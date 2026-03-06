@@ -80,12 +80,19 @@ Federeation), Supergraph (for Apollo Federation) and Hive schema metadata via th
 
 ### GraphQL schema (SDL)
 
+Also called the API Schema--this is the public-facing contract. It is what your clients would see
+when they interact with your API.
+
 ```bash
 curl -v -H 'X-Hive-CDN-Key: CDN_ACCESS_TOKEN' \
   "https://cdn.graphql-hive.com/artifacts/v1/TARGET_ID/sdl"
 ```
 
 ### List of Services
+
+The list of services is a JSON representation of all the GraphQL services in your target. This can
+be used for tooling that lives outside of Hive that requires a list of services and/or their
+internal SDL.
 
 ```bash
 curl -v -H 'X-Hive-CDN-Key: CDN_ACCESS_TOKEN' \
@@ -95,6 +102,10 @@ curl -v -H 'X-Hive-CDN-Key: CDN_ACCESS_TOKEN' \
 ### Supergraph
 
 <Callout>This artifact is only available for Apollo Federation projects.</Callout>
+
+This is the internal representation of your API that includes routing information and other metadata
+that's required for a federated gateway to handle requests and route them properly. This is not
+intended for clients because it reveals your internal microservice architecture.
 
 ```bash
 curl -v -H 'X-Hive-CDN-Key: CDN_ACCESS_TOKEN' \
@@ -109,7 +120,10 @@ Further reading:
 
 ### Hive Metadata
 
-<Callout>This artifact is only available for Single and Schema-Stitching projects.</Callout>
+<Callout>
+  This artifact is only available for Single and Schema-Stitching projects. To provide metadata in a
+  federated system, consider using [directives](/docs/api-reference/link-specifications#meta).
+</Callout>
 
 ```bash
 curl -v -H 'X-Hive-CDN-Key: CDN_ACCESS_TOKEN' \
