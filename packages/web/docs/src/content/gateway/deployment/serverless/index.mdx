@@ -7,7 +7,7 @@ serverless environment like AWS Lambda, Cloudflare Workers, or Azure Functions.
 
 <Callout>
   Please read carefully following sections, most importantly [Bundling
-  Problems](#bundling-problems). Serverless and Edge are very specific environment that are comming
+  Problems](#bundling-problems). Serverless and Edge are very specific environment that are coming
   with very specific requirements.
 </Callout>
 
@@ -40,7 +40,7 @@ loading those modules dynamically. This means that the bundler can't know static
 transport packages should be included in the bundle.
 
 When running in a bundled environment like Serevless and Edge, you need to statically configure the
-transports needed to comunicate with your upstream services. This way, the transport modules are
+transports needed to communicate with your upstream services. This way, the transport modules are
 statically referenced and will be included into the bundle.
 
 ```ts filename="index.ts"

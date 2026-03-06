@@ -1468,6 +1468,7 @@ export default gql`
     - **App Deployment** "the-guild/graphql-hive/production/appDeployment/production"
 
     These ids can also contain wildcards, e.g. "the-guild/graphql-hive/*", to reference all targets in a project.
+    If the field resolves to 'null', the permission group is not granted on any resource.
     """
     resolvedResourceIds: [String!]
     """

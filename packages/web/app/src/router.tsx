@@ -64,7 +64,7 @@ import { ProjectAlertsPage } from './pages/project-alerts';
 import { ProjectSettingsPage, ProjectSettingsPageEnum } from './pages/project-settings';
 import { TargetPage } from './pages/target';
 import { TargetAppVersionPage } from './pages/target-app-version';
-import { TargetAppsPage } from './pages/target-apps';
+import { TargetAppsPage, TargetAppsSortSchema, type SortState } from './pages/target-apps';
 import { TargetChecksPage } from './pages/target-checks';
 import { TargetChecksAffectedDeploymentsPage } from './pages/target-checks-affected-deployments';
 import { TargetChecksSinglePage } from './pages/target-checks-single';
@@ -74,9 +74,10 @@ import { TargetExplorerTypePage } from './pages/target-explorer-type';
 import { TargetExplorerUnusedPage } from './pages/target-explorer-unused';
 import { TargetHistoryPage } from './pages/target-history';
 import { TargetHistoryVersionPage } from './pages/target-history-version';
-import { TargetInsightsPage } from './pages/target-insights';
+import { InsightsFilterSearch, TargetInsightsPage } from './pages/target-insights';
 import { TargetInsightsClientPage } from './pages/target-insights-client';
 import { TargetInsightsCoordinatePage } from './pages/target-insights-coordinate';
+import { TargetInsightsManageFiltersPage } from './pages/target-insights-manage-filters';
 import { TargetInsightsOperationPage } from './pages/target-insights-operation';
 import { TargetLaboratoryPage } from './pages/target-laboratory';
 import { TargetLaboratoryPage as TargetLaboratoryPageNew } from './pages/target-laboratory-new';
@@ -656,16 +657,28 @@ const targetLaboratoryRoute = createRoute({
   },
 });
 
+const TargetAppsRouteSearch = z.object({
+  sort: TargetAppsSortSchema.optional(),
+});
+
 const targetAppsRoute = createRoute({
   getParentRoute: () => targetRoute,
   path: 'apps',
+  validateSearch: TargetAppsRouteSearch.parse,
   component: function TargetAppsRoute() {
     const { organizationSlug, projectSlug, targetSlug } = targetAppsRoute.useParams();
+    const {
+      sort = {
+        field: 'ACTIVATED_AT',
+        direction: 'DESC',
+      } satisfies SortState,
+    } = targetAppsRoute.useSearch();
     return (
       <TargetAppsPage
         organizationSlug={organizationSlug}
         projectSlug={projectSlug}
         targetSlug={targetSlug}
+        sorting={sort}
       />
     );
   },
@@ -692,13 +705,30 @@ const targetAppVersionRoute = createRoute({
   },
 });
 
-const targetInsightsRoute = createRoute({
+export const targetInsightsRoute = createRoute({
   getParentRoute: () => targetRoute,
   path: 'insights',
+  validateSearch: InsightsFilterSearch.parse,
   component: function TargetInsightsRoute() {
     const { organizationSlug, projectSlug, targetSlug } = targetInsightsRoute.useParams();
     return (
       <TargetInsightsPage
+        organizationSlug={organizationSlug}
+        projectSlug={projectSlug}
+        targetSlug={targetSlug}
+      />
+    );
+  },
+});
+
+const targetInsightsManageFiltersRoute = createRoute({
+  getParentRoute: () => targetRoute,
+  path: 'insights/manage-filters',
+  component: function TargetInsightsManageFiltersRoute() {
+    const { organizationSlug, projectSlug, targetSlug } =
+      targetInsightsManageFiltersRoute.useParams();
+    return (
+      <TargetInsightsManageFiltersPage
         organizationSlug={organizationSlug}
         projectSlug={projectSlug}
         targetSlug={targetSlug}
@@ -1107,6 +1137,7 @@ const routeTree = root.addChildren([
       targetLaboratoryRoute,
       targetHistoryRoute.addChildren([targetHistoryVersionRoute]),
       targetInsightsRoute,
+      targetInsightsManageFiltersRoute,
       targetTraceRoute,
       targetTracesRoute,
       targetInsightsCoordinateRoute,
@@ -1125,16 +1156,22 @@ const routeTree = root.addChildren([
   ]),
 ]);
 
+/** Routes whose search params contain arrays or objects and need jsurl2 encoding. */
+function needsJsurl2() {
+  const path = window.location.pathname;
+  return path.endsWith('/insights') || path.endsWith('/traces') || path.endsWith('/proposals');
+}
+
 export const router = createRouter({
   routeTree,
   parseSearch: parseSearchWith(str => {
-    if (window.location.pathname.endsWith('/traces')) {
+    if (needsJsurl2()) {
       return jsUrlParse(str);
     }
     return JSON.parse(str);
   }),
   stringifySearch: stringifySearchWith(search => {
-    if (window.location.pathname.endsWith('/traces')) {
+    if (needsJsurl2()) {
       return jsUrlStringify(search);
     }
     return JSON.stringify(search);

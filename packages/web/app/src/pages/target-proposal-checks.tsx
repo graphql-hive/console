@@ -38,7 +38,7 @@ export function TargetProposalChecksPage(props: {
 }) {
   const checks = useFragment(ProposalOverview_ChecksFragment, props.checks);
   return (
-    <div className="grid w-full grid-cols-3 content-evenly rounded-lg border-2 sm:grid-cols-5">
+    <div className="grid w-full grid-cols-3 content-evenly sm:grid-cols-5">
       {checks?.edges?.map(({ node }, index) => {
         return (
           <CheckItem

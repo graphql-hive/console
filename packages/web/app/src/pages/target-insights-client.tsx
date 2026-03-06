@@ -12,7 +12,6 @@ import { EmptyList } from '@/components/ui/empty-list';
 import { Meta } from '@/components/ui/meta';
 import { Subtitle, Title } from '@/components/ui/page';
 import { QueryError } from '@/components/ui/query-error';
-import { CHART_PRIMARY_COLOR } from '@/constants';
 import { graphql } from '@/gql';
 import { formatNumber, formatThroughput, toDecimal } from '@/lib/hooks';
 import { useDateRangeController } from '@/lib/hooks/use-date-range-controller';
@@ -62,7 +61,7 @@ function ClientView(props: {
   projectSlug: string;
   targetSlug: string;
 }) {
-  const styles = useChartStyles();
+  const { styles, colors } = useChartStyles();
   const dateRangeController = useDateRangeController({
     dataRetentionInDays: props.dataRetentionInDays,
     defaultPreset: presetLast7Days,
@@ -236,7 +235,7 @@ function ClientView(props: {
                             min: 0,
                             splitLine: {
                               lineStyle: {
-                                color: '#595959',
+                                color: colors.grid,
                                 type: 'dashed',
                               },
                             },
@@ -251,7 +250,7 @@ function ClientView(props: {
                             name: 'Requests',
                             showSymbol: false,
                             smooth: false,
-                            color: CHART_PRIMARY_COLOR,
+                            color: colors.primary,
                             areaStyle: {},
                             emphasis: {
                               focus: 'series',
@@ -286,7 +285,7 @@ function ClientView(props: {
                       <div key={operation.id} className="flex items-center">
                         <p className="truncate text-sm font-medium">
                           <Link
-                            className="text-neutral-2 hover:text-neutral-2 hover:underline hover:underline-offset-2"
+                            className="text-accent_80 hover:text-accent hover:underline hover:underline-offset-2"
                             to="/$organizationSlug/$projectSlug/$targetSlug/insights/$operationName/$operationHash"
                             params={{
                               organizationSlug: props.organizationSlug,

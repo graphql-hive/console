@@ -6,6 +6,11 @@
   "engines": {
     "node": ">=12"
   },
+  "exports": {
+    "./modules/auth/lib/supertokens-at-home/crypto": "./src/modules/auth/lib/supertokens-at-home/crypto.ts",
+    "./modules/auth/providers/supertokens-store": "./src/modules/auth/providers/supertokens-store.ts",
+    "./modules/shared/providers/logger": "./src/modules/shared/providers/logger"
+  },
   "peerDependencies": {
     "graphql": "^16.0.0",
     "reflect-metadata": "0.2.2"
@@ -20,6 +25,7 @@
     "@graphql-inspector/core": "7.1.2",
     "@graphql-tools/merge": "9.1.1",
     "@hive/cdn-script": "workspace:*",
+    "@hive/pubsub": "workspace:*",
     "@hive/schema": "workspace:*",
     "@hive/service-common": "workspace:*",
     "@hive/storage": "workspace:*",
@@ -50,6 +56,7 @@
     "date-fns": "4.1.0",
     "fast-json-stable-stringify": "2.1.0",
     "got": "14.4.7",
+    "graphile-worker": "0.16.6",
     "graphql": "16.9.0",
     "graphql-modules": "3.1.1",
     "graphql-parse-resolve-info": "4.13.0",
@@ -57,6 +64,7 @@
     "graphql-yoga": "5.13.3",
     "ioredis": "5.8.2",
     "ioredis-mock": "8.9.0",
+    "jsonwebtoken": "9.0.3",
     "lodash": "4.17.23",
     "lru-cache": "7.18.3",
     "ms": "2.1.3",

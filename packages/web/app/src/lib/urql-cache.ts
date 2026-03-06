@@ -17,6 +17,10 @@ import type { CreateOrganizationMutation } from '@/pages/organization-new';
 import type { DeleteOrganizationDocument } from '@/pages/organization-settings';
 import type { DeleteProjectMutation } from '@/pages/project-settings';
 import {
+  ManageFilters_SavedFiltersQuery,
+  type ManageFilters_DeleteSavedFilterMutation,
+} from '@/pages/target-insights-manage-filters';
+import {
   TokensDocument,
   type DeleteTargetMutation,
   type DeleteTokensDocument,
@@ -348,6 +352,41 @@ const createOperationInDocumentCollection: TypedDocumentNodeUpdateResolver<
   );
 };
 
+const deleteSavedFilter: TypedDocumentNodeUpdateResolver<
+  typeof ManageFilters_DeleteSavedFilterMutation
+> = ({ deleteSavedFilter }, args, cache) => {
+  if (!deleteSavedFilter.ok) {
+    return;
+  }
+
+  const selector = args.input.target.bySelector;
+  if (!selector) {
+    return;
+  }
+
+  updateQuery(
+    cache,
+    {
+      query: ManageFilters_SavedFiltersQuery,
+      variables: {
+        organizationSlug: selector.organizationSlug,
+        selector: {
+          organizationSlug: selector.organizationSlug,
+          projectSlug: selector.projectSlug,
+          targetSlug: selector.targetSlug,
+        },
+      },
+    },
+    data => {
+      if (data.target) {
+        data.target.savedFilters.edges = data.target.savedFilters.edges.filter(
+          edge => edge.node.id !== deleteSavedFilter.ok!.deletedId,
+        );
+      }
+    },
+  );
+};
+
 // UpdateResolver
 export const Mutation = {
   createOrganization,
@@ -365,4 +404,5 @@ export const Mutation = {
   deleteDocumentCollection,
   deleteOperationInDocumentCollection,
   createOperationInDocumentCollection,
+  deleteSavedFilter,
 };

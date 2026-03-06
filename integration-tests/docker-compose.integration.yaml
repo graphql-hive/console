@@ -239,6 +239,7 @@ services:
   workflows:
     environment:
       EMAIL_PROVIDER: '${EMAIL_PROVIDER}'
+      SCHEMA_ENDPOINT: http://schema:3002
       LOG_LEVEL: debug
     ports:
       - '3014:3014'

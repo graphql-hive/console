@@ -1,4 +1,4 @@
-import { concatAST, print } from 'graphql';
+import { concatAST, print, stripIgnoredCharacters } from 'graphql';
 import { CodeFileLoader } from '@graphql-tools/code-file-loader';
 import { GraphQLFileLoader } from '@graphql-tools/graphql-file-loader';
 import { JsonFileLoader } from '@graphql-tools/json-file-loader';
@@ -168,17 +168,5 @@ export async function loadSchema(
 }
 
 export function minifySchema(schema: string) {
-  // Regex breakdown:
-  // 1. ("""[\s\S]*?""") -> Group 1: Triple-quoted blocks
-  // 2. #[^\r\n]* -> Matches comments starting with #
-  // 3. \s+              -> Matches one or more whitespaces
-  return schema
-    .replace(/(?:("""[\s\S]*?""")|#[^\r\n]*|\s+)/g, (match, group1) => {
-      // If it's a triple-quote block, return it exactly as is
-      if (group1) return group1;
-
-      // If it was a comment or whitespace(s), replace with a single space
-      return ' ';
-    })
-    .trim();
+  return stripIgnoredCharacters(schema);
 }

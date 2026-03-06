@@ -34,6 +34,7 @@ const EnvironmentModel = zod.object({
     .union([zod.literal('1'), zod.literal('0')])
     .optional(),
   GRAPHQL_HIVE_ENVIRONMENT: emptyString(zod.enum(['prod', 'staging', 'dev']).optional()),
+  SUPERTOKENS_AT_HOME: zod.union([zod.literal('1'), zod.literal('0')]).optional(),
 });
 
 const PostgresModel = zod.object({
@@ -114,4 +115,5 @@ export const env = {
   isClickHouseMigrator: base.CLICKHOUSE_MIGRATOR === 'up',
   isHiveCloud: base.CLICKHOUSE_MIGRATOR_GRAPHQL_HIVE_CLOUD === '1',
   hiveCloudEnvironment: base.GRAPHQL_HIVE_ENVIRONMENT ?? null,
+  useSupertokensAtHome: base.SUPERTOKENS_AT_HOME === '1',
 } as const;

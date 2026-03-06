@@ -569,7 +569,7 @@ subscription {
 }
 ```
 
-Hive Gateway will inteligently resolve all fields on subscription events and deliver you the
+Hive Gateway will intelligently resolve all fields on subscription events and deliver you the
 complete result.
 
 <Tabs items={["SSE", "WebSocket"]}>
@@ -888,7 +888,7 @@ export const gatewayConfig = defineConfig({
 
 We're now ready to subscribe to the `newProduct` subscription field and publish events to the
 `new_product` topic. The publishing of events can happen from **anywhere**, it doesn't have to be
-from within Hive Gateway or any perticular subgraph, you can, for example, implement a separate
+from within Hive Gateway or any particular subgraph, you can, for example, implement a separate
 service that is only responsible for emitting subscription events.
 
 You can subscribe to the `newProduct` subscription from a client using any of the
@@ -961,7 +961,7 @@ export interface PubSub<M extends TopicDataMap = TopicDataMap> {
   publish<Topic extends keyof M>(topic: Topic, data: M[Topic]): MaybePromise<void>
   /**
    * A distinct list of all topics that are currently subscribed to.
-   * Can be a promise to accomodate distributed systems where subscribers exist on other
+   * Can be a promise to accommodate distributed systems where subscribers exist on other
    * locations and we need to know about all of them.
    */
   subscribedTopics(): MaybePromise<Iterable<keyof M>>

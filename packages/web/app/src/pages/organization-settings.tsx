@@ -3,6 +3,7 @@ import { ArrowRightIcon } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { useMutation, useQuery } from 'urql';
 import { z } from 'zod';
+import { Checkbox } from '@/components/base/checkbox/checkbox';
 import { OrganizationLayout, Page } from '@/components/layouts/organization';
 import { SubPageNavigationLink } from '@/components/navigation/sub-page-navigation-link';
 import { AccessTokensSubPage } from '@/components/organization/settings/access-tokens/access-tokens-sub-page';
@@ -11,7 +12,6 @@ import { PersonalAccessTokensSubPage } from '@/components/organization/settings/
 import { PolicySettings } from '@/components/policy/policy-settings';
 import { Button } from '@/components/ui/button';
 import { CardDescription } from '@/components/ui/card';
-import { Checkbox } from '@/components/ui/checkbox';
 import {
   Dialog,
   DialogContent,

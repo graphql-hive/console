@@ -20,7 +20,7 @@ test('use persisted documents (GraphQL over HTTP "documentId")', async () => {
     plugins: [
       useHive({
         enabled: false,
-        experimental__persistedDocuments: {
+        persistedDocuments: {
           cdn: {
             endpoint: 'http://artifacts-cdn.localhost',
             accessToken: 'foo',
@@ -70,7 +70,7 @@ test('use persisted documents (GraphQL over HTTP "documentId") real thing', asyn
     plugins: [
       useHive({
         enabled: false,
-        experimental__persistedDocuments: {
+        persistedDocuments: {
           cdn: {
             endpoint: 'http://artifacts-cdn.localhost',
             accessToken: 'foo',
@@ -124,7 +124,7 @@ test('persisted document not found (GraphQL over HTTP "documentId")', async () =
     plugins: [
       useHive({
         enabled: false,
-        experimental__persistedDocuments: {
+        persistedDocuments: {
           cdn: {
             endpoint: 'http://artifacts-cdn.localhost',
             accessToken: 'foo',
@@ -177,7 +177,7 @@ test('malformed document ID returns validation error instead of 500 (GraphQL ove
     plugins: [
       useHive({
         enabled: false,
-        experimental__persistedDocuments: {
+        persistedDocuments: {
           cdn: {
             endpoint: 'http://artifacts-cdn.localhost',
             accessToken: 'foo',
@@ -223,7 +223,7 @@ test('document ID with wrong number of parts returns validation error', async ()
     plugins: [
       useHive({
         enabled: false,
-        experimental__persistedDocuments: {
+        persistedDocuments: {
           cdn: {
             endpoint: 'http://artifacts-cdn.localhost',
             accessToken: 'foo',
@@ -269,7 +269,7 @@ test('arbitrary options are rejected with allowArbitraryDocuments=false (GraphQL
     plugins: [
       useHive({
         enabled: false,
-        experimental__persistedDocuments: {
+        persistedDocuments: {
           cdn: {
             endpoint: 'http://artifacts-cdn.localhost',
             accessToken: 'foo',
@@ -313,7 +313,7 @@ test('arbitrary options are allowed with allowArbitraryDocuments=true (GraphQL o
     plugins: [
       useHive({
         enabled: false,
-        experimental__persistedDocuments: {
+        persistedDocuments: {
           cdn: {
             endpoint: 'http://artifacts-cdn.localhost',
             accessToken: 'foo',
@@ -369,7 +369,7 @@ test('use persisted documents for SSE GET (GraphQL over HTTP "documentId")', asy
     plugins: [
       useHive({
         enabled: false,
-        experimental__persistedDocuments: {
+        persistedDocuments: {
           cdn: {
             endpoint: 'http://artifacts-cdn.localhost',
             accessToken: 'foo',
@@ -441,7 +441,7 @@ test('use persisted documents for subscription over SSE (GraphQL over HTTP "docu
     plugins: [
       useHive({
         enabled: false,
-        experimental__persistedDocuments: {
+        persistedDocuments: {
           cdn: {
             endpoint: 'http://artifacts-cdn.localhost',
             accessToken: 'foo',
@@ -502,7 +502,7 @@ test('usage reporting for persisted document', async () => {
         enabled: true,
         debug: false,
         token: 'brrrt',
-        experimental__persistedDocuments: {
+        persistedDocuments: {
           cdn: {
             endpoint: 'http://artifacts-cdn.localhost',
             accessToken: 'foo',
@@ -596,7 +596,7 @@ test('usage reporting for persisted document (subscription)', async () => {
         enabled: true,
         debug: false,
         token: 'brrrt',
-        experimental__persistedDocuments: {
+        persistedDocuments: {
           cdn: {
             endpoint: 'http://artifacts-cdn.localhost',
             accessToken: 'foo',
@@ -696,7 +696,7 @@ test('deduplication of parallel requests resolving the same document from CDN', 
     plugins: [
       useHive({
         enabled: false,
-        experimental__persistedDocuments: {
+        persistedDocuments: {
           cdn: {
             endpoint: 'http://artifacts-cdn.localhost',
             accessToken: 'foo',
@@ -750,7 +750,7 @@ test('usage reporting with batch execution and persisted documents', async () =>
       useHive({
         token: 'foo',
         enabled: true,
-        experimental__persistedDocuments: {
+        persistedDocuments: {
           cdn: {
             endpoint: 'http://artifacts-cdn.localhost',
             accessToken: 'foo',
@@ -853,7 +853,7 @@ test('L2 cache with waitUntil from yoga context', () => {
         plugins: [
           useHive({
             enabled: false,
-            experimental__persistedDocuments: {
+            persistedDocuments: {
               cdn: {
                 endpoint: 'http://artifacts-cdn.localhost',
                 accessToken: 'foo',
@@ -922,7 +922,7 @@ test('L2 cache hit skips CDN fetch', async () => {
     plugins: [
       useHive({
         enabled: false,
-        experimental__persistedDocuments: {
+        persistedDocuments: {
           cdn: {
             endpoint: 'http://artifacts-cdn.localhost',
             accessToken: 'foo',

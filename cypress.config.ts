@@ -1,3 +1,4 @@
+import 'reflect-metadata';
 import * as fs from 'node:fs';
 // eslint-disable-next-line import/no-extraneous-dependencies -- cypress SHOULD be a dev dependency
 import { defineConfig } from 'cypress';

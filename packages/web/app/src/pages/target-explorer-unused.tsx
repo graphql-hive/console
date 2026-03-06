@@ -178,9 +178,7 @@ const UnusedSchemaView = memo(function _UnusedSchemaView(props: {
                   size="sm"
                   className={cn(
                     'rounded-none px-2 py-1',
-                    letter === selectedLetter
-                      ? 'text-neutral-2'
-                      : 'text-neutral-10 hover:text-neutral-2',
+                    letter === selectedLetter ? 'text-accent' : 'text-neutral-10 hover:text-accent',
                   )}
                   key={letter}
                 >

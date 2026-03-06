@@ -8,6 +8,8 @@ import {
   decodeCreatedAtAndUUIDIdBasedCursor,
   encodeCreatedAtAndUUIDIdBasedCursor,
 } from '@hive/storage';
+import { TaskScheduler } from '@hive/workflows/kit';
+import { SchemaProposalCompositionTask } from '@hive/workflows/tasks/schema-proposal-composition';
 import { SchemaProposalStage } from '../../../__generated__/types';
 import { Logger } from '../../shared/providers/logger';
 import { PG_POOL_CONFIG } from '../../shared/providers/pg-pool';
@@ -38,9 +40,23 @@ export class SchemaProposalStorage {
     logger: Logger,
     @Inject(PG_POOL_CONFIG) private pool: DatabasePool,
     private storage: Storage,
-    @Inject(SCHEMA_PROPOSALS_ENABLED) private schemaProposalsEnabled: Boolean, // @todo
+    @Inject(SCHEMA_PROPOSALS_ENABLED) private schemaProposalsEnabled: Boolean,
+    private taskScheduler: TaskScheduler,
   ) {
     this.logger = logger.child({ source: 'SchemaProposalStorage' });
+  }
+
+  async runBackgroundComposition(input: {
+    proposalId: string;
+    targetId: string;
+    externalComposition: {
+      enabled: boolean;
+      endpoint?: string | null;
+      encryptedSecret?: string | null;
+    };
+    native: boolean;
+  }) {
+    await this.taskScheduler.scheduleTask(SchemaProposalCompositionTask, input);
   }
 
   private async assertSchemaProposalsEnabled(args: {
@@ -189,6 +205,29 @@ export class SchemaProposalStorage {
     };
   }
 
+  /**
+   * A stripped down version of getProposal that only returns the ID. This is intended
+   * to be used
+   */
+  async getProposalTargetId(args: { id: string }) {
+    this.logger.debug('Get proposal target ID (proposal=%s)', args.id);
+    const result = await this.pool
+      .maybeOne<unknown>(
+        sql`
+          SELECT
+              id
+            , target_id as "targetId"
+          FROM
+            "schema_proposals"
+          WHERE
+            id=${args.id}
+        `,
+      )
+      .then(row => SchemaProposalTargetIdModel.safeParse(row));
+
+    return result.data ?? null;
+  }
+
   async getProposal(args: { id: string }) {
     this.logger.debug('Get proposal (proposal=%s)', args.id);
     const result = await this.pool
@@ -202,9 +241,9 @@ export class SchemaProposalStorage {
             "sp"."id" = ${args.id}
         `,
       )
-      .then(row => SchemaProposalModel.parse(row));
+      .then(row => SchemaProposalModel.safeParse(row));
 
-    return result;
+    return result.data ?? null;
   }
 
   async getPaginatedProposals(args: {
@@ -344,7 +383,7 @@ export class SchemaProposalStorage {
 }
 
 const schemaProposalFields = sql`
-  sp."id"
+    sp."id"
   , to_json(sp."created_at") as "createdAt"
   , to_json(sp."updated_at") as "updatedAt"
   , sp."title"
@@ -352,6 +391,9 @@ const schemaProposalFields = sql`
   , sp."stage"
   , sp."target_id" as "targetId"
   , sp."author"
+  , sp."composition_status" as "compositionStatus"
+  , to_json(sp."composition_timestamp") as "compositionTimestamp"
+  , sp."composition_status_reason" as "compositionStatusReason"
 `;
 
 const schemaProposalReviewFields = sql`
@@ -388,6 +430,17 @@ const SchemaProposalModel = z.object({
   stage: StageModel,
   targetId: z.string(),
   author: z.string(),
+  compositionStatus: z.enum(['ERROR', 'SUCCESS']).nullable(),
+  compositionStatusReason: z.string().nullable(),
+  compositionTimestamp: z.string().nullable(),
+});
+
+/**
+ * Minimal model for extracting just the target Id for permission checks.
+ */
+const SchemaProposalTargetIdModel = z.object({
+  id: z.string(),
+  targetId: z.string(),
 });
 
 export type SchemaProposalRecord = z.infer<typeof SchemaProposalModel>;

@@ -6,20 +6,13 @@ import { SortDirection } from '@tanstack/react-table';
 export function Sortable(props: {
   children: ReactNode;
   sortOrder: SortDirection | false;
-  /**
-   * Whether another column is sorted in addition to this one.
-   * It's used to show a different tooltip when sorting by multiple columns.
-   */
-  otherColumnSorted?: boolean;
   onClick?: ComponentProps<'button'>['onClick'];
 }): ReactElement {
   const tooltipText =
     props.sortOrder === false
-      ? 'Click to sort descending' + props.otherColumnSorted
-        ? ' (hold shift to sort by multiple columns)'
-        : ''
+      ? 'Click to sort descending'
       : {
-          asc: 'Click to cancel sorting',
+          asc: 'Click to sort descending',
           desc: 'Click to sort ascending',
         }[props.sortOrder];
 
@@ -36,9 +29,9 @@ export function Sortable(props: {
           >
             <div>{props.children}</div>
 
-            {props.sortOrder === 'asc' ? <TriangleUpIcon className="text-neutral-2 ml-2" /> : null}
+            {props.sortOrder === 'asc' ? <TriangleUpIcon className="text-neutral-10 ml-2" /> : null}
             {props.sortOrder === 'desc' ? (
-              <TriangleUpIcon className="text-neutral-2 ml-2 rotate-180" />
+              <TriangleUpIcon className="text-neutral-10 ml-2 rotate-180" />
             ) : null}
           </button>
         </TooltipTrigger>

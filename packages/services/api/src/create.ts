@@ -39,6 +39,7 @@ import {
 import { projectModule } from './modules/project';
 import { proposalsModule } from './modules/proposals';
 import { SCHEMA_PROPOSALS_ENABLED } from './modules/proposals/providers/schema-proposals-enabled-token';
+import { savedFiltersModule } from './modules/saved-filters';
 import { schemaModule } from './modules/schema';
 import { ArtifactStorageWriter } from './modules/schema/providers/artifact-storage-writer';
 import { provideSchemaModuleConfig, SchemaModuleConfig } from './modules/schema/providers/config';
@@ -61,6 +62,7 @@ import { PG_POOL_CONFIG } from './modules/shared/providers/pg-pool';
 import { PrometheusConfig } from './modules/shared/providers/prometheus-config';
 import { HivePubSub, PUB_SUB_CONFIG } from './modules/shared/providers/pub-sub';
 import { REDIS_INSTANCE } from './modules/shared/providers/redis';
+import { RedisRateLimiter } from './modules/shared/providers/redis-rate-limiter';
 import { S3_CONFIG, type S3Config } from './modules/shared/providers/s3-config';
 import { Storage } from './modules/shared/providers/storage';
 import { RateLimitConfig, WEB_APP_URL } from './modules/shared/providers/tokens';
@@ -88,6 +90,7 @@ const modules = [
   oidcIntegrationsModule,
   schemaPolicyModule,
   collectionModule,
+  savedFiltersModule,
   appDeploymentsModule,
   auditLogsModule,
   proposalsModule,
@@ -156,6 +159,7 @@ export function createRegistry({
     baseUrl: string;
     rateLimit: null | {
       ipHeaderName: string;
+      bypassKey: string | null;
     };
   } | null;
   schemaConfig: SchemaModuleConfig;
@@ -218,6 +222,7 @@ export function createRegistry({
     CryptoProvider,
     InMemoryRateLimitStore,
     InMemoryRateLimiter,
+    RedisRateLimiter,
     {
       provide: AuditLogS3Config,
       useValue: auditLogS3Config,
