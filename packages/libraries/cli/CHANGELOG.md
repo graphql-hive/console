@@ -1,5 +1,14 @@
 # @graphql-hive/cli
 
+## 0.58.5
+
+### Patch Changes
+
+- [#7797](https://github.com/graphql-hive/console/pull/7797)
+  [`bb74982`](https://github.com/graphql-hive/console/commit/bb74982825d3f7d31c6d6345cf586617cbe728e8)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Revert improvements around federation composition
+  rules introduced in `0.58.4` as it might cause issues for Apollo Gateway.
+
 ## 0.58.4
 
 ### Patch Changes
