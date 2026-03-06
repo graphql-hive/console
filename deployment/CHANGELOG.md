@@ -1,5 +1,34 @@
 # hive
 
+## 9.6.1
+
+### Patch Changes
+
+- [#7792](https://github.com/graphql-hive/console/pull/7792)
+  [`56086ba`](https://github.com/graphql-hive/console/commit/56086ba42ee301e95a59ec2d7ceec0753063fced)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Address vulnerability
+  [CVE-2026-24051](https://github.com/graphql-hive/console/security/dependabot/517)
+
+- [#7768](https://github.com/graphql-hive/console/pull/7768)
+  [`6b22c3d`](https://github.com/graphql-hive/console/commit/6b22c3d9e2c90585b6680fb9bc8eed60fe878549)
+  Thanks [@jonathanawesome](https://github.com/jonathanawesome)! - Enhanced Insights filters UI with
+  include/exclude options
+
+- [#7792](https://github.com/graphql-hive/console/pull/7792)
+  [`56086ba`](https://github.com/graphql-hive/console/commit/56086ba42ee301e95a59ec2d7ceec0753063fced)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Address vulnerability
+  [CVE-2026-3419](https://github.com/graphql-hive/console/security/dependabot/536)
+
+- [#7797](https://github.com/graphql-hive/console/pull/7797)
+  [`bb74982`](https://github.com/graphql-hive/console/commit/bb74982825d3f7d31c6d6345cf586617cbe728e8)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Revert improvements around federation composition
+  rules introduced in `9.6.1` as it might cause issues for Apollo Gateway.
+
+- [#7795](https://github.com/graphql-hive/console/pull/7795)
+  [`4fef6c7`](https://github.com/graphql-hive/console/commit/4fef6c759d2c82bbc9ac8128f1e56ba31d0e21ca)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Address vulnerability
+  [CVE-2026-0540](https://github.com/graphql-hive/console/security/dependabot/523)
+
 ## 9.6.0
 
 ### Minor Changes

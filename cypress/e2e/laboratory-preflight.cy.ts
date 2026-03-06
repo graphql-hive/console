@@ -287,12 +287,7 @@ describe('Execution', () => {
         parseSpecialCharSequences: false,
       },
     );
-    cy.dataCy('env-editor-mini').within(() => {
-      cy.get('textarea').type('{"foo":"injected"}', {
-        force: true,
-        parseSpecialCharSequences: false,
-      });
-    });
+    setMonacoEditorContents('env-editor-mini', '{"foo":"injected"}');
 
     cy.intercept({
       method: 'POST',
