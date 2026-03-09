@@ -758,6 +758,15 @@ export async function createStorage(
             action = 'created';
           }
 
+          if (internalUser.email !== email) {
+            await t.query(sql`
+              UPDATE "users"
+              SET "email" = ${email}
+              WHERE "id" = ${internalUser.id}
+            `);
+            internalUser.email = email;
+          }
+
           if (oidcIntegration !== null) {
             // Add user to OIDC linked integration
             await shared.addOrganizationMemberViaOIDCIntegrationId(

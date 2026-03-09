@@ -53,13 +53,9 @@ import {
   updateTargetValidationSettings,
 } from './flow';
 import * as GraphQLSchema from './gql/graphql';
-import {
-  BreakingChangeFormulaType,
-  ProjectType,
-  SchemaPolicyInput,
-  TargetAccessScope,
-} from './gql/graphql';
+import { ProjectType, SchemaPolicyInput, TargetAccessScope } from './gql/graphql';
 import { execute } from './graphql';
+import { createOIDCIntegration } from './oidc-integration.js';
 import {
   CreateSavedFilterMutation,
   DeleteSavedFilterMutation,
@@ -1374,6 +1370,13 @@ export function initSeed() {
                   return updatedRole;
                 },
               };
+            },
+            createOIDCIntegration() {
+              return createOIDCIntegration({
+                organizationId: organization.id,
+                accessToken: ownerToken,
+                getPool: getPool,
+              });
             },
           };
         },
