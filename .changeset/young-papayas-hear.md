@@ -1,5 +1,5 @@
 ---
-'@graphql-hive/render-laboratory': major
+'@graphql-hive/render-laboratory': minor
 ---
 
 Render laboratory util for yoga

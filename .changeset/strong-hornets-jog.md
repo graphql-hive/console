@@ -1,5 +1,5 @@
 ---
-'@graphql-hive/laboratory': major
+'@graphql-hive/laboratory': minor
 ---
 
 First release
