@@ -1119,7 +1119,7 @@ export async function registerSupertokensAtHome(
           );
           return rep.status(200).send({
             status: 'SIGN_IN_UP_NOT_ALLOWED',
-            reason: 'Sign in failed. Please contact your origanization administrator.',
+            reason: 'Sign in failed. Please contact your organization administrator.',
           });
         }
 
@@ -1130,7 +1130,7 @@ export async function registerSupertokensAtHome(
           req.log.debug('received malformed json body from token endpoint');
           return rep.status(200).send({
             status: 'SIGN_IN_UP_NOT_ALLOWED',
-            reason: 'Sign in failed. Please contact your origanization administrator.',
+            reason: 'Sign in failed. Please contact your organization administrator.',
           });
         }
 
@@ -1140,7 +1140,7 @@ export async function registerSupertokensAtHome(
           req.log.debug('received invalid json body from token endpoint');
           return rep.status(200).send({
             status: 'SIGN_IN_UP_NOT_ALLOWED',
-            reason: 'Sign in failed. Please contact your origanization administrator.',
+            reason: 'Sign in failed. Please contact your organization administrator.',
           });
         }
 
@@ -1270,7 +1270,7 @@ export async function registerSupertokensAtHome(
 
           return rep.status(200).send({
             status: 'SIGN_IN_UP_NOT_ALLOWED',
-            reason: 'Sign in failed. Please contact your origanization administrator.',
+            reason: 'Sign in failed. Please contact your organization administrator.',
           });
         }
 
@@ -1287,7 +1287,7 @@ export async function registerSupertokensAtHome(
 
           return rep.status(200).send({
             status: 'SIGN_IN_UP_NOT_ALLOWED',
-            reason: 'Sign in failed. Please contact your origanization administrator.',
+            reason: 'Sign in failed. Please contact your organization administrator.',
           });
         }
 
@@ -1302,7 +1302,7 @@ export async function registerSupertokensAtHome(
 
           return rep.status(200).send({
             status: 'SIGN_IN_UP_NOT_ALLOWED',
-            reason: 'Sign in failed. Please contact your origanization administrator.',
+            reason: 'Sign in failed. Please contact your organization administrator.',
           });
         }
 
@@ -1329,7 +1329,7 @@ export async function registerSupertokensAtHome(
 
           return rep.status(200).send({
             status: 'SIGN_IN_UP_NOT_ALLOWED',
-            reason: 'Sign in failed. Please contact your origanization administrator.',
+            reason: 'Sign in failed. Please contact your organization administrator.',
           });
         }
 
@@ -1345,7 +1345,7 @@ export async function registerSupertokensAtHome(
 
           return rep.status(200).send({
             status: 'SIGN_IN_UP_NOT_ALLOWED',
-            reason: 'Sign in failed. Please contact your origanization administrator.',
+            reason: 'Sign in failed. Please contact your organization administrator.',
           });
         }
 
@@ -1365,7 +1365,7 @@ export async function registerSupertokensAtHome(
 
           return rep.status(200).send({
             status: 'SIGN_IN_UP_NOT_ALLOWED',
-            reason: 'Sign in failed. Please contact your origanization administrator.',
+            reason: 'Sign in failed. Please contact your organization administrator.',
           });
         }
 
@@ -1378,7 +1378,7 @@ export async function registerSupertokensAtHome(
 
           return rep.status(200).send({
             status: 'SIGN_IN_UP_NOT_ALLOWED',
-            reason: 'Sign in failed. Please contact your origanization administrator.',
+            reason: 'Sign in failed. Please contact your organization administrator.',
           });
         }
 
@@ -1406,7 +1406,7 @@ export async function registerSupertokensAtHome(
           if (!user) {
             return rep.status(200).send({
               status: 'SIGN_IN_UP_NOT_ALLOWED',
-              reason: 'Sign in failed. Please contact your origanization administrator.',
+              reason: 'Sign in failed. Please contact your organization administrator.',
             });
           }
         }
