@@ -186,26 +186,39 @@ export class OIDCIntegrationStore {
   }
 
   async createDomainChallenge(domainId: string) {
+    this.logger.debug('create domain challenge (domainId=%s)', domainId);
     const challenge = createChallengePayload();
-
     const key = `hive:oidcDomainChallenge:${domainId}`;
-    await this.redis.set(key, JSON.stringify(challenge));
-    await this.redis.expire(key, 60 * 60 * 24);
+    const oneDaySeconds = 60 * 60 * 24;
+    await this.redis.set(key, JSON.stringify(challenge), 'EX', oneDaySeconds);
     return challenge;
   }
 
   async deleteDomainChallenge(domainId: string) {
+    this.logger.debug('delete domain challenge (domainId=%s)', domainId);
     const key = `hive:oidcDomainChallenge:${domainId}`;
     await this.redis.del(key);
   }
 
   async getDomainChallenge(domainId: string) {
+    this.logger.debug('load domain challenge (domainId=%s)', domainId);
     const key = `hive:oidcDomainChallenge:${domainId}`;
     const rawChallenge = await this.redis.get(key);
     if (rawChallenge === null) {
+      this.logger.debug('no domain challenge found (domainId=%s)', domainId);
       return null;
     }
-    return ChallengePayloadModel.parse(JSON.parse(rawChallenge));
+
+    try {
+      return ChallengePayloadModel.parse(JSON.parse(rawChallenge));
+    } catch (err) {
+      this.logger.error(
+        'domain challange is invalid JSON (domainId=%s, err=%s)',
+        domainId,
+        String(err),
+      );
+      throw err;
+    }
   }
 }
 
