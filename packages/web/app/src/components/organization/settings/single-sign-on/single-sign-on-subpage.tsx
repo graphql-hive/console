@@ -5,6 +5,7 @@ import { CardDescription } from '@/components/ui/card';
 import { DocsLink } from '@/components/ui/docs-note';
 import { KeyIcon } from '@/components/ui/icon';
 import { SubPageLayout, SubPageLayoutHeader } from '@/components/ui/page-content-layout';
+import { Skeleton } from '@/components/ui/skeleton';
 import { useToast } from '@/components/ui/use-toast';
 import { graphql } from '@/gql';
 import { ConnectSingleSignOnProviderSheet } from './connect-single-sign-on-provider-sheet';
@@ -96,21 +97,24 @@ export function SingleSignOnSubpage(props: SingleSignOnSubPageProps): React.Reac
         }
       />
       <div className="text-neutral-10 max-w-[800px] space-y-4">
-        {oidcIntegration ? (
+        {query.fetching ? (
+          <LoadingSkeleton />
+        ) : oidcIntegration ? (
           <OIDCIntegrationConfiguration
             oidcIntegration={oidcIntegration}
             organization={organization}
           />
         ) : (
           <>
-            <p>Your organization has currently no Open ID Connect provider configured.</p>
             <Button
+              className="mt-5"
               onClick={() => setModalState(ConnectSingleSignOnProviderState.open)}
               data-button-connect-open-id-provider
             >
               <KeyIcon className="mr-2" />
               Connect Open ID Connect Provider
             </Button>
+            <p>Your organization has currently no Open ID Connect provider configured.</p>
             {modalState === ConnectSingleSignOnProviderState.open && (
               <ConnectSingleSignOnProviderSheet
                 onClose={() => setModalState(ConnectSingleSignOnProviderState.closed)}
@@ -159,5 +163,62 @@ export function SingleSignOnSubpage(props: SingleSignOnSubPageProps): React.Reac
         )}
       </div>
     </SubPageLayout>
+  );
+}
+
+function LoadingSkeleton() {
+  return (
+    <>
+      {/* Overview Section */}
+      <section className="space-y-8">
+        <Skeleton className="h-6 w-24" />
+        <Skeleton className="h-4 w-72" />
+        <div className="space-y-3">
+          {[...Array(3)].map((_, i) => (
+            <div key={i} className="flex gap-8">
+              <Skeleton className="h-4 w-36" />
+              <Skeleton className="h-4 w-80" />
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* OIDC Configuration Section */}
+      <section className="space-y-8">
+        <Skeleton className="h-6 w-40" />
+        <div className="space-y-3">
+          {[...Array(6)].map((_, i) => (
+            <div key={i} className="flex gap-8">
+              <Skeleton className="h-4 w-36" />
+              <Skeleton className="h-4 w-72" />
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* Registered Domains Section */}
+      <section className="space-y-8">
+        <Skeleton className="h-6 w-44" />
+        <Skeleton className="h-4 w-96" />
+        <div className="flex gap-8">
+          <Skeleton className="h-4 w-24" />
+          <Skeleton className="h-4 w-24" />
+        </div>
+      </section>
+
+      {/* Access Settings Section */}
+      <section className="space-y-8">
+        <Skeleton className="h-6 w-36" />
+        {[...Array(4)].map((_, i) => (
+          <div key={i} className="flex items-start justify-between">
+            <div className="space-y-2">
+              <Skeleton className="h-4 w-40" />
+              <Skeleton className="h-3 w-72" />
+            </div>
+            <Skeleton className="h-6 w-11 rounded-full" />
+          </div>
+        ))}
+      </section>
+    </>
   );
 }
