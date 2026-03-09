@@ -155,7 +155,6 @@ test.concurrent(
   },
 );
 
-// Note: this test should not run concurrently
 test.concurrent(
   'User does not need to confirm their email if the domain is verified with the origanization',
   async ({ expect }) => {
