@@ -1,5 +1,10 @@
 import { FragmentType, graphql, useFragment } from '@/gql';
-import { GraphQLTypeCard, GraphQLTypeCardListItem, SchemaExplorerUsageStats } from './common';
+import {
+  GraphQLTypeAsLink,
+  GraphQLTypeCard,
+  GraphQLTypeCardListItem,
+  SchemaExplorerUsageStats,
+} from './common';
 import { SupergraphMetadataList } from './super-graph-metadata';
 
 const GraphQLUnionTypeComponent_TypeFragment = graphql(`
@@ -46,7 +51,21 @@ export function GraphQLUnionTypeComponent(props: {
       <div className="flex flex-col">
         {ttype.members.map((member, i) => (
           <GraphQLTypeCardListItem key={member.name} index={i}>
-            <div>{member.name}</div>
+            <GraphQLTypeAsLink
+              organizationSlug={props.organizationSlug}
+              projectSlug={props.projectSlug}
+              targetSlug={props.targetSlug}
+              className="text-neutral-11 font-semibold"
+              type={member.name}
+            />
+            {member.supergraphMetadata && (
+              <SupergraphMetadataList
+                targetSlug={props.targetSlug}
+                projectSlug={props.projectSlug}
+                organizationSlug={props.organizationSlug}
+                supergraphMetadata={member.supergraphMetadata}
+              />
+            )}
             {typeof props.totalRequests === 'number' && (
               <SchemaExplorerUsageStats
                 totalRequests={props.totalRequests}
@@ -54,14 +73,6 @@ export function GraphQLUnionTypeComponent(props: {
                 targetSlug={props.targetSlug}
                 projectSlug={props.projectSlug}
                 organizationSlug={props.organizationSlug}
-              />
-            )}
-            {member.supergraphMetadata && (
-              <SupergraphMetadataList
-                targetSlug={props.targetSlug}
-                projectSlug={props.projectSlug}
-                organizationSlug={props.organizationSlug}
-                supergraphMetadata={member.supergraphMetadata}
               />
             )}
           </GraphQLTypeCardListItem>
