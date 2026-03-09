@@ -27,12 +27,21 @@ export function useExplorerFieldFiltering<
           doesMatchFilter &&= field.name.toLowerCase().includes(search);
         }
         if (filterMeta.length) {
+          const metadata =
+            field.supergraphMetadata as SupergraphMetadataList_SupergraphMetadataFragmentFragment;
+
+          // Check custom metadata attributes
           const doesMatchMeta =
-            field.supergraphMetadata &&
-            (
-              field.supergraphMetadata as SupergraphMetadataList_SupergraphMetadataFragmentFragment
-            ).metadata?.some(m => hasMetadataFilter(m.name, m.content));
-          doesMatchFilter &&= !!doesMatchMeta;
+            metadata && metadata.metadata?.some(m => hasMetadataFilter(m.name, m.content));
+
+          // Check service name filters
+          const doesMatchService =
+            metadata &&
+            metadata.ownedByServiceNames?.some(serviceName =>
+              hasMetadataFilter('service', serviceName),
+            );
+
+          doesMatchFilter &&= !!(doesMatchMeta || doesMatchService);
         }
         return doesMatchFilter;
       })
