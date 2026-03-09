@@ -15,6 +15,7 @@ test.concurrent(
   'User can sign in/up with OIDC provider and confirm their email',
   async ({ expect }) => {
     const seed = initSeed();
+    const email = seed.generateEmail();
     const { createOrg } = await seed.createOwner();
     const { createOIDCIntegration } = await createOrg();
 
@@ -25,7 +26,7 @@ test.concurrent(
 
     oidc.setUser({
       sub: 'test-user',
-      email: 'foo@foo.de',
+      email,
     });
 
     const result = await oidc.runSignInUp({
@@ -51,7 +52,7 @@ test.concurrent(
     }).then(r => r.expectNoGraphQLErrors());
     expect(meResult).toMatchObject({
       me: {
-        email: 'foo@foo.de',
+        email,
         id: expect.any(String),
       },
     });
@@ -62,6 +63,8 @@ test.concurrent(
   'If the OIDC provider users email changes, the users email is updated upon login',
   async ({ expect }) => {
     const seed = initSeed();
+    const oldEmail = seed.generateEmail();
+    const newEmail = seed.generateEmail();
     const { createOrg } = await seed.createOwner();
     const { createOIDCIntegration } = await createOrg();
 
@@ -72,7 +75,7 @@ test.concurrent(
 
     oidc.setUser({
       sub: 'test-user',
-      email: 'foo@foo.de',
+      email: oldEmail,
     });
 
     let result = await oidc.runSignInUp({
@@ -87,7 +90,7 @@ test.concurrent(
     }).then(r => r.expectNoGraphQLErrors());
     expect(meResult).toMatchObject({
       me: {
-        email: 'foo@foo.de',
+        email: oldEmail,
         id: expect.any(String),
       },
     });
@@ -96,7 +99,7 @@ test.concurrent(
 
     oidc.setUser({
       sub: 'test-user',
-      email: 'oof@foo.de',
+      email: newEmail,
     });
 
     result = await oidc.runSignInUp({
@@ -109,7 +112,7 @@ test.concurrent(
     }).then(r => r.expectNoGraphQLErrors());
     expect(meResult).toMatchObject({
       me: {
-        email: 'oof@foo.de',
+        email: newEmail,
         id: expect.any(String),
       },
     });

@@ -66,7 +66,7 @@ import {
 } from './saved-filters';
 import { UpdateSchemaPolicyForOrganization, UpdateSchemaPolicyForProject } from './schema-policy';
 import { collect, CollectedOperation, legacyCollect } from './usage';
-import { generateUnique, getServiceHost } from './utils';
+import { generateUnique, getServiceHost, pollForEmailVerificationLink } from './utils';
 
 function createConnectionPool() {
   const pg = {
@@ -107,6 +107,7 @@ export function initSeed() {
   }
 
   return {
+    pollForEmailVerificationLink,
     async purgeOIDCDomains() {
       const pool = await getPool();
       await pool.query(sql`

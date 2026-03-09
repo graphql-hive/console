@@ -2,7 +2,7 @@ import type { AddressInfo } from 'node:net';
 import humanId from 'human-id';
 import setCookie from 'set-cookie-parser';
 import { sql, type DatabasePool } from 'slonik';
-import { getServiceHost } from 'testkit/utils';
+import { getServiceHost, pollForEmailVerificationLink } from 'testkit/utils';
 import z from 'zod';
 import formDataPlugin from '@fastify/formbody';
 import { createServer, type FastifyReply, type FastifyRequest } from '@hive/service-common';
@@ -117,6 +117,35 @@ const UpdateOIDCIntegrationMutation = graphql(`
           authorizationEndpoint
           additionalScopes
         }
+      }
+    }
+  }
+`);
+
+const SendVerificationEmailMutation = graphql(`
+  mutation TestKit_OIDCIntegration_SendVerificationEmailMutation(
+    $input: SendVerificationEmailInput!
+  ) {
+    sendVerificationEmail(input: $input) {
+      ok {
+        expiresAt
+      }
+      error {
+        message
+        emailAlreadyVerified
+      }
+    }
+  }
+`);
+
+const VerifyEmailMutation = graphql(`
+  mutation TestKit_OIDCIntegration_VerifyEmailMutation($input: VerifyEmailInput!) {
+    verifyEmail(input: $input) {
+      ok {
+        verified
+      }
+      error {
+        message
       }
     }
   }
@@ -288,22 +317,44 @@ export async function createOIDCIntegration(args: {
           };
         },
         async confirmEmail(args: { userIdentityId: string; email: string }) {
-          const pool = await getPool();
-          await pool.query(sql`
-            INSERT INTO "email_verifications" (
-              "user_identity_id"
-              , "email"
-              , "token_hash"
-              , "verified_at"
-              , "expires_at"
-            ) VALUES (
-              ${args.userIdentityId}
-              , ${args.email}
-              , 'whatever'
-              , NOW()
-              , NULL
-            )
-          `);
+          const now = Date.now();
+          const sendMail = await execute({
+            document: SendVerificationEmailMutation,
+            variables: {
+              input: {
+                userIdentityId: args.userIdentityId,
+                resend: true,
+              },
+            },
+            authToken,
+          }).then(e => e.expectNoGraphQLErrors());
+
+          if (!sendMail.sendVerificationEmail.ok) {
+            throw new Error(sendMail.sendVerificationEmail.error?.message ?? 'Unknown error.');
+          }
+
+          const url = await pollForEmailVerificationLink({
+            email: args.email,
+            now,
+          });
+
+          const token = url.searchParams.get('token') ?? '';
+
+          const confirmMail = await execute({
+            document: VerifyEmailMutation,
+            variables: {
+              input: {
+                userIdentityId: args.userIdentityId,
+                email: args.email,
+                token,
+              },
+            },
+            authToken,
+          }).then(e => e.expectNoGraphQLErrors());
+
+          if (!confirmMail.verifyEmail.ok) {
+            throw new Error(confirmMail.verifyEmail.error?.message ?? 'Unknown error.');
+          }
         },
       };
     },
