@@ -23,22 +23,9 @@ test.concurrent(
 
     const auth = await oidc.runGetAuthorizationUrl();
 
-    oidc.setHandler(async (req, res) => {
-      if (req.routeOptions.url === '/token') {
-        return res.status(200).send({
-          access_token: 'yolo',
-        });
-      }
-
-      if (req.routeOptions.url === '/userinfo') {
-        return res.status(200).send({
-          sub: 'test-user',
-          email: 'foo@foo.de',
-        });
-      }
-
-      console.log('unhandled', req.routeOptions.url);
-      return res.status(404).send();
+    oidc.setUser({
+      sub: 'test-user',
+      email: 'foo@foo.de',
     });
 
     const result = await oidc.runSignInUp({
@@ -83,22 +70,9 @@ test.concurrent(
 
     let auth = await oidc.runGetAuthorizationUrl();
 
-    oidc.setHandler(async (req, res) => {
-      if (req.routeOptions.url === '/token') {
-        return res.status(200).send({
-          access_token: 'yolo',
-        });
-      }
-
-      if (req.routeOptions.url === '/userinfo') {
-        return res.status(200).send({
-          sub: 'test-user',
-          email: 'foo@foo.de',
-        });
-      }
-
-      console.log('unhandled', req.routeOptions.url);
-      return res.status(404).send();
+    oidc.setUser({
+      sub: 'test-user',
+      email: 'foo@foo.de',
     });
 
     let result = await oidc.runSignInUp({
@@ -120,22 +94,9 @@ test.concurrent(
 
     auth = await oidc.runGetAuthorizationUrl();
 
-    oidc.setHandler(async (req, res) => {
-      if (req.routeOptions.url === '/token') {
-        return res.status(200).send({
-          access_token: 'yolo',
-        });
-      }
-
-      if (req.routeOptions.url === '/userinfo') {
-        return res.status(200).send({
-          sub: 'test-user',
-          email: 'oof@foo.de',
-        });
-      }
-
-      console.log('unhandled', req.routeOptions.url);
-      return res.status(404).send();
+    oidc.setUser({
+      sub: 'test-user',
+      email: 'oof@foo.de',
     });
 
     result = await oidc.runSignInUp({
@@ -171,22 +132,9 @@ test.concurrent(
 
     let auth = await oidc.runGetAuthorizationUrl();
 
-    oidc.setHandler(async (req, res) => {
-      if (req.routeOptions.url === '/token') {
-        return res.status(200).send({
-          access_token: 'yolo',
-        });
-      }
-
-      if (req.routeOptions.url === '/userinfo') {
-        return res.status(200).send({
-          sub: 'test-user',
-          email,
-        });
-      }
-
-      console.log('unhandled', req.routeOptions.url);
-      return res.status(404).send();
+    oidc.setUser({
+      sub: 'test-user',
+      email,
     });
 
     const result = await oidc.runSignInUp({

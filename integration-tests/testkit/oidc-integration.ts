@@ -206,6 +206,25 @@ export async function createOIDCIntegration(args: {
 
       return {
         setHandler: server.setHandler,
+        setUser(args: { email: string; sub: string }) {
+          server.setHandler(async (req, res) => {
+            if (req.routeOptions.url === '/token') {
+              return res.status(200).send({
+                access_token: 'yolo',
+              });
+            }
+
+            if (req.routeOptions.url === '/userinfo') {
+              return res.status(200).send({
+                sub: args.sub,
+                email: args.email,
+              });
+            }
+
+            console.log('unhandled', req.routeOptions.url);
+            return res.status(404).send();
+          });
+        },
         async runGetAuthorizationUrl() {
           const baseUrl = 'http://' + apiAddress;
           const url = new URL('http://' + apiAddress + '/auth-api/authorisationurl');
