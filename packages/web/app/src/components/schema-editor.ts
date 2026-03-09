@@ -1,6 +1,10 @@
 import { lazy } from 'react';
 import * as monaco from 'monaco-editor';
-import { loader, DiffEditor as MonacoDiffEditor, Editor as MonacoEditor } from '@monaco-editor/react';
+import {
+  loader,
+  DiffEditor as MonacoDiffEditor,
+  Editor as MonacoEditor,
+} from '@monaco-editor/react';
 
 // Use the locally bundled Monaco (via vite-plugin-monaco-editor) instead of CDN
 // to ensure the editor and workers are from the same version.
