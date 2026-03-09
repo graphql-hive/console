@@ -1316,6 +1316,7 @@ export async function registerSupertokensAtHome(
             authorization: `Bearer ${codeGrantAccessToken}`,
           },
         });
+        const userInfoBodyRaw = await userInfoResponse.text();
 
         if (userInfoResponse.status != 200) {
           req.log.debug(
@@ -1324,7 +1325,7 @@ export async function registerSupertokensAtHome(
           );
           broadcastLog(
             oidcIntegration.id,
-            `an unexpected error occured while calling the user info endoint '${oidcIntegration.userinfoEndpoint}'. HTTP Status: ${grantResponse.status} Body: ${userInfoResponseRaw}.`,
+            `an unexpected error occured while calling the user info endoint '${oidcIntegration.userinfoEndpoint}'. HTTP Status: ${userInfoResponse.status} HTTP Body: ${userInfoBodyRaw}.`,
           );
 
           return rep.status(200).send({
@@ -1333,7 +1334,6 @@ export async function registerSupertokensAtHome(
           });
         }
 
-        const userInfoBodyRaw = await userInfoResponse.text();
         const userInfoBodyJSON = parseJSONSafe(userInfoBodyRaw);
 
         if (userInfoBodyJSON.type === 'error') {
