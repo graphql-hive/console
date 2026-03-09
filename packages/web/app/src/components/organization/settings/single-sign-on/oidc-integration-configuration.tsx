@@ -7,16 +7,11 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Heading } from '@/components/ui/heading';
 import { Switch } from '@/components/ui/switch';
 import * as Table from '@/components/ui/table';
-import { Tooltip } from '@/components/ui/tooltip';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useToast } from '@/components/ui/use-toast';
 import { Tag } from '@/components/v2';
 import { env } from '@/env/frontend';
 import { FragmentType, graphql, useFragment } from '@/gql';
-import {
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from '@/laboratory/components/ui/tooltip';
 import { cn } from '@/lib/utils';
 import { ConnectSingleSignOnProviderSheet } from './connect-single-sign-on-provider-sheet';
 import { DebugOIDCIntegrationModal } from './debug-oidc-integration-modal';
