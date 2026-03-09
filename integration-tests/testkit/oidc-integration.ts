@@ -1,5 +1,3 @@
-import { createServer, type FastifyReply, type FastifyRequest } from '@hive/service-common';
-import 'fastify';
 import type { AddressInfo } from 'node:net';
 import humanId from 'human-id';
 import setCookie from 'set-cookie-parser';
@@ -7,6 +5,7 @@ import { sql, type DatabasePool } from 'slonik';
 import { getServiceHost } from 'testkit/utils';
 import z from 'zod';
 import formDataPlugin from '@fastify/formbody';
+import { createServer, type FastifyReply, type FastifyRequest } from '@hive/service-common';
 import { graphql } from './gql';
 import { execute } from './graphql';
 
