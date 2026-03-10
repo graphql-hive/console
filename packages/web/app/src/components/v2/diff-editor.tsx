@@ -36,6 +36,18 @@ export const DiffEditor = (props: {
   }, []);
   const editorRef = useRef<OriginalMonacoDiffEditor | null>(null);
 
+  useEffect(() => {
+    return () => {
+      const editor = editorRef.current;
+      if (editor) {
+        editor.getOriginalEditor().getModel()?.dispose();
+        editor.getModifiedEditor().getModel()?.dispose();
+        editor.dispose();
+        editorRef.current = null;
+      }
+    };
+  }, []);
+
   function handleEditorDidMount(editor: OriginalMonacoDiffEditor, monaco: Monaco) {
     addKeyBindings(editor, monaco);
     editorRef.current = editor;
@@ -121,6 +133,8 @@ export const DiffEditor = (props: {
           loading={<Spinner />}
           original={sdlBefore ?? undefined}
           modified={sdlAfter ?? undefined}
+          keepCurrentOriginalModel
+          keepCurrentModifiedModel
           options={{
             originalEditable: false,
             renderLineHighlightOnlyWhenFocus: true,
