@@ -55,7 +55,7 @@ jobs:
         with:
           cmd: yq -i 'del(.services.*.volumes)' docker/docker-compose.community.yml
       # tests need to access host machine for OIDC stuff
-      - name: patch compose file volumes
+      - name: make host machine accessible to server container
         uses: mikefarah/yq@4839dbbf80445070a31c7a9c1055da527db2d5ee # v4.44.6
         with:
           cmd:
