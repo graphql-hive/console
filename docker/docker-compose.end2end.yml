@@ -55,6 +55,5 @@ services:
     environment:
       SUPERTOKENS_RATE_LIMIT: '0'
       AUTH_REQUIRE_EMAIL_VERIFICATION: '1'
-
 networks:
   stack: {}
