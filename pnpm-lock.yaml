@@ -352,6 +352,9 @@ importers:
       '@hive/server':
         specifier: workspace:*
         version: link:../packages/services/server
+      '@hive/service-common':
+        specifier: workspace:*
+        version: link:../packages/services/service-common
       '@hive/storage':
         specifier: workspace:*
         version: link:../packages/services/storage

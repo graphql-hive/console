@@ -21,6 +21,7 @@
     "@hive/commerce": "workspace:*",
     "@hive/schema": "workspace:*",
     "@hive/server": "workspace:*",
+    "@hive/service-common": "workspace:*",
     "@hive/storage": "workspace:*",
     "@theguild/federation-composition": "0.21.3",
     "@trpc/client": "10.45.3",
