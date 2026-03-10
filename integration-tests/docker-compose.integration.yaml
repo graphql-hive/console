@@ -168,6 +168,8 @@ services:
       SUPERTOKENS_CONNECTION_URI: http://supertokens:3567
       SUPERTOKENS_API_KEY: '${SUPERTOKENS_API_KEY}'
       GRAPHQL_PUBLIC_ORIGIN: http://localhost:8082
+    extra_hosts:
+      - 'host.docker.internal:host-gateway'
 
   broker:
     image: redpandadata/redpanda:latest

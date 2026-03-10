@@ -55,8 +55,6 @@ services:
     environment:
       SUPERTOKENS_RATE_LIMIT: '0'
       AUTH_REQUIRE_EMAIL_VERIFICATION: '1'
-    extra_hosts:
-      - 'host.docker.internal:host-gateway'
 
 networks:
   stack: {}
