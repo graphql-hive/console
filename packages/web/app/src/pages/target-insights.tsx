@@ -1,7 +1,6 @@
 import { ReactElement, useCallback, useEffect, useMemo } from 'react';
 import { ChevronDown, RefreshCw } from 'lucide-react';
 import { useMutation, useQuery } from 'urql';
-import { z } from 'zod';
 import { FilterDropdown } from '@/components/base/filter-dropdown/filter-dropdown';
 import type { FilterItem, FilterSelection } from '@/components/base/filter-dropdown/types';
 import type { SavedFilterView } from '@/components/base/insights-filters';
@@ -15,6 +14,7 @@ import {
   selectionsToClients,
   selectionsToOperations,
 } from '@/components/target/insights/search-params';
+import { InsightsFilterState } from '@/components/target/insights/search-schemas';
 import { OperationsStats } from '@/components/target/insights/stats';
 import { DateRangePicker, presetLast7Days } from '@/components/ui/date-range-picker';
 import { EmptyList } from '@/components/ui/empty-list';
@@ -25,23 +25,6 @@ import { graphql } from '@/gql';
 import { OperationStatsFilterInput, SavedFilterVisibilityType } from '@/gql/graphql';
 import { useDateRangeController } from '@/lib/hooks/use-date-range-controller';
 import { useNavigate, useSearch } from '@tanstack/react-router';
-
-const InsightsClientFilter = z.object({
-  name: z.string(),
-  versions: z.array(z.string()).nullable().default(null),
-});
-
-export const InsightsFilterSearch = z.object({
-  operations: z.array(z.string()).optional(),
-  clients: z.array(InsightsClientFilter).optional(),
-  excludeOperations: z.boolean().optional(),
-  excludeClients: z.boolean().optional(),
-  from: z.string().optional(),
-  to: z.string().optional(),
-  viewId: z.string().optional(),
-});
-
-type InsightsFilterState = z.infer<typeof InsightsFilterSearch>;
 
 function buildGraphQLFilter(state: InsightsFilterState): OperationStatsFilterInput {
   return {

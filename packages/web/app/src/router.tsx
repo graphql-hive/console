@@ -31,6 +31,7 @@ import 'react-toastify/dist/ReactToastify.css';
 import { useLocalStorage } from '@/lib/hooks';
 import { zodValidator } from '@tanstack/zod-adapter';
 import { authenticated } from './components/authenticated-container';
+import { InsightsFilterSearch } from './components/target/insights/search-schemas';
 import { SchemaProposalStage } from './gql/graphql';
 import { AuthPage } from './pages/auth';
 import { AuthCallbackPage } from './pages/auth-callback';
@@ -74,7 +75,7 @@ import { TargetExplorerTypePage } from './pages/target-explorer-type';
 import { TargetExplorerUnusedPage } from './pages/target-explorer-unused';
 import { TargetHistoryPage } from './pages/target-history';
 import { TargetHistoryVersionPage } from './pages/target-history-version';
-import { InsightsFilterSearch, TargetInsightsPage } from './pages/target-insights';
+import { TargetInsightsPage } from './pages/target-insights';
 import { TargetInsightsClientPage } from './pages/target-insights-client';
 import { TargetInsightsCoordinatePage } from './pages/target-insights-coordinate';
 import { TargetInsightsManageFiltersPage } from './pages/target-insights-manage-filters';
@@ -965,8 +966,8 @@ const targetExplorerUnusedRoute = createRoute({
 const targetChecksRoute = createRoute({
   validateSearch: zodValidator(
     z.object({
-      filter_changed: z.boolean().default(false),
-      filter_failed: z.boolean().default(false),
+      filter_changed: z.boolean().default(false).catch(false),
+      filter_failed: z.boolean().default(false).catch(false),
     }),
   ),
   getParentRoute: () => targetRoute,
@@ -1009,7 +1010,7 @@ const targetProposalsRoute = createRoute({
       .array()
       .optional()
       .catch(() => void 0),
-    user: z.string().array().optional(),
+    user: z.string().array().optional().catch(undefined),
   }),
   component: function TargetProposalsRoute() {
     const { organizationSlug, projectSlug, targetSlug } = targetProposalsRoute.useParams();
