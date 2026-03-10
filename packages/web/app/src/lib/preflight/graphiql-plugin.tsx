@@ -636,12 +636,14 @@ function PreflightModal({
   const envEditorRef = useRef<editor.IStandaloneCodeEditor | null>(null);
   const consoleRef = useRef<HTMLElement>(null);
 
-  const handleScriptEditorDidMount: OnMount = useCallback(editor => {
+  const handleScriptEditorDidMount: OnMount = useCallback((editor, monaco) => {
     scriptEditorRef.current = editor;
+    (window as any).monaco ??= monaco;
   }, []);
 
-  const handleEnvEditorDidMount: OnMount = useCallback(editor => {
+  const handleEnvEditorDidMount: OnMount = useCallback((editor, monaco) => {
     envEditorRef.current = editor;
+    (window as any).monaco ??= monaco;
   }, []);
 
   const handleMonacoEditorBeforeMount = useCallback(async (monaco: Monaco) => {
