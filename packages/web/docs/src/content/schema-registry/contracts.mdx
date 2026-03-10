@@ -249,7 +249,7 @@ When generating a contract schema, the composition filters schema elements based
 **included and excluded tags**. After filtering, the resulting schema must still be a **valid
 GraphQL schema**. If filtering produces an invalid schema (for example, a field referencing a
 removed type), the contract composition fails, and thus the schema check or published schema version
-is invalid
+becomes invalid.
 
 ### Tag Filtering Rules
 
@@ -260,13 +260,11 @@ Contract filtering operates on individual schema elements:
 - Arguments
 - Enum values
 
-If an element is removed due to tag filtering:
+When an element is removed due to tag filtering, the following applies:
 
-Fields referencing removed types may also need to be removed.
-
-Otherwise, the resulting schema may become invalid.
-
-If the final schema is invalid, **contract composition fails with an error**.
+- Fields referencing removed types must also be removed to maintain schema validity.
+- Failure to remove dependent fields will result in an invalid schema.
+- An invalid final schema will cause contract composition to fail with an error.
 
 ### Examples
 
