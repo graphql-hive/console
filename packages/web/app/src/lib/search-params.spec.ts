@@ -1,5 +1,6 @@
 import { parse as jsUrlParse, stringify as jsUrlStringify } from 'jsurl2';
 import { z } from 'zod';
+import { InsightsFilterSearch } from '@/components/target/insights/search-schemas';
 
 /**
  * Simulates TanStack Router's stringifySearchWith per-value behavior.
@@ -124,5 +125,35 @@ describe('search params serialization (jsurl2)', () => {
       name: 'Hive CLI',
       versions: ['v1'],
     });
+  });
+
+  it('gracefully handles malformed search params via .catch() (insights)', () => {
+    // "clients" receives a string instead of array — should not throw
+    const result = InsightsFilterSearch.parse({ clients: 'some-string' });
+    expect(result.clients).toBeUndefined();
+
+    // "operations" receives a number instead of array — should not throw
+    const result2 = InsightsFilterSearch.parse({ operations: 123 });
+    expect(result2.operations).toBeUndefined();
+
+    // Valid values still work
+    const result3 = InsightsFilterSearch.parse({
+      clients: [{ name: 'WebApp' }],
+      operations: ['op1'],
+    });
+    expect(result3.clients).toEqual([{ name: 'WebApp', versions: null }]);
+    expect(result3.operations).toEqual(['op1']);
+  });
+
+  it('gracefully handles malformed search params via .catch() (checks)', () => {
+    // "filter_failed" receives an array instead of boolean — should not throw
+    const schema = z.object({
+      filter_changed: z.boolean().default(false).catch(false),
+      filter_failed: z.boolean().default(false).catch(false),
+    });
+
+    const result = schema.parse({ filter_failed: ['unexpected', 'array'] });
+    expect(result.filter_failed).toBe(false);
+    expect(result.filter_changed).toBe(false);
   });
 });
