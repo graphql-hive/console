@@ -46,6 +46,7 @@ async function createMockOIDCServer() {
   });
 
   await server.listen({
+    port: 0,
     host: '0.0.0.0',
   });
 
@@ -288,6 +289,7 @@ export async function createOIDCIntegration(args: {
             }),
             headers: {
               'content-type': 'application/json',
+              'st-auth-mode': 'cookie',
             },
           });
 
@@ -296,6 +298,7 @@ export async function createOIDCIntegration(args: {
           }
 
           const rawBody = await result.json();
+
           const body = z
             .object({
               user: z.object({
