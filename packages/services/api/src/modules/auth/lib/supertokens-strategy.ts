@@ -430,6 +430,8 @@ export class SuperTokensUserAuthNStrategy extends AuthNStrategy<SuperTokensCooki
       }
     }
 
+    args.req.log.debug('the email is verified');
+
     args.req.log.debug('SuperTokens session resolved.');
     return sessionData;
   }
