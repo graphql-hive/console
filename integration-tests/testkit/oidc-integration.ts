@@ -45,7 +45,9 @@ async function createMockOIDCServer() {
     handler,
   });
 
-  await server.listen();
+  await server.listen({
+    host: '0.0.0.0',
+  });
 
   return {
     url: 'http://' + host + ':' + (server.server.address() as AddressInfo).port,
