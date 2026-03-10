@@ -2,12 +2,12 @@ import type { AddressInfo } from 'node:net';
 import humanId from 'human-id';
 import setCookie from 'set-cookie-parser';
 import { sql, type DatabasePool } from 'slonik';
-import { getServiceHost, pollForEmailVerificationLink } from 'testkit/utils';
 import z from 'zod';
 import formDataPlugin from '@fastify/formbody';
 import { createServer, type FastifyReply, type FastifyRequest } from '@hive/service-common';
 import { graphql } from './gql';
 import { execute } from './graphql';
+import { getServiceHost, pollForEmailVerificationLink } from './utils';
 
 const apiAddress = await getServiceHost('server', 8082);
 
