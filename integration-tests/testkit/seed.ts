@@ -104,14 +104,14 @@ export function initSeed() {
 
   async function doAuthenticate(
     email: string,
-    opts: {
+    opts?: {
       oidcIntegrationId?: string;
       verifyEmail?: boolean;
     },
   ) {
-    const auth = await authenticate(await getPool(), email, opts.oidcIntegrationId);
+    const auth = await authenticate(await getPool(), email, opts?.oidcIntegrationId);
 
-    if (opts.verifyEmail) {
+    if (opts?.verifyEmail ?? true) {
       const pool = await getPool();
       await pool.query(sql`
         INSERT INTO "email_verifications" ("user_identity_id", "email", "verified_at")
