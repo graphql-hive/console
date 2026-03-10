@@ -1,4 +1,4 @@
-import { ReactElement, useEffect, useRef, useState } from 'react';
+import { ReactElement, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { parse, print } from 'graphql';
 import { editor } from 'monaco-editor';
 import { MonacoDiffEditor, MonacoEditor } from '@/components/schema-editor';
@@ -35,22 +35,32 @@ export const DiffEditor = (props: {
     }
   }, []);
   const editorRef = useRef<OriginalMonacoDiffEditor | null>(null);
+  const modelsRef = useRef<{
+    original: editor.ITextModel | null;
+    modified: editor.ITextModel | null;
+  }>({ original: null, modified: null });
 
-  useEffect(() => {
+  // useLayoutEffect cleanup runs before @monaco-editor/react's useEffect cleanup.
+  // This lets us call setModel(null) to detach models from the widget, removing
+  // Monaco's onWillDispose listeners that throw "TextModel got disposed before
+  // DiffEditorWidget model got reset".
+  useLayoutEffect(() => {
     return () => {
-      const editor = editorRef.current;
-      if (editor) {
-        editor.getOriginalEditor().getModel()?.dispose();
-        editor.getModifiedEditor().getModel()?.dispose();
-        editor.dispose();
-        editorRef.current = null;
-      }
+      editorRef.current?.setModel(null);
+      modelsRef.current.original?.dispose();
+      modelsRef.current.modified?.dispose();
+      modelsRef.current = { original: null, modified: null };
+      editorRef.current = null;
     };
   }, []);
 
   function handleEditorDidMount(editor: OriginalMonacoDiffEditor, monaco: Monaco) {
     addKeyBindings(editor, monaco);
     editorRef.current = editor;
+    modelsRef.current = {
+      original: editor.getOriginalEditor().getModel(),
+      modified: editor.getModifiedEditor().getModel(),
+    };
     props.onMount?.(editor.getModifiedEditor());
 
     editor.getModifiedEditor().onDidChangeModelContent(() => {
