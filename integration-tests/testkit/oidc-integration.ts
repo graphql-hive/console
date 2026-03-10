@@ -270,6 +270,7 @@ export async function createOIDCIntegration(args: {
         },
         async runSignInUp(args: { state: string; code?: string }) {
           const url = new URL('http://' + apiAddress + '/auth-api/signinup');
+          url.searchParams.set('oidc_id', oidcIntegration.id);
 
           const result = await fetch(url, {
             method: 'POST',
