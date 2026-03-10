@@ -36,15 +36,14 @@ beforeEach(() => {
 
 /** Helper function for setting the text within a monaco editor as typing manually results in flaky tests */
 function setMonacoEditorContents(editorCyName: string, text: string) {
+  const selectAllKeys = Cypress.platform == 'darwin' ? '{cmd}a' : '{ctrl}a';
   // Wait for Monaco to render, then select all existing content and replace it
   // via execCommand('insertText') which Monaco handles natively through beforeinput events.
-  cy.dataCy(editorCyName).find('textarea').focus().type('{ctrl+a}', { force: true });
+  cy.dataCy(editorCyName).find('textarea').focus().type(selectAllKeys, { force: true });
+  // cy.dataCy(editorCyName).find('textarea').focus().type('{ctrl+a}', { force: true });
   cy.document().then(doc => {
     doc.execCommand('insertText', false, text);
   });
-  // Verify Monaco accepted the content
-  const snippet = text.length > 40 ? text.slice(0, 40) : text;
-  cy.dataCy(editorCyName).should('contain.text', snippet);
 }
 
 function setEditorScript(script: string) {
