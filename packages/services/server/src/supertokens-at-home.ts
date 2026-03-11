@@ -772,6 +772,13 @@ export async function registerSupertokensAtHome(
           });
         }
 
+        if (!z.string().uuid().safeParse(query.data.oidc_id).success) {
+          return rep.status(200).send({
+            status: 'GENERAL_ERROR',
+            message: 'Something went wrong. Please try again',
+          });
+        }
+
         const oidcIntegration = await storage.getOIDCIntegrationById({
           oidcIntegrationId: query.data.oidc_id,
         });
