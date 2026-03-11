@@ -45,7 +45,7 @@ export class Traces {
           SELECT
             min("Start") AS start_ts,
             max("End") AS end_ts
-          FROM otel_traces_trace_id_ts
+          FROM "otel_traces_trace_id_ts"
           WHERE "TraceId" IN (${sql.array(traceIds, 'String')})
         )
         SELECT
