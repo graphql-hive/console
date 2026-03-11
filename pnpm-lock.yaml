@@ -24,7 +24,7 @@ overrides:
   estree-util-value-to-estree: ^3.3.3
   nodemailer@^6.0.0: ^7.0.11
   '@types/nodemailer>@aws-sdk/client-sesv2': '-'
-  tar@6.x.x: ^7.5.10
+  tar@6.x.x: ^7.5.11
   diff@<8.0.3: ^8.0.3
   lodash-es@4.x.x: ^4.17.23
   lodash@4.x.x: ^4.17.23
@@ -18800,8 +18800,8 @@ packages:
     resolution: {integrity: sha512-ujeqbceABgwMZxEJnk2HDY2DlnUZ+9oEcb1KzTVfYHio0UE6dG71n60d8D2I4qNvleWrrXpmjpt7vZeF1LnMZQ==}
     engines: {node: '>=6'}
 
-  tar@7.5.10:
-    resolution: {integrity: sha512-8mOPs1//5q/rlkNSPcCegA6hiHJYDmSLEI8aMH/CdSQJNWztHC9WHNam5zdQlfpTwB9Xp7IBEsHfV5LKMJGVAw==}
+  tar@7.5.11:
+    resolution: {integrity: sha512-ChjMH33/KetonMTAtpYdgUFr0tbz69Fp2v7zWxQfYZX4g5ZN2nOBXm1R2xyA+lMIKrLKIoKAwFj93jE/avX9cQ==}
     engines: {node: '>=18'}
 
   tdigest@0.1.2:
@@ -34079,7 +34079,7 @@ snapshots:
       minipass-pipeline: 1.2.4
       p-map: 4.0.0
       ssri: 10.0.5
-      tar: 7.5.10
+      tar: 7.5.11
       unique-filename: 3.0.0
 
   cacache@20.0.3:
@@ -40180,7 +40180,7 @@ snapshots:
       nopt: 7.2.0
       proc-log: 3.0.0
       semver: 7.7.3
-      tar: 7.5.10
+      tar: 7.5.11
       which: 4.0.0
     transitivePeerDependencies:
       - supports-color
@@ -40602,7 +40602,7 @@ snapshots:
       read-package-json-fast: 3.0.2
       sigstore: 2.2.2
       ssri: 10.0.5
-      tar: 7.5.10
+      tar: 7.5.11
     transitivePeerDependencies:
       - bluebird
       - supports-color
@@ -43045,7 +43045,7 @@ snapshots:
       inherits: 2.0.4
       readable-stream: 3.6.0
 
-  tar@7.5.10:
+  tar@7.5.11:
     dependencies:
       '@isaacs/fs-minipass': 4.0.1
       chownr: 3.0.0
