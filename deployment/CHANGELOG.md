@@ -1,5 +1,28 @@
 # hive
 
+## 9.7.0
+
+### Minor Changes
+
+- [#7745](https://github.com/graphql-hive/console/pull/7745)
+  [`33bff41`](https://github.com/graphql-hive/console/commit/33bff4134240964bbf3bd97b878572202c13c256)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Allow organization owners register domain
+  ownership. The registration will allow users with matching email domains bypassing mandatory email
+  verification.
+
+### Patch Changes
+
+- [#7810](https://github.com/graphql-hive/console/pull/7810)
+  [`7aac422`](https://github.com/graphql-hive/console/commit/7aac422acc3ef13ec1c199259f5c9c4522481c6f)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Propagate updated email address from OIDC provider.
+  This fixes a bug where a user was locked out of the Hive account after the email of the user on
+  the OIDC provider side changed.
+
+- [#7812](https://github.com/graphql-hive/console/pull/7812)
+  [`2c55d5b`](https://github.com/graphql-hive/console/commit/2c55d5bd1188bc003ccf537095b9813127928693)
+  Thanks [@jdolle](https://github.com/jdolle)! - Explorer page unions now link to the contained
+  types
+
 ## 9.6.1
 
 ### Patch Changes
