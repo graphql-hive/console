@@ -26,9 +26,10 @@ import { graphql, useFragment } from '@/gql';
 import { TargetEnvPlugin } from '@/laboratory/plugins/target-env';
 import { useRedirect } from '@/lib/access/common';
 import { useLocalStorage, useToggle } from '@/lib/hooks';
-import { useCurrentOperation } from '@/lib/hooks/laboratory/use-current-operation';
+import { useCurrentOperationWithFetchingState } from '@/lib/hooks/laboratory/use-current-operation';
 import { TargetLaboratoryPageQuery } from '@/lib/hooks/laboratory/use-operation-collections-plugin';
 import { useSyncOperationState } from '@/lib/hooks/laboratory/use-sync-operation-state';
+import { useOperationFromQueryString } from '@/lib/hooks/laboratory/useOperationFromQueryString';
 import { useResetState } from '@/lib/hooks/use-reset-state';
 import { cn } from '@/lib/utils';
 import {
@@ -308,7 +309,7 @@ function useLaboratoryState(props: {
   targetSlug: string;
   defaultEndpoint: string | null;
 }) {
-  const [{ data, fetching }] = useQuery({
+  const [{ data, fetching: dataFetching }] = useQuery({
     query: LaboratoryQuery,
     variables: {
       selector: {
@@ -470,11 +471,12 @@ function useLaboratoryState(props: {
     [mutateUpdatePreflight, props.targetSlug, props.organizationSlug, props.projectSlug],
   );
 
-  const currentOperation = useCurrentOperation({
-    organizationSlug: props.organizationSlug,
-    projectSlug: props.projectSlug,
-    targetSlug: props.targetSlug,
-  });
+  const { currentOperation, fetching: currentOperationFetching } =
+    useCurrentOperationWithFetchingState({
+      organizationSlug: props.organizationSlug,
+      projectSlug: props.projectSlug,
+      targetSlug: props.targetSlug,
+    });
 
   const { savedOperation } = useSyncOperationState({
     organizationSlug: props.organizationSlug,
@@ -522,11 +524,15 @@ function useLaboratoryState(props: {
     return getLocalStorageState('tabs', []);
   }, [currentOperation, savedOperation]);
 
-  // useEffect(() => {
-  //   if (search.operation) {
-  //     window.history.pushState(null, '', `${location.pathname}`);
-  //   }
-  // }, [search.operation]);
+  const operationIdFromSearch = useOperationFromQueryString();
+
+  const fetching = useMemo(() => {
+    if (operationIdFromSearch) {
+      return dataFetching || currentOperationFetching;
+    }
+
+    return dataFetching;
+  }, [dataFetching, currentOperationFetching, operationIdFromSearch]);
 
   return {
     fetching,
