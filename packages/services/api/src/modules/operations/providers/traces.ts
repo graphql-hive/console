@@ -131,7 +131,9 @@ export class Traces {
       queryId: 'Traces.findSpansForTraceId',
     });
 
-    return SpanListModel.parse(result.data);
+    return SpanListModel.parse(result.data).filter(
+      row => row.spanAttributes['hive.target_id'] === targetId,
+    );
   }
 
   async findTracesForTargetId(
