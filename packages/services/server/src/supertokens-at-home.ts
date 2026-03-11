@@ -71,6 +71,57 @@ export async function registerSupertokensAtHome(
       });
   }
 
+  const OIDCIdLookupSchema = z.object({
+    slug: z.string({
+      required_error: 'Slug is required',
+    }),
+  });
+
+  server.post('/auth-api/oidc-id-lookup', async (req, res) => {
+    if (await rateLimiter.isFastifyRouteRateLimited(req)) {
+      return res.send({
+        ok: false,
+        title: 'Rate Limited',
+        description: 'Please try again later.',
+        status: 400,
+      });
+    }
+
+    req.log.debug('Looking up OIDC integration ID');
+    const inputResult = OIDCIdLookupSchema.safeParse(req.body);
+
+    if (!inputResult.success) {
+      req.log.debug('Invalid body sent. Failed to parse slug.');
+      return res.status(400).send({
+        ok: false,
+        title: 'Invalid input',
+        description: 'Failed to resolve SSO information due to invalid input.',
+        status: 400,
+      });
+    }
+
+    req.log.debug('Parsed slug (slug=%s)', inputResult.data.slug);
+
+    const oidcId = await storage.getOIDCIntegrationIdForOrganizationSlug({
+      slug: inputResult.data.slug,
+    });
+
+    if (!oidcId) {
+      req.log.debug('No SSO integration found (slug=%s)', inputResult.data.slug);
+      return res.status(404).send({
+        ok: false,
+        title: 'SSO integration not found',
+        description: 'Your organization lacks an SSO integration or it does not exist.',
+        status: 404,
+      });
+    }
+
+    return res.status(200).send({
+      ok: true,
+      id: oidcId,
+    });
+  });
+
   server.route({
     url: '/auth-api/signout',
     method: 'POST',

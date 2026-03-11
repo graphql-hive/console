@@ -4,7 +4,6 @@ import { GraphQLError, stripIgnoredCharacters } from 'graphql';
 import cors from '@fastify/cors';
 import type { FastifyCorsOptionsDelegateCallback } from '@fastify/cors';
 import 'reflect-metadata';
-import { z } from 'zod';
 import formDataPlugin from '@fastify/formbody';
 import {
   createRegistry,
@@ -55,7 +54,6 @@ import { graphqlHandler } from './graphql-handler';
 import { clickHouseElapsedDuration, clickHouseReadDuration } from './metrics';
 import { createOtelAuthEndpoint } from './otel-auth-endpoint';
 import { createPublicGraphQLHandler } from './public-graphql-handler';
-import { oidcIdLookup } from './supertokens';
 import { registerSupertokensAtHome } from './supertokens-at-home';
 
 class CorsError extends Error {
@@ -501,42 +499,6 @@ export async function main() {
         reportReadiness(false);
         res.status(400).send(); // eslint-disable-line @typescript-eslint/no-floating-promises -- false positive, FastifyReply.then returns void
       },
-    });
-
-    const oidcIdLookupSchema = z.object({
-      slug: z.string({
-        required_error: 'Slug is required',
-      }),
-    });
-
-    server.post('/auth-api/oidc-id-lookup', async (req, res) => {
-      const inputResult = oidcIdLookupSchema.safeParse(req.body);
-
-      if (!inputResult.success) {
-        captureException(inputResult.error, {
-          extra: {
-            path: '/auth-api/oidc-id-lookup',
-            body: req.body,
-          },
-        });
-        void res.status(400).send({
-          ok: false,
-          title: 'Invalid input',
-          description: 'Failed to resolve SSO information due to invalid input.',
-          status: 400,
-        } satisfies Awaited<ReturnType<typeof oidcIdLookup>>);
-        return;
-      }
-
-      const result = await oidcIdLookup(inputResult.data.slug, storage, req.log);
-
-      if (result.ok) {
-        void res.status(200).send(result);
-        return;
-      }
-
-      void res.status(result.status).send(result);
-      return;
     });
 
     createOtelAuthEndpoint({
