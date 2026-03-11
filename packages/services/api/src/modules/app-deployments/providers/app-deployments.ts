@@ -1291,35 +1291,11 @@ export class AppDeployments {
     return parsed.map(row => row.app_deployment_id);
   }
 
-  async getAffectedAppDeploymentsBySchemaCoordinates(args: {
+  private async getActiveDeployments(args: {
     targetId: string;
     schemaCoordinates: string[];
-    firstDeployments?: number;
-    afterCursor?: string;
-    firstOperations?: number;
     excludedAppDeploymentNames?: string[] | null;
   }) {
-    const emptyResult = {
-      deployments: [],
-      totalDeployments: 0,
-      pageInfo: {
-        hasNextPage: false,
-        hasPreviousPage: false,
-        startCursor: '',
-        endCursor: '',
-      },
-    };
-
-    if (args.schemaCoordinates.length === 0) {
-      return emptyResult;
-    }
-
-    this.logger.debug(
-      'Finding affected app deployments by schema coordinates (targetId=%s, coordinateCount=%d)',
-      args.targetId,
-      args.schemaCoordinates.length,
-    );
-
     // Get active deployments
     let activeDeploymentsResult;
     try {
@@ -1358,7 +1334,137 @@ export class AppDeployments {
       appVersion: z.string(),
     });
 
-    let activeDeployments = z.array(ActiveDeploymentModel).parse(activeDeploymentsResult.data);
+    return z.array(ActiveDeploymentModel).parse(activeDeploymentsResult.data);
+  }
+
+  private async getTotalEffectedDeployments(args: {
+    targetId: string;
+    schemaCoordinates: string[];
+    excludedAppDeploymentNames?: string[] | null;
+  }) {
+    let countResult;
+    try {
+      countResult = await this.clickhouse.query({
+        query: cSql`
+          SELECT uniq(app_deployment_id) AS "total"
+          FROM app_deployment_documents
+          PREWHERE app_deployment_id IN (
+            SELECT app_deployment_id
+            FROM app_deployments
+            PREWHERE
+              target_id = ${args.targetId}
+              ${
+                args.excludedAppDeploymentNames?.length
+                  ? cSql`AND app_name NOT IN (${cSql.array(args.excludedAppDeploymentNames, 'String')})`
+                  : cSql``
+              }
+            GROUP BY app_deployment_id
+            HAVING min(is_active) = True
+          )
+          WHERE hasAny(schema_coordinates, ${cSql.array(args.schemaCoordinates, 'String')})
+        `,
+        queryId: 'count-affected-app-deployments',
+        timeout: 30_000,
+      });
+    } catch (error) {
+      this.logger.error(
+        'Failed to count affected deployments from ClickHouse (targetId=%s): %s',
+        args.targetId,
+        error instanceof Error ? error.message : String(error),
+      );
+      throw error;
+    }
+
+    const totalDeployments =
+      z.array(z.object({ total: z.coerce.number() })).parse(countResult.data)[0]?.total ?? 0;
+    return totalDeployments;
+  }
+
+  private async getPaginatedAffectedDeployments(args: {
+    targetId: string;
+    schemaCoordinates: string[];
+    firstDeployments?: number;
+    afterCursor?: string;
+    excludedAppDeploymentNames?: string[] | null;
+  }) {
+    // Get paginated affected deployments
+    const limit = args.firstDeployments;
+    let affectedDeploymentIdsResult;
+    try {
+      affectedDeploymentIdsResult = await this.clickhouse.query({
+        query: cSql`
+          SELECT DISTINCT app_deployment_id AS "appDeploymentId"
+          FROM app_deployment_documents
+          PREWHERE app_deployment_id IN (
+            SELECT app_deployment_id
+            FROM app_deployments
+            PREWHERE
+              target_id = ${args.targetId}
+              ${
+                args.excludedAppDeploymentNames?.length
+                  ? cSql`AND app_name NOT IN (${cSql.array(args.excludedAppDeploymentNames, 'String')})`
+                  : cSql``
+              }
+            GROUP BY app_deployment_id
+            HAVING min(is_active) = True
+          )
+          WHERE hasAny(schema_coordinates, ${cSql.array(args.schemaCoordinates, 'String')})
+          ${args.afterCursor ? cSql`AND app_deployment_id > ${args.afterCursor}` : cSql``}
+          ${limit ? cSql`ORDER BY app_deployment_id LIMIT ${cSql.raw(String(limit + 1))}` : cSql``}
+        `,
+        queryId: 'get-limited-affected-deployment-ids',
+        timeout: 30_000,
+      });
+    } catch (error) {
+      this.logger.error(
+        'Failed to query affected deployment IDs from ClickHouse (targetId=%s): %s',
+        args.targetId,
+        error instanceof Error ? error.message : String(error),
+      );
+      throw error;
+    }
+
+    const affectedDeploymentIds = z
+      .array(z.object({ appDeploymentId: z.string() }))
+      .parse(affectedDeploymentIdsResult.data)
+      .map(d => d.appDeploymentId);
+    return affectedDeploymentIds;
+  }
+
+  async getAffectedAppDeploymentsBySchemaCoordinates(args: {
+    targetId: string;
+    schemaCoordinates: string[];
+    firstDeployments?: number;
+    afterCursor?: string;
+    firstOperations?: number;
+    excludedAppDeploymentNames?: string[] | null;
+  }) {
+    const emptyResult = {
+      deployments: [],
+      totalDeployments: 0,
+      pageInfo: {
+        hasNextPage: false,
+        hasPreviousPage: false,
+        startCursor: '',
+        endCursor: '',
+      },
+    };
+
+    if (args.schemaCoordinates.length === 0) {
+      return emptyResult;
+    }
+
+    this.logger.debug(
+      'Finding affected app deployments by schema coordinates (targetId=%s, coordinateCount=%d)',
+      args.targetId,
+      args.schemaCoordinates.length,
+    );
+
+    let [activeDeployments, totalDeployments, affectedDeploymentIds] = await Promise.all([
+      this.getActiveDeployments(args),
+      this.getTotalEffectedDeployments(args),
+      this.getPaginatedAffectedDeployments(args),
+    ]);
 
     if (activeDeployments.length === 0) {
       this.logger.debug('No active app deployments found (targetId=%s)', args.targetId);
@@ -1410,42 +1516,6 @@ export class AppDeployments {
     );
 
     // Count total affected deployments
-    let countResult;
-    try {
-      countResult = await this.clickhouse.query({
-        query: cSql`
-          SELECT uniq(app_deployment_id) AS "total"
-          FROM app_deployment_documents
-          PREWHERE app_deployment_id IN (
-            SELECT app_deployment_id
-            FROM app_deployments
-            PREWHERE
-              target_id = ${args.targetId}
-              ${
-                args.excludedAppDeploymentNames?.length
-                  ? cSql`AND app_name NOT IN (${cSql.array(args.excludedAppDeploymentNames, 'String')})`
-                  : cSql``
-              }
-            GROUP BY app_deployment_id
-            HAVING min(is_active) = True
-          )
-          WHERE hasAny(schema_coordinates, ${cSql.array(args.schemaCoordinates, 'String')})
-        `,
-        queryId: 'count-affected-app-deployments',
-        timeout: 30_000,
-      });
-    } catch (error) {
-      this.logger.error(
-        'Failed to count affected deployments from ClickHouse (targetId=%s): %s',
-        args.targetId,
-        error instanceof Error ? error.message : String(error),
-      );
-      throw error;
-    }
-
-    const totalDeployments =
-      z.array(z.object({ total: z.coerce.number() })).parse(countResult.data)[0]?.total ?? 0;
-
     if (totalDeployments === 0) {
       this.logger.debug(
         'No affected operations found (targetId=%s, coordinateCount=%d)',
@@ -1457,46 +1527,6 @@ export class AppDeployments {
 
     // Get paginated affected deployments
     const limit = args.firstDeployments;
-    let affectedDeploymentIdsResult;
-    try {
-      affectedDeploymentIdsResult = await this.clickhouse.query({
-        query: cSql`
-          SELECT DISTINCT app_deployment_id AS "appDeploymentId"
-          FROM app_deployment_documents
-          PREWHERE app_deployment_id IN (
-            SELECT app_deployment_id
-            FROM app_deployments
-            PREWHERE
-              target_id = ${args.targetId}
-              ${
-                args.excludedAppDeploymentNames?.length
-                  ? cSql`AND app_name NOT IN (${cSql.array(args.excludedAppDeploymentNames, 'String')})`
-                  : cSql``
-              }
-            GROUP BY app_deployment_id
-            HAVING min(is_active) = True
-          )
-          WHERE hasAny(schema_coordinates, ${cSql.array(args.schemaCoordinates, 'String')})
-          ${args.afterCursor ? cSql`AND app_deployment_id > ${args.afterCursor}` : cSql``}
-          ${limit ? cSql`ORDER BY app_deployment_id LIMIT ${cSql.raw(String(limit + 1))}` : cSql``}
-        `,
-        queryId: 'get-limited-affected-deployment-ids',
-        timeout: 30_000,
-      });
-    } catch (error) {
-      this.logger.error(
-        'Failed to query affected deployment IDs from ClickHouse (targetId=%s): %s',
-        args.targetId,
-        error instanceof Error ? error.message : String(error),
-      );
-      throw error;
-    }
-
-    let affectedDeploymentIds = z
-      .array(z.object({ appDeploymentId: z.string() }))
-      .parse(affectedDeploymentIdsResult.data)
-      .map(d => d.appDeploymentId);
-
     // Check if there are more results (only if limit is set)
     const hasNextPage = limit ? affectedDeploymentIds.length > limit : false;
     if (hasNextPage && limit) {
