@@ -3,6 +3,9 @@
   "type": "module",
   "license": "MIT",
   "private": true,
+  "exports": {
+    ".": "./src/index.ts"
+  },
   "peerDependencies": {
     "@sentry/node": "^7.0.0",
     "@sentry/utils": "^7.0.0",

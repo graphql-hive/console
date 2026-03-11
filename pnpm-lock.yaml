@@ -352,6 +352,9 @@ importers:
       '@hive/server':
         specifier: workspace:*
         version: link:../packages/services/server
+      '@hive/service-common':
+        specifier: workspace:*
+        version: link:../packages/services/service-common
       '@hive/storage':
         specifier: workspace:*
         version: link:../packages/services/storage
@@ -370,6 +373,9 @@ importers:
       '@types/dockerode':
         specifier: 3.3.43
         version: 3.3.43
+      '@types/set-cookie-parser':
+        specifier: 2.4.10
+        version: 2.4.10
       async-retry:
         specifier: 1.3.3
         version: 1.3.3
@@ -400,6 +406,9 @@ importers:
       ioredis:
         specifier: 5.8.2
         version: 5.8.2
+      set-cookie-parser:
+        specifier: 2.7.1
+        version: 2.7.1
       slonik:
         specifier: 30.4.4
         version: 30.4.4(patch_hash=195b140c0181c27a85a6026c0058087a419e38f6c5d89f5f2c608e39f5bf23e9)
@@ -10537,6 +10546,9 @@ packages:
 
   '@types/service-worker-mock@2.0.4':
     resolution: {integrity: sha512-MEBT2eiqYfhxjqYm/oAf2AvKLbPTPwJJAYrMdheKnGyz1yG9XBRfxCzi93h27qpSvI7jOYfXqFLVMLBXFDqo4A==}
+
+  '@types/set-cookie-parser@2.4.10':
+    resolution: {integrity: sha512-GGmQVGpQWUe5qglJozEjZV/5dyxbOOZ0LHe/lqyWssB88Y4svNfst0uqBVscdDeIKl5Jy5+aPSvy7mI9tYRguw==}
 
   '@types/shimmer@1.2.0':
     resolution: {integrity: sha512-UE7oxhQLLd9gub6JKIAhDq06T0F6FnztwMNRvYgjeQSBeMc1ZG/tA47EwfduvkuQS8apbkM/lpLpWsaCeYsXVg==}
@@ -32880,6 +32892,10 @@ snapshots:
       '@types/send': 0.17.5
 
   '@types/service-worker-mock@2.0.4': {}
+
+  '@types/set-cookie-parser@2.4.10':
+    dependencies:
+      '@types/node': 24.10.12
 
   '@types/shimmer@1.2.0': {}
 

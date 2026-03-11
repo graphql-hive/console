@@ -1119,7 +1119,7 @@ export async function registerSupertokensAtHome(
           );
           return rep.status(200).send({
             status: 'SIGN_IN_UP_NOT_ALLOWED',
-            reason: 'Sign in failed. Please contact your origanization administrator.',
+            reason: 'Sign in failed. Please contact your organization administrator.',
           });
         }
 
@@ -1130,7 +1130,7 @@ export async function registerSupertokensAtHome(
           req.log.debug('received malformed json body from token endpoint');
           return rep.status(200).send({
             status: 'SIGN_IN_UP_NOT_ALLOWED',
-            reason: 'Sign in failed. Please contact your origanization administrator.',
+            reason: 'Sign in failed. Please contact your organization administrator.',
           });
         }
 
@@ -1140,7 +1140,7 @@ export async function registerSupertokensAtHome(
           req.log.debug('received invalid json body from token endpoint');
           return rep.status(200).send({
             status: 'SIGN_IN_UP_NOT_ALLOWED',
-            reason: 'Sign in failed. Please contact your origanization administrator.',
+            reason: 'Sign in failed. Please contact your organization administrator.',
           });
         }
 
@@ -1231,7 +1231,10 @@ export async function registerSupertokensAtHome(
         const current_url = new URL(env.hiveServices.webApp.url);
         current_url.pathname = '/auth/callback/oidc';
 
-        req.log.debug('attempt exchanging auth code for auth token');
+        req.log.debug(
+          'attempt exchanging auth code for auth token (endpoint=%s)',
+          oidcIntegration.tokenEndpoint,
+        );
 
         broadcastLog(
           oidcIntegration.id,
@@ -1267,7 +1270,7 @@ export async function registerSupertokensAtHome(
 
           return rep.status(200).send({
             status: 'SIGN_IN_UP_NOT_ALLOWED',
-            reason: 'Sign in failed. Please contact your origanization administrator.',
+            reason: 'Sign in failed. Please contact your organization administrator.',
           });
         }
 
@@ -1284,7 +1287,7 @@ export async function registerSupertokensAtHome(
 
           return rep.status(200).send({
             status: 'SIGN_IN_UP_NOT_ALLOWED',
-            reason: 'Sign in failed. Please contact your origanization administrator.',
+            reason: 'Sign in failed. Please contact your organization administrator.',
           });
         }
 
@@ -1299,7 +1302,7 @@ export async function registerSupertokensAtHome(
 
           return rep.status(200).send({
             status: 'SIGN_IN_UP_NOT_ALLOWED',
-            reason: 'Sign in failed. Please contact your origanization administrator.',
+            reason: 'Sign in failed. Please contact your organization administrator.',
           });
         }
 
@@ -1313,6 +1316,7 @@ export async function registerSupertokensAtHome(
             authorization: `Bearer ${codeGrantAccessToken}`,
           },
         });
+        const userInfoBodyRaw = await userInfoResponse.text();
 
         if (userInfoResponse.status != 200) {
           req.log.debug(
@@ -1321,16 +1325,15 @@ export async function registerSupertokensAtHome(
           );
           broadcastLog(
             oidcIntegration.id,
-            `an unexpected error occured while calling the user info endoint '${oidcIntegration.userinfoEndpoint}'. HTTP Status: ${grantResponse.status} Body: ${await grantResponse.text()}.`,
+            `an unexpected error occured while calling the user info endoint '${oidcIntegration.userinfoEndpoint}'. HTTP Status: ${userInfoResponse.status} HTTP Body: ${userInfoBodyRaw}.`,
           );
 
           return rep.status(200).send({
             status: 'SIGN_IN_UP_NOT_ALLOWED',
-            reason: 'Sign in failed. Please contact your origanization administrator.',
+            reason: 'Sign in failed. Please contact your organization administrator.',
           });
         }
 
-        const userInfoBodyRaw = await userInfoResponse.text();
         const userInfoBodyJSON = parseJSONSafe(userInfoBodyRaw);
 
         if (userInfoBodyJSON.type === 'error') {
@@ -1342,7 +1345,7 @@ export async function registerSupertokensAtHome(
 
           return rep.status(200).send({
             status: 'SIGN_IN_UP_NOT_ALLOWED',
-            reason: 'Sign in failed. Please contact your origanization administrator.',
+            reason: 'Sign in failed. Please contact your organization administrator.',
           });
         }
 
@@ -1362,7 +1365,7 @@ export async function registerSupertokensAtHome(
 
           return rep.status(200).send({
             status: 'SIGN_IN_UP_NOT_ALLOWED',
-            reason: 'Sign in failed. Please contact your origanization administrator.',
+            reason: 'Sign in failed. Please contact your organization administrator.',
           });
         }
 
@@ -1375,7 +1378,7 @@ export async function registerSupertokensAtHome(
 
           return rep.status(200).send({
             status: 'SIGN_IN_UP_NOT_ALLOWED',
-            reason: 'Sign in failed. Please contact your origanization administrator.',
+            reason: 'Sign in failed. Please contact your organization administrator.',
           });
         }
 
@@ -1393,6 +1396,19 @@ export async function registerSupertokensAtHome(
             oidcIntegrationId: oidcIntegration.id,
             sub: userInfoBody.data.sub,
           });
+        } else if (user.email !== userInfoBody.data.email) {
+          req.log.debug('providers email has changed. Update record.');
+          user = await supertokensStore.updateOIDCUserEmail({
+            userId: user.userId,
+            newEmail: userInfoBody.data.email,
+          });
+
+          if (!user) {
+            return rep.status(200).send({
+              status: 'SIGN_IN_UP_NOT_ALLOWED',
+              reason: 'Sign in failed. Please contact your organization administrator.',
+            });
+          }
         }
 
         req.log.debug('supertokens user provisioned. ensure hive user exists');
