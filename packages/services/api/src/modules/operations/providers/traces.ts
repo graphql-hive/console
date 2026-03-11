@@ -106,16 +106,25 @@ export class Traces {
 
   async findSpansForTraceId(traceId: string, targetId: string): Promise<Array<Span>> {
     this.logger.debug('find spans for trace (traceId=%s)', traceId);
+    // When timestamps are being ingested, the precision is lost, and times are rounded.
+    // That's why we add 1 second to the "End" datetime range.
     const result = await this.clickHouse.query<unknown>({
       query: sql`
+        WITH trace_window AS (
+          SELECT
+            min("Start") AS start_ts,
+            max("End") AS end_ts
+          FROM "otel_traces_trace_id_ts"
+          WHERE "TraceId" = ${traceId}
+        )
         SELECT
           ${spanFields}
         FROM
           "otel_traces"
         PREWHERE
           "TraceId" = ${traceId}
-        WHERE
-          "SpanAttributes"['hive.target_id'] = ${targetId}
+          AND "otel_traces"."Timestamp" >= toDateTime64((SELECT start_ts FROM trace_window), 9, 'UTC')
+          AND "otel_traces"."Timestamp" < addSeconds(toDateTime64((SELECT end_ts FROM trace_window), 9, 'UTC'), 1)
         SETTINGS max_threads = 8
       `,
       timeout: 30_000,
