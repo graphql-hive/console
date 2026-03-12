@@ -1,9 +1,11 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useDeferredValue, useEffect, useMemo, useState } from 'react';
 import {
   GraphQLEnumType,
   GraphQLObjectType,
   GraphQLScalarType,
+  GraphQLSchema,
   GraphQLUnionType,
+  OperationTypeNode,
   type GraphQLArgument,
   type GraphQLField,
 } from 'graphql';
@@ -14,10 +16,22 @@ import {
   CopyMinusIcon,
   CuboidIcon,
   FolderIcon,
+  ListTreeIcon,
   RotateCcwIcon,
+  SearchIcon,
+  TextAlignStart,
+  TextAlignStartIcon,
 } from 'lucide-react';
+import { ToggleGroup, ToggleGroupItem } from '@/laboratory/components/ui/toggle-group';
 import type { LaboratoryOperation } from '../../lib/operations';
-import { getOpenPaths, isArgInQuery, isPathInQuery } from '../../lib/operations.utils';
+import {
+  getFieldByPath,
+  getOpenPaths,
+  isArgInQuery,
+  isPathInQuery,
+  SchemaSearchResult,
+  searchSchemaPaths,
+} from '../../lib/operations.utils';
 import { cn } from '../../lib/utils';
 import { GraphQLType } from '../graphql-type';
 import { GraphQLIcon } from '../icons';
@@ -94,8 +108,13 @@ export const BuilderScalarField = (props: {
   path: string[];
   openPaths: string[];
   setOpenPaths: (openPaths: string[]) => void;
+  visiblePaths?: Set<string> | null;
+  forcedOpenPaths?: Set<string> | null;
+  isSearchActive?: boolean;
   isReadOnly?: boolean;
   operation?: LaboratoryOperation | null;
+  searchValue?: string;
+  label?: React.ReactNode;
 }) => {
   const { activeOperation, addPathToActiveOperation, deletePathFromActiveOperation, activeTab } =
     useLaboratory();
@@ -104,24 +123,22 @@ export const BuilderScalarField = (props: {
     return props.operation ?? activeOperation ?? null;
   }, [props.operation, activeOperation]);
 
+  const path = useMemo(() => {
+    return props.path.join('.');
+  }, [props.path]);
+
   const isOpen = useMemo(() => {
-    return props.openPaths.includes(props.path.join('.'));
-  }, [props.openPaths, props.path]);
+    return props.openPaths.includes(path) || !!props.forcedOpenPaths?.has(path);
+  }, [props.openPaths, props.forcedOpenPaths, path]);
 
   const setIsOpen = useCallback(
     (isOpen: boolean) => {
       props.setOpenPaths(
-        isOpen
-          ? [...props.openPaths, props.path.join('.')]
-          : props.openPaths.filter(path => path !== props.path.join('.')),
+        isOpen ? [...props.openPaths, path] : props.openPaths.filter(openPath => openPath !== path),
       );
     },
-    [props],
+    [path, props],
   );
-
-  const path = useMemo(() => {
-    return props.path.join('.');
-  }, [props.path]);
 
   const isInQuery = useMemo(() => {
     return isPathInQuery(operation?.query ?? '', path);
@@ -134,6 +151,18 @@ export const BuilderScalarField = (props: {
   const hasArgs = useMemo(() => {
     return args.some(arg => isArgInQuery(operation?.query ?? '', path, arg.name));
   }, [operation?.query, args, path]);
+
+  const shouldHighlight = useMemo(() => {
+    return props.searchValue
+      ?.split('.')
+      .reverse()
+      .slice(0, -1)
+      .some(part => props.field.name === part);
+  }, [props.searchValue, props.field.name]);
+
+  if (props.isSearchActive && props.visiblePaths && !props.visiblePaths.has(path)) {
+    return null;
+  }
 
   if (args.length > 0) {
     return (
@@ -173,7 +202,16 @@ export const BuilderScalarField = (props: {
               }}
             />
             <BoxIcon className="size-4 text-rose-400" />
-            {props.field.name}: <GraphQLType type={props.field.type} />
+            {props.label ?? (
+              <span
+                className={cn({
+                  'text-primary-foreground bg-primary -mx-0.5 rounded-sm px-0.5': shouldHighlight,
+                })}
+              >
+                {props.field.name}
+              </span>
+            )}
+            : <GraphQLType type={props.field.type} />
           </Button>
         </CollapsibleTrigger>
         <CollapsibleContent className="border-border relative z-0 ml-3 flex flex-col border-l pl-2">
@@ -248,7 +286,16 @@ export const BuilderScalarField = (props: {
         }}
       />
       <BoxIcon className="size-4 text-rose-400" />
-      {props.field.name}: <GraphQLType type={props.field.type} />
+      {props.label ?? (
+        <span
+          className={cn({
+            'text-primary-foreground bg-primary -mx-0.5 rounded-sm px-0.5': shouldHighlight,
+          })}
+        >
+          {props.field.name}
+        </span>
+      )}
+      : <GraphQLType type={props.field.type} />
     </Button>
   );
 };
@@ -258,8 +305,13 @@ export const BuilderObjectField = (props: {
   path: string[];
   openPaths: string[];
   setOpenPaths: (openPaths: string[]) => void;
+  visiblePaths?: Set<string> | null;
+  forcedOpenPaths?: Set<string> | null;
+  isSearchActive?: boolean;
   isReadOnly?: boolean;
   operation?: LaboratoryOperation | null;
+  searchValue?: string;
+  label?: React.ReactNode;
 }) => {
   const {
     schema,
@@ -273,19 +325,21 @@ export const BuilderObjectField = (props: {
     return props.operation ?? activeOperation ?? null;
   }, [props.operation, activeOperation]);
 
+  const path = useMemo(() => {
+    return props.path.join('.');
+  }, [props.path]);
+
   const isOpen = useMemo(() => {
-    return props.openPaths.includes(props.path.join('.'));
-  }, [props.openPaths, props.path]);
+    return props.openPaths.includes(path) || !!props.forcedOpenPaths?.has(path);
+  }, [props.openPaths, props.forcedOpenPaths, path]);
 
   const setIsOpen = useCallback(
     (isOpen: boolean) => {
       props.setOpenPaths(
-        isOpen
-          ? [...props.openPaths, props.path.join('.')]
-          : props.openPaths.filter(path => path !== props.path.join('.')),
+        isOpen ? [...props.openPaths, path] : props.openPaths.filter(openPath => openPath !== path),
       );
     },
-    [props],
+    [path, props],
   );
 
   const fields = useMemo(
@@ -306,13 +360,21 @@ export const BuilderObjectField = (props: {
     return args.some(arg => isArgInQuery(operation?.query ?? '', props.path.join('.'), arg.name));
   }, [operation?.query, args, props.path]);
 
-  const path = useMemo(() => {
-    return props.path.join('.');
-  }, [props.path]);
-
   const isInQuery = useMemo(() => {
     return isPathInQuery(operation?.query ?? '', path);
   }, [operation?.query, path]);
+
+  const shouldHighlight = useMemo(() => {
+    return props.searchValue
+      ?.split('.')
+      .reverse()
+      .slice(0, -1)
+      .some(part => props.field.name === part);
+  }, [props.searchValue, props.field.name]);
+
+  if (props.isSearchActive && props.visiblePaths && !props.visiblePaths.has(path)) {
+    return null;
+  }
 
   return (
     <Collapsible key={props.field.name} open={isOpen} onOpenChange={setIsOpen}>
@@ -351,7 +413,16 @@ export const BuilderObjectField = (props: {
             }}
           />
           <BoxIcon className="size-4 text-rose-400" />
-          {props.field.name}: <GraphQLType type={props.field.type} />
+          {props.label ?? (
+            <span
+              className={cn({
+                'text-primary-foreground bg-primary -mx-0.5 rounded-sm px-0.5': shouldHighlight,
+              })}
+            >
+              {props.field.name}
+            </span>
+          )}
+          : <GraphQLType type={props.field.type} />
         </Button>
       </CollapsibleTrigger>
       <CollapsibleContent className="border-border relative z-0 ml-4 flex flex-col border-l pl-1">
@@ -402,8 +473,12 @@ export const BuilderObjectField = (props: {
                 path={[...props.path, child.name]}
                 openPaths={props.openPaths}
                 setOpenPaths={props.setOpenPaths}
+                visiblePaths={props.visiblePaths}
+                forcedOpenPaths={props.forcedOpenPaths}
+                isSearchActive={props.isSearchActive}
                 isReadOnly={props.isReadOnly}
                 operation={operation}
+                searchValue={props.searchValue}
               />
             ))}
           </div>
@@ -418,8 +493,13 @@ export const BuilderField = (props: {
   path: string[];
   openPaths: string[];
   setOpenPaths: (openPaths: string[]) => void;
+  visiblePaths?: Set<string> | null;
+  forcedOpenPaths?: Set<string> | null;
+  isSearchActive?: boolean;
   operation?: LaboratoryOperation | null;
   isReadOnly?: boolean;
+  searchValue?: string;
+  label?: React.ReactNode;
 }) => {
   const { schema } = useLaboratory();
 
@@ -437,8 +517,13 @@ export const BuilderField = (props: {
         path={props.path}
         openPaths={props.openPaths}
         setOpenPaths={props.setOpenPaths}
+        visiblePaths={props.visiblePaths}
+        forcedOpenPaths={props.forcedOpenPaths}
+        isSearchActive={props.isSearchActive}
         isReadOnly={props.isReadOnly}
         operation={props.operation}
+        searchValue={props.searchValue}
+        label={props.label}
       />
     );
   }
@@ -449,10 +534,106 @@ export const BuilderField = (props: {
       path={props.path}
       openPaths={props.openPaths}
       setOpenPaths={props.setOpenPaths}
+      visiblePaths={props.visiblePaths}
+      forcedOpenPaths={props.forcedOpenPaths}
+      isSearchActive={props.isSearchActive}
       isReadOnly={props.isReadOnly}
       operation={props.operation}
+      searchValue={props.searchValue}
+      label={props.label}
     />
   );
+};
+
+enum BuilderSearchResultMode {
+  LIST = 'list',
+  TREE = 'tree',
+}
+
+export const BuilderSearchResults = (props: {
+  type: 'query' | 'mutation' | 'subscription';
+  fields: GraphQLField<unknown, unknown, unknown>[];
+  openPaths: string[];
+  setOpenPaths: (openPaths: string[]) => void;
+  visiblePaths: Set<string> | null;
+  matchedPaths: string[];
+  forcedOpenPaths: Set<string> | null;
+  isSearchActive: boolean;
+  mode: BuilderSearchResultMode;
+  isReadOnly: boolean;
+  operation: LaboratoryOperation | null;
+  searchValue: string;
+  schema: GraphQLSchema;
+}) => {
+  if (props.mode === BuilderSearchResultMode.LIST) {
+    return props.matchedPaths.map(path => {
+      const field = getFieldByPath(path, props.schema);
+
+      if (!field) {
+        return null;
+      }
+
+      return (
+        <BuilderField
+          key={path}
+          field={field}
+          path={[path]}
+          openPaths={props.openPaths}
+          setOpenPaths={props.setOpenPaths}
+          visiblePaths={props.visiblePaths}
+          forcedOpenPaths={props.forcedOpenPaths}
+          isSearchActive={props.isSearchActive}
+          isReadOnly={props.isReadOnly}
+          operation={props.operation}
+          searchValue={props.searchValue}
+          label={
+            <span>
+              {path.split('.').map((part, index) => {
+                if (props.searchValue.split('.').some(p => p === part)) {
+                  return (
+                    <span
+                      key={part}
+                      className="text-primary-foreground bg-primary -mx-0.5 rounded-sm px-0.5"
+                    >
+                      {part}
+                      {index < path.split('.').length - 1 && '.'}
+                    </span>
+                  );
+                }
+
+                return (
+                  <span key={part}>
+                    {part}
+                    {index < path.split('.').length - 1 && '.'}
+                  </span>
+                );
+              })}
+            </span>
+          }
+        />
+      );
+    });
+  }
+
+  return props.fields
+    .filter(field => props.visiblePaths?.has(`query.${field.name}`))
+    .map(field => {
+      return (
+        <BuilderField
+          key={field.name}
+          field={field}
+          path={['query', field.name]}
+          openPaths={props.openPaths}
+          setOpenPaths={props.setOpenPaths}
+          visiblePaths={props.visiblePaths}
+          forcedOpenPaths={props.forcedOpenPaths}
+          isSearchActive={props.isSearchActive}
+          isReadOnly={props.isReadOnly}
+          operation={props.operation}
+          searchValue={props.searchValue}
+        />
+      );
+    });
 };
 
 export const Builder = (props: {
@@ -462,6 +643,8 @@ export const Builder = (props: {
   const { schema, activeOperation, endpoint, setEndpoint, defaultEndpoint } = useLaboratory();
 
   const [endpointValue, setEndpointValue] = useState<string>(endpoint ?? '');
+  const [searchValue, setSearchValue] = useState<string>('');
+  const deferredSearchValue = useDeferredValue(searchValue);
   const [openPaths, setOpenPaths] = useState<string[]>([]);
 
   const operation = useMemo(() => {
@@ -492,6 +675,31 @@ export const Builder = (props: {
   const subscriptionFields = useMemo(
     () => Object.values(schema?.getSubscriptionType()?.getFields?.() ?? {}),
     [schema],
+  );
+
+  const isSearchActive = deferredSearchValue.trim().length > 0;
+
+  const searchResult = useMemo(() => {
+    if (!schema || !isSearchActive) {
+      return null;
+    }
+
+    return searchSchemaPaths(schema, deferredSearchValue, {
+      maxDepth: 8,
+      maxMatches: 5000,
+      maxNodes: 1000000,
+      operationTypes: [OperationTypeNode.QUERY],
+    });
+  }, [schema, deferredSearchValue, isSearchActive]);
+
+  const visiblePaths = isSearchActive ? (searchResult?.visiblePaths ?? null) : null;
+  const forcedOpenPaths =
+    isSearchActive && deferredSearchValue.includes('.')
+      ? (searchResult?.forcedOpenPaths ?? null)
+      : null;
+
+  const [searchResultMode, setSearchResultMode] = useState<BuilderSearchResultMode>(
+    BuilderSearchResultMode.TREE,
   );
 
   const [tabValue, setTabValue] = useState<string>('query');
@@ -587,47 +795,150 @@ export const Builder = (props: {
                 </TabsTrigger>
               </TabsList>
             </div>
+            {schema && (
+              <div className="border-border sticky top-0 z-10 border-b p-3">
+                <InputGroup className="pr-0">
+                  <InputGroupInput
+                    placeholder="Search fields"
+                    value={searchValue}
+                    onChange={e => setSearchValue(e.currentTarget.value)}
+                  />
+                  <InputGroupAddon>
+                    <SearchIcon className="text-muted-foreground size-4" />
+                  </InputGroupAddon>
+                  <InputGroupAddon align="inline-end" className="py-0 pr-1.5">
+                    <ToggleGroup
+                      type="single"
+                      variant="outline"
+                      defaultValue={searchResultMode}
+                      onValueChange={value => setSearchResultMode(value as BuilderSearchResultMode)}
+                    >
+                      <ToggleGroupItem
+                        value={BuilderSearchResultMode.TREE}
+                        aria-label="Toggle tree"
+                        className="h-6 !rounded-l-sm p-2"
+                      >
+                        <ListTreeIcon className="size-4" />
+                      </ToggleGroupItem>
+                      <ToggleGroupItem
+                        value={BuilderSearchResultMode.LIST}
+                        aria-label="Toggle list"
+                        className="h-6 !rounded-r-sm p-2"
+                      >
+                        <TextAlignStartIcon className="size-4" />
+                      </ToggleGroupItem>
+                    </ToggleGroup>
+                  </InputGroupAddon>
+                </InputGroup>
+              </div>
+            )}
             <div className="flex-1 overflow-hidden">
               <ScrollArea className="h-full font-mono">
                 <div className="p-3">
                   <TabsContent value="query">
-                    {queryFields?.map(field => (
-                      <BuilderField
-                        key={field.name}
-                        field={field}
-                        path={['query', field.name]}
+                    {isSearchActive ? (
+                      <BuilderSearchResults
+                        type="query"
+                        fields={queryFields}
                         openPaths={openPaths}
                         setOpenPaths={setOpenPaths}
-                        isReadOnly={props.isReadOnly}
+                        visiblePaths={visiblePaths}
+                        matchedPaths={searchResult?.matchedPaths ?? []}
+                        forcedOpenPaths={searchResult?.forcedOpenPaths ?? null}
+                        isSearchActive={isSearchActive}
+                        mode={searchResultMode}
+                        isReadOnly={props.isReadOnly ?? false}
                         operation={operation}
+                        searchValue={deferredSearchValue}
+                        schema={schema}
                       />
-                    ))}
+                    ) : (
+                      queryFields.map(field => (
+                        <BuilderField
+                          key={field.name}
+                          field={field}
+                          path={['query', field.name]}
+                          openPaths={openPaths}
+                          setOpenPaths={setOpenPaths}
+                          visiblePaths={visiblePaths}
+                          forcedOpenPaths={forcedOpenPaths}
+                          isSearchActive={isSearchActive}
+                          isReadOnly={props.isReadOnly}
+                          operation={operation}
+                          searchValue={deferredSearchValue}
+                        />
+                      ))
+                    )}
                   </TabsContent>
                   <TabsContent value="mutation">
-                    {mutationFields?.map(field => (
-                      <BuilderField
-                        key={field.name}
-                        field={field}
-                        path={['mutation', field.name]}
+                    {isSearchActive ? (
+                      <BuilderSearchResults
+                        type="mutation"
+                        fields={mutationFields}
                         openPaths={openPaths}
                         setOpenPaths={setOpenPaths}
-                        isReadOnly={props.isReadOnly}
+                        visiblePaths={visiblePaths}
+                        matchedPaths={searchResult?.matchedPaths ?? []}
+                        forcedOpenPaths={searchResult?.forcedOpenPaths ?? null}
+                        isSearchActive={isSearchActive}
+                        mode={searchResultMode}
+                        isReadOnly={props.isReadOnly ?? false}
                         operation={operation}
+                        searchValue={deferredSearchValue}
+                        schema={schema}
                       />
-                    ))}
+                    ) : (
+                      mutationFields.map(field => (
+                        <BuilderField
+                          key={field.name}
+                          field={field}
+                          path={['mutation', field.name]}
+                          openPaths={openPaths}
+                          setOpenPaths={setOpenPaths}
+                          visiblePaths={visiblePaths}
+                          forcedOpenPaths={forcedOpenPaths}
+                          isSearchActive={isSearchActive}
+                          isReadOnly={props.isReadOnly}
+                          operation={operation}
+                          searchValue={deferredSearchValue}
+                        />
+                      ))
+                    )}
                   </TabsContent>
                   <TabsContent value="subscription">
-                    {subscriptionFields?.map(field => (
-                      <BuilderField
-                        key={field.name}
-                        field={field}
-                        path={['subscription', field.name]}
+                    {isSearchActive ? (
+                      <BuilderSearchResults
+                        type="subscription"
+                        fields={subscriptionFields}
                         openPaths={openPaths}
                         setOpenPaths={setOpenPaths}
-                        isReadOnly={props.isReadOnly}
+                        visiblePaths={visiblePaths}
+                        matchedPaths={searchResult?.matchedPaths ?? []}
+                        forcedOpenPaths={searchResult?.forcedOpenPaths ?? null}
+                        isSearchActive={isSearchActive}
+                        mode={searchResultMode}
+                        isReadOnly={props.isReadOnly ?? false}
                         operation={operation}
+                        searchValue={deferredSearchValue}
+                        schema={schema}
                       />
-                    ))}
+                    ) : (
+                      subscriptionFields.map(field => (
+                        <BuilderField
+                          key={field.name}
+                          field={field}
+                          path={['subscription', field.name]}
+                          openPaths={openPaths}
+                          setOpenPaths={setOpenPaths}
+                          visiblePaths={visiblePaths}
+                          forcedOpenPaths={forcedOpenPaths}
+                          isSearchActive={isSearchActive}
+                          isReadOnly={props.isReadOnly}
+                          operation={operation}
+                          searchValue={deferredSearchValue}
+                        />
+                      ))
+                    )}
                   </TabsContent>
                 </div>
                 <ScrollBar className="relative z-50" />
