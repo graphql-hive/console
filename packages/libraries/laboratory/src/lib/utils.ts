@@ -8,3 +8,12 @@ export function cn(...inputs: ClassValue[]) {
 export function capitalize(str: string) {
   return str.charAt(0).toUpperCase() + str.slice(1);
 }
+
+export function splitIdentifier(input: string): string[] {
+  return input
+    .replace(/_/g, ' ')
+    .replace(/([a-z0-9])([A-Z])/g, '$1 $2')
+    .trim()
+    .split(/\s+/)
+    .map(w => w.toLowerCase());
+}

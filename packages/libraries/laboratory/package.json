@@ -142,5 +142,8 @@
     "directories": {
       "buildResources": "assets"
     }
+  },
+  "dependencies": {
+    "radix-ui": "^1.4.3"
   }
 }
