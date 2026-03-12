@@ -102,6 +102,12 @@ if (env.sentry) {
     dist: 'webapp',
     release: env.release,
     environment: env.environment,
+    ignoreErrors: [
+      // Suppress specific monaco editor internal errors
+      "Failed to execute 'setStart' on 'Range'",
+      "Failed to execute 'setEnd' on 'Range'",
+      /TextModel got disposed/,
+    ],
   });
 }
 
