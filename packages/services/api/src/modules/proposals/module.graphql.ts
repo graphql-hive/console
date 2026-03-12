@@ -122,6 +122,21 @@ export default gql`
     body: String!
   }
 
+  extend type Subscription {
+    schemaProposalComposition(
+      input: SchemaProposalCompositionSubscriptionInput!
+    ): SchemaProposalCompositionEvent!
+  }
+
+  type SchemaProposalCompositionEvent {
+    status: ProposalCompositionStatus!
+    timestamp: String!
+  }
+
+  input SchemaProposalCompositionSubscriptionInput {
+    proposalId: ID!
+  }
+
   extend type Query {
     schemaProposals(
       after: String
@@ -240,6 +255,15 @@ export default gql`
       """
       fromCursor: String
     ): String
+
+    compositionStatus: ProposalCompositionStatus
+    compositionTimestamp: DateTime
+    compositionStatusReason: String
+  }
+
+  enum ProposalCompositionStatus {
+    ERROR
+    SUCCESS
   }
 
   input SchemaProposalChecksInput {

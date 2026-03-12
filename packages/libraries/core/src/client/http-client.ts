@@ -150,7 +150,7 @@ export async function makeFetchCall(
       const timeoutSignal = AbortSignal.timeout(config.timeout ?? 20_000);
       const signal = config.signal ? abortSignalAny([config.signal, timeoutSignal]) : timeoutSignal;
 
-      const response = await (config.fetchImplementation ?? fetch)(endpoint, {
+      const response = await ((config.fetchImplementation ?? fetch) as typeof fetch)(endpoint, {
         method: config.method,
         body: config.body,
         headers: {

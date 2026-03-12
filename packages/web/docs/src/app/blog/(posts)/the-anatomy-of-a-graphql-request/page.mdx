@@ -375,7 +375,7 @@ const myPlugin: Plugin = {
     console.log('before parsing')
     return function afterParse({ result }) {
       if (result instanceof Error) {
-        console.log('Error occured during parsing: ', result)
+        console.log('Error occurred during parsing: ', result)
       }
     }
   },
@@ -385,7 +385,7 @@ const myPlugin: Plugin = {
 
     return function afterValidate({ result }) {
       if (result.length) {
-        console.log('Errors occured duting validation: ', result)
+        console.log('Errors occurred during validation: ', result)
       }
     }
   },

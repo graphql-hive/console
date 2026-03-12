@@ -2,10 +2,10 @@ import { MouseEvent, useMemo, useState } from 'react';
 import { produce } from 'immer';
 import { ChevronRightIcon, XIcon } from 'lucide-react';
 import { useQuery } from 'urql';
+import { Checkbox } from '@/components/base/checkbox/checkbox';
 import { ArrowDownIcon } from '@/components/ui/icon';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { Checkbox } from '@/components/v2';
 import { graphql, useFragment, type FragmentType } from '@/gql';
 import * as GraphQLSchema from '@/gql/graphql';
 import { cn } from '@/lib/utils';
@@ -741,7 +741,7 @@ export function ResourceSelector(props: {
                     <div className="ml-auto flex items-center text-xs">
                       <span className="mr-1">All</span>
                       <Checkbox
-                        className="size-4"
+                        size="sm"
                         title="All"
                         checked={targetState.selection === '*'}
                         onClick={() => {
@@ -788,7 +788,7 @@ export function ResourceSelector(props: {
                       <div className="ml-auto flex items-center text-xs">
                         <span className="mr-1">All</span>
                         <Checkbox
-                          className="size-4"
+                          size="sm"
                           title="All"
                           checked={serviceState.selection === '*'}
                           onClick={() => {
@@ -1043,7 +1043,7 @@ export function ResourceSelector(props: {
                           <div className="ml-auto flex items-center text-xs">
                             <span className="mr-1">All</span>
                             <Checkbox
-                              className="size-4"
+                              size="sm"
                               title="All"
                               checked={appsState.selection === '*'}
                               onClick={() => {

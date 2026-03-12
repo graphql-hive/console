@@ -9,6 +9,21 @@ export default gql`
     monthlyUsage(selector: OrganizationSelectorInput!): [MonthlyUsage!]!
   }
 
+  """
+  Filter by specific client name + version combinations.
+  """
+  input ClientVersionFilterInput {
+    """
+    The client name to filter by.
+    """
+    clientName: String! @tag(name: "public")
+    """
+    Specific versions of this client to include.
+    When null, all versions of this client are included.
+    """
+    versions: [String!] @tag(name: "public")
+  }
+
   input OperationStatsFilterInput {
     """
     Filter by only showing operations with a specific id.
@@ -17,7 +32,24 @@ export default gql`
     """
     Filter by only showing operations performed by specific clients.
     """
-    clientNames: [String!] @tag(name: "public")
+    clientNames: [String!]
+      @tag(name: "public")
+      @deprecated(
+        reason: "Use 'clientVersionFilters' instead for more precise filtering by client name and version."
+      )
+    """
+    Filter by specific client name + version combinations.
+    More precise than clientNames - allows filtering to specific versions.
+    """
+    clientVersionFilters: [ClientVersionFilterInput!] @tag(name: "public")
+    """
+    When true, the operationIds filter is negated — matching operations are excluded instead of included.
+    """
+    excludeOperations: Boolean @tag(name: "public")
+    """
+    When true, the clientVersionFilters filter is negated — matching clients are excluded instead of included.
+    """
+    excludeClientVersionFilters: Boolean @tag(name: "public")
   }
 
   extend type Target {

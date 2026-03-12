@@ -4,7 +4,17 @@ import type { OperationsStatsResolvers } from './../../../__generated__/types';
 
 export const OperationsStats: OperationsStatsResolvers = {
   operations: async (
-    { organization, project, target, period, operations: operationsFilter, clients },
+    {
+      organization,
+      project,
+      target,
+      period,
+      operations: operationsFilter,
+      clients,
+      clientVersionFilters,
+      excludeOperations,
+      excludeClientVersionFilters,
+    },
     _,
     { injector },
   ) => {
@@ -17,6 +27,9 @@ export const OperationsStats: OperationsStatsResolvers = {
         period,
         operations: operationsFilter,
         clients,
+        clientVersionFilters,
+        excludeOperations,
+        excludeClientVersionFilters,
       }),
       operationsManager.readDetailedDurationMetrics({
         organizationId: organization,
@@ -25,6 +38,9 @@ export const OperationsStats: OperationsStatsResolvers = {
         period,
         operations: operationsFilter,
         clients,
+        clientVersionFilters,
+        excludeOperations,
+        excludeClientVersionFilters,
       }),
     ]);
 
@@ -54,7 +70,17 @@ export const OperationsStats: OperationsStatsResolvers = {
     };
   },
   totalRequests: (
-    { organization, project, target, period, operations, clients },
+    {
+      organization,
+      project,
+      target,
+      period,
+      operations,
+      clients,
+      clientVersionFilters,
+      excludeOperations,
+      excludeClientVersionFilters,
+    },
     _,
     { injector },
   ) => {
@@ -65,10 +91,23 @@ export const OperationsStats: OperationsStatsResolvers = {
       period,
       operations,
       clients,
+      clientVersionFilters,
+      excludeOperations,
+      excludeClientVersionFilters,
     });
   },
   totalFailures: (
-    { organization, project, target, period, operations: operationsFilter, clients },
+    {
+      organization,
+      project,
+      target,
+      period,
+      operations: operationsFilter,
+      clients,
+      clientVersionFilters,
+      excludeOperations,
+      excludeClientVersionFilters,
+    },
     _,
     { injector },
   ) => {
@@ -79,10 +118,23 @@ export const OperationsStats: OperationsStatsResolvers = {
       period,
       operations: operationsFilter,
       clients,
+      clientVersionFilters,
+      excludeOperations,
+      excludeClientVersionFilters,
     });
   },
   totalOperations: (
-    { organization, project, target, period, operations: operationsFilter, clients },
+    {
+      organization,
+      project,
+      target,
+      period,
+      operations: operationsFilter,
+      clients,
+      clientVersionFilters,
+      excludeOperations,
+      excludeClientVersionFilters,
+    },
     _,
     { injector },
   ) => {
@@ -93,10 +145,23 @@ export const OperationsStats: OperationsStatsResolvers = {
       period,
       operations: operationsFilter,
       clients,
+      clientVersionFilters,
+      excludeOperations,
+      excludeClientVersionFilters,
     });
   },
   requestsOverTime: (
-    { organization, project, target, period, operations: operationsFilter, clients },
+    {
+      organization,
+      project,
+      target,
+      period,
+      operations: operationsFilter,
+      clients,
+      clientVersionFilters,
+      excludeOperations,
+      excludeClientVersionFilters,
+    },
     { resolution },
     { injector },
   ) => {
@@ -108,10 +173,23 @@ export const OperationsStats: OperationsStatsResolvers = {
       resolution,
       operations: operationsFilter,
       clients,
+      clientVersionFilters,
+      excludeOperations,
+      excludeClientVersionFilters,
     });
   },
   failuresOverTime: (
-    { organization, project, target, period, operations: operationsFilter, clients },
+    {
+      organization,
+      project,
+      target,
+      period,
+      operations: operationsFilter,
+      clients,
+      clientVersionFilters,
+      excludeOperations,
+      excludeClientVersionFilters,
+    },
     { resolution },
     { injector },
   ) => {
@@ -123,10 +201,23 @@ export const OperationsStats: OperationsStatsResolvers = {
       resolution,
       operations: operationsFilter,
       clients,
+      clientVersionFilters,
+      excludeOperations,
+      excludeClientVersionFilters,
     });
   },
   durationOverTime: (
-    { organization, project, target, period, operations: operationsFilter, clients },
+    {
+      organization,
+      project,
+      target,
+      period,
+      operations: operationsFilter,
+      clients,
+      clientVersionFilters,
+      excludeOperations,
+      excludeClientVersionFilters,
+    },
     { resolution },
     { injector },
   ) => {
@@ -138,10 +229,23 @@ export const OperationsStats: OperationsStatsResolvers = {
       resolution,
       operations: operationsFilter,
       clients,
+      clientVersionFilters,
+      excludeOperations,
+      excludeClientVersionFilters,
     });
   },
   clients: async (
-    { organization, project, target, period, operations: operationsFilter, clients },
+    {
+      organization,
+      project,
+      target,
+      period,
+      operations: operationsFilter,
+      clients,
+      clientVersionFilters,
+      excludeOperations,
+      excludeClientVersionFilters,
+    },
     _,
     { injector },
   ) => {
@@ -152,6 +256,9 @@ export const OperationsStats: OperationsStatsResolvers = {
       period,
       operations: operationsFilter,
       clients,
+      clientVersionFilters,
+      excludeOperations,
+      excludeClientVersionFilters,
     });
 
     return {
@@ -165,7 +272,17 @@ export const OperationsStats: OperationsStatsResolvers = {
     };
   },
   duration: (
-    { organization, project, target, period, operations: operationsFilter, clients },
+    {
+      organization,
+      project,
+      target,
+      period,
+      operations: operationsFilter,
+      clients,
+      clientVersionFilters,
+      excludeOperations,
+      excludeClientVersionFilters,
+    },
     _,
     { injector },
   ) => {
@@ -176,6 +293,9 @@ export const OperationsStats: OperationsStatsResolvers = {
       period,
       operations: operationsFilter,
       clients,
+      clientVersionFilters,
+      excludeOperations,
+      excludeClientVersionFilters,
     });
   },
 };

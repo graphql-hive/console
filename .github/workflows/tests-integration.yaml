@@ -54,6 +54,13 @@ jobs:
         uses: mikefarah/yq@4839dbbf80445070a31c7a9c1055da527db2d5ee # v4.44.6
         with:
           cmd: yq -i 'del(.services.*.volumes)' docker/docker-compose.community.yml
+      # tests need to access host machine for OIDC stuff
+      - name: make host machine accessible to server container
+        uses: mikefarah/yq@4839dbbf80445070a31c7a9c1055da527db2d5ee # v4.44.6
+        with:
+          cmd:
+            yq -i '.services.server.extra_hosts[] |= sub("host-gateway"; "172.17.0.1")'
+            ./integration-tests/docker-compose.integration.yaml
 
       - name: get cpu count for vitest
         id: cpu-cores

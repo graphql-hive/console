@@ -1,6 +1,6 @@
 {
   "name": "@graphql-hive/core",
-  "version": "0.20.2",
+  "version": "0.21.0",
   "type": "module",
   "repository": {
     "type": "git",
@@ -58,7 +58,7 @@
   },
   "devDependencies": {
     "@apollo/federation": "0.38.1",
-    "@apollo/subgraph": "2.9.3",
+    "@apollo/subgraph": "2.13.1",
     "@types/async-retry": "1.4.8",
     "@types/js-md5": "0.8.0",
     "@types/lodash.sortby": "4.7.9",

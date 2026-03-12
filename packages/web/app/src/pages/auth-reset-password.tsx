@@ -23,6 +23,7 @@ import { exhaustiveGuard } from '@/lib/utils';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation } from '@tanstack/react-query';
 import { Link, Navigate } from '@tanstack/react-router';
+import { PasswordStringModel } from './auth-sign-up';
 
 const ResetPasswordFormSchema = z.object({
   email: z
@@ -194,7 +195,7 @@ function AuthResetPasswordEmail(props: { email: string | null; redirectToPath: s
 }
 
 const NewPasswordFormSchema = z.object({
-  newPassword: z.string().min(8, 'Password must be at least 8 characters'),
+  newPassword: PasswordStringModel,
 });
 
 type NewPasswordFormValues = z.infer<typeof NewPasswordFormSchema>;

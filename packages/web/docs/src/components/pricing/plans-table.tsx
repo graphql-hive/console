@@ -279,6 +279,23 @@ export function PlansTable({ className }: { className?: string }) {
               </PlansTableCell>
             </tr>
 
+            <tr>
+              <PlansTableCell>
+                <TextLink href="/docs/schema-registry/app-deployments" target="_blank">
+                  Manage Persisted Documents
+                </TextLink>
+              </PlansTableCell>
+              <PlansTableCell activePlan={activePlan} plan="Hobby">
+                {YES}
+              </PlansTableCell>
+              <PlansTableCell activePlan={activePlan} plan="Pro">
+                {YES}
+              </PlansTableCell>
+              <PlansTableCell activePlan={activePlan} plan="Enterprise">
+                {YES}
+              </PlansTableCell>
+            </tr>
+
             <TableSubheaderRow
               icon={<UsageIcon />}
               title="Analytics, Monitoring & Metrics"
@@ -287,7 +304,7 @@ export function PlansTable({ className }: { className?: string }) {
 
             <tr>
               <PlansTableCell>
-                <TextLink href=" /docs/schema-registry/usage-reporting" target="_blank">
+                <TextLink href="/docs/schema-registry/usage-reporting" target="_blank">
                   Operation usage reporting and insights
                 </TextLink>
               </PlansTableCell>
@@ -347,6 +364,26 @@ export function PlansTable({ className }: { className?: string }) {
               </PlansTableCell>
               <PlansTableCell activePlan={activePlan} plan="Enterprise">
                 One-year Minimum, Customizable
+              </PlansTableCell>
+            </tr>
+
+            <tr>
+              <PlansTableCell>
+                <TextLink
+                  href="/docs/schema-registry/app-deployments#schema-checks-and-affected-app-deployments"
+                  target="_blank"
+                >
+                  Persisted Document breaking change detection
+                </TextLink>
+              </PlansTableCell>
+              <PlansTableCell activePlan={activePlan} plan="Hobby">
+                {YES}
+              </PlansTableCell>
+              <PlansTableCell activePlan={activePlan} plan="Pro">
+                {YES}
+              </PlansTableCell>
+              <PlansTableCell activePlan={activePlan} plan="Enterprise">
+                {YES}
               </PlansTableCell>
             </tr>
 

@@ -1,4 +1,5 @@
 import { ExecutionResult, parse, print } from 'graphql';
+import { createClient } from 'graphql-sse';
 import { TypedDocumentNode } from '@graphql-typed-document-node/core';
 import { sortSDL } from '@theguild/federation-composition';
 import { getServiceHost } from './utils';
@@ -86,4 +87,43 @@ export async function execute<TResult, TVariables>(
       return body.data!;
     },
   };
+}
+
+export async function subscribe<TResult, TVariables>(
+  params: {
+    document: TypedDocumentNode<TResult, TVariables>;
+    operationName?: string;
+    authToken?: string;
+    token?: string;
+    legacyAuthorizationMode?: boolean;
+  } & (TVariables extends Record<string, never>
+    ? { variables?: never }
+    : { variables: TVariables }),
+) {
+  const registryAddress = await getServiceHost('server', 8082);
+  const client = createClient({
+    url: `http://${registryAddress}/graphql`,
+    headers: {
+      ...(params.authToken
+        ? {
+            authorization: `Bearer ${params.authToken}`,
+          }
+        : {}),
+      ...(params.token
+        ? params.legacyAuthorizationMode
+          ? {
+              'x-api-token': params.token,
+            }
+          : {
+              authorization: `Bearer ${params.token}`,
+            }
+        : {}),
+    },
+  });
+
+  return client.iterate({
+    operationName: params.operationName,
+    query: print(params.document),
+    variables: params.variables ?? {},
+  });
 }

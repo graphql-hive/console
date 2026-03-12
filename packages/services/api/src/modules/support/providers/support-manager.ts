@@ -1,12 +1,11 @@
 import { createHash } from 'node:crypto';
-import { HTTPError } from 'got';
 import { Inject, Injectable, Scope } from 'graphql-modules';
 import { z } from 'zod';
 import { Organization, SupportTicketPriority, SupportTicketStatus } from '../../../shared/entities';
 import { atomic } from '../../../shared/helpers';
 import { AuditLogRecorder } from '../../audit-logs/providers/audit-log-recorder';
 import { Session } from '../../auth/lib/authz';
-import { HttpClient } from '../../shared/providers/http-client';
+import { HiveHttpClientError, HttpClient } from '../../shared/providers/http-client';
 import { Logger } from '../../shared/providers/logger';
 import { Storage } from '../../shared/providers/storage';
 import { OrganizationManager } from './../../organization/providers/organization-manager';
@@ -347,7 +346,7 @@ export class SupportManager {
           },
         );
       } catch (err) {
-        if (err instanceof HTTPError && err.code === '422') {
+        if (err instanceof HiveHttpClientError && err.code === '422') {
           // This user is already a member of this organization.
           this.logger.debug(
             'The user was already connected to the zendesk organization. (organization: %s, user: %s, zendeskUserId: %d, zendeskOrganizationId: %d)',

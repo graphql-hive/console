@@ -10,6 +10,7 @@
 export type alert_channel_type = 'MSTEAMS_WEBHOOK' | 'SLACK' | 'WEBHOOK';
 export type alert_type = 'SCHEMA_CHANGE_NOTIFICATIONS';
 export type breaking_change_formula = 'PERCENTAGE' | 'REQUEST_COUNT';
+export type saved_filter_visibility = 'private' | 'shared';
 export type schema_policy_resource = 'ORGANIZATION' | 'PROJECT';
 export type schema_proposal_stage = 'APPROVED' | 'CLOSED' | 'DRAFT' | 'IMPLEMENTED' | 'OPEN';
 export type user_role = 'ADMIN' | 'MEMBER';
@@ -158,6 +159,15 @@ export interface migration {
   name: string;
 }
 
+export interface oidc_integration_domains {
+  created_at: Date;
+  domain_name: string;
+  id: string;
+  oidc_integration_id: string;
+  organization_id: string;
+  verified_at: Date | null;
+}
+
 export interface oidc_integrations {
   additional_scopes: Array<string> | null;
   authorization_endpoint: string | null;
@@ -270,6 +280,20 @@ export interface projects {
   validation_url: string | null;
 }
 
+export interface saved_filters {
+  created_at: Date;
+  created_by_user_id: string;
+  description: string | null;
+  filters: any;
+  id: string;
+  name: string;
+  project_id: string;
+  updated_at: Date;
+  updated_by_user_id: string | null;
+  views_count: number;
+  visibility: saved_filter_visibility;
+}
+
 export interface schema_change_approvals {
   context_id: string;
   created_at: Date;
@@ -368,6 +392,9 @@ export interface schema_proposal_reviews {
 export interface schema_proposals {
   author: string;
   comments_count: number;
+  composition_status: string | null;
+  composition_status_reason: string | null;
+  composition_timestamp: Date | null;
   created_at: Date;
   description: string;
   id: string;
@@ -512,6 +539,7 @@ export interface DBTables {
   email_verifications: email_verifications;
   graphile_worker_deduplication: graphile_worker_deduplication;
   migration: migration;
+  oidc_integration_domains: oidc_integration_domains;
   oidc_integrations: oidc_integrations;
   organization_access_tokens: organization_access_tokens;
   organization_invitations: organization_invitations;
@@ -520,6 +548,7 @@ export interface DBTables {
   organizations: organizations;
   organizations_billing: organizations_billing;
   projects: projects;
+  saved_filters: saved_filters;
   schema_change_approvals: schema_change_approvals;
   schema_checks: schema_checks;
   schema_coordinate_status: schema_coordinate_status;

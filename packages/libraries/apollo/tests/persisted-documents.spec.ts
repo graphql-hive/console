@@ -39,7 +39,7 @@ test('use persisted documents (GraphQL over HTTP "documentId")', async () => {
     plugins: [
       useHive({
         token: 'token',
-        experimental__persistedDocuments: {
+        persistedDocuments: {
           cdn: {
             endpoint: 'http://artifacts-cdn.localhost',
             accessToken: 'foo',
@@ -96,7 +96,7 @@ test('persisted document not found (GraphQL over HTTP "documentId")', async () =
     plugins: [
       useHive({
         token: 'token',
-        experimental__persistedDocuments: {
+        persistedDocuments: {
           cdn: {
             endpoint: 'http://artifacts-cdn.localhost',
             accessToken: 'foo',
@@ -152,7 +152,7 @@ test('arbitrary options are rejected with allowArbitraryDocuments=false (GraphQL
     plugins: [
       useHive({
         token: 'token',
-        experimental__persistedDocuments: {
+        persistedDocuments: {
           cdn: {
             endpoint: 'http://artifacts-cdn.localhost',
             accessToken: 'foo',
@@ -205,7 +205,7 @@ test('arbitrary options are allowed with allowArbitraryDocuments=true (GraphQL o
     plugins: [
       useHive({
         token: 'token',
-        experimental__persistedDocuments: {
+        persistedDocuments: {
           cdn: {
             endpoint: 'http://artifacts-cdn.localhost',
             accessToken: 'foo',
@@ -301,7 +301,7 @@ test('usage reporting for persisted document', async () => {
         enabled: true,
         debug: false,
         token: 'brrrt',
-        experimental__persistedDocuments: {
+        persistedDocuments: {
           cdn: {
             endpoint: 'http://artifacts-cdn.localhost',
             accessToken: 'foo',
@@ -376,7 +376,7 @@ test('handles validation errors from malformed document IDs', async () => {
     plugins: [
       useHive({
         token: 'token',
-        experimental__persistedDocuments: {
+        persistedDocuments: {
           cdn: {
             endpoint: 'http://artifacts-cdn.localhost',
             accessToken: 'foo',

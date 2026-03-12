@@ -36,20 +36,13 @@ beforeEach(() => {
 
 /** Helper function for setting the text within a monaco editor as typing manually results in flaky tests */
 function setMonacoEditorContents(editorCyName: string, text: string) {
-  // wait for textarea appearing which indicates monaco is loaded
-  cy.dataCy(editorCyName).find('textarea');
-  cy.window().then(win => {
-    // First, check if monaco is available on the main window
-    const editor = (win as any).monaco.editor
-      .getEditors()
-      .find(e => e.getContainerDomNode().parentElement.getAttribute('data-cy') === editorCyName);
-
-    // If Monaco instance is found
-    if (editor) {
-      editor.setValue(text);
-    } else {
-      throw new Error('Monaco editor not found on the window or frames[0]');
-    }
+  const selectAllKeys = Cypress.platform == 'darwin' ? '{cmd}a' : '{ctrl}a';
+  // Wait for Monaco to render, then select all existing content and replace it
+  // via execCommand('insertText') which Monaco handles natively through beforeinput events.
+  cy.dataCy(editorCyName).find('textarea').focus().type(selectAllKeys, { force: true });
+  // cy.dataCy(editorCyName).find('textarea').focus().type('{ctrl+a}', { force: true });
+  cy.document().then(doc => {
+    doc.execCommand('insertText', false, text);
   });
 }
 
@@ -287,12 +280,7 @@ describe('Execution', () => {
         parseSpecialCharSequences: false,
       },
     );
-    cy.dataCy('env-editor-mini').within(() => {
-      cy.get('textarea').type('{"foo":"injected"}', {
-        force: true,
-        parseSpecialCharSequences: false,
-      });
-    });
+    setMonacoEditorContents('env-editor-mini', '{"foo":"injected"}');
 
     cy.intercept({
       method: 'POST',

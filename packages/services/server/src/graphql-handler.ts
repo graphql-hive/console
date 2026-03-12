@@ -36,10 +36,6 @@ export interface GraphQLHandlerOptions {
   registry: Registry;
   signature: string;
   tracing?: TracingInstance;
-  supertokens: {
-    connectionUri: string;
-    apiKey: string;
-  };
   isProduction: boolean;
   hiveUsageConfig: HiveUsageConfig;
   hivePersistedDocumentsConfig: HivePersistedDocumentsConfig;
@@ -226,7 +222,7 @@ export const graphqlHandler = (options: GraphQLHandlerOptions): RouteHandlerMeth
               exclude: ['readiness'],
             }
           : false,
-        experimental__persistedDocuments: options.hivePersistedDocumentsConfig
+        persistedDocuments: options.hivePersistedDocumentsConfig
           ? {
               cdn: {
                 endpoint: options.hivePersistedDocumentsConfig.cdnEndpoint,

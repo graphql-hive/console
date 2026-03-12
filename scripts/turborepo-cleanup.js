@@ -8,7 +8,7 @@
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import rimraf from 'rimraf';
+import { rimraf } from 'rimraf';
 
 const cwd = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 

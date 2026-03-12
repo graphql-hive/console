@@ -1,6 +1,5 @@
 import { GlobeIcon } from 'lucide-react';
-import { Editor } from '@/laboratory/components/laboratory/editor';
-import { LaboratoryPlugin } from '@/laboratory/lib/plugins';
+import { Editor, LaboratoryPlugin } from '@graphql-hive/laboratory';
 
 export const TargetEnvPlugin = (props: {
   organizationSlug: string;
@@ -79,14 +78,14 @@ export const TargetEnvPlugin = (props: {
               defaultValue={Object.entries(state?.[targetId] ?? {})
                 .map(([key, value]) => `${key}=${value}`)
                 .join('\n')}
-              onChange={value => {
+              onChange={(value?: string) => {
                 setState({
                   ...state,
                   [targetId]: Object.fromEntries(
                     value
                       ?.split('\n')
-                      .filter(line => line.trim() && !line.trim().startsWith('#'))
-                      .map(line => {
+                      .filter((line: string) => line.trim() && !line.trim().startsWith('#'))
+                      .map((line: string) => {
                         const parts = line.split(/=(.*)/s);
 
                         return [parts[0].trim(), (parts[1] ?? '').trim()];

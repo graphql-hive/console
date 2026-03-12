@@ -242,3 +242,150 @@ Point your Hive Gateway or Apollo Router instance to the supergraph of the contr
 ```text filename="Example: Contract Supergraph Endpoint"
 https://cdn.graphql-hive.com/artifacts/v1/<target_id>/contracts/<contract_name>/supergraph
 ```
+
+## Understanding Tag Filtering Behavior
+
+When generating a contract schema, the composition filters schema elements based on the configured
+**included and excluded tags**. After filtering, the resulting schema must still be a **valid
+GraphQL schema**. If filtering produces an invalid schema (for example, a field referencing a
+removed type), the contract composition fails, and thus the schema check or published schema version
+becomes invalid.
+
+### Tag Filtering Rules
+
+Contract filtering operates on individual schema elements:
+
+- Object, interface, union, input, enum, and scalar types
+- Fields of object and interface types
+- Arguments
+- Enum values
+
+When an element is removed due to tag filtering, the following applies:
+
+- Fields referencing removed types must also be removed to maintain schema validity.
+- Failure to remove dependent fields will result in an invalid schema.
+- An invalid final schema will cause contract composition to fail with an error.
+
+### Examples
+
+#### Tag applied to both field and type
+
+```graphql
+type Query {
+  myFeature: Boolean
+  myNewFeature: MyNewFeatureResult @tag(name: "preview")
+}
+
+type MyNewFeatureResult @tag(name: "preview") {
+  value: String!
+}
+```
+
+Contract configuration:
+
+```
+excludeTags: ["preview"]
+```
+
+Resulting contract schema:
+
+```graphql
+type Query {
+  myFeature: Boolean
+}
+```
+
+Both the field and the type are removed because they are tagged.
+
+**Note**: A supergraph without any root field types is invalid.
+
+#### Tag applied only to the field
+
+```graphql
+type Query {
+  myFeature: Boolean
+  myNewFeature: MyNewFeatureResult @tag(name: "preview")
+}
+
+type MyNewFeatureResult {
+  value: String!
+}
+```
+
+Contract configuration:
+
+```
+excludeTags: ["preview"]
+```
+
+Resulting schema:
+
+```
+type Query {
+  myFeature: Boolean
+}
+type MyNewFeatureResult {
+  value: String!
+}
+```
+
+If **Remove unreachable types** is enabled, the type may be pruned because it is no longer
+referenced.
+
+#### Tag applied only on type
+
+```graphql
+type Query {
+  myFeature: Boolean
+  myNewFeature: MyNewFeatureResult
+}
+
+type MyNewFeatureResult @tag(name: "preview") {
+  value: String!
+}
+```
+
+Contract configuration:
+
+```
+excludeTags: ["preview"]
+```
+
+Filtering removes the type:
+
+```graphql
+type MyNewFeatureResult
+```
+
+But the Query field still references it.
+
+This produces an **invalid schema**, so contract composition fails with an error.
+
+You must update the schema to ensure consistency, for example:
+
+```graphql
+type Query {
+  myFeature: Boolean
+  myNewFeature: MyNewFeatureResult @tag(name: "preview")
+}
+```
+
+#### Recommended Tagging Strategy
+
+To avoid composition errors:
+
+1. Tag both the type and all fields that return it.
+2. Treat tags as feature boundaries rather than isolated annotations.
+3. Use Remove unreachable types to automatically prune leftover types.
+4. Prefer **include** over **exclude** filters
+
+```graphql
+type Query {
+  myFeature: Boolean @tag(name: "stable")
+  myNewFeature: MyNewFeatureResult
+}
+
+type MyNewFeatureResult {
+  value: String!
+}
+```

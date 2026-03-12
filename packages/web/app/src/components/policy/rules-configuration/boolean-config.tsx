@@ -1,5 +1,6 @@
 import { ReactElement, useEffect } from 'react';
-import { Checkbox, Tooltip } from '@/components/v2';
+import { Checkbox } from '@/components/base/checkbox/checkbox';
+import { Tooltip } from '@/components/v2';
 import { useConfigurationHelper } from '../form-helper';
 import { PolicyConfigBox } from '../policy-config-box';
 

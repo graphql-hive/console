@@ -145,6 +145,21 @@ export const enum PreflightWorkerState {
   ready,
 }
 
+function PromiseWithResolvers<T>() {
+  let resolve: (value: T) => void;
+  let reject: (error: any) => void;
+  const promise = new Promise<T>((res, rej) => {
+    resolve = res;
+    reject = rej;
+  });
+
+  return {
+    promise,
+    reject: reject!,
+    resolve: resolve!,
+  };
+}
+
 export function usePreflight(args: {
   target: FragmentType<typeof PreflightScript_TargetFragment> | null;
 }) {
@@ -233,7 +248,7 @@ export function usePreflight(args: {
       );
 
       let isFinished = false;
-      const isFinishedD = Promise.withResolvers<void>();
+      const isFinishedD = PromiseWithResolvers<void>();
       const openedPromptIds = new Set<number>();
 
       // eslint-disable-next-line no-inner-declarations
@@ -644,7 +659,11 @@ function PreflightModal({
     envEditorRef.current = editor;
   }, []);
 
-  const handleMonacoEditorBeforeMount = useCallback((monaco: Monaco) => {
+  const handleMonacoEditorBeforeMount = useCallback(async (monaco: Monaco) => {
+    if (monaco.languages.typescript) {
+      await import('monaco-editor/esm/vs/language/typescript/monaco.contribution');
+    }
+
     // Add custom typings for globalThis
     monaco.languages.typescript.javascriptDefaults.addExtraLib(
       `

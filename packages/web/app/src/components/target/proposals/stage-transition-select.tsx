@@ -57,18 +57,19 @@ const STAGE_TITLES = {
 export function StageTransitionSelect(props: {
   stage: SchemaProposalStage;
   onSelect: (stage: SchemaProposalStage) => void | Promise<void>;
+  className?: string;
 }) {
   const [open, setOpen] = useState(false);
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
         <Button
-          variant="link"
+          variant="outline"
           role="combobox"
-          className="flex min-w-[200px] max-w-[250px] justify-between truncate"
+          className={cn('flex min-w-[200px] justify-between truncate', props.className)}
           aria-expanded={open}
         >
-          <span className="truncate">{STAGE_TITLES[props.stage]}</span>
+          <div className="truncate">{STAGE_TITLES[props.stage]}</div>
           <ChevronsUpDown className="ml-2 size-4 shrink-0 opacity-50" />
         </Button>
       </PopoverTrigger>

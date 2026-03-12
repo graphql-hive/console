@@ -41,7 +41,7 @@ The idea of persisted documents is quite simple, however maintaining them can be
 especially if you have many apps with different versions that are all active at the same time.
 
 All the GraphQL API replicas must have access to the persisted documents, to ensure the requested
-operation hashes can be resolved to actualy GraphQL documents.
+operation hashes can be resolved to actual GraphQL documents.
 
 Embedding them within the GraphQL API codebase is not a good idea, as it would require deploying a
 new version of the API every time a new app version is about to be deployed.

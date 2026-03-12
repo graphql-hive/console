@@ -221,8 +221,8 @@ export function useHive(clientOrOptions: HiveClient | HivePluginOptions): Plugin
               : undefined,
           });
       void hive.info();
-      const experimentalPersistedDocs = hive.experimental__persistedDocuments;
-      if (experimentalPersistedDocs) {
+      const persistedDocuments = hive.persistedDocuments;
+      if (persistedDocuments) {
         addPlugin(
           usePersistedOperations({
             extractPersistedOperationId(body, request) {
@@ -241,7 +241,7 @@ export function useHive(clientOrOptions: HiveClient | HivePluginOptions): Plugin
             async getPersistedOperation(key, _request, context) {
               let document: string | null;
               try {
-                document = await experimentalPersistedDocs.resolve(key, {
+                document = await persistedDocuments.resolve(key, {
                   waitUntil: context.waitUntil,
                 });
               } catch (error) {
@@ -273,7 +273,7 @@ export function useHive(clientOrOptions: HiveClient | HivePluginOptions): Plugin
               return document;
             },
             allowArbitraryOperations(request) {
-              return experimentalPersistedDocs.allowArbitraryDocuments(request);
+              return persistedDocuments.allowArbitraryDocuments(request);
             },
             customErrors: {
               keyNotFound() {

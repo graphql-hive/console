@@ -117,7 +117,7 @@ export class HttpClient {
   }
 }
 
-class HiveHttpClientError extends Error {
+export class HiveHttpClientError extends Error {
   constructor(
     message: string,
     public code: string,

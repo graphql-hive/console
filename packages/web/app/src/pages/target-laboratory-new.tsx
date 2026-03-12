@@ -6,12 +6,31 @@ import { toast } from 'sonner';
 import { useMutation, useQuery } from 'urql';
 import { Page, TargetLayout } from '@/components/layouts/target';
 import { ConnectLabModal } from '@/components/target/laboratory/connect-lab-modal';
+import { useTheme } from '@/components/theme/theme-provider';
 import { Button } from '@/components/ui/button';
+import {
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import { DocsLink } from '@/components/ui/docs-note';
 import { Meta } from '@/components/ui/meta';
 import { Subtitle, Title } from '@/components/ui/page';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ToggleGroup, ToggleGroupItem } from '@/components/v2/toggle-group';
 import { graphql, useFragment } from '@/gql';
+import { TargetEnvPlugin } from '@/laboratory/plugins/target-env';
+import { useRedirect } from '@/lib/access/common';
+import { useLocalStorage, useToggle } from '@/lib/hooks';
+import { useCurrentOperation } from '@/lib/hooks/laboratory/use-current-operation';
+import { TargetLaboratoryPageQuery } from '@/lib/hooks/laboratory/use-operation-collections-plugin';
+import { useSyncOperationState } from '@/lib/hooks/laboratory/use-sync-operation-state';
+import { useResetState } from '@/lib/hooks/use-reset-state';
+import { cn } from '@/lib/utils';
 import {
   Laboratory,
   LaboratoryCollection,
@@ -22,24 +41,8 @@ import {
   LaboratoryPreflight,
   LaboratorySettings,
   LaboratoryTab,
-} from '@/laboratory';
-import { LaboratoryApi } from '@/laboratory/components/laboratory/context';
-import {
-  Dialog,
-  DialogClose,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/laboratory/components/ui/dialog';
-import { Tabs, TabsList, TabsTrigger } from '@/laboratory/components/ui/tabs';
-import { TargetEnvPlugin } from '@/laboratory/plugins/target-env';
-import { useRedirect } from '@/lib/access/common';
-import { useLocalStorage, useToggle } from '@/lib/hooks';
-import { TargetLaboratoryPageQuery } from '@/lib/hooks/laboratory/use-operation-collections-plugin';
-import { useResetState } from '@/lib/hooks/use-reset-state';
-import { cn } from '@/lib/utils';
+  LaboratoryTabOperation,
+} from '@graphql-hive/laboratory';
 import { Link as RouterLink } from '@tanstack/react-router';
 
 function useApiTabValueState(graphqlEndpointUrl: string | null) {
@@ -304,7 +307,7 @@ function useLaboratoryState(props: {
   projectSlug: string;
   targetSlug: string;
   defaultEndpoint: string | null;
-}): Partial<LaboratoryApi> & { fetching: boolean } {
+}) {
   const [{ data, fetching }] = useQuery({
     query: LaboratoryQuery,
     variables: {
@@ -467,12 +470,70 @@ function useLaboratoryState(props: {
     [mutateUpdatePreflight, props.targetSlug, props.organizationSlug, props.projectSlug],
   );
 
+  const currentOperation = useCurrentOperation({
+    organizationSlug: props.organizationSlug,
+    projectSlug: props.projectSlug,
+    targetSlug: props.targetSlug,
+  });
+
+  const { savedOperation } = useSyncOperationState({
+    organizationSlug: props.organizationSlug,
+    projectSlug: props.projectSlug,
+    targetSlug: props.targetSlug,
+  });
+
+  const defaultOperations = useMemo(() => {
+    if (currentOperation && savedOperation) {
+      return [
+        ...getLocalStorageState('operations', []),
+        {
+          id: currentOperation.id,
+          name: currentOperation.name,
+          query: savedOperation.query,
+          variables: savedOperation.variables ?? '{}',
+          headers: currentOperation.headers ?? '{}',
+          extensions: '{}',
+        } satisfies LaboratoryOperation,
+      ];
+    }
+
+    return getLocalStorageState('operations', []);
+  }, [currentOperation, savedOperation]);
+
+  const defaultTabs = useMemo(() => {
+    if (currentOperation && savedOperation) {
+      return [
+        ...getLocalStorageState('tabs', []),
+        {
+          id: currentOperation.id,
+          type: 'operation',
+          data: {
+            id: currentOperation.id,
+            type: 'operation',
+            data: {
+              id: currentOperation.id,
+              name: currentOperation.name,
+            },
+          } satisfies LaboratoryTabOperation,
+        },
+      ];
+    }
+
+    return getLocalStorageState('tabs', []);
+  }, [currentOperation, savedOperation]);
+
+  // useEffect(() => {
+  //   if (search.operation) {
+  //     window.history.pushState(null, '', `${location.pathname}`);
+  //   }
+  // }, [search.operation]);
+
   return {
     fetching,
     defaultCollections: collections,
-    defaultOperations: getLocalStorageState('operations', []),
+    defaultOperations,
     defaultHistory: getLocalStorageState('history', []),
-    defaultTabs: getLocalStorageState('tabs', []),
+    defaultTabs,
     defaultActiveTabId: getLocalStorageState('activeTabId', null),
     defaultSettings: getLocalStorageState('settings', {
       fetch: {
@@ -605,6 +666,8 @@ function LaboratoryPageContent(props: {
     entity: query.data?.target,
   });
 
+  const { resolvedTheme } = useTheme();
+
   const sdl = query.data?.target?.latestSchemaVersion?.sdl;
 
   const introspection = useMemo(() => {
@@ -652,7 +715,7 @@ function LaboratoryPageContent(props: {
                   </TabsTrigger>
                   <TabsTrigger value="hive-laboratory" className="px-2 py-0">
                     Hive Laboratory
-                    <div className="bg-neutral-2 size-2 rounded-full" />
+                    <div className="bg-accent ml-1 size-2 rounded-full" />
                   </TabsTrigger>
                 </TabsList>
               </Tabs>
@@ -734,6 +797,7 @@ function LaboratoryPageContent(props: {
           <Laboratory
             key={url}
             defaultEndpoint={url}
+            theme={resolvedTheme}
             defaultSchemaIntrospection={introspection}
             {...laboratoryState}
             plugins={[

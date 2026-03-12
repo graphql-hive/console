@@ -231,6 +231,9 @@ export class Proxy {
       replicas?: number;
       memory?: string;
       cpu?: string;
+      timeouts?: {
+        idleTimeout?: number;
+      };
     };
     tracing?: {
       collectorService: Output<k8s.core.v1.Service>;
@@ -301,6 +304,13 @@ export class Proxy {
                 customTags: [],
               }
             : undefined,
+        ...(options.envoy.timeouts?.idleTimeout
+          ? {
+              timeouts: {
+                'connection-idle-timeout': `${options.envoy.timeouts.idleTimeout}s`,
+              },
+            }
+          : {}),
       },
       // Needed because we override the `contour.image.repository` field.
       global: {

@@ -24,9 +24,17 @@ export const Target: Pick<
     });
   },
   appDeployments: async (target, args, { injector }) => {
+    const sort = args.sort
+      ? {
+          field: args.sort.field,
+          direction: args.sort.direction,
+        }
+      : null;
+
     return injector.get(AppDeploymentsManager).getPaginatedAppDeploymentsForTarget(target, {
       cursor: args.after ?? null,
       first: args.first ?? null,
+      sort,
     });
   },
   viewerCanViewAppDeployments: async (target, _arg, { injector }) => {

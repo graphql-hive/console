@@ -32,6 +32,7 @@ import {
   ChartTooltip,
   ChartTooltipContent,
 } from '@/components/ui/chart';
+import { CopyIconButton } from '@/components/ui/copy-icon-button';
 import { DateRangePicker, Preset, presetLast7Days } from '@/components/ui/date-range-picker';
 import { Meta } from '@/components/ui/meta';
 import { SubPageLayoutHeader } from '@/components/ui/page-content-layout';
@@ -74,11 +75,7 @@ import {
   useReactTable,
 } from '@tanstack/react-table';
 import * as GraphQLSchema from '../gql/graphql';
-import {
-  CopyIconButton,
-  formatNanoseconds,
-  TraceSheet as ImportedTraceSheet,
-} from './target-trace';
+import { formatNanoseconds, TraceSheet as ImportedTraceSheet } from './target-trace';
 import { DurationFilter, MultiInputFilter, MultiSelectFilter } from './traces/target-traces-filter';
 
 const chartConfig = {
