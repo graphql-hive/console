@@ -1,5 +1,14 @@
 # hive
 
+## 9.7.1
+
+### Patch Changes
+
+- [#7828](https://github.com/graphql-hive/console/pull/7828)
+  [`1b31761`](https://github.com/graphql-hive/console/commit/1b31761cc3f94693ad74498f70cf89faff373b2f)
+  Thanks [@jdolle](https://github.com/jdolle)! - Adjust app deployment schema check to perform
+  database queries in parallel
+
 ## 9.7.0
 
 ### Minor Changes
