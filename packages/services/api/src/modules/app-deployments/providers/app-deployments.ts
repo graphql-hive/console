@@ -1711,7 +1711,6 @@ export class AppDeployments {
     schemaCoordinates: Array<string>;
     excludedAppDeploymentNames: Array<string> | null;
   }) {
-    // We fetch 11 app deployments per schema coordinate, so we can display 10+ if there is more than 10 affected app deployments.
     const affectedAppDeploymentsQuery = cSql`
       SELECT
         "coordinate"
