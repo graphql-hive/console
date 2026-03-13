@@ -209,17 +209,12 @@ export class CompositeModel {
       targetId: selector.targetId,
     });
 
-    const getAffectedAppDeployments: GetAffectedAppDeployments = (
-      schemaCoordinates,
-      firstDeployments,
-      firstOperations,
-    ) =>
+    const getAffectedAppDeployments: GetAffectedAppDeployments = schemaCoordinates =>
       this.appDeployments.getAffectedAppDeploymentsBySchemaCoordinates({
         targetId: selector.targetId,
         schemaCoordinates,
-        firstDeployments,
-        firstOperations,
-        excludedAppDeploymentNames: conditionalBreakingChangeDiffConfig?.excludedAppDeploymentNames,
+        excludedAppDeploymentNames:
+          conditionalBreakingChangeDiffConfig?.excludedAppDeploymentNames ?? null,
       });
 
     const contractChecks = await this.getContractChecks({
@@ -450,17 +445,12 @@ export class CompositeModel {
       targetId: target.id,
     });
 
-    const getAffectedAppDeploymentsForPublish: GetAffectedAppDeployments = (
-      schemaCoordinates,
-      firstDeployments,
-      firstOperations,
-    ) =>
+    const getAffectedAppDeploymentsForPublish: GetAffectedAppDeployments = schemaCoordinates =>
       this.appDeployments.getAffectedAppDeploymentsBySchemaCoordinates({
         targetId: target.id,
         schemaCoordinates,
-        firstDeployments,
-        firstOperations,
-        excludedAppDeploymentNames: conditionalBreakingChangeDiffConfig?.excludedAppDeploymentNames,
+        excludedAppDeploymentNames:
+          conditionalBreakingChangeDiffConfig?.excludedAppDeploymentNames ?? null,
       });
 
     const diffCheck = await this.checks.diff({
@@ -602,17 +592,12 @@ export class CompositeModel {
       targetId: selector.target,
     });
 
-    const getAffectedAppDeploymentsForDelete: GetAffectedAppDeployments = (
-      schemaCoordinates,
-      firstDeployments,
-      firstOperations,
-    ) =>
+    const getAffectedAppDeploymentsForDelete: GetAffectedAppDeployments = schemaCoordinates =>
       this.appDeployments.getAffectedAppDeploymentsBySchemaCoordinates({
         targetId: selector.target,
         schemaCoordinates,
-        firstDeployments,
-        firstOperations,
-        excludedAppDeploymentNames: conditionalBreakingChangeDiffConfig?.excludedAppDeploymentNames,
+        excludedAppDeploymentNames:
+          conditionalBreakingChangeDiffConfig?.excludedAppDeploymentNames ?? null,
       });
 
     const diffCheck = await this.checks.diff({

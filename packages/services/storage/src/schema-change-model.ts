@@ -1267,6 +1267,25 @@ function isInputFieldAddedChange(change: Change): change is z.TypeOf<typeof Inpu
   return change.type === 'INPUT_FIELD_ADDED';
 }
 
+const AffectedAppDeploymentModel = z.object({
+  id: z.string(),
+  name: z.string(),
+  version: z.string(),
+  createdAt: z.string().nullable().optional(),
+  activatedAt: z.string().nullable().optional(),
+  retiredAt: z.string().nullable().optional(),
+  affectedOperations: z.array(
+    z.object({
+      hash: z.string(),
+      name: z.string().nullable(),
+    }),
+  ),
+});
+
+const AffectedAppDeploymentsModel = z.array(AffectedAppDeploymentModel);
+
+export type AffectedAppDeployments = z.TypeOf<typeof AffectedAppDeploymentsModel>;
+
 export const HiveSchemaChangeModel = z
   .intersection(
     SchemaChangeModel,
@@ -1298,24 +1317,7 @@ export const HiveSchemaChangeModel = z
         .optional()
         .transform(value => value ?? null),
       /** App deployments affected by this breaking change */
-      affectedAppDeployments: z
-        .array(
-          z.object({
-            id: z.string(),
-            name: z.string(),
-            version: z.string(),
-            createdAt: z.string().nullable().optional(),
-            activatedAt: z.string().nullable().optional(),
-            retiredAt: z.string().nullable().optional(),
-            affectedOperations: z.array(
-              z.object({
-                hash: z.string(),
-                name: z.string().nullable(),
-              }),
-            ),
-          }),
-        )
-        .nullable()
+      affectedAppDeployments: AffectedAppDeploymentsModel.nullable()
         .optional()
         .transform(value => value ?? null),
     }),

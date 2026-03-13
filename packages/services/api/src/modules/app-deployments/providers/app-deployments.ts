@@ -4,6 +4,7 @@ import { sql, UniqueIntegrityConstraintViolationError, type DatabasePool } from 
 import { z } from 'zod';
 import { buildAppDeploymentIsEnabledKey } from '@hive/cdn-script/artifact-storage-reader';
 import {
+  AffectedAppDeployments,
   decodeAppDeploymentSortCursor,
   decodeCreatedAtAndUUIDIdBasedCursor,
   decodeHashBasedCursor,
@@ -1607,167 +1608,208 @@ export class AppDeployments {
     return counts;
   }
 
+  private async getAffectedAppDeploymentsMetadata(appDeploymentIds: Array<string>) {
+    return await this.pool
+      .any(
+        sql`
+          SELECT
+            "id"
+            , "name"
+            , "version"
+            , to_json("created_at") AS "createdAt",
+            , to_json("activated_at") AS "activatedAt"
+            , to_json("retired_at") AS "retiredAt"
+          FROM
+            "app_deployments"
+          WHERE "id" = ANY(${sql.array(appDeploymentIds, 'uuid')})
+        `,
+      )
+      .then(
+        z
+          .array(
+            z.object({
+              id: z.string().uuid(),
+              name: z.string(),
+              version: z.string(),
+              createdAt: z.string(),
+              activatedAt: z.string().nullable(),
+              retiredAt: z.string().nullable(),
+            }),
+          )
+          .transform(values => {
+            const map = new Map<string, (typeof values)[0]>();
+            for (const value of values) {
+              map.set(value.id, value);
+            }
+            return map;
+          }).parse,
+      );
+  }
+
+  private async getAffectedAppDeploymentsDocumentsSample(args: {
+    targetId: string;
+    schemaCoordinates: Array<string>;
+    appDeploymentIds: Array<string>;
+  }) {
+    const affectedAppDeploymentsQuery = cSql`
+      SELECT
+        "coordinate" AS "coordinate"
+        , "app_deployment_id" AS "appDeploymentId"
+        , "document_hash" AS "hash"
+        , "operation_name" AS "name"
+      FROM
+        "app_deployment_document_coordinates"
+      PREWHERE
+        "target_id" = ${args.targetId}
+        AND "coordinate" IN (${cSql.array(args.schemaCoordinates, 'String')})
+        AND "app_deployment_id" IN (${cSql.array(args.appDeploymentIds, 'String')})
+      GROUP BY
+        "coordinate"
+        , "app_deployment_id"
+      LIMIT 5 BY "coordinate", "app_deployment_id"
+    `;
+
+    const affectedAppDeploymentsResult = await this.clickhouse.query({
+      query: affectedAppDeploymentsQuery,
+      queryId: 'find_affected_app_deployments_operations_query',
+      timeout: 30_000,
+    });
+
+    return z
+      .array(
+        z.object({
+          coordinate: z.string(),
+          appDeploymentId: z.string(),
+          hash: z.string(),
+          name: z.string(),
+        }),
+      )
+      .transform(records => {
+        const map = new Map<string, Array<Pick<(typeof records)[number], 'hash' | 'name'>>>();
+
+        records.forEach(record => {
+          const key = `${record.coordinate}|${record.appDeploymentId}`;
+          let records = map.get(key);
+          if (!records) {
+            records = [];
+            map.set(key, records);
+          }
+
+          records.push({
+            hash: record.hash,
+            name: record.name,
+          });
+        });
+
+        return map;
+      })
+      .parse(affectedAppDeploymentsResult);
+  }
+
   async getAffectedAppDeploymentsBySchemaCoordinates(args: {
     targetId: string;
-    schemaCoordinates: string[];
-    firstDeployments?: number;
-    afterCursor?: string;
-    firstOperations?: number;
-    excludedAppDeploymentNames?: string[] | null;
+    schemaCoordinates: Array<string>;
+    excludedAppDeploymentNames: Array<string> | null;
   }) {
-    const emptyResult = {
-      deployments: [],
-      totalDeployments: 0,
-      pageInfo: {
-        hasNextPage: false,
-        hasPreviousPage: false,
-        startCursor: '',
-        endCursor: '',
-      },
-    };
+    // We fetch 11 app deployments per schema coordinate, so we can display 10+ if there is more than 10 affected app deployments.
+    const affectedAppDeploymentsQuery = cSql`
+      SELECT
+        "coordinate"
+        , "app_deployment_id" AS "appDeploymentId"
+        , COUNT(DISTINCT "document_hash") AS "affectedDocumentCount"
+      FROM
+        "app_deployment_document_coordinates"
+      PREWHERE
+        "target_id" = ${args.targetId}
+        AND "coordinate" IN (${cSql.array(args.schemaCoordinates, 'String')})
+        AND "app_deployment_id" IN (
+          SELECT
+            "app_deployment_id"
+          FROM
+            "app_deployments"
+          PREWHERE
+            target_id = ${args.targetId}
+            ${
+              args.excludedAppDeploymentNames?.length
+                ? cSql`AND "app_name" NOT IN (${cSql.array(args.excludedAppDeploymentNames, 'String')})`
+                : cSql``
+            }
+            GROUP BY
+              "app_deployment_id"
+            HAVING
+              min("is_active") = True
+          )
+      GROUP BY
+        "coordinate"
+        , "app_deployment_id"
+    `;
 
-    if (args.schemaCoordinates.length === 0) {
-      return emptyResult;
-    }
+    const affectedAppDeploymentsResult = await this.clickhouse.query({
+      query: affectedAppDeploymentsQuery,
+      queryId: 'find_affected_app_deployments_query',
+      timeout: 30_000,
+    });
 
-    this.logger.debug(
-      'Finding affected app deployments by schema coordinates (targetId=%s, coordinateCount=%d)',
-      args.targetId,
-      args.schemaCoordinates.length,
-    );
+    const data = z
+      .array(
+        z.object({
+          coordinate: z.string(),
+          appDeploymentId: z.string().uuid(),
+          affectedDocumentCount: z.coerce.number(),
+        }),
+      )
+      .parse(affectedAppDeploymentsResult.data);
 
-    // kick off requests
-    let [totalDeployments, affectedDeploymentIds, affectedDocuments, deploymentMetadata, counts] =
-      await Promise.all([
-        this.getTotalAffectedDeployments(args),
-        this.getPaginatedAffectedDeployments(args),
-        this.getAffectedDocuments(args),
-        this.getDeploymentMetadata(args),
-        this.getOperationCounts(args),
-      ]);
+    const uniqueAppDeploymentIds = Array.from(new Set(data.map(record => record.appDeploymentId)));
 
-    // Count total affected deployments
-    if (totalDeployments === 0) {
-      this.logger.debug(
-        'No affected operations found (targetId=%s, coordinateCount=%d)',
-        args.targetId,
-        args.schemaCoordinates.length,
-      );
-      return emptyResult;
-    }
+    const [metadata, affectedDocumentsSample] = await Promise.all([
+      this.getAffectedAppDeploymentsMetadata(uniqueAppDeploymentIds),
+      this.getAffectedAppDeploymentsDocumentsSample({
+        targetId: args.targetId,
+        schemaCoordinates: args.schemaCoordinates,
+        appDeploymentIds: uniqueAppDeploymentIds,
+      }),
+    ]);
 
-    // Get paginated affected deployments
-    const limit = args.firstDeployments;
-    // Check if there are more results (only if limit is set)
-    const hasNextPage = limit ? affectedDeploymentIds.length > limit : false;
-    if (hasNextPage && limit) {
-      affectedDeploymentIds = affectedDeploymentIds.slice(0, limit);
-    }
+    const affectedAppDeploymentsBySchemaCoordinate: AffectAppDeploymentsBySchemaCoordinate =
+      new Map();
 
-    if (affectedDeploymentIds.length === 0) {
-      return {
-        deployments: [],
-        totalDeployments,
-        pageInfo: {
-          hasNextPage: false,
-          hasPreviousPage: !!args.afterCursor,
-          startCursor: '',
-          endCursor: '',
-        },
-      };
-    }
-
-    // Build count map: deploymentId -> coordinate -> count
-    const countMap = new Map<string, Map<string, number>>();
-    for (const { appDeploymentId, coordinate, count } of counts) {
-      let coordMap = countMap.get(appDeploymentId);
-      if (!coordMap) {
-        coordMap = new Map();
-        countMap.set(appDeploymentId, coordMap);
+    data.forEach(row => {
+      const meta = metadata.get(row.appDeploymentId);
+      if (!meta) {
+        this.logger.debug(
+          'could not resolve pg app deployment for clickhouse record (appDeploymentId=%s)',
+          row.appDeploymentId,
+        );
+        return;
       }
-      coordMap.set(coordinate, count);
-    }
-
-    // Group results by deployment and coordinate
-    // deploymentId -> coordinate -> operations
-    const deploymentCoordinateOperations = new Map<
-      string,
-      Map<string, Array<{ hash: string; name: string | null }>>
-    >();
-
-    for (const doc of affectedDocuments) {
-      let coordinateMap = deploymentCoordinateOperations.get(doc.appDeploymentId);
-      if (!coordinateMap) {
-        coordinateMap = new Map();
-        deploymentCoordinateOperations.set(doc.appDeploymentId, coordinateMap);
+      if (meta.activatedAt === null) {
+        this.logger.debug(
+          'the pg record is not activated (appDeploymentId=%s)',
+          row.appDeploymentId,
+        );
+        return;
+      }
+      if (meta.retiredAt !== null) {
+        this.logger.debug('the pg record is retired (appDeploymentId=%s)', row.appDeploymentId);
+        return;
       }
 
-      for (const coordinate of doc.matchingCoordinates) {
-        const ops = coordinateMap.get(coordinate) ?? [];
-        ops.push({
-          hash: doc.hash,
-          name: doc.operationName,
-        });
-        coordinateMap.set(coordinate, ops);
+      let affectedAppDeployments = affectedAppDeploymentsBySchemaCoordinate.get(row.coordinate);
+      if (!affectedAppDeployments) {
+        affectedAppDeployments = [];
+        affectedAppDeploymentsBySchemaCoordinate.set(row.coordinate, affectedAppDeployments);
       }
-    }
 
-    const deployments = [];
-    for (const deploymentId of affectedDeploymentIds) {
-      const info = deploymentMetadata?.deploymentIdToInfo.get(deploymentId);
-      const coordinateMap = deploymentCoordinateOperations.get(deploymentId);
-      const coordCounts = countMap.get(deploymentId);
+      affectedAppDeployments.push({
+        ...meta,
+        activatedAt: meta.activatedAt,
+        affectedOperations:
+          affectedDocumentsSample.get(`${row.coordinate}|${row.appDeploymentId}`) ?? [],
+      });
+    });
 
-      if (info) {
-        const totalOperations = coordCounts
-          ? Array.from(coordCounts.values()).reduce((sum, count) => sum + count, 0)
-          : 0;
-        const operations: Record<string, Array<{ hash: string; name: string | null }>> = {};
-
-        if (coordinateMap) {
-          for (const [coordinate, ops] of coordinateMap) {
-            operations[coordinate] = ops;
-          }
-        }
-
-        const timestamps = deploymentMetadata?.deploymentTimestamps.get(deploymentId);
-        deployments.push({
-          appDeployment: {
-            id: deploymentId,
-            name: info.name,
-            version: info.version,
-            createdAt: timestamps?.createdAt ?? null,
-            activatedAt: timestamps?.activatedAt ?? null,
-            retiredAt: timestamps?.retiredAt ?? null,
-          },
-          affectedOperationsByCoordinate: operations,
-          countByCoordinate: coordCounts ? Object.fromEntries(coordCounts) : {},
-          totalOperationsByCoordinate: totalOperations,
-        });
-      }
-    }
-
-    this.logger.debug(
-      'Found %d affected app deployments (returning: %d) with %d total operations (targetId=%s)',
-      totalDeployments,
-      deployments.length,
-      affectedDocuments.length,
-      args.targetId,
-    );
-
-    // Sort deployments by ID to match the order from query
-    deployments.sort((a, b) => a.appDeployment.id.localeCompare(b.appDeployment.id));
-
-    return {
-      deployments,
-      totalDeployments,
-      pageInfo: {
-        hasNextPage,
-        hasPreviousPage: !!args.afterCursor,
-        startCursor: deployments[0]?.appDeployment.id ?? '',
-        endCursor: deployments[deployments.length - 1]?.appDeployment.id ?? '',
-      },
-    };
+    return affectedAppDeploymentsBySchemaCoordinate;
   }
 
   async getActiveAppDeployments(args: {
@@ -2156,3 +2198,5 @@ const GraphQLDocumentModel = z.object({
 export type AppDeploymentRecord = z.infer<typeof AppDeploymentModel>;
 
 export type GraphQLDocumentRecord = z.infer<typeof GraphQLDocumentModel>;
+
+export type AffectAppDeploymentsBySchemaCoordinate = Map<string, AffectedAppDeployments>;
