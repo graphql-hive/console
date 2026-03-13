@@ -1391,8 +1391,8 @@ export class AppDeployments {
         "app_deployment_document_coordinates"
       PREWHERE
         "target_id" = ${args.targetId}
-        AND "coordinate" IN (${cSql.array(args.schemaCoordinates, 'String')})
-        AND "app_deployment_id" IN (${cSql.array(args.appDeploymentIds, 'String')})
+        AND "coordinate" IN (${cSql.longArray(args.schemaCoordinates, 'String')})
+        AND "app_deployment_id" IN (${cSql.longArray(args.appDeploymentIds, 'String')})
       LIMIT 5 BY "coordinate", "app_deployment_id"
     `;
 
@@ -1447,7 +1447,7 @@ export class AppDeployments {
         "app_deployment_document_coordinates"
       PREWHERE
         "target_id" = ${args.targetId}
-        AND "coordinate" IN (${cSql.array(args.schemaCoordinates, 'String')})
+        AND "coordinate" IN (${cSql.longArray(args.schemaCoordinates, 'String')})
         AND "app_deployment_id" IN (
           SELECT
             "app_deployment_id"
