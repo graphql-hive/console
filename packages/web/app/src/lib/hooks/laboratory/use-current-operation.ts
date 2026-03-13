@@ -61,6 +61,7 @@ export function useCurrentOperationWithFetchingState(props: {
       id: operationIdFromSearch || '',
     },
     pause: !operationIdFromSearch,
+    requestPolicy: 'network-only',
   });
 
   return {

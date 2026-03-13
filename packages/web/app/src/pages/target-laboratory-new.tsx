@@ -28,7 +28,6 @@ import { useRedirect } from '@/lib/access/common';
 import { useLocalStorage, useToggle } from '@/lib/hooks';
 import { useCurrentOperationWithFetchingState } from '@/lib/hooks/laboratory/use-current-operation';
 import { TargetLaboratoryPageQuery } from '@/lib/hooks/laboratory/use-operation-collections-plugin';
-import { useSyncOperationState } from '@/lib/hooks/laboratory/use-sync-operation-state';
 import { useOperationFromQueryString } from '@/lib/hooks/laboratory/useOperationFromQueryString';
 import { useResetState } from '@/lib/hooks/use-reset-state';
 import { cn } from '@/lib/utils';
@@ -403,7 +402,7 @@ function useLaboratoryState(props: {
 
   const deleteOperation = useMemo(
     () =>
-      throttle((collection: LaboratoryCollection, operation: LaboratoryCollectionOperation) => {
+      throttle((_collection: LaboratoryCollection, operation: LaboratoryCollectionOperation) => {
         void mutateDelete({
           selector: {
             targetSlug: props.targetSlug,
@@ -478,21 +477,15 @@ function useLaboratoryState(props: {
       targetSlug: props.targetSlug,
     });
 
-  const { savedOperation } = useSyncOperationState({
-    organizationSlug: props.organizationSlug,
-    projectSlug: props.projectSlug,
-    targetSlug: props.targetSlug,
-  });
-
   const defaultOperations = useMemo(() => {
-    if (currentOperation && savedOperation) {
+    if (currentOperation) {
       return [
         ...getLocalStorageState('operations', []),
         {
           id: currentOperation.id,
           name: currentOperation.name,
-          query: savedOperation.query,
-          variables: savedOperation.variables ?? '{}',
+          query: currentOperation.query,
+          variables: currentOperation.variables ?? '{}',
           headers: currentOperation.headers ?? '{}',
           extensions: '{}',
         } satisfies LaboratoryOperation,
@@ -500,10 +493,10 @@ function useLaboratoryState(props: {
     }
 
     return getLocalStorageState('operations', []);
-  }, [currentOperation, savedOperation]);
+  }, [currentOperation]);
 
   const defaultTabs = useMemo(() => {
-    if (currentOperation && savedOperation) {
+    if (currentOperation) {
       return [
         ...getLocalStorageState('tabs', []),
         {
@@ -522,7 +515,7 @@ function useLaboratoryState(props: {
     }
 
     return getLocalStorageState('tabs', []);
-  }, [currentOperation, savedOperation]);
+  }, [currentOperation]);
 
   const operationIdFromSearch = useOperationFromQueryString();
 
