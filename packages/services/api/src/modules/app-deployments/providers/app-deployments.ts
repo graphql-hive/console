@@ -1663,9 +1663,6 @@ export class AppDeployments {
         "target_id" = ${args.targetId}
         AND "coordinate" IN (${cSql.array(args.schemaCoordinates, 'String')})
         AND "app_deployment_id" IN (${cSql.array(args.appDeploymentIds, 'String')})
-      GROUP BY
-        "coordinate"
-        , "app_deployment_id"
       LIMIT 5 BY "coordinate", "app_deployment_id"
     `;
 
@@ -1703,7 +1700,7 @@ export class AppDeployments {
 
         return map;
       })
-      .parse(affectedAppDeploymentsResult);
+      .parse(affectedAppDeploymentsResult.data);
   }
 
   async getAffectedAppDeploymentsBySchemaCoordinates(args: {
@@ -1749,6 +1746,14 @@ export class AppDeployments {
       timeout: 30_000,
     });
 
+    const affectedAppDeploymentsBySchemaCoordinate: AffectAppDeploymentsBySchemaCoordinate =
+      new Map();
+
+    if (affectedAppDeploymentsResult.rows === 0) {
+      console.log('AHAHAHAH', 'NONE FOUND');
+      return affectedAppDeploymentsBySchemaCoordinate;
+    }
+
     const data = z
       .array(
         z.object({
@@ -1769,9 +1774,6 @@ export class AppDeployments {
         appDeploymentIds: uniqueAppDeploymentIds,
       }),
     ]);
-
-    const affectedAppDeploymentsBySchemaCoordinate: AffectAppDeploymentsBySchemaCoordinate =
-      new Map();
 
     data.forEach(row => {
       const meta = metadata.get(row.appDeploymentId);
