@@ -1616,7 +1616,7 @@ export class AppDeployments {
             "id"
             , "name"
             , "version"
-            , to_json("created_at") AS "createdAt",
+            , to_json("created_at") AS "createdAt"
             , to_json("activated_at") AS "activatedAt"
             , to_json("retired_at") AS "retiredAt"
           FROM
