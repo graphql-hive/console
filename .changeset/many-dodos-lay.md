@@ -47,7 +47,7 @@ WHERE
   "target_id" = ''
 ;
 
-INSERT INTO app_deployment_document_coordinates (
+INSERT INTO "app_deployment_document_coordinates" (
   "target_id"
   , "coordinate"
   , "app_deployment_id"
