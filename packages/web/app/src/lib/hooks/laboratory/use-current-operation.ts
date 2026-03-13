@@ -58,7 +58,7 @@ export function useCurrentOperationWithFetchingState(props: {
         projectSlug: props.projectSlug,
         organizationSlug: props.organizationSlug,
       },
-      id: operationIdFromSearch!,
+      id: operationIdFromSearch || '',
     },
     pause: !operationIdFromSearch,
   });
