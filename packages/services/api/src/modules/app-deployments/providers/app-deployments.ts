@@ -1407,8 +1407,8 @@ export class AppDeployments {
         z.object({
           coordinate: z.string(),
           appDeploymentId: z.string(),
-          hash: z.string().transform(value => (value === '' ? null : value)),
-          name: z.string(),
+          hash: z.string(),
+          name: z.string().transform(value => (value === '' ? null : value)),
         }),
       )
       .transform(records => {
