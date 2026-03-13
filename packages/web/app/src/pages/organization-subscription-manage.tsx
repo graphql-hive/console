@@ -427,12 +427,11 @@ function SubscriptionSlider({
 
   const [inputValue, setInputValue] = useState(formatMillionOrBillion(operationsRateLimit));
   const [inputError, setInputError] = useState<string | null>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
 
   // Sync local state when the parent prop changes
   useEffect(() => {
-    // Only update if the input is not currently focused and there's no error,
-    // to avoid overwriting what the user is typing.
-    if (document.activeElement !== document.getElementById('operations-input')) {
+    if (document.activeElement !== inputRef.current) {
       setInputValue(formatMillionOrBillion(operationsRateLimit));
     }
   }, [operationsRateLimit]);
@@ -449,7 +448,7 @@ function SubscriptionSlider({
     const valueInMillions = parseToMillions(currentValue);
 
     if (valueInMillions !== null) {
-      setInputError(null); // Clear error on valid input
+      setInputError(null);
       onOperationsRateLimitChange([valueInMillions]);
     } else {
       setInputError('Invalid format (e.g., "100M", "1.5B").');
@@ -457,7 +456,6 @@ function SubscriptionSlider({
   };
 
   const handleBlur = () => {
-    // On blur, format the input to a clean value and clear errors
     setInputError(null);
     setInputValue(formatMillionOrBillion(operationsRateLimit));
   };
@@ -483,7 +481,7 @@ function SubscriptionSlider({
 
       <div className="ml-auto w-48">
         <Input
-          id="operations-input"
+          ref={inputRef}
           value={inputValue}
           className="w-30 ml-auto text-end"
           onChange={handleInputChange}
@@ -500,7 +498,6 @@ export function parseToMillions(input: string): number | null {
     return null;
   }
 
-  // Normalize input to be uppercase and trimmed
   const normalizedInput = input.trim().toUpperCase();
 
   // Regex to capture the number and an optional 'M' or 'B' suffix.
@@ -509,7 +506,6 @@ export function parseToMillions(input: string): number | null {
   const match = normalizedInput.match(regex);
 
   if (!match) {
-    // Return null if the input doesn't match the expected format
     return null;
   }
 
@@ -517,11 +513,9 @@ export function parseToMillions(input: string): number | null {
   const unit = match[2];
 
   if (unit === 'B') {
-    // If the unit is 'B', convert billions to millions (e.g., 1.001B * 1000 = 1001)
     return number * 1000;
   }
 
-  // If the unit is 'M' or no unit is provided, the number is already in millions
   return number;
 }
 
