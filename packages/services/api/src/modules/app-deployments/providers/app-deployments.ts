@@ -1750,7 +1750,6 @@ export class AppDeployments {
       new Map();
 
     if (affectedAppDeploymentsResult.rows === 0) {
-      console.log('AHAHAHAH', 'NONE FOUND');
       return affectedAppDeploymentsBySchemaCoordinate;
     }
 

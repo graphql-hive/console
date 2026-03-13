@@ -670,6 +670,8 @@ export class RegistryChecks {
       const breakingCoordinates = new Set<string>();
       for (const change of inspectorChanges) {
         if (change.criticality === CriticalityLevel.Breaking) {
+          // Initialize affectedAppDeployments to empty array for all breaking changes
+          change.affectedAppDeployments = [];
           const coordinate = change.breakingChangeSchemaCoordinate ?? change.path;
           if (coordinate) {
             breakingCoordinates.add(coordinate);
