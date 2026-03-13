@@ -1204,7 +1204,8 @@ export function searchSchemaPaths(
     depth: number;
   };
 
-  const stack: Frame[] = [];
+  const queue: Frame[] = [];
+  let queueIndex = 0;
 
   const operationTypes: [OperationTypeNode, SearchableFieldType | null][] = [
     [OperationTypeNode.QUERY, schema.getQueryType() ?? null],
@@ -1212,15 +1213,18 @@ export function searchSchemaPaths(
     [OperationTypeNode.SUBSCRIPTION, schema.getSubscriptionType() ?? null],
   ];
 
-  for (const [operation, rootType] of operationTypes.filter(v =>
-    options?.operationTypes?.includes(v[0]),
-  )) {
+  const filteredOperationTypes =
+    options?.operationTypes && options.operationTypes.length > 0
+      ? operationTypes.filter(([operation]) => options.operationTypes!.includes(operation))
+      : operationTypes;
+
+  for (const [operation, rootType] of filteredOperationTypes) {
     if (!rootType) {
       continue;
     }
 
     for (const rootField of Object.values(rootType.getFields())) {
-      stack.push({
+      queue.push({
         operation,
         field: rootField,
         pathSegments: [rootField.name],
@@ -1233,13 +1237,13 @@ export function searchSchemaPaths(
   let nodesVisited = 0;
   let hasMore = false;
 
-  while (stack.length > 0) {
+  while (queueIndex < queue.length) {
     if (nodesVisited >= maxNodes || matchedPaths.length >= maxMatches) {
       hasMore = true;
       break;
     }
 
-    const frame = stack.pop() as Frame;
+    const frame = queue[queueIndex++] as Frame;
     ++nodesVisited;
 
     const path = `${frame.operation}.${frame.pathSegments.join('.')}`;
@@ -1272,7 +1276,7 @@ export function searchSchemaPaths(
     const nextTrail = [...frame.typeTrail, namedType.name];
 
     for (const childField of Object.values(namedType.getFields())) {
-      stack.push({
+      queue.push({
         operation: frame.operation,
         field: childField,
         pathSegments: [...frame.pathSegments, childField.name],

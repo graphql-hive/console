@@ -653,6 +653,7 @@ export const BuilderSearchResults = (props: {
   operation: LaboratoryOperation | null;
   searchValue: string;
   schema: GraphQLSchema;
+  tab: OperationTypeNode;
 }) => {
   if (props.mode === BuilderSearchResultMode.LIST) {
     return props.matchedPaths.map(path => {
@@ -714,13 +715,13 @@ export const BuilderSearchResults = (props: {
   }
 
   return props.fields
-    .filter(field => props.visiblePaths?.has(`query.${field.name}`))
+    .filter(field => props.visiblePaths?.has(`${props.tab}.${field.name}`))
     .map(field => {
       return (
         <BuilderField
           key={field.name}
           field={field}
-          path={['query', field.name]}
+          path={[props.tab, field.name]}
           openPaths={props.openPaths}
           setOpenPaths={props.setOpenPaths}
           visiblePaths={props.visiblePaths}
@@ -742,7 +743,9 @@ export const Builder = (props: {
 
   const [endpointValue, setEndpointValue] = useState<string>(endpoint ?? '');
   const [searchValue, setSearchValue] = useState<string>('');
-  const deferredSearchValue = useDeferredValue(searchValue);
+  const deferredSearchValue = useDeferredValue(
+    searchValue[searchValue.length - 1] === '.' ? searchValue.slice(0, -1) : searchValue,
+  );
   const [openPaths, setOpenPaths] = useState<string[]>([]);
   const [tabValue, setTabValue] = useState<OperationTypeNode>(OperationTypeNode.QUERY);
 
@@ -785,11 +788,13 @@ export const Builder = (props: {
 
     return searchSchemaPaths(schema, deferredSearchValue, {
       maxDepth: 8,
-      maxMatches: 1000,
-      maxNodes: 100000,
+      maxMatches: 100,
+      maxNodes: 10000,
       operationTypes: [tabValue],
     });
   }, [schema, deferredSearchValue, isSearchActive, tabValue]);
+
+  console.log(searchResult);
 
   const visiblePaths = isSearchActive ? (searchResult?.visiblePaths ?? null) : null;
   const forcedOpenPaths =
@@ -910,20 +915,30 @@ export const Builder = (props: {
                       defaultValue={searchResultMode}
                       onValueChange={value => setSearchResultMode(value as BuilderSearchResultMode)}
                     >
-                      <ToggleGroupItem
-                        value={BuilderSearchResultMode.TREE}
-                        aria-label="Toggle tree"
-                        className="h-6 !rounded-l-sm p-2"
-                      >
-                        <ListTreeIcon className="size-4" />
-                      </ToggleGroupItem>
-                      <ToggleGroupItem
-                        value={BuilderSearchResultMode.LIST}
-                        aria-label="Toggle list"
-                        className="h-6 !rounded-r-sm p-2"
-                      >
-                        <TextAlignStartIcon className="size-4" />
-                      </ToggleGroupItem>
+                      <Tooltip>
+                        <TooltipTrigger>
+                          <ToggleGroupItem
+                            value={BuilderSearchResultMode.TREE}
+                            aria-label="Toggle tree"
+                            className="h-6 !rounded-l-sm !rounded-r-none border-r-0 p-2"
+                          >
+                            <ListTreeIcon className="size-4" />
+                          </ToggleGroupItem>
+                        </TooltipTrigger>
+                        <TooltipContent>Tree</TooltipContent>
+                      </Tooltip>
+                      <Tooltip>
+                        <TooltipTrigger>
+                          <ToggleGroupItem
+                            value={BuilderSearchResultMode.LIST}
+                            aria-label="Toggle list"
+                            className="h-6 !rounded-l-none !rounded-r-sm p-2"
+                          >
+                            <TextAlignStartIcon className="size-4" />
+                          </ToggleGroupItem>
+                        </TooltipTrigger>
+                        <TooltipContent>List</TooltipContent>
+                      </Tooltip>
                     </ToggleGroup>
                   </InputGroupAddon>
                 </InputGroup>
@@ -948,6 +963,7 @@ export const Builder = (props: {
                         operation={operation}
                         searchValue={deferredSearchValue}
                         schema={schema}
+                        tab={tabValue}
                       />
                     ) : (
                       queryFields.map(field => (
@@ -983,6 +999,7 @@ export const Builder = (props: {
                         operation={operation}
                         searchValue={deferredSearchValue}
                         schema={schema}
+                        tab={tabValue}
                       />
                     ) : (
                       mutationFields.map(field => (
@@ -1018,6 +1035,7 @@ export const Builder = (props: {
                         operation={operation}
                         searchValue={deferredSearchValue}
                         schema={schema}
+                        tab={tabValue}
                       />
                     ) : (
                       subscriptionFields.map(field => (
