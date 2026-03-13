@@ -150,6 +150,7 @@ export interface Storage {
 
   updateOrganizationRateLimits(
     _: OrganizationSelector & Pick<Organization, 'monthlyRateLimit'>,
+    action?: () => Promise<void>,
   ): Promise<Organization | never>;
 
   createOrganizationInvitation(

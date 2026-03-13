@@ -428,19 +428,22 @@ export class OrganizationManager {
       organizationId: input.organizationId,
     });
 
-    const result = await this.storage.updateOrganizationRateLimits({
-      monthlyRateLimit,
-      organizationId: organization.id,
-    });
-
-    if (this.billingProvider.enabled) {
-      await this.billingProvider.syncOrganization({
+    const result = await this.storage.updateOrganizationRateLimits(
+      {
+        monthlyRateLimit,
         organizationId: organization.id,
-        reserved: {
-          operations: Math.floor(input.monthlyRateLimit.operations / 1_000_000),
-        },
-      });
-    }
+      },
+      async () => {
+        if (this.billingProvider.enabled) {
+          await this.billingProvider.syncOrganization({
+            organizationId: organization.id,
+            reserved: {
+              operations: Math.floor(input.monthlyRateLimit.operations / 1_000_000),
+            },
+          });
+        }
+      },
+    );
 
     await this.auditLog.record({
       eventType: 'SUBSCRIPTION_UPDATED',
