@@ -26,10 +26,12 @@ export const action: Action = async exec => {
     AS
     SELECT
       "target_id"
-      , arrayJoin("schema_coordinates") AS "schema_coordinate"
+      , arrayJoin("schema_coordinates") AS "coordinate"
       , "app_deployment_id"
       , "document_hash"
+      , "operation_name"
     FROM "app_deployment_documents"
+    ;
     ;
   `);
 };
