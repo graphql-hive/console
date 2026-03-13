@@ -3,12 +3,12 @@ import type { Action } from '../clickhouse';
 export const action: Action = async exec => {
   await exec(`
     ALTER TABLE app_deployment_documents
-    ADD COLUMN target_id LowCardinality(String)
+    ADD COLUMN IF NOT EXISTS target_id LowCardinality(String)
     ;
   `);
 
   await exec(`
-    CREATE TABLE "app_deployment_document_coordinates" (
+    CREATE TABLE IF NOT EXISTS "app_deployment_document_coordinates" (
       "target_id" LowCardinality(String)
       , "coordinate" LowCardinality(String)
       , "app_deployment_id" LowCardinality(String)
@@ -21,7 +21,7 @@ export const action: Action = async exec => {
   `);
 
   await exec(`
-    CREATE MATERIALIZED VIEW "mv_documents_by_coordinate"
+    CREATE MATERIALIZED VIEW IF NOT EXISTS "mv_documents_by_coordinate"
     TO "app_deployment_document_coordinates"
     AS
     SELECT
@@ -31,7 +31,6 @@ export const action: Action = async exec => {
       , "document_hash"
       , "operation_name"
     FROM "app_deployment_documents"
-    ;
     ;
   `);
 };
