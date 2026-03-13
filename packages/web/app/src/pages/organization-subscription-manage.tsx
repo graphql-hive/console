@@ -6,6 +6,7 @@ import {
   ManagePaymentMethod,
 } from '@/components/organization/billing/BillingPaymentMethod';
 import { BillingPlanPicker } from '@/components/organization/billing/BillingPlanPicker';
+import { formatMillionOrBillion } from '@/components/organization/billing/helpers';
 import { PlanSummary } from '@/components/organization/billing/PlanSummary';
 import { RenderIfStripeAvailable } from '@/components/organization/stripe';
 import { Button } from '@/components/ui/button';
@@ -377,21 +378,14 @@ function Inner(props: {
                       Don't worry, you can always adjust it later.
                     </p>
                     <div className="mt-5 pl-2.5">
-                      <Slider
-                        min={1}
-                        max={300}
-                        disabled={isFetching}
-                        value={[operationsRateLimit]}
-                        onValueChange={onOperationsRateLimitChange}
+                      <SubscriptionSlider
+                        isFetching={isFetching}
+                        operationsRateLimit={operationsRateLimit}
+                        onOperationsRateLimitChange={onOperationsRateLimitChange}
                       />
-                      <div className="flex justify-between">
-                        <span>1M</span>
-                        <span>100M</span>
-                        <span>200M</span>
-                        <span>300M</span>
-                      </div>
                     </div>
                   </div>
+
                   {plan === organization.plan ? (
                     <div>
                       <Button
@@ -417,6 +411,118 @@ function Inner(props: {
       </Card>
     </div>
   );
+}
+
+function SubscriptionSlider({
+  operationsRateLimit,
+  onOperationsRateLimitChange,
+  isFetching,
+}: {
+  operationsRateLimit: number;
+  onOperationsRateLimitChange: (value: number[]) => void;
+  isFetching: boolean;
+}) {
+  const min = 1;
+  const max = 1500;
+
+  const [inputValue, setInputValue] = useState(formatMillionOrBillion(operationsRateLimit));
+  const [inputError, setInputError] = useState<string | null>(null);
+
+  // Sync local state when the parent prop changes
+  useEffect(() => {
+    // Only update if the input is not currently focused and there's no error,
+    // to avoid overwriting what the user is typing.
+    if (document.activeElement !== document.getElementById('operations-input')) {
+      setInputValue(formatMillionOrBillion(operationsRateLimit));
+    }
+  }, [operationsRateLimit]);
+
+  const handleInputChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const currentValue = event.target.value;
+    setInputValue(currentValue);
+
+    if (currentValue.trim() === '') {
+      setInputError('Value cannot be empty.');
+      return;
+    }
+
+    const valueInMillions = parseToMillions(currentValue);
+
+    if (valueInMillions !== null) {
+      setInputError(null); // Clear error on valid input
+      onOperationsRateLimitChange([valueInMillions]);
+    } else {
+      setInputError('Invalid format (e.g., "100M", "1.5B").');
+    }
+  };
+
+  const handleBlur = () => {
+    // On blur, format the input to a clean value and clear errors
+    setInputError(null);
+    setInputValue(formatMillionOrBillion(operationsRateLimit));
+  };
+
+  return (
+    <div className="space-y-2">
+      <Slider
+        min={min}
+        max={max}
+        step={1}
+        disabled={isFetching}
+        value={[Math.min(operationsRateLimit, max)]}
+        onValueChange={onOperationsRateLimitChange}
+      />
+
+      <span>{formatMillionOrBillion(operationsRateLimit)}</span>
+      <div className="flex justify-between">
+        <span>1M</span>
+        <span>500M</span>
+        <span>1B</span>
+        <span>Custom</span>
+      </div>
+
+      <div className="ml-auto w-48">
+        <Input
+          id="operations-input"
+          value={inputValue}
+          className="w-30 ml-auto text-end"
+          onChange={handleInputChange}
+          onBlur={handleBlur}
+        />
+        {inputError && <div className="mt-1 text-end text-sm text-red-500">{inputError}</div>}
+      </div>
+    </div>
+  );
+}
+
+export function parseToMillions(input: string): number | null {
+  if (typeof input !== 'string' || input.trim() === '') {
+    return null;
+  }
+
+  // Normalize input to be uppercase and trimmed
+  const normalizedInput = input.trim().toUpperCase();
+
+  // Regex to capture the number and an optional 'M' or 'B' suffix.
+  // Supports floating-point numbers for precision.
+  const regex = /^(\d*\.?\d+)\s*([MB])?$/;
+  const match = normalizedInput.match(regex);
+
+  if (!match) {
+    // Return null if the input doesn't match the expected format
+    return null;
+  }
+
+  const number = parseFloat(match[1]);
+  const unit = match[2];
+
+  if (unit === 'B') {
+    // If the unit is 'B', convert billions to millions (e.g., 1.001B * 1000 = 1001)
+    return number * 1000;
+  }
+
+  // If the unit is 'M' or no unit is provided, the number is already in millions
+  return number;
 }
 
 const ManageSubscriptionPageQuery = graphql(`
