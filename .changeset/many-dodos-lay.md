@@ -7,7 +7,7 @@ version.
 
 **Caution**: If you are relying on the app deployments feature for schema checks it is recommended to manually perform the following migration against your ClickHouse database after deploying this version to ensure data consistency.
 
-Substitute `$POSTGRES_DB_USER` and `$POSTGRES_DB_PASSWORD`, with the same credentials that execute these migration.
+Substitute `$CLICKHOUSE_DB_USER` and `$CLICKHOUSE_DB_PASSWORD`, with the same credentials that execute these migration.
 
 ```sql
 CREATE TABLE "tmp_app_deployments_backfill_target_id" (
@@ -32,8 +32,8 @@ CREATE DICTIONARY "tmp_app_deployments_target_dict" (
 PRIMARY KEY "app_deployment_id"
 SOURCE(CLICKHOUSE(
     TABLE "tmp_app_deployments_backfill_target_id"
-    USER '$POSTGRES_DB_USER'
-    PASSWORD '$POSTGRES_DB_PASSWORD'
+    USER '$CLICKHOUSE_DB_USER'
+    PASSWORD '$CLICKHOUSE_DB_PASSWORD'
 ))
 LAYOUT(HASHED())
 LIFETIME(3600)
