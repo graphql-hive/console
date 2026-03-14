@@ -37,6 +37,7 @@ overrides:
   qs@<6.14.2: ^6.14.2
   dompurify@3.x.x: ^3.3.2
   ajv@8.x.x: ^8.18.0
+  yauzl@2.x.x: ^3.2.1
 
 patchedDependencies:
   '@apollo/federation@0.38.1':
@@ -13280,9 +13281,6 @@ packages:
   fault@2.0.1:
     resolution: {integrity: sha512-WtySTkS4OKev5JtpHXnib4Gxiurzh5NCGvWrFaZ34m6JehfTUhKZvn9njTfw48t6JumVQOmrKqpmGcdwxnhqBQ==}
 
-  fd-slicer@1.1.0:
-    resolution: {integrity: sha512-cE1qsB/VwyQozZ+q1dGxR8LBYNZeofhEdUNGSMbQD3Gw2lAzX9Zb3uIU6Ebc/Fmyjo9AWWfnn0AUCHqtevs/8g==}
-
   fdir@6.4.2:
     resolution: {integrity: sha512-KnhMXsKSPZlAhp7+IjUkRZKPb4fUyccpDrdFXbi4QL1qkmFh9kVY09Yox+n4MaOb3lHZ1Tv829C3oaaXoMYPDQ==}
     peerDependencies:
@@ -19961,8 +19959,9 @@ packages:
     resolution: {integrity: sha512-7dSzzRQ++CKnNI/krKnYRV7JKKPUXMEh61soaHKg9mrWEhzFWhFnxPxGl+69cD1Ou63C13NUPCnmIcrvqCuM6w==}
     engines: {node: '>=12'}
 
-  yauzl@2.10.0:
-    resolution: {integrity: sha512-p4a9I6X6nu6IhoGmBqAcbJy1mlC4j27vEPZX9F4L4/vZT3Lyq1VkFHw/V/PUcB9Buo+DG3iHkT0x3Qya58zc3g==}
+  yauzl@3.2.1:
+    resolution: {integrity: sha512-k1isifdbpNSFEHFJ1ZY4YDewv0IH9FR61lDetaRMD3j2ae3bIXGV+7c+LHCqtQGofSd8PIyV4X6+dHMAnSr60A==}
+    engines: {node: '>=12'}
 
   ylru@1.4.0:
     resolution: {integrity: sha512-2OQsPNEmBCvXuFlIni/a+Rn+R2pHW9INm0BxXJ4hVDA8TirqMj+J/Rp9ItLatT/5pZqWwefVrTQcHpixsxnVlA==}
@@ -34721,7 +34720,7 @@ snapshots:
       tmp: 0.2.5
       tree-kill: 1.2.2
       untildify: 4.0.0
-      yauzl: 2.10.0
+      yauzl: 3.2.1
 
   cytoscape-cose-bilkent@4.1.0(cytoscape@3.33.1):
     dependencies:
@@ -36034,7 +36033,7 @@ snapshots:
     dependencies:
       debug: 4.4.3(supports-color@8.1.1)
       get-stream: 5.2.0
-      yauzl: 2.10.0
+      yauzl: 3.2.1
     optionalDependencies:
       '@types/yauzl': 2.10.3
     transitivePeerDependencies:
@@ -36158,10 +36157,6 @@ snapshots:
   fault@2.0.1:
     dependencies:
       format: 0.2.2
-
-  fd-slicer@1.1.0:
-    dependencies:
-      pend: 1.2.0
 
   fdir@6.4.2(picomatch@4.0.2):
     optionalDependencies:
@@ -44276,10 +44271,10 @@ snapshots:
       y18n: 5.0.8
       yargs-parser: 21.1.1
 
-  yauzl@2.10.0:
+  yauzl@3.2.1:
     dependencies:
       buffer-crc32: 0.2.13
-      fd-slicer: 1.1.0
+      pend: 1.2.0
 
   ylru@1.4.0: {}
 

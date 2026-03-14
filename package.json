@@ -129,6 +129,7 @@
     "overrides.qs@<6.14.2": "address https://github.com/graphql-hive/console/security/dependabot/499",
     "overrides.dompurify@3.x.x": "address https://github.com/graphql-hive/console/security/dependabot/536",
     "overrides.ajv@8.x.x": "address https://github.com/graphql-hive/console/security/dependabot/507",
+    "overrides.yauzl@2.x.x": "address https://github.com/graphql-hive/console/security/dependabot/542",
     "overrides": {
       "esbuild": "0.25.9",
       "csstype": "3.1.2",
@@ -161,7 +162,8 @@
       "minimatch@4.x.x": "^4.2.4",
       "qs@<6.14.2": "^6.14.2",
       "dompurify@3.x.x": "^3.3.2",
-      "ajv@8.x.x": "^8.18.0"
+      "ajv@8.x.x": "^8.18.0",
+      "yauzl@2.x.x": "^3.2.1"
     },
     "patchedDependencies": {
       "mjml-core@4.14.0": "patches/mjml-core@4.14.0.patch",
