@@ -322,8 +322,8 @@ importers:
   integration-tests:
     devDependencies:
       '@apollo/gateway':
-        specifier: 2.13.1
-        version: 2.13.1(encoding@0.1.13)(graphql@16.9.0)
+        specifier: 2.13.2
+        version: 2.13.2(encoding@0.1.13)(graphql@16.9.0)
       '@apollo/server':
         specifier: 5.4.0
         version: 5.4.0(graphql@16.9.0)
@@ -587,8 +587,8 @@ importers:
         specifier: 0.38.1
         version: 0.38.1(patch_hash=cb592719b35ac58f48c97dd557e19223b45b2c5544bec4f6f2e741c58b7f1de9)(encoding@0.1.13)(graphql@16.9.0)
       '@apollo/subgraph':
-        specifier: 2.13.1
-        version: 2.13.1(graphql@16.9.0)
+        specifier: 2.13.2
+        version: 2.13.2(graphql@16.9.0)
       '@types/async-retry':
         specifier: 1.4.8
         version: 1.4.8
@@ -629,8 +629,8 @@ importers:
   packages/libraries/external-composition:
     devDependencies:
       '@apollo/composition':
-        specifier: 2.10.4
-        version: 2.10.4(graphql@16.9.0)
+        specifier: 2.13.2
+        version: 2.13.2(graphql@16.9.0)
       '@types/node':
         specifier: 22.10.5
         version: 22.10.5
@@ -1363,8 +1363,8 @@ importers:
   packages/services/demo/federation:
     dependencies:
       '@apollo/subgraph':
-        specifier: 2.13.1
-        version: 2.13.1(graphql@16.9.0)
+        specifier: 2.13.2
+        version: 2.13.2(graphql@16.9.0)
       '@theguild/federation-composition':
         specifier: 0.21.3
         version: 0.21.3(graphql@16.9.0)
@@ -1382,11 +1382,11 @@ importers:
   packages/services/external-composition/federation-2:
     devDependencies:
       '@apollo/composition':
-        specifier: 2.10.4
-        version: 2.10.4(graphql@16.9.0)
+        specifier: 2.13.2
+        version: 2.13.2(graphql@16.9.0)
       '@apollo/federation-internals':
-        specifier: 2.9.3
-        version: 2.9.3(graphql@16.9.0)
+        specifier: 2.13.2
+        version: 2.13.2(graphql@16.9.0)
       '@graphql-hive/external-composition':
         specifier: workspace:*
         version: link:../../../libraries/external-composition/dist
@@ -2640,33 +2640,15 @@ packages:
     peerDependencies:
       graphql: 14.x || 15.x || 16.x
 
-  '@apollo/composition@2.10.4':
-    resolution: {integrity: sha512-hL3Pk8ecKe6fe6VO1dPHxAKTHsQ1uI8XcGks5GzEL4tpZS+gklpEqmEqpmNq9pBcAmXOlbCWJmGQPW5AMmM+zw==}
-    engines: {node: '>=14.15.0'}
-    peerDependencies:
-      graphql: ^16.5.0
-
-  '@apollo/composition@2.13.1':
-    resolution: {integrity: sha512-F7FUlCspipP4GgzB4sB+49IS7aztrT9SAstQhhjDJD1HFzfqg8coY9w0IwXEOlZaANnC1wUEED+AgI69IOsp/Q==}
+  '@apollo/composition@2.13.2':
+    resolution: {integrity: sha512-E44BbSKuKkDdsNBtQzSU12D9FdggiOZzNR1TghqPjSPEyB1fl9Io1m2gMP0nkwrJUaftsBSP6ZSFF3SgYJfTVg==}
     engines: {node: '>=18'}
     peerDependencies:
       graphql: ^16.5.0
 
-  '@apollo/federation-internals@2.10.4':
-    resolution: {integrity: sha512-JlnIZ/My6cBrwbBcfnExZdl8FPuVb60SUMh++hnEv5Ptk+ekHX1lOnQibco3kNlGM6cvMMZ6ycmgoWtQGI0hcw==}
-    engines: {node: '>=14.15.0'}
-    peerDependencies:
-      graphql: ^16.5.0
-
-  '@apollo/federation-internals@2.13.1':
-    resolution: {integrity: sha512-3w+pEjew3xDHTjM4INvBiy0+F/Puje7NSnH0S9WkFiiSjYDu9wwHW6yw5Frx8jN1T17lGOgAGbx1S+YTosCs6Q==}
+  '@apollo/federation-internals@2.13.2':
+    resolution: {integrity: sha512-m9waen8iZhrzn23qkemlytqBCPoKU6AMv5k3eFYnu6yzoJ5/ONh6SMGE7CvrWsECcpnOLYOinxD19igEHm6Azw==}
     engines: {node: '>=18'}
-    peerDependencies:
-      graphql: ^16.5.0
-
-  '@apollo/federation-internals@2.9.3':
-    resolution: {integrity: sha512-r50Ykc331CZUw4TxpcqprAZOlGkbzoHEiHObUqUhQopTx8i0aXNt+0pc3nzqUAoT9OD83yJqPJV1EiZF2vCupQ==}
-    engines: {node: '>=14.15.0'}
     peerDependencies:
       graphql: ^16.5.0
 
@@ -2677,8 +2659,8 @@ packages:
     peerDependencies:
       graphql: ^15.8.0 || ^16.0.0
 
-  '@apollo/gateway@2.13.1':
-    resolution: {integrity: sha512-8ZgU8kAJ8kuPmbzcIDlmBXqv3uX3r9x468G15r4UsItYCd5FTjPy/rvSCm7IBwaR9fv0R3/AIq6gFt0LNdiohg==}
+  '@apollo/gateway@2.13.2':
+    resolution: {integrity: sha512-IAX/u0b2QPbNmAtTGIfJZawjneCnOIcCvgRaEl7WdL8Ea6ck6S2ZAn1WaHlbHL3jFbpmBsZ4N39gFL7XwtzTqg==}
     engines: {node: '>=14.15.0'}
     peerDependencies:
       graphql: ^16.5.0
@@ -2691,20 +2673,14 @@ packages:
     resolution: {integrity: sha512-Lahx5zntHPZia35myYDBRuF58tlwPskwHc5CWBZC/4bMKB6siTBWwtMrkqXcsNwQiFSzSx5hKdRPUmemrEp3Gg==}
     hasBin: true
 
-  '@apollo/query-graphs@2.10.4':
-    resolution: {integrity: sha512-yuCxegbWpEi0axwORDit2csnmXSS39P0jTUgpV9iUeqrg5P7SZhgKmHneMjiXQY6b/lgkX5Ql8jmTbn55nFyfw==}
-    engines: {node: '>=14.15.0'}
-    peerDependencies:
-      graphql: ^16.5.0
-
-  '@apollo/query-graphs@2.13.1':
-    resolution: {integrity: sha512-YfcwdYMCXkq8ODgZ2vGY2d7m+5i9Sjl8UygsFkVzpJUfDJCnOA35bEcs4oRCdcz3Esc1+j8Z4ORhx+4UoPsk9Q==}
+  '@apollo/query-graphs@2.13.2':
+    resolution: {integrity: sha512-iXb7Ut72BxOIKYT1Xbmmt5jONa/kB0iuQyWKhKIJdwIw+p8VSwJvaSFtzjDZ7tYTo/QH9l8yGzAdliJVR+/7cA==}
     engines: {node: '>=18'}
     peerDependencies:
       graphql: ^16.5.0
 
-  '@apollo/query-planner@2.13.1':
-    resolution: {integrity: sha512-X+47w93wtR7iwY4uJ3RbN+0DYZrR8xqXYA0thKIYm5W8gqIMUeR4JRJBDvO7bqpxIN8Z+kJKmzHqkZk6HGVk7g==}
+  '@apollo/query-planner@2.13.2':
+    resolution: {integrity: sha512-XlIz+kQg9M6aZyj5E9t9KNuptJr+uHcWdsTLq8SU1VzD//5c5qg9hUl8oz6uWGpff4rxBuSduPhuKyRguSOxIQ==}
     engines: {node: '>=14.15.0'}
     peerDependencies:
       graphql: ^16.5.0
@@ -2733,8 +2709,8 @@ packages:
     peerDependencies:
       graphql: ^15.8.0 || ^16.0.0
 
-  '@apollo/subgraph@2.13.1':
-    resolution: {integrity: sha512-SmFYNd/0uzVt9OyyofSMydgYpzDRPF2gyVY0a32xb2RTCtnNpGnCMaOd9kN9V5Tm31Zspcbqycj1l64zMu0egQ==}
+  '@apollo/subgraph@2.13.2':
+    resolution: {integrity: sha512-hNJv6kcGhtWdBfGWnSZwgfmSm4ZAJ3AoPmDFOXaloSE1wKmKz0NmPsef4nkC2/AUD9/FrQMKm5xzyBYTDrpNSw==}
     engines: {node: '>=14.15.0'}
     peerDependencies:
       graphql: ^16.5.0
@@ -11554,10 +11530,6 @@ packages:
     resolution: {integrity: sha512-Sp1ablJ0ivDkSzjcaJdxEunN5/XvksFJ2sMBFfq6x0ryhQV/2b/KwFe21cMpmHtPOSij8K99/wSfoEuTObmuMQ==}
     engines: {node: '>= 0.4'}
 
-  call-bind@1.0.7:
-    resolution: {integrity: sha512-GHTSNSYICQ7scH7sZ+M2rFopRoLh8t2bLSW6BbgrtLsahOIB5iyAVJf9GjWK3cYTDaMj4XdBpM1cA6pIS0Kv2w==}
-    engines: {node: '>= 0.4'}
-
   call-bind@1.0.8:
     resolution: {integrity: sha512-oKlSFMcMwpUg2ednkhQ454wfWiU/ul3CkJe/PEHcTKuiX6RpbehUiFMXu13HalGZxfUwCQzZG747YXBn1im9ww==}
     engines: {node: '>= 0.4'}
@@ -15435,10 +15407,6 @@ packages:
 
   lru-cache@11.0.2:
     resolution: {integrity: sha512-123qHRfJBmo2jXDbo/a5YOQrJoHF/GNQTLzQ5+IdK5pWpceK17yRc6ozlWd25FxvGKQbIUs91fDFkXmDHTKcyA==}
-    engines: {node: 20 || >=22}
-
-  lru-cache@11.1.0:
-    resolution: {integrity: sha512-QIXZUBJUx+2zHUdQujWejBkcD9+cs94tLn0+YL8UrCh+D5sCXZ4c7LaEH48pNwRY3MLDgqUFyhlCyjJPf1WP0A==}
     engines: {node: 20 || >=22}
 
   lru-cache@11.2.6:
@@ -20150,35 +20118,13 @@ snapshots:
     dependencies:
       graphql: 16.9.0
 
-  '@apollo/composition@2.10.4(graphql@16.9.0)':
+  '@apollo/composition@2.13.2(graphql@16.9.0)':
     dependencies:
-      '@apollo/federation-internals': 2.10.4(graphql@16.9.0)
-      '@apollo/query-graphs': 2.10.4(graphql@16.9.0)
+      '@apollo/federation-internals': 2.13.2(graphql@16.9.0)
+      '@apollo/query-graphs': 2.13.2(graphql@16.9.0)
       graphql: 16.9.0
 
-  '@apollo/composition@2.13.1(graphql@16.9.0)':
-    dependencies:
-      '@apollo/federation-internals': 2.13.1(graphql@16.9.0)
-      '@apollo/query-graphs': 2.13.1(graphql@16.9.0)
-      graphql: 16.9.0
-
-  '@apollo/federation-internals@2.10.4(graphql@16.9.0)':
-    dependencies:
-      '@types/uuid': 9.0.1
-      chalk: 4.1.2
-      graphql: 16.9.0
-      js-levenshtein: 1.1.6
-      uuid: 9.0.1
-
-  '@apollo/federation-internals@2.13.1(graphql@16.9.0)':
-    dependencies:
-      '@types/uuid': 9.0.1
-      chalk: 4.1.2
-      graphql: 16.9.0
-      js-levenshtein: 1.1.6
-      uuid: 9.0.1
-
-  '@apollo/federation-internals@2.9.3(graphql@16.9.0)':
+  '@apollo/federation-internals@2.13.2(graphql@16.9.0)':
     dependencies:
       '@types/uuid': 9.0.1
       chalk: 4.1.2
@@ -20195,11 +20141,11 @@ snapshots:
     transitivePeerDependencies:
       - encoding
 
-  '@apollo/gateway@2.13.1(encoding@0.1.13)(graphql@16.9.0)':
+  '@apollo/gateway@2.13.2(encoding@0.1.13)(graphql@16.9.0)':
     dependencies:
-      '@apollo/composition': 2.13.1(graphql@16.9.0)
-      '@apollo/federation-internals': 2.13.1(graphql@16.9.0)
-      '@apollo/query-planner': 2.13.1(graphql@16.9.0)
+      '@apollo/composition': 2.13.2(graphql@16.9.0)
+      '@apollo/federation-internals': 2.13.2(graphql@16.9.0)
+      '@apollo/query-planner': 2.13.2(graphql@16.9.0)
       '@apollo/server-gateway-interface': 1.1.1(graphql@16.9.0)
       '@apollo/usage-reporting-protobuf': 4.1.1
       '@apollo/utils.createhash': 2.0.2
@@ -20212,7 +20158,7 @@ snapshots:
       '@types/node-fetch': 2.6.4
       async-retry: 1.3.3
       graphql: 16.9.0
-      loglevel: 1.8.0
+      loglevel: 1.9.2
       make-fetch-happen: 15.0.4
       node-abort-controller: 3.1.1
       node-fetch: 2.6.12(encoding@0.1.13)
@@ -20251,26 +20197,18 @@ snapshots:
       '@types/long': 4.0.2
       long: 4.0.0
 
-  '@apollo/query-graphs@2.10.4(graphql@16.9.0)':
+  '@apollo/query-graphs@2.13.2(graphql@16.9.0)':
     dependencies:
-      '@apollo/federation-internals': 2.10.4(graphql@16.9.0)
+      '@apollo/federation-internals': 2.13.2(graphql@16.9.0)
       deep-equal: 2.1.0
       graphql: 16.9.0
       ts-graphviz: 1.5.5
       uuid: 9.0.1
 
-  '@apollo/query-graphs@2.13.1(graphql@16.9.0)':
+  '@apollo/query-planner@2.13.2(graphql@16.9.0)':
     dependencies:
-      '@apollo/federation-internals': 2.13.1(graphql@16.9.0)
-      deep-equal: 2.1.0
-      graphql: 16.9.0
-      ts-graphviz: 1.5.5
-      uuid: 9.0.1
-
-  '@apollo/query-planner@2.13.1(graphql@16.9.0)':
-    dependencies:
-      '@apollo/federation-internals': 2.13.1(graphql@16.9.0)
-      '@apollo/query-graphs': 2.13.1(graphql@16.9.0)
+      '@apollo/federation-internals': 2.13.2(graphql@16.9.0)
+      '@apollo/query-graphs': 2.13.2(graphql@16.9.0)
       '@apollo/utils.keyvaluecache': 2.1.0
       chalk: 4.1.2
       deep-equal: 2.1.0
@@ -20333,10 +20271,10 @@ snapshots:
       '@apollo/cache-control-types': 1.0.3(graphql@16.9.0)
       graphql: 16.9.0
 
-  '@apollo/subgraph@2.13.1(graphql@16.9.0)':
+  '@apollo/subgraph@2.13.2(graphql@16.9.0)':
     dependencies:
       '@apollo/cache-control-types': 1.0.3(graphql@16.9.0)
-      '@apollo/federation-internals': 2.13.1(graphql@16.9.0)
+      '@apollo/federation-internals': 2.13.2(graphql@16.9.0)
       graphql: 16.9.0
 
   '@apollo/usage-reporting-protobuf@4.1.1':
@@ -33603,14 +33541,14 @@ snapshots:
 
   array-buffer-byte-length@1.0.0:
     dependencies:
-      call-bind: 1.0.7
+      call-bind: 1.0.8
       is-array-buffer: 3.0.2
 
   array-flatten@1.1.1: {}
 
   array-includes@3.1.7:
     dependencies:
-      call-bind: 1.0.7
+      call-bind: 1.0.8
       define-properties: 1.2.1
       es-abstract: 1.22.3
       get-intrinsic: 1.3.0
@@ -33622,7 +33560,7 @@ snapshots:
 
   array.prototype.findlastindex@1.2.3:
     dependencies:
-      call-bind: 1.0.7
+      call-bind: 1.0.8
       define-properties: 1.2.1
       es-abstract: 1.22.3
       es-shim-unscopables: 1.0.0
@@ -33630,21 +33568,21 @@ snapshots:
 
   array.prototype.flat@1.3.2:
     dependencies:
-      call-bind: 1.0.7
+      call-bind: 1.0.8
       define-properties: 1.2.1
       es-abstract: 1.22.3
       es-shim-unscopables: 1.0.0
 
   array.prototype.flatmap@1.3.2:
     dependencies:
-      call-bind: 1.0.7
+      call-bind: 1.0.8
       define-properties: 1.2.1
       es-abstract: 1.22.3
       es-shim-unscopables: 1.0.0
 
   array.prototype.tosorted@1.1.1:
     dependencies:
-      call-bind: 1.0.7
+      call-bind: 1.0.8
       define-properties: 1.2.1
       es-abstract: 1.22.3
       es-shim-unscopables: 1.0.0
@@ -33653,7 +33591,7 @@ snapshots:
   arraybuffer.prototype.slice@1.0.2:
     dependencies:
       array-buffer-byte-length: 1.0.0
-      call-bind: 1.0.7
+      call-bind: 1.0.8
       define-properties: 1.2.1
       es-abstract: 1.22.3
       get-intrinsic: 1.3.0
@@ -34052,7 +33990,7 @@ snapshots:
       '@npmcli/fs': 5.0.0
       fs-minipass: 3.0.0
       glob: 13.0.6
-      lru-cache: 11.1.0
+      lru-cache: 11.2.6
       minipass: 7.1.3
       minipass-collect: 2.0.1
       minipass-flush: 1.0.5
@@ -34108,14 +34046,6 @@ snapshots:
     dependencies:
       es-errors: 1.3.0
       function-bind: 1.1.2
-
-  call-bind@1.0.7:
-    dependencies:
-      es-define-property: 1.0.1
-      es-errors: 1.3.0
-      function-bind: 1.1.2
-      get-intrinsic: 1.3.0
-      set-function-length: 1.2.2
 
   call-bind@1.0.8:
     dependencies:
@@ -35068,7 +34998,7 @@ snapshots:
 
   deep-equal@2.1.0:
     dependencies:
-      call-bind: 1.0.7
+      call-bind: 1.0.8
       es-get-iterator: 1.1.2
       get-intrinsic: 1.3.0
       is-arguments: 1.1.1
@@ -35402,7 +35332,7 @@ snapshots:
       array-buffer-byte-length: 1.0.0
       arraybuffer.prototype.slice: 1.0.2
       available-typed-arrays: 1.0.5
-      call-bind: 1.0.7
+      call-bind: 1.0.8
       es-set-tostringtag: 2.1.0
       es-to-primitive: 1.2.1
       function.prototype.name: 1.1.6
@@ -35445,7 +35375,7 @@ snapshots:
 
   es-get-iterator@1.1.2:
     dependencies:
-      call-bind: 1.0.7
+      call-bind: 1.0.8
       get-intrinsic: 1.3.0
       has-symbols: 1.1.0
       is-arguments: 1.1.1
@@ -35457,7 +35387,7 @@ snapshots:
   es-iterator-helpers@1.0.15:
     dependencies:
       asynciterator.prototype: 1.0.0
-      call-bind: 1.0.7
+      call-bind: 1.0.8
       define-properties: 1.2.1
       es-abstract: 1.22.3
       es-set-tostringtag: 2.1.0
@@ -36508,7 +36438,7 @@ snapshots:
 
   function.prototype.name@1.1.6:
     dependencies:
-      call-bind: 1.0.7
+      call-bind: 1.0.8
       define-properties: 1.2.1
       es-abstract: 1.22.3
       functions-have-names: 1.2.3
@@ -36612,7 +36542,7 @@ snapshots:
 
   get-symbol-description@1.0.0:
     dependencies:
-      call-bind: 1.0.7
+      call-bind: 1.0.8
       get-intrinsic: 1.3.0
 
   get-tsconfig@4.7.5:
@@ -37770,12 +37700,12 @@ snapshots:
 
   is-arguments@1.1.1:
     dependencies:
-      call-bind: 1.0.7
+      call-bind: 1.0.8
       has-tostringtag: 1.0.2
 
   is-array-buffer@3.0.2:
     dependencies:
-      call-bind: 1.0.7
+      call-bind: 1.0.8
       get-intrinsic: 1.3.0
       is-typed-array: 1.1.12
 
@@ -37797,7 +37727,7 @@ snapshots:
 
   is-boolean-object@1.1.2:
     dependencies:
-      call-bind: 1.0.7
+      call-bind: 1.0.8
       has-tostringtag: 1.0.2
 
   is-buffer@1.1.6: {}
@@ -37838,7 +37768,7 @@ snapshots:
 
   is-finalizationregistry@1.0.2:
     dependencies:
-      call-bind: 1.0.7
+      call-bind: 1.0.8
 
   is-fullwidth-code-point@3.0.0: {}
 
@@ -37917,7 +37847,7 @@ snapshots:
 
   is-regex@1.1.4:
     dependencies:
-      call-bind: 1.0.7
+      call-bind: 1.0.8
       has-tostringtag: 1.0.2
 
   is-regexp@1.0.0: {}
@@ -37938,7 +37868,7 @@ snapshots:
 
   is-shared-array-buffer@1.0.2:
     dependencies:
-      call-bind: 1.0.7
+      call-bind: 1.0.8
 
   is-stream@2.0.1: {}
 
@@ -37978,11 +37908,11 @@ snapshots:
 
   is-weakref@1.0.2:
     dependencies:
-      call-bind: 1.0.7
+      call-bind: 1.0.8
 
   is-weakset@2.0.2:
     dependencies:
-      call-bind: 1.0.7
+      call-bind: 1.0.8
       get-intrinsic: 1.3.0
 
   is-what@3.14.1:
@@ -38691,8 +38621,6 @@ snapshots:
   lru-cache@10.2.0: {}
 
   lru-cache@11.0.2: {}
-
-  lru-cache@11.1.0: {}
 
   lru-cache@11.2.6: {}
 
@@ -40266,7 +40194,7 @@ snapshots:
 
   object-is@1.1.5:
     dependencies:
-      call-bind: 1.0.7
+      call-bind: 1.0.8
       define-properties: 1.2.1
 
   object-keys@1.1.1: {}
@@ -40275,26 +40203,26 @@ snapshots:
 
   object.assign@4.1.5:
     dependencies:
-      call-bind: 1.0.7
+      call-bind: 1.0.8
       define-properties: 1.2.1
       has-symbols: 1.1.0
       object-keys: 1.1.1
 
   object.entries@1.1.7:
     dependencies:
-      call-bind: 1.0.7
+      call-bind: 1.0.8
       define-properties: 1.2.1
       es-abstract: 1.22.3
 
   object.fromentries@2.0.7:
     dependencies:
-      call-bind: 1.0.7
+      call-bind: 1.0.8
       define-properties: 1.2.1
       es-abstract: 1.22.3
 
   object.groupby@1.0.1:
     dependencies:
-      call-bind: 1.0.7
+      call-bind: 1.0.8
       define-properties: 1.2.1
       es-abstract: 1.22.3
       get-intrinsic: 1.3.0
@@ -40306,7 +40234,7 @@ snapshots:
 
   object.values@1.1.7:
     dependencies:
-      call-bind: 1.0.7
+      call-bind: 1.0.8
       define-properties: 1.2.1
       es-abstract: 1.22.3
 
@@ -41649,7 +41577,7 @@ snapshots:
 
   reflect.getprototypeof@1.0.4:
     dependencies:
-      call-bind: 1.0.7
+      call-bind: 1.0.8
       define-properties: 1.2.1
       es-abstract: 1.22.3
       get-intrinsic: 1.3.0
@@ -41673,7 +41601,7 @@ snapshots:
 
   regexp.prototype.flags@1.5.1:
     dependencies:
-      call-bind: 1.0.7
+      call-bind: 1.0.8
       define-properties: 1.2.1
       set-function-name: 2.0.1
 
@@ -42086,7 +42014,7 @@ snapshots:
 
   safe-array-concat@1.0.1:
     dependencies:
-      call-bind: 1.0.7
+      call-bind: 1.0.8
       get-intrinsic: 1.3.0
       has-symbols: 1.1.0
       isarray: 2.0.5
@@ -42097,7 +42025,7 @@ snapshots:
 
   safe-regex-test@1.0.0:
     dependencies:
-      call-bind: 1.0.7
+      call-bind: 1.0.8
       get-intrinsic: 1.3.0
       is-regex: 1.1.4
 
@@ -42699,7 +42627,7 @@ snapshots:
 
   string.prototype.matchall@4.0.8:
     dependencies:
-      call-bind: 1.0.7
+      call-bind: 1.0.8
       define-properties: 1.2.1
       es-abstract: 1.22.3
       get-intrinsic: 1.3.0
@@ -42710,19 +42638,19 @@ snapshots:
 
   string.prototype.trim@1.2.8:
     dependencies:
-      call-bind: 1.0.7
+      call-bind: 1.0.8
       define-properties: 1.2.1
       es-abstract: 1.22.3
 
   string.prototype.trimend@1.0.7:
     dependencies:
-      call-bind: 1.0.7
+      call-bind: 1.0.8
       define-properties: 1.2.1
       es-abstract: 1.22.3
 
   string.prototype.trimstart@1.0.7:
     dependencies:
-      call-bind: 1.0.7
+      call-bind: 1.0.8
       define-properties: 1.2.1
       es-abstract: 1.22.3
 
@@ -43398,13 +43326,13 @@ snapshots:
 
   typed-array-buffer@1.0.0:
     dependencies:
-      call-bind: 1.0.7
+      call-bind: 1.0.8
       get-intrinsic: 1.3.0
       is-typed-array: 1.1.12
 
   typed-array-byte-length@1.0.0:
     dependencies:
-      call-bind: 1.0.7
+      call-bind: 1.0.8
       for-each: 0.3.3
       has-proto: 1.0.1
       is-typed-array: 1.1.12
@@ -43412,14 +43340,14 @@ snapshots:
   typed-array-byte-offset@1.0.0:
     dependencies:
       available-typed-arrays: 1.0.5
-      call-bind: 1.0.7
+      call-bind: 1.0.8
       for-each: 0.3.3
       has-proto: 1.0.1
       is-typed-array: 1.1.12
 
   typed-array-length@1.0.4:
     dependencies:
-      call-bind: 1.0.7
+      call-bind: 1.0.8
       for-each: 0.3.3
       is-typed-array: 1.1.12
 
@@ -43450,7 +43378,7 @@ snapshots:
 
   unbox-primitive@1.0.2:
     dependencies:
-      call-bind: 1.0.7
+      call-bind: 1.0.8
       has-bigints: 1.0.2
       has-symbols: 1.1.0
       which-boxed-primitive: 1.0.2
@@ -44196,7 +44124,7 @@ snapshots:
   which-typed-array@1.1.13:
     dependencies:
       available-typed-arrays: 1.0.5
-      call-bind: 1.0.7
+      call-bind: 1.0.8
       for-each: 0.3.3
       gopd: 1.2.0
       has-tostringtag: 1.0.2
