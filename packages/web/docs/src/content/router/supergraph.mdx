@@ -55,6 +55,19 @@ supergraph:
   poll_interval: 60s
 ```
 
+You can also provide fallback endpoints from `cdn-mirror-graphql-hive.com` in case of a possible
+unavailability of the main CDN endpoints, as shown below:
+
+```yaml {3-5} filename="router.config.yaml"
+supergraph:
+  source: hive
+  endpoint:
+    - https://cdn.graphql-hive.com/artifacts/v1/... # Use your Hive CDN endpoint here
+    - https://cdn-mirror.graphql-hive.com/artifacts/v1/... # Use your Hive CDN mirror endpoint here
+  key: hvABCD # Use your Hive CDN API key here
+  poll_interval: 60s
+```
+
 For additional configuration options, refer to the
 [`supergraph` API reference page](./configuration/supergraph).
 

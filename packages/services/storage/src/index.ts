@@ -1256,15 +1256,20 @@ export async function createStorage(
         `),
       );
     },
-    async updateOrganizationRateLimits({ monthlyRateLimit, organizationId: organization }) {
-      return transformOrganization(
-        await pool.one<Slonik<organizations>>(sql`/* updateOrganizationRateLimits */
-          UPDATE organizations
-          SET limit_operations_monthly = ${monthlyRateLimit.operations}, limit_retention_days = ${monthlyRateLimit.retentionInDays}
-          WHERE id = ${organization}
-          RETURNING *
-        `),
-      );
+    async updateOrganizationRateLimits(args, action) {
+      return await tracedTransaction('updateOrganizationRateLimits', pool, async t => {
+        const org = transformOrganization(
+          await t.one<Slonik<organizations>>(sql`/* updateOrganizationRateLimits */
+            UPDATE organizations
+            SET limit_operations_monthly = ${args.monthlyRateLimit.operations}, limit_retention_days = ${args.monthlyRateLimit.retentionInDays}
+            WHERE id = ${args.organizationId}
+            RETURNING *
+          `),
+        );
+        await action?.();
+
+        return org;
+      });
     },
     async createOrganizationInvitation(args) {
       return transformOrganizationInvitation(

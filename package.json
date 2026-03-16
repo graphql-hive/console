@@ -119,7 +119,6 @@
     "overrides.ip": "There is no update with fix for ip package, we use fork https://github.com/indutny/node-ip/issues/150#issuecomment-2325961380",
     "overrides.miniflare@3>undici": "To address CVE: https://github.com/graphql-hive/console/security/dependabot/439",
     "overrides.tar-fs": "https://github.com/graphql-hive/console/security/dependabot/290",
-    "overrides.nodemailer@^6.0.0": "supertokens-node override for vulnerable version",
     "overrides.@types/nodemailer>@aws-sdk/client-sesv2": "@types/nodemailer depends on some AWS stuff that causes the 3.x.x version to stick around. We don't need that dependency. (https://github.com/graphql-hive/console/security/dependabot/436)",
     "overrides.tar@6.x.x": "address https://github.com/graphql-hive/console/security/dependabot/443",
     "overrides.diff@<8.0.3": "address https://github.com/graphql-hive/console/security/dependabot/438",
@@ -130,6 +129,7 @@
     "overrides.qs@<6.14.2": "address https://github.com/graphql-hive/console/security/dependabot/499",
     "overrides.dompurify@3.x.x": "address https://github.com/graphql-hive/console/security/dependabot/536",
     "overrides.ajv@8.x.x": "address https://github.com/graphql-hive/console/security/dependabot/507",
+    "overrides.yauzl@2.x.x": "address https://github.com/graphql-hive/console/security/dependabot/542",
     "overrides": {
       "esbuild": "0.25.9",
       "csstype": "3.1.2",
@@ -148,7 +148,6 @@
       "@tailwindcss/node>tailwindcss": "4.1.18",
       "@tailwindcss/vite>tailwindcss": "4.1.18",
       "estree-util-value-to-estree": "^3.3.3",
-      "nodemailer@^6.0.0": "^7.0.11",
       "@types/nodemailer>@aws-sdk/client-sesv2": "-",
       "tar@6.x.x": "^7.5.11",
       "diff@<8.0.3": "^8.0.3",
@@ -163,7 +162,8 @@
       "minimatch@4.x.x": "^4.2.4",
       "qs@<6.14.2": "^6.14.2",
       "dompurify@3.x.x": "^3.3.2",
-      "ajv@8.x.x": "^8.18.0"
+      "ajv@8.x.x": "^8.18.0",
+      "yauzl@2.x.x": "^3.2.1"
     },
     "patchedDependencies": {
       "mjml-core@4.14.0": "patches/mjml-core@4.14.0.patch",

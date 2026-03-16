@@ -2,7 +2,7 @@ import { ReactElement, ReactNode } from 'react';
 import { Stat, Table, TBody, Td, TFoot, Th, THead, Tr } from '@/components/v2';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import { BillingPlanType } from '@/gql/graphql';
-import { CurrencyFormatter } from './helpers';
+import { CurrencyFormatter, formatMillionOrBillion } from './helpers';
 
 const PriceEstimationTable_PlanFragment = graphql(`
   fragment PriceEstimationTable_PlanFragment on BillingPlan {
@@ -30,9 +30,15 @@ function PriceEstimationTable(props: {
     <Table>
       <THead>
         <Th>Feature</Th>
-        <Th align="right">Units</Th>
-        <Th align="right">Unit Price</Th>
-        <Th align="right">Total</Th>
+        <Th align="right" className="min-w-[150px]">
+          Units
+        </Th>
+        <Th align="right" className="min-w-[150px]">
+          Unit Price
+        </Th>
+        <Th align="right" className="min-w-[150px]">
+          Total
+        </Th>
       </THead>
       <TBody>
         <Tr>
@@ -48,7 +54,7 @@ function PriceEstimationTable(props: {
             <Td>
               Included Operations <span className="text-neutral-10">(free)</span>
             </Td>
-            <Td align="right">{includedOperationsInMillions}M</Td>
+            <Td align="right">{formatMillionOrBillion(includedOperationsInMillions)}</Td>
             <Td align="right">{CurrencyFormatter.format(0)}</Td>
             <Td align="right">{CurrencyFormatter.format(0)}</Td>
           </Tr>
@@ -56,7 +62,7 @@ function PriceEstimationTable(props: {
         {plan.planType === BillingPlanType.Pro && (
           <Tr>
             <Td>Operations</Td>
-            <Td align="right">{additionalOperations}M</Td>
+            <Td align="right">{formatMillionOrBillion(additionalOperations)}</Td>
             <Td align="right">{CurrencyFormatter.format(plan.pricePerOperationsUnit ?? 0)}</Td>
             <Td align="right">{CurrencyFormatter.format(operationsTotal)}</Td>
           </Tr>
@@ -114,7 +120,7 @@ export function PlanSummary({
         <Stat>
           <Stat.Label>Operations Limit</Stat.Label>
           <Stat.HelpText>up to</Stat.HelpText>
-          <Stat.Number>{operationsRateLimit}M</Stat.Number>
+          <Stat.Number>{formatMillionOrBillion(operationsRateLimit)}</Stat.Number>
           <Stat.HelpText>per month</Stat.HelpText>
         </Stat>
         <Stat className="mb-8">

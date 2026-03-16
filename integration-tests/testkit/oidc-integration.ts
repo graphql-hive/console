@@ -314,7 +314,7 @@ export async function createOIDCIntegration(args: {
             .parse(rawBody);
           const cookies = setCookie.parse(result.headers.getSetCookie());
           return {
-            accessToken: cookies.find(c => c.name === 'sAccessToken')?.value ?? ('' as string),
+            accessToken: cookies.find(c => c.name === 'sAccessToken')?.value ?? '',
             user: {
               id: body.user.id,
               email: body.user.emails[0],

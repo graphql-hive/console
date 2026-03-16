@@ -12,7 +12,7 @@ import { Toaster } from '@/components/ui/toaster';
 import { frontendConfig } from '@/config/supertokens/frontend';
 import { env } from '@/env/frontend';
 import { urqlClient } from '@/lib/urql';
-import { configureScope, init } from '@sentry/react';
+import { getCurrentScope, init } from '@sentry/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import {
   createRootRoute,
@@ -102,6 +102,12 @@ if (env.sentry) {
     dist: 'webapp',
     release: env.release,
     environment: env.environment,
+    ignoreErrors: [
+      // Suppress specific monaco editor internal errors
+      "Failed to execute 'setStart' on 'Range'",
+      "Failed to execute 'setEnd' on 'Range'",
+      /TextModel got disposed/,
+    ],
   });
 }
 
@@ -114,9 +120,7 @@ const LazyTanStackRouterDevtools = lazy(() =>
 );
 
 function identifyOnSentry(userId: string, email: string): void {
-  configureScope(scope => {
-    scope.setUser({ id: userId, email });
-  });
+  getCurrentScope().setUser({ id: userId, email });
 }
 
 function RootComponent() {
