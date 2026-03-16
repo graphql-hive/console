@@ -107,6 +107,9 @@ if (env.sentry) {
       "Failed to execute 'setStart' on 'Range'",
       "Failed to execute 'setEnd' on 'Range'",
       /TextModel got disposed/,
+      // Stale chunk errors after deployments — handled by auto-reload in main.tsx
+      /Failed to fetch dynamically imported module/,
+      /Importing a module script failed/,
     ],
   });
 }

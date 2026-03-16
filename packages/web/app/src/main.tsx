@@ -13,4 +13,50 @@ declare module '@tanstack/react-router' {
 
 Error.stackTraceLimit = 15;
 
+// Clear the chunk-reload flag on successful app load. This ensures the
+// auto-reload mechanism works again after a subsequent deployment. Without
+// this, the flag from a previous reload would persist in sessionStorage
+// and block future auto-reloads.
+sessionStorage.removeItem('chunk-reload');
+
+// Shared reload function that uses sessionStorage to prevent infinite loops.
+// If we've already reloaded once this session (flag not yet cleared by a
+// successful boot), we let the error propagate instead of reloading again.
+function reloadOnChunkError() {
+  if (sessionStorage.getItem('chunk-reload')) return;
+  sessionStorage.setItem('chunk-reload', '1');
+  window.location.reload();
+}
+
+// After a deployment, JS chunk filenames change (content hashes). Users with a
+// stale browser tab still reference old chunks that no longer exist on the CDN.
+// Vite wraps dynamic imports with a preload helper that emits this event when
+// a chunk or its CSS/JS dependencies fail to load. We catch it here and reload
+// the page so the browser fetches fresh HTML with the correct chunk references.
+// See: https://vite.dev/guide/build.html#load-error-handling
+window.addEventListener('vite:preloadError', event => {
+  // Prevent the error from propagating — we're handling it with a reload.
+  event.preventDefault();
+  reloadOnChunkError();
+});
+
+// Not all dynamic imports go through Vite's preload wrapper. React.lazy() calls,
+// nested dynamic imports inside already-loaded chunks, and third-party code (e.g.
+// Monaco editor) do their own import() calls that Vite doesn't instrument. When
+// these fail, the browser rejects the import promise with no handler, surfacing
+// as an unhandled promise rejection. We check for the specific browser error
+// messages that indicate a stale chunk, and reload if matched.
+window.addEventListener('unhandledrejection', event => {
+  if (
+    // Chrome/Edge error message for failed dynamic import()
+    event.reason?.message?.includes('Failed to fetch dynamically imported module') ||
+    // Safari/Firefox error message for failed dynamic import()
+    event.reason?.message?.includes('Importing a module script failed')
+  ) {
+    // Suppress the rejection — a reload will resolve it.
+    event.preventDefault();
+    reloadOnChunkError();
+  }
+});
+
 ReactDOM.createRoot(document.getElementById('root')!).render(<RouterProvider router={router} />);

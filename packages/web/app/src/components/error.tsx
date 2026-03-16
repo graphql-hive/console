@@ -11,11 +11,39 @@ export const commonErrorStrings = {
   link: 'here',
 };
 
+/** Check if an error is a chunk/module load failure from a stale deployment. */
+function isChunkLoadError(error: unknown): boolean {
+  if (!(error instanceof Error)) return false;
+  return (
+    // Chrome/Edge: failed dynamic import()
+    error.message.includes('Failed to fetch dynamically imported module') ||
+    // Safari/Firefox: failed dynamic import()
+    error.message.includes('Importing a module script failed') ||
+    // Webpack-style chunk errors (unlikely with Vite, but defensive)
+    error.name === 'ChunkLoadError'
+  );
+}
+
 export function ErrorComponent(props: { error: any; message?: string }) {
   const router = useRouter();
   const session = useSessionContext();
 
   useEffect(() => {
+    // Use sessionStorage to track whether we've already tried reloading.
+    // Since this is a client-rendered SPA, a single reload fetches fresh HTML
+    // with all correct chunk references — one reload is enough for the entire
+    // app. The flag prevents an infinite reload loop if the error persists
+    // (e.g. the deployment itself is broken, or it's a network issue).
+    if (isChunkLoadError(props.error) && !sessionStorage.getItem('chunk-reload')) {
+      sessionStorage.setItem('chunk-reload', '1');
+      // Reload to fetch fresh HTML with correct chunk references.
+      window.location.reload();
+      return;
+    }
+    // If we already reloaded once and the error persists, the flag is
+    // cleared on successful app boot in main.tsx, so no need to remove
+    // it here. Fall through to show the error page + report to Sentry.
+
     captureException(props.error);
     void flush(2000);
   }, []);
