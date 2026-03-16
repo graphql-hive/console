@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { GraphQLSchema } from 'graphql';
 import { createClient } from 'graphql-ws';
 import { decompressFromEncodedURIComponent } from 'lz-string';
+import { v4 as uuidv4 } from 'uuid';
 import { LaboratoryPermission, LaboratoryPermissions } from '../components/laboratory/context';
 import type {
   LaboratoryCollectionOperation,
@@ -130,7 +131,7 @@ export const useOperations = (
 
   const addOperation = useCallback(
     (operation: Omit<LaboratoryOperation, 'id'> & { id?: string }) => {
-      const newOperation = { id: crypto.randomUUID(), ...operation };
+      const newOperation = { id: uuidv4(), ...operation };
       const newOperations = [...operations, newOperation];
       _setOperations(newOperations);
       props.onOperationsChange?.(newOperations);
