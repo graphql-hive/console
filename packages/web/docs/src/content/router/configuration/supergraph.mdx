@@ -39,7 +39,9 @@ supergraph:
 #### Multiple endpoints
 
 You can provide multiple endpoints as an array of strings. This allows the router to use fallback
-endpoints in case of a possible unavailability of the main CDN endpoint.
+endpoints in case of a possible unavailability of the main CDN endpoint. The order matters; the
+router will always try to fetch the supergraph from the first endpoint, and if it fails, it will
+move on to the next one.
 
 ```yaml {3} filename="router.config.yaml"
 supergraph:
