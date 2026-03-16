@@ -1,4 +1,5 @@
 import { useCallback, useState } from 'react';
+import { v4 as uuidv4 } from 'uuid';
 import type { LaboratoryEnv } from './env';
 import type { LaboratoryHistoryRequest } from './history';
 import type { LaboratoryOperation } from './operations';
@@ -114,7 +115,7 @@ export const useTabs = (props: {
 
   const addTab = useCallback(
     (tab: Omit<LaboratoryTab, 'id'>) => {
-      const newTab = { ...tab, id: crypto.randomUUID() } as LaboratoryTab;
+      const newTab = { ...tab, id: uuidv4() } as LaboratoryTab;
       const newTabs = [...(tabs ?? []), newTab] as LaboratoryTab[];
       _setTabs(newTabs);
       props.onTabsChange?.(newTabs);

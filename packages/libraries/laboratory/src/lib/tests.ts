@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { v4 as uuidv4 } from 'uuid';
 import type { LaboratoryOperation } from './operations';
 
 export interface LaboratoryTestTaskBase {
@@ -53,7 +54,7 @@ export const useTests = (props: {
     (item: Omit<LaboratoryTest, 'id' | 'createdAt' | 'tasks'>) => {
       const newItem: LaboratoryTest = {
         ...item,
-        id: crypto.randomUUID(),
+        id: uuidv4(),
         createdAt: new Date().toISOString(),
         tasks: [],
       } as LaboratoryTest;

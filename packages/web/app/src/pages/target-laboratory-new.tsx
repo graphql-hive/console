@@ -26,9 +26,9 @@ import { graphql, useFragment } from '@/gql';
 import { TargetEnvPlugin } from '@/laboratory/plugins/target-env';
 import { useRedirect } from '@/lib/access/common';
 import { useLocalStorage, useToggle } from '@/lib/hooks';
-import { useCurrentOperation } from '@/lib/hooks/laboratory/use-current-operation';
+import { useCurrentOperationWithFetchingState } from '@/lib/hooks/laboratory/use-current-operation';
 import { TargetLaboratoryPageQuery } from '@/lib/hooks/laboratory/use-operation-collections-plugin';
-import { useSyncOperationState } from '@/lib/hooks/laboratory/use-sync-operation-state';
+import { useOperationFromQueryString } from '@/lib/hooks/laboratory/useOperationFromQueryString';
 import { useResetState } from '@/lib/hooks/use-reset-state';
 import { cn } from '@/lib/utils';
 import {
@@ -308,7 +308,7 @@ function useLaboratoryState(props: {
   targetSlug: string;
   defaultEndpoint: string | null;
 }) {
-  const [{ data, fetching }] = useQuery({
+  const [{ data, fetching: dataFetching }] = useQuery({
     query: LaboratoryQuery,
     variables: {
       selector: {
@@ -402,7 +402,7 @@ function useLaboratoryState(props: {
 
   const deleteOperation = useMemo(
     () =>
-      throttle((collection: LaboratoryCollection, operation: LaboratoryCollectionOperation) => {
+      throttle((_collection: LaboratoryCollection, operation: LaboratoryCollectionOperation) => {
         void mutateDelete({
           selector: {
             targetSlug: props.targetSlug,
@@ -470,27 +470,22 @@ function useLaboratoryState(props: {
     [mutateUpdatePreflight, props.targetSlug, props.organizationSlug, props.projectSlug],
   );
 
-  const currentOperation = useCurrentOperation({
-    organizationSlug: props.organizationSlug,
-    projectSlug: props.projectSlug,
-    targetSlug: props.targetSlug,
-  });
-
-  const { savedOperation } = useSyncOperationState({
-    organizationSlug: props.organizationSlug,
-    projectSlug: props.projectSlug,
-    targetSlug: props.targetSlug,
-  });
+  const { currentOperation, fetching: currentOperationFetching } =
+    useCurrentOperationWithFetchingState({
+      organizationSlug: props.organizationSlug,
+      projectSlug: props.projectSlug,
+      targetSlug: props.targetSlug,
+    });
 
   const defaultOperations = useMemo(() => {
-    if (currentOperation && savedOperation) {
+    if (currentOperation) {
       return [
         ...getLocalStorageState('operations', []),
         {
           id: currentOperation.id,
           name: currentOperation.name,
-          query: savedOperation.query,
-          variables: savedOperation.variables ?? '{}',
+          query: currentOperation.query,
+          variables: currentOperation.variables ?? '{}',
           headers: currentOperation.headers ?? '{}',
           extensions: '{}',
         } satisfies LaboratoryOperation,
@@ -498,10 +493,10 @@ function useLaboratoryState(props: {
     }
 
     return getLocalStorageState('operations', []);
-  }, [currentOperation, savedOperation]);
+  }, [currentOperation]);
 
   const defaultTabs = useMemo(() => {
-    if (currentOperation && savedOperation) {
+    if (currentOperation) {
       return [
         ...getLocalStorageState('tabs', []),
         {
@@ -520,13 +515,17 @@ function useLaboratoryState(props: {
     }
 
     return getLocalStorageState('tabs', []);
-  }, [currentOperation, savedOperation]);
+  }, [currentOperation]);
 
-  // useEffect(() => {
-  //   if (search.operation) {
-  //     window.history.pushState(null, '', `${location.pathname}`);
-  //   }
-  // }, [search.operation]);
+  const operationIdFromSearch = useOperationFromQueryString();
+
+  const fetching = useMemo(() => {
+    if (operationIdFromSearch) {
+      return dataFetching || currentOperationFetching;
+    }
+
+    return dataFetching;
+  }, [dataFetching, currentOperationFetching, operationIdFromSearch]);
 
   return {
     fetching,

@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { format } from 'date-fns';
+import { v4 as uuidv4 } from 'uuid';
 import type { LaboratoryOperation } from './operations';
 import type { LaboratoryPreflightLog } from './preflight';
 
@@ -64,7 +65,7 @@ export const useHistory = (
     (item: Omit<LaboratoryHistory, 'id'>) => {
       const newItem: LaboratoryHistory = {
         ...item,
-        id: crypto.randomUUID(),
+        id: uuidv4(),
       } as LaboratoryHistory;
       const newHistory = [...history, newItem];
       setHistory(newHistory);

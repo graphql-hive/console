@@ -36,7 +36,9 @@ export const renderLaboratory = (el: HTMLElement) => {
   return ReactDOM.createRoot(el).render(
     <Laboratory
       theme="dark"
-      defaultEndpoint={getLocalStorage('endpoint') ?? null}
+      defaultEndpoint={
+        getLocalStorage('endpoint') ?? window.location.origin + window.location.pathname
+      }
       onEndpointChange={endpoint => {
         setLocalStorage('endpoint', endpoint ?? '');
       }}
