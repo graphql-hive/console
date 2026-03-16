@@ -38,6 +38,7 @@
     "zod": "^4.1.12"
   },
   "dependencies": {
+    "radix-ui": "^1.4.3",
     "uuid": "^13.0.0"
   },
   "devDependencies": {

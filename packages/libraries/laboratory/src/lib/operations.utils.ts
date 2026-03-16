@@ -1,9 +1,12 @@
 import {
+  GraphQLEnumType,
+  GraphQLInterfaceType,
   GraphQLList,
   GraphQLNonNull,
   GraphQLObjectType,
   GraphQLScalarType,
   GraphQLSchema,
+  GraphQLUnionType,
   Kind,
   OperationTypeNode,
   parse,
@@ -13,6 +16,7 @@ import {
   type DocumentNode,
   type FieldNode,
   type GraphQLField,
+  type GraphQLNamedType,
   type GraphQLOutputType,
   type GraphQLType,
   type OperationDefinitionNode,
@@ -910,8 +914,423 @@ export function getOpenPaths(query: string): string[] {
   return extractPaths(query).map(v => v.join('.'));
 }
 
+type SearchableFieldType = GraphQLObjectType | GraphQLInterfaceType;
+
+export type SchemaPathSearchEntry = {
+  path: string;
+  segmentsLower: string[];
+  pathLower: string;
+  pathWithoutOperationLower: string;
+};
+
+export type SchemaSearchResult = {
+  matchedPaths: string[];
+  visiblePaths: Set<string>;
+  forcedOpenPaths: Set<string>;
+  hasMore: boolean;
+  nodesVisited: number;
+};
+
+function unwrapNamedType(type: GraphQLOutputType): GraphQLNamedType {
+  if (type instanceof GraphQLNonNull || type instanceof GraphQLList) {
+    return unwrapNamedType(type.ofType);
+  }
+
+  return type;
+}
+
+function isSearchableFieldType(type: GraphQLNamedType): type is SearchableFieldType {
+  return type instanceof GraphQLObjectType || type instanceof GraphQLInterfaceType;
+}
+
+function isLeafFieldType(type: GraphQLNamedType): boolean {
+  return (
+    type instanceof GraphQLScalarType ||
+    type instanceof GraphQLEnumType ||
+    type instanceof GraphQLUnionType
+  );
+}
+
+function collectOperationPaths(
+  operation: OperationTypeNode,
+  rootType: SearchableFieldType,
+  result: string[][],
+  maxDepth: number,
+) {
+  const rootFields = Object.values(rootType.getFields());
+  const pathBuffer: string[] = [operation];
+
+  const walk = (field: GraphQLField<unknown, unknown, unknown>, seenTypes: Set<string>) => {
+    pathBuffer.push(field.name);
+    result.push([...pathBuffer]);
+
+    if (pathBuffer.length >= maxDepth + 1) {
+      pathBuffer.pop();
+      return;
+    }
+
+    const namedType = unwrapNamedType(field.type);
+
+    if (isLeafFieldType(namedType) || !isSearchableFieldType(namedType)) {
+      pathBuffer.pop();
+      return;
+    }
+
+    if (seenTypes.has(namedType.name)) {
+      pathBuffer.pop();
+      return;
+    }
+
+    const nextSeenTypes = new Set(seenTypes);
+    nextSeenTypes.add(namedType.name);
+
+    for (const childField of Object.values(namedType.getFields())) {
+      walk(childField, nextSeenTypes);
+    }
+
+    pathBuffer.pop();
+  };
+
+  for (const rootField of rootFields) {
+    walk(rootField, new Set([rootType.name]));
+  }
+}
+
+export function schemaToPaths(schema: GraphQLSchema, maxDepth = 8): string[][] {
+  const result: string[][] = [];
+
+  const operationTypes: [OperationTypeNode, SearchableFieldType | null][] = [
+    [OperationTypeNode.QUERY, schema.getQueryType() ?? null],
+    [OperationTypeNode.MUTATION, schema.getMutationType() ?? null],
+    [OperationTypeNode.SUBSCRIPTION, schema.getSubscriptionType() ?? null],
+  ];
+
+  for (const [operation, rootType] of operationTypes) {
+    if (!rootType) {
+      continue;
+    }
+
+    collectOperationPaths(operation, rootType, result, maxDepth);
+  }
+
+  return result;
+}
+
+export function pathsToStrings(paths: readonly string[][]): string[] {
+  return paths.map(path => path.join('.'));
+}
+
+export function createSchemaPathSearchIndex(paths: readonly string[]): SchemaPathSearchEntry[] {
+  return paths.map(path => {
+    const segments = path.split('.');
+    const segmentsLower = segments.map(segment => segment.toLowerCase());
+
+    return {
+      path,
+      segmentsLower,
+      pathLower: path.toLowerCase(),
+      pathWithoutOperationLower: segmentsLower.slice(1).join('.'),
+    };
+  });
+}
+
+function matchesDottedSearch(entry: SchemaPathSearchEntry, searchSegments: string[]): boolean {
+  const segmentsLower = entry.segmentsLower;
+  const maxStart = segmentsLower.length - searchSegments.length;
+
+  if (maxStart < 1) {
+    return false;
+  }
+
+  for (let start = 1; start <= maxStart; ++start) {
+    let matches = true;
+
+    for (let i = 0; i < searchSegments.length; ++i) {
+      if (!segmentsLower[start + i].includes(searchSegments[i])) {
+        matches = false;
+        break;
+      }
+    }
+
+    if (matches) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+export function searchSchemaPathIndex(
+  index: readonly SchemaPathSearchEntry[],
+  search: string,
+  limit = 1000,
+): string[] {
+  const normalizedSearch = search.trim().toLowerCase();
+
+  if (!normalizedSearch) {
+    return [];
+  }
+
+  const searchSegments = normalizedSearch.split('.').filter(Boolean);
+  const useSegmentSearch = searchSegments.length > 1;
+  const result: string[] = [];
+
+  for (const entry of index) {
+    const isMatch = useSegmentSearch
+      ? matchesDottedSearch(entry, searchSegments)
+      : entry.pathWithoutOperationLower.includes(normalizedSearch) ||
+        entry.pathLower.includes(normalizedSearch);
+
+    if (!isMatch) {
+      continue;
+    }
+
+    result.push(entry.path);
+
+    if (result.length >= limit) {
+      break;
+    }
+  }
+
+  return result;
+}
+
+export function buildVisiblePathSet(paths: readonly string[]): Set<string> {
+  const result = new Set<string>();
+
+  for (const path of paths) {
+    let dotIndex = path.indexOf('.');
+
+    while (dotIndex !== -1) {
+      result.add(path.slice(0, dotIndex));
+      dotIndex = path.indexOf('.', dotIndex + 1);
+    }
+
+    result.add(path);
+  }
+
+  return result;
+}
+
+export function buildForcedOpenPathSet(paths: readonly string[]): Set<string> {
+  const result = new Set<string>();
+
+  for (const path of paths) {
+    let dotIndex = path.indexOf('.');
+
+    while (dotIndex !== -1) {
+      result.add(path.slice(0, dotIndex));
+      dotIndex = path.indexOf('.', dotIndex + 1);
+    }
+  }
+
+  return result;
+}
+
+function matchSearchAgainstPath(
+  pathSegmentsLower: readonly string[],
+  normalizedSearch: string,
+  searchSegments: readonly string[],
+): boolean {
+  if (searchSegments.length > 1) {
+    const maxStart = pathSegmentsLower.length - searchSegments.length;
+
+    if (maxStart < 0) {
+      return false;
+    }
+
+    for (let start = 0; start <= maxStart; ++start) {
+      let matched = true;
+
+      for (let i = 0; i < searchSegments.length; ++i) {
+        if (!pathSegmentsLower[start + i].includes(searchSegments[i])) {
+          matched = false;
+          break;
+        }
+      }
+
+      if (matched) {
+        return true;
+      }
+    }
+
+    return false;
+  }
+
+  for (const segment of pathSegmentsLower) {
+    if (segment.includes(normalizedSearch)) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+export function searchSchemaPaths(
+  schema: GraphQLSchema,
+  search: string,
+  options?: {
+    maxDepth?: number;
+    maxMatches?: number;
+    maxNodes?: number;
+    operationTypes?: OperationTypeNode[];
+  },
+): SchemaSearchResult {
+  const normalizedSearch = search.trim().toLowerCase();
+
+  if (!normalizedSearch) {
+    return {
+      matchedPaths: [],
+      visiblePaths: new Set(),
+      forcedOpenPaths: new Set(),
+      hasMore: false,
+      nodesVisited: 0,
+    };
+  }
+
+  const maxDepth = options?.maxDepth ?? 8;
+  const maxMatches = options?.maxMatches ?? 500;
+  const maxNodes = options?.maxNodes ?? 40000;
+  const searchSegments = normalizedSearch.split('.').filter(Boolean);
+  const matchedPaths: string[] = [];
+  const visiblePaths = new Set<string>();
+  const forcedOpenPaths = new Set<string>();
+
+  type Frame = {
+    operation: OperationTypeNode;
+    field: GraphQLField<unknown, unknown, unknown>;
+    pathSegments: string[];
+    typeTrail: string[];
+    depth: number;
+  };
+
+  const queue: Frame[] = [];
+  let queueIndex = 0;
+
+  const operationTypes: [OperationTypeNode, SearchableFieldType | null][] = [
+    [OperationTypeNode.QUERY, schema.getQueryType() ?? null],
+    [OperationTypeNode.MUTATION, schema.getMutationType() ?? null],
+    [OperationTypeNode.SUBSCRIPTION, schema.getSubscriptionType() ?? null],
+  ];
+
+  const filteredOperationTypes =
+    options?.operationTypes && options.operationTypes.length > 0
+      ? operationTypes.filter(([operation]) => options.operationTypes!.includes(operation))
+      : operationTypes;
+
+  for (const [operation, rootType] of filteredOperationTypes) {
+    if (!rootType) {
+      continue;
+    }
+
+    for (const rootField of Object.values(rootType.getFields())) {
+      queue.push({
+        operation,
+        field: rootField,
+        pathSegments: [rootField.name],
+        typeTrail: [rootType.name],
+        depth: 1,
+      });
+    }
+  }
+
+  let nodesVisited = 0;
+  let hasMore = false;
+
+  while (queueIndex < queue.length) {
+    if (nodesVisited >= maxNodes || matchedPaths.length >= maxMatches) {
+      hasMore = true;
+      break;
+    }
+
+    const frame = queue[queueIndex++] as Frame;
+    ++nodesVisited;
+
+    const path = `${frame.operation}.${frame.pathSegments.join('.')}`;
+    const pathSegmentsLower = frame.pathSegments.map(segment => segment.toLowerCase());
+
+    if (matchSearchAgainstPath(pathSegmentsLower, normalizedSearch, searchSegments)) {
+      matchedPaths.push(path);
+      visiblePaths.add(path);
+
+      let dotIndex = path.indexOf('.');
+
+      while (dotIndex !== -1) {
+        const parentPath = path.slice(0, dotIndex);
+        visiblePaths.add(parentPath);
+        forcedOpenPaths.add(parentPath);
+        dotIndex = path.indexOf('.', dotIndex + 1);
+      }
+    }
+
+    if (frame.depth >= maxDepth) {
+      continue;
+    }
+
+    const namedType = unwrapNamedType(frame.field.type);
+
+    if (!isSearchableFieldType(namedType) || frame.typeTrail.includes(namedType.name)) {
+      continue;
+    }
+
+    const nextTrail = [...frame.typeTrail, namedType.name];
+
+    for (const childField of Object.values(namedType.getFields())) {
+      queue.push({
+        operation: frame.operation,
+        field: childField,
+        pathSegments: [...frame.pathSegments, childField.name],
+        typeTrail: nextTrail,
+        depth: frame.depth + 1,
+      });
+    }
+  }
+
+  return {
+    matchedPaths,
+    visiblePaths,
+    forcedOpenPaths,
+    hasMore,
+    nodesVisited,
+  };
+}
+
 export function handleTemplate(query: string, env: Record<string, any>) {
   return query.replace(/\{\{(.*?)\}\}/g, (match, p1) => {
     return get(env, p1) ?? match;
   });
+}
+
+export function getFieldByPath(path: string, schema: GraphQLSchema) {
+  const [operation, ...segments] = path.split('.') as [OperationTypeNode, ...string[]];
+
+  let type: Maybe<GraphQLType>;
+
+  if (operation === 'query') {
+    type = schema.getQueryType();
+  } else if (operation === 'mutation') {
+    type = schema.getMutationType();
+  } else if (operation === 'subscription') {
+    type = schema.getSubscriptionType();
+  }
+
+  if (!type) {
+    return null;
+  }
+
+  let field: Maybe<GraphQLField<unknown, unknown, unknown>>;
+
+  for (const segment of segments) {
+    if (type instanceof GraphQLObjectType) {
+      field = type.getFields()[segment] as GraphQLField<unknown, unknown, unknown>;
+
+      if (!field) {
+        return null;
+      }
+
+      type = field.type;
+    }
+  }
+
+  return field;
 }

@@ -82,7 +82,7 @@ export const useTests = (props: {
     (testId: string, task: Pick<LaboratoryTestTask, 'type' | 'data'>) => {
       const newTask: LaboratoryTestTask = {
         ...task,
-        id: crypto.randomUUID(),
+        id: uuidv4(),
         next: null,
       } as LaboratoryTestTask;
 
