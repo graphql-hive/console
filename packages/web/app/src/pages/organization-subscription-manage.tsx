@@ -483,7 +483,7 @@ function SubscriptionSlider({
         <Input
           ref={inputRef}
           value={inputValue}
-          className="w-30 ml-auto text-end"
+          className="ml-auto text-end"
           onChange={handleInputChange}
           onBlur={handleBlur}
         />
