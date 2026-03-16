@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { LogOutIcon } from 'lucide-react';
 import { useSessionContext } from 'supertokens-auth-react/recipe/session';
 import { Button } from '@/components/ui/button';
+import { isChunkLoadError } from '@/lib/chunk-error';
 import { captureException, flush } from '@sentry/react';
 import { useRouter } from '@tanstack/react-router';
 
@@ -10,19 +11,6 @@ export const commonErrorStrings = {
   track: 'To share additional details with us, contact our support team',
   link: 'here',
 };
-
-/** Check if an error is a chunk/module load failure from a stale deployment. */
-function isChunkLoadError(error: unknown): boolean {
-  if (!(error instanceof Error)) return false;
-  return (
-    // Chrome/Edge: failed dynamic import()
-    error.message.includes('Failed to fetch dynamically imported module') ||
-    // Safari/Firefox: failed dynamic import()
-    error.message.includes('Importing a module script failed') ||
-    // Webpack-style chunk errors (unlikely with Vite, but defensive)
-    error.name === 'ChunkLoadError'
-  );
-}
 
 export function ErrorComponent(props: { error: any; message?: string }) {
   const router = useRouter();
@@ -46,7 +34,7 @@ export function ErrorComponent(props: { error: any; message?: string }) {
 
     captureException(props.error);
     void flush(2000);
-  }, []);
+  }, [props.error]);
 
   const isLoggedIn = !session.loading && session.doesSessionExist;
 

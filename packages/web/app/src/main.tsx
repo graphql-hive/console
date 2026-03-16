@@ -2,6 +2,7 @@ import 'regenerator-runtime/runtime';
 import ReactDOM from 'react-dom/client';
 import { RouterProvider } from '@tanstack/react-router';
 import './index.css';
+import { isChunkLoadError } from './lib/chunk-error';
 import { router } from './router';
 
 // Register things for typesafety
@@ -47,12 +48,7 @@ window.addEventListener('vite:preloadError', event => {
 // as an unhandled promise rejection. We check for the specific browser error
 // messages that indicate a stale chunk, and reload if matched.
 window.addEventListener('unhandledrejection', event => {
-  if (
-    // Chrome/Edge error message for failed dynamic import()
-    event.reason?.message?.includes('Failed to fetch dynamically imported module') ||
-    // Safari/Firefox error message for failed dynamic import()
-    event.reason?.message?.includes('Importing a module script failed')
-  ) {
+  if (isChunkLoadError(event.reason)) {
     // Suppress the rejection — a reload will resolve it.
     event.preventDefault();
     reloadOnChunkError();
