@@ -2,7 +2,7 @@ import { useEffect } from 'react';
 import { LogOutIcon } from 'lucide-react';
 import { useSessionContext } from 'supertokens-auth-react/recipe/session';
 import { Button } from '@/components/ui/button';
-import { isChunkLoadError } from '@/lib/chunk-error';
+import { isChunkLoadError, reloadOnChunkError } from '@/lib/chunk-error';
 import { captureException, flush } from '@sentry/react';
 import { useRouter } from '@tanstack/react-router';
 
@@ -17,20 +17,13 @@ export function ErrorComponent(props: { error: any; message?: string }) {
   const session = useSessionContext();
 
   useEffect(() => {
-    // Use sessionStorage to track whether we've already tried reloading.
-    // Since this is a client-rendered SPA, a single reload fetches fresh HTML
-    // with all correct chunk references — one reload is enough for the entire
-    // app. The flag prevents an infinite reload loop if the error persists
-    // (e.g. the deployment itself is broken, or it's a network issue).
-    if (isChunkLoadError(props.error) && !sessionStorage.getItem('chunk-reload')) {
-      sessionStorage.setItem('chunk-reload', '1');
-      // Reload to fetch fresh HTML with correct chunk references.
-      window.location.reload();
-      return;
+    // If this is a stale chunk error, attempt a single reload to fetch fresh
+    // HTML. reloadOnChunkError() handles the sessionStorage guard internally
+    // to prevent infinite loops — see lib/chunk-error.ts for details.
+    // If it doesn't reload (flag already set), fall through to report to Sentry.
+    if (isChunkLoadError(props.error)) {
+      reloadOnChunkError();
     }
-    // If we already reloaded once and the error persists, the flag is
-    // cleared on successful app boot in main.tsx, so no need to remove
-    // it here. Fall through to show the error page + report to Sentry.
 
     captureException(props.error);
     void flush(2000);

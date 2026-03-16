@@ -2,7 +2,7 @@ import 'regenerator-runtime/runtime';
 import ReactDOM from 'react-dom/client';
 import { RouterProvider } from '@tanstack/react-router';
 import './index.css';
-import { isChunkLoadError } from './lib/chunk-error';
+import { clearChunkReloadFlag, isChunkLoadError, reloadOnChunkError } from './lib/chunk-error';
 import { router } from './router';
 
 // Register things for typesafety
@@ -14,20 +14,7 @@ declare module '@tanstack/react-router' {
 
 Error.stackTraceLimit = 15;
 
-// Clear the chunk-reload flag on successful app load. This ensures the
-// auto-reload mechanism works again after a subsequent deployment. Without
-// this, the flag from a previous reload would persist in sessionStorage
-// and block future auto-reloads.
-sessionStorage.removeItem('chunk-reload');
-
-// Shared reload function that uses sessionStorage to prevent infinite loops.
-// If we've already reloaded once this session (flag not yet cleared by a
-// successful boot), we let the error propagate instead of reloading again.
-function reloadOnChunkError() {
-  if (sessionStorage.getItem('chunk-reload')) return;
-  sessionStorage.setItem('chunk-reload', '1');
-  window.location.reload();
-}
+clearChunkReloadFlag();
 
 // After a deployment, JS chunk filenames change (content hashes). Users with a
 // stale browser tab still reference old chunks that no longer exist on the CDN.
