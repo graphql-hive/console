@@ -89,22 +89,6 @@ services:
     volumes:
       - './.hive/redis/db:/bitnami/redis/data'
 
-  supertokens:
-    image: registry.supertokens.io/supertokens/supertokens-postgresql:9.3
-    depends_on:
-      db:
-        condition: service_healthy
-    networks:
-      - 'stack'
-    environment:
-      POSTGRESQL_USER: '${POSTGRES_USER}'
-      POSTGRESQL_PASSWORD: '${POSTGRES_PASSWORD}'
-      POSTGRESQL_DATABASE_NAME: '${POSTGRES_DB}'
-      POSTGRESQL_TABLE_NAMES_PREFIX: 'supertokens'
-      POSTGRESQL_HOST: db
-      POSTGRESQL_PORT: 5432
-      API_KEYS: '${SUPERTOKENS_API_KEY}'
-
   s3:
     image: quay.io/minio/minio:RELEASE.2025-09-07T16-13-09Z
     command: server /data --console-address ":9001"
@@ -234,9 +218,9 @@ services:
       # Auth
       AUTH_ORGANIZATION_OIDC: '1'
       AUTH_REQUIRE_EMAIL_VERIFICATION: '0'
-      SUPERTOKENS_CONNECTION_URI: http://supertokens:3567
-      SUPERTOKENS_API_KEY: '${SUPERTOKENS_API_KEY}'
       GRAPHQL_PUBLIC_ORIGIN: http://localhost:8082
+      SUPERTOKENS_REFRESH_TOKEN_KEY: '${SUPERTOKENS_REFRESH_TOKEN_KEY}'
+      SUPERTOKENS_ACCESS_TOKEN_KEY: '${SUPERTOKENS_ACCESS_TOKEN_KEY}'
       # Tracing
       OPENTELEMETRY_COLLECTOR_ENDPOINT: '${OPENTELEMETRY_COLLECTOR_ENDPOINT:-}'
       SENTRY: '${SENTRY:-0}'

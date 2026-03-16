@@ -25,7 +25,8 @@ import { TaskScheduler } from '@hive/workflows/kit';
 import { PasswordResetTask } from '@hive/workflows/tasks/password-reset';
 import { env } from './environment';
 import { createNewSession, validatePassword } from './supertokens-at-home/shared';
-import { type BroadcastOIDCIntegrationLog } from './supertokens/oidc-provider';
+
+type BroadcastOIDCIntegrationLog = (oidcOrganizationId: string, message: string) => void;
 
 /**
  * Registers the routes of the Supertokens at Home implementation to a fastify instance.
@@ -69,6 +70,57 @@ export async function registerSupertokensAtHome(
         expires: new Date(0),
       });
   }
+
+  const OIDCIdLookupSchema = z.object({
+    slug: z.string({
+      required_error: 'Slug is required',
+    }),
+  });
+
+  server.post('/auth-api/oidc-id-lookup', async (req, res) => {
+    if (await rateLimiter.isFastifyRouteRateLimited(req)) {
+      return res.send({
+        ok: false,
+        title: 'Rate Limited',
+        description: 'Please try again later.',
+        status: 400,
+      });
+    }
+
+    req.log.debug('Looking up OIDC integration ID');
+    const inputResult = OIDCIdLookupSchema.safeParse(req.body);
+
+    if (!inputResult.success) {
+      req.log.debug('Invalid body sent. Failed to parse slug.');
+      return res.status(400).send({
+        ok: false,
+        title: 'Invalid input',
+        description: 'Failed to resolve SSO information due to invalid input.',
+        status: 400,
+      });
+    }
+
+    req.log.debug('Parsed slug (slug=%s)', inputResult.data.slug);
+
+    const oidcId = await storage.getOIDCIntegrationIdForOrganizationSlug({
+      slug: inputResult.data.slug,
+    });
+
+    if (!oidcId) {
+      req.log.debug('No SSO integration found (slug=%s)', inputResult.data.slug);
+      return res.status(404).send({
+        ok: false,
+        title: 'SSO integration not found',
+        description: 'Your organization lacks an SSO integration or it does not exist.',
+        status: 404,
+      });
+    }
+
+    return res.status(200).send({
+      ok: true,
+      id: oidcId,
+    });
+  });
 
   server.route({
     url: '/auth-api/signout',
@@ -720,6 +772,13 @@ export async function registerSupertokensAtHome(
           });
         }
 
+        if (!z.string().uuid().safeParse(query.data.oidc_id).success) {
+          return rep.status(200).send({
+            status: 'GENERAL_ERROR',
+            message: 'Something went wrong. Please try again',
+          });
+        }
+
         const oidcIntegration = await storage.getOIDCIntegrationById({
           oidcIntegrationId: query.data.oidc_id,
         });
@@ -735,7 +794,7 @@ export async function registerSupertokensAtHome(
 
         const oidClientConfig = new oidClient.Configuration(
           {
-            issuer: oidcIntegration.id,
+            issuer: 'noop',
             authorization_endpoint: oidcIntegration.authorizationEndpoint,
             userinfo_endpoint: oidcIntegration.userinfoEndpoint,
             token_endpoint: oidcIntegration.tokenEndpoint,

@@ -5,7 +5,6 @@ actor "CLI User" as cliuser
 actor "Running Server" as gqlserver
 
 component zookeeper
-component supertokens
 
 queue kafka
 
@@ -28,7 +27,6 @@ storageSvc ---d-> Postgres
 
 kafka -l-> zookeeper
 
-app --> supertokens
 app --> server
 app --> emails
 
@@ -49,9 +47,6 @@ server -d-> tokens
 server -d-> webhooks
 server -d-> schema
 server -d-> emails
-server -d-> supertokens
-
-supertokens -> Postgres
 
 uiuser --> app
 cliuser --> server

@@ -1,9 +1,7 @@
 import c from 'node:crypto';
 import { parse as parseCookie } from 'cookie-es';
-import SessionNode from 'supertokens-node/recipe/session/index.js';
 import * as zod from 'zod';
 import type { FastifyReply, FastifyRequest } from '@hive/service-common';
-import { captureException } from '@sentry/node';
 import { AccessError, HiveError, OIDCRequiredError } from '../../../shared/errors';
 import { isUUID } from '../../../shared/is-uuid';
 import { OIDCIntegrationStore } from '../../oidc-integrations/providers/oidc-integration.store';
@@ -169,7 +167,7 @@ export class SuperTokensUserAuthNStrategy extends AuthNStrategy<SuperTokensCooki
   private storage: Storage;
   private supertokensStore: SuperTokensStore;
   private emailVerification: EmailVerification | null;
-  private accessTokenKey: AccessTokenKeyContainer | null;
+  private accessTokenKey: AccessTokenKeyContainer;
   private oidcIntegrationStore: OIDCIntegrationStore;
 
   constructor(deps: {
@@ -177,7 +175,7 @@ export class SuperTokensUserAuthNStrategy extends AuthNStrategy<SuperTokensCooki
     storage: Storage;
     organizationMembers: OrganizationMembers;
     emailVerification: EmailVerification | null;
-    accessTokenKey: AccessTokenKeyContainer | null;
+    accessTokenKey: AccessTokenKeyContainer;
     oidcIntegrationStore: OIDCIntegrationStore;
   }) {
     super();
@@ -189,83 +187,10 @@ export class SuperTokensUserAuthNStrategy extends AuthNStrategy<SuperTokensCooki
     this.oidcIntegrationStore = deps.oidcIntegrationStore;
   }
 
-  private async _verifySuperTokensCoreSession(args: {
+  private async _verifySuperTokensAtHomeSession(args: {
     req: FastifyRequest;
     reply: FastifyReply;
   }): Promise<SuperTokensSessionPayloadV2 | null> {
-    let session: SessionNode.SessionContainer | undefined;
-
-    try {
-      session = await SessionNode.getSession(args.req, args.reply, {
-        sessionRequired: false,
-        antiCsrfCheck: false,
-        checkDatabase: true,
-      });
-      args.req.log.debug('Session resolution ended successfully');
-    } catch (error) {
-      args.req.log.debug('Session resolution failed');
-      if (SessionNode.Error.isErrorFromSuperTokens(error)) {
-        if (
-          error.type === SessionNode.Error.TRY_REFRESH_TOKEN ||
-          error.type === SessionNode.Error.UNAUTHORISED
-        ) {
-          throw new HiveError('Invalid session', {
-            extensions: {
-              code: 'NEEDS_REFRESH',
-            },
-          });
-        }
-      }
-
-      args.req.log.error('Error while resolving user');
-      console.log(error);
-      captureException(error);
-
-      throw error;
-    }
-
-    if (!session) {
-      args.req.log.debug('No session found');
-      return null;
-    }
-
-    const payload = session.getAccessTokenPayload();
-
-    const result = SuperTokensSessionPayloadModel.safeParse(payload);
-
-    if (result.success === false) {
-      args.req.log.error('SuperTokens session payload is invalid');
-      args.req.log.debug('SuperTokens session payload: %s', JSON.stringify(payload));
-      args.req.log.debug(
-        'SuperTokens session parsing errors: %s',
-        JSON.stringify(result.error.flatten().fieldErrors),
-      );
-      throw new HiveError('Invalid access token provided', {
-        extensions: {
-          code: 'UNAUTHENTICATED',
-        },
-      });
-    }
-
-    if (result.data.version === '1') {
-      args.req.log.debug('legacy session detected, require session refresh');
-      throw new HiveError('Invalid session.', {
-        extensions: {
-          code: 'NEEDS_REFRESH',
-        },
-      });
-    }
-
-    return result.data;
-  }
-
-  private async _verifySuperTokensAtHomeSession(
-    args: {
-      req: FastifyRequest;
-      reply: FastifyReply;
-    },
-    accessTokenKey: AccessTokenKeyContainer,
-  ): Promise<SuperTokensSessionPayloadV2 | null> {
     let session: SessionInfo | null = null;
 
     args.req.log.debug('attempt parsing access token from cookie');
@@ -285,7 +210,7 @@ export class SuperTokensUserAuthNStrategy extends AuthNStrategy<SuperTokensCooki
 
     let accessToken;
     try {
-      accessToken = parseAccessToken(rawAccessToken, accessTokenKey.publicKey);
+      accessToken = parseAccessToken(rawAccessToken, this.accessTokenKey.publicKey);
     } catch (err) {
       args.req.log.debug('Failed verifying the access token. Ask for refresh. err=%s', String(err));
       throw new HiveError('Invalid session', {
@@ -399,9 +324,7 @@ export class SuperTokensUserAuthNStrategy extends AuthNStrategy<SuperTokensCooki
       return null;
     }
 
-    const sessionData = this.accessTokenKey
-      ? await this._verifySuperTokensAtHomeSession(args, this.accessTokenKey)
-      : await this._verifySuperTokensCoreSession(args);
+    const sessionData = await this._verifySuperTokensAtHomeSession(args);
 
     if (!sessionData) {
       args.req.log.debug('No session found');

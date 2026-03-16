@@ -1,4 +1,4 @@
-import { useCallback, useDeferredValue, useEffect, useMemo, useState } from 'react';
+import { Fragment, useCallback, useDeferredValue, useEffect, useMemo, useState } from 'react';
 import {
   GraphQLEnumType,
   GraphQLObjectType,
@@ -688,20 +688,17 @@ export const BuilderSearchResults = (props: {
 
                 if (isMatch) {
                   return (
-                    <>
-                      <span
-                        key={part}
-                        className="text-primary-foreground bg-primary -mx-0.5 rounded-sm px-0.5"
-                      >
+                    <Fragment key={index}>
+                      <span className="text-primary-foreground bg-primary -mx-0.5 rounded-sm px-0.5">
                         {part}
                       </span>
                       {index < path.split('.').length - 1 && '.'}
-                    </>
+                    </Fragment>
                   );
                 }
 
                 return (
-                  <span key={part}>
+                  <span key={index}>
                     {part}
                     {index < path.split('.').length - 1 && '.'}
                   </span>

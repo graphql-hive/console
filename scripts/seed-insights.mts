@@ -13,7 +13,7 @@
  */
 
 import * as readline from 'node:readline/promises';
-import { createTRPCProxyClient, httpLink } from '@trpc/client';
+import setCookie from 'set-cookie-parser';
 import type { CollectedOperation } from '../integration-tests/testkit/usage';
 
 process.env.RUN_AGAINST_LOCAL_SERVICES = '1';
@@ -42,92 +42,69 @@ const password = 'ilikebigturtlesandicannotlie47';
 async function signInOrSignUp(
   email: string,
 ): Promise<{ access_token: string; refresh_token: string }> {
-  const supertokensUri = ensureEnv('SUPERTOKENS_CONNECTION_URI');
-  const apiKey = ensureEnv('SUPERTOKENS_API_KEY');
-  const headers = {
-    'content-type': 'application/json; charset=UTF-8',
-    'api-key': apiKey,
-    'cdi-version': '4.0',
-  };
-  const body = JSON.stringify({ email, password });
-
-  // Try signup first
-  let res = await fetch(`${supertokensUri}/appid-public/public/recipe/signup`, {
-    method: 'POST',
-    headers,
-    body,
-  });
-  let data = (await res.json()) as { status: string; user?: { id: string; emails: string[] } };
-
-  // If user already exists, look them up by email (avoids needing their password)
-  if (data.status === 'EMAIL_ALREADY_EXISTS_ERROR') {
-    res = await fetch(
-      `${supertokensUri}/appid-public/public/recipe/user?email=${encodeURIComponent(email)}`,
-      { headers },
-    );
-    const lookupData = (await res.json()) as {
-      status: string;
-      user?: { id: string; emails: string[] };
-    };
-    if (lookupData.status !== 'OK' || !lookupData.user) {
-      throw new Error(`User lookup failed for ${email}: ${JSON.stringify(lookupData)}`);
-    }
-    data = { status: 'OK', user: lookupData.user };
-  }
-
-  if (data.status !== 'OK' || !data.user) {
-    throw new Error(`Auth failed for ${email}: ${JSON.stringify(data)}`);
-  }
-
-  const superTokensUserId = data.user.id;
-
-  // Ensure user exists in Hive DB
   const graphqlAddress = await getServiceHost('server', 8082);
-  const internalApi = createTRPCProxyClient<any>({
-    links: [httpLink({ url: `http://${graphqlAddress}/trpc`, fetch })],
-  });
-  const ensureUserResult = await internalApi.ensureUser.mutate({
-    superTokensUserId,
-    email,
-    oidcIntegrationId: null,
-    firstName: null,
-    lastName: null,
-  });
-  if (!ensureUserResult.ok) {
-    throw new Error(`ensureUser failed: ${ensureUserResult.reason}`);
-  }
 
-  // Create session
-  const sessionPayload = {
-    version: '2',
-    superTokensUserId,
-    userId: ensureUserResult.user.id,
-    oidcIntegrationId: null,
-    email,
-  };
-  const sessionRes = await fetch(`${supertokensUri}/appid-public/public/recipe/session`, {
+  let response = await fetch(`http://${graphqlAddress}/auth-api/signup`, {
     method: 'POST',
-    headers: { ...headers, rid: 'session' },
     body: JSON.stringify({
-      enableAntiCsrf: false,
-      userId: superTokensUserId,
-      userDataInDatabase: sessionPayload,
-      userDataInJWT: sessionPayload,
+      formFields: [
+        {
+          id: 'email',
+          value: email,
+        },
+        {
+          id: 'password',
+          value: password,
+        },
+      ],
     }),
+    headers: {
+      'content-type': 'application/json',
+    },
   });
-  const sessionData = (await sessionRes.json()) as {
-    accessToken?: { token: string };
-    refreshToken?: { token: string };
-  };
 
-  if (!sessionData.accessToken?.token || !sessionData.refreshToken?.token) {
-    throw new Error(`Session creation failed: ${JSON.stringify(sessionData)}`);
+  let body = await response.json();
+  if (body.status === 'OK') {
+    const cookies = setCookie.parse(response.headers.getSetCookie());
+    return {
+      access_token: cookies.find(c => c.name === 'sAccessToken')?.value ?? '',
+      refresh_token: cookies.find(c => c.name === 'sRefreshToken')?.value ?? '',
+    };
   }
 
-  return {
-    access_token: sessionData.accessToken.token,
-    refresh_token: sessionData.refreshToken.token,
-  };
+  console.log('signup response', JSON.stringify(body, null, 2));
+  console.log('attempt sign in');
+
+  response = await fetch(`http://${graphqlAddress}/auth-api/signin`, {
+    method: 'POST',
+    body: JSON.stringify({
+      formFields: [
+        {
+          id: 'email',
+          value: email,
+        },
+        {
+          id: 'password',
+          value: password,
+        },
+      ],
+    }),
+    headers: {
+      'content-type': 'application/json',
+    },
+  });
+
+  body = await response.json();
+
+  if (body.status === 'OK') {
+    const cookies = setCookie.parse(response.headers.getSetCookie());
+    return {
+      access_token: cookies.find(c => c.name === 'sAccessToken')?.value ?? '',
+      refresh_token: cookies.find(c => c.name === 'sRefreshToken')?.value ?? '',
+    };
+  }
+
+  throw new Error('Failed to sign in or up ' + JSON.stringify(body, null, 2));
 }
 
 // ---------------------------------------------------------------------------
