@@ -93,7 +93,11 @@ export async function createTokenStorage(
 
       return transformToken(row);
     },
-    async deleteToken(params: { token: string; postDeletionTransaction: () => Promise<void> }) {
+    async deleteToken(params: {
+      targetId: string;
+      token: string;
+      postDeletionTransaction: () => Promise<void>;
+    }) {
       await pool.transaction(async t => {
         await t.query(sql`
           UPDATE tokens
