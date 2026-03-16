@@ -180,7 +180,7 @@ export function createAccessToken(
 ) {
   const now = Math.floor(Date.now() / 1000);
   // Access tokens expires in 6 hours
-  const expiresIn = Math.floor(now + 60 * 60 * 6 * 1000);
+  const expiresIn = Math.floor(now + 60 * 60 * 6);
 
   const data: AccessTokenInfo = {
     iat: now,
