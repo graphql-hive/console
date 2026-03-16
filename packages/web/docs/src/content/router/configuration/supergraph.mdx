@@ -22,7 +22,7 @@ Load the Supergraph schema from [Hive Console](../../schema-registry) CDN.
 
 ### `endpoint`
 
-- **Type:** `string`
+- **Type:** `string` or `string[]`
 - **Required:** Yes
 - **Environment Variable:** `HIVE_CDN_ENDPOINT`
 
@@ -35,6 +35,32 @@ supergraph:
   endpoint: https://cdn.graphql-hive.com/artifacts/v1/...
   # ...
 ```
+
+#### Multiple endpoints
+
+You can provide multiple endpoints as an array of strings. This allows the router to use fallback
+endpoints in case of a possible unavailability of the main CDN endpoint. The order matters; the
+router will always try to fetch the supergraph from the first endpoint, and if it fails, it will
+move on to the next one.
+
+```yaml {3} filename="router.config.yaml"
+supergraph:
+  source: hive
+  endpoint:
+    - https://cdn.graphql-hive.com/artifacts/v1/... # Main CDN endpoint
+    - https://cdn-mirror.graphql-hive.com/artifacts/v1/... # Fallback CDN endpoint
+  # ...
+```
+
+If you provide the endpoints using `HIVE_CDN_ENDPOINT` environment variable, separate them with a
+comma:
+
+```bash
+HIVE_CDN_ENDPOINT=https://cdn.graphql-hive.com/artifacts/v1/...,https://cdn-mirror.graphql-hive.com/artifacts/v1/...
+```
+
+> Learn more about
+> [CDN Mirrors in Hive Console](../../schema-registry/high-availability-cdn#cdn-mirrors).
 
 ### `key`
 

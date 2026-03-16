@@ -1,4 +1,5 @@
 import { useCallback, useState } from 'react';
+import { v4 as uuidv4 } from 'uuid';
 import type { LaboratoryOperation } from './operations';
 import type { LaboratoryTabsActions, LaboratoryTabsState } from './tabs';
 
@@ -75,7 +76,7 @@ export const useCollections = (
     (collection: Omit<LaboratoryCollection, 'id' | 'createdAt' | 'operations'>) => {
       const newCollection: LaboratoryCollection = {
         ...collection,
-        id: crypto.randomUUID(),
+        id: uuidv4(),
         createdAt: new Date().toISOString(),
         operations: [],
       };
