@@ -5,9 +5,7 @@ import { buildSubgraphSchema } from '@apollo/subgraph';
 import { createServer } from '@hive/service-common';
 import { introspect } from '../../testkit/cli';
 
-async function createMockServer() {
-  const host =
-    process.env.RUN_AGAINST_LOCAL_SERVICES === '1' ? 'localhost' : 'host.docker.internal';
+async function createHTTPGraphQLServer() {
   const server = await createServer({
     sentryErrorHandler: false,
     log: {
@@ -68,7 +66,7 @@ async function createMockServer() {
   });
 
   return {
-    url: 'http://' + host + ':' + (server.server.address() as AddressInfo).port,
+    url: 'http://localhost:' + (server.server.address() as AddressInfo).port,
     [Symbol.asyncDispose]: () => {
       server.close();
     },
@@ -76,7 +74,7 @@ async function createMockServer() {
 }
 
 test.concurrent('can introspect monolith GraphQL service', async ({ expect }) => {
-  const server = await createMockServer();
+  const server = await createHTTPGraphQLServer();
   await expect(introspect([server.url + '/graphql'])).resolves.toMatchInlineSnapshot(`
     schema {
       query: Query
@@ -89,7 +87,7 @@ test.concurrent('can introspect monolith GraphQL service', async ({ expect }) =>
 });
 
 test.concurrent('can introspect federation GraphQL service', async ({ expect }) => {
-  const server = await createMockServer();
+  const server = await createHTTPGraphQLServer();
   const url = server.url + '/graphql-federation';
   const result = await introspect([url]);
   const forceResult = await introspect(['-t', 'federation', url]);
