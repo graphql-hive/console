@@ -2,7 +2,7 @@ import { cn, Heading } from '@theguild/components';
 import { getCaseStudies } from '../get-case-studies';
 import { OtherCaseStudies } from './other-case-studies';
 
-export interface MoreStoriesSectionProps extends React.HTMLAttributes<HTMLDivElement> {}
+export type MoreStoriesSectionProps = React.HTMLAttributes<HTMLDivElement>;
 
 export async function MoreStoriesSection({
   className,

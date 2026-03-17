@@ -274,7 +274,8 @@ export function ProposalEditor(props: {
           onValueChange={idx => {
             try {
               setActiveTab(parseInt(idx, 10));
-            } catch (e) {
+              // eslint-disable-next-line @typescript-eslint/no-unused-vars
+            } catch (_e: unknown) {
               console.error('Cannot set active tab. Could not parse index.');
             }
           }}

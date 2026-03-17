@@ -55,6 +55,8 @@ module.exports = {
     'packages/web/app/src/gql/**/*',
     'codegen.cjs',
     'tsup',
+    'packages/libraries/render-laboratory/src/laboratory.ts',
+    'packages/web/app/vite.config.ts',
   ],
   overrides: [
     {
@@ -144,6 +146,16 @@ module.exports = {
         '@typescript-eslint/no-empty-function': 'off',
         '@typescript-eslint/ban-types': 'off',
         '@typescript-eslint/triple-slash-reference': 'off',
+        '@typescript-eslint/no-unused-vars': [
+          'error',
+          {
+            argsIgnorePattern: '^_',
+            caughtErrors: 'none',
+            caughtErrorsIgnorePattern: '^_',
+            destructuredArrayIgnorePattern: '^_',
+            varsIgnorePattern: '^_',
+          },
+        ],
       },
     },
     {

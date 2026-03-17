@@ -238,7 +238,7 @@ function useSmallScreenTabsHandlers() {
   };
 }
 
-export interface FeatureTabProps extends Omit<FeatureProps, 'setActiveHighlight'> {}
+export type FeatureTabProps = Omit<FeatureProps, 'setActiveHighlight'>;
 
 export function FeatureTab({ title, highlights, description, documentationLink }: FeatureTabProps) {
   const { setActiveHighlight } = useFeatureTabsContext();

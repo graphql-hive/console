@@ -61,6 +61,7 @@ export default class AppCreate extends Command<typeof AppCreate> {
         description: AppCreate.flags['registry.endpoint'].description!,
       });
     } catch (e) {
+      this.logDebug(e);
       throw new MissingEndpointError();
     }
 
@@ -72,6 +73,7 @@ export default class AppCreate extends Command<typeof AppCreate> {
         description: AppCreate.flags['registry.accessToken'].description!,
       });
     } catch (e) {
+      this.logDebug(e);
       throw new MissingRegistryTokenError();
     }
 

@@ -75,7 +75,9 @@ export type { tokens, schema_policy_resource } from './db/types';
 
 type Connection = DatabasePool | DatabaseTransactionConnection;
 
-type OverrideProp<T extends {}, K extends keyof T, V extends T[K]> = Omit<T, K> & { [P in K]: V };
+type OverrideProp<T extends Record<string, any>, K extends keyof T, V extends T[K]> = Omit<T, K> & {
+  [P in K]: V;
+};
 
 type schema_log = Omit<schema_log_in_db, 'action'> & {
   action: 'PUSH' | 'DELETE';

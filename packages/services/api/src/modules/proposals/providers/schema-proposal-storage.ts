@@ -40,7 +40,7 @@ export class SchemaProposalStorage {
     logger: Logger,
     @Inject(PG_POOL_CONFIG) private pool: DatabasePool,
     private storage: Storage,
-    @Inject(SCHEMA_PROPOSALS_ENABLED) private schemaProposalsEnabled: Boolean,
+    @Inject(SCHEMA_PROPOSALS_ENABLED) private schemaProposalsEnabled: boolean,
     private taskScheduler: TaskScheduler,
   ) {
     this.logger = logger.child({ source: 'SchemaProposalStorage' });

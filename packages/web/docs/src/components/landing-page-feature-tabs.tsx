@@ -8,8 +8,7 @@ import registryExplorerImage from '../../public/features/registry/explorer.webp'
 import registrySchemaChecksImage from '../../public/features/registry/schema-checks.webp';
 import registryVersionControlSystemImage from '../../public/features/registry/version-control-system.webp';
 
-const tabs = ['Schema Registry', 'GraphQL Observability', 'GraphQL Gateway'];
-type Tab = (typeof tabs)[number];
+type Tab = 'Schema Registry' | 'GraphQL Observability' | 'GraphQL Gateway';
 
 export const highlights: Record<Tab, Highlight[]> = {
   'Schema Registry': [

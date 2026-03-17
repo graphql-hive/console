@@ -3,8 +3,7 @@ import { CallToAction, cn, Heading, ComparisonTable as Table } from '@theguild/c
 import { BenchmarkTableBody } from './benchmark-table-body';
 import { CheckmarkIcon, XIcon } from './icons';
 
-export interface FederationCompatibleBenchmarksSectionProps
-  extends React.HTMLAttributes<HTMLDivElement> {}
+export type FederationCompatibleBenchmarksSectionProps = React.HTMLAttributes<HTMLDivElement>;
 
 export function FederationCompatibleBenchmarksSection({
   className,
