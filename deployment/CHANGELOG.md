@@ -1,5 +1,29 @@
 # hive
 
+## 10.2.0
+
+### Minor Changes
+
+- [#7859](https://github.com/graphql-hive/console/pull/7859)
+  [`bf00fbc`](https://github.com/graphql-hive/console/commit/bf00fbcc2d35278b9be46431f4a0c339a29f6de7)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Improve federation composition
+
+  - Support `file:` protocol and non-RFC 3986 in imported `link` url arguments
+  - Fix supergraph `@join__field` emission for Federation v1 `@external` fields and improve
+    `override`/`requires` edge-case handling.
+    - Drop Federation v1 `@join__field(external: true)` fields based on key usage in the subgraph
+      instead of aggregated field key usage across subgraphs.
+    - Avoid emitting redundant `@join__field(external: true)` metadata when a field is only required
+      through overridden paths.
+    - Tighten `@join__field` emission around @override and interface type fields.
+
+### Patch Changes
+
+- [#7852](https://github.com/graphql-hive/console/pull/7852)
+  [`67b5949`](https://github.com/graphql-hive/console/commit/67b5949ce7d87d6b3cbeb946dbf7479925a19e19)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Improve access checks for deleting legacy target
+  tokens.
+
 ## 10.1.0
 
 ### Minor Changes
