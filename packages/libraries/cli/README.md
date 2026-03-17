@@ -232,7 +232,7 @@ introspects a GraphQL Schema
 
 ```
 USAGE
-  $ hive introspect LOCATION [--debug] [--write <value>] [--header <value>...]
+  $ hive introspect LOCATION [--debug] [--write <value>] [--header <value>...] [--subgraph]
 
 ARGUMENTS
   LOCATION  GraphQL Schema location (URL or file path/glob)
@@ -241,6 +241,7 @@ FLAGS
   --debug              Whether debug output for HTTP calls and similar should be enabled.
   --header=<value>...  HTTP header to add to the introspection request (in key:value format)
   --write=<value>      Write to a file (possible extensions: .graphql, .gql, .gqls, .graphqls, .json)
+  --subgraph           Use Federation's subgraph introspection ({ _service { sdl }}) instead of the GraphQL built-in introspection.
 
 DESCRIPTION
   introspects a GraphQL Schema

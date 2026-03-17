@@ -3,7 +3,11 @@ import { extname, resolve } from 'node:path';
 import { buildSchema, introspectionFromSchema } from 'graphql';
 import { Args, Flags } from '@oclif/core';
 import Command from '../base-command';
-import { APIError, UnexpectedError, UnsupportedFileExtensionError } from '../helpers/errors';
+import {
+  IntrospectionError,
+  UnexpectedError,
+  UnsupportedFileExtensionError,
+} from '../helpers/errors';
 import { loadSchema } from '../helpers/schema';
 
 export default class Introspect extends Command<typeof Introspect> {
@@ -18,8 +22,8 @@ export default class Introspect extends Command<typeof Introspect> {
       description: 'HTTP header to add to the introspection request (in key:value format)',
       multiple: true,
     }),
-    ['ignore-federation']: Flags.boolean({
-      description: `Ignore Federation's subgraph schema addition (Query._service field)`,
+    subgraph: Flags.boolean({
+      description: `Use Federation's Query._service field instead of GraphQL's built-in introspection query.`,
       default: false,
     }),
   };
@@ -47,15 +51,16 @@ export default class Introspect extends Command<typeof Introspect> {
       {} as Record<string, string>,
     );
 
-    const schema = await loadSchema(
-      flags['ignore-federation'] === true ? 'introspection' : 'federation-subgraph-introspection',
+    let schema = await loadSchema(
+      flags['subgraph'] === true ? 'federation-subgraph-introspection' : 'introspection',
       args.location,
       {
         headers,
         method: 'POST',
       },
     ).catch(err => {
-      throw new APIError(err);
+      this.logFailure(err);
+      throw new IntrospectionError();
     });
 
     if (!schema) {
