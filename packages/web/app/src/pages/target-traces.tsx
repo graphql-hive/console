@@ -23,7 +23,6 @@ import {
 import { Bar, BarChart, ReferenceArea, XAxis } from 'recharts';
 import { useClient, useQuery } from 'urql';
 import { z } from 'zod';
-import { Page, TargetLayout } from '@/components/layouts/target';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -34,7 +33,6 @@ import {
 } from '@/components/ui/chart';
 import { CopyIconButton } from '@/components/ui/copy-icon-button';
 import { DateRangePicker, Preset, presetLast7Days } from '@/components/ui/date-range-picker';
-import { Meta } from '@/components/ui/meta';
 import { SubPageLayoutHeader } from '@/components/ui/page-content-layout';
 import { QueryError } from '@/components/ui/query-error';
 import {
@@ -1105,7 +1103,7 @@ const TargetTracesFetchMoreTracesQuery = graphql(`
   }
 `);
 
-function TargetTracesPageContent(
+export function TargetTracesPageContent(
   props: SortProps &
     FilterProps & {
       range: Preset['range'] | null;
@@ -1391,34 +1389,6 @@ function TargetTracesPageContent(
         )}
       </Sheet>
     </div>
-  );
-}
-
-export function TargetTracesPage(
-  props: {
-    organizationSlug: string;
-    projectSlug: string;
-    targetSlug: string;
-    range: Preset['range'] | null;
-  } & SortProps &
-    FilterProps,
-) {
-  return (
-    <>
-      <Meta title="Traces" />
-      <TargetLayout
-        organizationSlug={props.organizationSlug}
-        projectSlug={props.projectSlug}
-        targetSlug={props.targetSlug}
-        page={Page.Traces}
-      >
-        <TargetTracesPageContent
-          sorting={props.sorting}
-          filter={props.filter}
-          range={props.range}
-        />
-      </TargetLayout>
-    </>
   );
 }
 

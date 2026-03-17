@@ -28,6 +28,8 @@ import {
 import { ErrorComponent } from './components/error';
 import { NotFound } from './components/not-found';
 import 'react-toastify/dist/ReactToastify.css';
+import { Page, TargetLayout } from '@/components/layouts/target';
+import { Meta } from '@/components/ui/meta';
 import { useLocalStorage } from '@/lib/hooks';
 import { zodValidator } from '@tanstack/zod-adapter';
 import { authenticated } from './components/authenticated-container';
@@ -90,7 +92,7 @@ import { TargetTracePage } from './pages/target-trace';
 import {
   FilterState,
   TargetTracesFilterState,
-  TargetTracesPage,
+  TargetTracesPageContent,
   TargetTracesSort,
 } from './pages/target-traces';
 
@@ -785,14 +787,17 @@ const targetTracesRoute = createRoute({
     const range = useMemo(() => (from && to ? { from, to } : null), [from, to]);
 
     return (
-      <TargetTracesPage
-        organizationSlug={organizationSlug}
-        projectSlug={projectSlug}
-        targetSlug={targetSlug}
-        sorting={sort}
-        filter={filter}
-        range={range}
-      />
+      <>
+        <Meta title="Traces" />
+        <TargetLayout
+          organizationSlug={organizationSlug}
+          projectSlug={projectSlug}
+          targetSlug={targetSlug}
+          page={Page.Traces}
+        >
+          <TargetTracesPageContent sorting={sort} filter={filter} range={range} />
+        </TargetLayout>
+      </>
     );
   },
 });
