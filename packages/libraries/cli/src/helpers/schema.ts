@@ -227,7 +227,7 @@ class FederationSubgraphUrlLoader implements Loader {
     // We can check if the schema is a subgraph by looking for the `_Service` type.
     const isSubgraph = await client.request({
       operation: parse(/* GraphQL */ `
-        {
+        query LookupService {
           __type(name: "_Service") {
             name
           }
