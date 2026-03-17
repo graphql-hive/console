@@ -157,12 +157,7 @@ export const renderWarnings = (warnings: SchemaWarningConnection) => {
 
 export async function loadSchema(
   /**
-   * This is used to determine the correct loader to use.
-   *
-   * If a user is simply introspecting a schema, the 'introspection' should be used.
-   * In case of federation, we should skip the UrlLoader,
-   * because it will try to introspect the schema
-   * instead of fetching the SDL with directives.
+   * Behaviour for loading the schema from a HTTP endpoint.
    */
   httpLoadingIntent:
     | 'first-federation-then-graphql-introspection'
