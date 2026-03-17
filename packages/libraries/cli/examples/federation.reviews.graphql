@@ -1,20 +1,35 @@
-extend type Product @key(fields: "id") {
-  id: ID! @external
-  reviews: [Review]
-  reviewSummary: ReviewSummary
-}
+extend schema
+  @link(
+    url: "https://specs.apollo.dev/federation/v2.3"
+    import: ["@key", "@shareable", "@override"]
+  )
+  @link(url: "https://specs.graphql-hive.com/hive/v1.0", import: ["@meta"])
+  @meta(name: "owner", content: "reviews-team")
 
-"""
-This is an Entity, docs:https://www.apollographql.com/docs/federation/entities/
-You will need to define a __resolveReference resolver for the type you define, docs: https://www.apollographql.com/docs/federation/entities/#resolving
-"""
-type Review @key(fields: "id") {
+directive @meta(
+  name: String!
+  content: String!
+) repeatable on SCHEMA | OBJECT | INTERFACE | FIELD_DEFINITION
+
+type Product implements ProductItf @key(fields: "id") {
   id: ID!
-  rating: Float
-  content: String
+  reviewsCount: Int!
+  reviewsScore: Float! @shareable @override(from: "products")
+  reviews: [Review!]!
 }
 
-type ReviewSummary {
-  totalReviews: Int
-  averageRating: Float
+interface ProductItf {
+  id: ID!
+  reviewsCount: Int!
+  reviewsScore: Float!
+  reviews: [Review!]!
+}
+
+type Query {
+  review(id: Int!): Review
+}
+
+type Review {
+  id: Int!
+  body: String!
 }

@@ -11,6 +11,7 @@ type WaitUntil = (promise: Promise<void>) => void;
 type GetCache = () => Promise<Cache | null>;
 
 type CreateKeyValidatorDeps = {
+  kvStorageBaseUrl?: string;
   waitUntil: null | WaitUntil;
   artifactStorageReader: ArtifactStorageReader;
   getCache: null | GetCache;
@@ -34,6 +35,7 @@ export const createIsKeyValid =
   };
 
 const handleLegacyCDNAccessToken = async (args: {
+  kvStorageBaseUrl?: string;
   targetId: string;
   accessToken: string;
   artifactStorageReader: ArtifactStorageReader;
@@ -49,7 +51,7 @@ const handleLegacyCDNAccessToken = async (args: {
     if (requestCache) {
       const cacheKey = new Request(
         [
-          'https://key-cache.graphql-hive.com',
+          args.kvStorageBaseUrl ?? 'https://key-cache.graphql-hive.com',
           'legacy',
           args.targetId,
           encodeURIComponent(args.accessToken),
@@ -150,9 +152,12 @@ async function handleCDNAccessToken(
 
     if (requestCache) {
       const cacheKey = new Request(
-        ['http://key-cache.graphql-hive.com', 'v1', targetId, encodeURIComponent(accessToken)].join(
-          '/',
-        ),
+        [
+          deps.kvStorageBaseUrl ?? 'https://key-cache.graphql-hive.com',
+          'v1',
+          targetId,
+          encodeURIComponent(accessToken),
+        ].join('/'),
         {
           method: 'GET',
         },

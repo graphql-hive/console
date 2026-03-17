@@ -1,5 +1,5 @@
 import { useCallback, useState } from 'react';
-import { MailQuestionIcon, MoreHorizontalIcon } from 'lucide-react';
+import { MailIcon, MailQuestionIcon, MoreHorizontalIcon } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { useMutation } from 'urql';
 import { z } from 'zod';
@@ -14,6 +14,7 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
+import { CardDescription } from '@/components/ui/card';
 import {
   Dialog,
   DialogContent,
@@ -34,17 +35,25 @@ import { Input } from '@/components/ui/input';
 import { SubPageLayout, SubPageLayoutHeader } from '@/components/ui/page-content-layout';
 import { useToast } from '@/components/ui/use-toast';
 import { FragmentType, graphql, useFragment } from '@/gql';
+import * as GraphQLSchema from '@/gql/graphql';
 import { useClipboard } from '@/lib/hooks';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { RoleSelector } from './common';
+import {
+  ResourceSelection,
+  ResourceSelector,
+  resourceSlectionToGraphQLSchemaResourceAssignmentInput,
+} from './resource-selector';
 
 const MemberInvitationForm_InviteByEmail = graphql(`
   mutation MemberInvitationForm_InviteByEmail($input: InviteToOrganizationByEmailInput!) {
     inviteToOrganizationByEmail(input: $input) {
       ok {
-        ...Members_Invitation
-        email
-        id
+        createdOrganizationInvitation {
+          ...Members_Invitation
+          email
+          id
+        }
       }
       error {
         message
@@ -61,12 +70,17 @@ const MemberInvitationForm_OrganizationFragment = graphql(`
     id
     slug
     memberRoles {
-      id
-      name
-      description
-      locked
-      canInvite
+      edges {
+        node {
+          id
+          name
+          description
+          isLocked
+          canInvite
+        }
+      }
     }
+    ...ResourceSelector_OrganizationFragment
   }
 `);
 
@@ -94,7 +108,14 @@ function MemberInvitationForm(props: {
   const { toast } = useToast();
   const organization = useFragment(MemberInvitationForm_OrganizationFragment, props.organization);
   const [invitation, invite] = useMutation(MemberInvitationForm_InviteByEmail);
-  const viewerRole = organization.memberRoles.find(r => r.name === 'Viewer');
+  const viewerRole = organization.memberRoles?.edges.find(
+    edge => edge.node.name === 'Viewer',
+  )?.node;
+
+  const [selection, setSelection] = useState<ResourceSelection>(() => ({
+    mode: GraphQLSchema.ResourceAssignmentModeType.All,
+    projects: [],
+  }));
 
   const form = useForm<MemberInvitationFormValues>({
     resolver: zodResolver(memberInvitationFormSchema),
@@ -111,7 +132,7 @@ function MemberInvitationForm(props: {
     return (
       <>
         <div className="text-red-500">Viewer role not found in organization member roles</div>
-        <div className="text-gray-400">Please contact support.</div>
+        <div className="text-neutral-10">Please contact support.</div>
       </>
     );
   }
@@ -120,9 +141,14 @@ function MemberInvitationForm(props: {
     try {
       const result = await invite({
         input: {
-          organizationSlug: organization.slug,
+          organization: {
+            bySelector: {
+              organizationSlug: organization.slug,
+            },
+          },
           email: data.email,
-          roleId: data.role,
+          memberRoleId: data.role,
+          resources: resourceSlectionToGraphQLSchemaResourceAssignmentInput(selection),
         },
       });
 
@@ -135,10 +161,10 @@ function MemberInvitationForm(props: {
         return;
       }
 
-      if (result.data?.inviteToOrganizationByEmail?.ok?.email) {
+      if (result.data?.inviteToOrganizationByEmail?.ok?.createdOrganizationInvitation.email) {
         toast({
           title: 'Invitation sent',
-          description: `${result.data.inviteToOrganizationByEmail.ok.email} should receive an invitation email shortly.`,
+          description: `${result.data.inviteToOrganizationByEmail.ok.createdOrganizationInvitation.email} should receive an invitation email shortly.`,
         });
         form.reset({ email: '', role: '' });
         props.close();
@@ -164,16 +190,15 @@ function MemberInvitationForm(props: {
     return (
       <>
         <div className="text-red-500">Viewer role not found in organization member roles</div>
-        <div className="text-gray-400">Please contact support.</div>
+        <div className="text-neutral-10">Please contact support.</div>
       </>
     );
   }
 
-  // TODO: fix visibility when screen is too small (height - elements are not visible... - this can happen when there's a lot of roles)
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)}>
-        <DialogContent>
+        <DialogContent className="min-w-[800px] max-w-[70vw]">
           <DialogHeader>
             <DialogTitle>Membership Invitation</DialogTitle>
             <DialogDescription>
@@ -204,9 +229,10 @@ function MemberInvitationForm(props: {
                   <FormItem>
                     <FormControl>
                       <RoleSelector
-                        roles={organization.memberRoles}
+                        roles={organization.memberRoles?.edges.map(edge => edge.node) ?? []}
                         defaultRole={
-                          organization.memberRoles.find(r => r.id === field.value) ?? viewerRole
+                          organization.memberRoles?.edges.find(edge => edge.node.id === field.value)
+                            ?.node ?? viewerRole
                         }
                         isRoleActive={role => ({
                           active: role.canInvite,
@@ -225,6 +251,13 @@ function MemberInvitationForm(props: {
                 )}
               />
             </div>
+          </div>
+          <div>
+            <ResourceSelector
+              selection={selection}
+              onSelectionChange={setSelection}
+              organization={organization}
+            />
           </div>
           <DialogFooter>
             <Button
@@ -250,7 +283,9 @@ export function MemberInvitationButton(props: {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button>Invite a new member</Button>
+        <Button className="ml-4 min-w-[140px]" data-cy="send-invite-trigger">
+          <MailIcon size={14} className="mr-2" /> Send Invite
+        </Button>
       </DialogTrigger>
       {open ? (
         <MemberInvitationForm
@@ -273,7 +308,7 @@ const InvitationDeleteButton_DeleteInvitation = graphql(`
   mutation InvitationDeleteButton_DeleteInvitation($input: DeleteOrganizationInvitationInput!) {
     deleteOrganizationInvitation(input: $input) {
       ok {
-        ...Members_Invitation
+        deletedOrganizationInvitationId
       }
       error {
         message
@@ -285,7 +320,6 @@ const InvitationDeleteButton_DeleteInvitation = graphql(`
 const Members_Invitation = graphql(`
   fragment Members_Invitation on OrganizationInvitation {
     id
-    createdAt
     expiresAt
     email
     code
@@ -336,7 +370,11 @@ function Invitation(props: {
                   try {
                     const result = await deleteInvitation({
                       input: {
-                        organizationSlug: props.organizationSlug,
+                        organization: {
+                          bySelector: {
+                            organizationSlug: props.organizationSlug,
+                          },
+                        },
                         email: invitation.email,
                       },
                     });
@@ -379,15 +417,19 @@ function Invitation(props: {
         ) : null}
       </AlertDialog>
       <tr>
-        <td className="py-3 text-sm font-medium">{invitation.email}</td>
-        <td className="py-3 text-center text-sm">{invitation.role.name}</td>
-        <td className="py-3 text-center text-sm text-gray-400">
+        <td className="truncate py-3 text-sm font-medium" title={invitation.email}>
+          {invitation.email}
+        </td>
+        <td className="truncate py-3 text-center text-sm" title={invitation.role.name}>
+          {invitation.role.name}
+        </td>
+        <td className="text-neutral-10 py-3 text-center text-sm">
           {DateFormatter.format(new Date(invitation.expiresAt))}
         </td>
         <td className="py-3 text-right text-sm">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" className="data-[state=open]:bg-muted flex size-8 p-0">
+              <Button variant="ghost" className="data-[state=open]:bg-neutral-3 flex size-8 p-0">
                 <MoreHorizontalIcon className="size-4" />
                 <span className="sr-only">Open menu</span>
               </Button>
@@ -408,12 +450,13 @@ const OrganizationInvitations_OrganizationFragment = graphql(`
     id
     slug
     invitations {
-      nodes {
-        id
-        ...Members_Invitation
+      edges {
+        node {
+          id
+          ...Members_Invitation
+        }
       }
     }
-
     ...MemberInvitationForm_OrganizationFragment
   }
 `);
@@ -427,32 +470,44 @@ export function OrganizationInvitations(props: {
     props.organization,
   );
 
+  if (!organization.invitations) {
+    return null;
+  }
+
   return (
     <SubPageLayout>
       <SubPageLayoutHeader
-        subPageTitle="Pending invitations"
-        description="Active invitations to join this organization. Invitations expire after 7 days."
+        subPageTitle="Member Invitations"
+        description={
+          <CardDescription className="pb-4">
+            Send an invite to add a new non-OIDC member to your Organization. Invitations expire
+            after 7 days.
+            <br />
+            <br />
+            To accept, the user must have an account and log in before using the sent link.
+          </CardDescription>
+        }
       >
         <MemberInvitationButton
           refetchInvitations={props.refetchInvitations}
           organization={organization}
         />
       </SubPageLayoutHeader>
-      {organization.invitations.nodes.length > 0 ? (
-        <table className="w-full table-auto divide-y-[1px] divide-gray-500/20">
+      {organization.invitations.edges.length > 0 ? (
+        <table className="divide-neutral-10/20 w-full table-fixed divide-y">
           <thead>
             <tr>
-              <th className="py-3 text-left text-sm font-semibold">Email</th>
-              <th className="w-64 py-3 text-center text-sm font-semibold">Assigned role</th>
+              <th className="w-[100px] py-3 text-left text-sm font-semibold sm:w-auto">Email</th>
+              <th className="w-32 py-3 text-center text-sm font-semibold lg:w-64">Assigned role</th>
               <th className="w-32 py-3 text-center text-sm font-semibold">Expiration date</th>
               <th className="w-12 py-3 text-right text-sm font-semibold" />
             </tr>
           </thead>
-          <tbody className="divide-y-[1px] divide-gray-500/20">
-            {organization.invitations.nodes.map(node => (
+          <tbody className="divide-neutral-10/20 max-w-full divide-y">
+            {organization.invitations.edges.map(edge => (
               <Invitation
-                key={node.id}
-                invitation={node}
+                key={edge.node.id}
+                invitation={edge.node}
                 organizationSlug={organization.slug}
                 refetchInvitations={props.refetchInvitations}
               />
@@ -462,10 +517,10 @@ export function OrganizationInvitations(props: {
       ) : (
         <div className="flex h-[250px] shrink-0 items-center justify-center rounded-md border border-dashed">
           <div className="mx-auto flex max-w-[420px] flex-col items-center justify-center text-center">
-            <MailQuestionIcon className="text-muted-foreground size-10" />
+            <MailQuestionIcon className="text-neutral-10 size-10" />
 
             <h3 className="mt-4 text-lg font-semibold">No invitations</h3>
-            <p className="text-muted-foreground mb-4 mt-2 text-sm">
+            <p className="text-neutral-10 mb-4 mt-2 text-sm">
               Invitations to join this organization will appear here.
             </p>
           </div>

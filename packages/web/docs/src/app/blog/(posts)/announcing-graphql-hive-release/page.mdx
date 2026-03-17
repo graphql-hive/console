@@ -1,0 +1,185 @@
+---
+title: Announcing GraphQL Hive, the complete GraphQL API manager
+tags: [graphql, graphql-federation, graphql-hive]
+authors: [charlypoly, arda, laurin, saihaj, kamil, dotan, uri, dimitri]
+date: 2022-05-24
+description: We are incredibly excited to share with you today the public launch of GraphQL Hive!
+---
+
+After months of development and collecting feedback from our customers using it in production, we
+are incredibly excited to share with you today the public launch of
+[Hive](https://the-guild.dev/graphql/hive)!
+
+## Built for the Community, for All GraphQL APIs
+
+[GraphQL Hive](https://the-guild.dev/graphql/hive) has been built with 3 main objectives in mind:
+
+- **Help GraphQL developers to get to know their GraphQL APIs** a little more with our schema
+  registry, performance monitoring, alerts, and integrations.
+- **Support all kinds of GraphQL APIs**, from
+  [Federation](https://the-guild.dev/graphql/hive/federation), and Stitching, to standalone APIs.
+- **Open Source at the heart**: GraphQL Hive is 100% open-source, and build in public with the
+  community.
+- **A plug and play SaaS solution**: to give access to Hive to most people with a generous free
+  “Hobby plan”
+
+Without further ado, let's review together how GraphQL Hive will help you to get the best of your
+GraphQL APIs.
+
+## Features Overview
+
+GraphQL Hive provides all the tools to get visibility of your GraphQL architecture at all stages,
+from standalone APIs to composed schemas
+([Federation](https://the-guild.dev/graphql/hive/federation), Stitching).
+
+From our experience working in the GraphQL field, **we believe that the following set of features
+are essential for a good understanding and operating of GraphQL APIs**, at any stage.
+
+### Schema Registry
+
+Using Hive requires publishing changes to your GraphQL API schema. Once published on the Schema
+Registry, Hive will offer 3 useful features to manage your GraphQL API:
+
+**Get warned about breaking changes**. For every new version of the schema either committed in a
+Pull Request or publish, Hive will run a set of checks and notify your team via Slack, GitHub, or
+within the Hive application.
+
+![Schema checks on CI](./schema-checks-gh.png)
+
+The definition of a “breaking change” is data-driven (based on "_live operations monitoring_") and
+entirely configurable for each project:
+
+![Schema checks conditional breaking changes configuration](./schema-checks-conditional-configuration.png)
+
+The schema changes detection also applies in a Federation setup, when a given subgraph breaks the
+composed supergraph.
+
+**Access the history of changes**. On top of detecting potential breaking changes, Hive gives your
+team access to the full history of changes, even on a complex composed schema (Federation,
+Stitching).
+
+Hive can also be configured to post the detected schema changes to Slack, fostering collaboration
+between the front-end and back-end engineers.
+
+![Hive changes history page](./changes-history.png)
+
+**Supercharge your GraphQL development workflow**. Finally, Hive provides a high-availability and
+multi-zone CDN service based on Cloudflare, allowing you to access the registry, through a secured
+external service, that's always up regardless of Hive services.
+
+This secured URL, generated from the Hive UI, can be used to supercharge your GraphQL development
+workflow, by:
+
+- **updating your GraphQL Code Generator config** to fetch the introspection from Hive CDN, instead
+  of production, staging, or local version of your GraphQL API
+- **updating your GraphQL Gateway** to fetch the schema from Hive CDN instead of querying all
+  services
+- **updating your GraphQL Mesh configuration** to fetch a GraphQL Source schema from Hive CDN
+
+Doing so will avoid deployment issues and development issues (ex: getting introspection for codegen
+from the wrong development version of the schema).
+
+More examples are available in Hive documentation:
+https://the-guild.dev/graphql/hive/docs/high-availability-cdn.
+
+The three aspects of Schema Registry covered above **will help you a safer and smoother deployment
+of your GraphQL APIs**, even when working with standalone or monolithic GraphQL APIs.
+
+### Monitoring
+
+Once a Schema is deployed, **it is important to be aware of how it is used and what is the
+experience of its final users**.
+
+GraphQL Hive helps you get a global overview of the usage of your GraphQL API with:
+
+- Error rates and repartition
+- Global and queries performances (latency, RPM…)
+- Operations count
+- Active GraphQL clients
+
+![Hive monitoring dashboard](./monitoring-preview.png)
+
+At a glance, the Hive operations dashboard helps you to understand:
+
+- **Does your GraphQL API face unexpected traffic?**
+- **Does a new version of Schema result in a raise of errors?**
+- **Which queries are slow?**
+
+Being able to quickly answer these questions allows you to build better GraphQL APIs and better user
+experiences.
+
+### Integrations
+
+**Hive is well integrated with Slack and most CI/CD systems** to get you up and running as smoothly
+as possible!
+
+As covered earlier, **Hive can notify your team when schema changes occur, either via Slack or a
+custom webhook:**
+
+![Schema checks Slack message](./slack-schema-change.png)
+
+Also, **the Hive CLI allows integration of the schema checks mechanism to all CI/CD systems**
+(GitHub, BitBucket, Azure, and others).
+
+To compare new schema with the latest one and detect breaking changes, run the following command:
+
+```sh
+hive schema:check schema.graphql
+```
+
+The same applies for schema publishing and operations checks.
+
+If you are using GitHub, you can directly benefit from **the Hive app that will automatically add
+status checks to your PRs**!
+
+![Schema checks on CI](./schema-checks-gh.png)
+
+And we are just getting started, we are already planning more alerts/notifications types and more
+integrations.
+
+## Get Started with GraphQL Hive
+
+By far the easiest way to use GraphQL Hive is to get started with one of our hosted plans below.
+
+**Our hobby plan is free and fits perfectly for most side projects**. When you're ready to upgrade,
+we have you covered with our Pro plan.
+
+All plans come with **unlimited seats, high availability and all the features**.
+
+You can now give more insight into your GraphQL API's performance by inviting all of your team to
+your project.
+
+### Pricing
+
+As you can see, the pricing is based on real usage and not the number of seats.
+
+You can start for free with the "Hobby" plan and upgrade to "Pro" once you hit the limits.
+
+| Feature / Plan | Hobby     | Pro         | Custom       |
+| -------------- | --------- | ----------- | ------------ |
+| Base price     | $ 0       | $ 10        | $ Talk to us |
+| Users / Seats  | Unlimited | Unlimited   | Unlimited    |
+| Schema pushes  | Unlimited | Unlimited   | Unlimited    |
+| Monitoring     | Up to 1M  | $ 10 per 1M | Unlimited    |
+| Data retention | 7 days    | 90 days     | 12 months    |
+
+If you need more than the Pro plan, let us know, and we
+[can discuss your requirements](mailto:contact@the-guild.dev).
+
+### GraphQL Hive Can Be Self-Hosted
+
+As stated earlier, [GraphQL Hive](https://the-guild.dev/graphql/hive) is completely open-source
+under the MIT license, meaning that you are free to host on your own infrastructure.
+
+You will find instructions in the [GitHub repository](https://github.com/graphql-hive) and feel free
+to contact us for any questions or support.
+
+## Join Us in Building the Future of Hive
+
+Like all [The Guild](/) projects, GraphQL Hive is built with the community.
+
+We can't wait to [get you onboard](https://app.graphql-hive.com) and get your feedback, pull
+requests, and feature requests on
+[https://github.com/graphql-hive](https://github.com/graphql-hive).
+
+See you in Hive! 🐝

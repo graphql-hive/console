@@ -1,3 +1,4 @@
+import { parseCliAuthor } from '../lib/parse-cli-author';
 import { ContractsManager } from '../providers/contracts-manager';
 import { SchemaCheckManager } from '../providers/schema-check-manager';
 import { SchemaManager } from '../providers/schema-manager';
@@ -39,6 +40,24 @@ export const SuccessfulSchemaCheck: SuccessfulSchemaCheckResolvers = {
         })
       : null;
   },
+  cliApprovalMetadata: schemaCheck => {
+    if (!schemaCheck.isManuallyApproved || schemaCheck.manualApprovalUserId) {
+      return null;
+    }
+    if (schemaCheck.breakingSchemaChanges) {
+      for (const change of schemaCheck.breakingSchemaChanges) {
+        if (change.approvalMetadata?.author) {
+          const { displayName, email } = parseCliAuthor(change.approvalMetadata.author);
+          return {
+            author: change.approvalMetadata.author,
+            displayName,
+            email,
+          } as const;
+        }
+      }
+    }
+    return null;
+  },
   approvalComment: schemaCheck => {
     return schemaCheck.isManuallyApproved ? schemaCheck.manualApprovalComment : null;
   },
@@ -50,5 +69,8 @@ export const SuccessfulSchemaCheck: SuccessfulSchemaCheckResolvers = {
   },
   conditionalBreakingChangeMetadata: (schemaCheck, _, { injector }) => {
     return injector.get(SchemaCheckManager).getConditionalBreakingChangeMetadata(schemaCheck);
+  },
+  schemaChanges: (schemaCheck, _, { injector }) => {
+    return injector.get(SchemaCheckManager).getAllSchemaChanges(schemaCheck);
   },
 };

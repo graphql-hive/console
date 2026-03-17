@@ -1,4 +1,8 @@
-import { ProjectType, RuleInstanceSeverityLevel } from 'testkit/gql/graphql';
+import {
+  ProjectType,
+  ResourceAssignmentModeType,
+  RuleInstanceSeverityLevel,
+} from 'testkit/gql/graphql';
 // eslint-disable-next-line import/no-extraneous-dependencies
 import { createStorage } from '@hive/storage';
 import { graphql } from '../../../testkit/gql';
@@ -116,7 +120,7 @@ test.concurrent('should match indentation of previous description', async ({ exp
 
 const SchemaCheckQuery = graphql(/* GraphQL */ `
   query SchemaCheckOnTargetQuery($selector: TargetSelectorInput!, $id: ID!) {
-    target(selector: $selector) {
+    target(reference: { bySelector: $selector }) {
       schemaCheck(id: $id) {
         __typename
         id
@@ -602,14 +606,14 @@ test.concurrent('failed check due to policy error is persisted', async ({ expect
             {
               node: {
                 end: {
-                  column: 17,
-                  line: 2,
+                  column: 11,
+                  line: 1,
                 },
                 message: 'Description is required for type "Query"',
                 ruleId: 'require-description',
                 start: {
-                  column: 12,
-                  line: 2,
+                  column: 6,
+                  line: 1,
                 },
               },
             },
@@ -1316,6 +1320,346 @@ test.concurrent(
 );
 
 test.concurrent(
+  'can not approve schema check with insufficient permissions granted by default user role',
+  async () => {
+    const { createOrg } = await initSeed().createOwner();
+    const { organization, createProject, inviteAndJoinMember } = await createOrg();
+
+    // Setup Start: Create a failed schema check
+
+    const { project, createTargetAccessToken, target } = await createProject(ProjectType.Single);
+
+    // Create a token with write rights
+    const writeToken = await createTargetAccessToken({});
+
+    // Publish schema with write rights
+    const publishResult = await writeToken
+      .publishSchema({
+        sdl: /* GraphQL */ `
+          type Query {
+            ping: String
+          }
+        `,
+      })
+      .then(r => r.expectNoGraphQLErrors());
+
+    // Schema publish should be successful
+    expect(publishResult.schemaPublish.__typename).toBe('SchemaPublishSuccess');
+
+    const checkResult = await writeToken
+      .checkSchema(/* GraphQL */ `
+        type Query {
+          ping: Float
+        }
+      `)
+      .then(r => r.expectNoGraphQLErrors());
+
+    if (checkResult.schemaCheck.__typename !== 'SchemaCheckError') {
+      throw new Error('Invalid result: ' + checkResult.schemaCheck.__typename);
+    }
+    const schemaCheckId = await checkResult.schemaCheck.schemaCheck?.id;
+    if (!schemaCheckId) {
+      throw new Error('Invalid result: ' + JSON.stringify(checkResult, null, 2));
+    }
+
+    // Setup Done: Create a failed schema check
+
+    // Create a member with no access to projects
+    const { member, assignMemberRole, memberToken } = await inviteAndJoinMember();
+    expect(member.role.name).toEqual('Viewer');
+    await assignMemberRole({
+      roleId: member.role.id,
+      userId: member.user.id,
+      resources: { mode: ResourceAssignmentModeType.Granular, projects: [] },
+    });
+
+    // Attempt approving the failed schema check
+    const errors = await execute({
+      document: ApproveFailedSchemaCheckMutation,
+      variables: {
+        input: {
+          organizationSlug: organization.slug,
+          projectSlug: project.slug,
+          targetSlug: target.slug,
+          schemaCheckId,
+        },
+      },
+      authToken: memberToken,
+    }).then(r => r.expectGraphQLErrors());
+    expect(errors).toHaveLength(1);
+    expect(errors.at(0)).toMatchObject({
+      extensions: {
+        code: 'UNAUTHORISED',
+      },
+      message: `No access (reason: "Missing permission for performing 'schemaCheck:approve' on resource")`,
+      path: ['approveFailedSchemaCheck'],
+    });
+  },
+);
+
+test.concurrent(
+  'can not approve schema check with insufficient permissions granted by member role (no access to project resource)',
+  async () => {
+    const { createOrg } = await initSeed().createOwner();
+    const { organization, createProject, inviteAndJoinMember } = await createOrg();
+
+    // Setup Start: Create a failed schema check
+
+    const { project, createTargetAccessToken, target } = await createProject(ProjectType.Single);
+
+    // Create a token with write rights
+    const writeToken = await createTargetAccessToken({});
+
+    // Publish schema with write rights
+    const publishResult = await writeToken
+      .publishSchema({
+        sdl: /* GraphQL */ `
+          type Query {
+            ping: String
+          }
+        `,
+      })
+      .then(r => r.expectNoGraphQLErrors());
+
+    // Schema publish should be successful
+    expect(publishResult.schemaPublish.__typename).toBe('SchemaPublishSuccess');
+
+    const checkResult = await writeToken
+      .checkSchema(/* GraphQL */ `
+        type Query {
+          ping: Float
+        }
+      `)
+      .then(r => r.expectNoGraphQLErrors());
+
+    if (checkResult.schemaCheck.__typename !== 'SchemaCheckError') {
+      throw new Error('Invalid result: ' + checkResult.schemaCheck.__typename);
+    }
+    const schemaCheckId = await checkResult.schemaCheck.schemaCheck?.id;
+    if (!schemaCheckId) {
+      throw new Error('Invalid result: ' + JSON.stringify(checkResult, null, 2));
+    }
+
+    // Setup Done: Create a failed schema check
+
+    // Create a member with no access to projects
+    const { member, assignMemberRole, createMemberRole, memberToken } = await inviteAndJoinMember();
+    const memberRole = await createMemberRole(['schemaCheck:approve', 'project:describe']);
+    await assignMemberRole({
+      roleId: memberRole.id,
+      userId: member.user.id,
+      resources: { mode: ResourceAssignmentModeType.Granular, projects: [] },
+    });
+
+    // Attempt approving the failed schema check
+    const errors = await execute({
+      document: ApproveFailedSchemaCheckMutation,
+      variables: {
+        input: {
+          organizationSlug: organization.slug,
+          projectSlug: project.slug,
+          targetSlug: target.slug,
+          schemaCheckId,
+        },
+      },
+      authToken: memberToken,
+    }).then(r => r.expectGraphQLErrors());
+    expect(errors).toHaveLength(1);
+    expect(errors.at(0)).toMatchObject({
+      extensions: {
+        code: 'UNAUTHORISED',
+      },
+      message: `No access (reason: "Missing permission for performing 'schemaCheck:approve' on resource")`,
+      path: ['approveFailedSchemaCheck'],
+    });
+  },
+);
+
+test.concurrent(
+  'can not approve schema check with insufficient permissions granted by member role (no access to target resource)',
+  async () => {
+    const { createOrg } = await initSeed().createOwner();
+    const { organization, createProject, inviteAndJoinMember } = await createOrg();
+
+    // Setup Start: Create a failed schema check
+
+    const { project, createTargetAccessToken, target, targets } = await createProject(
+      ProjectType.Single,
+    );
+
+    // Create a token with write rights
+    const writeToken = await createTargetAccessToken({});
+
+    // Publish schema with write rights
+    const publishResult = await writeToken
+      .publishSchema({
+        sdl: /* GraphQL */ `
+          type Query {
+            ping: String
+          }
+        `,
+      })
+      .then(r => r.expectNoGraphQLErrors());
+
+    // Schema publish should be successful
+    expect(publishResult.schemaPublish.__typename).toBe('SchemaPublishSuccess');
+
+    const checkResult = await writeToken
+      .checkSchema(/* GraphQL */ `
+        type Query {
+          ping: Float
+        }
+      `)
+      .then(r => r.expectNoGraphQLErrors());
+
+    if (checkResult.schemaCheck.__typename !== 'SchemaCheckError') {
+      throw new Error('Invalid result: ' + checkResult.schemaCheck.__typename);
+    }
+    const schemaCheckId = await checkResult.schemaCheck.schemaCheck?.id;
+    if (!schemaCheckId) {
+      throw new Error('Invalid result: ' + JSON.stringify(checkResult, null, 2));
+    }
+
+    // Setup Done: Create a failed schema check
+
+    // Create a member with no access to project targets
+    const { member, createMemberRole, assignMemberRole, memberToken } = await inviteAndJoinMember();
+    const memberRole = await createMemberRole(['schemaCheck:approve', 'project:describe']);
+    await assignMemberRole({
+      roleId: memberRole.id,
+      userId: member.user.id,
+      resources: {
+        mode: ResourceAssignmentModeType.Granular,
+        projects: [
+          {
+            projectId: project.id,
+            targets: {
+              mode: ResourceAssignmentModeType.Granular,
+              targets: [],
+            },
+          },
+        ],
+      },
+    });
+
+    // Attempt approving the failed schema check
+    const errors = await execute({
+      document: ApproveFailedSchemaCheckMutation,
+      variables: {
+        input: {
+          organizationSlug: organization.slug,
+          projectSlug: project.slug,
+          targetSlug: target.slug,
+          schemaCheckId,
+        },
+      },
+      authToken: memberToken,
+    }).then(r => r.expectGraphQLErrors());
+    expect(errors).toHaveLength(1);
+    expect(errors.at(0)).toMatchObject({
+      extensions: {
+        code: 'UNAUTHORISED',
+      },
+      message: `No access (reason: "Missing permission for performing 'schemaCheck:approve' on resource")`,
+      path: ['approveFailedSchemaCheck'],
+    });
+  },
+);
+
+test.concurrent(
+  'can approve schema with sufficient permissions granted by member role (access to target)',
+  async () => {
+    const { createOrg } = await initSeed().createOwner();
+    const { organization, createProject, inviteAndJoinMember } = await createOrg();
+
+    // Setup Start: Create a failed schema check
+
+    const { project, createTargetAccessToken, target } = await createProject(ProjectType.Single);
+
+    // Create a token with write rights
+    const writeToken = await createTargetAccessToken({});
+
+    // Publish schema with write rights
+    const publishResult = await writeToken
+      .publishSchema({
+        sdl: /* GraphQL */ `
+          type Query {
+            ping: String
+          }
+        `,
+      })
+      .then(r => r.expectNoGraphQLErrors());
+
+    // Schema publish should be successful
+    expect(publishResult.schemaPublish.__typename).toBe('SchemaPublishSuccess');
+
+    const checkResult = await writeToken
+      .checkSchema(/* GraphQL */ `
+        type Query {
+          ping: Float
+        }
+      `)
+      .then(r => r.expectNoGraphQLErrors());
+
+    if (checkResult.schemaCheck.__typename !== 'SchemaCheckError') {
+      throw new Error('Invalid result: ' + checkResult.schemaCheck.__typename);
+    }
+    const schemaCheckId = await checkResult.schemaCheck.schemaCheck?.id;
+    if (!schemaCheckId) {
+      throw new Error('Invalid result: ' + JSON.stringify(checkResult, null, 2));
+    }
+
+    // Setup Done: Create a failed schema check
+
+    // Create a member with no access to projects
+    const { member, createMemberRole, assignMemberRole, memberToken } = await inviteAndJoinMember();
+    const memberRole = await createMemberRole(['schemaCheck:approve', 'project:describe']);
+    await assignMemberRole({
+      roleId: memberRole.id,
+      userId: member.user.id,
+      resources: {
+        mode: ResourceAssignmentModeType.Granular,
+        projects: [
+          {
+            projectId: project.id,
+            targets: {
+              mode: ResourceAssignmentModeType.Granular,
+              targets: [
+                {
+                  targetId: target.id,
+                  appDeployments: { mode: ResourceAssignmentModeType.All },
+                  services: { mode: ResourceAssignmentModeType.All },
+                },
+              ],
+            },
+          },
+        ],
+      },
+    });
+
+    // Attempt approving the failed schema check
+    const result = await execute({
+      document: ApproveFailedSchemaCheckMutation,
+      variables: {
+        input: {
+          organizationSlug: organization.slug,
+          projectSlug: project.slug,
+          targetSlug: target.slug,
+          schemaCheckId,
+        },
+      },
+      authToken: memberToken,
+    }).then(r => r.expectNoGraphQLErrors());
+    expect(result.approveFailedSchemaCheck.ok).toMatchObject({
+      schemaCheck: {
+        __typename: 'SuccessfulSchemaCheck',
+        isApproved: true,
+      },
+    });
+  },
+);
+
+test.concurrent(
   'subsequent schema check with shared contextId that contains new breaking changes that have not been approved fails',
   async ({ expect }) => {
     const { createOrg, ownerToken } = await initSeed().createOwner();
@@ -1581,12 +1925,8 @@ describe.concurrent(
   () => {
     test.concurrent('native federation', async () => {
       const { createOrg } = await initSeed().createOwner();
-      const { createProject, setFeatureFlag } = await createOrg();
-      const { createTargetAccessToken, setNativeFederation } = await createProject(
-        ProjectType.Federation,
-      );
-      await setFeatureFlag('compareToPreviousComposableVersion', true);
-      await setNativeFederation(true);
+      const { createProject } = await createOrg();
+      const { createTargetAccessToken } = await createProject(ProjectType.Federation);
 
       const token = await createTargetAccessToken({});
 
@@ -1632,11 +1972,10 @@ describe.concurrent(
 
     test.concurrent('legacy fed composition', async () => {
       const { createOrg } = await initSeed().createOwner();
-      const { createProject, setFeatureFlag } = await createOrg();
+      const { createProject } = await createOrg();
       const { createTargetAccessToken, setNativeFederation } = await createProject(
         ProjectType.Federation,
       );
-      await setFeatureFlag('compareToPreviousComposableVersion', false);
       await setNativeFederation(false);
 
       const token = await createTargetAccessToken({});
@@ -1676,58 +2015,6 @@ describe.concurrent(
         }),
       });
     });
-
-    test.concurrent(
-      'legacy fed composition with compareToPreviousComposableVersion=true',
-      async () => {
-        const { createOrg } = await initSeed().createOwner();
-        const { createProject, setFeatureFlag } = await createOrg();
-        const { createTargetAccessToken, setNativeFederation } = await createProject(
-          ProjectType.Federation,
-        );
-        await setFeatureFlag('compareToPreviousComposableVersion', true);
-        await setNativeFederation(false);
-
-        const token = await createTargetAccessToken({});
-
-        // @key(fields:) is invalid - should trigger a composition error
-        const sdl = /* GraphQL */ `
-          type Query {
-            ping: String
-            pong: String
-            foo: User
-          }
-
-          type User @key(fields: "uuid") {
-            id: ID!
-          }
-        `;
-
-        // Publish schema with write rights
-        await token
-          .publishSchema({
-            sdl,
-            service: 'serviceA',
-            url: 'http://localhost:4000',
-          })
-          .then(r => r.expectNoGraphQLErrors());
-
-        const result = await token
-          .checkSchema(sdl, 'serviceA')
-          .then(r => r.expectNoGraphQLErrors());
-
-        expect(result.schemaCheck).toMatchObject({
-          valid: false,
-          __typename: 'SchemaCheckError',
-          changes: expect.objectContaining({
-            total: 0,
-          }),
-          errors: expect.objectContaining({
-            total: 1,
-          }),
-        });
-      },
-    );
   },
 );
 
@@ -1841,19 +2128,10 @@ test.concurrent(
       tags: null,
       targetId: target.id,
       url: null,
+      schemaMetadata: null,
+      metadataAttributes: null,
     });
     await storage.destroy();
-
-    const validSdl = /* GraphQL */ `
-      type Query {
-        a(b: B!): String
-      }
-
-      input B {
-        a: String @deprecated(reason: "This field is deprecated")
-        b: String!
-      }
-    `;
 
     const sdl = /* GraphQL */ `
       type Query {
@@ -1883,5 +2161,403 @@ test.concurrent(
       },
       valid: true,
     });
+  },
+);
+
+test.concurrent('schema policy errors prevent schema check approval', async ({ expect }) => {
+  const { createOrg, ownerToken } = await initSeed().createOwner();
+  const { createProject, organization } = await createOrg();
+  const { createTargetAccessToken, setProjectSchemaPolicy, project, target } = await createProject(
+    ProjectType.Single,
+  );
+
+  await setProjectSchemaPolicy(createPolicy(RuleInstanceSeverityLevel.Error));
+
+  const writeToken = await createTargetAccessToken({});
+  await writeToken
+    .publishSchema({
+      sdl: /* GraphQL */ `
+        type Query {
+          ping: String
+        }
+      `,
+    })
+    .then(r => r.expectNoGraphQLErrors());
+
+  const checkResult = await writeToken
+    .checkSchema(/* GraphQL */ `
+      type Query {
+        ping: Float
+      }
+    `)
+    .then(r => r.expectNoGraphQLErrors());
+
+  const check = checkResult.schemaCheck;
+
+  if (check.__typename !== 'SchemaCheckError') {
+    throw new Error(`Expected SchemaCheckError, got ${check.__typename}`);
+  }
+
+  const schemaCheckId = check.schemaCheck?.id;
+
+  if (schemaCheckId == null) {
+    throw new Error('Missing schema check id.');
+  }
+
+  const mutationResult = await execute({
+    document: ApproveFailedSchemaCheckMutation,
+    variables: {
+      input: {
+        organizationSlug: organization.slug,
+        projectSlug: project.slug,
+        targetSlug: target.slug,
+        schemaCheckId,
+      },
+    },
+    authToken: ownerToken,
+  }).then(r => r.expectNoGraphQLErrors());
+
+  expect(mutationResult).toEqual({
+    approveFailedSchemaCheck: {
+      ok: null,
+      error: {
+        message: 'Schema check has schema policy errors that must be resolved before approval.',
+      },
+    },
+  });
+});
+
+test.concurrent(
+  'schema policy errors prevent schema check approval with safe changes',
+  async ({ expect }) => {
+    const { createOrg, ownerToken } = await initSeed().createOwner();
+    const { createProject, organization } = await createOrg();
+    const { createTargetAccessToken, setProjectSchemaPolicy, project, target } =
+      await createProject(ProjectType.Single);
+
+    await setProjectSchemaPolicy(createPolicy(RuleInstanceSeverityLevel.Error));
+
+    const writeToken = await createTargetAccessToken({});
+    await writeToken
+      .publishSchema({
+        sdl: /* GraphQL */ `
+          type Query {
+            ping: String
+          }
+        `,
+      })
+      .then(r => r.expectNoGraphQLErrors());
+
+    const checkResult = await writeToken
+      .checkSchema(/* GraphQL */ `
+        type Query {
+          ping: String
+          pong: String
+        }
+      `)
+      .then(r => r.expectNoGraphQLErrors());
+
+    const check = checkResult.schemaCheck;
+
+    if (check.__typename !== 'SchemaCheckError') {
+      throw new Error(`Expected SchemaCheckError, got ${check.__typename}`);
+    }
+
+    const schemaCheckId = check.schemaCheck?.id;
+
+    if (schemaCheckId == null) {
+      throw new Error('Missing schema check id.');
+    }
+
+    const mutationResult = await execute({
+      document: ApproveFailedSchemaCheckMutation,
+      variables: {
+        input: {
+          organizationSlug: organization.slug,
+          projectSlug: project.slug,
+          targetSlug: target.slug,
+          schemaCheckId,
+        },
+      },
+      authToken: ownerToken,
+    }).then(r => r.expectNoGraphQLErrors());
+
+    expect(mutationResult).toEqual({
+      approveFailedSchemaCheck: {
+        ok: null,
+        error: {
+          message: 'Schema check has schema policy errors that must be resolved before approval.',
+        },
+      },
+    });
+  },
+);
+
+test.concurrent(
+  'approve failed schema check with author field using target access token',
+  async ({ expect }) => {
+    const { createOrg } = await initSeed().createOwner();
+    const { createProject, organization } = await createOrg();
+    const { createTargetAccessToken, project, target } = await createProject(ProjectType.Single);
+    const writeToken = await createTargetAccessToken({});
+
+    const publishResult = await writeToken
+      .publishSchema({
+        sdl: /* GraphQL */ `
+          type Query {
+            ping: String
+          }
+        `,
+      })
+      .then(r => r.expectNoGraphQLErrors());
+
+    expect(publishResult.schemaPublish.__typename).toBe('SchemaPublishSuccess');
+
+    const readToken = await createTargetAccessToken({
+      mode: 'readWrite',
+    });
+
+    const checkResult = await readToken
+      .checkSchema(/* GraphQL */ `
+        type Query {
+          ping: Float
+        }
+      `)
+      .then(r => r.expectNoGraphQLErrors());
+
+    const check = checkResult.schemaCheck;
+    if (check.__typename !== 'SchemaCheckError') {
+      throw new Error(`Expected SchemaCheckError, got ${check.__typename}`);
+    }
+
+    const schemaCheckId = check.schemaCheck?.id;
+    if (schemaCheckId == null) {
+      throw new Error('Missing schema check id.');
+    }
+
+    const mutationResult = await execute({
+      document: graphql(/* GraphQL */ `
+        mutation ApproveFailedSchemaCheckWithAuthor($input: ApproveFailedSchemaCheckInput!) {
+          approveFailedSchemaCheck(input: $input) {
+            ok {
+              schemaCheck {
+                __typename
+                ... on SuccessfulSchemaCheck {
+                  isApproved
+                  approvalComment
+                  cliApprovalMetadata {
+                    displayName
+                    email
+                  }
+                }
+              }
+            }
+            error {
+              message
+            }
+          }
+        }
+      `),
+      variables: {
+        input: {
+          organizationSlug: organization.slug,
+          projectSlug: project.slug,
+          targetSlug: target.slug,
+          schemaCheckId,
+          comment: 'Check force approved automatically via CLI --forceSafe flag',
+          author: 'John Doe <john@example.com>',
+        },
+      },
+      authToken: readToken.secret,
+    }).then(r => r.expectNoGraphQLErrors());
+
+    expect(mutationResult.approveFailedSchemaCheck.ok).not.toBeNull();
+    expect(mutationResult.approveFailedSchemaCheck.error).toBeNull();
+
+    const approvedCheck = mutationResult.approveFailedSchemaCheck.ok?.schemaCheck;
+    expect(approvedCheck?.__typename).toBe('SuccessfulSchemaCheck');
+
+    if (approvedCheck?.__typename === 'SuccessfulSchemaCheck') {
+      expect(approvedCheck.isApproved).toBe(true);
+
+      expect(approvedCheck.cliApprovalMetadata).toMatchObject({
+        displayName: 'John Doe',
+        email: 'john@example.com',
+      });
+    }
+
+    const schemaCheckQueryResult = await execute({
+      document: graphql(/* GraphQL */ `
+        query GetSchemaCheckWithApproval(
+          $organizationSlug: String!
+          $projectSlug: String!
+          $targetSlug: String!
+          $schemaCheckId: ID!
+        ) {
+          target(
+            reference: {
+              bySelector: {
+                organizationSlug: $organizationSlug
+                projectSlug: $projectSlug
+                targetSlug: $targetSlug
+              }
+            }
+          ) {
+            schemaCheck(id: $schemaCheckId) {
+              __typename
+              ... on SuccessfulSchemaCheck {
+                id
+                isApproved
+                cliApprovalMetadata {
+                  displayName
+                  email
+                }
+                breakingSchemaChanges {
+                  nodes {
+                    message
+                    approval {
+                      cliApprovalMetadata {
+                        displayName
+                        email
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      `),
+      variables: {
+        organizationSlug: organization.slug,
+        projectSlug: project.slug,
+        targetSlug: target.slug,
+        schemaCheckId,
+      },
+      authToken: readToken.secret,
+    }).then(r => r.expectNoGraphQLErrors());
+
+    const queriedCheck = schemaCheckQueryResult.target?.schemaCheck;
+    expect(queriedCheck?.__typename).toBe('SuccessfulSchemaCheck');
+
+    if (queriedCheck?.__typename === 'SuccessfulSchemaCheck') {
+      expect(queriedCheck.isApproved).toBe(true);
+
+      const breakingChanges = queriedCheck.breakingSchemaChanges?.nodes ?? [];
+      expect(breakingChanges.length).toBeGreaterThan(0);
+
+      for (const change of breakingChanges) {
+        expect(change.approval?.cliApprovalMetadata).toMatchObject({
+          displayName: 'John Doe',
+          email: 'john@example.com',
+        });
+      }
+    }
+  },
+);
+
+test.concurrent(
+  'approve failed schema check handles different author formats',
+  async ({ expect }) => {
+    const testCases = [
+      {
+        author: 'john@example.com',
+        expected: { displayName: 'john@example.com', email: 'john@example.com' },
+        description: 'email only',
+      },
+      {
+        author: 'John Doe',
+        expected: { displayName: 'John Doe', email: '<no email provided>' },
+        description: 'name only',
+      },
+      {
+        author: 'John Doe <john@example.com>',
+        expected: { displayName: 'John Doe', email: 'john@example.com' },
+        description: 'git standard format',
+      },
+    ];
+
+    for (const testCase of testCases) {
+      const { createOrg } = await initSeed().createOwner();
+      const { createProject, organization } = await createOrg();
+      const { createTargetAccessToken, project, target } = await createProject(ProjectType.Single);
+
+      const writeToken = await createTargetAccessToken({
+        mode: 'readWrite',
+      });
+
+      await writeToken
+        .publishSchema({
+          sdl: /* GraphQL */ `
+            type Query {
+              ping: String
+              email: String
+            }
+          `,
+        })
+        .then(r => r.expectNoGraphQLErrors());
+
+      const checkResult = await writeToken
+        .checkSchema(/* GraphQL */ `
+          type Query {
+            ping: String
+          }
+        `)
+        .then(r => r.expectNoGraphQLErrors());
+
+      expect(checkResult.schemaCheck.__typename).toBe('SchemaCheckError');
+      if (checkResult.schemaCheck.__typename !== 'SchemaCheckError') {
+        throw new Error('Expected SchemaCheckError');
+      }
+
+      const schemaCheckId = checkResult.schemaCheck.schemaCheck?.id;
+      expect(schemaCheckId).toBeDefined();
+
+      const mutationResult = await execute({
+        document: graphql(/* GraphQL */ `
+          mutation ApproveFailedSchemaCheckWithDifferentAuthorFormats(
+            $input: ApproveFailedSchemaCheckInput!
+          ) {
+            approveFailedSchemaCheck(input: $input) {
+              ok {
+                schemaCheck {
+                  __typename
+                  ... on SuccessfulSchemaCheck {
+                    isApproved
+                    approvalComment
+                    cliApprovalMetadata {
+                      displayName
+                      email
+                    }
+                  }
+                }
+              }
+              error {
+                message
+              }
+            }
+          }
+        `),
+        variables: {
+          input: {
+            organizationSlug: organization.slug,
+            projectSlug: project.slug,
+            targetSlug: target.slug,
+            schemaCheckId: schemaCheckId!,
+            comment: `Testing ${testCase.description}`,
+            author: testCase.author,
+          },
+        },
+        authToken: writeToken.secret,
+      }).then(r => r.expectNoGraphQLErrors());
+
+      expect(mutationResult.approveFailedSchemaCheck.ok).not.toBeNull();
+
+      const approvedCheck = mutationResult.approveFailedSchemaCheck.ok?.schemaCheck;
+      if (approvedCheck?.__typename === 'SuccessfulSchemaCheck') {
+        expect(approvedCheck.cliApprovalMetadata?.displayName).toBe(testCase.expected.displayName);
+        expect(approvedCheck.cliApprovalMetadata?.email).toBe(testCase.expected.email);
+      }
+    }
   },
 );

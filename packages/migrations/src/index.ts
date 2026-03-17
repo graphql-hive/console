@@ -5,6 +5,7 @@ import { migrateClickHouse } from './clickhouse';
 import { createConnectionString } from './connection-string';
 import { env } from './environment';
 import { runPGMigrations } from './run-pg-migrations';
+import { updateRetention } from './scripts/update-retention';
 
 const slonik = await createPool(createConnectionString(env.postgres), {
   // 10 minute timeout per statement
@@ -31,8 +32,33 @@ try {
   console.log('Running the UP migrations');
   await runPGMigrations({ slonik });
   if (env.clickhouse) {
-    await migrateClickHouse(env.isClickHouseMigrator, env.isHiveCloud, env.clickhouse);
+    await migrateClickHouse(
+      env.isClickHouseMigrator,
+      env.isHiveCloud,
+      env.hiveCloudEnvironment,
+      env.clickhouse,
+    );
   }
+
+  // Automatically apply retention if any retention setting is configured
+  if (
+    // eslint-disable-next-line no-process-env
+    process.env.CLICKHOUSE_TTL_TABLES ||
+    // eslint-disable-next-line no-process-env
+    process.env.CLICKHOUSE_TTL_DAILY_MV_TABLES ||
+    // eslint-disable-next-line no-process-env
+    process.env.CLICKHOUSE_TTL_HOURLY_MV_TABLES ||
+    // eslint-disable-next-line no-process-env
+    process.env.CLICKHOUSE_TTL_MINUTELY_MV_TABLES
+  ) {
+    console.log('Applying clickhouse retention settings...');
+    try {
+      await updateRetention();
+    } catch (error) {
+      console.error('Failed to update retention (non-fatal):', error);
+    }
+  }
+
   process.exit(0);
 } catch (error) {
   console.error(error);

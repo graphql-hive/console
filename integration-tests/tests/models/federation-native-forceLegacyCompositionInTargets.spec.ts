@@ -14,8 +14,6 @@ const options = ['targetWithNativeComposition', 'targetWithLegacyComposition'] a
 
 describe('publish', () => {
   describe.concurrent.each(options)('%s', caseName => {
-    const legacyComposition = isLegacyComposition(caseName);
-
     test.concurrent('accepted: composable', async () => {
       const {
         cli: { publish },
@@ -55,26 +53,23 @@ describe('publish', () => {
       });
     });
 
-    test.concurrent(
-      `${legacyComposition ? 'rejected' : 'accepted'}: not composable (graphql errors)`,
-      async () => {
-        const {
-          cli: { publish },
-        } = await prepare(caseName);
+    test.concurrent(`accepted: not composable (graphql errors)`, async () => {
+      const {
+        cli: { publish },
+      } = await prepare(caseName);
 
-        // non-composable
-        await publish({
-          sdl: /* GraphQL */ `
-            type Query {
-              topProduct: Product
-            }
-          `,
-          serviceName: 'products',
-          serviceUrl: 'http://products:3000/graphql',
-          expect: legacyComposition ? 'rejected' : 'latest',
-        });
-      },
-    );
+      // non-composable
+      await publish({
+        sdl: /* GraphQL */ `
+          type Query {
+            topProduct: Product
+          }
+        `,
+        serviceName: 'products',
+        serviceUrl: 'http://products:3000/graphql',
+        expect: 'latest',
+      });
+    });
 
     test.concurrent('accepted: composable, previous version was not', async () => {
       const {
@@ -905,12 +900,8 @@ async function prepare(targetPick: TargetOption) {
 async function prepareProject(projectType: ProjectType) {
   const { createOrg, ownerToken } = await initSeed().createOwner();
   const { organization, createProject } = await createOrg();
-  const { project, createTargetAccessToken, createCdnAccess, targets } = await createProject(
-    projectType,
-    {
-      useLegacyRegistryModels: false,
-    },
-  );
+  const { project, createTargetAccessToken, createCdnAccess, targets } =
+    await createProject(projectType);
 
   if (targets.length < 2) {
     throw new Error('Expected at least two targets');

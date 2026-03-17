@@ -2,6 +2,10 @@ name: pr
 on:
   pull_request: {}
 
+concurrency:
+  group: pr-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
 env:
   HIVE_TOKEN: ${{ secrets.HIVE_TOKEN }}
 
@@ -61,13 +65,19 @@ jobs:
     with:
       imageTag: ${{ github.event.pull_request.head.sha }}
 
+  # e2e tests for docs site using Playwright
+  docs-e2e:
+    name: test
+    uses: ./.github/workflows/tests-e2e-docs.yaml
+
+  # Changeset Validation
+  # Validates that changesets reference valid packages that exist in the monorepo
+  changeset-validation:
+    uses: ./.github/workflows/changeset-validation.yaml
+
   # ESLint and Prettier
   code-style:
     uses: ./.github/workflows/lint.yaml
-
-  # CodeQL
-  static-analysis:
-    uses: ./.github/workflows/codeql-analysis.yml
 
   # TypeScript Typecheck and compiler checks
   typescript:
@@ -76,12 +86,6 @@ jobs:
   # Deploy Website preview to CloudFlare Pages
   website-preview:
     uses: ./.github/workflows/website.yaml
-    if: ${{ !github.event.pull_request.head.repo.fork }}
-    secrets: inherit
-
-  # Deploy Storybook preview to CloudFlare Pages
-  storybook-preview:
-    uses: ./.github/workflows/storybook.yaml
     if: ${{ !github.event.pull_request.head.repo.fork }}
     secrets: inherit
 
@@ -99,8 +103,8 @@ jobs:
       npmTag: rc
       restoreDeletedChangesets: true
       buildScript: build:libraries
-      nodeVersion: 22.6
       packageManager: pnpm
+      nodeVersion: '24.13'
     secrets:
       githubToken: ${{ secrets.GITHUB_TOKEN }}
       npmToken: ${{ secrets.NPM_TOKEN }}

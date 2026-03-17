@@ -19,7 +19,7 @@ export const NotFound = ({
     >
       <img src={ghost} alt="Ghost illustration" width="200" height="200" className="drag-none" />
       <Heading className="text-center">{title}</Heading>
-      <span className="text-center text-sm font-medium text-gray-500">{description}</span>
+      <span className="text-neutral-10 text-center text-sm font-medium">{description}</span>
     </Card>
   );
 };

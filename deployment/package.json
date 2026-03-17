@@ -1,6 +1,6 @@
 {
   "name": "hive",
-  "version": "1.0.1",
+  "version": "10.0.0",
   "private": true,
   "scripts": {
     "generate": "tsx generate.ts",
@@ -10,26 +10,26 @@
   "dependencies": {
     "@lbrlabs/pulumi-grafana": "0.1.0",
     "@manypkg/get-packages": "2.2.2",
+    "@pulumi/aws": "7.12.0",
     "@pulumi/cloudflare": "4.16.0",
     "@pulumi/command": "1.0.1",
-    "@pulumi/kubernetes": "4.17.1",
+    "@pulumi/kubernetes": "4.24.1",
     "@pulumi/kubernetesx": "0.1.6",
-    "@pulumi/pulumi": "3.137.0",
-    "@pulumi/random": "4.16.2",
-    "js-yaml": "4.1.0",
-    "pg-connection-string": "2.7.0",
-    "prettier": "3.3.3",
-    "tar-stream": "3.1.7"
+    "@pulumi/pulumi": "3.214.0",
+    "@pulumi/random": "4.18.2",
+    "js-yaml": "4.1.1",
+    "pg-connection-string": "2.9.1",
+    "prettier": "3.4.2"
   },
   "devDependencies": {
+    "@graphql-hive/gateway": "^2.1.19",
     "@types/js-yaml": "4.0.9",
     "@types/mime-types": "2.1.4",
-    "@types/node": "22.8.7",
-    "@types/tar-stream": "3.1.3",
+    "@types/node": "22.10.5",
     "@types/tmp": "0.2.6",
-    "json-schema-to-typescript": "15.0.2",
-    "tmp": "0.2.3",
+    "json-schema-to-typescript": "15.0.3",
+    "tmp": "0.2.5",
     "tsx": "4.19.2",
-    "typescript": "5.6.3"
+    "typescript": "5.7.3"
   }
 }

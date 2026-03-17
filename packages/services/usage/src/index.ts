@@ -1,34 +1,50 @@
 #!/usr/bin/env node
-import { hostname } from 'os';
+import 'reflect-metadata';
+import Redis from 'ioredis';
+import { PrometheusConfig } from '@hive/api/modules/shared/providers/prometheus-config';
+import { TargetsByIdCache } from '@hive/api/modules/target/providers/targets-by-id-cache';
+import { TargetsBySlugCache } from '@hive/api/modules/target/providers/targets-by-slug-cache';
 import {
+  configureTracing,
   createServer,
   registerShutdown,
   reportReadiness,
+  sentryInit,
   startMetrics,
+  TracingInstance,
 } from '@hive/service-common';
+import { createConnectionString } from '@hive/storage';
+import { getPool } from '@hive/storage/db/pool';
 import * as Sentry from '@sentry/node';
+import { createAuthN } from './authn';
 import { env } from './environment';
-import { maskToken } from './helpers';
-import {
-  collectDuration,
-  droppedReports,
-  httpRequests,
-  httpRequestsWithNoAccess,
-  httpRequestsWithNonExistingToken,
-  httpRequestsWithoutToken,
-  tokensDuration,
-  usedAPIVersion,
-} from './metrics';
 import { createUsageRateLimit } from './rate-limit';
 import { createTokens } from './tokens';
 import { createUsage } from './usage';
-import { usageProcessorV1 } from './usage-processor-1';
-import { usageProcessorV2 } from './usage-processor-2';
+import { registerUsageCollectionLegacyRoute } from './usage-collection-legacy-route';
+import { registerUsageCollectionRoute } from './usage-collection-route';
+
+declare module 'fastify' {
+  interface FastifyRequest {
+    onRequestHRTime: [number, number];
+  }
+}
 
 async function main() {
+  let tracing: TracingInstance | undefined;
+
+  if (env.tracing.enabled && env.tracing.collectorEndpoint) {
+    tracing = configureTracing({
+      collectorEndpoint: env.tracing.collectorEndpoint,
+      serviceName: 'usage',
+    });
+
+    tracing.instrumentNodeFetch();
+    tracing.setup();
+  }
+
   if (env.sentry) {
-    Sentry.init({
-      serverName: hostname(),
+    sentryInit({
       dist: 'usage',
       enabled: !!env.sentry,
       environment: env.environment,
@@ -36,6 +52,16 @@ async function main() {
       release: env.release,
     });
   }
+
+  const redis = new Redis({
+    host: env.redis.host,
+    port: env.redis.port,
+    password: env.redis.password,
+    maxRetriesPerRequest: 20,
+    db: 0,
+    enableReadyCheck: false,
+    tls: env.redis.tlsEnabled ? {} : undefined,
+  });
 
   const server = await createServer({
     name: 'usage',
@@ -46,8 +72,53 @@ async function main() {
     },
   });
 
+  const pgPool = await getPool(
+    createConnectionString(env.postgres),
+    5,
+    tracing ? [tracing.instrumentSlonik()] : [],
+  );
+
+  const authN = createAuthN({
+    pgPool,
+    redis,
+    isPrometheusEnabled: !!tracing,
+  });
+
+  const prometheusConfig = new PrometheusConfig(!!tracing);
+  const targetsByIdCache = new TargetsByIdCache(redis, pgPool, prometheusConfig);
+  const targetsBySlugCache = new TargetsBySlugCache(redis, pgPool, prometheusConfig);
+
+  if (tracing) {
+    await server.register(...tracing.instrumentFastify());
+  }
+
   try {
-    const { collect, readiness, start, stop } = createUsage({
+    redis.on('error', err => {
+      server.log.error(err, 'Redis connection error');
+    });
+
+    redis.on('connect', () => {
+      server.log.info('Redis connection established');
+    });
+
+    redis.on('ready', () => {
+      server.log.info('Redis connection ready... ');
+    });
+
+    redis.on('close', () => {
+      server.log.info('Redis connection closed');
+    });
+
+    redis.on('reconnecting', (timeToReconnect?: number) => {
+      server.log.info('Redis reconnecting in %s', timeToReconnect);
+    });
+
+    redis.on('end', async () => {
+      server.log.info('Redis ended - no more reconnections will be made');
+      await shutdown();
+    });
+
+    const usage = createUsage({
       logger: server.log,
       kafka: {
         topic: env.kafka.topic,
@@ -62,7 +133,12 @@ async function main() {
     const shutdown = registerShutdown({
       logger: server.log,
       async onShutdown() {
-        await Promise.all([stop(), server.close()]);
+        server.log.info('Stopping service handler...');
+        await Promise.all([usage.stop(), server.close()]);
+
+        // shut down tracing last so that traces are sent till the very end
+        server.log.info('Stopping tracing handler...');
+        await tracing?.shutdown();
       },
     });
 
@@ -71,226 +147,61 @@ async function main() {
       logger: server.log,
     });
 
-    const rateLimit = env.hive.rateLimit
-      ? createUsageRateLimit({
-          endpoint: env.hive.rateLimit.endpoint,
-          logger: server.log,
-        })
-      : null;
-
-    server.route<{
-      Body: unknown;
-    }>({
-      method: 'POST',
-      url: '/',
-      async handler(req, res) {
-        httpRequests.inc();
-        let token: string | undefined;
-        const legacyToken = req.headers['x-api-token'] as string;
-        const apiVersion = Array.isArray(req.headers['x-usage-api-version'])
-          ? req.headers['x-usage-api-version'][0]
-          : req.headers['x-usage-api-version'];
-
-        if (apiVersion) {
-          if (apiVersion === '1') {
-            usedAPIVersion.labels({ version: '1' }).inc();
-          } else if (apiVersion === '2') {
-            usedAPIVersion.labels({ version: '2' }).inc();
+    const usageRateLimit = createUsageRateLimit(
+      env.hive.commerce
+        ? {
+            endpoint: env.hive.commerce.endpoint,
+            ttlMs: env.hive.commerce.ttl,
+            logger: server.log,
           }
-          usedAPIVersion.labels({ version: 'invalid' }).inc();
-        } else {
-          usedAPIVersion.labels({ version: 'none' }).inc();
-        }
+        : {
+            logger: server.log,
+          },
+    );
 
-        if (legacyToken) {
-          // TODO: add metrics to track legacy x-api-token header
-          token = legacyToken;
-        } else {
-          const authValue = req.headers.authorization;
+    registerUsageCollectionRoute({
+      server,
+      authN,
+      usageRateLimit,
+      usage,
+      targetsByIdCache,
+      targetsBySlugCache,
+    });
 
-          if (authValue) {
-            token = authValue.replace(/^Bearer\s+/, '');
-          }
-        }
-
-        if (!token) {
-          void res.status(401).send('Missing token');
-          httpRequestsWithoutToken.inc();
-          return;
-        }
-
-        if (token.length !== 32) {
-          void res.status(401).send('Invalid token');
-          httpRequestsWithoutToken.inc();
-          return;
-        }
-
-        const stopTokensDurationTimer = tokensDuration.startTimer();
-        const tokenInfo = await tokens.fetch(token);
-        const maskedToken = maskToken(token);
-
-        if (tokens.isNotFound(tokenInfo)) {
-          stopTokensDurationTimer({
-            status: 'not_found',
-          });
-          httpRequestsWithNonExistingToken.inc();
-          req.log.info('Token not found (token=%s)', maskedToken);
-          void res.status(401).send('Missing token');
-          return;
-        }
-
-        // We treat collected operations as part of registry
-        if (tokens.isNoAccess(tokenInfo)) {
-          stopTokensDurationTimer({
-            status: 'no_access',
-          });
-          httpRequestsWithNoAccess.inc();
-          req.log.info('No access (token=%s)', maskedToken);
-          void res.status(403).send('No access');
-          return;
-        }
-
-        stopTokensDurationTimer({
-          status: 'success',
-        });
-
-        if (
-          await rateLimit
-            ?.isRateLimited({
-              id: tokenInfo.target,
-              type: 'operations-reporting',
-              token,
-              entityType: 'target',
-            })
-            .catch(error => {
-              req.log.error('Failed to check rate limit (target=%s)', tokenInfo.target);
-              req.log.error(error);
-              Sentry.captureException(error, {
-                level: 'error',
-              });
-
-              // If we can't check rate limit, we should not drop the report
-              return false;
-            })
-        ) {
-          droppedReports
-            .labels({ targetId: tokenInfo.target, orgId: tokenInfo.organization })
-            .inc();
-          req.log.info('Rate limited (token=%s)', maskedToken);
-          void res.status(429).send();
-
-          return;
-        }
-
-        const retentionInfo =
-          (await rateLimit?.getRetentionForTargetId?.(tokenInfo.target).catch(error => {
-            req.log.error(error);
-            Sentry.captureException(error, {
-              level: 'error',
-            });
-            return null;
-          })) || null;
-
-        if (typeof retentionInfo !== 'number') {
-          req.log.error(
-            'Failed to get retention info (token=%s, target=%s, organization=%s)',
-            maskedToken,
-            tokenInfo.target,
-            tokenInfo.organization,
-          );
-        }
-
-        const stopTimer = collectDuration.startTimer();
-        try {
-          if (readiness() === false) {
-            req.log.warn('Not ready to collect report (token=%s)', maskedToken);
-            stopTimer({
-              status: 'not_ready',
-            });
-            // 503 - Service Unavailable
-            // The server is currently unable to handle the request due being not ready.
-            // This tells the gateway to retry the request and not to drop it.
-            void res.status(503).send();
-            return;
-          }
-
-          if (apiVersion === undefined || apiVersion === '1') {
-            const result = usageProcessorV1(server.log, req.body as any, tokenInfo, retentionInfo);
-            collect(result.report);
-            stopTimer({
-              status: 'success',
-            });
-            void res.status(200).send({
-              id: result.report.id,
-              operations: result.operations,
-            });
-          } else if (apiVersion === '2') {
-            const result = usageProcessorV2(server.log, req.body, tokenInfo, retentionInfo);
-
-            if (result.success === false) {
-              stopTimer({
-                status: 'error',
-              });
-              void res.status(400).send({
-                errors: result.errors,
-              });
-              return;
-            }
-
-            collect(result.report);
-            stopTimer({
-              status: 'success',
-            });
-            void res.status(200).send({
-              id: result.report.id,
-              operations: result.operations,
-            });
-          } else {
-            stopTimer({
-              status: 'error',
-            });
-            void res.status(401).send("Invalid 'x-api-version' header value.");
-          }
-        } catch (error) {
-          stopTimer({
-            status: 'error',
-          });
-          req.log.error('Failed to collect report (token=%s)', maskedToken);
-          req.log.error(error, 'Failed to collect');
-          Sentry.captureException(error, {
-            level: 'error',
-          });
-          void res.status(500).send();
-        }
-      },
+    registerUsageCollectionLegacyRoute({
+      server,
+      tokens,
+      usageRateLimit,
+      usage,
     });
 
     server.route({
       method: ['GET', 'HEAD'],
       url: '/_health',
-      handler(_, res) {
-        void res.status(200).send();
+      async handler(_, res) {
+        await res.status(200).send();
       },
     });
 
     server.route({
       method: ['GET', 'HEAD'],
       url: '/_readiness',
-      handler(_, res) {
-        const isReady = readiness();
+      async handler(_, res) {
+        const isReady = usage.readiness();
         reportReadiness(isReady);
-        void res.status(isReady ? 200 : 400).send();
+        await res.status(isReady ? 200 : 400).send();
       },
     });
 
     if (env.prometheus) {
       await startMetrics(env.prometheus.labels.instance, env.prometheus.port);
     }
+
     await server.listen({
       port: env.http.port,
       host: '::',
     });
-    await start();
+    await usage.start();
   } catch (error) {
     server.log.fatal(error);
     Sentry.captureException(error, {

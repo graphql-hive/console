@@ -1,0 +1,31 @@
+---
+description:
+  Next.js is a web framework that allows you to build websites very quickly and Hive Gateway can be
+  integrated with Next.js easily as an API Route.
+---
+
+import { Callout } from '@theguild/components'
+
+# Integration with Next.js
+
+[Next.js](https://nextjs.org) is a web framework that allows you to build websites very quickly and
+Hive Gateway can be integrated with Next.js easily as
+[a custom route handler](https://nextjs.org/docs/app/building-your-application/routing/router-handlers).
+
+## Example
+
+Please read the
+[relevant Next.js documentation on custom router handlers](https://nextjs.org/docs/app/building-your-application/routing/router-handlers)
+first.
+
+```ts filename="app/api/route.ts"
+import { createGatewayRuntime } from '@graphql-hive/gateway-runtime'
+import { supergraph } from './my-supergraph'
+
+const { handleRequest } = createGatewayRuntime({
+  supergraph,
+  graphqlEndpoint: '/api/graphql'
+})
+
+export { handleRequest as GET, handleRequest as POST, handleRequest as OPTIONS }
+```

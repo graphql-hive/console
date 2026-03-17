@@ -39,12 +39,13 @@ export function deployTokens({
       startupProbe: '/_health',
       exposesMetrics: true,
       availabilityOnEveryNode: true,
-      replicas: environment.isProduction ? 3 : 1,
+      replicas: environment.podsConfig.general.replicas,
       image,
       env: {
         ...environment.envVars,
         SENTRY: sentry.enabled ? '1' : '0',
         HEARTBEAT_ENDPOINT: heartbeat ?? '',
+        OPENTELEMETRY_TRACE_USAGE_REQUESTS: observability.enabledForUsageService ? '1' : '',
         OPENTELEMETRY_COLLECTOR_ENDPOINT:
           observability.enabled && observability.tracingEndpoint
             ? observability.tracingEndpoint

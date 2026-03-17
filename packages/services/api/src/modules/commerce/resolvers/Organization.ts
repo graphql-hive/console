@@ -1,0 +1,205 @@
+import { GraphQLError } from 'graphql';
+import { Logger } from '../../shared/providers/logger';
+import { BillingProvider } from '../providers/billing.provider';
+import { RateLimitProvider } from '../providers/rate-limit.provider';
+import { UsageEstimationProvider } from '../providers/usage-estimation.provider';
+import type { BillingPlanType, OrganizationResolvers } from './../../../__generated__/types';
+
+export const Organization: Pick<
+  OrganizationResolvers,
+  | 'billingConfiguration'
+  | 'isMonthlyOperationsLimitExceeded'
+  | 'monthlyOperationsLimit'
+  | 'plan'
+  | 'rateLimit'
+  | 'usageEstimation'
+  | 'usageRetentionInDays'
+  | 'viewerCanDescribeBilling'
+  | 'viewerCanModifyBilling'
+> = {
+  plan: org => (org.billingPlan || 'HOBBY') as BillingPlanType,
+  billingConfiguration: async (org, _args, { injector, session }) => {
+    if (org.billingPlan === 'ENTERPRISE') {
+      return {
+        hasActiveSubscription: true,
+        canUpdateSubscription: false,
+        hasPaymentIssues: false,
+        paymentMethod: null,
+        billingAddress: null,
+        invoices: null,
+        upcomingInvoice: null,
+      };
+    }
+
+    const billingRecord = await injector
+      .get(BillingProvider)
+      .getOrganizationBillingParticipant({ organizationId: org.id });
+
+    if (!billingRecord) {
+      return {
+        hasActiveSubscription: false,
+        canUpdateSubscription: true,
+        hasPaymentIssues: false,
+        paymentMethod: null,
+        billingAddress: null,
+        invoices: null,
+        upcomingInvoice: null,
+      };
+    }
+
+    // This is a special case where customer is on Pro and doesn't have a record for external billing.
+    // This happens when the customer is paying through an external system and not through Stripe.
+    if (org.billingPlan === 'PRO' && billingRecord.externalBillingReference === 'wire') {
+      return {
+        hasActiveSubscription: true,
+        canUpdateSubscription: false,
+        hasPaymentIssues: false,
+        paymentMethod: null,
+        billingAddress: null,
+        invoices: null,
+        upcomingInvoice: null,
+      };
+    }
+
+    const subscriptionInfo = await injector.get(BillingProvider).getActiveSubscription({
+      organizationId: billingRecord.organizationId,
+    });
+
+    const logger = injector.get(Logger);
+
+    if (!subscriptionInfo) {
+      logger.info('No active subscription for organization (id=%s)', org.id);
+      return {
+        hasActiveSubscription: false,
+        canUpdateSubscription: await session.canPerformAction({
+          action: 'billing:update',
+          organizationId: org.id,
+          params: {
+            organizationId: billingRecord.organizationId,
+          },
+        }),
+        hasPaymentIssues: false,
+        paymentMethod: null,
+        billingAddress: null,
+        invoices: null,
+        upcomingInvoice: null,
+      };
+    }
+
+    const [invoices, upcomingInvoice, canUpdateSubscription] = await Promise.all([
+      injector.get(BillingProvider).invoices({
+        organizationId: billingRecord.organizationId,
+      }),
+      injector.get(BillingProvider).upcomingInvoice({
+        organizationId: billingRecord.organizationId,
+      }),
+      session.canPerformAction({
+        action: 'billing:update',
+        organizationId: org.id,
+        params: {
+          organizationId: billingRecord.organizationId,
+        },
+      }),
+    ]);
+
+    const hasPaymentIssues = invoices?.some(
+      i => i.charge !== null && typeof i.charge === 'object' && i.charge?.failure_code !== null,
+    );
+
+    if (!subscriptionInfo.paymentMethod) {
+      logger.warn('Active subscription found but is missing a payment method (id=%s)', org.id);
+    }
+
+    return {
+      hasActiveSubscription: subscriptionInfo.subscription !== null,
+      canUpdateSubscription: canUpdateSubscription,
+      hasPaymentIssues,
+      paymentMethod: subscriptionInfo.paymentMethod?.card || null,
+      billingAddress: subscriptionInfo.paymentMethod?.billing_details || null,
+      invoices,
+      upcomingInvoice,
+    };
+  },
+  viewerCanDescribeBilling: async (organization, _arg, { session }) => {
+    return session.canPerformAction({
+      action: 'billing:describe',
+      organizationId: organization.id,
+      params: {
+        organizationId: organization.id,
+      },
+    });
+  },
+  viewerCanModifyBilling: async (organization, _arg, { session }) => {
+    return session.canPerformAction({
+      action: 'billing:update',
+      organizationId: organization.id,
+      params: {
+        organizationId: organization.id,
+      },
+    });
+  },
+  rateLimit: async (org, _args, { injector }) => {
+    let limitedForOperations = false;
+    const logger = injector.get(Logger);
+
+    try {
+      const operationsRateLimit = await injector.get(RateLimitProvider).checkRateLimit({
+        entityType: 'organization',
+        id: org.id,
+        type: 'operations-reporting',
+        token: null,
+      });
+
+      logger.debug('Fetched rate-limit info:', { orgId: org.id, operationsRateLimit });
+      limitedForOperations = operationsRateLimit.usagePercentage >= 1;
+    } catch (e) {
+      logger.error('Failed to fetch rate-limit info:', org.id, e);
+    }
+
+    return {
+      limitedForOperations,
+      operations: org.monthlyRateLimit.operations,
+      retentionInDays: org.monthlyRateLimit.retentionInDays,
+    };
+  },
+  isMonthlyOperationsLimitExceeded: async (org, _arg, { injector }) => {
+    let limitedForOperations = false;
+    const logger = injector.get(Logger);
+
+    try {
+      const operationsRateLimit = await injector.get(RateLimitProvider).checkRateLimit({
+        entityType: 'organization',
+        id: org.id,
+        type: 'operations-reporting',
+        token: null,
+      });
+
+      logger.debug('Fetched rate-limit info:', { orgId: org.id, operationsRateLimit });
+      limitedForOperations = operationsRateLimit.usagePercentage >= 1;
+    } catch (e) {
+      logger.error('Failed to fetch rate-limit info:', org.id, e);
+    }
+    return limitedForOperations;
+  },
+  monthlyOperationsLimit: async org => {
+    return org.monthlyRateLimit.operations;
+  },
+  usageEstimation: async (org, args, { injector }) => {
+    const result = await injector
+      .get(UsageEstimationProvider)
+      .estimateOperationsForOrganizationById({
+        organizationId: org.id,
+        month: args.input.month,
+        year: args.input.year,
+      });
+
+    if (!result && result !== 0) {
+      throw new GraphQLError(`Failed to estimate usage, please try again later.`);
+    }
+
+    return { operations: result };
+  },
+  usageRetentionInDays: async org => {
+    return org.monthlyRateLimit.retentionInDays;
+  },
+};

@@ -10,9 +10,12 @@ test.concurrent(
     const { createOrg } = await initSeed().createOwner();
     const { inviteAndJoinMember, createProject } = await createOrg();
     await inviteAndJoinMember();
-    const { createTargetAccessToken, readOperationsStats, readOperationBody } = await createProject(
-      ProjectType.Single,
-    );
+    const {
+      createTargetAccessToken,
+      readOperationsStats,
+      readOperationBody,
+      waitForOperationsCollected,
+    } = await createProject(ProjectType.Single);
     const { publishSchema, collectLegacyOperations: collectOperations } =
       await createTargetAccessToken({});
 
@@ -40,14 +43,14 @@ test.concurrent(
 
     expect(collectResult.status).toEqual(200);
 
-    await waitFor(5000);
+    await waitForOperationsCollected(1);
 
     const from = formatISO(subHours(Date.now(), 6));
     const to = formatISO(Date.now());
     const operationsStats = await readOperationsStats(from, to);
-    expect(operationsStats.operations.nodes).toHaveLength(1);
+    expect(operationsStats.operations.edges).toHaveLength(1);
 
-    const op = operationsStats.operations.nodes[0];
+    const op = operationsStats.operations.edges[0].node;
     expect(op.count).toEqual(1);
     await expect(readOperationBody(op.operationHash!)).resolves.toEqual('query ping{ping}');
     expect(op.operationHash).toBeDefined();

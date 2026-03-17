@@ -1,18 +1,10 @@
-import { IdTranslator } from '../../../shared/providers/id-translator';
 import { OrganizationManager } from '../../providers/organization-manager';
 import type { QueryResolvers } from './../../../../__generated__/types';
 
 export const organization: NonNullable<QueryResolvers['organization']> = async (
   _,
-  { selector },
+  { reference },
   { injector },
 ) => {
-  const organization = await injector.get(IdTranslator).translateOrganizationId(selector);
-
-  return {
-    selector,
-    organization: await injector.get(OrganizationManager).getOrganization({
-      organizationId: organization,
-    }),
-  };
+  return await injector.get(OrganizationManager).getOrganizationByReference(reference);
 };

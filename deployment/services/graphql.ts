@@ -2,27 +2,22 @@ import * as pulumi from '@pulumi/pulumi';
 import { serviceLocalEndpoint } from '../utils/local-endpoint';
 import { ServiceSecret } from '../utils/secrets';
 import { ServiceDeployment } from '../utils/service-deployment';
-import { StripeBillingService } from './billing';
 import { CDN } from './cf-cdn';
 import { Clickhouse } from './clickhouse';
+import { CommerceService } from './commerce';
 import { DbMigrations } from './db-migrations';
 import { Docker } from './docker';
-import { Emails } from './emails';
 import { Environment } from './environment';
 import { GitHubApp } from './github';
 import { Observability } from './observability';
 import { SchemaPolicy } from './policy';
 import { Postgres } from './postgres';
-import { RateLimitService } from './rate-limit';
 import { Redis } from './redis';
 import { S3 } from './s3';
 import { Schema } from './schema';
 import { Sentry } from './sentry';
-import { Supertokens } from './supertokens';
 import { Tokens } from './tokens';
 import { Usage } from './usage';
-import { UsageEstimator } from './usage-estimation';
-import { Webhooks } from './webhooks';
 import { Zendesk } from './zendesk';
 
 export type GraphQL = ReturnType<typeof deployGraphQL>;
@@ -37,20 +32,16 @@ export function deployGraphQL({
   image,
   environment,
   tokens,
-  webhooks,
   schema,
   schemaPolicy,
   cdn,
   redis,
   usage,
-  usageEstimator,
+  commerce,
   dbMigrations,
-  rateLimit,
-  billing,
-  emails,
-  supertokens,
   s3,
   s3Mirror,
+  s3AuditLog,
   zendesk,
   docker,
   postgres,
@@ -65,26 +56,25 @@ export function deployGraphQL({
   clickhouse: Clickhouse;
   environment: Environment;
   tokens: Tokens;
-  webhooks: Webhooks;
   schema: Schema;
   schemaPolicy: SchemaPolicy;
   redis: Redis;
   cdn: CDN;
   s3: S3;
   s3Mirror: S3;
+  s3AuditLog: S3;
   usage: Usage;
-  usageEstimator: UsageEstimator;
   dbMigrations: DbMigrations;
-  rateLimit: RateLimitService;
-  billing: StripeBillingService;
-  emails: Emails;
-  supertokens: Supertokens;
+  commerce: CommerceService;
   zendesk: Zendesk;
   docker: Docker;
   sentry: Sentry;
 }) {
   const apiConfig = new pulumi.Config('api');
+  const supertokensConfig = new pulumi.Config('supertokens');
   const apiEnv = apiConfig.requireObject<Record<string, string>>('env');
+
+  const hiveConfig = new pulumi.Config('hive');
 
   const oauthConfig = new pulumi.Config('oauth');
   const githubOAuthSecret = new AppOAuthSecret('oauth-github', {
@@ -99,6 +89,14 @@ export function deployGraphQL({
   const persistedDocumentsSecret = new ServiceSecret('persisted-documents', {
     cdnAccessKeyId: apiConfig.requireSecret('hivePersistedDocumentsCdnAccessKeyId'),
   });
+  const hiveUsageSecret = new ServiceSecret('hive-usage', {
+    usageAccessToken: hiveConfig.requireSecret('usageAccessToken'),
+  });
+  const supertokensSecrets = new ServiceSecret('supertokens-at-home', {
+    refreshTokenKey: supertokensConfig.requireSecret('refreshTokenKey'),
+    accessTokenKey: supertokensConfig.requireSecret('accessTokenKey'),
+    bypassRateLimitKey: supertokensConfig.requireSecret('bypassRateLimitKey'),
+  });
 
   return (
     new ServiceDeployment(
@@ -106,7 +104,7 @@ export function deployGraphQL({
       {
         imagePullSecret: docker.secret,
         image,
-        replicas: environment.isProduction ? 3 : 1,
+        replicas: environment.podsConfig.general.replicas,
         pdb: true,
         readinessProbe: '/_readiness',
         livenessProbe: '/_health',
@@ -122,28 +120,27 @@ export function deployGraphQL({
           ...environment.envVars,
           ...apiEnv,
           SENTRY: sentry.enabled ? '1' : '0',
-          REQUEST_LOGGING: '0', // disabled
-          BILLING_ENDPOINT: serviceLocalEndpoint(billing.service),
+          REQUEST_LOGGING: '1', // disabled
+          COMMERCE_ENDPOINT: serviceLocalEndpoint(commerce.service),
           TOKENS_ENDPOINT: serviceLocalEndpoint(tokens.service),
-          WEBHOOKS_ENDPOINT: serviceLocalEndpoint(webhooks.service),
           SCHEMA_ENDPOINT: serviceLocalEndpoint(schema.service),
           SCHEMA_POLICY_ENDPOINT: serviceLocalEndpoint(schemaPolicy.service),
-          HIVE_USAGE_ENDPOINT: serviceLocalEndpoint(usage.service),
-          RATE_LIMIT_ENDPOINT: serviceLocalEndpoint(rateLimit.service),
-          EMAILS_ENDPOINT: serviceLocalEndpoint(emails.service),
-          USAGE_ESTIMATOR_ENDPOINT: serviceLocalEndpoint(usageEstimator.service),
           WEB_APP_URL: `https://${environment.appDns}`,
           GRAPHQL_PUBLIC_ORIGIN: `https://${environment.appDns}`,
           CDN_CF: '1',
-          HIVE: '1',
-          HIVE_REPORTING: '1',
           HIVE_USAGE: '1',
-          HIVE_REPORTING_ENDPOINT: 'http://0.0.0.0:4000/graphql',
+          HIVE_TARGET: hiveConfig.require('target'),
+          HIVE_USAGE_ENDPOINT: serviceLocalEndpoint(usage.service),
+          HIVE_TRACING: '1',
+          HIVE_TRACING_ENDPOINT: environment.isProduction
+            ? 'https://api.graphql-hive.com/otel/v1/traces'
+            : environment.isStaging
+              ? 'https://api.hiveready.dev/otel/v1/traces'
+              : 'https://api.buzzcheck.dev/otel/v1/traces',
           HIVE_PERSISTED_DOCUMENTS: '1',
           ZENDESK_SUPPORT: zendesk.enabled ? '1' : '0',
           INTEGRATION_GITHUB: '1',
           // Auth
-          SUPERTOKENS_CONNECTION_URI: supertokens.localEndpoint,
           AUTH_GITHUB: '1',
           AUTH_GOOGLE: '1',
           AUTH_ORGANIZATION_OIDC: '1',
@@ -164,8 +161,8 @@ export function deployGraphQL({
         redis.service,
         clickhouse.deployment,
         clickhouse.service,
-        rateLimit.deployment,
-        rateLimit.service,
+        commerce.deployment,
+        commerce.service,
       ],
     )
       // GitHub App
@@ -201,18 +198,28 @@ export function deployGraphQL({
       .withSecret('S3_MIRROR_SECRET_ACCESS_KEY', s3Mirror.secret, 'secretAccessKey')
       .withSecret('S3_MIRROR_BUCKET_NAME', s3Mirror.secret, 'bucket')
       .withSecret('S3_MIRROR_ENDPOINT', s3Mirror.secret, 'endpoint')
+      // S3 Audit Log
+      .withSecret('S3_AUDIT_LOG_ACCESS_KEY_ID', s3AuditLog.secret, 'accessKeyId')
+      .withSecret('S3_AUDIT_LOG_SECRET_ACCESS_KEY', s3AuditLog.secret, 'secretAccessKey')
+      .withSecret('S3_AUDIT_LOG_BUCKET_NAME', s3AuditLog.secret, 'bucket')
+      .withSecret('S3_AUDIT_LOG_ENDPOINT', s3AuditLog.secret, 'endpoint')
       // Auth
-      .withSecret('SUPERTOKENS_API_KEY', supertokens.secret, 'apiKey')
       .withSecret('AUTH_GITHUB_CLIENT_ID', githubOAuthSecret, 'clientId')
       .withSecret('AUTH_GITHUB_CLIENT_SECRET', githubOAuthSecret, 'clientSecret')
       .withSecret('AUTH_GOOGLE_CLIENT_ID', googleOAuthSecret, 'clientId')
       .withSecret('AUTH_GOOGLE_CLIENT_SECRET', googleOAuthSecret, 'clientSecret')
+      // Hive Usage Reporting
+      .withSecret('HIVE_ACCESS_TOKEN', hiveUsageSecret, 'usageAccessToken')
       // Persisted Documents
       .withSecret(
         'HIVE_PERSISTED_DOCUMENTS_CDN_ACCESS_KEY_ID',
         persistedDocumentsSecret,
         'cdnAccessKeyId',
       )
+      // Supertokens
+      .withSecret('SUPERTOKENS_REFRESH_TOKEN_KEY', supertokensSecrets, 'refreshTokenKey')
+      .withSecret('SUPERTOKENS_ACCESS_TOKEN_KEY', supertokensSecrets, 'accessTokenKey')
+      .withSecret('SUPERTOKENS_RATE_LIMIT_BYPASS_KEY', supertokensSecrets, 'bypassRateLimitKey')
       // Zendesk
       .withConditionalSecret(zendesk.enabled, 'ZENDESK_SUBDOMAIN', zendesk.secret, 'subdomain')
       .withConditionalSecret(zendesk.enabled, 'ZENDESK_USERNAME', zendesk.secret, 'username')

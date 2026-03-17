@@ -1,6 +1,7 @@
 import { Injectable, Scope } from 'graphql-modules';
 import type { CheckPolicyResponse, PolicyConfigurationObject } from '@hive/policy';
 import { SchemaPolicy } from '../../../shared/entities';
+import { AuditLogRecorder } from '../../audit-logs/providers/audit-log-recorder';
 import { Session } from '../../auth/lib/authz';
 import { Logger } from '../../shared/providers/logger';
 import {
@@ -22,6 +23,7 @@ export class SchemaPolicyProvider {
     rootLogger: Logger,
     private storage: Storage,
     private session: Session,
+    private auditLog: AuditLogRecorder,
     private api: SchemaPolicyApiProvider,
   ) {
     this.logger = rootLogger.child({ service: 'SchemaPolicyProvider' });
@@ -133,11 +135,22 @@ export class SchemaPolicyProvider {
       },
     });
 
-    return await this.storage.setSchemaPolicyForOrganization({
+    const result = await this.storage.setSchemaPolicyForOrganization({
       organizationId: selector.organizationId,
       policy,
       allowOverrides,
     });
+
+    await this.auditLog.record({
+      eventType: 'ORGANIZATION_POLICY_UPDATED',
+      organizationId: selector.organizationId,
+      metadata: {
+        allowOverrides: allowOverrides,
+        policy: JSON.stringify(policy),
+      },
+    });
+
+    return result;
   }
 
   async setProjectPolicy(selector: ProjectSelector, policy: any) {
@@ -150,15 +163,26 @@ export class SchemaPolicyProvider {
       },
     });
 
-    return await this.storage.setSchemaPolicyForProject({
+    const result = await this.storage.setSchemaPolicyForProject({
       projectId: selector.projectId,
       policy,
     });
+
+    await this.auditLog.record({
+      eventType: 'PROJECT_POLICY_UPDATED',
+      organizationId: selector.organizationId,
+      metadata: {
+        projectId: selector.projectId,
+        policy: JSON.stringify(policy),
+      },
+    });
+
+    return result;
   }
 
   async getOrganizationPolicy(selector: OrganizationSelector) {
     await this.session.assertPerformAction({
-      action: 'schemaLinting:modifyOrganizationRules',
+      action: 'organization:describe',
       organizationId: selector.organizationId,
       params: {
         organizationId: selector.organizationId,
@@ -170,7 +194,7 @@ export class SchemaPolicyProvider {
 
   async getOrganizationPolicyForProject(selector: ProjectSelector) {
     await this.session.assertPerformAction({
-      action: 'schemaLinting:modifyProjectRules',
+      action: 'project:describe',
       organizationId: selector.organizationId,
       params: {
         organizationId: selector.organizationId,
@@ -183,7 +207,7 @@ export class SchemaPolicyProvider {
 
   async getProjectPolicy(selector: ProjectSelector) {
     await this.session.assertPerformAction({
-      action: 'schemaLinting:modifyProjectRules',
+      action: 'project:describe',
       organizationId: selector.organizationId,
       params: {
         organizationId: selector.organizationId,

@@ -1,5 +1,6 @@
 import { ReactElement, useEffect } from 'react';
-import { Checkbox, Tooltip } from '@/components/v2';
+import { Checkbox } from '@/components/base/checkbox/checkbox';
+import { Tooltip } from '@/components/v2';
 import { useConfigurationHelper } from '../form-helper';
 import { PolicyConfigBox } from '../policy-config-box';
 
@@ -21,7 +22,7 @@ export const PolicyBooleanToggle = (props: {
 
   const label = (
     <label
-      className="pb-1 pl-2 font-mono text-xs text-gray-500"
+      className="text-neutral-10 pb-1 pl-2 font-mono text-xs"
       htmlFor={`${props.rule}_${props.propertyName}`}
     >
       {props.title}

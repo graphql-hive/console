@@ -1,0 +1,26 @@
+diff --git a/dist/server/compile.js b/dist/server/compile.js
+index 4b3f41397995dd4c796f6945627fb14d43776eb3..889f926c097db987f8e9d262e015ae9a1f89664b 100644
+--- a/dist/server/compile.js
++++ b/dist/server/compile.js
+@@ -9,6 +9,7 @@ import remarkGfm from "remark-gfm";
+ import remarkMath from "remark-math";
+ import remarkReadingTime from "remark-reading-time";
+ import remarkSmartypants from "remark-smartypants";
++import { rehypeFrontmatterMdxImports } from 'rehype-frontmatter-mdx-imports';
+ import { MARKDOWN_URL_EXTENSION_RE } from "./constants.js";
+ import { recmaRewrite } from "./recma-plugins/index.js";
+ import {
+@@ -142,7 +143,12 @@ async function compileMdx(source, {
+           rehypeTwoslashPopup,
+           [rehypeAttachCodeMeta, { search }]
+         ],
+-        rehypeExtractTocContent
++        rehypeExtractTocContent,
++        [rehypeFrontmatterMdxImports, {
++          keys: ['thumbnail', 'image'],
++          importedAssetPathRegex: /(png|jpg|jpeg|gif|webp)$/,
++          fileRegex: /\/blog\/\(posts\)/,
++        }]
+       ].filter((v) => !!v),
+       recmaPlugins: [
+         ...recmaPlugins || [],

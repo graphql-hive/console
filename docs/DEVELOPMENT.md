@@ -4,8 +4,8 @@
 
 Developing Hive locally requires you to have the following software installed locally:
 
-- Node.js 21 (or `nvm` or `fnm`)
-- pnpm v9
+- Node.js >=22 (or `nvm` or `fnm`)
+- pnpm >=10.16.0
 - Docker version 26.1.1 or later(previous versions will not work correctly on arm64)
 - make sure these ports are free: 5432, 6379, 9000, 9001, 8123, 9092, 8081, 8082, 9644, 3567, 7043
 
@@ -13,7 +13,7 @@ Developing Hive locally requires you to have the following software installed lo
 
 - Clone the repository locally
 - Make sure to install the recommended VSCode extensions (defined in `.vscode/extensions.json`)
-- In the root of the repo, run `nvm use` to use the same version of node as mentioned
+- In the root of the repo, run `nvm use` to use the same version of node as mentioned above
 - Create `.env` file in the root, and use the following:
 
 ```dotenv
@@ -22,18 +22,29 @@ ENVIRONMENT=local
 
 - Run `pnpm i` at the root to install all the dependencies and run the hooks
 - Run `pnpm local:setup` to run Docker compose dependencies, create databases and migrate database
+
+Solving permission problems on this step:
+
+```bash
+export UID=$(id -u)
+export GID=$(id -g)
+```
+
+Add "user" field to ./docker/docker-compose.dev.yml
+
+```
+  clickhouse:
+    user: '${UID}:${GID}'
+  db:
+    user: '${UID}:${GID}'
+```
+
 - Run `pnpm generate` to generate the typings from the graphql files (use `pnpm graphql:generate` if
   you only need to run GraphQL Codegen)
 - Run `pnpm build` to build all services
 - Click on `Start Hive` in the bottom bar of VSCode
 - Open the UI (`http://localhost:3000` by default) and Sign in with any of the identity provider
 - Once this is done, you should be able to log in and use the project
-- Once you generate the token against your organization/personal account in hive, the same can be
-  added locally to `hive.json` within `packages/libraries/cli` which can be used to interact via the
-  hive cli with the registry (Use `http://localhost:3001/graphql` as the `registry.endpoint` value
-  in `hive.json`)
-- Now you can use Hive locally. All other steps in this document are optional and only necessary if
-  you work on specific features.
 
 ## Development Seed
 
@@ -41,20 +52,23 @@ We have a script to feed your local instance of Hive with initial seed data. Thi
 
 1. Use `Start Hive` to run your local Hive instance
 2. Make sure `usage` and `usage-ingestor` are running as well (with `pnpm dev`)
-3. Open Hive app, create a project and a target, then create a token
-4. Run the seed script: `TOKEN="MY_TOKEN_HERE" pnpm seed`
-5. This should report a dummy schema and some dummy usage data to your local instance of Hive,
-   allowing you to test features e2e
+3. (Optional) Seed a organization with many projects and users `pnpm seed:org`
+4. Open Hive app, create a project and a target, then create a token (or use the previously created
+   one)
+5. Run the seed script: `FEDERATION=<0|1> TOKEN=<access_token> TARGET=<target_id> pnpm seed:schemas`
+6. This should report a dummy schema
+7. Run the usage seed to generate some dummy usage data to your local instance of Hive, allowing you
+   to test features e2e: `FEDERATION=<0|1> TOKEN=<access_token> TARGET=<target_id> pnpm seed:usage`
 
-> Note: You can set `STAGING=1` in order to target staging env and seed a target there. Same for
-> development env, you can use `DEV=1`
+> Note: You can set `STAGE=<dev|staging|local>` in order to target a specific Hive environment and
+> seed a target there. `TARGET=<target_id>` can be obtained via target's Settings page → General →
+> Resource ID. `TOKEN=<access_token>` is created on organization's Setting's page → Access Tokens
 
-> Note: You can set `FEDERATION=1` in order to publish multiple subgraphs.
-
-> To send more operations and test heavy load on Hive instance, you can also set `OPERATIONS`
-> (amount of operations in each interval round, default is `1`) and `INTERVAL` (frequency of sending
-> operations, default: `1000`ms). For example, using `INTERVAL=1000 OPERATIONS=1000` will send 1000
-> requests per second.
+> To send more operations with `seed:usage`, and test heavy load on Hive instance, you can also set
+> `OPERATIONS` (amount of operations in each interval round, default is `10`) and `INTERVAL`
+> (frequency of sending operations, default: `1000`ms). For example, using
+> `INTERVAL=1000 OPERATIONS=1000` will send 1000 requests per second. And set `BATCHES` to set the
+> total number of batches to run before the seed exits. Default: 10.
 
 ### Troubleshooting
 
@@ -190,6 +204,6 @@ password
 1. Click on Start Hive in the bottom bar of VSCode
 2. Open the UI (`http://localhost:3000` by default) and register any email and password
 3. Sending e-mails is mocked out during local development, so in order to verify the account find
-   the verification link by visiting the email server's `/_history` endpoint -
-   `http://localhost:6260/_history` by default.
+   the verification link by visiting the workflow server's `/_history` endpoint -
+   `http://localhost:3014/_history` by default.
    - Searching for `token` should help you find the link.

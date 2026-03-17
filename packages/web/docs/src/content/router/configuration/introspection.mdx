@@ -1,0 +1,62 @@
+---
+title: 'introspection'
+---
+
+# introspection
+
+The `introspection` configuration option allows you to enable or disable GraphQL introspection
+queries for added security.
+
+[Learn more about when the introspection should be disabled](../security/introspection).
+
+## Configuration Structure
+
+The `introspection` key is a top-level property in your `router.config.yaml`. You can either set it
+to a static boolean value, or use an expression for dynamic evaluation.
+
+## Value Options
+
+### Static Boolean
+
+- **Type:** `boolean`
+- **Default:** `true`
+
+When set to `false`, all introspection queries will be blocked by the router. When set to `true`,
+introspection queries will be allowed as normal.
+
+```yaml
+introspection: true
+```
+
+### Dynamic with `expression`
+
+- **Type:** `object`
+
+When an `object` is provided, it must contain a VRL `expression` that evaluates to a boolean (`true`
+or `false`). The expression is evaluated for each request, allowing for request-time decisions on
+whether to disable introspection.
+
+- `expression`: **(string, required)** A VRL expression that computes whether introspection should
+  be disabled for the request.
+
+Within the `expression`, you have access to the following context:
+
+- `.request`: The incoming HTTP request object, including its headers.
+
+```yaml
+introspection:
+  expression: '.request.headers."x-enable-introspection" == "true"'
+```
+
+This configuration will disable introspection for all requests that do not include the header
+`x-enable-introspection` set to `true`.
+
+Or you can dynamically change it using an environment variable:
+
+```yaml
+introspection:
+  expression: 'env("DISABLE_INTROSPECTION") != "true"'
+```
+
+In this example, introspection will be disabled if the environment variable `DISABLE_INTROSPECTION`
+is set to `true`.

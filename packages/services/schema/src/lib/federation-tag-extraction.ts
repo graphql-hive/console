@@ -1,595 +1,182 @@
 import {
-  EnumTypeExtensionNode,
-  InputObjectTypeExtensionNode,
-  InterfaceTypeExtensionNode,
   Kind,
-  ObjectTypeExtensionNode,
   visit,
-  type ArgumentNode,
   type ConstDirectiveNode,
   type DirectiveNode,
   type DocumentNode,
-  type EnumTypeDefinitionNode,
+  type EnumValueDefinitionNode,
   type FieldDefinitionNode,
-  type InputObjectTypeDefinitionNode,
   type InputValueDefinitionNode,
-  type InterfaceTypeDefinitionNode,
-  type ObjectFieldNode,
-  type ObjectTypeDefinitionNode,
-  type ScalarTypeDefinitionNode,
-  type UnionTypeDefinitionNode,
+  type NameNode,
 } from 'graphql';
+import { extractLinkImplementations } from '@theguild/federation-composition';
 
 type TagExtractionStrategy = (directiveNode: DirectiveNode) => string | null;
 
-const federationSubgraphSpecificationUrl = 'https://specs.apollo.dev/federation/';
-
-function createTransformTagDirectives(tagDirectiveName: string, inaccessibleDirectiveName: string) {
-  return function transformTagDirectives(
-    node: { directives?: readonly ConstDirectiveNode[] },
-    /** if non-null, will add the inaccessible directive to the nodes directive if not already present. */
-    includeInaccessibleDirective: boolean = false,
-  ): readonly ConstDirectiveNode[] {
-    let hasInaccessibleDirective = false;
-    const directives =
-      node.directives?.filter(directive => {
-        if (directive.name.value === inaccessibleDirectiveName) {
-          hasInaccessibleDirective = true;
-        }
-        return directive.name.value !== tagDirectiveName;
-      }) ?? [];
-
-    if (hasInaccessibleDirective === false && includeInaccessibleDirective) {
-      directives.push({
-        kind: Kind.DIRECTIVE,
-        name: {
-          kind: Kind.NAME,
-          value: inaccessibleDirectiveName,
-        },
-      });
-    }
-
-    return directives;
-  };
-}
-
-/** check whether two sets have an intersection with each other. */
-function hasIntersection<T>(a: Set<T>, b: Set<T>): boolean {
-  if (a.size === 0 || b.size === 0) {
-    return false;
-  }
-  for (const item of a) {
-    if (b.has(item)) {
-      return true;
-    }
-  }
-  return false;
-}
-
-/**
- * Retrieve both the url and import argument from an `@link` directive AST node.
- * @link https://specs.apollo.dev/link/v1.0/#@link
- **/
-function getUrlAndImportDirectiveArgumentsFromLinkDirectiveNode(directiveNode: DirectiveNode): {
-  url: ArgumentNode | null;
-  import: ArgumentNode | null;
-} {
-  let urlArgument: ArgumentNode | null = null;
-  let importArgument: ArgumentNode | null = null;
-
-  if (directiveNode.arguments) {
-    for (const argument of directiveNode.arguments) {
-      if (argument.name.value === 'url') {
-        urlArgument = argument;
-      }
-      if (argument.name.value === 'import') {
-        importArgument = argument;
-      }
-    }
-  }
-
-  return {
-    url: urlArgument,
-    import: importArgument,
-  };
-}
-
-/**
- * Resolve the actual directive name from an ObjectValueNode, that has been passed to a `@link` directive import argument.
- * @link https://specs.apollo.dev/link/v1.0/#Import
- */
-function resolveImportedDirectiveNameFromObjectFieldNodes(
-  forName: string,
-  objectFieldNodes: ReadonlyArray<ObjectFieldNode>,
-) {
-  let alias: string | null = null;
-  let name: string | null = null;
-
-  for (const field of objectFieldNodes) {
-    if (field.name.value === 'name' && field.value.kind === Kind.STRING) {
-      name = field.value.value;
-      if (name !== forName) {
-        return null;
-      }
-    }
-    if (field.name.value === 'as' && field.value.kind === Kind.STRING) {
-      alias = field.value.value;
-    }
-  }
-
-  const final = alias ?? name;
-
-  if (final && final[0] === '@') {
-    return final.substring(1);
-  }
-
-  return null;
-}
-
-/**
- * Helper function for creating a function that resolves the federation directive name within the subgraph.
- */
-function createGetFederationDirectiveNameForSubgraphSDL(directiveName: string) {
-  const prefixedName = `federation__${directiveName}`;
-  const defaultName = directiveName;
-  const importName = `@${directiveName}`;
-
-  return function getFederationTagDirectiveNameForSubgraphSDL(documentNode: DocumentNode): string {
-    for (const definition of documentNode.definitions) {
-      if (
-        (definition.kind !== Kind.SCHEMA_DEFINITION && definition.kind !== Kind.SCHEMA_EXTENSION) ||
-        !definition.directives
-      ) {
-        continue;
-      }
-
-      for (const directive of definition.directives) {
-        const args = getUrlAndImportDirectiveArgumentsFromLinkDirectiveNode(directive);
-        if (
-          args.url?.value.kind === Kind.STRING &&
-          args.url.value.value.startsWith(federationSubgraphSpecificationUrl)
-        ) {
-          if (!args.import || args.import.value.kind !== Kind.LIST) {
-            return prefixedName;
-          }
-
-          for (const item of args.import.value.values) {
-            if (item.kind === Kind.STRING && item.value === importName) {
-              return defaultName;
-            }
-
-            if (item.kind === Kind.OBJECT && item.fields) {
-              const resolvedDirectiveName = resolveImportedDirectiveNameFromObjectFieldNodes(
-                importName,
-                item.fields,
-              );
-              if (resolvedDirectiveName) {
-                return resolvedDirectiveName;
-              }
-            }
-          }
-          return prefixedName;
-        }
-      }
-    }
-
-    // no directives? this must be Federation 1.X
-    return defaultName;
-  };
-}
-
-function getRootTypeNamesFromDocumentNode(document: DocumentNode) {
-  let queryName: string | null = 'Query';
-  let mutationName: string | null = 'Mutation';
-  let subscriptionName: string | null = 'Subscription';
-
-  for (const definition of document.definitions) {
-    if (definition.kind === Kind.SCHEMA_DEFINITION || definition.kind === Kind.SCHEMA_EXTENSION) {
-      for (const operationTypeDefinition of definition.operationTypes ?? []) {
-        if (operationTypeDefinition.operation === 'query') {
-          queryName = operationTypeDefinition.type.name.value;
-        }
-        if (operationTypeDefinition.operation === 'mutation') {
-          mutationName = operationTypeDefinition.type.name.value;
-        }
-        if (operationTypeDefinition.operation === 'subscription') {
-          subscriptionName = operationTypeDefinition.type.name.value;
-        }
-      }
-    }
-  }
-
-  const names = new Set<string>();
-
-  names.add(queryName);
-  names.add(mutationName);
-  names.add(subscriptionName);
-
-  return names;
-}
-
-/** Retrieve the actual `@tag` directive name from a given subgraph */
-export const getFederationTagDirectiveNameForSubgraphSDL =
-  createGetFederationDirectiveNameForSubgraphSDL('tag');
-/** Retrieve the actual `@inaccessible` directive name from a given subgraph */
-const getFederationInaccessibleDirectiveNameForSubgraphSDL =
-  createGetFederationDirectiveNameForSubgraphSDL('inaccessible');
-
-/**
- * Takes a subgraph document node and a set of tag filters and transforms the document node to contain `@inaccessible` directives on all fields not included by the applied filter.
- * Note: you probably want to use `filterSubgraphs` instead, as it also applies the correct post step required after applying this.
- */
-export function applyTagFilterToInaccessibleTransformOnSubgraphSchema(
+function collectTagsBySchemaCoordinateFromSubgraph(
   documentNode: DocumentNode,
-  filter: Federation2SubgraphDocumentNodeByTagsFilter,
-): {
-  typeDefs: DocumentNode;
-  typesWithAllFieldsInaccessible: Map<string, boolean>;
-  transformTagDirectives: ReturnType<typeof createTransformTagDirectives>;
-} {
-  const tagDirectiveName = getFederationTagDirectiveNameForSubgraphSDL(documentNode);
-  const inaccessibleDirectiveName =
-    getFederationInaccessibleDirectiveNameForSubgraphSDL(documentNode);
-  const getTagsOnNode = buildGetTagsOnNode(tagDirectiveName);
-  const transformTagDirectives = createTransformTagDirectives(
-    tagDirectiveName,
-    inaccessibleDirectiveName,
-  );
-  const rootTypeNames = getRootTypeNamesFromDocumentNode(documentNode);
+  /** This map will be populated with values. */
+  map: SchemaCoordinateToTagsRegistry,
+  /** This map will be populated with values. */
+  subcoordinatesPerType: SubcoordinatesPerType,
+): void {
+  const { resolveImportName } = extractLinkImplementations(documentNode);
+  const tagDirectiveName = resolveImportName('https://specs.apollo.dev/federation', '@tag');
+  const extractTag = createTagDirectiveNameExtractionStrategy(tagDirectiveName);
 
-  const typesWithAllFieldsInaccessibleTracker = new Map<string, boolean>();
-
-  function onAllFieldsInaccessible(name: string) {
-    const current = typesWithAllFieldsInaccessibleTracker.get(name);
-    if (current === undefined) {
-      typesWithAllFieldsInaccessibleTracker.set(name, true);
+  function addTypeFields(typeName: string, fields: Set<string>) {
+    let typeFields = subcoordinatesPerType.get(typeName);
+    if (typeFields === undefined) {
+      typeFields = new Set();
+      subcoordinatesPerType.set(typeName, typeFields);
+    }
+    for (const value of fields) {
+      typeFields.add(value);
     }
   }
 
-  function onSomeFieldsAccessible(name: string) {
-    typesWithAllFieldsInaccessibleTracker.set(name, false);
-  }
-
-  function fieldArgumentHandler(node: InputValueDefinitionNode) {
-    const tagsOnNode = getTagsOnNode(node);
-    if (
-      (filter.include.size && !hasIntersection(tagsOnNode, filter.include)) ||
-      (filter.exclude.size && hasIntersection(tagsOnNode, filter.exclude))
-    ) {
-      return {
-        ...node,
-        directives: transformTagDirectives(node, true),
-      };
-    }
-
-    return {
-      ...node,
-      directives: transformTagDirectives(node),
-    };
-  }
-
-  function fieldLikeObjectHandler(
-    node:
-      | ObjectTypeExtensionNode
-      | ObjectTypeDefinitionNode
-      | InterfaceTypeDefinitionNode
-      | InterfaceTypeExtensionNode
-      | InputObjectTypeDefinitionNode
-      | InputObjectTypeExtensionNode,
+  function addTagsPerSchemaCoordinate(
+    schemaCoordinate: string,
+    tagValues: Set<string> | undefined,
   ) {
-    const tagsOnNode = getTagsOnNode(node);
-
-    let isAllFieldsInaccessible = true;
-
-    const newNode = {
-      ...node,
-      fields: node.fields?.map(node => {
-        const tagsOnNode = getTagsOnNode(node);
-
-        if (node.kind === Kind.FIELD_DEFINITION) {
-          node = {
-            ...node,
-            arguments: node.arguments?.map(fieldArgumentHandler),
-          } as FieldDefinitionNode;
-        }
-
-        if (
-          (filter.include.size && !hasIntersection(tagsOnNode, filter.include)) ||
-          (filter.exclude.size && hasIntersection(tagsOnNode, filter.exclude))
-        ) {
-          return {
-            ...node,
-            directives: transformTagDirectives(node, true),
-          };
-        }
-
-        isAllFieldsInaccessible = false;
-
-        return {
-          ...node,
-          directives: transformTagDirectives(node),
-        };
-      }),
-    };
-
-    if (
-      !rootTypeNames.has(node.name.value) &&
-      filter.exclude.size &&
-      hasIntersection(tagsOnNode, filter.exclude)
-    ) {
-      return {
-        ...newNode,
-        directives: transformTagDirectives(node, true),
-      };
-    }
-
-    if (isAllFieldsInaccessible) {
-      onAllFieldsInaccessible(node.name.value);
-    } else {
-      onSomeFieldsAccessible(node.name.value);
-    }
-
-    return {
-      ...newNode,
-      directives: transformTagDirectives(node),
-    };
-  }
-
-  function enumHandler(node: EnumTypeDefinitionNode | EnumTypeExtensionNode) {
-    const tagsOnNode = getTagsOnNode(node);
-
-    let isAllFieldsInaccessible = true;
-
-    const newNode = {
-      ...node,
-      values: node.values?.map(node => {
-        const tagsOnNode = getTagsOnNode(node);
-
-        if (
-          (filter.include.size && !hasIntersection(tagsOnNode, filter.include)) ||
-          (filter.exclude.size && hasIntersection(tagsOnNode, filter.exclude))
-        ) {
-          return {
-            ...node,
-            directives: transformTagDirectives(node, true),
-          };
-        }
-
-        isAllFieldsInaccessible = false;
-
-        return {
-          ...node,
-          directives: transformTagDirectives(node),
-        };
-      }),
-    };
-
-    if (filter.exclude.size && hasIntersection(tagsOnNode, filter.exclude)) {
-      return {
-        ...newNode,
-        directives: transformTagDirectives(node, true),
-      };
-    }
-
-    if (isAllFieldsInaccessible) {
-      onAllFieldsInaccessible(node.name.value);
-    } else {
-      onSomeFieldsAccessible(node.name.value);
-    }
-
-    return {
-      ...newNode,
-      directives: transformTagDirectives(node),
-    };
-  }
-
-  function scalarAndUnionHandler(node: ScalarTypeDefinitionNode | UnionTypeDefinitionNode) {
-    const tagsOnNode = getTagsOnNode(node);
-
-    if (
-      (filter.include.size && !hasIntersection(tagsOnNode, filter.include)) ||
-      (filter.exclude.size && hasIntersection(tagsOnNode, filter.exclude))
-    ) {
-      return {
-        ...node,
-        directives: transformTagDirectives(node, true),
-      };
-    }
-
-    return {
-      ...node,
-      directives: transformTagDirectives(node),
-    };
-  }
-
-  const typeDefs = visit(documentNode, {
-    [Kind.OBJECT_TYPE_DEFINITION]: fieldLikeObjectHandler,
-    [Kind.OBJECT_TYPE_EXTENSION]: fieldLikeObjectHandler,
-    [Kind.INTERFACE_TYPE_DEFINITION]: fieldLikeObjectHandler,
-    [Kind.INTERFACE_TYPE_EXTENSION]: fieldLikeObjectHandler,
-    [Kind.INPUT_OBJECT_TYPE_DEFINITION]: fieldLikeObjectHandler,
-    [Kind.INPUT_OBJECT_TYPE_EXTENSION]: fieldLikeObjectHandler,
-    [Kind.ENUM_TYPE_DEFINITION]: enumHandler,
-    [Kind.ENUM_TYPE_EXTENSION]: enumHandler,
-    [Kind.SCALAR_TYPE_DEFINITION]: scalarAndUnionHandler,
-    [Kind.UNION_TYPE_DEFINITION]: scalarAndUnionHandler,
-  });
-
-  for (const rootTypeName of rootTypeNames) {
-    typesWithAllFieldsInaccessibleTracker.delete(rootTypeName);
-  }
-
-  return {
-    typeDefs,
-    typesWithAllFieldsInaccessible: typesWithAllFieldsInaccessibleTracker,
-    transformTagDirectives,
-  };
-}
-
-function makeTypesFromSetInaccessible(
-  documentNode: DocumentNode,
-  types: Set<string>,
-  transformTagDirectives: ReturnType<typeof createTransformTagDirectives>,
-) {
-  function typeHandler(
-    node:
-      | ObjectTypeExtensionNode
-      | ObjectTypeDefinitionNode
-      | InterfaceTypeDefinitionNode
-      | InterfaceTypeExtensionNode
-      | InputObjectTypeDefinitionNode
-      | InputObjectTypeExtensionNode
-      | EnumTypeDefinitionNode
-      | EnumTypeExtensionNode,
-  ) {
-    if (types.has(node.name.value) === false) {
+    if (tagValues === undefined) {
       return;
     }
-    return {
-      ...node,
-      directives: transformTagDirectives(node, true),
-    };
+
+    let values = map.get(schemaCoordinate);
+    if (values === undefined) {
+      values = new Set();
+      map.set(schemaCoordinate, values);
+    }
+    for (const tagValue of tagValues) {
+      values.add(tagValue);
+    }
   }
 
-  return visit(documentNode, {
-    [Kind.OBJECT_TYPE_DEFINITION]: typeHandler,
-    [Kind.OBJECT_TYPE_EXTENSION]: typeHandler,
-    [Kind.INTERFACE_TYPE_DEFINITION]: typeHandler,
-    [Kind.INTERFACE_TYPE_EXTENSION]: typeHandler,
-    [Kind.INPUT_OBJECT_TYPE_DEFINITION]: typeHandler,
-    [Kind.INPUT_OBJECT_TYPE_EXTENSION]: typeHandler,
-    [Kind.ENUM_TYPE_DEFINITION]: typeHandler,
-    [Kind.ENUM_TYPE_EXTENSION]: typeHandler,
+  function getTagsForNode(node: {
+    directives?: readonly ConstDirectiveNode[];
+  }): Set<string> | undefined {
+    const tags = new Set<string>();
+    node.directives?.forEach(directiveNode => {
+      const tagValue = extractTag(directiveNode);
+      if (tagValue === null) {
+        return;
+      }
+      tags.add(tagValue);
+    });
+    if (tags.size === 0) {
+      return undefined;
+    }
+    return tags;
+  }
+
+  function TypeDefinitionHandler(node: {
+    name: NameNode;
+    directives?: readonly ConstDirectiveNode[];
+    fields?: readonly FieldDefinitionNode[] | readonly InputValueDefinitionNode[];
+    values?: readonly EnumValueDefinitionNode[];
+  }) {
+    const tagValues = getTagsForNode(node);
+    addTagsPerSchemaCoordinate(node.name.value, tagValues);
+
+    const subCoordinates = new Set<string>();
+
+    node.fields?.forEach(fieldNode => {
+      const schemaCoordinate = `${node.name.value}.${fieldNode.name.value}`;
+      subCoordinates.add(schemaCoordinate);
+
+      const tagValues = getTagsForNode(fieldNode);
+      addTagsPerSchemaCoordinate(schemaCoordinate, tagValues);
+
+      if ('arguments' in fieldNode) {
+        fieldNode.arguments?.forEach(argumentNode => {
+          const schemaCoordinate = `${node.name.value}.${fieldNode.name.value}(${argumentNode.name.value}:)`;
+          subCoordinates.add(schemaCoordinate);
+
+          const tagValues = getTagsForNode(argumentNode);
+          addTagsPerSchemaCoordinate(schemaCoordinate, tagValues);
+        });
+      }
+    });
+    node.values?.forEach(valueNode => {
+      const schemaCoordinate = `${node.name.value}.${valueNode.name.value}`;
+      subCoordinates.add(schemaCoordinate);
+
+      const tagValues = getTagsForNode(valueNode);
+      addTagsPerSchemaCoordinate(schemaCoordinate, tagValues);
+    });
+
+    addTypeFields(node.name.value, subCoordinates);
+
+    return false;
+  }
+
+  visit(documentNode, {
+    ScalarTypeDefinition: TypeDefinitionHandler,
+    ScalarTypeExtension: TypeDefinitionHandler,
+    UnionTypeDefinition: TypeDefinitionHandler,
+    UnionTypeExtension: TypeDefinitionHandler,
+    ObjectTypeDefinition: TypeDefinitionHandler,
+    ObjectTypeExtension: TypeDefinitionHandler,
+    InterfaceTypeDefinition: TypeDefinitionHandler,
+    InterfaceTypeExtension: TypeDefinitionHandler,
+    InputObjectTypeDefinition: TypeDefinitionHandler,
+    InputObjectTypeExtension: TypeDefinitionHandler,
+    EnumTypeDefinition: TypeDefinitionHandler,
+    EnumTypeExtension: TypeDefinitionHandler,
   });
 }
 
+type SchemaCoordinateToTagsRegistry = Map<
+  /* schema coordinate */ string,
+  /* tag list */ Set<string>
+>;
+
+type SubcoordinatesPerType = Map</* type name */ string, /* schema coordinates */ Set<string>>;
+
 /**
- * Apply a tag filter to a set of subgraphs.
+ * Get a map with tags per schema coordinates in all subgraphs.
  */
-export function applyTagFilterOnSubgraphs<
-  TType extends {
-    typeDefs: DocumentNode;
-    name: string;
-  },
->(subgraphs: Array<TType>, filter: Federation2SubgraphDocumentNodeByTagsFilter): Array<TType> {
-  const filteredSubgraphs = subgraphs.map(subgraph => ({
-    ...subgraph,
-    ...applyTagFilterToInaccessibleTransformOnSubgraphSchema(subgraph.typeDefs, filter),
-  }));
+export function buildSchemaCoordinateTagRegister(
+  documentNodes: Array<DocumentNode>,
+): SchemaCoordinateToTagsRegistry {
+  const schemaCoordinatesToTags: SchemaCoordinateToTagsRegistry = new Map();
+  const subcoordinatesPerType: SubcoordinatesPerType = new Map();
 
-  const intersectionOfTypesWhereAllFieldsAreInaccessible = new Set<string>();
-  // We need to traverse all subgraphs to find the intersection of types where all fields are inaccessible.
-  // If a type is not present in any other subgraph, we can safely mark it as inaccessible.
-  filteredSubgraphs.forEach(subgraph => {
-    const otherSubgraphs = filteredSubgraphs.filter(sub => sub !== subgraph);
-
-    for (const [type, allFieldsInaccessible] of subgraph.typesWithAllFieldsInaccessible) {
-      if (
-        allFieldsInaccessible &&
-        otherSubgraphs.every(
-          sub =>
-            !sub.typesWithAllFieldsInaccessible.has(type) ||
-            sub.typesWithAllFieldsInaccessible.get(type) === true,
-        )
-      ) {
-        intersectionOfTypesWhereAllFieldsAreInaccessible.add(type);
-      }
-      // let's not visit this type a second time...
-      otherSubgraphs.forEach(sub => {
-        sub.typesWithAllFieldsInaccessible.delete(type);
-      });
-    }
-  });
-
-  if (!intersectionOfTypesWhereAllFieldsAreInaccessible.size) {
-    filteredSubgraphs;
-  }
-
-  return filteredSubgraphs.map(subgraph => ({
-    ...subgraph,
-    typeDefs: makeTypesFromSetInaccessible(
-      subgraph.typeDefs,
-      intersectionOfTypesWhereAllFieldsAreInaccessible,
-      subgraph.transformTagDirectives,
+  documentNodes.forEach(documentNode =>
+    collectTagsBySchemaCoordinateFromSubgraph(
+      documentNode,
+      schemaCoordinatesToTags,
+      subcoordinatesPerType,
     ),
-  }));
-}
-
-function createFederationDirectiveStrategy(directiveName: string): TagExtractionStrategy {
-  return (directiveNode: DirectiveNode) => {
-    if (
-      directiveNode.name.value === directiveName &&
-      directiveNode.arguments?.[0].name.value === 'name' &&
-      directiveNode.arguments?.[0]?.value.kind === Kind.STRING
-    ) {
-      return directiveNode.arguments[0].value.value ?? null;
-    }
-    return null;
-  };
-}
-
-function createGetImportedDirectiveNameFromFederation2SupergraphSDL(
-  directiveImportUrlPrefix: string,
-  defaultName: string,
-) {
-  return function getDirectiveNameFromFederation2SupergraphSDL(
-    documentNode: DocumentNode,
-  ): string | null {
-    for (const definition of documentNode.definitions) {
-      if (
-        (definition.kind !== Kind.SCHEMA_DEFINITION && definition.kind !== Kind.SCHEMA_EXTENSION) ||
-        !definition.directives
-      ) {
-        continue;
-      }
-
-      for (const directive of definition.directives) {
-        // TODO: maybe not rely on argument order - but the order seems stable
-        if (
-          directive.name.value === 'link' &&
-          directive.arguments?.[0].name.value === 'url' &&
-          directive.arguments[0].value.kind === Kind.STRING &&
-          directive.arguments[0].value.value.startsWith(directiveImportUrlPrefix)
-        ) {
-          if (
-            directive.arguments[1]?.name.value === 'as' &&
-            directive.arguments[1].value.kind === Kind.STRING
-          ) {
-            return directive.arguments[1].value.value;
-          }
-          return defaultName;
-        }
-      }
-      return null;
-    }
-    return null;
-  };
-}
-
-export const getTagDirectiveNameFromFederation2SupergraphSDL =
-  createGetImportedDirectiveNameFromFederation2SupergraphSDL(
-    'https://specs.apollo.dev/tag/',
-    'tag',
   );
 
-export const getInaccessibleDirectiveNameFromFederation2SupergraphSDL =
-  createGetImportedDirectiveNameFromFederation2SupergraphSDL(
-    'https://specs.apollo.dev/inaccessible/',
-    'inaccessible',
-  );
+  // The tags of a type are inherited by it's fields and field arguments
+  for (const [typeName, subCoordinates] of subcoordinatesPerType) {
+    const tags = schemaCoordinatesToTags.get(typeName);
+    if (tags === undefined) {
+      continue;
+    }
 
-/**
- * Extract all
- */
-export function extractTagsFromFederation2SupergraphSDL(documentNode: DocumentNode) {
-  const federationDirectiveName = getTagDirectiveNameFromFederation2SupergraphSDL(documentNode);
-
-  if (federationDirectiveName === null) {
-    return null;
+    for (const subCoordinate of subCoordinates) {
+      let subcoordinateTags = schemaCoordinatesToTags.get(subCoordinate);
+      if (!subcoordinateTags) {
+        subcoordinateTags = new Set();
+        schemaCoordinatesToTags.set(subCoordinate, subcoordinateTags);
+      }
+      for (const tag of tags) {
+        subcoordinateTags.add(tag);
+      }
+    }
   }
 
-  const tagStrategy = createFederationDirectiveStrategy(federationDirectiveName);
+  return schemaCoordinatesToTags;
+}
 
+export const extractTagsFromDocument = (
+  documentNode: DocumentNode,
+  tagStrategy: TagExtractionStrategy,
+) => {
   const tags = new Set<string>();
 
   function collectTagsFromDirective(directiveNode: DirectiveNode) {
@@ -606,33 +193,19 @@ export function extractTagsFromFederation2SupergraphSDL(documentNode: DocumentNo
   });
 
   return Array.from(tags);
-}
-
-export type Federation2SubgraphDocumentNodeByTagsFilter = {
-  include: Set<string>;
-  exclude: Set<string>;
 };
 
-function buildGetTagsOnNode(directiveName: string) {
-  const emptySet = new Set<string>();
-  return function getTagsOnNode(node: { directives?: ReadonlyArray<DirectiveNode> }): Set<string> {
-    if (!node.directives) {
-      return emptySet;
+export function createTagDirectiveNameExtractionStrategy(
+  directiveName: string,
+): TagExtractionStrategy {
+  return (directiveNode: DirectiveNode) => {
+    if (
+      directiveNode.name.value === directiveName &&
+      directiveNode.arguments?.[0].name.value === 'name' &&
+      directiveNode.arguments?.[0]?.value.kind === Kind.STRING
+    ) {
+      return directiveNode.arguments[0].value.value ?? null;
     }
-    const tags = new Set<string>();
-    for (const directive of node.directives) {
-      if (
-        directive.name.value === directiveName &&
-        directive.arguments?.[0].name.value === 'name' &&
-        directive.arguments[0].value.kind === Kind.STRING
-      ) {
-        tags.add(directive.arguments[0].value.value);
-      }
-    }
-
-    if (!tags.size) {
-      return emptySet;
-    }
-    return tags;
+    return null;
   };
 }

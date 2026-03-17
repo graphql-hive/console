@@ -1,0 +1,218 @@
+---
+title: Bringing the best GraphQL experience to Svelte
+tags: [graphql, svelte]
+authors: [jycouet, AlecAivazis]
+date: 2022-07-04
+description:
+  It's time to unveil a massive effort by the KitQL and Houdini maintainers to join forces!
+---
+
+## A Tale of Two Projects
+
+[SvelteKit](https://kit.svelte.dev) is taking the web dev community by storm by providing an
+excellent solution for server-side rendered web applications and simplifying the creation of
+"WebApp"s ... whatever that means 😅. While most of the common libraries for GraphQL apps do have
+svelte bindings, none of them really _spark joy_. It was hard to avoid this feeling that people were
+trying to smash a React-shaped wedge into a Svelte-shaped hole. Independently,
+[Alec](https://github.com/AlecAivazis) and [Jean-Yves](https://twitter.com/jycouet) set out to give
+the Svelte community something better and took very different approaches to the problem. Eventually
+we connected on GitHub started to discuss the pros and cons of each approach. During this team, one
+question kept popping up:
+
+> What would the best experience for using #Svelte and #GraphQL look like?
+
+It was very clear we both wanted to provide "the best" solution for using GraphQL and Svelte. It
+seemed silly to work independently since we shared this common goal so all we needed to do was
+figure out how to structure our joint efforts.
+
+## The Best of Both Worlds
+
+While at first we thought that Houdini and KitQL were solving the same problem, during our
+conversation it became clear that KitQL's scope was significantly larger than Houdini's. KitQL
+strives to provide the best possible, "batteries included" solution for fullstack applications built
+with GraphQL and SvelteKit. It achieves this by integrating powerful tools in the GraphQL community
+such as [Yoga](https://graphql-yoga.com), [Envelop](https://envelop.dev),
+[Modules](https://graphql-modules.com), [Scalars](https://graphql-scalars.dev),
+[GraphQL-ESLint](https://github.com/dimaMachina/graphql-eslint), and
+[CodeGen](https://graphql-code-generator.com) with its own custom client that ran in the browser. On
+the other hand, Houdini is entirely focused on the client-side of the GraphQL picture and fills a
+similar role to libraries like Relay, urql, and Apollo. With this realization, the path forward was
+clear: bring the best parts of the KitQL client into Houdini and integrate it with the rest of the
+tools in the KitQL Stack.
+
+Now users no longer have to choose between KitQL or Houdini. If you are looking for:
+
+- a GraphQL client, we recommend to use Houdini
+- building a full-stack app, we recommend KitQL _(including Houdini of course 😉)_
+
+> And it's available Today 🎉🎉🎉
+
+<img src="./houdini-and-kitql/2022 05 25 - KitQL & Houdini.gif" alt="Houdini & KitQL" />
+
+## How Does It Looks like to Use GraphQL in SvelteKit?
+
+You have now two ways that you can mix and match in your application:
+
+### External Documents
+
+You write your GraphQL query in an external file `AllItems.gql` like:
+
+```graphql
+query AllItems {
+  items {
+    id
+    name
+  }
+}
+```
+
+And you can use the generated store everywhere in your app like:
+
+```svelte
+<script lang="ts">
+  import { GQL_AllItems } from '$houdini'
+
+  $: browser && GQL_AllItems.fetch()
+</script>
+
+{#each $GQL_AllItems.data.items as item}
+  {item.name}
+{/each}
+```
+
+Pretty simple, right? You can put this code in a component or in a route. Here, you are doing `CSR`
+(Client Side Rendering). The browser is doing a network call to get data.
+
+If you want to enjoy `SSR` (Server Side Rendering), you have to add a small bit of code to your
+route:
+
+```svelte
+<script context="module" lang="ts">
+  import type { LoadEvent } from '@sveltejs/kit';
+
+  export async function load(event: LoadEvent) {
+    await GQL_AllItems.fetch({ event });
+    return {};
+  }
+</script>
+```
+
+### Inline Documents
+
+With inline documents, the approach is a bit different but relies on the same store API under the
+hood. Here is the only thing you write and you automagically get `CSR` and `SSR` depending on your
+situation:
+
+```svelte
+<script>
+  import { query, graphql } from '$houdini';
+
+  const { data } = query(graphql`
+    query AllItems {
+      items {
+        id
+        name
+      }
+    }
+  `);
+</script>
+
+{#each $data.items as item}
+  <div>{item.name}</div>
+{/each}
+```
+
+### Pros and Cons?
+
+While the two APIs are equivalent, there are pros and cons to both approaches. What you gain in
+simplicity with the preprocessor, you lose in flexibility. The preprocessor can only run on
+`.svelte` files so if you want to do things inside of an endpoint or any random file, you'll need to
+use the store API. If you want to send custom headers for just a single request, you'll need the
+store API.
+
+## Some Examples
+
+Just to give you a feel for what we have built, here are a few common situations you have probably
+seen.
+
+### Pagination Example
+
+For example, you want to do an infinite scroll pagination? And load more items? Simply do 👇
+
+```svelte
+<script lang="ts">
+  function loadMore() {
+    await GQL_AllItems.loadNextPage()
+  }
+</script>
+
+<button on:click={loadMore}>Load More</button>
+
+{#each $GQL_AllItems.data.items as item}
+  {item.title}
+{/each}
+```
+
+And that's it!
+
+### Mutation Example to Append the List
+
+Want to take the result of a mutation and add it to a list?
+
+First, you need to inform graphql that this is a "special" list with a directive:
+
+```graphql
+query AllItems {
+  items @list(name: "All_Items") {
+    id
+    name
+  }
+}
+```
+
+After the generate, a fragment is created for you: `All_Items_insert` (to be used in the mutation).
+
+And that's it! Call your mutation and your data will apprend the list automagically!
+
+```svelte
+<script lang="ts">
+  const mutate = mutation<AddItem>(graphql`
+    mutation AddItem($name: String!) {
+      addItem(name: $name) {
+        ...All_Items_insert
+      }
+    }
+  `);
+
+  function add() {
+    mutate({ name: 'my new item name' });
+  }
+</script>
+
+<button on:click={add}>Add</button>
+
+{#each $GQL_AllItems.data.items as item}
+  {item.title}
+{/each}
+```
+
+- No need to retrigger a query to get the new data in the list.
+- No need to append the list manually.
+- Don't even need remember exactly what fields need to ask for the item.
+
+> Houdini takes care of everything for you 🎉.
+
+## Join Us in Building the Future
+
+We showed here two examples... but a lot more is available in the two projects.
+
+Please come on our GitHub repos to ⭐ star, 🗣️ discuss, 🎉 ask for new features, and more:
+
+- [Houdini](https://github.com/HoudiniGraphql/houdini)
+- [KitQL](https://github.com/jycouet/kitql)
+
+_If you were already using these projects, please follow
+[Houdini migration to 0.16.0](https://houdinigraphql.com/guides/migrating-to-016) or
+[KitQL migration to 0.7.0](https://kitql.dev/docs/migrating-to-0.7.0) to be up-to-date._
+
+Speak to you soon! 🤟

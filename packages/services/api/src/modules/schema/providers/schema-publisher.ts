@@ -6,7 +6,7 @@ import lodash from 'lodash';
 import promClient from 'prom-client';
 import { z } from 'zod';
 import { CriticalityLevel } from '@graphql-inspector/core';
-import { traceFn } from '@hive/service-common';
+import { trace, traceFn } from '@hive/service-common';
 import type {
   ConditionalBreakingChangeMetadata,
   SchemaChangeType,
@@ -14,22 +14,22 @@ import type {
 } from '@hive/storage';
 import * as Sentry from '@sentry/node';
 import * as Types from '../../../__generated__/types';
-import { Organization, Project, ProjectType, Schema, Target } from '../../../shared/entities';
+import { Organization, Project, ProjectType, Target } from '../../../shared/entities';
 import { HiveError } from '../../../shared/errors';
 import { createPeriod } from '../../../shared/helpers';
 import { isGitHubRepositoryString } from '../../../shared/is-github-repository-string';
 import { bolderize } from '../../../shared/markdown';
 import { AlertsManager } from '../../alerts/providers/alerts-manager';
 import { Session } from '../../auth/lib/authz';
+import { RateLimitProvider } from '../../commerce/providers/rate-limit.provider';
 import {
   GitHubIntegrationManager,
   type GitHubCheckRun,
 } from '../../integrations/providers/github-integration-manager';
 import { OperationsReader } from '../../operations/providers/operations-reader';
-import { OrganizationManager } from '../../organization/providers/organization-manager';
-import { ProjectManager } from '../../project/providers/project-manager';
-import { RateLimitProvider } from '../../rate-limit/providers/rate-limit.provider';
+import { SchemaProposalStorage } from '../../proposals/providers/schema-proposal-storage';
 import { DistributedCache } from '../../shared/providers/distributed-cache';
+import { IdTranslator } from '../../shared/providers/id-translator';
 import { Logger } from '../../shared/providers/logger';
 import { Mutex, MutexResourceLockedError } from '../../shared/providers/mutex';
 import { Storage, type TargetSelector } from '../../shared/providers/storage';
@@ -40,7 +40,6 @@ import type { SchemaModuleConfig } from './config';
 import { SCHEMA_MODULE_CONFIG } from './config';
 import { Contracts } from './contracts';
 import { CompositeModel } from './models/composite';
-import { CompositeLegacyModel } from './models/composite-legacy';
 import {
   DeleteFailureReasonCode,
   formatPolicyError,
@@ -54,10 +53,15 @@ import {
   SchemaPublishResult,
 } from './models/shared';
 import { SingleModel } from './models/single';
-import { SingleLegacyModel } from './models/single-legacy';
 import type { ConditionalBreakingChangeDiffConfig } from './registry-checks';
-import { ensureCompositeSchemas, ensureSingleSchema, SchemaHelper } from './schema-helper';
-import { SchemaManager, shouldUseLatestComposableVersion } from './schema-manager';
+import {
+  ensureCompositeSchemas,
+  ensureSingleSchema,
+  SchemaInput,
+  toCompositeSchemaInput,
+  toSingleSchemaInput,
+} from './schema-helper';
+import { SchemaManager } from './schema-manager';
 import { SchemaVersionHelper } from './schema-version-helper';
 
 const schemaCheckCount = new promClient.Counter({
@@ -72,30 +76,42 @@ const schemaPublishCount = new promClient.Counter({
   labelNames: ['model', 'projectType', 'conclusion'],
 });
 
+const schemaPublishUnexpectedErrorCount = new promClient.Counter({
+  name: 'registry_publish_unexpected_error_count',
+  help: 'Unexpected, not gracefully handled errors. E.g. from GitHub or other third-party services.',
+  labelNames: ['errorName'],
+});
+
+const schemaCheckUnexpectedErrorCount = new promClient.Counter({
+  name: 'registry_check_unexpected_error_count',
+  help: 'Unexpected, not gracefully handled errors. E.g. from GitHub or other third-party services.',
+  labelNames: ['errorName'],
+});
+
 const schemaDeleteCount = new promClient.Counter({
   name: 'registry_delete_count',
   help: 'Number of schema deletes',
   labelNames: ['model', 'projectType'],
 });
 
-export type CheckInput = Omit<Types.SchemaCheckInput, 'project' | 'organization' | 'target'> &
-  TargetSelector;
+export type CheckInput = Types.SchemaCheckInput & {
+  schemaProposalId?: string | null;
+};
 
-export type DeleteInput = Types.SchemaDeleteInput &
-  Omit<TargetSelector, 'targetId'> & {
-    checksum: string;
-    target: Target;
-  };
+export type DeleteInput = Types.SchemaDeleteInput;
 
-export type PublishInput = Types.SchemaPublishInput &
-  TargetSelector & {
-    isSchemaPublishMissingUrlErrorSelected: boolean;
-  };
+export type PublishInput = Types.SchemaPublishInput & {
+  isSchemaPublishMissingUrlErrorSelected: boolean;
+};
 
 type BreakPromise<T> = T extends Promise<infer U> ? U : never;
 
 type PublishResult =
   | BreakPromise<ReturnType<SchemaPublisher['internalPublish']>>
+  | {
+      readonly __typename: 'SchemaPublishMissingServiceError';
+      message: 'Missing service name';
+    }
   | {
       readonly __typename: 'SchemaPublishRetry';
       readonly reason: string;
@@ -116,6 +132,8 @@ type ConditionalBreakingChangeConfiguration = {
   conditionalBreakingChangeDiffConfig: ConditionalBreakingChangeDiffConfig;
   retentionInDays: number;
   percentage: number;
+  requestCount: number;
+  breakingChangeFormula: 'PERCENTAGE' | 'REQUEST_COUNT';
   totalRequestCount: number;
 };
 
@@ -125,18 +143,9 @@ type ConditionalBreakingChangeConfiguration = {
 export class SchemaPublisher {
   private logger: Logger;
   private models: {
-    [ProjectType.SINGLE]: {
-      modern: SingleModel;
-      legacy: SingleLegacyModel;
-    };
-    [ProjectType.FEDERATION]: {
-      modern: CompositeModel;
-      legacy: CompositeLegacyModel;
-    };
-    [ProjectType.STITCHING]: {
-      modern: CompositeModel;
-      legacy: CompositeLegacyModel;
-    };
+    [ProjectType.SINGLE]: SingleModel;
+    [ProjectType.FEDERATION]: CompositeModel;
+    [ProjectType.STITCHING]: CompositeModel;
   };
 
   constructor(
@@ -145,42 +154,30 @@ export class SchemaPublisher {
     private storage: Storage,
     private schemaManager: SchemaManager,
     private targetManager: TargetManager,
-    private projectManager: ProjectManager,
-    private organizationManager: OrganizationManager,
     private alertsManager: AlertsManager,
+    private schemaProposals: SchemaProposalStorage,
     private gitHubIntegrationManager: GitHubIntegrationManager,
     private distributedCache: DistributedCache,
-    private helper: SchemaHelper,
     private artifactStorageWriter: ArtifactStorageWriter,
     private mutex: Mutex,
     private rateLimit: RateLimitProvider,
     private contracts: Contracts,
     private schemaVersionHelper: SchemaVersionHelper,
     private operationsReader: OperationsReader,
+    private idTranslator: IdTranslator,
     @Inject(SCHEMA_MODULE_CONFIG) private schemaModuleConfig: SchemaModuleConfig,
     singleModel: SingleModel,
     compositeModel: CompositeModel,
-    compositeLegacyModel: CompositeLegacyModel,
-    singleLegacyModel: SingleLegacyModel,
   ) {
     this.logger = logger.child({ service: 'SchemaPublisher' });
     this.models = {
-      [ProjectType.SINGLE]: {
-        modern: singleModel,
-        legacy: singleLegacyModel,
-      },
-      [ProjectType.FEDERATION]: {
-        modern: compositeModel,
-        legacy: compositeLegacyModel,
-      },
-      [ProjectType.STITCHING]: {
-        modern: compositeModel,
-        legacy: compositeLegacyModel,
-      },
+      [ProjectType.SINGLE]: singleModel,
+      [ProjectType.FEDERATION]: compositeModel,
+      [ProjectType.STITCHING]: compositeModel,
     };
   }
 
-  private async getConditionalBreakingChangeConfiguration({
+  private async getBreakingChangeConfiguration({
     selector,
   }: {
     selector: {
@@ -188,20 +185,29 @@ export class SchemaPublisher {
       projectId: string;
       targetId: string;
     };
-  }): Promise<ConditionalBreakingChangeConfiguration | null> {
+  }): Promise<{
+    conditionalBreakingChangeConfiguration: ConditionalBreakingChangeConfiguration | null;
+    failDiffOnDangerousChange: boolean;
+  }> {
     try {
       const settings = await this.storage.getTargetSettings(selector);
 
-      if (!settings.validation.enabled) {
+      if (!settings.validation.isEnabled) {
         this.logger.debug('Usage validation disabled');
         this.logger.debug('Mark all as used');
-        return null;
+        return {
+          failDiffOnDangerousChange: settings.failDiffOnDangerousChange,
+          conditionalBreakingChangeConfiguration: null,
+        };
       }
 
-      if (settings.validation.enabled && settings.validation.targets.length === 0) {
+      if (settings.validation.isEnabled && settings.validation.targets.length === 0) {
         this.logger.debug('Usage validation enabled but no targets to check against');
         this.logger.debug('Mark all as used');
-        return null;
+        return {
+          failDiffOnDangerousChange: settings.failDiffOnDangerousChange,
+          conditionalBreakingChangeConfiguration: null,
+        };
       }
 
       const targetIds = settings.validation.targets;
@@ -217,23 +223,38 @@ export class SchemaPublisher {
       });
 
       return {
-        conditionalBreakingChangeDiffConfig: {
-          period,
-          targetIds,
-          excludedClientNames: settings.validation.excludedClients?.length
-            ? settings.validation.excludedClients
-            : null,
-          requestCountThreshold: Math.ceil(
-            totalRequestCount * (settings.validation.percentage / 100),
-          ),
+        conditionalBreakingChangeConfiguration: {
+          conditionalBreakingChangeDiffConfig: {
+            period,
+            targetIds,
+            excludedClientNames: settings.validation.excludedClients?.length
+              ? settings.validation.excludedClients
+              : null,
+            excludedAppDeploymentNames: settings.validation.excludedAppDeployments?.length
+              ? settings.validation.excludedAppDeployments
+              : null,
+            requestCountThreshold:
+              settings.validation.breakingChangeFormula === 'PERCENTAGE'
+                ? Math.ceil(totalRequestCount * (settings.validation.percentage / 100))
+                : settings.validation.requestCount,
+          },
+          retentionInDays: settings.validation.period,
+          percentage: settings.validation.percentage,
+          requestCount: settings.validation.requestCount,
+          breakingChangeFormula: settings.validation.breakingChangeFormula,
+          totalRequestCount,
         },
-        retentionInDays: settings.validation.period,
-        percentage: settings.validation.percentage,
-        totalRequestCount,
+        failDiffOnDangerousChange: settings.failDiffOnDangerousChange,
       };
     } catch (error: unknown) {
-      this.logger.error(`Failed to get settings`, error);
-      return null;
+      const errorText =
+        error instanceof Error
+          ? error.toString()
+          : typeof error === 'string'
+            ? error
+            : JSON.stringify(error);
+      this.logger.error(`Failed to get settings (error=%s)`, errorText);
+      throw error;
     }
   }
 
@@ -254,7 +275,10 @@ export class SchemaPublisher {
       settings: {
         retentionInDays: args.conditionalBreakingChangeConfiguration.retentionInDays,
         excludedClientNames: conditionalBreakingChangeDiffConfig.excludedClientNames,
+        excludedAppDeploymentNames: conditionalBreakingChangeDiffConfig.excludedAppDeploymentNames,
         percentage: args.conditionalBreakingChangeConfiguration.percentage,
+        requestCount: args.conditionalBreakingChangeConfiguration.requestCount,
+        breakingChangeFormula: args.conditionalBreakingChangeConfiguration.breakingChangeFormula,
         targets: await Promise.all(
           conditionalBreakingChangeDiffConfig.targetIds.map(async targetId => {
             return {
@@ -274,78 +298,151 @@ export class SchemaPublisher {
     };
   }
 
-  @traceFn('SchemaPublisher.check', {
+  @traceFn('SchemaPublisher.internalCheck', {
     initAttributes: input => ({
-      'hive.target.id': input.targetId,
-      'hive.organization.id': input.organizationId,
-      'hive.project.id': input.projectId,
+      'hive.organization.slug': input.target?.bySelector?.organizationSlug,
+      'hive.project.slug': input.target?.bySelector?.projectSlug,
+      'hive.target.slug': input.target?.bySelector?.targetSlug,
+      'hive.target.id': input.target?.byId ?? undefined,
     }),
     resultAttributes: result => ({
       'hive.check.result': result.__typename,
     }),
   })
-  async check(input: CheckInput) {
+  private async internalCheck(input: CheckInput) {
     this.logger.info('Checking schema (input=%o)', lodash.omit(input, ['sdl']));
+
+    const selector = await this.idTranslator.resolveTargetReference({
+      reference: input.target ?? null,
+    });
+
+    if (!selector) {
+      this.session.raise('schemaCheck:create');
+    }
+
+    trace.getActiveSpan()?.setAttributes({
+      'hive.organization.id': selector.organizationId,
+      'hive.target.id': selector.targetId,
+      'hive.project.id': selector.projectId,
+    });
 
     await this.session.assertPerformAction({
       action: 'schemaCheck:create',
-      organizationId: input.organizationId,
+      organizationId: selector.organizationId,
       params: {
-        organizationId: input.organizationId,
-        projectId: input.projectId,
-        targetId: input.targetId,
+        organizationId: selector.organizationId,
+        projectId: selector.projectId,
+        targetId: selector.targetId,
         serviceName: input.service ?? null,
       },
     });
 
-    const [target, project, organization, latestVersion, latestComposableVersion] =
-      await Promise.all([
-        this.storage.getTarget({
-          organizationId: input.organizationId,
-          projectId: input.projectId,
-          targetId: input.targetId,
-        }),
-        this.storage.getProject({
-          organizationId: input.organizationId,
-          projectId: input.projectId,
-        }),
-        this.storage.getOrganization({
-          organizationId: input.organizationId,
-        }),
-        this.storage.getLatestSchemas({
-          organizationId: input.organizationId,
-          projectId: input.projectId,
-          targetId: input.targetId,
-        }),
-        this.storage.getLatestSchemas({
-          organizationId: input.organizationId,
-          projectId: input.projectId,
-          targetId: input.targetId,
-          onlyComposable: true,
-        }),
-      ]);
+    const [target, project, organization, schemaProposal] = await Promise.all([
+      this.storage.getTarget({
+        organizationId: selector.organizationId,
+        projectId: selector.projectId,
+        targetId: selector.targetId,
+      }),
+      this.storage.getProject({
+        organizationId: selector.organizationId,
+        projectId: selector.projectId,
+      }),
+      this.storage.getOrganization({
+        organizationId: selector.organizationId,
+      }),
 
-    const [latestSchemaVersion, latestComposableSchemaVersion] = await Promise.all([
-      this.schemaManager.getMaybeLatestVersion(target),
-      this.schemaManager.getMaybeLatestValidVersion(target),
+      input.schemaProposalId
+        ? this.schemaProposals.getProposal({
+            id: input.schemaProposalId,
+          })
+        : null,
     ]);
 
-    const projectModelVersion = project.legacyRegistryModel ? 'legacy' : 'modern';
+    if (input.schemaProposalId && schemaProposal?.targetId !== selector.targetId) {
+      return {
+        __typename: 'SchemaCheckError',
+        valid: false,
+        changes: [],
+        warnings: [],
+        errors: [
+          {
+            message:
+              'Invalid schema proposal reference. No proposal found with that ID for the target.',
+          },
+        ],
+      } as const;
+    }
+
+    const [latestVersion, latestComposableVersion] = await Promise.all([
+      this.schemaManager.getLatestSchemaVersionWithSchemaLogs({
+        target,
+      }),
+      this.schemaManager.getLatestSchemaVersionWithSchemaLogs({
+        target,
+        onlyComposable: true,
+      }),
+    ]);
+
+    if (input.service) {
+      let serviceExists = false;
+      if (latestVersion?.schemas) {
+        serviceExists = !!ensureCompositeSchemas(latestVersion.schemas).find(
+          ({ service_name }) => service_name === input.service,
+        );
+      }
+      // this is a new service. Validate the service name.
+      if (!serviceExists && !isValidServiceName(input.service)) {
+        return {
+          __typename: 'SchemaCheckError',
+          valid: false,
+          changes: [],
+          warnings: [],
+          errors: [
+            {
+              message:
+                'Invalid service name. Service name must be 64 characters or less, must start with a letter, and can only contain alphanumeric characters, dash (-), or underscore (_).',
+            },
+          ],
+        } as const;
+      }
+    }
 
     function increaseSchemaCheckCountMetric(conclusion: 'rejected' | 'accepted') {
       schemaCheckCount.inc({
-        model: projectModelVersion,
+        model: 'modern',
         projectType: project.type,
         conclusion,
       });
+    }
+
+    // if url is provided but this is not a distributed project
+    if (
+      input.url != null &&
+      !(project.type === ProjectType.FEDERATION || project.type === ProjectType.STITCHING)
+    ) {
+      this.logger.debug('url is only supported by distributed projects (type=%s)', project.type);
+      increaseSchemaCheckCountMetric('rejected');
+
+      return {
+        __typename: 'SchemaCheckError',
+        valid: false,
+        changes: [],
+        warnings: [],
+        errors: [
+          {
+            message: 'url is only supported by distributed projects',
+          },
+        ],
+      } as const;
     }
 
     if (
       (project.type === ProjectType.FEDERATION || project.type === ProjectType.STITCHING) &&
       input.service == null
     ) {
-      this.logger.debug('No service name provided (type=%s)', project.type, projectModelVersion);
+      this.logger.debug('No service name provided (type=%s)', project.type);
       increaseSchemaCheckCountMetric('rejected');
+
       return {
         __typename: 'SchemaCheckError',
         valid: false,
@@ -456,12 +553,6 @@ export class SchemaPublisher {
 
     const baseSchema = await this.schemaManager.getBaseSchemaForTarget(target);
 
-    const selector = {
-      organizationId: input.organizationId,
-      projectId: input.projectId,
-      targetId: input.targetId,
-    };
-
     const sdl = tryPrettifySDL(input.sdl);
 
     const activeContracts =
@@ -501,35 +592,53 @@ export class SchemaPublisher {
       );
     });
 
-    const conditionalBreakingChangeConfiguration =
-      await this.getConditionalBreakingChangeConfiguration({
+    const { conditionalBreakingChangeConfiguration, failDiffOnDangerousChange } =
+      await this.getBreakingChangeConfiguration({
         selector,
       });
 
-    const latestSchemaVersionContracts = latestSchemaVersion
+    const latestSchemaVersionContracts = latestVersion
       ? await this.contracts.getContractVersionsForSchemaVersion({
-          schemaVersionId: latestSchemaVersion.id,
+          schemaVersionId: latestVersion.version.id,
         })
       : null;
 
+    let proposalChanges: Array<SchemaChangeType> | null = null;
     switch (project.type) {
       case ProjectType.SINGLE:
-        this.logger.debug('Using SINGLE registry model (version=%s)', projectModelVersion);
-        checkResult = await this.models[ProjectType.SINGLE][projectModelVersion].check({
-          input,
+        this.logger.debug('Using SINGLE registry model');
+
+        if (input.schemaProposalId) {
+          try {
+            const diffSchema = await this.models[project.type].diffSchema({
+              existing: latestVersion
+                ? toSingleSchemaInput(ensureSingleSchema(latestVersion.schemas))
+                : null,
+              incoming: { sdl },
+            });
+            if ('result' in diffSchema) {
+              proposalChanges = diffSchema.result ?? null;
+            }
+          } catch (e: any) {
+            this.logger.error('Could not calculate schema proposal diff: %s', e.message ?? e);
+          }
+        }
+
+        checkResult = await this.models[ProjectType.SINGLE].check({
+          input: { sdl },
           selector,
           latest: latestVersion
             ? {
-                isComposable: latestVersion.valid,
-                sdl: latestSchemaVersion?.compositeSchemaSDL ?? null,
-                schemas: [ensureSingleSchema(latestVersion.schemas)],
+                isComposable: latestVersion.version.isComposable,
+                sdl: latestVersion.version.compositeSchemaSDL,
+                schemas: [toSingleSchemaInput(ensureSingleSchema(latestVersion.schemas))],
               }
             : null,
           latestComposable: latestComposableVersion
             ? {
-                isComposable: latestComposableVersion.valid,
-                sdl: latestComposableSchemaVersion?.compositeSchemaSDL ?? null,
-                schemas: [ensureSingleSchema(latestComposableVersion.schemas)],
+                isComposable: latestComposableVersion.version.isComposable,
+                sdl: latestComposableVersion.version.compositeSchemaSDL,
+                schemas: [toSingleSchemaInput(ensureSingleSchema(latestComposableVersion.schemas))],
               }
             : null,
           baseSchema,
@@ -538,40 +647,60 @@ export class SchemaPublisher {
           approvedChanges: approvedSchemaChanges,
           conditionalBreakingChangeDiffConfig:
             conditionalBreakingChangeConfiguration?.conditionalBreakingChangeDiffConfig ?? null,
+          failDiffOnDangerousChange,
+          filterNestedChanges: true,
         });
         break;
       case ProjectType.FEDERATION:
       case ProjectType.STITCHING:
-        this.logger.debug(
-          'Using %s registry model (version=%s)',
-          project.type,
-          projectModelVersion,
-        );
+        this.logger.debug('Using %s registry model', project.type);
 
         if (!input.service) {
           throw new Error('Guard for TypeScript limitations on inferring types. :)');
         }
 
-        checkResult = await this.models[project.type][projectModelVersion].check({
+        if (input.schemaProposalId) {
+          try {
+            const diffSchema = await this.models[project.type].diffSchema({
+              input: {
+                sdl,
+                serviceName: input.service,
+              },
+              existing: latestVersion
+                ? ensureCompositeSchemas(latestVersion.schemas).map(toCompositeSchemaInput)
+                : null,
+            });
+            if ('result' in diffSchema) {
+              proposalChanges = diffSchema.result ?? null;
+            }
+          } catch (e: any) {
+            this.logger.error('Could not calculate schema proposal diff: %s', e.message ?? e);
+          }
+        }
+
+        checkResult = await this.models[project.type].check({
           input: {
             sdl,
             serviceName: input.service,
+            serviceUrl: input.url ?? null,
           },
           selector,
           latest: latestVersion
             ? {
-                isComposable: latestVersion.valid,
-                sdl: latestSchemaVersion?.compositeSchemaSDL ?? null,
-                schemas: ensureCompositeSchemas(latestVersion.schemas),
+                isComposable: latestVersion.version.isComposable,
+                sdl: latestVersion.version.compositeSchemaSDL,
+                schemas: ensureCompositeSchemas(latestVersion.schemas).map(toCompositeSchemaInput),
                 contractNames:
                   latestSchemaVersionContracts?.edges.map(edge => edge.node.contractName) ?? null,
               }
             : null,
           latestComposable: latestComposableVersion
             ? {
-                isComposable: latestComposableVersion.valid,
-                sdl: latestComposableSchemaVersion?.compositeSchemaSDL ?? null,
-                schemas: ensureCompositeSchemas(latestComposableVersion.schemas),
+                isComposable: latestComposableVersion.version.isComposable,
+                sdl: latestComposableVersion.version.compositeSchemaSDL,
+                schemas: ensureCompositeSchemas(latestComposableVersion.schemas).map(
+                  toCompositeSchemaInput,
+                ),
               }
             : null,
           baseSchema,
@@ -585,11 +714,13 @@ export class SchemaPublisher {
             })) ?? null,
           conditionalBreakingChangeDiffConfig:
             conditionalBreakingChangeConfiguration?.conditionalBreakingChangeDiffConfig ?? null,
+          failDiffOnDangerousChange,
+          filterNestedChanges: !input.schemaProposalId,
         });
         break;
       default:
         this.logger.debug('Unsupported project type (type=%s)', project.type);
-        throw new HiveError(`${project.type} project (${projectModelVersion}) not supported`);
+        throw new HiveError(`${project.type} project not supported`);
     }
 
     let schemaCheck: null | SchemaCheck = null;
@@ -597,13 +728,23 @@ export class SchemaPublisher {
     const retention = await this.rateLimit.getRetention({ targetId: target.id });
     const expiresAt = retention ? new Date(Date.now() + retention * millisecondsPerDay) : null;
 
+    if (input.schemaProposalId) {
+      await this.schemaProposals.runBackgroundComposition({
+        externalComposition: project.externalComposition,
+        native: project.nativeFederation,
+        proposalId: input.schemaProposalId,
+        targetId: target.id,
+      });
+    }
+
     if (checkResult.conclusion === SchemaCheckConclusion.Failure) {
       schemaCheck = await this.storage.createSchemaCheck({
         schemaSDL: sdl,
         serviceName: input.service ?? null,
+        serviceUrl: input.url ?? null,
         meta: input.meta ?? null,
         targetId: target.id,
-        schemaVersionId: latestVersion?.versionId ?? null,
+        schemaVersionId: latestVersion?.version.id ?? null,
         isSuccess: false,
         breakingSchemaChanges: checkResult.state.schemaChanges?.breaking ?? null,
         safeSchemaChanges: checkResult.state.schemaChanges?.safe ?? null,
@@ -648,14 +789,18 @@ export class SchemaPublisher {
             breakingSchemaChanges: contract.schemaChanges?.breaking ?? null,
             safeSchemaChanges: contract.schemaChanges?.safe ?? null,
           })) ?? null,
+        schemaProposalId: input.schemaProposalId ?? null,
+        schemaProposalChanges: proposalChanges,
       });
+      this.logger.info('created failed schema check. (schemaCheckId=%s)', schemaCheck.id);
     } else if (checkResult.conclusion === SchemaCheckConclusion.Success) {
       schemaCheck = await this.storage.createSchemaCheck({
         schemaSDL: sdl,
         serviceName: input.service ?? null,
+        serviceUrl: input.url ?? null,
         meta: input.meta ?? null,
         targetId: target.id,
-        schemaVersionId: latestVersion?.versionId ?? null,
+        schemaVersionId: latestVersion?.version.id ?? null,
         isSuccess: true,
         breakingSchemaChanges: checkResult.state?.schemaChanges?.breaking ?? null,
         safeSchemaChanges: checkResult.state?.schemaChanges?.safe ?? null,
@@ -692,24 +837,28 @@ export class SchemaPublisher {
             breakingSchemaChanges: contract.schemaChanges?.breaking ?? null,
             safeSchemaChanges: contract.schemaChanges?.safe ?? null,
           })) ?? null,
+        schemaProposalId: input.schemaProposalId ?? null,
+        schemaProposalChanges: proposalChanges,
       });
+      this.logger.info('created successful schema check. (schemaCheckId=%s)', schemaCheck.id);
     } else if (checkResult.conclusion === SchemaCheckConclusion.Skip) {
-      if (!latestVersion || !latestSchemaVersion) {
+      if (!latestVersion) {
         throw new Error('This cannot happen 1 :)');
       }
 
       const [compositeSchemaSdl, supergraphSdl, compositionErrors] = await Promise.all([
-        this.schemaVersionHelper.getCompositeSchemaSdl(latestSchemaVersion),
-        this.schemaVersionHelper.getSupergraphSdl(latestSchemaVersion),
-        this.schemaVersionHelper.getSchemaCompositionErrors(latestSchemaVersion),
+        this.schemaVersionHelper.getCompositeSchemaSdl(latestVersion.version),
+        this.schemaVersionHelper.getSupergraphSdl(latestVersion.version),
+        this.schemaVersionHelper.getSchemaCompositionErrors(latestVersion.version),
       ]);
 
       schemaCheck = await this.storage.createSchemaCheck({
         schemaSDL: sdl,
         serviceName: input.service ?? null,
+        serviceUrl: input.url ?? null,
         meta: input.meta ?? null,
         targetId: target.id,
-        schemaVersionId: latestSchemaVersion.id ?? null,
+        schemaVersionId: latestVersion.version.id ?? null,
         breakingSchemaChanges: null,
         safeSchemaChanges: null,
         schemaPolicyWarnings: null,
@@ -768,7 +917,10 @@ export class SchemaPublisher {
               })),
             )
           : null,
+        schemaProposalId: input.schemaProposalId ?? null,
+        schemaProposalChanges: proposalChanges,
       });
+      this.logger.info('created skipped schema check. (schemaCheckId=%s)', schemaCheck.id);
     }
 
     if (githubCheckRun) {
@@ -819,14 +971,14 @@ export class SchemaPublisher {
 
       // SchemaCheckConclusion.Skip
 
-      if (!latestVersion || !latestSchemaVersion) {
+      if (!latestVersion) {
         throw new Error('This cannot happen 2 :)');
       }
 
-      if (latestSchemaVersion.isComposable) {
+      if (latestVersion.version.isComposable) {
         increaseSchemaCheckCountMetric('accepted');
         const contracts = await this.contracts.getContractVersionsForSchemaVersion({
-          schemaVersionId: latestSchemaVersion.id,
+          schemaVersionId: latestVersion.version.id,
         });
         const failedContractCompositionCount =
           contracts?.edges.filter(edge => edge.node.schemaCompositionErrors !== null).length ?? 0;
@@ -855,7 +1007,7 @@ export class SchemaPublisher {
         conclusion: SchemaCheckConclusion.Failure,
         changes: null,
         breakingChanges: null,
-        compositionErrors: latestSchemaVersion.schemaCompositionErrors,
+        compositionErrors: latestVersion.version.schemaCompositionErrors,
         warnings: null,
         errors: null,
         schemaCheckId: schemaCheck?.id ?? null,
@@ -878,6 +1030,7 @@ export class SchemaPublisher {
       return {
         __typename: 'SchemaCheckSuccess',
         valid: true,
+        schemaProposalChanges: schemaCheck.schemaProposalChanges,
         changes: [
           ...(checkResult.state?.schemaChanges?.all ?? []),
           ...(checkResult.state?.contracts?.flatMap(contract => [
@@ -899,6 +1052,7 @@ export class SchemaPublisher {
       return {
         __typename: 'SchemaCheckError',
         valid: false,
+        schemaProposalChanges: schemaCheck.schemaProposalChanges,
         changes: [
           ...(checkResult.state.schemaChanges?.all ?? []),
           ...(checkResult.state.contracts?.flatMap(contract => [
@@ -939,15 +1093,16 @@ export class SchemaPublisher {
 
     // SchemaCheckConclusion.Skip
 
-    if (!latestVersion || !latestSchemaVersion) {
+    if (!latestVersion) {
       throw new Error('This cannot happen 3 :)');
     }
 
-    if (latestSchemaVersion.isComposable) {
+    if (latestVersion.version.isComposable) {
       increaseSchemaCheckCountMetric('accepted');
       return {
         __typename: 'SchemaCheckSuccess',
         valid: true,
+        schemaProposalChanges: schemaCheck.schemaProposalChanges,
         changes: [],
         warnings: [],
         initial: false,
@@ -956,17 +1111,18 @@ export class SchemaPublisher {
     }
 
     const contractVersions = await this.contracts.getContractVersionsForSchemaVersion({
-      schemaVersionId: latestSchemaVersion.id,
+      schemaVersionId: latestVersion.version.id,
     });
 
     increaseSchemaCheckCountMetric('rejected');
     return {
       __typename: 'SchemaCheckError',
       valid: false,
+      schemaProposalChanges: schemaCheck.schemaProposalChanges,
       changes: [],
       warnings: [],
       errors: [
-        ...(latestSchemaVersion.schemaCompositionErrors?.map(error => ({
+        ...(latestVersion.version.schemaCompositionErrors?.map(error => ({
           message: error.message,
           source: error.source,
         })) ?? []),
@@ -981,51 +1137,121 @@ export class SchemaPublisher {
     } as const;
   }
 
+  async check(input: CheckInput) {
+    return await this.internalCheck(input).catch(error => {
+      if (error instanceof HiveError === false) {
+        schemaCheckUnexpectedErrorCount.inc({
+          errorName: (error instanceof Error && error.name) || 'unknown',
+        });
+      }
+
+      throw error;
+    });
+  }
+
   @traceFn('SchemaPublisher.publish', {
     initAttributes: (input, _) => ({
-      'hive.target.id': input.targetId,
-      'hive.organization.id': input.organizationId,
-      'hive.project.id': input.projectId,
+      'hive.organization.slug': input.target?.bySelector?.organizationSlug,
+      'hive.project.slug': input.target?.bySelector?.projectSlug,
+      'hive.target.slug': input.target?.bySelector?.targetSlug,
+      'hive.target.id': input.target?.byId ?? undefined,
     }),
     resultAttributes: result => ({
       'hive.publish.result': result.__typename,
     }),
   })
   async publish(input: PublishInput, signal: AbortSignal): Promise<PublishResult> {
-    this.logger.debug(
-      'Schema publication (organization=%s, project=%s, target=%s)',
-      input.organizationId,
-      input.projectId,
-      input.targetId,
-    );
+    this.logger.debug('Start schema publication.');
+
+    const selector = await this.idTranslator.resolveTargetReference({
+      reference: input.target ?? null,
+    });
+
+    if (!selector) {
+      this.session.raise('schemaVersion:publish');
+    }
+
+    trace.getActiveSpan()?.setAttributes({
+      'hive.organization.id': selector.organizationId,
+      'hive.target.id': selector.targetId,
+      'hive.project.id': selector.projectId,
+    });
+
+    await this.session.assertPerformAction({
+      action: 'schemaVersion:publish',
+      organizationId: selector.organizationId,
+      params: {
+        targetId: selector.targetId,
+        projectId: selector.projectId,
+        organizationId: selector.organizationId,
+        serviceName: input.service ?? null,
+      },
+    });
 
     this.logger.debug(
       'Compute hash (organization=%s, project=%s, target=%s)',
-      input.organizationId,
-      input.projectId,
-      input.targetId,
+      selector.organizationId,
+      selector.projectId,
+      selector.targetId,
     );
 
-    const selector = this.session.getLegacySelector();
-
-    const target = await this.storage.getTarget({
-      organizationId: input.organizationId,
-      projectId: input.projectId,
-      targetId: input.targetId,
-    });
+    const [target, project] = await Promise.all([
+      this.storage.getTarget({
+        organizationId: selector.organizationId,
+        projectId: selector.projectId,
+        targetId: selector.targetId,
+      }),
+      this.storage.getProject({
+        organizationId: selector.organizationId,
+        projectId: selector.projectId,
+      }),
+    ]);
 
     const [contracts, latestVersion] = await Promise.all([
-      this.contracts.getActiveContractsByTargetId({ targetId: input.targetId }),
-      this.schemaManager.getMaybeLatestVersion(target),
+      this.contracts.getActiveContractsByTargetId({ targetId: selector.targetId }),
+      this.schemaManager.getLatestSchemaVersionWithSchemaLogs({
+        target,
+      }),
     ]);
+
+    if (project.type !== Types.ProjectType.SINGLE) {
+      if (!input.service) {
+        return {
+          __typename: 'SchemaPublishMissingServiceError' as const,
+          message: 'Missing service name',
+        } as const;
+      }
+
+      let serviceExists = false;
+      if (latestVersion?.schemas) {
+        serviceExists = !!ensureCompositeSchemas(latestVersion.schemas).find(
+          ({ service_name }) => service_name === input.service,
+        );
+      }
+
+      // this is a new service. Validate the service name.
+      if (!serviceExists && !isValidServiceName(input.service)) {
+        return {
+          __typename: 'SchemaPublishError',
+          valid: false,
+          changes: [],
+          errors: [
+            {
+              message:
+                'Invalid service name. Service name must be 64 characters or less, must start with a letter, and can only contain alphanumeric characters, dash (-), or underscore (_).',
+            },
+          ],
+        };
+      }
+    }
 
     const checksum = createHash('md5')
       .update(
         stringify({
           ...input,
-          organization: input.organizationId,
-          project: input.projectId,
-          target: input.targetId,
+          organization: selector.organizationId,
+          project: selector.projectId,
+          target: selector.targetId,
           service: input.service?.toLowerCase(),
           contracts: contracts?.map(contract => ({
             contractId: contract.id,
@@ -1034,22 +1260,22 @@ export class SchemaPublisher {
           // We include the latest version ID to avoid caching a schema publication that targets different versions.
           // When deleting a schema, and publishing it again, the latest version ID will be different.
           // If we don't include it, the cache will return the previous result.
-          latestVersionId: latestVersion?.id,
+          latestVersionId: latestVersion?.version.id,
         }),
       )
-      .update(selector.token)
+      .update(this.session.id)
       .digest('base64');
 
     this.logger.debug(
       'Hash computation finished (organization=%s, project=%s, target=%s, hash=%s)',
-      input.organizationId,
-      input.projectId,
-      input.targetId,
+      selector.organizationId,
+      selector.projectId,
+      selector.targetId,
     );
 
     return this.mutex
       .perform(
-        registryLockId(input.targetId),
+        registryLockId(selector.targetId),
         {
           /**
            * The global request timeout is 60 seconds.
@@ -1064,111 +1290,57 @@ export class SchemaPublisher {
           signal,
         },
         async () => {
-          await this.session.assertPerformAction({
-            action: 'schemaVersion:publish',
-            organizationId: input.organizationId,
-            params: {
-              targetId: input.targetId,
-              projectId: input.projectId,
-              organizationId: input.organizationId,
-              serviceName: input.service ?? null,
-            },
-          });
           return this.distributedCache.wrap({
             key: `schema:publish:${checksum}`,
             ttlSeconds: 15,
             executor: () =>
               this.internalPublish({
                 ...input,
+                sdl: tryPrettifySDL(input.sdl),
                 checksum,
+                selector,
               }),
           });
         },
       )
       .catch((error: unknown) => {
-        if (error instanceof MutexResourceLockedError && input.supportsRetry === true) {
+        if (error instanceof MutexResourceLockedError) {
+          if (input.supportsRetry === true) {
+            return {
+              __typename: 'SchemaPublishRetry',
+              reason: 'Another schema publish is currently in progress.',
+            } satisfies PublishResult;
+          }
+
           return {
-            __typename: 'SchemaPublishRetry',
-            reason: 'Another schema publish is currently in progress.',
+            __typename: 'SchemaPublishError',
+            valid: false,
+            changes: [],
+            errors: [
+              {
+                message:
+                  'Another schema publish is currently in progress. Please retry the publish.',
+              },
+            ],
           } satisfies PublishResult;
+        }
+
+        if (error instanceof HiveError === false) {
+          schemaPublishUnexpectedErrorCount.inc({
+            errorName: (error instanceof Error && error.name) || 'unknown',
+          });
         }
 
         throw error;
       });
   }
 
-  public async updateVersionStatus(input: TargetSelector & { versionId: string; valid: boolean }) {
-    const updateResult = await this.schemaManager.updateSchemaVersionStatus(input);
-
-    if (updateResult.isComposable === true) {
-      // Now, when fetching the latest valid version, we should be able to detect
-      // if it's the version we just updated or not.
-      // Why?
-      // Because we change its status to valid
-      // and `getLatestValidVersion` calls for fresh data from DB
-      const latestVersion = await this.schemaManager.getLatestValidVersion(input);
-
-      // if it is the latest version, we should update the CDN
-      if (latestVersion.id === updateResult.id) {
-        this.logger.info('Version is now promoted to latest valid (version=%s)', latestVersion.id);
-        const [organization, project, target, schemas] = await Promise.all([
-          this.organizationManager.getOrganization({
-            organizationId: input.organizationId,
-          }),
-          this.projectManager.getProject({
-            organizationId: input.organizationId,
-            projectId: input.projectId,
-          }),
-          this.targetManager.getTarget({
-            organizationId: input.organizationId,
-            projectId: input.projectId,
-            targetId: input.targetId,
-          }),
-          this.schemaManager.getSchemasOfVersion({
-            organizationId: input.organizationId,
-            projectId: input.projectId,
-            targetId: input.targetId,
-            versionId: latestVersion.id,
-            includeMetadata: true,
-          }),
-        ]);
-
-        const orchestrator = this.schemaManager.matchOrchestrator(project.type);
-        const schemaObjects = schemas.map(s => this.helper.createSchemaObject(s));
-        const compositionResult = await orchestrator.composeAndValidate(schemaObjects, {
-          external: project.externalComposition,
-          native: this.schemaManager.checkProjectNativeFederationSupport({
-            project,
-            organization,
-            targetId: target.id,
-          }),
-          contracts: null,
-        });
-
-        this.logger.info(
-          'Deploying version to CDN (reason="status_change" version=%s)',
-          latestVersion.id,
-        );
-
-        await this.publishToCDN({
-          target,
-          project,
-          supergraph: compositionResult.supergraph,
-          schemas,
-          fullSchemaSdl: compositionResult.sdl!,
-          contracts: null,
-        });
-      }
-    }
-
-    return updateResult;
-  }
-
   @traceFn('SchemaPublisher.delete', {
     initAttributes: (input, _) => ({
-      'hive.target.id': input.target.id,
-      'hive.organization.id': input.organizationId,
-      'hive.project.id': input.projectId,
+      'hive.organization.slug': input.target?.bySelector?.organizationSlug,
+      'hive.project.slug': input.target?.bySelector?.projectSlug,
+      'hive.target.slug': input.target?.bySelector?.targetSlug,
+      'hive.target.id': input.target?.byId ?? undefined,
     }),
     resultAttributes: result => ({
       'hive.delete.result': result.__typename,
@@ -1177,79 +1349,72 @@ export class SchemaPublisher {
   async delete(input: DeleteInput, signal: AbortSignal) {
     this.logger.info('Deleting schema (input=%o)', input);
 
+    const selector = await this.idTranslator.resolveTargetReference({
+      reference: input.target ?? null,
+    });
+
+    if (!selector) {
+      this.session.raise('schemaVersion:deleteService');
+    }
+
+    trace.getActiveSpan()?.setAttributes({
+      'hive.organization.id': selector.organizationId,
+      'hive.target.id': selector.targetId,
+      'hive.project.id': selector.projectId,
+    });
+
+    await this.session.assertPerformAction({
+      action: 'schemaVersion:deleteService',
+      organizationId: selector.organizationId,
+      params: {
+        organizationId: selector.organizationId,
+        projectId: selector.projectId,
+        targetId: selector.targetId,
+        serviceName: input.serviceName,
+      },
+    });
+
     return this.mutex.perform(
-      registryLockId(input.target.id),
+      registryLockId(selector.targetId),
       {
         signal,
       },
       async () => {
-        await this.session.assertPerformAction({
-          action: 'schemaVersion:deleteService',
-          organizationId: input.organizationId,
-          params: {
-            organizationId: input.organizationId,
-            projectId: input.projectId,
-            targetId: input.target.id,
-            serviceName: input.serviceName,
-          },
-        });
-
-        const [organization, project, target, latestVersion, latestComposableVersion, baseSchema] =
-          await Promise.all([
-            this.storage.getOrganization({
-              organizationId: input.organizationId,
-            }),
-            this.storage.getProject({
-              organizationId: input.organizationId,
-              projectId: input.projectId,
-            }),
-            this.storage.getTarget({
-              organizationId: input.organizationId,
-              projectId: input.projectId,
-              targetId: input.target.id,
-            }),
-            this.storage.getLatestSchemas({
-              organizationId: input.organizationId,
-              projectId: input.projectId,
-              targetId: input.target.id,
-            }),
-            this.storage.getLatestSchemas({
-              organizationId: input.organizationId,
-              projectId: input.projectId,
-              targetId: input.target.id,
-              onlyComposable: true,
-            }),
-            this.storage.getBaseSchema({
-              organizationId: input.organizationId,
-              projectId: input.projectId,
-              targetId: input.target.id,
-            }),
-          ]);
-
-        const [latestSchemaVersion, latestComposableSchemaVersion] = await Promise.all([
-          this.schemaManager.getMaybeLatestVersion(target),
-          this.schemaManager.getMaybeLatestValidVersion(target),
+        const [organization, project, target] = await Promise.all([
+          this.storage.getOrganization({
+            organizationId: selector.organizationId,
+          }),
+          this.storage.getProject({
+            organizationId: selector.organizationId,
+            projectId: selector.projectId,
+          }),
+          this.storage.getTarget({
+            organizationId: selector.organizationId,
+            projectId: selector.projectId,
+            targetId: selector.targetId,
+          }),
         ]);
 
-        const compareToPreviousComposableVersion = shouldUseLatestComposableVersion(
-          input.target.id,
-          project,
-          organization,
-        );
-
-        const modelVersion = project.legacyRegistryModel ? 'legacy' : 'modern';
-
-        schemaDeleteCount.inc({ model: modelVersion, projectType: project.type });
+        schemaDeleteCount.inc({ model: 'modern', projectType: project.type });
 
         if (project.type !== ProjectType.FEDERATION && project.type !== ProjectType.STITCHING) {
-          throw new HiveError(`${project.type} project (${modelVersion}) not supported`);
+          throw new HiveError(`${project.type} project not supported`);
         }
 
-        if (modelVersion === 'legacy') {
-          throw new HiveError(
-            'Please upgrade your project to the new registry model to use this feature. See https://the-guild.dev/blog/graphql-hive-improvements-in-schema-registry',
-          );
-        }
+        const [latestVersion, latestComposableVersion, baseSchema] = await Promise.all([
+          this.schemaManager.getLatestSchemaVersionWithSchemaLogs({
+            target,
+          }),
+          this.schemaManager.getLatestSchemaVersionWithSchemaLogs({
+            target,
+            onlyComposable: true,
+          }),
+          this.storage.getBaseSchema({
+            organizationId: selector.organizationId,
+            projectId: selector.projectId,
+            targetId: selector.targetId,
+          }),
+        ]);
 
         if (!latestVersion || latestVersion.schemas.length === 0) {
           throw new HiveError('Registry is empty');
@@ -1258,9 +1423,8 @@ export class SchemaPublisher {
         const schemas = ensureCompositeSchemas(latestVersion.schemas);
         this.logger.debug(`Found ${latestVersion?.schemas.length ?? 0} most recent schemas`);
         this.logger.debug(
-          'Using %s registry model (version=%s, featureFlags=%o)',
+          'Using %s registry model (featureFlags=%o)',
           project.type,
-          modelVersion,
           organization.featureFlags,
         );
 
@@ -1269,7 +1433,7 @@ export class SchemaPublisher {
         if (!serviceExists) {
           return {
             __typename: 'SchemaDeleteError',
-            valid: latestVersion.valid,
+            valid: false,
             errors: [
               {
                 message: `Service "${input.serviceName}" not found`,
@@ -1278,70 +1442,64 @@ export class SchemaPublisher {
           } as const;
         }
 
-        const conditionalBreakingChangeConfiguration =
-          await this.getConditionalBreakingChangeConfiguration({
+        const { conditionalBreakingChangeConfiguration, failDiffOnDangerousChange } =
+          await this.getBreakingChangeConfiguration({
             selector: {
-              targetId: input.target.id,
-              projectId: input.projectId,
-              organizationId: input.organizationId,
+              targetId: selector.targetId,
+              projectId: selector.projectId,
+              organizationId: selector.organizationId,
             },
           });
 
         const contracts =
           project.type === ProjectType.FEDERATION
             ? await this.contracts.loadActiveContractsWithLatestValidContractVersionsByTargetId({
-                targetId: input.target.id,
+                targetId: selector.targetId,
               })
             : null;
 
-        const deleteResult = await this.models[project.type][modelVersion].delete({
+        const deleteResult = await this.models[project.type].delete({
           input: {
             serviceName: input.serviceName,
           },
           latest: {
-            isComposable: latestVersion.valid,
-            sdl: latestSchemaVersion?.compositeSchemaSDL ?? null,
-            schemas,
+            isComposable: latestVersion.version.isComposable,
+            sdl: latestVersion.version.compositeSchemaSDL,
+            schemas: schemas.map(toCompositeSchemaInput),
           },
           latestComposable: latestComposableVersion
             ? {
-                isComposable: latestComposableVersion.valid,
-                sdl: latestComposableSchemaVersion?.compositeSchemaSDL ?? null,
-                schemas: ensureCompositeSchemas(latestComposableVersion.schemas),
+                isComposable: latestComposableVersion.version.isComposable,
+                sdl: latestComposableVersion.version.compositeSchemaSDL ?? null,
+                schemas: ensureCompositeSchemas(latestComposableVersion.schemas).map(
+                  toCompositeSchemaInput,
+                ),
               }
             : null,
           baseSchema,
           project,
           organization,
           selector: {
-            target: input.target.id,
-            project: input.projectId,
-            organization: input.organizationId,
+            target: selector.targetId,
+            project: selector.projectId,
+            organization: selector.organizationId,
           },
           conditionalBreakingChangeDiffConfig:
             conditionalBreakingChangeConfiguration?.conditionalBreakingChangeDiffConfig ?? null,
           contracts,
+          failDiffOnDangerousChange,
         });
-
-        let diffSchemaVersionId: string | null = null;
-        if (compareToPreviousComposableVersion && latestComposableSchemaVersion) {
-          diffSchemaVersionId = latestComposableSchemaVersion.id;
-        }
-
-        if (!compareToPreviousComposableVersion && latestSchemaVersion) {
-          diffSchemaVersionId = latestSchemaVersion.id;
-        }
 
         if (deleteResult.conclusion === SchemaDeleteConclusion.Accept) {
           this.logger.debug('Delete accepted');
           if (input.dryRun !== true) {
             const schemaVersion = await this.storage.deleteSchema({
-              organizationId: input.organizationId,
-              projectId: input.projectId,
-              targetId: input.target.id,
+              organizationId: selector.organizationId,
+              projectId: selector.projectId,
+              targetId: selector.targetId,
               serviceName: input.serviceName,
               composable: deleteResult.state.composable,
-              diffSchemaVersionId,
+              diffSchemaVersionId: latestComposableVersion?.version.id ?? null,
               changes: deleteResult.state.changes,
               coordinatesDiff: deleteResult.state.coordinatesDiff,
               contracts:
@@ -1359,14 +1517,18 @@ export class SchemaPublisher {
                     supergraphSDL: deleteResult.state.supergraph,
                     schemaCompositionErrors: null,
                     tags: deleteResult.state.tags,
+                    schemaMetadata: deleteResult.state.schemaMetadata,
+                    metadataAttributes: deleteResult.state.metadataAttributes,
                   }
                 : {
                     compositeSchemaSDL: null,
                     supergraphSDL: null,
                     schemaCompositionErrors: deleteResult.state.compositionErrors ?? [],
                     tags: null,
+                    schemaMetadata: null,
+                    metadataAttributes: null,
                   }),
-              actionFn: async () => {
+              actionFn: async (versionId: string) => {
                 if (deleteResult.state.composable) {
                   const contracts: Array<{ name: string; sdl: string; supergraph: string }> = [];
                   for (const contract of deleteResult.state.contracts ?? []) {
@@ -1380,21 +1542,22 @@ export class SchemaPublisher {
                   }
 
                   await this.publishToCDN({
-                    target: input.target,
+                    target,
                     project,
                     supergraph: deleteResult.state.supergraph,
                     fullSchemaSdl: deleteResult.state.fullSchemaSdl,
                     // pass all schemas except the one we are deleting
                     schemas: deleteResult.state.schemas,
                     contracts,
+                    versionId,
                   });
                 }
               },
               conditionalBreakingChangeMetadata: await this.getConditionalBreakingChangeMetadata({
                 conditionalBreakingChangeConfiguration,
-                organizationId: input.organizationId,
-                projectId: input.projectId,
-                targetId: input.target.id,
+                organizationId: selector.organizationId,
+                projectId: selector.projectId,
+                targetId: selector.targetId,
               }),
             });
 
@@ -1413,7 +1576,7 @@ export class SchemaPublisher {
                 .triggerSchemaChangeNotifications({
                   organization,
                   project,
-                  target: input.target,
+                  target,
                   schema: {
                     id: schemaVersion.versionId,
                     commit: schemaVersion.id,
@@ -1450,12 +1613,6 @@ export class SchemaPublisher {
           DeleteFailureReasonCode.CompositionFailure,
         )?.compositionErrors;
 
-        if (getReasonByCode(deleteResult.reasons, DeleteFailureReasonCode.MissingServiceName)) {
-          errors.push({
-            message: 'Service name is required',
-          });
-        }
-
         if (compositionErrors?.length) {
           errors.push(...compositionErrors);
         }
@@ -1472,12 +1629,13 @@ export class SchemaPublisher {
   private async internalPublish(
     input: PublishInput & {
       checksum: string;
+      selector: TargetSelector;
     },
   ) {
     const [organizationId, projectId, targetId] = [
-      input.organizationId,
-      input.projectId,
-      input.targetId,
+      input.selector.organizationId,
+      input.selector.projectId,
+      input.selector.targetId,
     ];
     this.logger.info('Publishing schema (input=%o)', {
       ...lodash.omit(input, ['sdl', 'organization', 'project', 'target', 'metadata']),
@@ -1490,48 +1648,40 @@ export class SchemaPublisher {
       metadata: !!input.metadata,
     });
 
-    const [organization, project, target, latestVersion, latestComposable, baseSchema] =
-      await Promise.all([
-        this.storage.getOrganization({
-          organizationId: organizationId,
-        }),
-        this.storage.getProject({
-          organizationId: organizationId,
-          projectId: projectId,
-        }),
-        this.storage.getTarget({
-          organizationId: organizationId,
-          projectId: projectId,
-          targetId: targetId,
-        }),
-        this.storage.getLatestSchemas({
-          organizationId: organizationId,
-          projectId: projectId,
-          targetId: targetId,
-        }),
-        this.storage.getLatestSchemas({
-          organizationId: organizationId,
-          projectId: projectId,
-          targetId: targetId,
-          onlyComposable: true,
-        }),
-        this.storage.getBaseSchema({
-          organizationId: organizationId,
-          projectId: projectId,
-          targetId: targetId,
-        }),
-      ]);
+    const [organization, project, target, baseSchema] = await Promise.all([
+      this.storage.getOrganization({
+        organizationId: organizationId,
+      }),
+      this.storage.getProject({
+        organizationId: organizationId,
+        projectId: projectId,
+      }),
+      this.storage.getTarget({
+        organizationId: organizationId,
+        projectId: projectId,
+        targetId: targetId,
+      }),
 
-    const [latestSchemaVersion, latestComposableSchemaVersion] = await Promise.all([
-      this.schemaManager.getMaybeLatestVersion(target),
-      this.schemaManager.getMaybeLatestValidVersion(target),
+      this.storage.getBaseSchema({
+        organizationId: organizationId,
+        projectId: projectId,
+        targetId: targetId,
+      }),
     ]);
 
-    const modelVersion = project.legacyRegistryModel ? 'legacy' : 'modern';
+    const [latestVersion, latestComposable] = await Promise.all([
+      this.schemaManager.getLatestSchemaVersionWithSchemaLogs({
+        target,
+      }),
+      this.schemaManager.getLatestSchemaVersionWithSchemaLogs({
+        target,
+        onlyComposable: true,
+      }),
+    ]);
 
     function increaseSchemaPublishCountMetric(conclusion: 'rejected' | 'accepted' | 'ignored') {
       schemaPublishCount.inc({
-        model: modelVersion,
+        model: 'modern',
         projectType: project.type,
         conclusion,
       });
@@ -1607,8 +1757,8 @@ export class SchemaPublisher {
 
     this.logger.debug(`Found ${latestVersion?.schemas.length ?? 0} most recent schemas`);
 
-    const conditionalBreakingChangeConfiguration =
-      await this.getConditionalBreakingChangeConfiguration({
+    const { conditionalBreakingChangeConfiguration, failDiffOnDangerousChange } =
+      await this.getBreakingChangeConfiguration({
         selector: {
           organizationId: organization.id,
           projectId: project.id,
@@ -1623,18 +1773,9 @@ export class SchemaPublisher {
           })
         : null;
 
-    const compareToPreviousComposableVersion = shouldUseLatestComposableVersion(
-      target.id,
-      project,
-      organization,
-    );
-    const comparedSchemaVersion = compareToPreviousComposableVersion
-      ? latestComposableSchemaVersion
-      : latestSchemaVersion;
-
-    const latestSchemaVersionContracts = latestSchemaVersion
+    const latestSchemaVersionContracts = latestVersion
       ? await this.contracts.getContractVersionsForSchemaVersion({
-          schemaVersionId: latestSchemaVersion.id,
+          schemaVersionId: latestVersion.version.id,
         })
       : null;
 
@@ -1643,24 +1784,26 @@ export class SchemaPublisher {
     switch (project.type) {
       case ProjectType.SINGLE:
         this.logger.debug(
-          'Using SINGLE registry model (version=%s, featureFlags=%o)',
-          modelVersion,
+          'Using SINGLE registry model (featureFlags=%o)',
           organization.featureFlags,
         );
-        publishResult = await this.models[ProjectType.SINGLE][modelVersion].publish({
-          input,
+        publishResult = await this.models[ProjectType.SINGLE].publish({
+          input: {
+            sdl: input.sdl,
+            metadata: input.metadata ?? null,
+          },
           latest: latestVersion
             ? {
-                isComposable: latestVersion.valid,
-                sdl: latestSchemaVersion?.compositeSchemaSDL ?? null,
-                schemas: [ensureSingleSchema(latestVersion.schemas)],
+                isComposable: latestVersion.version.isComposable,
+                sdl: latestVersion.version.compositeSchemaSDL,
+                schemas: [toSingleSchemaInput(ensureSingleSchema(latestVersion.schemas))],
               }
             : null,
           latestComposable: latestComposable
             ? {
-                isComposable: latestComposable.valid,
-                sdl: latestComposableSchemaVersion?.compositeSchemaSDL ?? null,
-                schemas: [ensureSingleSchema(latestComposable.schemas)],
+                isComposable: latestComposable.version.isComposable,
+                sdl: latestComposable.version.compositeSchemaSDL,
+                schemas: [toSingleSchemaInput(ensureSingleSchema(latestComposable.schemas))],
               }
             : null,
           organization,
@@ -1669,32 +1812,44 @@ export class SchemaPublisher {
           baseSchema,
           conditionalBreakingChangeDiffConfig:
             conditionalBreakingChangeConfiguration?.conditionalBreakingChangeDiffConfig ?? null,
+          failDiffOnDangerousChange,
         });
         break;
       case ProjectType.FEDERATION:
       case ProjectType.STITCHING:
         this.logger.debug(
-          'Using %s registry model (version=%s, featureFlags=%o)',
+          'Using %s registry model (featureFlags=%o)',
           project.type,
-          modelVersion,
           organization.featureFlags,
         );
-        publishResult = await this.models[project.type][modelVersion].publish({
-          input,
+
+        if (!input.service) {
+          throw new Error('Invalid state. input.service should have been validated by now.');
+        }
+
+        publishResult = await this.models[project.type].publish({
+          input: {
+            sdl: input.sdl,
+            service: input.service,
+            metadata: input.metadata ?? null,
+            url: input.url ?? null,
+          },
           latest: latestVersion
             ? {
-                isComposable: latestVersion.valid,
-                sdl: latestSchemaVersion?.compositeSchemaSDL ?? null,
-                schemas: ensureCompositeSchemas(latestVersion.schemas),
+                isComposable: latestVersion.version.isComposable,
+                sdl: latestVersion.version.compositeSchemaSDL,
+                schemas: ensureCompositeSchemas(latestVersion.schemas).map(toCompositeSchemaInput),
                 contractNames:
                   latestSchemaVersionContracts?.edges.map(edge => edge.node.contractName) ?? null,
               }
             : null,
           latestComposable: latestComposable
             ? {
-                isComposable: latestComposable.valid,
-                sdl: latestComposableSchemaVersion?.compositeSchemaSDL ?? null,
-                schemas: ensureCompositeSchemas(latestComposable.schemas),
+                isComposable: latestComposable.version.isComposable,
+                sdl: latestComposable.version.compositeSchemaSDL,
+                schemas: ensureCompositeSchemas(latestComposable.schemas).map(
+                  toCompositeSchemaInput,
+                ),
               }
             : null,
           organization,
@@ -1704,11 +1859,12 @@ export class SchemaPublisher {
           contracts,
           conditionalBreakingChangeDiffConfig:
             conditionalBreakingChangeConfiguration?.conditionalBreakingChangeDiffConfig ?? null,
+          failDiffOnDangerousChange,
         });
         break;
       default: {
         this.logger.debug('Unsupported project type (type=%s)', project.type);
-        throw new HiveError(`${project.type} project (${modelVersion}) not supported`);
+        throw new HiveError(`${project.type} project not supported`);
       }
     }
 
@@ -1729,7 +1885,7 @@ export class SchemaPublisher {
               target: {
                 slug: target.slug,
               },
-              version: latestVersion ? { id: latestVersion.versionId } : undefined,
+              version: latestVersion ? { id: latestVersion.version.id } : undefined,
             })
           : null;
 
@@ -1763,13 +1919,6 @@ export class SchemaPublisher {
       );
 
       increaseSchemaPublishCountMetric('rejected');
-
-      if (getReasonByCode(publishResult.reasons, PublishFailureReasonCode.MissingServiceName)) {
-        return {
-          __typename: 'SchemaPublishMissingServiceError' as const,
-          message: 'Missing service name',
-        } as const;
-      }
 
       if (getReasonByCode(publishResult.reasons, PublishFailureReasonCode.MissingServiceUrl)) {
         return {
@@ -1852,9 +2001,18 @@ export class SchemaPublisher {
 
     const supergraph = publishResult.state.supergraph ?? null;
 
-    const diffSchemaVersionId = comparedSchemaVersion?.id ?? null;
-
     this.logger.debug(`Assigning ${schemaLogIds.length} schemas to new version`);
+
+    const serviceName = input.service;
+    let serviceUrl = input.url;
+
+    if (
+      (project.type === ProjectType.FEDERATION || project.type === ProjectType.STITCHING) &&
+      serviceUrl == null &&
+      pushedSchema.serviceName
+    ) {
+      serviceUrl = pushedSchema.serviceUrl;
+    }
 
     const schemaVersion = await this.schemaManager.createVersion({
       valid: composable,
@@ -1863,15 +2021,15 @@ export class SchemaPublisher {
       targetId: target.id,
       commit: input.commit,
       logIds: schemaLogIds,
-      service: input.service,
       schema: input.sdl,
       author: input.author,
-      url: input.url,
+      service: serviceName,
+      url: serviceUrl,
       base_schema: baseSchema,
       metadata: input.metadata ?? null,
       projectType: project.type,
       github,
-      actionFn: async () => {
+      actionFn: async (versionId: string) => {
         if (composable && fullSchemaSdl) {
           const contracts: Array<{ name: string; sdl: string; supergraph: string }> = [];
           for (const contract of publishState.contracts ?? []) {
@@ -1891,13 +2049,14 @@ export class SchemaPublisher {
             fullSchemaSdl,
             schemas,
             contracts,
+            versionId,
           });
         }
       },
       changes,
       coordinatesDiff: publishResult.state.coordinatesDiff,
-      diffSchemaVersionId,
-      previousSchemaVersion: latestVersion?.versionId ?? null,
+      diffSchemaVersionId: latestComposable?.version.id ?? null,
+      previousSchemaVersion: latestVersion?.version.id ?? null,
       conditionalBreakingChangeMetadata: await this.getConditionalBreakingChangeMetadata({
         conditionalBreakingChangeConfiguration,
         organizationId,
@@ -1919,6 +2078,8 @@ export class SchemaPublisher {
             supergraphSDL: supergraph,
             schemaCompositionErrors: null,
             tags: publishResult.state?.tags ?? null,
+            schemaMetadata: publishResult.state?.schemaMetadata ?? null,
+            metadataAttributes: publishResult.state?.metadataAttributes ?? null,
           }
         : {
             compositeSchemaSDL: null,
@@ -1928,6 +2089,8 @@ export class SchemaPublisher {
               "Can't be null",
             ),
             tags: null,
+            schemaMetadata: null,
+            metadataAttributes: null,
           }),
     });
 
@@ -1939,7 +2102,7 @@ export class SchemaPublisher {
           target,
           schema: {
             id: schemaVersion.id,
-            commit: schemaVersion.actionId,
+            commit: input.commit,
             valid: schemaVersion.isComposable,
           },
           changes,
@@ -1947,8 +2110,14 @@ export class SchemaPublisher {
           errors,
           initial,
         })
-        .catch(err => {
-          this.logger.error('Failed to trigger schema change notifications', err);
+        .catch(error => {
+          const errorText =
+            error instanceof Error
+              ? error.toString()
+              : typeof error === 'string'
+                ? error
+                : JSON.stringify(error);
+          this.logger.error('Failed to trigger schema change notifications (error=%s)', errorText);
         });
     }
 
@@ -1990,7 +2159,7 @@ export class SchemaPublisher {
       __typename: 'SchemaPublishSuccess' as const,
       initial: publishResult.state.initial,
       valid: publishResult.state.composable,
-      changes: modelVersion === 'legacy' ? (publishResult.state.changes ?? []) : null,
+      changes: null,
       message: (publishResult.state.messages ?? []).join('\n'),
       linkToWebsite,
     };
@@ -2160,13 +2329,15 @@ export class SchemaPublisher {
     fullSchemaSdl,
     schemas,
     contracts,
+    versionId,
   }: {
     target: Target;
     project: Project;
     supergraph: string | null;
     fullSchemaSdl: string;
-    schemas: readonly Schema[];
+    schemas: readonly SchemaInput[];
     contracts: null | Array<{ name: string; supergraph: string; sdl: string }>;
+    versionId: string;
   }) {
     const publishMetadata = async () => {
       const metadata: Array<Record<string, any>> = [];
@@ -2184,29 +2355,30 @@ export class SchemaPublisher {
           artifact: project.type === ProjectType.SINGLE ? metadata[0] : metadata,
           artifactType: 'metadata',
           contractName: null,
+          versionId,
         });
       }
     };
 
     const publishCompositeSchema = async () => {
-      const compositeSchema = ensureCompositeSchemas(schemas);
-
       await Promise.all([
         await this.artifactStorageWriter.writeArtifact({
           targetId: target.id,
           artifactType: 'services',
-          artifact: compositeSchema.map(s => ({
-            name: s.service_name,
+          artifact: schemas.map(s => ({
+            name: s.serviceName,
             sdl: s.sdl,
-            url: s.service_url,
+            url: s.serviceUrl,
           })),
           contractName: null,
+          versionId,
         }),
         this.artifactStorageWriter.writeArtifact({
           targetId: target.id,
           artifactType: 'sdl',
           artifact: fullSchemaSdl,
           contractName: null,
+          versionId,
         }),
       ]);
     };
@@ -2217,6 +2389,7 @@ export class SchemaPublisher {
         artifactType: 'sdl',
         artifact: fullSchemaSdl,
         contractName: null,
+        versionId,
       });
     };
 
@@ -2235,6 +2408,7 @@ export class SchemaPublisher {
             artifactType: 'supergraph',
             artifact: supergraph,
             contractName: null,
+            versionId,
           }),
         );
       }
@@ -2249,12 +2423,14 @@ export class SchemaPublisher {
               artifactType: 'sdl',
               artifact: contract.sdl,
               contractName: contract.name,
+              versionId,
             }),
             this.artifactStorageWriter.writeArtifact({
               targetId: target.id,
               artifactType: 'supergraph',
               artifact: contract.supergraph,
               contractName: contract.name,
+              versionId,
             }),
           );
         }
@@ -2380,8 +2556,17 @@ export class SchemaPublisher {
     }
   }
 
-  private errorsToMarkdown(errors: ReadonlyArray<{ message: string }>): string {
-    return ['', ...errors.map(error => `- ${bolderize(error.message)}`)].join('\n');
+  private errorsToMarkdown(
+    errors: ReadonlyArray<{ message: string; isSafeBasedOnUsage?: boolean }>,
+  ): string {
+    return [
+      '',
+      ...errors.map(
+        error =>
+          `- ${bolderize(error.message)}` +
+          (error.isSafeBasedOnUsage ? ' (safe based on usage)' : ''),
+      ),
+    ].join('\n');
   }
 
   private warningsToMarkdown(warnings: SchemaCheckWarning[]): string {
@@ -2404,7 +2589,12 @@ export class SchemaPublisher {
     const breakingChanges = changes.filter(
       change => change.criticality === CriticalityLevel.Breaking,
     );
-    const safeChanges = changes.filter(change => change.criticality !== CriticalityLevel.Breaking);
+    const dangerousChanges = changes.filter(
+      change => change.criticality === CriticalityLevel.Dangerous,
+    );
+    const safeChanges = changes.filter(
+      change => change.criticality === CriticalityLevel.NonBreaking,
+    );
 
     const lines: string[] = [
       `## Found ${changes.length} change${changes.length > 1 ? 's' : ''}`,
@@ -2415,12 +2605,17 @@ export class SchemaPublisher {
       lines.push(`Breaking: ${breakingChanges.length}`);
     }
 
+    if (dangerousChanges.length) {
+      lines.push(`Dangerous: ${dangerousChanges.length}`);
+    }
+
     if (safeChanges.length) {
       lines.push(`Safe: ${safeChanges.length}`);
     }
 
     if (printListOfChanges) {
       writeChanges('Breaking', breakingChanges, lines);
+      writeChanges('Dangrous', dangerousChanges, lines);
       writeChanges('Safe', safeChanges, lines);
     }
 
@@ -2475,3 +2670,7 @@ const SchemaCheckContextIdModel = z
   .max(200, {
     message: 'Context ID cannot exceed length of 200 characters.',
   });
+
+function isValidServiceName(service: string): boolean {
+  return service.length <= 64 && /^[a-zA-Z][\w_-]*$/g.test(service);
+}

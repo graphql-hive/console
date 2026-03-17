@@ -13,7 +13,7 @@
  */
 import type { Action } from '../clickhouse';
 
-const action: Action = async (exec, _query, isGraphQLHiveCloud) => {
+const action: Action = async (exec, _query, hiveCloudEnvironment) => {
   // Create materialized views
   await Promise.all(
     [
@@ -72,7 +72,7 @@ const action: Action = async (exec, _query, isGraphQLHiveCloud) => {
   );
 
   // Run the rest of the migration only for self-hosted instances, not for Cloud.
-  if (isGraphQLHiveCloud) {
+  if (hiveCloudEnvironment === 'prod') {
     console.log('Detected GraphQL Hive Cloud. Skipping the rest of the migration.');
     // In case of Cloud, we need to perform it in a different, more complicated way.
     // We need to insert partition by partition, because otherwise it will take too much time and resources.
@@ -153,9 +153,8 @@ const action: Action = async (exec, _query, isGraphQLHiveCloud) => {
       expires_at
   `);
 
-  await exec(`
-    RENAME TABLE default.clients_daily TO default.clients_daily_old, default.clients_daily_new TO default.clients_daily
-  `);
+  await exec(`RENAME TABLE default.clients_daily TO default.clients_daily_old`);
+  await exec(`RENAME TABLE default.clients_daily_new TO default.clients_daily`);
 
   await Promise.all([
     exec(`DROP VIEW default.clients_daily_old`),

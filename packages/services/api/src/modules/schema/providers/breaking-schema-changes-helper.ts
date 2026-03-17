@@ -11,16 +11,16 @@ import { formatNumber, formatPercentage } from '../lib/number-formatting';
 export class BreakingSchemaChangeUsageHelper {
   constructor() {}
 
-  private breakingSchemaChangeToUsageMap = new WeakMap<
+  private breakingSchemaChangeToMetadataMap = new WeakMap<
     SchemaChangeType,
-    ConditionalBreakingChangeMetadata['usage']
+    ConditionalBreakingChangeMetadata
   >();
 
-  registerUsageDataForBreakingSchemaChange(
+  registerMetadataForBreakingSchemaChange(
     schemaChange: SchemaChangeType,
-    usage: ConditionalBreakingChangeMetadata['usage'],
+    metadata: ConditionalBreakingChangeMetadata,
   ) {
-    this.breakingSchemaChangeToUsageMap.set(schemaChange, usage);
+    this.breakingSchemaChangeToMetadataMap.set(schemaChange, metadata);
   }
 
   async getUsageDataForBreakingSchemaChange(schemaChange: SchemaChangeType) {
@@ -28,28 +28,33 @@ export class BreakingSchemaChangeUsageHelper {
       return null;
     }
 
-    const usageData = this.breakingSchemaChangeToUsageMap.get(schemaChange);
+    const metadata = this.breakingSchemaChangeToMetadataMap.get(schemaChange);
 
-    if (usageData == null) {
-      return null;
-    }
+    // If metadata is missing, still return basic data with default values
+    // This ensures the badge shows even when WeakMap lookup fails (e.g., after cache refresh)
+    const totalRequestCount =
+      metadata && Number.isFinite(metadata.usage.totalRequestCount)
+        ? Math.max(1, metadata.usage.totalRequestCount)
+        : 1;
+    const targetIds = metadata?.settings.targets.map(target => target.id) ?? [];
 
     return {
       topAffectedOperations: schemaChange.usageStatistics.topAffectedOperations.map(operation => {
-        const percentage = (operation.count / usageData.totalRequestCount) * 100;
+        const count = Number.isFinite(operation.count) ? operation.count : 0;
+        const percentage = (count / totalRequestCount) * 100;
         return {
           ...operation,
-          countFormatted: formatNumber(operation.count),
           percentage,
-          percentageFormatted: formatPercentage(percentage),
+          targetIds,
         };
       }),
       topAffectedClients: schemaChange.usageStatistics.topAffectedClients.map(client => {
-        const percentage = (client.count / usageData.totalRequestCount) * 100;
+        const count = Number.isFinite(client.count) ? client.count : 0;
+        const percentage = (count / totalRequestCount) * 100;
 
         return {
           ...client,
-          countFormatted: formatNumber(client.count),
+          countFormatted: formatNumber(count),
           percentage,
           percentageFormatted: formatPercentage(percentage),
         };

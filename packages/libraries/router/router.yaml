@@ -7,3 +7,4 @@ supergraph:
   introspection: true
 plugins:
   hive.usage: {}
+  hive.persisted_documents: {}

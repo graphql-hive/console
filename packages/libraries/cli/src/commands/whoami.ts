@@ -1,32 +1,34 @@
-import colors from 'colors';
+import Table from 'cli-table3';
 import { Flags } from '@oclif/core';
 import Command from '../base-command';
 import { graphql } from '../gql';
 import { graphqlEndpoint } from '../helpers/config';
+import {
+  InvalidRegistryTokenError,
+  MissingEndpointError,
+  MissingRegistryTokenError,
+} from '../helpers/errors';
+import { colors } from '../helpers/texture/texture';
 
 const myTokenInfoQuery = graphql(/* GraphQL */ `
-  query myTokenInfo {
-    tokenInfo {
-      __typename
-      ... on TokenInfo {
-        token {
-          name
+  query myTokenInfo($showAll: Boolean!) {
+    whoAmI {
+      title
+      resolvedPermissions(includeAll: $showAll) {
+        level
+        resolvedResourceIds
+        title
+        resolvedPermissionGroups {
+          title
+          permissions {
+            isGranted
+            permission {
+              id
+              title
+              description
+            }
+          }
         }
-        organization {
-          slug
-        }
-        project {
-          type
-          slug
-        }
-        target {
-          slug
-        }
-        canPublishSchema: hasTargetScope(scope: REGISTRY_WRITE)
-        canCheckSchema: hasTargetScope(scope: REGISTRY_READ)
-      }
-      ... on TokenNotFoundError {
-        message
       }
     }
   }
@@ -57,82 +59,107 @@ export default class WhoAmI extends Command<typeof WhoAmI> {
         version: '0.21.0',
       },
     }),
+    all: Flags.boolean({
+      description: 'Also show non-granted permissions.',
+      default: false,
+    }),
   };
 
   async run() {
     const { flags } = await this.parse(WhoAmI);
+    let registry: string, token: string;
+    try {
+      registry = this.ensure({
+        key: 'registry.endpoint',
+        legacyFlagName: 'registry',
+        args: flags,
+        defaultValue: graphqlEndpoint,
+        env: 'HIVE_REGISTRY',
+        description: WhoAmI.flags['registry.endpoint'].description!,
+      });
+    } catch (e) {
+      throw new MissingEndpointError();
+    }
 
-    const registry = this.ensure({
-      key: 'registry.endpoint',
-      legacyFlagName: 'registry',
-      args: flags,
-      defaultValue: graphqlEndpoint,
-      env: 'HIVE_REGISTRY',
+    try {
+      token = this.ensure({
+        key: 'registry.accessToken',
+        legacyFlagName: 'token',
+        args: flags,
+        env: 'HIVE_TOKEN',
+        description: WhoAmI.flags['registry.accessToken'].description!,
+      });
+    } catch (e) {
+      throw new MissingRegistryTokenError();
+    }
+
+    const result = await this.registryApi(registry, token).request({
+      operation: myTokenInfoQuery,
+      variables: {
+        showAll: flags.all,
+      },
     });
-    const token = this.ensure({
-      key: 'registry.accessToken',
-      legacyFlagName: 'token',
-      args: flags,
-      env: 'HIVE_TOKEN',
-    });
 
-    const result = await this.registryApi(registry, token)
-      .request({
-        operation: myTokenInfoQuery,
-      })
-      .catch(error => {
-        this.handleFetchError(error);
+    if (result.whoAmI == null) {
+      throw new InvalidRegistryTokenError();
+    }
+
+    const data = result.whoAmI;
+
+    // Print header
+    this.log(`\n=== ${data.title} ===\n`);
+
+    // Iterate and display each permission group
+    for (const permLevel of data.resolvedPermissions) {
+      this.log(`Level: ${permLevel.level}`);
+      this.log(`Resources: ${permLevel.resolvedResourceIds?.join(', ') ?? '<none>'}`);
+
+      const data = [['Group', 'Permission ID', 'Title', 'Granted', 'Description']];
+
+      for (const group of permLevel.resolvedPermissionGroups) {
+        for (const perm of group.permissions) {
+          data.push([
+            group.title,
+            perm.permission.id,
+            perm.permission.title,
+            perm.isGranted ? colors.green('✓') : colors.red('✗'),
+            perm.permission.description,
+          ]);
+        }
+      }
+
+      const colWidths = calculateColWidths(data);
+
+      const table = new Table({
+        head: data[0],
+        wordWrap: true,
+        style: { head: ['cyan'] },
+        colWidths,
       });
 
-    if (result.tokenInfo.__typename === 'TokenInfo') {
-      const { tokenInfo } = result;
-      const { organization, project, target } = tokenInfo;
+      data.slice(1).forEach(row => table.push(row));
 
-      const organizationUrl = `https://app.graphql-hive.com/${organization.slug}`;
-      const projectUrl = `${organizationUrl}/${project.slug}`;
-      const targetUrl = `${projectUrl}/${target.slug}`;
-
-      const access = {
-        yes: colors.green('Yes'),
-        not: colors.red('No access'),
-      };
-
-      const print = createPrinter({
-        'Token name:': [colors.bold(tokenInfo.token.name)],
-        ' ': [''],
-        'Organization:': [colors.bold(organization.slug), colors.dim(organizationUrl)],
-        'Project:': [colors.bold(project.slug), colors.dim(projectUrl)],
-        'Target:': [colors.bold(target.slug), colors.dim(targetUrl)],
-        '  ': [''],
-        'Access to schema:publish': [tokenInfo.canPublishSchema ? access.yes : access.not],
-        'Access to schema:check': [tokenInfo.canCheckSchema ? access.yes : access.not],
-      });
-
-      this.log(print());
-    } else if (result.tokenInfo.__typename === 'TokenNotFoundError') {
-      this.error(`Token not found. Reason: ${result.tokenInfo.message}`, {
-        exit: 0,
-        suggestions: [`How to create a token? https://docs.graphql-hive.com/features/tokens`],
-      });
+      this.log(table.toString());
     }
   }
 }
 
-function createPrinter(records: { [label: string]: [value: string, extra?: string] }) {
-  const labels = Object.keys(records);
-  const values = Object.values(records).map(v => v[0]);
-  const maxLabelsLen = Math.max(...labels.map(v => v.length)) + 4;
-  const maxValuesLen = Math.max(...values.map(v => v.length)) + 4;
+function calculateColWidths(data: Array<Array<string>>) {
+  const colCount = data[0].length;
+  const maxColWidths = new Array(colCount).fill(0);
 
-  return () => {
-    const lines: string[] = [];
+  data.forEach(row => {
+    row.forEach((cell, i) => {
+      maxColWidths[i] = Math.max(maxColWidths[i], cell.length);
+    });
+  });
 
-    for (const label in records) {
-      const [value, extra] = records[label];
+  const terminalWidth = process.stdout.columns || 80;
 
-      lines.push(label.padEnd(maxLabelsLen, ' ') + value.padEnd(maxValuesLen, ' ') + (extra || ''));
-    }
+  // Account for borders: numCols + 1
+  const totalBorder = colCount + 1;
+  const totalContentWidth = maxColWidths.reduce((a, b) => a + b, 0);
 
-    return lines.join('\n');
-  };
+  // Calculate scaled width for each column
+  return maxColWidths.map(w => Math.floor((w / totalContentWidth) * (terminalWidth - totalBorder)));
 }

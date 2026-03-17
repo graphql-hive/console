@@ -1,18 +1,19 @@
 import { graphql } from './gql';
 import type {
+  AddAlertChannelInput,
+  AddAlertInput,
   AnswerOrganizationTransferRequestInput,
   AssignMemberRoleInput,
   CreateMemberRoleInput,
+  CreateOrganizationAccessTokenInput,
   CreateOrganizationInput,
   CreateProjectInput,
   CreateTargetInput,
   CreateTokenInput,
   DeleteMemberRoleInput,
   DeleteTokensInput,
-  EnableExternalSchemaCompositionInput,
   Experimental__UpdateTargetSchemaCompositionInput,
   InviteToOrganizationByEmailInput,
-  OperationsStatsSelectorInput,
   OrganizationSelectorInput,
   OrganizationTransferRequestSelector,
   RateLimitInput,
@@ -20,21 +21,78 @@ import type {
   SchemaCheckInput,
   SchemaDeleteInput,
   SchemaPublishInput,
-  SchemaVersionUpdateInput,
-  SetTargetValidationInput,
   TargetSelectorInput,
   UpdateBaseSchemaInput,
   UpdateMemberRoleInput,
   UpdateOrganizationSlugInput,
-  UpdateProjectRegistryModelInput,
   UpdateProjectSlugInput,
+  UpdateSchemaCompositionInput,
+  UpdateTargetConditionalBreakingChangeConfigurationInput,
   UpdateTargetSlugInput,
-  UpdateTargetValidationSettingsInput,
 } from './gql/graphql';
+import * as GraphQLSchema from './gql/graphql';
 import { execute } from './graphql';
 
 export function waitFor(ms: number) {
   return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+function pollInternal(
+  check: () => Promise<boolean>,
+
+  /** In milliseconds */
+  pollFrequency: number,
+
+  /** In milliseconds */
+  maxWait: number,
+
+  /** In milliseconds. A random number between 0 and Jitter is added to the pollFrequency to add some
+   * noise and prevent test cases where exact durations are required.
+   * */
+  jitter: number,
+
+  resolve: (value: void | PromiseLike<void>) => void,
+  reject: (reason?: any) => void,
+
+  /** In milliseconds */
+  startTime: number = Date.now(),
+) {
+  setTimeout(
+    async () => {
+      try {
+        const passes = await check();
+        if (passes) {
+          resolve();
+        } else {
+          const waited = Date.now() - startTime;
+          if (waited > maxWait) {
+            reject(new Error(`Polling failed. Condition was not satisfied within ${maxWait}ms`));
+          } else {
+            pollInternal(check, pollFrequency, maxWait, jitter, resolve, reject, startTime);
+          }
+        }
+      } catch (e) {
+        reject(e);
+      }
+    },
+    Math.round(pollFrequency + Math.random() * jitter),
+  );
+}
+
+export function pollFor(
+  check: () => Promise<boolean>,
+  opts?: { pollFrequency?: number; maxWait?: number; jitter?: number },
+): Promise<void> {
+  return new Promise((resolve, reject) => {
+    pollInternal(
+      check,
+      opts?.pollFrequency ?? 500,
+      opts?.maxWait ?? 10_000,
+      opts?.jitter ?? 100,
+      resolve,
+      reject,
+    );
+  });
 }
 
 export function createOrganization(input: CreateOrganizationInput, authToken: string) {
@@ -49,18 +107,21 @@ export function createOrganization(input: CreateOrganizationInput, authToken: st
                 slug
                 owner {
                   id
-                  organizationAccessScopes
-                  projectAccessScopes
-                  targetAccessScopes
+                  role {
+                    id
+                    permissions
+                  }
                 }
                 memberRoles {
-                  id
-                  name
-                  locked
+                  edges {
+                    node {
+                      id
+                      name
+                      isLocked
+                    }
+                  }
                 }
-                rateLimit {
-                  retentionInDays
-                }
+                usageRetentionInDays
               }
             }
           }
@@ -84,17 +145,26 @@ export function getOrganization(organizationSlug: string, authToken: string) {
   return execute({
     document: graphql(`
       query getOrganization($organizationSlug: String!) {
-        organization(selector: { organizationSlug: $organizationSlug }) {
-          organization {
+        organization(reference: { bySelector: { organizationSlug: $organizationSlug } }) {
+          id
+          slug
+          getStarted {
+            creatingProject
+            publishingSchema
+            checkingSchema
+            invitingMembers
+            reportingOperations
+            enablingUsageBasedBreakingChanges
+          }
+          me {
             id
-            slug
-            getStarted {
-              creatingProject
-              publishingSchema
-              checkingSchema
-              invitingMembers
-              reportingOperations
-              enablingUsageBasedBreakingChanges
+            user {
+              id
+            }
+            role {
+              id
+              name
+              permissions
             }
           }
         }
@@ -113,11 +183,13 @@ export function inviteToOrganization(input: InviteToOrganizationByEmailInput, au
       mutation inviteToOrganization($input: InviteToOrganizationByEmailInput!) {
         inviteToOrganizationByEmail(input: $input) {
           ok {
-            id
-            createdAt
-            expiresAt
-            email
-            code
+            createdOrganizationInvitation {
+              id
+              createdAt
+              expiresAt
+              email
+              code
+            }
           }
           error {
             message
@@ -177,9 +249,11 @@ export function joinOrganization(code: string, authToken: string) {
                 user {
                   id
                 }
-                organizationAccessScopes
-                projectAccessScopes
-                targetAccessScopes
+                role {
+                  id
+                  name
+                  permissions
+                }
               }
             }
           }
@@ -200,10 +274,10 @@ export function getOrganizationMembers(selector: OrganizationSelectorInput, auth
   return execute({
     document: graphql(`
       query getOrganizationMembers($selector: OrganizationSelectorInput!) {
-        organization(selector: $selector) {
-          organization {
-            members {
-              nodes {
+        organization(reference: { bySelector: $selector }) {
+          members {
+            edges {
+              node {
                 id
                 user {
                   id
@@ -212,10 +286,8 @@ export function getOrganizationMembers(selector: OrganizationSelectorInput, auth
                 role {
                   id
                   name
+                  permissions
                 }
-                organizationAccessScopes
-                projectAccessScopes
-                targetAccessScopes
               }
             }
           }
@@ -233,10 +305,10 @@ export function getOrganizationProjects(selector: OrganizationSelectorInput, aut
   return execute({
     document: graphql(`
       query getOrganizationProjects($selector: OrganizationSelectorInput!) {
-        organization(selector: $selector) {
-          organization {
-            projects {
-              nodes {
+        organization(reference: { bySelector: $selector }) {
+          projects {
+            edges {
+              node {
                 id
                 slug
                 name
@@ -333,6 +405,7 @@ export function createProject(input: CreateProjectInput, authToken: string) {
               id
               slug
               name
+              createdAt
             }
             createdTargets {
               id
@@ -356,37 +429,11 @@ export function updateProjectSlug(input: UpdateProjectSlugInput, authToken: stri
       mutation updateProjectSlug($input: UpdateProjectSlugInput!) {
         updateProjectSlug(input: $input) {
           ok {
-            selector {
-              organizationSlug
-              projectSlug
-            }
-            project {
+            updatedProject {
               id
               name
               slug
             }
-          }
-          error {
-            message
-          }
-        }
-      }
-    `),
-    authToken,
-    variables: {
-      input,
-    },
-  });
-}
-
-export function updateRegistryModel(input: UpdateProjectRegistryModelInput, authToken: string) {
-  return execute({
-    document: graphql(`
-      mutation updateRegistryModel($input: UpdateProjectRegistryModelInput!) {
-        updateProjectRegistryModel(input: $input) {
-          ok {
-            id
-            slug
           }
           error {
             message
@@ -528,6 +575,148 @@ export function readTokenInfo(token: string) {
   });
 }
 
+export function addAlertChannel(input: AddAlertChannelInput, authToken: string) {
+  return execute({
+    document: graphql(`
+      mutation IntegrationTests_AddAlertChannel($input: AddAlertChannelInput!) {
+        addAlertChannel(input: $input) {
+          ok {
+            addedAlertChannel {
+              id
+              name
+              type
+              ... on AlertSlackChannel {
+                channel
+              }
+              ... on AlertWebhookChannel {
+                endpoint
+              }
+              ... on TeamsWebhookChannel {
+                endpoint
+              }
+            }
+          }
+          error {
+            message
+            inputErrors {
+              webhookEndpoint
+              slackChannel
+              name
+            }
+          }
+        }
+      }
+    `),
+    variables: {
+      input,
+    },
+    authToken,
+  });
+}
+
+export function addAlert(input: AddAlertInput, authToken: string) {
+  return execute({
+    document: graphql(`
+      mutation IntegrationTests_AddAlert($input: AddAlertInput!) {
+        addAlert(input: $input) {
+          ok {
+            addedAlert {
+              id
+              type
+              channel {
+                id
+                name
+                type
+              }
+              target {
+                id
+                slug
+              }
+            }
+          }
+          error {
+            message
+          }
+        }
+      }
+    `),
+    variables: {
+      input,
+    },
+    authToken,
+  });
+}
+
+export function readOrganizationInfo(
+  selector: {
+    organizationSlug: string;
+  },
+  authToken: string,
+) {
+  return execute({
+    document: graphql(`
+      query readOrganizationInfo($selector: OrganizationSelectorInput!) {
+        organization(reference: { bySelector: $selector }) {
+          id
+          slug
+        }
+      }
+    `),
+    authToken,
+    variables: {
+      selector,
+    },
+  });
+}
+
+export function readProjectInfo(
+  selector: {
+    organizationSlug: string;
+    projectSlug: string;
+  },
+  authToken: string,
+) {
+  return execute({
+    document: graphql(`
+      query readProjectInfo($selector: ProjectSelectorInput!) {
+        project(reference: { bySelector: $selector }) {
+          id
+          slug
+          createdAt
+        }
+      }
+    `),
+    authToken,
+    variables: {
+      selector,
+    },
+  });
+}
+
+export function readTargetInfo(
+  selector: {
+    organizationSlug: string;
+    projectSlug: string;
+    targetSlug: string;
+  },
+  authToken: string,
+) {
+  return execute({
+    document: graphql(`
+      query readTargetInfo($selector: TargetSelectorInput!) {
+        target(reference: { bySelector: $selector }) {
+          id
+          slug
+        }
+      }
+    `),
+    authToken,
+    variables: {
+      selector,
+    },
+  });
+}
+
 export function createMemberRole(input: CreateMemberRoleInput, authToken: string) {
   return execute({
     document: graphql(`
@@ -538,13 +727,15 @@ export function createMemberRole(input: CreateMemberRoleInput, authToken: string
               id
               slug
               memberRoles {
-                id
-                name
-                description
-                locked
-                organizationAccessScopes
-                projectAccessScopes
-                targetAccessScopes
+                edges {
+                  node {
+                    id
+                    name
+                    description
+                    isLocked
+                    permissions
+                  }
+                }
               }
             }
           }
@@ -598,13 +789,15 @@ export function deleteMemberRole(input: DeleteMemberRoleInput, authToken: string
               id
               slug
               memberRoles {
-                id
-                name
-                description
-                locked
-                organizationAccessScopes
-                projectAccessScopes
-                targetAccessScopes
+                edges {
+                  node {
+                    id
+                    name
+                    description
+                    isLocked
+                    permissions
+                  }
+                }
               }
             }
           }
@@ -631,10 +824,8 @@ export function updateMemberRole(input: UpdateMemberRoleInput, authToken: string
               id
               name
               description
-              locked
-              organizationAccessScopes
-              projectAccessScopes
-              targetAccessScopes
+              isLocked
+              permissions
             }
           }
           error {
@@ -800,39 +991,8 @@ export function deleteSchema(
   });
 }
 
-export function setTargetValidation(
-  input: SetTargetValidationInput,
-  access:
-    | {
-        token: string;
-      }
-    | {
-        authToken: string;
-      },
-) {
-  return execute({
-    document: graphql(`
-      mutation setTargetValidation($input: SetTargetValidationInput!) {
-        setTargetValidation(input: $input) {
-          id
-          validationSettings {
-            enabled
-            period
-            percentage
-            excludedClients
-          }
-        }
-      }
-    `),
-    ...access,
-    variables: {
-      input,
-    },
-  });
-}
-
 export function updateTargetValidationSettings(
-  input: UpdateTargetValidationSettingsInput,
+  input: UpdateTargetConditionalBreakingChangeConfigurationInput,
   access:
     | {
         token: string;
@@ -843,19 +1003,22 @@ export function updateTargetValidationSettings(
 ) {
   return execute({
     document: graphql(`
-      mutation updateTargetValidationSettings($input: UpdateTargetValidationSettingsInput!) {
-        updateTargetValidationSettings(input: $input) {
+      mutation updateTargetConditionalBreakingChangeConfiguration(
+        $input: UpdateTargetConditionalBreakingChangeConfigurationInput!
+      ) {
+        updateTargetConditionalBreakingChangeConfiguration(input: $input) {
           ok {
             target {
               id
-              validationSettings {
-                enabled
+              conditionalBreakingChangeConfiguration {
+                isEnabled
                 period
                 percentage
                 targets {
                   id
                 }
                 excludedClients
+                excludedAppDeployments
               }
             }
           }
@@ -892,25 +1055,94 @@ export function updateBaseSchema(input: UpdateBaseSchemaInput, token: string) {
   });
 }
 
-export function readOperationsStats(input: OperationsStatsSelectorInput, token: string) {
+export function readClientStats(
+  reference: GraphQLSchema.TargetReferenceInput,
+  period: GraphQLSchema.DateRangeInput,
+  clientName: string,
+  token: string,
+) {
   return execute({
     document: graphql(`
-      query readOperationsStats($input: OperationsStatsSelectorInput!) {
-        operationsStats(selector: $input) {
-          totalOperations
-          operations {
-            nodes {
-              id
-              operationHash
-              kind
-              name
+      query IntegrationTests_ClientStat(
+        $reference: TargetReferenceInput!
+        $period: DateRangeInput!
+        $clientName: String!
+      ) {
+        target(reference: $reference) {
+          clientStats(period: $period, clientName: $clientName) {
+            totalRequests
+            totalVersions
+            operations {
+              edges {
+                node {
+                  id
+                  name
+                  operationHash
+                  count
+                }
+              }
+            }
+            versions(limit: 25) {
+              version
               count
-              percentage
-              duration {
-                p75
-                p90
-                p95
-                p99
+            }
+          }
+        }
+      }
+    `),
+    token,
+    variables: {
+      reference,
+      period,
+      clientName,
+    },
+  });
+}
+
+export function readOperationsStats(
+  target: GraphQLSchema.TargetReferenceInput,
+  period: GraphQLSchema.DateRangeInput,
+  filter: GraphQLSchema.OperationStatsFilterInput,
+  token: string,
+) {
+  return execute({
+    document: graphql(`
+      query readOperationsStats(
+        $target: TargetReferenceInput!
+        $period: DateRangeInput!
+        $filter: OperationStatsFilterInput
+      ) {
+        target(reference: $target) {
+          operationsStats(period: $period, filter: $filter) {
+            totalOperations
+            operations {
+              edges {
+                node {
+                  id
+                  operationHash
+                  kind
+                  name
+                  count
+                  percentage
+                  duration {
+                    p75
+                    p90
+                    p95
+                    p99
+                  }
+                }
+              }
+            }
+            clients {
+              edges {
+                node {
+                  name
+                  versions {
+                    version
+                    count
+                  }
+                  count
+                }
               }
             }
           }
@@ -919,7 +1151,9 @@ export function readOperationsStats(input: OperationsStatsSelectorInput, token: 
     `),
     token,
     variables: {
-      input,
+      target,
+      period,
+      filter,
     },
   });
 }
@@ -935,8 +1169,8 @@ export function readOperationBody(
 ) {
   return execute({
     document: graphql(`
-      query readOperationBody($selector: TargetSelectorInput!, $hash: String!) {
-        target(selector: $selector) {
+      query readOperationBody($selector: TargetSelectorInput!, $hash: ID!) {
+        target(reference: { bySelector: $selector }) {
           id
           operation(hash: $hash) {
             body
@@ -973,6 +1207,9 @@ export function fetchLatestSchema(token: string) {
               deletedService
             }
           }
+          isValid
+          sdl
+          supergraph
           schemas {
             nodes {
               ... on SingleSchema {
@@ -1019,6 +1256,7 @@ export function fetchLatestValidSchema(token: string) {
             }
           }
           tags
+          sdl
           schemas {
             nodes {
               ... on SingleSchema {
@@ -1046,7 +1284,7 @@ export function fetchVersions(selector: TargetSelectorInput, first: number, toke
   return execute({
     document: graphql(`
       query schemaVersions($first: Int!, $selector: TargetSelectorInput!) {
-        target(selector: $selector) {
+        target(reference: { bySelector: $selector }) {
           schemaVersions(first: $first) {
             edges {
               node {
@@ -1112,10 +1350,12 @@ export function compareToPreviousVersion(
         $version: ID!
       ) {
         target(
-          selector: {
-            organizationSlug: $organizationSlug
-            projectSlug: $projectSlug
-            targetSlug: $targetSlug
+          reference: {
+            bySelector: {
+              organizationSlug: $organizationSlug
+              projectSlug: $projectSlug
+              targetSlug: $targetSlug
+            }
           }
         ) {
           id
@@ -1194,35 +1434,6 @@ export function compareToPreviousVersion(
   });
 }
 
-export function updateSchemaVersionStatus(input: SchemaVersionUpdateInput, token: string) {
-  return execute({
-    document: graphql(`
-      mutation updateSchemaVersionStatus($input: SchemaVersionUpdateInput!) {
-        updateSchemaVersionStatus(input: $input) {
-          id
-          date
-          valid
-          log {
-            ... on PushedSchemaLog {
-              __typename
-              commit
-              service
-            }
-            ... on DeletedSchemaLog {
-              __typename
-              deletedService
-            }
-          }
-        }
-      }
-    `),
-    token,
-    variables: {
-      input,
-    },
-  });
-}
-
 export function createCdnAccess(selector: TargetSelectorInput, token: string) {
   return execute({
     document: graphql(`
@@ -1240,7 +1451,7 @@ export function createCdnAccess(selector: TargetSelectorInput, token: string) {
     `),
     token,
     variables: {
-      input: { selector, alias: 'CDN Access Token' },
+      input: { target: { bySelector: selector }, alias: 'CDN Access Token' },
     },
   });
 }
@@ -1313,25 +1524,26 @@ export async function updateOrgRateLimit(
   });
 }
 
-export async function enableExternalSchemaComposition(
-  input: EnableExternalSchemaCompositionInput,
-  token: string,
-) {
+export async function updateSchemaComposition(input: UpdateSchemaCompositionInput, token: string) {
   return execute({
     document: graphql(`
-      mutation enableExternalSchemaComposition($input: EnableExternalSchemaCompositionInput!) {
-        enableExternalSchemaComposition(input: $input) {
+      mutation updateSchemaComposition($input: UpdateSchemaCompositionInput!) {
+        updateSchemaComposition(input: $input) {
           ok {
-            id
-            externalSchemaComposition {
-              endpoint
+            updatedProject {
+              id
+              externalSchemaComposition {
+                endpoint
+              }
             }
           }
           error {
-            message
-            inputErrors {
-              endpoint
-              secret
+            ... on UpdateSchemaCompositionExternalError {
+              message
+              inputErrors {
+                endpoint
+                secret
+              }
             }
           }
         }
@@ -1362,5 +1574,40 @@ export async function updateTargetSchemaComposition(
       input,
     },
     token,
+  });
+}
+
+export function createOrganizationAccessToken(
+  input: CreateOrganizationAccessTokenInput,
+  authToken: string,
+) {
+  return execute({
+    document: graphql(`
+      mutation CreateOrganizationAccessToken($input: CreateOrganizationAccessTokenInput!) {
+        createOrganizationAccessToken(input: $input) {
+          ok {
+            privateAccessKey
+            createdOrganizationAccessToken {
+              id
+              title
+              description
+              permissions
+              createdAt
+            }
+          }
+          error {
+            message
+            details {
+              title
+              description
+            }
+          }
+        }
+      }
+    `),
+    authToken,
+    variables: {
+      input,
+    },
   });
 }

@@ -1,4 +1,4 @@
-import LRU from 'tiny-lru';
+import { lru } from 'tiny-lru';
 import {
   castValue,
   ProcessedAppDeploymentUsageRecord,
@@ -31,7 +31,7 @@ function dateCacheKey(date: number): string {
   return String(Math.floor(date / 1000) * 1000);
 }
 
-const cachedFormatDate = cache(formatDate, dateCacheKey, LRU(50_000));
+const cachedFormatDate = cache(formatDate, dateCacheKey, lru(50_000));
 
 export const operationsOrder = [
   'organization',

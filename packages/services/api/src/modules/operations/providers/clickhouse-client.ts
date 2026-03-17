@@ -120,6 +120,23 @@ export class ClickHouse {
           },
           retry: {
             calculateDelay: info => {
+              if (
+                info.error.response?.body &&
+                typeof info.error.response.body === 'object' &&
+                'exception' in info.error.response.body &&
+                typeof info.error.response.body.exception === 'string'
+              ) {
+                this.logger.error(info.error.response.body.exception);
+                // In case of development errors we don't need to retry
+                // https://github.com/ClickHouse/ClickHouse/blob/eb33caaa13355761e4ceaba4a41b8801161ce327/src/Common/ErrorCodes.cpp#L55
+                // //https://github.com/ClickHouse/ClickHouse/blob/eb33caaa13355761e4ceaba4a41b8801161ce327/src/Common/ErrorCodes.cpp#L68C7-L68C9
+                if (
+                  info.error.response.body.exception.startsWith('Code: 47') ||
+                  info.error.response.body.exception.startsWith('Code: 62')
+                ) {
+                  return 0;
+                }
+              }
               span.setAttribute('retry.count', info.attemptCount);
 
               if (info.attemptCount >= 6) {

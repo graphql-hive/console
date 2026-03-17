@@ -1,9 +1,8 @@
 # syntax=docker/dockerfile:1
-FROM scratch AS pkg
+FROM scratch AS router_pkg
 FROM scratch AS config
 
-# Stick to v1.76 due to this issue: https://github.com/apollographql/router/issues/5084
-FROM rust:1.76 as build
+FROM rust:1.91.1-slim-bookworm AS build
 
 # Required by Apollo Router
 RUN apt-get update
@@ -13,26 +12,29 @@ RUN update-ca-certificates
 RUN rustup component add rustfmt
 
 WORKDIR /usr/src
-# Create blank project
+# Create blank projects
 RUN USER=root cargo new router
 
 # Copy Cargo files
-COPY --from=pkg Cargo.toml /usr/src/router/
+COPY --from=router_pkg Cargo.toml /usr/src/router/
 COPY --from=config Cargo.lock /usr/src/router/
 
 WORKDIR /usr/src/router
-# Get the dependencies cached
+# Get the dependencies cached, so we can use dummy input files so Cargo wont fail
+RUN echo 'fn main() { println!(""); }' > ./src/main.rs
+RUN echo 'fn main() { println!(""); }' > ./src/lib.rs
 RUN cargo build --release
 
-# Copy in the source code
-COPY --from=pkg src ./src
+# Copy in the actual source code
+COPY --from=router_pkg src ./src
 RUN touch ./src/main.rs
+RUN touch ./src/lib.rs
 
 # Real build this time
 RUN cargo build --release
 
 # Runtime
-FROM debian:12-slim as runtime
+FROM debian:bookworm-slim AS runtime
 
 RUN apt-get update
 RUN apt-get -y install ca-certificates
@@ -43,15 +45,15 @@ LABEL org.opencontainers.image.version=$RELEASE
 LABEL org.opencontainers.image.description=$IMAGE_DESCRIPTION
 LABEL org.opencontainers.image.authors="The Guild"
 LABEL org.opencontainers.image.vendor="Kamil Kisiela"
-LABEL org.opencontainers.image.url="https://github.com/graphql-hive/platform"
-LABEL org.opencontainers.image.source="https://github.com/graphql-hive/platform"
+LABEL org.opencontainers.image.url="https://github.com/graphql-hive/console"
+LABEL org.opencontainers.image.source="https://github.com/graphql-hive/console"
 
 RUN mkdir -p /dist/config
 RUN mkdir /dist/schema
 
 # Copy in the required files from our build image
 COPY --from=build --chown=root:root /usr/src/router/target/release/router /dist
-COPY --from=pkg router.yaml /dist/config/router.yaml
+COPY --from=router_pkg router.yaml /dist/config/router.yaml
 
 WORKDIR /dist
 

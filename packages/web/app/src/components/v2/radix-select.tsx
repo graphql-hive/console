@@ -51,11 +51,8 @@ export function RadixSelect<T extends string>({
           )}
         </RadixButton>
       </S.Trigger>
-      <S.Content
-        className="z-50 rounded-lg bg-white p-2 shadow-lg dark:bg-gray-800"
-        position={position}
-      >
-        <S.ScrollUpButton className="flex items-center justify-center text-gray-700 dark:text-gray-300">
+      <S.Content className="bg-neutral-12 z-50 rounded-lg p-2 shadow-lg" position={position}>
+        <S.ScrollUpButton className="text-neutral-2 flex items-center justify-center">
           <ChevronUpIcon />
         </S.ScrollUpButton>
         <S.Viewport>
@@ -66,8 +63,8 @@ export function RadixSelect<T extends string>({
                 key={value}
                 value={value}
                 className={clsx(
-                  'relative flex items-center rounded-md px-8 py-2 text-sm font-medium text-gray-700 focus:bg-gray-100 dark:text-gray-300 dark:focus:bg-gray-900',
-                  'radix-disabled:opacity-50',
+                  'focus:bg-neutral-11 text-neutral-2 relative flex items-center rounded-md px-8 py-2 text-sm font-medium',
+                  'data-disabled:opacity-50',
                   'cursor-pointer select-none focus:outline-none',
                 )}
               >
@@ -79,7 +76,7 @@ export function RadixSelect<T extends string>({
             ))}
           </S.Group>
         </S.Viewport>
-        <S.ScrollDownButton className="flex items-center justify-center text-gray-700 dark:text-gray-300">
+        <S.ScrollDownButton className="text-neutral-2 flex items-center justify-center">
           <ChevronDownIcon />
         </S.ScrollDownButton>
       </S.Content>

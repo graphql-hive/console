@@ -1,9 +1,8 @@
 import { useState } from 'react';
 import { useForm, UseFormReturn } from 'react-hook-form';
-import { AnyVariables, useMutation, UseMutationState, useQuery } from 'urql';
+import { AnyVariables, useMutation, UseMutationState } from 'urql';
 import { z } from 'zod';
-import { Tag } from '@/components//v2/tag';
-import { PermissionScopeItem, usePermissionsManager } from '@/components/organization/Permissions';
+import { PermissionScopeItem } from '@/components/organization/Permissions';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -15,10 +14,11 @@ import {
 } from '@/components/ui/dialog';
 import { Form, FormControl, FormField, FormItem, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
+import { InputCopy } from '@/components/ui/input-copy';
 import { useToast } from '@/components/ui/use-toast';
 import { Accordion } from '@/components/v2/accordion';
-import { CopyValue } from '@/components/v2/copy-value';
-import { FragmentType, graphql, useFragment } from '@/gql';
+import { Tag } from '@/components/v2/tag';
+import { graphql } from '@/gql';
 import { TargetAccessScope } from '@/gql/graphql';
 import { RegistryAccessScope } from '@/lib/access/common';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -48,16 +48,6 @@ export const CreateAccessToken_CreateTokenMutation = graphql(`
   }
 `);
 
-const CreateAccessTokenModalQuery = graphql(`
-  query CreateAccessTokenModalQuery($organizationSlug: String!) {
-    organization(selector: { organizationSlug: $organizationSlug }) {
-      organization {
-        ...CreateAccessTokenModalContent_OrganizationFragment
-      }
-    }
-  }
-`);
-
 export function CreateAccessTokenModal(props: {
   isOpen: boolean;
   toggleModalOpen: () => void;
@@ -66,51 +56,18 @@ export function CreateAccessTokenModal(props: {
   targetSlug: string;
 }) {
   const { isOpen, toggleModalOpen } = props;
-  const [organizationQuery] = useQuery({
-    query: CreateAccessTokenModalQuery,
-    variables: {
-      organizationSlug: props.organizationSlug,
-    },
-  });
-
-  const organization = organizationQuery.data?.organization?.organization;
 
   return (
     <Dialog open={isOpen} onOpenChange={toggleModalOpen}>
-      {organization ? (
-        <ModalContent
-          organization={organization}
-          organizationSlug={props.organizationSlug}
-          projectSlug={props.projectSlug}
-          targetSlug={props.targetSlug}
-          toggleModalOpen={toggleModalOpen}
-        />
-      ) : (
-        <DialogContent className="container w-4/5 max-w-[600px] md:w-3/5">
-          <DialogHeader>
-            <DialogTitle>Organization not found</DialogTitle>
-            <DialogDescription>
-              The organization you are trying to access does not exist.
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <Button onClick={toggleModalOpen}>Ok, got it!</Button>
-          </DialogFooter>
-        </DialogContent>
-      )}
+      <ModalContent
+        organizationSlug={props.organizationSlug}
+        projectSlug={props.projectSlug}
+        targetSlug={props.targetSlug}
+        toggleModalOpen={toggleModalOpen}
+      />
     </Dialog>
   );
 }
-
-const CreateAccessTokenModalContent_OrganizationFragment = graphql(`
-  fragment CreateAccessTokenModalContent_OrganizationFragment on Organization {
-    id
-    ...UsePermissionManager_OrganizationFragment
-    me {
-      ...UsePermissionManager_MemberFragment
-    }
-  }
-`);
 
 function getFinalTargetAccessScopes(
   selectedScope: 'no-access' | TargetAccessScope,
@@ -142,25 +99,13 @@ const createRegistryTokenFormSchema = z.object({
 });
 
 export function ModalContent(props: {
-  organization: FragmentType<typeof CreateAccessTokenModalContent_OrganizationFragment>;
   organizationSlug: string;
   projectSlug: string;
   targetSlug: string;
   toggleModalOpen: () => void;
 }) {
   const { toast } = useToast();
-  const organization = useFragment(
-    CreateAccessTokenModalContent_OrganizationFragment,
-    props.organization,
-  );
   const [selectedScope, setSelectedScope] = useState<'no-access' | TargetAccessScope>('no-access');
-
-  const manager = usePermissionsManager({
-    onSuccess() {},
-    organization,
-    member: organization.me,
-    passMemberScopes: false,
-  });
 
   const form = useForm<z.infer<typeof createRegistryTokenFormSchema>>({
     mode: 'onChange',
@@ -206,7 +151,6 @@ export function ModalContent(props: {
   return (
     <GenerateTokenContent
       form={form}
-      manager={manager}
       noPermissionsSelected={noPermissionsSelected}
       onSubmit={onSubmit}
       selectedScope={selectedScope} // Ensure selectedScope is passed correctly
@@ -221,11 +165,11 @@ export function CreatedTokenContent(props: {
   toggleModalOpen: () => void;
 }) {
   return (
-    <DialogContent className="container w-4/5 max-w-[600px] md:w-3/5">
+    <DialogContent className="w-4/5 max-w-[600px] md:w-3/5" data-cy="registry-token-created">
       <DialogHeader className="flex flex-col gap-5">
         <DialogTitle>Token successfully created!</DialogTitle>
         <DialogDescription className="flex flex-col gap-5">
-          <CopyValue value={props.mutation.data.createToken.ok.secret} />
+          <InputCopy value={props.mutation.data.createToken.ok.secret} />
           <Tag color="green">
             This is your unique API key and it is non-recoverable. If you lose this key, you will
             need to create a new one.
@@ -233,7 +177,9 @@ export function CreatedTokenContent(props: {
         </DialogDescription>
       </DialogHeader>
       <DialogFooter>
-        <Button onClick={props.toggleModalOpen}>Ok, got it!</Button>
+        <Button data-cy="close" onClick={props.toggleModalOpen}>
+          Ok, got it!
+        </Button>
       </DialogFooter>
     </DialogContent>
   );
@@ -242,17 +188,17 @@ export function CreatedTokenContent(props: {
 export function GenerateTokenContent(props: {
   form: UseFormReturn<z.infer<typeof createRegistryTokenFormSchema>>;
   onSubmit: (values: z.infer<typeof createRegistryTokenFormSchema>) => void;
-  manager: ReturnType<typeof usePermissionsManager>;
   setSelectedScope: (scope: 'no-access' | TargetAccessScope) => void;
   selectedScope: 'no-access' | TargetAccessScope;
   toggleModalOpen: () => void;
   noPermissionsSelected: boolean;
 }) {
   return (
-    <DialogContent className="container w-4/5 max-w-[600px] md:w-3/5">
+    <DialogContent className="w-4/5 max-w-[600px] md:w-3/5">
       <Form {...props.form}>
         <form
           className="flex grow flex-col gap-5"
+          data-cy="create-registry-token-form"
           onSubmit={props.form.handleSubmit(props.onSubmit)}
         >
           <DialogHeader>
@@ -267,7 +213,12 @@ export function GenerateTokenContent(props: {
             render={({ field }) => (
               <FormItem>
                 <FormControl>
-                  <Input placeholder="Token description" autoComplete="off" {...field} />
+                  <Input
+                    placeholder="Token description"
+                    data-cy="description"
+                    autoComplete="off"
+                    {...field}
+                  />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -279,13 +230,11 @@ export function GenerateTokenContent(props: {
                 <Accordion.Header>Registry & Usage</Accordion.Header>
                 <Accordion.Content>
                   <PermissionScopeItem
+                    dataCy="registry-access-scope"
                     key={props.selectedScope}
                     scope={RegistryAccessScope}
-                    canManageScope={
-                      props.manager.canAccessTarget(RegistryAccessScope.mapping['read-only']) ||
-                      props.manager.canAccessTarget(RegistryAccessScope.mapping['read-write'])
-                    }
-                    checkAccess={props.manager.canAccessTarget}
+                    canManageScope
+                    checkAccess={() => true}
                     onChange={value => {
                       if (value === 'no-access') {
                         props.setSelectedScope('no-access');
@@ -314,7 +263,12 @@ export function GenerateTokenContent(props: {
             </Button>
             <Button
               type="submit"
-              disabled={!props.form.formState.isValid || props.noPermissionsSelected}
+              data-cy="submit"
+              disabled={
+                !props.form.formState.isValid ||
+                props.noPermissionsSelected ||
+                props.form.formState.isSubmitting
+              }
             >
               Generate Token
             </Button>

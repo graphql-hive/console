@@ -1,35 +1,38 @@
 import * as k8s from '@pulumi/kubernetes';
 import { interpolate, Output } from '@pulumi/pulumi';
+import { Environment } from '../services/environment';
 import { helmChart } from './helm';
 import { Values as OpenTelemetryCollectorValues } from './opentelemetry-collector.types';
 import { VectorValues } from './vector.types';
 
-export type ObservabilityConfig = {
-  loki: {
-    endpoint: Output<string> | string;
-    username: Output<string> | string;
-    password: Output<string>;
-  };
-  prom: {
-    endpoint: Output<string> | string;
-    username: Output<string> | string;
-    password: Output<string>;
-  };
-  tempo: {
-    endpoint: Output<string> | string;
-    username: Output<string> | string;
-    password: Output<string>;
-  };
-};
+export type ObservabilityConfig =
+  | 'local'
+  | {
+      loki: {
+        endpoint: Output<string> | string;
+        username: Output<string> | string;
+        password: Output<string>;
+      };
+      otlpMetrics: {
+        endpoint: Output<string> | string;
+        username: Output<string> | string;
+        password: Output<string>;
+      };
+      tempo: {
+        endpoint: Output<string> | string;
+        username: Output<string> | string;
+        password: Output<string>;
+      };
+    };
 
 // prettier-ignore
-export const OTLP_COLLECTOR_CHART = helmChart('https://open-telemetry.github.io/opentelemetry-helm-charts', 'opentelemetry-collector', '0.96.0');
+export const OTLP_COLLECTOR_CHART = helmChart('https://open-telemetry.github.io/opentelemetry-helm-charts', 'opentelemetry-collector', '0.143.1');
 // prettier-ignore
 export const VECTOR_HELM_CHART = helmChart('https://helm.vector.dev', 'vector', '0.35.0');
 
 export class Observability {
   constructor(
-    private envName: string,
+    private environment: Environment,
     private config: ObservabilityConfig,
   ) {}
 
@@ -41,6 +44,74 @@ export class Observability {
       },
     });
 
+    const extensions =
+      this.config === 'local'
+        ? {}
+        : {
+            'basicauth/grafana_cloud_traces': {
+              client_auth: {
+                username: this.config.tempo.username,
+                password: this.config.tempo.password,
+              },
+            },
+            'basicauth/grafana_cloud_metrics': {
+              client_auth: {
+                username: this.config.otlpMetrics.username,
+                password: this.config.otlpMetrics.password,
+              },
+            },
+          };
+
+    const exporters =
+      this.config === 'local'
+        ? {}
+        : {
+            'otlp/grafana_cloud_traces': {
+              endpoint: this.config.tempo.endpoint,
+              auth: {
+                authenticator: 'basicauth/grafana_cloud_traces',
+              },
+            },
+            'otlphttp/grafana_cloud_metrics': {
+              endpoint: this.config.otlpMetrics.endpoint,
+              auth: { authenticator: 'basicauth/grafana_cloud_metrics' },
+            },
+          };
+
+    const sinks =
+      this.config === 'local'
+        ? {
+            stdout: {
+              type: 'console',
+              inputs: ['kubernetes_logs'],
+              encoding: { codec: 'json' },
+            },
+          }
+        : {
+            grafana_lab: {
+              type: 'loki',
+              inputs: ['kubernetes_logs', 'envoy_error_logs'],
+              endpoint: interpolate`https://${this.config.loki.endpoint}`,
+              auth: {
+                strategy: 'basic',
+                user: this.config.loki.username,
+                password: this.config.loki.password,
+              },
+              // Based on https://vector.dev/docs/reference/configuration/sources/kubernetes_logs/#output-types
+              labels: {
+                namespace: '{{`{{ kubernetes.pod_namespace }}`}}',
+                pod_name: '{{`{{ kubernetes.pod_name }}`}}',
+                node: '{{`{{ kubernetes.pod_node_name }}`}}',
+                container_name: '{{`{{ kubernetes.container_name }}`}}',
+              },
+              encoding: {
+                codec: 'text',
+              },
+              out_of_order_action: 'accept',
+              remove_timestamp: false,
+            },
+          };
+
     // https://github.com/open-telemetry/opentelemetry-helm-charts/blob/main/charts/opentelemetry-collector/values.yaml
     const chartValues: OpenTelemetryCollectorValues = {
       image: {
@@ -50,8 +121,8 @@ export class Observability {
       replicaCount: 1,
       resources: {
         limits: {
-          cpu: '256m',
-          memory: '512Mi',
+          cpu: this.environment.podsConfig.internalObservability.cpuLimit,
+          memory: this.environment.podsConfig.internalObservability.memoryLimit,
         },
       },
       podAnnotations: {
@@ -106,26 +177,13 @@ export class Observability {
       },
       config: {
         exporters: {
-          'otlp/grafana_cloud_traces': {
-            endpoint: this.config.tempo.endpoint,
-            auth: {
-              authenticator: 'basicauth/grafana_cloud_traces',
-            },
-          },
-          logging: {
+          ...exporters,
+          debug: {
             verbosity: 'basic',
-          },
-          prometheusremotewrite: {
-            endpoint: interpolate`https://${this.config.prom.username}:${this.config.prom.password}@${this.config.prom.endpoint}`,
           },
         },
         extensions: {
-          'basicauth/grafana_cloud_traces': {
-            client_auth: {
-              username: this.config.tempo.username,
-              password: this.config.tempo.password,
-            },
-          },
+          ...extensions,
           health_check: {},
         },
         processors: {
@@ -136,27 +194,46 @@ export class Observability {
             spike_limit_mib: 128,
           },
           // Filter OpenTelemetry traces that are not needed for debugging.
-          'filter/traces': {
-            error_mode: 'ignore',
-            traces: {
-              span: [
-                // Ignore all HEAD/OPTIONS requests
-                'attributes["component"] == "proxy" and attributes["http.method"] == "HEAD"',
-                'attributes["component"] == "proxy" and attributes["http.method"] == "OPTIONS"',
-                // Ignore health checks
-                'attributes["component"] == "proxy" and attributes["http.method"] == "GET" and attributes["http.url"] == "/_readiness"',
-                'attributes["component"] == "proxy" and attributes["http.method"] == "GET" and attributes["http.url"] == "/_health"',
-                'attributes["component"] == "proxy" and attributes["http.method"] == "GET" and IsMatch(attributes["http.url"], ".*/_health") == true',
-                // Ignore Contour/Envoy traces for /usage requests
-                'attributes["component"] == "proxy" and attributes["http.method"] == "POST" and attributes["http.url"] == "/usage"',
-                'attributes["component"] == "proxy" and attributes["http.method"] == "POST" and IsMatch(attributes["upstream_cluster.name"], "default_usage-service-.*") == true',
-                'attributes["component"] == "proxy" and attributes["http.method"] == "POST" and IsMatch(attributes["upstream_cluster.name"], "default_app-.*") == true',
-                // Ignore metrics scraping
-                'attributes["component"] == "proxy" and attributes["http.method"] == "GET" and attributes["http.url"] == "/metrics"',
-                // Ignore webapp HTTP calls
-                'attributes["component"] == "proxy" and attributes["http.method"] == "GET" and IsMatch(attributes["upstream_cluster.name"], "default_app-.*") == true',
-              ],
-            },
+          tail_sampling: {
+            decision_wait: '10s',
+            num_traces: 10000,
+            policies: [
+              {
+                name: 'drop-traces',
+                type: 'drop',
+                drop: {
+                  drop_sub_policy: [
+                    {
+                      name: 'drop-proxy-noise',
+                      type: 'ottl_condition',
+                      ottl_condition: {
+                        error_mode: 'ignore',
+                        span: [
+                          // Ignore HEAD/OPTIONS
+                          'attributes["component"] == "proxy" and (attributes["http.method"] == "HEAD" or attributes["http.method"] == "OPTIONS")',
+                          //Ignore health checks
+                          'attributes["component"] == "proxy" and attributes["http.method"] == "GET" and (attributes["http.url"] == "/_readiness" or attributes["http.url"] == "/_health" or IsMatch(attributes["http.url"], ".*/_health"))',
+                          //Ignore /usage requests (200 or 429)
+                          'attributes["component"] == "proxy" and attributes["http.method"] == "POST" and (attributes["http.url"] == "/usage" or IsMatch(attributes["http.url"], "/usage/.*")) and (attributes["http.status_code"] == "200" or attributes["http.status_code"] == "429")',
+                          // Ignore metrics scraping
+                          'attributes["component"] == "proxy" and attributes["http.method"] == "GET" and attributes["http.url"] == "/metrics"',
+                          // Ignore webapp HTTP calls via upstream cluster name
+                          'attributes["component"] == "proxy" and (attributes["http.method"] == "POST" or attributes["http.method"] == "GET") and IsMatch(attributes["upstream_cluster.name"], "default_app-.*")',
+                          // Hive Tracing is using these endpoints and they don't have any added value for us when monitored
+                          'attributes["component"] == "proxy" and attributes["http.method"] == "POST" and attributes["http.url"] == "/otel/v1/traces"',
+                          // Internal /usage calls can also be filtered out
+                          'resource.attributes["service.name"] == "usage" and attributes["http.status_code"] == 200 and IsRootSpan() == true',
+                        ],
+                      },
+                    },
+                  ],
+                },
+              },
+              {
+                name: 'keep-all-others',
+                type: 'always_sample',
+              },
+            ],
           },
           // Remove raw trace information that we don't really need and exposed by default.
           'attributes/trace_filter': {
@@ -228,9 +305,11 @@ export class Observability {
               },
               scrape_configs: [
                 {
+                  job_name: 'service-metrics',
+                  scheme: 'http',
                   honor_labels: true,
                   honor_timestamps: true,
-                  job_name: 'service-metrics',
+                  metrics_path: '/metrics',
                   kubernetes_sd_configs: [
                     {
                       role: 'pod',
@@ -239,17 +318,24 @@ export class Observability {
                       },
                     },
                   ],
-                  metrics_path: '/metrics',
                   relabel_configs: [
+                    // compares the name of the port to == "metrics"
                     {
                       source_labels: ['__meta_kubernetes_pod_container_port_name'],
                       action: 'keep',
                       regex: 'metrics',
                     },
+                    // compares "scrape" label to "true"
                     {
                       source_labels: ['__meta_kubernetes_pod_annotation_prometheus_io_scrape'],
                       action: 'keep',
                       regex: true,
+                    },
+                    {
+                      source_labels: ['__meta_kubernetes_pod_name'],
+                      action: 'replace',
+                      target_label: 'instance',
+                      regex: '(.*redis.*)',
                     },
                     {
                       source_labels: ['__meta_kubernetes_pod_annotation_prometheus_io_scheme'],
@@ -288,14 +374,20 @@ export class Observability {
                       target_label: 'kubernetes_node',
                     },
                   ],
-                  scheme: 'http',
                 },
               ],
             },
           },
         },
         service: {
-          extensions: ['health_check', 'basicauth/grafana_cloud_traces'],
+          extensions:
+            this.config === 'local'
+              ? ['health_check']
+              : [
+                  'health_check',
+                  'basicauth/grafana_cloud_traces',
+                  'basicauth/grafana_cloud_metrics',
+                ],
           pipelines: {
             traces: {
               receivers: ['otlp'],
@@ -303,13 +395,15 @@ export class Observability {
                 'resource/trace_cleanup',
                 'attributes/trace_filter',
                 'transform/patch_envoy_spans',
-                'filter/traces',
+                'tail_sampling',
                 'batch',
               ],
-              exporters: ['logging', 'otlp/grafana_cloud_traces'],
+              exporters:
+                this.config === 'local' ? ['debug'] : ['debug', 'otlp/grafana_cloud_traces'],
             },
             metrics: {
-              exporters: ['logging', 'prometheusremotewrite'],
+              exporters:
+                this.config === 'local' ? ['debug'] : ['debug', 'otlphttp/grafana_cloud_metrics'],
               processors: ['memory_limiter', 'batch'],
               receivers: ['prometheus'],
             },
@@ -379,26 +473,7 @@ export class Observability {
             inputs: ['envoy_json_logs.dropped'],
             encoding: { codec: 'json' },
           },
-          grafana_lab: {
-            type: 'loki',
-            inputs: ['kubernetes_logs', 'envoy_error_logs'],
-            endpoint: interpolate`https://${this.config.loki.endpoint}`,
-            auth: {
-              strategy: 'basic',
-              user: this.config.loki.username,
-              password: this.config.loki.password,
-            },
-            labels: {
-              namespace: '{{`{{ kubernetes.pod_namespace }}`}}',
-              container_name: '{{`{{ kubernetes.container_name }}`}}',
-              env: this.envName,
-            },
-            encoding: {
-              codec: 'text',
-            },
-            out_of_order_action: 'accept',
-            remove_timestamp: false,
-          },
+          ...sinks,
         },
       },
     };

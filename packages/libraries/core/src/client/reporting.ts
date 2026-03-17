@@ -11,15 +11,15 @@ import { getDocumentNodeFromSchema } from '@graphql-tools/utils';
 import { version } from '../version.js';
 import type { SchemaPublishMutation } from './__generated__/types.js';
 import { http } from './http-client.js';
-import type { HivePluginOptions } from './types.js';
-import { createHiveLogger, logIf } from './utils.js';
+import type { HiveInternalPluginOptions } from './types.js';
+import { logIf } from './utils.js';
 
 export interface SchemaReporter {
   report(args: { schema: GraphQLSchema }): void;
   dispose(): Promise<void>;
 }
 
-export function createReporting(pluginOptions: HivePluginOptions): SchemaReporter {
+export function createReporting(pluginOptions: HiveInternalPluginOptions): SchemaReporter {
   if (!pluginOptions.reporting || pluginOptions.enabled === false) {
     return {
       async report() {},
@@ -30,7 +30,7 @@ export function createReporting(pluginOptions: HivePluginOptions): SchemaReporte
   const token = pluginOptions.token;
   const selfHostingOptions = pluginOptions.selfHosting;
   const reportingOptions = pluginOptions.reporting;
-  const logger = createHiveLogger(pluginOptions.agent?.logger ?? console, '[hive][reporting]');
+  const logger = pluginOptions.logger.child({ module: 'hive-reporting' });
 
   logIf(
     typeof reportingOptions.author !== 'string' || reportingOptions.author.length === 0,
@@ -75,8 +75,8 @@ export function createReporting(pluginOptions: HivePluginOptions): SchemaReporte
           }),
           {
             headers: {
-              'graphql-client-name': 'Hive Client',
-              'graphql-client-version': version,
+              'graphql-client-name': pluginOptions.agent?.name ?? 'Hive Client',
+              'graphql-client-version': pluginOptions.agent?.version ?? version,
               authorization: `Bearer ${token}`,
               'content-type': 'application/json',
             },

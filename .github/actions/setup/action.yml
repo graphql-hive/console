@@ -18,9 +18,6 @@ inputs:
     description: Name of the workflow that called this action
     required: true
     type: string
-  cacheTurbo:
-    description: Should cache Turbo?
-    default: 'true'
 
 runs:
   using: 'composite'
@@ -30,42 +27,38 @@ runs:
       id: pnpm
       run: |
         PNPM_VERSION=$(cat package.json | jq -r '.packageManager' | awk -F@ '{print $2}')
-        PNPM_VERSION=${PNPM_VERSION:-8}
+        PNPM_VERSION=${PNPM_VERSION:-9}
         echo "Using PNPM version $PNPM_VERSION"
         echo "version=$PNPM_VERSION" >> $GITHUB_OUTPUT
 
         if [ ${{ inputs.installDependencies }} = true ]; then
           echo "cache=pnpm" >> $GITHUB_OUTPUT
         else
-          echo "cache=" >> "$GITHUB_ENV"
+          echo "cache=" >> $GITHUB_OUTPUT
         fi
 
     - name: install pnpm
-      uses: pnpm/action-setup@v4.0.0
+      uses: pnpm/action-setup@fe02b34f77f8bc703788d5817da081398fad5dd2 # v4.0.0
       with:
         version: ${{ steps.pnpm.outputs.version }}
 
     - name: install nodejs
-      uses: actions/setup-node@v4.1.0
+      uses: actions/setup-node@39370e3970a6d050c480ffad4ff0ed4d3fdee5af # v4.1.0
       with:
         node-version-file: .node-version
         cache: ${{ steps.pnpm.outputs.cache }}
-
-    - name: Cache Turbo
-      uses: actions/cache@v4
-      if: ${{ inputs.cacheTurbo == 'true' }}
-      with:
-        path: node_modules/.cache/turbo
-        key: turbo-cache-${{ hashFiles('**/pnpm-lock.yaml') }}-${{ inputs.actor }}-${{ github.sha }}
-        restore-keys: |
-          turbo-cache-${{ hashFiles('**/pnpm-lock.yaml') }}-${{ inputs.actor }}-
-          turbo-cache-${{ hashFiles('**/pnpm-lock.yaml') }}-
 
     - name: pnpm install
       shell: bash
       if: ${{ inputs.installDependencies == 'true' }}
       working-directory: ${{ inputs.workingDirectory }}
       run: pnpm install --frozen-lockfile
+
+    - name: build laboratory
+      shell: bash
+      if: ${{ inputs.buildLaboratory == 'true' }}
+      working-directory: ${{ inputs.workingDirectory }}
+      run: pnpm turbo build --filter=./packages/libraries/laboratory --color
 
     - name: generate graphql types
       if: ${{ inputs.codegen == 'true' }}

@@ -1,10 +1,13 @@
+import { differenceInCalendarDays, startOfDay, subDays } from 'date-fns';
 import { Inject, Injectable, Scope } from 'graphql-modules';
 import { sql, UniqueIntegrityConstraintViolationError, type DatabasePool } from 'slonik';
 import { z } from 'zod';
 import { buildAppDeploymentIsEnabledKey } from '@hive/cdn-script/artifact-storage-reader';
 import {
+  decodeAppDeploymentSortCursor,
   decodeCreatedAtAndUUIDIdBasedCursor,
   decodeHashBasedCursor,
+  encodeAppDeploymentSortCursor,
   encodeCreatedAtAndUUIDIdBasedCursor,
   encodeHashBasedCursor,
 } from '@hive/storage';
@@ -17,7 +20,7 @@ import { Storage } from '../../shared/providers/storage';
 import { APP_DEPLOYMENTS_ENABLED } from './app-deployments-enabled-token';
 import { PersistedDocumentScheduler } from './persisted-document-scheduler';
 
-const AppDeploymentNameModel = z
+export const AppDeploymentNameModel = z
   .string()
   .min(1, 'Must be at least 1 character long')
   .max(64, 'Must be at most 64 characters long')
@@ -51,6 +54,29 @@ export class AppDeployments {
     @Inject(APP_DEPLOYMENTS_ENABLED) private appDeploymentsEnabled: Boolean,
   ) {
     this.logger = logger.child({ source: 'AppDeployments' });
+  }
+
+  async getAppDeploymentById(args: {
+    appDeploymentId: string;
+  }): Promise<AppDeploymentRecord | null> {
+    this.logger.debug('get app deployment by id (appDeploymentId=%s)', args.appDeploymentId);
+
+    const record = await this.pool.maybeOne<unknown>(
+      sql`
+        SELECT
+          ${appDeploymentFields}
+        FROM
+          "app_deployments"
+        WHERE
+          "id" = ${args.appDeploymentId}
+      `,
+    );
+
+    if (!record) {
+      return null;
+    }
+
+    return AppDeploymentModel.parse(record);
   }
 
   async findAppDeployment(args: {
@@ -478,13 +504,28 @@ export class AppDeployments {
 
   async retireAppDeployment(args: {
     organizationId: string;
+    projectId: string;
     targetId: string;
     appDeployment: {
       name: string;
       version: string;
     };
-  }) {
-    this.logger.debug('activate app deployment (targetId=%s, appName=%s, appVersion=%s)');
+    force?: boolean;
+  }): Promise<
+    | { type: 'success'; appDeployment: AppDeploymentRecord }
+    | {
+        type: 'error';
+        message: string;
+        protectionDetails?: {
+          lastUsed: Date | null;
+          daysSinceLastUsed: number | null;
+          requiredMinDaysInactive: number;
+          currentTrafficPercentage: number | null;
+          maxTrafficPercentage: number;
+        };
+      }
+  > {
+    this.logger.debug('retire app deployment (targetId=%s, appName=%s, appVersion=%s)');
 
     if (this.appDeploymentsEnabled === false) {
       const organization = await this.storage.getOrganization({
@@ -510,7 +551,7 @@ export class AppDeployments {
 
     if (appDeployment === null) {
       this.logger.debug(
-        'activate app deployment failed as it does not exist. (targetId=%s, appName=%s, appVersion=%s)',
+        'retire app deployment failed as it does not exist. (targetId=%s, appName=%s, appVersion=%s)',
         args.targetId,
         args.appDeployment.name,
         args.appDeployment.version,
@@ -523,7 +564,7 @@ export class AppDeployments {
 
     if (appDeployment.activatedAt === null) {
       this.logger.debug(
-        'activate app deployment failed as it was never active. (targetId=%s, appDeploymentId=%s)',
+        'retire app deployment failed as it was never active. (targetId=%s, appDeploymentId=%s)',
         args.targetId,
         appDeployment.id,
       );
@@ -535,7 +576,7 @@ export class AppDeployments {
 
     if (appDeployment.retiredAt !== null) {
       this.logger.debug(
-        'activate app deployment failed as it is already retired. (targetId=%s, appDeploymentId=%s)',
+        'retire app deployment failed as it is already retired. (targetId=%s, appDeploymentId=%s)',
         args.targetId,
         appDeployment.id,
       );
@@ -544,6 +585,105 @@ export class AppDeployments {
         type: 'error' as const,
         message: 'App deployment is already retired',
       };
+    }
+
+    // Check protection settings if force flag is not set
+    if (args.force !== true) {
+      const targetSettings = await this.storage.getTargetSettings({
+        organizationId: args.organizationId,
+        targetId: args.targetId,
+        projectId: args.projectId,
+      });
+
+      if (targetSettings.appDeploymentProtection.isEnabled) {
+        const protectionConfig = targetSettings.appDeploymentProtection;
+
+        // Get last used timestamp
+        const lastUsedResults = await this.getLastUsedForAppDeployments({
+          appDeploymentIds: [appDeployment.id],
+        });
+        const lastUsedStr =
+          lastUsedResults.find(r => r.appDeploymentId === appDeployment.id)?.lastUsed ?? null;
+        const lastUsed = lastUsedStr ? new Date(lastUsedStr) : null;
+
+        // Calculate days since last used
+        let daysSinceLastUsed: number | null = null;
+        if (lastUsed) {
+          const now = new Date();
+          const diffMs = now.getTime() - lastUsed.getTime();
+          daysSinceLastUsed = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+        }
+
+        // Get traffic percentage using configured period
+        const trafficData = await this.getAppDeploymentTrafficPercentage({
+          targetId: args.targetId,
+          appName: args.appDeployment.name,
+          appVersion: args.appDeployment.version,
+          periodDays: protectionConfig.trafficPeriodDays,
+        });
+        const trafficPercentage = trafficData?.trafficPercentage ?? null;
+
+        // Check protection rules:
+        // 1. App deployment must have been created at least minDaysSinceCreation days ago
+        // 2. If usage data exists, check inactivity and traffic criteria based on ruleLogic:
+        //    AND: Both conditions must pass (inactive enough AND low traffic)
+        //    OR: Either condition can pass (inactive enough OR low traffic)
+
+        let isBlocked = false;
+        let blockReason = '';
+
+        const createdAt = new Date(appDeployment.createdAt);
+        const daysSinceCreation = differenceInCalendarDays(new Date(), createdAt);
+
+        if (daysSinceCreation < protectionConfig.minDaysSinceCreation) {
+          isBlocked = true;
+          blockReason = `App deployment was created ${daysSinceCreation} days ago, but requires at least ${protectionConfig.minDaysSinceCreation} days since creation`;
+        } else if (lastUsed !== null) {
+          const inactiveEnough =
+            daysSinceLastUsed === null || daysSinceLastUsed >= protectionConfig.minDaysInactive;
+          const lowTraffic =
+            trafficPercentage === null ||
+            trafficPercentage <= protectionConfig.maxTrafficPercentage;
+
+          if (protectionConfig.ruleLogic === 'OR') {
+            // OR logic: retirement allowed if EITHER condition is met
+            isBlocked = !inactiveEnough && !lowTraffic;
+            if (isBlocked) {
+              blockReason = `App deployment was used ${daysSinceLastUsed} days ago (requires ${protectionConfig.minDaysInactive}) and has ${trafficPercentage?.toFixed(2)}% traffic (max ${protectionConfig.maxTrafficPercentage}%)`;
+            }
+          } else {
+            // AND logic (default): retirement allowed only if BOTH conditions are met
+            if (!inactiveEnough) {
+              isBlocked = true;
+              blockReason = `App deployment was used ${daysSinceLastUsed} days ago, but requires ${protectionConfig.minDaysInactive} days of inactivity`;
+            } else if (!lowTraffic) {
+              isBlocked = true;
+              blockReason = `App deployment has ${trafficPercentage?.toFixed(2)}% of traffic, but maximum allowed is ${protectionConfig.maxTrafficPercentage}%`;
+            }
+          }
+        }
+
+        if (isBlocked) {
+          this.logger.debug(
+            'retire app deployment blocked by protection settings. (targetId=%s, appDeploymentId=%s, reason=%s)',
+            args.targetId,
+            appDeployment.id,
+            blockReason,
+          );
+
+          return {
+            type: 'error' as const,
+            message: `App deployment retirement blocked by protection settings. ${blockReason}.`,
+            protectionDetails: {
+              lastUsed,
+              daysSinceLastUsed,
+              requiredMinDaysInactive: protectionConfig.minDaysInactive,
+              currentTrafficPercentage: trafficPercentage,
+              maxTrafficPercentage: protectionConfig.maxTrafficPercentage,
+            },
+          };
+        }
+      }
     }
 
     for (const s3 of this.s3) {
@@ -598,7 +738,7 @@ export class AppDeployments {
         );
       `,
       timeout: 10000,
-      queryId: 'app-deployment-activate',
+      queryId: 'app-deployment-retire',
     });
 
     const updatedAppDeployment = await this.pool
@@ -630,13 +770,76 @@ export class AppDeployments {
     };
   }
 
+  async countAppDeployments(targetId: string): Promise<number> {
+    return this.pool.oneFirst<number>(sql`
+      SELECT count(*) FROM "app_deployments" WHERE "target_id" = ${targetId}
+    `);
+  }
+
   async getPaginatedAppDeployments(args: {
     targetId: string;
     cursor: string | null;
     first: number | null;
+    sort: { field: 'CREATED_AT' | 'ACTIVATED_AT'; direction: 'ASC' | 'DESC' } | null;
   }) {
+    this.logger.debug(
+      'get paginated app deployments (targetId=%s, cursor=%s, sort=%o)',
+      args.targetId,
+      args.cursor,
+      args.sort,
+    );
     const limit = args.first ? (args.first > 0 ? Math.min(args.first, 20) : 20) : 20;
-    const cursor = args.cursor ? decodeCreatedAtAndUUIDIdBasedCursor(args.cursor) : null;
+    const sortField = args.sort?.field ?? 'CREATED_AT';
+    const sortDirection = args.sort?.direction ?? 'DESC';
+
+    let cursor = null;
+    if (args.cursor) {
+      try {
+        cursor = decodeAppDeploymentSortCursor(args.cursor);
+      } catch (error) {
+        this.logger.debug(
+          'Failed to decode cursor for getPaginatedAppDeployments (targetId=%s, cursor=%s): %s',
+          args.targetId,
+          args.cursor,
+          error instanceof Error ? error.message : String(error),
+        );
+      }
+    }
+    if (cursor && cursor.sortField !== sortField) {
+      this.logger.debug(
+        'Cursor sort field mismatch (targetId=%s, cursorField=%s, requestedField=%s). Ignoring cursor.',
+        args.targetId,
+        cursor.sortField,
+        sortField,
+      );
+      cursor = null;
+    }
+
+    const col = sql.identifier([sortField === 'ACTIVATED_AT' ? 'activated_at' : 'created_at']);
+    const isNullable = sortField === 'ACTIVATED_AT';
+    const isDesc = sortDirection === 'DESC';
+
+    let cursorCondition = sql``;
+    if (cursor) {
+      const cv = cursor.sortValue;
+      const tiebreakOp = isDesc ? sql`<` : sql`>`;
+
+      if (cv === null) {
+        cursorCondition = sql`AND (${col} IS NULL AND "id" ${tiebreakOp} ${cursor.id})`;
+      } else if (isNullable) {
+        cursorCondition = isDesc
+          ? sql`AND ((${col} = ${cv} AND "id" < ${cursor.id}) OR ${col} < ${cv} OR ${col} IS NULL)`
+          : sql`AND ((${col} = ${cv} AND "id" > ${cursor.id}) OR ${col} > ${cv} OR ${col} IS NULL)`;
+      } else {
+        cursorCondition = isDesc
+          ? sql`AND ((${col} = ${cv} AND "id" < ${cursor.id}) OR ${col} < ${cv})`
+          : sql`AND ((${col} = ${cv} AND "id" > ${cursor.id}) OR ${col} > ${cv})`;
+      }
+    }
+
+    const dirSql = isDesc ? sql`DESC` : sql`ASC`;
+    const nullsLast = isNullable ? sql`NULLS LAST` : sql``;
+    const orderBy = sql`ORDER BY ${col} ${dirSql} ${nullsLast}, "id" ${dirSql}`;
 
     const result = await this.pool.query<unknown>(sql`
       SELECT
@@ -645,28 +848,21 @@ export class AppDeployments {
         "app_deployments"
       WHERE
         "target_id" = ${args.targetId}
-        ${
-          cursor
-            ? sql`
-                AND (
-                  (
-                    "created_at" = ${cursor.createdAt}
-                    AND "id" < ${cursor.id}
-                  )
-                  OR "created_at" < ${cursor.createdAt}
-                )
-              `
-            : sql``
-        }
-      ORDER BY "created_at" DESC, "id"
+        ${cursorCondition}
+      ${orderBy}
       LIMIT ${limit + 1}
     `);
 
     let items = result.rows.map(row => {
       const node = AppDeploymentModel.parse(row);
+      const sortValue = sortField === 'ACTIVATED_AT' ? node.activatedAt : node.createdAt;
 
       return {
-        cursor: encodeCreatedAtAndUUIDIdBasedCursor(node),
+        cursor: encodeAppDeploymentSortCursor({
+          sortField,
+          sortValue,
+          id: node.id,
+        }),
         node,
       };
     });
@@ -686,13 +882,231 @@ export class AppDeployments {
     };
   }
 
+  async getPaginatedAppDeploymentsSortedByLastUsed(args: {
+    targetId: string;
+    cursor: string | null;
+    first: number | null;
+    direction: 'ASC' | 'DESC';
+  }) {
+    this.logger.debug(
+      'get paginated app deployments sorted by last used (targetId=%s, cursor=%s, direction=%s)',
+      args.targetId,
+      args.cursor,
+      args.direction,
+    );
+    const limit = args.first ? (args.first > 0 ? Math.min(args.first, 20) : 20) : 20;
+    const isDesc = args.direction === 'DESC';
+    let cursor = null;
+    if (args.cursor) {
+      try {
+        cursor = decodeAppDeploymentSortCursor(args.cursor);
+      } catch (error) {
+        this.logger.debug(
+          'Failed to decode cursor for getPaginatedAppDeploymentsSortedByLastUsed (targetId=%s, cursor=%s): %s',
+          args.targetId,
+          args.cursor,
+          error instanceof Error ? error.message : String(error),
+        );
+      }
+    }
+    if (cursor && cursor.sortField !== 'LAST_USED') {
+      this.logger.debug(
+        'Cursor sort field mismatch (targetId=%s, cursorField=%s, requestedField=LAST_USED). Ignoring cursor.',
+        args.targetId,
+        cursor.sortField,
+      );
+      cursor = null;
+    }
+
+    const cursorInNoUsageSection = cursor !== null && cursor.sortValue === null;
+    let usageForPage: Array<{ appName: string; appVersion: string; lastUsed: string }> = [];
+
+    if (!cursorInNoUsageSection) {
+      const chDirSql = isDesc ? cSql`DESC` : cSql`ASC`;
+      let chCursorCondition = cSql``;
+      if (cursor && cursor.sortValue !== null) {
+        chCursorCondition = isDesc
+          ? cSql`HAVING lastUsed <= ${cursor.sortValue}`
+          : cSql`HAVING lastUsed >= ${cursor.sortValue}`;
+      }
+
+      let chResult;
+      try {
+        chResult = await this.clickhouse.query({
+          query: cSql`
+            SELECT
+              app_name AS appName,
+              app_version AS appVersion,
+              formatDateTimeInJodaSyntax(max(last_request), 'yyyy-MM-dd\\'T\\'HH:mm:ss.000000+00:00') AS lastUsed
+            FROM app_deployment_usage
+            WHERE target_id = ${args.targetId}
+            GROUP BY app_name, app_version
+            ${chCursorCondition}
+            ORDER BY lastUsed ${chDirSql}
+            LIMIT ${cSql.raw(String(limit + 1))}
+          `,
+          queryId: 'get-all-deployments-last-used-for-sorting',
+          timeout: 30_000,
+        });
+      } catch (error) {
+        this.logger.error(
+          'Failed to query deployment last-used from ClickHouse (targetId=%s): %s',
+          args.targetId,
+          error instanceof Error ? error.message : String(error),
+        );
+        throw error;
+      }
+
+      const chModel = z.array(
+        z.object({
+          appName: z.string(),
+          appVersion: z.string(),
+          lastUsed: z.string(),
+        }),
+      );
+      usageForPage = chModel.parse(chResult.data);
+    }
+
+    const usagePairsForPage = usageForPage.map(r => `${r.appName}:${r.appVersion}`);
+    const deploymentByPair = new Map();
+
+    if (usagePairsForPage.length > 0) {
+      const pgResult = await this.pool.query<unknown>(sql`
+        SELECT ${appDeploymentFields}
+        FROM "app_deployments"
+        WHERE "target_id" = ${args.targetId}
+          AND ("name" || ':' || "version") = ANY(${sql.array(usagePairsForPage, 'text')})
+      `);
+      for (const row of pgResult.rows) {
+        const d = AppDeploymentModel.parse(row);
+        deploymentByPair.set(`${d.name}:${d.version}`, d);
+      }
+    }
+
+    let pageItems: Array<{ node: AppDeploymentRecord; lastUsed: string | null }> = [];
+    for (const usage of usageForPage) {
+      const node = deploymentByPair.get(`${usage.appName}:${usage.appVersion}`);
+      if (node) {
+        pageItems.push({ node, lastUsed: usage.lastUsed });
+      }
+    }
+
+    if (cursor && cursor.sortValue !== null) {
+      const cursorIdx = pageItems.findIndex(item => item.node.id === cursor.id);
+      if (cursorIdx !== -1) {
+        pageItems = pageItems.slice(cursorIdx + 1);
+      } else {
+        pageItems = pageItems.filter(item => {
+          const cmp = item.lastUsed!.localeCompare(cursor.sortValue!);
+          if (cmp === 0) return item.node.id !== cursor.id;
+          return isDesc ? cmp < 0 : cmp > 0;
+        });
+      }
+    }
+
+    const remaining = limit + 1 - pageItems.length;
+    let fillHasMore = false;
+    if (remaining > 0) {
+      const dirSql = isDesc ? sql`DESC` : sql`ASC`;
+      let fillCursorCondition = sql``;
+      if (cursorInNoUsageSection) {
+        fillCursorCondition = isDesc
+          ? sql`AND "id" < ${cursor!.id}`
+          : sql`AND "id" > ${cursor!.id}`;
+      }
+
+      const excludeCurrentPage =
+        usagePairsForPage.length > 0
+          ? sql`AND NOT (("name" || ':' || "version") = ANY(${sql.array(usagePairsForPage, 'text')}))`
+          : sql``;
+
+      const fillResult = await this.pool.query<unknown>(sql`
+        SELECT ${appDeploymentFields}
+        FROM "app_deployments"
+        WHERE "target_id" = ${args.targetId}
+          ${excludeCurrentPage}
+          ${fillCursorCondition}
+        ORDER BY "id" ${dirSql}
+        LIMIT ${limit + 1}
+      `);
+
+      const candidates = fillResult.rows.map(row => AppDeploymentModel.parse(row));
+      fillHasMore = candidates.length > limit;
+
+      if (candidates.length > 0) {
+        const candidateTuples = candidates.map(
+          c => cSql`(${args.targetId}, ${c.name}, ${c.version})`,
+        );
+        let usageCheckResult;
+        try {
+          usageCheckResult = await this.clickhouse.query({
+            query: cSql`
+              SELECT DISTINCT app_name, app_version
+              FROM app_deployment_usage
+              WHERE (target_id, app_name, app_version)
+                IN (${candidateTuples.reduce((a, b) => cSql`${a}, ${b}`)})
+            `,
+            queryId: 'check-candidates-have-usage',
+            timeout: 10_000,
+          });
+        } catch (error) {
+          this.logger.error(
+            'Failed to check candidate usage from ClickHouse (targetId=%s): %s',
+            args.targetId,
+            error instanceof Error ? error.message : String(error),
+          );
+          throw error;
+        }
+        const pairsWithUsage = new Set(
+          z
+            .array(z.object({ app_name: z.string(), app_version: z.string() }))
+            .parse(usageCheckResult.data)
+            .map(r => `${r.app_name}:${r.app_version}`),
+        );
+
+        for (const candidate of candidates) {
+          if (pageItems.length >= limit + 1) break;
+          if (!pairsWithUsage.has(`${candidate.name}:${candidate.version}`)) {
+            pageItems.push({ node: candidate, lastUsed: null });
+          }
+        }
+      }
+    }
+
+    const hasNextPage = pageItems.length > limit || fillHasMore;
+    const finalItems = pageItems.slice(0, limit);
+
+    const items = finalItems.map(item => ({
+      cursor: encodeAppDeploymentSortCursor({
+        sortField: 'LAST_USED',
+        sortValue: item.lastUsed,
+        id: item.node.id,
+      }),
+      node: item.node,
+    }));
+
+    return {
+      edges: items,
+      pageInfo: {
+        hasNextPage,
+        hasPreviousPage: cursor !== null,
+        endCursor: items[items.length - 1]?.cursor ?? '',
+        startCursor: items[0]?.cursor ?? '',
+      },
+    };
+  }
+
   async getPaginatedGraphQLDocuments(args: {
     appDeploymentId: string;
     cursor: string | null;
     first: number | null;
+    operationName: string;
+    schemaCoordinates: string[] | null;
   }) {
     const limit = args.first ? (args.first > 0 ? Math.min(args.first, 20) : 20) : 20;
     const cursor = args.cursor ? decodeHashBasedCursor(args.cursor) : null;
+    const operationName = args.operationName.trim();
+    const schemaCoordinates = args.schemaCoordinates;
     const result = await this.clickhouse.query({
       query: cSql`
         SELECT
@@ -705,7 +1119,9 @@ export class AppDeployments {
         WHERE
           "app_deployment_id" = ${args.appDeploymentId}
           ${cursor?.id ? cSql`AND "document_hash" > ${cursor.id}` : cSql``}
-        ORDER BY "app_deployment_id", "document_hash"
+          ${operationName.length ? cSql`AND "operation_name" ILIKE CONCAT('%', ${operationName}, '%')` : cSql``}
+          ${schemaCoordinates?.length ? cSql`AND hasAny("schema_coordinates", ${cSql.array(schemaCoordinates, 'String')})` : cSql``}
+        ORDER BY "app_deployment_id", ${operationName.length ? cSql`positionCaseInsensitive("operation_name", ${operationName}) ASC, "operation_name" ASC` : cSql`"document_hash"`}
         LIMIT 1 BY "app_deployment_id", "document_hash"
         LIMIT ${cSql.raw(String(limit + 1))}
       `,
@@ -769,7 +1185,7 @@ export class AppDeployments {
       query: cSql`
         SELECT
           "filtered_app_deployments"."app_deployment_id" AS "appDeploymentId"
-          , formatDateTimeInJodaSyntax(max("app_deployment_usage"."last_request"), 'YYYY-MM-dd\\'T\\'HH:mm:SS.000000+00:00') AS "lastUsed"
+          , formatDateTimeInJodaSyntax(max("app_deployment_usage"."last_request"), 'yyyy-MM-dd\\'T\\'HH:mm:ss.000000+00:00') AS "lastUsed"
         FROM (
           SELECT
             "target_id"
@@ -802,6 +1218,894 @@ export class AppDeployments {
     );
 
     return model.parse(result.data);
+  }
+
+  private async getStaleDeploymentIds(args: {
+    targetId: string;
+    name: string | null;
+    lastUsedBefore: string | null;
+    neverUsedAndCreatedBefore: string | null;
+  }): Promise<string[]> {
+    const { targetId, name, lastUsedBefore, neverUsedAndCreatedBefore } = args;
+
+    if (!lastUsedBefore && !neverUsedAndCreatedBefore) {
+      return [];
+    }
+
+    const lastUsedCondition = lastUsedBefore
+      ? cSql`(target_id, app_name, app_version) IN (
+          SELECT target_id, app_name, app_version
+          FROM app_deployment_usage
+          WHERE target_id = ${targetId}
+          GROUP BY target_id, app_name, app_version
+          HAVING max(last_request) < parseDateTimeBestEffort(${lastUsedBefore})
+        )`
+      : null;
+
+    const neverUsedCondition = neverUsedAndCreatedBefore
+      ? cSql`(target_id, app_name, app_version) NOT IN (
+          SELECT DISTINCT target_id, app_name, app_version
+          FROM app_deployment_usage
+          WHERE target_id = ${targetId}
+        )`
+      : null;
+
+    const staleCondition = (
+      lastUsedCondition && neverUsedCondition
+        ? cSql`(${lastUsedCondition} OR ${neverUsedCondition})`
+        : (lastUsedCondition ?? neverUsedCondition)
+    )!;
+
+    let result;
+    try {
+      result = await this.clickhouse.query({
+        query: cSql`
+          SELECT app_deployment_id FROM app_deployments
+          WHERE target_id = ${targetId}
+            ${name ? cSql`AND app_name ILIKE ${'%' + name + '%'}` : cSql``}
+            AND ${staleCondition}
+        `,
+        queryId: 'get-stale-deployment-ids',
+        timeout: 30_000,
+      });
+    } catch (error) {
+      this.logger.error(
+        'Failed to query stale deployment IDs from clickhouse (targetId=%s, lastUsedBefore=%s, neverUsedAndCreatedBefore=%s): %s',
+        targetId,
+        lastUsedBefore,
+        neverUsedAndCreatedBefore,
+        error instanceof Error ? error.message : String(error),
+      );
+      throw error;
+    }
+
+    const model = z.array(z.object({ app_deployment_id: z.string() }));
+    const parsed = model.parse(result.data);
+
+    this.logger.debug(
+      'found %d stale deployment candidates from clickhouse (targetId=%s)',
+      parsed.length,
+      targetId,
+    );
+
+    return parsed.map(row => row.app_deployment_id);
+  }
+
+  private async getActiveDeployments(args: {
+    targetId: string;
+    schemaCoordinates: string[];
+    excludedAppDeploymentNames?: string[] | null;
+  }) {
+    // Get active deployments
+    let activeDeploymentsResult;
+    try {
+      activeDeploymentsResult = await this.clickhouse.query({
+        query: cSql`
+          SELECT
+            app_deployment_id AS "appDeploymentId",
+            any(app_name) AS "appName",
+            any(app_version) AS "appVersion"
+          FROM app_deployments
+          PREWHERE
+            target_id = ${args.targetId}
+            ${
+              args.excludedAppDeploymentNames?.length
+                ? cSql`AND app_name NOT IN (${cSql.array(args.excludedAppDeploymentNames, 'String')})`
+                : cSql``
+            }
+          GROUP BY app_deployment_id
+          HAVING min(is_active) = True
+        `,
+        queryId: 'get-active-app-deployment-ids',
+        timeout: 30_000,
+      });
+    } catch (error) {
+      this.logger.error(
+        'Failed to query active app deployments from ClickHouse (targetId=%s): %s',
+        args.targetId,
+        error instanceof Error ? error.message : String(error),
+      );
+      throw error;
+    }
+
+    const ActiveDeploymentModel = z.object({
+      appDeploymentId: z.string(),
+      appName: z.string(),
+      appVersion: z.string(),
+    });
+
+    return z.array(ActiveDeploymentModel).parse(activeDeploymentsResult.data);
+  }
+
+  private async getTotalAffectedDeployments(args: {
+    targetId: string;
+    schemaCoordinates: string[];
+    excludedAppDeploymentNames?: string[] | null;
+  }) {
+    let countResult;
+    try {
+      countResult = await this.clickhouse.query({
+        query: cSql`
+          SELECT uniq(app_deployment_id) AS "total"
+          FROM app_deployment_documents
+          PREWHERE app_deployment_id IN (
+            SELECT app_deployment_id
+            FROM app_deployments
+            PREWHERE
+              target_id = ${args.targetId}
+              ${
+                args.excludedAppDeploymentNames?.length
+                  ? cSql`AND app_name NOT IN (${cSql.array(args.excludedAppDeploymentNames, 'String')})`
+                  : cSql``
+              }
+            GROUP BY app_deployment_id
+            HAVING min(is_active) = True
+          )
+          WHERE hasAny(schema_coordinates, ${cSql.array(args.schemaCoordinates, 'String')})
+        `,
+        queryId: 'count-affected-app-deployments',
+        timeout: 30_000,
+      });
+    } catch (error) {
+      this.logger.error(
+        'Failed to count affected deployments from ClickHouse (targetId=%s): %s',
+        args.targetId,
+        error instanceof Error ? error.message : String(error),
+      );
+      throw error;
+    }
+
+    const totalDeployments =
+      z.array(z.object({ total: z.coerce.number() })).parse(countResult.data)[0]?.total ?? 0;
+    return totalDeployments;
+  }
+
+  private async getAffectedDocuments(args: {
+    targetId: string;
+    schemaCoordinates: string[];
+    firstDeployments?: number;
+    afterCursor?: string;
+    firstOperations?: number;
+    excludedAppDeploymentNames?: string[] | null;
+  }) {
+    const operationsLimit = args.firstOperations;
+    // Get limited operations per deployment (only fetch what we need)
+    let affectedDocumentsResult;
+    try {
+      affectedDocumentsResult = await this.clickhouse.query({
+        query: cSql`
+          SELECT
+            app_deployment_id AS "appDeploymentId",
+            document_hash AS "hash",
+            operation_name AS "operationName",
+            arrayIntersect(schema_coordinates, ${cSql.array(args.schemaCoordinates, 'String')}) AS "matchingCoordinates"
+          FROM app_deployment_documents
+          PREWHERE app_deployment_id IN (
+            SELECT app_deployment_id
+            FROM app_deployments
+            PREWHERE
+              target_id = ${args.targetId}
+              ${
+                args.excludedAppDeploymentNames?.length
+                  ? cSql`AND app_name NOT IN (${cSql.array(args.excludedAppDeploymentNames, 'String')})`
+                  : cSql``
+              }
+            GROUP BY app_deployment_id
+            HAVING min(is_active) = True
+          )
+          WHERE hasAny(schema_coordinates, ${cSql.array(args.schemaCoordinates, 'String')})
+          ${operationsLimit ? cSql`LIMIT ${cSql.raw(String(operationsLimit))} BY app_deployment_id` : cSql``}
+        `,
+        queryId: 'get-affected-app-deployments-by-coordinates',
+        timeout: 30_000,
+      });
+    } catch (error) {
+      this.logger.error(
+        'Failed to query affected documents from ClickHouse (targetId=%s, coordinateCount=%d): %s',
+        args.targetId,
+        args.schemaCoordinates.length,
+        error instanceof Error ? error.message : String(error),
+      );
+      throw error;
+    }
+
+    const AffectedDocumentModel = z.object({
+      appDeploymentId: z.string(),
+      hash: z.string(),
+      operationName: z.string().transform(value => (value === '' ? null : value)),
+      matchingCoordinates: z.array(z.string()),
+    });
+
+    const affectedDocuments = z.array(AffectedDocumentModel).parse(affectedDocumentsResult.data);
+    return affectedDocuments;
+  }
+
+  private async getPaginatedAffectedDeployments(args: {
+    targetId: string;
+    schemaCoordinates: string[];
+    firstDeployments?: number;
+    afterCursor?: string;
+    excludedAppDeploymentNames?: string[] | null;
+  }) {
+    // Get paginated affected deployments
+    const limit = args.firstDeployments;
+    let affectedDeploymentIdsResult;
+    try {
+      affectedDeploymentIdsResult = await this.clickhouse.query({
+        query: cSql`
+          SELECT DISTINCT app_deployment_id AS "appDeploymentId"
+          FROM app_deployment_documents
+          PREWHERE app_deployment_id IN (
+            SELECT app_deployment_id
+            FROM app_deployments
+            PREWHERE
+              target_id = ${args.targetId}
+              ${
+                args.excludedAppDeploymentNames?.length
+                  ? cSql`AND app_name NOT IN (${cSql.array(args.excludedAppDeploymentNames, 'String')})`
+                  : cSql``
+              }
+            GROUP BY app_deployment_id
+            HAVING min(is_active) = True
+          )
+          WHERE hasAny(schema_coordinates, ${cSql.array(args.schemaCoordinates, 'String')})
+          ${args.afterCursor ? cSql`AND app_deployment_id > ${args.afterCursor}` : cSql``}
+          ${limit ? cSql`ORDER BY app_deployment_id LIMIT ${cSql.raw(String(limit + 1))}` : cSql``}
+        `,
+        queryId: 'get-limited-affected-deployment-ids',
+        timeout: 30_000,
+      });
+    } catch (error) {
+      this.logger.error(
+        'Failed to query affected deployment IDs from ClickHouse (targetId=%s): %s',
+        args.targetId,
+        error instanceof Error ? error.message : String(error),
+      );
+      throw error;
+    }
+
+    const affectedDeploymentIds = z
+      .array(z.object({ appDeploymentId: z.string() }))
+      .parse(affectedDeploymentIdsResult.data)
+      .map(d => d.appDeploymentId);
+    return affectedDeploymentIds;
+  }
+
+  private async getDeploymentMetadata(args: {
+    targetId: string;
+    schemaCoordinates: string[];
+    firstDeployments?: number;
+    afterCursor?: string;
+    excludedAppDeploymentNames?: string[] | null;
+  }) {
+    const activeDeployments = await this.getActiveDeployments(args);
+
+    if (activeDeployments.length === 0) {
+      this.logger.debug('No active app deployments found (targetId=%s)', args.targetId);
+      return null;
+    }
+
+    const deploymentIdToInfo = new Map(
+      activeDeployments.map(d => [d.appDeploymentId, { name: d.appName, version: d.appVersion }]),
+    );
+
+    const deploymentIds = activeDeployments.map(d => d.appDeploymentId);
+    let timestampsResult;
+    try {
+      timestampsResult = await this.pool.query<{
+        id: string;
+        createdAt: string;
+        activatedAt: string | null;
+        retiredAt: string | null;
+      }>(
+        sql`
+          SELECT
+            "id",
+            to_json("created_at") AS "createdAt",
+            to_json("activated_at") AS "activatedAt",
+            to_json("retired_at") AS "retiredAt"
+          FROM "app_deployments"
+          WHERE "id" = ANY(${sql.array(deploymentIds, 'uuid')})
+        `,
+      );
+    } catch (error) {
+      this.logger.error(
+        'Failed to fetch deployment timestamps from postgres (targetId=%s, deploymentCount=%d): %s',
+        args.targetId,
+        deploymentIds.length,
+        error instanceof Error ? error.message : String(error),
+      );
+      throw error;
+    }
+
+    const deploymentTimestamps = new Map(
+      timestampsResult.rows.map(row => [
+        row.id,
+        {
+          createdAt: row.createdAt,
+          activatedAt: row.activatedAt,
+          retiredAt: row.retiredAt,
+        },
+      ]),
+    );
+    return {
+      deploymentTimestamps,
+      deploymentIdToInfo,
+    };
+  }
+
+  private async getOperationCounts(args: {
+    targetId: string;
+    schemaCoordinates: string[];
+    excludedAppDeploymentNames?: string[] | null;
+  }) {
+    // Get operation counts per deployment per coordinate
+    let countsResult;
+    try {
+      countsResult = await this.clickhouse.query({
+        query: cSql`
+          SELECT
+            app_deployment_id AS "appDeploymentId",
+            coord AS "coordinate",
+            count() AS "count"
+          FROM app_deployment_documents
+          ARRAY JOIN arrayIntersect(schema_coordinates, ${cSql.array(args.schemaCoordinates, 'String')}) AS coord
+          PREWHERE app_deployment_id IN (
+            SELECT app_deployment_id
+            FROM app_deployments
+            PREWHERE
+              target_id = ${args.targetId}
+              ${
+                args.excludedAppDeploymentNames?.length
+                  ? cSql`AND app_name NOT IN (${cSql.array(args.excludedAppDeploymentNames, 'String')})`
+                  : cSql``
+              }
+            GROUP BY app_deployment_id
+            HAVING min(is_active) = True
+          )
+          WHERE hasAny(schema_coordinates, ${cSql.array(args.schemaCoordinates, 'String')})
+          GROUP BY app_deployment_id, coord
+        `,
+        queryId: 'count-affected-operations-by-coordinate',
+        timeout: 30_000,
+      });
+    } catch (error) {
+      this.logger.error(
+        'Failed to count affected operations from ClickHouse (targetId=%s): %s',
+        args.targetId,
+        error instanceof Error ? error.message : String(error),
+      );
+      throw error;
+    }
+
+    const CountModel = z.object({
+      appDeploymentId: z.string(),
+      coordinate: z.string(),
+      count: z.coerce.number(),
+    });
+    const counts = z.array(CountModel).parse(countsResult.data);
+    return counts;
+  }
+
+  async getAffectedAppDeploymentsBySchemaCoordinates(args: {
+    targetId: string;
+    schemaCoordinates: string[];
+    firstDeployments?: number;
+    afterCursor?: string;
+    firstOperations?: number;
+    excludedAppDeploymentNames?: string[] | null;
+  }) {
+    const emptyResult = {
+      deployments: [],
+      totalDeployments: 0,
+      pageInfo: {
+        hasNextPage: false,
+        hasPreviousPage: false,
+        startCursor: '',
+        endCursor: '',
+      },
+    };
+
+    if (args.schemaCoordinates.length === 0) {
+      return emptyResult;
+    }
+
+    this.logger.debug(
+      'Finding affected app deployments by schema coordinates (targetId=%s, coordinateCount=%d)',
+      args.targetId,
+      args.schemaCoordinates.length,
+    );
+
+    // kick off requests
+    let [totalDeployments, affectedDeploymentIds, affectedDocuments, deploymentMetadata, counts] =
+      await Promise.all([
+        this.getTotalAffectedDeployments(args),
+        this.getPaginatedAffectedDeployments(args),
+        this.getAffectedDocuments(args),
+        this.getDeploymentMetadata(args),
+        this.getOperationCounts(args),
+      ]);
+
+    // Count total affected deployments
+    if (totalDeployments === 0) {
+      this.logger.debug(
+        'No affected operations found (targetId=%s, coordinateCount=%d)',
+        args.targetId,
+        args.schemaCoordinates.length,
+      );
+      return emptyResult;
+    }
+
+    // Get paginated affected deployments
+    const limit = args.firstDeployments;
+    // Check if there are more results (only if limit is set)
+    const hasNextPage = limit ? affectedDeploymentIds.length > limit : false;
+    if (hasNextPage && limit) {
+      affectedDeploymentIds = affectedDeploymentIds.slice(0, limit);
+    }
+
+    if (affectedDeploymentIds.length === 0) {
+      return {
+        deployments: [],
+        totalDeployments,
+        pageInfo: {
+          hasNextPage: false,
+          hasPreviousPage: !!args.afterCursor,
+          startCursor: '',
+          endCursor: '',
+        },
+      };
+    }
+
+    // Build count map: deploymentId -> coordinate -> count
+    const countMap = new Map<string, Map<string, number>>();
+    for (const { appDeploymentId, coordinate, count } of counts) {
+      let coordMap = countMap.get(appDeploymentId);
+      if (!coordMap) {
+        coordMap = new Map();
+        countMap.set(appDeploymentId, coordMap);
+      }
+      coordMap.set(coordinate, count);
+    }
+
+    // Group results by deployment and coordinate
+    // deploymentId -> coordinate -> operations
+    const deploymentCoordinateOperations = new Map<
+      string,
+      Map<string, Array<{ hash: string; name: string | null }>>
+    >();
+
+    for (const doc of affectedDocuments) {
+      let coordinateMap = deploymentCoordinateOperations.get(doc.appDeploymentId);
+      if (!coordinateMap) {
+        coordinateMap = new Map();
+        deploymentCoordinateOperations.set(doc.appDeploymentId, coordinateMap);
+      }
+
+      for (const coordinate of doc.matchingCoordinates) {
+        const ops = coordinateMap.get(coordinate) ?? [];
+        ops.push({
+          hash: doc.hash,
+          name: doc.operationName,
+        });
+        coordinateMap.set(coordinate, ops);
+      }
+    }
+
+    const deployments = [];
+    for (const deploymentId of affectedDeploymentIds) {
+      const info = deploymentMetadata?.deploymentIdToInfo.get(deploymentId);
+      const coordinateMap = deploymentCoordinateOperations.get(deploymentId);
+      const coordCounts = countMap.get(deploymentId);
+
+      if (info) {
+        const totalOperations = coordCounts
+          ? Array.from(coordCounts.values()).reduce((sum, count) => sum + count, 0)
+          : 0;
+        const operations: Record<string, Array<{ hash: string; name: string | null }>> = {};
+
+        if (coordinateMap) {
+          for (const [coordinate, ops] of coordinateMap) {
+            operations[coordinate] = ops;
+          }
+        }
+
+        const timestamps = deploymentMetadata?.deploymentTimestamps.get(deploymentId);
+        deployments.push({
+          appDeployment: {
+            id: deploymentId,
+            name: info.name,
+            version: info.version,
+            createdAt: timestamps?.createdAt ?? null,
+            activatedAt: timestamps?.activatedAt ?? null,
+            retiredAt: timestamps?.retiredAt ?? null,
+          },
+          affectedOperationsByCoordinate: operations,
+          countByCoordinate: coordCounts ? Object.fromEntries(coordCounts) : {},
+          totalOperationsByCoordinate: totalOperations,
+        });
+      }
+    }
+
+    this.logger.debug(
+      'Found %d affected app deployments (returning: %d) with %d total operations (targetId=%s)',
+      totalDeployments,
+      deployments.length,
+      affectedDocuments.length,
+      args.targetId,
+    );
+
+    // Sort deployments by ID to match the order from query
+    deployments.sort((a, b) => a.appDeployment.id.localeCompare(b.appDeployment.id));
+
+    return {
+      deployments,
+      totalDeployments,
+      pageInfo: {
+        hasNextPage,
+        hasPreviousPage: !!args.afterCursor,
+        startCursor: deployments[0]?.appDeployment.id ?? '',
+        endCursor: deployments[deployments.length - 1]?.appDeployment.id ?? '',
+      },
+    };
+  }
+
+  async getActiveAppDeployments(args: {
+    targetId: string;
+    cursor: string | null;
+    first: number | null;
+    filter: {
+      name?: string | null;
+      lastUsedBefore?: string | null;
+      neverUsedAndCreatedBefore?: string | null;
+    };
+  }) {
+    this.logger.debug(
+      'get active app deployments (targetId=%s, cursor=%s, first=%s, filter=%o)',
+      args.targetId,
+      args.cursor ? '[provided]' : '[none]',
+      args.first,
+      args.filter,
+    );
+
+    if (args.filter.lastUsedBefore && Number.isNaN(Date.parse(args.filter.lastUsedBefore))) {
+      this.logger.debug(
+        'invalid lastUsedBefore filter (targetId=%s, value=%s)',
+        args.targetId,
+        args.filter.lastUsedBefore,
+      );
+      throw new Error(
+        `Invalid lastUsedBefore filter: "${args.filter.lastUsedBefore}" is not a valid date string`,
+      );
+    }
+    if (
+      args.filter.neverUsedAndCreatedBefore &&
+      Number.isNaN(Date.parse(args.filter.neverUsedAndCreatedBefore))
+    ) {
+      this.logger.debug(
+        'invalid neverUsedAndCreatedBefore filter (targetId=%s, value=%s)',
+        args.targetId,
+        args.filter.neverUsedAndCreatedBefore,
+      );
+      throw new Error(
+        `Invalid neverUsedAndCreatedBefore filter: "${args.filter.neverUsedAndCreatedBefore}" is not a valid date string`,
+      );
+    }
+
+    const limit = args.first ? (args.first > 0 ? Math.min(args.first, 20) : 20) : 20;
+
+    let cursor = null;
+    if (args.cursor) {
+      try {
+        cursor = decodeCreatedAtAndUUIDIdBasedCursor(args.cursor);
+      } catch (error) {
+        this.logger.error(
+          'Failed to decode cursor for activeAppDeployments (targetId=%s, cursor=%s): %s',
+          args.targetId,
+          args.cursor,
+          error instanceof Error ? error.message : String(error),
+        );
+        throw new Error(
+          `Invalid cursor format for activeAppDeployments. Expected a valid pagination cursor.`,
+        );
+      }
+    }
+
+    // Get active deployments from db
+    const hasDateFilter = args.filter.lastUsedBefore || args.filter.neverUsedAndCreatedBefore;
+    const maxDeployments = 1000; // note: hard limit, only applies when no date filters are used
+
+    // When date filters are present, query clickhouse first to identify stale deployment IDs
+    // This avoids the LIMIT 1000 problem where old stale deployments get cut off
+    let staleDeploymentIds: string[] | undefined;
+    if (hasDateFilter) {
+      staleDeploymentIds = await this.getStaleDeploymentIds({
+        targetId: args.targetId,
+        name: args.filter.name ?? null,
+        lastUsedBefore: args.filter.lastUsedBefore ?? null,
+        neverUsedAndCreatedBefore: args.filter.neverUsedAndCreatedBefore ?? null,
+      });
+
+      this.logger.debug(
+        'found %d stale deployment candidates from clickhouse (targetId=%s)',
+        staleDeploymentIds.length,
+        args.targetId,
+      );
+
+      if (staleDeploymentIds.length === 0) {
+        return {
+          edges: [],
+          pageInfo: {
+            hasNextPage: false,
+            hasPreviousPage: cursor !== null,
+            endCursor: '',
+            startCursor: '',
+          },
+        };
+      }
+    }
+
+    // Fetch deployments from postgres
+    // When using stale deployment IDs, batch queries to avoid issues with large arrays
+    const BATCH_SIZE = 1000;
+    let activeDeployments;
+
+    try {
+      if (staleDeploymentIds) {
+        // Batch the IDs to avoid query size issues
+        const batches: string[][] = [];
+        for (let i = 0; i < staleDeploymentIds.length; i += BATCH_SIZE) {
+          batches.push(staleDeploymentIds.slice(i, i + BATCH_SIZE));
+        }
+
+        const batchResults = await Promise.all(
+          batches.map(batchIds =>
+            this.pool.query<unknown>(sql`
+              SELECT
+                ${appDeploymentFields}
+              FROM
+                "app_deployments"
+              WHERE
+                "id" = ANY(${sql.array(batchIds, 'uuid')})
+                AND "activated_at" IS NOT NULL
+                AND "retired_at" IS NULL
+            `),
+          ),
+        );
+
+        // Merge and sort results
+        activeDeployments = batchResults
+          .flatMap(result => result.rows.map(row => AppDeploymentModel.parse(row)))
+          .sort((a, b) => {
+            // Sort by created_at DESC, id ASC
+            if (a.createdAt > b.createdAt) return -1;
+            if (a.createdAt < b.createdAt) return 1;
+            return a.id.localeCompare(b.id);
+          });
+      } else {
+        const activeDeploymentsResult = await this.pool.query<unknown>(sql`
+          SELECT
+            ${appDeploymentFields}
+          FROM
+            "app_deployments"
+          WHERE
+            "target_id" = ${args.targetId}
+            ${args.filter.name ? sql`AND "name" ILIKE ${'%' + args.filter.name + '%'}` : sql``}
+            AND "activated_at" IS NOT NULL
+            AND "retired_at" IS NULL
+          ORDER BY "created_at" DESC, "id" ASC
+          LIMIT ${maxDeployments}
+        `);
+
+        activeDeployments = activeDeploymentsResult.rows.map(row => AppDeploymentModel.parse(row));
+      }
+    } catch (error) {
+      const batchCount = staleDeploymentIds ? Math.ceil(staleDeploymentIds.length / BATCH_SIZE) : 0;
+      this.logger.error(
+        'Failed to query active deployments from PostgreSQL (targetId=%s, batchCount=%d, totalIds=%d): %s',
+        args.targetId,
+        batchCount,
+        staleDeploymentIds?.length ?? 0,
+        error instanceof Error ? error.message : String(error),
+      );
+      throw error;
+    }
+
+    this.logger.debug(
+      'found %d active deployments for target (targetId=%s)',
+      activeDeployments.length,
+      args.targetId,
+    );
+
+    if (activeDeployments.length === 0) {
+      return {
+        edges: [],
+        pageInfo: {
+          hasNextPage: false,
+          hasPreviousPage: cursor !== null,
+          endCursor: '',
+          startCursor: '',
+        },
+      };
+    }
+
+    // Get lastUsed data from clickhouse for all active deployment IDs
+    // Batch to avoid clickhouse Cloud's HTTP form field size limit
+    const deploymentIds = activeDeployments.map(d => d.id);
+    let usageData;
+    try {
+      const batches = [];
+      for (let i = 0; i < deploymentIds.length; i += BATCH_SIZE) {
+        batches.push(deploymentIds.slice(i, i + BATCH_SIZE));
+      }
+      const batchResults = await Promise.all(
+        batches.map(batchIds => this.getLastUsedForAppDeployments({ appDeploymentIds: batchIds })),
+      );
+      usageData = batchResults.flat();
+    } catch (error) {
+      this.logger.error(
+        'Failed to query lastUsed data from ClickHouse (targetId=%s, deploymentCount=%d): %s',
+        args.targetId,
+        deploymentIds.length,
+        error instanceof Error ? error.message : String(error),
+      );
+      throw error;
+    }
+
+    // Create a map of deployment ID -> lastUsed date
+    const lastUsedMap = new Map<string, string>();
+    for (const usage of usageData) {
+      lastUsedMap.set(usage.appDeploymentId, usage.lastUsed);
+    }
+
+    // Apply OR filter logic for date filters
+    // If no date filters provided, return all active deployments (name filter already applied in SQL)
+    const filteredDeployments = activeDeployments.filter(deployment => {
+      // If no date filters, include all deployments
+      if (!hasDateFilter) {
+        return true;
+      }
+
+      const lastUsed = lastUsedMap.get(deployment.id);
+      const hasBeenUsed = lastUsed !== undefined;
+
+      // Check lastUsedBefore filter, deployment HAS been used AND was last used before the threshold
+      if (args.filter.lastUsedBefore && hasBeenUsed) {
+        const lastUsedDate = new Date(lastUsed);
+        const thresholdDate = new Date(args.filter.lastUsedBefore);
+        if (Number.isNaN(thresholdDate.getTime())) {
+          throw new Error(
+            `Invalid lastUsedBefore filter: "${args.filter.lastUsedBefore}" is not a valid date`,
+          );
+        }
+        if (lastUsedDate < thresholdDate) {
+          return true;
+        }
+      }
+
+      // Check neverUsedAndCreatedBefore filter, deployment has NEVER been used AND was created before threshold
+      if (args.filter.neverUsedAndCreatedBefore && !hasBeenUsed) {
+        const createdAtDate = new Date(deployment.createdAt);
+        const thresholdDate = new Date(args.filter.neverUsedAndCreatedBefore);
+        if (Number.isNaN(thresholdDate.getTime())) {
+          throw new Error(
+            `Invalid neverUsedAndCreatedBefore filter: "${args.filter.neverUsedAndCreatedBefore}" is not a valid date`,
+          );
+        }
+        if (createdAtDate < thresholdDate) {
+          return true;
+        }
+      }
+
+      return false;
+    });
+
+    this.logger.debug(
+      'after filter: %d deployments match criteria (targetId=%s)',
+      filteredDeployments.length,
+      args.targetId,
+    );
+
+    // apply cursor-based pagination
+    // Order is: created_at DESC, id ASC
+    // Items after cursor have: smaller created_at OR (same created_at AND larger id)
+    // Note: Compare ISO strings directly to preserve microsecond precision (JS Date loses it)
+    let paginatedDeployments = filteredDeployments;
+    if (cursor) {
+      paginatedDeployments = filteredDeployments.filter(deployment => {
+        if (deployment.createdAt < cursor.createdAt) return true;
+        if (deployment.createdAt === cursor.createdAt && deployment.id > cursor.id) return true;
+        return false;
+      });
+    }
+
+    // Apply limit
+    const hasNextPage = paginatedDeployments.length > limit;
+    const items = paginatedDeployments.slice(0, limit).map(node => ({
+      cursor: encodeCreatedAtAndUUIDIdBasedCursor(node),
+      node,
+    }));
+
+    return {
+      edges: items,
+      pageInfo: {
+        hasNextPage,
+        hasPreviousPage: cursor !== null,
+        endCursor: items[items.length - 1]?.cursor ?? '',
+        startCursor: items[0]?.cursor ?? '',
+      },
+    };
+  }
+
+  async getAppDeploymentTrafficPercentage(args: {
+    targetId: string;
+    appName: string;
+    appVersion: string;
+    periodDays: number;
+  }): Promise<{
+    trafficPercentage: number;
+    totalOperations: number;
+    appDeploymentOperations: number;
+  } | null> {
+    const periodFrom = startOfDay(subDays(new Date(), args.periodDays));
+
+    const periodTo = new Date();
+
+    const result = await this.clickhouse.query({
+      query: cSql`
+        SELECT
+          SUM(CASE WHEN "client_name" = ${args.appName} AND "client_version" = ${args.appVersion} THEN "total" ELSE 0 END) AS "appDeploymentOps"
+          , SUM("total") AS "totalOps"
+        FROM "operations_daily"
+        WHERE
+          "target" = ${args.targetId}
+          AND "timestamp" >= parseDateTimeBestEffort(${periodFrom.toISOString()})
+          AND "timestamp" <= parseDateTimeBestEffort(${periodTo.toISOString()})
+      `,
+      queryId: 'get-app-deployment-traffic-percentage',
+      timeout: 20_000,
+    });
+
+    const model = z.array(
+      z.object({
+        appDeploymentOps: z.string().transform(str => parseInt(str, 10)),
+        totalOps: z.string().transform(str => parseInt(str, 10)),
+      }),
+    );
+
+    const parsed = model.parse(result.data);
+
+    if (parsed.length === 0 || parsed[0].totalOps === 0) {
+      return null;
+    }
+
+    const { appDeploymentOps, totalOps } = parsed[0];
+
+    return {
+      trafficPercentage: (appDeploymentOps / totalOps) * 100,
+      totalOperations: totalOps,
+      appDeploymentOperations: appDeploymentOps,
+    };
   }
 }
 

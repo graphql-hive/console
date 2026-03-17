@@ -1,11 +1,11 @@
 #!/usr/bin/env node
-import { hostname } from 'os';
 import {
   configureTracing,
   createServer,
   registerShutdown,
   registerTRPC,
   reportReadiness,
+  sentryInit,
   startMetrics,
   TracingInstance,
 } from '@hive/service-common';
@@ -23,14 +23,12 @@ async function main() {
     });
 
     tracing.instrumentNodeFetch();
-    tracing.build();
-    tracing.start();
+    tracing.setup();
   }
 
   if (env.sentry) {
-    Sentry.init({
+    sentryInit({
       dist: 'policy',
-      serverName: hostname(),
       enabled: !!env.sentry,
       environment: env.environment,
       dsn: env.sentry.dsn,
@@ -89,7 +87,7 @@ async function main() {
     });
 
     if (env.prometheus) {
-      await startMetrics(env.prometheus.labels.instance);
+      await startMetrics(env.prometheus.labels.instance, env.prometheus.port);
     }
   } catch (error) {
     server.log.fatal(error);

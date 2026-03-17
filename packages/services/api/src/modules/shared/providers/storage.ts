@@ -3,6 +3,7 @@ import type { DatabasePool } from 'slonik';
 import type { PolicyConfigurationObject } from '@hive/policy';
 import type {
   ConditionalBreakingChangeMetadata,
+  PaginatedOrganizationInvitationConnection,
   PaginatedSchemaVersionConnection,
   SchemaChangeType,
   SchemaCheck,
@@ -11,7 +12,7 @@ import type {
   SchemaVersion,
   TargetBreadcrumb,
 } from '@hive/storage';
-import type { RegistryModel, SchemaChecksFilter } from '../../../__generated__/types';
+import type { SchemaChecksFilter } from '../../../__generated__/types';
 import type {
   Alert,
   AlertChannel,
@@ -24,7 +25,6 @@ import type {
   Organization,
   OrganizationBilling,
   OrganizationInvitation,
-  OrganizationMemberRole,
   PaginatedDocumentCollectionOperations,
   PaginatedDocumentCollections,
   Project,
@@ -35,9 +35,12 @@ import type {
   TargetSettings,
   User,
 } from '../../../shared/entities';
-import type { OrganizationAccessScope } from '../../auth/providers/organization-access';
-import type { ProjectAccessScope } from '../../auth/providers/project-access';
-import type { TargetAccessScope } from '../../auth/providers/target-access';
+import type {
+  OrganizationAccessScope,
+  ProjectAccessScope,
+  TargetAccessScope,
+} from '../../auth/providers/scopes';
+import type { ResourceAssignmentGroup } from '../../organization/lib/resource-assignment-model';
 import type { Contracts } from '../../schema/providers/contracts';
 import type { SchemaCoordinatesDiffResult } from '../../schema/providers/inspector';
 
@@ -69,7 +72,6 @@ export interface Storage {
   isReady(): Promise<boolean>;
   ensureUserExists(_: {
     superTokensUserId: string;
-    externalAuthUserId?: string | null;
     email: string;
     oidcIntegration: null | {
       id: string;
@@ -77,7 +79,17 @@ export interface Storage {
     };
     firstName: string | null;
     lastName: string | null;
-  }): Promise<'created' | 'no_action'>;
+  }): Promise<
+    | {
+        ok: true;
+        user: User;
+        action: 'created' | 'no_action';
+      }
+    | {
+        ok: false;
+        reason: string;
+      }
+  >;
 
   getUserBySuperTokenId(_: { superTokensUserId: string }): Promise<User | null>;
   getUserById(_: { id: string }): Promise<User | null>;
@@ -85,19 +97,19 @@ export interface Storage {
   updateUser(_: { id: string; fullName: string; displayName: string }): Promise<User | never>;
 
   getOrganizationId(_: { organizationSlug: string }): Promise<string | null>;
-  getOrganizationByInviteCode(_: { inviteCode: string }): Promise<Organization | null>;
+  getOrganizationByInviteCode(_: {
+    inviteCode: string;
+    email: string;
+  }): Promise<Organization | null>;
   getOrganizationBySlug(_: { slug: string }): Promise<Organization | null>;
   getOrganizationByGitHubInstallationId(_: {
     installationId: string;
   }): Promise<Organization | null>;
   getOrganization(_: { organizationId: string }): Promise<Organization | never>;
-  getMyOrganization(_: { userId: string }): Promise<Organization | null>;
   getOrganizations(_: { userId: string }): Promise<readonly Organization[] | never>;
   createOrganization(
     _: Pick<Organization, 'slug'> & {
       userId: string;
-      adminScopes: ReadonlyArray<OrganizationAccessScope | ProjectAccessScope | TargetAccessScope>;
-      viewerScopes: ReadonlyArray<OrganizationAccessScope | ProjectAccessScope | TargetAccessScope>;
       reservedSlugs: string[];
     },
   ): Promise<
@@ -138,10 +150,15 @@ export interface Storage {
 
   updateOrganizationRateLimits(
     _: OrganizationSelector & Pick<Organization, 'monthlyRateLimit'>,
+    action?: () => Promise<void>,
   ): Promise<Organization | never>;
 
   createOrganizationInvitation(
-    _: OrganizationSelector & { email: string; roleId: string },
+    _: OrganizationSelector & {
+      email: string;
+      roleId: string;
+      resourceAssignments: ResourceAssignmentGroup | null;
+    },
   ): Promise<OrganizationInvitation | never>;
 
   deleteOrganizationInvitationByEmail(
@@ -173,10 +190,15 @@ export interface Storage {
     },
   ): Promise<void>;
 
-  getOrganizationMembers(_: OrganizationSelector): Promise<readonly Member[] | never>;
   countOrganizationMembers(_: OrganizationSelector): Promise<number>;
 
-  getOrganizationInvitations(_: OrganizationSelector): Promise<readonly OrganizationInvitation[]>;
+  getOrganizationInvitations(
+    organizationId: string,
+    args: {
+      first: number | null;
+      after: string | null;
+    },
+  ): Promise<PaginatedOrganizationInvitationConnection>;
 
   getOrganizationOwnerId(_: OrganizationSelector): Promise<string | null>;
 
@@ -190,14 +212,6 @@ export interface Storage {
     ReadonlyArray<ReadonlyArray<OrganizationAccessScope | ProjectAccessScope | TargetAccessScope>>
   >;
 
-  hasOrganizationMemberPairs(
-    _: readonly (OrganizationSelector & { userId: string })[],
-  ): Promise<readonly boolean[]>;
-
-  hasOrganizationProjectMemberPairs(
-    _: readonly (ProjectSelector & { userId: string })[],
-  ): Promise<readonly boolean[]>;
-
   addOrganizationMemberViaInvitationCode(
     _: OrganizationSelector & {
       code: string;
@@ -207,57 +221,7 @@ export interface Storage {
 
   deleteOrganizationMember(_: OrganizationSelector & { userId: string }): Promise<void>;
 
-  updateOrganizationMemberAccess(
-    _: OrganizationSelector & {
-      userId: string;
-      scopes: ReadonlyArray<OrganizationAccessScope | ProjectAccessScope | TargetAccessScope>;
-    },
-  ): Promise<void>;
-
-  hasOrganizationMemberRoleName(_: {
-    organizationId: string;
-    roleName: string;
-    excludeRoleId?: string;
-  }): Promise<boolean>;
-  getOrganizationMemberRoles(_: {
-    organizationId: string;
-  }): Promise<ReadonlyArray<OrganizationMemberRole>>;
-  getViewerOrganizationMemberRole(_: { organizationId: string }): Promise<OrganizationMemberRole>;
-  getAdminOrganizationMemberRole(_: { organizationId: string }): Promise<OrganizationMemberRole>;
-  getOrganizationMemberRole(_: { organizationId: string; roleId: string }): Promise<
-    | (OrganizationMemberRole & {
-        membersCount: number;
-      })
-    | null
-  >;
-  createOrganizationMemberRole(_: {
-    organizationId: string;
-    name: string;
-    description: string;
-    scopes: ReadonlyArray<OrganizationAccessScope | ProjectAccessScope | TargetAccessScope>;
-  }): Promise<OrganizationMemberRole>;
-  updateOrganizationMemberRole(_: {
-    organizationId: string;
-    roleId: string;
-    name: string;
-    description: string;
-    scopes: ReadonlyArray<OrganizationAccessScope | ProjectAccessScope | TargetAccessScope>;
-  }): Promise<OrganizationMemberRole>;
-  assignOrganizationMemberRole(_: {
-    organizationId: string;
-    roleId: string;
-    userId: string;
-  }): Promise<void>;
-  /**
-   * Remove it after all users have been migrated to the new role system.
-   */
-  assignOrganizationMemberRoleToMany(_: {
-    organizationId: string;
-    roleId: string;
-    userIds: readonly string[];
-  }): Promise<void>;
   deleteOrganizationMemberRole(_: { organizationId: string; roleId: string }): Promise<void>;
-  getMembersWithoutRole(_: { organizationId: string }): Promise<readonly Member[]>;
 
   getProject(_: ProjectSelector): Promise<Project | never>;
 
@@ -266,6 +230,10 @@ export interface Storage {
   getProjectBySlug(_: { slug: string } & OrganizationSelector): Promise<Project | null>;
 
   getProjects(_: OrganizationSelector): Promise<Project[] | never>;
+
+  getProjectById(projectId: string): Promise<Project | null>;
+
+  findProjectsByIds(args: { projectIds: Array<string> }): Promise<Map<string, Project>>;
 
   createProject(_: Pick<Project, 'type'> & { slug: string } & OrganizationSelector): Promise<
     | {
@@ -285,7 +253,7 @@ export interface Storage {
     | never
   >;
 
-  updateProjectSlug(_: ProjectSelector & { slug: string; userId: string }): Promise<
+  updateProjectSlug(_: ProjectSelector & { slug: string }): Promise<
     | {
         ok: true;
         project: Project;
@@ -309,15 +277,7 @@ export interface Storage {
     },
   ): Promise<Project>;
 
-  disableExternalSchemaComposition(_: ProjectSelector): Promise<Project>;
-
   enableProjectNameInGithubCheck(_: ProjectSelector): Promise<Project>;
-
-  updateProjectRegistryModel(
-    _: ProjectSelector & {
-      model: RegistryModel;
-    },
-  ): Promise<Project>;
 
   getTargetId(_: {
     organizationSlug: string;
@@ -342,7 +302,7 @@ export interface Storage {
       }
   >;
 
-  updateTargetSlug(_: TargetSelector & { slug: string; userId: string }): Promise<
+  updateTargetSlug(_: TargetSelector & { slug: string }): Promise<
     | {
         ok: true;
         target: Target;
@@ -370,17 +330,27 @@ export interface Storage {
 
   getTargets(_: ProjectSelector): Promise<readonly Target[]>;
 
+  findTargetsByIds(args: {
+    organizationId: string;
+    targetIds: Array<string>;
+  }): Promise<Map<string, Target>>;
+
   getTargetIdsOfOrganization(_: OrganizationSelector): Promise<readonly string[]>;
   getTargetIdsOfProject(_: ProjectSelector): Promise<readonly string[]>;
   getTargetSettings(_: TargetSelector): Promise<TargetSettings | never>;
 
-  setTargetValidation(
-    _: TargetSelector & { enabled: boolean },
+  updateTargetValidationSettings(
+    _: TargetSelector & Partial<TargetSettings['validation']>,
   ): Promise<TargetSettings['validation'] | never>;
 
-  updateTargetValidationSettings(
-    _: TargetSelector & Omit<TargetSettings['validation'], 'enabled'>,
-  ): Promise<TargetSettings['validation'] | never>;
+  updateTargetDangerousChangeClassification(
+    _: TargetSelector & Pick<TargetSettings, 'failDiffOnDangerousChange'>,
+  ): Promise<TargetSettings | never>; // @todo decide if something should be returned.
+
+  updateTargetAppDeploymentProtectionSettings(
+    _: Pick<TargetSelector, 'targetId' | 'projectId'> &
+      Partial<TargetSettings['appDeploymentProtection']>,
+  ): Promise<TargetSettings['appDeploymentProtection']>;
 
   countSchemaVersionsOfProject(
     _: ProjectSelector & {
@@ -401,21 +371,9 @@ export interface Storage {
 
   hasSchema(_: TargetSelector): Promise<boolean>;
 
-  getLatestSchemas(
-    _: {
-      onlyComposable?: boolean;
-    } & TargetSelector,
-  ): Promise<{
-    schemas: Schema[];
-    versionId: string;
-    valid: boolean;
-  } | null>;
-
   getLatestValidVersion(_: { targetId: string }): Promise<SchemaVersion | never>;
 
   getMaybeLatestValidVersion(_: { targetId: string }): Promise<SchemaVersion | null | never>;
-
-  getLatestVersion(_: TargetSelector): Promise<SchemaVersion | never>;
 
   getMaybeLatestVersion(_: TargetSelector): Promise<SchemaVersion | null>;
 
@@ -432,10 +390,10 @@ export interface Storage {
    * The action id is the id of the action that created the schema version, it is user provided.
    * Multiple entries with the same action ID can exist. In that case the latest one is returned.
    */
-  getSchemaVersionByActionId(_: {
+  getSchemaVersionByCommit(_: {
     targetId: string;
     projectId: string;
-    actionId: string;
+    commit: string;
   }): Promise<SchemaVersion | null>;
   getMatchingServiceSchemaOfVersions(versions: {
     before: string | null;
@@ -456,12 +414,36 @@ export interface Storage {
     first: number | null;
     cursor: null | string;
   }): Promise<PaginatedSchemaVersionConnection>;
-  getVersion(_: TargetSelector & { versionId: string }): Promise<SchemaVersion | never>;
+  getPaginatedSchemaChecksForSchemaProposal<
+    TransformedSchemaCheck extends SchemaCheck = SchemaCheck,
+  >(_: {
+    proposalId: string;
+    first: number | null;
+    cursor: null | string;
+    transformNode?: (check: SchemaCheck) => TransformedSchemaCheck;
+    latest?: boolean;
+  }): Promise<
+    Readonly<{
+      edges: ReadonlyArray<{
+        // @todo consider conditionally excluding this from the query for performance
+        // Omit<TransformedSchemaCheck, 'supergraphSDL' | 'compositeSchemaSDL' | 'schemaSDL'>;
+        node: TransformedSchemaCheck;
+        cursor: string;
+      }>;
+      pageInfo: Readonly<{
+        hasNextPage: boolean;
+        hasPreviousPage: boolean;
+        startCursor: string;
+        endCursor: string;
+      }>;
+    }>
+  >;
+  getMaybeVersion(_: TargetSelector & { versionId: string }): Promise<SchemaVersion | null>;
   deleteSchema(
     _: {
       serviceName: string;
       composable: boolean;
-      actionFn(): Promise<void>;
+      actionFn(versionId: string): Promise<void>;
       changes: Array<SchemaChangeType> | null;
       diffSchemaVersionId: string | null;
       conditionalBreakingChangeMetadata: null | ConditionalBreakingChangeMetadata;
@@ -474,12 +456,19 @@ export interface Storage {
             supergraphSDL: null;
             schemaCompositionErrors: Array<SchemaCompositionError>;
             tags: null;
+            schemaMetadata: null;
+            metadataAttributes: null;
           }
         | {
             compositeSchemaSDL: string;
             supergraphSDL: string | null;
             schemaCompositionErrors: null;
             tags: null | Array<string>;
+            schemaMetadata: null | Record<
+              string,
+              Array<{ name: string; content: string; source: string | null }>
+            >;
+            metadataAttributes: null | Record<string, string[]>;
           }
       ),
   ): Promise<DeletedCompositeSchema & { versionId: string }>;
@@ -495,7 +484,7 @@ export interface Storage {
       commit: string;
       logIds: string[];
       base_schema: string | null;
-      actionFn(): Promise<void>;
+      actionFn(versionId: string): Promise<void>;
       changes: Array<SchemaChangeType>;
       previousSchemaVersion: null | string;
       diffSchemaVersionId: null | string;
@@ -513,12 +502,19 @@ export interface Storage {
             supergraphSDL: null;
             schemaCompositionErrors: Array<SchemaCompositionError>;
             tags: null;
+            schemaMetadata: null;
+            metadataAttributes: null;
           }
         | {
             compositeSchemaSDL: string;
             supergraphSDL: string | null;
             schemaCompositionErrors: null;
             tags: null | Array<string>;
+            schemaMetadata: null | Record<
+              string,
+              Array<{ name: string; content: string; source: string | null }>
+            >;
+            metadataAttributes: null | Record<string, string[]>;
           }
       ),
   ): Promise<SchemaVersion | never>;
@@ -530,23 +526,7 @@ export interface Storage {
    */
   getSchemaChangesForVersion(_: { versionId: string }): Promise<null | Array<SchemaChangeType>>;
 
-  updateVersionStatus(
-    _: {
-      valid: boolean;
-      versionId: string;
-    } & TargetSelector,
-  ): Promise<SchemaVersion | never>;
-
   getSchemaLog(_: { commit: string; targetId: string }): Promise<SchemaLog>;
-
-  createActivity(
-    _: {
-      userId: string;
-      type: string;
-      meta: object;
-    } & OrganizationSelector &
-      Partial<Pick<TargetSelector, 'projectId' | 'targetId'>>,
-  ): Promise<void>;
 
   addSlackIntegration(_: OrganizationSelector & { token: string }): Promise<void>;
 
@@ -658,6 +638,7 @@ export interface Storage {
     tokenEndpoint: string;
     userinfoEndpoint: string;
     authorizationEndpoint: string;
+    additionalScopes: readonly string[];
   }): Promise<{ type: 'ok'; oidcIntegration: OIDCIntegration } | { type: 'error'; reason: string }>;
 
   updateOIDCIntegration(_: {
@@ -667,13 +648,26 @@ export interface Storage {
     tokenEndpoint: string | null;
     userinfoEndpoint: string | null;
     authorizationEndpoint: string | null;
+    additionalScopes: readonly string[] | null;
   }): Promise<OIDCIntegration>;
 
   deleteOIDCIntegration(_: { oidcIntegrationId: string }): Promise<void>;
 
   updateOIDCRestrictions(_: {
     oidcIntegrationId: string;
-    oidcUserAccessOnly: boolean;
+    oidcUserJoinOnly: boolean | null;
+    oidcUserAccessOnly: boolean | null;
+    requireInvitation: boolean | null;
+  }): Promise<OIDCIntegration>;
+
+  updateOIDCDefaultMemberRole(_: {
+    oidcIntegrationId: string;
+    roleId: string;
+  }): Promise<OIDCIntegration>;
+
+  updateOIDCDefaultAssignedResources(_: {
+    oidcIntegrationId: string;
+    assignedResources: ResourceAssignmentGroup;
   }): Promise<OIDCIntegration>;
 
   createCDNAccessToken(_: {
@@ -791,7 +785,13 @@ export interface Storage {
   /**
    * Persist a schema check record in the database.
    */
-  createSchemaCheck(_: SchemaCheckInput & { expiresAt: Date | null }): Promise<SchemaCheck>;
+  createSchemaCheck(
+    _: SchemaCheckInput & {
+      expiresAt: Date | null;
+      schemaProposalId?: string | null;
+      schemaProposalChanges: null | Array<SchemaChangeType>;
+    },
+  ): Promise<SchemaCheck>;
   /**
    * Delete the expired schema checks from the database.
    */
@@ -842,8 +842,9 @@ export interface Storage {
     /** We inject this here as a dirty way to avoid chicken egg issues :) */
     contracts: Contracts;
     schemaCheckId: string;
-    userId: string;
+    userId: string | null;
     comment: string | null | undefined;
+    author: string | null | undefined;
   }): Promise<SchemaCheck | null>;
 
   /**
@@ -854,12 +855,9 @@ export interface Storage {
     contextId: string;
   }): Promise<Map<string, SchemaChangeType>>;
 
-  getTargetBreadcrumbForTargetId(_: { targetId: string }): Promise<TargetBreadcrumb | null>;
+  getTargetById(targetId: string): Promise<Target | null>;
 
-  /**
-   * Get an user that belongs to a specific organization by id.
-   */
-  getOrganizationUser(_: { organizationId: string; userId: string }): Promise<User | null>;
+  getTargetBreadcrumbForTargetId(_: { targetId: string }): Promise<TargetBreadcrumb | null>;
 
   // Zendesk
   setZendeskUserId(_: { userId: string; zendeskId: string }): Promise<void>;

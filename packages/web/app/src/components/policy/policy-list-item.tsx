@@ -1,7 +1,7 @@
 import { ReactElement } from 'react';
 import type { JSONSchema } from 'json-schema-typed';
 import { InfoIcon } from 'lucide-react';
-import { Checkbox } from '@/components/ui/checkbox';
+import { Checkbox } from '@/components/base/checkbox/checkbox';
 import { Markdown } from '@/components/v2/markdown';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import { RuleInstanceSeverityLevel } from '@/gql/graphql';
@@ -36,6 +36,7 @@ function extractBaseSchema(configJsonSchema: JSONSchema | null | undefined): JSO
 }
 
 export function PolicyListItem(props: {
+  disabled?: boolean;
   ruleInfo: FragmentType<typeof PolicyListItem_RuleInfoFragment>;
   overridingParentRule: boolean;
 }): ReactElement {
@@ -55,6 +56,7 @@ export function PolicyListItem(props: {
               id={ruleInfo.id}
               value={ruleInfo.id}
               checked={enabled}
+              disabled={props.disabled}
               onCheckedChange={newState => toggleRuleState(newState as boolean)}
             />
           </div>
@@ -78,7 +80,7 @@ export function PolicyListItem(props: {
                     </>
                   }
                 >
-                  <InfoIcon className="ml-2 inline-block size-4 text-orange-500" />
+                  <InfoIcon className="text-accent ml-2 inline-block size-4" />
                 </Tooltip>
               </label>
             </div>
@@ -87,7 +89,7 @@ export function PolicyListItem(props: {
                 <div>
                   <SeverityLevelToggle canTurnOff={props.overridingParentRule} rule={ruleInfo.id} />
                 </div>
-                <div className="grid grow grid-cols-4 align-middle [&>*]:min-h-[40px] [&>*]:border-l-[1px] [&>*]:border-l-gray-800">
+                <div className="[&>*]:border-l-neutral-5 grid grow grid-cols-4 align-middle [&>*]:min-h-[40px] [&>*]:border-l-[1px]">
                   {shouldShowRuleConfig && (
                     <PolicyRuleConfig
                       rule={ruleInfo.id}
@@ -99,8 +101,8 @@ export function PolicyListItem(props: {
               </div>
             ) : null}
             {props.overridingParentRule && enabled ? (
-              <div className="mt-4 text-xs font-medium text-gray-400">
-                <p className="mr-2 inline-block text-sm font-medium text-orange-500">!</p>
+              <div className="text-neutral-10 mt-4 text-xs font-medium">
+                <p className="text-accent mr-2 inline-block text-sm font-medium">!</p>
                 You are {severity === RuleInstanceSeverityLevel.Off ? 'disabling' : 'overriding'} a
                 rule configured at the organization level
               </div>

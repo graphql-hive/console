@@ -26,7 +26,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 
 const CollectionQuery = graphql(`
   query Collection($selector: TargetSelectorInput!, $id: ID!) {
-    target(selector: $selector) {
+    target(reference: { bySelector: $selector }) {
       id
       documentCollection(id: $id) {
         id
@@ -235,7 +235,7 @@ export function CreateCollectionModalContent(props: {
 }) {
   return (
     <Dialog open={props.isOpen} onOpenChange={props.toggleModalOpen}>
-      <DialogContent className="container w-4/5 max-w-[600px] md:w-3/5">
+      <DialogContent className="w-4/5 max-w-[600px] md:w-3/5" data-cy="create-collection-modal">
         {!props.fetching && (
           <Form {...props.form}>
             <form className="space-y-8" onSubmit={props.form.handleSubmit(props.onSubmit)}>

@@ -1,10 +1,14 @@
 import { Injectable, Scope } from 'graphql-modules';
 import { traceFn } from '@hive/service-common';
 import { SchemaChangeType } from '@hive/storage';
-import { SingleOrchestrator } from '../orchestrators/single';
-import { ConditionalBreakingChangeDiffConfig, RegistryChecks } from '../registry-checks';
-import type { PublishInput } from '../schema-publisher';
-import type { Organization, Project, SingleSchema, Target } from './../../../../shared/entities';
+import { AppDeployments } from '../../../app-deployments/providers/app-deployments';
+import {
+  ConditionalBreakingChangeDiffConfig,
+  GetAffectedAppDeployments,
+  RegistryChecks,
+} from '../registry-checks';
+import { SingleSchemaInput } from '../schema-helper';
+import type { Organization, Project, Target } from './../../../../shared/entities';
 import { Logger } from './../../../shared/providers/logger';
 import {
   buildSchemaCheckFailureState,
@@ -22,10 +26,18 @@ import {
 })
 export class SingleModel {
   constructor(
-    private orchestrator: SingleOrchestrator,
     private checks: RegistryChecks,
     private logger: Logger,
+    private appDeployments: AppDeployments,
   ) {}
+
+  @traceFn('Single modern: diffSchema')
+  async diffSchema(args: {
+    incoming: Pick<SingleSchemaInput, 'sdl'>;
+    existing: Pick<SingleSchemaInput, 'sdl'> | null;
+  }) {
+    return this.checks.serviceDiff(args);
+  }
 
   @traceFn('Single modern: check', {
     initAttributes: args => ({
@@ -44,10 +56,10 @@ export class SingleModel {
     baseSchema,
     approvedChanges,
     conditionalBreakingChangeDiffConfig,
+    failDiffOnDangerousChange,
+    filterNestedChanges,
   }: {
-    input: {
-      sdl: string;
-    };
+    input: Pick<SingleSchemaInput, 'sdl'>;
     selector: {
       organizationId: string;
       projectId: string;
@@ -56,34 +68,30 @@ export class SingleModel {
     latest: {
       isComposable: boolean;
       sdl: string | null;
-      schemas: [SingleSchema];
+      schemas: [SingleSchemaInput];
     } | null;
     latestComposable: {
       isComposable: boolean;
       sdl: string | null;
-      schemas: [SingleSchema];
+      schemas: [SingleSchemaInput];
     } | null;
     baseSchema: string | null;
     project: Project;
     organization: Organization;
     approvedChanges: Map<string, SchemaChangeType>;
     conditionalBreakingChangeDiffConfig: null | ConditionalBreakingChangeDiffConfig;
+    failDiffOnDangerousChange: boolean;
+    filterNestedChanges: boolean;
   }): Promise<SchemaCheckResult> {
-    const incoming: SingleSchema = {
-      kind: 'single',
+    const incoming: SingleSchemaInput = {
       id: temp,
-      author: temp,
-      commit: temp,
-      target: selector.targetId,
-      date: Date.now(),
       sdl: input.sdl,
       metadata: null,
+      serviceName: null,
+      serviceUrl: null,
     };
 
-    const schemas = [incoming] as [SingleSchema];
-    const compareToPreviousComposableVersion =
-      organization.featureFlags.compareToPreviousComposableVersion;
-    const comparedVersion = compareToPreviousComposableVersion ? latestComposable : latest;
+    const schemas = [incoming] as [SingleSchemaInput];
 
     const checksumResult = await this.checks.checksum({
       existing: latest
@@ -106,7 +114,6 @@ export class SingleModel {
     }
 
     const compositionCheck = await this.checks.composition({
-      orchestrator: this.orchestrator,
       targetId: selector.targetId,
       project,
       organization,
@@ -116,12 +123,24 @@ export class SingleModel {
     });
 
     const previousVersionSdl = await this.checks.retrievePreviousVersionSdl({
-      orchestrator: this.orchestrator,
-      version: comparedVersion,
+      version: latestComposable,
       organization,
       project,
       targetId: selector.targetId,
     });
+
+    const getAffectedAppDeployments: GetAffectedAppDeployments = (
+      schemaCoordinates,
+      firstDeployments,
+      firstOperations,
+    ) =>
+      this.appDeployments.getAffectedAppDeploymentsBySchemaCoordinates({
+        targetId: selector.targetId,
+        schemaCoordinates,
+        firstDeployments,
+        firstOperations,
+        excludedAppDeploymentNames: conditionalBreakingChangeDiffConfig?.excludedAppDeploymentNames,
+      });
 
     const [diffCheck, policyCheck] = await Promise.all([
       this.checks.diff({
@@ -131,6 +150,9 @@ export class SingleModel {
         approvedChanges,
         existingSdl: previousVersionSdl,
         incomingSdl: compositionCheck.result?.fullSchemaSdl ?? null,
+        failDiffOnDangerousChange,
+        filterNestedChanges,
+        getAffectedAppDeployments,
       }),
       this.checks.policyCheck({
         selector,
@@ -178,40 +200,39 @@ export class SingleModel {
     latestComposable,
     baseSchema,
     conditionalBreakingChangeDiffConfig,
+    failDiffOnDangerousChange,
   }: {
-    input: PublishInput;
+    input: {
+      sdl: string;
+      metadata: string | null;
+    };
     organization: Organization;
     project: Project;
     target: Target;
     latest: {
       isComposable: boolean;
       sdl: string | null;
-      schemas: [SingleSchema];
+      schemas: [SingleSchemaInput];
     } | null;
     latestComposable: {
       isComposable: boolean;
       sdl: string | null;
-      schemas: [SingleSchema];
+      schemas: [SingleSchemaInput];
     } | null;
     baseSchema: string | null;
     conditionalBreakingChangeDiffConfig: null | ConditionalBreakingChangeDiffConfig;
+    failDiffOnDangerousChange: boolean;
   }): Promise<SchemaPublishResult> {
-    const incoming: SingleSchema = {
-      kind: 'single',
+    const incoming: SingleSchemaInput = {
       id: temp,
-      author: input.author,
       sdl: input.sdl,
-      commit: input.commit,
-      target: target.id,
-      date: Date.now(),
-      metadata: input.metadata ?? null,
+      metadata: input.metadata,
+      serviceName: null,
+      serviceUrl: null,
     };
 
     const latestVersion = latest;
-    const schemas = [incoming] as [SingleSchema];
-    const compareToPreviousComposableVersion =
-      organization.featureFlags.compareToPreviousComposableVersion;
-    const comparedVersion = compareToPreviousComposableVersion ? latestComposable : latest;
+    const schemas = [incoming] as [SingleSchemaInput];
 
     const checksumCheck = await this.checks.checksum({
       existing: latest
@@ -234,7 +255,6 @@ export class SingleModel {
     }
 
     const compositionCheck = await this.checks.composition({
-      orchestrator: this.orchestrator,
       targetId: target.id,
       project,
       organization,
@@ -250,13 +270,40 @@ export class SingleModel {
       contracts: null,
     });
 
+    if (
+      compositionCheck.status === 'failed' &&
+      compositionCheck.reason.errorsBySource.graphql.length > 0
+    ) {
+      return {
+        conclusion: SchemaPublishConclusion.Reject,
+        reasons: [
+          {
+            code: PublishFailureReasonCode.CompositionFailure,
+            compositionErrors: compositionCheck.reason.errorsBySource.graphql,
+          },
+        ],
+      };
+    }
+
     const previousVersionSdl = await this.checks.retrievePreviousVersionSdl({
-      orchestrator: this.orchestrator,
-      version: comparedVersion,
+      version: latestComposable,
       organization,
       project,
       targetId: target.id,
     });
+
+    const getAffectedAppDeploymentsForPublish: GetAffectedAppDeployments = (
+      schemaCoordinates,
+      firstDeployments,
+      firstOperations,
+    ) =>
+      this.appDeployments.getAffectedAppDeploymentsBySchemaCoordinates({
+        targetId: target.id,
+        schemaCoordinates,
+        firstDeployments,
+        firstOperations,
+        excludedAppDeploymentNames: conditionalBreakingChangeDiffConfig?.excludedAppDeploymentNames,
+      });
 
     const [metadataCheck, diffCheck] = await Promise.all([
       this.checks.metadata(incoming, latestVersion ? latestVersion.schemas[0] : null),
@@ -267,6 +314,9 @@ export class SingleModel {
         approvedChanges: null,
         existingSdl: previousVersionSdl,
         incomingSdl: compositionCheck.result?.fullSchemaSdl ?? null,
+        failDiffOnDangerousChange,
+        filterNestedChanges: true, // publish is never associated with schema proposals in this way. So always show the minimal changeset.
+        getAffectedAppDeployments: getAffectedAppDeploymentsForPublish,
       }),
     ]);
 
@@ -290,23 +340,6 @@ export class SingleModel {
       messages.push('Metadata has been updated');
     }
 
-    if (
-      compositionCheck.status === 'failed' &&
-      compositionCheck.reason.errorsBySource.graphql.length > 0
-    ) {
-      if (organization.featureFlags.compareToPreviousComposableVersion === false) {
-        return {
-          conclusion: SchemaPublishConclusion.Reject,
-          reasons: [
-            {
-              code: PublishFailureReasonCode.CompositionFailure,
-              compositionErrors: compositionCheck.reason.errorsBySource.graphql,
-            },
-          ],
-        };
-      }
-    }
-
     return {
       conclusion: SchemaPublishConclusion.Publish,
       state: {
@@ -327,6 +360,8 @@ export class SingleModel {
         fullSchemaSdl: compositionCheck.result?.fullSchemaSdl ?? null,
         tags: compositionCheck.result?.tags ?? null,
         contracts: null,
+        schemaMetadata: compositionCheck.result?.schemaMetadata ?? null,
+        metadataAttributes: compositionCheck.result?.metadataAttributes ?? null,
       },
     };
   }

@@ -3,9 +3,14 @@ import { AlertCircleIcon } from 'lucide-react';
 import { useQuery } from 'urql';
 import { Page, TargetLayout } from '@/components/layouts/target';
 import {
-  ArgumentVisibilityFilter,
+  GraphQLFieldsSkeleton,
+  GraphQLTypeCardSkeleton,
+} from '@/components/target/explorer/common';
+import {
   DateRangeFilter,
+  DescriptionsVisibilityFilter,
   FieldByNameFilter,
+  MetadataFilter,
   SchemaVariantFilter,
   TypeFilter,
 } from '@/components/target/explorer/filter';
@@ -15,7 +20,7 @@ import {
   useSchemaExplorerContext,
 } from '@/components/target/explorer/provider';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { noSchemaVersion, noValidSchemaVersion } from '@/components/ui/empty-list';
+import { NoSchemaVersion, noValidSchemaVersion } from '@/components/ui/empty-list';
 import { Meta } from '@/components/ui/meta';
 import { Subtitle, Title } from '@/components/ui/page';
 import { QueryError } from '@/components/ui/query-error';
@@ -55,39 +60,33 @@ function SchemaView(props: {
         <GraphQLObjectTypeComponent
           type={query}
           totalRequests={totalRequests}
-          collapsed
           targetSlug={props.targetSlug}
           projectSlug={props.projectSlug}
           organizationSlug={props.organizationSlug}
           warnAboutDeprecatedArguments={false}
           warnAboutUnusedArguments={false}
-          styleDeprecated
         />
       ) : null}
       {mutation ? (
         <GraphQLObjectTypeComponent
           type={mutation}
           totalRequests={totalRequests}
-          collapsed
           targetSlug={props.targetSlug}
           projectSlug={props.projectSlug}
           organizationSlug={props.organizationSlug}
           warnAboutDeprecatedArguments={false}
           warnAboutUnusedArguments={false}
-          styleDeprecated
         />
       ) : null}
       {subscription ? (
         <GraphQLObjectTypeComponent
           type={subscription}
           totalRequests={totalRequests}
-          collapsed
           targetSlug={props.targetSlug}
           projectSlug={props.projectSlug}
           organizationSlug={props.organizationSlug}
           warnAboutDeprecatedArguments={false}
           warnAboutUnusedArguments={false}
-          styleDeprecated
         />
       ) : null}
     </div>
@@ -101,20 +100,18 @@ const TargetExplorerPageQuery = graphql(`
     $targetSlug: String!
     $period: DateRangeInput!
   ) {
-    organization(selector: { organizationSlug: $organizationSlug }) {
-      organization {
-        id
-        rateLimit {
-          retentionInDays
-        }
-        slug
-      }
+    organization: organizationBySlug(organizationSlug: $organizationSlug) {
+      id
+      usageRetentionInDays
+      slug
     }
     target(
-      selector: {
-        organizationSlug: $organizationSlug
-        projectSlug: $projectSlug
-        targetSlug: $targetSlug
+      reference: {
+        bySelector: {
+          organizationSlug: $organizationSlug
+          projectSlug: $projectSlug
+          targetSlug: $targetSlug
+        }
       }
     ) {
       id
@@ -125,21 +122,21 @@ const TargetExplorerPageQuery = graphql(`
       latestValidSchemaVersion {
         __typename
         id
-        valid
         explorer(usage: { period: $period }) {
+          metadataAttributes {
+            name
+            values
+          }
           ...ExplorerPage_SchemaExplorerFragment
         }
       }
-    }
-    operationsStats(
-      selector: {
-        organizationSlug: $organizationSlug
-        projectSlug: $projectSlug
-        targetSlug: $targetSlug
-        period: $period
+      project {
+        id
+        type
       }
-    ) {
-      totalRequests
+      operationsStats(period: $period) {
+        totalRequests
+      }
     }
   }
 `);
@@ -161,8 +158,8 @@ function ExplorerPageContent(props: {
     },
   });
 
-  const currentOrganization = query.data?.organization?.organization;
-  const retentionInDays = currentOrganization?.rateLimit.retentionInDays;
+  const currentOrganization = query.data?.organization;
+  const retentionInDays = currentOrganization?.usageRetentionInDays;
 
   useEffect(() => {
     if (typeof retentionInDays === 'number' && dataRetentionInDays !== retentionInDays) {
@@ -174,7 +171,13 @@ function ExplorerPageContent(props: {
   const isFilterVisible = useRef(false);
 
   if (query.error) {
-    return <QueryError organizationSlug={props.organizationSlug} error={query.error} />;
+    return (
+      <QueryError
+        organizationSlug={props.organizationSlug}
+        error={query.error}
+        showLogoutButton={false}
+      />
+    );
   }
 
   const currentTarget = query.data?.target;
@@ -186,12 +189,7 @@ function ExplorerPageContent(props: {
   }
 
   return (
-    <TargetLayout
-      organizationSlug={props.organizationSlug}
-      projectSlug={props.projectSlug}
-      targetSlug={props.targetSlug}
-      page={Page.Explorer}
-    >
+    <>
       <div className="flex flex-row items-center justify-between py-6">
         <div>
           <Title>Explore Schema</Title>
@@ -208,18 +206,21 @@ function ExplorerPageContent(props: {
               />
               <FieldByNameFilter />
               <DateRangeFilter />
-              <ArgumentVisibilityFilter />
+              <DescriptionsVisibilityFilter />
               <SchemaVariantFilter
                 organizationSlug={props.organizationSlug}
                 projectSlug={props.projectSlug}
                 targetSlug={props.targetSlug}
                 variant="all"
               />
+              {latestValidSchemaVersion?.explorer?.metadataAttributes?.length ? (
+                <MetadataFilter options={latestValidSchemaVersion.explorer.metadataAttributes} />
+              ) : null}
             </>
           )}
         </div>
       </div>
-      {!query.fetching && !query.stale && (
+      {!query.fetching && !query.stale ? (
         <>
           {latestValidSchemaVersion?.explorer && latestSchemaVersion ? (
             <>
@@ -250,7 +251,7 @@ function ExplorerPageContent(props: {
                 </Alert>
               )}
               <SchemaView
-                totalRequests={query.data?.operationsStats.totalRequests ?? 0}
+                totalRequests={query.data?.target?.operationsStats.totalRequests ?? 0}
                 explorer={latestValidSchemaVersion.explorer}
                 organizationSlug={props.organizationSlug}
                 projectSlug={props.projectSlug}
@@ -260,11 +261,18 @@ function ExplorerPageContent(props: {
           ) : latestSchemaVersion ? (
             noValidSchemaVersion
           ) : (
-            noSchemaVersion
+            <NoSchemaVersion
+              projectType={query.data?.target?.project.type ?? null}
+              recommendedAction="publish"
+            />
           )}
         </>
+      ) : (
+        <GraphQLTypeCardSkeleton>
+          <GraphQLFieldsSkeleton count={15} />
+        </GraphQLTypeCardSkeleton>
       )}
-    </TargetLayout>
+    </>
   );
 }
 
@@ -277,7 +285,14 @@ export function TargetExplorerPage(props: {
     <>
       <Meta title="Schema Explorer" />
       <SchemaExplorerProvider>
-        <ExplorerPageContent {...props} />
+        <TargetLayout
+          organizationSlug={props.organizationSlug}
+          projectSlug={props.projectSlug}
+          targetSlug={props.targetSlug}
+          page={Page.Explorer}
+        >
+          <ExplorerPageContent {...props} />
+        </TargetLayout>
       </SchemaExplorerProvider>
     </>
   );

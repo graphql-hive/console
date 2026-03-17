@@ -1,6 +1,5 @@
 import { DocumentNode, ExecutionArgs, GraphQLError, GraphQLSchema, Kind, parse } from 'graphql';
-import type { GraphQLParams, Plugin } from 'graphql-yoga';
-import LRU from 'tiny-lru';
+import { _createLRUCache, YogaServer, type GraphQLParams, type Plugin } from 'graphql-yoga';
 import {
   autoDisposeSymbol,
   CollectUsageCallback,
@@ -10,7 +9,9 @@ import {
   isAsyncIterable,
   isHiveClient,
 } from '@graphql-hive/core';
+import { Logger } from '@graphql-hive/logger';
 import { usePersistedOperations } from '@graphql-yoga/plugin-persisted-operations';
+import { version } from './version.js';
 
 export {
   atLeastOnceSampler,
@@ -34,6 +35,7 @@ export function createHive(clientOrOptions: HivePluginOptions) {
     ...clientOrOptions,
     agent: {
       name: 'hive-client-yoga',
+      version,
       ...clientOrOptions.agent,
     },
   });
@@ -42,31 +44,26 @@ export function createHive(clientOrOptions: HivePluginOptions) {
 export function useHive(clientOrOptions: HiveClient): Plugin;
 export function useHive(clientOrOptions: HivePluginOptions): Plugin;
 export function useHive(clientOrOptions: HiveClient | HivePluginOptions): Plugin {
-  const hive = isHiveClient(clientOrOptions) ? clientOrOptions : createHive(clientOrOptions);
-
-  void hive.info();
-
-  if (hive[autoDisposeSymbol]) {
-    if (global.process) {
-      const signals = Array.isArray(hive[autoDisposeSymbol])
-        ? hive[autoDisposeSymbol]
-        : ['SIGINT', 'SIGTERM'];
-      for (const signal of signals) {
-        process.once(signal, () => hive.dispose());
-      }
-    } else {
-      console.error(
-        'It seems that GraphQL Hive is not being executed in Node.js. ' +
-          'Please attempt manual client disposal and use autoDispose: false option.',
-      );
-    }
-  }
-
-  const parsedDocumentCache = LRU<DocumentNode>(10_000);
+  const parsedDocumentCache = _createLRUCache<DocumentNode>();
   let latestSchema: GraphQLSchema | null = null;
-  const cache = new WeakMap<Request, CacheRecord>();
+  const contextualCache = new WeakMap<object, CacheRecord>();
+
+  let hive: HiveClient;
+  let yoga: YogaServer<any, any>;
+  let onYogaInit: () => void;
+  let onYogaInitDefered: Promise<void> | null = new Promise<void>(
+    res =>
+      (onYogaInit = () => {
+        res();
+        onYogaInitDefered = null;
+      }),
+  );
 
   return {
+    onYogaInit(payload) {
+      yoga = payload.yoga;
+      onYogaInit();
+    },
     onSchemaChange({ schema }) {
       hive.reportSchema({ schema });
       latestSchema = schema;
@@ -74,7 +71,7 @@ export function useHive(clientOrOptions: HiveClient | HivePluginOptions): Plugin
     onParams(context) {
       // we set the params if there is either a query or documentId in the request
       if ((context.params.query || 'documentId' in context.params) && latestSchema) {
-        cache.set(context.request, {
+        contextualCache.set(context.context, {
           callback: hive.collectUsage(),
           paramsArgs: context.params,
         });
@@ -84,7 +81,7 @@ export function useHive(clientOrOptions: HiveClient | HivePluginOptions): Plugin
     onParse(parseCtx) {
       return ctx => {
         if (ctx.result.kind === Kind.DOCUMENT) {
-          const record = cache.get(ctx.context.request);
+          const record = contextualCache.get(ctx.context);
           if (record) {
             record.parsedDocument = ctx.result;
             parsedDocumentCache.set(parseCtx.params.source, ctx.result);
@@ -95,7 +92,7 @@ export function useHive(clientOrOptions: HiveClient | HivePluginOptions): Plugin
     onExecute() {
       return {
         onExecuteDone({ args, result }) {
-          const record = cache.get(args.contextValue.request);
+          const record = contextualCache.get(args.contextValue);
           if (!record) {
             return;
           }
@@ -103,6 +100,16 @@ export function useHive(clientOrOptions: HiveClient | HivePluginOptions): Plugin
           record.executionArgs = args;
 
           if (!isAsyncIterable(result)) {
+            args.contextValue.waitUntil(
+              record.callback(
+                {
+                  ...record.executionArgs,
+                  document: record.parsedDocument ?? record.executionArgs.document,
+                },
+                result,
+                record.experimental__documentId,
+              ),
+            );
             return;
           }
 
@@ -116,10 +123,12 @@ export function useHive(clientOrOptions: HiveClient | HivePluginOptions): Plugin
               errors.push(...ctx.result.errors);
             },
             onEnd() {
-              void record.callback(
-                args,
-                errors.length ? { errors } : {},
-                record.experimental__documentId,
+              args.contextValue.waitUntil(
+                record.callback(
+                  args,
+                  errors.length ? { errors } : {},
+                  record.experimental__documentId,
+                ),
               );
             },
           };
@@ -127,7 +136,7 @@ export function useHive(clientOrOptions: HiveClient | HivePluginOptions): Plugin
       };
     },
     onSubscribe(context) {
-      const record = cache.get(context.args.contextValue.request);
+      const record = contextualCache.get(context.args.contextValue);
 
       return {
         onSubscribeResult() {
@@ -139,23 +148,10 @@ export function useHive(clientOrOptions: HiveClient | HivePluginOptions): Plugin
         },
       };
     },
-    onResultProcess(context) {
-      const record = cache.get(context.request);
+    onResultProcess({ serverContext, result }) {
+      const record = contextualCache.get(serverContext);
 
-      if (!record || Array.isArray(context.result) || isAsyncIterable(context.result)) {
-        return;
-      }
-
-      // Report if execution happened (aka executionArgs have been set within onExecute)
-      if (record.executionArgs) {
-        void record.callback(
-          {
-            ...record.executionArgs,
-            document: record.parsedDocument ?? record.executionArgs.document,
-          },
-          context.result,
-          record.experimental__documentId,
-        );
+      if (!record || Array.isArray(result) || isAsyncIterable(result) || record.executionArgs) {
         return;
       }
 
@@ -163,7 +159,7 @@ export function useHive(clientOrOptions: HiveClient | HivePluginOptions): Plugin
       if (
         record.paramsArgs.query &&
         latestSchema &&
-        Symbol.for('servedFromResponseCache') in context.result
+        Symbol.for('servedFromResponseCache') in result
       ) {
         try {
           let document = parsedDocumentCache.get(record.paramsArgs.query);
@@ -171,81 +167,139 @@ export function useHive(clientOrOptions: HiveClient | HivePluginOptions): Plugin
             document = parse(record.paramsArgs.query);
             parsedDocumentCache.set(record.paramsArgs.query, document);
           }
-          void record.callback(
-            {
-              document,
-              schema: latestSchema,
-              variableValues: record.paramsArgs.variables,
-              operationName: record.paramsArgs.operationName,
-            },
-            context.result,
-            record.experimental__documentId,
+          serverContext.waitUntil(
+            record.callback(
+              {
+                document,
+                schema: latestSchema,
+                variableValues: record.paramsArgs.variables,
+                operationName: record.paramsArgs.operationName,
+                contextValue: serverContext,
+              },
+              result,
+              record.experimental__documentId,
+            ),
           );
         } catch (err) {
-          console.error(err);
+          yoga.logger.error(err);
         }
       }
     },
     onPluginInit({ addPlugin }) {
-      const { experimental__persistedDocuments } = hive;
-      if (!experimental__persistedDocuments) {
-        return;
-      }
-      addPlugin(
-        usePersistedOperations({
-          extractPersistedOperationId(body, request) {
-            if ('documentId' in body && typeof body.documentId === 'string') {
-              return body.documentId;
-            }
+      hive = isHiveClient(clientOrOptions)
+        ? clientOrOptions
+        : createHive({
+            ...clientOrOptions,
+            logger:
+              clientOrOptions.logger ??
+              new Logger({
+                writers: [
+                  {
+                    write(level, attrs, msg) {
+                      level = level === 'trace' ? 'debug' : level;
+                      if (!onYogaInitDefered) {
+                        yoga.logger[level](msg, attrs);
 
-            const documentId = new URL(request.url).searchParams.get('documentId');
-
-            if (documentId) {
-              return documentId;
-            }
-
-            return null;
-          },
-          async getPersistedOperation(key, request) {
-            const document = await experimental__persistedDocuments.resolve(key);
-            // after we resolve the document we need to update the cache record to contain the resolved document
-            if (document) {
-              const record = cache.get(request);
-              if (record) {
-                record.experimental__documentId = key;
-                record.paramsArgs = {
-                  ...record.paramsArgs,
-                  query: document,
-                };
+                        return;
+                      }
+                      // Defer logs until yoga instance is initialized
+                      // Ideally, onPluginInit would provide us access to the logger instance
+                      // See https://github.com/graphql-hive/graphql-yoga/issues/4048#issuecomment-3576258603
+                      void onYogaInitDefered.then(() => {
+                        yoga?.logger[level](msg, attrs);
+                      });
+                    },
+                  },
+                ],
+              }),
+            agent: clientOrOptions.agent
+              ? {
+                  // Hive Plugin should respect the given FetchAPI, note that this is not `yoga.fetch`
+                  fetch: (...args) => yoga.fetchAPI.fetch(...args),
+                  ...clientOrOptions.agent,
+                }
+              : undefined,
+          });
+      void hive.info();
+      const persistedDocuments = hive.persistedDocuments;
+      if (persistedDocuments) {
+        addPlugin(
+          usePersistedOperations({
+            extractPersistedOperationId(body, request) {
+              if ('documentId' in body && typeof body.documentId === 'string') {
+                return body.documentId;
               }
-            }
 
-            return document;
-          },
-          allowArbitraryOperations(request) {
-            return experimental__persistedDocuments.allowArbitraryDocuments({
-              headers: request.headers,
-            });
-          },
-          customErrors: {
-            keyNotFound() {
-              return new GraphQLError('Persisted document not found.', {
-                extensions: { code: 'PERSISTED_DOCUMENT_NOT_FOUND' },
-              });
+              const documentId = new URL(request.url).searchParams.get('documentId');
+
+              if (documentId) {
+                return documentId;
+              }
+
+              return null;
             },
-            notFound() {
-              return new GraphQLError('Persisted document not found.', {
-                extensions: { code: 'PERSISTED_DOCUMENT_NOT_FOUND' },
-              });
+            async getPersistedOperation(key, _request, context) {
+              let document: string | null;
+              try {
+                document = await persistedDocuments.resolve(key, {
+                  waitUntil: context.waitUntil,
+                });
+              } catch (error) {
+                if (
+                  error &&
+                  typeof error === 'object' &&
+                  'code' in error &&
+                  error.code === 'INVALID_DOCUMENT_ID' &&
+                  'message' in error &&
+                  typeof error.message === 'string'
+                ) {
+                  throw new GraphQLError(error.message, {
+                    extensions: { code: 'INVALID_DOCUMENT_ID' },
+                  });
+                }
+                throw error;
+              }
+              // after we resolve the document we need to update the cache record to contain the resolved document
+              if (document) {
+                const record = contextualCache.get(context);
+                if (record) {
+                  record.experimental__documentId = key;
+                  record.paramsArgs = {
+                    ...record.paramsArgs,
+                    query: document,
+                  };
+                }
+              }
+              return document;
             },
-            persistedQueryOnly() {
-              return new GraphQLError('No persisted document provided.', {
-                extensions: { code: 'PERSISTED_DOCUMENT_REQUIRED' },
-              });
+            allowArbitraryOperations(request) {
+              return persistedDocuments.allowArbitraryDocuments(request);
             },
-          },
-        }),
-      );
+            customErrors: {
+              keyNotFound() {
+                return new GraphQLError('Persisted document not found.', {
+                  extensions: { code: 'PERSISTED_DOCUMENT_NOT_FOUND' },
+                });
+              },
+              notFound() {
+                return new GraphQLError('Persisted document not found.', {
+                  extensions: { code: 'PERSISTED_DOCUMENT_NOT_FOUND' },
+                });
+              },
+              persistedQueryOnly() {
+                return new GraphQLError('No persisted document provided.', {
+                  extensions: { code: 'PERSISTED_DOCUMENT_REQUIRED' },
+                });
+              },
+            },
+          }),
+        );
+      }
+    },
+    onDispose() {
+      if (hive[autoDisposeSymbol]) {
+        return hive.dispose();
+      }
     },
   };
 }

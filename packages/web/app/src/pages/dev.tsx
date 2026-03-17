@@ -7,13 +7,13 @@ import 'graphiql/style.css';
 
 export function DevPage() {
   return (
-    <div className="size-full">
+    <div className="h-screen w-full">
       <Helmet>
         <style key="dev">
           {`
             body.graphiql-dark .graphiql-container {
               --color-base: transparent;
-              --color-primary: 40, 89%, 60%;
+              --color-neutral-11: 40, 89%, 60%;
             }
           `}
         </style>

@@ -1,103 +1,91 @@
 #!/usr/bin/env node
 import got from 'got';
 import { GraphQLError, stripIgnoredCharacters } from 'graphql';
-import supertokens from 'supertokens-node';
-import {
-  errorHandler as supertokensErrorHandler,
-  plugin as supertokensFastifyPlugin,
-} from 'supertokens-node/framework/fastify/index.js';
 import cors from '@fastify/cors';
 import type { FastifyCorsOptionsDelegateCallback } from '@fastify/cors';
-import { createRedisEventTarget } from '@graphql-yoga/redis-event-target';
 import 'reflect-metadata';
-import { hostname } from 'os';
-import { createPubSub } from 'graphql-yoga';
-import { z } from 'zod';
 import formDataPlugin from '@fastify/formbody';
-import { createRegistry, createTaskRunner, CryptoProvider, LogFn, Logger } from '@hive/api';
-import { HivePubSub } from '@hive/api/src/modules/shared/providers/pub-sub';
-import { createRedisClient } from '@hive/api/src/modules/shared/providers/redis';
+import {
+  createRegistry,
+  CryptoProvider,
+  LogFn,
+  Logger,
+  OrganizationMemberRoles,
+  OrganizationMembers,
+} from '@hive/api';
+import { AccessTokenKeyContainer } from '@hive/api/modules/auth/lib/supertokens-at-home/crypto';
+import { EmailVerification } from '@hive/api/modules/auth/providers/email-verification';
+import { OAuthCache } from '@hive/api/modules/auth/providers/oauth-cache';
+import { OIDCIntegrationStore } from '@hive/api/modules/oidc-integrations/providers/oidc-integration.store';
+import { createRedisClient } from '@hive/api/modules/shared/providers/redis';
+import { RedisRateLimiter } from '@hive/api/modules/shared/providers/redis-rate-limiter';
+import { TargetsByIdCache } from '@hive/api/modules/target/providers/targets-by-id-cache';
+import { TargetsBySlugCache } from '@hive/api/modules/target/providers/targets-by-slug-cache';
 import { createArtifactRequestHandler } from '@hive/cdn-script/artifact-handler';
 import { ArtifactStorageReader } from '@hive/cdn-script/artifact-storage-reader';
 import { AwsClient } from '@hive/cdn-script/aws';
 import { createIsAppDeploymentActive } from '@hive/cdn-script/is-app-deployment-active';
 import { createIsKeyValid } from '@hive/cdn-script/key-validation';
+import { createHivePubSub } from '@hive/pubsub';
 import {
   configureTracing,
   createServer,
   registerShutdown,
   registerTRPC,
   reportReadiness,
+  sentryInit,
   startMetrics,
-  traceInline,
   TracingInstance,
 } from '@hive/service-common';
 import { createConnectionString, createStorage as createPostgreSQLStorage } from '@hive/storage';
-import {
-  contextLinesIntegration,
-  dedupeIntegration,
-  extraErrorDataIntegration,
-} from '@sentry/integrations';
-import {
-  captureException,
-  httpIntegration,
-  init,
-  linkedErrorsIntegration,
-  SeverityLevel,
-} from '@sentry/node';
+import { TaskScheduler } from '@hive/workflows/kit';
+import { captureException, SeverityLevel } from '@sentry/node';
 import { createServerAdapter } from '@whatwg-node/server';
 import { AuthN } from '../../api/src/modules/auth/lib/authz';
+import { OrganizationAccessTokenStrategy } from '../../api/src/modules/auth/lib/organization-access-token-strategy';
 import { SuperTokensUserAuthNStrategy } from '../../api/src/modules/auth/lib/supertokens-strategy';
 import { TargetAccessTokenStrategy } from '../../api/src/modules/auth/lib/target-access-token-strategy';
-import { createContext, internalApiRouter } from './api';
+import { OrganizationAccessTokenValidationCache } from '../../api/src/modules/auth/providers/organization-access-token-validation-cache';
+import { OrganizationAccessTokensCache } from '../../api/src/modules/organization/providers/organization-access-tokens-cache';
+import { internalApiRouter } from './api';
 import { asyncStorage } from './async-storage';
 import { env } from './environment';
 import { graphqlHandler } from './graphql-handler';
 import { clickHouseElapsedDuration, clickHouseReadDuration } from './metrics';
-import { initSupertokens, oidcIdLookup } from './supertokens';
+import { createOtelAuthEndpoint } from './otel-auth-endpoint';
+import { createPublicGraphQLHandler } from './public-graphql-handler';
+import { registerSupertokensAtHome } from './supertokens-at-home';
+
+class CorsError extends Error {
+  constructor() {
+    super('CORS origin not allowed.');
+  }
+}
 
 export async function main() {
   let tracing: TracingInstance | undefined;
 
-  if (env.tracing.enabled && env.tracing.collectorEndpoint) {
+  if (env.tracing.enabled) {
     tracing = configureTracing({
       collectorEndpoint: env.tracing.collectorEndpoint,
       serviceName: 'graphql-api',
       enableConsoleExporter: env.tracing.enableConsoleExporter,
+      hiveTracing: env.tracing.hive,
     });
 
     tracing.instrumentNodeFetch();
-    tracing.build();
-    tracing.start();
+    tracing.setup();
   }
 
-  init({
-    serverName: hostname(),
-    dist: 'server',
-    enabled: !!env.sentry,
-    environment: env.environment,
-    dsn: env.sentry?.dsn,
-    enableTracing: false,
-    tracesSampleRate: 1,
-    ignoreTransactions: [
-      'POST /graphql', // Transaction created for a cached response (@graphql-yoga/plugin-response-cache)
-    ],
-    release: env.release,
-    integrations: [
-      httpIntegration({ tracing: false }),
-      contextLinesIntegration({
-        frameContextLines: 0,
-      }),
-      linkedErrorsIntegration(),
-      extraErrorDataIntegration({
-        depth: 2,
-      }),
-      dedupeIntegration(),
-    ],
-    maxBreadcrumbs: 10,
-    defaultIntegrations: false,
-    autoSessionTracking: false,
-  });
+  if (env.sentry) {
+    sentryInit({
+      dist: 'server',
+      enabled: !!env.sentry,
+      environment: env.environment,
+      dsn: env.sentry.dsn,
+      release: env.release,
+    });
+  }
 
   const server = await createServer({
     name: 'graphql-api',
@@ -131,28 +119,47 @@ export async function main() {
     },
   );
 
-  server.setErrorHandler(supertokensErrorHandler());
+  server.setErrorHandler((err, req, res) => {
+    if (err instanceof CorsError) {
+      return res.status(403).send(err.message);
+    }
+
+    server.log.error(err);
+    return res.status(500);
+  });
   await server.register(cors, (_: unknown): FastifyCorsOptionsDelegateCallback => {
     return (req, callback) => {
-      if (req.headers.origin?.startsWith(env.hiveServices.webApp.url)) {
-        // We need to treat requests from the web app a bit differently than others.
-        // The web app requires to define the `Access-Control-Allow-Origin` header (not *).
-        callback(null, {
-          origin: env.hiveServices.webApp.url,
-          credentials: true,
-          methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-          allowedHeaders: [
-            'Content-Type',
-            'graphql-client-version',
-            'graphql-client-name',
-            'x-request-id',
-            ...supertokens.getAllCORSHeaders(),
-          ],
+      // For CLI user we do not have a origin
+      if (req.headers.origin == null) {
+        // this is the easiest way to omit all cors headers for our version of the cors plugin.
+        return callback(null, {
+          origin: [],
         });
-        return;
       }
 
-      callback(null, {});
+      if (req.headers.origin !== env.hiveServices.webApp.url) {
+        return callback(new CorsError());
+      }
+
+      // We need to treat requests from the web app a bit differently than others.
+      // The web app requires to define the `Access-Control-Allow-Origin` header (not *).
+      callback(null, {
+        origin: env.hiveServices.webApp.url,
+        credentials: true,
+        methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+        allowedHeaders: [
+          'Content-Type',
+          'graphql-client-version',
+          'graphql-client-name',
+          'ignore-session',
+          'x-request-id',
+          'rid',
+          'fdi-version',
+          'anti-csrf',
+          'authorization',
+          'st-auth-mode',
+        ],
+      });
     };
   });
 
@@ -161,63 +168,18 @@ export async function main() {
     10,
     tracing ? [tracing.instrumentSlonik()] : [],
   );
+  const taskScheduler = new TaskScheduler(storage.pool.pool);
 
   const redis = createRedisClient('Redis', env.redis, server.log.child({ source: 'Redis' }));
 
-  const pubSub = createPubSub({
-    eventTarget: createRedisEventTarget({
-      publishClient: redis,
-      subscribeClient: createRedisClient(
-        'subscriber',
-        env.redis,
-        server.log.child({ source: 'RedisSubscribe' }),
-      ),
-    }),
-  }) as HivePubSub;
-
-  let dbPurgeTaskRunner: null | ReturnType<typeof createTaskRunner> = null;
-
-  if (!env.hiveServices.usageEstimator) {
-    server.log.debug('Usage estimation is disabled. Skip scheduling purge tasks.');
-  } else {
-    server.log.debug(
-      `Usage estimation is enabled. Start scheduling purge tasks every ${env.hiveServices.usageEstimator.dateRetentionPurgeIntervalMinutes} minutes.`,
-    );
-    dbPurgeTaskRunner = createTaskRunner({
-      run: traceInline(
-        'Purge Task',
-        {
-          resultAttributes: result => ({
-            'purge.schema.check.count': result.deletedSchemaCheckCount,
-            'purge.sdl.store.count': result.deletedSdlStoreCount,
-            'purge.change.approval.count': result.deletedSchemaChangeApprovalCount,
-            'purge.contract.approval.count': result.deletedContractSchemaChangeApprovalCount,
-          }),
-        },
-        async () => {
-          try {
-            const result = await storage.purgeExpiredSchemaChecks({
-              expiresAt: new Date(),
-            });
-            server.log.debug(
-              'Finished running schema check purge task. (deletedSchemaCheckCount=%s deletedSdlStoreCount=%s)',
-              result.deletedSchemaCheckCount,
-              result.deletedSdlStoreCount,
-            );
-
-            return result;
-          } catch (error) {
-            captureException(error);
-            throw error;
-          }
-        },
-      ),
-      interval: env.hiveServices.usageEstimator.dateRetentionPurgeIntervalMinutes * 60 * 1000,
-      logger: server.log,
-    });
-
-    dbPurgeTaskRunner.start();
-  }
+  const pubSub = createHivePubSub({
+    publisher: redis,
+    subscriber: createRedisClient(
+      'subscriber',
+      env.redis,
+      server.log.child({ source: 'RedisSubscribe' }),
+    ),
+  });
 
   registerShutdown({
     logger: server.log,
@@ -228,10 +190,6 @@ export async function main() {
       await server.close();
       server.log.info('Stopping Storage handler...');
       await storage.destroy();
-      if (dbPurgeTaskRunner) {
-        server.log.info('Stopping expired schema check purge task...');
-        await dbPurgeTaskRunner.stop();
-      }
       server.log.info('Shutdown complete.');
     },
   });
@@ -304,26 +262,17 @@ export async function main() {
       app: env.hiveServices.webApp
         ? {
             baseUrl: env.hiveServices.webApp.url,
+            rateLimit: env.supertokens.rateLimit,
           }
         : null,
       tokens: {
         endpoint: env.hiveServices.tokens.endpoint,
       },
-      billing: {
-        endpoint: env.hiveServices.billing ? env.hiveServices.billing.endpoint : null,
-      },
-      emailsEndpoint: env.hiveServices.emails ? env.hiveServices.emails.endpoint : undefined,
-      webhooks: {
-        endpoint: env.hiveServices.webhooks.endpoint,
+      commerce: {
+        endpoint: env.hiveServices.commerce ? env.hiveServices.commerce.endpoint : null,
       },
       schemaService: {
         endpoint: env.hiveServices.schema.endpoint,
-      },
-      usageEstimationService: {
-        endpoint: env.hiveServices.usageEstimator ? env.hiveServices.usageEstimator.endpoint : null,
-      },
-      rateLimitService: {
-        endpoint: env.hiveServices.rateLimit ? env.hiveServices.rateLimit.endpoint : null,
       },
       schemaPolicyService: {
         endpoint: env.hiveServices.schemaPolicy ? env.hiveServices.schemaPolicy.endpoint : null,
@@ -364,6 +313,15 @@ export async function main() {
             endpoint: env.s3Mirror.endpoint,
           }
         : null,
+      s3AuditLogs: env.s3AuditLogs
+        ? {
+            accessKeyId: env.s3AuditLogs.credentials.accessKeyId,
+            secretAccessKeyId: env.s3AuditLogs.credentials.secretAccessKey,
+            sessionToken: env.s3AuditLogs.credentials.sessionToken,
+            bucketName: env.s3AuditLogs.bucketName,
+            endpoint: env.s3AuditLogs.endpoint,
+          }
+        : null,
       encryptionSecret: env.encryptionSecret,
       schemaConfig: env.hiveServices.webApp
         ? {
@@ -385,22 +343,20 @@ export async function main() {
       supportConfig: env.zendeskSupport,
       pubSub,
       appDeploymentsEnabled: env.featureFlags.appDeploymentsEnabled,
+      schemaProposalsEnabled: env.featureFlags.schemaProposalsEnabled,
+      otelTracingEnabled: env.featureFlags.otelTracingEnabled,
+      prometheus: env.prometheus,
+      taskScheduler,
     });
 
-    const authN = new AuthN({
-      strategies: [
-        new SuperTokensUserAuthNStrategy({
-          logger: server.log,
-          storage,
-        }),
-        new TargetAccessTokenStrategy({
-          logger: server.log,
-          tokensConfig: {
-            endpoint: env.hiveServices.tokens.endpoint,
-          },
-        }),
-      ],
-    });
+    const organizationAccessTokenStrategy = (logger: Logger) =>
+      new OrganizationAccessTokenStrategy({
+        logger,
+        organizationAccessTokensCache: registry.injector.get(OrganizationAccessTokensCache),
+        organizationAccessTokenValidationCache: registry.injector.get(
+          OrganizationAccessTokenValidationCache,
+        ),
+      });
 
     const graphqlPath = '/graphql';
     const port = env.http.port;
@@ -409,23 +365,61 @@ export async function main() {
       graphiqlEndpoint: graphqlPath,
       registry,
       signature,
-      supertokens: {
-        connectionUri: env.supertokens.connectionURI,
-        apiKey: env.supertokens.apiKey,
-      },
-      isProduction: env.environment === 'prod',
+      isProduction: env.environment !== 'development',
       release: env.release,
-      hiveConfig: env.hive,
+      hiveUsageConfig: env.hive,
       hivePersistedDocumentsConfig: env.hivePersistedDocuments,
       tracing,
       logger: logger as any,
-      authN,
+      authN: new AuthN({
+        strategies: [
+          (logger: Logger) =>
+            new SuperTokensUserAuthNStrategy({
+              logger,
+              storage,
+              organizationMembers: new OrganizationMembers(
+                storage.pool,
+                new OrganizationMemberRoles(storage.pool, logger),
+                logger,
+              ),
+              emailVerification: env.auth.requireEmailVerification
+                ? registry.injector.get(EmailVerification)
+                : null,
+              accessTokenKey: new AccessTokenKeyContainer(env.supertokens.secrets.accessTokenKey),
+              oidcIntegrationStore: new OIDCIntegrationStore(storage.pool, redis, logger),
+            }),
+          organizationAccessTokenStrategy,
+          (logger: Logger) =>
+            new TargetAccessTokenStrategy({
+              logger,
+              tokensConfig: {
+                endpoint: env.hiveServices.tokens.endpoint,
+              },
+            }),
+        ],
+      }),
     });
 
     server.route({
       method: ['GET', 'POST'],
       url: graphqlPath,
       handler: graphql,
+    });
+
+    const authN = new AuthN({
+      strategies: [organizationAccessTokenStrategy],
+    });
+
+    server.route({
+      method: ['GET', 'POST'],
+      url: '/graphql-public',
+      handler: createPublicGraphQLHandler({
+        registry,
+        logger: logger as any,
+        hiveUsageConfig: env.hive,
+        authN,
+        tracing,
+      }),
     });
 
     const introspection = JSON.stringify({
@@ -443,25 +437,22 @@ export async function main() {
 
     const crypto = new CryptoProvider(env.encryptionSecret);
 
-    initSupertokens({
-      storage,
-      crypto,
-      logger: server.log,
-      broadcastLog(id, message) {
-        pubSub.publish('oidcIntegrationLogs', id, {
-          timestamp: new Date().toISOString(),
-          message,
-        });
-      },
-    });
+    function broadcastLog(oidcId: string, message: string) {
+      pubSub.publish('oidcIntegrationLogs', oidcId, {
+        timestamp: new Date().toISOString(),
+        message,
+      });
+    }
 
     await server.register(formDataPlugin);
-    await server.register(supertokensFastifyPlugin);
 
     await registerTRPC(server, {
       router: internalApiRouter,
       createContext() {
-        return createContext({ storage, crypto });
+        return {
+          storage,
+          crypto,
+        };
       },
     });
 
@@ -486,6 +477,7 @@ export async function main() {
                 'Content-Type': 'application/json',
                 Accept: 'application/json',
                 'x-signature': signature,
+                'x-hive-tracing': 'ignore',
               },
             }),
             storage.isReady(),
@@ -509,40 +501,32 @@ export async function main() {
       },
     });
 
-    const oidcIdLookupSchema = z.object({
-      slug: z.string({
-        required_error: 'Slug is required',
-      }),
+    createOtelAuthEndpoint({
+      server,
+      authN,
+      targetsBySlugCache: registry.injector.get(TargetsBySlugCache),
+      targetsByIdCache: registry.injector.get(TargetsByIdCache),
     });
-    server.post('/auth-api/oidc-id-lookup', async (req, res) => {
-      const inputResult = oidcIdLookupSchema.safeParse(req.body);
 
-      if (!inputResult.success) {
-        captureException(inputResult.error, {
-          extra: {
-            path: '/auth-api/oidc-id-lookup',
-            body: req.body,
-          },
-        });
-        void res.status(400).send({
-          ok: false,
-          title: 'Invalid input',
-          description: 'Failed to resolve SSO information due to invalid input.',
-          status: 400,
-        } satisfies Awaited<ReturnType<typeof oidcIdLookup>>);
-        return;
-      }
-
-      const result = await oidcIdLookup(inputResult.data.slug, storage, req.log);
-
-      if (result.ok) {
-        void res.status(200).send(result);
-        return;
-      }
-
-      void res.status(result.status).send(result);
+    server.post('/cache/organization-access-token-cache/delete/:id', async (req, res) => {
+      void res.status(200).send({
+        deleted: await registry.injector
+          .get(OrganizationAccessTokensCache)
+          .purge({ id: (req.params as any).id }),
+      });
       return;
     });
+
+    await registerSupertokensAtHome(
+      server,
+      storage,
+      registry.injector.get(TaskScheduler),
+      registry.injector.get(CryptoProvider),
+      registry.injector.get(RedisRateLimiter),
+      registry.injector.get(OAuthCache),
+      broadcastLog,
+      env.supertokens.secrets,
+    );
 
     if (env.cdn.providers.api !== null) {
       const s3 = {
@@ -571,6 +555,7 @@ export async function main() {
 
       const artifactHandler = createArtifactRequestHandler({
         isKeyValid: createIsKeyValid({
+          kvStorageBaseUrl: env.cdn.providers.api.kv?.baseUrl,
           artifactStorageReader,
           analytics: null,
           breadcrumb(message: string) {

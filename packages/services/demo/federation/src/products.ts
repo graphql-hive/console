@@ -28,7 +28,7 @@ type Context = {
   products: Product[];
 };
 
-const typeDefs = parse(/* GraphQL */ `
+export const typeDefs = parse(/* GraphQL */ `
   extend type Query {
     topProducts(first: Int = 5): [Product]
   }

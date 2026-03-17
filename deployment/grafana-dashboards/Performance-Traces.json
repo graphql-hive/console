@@ -1,0 +1,693 @@
+{
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": {
+          "type": "datasource",
+          "uid": "grafana"
+        },
+        "enable": true,
+        "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Annotations & Alerts",
+        "target": {
+          "limit": 100,
+          "matchAny": false,
+          "tags": [],
+          "type": "dashboard"
+        },
+        "type": "dashboard"
+      }
+    ]
+  },
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 0,
+  "id": 1000,
+  "links": [],
+  "panels": [
+    {
+      "collapsed": true,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 0
+      },
+      "id": 8,
+      "panels": [],
+      "title": "Slow Requests",
+      "type": "row"
+    },
+    {
+      "datasource": {
+        "type": "tempo",
+        "uid": "grafanacloud-traces"
+      },
+      "description": "",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "fixed"
+          },
+          "custom": {
+            "align": "auto",
+            "cellOptions": {
+              "type": "auto"
+            },
+            "inspect": false
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Service"
+            },
+            "properties": [
+              {
+                "id": "custom.hidden"
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 24,
+        "x": 0,
+        "y": 1
+      },
+      "id": 6,
+      "options": {
+        "cellHeight": "sm",
+        "footer": {
+          "countRows": false,
+          "fields": "",
+          "reducer": ["sum"],
+          "show": false
+        },
+        "showHeader": true
+      },
+      "pluginVersion": "11.5.0-80207",
+      "targets": [
+        {
+          "datasource": {
+            "type": "tempo",
+            "uid": "grafanacloud-traces"
+          },
+          "filters": [
+            {
+              "id": "9d055a7f",
+              "operator": "=",
+              "scope": "span"
+            }
+          ],
+          "limit": 100,
+          "query": "{name=~\"POST /graphql\" && duration>$requestsThreshold}",
+          "queryType": "traceql",
+          "refId": "A",
+          "spss": 20,
+          "tableType": "traces"
+        }
+      ],
+      "title": "Slow GraphQL HTTP Requests",
+      "type": "table"
+    },
+    {
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 9
+      },
+      "id": 5,
+      "panels": [],
+      "title": "Slow Flows",
+      "type": "row"
+    },
+    {
+      "datasource": {
+        "type": "tempo",
+        "uid": "grafanacloud-traces"
+      },
+      "description": "",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "fixed"
+          },
+          "custom": {
+            "align": "auto",
+            "cellOptions": {
+              "type": "auto"
+            },
+            "inspect": false
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Service"
+            },
+            "properties": [
+              {
+                "id": "custom.hidden"
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 24,
+        "x": 0,
+        "y": 10
+      },
+      "id": 9,
+      "options": {
+        "cellHeight": "sm",
+        "footer": {
+          "countRows": false,
+          "fields": "",
+          "reducer": ["sum"],
+          "show": false
+        },
+        "showHeader": true
+      },
+      "pluginVersion": "11.5.0-80207",
+      "targets": [
+        {
+          "datasource": {
+            "type": "tempo",
+            "uid": "grafanacloud-traces"
+          },
+          "filters": [
+            {
+              "id": "9d055a7f",
+              "operator": "=",
+              "scope": "span"
+            }
+          ],
+          "limit": 100,
+          "query": "{name=~\"SchemaPublisher.check\" && duration>$schemaCheckThreshold}",
+          "queryType": "traceql",
+          "refId": "A",
+          "spss": 20,
+          "tableType": "traces"
+        }
+      ],
+      "title": "Slow SchemaPublisher.check",
+      "type": "table"
+    },
+    {
+      "datasource": {
+        "type": "tempo",
+        "uid": "grafanacloud-traces"
+      },
+      "description": "",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "fixed"
+          },
+          "custom": {
+            "align": "auto",
+            "cellOptions": {
+              "type": "auto"
+            },
+            "inspect": false
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Service"
+            },
+            "properties": [
+              {
+                "id": "custom.hidden"
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 24,
+        "x": 0,
+        "y": 18
+      },
+      "id": 7,
+      "options": {
+        "cellHeight": "sm",
+        "footer": {
+          "countRows": false,
+          "fields": "",
+          "reducer": ["sum"],
+          "show": false
+        },
+        "showHeader": true
+      },
+      "pluginVersion": "11.5.0-80207",
+      "targets": [
+        {
+          "datasource": {
+            "type": "tempo",
+            "uid": "grafanacloud-traces"
+          },
+          "filters": [
+            {
+              "id": "9d055a7f",
+              "operator": "=",
+              "scope": "span"
+            }
+          ],
+          "limit": 100,
+          "query": "{name=~\"SchemaPublisher.publish\" && duration>$schemaPublishThreshold}",
+          "queryType": "traceql",
+          "refId": "A",
+          "spss": 20,
+          "tableType": "traces"
+        }
+      ],
+      "title": "Slow SchemaPublisher.publish",
+      "type": "table"
+    },
+    {
+      "collapsed": true,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 26
+      },
+      "id": 3,
+      "panels": [
+        {
+          "datasource": {
+            "type": "tempo",
+            "uid": "grafanacloud-traces"
+          },
+          "description": "A list of requests that included a slow Clickhouse query",
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "fixed"
+              },
+              "custom": {
+                "align": "auto",
+                "cellOptions": {
+                  "type": "auto"
+                },
+                "inspect": false
+              },
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  }
+                ]
+              }
+            },
+            "overrides": [
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "Service"
+                },
+                "properties": [
+                  {
+                    "id": "custom.hidden"
+                  }
+                ]
+              }
+            ]
+          },
+          "gridPos": {
+            "h": 9,
+            "w": 24,
+            "x": 0,
+            "y": 34
+          },
+          "id": 4,
+          "options": {
+            "cellHeight": "sm",
+            "footer": {
+              "countRows": false,
+              "fields": "",
+              "reducer": ["sum"],
+              "show": false
+            },
+            "showHeader": true
+          },
+          "pluginVersion": "11.5.0-80207",
+          "targets": [
+            {
+              "datasource": {
+                "type": "tempo",
+                "uid": "grafanacloud-traces"
+              },
+              "filters": [
+                {
+                  "id": "9d055a7f",
+                  "operator": "=",
+                  "scope": "span"
+                }
+              ],
+              "limit": 100,
+              "query": "{name=~\"ClickHouse: .*\" && duration>${clickhouseThreshold}}",
+              "queryType": "traceql",
+              "refId": "A",
+              "spss": 20,
+              "tableType": "traces"
+            }
+          ],
+          "title": "Slow Clickhouse Queries",
+          "type": "table"
+        }
+      ],
+      "title": "Clickhouse Performance",
+      "type": "row"
+    },
+    {
+      "collapsed": true,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 27
+      },
+      "id": 2,
+      "panels": [
+        {
+          "datasource": {
+            "type": "tempo",
+            "uid": "grafanacloud-traces"
+          },
+          "description": "A list of requests that included a slow Postgres query",
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "fixed"
+              },
+              "custom": {
+                "align": "auto",
+                "cellOptions": {
+                  "type": "auto"
+                },
+                "inspect": false
+              },
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  }
+                ]
+              }
+            },
+            "overrides": [
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "Service"
+                },
+                "properties": [
+                  {
+                    "id": "custom.hidden"
+                  }
+                ]
+              }
+            ]
+          },
+          "gridPos": {
+            "h": 9,
+            "w": 24,
+            "x": 0,
+            "y": 35
+          },
+          "id": 1,
+          "options": {
+            "cellHeight": "sm",
+            "footer": {
+              "countRows": false,
+              "fields": "",
+              "reducer": ["sum"],
+              "show": false
+            },
+            "showHeader": true
+          },
+          "pluginVersion": "11.5.0-80207",
+          "targets": [
+            {
+              "datasource": {
+                "type": "tempo",
+                "uid": "grafanacloud-traces"
+              },
+              "filters": [
+                {
+                  "id": "9d055a7f",
+                  "operator": "=",
+                  "scope": "span"
+                }
+              ],
+              "limit": 100,
+              "query": "{name=~\"PG: .*\" && duration>${postgresThreshold}}",
+              "queryType": "traceql",
+              "refId": "A",
+              "spss": 20,
+              "tableType": "traces"
+            }
+          ],
+          "title": "Slow Postgres Queries",
+          "type": "table"
+        }
+      ],
+      "title": "Postgres Performance",
+      "type": "row"
+    }
+  ],
+  "preload": false,
+  "schemaVersion": 40,
+  "tags": [],
+  "templating": {
+    "list": [
+      {
+        "allowCustomValue": true,
+        "current": {
+          "text": "1000ms",
+          "value": "1000ms"
+        },
+        "description": "",
+        "label": "Postgres Threshold",
+        "name": "postgresThreshold",
+        "options": [
+          {
+            "selected": false,
+            "text": "3000ms",
+            "value": "3000ms"
+          },
+          {
+            "selected": false,
+            "text": "5000ms",
+            "value": "5000ms"
+          },
+          {
+            "selected": false,
+            "text": "10000ms",
+            "value": "10000ms"
+          }
+        ],
+        "query": "3000ms,5000ms,10000ms",
+        "type": "custom"
+      },
+      {
+        "allowCustomValue": true,
+        "current": {
+          "text": "3000ms",
+          "value": "3000ms"
+        },
+        "description": "",
+        "label": "Clickhouse Threshold",
+        "name": "clickhouseThreshold",
+        "options": [
+          {
+            "selected": false,
+            "text": "1000ms",
+            "value": "1000ms"
+          },
+          {
+            "selected": true,
+            "text": "3000ms",
+            "value": "3000ms"
+          },
+          {
+            "selected": false,
+            "text": "5000ms",
+            "value": "5000ms"
+          },
+          {
+            "selected": false,
+            "text": "10000ms",
+            "value": "10000ms"
+          }
+        ],
+        "query": "1000ms,3000ms,5000ms,10000ms",
+        "type": "custom"
+      },
+      {
+        "current": {
+          "text": "3000ms",
+          "value": "3000ms"
+        },
+        "label": "Schema Check Threshold",
+        "name": "schemaCheckThreshold",
+        "options": [
+          {
+            "selected": false,
+            "text": "1000ms",
+            "value": "1000ms"
+          },
+          {
+            "selected": true,
+            "text": "3000ms",
+            "value": "3000ms"
+          },
+          {
+            "selected": false,
+            "text": "5000ms",
+            "value": "5000ms"
+          },
+          {
+            "selected": false,
+            "text": "10000ms",
+            "value": "10000ms"
+          }
+        ],
+        "query": "1000ms,3000ms,5000ms,10000ms",
+        "type": "custom"
+      },
+      {
+        "current": {
+          "text": "3000ms",
+          "value": "3000ms"
+        },
+        "description": "",
+        "label": "Schema Publish Threshold",
+        "name": "schemaPublishThreshold",
+        "options": [
+          {
+            "selected": false,
+            "text": "1000ms",
+            "value": "1000ms"
+          },
+          {
+            "selected": true,
+            "text": "3000ms",
+            "value": "3000ms"
+          },
+          {
+            "selected": false,
+            "text": "5000ms",
+            "value": "5000ms"
+          },
+          {
+            "selected": false,
+            "text": "10000ms",
+            "value": "10000ms"
+          }
+        ],
+        "query": "1000ms,3000ms,5000ms,10000ms",
+        "type": "custom"
+      },
+      {
+        "current": {
+          "text": "3000ms",
+          "value": "3000ms"
+        },
+        "description": "",
+        "label": "HTTP Requests Threshold",
+        "name": "requestsThreshold",
+        "options": [
+          {
+            "selected": false,
+            "text": "1000ms",
+            "value": "1000ms"
+          },
+          {
+            "selected": true,
+            "text": "3000ms",
+            "value": "3000ms"
+          },
+          {
+            "selected": false,
+            "text": "5000ms",
+            "value": "5000ms"
+          },
+          {
+            "selected": false,
+            "text": "10000ms",
+            "value": "10000ms"
+          },
+          {
+            "selected": false,
+            "text": "20000ms",
+            "value": "20000ms"
+          }
+        ],
+        "query": "1000ms,3000ms,5000ms,10000ms,20000ms",
+        "type": "custom"
+      }
+    ]
+  },
+  "time": {
+    "from": "now-1h",
+    "to": "now"
+  },
+  "timepicker": {},
+  "timezone": "browser",
+  "title": "Performance Traces",
+  "uid": "de7pap7n5brb4d",
+  "version": 4,
+  "weekStart": ""
+}

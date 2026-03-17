@@ -6,6 +6,7 @@ import {
   ManagePaymentMethod,
 } from '@/components/organization/billing/BillingPaymentMethod';
 import { BillingPlanPicker } from '@/components/organization/billing/BillingPlanPicker';
+import { formatMillionOrBillion } from '@/components/organization/billing/helpers';
 import { PlanSummary } from '@/components/organization/billing/PlanSummary';
 import { RenderIfStripeAvailable } from '@/components/organization/stripe';
 import { Button } from '@/components/ui/button';
@@ -19,16 +20,13 @@ import { Slider } from '@/components/v2/slider';
 import Stat from '@/components/v2/stat';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import { BillingPlanType } from '@/gql/graphql';
-import { OrganizationAccessScope, useOrganizationAccess } from '@/lib/access/organization';
 import { CardElement, useElements, useStripe } from '@stripe/react-stripe-js';
 import { Link } from '@tanstack/react-router';
 
 const ManageSubscriptionInner_OrganizationFragment = graphql(`
   fragment ManageSubscriptionInner_OrganizationFragment on Organization {
     slug
-    me {
-      ...CanAccessOrganization_MemberFragment
-    }
+    viewerCanModifyBilling
     billingConfiguration {
       hasPaymentIssues
       canUpdateSubscription
@@ -37,9 +35,7 @@ const ManageSubscriptionInner_OrganizationFragment = graphql(`
       }
     }
     plan
-    rateLimit {
-      operations
-    }
+    monthlyOperationsLimit
     ...BillingPaymentMethod_OrganizationFragment
   }
 `);
@@ -126,13 +122,6 @@ function Inner(props: {
   );
   const stripe = useStripe();
   const elements = useElements();
-  const canAccess = useOrganizationAccess({
-    scope: OrganizationAccessScope.Settings,
-    member: organization?.me,
-    redirect: true,
-    organizationSlug: organization.slug,
-  });
-
   const [query] = useQuery({ query: BillingsPlanQuery });
 
   const [paymentDetailsValid, setPaymentDetailsValid] = useState(
@@ -166,7 +155,7 @@ function Inner(props: {
   );
   const [couponCode, setCouponCode] = useState('');
   const [operationsRateLimit, setOperationsRateLimit] = useState(
-    Math.floor((organization.rateLimit.operations || 1_000_000) / 1_000_000),
+    Math.floor((organization.monthlyOperationsLimit || 1_000_000) / 1_000_000),
   );
 
   const onOperationsRateLimitChange = useCallback(
@@ -189,7 +178,7 @@ function Inner(props: {
   useEffect(() => {
     if (query.data?.billingPlans?.length) {
       if (organization.plan === plan) {
-        setOperationsRateLimit(Math.floor((organization.rateLimit.operations || 0) / 1_000_000));
+        setOperationsRateLimit(Math.floor((organization.monthlyOperationsLimit || 0) / 1_000_000));
       } else {
         const actualPlan = query.data.billingPlans.find(v => v.planType === plan);
 
@@ -198,7 +187,7 @@ function Inner(props: {
         );
       }
     }
-  }, [organization.plan, organization.rateLimit.operations, plan, query.data?.billingPlans]);
+  }, [organization.plan, organization.monthlyOperationsLimit, plan, query.data?.billingPlans]);
 
   const upgrade = useCallback(async () => {
     if (isFetching) {
@@ -271,10 +260,6 @@ function Inner(props: {
     });
   }, [organization.slug, operationsRateLimit, updateOrgRateLimitMutation, isFetching]);
 
-  if (!canAccess) {
-    return null;
-  }
-
   const renderActions = () => {
     if (plan === organization.plan) {
       return null;
@@ -330,6 +315,12 @@ function Inner(props: {
     return null;
   };
 
+  // Only show the permission warning if not on the enterprise plan. Since enterprise plans must be manually updated through us.
+  const missingBillingUpdatePermissions =
+    plan !== 'ENTERPRISE' &&
+    !organization.billingConfiguration.canUpdateSubscription &&
+    !organization.viewerCanModifyBilling;
+
   const error =
     upgradeToProMutationState.error ||
     downgradeToHobbyMutationState.error ||
@@ -342,11 +333,13 @@ function Inner(props: {
     <div className="flex w-full flex-col gap-5">
       <Card className="w-full">
         <Heading className="mb-4">Choose Your Plan</Heading>
+        {missingBillingUpdatePermissions ? (
+          <div className="text-neutral-10 mb-3 text-sm">
+            You lack the necessary permission 'billing:update' to update the subscription plan.
+          </div>
+        ) : null}
         <BillingPlanPicker
-          disabled={
-            organization.plan === BillingPlanType.Enterprise ||
-            !organization.billingConfiguration.canUpdateSubscription
-          }
+          disabled={!organization.billingConfiguration.canUpdateSubscription}
           activePlan={organization.plan}
           value={plan}
           plans={billingPlans}
@@ -374,32 +367,25 @@ function Inner(props: {
                 <>
                   <div className="my-8 w-1/2">
                     <Heading>Define your reserved volume</Heading>
-                    <p className="text-sm text-gray-500">
+                    <p className="text-neutral-10 text-sm">
                       Pro plan requires to defined quota of reported operations.
                     </p>
-                    <p className="text-sm text-gray-500">
+                    <p className="text-neutral-10 text-sm">
                       Pick a volume a little higher than you think you'll need to avoid being rate
                       limited.
                     </p>
-                    <p className="text-sm text-gray-500">
+                    <p className="text-neutral-10 text-sm">
                       Don't worry, you can always adjust it later.
                     </p>
                     <div className="mt-5 pl-2.5">
-                      <Slider
-                        min={1}
-                        max={300}
-                        disabled={isFetching}
-                        value={[operationsRateLimit]}
-                        onValueChange={onOperationsRateLimitChange}
+                      <SubscriptionSlider
+                        isFetching={isFetching}
+                        operationsRateLimit={operationsRateLimit}
+                        onOperationsRateLimitChange={onOperationsRateLimitChange}
                       />
-                      <div className="flex justify-between">
-                        <span>1M</span>
-                        <span>100M</span>
-                        <span>200M</span>
-                        <span>300M</span>
-                      </div>
                     </div>
                   </div>
+
                   {plan === organization.plan ? (
                     <div>
                       <Button
@@ -407,7 +393,7 @@ function Inner(props: {
                         onClick={updateLimits}
                         disabled={
                           isFetching ||
-                          organization.rateLimit.operations === operationsRateLimit * 1_000_000
+                          organization.monthlyOperationsLimit === operationsRateLimit * 1_000_000
                         }
                       >
                         Update Limits
@@ -427,13 +413,118 @@ function Inner(props: {
   );
 }
 
+function SubscriptionSlider({
+  operationsRateLimit,
+  onOperationsRateLimitChange,
+  isFetching,
+}: {
+  operationsRateLimit: number;
+  onOperationsRateLimitChange: (value: number[]) => void;
+  isFetching: boolean;
+}) {
+  const min = 1;
+  const max = 1500;
+
+  const [inputValue, setInputValue] = useState(formatMillionOrBillion(operationsRateLimit));
+  const [inputError, setInputError] = useState<string | null>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  // Sync local state when the parent prop changes
+  useEffect(() => {
+    if (document.activeElement !== inputRef.current) {
+      setInputValue(formatMillionOrBillion(operationsRateLimit));
+    }
+  }, [operationsRateLimit]);
+
+  const handleInputChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const currentValue = event.target.value;
+    setInputValue(currentValue);
+
+    if (currentValue.trim() === '') {
+      setInputError('Value cannot be empty.');
+      return;
+    }
+
+    const valueInMillions = parseToMillions(currentValue);
+
+    if (valueInMillions !== null) {
+      setInputError(null);
+      onOperationsRateLimitChange([valueInMillions]);
+    } else {
+      setInputError('Invalid format (e.g., "100M", "1.5B").');
+    }
+  };
+
+  const handleBlur = () => {
+    setInputError(null);
+    setInputValue(formatMillionOrBillion(operationsRateLimit));
+  };
+
+  return (
+    <div className="space-y-2">
+      <Slider
+        min={min}
+        max={max}
+        step={1}
+        disabled={isFetching}
+        value={[Math.min(operationsRateLimit, max)]}
+        onValueChange={onOperationsRateLimitChange}
+      />
+
+      <span>{formatMillionOrBillion(operationsRateLimit)}</span>
+      <div className="flex justify-between">
+        <span>1M</span>
+        <span>500M</span>
+        <span>1B</span>
+        <span>Custom</span>
+      </div>
+
+      <div className="ml-auto w-48">
+        <Input
+          ref={inputRef}
+          value={inputValue}
+          className="ml-auto text-end"
+          onChange={handleInputChange}
+          onBlur={handleBlur}
+        />
+        {inputError && <div className="mt-1 text-end text-sm text-red-500">{inputError}</div>}
+      </div>
+    </div>
+  );
+}
+
+export function parseToMillions(input: string): number | null {
+  if (typeof input !== 'string' || input.trim() === '') {
+    return null;
+  }
+
+  const normalizedInput = input.trim().toUpperCase();
+
+  // Regex to capture the number and an optional 'M' or 'B' suffix.
+  // Supports floating-point numbers for precision.
+  const regex = /^(\d*\.?\d+)\s*([MB])?$/;
+  const match = normalizedInput.match(regex);
+
+  if (!match) {
+    return null;
+  }
+
+  const number = parseFloat(match[1]);
+  const unit = match[2];
+
+  if (unit === 'B') {
+    return number * 1000;
+  }
+
+  return number;
+}
+
 const ManageSubscriptionPageQuery = graphql(`
-  query ManageSubscriptionPageQuery($selector: OrganizationSelectorInput!) {
-    organization(selector: $selector) {
-      organization {
-        slug
-        ...ManageSubscriptionInner_OrganizationFragment
-      }
+  query ManageSubscriptionPageQuery($organizationSlug: String!) {
+    organization: organizationBySlug(organizationSlug: $organizationSlug) {
+      id
+      slug
+      ...ManageSubscriptionInner_OrganizationFragment
     }
     billingPlans {
       ...ManageSubscriptionInner_BillingPlansFragment
@@ -445,25 +536,12 @@ function ManageSubscriptionPageContent(props: { organizationSlug: string }) {
   const [query] = useQuery({
     query: ManageSubscriptionPageQuery,
     variables: {
-      selector: {
-        organizationSlug: props.organizationSlug,
-      },
+      organizationSlug: props.organizationSlug,
     },
   });
 
-  const currentOrganization = query.data?.organization?.organization;
+  const currentOrganization = query.data?.organization;
   const billingPlans = query.data?.billingPlans;
-
-  const organization = useFragment(
-    ManageSubscriptionInner_OrganizationFragment,
-    currentOrganization,
-  );
-  useOrganizationAccess({
-    scope: OrganizationAccessScope.Settings,
-    member: organization?.me ?? null,
-    redirect: true,
-    organizationSlug: props.organizationSlug,
-  });
 
   if (query.error) {
     return <QueryError organizationSlug={props.organizationSlug} error={query.error} />;

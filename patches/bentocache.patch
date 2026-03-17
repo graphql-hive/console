@@ -1,0 +1,13 @@
+diff --git a/package.json b/package.json
+index 26e97ac450795f4595d06b7b4b9d1d0f6b16700e..cabc9439217790a325c042f2931fe8c3761ccaa3 100644
+--- a/package.json
++++ b/package.json
+@@ -15,6 +15,8 @@
+   ],
+   "exports": {
+     ".": "./build/index.js",
++    "./build/src/drivers/redis": "./build/src/drivers/redis.js",
++    "./build/src/drivers/memory": "./build/src/drivers/memory.js",
+     "./drivers/redis": "./build/src/drivers/redis.js",
+     "./drivers/memory": "./build/src/drivers/memory.js",
+     "./drivers/file": "./build/src/drivers/file/file.js",

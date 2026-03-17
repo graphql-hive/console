@@ -1,7 +1,13 @@
 import Image, { StaticImageData } from 'next/image';
 import { GlobeIcon } from '@radix-ui/react-icons';
-import { CallToAction, DiscordIcon, GitHubIcon, Heading, TwitterIcon } from '@theguild/components';
-import { cn } from '../lib';
+import {
+  CallToAction,
+  cn,
+  DiscordIcon,
+  GitHubIcon,
+  Heading,
+  TwitterIcon,
+} from '@theguild/components';
 import { MaskingScrollview } from './masking-scrollview';
 import Achrafash from './community-section/achrafash_.png';
 import ChimameRt from './community-section/chimame_rt.png';
@@ -22,14 +28,14 @@ export function CommunitySection({ className }: { className?: string }) {
       className={cn('bg-green-1000 rounded-3xl px-4 py-6 lg:px-8 lg:py-16 xl:p-24', className)}
     >
       <Heading as="h2" size="sm" className="text-balance text-white lg:text-center">
-        Community-driven Open Source
+        Community-Driven Open Source
       </Heading>
       <p className="mt-4 text-white/80 lg:text-center">
         Supported by a network of early advocates, contributors, and champions.
       </p>
       <div className="my-6 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:my-24 lg:grid-cols-4">
         <CommunityCard
-          title="GitHub integration"
+          title="GitHub Integration"
           description="Our CLI integrates smoothly with GitHub Actions / repositories."
         >
           <CallToAction
@@ -43,7 +49,7 @@ export function CommunitySection({ className }: { className?: string }) {
           </CallToAction>
         </CommunityCard>
         <CommunityCard
-          title="Impactful community"
+          title="Impactful Community"
           description="Implement your own features with our help"
         >
           <CallToAction
@@ -56,7 +62,7 @@ export function CommunitySection({ className }: { className?: string }) {
             Discord
           </CallToAction>
         </CommunityCard>
-        <CommunityCard title="Public roadmap" description="Influence the future of Hive">
+        <CommunityCard title="Public Roadmap" description="Influence the future of Hive">
           <CallToAction
             variant="secondary-inverted"
             href="https://the-guild.dev/graphql/hive/product-updates"
@@ -67,17 +73,17 @@ export function CommunitySection({ className }: { className?: string }) {
           </CallToAction>
         </CommunityCard>
         <CommunityCard
-          title="Available for free"
+          title="Available for Free"
           description="Free Hobby plan that fits perfectly for most side projects."
         >
-          <CallToAction variant="secondary-inverted" href="/#pricing">
+          <CallToAction variant="secondary-inverted" href="/pricing">
             Check Pricing
           </CallToAction>
         </CommunityCard>
       </div>
       <MaskingScrollview
         outerClassName="max-sm:-mx-4 max-sm:px-4 "
-        className="relative -m-4 flex flex-row gap-6 p-4 max-sm:overflow-x-auto sm:grid sm:h-[600px] sm:grid-cols-2 sm:overflow-y-auto lg:grid-cols-4"
+        className="nextra-scrollbar relative -m-4 flex flex-row gap-6 p-4 [scrollbar-width:auto] max-sm:overflow-x-auto sm:grid sm:h-[600px] sm:grid-cols-2 sm:overflow-y-auto lg:grid-cols-4"
         fade="y"
       >
         {Array.from({ length: 4 }).map((_, i) => (

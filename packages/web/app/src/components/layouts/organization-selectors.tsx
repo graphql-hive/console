@@ -25,32 +25,38 @@ export function OrganizationSelector(props: {
     node => node.slug === props.currentOrganizationSlug,
   );
 
-  return organizations ? (
+  if (!organizations) {
+    return <div className="bg-neutral-5 h-5 w-48 animate-pulse rounded-full" />;
+  }
+
+  return (
     <Select
       value={props.currentOrganizationSlug}
-      onValueChange={id => {
+      onValueChange={slug => {
         void router.navigate({
           to: '/$organizationSlug',
           params: {
-            organizationSlug: id,
+            organizationSlug: slug,
           },
         });
       }}
     >
-      <SelectTrigger variant="default">
+      <SelectTrigger variant="default" data-cy="organization-picker-trigger">
         <div className="font-medium" data-cy="organization-picker-current">
           {currentOrganization?.slug}
         </div>
       </SelectTrigger>
       <SelectContent>
         {organizations.map(org => (
-          <SelectItem key={org.slug} value={org.slug}>
+          <SelectItem
+            key={org.slug}
+            value={org.slug}
+            data-cy={`organization-picker-option-${org.slug}`}
+          >
             {org.slug}
           </SelectItem>
         ))}
       </SelectContent>
     </Select>
-  ) : (
-    <div className="h-5 w-48 animate-pulse rounded-full bg-gray-800" />
   );
 }

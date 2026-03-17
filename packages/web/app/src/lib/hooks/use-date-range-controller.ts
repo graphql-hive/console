@@ -2,10 +2,8 @@ import { useState } from 'react';
 import {
   addDays,
   addHours,
-  endOfHour,
   endOfMinute,
   formatISO,
-  startOfHour,
   startOfMinute,
   subHours,
   subMilliseconds,
@@ -18,8 +16,12 @@ import { useRouter } from '@tanstack/react-router';
 import { useResetState } from './use-reset-state';
 
 export function useDateRangeController(args: {
+  /** the data retention aka minimum time range. */
   dataRetentionInDays: number;
+  /** the default preset to pick if no range is provided. */
   defaultPreset: Preset;
+  /** controlled input range */
+  range?: Preset['range'];
 }) {
   const router = useRouter();
 
@@ -27,11 +29,10 @@ export function useDateRangeController(args: {
     () => subDays(new Date(), args.dataRetentionInDays),
     [args.dataRetentionInDays],
   );
-
   const searchParams = router.latestLocation.search;
-  // const params = new URLSearchParams(urlParameter);
-  const fromRaw = (('from' in searchParams && searchParams.from) ?? '') as string;
-  const toRaw = (('to' in searchParams && searchParams.to) ?? 'now') as string;
+  const fromRaw =
+    args.range?.from ?? ((('from' in searchParams && searchParams.from) ?? '') as string);
+  const toRaw = args.range?.to ?? ((('to' in searchParams && searchParams.to) ?? 'now') as string);
 
   const [selectedPreset] = useResetState(() => {
     const preset = availablePresets.find(p => p.range.from === fromRaw && p.range.to === toRaw);
@@ -62,7 +63,7 @@ export function useDateRangeController(args: {
     let to = new Date(parsed.to);
 
     if (from.getTime() === to.getTime()) {
-      to = subSeconds(addHours(new Date(), 20), 1);
+      to = subSeconds(addHours(to, 24), 1);
     }
 
     const resolved = resolveRangeAndResolution({
@@ -128,6 +129,26 @@ function getUTCStartOfDay(date: Date) {
 /** Get the UTC end date of a day */
 function getUTCEndOfDay(date: Date) {
   return subMilliseconds(getUTCStartOfDay(addDays(date, 1)), 1);
+}
+
+function startOfHour(date: Date): Date {
+  return new Date(
+    Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate(), date.getUTCHours()),
+  );
+}
+
+function endOfHour(date: Date): Date {
+  return new Date(
+    Date.UTC(
+      date.getUTCFullYear(),
+      date.getUTCMonth(),
+      date.getUTCDate(),
+      date.getUTCHours(),
+      59,
+      59,
+      999,
+    ),
+  );
 }
 
 export function resolveRangeAndResolution(range: { from: Date; to: Date }, now = new Date()) {

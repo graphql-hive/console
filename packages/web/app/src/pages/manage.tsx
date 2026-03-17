@@ -1,7 +1,7 @@
 import { useCallback, useState } from 'react';
 import { AdminStats, Filters } from '@/components/admin/AdminStats';
+import { Checkbox } from '@/components/base/checkbox/checkbox';
 import { Page } from '@/components/common';
-import { Checkbox } from '@/components/ui/checkbox';
 import { DateRangePicker, presetLast7Days } from '@/components/ui/date-range-picker';
 import { Tooltip } from '@/components/v2/tooltip';
 import { useDateRangeController } from '@/lib/hooks/use-date-range-controller';

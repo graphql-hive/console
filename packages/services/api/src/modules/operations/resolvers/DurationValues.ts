@@ -2,6 +2,9 @@ import { nsToMs } from '../../../shared/helpers';
 import type { DurationValuesResolvers } from './../../../__generated__/types';
 
 export const DurationValues: DurationValuesResolvers = {
+  avg: value => {
+    return transformPercentile(value.avg);
+  },
   p75: value => {
     return transformPercentile(value.p75);
   },

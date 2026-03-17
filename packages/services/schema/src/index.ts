@@ -1,6 +1,5 @@
 #!/usr/bin/env node
-import crypto from 'node:crypto';
-import { hostname } from 'os';
+import 'reflect-metadata';
 import Redis from 'ioredis';
 import {
   configureTracing,
@@ -9,31 +8,15 @@ import {
   registerShutdown,
   registerTRPC,
   reportReadiness,
+  sentryInit,
   startMetrics,
   TracingInstance,
 } from '@hive/service-common';
 import * as Sentry from '@sentry/node';
 import { Context, schemaBuilderApiRouter } from './api';
 import { createCache } from './cache';
+import { CompositionScheduler } from './composition-scheduler';
 import { env } from './environment';
-
-const ENCRYPTION_SECRET = crypto.createHash('md5').update(env.encryptionSecret).digest('hex');
-
-function decryptFactory() {
-  const ALG = 'aes256';
-  const IN_ENC = 'utf8';
-  const OUT_ENC = 'hex';
-
-  const secretBuffer = Buffer.from(ENCRYPTION_SECRET, 'latin1');
-
-  return function decrypt(text: string) {
-    const components = text.split(':');
-    const iv = Buffer.from(components.shift() || '', OUT_ENC);
-    const decipher = crypto.createDecipheriv(ALG, secretBuffer, iv);
-
-    return decipher.update(components.join(':'), OUT_ENC, IN_ENC) + decipher.final(IN_ENC);
-  };
-}
 
 async function main() {
   let tracing: TracingInstance | undefined;
@@ -45,13 +28,11 @@ async function main() {
     });
 
     tracing.instrumentNodeFetch();
-    tracing.build();
-    tracing.start();
+    tracing.setup();
   }
 
   if (env.sentry) {
-    Sentry.init({
-      serverName: hostname(),
+    sentryInit({
       dist: 'schema',
       enabled: !!env.sentry,
       environment: env.environment,
@@ -69,6 +50,12 @@ async function main() {
     },
     bodyLimit: env.http.bodyLimit,
   });
+
+  const compositionScheduler = new CompositionScheduler(
+    server.log,
+    env.compositionWorker.count,
+    env.compositionWorker.maxOldGenerationSizeMb,
+  );
 
   if (tracing) {
     await server.register(...tracing.instrumentFastify());
@@ -98,6 +85,7 @@ async function main() {
     db: 0,
     maxRetriesPerRequest: null,
     enableReadyCheck: false,
+    tls: env.redis.tlsEnabled ? {} : undefined,
   });
 
   try {
@@ -121,8 +109,6 @@ async function main() {
       server.log.info('Redis reconnecting in %s', timeToReconnect);
     });
 
-    const decrypt = decryptFactory();
-
     await registerTRPC(server, {
       router: schemaBuilderApiRouter,
       createContext({ req }): Context {
@@ -137,7 +123,7 @@ async function main() {
             failure: env.timings.cacheTTL,
           },
         });
-        return { cache, req, decrypt, broker: env.requestBroker };
+        return { cache, req, broker: env.requestBroker, compositionScheduler };
       },
     });
 

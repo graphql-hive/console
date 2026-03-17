@@ -12,34 +12,43 @@ import { EmptyList } from '@/components/ui/empty-list';
 import { Meta } from '@/components/ui/meta';
 import { Subtitle, Title } from '@/components/ui/page';
 import { QueryError } from '@/components/ui/query-error';
-import { CHART_PRIMARY_COLOR } from '@/constants';
 import { graphql } from '@/gql';
 import { formatNumber, formatThroughput, toDecimal } from '@/lib/hooks';
 import { useDateRangeController } from '@/lib/hooks/use-date-range-controller';
 import { pick } from '@/lib/object';
-import { useChartStyles } from '@/utils';
+import { useChartStyles } from '@/lib/utils';
 import { Link } from '@tanstack/react-router';
 
 const ClientView_ClientStatsQuery = graphql(`
-  query ClientView_ClientStatsQuery($selector: ClientStatsInput!, $resolution: Int!) {
-    clientStats(selector: $selector) {
-      requestsOverTime(resolution: $resolution) {
-        date
-        value
-      }
-      totalRequests
-      totalVersions
-      operations {
-        nodes {
-          id
-          name
-          operationHash
+  query ClientView_ClientStatsQuery(
+    $targetSelector: TargetSelectorInput!
+    $period: DateRangeInput!
+    $resolution: Int!
+    $clientName: String!
+  ) {
+    target(reference: { bySelector: $targetSelector }) {
+      id
+      clientStats(period: $period, clientName: $clientName) {
+        requestsOverTime(resolution: $resolution) {
+          date
+          value
+        }
+        totalRequests
+        totalVersions
+        operations {
+          edges {
+            node {
+              id
+              name
+              operationHash
+              count
+            }
+          }
+        }
+        versions(limit: 25) {
+          version
           count
         }
-      }
-      versions(limit: 25) {
-        version
-        count
       }
     }
   }
@@ -52,7 +61,7 @@ function ClientView(props: {
   projectSlug: string;
   targetSlug: string;
 }) {
-  const styles = useChartStyles();
+  const { styles, colors } = useChartStyles();
   const dateRangeController = useDateRangeController({
     dataRetentionInDays: props.dataRetentionInDays,
     defaultPreset: presetLast7Days,
@@ -61,13 +70,13 @@ function ClientView(props: {
   const [query, refetch] = useQuery({
     query: ClientView_ClientStatsQuery,
     variables: {
-      selector: {
+      targetSelector: {
         organizationSlug: props.organizationSlug,
         projectSlug: props.projectSlug,
         targetSlug: props.targetSlug,
-        client: props.clientName,
-        period: dateRangeController.resolvedRange,
       },
+      period: dateRangeController.resolvedRange,
+      clientName: props.clientName,
       resolution: dateRangeController.resolution,
     },
   });
@@ -79,7 +88,7 @@ function ClientView(props: {
   }, [dateRangeController.resolvedRange]);
 
   const isLoading = query.fetching;
-  const points = query.data?.clientStats?.requestsOverTime;
+  const points = query.data?.target?.clientStats?.requestsOverTime;
   const requestsOverTime = useMemo(() => {
     if (!points) {
       return [];
@@ -88,12 +97,18 @@ function ClientView(props: {
     return points.map(node => [node.date, node.value]);
   }, [points]);
 
-  const totalRequests = query.data?.clientStats?.totalRequests ?? 0;
-  const totalVersions = query.data?.clientStats?.totalVersions ?? 0;
-  const totalOperations = query.data?.clientStats?.operations.nodes.length ?? 0;
+  const totalRequests = query.data?.target?.clientStats?.totalRequests ?? 0;
+  const totalVersions = query.data?.target?.clientStats?.totalVersions ?? 0;
+  const totalOperations = query.data?.target?.clientStats?.operations.edges.length ?? 0;
 
   if (query.error) {
-    return <QueryError organizationSlug={props.organizationSlug} error={query.error} />;
+    return (
+      <QueryError
+        organizationSlug={props.organizationSlug}
+        error={query.error}
+        showLogoutButton={false}
+      />
+    );
   }
 
   return (
@@ -120,24 +135,24 @@ function ClientView(props: {
         <div className="grid gap-4 md:grid-cols-1 lg:grid-cols-8">
           <div className="col-span-4">
             <div className="grid gap-4 md:grid-cols-4 lg:grid-cols-2">
-              <Card className="bg-gray-900/50">
+              <Card className="bg-neutral-2/50">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                   <CardTitle className="text-sm font-medium">Total calls</CardTitle>
-                  <GlobeIcon className="text-muted-foreground size-4" />
+                  <GlobeIcon className="text-neutral-10 size-4" />
                 </CardHeader>
                 <CardContent>
                   <div className="text-2xl font-bold">
                     {isLoading ? '-' : formatNumber(totalRequests)}
                   </div>
-                  <p className="text-muted-foreground text-xs">
+                  <p className="text-neutral-10 text-xs">
                     Requests in {dateRangeController.selectedPreset.label.toLowerCase()}
                   </p>
                 </CardContent>
               </Card>
-              <Card className="bg-gray-900/50">
+              <Card className="bg-neutral-2/50">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                   <CardTitle className="text-sm font-medium">Requests per minute</CardTitle>
-                  <ActivityIcon className="text-muted-foreground size-4" />
+                  <ActivityIcon className="text-neutral-10 size-4" />
                 </CardHeader>
                 <CardContent>
                   <div className="text-2xl font-bold">
@@ -151,31 +166,29 @@ function ClientView(props: {
                           ),
                         )}
                   </div>
-                  <p className="text-muted-foreground text-xs">
+                  <p className="text-neutral-10 text-xs">
                     RPM in {dateRangeController.selectedPreset.label.toLowerCase()}
                   </p>
                 </CardContent>
               </Card>
-              <Card className="bg-gray-900/50">
+              <Card className="bg-neutral-2/50">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                   <CardTitle className="text-sm font-medium">Operations</CardTitle>
-                  <BookIcon className="text-muted-foreground size-4" />
+                  <BookIcon className="text-neutral-10 size-4" />
                 </CardHeader>
                 <CardContent>
                   <div className="text-2xl font-bold">{isLoading ? '-' : totalOperations}</div>
-                  <p className="text-muted-foreground text-xs">
-                    Documents requested by selected client
-                  </p>
+                  <p className="text-neutral-10 text-xs">Documents requested by selected client</p>
                 </CardContent>
               </Card>
-              <Card className="bg-gray-900/50">
+              <Card className="bg-neutral-2/50">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                   <CardTitle className="text-sm font-medium">Versions</CardTitle>
-                  <HistoryIcon className="text-muted-foreground size-4" />
+                  <HistoryIcon className="text-neutral-10 size-4" />
                 </CardHeader>
                 <CardContent>
                   <div className="text-2xl font-bold">{isLoading ? '-' : totalVersions}</div>
-                  <p className="text-muted-foreground text-xs">
+                  <p className="text-neutral-10 text-xs">
                     Versions in {dateRangeController.selectedPreset.label.toLowerCase()}
                   </p>
                 </CardContent>
@@ -183,7 +196,7 @@ function ClientView(props: {
             </div>
           </div>
           <div className="col-span-4">
-            <Card className="flex h-full flex-col bg-gray-900/50">
+            <Card className="bg-neutral-2/50 flex h-full flex-col">
               <CardHeader>
                 <CardTitle>Activity</CardTitle>
                 <CardDescription>
@@ -222,7 +235,7 @@ function ClientView(props: {
                             min: 0,
                             splitLine: {
                               lineStyle: {
-                                color: '#595959',
+                                color: colors.grid,
                                 type: 'dashed',
                               },
                             },
@@ -237,7 +250,7 @@ function ClientView(props: {
                             name: 'Requests',
                             showSymbol: false,
                             smooth: false,
-                            color: CHART_PRIMARY_COLOR,
+                            color: colors.primary,
                             areaStyle: {},
                             emphasis: {
                               focus: 'series',
@@ -255,7 +268,7 @@ function ClientView(props: {
           </div>
         </div>
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
-          <Card className="col-span-4 flex h-full flex-col bg-gray-900/50">
+          <Card className="bg-neutral-2/50 col-span-4 flex h-full flex-col">
             <CardHeader>
               <CardTitle>Operations</CardTitle>
               <CardDescription>
@@ -268,11 +281,11 @@ function ClientView(props: {
               <div className="space-y-2">
                 {isLoading
                   ? null
-                  : query.data?.clientStats.operations.nodes.map(operation => (
+                  : query.data?.target?.clientStats.operations.edges.map(({ node: operation }) => (
                       <div key={operation.id} className="flex items-center">
                         <p className="truncate text-sm font-medium">
                           <Link
-                            className="text-orange-500 hover:text-orange-500 hover:underline hover:underline-offset-2"
+                            className="text-accent_80 hover:text-accent hover:underline hover:underline-offset-2"
                             to="/$organizationSlug/$projectSlug/$targetSlug/insights/$operationName/$operationHash"
                             params={{
                               organizationSlug: props.organizationSlug,
@@ -298,7 +311,7 @@ function ClientView(props: {
             </CardContent>
           </Card>
 
-          <Card className="col-span-3 flex h-full flex-col bg-gray-900/50">
+          <Card className="bg-neutral-2/50 col-span-3 flex h-full flex-col">
             <CardHeader>
               <CardTitle>Versions</CardTitle>
               <CardDescription>
@@ -314,7 +327,7 @@ function ClientView(props: {
               <div className="space-y-2">
                 {isLoading
                   ? null
-                  : query.data?.clientStats.versions.map(version => (
+                  : query.data?.target?.clientStats.versions.map(version => (
                       <div key={version.version} className="flex items-center">
                         <p className="truncate text-sm font-medium">{version.version}</p>
                         <div className="ml-auto flex min-w-[150px] flex-row items-center justify-end text-sm font-light">
@@ -340,14 +353,10 @@ const ClientInsightsPageQuery = graphql(`
     $projectSlug: String!
     $targetSlug: String!
   ) {
-    organization(selector: { organizationSlug: $organizationSlug }) {
-      organization {
-        id
-        slug
-        rateLimit {
-          retentionInDays
-        }
-      }
+    organization: organizationBySlug(organizationSlug: $organizationSlug) {
+      id
+      slug
+      usageRetentionInDays
     }
     hasCollectedOperations(
       selector: {
@@ -375,39 +384,41 @@ function ClientInsightsPageContent(props: {
   });
 
   if (query.error) {
-    return <QueryError organizationSlug={props.organizationSlug} error={query.error} />;
+    return (
+      <QueryError
+        organizationSlug={props.organizationSlug}
+        error={query.error}
+        showLogoutButton={false}
+      />
+    );
   }
 
-  const currentOrganization = query.data?.organization?.organization;
-  const hasCollectedOperations = query.data?.hasCollectedOperations === true;
+  const currentOrganization = query.data?.organization;
+
+  if (!currentOrganization) {
+    return null;
+  }
+
+  if (!query.data?.hasCollectedOperations) {
+    return (
+      <div className="py-8">
+        <EmptyList
+          title="Hive is waiting for your first collected operation"
+          description="You can collect usage of your GraphQL API with Hive Client"
+          docsUrl="/features/usage-reporting"
+        />
+      </div>
+    );
+  }
 
   return (
-    <TargetLayout
+    <ClientView
+      clientName={props.name}
+      dataRetentionInDays={currentOrganization.usageRetentionInDays}
       organizationSlug={props.organizationSlug}
       projectSlug={props.projectSlug}
       targetSlug={props.targetSlug}
-      page={Page.Insights}
-    >
-      {currentOrganization ? (
-        hasCollectedOperations ? (
-          <ClientView
-            clientName={props.name}
-            dataRetentionInDays={currentOrganization.rateLimit.retentionInDays}
-            organizationSlug={props.organizationSlug}
-            projectSlug={props.projectSlug}
-            targetSlug={props.targetSlug}
-          />
-        ) : (
-          <div className="py-8">
-            <EmptyList
-              title="Hive is waiting for your first collected operation"
-              description="You can collect usage of your GraphQL API with Hive Client"
-              docsUrl="/features/usage-reporting"
-            />
-          </div>
-        )
-      ) : null}
-    </TargetLayout>
+    />
   );
 }
 
@@ -420,7 +431,14 @@ export function TargetInsightsClientPage(props: {
   return (
     <>
       <Meta title={`${props.name} - client`} />
-      <ClientInsightsPageContent {...props} />
+      <TargetLayout
+        organizationSlug={props.organizationSlug}
+        projectSlug={props.projectSlug}
+        targetSlug={props.targetSlug}
+        page={Page.Insights}
+      >
+        <ClientInsightsPageContent {...props} />
+      </TargetLayout>
     </>
   );
 }

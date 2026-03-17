@@ -4,7 +4,7 @@ import { ContourValues } from './contour.types';
 import { helmChart } from './helm';
 
 // prettier-ignore
-export const CONTOUR_CHART = helmChart('https://charts.bitnami.com/bitnami', 'contour', '18.2.11');
+export const CONTOUR_CHART = helmChart('https://raw.githubusercontent.com/bitnami/charts/refs/heads/index/bitnami/', 'contour', '20.0.3');
 
 export class Proxy {
   private lbService: Output<k8s.core.v1.Service> | null = null;
@@ -14,8 +14,69 @@ export class Proxy {
     private staticIp?: { address?: string; aksReservedIpResourceGroup?: string },
   ) {}
 
+  registerInternalProxy(
+    dnsRecord: string,
+    route: {
+      path: string;
+      service: k8s.core.v1.Service;
+      host: string;
+      customRewrite: string;
+    },
+  ) {
+    const cert = new k8s.apiextensions.CustomResource(`cert-${dnsRecord}`, {
+      apiVersion: 'cert-manager.io/v1',
+      kind: 'Certificate',
+      metadata: {
+        name: dnsRecord,
+      },
+      spec: {
+        commonName: dnsRecord,
+        dnsNames: [dnsRecord],
+        issuerRef: {
+          name: this.tlsSecretName,
+          kind: 'ClusterIssuer',
+        },
+        secretName: dnsRecord,
+      },
+    });
+
+    new k8s.apiextensions.CustomResource(
+      `internal-proxy-${dnsRecord}`,
+      {
+        apiVersion: 'projectcontour.io/v1',
+        kind: 'HTTPProxy',
+        metadata: {
+          name: `internal-proxy-metadata-${dnsRecord}`,
+        },
+        spec: {
+          virtualhost: {
+            fqdn: route.host,
+            tls: {
+              secretName: dnsRecord,
+            },
+          },
+          routes: [
+            {
+              conditions: [{ prefix: route.path }],
+              services: [
+                {
+                  name: route.service.metadata.name,
+                  port: route.service.spec.ports[0].port,
+                },
+              ],
+              pathRewritePolicy: {
+                replacePrefix: [{ prefix: route.path, replacement: route.customRewrite }],
+              },
+            },
+          ],
+        },
+      },
+      { dependsOn: [cert, this.lbService!] },
+    );
+  }
+
   registerService(
-    dns: { record: string; apex?: boolean },
+    dns: { record: string },
     routes: {
       name: string;
       path: string;
@@ -29,7 +90,7 @@ export class Proxy {
       withWwwDomain?: boolean;
       // https://projectcontour.io/docs/1.29/config/rate-limiting/#local-rate-limiting
       rateLimit?: {
-        // Max amount of request allowed with the "unit" paramter.
+        // Max amount of request allowed with the "unit" parameter.
         maxRequests: number;
         unit: 'second' | 'minute' | 'hour';
         // defining the number of requests above the baseline rate that are allowed in a short period of time.
@@ -74,7 +135,7 @@ export class Proxy {
               secretName: dns.record,
             },
             corsPolicy: {
-              allowOrigin: ['https://app.graphql-hive.com', 'https://graphql-hive.com'],
+              allowOrigin: [`https://${dns.record}`],
               allowMethods: ['GET', 'POST', 'OPTIONS'],
               allowHeaders: ['*'],
               exposeHeaders: ['*'],
@@ -170,6 +231,9 @@ export class Proxy {
       replicas?: number;
       memory?: string;
       cpu?: string;
+      timeouts?: {
+        idleTimeout?: number;
+      };
     };
     tracing?: {
       collectorService: Output<k8s.core.v1.Service>;
@@ -225,6 +289,11 @@ export class Proxy {
           'upstream_service_time',
           'user_agent',
           'x_forwarded_for',
+          'x_trace_id',
+          // X-API-TOKEN is a custom header, that contains only the token without a prefix.
+          'x_api_token=%REQ(X-API-TOKEN):3%',
+          /// Authorization header contains the token with the prefix "Bearer " (so 7+4 to get the first 4 chars).
+          'authorization=%REQ(AUTHORIZATION):11%',
         ],
         tracing:
           options.tracing && tracingExtensionService
@@ -235,8 +304,24 @@ export class Proxy {
                 customTags: [],
               }
             : undefined,
+        ...(options.envoy.timeouts?.idleTimeout
+          ? {
+              timeouts: {
+                'connection-idle-timeout': `${options.envoy.timeouts.idleTimeout}s`,
+              },
+            }
+          : {}),
+      },
+      // Needed because we override the `contour.image.repository` field.
+      global: {
+        security: {
+          allowInsecureImages: true,
+        },
       },
       contour: {
+        image: {
+          repository: 'bitnamilegacy/contour',
+        },
         podAnnotations: {
           'prometheus.io/scrape': 'true',
           'prometheus.io/port': '8000',
@@ -251,6 +336,9 @@ export class Proxy {
         },
       },
       envoy: {
+        image: {
+          repository: 'bitnamilegacy/envoy',
+        },
         resources: {
           limits: {},
         },

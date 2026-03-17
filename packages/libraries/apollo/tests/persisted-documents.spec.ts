@@ -39,7 +39,7 @@ test('use persisted documents (GraphQL over HTTP "documentId")', async () => {
     plugins: [
       useHive({
         token: 'token',
-        experimental__persistedDocuments: {
+        persistedDocuments: {
           cdn: {
             endpoint: 'http://artifacts-cdn.localhost',
             accessToken: 'foo',
@@ -96,7 +96,7 @@ test('persisted document not found (GraphQL over HTTP "documentId")', async () =
     plugins: [
       useHive({
         token: 'token',
-        experimental__persistedDocuments: {
+        persistedDocuments: {
           cdn: {
             endpoint: 'http://artifacts-cdn.localhost',
             accessToken: 'foo',
@@ -152,7 +152,7 @@ test('arbitrary options are rejected with allowArbitraryDocuments=false (GraphQL
     plugins: [
       useHive({
         token: 'token',
-        experimental__persistedDocuments: {
+        persistedDocuments: {
           cdn: {
             endpoint: 'http://artifacts-cdn.localhost',
             accessToken: 'foo',
@@ -205,7 +205,7 @@ test('arbitrary options are allowed with allowArbitraryDocuments=true (GraphQL o
     plugins: [
       useHive({
         token: 'token',
-        experimental__persistedDocuments: {
+        persistedDocuments: {
           cdn: {
             endpoint: 'http://artifacts-cdn.localhost',
             accessToken: 'foo',
@@ -301,7 +301,7 @@ test('usage reporting for persisted document', async () => {
         enabled: true,
         debug: false,
         token: 'brrrt',
-        experimental__persistedDocuments: {
+        persistedDocuments: {
           cdn: {
             endpoint: 'http://artifacts-cdn.localhost',
             accessToken: 'foo',
@@ -364,4 +364,62 @@ test('usage reporting for persisted document', async () => {
 
   httpScope.done();
   usageScope.done();
+});
+
+test('handles validation errors from malformed document IDs', async () => {
+  const testServer = new ApolloServer({
+    typeDefs: /* GraphQL */ `
+      type Query {
+        hi: String
+      }
+    `,
+    plugins: [
+      useHive({
+        token: 'token',
+        persistedDocuments: {
+          cdn: {
+            endpoint: 'http://artifacts-cdn.localhost',
+            accessToken: 'foo',
+          },
+        },
+        agent: {
+          logger,
+        },
+      }),
+    ],
+  });
+
+  const { url } = await startStandaloneServer(testServer, {
+    async context({ req }): Promise<ApolloServerContext> {
+      return { req };
+    },
+    listen: {
+      port: 0,
+    },
+  });
+
+  const response = await fetch(url, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      documentId: 'client-name~client-version~', // Malformed - missing hash
+    }),
+  });
+
+  expect(response.status).toBe(400);
+  expect(await response.json()).toEqual({
+    errors: [
+      {
+        message:
+          'Invalid document ID "client-name~client-version~": Hash cannot be empty. Expected format: "name~version~hash" (e.g., "client-name~client-version~hash")',
+        extensions: {
+          code: 'INVALID_DOCUMENT_ID',
+        },
+      },
+    ],
+  });
+
+  await testServer.stop();
 });

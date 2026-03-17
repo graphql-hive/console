@@ -1,0 +1,5 @@
+query FirstReview {
+  review(id: 1) {
+    body
+  }
+}

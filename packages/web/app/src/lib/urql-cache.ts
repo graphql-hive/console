@@ -17,6 +17,10 @@ import type { CreateOrganizationMutation } from '@/pages/organization-new';
 import type { DeleteOrganizationDocument } from '@/pages/organization-settings';
 import type { DeleteProjectMutation } from '@/pages/project-settings';
 import {
+  ManageFilters_SavedFiltersQuery,
+  type ManageFilters_DeleteSavedFilterMutation,
+} from '@/pages/target-insights-manage-filters';
+import {
   TokensDocument,
   type DeleteTargetMutation,
   type DeleteTokensDocument,
@@ -27,9 +31,10 @@ import { Cache, QueryInput, UpdateResolver } from '@urql/exchange-graphcache';
 const TargetsDocument = graphql(`
   query targets($selector: ProjectSelectorInput!) {
     targets(selector: $selector) {
-      total
-      nodes {
-        id
+      edges {
+        node {
+          id
+        }
       }
     }
   }
@@ -113,12 +118,14 @@ const deleteProject: TypedDocumentNodeUpdateResolver<typeof DeleteProjectMutatio
   _args,
   cache,
 ) => {
-  const project = deleteProject.deletedProject;
+  const projectId = deleteProject.ok?.deletedProjectId;
 
-  cache.invalidate({
-    __typename: project.__typename,
-    id: project.id,
-  });
+  if (projectId) {
+    cache.invalidate({
+      __typename: 'Project',
+      id: projectId,
+    });
+  }
 };
 
 const createTarget: TypedDocumentNodeUpdateResolver<typeof CreateTarget_CreateTargetMutation> = (
@@ -146,8 +153,7 @@ const createTarget: TypedDocumentNodeUpdateResolver<typeof CreateTarget_CreateTa
     },
     data => {
       // TODO: figure out masking
-      data.targets.nodes.unshift(target as any);
-      data.targets.total += 1;
+      data.targets.edges.unshift({ node: target as any, cursor: '' } as any);
     },
   );
 };
@@ -157,12 +163,14 @@ const deleteTarget: TypedDocumentNodeUpdateResolver<typeof DeleteTargetMutation>
   _args,
   cache,
 ) => {
-  const target = deleteTarget.deletedTarget;
+  const targetId = deleteTarget.ok?.deletedTargetId;
 
-  cache.invalidate({
-    __typename: target.__typename,
-    id: target.id,
-  });
+  if (targetId) {
+    cache.invalidate({
+      __typename: 'Target',
+      id: targetId,
+    });
+  }
 };
 
 const createToken: TypedDocumentNodeUpdateResolver<typeof CreateAccessToken_CreateTokenMutation> = (
@@ -344,6 +352,41 @@ const createOperationInDocumentCollection: TypedDocumentNodeUpdateResolver<
   );
 };
 
+const deleteSavedFilter: TypedDocumentNodeUpdateResolver<
+  typeof ManageFilters_DeleteSavedFilterMutation
+> = ({ deleteSavedFilter }, args, cache) => {
+  if (!deleteSavedFilter.ok) {
+    return;
+  }
+
+  const selector = args.input.target.bySelector;
+  if (!selector) {
+    return;
+  }
+
+  updateQuery(
+    cache,
+    {
+      query: ManageFilters_SavedFiltersQuery,
+      variables: {
+        organizationSlug: selector.organizationSlug,
+        selector: {
+          organizationSlug: selector.organizationSlug,
+          projectSlug: selector.projectSlug,
+          targetSlug: selector.targetSlug,
+        },
+      },
+    },
+    data => {
+      if (data.target) {
+        data.target.savedFilters.edges = data.target.savedFilters.edges.filter(
+          edge => edge.node.id !== deleteSavedFilter.ok!.deletedId,
+        );
+      }
+    },
+  );
+};
+
 // UpdateResolver
 export const Mutation = {
   createOrganization,
@@ -361,4 +404,5 @@ export const Mutation = {
   deleteDocumentCollection,
   deleteOperationInDocumentCollection,
   createOperationInDocumentCollection,
+  deleteSavedFilter,
 };

@@ -1,0 +1,160 @@
+---
+title: Introducing GraphQL Mesh v1 and Hive Gateway v1
+authors: arda
+tags: [graphql, graphql-mesh, graphql-hive, graphql-federation]
+date: 2024-09-10
+description:
+  We released Version 1 of GraphQL Mesh and Hive Gateway, enabling flexible, open-source GraphQL
+  Federation with both GraphQL and non-GraphQL sources.
+---
+
+We, The Guild, are proud to announce both the Version 1 release of
+[GraphQL Mesh](https://the-guild.dev/graphql/mesh) and
+[Hive Gateway](https://the-guild.dev/graphql/hive/docs/gateway), and we believe this release brings
+a new perspective to [GraphQL Federation](https://the-guild.dev/graphql/hive/federation) that we
+call “Query Anything, Run Anywhere”.
+
+After several years of experience with composed APIs with early v0 versions of GraphQL Mesh and
+Schema Stitching, we have completely rebuild GraphQL Mesh from scratch for GraphQL Federation.
+
+> **TL;DR**: The previous GraphQL Mesh is now split into two complimentary projects:
+>
+> - **GraphQL Mesh**: Compose and Transform Datasources into a Federated GraphQL Schema. Query
+>   anything anywhere. [Get started with GraphQL Mesh](https://the-guild.dev/graphql/mesh)
+> - **Hive Gateway**: Our Federation Gateway for that integrates with GraphQL Mesh and Schema
+>   registries such as GraphQL Hive or Apollo Studio.
+>   [Get started with Hive Gateway](https://the-guild.dev/graphql/hive/docs/gateway)
+
+## What is Hive Gateway? {/* eslint-disable-line mdx/remark */}
+
+Hive Gateway is our fully
+[open source](https://github.com/ardatan/graphql-mesh/tree/master/packages/hive-gateway) and
+[MIT](https://github.com/ardatan/graphql-mesh/blob/master/LICENSE)-licensed GraphQL Gateway with
+native support for GraphQL Federation.
+
+It is designed to fully integrate with with our GraphQL Hive Platform offering, but also neatly
+integrates with other Schema Registries such as Apollo Studio.
+
+Hive Gateway is built on top of our existing and widely used open-source packages such as
+[GraphQL Yoga](https://the-guild.dev/graphql/yoga-server) and
+[GraphQL Tools](https://the-guild.dev/graphql/tools).
+
+With Hive Gateway adding these features is now a simple configuration change, **no enterprise
+license is required**!
+
+- [GraphQL Subscriptions](https://the-guild.dev/graphql/hive/docs/gateway/subscriptions) (via
+  WebSocket, SSE, or HTTP Callbacks)
+- [GraphQL API Usage and Analytics Reporting (GraphQL Hive or Apollo Studio)](https://the-guild.dev/graphql/hive/docs/gateway/usage-reporting)
+- [Authentication and Authorization (JWT)](https://the-guild.dev/graphql/hive/docs/gateway/authorization-authentication)
+- [Role-based Access Control (RBAC)](https://the-guild.dev/graphql/hive/docs/gateway/authorization-authentication#policy-directive-to-fetch-the-roles-from-a-policy-service)
+- [Observability with Open Telemetry and Prometheus](https://the-guild.dev/graphql/hive/docs/gateway/monitoring-tracing)
+- [Caching](https://the-guild.dev/graphql/hive/docs/gateway/other-features/performance)
+- [Rate Limiting](https://the-guild.dev/graphql/hive/docs/gateway/other-features/security/rate-limiting)
+- [Persisted Documents](https://the-guild.dev/graphql/hive/docs/gateway/persisted-documents)
+- [Query Complexity Analysis](https://the-guild.dev/graphql/hive/docs/gateway/other-features/security/cost-limit)
+- And more…
+
+We listened to the feedback of the companies using Version 0 of GraphQL Mesh, and decided that Hive
+Gateway should be as easy-to-use and be batteries-included by default. Many of our users are not as
+versed and deep within the JavaScript and npm eco-system. The new configuration is designed in a way
+to be approachable for users from all backgrounds.
+
+Getting started is easy, whether you're already using the Hive Schema Registry, Apollo GraphOS, or
+local subgraphs. With just a few lines of configuration, you'll end up with a running Gateway in no
+time.
+
+### How well does Hive Gateway support GraphQL Federation? {/* eslint-disable-line mdx/remark */}
+
+We put in a lot of effort over the last year into having a Federation compatibility test suite. We
+rebuilt our Federation Query Planner and Execution Engine completely from scratch from these
+learnings and now open-sources the test suite so other Apollo Federation Gateways can too benefit
+from our research as well. It already helped to discover and report some regressions in Apollo
+Router to the Apollo Team. We hope that this test suite will overall enhance the quality of all the
+GraphQL gateways on the market.
+
+### Do I have to use the Hive Registry? {/* eslint-disable-line mdx/remark */}
+
+No. You can gradually migrate to the Hive platform if desired. If you want to use your existing
+schema registry (e.g. GraphOS), Hive Gateway supports these registries as well. You don't have to
+migrate to the Hive Platform if you are just looking for a replacement to Apollo Router or Apollo
+Gateway.
+
+### Deploy and Run Anywhere {/* eslint-disable-line mdx/remark */}
+
+Hive Gateway can run anywhere. No need to mess with JavaScript and Node.js. You can choose your
+preferred way:
+
+- Single Executable Binary
+- Docker Image
+- NPM package
+- If you are a JavaScript Tinkerer
+  - Node.js, Bun, or Deno
+  - Cloudflare Workers, AWS Lambda, Azure Functions and Google Cloud Functions.
+  - Integrate with your existing server framework such as Express, Fastify, Hapi and Koa.
+
+## What about GraphQL Mesh? {/* eslint-disable-line mdx/remark */}
+
+Previously what is now known as Hive Gateway has been one of the many building block of GraphQL
+Mesh. The other significant building block of GraphQL Mesh is the possibility to convert and compose
+any amount of APIs such as REST/OpenAPI, SOAP, gRPC or even a database like MySQL into a single
+unified GraphQL API, while applying a wide range of transforms e.g. for renaming or filtering the
+output API types.
+
+A lot of our clients have been using this approach to transform legacy APIs and all kind of other
+sources for many years with great success.
+
+From now on, GraphQL Mesh now only focuses only on composing datasources into a single annotated
+GraphQL/Supergraph SDL file that is 100% compatible with Apollo Federation.
+
+Serving the composed GraphQL schema is now a concern of Hive Gateway, which seamlessly integrates
+with GraphQL Mesh.
+
+All of the features introduced in GraphQL Mesh v0 remain unchanged. However, GraphQL Mesh now builds
+on top of the Apollo Federation specification. That means you do all the conversion, generation and
+stitching process at build time once, and then you generate a supergraph or subgraph SDL that can be
+consumed by any
+[Apollo Federation compatible gateway](https://the-guild.dev/graphql/hive/federation-gateway-audit).
+
+To summarize, GraphQL Mesh is a framework that allows you to convert any API (REST, SOAP etc) into
+the Apollo Federation subgraph to be consumed by a gateway. For the best experience, we recommend
+using GraphQL Hive Gateway.
+
+<aside>
+💡 GraphQL Mesh extends Apollo Federation to consume OpenAPI, SOAP and other non GraphQL sources, and also transform them by renaming fields and so on.
+Of course within the boundaries of Apollo Federation specification!
+
+</aside>
+
+### How can I migrate to v1? {/* eslint-disable-line mdx/remark */}
+
+While GraphQL Mesh v1 introduces several breaking changes, the core functionality remain the same as
+in v0. All transforms, plugins, and other features are still available through the combination of
+GraphQL Mesh and Hive Gateway. Simply follow our migration guides to make the transition. And as
+always, feel free to reach out to us directly for assistance.
+
+However, there's no need to rush your migration — we will continue to maintain v0 for the
+foreseeable future.
+
+### What is the relationship between GraphQL Mesh and Hive Gateway? {/* eslint-disable-line mdx/remark */}
+
+GraphQL Mesh generates a GraphQL Federation subgraph from a non GraphQL source (OpenAPI, SOAP, gRPC
+etc) and/or a GraphQL API that doesn't have federation metadata. Then you can either compose that
+subgraph with Mesh, or publish it to the schema registry, or compose it using other tools like
+Apollo Rover to get a Federation Supergraph. Then this generated supergraph is consumed by a GraphQL
+Gateway like Hive Gateway.
+
+## Query Anything, Run Anywhere
+
+As our initial motto from the earlier stages of GraphQL Mesh. We still follow it.
+
+This time we combined this idea with Apollo Federation. GraphQL Mesh now federates non GraphQL and
+GraphQL sources on top of the official Apollo Federation specification.
+
+Hive Gateway is there to orchestrate calls to those APIs and serve the responses to the client. You
+can use them together or take one of them and use with other alternatives.
+
+Both are free, open-source, MIT-licensed, without the need to pay extra for enterprise grade
+features.
+
+- [Learn more about Hive Gateway](https://the-guild.dev/graphql/hive/docs/gateway)
+- [Learn more about GraphQL Mesh](https://the-guild.dev/graphql/mesh)

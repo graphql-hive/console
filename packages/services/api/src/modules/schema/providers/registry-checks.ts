@@ -1,8 +1,8 @@
 import { URL } from 'node:url';
-import type { GraphQLSchema } from 'graphql';
+import { type GraphQLSchema } from 'graphql';
 import { Injectable, Scope } from 'graphql-modules';
 import hashObject from 'object-hash';
-import { CriticalityLevel } from '@graphql-inspector/core';
+import { ChangeType, CriticalityLevel, DiffRule, TypeOfChangeType } from '@graphql-inspector/core';
 import type { CheckPolicyResponse } from '@hive/policy';
 import type { CompositionFailureError, ContractsInputType } from '@hive/schema';
 import { traceFn } from '@hive/service-common';
@@ -18,23 +18,53 @@ import { SchemaPolicyProvider } from '../../policy/providers/schema-policy.provi
 import type {
   ComposeAndValidateResult,
   DateRange,
-  Orchestrator,
   Organization,
   Project,
-  PushedCompositeSchema,
-  SingleSchema,
 } from './../../../shared/entities';
 import { Logger } from './../../shared/providers/logger';
 import { diffSchemaCoordinates, Inspector, SchemaCoordinatesDiffResult } from './inspector';
 import { SchemaCheckWarning } from './models/shared';
-import { extendWithBase, isCompositeSchema, SchemaHelper } from './schema-helper';
+import { CompositionOrchestrator } from './orchestrator/composition-orchestrator';
+import {
+  addTypeForExtensions,
+  CompositeSchemaInput,
+  extendWithBase,
+  SchemaHelper,
+  SchemaInput,
+} from './schema-helper';
 
 export type ConditionalBreakingChangeDiffConfig = {
   period: DateRange;
   requestCountThreshold: number;
   targetIds: string[];
   excludedClientNames: string[] | null;
+  excludedAppDeploymentNames: string[] | null;
 };
+
+export type AffectedAppDeployment = {
+  appDeployment: {
+    id: string;
+    name: string;
+    version: string;
+    createdAt: string | null;
+    activatedAt: string | null;
+    retiredAt: string | null;
+  };
+  affectedOperationsByCoordinate: Record<string, Array<{ hash: string; name: string | null }>>;
+  countByCoordinate: Record<string, number>;
+  totalOperationsByCoordinate: number;
+};
+
+export type AffectedAppDeploymentsResult = {
+  deployments: AffectedAppDeployment[];
+  totalDeployments: number;
+};
+
+export type GetAffectedAppDeployments = (
+  schemaCoordinates: string[],
+  firstDeployments?: number,
+  firstOperations?: number,
+) => Promise<AffectedAppDeploymentsResult>;
 
 // The reason why I'm using `result` and `reason` instead of just `data` for both:
 // https://bit.ly/hive-check-result-data
@@ -51,8 +81,6 @@ export type CheckResult<C = unknown, F = unknown, S = unknown> =
       status: 'skipped';
       data?: S;
     };
-
-type Schemas = [SingleSchema] | PushedCompositeSchema[];
 
 type CompositionValidationError = {
   message: string;
@@ -170,6 +198,7 @@ export class RegistryChecks {
     private inspector: Inspector,
     private logger: Logger,
     private operationsReader: OperationsReader,
+    private orchestrator: CompositionOrchestrator,
   ) {}
 
   /**
@@ -181,11 +210,11 @@ export class RegistryChecks {
    */
   async checksum(args: {
     incoming: {
-      schema: SingleSchema | PushedCompositeSchema;
+      schema: SchemaInput;
       contractNames: null | Array<string>;
     };
     existing: null | {
-      schema: SingleSchema | PushedCompositeSchema;
+      schema: SchemaInput;
       contractNames: null | Array<string>;
     };
   }) {
@@ -242,7 +271,6 @@ export class RegistryChecks {
   }
 
   async composition({
-    orchestrator,
     targetId,
     project,
     organization,
@@ -250,15 +278,15 @@ export class RegistryChecks {
     baseSchema,
     contracts,
   }: {
-    orchestrator: Orchestrator;
     targetId: string;
     project: Project;
     organization: Organization;
-    schemas: Schemas;
+    schemas: Array<SchemaInput>;
     baseSchema: string | null;
     contracts: null | ContractsInputType;
   }) {
-    const result = await orchestrator.composeAndValidate(
+    const result = await this.orchestrator.composeAndValidate(
+      CompositionOrchestrator.projectTypeToOrchestratorType(project.type),
       extendWithBase(schemas, baseSchema).map(s => this.helper.createSchemaObject(s)),
       {
         external: project.externalComposition,
@@ -283,11 +311,11 @@ export class RegistryChecks {
           // Federation 1 apparently has SDL and validation errors at the same time.
           fullSchemaSdl: result.sdl,
           contracts: result.contracts?.map(mapContract) ?? null,
+          includesNetworkError: result.includesNetworkError ?? false,
+          includesException: result.includesException ?? false,
         },
       } satisfies CheckResult;
     }
-
-    this.logger.debug('No validation errors');
 
     if (!result.sdl) {
       throw new Error('No SDL, but no errors either');
@@ -300,6 +328,8 @@ export class RegistryChecks {
         supergraph: result.supergraph,
         tags: result.tags ?? null,
         contracts: result.contracts?.map(mapContract) ?? null,
+        schemaMetadata: result.schemaMetadata ?? null,
+        metadataAttributes: result.metadataAttributes ?? null,
       },
     } satisfies CheckResult;
   }
@@ -312,9 +342,8 @@ export class RegistryChecks {
     version: {
       isComposable: boolean;
       sdl: string | null;
-      schemas: Schemas;
+      schemas: Array<SchemaInput>;
     } | null;
-    orchestrator: Orchestrator;
     organization: Organization;
     project: Project;
     targetId: string;
@@ -337,7 +366,8 @@ export class RegistryChecks {
 
     this.logger.debug('Compose on the fly.');
 
-    const existingSchemaResult = await args.orchestrator.composeAndValidate(
+    const existingSchemaResult = await this.orchestrator.composeAndValidate(
+      CompositionOrchestrator.projectTypeToOrchestratorType(args.project.type),
       args.version.schemas.map(s => this.helper.createSchemaObject(s)),
       {
         external: args.project.externalComposition,
@@ -401,6 +431,60 @@ export class RegistryChecks {
     } satisfies CheckResult;
   }
 
+  @traceFn('RegistryChecks.serviceDiff')
+  /**
+   * Intended to be used for subgraph/service schemas only. This does not check conditional breaking changes
+   * or policy logic. This function strictly calculates the diff between two SDL and returns the list of changes.
+   * This also handles raw SDL which might include type extensions -- which cannot be used by themselves to build
+   * a schema and therefore must have the type definition added
+   */
+  async serviceDiff(args: {
+    /** The existing SDL */
+    existing: Pick<SchemaInput, 'sdl'> | null;
+    /** The incoming SDL */
+    incoming: Pick<SchemaInput, 'sdl'> | null;
+  }) {
+    let existingSchema: GraphQLSchema | null;
+    let incomingSchema: GraphQLSchema | null;
+
+    const createSchema = (sdl: Pick<SchemaInput, 'sdl'>) => {
+      const obj = this.helper.createSchemaObject(sdl);
+      obj.document = addTypeForExtensions(obj.document);
+      return buildSortedSchemaFromSchemaObject(obj);
+    };
+
+    try {
+      existingSchema = args.existing ? createSchema(args.existing) : null;
+      incomingSchema = args.incoming ? createSchema(args.incoming) : null;
+    } catch (error) {
+      this.logger.error('Failed to build schema for serviceDiff. Skip serviceDiff check.');
+      return {
+        status: 'skipped',
+      } satisfies CheckResult;
+    }
+
+    if (!existingSchema || !incomingSchema) {
+      this.logger.debug(
+        'Skip serviceDiff check due to either existing or incoming SDL being absent.',
+      );
+      return {
+        status: 'skipped',
+      } satisfies CheckResult;
+    }
+    if (!incomingSchema) {
+      return {
+        status: 'failed',
+        reason: 'Incoming schema is invalid.',
+      } satisfies CheckResult;
+    }
+    let inspectorChanges = await this.inspector.diff(existingSchema, incomingSchema);
+
+    return {
+      status: 'completed',
+      result: inspectorChanges,
+    } satisfies CheckResult;
+  }
+
   /**
    * Diff incoming and existing SDL and generate a list of changes.
    * Uses usage stats to determine whether a change is safe or not (if available).
@@ -414,8 +498,8 @@ export class RegistryChecks {
     includeUrlChanges:
       | false
       | {
-          schemasBefore: [SingleSchema] | PushedCompositeSchema[];
-          schemasAfter: [SingleSchema] | PushedCompositeSchema[];
+          schemasBefore: CompositeSchemaInput[];
+          schemasAfter: CompositeSchemaInput[];
         };
     /** Whether Federation directive related changes should be filtered out from the list of changes. These would only show up due to an internal bug. */
     filterOutFederationChanges: boolean;
@@ -423,6 +507,14 @@ export class RegistryChecks {
     approvedChanges: null | Map<string, SchemaChangeType>;
     /** Settings for fetching conditional breaking changes. */
     conditionalBreakingChangeConfig: null | ConditionalBreakingChangeDiffConfig;
+    failDiffOnDangerousChange: null | boolean;
+    /**
+     * Set to true to reduce the number of changes to only what's relevant to the user.
+     * Use false for schema proposals in order to capture every single change record for the patch function.
+     */
+    filterNestedChanges: boolean;
+    /** Function to fetch affected app deployments. Called with breaking change coordinates after diff is computed. */
+    getAffectedAppDeployments: GetAffectedAppDeployments | null;
   }) {
     let existingSchema: GraphQLSchema | null = null;
     let incomingSchema: GraphQLSchema | null = null;
@@ -432,6 +524,8 @@ export class RegistryChecks {
         ? buildSortedSchemaFromSchemaObject(
             this.helper.createSchemaObject({
               sdl: args.existingSdl,
+              serviceName: null,
+              serviceUrl: null,
             }),
           )
         : null;
@@ -440,6 +534,8 @@ export class RegistryChecks {
         ? buildSortedSchemaFromSchemaObject(
             this.helper.createSchemaObject({
               sdl: args.incomingSdl,
+              serviceName: null,
+              serviceUrl: null,
             }),
           )
         : null;
@@ -460,7 +556,11 @@ export class RegistryChecks {
       } satisfies CheckResult;
     }
 
-    let inspectorChanges = await this.inspector.diff(existingSchema, incomingSchema);
+    let inspectorChanges = await this.inspector.diff(
+      existingSchema,
+      incomingSchema,
+      args.filterNestedChanges ? [DiffRule.simplifyChanges] : [],
+    );
 
     // Filter out federation specific changes as they are not relevant for the schema diff and were in previous schema versions by accident.
     if (args.filterOutFederationChanges === true) {
@@ -482,46 +582,169 @@ export class RegistryChecks {
             return;
           }
 
-          // We need to run both the affected operations an affected clients query.
-          // Since the affected clients query is lighter it makes more sense to run it first and skip running the operations query if no clients are affected, as it will also yield zero results in that case.
+          let checkCoordinate = change.breakingChangeSchemaCoordinate;
+          if (isNullToRequiredArgumentChange(change)) {
+            /**
+             * It's necessary to check the parent field in this case because an argument is included in the
+             * usage report's list of coordinates _only if it's in the operation_. E.g. For a schema:
+             *
+             * ```
+             * type Query {
+             *   foo(a: String): String
+             * }
+             * ```
+             *
+             * Operation `query Foo { foo(a: "b") }`
+             * Reports: `Query.foo, Query.foo.a, Query.foo.a!`
+             *
+             * Operation: `query Foo2 { foo }`
+             * Only reports: `Query.foo`.
+             *
+             * And so when changing an argument from nullable to non-nullable, we need to check the parent field
+             * could rather than the argument count. Otherwise, the second example wouldn't trigger the change as "breaking".
+             */
+            checkCoordinate = change.breakingChangeSchemaCoordinate
+              .split('.')
+              .slice(0, 2)
+              .join('.');
+          }
 
-          const topAffectedClients = await this.operationsReader.getTopClientsForSchemaCoordinate({
+          const totalRequestCounts = await this.operationsReader.countCoordinate({
             targetIds: settings.targetIds,
             excludedClients: settings.excludedClientNames,
             period: settings.period,
-            schemaCoordinate: change.breakingChangeSchemaCoordinate,
+            schemaCoordinate: checkCoordinate,
           });
+          const totalRequests = totalRequestCounts[checkCoordinate] ?? 0;
+          let isBreaking = totalRequests >= Math.max(settings.requestCountThreshold, 1);
+          if (isBreaking) {
+            const useAdvancedNullabilityCheck = requiresAdvancedNullabilityCheck(change);
 
-          if (topAffectedClients) {
-            const topAffectedOperations =
-              await this.operationsReader.getTopOperationsForSchemaCoordinate({
+            if (useAdvancedNullabilityCheck) {
+              const advancedNullabilityTotalRequests = await this.operationsReader.countCoordinate({
                 targetIds: settings.targetIds,
                 excludedClients: settings.excludedClientNames,
                 period: settings.period,
-                requestCountThreshold: settings.requestCountThreshold,
-                schemaCoordinate: change.breakingChangeSchemaCoordinate,
+                schemaCoordinate: `${change.breakingChangeSchemaCoordinate}!`,
               });
 
-            if (topAffectedOperations) {
-              change.usageStatistics = {
-                topAffectedOperations,
-                topAffectedClients,
-              };
+              if (
+                advancedNullabilityTotalRequests[`${change.breakingChangeSchemaCoordinate}!`] >=
+                totalRequests
+              ) {
+                // All requests for this coordinate provide the value for the coordinate. So moving to non-null is allowed.
+                isBreaking = false;
+              }
             }
+
+            const [topAffectedClients, topAffectedOperations] = await Promise.all([
+              this.operationsReader.getTopClientsForSchemaCoordinate({
+                targetIds: settings.targetIds,
+                excludedClients: settings.excludedClientNames,
+                period: settings.period,
+                schemaCoordinate: change.breakingChangeSchemaCoordinate,
+              }),
+              this.operationsReader.getTopOperationsForSchemaCoordinate({
+                targetIds: settings.targetIds,
+                excludedClients: settings.excludedClientNames,
+                period: settings.period,
+                schemaCoordinate: change.breakingChangeSchemaCoordinate,
+              }),
+            ]);
+
+            change.usageStatistics = {
+              topAffectedOperations: topAffectedOperations ?? [],
+              topAffectedClients: topAffectedClients ?? [],
+            };
           }
 
-          change.isSafeBasedOnUsage = change.usageStatistics === null;
+          change.isSafeBasedOnUsage = !isBreaking;
         }),
       );
     } else {
       this.logger.debug('No conditional breaking change settings available');
     }
 
+    // Check against active app deployments if function is provided
+    if (args.getAffectedAppDeployments) {
+      // Collect all coordinates from breaking changes and initialize affectedAppDeployments to []
+      const breakingCoordinates = new Set<string>();
+      for (const change of inspectorChanges) {
+        if (change.criticality === CriticalityLevel.Breaking) {
+          // Initialize affectedAppDeployments to empty array for all breaking changes
+          change.affectedAppDeployments = [];
+
+          const coordinate = change.breakingChangeSchemaCoordinate ?? change.path;
+          if (coordinate) {
+            breakingCoordinates.add(coordinate);
+          }
+        }
+      }
+
+      if (breakingCoordinates.size > 0) {
+        this.logger.debug(
+          'Checking affected app deployments for %d breaking schema coordinates',
+          breakingCoordinates.size,
+        );
+
+        try {
+          const result = await args.getAffectedAppDeployments(Array.from(breakingCoordinates));
+          const affectedAppDeployments = result.deployments;
+
+          if (affectedAppDeployments.length > 0) {
+            this.logger.debug(
+              '%d app deployments affected by breaking changes (total: %d)',
+              affectedAppDeployments.length,
+              result.totalDeployments,
+            );
+
+            // Mark changes as unsafe if they affect active app deployments
+            for (const change of inspectorChanges) {
+              if (change.criticality === CriticalityLevel.Breaking) {
+                const coordinate = change.breakingChangeSchemaCoordinate ?? change.path;
+                if (coordinate) {
+                  // Check if any deployment is affected by this specific coordinate
+                  const deploymentsForCoordinate = affectedAppDeployments.filter(
+                    d => d.affectedOperationsByCoordinate[coordinate]?.length > 0,
+                  );
+
+                  if (deploymentsForCoordinate.length > 0) {
+                    // Override usage-based safety: change is NOT safe if app deployments are affected
+                    change.isSafeBasedOnUsage = false;
+
+                    // Update affected app deployments for this change
+                    change.affectedAppDeployments = deploymentsForCoordinate.map(d => ({
+                      id: d.appDeployment.id,
+                      name: d.appDeployment.name,
+                      version: d.appDeployment.version,
+                      createdAt: d.appDeployment.createdAt,
+                      activatedAt: d.appDeployment.activatedAt,
+                      retiredAt: d.appDeployment.retiredAt,
+                      affectedOperations: d.affectedOperationsByCoordinate[coordinate],
+                    }));
+                  }
+                }
+              }
+            }
+          } else {
+            this.logger.debug('No app deployments affected by breaking changes');
+          }
+        } catch (error) {
+          this.logger.error(
+            'Failed to check affected app deployments (coordinateCount=%d): %s',
+            breakingCoordinates.size,
+            error instanceof Error ? error.stack : String(error),
+          );
+          throw error;
+        }
+      }
+    }
+
     if (args.includeUrlChanges) {
       inspectorChanges.push(
         ...detectUrlChanges(
-          args.includeUrlChanges.schemasBefore.filter(isCompositeSchema),
-          args.includeUrlChanges.schemasAfter.filter(isCompositeSchema),
+          args.includeUrlChanges.schemasBefore,
+          args.includeUrlChanges.schemasAfter,
         ),
       );
     }
@@ -533,7 +756,10 @@ export class RegistryChecks {
     const coordinatesDiff = diffSchemaCoordinates(existingSchema, incomingSchema);
 
     for (const change of inspectorChanges) {
-      if (change.criticality === CriticalityLevel.Breaking) {
+      if (
+        change.criticality === CriticalityLevel.Breaking ||
+        (args.failDiffOnDangerousChange && change.criticality === CriticalityLevel.Dangerous)
+      ) {
         if (change.isSafeBasedOnUsage === true) {
           breakingChanges.push(change);
           continue;
@@ -595,23 +821,6 @@ export class RegistryChecks {
     } satisfies SchemaDiffSuccess;
   }
 
-  async serviceName(service: { name: string | null }) {
-    if (!service.name) {
-      this.logger.debug('No service name');
-      return {
-        status: 'failed',
-        reason: 'Service name is required',
-      } satisfies CheckResult;
-    }
-
-    this.logger.debug('Service name is defined');
-
-    return {
-      status: 'completed',
-      result: null,
-    } satisfies CheckResult;
-  }
-
   private isValidURL(url: string): boolean {
     try {
       new URL(url);
@@ -622,21 +831,35 @@ export class RegistryChecks {
     }
   }
 
-  async serviceUrl(
-    service: { url: string | null },
-    existingService: { url: string | null } | null,
-  ) {
-    if (!service.url) {
-      this.logger.debug('No service url');
+  async serviceUrl(newServiceUrl: string | null, existingServiceUrl: string | null) {
+    if (newServiceUrl === null) {
+      if (existingServiceUrl) {
+        return {
+          status: 'completed',
+          result: {
+            status: 'unchanged' as const,
+            serviceUrl: existingServiceUrl,
+          },
+        } satisfies CheckResult;
+      }
+
       return {
         status: 'failed',
         reason: 'Service url is required',
       } satisfies CheckResult;
     }
 
-    this.logger.debug('Service url is defined');
+    if (newServiceUrl === existingServiceUrl) {
+      return {
+        status: 'completed',
+        result: {
+          status: 'unchanged' as const,
+          serviceUrl: existingServiceUrl,
+        },
+      } satisfies CheckResult;
+    }
 
-    if (!this.isValidURL(service.url)) {
+    if (!this.isValidURL(newServiceUrl)) {
       return {
         status: 'failed',
         reason: 'Invalid service URL provided',
@@ -645,19 +868,13 @@ export class RegistryChecks {
 
     return {
       status: 'completed',
-      result:
-        existingService && service.url !== existingService.url
-          ? {
-              before: existingService.url,
-              after: service.url,
-              message: service.url
-                ? `New service url: ${service.url} (previously: ${existingService.url ?? 'none'})`
-                : `Service url removed (previously: ${existingService.url ?? 'none'})`,
-              status: 'modified' as const,
-            }
-          : {
-              status: 'unchanged' as const,
-            },
+      result: {
+        message: `New service url: ${newServiceUrl} (previously: ${existingServiceUrl ?? 'none'})`,
+        status: 'modified' as const,
+        before: existingServiceUrl,
+        after: newServiceUrl,
+        serviceUrl: newServiceUrl,
+      },
     } satisfies CheckResult;
   }
 
@@ -711,15 +928,6 @@ export class RegistryChecks {
       return false;
     }
 
-    if (project.legacyRegistryModel === true) {
-      this.logger.warn(
-        'Project is using legacy registry model, ignoring native Federation support (organization=%s, project=%s)',
-        organization.id,
-        project.id,
-      );
-      return false;
-    }
-
     if (organization.featureFlags.forceLegacyCompositionInTargets.includes(targetId)) {
       this.logger.warn(
         'Project is using legacy composition in target, ignoring native Federation support (organization=%s, project=%s, target=%s)',
@@ -740,8 +948,8 @@ export class RegistryChecks {
 }
 
 type SubgraphDefinition = {
-  service_name: string;
-  service_url: string | null;
+  serviceName: string;
+  serviceUrl: string | null;
 };
 
 export function detectUrlChanges(
@@ -756,48 +964,50 @@ export function detectUrlChanges(
     return [];
   }
 
-  const nameToCompositeSchemaMap = new Map(subgraphsBefore.map(s => [s.service_name, s]));
+  const nameToCompositeSchemaMap = new Map(subgraphsBefore.map(s => [s.serviceName, s]));
   const changes: Array<RegistryServiceUrlChangeSerializableChange> = [];
 
   for (const schema of subgraphsAfter) {
-    const before = nameToCompositeSchemaMap.get(schema.service_name);
+    const before = nameToCompositeSchemaMap.get(schema.serviceName);
 
-    if (before && before.service_url !== schema.service_url) {
-      if (before.service_url && schema.service_url) {
+    if (before && before.serviceUrl !== schema.serviceUrl) {
+      if (before.serviceUrl != null && schema.serviceUrl != null) {
         changes.push({
           type: 'REGISTRY_SERVICE_URL_CHANGED',
           meta: {
-            serviceName: schema.service_name,
+            serviceName: schema.serviceName,
             serviceUrls: {
-              old: before.service_url,
-              new: schema.service_url,
+              old: before.serviceUrl,
+              new: schema.serviceUrl,
             },
           },
         });
-      } else if (before.service_url && schema.service_url == null) {
+      } else if (before.serviceUrl != null && schema.serviceUrl == null) {
         changes.push({
           type: 'REGISTRY_SERVICE_URL_CHANGED',
           meta: {
-            serviceName: schema.service_name,
+            serviceName: schema.serviceName,
             serviceUrls: {
-              old: before.service_url,
+              old: before.serviceUrl,
               new: null,
             },
           },
         });
-      } else if (before.service_url == null && schema.service_url) {
+      } else if (before.serviceUrl == null && schema.serviceUrl != null) {
         changes.push({
           type: 'REGISTRY_SERVICE_URL_CHANGED',
           meta: {
-            serviceName: schema.service_name,
+            serviceName: schema.serviceName,
             serviceUrls: {
               old: null,
-              new: schema.service_url,
+              new: schema.serviceUrl,
             },
           },
         });
       } else {
-        throw new Error("This shouldn't happen.");
+        throw new Error(
+          `This shouldn't happen (before.serviceUrl=${JSON.stringify(before.serviceUrl)}, schema.serviceUrl=${JSON.stringify(schema.serviceUrl)}).`,
+        );
       }
     }
   }
@@ -853,4 +1063,22 @@ function isFederationRelatedChange(change: SchemaChangeType) {
 
 function compareAlphaNumeric(a: string, b: string) {
   return a.localeCompare(b, 'en', { numeric: true });
+}
+
+function requiresAdvancedNullabilityCheck(change: Awaited<ReturnType<Inspector['diff']>>[number]) {
+  if (ChangeType.InputFieldTypeChanged === (change.type as TypeOfChangeType)) {
+    const oldType = change.meta.oldInputFieldType?.toString();
+    const newType = change.meta.newInputFieldType?.toString();
+    return `${oldType}!` === newType;
+  }
+  return isNullToRequiredArgumentChange(change);
+}
+
+function isNullToRequiredArgumentChange(change: Awaited<ReturnType<Inspector['diff']>>[number]) {
+  if (ChangeType.FieldArgumentTypeChanged === (change.type as TypeOfChangeType)) {
+    const oldType = change.meta.oldArgumentType?.toString();
+    const newType = change.meta.newArgumentType?.toString();
+    return `${oldType}!` === newType;
+  }
+  return false;
 }

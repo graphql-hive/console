@@ -32,4 +32,7 @@ export const ContractVersion: ContractVersionResolvers = {
     context.injector
       .get(ContractsManager)
       .getIsFirstComposableVersionForContractVersion(contractVersion),
+  schemaChanges: async (contractVersion, _, context) => {
+    return context.injector.get(ContractsManager).getAllChangesForContractVersion(contractVersion);
+  },
 };

@@ -1,0 +1,58 @@
+extend schema
+  @link(
+    url: "https://specs.apollo.dev/federation/v2.3"
+    import: ["@key", "@shareable", "@external", "@requires"]
+  )
+  @link(url: "https://specs.graphql-hive.com/hive/v1.0", import: ["@meta"])
+  @meta(name: "owner", content: "inventory-team")
+  @meta(name: "contact", content: "#inventory-channel")
+
+directive @meta(
+  name: String!
+  content: String!
+) repeatable on SCHEMA | OBJECT | INTERFACE | FIELD_DEFINITION
+
+extend type Product @key(fields: "upc dimensions") {
+  """
+  Universal Product Code
+  """
+  upc: String!
+  """
+  Physical dimensions (from products subgraph)
+  """
+  dimensions: ProductDimension @external
+  """
+  Delivery estimates for a given zip code (requires dimensions data)
+  """
+  delivery(zip: String): DeliveryEstimates
+    @requires(fields: "dimensions { size weight }")
+    @meta(name: "priority", content: "tier2")
+}
+
+"""
+Physical dimensions of a product (shared across subgraphs)
+"""
+type ProductDimension @shareable {
+  """
+  Size description (e.g., 'Small', 'Large', '10x5x3')
+  """
+  size: String
+  """
+  Weight in pounds
+  """
+  weight: Float
+}
+
+"""
+Delivery time estimates for a product
+"""
+type DeliveryEstimates @meta(name: "domain", content: "inventory") {
+  """
+  Estimated standard delivery date
+  """
+  estimatedDelivery: String
+  """
+  Fastest possible delivery date
+  """
+  fastestDelivery: String
+}

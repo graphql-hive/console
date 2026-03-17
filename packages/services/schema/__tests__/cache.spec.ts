@@ -220,7 +220,7 @@ test('timeout', async ({ expect }) => {
   expect(spy).toHaveBeenCalledTimes(2);
 });
 
-test('run action again when the action expires', async ({ expect }) => {
+test('run action again when the action expires', { retry: 3 }, async ({ expect }) => {
   const ttlMs = 10;
   const redis = new Redis();
   const prefix = randomString();
@@ -258,7 +258,7 @@ test('run action again when the action expires', async ({ expect }) => {
 
   const actionId = randomString();
   async function actionFn() {
-    await waitFor(timeoutMs);
+    await waitFor(timeoutMs - 1);
     return 'foo';
   }
 

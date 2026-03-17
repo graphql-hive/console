@@ -1,6 +1,18 @@
-import { ExecutionResult, print } from 'graphql';
+import { ExecutionResult, parse, print } from 'graphql';
+import { createClient } from 'graphql-sse';
 import { TypedDocumentNode } from '@graphql-typed-document-node/core';
+import { sortSDL } from '@theguild/federation-composition';
 import { getServiceHost } from './utils';
+
+/**
+ * Sorts the SDL of a supergraph schema and removes any extra whitespace.
+ * Helps with schema assertions, especially the snapshot tests.
+ * @param sdl The SDL of a supergraph schema.
+ * @returns The normalized SDL.
+ */
+export function normalizeSupergraph(sdl: string): string {
+  return print(sortSDL(parse(sdl, { noLocation: true })));
+}
 
 export async function execute<TResult, TVariables>(
   params: {
@@ -55,7 +67,7 @@ export async function execute<TResult, TVariables>(
     rawBody: body,
     status: response.status,
     expectGraphQLErrors() {
-      if (!body.errors?.length) {
+      if (!body?.errors?.length) {
         throw new Error(
           `Expected GraphQL response to have errors, but no errors were found!${detailsDump}`,
         );
@@ -64,7 +76,7 @@ export async function execute<TResult, TVariables>(
       return body.errors!;
     },
     expectNoGraphQLErrors: async () => {
-      if (body.errors?.length) {
+      if (body?.errors?.length) {
         throw new Error(
           `Expected GraphQL response to have no errors, but got ${
             body.errors.length
@@ -75,4 +87,43 @@ export async function execute<TResult, TVariables>(
       return body.data!;
     },
   };
+}
+
+export async function subscribe<TResult, TVariables>(
+  params: {
+    document: TypedDocumentNode<TResult, TVariables>;
+    operationName?: string;
+    authToken?: string;
+    token?: string;
+    legacyAuthorizationMode?: boolean;
+  } & (TVariables extends Record<string, never>
+    ? { variables?: never }
+    : { variables: TVariables }),
+) {
+  const registryAddress = await getServiceHost('server', 8082);
+  const client = createClient({
+    url: `http://${registryAddress}/graphql`,
+    headers: {
+      ...(params.authToken
+        ? {
+            authorization: `Bearer ${params.authToken}`,
+          }
+        : {}),
+      ...(params.token
+        ? params.legacyAuthorizationMode
+          ? {
+              'x-api-token': params.token,
+            }
+          : {
+              authorization: `Bearer ${params.token}`,
+            }
+        : {}),
+    },
+  });
+
+  return client.iterate({
+    operationName: params.operationName,
+    query: print(params.document),
+    variables: params.variables ?? {},
+  });
 }

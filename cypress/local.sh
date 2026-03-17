@@ -25,8 +25,12 @@ cd ..
 docker buildx bake -f docker/docker.hcl build --load
 
 echo "⬆️ Running all local containers..."
-docker compose -f ./docker/docker-compose.community.yml -f ./docker/docker-compose.end2end.yml --env-file ./integration-tests/.env --env-file ./docker/.end2end.env up -d --wait
+docker compose -f ./docker/docker-compose.community.yml -f ./docker/docker-compose.end2end.yml --env-file ./integration-tests/.env up -d --wait
 
 echo "✅ E2E tests environment is ready. To run tests now, use:"
 echo ""
 echo "    HIVE_APP_BASE_URL=http://localhost:8080 pnpm test:e2e"
+echo ""
+echo "    or to open Cypress GUI:"
+echo ""
+echo "    HIVE_APP_BASE_URL=http://localhost:8080 pnpm test:e2e:open"

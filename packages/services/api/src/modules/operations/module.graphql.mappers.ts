@@ -1,10 +1,20 @@
-import type { ClientStatsValues, OperationStatsValues } from '../../__generated__/types';
+import type { ClientStatsValues, OperationStatsValues, PageInfo } from '../../__generated__/types';
 import type { DateRange } from '../../shared/entities';
+import type { Span, Trace, TraceBreakdownLoader } from './providers/traces';
 
-export type OperationStatsValuesConnectionMapper = ReadonlyArray<
+// import { SqlValue } from './providers/sql';
+
+type Connection<TNode> = {
+  pageInfo: PageInfo;
+  edges: Array<{ node: TNode; cursor: string }>;
+};
+
+export type OperationStatsValuesConnectionMapper = Connection<
   Omit<OperationStatsValues, 'duration'> & { duration: DurationValuesMapper }
 >;
-export type ClientStatsValuesConnectionMapper = readonly ClientStatsValues[];
+
+export type ClientStatsValuesConnectionMapper = Connection<ClientStatsValues>;
+
 export interface SchemaCoordinateStatsMapper {
   organization: string;
   project: string;
@@ -26,10 +36,19 @@ export interface OperationsStatsMapper {
   period: DateRange;
   operations: readonly string[];
   clients: readonly string[];
+  clientVersionFilters: readonly { clientName: string; versions: readonly string[] | null }[];
+  excludeOperations?: boolean;
+  excludeClientVersionFilters?: boolean;
 }
 export interface DurationValuesMapper {
+  avg: number | null;
   p75: number | null;
   p90: number | null;
   p95: number | null;
   p99: number | null;
 }
+
+export type TracesFilterOptionsMapper = TraceBreakdownLoader;
+
+export type TraceMapper = Trace;
+export type SpanMapper = Span;

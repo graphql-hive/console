@@ -28,24 +28,37 @@ variable "BUILD_STABLE" {
   default = ""
 }
 
+variable "IMAGE_SUFFIX" {
+  default = ""
+}
+
+variable "BUILD_PLATFORM" {
+  default = "linux/amd64,linux/arm64"
+}
+
 function "get_target" {
   params = []
   result = notequal("", BUILD_TYPE) ? notequal("ci", BUILD_TYPE) ? "target-publish" : "target-ci" : "target-dev"
 }
 
+function "get_platform" {
+  params = []
+  result = "${BUILD_PLATFORM}"
+}
+
 function "local_image_tag" {
   params = [name]
-  result = equal("", BUILD_TYPE) ? "${DOCKER_REGISTRY}${name}:latest" : ""
+  result = equal("", BUILD_TYPE) ? "${DOCKER_REGISTRY}${name}:latest${IMAGE_SUFFIX}" : ""
 }
 
 function "stable_image_tag" {
   params = [name]
-  result = equal("1", BUILD_STABLE) ? "${DOCKER_REGISTRY}${name}:latest" : ""
+  result = equal("1", BUILD_STABLE) ? "${DOCKER_REGISTRY}${name}:latest${IMAGE_SUFFIX}" : ""
 }
 
 function "image_tag" {
   params = [name, tag]
-  result = notequal("", tag) ? "${DOCKER_REGISTRY}${name}:${tag}" : ""
+  result = notequal("", tag) ? "${DOCKER_REGISTRY}${name}:${tag}${IMAGE_SUFFIX}" : ""
 }
 
 target "migrations-base" {
@@ -69,6 +82,13 @@ target "router-base" {
   }
 }
 
+target "otel-collector-base" {
+  dockerfile = "${PWD}/docker/otel-collector.dockerfile"
+  args = {
+    RELEASE = "${RELEASE}"
+  }
+}
+
 target "cli-base" {
   dockerfile = "${PWD}/docker/cli.dockerfile"
   args = {
@@ -84,51 +104,9 @@ target "target-ci" {
 }
 
 target "target-publish" {
-  platforms = ["linux/amd64", "linux/arm64"]
+  platforms = [get_platform()]
   cache-from = ["type=gha,ignore-error=true"]
   cache-to = ["type=gha,mode=max,ignore-error=true"]
-}
-
-target "emails" {
-  inherits = ["service-base", get_target()]
-  contexts = {
-    dist = "${PWD}/packages/services/emails/dist"
-    shared = "${PWD}/docker/shared"
-  }
-  args = {
-    SERVICE_DIR_NAME = "@hive/emails"
-    IMAGE_TITLE = "graphql-hive/emails"
-    IMAGE_DESCRIPTION = "The emails service of the GraphQL Hive project."
-    PORT = "3006"
-    HEALTHCHECK_CMD = "wget --spider -q http://127.0.0.1:$${PORT}/_readiness"
-  }
-  tags = [
-    local_image_tag("emails"),
-    stable_image_tag("emails"),
-    image_tag("emails", COMMIT_SHA),
-    image_tag("emails", BRANCH_NAME)
-  ]
-}
-
-target "rate-limit" {
-  inherits = ["service-base", get_target()]
-  contexts = {
-    dist = "${PWD}/packages/services/rate-limit/dist"
-    shared = "${PWD}/docker/shared"
-  }
-  args = {
-    SERVICE_DIR_NAME = "@hive/rate-limit"
-    IMAGE_TITLE = "graphql-hive/rate-limit"
-    IMAGE_DESCRIPTION = "The rate limit service of the GraphQL Hive project."
-    PORT = "3009"
-    HEALTHCHECK_CMD = "wget --spider -q http://127.0.0.1:$${PORT}/_readiness"
-  }
-  tags = [
-    local_image_tag("rate-limit"),
-    stable_image_tag("rate-limit"),
-    image_tag("rate-limit", COMMIT_SHA),
-    image_tag("rate-limit", BRANCH_NAME)
-  ]
 }
 
 target "schema" {
@@ -212,24 +190,24 @@ target "storage" {
   ]
 }
 
-target "stripe-billing" {
+target "commerce" {
   inherits = ["service-base", get_target()]
   contexts = {
-    dist = "${PWD}/packages/services/stripe-billing/dist"
+    dist = "${PWD}/packages/services/commerce/dist"
     shared = "${PWD}/docker/shared"
   }
   args = {
-    SERVICE_DIR_NAME = "@hive/stripe-billing"
-    IMAGE_TITLE = "graphql-hive/stripe-billing"
-    IMAGE_DESCRIPTION = "The stripe billing service of the GraphQL Hive project."
+    SERVICE_DIR_NAME = "@hive/commerce"
+    IMAGE_TITLE = "graphql-hive/commerce"
+    IMAGE_DESCRIPTION = "The commerce service of the GraphQL Hive project."
     PORT = "3010"
     HEALTHCHECK_CMD = "wget --spider -q http://127.0.0.1:$${PORT}/_readiness"
   }
   tags = [
-    local_image_tag("stripe-billing"),
-    stable_image_tag("stripe-billing"),
-    image_tag("stripe-billing", COMMIT_SHA),
-    image_tag("stripe-billing", BRANCH_NAME)
+    local_image_tag("commerce"),
+    stable_image_tag("commerce"),
+    image_tag("commerce", COMMIT_SHA),
+    image_tag("commerce", BRANCH_NAME)
   ]
 }
 
@@ -251,27 +229,6 @@ target "tokens" {
     stable_image_tag("tokens"),
     image_tag("tokens", COMMIT_SHA),
     image_tag("tokens", BRANCH_NAME)
-  ]
-}
-
-target "usage-estimator" {
-  inherits = ["service-base", get_target()]
-  contexts = {
-    dist = "${PWD}/packages/services/usage-estimator/dist"
-    shared = "${PWD}/docker/shared"
-  }
-  args = {
-    SERVICE_DIR_NAME = "@hive/usage-estimator"
-    IMAGE_TITLE = "graphql-hive/usage-estimator"
-    IMAGE_DESCRIPTION = "The usage estimator service of the GraphQL Hive project."
-    PORT = "3008"
-    HEALTHCHECK_CMD = "wget --spider -q http://127.0.0.1:$${PORT}/_readiness"
-  }
-  tags = [
-    local_image_tag("usage-estimator"),
-    stable_image_tag("usage-estimator"),
-    image_tag("usage-estimator", COMMIT_SHA),
-    image_tag("usage-estimator", BRANCH_NAME)
   ]
 }
 
@@ -317,24 +274,24 @@ target "usage" {
   ]
 }
 
-target "webhooks" {
+target "workflows" {
   inherits = ["service-base", get_target()]
   contexts = {
-    dist = "${PWD}/packages/services/webhooks/dist"
+    dist = "${PWD}/packages/services/workflows/dist"
     shared = "${PWD}/docker/shared"
   }
   args = {
-    SERVICE_DIR_NAME = "@hive/webhooks"
-    IMAGE_TITLE = "graphql-hive/webhooks"
-    IMAGE_DESCRIPTION = "The webhooks ingestor service of the GraphQL Hive project."
-    PORT = "3005"
+    SERVICE_DIR_NAME = "@hive/workflows"
+    IMAGE_TITLE = "graphql-hive/workflows"
+    IMAGE_DESCRIPTION = "The workflow service of the GraphQL Hive project."
+    PORT = "3013"
     HEALTHCHECK_CMD = "wget --spider -q http://127.0.0.1:$${PORT}/_readiness"
   }
   tags = [
-    local_image_tag("webhooks"),
-    stable_image_tag("webhooks"),
-    image_tag("webhooks", COMMIT_SHA),
-    image_tag("webhooks", BRANCH_NAME)
+    local_image_tag("workflows"),
+    stable_image_tag("workflows"),
+    image_tag("workflows", COMMIT_SHA),
+    image_tag("workflows", BRANCH_NAME)
   ]
 }
 
@@ -383,7 +340,7 @@ target "app" {
 target "apollo-router" {
   inherits = ["router-base", get_target()]
   contexts = {
-    pkg = "${PWD}/packages/libraries/router"
+    router_pkg = "${PWD}/packages/libraries/router"
     config = "${PWD}/configs/cargo"
   }
   args = {
@@ -396,6 +353,21 @@ target "apollo-router" {
     stable_image_tag("apollo-router"),
     image_tag("apollo-router", COMMIT_SHA),
     image_tag("apollo-router", BRANCH_NAME)
+  ]
+}
+
+target "otel-collector" {
+  inherits = ["otel-collector-base", get_target()]
+  context = "${PWD}/docker/configs/otel-collector"
+  args = {
+    IMAGE_TITLE = "graphql-hive/otel-collector"
+    IMAGE_DESCRIPTION = "OTEL Collector for GraphQL Hive."
+  }
+  tags = [
+    local_image_tag("otel-collector"),
+    stable_image_tag("otel-collector"),
+    image_tag("otel-collector", COMMIT_SHA),
+    image_tag("otel-collector", BRANCH_NAME)
   ]
 }
 
@@ -418,41 +390,38 @@ target "cli" {
 
 group "build" {
   targets = [
-    "emails",
-    "rate-limit",
     "schema",
     "policy",
     "storage",
     "tokens",
-    "usage-estimator",
     "usage-ingestor",
     "usage",
-    "webhooks",
     "server",
-    "stripe-billing",
+    "commerce",
     "composition-federation-2",
-    "app"
+    "app",
+    "workflows",
+    "otel-collector"
   ]
 }
 
 group "integration-tests" {
   targets = [
-    "emails",
-    "rate-limit",
+    "commerce",
     "schema",
     "policy",
     "storage",
     "tokens",
-    "usage-estimator",
     "usage-ingestor",
     "usage",
-    "webhooks",
     "server",
-    "composition-federation-2"
+    "composition-federation-2",
+    "workflows",
+    "otel-collector"
   ]
 }
 
-group "rust" {
+group "apollo-router-hive-build" {
   targets = [
     "apollo-router"
   ]

@@ -30,22 +30,29 @@ const EnvironmentModel = zod.object({
         'GRAPHQL_PUBLIC_ORIGIN is required (see: https://github.com/graphql-hive/platform/pull/4288#issue-2195509699)',
     })
     .url(),
-  RATE_LIMIT_ENDPOINT: emptyString(zod.string().url().optional()),
   SCHEMA_POLICY_ENDPOINT: emptyString(zod.string().url().optional()),
   TOKENS_ENDPOINT: zod.string().url(),
-  USAGE_ESTIMATOR_ENDPOINT: emptyString(zod.string().url().optional()),
-  USAGE_ESTIMATOR_RETENTION_PURGE_INTERVAL_MINUTES: emptyString(NumberFromString.optional()),
-  BILLING_ENDPOINT: emptyString(zod.string().url().optional()),
-  EMAILS_ENDPOINT: emptyString(zod.string().url().optional()),
-  WEBHOOKS_ENDPOINT: zod.string().url(),
   SCHEMA_ENDPOINT: zod.string().url(),
   AUTH_ORGANIZATION_OIDC: emptyString(zod.union([zod.literal('1'), zod.literal('0')]).optional()),
   AUTH_REQUIRE_EMAIL_VERIFICATION: emptyString(
     zod.union([zod.literal('1'), zod.literal('0')]).optional(),
   ),
   FEATURE_FLAGS_APP_DEPLOYMENTS_ENABLED: emptyString(
+    zod
+      .union([zod.literal('1'), zod.literal('0')])
+      .optional()
+      .default('1'),
+  ),
+  FEATURE_FLAGS_SCHEMA_PROPOSALS_ENABLED: emptyString(
     zod.union([zod.literal('1'), zod.literal('0')]).optional(),
   ),
+  FEATURE_FLAGS_OTEL_TRACING_ENABLED: emptyString(
+    zod.union([zod.literal('1'), zod.literal('0')]).optional(),
+  ),
+});
+
+const CommerceModel = zod.object({
+  COMMERCE_ENDPOINT: emptyString(zod.string().url().optional()),
 });
 
 const SentryModel = zod.union([
@@ -76,7 +83,7 @@ const PostgresModel = zod.object({
   POSTGRES_PORT: NumberFromString,
   POSTGRES_DB: zod.string(),
   POSTGRES_USER: zod.string(),
-  POSTGRES_PASSWORD: zod.string(),
+  POSTGRES_PASSWORD: emptyString(zod.string().optional()),
 });
 
 const ClickHouseModel = zod.object({
@@ -92,11 +99,15 @@ const RedisModel = zod.object({
   REDIS_HOST: zod.string(),
   REDIS_PORT: NumberFromString,
   REDIS_PASSWORD: emptyString(zod.string().optional()),
+  REDIS_TLS_ENABLED: emptyString(zod.union([zod.literal('1'), zod.literal('0')]).optional()),
 });
 
 const SuperTokensModel = zod.object({
-  SUPERTOKENS_CONNECTION_URI: zod.string().url(),
-  SUPERTOKENS_API_KEY: zod.string(),
+  SUPERTOKENS_REFRESH_TOKEN_KEY: zod.string(),
+  SUPERTOKENS_ACCESS_TOKEN_KEY: zod.string(),
+  SUPERTOKENS_RATE_LIMIT: emptyString(zod.union([zod.literal('1'), zod.literal('0')]).optional()),
+  SUPERTOKENS_RATE_LIMIT_IP_HEADER_NAME: emptyString(zod.string().optional()),
+  SUPERTOKENS_RATE_LIMIT_BYPASS_KEY: emptyString(zod.string().optional()),
 });
 
 const GitHubModel = zod.union([
@@ -117,6 +128,7 @@ const CdnCFModel = zod.union([
   zod.object({
     CDN_CF: zod.literal('1'),
     CDN_CF_BASE_URL: zod.string(),
+    CDN_CF_KV_BASE_URL: emptyString(zod.string().url().optional()),
   }),
 ]);
 
@@ -127,21 +139,33 @@ const CdnApiModel = zod.union([
   zod.object({
     CDN_API: zod.literal('1'),
     CDN_API_BASE_URL: zod.string(),
+    CDN_API_KV_BASE_URL: emptyString(zod.string().url().optional()),
   }),
 ]);
 
-const HiveModel = zod.union([
-  zod.object({ HIVE: emptyString(zod.literal('0').optional()) }),
-  zod.object({
-    HIVE: zod.literal('1'),
-    HIVE_API_TOKEN: zod.string(),
-    HIVE_USAGE: zod.union([zod.literal('0'), zod.literal('1')]).optional(),
-    HIVE_USAGE_ENDPOINT: zod.string().url().optional(),
-    HIVE_USAGE_DATA_RETENTION_PURGE_INTERVAL_MINUTES: emptyString(NumberFromString.optional()),
-    HIVE_REPORTING: zod.union([zod.literal('0'), zod.literal('1')]).optional(),
-    HIVE_REPORTING_ENDPOINT: zod.string().url().optional(),
-  }),
-]);
+const HiveModel = zod.intersection(
+  zod.union([
+    zod.object({ HIVE_USAGE: emptyString(zod.literal('0').optional()) }),
+    zod.object({
+      HIVE_USAGE: zod.literal('1'),
+      HIVE_USAGE_ENDPOINT: zod.string().url().optional(),
+      HIVE_TARGET: zod.string(),
+      HIVE_ACCESS_TOKEN: zod.string(),
+    }),
+  ]),
+  zod.union([
+    zod.object({ HIVE_TRACING: emptyString(zod.literal('0').optional()) }),
+    zod.object({
+      HIVE_TRACING: zod.literal('1'),
+      HIVE_TRACING_ENDPOINT: zod
+        .string()
+        .url()
+        .default('https://api.graphql-hive.com/otel/v1/traces'),
+      HIVE_TARGET: zod.string(),
+      HIVE_ACCESS_TOKEN: zod.string(),
+    }),
+  ]),
+);
 
 const PrometheusModel = zod.object({
   PROMETHEUS_METRICS: emptyString(zod.union([zod.literal('0'), zod.literal('1')]).optional()),
@@ -169,6 +193,21 @@ const S3MirrorModel = zod.union([
     S3_MIRROR_SESSION_TOKEN: emptyString(zod.string().optional()),
     S3_MIRROR_BUCKET_NAME: zod.string(),
     S3_MIRROR_PUBLIC_URL: emptyString(zod.string().url().optional()),
+  }),
+]);
+
+const S3AuditLogModel = zod.union([
+  zod.object({
+    S3_AUDIT_LOG: zod.union([zod.void(), zod.literal('0'), zod.literal('')]),
+  }),
+  zod.object({
+    S3_AUDIT_LOG: zod.literal('1'),
+    S3_AUDIT_LOG_ENDPOINT: zod.string().url(),
+    S3_AUDIT_LOG_ACCESS_KEY_ID: zod.string(),
+    S3_AUDIT_LOG_SECRET_ACCESS_KEY: zod.string(),
+    S3_AUDIT_LOG_SESSION_TOKEN: emptyString(zod.string().optional()),
+    S3_AUDIT_LOG_BUCKET_NAME: zod.string(),
+    S3_AUDIT_LOG_PUBLIC_URL: emptyString(zod.string().url().optional()),
   }),
 ]);
 
@@ -241,11 +280,11 @@ const LogModel = zod.object({
   ),
 });
 
-// eslint-disable-next-line no-process-env
 const processEnv = process.env;
 
 const configs = {
   base: EnvironmentModel.safeParse(processEnv),
+  commerce: CommerceModel.safeParse(processEnv),
   sentry: SentryModel.safeParse(processEnv),
   postgres: PostgresModel.safeParse(processEnv),
   clickhouse: ClickHouseModel.safeParse(processEnv),
@@ -262,6 +301,7 @@ const configs = {
   hive: HiveModel.safeParse(processEnv),
   s3: S3Model.safeParse(processEnv),
   s3Mirror: S3MirrorModel.safeParse(processEnv),
+  s3AuditLog: S3AuditLogModel.safeParse(processEnv),
   log: LogModel.safeParse(processEnv),
   zendeskSupport: ZendeskSupportModel.safeParse(processEnv),
   tracing: OpenTelemetryConfigurationModel.safeParse(processEnv),
@@ -290,6 +330,7 @@ function extractConfig<Input, Output>(config: zod.SafeParseReturnType<Input, Out
 }
 
 const base = extractConfig(configs.base);
+const commerce = extractConfig(configs.commerce);
 const postgres = extractConfig(configs.postgres);
 const sentry = extractConfig(configs.sentry);
 const clickhouse = extractConfig(configs.clickhouse);
@@ -307,22 +348,17 @@ const cdnApi = extractConfig(configs.cdnApi);
 const hive = extractConfig(configs.hive);
 const s3 = extractConfig(configs.s3);
 const s3Mirror = extractConfig(configs.s3Mirror);
+const s3AuditLog = extractConfig(configs.s3AuditLog);
 const zendeskSupport = extractConfig(configs.zendeskSupport);
 const tracing = extractConfig(configs.tracing);
 const hivePersistedDocuments = extractConfig(configs.hivePersistedDocuments);
 
-const hiveConfig =
-  hive.HIVE === '1'
+const hiveUsageConfig =
+  hive.HIVE_USAGE === '1'
     ? {
-        token: hive.HIVE_API_TOKEN,
-        reporting:
-          hive.HIVE_REPORTING === '1' ? { endpoint: hive.HIVE_REPORTING_ENDPOINT ?? null } : null,
-        usage:
-          hive.HIVE_USAGE === '1'
-            ? {
-                endpoint: hive.HIVE_USAGE_ENDPOINT ?? null,
-              }
-            : null,
+        target: hive.HIVE_TARGET,
+        token: hive.HIVE_ACCESS_TOKEN,
+        endpoint: hive.HIVE_USAGE_ENDPOINT ?? null,
       }
     : null;
 
@@ -334,7 +370,7 @@ const hivePersistedDocumentsConfig =
       }
     : null;
 
-export type HiveConfig = typeof hiveConfig;
+export type HiveUsageConfig = typeof hiveUsageConfig;
 export type HivePersistedDocumentsConfig = typeof hivePersistedDocumentsConfig;
 
 export const env = {
@@ -342,9 +378,17 @@ export const env = {
   release: base.RELEASE ?? 'local',
   encryptionSecret: base.ENCRYPTION_SECRET,
   tracing: {
-    enabled: !!tracing.OPENTELEMETRY_COLLECTOR_ENDPOINT,
+    enabled: !!tracing.OPENTELEMETRY_COLLECTOR_ENDPOINT || hive.HIVE_TRACING === '1',
     collectorEndpoint: tracing.OPENTELEMETRY_COLLECTOR_ENDPOINT,
     enableConsoleExporter: tracing.OPENTELEMETRY_CONSOLE_EXPORTER === '1',
+    hive:
+      hive.HIVE_TRACING === '1'
+        ? {
+            endpoint: hive.HIVE_TRACING_ENDPOINT,
+            target: hive.HIVE_TARGET,
+            accessToken: hive.HIVE_ACCESS_TOKEN,
+          }
+        : undefined,
   },
   hiveServices: {
     webApp: {
@@ -353,9 +397,10 @@ export const env = {
     tokens: {
       endpoint: base.TOKENS_ENDPOINT,
     },
-    rateLimit: base.RATE_LIMIT_ENDPOINT
+    commerce: commerce.COMMERCE_ENDPOINT
       ? {
-          endpoint: base.RATE_LIMIT_ENDPOINT,
+          endpoint: commerce.COMMERCE_ENDPOINT,
+          dateRetentionPurgeIntervalMinutes: 5,
         }
       : null,
     schemaPolicy: base.SCHEMA_POLICY_ENDPOINT
@@ -363,15 +408,6 @@ export const env = {
           endpoint: base.SCHEMA_POLICY_ENDPOINT,
         }
       : null,
-    usageEstimator: base.USAGE_ESTIMATOR_ENDPOINT
-      ? {
-          endpoint: base.USAGE_ESTIMATOR_ENDPOINT,
-          dateRetentionPurgeIntervalMinutes: 5,
-        }
-      : null,
-    billing: base.BILLING_ENDPOINT ? { endpoint: base.BILLING_ENDPOINT } : null,
-    emails: base.EMAILS_ENDPOINT ? { endpoint: base.EMAILS_ENDPOINT } : null,
-    webhooks: { endpoint: base.WEBHOOKS_ENDPOINT },
     schema: { endpoint: base.SCHEMA_ENDPOINT },
   },
   http: {
@@ -397,10 +433,20 @@ export const env = {
     host: redis.REDIS_HOST,
     port: redis.REDIS_PORT,
     password: redis.REDIS_PASSWORD ?? '',
+    tlsEnabled: redis.REDIS_TLS_ENABLED === '1',
   },
   supertokens: {
-    connectionURI: supertokens.SUPERTOKENS_CONNECTION_URI,
-    apiKey: supertokens.SUPERTOKENS_API_KEY,
+    secrets: {
+      refreshTokenKey: supertokens.SUPERTOKENS_REFRESH_TOKEN_KEY,
+      accessTokenKey: supertokens.SUPERTOKENS_ACCESS_TOKEN_KEY,
+    },
+    rateLimit:
+      supertokens.SUPERTOKENS_RATE_LIMIT === '0'
+        ? null
+        : {
+            ipHeaderName: supertokens.SUPERTOKENS_RATE_LIMIT_IP_HEADER_NAME ?? 'CF-Connecting-IP',
+            bypassKey: supertokens.SUPERTOKENS_RATE_LIMIT_BYPASS_KEY ?? null,
+          },
   },
   auth: {
     github:
@@ -442,9 +488,16 @@ export const env = {
         cdnCf.CDN_CF === '1'
           ? {
               baseUrl: cdnCf.CDN_CF_BASE_URL,
+              kv: cdnCf.CDN_CF_KV_BASE_URL ? { baseUrl: cdnCf.CDN_CF_KV_BASE_URL } : null,
             }
           : null,
-      api: cdnApi.CDN_API === '1' ? { baseUrl: cdnApi.CDN_API_BASE_URL } : null,
+      api:
+        cdnApi.CDN_API === '1'
+          ? {
+              baseUrl: cdnApi.CDN_API_BASE_URL,
+              kv: cdnApi.CDN_API_KV_BASE_URL ? { baseUrl: cdnApi.CDN_API_KV_BASE_URL } : null,
+            }
+          : null,
     },
   },
   s3: {
@@ -469,6 +522,19 @@ export const env = {
           },
         }
       : null,
+  s3AuditLogs:
+    s3AuditLog.S3_AUDIT_LOG === '1'
+      ? {
+          bucketName: s3AuditLog.S3_AUDIT_LOG_BUCKET_NAME,
+          endpoint: s3AuditLog.S3_AUDIT_LOG_ENDPOINT,
+          publicUrl: s3AuditLog.S3_AUDIT_LOG_PUBLIC_URL ?? null,
+          credentials: {
+            accessKeyId: s3AuditLog.S3_AUDIT_LOG_ACCESS_KEY_ID,
+            secretAccessKey: s3AuditLog.S3_AUDIT_LOG_SECRET_ACCESS_KEY,
+            sessionToken: s3AuditLog.S3_AUDIT_LOG_SESSION_TOKEN,
+          },
+        }
+      : null,
   organizationOIDC: base.AUTH_ORGANIZATION_OIDC === '1',
   sentry: sentry.SENTRY === '1' ? { dsn: sentry.SENTRY_DSN } : null,
   log: {
@@ -484,7 +550,7 @@ export const env = {
           port: prometheus.PROMETHEUS_METRICS_PORT ?? 10_254,
         }
       : null,
-  hive: hiveConfig,
+  hive: hiveUsageConfig,
   hivePersistedDocuments: hivePersistedDocumentsConfig,
   graphql: {
     origin: base.GRAPHQL_PUBLIC_ORIGIN,
@@ -500,5 +566,9 @@ export const env = {
   featureFlags: {
     /** Whether app deployments should be enabled by default for everyone. */
     appDeploymentsEnabled: base.FEATURE_FLAGS_APP_DEPLOYMENTS_ENABLED === '1',
+    /** Whether schema proposals should be enabled for all organizations. */
+    schemaProposalsEnabled: base.FEATURE_FLAGS_SCHEMA_PROPOSALS_ENABLED === '1',
+    /** Whether OTEL tracing should be enabled for all organizations. */
+    otelTracingEnabled: base.FEATURE_FLAGS_OTEL_TRACING_ENABLED === '1',
   },
 } as const;

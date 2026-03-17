@@ -4,8 +4,7 @@ import { useQuery } from 'urql';
 import { Section } from '@/components/common';
 import { GraphQLHighlight } from '@/components/common/GraphQLSDLBlock';
 import { Page, TargetLayout } from '@/components/layouts/target';
-import { ClientsFilterTrigger } from '@/components/target/insights/Filters';
-import { OperationsStats } from '@/components/target/insights/Stats';
+import { OperationsStats } from '@/components/target/insights/stats';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { DateRangePicker, presetLast1Day } from '@/components/ui/date-range-picker';
@@ -16,7 +15,6 @@ import { Subtitle, Title } from '@/components/ui/page';
 import { QueryError } from '@/components/ui/query-error';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import { useDateRangeController } from '@/lib/hooks/use-date-range-controller';
-import { useSearchParamsFilter } from '@/lib/hooks/use-search-params-filters';
 
 const GraphQLOperationBody_OperationFragment = graphql(`
   fragment GraphQLOperationBody_OperationFragment on Operation {
@@ -33,15 +31,12 @@ function GraphQLOperationBody(props: {
     return <GraphQLHighlight className="pt-6" code={operation.body} />;
   }
 
-  return <div>Loading...</div>;
+  return <div>Operation not found.</div>;
 }
 
 const Operation_View_OperationBodyQuery = graphql(`
-  query GraphQLOperationBody_GetOperationBodyQuery(
-    $selector: TargetSelectorInput!
-    $hash: String!
-  ) {
-    target(selector: $selector) {
+  query GraphQLOperationBody_GetOperationBodyQuery($selector: TargetSelectorInput!, $hash: ID!) {
+    target(reference: { bySelector: $selector }) {
       id
       operation(hash: $hash) {
         type
@@ -70,8 +65,7 @@ function OperationView({
     dataRetentionInDays,
     defaultPreset: presetLast1Day,
   });
-  const [selectedClients, setSelectedClients] = useSearchParamsFilter<string[]>('clients', []);
-  const operationsList = useMemo(() => [operationHash], [operationHash]);
+  const operationFilter = useMemo(() => ({ operationIds: [operationHash] }), [operationHash]);
 
   const [result] = useQuery({
     query: Operation_View_OperationBodyQuery,
@@ -86,8 +80,8 @@ function OperationView({
   });
 
   const isNotNoQueryOrMutation =
-    result.data?.target?.operation?.type !== 'query' &&
-    result.data?.target?.operation?.type !== 'mutation';
+    result.data?.target?.operation?.type !== 'QUERY' &&
+    result.data?.target?.operation?.type !== 'MUTATION';
 
   return (
     <>
@@ -98,14 +92,6 @@ function OperationView({
         </div>
         {!result.fetching && isNotNoQueryOrMutation === false && (
           <div className="flex justify-end gap-x-2">
-            <ClientsFilterTrigger
-              period={dateRangeController.resolvedRange}
-              selected={selectedClients}
-              onFilter={setSelectedClients}
-              organizationSlug={organizationSlug}
-              projectSlug={projectSlug}
-              targetSlug={targetSlug}
-            />
             <DateRangePicker
               validUnits={['y', 'M', 'w', 'd', 'h']}
               selectedRange={dateRangeController.selectedPreset.range}
@@ -126,8 +112,7 @@ function OperationView({
           targetSlug={targetSlug}
           period={dateRangeController.resolvedRange}
           dateRangeText={dateRangeController.selectedPreset.label}
-          operationsFilter={operationsList}
-          clientNamesFilter={selectedClients}
+          filter={operationFilter}
           mode="operation-page"
           resolution={dateRangeController.resolution}
         />
@@ -145,9 +130,13 @@ function OperationView({
           </AlertDescription>
         </Alert>
       )}
-      <div className="mt-12 w-full rounded-md border border-gray-800 bg-gray-900/50 p-5">
+      <div className="border-neutral-5 bg-neutral-2/50 mt-12 w-full rounded-md border p-5">
         <Section.Title>Operation body</Section.Title>
-        <GraphQLOperationBody operation={result.data?.target?.operation ?? null} />
+        {result.fetching ? (
+          <div>Loading...</div>
+        ) : (
+          <GraphQLOperationBody operation={result.data?.target?.operation ?? null} />
+        )}
       </div>
     </>
   );
@@ -159,14 +148,10 @@ const OperationInsightsPageQuery = graphql(`
     $projectSlug: String!
     $targetSlug: String!
   ) {
-    organization(selector: { organizationSlug: $organizationSlug }) {
-      organization {
-        id
-        slug
-        rateLimit {
-          retentionInDays
-        }
-      }
+    organization: organizationBySlug(organizationSlug: $organizationSlug) {
+      id
+      slug
+      usageRetentionInDays
     }
     hasCollectedOperations(
       selector: {
@@ -195,40 +180,42 @@ function OperationInsightsContent(props: {
   });
 
   if (query.error) {
-    return <QueryError organizationSlug={props.organizationSlug} error={query.error} />;
+    return (
+      <QueryError
+        organizationSlug={props.organizationSlug}
+        error={query.error}
+        showLogoutButton={false}
+      />
+    );
   }
 
-  const currentOrganization = query.data?.organization?.organization;
-  const hasCollectedOperations = query.data?.hasCollectedOperations === true;
+  const currentOrganization = query.data?.organization;
+
+  if (!currentOrganization) {
+    return null;
+  }
+
+  if (!query.data?.hasCollectedOperations) {
+    return (
+      <div className="py-8">
+        <EmptyList
+          title="Hive is waiting for your first collected operation"
+          description="You can collect usage of your GraphQL API with Hive Client"
+          docsUrl="/features/usage-reporting"
+        />
+      </div>
+    );
+  }
 
   return (
-    <TargetLayout
+    <OperationView
       organizationSlug={props.organizationSlug}
       projectSlug={props.projectSlug}
       targetSlug={props.targetSlug}
-      page={Page.Insights}
-    >
-      {currentOrganization ? (
-        hasCollectedOperations ? (
-          <OperationView
-            organizationSlug={props.organizationSlug}
-            projectSlug={props.projectSlug}
-            targetSlug={props.targetSlug}
-            dataRetentionInDays={currentOrganization.rateLimit.retentionInDays}
-            operationHash={props.operationHash}
-            operationName={props.operationName}
-          />
-        ) : (
-          <div className="py-8">
-            <EmptyList
-              title="Hive is waiting for your first collected operation"
-              description="You can collect usage of your GraphQL API with Hive Client"
-              docsUrl="/features/usage-reporting"
-            />
-          </div>
-        )
-      ) : null}
-    </TargetLayout>
+      dataRetentionInDays={currentOrganization.usageRetentionInDays}
+      operationHash={props.operationHash}
+      operationName={props.operationName}
+    />
   );
 }
 
@@ -242,7 +229,14 @@ export function TargetInsightsOperationPage(props: {
   return (
     <>
       <Meta title={`Operation ${props.operationName}`} />
-      <OperationInsightsContent {...props} />
+      <TargetLayout
+        organizationSlug={props.organizationSlug}
+        projectSlug={props.projectSlug}
+        targetSlug={props.targetSlug}
+        page={Page.Insights}
+      >
+        <OperationInsightsContent {...props} />
+      </TargetLayout>
     </>
   );
 }

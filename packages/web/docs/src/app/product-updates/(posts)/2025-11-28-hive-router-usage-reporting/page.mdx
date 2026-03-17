@@ -1,0 +1,55 @@
+---
+title: Usage Reporting in Hive Router
+description:
+  Hive Router (Rust) now supports Usage Reporting, allowing you to send operation metrics to Hive
+  Console
+date: 2025-11-28
+authors: [kamil]
+---
+
+[Hive Router (Rust)](/docs/router) now supports
+[Usage Reporting](/docs/schema-registry/usage-reporting), enabling you to send metrics about your
+GraphQL operations directly to Hive Console. This integration allows you to monitor performance,
+track schema usage, and analyze client activity for traffic handled by Router.
+
+## Configuration
+
+We've added a `usage_reporting` configuration object that gives you full control over how usage data
+is reported. You can configure sampling rates, buffer sizes, timeouts, and more to ensure reporting
+doesn't impact your router's performance.
+
+Here is an example configuration:
+
+```yaml filename="router.config.yaml"
+usage_reporting:
+  # Enable reporting by providing your access token
+  access_token: 'your-secret-token' # or set HIVE_ACCESS_TOKEN env var
+  target_id: 'your-target-id' # or set HIVE_TARGET env var
+
+  # Report 50% of requests
+  sample_rate: 50%
+
+  # Buffer settings
+  flush_interval: 10s
+  buffer_size: 500
+
+  # Exclude specific operations
+  exclude:
+    - IntrospectionQuery
+
+  # Custom client identification headers
+  client_name_header: 'x-client-name'
+  client_version_header: 'x-client-version'
+```
+
+## Key Options
+
+- **`sample_rate`**: Control the percentage of requests to report (e.g., `100%` for all traffic, or
+  `10%` for sampling).
+- **`buffer_size` and `flush_interval`**: Optimize network usage by batching reports.
+- **`exclude`**: Filter out specific operations (like introspection) from being reported.
+- **`client_name_header` and `client_version_header`**: Customize how clients are identified in your
+  metrics.
+
+For a complete reference of all available options, please see the
+[Usage Reporting documentation](/docs/router/configuration/usage_reporting).

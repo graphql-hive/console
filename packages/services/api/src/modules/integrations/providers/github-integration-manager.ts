@@ -1,9 +1,11 @@
 import { Inject, Injectable, InjectionToken, Scope } from 'graphql-modules';
 import { App } from '@octokit/app';
 import { Octokit } from '@octokit/core';
+import { retry } from '@octokit/plugin-retry';
 import { RequestError } from '@octokit/request-error';
 import type { GitHubIntegration } from '../../../__generated__/types';
 import { HiveError } from '../../../shared/errors';
+import { AuditLogRecorder } from '../../audit-logs/providers/audit-log-recorder';
 import { Session } from '../../auth/lib/authz';
 import { Logger } from '../../shared/providers/logger';
 import { OrganizationSelector, ProjectSelector, Storage } from '../../shared/providers/storage';
@@ -17,18 +19,23 @@ export const GITHUB_APP_CONFIG = new InjectionToken<GitHubApplicationConfig>(
   'GitHubApplicationConfig',
 );
 
+type Constructor<T> = new (...args: any[]) => T;
+
 @Injectable({
   scope: Scope.Operation,
   global: true,
 })
 export class GitHubIntegrationManager {
   private logger: Logger;
-  private app?: App;
+  private app?: App<{
+    Octokit: typeof Octokit & Constructor<ReturnType<typeof retry>>;
+  }>;
 
   constructor(
     logger: Logger,
     private session: Session,
     private storage: Storage,
+    private auditLog: AuditLogRecorder,
     @Inject(GITHUB_APP_CONFIG) private config: GitHubApplicationConfig | null,
   ) {
     this.logger = logger.child({
@@ -40,7 +47,7 @@ export class GitHubIntegrationManager {
         appId: this.config.appId,
         privateKey: this.config.privateKey,
         log: this.logger,
-        Octokit: Octokit.defaults({
+        Octokit: Octokit.plugin(retry).defaults({
           request: {
             fetch,
           },
@@ -71,10 +78,22 @@ export class GitHubIntegrationManager {
       },
     });
     this.logger.debug('Updating organization');
-    await this.storage.addGitHubIntegration({
+    const result = await this.storage.addGitHubIntegration({
       organizationId: input.organizationId,
       installationId: input.installationId,
     });
+
+    await this.auditLog.record({
+      eventType: 'ORGANIZATION_UPDATED_INTEGRATION',
+      organizationId: input.organizationId,
+      metadata: {
+        integrationId: input.installationId,
+        integrationType: 'GITHUB',
+        integrationStatus: 'ENABLED',
+      },
+    });
+
+    return result;
   }
 
   async unregister(input: OrganizationSelector): Promise<void> {
@@ -88,9 +107,21 @@ export class GitHubIntegrationManager {
       },
     });
     this.logger.debug('Updating organization');
-    await this.storage.deleteGitHubIntegration({
+    const result = await this.storage.deleteGitHubIntegration({
       organizationId: input.organizationId,
     });
+
+    await this.auditLog.record({
+      eventType: 'ORGANIZATION_UPDATED_INTEGRATION',
+      organizationId: input.organizationId,
+      metadata: {
+        integrationId: input.organizationId,
+        integrationType: 'GITHUB',
+        integrationStatus: 'DISABLED',
+      },
+    });
+
+    return result;
   }
 
   async isAvailable(selector: OrganizationSelector): Promise<boolean> {
@@ -144,7 +175,7 @@ export class GitHubIntegrationManager {
     return installationId;
   }
 
-  private async getOctokitForOrganization(selector: OrganizationSelector): Promise<Octokit | null> {
+  private async getOctokitForOrganization(selector: OrganizationSelector) {
     const installationId = await this.getInstallationId(selector);
 
     if (!installationId) {
@@ -272,7 +303,19 @@ export class GitHubIntegrationManager {
         },
       };
     } catch (error) {
-      this.logger.error('Failed to create check-run', error);
+      const errorText =
+        error instanceof Error
+          ? error.toString()
+          : typeof error === 'string'
+            ? error
+            : JSON.stringify(error);
+      this.logger.error(
+        'Failed to create check-run (owner=%s, name=%s, sha=%s, error=%s)',
+        input.repositoryOwner,
+        input.repositoryName,
+        input.sha,
+        errorText,
+      );
 
       if (isOctokitRequestError(error)) {
         this.logger.debug(
@@ -295,11 +338,18 @@ export class GitHubIntegrationManager {
           };
         }
 
+        if (error.status >= 500) {
+          return {
+            success: false,
+            error: `GitHub API couldn't respond to your request in time. Please check Github status page for more information.`,
+          };
+        }
+
         return {
           success: false,
           error:
             `Missing permissions for updating check-runs on GitHub repository '${input.repositoryOwner}/${input.repositoryName}'. ` +
-            'Please make sure that the GitHub App has access on the repository.',
+            'Please make sure that the Hive Console GitHub App installation has access on the repository.',
         };
       }
 
@@ -409,7 +459,19 @@ export class GitHubIntegrationManager {
         url: result.data.url,
       } as const;
     } catch (error) {
-      this.logger.error('Failed to update check-run', error);
+      const errorText =
+        error instanceof Error
+          ? error.toString()
+          : typeof error === 'string'
+            ? error
+            : JSON.stringify(error);
+      this.logger.error(
+        'Failed to update check-run (owner=%s, name=%s, checkId=%s, error=%s)',
+        args.checkRun.owner,
+        args.checkRun.repository,
+        args.checkRun.checkRunId,
+        errorText,
+      );
 
       if (isOctokitRequestError(error)) {
         this.logger.debug(
@@ -428,10 +490,11 @@ export class GitHubIntegrationManager {
 
   async enableProjectNameInGithubCheck(input: ProjectSelector) {
     await this.session.assertPerformAction({
-      action: 'gitHubIntegration:modify',
+      action: 'project:modifySettings',
       organizationId: input.organizationId,
       params: {
         organizationId: input.organizationId,
+        projectId: input.projectId,
       },
     });
 
@@ -459,7 +522,7 @@ export class GitHubIntegrationManager {
 }
 
 function isOctokitRequestError(error: unknown): error is RequestError {
-  return !!error && typeof error === 'object' && 'code' in error && 'status' in error;
+  return error instanceof RequestError;
 }
 
 export type GitHubCheckRun = {

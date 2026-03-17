@@ -2,7 +2,7 @@ import { parse } from 'graphql';
 import { createYoga } from 'graphql-yoga';
 import { buildSubgraphSchema } from '@apollo/subgraph';
 
-const typeDefs = parse(/* GraphQL */ `
+export const typeDefs = parse(/* GraphQL */ `
   extend type Query {
     me: User
     user(id: ID!): User

@@ -1,10 +1,14 @@
-import colors from 'colors';
-import { print, type GraphQLError } from 'graphql';
-import type { ExecutionResult } from 'graphql';
-import { http } from '@graphql-hive/core';
-import type { TypedDocumentNode } from '@graphql-typed-document-node/core';
-import { Command, Errors, Flags, Interfaces } from '@oclif/core';
+import { existsSync, readFileSync } from 'node:fs';
+import { env } from 'node:process';
+import { Command, Flags, Interfaces } from '@oclif/core';
 import { Config, GetConfigurationValueType, ValidConfigurationKeys } from './helpers/config';
+import {
+  FileMissingError,
+  InvalidFileContentsError,
+  MissingArgumentsError,
+} from './helpers/errors';
+import { graphqlRequest } from './helpers/graphql-request';
+import { Texture } from './helpers/texture/texture';
 
 export type Flags<T extends typeof Command> = Interfaces.InferredFlags<
   (typeof BaseCommand)['baseFlags'] & T['flags']
@@ -52,29 +56,20 @@ export default abstract class BaseCommand<T extends typeof Command> extends Comm
     this.args = args as Args<T>;
   }
 
-  success(...args: any[]) {
-    this.log(colors.green('✔'), ...args);
+  logSuccess(...args: any[]) {
+    this.log(Texture.success(...args));
   }
 
-  fail(...args: any[]) {
-    this.log(colors.red('✖'), ...args);
+  logFailure(...args: any[]) {
+    this.logToStderr(Texture.failure(...args));
   }
 
-  info(...args: any[]) {
-    this.log(colors.yellow('ℹ'), ...args);
+  logInfo(...args: any[]) {
+    this.log(Texture.info(...args));
   }
 
-  infoWarning(...args: any[]) {
-    this.log(colors.yellow('⚠'), ...args);
-  }
-
-  bolderize(msg: string) {
-    const findSingleQuotes = /'([^']+)'/gim;
-    const findDoubleQuotes = /"([^"]+)"/gim;
-
-    return msg
-      .replace(findSingleQuotes, (_: string, value: string) => colors.bold(value))
-      .replace(findDoubleQuotes, (_: string, value: string) => colors.bold(value));
+  logWarning(...args: any[]) {
+    this.log(Texture.warning(...args));
   }
 
   maybe<TArgs extends Record<string, any>, TKey extends keyof TArgs>({
@@ -107,7 +102,7 @@ export default abstract class BaseCommand<T extends typeof Command> extends Comm
    * @param key
    * @param args all arguments or flags
    * @param defaultValue default value
-   * @param message custom error message in case of no value
+   * @param description description of the flag in case of no value
    * @param env an env var name
    */
   ensure<
@@ -120,8 +115,8 @@ export default abstract class BaseCommand<T extends typeof Command> extends Comm
     args,
     legacyFlagName,
     defaultValue,
-    message,
-    env,
+    env: envName,
+    description,
   }: {
     args: TArgs;
     key: TKey;
@@ -136,42 +131,32 @@ export default abstract class BaseCommand<T extends typeof Command> extends Comm
     }>;
 
     defaultValue?: TArgs[keyof TArgs] | null;
-    message?: string;
+    description: string;
     env?: string;
   }): NonNullable<GetConfigurationValueType<TKey>> | never {
+    let value: GetConfigurationValueType<TKey>;
+
     if (args[key] != null) {
-      return args[key] as NonNullable<GetConfigurationValueType<TKey>>;
+      value = args[key];
+    } else if (legacyFlagName && (args as any)[legacyFlagName] != null) {
+      value = args[legacyFlagName] as NonNullable<GetConfigurationValueType<TKey>>;
+    } else if (envName && env[envName] !== undefined) {
+      value = env[envName] as TArgs[keyof TArgs] as NonNullable<GetConfigurationValueType<TKey>>;
+    } else {
+      const configValue = this._userConfig!.get(key) as GetConfigurationValueType<TKey>;
+
+      if (configValue != null) {
+        value = configValue;
+      } else if (defaultValue) {
+        value = defaultValue;
+      }
     }
 
-    if (legacyFlagName && (args as any)[legacyFlagName] != null) {
-      return args[legacyFlagName] as any as NonNullable<GetConfigurationValueType<TKey>>;
+    if (value?.length) {
+      return value;
     }
 
-    // eslint-disable-next-line no-process-env
-    if (env && process.env[env]) {
-      // eslint-disable-next-line no-process-env
-      return process.env[env] as TArgs[keyof TArgs] as NonNullable<GetConfigurationValueType<TKey>>;
-    }
-
-    const userConfigValue = this._userConfig!.get(key);
-
-    if (userConfigValue != null) {
-      return userConfigValue;
-    }
-
-    if (defaultValue) {
-      return defaultValue;
-    }
-
-    if (message) {
-      throw new Errors.CLIError(message);
-    }
-
-    throw new Errors.CLIError(`Missing "${String(key)}"`);
-  }
-
-  cleanRequestId(requestId?: string | null) {
-    return requestId ? requestId.split(',')[0].trim() : undefined;
+    throw new MissingArgumentsError([String(key), description]);
   }
 
   registryApi(registry: string, token: string) {
@@ -184,35 +169,18 @@ export default abstract class BaseCommand<T extends typeof Command> extends Comm
     return graphqlRequest({
       endpoint: registry,
       additionalHeaders: requestHeaders,
-      version: this.config.version,
       debug: this.flags.debug,
+      version: this.config.version,
+      logger: {
+        info: this.logInfo,
+        error: this.logFailure,
+        debug: (...args) => {
+          if (this.config.debug) {
+            this.logInfo(...args);
+          }
+        },
+      },
     });
-  }
-
-  handleFetchError(error: unknown): never {
-    if (typeof error === 'string') {
-      return this.error(error);
-    }
-
-    if (error instanceof Error) {
-      if (isClientError(error)) {
-        const errors = error.response?.errors;
-
-        if (Array.isArray(errors) && errors.length > 0) {
-          return this.error(errors[0].message, {
-            ref: this.cleanRequestId(error.response?.headers?.get('x-request-id')),
-          });
-        }
-
-        return this.error(error.message, {
-          ref: this.cleanRequestId(error.response?.headers?.get('x-request-id')),
-        });
-      }
-
-      return this.error(error);
-    }
-
-    return this.error(JSON.stringify(error));
   }
 
   async require<
@@ -227,92 +195,25 @@ export default abstract class BaseCommand<T extends typeof Command> extends Comm
       );
     }
   }
-}
 
-class ClientError extends Error {
-  constructor(
-    message: string,
-    public response: {
-      errors?: readonly GraphQLError[];
-      headers: Headers;
-    },
-  ) {
-    super(message);
-  }
-}
+  readJSON(file: string): string {
+    // If we can't parse it, we can try to load it from FS
+    const exists = existsSync(file);
 
-function isClientError(error: Error): error is ClientError {
-  return error instanceof ClientError;
-}
-
-export function graphqlRequest(config: {
-  endpoint: string;
-  additionalHeaders?: Record<string, string>;
-  version?: string;
-  debug?: boolean;
-}) {
-  const requestHeaders = {
-    'Content-Type': 'application/json',
-    Accept: 'application/json',
-    ...(config.version ? { 'User-Agent': `hive-cli/${config.version}` } : {}),
-    ...(config.additionalHeaders ?? {}),
-  };
-
-  // const isDebug = this.flags.debug;
-  const isDebug = config.debug === true;
-
-  return {
-    async request<TResult, TVariables>(
-      args: {
-        operation: TypedDocumentNode<TResult, TVariables>;
-        /** timeout in milliseconds */
-        timeout?: number;
-      } & (TVariables extends Record<string, never>
-        ? {
-            variables?: never;
-          }
-        : {
-            variables: TVariables;
-          }),
-    ): Promise<TResult> {
-      const response = await http.post(
-        config.endpoint,
-        JSON.stringify({
-          query: typeof args.operation === 'string' ? args.operation : print(args.operation),
-          variables: args.variables,
-        }),
-        {
-          logger: {
-            info: (...args) => {
-              if (isDebug) {
-                console.info(...args);
-              }
-            },
-            error: (...args) => {
-              console.error(...args);
-            },
-          },
-          headers: requestHeaders,
-          timeout: args.timeout,
-        },
+    if (!exists) {
+      throw new FileMissingError(
+        file,
+        'Please specify a path to an existing file, or a string with valid JSON',
       );
+    }
 
-      if (!response.ok) {
-        throw new Error(`Invalid status code for HTTP call: ${response.status}`);
-      }
-      const jsonData = (await response.json()) as ExecutionResult<TResult>;
+    try {
+      const fileContent = readFileSync(file, 'utf-8');
+      JSON.parse(fileContent);
 
-      if (jsonData.errors && jsonData.errors.length > 0) {
-        throw new ClientError(
-          `Failed to execute GraphQL operation: ${jsonData.errors.map(e => e.message).join('\n')}`,
-          {
-            errors: jsonData.errors,
-            headers: response.headers,
-          },
-        );
-      }
-
-      return jsonData.data!;
-    },
-  };
+      return fileContent;
+    } catch (e) {
+      throw new InvalidFileContentsError(file, 'JSON');
+    }
+  }
 }

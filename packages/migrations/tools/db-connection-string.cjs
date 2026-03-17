@@ -1,6 +1,11 @@
+require('dotenv').config({
+  debug: true,
+  encoding: 'utf8',
+});
+
 const {
   POSTGRES_USER = 'postgres',
-  POSTGRES_PASSWORD = 'postgres',
+  POSTGRES_PASSWORD = null,
   POSTGRES_HOST = 'localhost',
   POSTGRES_PORT = 5432,
   POSTGRES_DB = 'registry',
@@ -9,11 +14,16 @@ const {
 } = process.env;
 
 function cn(dbName = POSTGRES_DB) {
+  const user = encodeURIComponent(POSTGRES_USER);
+  const password =
+    typeof POSTGRES_PASSWORD === 'string' ? `:${encodeURIComponent(POSTGRES_PASSWORD)}` : '';
+  const host = encodeURIComponent(POSTGRES_HOST);
+  const dbNameEncoded = encodeURIComponent(dbName);
+  const sslMode = POSTGRES_SSL ? 'require' : 'disable';
+
   return (
     POSTGRES_CONNECTION_STRING ||
-    `postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT}/${dbName}${
-      POSTGRES_SSL ? '?sslmode=require' : '?sslmode=disable'
-    }`
+    `postgres://${user}${password}@${host}:${POSTGRES_PORT}/${dbNameEncoded}?sslmode=${sslMode}`
   );
 }
 

@@ -1,0 +1,75 @@
+---
+title: Multiple environments and endpoints in GraphQL Inspector
+authors: kamil
+tags: [graphql, graphql-inspector]
+date: 2020-05-02
+description:
+  Use different variants of GraphQL schema.  Live and running GraphQL API as the source of truth of
+  a schema.
+---
+
+One of the features introduced with the new version of GraphQL Inspector is a support for **multiple
+variants of GraphQL schema** and ability to use **live and running GraphQL endpoints**.
+
+We recently released a lot more interesting features. You can read about them in
+["New GraphQL Inspector and upcoming features"](/blog/new-graphql-inspector) article.
+
+Here, we're going to focus on environments and endpoints only.
+
+## Using Environments
+
+The previous iteration of GraphQL Inspector worked with only a single target branch. Every Pull
+Request was checked against the default branch of Git repository. We can agree, it's not ideal :)
+
+**The new version allows to define as many environments as you wish**. We called them "environments"
+but those are just variants of GraphQL schema. You may have production environment as well as
+staging and QA.
+
+![](../multiple-environments-endpoints-graphql-inspector/graph.png 'Using environments')
+
+**Using multiple environments means:**
+
+- notifications narrowed down to each variant of schema
+- ability to define different settings per environment
+
+Follow the [_"Using Environments"_](https://graphql-inspector.com/docs/recipes/environments) chapter
+in our docs.
+
+## Using Endpoints
+
+We highly recommend to use branches to identify environments but GraphQL Inspector is here to help
+and not force any opinionated patterns.
+
+That's why the new version introduces a way to **use live and running GraphQL endpoints as the
+source of truth of schema**.
+
+This approach is very useful when you don't deploy an API on every Push and your default branch is
+fine with temporary breaking changes. To learn more, read
+[_"Using Endpoints"_ chapter](https://graphql-inspector.com/docs/recipes/endpoints).
+
+---
+
+## Future Plans
+
+We're working on **Azure and Bitbucket integrations** plus a **monitoring feature**. Talk to us to
+try it out.
+
+We want to make **Azure** and **Bitbucket** a first-class citizens in GraphQL Inspector and give you
+the same experience as you get right now with **GitHub**.
+
+**Monitoring** will enable you to analyze the traffic of your GraphQL APIs and provide details
+needed to improve performance. Collecting information about the usage will let you safely remove
+deprecated pieces of GraphQL Schema.
+
+> If you're interested, please reach out to us!
+
+---
+
+## Enjoy GraphQL Inspector!
+
+We have big plans for Inspector, and you're very welcome to join us in that journey.
+
+GraphQL Inspector is a tool created by developers, for developers and that's why we'd love to get
+your feedback and shape GraphQL Inspector together!
+
+Oh... and it's [Open Sourced](https://github.com/kamilkisiela/graphql-inspector)!

@@ -22,7 +22,7 @@ export const urqlClient = createClient({
   url: env.graphqlPublicEndpoint,
   fetchOptions: {
     headers: {
-      'graphql-client-name': 'Hive App',
+      'graphql-client-name': 'hive-app',
       'graphql-client-version': env.release,
     },
   },
@@ -35,9 +35,13 @@ export const urqlClient = createClient({
       resolvers: {
         Target: {
           appDeployments: relayPagination(),
+          traces: relayPagination(),
         },
         AppDeployment: {
           documents: relayPagination(),
+        },
+        Organization: {
+          accessTokens: relayPagination(),
         },
       },
       keys: {
@@ -47,12 +51,13 @@ export const urqlClient = createClient({
         SchemaCoordinateStats: noKey,
         ClientStats: noKey,
         ClientStatsValues: noKey,
+        ClientVersionStatsValues: noKey,
+        InsightsDateRange: noKey,
         OperationsStats: noKey,
+        OperationStatsValues: noKey,
         DurationValues: noKey,
         OrganizationPayload: noKey,
-        SchemaCompareResult: noKey,
         SchemaChange: noKey,
-        SchemaDiff: noKey,
         GitHubIntegration: noKey,
         GitHubRepository: noKey,
         SchemaExplorer: noKey,
@@ -70,12 +75,116 @@ export const urqlClient = createClient({
         SchemaCoordinateUsage: noKey,
         SuccessfulSchemaCheck: ({ id }) => `SchemaCheck:${id}`,
         FailedSchemaCheck: ({ id }) => `SchemaCheck:${id}`,
+        SchemaChangeApproval: ({ schemaCheckId }) => `SchemaChangeApproval:${schemaCheckId}`,
+        SchemaMetadata: noKey,
+        SupergraphMetadata: noKey,
+        MetadataAttribute: noKey,
+        RateLimit: noKey,
+        DeprecatedSchemaExplorer: noKey,
+        TraceStatusBreakdownBucket: noKey,
+        FilterStringOption: noKey,
+        FilterBooleanOption: noKey,
+        TracesFilterOptions: noKey,
+        ResourceAssignment: noKey,
+        TargetServicesResourceAssignment: noKey,
+        TargetAppDeploymentsResourceAssignment: noKey,
+        TargetResouceAssignment: noKey,
+        ProjectTargetsResourceAssignment: noKey,
+        ProjectResourceAssignment: noKey,
+        BillingConfiguration: noKey,
+        InsightsFilterConfiguration: noKey,
+        ClientFilter: noKey,
+        SchemaChangeMeta: noKey,
+        SchemaCheckMeta: noKey,
+        FieldArgumentDescriptionChanged: noKey,
+        FieldArgumentTypeChanged: noKey,
+        DirectiveRemoved: noKey,
+        DirectiveAdded: noKey,
+        DirectiveDescriptionChanged: noKey,
+        DirectiveLocationAdded: noKey,
+        DirectiveLocationRemoved: noKey,
+        DirectiveArgumentAdded: noKey,
+        DirectiveArgumentRemoved: noKey,
+        DirectiveArgumentDescriptionChanged: noKey,
+        DirectiveArgumentDefaultValueChanged: noKey,
+        DirectiveArgumentTypeChanged: noKey,
+        EnumValueRemoved: noKey,
+        EnumValueAdded: noKey,
+        EnumValueDescriptionChanged: noKey,
+        EnumValueDeprecationReasonChanged: noKey,
+        EnumValueDeprecationReasonAdded: noKey,
+        EnumValueDeprecationReasonRemoved: noKey,
+        FieldRemoved: noKey,
+        FieldAdded: noKey,
+        FieldDescriptionChanged: noKey,
+        FieldDescriptionAdded: noKey,
+        FieldDescriptionRemoved: noKey,
+        FieldDeprecationAdded: noKey,
+        FieldDeprecationRemoved: noKey,
+        FieldDeprecationReasonChanged: noKey,
+        FieldDeprecationReasonAdded: noKey,
+        FieldDeprecationReasonRemoved: noKey,
+        FieldTypeChanged: noKey,
+        DirectiveUsageUnionMemberAdded: noKey,
+        DirectiveUsageUnionMemberRemoved: noKey,
+        FieldArgumentAdded: noKey,
+        FieldArgumentRemoved: noKey,
+        InputFieldRemoved: noKey,
+        InputFieldAdded: noKey,
+        InputFieldDescriptionAdded: noKey,
+        InputFieldDescriptionRemoved: noKey,
+        InputFieldDescriptionChanged: noKey,
+        InputFieldDefaultValueChanged: noKey,
+        InputFieldTypeChanged: noKey,
+        ObjectTypeInterfaceAdded: noKey,
+        ObjectTypeInterfaceRemoved: noKey,
+        SchemaQueryTypeChanged: noKey,
+        SchemaMutationTypeChanged: noKey,
+        SchemaSubscriptionTypeChanged: noKey,
+        TypeRemoved: noKey,
+        TypeAdded: noKey,
+        TypeKindChanged: noKey,
+        TypeDescriptionChanged: noKey,
+        TypeDescriptionAdded: noKey,
+        TypeDescriptionRemoved: noKey,
+        UnionMemberRemoved: noKey,
+        UnionMemberAdded: noKey,
+        DirectiveUsageEnumAdded: noKey,
+        DirectiveUsageEnumRemoved: noKey,
+        DirectiveUsageEnumValueAdded: noKey,
+        DirectiveUsageEnumValueRemoved: noKey,
+        DirectiveUsageInputObjectRemoved: noKey,
+        DirectiveUsageInputObjectAdded: noKey,
+        DirectiveUsageInputFieldDefinitionAdded: noKey,
+        DirectiveUsageInputFieldDefinitionRemoved: noKey,
+        DirectiveUsageFieldAdded: noKey,
+        DirectiveUsageFieldRemoved: noKey,
+        DirectiveUsageScalarAdded: noKey,
+        DirectiveUsageScalarRemoved: noKey,
+        DirectiveUsageObjectAdded: noKey,
+        DirectiveUsageObjectRemoved: noKey,
+        DirectiveUsageInterfaceAdded: noKey,
+        DirectiveUsageSchemaAdded: noKey,
+        DirectiveUsageSchemaRemoved: noKey,
+        DirectiveUsageFieldDefinitionAdded: noKey,
+        DirectiveUsageFieldDefinitionRemoved: noKey,
+        DirectiveUsageArgumentDefinitionRemoved: noKey,
+        DirectiveUsageInterfaceRemoved: noKey,
+        DirectiveUsageArgumentDefinitionAdded: noKey,
+        DirectiveUsageArgumentAdded: noKey,
+        DirectiveUsageArgumentRemoved: noKey,
+        DirectiveRepeatableAdded: noKey,
+        DirectiveRepeatableRemoved: noKey,
       },
       globalIDs: ['SuccessfulSchemaCheck', 'FailedSchemaCheck'],
     }),
     networkStatusExchange,
     authExchange(async () => {
-      let action: 'NEEDS_REFRESH' | 'VERIFY_EMAIL' | 'UNAUTHENTICATED' = 'UNAUTHENTICATED';
+      let action:
+        | { type: 'NEEDS_REFRESH' | 'VERIFY_EMAIL' | 'UNAUTHENTICATED' }
+        | { type: 'NEEDS_OIDC'; organizationSlug: string; oidcIntegrationId: string } = {
+        type: 'UNAUTHENTICATED',
+      };
 
       return {
         addAuthToOperation(operation) {
@@ -86,28 +195,41 @@ export const urqlClient = createClient({
         },
         didAuthError(error) {
           if (error.graphQLErrors.some(e => e.extensions?.code === 'UNAUTHENTICATED')) {
-            action = 'UNAUTHENTICATED';
+            action = { type: 'UNAUTHENTICATED' };
             return true;
           }
 
           if (error.graphQLErrors.some(e => e.extensions?.code === 'VERIFY_EMAIL')) {
-            action = 'VERIFY_EMAIL';
+            action = { type: 'VERIFY_EMAIL' };
             return true;
           }
 
           if (error.graphQLErrors.some(e => e.extensions?.code === 'NEEDS_REFRESH')) {
-            action = 'NEEDS_REFRESH';
+            action = { type: 'NEEDS_REFRESH' };
+            return true;
+          }
+
+          const oidcError = error.graphQLErrors.find(e => e.extensions?.code === 'NEEDS_OIDC');
+          if (oidcError) {
+            action = {
+              type: 'NEEDS_OIDC',
+              organizationSlug: oidcError.extensions?.organizationSlug as string,
+              oidcIntegrationId: oidcError.extensions?.oidcIntegrationId as string,
+            };
             return true;
           }
 
           return false;
         },
         async refreshAuth() {
-          if (action === 'NEEDS_REFRESH' && (await Session.attemptRefreshingSession())) {
+          if (action.type === 'NEEDS_REFRESH' && (await Session.attemptRefreshingSession())) {
             location.reload();
-          } else if (action === 'VERIFY_EMAIL') {
+          } else if (action.type === 'VERIFY_EMAIL') {
             window.location.href = '/auth/verify-email';
+          } else if (action.type === 'NEEDS_OIDC') {
+            window.location.href = `/${action.organizationSlug}/oidc-request?id=${action.oidcIntegrationId}&redirectToPath=${encodeURIComponent(window.location.pathname)}`;
           } else {
+            await Session.signOut();
             window.location.href = `/auth?redirectToPath=${encodeURIComponent(window.location.pathname)}`;
           }
         },
@@ -174,3 +296,6 @@ type GraphQLPayload = {
       documentId: string;
     }
 );
+
+// @ts-expect-error for testing purposes ok
+window.__YOU_ARE_FIRED_attemptSessionRefresh = () => Session.attemptRefreshingSession();

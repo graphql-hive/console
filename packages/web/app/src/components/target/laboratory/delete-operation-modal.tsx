@@ -99,7 +99,7 @@ export function DeleteOperationModalContent(props: {
 }): ReactElement {
   return (
     <Dialog open={props.isOpen} onOpenChange={props.toggleModalOpen}>
-      <DialogContent className="w-4/5 max-w-[520px] md:w-3/5">
+      <DialogContent className="w-4/5 max-w-[520px] md:w-3/5" data-cy="delete-operation-modal">
         <DialogHeader>
           <DialogTitle>Delete Operation</DialogTitle>
           <DialogDescription>Do you really want to delete this operation?</DialogDescription>
@@ -117,7 +117,7 @@ export function DeleteOperationModalContent(props: {
           >
             Cancel
           </Button>
-          <Button variant="destructive" onClick={props.handleDelete}>
+          <Button variant="destructive" data-cy="confirm" onClick={props.handleDelete}>
             Delete
           </Button>
         </DialogFooter>

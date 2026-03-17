@@ -12,6 +12,7 @@ import {
 import AutoSizer from 'react-virtualized-auto-sizer';
 import { useQuery } from 'urql';
 import { Page, TargetLayout } from '@/components/layouts/target';
+import { SupergraphMetadataList } from '@/components/target/explorer/super-graph-metadata';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -21,43 +22,59 @@ import { Link as LegacyLink } from '@/components/ui/link';
 import { Meta } from '@/components/ui/meta';
 import { Subtitle, Title } from '@/components/ui/page';
 import { QueryError } from '@/components/ui/query-error';
-import { CHART_PRIMARY_COLOR } from '@/constants';
 import { graphql } from '@/gql';
 import { formatNumber, formatThroughput, toDecimal } from '@/lib/hooks';
 import { useDateRangeController } from '@/lib/hooks/use-date-range-controller';
-import { useChartStyles } from '@/utils';
+import { useChartStyles } from '@/lib/utils';
 import { Link } from '@tanstack/react-router';
 
 const SchemaCoordinateView_SchemaCoordinateStatsQuery = graphql(`
   query SchemaCoordinateView_SchemaCoordinateStatsQuery(
-    $selector: SchemaCoordinateStatsInput!
     $targetSelector: TargetSelectorInput!
+    $period: DateRangeInput!
     $resolution: Int!
+    $schemaCoordinate: String!
+    $type: String!
   ) {
-    schemaCoordinateStats(selector: $selector) {
-      requestsOverTime(resolution: $resolution) {
-        date
-        value
-      }
-      totalRequests
-      operations {
-        nodes {
-          id
-          name
-          operationHash
-          count
-        }
-      }
-      clients {
-        nodes {
-          name
-          count
-        }
-      }
-    }
-    target(selector: $targetSelector) {
+    target(reference: { bySelector: $targetSelector }) {
       id
       hasCollectedSubscriptionOperations
+      schemaCoordinateStats(period: $period, schemaCoordinate: $schemaCoordinate) {
+        supergraphMetadata {
+          ...SupergraphMetadataList_SupergraphMetadataFragment
+        }
+        requestsOverTime(resolution: $resolution) {
+          date
+          value
+        }
+        totalRequests
+        operations {
+          edges {
+            node {
+              id
+              name
+              operationHash
+              count
+            }
+          }
+        }
+        clients {
+          edges {
+            node {
+              name
+              count
+            }
+          }
+        }
+      }
+      latestValidSchemaVersion {
+        id
+        explorer {
+          type(name: $type) {
+            __typename
+          }
+        }
+      }
     }
   }
 `);
@@ -69,27 +86,25 @@ function SchemaCoordinateView(props: {
   projectSlug: string;
   targetSlug: string;
 }) {
-  const styles = useChartStyles();
+  const { styles, colors } = useChartStyles();
   const dateRangeController = useDateRangeController({
     dataRetentionInDays: props.dataRetentionInDays,
     defaultPreset: presetLast7Days,
   });
 
+  const typeName = props.coordinate.split('.')[0];
+
   const [query, refetch] = useQuery({
     query: SchemaCoordinateView_SchemaCoordinateStatsQuery,
     variables: {
-      selector: {
-        organizationSlug: props.organizationSlug,
-        projectSlug: props.projectSlug,
-        targetSlug: props.targetSlug,
-        schemaCoordinate: props.coordinate,
-        period: dateRangeController.resolvedRange,
-      },
       targetSelector: {
         organizationSlug: props.organizationSlug,
         projectSlug: props.projectSlug,
         targetSlug: props.targetSlug,
       },
+      type: typeName,
+      schemaCoordinate: props.coordinate,
+      period: dateRangeController.resolvedRange,
       resolution: dateRangeController.resolution,
     },
   });
@@ -101,7 +116,7 @@ function SchemaCoordinateView(props: {
   }, [dateRangeController.resolvedRange]);
 
   const isLoading = query.fetching;
-  const points = query.data?.schemaCoordinateStats?.requestsOverTime;
+  const points = query.data?.target?.schemaCoordinateStats?.requestsOverTime;
   const requestsOverTime = useMemo(() => {
     if (!points) {
       return [];
@@ -109,9 +124,13 @@ function SchemaCoordinateView(props: {
 
     return points.map(node => [node.date, node.value]);
   }, [points]);
-  const totalRequests = query.data?.schemaCoordinateStats?.totalRequests ?? 0;
-  const totalOperations = query.data?.schemaCoordinateStats?.operations.nodes.length ?? 0;
-  const totalClients = query.data?.schemaCoordinateStats?.clients.nodes.length ?? 0;
+  const totalRequests = query.data?.target?.schemaCoordinateStats?.totalRequests ?? 0;
+  const totalOperations = query.data?.target?.schemaCoordinateStats?.operations.edges.length ?? 0;
+  const totalClients = query.data?.target?.schemaCoordinateStats?.clients.edges.length ?? 0;
+
+  const supergraphMetadata = query.data?.target?.schemaCoordinateStats?.supergraphMetadata;
+  const kind = query.data?.target?.latestValidSchemaVersion?.explorer?.type?.__typename;
+  const title = kind === 'GraphQLEnumType' ? `${typeName} (${props.coordinate})` : props.coordinate;
 
   if (query.error) {
     return <QueryError organizationSlug={props.organizationSlug} error={query.error} />;
@@ -121,7 +140,18 @@ function SchemaCoordinateView(props: {
     <>
       <div className="flex flex-row items-center justify-between py-6">
         <div>
-          <Title>{props.coordinate}</Title>
+          <div className="flex flex-row items-center justify-between">
+            <Title className="pr-8">{title}</Title>
+            {supergraphMetadata ? (
+              <SupergraphMetadataList
+                organizationSlug={props.organizationSlug}
+                projectSlug={props.projectSlug}
+                targetSlug={props.targetSlug}
+                supergraphMetadata={supergraphMetadata}
+                previewThreshold={5}
+              />
+            ) : null}
+          </div>
           <Subtitle>Schema coordinate insights</Subtitle>
         </div>
         <div className="flex justify-end gap-x-2">
@@ -161,24 +191,24 @@ function SchemaCoordinateView(props: {
         <div className="grid gap-4 md:grid-cols-1 lg:grid-cols-8">
           <div className="col-span-4">
             <div className="grid gap-4 md:grid-cols-4 lg:grid-cols-2">
-              <Card className="bg-gray-900/50">
+              <Card className="bg-neutral-2/50">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                   <CardTitle className="text-sm font-medium">Total calls</CardTitle>
-                  <GlobeIcon className="text-muted-foreground size-4" />
+                  <GlobeIcon className="text-neutral-10 size-4" />
                 </CardHeader>
                 <CardContent>
                   <div className="text-2xl font-bold">
                     {isLoading ? '-' : formatNumber(totalRequests)}
                   </div>
-                  <p className="text-muted-foreground text-xs">
+                  <p className="text-neutral-10 text-xs">
                     Requests in {dateRangeController.selectedPreset.label.toLowerCase()}
                   </p>
                 </CardContent>
               </Card>
-              <Card className="bg-gray-900/50">
+              <Card className="bg-neutral-2/50">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                   <CardTitle className="text-sm font-medium">Requests per minute</CardTitle>
-                  <ActivityIcon className="text-muted-foreground size-4" />
+                  <ActivityIcon className="text-neutral-10 size-4" />
                 </CardHeader>
                 <CardContent>
                   <div className="text-2xl font-bold">
@@ -192,31 +222,31 @@ function SchemaCoordinateView(props: {
                           ),
                         )}
                   </div>
-                  <p className="text-muted-foreground text-xs">
+                  <p className="text-neutral-10 text-xs">
                     RPM in {dateRangeController.selectedPreset.label.toLowerCase()}
                   </p>
                 </CardContent>
               </Card>
-              <Card className="bg-gray-900/50">
+              <Card className="bg-neutral-2/50">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                   <CardTitle className="text-sm font-medium">Operations</CardTitle>
-                  <BookIcon className="text-muted-foreground size-4" />
+                  <BookIcon className="text-neutral-10 size-4" />
                 </CardHeader>
                 <CardContent>
                   <div className="text-2xl font-bold">{isLoading ? '-' : totalOperations}</div>
-                  <p className="text-muted-foreground text-xs">
+                  <p className="text-neutral-10 text-xs">
                     GraphQL documents with selected coordinate
                   </p>
                 </CardContent>
               </Card>
-              <Card className="bg-gray-900/50">
+              <Card className="bg-neutral-2/50">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                   <CardTitle className="text-sm font-medium">Consumers</CardTitle>
-                  <TabletSmartphoneIcon className="text-muted-foreground size-4" />
+                  <TabletSmartphoneIcon className="text-neutral-10 size-4" />
                 </CardHeader>
                 <CardContent>
                   <div className="text-2xl font-bold">{isLoading ? '-' : totalClients}</div>
-                  <p className="text-muted-foreground text-xs">
+                  <p className="text-neutral-10 text-xs">
                     GraphQL clients in {dateRangeController.selectedPreset.label.toLowerCase()}
                   </p>
                 </CardContent>
@@ -224,7 +254,7 @@ function SchemaCoordinateView(props: {
             </div>
           </div>
           <div className="col-span-4">
-            <Card className="flex h-full flex-col bg-gray-900/50">
+            <Card className="bg-neutral-2/50 flex h-full flex-col">
               <CardHeader>
                 <CardTitle>Activity</CardTitle>
                 <CardDescription>
@@ -263,7 +293,7 @@ function SchemaCoordinateView(props: {
                             min: 0,
                             splitLine: {
                               lineStyle: {
-                                color: '#595959',
+                                color: colors.grid,
                                 type: 'dashed',
                               },
                             },
@@ -278,7 +308,7 @@ function SchemaCoordinateView(props: {
                             name: 'Requests',
                             showSymbol: false,
                             smooth: false,
-                            color: CHART_PRIMARY_COLOR,
+                            color: colors.primary,
                             areaStyle: {},
                             emphasis: {
                               focus: 'series',
@@ -296,7 +326,7 @@ function SchemaCoordinateView(props: {
           </div>
         </div>
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
-          <Card className="col-span-4 flex h-full flex-col bg-gray-900/50">
+          <Card className="bg-neutral-2/50 col-span-4 flex h-full flex-col">
             <CardHeader>
               <CardTitle>Operations</CardTitle>
               <CardDescription>
@@ -309,36 +339,38 @@ function SchemaCoordinateView(props: {
               <div className="space-y-2">
                 {isLoading
                   ? null
-                  : query.data?.schemaCoordinateStats.operations.nodes.map(operation => (
-                      <div key={operation.id} className="flex items-center">
-                        <p className="truncate text-sm font-medium">
-                          <Link
-                            className="text-orange-500 hover:text-orange-500 hover:underline hover:underline-offset-2"
-                            to="/$organizationSlug/$projectSlug/$targetSlug/insights/$operationName/$operationHash"
-                            params={{
-                              organizationSlug: props.organizationSlug,
-                              projectSlug: props.projectSlug,
-                              targetSlug: props.targetSlug,
-                              operationName: operation.name,
-                              operationHash: operation.operationHash ?? '_',
-                            }}
-                          >
-                            {operation.name}
-                          </Link>
-                        </p>
-                        <div className="ml-auto flex min-w-[150px] flex-row items-center justify-end text-sm font-light">
-                          <div>{formatNumber(operation.count)}</div>{' '}
-                          <div className="min-w-[70px] text-right">
-                            {toDecimal((operation.count * 100) / totalRequests)}%
+                  : query.data?.target?.schemaCoordinateStats.operations.edges.map(
+                      ({ node: operation }) => (
+                        <div key={operation.id} className="flex items-center">
+                          <p className="truncate text-sm font-medium">
+                            <Link
+                              className="text-neutral-11 hover:text-neutral-11 hover:underline hover:underline-offset-2"
+                              to="/$organizationSlug/$projectSlug/$targetSlug/insights/$operationName/$operationHash"
+                              params={{
+                                organizationSlug: props.organizationSlug,
+                                projectSlug: props.projectSlug,
+                                targetSlug: props.targetSlug,
+                                operationName: operation.name,
+                                operationHash: operation.operationHash ?? '_',
+                              }}
+                            >
+                              {operation.name}
+                            </Link>
+                          </p>
+                          <div className="ml-auto flex min-w-[150px] flex-row items-center justify-end text-sm font-light">
+                            <div>{formatNumber(operation.count)}</div>{' '}
+                            <div className="min-w-[70px] text-right">
+                              {toDecimal((operation.count * 100) / totalRequests)}%
+                            </div>
                           </div>
                         </div>
-                      </div>
-                    ))}
+                      ),
+                    )}
               </div>
             </CardContent>
           </Card>
 
-          <Card className="col-span-3 flex h-full flex-col bg-gray-900/50">
+          <Card className="bg-neutral-2/50 col-span-3 flex h-full flex-col">
             <CardHeader>
               <CardTitle>Clients</CardTitle>
               <CardDescription>
@@ -351,30 +383,32 @@ function SchemaCoordinateView(props: {
               <div className="space-y-2">
                 {isLoading
                   ? null
-                  : query.data?.schemaCoordinateStats.clients.nodes.map(client => (
-                      <div key={client.name} className="flex items-center">
-                        <p className="truncate text-sm font-medium">
-                          <Link
-                            className="text-orange-500 hover:text-orange-500 hover:underline hover:underline-offset-2"
-                            to="/$organizationSlug/$projectSlug/$targetSlug/insights/client/$name"
-                            params={{
-                              organizationSlug: props.organizationSlug,
-                              projectSlug: props.projectSlug,
-                              targetSlug: props.targetSlug,
-                              name: client.name,
-                            }}
-                          >
-                            {client.name}
-                          </Link>
-                        </p>
-                        <div className="ml-auto flex min-w-[150px] flex-row items-center justify-end text-sm font-light">
-                          <div>{formatNumber(client.count)}</div>
-                          <div className="min-w-[70px] text-right">
-                            {toDecimal((client.count * 100) / totalRequests)}%
+                  : query.data?.target?.schemaCoordinateStats.clients.edges.map(
+                      ({ node: client }) => (
+                        <div key={client.name} className="flex items-center">
+                          <p className="truncate text-sm font-medium">
+                            <Link
+                              className="text-neutral-11 hover:text-neutral-11 hover:underline hover:underline-offset-2"
+                              to="/$organizationSlug/$projectSlug/$targetSlug/insights/client/$name"
+                              params={{
+                                organizationSlug: props.organizationSlug,
+                                projectSlug: props.projectSlug,
+                                targetSlug: props.targetSlug,
+                                name: client.name,
+                              }}
+                            >
+                              {client.name}
+                            </Link>
+                          </p>
+                          <div className="ml-auto flex min-w-[150px] flex-row items-center justify-end text-sm font-light">
+                            <div>{formatNumber(client.count)}</div>
+                            <div className="min-w-[70px] text-right">
+                              {toDecimal((client.count * 100) / totalRequests)}%
+                            </div>
                           </div>
                         </div>
-                      </div>
-                    ))}
+                      ),
+                    )}
               </div>
             </CardContent>
           </Card>
@@ -390,14 +424,10 @@ const TargetSchemaCoordinatePageQuery = graphql(`
     $projectSlug: String!
     $targetSlug: String!
   ) {
-    organization(selector: { organizationSlug: $organizationSlug }) {
-      organization {
-        id
-        slug
-        rateLimit {
-          retentionInDays
-        }
-      }
+    organization: organizationBySlug(organizationSlug: $organizationSlug) {
+      id
+      slug
+      usageRetentionInDays
     }
     hasCollectedOperations(
       selector: {
@@ -425,39 +455,41 @@ function TargetSchemaCoordinatePageContent(props: {
   });
 
   if (query.error) {
-    return <QueryError organizationSlug={props.organizationSlug} error={query.error} />;
+    return (
+      <QueryError
+        organizationSlug={props.organizationSlug}
+        error={query.error}
+        showLogoutButton={false}
+      />
+    );
   }
 
-  const currentOrganization = query.data?.organization?.organization;
-  const hasCollectedOperations = query.data?.hasCollectedOperations === true;
+  const currentOrganization = query.data?.organization;
+
+  if (!currentOrganization) {
+    return null;
+  }
+
+  if (query.data?.hasCollectedOperations === false) {
+    return (
+      <div className="py-8">
+        <EmptyList
+          title="Hive is waiting for your first collected operation"
+          description="You can collect usage of your GraphQL API with Hive Client"
+          docsUrl="/features/usage-reporting"
+        />
+      </div>
+    );
+  }
 
   return (
-    <TargetLayout
+    <SchemaCoordinateView
+      coordinate={props.coordinate}
+      dataRetentionInDays={currentOrganization.usageRetentionInDays}
       organizationSlug={props.organizationSlug}
       projectSlug={props.projectSlug}
       targetSlug={props.targetSlug}
-      page={Page.Insights}
-    >
-      {currentOrganization ? (
-        hasCollectedOperations ? (
-          <SchemaCoordinateView
-            coordinate={props.coordinate}
-            dataRetentionInDays={currentOrganization.rateLimit.retentionInDays}
-            organizationSlug={props.organizationSlug}
-            projectSlug={props.projectSlug}
-            targetSlug={props.targetSlug}
-          />
-        ) : (
-          <div className="py-8">
-            <EmptyList
-              title="Hive is waiting for your first collected operation"
-              description="You can collect usage of your GraphQL API with Hive Client"
-              docsUrl="/features/usage-reporting"
-            />
-          </div>
-        )
-      ) : null}
-    </TargetLayout>
+    />
   );
 }
 
@@ -470,7 +502,14 @@ export function TargetInsightsCoordinatePage(props: {
   return (
     <>
       <Meta title={`${props.coordinate} - schema coordinate`} />
-      <TargetSchemaCoordinatePageContent {...props} />
+      <TargetLayout
+        organizationSlug={props.organizationSlug}
+        projectSlug={props.projectSlug}
+        targetSlug={props.targetSlug}
+        page={Page.Insights}
+      >
+        <TargetSchemaCoordinatePageContent {...props} />
+      </TargetLayout>
     </>
   );
 }

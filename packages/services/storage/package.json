@@ -8,30 +8,32 @@
   },
   "main": "./src/index.ts",
   "exports": {
-    ".": "./src/index.ts"
+    ".": "./src/index.ts",
+    "./db/pool": "./src/db/pool.ts"
   },
   "scripts": {
     "build": "tsx ../../../scripts/runify.ts",
     "db:generate": "schemats generate --config schemats.cjs -o src/db/types.ts && prettier --write src/db/types.ts"
   },
   "devDependencies": {
-    "@graphql-inspector/core": "5.1.0-alpha-20231208113249-34700c8a",
+    "@graphql-inspector/core": "7.1.2",
     "@hive/service-common": "workspace:*",
-    "@sentry/node": "7.119.2",
-    "@sentry/types": "7.119.2",
+    "@sentry/node": "7.120.2",
+    "@sentry/types": "7.120.2",
     "@tgriesser/schemats": "9.0.1",
-    "@types/node": "22.8.7",
+    "@types/node": "22.10.5",
     "@types/pg": "8.11.10",
-    "dotenv": "16.4.5",
+    "dotenv": "16.4.7",
     "fast-json-stable-stringify": "2.1.0",
-    "got": "14.4.3",
-    "pg-promise": "11.10.1",
+    "got": "14.4.7",
+    "graphql": "^0.13.0 || ^14.0.0 || ^15.0.0 || ^16.0.0",
+    "pg-promise": "11.10.2",
     "slonik": "30.4.4",
-    "slonik-interceptor-query-logging": "46.1.0",
+    "slonik-interceptor-query-logging": "46.4.0",
     "slonik-utilities": "1.9.4",
-    "tslib": "2.8.0",
-    "typescript": "5.6.3",
-    "zod": "3.23.8"
+    "tslib": "2.8.1",
+    "typescript": "5.7.3",
+    "zod": "3.25.76"
   },
   "buildOptions": {
     "external": [

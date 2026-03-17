@@ -1,0 +1,57 @@
+---
+title: Input Based Breaking Change Detection
+description:
+  Improvements to Hive's breaking change detection to make it easier and safer to migrate schemas.
+date: 2025-05-20
+authors: [jdolle]
+---
+
+## What’s New?
+
+- **Hive accounts for argument, input field, and variable values when checking for breaking
+  changes** – This improvement is fully backwards compatible and will automatically take effect when
+  upgrading your hive client package(s).
+
+Compatible client versions include versions greater than or equal to:
+
+- @graphql-hive/apollo@0.39.1
+- @graphql-hive/envelop@0.36.1
+- @graphql-hive/yoga@0.42.1
+
+## Feature Details
+
+Breaking change detection is complicated. It starts in the
+[graphql-hive client packages](https://the-guild.dev/graphql/hive/docs/api-reference/client), where
+operations are processed into a list of requested fields and types.
+
+For example, an operation `{ user(id: "1234") { id } }` will produce this list of coordinates:
+
+- Query
+- Query.user
+- Query.user.id
+- User
+- User.id
+- ID
+
+These coordinates, along with other useful metrics like latency and error status, are sent to Hive's
+servers in batches from the client(s). Hive processes and stores this usage data by timestamp and
+coordinate. These are then aggregated over time to produce what's seen on Hive's explorer and
+insights pages, as well as to detect whether not a specific change to the schema will break clients.
+
+This approach works well, but previously, it only collected from the type definitions used by the
+operation. But this release adds an additional coordinate for inputs with an indicator if the data
+is provided by clients, either as a value or variable.
+
+For the above example, an additional coordinate is generated:
+
+- Query.user.id!
+
+The exclamation (!) indicates that this argument was passed a value. This helps distinguish whether
+or not an input field or argument can be converted from nullable to non-nullable safely.
+
+We are excited about this feature because it provides greater accuracy and convenience for our
+users, while keeping their schemas safe.
+
+---
+
+[For more information about conditional breaking changes, see the Target Management docs](/docs/management/targets#conditional-breaking-changes).

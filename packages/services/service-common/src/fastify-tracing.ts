@@ -48,18 +48,13 @@ export type IgnoreRouteFn = (path: string, method: string) => boolean;
 
 declare module 'fastify' {
   interface FastifyRequest {
-    openTelemetry: () => ReqInstance;
+    openTelemetry?: () => ReqInstance;
   }
 }
 
 function defaultFormatSpanName(request: FastifyRequest) {
   const { method } = request;
-  let path;
-  if (request.routeOptions) {
-    path = request.routeOptions.url;
-  } else {
-    path = request.routerPath;
-  }
+  let path = request.routeOptions.url;
   return path ? `${method} ${path}` : method;
 }
 

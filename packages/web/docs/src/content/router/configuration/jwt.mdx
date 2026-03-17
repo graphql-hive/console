@@ -1,0 +1,180 @@
+---
+title: 'jwt'
+---
+
+# jwt
+
+The `jwt` configuration lets you add JWT-based authentication to your GraphQL endpoint. When
+enabled, the router checks incoming requests for valid JSON Web Tokens and can reject
+unauthenticated requests.
+
+For practical examples and common setups, see
+**[JWT Authentication](../security/jwt-authentication)**.
+
+## Basic Options
+
+### `require_authentication`
+
+- **Type:** `boolean`
+- **Default:** `false`
+
+When `true`, the router rejects any request without a valid JWT. Set to `false` if you want to allow
+both authenticated and anonymous requests.
+
+### `jwks_providers`
+
+- **Type:** `object[]`
+- **Required:** Yes
+
+Where to get the keys for verifying JWT signatures. You can use local files or remote URLs (like
+from Auth0, Okta, or other identity providers).
+
+Each provider needs:
+
+- **`source`**: `string` - Either `"file"` or `"remote"`
+- **`path`**: `string` - Path to a local `jwks.json` file (when using `source: "file"`)
+- **`url`**: `string` - URL to fetch JWKS from (when using `source: "remote"`)
+- **`polling_interval`**: `string` - (Remote only) How often to refresh the keys (like `"15m"`).
+  Default is `"10m"`
+- **`prefetch`**: `boolean` - (Remote only) Whether to fetch keys on startup. Default is `false`
+
+### `lookup_locations`
+
+- **Type:** `object[]`
+- **Default:** `[{ "source": "header", "name": "authorization", "prefix": "Bearer " }]`
+
+Where to look for the JWT in requests. The router checks these locations in order and uses the first
+token it finds.
+
+Each location has:
+
+- **`source`**: `string` - Either `"header"` or `"cookies"`
+- **`name`**: `string` - Header or cookie name
+- **`prefix`**: `string` - Text to remove from the header value (like `"Bearer "`)
+
+## Token Validation
+
+### `audiences`
+
+- **Type:** `string[]`
+
+Valid values for the `aud` (audience) claim in the JWT. If you set this, the token's audience must
+match one of these values. Leave empty to skip audience validation.
+
+### `issuers`
+
+- **Type:** `string[]`
+
+Valid values for the `iss` (issuer) claim in the JWT. If you set this, the token's issuer must match
+one of these values. Leave empty to skip issuer validation.
+
+### `allowed_algorithms`
+
+- **Type:** `string[]`
+- **Default:** All standard algorithms (`HS256`, `RS256`, etc.)
+
+Which signature algorithms to accept (like `["RS256", "ES256"]`). Only change this if you need to
+restrict to specific algorithms for security reasons.
+
+## Forwarding Claims
+
+### `forward_claims_to_upstream_extensions`
+
+- **Type:** `object`
+- **Default:** `{ "enabled": false, "field_name": "jwt" }`
+
+Send the validated JWT claims to your subgraphs in the GraphQL `extensions` object. This lets your
+services access user information from the token.
+
+- **`enabled`**: `boolean` - Turn on claim forwarding
+- **`field_name`**: `string` - Key name for the claims in the extensions object
+
+## Examples
+
+### Basic Auth0/Okta Setup
+
+```yaml filename="router.config.yaml"
+jwt:
+  require_authentication: true
+  jwks_providers:
+    - source: remote
+      url: https://your-domain.auth0.com/.well-known/jwks.json
+      polling_interval: '1h'
+  audiences:
+    - 'https://your-api.com'
+  issuers:
+    - 'https://your-domain.auth0.com/'
+```
+
+### Multiple Token Locations
+
+```yaml filename="router.config.yaml"
+jwt:
+  require_authentication: false
+  jwks_providers:
+    - source: remote
+      url: https://your-domain.auth0.com/.well-known/jwks.json
+  lookup_locations:
+    # Check Authorization header first
+    - source: header
+      name: authorization
+      prefix: 'Bearer '
+    # Fall back to a cookie
+    - source: cookies
+      name: auth_token
+    # Custom header without prefix
+    - source: header
+      name: x-api-token
+```
+
+### Forward Claims to Subgraphs
+
+```yaml filename="router.config.yaml"
+jwt:
+  require_authentication: true
+  jwks_providers:
+    - source: remote
+      url: https://your-domain.auth0.com/.well-known/jwks.json
+  forward_claims_to_upstream_extensions:
+    enabled: true
+    field_name: 'user'
+```
+
+With this setup, your subgraphs receive the JWT claims like this:
+
+```json
+{
+  "query": "{ me { name } }",
+  "extensions": {
+    "user": {
+      "sub": "user123",
+      "email": "user@example.com",
+      "role": "admin"
+    }
+  }
+}
+```
+
+### Local Development with File-based Keys
+
+```yaml filename="router.config.yaml"
+jwt:
+  require_authentication: false
+  jwks_providers:
+    - source: file
+      path: ./dev-jwks.json
+  audiences:
+    - 'localhost:4000'
+```
+
+## Common Patterns
+
+**Optional authentication:** Set `require_authentication: false` to allow both authenticated and
+anonymous requests. Your subgraphs can check if claims were forwarded to determine if the user is
+logged in.
+
+**Multiple identity providers:** Add multiple JWKS providers to support tokens from different
+issuers (like allowing both internal tokens and social login tokens).
+
+**Staging vs production:** Use different audiences and issuers for different environments to prevent
+tokens from one environment being used in another.

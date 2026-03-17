@@ -1,0 +1,12 @@
+type: hiveauth
+
+status:
+  class: extension
+  stability:
+    beta: [extension]
+  distributions: [contrib, k8s]
+  codeowners:
+    active: [kamilkisiela]
+
+tests:
+  config:

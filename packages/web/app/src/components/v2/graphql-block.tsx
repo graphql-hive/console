@@ -1,6 +1,7 @@
 import { ReactElement, ReactNode } from 'react';
 import { clsx } from 'clsx';
 import { SchemaEditor, SchemaEditorProps } from '@/components/schema-editor';
+import { useTheme } from '@/components/theme/theme-provider';
 import { Card } from '@/components/v2/card';
 import { usePrettify } from '@/lib/hooks';
 import { Heading } from '../ui/heading';
@@ -12,6 +13,7 @@ export function GraphQLHighlight({
   code: string;
 }): ReactElement {
   const pretty = usePrettify(code);
+  const { resolvedTheme } = useTheme();
 
   return (
     <div
@@ -20,7 +22,8 @@ export function GraphQLHighlight({
       }}
     >
       <SchemaEditor
-        theme="vs-dark"
+        // this outputs either "vs-light" or "vs-dark"
+        theme={`vs-${resolvedTheme}`}
         options={{
           readOnly: true,
           lineNumbers: 'on',

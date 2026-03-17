@@ -32,3 +32,14 @@ export function invariant(
   const value: string = provided ? `${prefix}: ${provided}` : prefix;
   throw new Error(value);
 }
+
+export function maskToken(token: string, visibleStart = 3, visibleEnd = 3): string {
+  if (token.length <= visibleStart + visibleEnd) {
+    return token;
+  }
+  return (
+    token.slice(0, visibleStart) +
+    '*'.repeat(token.length - visibleStart - visibleEnd) +
+    token.slice(-visibleEnd)
+  );
+}

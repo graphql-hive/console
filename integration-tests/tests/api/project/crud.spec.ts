@@ -1,5 +1,5 @@
-import { ProjectType } from 'testkit/gql/graphql';
-import { updateProjectSlug } from '../../../testkit/flow';
+import { ProjectType, ResourceAssignmentModeType } from 'testkit/gql/graphql';
+import { readProjectInfo, updateProjectSlug } from '../../../testkit/flow';
 import { initSeed } from '../../../testkit/seed';
 
 test.concurrent(
@@ -31,6 +31,43 @@ test.concurrent(
   },
 );
 
+test.concurrent(
+  'creating a project should return createdAt as a valid ISO date string',
+  async ({ expect }) => {
+    const { createOrg } = await initSeed().createOwner();
+    const { createProject } = await createOrg();
+    const { project } = await createProject(ProjectType.Single);
+
+    expect(project.createdAt).toBeDefined();
+    expect(typeof project.createdAt).toBe('string');
+    // Verify it's a valid ISO date string
+    const parsedDate = new Date(project.createdAt);
+    expect(parsedDate.toISOString()).toBe(project.createdAt);
+  },
+);
+
+test.concurrent(
+  'querying a project should return createdAt as a valid ISO date string',
+  async ({ expect }) => {
+    const { createOrg, ownerToken } = await initSeed().createOwner();
+    const { createProject, organization } = await createOrg();
+    const { project } = await createProject(ProjectType.Single);
+
+    const result = await readProjectInfo(
+      {
+        organizationSlug: organization.slug,
+        projectSlug: project.slug,
+      },
+      ownerToken,
+    ).then(r => r.expectNoGraphQLErrors());
+
+    expect(result.project?.createdAt).toBeDefined();
+    expect(typeof result.project?.createdAt).toBe('string');
+    // Verify it matches the createdAt from the mutation
+    expect(result.project?.createdAt).toBe(project.createdAt);
+  },
+);
+
 test.concurrent(`changing a project's slug should result changing its name`, async ({ expect }) => {
   const { createOrg, ownerToken } = await initSeed().createOwner();
   const { createProject, organization } = await createOrg();
@@ -38,17 +75,20 @@ test.concurrent(`changing a project's slug should result changing its name`, asy
 
   const renameResult = await updateProjectSlug(
     {
-      organizationSlug: organization.slug,
-      projectSlug: project.slug,
+      project: {
+        bySelector: {
+          organizationSlug: organization.slug,
+          projectSlug: project.slug,
+        },
+      },
       slug: 'bar',
     },
     ownerToken,
   ).then(r => r.expectNoGraphQLErrors());
 
   expect(renameResult.updateProjectSlug.error).toBeNull();
-  expect(renameResult.updateProjectSlug.ok?.project.name).toBe('bar');
-  expect(renameResult.updateProjectSlug.ok?.project.slug).toBe('bar');
-  expect(renameResult.updateProjectSlug.ok?.selector.projectSlug).toBe('bar');
+  expect(renameResult.updateProjectSlug.ok?.updatedProject.name).toBe('bar');
+  expect(renameResult.updateProjectSlug.ok?.updatedProject.slug).toBe('bar');
 });
 
 test.concurrent(
@@ -60,17 +100,20 @@ test.concurrent(
 
     const renameResult = await updateProjectSlug(
       {
-        organizationSlug: organization.slug,
-        projectSlug: project.slug,
+        project: {
+          bySelector: {
+            organizationSlug: organization.slug,
+            projectSlug: project.slug,
+          },
+        },
         slug: project.slug,
       },
       ownerToken,
     ).then(r => r.expectNoGraphQLErrors());
 
     expect(renameResult.updateProjectSlug.error).toBeNull();
-    expect(renameResult.updateProjectSlug.ok?.project.name).toBe(project.slug);
-    expect(renameResult.updateProjectSlug.ok?.project.slug).toBe(project.slug);
-    expect(renameResult.updateProjectSlug.ok?.selector.projectSlug).toBe(project.slug);
+    expect(renameResult.updateProjectSlug.ok?.updatedProject.name).toBe(project.slug);
+    expect(renameResult.updateProjectSlug.ok?.updatedProject.slug).toBe(project.slug);
   },
 );
 
@@ -84,8 +127,12 @@ test.concurrent(
 
     const renameResult = await updateProjectSlug(
       {
-        organizationSlug: organization.slug,
-        projectSlug: project.slug,
+        project: {
+          bySelector: {
+            organizationSlug: organization.slug,
+            projectSlug: project.slug,
+          },
+        },
         slug: project2.slug,
       },
       ownerToken,
@@ -116,24 +163,27 @@ test.concurrent(
   `changing a project's slug to a slug taken by another organization should be possible`,
   async ({ expect }) => {
     const { createOrg, ownerToken } = await initSeed().createOwner();
-    const { createProject, organization, projects } = await createOrg();
-    const { createProject: createProject2, organization: organization2 } = await createOrg();
+    const { createProject, organization } = await createOrg();
+    const { createProject: createProject2 } = await createOrg();
     const { project } = await createProject(ProjectType.Single);
     const { project: project2 } = await createProject2(ProjectType.Single);
 
     const renameResult = await updateProjectSlug(
       {
-        organizationSlug: organization.slug,
-        projectSlug: project.slug,
+        project: {
+          bySelector: {
+            organizationSlug: organization.slug,
+            projectSlug: project.slug,
+          },
+        },
         slug: project2.slug,
       },
       ownerToken,
     ).then(r => r.expectNoGraphQLErrors());
 
     expect(renameResult.updateProjectSlug.error).toBeNull();
-    expect(renameResult.updateProjectSlug.ok?.project.name).toBe(project2.slug);
-    expect(renameResult.updateProjectSlug.ok?.project.slug).toBe(project2.slug);
-    expect(renameResult.updateProjectSlug.ok?.selector.projectSlug).toBe(project2.slug);
+    expect(renameResult.updateProjectSlug.ok?.updatedProject.name).toBe(project2.slug);
+    expect(renameResult.updateProjectSlug.ok?.updatedProject.slug).toBe(project2.slug);
   },
 );
 
@@ -146,8 +196,12 @@ test.concurrent(
 
     const renameResult = await updateProjectSlug(
       {
-        organizationSlug: organization.slug,
-        projectSlug: project.slug,
+        project: {
+          bySelector: {
+            organizationSlug: organization.slug,
+            projectSlug: project.slug,
+          },
+        },
         slug: 'view',
       },
       ownerToken,
@@ -167,8 +221,12 @@ test.concurrent(
 
     const renameResult = await updateProjectSlug(
       {
-        organizationSlug: organization.slug,
-        projectSlug: project.slug,
+        project: {
+          bySelector: {
+            organizationSlug: organization.slug,
+            projectSlug: project.slug,
+          },
+        },
         slug: 'new',
       },
       ownerToken,
@@ -188,8 +246,12 @@ test.concurrent(
 
     const renameResult = await updateProjectSlug(
       {
-        organizationSlug: organization.slug,
-        projectSlug: project.slug,
+        project: {
+          bySelector: {
+            organizationSlug: organization.slug,
+            projectSlug: project.slug,
+          },
+        },
         slug: 'new',
       },
       ownerToken,
@@ -199,3 +261,64 @@ test.concurrent(
     expect(renameResult.updateProjectSlug.error?.message).toBeDefined();
   },
 );
+
+test.concurrent('prevent access to projects with assigned resources on member', async () => {
+  const { createOrg } = await initSeed().createOwner();
+  const { createProject, inviteAndJoinMember, projects: getProjects } = await createOrg();
+  const { project } = await createProject(ProjectType.Single);
+  // By default the viewer will have the "Viewer" role.
+  const { member, assignMemberRole, memberToken } = await inviteAndJoinMember();
+
+  // By default the user should have access to all the projects within the organization.
+  let projects = await getProjects(memberToken);
+  expect(projects).toHaveLength(1);
+  expect(projects.at(0)?.id).toEqual(project.id);
+
+  // Limit the users access to no projects using the "Viewer" role
+  await assignMemberRole({
+    roleId: member.role.id,
+    userId: member.user.id,
+    resources: {
+      mode: ResourceAssignmentModeType.Granular,
+      projects: [],
+    },
+  });
+
+  projects = await getProjects(memberToken);
+  expect(projects).toHaveLength(0);
+});
+
+test.concurrent('restrict access to single project with assigned resources on member', async () => {
+  const { createOrg } = await initSeed().createOwner();
+  const { createProject, inviteAndJoinMember, projects: getProjects } = await createOrg();
+  const { project: firstProject } = await createProject(ProjectType.Single);
+  const { project: secondProject } = await createProject(ProjectType.Single);
+
+  // By default the viewer will have the "Viewer" role.
+  const { member, assignMemberRole, memberToken } = await inviteAndJoinMember();
+
+  // By default the user should have access to all the projects within the organization.
+  let projects = await getProjects(memberToken);
+  expect(projects).toHaveLength(2);
+  expect(projects.at(0)?.id).toEqual(secondProject.id);
+  expect(projects.at(1)?.id).toEqual(firstProject.id);
+
+  // Limit the users access to a single project using the "Viewer" role
+  await assignMemberRole({
+    roleId: member.role.id,
+    userId: member.user.id,
+    resources: {
+      mode: ResourceAssignmentModeType.Granular,
+      projects: [
+        {
+          projectId: firstProject.id,
+          targets: { mode: ResourceAssignmentModeType.All },
+        },
+      ],
+    },
+  });
+
+  projects = await getProjects(memberToken);
+  expect(projects).toHaveLength(1);
+  expect(projects.at(0)?.id).toEqual(firstProject.id);
+});

@@ -15,25 +15,24 @@ jobs:
 
     steps:
       - name: checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
         with:
           fetch-depth: 2
           ref: ${{ github.event.inputs.branch }}
-          token: ${{ secrets.GH_PAT_WORKFLOW }}
+          token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: setup environment
         uses: ./.github/actions/setup
         with:
           actor: prettier
-          cacheTurbo: false
 
       - name: Cache ESLint and Prettier
-        uses: actions/cache@v4
+        uses: actions/cache@d4323d4df104b026a6aa633fdb11d772146be0bf # v4
         with:
           path: |
             .eslintcache
             node_modules/.cache/prettier
-          key: lint-cache-${{ hashFiles('**/pnpm-lock.yaml') }}-${{ github.sha }}
+          key: lint-cache-${{ hashFiles('**/pnpm-lock.yaml') }}
           restore-keys: |
             lint-cache-${{ hashFiles('**/pnpm-lock.yaml') }}-
 

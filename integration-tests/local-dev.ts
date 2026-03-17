@@ -7,11 +7,11 @@ function applyEnv(env: Record<string, string>) {
   }
 }
 
-const serverEnvVars = parse(readFileSync('../packages/services/server/.env', 'utf-8'));
+const __dirname = import.meta.dirname;
+
+const serverEnvVars = parse(readFileSync(__dirname + '/../packages/services/server/.env', 'utf-8'));
 
 applyEnv({
-  SUPERTOKENS_CONNECTION_URI: serverEnvVars.SUPERTOKENS_CONNECTION_URI,
-  SUPERTOKENS_API_KEY: serverEnvVars.SUPERTOKENS_API_KEY,
   POSTGRES_USER: serverEnvVars.POSTGRES_USER,
   POSTGRES_PASSWORD: serverEnvVars.POSTGRES_PASSWORD,
   POSTGRES_DB: serverEnvVars.POSTGRES_DB,
@@ -22,4 +22,6 @@ applyEnv({
   CLICKHOUSE_USER: serverEnvVars.CLICKHOUSE_USERNAME,
   CLICKHOUSE_PASSWORD: serverEnvVars.CLICKHOUSE_PASSWORD,
   HIVE_ENCRYPTION_SECRET: serverEnvVars.HIVE_ENCRYPTION_SECRET,
+  SUPERTOKENS_REFRESH_TOKEN_KEY: serverEnvVars.SUPERTOKENS_REFRESH_TOKEN_KEY,
+  SUPERTOKENS_ACCESS_TOKEN_KEY: serverEnvVars.SUPERTOKENS_ACCESS_TOKEN_KEY,
 });

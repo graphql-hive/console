@@ -1,8 +1,13 @@
 {
   "compilerOptions": {
-    "target": "es5",
-    "lib": ["es5", "dom"],
-    "types": ["node", "cypress"]
+    "target": "es2021",
+    "lib": ["es2021", "dom"],
+    "types": ["node", "cypress"],
+    "baseUrl": "..",
+    "paths": {
+      "@hive/api/*": ["./packages/services/api/src/*"],
+      "@hive/server/*": ["./packages/services/server/src/*"]
+    }
   },
-  "include": ["**/*.ts"]
+  "include": ["**/*.ts", "../integration-tests/testkit/**/*.ts"]
 }

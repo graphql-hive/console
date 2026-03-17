@@ -1,0 +1,189 @@
+---
+title: 'JWT Authentication'
+---
+
+# JWT Authentication
+
+Most production GraphQL APIs need to authenticate requests, and JWT tokens are one of the most
+common ways to do this. Hive Router has built-in JWT support that can validate tokens and protect
+your entire federated graph.
+
+This guide shows you how to set up JWT authentication for real-world scenarios. For the complete
+configuration reference, see [`jwt` configuration](../configuration/jwt).
+
+## How JWT Authentication Works
+
+When a request comes in with JWT authentication enabled, here's what happens:
+
+1. **Find the token:** The router looks for a JWT in the places you've configured (usually the
+   `Authorization` header)
+2. **Verify the signature:** Using keys from your identity provider, the router checks that the
+   token is legitimate and hasn't been tampered with
+3. **Check the claims:** The router validates that the token isn't expired and matches your
+   configured audience and issuer requirements
+4. **Allow or reject:** Valid tokens get through, invalid ones get rejected with an authentication
+   error
+5. **Forward claims (optional):** The router can pass user information from the token to your
+   subgraphs
+
+## Common Setup: Auth0, Okta, or Similar
+
+This is the most typical setup - you're using a hosted identity provider that exposes a JWKS
+endpoint.
+
+**What you want:**
+
+- Require valid JWTs on all requests
+- Validate tokens using your provider's public keys
+- Make sure tokens are meant for your API
+
+```yaml filename="router.config.yaml"
+jwt:
+  # Reject requests without valid tokens
+  require_authentication: true
+
+  # Where to get the keys for validation
+  jwks_providers:
+    - source: remote
+      url: https://your-domain.auth0.com/.well-known/jwks.json
+      prefetch: true # Fetch keys on startup
+      polling_interval: '15m' # Refresh keys every 15 minutes
+
+  # Make sure tokens are for your API
+  audiences:
+    - 'https://your-api.com'
+
+  # Make sure tokens come from your provider
+  issuers:
+    - 'https://your-domain.auth0.com/'
+
+  # Only allow secure algorithms
+  allowed_algorithms:
+    - RS256
+```
+
+Replace `your-domain.auth0.com` and `https://your-api.com` with your actual values.
+
+## Passing User Info to Subgraphs
+
+Your subgraphs often need to know who the user is to handle authorization or return personalized
+data. The router can extract this information from the JWT and pass it along.
+
+```json filename="Example JWT Payload"
+{
+  "sub": "user-123",
+  "email": "user@example.com",
+  "role": "admin",
+  "tenant_id": "company-abc"
+}
+```
+
+```yaml filename="router.config.yaml"
+jwt:
+  require_authentication: true
+  jwks_providers:
+    - source: remote
+      url: https://your-domain.auth0.com/.well-known/jwks.json
+
+  # Send user info to subgraphs
+  forward_claims_to_upstream_extensions:
+    enabled: true
+    field_name: 'user' # Access as extensions.user in subgraphs
+```
+
+**What your subgraphs receive:**
+
+```json
+{
+  "query": "{ me { name } }",
+  "extensions": {
+    "user": {
+      "sub": "user-123",
+      "email": "user@example.com",
+      "role": "admin",
+      "tenant_id": "company-abc"
+    }
+  }
+}
+```
+
+Now your subgraph resolvers can access `extensions.user.sub` to identify the current user.
+
+## Optional Authentication
+
+Sometimes you want to allow both authenticated and anonymous requests. Set
+`require_authentication: false` and your subgraphs can check if user claims were provided.
+
+```yaml filename="router.config.yaml"
+jwt:
+  require_authentication: false # Allow anonymous requests
+  jwks_providers:
+    - source: remote
+      url: https://your-domain.auth0.com/.well-known/jwks.json
+
+  forward_claims_to_upstream_extensions:
+    enabled: true
+    field_name: 'user'
+```
+
+Anonymous requests won't have `extensions.user`, while authenticated requests will. Your subgraphs
+can adapt their behavior accordingly.
+
+## Multiple Token Locations
+
+By default, the router looks for tokens in the `Authorization` header with a `Bearer` prefix. You
+can configure it to check multiple places:
+
+```yaml filename="router.config.yaml"
+jwt:
+  require_authentication: true
+  jwks_providers:
+    - source: remote
+      url: https://your-domain.auth0.com/.well-known/jwks.json
+
+  lookup_locations:
+    # Check Authorization header first
+    - source: header
+      name: authorization
+      prefix: 'Bearer '
+
+    # Fall back to a cookie
+    - source: cookies
+      name: auth_token
+
+    # Check a custom header (no prefix)
+    - source: header
+      name: x-api-token
+```
+
+The router checks these in order and uses the first token it finds.
+
+## Local Development
+
+For development, you might want to use a local JWKS file instead of hitting a remote endpoint:
+
+```yaml filename="router.config.yaml"
+jwt:
+  require_authentication: false # More flexible for dev
+  jwks_providers:
+    - source: file
+      path: ./dev-jwks.json
+
+  audiences:
+    - 'localhost:4000'
+```
+
+You can generate development keys using tools like [jwt.io](https://jwt.io) or your identity
+provider's development tools.
+
+## Security Best Practices
+
+- **Always validate claims:** Set `audiences` and `issuers` to prevent token substitution attacks
+  where someone tries to use a token meant for a different API.
+- **Use specific algorithms:** If you know your provider only uses `RS256`, specify it in
+  `allowed_algorithms` to reduce the attack surface.
+- **Require authentication in production:** Unless your API is truly public, set
+  `require_authentication: true`.
+- **Use HTTPS everywhere:** Your JWKS endpoint must use HTTPS, and your router should too.
+- **Monitor token validation:** Keep an eye on authentication error rates - a sudden spike might
+  indicate an attack or configuration issue.

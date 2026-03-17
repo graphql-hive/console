@@ -27,8 +27,8 @@ import { DocsLink } from '@/components/ui/docs-note';
 import { Meta } from '@/components/ui/meta';
 import { Subtitle, Title } from '@/components/ui/page';
 import { QueryError } from '@/components/ui/query-error';
-import { FragmentType, graphql, useFragment } from '@/gql';
-import { ProjectAccessScope, useProjectAccess } from '@/lib/access/project';
+import { FragmentType, graphql } from '@/gql';
+import { useRedirect } from '@/lib/access/common';
 import { useToggle } from '@/lib/hooks';
 
 function Channels(props: {
@@ -48,10 +48,7 @@ function Channels(props: {
           Alert Channels are a way to configure <strong>how</strong> you want to receive alerts and
           notifications from Hive.
           <br />
-          <DocsLink
-            className="text-muted-foreground text-sm"
-            href="/management/projects#alert-channels"
-          >
+          <DocsLink className="text-neutral-10 text-sm" href="/management/projects#alert-channels">
             Learn more
           </DocsLink>
         </CardDescription>
@@ -117,7 +114,7 @@ function Alerts(props: {
             notifications from Hive.
             <br />
             <DocsLink
-              className="text-muted-foreground text-sm"
+              className="text-neutral-10 text-sm"
               href="/management/projects#alerts-and-notifications-1"
             >
               Learn more
@@ -163,29 +160,17 @@ function Alerts(props: {
   );
 }
 
-const ProjectAlertsPage_OrganizationFragment = graphql(`
-  fragment ProjectAlertsPage_OrganizationFragment on Organization {
-    id
-    slug
-    me {
-      id
-      ...CanAccessProject_MemberFragment
-    }
-  }
-`);
-
 const ProjectAlertsPageQuery = graphql(`
   query ProjectAlertsPageQuery($organizationSlug: String!, $projectSlug: String!) {
-    organization(selector: { organizationSlug: $organizationSlug }) {
-      organization {
-        ...ProjectAlertsPage_OrganizationFragment
-      }
-    }
-    project(selector: { organizationSlug: $organizationSlug, projectSlug: $projectSlug }) {
+    project(
+      reference: { bySelector: { organizationSlug: $organizationSlug, projectSlug: $projectSlug } }
+    ) {
       id
       targets {
-        nodes {
-          ...CreateAlertModal_TargetFragment
+        edges {
+          node {
+            ...CreateAlertModal_TargetFragment
+          }
         }
       }
       alerts {
@@ -195,6 +180,7 @@ const ProjectAlertsPageQuery = graphql(`
         ...ChannelsTable_AlertChannelFragment
         ...CreateAlertModal_AlertChannelFragment
       }
+      viewerCanModifyAlerts
     }
   }
 `);
@@ -209,59 +195,63 @@ function AlertsPageContent(props: { organizationSlug: string; projectSlug: strin
     requestPolicy: 'cache-and-network',
   });
 
-  const currentOrganization = query.data?.organization?.organization;
   const currentProject = query.data?.project;
-  const organizationForAlerts = useFragment(
-    ProjectAlertsPage_OrganizationFragment,
-    currentOrganization,
-  );
 
-  const hasAccess = useProjectAccess({
-    scope: ProjectAccessScope.Alerts,
-    member: organizationForAlerts?.me ?? null,
-    redirect: true,
-    organizationSlug: props.organizationSlug,
-    projectSlug: props.projectSlug,
+  useRedirect({
+    canAccess: currentProject?.viewerCanModifyAlerts === true,
+    redirectTo: router => {
+      void router.navigate({
+        to: '/$organizationSlug/$projectSlug',
+        params: {
+          organizationSlug: props.organizationSlug,
+          projectSlug: props.projectSlug,
+        },
+      });
+    },
+    entity: currentProject,
   });
 
+  if (query.data?.project?.viewerCanModifyAlerts === false) {
+    return null;
+  }
+
   if (query.error) {
-    return <QueryError organizationSlug={props.organizationSlug} error={query.error} />;
+    return (
+      <QueryError
+        organizationSlug={props.organizationSlug}
+        error={query.error}
+        showLogoutButton={false}
+      />
+    );
   }
 
   const alerts = currentProject?.alerts || [];
   const channels = currentProject?.alertChannels || [];
-  const targets = currentProject?.targets?.nodes || [];
+  const targets = currentProject?.targets?.edges.map(edge => edge.node) || [];
 
   return (
-    <ProjectLayout
-      projectSlug={props.projectSlug}
-      organizationSlug={props.organizationSlug}
-      page={Page.Alerts}
-      className="flex flex-col gap-y-10"
-    >
-      <div>
-        <div className="py-6">
-          <Title>Alerts and Notifications</Title>
-          <Subtitle>Configure alerts and notifications for your project.</Subtitle>
-        </div>
-        {currentProject && currentOrganization && hasAccess ? (
-          <div className="flex flex-col gap-y-4">
-            <Channels
-              organizationSlug={props.organizationSlug}
-              projectSlug={props.projectSlug}
-              channels={channels}
-            />
-            <Alerts
-              organizationSlug={props.organizationSlug}
-              projectSlug={props.projectSlug}
-              alerts={alerts}
-              channels={channels}
-              targets={targets}
-            />
-          </div>
-        ) : null}
+    <div>
+      <div className="py-6">
+        <Title>Alerts and Notifications</Title>
+        <Subtitle>Configure alerts and notifications for your project.</Subtitle>
       </div>
-    </ProjectLayout>
+      {currentProject ? (
+        <div className="flex flex-col gap-y-4">
+          <Channels
+            organizationSlug={props.organizationSlug}
+            projectSlug={props.projectSlug}
+            channels={channels}
+          />
+          <Alerts
+            organizationSlug={props.organizationSlug}
+            projectSlug={props.projectSlug}
+            alerts={alerts}
+            channels={channels}
+            targets={targets}
+          />
+        </div>
+      ) : null}
+    </div>
   );
 }
 
@@ -269,10 +259,17 @@ export function ProjectAlertsPage(props: { organizationSlug: string; projectSlug
   return (
     <>
       <Meta title="Alerts" />
-      <AlertsPageContent
-        organizationSlug={props.organizationSlug}
+      <ProjectLayout
         projectSlug={props.projectSlug}
-      />
+        organizationSlug={props.organizationSlug}
+        page={Page.Alerts}
+        className="flex flex-col gap-y-10"
+      >
+        <AlertsPageContent
+          organizationSlug={props.organizationSlug}
+          projectSlug={props.projectSlug}
+        />
+      </ProjectLayout>
     </>
   );
 }

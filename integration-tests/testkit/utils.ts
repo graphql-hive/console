@@ -1,3 +1,4 @@
+import asyncRetry from 'async-retry';
 import Docker from 'dockerode';
 import { humanId } from 'human-id';
 
@@ -19,6 +20,9 @@ const LOCAL_SERVICES = {
   usage: 4001,
   schema: 6500,
   external_composition: 3012,
+  mock_server: 3042,
+  'otel-collector': 4318,
+  workflows: 3014,
 } as const;
 
 export type KnownServices = keyof typeof LOCAL_SERVICES;
@@ -100,4 +104,56 @@ export function generateUnique() {
     addAdverb: true,
     capitalize: false,
   });
+}
+
+export function assertNonNull<T>(
+  value: T | null,
+  message = 'Expected non-null value.',
+): asserts value is T {
+  if (value === null) {
+    throw new Error(message);
+  }
+}
+
+export function assertNonNullish<T>(
+  value: T | null | undefined,
+  message = 'Expected non-null value.',
+): asserts value is T {
+  if (value === null) {
+    throw new Error(message);
+  }
+}
+
+export async function pollForEmailVerificationLink(input: string | { email: string; now: number }) {
+  const email = typeof input === 'string' ? input : input.email;
+  const now = new Date(typeof input === 'string' ? Date.now() - 10_000 : input.now).toISOString();
+  const url = new URL('http://localhost:3014/_history');
+  url.searchParams.set('after', now);
+
+  return await asyncRetry(
+    async () => {
+      const emails = await fetch(url.toString())
+        .then(res => res.json())
+        .then(emails =>
+          emails.filter((e: any) => e.to === email && e.subject === 'Verify your email'),
+        );
+
+      if (emails.length === 0) {
+        throw new Error('Could not find email');
+      }
+
+      // take the latest one
+      const result = emails[emails.length - 1];
+
+      const urlMatch = result.body.match(/href=\"(http:\/\/[^\s"]+)/);
+      if (!urlMatch) throw new Error('No URL found in email');
+
+      return new URL(urlMatch[1]);
+    },
+    {
+      retries: 10,
+      minTimeout: 1000,
+      maxTimeout: 10000,
+    },
+  );
 }

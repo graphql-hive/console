@@ -4,24 +4,49 @@ on:
     branches:
       - main
 
+concurrency:
+  group: ci-main
+  cancel-in-progress: false
+
 jobs:
+  # Release NPM packages and tarballs
+  package:
+    uses: ./.github/workflows/release-stable.yaml
+    secrets: inherit
+
   # Build all packages and applications, and creates Docker images.
   build:
+    needs:
+      - package
     uses: ./.github/workflows/build-and-dockerize.yaml
     with:
-      imageTag: ${{ github.sha }}
+      imageTag:
+        # prettier-ignore
+        ${{ needs.package.outputs.hivePublish == 'true' && needs.package.outputs.hiveVersion || github.sha }}
       publishSourceMaps: true
-      publishLatest: false
+      publishLatest: ${{ needs.package.outputs.hivePublish == 'true' }}
       targets: build
       uploadJavaScriptArtifacts: true
     secrets: inherit
 
-  # Trigger deployment
+  # Dockerize the CLI in case a CLI version was released
+  publish_docker_cli:
+    needs:
+      - package
+    uses: ./.github/workflows/dockerize-cli.yaml
+    if: ${{ needs.package.outputs.cliPublish == 'true' }}
+    with:
+      cliVersion: ${{ needs.package.outputs.cliVersion }}
+      publishLatest: true
+    secrets: inherit
+
+  # Trigger deployment for staging
   deploy:
     name: trigger staging deployment
     needs:
       - build
     runs-on: ubuntu-22.04
+    if: ${{ vars.ENABLE_STAGING_DEPLOYMENT == '1' }}
     steps:
       - name: Dispatch Deployment
         run: |
@@ -45,10 +70,6 @@ jobs:
   code-style:
     uses: ./.github/workflows/lint.yaml
 
-  # CodeQL
-  static-analysis:
-    uses: ./.github/workflows/codeql-analysis.yml
-
   # TypeScript Typecheck and compiler checks
   typescript:
     uses: ./.github/workflows/typescript-typecheck.yaml
@@ -56,16 +77,6 @@ jobs:
   # Deploy Website to CloudFlare Pages
   website:
     uses: ./.github/workflows/website.yaml
-    secrets: inherit
-
-  # Deploy Storybook to CloudFlare Pages
-  storybook:
-    uses: ./.github/workflows/storybook.yaml
-    secrets: inherit
-
-  # Release NPM packages and tarballs
-  package:
-    uses: ./.github/workflows/release-stable.yaml
     secrets: inherit
 
   # GraphQL Schema Publish

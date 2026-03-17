@@ -31,9 +31,7 @@ export function deployCFCDN({
     // We can't cdn for staging env, since CF certificate only covers
     // one level of subdomains. See: https://community.cloudflare.com/t/ssl-handshake-error-cloudflare-proxy/175088
     // So for staging env, we are going to use `cdn-staging` instead of `cdn.staging`.
-    cdnDnsRecord: environment.isProduction
-      ? `cdn.${environment.rootDns}`
-      : `cdn-${environment.rootDns}`,
+    cdnDnsRecord: `cdn.${environment.rootDns}`,
     sentryDsn: sentry.enabled && sentry.secret ? sentry.secret?.raw.dsn : '',
     release: environment.release,
     s3,

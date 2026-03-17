@@ -12,19 +12,7 @@ import { SubPageLayout, SubPageLayoutHeader } from '@/components/ui/page-content
 import { Input, Modal, Table, Tag, TBody, Td, TimeAgo, Tr } from '@/components/v2';
 import { InlineCode } from '@/components/v2/inline-code';
 import { FragmentType, graphql, useFragment } from '@/gql';
-import { TargetAccessScope } from '@/gql/graphql';
-import { canAccessTarget } from '@/lib/access/target';
 import { Link, useRouter } from '@tanstack/react-router';
-
-const CDNAccessTokeRowFragment = graphql(`
-  fragment CDNAccessTokens_CdnAccessTokenRowFragment on CdnAccessToken {
-    id
-    firstCharacters
-    lastCharacters
-    alias
-    createdAt
-  }
-`);
 
 const CDNAccessTokenCreateMutation = graphql(`
   mutation CDNAccessTokens_CDNAccessTokenCreateMutation($input: CreateCdnAccessTokenInput!) {
@@ -63,10 +51,12 @@ function CreateCDNAccessTokenModal(props: {
     onSubmit: async values => {
       await mutate({
         input: {
-          selector: {
-            organizationSlug: props.organizationSlug,
-            projectSlug: props.projectSlug,
-            targetSlug: props.targetSlug,
+          target: {
+            bySelector: {
+              organizationSlug: props.organizationSlug,
+              projectSlug: props.projectSlug,
+              targetSlug: props.targetSlug,
+            },
           },
           alias: values.alias,
         },
@@ -98,6 +88,12 @@ function CreateCDNAccessTokenModal(props: {
           onBlur={form.handleBlur}
           disabled={form.isSubmitting}
           isInvalid={form.touched.alias && !!form.errors.alias}
+          onKeyPress={ev => {
+            if (ev.key === 'Enter') {
+              ev.preventDefault();
+              form.handleSubmit();
+            }
+          }}
         />
         {form.touched.alias && form.errors.alias ? (
           <span className="text-sm text-red-500">{form.errors.alias}</span>
@@ -231,10 +227,12 @@ function DeleteCDNAccessTokenModal(props: {
           onClick={() =>
             mutate({
               input: {
-                selector: {
-                  organizationSlug: props.organizationSlug,
-                  projectSlug: props.projectSlug,
-                  targetSlug: props.targetSlug,
+                target: {
+                  bySelector: {
+                    organizationSlug: props.organizationSlug,
+                    projectSlug: props.projectSlug,
+                    targetSlug: props.targetSlug,
+                  },
                 },
                 cdnAccessTokenId: props.cdnAccessTokenId,
               },
@@ -298,7 +296,7 @@ function DeleteCDNAccessTokenModal(props: {
 
 const CDNAccessTokensQuery = graphql(`
   query CDNAccessTokensQuery($selector: TargetSelectorInput!, $first: Int!, $after: String) {
-    target(selector: $selector) {
+    target(reference: { bySelector: $selector }) {
       id
       cdnAccessTokens(first: $first, after: $after) {
         edges {
@@ -317,12 +315,6 @@ const CDNAccessTokensQuery = graphql(`
   }
 `);
 
-const CDNAccessTokens_MeFragment = graphql(`
-  fragment CDNAccessTokens_MeFragment on Member {
-    ...CanAccessTarget_MemberFragment
-  }
-`);
-
 const CDNSearchParams = z.discriminatedUnion('cdn', [
   z.object({
     cdn: z.literal('create').optional(),
@@ -334,13 +326,10 @@ const CDNSearchParams = z.discriminatedUnion('cdn', [
 ]);
 
 export function CDNAccessTokens(props: {
-  me: FragmentType<typeof CDNAccessTokens_MeFragment>;
   organizationSlug: string;
   projectSlug: string;
   targetSlug: string;
 }): React.ReactElement {
-  const me = useFragment(CDNAccessTokens_MeFragment, props.me);
-
   const [endCursors, setEndCursors] = useState<Array<string>>([]);
   const router = useRouter();
   const searchParamsResult = CDNSearchParams.safeParse(router.latestLocation.search);
@@ -373,8 +362,6 @@ export function CDNAccessTokens(props: {
     requestPolicy: 'cache-and-network',
   });
 
-  const canManage = canAccessTarget(TargetAccessScope.Settings, me);
-
   return (
     <SubPageLayout>
       <SubPageLayoutHeader
@@ -388,7 +375,7 @@ export function CDNAccessTokens(props: {
             <CardDescription>
               <DocsLink
                 href="/management/targets#cdn-access-tokens"
-                className="text-gray-500 hover:text-gray-300"
+                className="text-neutral-10 hover:text-neutral-11"
               >
                 Learn more about CDN Access Tokens
               </DocsLink>
@@ -396,56 +383,23 @@ export function CDNAccessTokens(props: {
           </>
         }
       />
-      {canManage && (
-        <div className="my-3.5 flex justify-between">
-          <Button asChild>
-            <Link
-              search={{
-                page: 'cdn',
-                cdn: 'create',
-              }}
-            >
-              Create new CDN token
-            </Link>
-          </Button>
-        </div>
-      )}
+      <div className="my-3.5 flex justify-between">
+        <Button asChild>
+          <Link
+            search={{
+              page: 'cdn',
+              cdn: 'create',
+            }}
+          >
+            Create new CDN token
+          </Link>
+        </Button>
+      </div>
       <Table>
         <TBody>
-          {target?.data?.target?.cdnAccessTokens.edges?.map(edge => {
-            const node = useFragment(CDNAccessTokeRowFragment, edge.node);
-
-            return (
-              <Tr key={node.id}>
-                <Td>
-                  {node.firstCharacters + new Array(10).fill('•').join('') + node.lastCharacters}
-                </Td>
-                <Td>{node.alias}</Td>
-                <Td align="right">
-                  created <TimeAgo date={node.createdAt} />
-                </Td>
-                <Td align="right">
-                  {canManage ? (
-                    <Button
-                      className="hover:text-red-500"
-                      variant="ghost"
-                      onClick={() => {
-                        void router.navigate({
-                          search: {
-                            page: 'cdn',
-                            cdn: 'delete',
-                            id: node.id,
-                          },
-                        });
-                      }}
-                    >
-                      <TrashIcon />
-                    </Button>
-                  ) : null}
-                </Td>
-              </Tr>
-            );
-          })}
+          {target?.data?.target?.cdnAccessTokens.edges?.map(edge => (
+            <CDNAccessTokenRow cdnAccessToken={edge.node} key={edge.node.id} />
+          ))}
         </TBody>
       </Table>
 
@@ -508,5 +462,51 @@ export function CDNAccessTokens(props: {
         />
       ) : null}
     </SubPageLayout>
+  );
+}
+
+const CDNAccessTokenRowFragment = graphql(`
+  fragment CDNAccessTokens_CdnAccessTokenRowFragment on CdnAccessToken {
+    id
+    firstCharacters
+    lastCharacters
+    alias
+    createdAt
+  }
+`);
+
+type CDNAccessTokenRowProps = {
+  cdnAccessToken: FragmentType<typeof CDNAccessTokenRowFragment>;
+};
+
+function CDNAccessTokenRow(props: CDNAccessTokenRowProps): React.ReactNode {
+  const node = useFragment(CDNAccessTokenRowFragment, props.cdnAccessToken);
+  const router = useRouter();
+
+  return (
+    <Tr key={node.id}>
+      <Td>{node.firstCharacters + new Array(10).fill('•').join('') + node.lastCharacters}</Td>
+      <Td>{node.alias}</Td>
+      <Td align="right">
+        created <TimeAgo date={node.createdAt} />
+      </Td>
+      <Td align="right">
+        <Button
+          className="hover:text-red-500"
+          variant="ghost"
+          onClick={() => {
+            void router.navigate({
+              search: {
+                page: 'cdn',
+                cdn: 'delete',
+                id: node.id,
+              },
+            });
+          }}
+        >
+          <TrashIcon />
+        </Button>
+      </Td>
+    </Tr>
   );
 }

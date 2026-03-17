@@ -17,9 +17,8 @@ import { QueryError } from '@/components/ui/query-error';
 import { Card } from '@/components/v2/card';
 import Stat from '@/components/v2/stat';
 import { graphql, useFragment } from '@/gql';
-import { OrganizationAccessScope, useOrganizationAccess } from '@/lib/access/organization';
 import { formatNumber } from '@/lib/hooks';
-import { useChartStyles } from '@/utils';
+import { useChartStyles } from '@/lib/utils';
 import { Link } from '@tanstack/react-router';
 
 const DateFormatter = Intl.DateTimeFormat('en-US', {
@@ -34,9 +33,7 @@ const SubscriptionPage_OrganizationFragment = graphql(`
   fragment SubscriptionPage_OrganizationFragment on Organization {
     id
     slug
-    me {
-      ...CanAccessOrganization_MemberFragment
-    }
+    viewerCanModifyBilling
     billingConfiguration {
       hasPaymentIssues
       canUpdateSubscription
@@ -63,15 +60,14 @@ const SubscriptionPage_QueryFragment = graphql(`
 `);
 
 const SubscriptionPageQuery = graphql(`
-  query SubscriptionPageQuery($selector: OrganizationSelectorInput!) {
-    organization(selector: $selector) {
-      organization {
-        slug
-        ...SubscriptionPage_OrganizationFragment
-      }
+  query SubscriptionPageQuery($organizationSlug: String!) {
+    organization: organizationBySlug(organizationSlug: $organizationSlug) {
+      id
+      slug
+      ...SubscriptionPage_OrganizationFragment
     }
     ...SubscriptionPage_QueryFragment
-    monthlyUsage(selector: $selector) {
+    monthlyUsage(selector: { organizationSlug: $organizationSlug }) {
       date
       total
     }
@@ -82,23 +78,15 @@ function SubscriptionPageContent(props: { organizationSlug: string }) {
   const [query] = useQuery({
     query: SubscriptionPageQuery,
     variables: {
-      selector: {
-        organizationSlug: props.organizationSlug,
-      },
+      organizationSlug: props.organizationSlug,
     },
   });
 
-  const currentOrganization = query.data?.organization?.organization;
+  const currentOrganization = query.data?.organization;
 
   const organization = useFragment(SubscriptionPage_OrganizationFragment, currentOrganization);
   const queryForBilling = useFragment(SubscriptionPage_QueryFragment, query.data);
-  const styles = useChartStyles();
-  const canAccess = useOrganizationAccess({
-    scope: OrganizationAccessScope.Settings,
-    member: organization?.me ?? null,
-    redirect: true,
-    organizationSlug: props.organizationSlug,
-  });
+  const { styles } = useChartStyles();
 
   const monthlyUsage = query.data?.monthlyUsage ?? [];
   const monthlyUsagePoints: [string, number][] = useMemo(
@@ -118,10 +106,6 @@ function SubscriptionPageContent(props: { organizationSlug: string }) {
     return null;
   }
 
-  if (!canAccess) {
-    return null;
-  }
-
   const today = startOfDay(new Date());
   const start = startOfMonth(today);
   const end = endOfMonth(today);
@@ -138,16 +122,18 @@ function SubscriptionPageContent(props: { organizationSlug: string }) {
             <Title>Your subscription</Title>
             <Subtitle>Explore your current plan and usage.</Subtitle>
           </div>
-          <div>
-            <Button asChild>
-              <Link
-                to="/$organizationSlug/view/manage-subscription"
-                params={{ organizationSlug: currentOrganization.slug }}
-              >
-                Manage subscription
-              </Link>
-            </Button>
-          </div>
+          {organization.viewerCanModifyBilling && (
+            <div>
+              <Button asChild>
+                <Link
+                  to="/$organizationSlug/view/manage-subscription"
+                  params={{ organizationSlug: currentOrganization.slug }}
+                >
+                  Manage subscription
+                </Link>
+              </Button>
+            </div>
+          )}
         </div>
         <div>
           <Card>
@@ -174,7 +160,7 @@ function SubscriptionPageContent(props: { organizationSlug: string }) {
           </Card>
           <Card className="mt-8">
             <Heading>Current Usage</Heading>
-            <p className="text-sm text-gray-500">
+            <p className="text-neutral-10 text-sm">
               {DateFormatter.format(start)} — {DateFormatter.format(end)}
             </p>
             <div className="mt-4">

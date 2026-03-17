@@ -8,14 +8,16 @@ import {
   useState,
 } from 'react';
 import { startOfDay } from 'date-fns';
-import { resolveRange, type Period } from '@/lib/date-math';
+import { z } from 'zod';
+import { Period, resolveRange } from '@/lib/date-math';
 import { subDays } from '@/lib/date-time';
-import { useLocalStorage } from '@/lib/hooks';
+import { useLocalStorageJson } from '@/lib/hooks';
+import { useSearchParamsFilter } from '@/lib/hooks/use-search-params-filters';
 import { UTCDate } from '@date-fns/utc';
 
 type SchemaExplorerContextType = {
-  isArgumentListCollapsed: boolean;
-  setArgumentListCollapsed(isCollapsed: boolean): void;
+  isDescriptionsVisible: boolean;
+  setDescriptionsVisible(isCollapsed: boolean): void;
   setDataRetentionInDays(days: number): void;
   dataRetentionInDays: number;
   startDate: Date;
@@ -25,16 +27,22 @@ type SchemaExplorerContextType = {
   resolvedPeriod: { from: string; to: string };
   /** refresh the resolved period (aka trigger refetch) */
   refreshResolvedPeriod(): void;
+  setMetadataFilter(name: string, value: string): void;
+  bulkSetMetadataFilter(filters: Array<{ name: string; values: string[] }>): void;
+  unsetMetadataFilter(name: string, value: string): void;
+  hasMetadataFilter(name: string, value: string): boolean;
+  clearMetadataFilter(name?: string): void;
+  metadata: string[];
 };
 
-const defaultPeriod = {
+const defaultPeriod: Period = {
   from: 'now-7d',
   to: 'now',
 };
 
 const SchemaExplorerContext = createContext<SchemaExplorerContextType>({
-  isArgumentListCollapsed: true,
-  setArgumentListCollapsed: () => {},
+  isDescriptionsVisible: true,
+  setDescriptionsVisible: () => {},
   dataRetentionInDays: 7,
   startDate: startOfDay(subDays(new UTCDate(), 7)),
   period: defaultPeriod,
@@ -42,7 +50,17 @@ const SchemaExplorerContext = createContext<SchemaExplorerContextType>({
   setPeriod: () => {},
   setDataRetentionInDays: () => {},
   refreshResolvedPeriod: () => {},
+  setMetadataFilter: () => {},
+  bulkSetMetadataFilter: () => {},
+  unsetMetadataFilter: () => {},
+  hasMetadataFilter: () => false,
+  clearMetadataFilter: () => {},
+  metadata: [],
 });
+
+function filterUnique(array: string[]) {
+  return array.filter((value, index, self) => self.indexOf(value) === index);
+}
 
 export function SchemaExplorerProvider({ children }: { children: ReactNode }): ReactElement {
   const [dataRetentionInDays, setDataRetentionInDays] = useState(
@@ -54,21 +72,22 @@ export function SchemaExplorerProvider({ children }: { children: ReactNode }): R
     [dataRetentionInDays],
   );
 
-  const [isArgumentListCollapsed, setArgumentListCollapsed] = useLocalStorage(
+  const [isDescriptionsVisible, setDescriptionsVisible] = useLocalStorageJson(
     'hive:schema-explorer:collapsed',
-    true,
+    z.boolean().default(false),
   );
-  const [period, setPeriod] = useLocalStorage<Period>(
+  const [period, setPeriod] = useLocalStorageJson(
     'hive:schema-explorer:period-1',
-    defaultPeriod,
+    Period.default(defaultPeriod),
   );
   const [resolvedPeriod, setResolvedPeriod] = useState<Period>(() => resolveRange(period));
+  const [metadata, setMetadataFilter] = useSearchParamsFilter('meta', [] as string[]);
 
   return (
     <SchemaExplorerContext.Provider
       value={{
-        isArgumentListCollapsed,
-        setArgumentListCollapsed,
+        isDescriptionsVisible,
+        setDescriptionsVisible,
         period,
         setPeriod(period) {
           setPeriod(period);
@@ -81,6 +100,37 @@ export function SchemaExplorerProvider({ children }: { children: ReactNode }): R
         refreshResolvedPeriod() {
           setResolvedPeriod(resolveRange(period));
         },
+        setMetadataFilter(name, value) {
+          setMetadataFilter(filterUnique([...metadata, `${name}:${value}`]));
+        },
+        /** Adds to the metadata list */
+        bulkSetMetadataFilter(filters) {
+          setMetadataFilter(
+            filterUnique([
+              ...metadata,
+              ...filters.flatMap(f => f.values.map(v => `${f.name}:${v}`)),
+            ]),
+          );
+        },
+        unsetMetadataFilter(name, value) {
+          const data = [...metadata];
+          const index = data.indexOf(`${name}:${value}`);
+          if (index >= 0) {
+            data.splice(index, 1);
+            setMetadataFilter(data);
+          }
+        },
+        clearMetadataFilter(name?: string) {
+          if (name) {
+            setMetadataFilter(metadata.filter(d => !d.startsWith(`${name}:`)));
+          } else {
+            setMetadataFilter([]);
+          }
+        },
+        hasMetadataFilter(name, value) {
+          return metadata.includes(`${name}:${value}`);
+        },
+        metadata,
       }}
     >
       {children}
@@ -92,21 +142,25 @@ export function useSchemaExplorerContext() {
   return useContext(SchemaExplorerContext);
 }
 
-export function useArgumentListToggle() {
-  const { isArgumentListCollapsed, setArgumentListCollapsed } = useSchemaExplorerContext();
-  const toggle = useCallback(() => {
-    setArgumentListCollapsed(!isArgumentListCollapsed);
-  }, [setArgumentListCollapsed, isArgumentListCollapsed]);
+export function useDescriptionsVisibleToggle() {
+  const { isDescriptionsVisible, setDescriptionsVisible } = useSchemaExplorerContext();
+  const toggleDescriptionsVisible = useCallback(() => {
+    setDescriptionsVisible(!isDescriptionsVisible);
+  }, [setDescriptionsVisible, isDescriptionsVisible]);
 
-  return [isArgumentListCollapsed, toggle] as const;
+  return { isDescriptionsVisible, toggleDescriptionsVisible };
 }
 
 export function usePeriodSelector() {
-  const { period, setPeriod, startDate, refreshResolvedPeriod } = useSchemaExplorerContext();
-  return {
-    setPeriod,
-    period,
-    startDate,
-    refreshResolvedPeriod,
-  };
+  const ctx = useSchemaExplorerContext();
+  const selector = useMemo(() => {
+    const { period, setPeriod, startDate, refreshResolvedPeriod } = ctx;
+    return {
+      setPeriod,
+      period,
+      startDate,
+      refreshResolvedPeriod,
+    };
+  }, [ctx]);
+  return selector;
 }

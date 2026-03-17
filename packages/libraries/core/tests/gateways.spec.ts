@@ -1,5 +1,6 @@
 import nock from 'nock';
 import { createSchemaFetcher, createServicesFetcher } from '../src/client/gateways';
+import { maskRequestId } from './test-utils.js';
 
 afterEach(() => {
   nock.cleanAll();
@@ -288,9 +289,9 @@ test('fail in case of unexpected CDN status code (nRetryCount=11)', async () => 
 
   try {
     await fetcher();
-  } catch (e) {
-    expect(e).toMatchInlineSnapshot(
-      `[Error: GET http://localhost/services failed with status 500.]`,
+  } catch (error: any) {
+    expect(maskRequestId(error.message)).toMatchInlineSnapshot(
+      `GET http://localhost/services (x-request-id=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx) failed with status 500.`,
     );
   }
 });

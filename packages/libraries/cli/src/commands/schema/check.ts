@@ -1,7 +1,20 @@
+import fs from 'node:fs';
 import { Args, Errors, Flags } from '@oclif/core';
 import Command from '../../base-command';
 import { graphql } from '../../gql';
+import * as GraphQLSchema from '../../gql/graphql';
 import { graphqlEndpoint } from '../../helpers/config';
+import {
+  APIError,
+  CommitRequiredError,
+  GithubRepositoryRequiredError,
+  InvalidTargetError,
+  MissingEndpointError,
+  MissingRegistryTokenError,
+  SchemaFileEmptyError,
+  SchemaFileNotFoundError,
+  UnexpectedError,
+} from '../../helpers/errors';
 import { gitInfo } from '../../helpers/git';
 import {
   loadSchema,
@@ -10,12 +23,28 @@ import {
   renderErrors,
   renderWarnings,
 } from '../../helpers/schema';
+import * as TargetInput from '../../helpers/target-input';
+
+const approveFailedSchemaCheckMutation = graphql(/* GraphQL */ `
+  mutation approveFailedSchemaCheck($input: ApproveFailedSchemaCheckInput!) {
+    approveFailedSchemaCheck(input: $input) {
+      ok {
+        schemaCheck {
+          id
+        }
+      }
+      error {
+        message
+      }
+    }
+  }
+`);
 
 const schemaCheckMutation = graphql(/* GraphQL */ `
-  mutation schemaCheck($input: SchemaCheckInput!, $usesGitHubApp: Boolean!) {
+  mutation schemaCheck($input: SchemaCheckInput!) {
     schemaCheck(input: $input) {
       __typename
-      ... on SchemaCheckSuccess @skip(if: $usesGitHubApp) {
+      ... on SchemaCheckSuccess {
         valid
         initial
         warnings {
@@ -28,33 +57,22 @@ const schemaCheckMutation = graphql(/* GraphQL */ `
           total
         }
         changes {
-          nodes {
-            message(withSafeBasedOnUsageNote: false)
-            criticality
-            isSafeBasedOnUsage
-            approval {
-              approvedBy {
-                id
-                displayName
-              }
-            }
+          edges {
+            __typename
           }
-          total
           ...RenderChanges_schemaChanges
         }
         schemaCheck {
+          id
           webUrl
         }
       }
-      ... on SchemaCheckError @skip(if: $usesGitHubApp) {
+      ... on SchemaCheckError {
         valid
         changes {
-          nodes {
-            message(withSafeBasedOnUsageNote: false)
-            criticality
-            isSafeBasedOnUsage
+          edges {
+            __typename
           }
-          total
           ...RenderChanges_schemaChanges
         }
         warnings {
@@ -67,19 +85,17 @@ const schemaCheckMutation = graphql(/* GraphQL */ `
           total
         }
         errors {
-          nodes {
-            message
-          }
-          total
+          ...RenderErrors_SchemaErrorConnectionFragment
         }
         schemaCheck {
+          id
           webUrl
         }
       }
-      ... on GitHubSchemaCheckSuccess @include(if: $usesGitHubApp) {
+      ... on GitHubSchemaCheckSuccess {
         message
       }
-      ... on GitHubSchemaCheckError @include(if: $usesGitHubApp) {
+      ... on GitHubSchemaCheckError {
         message
       }
     }
@@ -114,6 +130,11 @@ export default class SchemaCheck extends Command<typeof SchemaCheck> {
         version: '0.21.0',
       },
     }),
+    experimentalJsonFile: Flags.string({
+      name: 'experimental-json-file',
+      description:
+        "File path to output a JSON file containing the command's result. Useful for e.g. CI scripting with `jq`.",
+    }),
     forceSafe: Flags.boolean({
       description: 'mark the check as safe, breaking changes are expected',
     }),
@@ -136,6 +157,19 @@ export default class SchemaCheck extends Command<typeof SchemaCheck> {
     contextId: Flags.string({
       description: 'Context ID for grouping the schema check.',
     }),
+    target: Flags.string({
+      description:
+        'The target against which to check the schema (slug or ID).' +
+        ' This can either be a slug following the format "$organizationSlug/$projectSlug/$targetSlug" (e.g "the-guild/graphql-hive/staging")' +
+        ' or an UUID (e.g. "a0f4c605-6541-4350-8cfe-b31f21a4bf80").',
+    }),
+    url: Flags.string({
+      description:
+        'If checking a service, then you can optionally provide the service URL to see the difference in the supergraph during the check.',
+    }),
+    schemaProposalId: Flags.string({
+      description: 'Attach the schema check to a schema proposal.',
+    }),
   };
 
   static args = {
@@ -153,24 +187,47 @@ export default class SchemaCheck extends Command<typeof SchemaCheck> {
 
       await this.require(flags);
 
+      let target: GraphQLSchema.TargetReferenceInput | null = null;
+      if (flags.target) {
+        const result = TargetInput.parse(flags.target);
+        if (result.type === 'error') {
+          throw new InvalidTargetError();
+        }
+        target = result.data;
+      }
+
       const service = flags.service;
       const forceSafe = flags.forceSafe;
       const usesGitHubApp = flags.github === true;
-      const endpoint = this.ensure({
-        key: 'registry.endpoint',
-        args: flags,
-        legacyFlagName: 'registry',
-        defaultValue: graphqlEndpoint,
-        env: 'HIVE_REGISTRY',
-      });
+      let endpoint: string, accessToken: string;
+      try {
+        endpoint = this.ensure({
+          key: 'registry.endpoint',
+          args: flags,
+          legacyFlagName: 'registry',
+          defaultValue: graphqlEndpoint,
+          env: 'HIVE_REGISTRY',
+          description: SchemaCheck.flags['registry.endpoint'].description!,
+        });
+      } catch (e) {
+        throw new MissingEndpointError();
+      }
       const file = args.file;
-      const accessToken = this.ensure({
-        key: 'registry.accessToken',
-        args: flags,
-        legacyFlagName: 'token',
-        env: 'HIVE_TOKEN',
+      try {
+        accessToken = this.ensure({
+          key: 'registry.accessToken',
+          args: flags,
+          legacyFlagName: 'token',
+          env: 'HIVE_TOKEN',
+          description: SchemaCheck.flags['registry.accessToken'].description!,
+        });
+      } catch (e) {
+        throw new MissingRegistryTokenError();
+      }
+
+      const sdl = await loadSchema('introspection', file).catch(e => {
+        throw new SchemaFileNotFoundError(file, e);
       });
-      const sdl = await loadSchema('introspection', file);
       const git = await gitInfo(() => {
         // noop
       });
@@ -179,7 +236,7 @@ export default class SchemaCheck extends Command<typeof SchemaCheck> {
       const author = flags.author || git?.author;
 
       if (typeof sdl !== 'string' || sdl.length === 0) {
-        throw new Errors.CLIError('Schema seems empty');
+        throw new SchemaFileEmptyError(file);
       }
 
       let github: null | {
@@ -190,12 +247,10 @@ export default class SchemaCheck extends Command<typeof SchemaCheck> {
 
       if (usesGitHubApp) {
         if (!commit) {
-          throw new Errors.CLIError(`Couldn't resolve commit sha required for GitHub Application`);
+          throw new CommitRequiredError();
         }
         if (!git.repository) {
-          throw new Errors.CLIError(
-            `Couldn't resolve git repository required for GitHub Application`,
-          );
+          throw new GithubRepositoryRequiredError();
         }
         if (!git.pullRequestNumber) {
           this.warn(
@@ -226,26 +281,30 @@ export default class SchemaCheck extends Command<typeof SchemaCheck> {
                   }
                 : null,
             contextId: flags.contextId ?? undefined,
+            target,
+            url: flags.url,
+            schemaProposalId: flags.schemaProposalId,
           },
-          usesGitHubApp,
         },
       });
+
+      if (flags.experimentalJsonFile) {
+        fs.writeFileSync(flags.experimentalJsonFile, JSON.stringify(result, null, 2));
+      }
 
       if (result.schemaCheck.__typename === 'SchemaCheckSuccess') {
         const changes = result.schemaCheck.changes;
         if (result.schemaCheck.initial) {
-          this.success('Schema registry is empty, nothing to compare your schema with.');
-        } else if (!changes?.total) {
-          this.success('No changes');
+          this.logSuccess('Schema registry is empty, nothing to compare your schema with.');
+        } else if (!changes?.edges.length) {
+          this.logSuccess('No changes');
         } else {
-          renderChanges.call(this, changes);
-          this.log('');
+          this.log(renderChanges(changes));
         }
 
         const warnings = result.schemaCheck.warnings;
         if (warnings?.total) {
-          renderWarnings.call(this, warnings);
-          this.log('');
+          this.log(renderWarnings(warnings));
         }
 
         if (result.schemaCheck.schemaCheck?.webUrl) {
@@ -255,41 +314,70 @@ export default class SchemaCheck extends Command<typeof SchemaCheck> {
         const changes = result.schemaCheck.changes;
         const errors = result.schemaCheck.errors;
         const warnings = result.schemaCheck.warnings;
-        renderErrors.call(this, errors);
+        this.log(renderErrors(errors));
 
         if (warnings?.total) {
-          renderWarnings.call(this, warnings);
-          this.log('');
+          this.log(renderWarnings(warnings));
         }
 
-        if (changes && changes.total) {
-          this.log('');
-          renderChanges.call(this, changes);
+        if (changes?.edges.length) {
+          this.log(renderChanges(changes));
         }
 
         if (result.schemaCheck.schemaCheck?.webUrl) {
-          this.log('');
           this.log(`View full report:\n${result.schemaCheck.schemaCheck.webUrl}`);
         }
 
         this.log('');
 
         if (forceSafe) {
-          this.success('Breaking changes were expected (forced)');
+          if (!target?.bySelector) {
+            throw new Errors.CLIError(
+              'The `--forceSafe` flag requires the `--target` flag to be specified by its slug ("organization/project/target"), not its ID.',
+            );
+          }
+
+          if (result.schemaCheck.schemaCheck?.id) {
+            let approvalResult: GraphQLSchema.ApproveFailedSchemaCheckMutation;
+            try {
+              approvalResult = await this.registryApi(endpoint, accessToken).request({
+                operation: approveFailedSchemaCheckMutation,
+                variables: {
+                  input: {
+                    organizationSlug: target.bySelector.organizationSlug,
+                    projectSlug: target.bySelector.projectSlug,
+                    targetSlug: target.bySelector.targetSlug,
+                    schemaCheckId: result.schemaCheck.schemaCheck.id,
+                    comment: 'Check force approved automatically via CLI --forceSafe flag',
+                    author: author ?? '',
+                  },
+                },
+              });
+            } catch (error) {
+              throw new UnexpectedError(error);
+            }
+            if (approvalResult.approveFailedSchemaCheck.error) {
+              this.logFailure(
+                `Failed to auto-approve: ${approvalResult.approveFailedSchemaCheck.error.message}`,
+              );
+              this.exit(1);
+            }
+            this.logSuccess('Breaking changes were expected (forced)');
+          }
         } else {
           this.exit(1);
         }
       } else if (result.schemaCheck.__typename === 'GitHubSchemaCheckSuccess') {
-        this.success(result.schemaCheck.message);
+        this.logSuccess(result.schemaCheck.message);
       } else {
-        this.error(result.schemaCheck.message);
+        throw new APIError(result.schemaCheck.message);
       }
     } catch (error) {
-      if (error instanceof Errors.ExitError) {
+      if (error instanceof Errors.CLIError) {
         throw error;
       } else {
-        this.fail('Failed to check schema');
-        this.handleFetchError(error);
+        this.logFailure('Failed to check schema');
+        throw new UnexpectedError(error);
       }
     }
   }

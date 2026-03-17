@@ -1,10 +1,9 @@
 import { buildSchema, DocumentNode, GraphQLError, Kind, parse, TypeInfo, validate } from 'graphql';
 import PromiseQueue from 'p-queue';
 import { z } from 'zod';
-import { collectSchemaCoordinates } from '@graphql-hive/core/src/client/collect-schema-coordinates';
+import { collectSchemaCoordinates, preprocessOperation } from '@graphql-hive/core';
 import { buildOperationS3BucketKey } from '@hive/cdn-script/artifact-storage-reader';
 import { ServiceLogger } from '@hive/service-common';
-import { normalizeOperation } from '@hive/usage-ingestor/src/normalize-operation';
 import { sql as c_sql, ClickHouse } from '../../operations/providers/clickhouse-client';
 import { S3Config } from '../../shared/providers/s3-config';
 
@@ -67,6 +66,26 @@ export type BatchProcessedEvent = {
       };
 };
 
+/**
+ * Callback invoked when documents are successfully persisted to S3.
+ * Can be used to prefill a Redis cache during deployment.
+ *
+ * @example
+ * ```typescript
+ * const onDocumentsPersisted: OnDocumentsPersistedCallback = async (documents) => {
+ *   for (const { key, body } of documents) {
+ *     await redis.set(`hive:pd:${key}`, body, { EX: 3600 });
+ *   }
+ * };
+ * ```
+ */
+export type OnDocumentsPersistedCallback = (
+  documents: Array<{
+    key: string; // targetId~appName~appVersion~hash
+    body: string;
+  }>,
+) => Promise<void>;
+
 export class PersistedDocumentIngester {
   private promiseQueue = new PromiseQueue({ concurrency: 30 });
   private logger: ServiceLogger;
@@ -75,13 +94,14 @@ export class PersistedDocumentIngester {
     private clickhouse: ClickHouse,
     private s3: S3Config,
     logger: ServiceLogger,
+    private onDocumentsPersisted?: OnDocumentsPersistedCallback,
   ) {
     this.logger = logger.child({ source: 'PersistedDocumentIngester' });
   }
 
   async processBatch(data: BatchProcessEvent['data']) {
     this.logger.debug(
-      'Processing batch. (targetId=%s, appDeploymentId=%s, operationCount=%n)',
+      'Processing batch. (targetId=%s, appDeploymentId=%s, operationCount=%d)',
       data.targetId,
       data.appDeployment.id,
       data.documents.length,
@@ -98,7 +118,7 @@ export class PersistedDocumentIngester {
 
       if (hashValidation.success === false || bodyValidation.success === false) {
         this.logger.debug(
-          'Invalid operation provided. Processing failed. (targetId=%s, appDeploymentId=%s, operationIndex=%n)',
+          'Invalid operation provided. Processing failed. (targetId=%s, appDeploymentId=%s, operationIndex=%d)',
           data.targetId,
           data.appDeployment.id,
           index,
@@ -126,7 +146,7 @@ export class PersistedDocumentIngester {
         if (err instanceof GraphQLError) {
           console.error(err);
           this.logger.debug(
-            'Failed parsing GraphQL operation. (targetId=%s, appDeploymentId=%s, operationIndex=%n)',
+            'Failed parsing GraphQL operation. (targetId=%s, appDeploymentId=%s, operationIndex=%d)',
             data.targetId,
             data.appDeployment.id,
             index,
@@ -151,7 +171,7 @@ export class PersistedDocumentIngester {
 
       if (errors.length > 0) {
         this.logger.debug(
-          'GraphQL operation did not pass validation against latest valid schema version. (targetId=%s, appDeploymentId=%s, operationIndex=%n)',
+          'GraphQL operation did not pass validation against latest valid schema version. (targetId=%s, appDeploymentId=%s, operationIndex=%d)',
           data.targetId,
           data.appDeployment.id,
           index,
@@ -186,7 +206,7 @@ export class PersistedDocumentIngester {
 
       const operationName = operationNames[0] ?? null;
 
-      const coordinates = collectSchemaCoordinates({
+      const schemaCoordinates = collectSchemaCoordinates({
         documentNode,
         processVariables: false,
         variables: null,
@@ -194,10 +214,10 @@ export class PersistedDocumentIngester {
         typeInfo,
       });
 
-      const normalizedOperation = normalizeOperation({
-        document: operation.body,
-        fields: coordinates,
+      const normalizedOperation = preprocessOperation({
+        document: documentNode,
         operationName,
+        schemaCoordinates,
       });
 
       documents.push({
@@ -206,7 +226,7 @@ export class PersistedDocumentIngester {
         internalHash: normalizedOperation?.hash ?? operation.hash,
         body: operation.body,
         operationName,
-        schemaCoordinates: Array.from(coordinates),
+        schemaCoordinates: Array.from(schemaCoordinates),
       });
 
       index++;
@@ -214,7 +234,7 @@ export class PersistedDocumentIngester {
 
     if (documents.length) {
       this.logger.debug(
-        'inserting documents into clickhouse and s3. (targetId=%s, appDeployment=%s, documentCount=%n)',
+        'inserting documents into clickhouse and s3. (targetId=%s, appDeployment=%s, documentCount=%d)',
         data.targetId,
         data.appDeployment.id,
         documents.length,
@@ -241,7 +261,7 @@ export class PersistedDocumentIngester {
   }) {
     // 1. Insert into ClickHouse
     this.logger.debug(
-      'Inserting documents into ClickHouse. (targetId=%s, appDeployment=%s, documentCount=%n)',
+      'Inserting documents into ClickHouse. (targetId=%s, appDeployment=%s, documentCount=%d)',
       args.targetId,
       args.appDeployment.id,
       args.documents.length,
@@ -250,7 +270,8 @@ export class PersistedDocumentIngester {
     await this.clickhouse.insert({
       query: c_sql`
         INSERT INTO "app_deployment_documents" (
-          "app_deployment_id"
+          "target_id"
+          , "app_deployment_id"
           , "document_hash"
           , "document_body"
           , "operation_name"
@@ -259,6 +280,7 @@ export class PersistedDocumentIngester {
         )
         FORMAT CSV`,
       data: args.documents.map(document => [
+        args.targetId,
         document.appDeploymentId,
         document.hash,
         document.body,
@@ -271,7 +293,7 @@ export class PersistedDocumentIngester {
     });
 
     this.logger.debug(
-      'Inserting documents into ClickHouse finished. (targetId=%s, appDeployment=%s, documentCount=%n)',
+      'Inserting documents into ClickHouse finished. (targetId=%s, appDeployment=%s, documentCount=%d)',
       args.targetId,
       args.appDeployment.id,
       args.documents.length,
@@ -288,7 +310,7 @@ export class PersistedDocumentIngester {
     documents: Array<DocumentRecord>;
   }) {
     this.logger.debug(
-      'Inserting documents into S3. (targetId=%s, appDeployment=%s, documentCount=%n)',
+      'Inserting documents into S3. (targetId=%s, appDeployment=%s, documentCount=%d)',
       args.targetId,
       args.appDeployment.id,
       args.documents.length,
@@ -333,11 +355,38 @@ export class PersistedDocumentIngester {
     await Promise.all(tasks);
 
     this.logger.debug(
-      'Inserting documents into S3 finished. (targetId=%s, appDeployment=%s, documentCount=%n)',
+      'Inserting documents into S3 finished. (targetId=%s, appDeployment=%s, documentCount=%d)',
       args.targetId,
       args.appDeployment.id,
       args.documents.length,
     );
+
+    // Trigger cache prefill callback if configured
+    if (this.onDocumentsPersisted) {
+      const docsForCache = args.documents.map(doc => ({
+        // Key format matches what the SDK uses for lookups: targetId~appName~appVersion~hash
+        key: `${args.targetId}~${args.appDeployment.name}~${args.appDeployment.version}~${doc.hash}`,
+        body: doc.body,
+      }));
+
+      try {
+        await this.onDocumentsPersisted(docsForCache);
+        this.logger.debug(
+          'Cache prefill callback completed. (targetId=%s, appDeployment=%s, documentCount=%d)',
+          args.targetId,
+          args.appDeployment.id,
+          docsForCache.length,
+        );
+      } catch (error) {
+        // Don't fail the deployment for cache prefill failures
+        this.logger.warn(
+          { error },
+          'Cache prefill callback failed. (targetId=%s, appDeployment=%s)',
+          args.targetId,
+          args.appDeployment.id,
+        );
+      }
+    }
   }
 
   /** inserts operations of an app deployment into clickhouse and s3 */

@@ -77,10 +77,18 @@ export default gql`
 
   extend type Organization {
     schemaPolicy: SchemaPolicy
+    """
+    Whether the viewer can view and modify the schema policy for this organization
+    """
+    viewerCanModifySchemaPolicy: Boolean!
   }
 
   extend type Project {
     schemaPolicy: SchemaPolicy
     parentSchemaPolicy: SchemaPolicy
+    """
+    Whether the viewer can view and modify the schema policy for this organization
+    """
+    viewerCanModifySchemaPolicy: Boolean!
   }
 `;

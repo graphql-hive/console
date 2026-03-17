@@ -20,7 +20,7 @@ const CreateContractMutation = graphql(`
       error {
         message
         details {
-          targetId
+          target
           contractName
           includeTags
           excludeTags
@@ -32,12 +32,8 @@ const CreateContractMutation = graphql(`
 
 test.concurrent('schema check with successful contract checks', async ({ expect }) => {
   const { createOrg, ownerToken } = await initSeed().createOwner();
-  const { createProject, setFeatureFlag } = await createOrg();
-  const { createTargetAccessToken, target, setNativeFederation } = await createProject(
-    ProjectType.Federation,
-  );
-  await setFeatureFlag('compareToPreviousComposableVersion', true);
-  await setNativeFederation(true);
+  const { createProject } = await createOrg();
+  const { createTargetAccessToken, target } = await createProject(ProjectType.Federation);
 
   // Create a token with write rights
   const writeToken = await createTargetAccessToken({});
@@ -67,7 +63,7 @@ test.concurrent('schema check with successful contract checks', async ({ expect 
     document: CreateContractMutation,
     variables: {
       input: {
-        targetId: target.id,
+        target: { byId: target.id },
         contractName: 'my-contract',
         removeUnreachableTypesFromPublicApiSchema: true,
         excludeTags: ['toyota'],
@@ -99,12 +95,8 @@ test.concurrent('schema check with successful contract checks', async ({ expect 
 
 test.concurrent('schema check with failing contract composition', async ({ expect }) => {
   const { createOrg, ownerToken } = await initSeed().createOwner();
-  const { createProject, setFeatureFlag } = await createOrg();
-  const { createTargetAccessToken, target, setNativeFederation } = await createProject(
-    ProjectType.Federation,
-  );
-  await setFeatureFlag('compareToPreviousComposableVersion', true);
-  await setNativeFederation(true);
+  const { createProject } = await createOrg();
+  const { createTargetAccessToken, target } = await createProject(ProjectType.Federation);
 
   // Create a token with write rights
   const writeToken = await createTargetAccessToken({});
@@ -134,7 +126,7 @@ test.concurrent('schema check with failing contract composition', async ({ expec
     document: CreateContractMutation,
     variables: {
       input: {
-        targetId: target.id,
+        target: { byId: target.id },
         contractName: 'my-contract',
         removeUnreachableTypesFromPublicApiSchema: true,
         excludeTags: ['toyota'],
@@ -180,12 +172,8 @@ test.concurrent(
   'schema check with failing contract composition (multiple contracts)',
   async ({ expect }) => {
     const { createOrg, ownerToken } = await initSeed().createOwner();
-    const { createProject, setFeatureFlag } = await createOrg();
-    const { createTargetAccessToken, target, setNativeFederation } = await createProject(
-      ProjectType.Federation,
-    );
-    await setFeatureFlag('compareToPreviousComposableVersion', true);
-    await setNativeFederation(true);
+    const { createProject } = await createOrg();
+    const { createTargetAccessToken, target } = await createProject(ProjectType.Federation);
 
     // Create a token with write rights
     const writeToken = await createTargetAccessToken({});
@@ -215,7 +203,7 @@ test.concurrent(
       document: CreateContractMutation,
       variables: {
         input: {
-          targetId: target.id,
+          target: { byId: target.id },
           contractName: 'my-contract',
           removeUnreachableTypesFromPublicApiSchema: true,
           excludeTags: ['toyota'],
@@ -230,7 +218,7 @@ test.concurrent(
       document: CreateContractMutation,
       variables: {
         input: {
-          targetId: target.id,
+          target: { byId: target.id },
           contractName: 'my-other-contract',
           removeUnreachableTypesFromPublicApiSchema: true,
           includeTags: ['fiat'],
@@ -300,7 +288,7 @@ const ApproveFailedSchemaCheckMutation = graphql(/* GraphQL */ `
 
 const SchemaCheckQuery = graphql(/* GraphQL */ `
   query SchemaCheckContractsQuery($selector: TargetSelectorInput!, $id: ID!) {
-    target(selector: $selector) {
+    target(reference: { bySelector: $selector }) {
       schemaCheck(id: $id) {
         __typename
         id
@@ -381,12 +369,10 @@ test.concurrent(
   'approve failed schema check that has breaking change in contract check -> updates the status to successful and attaches meta information to the breaking change',
   async ({ expect }) => {
     const { createOrg, ownerToken } = await initSeed().createOwner();
-    const { createProject, organization, setFeatureFlag } = await createOrg();
-    const { createTargetAccessToken, project, target, setNativeFederation } = await createProject(
+    const { createProject, organization } = await createOrg();
+    const { createTargetAccessToken, project, target } = await createProject(
       ProjectType.Federation,
     );
-    await setFeatureFlag('compareToPreviousComposableVersion', true);
-    await setNativeFederation(true);
 
     // Create a token with write rights
     const writeToken = await createTargetAccessToken({});
@@ -399,7 +385,7 @@ test.concurrent(
       document: CreateContractMutation,
       variables: {
         input: {
-          targetId: target.id,
+          target: { byId: target.id },
           contractName,
           removeUnreachableTypesFromPublicApiSchema: true,
           includeTags: ['toyota'],
@@ -547,8 +533,6 @@ test.concurrent(
     const { createTargetAccessToken, project, target, setNativeFederation } = await createProject(
       ProjectType.Federation,
     );
-    await setFeatureFlag('compareToPreviousComposableVersion', true);
-    await setNativeFederation(true);
 
     // Create a token with write rights
     const writeToken = await createTargetAccessToken({});
@@ -562,7 +546,7 @@ test.concurrent(
       document: CreateContractMutation,
       variables: {
         input: {
-          targetId: target.id,
+          target: { byId: target.id },
           contractName,
           removeUnreachableTypesFromPublicApiSchema: true,
           includeTags: ['toyota'],
@@ -739,12 +723,10 @@ test.concurrent(
   'approving a schema check with contextId containing breaking changes does not allow the changes for subsequent checks with a different contextId',
   async ({ expect }) => {
     const { createOrg, ownerToken } = await initSeed().createOwner();
-    const { createProject, organization, setFeatureFlag } = await createOrg();
-    const { createTargetAccessToken, project, target, setNativeFederation } = await createProject(
+    const { createProject, organization } = await createOrg();
+    const { createTargetAccessToken, project, target } = await createProject(
       ProjectType.Federation,
     );
-    await setFeatureFlag('compareToPreviousComposableVersion', true);
-    await setNativeFederation(true);
 
     // Create a token with write rights
     const writeToken = await createTargetAccessToken({});
@@ -758,7 +740,7 @@ test.concurrent(
       document: CreateContractMutation,
       variables: {
         input: {
-          targetId: target.id,
+          target: { byId: target.id },
           contractName,
           removeUnreachableTypesFromPublicApiSchema: true,
           includeTags: ['toyota'],
@@ -928,12 +910,10 @@ test.concurrent(
   'subsequent schema check with shared contextId that contains new breaking changes that have not been approved fails',
   async ({ expect }) => {
     const { createOrg, ownerToken } = await initSeed().createOwner();
-    const { createProject, organization, setFeatureFlag } = await createOrg();
-    const { createTargetAccessToken, project, target, setNativeFederation } = await createProject(
+    const { createProject, organization } = await createOrg();
+    const { createTargetAccessToken, project, target } = await createProject(
       ProjectType.Federation,
     );
-    await setFeatureFlag('compareToPreviousComposableVersion', true);
-    await setNativeFederation(true);
 
     // Create a token with write rights
     const writeToken = await createTargetAccessToken({});
@@ -947,7 +927,7 @@ test.concurrent(
       document: CreateContractMutation,
       variables: {
         input: {
-          targetId: target.id,
+          target: { byId: target.id },
           contractName,
           removeUnreachableTypesFromPublicApiSchema: true,
           includeTags: ['toyota'],
@@ -1128,12 +1108,10 @@ test.concurrent(
   'schema check that has no composition errors in contract check -> can be approved',
   async ({ expect }) => {
     const { createOrg, ownerToken } = await initSeed().createOwner();
-    const { createProject, organization, setFeatureFlag } = await createOrg();
-    const { createTargetAccessToken, project, target, setNativeFederation } = await createProject(
+    const { createProject, organization } = await createOrg();
+    const { createTargetAccessToken, project, target } = await createProject(
       ProjectType.Federation,
     );
-    await setFeatureFlag('compareToPreviousComposableVersion', true);
-    await setNativeFederation(true);
 
     // Create a token with write rights
     const writeToken = await createTargetAccessToken({});
@@ -1146,7 +1124,7 @@ test.concurrent(
       document: CreateContractMutation,
       variables: {
         input: {
-          targetId: target.id,
+          target: { byId: target.id },
           contractName,
           removeUnreachableTypesFromPublicApiSchema: true,
           includeTags: ['toyota'],
@@ -1237,12 +1215,10 @@ test.concurrent(
   'schema check that has composition errors in contract check -> can not be approved',
   async ({ expect }) => {
     const { createOrg, ownerToken } = await initSeed().createOwner();
-    const { createProject, organization, setFeatureFlag } = await createOrg();
+    const { createProject, organization } = await createOrg();
     const { createTargetAccessToken, project, target, setNativeFederation } = await createProject(
       ProjectType.Federation,
     );
-    await setFeatureFlag('compareToPreviousComposableVersion', true);
-    await setNativeFederation(true);
 
     // Create a token with write rights
     const writeToken = await createTargetAccessToken({});
@@ -1255,7 +1231,7 @@ test.concurrent(
       document: CreateContractMutation,
       variables: {
         input: {
-          targetId: target.id,
+          target: { byId: target.id },
           contractName,
           removeUnreachableTypesFromPublicApiSchema: true,
           includeTags: ['toyota'],

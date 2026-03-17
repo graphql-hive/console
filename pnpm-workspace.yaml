@@ -9,3 +9,4 @@ packages:
   - deployment
   - scripts
   - rules
+  - load-tests/otel-traces

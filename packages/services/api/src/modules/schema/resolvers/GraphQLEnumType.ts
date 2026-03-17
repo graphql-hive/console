@@ -14,7 +14,9 @@ export const GraphQLEnumType: GraphQlEnumTypeResolvers = {
       },
       usage: t.usage,
       supergraph: t.supergraph
-        ? { ownedByServiceNames: t.supergraph.getEnumValueOwnedByServices(v.name) }
+        ? {
+            ownedByServiceNames: t.supergraph.getEnumValueOwnedByServices(v.name),
+          }
         : null,
     })),
   usage,

@@ -26,6 +26,8 @@ export default gql`
     hasSlackIntegration: Boolean!
     hasGitHubIntegration: Boolean!
     gitHubIntegration: GitHubIntegration
+    viewerCanModifySlackIntegration: Boolean!
+    viewerCanModifyGitHubIntegration: Boolean!
   }
 
   input AddSlackIntegrationInput {

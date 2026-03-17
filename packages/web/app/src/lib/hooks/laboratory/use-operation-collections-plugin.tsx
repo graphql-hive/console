@@ -26,8 +26,6 @@ import { Link } from '@/components/ui/link';
 import { Spinner } from '@/components/ui/spinner';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { graphql } from '@/gql';
-import { TargetAccessScope } from '@/gql/graphql';
-import { canAccessTarget } from '@/lib/access/target';
 import { useClipboard, useNotifications, useToggle } from '@/lib/hooks';
 import { useOperationFromQueryString } from '@/lib/hooks/laboratory/useOperationFromQueryString';
 import { cn } from '@/lib/utils';
@@ -82,20 +80,13 @@ export const TargetLaboratoryPageQuery = graphql(`
     $projectSlug: String!
     $targetSlug: String!
   ) {
-    organization(selector: { organizationSlug: $organizationSlug }) {
-      organization {
-        id
-        me {
-          id
-          ...CanAccessTarget_MemberFragment
-        }
-      }
-    }
     target(
-      selector: {
-        organizationSlug: $organizationSlug
-        projectSlug: $projectSlug
-        targetSlug: $targetSlug
+      reference: {
+        bySelector: {
+          organizationSlug: $organizationSlug
+          projectSlug: $projectSlug
+          targetSlug: $targetSlug
+        }
       }
     ) {
       id
@@ -104,6 +95,9 @@ export const TargetLaboratoryPageQuery = graphql(`
         id
         sdl
       }
+      viewerCanViewLaboratory
+      viewerCanModifyLaboratory
+      ...PreflightScript_TargetFragment
     }
     ...Laboratory_IsCDNEnabledFragment
   }
@@ -123,11 +117,9 @@ export const operationCollectionsPlugin: GraphiQLPlugin = {
 };
 
 export function Content() {
-  const { organizationSlug, projectSlug, targetSlug } = useParams({ strict: false }) as {
-    organizationSlug: string;
-    projectSlug: string;
-    targetSlug: string;
-  };
+  const { organizationSlug, projectSlug, targetSlug } = useParams({
+    from: '/authenticated/$organizationSlug/$projectSlug/$targetSlug',
+  });
   const [query] = useQuery({
     query: TargetLaboratoryPageQuery,
     variables: {
@@ -136,9 +128,8 @@ export function Content() {
       targetSlug,
     },
   });
-  const currentOrganization = query.data?.organization?.organization;
-  const canEdit = canAccessTarget(TargetAccessScope.Settings, currentOrganization?.me ?? null);
-  const canDelete = canAccessTarget(TargetAccessScope.Delete, currentOrganization?.me ?? null);
+  const canEdit = query.data?.target?.viewerCanModifyLaboratory === true;
+  const canDelete = query.data?.target?.viewerCanModifyLaboratory === true;
 
   const [isCollectionModalOpen, toggleCollectionModal] = useToggle();
   const { collections, fetching: loading } = useCollections({
@@ -300,26 +291,37 @@ export function Content() {
     setAccordionValue([initialSelectedCollection]);
     setTimeout(() => {
       const link = containerRef.current!.querySelector(`a[href$="${queryParamsOperationId}"]`);
-      link!.scrollIntoView();
-      setIsScrolled(true);
+
+      if (link) {
+        link.scrollIntoView();
+        setIsScrolled(true);
+      }
     }, 150);
   }, [initialSelectedCollection]);
 
   const renderedCollections = collections.map(collection => (
     <AccordionItem key={collection.id} value={collection.id} className="border-b-0">
-      <AccordionHeader className="flex items-center justify-between">
-        <AccordionTriggerPrimitive className="group flex w-full items-center gap-x-3 rounded p-2 text-left font-medium text-white hover:bg-gray-100/10">
-          <FolderIcon className="group-radix-state-open:hidden size-4" />
-          <FolderOpenIcon className="group-radix-state-closed:hidden size-4" />
+      <AccordionHeader className="flex items-center justify-between" data-cy="collection-item">
+        <AccordionTriggerPrimitive
+          className="text-neutral-12 hover:bg-neutral-11/10 group flex w-full items-center gap-x-3 rounded-sm p-2 text-left font-medium"
+          data-cy="collection-item-trigger"
+        >
+          <FolderIcon className="size-4 group-data-[state=open]:hidden" />
+          <FolderOpenIcon className="size-4 group-data-[state=closed]:hidden" />
           {collection.name}
         </AccordionTriggerPrimitive>
         {shouldShowMenu && (
           <DropdownMenu>
-            <DropdownMenuTrigger aria-label="More" className="graphiql-toolbar-button">
+            <DropdownMenuTrigger
+              aria-label="More"
+              className="graphiql-toolbar-button"
+              data-cy="collection-menu-trigger"
+            >
               <DotsHorizontalIcon />
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
               <DropdownMenuItem
+                data-cy="add-operation-to-collection"
                 onClick={addOperation}
                 disabled={createOperationState.fetching}
                 data-collection-id={collection.id}
@@ -328,6 +330,7 @@ export function Content() {
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem
+                data-cy="edit-collection"
                 onClick={() => {
                   setCollectionId(collection.id);
                   toggleCollectionModal();
@@ -336,6 +339,7 @@ export function Content() {
                 Edit
               </DropdownMenuItem>
               <DropdownMenuItem
+                data-cy="delete-collection"
                 onClick={() => {
                   setCollectionId(collection.id);
                   toggleDeleteCollectionModalOpen();
@@ -360,10 +364,11 @@ export function Content() {
                   targetSlug,
                 }}
                 search={{ operation: node.id }}
+                data-cy={`operation-${node.name}`}
                 className={cn(
-                  'flex w-full items-center gap-x-3 rounded p-2 font-normal text-white/50 hover:bg-gray-100/10 hover:text-white hover:no-underline',
+                  'text-neutral-12/50 hover:text-neutral-12 hover:bg-neutral-11/10 flex w-full items-center gap-x-3 rounded-sm p-2 font-normal hover:no-underline',
                   node.id === queryParamsOperationId && [
-                    'bg-gray-100/10 text-white',
+                    'text-neutral-12 bg-neutral-11/10',
                     currentOperation &&
                       node.id === currentOperation.id &&
                       !isSame &&
@@ -375,11 +380,12 @@ export function Content() {
                 {node.name}
               </Link>
               <DropdownMenu modal={false}>
-                <DropdownMenuTrigger className="graphiql-toolbar-button text-white opacity-0 transition-opacity [div:hover>&]:opacity-100">
+                <DropdownMenuTrigger className="graphiql-toolbar-button text-neutral-12 opacity-0 transition-opacity [div:hover>&]:opacity-100">
                   <DotsHorizontalIcon />
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
                   <DropdownMenuItem
+                    data-cy="copy-operation-link"
                     onClick={async () => {
                       const url = new URL(window.location.href);
                       await copyToClipboard(`${url.origin}${url.pathname}?operation=${node.id}`);
@@ -390,6 +396,7 @@ export function Content() {
                   <DropdownMenuSeparator />
                   {canEdit && (
                     <DropdownMenuItem
+                      data-cy="edit-operation"
                       onClick={() => {
                         setOperationToEditId(node.id);
                       }}
@@ -399,6 +406,7 @@ export function Content() {
                   )}
                   {canDelete && (
                     <DropdownMenuItem
+                      data-cy="delete-operation"
                       onClick={() => {
                         setOperationToDeleteId(node.id);
                         toggleDeleteOperationModalOpen();
@@ -426,34 +434,39 @@ export function Content() {
     </AccordionItem>
   ));
 
+  const target = query.data?.target;
+
   return (
     <>
       <div className="mb-5 flex items-center justify-between gap-1">
         <div className="graphiql-doc-explorer-title">Operations</div>
-        <TooltipProvider>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                variant="orangeLink"
-                size="icon-sm"
-                className={clsx(
-                  'flex w-auto items-center gap-1',
-                  'min-w-0', // trick to make work truncate
-                )}
-                onClick={() => {
-                  if (collectionId) {
-                    setCollectionId('');
-                  }
-                  toggleCollectionModal();
-                }}
-              >
-                <PlusIcon className="size-4 shrink-0" />
-                <span className="truncate">New collection</span>
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>Create a new collection of GraphQL Operations</TooltipContent>
-          </Tooltip>
-        </TooltipProvider>
+        {target?.viewerCanModifyLaboratory && (
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="orangeLink"
+                  size="icon-sm"
+                  data-cy="new-collection"
+                  className={clsx(
+                    'flex w-auto items-center gap-1',
+                    'min-w-0', // trick to make work truncate
+                  )}
+                  onClick={() => {
+                    if (collectionId) {
+                      setCollectionId('');
+                    }
+                    toggleCollectionModal();
+                  }}
+                >
+                  <PlusIcon className="size-4 shrink-0" />
+                  <span className="truncate">New collection</span>
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>Create a new collection of GraphQL Operations</TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        )}
       </div>
       {loading ? (
         <div className="flex flex-col items-center gap-4 text-xs">

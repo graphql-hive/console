@@ -2,7 +2,6 @@ import { ReactElement, useState } from 'react';
 import { ChevronsUpDown, XIcon } from 'lucide-react';
 import { useQuery } from 'urql';
 import { Page, TargetLayout } from '@/components/layouts/target';
-import { MarkAsValid } from '@/components/target/history/MarkAsValid';
 import { Button } from '@/components/ui/button';
 import {
   Command,
@@ -11,7 +10,7 @@ import {
   CommandInput,
   CommandItem,
 } from '@/components/ui/command';
-import { EmptyList, noSchema, noSchemaVersion } from '@/components/ui/empty-list';
+import { EmptyList, noSchema, NoSchemaVersion } from '@/components/ui/empty-list';
 import { Meta } from '@/components/ui/meta';
 import { Subtitle, Title } from '@/components/ui/page';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -20,8 +19,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Accordion } from '@/components/v2/accordion';
 import { GraphQLBlock, GraphQLHighlight } from '@/components/v2/graphql-block';
 import { DocumentType, FragmentType, graphql, useFragment } from '@/gql';
-import { ProjectType, RegistryModel } from '@/gql/graphql';
-import { TargetAccessScope, useTargetAccess } from '@/lib/access/target';
+import { ProjectType } from '@/gql/graphql';
 import { Link, useRouter } from '@tanstack/react-router';
 
 type CompositeSchema = Extract<
@@ -46,13 +44,13 @@ function isCompositeSchema(
 
 function SchemaBlock({ schema }: { schema: CompositeSchema }) {
   return (
-    <Accordion.Item value={schema.id} key={schema.id} className="border-2 border-gray-900/50">
+    <Accordion.Item value={schema.id} key={schema.id} className="border-neutral-5/50 border-2">
       <Accordion.Header>
         <div>
           <div className="text-base" id={schema.service ? `service-${schema.service}` : undefined}>
             {schema.service ?? 'SDL'}
           </div>
-          {schema.url ? <div className="text-xs text-gray-500">{schema.url}</div> : null}
+          {schema.url ? <div className="text-neutral-10 text-xs">{schema.url}</div> : null}
         </div>
       </Accordion.Header>
       <Accordion.Content>
@@ -107,22 +105,10 @@ function Schemas(props: { schemas?: readonly CompositeSchema[]; schema?: SingleS
   );
 }
 
-const SchemaView_OrganizationFragment = graphql(`
-  fragment SchemaView_OrganizationFragment on Organization {
-    id
-    slug
-    me {
-      ...CanAccessTarget_MemberFragment
-    }
-  }
-`);
-
 const SchemaView_ProjectFragment = graphql(`
   fragment SchemaView_ProjectFragment on Project {
     id
-    slug
     type
-    registryModel
   }
 `);
 
@@ -149,22 +135,21 @@ const SchemaView_TargetFragment = graphql(`
     latestSchemaVersion {
       id
       schemas {
-        nodes {
-          __typename
-          ...SchemaView_SchemaFragment
+        edges {
+          node {
+            __typename
+            ...SchemaView_SchemaFragment
+          }
         }
       }
-      ...MarkAsValid_SchemaVersionFragment
     }
   }
 `);
 
 function SchemaView(props: {
-  organization: FragmentType<typeof SchemaView_OrganizationFragment>;
   project: FragmentType<typeof SchemaView_ProjectFragment>;
   target: FragmentType<typeof SchemaView_TargetFragment>;
 }): ReactElement | null {
-  const organization = useFragment(SchemaView_OrganizationFragment, props.organization);
   const project = useFragment(SchemaView_ProjectFragment, props.project);
   const target = useFragment(SchemaView_TargetFragment, props.target);
   const router = useRouter();
@@ -181,30 +166,23 @@ function SchemaView(props: {
     });
   };
 
+  const schemas = useFragment(
+    SchemaView_SchemaFragment,
+    target.latestSchemaVersion?.schemas?.edges?.map(edge => edge.node),
+  );
+
   const isDistributed =
     project.type === ProjectType.Federation || project.type === ProjectType.Stitching;
 
-  const canManage = useTargetAccess({
-    scope: TargetAccessScope.RegistryWrite,
-    member: organization.me,
-    redirect: false,
-    organizationSlug: organization.slug,
-    projectSlug: project.slug,
-    targetSlug: target.slug,
-  });
-
   const { latestSchemaVersion } = target;
   if (!latestSchemaVersion) {
-    return noSchemaVersion;
+    return <NoSchemaVersion recommendedAction="publish" projectType={project.type} />;
   }
 
-  if (!latestSchemaVersion.schemas.nodes.length) {
+  if (!latestSchemaVersion.schemas.edges.length) {
     return noSchema;
   }
 
-  const canMarkAsValid = project.registryModel === RegistryModel.Legacy && canManage;
-
-  const schemas = useFragment(SchemaView_SchemaFragment, target.latestSchemaVersion?.schemas.nodes);
   const compositeSchemas = schemas?.filter(isCompositeSchema) as CompositeSchema[];
   const singleSchema = schemas?.filter(schema => !isCompositeSchema(schema))[0] as
     | SingleSchema
@@ -259,7 +237,7 @@ function SchemaView(props: {
                         >
                           <div>
                             <div>{schema.service}</div>
-                            <div className="text-muted-foreground text-xs">{schema.url}</div>
+                            <div className="text-neutral-10 text-xs">{schema.url}</div>
                           </div>
                         </CommandItem>
                       ))}
@@ -269,16 +247,6 @@ function SchemaView(props: {
               </PopoverContent>
             </Popover>
           )}
-          {canMarkAsValid ? (
-            <>
-              <MarkAsValid
-                organizationSlug={organization.slug}
-                projectSlug={project.slug}
-                targetSlug={target.slug}
-                version={latestSchemaVersion}
-              />{' '}
-            </>
-          ) : null}
         </div>
       </div>
       {isDistributed ? <Schemas schemas={schemasToDisplay} /> : <Schemas schema={singleSchema} />}
@@ -292,22 +260,13 @@ const TargetSchemaPageQuery = graphql(`
     $projectSlug: String!
     $targetSlug: String!
   ) {
-    organization(selector: { organizationSlug: $organizationSlug }) {
-      organization {
-        ...SchemaView_OrganizationFragment
-      }
-    }
-    project(selector: { organizationSlug: $organizationSlug, projectSlug: $projectSlug }) {
-      ...SchemaView_ProjectFragment
-    }
-    target(
-      selector: {
-        organizationSlug: $organizationSlug
-        projectSlug: $projectSlug
-        targetSlug: $targetSlug
-      }
+    project(
+      reference: { bySelector: { organizationSlug: $organizationSlug, projectSlug: $projectSlug } }
     ) {
-      ...SchemaView_TargetFragment
+      ...SchemaView_ProjectFragment
+      target: targetBySlug(targetSlug: $targetSlug) {
+        ...SchemaView_TargetFragment
+      }
     }
   }
 `);
@@ -330,9 +289,8 @@ function TargetSchemaPage(props: {
     return <QueryError organizationSlug={props.organizationSlug} error={query.error} />;
   }
 
-  const currentOrganization = query.data?.organization?.organization;
   const currentProject = query.data?.project;
-  const target = query.data?.target;
+  const target = currentProject?.target;
 
   return (
     <TargetLayout
@@ -375,8 +333,8 @@ function TargetSchemaPage(props: {
         </div>
       </div>
       <div>
-        {query.fetching ? null : currentOrganization && currentProject && target ? (
-          <SchemaView organization={currentOrganization} project={currentProject} target={target} />
+        {query.fetching ? null : currentProject && target ? (
+          <SchemaView project={currentProject} target={target} />
         ) : null}
       </div>
     </TargetLayout>

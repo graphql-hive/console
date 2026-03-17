@@ -1,3 +1,4 @@
+import type { Report } from '../../packages/libraries/core/src/client/usage.js';
 import { getServiceHost } from './utils';
 
 export interface CollectedOperation {
@@ -15,6 +16,32 @@ export interface CollectedOperation {
       name?: string;
       version?: string;
     };
+  };
+}
+
+export async function collect(params: { report: Report; accessToken: string }) {
+  const usageAddress = await getServiceHost('usage', 8081);
+  const res = await fetch(`http://${usageAddress}`, {
+    method: 'POST',
+    body: JSON.stringify(params.report),
+    headers: {
+      'Content-Type': 'application/json',
+      Accept: 'application/json',
+      Authorization: `Bearer ${params.accessToken}`,
+    },
+  });
+
+  return {
+    status: res.status,
+    body:
+      res.status === 200
+        ? ((await res.json()) as {
+            operations: {
+              accepted: number;
+              rejected: number;
+            };
+          })
+        : await res.text(),
   };
 }
 

@@ -1,4 +1,4 @@
-FROM node:22.11.0-slim
+FROM node:24.13.0-slim
 
 RUN apt-get update && apt-get install -y ca-certificates
 
@@ -7,9 +7,9 @@ WORKDIR /usr/src/app
 COPY --from=dist . /usr/src/app/
 COPY --from=shared . /
 
-ENV ENVIRONMENT production
-ENV NODE_ENV production
-ENV RELEASE $RELEASE
+ENV ENVIRONMENT=production
+ENV NODE_ENV=production
+ENV RELEASE=$RELEASE
 
 LABEL org.opencontainers.image.licenses=MIT
 LABEL org.opencontainers.image.title=$IMAGE_TITLE

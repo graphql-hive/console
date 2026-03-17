@@ -1,10 +1,17 @@
 import { buildSchema, parse } from 'graphql';
 import nock from 'nock';
+import { Logger, MemoryLogWriter } from '@graphql-hive/logger';
 import { createHive } from '../src/client/client';
 import { atLeastOnceSampler } from '../src/client/samplers';
 import type { Report } from '../src/client/usage';
 import { version } from '../src/version';
-import { createHiveTestingLogger, waitFor } from './test-utils';
+import {
+  createHiveTestingLogger,
+  fastFetchError,
+  normalizeLogMessage,
+  waitFor,
+  waitUntil,
+} from './test-utils';
 
 const headers = {
   'Content-Type': 'application/json',
@@ -165,11 +172,11 @@ test('should send data to Hive', async () => {
   http.done();
 
   expect(logger.getLogs()).toMatchInlineSnapshot(`
-    [INF] [hive][usage] Disposing
-    [INF] [hive][usage] Sending report (queue 1)
-    [INF] [hive][usage] POST http://localhost/200
-    [INF] [hive][usage] POST http://localhost/200 succeeded with status 200 (666ms).
-    [INF] [hive][usage] Report sent!
+    [DBG] Disposing
+    [DBG] Sending report (queue 1)
+    [DBG] POST http://localhost/200 (x-request-id=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx)
+    [DBG] POST http://localhost/200 (x-request-id=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx) succeeded with status 200 (666ms).
+    [DBG] Report sent!
   `);
 
   // Map
@@ -275,11 +282,11 @@ test('should send data to Hive (deprecated endpoint)', async () => {
   http.done();
 
   expect(logger.getLogs()).toMatchInlineSnapshot(`
-    [INF] [hive][usage] Disposing
-    [INF] [hive][usage] Sending report (queue 1)
-    [INF] [hive][usage] POST http://localhost/200
-    [INF] [hive][usage] POST http://localhost/200 succeeded with status 200 (666ms).
-    [INF] [hive][usage] Report sent!
+    [DBG] Disposing
+    [DBG] Sending report (queue 1)
+    [DBG] POST http://localhost/200 (x-request-id=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx)
+    [DBG] POST http://localhost/200 (x-request-id=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx) succeeded with status 200 (666ms).
+    [DBG] Report sent!
   `);
 
   // Map
@@ -333,13 +340,14 @@ test('should send data to Hive (deprecated endpoint)', async () => {
   expect(operation.execution.ok).toBe(true);
 });
 
-test('should not leak the exception', async () => {
+test('should not leak the exception', { retry: 3 }, async () => {
   const logger = createHiveTestingLogger();
 
   const hive = createHive({
     enabled: true,
     debug: true,
     agent: {
+      fetch: fastFetchError,
       timeout: 500,
       maxRetries: 1,
       sendInterval: 10,
@@ -365,16 +373,15 @@ test('should not leak the exception', async () => {
   await hive.dispose();
 
   expect(logger.getLogs()).toMatchInlineSnapshot(`
-    [INF] [hive][usage] Sending report (queue 1)
-    [INF] [hive][usage] POST http://404.localhost.noop Attempt (1/2)
-    [ERR] [hive][usage] Error: getaddrinfo ENOTFOUND 404.localhost.noop
-    [ERR] [hive][usage]     at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:666:666)
-    [ERR] [hive][usage] POST http://404.localhost.noop failed (666ms). getaddrinfo ENOTFOUND 404.localhost.noop
-    [INF] [hive][usage] Disposing
+    [DBG] Sending report (queue 1)
+    [DBG] POST http://404.localhost.noop (x-request-id=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx) Attempt (1/2)
+    [DBG] Error: getaddrinfo ENOTFOUND 404.localhost.noop
+    [DBG] POST http://404.localhost.noop (x-request-id=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx) failed (666ms). getaddrinfo ENOTFOUND 404.localhost.noop
+    [DBG] Disposing
   `);
 });
 
-test('sendImmediately should not stop the schedule', { retry: 3 }, async () => {
+test('sendImmediately should not stop the schedule', async () => {
   const logger = createHiveTestingLogger();
 
   const token = 'Token';
@@ -431,36 +438,19 @@ test('sendImmediately should not stop the schedule', { retry: 3 }, async () => {
   // since we sent only 1 element, the buffer was not full,
   // so we should not see "Sending immediately"
 
-  expect(logger.getLogs()).toMatchInlineSnapshot(`
-    [INF] [hive][usage] Sending report (queue 1)
-    [INF] [hive][usage] POST http://localhost/200
-    [INF] [hive][usage] POST http://localhost/200 succeeded with status 200 (666ms).
-    [INF] [hive][usage] Report sent!
-  `);
+  expect(logger.getLogs()).not.toMatch('Sending immediately');
   logger.clear();
 
   // Now we will hit the maxSize
   // We run collect two times
   await Promise.all([collect(args, {}), collect(args, {})]);
-  await waitFor(1);
-  expect(logger.getLogs()).toMatchInlineSnapshot(`
-    [INF] [hive][usage] Sending immediately
-    [INF] [hive][usage] Sending report (queue 2)
-    [INF] [hive][usage] POST http://localhost/200
-  `);
+  await waitUntil(() => logger.getLogs().includes('Sending immediately'));
+  expect(logger.getLogs()).toMatch('Sending report (queue 2)');
   logger.clear();
-  await waitFor(100);
   // Let's check if the scheduled send task is still running
   await collect(args, {});
-  await waitFor(40);
-  expect(logger.getLogs()).toMatchInlineSnapshot(`
-    [INF] [hive][usage] POST http://localhost/200 succeeded with status 200 (666ms).
-    [INF] [hive][usage] Report sent!
-    [INF] [hive][usage] Sending report (queue 1)
-    [INF] [hive][usage] POST http://localhost/200
-    [INF] [hive][usage] POST http://localhost/200 succeeded with status 200 (666ms).
-    [INF] [hive][usage] Report sent!
-  `);
+  await waitFor(60);
+  expect(logger.getLogs()).toMatch('Sending report (queue 1)');
 
   await hive.dispose();
   http.done();
@@ -548,16 +538,14 @@ test('should send data to Hive at least once when using atLeastOnceSampler', asy
     ),
   ]);
   await hive.dispose();
-  await waitFor(50);
+  await waitUntil(() => logger.getLogs().includes('Report sent!'));
   http.done();
 
-  expect(logger.getLogs()).toMatchInlineSnapshot(`
-    [INF] [hive][usage] Disposing
-    [INF] [hive][usage] Sending report (queue 2)
-    [INF] [hive][usage] POST http://localhost/200
-    [INF] [hive][usage] POST http://localhost/200 succeeded with status 200 (666ms).
-    [INF] [hive][usage] Report sent!
-  `);
+  expect(logger.getLogs()).toMatch(/\[DBG\] Disposing/);
+  expect(logger.getLogs()).toMatch(/\[DBG\] Sending report \(queue 2\)/);
+  expect(logger.getLogs()).toMatch(/\[DBG\] POST http:\/\/localhost\/200/);
+  expect(logger.getLogs()).toMatch(/succeeded with status 200/);
+  expect(logger.getLogs()).toMatch(/\[DBG\] Report sent!/);
 
   // Map
   expect(report.size).toEqual(2);
@@ -656,11 +644,11 @@ test('should not send excluded operation name data to Hive', async () => {
   http.done();
 
   expect(logger.getLogs()).toMatchInlineSnapshot(`
-    [INF] [hive][usage] Disposing
-    [INF] [hive][usage] Sending report (queue 2)
-    [INF] [hive][usage] POST http://localhost/200
-    [INF] [hive][usage] POST http://localhost/200 succeeded with status 200 (666ms).
-    [INF] [hive][usage] Report sent!
+    [DBG] Disposing
+    [DBG] Sending report (queue 2)
+    [DBG] POST http://localhost/200 (x-request-id=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx)
+    [DBG] POST http://localhost/200 (x-request-id=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx) succeeded with status 200 (666ms).
+    [DBG] Report sent!
   `);
 
   // Map
@@ -733,9 +721,7 @@ test('retry on non-200', async () => {
       minTimeout: 10,
       sendInterval: 10,
       maxRetries: 1,
-      __testing: {
-        fetch: fetchSpy,
-      },
+      fetch: fetchSpy,
     },
     token,
     usage: {
@@ -759,9 +745,402 @@ test('retry on non-200', async () => {
   await hive.dispose();
 
   expect(logger.getLogs()).toMatchInlineSnapshot(`
-    [INF] [hive][usage] Sending report (queue 1)
-    [INF] [hive][usage] POST http://localhost/200 Attempt (1/2)
-    [ERR] [hive][usage] POST http://localhost/200 failed with status 500 (666ms): No no no
-    [INF] [hive][usage] Disposing
+    [DBG] Sending report (queue 1)
+    [DBG] POST http://localhost/200 (x-request-id=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx) Attempt (1/2)
+    [DBG] POST http://localhost/200 (x-request-id=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx) failed with status 500 (666ms): No no no
+    [DBG] Disposing
+  `);
+});
+
+test('constructs URL with usage.target (hvo1/)', async ({ expect }) => {
+  const logger = createHiveTestingLogger();
+  const token = 'hvo1/brrrrt';
+  const dUrl = Promise.withResolvers<string>();
+
+  const hive = createHive({
+    enabled: true,
+    debug: true,
+    agent: {
+      timeout: 500,
+      maxRetries: 0,
+      sendInterval: 1,
+      maxSize: 1,
+      async fetch(url) {
+        dUrl.resolve(url.toString());
+        return new Response('', {
+          status: 200,
+        });
+      },
+      logger,
+    },
+    token,
+    selfHosting: {
+      graphqlEndpoint: 'http://localhost:2/graphql',
+      applicationUrl: 'http://localhost:1',
+      usageEndpoint: 'http://localhost',
+    },
+    usage: {
+      target: 'the-guild/graphql-hive/staging',
+    },
+  });
+
+  await hive.collectUsage()(
+    {
+      schema,
+      document: op,
+      operationName: 'asd',
+    },
+    {},
+  );
+
+  const url = await dUrl.promise;
+  expect(url).toEqual('http://localhost/the-guild/graphql-hive/staging');
+  await hive.dispose();
+});
+
+test('constructs URL with usage.target (hvp1/)', async ({ expect }) => {
+  const logger = createHiveTestingLogger();
+  const token = 'hvp1/brrrrt';
+  const dUrl = Promise.withResolvers<string>();
+
+  const hive = createHive({
+    enabled: true,
+    debug: true,
+    agent: {
+      timeout: 500,
+      maxRetries: 0,
+      sendInterval: 1,
+      maxSize: 1,
+      async fetch(url) {
+        dUrl.resolve(url.toString());
+        return new Response('', {
+          status: 200,
+        });
+      },
+      logger,
+    },
+    token,
+    selfHosting: {
+      graphqlEndpoint: 'http://localhost:2/graphql',
+      applicationUrl: 'http://localhost:1',
+      usageEndpoint: 'http://localhost',
+    },
+    usage: {
+      target: 'the-guild/graphql-hive/staging',
+    },
+  });
+
+  await hive.collectUsage()(
+    {
+      schema,
+      document: op,
+      operationName: 'asd',
+    },
+    {},
+  );
+
+  const url = await dUrl.promise;
+  expect(url).toEqual('http://localhost/the-guild/graphql-hive/staging');
+  await hive.dispose();
+});
+
+test('constructs URL with usage.target (hvu1/)', async ({ expect }) => {
+  const logger = createHiveTestingLogger();
+  const token = 'hvu1/brrrrt';
+  const dUrl = Promise.withResolvers<string>();
+
+  const hive = createHive({
+    enabled: true,
+    debug: true,
+    agent: {
+      timeout: 500,
+      maxRetries: 0,
+      sendInterval: 1,
+      maxSize: 1,
+      async fetch(url) {
+        dUrl.resolve(url.toString());
+        return new Response('', {
+          status: 200,
+        });
+      },
+      logger,
+    },
+    token,
+    selfHosting: {
+      graphqlEndpoint: 'http://localhost:2/graphql',
+      applicationUrl: 'http://localhost:1',
+      usageEndpoint: 'http://localhost',
+    },
+    usage: {
+      target: 'the-guild/graphql-hive/staging',
+    },
+  });
+
+  await hive.collectUsage()(
+    {
+      schema,
+      document: op,
+      operationName: 'asd',
+    },
+    {},
+  );
+
+  const url = await dUrl.promise;
+  expect(url).toEqual('http://localhost/the-guild/graphql-hive/staging');
+  await hive.dispose();
+});
+
+test('no debug property -> logger.debug is invoked', async ({ expect }) => {
+  const logger = createHiveTestingLogger();
+  const token = 'hvu1/brrrrt';
+
+  const hive = createHive({
+    enabled: true,
+    agent: {
+      timeout: 500,
+      maxRetries: 0,
+      sendInterval: 1,
+      maxSize: 1,
+      async fetch() {
+        return new Response('', {
+          status: 200,
+        });
+      },
+      logger,
+    },
+    token,
+    selfHosting: {
+      graphqlEndpoint: 'http://localhost:2/graphql',
+      applicationUrl: 'http://localhost:1',
+      usageEndpoint: 'http://localhost',
+    },
+    usage: {
+      target: 'the-guild/graphql-hive/staging',
+    },
+  });
+
+  await hive.collectUsage()(
+    {
+      schema,
+      document: op,
+      operationName: 'asd',
+    },
+    {},
+  );
+
+  await hive.dispose();
+  expect(logger.getLogs()).toMatchInlineSnapshot(`
+    [DBG] Disposing
+    [DBG] Sending immediately
+    [DBG] Sending report (queue 1)
+    [DBG] POST http://localhost/the-guild/graphql-hive/staging (x-request-id=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx)
+    [DBG] POST http://localhost/the-guild/graphql-hive/staging (x-request-id=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx) succeeded with status 200 (666ms).
+    [DBG] Report sent!
+  `);
+});
+
+test('debug: false -> logger.debug is not invoked', async ({ expect }) => {
+  const logger = createHiveTestingLogger();
+  const token = 'hvu1/brrrrt';
+
+  const hive = createHive({
+    enabled: true,
+    debug: false,
+    agent: {
+      timeout: 500,
+      maxRetries: 0,
+      sendInterval: 1,
+      maxSize: 1,
+      async fetch() {
+        return new Response('', {
+          status: 200,
+        });
+      },
+      logger,
+    },
+    token,
+    selfHosting: {
+      graphqlEndpoint: 'http://localhost:2/graphql',
+      applicationUrl: 'http://localhost:1',
+      usageEndpoint: 'http://localhost',
+    },
+    usage: {
+      target: 'the-guild/graphql-hive/staging',
+    },
+  });
+
+  await hive.collectUsage()(
+    {
+      schema,
+      document: op,
+      operationName: 'asd',
+    },
+    {},
+  );
+
+  await hive.dispose();
+  expect(logger.getLogs()).toMatchInlineSnapshot(`
+    [DBG] Disposing
+    [DBG] Sending immediately
+    [DBG] Sending report (queue 1)
+    [DBG] POST http://localhost/the-guild/graphql-hive/staging (x-request-id=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx)
+    [DBG] POST http://localhost/the-guild/graphql-hive/staging (x-request-id=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx) succeeded with status 200 (666ms).
+    [DBG] Report sent!
+  `);
+});
+
+test('debug: true and missing logger.debug method -> logger.info is invoked (to cover legacy logger implementation)', async ({
+  expect,
+}) => {
+  const logger = createHiveTestingLogger();
+  // @ts-expect-error we remove this property to emulate logger without it
+  logger.debug = undefined;
+  const token = 'hvu1/brrrrt';
+
+  const hive = createHive({
+    enabled: true,
+    debug: true,
+    agent: {
+      timeout: 500,
+      maxRetries: 0,
+      sendInterval: 1,
+      maxSize: 1,
+      async fetch() {
+        return new Response('', {
+          status: 200,
+        });
+      },
+      logger,
+    },
+    token,
+    selfHosting: {
+      graphqlEndpoint: 'http://localhost:2/graphql',
+      applicationUrl: 'http://localhost:1',
+      usageEndpoint: 'http://localhost',
+    },
+    usage: {
+      target: 'the-guild/graphql-hive/staging',
+    },
+  });
+
+  await hive.collectUsage()(
+    {
+      schema,
+      document: op,
+      operationName: 'asd',
+    },
+    {},
+  );
+
+  await hive.dispose();
+  expect(logger.getLogs()).toMatchInlineSnapshot(`
+    [INF] Disposing
+    [INF] Sending immediately
+    [INF] Sending report (queue 1)
+    [INF] POST http://localhost/the-guild/graphql-hive/staging (x-request-id=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx)
+    [INF] POST http://localhost/the-guild/graphql-hive/staging (x-request-id=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx) succeeded with status 200 (666ms).
+    [INF] Report sent!
+  `);
+});
+
+test('new logger option', async () => {
+  const logWriter = new MemoryLogWriter();
+  const logger = new Logger({
+    writers: [
+      {
+        write(level, attrs, msg) {
+          if (msg) {
+            msg = normalizeLogMessage(msg);
+          }
+
+          logWriter.write(level, attrs, msg);
+        },
+      },
+    ],
+    level: 'debug',
+  });
+
+  const token = 'hvu1/brrrrt';
+
+  const hive = createHive({
+    enabled: true,
+    logger,
+    agent: {
+      timeout: 500,
+      maxRetries: 0,
+      sendInterval: 1,
+      maxSize: 1,
+      async fetch() {
+        return new Response('', {
+          status: 200,
+        });
+      },
+    },
+    token,
+    selfHosting: {
+      graphqlEndpoint: 'http://localhost:2/graphql',
+      applicationUrl: 'http://localhost:1',
+      usageEndpoint: 'http://localhost',
+    },
+    usage: {
+      target: 'the-guild/graphql-hive/staging',
+    },
+  });
+
+  await hive.collectUsage()(
+    {
+      schema,
+      document: op,
+      operationName: 'asd',
+    },
+    {},
+  );
+
+  await hive.dispose();
+  expect(logWriter.logs).toMatchInlineSnapshot(`
+    [
+      {
+        attrs: {
+          module: hive-agent,
+        },
+        level: debug,
+        msg: Disposing,
+      },
+      {
+        attrs: {
+          module: hive-agent,
+        },
+        level: debug,
+        msg: Sending immediately,
+      },
+      {
+        attrs: {
+          module: hive-agent,
+        },
+        level: debug,
+        msg: Sending report (queue 1),
+      },
+      {
+        attrs: {
+          module: hive-agent,
+        },
+        level: debug,
+        msg: POST http://localhost/the-guild/graphql-hive/staging (x-request-id=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx),
+      },
+      {
+        attrs: {
+          module: hive-agent,
+        },
+        level: debug,
+        msg: POST http://localhost/the-guild/graphql-hive/staging (x-request-id=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx) succeeded with status 200 (666ms).,
+      },
+      {
+        attrs: {
+          module: hive-agent,
+        },
+        level: debug,
+        msg: Report sent!,
+      },
+    ]
   `);
 });

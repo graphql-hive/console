@@ -2,8 +2,7 @@
 import Redis from 'ioredis';
 import ms from 'ms';
 import 'reflect-metadata';
-import { hostname } from 'os';
-import LRU from 'tiny-lru';
+import { lru } from 'tiny-lru';
 import {
   configureTracing,
   createErrorHandler,
@@ -12,15 +11,15 @@ import {
   registerTRPC,
   reportReadiness,
   SamplingDecision,
+  sentryInit,
   startHeartbeats,
   startMetrics,
   TracingInstance,
 } from '@hive/service-common';
 import * as Sentry from '@sentry/node';
 import { Context, tokensApiRouter } from './api';
-import { useCache } from './cache';
 import { env } from './environment';
-import { createStorage } from './storage';
+import { createStorage } from './multi-tier-storage';
 
 export async function main() {
   let tracing: TracingInstance | undefined;
@@ -43,18 +42,16 @@ export async function main() {
     });
 
     tracing.instrumentNodeFetch();
-    tracing.build();
-    tracing.start();
+    tracing.setup();
   }
 
   if (env.sentry) {
-    Sentry.init({
-      dist: 'tokens',
-      serverName: hostname(),
+    sentryInit({
       enabled: true,
       environment: env.environment,
       dsn: env.sentry.dsn,
       release: env.release,
+      dist: 'tokens',
     });
   }
 
@@ -80,12 +77,14 @@ export async function main() {
     maxRetriesPerRequest: 20,
     db: 0,
     enableReadyCheck: false,
+    tls: env.redis.tlsEnabled ? {} : undefined,
   });
 
-  const { start, stop, readiness, getStorage } = useCache(
-    createStorage(env.postgres, tracing ? [tracing.instrumentSlonik()] : []),
+  const storage = await createStorage(
+    env.postgres,
     redis,
     server.log,
+    tracing ? [tracing.instrumentSlonik()] : [],
   );
 
   const stopHeartbeats = env.heartbeat
@@ -94,14 +93,14 @@ export async function main() {
         endpoint: env.heartbeat.endpoint,
         intervalInMS: 20_000,
         onError: e => server.log.error(e, `Heartbeat failed with error`),
-        isReady: readiness,
+        isReady: storage.isReady,
       })
     : startHeartbeats({ enabled: false });
 
   async function shutdown() {
     stopHeartbeats();
     await server.close();
-    await stop();
+    await storage.close();
   }
 
   try {
@@ -132,7 +131,7 @@ export async function main() {
 
     // Cache failures for 1 minute
     const errorCachingInterval = ms('1m');
-    const tokenReadFailuresCache = LRU<string>(1000, errorCachingInterval);
+    const tokenReadFailuresCache = lru<string>(1000, errorCachingInterval);
 
     registerShutdown({
       logger: server.log,
@@ -145,7 +144,7 @@ export async function main() {
         return {
           req,
           errorHandler,
-          getStorage,
+          storage,
           tokenReadFailuresCache,
         };
       },
@@ -163,7 +162,7 @@ export async function main() {
       method: ['GET', 'HEAD'],
       url: '/_readiness',
       async handler(_, res) {
-        const isReady = await readiness();
+        const isReady = await storage.isReady();
         reportReadiness(isReady);
         void res.status(isReady ? 200 : 400).send();
       },
@@ -177,8 +176,6 @@ export async function main() {
       port: env.http.port,
       host: '::',
     });
-
-    await start();
   } catch (error) {
     server.log.fatal(error);
     Sentry.captureException(error, {

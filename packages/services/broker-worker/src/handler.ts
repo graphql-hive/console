@@ -42,6 +42,7 @@ export async function handleRequest(
           headers: {
             ...parsedRequest.headers,
             'x-hive-request-id': requestId,
+            'user-agent': 'Hive Request Broker',
           },
           signal: request.signal,
           redirect: 'follow',
@@ -52,6 +53,7 @@ export async function handleRequest(
           headers: {
             ...parsedRequest.headers,
             'x-hive-request-id': requestId,
+            'user-agent': 'Hive Request Broker',
           },
           signal: request.signal,
           redirect: 'follow',

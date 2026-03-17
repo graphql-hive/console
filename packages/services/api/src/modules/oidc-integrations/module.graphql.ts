@@ -17,8 +17,16 @@ export default gql`
     tokenEndpoint: String!
     userinfoEndpoint: String!
     authorizationEndpoint: String!
-    organization: Organization!
+    additionalScopes: [String!]!
+    oidcUserJoinOnly: Boolean!
     oidcUserAccessOnly: Boolean!
+    requireInvitation: Boolean!
+    defaultMemberRole: MemberRole!
+    defaultResourceAssignment: ResourceAssignment
+    """
+    List of domains registered with this OIDC integration.
+    """
+    registeredDomains: [OIDCIntegrationDomain!]!
   }
 
   extend type Mutation {
@@ -26,9 +34,141 @@ export default gql`
     updateOIDCIntegration(input: UpdateOIDCIntegrationInput!): UpdateOIDCIntegrationResult!
     deleteOIDCIntegration(input: DeleteOIDCIntegrationInput!): DeleteOIDCIntegrationResult!
     updateOIDCRestrictions(input: UpdateOIDCRestrictionsInput!): UpdateOIDCRestrictionsResult!
+    updateOIDCDefaultMemberRole(
+      input: UpdateOIDCDefaultMemberRoleInput!
+    ): UpdateOIDCDefaultMemberRoleResult!
+    updateOIDCDefaultResourceAssignment(
+      input: UpdateOIDCDefaultResourceAssignmentInput!
+    ): UpdateOIDCDefaultResourceAssignmentResult!
+    """
+    Register a domain for the OIDC provider for a verification challenge.
+    """
+    registerOIDCDomain(input: RegisterOIDCDomainInput!): RegisterOIDCDomainResult!
+    """
+    Remove a domain from the OIDC provider list.
+    """
+    deleteOIDCDomain(input: DeleteOIDCDomainInput!): DeleteOIDCDomainResult!
+    """
+    Verify the domain verification challenge
+    """
+    verifyOIDCDomainChallenge(
+      input: VerifyOIDCDomainChallengeInput!
+    ): VerifyOIDCDomainChallengeResult!
+    """
+    Request a new domain verification challenge
+    """
+    requestOIDCDomainChallenge(
+      input: RequestOIDCDomainChallengeInput!
+    ): RequestOIDCDomainChallengeResult!
   }
 
-  type Subscription {
+  input RegisterOIDCDomainInput {
+    oidcIntegrationId: ID!
+    domainName: String!
+  }
+
+  type RegisterOIDCDomainResult {
+    ok: RegisterOIDCDomainResultOk
+    error: RegisterOIDCDomainResultError
+  }
+
+  type RegisterOIDCDomainResultOk {
+    createdOIDCIntegrationDomain: OIDCIntegrationDomain!
+    oidcIntegration: OIDCIntegration!
+  }
+
+  type RegisterOIDCDomainResultError {
+    message: String!
+  }
+
+  input DeleteOIDCDomainInput {
+    oidcDomainId: ID!
+  }
+
+  type DeleteOIDCDomainResult {
+    ok: DeleteOIDCDomainOk
+    error: DeleteOIDCDomainError
+  }
+
+  type DeleteOIDCDomainOk {
+    deletedOIDCIntegrationId: ID!
+    oidcIntegration: OIDCIntegration
+  }
+
+  type DeleteOIDCDomainError {
+    message: String!
+  }
+
+  input VerifyOIDCDomainChallengeInput {
+    oidcDomainId: ID!
+  }
+
+  type VerifyOIDCDomainChallengeResult {
+    ok: VerifyOIDCDomainChallengeOk
+    error: VerifyOIDCDomainChallengeError
+  }
+
+  type VerifyOIDCDomainChallengeOk {
+    verifiedOIDCIntegrationDomain: OIDCIntegrationDomain!
+  }
+
+  type VerifyOIDCDomainChallengeError {
+    message: String!
+  }
+
+  input RequestOIDCDomainChallengeInput {
+    oidcDomainId: ID!
+  }
+
+  type RequestOIDCDomainChallengeResult {
+    ok: RequestOIDCDomainChallengeResultOk
+    error: RequestOIDCDomainChallengeResultError
+  }
+
+  type RequestOIDCDomainChallengeResultOk {
+    oidcIntegrationDomain: OIDCIntegrationDomain
+  }
+
+  type RequestOIDCDomainChallengeResultError {
+    message: String!
+  }
+
+  type OIDCIntegrationDomain {
+    id: ID!
+    domainName: String!
+    createdAt: DateTime!
+    verifiedAt: DateTime
+    challenge: OIDCIntegrationDomainChallenge
+  }
+
+  type OIDCIntegrationDomainChallenge {
+    recordName: String!
+    recordType: String!
+    recordValue: String!
+  }
+
+  """
+  @oneOf
+  """
+  type UpdateOIDCDefaultResourceAssignmentResult {
+    ok: UpdateOIDCDefaultResourceAssignmentOk
+    error: UpdateOIDCDefaultResourceAssignmentError
+  }
+
+  type UpdateOIDCDefaultResourceAssignmentOk {
+    updatedOIDCIntegration: OIDCIntegration!
+  }
+
+  type UpdateOIDCDefaultResourceAssignmentError implements Error {
+    message: String!
+  }
+
+  input UpdateOIDCDefaultResourceAssignmentInput {
+    oidcIntegrationId: ID!
+    resources: ResourceAssignmentInput!
+  }
+
+  extend type Subscription {
     """
     Subscribe to logs from the OIDC provider integration.
     Helpful for debugging failing logins.
@@ -52,6 +192,7 @@ export default gql`
     tokenEndpoint: String!
     userinfoEndpoint: String!
     authorizationEndpoint: String!
+    additionalScopes: [String!]!
   }
 
   type CreateOIDCIntegrationResult {
@@ -70,6 +211,7 @@ export default gql`
     tokenEndpoint: String
     userinfoEndpoint: String
     authorizationEndpoint: String
+    additionalScopes: String
   }
 
   type CreateOIDCIntegrationError implements Error {
@@ -84,6 +226,7 @@ export default gql`
     tokenEndpoint: String
     userinfoEndpoint: String
     authorizationEndpoint: String
+    additionalScopes: [String!]
   }
 
   type UpdateOIDCIntegrationResult {
@@ -101,6 +244,7 @@ export default gql`
     tokenEndpoint: String
     userinfoEndpoint: String
     authorizationEndpoint: String
+    additionalScopes: String
   }
 
   type UpdateOIDCIntegrationError implements Error {
@@ -131,7 +275,9 @@ export default gql`
     Applies only to newly invited members.
     Existing members are not affected.
     """
-    oidcUserAccessOnly: Boolean!
+    oidcUserJoinOnly: Boolean
+    oidcUserAccessOnly: Boolean
+    requireInvitation: Boolean
   }
 
   """
@@ -147,6 +293,27 @@ export default gql`
   }
 
   type UpdateOIDCRestrictionsError implements Error {
+    message: String!
+  }
+
+  input UpdateOIDCDefaultMemberRoleInput {
+    oidcIntegrationId: ID!
+    defaultMemberRoleId: ID!
+  }
+
+  """
+  @oneOf
+  """
+  type UpdateOIDCDefaultMemberRoleResult {
+    ok: UpdateOIDCDefaultMemberRoleOk
+    error: UpdateOIDCDefaultMemberRoleError
+  }
+
+  type UpdateOIDCDefaultMemberRoleOk {
+    updatedOIDCIntegration: OIDCIntegration!
+  }
+
+  type UpdateOIDCDefaultMemberRoleError implements Error {
     message: String!
   }
 `;

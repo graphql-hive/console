@@ -34,6 +34,9 @@ test('increase the defaultBytesPerOperation estimation by 5% when over 100 calls
     limitInBytes: eventHubLimitInBytes,
     useEstimator: true,
     onRetry,
+    isTooLargePayloadError() {
+      return true;
+    },
     calculateReportSize(report) {
       return report.size;
     },
@@ -150,6 +153,9 @@ test('buffer should split the report into multiple reports when the estimated si
     interval,
     limitInBytes: eventHubLimitInBytes,
     useEstimator: true,
+    isTooLargePayloadError() {
+      return true;
+    },
     calculateReportSize(report) {
       return report.size;
     },
@@ -262,6 +268,9 @@ test('buffer create two chunks out of one buffer when actual buffer size is too 
     interval,
     limitInBytes: eventHubLimitInBytes,
     useEstimator: true,
+    isTooLargePayloadError() {
+      return true;
+    },
     calculateReportSize(report) {
       return report.size;
     },

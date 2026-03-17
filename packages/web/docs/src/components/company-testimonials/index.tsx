@@ -1,19 +1,27 @@
+'use client';
+
 import React, { Fragment, useRef } from 'react';
 import Head from 'next/head';
 import Image, { StaticImageData } from 'next/image';
 import * as Tabs from '@radix-ui/react-tabs';
-import { CallToAction, Heading } from '@theguild/components';
-import { cn } from '../../lib';
+import { CallToAction, cn, Heading } from '@theguild/components';
 import { ArrowIcon } from '../arrow-icon';
-import { KarrotLogo, NacelleLogo, WealthsimpleLogo, type LogoProps } from '../company-logos';
+import {
+  KarrotLogo,
+  NacelleLogo,
+  ProdigyLogo,
+  WealthsimpleLogo,
+  type LogoProps,
+} from '../company-logos';
 import karrotPicture from './karrot-picture.webp';
 import nacellePicture from './nacelle-picture.webp';
+import prodigyPicture from './prodigy-picture.webp';
 import wealthsimplePicture from './wealthsimple-picture.webp';
 
 type Testimonial = {
   company: string;
   logo: (props: LogoProps) => React.ReactElement;
-  text: string;
+  text: React.ReactNode;
   picture?: {
     img: string | StaticImageData;
     className?: string;
@@ -27,7 +35,7 @@ const testimonials: Testimonial[] = [
   {
     company: 'nacelle',
     logo: NacelleLogo,
-    text: "Our migration from Apollo to Hive was incredibly straightforward. In less than a month, we had about 20 services running on Hive in production. The process was smooth, and the Hive team's friendly demeanor made it even more pleasant. Although we haven't needed direct assistance with our implementation, their openness to feedback and generally nice attitude has fostered a sense of collaboration and partnership.",
+    text: "Our migration from Apollo GraphOS to Hive was incredibly straightforward. In less than a month, we had about 20 subgraphs running on Hive in production. The process was smooth, and the Hive team's friendly demeanor made it even more pleasant. Although we haven't needed direct assistance with our implementation, their openness to feedback and generally nice attitude has fostered a sense of collaboration and partnership.",
     picture: { img: nacellePicture },
     // data: [
     //   { numbers: '65M+', description: 'daily events processed' },
@@ -38,7 +46,7 @@ const testimonials: Testimonial[] = [
   {
     company: 'Karrot',
     logo: KarrotLogo,
-    text: 'We use GraphQL Hive as schema registry and monitoring tool. As a schema registry, we can publish GraphQL Schema with decoupled any application code. As a monitoring tool, we can find useful metrics. For example operation latency, usage of deprecated field. The great thing about GraphQL Hive is that it is easy to use, we have already integrated many tools like Slack or Github.',
+    text: 'We use Hive as schema registry and monitoring tool. As a schema registry, we can publish GraphQL Schema with decoupled any application code. As a monitoring tool, we can find useful metrics. For example operation latency, usage of deprecated field. The great thing about GraphQL Hive is that it is easy to use, we have already integrated many tools like Slack or Github.',
     picture: { img: karrotPicture },
   },
   {
@@ -54,6 +62,28 @@ const testimonials: Testimonial[] = [
     picture: {
       img: wealthsimplePicture,
     },
+    caseStudyHref: '/case-studies/wealthsimple',
+  },
+  {
+    company: 'Prodigy',
+    logo: ({ className, ...props }) => (
+      <div className={cn('flex h-8 w-min items-center justify-center', className)}>
+        <ProdigyLogo {...props} className="" height={37} />
+      </div>
+    ),
+    text: (
+      <>
+        Hive is essential to us handling more than 750M GraphQL requests every month. We ship with
+        certainty that schema changes will not break clients. The <code>atLeastOnceSampler</code> is
+        crucial to capture telemetry from less-often run operations. The schema explorer condenses
+        hours of searching through Github for client usage down to minutes.
+      </>
+    ),
+    picture: {
+      img: prodigyPicture,
+      className: 'bg-[#a9e7f599]',
+    },
+    data: [{ numbers: '>750M', description: 'requests every month' }],
   },
 ];
 
@@ -89,17 +119,21 @@ export function CompanyTestimonialsSection({ className }: { className?: string }
         )}
       >
         <Heading as="h2" size="md">
-          Loved by developers, trusted by businesses
+          Loved by Developers, Trusted by Businesses
         </Heading>
         <Tabs.Root
           defaultValue={testimonials[0].company}
-          className="flex flex-col"
+          className="flex flex-col overflow-hidden"
+          // we need scrolling for mobile, so this can't be changed to a state-driven opacity transition
           onValueChange={value => {
             const id = getTestimonialId(value);
-            const element = document.getElementById(id);
-            if (element) {
-              element.scrollIntoView({ behavior: 'instant', block: 'nearest', inline: 'nearest' });
-            }
+            const element = document.getElementById(id)?.parentElement;
+            const scrollview = scrollviewRef.current;
+
+            if (!scrollview || !element) return;
+
+            // we don't use scrollIntoView because it will also scroll vertically
+            scrollview.scrollTo({ left: element.offsetLeft, behavior: 'instant' });
           }}
         >
           <Tabs.List
@@ -112,14 +146,7 @@ export function CompanyTestimonialsSection({ className }: { className?: string }
                 <Tabs.Trigger
                   key={testimonial.company}
                   value={testimonial.company}
-                  className={
-                    'hive-focus flex-grow-0 [&[data-state="active"]>:first-child]:bg-blue-400' +
-                    ' lg:rdx-state-active:bg-white lg:flex-grow lg:bg-transparent' +
-                    ' justify-center p-0.5 lg:p-4' +
-                    ' rdx-state-active:text-green-1000 lg:rdx-state-active:border-beige-600' +
-                    ' border-transparent font-medium leading-6 text-green-800 lg:border' +
-                    ' flex flex-1 items-center justify-center rounded-[15px]'
-                  }
+                  className='hive-focus lg:rdx-state-active:bg-white rdx-state-active:text-green-1000 lg:rdx-state-active:border-beige-600 flex flex-1 grow-0 items-center justify-center rounded-[15px] border-transparent p-0.5 font-medium leading-6 text-green-800 lg:grow lg:border lg:bg-transparent lg:p-4 [&[data-state="active"]>:first-child]:bg-blue-400'
                 >
                   <div className="size-2 rounded-full bg-blue-200 transition-colors lg:hidden" />
                   <Logo title={testimonial.company} height={32} className="max-lg:sr-only" />
@@ -130,7 +157,7 @@ export function CompanyTestimonialsSection({ className }: { className?: string }
           <div
             /* mobile scrollview */
             ref={scrollviewRef}
-            className="-m-2 -mb-10 flex snap-x snap-mandatory gap-4 overflow-auto p-2 lg:pb-10"
+            className="no-scrollbar -m-2 -mb-10 flex snap-x snap-mandatory gap-4 overflow-auto p-2 lg:pb-10"
             onScroll={updateDotsOnScroll.current}
           >
             {testimonials.map(
@@ -141,9 +168,9 @@ export function CompanyTestimonialsSection({ className }: { className?: string }
                     value={company}
                     tabIndex={-1}
                     className={cn(
-                      'relative flex w-full shrink-0 snap-center flex-col' +
-                        ' gap-6 md:flex-row lg:gap-12' +
-                        ' lg:data-[state="inactive"]:hidden',
+                      'relative flex w-full shrink-0 snap-center flex-col outline-none',
+                      'gap-6 md:flex-row lg:gap-12',
+                      'lg:data-[state="inactive"]:hidden',
                       caseStudyHref
                         ? 'data-[state="active"]:pb-[72px] lg:data-[state="active"]:pb-0'
                         : 'max-lg:pb-8',
@@ -165,7 +192,12 @@ export function CompanyTestimonialsSection({ className }: { className?: string }
                     )}
                     <article className="max-lg:mt-6 lg:relative" id={getTestimonialId(company)}>
                       <Logo title={company} height={32} className="text-blue-1000 mb-6 lg:hidden" />
-                      <blockquote className="sm:blockquote-beige-500 lg:text-xl xl:text-2xl xl:leading-[32px]">
+                      <blockquote
+                        className={cn(
+                          'sm:blockquote-beige-500 lg:text-xl xl:text-2xl xl:leading-[32px] [&_code]:font-mono [&_code]:text-[0.9em]',
+                          data && 'lg:text-lg',
+                        )}
+                      >
                         {text}
                       </blockquote>
                       {person && <TestimonialPerson className="mt-6" person={person} />}
@@ -175,7 +207,7 @@ export function CompanyTestimonialsSection({ className }: { className?: string }
                           href={caseStudyHref}
                           className="absolute bottom-0 w-full md:w-fit"
                         >
-                          Read Case Study
+                          Read the case study
                           <ArrowIcon />
                         </CallToAction>
                       )}
@@ -187,12 +219,7 @@ export function CompanyTestimonialsSection({ className }: { className?: string }
                           {data.map(({ numbers, description }, i) => (
                             <Fragment key={i}>
                               <li>
-                                <span
-                                  className={
-                                    'block text-[40px] leading-[1.2] tracking-[-0.2px]' +
-                                    ' md:text-6xl md:leading-[1.1875] md:tracking-[-0.64px]'
-                                  }
-                                >
+                                <span className="block text-[40px] leading-[1.2] tracking-[-0.2px] md:text-6xl md:leading-[1.1875] md:tracking-[-0.64px]">
                                   {numbers}
                                 </span>
                                 <span className="mt-2">{description}</span>

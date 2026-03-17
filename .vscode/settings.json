@@ -1,14 +1,27 @@
 {
+  "search.exclude": {
+    "**/dist": true,
+    "**/pnpm-lock.yaml": true,
+    "**/*.tsbuildinfo": true,
+    "**/*.next": true,
+    "**/*.turbo": true,
+    "**/web/docs/out": true
+  },
   "commands.commands": [
     {
       "command": "terminals.runTerminals",
-      "color": "#eab308",
-      "text": "$(rocket) Start Hive $(rocket)",
+      "text": "$(rocket) Start Hive",
       "tooltip": "Start dev environment"
+    },
+    {
+      "command": "terminals.kill",
+      "text": "$(stop)",
+      "tooltip": "Stop dev environment"
     }
   ],
   "files.associations": {
-    "*.env.template": "dotenv"
+    "*.env.template": "dotenv",
+    "*.css": "tailwindcss"
   },
   "editor.codeActionsOnSave": {
     "source.organizeImports": "never"
@@ -23,10 +36,17 @@
   "typescript.tsdk": "node_modules/typescript/lib",
   "typescript.enablePromptUseWorkspaceTsdk": true,
   "git.mergeEditor": false,
-  "tailwindCSS.experimental.classRegex": [
-    ["cva\\(([^)]*)\\)", "[\"'`]([^\"'`]*).*?[\"'`]"],
-    ["cx\\(([^)]*)\\)", "(?:'|\"|`)([^']*)(?:'|\"|`)"],
-    ["cn\\(([^)]*)\\)", "(?:'|\"|`)([^']*)(?:'|\"|`)"],
-    ["clsx\\(([^)]*)\\)", "(?:'|\"|`)([^']*)(?:'|\"|`)"]
-  ]
+  "tailwindCSS.experimental.configFile": {
+    "packages/web/app/src/index.css": "packages/web/app/**"
+  },
+  "tailwindCSS.classFunctions": ["cva", "cx", "cn", "clsx"],
+  "[typescript]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "[yaml]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "[rust]": {
+    "editor.defaultFormatter": "rust-lang.rust-analyzer"
+  }
 }

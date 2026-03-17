@@ -1,18 +1,17 @@
-import { useCallback } from 'react';
+import { useCallback, useMemo } from 'react';
+import { ArrowRightIcon } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { useMutation, useQuery } from 'urql';
 import { z } from 'zod';
+import { Checkbox } from '@/components/base/checkbox/checkbox';
 import { OrganizationLayout, Page } from '@/components/layouts/organization';
-import { OIDCIntegrationSection } from '@/components/organization/settings/oidc-integration-section';
+import { SubPageNavigationLink } from '@/components/navigation/sub-page-navigation-link';
+import { AccessTokensSubPage } from '@/components/organization/settings/access-tokens/access-tokens-sub-page';
+import { PersonalAccessTokensSubPage } from '@/components/organization/settings/personal-access-tokens/personal-access-tokens-sub-page';
+import { SingleSignOnSubpage } from '@/components/organization/settings/single-sign-on/single-sign-on-subpage';
+import { PolicySettings } from '@/components/policy/policy-settings';
 import { Button } from '@/components/ui/button';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
+import { CardDescription } from '@/components/ui/card';
 import {
   Dialog,
   DialogContent,
@@ -26,36 +25,23 @@ import { Form, FormControl, FormField, FormItem, FormMessage } from '@/component
 import { GitHubIcon, SlackIcon } from '@/components/ui/icon';
 import { Input } from '@/components/ui/input';
 import { Meta } from '@/components/ui/meta';
-import { Subtitle, Title } from '@/components/ui/page';
+import {
+  NavLayout,
+  PageLayout,
+  PageLayoutContent,
+  SubPageLayout,
+  SubPageLayoutHeader,
+} from '@/components/ui/page-content-layout';
 import { QueryError } from '@/components/ui/query-error';
+import { ResourceDetails } from '@/components/ui/resource-details';
 import { useToast } from '@/components/ui/use-toast';
 import { TransferOrganizationOwnershipModal } from '@/components/v2/modals';
-import { Tag } from '@/components/v2/tag';
 import { env } from '@/env/frontend';
 import { FragmentType, graphql, useFragment } from '@/gql';
-import {
-  canAccessOrganization,
-  OrganizationAccessScope,
-  useOrganizationAccess,
-} from '@/lib/access/organization';
+import { useRedirect } from '@/lib/access/common';
 import { useToggle } from '@/lib/hooks';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useRouter } from '@tanstack/react-router';
-
-const Integrations_CheckIntegrationsQuery = graphql(`
-  query Integrations_CheckIntegrationsQuery($selector: OrganizationSelectorInput!) {
-    organization(selector: $selector) {
-      organization {
-        id
-        viewerCanManageOIDCIntegration
-        ...OIDCIntegrationSection_OrganizationFragment
-        hasSlackIntegration
-        hasGitHubIntegration
-      }
-    }
-    isGitHubIntegrationFeatureEnabled
-  }
-`);
 
 const DeleteSlackIntegrationMutation = graphql(`
   mutation Integrations_DeleteSlackIntegration($input: OrganizationSelectorInput!) {
@@ -79,99 +65,90 @@ const DeleteGitHubIntegrationMutation = graphql(`
   }
 `);
 
-function Integrations(props: { organizationSlug: string }) {
-  const [checkIntegrations] = useQuery({
-    query: Integrations_CheckIntegrationsQuery,
-    variables: {
-      selector: {
-        organizationSlug: props.organizationSlug,
-      },
-    },
-  });
-
-  const [deleteSlackMutation, deleteSlack] = useMutation(DeleteSlackIntegrationMutation);
-  const [deleteGitHubMutation, deleteGitHub] = useMutation(DeleteGitHubIntegrationMutation);
-
-  if (checkIntegrations.fetching) {
-    return null;
+const GitHubIntegrationSection_OrganizationFragment = graphql(`
+  fragment GitHubIntegrationSection_OrganizationFragment on Organization {
+    hasGitHubIntegration
+    slug
   }
+`);
 
-  const isGitHubIntegrationFeatureEnabled =
-    checkIntegrations.data?.isGitHubIntegrationFeatureEnabled;
-  const hasGitHubIntegration =
-    checkIntegrations.data?.organization?.organization.hasGitHubIntegration === true;
-  const hasSlackIntegration =
-    checkIntegrations.data?.organization?.organization.hasSlackIntegration === true;
+function GitHubIntegrationSection(props: {
+  organization: FragmentType<typeof GitHubIntegrationSection_OrganizationFragment>;
+}) {
+  const [deleteGitHubMutation, deleteGitHub] = useMutation(DeleteGitHubIntegrationMutation);
+  const organization = useFragment(
+    GitHubIntegrationSection_OrganizationFragment,
+    props.organization,
+  );
 
-  return (
-    <>
-      {env.integrations.slack === false ? null : (
-        <div className="flex items-center gap-x-4">
-          {hasSlackIntegration ? (
-            <Button
-              variant="destructive"
-              disabled={deleteSlackMutation.fetching}
-              onClick={async () => {
-                await deleteSlack({
-                  input: {
-                    organizationSlug: props.organizationSlug,
-                  },
-                });
-              }}
-            >
-              <SlackIcon className="mr-2" />
-              Disconnect Slack
-            </Button>
-          ) : (
-            <Button variant="secondary" asChild>
-              <a href={`/api/slack/connect/${props.organizationSlug}`}>
-                <SlackIcon className="mr-2" />
-                Connect Slack
-              </a>
-            </Button>
-          )}
-          <Tag>Alerts and notifications</Tag>
-        </div>
-      )}
-      {isGitHubIntegrationFeatureEnabled === false ? null : (
-        <div className="flex items-center gap-x-4">
-          <>
-            {hasGitHubIntegration ? (
-              <>
-                <Button
-                  variant="destructive"
-                  disabled={deleteGitHubMutation.fetching}
-                  onClick={async () => {
-                    await deleteGitHub({
-                      input: {
-                        organizationSlug: props.organizationSlug,
-                      },
-                    });
-                  }}
-                >
-                  <GitHubIcon className="mr-2" />
-                  Disconnect GitHub
-                </Button>
-                <Button variant="link" asChild>
-                  <a href={`/api/github/connect/${props.organizationSlug}`}>Adjust permissions</a>
-                </Button>
-              </>
-            ) : (
-              <Button variant="secondary" asChild>
-                <a href={`/api/github/connect/${props.organizationSlug}`}>
-                  <GitHubIcon className="mr-2" />
-                  Connect GitHub
-                </a>
-              </Button>
-            )}
-            <Tag>Allow Hive to communicate with GitHub</Tag>
-          </>
-        </div>
-      )}
-      {checkIntegrations.data?.organization?.organization.viewerCanManageOIDCIntegration ? (
-        <OIDCIntegrationSection organization={checkIntegrations.data?.organization?.organization} />
-      ) : null}
-    </>
+  return organization.hasGitHubIntegration ? (
+    <div className="flex flex-row justify-start gap-3">
+      <Button
+        variant="destructive"
+        disabled={deleteGitHubMutation.fetching}
+        onClick={async () => {
+          await deleteGitHub({
+            input: {
+              organizationSlug: organization.slug,
+            },
+          });
+        }}
+      >
+        <GitHubIcon className="mr-2" />
+        Disconnect GitHub
+      </Button>
+      <Button variant="destructive" asChild>
+        <a href={`/api/github/connect/${organization.slug}`}>Adjust permissions</a>
+      </Button>
+    </div>
+  ) : (
+    <Button variant="default" asChild>
+      <a href={`/api/github/connect/${organization.slug}`}>
+        <GitHubIcon className="mr-2" />
+        Connect GitHub
+      </a>
+    </Button>
+  );
+}
+
+const SlackIntegrationSection_OrganizationFragment = graphql(`
+  fragment SlackIntegrationSection_OrganizationFragment on Organization {
+    hasSlackIntegration
+    slug
+  }
+`);
+
+function SlackIntegrationSection(props: {
+  organization: FragmentType<typeof SlackIntegrationSection_OrganizationFragment>;
+}) {
+  const [deleteSlackMutation, deleteSlack] = useMutation(DeleteSlackIntegrationMutation);
+  const organization = useFragment(
+    SlackIntegrationSection_OrganizationFragment,
+    props.organization,
+  );
+
+  return organization.hasSlackIntegration ? (
+    <Button
+      variant="destructive"
+      disabled={deleteSlackMutation.fetching}
+      onClick={async () => {
+        await deleteSlack({
+          input: {
+            organizationSlug: organization.slug,
+          },
+        });
+      }}
+    >
+      <SlackIcon className="mr-2" />
+      Disconnect Slack
+    </Button>
+  ) : (
+    <Button variant="default" asChild>
+      <a href={`/api/slack/connect/${organization.slug}`}>
+        <SlackIcon className="mr-2" />
+        Connect Slack
+      </a>
+    </Button>
   );
 }
 
@@ -200,11 +177,16 @@ const SettingsPageRenderer_OrganizationFragment = graphql(`
   fragment SettingsPageRenderer_OrganizationFragment on Organization {
     id
     slug
-    me {
-      ...CanAccessOrganization_MemberFragment
-      isOwner
-    }
+    viewerCanDelete
+    viewerCanTransferOwnership
+    viewerCanModifySlug
+    viewerCanManageOIDCIntegration
+    viewerCanModifySlackIntegration
+    viewerCanModifyGitHubIntegration
+    viewerCanExportAuditLogs
     ...TransferOrganizationOwnershipModal_OrganizationFragment
+    ...GitHubIntegrationSection_OrganizationFragment
+    ...SlackIntegrationSection_OrganizationFragment
   }
 `);
 
@@ -220,20 +202,15 @@ const SlugFormSchema = z.object({
 
 type SlugFormValues = z.infer<typeof SlugFormSchema>;
 
-const SettingsPageRenderer = (props: {
+const OrganizationSettingsContent = (props: {
   organization: FragmentType<typeof SettingsPageRenderer_OrganizationFragment>;
   organizationSlug: string;
 }) => {
   const organization = useFragment(SettingsPageRenderer_OrganizationFragment, props.organization);
-  const hasAccess = useOrganizationAccess({
-    scope: OrganizationAccessScope.Settings,
-    member: organization.me,
-    redirect: true,
-    organizationSlug: props.organizationSlug,
-  });
   const router = useRouter();
   const [isDeleteModalOpen, toggleDeleteModalOpen] = useToggle();
   const [isTransferModalOpen, toggleTransferModalOpen] = useToggle();
+  const [isAuditLogsModalOpen, toggleAuditLogsModalOpen] = useToggle();
   const { toast } = useToast();
 
   const [_slugMutation, slugMutate] = useMutation(UpdateOrganizationSlugMutation);
@@ -287,186 +264,427 @@ const SettingsPageRenderer = (props: {
   );
 
   return (
-    <div>
-      <div className="py-6">
-        <Title>Organization Settings</Title>
-        <Subtitle>Manage your organization settings and integrations.</Subtitle>
-      </div>
+    <div className="space-y-12">
+      <ResourceDetails id={organization.id} label="Organization ID" />
+      {organization.viewerCanModifySlug && (
+        <Form {...slugForm}>
+          <form onSubmit={slugForm.handleSubmit(onSlugFormSubmit)}>
+            <SubPageLayout>
+              <SubPageLayoutHeader
+                subPageTitle="Organization Slug"
+                description={
+                  <>
+                    <CardDescription>
+                      This is your organization's URL namespace on GraphQL Hive. Changing it{' '}
+                      <span className="font-bold">will</span> invalidate any existing links to your
+                      organization.
+                    </CardDescription>
+                    <CardDescription>
+                      <DocsLink
+                        className="text-neutral-10 text-sm"
+                        href="/management/organizations#change-slug-of-organization"
+                      >
+                        You can read more about it in the documentation
+                      </DocsLink>
+                    </CardDescription>
+                  </>
+                }
+              />
+              <FormField
+                control={slugForm.control}
+                name="slug"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormControl>
+                      <div className="flex items-center">
+                        <div className="border-neutral-5 text-neutral-10 bg-neutral-2 h-10 rounded-md rounded-r-none border-y border-l px-3 py-2 text-sm">
+                          {env.appBaseUrl.replace(/https?:\/\//i, '')}/
+                        </div>
+                        <Input placeholder="slug" className="w-48 rounded-l-none" {...field} />
+                      </div>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <Button disabled={slugForm.formState.isSubmitting} className="px-10" type="submit">
+                Save
+              </Button>
+            </SubPageLayout>
+          </form>
+        </Form>
+      )}
 
-      {hasAccess ? (
-        <div className="flex flex-col gap-y-4">
-          <Form {...slugForm}>
-            <form onSubmit={slugForm.handleSubmit(onSlugFormSubmit)}>
-              <Card>
-                <CardHeader>
-                  <CardTitle>Organization Slug</CardTitle>
-                  <CardDescription>
-                    This is your organization's URL namespace on GraphQL Hive. Changing it{' '}
-                    <span className="font-bold">will</span> invalidate any existing links to your
-                    organization.
-                    <br />
-                    <DocsLink
-                      className="text-muted-foreground text-sm"
-                      href="/management/organizations#change-slug-of-organization"
-                    >
-                      You can read more about it in the documentation
-                    </DocsLink>
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="grid gap-4">
-                  <FormField
-                    control={slugForm.control}
-                    name="slug"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormControl>
-                          <div className="flex items-center">
-                            <div className="border-input text-muted-foreground h-10 rounded-md rounded-r-none border-y border-l bg-gray-900 px-3 py-2 text-sm">
-                              {env.appBaseUrl.replace(/https?:\/\//i, '')}/
-                            </div>
-                            <Input placeholder="slug" className="w-48 rounded-l-none" {...field} />
-                          </div>
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </CardContent>
-                <CardFooter className="flex justify-between">
-                  <Button
-                    disabled={slugForm.formState.isSubmitting}
-                    className="px-10"
-                    type="submit"
-                  >
-                    Save
-                  </Button>
-                </CardFooter>
-              </Card>
-            </form>
-          </Form>
-
-          {canAccessOrganization(OrganizationAccessScope.Integrations, organization.me) && (
-            <Card>
-              <CardHeader>
-                <CardTitle>Integrations</CardTitle>
+      {organization.viewerCanModifySlackIntegration && (
+        <SubPageLayout>
+          <SubPageLayoutHeader
+            subPageTitle="Slack Integration"
+            description={
+              <>
                 <CardDescription>
-                  Authorize external services to make them available for your the projects under
-                  this organization.
-                  <br />
+                  Link your Hive organization with Slack for schema change notifications.
+                </CardDescription>
+                <CardDescription>
                   <DocsLink
-                    className="text-muted-foreground text-sm"
-                    href="/management/organizations#integrations"
+                    className="text-neutral-10 text-sm"
+                    href="/management/organizations#slack"
                   >
-                    You can find here instructions and full documentation for the available
-                    integration
+                    Learn more.
                   </DocsLink>
                 </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="flex flex-col gap-y-4 text-gray-500">
-                  <Integrations organizationSlug={props.organizationSlug} />
-                </div>
-              </CardContent>
-            </Card>
-          )}
+              </>
+            }
+          />
+          <SlackIntegrationSection organization={organization} />
+        </SubPageLayout>
+      )}
 
-          {organization.me.isOwner && (
-            <Card>
-              <CardHeader>
-                <CardTitle>Transfer Ownership</CardTitle>
+      {organization.viewerCanModifyGitHubIntegration && (
+        <SubPageLayout>
+          <SubPageLayoutHeader
+            subPageTitle="GitHub Integration"
+            description={
+              <>
+                <CardDescription>Link your Hive organization with GitHub.</CardDescription>
+                <CardDescription>
+                  <DocsLink
+                    className="text-neutral-10 text-sm"
+                    href="/management/organizations#github"
+                  >
+                    Learn more.
+                  </DocsLink>
+                </CardDescription>
+              </>
+            }
+          />
+          <GitHubIntegrationSection organization={organization} />
+        </SubPageLayout>
+      )}
+
+      {organization.viewerCanTransferOwnership && (
+        <SubPageLayout>
+          <SubPageLayoutHeader
+            subPageTitle="Transfer Ownership"
+            description={
+              <>
                 <CardDescription>
                   <strong>You are currently the owner of the organization.</strong> You can transfer
                   the organization to another member of the organization, or to an external user.
-                  <br />
+                </CardDescription>
+                <CardDescription>
                   <DocsLink
-                    className="text-muted-foreground text-sm"
+                    className="text-neutral-10 text-sm"
                     href="/management/organizations#transfer-ownership"
                   >
                     Learn more about the process
                   </DocsLink>
                 </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <Button
-                      variant="destructive"
-                      onClick={toggleTransferModalOpen}
-                      className="px-5"
-                    >
-                      Transfer Ownership
-                    </Button>
-                    <TransferOrganizationOwnershipModal
-                      isOpen={isTransferModalOpen}
-                      toggleModalOpen={toggleTransferModalOpen}
-                      organization={organization}
-                    />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          )}
+              </>
+            }
+          />
+          <Button variant="destructive" onClick={toggleTransferModalOpen} className="px-5">
+            Transfer Ownership
+          </Button>
+          <TransferOrganizationOwnershipModal
+            isOpen={isTransferModalOpen}
+            toggleModalOpen={toggleTransferModalOpen}
+            organization={organization}
+          />
+        </SubPageLayout>
+      )}
 
-          {canAccessOrganization(OrganizationAccessScope.Delete, organization.me) && (
-            <Card>
-              <CardHeader>
-                <CardTitle>Delete Organization</CardTitle>
+      {organization.viewerCanDelete && (
+        <SubPageLayout>
+          <SubPageLayoutHeader
+            subPageTitle="Delete Organization"
+            description={
+              <>
                 <CardDescription>
                   Deleting an organization will delete all the projects, targets, schemas and data
                   associated with it.
-                  <br />
+                </CardDescription>
+                <CardDescription>
                   <DocsLink
-                    className="text-muted-foreground text-sm"
+                    className="text-neutral-10 text-sm"
                     href="/management/organizations#delete-an-organization"
                   >
-                    <strong>This action is not reversible!</strong> You can find more information
-                    about this process in the documentation
+                    <span>
+                      <strong>This action is not reversible!</strong> You can find more information
+                      about this process in the documentation
+                    </span>
                   </DocsLink>
                 </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <Button variant="destructive" onClick={toggleDeleteModalOpen} className="px-5">
-                  Delete Organization
-                </Button>
-                <DeleteOrganizationModal
-                  organizationSlug={props.organizationSlug}
-                  isOpen={isDeleteModalOpen}
-                  toggleModalOpen={toggleDeleteModalOpen}
-                />
-              </CardContent>
-            </Card>
-          )}
-        </div>
-      ) : null}
+              </>
+            }
+          />
+          <Button variant="destructive" onClick={toggleDeleteModalOpen} className="px-5">
+            Delete Organization
+          </Button>
+          <DeleteOrganizationModal
+            organizationSlug={props.organizationSlug}
+            isOpen={isDeleteModalOpen}
+            toggleModalOpen={toggleDeleteModalOpen}
+          />
+        </SubPageLayout>
+      )}
+
+      {organization.viewerCanExportAuditLogs && (
+        <SubPageLayout>
+          <SubPageLayoutHeader
+            subPageTitle="Audit Logs"
+            description={
+              <>
+                <CardDescription>
+                  View a history of changes made to the organization settings.
+                </CardDescription>
+                <CardDescription>
+                  <DocsLink className="text-neutral-10 text-sm" href="/management/audit-logs">
+                    Learn more.
+                  </DocsLink>
+                </CardDescription>
+              </>
+            }
+          />
+          <Button variant="default" onClick={toggleAuditLogsModalOpen} className="px-5">
+            Export Audit Logs
+          </Button>
+          <AuditLogsOrganizationModal
+            organizationSlug={organization.slug}
+            isOpen={isAuditLogsModalOpen}
+            toggleModalOpen={toggleAuditLogsModalOpen}
+          />
+        </SubPageLayout>
+      )}
     </div>
   );
 };
 
-const OrganizationSettingsPageQuery = graphql(`
-  query OrganizationSettingsPageQuery($selector: OrganizationSelectorInput!) {
-    organization(selector: $selector) {
-      organization {
-        ...SettingsPageRenderer_OrganizationFragment
+const OrganizationPolicySettings_OrganizationFragment = graphql(`
+  fragment OrganizationPolicySettings_OrganizationFragment on Organization {
+    id
+    slug
+    schemaPolicy {
+      id
+      updatedAt
+      ...PolicySettings_SchemaPolicyFragment
+    }
+    viewerCanModifySchemaPolicy
+  }
+`);
+
+const UpdateSchemaPolicyForOrganization = graphql(`
+  mutation UpdateSchemaPolicyForOrganization(
+    $selector: OrganizationSelectorInput!
+    $policy: SchemaPolicyInput!
+    $allowOverrides: Boolean!
+  ) {
+    updateSchemaPolicyForOrganization(
+      selector: $selector
+      policy: $policy
+      allowOverrides: $allowOverrides
+    ) {
+      error {
+        message
+      }
+      ok {
+        organization {
+          id
+          schemaPolicy {
+            id
+            updatedAt
+            allowOverrides
+            ...PolicySettings_SchemaPolicyFragment
+          }
+        }
       }
     }
   }
 `);
 
-function SettingsPageContent(props: { organizationSlug: string }) {
+function OrganizationPolicySettings(props: {
+  organization: FragmentType<typeof OrganizationPolicySettings_OrganizationFragment>;
+}) {
+  const [mutation, mutate] = useMutation(UpdateSchemaPolicyForOrganization);
+  const { toast } = useToast();
+
+  const currentOrganization = useFragment(
+    OrganizationPolicySettings_OrganizationFragment,
+    props.organization,
+  );
+
+  return (
+    <SubPageLayout>
+      <SubPageLayoutHeader
+        subPageTitle="Rules"
+        description={
+          <CardDescription>
+            At the organizational level, policies can be defined to affect all projects and targets.
+            <br />
+            At the project level, policies can be overridden or extended.
+            <br />
+            <DocsLink className="text-neutral-10" href="/features/schema-policy">
+              Learn more
+            </DocsLink>
+          </CardDescription>
+        }
+      />
+      <PolicySettings
+        saving={mutation.fetching}
+        error={
+          mutation.error?.message || mutation.data?.updateSchemaPolicyForOrganization.error?.message
+        }
+        onSave={
+          currentOrganization.viewerCanModifySchemaPolicy
+            ? async (newPolicy, allowOverrides) => {
+                await mutate({
+                  selector: {
+                    organizationSlug: currentOrganization.slug,
+                  },
+                  policy: newPolicy,
+                  allowOverrides,
+                })
+                  .then(result => {
+                    if (result.data?.updateSchemaPolicyForOrganization.error || result.error) {
+                      toast({
+                        variant: 'destructive',
+                        title: 'Error',
+                        description:
+                          result.data?.updateSchemaPolicyForOrganization.error?.message ||
+                          result.error?.message,
+                      });
+                    } else {
+                      toast({
+                        variant: 'default',
+                        title: 'Success',
+                        description: 'Policy updated successfully',
+                      });
+                    }
+                  })
+                  .catch();
+              }
+            : null
+        }
+        currentState={currentOrganization.schemaPolicy}
+      >
+        {form => (
+          <div className="flex items-center pl-1 pt-2">
+            <Checkbox
+              id="allowOverrides"
+              checked={form.values.allowOverrides}
+              value="allowOverrides"
+              onCheckedChange={newValue => form.setFieldValue('allowOverrides', newValue)}
+              disabled={!currentOrganization.viewerCanModifySchemaPolicy}
+            />
+            <label htmlFor="allowOverrides" className="text-neutral-11 ml-2 inline-block text-sm">
+              Allow projects to override or disable rules
+            </label>
+          </div>
+        )}
+      </PolicySettings>
+    </SubPageLayout>
+  );
+}
+
+const OrganizationSettingsPageQuery = graphql(`
+  query OrganizationSettingsPageQuery($organizationSlug: String!) {
+    organization: organizationBySlug(organizationSlug: $organizationSlug) {
+      ...SettingsPageRenderer_OrganizationFragment
+      ...OrganizationPolicySettings_OrganizationFragment
+      viewerCanAccessSettings
+      viewerCanManageAccessTokens
+      viewerCanManagePersonalAccessTokens
+      viewerCanManageOIDCIntegration
+    }
+  }
+`);
+
+export const OrganizationSettingsPageEnum = z.enum([
+  'general',
+  'sso',
+  'policy',
+  'access-tokens',
+  'personal-access-tokens',
+]);
+export type OrganizationSettingsSubPage = z.TypeOf<typeof OrganizationSettingsPageEnum>;
+
+function SettingsPageContent(props: {
+  organizationSlug: string;
+  page?: OrganizationSettingsSubPage;
+}) {
+  const router = useRouter();
   const [query] = useQuery({
     query: OrganizationSettingsPageQuery,
     variables: {
-      selector: {
-        organizationSlug: props.organizationSlug,
-      },
+      organizationSlug: props.organizationSlug,
     },
+  });
+
+  const currentOrganization = query.data?.organization;
+
+  const subPages = useMemo(() => {
+    const pages: Array<{
+      key: OrganizationSettingsSubPage;
+      title: string;
+    }> = [];
+
+    if (currentOrganization?.viewerCanAccessSettings) {
+      pages.push({
+        key: 'general',
+        title: 'General',
+      });
+    }
+
+    pages.push({
+      key: 'policy',
+      title: 'Policy',
+    });
+
+    if (currentOrganization?.viewerCanManageOIDCIntegration) {
+      pages.push({
+        key: 'sso',
+        title: 'Single Sign On',
+      });
+    }
+
+    if (currentOrganization?.viewerCanManageAccessTokens) {
+      pages.push({
+        key: 'access-tokens',
+        title: 'Access Tokens',
+      });
+    }
+
+    if (currentOrganization?.viewerCanManagePersonalAccessTokens) {
+      pages.push({
+        key: 'personal-access-tokens',
+        title: 'Personal Access Tokens',
+      });
+    }
+
+    return pages;
+  }, [currentOrganization]);
+
+  const resolvedPage = props.page ? subPages.find(page => page.key === props.page) : subPages.at(0);
+
+  useRedirect({
+    canAccess: resolvedPage !== undefined,
+    redirectTo: router => {
+      void router.navigate({
+        to: '/$organizationSlug',
+        params: {
+          organizationSlug: props.organizationSlug,
+        },
+      });
+    },
+    entity: currentOrganization,
   });
 
   if (query.error) {
     return <QueryError organizationSlug={props.organizationSlug} error={query.error} />;
   }
 
-  const currentOrganization = query.data?.organization?.organization;
+  if (!resolvedPage || !currentOrganization) {
+    return null;
+  }
 
   return (
     <OrganizationLayout
@@ -474,21 +692,61 @@ function SettingsPageContent(props: { organizationSlug: string }) {
       organizationSlug={props.organizationSlug}
       className="flex flex-col gap-y-10"
     >
-      {currentOrganization ? (
-        <SettingsPageRenderer
-          organizationSlug={props.organizationSlug}
-          organization={currentOrganization}
-        />
-      ) : null}
+      <PageLayout>
+        <NavLayout>
+          {subPages.map(subPage => {
+            return (
+              <SubPageNavigationLink
+                dataCy={`link-${subPage.key}`}
+                key={subPage.key}
+                isActive={resolvedPage.key === subPage.key}
+                onClick={() => {
+                  void router.navigate({
+                    search: {
+                      page: subPage.key,
+                    },
+                  });
+                }}
+                title={subPage.title}
+              />
+            );
+          })}
+        </NavLayout>
+        <PageLayoutContent>
+          <div className="space-y-12">
+            {resolvedPage.key === 'general' ? (
+              <OrganizationSettingsContent
+                organizationSlug={props.organizationSlug}
+                organization={currentOrganization}
+              />
+            ) : null}
+            {resolvedPage.key === 'sso' ? (
+              <SingleSignOnSubpage organizationSlug={props.organizationSlug} />
+            ) : null}
+            {resolvedPage.key === 'policy' ? (
+              <OrganizationPolicySettings organization={currentOrganization} />
+            ) : null}
+            {resolvedPage.key === 'access-tokens' ? (
+              <AccessTokensSubPage organizationSlug={props.organizationSlug} />
+            ) : null}
+            {resolvedPage.key === 'personal-access-tokens' ? (
+              <PersonalAccessTokensSubPage organizationSlug={props.organizationSlug} />
+            ) : null}
+          </div>
+        </PageLayoutContent>
+      </PageLayout>
     </OrganizationLayout>
   );
 }
 
-export function OrganizationSettingsPage(props: { organizationSlug: string }) {
+export function OrganizationSettingsPage(props: {
+  organizationSlug: string;
+  page?: OrganizationSettingsSubPage;
+}) {
   return (
     <>
       <Meta title="Organization settings" />
-      <SettingsPageContent organizationSlug={props.organizationSlug} />
+      <SettingsPageContent organizationSlug={props.organizationSlug} page={props.page} />
     </>
   );
 }
@@ -581,6 +839,137 @@ export function DeleteOrganizationModalContent(props: {
             Delete
           </Button>
         </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+const AuditLogsOrganizationSettingsPageMutation = graphql(`
+  mutation AuditLogsOrganizationSettingsPageMutation($input: ExportOrganizationAuditLogInput!) {
+    exportOrganizationAuditLog(input: $input) {
+      ok {
+        url
+      }
+      error {
+        message
+      }
+    }
+  }
+`);
+
+const AuditLogsSchema = z.object({
+  startDate: z.string(),
+  endDate: z.string(),
+  userId: z.string().optional(),
+});
+
+function AuditLogsOrganizationModal(props: {
+  isOpen: boolean;
+  toggleModalOpen: () => void;
+  organizationSlug: string;
+}) {
+  const { organizationSlug: organization } = props;
+  const { toast } = useToast();
+  const [, exportAuditLogs] = useMutation(AuditLogsOrganizationSettingsPageMutation);
+
+  const today = new Date().toISOString().split('T')[0];
+  const lastYear = new Date(new Date().setFullYear(new Date().getFullYear() - 1))
+    .toISOString()
+    .split('T')[0];
+
+  const form = useForm<z.infer<typeof AuditLogsSchema>>({
+    mode: 'onSubmit',
+    resolver: zodResolver(AuditLogsSchema),
+    defaultValues: {
+      startDate: lastYear,
+      endDate: today,
+    },
+  });
+
+  async function onSubmit(data: z.infer<typeof AuditLogsSchema>) {
+    const formattedStartDate = new Date(data.startDate).toISOString();
+    const formattedEndDate = new Date(data.endDate).toISOString();
+
+    const result = await exportAuditLogs({
+      input: {
+        selector: {
+          organizationSlug: organization,
+        },
+        filter: {
+          startDate: formattedStartDate,
+          endDate: formattedEndDate,
+        },
+      },
+    });
+
+    if (result.data?.exportOrganizationAuditLog.error) {
+      toast({
+        title: 'Failed to start audit logs report',
+        description: result.data.exportOrganizationAuditLog.error.message,
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    props.toggleModalOpen();
+    form.reset();
+    toast({
+      title: 'Audit logs report generated',
+      description: 'The audit logs report has been generated and will be sent to your email.',
+    });
+  }
+
+  return (
+    <Dialog open={props.isOpen} onOpenChange={props.toggleModalOpen}>
+      <DialogContent className="w-4/5 max-w-[520px] md:w-3/5">
+        <Form {...form}>
+          <form className="space-y-8" onSubmit={form.handleSubmit(onSubmit)}>
+            <DialogHeader>
+              <DialogTitle>Audit Logs</DialogTitle>
+              <DialogDescription>
+                Select a date range to generate an audit logs report.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="flex flex-row justify-evenly gap-x-8">
+              <FormField
+                control={form.control}
+                name="startDate"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormControl>
+                      <Input type="date" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <div className="mt-2">
+                <ArrowRightIcon className="text-neutral-10 size-6" />
+              </div>
+              <FormField
+                control={form.control}
+                name="endDate"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormControl>
+                      <Input type="date" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+            <DialogFooter>
+              <Button
+                className="w-full"
+                type="submit"
+                disabled={!form.formState.isValid || form.formState.isSubmitting}
+              >
+                Generate Report
+              </Button>
+            </DialogFooter>
+          </form>
+        </Form>
       </DialogContent>
     </Dialog>
   );

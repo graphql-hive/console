@@ -17,7 +17,7 @@ import type {
 } from './providers/contracts';
 import type { SchemaCheckWarning } from './providers/models/shared';
 
-export type SchemaChangeConnectionMapper = ReadonlyArray<SchemaChangeType>;
+export type SchemaChangeConnectionMapper = ReadonlyArray<SchemaChangeMapper>;
 export type SchemaChangeMapper = SchemaChangeType;
 export type SchemaChangeApprovalMapper = SchemaCheckApprovalMetadata;
 export type SchemaErrorConnectionMapper = readonly SchemaError[];
@@ -130,6 +130,7 @@ export type GraphQLFieldMapper = WithSchemaCoordinatesUsage<
     };
     supergraph: null | {
       ownedByServiceNames: Array<string> | null;
+      schemaMetadata: Array<SchemaMetadataMapper> | null;
     };
   }>
 >;
@@ -179,6 +180,7 @@ export type GraphQLObjectTypeMapper = WithSchemaCoordinatesUsage<{
   };
   supergraph: null | {
     ownedByServiceNames: Array<string> | null;
+    getFieldMetadata: (fieldName: string) => Array<SchemaMetadataMapper> | null;
     getFieldOwnedByServices: (fieldName: string) => Array<string> | null;
   };
 }>;
@@ -192,6 +194,7 @@ export type GraphQLInterfaceTypeMapper = WithSchemaCoordinatesUsage<{
   };
   supergraph: null | {
     ownedByServiceNames: Array<string> | null;
+    getFieldMetadata: (fieldName: string) => Array<SchemaMetadataMapper> | null;
     getFieldOwnedByServices: (fieldName: string) => Array<string> | null;
   };
 }>;
@@ -292,4 +295,63 @@ export type ContractVersionMapper = ContractVersion;
 export type BreakingChangeMetadataTargetMapper = {
   name: string;
   id: string;
+};
+
+export type SchemaMetadataMapper = {
+  name: string;
+  content: string;
+  source: string | null;
+};
+
+export type SchemaChangeUsageStatisticsAffectedOperationMapper = {
+  name: string;
+  hash: string;
+  count: number;
+  percentage: number;
+  targetIds: Array<string>;
+};
+
+export type SchemaChangeAffectedAppDeploymentMapper = {
+  id: string;
+  name: string;
+  version: string;
+  createdAt: string | null;
+  activatedAt: string | null;
+  retiredAt: string | null;
+  status: 'pending' | 'active' | 'retired';
+  operations: Array<{
+    hash: string;
+    name: string | null;
+  }>;
+  totalOperations: number;
+};
+
+export type SchemaChangeAffectedAppDeploymentOperationsConnectionMapper = {
+  edges: Array<{
+    cursor: string;
+    node: {
+      hash: string;
+      name: string | null;
+    };
+  }>;
+  pageInfo: {
+    hasNextPage: boolean;
+    hasPreviousPage: boolean;
+    startCursor: string;
+    endCursor: string;
+  };
+};
+
+export type SchemaChangeAffectedAppDeploymentsConnectionMapper = {
+  edges: Array<{
+    cursor: string;
+    node: SchemaChangeAffectedAppDeploymentMapper;
+  }>;
+  totalCount: number;
+  pageInfo: {
+    hasNextPage: boolean;
+    hasPreviousPage: boolean;
+    startCursor: string;
+    endCursor: string;
+  };
 };

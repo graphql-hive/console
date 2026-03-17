@@ -10,8 +10,23 @@ import {
 } from '@theguild/federation-composition';
 import Command from '../base-command';
 import { graphql } from '../gql';
+import * as GraphQLSchema from '../gql/graphql';
 import { graphqlEndpoint } from '../helpers/config';
-import { loadSchema, renderErrors } from '../helpers/schema';
+import {
+  APIError,
+  HiveCLIError,
+  IntrospectionError,
+  InvalidCompositionResultError,
+  InvalidTargetError,
+  LocalCompositionError,
+  MissingEndpointError,
+  MissingRegistryTokenError,
+  RemoteCompositionError,
+  ServiceAndUrlLengthMismatch,
+  UnexpectedError,
+} from '../helpers/errors';
+import { loadSchema } from '../helpers/schema';
+import * as TargetInput from '../helpers/target-input';
 import { invariant } from '../helpers/validation';
 
 const CLI_SchemaComposeMutation = graphql(/* GraphQL */ `
@@ -23,10 +38,7 @@ const CLI_SchemaComposeMutation = graphql(/* GraphQL */ `
         compositionResult {
           supergraphSdl
           errors {
-            total
-            nodes {
-              message
-            }
+            ...RenderErrors_SchemaErrorConnectionFragment
           }
         }
       }
@@ -144,9 +156,15 @@ export default class Dev extends Command<typeof Dev> {
     unstable__forceLatest: Flags.boolean({
       hidden: true,
       description:
-        'Force the command to use the latest version of the CLI, not the latest composable version. ',
+        'Force the command to use the latest version of the CLI, not the latest composable version.',
       default: false,
       dependsOn: ['remote'],
+    }),
+    target: Flags.string({
+      description:
+        'The target to use for composition (slug or ID).' +
+        ' This can either be a slug following the format "$organizationSlug/$projectSlug/$targetSlug" (e.g "the-guild/graphql-hive/staging")' +
+        ' or an UUID (e.g. "a0f4c605-6541-4350-8cfe-b31f21a4bf80").',
     }),
   };
 
@@ -156,9 +174,7 @@ export default class Dev extends Command<typeof Dev> {
     const { unstable__forceLatest } = flags;
 
     if (flags.service.length !== flags.url.length) {
-      this.error('Not every services has a matching url', {
-        exit: 1,
-      });
+      throw new ServiceAndUrlLengthMismatch(flags.service, flags.url);
     }
 
     const isRemote = flags.remote === true;
@@ -174,21 +190,41 @@ export default class Dev extends Command<typeof Dev> {
       };
     });
 
+    let target: GraphQLSchema.TargetReferenceInput | null = null;
+    if (flags.target) {
+      const result = TargetInput.parse(flags.target);
+      if (result.type === 'error') {
+        throw new InvalidTargetError();
+      }
+      target = result.data;
+    }
+
     if (flags.watch === true) {
       if (isRemote) {
-        const registry = this.ensure({
-          key: 'registry.endpoint',
-          legacyFlagName: 'registry',
-          args: flags,
-          defaultValue: graphqlEndpoint,
-          env: 'HIVE_REGISTRY',
-        });
-        const token = this.ensure({
-          key: 'registry.accessToken',
-          legacyFlagName: 'token',
-          args: flags,
-          env: 'HIVE_TOKEN',
-        });
+        let registry: string, token: string;
+        try {
+          registry = this.ensure({
+            key: 'registry.endpoint',
+            legacyFlagName: 'registry',
+            args: flags,
+            defaultValue: graphqlEndpoint,
+            env: 'HIVE_REGISTRY',
+            description: Dev.flags['registry.endpoint'].description!,
+          });
+        } catch (e) {
+          throw new MissingEndpointError();
+        }
+        try {
+          token = this.ensure({
+            key: 'registry.accessToken',
+            legacyFlagName: 'token',
+            args: flags,
+            env: 'HIVE_TOKEN',
+            description: Dev.flags['registry.accessToken'].description!,
+          });
+        } catch (e) {
+          throw new MissingRegistryTokenError();
+        }
 
         void this.watch(flags.watchInterval, serviceInputs, services =>
           this.compose({
@@ -197,8 +233,10 @@ export default class Dev extends Command<typeof Dev> {
             token,
             write: flags.write,
             unstable__forceLatest,
-            onError: message => {
-              this.fail(message);
+            target,
+            onError: error => {
+              // watch mode should not exit. Log instead.
+              this.logFailure(error.message);
             },
           }),
         );
@@ -210,8 +248,9 @@ export default class Dev extends Command<typeof Dev> {
         this.composeLocally({
           services,
           write: flags.write,
-          onError: message => {
-            this.fail(message);
+          onError: error => {
+            // watch mode should not exit. Log instead.
+            this.logFailure(error.message);
           },
         }),
       );
@@ -221,19 +260,30 @@ export default class Dev extends Command<typeof Dev> {
     const services = await this.resolveServices(serviceInputs);
 
     if (isRemote) {
-      const registry = this.ensure({
-        key: 'registry.endpoint',
-        legacyFlagName: 'registry',
-        args: flags,
-        defaultValue: graphqlEndpoint,
-        env: 'HIVE_REGISTRY',
-      });
-      const token = this.ensure({
-        key: 'registry.accessToken',
-        legacyFlagName: 'token',
-        args: flags,
-        env: 'HIVE_TOKEN',
-      });
+      let registry: string, token: string;
+      try {
+        registry = this.ensure({
+          key: 'registry.endpoint',
+          legacyFlagName: 'registry',
+          args: flags,
+          defaultValue: graphqlEndpoint,
+          env: 'HIVE_REGISTRY',
+          description: Dev.flags['registry.endpoint'].description!,
+        });
+      } catch (e) {
+        throw new MissingEndpointError();
+      }
+      try {
+        token = this.ensure({
+          key: 'registry.accessToken',
+          legacyFlagName: 'token',
+          args: flags,
+          env: 'HIVE_TOKEN',
+          description: Dev.flags['registry.accessToken'].description!,
+        });
+      } catch (e) {
+        throw new MissingRegistryTokenError();
+      }
 
       return this.compose({
         services,
@@ -241,10 +291,9 @@ export default class Dev extends Command<typeof Dev> {
         token,
         write: flags.write,
         unstable__forceLatest,
-        onError: message => {
-          this.error(message, {
-            exit: 1,
-          });
+        target,
+        onError: error => {
+          throw error;
         },
       });
     }
@@ -252,10 +301,8 @@ export default class Dev extends Command<typeof Dev> {
     return this.composeLocally({
       services,
       write: flags.write,
-      onError: message => {
-        this.error(message, {
-          exit: 1,
-        });
+      onError: error => {
+        throw error;
       },
     });
   }
@@ -267,7 +314,7 @@ export default class Dev extends Command<typeof Dev> {
       sdl: string;
     }>;
     write: string;
-    onError: (message: string) => void | never;
+    onError: (error: HiveCLIError) => void | never;
   }) {
     const compositionResult = await new Promise<CompositionResult>((resolve, reject) => {
       try {
@@ -281,34 +328,19 @@ export default class Dev extends Command<typeof Dev> {
           ),
         );
       } catch (error) {
+        // @note: composeServices should not throw.
+        // This reject is for the offchance that something happens under the hood that was not expected.
+        // Without it, if something happened then the promise would hang.
         reject(error);
       }
-    }).catch(error => {
-      this.handleFetchError(error);
     });
 
     if (compositionHasErrors(compositionResult)) {
-      if (compositionResult.errors) {
-        renderErrors.call(this, {
-          total: compositionResult.errors.length,
-          nodes: compositionResult.errors.map(error => ({
-            message: error.message,
-          })),
-        });
-      }
-
-      input.onError('Composition failed');
+      input.onError(new LocalCompositionError(compositionResult));
       return;
     }
 
-    if (typeof compositionResult.supergraphSdl !== 'string') {
-      input.onError(
-        'Composition successful but failed to get supergraph schema. Please try again later or contact support',
-      );
-      return;
-    }
-
-    this.success('Composition successful');
+    this.logSuccess('Composition successful');
     this.log(`Saving supergraph schema to ${input.write}`);
     await writeFile(resolve(process.cwd(), input.write), compositionResult.supergraphSdl, 'utf-8');
   }
@@ -323,52 +355,58 @@ export default class Dev extends Command<typeof Dev> {
     token: string;
     write: string;
     unstable__forceLatest: boolean;
-    onError: (message: string) => void | never;
+    target: GraphQLSchema.TargetReferenceInput | null;
+    onError: (error: HiveCLIError) => void | never;
   }) {
-    const result = await this.registryApi(input.registry, input.token)
-      .request({
-        operation: CLI_SchemaComposeMutation,
-        variables: {
-          input: {
-            useLatestComposableVersion: !input.unstable__forceLatest,
-            services: input.services.map(service => ({
-              name: service.name,
-              url: service.url,
-              sdl: service.sdl,
-            })),
-          },
+    const result = await this.registryApi(input.registry, input.token).request({
+      operation: CLI_SchemaComposeMutation,
+      variables: {
+        input: {
+          useLatestComposableVersion: !input.unstable__forceLatest,
+          services: input.services.map(service => ({
+            name: service.name,
+            url: service.url,
+            sdl: service.sdl,
+          })),
+          target: input.target,
         },
-      })
-      .catch(error => {
-        this.handleFetchError(error);
-      });
+      },
+    });
 
     if (result.schemaCompose.__typename === 'SchemaComposeError') {
-      input.onError(result.schemaCompose.message);
+      input.onError(new APIError(result.schemaCompose.message));
       return;
     }
 
     const { valid, compositionResult } = result.schemaCompose;
 
     if (!valid) {
+      // @note: Can this actually be invalid without any errors?
       if (compositionResult.errors) {
-        renderErrors.call(this, compositionResult.errors);
+        input.onError(new RemoteCompositionError(compositionResult.errors));
+        return;
       }
 
-      input.onError('Composition failed');
+      input.onError(new InvalidCompositionResultError(compositionResult.supergraphSdl));
       return;
     }
 
     if (typeof compositionResult.supergraphSdl !== 'string') {
-      input.onError(
-        'Composition successful but failed to get supergraph schema. Please try again later or contact support',
-      );
+      input.onError(new InvalidCompositionResultError(compositionResult.supergraphSdl));
       return;
     }
 
-    this.success('Composition successful');
+    this.logSuccess('Composition successful');
     this.log(`Saving supergraph schema to ${input.write}`);
-    await writeFile(resolve(process.cwd(), input.write), compositionResult.supergraphSdl, 'utf-8');
+    try {
+      await writeFile(
+        resolve(process.cwd(), input.write),
+        compositionResult.supergraphSdl,
+        'utf-8',
+      );
+    } catch (e) {
+      input.onError(new UnexpectedError(e));
+    }
   }
 
   private async watch(
@@ -376,12 +414,17 @@ export default class Dev extends Command<typeof Dev> {
     serviceInputs: ServiceInput[],
     compose: (services: Service[]) => Promise<void>,
   ) {
-    this.info('Watch mode enabled');
+    this.logInfo('Watch mode enabled');
 
-    let services = await this.resolveServices(serviceInputs);
-    await compose(services);
+    let services: ServiceWithSource[];
+    try {
+      services = await this.resolveServices(serviceInputs);
+      await compose(services);
+    } catch (e) {
+      throw new UnexpectedError(e);
+    }
 
-    this.info('Watching for changes');
+    this.logInfo('Watching for changes');
 
     let resolveWatchMode: () => void;
 
@@ -398,25 +441,25 @@ export default class Dev extends Command<typeof Dev> {
             service => services.find(s => s.name === service.name)!.sdl !== service.sdl,
           )
         ) {
-          this.info('Detected changes, recomposing');
+          this.logInfo('Detected changes, recomposing');
           await compose(newServices);
           services = newServices;
         }
       } catch (error) {
-        this.fail(String(error));
+        this.logFailure(new UnexpectedError(error));
       }
 
       timeoutId = setTimeout(watch, watchInterval);
     };
 
     process.once('SIGINT', () => {
-      this.info('Exiting watch mode');
+      this.logInfo('Exiting watch mode');
       clearTimeout(timeoutId);
       resolveWatchMode();
     });
 
     process.once('SIGTERM', () => {
-      this.info('Exiting watch mode');
+      this.logInfo('Exiting watch mode');
       clearTimeout(timeoutId);
       resolveWatchMode();
     });
@@ -462,12 +505,14 @@ export default class Dev extends Command<typeof Dev> {
   }
 
   private async resolveSdlFromUrl(url: string) {
+    // const result = await this.graphql(url).request({ operation: ServiceIntrospectionQuery });
+    // const sdl = result._service.sdl;
     const sdl = await loadSchema('federation-subgraph-introspection', url).catch(error => {
       this.handleFetchError(error);
     });
 
     if (!sdl) {
-      throw new Error('Failed to introspect service');
+      throw new IntrospectionError();
     }
 
     return sdl;

@@ -1,9 +1,9 @@
 import 'reflect-metadata';
 import { parse, print } from 'graphql';
-import { enableExternalSchemaComposition } from 'testkit/flow';
+import { updateSchemaComposition } from 'testkit/flow';
 import { ProjectType } from 'testkit/gql/graphql';
 import { initSeed } from 'testkit/seed';
-import { getServiceHost } from 'testkit/utils';
+import { assertNonNull, getServiceHost } from 'testkit/utils';
 import { GetObjectCommand, S3Client } from '@aws-sdk/client-s3';
 import { createStorage } from '@hive/storage';
 import { sortSDL } from '@theguild/federation-composition';
@@ -171,11 +171,12 @@ test.concurrent(
         .then(r => r.expectNoGraphQLErrors());
       expect(deleteServiceResult.schemaDelete.__typename).toBe('SchemaDeleteSuccess');
 
-      const latestVersion = await storage.getLatestVersion({
+      const latestVersion = await storage.getMaybeLatestVersion({
         targetId: target.id,
         projectId: project.id,
         organizationId: organization.id,
       });
+      assertNonNull(latestVersion);
 
       expect(latestVersion.compositeSchemaSDL).toMatchInlineSnapshot(`
         type Query {
@@ -196,6 +197,7 @@ test.concurrent(
 
       expect(changes[0]).toMatchInlineSnapshot(`
         {
+          affectedAppDeployments: null,
           approvalMetadata: null,
           breakingChangeSchemaCoordinate: Query.bruv,
           criticality: BREAKING,
@@ -209,7 +211,7 @@ test.concurrent(
             typeType: object type,
           },
           path: Query.bruv,
-          reason: Removing a field is a breaking change. It is preferable to deprecate the field before removing it.,
+          reason: Removing a field is a breaking change. It is preferable to deprecate the field before removing it. This applies to removed union fields as well, since removal breaks client operations that contain fragments that reference the removed type through direct (... on RemovedType) or indirect means such as __typename in the consumers.,
           type: FIELD_REMOVED,
           usageStatistics: null,
         }
@@ -221,7 +223,7 @@ test.concurrent(
 );
 
 test.concurrent(
-  'composition error is persisted in the database when the super schema schema is not composable',
+  'composition error is persisted in the database when the supergraph is not composable',
   async ({ expect }) => {
     let storage: Awaited<ReturnType<typeof createStorage>> | undefined = undefined;
 
@@ -235,13 +237,21 @@ test.concurrent(
 
       const readToken = await createTargetAccessToken({});
 
-      await enableExternalSchemaComposition(
+      await updateSchemaComposition(
         {
-          endpoint: `http://${await getServiceHost('composition_federation_2', 3069, false)}/compose`,
-          // eslint-disable-next-line no-process-env
-          secret: process.env.EXTERNAL_COMPOSITION_SECRET!,
-          projectSlug: project.slug,
-          organizationSlug: organization.slug,
+          project: {
+            bySelector: {
+              projectSlug: project.slug,
+              organizationSlug: organization.slug,
+            },
+          },
+          method: {
+            external: {
+              endpoint: `http://${await getServiceHost('composition_federation_2', 3069, false)}/compose`,
+              // eslint-disable-next-line no-process-env
+              secret: process.env.EXTERNAL_COMPOSITION_SECRET!,
+            },
+          },
         },
         ownerToken,
       ).then(r => r.expectNoGraphQLErrors());
@@ -259,6 +269,7 @@ test.concurrent(
           url: 'http://localhost:4000/graphql',
         })
         .then(r => r.expectNoGraphQLErrors());
+
       expect(publishService1Result.schemaPublish.__typename).toBe('SchemaPublishSuccess');
 
       const publishService2Result = await readToken
@@ -300,11 +311,12 @@ test.concurrent(
         .then(r => r.expectNoGraphQLErrors());
       expect(deleteServiceResult.schemaDelete.__typename).toBe('SchemaDeleteSuccess');
 
-      const latestVersion = await storage.getLatestVersion({
+      const latestVersion = await storage.getMaybeLatestVersion({
         targetId: target.id,
         projectId: project.id,
         organizationId: organization.id,
       });
+      assertNonNull(latestVersion);
 
       expect(latestVersion.compositeSchemaSDL).toEqual(null);
       expect(latestVersion.schemaCompositionErrors).toMatchInlineSnapshot(`

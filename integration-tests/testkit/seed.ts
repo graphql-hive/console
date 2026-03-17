@@ -1,14 +1,9 @@
+import { formatISO, subHours } from 'date-fns';
 import { humanId } from 'human-id';
 import { createPool, sql } from 'slonik';
-import {
-  OrganizationAccessScope,
-  ProjectAccessScope,
-  ProjectType,
-  RegistryModel,
-  SchemaPolicyInput,
-  TargetAccessScope,
-  TargetSelectorInput,
-} from 'testkit/gql/graphql';
+import { NoopLogger } from '@hive/api/modules/shared/providers/logger';
+import { createRedisClient } from '@hive/api/modules/shared/providers/redis';
+import type { Report } from '../../packages/libraries/core/src/client/usage.js';
 import { authenticate, userEmail } from './auth';
 import {
   CreateCollectionMutation,
@@ -17,16 +12,21 @@ import {
   DeleteOperationMutation,
   UpdateCollectionMutation,
   UpdateOperationMutation,
+  UpdatePreflightScriptMutation,
 } from './collections';
 import { ensureEnv } from './env';
 import {
+  addAlert,
+  addAlertChannel,
   assignMemberRole,
   checkSchema,
   compareToPreviousVersion,
   createCdnAccess,
   createMemberRole,
   createOrganization,
+  createOrganizationAccessToken,
   createProject,
+  createTarget,
   createToken,
   deleteMemberRole,
   deleteSchema,
@@ -42,23 +42,33 @@ import {
   getOrganizationProjects,
   inviteToOrganization,
   joinOrganization,
+  pollFor,
   publishSchema,
+  readClientStats,
   readOperationBody,
   readOperationsStats,
   readTokenInfo,
-  setTargetValidation,
   updateBaseSchema,
   updateMemberRole,
-  updateRegistryModel,
-  updateSchemaVersionStatus,
   updateTargetValidationSettings,
 } from './flow';
+import * as GraphQLSchema from './gql/graphql';
+import { ProjectType, SchemaPolicyInput, TargetAccessScope } from './gql/graphql';
 import { execute } from './graphql';
+import { createOIDCIntegration } from './oidc-integration.js';
+import {
+  CreateSavedFilterMutation,
+  DeleteSavedFilterMutation,
+  GetSavedFilterQuery,
+  GetSavedFiltersQuery,
+  TrackSavedFilterViewMutation,
+  UpdateSavedFilterMutation,
+} from './saved-filters';
 import { UpdateSchemaPolicyForOrganization, UpdateSchemaPolicyForProject } from './schema-policy';
-import { CollectedOperation, legacyCollect } from './usage';
-import { generateUnique } from './utils';
+import { collect, CollectedOperation, legacyCollect } from './usage';
+import { generateUnique, getServiceHost, pollForEmailVerificationLink } from './utils';
 
-export function initSeed() {
+function createConnectionPool() {
   const pg = {
     user: ensureEnv('POSTGRES_USER'),
     password: ensureEnv('POSTGRES_PASSWORD'),
@@ -67,31 +77,115 @@ export function initSeed() {
     db: ensureEnv('POSTGRES_DB'),
   };
 
-  function createConnectionPool() {
-    return createPool(
-      `postgres://${pg.user}:${pg.password}@${pg.host}:${pg.port}/${pg.db}?sslmode=disable`,
-    );
+  return createPool(
+    `postgres://${pg.user}:${pg.password}@${pg.host}:${pg.port}/${pg.db}?sslmode=disable`,
+  );
+}
+
+async function createDbConnection() {
+  const pool = await createConnectionPool();
+  return {
+    pool,
+    [Symbol.asyncDispose]: async () => {
+      await pool.end();
+    },
+  };
+}
+
+export function initSeed() {
+  let sharedDBPoolPromise: ReturnType<typeof createDbConnection>;
+
+  function getPool() {
+    if (!sharedDBPoolPromise) {
+      sharedDBPoolPromise = createDbConnection();
+    }
+    return sharedDBPoolPromise.then(res => res.pool);
+  }
+
+  async function doAuthenticate(
+    email: string,
+    opts?: {
+      oidcIntegrationId?: string;
+      verifyEmail?: boolean;
+    },
+  ) {
+    const auth = await authenticate(await getPool(), email, opts?.oidcIntegrationId);
+
+    if (opts?.verifyEmail ?? true) {
+      const pool = await getPool();
+      await pool.query(sql`
+        INSERT INTO "email_verifications" ("user_identity_id", "email", "verified_at")
+        VALUES (${auth.supertokensUserId}, ${email}, NOW())
+      `);
+    }
+
+    return auth;
   }
 
   return {
-    async createDbConnection() {
-      const pool = await createConnectionPool();
-      return {
-        pool,
-        [Symbol.asyncDispose]: async () => {
-          await pool.end();
-        },
-      };
+    pollForEmailVerificationLink,
+    async purgeOIDCDomains() {
+      const pool = await getPool();
+      await pool.query(sql`
+        TRUNCATE "oidc_integration_domains"
+      `);
     },
-    authenticate: authenticate,
+    async forgeOIDCDNSChallenge(orgSlug: string) {
+      const pool = await getPool();
+
+      const domainChallengeId = await pool.oneFirst<string>(sql`
+      SELECT "oidc_integration_domains"."id"
+      FROM "oidc_integration_domains" INNER JOIN "organizations" ON "oidc_integration_domains"."organization_id" = "organizations"."id"
+      WHERE "organizations"."clean_id" = ${orgSlug}
+    `);
+      const key = `hive:oidcDomainChallenge:${domainChallengeId}`;
+
+      const challenge = {
+        id: domainChallengeId,
+        recordName: `_hive-challenge`,
+        // hardcoded value
+        value: 'a894723a5d52a30d73790752b0169835e6f81dd77d2737dba809bee7fde39092',
+      };
+
+      const redis = createRedisClient(
+        '',
+        {
+          host: ensureEnv('REDIS_HOST'),
+          password: ensureEnv('REDIS_PASSWORD'),
+          port: parseInt(ensureEnv('REDIS_PORT'), 10),
+          tlsEnabled: false,
+        },
+        new NoopLogger(),
+      );
+
+      await redis.set(key, JSON.stringify(challenge));
+      await redis.disconnect();
+    },
+    createDbConnection,
+    authenticate: doAuthenticate,
     generateEmail: () => userEmail(generateUnique()),
-    async createOwner() {
+    async purgeOrganizationAccessTokenById(id: string) {
+      const registryAddress = await getServiceHost('server', 8082);
+      await fetch(
+        'http://' + registryAddress + '/cache/organization-access-token-cache/delete/' + id,
+        {
+          method: 'POST',
+        },
+      ).then(res => res.json());
+    },
+    async createOwner(verifyEmail: boolean = true) {
       const ownerEmail = userEmail(generateUnique());
-      const ownerToken = await authenticate(ownerEmail).then(r => r.access_token);
+      const auth = await doAuthenticate(ownerEmail, {
+        verifyEmail,
+      });
+
+      const ownerRefreshToken = auth.refresh_token;
+      const ownerToken = auth.access_token;
 
       return {
         ownerEmail,
         ownerToken,
+        ownerRefreshToken,
         async createOrg() {
           const orgSlug = generateUnique();
           const orgResult = await createOrganization({ slug: orgSlug }, ownerToken).then(r =>
@@ -103,6 +197,33 @@ export function initSeed() {
 
           return {
             organization,
+            async createOrganizationAccessToken(
+              args: {
+                permissions: Array<string>;
+                resources: GraphQLSchema.ResourceAssignmentInput;
+              },
+              /** Override the used access token. */
+              accessToken?: string,
+            ) {
+              const result = await createOrganizationAccessToken(
+                {
+                  title: 'an access token',
+                  description: 'access token',
+                  organization: {
+                    byId: organization.id,
+                  },
+                  permissions: args.permissions,
+                  resources: args.resources,
+                },
+                accessToken ?? ownerToken,
+              ).then(r => r.expectNoGraphQLErrors());
+
+              if (result.createOrganizationAccessToken.error) {
+                throw new Error(result.createOrganizationAccessToken.error.message);
+              }
+
+              return result.createOrganizationAccessToken.ok!;
+            },
             async setFeatureFlag(name: string, value: boolean | string[]) {
               const pool = await createConnectionPool();
 
@@ -144,18 +265,22 @@ export function initSeed() {
                 r.expectNoGraphQLErrors(),
               );
 
-              return result.organization!.organization;
+              return result.organization!;
             },
             async inviteMember(
               email = 'some@email.com',
               inviteToken = ownerToken,
-              roleId?: string,
+              memberRoleId?: string,
             ) {
               const inviteResult = await inviteToOrganization(
                 {
+                  organization: {
+                    bySelector: {
+                      organizationSlug: organization.slug,
+                    },
+                  },
                   email,
-                  organizationSlug: organization.slug,
-                  roleId,
+                  memberRoleId,
                 },
                 inviteToken,
               ).then(r => r.expectNoGraphQLErrors());
@@ -171,7 +296,7 @@ export function initSeed() {
                 ownerToken,
               ).then(r => r.expectNoGraphQLErrors());
 
-              const members = membersResult.organization?.organization.members.nodes;
+              const members = membersResult.organization?.members?.edges?.map(edge => edge.node);
 
               if (!members) {
                 throw new Error(`Could not get members for org ${organization.slug}`);
@@ -179,13 +304,13 @@ export function initSeed() {
 
               return members;
             },
-            async projects() {
+            async projects(token = ownerToken) {
               const projectsResult = await getOrganizationProjects(
                 { organizationSlug: organization.slug },
-                ownerToken,
+                token,
               ).then(r => r.expectNoGraphQLErrors());
 
-              const projects = projectsResult.organization?.organization.projects.nodes;
+              const projects = projectsResult.organization?.projects.edges.map(edge => edge.node);
 
               if (!projects) {
                 throw new Error(`Could not get projects for org ${organization.slug}`);
@@ -193,16 +318,14 @@ export function initSeed() {
 
               return projects;
             },
-            async createProject(
-              projectType: ProjectType = ProjectType.Single,
-              options?: {
-                useLegacyRegistryModels?: boolean;
-              },
-            ) {
-              const useLegacyRegistryModels = options?.useLegacyRegistryModels === true;
+            async createProject(projectType: ProjectType = ProjectType.Single) {
               const projectResult = await createProject(
                 {
-                  organizationSlug: organization.slug,
+                  organization: {
+                    bySelector: {
+                      organizationSlug: organization.slug,
+                    },
+                  },
                   type: projectType,
                   slug: generateUnique(),
                 },
@@ -212,17 +335,6 @@ export function initSeed() {
               const targets = projectResult.createProject.ok!.createdTargets;
               const target = targets[0];
               const project = projectResult.createProject.ok!.createdProject;
-
-              if (useLegacyRegistryModels) {
-                await updateRegistryModel(
-                  {
-                    organizationSlug: organization.slug,
-                    projectSlug: projectResult.createProject.ok!.createdProject.slug,
-                    model: RegistryModel.Legacy,
-                  },
-                  ownerToken,
-                ).then(r => r.expectNoGraphQLErrors());
-              }
 
               return {
                 project,
@@ -291,6 +403,30 @@ export function initSeed() {
                   }).then(r => r.expectNoGraphQLErrors());
 
                   return result.createDocumentCollection;
+                },
+                async updatePreflightScript({
+                  sourceCode,
+                  token = ownerToken,
+                }: {
+                  sourceCode: string;
+                  token?: string;
+                }) {
+                  const result = await execute({
+                    document: UpdatePreflightScriptMutation,
+                    variables: {
+                      input: {
+                        selector: {
+                          organizationSlug: organization.slug,
+                          projectSlug: project.slug,
+                          targetSlug: target.slug,
+                        },
+                        sourceCode,
+                      },
+                    },
+                    authToken: token,
+                  }).then(r => r.expectNoGraphQLErrors());
+
+                  return result.updatePreflightScript;
                 },
                 async updateDocumentCollection({
                   collectionId,
@@ -420,8 +556,207 @@ export function initSeed() {
 
                   return result.updateOperationInDocumentCollection;
                 },
+                async getSavedFilter({
+                  filterId,
+                  token = ownerToken,
+                }: {
+                  filterId: string;
+                  token?: string;
+                }) {
+                  const result = await execute({
+                    document: GetSavedFilterQuery,
+                    variables: {
+                      id: filterId,
+                      selector: {
+                        organizationSlug: organization.slug,
+                        projectSlug: project.slug,
+                        targetSlug: target.slug,
+                      },
+                    },
+                    authToken: token,
+                  }).then(r => r.expectNoGraphQLErrors());
+
+                  return result.target?.savedFilter;
+                },
+                async getSavedFilters({
+                  first = 20,
+                  after,
+                  visibility,
+                  search,
+                  token = ownerToken,
+                }: {
+                  first?: number;
+                  after?: string;
+                  visibility?: GraphQLSchema.SavedFilterVisibilityType;
+                  search?: string;
+                  token?: string;
+                }) {
+                  const result = await execute({
+                    document: GetSavedFiltersQuery,
+                    variables: {
+                      first,
+                      after,
+                      visibility,
+                      search,
+                      selector: {
+                        organizationSlug: organization.slug,
+                        projectSlug: project.slug,
+                        targetSlug: target.slug,
+                      },
+                    },
+                    authToken: token,
+                  }).then(r => r.expectNoGraphQLErrors());
+
+                  return {
+                    savedFilters: result.target?.savedFilters,
+                    viewerCanCreateSavedFilter: result.target?.viewerCanCreateSavedFilter,
+                  };
+                },
+                async createSavedFilter({
+                  name,
+                  description,
+                  visibility,
+                  insightsFilter,
+                  token = ownerToken,
+                }: {
+                  name: string;
+                  description?: string;
+                  visibility: GraphQLSchema.SavedFilterVisibilityType;
+                  insightsFilter?: GraphQLSchema.InsightsFilterConfigurationInput;
+                  token?: string;
+                }) {
+                  const result = await execute({
+                    document: CreateSavedFilterMutation,
+                    variables: {
+                      input: {
+                        target: {
+                          bySelector: {
+                            organizationSlug: organization.slug,
+                            projectSlug: project.slug,
+                            targetSlug: target.slug,
+                          },
+                        },
+                        name,
+                        description,
+                        visibility,
+                        insightsFilter,
+                      },
+                    },
+                    authToken: token,
+                  }).then(r => r.expectNoGraphQLErrors());
+
+                  return result.createSavedFilter;
+                },
+                async updateSavedFilter({
+                  filterId,
+                  name,
+                  description,
+                  visibility,
+                  insightsFilter,
+                  token = ownerToken,
+                }: {
+                  filterId: string;
+                  name?: string;
+                  description?: string;
+                  visibility?: GraphQLSchema.SavedFilterVisibilityType;
+                  insightsFilter?: GraphQLSchema.InsightsFilterConfigurationInput;
+                  token?: string;
+                }) {
+                  const result = await execute({
+                    document: UpdateSavedFilterMutation,
+                    variables: {
+                      input: {
+                        target: {
+                          bySelector: {
+                            organizationSlug: organization.slug,
+                            projectSlug: project.slug,
+                            targetSlug: target.slug,
+                          },
+                        },
+                        id: filterId,
+                        name,
+                        description,
+                        visibility,
+                        insightsFilter,
+                      },
+                    },
+                    authToken: token,
+                  }).then(r => r.expectNoGraphQLErrors());
+
+                  return result.updateSavedFilter;
+                },
+                async deleteSavedFilter({
+                  filterId,
+                  token = ownerToken,
+                }: {
+                  filterId: string;
+                  token?: string;
+                }) {
+                  const result = await execute({
+                    document: DeleteSavedFilterMutation,
+                    variables: {
+                      input: {
+                        target: {
+                          bySelector: {
+                            organizationSlug: organization.slug,
+                            projectSlug: project.slug,
+                            targetSlug: target.slug,
+                          },
+                        },
+                        id: filterId,
+                      },
+                    },
+                    authToken: token,
+                  }).then(r => r.expectNoGraphQLErrors());
+
+                  return result.deleteSavedFilter;
+                },
+                async trackSavedFilterView({
+                  filterId,
+                  token = ownerToken,
+                }: {
+                  filterId: string;
+                  token?: string;
+                }) {
+                  const result = await execute({
+                    document: TrackSavedFilterViewMutation,
+                    variables: {
+                      input: {
+                        target: {
+                          bySelector: {
+                            organizationSlug: organization.slug,
+                            projectSlug: project.slug,
+                            targetSlug: target.slug,
+                          },
+                        },
+                        id: filterId,
+                      },
+                    },
+                    authToken: token,
+                  }).then(r => r.expectNoGraphQLErrors());
+
+                  return result.trackSavedFilterView;
+                },
+                async addAlert(
+                  input: {
+                    token?: string;
+                  } & Parameters<typeof addAlert>[0],
+                ) {
+                  const result = await addAlert(input, input.token || ownerToken).then(r =>
+                    r.expectNoGraphQLErrors(),
+                  );
+                  return result.addAlert;
+                },
+                async addAlertChannel(
+                  input: { token?: string } & Parameters<typeof addAlertChannel>[0],
+                ) {
+                  const result = await addAlertChannel(input, input.token || ownerToken).then(r =>
+                    r.expectNoGraphQLErrors(),
+                  );
+                  return result.addAlertChannel;
+                },
                 /**
-                 * Create a access token for a given target.
+                 * Create an access token for a given target.
                  * This token can be used for usage reporting and all actions that would be performed by the CLI.
                  */
                 async createTargetAccessToken({
@@ -475,7 +810,12 @@ export function initSeed() {
                         authorizationHeader: headerName,
                       });
                     },
-                    async collectUsage() {},
+                    collectUsage(report: Report) {
+                      return collect({
+                        report,
+                        accessToken: secret,
+                      });
+                    },
                     async checkSchema(
                       sdl: string,
                       service?: string,
@@ -484,6 +824,7 @@ export function initSeed() {
                         commit: string;
                       },
                       contextId?: string,
+                      schemaProposalId?: string,
                     ) {
                       return await checkSchema(
                         {
@@ -491,6 +832,7 @@ export function initSeed() {
                           service,
                           meta,
                           contextId,
+                          schemaProposalId,
                         },
                         secret,
                       );
@@ -578,46 +920,68 @@ export function initSeed() {
                     },
                   };
                 },
-                async toggleTargetValidation(enabled: boolean, ttarget: TargetOverwrite = target) {
-                  const result = await setTargetValidation(
+                async toggleTargetValidation(
+                  isEnabled: boolean,
+                  ttarget: TargetOverwrite = target,
+                ) {
+                  const result = await updateTargetValidationSettings(
                     {
-                      enabled,
-                      organizationSlug: organization.slug,
-                      projectSlug: project.slug,
-                      targetSlug: ttarget.slug,
+                      target: {
+                        bySelector: {
+                          organizationSlug: organization.slug,
+                          projectSlug: project.slug,
+                          targetSlug: ttarget.slug,
+                        },
+                      },
+                      conditionalBreakingChangeConfiguration: {
+                        isEnabled,
+                      },
                     },
                     {
                       token: ownerToken,
                     },
                   ).then(r => r.expectNoGraphQLErrors());
 
-                  return result;
+                  return result.updateTargetConditionalBreakingChangeConfiguration.ok!.target
+                    .conditionalBreakingChangeConfiguration;
                 },
                 async updateTargetValidationSettings({
+                  isEnabled,
                   excludedClients,
+                  excludedAppDeployments,
                   percentage,
                   target: ttarget = target,
-                }: {
-                  excludedClients?: string[];
-                  percentage: number;
+                  requestCount,
+                  breakingChangeFormula,
+                }: GraphQLSchema.ConditionalBreakingChangeConfigurationInput & {
                   target?: TargetOverwrite;
                 }) {
                   const result = await updateTargetValidationSettings(
                     {
-                      organizationSlug: organization.slug,
-                      projectSlug: project.slug,
-                      targetSlug: ttarget.slug,
-                      excludedClients,
-                      percentage,
-                      period: 2,
-                      targetIds: [target.id],
+                      target: {
+                        bySelector: {
+                          organizationSlug: organization.slug,
+                          projectSlug: project.slug,
+                          targetSlug: ttarget.slug,
+                        },
+                      },
+                      conditionalBreakingChangeConfiguration: {
+                        isEnabled,
+                        excludedClients,
+                        excludedAppDeployments,
+                        percentage,
+                        requestCount,
+                        breakingChangeFormula,
+                        period: 2,
+                        targetIds: [target.id],
+                      },
                     },
                     {
                       token: ownerToken,
                     },
                   ).then(r => r.expectNoGraphQLErrors());
 
-                  return result.updateTargetValidationSettings;
+                  return result.updateTargetConditionalBreakingChangeConfiguration;
                 },
                 async compareToPreviousVersion(version: string, ttarget: TargetOverwrite = target) {
                   return (
@@ -645,25 +1009,103 @@ export function initSeed() {
 
                   return operationBodyResult?.target?.operation?.body;
                 },
+                async waitForOperationsCollected(
+                  n: number,
+                  _from?: number,
+                  _to?: number,
+                  ttarget: TargetOverwrite = target,
+                ) {
+                  const from = formatISO(_from ?? subHours(Date.now(), 1));
+                  const to = formatISO(_to ?? Date.now());
+                  const check = async () => {
+                    const statsResult = await readOperationsStats(
+                      {
+                        bySelector: {
+                          organizationSlug: organization.slug,
+                          projectSlug: project.slug,
+                          targetSlug: ttarget.slug,
+                        },
+                      },
+                      {
+                        from,
+                        to,
+                      },
+                      {},
+                      ownerToken,
+                    ).then(r => r.expectNoGraphQLErrors());
+                    return statsResult.target?.operationsStats.totalOperations == n;
+                  };
+
+                  return pollFor(check);
+                },
+                async waitForRequestsCollected(
+                  n: number,
+                  opts?: {
+                    from?: number;
+                    to?: number;
+                    target?: TargetOverwrite;
+                  },
+                ) {
+                  const from = formatISO(opts?.from ?? subHours(Date.now(), 1));
+                  const to = formatISO(opts?.to ?? Date.now());
+                  const check = async () => {
+                    const statsResult = await readOperationsStats(
+                      {
+                        bySelector: {
+                          organizationSlug: organization.slug,
+                          projectSlug: project.slug,
+                          targetSlug: (opts?.target ?? target).slug,
+                        },
+                      },
+                      {
+                        from,
+                        to,
+                      },
+                      {},
+                      ownerToken,
+                    ).then(r => r.expectNoGraphQLErrors());
+                    const totalRequests =
+                      statsResult.target?.operationsStats.operations.edges.reduce(
+                        (total, edge) => total + edge.node.count,
+                        0,
+                      );
+                    return totalRequests == n;
+                  };
+
+                  return pollFor(check);
+                },
                 async readOperationsStats(
                   from: string,
                   to: string,
                   ttarget: TargetOverwrite = target,
+                  filter: GraphQLSchema.OperationStatsFilterInput = {},
                 ) {
                   const statsResult = await readOperationsStats(
+                    { byId: ttarget.id },
                     {
-                      organizationSlug: organization.slug,
-                      projectSlug: project.slug,
-                      targetSlug: ttarget.slug,
-                      period: {
-                        from,
-                        to,
-                      },
+                      from,
+                      to,
                     },
+                    filter,
                     ownerToken,
                   ).then(r => r.expectNoGraphQLErrors());
 
-                  return statsResult.operationsStats;
+                  return statsResult.target?.operationsStats!;
+                },
+                async readClientStats(params: { clientName: string; from: string; to: string }) {
+                  const statsResult = await readClientStats(
+                    {
+                      byId: target.id,
+                    },
+                    {
+                      from: params.from,
+                      to: params.to,
+                    },
+                    params.clientName,
+                    ownerToken,
+                  ).then(r => r.expectNoGraphQLErrors());
+
+                  return statsResult.target?.clientStats!;
                 },
                 async updateBaseSchema(newBase: string, ttarget: TargetOverwrite = target) {
                   const result = await updateBaseSchema(
@@ -695,55 +1137,85 @@ export function initSeed() {
 
                   return result.target?.schemaVersions.edges.map(edge => edge.node);
                 },
-                async updateSchemaVersionStatus(
-                  versionId: string,
-                  valid: boolean,
-                  ttarget: TargetOverwrite = target,
-                ) {
-                  return await updateSchemaVersionStatus(
+                async createTarget(args?: { slug?: string; accessToken?: string }) {
+                  return createTarget(
                     {
-                      organizationSlug: organization.slug,
-                      projectSlug: project.slug,
-                      targetSlug: ttarget.slug,
-                      valid,
-                      versionId,
+                      project: {
+                        bySelector: {
+                          organizationSlug: orgSlug,
+                          projectSlug: project.slug,
+                        },
+                      },
+                      slug: args?.slug ?? generateUnique(),
                     },
-                    ownerToken,
-                  ).then(r => r.expectNoGraphQLErrors());
+                    args?.accessToken ?? ownerToken,
+                  );
                 },
               };
             },
-            async inviteAndJoinMember(inviteToken: string = ownerToken) {
-              const memberEmail = userEmail(generateUnique());
-              const memberToken = await authenticate(memberEmail).then(r => r.access_token);
-
-              const invitationResult = await inviteToOrganization(
+            async inviteAndJoinMember(options?: {
+              inviteToken?: string;
+              memberRoleId?: string | undefined;
+              oidcIntegrationId?: string | undefined;
+              resources?: GraphQLSchema.ResourceAssignmentInput | undefined;
+            }) {
+              const { inviteToken, memberRoleId, oidcIntegrationId, resources } = Object.assign(
+                options ?? {},
                 {
-                  organizationSlug: organization.slug,
-                  email: memberEmail,
+                  inviteToken: ownerToken,
                 },
-                inviteToken,
-              ).then(r => r.expectNoGraphQLErrors());
+              );
+              const memberEmail = userEmail(generateUnique());
+              const memberToken = await doAuthenticate(memberEmail, {
+                oidcIntegrationId,
+                verifyEmail: true,
+              }).then(r => r.access_token);
 
-              const code = invitationResult.inviteToOrganizationByEmail.ok?.code;
+              if (!oidcIntegrationId) {
+                const invitationResult = await inviteToOrganization(
+                  {
+                    organization: {
+                      bySelector: {
+                        organizationSlug: organization.slug,
+                      },
+                    },
+                    email: memberEmail,
+                    memberRoleId,
+                    resources,
+                  },
+                  inviteToken,
+                ).then(r => r.expectNoGraphQLErrors());
+                const code =
+                  invitationResult.inviteToOrganizationByEmail.ok?.createdOrganizationInvitation
+                    .code;
 
-              if (!code) {
-                throw new Error(
-                  `Could not create invitation for ${memberEmail} to join org ${organization.slug}`,
+                if (!code) {
+                  throw new Error(
+                    `Could not create invitation for ${memberEmail} to join org ${organization.slug}`,
+                  );
+                }
+
+                const joinResult = await joinOrganization(code, memberToken).then(r =>
+                  r.expectNoGraphQLErrors(),
                 );
+
+                if (joinResult.joinOrganization.__typename !== 'OrganizationPayload') {
+                  throw new Error(
+                    `Member ${memberEmail} could not join organization ${organization.slug}`,
+                  );
+                }
               }
 
-              const joinResult = await joinOrganization(code, memberToken).then(r =>
+              const orgAfterJoin = await getOrganization(organization.slug, memberToken).then(r =>
                 r.expectNoGraphQLErrors(),
               );
+              const member = orgAfterJoin.organization?.me;
 
-              if (joinResult.joinOrganization.__typename !== 'OrganizationPayload') {
+              if (!member) {
                 throw new Error(
-                  `Member ${memberEmail} could not join organization ${organization.slug}`,
+                  `Could not retrieve membership for ${memberEmail} in ${organization.slug} after joining`,
                 );
               }
-
-              const member = joinResult.joinOrganization.organization.me;
 
               return {
                 member,
@@ -753,6 +1225,7 @@ export function initSeed() {
                   input: {
                     roleId: string;
                     userId: string;
+                    resources?: GraphQLSchema.ResourceAssignmentInput;
                   },
                   options: { useMemberToken?: boolean } = {
                     useMemberToken: false,
@@ -760,9 +1233,21 @@ export function initSeed() {
                 ) {
                   const memberRoleAssignmentResult = await assignMemberRole(
                     {
-                      organizationSlug: organization.slug,
-                      userId: input.userId,
-                      roleId: input.roleId,
+                      organization: {
+                        bySelector: {
+                          organizationSlug: organization.slug,
+                        },
+                      },
+                      member: {
+                        byId: input.userId,
+                      },
+                      memberRole: {
+                        byId: input.roleId,
+                      },
+                      resources: input.resources ?? {
+                        mode: GraphQLSchema.ResourceAssignmentModeType.All,
+                        projects: [],
+                      },
                     },
                     options.useMemberToken ? memberToken : ownerToken,
                   ).then(r => r.expectNoGraphQLErrors());
@@ -774,15 +1259,16 @@ export function initSeed() {
                   return memberRoleAssignmentResult.assignMemberRole.ok?.updatedMember;
                 },
                 async deleteMemberRole(
-                  roleId: string,
+                  memberRoleId: string,
                   options: { useMemberToken?: boolean } = {
                     useMemberToken: false,
                   },
                 ) {
                   const memberRoleDeletionResult = await deleteMemberRole(
                     {
-                      organizationSlug: organization.slug,
-                      roleId,
+                      memberRole: {
+                        byId: memberRoleId,
+                      },
                     },
                     options.useMemberToken ? memberToken : ownerToken,
                   ).then(r => r.expectNoGraphQLErrors());
@@ -794,11 +1280,7 @@ export function initSeed() {
                   return memberRoleDeletionResult.deleteMemberRole.ok?.updatedOrganization;
                 },
                 async createMemberRole(
-                  scopes: {
-                    organization: OrganizationAccessScope[];
-                    project: ProjectAccessScope[];
-                    target: TargetAccessScope[];
-                  },
+                  permissions: Array<string>,
                   options: { useMemberToken?: boolean } = {
                     useMemberToken: false,
                   },
@@ -811,12 +1293,14 @@ export function initSeed() {
                   });
                   const memberRoleCreationResult = await createMemberRole(
                     {
-                      organizationSlug: organization.slug,
+                      organization: {
+                        bySelector: {
+                          organizationSlug: organization.slug,
+                        },
+                      },
                       name,
                       description: 'some description',
-                      organizationAccessScopes: scopes.organization,
-                      projectAccessScopes: scopes.project,
-                      targetAccessScopes: scopes.target,
+                      selectedPermissions: permissions,
                     },
                     options.useMemberToken ? memberToken : ownerToken,
                   ).then(r => r.expectNoGraphQLErrors());
@@ -837,9 +1321,9 @@ export function initSeed() {
                   }
 
                   const createdRole =
-                    memberRoleCreationResult.createMemberRole.ok?.updatedOrganization.memberRoles.find(
-                      r => r.name === name,
-                    );
+                    memberRoleCreationResult.createMemberRole.ok?.updatedOrganization.memberRoles?.edges.find(
+                      e => e.node.name === name,
+                    )?.node;
 
                   if (!createdRole) {
                     throw new Error(
@@ -855,24 +1339,19 @@ export function initSeed() {
                     name: string;
                     description: string;
                   },
-                  scopes: {
-                    organization: OrganizationAccessScope[];
-                    project: ProjectAccessScope[];
-                    target: TargetAccessScope[];
-                  },
+                  permissions: Array<string>,
                   options: { useMemberToken?: boolean } = {
                     useMemberToken: false,
                   },
                 ) {
                   const memberRoleUpdateResult = await updateMemberRole(
                     {
-                      organizationSlug: organization.slug,
-                      roleId: role.id,
+                      memberRole: {
+                        byId: role.id,
+                      },
                       name: role.name,
                       description: role.description,
-                      organizationAccessScopes: scopes.organization,
-                      projectAccessScopes: scopes.project,
-                      targetAccessScopes: scopes.target,
+                      selectedPermissions: permissions,
                     },
                     options.useMemberToken ? memberToken : ownerToken,
                   ).then(r => r.expectNoGraphQLErrors());
@@ -903,6 +1382,13 @@ export function initSeed() {
                   return updatedRole;
                 },
               };
+            },
+            createOIDCIntegration() {
+              return createOIDCIntegration({
+                organizationId: organization.id,
+                accessToken: ownerToken,
+                getPool: getPool,
+              });
             },
           };
         },

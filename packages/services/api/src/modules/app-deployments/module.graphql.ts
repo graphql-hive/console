@@ -2,16 +2,32 @@ import { gql } from 'graphql-modules';
 
 export default gql`
   type AppDeployment {
-    id: ID!
-    name: String!
-    version: String!
-    documents(first: Int, after: String): GraphQLDocumentConnection
+    id: ID! @tag(name: "public")
+    name: String! @tag(name: "public")
+    version: String! @tag(name: "public")
+    documents(
+      first: Int
+      after: String
+      filter: AppDeploymentDocumentsFilterInput
+    ): GraphQLDocumentConnection
     totalDocumentCount: Int!
     status: AppDeploymentStatus!
     """
+    The timestamp when the app deployment was created.
+    """
+    createdAt: DateTime! @tag(name: "public")
+    """
+    The timestamp when the app deployment was activated.
+    """
+    activatedAt: DateTime @tag(name: "public")
+    """
+    The timestamp when the app deployment was retired. Only present for retired deployments.
+    """
+    retiredAt: DateTime @tag(name: "public")
+    """
     The last time a GraphQL request that used the app deployment was reported.
     """
-    lastUsed: DateTime
+    lastUsed: DateTime @tag(name: "public")
   }
 
   extend type Organization {
@@ -22,6 +38,23 @@ export default gql`
     pending
     active
     retired
+  }
+
+  """
+  Fields available for sorting app deployments.
+  """
+  enum AppDeploymentsSortField {
+    CREATED_AT
+    ACTIVATED_AT
+    LAST_USED
+  }
+
+  """
+  Sort configuration for app deployments.
+  """
+  input AppDeploymentsSortInput {
+    field: AppDeploymentsSortField!
+    direction: SortDirectionType!
   }
 
   type GraphQLDocumentConnection {
@@ -45,21 +78,79 @@ export default gql`
   }
 
   type AppDeploymentConnection {
-    pageInfo: PageInfo!
-    edges: [AppDeploymentEdge!]!
+    pageInfo: PageInfo! @tag(name: "public")
+    edges: [AppDeploymentEdge!]! @tag(name: "public")
+    """
+    The total number of app deployments for this target.
+    """
+    total: Int! @tag(name: "public")
   }
 
   type AppDeploymentEdge {
-    cursor: String!
-    node: AppDeployment!
+    cursor: String! @tag(name: "public")
+    node: AppDeployment! @tag(name: "public")
+  }
+
+  input AppDeploymentDocumentsFilterInput {
+    operationName: String
+    """
+    Filter documents that use any of the specified schema coordinates.
+    """
+    schemaCoordinates: [String!]
+  }
+
+  """
+  Filter options for querying active app deployments.
+  The date filters (lastUsedBefore, neverUsedAndCreatedBefore) use OR semantics:
+  a deployment is included if it matches either date condition.
+  If no date filters are provided, all active deployments are returned.
+  """
+  input ActiveAppDeploymentsFilter {
+    """
+    Filter by app deployment name. Case-insensitive partial match.
+    Applied with AND semantics to narrow down results.
+    """
+    name: String @tag(name: "public")
+    """
+    Returns deployments that were last used before the given timestamp.
+    Useful for identifying stale or inactive deployments that have been used
+    at least once but not recently.
+    """
+    lastUsedBefore: DateTime @tag(name: "public")
+    """
+    Returns deployments that have never been used and were created before
+    the given timestamp. Useful for identifying old, unused deployments
+    that may be candidates for cleanup.
+    """
+    neverUsedAndCreatedBefore: DateTime @tag(name: "public")
   }
 
   extend type Target {
     """
     The app deployments for this target.
     """
-    appDeployments(first: Int, after: String): AppDeploymentConnection
+    appDeployments(
+      first: Int
+      after: String
+      sort: AppDeploymentsSortInput
+    ): AppDeploymentConnection
     appDeployment(appName: String!, appVersion: String!): AppDeployment
+    """
+    Whether the viewer can access the app deployments within a target.
+    """
+    viewerCanViewAppDeployments: Boolean!
+    """
+    Find active app deployments matching specific criteria.
+    Date filter conditions (lastUsedBefore, neverUsedAndCreatedBefore) use OR semantics.
+    If no date filters are provided, all active deployments are returned.
+    The name filter uses AND semantics to narrow results.
+    Only active deployments are returned (not pending or retired).
+    """
+    activeAppDeployments(
+      first: Int @tag(name: "public")
+      after: String @tag(name: "public")
+      filter: ActiveAppDeploymentsFilter! @tag(name: "public")
+    ): AppDeploymentConnection! @tag(name: "public")
   }
 
   extend type Mutation {
@@ -68,29 +159,80 @@ export default gql`
       input: AddDocumentsToAppDeploymentInput!
     ): AddDocumentsToAppDeploymentResult!
     activateAppDeployment(input: ActivateAppDeploymentInput!): ActivateAppDeploymentResult!
-    retireAppDeployment(input: RetireAppDeploymentInput!): RetireAppDeploymentResult!
+    retireAppDeployment(
+      input: RetireAppDeploymentInput! @tag(name: "public")
+    ): RetireAppDeploymentResult! @tag(name: "public")
   }
 
   input RetireAppDeploymentInput {
-    targetId: ID!
-    appName: String!
-    appVersion: String!
+    """
+    If using an organization access token, then a target must be provided.
+    If using a target's access token, then this should be null.
+    """
+    target: TargetReferenceInput @tag(name: "public")
+
+    """
+    The identifying application name
+    """
+    appName: String! @tag(name: "public")
+
+    """
+    The exact version of the application to retire
+    """
+    appVersion: String! @tag(name: "public")
+
+    """
+    Force retirement even if protection rules would prevent it. Disabled by default.
+    """
+    force: Boolean! = false @tag(name: "public")
+  }
+
+  """
+  Details about why protection prevented retirement.
+  """
+  type AppDeploymentProtectionBlockDetails {
+    """
+    The last time the app deployment was used.
+    """
+    lastUsed: DateTime @tag(name: "public")
+    """
+    Days since the app deployment was last used.
+    """
+    daysSinceLastUsed: Int @tag(name: "public")
+    """
+    Required minimum days of inactivity.
+    """
+    requiredMinDaysInactive: Int! @tag(name: "public")
+    """
+    Current traffic percentage of this app deployment.
+    """
+    currentTrafficPercentage: Float @tag(name: "public")
+    """
+    Maximum traffic percentage allowed for retirement.
+    """
+    maxTrafficPercentage: Float! @tag(name: "public")
   }
 
   type RetireAppDeploymentError implements Error {
-    message: String!
+    message: String! @tag(name: "public")
+    """
+    Details about why protection prevented retirement.
+    Only present when retirement was blocked due to protection rules.
+    """
+    protectionDetails: AppDeploymentProtectionBlockDetails @tag(name: "public")
   }
 
   type RetireAppDeploymentOk {
-    retiredAppDeployment: AppDeployment!
+    retiredAppDeployment: AppDeployment! @tag(name: "public")
   }
 
   type RetireAppDeploymentResult {
-    error: RetireAppDeploymentError
-    ok: RetireAppDeploymentOk
+    error: RetireAppDeploymentError @tag(name: "public")
+    ok: RetireAppDeploymentOk @tag(name: "public")
   }
 
   input CreateAppDeploymentInput {
+    target: TargetReferenceInput
     appName: String!
     appVersion: String!
   }
@@ -143,6 +285,7 @@ export default gql`
   }
 
   input AddDocumentsToAppDeploymentInput {
+    target: TargetReferenceInput
     """
     Name of the app.
     """
@@ -186,6 +329,7 @@ export default gql`
   }
 
   input ActivateAppDeploymentInput {
+    target: TargetReferenceInput
     appName: String!
     appVersion: String!
   }

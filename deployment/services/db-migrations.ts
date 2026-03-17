@@ -40,6 +40,7 @@ export function deployDbMigrations({
         MIGRATOR: 'up',
         CLICKHOUSE_MIGRATOR: 'up',
         CLICKHOUSE_MIGRATOR_GRAPHQL_HIVE_CLOUD: '1',
+        GRAPHQL_HIVE_ENVIRONMENT: environment.envVars.ENVIRONMENT,
         TS_NODE_TRANSPILE_ONLY: 'true',
         RUN_S3_LEGACY_CDN_KEY_IMPORT: '1',
         // Change to this env var will lead to force rerun of the migration job

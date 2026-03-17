@@ -25,6 +25,8 @@ const EnvironmentModel = zod.object({
   ENVIRONMENT: emptyString(zod.string().optional()),
   RELEASE: emptyString(zod.string().optional()),
   ENCRYPTION_SECRET: zod.string(),
+  COMPOSITION_WORKER_COUNT: zod.number().min(1).default(4),
+  COMPOSITION_WORKER_MAX_OLD_GENERATION_SIZE_MB: NumberFromString(1).optional().default(512),
 });
 
 const RequestBrokerModel = zod.union([
@@ -41,7 +43,8 @@ const RequestBrokerModel = zod.union([
 const TimingsModel = zod.object({
   SCHEMA_CACHE_TTL_MS: NumberFromString().default(30000),
   SCHEMA_CACHE_SUCCESS_TTL_MS: zod.optional(NumberFromString()),
-  SCHEMA_COMPOSITION_TIMEOUT_MS: NumberFromString(25000).default(25000),
+  SCHEMA_COMPOSITION_TIMEOUT_MS: NumberFromString(30_000).default(30_000),
+  SCHEMA_EXTERNAL_COMPOSITION_TIMEOUT_MS: NumberFromString(9_000).default(9_000),
   SCHEMA_CACHE_POLL_INTERVAL_MS: NumberFromString(100).default(150),
 });
 
@@ -59,6 +62,7 @@ const RedisModel = zod.object({
   REDIS_HOST: zod.string(),
   REDIS_PORT: NumberFromString(),
   REDIS_PASSWORD: emptyString(zod.string().optional()),
+  REDIS_TLS_ENABLED: emptyString(zod.union([zod.literal('1'), zod.literal('0')]).optional()),
 });
 
 const PrometheusModel = zod.object({
@@ -87,21 +91,20 @@ const LogModel = zod.object({
 });
 
 const configs = {
-  // eslint-disable-next-line no-process-env
   base: EnvironmentModel.safeParse(process.env),
-  // eslint-disable-next-line no-process-env
+
   sentry: SentryModel.safeParse(process.env),
-  // eslint-disable-next-line no-process-env
+
   redis: RedisModel.safeParse(process.env),
-  // eslint-disable-next-line no-process-env
+
   prometheus: PrometheusModel.safeParse(process.env),
-  // eslint-disable-next-line no-process-env
+
   log: LogModel.safeParse(process.env),
-  // eslint-disable-next-line no-process-env
+
   requestBroker: RequestBrokerModel.safeParse(process.env),
-  // eslint-disable-next-line no-process-env
+
   timings: TimingsModel.safeParse(process.env),
-  // eslint-disable-next-line no-process-env
+
   tracing: OpenTelemetryConfigurationModel.safeParse(process.env),
 };
 
@@ -151,6 +154,7 @@ export const env = {
     host: redis.REDIS_HOST,
     port: redis.REDIS_PORT,
     password: redis.REDIS_PASSWORD ?? '',
+    tlsEnabled: redis.REDIS_TLS_ENABLED === '1',
   },
   sentry: sentry.SENTRY === '1' ? { dsn: sentry.SENTRY_DSN } : null,
   log: {
@@ -172,7 +176,13 @@ export const env = {
       timings.SCHEMA_CACHE_SUCCESS_TTL_MS ||
       timings.SCHEMA_CACHE_TTL_MS /* Fallback to cacheTTL if not set */,
     cachePollInterval: timings.SCHEMA_CACHE_POLL_INTERVAL_MS,
+    /** timeout of the composition in worker */
     schemaCompositionTimeout: timings.SCHEMA_COMPOSITION_TIMEOUT_MS,
+    /**
+     * Timeout of calls to the external composition endpoint within worker
+     * NOTE: This value should always be lower than the schemaCompositionTimeout
+     */
+    schemaExternalCompositionTimeout: timings.SCHEMA_EXTERNAL_COMPOSITION_TIMEOUT_MS,
   },
   requestBroker:
     requestBroker.REQUEST_BROKER === '1'
@@ -181,4 +191,8 @@ export const env = {
           signature: requestBroker.REQUEST_BROKER_SIGNATURE,
         }
       : null,
+  compositionWorker: {
+    count: base.COMPOSITION_WORKER_COUNT,
+    maxOldGenerationSizeMb: base.COMPOSITION_WORKER_MAX_OLD_GENERATION_SIZE_MB,
+  },
 } as const;

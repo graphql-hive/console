@@ -7,9 +7,8 @@ import {
   TaggedTemplateLiteralInvocation,
 } from 'slonik';
 import { createQueryLoggingInterceptor } from 'slonik-interceptor-query-logging';
-import { createSentryInterceptor } from './sentry';
 
-const dbInterceptors: Interceptor[] = [createQueryLoggingInterceptor(), createSentryInterceptor()];
+const dbInterceptors: Interceptor[] = [createQueryLoggingInterceptor()];
 
 export async function getPool(
   connection: string,

@@ -41,7 +41,6 @@ import { TimeAgo } from '@/components/ui/time-ago';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import { SupportTicketPriority, SupportTicketStatus } from '@/gql/graphql';
-import { OrganizationAccessScope, useOrganizationAccess } from '@/lib/access/organization';
 import { useNotifications, useToggle } from '@/lib/hooks';
 import { cn } from '@/lib/utils';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -171,8 +170,8 @@ function NewTicketForm(props: {
                             <FormControl>
                               <RadioGroupItem value={SupportTicketPriority.Normal} />
                             </FormControl>
-                            <FormLabel className="font-normal text-gray-400">
-                              <span className="font-semibold text-white">Normal</span> -{' '}
+                            <FormLabel className="text-neutral-10 font-normal">
+                              <span className="text-neutral-12 font-semibold">Normal</span> -{' '}
                               {priorityDescription[SupportTicketPriority.Normal]}
                             </FormLabel>
                           </FormItem>
@@ -180,8 +179,8 @@ function NewTicketForm(props: {
                             <FormControl>
                               <RadioGroupItem value={SupportTicketPriority.High} />
                             </FormControl>
-                            <FormLabel className="font-normal text-gray-400">
-                              <span className="font-semibold text-white">High</span> -{' '}
+                            <FormLabel className="text-neutral-10 font-normal">
+                              <span className="text-neutral-12 font-semibold">High</span> -{' '}
                               {priorityDescription[SupportTicketPriority.High]}
                             </FormLabel>
                           </FormItem>
@@ -189,8 +188,8 @@ function NewTicketForm(props: {
                             <FormControl>
                               <RadioGroupItem value={SupportTicketPriority.Urgent} />
                             </FormControl>
-                            <FormLabel className="font-normal text-gray-400">
-                              <span className="font-semibold text-white">Urgent</span> -{' '}
+                            <FormLabel className="text-neutral-10 font-normal">
+                              <span className="text-neutral-12 font-semibold">Urgent</span> -{' '}
                               {priorityDescription[SupportTicketPriority.Urgent]}
                             </FormLabel>
                           </FormItem>
@@ -261,12 +260,12 @@ function SupportTicketRow(props: {
   const isSolved = ticket.status === SupportTicketStatus.Solved;
 
   return (
-    <TableRow className={cn(isSolved ? 'text-gray-500' : '')}>
+    <TableRow className={cn(isSolved ? 'text-neutral-10' : '')}>
       <TableCell className="text-center">{ticket.id}</TableCell>
       <TableCell>
         <Button
           variant="link"
-          className={cn(isSolved ? 'text-gray-500' : '', 'h-auto p-0 text-left')}
+          className={cn(isSolved ? 'text-neutral-10' : '', 'h-auto p-0 text-left')}
           asChild
         >
           <Link
@@ -284,7 +283,7 @@ function SupportTicketRow(props: {
         <Priority level={ticket.priority} />
       </TableCell>
       <TableCell className="w-[200px] text-right text-xs">
-        <TimeAgo date={ticket.updatedAt} className="text-gray-500" />
+        <TimeAgo date={ticket.updatedAt} className="text-neutral-10" />
       </TableCell>
     </TableRow>
   );
@@ -294,10 +293,6 @@ const Support_OrganizationFragment = graphql(`
   fragment Support_OrganizationFragment on Organization {
     id
     slug
-    me {
-      ...CanAccessOrganization_MemberFragment
-      isOwner
-    }
     supportTickets {
       ...Support_SupportTicketConnection
     }
@@ -329,12 +324,6 @@ function Support(props: {
     toggle();
     props.refetch();
   }, [toggle, props.refetch]);
-  useOrganizationAccess({
-    scope: OrganizationAccessScope.Read,
-    member: organization.me,
-    redirect: true,
-    organizationSlug: organization.slug,
-  });
 
   const tickets = supportTicketsConnection?.edges.map(e => e.node);
 
@@ -387,11 +376,9 @@ function Support(props: {
 }
 
 const SupportPageQuery = graphql(`
-  query SupportPageQuery($selector: OrganizationSelectorInput!) {
-    organization(selector: $selector) {
-      organization {
-        ...Support_OrganizationFragment
-      }
+  query SupportPageQuery($organizationSlug: String!) {
+    organization: organizationBySlug(organizationSlug: $organizationSlug) {
+      ...Support_OrganizationFragment
     }
   }
 `);
@@ -400,9 +387,7 @@ function SupportPageContent(props: { organizationSlug: string }) {
   const [query, refetchQuery] = useQuery({
     query: SupportPageQuery,
     variables: {
-      selector: {
-        organizationSlug: props.organizationSlug,
-      },
+      organizationSlug: props.organizationSlug,
     },
     requestPolicy: 'cache-first',
   });
@@ -415,7 +400,7 @@ function SupportPageContent(props: { organizationSlug: string }) {
     return <QueryError organizationSlug={props.organizationSlug} error={query.error} />;
   }
 
-  const currentOrganization = query.data?.organization?.organization;
+  const currentOrganization = query.data?.organization;
 
   return (
     <OrganizationLayout

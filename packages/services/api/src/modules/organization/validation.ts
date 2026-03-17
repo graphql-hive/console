@@ -13,7 +13,7 @@ export const OrganizationSlugModel = z
   .refine(slug => !reservedOrganizationSlugs.includes(slug), {
     message: "Slug can't be one of the reserved names",
   });
-export const createOrUpdateMemberRoleInputSchema = z.object({
+export const CreateOrUpdateMemberRoleModel = z.object({
   name: z
     .string({
       required_error: 'Please enter role name',

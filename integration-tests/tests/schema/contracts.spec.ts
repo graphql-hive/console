@@ -268,7 +268,6 @@ test('federation schema contains list of tags', async () => {
       },
     ],
   });
-
   expect(result.tags).toMatchInlineSnapshot(`
     [
       toyota,
@@ -348,4 +347,323 @@ test('failed contract composition has errors and no sdl and supergraph', async (
   expect(result.contracts?.[0].sdl).toEqual(null);
   expect(result.contracts?.[0].supergraph).toEqual(null);
   expect(result.contracts?.[0].errors).toBeDefined();
+});
+
+test('type is marked as inaccessible if all fields are inaccessible and the type is not used', async () => {
+  const result = await client.composeAndValidate.mutate({
+    type: 'federation',
+    native: true,
+    schemas: [
+      {
+        raw: /* GraphQL */ `
+          extend schema
+            @link(url: "https://specs.apollo.dev/link/v1.0")
+            @link(url: "https://specs.apollo.dev/federation/v2.8", import: ["@tag"])
+
+          type Query {
+            hello: String @tag(name: "public")
+          }
+
+          type Brr {
+            a: String
+            b: String
+            c: String
+          }
+        `,
+        source: 'foo.graphql',
+        url: null,
+      },
+    ],
+    external: null,
+    contracts: [
+      {
+        id: 'foo',
+        filter: {
+          removeUnreachableTypesFromPublicApiSchema: true,
+          exclude: null,
+          include: ['public'],
+        },
+      },
+    ],
+  });
+
+  expect(result.contracts?.[0].errors).toEqual([]);
+  expect(result.contracts?.[0].supergraph).toContain(
+    'type Brr @join__type(graph: FOO_GRAPHQL) @inaccessible {',
+  );
+});
+
+test('inaccessible is only applied once per type', async () => {
+  const result = await client.composeAndValidate.mutate({
+    type: 'federation',
+    native: true,
+    schemas: [
+      {
+        raw: /* GraphQL */ `
+          extend schema
+            @link(url: "https://specs.apollo.dev/link/v1.0")
+            @link(url: "https://specs.apollo.dev/federation/v2.8", import: ["@tag"])
+
+          type Query {
+            hello: String @tag(name: "public")
+          }
+
+          type Brr {
+            a: String
+          }
+
+          extend type Brr {
+            b: String
+          }
+        `,
+        source: 'foo.graphql',
+        url: null,
+      },
+    ],
+    external: null,
+    contracts: [
+      {
+        id: 'foo',
+        filter: {
+          removeUnreachableTypesFromPublicApiSchema: true,
+          exclude: null,
+          include: ['public'],
+        },
+      },
+    ],
+  });
+
+  expect(result.contracts?.[0].errors).toEqual([]);
+});
+
+test('inaccessible is not applied on type if at least one type extension has a public field', async () => {
+  const result = await client.composeAndValidate.mutate({
+    type: 'federation',
+    native: true,
+    schemas: [
+      {
+        raw: /* GraphQL */ `
+          extend schema
+            @link(url: "https://specs.apollo.dev/link/v1.0")
+            @link(url: "https://specs.apollo.dev/federation/v2.8", import: ["@tag"])
+
+          type Query {
+            hello: String @tag(name: "public")
+          }
+
+          type Brr {
+            a: String
+          }
+
+          extend type Brr {
+            b: String @tag(name: "public")
+          }
+        `,
+        source: 'foo.graphql',
+        url: null,
+      },
+    ],
+    external: null,
+    contracts: [
+      {
+        id: 'foo',
+        filter: {
+          removeUnreachableTypesFromPublicApiSchema: false,
+          exclude: null,
+          include: ['public'],
+        },
+      },
+    ],
+  });
+
+  expect(result.contracts?.[0].errors).toEqual([]);
+  expect(result.contracts?.[0].sdl).toContain('type Brr {');
+});
+
+test('@external fields are always included if exclude @tag is used', async () => {
+  const result = await client.composeAndValidate.mutate({
+    type: 'federation',
+    native: true,
+    schemas: [
+      {
+        raw: /* GraphQL */ `
+          extend schema
+            @link(url: "https://specs.apollo.dev/link/v1.0")
+            @link(url: "https://specs.apollo.dev/federation/v2.8", import: ["@key", "@tag"])
+
+          type Query {
+            user: User
+          }
+
+          type User @key(fields: "id") {
+            id: ID!
+            ssn: String @tag(name: "private")
+          }
+        `,
+        source: 'user.graphql',
+        url: 'https://localhost:3000/graphql',
+      },
+      {
+        raw: /* GraphQL */ `
+          extend schema
+            @link(url: "https://specs.apollo.dev/link/v1.0")
+            @link(
+              url: "https://specs.apollo.dev/federation/v2.8"
+              import: ["@key", "@external", "@requires"]
+            )
+
+          type User @key(fields: "id") {
+            id: ID!
+            ssn: String @external
+            creditScore: Int @requires(fields: "ssn")
+          }
+        `,
+        source: 'credit.graphql',
+        url: 'https://localhost:3001/graphql',
+      },
+    ],
+    external: null,
+    contracts: [
+      {
+        id: 'foo',
+        filter: {
+          removeUnreachableTypesFromPublicApiSchema: false,
+          exclude: ['private'],
+          include: null,
+        },
+      },
+    ],
+  });
+
+  expect(result.errors).toEqual([]);
+  expect(result.contracts?.[0].errors).toEqual([]);
+  expect(result.contracts?.[0].sdl).toMatchInlineSnapshot(`
+    type User {
+      id: ID!
+      creditScore: Int
+    }
+
+    type Query {
+      user: User
+    }
+  `);
+});
+
+test('@external fields are always included if include @tag is used', async () => {
+  const result = await client.composeAndValidate.mutate({
+    type: 'federation',
+    native: true,
+    schemas: [
+      {
+        raw: /* GraphQL */ `
+          extend schema
+            @link(url: "https://specs.apollo.dev/link/v1.0")
+            @link(url: "https://specs.apollo.dev/federation/v2.8", import: ["@key", "@tag"])
+
+          type Query {
+            user: User @tag(name: "public")
+          }
+
+          type User @key(fields: "id") {
+            id: ID! @tag(name: "public")
+            ssn: String
+          }
+        `,
+        source: 'user.graphql',
+        url: 'https://localhost:3000/graphql',
+      },
+      {
+        raw: /* GraphQL */ `
+          extend schema
+            @link(url: "https://specs.apollo.dev/link/v1.0")
+            @link(
+              url: "https://specs.apollo.dev/federation/v2.8"
+              import: ["@key", "@external", "@requires", "@tag"]
+            )
+
+          type User @key(fields: "id") {
+            id: ID!
+            ssn: String @external
+            creditScore: Int @requires(fields: "ssn") @tag(name: "public")
+          }
+        `,
+        source: 'credit.graphql',
+        url: 'https://localhost:3001/graphql',
+      },
+    ],
+    external: null,
+    contracts: [
+      {
+        id: 'foo',
+        filter: {
+          removeUnreachableTypesFromPublicApiSchema: false,
+          exclude: null,
+          include: ['public'],
+        },
+      },
+    ],
+  });
+
+  expect(result.errors).toEqual([]);
+  expect(result.contracts?.[0].errors).toEqual([]);
+  expect(result.contracts?.[0].sdl).toMatchInlineSnapshot(`
+    type User {
+      id: ID!
+      creditScore: Int
+    }
+
+    type Query {
+      user: User
+    }
+  `);
+});
+
+test('include with exclude is possible', async () => {
+  const result = await client.composeAndValidate.mutate({
+    type: 'federation',
+    native: true,
+    schemas: [
+      {
+        raw: /* GraphQL */ `
+          extend schema
+            @link(url: "https://specs.apollo.dev/link/v1.0")
+            @link(url: "https://specs.apollo.dev/federation/v2.8", import: ["@key", "@tag"])
+
+          type Query {
+            user: User @tag(name: "public")
+          }
+
+          type User @key(fields: "id") @tag(name: "public") {
+            id: ID!
+            ssn: String @tag(name: "private")
+          }
+        `,
+        source: 'user.graphql',
+        url: 'https://localhost:3000/graphql',
+      },
+    ],
+    external: null,
+    contracts: [
+      {
+        id: 'foo',
+        filter: {
+          removeUnreachableTypesFromPublicApiSchema: false,
+          exclude: ['private'],
+          include: ['public'],
+        },
+      },
+    ],
+  });
+
+  expect(result.errors).toEqual([]);
+  expect(result.contracts?.[0].errors).toEqual([]);
+  expect(result.contracts?.[0].sdl).toMatchInlineSnapshot(`
+    type Query {
+      user: User
+    }
+
+    type User {
+      id: ID!
+    }
+  `);
 });

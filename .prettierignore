@@ -3,6 +3,7 @@
 dist/
 .next/
 __generated__/
+__snapshots__/
 
 /.turbo/
 /integration-tests/testkit/gql/
@@ -12,11 +13,12 @@ __generated__/
 /packages/web/app/src/graphql/index.ts
 /packages/web/app/next.config.mjs
 /packages/migrations/test/utils/testkit.ts
-/packages/web/app/storybook-static
 /packages/web/docs/out/
+/packages/web/docs/public/privacy-policy.html
 
 # test fixtures
 integration-tests/fixtures/init-invalid-schema.graphql
+integration-tests/fixtures/whitespace-oddity.graphql
 /target
 tmp
 

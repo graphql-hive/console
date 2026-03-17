@@ -12,7 +12,10 @@ const config: CodegenConfig = {
         typeDefsFilePath: false,
         mergeSchema: {
           path: '../../../../schema.graphql',
-          config: { includeDirectives: true },
+          config: {
+            includeDirectives: true,
+            append: '\n\n directive @oneOf on INPUT_OBJECT',
+          },
         },
         resolverGeneration: 'minimal',
         resolverMainFileMode: 'modules',
@@ -31,12 +34,11 @@ const config: CodegenConfig = {
           contextType: 'GraphQLModules.ModuleContext',
           enumValues: {
             ProjectType: '../shared/entities#ProjectType',
-            NativeFederationCompatibilityStatus:
-              '../shared/entities#NativeFederationCompatibilityStatus',
-            TargetAccessScope: '../modules/auth/providers/target-access#TargetAccessScope',
-            ProjectAccessScope: '../modules/auth/providers/project-access#ProjectAccessScope',
-            OrganizationAccessScope:
-              '../modules/auth/providers/organization-access#OrganizationAccessScope',
+            NativeFederationCompatibilityStatusType:
+              '../shared/entities#NativeFederationCompatibilityStatusType',
+            TargetAccessScope: '../modules/auth/providers/scopes#TargetAccessScope',
+            ProjectAccessScope: '../modules/auth/providers/scopes#ProjectAccessScope',
+            OrganizationAccessScope: '../modules/auth/providers/scopes#OrganizationAccessScope',
             SupportTicketPriority: '../shared/entities#SupportTicketPriority',
             SupportTicketStatus: '../shared/entities#SupportTicketStatus',
           },
@@ -60,10 +62,7 @@ const config: CodegenConfig = {
       },
     ),
     './packages/web/app/src/gql/': {
-      documents: [
-        './packages/web/app/src/(components|lib|pages)/**/*.ts(x)?',
-        '!./packages/web/app/src/server/**/*.ts',
-      ],
+      documents: ['./packages/web/app/src/(components|lib|pages|server)/**/*.ts(x)?'],
       preset: 'client',
       config: {
         scalars: {

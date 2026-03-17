@@ -125,7 +125,7 @@ export class AlertsManager {
       selector.projectId,
     );
     await this.session.assertPerformAction({
-      action: 'alert:describe',
+      action: 'alert:modify',
       organizationId: selector.organizationId,
       params: {
         organizationId: selector.organizationId,
@@ -199,7 +199,7 @@ export class AlertsManager {
       selector.projectId,
     );
     await this.session.assertPerformAction({
-      action: 'alert:describe',
+      action: 'alert:modify',
       organizationId: selector.organizationId,
       params: {
         organizationId: selector.organizationId,
@@ -234,8 +234,8 @@ export class AlertsManager {
     );
 
     const [channels, alerts] = await Promise.all([
-      this.getChannels({ organizationId: organization, projectId: project }),
-      this.getAlerts({ organizationId: organization, projectId: project }),
+      this.storage.getAlertChannels({ organizationId: organization, projectId: project }),
+      this.storage.getAlerts({ organizationId: organization, projectId: project }),
     ]);
 
     const matchingAlerts = alerts.filter(

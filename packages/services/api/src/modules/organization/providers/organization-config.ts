@@ -1,9 +1,3 @@
-import {
-  OrganizationAccessScope,
-  ProjectAccessScope,
-  TargetAccessScope,
-} from '../../auth/providers/scopes';
-
 export const reservedOrganizationSlugs = [
   'registry',
   'server',
@@ -50,18 +44,4 @@ export const reservedOrganizationSlugs = [
   'view',
   'new',
   'org',
-];
-
-export const organizationAdminScopes = [
-  ...Object.values(OrganizationAccessScope),
-  ...Object.values(ProjectAccessScope),
-  ...Object.values(TargetAccessScope),
-];
-
-export const organizationViewerScopes = [
-  OrganizationAccessScope.READ,
-  ProjectAccessScope.READ,
-  ProjectAccessScope.OPERATIONS_STORE_READ,
-  TargetAccessScope.READ,
-  TargetAccessScope.REGISTRY_READ,
 ];

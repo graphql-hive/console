@@ -326,13 +326,17 @@ function printValue(value: Value): string {
   throw new Error('sql: Unexpected value. Expected a string or an array of strings.');
 }
 
+function escapeDoubleQuotes(value: string) {
+  return value.replaceAll(`\"`, `\\\"`);
+}
+
 function stringifyValue(value: Value): string {
   if (typeof value === 'string') {
-    return value;
+    return escapeDoubleQuotes(value);
   }
 
   if (Array.isArray(value)) {
-    return `[${value.map(v => `'${v}'`).join(', ')}]`;
+    return escapeDoubleQuotes(`[${value.map(v => `'${v}'`).join(', ')}]`);
   }
 
   throw new Error('sql: Unexpected value. Expected a string or an array of strings.');

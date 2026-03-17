@@ -74,6 +74,11 @@ async function rewritePackageJson(
   });
 }
 
+const globalExternals: string[] = [
+  // TODO: dependency of hive gateway. why does it get built by all packages, mystery
+  'ansi-color',
+];
+
 async function compile(
   cwd: string,
   entryPoint: string | string[],
@@ -96,7 +101,7 @@ async function compile(
     shims: true,
     skipNodeModulesBundle: false,
     // noExternal: dependencies,
-    external: buildOptions.external,
+    external: [...globalExternals, ...(buildOptions.external || [])],
     banner: {
       js: requireShim,
     },

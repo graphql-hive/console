@@ -21,6 +21,8 @@ export const AppDeployment: AppDeploymentResolvers = {
       .getPaginatedDocumentsForAppDeployment(appDeployment, {
         cursor: args.after ?? null,
         first: args.first ?? null,
+        operationName: args.filter?.operationName ?? '',
+        schemaCoordinates: args.filter?.schemaCoordinates?.slice() ?? null,
       });
   },
   totalDocumentCount: async (appDeployment, _, { injector }) => {

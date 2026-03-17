@@ -18,6 +18,7 @@ export const approveFailedSchemaCheck: NonNullable<
     targetId,
     schemaCheckId: input.schemaCheckId,
     comment: input.comment,
+    author: input.author,
   });
 
   if (result.type === 'error') {

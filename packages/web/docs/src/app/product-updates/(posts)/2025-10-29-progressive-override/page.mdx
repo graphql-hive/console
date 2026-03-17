@@ -1,0 +1,160 @@
+---
+title: Easier Gradual Schema Migrations with Progressive Overrides
+description:
+  Safer and controlled migrations with Progressive Override that allows gradual schema changes.
+date: 2025-10-29
+authors: [arda]
+---
+
+import { Tabs } from '@theguild/components'
+
+**Schema migrations just got a lot safer.** We're thrilled to introduce Progressive Override in Hive
+Gateway and Hive Router - enabling you to gradually migrate fields between subgraphs with zero risk
+and full control.
+
+Moving fields between subgraphs has always been risky. Traditional approaches require coordinated
+releases, no way to gradually test changes, and zero tolerance for errors. With Progressive
+Override, you can now:
+
+- **A/B test** field migrations before full rollout
+- **Reduce risk** with percentage-based traffic control
+- **Test safely** with internal users first, then gradually expand to all traffic
+- **Rollback instantly** if anything goes wrong
+
+No more stressful schema migrations - just smooth, controlled transitions that you control
+completely.
+
+## Simple Percentage-Based Rollouts
+
+The easiest way to get started is with **built-in percentage rollouts**. No gateway configuration
+needed - just add a `percent(x)` label to your `@override` directive.
+
+**Step 1:** Import the `@override` directive in your subgraph schema:
+
+```graphql
+extend schema @link(url: "https://specs.apollo.dev/federation/v2.7", import: ["@key", "@override"])
+```
+
+**Step 2:** Add the field to your new subgraph with progressive override:
+
+```diff
+type Bill @key(fields: "id") {
+  id: ID!
++ amount: Int! @override(from: "Payments", label: "percent(20)")
+}
+```
+
+That's it! **20% of traffic** for the `amount` field will now route to your new `Billing` subgraph,
+while **80% continues** to use the `Payments` subgraph.
+
+### How It Works
+
+- **Same query = same result**: The percentage is calculated per operation, ensuring consistency
+- **No configuration needed**: The `percent(x)` syntax works automatically
+- **Gradual rollout**: Start with 20%, monitor for a day, increase to 50%, then 100%
+- **Safe migration**: Both subgraphs serve the field simultaneously until you reach 100%
+
+When you're ready to commit the change completely, simply bump the percentage to 100% and remove the
+field from the old subgraph.
+
+## Advanced: Custom Labels & Feature Flags
+
+Need more control than percentages? **Custom labels** let you route traffic based on specific
+criteria - user groups, feature flags, request headers, or any logic you need.
+
+Perfect for:
+
+- **Beta testing** with specific user groups
+- **Internal testing** before public release
+- **Integration** with LaunchDarkly or other feature flag services
+- **Header-based routing** (e.g., `x-user-group: beta`)
+
+```diff
+type Bill @key(fields: "id") {
+  id: ID!
++ amount: Int! @override(from: "Payments", label: "activate-beta-feature")
+}
+```
+
+### Configure Your Gateway
+
+Now tell your gateway when to activate this label. You can base the decision on headers, environment
+variables, user IDs, or any other criteria.
+
+The following example shows how to activate the `activate-beta-feature` label if `x-user-group`
+header is set to `beta`.
+
+<Tabs items={['Hive Gateway', 'Hive Router']}>
+  <Tabs.Tab>
+    {/* Hive Gateway Content */}
+    ```ts
+    import { defineConfig, type GatewayContext } from '@graphql-hive/gateway';
+
+    export const gatewayConfig = defineConfig({
+      progressiveOverride(label: string, context: GatewayContext) {
+        if (label === 'activate-beta-feature' && context.request.headers.get('x-user-group') === 'beta') {
+            // Activate `activate-beta-feature` feature flag
+            return true;
+        }
+        return false;
+      }
+    });
+    ```
+
+  </Tabs.Tab>
+  <Tabs.Tab>
+    {/* Hive Router Content */}
+    ```yaml
+    override_labels:
+        activate-beta-feature:
+            # Activate if the x-user-group header is set to beta
+            expression: '.request.headers."x-user-group" == "beta"'
+    ```
+  </Tabs.Tab>
+</Tabs>
+
+### Why You'll Love Progressive Override
+
+Transform how you deploy GraphQL schema changes:
+
+**🎯 Zero-Risk Rollouts** Start with 5% of traffic, watch your metrics, increase to 50%, then 100%.
+Sleep better knowing you can rollback instantly.
+
+**⚡ Faster Feature Delivery** No more waiting for coordinated releases. Test new implementations in
+production with real traffic before committing.
+
+**🧪 Real A/B Testing** Compare behavior between old and new implementations side-by-side with the
+same queries. Make data-driven decisions.
+
+**🔒 Built-in Safety** Both implementations run in parallel until you reach 100%. If something
+breaks, just lower the percentage or remove the label.
+
+**👥 Smarter Testing** Route specific user groups (beta testers, internal users) to new
+implementations. Get feedback before global release.
+
+**📊 Better Monitoring** Compare performance metrics, error rates, and user behavior across both
+implementations in real-time.
+
+> You can use this feature with LaunchDarkly or any other feature flagging service by integrating it
+> into your gateway/router configuration. See
+> [the example with Hive Gateway](https://github.com/graphql-hive/gateway/tree/main/examples/launchdarkly-override)
+
+## Ready to Make Schema Migrations Stress-Free?
+
+**Progressive Override is live now** in both Hive Gateway and Hive Router. Start using it today to
+make your GraphQL schema migrations safer and more controlled.
+
+### Quick Start Links
+
+**For Hive Gateway users:** 👉
+[Read the Gateway Documentation](/docs/gateway/other-features/progressive-override)
+
+**For Hive Router users:** 👉
+[Read the Router Documentation](/docs/router/configuration/override_labels)
+
+**See it in action:** 👉
+[LaunchDarkly Integration Example](https://github.com/graphql-hive/gateway/tree/main/examples/launchdarkly-override)
+
+---
+
+Questions or want to share how you're using Progressive Override? We'd love to hear from you!

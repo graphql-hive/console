@@ -1,9 +1,9 @@
 #!/usr/bin/env node
-import { hostname } from 'os';
 import {
   createServer,
   registerShutdown,
   reportReadiness,
+  sentryInit,
   startHeartbeats,
   startMetrics,
 } from '@hive/service-common';
@@ -13,8 +13,7 @@ import { createIngestor } from './ingestor';
 
 async function main() {
   if (env.sentry) {
-    Sentry.init({
-      serverName: hostname(),
+    sentryInit({
       dist: 'usage-ingestor',
       enabled: !!env.sentry,
       environment: env.environment,

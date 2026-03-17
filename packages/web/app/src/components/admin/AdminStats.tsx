@@ -22,11 +22,10 @@ import {
   Tooltip,
   Tr,
 } from '@/components/v2';
-import { CHART_PRIMARY_COLOR } from '@/constants';
 import { env } from '@/env/frontend';
 import { DocumentType, FragmentType, graphql, useFragment } from '@/gql';
 import { theme } from '@/lib/charts';
-import { useChartStyles } from '@/utils';
+import { useChartStyles } from '@/lib/utils';
 import { ChevronUpIcon } from '@radix-ui/react-icons';
 import {
   createColumnHelper,
@@ -42,7 +41,6 @@ import { Button } from '../ui/button';
 
 interface Organization {
   name: ReactElement;
-  members: string;
   users: number;
   projects: number;
   targets: number;
@@ -86,6 +84,7 @@ function CollectedOperationsOverTime(props: {
   const dataRef = useRef<[string, number][]>();
   dataRef.current ||= operations.map(node => [node.date, node.count]);
   const data = dataRef.current;
+  const { styles: chartStyles, colors } = useChartStyles();
 
   return (
     <AutoSizer disableHeight>
@@ -94,7 +93,7 @@ function CollectedOperationsOverTime(props: {
           style={{ width: size.width, height: 200 }}
           theme={theme.theme}
           option={{
-            ...useChartStyles(),
+            ...chartStyles,
             grid: {
               left: 50,
               top: 50,
@@ -117,7 +116,7 @@ function CollectedOperationsOverTime(props: {
                 min: 0,
                 splitLine: {
                   lineStyle: {
-                    color: '#595959',
+                    color: colors.grid,
                     type: 'dashed',
                   },
                 },
@@ -132,7 +131,7 @@ function CollectedOperationsOverTime(props: {
                 name: 'Collected operations',
                 showSymbol: false,
                 smooth: true,
-                color: CHART_PRIMARY_COLOR,
+                color: colors.primary,
                 areaStyle: {},
                 emphasis: {
                   focus: 'series',
@@ -170,15 +169,6 @@ const AdminStatsQuery = graphql(`
               user {
                 id
                 email
-              }
-            }
-            members {
-              nodes {
-                id
-                user {
-                  id
-                  email
-                }
               }
             }
           }
@@ -232,9 +222,6 @@ const columns = [
   columnHelper.accessor('name', {
     header: 'Organization',
     enableSorting: false,
-  }),
-  columnHelper.accessor('members', {
-    header: 'Members',
   }),
   columnHelper.accessor('users', {
     header: 'Users',
@@ -411,7 +398,6 @@ export function AdminStats({
               <pre title="owner">{node.organization.owner.user.email}</pre>
             </div>
           ),
-          members: (node.organization.members.nodes || []).map(v => v.user.email).join(', '),
           users: node.users,
           projects: node.projects,
           targets: node.targets,
@@ -439,7 +425,7 @@ export function AdminStats({
     <DataWrapper query={query} organizationSlug={null}>
       {({ data }) => (
         <div className="flex flex-col gap-6">
-          <div className="flex justify-between rounded-md border border-gray-800 bg-gray-900/50 p-5">
+          <div className="border-neutral-5 bg-neutral-2/50 flex justify-between rounded-md border p-5">
             <OverallStat label="Users" value={overall.users} />
             <OverallStat label="Organizations" value={overall.organizations} />
             <OverallStat label="Projects" value={overall.projects} />

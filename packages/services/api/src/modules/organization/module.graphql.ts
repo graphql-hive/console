@@ -2,13 +2,19 @@ import { gql } from 'graphql-modules';
 
 export default gql`
   extend type Query {
-    organization(selector: OrganizationSelectorInput!): OrganizationPayload
+    organization(
+      """
+      Reference to the organization that should be fetched.
+      """
+      reference: OrganizationReferenceInput! @tag(name: "public")
+    ): Organization @tag(name: "public")
     organizationByInviteCode(code: String!): OrganizationByInviteCodePayload
     organizations: OrganizationConnection!
     organizationTransferRequest(
       selector: OrganizationTransferRequestSelector!
     ): OrganizationTransfer
     myDefaultOrganization(previouslyVisitedOrganizationId: ID): OrganizationPayload
+    organizationBySlug(organizationSlug: String!): Organization
   }
 
   extend type Mutation {
@@ -18,27 +24,607 @@ export default gql`
     joinOrganization(code: String!): JoinOrganizationPayload!
     leaveOrganization(input: OrganizationSelectorInput!): LeaveOrganizationResult!
     inviteToOrganizationByEmail(
-      input: InviteToOrganizationByEmailInput!
-    ): InviteToOrganizationByEmailResult!
+      input: InviteToOrganizationByEmailInput! @tag(name: "public")
+    ): InviteToOrganizationByEmailResult! @tag(name: "public")
     deleteOrganizationInvitation(
-      input: DeleteOrganizationInvitationInput!
-    ): DeleteOrganizationInvitationResult!
+      input: DeleteOrganizationInvitationInput! @tag(name: "public")
+    ): DeleteOrganizationInvitationResult! @tag(name: "public")
     updateOrganizationSlug(input: UpdateOrganizationSlugInput!): UpdateOrganizationSlugResult!
-    updateOrganizationMemberAccess(input: OrganizationMemberAccessInput!): OrganizationPayload!
     requestOrganizationTransfer(
       input: RequestOrganizationTransferInput!
     ): RequestOrganizationTransferResult!
     answerOrganizationTransferRequest(
       input: AnswerOrganizationTransferRequestInput!
     ): AnswerOrganizationTransferRequestResult!
-    createMemberRole(input: CreateMemberRoleInput!): CreateMemberRoleResult!
-    updateMemberRole(input: UpdateMemberRoleInput!): UpdateMemberRoleResult!
-    deleteMemberRole(input: DeleteMemberRoleInput!): DeleteMemberRoleResult!
-    assignMemberRole(input: AssignMemberRoleInput!): AssignMemberRoleResult!
     """
-    Remove this mutation after migration is complete.
+    Create a new member role with permissions.
     """
-    migrateUnassignedMembers(input: MigrateUnassignedMembersInput!): MigrateUnassignedMembersResult!
+    createMemberRole(input: CreateMemberRoleInput! @tag(name: "public")): CreateMemberRoleResult!
+      @tag(name: "public")
+    updateMemberRole(input: UpdateMemberRoleInput! @tag(name: "public")): UpdateMemberRoleResult!
+      @tag(name: "public")
+    deleteMemberRole(input: DeleteMemberRoleInput! @tag(name: "public")): DeleteMemberRoleResult!
+      @tag(name: "public")
+    assignMemberRole(input: AssignMemberRoleInput! @tag(name: "public")): AssignMemberRoleResult!
+      @tag(name: "public")
+    """
+    Create a new access token scoped to an organization.
+    """
+    createOrganizationAccessToken(
+      input: CreateOrganizationAccessTokenInput! @tag(name: "public")
+    ): CreateOrganizationAccessTokenResult! @tag(name: "public")
+
+    """
+    Create a new access token scoped to a project.
+    """
+    createProjectAccessToken(input: CreateProjectAccessTokenInput!): CreateProjectAccessTokenResult!
+
+    """
+    Create a new personal access token for the current actor/user.
+    """
+    createPersonalAccessToken(
+      input: CreatePersonalAccessTokenInput!
+    ): CreatePersonalAccessTokenResult!
+
+    """
+    Delete an organization-level access token.
+    """
+    deleteOrganizationAccessToken(
+      input: DeleteOrganizationAccessTokenInput! @tag(name: "public")
+    ): DeleteOrganizationAccessTokenResult!
+      @tag(name: "public")
+      @deprecated(reason: "Please use 'Mutation.deleteAccessToken' instead.")
+
+    """
+    Delete any type of access token (organization, project, or personal).
+    """
+    deleteAccessToken(
+      input: DeleteAccessTokenInput! @tag(name: "public")
+    ): DeleteAccessTokenResult! @tag(name: "public")
+  }
+
+  """
+  Input for deleting an existing organization access token.
+  """
+  input DeleteOrganizationAccessTokenInput {
+    """
+    Reference to the organization access token that should be deleted.
+    """
+    organizationAccessToken: OrganizationAccessTokenReference! @tag(name: "public")
+  }
+
+  """
+  Reference input for identifying an organization access token.
+  """
+  input OrganizationAccessTokenReference @oneOf @tag(name: "public") {
+    """
+    Identify the access token by its unique ID.
+    """
+    byId: ID @tag(name: "public")
+  }
+
+  """
+  Result returned after attempting to delete an organization access token.
+  """
+  type DeleteOrganizationAccessTokenResult {
+    """
+    Indicates a successful deletion.
+    """
+    ok: DeleteOrganizationAccessTokenResultOk @tag(name: "public")
+
+    """
+    Contains error details if the deletion failed.
+    """
+    error: DeleteOrganizationAccessTokenResultError @tag(name: "public")
+  }
+
+  """
+  Payload returned on successful organization access token deletion.
+  """
+  type DeleteOrganizationAccessTokenResultOk {
+    """
+    The ID of the organization access token that was deleted.
+    """
+    deletedOrganizationAccessTokenId: ID! @tag(name: "public")
+  }
+
+  """
+  Payload returned when an organization access token deletion fails.
+  """
+  type DeleteOrganizationAccessTokenResultError {
+    """
+    A human-readable message describing the reason for the failure.
+    """
+    message: String! @tag(name: "public")
+  }
+
+  """
+  Input for creating a new personal access token.
+  """
+  input CreatePersonalAccessTokenInput {
+    """
+    The organization in which the access token should be created.
+    """
+    organization: OrganizationReferenceInput!
+
+    """
+    Human-readable title for the access token.
+    """
+    title: String!
+
+    """
+    Optional description providing additional context about the purpose of the access token.
+    """
+    description: String
+
+    """
+    List of permissions assigned to the access token.
+    A list of available permissions can be retrieved via the
+    'Member.availablePersonalAccessTokenPermissionGroups' field.
+    """
+    permissions: [String!]
+
+    """
+    Resources on which the permissions should be granted (e.g., project, target, service, or app deployments).
+    Permissions are inherited by sub-resources.
+    """
+    resources: ResourceAssignmentInput
+  }
+
+  """
+  Result returned when the creation of a personal access token succeeds.
+  """
+  type CreatePersonalAccessTokenResultOk {
+    """
+    The newly created personal access token.
+    """
+    createdPersonalAccessToken: PersonalAccessToken!
+
+    """
+    The private access key corresponding to the new token.
+    This value is only returned once at creation time and cannot be retrieved later.
+    """
+    privateAccessKey: String!
+  }
+
+  """
+  Result returned when the creation of a personal access token fails.
+  """
+  type CreatePersonalAccessTokenResultError {
+    """
+    A human-readable message describing the reason for the failure.
+    """
+    message: String!
+
+    """
+    Field-specific validation error details, if any.
+    """
+    details: CreatePersonalAccessTokenResultErrorDetails
+  }
+
+  """
+  Field-level validation error details for personal access token creation.
+  """
+  type CreatePersonalAccessTokenResultErrorDetails {
+    """
+    Validation error message related to the provided title.
+    """
+    title: String
+
+    """
+    Validation error message related to the provided description.
+    """
+    description: String
+  }
+
+  """
+  Top-level result object for creating a personal access token.
+  """
+  type CreatePersonalAccessTokenResult {
+    """
+    Indicates a successful creation.
+    """
+    ok: CreatePersonalAccessTokenResultOk
+
+    """
+    Contains error information if the creation failed.
+    """
+    error: CreatePersonalAccessTokenResultError
+  }
+
+  """
+  Input for creating a new project-scoped access token.
+  """
+  input CreateProjectAccessTokenInput {
+    """
+    The project in which the access token should be created.
+    """
+    project: ProjectReferenceInput!
+
+    """
+    Human-readable title for the access token.
+    """
+    title: String!
+
+    """
+    Optional description providing additional context about the purpose of the access token.
+    """
+    description: String
+
+    """
+    List of permissions assigned to the access token.
+    Available permissions can be retrieved via the
+    'Project.availableProjectAccessTokenPermissionGroups' field.
+    """
+    permissions: [String!]!
+
+    """
+    Resources on which the permissions should be granted (e.g.,  target, service, or app deployments).
+    Permissions are inherited by sub-resources.
+    """
+    resources: ProjectTargetsResourceAssignmentInput!
+  }
+
+  """
+  Result returned when the creation of a project access token succeeds.
+  """
+  type CreateProjectAccessTokenResultOk {
+    """
+    The newly created project access token.
+    """
+    createdProjectAccessToken: ProjectAccessToken!
+
+    """
+    The private access key corresponding to the new token.
+    This value is only returned once at creation time and cannot be retrieved later.
+    """
+    privateAccessKey: String!
+  }
+
+  """
+  Field-level validation error details for project access token creation.
+  """
+  type CreateProjectAccessTokenResultErrorDetails {
+    """
+    Validation error message related to the provided title.
+    """
+    title: String
+
+    """
+    Validation error message related to the provided description.
+    """
+    description: String
+  }
+
+  """
+  Result returned when the creation of a project access token fails.
+  """
+  type CreateProjectAccessTokenResultError {
+    """
+    A human-readable message describing the reason for the failure.
+    """
+    message: String
+
+    """
+    Field-specific validation error details, if any.
+    """
+    details: CreateProjectAccessTokenResultErrorDetails
+  }
+
+  """
+  Top-level result object for creating a project access token.
+
+  @oneOf
+  """
+  type CreateProjectAccessTokenResult {
+    """
+    Indicates a successful creation.
+    """
+    ok: CreateProjectAccessTokenResultOk
+
+    """
+    Contains error information if the creation failed.
+    """
+    error: CreateProjectAccessTokenResultError
+  }
+
+  """
+  Reference input for identifying an organization.
+  """
+  input OrganizationReferenceInput @oneOf {
+    """
+    Select an organization using a selector (e.g., slug-based selection).
+    """
+    bySelector: OrganizationSelectorInput @tag(name: "public")
+
+    """
+    Select an organization using its unique ID.
+    """
+    byId: ID @tag(name: "public")
+  }
+
+  """
+  Input for creating a new organization-scoped access token.
+  """
+  input CreateOrganizationAccessTokenInput {
+    """
+    The organization in which the access token should be created.
+    """
+    organization: OrganizationReferenceInput! @tag(name: "public")
+
+    """
+    Human-readable title for the access token.
+    """
+    title: String! @tag(name: "public")
+
+    """
+    Optional description providing additional context about the purpose of the access token.
+    """
+    description: String @tag(name: "public")
+
+    """
+    List of permissions assigned to the access token.
+    Available permissions can be retrieved via the
+    'Organization.availableOrganizationAccessTokenPermissionGroups' field.
+    """
+    permissions: [String!]! @tag(name: "public")
+
+    """
+    Resources on which the permissions should be granted (e.g., project, target, service, or app deployments).
+    Permissions are inherited by sub-resources.
+    """
+    resources: ResourceAssignmentInput! @tag(name: "public")
+  }
+
+  """
+  Result returned after attempting to create an organization access token.
+  """
+  type CreateOrganizationAccessTokenResult {
+    """
+    Indicates a successful creation.
+    """
+    ok: CreateOrganizationAccessTokenResultOk @tag(name: "public")
+
+    """
+    Contains error information if the creation failed.
+    """
+    error: CreateOrganizationAccessTokenResultError @tag(name: "public")
+  }
+
+  """
+  Payload returned on successful organization access token creation.
+  """
+  type CreateOrganizationAccessTokenResultOk {
+    """
+    The newly created organization access token.
+    """
+    createdOrganizationAccessToken: OrganizationAccessToken!
+
+    """
+    The private access key corresponding to the new token.
+    This value is only returned once at creation time and cannot be retrieved later.
+    """
+    privateAccessKey: String! @tag(name: "public")
+  }
+
+  """
+  Payload returned when organization access token creation fails.
+  """
+  type CreateOrganizationAccessTokenResultError {
+    """
+    A human-readable message describing the reason for the failure.
+    """
+    message: String! @tag(name: "public")
+
+    """
+    Field-specific validation error details, if any.
+    """
+    details: CreateOrganizationAccessTokenResultErrorDetails @tag(name: "public")
+  }
+
+  """
+  Field-level validation error details for organization access token creation.
+  """
+  type CreateOrganizationAccessTokenResultErrorDetails {
+    """
+    Validation error message related to the provided title.
+    """
+    title: String @tag(name: "public")
+
+    """
+    Validation error message related to the provided description.
+    """
+    description: String @tag(name: "public")
+  }
+
+  """
+  Interface representing a generic access token.
+  """
+  interface AccessToken {
+    """
+    Unique identifier of the access token.
+    """
+    id: ID!
+
+    """
+    Human-readable title of the access token.
+    """
+    title: String!
+
+    """
+    Optional description providing additional context about the access token.
+    """
+    description: String
+
+    """
+    The first few characters of the access token, useful for display without exposing the full token.
+    """
+    firstCharacters: String!
+
+    """
+    Timestamp indicating when the access token was created.
+    """
+    createdAt: DateTime!
+
+    """
+    A list of resource levels, their assigned resources, and the granted permissions on each resource.
+    """
+    resolvedResourcePermissionGroups(
+      """
+      If true, include all permissions and resource groups in the result,
+      even those not currently granted.
+      """
+      includeAll: Boolean! = false
+    ): [ResolvedResourcePermissionGroup!]!
+  }
+
+  type AccessTokenEdge {
+    node: AccessToken!
+    cursor: String!
+  }
+
+  type AccessTokenConnection {
+    pageInfo: PageInfo!
+    edges: [AccessTokenEdge!]!
+  }
+
+  """
+  Organization-scoped access token.
+  """
+  type OrganizationAccessToken implements AccessToken {
+    id: ID! @tag(name: "public")
+    title: String! @tag(name: "public")
+    description: String @tag(name: "public")
+    permissions: [String!]! @tag(name: "public")
+    resources: ResourceAssignment! @tag(name: "public")
+    firstCharacters: String! @tag(name: "public")
+    createdAt: DateTime! @tag(name: "public")
+
+    """
+    A list of resource levels, their assigned resources, and the granted permissions on each resource.
+    """
+    resolvedResourcePermissionGroups(
+      """
+      If true, include all permissions and resource groups in the result,
+      even those not currently granted.
+      """
+      includeAll: Boolean! = false
+    ): [ResolvedResourcePermissionGroup!]!
+  }
+
+  type ProjectAccessTokenEdge {
+    node: ProjectAccessToken!
+    cursor: String!
+  }
+
+  type PersonalAccessTokenConnection {
+    pageInfo: PageInfo!
+    edges: [PersonalAccessTokenEdge!]!
+  }
+
+  type PersonalAccessTokenEdge {
+    node: PersonalAccessToken!
+    cursor: String!
+  }
+
+  type ProjectAccessTokenConnection {
+    pageInfo: PageInfo!
+    edges: [ProjectAccessTokenEdge!]!
+  }
+
+  """
+  Project-scoped access token.
+  """
+  type ProjectAccessToken implements AccessToken {
+    id: ID! @tag(name: "public")
+    title: String! @tag(name: "public")
+    description: String @tag(name: "public")
+    firstCharacters: String! @tag(name: "public")
+    createdAt: DateTime! @tag(name: "public")
+
+    """
+    A list of resource levels, their assigned resources, and the granted permissions on each resource.
+    """
+    resolvedResourcePermissionGroups(
+      """
+      Whether the result should contain all permissions and resource groups, or only granted permissions/resources.
+      """
+      includeAll: Boolean! = false
+    ): [ResolvedResourcePermissionGroup!]!
+  }
+
+  type PersonalAccessToken implements AccessToken {
+    id: ID! @tag(name: "public")
+    title: String! @tag(name: "public")
+    description: String @tag(name: "public")
+    firstCharacters: String! @tag(name: "public")
+    createdAt: DateTime! @tag(name: "public")
+
+    """
+    A list of the resource levels, the assigned resources and the granted permissions on each of those resources.
+    """
+    resolvedResourcePermissionGroups(
+      """
+      If true, include all permissions and resource groups in the result,
+      even those not currently granted.
+      """
+      includeAll: Boolean! = false
+    ): [ResolvedResourcePermissionGroup!]!
+  }
+
+  """
+  Input for deleting an access token.
+  """
+  input DeleteAccessTokenInput {
+    """
+    Reference to the access token that should be deleted.
+    """
+    accessToken: AccessTokenReference! @tag(name: "public")
+  }
+
+  """
+  Reference input for identifying an access token.
+  """
+  input AccessTokenReference @oneOf @tag(name: "public") {
+    """
+    Select an access token by its unique ID.
+    """
+    byId: ID @tag(name: "public")
+  }
+
+  """
+  Result returned after attempting to delete an access token.
+  """
+  type DeleteAccessTokenResult {
+    """
+    Indicates a successful deletion.
+    """
+    ok: DeleteAccessTokenResultOk @tag(name: "public")
+
+    """
+    Contains error information if the deletion failed.
+    """
+    error: DeleteAccessTokenResultError @tag(name: "public")
+  }
+
+  """
+  Payload returned on successful access token deletion.
+  """
+  type DeleteAccessTokenResultOk {
+    """
+    The unique ID of the access token that was deleted.
+    """
+    deletedAccessTokenId: ID! @tag(name: "public")
+  }
+
+  """
+  Payload returned when access token deletion fails.
+  """
+  type DeleteAccessTokenResultError {
+    """
+    A human-readable message describing the reason for the failure.
+    """
+    message: String! @tag(name: "public")
   }
 
   type UpdateOrganizationSlugResult {
@@ -136,7 +722,7 @@ export default gql`
   }
 
   input OrganizationSelectorInput {
-    organizationSlug: String!
+    organizationSlug: String! @tag(name: "public")
   }
 
   type OrganizationSelector {
@@ -146,14 +732,6 @@ export default gql`
   input OrganizationMemberInput {
     organizationSlug: String!
     userId: ID!
-  }
-
-  input OrganizationMemberAccessInput {
-    organizationSlug: String!
-    userId: ID!
-    organizationScopes: [OrganizationAccessScope!]!
-    projectScopes: [ProjectAccessScope!]!
-    targetScopes: [TargetAccessScope!]!
   }
 
   input RequestOrganizationTransferInput {
@@ -171,56 +749,279 @@ export default gql`
   }
 
   input InviteToOrganizationByEmailInput {
-    organizationSlug: String!
-    roleId: ID
-    email: String!
+    organization: OrganizationReferenceInput! @tag(name: "public")
+    email: String! @tag(name: "public")
+    memberRoleId: ID @tag(name: "public")
+    resources: ResourceAssignmentInput @tag(name: "public")
   }
 
   input DeleteOrganizationInvitationInput {
-    organizationSlug: String!
-    email: String!
+    organization: OrganizationReferenceInput! @tag(name: "public")
+    email: String! @tag(name: "public")
   }
 
-  type InviteToOrganizationByEmailError implements Error {
-    message: String!
+  type InviteToOrganizationByEmailResultError {
+    message: String! @tag(name: "public")
     """
     The detailed validation error messages for the input fields.
     """
-    inputErrors: InviteToOrganizationByEmailInputErrors!
+    inputErrors: InviteToOrganizationByEmailInputErrors! @tag(name: "public")
+  }
+
+  type InviteToOrganizationByEmailResultOk {
+    createdOrganizationInvitation: OrganizationInvitation! @tag(name: "public")
   }
 
   type InviteToOrganizationByEmailInputErrors {
-    email: String
+    email: String @tag(name: "public") @tag(name: "public")
   }
 
   """
   @oneOf
   """
   type InviteToOrganizationByEmailResult {
-    ok: OrganizationInvitation
-    error: InviteToOrganizationByEmailError
+    ok: InviteToOrganizationByEmailResultOk @tag(name: "public")
+    error: InviteToOrganizationByEmailResultError @tag(name: "public")
   }
 
   type OrganizationTransfer {
     organization: Organization!
   }
 
-  type Organization {
-    id: ID!
+  type MemberRoleEdge {
+    node: MemberRole! @tag(name: "public")
+    cursor: String!
+  }
+
+  type MemberRoleConnection {
+    edges: [MemberRoleEdge!]! @tag(name: "public")
+    pageInfo: PageInfo!
+  }
+
+  """
+  Defines the intent or context under which a resource selector is used.
+  """
+  enum ResourceSelectorIntentType {
+    """
+    Indicates administrative intent, typically for management or configuration tasks.
+    """
+    ADMIN
+
+    """
+    Indicates user intent, typically for personal or non-administrative operations.
+    """
+    USER
+  }
+
+  """
+  Represents a project and its associated targets for resource selection.
+  """
+  type ProjectForResourceSelector {
+    """
+    Unique identifier of the project.
+    """
+    projectId: ID!
+
+    """
+    Human-readable slug of the project.
+    """
     slug: String!
+
+    """
+    Type of the project.
+    """
+    type: ProjectType!
+
+    """
+    List of targets that belong to the project and can be selected as resources.
+    """
+    targets: [TargetForResourceSelector!]!
+
+    """
+    Gat a specific target that belongs to the project and can be selected as resource.
+    """
+    target(targetId: ID!): TargetForResourceSelector
+  }
+
+  """
+  Represents a target and its selectable sub-resources for resource selection.
+  """
+  type TargetForResourceSelector {
+    """
+    Unique identifier of the target.
+    """
+    targetId: ID!
+
+    """
+    Human-readable slug of the target.
+    """
+    slug: String!
+
+    """
+    List of service identifiers available under this target. Empty if not existing (no federation or stitching project).
+    """
+    services: [String!]
+
+    """
+    List of application deployment identifiers available under this target.
+    """
+    appDeployments: [String!]
+  }
+
+  input MembersFilter {
+    """
+    Part of a user's email or username that is used to filter the list of
+    members.
+    """
+    searchTerm: String
+  }
+
+  type Organization {
+    """
+    Unique UUID of the organization
+    """
+    id: ID! @tag(name: "public")
+    """
+    The slug of the organization.
+    """
+    slug: String! @tag(name: "public")
     cleanId: ID! @deprecated(reason: "Use the 'slug' field instead.")
     name: String! @deprecated(reason: "Use the 'slug' field instead.")
-    owner: Member!
-    me: Member!
-    members: MemberConnection!
-    invitations: OrganizationInvitationConnection!
+    owner: Member! @tag(name: "public")
+    """
+    Returns 'null' if the user is not a member of the organization, but able to see the organization (admin user).
+    """
+    me: Member
+    members(
+      first: Int @tag(name: "public")
+      after: String @tag(name: "public")
+      filters: MembersFilter
+    ): MemberConnection! @tag(name: "public")
+    invitations(
+      first: Int @tag(name: "public")
+      after: String @tag(name: "public")
+    ): OrganizationInvitationConnection @tag(name: "public")
     getStarted: OrganizationGetStarted!
-    memberRoles: [MemberRole!]!
+    memberRoles(
+      first: Int @tag(name: "public")
+      after: String @tag(name: "public")
+    ): MemberRoleConnection @tag(name: "public")
+
     """
-    Only available to members with the Admin role.
-    Returns a list of members that are not assigned to any role.
+    Retrieves a list of all projects and their targets available for resource selection
+    within the organization.
+
+    The result can be filtered by intent, which defines the context of selection
+    (e.g., administrative vs. user-level operations).
     """
-    unassignedMembersToMigrate: [MemberRoleMigrationGroup!]!
+    projectsForResourceSelector(
+      """
+      Defines the purpose or context for which targets are being selected.
+      """
+      intent: ResourceSelectorIntentType!
+    ): [ProjectForResourceSelector!]!
+
+    """
+    Retrieves a single project and its associated targets for resource selection
+    by its unique identifier.
+
+    The result can be filtered by intent to adjust access based on context.
+    """
+    projectForResourceSelector(
+      """
+      Unique identifier of the project.
+      """
+      projectId: ID!
+
+      """
+      Defines the purpose or context for which targets are being selected.
+      """
+      intent: ResourceSelectorIntentType!
+    ): ProjectForResourceSelector
+
+    """
+    Whether the viewer should be able to access the settings page within the app
+    """
+    viewerCanAccessSettings: Boolean!
+    """
+    Whether the viewer can modify the organization slug
+    """
+    viewerCanModifySlug: Boolean!
+    """
+    Whether the viewer can transfer ownership of the organization
+    """
+    viewerCanTransferOwnership: Boolean!
+    """
+    Whether the viewer can delete the organization
+    """
+    viewerCanDelete: Boolean!
+    """
+    Whether the viewer can see the members within the organization
+    """
+    viewerCanSeeMembers: Boolean!
+    """
+    Whether the viewer can manage member invites
+    """
+    viewerCanManageInvitations: Boolean!
+    """
+    Whether the viewer can assign roles to users
+    """
+    viewerCanAssignUserRoles: Boolean!
+    """
+    Whether the viewer can modify roles of members within the organization
+    """
+    viewerCanManageRoles: Boolean!
+    """
+    The organization's audit logs. This field is only available to members with the Admin role.
+    """
+    viewerCanExportAuditLogs: Boolean!
+    """
+    List of available permission groups that can be assigned to users.
+    """
+    availableMemberPermissionGroups: [PermissionGroup!]! @tag(name: "public")
+    """
+    List of available permission groups that can be assigned to organization access tokens.
+    """
+    availableOrganizationAccessTokenPermissionGroups: [PermissionGroup!]! @tag(name: "public")
+    """
+    Whether the viewer can manage access tokens.
+    """
+    viewerCanManageAccessTokens: Boolean!
+    """
+    Whether the viewer can manage personal access tokens.
+    """
+    viewerCanManagePersonalAccessTokens: Boolean!
+    """
+    Paginated list of all organization scoped access tokens.
+    """
+    accessTokens(
+      first: Int @tag(name: "public")
+      after: String @tag(name: "public")
+    ): OrganizationAccessTokenConnection! @tag(name: "public")
+    """
+    Retrieve a organization scoped access token by it's id.
+    """
+    accessToken(id: ID! @tag(name: "public")): OrganizationAccessToken @tag(name: "public")
+
+    """
+    Retrieve a list of all access tokens within the organization.
+    This includes organization, project and personal scoped access tokens.
+    """
+    allAccessTokens(first: Int, after: String): AccessTokenConnection!
+    """
+    Retrieve an access token within the organization by its ID.
+    """
+    accessTokenById(id: ID!): AccessToken
+  }
+
+  type OrganizationAccessTokenEdge {
+    node: OrganizationAccessToken! @tag(name: "public")
+    cursor: String! @tag(name: "public")
+  }
+
+  type OrganizationAccessTokenConnection {
+    pageInfo: PageInfo! @tag(name: "public")
+    edges: [OrganizationAccessTokenEdge!]! @tag(name: "public")
   }
 
   type OrganizationConnection {
@@ -228,18 +1029,23 @@ export default gql`
     total: Int!
   }
 
+  type OrganizationInvitationEdge {
+    node: OrganizationInvitation! @tag(name: "public")
+    cursor: String! @tag(name: "public")
+  }
+
   type OrganizationInvitationConnection {
-    nodes: [OrganizationInvitation!]!
-    total: Int!
+    edges: [OrganizationInvitationEdge!]! @tag(name: "public")
+    pageInfo: PageInfo! @tag(name: "public")
   }
 
   type OrganizationInvitation {
-    id: ID!
-    createdAt: DateTime!
-    expiresAt: DateTime!
-    email: String!
+    id: ID! @tag(name: "public")
+    createdAt: DateTime! @tag(name: "public")
+    expiresAt: DateTime! @tag(name: "public")
+    email: String! @tag(name: "public")
     code: String!
-    role: MemberRole!
+    role: MemberRole! @tag(name: "public")
   }
 
   type OrganizationInvitationError {
@@ -273,31 +1079,26 @@ export default gql`
   @oneOf
   """
   type DeleteOrganizationInvitationResult {
-    ok: OrganizationInvitation
-    error: DeleteOrganizationInvitationError
+    ok: DeleteOrganizationInvitationResultOk @tag(name: "public")
+    error: DeleteOrganizationInvitationResultError @tag(name: "public")
   }
 
-  type DeleteOrganizationInvitationError implements Error {
-    message: String!
+  type DeleteOrganizationInvitationResultOk {
+    deletedOrganizationInvitationId: ID! @tag(name: "public")
   }
 
-  extend type Member {
-    canLeaveOrganization: Boolean!
-    role: MemberRole
-    isAdmin: Boolean!
+  type DeleteOrganizationInvitationResultError {
+    message: String! @tag(name: "public")
   }
 
   type MemberRole {
-    id: ID!
-    name: String!
-    description: String!
+    id: ID! @tag(name: "public")
+    name: String! @tag(name: "public")
+    description: String! @tag(name: "public")
     """
     Whether the role is a built-in role. Built-in roles cannot be deleted or modified.
     """
-    locked: Boolean!
-    organizationAccessScopes: [OrganizationAccessScope!]!
-    projectAccessScopes: [ProjectAccessScope!]!
-    targetAccessScopes: [TargetAccessScope!]!
+    isLocked: Boolean! @tag(name: "public")
     """
     Whether the role can be deleted (based on current user's permissions)
     """
@@ -310,164 +1111,404 @@ export default gql`
     Whether the role can be used to invite new members (based on current user's permissions)
     """
     canInvite: Boolean!
+    """
+    Amount of users within the organization that have this role assigned.
+    """
     membersCount: Int!
+    """
+    List of permissions attached to this member role.
+    """
+    permissions: [String!]! @tag(name: "public")
   }
 
   input CreateMemberRoleInput {
-    organizationSlug: String!
-    name: String!
-    description: String!
-    organizationAccessScopes: [OrganizationAccessScope!]!
-    projectAccessScopes: [ProjectAccessScope!]!
-    targetAccessScopes: [TargetAccessScope!]!
+    """
+    The organization in which the member role should be created.
+    """
+    organization: OrganizationReferenceInput! @tag(name: "public")
+    """
+    The name of the member role (must be unique).
+    """
+    name: String! @tag(name: "public")
+    """
+    A description describing the purpose of the member role.
+    """
+    description: String! @tag(name: "public")
+    """
+    A list of available permissions can be retrieved via the 'Organization.availableMemberPermissionGroups' field.
+    """
+    selectedPermissions: [String!]! @tag(name: "public")
   }
 
-  type CreateMemberRoleOk {
-    updatedOrganization: Organization!
+  type CreateMemberRoleResultOk {
+    updatedOrganization: Organization! @tag(name: "public")
+    createdMemberRole: MemberRole! @tag(name: "public")
   }
 
   type CreateMemberRoleInputErrors {
-    name: String
-    description: String
+    name: String @tag(name: "public")
+    description: String @tag(name: "public")
   }
 
-  type CreateMemberRoleError implements Error {
-    message: String!
+  type CreateMemberRoleResultError {
+    message: String! @tag(name: "public")
     """
     The detailed validation error messages for the input fields.
     """
-    inputErrors: CreateMemberRoleInputErrors
+    inputErrors: CreateMemberRoleInputErrors @tag(name: "public")
   }
 
   """
   @oneOf
   """
   type CreateMemberRoleResult {
-    ok: CreateMemberRoleOk
-    error: CreateMemberRoleError
+    ok: CreateMemberRoleResultOk @tag(name: "public")
+    error: CreateMemberRoleResultError @tag(name: "public")
   }
 
   input UpdateMemberRoleInput {
-    organizationSlug: String!
-    roleId: ID!
-    name: String!
-    description: String!
-    organizationAccessScopes: [OrganizationAccessScope!]!
-    projectAccessScopes: [ProjectAccessScope!]!
-    targetAccessScopes: [TargetAccessScope!]!
+    """
+    The member role that should be udpated.
+    """
+    memberRole: MemberRoleReferenceInput! @tag(name: "public")
+    name: String! @tag(name: "public")
+    description: String! @tag(name: "public")
+    selectedPermissions: [String!]! @tag(name: "public")
   }
 
-  type UpdateMemberRoleOk {
-    updatedRole: MemberRole!
+  type UpdateMemberRoleResultOk {
+    updatedRole: MemberRole! @tag(name: "public")
   }
 
   type UpdateMemberRoleInputErrors {
-    name: String
-    description: String
+    name: String @tag(name: "public")
+    description: String @tag(name: "public")
   }
 
-  type UpdateMemberRoleError implements Error {
-    message: String!
+  type UpdateMemberRoleResultError {
+    message: String! @tag(name: "public")
     """
     The detailed validation error messages for the input fields.
     """
-    inputErrors: UpdateMemberRoleInputErrors
+    inputErrors: UpdateMemberRoleInputErrors @tag(name: "public")
+  }
+
+  input MemberRoleReferenceInput @oneOf {
+    byId: ID @tag(name: "public")
+  }
+
+  input MemberReferenceInput @oneOf {
+    byId: ID @tag(name: "public")
   }
 
   """
   @oneOf
   """
   type UpdateMemberRoleResult {
-    ok: UpdateMemberRoleOk
-    error: UpdateMemberRoleError
+    ok: UpdateMemberRoleResultOk @tag(name: "public")
+    error: UpdateMemberRoleResultError @tag(name: "public")
   }
 
   input DeleteMemberRoleInput {
-    organizationSlug: String!
-    roleId: ID!
+    memberRole: MemberRoleReferenceInput! @tag(name: "public")
   }
 
-  type DeleteMemberRoleOk {
-    updatedOrganization: Organization!
+  type DeleteMemberRoleResultOk {
+    updatedOrganization: Organization! @tag(name: "public")
+    deletedMemberRoleId: ID! @tag(name: "public")
   }
 
-  type DeleteMemberRoleError implements Error {
-    message: String!
+  type DeleteMemberRoleResultError {
+    message: String! @tag(name: "public")
   }
 
   """
   @oneOf
   """
   type DeleteMemberRoleResult {
-    ok: DeleteMemberRoleOk
-    error: DeleteMemberRoleError
+    ok: DeleteMemberRoleResultOk @tag(name: "public")
+    error: DeleteMemberRoleResultError @tag(name: "public")
   }
 
   input AssignMemberRoleInput {
-    organizationSlug: String!
-    userId: ID!
-    roleId: ID!
+    organization: OrganizationReferenceInput! @tag(name: "public")
+    memberRole: MemberRoleReferenceInput! @tag(name: "public")
+    member: MemberReferenceInput! @tag(name: "public")
+    resources: ResourceAssignmentInput! @tag(name: "public")
   }
 
-  type AssignMemberRoleOk {
-    updatedMember: Member!
-    previousMemberRole: MemberRole
+  type AssignMemberRoleResultOk {
+    updatedMember: Member! @tag(name: "public")
+    previousMemberRole: MemberRole @tag(name: "public")
   }
 
-  type AssignMemberRoleError implements Error {
-    message: String!
+  type AssignMemberRoleResultError {
+    message: String! @tag(name: "public")
   }
 
   """
   @oneOf
   """
   type AssignMemberRoleResult {
-    ok: AssignMemberRoleOk
-    error: AssignMemberRoleError
+    ok: AssignMemberRoleResultOk @tag(name: "public")
+    error: AssignMemberRoleResultError @tag(name: "public")
   }
 
-  type MemberRoleMigrationGroup {
+  type Member {
     id: ID!
-    members: [Member!]!
-    organizationScopes: [OrganizationAccessScope!]!
-    projectScopes: [ProjectAccessScope!]!
-    targetScopes: [TargetAccessScope!]!
+    user: User! @tag(name: "public")
+    authProviders: [MemberAuthProvider!]!
+    isOwner: Boolean! @tag(name: "public")
+    canLeaveOrganization: Boolean!
+    role: MemberRole! @tag(name: "public")
+    resourceAssignment: ResourceAssignment! @tag(name: "public")
+    """
+    Whether the viewer can remove this member from the organization.
+    """
+    viewerCanRemove: Boolean!
+  }
+
+  enum ResourceAssignmentModeType {
+    """
+    Apply to all subresouces of the resource.
+    """
+    ALL @tag(name: "public")
+    """
+    Apply to specific subresouces of the resource.
+    """
+    GRANULAR @tag(name: "public")
+  }
+
+  type MemberConnection {
+    edges: [MemberEdge!]! @tag(name: "public")
+    pageInfo: PageInfo! @tag(name: "public")
+  }
+
+  type MemberEdge {
+    cursor: String! @tag(name: "public")
+    node: Member! @tag(name: "public")
+  }
+
+  input AppDeploymentResourceAssignmentInput {
+    appDeployment: String! @tag(name: "public")
+  }
+
+  input TargetAppDeploymentsResourceAssignmentInput {
+    """
+    Whether the permissions should apply for all app deployments within the target.
+    """
+    mode: ResourceAssignmentModeType! @tag(name: "public")
+    """
+    Specific app deployments within the target for which the permissions should be applied.
+    """
+    appDeployments: [AppDeploymentResourceAssignmentInput!] @tag(name: "public")
+  }
+
+  input ServiceResourceAssignmentInput {
+    serviceName: String! @tag(name: "public")
+  }
+
+  input TargetServicesResourceAssignmentInput {
+    """
+    Whether the permissions should apply for all services within the target or only selected ones.
+    """
+    mode: ResourceAssignmentModeType! @tag(name: "public")
+    """
+    Specific services within the target for which the permissions should be applied.
+    """
+    services: [ServiceResourceAssignmentInput!] @tag(name: "public")
+  }
+
+  input TargetResourceAssignmentInput {
+    targetId: ID! @tag(name: "public")
+    services: TargetServicesResourceAssignmentInput! @tag(name: "public")
+    appDeployments: TargetAppDeploymentsResourceAssignmentInput! @tag(name: "public")
+  }
+
+  input ProjectTargetsResourceAssignmentInput {
+    """
+    Whether the permissions should apply for all targets within the project or only selected ones.
+    """
+    mode: ResourceAssignmentModeType! @tag(name: "public")
+    """
+    Specific targets within the projects for which the permissions should be applied.
+    """
+    targets: [TargetResourceAssignmentInput!] @tag(name: "public")
+  }
+
+  input ProjectResourceAssignmentInput {
+    projectId: ID! @tag(name: "public")
+    targets: ProjectTargetsResourceAssignmentInput! @tag(name: "public")
+  }
+
+  input ResourceAssignmentInput {
+    """
+    Whether the permissions should apply for all projects within the organization or only selected ones.
+    """
+    mode: ResourceAssignmentModeType! @tag(name: "public")
+    """
+    Specific projects within the organization for which the permissions should be applied.
+    """
+    projects: [ProjectResourceAssignmentInput!] @tag(name: "public")
+  }
+
+  type TargetServicesResourceAssignment {
+    mode: ResourceAssignmentModeType! @tag(name: "public")
+    services: [String!] @tag(name: "public")
+  }
+
+  type TargetAppDeploymentsResourceAssignment {
+    mode: ResourceAssignmentModeType! @tag(name: "public")
+    appDeployments: [String!] @tag(name: "public")
+  }
+
+  type TargetResouceAssignment {
+    targetId: ID! @tag(name: "public")
+    target: Target! @tag(name: "public")
+    services: TargetServicesResourceAssignment! @tag(name: "public")
+    appDeployments: TargetAppDeploymentsResourceAssignment! @tag(name: "public")
+  }
+
+  type ProjectTargetsResourceAssignment {
+    mode: ResourceAssignmentModeType! @tag(name: "public")
+    targets: [TargetResouceAssignment!] @tag(name: "public")
+  }
+
+  type ProjectResourceAssignment {
+    projectId: ID! @tag(name: "public")
+    project: Project! @tag(name: "public")
+    targets: ProjectTargetsResourceAssignment! @tag(name: "public")
+  }
+
+  type ResourceAssignment {
+    mode: ResourceAssignmentModeType! @tag(name: "public")
+    projects: [ProjectResourceAssignment!] @tag(name: "public")
+  }
+
+  type MemberAuthProvider {
+    type: AuthProviderType!
+    disabledReason: String
+  }
+
+  extend type Project {
+    """
+    Paginated list of access tokens issued for the project.
+    """
+    accessTokens(first: Int, after: String): ProjectAccessTokenConnection!
+    """
+    Access token for project.
+    """
+    accessToken(id: ID!): ProjectAccessToken
+    """
+    Permissions that the viewer can assign to project access tokens.
+    """
+    availableProjectAccessTokenPermissionGroups: [PermissionGroup!]!
+    """
+    Whether the user can manage the access tokens in this project.
+    """
+    viewerCanManageProjectAccessTokens: Boolean!
+  }
+
+  extend type Member {
+    availablePersonalAccessTokenPermissionGroups: [PermissionGroup!]!
+    """
+    Paginated list of access tokens issued for the project.
+    """
+    accessTokens(first: Int, after: String): PersonalAccessTokenConnection!
+    """
+    Access token for project.
+    """
+    accessToken(id: ID!): PersonalAccessToken
   }
 
   """
-  @oneOf
+  Represents a specific permission and whether it is currently granted to the user or actor.
   """
-  input MigrateUnassignedMembersInput {
-    assignRole: AssignMemberRoleMigrationInput
-    createRole: CreateMemberRoleMigrationInput
+  type ResolvedPermission {
+    """
+    The permission definition, indicating the action or capability being checked.
+    """
+    permission: Permission!
+    """
+    Indicates whether this permission is currently granted.
+    """
+    isGranted: Boolean!
   }
 
-  input AssignMemberRoleMigrationInput {
-    organizationSlug: String!
-    roleId: ID!
-    userIds: [ID!]!
+  """
+  A logical grouping of related permissions, often displayed together in a UI section.
+  """
+  type ResolvedPermissionsGroup {
+    """
+    Human-readable title of the permission group (e.g. "Schema Registry" or "Members").
+    """
+    title: String!
+    """
+    List of resolved permissions that belong to this group.
+    """
+    permissions: [ResolvedPermission!]!
   }
 
-  input CreateMemberRoleMigrationInput {
-    organizationSlug: String!
-    name: String!
-    description: String!
-    organizationScopes: [OrganizationAccessScope!]!
-    projectScopes: [ProjectAccessScope!]!
-    targetScopes: [TargetAccessScope!]!
-    userIds: [ID!]!
+  """
+  Represents a group of permissions associated with a specific resource level
+  (e.g., organization, project, or item).
+  """
+  type ResolvedResourcePermissionGroup {
+    """
+    The resource level this permission group applies to (e.g., ORGANIZATION, PROJECT).
+    """
+    level: PermissionLevelType!
+    """
+    The resource identifiers that are currently valid for this permission group.
+    Some examples:
+    - **Organization.** "the-guild"
+    - **Project** "the-guild/graphql-hive"
+    - **Target** "the-guild/graphql-hive/production"
+    - **Service** "the-guild/graphql-hive/production/service/users"
+    - **App Deployment** "the-guild/graphql-hive/production/appDeployment/production"
+
+    These ids can also contain wildcards, e.g. "the-guild/graphql-hive/*", to reference all targets in a project.
+    If the field resolves to 'null', the permission group is not granted on any resource.
+    """
+    resolvedResourceIds: [String!]
+    """
+    Human-readable title describing this permission group.
+    """
+    title: String!
+    """
+    The resolved permission groups under this resource level.
+    """
+    resolvedPermissionGroups: [ResolvedPermissionsGroup!]!
   }
 
-  type MigrateUnassignedMembersResult {
-    ok: MigrateUnassignedMembersOk
-    error: MigrateUnassignedMembersError
+  """
+  Represents the currently authorized actor (user, service, etc.)
+  and its associated permissions.
+  """
+  type WhoAmI {
+    """
+    Human-readable title identifying the type of actor
+    (e.g., "User", "Access Token").
+    """
+    title: String!
+    """
+    A structured view of permissions that the authorized actor can perform,
+    optionally including all possible permissions for context.
+    """
+    resolvedPermissions(
+      """
+      If true, include all known permissions in the response,
+      even those not currently granted.
+      """
+      includeAll: Boolean! = false
+    ): [ResolvedResourcePermissionGroup!]!
   }
 
-  type MigrateUnassignedMembersOk {
-    updatedOrganization: Organization!
-  }
-
-  type MigrateUnassignedMembersError implements Error {
-    message: String!
+  extend type Query {
+    """
+    Returns information about the currently authorized actor,
+    including permission details.
+    """
+    whoAmI: WhoAmI
   }
 `;

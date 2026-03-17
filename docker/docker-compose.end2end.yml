@@ -1,8 +1,6 @@
-version: '3.8'
 name: 'hive-e2e'
 services:
   oidc-server-mock:
-    container_name: oidc-server-mock
     image: ghcr.io/soluto/oidc-server-mock:0.8.6
     ports:
       - '7043:80'
@@ -35,5 +33,23 @@ services:
     networks:
       - 'stack'
 
+  db:
+    ports:
+      - '5432:5432'
+
+  workflows:
+    ports:
+      - '3014:3014'
+    environment:
+      EMAIL_PROVIDER: mock
+
+  redis:
+    ports:
+      - '6379:6379'
+
+  server:
+    environment:
+      SUPERTOKENS_RATE_LIMIT: '0'
+      AUTH_REQUIRE_EMAIL_VERIFICATION: '1'
 networks:
   stack: {}

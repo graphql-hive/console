@@ -68,17 +68,17 @@ function Header({
       <A.Trigger
         className={clsx(
           'group',
-          'radix-state-open:rounded-t-lg radix-state-closed:rounded-lg',
+          'data-[state=closed]:rounded-lg data-[state=open]:rounded-t-lg',
           'focus:outline-none',
           'inline-flex w-full items-center justify-between px-4 py-2 text-left',
           triggerClassName,
         )}
       >
-        <span className="text-sm font-medium text-gray-900 dark:text-gray-100">{children}</span>
+        <span className="text-neutral-11 text-sm font-medium">{children}</span>
         <ChevronDownIcon
           className={clsx(
-            'ml-2 size-5 shrink-0 text-gray-700 ease-in-out dark:text-gray-400',
-            'group-radix-state-open:rotate-180 group-radix-state-open:duration-300',
+            'text-neutral-11 ml-2 size-5 shrink-0 ease-in-out',
+            'group-data-[state=open]:rotate-180 group-data-[state=open]:duration-300',
           )}
         />
       </A.Trigger>
@@ -95,7 +95,7 @@ function Content({
 }): ReactElement {
   return (
     <A.Content className={clsx('w-full rounded-b-lg px-4 pb-3 pt-1', className)}>
-      <div className="text-sm text-gray-700 dark:text-gray-400">{children}</div>
+      <div className="text-neutral-12 text-sm">{children}</div>
     </A.Content>
   );
 }

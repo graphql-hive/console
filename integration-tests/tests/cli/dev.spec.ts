@@ -175,10 +175,6 @@ describe('dev --remote', () => {
     const { secret } = await createTargetAccessToken({});
     const cli = createCLI({ readwrite: secret, readonly: secret });
 
-    // Once we ship native federation v2 composition by default, we can remove these two lines
-    await setFeatureFlag('compareToPreviousComposableVersion', true);
-    await setNativeFederation(true);
-
     await cli.publish({
       sdl: /* GraphQL */ `
         extend schema @link(url: "https://specs.apollo.dev/federation/v2.3", import: ["@key"])
@@ -254,10 +250,6 @@ describe('dev --remote', () => {
     );
     const { secret } = await createTargetAccessToken({});
     const cli = createCLI({ readwrite: secret, readonly: secret });
-
-    // Once we ship native federation v2 composition by default, we can remove these two lines
-    await setFeatureFlag('compareToPreviousComposableVersion', true);
-    await setNativeFederation(true);
 
     await cli.publish({
       sdl: /* GraphQL */ `

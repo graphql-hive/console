@@ -1,0 +1,14 @@
+<clickhouse>
+  <default>
+    <max_threads>3</max_threads>
+    <max_insert_threads>2</max_insert_threads>
+    <max_block_size>8192</max_block_size>
+    <max_download_threads>1</max_download_threads>
+    <input_format_parallel_parsing>0</input_format_parallel_parsing>
+    <output_format_parallel_formatting>0</output_format_parallel_formatting>
+    <concurrent_threads_soft_limit_num>2</concurrent_threads_soft_limit_num>
+    <max_bytes_before_external_group_by>10000000</max_bytes_before_external_group_by>
+    <aggregation_memory_efficient_merge_threads>1</aggregation_memory_efficient_merge_threads>
+    <max_server_memory_usage_to_ram_ratio>1.2</max_server_memory_usage_to_ram_ratio>
+  </default>
+</clickhouse>

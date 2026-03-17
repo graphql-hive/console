@@ -1,17 +1,18 @@
-import { ReactElement, ReactNode, useMemo, useState } from 'react';
+import { createContext, ReactElement, ReactNode, useContext, useMemo, useState } from 'react';
 import { LinkIcon } from 'lucide-react';
 import { useQuery } from 'urql';
+import { Header } from '@/components/navigation/header';
+import { SecondaryNavigation } from '@/components/navigation/secondary-navigation';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
   DialogContent,
   DialogDescription,
-  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { DocsLink } from '@/components/ui/docs-note';
 import { HiveLink } from '@/components/ui/hive-link';
+import { InputCopy } from '@/components/ui/input-copy';
 import { Link as UiLink } from '@/components/ui/link';
 import {
   Select,
@@ -21,17 +22,16 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { UserMenu } from '@/components/ui/user-menu';
-import { CopyValue, Tag } from '@/components/v2';
 import { graphql } from '@/gql';
 import { ProjectType } from '@/gql/graphql';
-import { canAccessTarget, TargetAccessScope, useTargetAccess } from '@/lib/access/target';
 import { getDocsUrl } from '@/lib/docs-url';
 import { useToggle } from '@/lib/hooks';
+import { useResetState } from '@/lib/hooks/use-reset-state';
 import { useLastVisitedOrganizationWriter } from '@/lib/last-visited-org';
 import { cn } from '@/lib/utils';
-import { Link } from '@tanstack/react-router';
-import { ProjectMigrationToast } from '../project/migration-toast';
-import { Tabs, TabsList, TabsTrigger } from '../ui/tabs';
+import { ResourceNotFoundComponent } from '../resource-not-found';
+import { Label } from '../ui/label';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
 import { TargetSelector } from './target-selector';
 
 export enum Page {
@@ -40,53 +40,91 @@ export enum Page {
   Checks = 'checks',
   History = 'history',
   Insights = 'insights',
+  Traces = 'traces',
   Laboratory = 'laboratory',
   Apps = 'apps',
+  Proposals = 'proposals',
   Settings = 'settings',
 }
 
+type TargetReference = {
+  organizationSlug: string;
+  projectSlug: string;
+  targetSlug: string;
+};
+
+const TargetReferenceContext = createContext<TargetReference | undefined>(undefined);
+
+type TargetReferenceProviderProps = {
+  children: ReactNode;
+  organizationSlug: string;
+  projectSlug: string;
+  targetSlug: string;
+};
+
+export const TargetReferenceProvider = ({
+  children,
+  organizationSlug,
+  projectSlug,
+  targetSlug,
+}: TargetReferenceProviderProps) => {
+  return (
+    <TargetReferenceContext.Provider value={{ organizationSlug, projectSlug, targetSlug }}>
+      {children}
+    </TargetReferenceContext.Provider>
+  );
+};
+
+export const useTargetReference = () => {
+  const context = useContext(TargetReferenceContext);
+  if (!context) {
+    throw new Error('useTargetReference must be used within a TargetReferenceProvider');
+  }
+  return context;
+};
+
 const TargetLayoutQuery = graphql(`
-  query TargetLayoutQuery {
+  query TargetLayoutQuery($organizationSlug: String!, $projectSlug: String!, $targetSlug: String!) {
     me {
       id
       ...UserMenu_MeFragment
     }
     organizations {
-      nodes {
-        id
-        slug
-        isAppDeploymentsEnabled
-        me {
-          id
-          ...CanAccessTarget_MemberFragment
-        }
-        projects {
-          nodes {
-            id
-            slug
-            registryModel
-            targets {
-              nodes {
-                id
-                slug
-              }
-            }
-          }
-        }
-      }
       ...TargetSelector_OrganizationConnectionFragment
       ...UserMenu_OrganizationConnectionFragment
     }
     isCDNEnabled
+    organization: organizationBySlug(organizationSlug: $organizationSlug) {
+      id
+      slug
+      project: projectBySlug(projectSlug: $projectSlug) {
+        id
+        slug
+        target: targetBySlug(targetSlug: $targetSlug) {
+          id
+          slug
+          viewerCanViewLaboratory
+          viewerCanViewAppDeployments
+          viewerCanAccessSettings
+          viewerCanAccessTraces
+          viewerCanViewSchemaProposals
+          latestSchemaVersion {
+            id
+          }
+        }
+      }
+      ...UserMenu_OrganizationFragment
+    }
   }
 `);
 
 export const TargetLayout = ({
   children,
-  connect,
   page,
   className,
-  ...props
+  organizationSlug,
+  projectSlug,
+  targetSlug,
 }: {
   page: Page;
   organizationSlug: string;
@@ -94,236 +132,172 @@ export const TargetLayout = ({
   targetSlug: string;
   className?: string;
   children: ReactNode;
-  connect?: ReactNode;
 }): ReactElement | null => {
+  const params = {
+    organizationSlug,
+    projectSlug,
+    targetSlug,
+  };
+
   const [isModalOpen, toggleModalOpen] = useToggle();
   const [query] = useQuery({
     query: TargetLayoutQuery,
     requestPolicy: 'cache-first',
+    variables: params,
   });
 
   const me = query.data?.me;
-  const currentOrganization = query.data?.organizations.nodes.find(
-    node => node.slug === props.organizationSlug,
-  );
-  const currentProject = currentOrganization?.projects.nodes.find(
-    node => node.slug === props.projectSlug,
-  );
-  const currentTarget = currentProject?.targets.nodes.find(node => node.slug === props.targetSlug);
-  const isCDNEnabled = query.data?.isCDNEnabled === true;
+  const currentOrganization = query.data?.organization;
+  const currentProject = query.data?.organization?.project;
+  const currentTarget = query.data?.organization?.project?.target;
+  const latestSchemaVersion = query.data?.organization?.project?.target?.latestSchemaVersion?.id;
 
-  useTargetAccess({
-    scope: TargetAccessScope.Read,
-    member: currentOrganization?.me ?? null,
-    redirect: true,
-    targetSlug: props.targetSlug,
-    projectSlug: props.projectSlug,
-    organizationSlug: props.organizationSlug,
-  });
+  const isCDNEnabled = query.data?.isCDNEnabled === true;
 
   useLastVisitedOrganizationWriter(currentOrganization?.slug);
 
-  const hasRegistryReadAccess = canAccessTarget(
-    TargetAccessScope.RegistryRead,
-    currentOrganization?.me ?? null,
-  );
-  const hasReadAccess = canAccessTarget(TargetAccessScope.Read, currentOrganization?.me ?? null);
-  const hasSettingsAccess = canAccessTarget(
-    TargetAccessScope.Settings,
-    currentOrganization?.me ?? null,
-  );
-  const hasRegistryWriteAccess = canAccessTarget(
-    TargetAccessScope.RegistryWrite,
-    currentOrganization?.me ?? null,
-  );
-  const hasTokensWriteAccess = canAccessTarget(
-    TargetAccessScope.TokensWrite,
-    currentOrganization?.me ?? null,
-  );
-
-  const canAccessSettingsPage =
-    hasReadAccess || hasSettingsAccess || hasRegistryWriteAccess || hasTokensWriteAccess;
-
   return (
-    <>
-      <header>
-        <div className="container flex h-[--header-height] items-center justify-between">
-          <div className="flex flex-row items-center gap-4">
-            <HiveLink className="size-8" />
-            <TargetSelector
-              organizations={query.data?.organizations ?? null}
-              currentOrganizationSlug={props.organizationSlug}
-              currentProjectSlug={props.projectSlug}
-              currentTargetSlug={props.targetSlug}
-            />
-          </div>
-          <div>
-            <UserMenu
-              me={me ?? null}
-              currentOrganizationSlug={props.organizationSlug}
-              organizations={query.data?.organizations ?? null}
-            />
-          </div>
+    <TargetReferenceProvider
+      organizationSlug={organizationSlug}
+      projectSlug={projectSlug}
+      targetSlug={targetSlug}
+    >
+      <Header>
+        <div className="flex flex-row items-center gap-4">
+          <HiveLink className="size-8" />
+          <TargetSelector
+            organizations={query.data?.organizations ?? null}
+            currentOrganizationSlug={organizationSlug}
+            currentProjectSlug={projectSlug}
+            currentTargetSlug={targetSlug}
+          />
         </div>
-      </header>
-
-      {currentProject?.registryModel === 'LEGACY' ? (
-        <ProjectMigrationToast
-          organizationSlug={props.organizationSlug}
-          projectSlug={props.projectSlug}
-        />
-      ) : null}
-
-      <div className="relative h-[--tabs-navbar-height] border-b border-gray-800">
-        <div className="container flex items-center justify-between">
-          {currentOrganization && currentProject && currentTarget ? (
-            <Tabs className="flex h-full grow flex-col" value={page}>
-              <TabsList variant="menu">
-                {hasRegistryReadAccess && (
-                  <>
-                    <TabsTrigger variant="menu" value={Page.Schema} asChild>
-                      <Link
-                        to="/$organizationSlug/$projectSlug/$targetSlug"
-                        params={{
-                          organizationSlug: props.organizationSlug,
-                          projectSlug: props.projectSlug,
-                          targetSlug: props.targetSlug,
-                        }}
-                      >
-                        Schema
-                      </Link>
-                    </TabsTrigger>
-                    <TabsTrigger variant="menu" value={Page.Checks} asChild>
-                      <Link
-                        to="/$organizationSlug/$projectSlug/$targetSlug/checks"
-                        params={{
-                          organizationSlug: props.organizationSlug,
-                          projectSlug: props.projectSlug,
-                          targetSlug: props.targetSlug,
-                        }}
-                      >
-                        Checks
-                      </Link>
-                    </TabsTrigger>
-                    <TabsTrigger variant="menu" value={Page.Explorer} asChild>
-                      <Link
-                        to="/$organizationSlug/$projectSlug/$targetSlug/explorer"
-                        params={{
-                          organizationSlug: props.organizationSlug,
-                          projectSlug: props.projectSlug,
-                          targetSlug: props.targetSlug,
-                        }}
-                      >
-                        Explorer
-                      </Link>
-                    </TabsTrigger>
-                    <TabsTrigger variant="menu" value={Page.History} asChild>
-                      <Link
-                        to="/$organizationSlug/$projectSlug/$targetSlug/history"
-                        params={{
-                          organizationSlug: currentOrganization.slug,
-                          projectSlug: currentProject.slug,
-                          targetSlug: currentTarget.slug,
-                        }}
-                      >
-                        History
-                      </Link>
-                    </TabsTrigger>
-                    <TabsTrigger variant="menu" value={Page.Insights} asChild>
-                      <Link
-                        to="/$organizationSlug/$projectSlug/$targetSlug/insights"
-                        params={{
-                          organizationSlug: props.organizationSlug,
-                          projectSlug: props.projectSlug,
-                          targetSlug: props.targetSlug,
-                        }}
-                      >
-                        Insights
-                      </Link>
-                    </TabsTrigger>
-                    {currentOrganization.isAppDeploymentsEnabled && (
-                      <TabsTrigger variant="menu" value={Page.Apps} asChild>
-                        <Link
-                          to="/$organizationSlug/$projectSlug/$targetSlug/apps"
-                          params={{
-                            organizationSlug: props.organizationSlug,
-                            projectSlug: props.projectSlug,
-                            targetSlug: props.targetSlug,
-                          }}
-                        >
-                          Apps
-                        </Link>
-                      </TabsTrigger>
-                    )}
-                    <TabsTrigger variant="menu" value={Page.Laboratory} asChild>
-                      <Link
-                        to="/$organizationSlug/$projectSlug/$targetSlug/laboratory"
-                        params={{
-                          organizationSlug: props.organizationSlug,
-                          projectSlug: props.projectSlug,
-                          targetSlug: props.targetSlug,
-                        }}
-                      >
-                        Laboratory
-                      </Link>
-                    </TabsTrigger>
-                  </>
-                )}
-                {canAccessSettingsPage && (
-                  <TabsTrigger variant="menu" value={Page.Settings} asChild>
-                    <Link
-                      to="/$organizationSlug/$projectSlug/$targetSlug/settings"
-                      params={{
-                        organizationSlug: props.organizationSlug,
-                        projectSlug: props.projectSlug,
-                        targetSlug: props.targetSlug,
-                      }}
-                      search={{ page: 'general' }}
-                    >
-                      Settings
-                    </Link>
-                  </TabsTrigger>
-                )}
-              </TabsList>
-            </Tabs>
-          ) : (
-            <div className="flex flex-row gap-x-8 border-b-2 border-b-transparent px-4 py-3">
-              <div className="h-5 w-12 animate-pulse rounded-full bg-gray-800" />
-              <div className="h-5 w-12 animate-pulse rounded-full bg-gray-800" />
-              <div className="h-5 w-12 animate-pulse rounded-full bg-gray-800" />
-            </div>
-          )}
-          {currentTarget ? (
-            connect != null ? (
-              connect
-            ) : isCDNEnabled ? (
-              <>
-                <Button onClick={toggleModalOpen} variant="link" className="text-orange-500">
-                  <LinkIcon size={16} className="mr-2" />
-                  Connect to CDN
-                </Button>
-                <ConnectSchemaModal
-                  organizationSlug={props.organizationSlug}
-                  projectSlug={props.projectSlug}
-                  targetSlug={props.targetSlug}
-                  isOpen={isModalOpen}
-                  toggleModalOpen={toggleModalOpen}
-                />
-              </>
-            ) : null
-          ) : null}
+        <div>
+          <UserMenu
+            me={me ?? null}
+            currentOrganization={currentOrganization ?? null}
+            organizations={query.data?.organizations ?? null}
+          />
         </div>
-      </div>
-      <div className={cn('container min-h-[var(--content-height)] pb-7', className)}>
-        {children}
-      </div>
-    </>
+      </Header>
+
+      {query.fetching === false &&
+      query.stale === false &&
+      (currentProject === null || currentOrganization === null || currentTarget === null) ? (
+        <ResourceNotFoundComponent title="404 - This project does not seem to exist." />
+      ) : (
+        <>
+          <SecondaryNavigation
+            page={page}
+            loading={!currentOrganization || !currentProject || !currentTarget}
+            className="flex h-full grow flex-col"
+            links={
+              currentOrganization && currentProject && currentTarget
+                ? [
+                    {
+                      value: Page.Schema,
+                      label: 'Schema',
+                      to: '/$organizationSlug/$projectSlug/$targetSlug',
+                      params,
+                    },
+                    {
+                      value: Page.Checks,
+                      label: 'Checks',
+                      to: '/$organizationSlug/$projectSlug/$targetSlug/checks',
+                      params,
+                    },
+                    {
+                      value: Page.Explorer,
+                      label: 'Explorer',
+                      to: '/$organizationSlug/$projectSlug/$targetSlug/explorer',
+                      params,
+                    },
+                    {
+                      value: Page.History,
+                      label: 'History',
+                      to: '/$organizationSlug/$projectSlug/$targetSlug/history/$versionId',
+                      params: {
+                        ...params,
+                        versionId: latestSchemaVersion ?? '',
+                      },
+                    },
+                    {
+                      value: Page.Insights,
+                      label: 'Insights',
+                      to: '/$organizationSlug/$projectSlug/$targetSlug/insights',
+                      params,
+                      search: {},
+                    },
+                    {
+                      value: Page.Traces,
+                      label: 'Traces',
+                      visible: currentTarget.viewerCanAccessTraces,
+                      to: '/$organizationSlug/$projectSlug/$targetSlug/traces',
+                      params,
+                    },
+                    {
+                      value: Page.Apps,
+                      label: 'Apps',
+                      visible: currentTarget.viewerCanViewAppDeployments,
+                      to: '/$organizationSlug/$projectSlug/$targetSlug/apps',
+                      params,
+                    },
+                    {
+                      value: Page.Laboratory,
+                      label: 'Laboratory',
+                      visible: currentTarget.viewerCanViewLaboratory,
+                      to: '/$organizationSlug/$projectSlug/$targetSlug/laboratory',
+                      params,
+                    },
+                    {
+                      value: Page.Proposals,
+                      label: 'Proposals',
+                      visible: currentTarget.viewerCanViewSchemaProposals,
+                      to: '/$organizationSlug/$projectSlug/$targetSlug/proposals',
+                      params,
+                    },
+                    {
+                      value: Page.Settings,
+                      label: 'Settings',
+                      visible: currentTarget.viewerCanAccessSettings,
+                      to: '/$organizationSlug/$projectSlug/$targetSlug/settings',
+                      params,
+                    },
+                  ]
+                : []
+            }
+            actions={
+              currentTarget && isCDNEnabled ? (
+                <>
+                  <Button
+                    onClick={toggleModalOpen}
+                    variant="link"
+                    className="hidden whitespace-nowrap md:flex"
+                  >
+                    <LinkIcon size={16} className="mr-2" />
+                    Connect to CDN
+                  </Button>
+                  <ConnectSchemaModal
+                    organizationSlug={organizationSlug}
+                    projectSlug={projectSlug}
+                    targetSlug={targetSlug}
+                    isOpen={isModalOpen}
+                    toggleModalOpen={toggleModalOpen}
+                  />
+                </>
+              ) : null
+            }
+          />
+          <div className={cn('min-h-(--content-height) container pb-7', className)}>{children}</div>
+        </>
+      )}
+    </TargetReferenceProvider>
   );
 };
 
 const ConnectSchemaModalQuery = graphql(`
   query ConnectSchemaModal($targetSelector: TargetSelectorInput!) {
-    target(selector: $targetSelector) {
+    target(reference: { bySelector: $targetSelector }) {
       id
       project {
         id
@@ -346,15 +320,15 @@ const ConnectSchemaModalQuery = graphql(`
 type CdnArtifactType = 'sdl' | 'services' | 'supergraph' | 'metadata';
 
 const ArtifactToProjectTypeMapping: Record<ProjectType, CdnArtifactType[]> = {
+  [ProjectType.Federation]: ['supergraph', 'sdl', 'services'],
   [ProjectType.Single]: ['sdl', 'metadata'],
   [ProjectType.Stitching]: ['sdl', 'services'],
-  [ProjectType.Federation]: ['sdl', 'services', 'supergraph'],
 };
 
 const ArtifactTypeToDisplayName: Record<CdnArtifactType, string> = {
-  sdl: 'GraphQL SDL',
+  supergraph: 'Supergraph',
+  sdl: 'Public GraphQL SDL',
   services: 'Services Definition and SDL',
-  supergraph: 'Apollo Federation Supergraph',
   metadata: 'Hive Schema Metadata',
 };
 
@@ -384,7 +358,6 @@ export function ConnectSchemaModal(props: {
   });
 
   const [selectedGraph, setSelectedGraph] = useState<string>('DEFAULT_GRAPH');
-  const [selectedArtifact, setSelectedArtifact] = useState<CdnArtifactType>('sdl');
 
   const selectedContract = useMemo(() => {
     if (selectedGraph === 'DEFAULT_GRAPH') {
@@ -395,144 +368,318 @@ export function ConnectSchemaModal(props: {
     )?.node;
   }, [selectedGraph]);
 
+  const target = query.data?.target;
+
+  const [selectedArtifact, setSelectedArtifact] = useResetState<CdnArtifactType>(
+    () => (target?.project.type === ProjectType.Federation ? 'supergraph' : 'sdl'),
+    [target?.project.type],
+  );
+
   return (
     <Dialog open={props.isOpen} onOpenChange={props.toggleModalOpen}>
-      <DialogContent className="w-[600px] max-w-[700px] gap-5 md:w-3/5">
+      <DialogContent className="w-[650px] min-w-[650px]">
         <DialogHeader>
           <DialogTitle>Hive CDN Access</DialogTitle>
           <DialogDescription>
-            Hive leverages the{' '}
+            Learn more in our{' '}
             <UiLink
-              as="a"
               variant="primary"
-              className="font-bold underline"
-              href="https://www.cloudflare.com/network"
+              href={getDocsUrl('/high-availability-cdn')}
               target="_blank"
               rel="noreferrer"
             >
-              CloudFlare Global Network
+              High-Availability CDN
             </UiLink>{' '}
-            to deliver your GraphQL schema and schema metadata. This means that your schema will be
-            available from the nearest location to your GraphQL gateway, with 100% uptime,
-            regardless of Hive's status.
+            documentation.
           </DialogDescription>
         </DialogHeader>
-        {query.data?.target && (
-          <>
-            <DialogDescription>
-              Based on your project type, you can access different artifacts from Hive's CDN:
-            </DialogDescription>
-            <div className="flex flex-row justify-start gap-3">
-              <Select
-                value={selectedGraph}
-                onValueChange={value => {
-                  if (
-                    value !== 'DEFAULT_GRAPH' &&
-                    selectedArtifact !== 'sdl' &&
-                    selectedArtifact !== 'supergraph'
-                  ) {
-                    setSelectedArtifact('sdl');
-                  }
-                  setSelectedGraph(value);
-                }}
-              >
-                <SelectTrigger className="w-[250px] max-w-[300px]">
-                  <SelectValue placeholder="Select Graph" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="DEFAULT_GRAPH">Default Graph</SelectItem>
-                  {query.data.target.activeContracts.edges.map(({ node }) => (
-                    <SelectItem key={node.id} value={node.contractName}>
-                      {node.contractName}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <Select
-                value={selectedArtifact}
-                onValueChange={(value: CdnArtifactType) => setSelectedArtifact(value)}
-              >
-                <SelectTrigger className="w-[250px] max-w-[300px]">
-                  <SelectValue placeholder="Select Artifact" />
-                </SelectTrigger>
-                <SelectContent>
-                  {ArtifactToProjectTypeMapping[query.data.target.project.type].map(t => (
-                    <SelectItem
-                      key={t}
-                      value={t}
-                      disabled={
-                        t !== 'supergraph' && t !== 'sdl' && selectedGraph !== 'DEFAULT_GRAPH'
+        <div className="max-w-[600px]">
+          {target && (
+            <>
+              <div className="mb-5 mt-1 flex flex-row justify-start gap-3">
+                <div>
+                  <Label>Graph Variant</Label>
+                  <Select
+                    value={selectedGraph}
+                    onValueChange={value => {
+                      if (
+                        value !== 'DEFAULT_GRAPH' &&
+                        selectedArtifact !== 'sdl' &&
+                        selectedArtifact !== 'supergraph'
+                      ) {
+                        setSelectedArtifact('sdl');
                       }
+                      setSelectedGraph(value);
+                    }}
+                  >
+                    <SelectTrigger className="w-[250px] max-w-[300px]">
+                      <SelectValue placeholder="Select Graph" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="DEFAULT_GRAPH">Default Graph</SelectItem>
+                      {target.activeContracts.edges.map(({ node }) => (
+                        <SelectItem key={node.id} value={node.contractName}>
+                          {node.contractName}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label>Artifact</Label>
+                  <Select
+                    value={selectedArtifact}
+                    onValueChange={(value: CdnArtifactType) => setSelectedArtifact(value)}
+                  >
+                    <SelectTrigger className="w-[250px] max-w-[300px]">
+                      <SelectValue placeholder="Select Artifact" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {ArtifactToProjectTypeMapping[target.project.type].map(t => (
+                        <SelectItem
+                          key={t}
+                          value={t}
+                          disabled={
+                            t !== 'supergraph' && t !== 'sdl' && selectedGraph !== 'DEFAULT_GRAPH'
+                          }
+                        >
+                          {ArtifactTypeToDisplayName[t]}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              {selectedArtifact === 'supergraph' ? (
+                <FederationModalContent
+                  cdnUrl={selectedContract?.cdnUrl ?? target.cdnUrl}
+                  organizationSlug={props.organizationSlug}
+                  projectSlug={props.projectSlug}
+                  targetSlug={props.targetSlug}
+                />
+              ) : (
+                <div className="space-y-2 text-sm">
+                  <p>To access your schema from Hive's CDN, use the following endpoint:</p>
+                  <InputCopy
+                    value={composeEndpoint(
+                      selectedContract?.cdnUrl ?? target.cdnUrl,
+                      selectedArtifact,
+                    )}
+                  />
+                  <p>
+                    To authenticate,{' '}
+                    <UiLink
+                      as="a"
+                      search={{
+                        page: 'cdn',
+                      }}
+                      variant="primary"
+                      to="/$organizationSlug/$projectSlug/$targetSlug/settings"
+                      params={{
+                        organizationSlug: props.organizationSlug,
+                        projectSlug: props.projectSlug,
+                        targetSlug: props.targetSlug,
+                      }}
+                      target="_blank"
+                      rel="noreferrer"
                     >
-                      {ArtifactTypeToDisplayName[t]}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <DialogDescription>
-              To access your schema from Hive's CDN, use the following endpoint:
-            </DialogDescription>
-            <CopyValue
-              value={composeEndpoint(
-                selectedContract?.cdnUrl ?? query.data.target.cdnUrl,
-                selectedArtifact,
+                      create a CDN Access Token from your target's Settings page
+                    </UiLink>{' '}
+                    use the CDN access token in your HTTP headers:
+                    <br />
+                  </p>
+                  <InputCopy value="X-Hive-CDN-Key: <Your Access Token>" />
+                </div>
               )}
-            />
-            <DialogDescription>
-              To authenticate,{' '}
-              <UiLink
-                as="a"
-                search={{
-                  page: 'cdn',
-                }}
-                variant="primary"
-                className="font-bold underline"
-                to="/$organizationSlug/$projectSlug/$targetSlug/settings"
-                params={{
-                  organizationSlug: props.organizationSlug,
-                  projectSlug: props.projectSlug,
-                  targetSlug: props.targetSlug,
-                }}
-                target="_blank"
-                rel="noreferrer"
-              >
-                create a CDN Access Token from your target's Settings page
-              </UiLink>{' '}
-              use the CDN access token in your HTTP headers:
-              <br />
-            </DialogDescription>
-            <DialogDescription>
-              <Tag className="relative w-full">
-                X-Hive-CDN-Key: {'<'}Your Access Token{'>'}
-              </Tag>
-            </DialogDescription>
-
-            <DocsLink href="/features/high-availability-cdn">
-              Learn more about Hive High-Availability CDN
-            </DocsLink>
-            {query.data.target.project.type === ProjectType.Federation ? (
-              <DialogDescription className="text-center">
-                Read the{' '}
-                <UiLink
-                  variant="primary"
-                  target="_blank"
-                  rel="noreferrer"
-                  to={getDocsUrl('/integrations/apollo-gateway#supergraph-sdl-from-the-cdn')}
-                >
-                  Using the Registry with a Apollo Gateway
-                </UiLink>{' '}
-                chapter in our documentation.
-              </DialogDescription>
-            ) : null}
-          </>
-        )}
-        <DialogFooter>
-          <Button type="button" onClick={props.toggleModalOpen}>
-            Close
-          </Button>
-        </DialogFooter>
+            </>
+          )}
+        </div>
       </DialogContent>
     </Dialog>
+  );
+}
+
+function FederationModalContent(props: {
+  cdnUrl: string;
+  organizationSlug: string;
+  projectSlug: string;
+  targetSlug: string;
+}) {
+  const authenticateSection = (
+    <p>
+      Replace "{'<hive_cdn_access_key>'}" with a{' '}
+      <UiLink
+        search={{
+          page: 'cdn',
+        }}
+        variant="primary"
+        to="/$organizationSlug/$projectSlug/$targetSlug/settings"
+        params={{
+          organizationSlug: props.organizationSlug,
+          projectSlug: props.projectSlug,
+          targetSlug: props.targetSlug,
+        }}
+        target="_blank"
+        rel="noreferrer"
+      >
+        CDN Access Token from your target's settings
+      </UiLink>
+      .
+    </p>
+  );
+  return (
+    <Tabs className="mt-2 flex min-h-[300px] grow flex-col text-sm" defaultValue="hive-gateway">
+      <TabsList variant="content">
+        <TabsTrigger value="hive-gateway" variant="content">
+          Hive Gateway
+        </TabsTrigger>
+        <TabsTrigger value="hive-router" variant="content">
+          Hive Router
+        </TabsTrigger>
+        <TabsTrigger value="apollo-router" variant="content">
+          Apollo Router
+        </TabsTrigger>
+        <TabsTrigger value="grafbase-gateway" variant="content">
+          Grafbase Gateway
+        </TabsTrigger>
+        <TabsTrigger value="cdn" variant="content">
+          Custom / HTTP
+        </TabsTrigger>
+      </TabsList>
+      <TabsContent value="hive-gateway" variant="content">
+        <p>
+          Start up a Hive Gateway instance polling the supergraph from the Hive CDN using the
+          following command.
+        </p>
+        {authenticateSection}
+        <div className="mt-2">
+          <InputCopy
+            multiline
+            value={`docker run --name hive-gateway --rm -p 4000:4000 \\
+  ghcr.io/graphql-hive/gateway supergraph \\
+  "${props.cdnUrl}" \\
+  --hive-cdn-key '<hive_cdn_access_key>'`}
+          />
+        </div>
+        <p>
+          For more information please refer to our{' '}
+          <UiLink
+            variant="primary"
+            target="_blank"
+            rel="noreferrer"
+            to={getDocsUrl('/gateway/usage-reporting')}
+          >
+            Hive Gateway documentation
+          </UiLink>
+          .
+        </p>
+      </TabsContent>
+      <TabsContent value="hive-router" variant="content">
+        <p>
+          Start up a Hive Router instance polling the supergraph from the Hive CDN using the
+          following command.
+        </p>
+        {authenticateSection}
+        <InputCopy
+          multiline
+          value={`docker run --name hive-router --rm -p 4000:4000 \\
+  --env HIVE_CDN_ENDPOINT="${props.cdnUrl}" \\
+  --env HIVE_CDN_KEY="<hive_cdn_access_key>" \\
+  ghcr.io/graphql-hive/router`}
+        />
+        <p>
+          For more information please refer to our{' '}
+          <UiLink
+            variant="primary"
+            target="_blank"
+            rel="noreferrer"
+            to={getDocsUrl('/router/observability/usage_reporting')}
+          >
+            Hive Router documentation
+          </UiLink>
+          .
+        </p>
+      </TabsContent>
+      <TabsContent value="apollo-router" variant="content">
+        <p>
+          Start up a Apollo Router instance polling the supergraph from the Hive CDN using the
+          following command.
+        </p>
+        {authenticateSection}
+        <InputCopy
+          multiline
+          value={`docker run --name apollo-router -p 4000:4000 --rm \\
+  --env HIVE_CDN_ENDPOINT="${props.cdnUrl}" \\
+  --env HIVE_CDN_KEY="<hive_cdn_access_key>"
+  ghcr.io/graphql-hive/apollo-router`}
+        />
+        <p>
+          For more information please refer to our{' '}
+          <UiLink
+            variant="primary"
+            target="_blank"
+            rel="noreferrer"
+            to={getDocsUrl('/other-integrations/apollo-router')}
+          >
+            Apollo Router documentation
+          </UiLink>
+          .
+        </p>
+      </TabsContent>
+      <TabsContent value="grafbase-gateway" variant="content">
+        <p>
+          Start up a Grafbase Gateway instance polling the supergraph from the Hive CDN using the
+          following command.
+        </p>
+        {authenticateSection}
+        <InputCopy
+          multiline
+          value={`docker run --name grafbase-gateway -p 5000:5000 --rm \\
+  --env HIVE_CDN_ENDPOINT="${props.cdnUrl}" \\
+  --env HIVE_CDN_KEY="<hive_cdn_access_key>"
+  ghcr.io/grafbase/gateway`}
+        />
+        <p>
+          For more information please refer to our{' '}
+          <UiLink
+            variant="primary"
+            target="_blank"
+            rel="noreferrer"
+            to={getDocsUrl('/other-integrations/grafbase-gateway')}
+          >
+            Grafbase Gateway documentation
+          </UiLink>
+          .
+        </p>
+      </TabsContent>
+      <TabsContent value="cdn" variant="content">
+        <p>For other tooling you can access the raw supergraph by sending a HTTP request.</p>
+        <p>To access your schema from Hive's CDN, use the following endpoint:</p>
+        <div>
+          <InputCopy multiline value={`${props.cdnUrl}/supergraph`} />
+        </div>
+        <p>Here is an example calling the endpoint using curl.</p>
+        {authenticateSection}
+        <div className="mt-2">
+          <InputCopy
+            multiline
+            value={`curl -H 'X-Hive-CDN-Key: <hive_cdn_access_key>' \\
+  ${props.cdnUrl}/supergraph`}
+          />
+        </div>
+        <p>
+          For more information please refer to our{' '}
+          <UiLink
+            variant="primary"
+            target="_blank"
+            rel="noreferrer"
+            to={getDocsUrl('/high-availability-cdn')}
+          >
+            CDN documentation
+          </UiLink>
+          .
+        </p>
+      </TabsContent>
+    </Tabs>
   );
 }

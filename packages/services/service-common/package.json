@@ -3,32 +3,38 @@
   "type": "module",
   "license": "MIT",
   "private": true,
+  "exports": {
+    ".": "./src/index.ts"
+  },
   "peerDependencies": {
     "@sentry/node": "^7.0.0",
     "@sentry/utils": "^7.0.0",
-    "@trpc/server": "10.45.2"
+    "@trpc/server": "10.45.3"
   },
   "devDependencies": {
-    "@fastify/cors": "9.0.1",
+    "@fastify/cors": "11.2.0",
+    "@graphql-hive/logger": "1.0.9",
+    "@graphql-hive/plugin-opentelemetry": "1.3.0",
     "@opentelemetry/api": "1.9.0",
-    "@opentelemetry/auto-instrumentations-node": "0.52.0",
-    "@opentelemetry/context-async-hooks": "1.27.0",
-    "@opentelemetry/exporter-trace-otlp-http": "0.54.0",
-    "@opentelemetry/instrumentation": "0.54.0",
-    "@opentelemetry/resources": "1.27.0",
-    "@opentelemetry/sdk-node": "0.54.0",
-    "@opentelemetry/sdk-trace-base": "1.27.0",
-    "@opentelemetry/sdk-trace-node": "1.27.0",
-    "@opentelemetry/semantic-conventions": "1.27.0",
-    "@sentry/node": "7.119.2",
-    "@sentry/types": "7.119.2",
-    "@sentry/utils": "7.119.2",
-    "fastify": "4.28.1",
-    "fastify-plugin": "4.5.1",
+    "@opentelemetry/auto-instrumentations-node": "0.67.2",
+    "@opentelemetry/context-async-hooks": "2.2.0",
+    "@opentelemetry/exporter-trace-otlp-http": "0.208.0",
+    "@opentelemetry/instrumentation": "0.208.0",
+    "@opentelemetry/resources": "2.2.0",
+    "@opentelemetry/sdk-node": "0.208.0",
+    "@opentelemetry/sdk-trace-base": "2.2.0",
+    "@opentelemetry/sdk-trace-node": "2.2.0",
+    "@opentelemetry/semantic-conventions": "1.38.0",
+    "@sentry/integrations": "7.114.0",
+    "@sentry/node": "7.120.2",
+    "@sentry/types": "7.120.2",
+    "@sentry/utils": "7.120.2",
+    "fastify": "5.8.1",
+    "fastify-plugin": "5.1.0",
     "opentelemetry-instrumentation-fetch-node": "1.2.3",
-    "p-retry": "6.2.0",
+    "p-retry": "6.2.1",
     "prom-client": "15.1.3",
     "slonik": "30.4.4",
-    "zod": "3.23.8"
+    "zod": "3.25.76"
   }
 }

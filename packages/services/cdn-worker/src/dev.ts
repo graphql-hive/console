@@ -27,6 +27,7 @@ const artifactStorageReader = new ArtifactStorageReader(s3, null, null, null);
 
 const handleRequest = createRequestHandler({
   isKeyValid: createIsKeyValid({
+    kvStorageBaseUrl: env.KV_STORAGE_BASE_URL,
     artifactStorageReader,
     getCache: null,
     waitUntil: null,
@@ -52,6 +53,7 @@ const handleRequest = createRequestHandler({
 
 const handleArtifactRequest = createArtifactRequestHandler({
   isKeyValid: createIsKeyValid({
+    kvStorageBaseUrl: env.KV_STORAGE_BASE_URL,
     artifactStorageReader,
     getCache: null,
     waitUntil: null,

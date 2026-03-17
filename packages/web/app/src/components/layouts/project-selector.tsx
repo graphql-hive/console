@@ -1,6 +1,7 @@
+import { PrimaryNavigationLink } from '@/components/navigation/primary-navigation-link';
 import { Select, SelectContent, SelectItem, SelectTrigger } from '@/components/ui/select';
 import { FragmentType, graphql, useFragment } from '@/gql';
-import { Link, useRouter } from '@tanstack/react-router';
+import { useRouter } from '@tanstack/react-router';
 
 const ProjectSelector_OrganizationConnectionFragment = graphql(`
   fragment ProjectSelector_OrganizationConnectionFragment on OrganizationConnection {
@@ -8,9 +9,11 @@ const ProjectSelector_OrganizationConnectionFragment = graphql(`
       id
       slug
       projects {
-        nodes {
-          id
-          slug
+        edges {
+          node {
+            id
+            slug
+          }
         }
       }
     }
@@ -33,25 +36,27 @@ export function ProjectSelector(props: {
     node => node.slug === props.currentOrganizationSlug,
   );
 
-  const projects = currentOrganization?.projects.nodes;
-  const currentProject = projects?.find(node => node.slug === props.currentProjectSlug);
+  const projectEdges = currentOrganization?.projects.edges;
+  const currentProject = projectEdges?.find(
+    edge => edge.node.slug === props.currentProjectSlug,
+  )?.node;
 
   return (
     <>
       {currentOrganization ? (
-        <Link
-          to="/$organizationSlug"
-          params={{ organizationSlug: props.currentOrganizationSlug }}
-          className="max-w-[200px] shrink-0 truncate font-medium"
-        >
-          {currentOrganization.slug}
-        </Link>
+        <PrimaryNavigationLink
+          linkProps={{
+            to: '/$organizationSlug',
+            params: { organizationSlug: props.currentOrganizationSlug },
+          }}
+          linkText={currentOrganization.slug}
+        />
       ) : (
-        <div className="h-5 w-48 max-w-[200px] animate-pulse rounded-full bg-gray-800" />
+        <div className="bg-neutral-5 h-5 w-48 max-w-[200px] animate-pulse rounded-full" />
       )}
-      {projects?.length && currentProject ? (
+      {projectEdges?.length && currentProject ? (
         <>
-          <div className="italic text-gray-500">/</div>
+          <div className="text-neutral-10 italic">/</div>
           <Select
             value={props.currentProjectSlug}
             onValueChange={id => {
@@ -64,20 +69,26 @@ export function ProjectSelector(props: {
               });
             }}
           >
-            <SelectTrigger variant="default">
-              <div className="font-medium">{currentProject.slug}</div>
+            <SelectTrigger variant="default" data-cy="project-picker-trigger">
+              <div className="font-medium" data-cy="project-picker-current">
+                {currentProject.slug}
+              </div>
             </SelectTrigger>
             <SelectContent>
-              {projects.map(project => (
-                <SelectItem key={project.slug} value={project.slug}>
-                  {project.slug}
+              {projectEdges.map(edge => (
+                <SelectItem
+                  key={edge.node.slug}
+                  value={edge.node.slug}
+                  data-cy={`project-picker-option-${edge.node.slug}`}
+                >
+                  {edge.node.slug}
                 </SelectItem>
               ))}
             </SelectContent>
           </Select>
         </>
       ) : (
-        <div className="h-5 w-48 animate-pulse rounded-full bg-gray-800" />
+        <div className="bg-neutral-5 h-5 w-48 animate-pulse rounded-full" />
       )}
     </>
   );

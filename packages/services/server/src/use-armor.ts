@@ -86,7 +86,9 @@ export function useArmor<
       );
       ctx.addValidationRule(
         maxDepthRule({
-          n: 21,
+          n: 22,
+          flattenFragments: true,
+          ignoreIntrospection: true,
           onReject: [
             (_, error) => {
               rejectedRequests.inc({

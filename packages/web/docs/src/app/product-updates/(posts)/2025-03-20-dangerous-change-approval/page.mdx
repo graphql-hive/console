@@ -1,0 +1,31 @@
+---
+title: Require Approval for Dangerous Schema Changes
+description: Make schema changes safer with this simple opt-in setting.
+date: 2025-03-20
+authors: [jdolle]
+---
+
+## What’s New?
+
+- **Require approval for dangerous changes** – A new setting, configurable per Schema Target, to
+  require approval for dangerous schema changes.
+
+## Feature Details
+
+We are constantly striving to make schema management easier and safer. One issue that isn't
+discussed so much is dangerous changes. These are technically safe changes from an API perspective,
+but are known to cause issues if systems are not built to handle them. An example is adding a new
+enum value.
+
+A new enum value does not break existing values, but if the consumers of the API don't know how to
+handle this new case, and don't have a fallback, then it could cause undesirable behavior such as
+not rendering an element for an item in a list.
+
+Requiring approval for dangerous changes doesn't entirely solve this issue, because it still
+requires the approver to manually verify that the change is safe. But it can help raise awareness
+that the change could cause issues and therefore empowers schema owners to better make decisions
+about their schema.
+
+---
+
+[For more information see the Target Management docs](/docs/management/targets#dangerous-changes).

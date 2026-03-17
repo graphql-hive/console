@@ -24,7 +24,7 @@ fetch_and_prepare_binary() {
   architecture="$ARCH_DETECTED"
   check_non_empty "$architecture" "architecture"
 
-  RELEASE_TAG="hive-gateway@$TARGET_VERSION"
+  RELEASE_TAG="hive-gateway%40$TARGET_VERSION"
 
   DOWNLOAD_URL="https://github.com/$GITHUB_OWNER/$GITHUB_REPO/releases/download/$RELEASE_TAG/$BINARY_NAME-${architecture}.gz"
 

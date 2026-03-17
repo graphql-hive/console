@@ -1,6 +1,6 @@
 import type { Action } from '../clickhouse';
 
-const action: Action = async (exec, _query, isGraphQLHiveCloud) => {
+const action: Action = async (exec, _query, hiveCloudEnvironment) => {
   // Create materialized views
   await Promise.all(
     [
@@ -96,7 +96,7 @@ const action: Action = async (exec, _query, isGraphQLHiveCloud) => {
   );
 
   // Run the rest of the migration only for self-hosted instances, not for Cloud.
-  if (isGraphQLHiveCloud) {
+  if (hiveCloudEnvironment === 'prod') {
     console.log('Detected GraphQL Hive Cloud. Skipping the rest of the migration.');
     // You need to run these two queries and then execute all the statements they output
 
@@ -228,7 +228,11 @@ const action: Action = async (exec, _query, isGraphQLHiveCloud) => {
 
   await exec(`
     RENAME TABLE
-      default.operations_daily TO default.operations_daily_old,
+      default.operations_daily TO default.operations_daily_old
+    `);
+
+  await exec(`
+    RENAME TABLE
       default.operations_daily_new TO default.operations_daily
   `);
 
@@ -268,7 +272,11 @@ const action: Action = async (exec, _query, isGraphQLHiveCloud) => {
 
   await exec(`
     RENAME TABLE
-      default.operations_hourly TO default.operations_hourly_old,
+      default.operations_hourly TO default.operations_hourly_old
+  `);
+
+  await exec(`
+    RENAME TABLE
       default.operations_hourly_new TO default.operations_hourly
   `);
 

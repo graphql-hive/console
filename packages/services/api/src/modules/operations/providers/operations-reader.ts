@@ -2,6 +2,7 @@ import { addMinutes, format } from 'date-fns';
 import { Injectable } from 'graphql-modules';
 import * as z from 'zod';
 import { UTCDate } from '@date-fns/utc';
+import { traceFn } from '@hive/service-common';
 import type { DateRange } from '../../../shared/entities';
 import { batch, batchBy } from '../../../shared/helpers';
 import { Logger } from '../../shared/providers/logger';
@@ -18,7 +19,7 @@ const CoordinateClientNamesGroupModel = z.array(
   }),
 );
 
-function formatDate(date: Date): string {
+export function formatDate(date: Date): string {
   return format(addMinutes(date, date.getTimezoneOffset()), 'yyyy-MM-dd HH:mm:ss');
 }
 
@@ -32,28 +33,31 @@ function toUnixTimestamp(utcDate: string): any {
   return new UTCDate(iso).getTime();
 }
 
-export interface Percentiles {
+export interface DurationMetrics {
+  avg: number;
   p75: number;
   p90: number;
   p95: number;
   p99: number;
 }
 
-function toPercentiles(item: Percentiles | number[]) {
-  if (Array.isArray(item)) {
-    return {
-      p75: item[0],
-      p90: item[1],
-      p95: item[2],
-      p99: item[3],
-    };
-  }
+const ReadOperationModel = z.object({
+  target: z.string().uuid(),
+  hash: z.string(),
+  body: z.string(),
+  name: z.string(),
+  type: z.union([z.literal('QUERY'), z.literal('MUTATION'), z.literal('SUBSCRIPTION')]),
+});
 
+type Operation = z.TypeOf<typeof ReadOperationModel>;
+
+function toDurationMetrics(percentiles: [number, number, number, number], avg: number) {
   return {
-    p75: item.p75,
-    p90: item.p90,
-    p95: item.p95,
-    p99: item.p99,
+    avg,
+    p75: percentiles[0],
+    p90: percentiles[1],
+    p95: percentiles[2],
+    p99: percentiles[3],
   };
 }
 
@@ -188,25 +192,48 @@ export class OperationsReader {
     }).then(r => r[this.makeId({ type, field, argument })]);
   }
 
-  private async countFields({
-    fields,
-    target,
+  countCoordinate = batchBy<
+    {
+      schemaCoordinate: string;
+      targetIds: readonly string[];
+      period: DateRange;
+      operations?: readonly string[];
+      excludedClients?: readonly string[] | null;
+    },
+    Record<string, number>
+  >(
+    item =>
+      `${item.targetIds.join(',')}-${item.excludedClients?.join(',') ?? ''}-${item.operations?.join(',') ?? ''}-${item.period.from.toISOString()}-${item.period.to.toISOString()}`,
+    async items => {
+      const schemaCoordinates = items.map(item => item.schemaCoordinate);
+      return await this.countCoordinates({
+        targetIds: items[0].targetIds,
+        excludedClients: items[0].excludedClients,
+        period: items[0].period,
+        operations: items[0].operations,
+        schemaCoordinates,
+      }).then(result =>
+        items.map(item =>
+          Promise.resolve({ [item.schemaCoordinate]: result[item.schemaCoordinate] }),
+        ),
+      );
+    },
+  );
+
+  public async countCoordinates({
+    schemaCoordinates,
+    targetIds,
     period,
     operations,
     excludedClients,
   }: {
-    fields: ReadonlyArray<{
-      type: string;
-      field?: string | null;
-      argument?: string | null;
-    }>;
-    target: string | readonly string[];
+    schemaCoordinates: readonly string[];
+    targetIds: string | readonly string[];
     period: DateRange;
     operations?: readonly string[];
     excludedClients?: readonly string[] | null;
-  }): Promise<Record<string, number>> {
-    const coordinates = fields.map(selector => this.makeId(selector));
-    const conditions = [sql`(coordinate IN (${sql.array(coordinates, 'String')}))`];
+  }) {
+    const conditions = [sql`(coordinate IN (${sql.array(schemaCoordinates, 'String')}))`];
 
     if (Array.isArray(excludedClients) && excludedClients.length > 0) {
       // Eliminate coordinates fetched by excluded clients.
@@ -223,7 +250,7 @@ export class OperationsReader {
                 'String',
               )})) as non_excluded_clients_total
             FROM clients_daily ${this.createFilter({
-              target,
+              target: targetIds,
               period,
             })}
             GROUP BY hash
@@ -242,7 +269,7 @@ export class OperationsReader {
               sum(total) as total
             FROM coordinates_daily
             ${this.createFilter({
-              target,
+              target: targetIds,
               period,
               operations,
               extra: conditions,
@@ -258,15 +285,40 @@ export class OperationsReader {
       stats[row.coordinate] = ensureNumber(row.total);
     }
 
-    for (const selector of fields) {
-      const key = this.makeId(selector);
-
-      if (typeof stats[key] !== 'number') {
-        stats[key] = 0;
+    for (const coordinate of schemaCoordinates) {
+      if (typeof stats[coordinate] !== 'number') {
+        stats[coordinate] = 0;
       }
     }
 
     return stats;
+  }
+
+  private async countFields({
+    fields,
+    target,
+    period,
+    operations,
+    excludedClients,
+  }: {
+    fields: ReadonlyArray<{
+      type: string;
+      field?: string | null;
+      argument?: string | null;
+    }>;
+    target: string | readonly string[];
+    period: DateRange;
+    operations?: readonly string[];
+    excludedClients?: readonly string[] | null;
+  }): Promise<Record<string, number>> {
+    const schemaCoordinates = fields.map(selector => this.makeId(selector));
+    return this.countCoordinates({
+      schemaCoordinates,
+      targetIds: target,
+      period,
+      operations,
+      excludedClients,
+    });
   }
 
   async hasCollectedOperations({
@@ -403,12 +455,18 @@ export class OperationsReader {
     period,
     operations,
     clients,
+    clientVersionFilters,
+    excludeOperations,
+    excludeClientVersionFilters,
     schemaCoordinate,
   }: {
     target: string | readonly string[];
     period: DateRange;
     operations?: readonly string[];
     clients?: readonly string[];
+    clientVersionFilters?: readonly { clientName: string; versions: readonly string[] | null }[];
+    excludeOperations?: boolean;
+    excludeClientVersionFilters?: boolean;
     schemaCoordinate?: string;
   }): Promise<{
     total: number;
@@ -429,6 +487,9 @@ export class OperationsReader {
             period,
             operations,
             clients,
+            clientVersionFilters,
+            excludeOperations,
+            excludeClientVersionFilters,
             extra: schemaCoordinate
               ? [
                   sql`hash IN (SELECT hash FROM ${aggregationTableName('coordinates')} ${this.createFilter(
@@ -465,13 +526,27 @@ export class OperationsReader {
     period,
     operations,
     clients,
+    clientVersionFilters,
+    excludeOperations,
+    excludeClientVersionFilters,
   }: {
     target: string;
     period: DateRange;
     operations?: readonly string[];
     clients?: readonly string[];
+    clientVersionFilters?: readonly { clientName: string; versions: readonly string[] | null }[];
+    excludeOperations?: boolean;
+    excludeClientVersionFilters?: boolean;
   }): Promise<number> {
-    return this.countRequests({ target, period, operations, clients }).then(r => r.notOk);
+    return this.countRequests({
+      target,
+      period,
+      operations,
+      clients,
+      clientVersionFilters,
+      excludeOperations,
+      excludeClientVersionFilters,
+    }).then(r => r.notOk);
   }
 
   async countUniqueDocuments({
@@ -479,11 +554,17 @@ export class OperationsReader {
     period,
     operations,
     clients,
+    clientVersionFilters,
+    excludeOperations,
+    excludeClientVersionFilters,
   }: {
     target: string;
     period: DateRange;
     operations?: readonly string[];
     clients?: readonly string[];
+    clientVersionFilters?: readonly { clientName: string; versions: readonly string[] | null }[];
+    excludeOperations?: boolean;
+    excludeClientVersionFilters?: boolean;
   }): Promise<number> {
     const query = this.pickAggregationByPeriod({
       period,
@@ -499,6 +580,9 @@ export class OperationsReader {
             period,
             operations,
             clients,
+            clientVersionFilters,
+            excludeOperations,
+            excludeClientVersionFilters,
           },
         )}`,
       queryId: aggregation => `count_unique_documents_${aggregation}`,
@@ -516,12 +600,18 @@ export class OperationsReader {
     period,
     operations,
     clients,
+    clientVersionFilters,
+    excludeOperations,
+    excludeClientVersionFilters,
     schemaCoordinate,
   }: {
     target: string;
     period: DateRange;
     operations?: readonly string[];
     clients?: readonly string[];
+    clientVersionFilters?: readonly { clientName: string; versions: readonly string[] | null }[];
+    excludeOperations?: boolean;
+    excludeClientVersionFilters?: boolean;
     schemaCoordinate?: string;
   }): Promise<
     Array<{
@@ -548,6 +638,9 @@ export class OperationsReader {
           period,
           operations,
           clients,
+          clientVersionFilters,
+          excludeOperations,
+          excludeClientVersionFilters,
           extra: schemaCoordinate
             ? [
                 sql`hash IN (SELECT hash FROM ${aggregationTableName('coordinates')} ${this.createFilter(
@@ -575,7 +668,7 @@ export class OperationsReader {
         operation_kind: string;
       }>({
         query: sql`
-          SELECT 
+          SELECT
             name,
             hash,
             operation_kind
@@ -591,6 +684,9 @@ export class OperationsReader {
                       target,
                       period,
                       operations,
+                      clientVersionFilters,
+                      excludeOperations,
+                      excludeClientVersionFilters,
                       extra: schemaCoordinate
                         ? [
                             sql`hash IN (SELECT hash FROM ${sql.raw('coordinates_' + query.queryType)} ${this.createFilter(
@@ -643,47 +739,70 @@ export class OperationsReader {
     });
   }
 
-  async readOperation({ target, hash }: { target: string; hash: string }) {
-    const result = await this.clickHouse.query<{
-      hash: string;
-      body: string;
-      name: string;
-      type: 'query' | 'mutation' | 'subscription';
-    }>({
-      query: sql`
-        SELECT 
+  readOperation = batch<{ targetIds: Array<string>; hash: string }, Operation | null>(
+    async args => {
+      const allTargetIds = Array.from(new Set(args.flatMap(arg => arg.targetIds)));
+      const hashes = Array.from(new Set(args.map(arg => arg.hash)));
+
+      const result = await this.clickHouse.query<unknown>({
+        query: sql`
+        SELECT
+          "operation_collection_details"."target" AS "target",
           "operation_collection_details"."hash" AS "hash",
-          "operation_collection_details"."operation_kind" AS "type",
+          upper("operation_collection_details"."operation_kind") AS "type",
           "operation_collection_details"."name" AS "name",
           "body_join"."body" AS "body"
         FROM "operation_collection_details"
         RIGHT JOIN (
           SELECT
+            "operation_collection_body"."target" AS "target",
             "operation_collection_body"."hash" AS "hash",
             "operation_collection_body"."body" AS "body"
           FROM "operation_collection_body"
             ${this.createFilter({
-              target,
-              extra: [sql`"operation_collection_body"."hash" = ${hash}`],
+              target: allTargetIds,
+              extra: [sql`"operation_collection_body"."hash" IN (${sql.array(hashes, 'String')})`],
               namespace: 'operation_collection_body',
             })}
           LIMIT 1
+            BY
+              "operation_collection_body"."target",
+              "operation_collection_body"."hash"
         ) AS "body_join"
           ON "operation_collection_details"."hash" = "body_join"."hash"
           ${this.createFilter({
-            target,
-            extra: [sql`"operation_collection_details"."hash" = ${hash}`],
+            target: allTargetIds,
+            extra: [sql`"operation_collection_details"."hash" IN (${sql.array(hashes, 'String')})`],
             namespace: 'operation_collection_details',
           })}
         LIMIT 1
+          BY
+            "operation_collection_details"."target" AS "target",
+            "operation_collection_details"."hash"
         SETTINGS allow_asynchronous_read_from_io_pool_for_merge_tree = 1
       `,
-      queryId: 'read_body',
-      timeout: 10_000,
-    });
+        queryId: 'read_body',
+        timeout: 10_000,
+      });
 
-    return result.data.length ? result.data[0] : null;
-  }
+      const lookupMap = new Map<string, Operation>(
+        result.data.map(row => {
+          const record = ReadOperationModel.parse(row);
+          return [`${record.target}/${record.hash}`, record];
+        }),
+      );
+
+      return args.map(async arg => {
+        for (const targetId of arg.targetIds) {
+          const operation = lookupMap.get(`${targetId}/${arg.hash}`);
+          if (operation) {
+            return operation;
+          }
+        }
+        return null;
+      });
+    },
+  );
 
   async getReportedSchemaCoordinates({
     target,
@@ -697,7 +816,7 @@ export class OperationsReader {
     }>(
       this.pickAggregationByPeriod({
         query: aggregationTableName => sql`
-          SELECT 
+          SELECT
             coordinate
           FROM ${aggregationTableName('coordinates')}
             ${this.createFilter({
@@ -721,12 +840,18 @@ export class OperationsReader {
     period,
     operations,
     clients,
+    clientVersionFilters,
+    excludeOperations,
+    excludeClientVersionFilters,
     schemaCoordinate,
   }: {
     target: string;
     period: DateRange;
     operations?: readonly string[];
     clients?: readonly string[];
+    clientVersionFilters?: readonly { clientName: string; versions: readonly string[] | null }[];
+    excludeOperations?: boolean;
+    excludeClientVersionFilters?: boolean;
     schemaCoordinate?: string;
   }): Promise<
     Array<{
@@ -747,7 +872,7 @@ export class OperationsReader {
     }>(
       this.pickAggregationByPeriod({
         query: aggregationTableName => sql`
-              SELECT 
+              SELECT
                 sum(total) as total,
                 client_name,
                 client_version
@@ -757,6 +882,9 @@ export class OperationsReader {
                 period,
                 operations,
                 clients,
+                clientVersionFilters,
+                excludeOperations,
+                excludeClientVersionFilters,
                 extra: schemaCoordinate
                   ? [
                       sql`hash IN (SELECT hash FROM ${aggregationTableName('coordinates')} ${this.createFilter(
@@ -844,7 +972,7 @@ export class OperationsReader {
     }>(
       this.pickAggregationByPeriod({
         query: aggregationTableName => sql`
-              SELECT 
+              SELECT
                 sum(total) as total,
                 client_version
               FROM ${aggregationTableName('clients')}
@@ -892,7 +1020,7 @@ export class OperationsReader {
           SELECT
             SUM("result"."total") AS "amountOfRequests"
           FROM (
-            SELECT 
+            SELECT
               SUM("operations_daily"."total") AS "total"
             FROM
               "operations_daily"
@@ -904,7 +1032,7 @@ export class OperationsReader {
 
             UNION ALL
 
-            SELECT 
+            SELECT
               SUM("subscription_operations_daily"."total") AS "total"
             FROM
               "subscription_operations_daily"
@@ -926,7 +1054,6 @@ export class OperationsReader {
     excludedClients: null | readonly string[];
     period: DateRange;
     schemaCoordinates: string[];
-    requestCountThreshold: number;
   }) {
     const RecordArrayType = z.array(
       z.object({
@@ -987,7 +1114,6 @@ export class OperationsReader {
               AND "coordinates_daily"."timestamp" >= toDateTime(${formatDate(args.period.from)}, 'UTC')
               AND "coordinates_daily"."timestamp" <= toDateTime(${formatDate(args.period.to)}, 'UTC')
               AND "coordinates_daily"."coordinate" IN (${sql.longArray(args.schemaCoordinates, 'String')})
-            HAVING "total" >= ${String(args.requestCountThreshold)}
             ORDER BY
               "total" DESC,
               "coordinates_daily"."hash" DESC
@@ -1005,7 +1131,7 @@ export class OperationsReader {
             SELECT
               "operation_collection_details"."name",
               "operation_collection_details"."hash"
-            FROM 
+            FROM
               "operation_collection_details"
             PREWHERE
               "operation_collection_details"."target" IN (${sql.array(args.targetIds, 'String')})
@@ -1056,7 +1182,6 @@ export class OperationsReader {
       excludedClients: null | readonly string[];
       period: DateRange;
       schemaCoordinate: string;
-      requestCountThreshold: number;
     },
     Array<{
       hash: string;
@@ -1065,14 +1190,13 @@ export class OperationsReader {
     }> | null
   >(
     item =>
-      `${item.targetIds.join(',')}-${item.excludedClients?.join(',') ?? ''}-${item.period.from.toISOString()}-${item.period.to.toISOString()}-${item.requestCountThreshold}`,
+      `${item.targetIds.join(',')}-${item.excludedClients?.join(',') ?? ''}-${item.period.from.toISOString()}-${item.period.to.toISOString()}`,
     async items => {
       const schemaCoordinates = items.map(item => item.schemaCoordinate);
       return await this._getTopOperationsForSchemaCoordinates({
         targetIds: items[0].targetIds,
         excludedClients: items[0].excludedClients,
         period: items[0].period,
-        requestCountThreshold: items[0].requestCountThreshold,
         schemaCoordinates,
       }).then(result => result.map(result => Promise.resolve(result)));
     },
@@ -1262,7 +1386,7 @@ export class OperationsReader {
     }>(
       this.pickAggregationByPeriod({
         query: aggregationTableName => sql`
-              SELECT 
+              SELECT
                 count(distinct client_version) as total
               FROM ${aggregationTableName('clients')}
               ${this.createFilter({
@@ -1295,10 +1419,6 @@ export class OperationsReader {
       }>
     >
   > {
-    const ORs = args.typeNames.map(
-      typeName => sql`( cdi.coordinate = ${typeName} OR cdi.coordinate LIKE ${typeName + '.%'} )`,
-    );
-
     const result = await this.clickHouse.query<{
       total: string;
       hash: string;
@@ -1319,7 +1439,10 @@ export class OperationsReader {
                 ${this.createFilter({
                   target: args.targetId,
                   period: args.period,
-                  extra: [sql`cdi.coordinate NOT LIKE '%.%.%'`, sql`(${sql.join(ORs, ' OR ')})`],
+                  extra: [
+                    sql`cdi.coordinate NOT LIKE '%.%.%'`,
+                    sql`substringIndex(cdi.coordinate, '.', 1) IN (${sql.array(args.typeNames, 'String')})`,
+                  ],
                   namespace: 'cdi',
                 })}
               GROUP BY cdi.hash, cdi.coordinate ORDER by total DESC, cdi.hash ASC LIMIT ${sql.raw(
@@ -1366,25 +1489,14 @@ export class OperationsReader {
     return coordinateToTopOperations;
   }
 
-  async getClientNamesPerCoordinateOfType(args: {
-    targetId: string;
-    period: DateRange;
-    typename: string;
-  }): Promise<Map<string, Set<string>>> {
-    // The Explorer page is the only consumer of this method.
-    // It displays:
-    // - a list of fields of a given (interface, input object, object) type (in this case we can use Type.*)
-    // - a list of fields of root types (in this case we can use Query.*, Mutation.*, Subscription.*)
-    // - enums (in this case we can use Enum.* + Enum)
-    // - union (in this case we can use Union.* + Union)
-    // - scalar (in this case we can use Scalar)
-    // We clearly over-fetch here as we fetch all coordinates of a given type,
-    // even though some coordinates may no longer be used in the schema.
-    // But it's a fine tradeoff for the sake of simplicity.
-
+  async getClientNamesPerCoorinateOfTypes(
+    targetId: string,
+    period: DateRange,
+    coordinates: readonly string[],
+  ): Promise<Map<string, Set<string>>> {
     const dbResult = await this.clickHouse.query(
       this.pickAggregationByPeriod({
-        queryId: aggregation => `get_hashes_for_schema_coordinates_${aggregation}`,
+        queryId: aggregation => `get_client_names_for_schema_coordinates_${aggregation}`,
         // KAMIL: I know this query is a bit weird, but it's the best I could come up with.
         // It processed 27x less rows than the previous version.
         // It's 30x faster.
@@ -1414,13 +1526,9 @@ export class OperationsReader {
               co.hash
             FROM ${aggregationTableName('coordinates')} AS co
             ${this.createFilter({
-              target: args.targetId,
-              period: args.period,
-              extra: [
-                sql`( co.coordinate = ${args.typename} OR co.coordinate LIKE ${
-                  args.typename + '.%'
-                } )`,
-              ],
+              target: targetId,
+              period: period,
+              extra: [sql`co.coordinate IN (${sql.array(coordinates, 'String')})`],
               namespace: 'co',
             })}
             GROUP BY co.coordinate, co.hash
@@ -1432,8 +1540,8 @@ export class OperationsReader {
                 cl.hash AS hash
               FROM ${aggregationTableName('clients')} AS cl
               ${this.createFilter({
-                target: args.targetId,
-                period: args.period,
+                target: targetId,
+                period: period,
                 namespace: 'cl',
               })}
               GROUP BY cl.hash
@@ -1442,7 +1550,7 @@ export class OperationsReader {
           SETTINGS join_algorithm = 'parallel_hash'
         `,
         timeout: 15_000,
-        period: args.period,
+        period,
       }),
     );
 
@@ -1471,7 +1579,7 @@ export class OperationsReader {
       client_name: string;
     }>({
       query: sql`
-        SELECT 
+        SELECT
           sum(total) as count,
           client_name
         FROM clients_daily
@@ -1574,7 +1682,7 @@ export class OperationsReader {
           }>(
             this.pickAggregationByPeriod({
               query: aggregationTableName => sql`
-                SELECT 
+                SELECT
                   toDateTime(
                       intDiv(
                         toUnixTimestamp(timestamp),
@@ -1586,7 +1694,7 @@ export class OperationsReader {
                 FROM ${aggregationTableName('operations')}
                 ${this.createFilter({ target: targets, period: roundedPeriod })}
                 GROUP BY target, date
-                ORDER BY 
+                ORDER BY
                   target,
                   date
                     WITH FILL
@@ -1658,6 +1766,9 @@ export class OperationsReader {
     resolution,
     operations,
     clients,
+    clientVersionFilters,
+    excludeOperations,
+    excludeClientVersionFilters,
     schemaCoordinate,
   }: {
     target: string;
@@ -1665,6 +1776,9 @@ export class OperationsReader {
     resolution: number;
     operations?: readonly string[];
     clients?: readonly string[];
+    clientVersionFilters?: readonly { clientName: string; versions: readonly string[] | null }[];
+    excludeOperations?: boolean;
+    excludeClientVersionFilters?: boolean;
     schemaCoordinate?: string;
   }) {
     const results = await this.getDurationAndCountOverTime({
@@ -1673,6 +1787,9 @@ export class OperationsReader {
       resolution,
       operations,
       clients,
+      clientVersionFilters,
+      excludeOperations,
+      excludeClientVersionFilters,
       schemaCoordinate,
     });
 
@@ -1688,12 +1805,18 @@ export class OperationsReader {
     resolution,
     operations,
     clients,
+    clientVersionFilters,
+    excludeOperations,
+    excludeClientVersionFilters,
   }: {
     target: string;
     period: DateRange;
     resolution: number;
     operations?: readonly string[];
     clients?: readonly string[];
+    clientVersionFilters?: readonly { clientName: string; versions: readonly string[] | null }[];
+    excludeOperations?: boolean;
+    excludeClientVersionFilters?: boolean;
   }) {
     const result = await this.getDurationAndCountOverTime({
       target,
@@ -1701,6 +1824,9 @@ export class OperationsReader {
       resolution,
       operations,
       clients,
+      clientVersionFilters,
+      excludeOperations,
+      excludeClientVersionFilters,
     });
 
     return result.map(row => ({
@@ -1715,16 +1841,22 @@ export class OperationsReader {
     resolution,
     operations,
     clients,
+    clientVersionFilters,
+    excludeOperations,
+    excludeClientVersionFilters,
   }: {
     target: string;
     period: DateRange;
     resolution: number;
+    clientVersionFilters?: readonly { clientName: string; versions: readonly string[] | null }[];
+    excludeOperations?: boolean;
+    excludeClientVersionFilters?: boolean;
     operations?: readonly string[];
     clients?: readonly string[];
   }): Promise<
     Array<{
       date: any;
-      duration: Percentiles;
+      duration: DurationMetrics;
     }>
   > {
     return this.getDurationAndCountOverTime({
@@ -1733,6 +1865,9 @@ export class OperationsReader {
       resolution,
       operations,
       clients,
+      clientVersionFilters,
+      excludeOperations,
+      excludeClientVersionFilters,
     });
   }
 
@@ -1741,21 +1876,29 @@ export class OperationsReader {
     period,
     operations,
     clients,
+    clientVersionFilters,
+    excludeOperations,
+    excludeClientVersionFilters,
   }: {
     target: string;
     period: DateRange;
     operations?: readonly string[];
     clients?: readonly string[];
-  }): Promise<Percentiles> {
+    clientVersionFilters?: readonly { clientName: string; versions: readonly string[] | null }[];
+    excludeOperations?: boolean;
+    excludeClientVersionFilters?: boolean;
+  }): Promise<DurationMetrics> {
     const result = await this.clickHouse.query<{
       percentiles: [number, number, number, number];
+      average: number;
     }>(
       this.pickAggregationByPeriod({
         query: aggregationTableName => sql`
-          SELECT 
+          SELECT
+            avgMerge(duration_avg) as average,
             quantilesMerge(0.75, 0.90, 0.95, 0.99)(duration_quantiles) as percentiles
           FROM ${aggregationTableName('operations')}
-            ${this.createFilter({ target, period, operations, clients })}
+            ${this.createFilter({ target, period, operations, clients, clientVersionFilters, excludeOperations, excludeClientVersionFilters })}
         `,
         queryId: aggregation => `general_duration_percentiles_${aggregation}`,
         timeout: 15_000,
@@ -1763,16 +1906,22 @@ export class OperationsReader {
       }),
     );
 
-    return toPercentiles(result.data[0].percentiles);
+    return toDurationMetrics(result.data[0].percentiles, result.data[0].average);
   }
 
-  async durationPercentiles({
+  async durationMetrics({
     target,
     period,
     operations,
     clients,
+    clientVersionFilters,
+    excludeOperations,
+    excludeClientVersionFilters,
     schemaCoordinate,
   }: {
+    clientVersionFilters?: readonly { clientName: string; versions: readonly string[] | null }[];
+    excludeOperations?: boolean;
+    excludeClientVersionFilters?: boolean;
     target: string;
     period: DateRange;
     operations?: readonly string[];
@@ -1781,12 +1930,14 @@ export class OperationsReader {
   }) {
     const result = await this.clickHouse.query<{
       hash: string;
+      average: number;
       percentiles: [number, number, number, number];
     }>(
       this.pickAggregationByPeriod({
         query: aggregationTableName => sql`
-              SELECT 
+              SELECT
                 hash,
+                avgMerge(duration_avg) as average,
                 quantilesMerge(0.75, 0.90, 0.95, 0.99)(duration_quantiles) as percentiles
               FROM ${aggregationTableName('operations')}
               ${this.createFilter({
@@ -1794,6 +1945,9 @@ export class OperationsReader {
                 period,
                 operations,
                 clients,
+                clientVersionFilters,
+                excludeOperations,
+                excludeClientVersionFilters,
                 extra: schemaCoordinate
                   ? [
                       sql`hash IN (SELECT hash FROM ${aggregationTableName('coordinates')} ${this.createFilter(
@@ -1814,10 +1968,10 @@ export class OperationsReader {
       }),
     );
 
-    const collection = new Map<string, Percentiles>();
+    const collection = new Map<string, DurationMetrics>();
 
     result.data.forEach(row => {
-      collection.set(row.hash, toPercentiles(row.percentiles));
+      collection.set(row.hash, toDurationMetrics(row.percentiles, row.average));
     });
 
     return collection;
@@ -1855,6 +2009,9 @@ export class OperationsReader {
     resolution,
     operations,
     clients,
+    clientVersionFilters,
+    excludeOperations,
+    excludeClientVersionFilters,
     schemaCoordinate,
   }: {
     target: string;
@@ -1862,6 +2019,9 @@ export class OperationsReader {
     resolution: number;
     operations?: readonly string[];
     clients?: readonly string[];
+    clientVersionFilters?: readonly { clientName: string; versions: readonly string[] | null }[];
+    excludeOperations?: boolean;
+    excludeClientVersionFilters?: boolean;
     schemaCoordinate?: string;
   }) {
     const interval = calculateTimeWindow({ period, resolution });
@@ -1882,6 +2042,7 @@ export class OperationsReader {
         return sql`
         SELECT
           date,
+          average,
           percentiles,
           total,
           totalOk
@@ -1893,6 +2054,7 @@ export class OperationsReader {
                 toUInt32(${String(interval.seconds)})
               ) * toUInt32(${String(interval.seconds)})
             ) as date,
+            avgMerge(duration_avg) as average,
             quantilesMerge(0.75, 0.90, 0.95, 0.99)(duration_quantiles) as percentiles,
             sum(total) as total,
             sum(total_ok) as totalOk
@@ -1902,6 +2064,9 @@ export class OperationsReader {
             period: roundedPeriod,
             operations,
             clients,
+            clientVersionFilters,
+            excludeOperations,
+            excludeClientVersionFilters,
             extra: schemaCoordinate
               ? [
                   sql`hash IN (SELECT hash FROM ${aggregationTableName('coordinates')} ${this.createFilter(
@@ -1930,6 +2095,7 @@ export class OperationsReader {
       date: string;
       total: number;
       totalOk: number;
+      average: number;
       percentiles: [number, number, number, number];
     }>(query);
 
@@ -1938,7 +2104,7 @@ export class OperationsReader {
         date: toUnixTimestamp(row.date),
         total: ensureNumber(row.total),
         totalOk: ensureNumber(row.totalOk),
-        duration: toPercentiles(row.percentiles),
+        duration: toDurationMetrics(row.percentiles, row.average),
       };
     });
   }
@@ -2063,7 +2229,14 @@ export class OperationsReader {
     }));
   }
 
+  @traceFn('OperationReader.countCoordinatesOfTarget', {
+    initAttributes: input => ({
+      'hive.target.id': input.target,
+    }),
+  })
   async countCoordinatesOfTarget({ target, period }: { target: string; period: DateRange }) {
+    this.logger.debug('Count coordinates of target. (targetId=%s, period=%o)', target, period);
+
     const result = await this.clickHouse.query<{
       coordinate: string;
       total: number;
@@ -2082,6 +2255,8 @@ export class OperationsReader {
         period,
       }),
     );
+
+    this.logger.debug('%d rows found. (targetId=%s, period=%o)', result.rows, target, period);
 
     return result.data.map(row => ({
       coordinate: row.coordinate,
@@ -2149,7 +2324,7 @@ export class OperationsReader {
     }>(
       this.pickAggregationByPeriod({
         query: aggregationTableName => sql`
-        SELECT 
+        SELECT
           toDateTime(
             intDiv(
               toUnixTimestamp(timestamp),
@@ -2184,6 +2359,9 @@ export class OperationsReader {
     period,
     operations,
     clients,
+    clientVersionFilters,
+    excludeOperations,
+    excludeClientVersionFilters,
     extra = [],
     skipWhere = false,
     namespace,
@@ -2192,6 +2370,9 @@ export class OperationsReader {
     period?: DateRange;
     operations?: readonly string[];
     clients?: readonly string[];
+    clientVersionFilters?: readonly { clientName: string; versions: readonly string[] | null }[];
+    excludeOperations?: boolean;
+    excludeClientVersionFilters?: boolean;
     extra?: SqlValue[];
     skipWhere?: boolean;
     namespace?: string;
@@ -2216,11 +2397,32 @@ export class OperationsReader {
     }
 
     if (operations?.length) {
-      where.push(sql`(${columnPrefix}hash) IN (${sql.array(operations, 'String')})`);
+      if (excludeOperations) {
+        where.push(sql`(${columnPrefix}hash) NOT IN (${sql.array(operations, 'String')})`);
+      } else {
+        where.push(sql`(${columnPrefix}hash) IN (${sql.array(operations, 'String')})`);
+      }
     }
 
     if (clients?.length) {
       where.push(sql`${sql.raw(namespace ?? '')}client_name IN (${sql.array(clients, 'String')})`);
+    }
+
+    if (clientVersionFilters?.length) {
+      // Build OR conditions for each client+versions combination
+      const versionConditions = clientVersionFilters.map(filter => {
+        const clientName = filter.clientName === 'unknown' ? '' : filter.clientName;
+        if (!filter.versions?.length) {
+          // null/empty versions = all versions of this client
+          return sql`(${columnPrefix}client_name = ${clientName})`;
+        }
+        return sql`(${columnPrefix}client_name = ${clientName} AND ${columnPrefix}client_version IN (${sql.array(filter.versions, 'String')}))`;
+      });
+      if (excludeClientVersionFilters) {
+        where.push(sql`NOT (${sql.join(versionConditions, ' OR ')})`);
+      } else {
+        where.push(sql`(${sql.join(versionConditions, ' OR ')})`);
+      }
     }
 
     if (extra.length) {

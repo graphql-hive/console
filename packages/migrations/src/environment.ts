@@ -1,7 +1,6 @@
 import { config as dotenv } from 'dotenv';
 import zod from 'zod';
 
-// eslint-disable-next-line no-process-env
 if (!process.env.RELEASE) {
   dotenv({
     debug: true,
@@ -34,6 +33,7 @@ const EnvironmentModel = zod.object({
   CLICKHOUSE_MIGRATOR_GRAPHQL_HIVE_CLOUD: zod
     .union([zod.literal('1'), zod.literal('0')])
     .optional(),
+  GRAPHQL_HIVE_ENVIRONMENT: emptyString(zod.enum(['prod', 'staging', 'dev']).optional()),
 });
 
 const PostgresModel = zod.object({
@@ -42,7 +42,7 @@ const PostgresModel = zod.object({
   POSTGRES_PORT: NumberFromString,
   POSTGRES_DB: zod.string(),
   POSTGRES_USER: zod.string(),
-  POSTGRES_PASSWORD: zod.string(),
+  POSTGRES_PASSWORD: emptyString(zod.string().optional()),
 });
 
 const ClickHouseModel = zod.union([
@@ -57,11 +57,10 @@ const ClickHouseModel = zod.union([
 ]);
 
 const configs = {
-  // eslint-disable-next-line no-process-env
   base: EnvironmentModel.safeParse(process.env),
-  // eslint-disable-next-line no-process-env
+
   clickhouse: ClickHouseModel.safeParse(process.env),
-  // eslint-disable-next-line no-process-env
+
   postgres: PostgresModel.safeParse(process.env),
 };
 
@@ -114,4 +113,5 @@ export const env = {
   isMigrator: base.MIGRATOR === 'up',
   isClickHouseMigrator: base.CLICKHOUSE_MIGRATOR === 'up',
   isHiveCloud: base.CLICKHOUSE_MIGRATOR_GRAPHQL_HIVE_CLOUD === '1',
+  hiveCloudEnvironment: base.GRAPHQL_HIVE_ENVIRONMENT ?? null,
 } as const;

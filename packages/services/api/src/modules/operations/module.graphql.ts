@@ -4,38 +4,94 @@ export default gql`
   extend type Query {
     fieldStats(selector: FieldStatsInput!): FieldStatsValues!
     fieldListStats(selector: FieldListStatsInput!): [FieldStatsValues!]!
-    operationsStats(selector: OperationsStatsSelectorInput!): OperationsStats!
-    schemaCoordinateStats(selector: SchemaCoordinateStatsInput!): SchemaCoordinateStats!
-    clientStats(selector: ClientStatsInput!): ClientStats!
     hasCollectedOperations(selector: TargetSelectorInput!): Boolean!
     clientStatsByTargets(selector: ClientStatsByTargetsInput!): ClientStatsValuesConnection!
     monthlyUsage(selector: OrganizationSelectorInput!): [MonthlyUsage!]!
   }
 
-  input OperationsStatsSelectorInput {
-    organizationSlug: String!
-    projectSlug: String!
-    targetSlug: String!
-    period: DateRangeInput!
-    # TODO: are these IDs or hashes?
-    operations: [ID!]
+  """
+  Filter by specific client name + version combinations.
+  """
+  input ClientVersionFilterInput {
+    """
+    The client name to filter by.
+    """
+    clientName: String! @tag(name: "public")
+    """
+    Specific versions of this client to include.
+    When null, all versions of this client are included.
+    """
+    versions: [String!] @tag(name: "public")
+  }
+
+  input OperationStatsFilterInput {
+    """
+    Filter by only showing operations with a specific id.
+    """
+    operationIds: [ID!] @tag(name: "public")
+    """
+    Filter by only showing operations performed by specific clients.
+    """
     clientNames: [String!]
+      @tag(name: "public")
+      @deprecated(
+        reason: "Use 'clientVersionFilters' instead for more precise filtering by client name and version."
+      )
+    """
+    Filter by specific client name + version combinations.
+    More precise than clientNames - allows filtering to specific versions.
+    """
+    clientVersionFilters: [ClientVersionFilterInput!] @tag(name: "public")
+    """
+    When true, the operationIds filter is negated — matching operations are excluded instead of included.
+    """
+    excludeOperations: Boolean @tag(name: "public")
+    """
+    When true, the clientVersionFilters filter is negated — matching clients are excluded instead of included.
+    """
+    excludeClientVersionFilters: Boolean @tag(name: "public")
   }
 
-  input ClientStatsInput {
-    organizationSlug: String!
-    projectSlug: String!
-    targetSlug: String!
-    period: DateRangeInput!
-    client: String!
-  }
-
-  input SchemaCoordinateStatsInput {
-    organizationSlug: String!
-    projectSlug: String!
-    targetSlug: String!
-    period: DateRangeInput!
-    schemaCoordinate: String!
+  extend type Target {
+    """
+    Retrieve statistics over a schema coordinates usage.
+    """
+    schemaCoordinateStats(
+      """
+      The usage period for retrieving the statistics.
+      """
+      period: DateRangeInput! @tag(name: "public")
+      """
+      The schema coordinate for which statistics should be fetched.
+      """
+      schemaCoordinate: String! @tag(name: "public")
+    ): SchemaCoordinateStats! @tag(name: "public")
+    """
+    Retrieve statistics for a clients usage.
+    """
+    clientStats(
+      """
+      The usage period for retrieving the statistics.
+      """
+      period: DateRangeInput! @tag(name: "public")
+      """
+      Name of the client for which statistics should be fetched.
+      """
+      clientName: String! @tag(name: "public")
+    ): ClientStats! @tag(name: "public")
+    """
+    Retrieve an overview of all operation statistics.
+    """
+    operationsStats(
+      """
+      The usage period for retrieving the statistics.
+      """
+      period: DateRangeInput! @tag(name: "public")
+      """
+      Optional filter.
+      """
+      filter: OperationStatsFilterInput @tag(name: "public")
+    ): OperationsStats! @tag(name: "public")
   }
 
   input ClientStatsByTargetsInput {
@@ -46,14 +102,17 @@ export default gql`
     period: DateRangeInput!
   }
 
+  """
+  Describes a date range interval.
+  """
   input DateRangeInput {
-    from: DateTime!
-    to: DateTime!
+    from: DateTime! @tag(name: "public")
+    to: DateTime! @tag(name: "public")
   }
 
   type DateRange {
-    from: DateTime!
-    to: DateTime!
+    from: DateTime! @tag(name: "public")
+    to: DateTime! @tag(name: "public")
   }
 
   input FieldStatsInput {
@@ -92,39 +151,49 @@ export default gql`
 
   type ClientStats {
     requestsOverTime(resolution: Int!): [RequestsOverTime!]!
-    totalRequests: SafeInt!
-    totalVersions: SafeInt!
-    operations: OperationStatsValuesConnection!
+    totalRequests: SafeInt! @tag(name: "public")
+    totalVersions: SafeInt! @tag(name: "public")
+    operations: OperationStatsValuesConnection! @tag(name: "public")
     versions(limit: Int!): [ClientVersionStatsValues!]!
   }
 
   type SchemaCoordinateStats {
     requestsOverTime(resolution: Int!): [RequestsOverTime!]!
-    totalRequests: SafeInt!
-    operations: OperationStatsValuesConnection!
-    clients: ClientStatsValuesConnection!
+    totalRequests: SafeInt! @tag(name: "public")
+    operations: OperationStatsValuesConnection! @tag(name: "public")
+    clients: ClientStatsValuesConnection! @tag(name: "public")
   }
 
   type OperationsStats {
     requestsOverTime(resolution: Int!): [RequestsOverTime!]!
     failuresOverTime(resolution: Int!): [FailuresOverTime!]!
     durationOverTime(resolution: Int!): [DurationOverTime!]!
-    totalRequests: SafeInt!
-    totalFailures: SafeInt!
-    totalOperations: Int!
-    duration: DurationValues!
-    operations: OperationStatsValuesConnection!
-    clients: ClientStatsValuesConnection!
+    totalRequests: SafeInt! @tag(name: "public")
+    totalFailures: SafeInt! @tag(name: "public")
+    totalOperations: Int! @tag(name: "public")
+    duration: DurationValues! @tag(name: "public")
+    operations: OperationStatsValuesConnection! @tag(name: "public")
+    clients: ClientStatsValuesConnection! @tag(name: "public")
+  }
+
+  type OperationStatsValuesEdge {
+    node: OperationStatsValues! @tag(name: "public")
+    cursor: String! @tag(name: "public")
   }
 
   type OperationStatsValuesConnection {
-    nodes: [OperationStatsValues!]!
-    total: Int!
+    edges: [OperationStatsValuesEdge!]! @tag(name: "public")
+    pageInfo: PageInfo! @tag(name: "public")
+  }
+
+  type ClientStatsValuesEdge {
+    node: ClientStatsValues! @tag(name: "public")
+    cursor: String! @tag(name: "public")
   }
 
   type ClientStatsValuesConnection {
-    nodes: [ClientStatsValues!]!
-    total: Int!
+    edges: [ClientStatsValuesEdge!]! @tag(name: "public")
+    pageInfo: PageInfo! @tag(name: "public")
   }
 
   type MonthlyUsage {
@@ -136,34 +205,35 @@ export default gql`
   }
 
   type DurationValues {
-    p75: Int!
-    p90: Int!
-    p95: Int!
-    p99: Int!
+    avg: Int! @tag(name: "public")
+    p75: Int! @tag(name: "public")
+    p90: Int! @tag(name: "public")
+    p95: Int! @tag(name: "public")
+    p99: Int! @tag(name: "public")
   }
 
   type OperationStatsValues {
-    id: ID!
-    operationHash: String
+    id: ID! @tag(name: "public")
+    operationHash: String! @tag(name: "public")
     kind: String!
-    name: String!
+    name: String! @tag(name: "public")
     """
     Total number of requests
     """
-    count: SafeInt!
+    count: SafeInt! @tag(name: "public")
     """
     Number of requests that succeeded
     """
-    countOk: SafeInt!
-    percentage: Float!
-    duration: DurationValues!
+    countOk: SafeInt! @tag(name: "public")
+    percentage: Float! @tag(name: "public")
+    duration: DurationValues! @tag(name: "public")
   }
 
   type ClientStatsValues {
-    name: String!
+    name: String! @tag(name: "public")
     versions: [ClientVersionStatsValues!]!
-    count: Float!
-    percentage: Float!
+    count: Float! @tag(name: "public")
+    percentage: Float! @tag(name: "public")
   }
 
   type ClientVersionStatsValues {
@@ -197,26 +267,274 @@ export default gql`
   }
 
   enum GraphQLOperationType {
-    query
-    mutation
-    subscription
+    QUERY @tag(name: "public")
+    MUTATION @tag(name: "public")
+    SUBSCRIPTION @tag(name: "public")
   }
 
   type Operation {
-    hash: String!
-    name: String
-    type: GraphQLOperationType!
-    body: String!
+    """
+    Hash that uniquely identifies the operation.
+    """
+    hash: ID! @tag(name: "public")
+    """
+    Name of the operation
+    """
+    name: String @tag(name: "public")
+    """
+    Operation type
+    """
+    type: GraphQLOperationType! @tag(name: "public")
+    """
+    Operation body
+    """
+    body: String! @tag(name: "public")
+  }
+
+  type TraceConnection {
+    edges: [TraceEdge!]!
+    pageInfo: PageInfo!
+  }
+
+  type TraceEdge {
+    node: Trace!
+    cursor: String!
+  }
+
+  type Trace {
+    id: ID!
+    timestamp: DateTime!
+    operationName: String
+    operationType: GraphQLOperationType
+    """
+    The Hash of the GraphQL operation.
+    """
+    operationHash: ID
+    """
+    Total duration of the trace.
+    """
+    duration: SafeInt!
+    """
+    The subgraphs called within the trace.
+    """
+    subgraphs: [String!]
+    """
+    Wether the trace is successful.
+    A trace is a success if no GraphQL errors occured and the HTTP status code is in the 2XX to 3XX range.
+    """
+    success: Boolean!
+    """
+    The client name.
+    Usually this is the 'x-graphql-client-name' or 'graphql-client-name' header sent to the gateway.
+    """
+    clientName: String
+    """
+    The client version.
+    Usually this is the 'x-graphql-client-version' or 'graphql-client-version' header sent to the gateway.
+    """
+    clientVersion: String
+    httpStatusCode: String
+    httpMethod: String
+    httpHost: String
+    httpRoute: String
+    httpUrl: String
+
+    spans: [Span!]!
+  }
+
+  type SpanEvent {
+    date: DateTime64!
+    name: String!
+    attributes: JSONObject!
+  }
+
+  type Span {
+    id: ID!
+    traceId: ID!
+    parentId: ID
+    name: String!
+    startTime: DateTime64!
+    duration: SafeInt!
+    endTime: DateTime64!
+    resourceAttributes: JSONObject!
+    spanAttributes: JSONObject!
+    events: [SpanEvent!]!
+  }
+
+  input DurationInput {
+    min: SafeInt
+    max: SafeInt
+  }
+
+  input TracesFilterInput {
+    """
+    Time range filter for the traces.
+    """
+    period: DateRangeInput
+    """
+    Duration filter for the traces.
+    """
+    duration: DurationInput
+    """
+    Filter based on trace ID.
+    """
+    traceIds: [ID!]
+    """
+    Filter based on whether the operation is a success.
+    A operation is successful if no GraphQL error has occured and the result is within the 2XX or 3XX range.
+    """
+    success: [Boolean!]
+    """
+    Filter based on GraphQL error codes (error.extensions.code).
+    """
+    errorCodes: [String!]
+    """
+    Filter based on the operation name.
+    """
+    operationNames: [String!]
+    """
+    Filter based on the operation type.
+
+    A value of 'null' value indicates a unknown operation type.
+    """
+    operationTypes: [GraphQLOperationType]
+    """
+    Filter based on the client name.
+    """
+    clientNames: [String!]
+    """
+    Filter based on the HTTP status code of the request.
+    """
+    httpStatusCodes: [String!]
+    """
+    Filter based on the HTTP method of the request.
+    """
+    httpMethods: [String!]
+    """
+    Filter based on the HTTP host of the request.
+    """
+    httpHosts: [String!]
+    """
+    Filter based on the HTTP route of the request.
+    """
+    httpRoutes: [String!]
+    """
+    Filter based on the HTTP URL of the request.
+    """
+    httpUrls: [String!]
+    """
+    Filter based on called subgraphs.
+    """
+    subgraphNames: [String!]
+  }
+
+  type TracesFilterOptions {
+    success: [FilterBooleanOption!]!
+    """
+    Filter based on GraphQL error code.
+    """
+    errorCode(top: Int): [FilterStringOption!]!
+    operationType: [FilterStringOption!]!
+    operationName(top: Int): [FilterStringOption!]!
+    clientName(top: Int): [FilterStringOption!]!
+    httpStatusCode(top: Int): [FilterStringOption!]!
+    httpMethod(top: Int): [FilterStringOption!]!
+    httpHost(top: Int): [FilterStringOption!]!
+    httpRoute(top: Int): [FilterStringOption!]!
+    httpUrl(top: Int): [FilterStringOption!]!
+    subgraphs(top: Int): [FilterStringOption!]!
+  }
+
+  type FilterStringOption {
+    value: String!
+    count: Int!
+  }
+
+  type FilterBooleanOption {
+    value: Boolean!
+    count: Int!
+  }
+
+  type FilterIntOption {
+    value: Int!
+    count: Int!
+  }
+
+  enum SortDirectionType {
+    ASC
+    DESC
+  }
+
+  enum TracesSortType {
+    DURATION
+    TIMESTAMP
+  }
+
+  input TracesSortInput {
+    sort: TracesSortType!
+    direction: SortDirectionType!
+  }
+
+  type TraceStatusBreakdownBucket {
+    """
+    The time bucket for the data
+    """
+    timeBucketStart: DateTime!
+    """
+    The end of the time bucket for the data
+    """
+    timeBucketEnd: DateTime!
+    """
+    Total amount of ok traces in the bucket.
+    """
+    okCountTotal: SafeInt!
+    """
+    Total amount of error traces in the bucket.
+    """
+    errorCountTotal: SafeInt!
+    """
+    Total amount of ok traces in the bucket based on the filter.
+    """
+    okCountFiltered: SafeInt!
+    """
+    Total mount of error traces in the bucket based on the filter.
+    """
+    errorCountFiltered: SafeInt!
   }
 
   extend type Target {
     requestsOverTime(resolution: Int!, period: DateRangeInput!): [RequestsOverTime!]!
     totalRequests(period: DateRangeInput!): SafeInt!
-    operation(hash: String!): Operation
+    """
+    Retrieve an operation via it's hash.
+    """
+    operation(hash: ID! @tag(name: "public")): Operation @tag(name: "public")
+
+    """
+    Whether the viewer can access OTEL traces
+    """
+    viewerCanAccessTraces: Boolean!
+    traces(
+      first: Int
+      after: String
+      filter: TracesFilterInput
+      sort: TracesSortInput
+    ): TraceConnection!
+    tracesFilterOptions(filter: TracesFilterInput): TracesFilterOptions!
+    tracesStatusBreakdown(filter: TracesFilterInput): [TraceStatusBreakdownBucket!]!
+    trace(traceId: ID!): Trace
   }
 
   extend type Project {
     requestsOverTime(resolution: Int!, period: DateRangeInput!): [RequestsOverTime!]!
     totalRequests(period: DateRangeInput!): SafeInt!
+  }
+
+  extend type SchemaChangeUsageStatisticsAffectedOperation {
+    """
+    Get the associated operation.
+    The field is nullable as this data is only stored for the duration of the usage retention period.
+    """
+    operation: Operation @tag(name: "public")
   }
 `;

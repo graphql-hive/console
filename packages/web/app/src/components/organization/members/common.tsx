@@ -20,6 +20,7 @@ type Role<T> = {
 } & T;
 
 export function RoleSelector<T>(props: {
+  className?: string;
   roles: readonly Role<T>[];
   defaultRole?: Role<T>;
   isRoleActive(role: Role<T>):
@@ -29,6 +30,7 @@ export function RoleSelector<T>(props: {
         reason?: string;
       };
   disabled?: boolean;
+  searchPlaceholder?: string;
   onSelect(role: Role<T>): void | Promise<void>;
   /**
    * It's only needed for the migration flow, where we need to be able to select no role.
@@ -46,19 +48,25 @@ export function RoleSelector<T>(props: {
       <PopoverTrigger asChild>
         <Button
           variant="outline"
-          className="ml-auto"
+          className={cn('flex items-center', props.className)}
+          data-cy="role-selector-trigger"
           disabled={props.disabled === true || isBusy}
           onClick={() => {
             props.onBlur?.();
           }}
         >
-          {props.defaultRole?.name ?? 'Select role'}
-          <ChevronDownIcon className="text-muted-foreground ml-2 size-4" />
+          <span
+            className="flex grow truncate"
+            {...(props.defaultRole?.name ? { title: props.defaultRole?.name } : {})}
+          >
+            {props.defaultRole?.name ?? 'Select role'}
+          </span>
+          <ChevronDownIcon className="text-neutral-10 ml-2 size-4" />
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-[400px] p-0" align="end">
         <Command>
-          <CommandInput placeholder="Select new role..." />
+          <CommandInput placeholder={props.searchPlaceholder ?? 'Search roles...'} />
           <CommandList>
             <CommandEmpty>No roles found.</CommandEmpty>
             <CommandGroup>
@@ -73,7 +81,7 @@ export function RoleSelector<T>(props: {
                   }}
                 >
                   <p>None</p>
-                  <p className="text-muted-foreground text-sm">Do not assign a role</p>
+                  <p className="text-neutral-10 text-sm">Do not assign a role</p>
                 </CommandItem>
               ) : null}
               {props.roles.map(role => {
@@ -95,6 +103,7 @@ export function RoleSelector<T>(props: {
                             /[^a-z0-9\-\:\ ]+/gi,
                             '',
                           )}
+                          data-cy="role-selector-item"
                           onSelect={() => {
                             setPhase('busy');
                             setOpen(false);
@@ -109,7 +118,7 @@ export function RoleSelector<T>(props: {
                           disabled={!isActive}
                         >
                           <p>{role.name}</p>
-                          <p className="text-muted-foreground text-sm">{role.description}</p>
+                          <p className="text-neutral-10 text-sm">{role.description}</p>
                         </CommandItem>
                       </TooltipTrigger>
                       <TooltipContent>{reason}</TooltipContent>

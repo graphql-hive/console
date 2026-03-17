@@ -10,7 +10,7 @@ const pkg = JSON.parse(readFileSync(join(__dirname, 'package.json'), 'utf8'));
 await tsup({
   entry: [join(__dirname, 'example.mjs')],
   outDir: join(__dirname, 'dist'),
-  target: 'node21',
+  target: 'node22',
   format: ['esm'],
   splitting: false,
   sourcemap: true,
@@ -21,7 +21,7 @@ await tsup({
     js: `
       // Adds missing require function (reason: node_modules are not transpiled)
       import { createRequire as _createRequire } from 'module';
-      const require = _createRequire(import.meta.url);        
+      const require = _createRequire(import.meta.url);
     `,
   },
 });

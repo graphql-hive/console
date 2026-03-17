@@ -4,14 +4,10 @@ import { graphql } from 'testkit/gql';
 /* eslint-disable no-process-env */
 import { ProjectType } from 'testkit/gql/graphql';
 import { execute } from 'testkit/graphql';
-import { getServiceHost } from 'testkit/utils';
+import { assertNonNull, getServiceHost } from 'testkit/utils';
 // eslint-disable-next-line import/no-extraneous-dependencies
 import { createStorage } from '@hive/storage';
-import {
-  createTarget,
-  enableExternalSchemaComposition,
-  publishSchema,
-} from '../../../testkit/flow';
+import { createTarget, publishSchema, updateSchemaComposition } from '../../../testkit/flow';
 import { initSeed } from '../../../testkit/seed';
 
 test.concurrent(
@@ -120,7 +116,10 @@ test.concurrent(
     expect(firstNode).toEqual(
       expect.objectContaining({
         commit: '2',
-        source: expect.stringContaining('type Query { ping: String @auth pong: String }'),
+        source: `type Query {
+  ping: String @auth
+  pong: String
+}`,
       }),
     );
     expect(firstNode).not.toEqual(
@@ -135,125 +134,127 @@ test.concurrent(
   },
 );
 
-test.concurrent.each(['legacy', 'modern'])(
-  'directives should not be removed (federation %s)',
-  async mode => {
-    const { createOrg } = await initSeed().createOwner();
-    const { createProject } = await createOrg();
-    const { createTargetAccessToken, fetchVersions } = await createProject(ProjectType.Federation, {
-      useLegacyRegistryModels: mode === 'legacy',
-    });
-    const readWriteToken = await createTargetAccessToken({});
+test.concurrent('directives should not be removed (federation)', async () => {
+  const { createOrg } = await initSeed().createOwner();
+  const { createProject } = await createOrg();
+  const { createTargetAccessToken, fetchVersions } = await createProject(ProjectType.Federation);
+  const readWriteToken = await createTargetAccessToken({});
 
-    // Publish schema with write rights
-    const publishResult = await readWriteToken
-      .publishSchema({
-        commit: 'abc123',
-        service: 'users',
-        url: 'https://api.com/users',
-        sdl: `type Query { me: User } type User @key(fields: "id") { id: ID! name: String }`,
-      })
-      .then(r => r.expectNoGraphQLErrors());
+  // Publish schema with write rights
+  const publishResult = await readWriteToken
+    .publishSchema({
+      commit: 'abc123',
+      service: 'users',
+      url: 'https://api.com/users',
+      sdl: `type Query { me: User } type User @key(fields: "id") { id: ID! name: String }`,
+    })
+    .then(r => r.expectNoGraphQLErrors());
 
-    // Schema publish should be successful
-    expect(publishResult.schemaPublish.__typename).toBe('SchemaPublishSuccess');
-    const versionsResult = await fetchVersions(5);
-    expect(versionsResult).toHaveLength(1);
+  // Schema publish should be successful
+  expect(publishResult.schemaPublish.__typename).toBe('SchemaPublishSuccess');
+  const versionsResult = await fetchVersions(5);
+  expect(versionsResult).toHaveLength(1);
 
-    const latestResult = await readWriteToken.latestSchema();
-    expect(latestResult.latestVersion?.schemas.total).toBe(1);
+  const latestResult = await readWriteToken.latestSchema();
+  expect(latestResult.latestVersion?.schemas.total).toBe(1);
 
-    expect(latestResult.latestVersion?.schemas.nodes[0]).toEqual(
-      expect.objectContaining({
-        commit: 'abc123',
-        source: expect.stringContaining(
-          `type Query { me: User } type User @key(fields: "id") { id: ID! name: String }`,
-        ),
-      }),
-    );
-  },
-);
+  expect(latestResult.latestVersion?.schemas.nodes[0]).toEqual(
+    expect.objectContaining({
+      commit: 'abc123',
+      source: `type Query {
+  me: User
+}
 
-test.concurrent.each(['legacy', 'modern'])(
-  'directives should not be removed (stitching %s)',
-  async mode => {
-    const { createOrg } = await initSeed().createOwner();
-    const { createProject } = await createOrg();
-    const { createTargetAccessToken, fetchVersions } = await createProject(ProjectType.Stitching, {
-      useLegacyRegistryModels: mode === 'legacy',
-    });
-    const readWriteToken = await createTargetAccessToken({});
+type User @key(fields: "id") {
+  id: ID!
+  name: String
+}`,
+    }),
+  );
+});
 
-    // Publish schema with write rights
-    const publishResult = await readWriteToken
-      .publishSchema({
-        author: 'Kamil',
-        sdl: `type Query { me: User } type User @key(selectionSet: "{ id }") { id: ID! name: String }`,
-        service: 'test',
-        url: 'https://api.com/users',
-        commit: 'abc123',
-      })
-      .then(r => r.expectNoGraphQLErrors());
+test.concurrent('directives should not be removed (stitching)', async () => {
+  const { createOrg } = await initSeed().createOwner();
+  const { createProject } = await createOrg();
+  const { createTargetAccessToken, fetchVersions } = await createProject(ProjectType.Stitching);
+  const readWriteToken = await createTargetAccessToken({});
 
-    // Schema publish should be successful
-    expect(publishResult.schemaPublish.__typename).toBe('SchemaPublishSuccess');
+  // Publish schema with write rights
+  const publishResult = await readWriteToken
+    .publishSchema({
+      author: 'Kamil',
+      sdl: `type Query { me: User } type User @key(selectionSet: "{ id }") { id: ID! name: String }`,
+      service: 'test',
+      url: 'https://api.com/users',
+      commit: 'abc123',
+    })
+    .then(r => r.expectNoGraphQLErrors());
 
-    const versionsResult = await fetchVersions(5);
-    expect(versionsResult).toHaveLength(1);
+  // Schema publish should be successful
+  expect(publishResult.schemaPublish.__typename).toBe('SchemaPublishSuccess');
 
-    const latestResult = await readWriteToken.latestSchema();
-    expect(latestResult.latestVersion?.schemas.total).toBe(1);
+  const versionsResult = await fetchVersions(5);
+  expect(versionsResult).toHaveLength(1);
 
-    expect(latestResult.latestVersion?.schemas.nodes[0]).toEqual(
-      expect.objectContaining({
-        commit: 'abc123',
-        source: expect.stringContaining(
-          `type Query { me: User } type User @key(selectionSet: "{ id }") { id: ID! name: String }`,
-        ),
-      }),
-    );
-  },
-);
+  const latestResult = await readWriteToken.latestSchema();
+  expect(latestResult.latestVersion?.schemas.total).toBe(1);
 
-test.concurrent.each(['legacy', 'modern'])(
-  'directives should not be removed (single %s)',
-  async mode => {
-    const { createOrg } = await initSeed().createOwner();
-    const { createProject } = await createOrg();
-    const { createTargetAccessToken, fetchVersions } = await createProject(ProjectType.Single, {
-      useLegacyRegistryModels: mode === 'legacy',
-    });
-    const readWriteToken = await createTargetAccessToken({});
-    // Publish schema with write rights
-    const publishResult = await readWriteToken
-      .publishSchema({
-        author: 'Kamil',
-        commit: 'abc123',
-        sdl: `directive @auth on FIELD_DEFINITION type Query { me: User @auth } type User { id: ID! name: String }`,
-        service: 'test',
-        url: 'https://api.com/users',
-      })
-      .then(r => r.expectNoGraphQLErrors());
+  expect(latestResult.latestVersion?.schemas.nodes[0]).toEqual(
+    expect.objectContaining({
+      commit: 'abc123',
+      source: `type Query {
+  me: User
+}
 
-    // Schema publish should be successful
-    expect(publishResult.schemaPublish.__typename).toBe('SchemaPublishSuccess');
+type User @key(selectionSet: "{ id }") {
+  id: ID!
+  name: String
+}`,
+    }),
+  );
+});
 
-    const versionsResult = await fetchVersions(5);
-    expect(versionsResult).toHaveLength(1);
+test.concurrent('directives should not be removed (single)', async () => {
+  const { createOrg } = await initSeed().createOwner();
+  const { createProject } = await createOrg();
+  const { createTargetAccessToken, fetchVersions } = await createProject(ProjectType.Single);
+  const readWriteToken = await createTargetAccessToken({});
+  // Publish schema with write rights
+  const publishResult = await readWriteToken
+    .publishSchema({
+      author: 'Kamil',
+      commit: 'abc123',
+      sdl: `directive @auth on FIELD_DEFINITION type Query { me: User @auth } type User { id: ID! name: String }`,
+      service: 'test',
+      url: 'https://api.com/users',
+    })
+    .then(r => r.expectNoGraphQLErrors());
 
-    const latestResult = await readWriteToken.latestSchema();
-    expect(latestResult.latestVersion?.schemas.total).toBe(1);
+  // Schema publish should be successful
+  expect(publishResult.schemaPublish.__typename).toBe('SchemaPublishSuccess');
 
-    expect(latestResult.latestVersion?.schemas.nodes[0]).toEqual(
-      expect.objectContaining({
-        commit: 'abc123',
-        source: expect.stringContaining(
-          `directive @auth on FIELD_DEFINITION type Query { me: User @auth } type User { id: ID! name: String }`,
-        ),
-      }),
-    );
-  },
-);
+  const versionsResult = await fetchVersions(5);
+  expect(versionsResult).toHaveLength(1);
+
+  const latestResult = await readWriteToken.latestSchema();
+  expect(latestResult.latestVersion?.schemas.total).toBe(1);
+
+  expect(latestResult.latestVersion?.schemas.nodes[0]).toEqual(
+    expect.objectContaining({
+      commit: 'abc123',
+      source: `directive @auth on FIELD_DEFINITION
+
+type Query {
+  me: User @auth
+}
+
+type User {
+  id: ID!
+  name: String
+}`,
+    }),
+  );
+});
 
 test.concurrent('share publication of schema using redis', async ({ expect }) => {
   const { createOrg } = await initSeed().createOwner();
@@ -411,17 +412,7 @@ test.concurrent(
   },
 );
 
-type EachParams = { projectType: ProjectType; model: 'modern' | 'legacy' };
-
-describe.each`
-  projectType               | model
-  ${ProjectType.Single}     | ${'modern'}
-  ${ProjectType.Stitching}  | ${'modern'}
-  ${ProjectType.Federation} | ${'modern'}
-  ${ProjectType.Single}     | ${'legacy'}
-  ${ProjectType.Stitching}  | ${'legacy'}
-  ${ProjectType.Federation} | ${'legacy'}
-`('$projectType ($model)', ({ projectType, model }: EachParams) => {
+describe.each([ProjectType.Stitching, ProjectType.Federation])('$projectType', projectType => {
   const serviceName =
     projectType === ProjectType.Single
       ? {}
@@ -435,9 +426,7 @@ describe.each`
     async ({ expect }) => {
       const { createOrg } = await initSeed().createOwner();
       const { createProject, organization } = await createOrg();
-      const { project, target, createTargetAccessToken } = await createProject(projectType, {
-        useLegacyRegistryModels: model === 'legacy',
-      });
+      const { project, target, createTargetAccessToken } = await createProject(projectType);
       const readWriteToken = await createTargetAccessToken({});
 
       const result = await readWriteToken
@@ -468,9 +457,7 @@ describe.each`
     async ({ expect }) => {
       const { createOrg } = await initSeed().createOwner();
       const { createProject, organization } = await createOrg();
-      const { createTargetAccessToken, project, target } = await createProject(projectType, {
-        useLegacyRegistryModels: model === 'legacy',
-      });
+      const { createTargetAccessToken, project, target } = await createProject(projectType);
       const readWriteToken = await createTargetAccessToken({});
 
       let result = await readWriteToken
@@ -513,9 +500,7 @@ describe.each`
   test("Two targets with the same commit id shouldn't return an error", async () => {
     const { createOrg, ownerToken } = await initSeed().createOwner();
     const { organization, createProject } = await createOrg();
-    const { project, createTargetAccessToken } = await createProject(projectType, {
-      useLegacyRegistryModels: model === 'legacy',
-    });
+    const { project, createTargetAccessToken } = await createProject(projectType);
     const readWriteToken = await createTargetAccessToken({});
 
     const publishResult = await readWriteToken
@@ -529,8 +514,12 @@ describe.each`
       .then(r => r.expectNoGraphQLErrors());
     const createTargetResult = await createTarget(
       {
-        organizationSlug: organization.slug,
-        projectSlug: project.slug,
+        project: {
+          bySelector: {
+            organizationSlug: organization.slug,
+            projectSlug: project.slug,
+          },
+        },
         slug: 'target2',
       },
       ownerToken,
@@ -607,7 +596,6 @@ describe('schema publishing changes are persisted', () => {
       const { createProject, organization } = await createOrg();
       const { createTargetAccessToken, target, project } = await createProject(
         args.type ?? ProjectType.Single,
-        {},
       );
       const readWriteToken = await createTargetAccessToken({});
 
@@ -638,11 +626,12 @@ describe('schema publishing changes are persisted', () => {
         return;
       }
 
-      const latestVersion = await storage.getLatestVersion({
+      const latestVersion = await storage.getMaybeLatestVersion({
         targetId: target.id,
         projectId: project.id,
         organizationId: organization.id,
       });
+      assertNonNull(latestVersion);
 
       const changes = await storage.getSchemaChangesForVersion({
         versionId: latestVersion.id,
@@ -849,6 +838,9 @@ describe('schema publishing changes are persisted', () => {
     equalsObject: {
       meta: {
         addedDirectiveName: 'foo',
+        addedDirectiveDescription: null,
+        addedDirectiveLocations: ['FIELD'],
+        addedDirectiveRepeatable: false,
       },
       type: 'DIRECTIVE_ADDED',
     },
@@ -1309,8 +1301,10 @@ describe('schema publishing changes are persisted', () => {
     `,
     equalsObject: {
       meta: {
+        addedDirectiveDescription: null,
         enumName: 'Foo',
         addedEnumValueName: 'b',
+        addedToNewType: false,
       },
       type: 'ENUM_VALUE_ADDED',
     },
@@ -1554,6 +1548,7 @@ describe('schema publishing changes are persisted', () => {
         typeName: 'Query',
         addedFieldName: 'b',
         typeType: 'object type',
+        addedFieldReturnType: 'String',
       },
       type: 'FIELD_ADDED',
     },
@@ -1817,6 +1812,7 @@ describe('schema publishing changes are persisted', () => {
         addedArgumentType: 'String!',
         hasDefaultValue: false,
         isAddedFieldArgumentBreaking: true,
+        addedToNewField: false,
       },
       type: 'FIELD_ARGUMENT_ADDED',
     },
@@ -1831,7 +1827,7 @@ describe('schema publishing changes are persisted', () => {
     `,
     schemaAfter: /* GraphQL */ `
       type Query {
-        a(a: String): String!
+        a(a: String): String
       }
     `,
     equalsObject: {
@@ -1842,6 +1838,7 @@ describe('schema publishing changes are persisted', () => {
         addedArgumentType: 'String',
         hasDefaultValue: false,
         isAddedFieldArgumentBreaking: false,
+        addedToNewField: false,
       },
       type: 'FIELD_ARGUMENT_ADDED',
     },
@@ -1897,6 +1894,7 @@ describe('schema publishing changes are persisted', () => {
         addedInputFieldName: 'b',
         isAddedInputFieldTypeNullable: true,
         addedInputFieldType: 'String',
+        addedToNewType: false,
       },
       type: 'INPUT_FIELD_ADDED',
     },
@@ -1929,6 +1927,7 @@ describe('schema publishing changes are persisted', () => {
         addedInputFieldName: 'b',
         isAddedInputFieldTypeNullable: false,
         addedInputFieldType: 'String!',
+        addedToNewType: false,
       },
       type: 'INPUT_FIELD_ADDED',
     },
@@ -2156,6 +2155,7 @@ describe('schema publishing changes are persisted', () => {
       meta: {
         objectTypeName: 'Query',
         addedInterfaceName: 'Foo',
+        addedToNewType: false,
       },
       type: 'OBJECT_TYPE_INTERFACE_ADDED',
     },
@@ -2368,6 +2368,7 @@ describe('schema publishing changes are persisted', () => {
     equalsObject: {
       meta: {
         addedTypeName: 'A',
+        addedTypeKind: 'ObjectTypeDefinition',
       },
       type: 'TYPE_ADDED',
     },
@@ -2539,13 +2540,14 @@ describe('schema publishing changes are persisted', () => {
       meta: {
         unionName: 'C',
         addedUnionMemberTypeName: 'B',
+        addedToNewType: false,
       },
       type: 'UNION_MEMBER_ADDED',
     },
   });
 
   persistedTest({
-    name: 'UnionMemberAddedModel',
+    name: 'UnionMemberRemovedModel',
     schemaBefore: /* GraphQL */ `
       type Query {
         a: String!
@@ -2610,6 +2612,566 @@ describe('schema publishing changes are persisted', () => {
       type: 'REGISTRY_SERVICE_URL_CHANGED',
     },
   });
+
+  // DirectiveUsage tests
+  persistedTest({
+    name: 'DirectiveUsageEnumValueAddedModel',
+    schemaBefore: /* GraphQL */ `
+      directive @auth on ENUM_VALUE
+
+      enum Role {
+        ADMIN
+        USER
+      }
+
+      type Query {
+        me: String
+      }
+    `,
+    schemaAfter: /* GraphQL */ `
+      directive @auth on ENUM_VALUE
+
+      enum Role {
+        ADMIN
+        USER @auth
+      }
+
+      type Query {
+        me: String
+      }
+    `,
+    equalsObject: {
+      meta: {
+        enumName: 'Role',
+        enumValueName: 'USER',
+        addedDirectiveName: 'auth',
+        addedToNewType: false,
+        directiveRepeatedTimes: 1,
+      },
+      type: 'DIRECTIVE_USAGE_ENUM_VALUE_ADDED',
+    },
+  });
+
+  persistedTest({
+    name: 'DirectiveUsageEnumValueRemovedModel',
+    schemaBefore: /* GraphQL */ `
+      directive @auth on ENUM_VALUE
+
+      enum Role {
+        ADMIN
+        USER @auth
+      }
+
+      type Query {
+        me: String
+      }
+    `,
+    schemaAfter: /* GraphQL */ `
+      directive @auth on ENUM_VALUE
+
+      enum Role {
+        ADMIN
+        USER
+      }
+
+      type Query {
+        me: String
+      }
+    `,
+    equalsObject: {
+      meta: {
+        enumName: 'Role',
+        enumValueName: 'USER',
+        removedDirectiveName: 'auth',
+        directiveRepeatedTimes: 1,
+      },
+      type: 'DIRECTIVE_USAGE_ENUM_VALUE_REMOVED',
+    },
+  });
+
+  persistedTest({
+    name: 'DirectiveUsageFieldDefinitionAddedModel',
+    schemaBefore: /* GraphQL */ `
+      directive @deprecated on FIELD_DEFINITION
+
+      type User {
+        id: ID!
+        name: String
+      }
+
+      type Query {
+        user: User
+      }
+    `,
+    schemaAfter: /* GraphQL */ `
+      directive @deprecated on FIELD_DEFINITION
+
+      type User {
+        id: ID!
+        name: String @deprecated
+      }
+
+      type Query {
+        user: User
+      }
+    `,
+    equalsObject: {
+      meta: {
+        deprecationReason: 'No longer supported',
+        typeName: 'User',
+        fieldName: 'name',
+      },
+      type: 'FIELD_DEPRECATION_ADDED',
+    },
+  });
+
+  persistedTest({
+    name: 'DirectiveUsageFieldDefinitionRemovedModel',
+    schemaBefore: /* GraphQL */ `
+      directive @deprecated on FIELD_DEFINITION
+
+      type User {
+        id: ID!
+        name: String @deprecated
+      }
+
+      type Query {
+        user: User
+      }
+    `,
+    schemaAfter: /* GraphQL */ `
+      directive @deprecated on FIELD_DEFINITION
+
+      type User {
+        id: ID!
+        name: String
+      }
+
+      type Query {
+        user: User
+      }
+    `,
+    equalsObject: {
+      meta: {
+        typeName: 'User',
+        fieldName: 'name',
+      },
+      type: 'FIELD_DEPRECATION_REMOVED',
+    },
+  });
+
+  persistedTest({
+    name: 'DirectiveUsageArgumentDefinitionAddedModel',
+    schemaBefore: /* GraphQL */ `
+      directive @validate on ARGUMENT_DEFINITION
+
+      type Query {
+        user(id: ID!): String
+      }
+    `,
+    schemaAfter: /* GraphQL */ `
+      directive @validate on ARGUMENT_DEFINITION
+
+      type Query {
+        user(id: ID! @validate): String
+      }
+    `,
+    equalsObject: {
+      meta: {
+        typeName: 'Query',
+        fieldName: 'user',
+        argumentName: 'id',
+        addedDirectiveName: 'validate',
+        addedToNewType: false,
+        directiveRepeatedTimes: 1,
+      },
+      type: 'DIRECTIVE_USAGE_ARGUMENT_DEFINITION_ADDED',
+    },
+  });
+
+  persistedTest({
+    name: 'DirectiveUsageArgumentDefinitionRemovedModel',
+    schemaBefore: /* GraphQL */ `
+      directive @validate on ARGUMENT_DEFINITION
+
+      type Query {
+        user(id: ID! @validate): String
+      }
+    `,
+    schemaAfter: /* GraphQL */ `
+      directive @validate on ARGUMENT_DEFINITION
+
+      type Query {
+        user(id: ID!): String
+      }
+    `,
+    equalsObject: {
+      meta: {
+        typeName: 'Query',
+        fieldName: 'user',
+        argumentName: 'id',
+        removedDirectiveName: 'validate',
+        directiveRepeatedTimes: 1,
+      },
+      type: 'DIRECTIVE_USAGE_ARGUMENT_DEFINITION_REMOVED',
+    },
+  });
+
+  persistedTest({
+    name: 'DirectiveUsageObjectAddedModel',
+    schemaBefore: /* GraphQL */ `
+      directive @auth on OBJECT
+
+      type User {
+        id: ID!
+      }
+
+      type Query {
+        user: User
+      }
+    `,
+    schemaAfter: /* GraphQL */ `
+      directive @auth on OBJECT
+
+      type User @auth {
+        id: ID!
+      }
+
+      type Query {
+        user: User
+      }
+    `,
+    equalsObject: {
+      meta: {
+        objectName: 'User',
+        addedDirectiveName: 'auth',
+        addedToNewType: false,
+        directiveRepeatedTimes: 1,
+      },
+      type: 'DIRECTIVE_USAGE_OBJECT_ADDED',
+    },
+  });
+
+  persistedTest({
+    name: 'DirectiveUsageObjectRemovedModel',
+    schemaBefore: /* GraphQL */ `
+      directive @auth on OBJECT
+
+      type User @auth {
+        id: ID!
+      }
+
+      type Query {
+        user: User
+      }
+    `,
+    schemaAfter: /* GraphQL */ `
+      directive @auth on OBJECT
+
+      type User {
+        id: ID!
+      }
+
+      type Query {
+        user: User
+      }
+    `,
+    equalsObject: {
+      meta: {
+        objectName: 'User',
+        removedDirectiveName: 'auth',
+        directiveRepeatedTimes: 1,
+      },
+      type: 'DIRECTIVE_USAGE_OBJECT_REMOVED',
+    },
+  });
+
+  persistedTest({
+    name: 'DirectiveUsageInputFieldDefinitionAddedModel',
+    schemaBefore: /* GraphQL */ `
+      directive @validate on INPUT_FIELD_DEFINITION
+
+      input UserInput {
+        name: String!
+        email: String!
+      }
+
+      type Query {
+        createUser(input: UserInput!): String
+      }
+    `,
+    schemaAfter: /* GraphQL */ `
+      directive @validate on INPUT_FIELD_DEFINITION
+
+      input UserInput {
+        name: String!
+        email: String! @validate
+      }
+
+      type Query {
+        createUser(input: UserInput!): String
+      }
+    `,
+    equalsObject: {
+      meta: {
+        inputObjectName: 'UserInput',
+        inputFieldName: 'email',
+        addedDirectiveName: 'validate',
+        addedToNewType: false,
+        directiveRepeatedTimes: 1,
+        inputFieldType: 'String!',
+      },
+      type: 'DIRECTIVE_USAGE_INPUT_FIELD_DEFINITION_ADDED',
+    },
+  });
+
+  persistedTest({
+    name: 'DirectiveUsageInputFieldDefinitionRemovedModel',
+    schemaBefore: /* GraphQL */ `
+      directive @validate on INPUT_FIELD_DEFINITION
+
+      input UserInput {
+        name: String!
+        email: String! @validate
+      }
+
+      type Query {
+        createUser(input: UserInput!): String
+      }
+    `,
+    schemaAfter: /* GraphQL */ `
+      directive @validate on INPUT_FIELD_DEFINITION
+
+      input UserInput {
+        name: String!
+        email: String!
+      }
+
+      type Query {
+        createUser(input: UserInput!): String
+      }
+    `,
+    equalsObject: {
+      meta: {
+        directiveRepeatedTimes: 0,
+        inputObjectName: 'UserInput',
+        inputFieldName: 'email',
+        removedDirectiveName: 'validate',
+      },
+      type: 'DIRECTIVE_USAGE_INPUT_FIELD_DEFINITION_REMOVED',
+    },
+  });
+
+  persistedTest({
+    name: 'DirectiveUsageInterfaceAddedModel',
+    schemaBefore: /* GraphQL */ `
+      directive @auth on INTERFACE
+
+      interface Node {
+        id: ID!
+      }
+
+      type Query {
+        node: Node
+      }
+    `,
+    schemaAfter: /* GraphQL */ `
+      directive @auth on INTERFACE
+
+      interface Node @auth {
+        id: ID!
+      }
+
+      type Query {
+        node: Node
+      }
+    `,
+    equalsObject: {
+      meta: {
+        interfaceName: 'Node',
+        addedDirectiveName: 'auth',
+        addedToNewType: false,
+        directiveRepeatedTimes: 1,
+      },
+      type: 'DIRECTIVE_USAGE_INTERFACE_ADDED',
+    },
+  });
+
+  persistedTest({
+    name: 'DirectiveUsageInterfaceRemovedModel',
+    schemaBefore: /* GraphQL */ `
+      directive @auth on INTERFACE
+
+      interface Node @auth {
+        id: ID!
+      }
+
+      type Query {
+        node: Node
+      }
+    `,
+    schemaAfter: /* GraphQL */ `
+      directive @auth on INTERFACE
+
+      interface Node {
+        id: ID!
+      }
+
+      type Query {
+        node: Node
+      }
+    `,
+    equalsObject: {
+      meta: {
+        directiveRepeatedTimes: 1,
+        interfaceName: 'Node',
+        removedDirectiveName: 'auth',
+      },
+      type: 'DIRECTIVE_USAGE_INTERFACE_REMOVED',
+    },
+  });
+
+  persistedTest({
+    name: 'DirectiveUsageArgumentAdded',
+    schemaBefore: /* GraphQL */ `
+      directive @auth(roles: [String!]) on OBJECT
+
+      interface Node {
+        id: ID!
+      }
+
+      type Query @auth {
+        node: Node
+      }
+    `,
+    schemaAfter: /* GraphQL */ `
+      directive @auth(roles: [String!]) on OBJECT
+
+      interface Node {
+        id: ID!
+      }
+
+      type Query @auth(roles: ["node:read"]) {
+        node: Node
+      }
+    `,
+    equalsObject: {
+      meta: {
+        addedArgumentName: 'roles',
+        addedArgumentValue: '["node:read"]',
+        directiveName: 'auth',
+        directiveRepeatedTimes: 1,
+        oldArgumentValue: null,
+        parentArgumentName: null,
+        parentEnumValueName: null,
+        parentFieldName: null,
+        parentTypeName: 'Query',
+      },
+      type: 'DIRECTIVE_USAGE_ARGUMENT_ADDED',
+    },
+  });
+
+  persistedTest({
+    name: 'DirectiveUsageArgumentRemoved',
+    schemaBefore: /* GraphQL */ `
+      directive @auth(roles: [String!]) on OBJECT
+
+      interface Node {
+        id: ID!
+      }
+
+      type Query @auth(roles: ["node:read"]) {
+        node: Node
+      }
+    `,
+    schemaAfter: /* GraphQL */ `
+      directive @auth(roles: [String!]) on OBJECT
+
+      interface Node {
+        id: ID!
+      }
+
+      type Query @auth {
+        node: Node
+      }
+    `,
+    equalsObject: {
+      meta: {
+        directiveName: 'auth',
+        directiveRepeatedTimes: 1,
+        parentArgumentName: null,
+        parentEnumValueName: null,
+        parentFieldName: null,
+        parentTypeName: 'Query',
+        removedArgumentName: 'roles',
+      },
+      type: 'DIRECTIVE_USAGE_ARGUMENT_REMOVED',
+    },
+  });
+
+  persistedTest({
+    name: 'DirectiveRepeatableAdded',
+    schemaBefore: /* GraphQL */ `
+      directive @auth on OBJECT
+
+      interface Node {
+        id: ID!
+      }
+
+      type Query @auth {
+        node: Node
+      }
+    `,
+    schemaAfter: /* GraphQL */ `
+      directive @auth repeatable on OBJECT
+
+      interface Node {
+        id: ID!
+      }
+
+      type Query @auth {
+        node: Node
+      }
+    `,
+    equalsObject: {
+      meta: {
+        directiveName: 'auth',
+      },
+      type: 'DIRECTIVE_REPEATABLE_ADDED',
+    },
+  });
+
+  persistedTest({
+    name: 'DirectiveRepeatableRemoved',
+    schemaBefore: /* GraphQL */ `
+      directive @auth repeatable on OBJECT
+
+      interface Node {
+        id: ID!
+      }
+
+      type Query @auth {
+        node: Node
+      }
+    `,
+    schemaAfter: /* GraphQL */ `
+      directive @auth on OBJECT
+
+      interface Node {
+        id: ID!
+      }
+
+      type Query @auth {
+        node: Node
+      }
+    `,
+    equalsObject: {
+      meta: {
+        directiveName: 'auth',
+      },
+      type: 'DIRECTIVE_REPEATABLE_REMOVED',
+    },
+  });
 });
 
 const SchemaCompareToPreviousVersionQuery = graphql(`
@@ -2620,10 +3182,12 @@ const SchemaCompareToPreviousVersionQuery = graphql(`
     $version: ID!
   ) {
     target(
-      selector: {
-        organizationSlug: $organizationSlug
-        projectSlug: $projectSlug
-        targetSlug: $targetSlug
+      reference: {
+        bySelector: {
+          organizationSlug: $organizationSlug
+          projectSlug: $projectSlug
+          targetSlug: $targetSlug
+        }
       }
     ) {
       id
@@ -2710,7 +3274,6 @@ test('Target.schemaVersion: result is read from the database', async () => {
     const { createProject, organization } = await createOrg();
     const { createTargetAccessToken, target, project } = await createProject(
       ProjectType.Federation,
-      {},
     );
     const readWriteToken = await createTargetAccessToken({});
 
@@ -2741,11 +3304,12 @@ test('Target.schemaVersion: result is read from the database', async () => {
       return;
     }
 
-    const latestVersion = await storage.getLatestVersion({
+    const latestVersion = await storage.getMaybeLatestVersion({
       targetId: target.id,
       projectId: project.id,
       organizationId: organization.id,
     });
+    assertNonNull(latestVersion);
 
     const result = await execute({
       document: SchemaCompareToPreviousVersionQuery,
@@ -2828,17 +3392,24 @@ test('Composition Error (Federation 2) can be served from the database', async (
     const { createProject, organization } = await createOrg();
     const { createTargetAccessToken, target, project, setNativeFederation } = await createProject(
       ProjectType.Federation,
-      {},
     );
     const readWriteToken = await createTargetAccessToken({});
 
-    await enableExternalSchemaComposition(
+    await updateSchemaComposition(
       {
-        endpoint: `http://${serviceAddress}/compose`,
-        // eslint-disable-next-line no-process-env
-        secret: process.env.EXTERNAL_COMPOSITION_SECRET!,
-        projectSlug: project.slug,
-        organizationSlug: organization.slug,
+        project: {
+          bySelector: {
+            projectSlug: project.slug,
+            organizationSlug: organization.slug,
+          },
+        },
+        method: {
+          external: {
+            endpoint: `http://${serviceAddress}/compose`,
+            // eslint-disable-next-line no-process-env
+            secret: process.env.EXTERNAL_COMPOSITION_SECRET!,
+          },
+        },
       },
       ownerToken,
     ).then(r => r.expectNoGraphQLErrors());
@@ -2872,11 +3443,12 @@ test('Composition Error (Federation 2) can be served from the database', async (
       return;
     }
 
-    const latestVersion = await storage.getLatestVersion({
+    const latestVersion = await storage.getMaybeLatestVersion({
       targetId: target.id,
       projectId: project.id,
       organizationId: organization.id,
     });
+    assertNonNull(latestVersion);
 
     const result = await execute({
       document: SchemaCompareToPreviousVersionQuery,
@@ -2949,17 +3521,24 @@ test('Composition Network Failure (Federation 2)', async () => {
     const { createProject, organization } = await createOrg();
     const { createTargetAccessToken, target, project, setNativeFederation } = await createProject(
       ProjectType.Federation,
-      {},
     );
     const readWriteToken = await createTargetAccessToken({});
 
-    await enableExternalSchemaComposition(
+    await updateSchemaComposition(
       {
-        endpoint: `http://${serviceAddress}/compose`,
-        // eslint-disable-next-line no-process-env
-        secret: process.env.EXTERNAL_COMPOSITION_SECRET!,
-        projectSlug: project.slug,
-        organizationSlug: organization.slug,
+        project: {
+          bySelector: {
+            projectSlug: project.slug,
+            organizationSlug: organization.slug,
+          },
+        },
+        method: {
+          external: {
+            endpoint: `http://${serviceAddress}/compose`,
+            // eslint-disable-next-line no-process-env
+            secret: process.env.EXTERNAL_COMPOSITION_SECRET!,
+          },
+        },
       },
       ownerToken,
     ).then(r => r.expectNoGraphQLErrors());
@@ -2994,12 +3573,21 @@ test('Composition Network Failure (Federation 2)', async () => {
       return;
     }
 
-    await enableExternalSchemaComposition(
+    await updateSchemaComposition(
       {
-        endpoint: `http://${serviceAddress}/no_compose`,
-        secret: process.env.EXTERNAL_COMPOSITION_SECRET!,
-        projectSlug: project.slug,
-        organizationSlug: organization.slug,
+        project: {
+          bySelector: {
+            projectSlug: project.slug,
+            organizationSlug: organization.slug,
+          },
+        },
+        method: {
+          external: {
+            endpoint: `http://${serviceAddress}/no_compose`,
+            // eslint-disable-next-line no-process-env
+            secret: process.env.EXTERNAL_COMPOSITION_SECRET!,
+          },
+        },
       },
       ownerToken,
     ).then(r => r.expectNoGraphQLErrors());
@@ -3021,11 +3609,12 @@ test('Composition Network Failure (Federation 2)', async () => {
       return;
     }
 
-    const latestVersion = await storage.getLatestVersion({
+    const latestVersion = await storage.getMaybeLatestVersion({
       targetId: target.id,
       projectId: project.id,
       organizationId: organization.id,
     });
+    assertNonNull(latestVersion);
 
     const result = await execute({
       document: SchemaCompareToPreviousVersionQuery,
@@ -3359,66 +3948,6 @@ test.concurrent(
 );
 
 test.concurrent(
-  'legacy stitching project service without url results in correct change when an url is added',
-  async ({ expect }) => {
-    const { createOrg } = await initSeed().createOwner();
-    const { createProject } = await createOrg();
-    const { createTargetAccessToken, compareToPreviousVersion } = await createProject(
-      ProjectType.Stitching,
-      {
-        useLegacyRegistryModels: true,
-      },
-    );
-
-    const writeToken = await createTargetAccessToken({});
-
-    let result = await writeToken
-      .publishSchema({
-        sdl: 'type Query { ping: String! }',
-        author: 'Laurin',
-        commit: '123',
-        service: 'foo1',
-      })
-      .then(r => r.expectNoGraphQLErrors());
-
-    expect(result.schemaPublish.__typename).toEqual('SchemaPublishSuccess');
-
-    result = await writeToken
-      .publishSchema({
-        sdl: 'type Query { ping: String! }',
-        author: 'Laurin',
-        commit: '123',
-        service: 'foo1',
-        url: 'https://api.com/foo1',
-      })
-      .then(r => r.expectNoGraphQLErrors());
-
-    expect(result.schemaPublish.__typename).toEqual('SchemaPublishSuccess');
-
-    const newVersionId = (await writeToken.fetchLatestValidSchema())?.latestValidVersion?.id;
-
-    if (typeof newVersionId !== 'string') {
-      throw new Error('newVersionId is not a string');
-    }
-
-    const compareResult = await compareToPreviousVersion(newVersionId);
-    expect(compareResult?.target?.schemaVersion?.safeSchemaChanges?.nodes).toMatchInlineSnapshot(`
-      [
-        {
-          approval: null,
-          criticality: Dangerous,
-          criticalityReason: The registry service url has changed,
-          isSafeBasedOnUsage: false,
-          message: [foo1] New service url: 'https://api.com/foo1' (previously: 'none'),
-          path: null,
-        },
-      ]
-    `);
-    expect(compareResult?.target?.schemaVersion?.breakingSchemaChanges?.nodes).toBeUndefined();
-  },
-);
-
-test.concurrent(
   'service url change from legacy to legacy version is displayed correctly',
   async ({ expect }) => {
     let pool: Awaited<ReturnType<typeof createPool>> | undefined;
@@ -3511,8 +4040,6 @@ test.concurrent(
     const { createTargetAccessToken, setNativeFederation } = await createProject(
       ProjectType.Federation,
     );
-    await setNativeFederation(true);
-    await setFeatureFlag('compareToPreviousComposableVersion', true);
 
     const readWriteToken = await createTargetAccessToken({});
 
@@ -3656,8 +4183,6 @@ describe.concurrent(
       const { createTargetAccessToken, setNativeFederation } = await createProject(
         ProjectType.Federation,
       );
-      await setFeatureFlag('compareToPreviousComposableVersion', true);
-      await setNativeFederation(true);
 
       const token = await createTargetAccessToken({});
 
@@ -3804,8 +4329,6 @@ describe.concurrent(
       const { createTargetAccessToken, setNativeFederation } = await createProject(
         ProjectType.Federation,
       );
-      await setFeatureFlag('compareToPreviousComposableVersion', false);
-      await setNativeFederation(false);
 
       const token = await createTargetAccessToken({});
 
@@ -3937,149 +4460,6 @@ describe.concurrent(
         linkToWebsite: result.schemaPublish.linkToWebsite,
       });
     });
-
-    test.concurrent(
-      'legacy fed composition with compareToPreviousComposableVersion=true',
-      async () => {
-        const { createOrg } = await initSeed().createOwner();
-        const { createProject, setFeatureFlag } = await createOrg();
-        const { createTargetAccessToken, setNativeFederation } = await createProject(
-          ProjectType.Federation,
-        );
-        await setFeatureFlag('compareToPreviousComposableVersion', true);
-        await setNativeFederation(false);
-
-        const token = await createTargetAccessToken({});
-
-        const validSdl = /* GraphQL */ `
-          type Query {
-            ping: String
-            pong: String
-            foo: User
-          }
-
-          type User @key(fields: "id") {
-            id: ID!
-          }
-        `;
-
-        // @key(fields:) is invalid - should trigger a composition error
-        const invalidSdl = /* GraphQL */ `
-          type Query {
-            ping: String
-            pong: String
-            foo: User
-          }
-
-          type User @key(fields: "uuid") {
-            id: ID!
-          }
-        `;
-
-        // Publish schema with write rights
-        const validPublish = await token
-          .publishSchema({
-            sdl: validSdl,
-            service: 'serviceA',
-            url: 'http://localhost:4000',
-          })
-          .then(r => r.expectNoGraphQLErrors());
-
-        expect(validPublish.schemaPublish).toMatchObject({
-          valid: true,
-          linkToWebsite: expect.any(String),
-        });
-
-        const invalidPublish = await token
-          .publishSchema({
-            sdl: invalidSdl,
-            service: 'serviceA',
-            url: 'http://localhost:4000',
-          })
-          .then(r => r.expectNoGraphQLErrors());
-
-        expect(invalidPublish.schemaPublish).toMatchObject({
-          valid: false,
-          linkToWebsite: expect.any(String),
-        });
-
-        const invalidSdlCheck = await token
-          .checkSchema(invalidSdl, 'serviceA')
-          .then(r => r.expectNoGraphQLErrors());
-
-        expect(invalidSdlCheck.schemaCheck).toMatchObject({
-          valid: false,
-          __typename: 'SchemaCheckError',
-          changes: expect.objectContaining({
-            total: 0,
-          }),
-          errors: expect.objectContaining({
-            total: 1,
-          }),
-        });
-
-        const validSdlCheck = await token
-          .checkSchema(validSdl, 'serviceA')
-          .then(r => r.expectNoGraphQLErrors());
-
-        expect(validSdlCheck.schemaCheck).toMatchObject({
-          valid: true,
-          __typename: 'SchemaCheckSuccess',
-          changes: expect.objectContaining({
-            total: 0,
-          }),
-        });
-
-        const result = await token
-          .publishSchema({
-            sdl: validSdl,
-            service: 'serviceA',
-            url: 'http://localhost:4000',
-          })
-          .then(r => r.expectNoGraphQLErrors());
-
-        expect(result.schemaPublish).toMatchObject({
-          valid: true,
-          linkToWebsite: expect.any(String),
-        });
-
-        if (
-          !('linkToWebsite' in result.schemaPublish) ||
-          !('linkToWebsite' in invalidPublish.schemaPublish) ||
-          !('linkToWebsite' in validPublish.schemaPublish)
-        ) {
-          throw new Error('linkToWebsite not found');
-        }
-
-        // If the linkToWebsite is the same as one of the previous versions,
-        // the schema publish was ignored due to unchanged input schemas.
-        // It shouldn't be the case.
-        // That's what we're checking here.
-
-        expect(result.schemaPublish.linkToWebsite).not.toEqual(
-          invalidPublish.schemaPublish.linkToWebsite,
-        );
-
-        expect(result.schemaPublish.linkToWebsite).not.toEqual(
-          validPublish.schemaPublish.linkToWebsite,
-        );
-
-        const ignoredResult = await token
-          .publishSchema({
-            sdl: validSdl,
-            service: 'serviceA',
-            url: 'http://localhost:4000',
-          })
-          .then(r => r.expectNoGraphQLErrors());
-
-        // This time the schema publish should be ignored
-        // and link to the previous version
-        expect(ignoredResult.schemaPublish).toMatchObject({
-          valid: true,
-          linkToWebsite: result.schemaPublish.linkToWebsite,
-        });
-      },
-    );
   },
 );
 
@@ -4177,6 +4557,8 @@ test.concurrent(
       tags: null,
       targetId: target.id,
       url: null,
+      schemaMetadata: null,
+      metadataAttributes: null,
     });
     await storage.destroy();
 

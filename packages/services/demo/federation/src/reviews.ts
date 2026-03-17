@@ -41,7 +41,7 @@ type Context = {
   usernames: User[];
 };
 
-const typeDefs = parse(/* GraphQL */ `
+export const typeDefs = parse(/* GraphQL */ `
   type Review @key(fields: "id") {
     id: ID!
     body: String

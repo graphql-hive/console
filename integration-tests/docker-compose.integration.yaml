@@ -12,7 +12,7 @@ networks:
 
 services:
   local_cdn:
-    image: node:22.11.0-alpine3.20
+    image: node:24.13.0-alpine3.23
     working_dir: /app
     command: ['node', 'index.js']
     networks:
@@ -38,7 +38,7 @@ services:
       S3_BUCKET_NAME: artifacts
 
   local_broker:
-    image: node:22.11.0-alpine3.20
+    image: node:24.13.0-alpine3.23
     working_dir: /app
     command: ['node', 'broker.js']
     networks:
@@ -59,6 +59,18 @@ services:
       LOG_LEVEL: debug
       CF_BROKER_SIGNATURE: secretSignature
 
+  mock_server:
+    image: mockserver/mockserver:5.15.0
+    # healthcheck - no time to implement it
+    # The image does not contain curl or wget.
+    networks:
+      - 'stack'
+    ports:
+      - 3042:3042
+    environment:
+      MOCKSERVER_LOG_LEVEL: DEBUG
+      MOCKSERVER_SERVER_PORT: 3042
+
   composition_federation_2:
     image: '${DOCKER_REGISTRY}composition-federation-2${DOCKER_TAG}'
     networks:
@@ -78,7 +90,7 @@ services:
       SECRET: '${EXTERNAL_COMPOSITION_SECRET}'
 
   external_composition:
-    image: node:22.11.0-alpine3.20
+    image: node:24.13.0-alpine3.23
     working_dir: /app
     command: ['node', 'example.mjs']
     networks:
@@ -99,30 +111,8 @@ services:
       LOG_LEVEL: debug
       SECRET: '${EXTERNAL_COMPOSITION_SECRET}'
 
-  usage-estimator:
-    image: '${DOCKER_REGISTRY}usage-estimator${DOCKER_TAG}'
-    networks:
-      - 'stack'
-    ports:
-      - 3008:3008
-    depends_on:
-      clickhouse:
-        condition: service_healthy
-      migrations:
-        condition: service_completed_successfully
-    environment:
-      NODE_ENV: production
-      LOG_LEVEL: debug
-      CLICKHOUSE_PROTOCOL: 'http'
-      CLICKHOUSE_HOST: 'clickhouse'
-      CLICKHOUSE_PORT: '8123'
-      CLICKHOUSE_USERNAME: '${CLICKHOUSE_USER}'
-      CLICKHOUSE_PASSWORD: '${CLICKHOUSE_PASSWORD}'
-      PORT: 3008
-      FF_CLICKHOUSE_V2_TABLES: ${FF_CLICKHOUSE_V2_TABLES:-}
-
-  rate-limit:
-    image: '${DOCKER_REGISTRY}rate-limit${DOCKER_TAG}'
+  commerce:
+    image: '${DOCKER_REGISTRY}commerce${DOCKER_TAG}'
     networks:
       - 'stack'
     ports:
@@ -132,10 +122,6 @@ services:
         condition: service_healthy
       migrations:
         condition: service_completed_successfully
-      usage-estimator:
-        condition: service_healthy
-      emails:
-        condition: service_healthy
     environment:
       NODE_ENV: production
       LOG_LEVEL: debug
@@ -145,8 +131,12 @@ services:
       POSTGRES_DB: '${POSTGRES_DB}'
       POSTGRES_USER: '${POSTGRES_USER}'
       POSTGRES_PASSWORD: '${POSTGRES_PASSWORD}'
-      USAGE_ESTIMATOR_ENDPOINT: http://usage-estimator:3008
-      EMAILS_ENDPOINT: http://emails:3011
+      CLICKHOUSE_PROTOCOL: 'http'
+      CLICKHOUSE_HOST: 'clickhouse'
+      CLICKHOUSE_PORT: '8123'
+      CLICKHOUSE_USERNAME: '${CLICKHOUSE_USER}'
+      CLICKHOUSE_PASSWORD: '${CLICKHOUSE_PASSWORD}'
+      STRIPE_SECRET_KEY: empty
       PORT: 3009
 
   # Overrides only to `docker-compose.community.yaml` from now on:
@@ -168,20 +158,22 @@ services:
       GITHUB_APP_PRIVATE_KEY: 5f938d51a065476c4dc1b04aeba13afb
       FEEDBACK_SLACK_TOKEN: ''
       FEEDBACK_SLACK_CHANNEL: '#hive'
-      USAGE_ESTIMATOR_ENDPOINT: '${USAGE_ESTIMATOR_ENDPOINT}'
-      RATE_LIMIT_ENDPOINT: '${RATE_LIMIT_ENDPOINT}'
+      COMMERCE_ENDPOINT: '${COMMERCE_ENDPOINT}'
       EMAIL_PROVIDER: '${EMAIL_PROVIDER}'
       LOG_LEVEL: debug
       # Auth
       WEB_APP_URL: '${HIVE_APP_BASE_URL}'
       AUTH_ORGANIZATION_OIDC: '1'
-      AUTH_REQUIRE_EMAIL_VERIFICATION: '0'
-      SUPERTOKENS_CONNECTION_URI: http://supertokens:3567
-      SUPERTOKENS_API_KEY: '${SUPERTOKENS_API_KEY}'
+      AUTH_REQUIRE_EMAIL_VERIFICATION: '1'
       GRAPHQL_PUBLIC_ORIGIN: http://localhost:8082
+      SUPERTOKENS_RATE_LIMIT: '0'
+      SUPERTOKENS_REFRESH_TOKEN_KEY: '1000:15e5968d52a9a48921c1c63d88145441a8099b4a44248809a5e1e733411b3eeb80d87a6e10d3390468c222f6a91fef3427f8afc8b91ea1820ab10c7dfd54a268:39f72164821e08edd6ace99f3bd4e387f45fa4221fe3cd80ecfee614850bc5d647ac2fddc14462a00647fff78c22e8d01bc306a91294f5b889a90ba891bf0aa0'
+      SUPERTOKENS_ACCESS_TOKEN_KEY: 's-aaa5da0d-8678-46ef-b56d-9cd19e1cdb5b|MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAjdpx/LNIAPKDCNgszZIzz2tepThK9/3mCWTrOjAJY8KI8YgMo5Gf+IwYvJ2VcpKYa36UJ70bD283P2O/yE/IjtXI6S9cJyd5LrYs+QDENc8au63iDy2iAiFpR1kO7cWQPDKK3OrD+hc5ZEHA3LN82Kb4ZnEA6tAulPfULVDU+RJfSWZOCE+LnkSZ8obvJjiMeknhNSSJko6V3WVuL5ToYfRIiOnueoTywB+3O3Mtp6lBj1j2rpQfO/qvLdRYLpDmLaoaScAyymWfeBp0hpwxd5Jm4vexyHgit2sK0S+tFl0pmh37iVGsRqPJEPISpEwQBcHOhKRj0uW+t/feK6U0WQIDAQAB|MIIEvgIBADANBgkqhkiG9w0BAQEFAASCBKgwggSkAgEAAoIBAQCN2nH8s0gA8oMI2CzNkjPPa16lOEr3/eYJZOs6MAljwojxiAyjkZ/4jBi8nZVykphrfpQnvRsPbzc/Y7/IT8iO1cjpL1wnJ3kutiz5AMQ1zxq7reIPLaICIWlHWQ7txZA8Morc6sP6FzlkQcDcs3zYpvhmcQDq0C6U99QtUNT5El9JZk4IT4ueRJnyhu8mOIx6SeE1JImSjpXdZW4vlOhh9EiI6e56hPLAH7c7cy2nqUGPWPaulB87+q8t1FgukOYtqhpJwDLKZZ94GnSGnDF3kmbi97HIeCK3awrRL60WXSmaHfuJUaxGo8kQ8hKkTBAFwc6EpGPS5b63994rpTRZAgMBAAECggEBAIl96/IFS4svg/Z0oah3RySKa2g1EeUhAXClkqIJoXBCRD3nomiAY8+i6u8Wxp4QnQ/D1pJV5v6ky6XzZxYezsQzTtNGBkolJn4yMZEAPy3wmXbD6VLQ5jCudb6kAaZRUaYnTxUlr+Kd1BDq8qZ4ik/sNuQEL+Fo+12EgPGTYXov7lWwWjNbzuzMQMm7b1BDU7D/8s/lGg4wimJffVSd4C++buN4Jxm1n1hWWREl7jkJC0sp2J50cpt9IhIIhi8DOnGAcJ4aTtABEJdZyXlO0QllN/D5FEbZBC0Jkbl3lmaIo1WVEYdDpcbSLZxGeYD0CkH4CF/BzUpeHq7FU0HkqOkCgYEA5tgLRFC4CS/FtR3JQ1YifHN4J2bI3BEyje6eiI/n9jmm5zUN/WjCQ6ui2fPzbKAC3yD60lcCgrP7YAn4KFmOv9RS7ApamUH+AX5UBfHlhvwzi4U9eenu7UHH8XrxEHlAwUC9mQbaqzoR/A7jEg8qqincMDUCkk1kjP4nNgQSBFcCgYEAnU/KSQf79m57nXMv+ge9QWkAggnHO7baRox5qlMM6l1gTZB5yELaLNXeik9D2mhVwcpezcQo2Uf+B4MviVeqpoTzYwgdxYg+ebYPUzhd3Ya8ANRDwKCB7SSoRULEDpWebV6ngOc+ruv9ii3ZbVEi7ribtHo6w7rVVJc2bMEKns8CgYB9ssp/yoxLxE2dz7hWCEMDDUUx/1AENQEYNATzS5j9hGsTntodULvnaUBl+eZlEcQ+h5DMlEBzt1l79DHClvGaFx2IFiM7LKoJWiaajhtzo0TWBhlxlyZY3ubm4RD+7WeLU5tqBkdv0VEVtW2D2epbeivBvDvIOog0Ffh3+0NsRQKBgGPA8w84hugPy0dega/VNIfD49SSCsqs+uD9tzDwlSIQsD6/PNpmuh7wR7wA45Ad1TOb9l4Y46ZU5psw7vXyp34MlKHZxbc63BMmBbXJ6ovNIm6MK6J8pacRNbslyVlOOzYzbZhqCu+1KgNza4rMhpBGdEYPtC/ly91mPdbc2rU1AoGBALl6eZqBMahE0S19X5SO/xykGe4ALf74UWCsfKrVEO4Zd3IcELnir0uEPABWvd5C/EAaGoi/a2xgdwuKG32GMpinjoXJywzsquQC6N8CcFIzDiQXaL4j4lFztjgowqNs/YwpOGbm1Dyr3Av072jDPajQGP/xX4fFxBZFnyk1vnXT'
+    extra_hosts:
+      - 'host.docker.internal:host-gateway'
 
   broker:
-    image: vectorized/redpanda:latest
+    image: redpandadata/redpanda:latest
     hostname: broker
     networks:
       - 'stack'
@@ -221,13 +213,10 @@ services:
       - ./.hive/clickhouse/db:/var/lib/clickhouse
       - ./configs/clickhouse:/etc/clickhouse-server/conf.d
 
-  supertokens:
-    ports:
-      - '3567:3567'
-
   usage:
     environment:
-      RATE_LIMIT_ENDPOINT: '${RATE_LIMIT_ENDPOINT}'
+      COMMERCE_ENDPOINT: '${COMMERCE_ENDPOINT}'
+      RATE_LIMIT_TTL: 1000
       LOG_LEVEL: debug
     depends_on:
       broker:
@@ -246,12 +235,13 @@ services:
       tokens:
         condition: service_healthy
 
-  emails:
+  workflows:
     environment:
       EMAIL_PROVIDER: '${EMAIL_PROVIDER}'
+      SCHEMA_ENDPOINT: http://schema:3002
       LOG_LEVEL: debug
     ports:
-      - '3011:3011'
+      - '3014:3014'
 
   schema:
     environment:
@@ -262,16 +252,47 @@ services:
     ports:
       - '3002:3002'
 
+  otel-collector:
+    depends_on:
+      clickhouse:
+        condition: service_healthy
+      server:
+        condition: service_healthy
+    build:
+      context: ${PWD}/docker/configs/otel-collector
+      dockerfile: ${PWD}/docker/otel-collector.dockerfile
+    environment:
+      HIVE_OTEL_AUTH_ENDPOINT: 'http://server:3001/otel-auth'
+      CLICKHOUSE_PROTOCOL: 'http'
+      CLICKHOUSE_HOST: clickhouse
+      CLICKHOUSE_PORT: 8123
+      CLICKHOUSE_USERNAME: '${CLICKHOUSE_USER}'
+      CLICKHOUSE_PASSWORD: '${CLICKHOUSE_PASSWORD}'
+    volumes:
+      - '${PWD}/docker/configs/otel-collector/builder-config.yaml:/builder-config.yaml'
+      - '${PWD}/docker/configs/otel-collector/config.yaml:/etc/otel-config.yaml'
+    ports:
+      - '4317:4317'
+      - '4318:4318'
+    networks:
+      - 'stack'
+    healthcheck:
+      test: ['CMD', 'wget', '--spider', '-q', 'localhost:13133']
+      interval: 5s
+      timeout: 5s
+      retries: 6
+      start_period: 10s
+
   #
   # Awkwardly, we need to override some services for different reasons
   #
 
   # It's not part of integration tests
   app:
-    image: node:22.11.0-alpine3.20
+    image: node:24.13.0-alpine3.23
     command: ['npx', 'http-server']
 
   # Redpand is used for integration tests, instead of Kafka. Zookeeper is no longer needed
   zookeeper:
-    image: node:22.11.0-alpine3.20
+    image: node:24.13.0-alpine3.23
     command: ['npx', 'http-server']

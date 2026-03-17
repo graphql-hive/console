@@ -1,0 +1,101 @@
+---
+title: 'headers'
+---
+
+# headers
+
+The `headers` configuration object provides a rule-based system for manipulating HTTP headers as
+they flow through the router.
+
+This feature allows you to centrally manage headers for tasks like context propagation, security,
+and client-to-subgraph communication. For detailed use cases and advanced scenarios, see the
+**[Advanced Header Manipulation](../guides/header-manipulation)**.
+
+## Configuration Structure
+
+Header rules are defined under the `headers` key and can be applied globally or to specific
+subgraphs.
+
+```yaml
+headers:
+  # Rules applied to all subgraphs.
+  all:
+    request: [ # Rule definitions... ]
+    response: [ # Rule definitions... ]
+
+  # Rules applied to a specific subgraph, which run after 'all' rules.
+  subgraphs:
+    products:
+      request: [ # Rule definitions... ]
+      response: [ # Rule definitions... ]
+```
+
+- `all`: Rules that apply to every subgraph.
+- `subgraphs`: Rules that apply only to the named subgraph.
+- `request`: Rules that modify the request sent _from the router to subgraphs_.
+- `response`: Rules that modify the response sent _from the router back to the client_.
+
+## Rule Actions
+
+Each rule in a `request` or `response` list must be one of the following actions.
+
+### 1. `propagate`
+
+Forwards headers from the source to the destination.
+
+| Key         | Type                 | Description                                                                                               |
+| :---------- | :------------------- | :-------------------------------------------------------------------------------------------------------- |
+| `named`     | `string \| string[]` | The exact, case-insensitive name of a header to match.                                                    |
+| `matching`  | `string \| string[]` | A regex pattern to match against header names.                                                            |
+| `exclude`   | `string \| string[]` | A list of regex patterns to exclude headers that were matched.                                            |
+| `rename`    | `string`             | A new name for the header when it's forwarded.                                                            |
+| `default`   | `string`             | A fallback value to use if no matching header is found.                                                   |
+| `algorithm` | `string`             | **(Response only)** Determines how to merge header values when multiple subgraphs return the same header. |
+
+The `algorithm` key is only applicable for `response` rules, as it defines how to handle multiple
+values.
+
+- `last` (default) - The value from the last subgraph to respond is used.
+- `first` - The value from the first subgraph to respond is used.
+- `append` - Values from all subgraph responses are joined by a comma.
+
+### 2. `insert`
+
+Adds a new header or overwrites an existing one.
+
+| Key          | Type     | Description                                                                |
+| :----------- | :------- | :------------------------------------------------------------------------- |
+| `name`       | `string` | **Required.** The name of the header to insert or overwrite.               |
+| `value`      | `string` | A static string value for the header.                                      |
+| `expression` | `string` | An [expression](./expressions) that dynamically computes the header value. |
+
+### 3. `remove`
+
+Deletes headers.
+
+| Key        | Type                 | Description                                                             |
+| :--------- | :------------------- | :---------------------------------------------------------------------- |
+| `named`    | `string \| string[]` | The exact, case-insensitive name of a header to remove.                 |
+| `matching` | `string \| string[]` | A regex pattern to match and remove headers.                            |
+| `exclude`  | `string \| string[]` | A list of regex patterns to prevent certain headers from being removed. |
+
+## Example
+
+```yaml filename="router.config.yaml"
+headers:
+  all:
+    request:
+      # Forward the Authorization header to all subgraphs.
+      - propagate:
+          named: Authorization
+      # Add a static header to all subgraph requests.
+      - insert:
+          name: X-Via-Router
+          value: hive-router-v1
+  subgraphs:
+    products:
+      request:
+        # Remove a legacy header only for the 'products' subgraph.
+        - remove:
+            named: X-Legacy-Product-ID
+```

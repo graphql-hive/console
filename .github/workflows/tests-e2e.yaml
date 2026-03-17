@@ -22,20 +22,19 @@ jobs:
 
     steps:
       - name: checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
 
       - name: setup environment
         uses: ./.github/actions/setup
         with:
-          codegen: false
+          codegen: true
           actor: test-e2e
-          cacheTurbo: false
 
       - name: Install Cypress binary
         run: pnpm cypress install
 
       - name: patch compose file volumes
-        uses: mikefarah/yq@v4.44.3
+        uses: mikefarah/yq@4839dbbf80445070a31c7a9c1055da527db2d5ee # v4.44.6
         with:
           cmd: yq -i 'del(.services.*.volumes)' docker/docker-compose.community.yml
 
@@ -43,13 +42,13 @@ jobs:
         timeout-minutes: 10
         run: |
           docker compose \
-            --env-file docker/.end2end.env \
+            --env-file integration-tests/.env \
             -f docker/docker-compose.community.yml \
             -f docker/docker-compose.end2end.yml \
             up -d --wait
 
       - name: cypress
-        timeout-minutes: 6
+        timeout-minutes: 12
         uses: cypress-io/github-action@v6
         env:
           CI: true
@@ -65,12 +64,12 @@ jobs:
           docker --version
           docker ps --format json | jq .
           docker compose \
-            --env-file docker/.end2end.env \
+            --env-file integration-tests/.env \
             -f docker/docker-compose.community.yml \
             -f docker/docker-compose.end2end.yml \
             logs
 
-      - uses: actions/upload-artifact@v4.4.3
+      - uses: actions/upload-artifact@4cec3d8aa04e39d1a68397de0c4cd6fb9dce8ec1 # v4.6.1
         if: ${{ failure() }}
         with:
           name: cypress

@@ -7,12 +7,11 @@ import {
   UniqueIntegrityConstraintViolationError,
 } from 'slonik';
 import { update } from 'slonik-utilities';
-import { TransactionFunction } from 'slonik/dist/src/types';
+import { TaggedTemplateLiteralInvocation, TransactionFunction } from 'slonik/dist/src/types';
 import zod from 'zod';
 import type {
   Alert,
   AlertChannel,
-  AuthProvider,
   Member,
   Organization,
   OrganizationBilling,
@@ -20,27 +19,24 @@ import type {
   Project,
   Schema,
   Storage,
+  Target,
   TargetSettings,
-  User,
 } from '@hive/api';
 import { context, SpanKind, SpanStatusCode, trace } from '@hive/service-common';
 import type { SchemaCoordinatesDiffResult } from '../../api/src/modules/schema/providers/inspector';
 import {
   createSDLHash,
-  OrganizationMemberRoleModel,
   ProjectType,
   type CDNAccessToken,
   type OIDCIntegration,
   type SchemaLog,
   type SchemaPolicy,
 } from '../../api/src/shared/entities';
-import { batch } from '../../api/src/shared/helpers';
+import { batch, batchBy } from '../../api/src/shared/helpers';
 import {
-  activities,
   alert_channels,
   alerts,
   getPool,
-  objectToParams,
   organization_invitations,
   organization_member,
   organization_member_roles,
@@ -139,52 +135,13 @@ async function tracedTransaction<T>(
   });
 }
 
-function resolveAuthProviderOfUser(
-  user: users & {
-    provider: string | null | undefined;
-  },
-): AuthProvider {
-  // TODO: remove this once we have migrated all users
-  if (user.external_auth_user_id) {
-    if (user.external_auth_user_id.startsWith('github')) {
-      return 'GITHUB';
-    }
-
-    if (user.external_auth_user_id.startsWith('google')) {
-      return 'GOOGLE';
-    }
-
-    return 'USERNAME_PASSWORD';
-  }
-
-  if (user.provider === 'oidc') {
-    return 'OIDC';
-  }
-  if (user.provider === 'google') {
-    return 'GOOGLE';
-  }
-  if (user.provider === 'github') {
-    return 'GITHUB';
-  }
-
-  return 'USERNAME_PASSWORD';
-}
-
-type MemberRoleColumns =
-  | {
-      role_id: organization_member_roles['id'];
-      role_name: organization_member_roles['name'];
-      role_description: organization_member_roles['description'];
-      role_locked: organization_member_roles['locked'];
-      role_scopes: organization_member_roles['scopes'];
-    }
-  | {
-      role_id: null;
-      role_name: null;
-      role_description: null;
-      role_locked: null;
-      role_scopes: null;
-    };
+type MemberRoleColumns = {
+  role_id: organization_member_roles['id'];
+  role_name: organization_member_roles['name'];
+  role_description: organization_member_roles['description'];
+  role_locked: organization_member_roles['locked'];
+  role_scopes: organization_member_roles['scopes'];
+};
 
 export async function createStorage(
   connection: string,
@@ -192,25 +149,6 @@ export async function createStorage(
   additionalInterceptors: Interceptor[] = [],
 ): Promise<Storage> {
   const pool = await getPool(connection, maximumPoolSize, additionalInterceptors);
-
-  function transformUser(
-    user: users & {
-      provider: string | null | undefined;
-    },
-  ): User {
-    return {
-      id: user.id,
-      email: user.email,
-      superTokensUserId: user.supertoken_user_id,
-      provider: resolveAuthProviderOfUser(user),
-      fullName: user.full_name,
-      displayName: user.display_name,
-      isAdmin: user.is_admin ?? false,
-      externalAuthUserId: user.external_auth_user_id ?? null,
-      oidcIntegrationId: user.oidc_integration_id ?? null,
-      zendeskId: user.zendesk_user_id ?? null,
-    };
-  }
 
   function transformSchemaPolicy(schema_policy: schema_policy_config): SchemaPolicy {
     return {
@@ -235,23 +173,21 @@ export async function createStorage(
     return {
       id: user.id,
       isOwner: user.is_owner,
-      user: transformUser(user),
+      user: UserModel.parse(user),
       // This allows us to have a fallback for users that don't have a role, remove this once we all users have a role
       scopes: (user.scopes as Member['scopes']) || [],
       organization: user.organization_id,
       oidcIntegrationId: user.oidc_integration_id ?? null,
       connectedToZendesk: user.connected_to_zendesk ?? false,
-      role: user.role_id
-        ? {
-            id: user.role_id,
-            name: user.role_name,
-            locked: user.role_locked,
-            description: user.role_description,
-            scopes: user.role_scopes as Member['scopes'],
-            organizationId: user.organization_id,
-            membersCount: undefined, // if it's not defined, the resolver will fetch it
-          }
-        : null,
+      role: {
+        id: user.role_id,
+        name: user.role_name,
+        locked: user.role_locked,
+        description: user.role_description,
+        scopes: user.role_scopes as Member['scopes'],
+        organizationId: user.organization_id,
+        membersCount: undefined, // if it's not defined, the resolver will fetch it
+      },
     };
   }
 
@@ -276,6 +212,7 @@ export async function createStorage(
       },
       featureFlags: decodeFeatureFlags(organization.feature_flags),
       zendeskId: organization.zendesk_organization_id ?? null,
+      ownerId: organization.user_id,
     };
   }
 
@@ -285,12 +222,20 @@ export async function createStorage(
     },
   ): OrganizationInvitation {
     return {
+      get id() {
+        return getOrganizationInvitationId({
+          organizationId: invitation.organization_id,
+          email: invitation.email,
+          code: invitation.code,
+        });
+      },
       email: invitation.email,
-      organization_id: invitation.organization_id,
+      organizationId: invitation.organization_id,
       code: invitation.code,
-      created_at: invitation.created_at as any,
-      expires_at: invitation.expires_at as any,
-      role: OrganizationMemberRoleModel.parse(invitation.role),
+      createdAt: invitation.created_at as any,
+      expiresAt: invitation.expires_at as any,
+      roleId: invitation.role.id,
+      assignedResources: invitation.assigned_resources as any,
     };
   }
 
@@ -301,10 +246,10 @@ export async function createStorage(
       orgId: project.org_id,
       name: project.name,
       type: project.type as ProjectType,
+      createdAt: new Date(project.created_at).toISOString(),
       buildUrl: project.build_url,
       validationUrl: project.validation_url,
       gitRepository: project.git_repository as `${string}/${string}` | null,
-      legacyRegistryModel: project.legacy_registry_model,
       useProjectNameInGithubCheck: project.github_check_with_project_name === true,
       externalComposition: {
         enabled: project.external_composition_enabled,
@@ -423,19 +368,43 @@ export async function createStorage(
       | 'validation_percentage'
       | 'validation_period'
       | 'validation_excluded_clients'
+      | 'validation_excluded_app_deployments'
+      | 'validation_request_count'
+      | 'validation_breaking_change_formula'
+      | 'fail_diff_on_dangerous_change'
+      | 'app_deployment_protection_enabled'
+      | 'app_deployment_protection_min_days_inactive'
+      | 'app_deployment_protection_max_traffic_percentage'
+      | 'app_deployment_protection_traffic_period_days'
+      | 'app_deployment_protection_rule_logic'
+      | 'app_deployment_protection_min_days_since_creation'
     > & {
       targets: target_validation['destination_target_id'][] | null;
     },
   ): TargetSettings {
     return {
+      failDiffOnDangerousChange: row.fail_diff_on_dangerous_change,
       validation: {
-        enabled: row.validation_enabled,
+        isEnabled: row.validation_enabled,
         percentage: row.validation_percentage,
         period: row.validation_period,
+        requestCount: row.validation_request_count ?? 1,
+        breakingChangeFormula: row.validation_breaking_change_formula ?? 'PERCENTAGE',
         targets: Array.isArray(row.targets) ? row.targets.filter(isDefined) : [],
         excludedClients: Array.isArray(row.validation_excluded_clients)
           ? row.validation_excluded_clients.filter(isDefined)
           : [],
+        excludedAppDeployments: Array.isArray(row.validation_excluded_app_deployments)
+          ? row.validation_excluded_app_deployments.filter(isDefined)
+          : [],
+      },
+      appDeploymentProtection: {
+        isEnabled: row.app_deployment_protection_enabled,
+        minDaysInactive: row.app_deployment_protection_min_days_inactive,
+        minDaysSinceCreation: row.app_deployment_protection_min_days_since_creation,
+        maxTrafficPercentage: Number(row.app_deployment_protection_max_traffic_percentage),
+        trafficPeriodDays: row.app_deployment_protection_traffic_period_days,
+        ruleLogic: row.app_deployment_protection_rule_logic as 'AND' | 'OR',
       },
     };
   }
@@ -477,64 +446,81 @@ export async function createStorage(
       { superTokensUserId }: { superTokensUserId: string },
       connection: Connection,
     ) {
-      const user = await connection.maybeOne<
-        users & {
-          provider: string | null;
-        }
-      >(sql`/* getUserBySuperTokenId */
+      const record = await connection.maybeOne<unknown>(sql`/* getUserBySuperTokenId */
         SELECT
-          u.*,
-          stu.third_party_id as provider
+          ${userFields(sql`"users".`)}
         FROM
-          users as u
-        LEFT JOIN supertokens_thirdparty_users as stu ON (stu.user_id = u.supertoken_user_id)
+          "users"
         WHERE
-          u.supertoken_user_id = ${superTokensUserId}
+          "users"."supertoken_user_id" = ${superTokensUserId}
         LIMIT 1
       `);
 
-      if (user) {
-        return transformUser(user);
+      if (!record) {
+        return null;
       }
 
-      return null;
+      return UserModel.parse(record);
     },
+    getUserById: batchBy(
+      (item: { id: string; connection: Connection }) => item.connection,
+      async input => {
+        const userIds = input.map(i => i.id);
+        const records = await input[0].connection.any<unknown>(sql`/* getUserById */
+          SELECT
+            ${userFields(sql`"users".`)}
+          FROM
+            "users"
+          WHERE
+            "users"."id" = ANY(${sql.array(userIds, 'uuid')})
+        `);
+
+        const mappings = new Map<string, UserType>();
+        for (const record of records) {
+          const user = UserModel.parse(record);
+          mappings.set(user.id, user);
+        }
+
+        return userIds.map(async id => mappings.get(id) ?? null);
+      },
+    ),
     async createUser(
       {
-        superTokensUserId,
         email,
         fullName,
         displayName,
-        externalAuthUserId,
+        superTokensUserId,
         oidcIntegrationId,
       }: {
-        superTokensUserId: string;
         email: string;
         fullName: string;
         displayName: string;
-        externalAuthUserId: string | null;
+        superTokensUserId: string;
         oidcIntegrationId: string | null;
       },
-      connection: Connection,
+      connection: DatabaseTransactionConnection,
     ) {
-      const user = await connection.one<users>(
+      const { id } = await connection.one<{ id: string }>(
         sql`/* createUser */
           INSERT INTO users
-            ("email", "supertoken_user_id", "full_name", "display_name", "external_auth_user_id", "oidc_integration_id")
+            ("email", "full_name", "display_name", "supertoken_user_id", "oidc_integration_id")
           VALUES
-            (${email}, ${superTokensUserId}, ${fullName}, ${displayName}, ${externalAuthUserId}, ${oidcIntegrationId})
-          RETURNING *
+            (${email}, ${fullName}, ${displayName}, ${superTokensUserId}, ${oidcIntegrationId})
+          RETURNING id
         `,
       );
 
-      const provider = await connection.maybeOneFirst<string>(sql`/* findSupertokensProvider */
-        SELECT third_party_id FROM supertokens_thirdparty_users WHERE user_id = ${superTokensUserId} LIMIT 1
+      await connection.query(sql`
+        INSERT INTO "users_linked_identities" ("user_id", "identity_id")
+        VALUES (${id}, ${superTokensUserId})
       `);
 
-      return transformUser({
-        ...user,
-        provider,
-      });
+      const user = await shared.getUserById({ id, connection });
+      if (!user) {
+        throw new Error('Something went wrong.');
+      }
+
+      return user;
     },
     async getOrganization(userId: string, connection: Connection) {
       const org = await connection.maybeOne<Slonik<organizations>>(
@@ -547,6 +533,7 @@ export async function createStorage(
       args: {
         oidcIntegrationId: string;
         userId: string;
+        invitation: OrganizationInvitation | null;
       },
       connection: Connection,
     ) {
@@ -564,18 +551,33 @@ export async function createStorage(
         return;
       }
 
-      const viewerRole = await shared.getOrganizationMemberRoleByName(
-        { organizationId: linkedOrganizationId, roleName: 'Viewer' },
-        connection,
-      );
-      // TODO: turn it into a default role and let the admin choose the default role
+      // Add user and assign role (either the invited role, custom default role, or Viewer)
       await connection.query(
         sql`/* addOrganizationMemberViaOIDCIntegrationId */
           INSERT INTO organization_member
-            (organization_id, user_id, role_id)
+            (organization_id, user_id, role_id, assigned_resources, created_at)
           VALUES
-            (${linkedOrganizationId}, ${args.userId}, ${viewerRole.id})
-          ON CONFLICT DO NOTHING
+            (
+              ${linkedOrganizationId},
+              ${args.userId},
+              (
+                COALESCE(
+                  ${args.invitation?.roleId ?? null},
+                  (SELECT default_role_id FROM oidc_integrations
+                    WHERE id = ${args.oidcIntegrationId}),
+                  (SELECT id FROM organization_member_roles
+                    WHERE organization_id = ${linkedOrganizationId} AND name = 'Viewer')
+                )
+              ),
+              ${
+                args.invitation?.assignedResources
+                  ? sql.jsonb(args.invitation.assignedResources)
+                  : sql`(SELECT default_assigned_resources FROM oidc_integrations
+                      WHERE id = ${args.oidcIntegrationId})`
+              },
+              now()
+            )
+          ${args.invitation ? sql`` : sql`ON CONFLICT DO NOTHING`}
           RETURNING *
         `,
       );
@@ -587,25 +589,27 @@ export async function createStorage(
       },
       connection: Connection,
     ) {
-      const result = await connection.one(sql`/* getOrganizationMemberRoleByName */
+      const roleId = await connection.oneFirst<string>(sql`/* getOrganizationMemberRoleByName */
         SELECT
-          id, name, description, scopes, locked, organization_id
-        FROM organization_member_roles
-        WHERE organization_id = ${args.organizationId} AND name = ${args.roleName}
+          "id"
+        FROM
+          "organization_member_roles"
+        WHERE
+          "organization_id" = ${args.organizationId}
+          AND "name" = ${args.roleName}
         LIMIT 1
       `);
 
-      return OrganizationMemberRoleModel.parse(result);
+      return roleId;
     },
   };
 
   function buildUserData(input: {
-    superTokensUserId: string;
     email: string;
-    externalAuthUserId: string | null;
-    oidcIntegrationId: string | null;
     firstName: string | null;
     lastName: string | null;
+    superTokensUserId: string;
+    oidcIntegrationId: string | null;
   }) {
     const { firstName, lastName } = input;
     const name =
@@ -614,11 +618,10 @@ export async function createStorage(
         : input.email.split('@')[0].slice(0, 25).padEnd(2, '1');
 
     return {
-      superTokensUserId: input.superTokensUserId,
       email: input.email,
       displayName: name,
       fullName: name,
-      externalAuthUserId: input.externalAuthUserId,
+      superTokensUserId: input.superTokensUserId,
       oidcIntegrationId: input.oidcIntegrationId,
     };
   }
@@ -637,14 +640,12 @@ export async function createStorage(
     },
     async ensureUserExists({
       superTokensUserId,
-      externalAuthUserId,
       email,
       oidcIntegration,
       firstName,
       lastName,
     }: {
       superTokensUserId: string;
-      externalAuthUserId?: string | null;
       firstName: string | null;
       lastName: string | null;
       email: string;
@@ -652,91 +653,171 @@ export async function createStorage(
         id: string;
       };
     }) {
-      return tracedTransaction('ensureUserExists', pool, async t => {
-        let action: 'created' | 'no_action' = 'no_action';
-        let internalUser = await shared.getUserBySuperTokenId({ superTokensUserId }, t);
+      class EnsureUserExistsError extends Error {}
 
-        if (!internalUser) {
-          internalUser = await shared.createUser(
-            buildUserData({
-              superTokensUserId,
-              email,
-              externalAuthUserId: externalAuthUserId ?? null,
-              oidcIntegrationId: oidcIntegration?.id ?? null,
-              firstName,
-              lastName,
-            }),
-            t,
-          );
-          action = 'created';
-        }
+      try {
+        return await tracedTransaction('ensureUserExists', pool, async t => {
+          let action: 'created' | 'no_action' = 'no_action';
 
-        if (oidcIntegration !== null) {
-          // Add user to OIDC linked integration
-          await shared.addOrganizationMemberViaOIDCIntegrationId(
-            {
+          // try searching existing user first
+          let internalUser = await t
+            .maybeOne<unknown>(
+              sql`
+                SELECT
+                  ${userFields(sql`"users".`)}
+                FROM "users"
+                WHERE
+                  "users"."supertoken_user_id" = ${superTokensUserId}
+                  OR EXISTS (
+                    SELECT 1 FROM "users_linked_identities" "uli"
+                    WHERE "uli"."user_id" = "users"."id"
+                    AND "uli"."identity_id" = ${superTokensUserId}
+                  )
+              `,
+            )
+            .then(v => UserModel.nullable().parse(v));
+
+          if (!internalUser) {
+            // try automatic account linking
+            const sameEmailUsers = await t
+              .any<unknown>(
+                sql`/* ensureUserExists */
+                  SELECT ${userFields(sql`"users".`)}
+                  FROM "users"
+                  WHERE "users"."email" = ${email}
+                  ORDER BY "users"."created_at";
+                `,
+              )
+              .then(users => users.map(user => UserModel.parse(user)));
+
+            if (sameEmailUsers.length === 1) {
+              internalUser = sameEmailUsers[0];
+              await t.query(sql`
+                INSERT INTO "users_linked_identities" ("user_id", "identity_id")
+                VALUES (${internalUser.id}, ${superTokensUserId})
+              `);
+            }
+          }
+
+          let invitation: OrganizationInvitation | null = null;
+
+          if (oidcIntegration?.id) {
+            const oidcConfig = await this.getOIDCIntegrationById({
               oidcIntegrationId: oidcIntegration.id,
-              userId: internalUser.id,
-              // TODO: pass a default role here
-            },
-            t,
-          );
-        }
+            });
 
-        return action;
-      });
+            if (oidcConfig) {
+              invitation = await t
+                .maybeOne<unknown>(
+                  sql`
+                    DELETE FROM "organization_invitations" AS "oi"
+                    WHERE
+                      "oi"."organization_id" = ${oidcConfig.linkedOrganizationId}
+                      AND "oi"."email" = ${email}
+                      AND "oi"."expires_at" > now()
+                    RETURNING
+                      "oi"."organization_id" "organizationId"
+                      , "oi"."code" "code"
+                      , "oi"."email" "email"
+                      , "oi"."created_at" "createdAt"
+                      , "oi"."expires_at" "expiresAt"
+                      , "oi"."role_id" "roleId"
+                      , "oi"."assigned_resources" "assignedResources"
+                  `,
+                )
+                .then(v => OrganizationInvitationModel.nullable().parse(v));
+            }
+
+            if (oidcConfig?.requireInvitation && !invitation) {
+              const member = internalUser
+                ? await this.getOrganizationMember({
+                    organizationId: oidcConfig.linkedOrganizationId,
+                    userId: internalUser.id,
+                  })
+                : null;
+
+              if (!member) {
+                throw new EnsureUserExistsError('User is not invited to the organization.');
+              }
+            }
+          }
+
+          // either user is brand new or user is not linkable (multiple accounts with the same email exist)
+          if (!internalUser) {
+            internalUser = await shared.createUser(
+              buildUserData({
+                email,
+                firstName,
+                lastName,
+                superTokensUserId,
+                oidcIntegrationId: oidcIntegration?.id ?? null,
+              }),
+              t,
+            );
+
+            action = 'created';
+          }
+
+          if (internalUser.email !== email) {
+            await t.query(sql`
+              UPDATE "users"
+              SET "email" = ${email}
+              WHERE "id" = ${internalUser.id}
+            `);
+            internalUser.email = email;
+          }
+
+          if (oidcIntegration !== null) {
+            // Add user to OIDC linked integration
+            await shared.addOrganizationMemberViaOIDCIntegrationId(
+              {
+                oidcIntegrationId: oidcIntegration.id,
+                userId: internalUser.id,
+                invitation,
+              },
+              t,
+            );
+          }
+
+          return {
+            ok: true,
+            user: internalUser,
+            action,
+          };
+        });
+      } catch (e) {
+        if (e instanceof EnsureUserExistsError) {
+          return {
+            ok: false,
+            reason: e.message,
+          };
+        }
+        throw e;
+      }
     },
     async getUserBySuperTokenId({ superTokensUserId }) {
       return shared.getUserBySuperTokenId({ superTokensUserId }, pool);
     },
-    getUserById: batch(async input => {
-      const userIds = input.map(i => i.id);
-      const users = await pool.any<
-        users & {
-          provider: string | null;
-        }
-      >(sql`/* getUserById */
-        SELECT
-          u.*, stu.third_party_id as provider
-        FROM
-          "users" as u
-        LEFT JOIN
-          supertokens_thirdparty_users as stu ON (stu.user_id = u.supertoken_user_id)
+    async getUserById({ id }) {
+      return shared.getUserById({ id, connection: pool });
+    },
+    async updateUser({ id, displayName, fullName }) {
+      await pool.query<users>(sql`/* updateUser */
+        UPDATE "users"
+        SET
+          "display_name" = ${displayName}
+          , "full_name" = ${fullName}
         WHERE
-          u.id = ANY(${sql.array(userIds, 'uuid')})
+          "id" = ${id}
       `);
 
-      const mappings = new Map<
-        string,
-        users & {
-          provider: string | null;
-        }
-      >();
-      for (const user of users) {
-        mappings.set(user.id, user);
+      const user = await this.getUserById({ id });
+
+      if (!user) {
+        throw new Error('Something went wrong.');
       }
 
-      return userIds.map(id => {
-        const user = mappings.get(id) ?? null;
-        return Promise.resolve(user ? transformUser(user) : null);
-      });
-    }),
-    async updateUser({ id, displayName, fullName }) {
-      const user = await pool.one<users>(sql`/* updateUser */
-        UPDATE "users"
-        SET display_name = ${displayName}, full_name = ${fullName}
-        WHERE id = ${id}
-        RETURNING *
-      `);
-
-      const provider = await pool.maybeOneFirst<string>(sql`/* findSupertokensProvider */
-        SELECT third_party_id FROM supertokens_thirdparty_users WHERE user_id = ${user.supertoken_user_id} LIMIT 1
-      `);
-
-      return transformUser({
-        ...user,
-        provider,
-      });
+      return user;
     },
     createOrganization(input) {
       return tracedTransaction('createOrganization', pool, async t => {
@@ -777,20 +858,17 @@ export async function createStorage(
             organization_id,
             name,
             description,
-            scopes,
             locked
           )
           VALUES (
             ${org.id},
             'Admin',
             'Full access to all organization resources',
-            ${sql.array(input.adminScopes, 'text')},
             true
           ), (
             ${org.id},
             'Viewer',
             'Read-only access to all organization resources',
-            ${sql.array(input.viewerScopes, 'text')},
             true
           )
           RETURNING id, name
@@ -806,9 +884,9 @@ export async function createStorage(
         await t.query<organization_member>(
           sql`/* assignAdminRole */
             INSERT INTO organization_member
-              ("organization_id", "user_id", "role_id")
+              ("organization_id", "user_id", "role_id", "created_at")
             VALUES
-              (${org.id}, ${input.userId}, ${adminRole.id})
+              (${org.id}, ${input.userId}, ${adminRole.id}, now())
           `,
         );
 
@@ -915,22 +993,20 @@ export async function createStorage(
       >(
         sql`/* getOrganizationOwner */
         SELECT
-          u.*,
-          COALESCE(omr.scopes, om.scopes) as scopes,
+          ${userFields(sql`"u".`)},
+          omr.scopes as scopes,
           om.organization_id,
           om.connected_to_zendesk,
           omr.id as role_id,
           omr.name as role_name,
           omr.locked as role_locked,
           omr.scopes as role_scopes,
-          omr.description as role_description,
-          stu.third_party_id as provider
+          omr.description as role_description
         FROM organizations as o
         LEFT JOIN users as u ON (u.id = o.user_id)
         LEFT JOIN organization_member as om ON (om.user_id = u.id AND om.organization_id = o.id)
         LEFT JOIN organization_member_roles as omr ON (omr.organization_id = o.id AND omr.id = om.role_id)
-        LEFT JOIN supertokens_thirdparty_users as stu ON (stu.user_id = u.supertoken_user_id)
-        WHERE o.id IN (${sql.join(organizations, sql`, `)})`,
+        WHERE o.id = ANY(${sql.array(organizations, 'uuid')})`,
       );
 
       return organizations.map(organization => {
@@ -955,50 +1031,6 @@ export async function createStorage(
 
       return total;
     },
-    getOrganizationMembers: batch(async selectors => {
-      const organizations = selectors.map(s => s.organizationId);
-      const allMembers = await pool.query<
-        users &
-          Pick<organization_member, 'scopes' | 'organization_id' | 'connected_to_zendesk'> & {
-            is_owner: boolean;
-          } & MemberRoleColumns & {
-            provider: string | null;
-          }
-      >(
-        sql`/* getOrganizationMembers */
-        SELECT
-          u.*,
-          COALESCE(omr.scopes, om.scopes) as scopes,
-          om.organization_id,
-          om.connected_to_zendesk,
-          CASE WHEN o.user_id = om.user_id THEN true ELSE false END AS is_owner,
-          omr.id as role_id,
-          omr.name as role_name,
-          omr.locked as role_locked,
-          omr.scopes as role_scopes,
-          omr.description as role_description,
-          stu.third_party_id as provider
-        FROM organization_member as om
-        LEFT JOIN organizations as o ON (o.id = om.organization_id)
-        LEFT JOIN users as u ON (u.id = om.user_id)
-        LEFT JOIN organization_member_roles as omr ON (omr.organization_id = o.id AND omr.id = om.role_id)
-        LEFT JOIN supertokens_thirdparty_users as stu ON (stu.user_id = u.supertoken_user_id)
-        WHERE om.organization_id IN (${sql.join(
-          organizations,
-          sql`, `,
-        )}) ORDER BY u.created_at DESC`,
-      );
-
-      return organizations.map(organization => {
-        const members = allMembers.rows.filter(row => row.organization_id === organization);
-
-        if (members) {
-          return Promise.resolve(members.map(transformMember));
-        }
-
-        return Promise.reject(new Error(`Members not found (organization=${organization})`));
-      });
-    }),
     getOrganizationMember: batch(async selectors => {
       const membersResult = await pool.query<
         users &
@@ -1010,8 +1042,8 @@ export async function createStorage(
       >(
         sql`/* getOrganizationMember */
           SELECT
-            u.*,
-            COALESCE(omr.scopes, om.scopes) as scopes,
+            ${userFields(sql`"u".`)},
+            omr.scopes as scopes,
             om.organization_id,
             om.connected_to_zendesk,
             CASE WHEN o.user_id = om.user_id THEN true ELSE false END AS is_owner,
@@ -1019,13 +1051,11 @@ export async function createStorage(
             omr.name as role_name,
             omr.locked as role_locked,
             omr.scopes as role_scopes,
-            omr.description as role_description,
-            stu.third_party_id as provider
+            omr.description as role_description
           FROM organization_member as om
           LEFT JOIN organizations as o ON (o.id = om.organization_id)
           LEFT JOIN users as u ON (u.id = om.user_id)
           LEFT JOIN organization_member_roles as omr ON (omr.organization_id = o.id AND omr.id = om.role_id)
-          LEFT JOIN supertokens_thirdparty_users as stu ON (stu.user_id = u.supertoken_user_id)
           WHERE (om.organization_id, om.user_id) IN ((${sql.join(
             selectors.map(s => sql`${s.organizationId}, ${s.userId}`),
             sql`), (`,
@@ -1046,98 +1076,92 @@ export async function createStorage(
         return Promise.resolve(null);
       });
     }),
-    getAdminOrganizationMemberRole({ organizationId }) {
-      return shared.getOrganizationMemberRoleByName(
-        {
-          organizationId,
-          roleName: 'Admin',
-        },
-        pool,
-      );
-    },
-    getViewerOrganizationMemberRole({ organizationId }) {
-      return shared.getOrganizationMemberRoleByName(
-        {
-          organizationId,
-          roleName: 'Viewer',
-        },
-        pool,
-      );
-    },
-    async getOrganizationMemberRoles(selector) {
-      const results = await pool.many(sql`/* getOrganizationMemberRoles */
-        SELECT
-          id, name, description, scopes, locked, organization_id
-        FROM organization_member_roles
-        WHERE organization_id = ${selector.organizationId}
-        ORDER BY array_length(scopes, 1) DESC, name ASC
-      `);
 
-      return results.map(role => OrganizationMemberRoleModel.parse(role));
-    },
-    async getOrganizationMemberRole(selector) {
-      const result = await pool.maybeOne<{
-        members_count: number;
-      }>(sql`/* getOrganizationMemberRole */
-        SELECT
-          id, name, description, scopes, locked, organization_id,
-          (
-            SELECT count(*)
-            FROM organization_member
-            WHERE role_id = ${selector.roleId} AND organization_id = ${selector.organizationId}
-          ) AS members_count
-        FROM organization_member_roles
-        WHERE organization_id = ${selector.organizationId} AND id = ${selector.roleId}
-        LIMIT 1
-      `);
+    async getOrganizationInvitations(organizationId, args) {
+      let cursor: null | {
+        createdAt: string;
+        /** email */
+        hash: string;
+      } = null;
 
-      if (!result) {
-        return null;
+      const limit = args.first ? (args.first > 0 ? Math.min(args.first, 50) : 50) : 50;
+
+      if (args.after) {
+        cursor = decodeCreatedAtAndHashBasedCursor(args.after);
       }
 
-      return {
-        ...OrganizationMemberRoleModel.parse(result),
-        membersCount: result.members_count,
-      };
-    },
-    hasOrganizationMemberRoleName({ organizationId, roleName, excludeRoleId }) {
-      return pool.exists(sql`/* hasOrganizationMemberRoleName */
-        SELECT 1
-        FROM organization_member_roles
+      const query = sql`
+        SELECT
+          oi.organization_id
+          , oi.code
+          , oi.email
+          , to_json(oi.created_at) as "created_at"
+          , to_json(oi.expires_at) as "expires_at"
+          , oi.role_id as "role_id"
+          , to_jsonb(omr.*) as role
+        FROM
+          organization_invitations as oi
+        LEFT JOIN organization_member_roles as omr ON (omr.organization_id = oi.organization_id AND omr.id = oi.role_id)
         WHERE
-          organization_id = ${organizationId}
-          AND
-          name = ${roleName}
-          ${excludeRoleId ? sql`AND id != ${excludeRoleId}` : sql``}
-        LIMIT 1
-      `);
-    },
-    getOrganizationInvitations: batch(async selectors => {
-      const organizations = selectors.map(s => s.organizationId);
-      const allInvitations = await pool.query<
+          oi.organization_id = ${organizationId}
+          ${
+            cursor
+              ? sql`
+                  AND (
+                    (
+                      oi.created_at = ${cursor.createdAt}
+                      AND oi.email < ${cursor.hash}
+                    )
+                    OR oi.created_at < ${cursor.createdAt}
+                  )
+                `
+              : sql``
+          }
+          AND oi.expires_at > NOW()
+        ORDER BY
+          oi.created_at DESC
+          , oi.email DESC
+        LIMIT ${limit + 1}
+      `;
+
+      const result = await pool.any<
         organization_invitations & {
           role: organization_member_roles;
         }
-      >(
-        sql`/* getOrganizationInvitations */
-          SELECT oi.*, to_jsonb(omr.*) as role
-          FROM organization_invitations as oi
-          LEFT JOIN organization_member_roles as omr ON (omr.organization_id = oi.organization_id AND omr.id = oi.role_id)
-          WHERE oi.organization_id IN (${sql.join(
-            organizations,
-            sql`, `,
-          )}) AND oi.expires_at > NOW() ORDER BY oi.created_at DESC
-        `,
-      );
+      >(query);
 
-      return organizations.map(organization => {
-        return Promise.resolve(
-          allInvitations.rows
-            .filter(row => row.organization_id === organization)
-            .map(transformOrganizationInvitation) ?? [],
-        );
+      let edges = result.map(row => {
+        const node = transformOrganizationInvitation(row);
+
+        return {
+          node,
+          get cursor() {
+            return encodeCreatedAtAndHashBasedCursor({
+              createdAt: node.createdAt,
+              hash: node.email,
+            });
+          },
+        };
       });
-    }),
+
+      const hasNextPage = edges.length > limit;
+      edges = edges.slice(0, limit);
+
+      return {
+        edges,
+        pageInfo: {
+          hasNextPage,
+          hasPreviousPage: cursor !== null,
+          get endCursor() {
+            return edges[edges.length - 1]?.cursor ?? '';
+          },
+          get startCursor() {
+            return edges[0]?.cursor ?? '';
+          },
+        },
+      };
+    },
+
     async deleteOrganizationMemberRole({ organizationId, roleId }) {
       await tracedTransaction('deleteOrganizationMemberRole', pool, async t => {
         const viewerRoleId = await t.oneFirst(sql`/* getViewerRoleId */
@@ -1158,7 +1182,7 @@ export async function createStorage(
           WHERE
             organization_id = ${organizationId}
             AND id = ${roleId}
-            AND locked = false 
+            AND locked = false
             AND (
               SELECT count(*)
               FROM organization_member
@@ -1167,44 +1191,12 @@ export async function createStorage(
         `);
       });
     },
-    async getMembersWithoutRole({ organizationId }) {
-      const result = await pool.query<
-        users &
-          Pick<organization_member, 'scopes' | 'organization_id' | 'connected_to_zendesk'> & {
-            is_owner: boolean;
-          } & MemberRoleColumns & {
-            provider: string | null;
-          }
-      >(
-        sql`/* getMembersWithoutRole */
-        SELECT
-          u.*,
-          COALESCE(omr.scopes, om.scopes) as scopes,
-          om.organization_id,
-          om.connected_to_zendesk,
-          CASE WHEN o.user_id = om.user_id THEN true ELSE false END AS is_owner,
-          omr.id as role_id,
-          omr.name as role_name,
-          omr.locked as role_locked,
-          omr.scopes as role_scopes,
-          omr.description as role_description,
-          stu.third_party_id as provider
-        FROM organization_member as om
-        LEFT JOIN organizations as o ON (o.id = om.organization_id)
-        LEFT JOIN users as u ON (u.id = om.user_id)
-        LEFT JOIN organization_member_roles as omr ON (omr.organization_id = o.id AND omr.id = om.role_id)
-        LEFT JOIN supertokens_thirdparty_users as stu ON (stu.user_id = u.supertoken_user_id)
-        WHERE om.organization_id = ${organizationId} AND om.role_id IS NULL`,
-      );
-
-      return result.rows.map(transformMember);
-    },
     async getOrganizationMemberAccessPairs(pairs) {
       const results = await pool.query<
         Slonik<Pick<organization_member, 'organization_id' | 'user_id' | 'scopes'>>
       >(
         sql`/* getOrganizationMemberAccessPairs */
-          SELECT om.organization_id, om.user_id, COALESCE(omr.scopes, om.scopes) as scopes
+          SELECT om.organization_id, om.user_id, omr.scopes as scopes
           FROM organization_member as om
           LEFT JOIN organization_member_roles as omr ON (omr.organization_id = om.organization_id AND omr.id = om.role_id)
           WHERE (om.organization_id, om.user_id) IN ((${sql.join(
@@ -1219,44 +1211,6 @@ export async function createStorage(
           row => row.organization_id === organization && row.user_id === user,
         )?.scopes || []) as Member['scopes'];
       });
-    },
-    async hasOrganizationMemberPairs(pairs) {
-      const results = await pool.query<Slonik<organization_member>>(
-        sql`/* hasOrganizationMemberPairs */
-          SELECT organization_id, user_id
-          FROM organization_member
-          WHERE (organization_id, user_id) IN ((${sql.join(
-            pairs.map(p => sql`${p.organizationId}, ${p.userId}`),
-            sql`), (`,
-          )}))
-        `,
-      );
-
-      return pairs.map(({ organizationId: organization, userId: user }) =>
-        results.rows.some(row => row.organization_id === organization && row.user_id === user),
-      );
-    },
-    async hasOrganizationProjectMemberPairs(pairs) {
-      const results = await pool.query<Slonik<organization_member & { project_id: string }>>(
-        sql`/* hasOrganizationProjectMemberPairs */
-          SELECT om.organization_id, om.user_id, p.id AS project_id
-          FROM projects as p
-          LEFT JOIN organization_member as om ON (p.org_id = om.organization_id)
-          WHERE (om.organization_id, om.user_id, p.id) IN ((${sql.join(
-            pairs.map(p => sql`${p.organizationId}, ${p.userId}, ${p.projectId}`),
-            sql`), (`,
-          )}))
-        `,
-      );
-
-      return pairs.map(({ organizationId: organization, userId: user, projectId: project }) =>
-        results.rows.some(
-          row =>
-            row.organization_id === organization &&
-            row.project_id === project &&
-            row.user_id === user,
-        ),
-      );
     },
     async updateOrganizationSlug({ slug, organizationId: organization, reservedSlugs }) {
       return pool.transaction(async t => {
@@ -1302,29 +1256,49 @@ export async function createStorage(
         `),
       );
     },
-    async updateOrganizationRateLimits({ monthlyRateLimit, organizationId: organization }) {
-      return transformOrganization(
-        await pool.one<Slonik<organizations>>(sql`/* updateOrganizationRateLimits */ 
-          UPDATE organizations
-          SET limit_operations_monthly = ${monthlyRateLimit.operations}, limit_retention_days = ${monthlyRateLimit.retentionInDays}
-          WHERE id = ${organization}
-          RETURNING *
-        `),
-      );
+    async updateOrganizationRateLimits(args, action) {
+      return await tracedTransaction('updateOrganizationRateLimits', pool, async t => {
+        const org = transformOrganization(
+          await t.one<Slonik<organizations>>(sql`/* updateOrganizationRateLimits */
+            UPDATE organizations
+            SET limit_operations_monthly = ${args.monthlyRateLimit.operations}, limit_retention_days = ${args.monthlyRateLimit.retentionInDays}
+            WHERE id = ${args.organizationId}
+            RETURNING *
+          `),
+        );
+        await action?.();
+
+        return org;
+      });
     },
-    async createOrganizationInvitation({ organizationId: organization, email, roleId }) {
+    async createOrganizationInvitation(args) {
       return transformOrganizationInvitation(
         await tracedTransaction('createOrganizationInvitation', pool, async trx => {
           const invitation =
             await trx.one<organization_invitations>(sql`/* createOrganizationInvitation */
-          INSERT INTO organization_invitations (organization_id, email, role_id)
-          VALUES (${organization}, ${email}, ${roleId})
-          RETURNING *
-        `);
+            INSERT INTO "organization_invitations" (
+              "organization_id"
+              , "email"
+              , "role_id"
+              , "assigned_resources"
+            )
+            VALUES (
+              ${args.organizationId}
+              , ${args.email}
+              , ${args.roleId}
+              , ${args.resourceAssignments === null ? null : sql.jsonb(args.resourceAssignments)}
+            )
+            RETURNING *
+          `);
 
           const role = await trx.one<organization_member_roles>(sql`/* getOrganizationRole */
-          SELECT * FROM organization_member_roles WHERE id = ${roleId} LIMIT 1
-        `);
+            SELECT *
+            FROM
+              "organization_member_roles"
+            WHERE
+              "id" = ${args.roleId}
+            LIMIT 1
+          `);
 
           return {
             ...invitation,
@@ -1372,18 +1346,37 @@ export async function createStorage(
       organizationId: organization,
     }) {
       await tracedTransaction('addOrganizationMemberViaInvitationCode', pool, async trx => {
-        const roleId = await trx.oneFirst<string>(sql`/* deleteInviteAndGetRoleId */
-          DELETE FROM organization_invitations
-          WHERE organization_id = ${organization} AND code = ${code}
-          RETURNING role_id
+        const { roleId, assignedResources } = await trx.one<{
+          roleId: string;
+          assignedResources: null | Record<string, any>;
+        }>(sql`/* deleteInviteAndGetRoleId */
+          DELETE
+          FROM
+            "organization_invitations"
+          WHERE
+            "organization_id" = ${organization}
+            AND "code" = ${code}
+          RETURNING
+            role_id as "roleId"
+            , assigned_resources as "assignedResources"
         `);
 
         await trx.query(
           sql`/* addOrganizationMemberViaInvitationCode */
-            INSERT INTO organization_member
-              (organization_id, user_id, role_id)
-            VALUES
-              (${organization}, ${user}, ${roleId})
+            INSERT INTO "organization_member" (
+              "organization_id"
+              , "user_id"
+              , "role_id"
+              , "assigned_resources"
+              , "created_at"
+            )
+            VALUES (
+              ${organization}
+              , ${user}
+              , ${roleId}
+              , ${assignedResources === null ? null : sql.json(assignedResources)}
+              , now()
+            )
           `,
         );
       });
@@ -1456,7 +1449,7 @@ export async function createStorage(
           return;
         }
 
-        const adminRole = await shared.getOrganizationMemberRoleByName(
+        const adminRoleId = await shared.getOrganizationMemberRoleByName(
           {
             organizationId: organization,
             roleName: 'Admin',
@@ -1467,7 +1460,7 @@ export async function createStorage(
         // set admin role
         await tsx.query(sql`/* setAdminRole */
           UPDATE organization_member
-          SET role_id = ${adminRole.id}
+          SET role_id = ${adminRoleId}
           WHERE organization_id = ${organization} AND user_id = ${user}
         `);
 
@@ -1492,61 +1485,6 @@ export async function createStorage(
         `,
       );
     },
-    async updateOrganizationMemberAccess({ userId: user, organizationId: organization, scopes }) {
-      await pool.query<Slonik<organization_member>>(
-        sql`/* updateOrganizationMemberAccess */
-          UPDATE organization_member
-          SET scopes = ${sql.array(scopes, 'text')}
-          WHERE organization_id = ${organization} AND user_id = ${user} AND role_id IS NULL
-        `,
-      );
-    },
-    async createOrganizationMemberRole({ organizationId, name, scopes, description }) {
-      const role = await pool.one(
-        sql`/* createOrganizationMemberRole */
-          INSERT INTO organization_member_roles
-          (organization_id, name, description, scopes)
-          VALUES
-          (${organizationId}, ${name}, ${description}, ${sql.array(scopes, 'text')})
-          RETURNING *
-        `,
-      );
-
-      return OrganizationMemberRoleModel.parse(role);
-    },
-    async updateOrganizationMemberRole({ organizationId, roleId, name, scopes, description }) {
-      const role = await pool.one(
-        sql`/* updateOrganizationMemberRole */
-          UPDATE organization_member_roles
-          SET
-            name = ${name},
-            description = ${description},
-            scopes = ${sql.array(scopes, 'text')}
-          WHERE organization_id = ${organizationId} AND id = ${roleId}
-          RETURNING *
-        `,
-      );
-
-      return OrganizationMemberRoleModel.parse(role);
-    },
-    async assignOrganizationMemberRole({ userId, organizationId, roleId }) {
-      await pool.query(
-        sql`/* assignOrganizationMemberRole */
-          UPDATE organization_member
-          SET role_id = ${roleId}
-          WHERE organization_id = ${organizationId} AND user_id = ${userId}
-        `,
-      );
-    },
-    async assignOrganizationMemberRoleToMany({ userIds, organizationId, roleId }) {
-      await pool.query(
-        sql`/* assignOrganizationMemberRoleToMany */
-          UPDATE organization_member
-          SET role_id = ${roleId}
-          WHERE organization_id = ${organizationId} AND user_id = ANY(${sql.array(userIds, 'uuid')})
-        `,
-      );
-    },
     async getProjectId({ projectSlug, organizationSlug }) {
       // Based on project's clean_id and organization's clean_id, resolve the actual uuid of the project
       const result = await pool.one<Pick<projects, 'id'>>(
@@ -1565,7 +1503,7 @@ export async function createStorage(
           SELECT t.id FROM targets as t
           LEFT JOIN projects AS p ON (p.id = t.project_id)
           LEFT JOIN organizations AS o ON (o.id = p.org_id)
-          WHERE 
+          WHERE
             t.clean_id = ${selector.targetSlug} AND
             p.clean_id = ${selector.projectSlug} AND
             o.clean_id = ${selector.organizationSlug} AND
@@ -1582,13 +1520,6 @@ export async function createStorage(
         ),
       );
     },
-    async getMyOrganization({ userId: user }) {
-      const org = await pool.maybeOne<Slonik<organizations>>(
-        sql`/* getMyOrganization */ SELECT * FROM organizations WHERE user_id = ${user} AND type = ${'PERSONAL'} LIMIT 1`,
-      );
-
-      return org ? transformOrganization(org) : null;
-    },
     async getOrganizations({ userId: user }) {
       const results = await pool.query<Slonik<organizations>>(
         sql`/* getOrganizations */
@@ -1602,12 +1533,15 @@ export async function createStorage(
 
       return results.rows.map(transformOrganization);
     },
-    async getOrganizationByInviteCode({ inviteCode }) {
+    async getOrganizationByInviteCode({ inviteCode, email }) {
       const result = await pool.maybeOne<Slonik<organizations>>(
         sql`/* getOrganizationByInviteCode */
           SELECT o.* FROM organizations as o
           LEFT JOIN organization_invitations as i ON (i.organization_id = o.id)
-          WHERE i.code = ${inviteCode} AND i.expires_at > NOW()
+          WHERE
+            i.code = ${inviteCode}
+            AND i.email = ${email}
+            AND i.expires_at > NOW()
           GROUP BY o.id
           LIMIT 1
         `,
@@ -1670,6 +1604,41 @@ export async function createStorage(
 
       return result.rows.map(transformProject);
     },
+    findProjectsByIds: batch<{ projectIds: Array<string> }, Map<string, Project>>(
+      async function FindProjectByIdsBatchHandler(args) {
+        const allProjectIds = args.flatMap(args => args.projectIds);
+        const allProjectsLookupMap = new Map<string, Project>();
+
+        if (allProjectIds.length === 0) {
+          return args.map(async () => allProjectsLookupMap);
+        }
+
+        const result = await pool.query<Slonik<projects>>(
+          sql`/* findProjectsByIds */ SELECT * FROM projects WHERE id = ANY(${sql.array(allProjectIds, 'uuid')}) AND type != 'CUSTOM'`,
+        );
+
+        result.rows.forEach(row => {
+          const project = transformProject(row);
+          allProjectsLookupMap.set(project.id, project);
+        });
+
+        return args.map(async arg => {
+          const map = new Map<string, Project>();
+          for (const projectId of arg.projectIds) {
+            const project = allProjectsLookupMap.get(projectId);
+            if (!project) continue;
+            map.set(projectId, project);
+          }
+
+          return map;
+        });
+      },
+    ),
+    getProjectById(projectId) {
+      return this.findProjectsByIds({ projectIds: [projectId] }).then(
+        map => map.get(projectId) ?? null,
+      );
+    },
     async updateProjectSlug({ slug, organizationId: organization, projectId: project }) {
       return pool.transaction(async t => {
         const projectSlugExists = await t.exists(
@@ -1701,7 +1670,8 @@ export async function createStorage(
         await pool.one<projects>(sql`/* updateNativeSchemaComposition */
           UPDATE projects
           SET
-            native_federation = ${enabled}
+            native_federation = ${enabled},
+            external_composition_enabled = FALSE
           WHERE id = ${project}
           RETURNING *
         `),
@@ -1712,22 +1682,10 @@ export async function createStorage(
         await pool.one<Slonik<projects>>(sql`/* enableExternalSchemaComposition */
           UPDATE projects
           SET
+            native_federation = FALSE,
             external_composition_enabled = TRUE,
             external_composition_endpoint = ${endpoint},
             external_composition_secret = ${encryptedSecret}
-          WHERE id = ${project}
-          RETURNING *
-        `),
-      );
-    },
-    async disableExternalSchemaComposition({ projectId: project }) {
-      return transformProject(
-        await pool.one<Slonik<projects>>(sql`/* disableExternalSchemaComposition */
-          UPDATE projects
-          SET
-            external_composition_enabled = FALSE,
-            external_composition_endpoint = NULL,
-            external_composition_secret = NULL
           WHERE id = ${project}
           RETURNING *
         `),
@@ -1738,18 +1696,6 @@ export async function createStorage(
         await pool.one<projects>(sql`/* enableProjectNameInGithubCheck */
           UPDATE projects
           SET github_check_with_project_name = true
-          WHERE id = ${project}
-          RETURNING *
-        `),
-      );
-    },
-    async updateProjectRegistryModel({ projectId: project, model }) {
-      const isLegacyModel = model === 'LEGACY';
-
-      return transformProject(
-        await pool.one<projects>(sql`/* updateProjectRegistryModel */
-          UPDATE projects
-          SET legacy_registry_model = ${isLegacyModel}
           WHERE id = ${project}
           RETURNING *
         `),
@@ -1956,23 +1902,67 @@ export async function createStorage(
         orgId: organization,
       };
     },
-    async getTargets({ organizationId: organization, projectId: project }) {
+    async getTargets({ organizationId, projectId }) {
       const results = await pool.query<unknown>(sql`/* getTargets */
         SELECT
           ${targetSQLFields}
         FROM
           targets
         WHERE
-          project_id = ${project}
+          project_id = ${projectId}
         ORDER BY
           created_at DESC
       `);
 
       return results.rows.map(r => ({
         ...TargetModel.parse(r),
-        orgId: organization,
+        orgId: organizationId,
       }));
     },
+    findTargetsByIds: batchBy<
+      {
+        organizationId: string;
+        targetIds: Array<string>;
+      },
+      Map<string, Target>
+    >(
+      org => org.organizationId,
+      async function FindTargetsByIdsBatchHandler(args) {
+        const resultLookupMap = new Map<string, Target>();
+
+        const allTargetIds = args.flatMap(arg => arg.targetIds);
+
+        if (allTargetIds.length === 0) {
+          return args.map(async () => resultLookupMap);
+        }
+
+        const orgId = args[0].organizationId;
+
+        const results = await pool.query<unknown>(sql`/* getTargets */
+          SELECT
+          ${targetSQLFields}
+          FROM
+          "targets"
+          WHERE
+          "id" = ANY(${sql.array(allTargetIds, 'uuid')})
+        `);
+
+        for (const row of results.rows) {
+          const target: Target = { ...TargetModel.parse(row), orgId };
+          resultLookupMap.set(target.id, target);
+        }
+
+        return args.map(async arg => {
+          const map = new Map<string, Target>();
+          for (const targetId of arg.targetIds) {
+            const target = resultLookupMap.get(targetId);
+            if (!target) continue;
+            map.set(targetId, target);
+          }
+          return map;
+        });
+      },
+    ),
     async getTargetIdsOfOrganization({ organizationId: organization }) {
       const results = await pool.query<Slonik<Pick<targets, 'id'>>>(
         sql`/* getTargetIdsOfOrganization */
@@ -2002,6 +1992,16 @@ export async function createStorage(
           | 'validation_percentage'
           | 'validation_period'
           | 'validation_excluded_clients'
+          | 'validation_excluded_app_deployments'
+          | 'validation_request_count'
+          | 'validation_breaking_change_formula'
+          | 'fail_diff_on_dangerous_change'
+          | 'app_deployment_protection_enabled'
+          | 'app_deployment_protection_min_days_inactive'
+          | 'app_deployment_protection_max_traffic_percentage'
+          | 'app_deployment_protection_traffic_period_days'
+          | 'app_deployment_protection_rule_logic'
+          | 'app_deployment_protection_min_days_since_creation'
         > & {
           targets: target_validation['destination_target_id'][];
         }
@@ -2011,7 +2011,17 @@ export async function createStorage(
           t.validation_percentage,
           t.validation_period,
           t.validation_excluded_clients,
-          array_agg(tv.destination_target_id) as targets
+          t.validation_excluded_app_deployments,
+          t.validation_request_count,
+          t.validation_breaking_change_formula,
+          array_agg(tv.destination_target_id) as targets,
+          t.fail_diff_on_dangerous_change,
+          t.app_deployment_protection_enabled,
+          t.app_deployment_protection_min_days_inactive,
+          t.app_deployment_protection_min_days_since_creation,
+          t.app_deployment_protection_max_traffic_percentage,
+          t.app_deployment_protection_traffic_period_days,
+          t.app_deployment_protection_rule_logic
         FROM targets AS t
         LEFT JOIN target_validation AS tv ON (tv.target_id = t.id)
         WHERE t.id = ${target} AND t.project_id = ${project}
@@ -2021,85 +2031,16 @@ export async function createStorage(
 
       return transformTargetSettings(row);
     },
-    async setTargetValidation({ targetId: target, projectId: project, enabled }) {
-      return transformTargetSettings(
-        await tracedTransaction('setTargetValidation', pool, async trx => {
-          const targetValidationRowExists = await trx.exists(sql`/* findTargetValidation */
-            SELECT 1 FROM target_validation WHERE target_id = ${target}
-          `);
-
-          if (!targetValidationRowExists) {
-            await trx.query(sql`/* insertTargetValidation */
-              INSERT INTO target_validation (target_id, destination_target_id) VALUES (${target}, ${target})
-            `);
-          }
-
-          return trx.one<
-            Pick<
-              targets,
-              | 'validation_enabled'
-              | 'validation_percentage'
-              | 'validation_period'
-              | 'validation_excluded_clients'
-            > & {
-              targets: target_validation['destination_target_id'][];
-            }
-          >(sql`/* setTargetValidation */
-          UPDATE targets as t
-          SET validation_enabled = ${enabled}
-          FROM
-            (
-              SELECT
-                  it.id,
-                  array_agg(tv.destination_target_id) as targets
-              FROM targets AS it
-              LEFT JOIN target_validation AS tv ON (tv.target_id = it.id)
-              WHERE it.id = ${target} AND it.project_id = ${project}
-              GROUP BY it.id
-              LIMIT 1
-            ) ret
-          WHERE t.id = ret.id
-          RETURNING ret.id, t.validation_enabled, t.validation_percentage, t.validation_period, t.validation_excluded_clients, ret.targets
-        `);
-        }),
-      ).validation;
-    },
-    async updateTargetValidationSettings({
+    async updateTargetDangerousChangeClassification({
       targetId: target,
       projectId: project,
-      percentage,
-      period,
-      targets,
-      excludedClients,
+      failDiffOnDangerousChange,
     }) {
       return transformTargetSettings(
-        await tracedTransaction('updateTargetValidationSettings', pool, async trx => {
-          await trx.query(sql`/* deleteTargetValidation */
-            DELETE
-            FROM target_validation
-            WHERE destination_target_id NOT IN (${sql.join(targets, sql`, `)})
-              AND target_id = ${target}
-          `);
-
-          await trx.query(sql`/* insertTargetValidation */
-            INSERT INTO target_validation
-              (target_id, destination_target_id)
-            VALUES
-            (
-              ${sql.join(
-                targets.map(dest => sql.join([target, dest], sql`, `)),
-                sql`), (`,
-              )}
-            )
-            ON CONFLICT (target_id, destination_target_id) DO NOTHING
-          `);
-
+        await tracedTransaction('updateTargetDangerousChangeClassification', pool, async trx => {
           return trx.one(sql`/* updateTargetValidationSettings */
             UPDATE targets as t
-            SET validation_percentage = ${percentage}, validation_period = ${period}, validation_excluded_clients = ${sql.array(
-              excludedClients,
-              'text',
-            )}
+            SET fail_diff_on_dangerous_change = ${failDiffOnDangerousChange}
             FROM (
               SELECT
                 it.id,
@@ -2111,10 +2052,155 @@ export async function createStorage(
               LIMIT 1
             ) ret
             WHERE t.id = ret.id
-            RETURNING t.id, t.validation_enabled, t.validation_percentage, t.validation_period, t.validation_excluded_clients, ret.targets;
+            RETURNING t.id, t.validation_enabled, t.validation_percentage, t.validation_period, t.validation_excluded_clients, t.validation_excluded_app_deployments, ret.targets, t.validation_request_count, t.validation_breaking_change_formula, t.fail_diff_on_dangerous_change, t.app_deployment_protection_enabled, t.app_deployment_protection_min_days_inactive, t.app_deployment_protection_max_traffic_percentage, t.app_deployment_protection_traffic_period_days, t.app_deployment_protection_rule_logic;
+          `);
+        }),
+      );
+    },
+    async updateTargetValidationSettings({
+      targetId: target,
+      projectId: project,
+      percentage,
+      period,
+      targets,
+      excludedClients,
+      excludedAppDeployments,
+      breakingChangeFormula,
+      requestCount,
+      isEnabled,
+    }) {
+      return transformTargetSettings(
+        await tracedTransaction('updateTargetValidationSettings', pool, async trx => {
+          if (targets) {
+            await trx.query(sql`/* deleteTargetValidation */
+              DELETE
+              FROM target_validation
+              WHERE destination_target_id NOT IN (${sql.join(targets, sql`, `)})
+                AND target_id = ${target}
+            `);
+
+            await trx.query(sql`/* insertTargetValidation */
+              INSERT INTO target_validation
+              (target_id, destination_target_id)
+              VALUES
+              (
+              ${sql.join(
+                targets.map(dest => sql.join([target, dest], sql`, `)),
+                sql`), (`,
+              )}
+              )
+              ON CONFLICT (target_id, destination_target_id) DO NOTHING
+            `);
+          } else {
+            const targetValidationRowExists = await trx.exists(sql`/* findTargetValidation */
+              SELECT 1 FROM target_validation WHERE target_id = ${target}
+            `);
+
+            if (!targetValidationRowExists) {
+              await trx.query(sql`/* insertTargetValidation */
+                INSERT INTO target_validation (target_id, destination_target_id) VALUES (${target}, ${target})
+              `);
+            }
+          }
+
+          return trx.one(sql`/* updateTargetValidationSettings */
+            UPDATE
+              targets as t
+            SET
+              validation_percentage = COALESCE(${percentage ?? null}, validation_percentage)
+              , validation_period = COALESCE(${period ?? null}, validation_period)
+              , validation_excluded_clients = COALESCE(${excludedClients?.length ? sql.array(excludedClients, 'text') : null}, validation_excluded_clients)
+              , validation_excluded_app_deployments = COALESCE(${excludedAppDeployments?.length ? sql.array(excludedAppDeployments, 'text') : null}, validation_excluded_app_deployments)
+              , validation_request_count = COALESCE(${requestCount ?? null}, validation_request_count)
+              , validation_breaking_change_formula = COALESCE(${breakingChangeFormula ?? null}, validation_breaking_change_formula)
+              , validation_enabled = COALESCE(${isEnabled ?? null}, validation_enabled)
+            FROM (
+              SELECT
+                it.id
+                , array_agg(tv.destination_target_id) as targets
+              FROM targets AS it
+                LEFT JOIN target_validation AS tv ON (tv.target_id = it.id)
+              WHERE
+                it.id = ${target}
+                AND it.project_id = ${project}
+              GROUP BY
+                it.id
+              LIMIT 1
+            ) ret
+            WHERE
+              t.id = ret.id
+            RETURNING
+              t.id
+              , t.validation_enabled
+              , t.validation_percentage
+              , t.validation_period
+              , t.validation_excluded_clients
+              , t.validation_excluded_app_deployments
+              , ret.targets
+              , t.validation_request_count
+              , t.validation_breaking_change_formula
+              , t.fail_diff_on_dangerous_change
+              , t.app_deployment_protection_enabled
+              , t.app_deployment_protection_min_days_inactive
+              , t.app_deployment_protection_max_traffic_percentage
+              , t.app_deployment_protection_traffic_period_days
+              , t.app_deployment_protection_rule_logic
           `);
         }),
       ).validation;
+    },
+
+    async updateTargetAppDeploymentProtectionSettings({
+      targetId: target,
+      projectId: project,
+      isEnabled,
+      minDaysInactive,
+      minDaysSinceCreation,
+      maxTrafficPercentage,
+      trafficPeriodDays,
+      ruleLogic,
+    }: {
+      targetId: string;
+      projectId: string;
+      isEnabled?: boolean | null;
+      minDaysInactive?: number | null;
+      minDaysSinceCreation?: number | null;
+      maxTrafficPercentage?: number | null;
+      trafficPeriodDays?: number | null;
+      ruleLogic?: 'AND' | 'OR' | null;
+    }) {
+      return transformTargetSettings(
+        await pool.one(sql`/* updateTargetAppDeploymentProtectionSettings */
+            UPDATE
+              targets
+            SET
+              app_deployment_protection_enabled = COALESCE(${isEnabled ?? null}, app_deployment_protection_enabled)
+              , app_deployment_protection_min_days_inactive = COALESCE(${minDaysInactive ?? null}, app_deployment_protection_min_days_inactive)
+              , app_deployment_protection_max_traffic_percentage = COALESCE(${maxTrafficPercentage ?? null}, app_deployment_protection_max_traffic_percentage)
+              , app_deployment_protection_traffic_period_days = COALESCE(${trafficPeriodDays ?? null}, app_deployment_protection_traffic_period_days)
+              , app_deployment_protection_min_days_since_creation = COALESCE(${minDaysSinceCreation ?? null}, app_deployment_protection_min_days_since_creation)
+              , app_deployment_protection_rule_logic = COALESCE(${ruleLogic ?? null}, app_deployment_protection_rule_logic)
+            WHERE
+              id = ${target}
+              AND project_id = ${project}
+            RETURNING
+              id
+              , validation_enabled
+              , validation_percentage
+              , validation_period
+              , validation_excluded_clients
+              , null as targets
+              , validation_request_count
+              , validation_breaking_change_formula
+              , fail_diff_on_dangerous_change
+              , app_deployment_protection_enabled
+              , app_deployment_protection_min_days_inactive
+              , app_deployment_protection_max_traffic_percentage
+              , app_deployment_protection_traffic_period_days
+              , app_deployment_protection_rule_logic
+              , app_deployment_protection_min_days_since_creation
+          `),
+      ).appDeploymentProtection;
     },
 
     async countSchemaVersionsOfProject({ projectId: project, period }) {
@@ -2124,7 +2210,7 @@ export async function createStorage(
         }>(sql`/* countPeriodSchemaVersionsOfProject */
           SELECT COUNT(*) as total FROM schema_versions as sv
           LEFT JOIN targets as t ON (t.id = sv.target_id)
-          WHERE 
+          WHERE
             t.project_id = ${project}
             AND sv.created_at >= ${period.from.toISOString()}
             AND sv.created_at < ${period.to.toISOString()}
@@ -2146,7 +2232,7 @@ export async function createStorage(
           total: number;
         }>(sql`/* countPeriodSchemaVersionsOfTarget */
           SELECT COUNT(*) as total FROM schema_versions
-          WHERE 
+          WHERE
             target_id = ${target}
             AND created_at >= ${period.from.toISOString()}
             AND created_at < ${period.to.toISOString()}
@@ -2200,31 +2286,17 @@ export async function createStorage(
 
       return SchemaVersionModel.parse(version);
     },
-    async getLatestVersion(args) {
-      const version = await pool.maybeOne<unknown>(
-        sql`/* getLatestVersion */
-          SELECT
-            ${schemaVersionSQLFields(sql`sv.`)}
-          FROM schema_versions as sv
-          LEFT JOIN targets as t ON (t.id = sv.target_id)
-          WHERE sv.target_id = ${args.targetId} AND t.project_id = ${args.projectId}
-          ORDER BY sv.created_at DESC
-          LIMIT 1
-        `,
-      );
-
-      return SchemaVersionModel.parse(version);
-    },
-
     async getMaybeLatestVersion(args) {
       const version = await pool.maybeOne<unknown>(
         sql`/* getMaybeLatestVersion */
           SELECT
             ${schemaVersionSQLFields(sql`sv.`)}
-          FROM schema_versions as sv
-          LEFT JOIN targets as t ON (t.id = sv.target_id)
-          WHERE sv.target_id = ${args.targetId} AND t.project_id = ${args.projectId}
-          ORDER BY sv.created_at DESC
+          FROM
+            "schema_versions" AS "sv"
+          WHERE
+            "sv"."target_id" = ${args.targetId}
+          ORDER BY
+            "sv"."created_at" DESC
           LIMIT 1
         `,
       );
@@ -2262,36 +2334,6 @@ export async function createStorage(
       }
 
       return SchemaVersionModel.parse(version);
-    },
-    async getLatestSchemas({ projectId: project, targetId: target, onlyComposable }) {
-      const latest = await pool.maybeOne<
-        Pick<schema_versions, 'id' | 'is_composable'>
-      >(sql`/* getLatestSchemas */
-        SELECT sv.id, sv.is_composable
-        FROM schema_versions as sv
-        LEFT JOIN targets as t ON (t.id = sv.target_id)
-        LEFT JOIN schema_log as sl ON (sl.id = sv.action_id)
-        WHERE t.id = ${target} AND t.project_id = ${project} AND ${
-          onlyComposable ? sql`sv.is_composable IS TRUE` : true
-        }
-        ORDER BY sv.created_at DESC
-        LIMIT 1
-      `);
-
-      if (!latest) {
-        return null;
-      }
-
-      const schemas = await storage.getSchemasOfVersion({
-        versionId: latest.id,
-        includeMetadata: true,
-      });
-
-      return {
-        versionId: latest.id,
-        valid: latest.is_composable,
-        schemas,
-      };
     },
     async getSchemaByNameOfVersion(args) {
       const result = await pool.maybeOne<
@@ -2464,9 +2506,9 @@ export async function createStorage(
       return { serviceName: after.service_name, after: after.sdl, before: before?.sdl ?? null };
     },
 
-    async getVersion({ projectId: project, targetId: target, versionId: version }) {
-      const result = await pool.one(sql`/* getVersion */
-        SELECT 
+    async getMaybeVersion({ projectId: project, targetId: target, versionId: version }) {
+      const result = await pool.maybeOne(sql`/* getMaybeVersion */
+        SELECT
           ${schemaVersionSQLFields(sql`sv.`)}
         FROM schema_versions as sv
         LEFT JOIN schema_log as sl ON (sl.id = sv.action_id)
@@ -2477,6 +2519,10 @@ export async function createStorage(
           AND sv.id = ${version}
         LIMIT 1
       `);
+
+      if (!result) {
+        return null;
+      }
 
       return SchemaVersionModel.parse(result);
     },
@@ -2493,7 +2539,7 @@ export async function createStorage(
       }
 
       const query = sql`/* getPaginatedSchemaVersionsForTargetId */
-        SELECT 
+        SELECT
           ${schemaVersionSQLFields()}
         FROM
           "schema_versions"
@@ -2598,6 +2644,8 @@ export async function createStorage(
           // Deleting a schema is done via CLI and not associated to a commit or a pull request.
           github: null,
           tags: args.tags,
+          schemaMetadata: args.schemaMetadata,
+          metadataAttributes: args.metadataAttributes,
           hasContractCompositionErrors:
             args.contracts?.some(c => c.schemaCompositionErrors != null) ?? false,
           conditionalBreakingChangeMetadata: args.conditionalBreakingChangeMetadata,
@@ -2650,7 +2698,7 @@ export async function createStorage(
           });
         }
 
-        await args.actionFn();
+        await args.actionFn(newVersion.id);
 
         return {
           kind: 'composite',
@@ -2709,6 +2757,8 @@ export async function createStorage(
           schemaCompositionErrors: input.schemaCompositionErrors,
           github: input.github,
           tags: input.tags,
+          schemaMetadata: input.schemaMetadata,
+          metadataAttributes: input.metadataAttributes,
           hasContractCompositionErrors:
             input.contracts?.some(c => c.schemaCompositionErrors != null) ?? false,
           conditionalBreakingChangeMetadata: input.conditionalBreakingChangeMetadata,
@@ -2755,7 +2805,7 @@ export async function createStorage(
           });
         }
 
-        await input.actionFn();
+        await input.actionFn(version.id);
 
         return {
           version,
@@ -2785,21 +2835,6 @@ export async function createStorage(
       }
 
       return changes.rows.map(row => HiveSchemaChangeModel.parse(row));
-    },
-
-    async updateVersionStatus({ versionId: version, valid }) {
-      return SchemaVersionModel.parse(
-        await pool.maybeOne<unknown>(sql`/* updateVersionStatus */
-          UPDATE
-            schema_versions
-          SET
-            is_composable = ${valid}
-          WHERE
-            id = ${version}
-          RETURNING
-          ${schemaVersionSQLFields()}
-        `),
-      );
     },
 
     getSchemaLog: batch(async selectors => {
@@ -2832,27 +2867,6 @@ export async function createStorage(
         );
       });
     }),
-    async createActivity({
-      organizationId: organization,
-      projectId: project,
-      targetId: target,
-      userId: user,
-      type,
-      meta,
-    }) {
-      const { identifiers, values } = objectToParams<Omit<activities, 'id' | 'created_at'>>({
-        activity_metadata: meta,
-        activity_type: type,
-        organization_id: organization,
-        project_id: project ?? null,
-        target_id: target ?? null,
-        user_id: user ?? null,
-      });
-
-      await pool.query<Slonik<activities>>(
-        sql`/* createActivity */ INSERT INTO activities (${identifiers}) VALUES (${values}) RETURNING *;`,
-      );
-    },
     async addSlackIntegration({ organizationId: organization, token }) {
       await pool.query<Slonik<organizations>>(
         sql`/* addSlackIntegration */
@@ -3113,7 +3127,7 @@ export async function createStorage(
       `);
 
       // get organizations data
-      const organizationsResult = pool.query<Slonik<organizations>>(sql`/* adminGetOrganizations */ 
+      const organizationsResult = pool.query<Slonik<organizations>>(sql`/* adminGetOrganizations */
         SELECT * FROM organizations
       `);
 
@@ -3196,7 +3210,7 @@ export async function createStorage(
     },
     async deleteOrganizationBilling(selector) {
       await pool.query<Slonik<organizations_billing>>(
-        sql`/* deleteOrganizationBilling */ 
+        sql`/* deleteOrganizationBilling */
           DELETE FROM organizations_billing
           WHERE organization_id = ${selector.organizationId}`,
       );
@@ -3242,7 +3256,12 @@ export async function createStorage(
           , "token_endpoint"
           , "userinfo_endpoint"
           , "authorization_endpoint"
+          , "additional_scopes"
+          , "oidc_user_join_only"
           , "oidc_user_access_only"
+          , "default_role_id"
+          , "default_assigned_resources"
+          , "require_invitation"
         FROM
           "oidc_integrations"
         WHERE
@@ -3257,8 +3276,8 @@ export async function createStorage(
       return decodeOktaIntegrationRecord(result);
     },
 
-    async getOIDCIntegrationForOrganization({ organizationId }) {
-      const result = await pool.maybeOne<unknown>(sql`/* getOIDCIntegrationForOrganization */
+    getOIDCIntegrationForOrganization: batch(async selectors => {
+      const result = await pool.query<unknown>(sql`/* getOIDCIntegrationForOrganization */
         SELECT
           "id"
           , "linked_organization_id"
@@ -3268,20 +3287,29 @@ export async function createStorage(
           , "token_endpoint"
           , "userinfo_endpoint"
           , "authorization_endpoint"
+          , "additional_scopes"
+          , "oidc_user_join_only"
           , "oidc_user_access_only"
+          , "default_role_id"
+          , "default_assigned_resources"
+          , "require_invitation"
         FROM
           "oidc_integrations"
         WHERE
-          "linked_organization_id" = ${organizationId}
-        LIMIT 1
+          "linked_organization_id" = ANY(${sql.array(
+            selectors.map(s => s.organizationId),
+            'uuid',
+          )})
       `);
+      const integrations = new Map(
+        result.rows.map(row => {
+          const integration = decodeOktaIntegrationRecord(row);
+          return [integration.linkedOrganizationId, integration] as const;
+        }),
+      );
 
-      if (result === null) {
-        return null;
-      }
-
-      return decodeOktaIntegrationRecord(result);
-    },
+      return selectors.map(async s => integrations.get(s.organizationId) ?? null);
+    }),
 
     async getOIDCIntegrationIdForOrganizationSlug({ slug }) {
       const id = await pool.maybeOneFirst<string>(sql`/* getOIDCIntegrationIdForOrganizationSlug */
@@ -3311,7 +3339,8 @@ export async function createStorage(
             "client_secret",
             "token_endpoint",
             "userinfo_endpoint",
-            "authorization_endpoint"
+            "authorization_endpoint",
+            "additional_scopes"
           )
           VALUES (
             ${args.organizationId},
@@ -3319,7 +3348,8 @@ export async function createStorage(
             ${args.encryptedClientSecret},
             ${args.tokenEndpoint},
             ${args.userinfoEndpoint},
-            ${args.authorizationEndpoint}
+            ${args.authorizationEndpoint},
+            ${sql.array(args.additionalScopes, 'text')}
           )
           RETURNING
             "id"
@@ -3330,7 +3360,12 @@ export async function createStorage(
             , "token_endpoint"
             , "userinfo_endpoint"
             , "authorization_endpoint"
+            , "additional_scopes"
+            , "oidc_user_join_only"
             , "oidc_user_access_only"
+            , "default_role_id"
+            , "default_assigned_resources"
+            , "require_invitation"
         `);
 
         return {
@@ -3372,6 +3407,7 @@ export async function createStorage(
             /** update existing columns to the old legacy values if not yet stored */
             sql`COALESCE("authorization_endpoint", CONCAT("oauth_api_url", "/authorize"))`
           }
+          , "additional_scopes" = ${args.additionalScopes ? sql.array(args.additionalScopes, 'text') : sql`"additional_scopes"`}
           , "oauth_api_url" = NULL
         WHERE
           "id" = ${args.oidcIntegrationId}
@@ -3384,7 +3420,12 @@ export async function createStorage(
           , "token_endpoint"
           , "userinfo_endpoint"
           , "authorization_endpoint"
+          , "additional_scopes"
+          , "oidc_user_join_only"
           , "oidc_user_access_only"
+          , "default_role_id"
+          , "default_assigned_resources"
+          , "require_invitation"
       `);
 
       return decodeOktaIntegrationRecord(result);
@@ -3394,7 +3435,9 @@ export async function createStorage(
       const result = await pool.one(sql`/* updateOIDCRestrictions */
           UPDATE "oidc_integrations"
           SET
-            "oidc_user_access_only" = ${args.oidcUserAccessOnly}
+            "oidc_user_join_only" = ${args.oidcUserJoinOnly ?? sql`"oidc_user_join_only"`}
+            , "oidc_user_access_only" = ${args.oidcUserAccessOnly ?? sql`"oidc_user_access_only"`}
+            , "require_invitation" = ${args.requireInvitation ?? sql`"require_invitation"`}
           WHERE
             "id" = ${args.oidcIntegrationId}
           RETURNING
@@ -3406,10 +3449,87 @@ export async function createStorage(
           , "token_endpoint"
           , "userinfo_endpoint"
           , "authorization_endpoint"
+          , "additional_scopes"
+          , "oidc_user_join_only"
           , "oidc_user_access_only"
+          , "default_role_id"
+          , "default_assigned_resources"
+          , "require_invitation"
       `);
 
       return decodeOktaIntegrationRecord(result);
+    },
+
+    async updateOIDCDefaultAssignedResources(args) {
+      return tracedTransaction('updateOIDCDefaultAssignedResources', pool, async _ => {
+        const result = await pool.one(sql`/* updateOIDCDefaultAssignedResources */
+          UPDATE "oidc_integrations"
+          SET
+            "default_assigned_resources" = ${sql.jsonb(args.assignedResources)}
+          WHERE
+            "id" = ${args.oidcIntegrationId}
+          RETURNING
+          "id"
+          , "linked_organization_id"
+          , "client_id"
+          , "client_secret"
+          , "oauth_api_url"
+          , "token_endpoint"
+          , "userinfo_endpoint"
+          , "authorization_endpoint"
+          , "oidc_user_join_only"
+          , "oidc_user_access_only"
+          , "additional_scopes"
+          , "default_role_id"
+          , "default_assigned_resources"
+          , "require_invitation"
+        `);
+
+        return decodeOktaIntegrationRecord(result);
+      });
+    },
+
+    async updateOIDCDefaultMemberRole(args) {
+      return tracedTransaction('updateOIDCDefaultMemberRole', pool, async trx => {
+        // Make sure the role exists and is associated with the organization
+        const roleId = await trx.oneFirst<string>(sql`/* checkRoleExists */
+          SELECT id FROM "organization_member_roles"
+          WHERE
+            "id" = ${args.roleId} AND
+            "organization_id" = (
+              SELECT "linked_organization_id" FROM "oidc_integrations" WHERE "id" = ${args.oidcIntegrationId}
+            )
+        `);
+
+        if (!roleId) {
+          throw new Error('Role does not exist');
+        }
+
+        const result = await pool.one(sql`/* updateOIDCDefaultMemberRole */
+          UPDATE "oidc_integrations"
+          SET
+            "default_role_id" = ${roleId}
+          WHERE
+            "id" = ${args.oidcIntegrationId}
+          RETURNING
+          "id"
+          , "linked_organization_id"
+          , "client_id"
+          , "client_secret"
+          , "oauth_api_url"
+          , "token_endpoint"
+          , "userinfo_endpoint"
+          , "authorization_endpoint"
+          , "additional_scopes"
+          , "oidc_user_join_only"
+          , "oidc_user_access_only"
+          , "default_role_id"
+          , "default_assigned_resources"
+          , "require_invitation"
+        `);
+
+        return decodeOktaIntegrationRecord(result);
+      });
     },
 
     async deleteOIDCIntegration(args) {
@@ -3458,7 +3578,7 @@ export async function createStorage(
 
     async getCDNAccessTokenById(args) {
       const result = await pool.maybeOne(sql`/* getCDNAccessTokenById */
-        SELECT 
+        SELECT
           "id"
           , "target_id"
           , "s3_key"
@@ -3579,7 +3699,7 @@ export async function createStorage(
         DO UPDATE
           SET "config" = ${sql.jsonb(input.policy)},
               "allow_overriding" = ${input.allowOverrides},
-              "updated_at" = now() 
+              "updated_at" = now()
         RETURNING *;
       `);
 
@@ -3594,7 +3714,7 @@ export async function createStorage(
         (resource_type, resource_id)
       DO UPDATE
         SET "config" = ${sql.jsonb(input.policy)},
-            "updated_at" = now() 
+            "updated_at" = now()
       RETURNING *;
     `);
 
@@ -3994,6 +4114,7 @@ export async function createStorage(
 
       return DocumentCollectionDocumentModel.parse(result);
     },
+
     async createSchemaCheck(args) {
       const result = await tracedTransaction('createSchemaCheck', pool, async trx => {
         const sdlStoreInserts: Array<Promise<unknown>> = [];
@@ -4028,6 +4149,7 @@ export async function createStorage(
           INSERT INTO "schema_checks" (
               "schema_sdl_store_id"
             , "service_name"
+            , "service_url"
             , "meta"
             , "target_id"
             , "schema_version_id"
@@ -4048,10 +4170,13 @@ export async function createStorage(
             , "context_id"
             , "has_contract_schema_changes"
             , "conditional_breaking_change_metadata"
+            , "schema_proposal_id"
+            , "schema_proposal_changes"
           )
           VALUES (
               ${schemaSDLHash}
             , ${args.serviceName}
+            , ${args.serviceUrl}
             , ${jsonify(args.meta)}
             , ${args.targetId}
             , ${args.schemaVersionId}
@@ -4076,6 +4201,8 @@ export async function createStorage(
               ) ?? false
             }
             , ${jsonify(InsertConditionalBreakingChangeMetadataModel.parse(args.conditionalBreakingChangeMetadata))}
+            , ${args.schemaProposalId ?? null}
+            , ${jsonify(args.schemaProposalChanges?.map(toSerializableSchemaChange))}
           )
           RETURNING
             "id"
@@ -4172,6 +4299,7 @@ export async function createStorage(
         userId: args.userId,
         date: new Date().toISOString(),
         schemaCheckId: schemaCheck.id,
+        author: args.author ?? undefined,
       };
 
       if (schemaCheck.contextId !== null && !!schemaCheck.breakingSchemaChanges) {
@@ -4239,7 +4367,8 @@ export async function createStorage(
             "id" = ${args.schemaCheckId}
             AND "is_success" = false
             AND "schema_composition_errors" IS NULL
-          RETURNING 
+            AND "schema_policy_errors" IS NULL
+          RETURNING
             "id"
         `);
       } else if (didUpdateContractChecks) {
@@ -4257,7 +4386,8 @@ export async function createStorage(
             "id" = ${args.schemaCheckId}
             AND "is_success" = false
             AND "schema_composition_errors" IS NULL
-          RETURNING 
+            AND "schema_policy_errors" IS NULL
+          RETURNING
             "id"
         `);
       }
@@ -4395,6 +4525,111 @@ export async function createStorage(
       };
     },
 
+    async getPaginatedSchemaChecksForSchemaProposal(args) {
+      let cursor: null | {
+        createdAt: string;
+        id: string;
+      } = null;
+
+      const limit = args.first ? (args.first > 0 ? Math.min(args.first, 20) : 20) : 20;
+
+      if (args.cursor) {
+        cursor = decodeCreatedAtAndUUIDIdBasedCursor(args.cursor);
+      }
+
+      // gets the most recently created schema checks per service name
+      const result = await pool.any<unknown>(sql`/* getPaginatedSchemaChecksForSchemaProposal */
+        SELECT
+          ${schemaCheckSQLFields}
+        FROM
+          "schema_checks" as c
+        ${
+          args.latest
+            ? sql`
+            INNER JOIN (
+              SELECT COALESCE("service_name", '') as "service", "schema_proposal_id", max("created_at") as "maxdate"
+              FROM schema_checks
+              ${
+                cursor
+                  ? sql`
+                    WHERE "schema_proposal_id" = ${args.proposalId}
+                    AND (
+                      (
+                        "created_at" = ${cursor.createdAt}
+                        AND "id" < ${cursor.id}
+                      )
+                      OR "created_at" < ${cursor.createdAt}
+                    )
+                  `
+                  : sql``
+              }
+              GROUP BY "service", "schema_proposal_id"
+            ) as cc
+            ON c."schema_proposal_id" = cc."schema_proposal_id"
+              AND COALESCE(c."service_name", '') = cc."service"
+              AND c."created_at" = cc."maxdate"
+          `
+            : sql``
+        }
+        LEFT JOIN "sdl_store" as s_schema
+          ON s_schema."id" = c."schema_sdl_store_id"
+        LEFT JOIN "sdl_store" as s_composite_schema
+          ON s_composite_schema."id" = c."composite_schema_sdl_store_id"
+        LEFT JOIN "sdl_store" as s_supergraph
+          ON s_supergraph."id" = c."supergraph_sdl_store_id"
+        WHERE
+          c."schema_proposal_id" = ${args.proposalId}
+          ${
+            cursor
+              ? sql`
+                AND (
+                  (
+                    c."created_at" = ${cursor.createdAt}
+                    AND c."id" < ${cursor.id}
+                  )
+                  OR c."created_at" < ${cursor.createdAt}
+                )
+              `
+              : sql``
+          }
+        ORDER BY
+          c."created_at" DESC
+          , c."id" DESC
+        LIMIT ${limit + 1}
+      `);
+
+      let items = result.map(row => {
+        const node = SchemaCheckModel.parse(row);
+        return {
+          get node() {
+            // TODO: remove this any cast and fix the type issues...
+            return (args.transformNode?.(node) ?? node) as any;
+          },
+          get cursor() {
+            return encodeCreatedAtAndUUIDIdBasedCursor(node);
+          },
+        };
+      });
+
+      const hasNextPage = items.length > limit;
+
+      items = items.slice(0, limit);
+
+      return {
+        edges: items,
+        pageInfo: {
+          hasNextPage,
+          hasPreviousPage: cursor !== null,
+          get endCursor() {
+            return items[items.length - 1]?.cursor ?? '';
+          },
+          get startCursor() {
+            return items[0]?.cursor ?? '';
+          },
+        },
+      };
+    },
+
     async getTargetBreadcrumbForTargetId(args) {
       const result = await pool.maybeOne<unknown>(sql`/* getTargetBreadcrumbForTargetId */
         SELECT
@@ -4415,30 +4650,35 @@ export async function createStorage(
 
       return TargetBreadcrumbModel.parse(result);
     },
+    getTargetById: batch(async targetIds => {
+      const rows = await pool
+        .any<unknown>(
+          sql`/* getTarget */
+            SELECT
+              "t".*
+              , "p"."org_id" AS "orgId"
+            FROM (
+              SELECT
+                ${targetSQLFields}
+              FROM
+                "targets"
+              WHERE
+                "id" = ANY(${sql.array(targetIds, 'uuid')})
+            ) AS "t"
+              INNER JOIN "projects" "p" ON "t"."projectId" = "p"."id"
+          `,
+        )
+        .then(rows => rows.map(row => TargetWithOrgIdModel.parse(row)));
 
-    async getOrganizationUser(args) {
-      const result = await pool.maybeOne<
-        users & {
-          provider: string | null;
-        }
-      >(sql`/* getOrganizationUser */
-        SELECT
-          "u".*, "stu"."third_party_id" as provider
-        FROM "organization_member" as "om"
-          LEFT JOIN "organizations" as "o" ON ("o"."id" = "om"."organization_id")
-          LEFT JOIN "users" as "u" ON ("u"."id" = "om"."user_id")
-          LEFT JOIN "supertokens_thirdparty_users" as "stu" ON ("stu"."user_id" = "u"."supertoken_user_id")
-        WHERE
-          "u"."id" = ${args.userId}
-          AND "o"."id" = ${args.organizationId}
-      `);
-
-      if (result === null) {
-        return null;
+      const resultLookupMap = new Map<string, Target>();
+      for (const target of rows) {
+        resultLookupMap.set(target.id, target);
       }
 
-      return transformUser(result);
-    },
+      return targetIds.map(async id => {
+        return resultLookupMap.get(id) ?? null;
+      });
+    }),
 
     async updateTargetGraphQLEndpointUrl(args) {
       const result = await pool.maybeOne<unknown>(sql`/* updateTargetGraphQLEndpointUrl */
@@ -4640,14 +4880,14 @@ export async function createStorage(
       });
     },
 
-    async getSchemaVersionByActionId(args) {
-      const record = await pool.maybeOne<unknown>(sql`/* getSchemaVersionByActionId */
+    async getSchemaVersionByCommit(args) {
+      const record = await pool.maybeOne<unknown>(sql`/* getSchemaVersionByCommit */
         SELECT
           ${schemaVersionSQLFields()}
         FROM
           "schema_versions"
         WHERE
-          "action_id" = ANY(
+          "action_id" = (
             SELECT
               "id"
             FROM
@@ -4655,7 +4895,9 @@ export async function createStorage(
             WHERE
               "schema_log"."project_id" = ${args.projectId}
               AND "schema_log"."target_id" = ${args.targetId}
-              AND "schema_log"."commit" = ${args.actionId}
+              AND "schema_log"."commit" = ${args.commit}
+            ORDER BY "schema_log"."created_at" DESC
+            LIMIT 1
           )
         LIMIT 1
       `);
@@ -4770,6 +5012,45 @@ export function decodeCreatedAtAndUUIDIdBasedCursor(cursor: string) {
   };
 }
 
+export function encodeAppDeploymentSortCursor(cursor: {
+  sortField: string;
+  sortValue: string | null;
+  id: string;
+}) {
+  const value = cursor.sortValue ?? '';
+  return Buffer.from(`${cursor.sortField}:${value}|${cursor.id}`).toString('base64');
+}
+
+export function decodeAppDeploymentSortCursor(cursor: string) {
+  const decoded = Buffer.from(cursor, 'base64').toString('utf8');
+  const pipeIndex = decoded.lastIndexOf('|');
+  if (pipeIndex === -1) {
+    throw new Error('Invalid cursor');
+  }
+  const id = decoded.slice(pipeIndex + 1);
+  const fieldAndValue = decoded.slice(0, pipeIndex);
+  const colonIndex = fieldAndValue.indexOf(':');
+  if (colonIndex === -1) {
+    throw new Error('Invalid cursor');
+  }
+  const sortField = fieldAndValue.slice(0, colonIndex);
+  const validSortFields = ['CREATED_AT', 'ACTIVATED_AT', 'LAST_USED'];
+  if (!validSortFields.includes(sortField)) {
+    throw new Error('Invalid cursor: unknown sort field');
+  }
+
+  const sortValue = fieldAndValue.slice(colonIndex + 1) || null;
+  if (sortValue !== null && Number.isNaN(new Date(sortValue).getTime())) {
+    throw new Error('Invalid cursor: sortValue is not a valid date');
+  }
+
+  if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-5][0-9a-f]{3}-[089ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(id)) {
+    throw new Error('Invalid cursor');
+  }
+
+  return { sortField, sortValue, id };
+}
+
 export function encodeHashBasedCursor(cursor: { id: string }) {
   return Buffer.from(cursor.id).toString('base64');
 }
@@ -4778,6 +5059,19 @@ export function decodeHashBasedCursor(cursor: string) {
   const id = Buffer.from(cursor, 'base64').toString('utf8');
   return {
     id,
+  };
+}
+
+export function encodeCreatedAtAndHashBasedCursor(cursor: { createdAt: string; hash: string }) {
+  return Buffer.from(`${cursor.createdAt}|${cursor.hash}`).toString('base64');
+}
+
+export function decodeCreatedAtAndHashBasedCursor(cursor: string) {
+  const [createdAt, hash] = Buffer.from(cursor, 'base64').toString('utf8').split('|');
+
+  return {
+    createdAt,
+    hash,
   };
 }
 
@@ -4790,7 +5084,15 @@ const OktaIntegrationBaseModel = zod.object({
   linked_organization_id: zod.string(),
   client_id: zod.string(),
   client_secret: zod.string(),
+  additional_scopes: zod
+    .array(zod.string())
+    .nullable()
+    .transform(value => (value === null ? [] : value)),
+  oidc_user_join_only: zod.boolean(),
   oidc_user_access_only: zod.boolean(),
+  default_role_id: zod.string().nullable(),
+  default_assigned_resources: zod.any().nullable(),
+  require_invitation: zod.boolean(),
 });
 
 const OktaIntegrationLegacyModel = zod.intersection(
@@ -4824,7 +5126,12 @@ const decodeOktaIntegrationRecord = (result: unknown): OIDCIntegration => {
       tokenEndpoint: `${rawRecord.oauth_api_url}/token`,
       userinfoEndpoint: `${rawRecord.oauth_api_url}/userinfo`,
       authorizationEndpoint: `${rawRecord.oauth_api_url}/authorize`,
+      additionalScopes: rawRecord.additional_scopes,
+      oidcUserJoinOnly: rawRecord.oidc_user_join_only,
       oidcUserAccessOnly: rawRecord.oidc_user_access_only,
+      requireInvitation: rawRecord.require_invitation,
+      defaultMemberRoleId: rawRecord.default_role_id,
+      defaultResourceAssignment: rawRecord.default_assigned_resources,
     };
   }
 
@@ -4836,7 +5143,12 @@ const decodeOktaIntegrationRecord = (result: unknown): OIDCIntegration => {
     tokenEndpoint: rawRecord.token_endpoint,
     userinfoEndpoint: rawRecord.userinfo_endpoint,
     authorizationEndpoint: rawRecord.authorization_endpoint,
+    additionalScopes: rawRecord.additional_scopes,
+    oidcUserJoinOnly: rawRecord.oidc_user_join_only,
     oidcUserAccessOnly: rawRecord.oidc_user_access_only,
+    requireInvitation: rawRecord.require_invitation,
+    defaultMemberRoleId: rawRecord.default_role_id,
+    defaultResourceAssignment: rawRecord.default_assigned_resources,
   };
 };
 
@@ -4866,10 +5178,12 @@ const decodeCDNAccessTokenRecord = (result: unknown): CDNAccessToken => {
 
 const FeatureFlagsModel = zod
   .object({
-    compareToPreviousComposableVersion: zod.boolean().default(false),
     forceLegacyCompositionInTargets: zod.array(zod.string()).default([]),
     /** whether app deployments are enabled for the given organization */
     appDeployments: zod.boolean().default(false),
+    /** whether otel tracing is enabled for the given organization */
+    otelTracing: zod.boolean().default(false),
+    schemaProposals: zod.boolean().default(false),
   })
   .optional()
   .nullable()
@@ -4877,9 +5191,10 @@ const FeatureFlagsModel = zod
   .transform(
     val =>
       val ?? {
-        compareToPreviousComposableVersion: false,
         forceLegacyCompositionInTargets: [],
         appDeployments: false,
+        otelTracing: false,
+        schemaProposals: false,
       },
   );
 
@@ -4891,6 +5206,12 @@ function decodeFeatureFlags(column: unknown) {
 const SchemaVersionRecordVersion_2024_01_10_Model = zod.literal('2024-01-10');
 
 const SchemaVersionRecordVersionModel = SchemaVersionRecordVersion_2024_01_10_Model;
+
+const SchemaMetadataModel = zod.object({
+  name: zod.string(),
+  content: zod.string(),
+  source: zod.nullable(zod.string()).default(null),
+});
 
 const SchemaVersionModel = zod.intersection(
   zod.object({
@@ -4907,6 +5228,8 @@ const SchemaVersionModel = zod.intersection(
     schemaCompositionErrors: zod.nullable(zod.array(SchemaCompositionErrorModel)),
     recordVersion: zod.nullable(SchemaVersionRecordVersionModel),
     tags: zod.nullable(zod.array(zod.string())),
+    schemaMetadata: zod.nullable(zod.record(zod.string(), zod.array(SchemaMetadataModel))),
+    metadataAttributes: zod.nullable(zod.record(zod.string(), zod.array(zod.string()))),
     hasContractCompositionErrors: zod
       .boolean()
       .nullable()
@@ -5052,6 +5375,11 @@ async function insertSchemaVersion(
     supergraphSDL: string | null;
     schemaCompositionErrors: Array<SchemaCompositionError> | null;
     tags: Array<string> | null;
+    schemaMetadata: Record<
+      string,
+      Array<{ name: string; content: string; source: string | null }>
+    > | null;
+    metadataAttributes: Record<string, string[]> | null;
     hasContractCompositionErrors: boolean;
     github: null | {
       sha: string;
@@ -5078,7 +5406,9 @@ async function insertSchemaVersion(
         github_sha,
         tags,
         has_contract_composition_errors,
-        conditional_breaking_change_metadata
+        conditional_breaking_change_metadata,
+        schema_metadata,
+        metadata_attributes
       )
     VALUES
       (
@@ -5092,16 +5422,14 @@ async function insertSchemaVersion(
         ${args.diffSchemaVersionId},
         ${args.compositeSchemaSDL},
         ${args.supergraphSDL},
-        ${
-          args.schemaCompositionErrors
-            ? sql`${JSON.stringify(args.schemaCompositionErrors)}::jsonb`
-            : sql`${null}`
-        },
+        ${jsonify(args.schemaCompositionErrors)},
         ${args.github?.repository ?? null},
         ${args.github?.sha ?? null},
         ${Array.isArray(args.tags) ? sql.array(args.tags, 'text') : null},
         ${args.hasContractCompositionErrors},
-        ${jsonify(InsertConditionalBreakingChangeMetadataModel.parse(args.conditionalBreakingChangeMetadata))}
+        ${jsonify(InsertConditionalBreakingChangeMetadataModel.parse(args.conditionalBreakingChangeMetadata))},
+        ${jsonify(args.schemaMetadata)},
+        ${jsonify(args.metadataAttributes)}
       )
     RETURNING
       ${schemaVersionSQLFields()}
@@ -5235,9 +5563,10 @@ export function toSerializableSchemaChange(change: SchemaChangeType): {
   type: string;
   meta: Record<string, SerializableValue>;
   approvalMetadata: null | {
-    userId: string;
+    userId: string | null;
     date: string;
     schemaCheckId: string;
+    author?: string;
   };
   isSafeBasedOnUsage: boolean;
   usageStatistics: null | {
@@ -5251,6 +5580,15 @@ export function toSerializableSchemaChange(change: SchemaChangeType): {
       count: number;
     }>;
   };
+  affectedAppDeployments: null | Array<{
+    id: string;
+    name: string;
+    version: string;
+    affectedOperations: Array<{
+      hash: string;
+      name: string | null;
+    }>;
+  }>;
 } {
   return {
     id: change.id,
@@ -5259,6 +5597,7 @@ export function toSerializableSchemaChange(change: SchemaChangeType): {
     isSafeBasedOnUsage: change.isSafeBasedOnUsage,
     approvalMetadata: change.approvalMetadata,
     usageStatistics: change.usageStatistics,
+    affectedAppDeployments: change.affectedAppDeployments,
   };
 }
 
@@ -5268,6 +5607,7 @@ const schemaCheckSQLFields = sql`
   , to_json(c."updated_at") as "updatedAt"
   , coalesce(c."schema_sdl", s_schema."sdl") as "schemaSDL"
   , c."service_name" as "serviceName"
+  , c."service_url" as "serviceUrl"
   , c."meta"
   , c."target_id" as "targetId"
   , c."schema_version_id" as "schemaVersionId"
@@ -5287,6 +5627,8 @@ const schemaCheckSQLFields = sql`
   , c."manual_approval_comment" as "manualApprovalComment"
   , c."context_id" as "contextId"
   , c."conditional_breaking_change_metadata" as "conditionalBreakingChangeMetadata"
+  , c."schema_proposal_id" as "schemaProposalId"
+  , c."schema_proposal_changes" as "schemaProposalChanges"
 `;
 
 const schemaVersionSQLFields = (t = sql``) => sql`
@@ -5307,6 +5649,8 @@ const schemaVersionSQLFields = (t = sql``) => sql`
   , ${t}"tags"
   , ${t}"has_contract_composition_errors" as "hasContractCompositionErrors"
   , ${t}"conditional_breaking_change_metadata" as "conditionalBreakingChangeMetadata"
+  , ${t}"schema_metadata" as "schemaMetadata"
+  , ${t}"metadata_attributes" as "metadataAttributes"
 `;
 
 const targetSQLFields = sql`
@@ -5314,8 +5658,70 @@ const targetSQLFields = sql`
   "clean_id" as "slug",
   "name",
   "project_id" as "projectId",
-  "graphql_endpoint_url" as "graphqlEndpointUrl"
+  "graphql_endpoint_url" as "graphqlEndpointUrl",
+  "fail_diff_on_dangerous_change" as "failDiffOnDangerousChange"
 `;
+
+export function findTargetById(deps: { pool: DatabasePool }) {
+  return async function findByIdImplementation(id: string): Promise<Target | null> {
+    const data = await deps.pool.maybeOne<unknown>(
+      sql`/* getTarget */
+        SELECT
+          "t".*
+          , "p"."org_id" AS "orgId"
+        FROM (
+          SELECT
+            ${targetSQLFields}
+          FROM
+            "targets"
+          WHERE
+            "id" = ${id}
+        ) AS "t"
+        INNER JOIN "projects" "p" ON "t"."projectId" = "p"."id"
+      `,
+    );
+
+    if (data === null) {
+      return null;
+    }
+
+    return TargetWithOrgIdModel.parse(data);
+  };
+}
+
+export function findTargetBySlug(deps: { pool: DatabasePool }) {
+  return async function findTargetsBySlugImplementation(args: {
+    organizationSlug: string;
+    projectSlug: string;
+    targetSlug: string;
+  }): Promise<Target | null> {
+    const data = await deps.pool.maybeOne<unknown>(
+      sql`/* getTargetBySlug */
+        SELECT
+          "t".*
+          , "p"."org_id" AS "orgId"
+          FROM (
+            SELECT
+              ${targetSQLFields}
+            FROM
+              "targets"
+            where
+              "clean_id" = ${args.targetSlug}
+            ) AS "t"
+          INNER JOIN "projects" "p" ON "t"."projectId" = "p"."id"
+          INNER JOIN "organizations" "o" on "p"."org_id" = "o"."id"
+        WHERE "p"."clean_id" = ${args.projectSlug}
+         and "o"."clean_id" = ${args.organizationSlug}
+      `,
+    );
+
+    if (data === null) {
+      return null;
+    }
+
+    return TargetWithOrgIdModel.parse(data);
+  };
+}
 
 const TargetModel = zod.object({
   id: zod.string(),
@@ -5323,6 +5729,11 @@ const TargetModel = zod.object({
   name: zod.string(),
   projectId: zod.string(),
   graphqlEndpointUrl: zod.string().nullable(),
+  failDiffOnDangerousChange: zod.boolean(),
+});
+
+const TargetWithOrgIdModel = TargetModel.extend({
+  orgId: zod.string(),
 });
 
 export * from './schema-change-model';
@@ -5343,3 +5754,100 @@ export type PaginatedSchemaVersionConnection = Readonly<{
     endCursor: string;
   }>;
 }>;
+
+export type PaginatedOrganizationInvitationConnection = Readonly<{
+  edges: ReadonlyArray<{
+    cursor: string;
+    node: OrganizationInvitation;
+  }>;
+  pageInfo: Readonly<{
+    hasNextPage: boolean;
+    hasPreviousPage: boolean;
+    startCursor: string;
+    endCursor: string;
+  }>;
+}>;
+
+const getOrganizationInvitationId = (keys: {
+  organizationId: string;
+  email: string;
+  code: string;
+}) => Buffer.from([keys.organizationId, keys.email, keys.code].join(':')).toString('hex');
+const OrganizationInvitationModel = zod
+  .object({
+    organizationId: zod.string(),
+    code: zod.string(),
+    email: zod.string().email(),
+    createdAt: zod.number().transform(v => new Date(v).toISOString()),
+    expiresAt: zod.number().transform(v => new Date(v).toISOString()),
+    roleId: zod.string(),
+    assignedResources: zod.any(),
+  })
+  .transform(
+    invitation =>
+      ({
+        ...invitation,
+        get id(): string {
+          return getOrganizationInvitationId(this);
+        },
+      }) as OrganizationInvitation,
+  );
+
+export const userFields = (user: TaggedTemplateLiteralInvocation) => sql`
+  ${user}"id"
+  , ${user}"email"
+  , to_json(${user}"created_at") AS "createdAt"
+  , ${user}"display_name" AS "displayName"
+  , ${user}"full_name" AS "fullName"
+  , ${user}"supertoken_user_id" AS "superTokensUserId"
+  , ${user}"is_admin" AS "isAdmin"
+  , ${user}"oidc_integration_id" AS "oidcIntegrationId"
+  , ${user}"zendesk_user_id" AS "zendeskId"
+  , (
+      SELECT ARRAY_AGG(DISTINCT "sub_stu"."third_party_id")
+      FROM (
+        SELECT ${user}"supertoken_user_id"::text "id"
+        WHERE ${user}"supertoken_user_id" IS NOT NULL
+        UNION
+        SELECT "sub_uli"."identity_id"::text "id"
+        FROM "users_linked_identities" "sub_uli"
+        WHERE "sub_uli"."user_id" = ${user}"id"
+      ) "sub_ids"
+      LEFT JOIN "supertokens_thirdparty_users" "sub_stu"
+      ON "sub_stu"."user_id" = "sub_ids"."id"
+    ) AS "providers"
+`;
+
+export const UserModel = zod.object({
+  id: zod.string(),
+  email: zod.string(),
+  createdAt: zod.string(),
+  displayName: zod.string(),
+  fullName: zod.string(),
+  superTokensUserId: zod.string().nullable(),
+  isAdmin: zod
+    .boolean()
+    .nullable()
+    .transform(value => value ?? false),
+  oidcIntegrationId: zod.string().nullable(),
+  zendeskId: zod.string().nullable(),
+  providers: zod.array(
+    zod
+      .string()
+      .nullable()
+      .transform(provider => {
+        if (provider === 'oidc') {
+          return 'OIDC' as const;
+        }
+        if (provider === 'google') {
+          return 'GOOGLE' as const;
+        }
+        if (provider === 'github') {
+          return 'GITHUB' as const;
+        }
+        return 'USERNAME_PASSWORD' as const;
+      }),
+  ),
+});
+
+type UserType = zod.TypeOf<typeof UserModel>;

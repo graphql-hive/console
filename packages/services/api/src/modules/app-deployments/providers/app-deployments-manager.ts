@@ -1,7 +1,9 @@
 import { Injectable, Scope } from 'graphql-modules';
+import * as GraphQLSchema from '../../../__generated__/types';
 import { Target } from '../../../shared/entities';
 import { batch } from '../../../shared/helpers';
 import { Session } from '../../auth/lib/authz';
+import { IdTranslator } from '../../shared/providers/id-translator';
 import { Logger } from '../../shared/providers/logger';
 import { TargetManager } from '../../target/providers/target-manager';
 import { AppDeployments, type AppDeploymentRecord } from './app-deployments';
@@ -20,6 +22,7 @@ export class AppDeploymentsManager {
     private session: Session,
     private targetManager: TargetManager,
     private appDeployments: AppDeployments,
+    private idTranslator: IdTranslator,
   ) {
     this.logger = logger.child({ source: 'AppDeploymentsManager' });
   }
@@ -37,62 +40,62 @@ export class AppDeploymentsManager {
       version: appDeploymentInput.version,
     });
 
-    if (!appDeployment) {
-      return null;
-    }
-
-    await this.session.assertPerformAction({
-      action: 'appDeployment:describe',
-      organizationId: target.orgId,
-      params: {
-        organizationId: target.orgId,
-        projectId: target.projectId,
-        targetId: target.id,
-      },
-    });
-
     return appDeployment;
   }
 
-  getStatusForAppDeployment(appDeployment: AppDeploymentRecord): AppDeploymentStatus {
-    if (appDeployment.activatedAt) {
-      return 'active';
-    }
+  async getAppDeploymentById(args: {
+    appDeploymentId: string;
+  }): Promise<AppDeploymentRecord | null> {
+    return await this.appDeployments.getAppDeploymentById(args);
+  }
 
+  getStatusForAppDeployment(appDeployment: AppDeploymentRecord): AppDeploymentStatus {
     if (appDeployment.retiredAt) {
       return 'retired';
+    }
+
+    if (appDeployment.activatedAt) {
+      return 'active';
     }
 
     return 'pending';
   }
 
   async createAppDeployment(args: {
+    reference: GraphQLSchema.TargetReferenceInput | null;
     appDeployment: {
       name: string;
       version: string;
     };
   }) {
-    const token = this.session.getLegacySelector();
+    const selector = await this.idTranslator.resolveTargetReference({
+      reference: args.reference,
+    });
+
+    if (!selector) {
+      this.session.raise('appDeployment:create');
+    }
 
     await this.session.assertPerformAction({
       action: 'appDeployment:create',
-      organizationId: token.organizationId,
+      organizationId: selector.organizationId,
       params: {
-        organizationId: token.organizationId,
-        projectId: token.projectId,
-        targetId: token.targetId,
+        organizationId: selector.organizationId,
+        projectId: selector.projectId,
+        targetId: selector.targetId,
         appDeploymentName: args.appDeployment.name,
       },
     });
 
     return await this.appDeployments.createAppDeployment({
-      organizationId: token.organizationId,
-      targetId: token.targetId,
+      organizationId: selector.organizationId,
+      targetId: selector.targetId,
       appDeployment: args.appDeployment,
     });
   }
 
   async addDocumentsToAppDeployment(args: {
+    reference: GraphQLSchema.TargetReferenceInput | null;
     appDeployment: {
       name: string;
       version: string;
@@ -102,78 +105,100 @@ export class AppDeploymentsManager {
       body: string;
     }>;
   }) {
-    const token = this.session.getLegacySelector();
+    const selector = await this.idTranslator.resolveTargetReference({
+      reference: args.reference,
+    });
+
+    if (!selector) {
+      this.session.raise('appDeployment:create');
+    }
 
     await this.session.assertPerformAction({
       action: 'appDeployment:create',
-      organizationId: token.organizationId,
+      organizationId: selector.organizationId,
       params: {
-        organizationId: token.organizationId,
-        projectId: token.projectId,
-        targetId: token.targetId,
+        organizationId: selector.organizationId,
+        projectId: selector.projectId,
+        targetId: selector.targetId,
         appDeploymentName: args.appDeployment.name,
       },
     });
 
     return await this.appDeployments.addDocumentsToAppDeployment({
-      organizationId: token.organizationId,
-      projectId: token.projectId,
-      targetId: token.targetId,
+      organizationId: selector.organizationId,
+      projectId: selector.projectId,
+      targetId: selector.targetId,
       appDeployment: args.appDeployment,
       operations: args.documents,
     });
   }
 
   async activateAppDeployment(args: {
+    reference: GraphQLSchema.TargetReferenceInput | null;
     appDeployment: {
       name: string;
       version: string;
     };
   }) {
-    const token = this.session.getLegacySelector();
+    const selector = await this.idTranslator.resolveTargetReference({
+      reference: args.reference,
+    });
+
+    if (!selector) {
+      this.session.raise('appDeployment:publish');
+    }
 
     await this.session.assertPerformAction({
       action: 'appDeployment:publish',
-      organizationId: token.organizationId,
+      organizationId: selector.organizationId,
       params: {
-        organizationId: token.organizationId,
-        projectId: token.projectId,
-        targetId: token.targetId,
+        organizationId: selector.organizationId,
+        projectId: selector.projectId,
+        targetId: selector.targetId,
         appDeploymentName: args.appDeployment.name,
       },
     });
 
     return await this.appDeployments.activateAppDeployment({
-      organizationId: token.organizationId,
-      targetId: token.targetId,
+      organizationId: selector.organizationId,
+      targetId: selector.targetId,
       appDeployment: args.appDeployment,
     });
   }
 
   async retireAppDeployment(args: {
-    targetId: string;
+    reference: GraphQLSchema.TargetReferenceInput | null;
     appDeployment: {
       name: string;
       version: string;
     };
+    force?: boolean;
   }) {
-    const target = await this.targetManager.getTargetById({ targetId: args.targetId });
+    const selector = await this.idTranslator.resolveTargetReference({
+      reference: args.reference,
+    });
+
+    if (!selector) {
+      this.session.raise('appDeployment:retire');
+    }
 
     await this.session.assertPerformAction({
       action: 'appDeployment:retire',
-      organizationId: target.orgId,
+      organizationId: selector.organizationId,
       params: {
-        organizationId: target.orgId,
-        projectId: target.projectId,
-        targetId: target.id,
+        organizationId: selector.organizationId,
+        projectId: selector.projectId,
+        targetId: selector.targetId,
         appDeploymentName: args.appDeployment.name,
       },
     });
 
     return await this.appDeployments.retireAppDeployment({
-      organizationId: target.orgId,
-      targetId: target.id,
+      organizationId: selector.organizationId,
+      projectId: selector.projectId,
+      targetId: selector.targetId,
       appDeployment: args.appDeployment,
+      force: args.force,
     });
   }
 
@@ -182,34 +207,78 @@ export class AppDeploymentsManager {
     args: {
       cursor: string | null;
       first: number | null;
+      operationName: string;
+      schemaCoordinates: string[] | null;
     },
   ) {
     return await this.appDeployments.getPaginatedGraphQLDocuments({
       appDeploymentId: appDeployment.id,
       cursor: args.cursor,
       first: args.first,
+      operationName: args.operationName,
+      schemaCoordinates: args.schemaCoordinates,
     });
   }
 
   async getPaginatedAppDeploymentsForTarget(
     target: Target,
-    args: { cursor: string | null; first: number | null },
+    args: {
+      cursor: string | null;
+      first: number | null;
+      sort: {
+        field: GraphQLSchema.AppDeploymentsSortField;
+        direction: GraphQLSchema.SortDirectionType;
+      } | null;
+    },
   ) {
-    await this.session.assertPerformAction({
-      action: 'appDeployment:describe',
-      organizationId: target.orgId,
-      params: {
-        organizationId: target.orgId,
-        projectId: target.projectId,
-        targetId: target.id,
-      },
-    });
+    const { sort, cursor, first } = args;
 
-    return await this.appDeployments.getPaginatedAppDeployments({
-      targetId: target.id,
-      cursor: args.cursor,
-      first: args.first,
-    });
+    const pagePromise =
+      sort?.field === 'LAST_USED'
+        ? this.appDeployments.getPaginatedAppDeploymentsSortedByLastUsed({
+            targetId: target.id,
+            cursor,
+            first,
+            direction: sort.direction,
+          })
+        : this.appDeployments.getPaginatedAppDeployments({
+            targetId: target.id,
+            cursor,
+            first,
+            sort: sort ? { field: sort.field, direction: sort.direction } : null,
+          });
+
+    const [page, total] = await Promise.all([
+      pagePromise,
+      this.appDeployments.countAppDeployments(target.id),
+    ]);
+
+    return { ...page, total };
+  }
+
+  async getActiveAppDeploymentsForTarget(
+    target: Target,
+    args: {
+      cursor: string | null;
+      first: number | null;
+      filter: {
+        name?: string | null;
+        lastUsedBefore?: string | null;
+        neverUsedAndCreatedBefore?: string | null;
+      };
+    },
+  ) {
+    const [page, total] = await Promise.all([
+      this.appDeployments.getActiveAppDeployments({
+        targetId: target.id,
+        cursor: args.cursor,
+        first: args.first,
+        filter: args.filter,
+      }),
+      this.appDeployments.countAppDeployments(target.id),
+    ]);
+
+    return { ...page, total };
   }
 
   getDocumentCountForAppDeployment = batch<AppDeploymentRecord, number>(async args => {

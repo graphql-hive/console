@@ -5,22 +5,112 @@ import type { TargetResolvers } from './../../../__generated__/types';
 
 export const Target: Pick<
   TargetResolvers,
+  | 'appDeploymentProtectionConfiguration'
   | 'cleanId'
+  | 'conditionalBreakingChangeConfiguration'
   | 'experimental_forcedLegacySchemaComposition'
+  | 'failDiffOnDangerousChange'
   | 'graphqlEndpointUrl'
   | 'id'
   | 'name'
   | 'project'
   | 'slug'
-  | 'validationSettings'
-  | '__isTypeOf'
+  | 'viewerCanAccessSettings'
+  | 'viewerCanDelete'
+  | 'viewerCanModifyCDNAccessToken'
+  | 'viewerCanModifySettings'
+  | 'viewerCanModifyTargetAccessToken'
 > = {
   project: (target, _args, { injector }) =>
     injector.get(ProjectManager).getProject({
       projectId: target.projectId,
       organizationId: target.orgId,
     }),
-  validationSettings: async (target, _args, { injector }) => {
+  experimental_forcedLegacySchemaComposition: (target, _, { injector }) => {
+    return injector
+      .get(OrganizationManager)
+      .getFeatureFlags({
+        organizationId: target.orgId,
+      })
+      .then(flags => flags.forceLegacyCompositionInTargets.includes(target.id));
+  },
+  cleanId: target => target.slug,
+  viewerCanAccessSettings: async (target, _arg, { session }) => {
+    return Promise.all([
+      session.canPerformAction({
+        action: 'target:modifySettings',
+        organizationId: target.orgId,
+        params: {
+          organizationId: target.orgId,
+          projectId: target.projectId,
+          targetId: target.id,
+        },
+      }),
+      session.canPerformAction({
+        action: 'cdnAccessToken:modify',
+        organizationId: target.orgId,
+        params: {
+          organizationId: target.orgId,
+          projectId: target.projectId,
+          targetId: target.id,
+        },
+      }),
+      session.canPerformAction({
+        action: 'targetAccessToken:modify',
+        organizationId: target.orgId,
+        params: {
+          organizationId: target.orgId,
+          projectId: target.projectId,
+          targetId: target.id,
+        },
+      }),
+    ]).then(checks => checks.some(Boolean));
+  },
+  viewerCanModifyTargetAccessToken: (target, _arg, { session }) => {
+    return session.canPerformAction({
+      action: 'targetAccessToken:modify',
+      organizationId: target.orgId,
+      params: {
+        organizationId: target.orgId,
+        projectId: target.projectId,
+        targetId: target.id,
+      },
+    });
+  },
+  viewerCanModifyCDNAccessToken: (target, _arg, { session }) => {
+    return session.canPerformAction({
+      action: 'cdnAccessToken:modify',
+      organizationId: target.orgId,
+      params: {
+        organizationId: target.orgId,
+        projectId: target.projectId,
+        targetId: target.id,
+      },
+    });
+  },
+  viewerCanDelete: (target, _arg, { session }) => {
+    return session.canPerformAction({
+      action: 'target:delete',
+      organizationId: target.orgId,
+      params: {
+        organizationId: target.orgId,
+        projectId: target.projectId,
+        targetId: target.id,
+      },
+    });
+  },
+  viewerCanModifySettings: (target, _arg, { session }) => {
+    return session.canPerformAction({
+      action: 'target:modifySettings',
+      organizationId: target.orgId,
+      params: {
+        organizationId: target.orgId,
+        projectId: target.projectId,
+        targetId: target.id,
+      },
+    });
+  },
+  conditionalBreakingChangeConfiguration: async (target, _arg, { injector }) => {
     const targetManager = injector.get(TargetManager);
 
     const settings = await targetManager.getTargetSettings({
@@ -42,13 +132,13 @@ export const Target: Pick<
       ),
     };
   },
-  experimental_forcedLegacySchemaComposition: (target, _, { injector }) => {
-    return injector
-      .get(OrganizationManager)
-      .getFeatureFlags({
-        organizationId: target.orgId,
-      })
-      .then(flags => flags.forceLegacyCompositionInTargets.includes(target.id));
+  appDeploymentProtectionConfiguration: async (target, _args, { injector }) => {
+    const targetSettings = await injector.get(TargetManager).getTargetSettings({
+      organizationId: target.orgId,
+      projectId: target.projectId,
+      targetId: target.id,
+    });
+
+    return targetSettings.appDeploymentProtection;
   },
-  cleanId: target => target.slug,
 };

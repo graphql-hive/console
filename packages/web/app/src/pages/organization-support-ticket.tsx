@@ -15,7 +15,6 @@ import { Textarea } from '@/components/ui/textarea';
 import { TimeAgo } from '@/components/ui/time-ago';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { FragmentType, graphql, useFragment } from '@/gql';
-import { OrganizationAccessScope, useOrganizationAccess } from '@/lib/access/organization';
 import { useNotifications } from '@/lib/hooks';
 import { cn } from '@/lib/utils';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -130,12 +129,12 @@ function Comment({ node }: { node: FragmentType<typeof Comment_SupportTicketComm
         isSupport ? 'justify-end' : 'justify-start',
       )}
     >
-      {isSupport ? null : <UserIcon className="size-6 text-orange-500" />}
+      {isSupport ? null : <UserIcon className="text-accent size-6" />}
       <Tooltip>
         <TooltipTrigger asChild>
           <div
             className={cn(
-              'text-foreground inline-block max-w-[70%] rounded-lg bg-gray-800 p-2 text-left',
+              'text-neutral-11 bg-neutral-5 inline-block max-w-[70%] rounded-lg p-2 text-left',
               isSupport ? 'rounded-br-none' : 'rounded-bl-none',
             )}
           >
@@ -143,7 +142,7 @@ function Comment({ node }: { node: FragmentType<typeof Comment_SupportTicketComm
           </div>
         </TooltipTrigger>
         <TooltipContent side="bottom">
-          <TimeAgo date={comment.createdAt} className="text-gray-500" />
+          <TimeAgo date={comment.createdAt} className="text-neutral-10" />
         </TooltipContent>
       </Tooltip>
       {isSupport ? (
@@ -179,12 +178,6 @@ function SupportTicket(props: {
 }) {
   const ticket = useFragment(SupportTicket_SupportTicketFragment, props.ticket);
   const organization = useFragment(SupportTicket_OrganizationFragment, props.organization);
-  useOrganizationAccess({
-    scope: OrganizationAccessScope.Read,
-    member: organization.me,
-    redirect: true,
-    organizationSlug: organization.slug,
-  });
 
   const commentEdges = ticket.comments?.edges;
   const comments = useMemo(() => {
@@ -199,7 +192,7 @@ function SupportTicket(props: {
     <TooltipProvider>
       <div className="py-6">
         <div className="flex flex-row items-start justify-between gap-x-6">
-          <div className="flex-1 border-r border-gray-800 pr-6">
+          <div className="border-neutral-5 flex-1 border-r pr-6">
             <Title className="flex flex-row items-center gap-x-2">
               <Button
                 variant="link"
@@ -215,7 +208,7 @@ function SupportTicket(props: {
                   Tickets
                 </Link>
               </Button>
-              <span className="text-lg font-semibold tracking-tight text-gray-500">
+              <span className="text-neutral-10 text-lg font-semibold tracking-tight">
                 <ChevronRightIcon className="size-4" />
               </span>
               <span>{ticket.subject}</span>
@@ -238,27 +231,27 @@ function SupportTicket(props: {
           <div className="w-1/3 shrink-0 text-sm">
             <div className="flex flex-col gap-y-6 text-left">
               <div className="space-y-0">
-                <div className="font-semibold text-white">Support Ticket ID</div>
-                <div className="text-muted-foreground">{ticket.id}</div>
+                <div className="text-neutral-12 font-semibold">Support Ticket ID</div>
+                <div className="text-neutral-10">{ticket.id}</div>
               </div>
               <div className="space-y-0">
-                <div className="font-semibold text-white">Status</div>
-                <div className="text-muted-foreground">
+                <div className="text-neutral-12 font-semibold">Status</div>
+                <div className="text-neutral-10">
                   {ticket.status}
                   <div className="text-xs">{statusDescription[ticket.status]}</div>
                 </div>
               </div>
               <div className="space-y-0">
-                <div className="font-semibold text-white">Priority</div>
-                <div className="text-muted-foreground">
+                <div className="text-neutral-12 font-semibold">Priority</div>
+                <div className="text-neutral-10">
                   {ticket.priority}
                   <div className="text-xs">{priorityDescription[ticket.priority]}</div>
                 </div>
               </div>
               <div className="space-y-0">
-                <div className="font-semibold text-white">Last updated</div>
+                <div className="text-neutral-12 font-semibold">Last updated</div>
                 <div>
-                  <TimeAgo date={ticket.updatedAt} className="text-xs text-gray-500" />
+                  <TimeAgo date={ticket.updatedAt} className="text-neutral-10 text-xs" />
                 </div>
               </div>
             </div>
@@ -273,21 +266,15 @@ const SupportTicket_OrganizationFragment = graphql(`
   fragment SupportTicket_OrganizationFragment on Organization {
     id
     slug
-    me {
-      ...CanAccessOrganization_MemberFragment
-      isOwner
-    }
   }
 `);
 
 const SupportTicketPageQuery = graphql(`
-  query SupportTicketPageQuery($selector: OrganizationSelectorInput!, $ticketId: ID!) {
-    organization(selector: $selector) {
-      organization {
-        ...SupportTicket_OrganizationFragment
-        supportTicket(id: $ticketId) {
-          ...SupportTicket_SupportTicketFragment
-        }
+  query SupportTicketPageQuery($organizationSlug: String!, $ticketId: ID!) {
+    organization: organizationBySlug(organizationSlug: $organizationSlug) {
+      ...SupportTicket_OrganizationFragment
+      supportTicket(id: $ticketId) {
+        ...SupportTicket_SupportTicketFragment
       }
     }
   }
@@ -298,9 +285,7 @@ function SupportTicketPageContent(props: { ticketId: string; organizationSlug: s
   const [query, refetchQuery] = useQuery({
     query: SupportTicketPageQuery,
     variables: {
-      selector: {
-        organizationSlug: props.organizationSlug,
-      },
+      organizationSlug: props.organizationSlug,
       ticketId,
     },
     requestPolicy: 'cache-first',
@@ -314,8 +299,8 @@ function SupportTicketPageContent(props: { ticketId: string; organizationSlug: s
     return <QueryError organizationSlug={props.organizationSlug} error={query.error} />;
   }
 
-  const currentOrganization = query.data?.organization?.organization;
-  const ticket = query.data?.organization?.organization.supportTicket;
+  const currentOrganization = query.data?.organization;
+  const ticket = currentOrganization?.supportTicket;
 
   return (
     <OrganizationLayout

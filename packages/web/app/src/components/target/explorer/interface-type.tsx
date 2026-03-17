@@ -1,5 +1,6 @@
 import { FragmentType, graphql, useFragment } from '@/gql';
-import { GraphQLFields, GraphQLTypeCard } from './common';
+import { GraphQLTypeCard } from './common';
+import { GraphQLFields } from './graphql-fields';
 
 const GraphQLInterfaceTypeComponent_TypeFragment = graphql(`
   fragment GraphQLInterfaceTypeComponent_TypeFragment on GraphQLInterfaceType {
@@ -26,7 +27,6 @@ export function GraphQLInterfaceTypeComponent(props: {
   targetSlug: string;
   warnAboutUnusedArguments: boolean;
   warnAboutDeprecatedArguments: boolean;
-  styleDeprecated: boolean;
 }) {
   const ttype = useFragment(GraphQLInterfaceTypeComponent_TypeFragment, props.type);
   return (
@@ -49,7 +49,6 @@ export function GraphQLInterfaceTypeComponent(props: {
         organizationSlug={props.organizationSlug}
         warnAboutDeprecatedArguments={props.warnAboutDeprecatedArguments}
         warnAboutUnusedArguments={props.warnAboutUnusedArguments}
-        styleDeprecated={props.styleDeprecated}
       />
     </GraphQLTypeCard>
   );

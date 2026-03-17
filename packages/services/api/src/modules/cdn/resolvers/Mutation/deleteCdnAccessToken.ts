@@ -1,4 +1,3 @@
-import { IdTranslator } from '../../../shared/providers/id-translator';
 import { CdnProvider } from '../../providers/cdn.provider';
 import type { MutationResolvers } from './../../../../__generated__/types';
 
@@ -7,18 +6,8 @@ export const deleteCdnAccessToken: NonNullable<MutationResolvers['deleteCdnAcces
   { input },
   { injector },
 ) => {
-  const translator = injector.get(IdTranslator);
-
-  const [organizationId, projectId, targetId] = await Promise.all([
-    translator.translateOrganizationId(input.selector),
-    translator.translateProjectId(input.selector),
-    translator.translateTargetId(input.selector),
-  ]);
-
   const deleteResult = await injector.get(CdnProvider).deleteCDNAccessToken({
-    organizationId,
-    projectId,
-    targetId,
+    target: input.target,
     cdnAccessTokenId: input.cdnAccessTokenId,
   });
 

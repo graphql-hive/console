@@ -1,11 +1,16 @@
 import { useEffect } from 'react';
 import { useQuery } from 'urql';
 import { Page, TargetLayout } from '@/components/layouts/target';
+import {
+  GraphQLFieldsSkeleton,
+  GraphQLTypeCardSkeleton,
+} from '@/components/target/explorer/common';
 import { GraphQLEnumTypeComponent } from '@/components/target/explorer/enum-type';
 import {
-  ArgumentVisibilityFilter,
   DateRangeFilter,
+  DescriptionsVisibilityFilter,
   FieldByNameFilter,
+  MetadataFilter,
   SchemaVariantFilter,
   TypeFilter,
 } from '@/components/target/explorer/filter';
@@ -18,7 +23,7 @@ import {
 } from '@/components/target/explorer/provider';
 import { GraphQLScalarTypeComponent } from '@/components/target/explorer/scalar-type';
 import { GraphQLUnionTypeComponent } from '@/components/target/explorer/union-type';
-import { noSchemaVersion } from '@/components/ui/empty-list';
+import { NoSchemaVersion } from '@/components/ui/empty-list';
 import { Meta } from '@/components/ui/meta';
 import { Subtitle, Title } from '@/components/ui/page';
 import { QueryError } from '@/components/ui/query-error';
@@ -44,7 +49,6 @@ export function TypeRenderer(props: {
   targetSlug: string;
   warnAboutUnusedArguments: boolean;
   warnAboutDeprecatedArguments: boolean;
-  styleDeprecated: boolean;
 }) {
   const ttype = useFragment(TypeRenderFragment, props.type);
   switch (ttype.__typename) {
@@ -58,7 +62,6 @@ export function TypeRenderer(props: {
           organizationSlug={props.organizationSlug}
           warnAboutUnusedArguments={props.warnAboutUnusedArguments}
           warnAboutDeprecatedArguments={props.warnAboutDeprecatedArguments}
-          styleDeprecated={props.styleDeprecated}
         />
       );
     case 'GraphQLInterfaceType':
@@ -71,7 +74,6 @@ export function TypeRenderer(props: {
           organizationSlug={props.organizationSlug}
           warnAboutUnusedArguments={props.warnAboutUnusedArguments}
           warnAboutDeprecatedArguments={props.warnAboutDeprecatedArguments}
-          styleDeprecated={props.styleDeprecated}
         />
       );
     case 'GraphQLUnionType':
@@ -92,7 +94,6 @@ export function TypeRenderer(props: {
           targetSlug={props.targetSlug}
           projectSlug={props.projectSlug}
           organizationSlug={props.organizationSlug}
-          styleDeprecated={props.styleDeprecated}
         />
       );
     case 'GraphQLInputObjectType':
@@ -103,7 +104,6 @@ export function TypeRenderer(props: {
           targetSlug={props.targetSlug}
           projectSlug={props.projectSlug}
           organizationSlug={props.organizationSlug}
-          styleDeprecated={props.styleDeprecated}
         />
       );
     case 'GraphQLScalarType':
@@ -129,20 +129,18 @@ const TargetExplorerTypenamePageQuery = graphql(`
     $period: DateRangeInput!
     $typename: String!
   ) {
-    organization(selector: { organizationSlug: $organizationSlug }) {
-      organization {
-        id
-        slug
-        rateLimit {
-          retentionInDays
-        }
-      }
+    organization: organizationBySlug(organizationSlug: $organizationSlug) {
+      id
+      slug
+      usageRetentionInDays
     }
     target(
-      selector: {
-        organizationSlug: $organizationSlug
-        projectSlug: $projectSlug
-        targetSlug: $targetSlug
+      reference: {
+        bySelector: {
+          organizationSlug: $organizationSlug
+          projectSlug: $projectSlug
+          targetSlug: $targetSlug
+        }
       }
     ) {
       id
@@ -150,23 +148,23 @@ const TargetExplorerTypenamePageQuery = graphql(`
       latestSchemaVersion {
         __typename
         id
-        valid
         explorer(usage: { period: $period }) {
+          metadataAttributes {
+            name
+            values
+          }
           type(name: $typename) {
             ...TypeRenderFragment
           }
         }
       }
-    }
-    operationsStats(
-      selector: {
-        organizationSlug: $organizationSlug
-        projectSlug: $projectSlug
-        targetSlug: $targetSlug
-        period: $period
+      project {
+        id
+        type
       }
-    ) {
-      totalRequests
+      operationsStats(period: $period) {
+        totalRequests
+      }
     }
   }
 `);
@@ -190,8 +188,8 @@ function TypeExplorerPageContent(props: {
     },
   });
 
-  const currentOrganization = query.data?.organization?.organization;
-  const retentionInDays = currentOrganization?.rateLimit.retentionInDays;
+  const currentOrganization = query.data?.organization;
+  const retentionInDays = currentOrganization?.usageRetentionInDays;
 
   useEffect(() => {
     if (typeof retentionInDays === 'number' && dataRetentionInDays !== retentionInDays) {
@@ -200,7 +198,13 @@ function TypeExplorerPageContent(props: {
   }, [setDataRetentionInDays, retentionInDays]);
 
   if (query.error) {
-    return <QueryError organizationSlug={props.organizationSlug} error={query.error} />;
+    return (
+      <QueryError
+        organizationSlug={props.organizationSlug}
+        error={query.error}
+        showLogoutButton={false}
+      />
+    );
   }
 
   const currentTarget = query.data?.target;
@@ -208,12 +212,7 @@ function TypeExplorerPageContent(props: {
   const latestSchemaVersion = currentTarget?.latestSchemaVersion;
 
   return (
-    <TargetLayout
-      organizationSlug={props.organizationSlug}
-      projectSlug={props.projectSlug}
-      targetSlug={props.targetSlug}
-      page={Page.Explorer}
-    >
+    <>
       <div className="flex flex-row items-center justify-between py-6">
         <div>
           <Title>Explore</Title>
@@ -231,34 +230,43 @@ function TypeExplorerPageContent(props: {
               />
               <FieldByNameFilter />
               <DateRangeFilter />
-              <ArgumentVisibilityFilter />
+              <DescriptionsVisibilityFilter />
               <SchemaVariantFilter
                 organizationSlug={props.organizationSlug}
                 projectSlug={props.projectSlug}
                 targetSlug={props.targetSlug}
                 variant="all"
               />
+              {latestSchemaVersion?.explorer?.metadataAttributes?.length ? (
+                <MetadataFilter options={latestSchemaVersion.explorer.metadataAttributes} />
+              ) : null}
             </>
           ) : null}
         </div>
       </div>
-      {query.fetching ? null : latestSchemaVersion && type ? (
+      {query.fetching || query.stale ? (
+        <GraphQLTypeCardSkeleton>
+          <GraphQLFieldsSkeleton count={15} />
+        </GraphQLTypeCardSkeleton>
+      ) : latestSchemaVersion && type ? (
         <TypeRenderer
-          totalRequests={query.data?.operationsStats.totalRequests ?? 0}
+          totalRequests={query.data?.target?.operationsStats.totalRequests ?? 0}
           type={type}
           organizationSlug={props.organizationSlug}
           projectSlug={props.projectSlug}
           targetSlug={props.targetSlug}
           warnAboutDeprecatedArguments={false}
           warnAboutUnusedArguments={false}
-          styleDeprecated
         />
       ) : type ? (
-        noSchemaVersion
+        <NoSchemaVersion
+          recommendedAction="publish"
+          projectType={query.data?.target?.project?.type ?? null}
+        />
       ) : (
         <div>Not found</div>
       )}
-    </TargetLayout>
+    </>
   );
 }
 
@@ -272,7 +280,14 @@ export function TargetExplorerTypePage(props: {
     <>
       <Meta title={`Type ${props.typename}`} />
       <SchemaExplorerProvider>
-        <TypeExplorerPageContent {...props} />
+        <TargetLayout
+          organizationSlug={props.organizationSlug}
+          projectSlug={props.projectSlug}
+          targetSlug={props.targetSlug}
+          page={Page.Explorer}
+        >
+          <TypeExplorerPageContent {...props} />
+        </TargetLayout>
       </SchemaExplorerProvider>
     </>
   );

@@ -20,4 +20,14 @@ export const ContractCheck: ContractCheckResolvers = {
   hasSchemaChanges: (contractCheck, _, { injector }) => {
     return injector.get(ContractsManager).getHasSchemaChangesForContractCheck(contractCheck);
   },
+  schemaChanges: async (contractCheck, _arg, _ctx) => {
+    if (contractCheck.safeSchemaChanges == null && contractCheck.breakingSchemaChanges == null) {
+      return null;
+    }
+
+    return [
+      ...(contractCheck.breakingSchemaChanges ?? []),
+      ...(contractCheck.safeSchemaChanges ?? []),
+    ];
+  },
 };

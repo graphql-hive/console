@@ -1,0 +1,52 @@
+---
+title: 'query_planner'
+---
+
+# query_planner
+
+The `query_planner` configuration block allows you to fine-tune the behavior of the router's query
+planning phase. The query planner is a critical component that analyzes incoming GraphQL operations
+and creates an efficient execution plan for fetching data from the required subgraphs.
+
+These settings act as important safeguards to protect your router and subgraphs from overly complex
+or malicious queries that could degrade performance.
+
+## Options
+
+### `allow_expose`
+
+- **Type:** `boolean`
+- **Default:** `false`
+
+The `allow_expose` flag is a debugging tool that controls whether the generated query plan can be
+exposed in the GraphQL response.
+
+When set to `true`, if an incoming request includes the HTTP header `hive-expose-query-plan: true`,
+the router will add the detailed query plan to the `extensions` field of the GraphQL response.
+
+This should be disabled in production environments to avoid leaking implementation details about
+your graph.
+
+### `timeout`
+
+- **Type:** `string`
+- **Default:** `"10s"`
+
+The `timeout` property sets a maximum duration for the query planner to generate an execution plan.
+This is a crucial defense against "denial of service" attacks that use deeply nested or complex
+queries to exhaust server resources.
+
+If the planning phase for a query takes longer than this specified duration, the process is
+cancelled, and an error is returned to the client. The value should be a string representing a
+duration, for example, `"5s"` or `"500ms"`.
+
+## Example
+
+This example configuration enables the query plan exposure for debugging and sets a stricter timeout
+of 5 seconds.
+
+```yaml filename="router.config.yaml"
+query_planner:
+  allow_expose: true
+  timeout: '5s'
+```

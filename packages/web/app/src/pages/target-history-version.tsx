@@ -1,20 +1,22 @@
 import { ReactElement, useMemo, useState } from 'react';
 import { CheckIcon, GitCompareIcon } from 'lucide-react';
 import { useQuery } from 'urql';
+import { NotFoundContent } from '@/components/common/not-found-content';
 import {
   ChangesBlock,
   CompositionErrorsSection,
   NoGraphChanges,
 } from '@/components/target/history/errors-and-changes';
+import { CopyText } from '@/components/ui/copy-text';
 import { DiffIcon } from '@/components/ui/icon';
 import { Subtitle, Title } from '@/components/ui/page';
 import { Spinner } from '@/components/ui/spinner';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { DiffEditor } from '@/components/v2';
+import { DiffEditor, TimeAgo } from '@/components/v2';
 import { FragmentType, graphql, useFragment } from '@/gql';
-import { CriticalityLevel, ProjectType } from '@/gql/graphql';
-import { cn } from '@/lib/utils';
+import { ProjectType, SeverityLevelType } from '@/gql/graphql';
+import { cn, isValidUUID } from '@/lib/utils';
 import {
   CheckCircledIcon,
   CrossCircledIcon,
@@ -28,9 +30,9 @@ function FirstComposableVersion() {
     <div className="cursor-default">
       <div className="mb-3 flex items-center gap-3">
         <CheckCircledIcon className="h-4 w-auto text-emerald-500" />
-        <h2 className="text-base font-medium text-white">First composable version</h2>
+        <h2 className="text-neutral-12 text-base font-medium">First composable version</h2>
       </div>
-      <p className="text-muted-foreground text-xs">
+      <p className="text-neutral-10 text-xs">
         Congratulations! This is the first version of the schema that is composable.
       </p>
     </div>
@@ -43,6 +45,15 @@ const SchemaVersionView_SchemaVersionFragment = graphql(`
     ...DefaultSchemaVersionView_SchemaVersionFragment
     hasSchemaChanges
     isComposable
+    log {
+      ... on PushedSchemaLog {
+        id
+        author
+        service
+        commit
+        date
+      }
+    }
     contractVersions {
       edges {
         node {
@@ -80,6 +91,55 @@ function SchemaVersionView(props: {
         <Title>Schema Version {schemaVersion.id}</Title>
         <Subtitle>Detailed view of the schema version</Subtitle>
       </div>
+      <div className="mb-3">
+        <div className="border-neutral-5 text-neutral-10 grid items-center justify-between gap-x-4 gap-y-2 rounded-md border p-4 font-medium md:grid-flow-col md:grid-rows-2 lg:grid-rows-1">
+          <div className="min-w-0">
+            <div className="text-xs">Status</div>
+            <div
+              className={cn(
+                'text-neutral-12 truncate text-sm font-semibold',
+                !schemaVersion.isComposable && 'text-red-600',
+              )}
+            >
+              {schemaVersion.isComposable === false ? <>Composition Errors</> : <>Composable</>}
+            </div>
+          </div>
+          {'service' in schemaVersion.log && schemaVersion.log.service ? (
+            <div className="min-w-0">
+              <div className="text-xs">Service</div>
+              <div
+                className="text-neutral-12 truncate text-sm font-semibold"
+                title={schemaVersion.log.service}
+              >
+                {schemaVersion.log.service}
+              </div>
+            </div>
+          ) : null}
+          {'date' in schemaVersion.log && (
+            <div className="min-w-0">
+              <div className="text-xs">
+                Triggered <TimeAgo date={schemaVersion.log.date} />
+              </div>
+              {'author' in schemaVersion.log && schemaVersion.log.author && (
+                <div className="text-neutral-12 truncate text-sm" title={schemaVersion.log.author}>
+                  by {schemaVersion.log.author}
+                </div>
+              )}
+            </div>
+          )}
+          {'commit' in schemaVersion.log && schemaVersion.log.commit && (
+            <div className="min-w-0">
+              <div className="text-xs">Commit</div>
+              <div
+                className="text-neutral-12 truncate text-sm font-semibold"
+                title={schemaVersion.log.commit}
+              >
+                <CopyText>{schemaVersion.log.commit}</CopyText>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
       {schemaVersion.contractVersions?.edges && (
         <Tabs
           defaultValue="default"
@@ -87,8 +147,11 @@ function SchemaVersionView(props: {
           value={selectedItem}
           onValueChange={value => setSelectedItem(value)}
         >
-          <TabsList className="w-full justify-start rounded-b-none px-2 py-0">
-            <TabsTrigger value="default" className="mt-1 py-2 data-[state=active]:rounded-b-none">
+          <TabsList className="w-full justify-start rounded-b-none bg-transparent px-2 py-0">
+            <TabsTrigger
+              value="default"
+              className="data-[state=active]:bg-neutral-5 dark:data-[state=active]:bg-neutral-3 border-neutral-5 dark:border-neutral-3 mt-1 rounded-b-none border py-2"
+            >
               <span>Default Graph</span>
               <TooltipProvider>
                 <Tooltip>
@@ -121,7 +184,7 @@ function SchemaVersionView(props: {
               <TabsTrigger
                 value={edge.node.id}
                 key={edge.node.id}
-                className="mt-1 py-2 data-[state=active]:rounded-b-none"
+                className="data-[state=active]:bg-neutral-5 dark:data-[state=active]:bg-neutral-3 border-neutral-5 dark:border-neutral-3 mt-1 rounded-b-none border py-2"
               >
                 {edge.node.contractName}
                 <TooltipProvider>
@@ -183,15 +246,11 @@ const DefaultSchemaVersionView_SchemaVersionFragment = graphql(`
     log {
       ... on PushedSchemaLog {
         id
-        author
-        service
-        commit
         serviceSdl
         previousServiceSdl
       }
       ... on DeletedSchemaLog {
         id
-        deletedService
         previousServiceSdl
       }
     }
@@ -202,13 +261,17 @@ const DefaultSchemaVersionView_SchemaVersionFragment = graphql(`
     }
     isFirstComposableVersion
     breakingSchemaChanges {
-      nodes {
-        ...ChangesBlock_SchemaChangeFragment
+      edges {
+        node {
+          ...ChangesBlock_SchemaChangeFragment
+        }
       }
     }
     safeSchemaChanges {
-      nodes {
-        ...ChangesBlock_SchemaChangeFragment
+      edges {
+        node {
+          ...ChangesBlock_SchemaChangeFragment
+        }
       }
     }
     previousDiffableSchemaVersion {
@@ -286,7 +349,7 @@ function DefaultSchemaVersionView(props: {
         <Tabs value={selectedView} onValueChange={value => setSelectedView(value)}>
           <TabsList
             className={cn(
-              'bg-background border-muted w-full justify-start rounded-none border-x border-b',
+              'bg-neutral-5 dark:bg-neutral-3 border-neutral-5 dark:border-neutral-3 w-full justify-start rounded-none border-x border-b',
               !props.hasContracts && 'rounded-t border-t',
             )}
           >
@@ -310,7 +373,7 @@ function DefaultSchemaVersionView(props: {
           </TabsList>
         </Tabs>
       </TooltipProvider>
-      <div className="border-muted grow rounded-md rounded-t-none border border-t-0">
+      <div className="dark:border-neutral-3 border-neutral-5 grow rounded-md rounded-t-none border border-t-0">
         {selectedView === 'details' && (
           <div className="my-4 px-4">
             {schemaVersion.isFirstComposableVersion ? (
@@ -323,7 +386,7 @@ function DefaultSchemaVersionView(props: {
             {schemaVersion.schemaCompositionErrors && (
               <CompositionErrorsSection compositionErrors={schemaVersion.schemaCompositionErrors} />
             )}
-            {schemaVersion.breakingSchemaChanges?.nodes.length && (
+            {schemaVersion.breakingSchemaChanges?.edges.length && (
               <div className="mb-2">
                 <ChangesBlock
                   organizationSlug={props.organizationSlug}
@@ -331,12 +394,12 @@ function DefaultSchemaVersionView(props: {
                   targetSlug={props.targetSlug}
                   schemaCheckId=""
                   title="Breaking Changes"
-                  criticality={CriticalityLevel.Breaking}
-                  changes={schemaVersion.breakingSchemaChanges.nodes}
+                  severityLevel={SeverityLevelType.Breaking}
+                  changes={schemaVersion.breakingSchemaChanges.edges.map(edge => edge.node)}
                 />
               </div>
             )}
-            {schemaVersion.safeSchemaChanges?.nodes?.length && (
+            {schemaVersion.safeSchemaChanges?.edges?.length && (
               <div className="mb-2">
                 <ChangesBlock
                   organizationSlug={props.organizationSlug}
@@ -344,8 +407,8 @@ function DefaultSchemaVersionView(props: {
                   targetSlug={props.targetSlug}
                   schemaCheckId=""
                   title="Safe Changes"
-                  criticality={CriticalityLevel.Safe}
-                  changes={schemaVersion.safeSchemaChanges.nodes}
+                  severityLevel={SeverityLevelType.Safe}
+                  changes={schemaVersion.safeSchemaChanges.edges.map(edge => edge.node)}
                 />
               </div>
             )}
@@ -380,9 +443,6 @@ function DefaultSchemaVersionView(props: {
 const ContractVersionView_ContractVersionFragment = graphql(`
   fragment ContractVersionView_ContractVersionFragment on ContractVersion {
     id
-    contractName
-    isComposable
-    hasSchemaChanges
     isFirstComposableVersion
     supergraphSDL
     compositeSchemaSDL
@@ -390,13 +450,17 @@ const ContractVersionView_ContractVersionFragment = graphql(`
       ...CompositionErrorsSection_SchemaErrorConnection
     }
     breakingSchemaChanges {
-      nodes {
-        ...ChangesBlock_SchemaChangeFragment
+      edges {
+        node {
+          ...ChangesBlock_SchemaChangeFragment
+        }
       }
     }
     safeSchemaChanges {
-      nodes {
-        ...ChangesBlock_SchemaChangeFragment
+      edges {
+        node {
+          ...ChangesBlock_SchemaChangeFragment
+        }
       }
     }
     previousDiffableContractVersion {
@@ -461,7 +525,7 @@ function ContractVersionView(props: {
     <>
       <TooltipProvider>
         <Tabs value={selectedView} onValueChange={value => setSelectedView(value)}>
-          <TabsList className="bg-background border-muted w-full justify-start rounded-none border-x border-b">
+          <TabsList className="dark:bg-neutral-3 bg-neutral-5 dark:border-neutral-3 w-full justify-start rounded-none border-x border-b">
             {availableViews.map(item => (
               <Tooltip key={item.value}>
                 <TooltipTrigger>
@@ -482,7 +546,7 @@ function ContractVersionView(props: {
           </TabsList>
         </Tabs>
       </TooltipProvider>
-      <div className="border-muted grow rounded-md rounded-t-none border border-t-0">
+      <div className="dark:border-neutral-3 border-neutral-5 grow rounded-md rounded-t-none border border-t-0">
         {selectedView === 'details' && (
           <div className="my-4 px-4">
             {contractVersion.isFirstComposableVersion ? (
@@ -497,7 +561,7 @@ function ContractVersionView(props: {
                 compositionErrors={contractVersion.schemaCompositionErrors}
               />
             )}
-            {contractVersion.breakingSchemaChanges?.nodes.length && (
+            {contractVersion.breakingSchemaChanges?.edges.length && (
               <div className="mb-2">
                 <ChangesBlock
                   organizationSlug={props.organizationSlug}
@@ -505,12 +569,12 @@ function ContractVersionView(props: {
                   targetSlug={props.targetSlug}
                   schemaCheckId=""
                   title="Breaking Changes"
-                  criticality={CriticalityLevel.Breaking}
-                  changes={contractVersion.breakingSchemaChanges.nodes}
+                  severityLevel={SeverityLevelType.Breaking}
+                  changes={contractVersion.breakingSchemaChanges.edges.map(edge => edge.node)}
                 />
               </div>
             )}
-            {contractVersion.safeSchemaChanges?.nodes?.length && (
+            {contractVersion.safeSchemaChanges?.edges?.length && (
               <div className="mb-2">
                 <ChangesBlock
                   organizationSlug={props.organizationSlug}
@@ -518,8 +582,8 @@ function ContractVersionView(props: {
                   targetSlug={props.targetSlug}
                   schemaCheckId=""
                   title="Safe Changes"
-                  criticality={CriticalityLevel.Safe}
-                  changes={contractVersion.safeSchemaChanges.nodes}
+                  severityLevel={SeverityLevelType.Safe}
+                  changes={contractVersion.safeSchemaChanges.edges.map(edge => edge.node)}
                 />
               </div>
             )}
@@ -551,22 +615,18 @@ const ActiveSchemaVersion_SchemaVersionQuery = graphql(`
     $targetSlug: String!
     $versionId: ID!
   ) {
-    target(
-      selector: {
-        organizationSlug: $organizationSlug
-        projectSlug: $projectSlug
-        targetSlug: $targetSlug
-      }
+    project(
+      reference: { bySelector: { organizationSlug: $organizationSlug, projectSlug: $projectSlug } }
     ) {
       id
-      schemaVersion(id: $versionId) {
-        id
-        ...SchemaVersionView_SchemaVersionFragment
-      }
-    }
-    project(selector: { organizationSlug: $organizationSlug, projectSlug: $projectSlug }) {
-      id
       type
+      target: targetBySlug(targetSlug: $targetSlug) {
+        id
+        schemaVersion(id: $versionId) {
+          id
+          ...SchemaVersionView_SchemaVersionFragment
+        }
+      }
     }
   }
 `);
@@ -577,6 +637,8 @@ function ActiveSchemaVersion(props: {
   projectSlug: string;
   targetSlug: string;
 }) {
+  const isValidVersionId = isValidUUID(props.versionId);
+
   const [query] = useQuery({
     query: ActiveSchemaVersion_SchemaVersionQuery,
     variables: {
@@ -585,20 +647,43 @@ function ActiveSchemaVersion(props: {
       targetSlug: props.targetSlug,
       versionId: props.versionId,
     },
+    // don't fire query if this is an invalid UUID
+    pause: !isValidVersionId,
   });
 
   const { error } = query;
-
   const isLoading = query.fetching || query.stale;
-  const schemaVersion = query?.data?.target?.schemaVersion;
-  const projectType = query?.data?.project?.type;
+  const project = query.data?.project;
+  const schemaVersion = project?.target?.schemaVersion;
+  const projectType = query.data?.project?.type;
 
-  if (isLoading || !schemaVersion || !projectType) {
+  if (!isValidVersionId) {
     return (
-      <div className="flex size-full flex-col items-center justify-center self-center text-sm text-gray-500">
+      <NotFoundContent
+        heading="Invalid version ID"
+        subheading="The provided version ID is not a valid UUID format."
+        includeBackButton={false}
+      />
+    );
+  }
+
+  if (isLoading || !projectType) {
+    return (
+      <div className="text-neutral-10 flex size-full flex-col items-center justify-center self-center text-sm">
         <Spinner className="mb-3 size-8" />
         Loading schema version...
       </div>
+    );
+  }
+
+  // if we're here, we have a valid UUID for versionId but the schemaVersion is doesn't exist
+  if (!schemaVersion) {
+    return (
+      <NotFoundContent
+        heading="Schema Version not found."
+        subheading="This schema version does not seem to exist anymore."
+        includeBackButton={false}
+      />
     );
   }
 
@@ -607,12 +692,12 @@ function ActiveSchemaVersion(props: {
       <div className="m-3 rounded-lg bg-red-500/20 p-8">
         <div className="mb-3 flex items-center gap-3">
           <CrossCircledIcon className="h-6 w-auto text-red-500" />
-          <h2 className="text-lg font-medium text-white">Failed to compare schemas</h2>
+          <h2 className="text-neutral-12 text-lg font-medium">Failed to compare schemas</h2>
         </div>
-        <p className="text-base text-gray-500">
+        <p className="text-neutral-10 text-base">
           Previous or current schema is most likely incomplete and was force published
         </p>
-        <pre className="mt-5 whitespace-pre-wrap rounded-lg bg-red-900 p-3 text-xs text-white">
+        <pre className="text-neutral-12 mt-5 whitespace-pre-wrap rounded-lg bg-red-900 p-3 text-xs">
           {error.graphQLErrors?.[0]?.message ?? error.networkError?.message}
         </pre>
       </div>

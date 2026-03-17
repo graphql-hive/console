@@ -1,48 +1,124 @@
-import SessionNode from 'supertokens-node/recipe/session/index.js';
+import c from 'node:crypto';
+import { parse as parseCookie } from 'cookie-es';
 import * as zod from 'zod';
-import type { FastifyReply, FastifyRequest, ServiceLogger } from '@hive/service-common';
-import { captureException } from '@sentry/node';
-import type { User } from '../../../shared/entities';
-import { AccessError, HiveError } from '../../../shared/errors';
+import type { FastifyReply, FastifyRequest } from '@hive/service-common';
+import { AccessError, HiveError, OIDCRequiredError } from '../../../shared/errors';
 import { isUUID } from '../../../shared/is-uuid';
+import { OIDCIntegrationStore } from '../../oidc-integrations/providers/oidc-integration.store';
+import { OrganizationMembers } from '../../organization/providers/organization-members';
 import { Logger } from '../../shared/providers/logger';
 import type { Storage } from '../../shared/providers/storage';
+import { EmailVerification } from '../providers/email-verification';
+import { SessionInfo, SuperTokensStore } from '../providers/supertokens-store';
+import { AuthNStrategy, AuthorizationPolicyStatement, Session, UserActor } from './authz';
 import {
-  OrganizationAccessScope,
-  ProjectAccessScope,
-  TargetAccessScope,
-} from '../providers/scopes';
-import { AuthNStrategy, AuthorizationPolicyStatement, Session } from './authz';
+  AccessTokenKeyContainer,
+  isAccessToken,
+  parseAccessToken,
+} from './supertokens-at-home/crypto';
+
+function sha256(str: string) {
+  return c.createHash('sha256').update(str).digest('hex');
+}
 
 export class SuperTokensCookieBasedSession extends Session {
   public superTokensUserId: string;
+  private organizationMembers: OrganizationMembers;
   private storage: Storage;
+  /**
+   * The properties `userId` and `oidcIntegrationId` are nullable for backwards compatibility.
+   * In the future, when all still active sessions are using the new format, we can remove the nullability.
+   */
+  public userId: string | null = null;
+  public oidcIntegrationId: string | null = null;
 
   constructor(
-    args: { superTokensUserId: string; email: string },
-    deps: { storage: Storage; logger: Logger },
+    sessionPayload: SuperTokensSessionPayload,
+    deps: { organizationMembers: OrganizationMembers; storage: Storage; logger: Logger },
   ) {
     super({ logger: deps.logger });
-    this.superTokensUserId = args.superTokensUserId;
+    this.superTokensUserId = sessionPayload.superTokensUserId;
+
+    this.organizationMembers = deps.organizationMembers;
     this.storage = deps.storage;
+
+    if (sessionPayload.version === '2') {
+      this.userId = sessionPayload.userId;
+      this.oidcIntegrationId = sessionPayload.oidcIntegrationId;
+    }
+  }
+
+  get id(): string {
+    return this.superTokensUserId;
   }
 
   protected async loadPolicyStatementsForOrganization(
     organizationId: string,
   ): Promise<Array<AuthorizationPolicyStatement>> {
-    const user = await this.getViewer();
+    const { user } = await this.getActor();
+
+    this.logger.debug(
+      'Loading policy statements for organization. (userId=%s, organizationId=%s)',
+      user.id,
+      organizationId,
+    );
 
     if (!isUUID(organizationId)) {
+      this.logger.debug(
+        'Invalid organization ID provided. (userId=%s, organizationId=%s)',
+        user.id,
+        organizationId,
+      );
+
       return [];
     }
 
-    const member = await this.storage.getOrganizationMember({
+    this.logger.debug(
+      'Load organization membership for user. (userId=%s, organizationId=%s)',
+      user.id,
       organizationId,
+    );
+    const [organization, oidcIntegration] = await Promise.all([
+      this.storage.getOrganization({ organizationId }),
+      this.storage.getOIDCIntegrationForOrganization({
+        organizationId,
+      }),
+    ]);
+    const organizationMembership = await this.organizationMembers.findOrganizationMembership({
+      organization,
       userId: user.id,
     });
 
+    if (!organizationMembership) {
+      this.logger.debug(
+        'No membership found, resolve empty policy statements. (userId=%s, organizationId=%s)',
+        user.id,
+        organizationId,
+      );
+
+      // Allow admins to use all describe actions within foreign organizations
+      // This makes it much more pleasant to debug.
+      if (user.isAdmin) {
+        return [
+          {
+            action: '*:describe',
+            effect: 'allow',
+            resource: `hrn:${organizationId}:organization/${organizationId}`,
+          },
+        ];
+      }
+
+      return [];
+    }
+
     // owner of organization should have full right to do anything.
-    if (member?.isOwner) {
+    if (organizationMembership.isOwner) {
+      this.logger.debug(
+        'User is organization owner, resolve admin access policy. (userId=%s, organizationId=%s)',
+        user.id,
+        organizationId,
+      );
+
       return [
         {
           action: '*',
@@ -52,23 +128,33 @@ export class SuperTokensCookieBasedSession extends Session {
       ];
     }
 
-    if (Array.isArray(member?.scopes)) {
-      return transformOrganizationMemberLegacyScopes({ organizationId, scopes: member.scopes });
+    if (oidcIntegration?.oidcUserAccessOnly && this.oidcIntegrationId !== oidcIntegration.id) {
+      throw new OIDCRequiredError(organization.slug, oidcIntegration.id);
     }
 
-    return [];
+    this.logger.debug(
+      'Translate organization role assignments to policy statements. (userId=%s, organizationId=%s)',
+      user.id,
+      organizationId,
+    );
+
+    return organizationMembership.assignedRole.authorizationPolicyStatements;
   }
 
-  public async getViewer(): Promise<User> {
-    const user = await this.storage.getUserBySuperTokenId({
-      superTokensUserId: this.superTokensUserId,
-    });
+  public async getActor(): Promise<UserActor> {
+    const user = this.userId
+      ? await this.storage.getUserById({ id: this.userId })
+      : await this.storage.getUserBySuperTokenId({ superTokensUserId: this.superTokensUserId });
 
     if (!user) {
       throw new AccessError('User not found');
     }
 
-    return user;
+    return {
+      type: 'user',
+      user,
+      oidcIntegrationId: this.oidcIntegrationId,
+    };
   }
 
   public isViewer() {
@@ -77,268 +163,243 @@ export class SuperTokensCookieBasedSession extends Session {
 }
 
 export class SuperTokensUserAuthNStrategy extends AuthNStrategy<SuperTokensCookieBasedSession> {
-  private logger: ServiceLogger;
+  private organizationMembers: OrganizationMembers;
   private storage: Storage;
+  private supertokensStore: SuperTokensStore;
+  private emailVerification: EmailVerification | null;
+  private accessTokenKey: AccessTokenKeyContainer;
+  private oidcIntegrationStore: OIDCIntegrationStore;
 
-  constructor(deps: { logger: ServiceLogger; storage: Storage }) {
+  constructor(deps: {
+    logger: Logger;
+    storage: Storage;
+    organizationMembers: OrganizationMembers;
+    emailVerification: EmailVerification | null;
+    accessTokenKey: AccessTokenKeyContainer;
+    oidcIntegrationStore: OIDCIntegrationStore;
+  }) {
     super();
-    this.logger = deps.logger.child({ module: 'SuperTokensUserAuthNStrategy' });
+    this.organizationMembers = deps.organizationMembers;
     this.storage = deps.storage;
+    this.emailVerification = deps.emailVerification;
+    this.supertokensStore = new SuperTokensStore(deps.storage.pool, deps.logger);
+    this.accessTokenKey = deps.accessTokenKey;
+    this.oidcIntegrationStore = deps.oidcIntegrationStore;
   }
 
-  private async verifySuperTokensSession(args: { req: FastifyRequest; reply: FastifyReply }) {
-    this.logger.debug('Attempt verifying SuperTokens session');
-    let session: SessionNode.SessionContainer | undefined;
+  private async _verifySuperTokensAtHomeSession(args: {
+    req: FastifyRequest;
+    reply: FastifyReply;
+  }): Promise<SuperTokensSessionPayloadV2 | null> {
+    let session: SessionInfo | null = null;
 
-    try {
-      session = await SessionNode.getSession(args.req, args.reply, {
-        sessionRequired: false,
-        antiCsrfCheck: false,
-        checkDatabase: true,
-      });
-      this.logger.debug('Session resolution ended successfully');
-    } catch (error) {
-      this.logger.debug('Session resolution failed');
-      if (SessionNode.Error.isErrorFromSuperTokens(error)) {
-        // Check whether the email is already verified.
-        // If it is not then we need to redirect to the email verification page - which will trigger the email sending.
-        if (error.type === SessionNode.Error.INVALID_CLAIMS) {
-          throw new HiveError('Your account is not verified. Please verify your email address.', {
-            extensions: {
-              code: 'VERIFY_EMAIL',
-            },
-          });
-        } else if (
-          error.type === SessionNode.Error.TRY_REFRESH_TOKEN ||
-          error.type === SessionNode.Error.UNAUTHORISED
-        ) {
-          throw new HiveError('Invalid session', {
-            extensions: {
-              code: 'NEEDS_REFRESH',
-            },
-          });
-        }
-      }
+    args.req.log.debug('attempt parsing access token from cookie');
 
-      this.logger.error('Error while resolving user');
-      console.log(error);
-      captureException(error);
+    const cookie = parseCookie(args.req.headers.cookie ?? '');
+    let rawAccessToken: string | undefined = cookie['sAccessToken'];
 
-      throw error;
+    if (!rawAccessToken) {
+      args.req.log.debug('attempt parsing access token authorization header');
+      rawAccessToken = args.req.headers.authorization?.replace('Bearer ', '')?.trim();
     }
+
+    if (!rawAccessToken || !isAccessToken(rawAccessToken)) {
+      args.req.log.debug('access token is not identified as a supertokens access token.');
+      return null;
+    }
+
+    let accessToken;
+    try {
+      accessToken = parseAccessToken(rawAccessToken, this.accessTokenKey.publicKey);
+    } catch (err) {
+      args.req.log.debug('Failed verifying the access token. Ask for refresh. err=%s', String(err));
+      throw new HiveError('Invalid session', {
+        extensions: {
+          code: 'NEEDS_REFRESH',
+        },
+      });
+    }
+
+    if (accessToken.exp < Date.now() / 1000) {
+      args.req.log.debug('The access token is expired. Ask for refresh.');
+      throw new HiveError('Invalid session', {
+        extensions: {
+          code: 'NEEDS_REFRESH',
+        },
+      });
+    }
+
+    session = await this.supertokensStore.getSessionInfo(accessToken.sessionHandle);
 
     if (!session) {
-      this.logger.debug('No session found');
+      args.req.log.debug('The access token is expired, no session was found. Ask for refresh.');
       return null;
     }
 
-    const payload = session.getAccessTokenPayload();
-
-    if (!payload) {
-      this.logger.error('No access token payload found');
-      return null;
+    if (session.expiresAt < Date.now()) {
+      args.req.log.debug('The session is expired.');
+      throw new HiveError('Invalid session.', {
+        extensions: {
+          code: 'UNAUTHENTICATED',
+        },
+      });
     }
 
-    const result = SuperTokenAccessTokenModel.safeParse(payload);
+    if (
+      accessToken.parentRefreshTokenHash1 &&
+      sha256(accessToken.parentRefreshTokenHash1) !== session.refreshTokenHash2
+    ) {
+      args.req.log.debug(
+        'The access token is expired. A new access token has been issued for this session. Require refresh.',
+      );
+
+      // old access token in use, there was alreadya refresh
+      throw new HiveError('Expired session.', {
+        extensions: {
+          code: 'NEEDS_REFRESH',
+        },
+      });
+    }
+
+    const result = SuperTokensSessionPayloadModel.safeParse(JSON.parse(session.sessionData));
 
     if (result.success === false) {
-      this.logger.error('SuperTokens session payload is invalid');
-      this.logger.debug('SuperTokens session payload: %s', JSON.stringify(payload));
-      this.logger.debug(
+      args.req.log.error('SuperTokens session payload is invalid');
+      args.req.log.debug('SuperTokens session payload: %s', session.sessionData);
+      args.req.log.debug(
         'SuperTokens session parsing errors: %s',
         JSON.stringify(result.error.flatten().fieldErrors),
       );
-      throw new HiveError(`Invalid access token provided`);
+      throw new HiveError('Invalid access token provided', {
+        extensions: {
+          code: 'UNAUTHENTICATED',
+        },
+      });
     }
 
-    this.logger.debug('SuperTokens session resolved.');
+    if (result.data.version === '1') {
+      throw new HiveError('Expired session.', {
+        extensions: {
+          code: 'NEEDS_REFRESH',
+        },
+      });
+    }
+
     return result.data;
+  }
+
+  private async requireEmailVerification(
+    sessionData: SuperTokensSessionPayloadV2,
+    logger: Logger,
+  ): Promise<boolean> {
+    if (!sessionData.oidcIntegrationId) {
+      logger.debug('email verification is required.');
+      return true;
+    }
+
+    const [, domainName] = sessionData.email.split('@');
+    const record =
+      await this.oidcIntegrationStore.findVerifiedDomainByOIDCIntegrationIdAndDomainName(
+        sessionData.oidcIntegrationId,
+        domainName,
+      );
+
+    if (record) {
+      logger.debug('no email verification is required, as the domain is verified.');
+      return false;
+    }
+
+    logger.debug('email verification is required, as the domain is not verified.');
+    return true;
+  }
+
+  private async verifySuperTokensSession(args: {
+    req: FastifyRequest;
+    reply: FastifyReply;
+  }): Promise<SuperTokensSessionPayload | null> {
+    args.req.log.debug('Attempt verifying SuperTokens session');
+
+    if (args.req.headers['ignore-session']) {
+      args.req.log.debug('Ignoring session due to header');
+      return null;
+    }
+
+    const sessionData = await this._verifySuperTokensAtHomeSession(args);
+
+    if (!sessionData) {
+      args.req.log.debug('No session found');
+      return null;
+    }
+
+    if (
+      this.emailVerification &&
+      (await this.requireEmailVerification(sessionData, args.req.log))
+    ) {
+      args.req.log.debug('check if email is verified');
+      // Check whether the email is already verified.
+      // If it is not then we need to redirect to the email verification page - which will trigger the email sending.
+      const { verified } = await this.emailVerification.checkUserEmailVerified({
+        userIdentityId: sessionData.superTokensUserId,
+        email: sessionData.email,
+      });
+
+      if (!verified) {
+        args.req.log.debug('email is not yet verified');
+        throw new HiveError('Your account is not verified. Please verify your email address.', {
+          extensions: {
+            code: 'VERIFY_EMAIL',
+          },
+        });
+      }
+    }
+
+    args.req.log.debug('the email is verified');
+
+    args.req.log.debug('SuperTokens session resolved.');
+    return sessionData;
   }
 
   async parse(args: {
     req: FastifyRequest;
     reply: FastifyReply;
   }): Promise<SuperTokensCookieBasedSession | null> {
-    const session = await this.verifySuperTokensSession(args);
-    if (!session) {
+    const sessionPayload = await this.verifySuperTokensSession(args);
+    if (!sessionPayload) {
       return null;
     }
 
-    return new SuperTokensCookieBasedSession(
-      {
-        superTokensUserId: session.superTokensUserId,
-        email: session.email,
-      },
-      {
-        storage: this.storage,
-        logger: args.req.log,
-      },
-    );
+    args.req.log.debug('SuperTokens session resolved successfully');
+
+    return new SuperTokensCookieBasedSession(sessionPayload, {
+      storage: this.storage,
+      organizationMembers: this.organizationMembers,
+      logger: args.req.log,
+    });
   }
 }
 
-const SuperTokenAccessTokenModel = zod.object({
+/**
+ * This is the legacy format that is no longer issued for new logins.
+ * In the future, when all sessions using this access token payload format are expired
+ * we can remove it from here.
+ */
+const SuperTokensSessionPayloadV1Model = zod.object({
   version: zod.literal('1'),
   superTokensUserId: zod.string(),
-  /**
-   * Supertokens for some reason omits externalUserId from the access token payload if it is null.
-   */
-  externalUserId: zod.optional(zod.union([zod.string(), zod.null()])),
-  email: zod.string(),
 });
 
-function transformOrganizationMemberLegacyScopes(args: {
-  organizationId: string;
-  scopes: Array<OrganizationAccessScope | ProjectAccessScope | TargetAccessScope>;
-}) {
-  const policies: Array<AuthorizationPolicyStatement> = [];
-  for (const scope of args.scopes) {
-    switch (scope) {
-      case OrganizationAccessScope.READ: {
-        policies.push({
-          effect: 'allow',
-          action: [
-            'support:manageTickets',
-            'project:create',
-            'project:describe',
-            'organization:describe',
-          ],
-          resource: [`hrn:${args.organizationId}:organization/${args.organizationId}`],
-        });
-        break;
-      }
-      case OrganizationAccessScope.SETTINGS: {
-        policies.push({
-          effect: 'allow',
-          action: [
-            'organization:modifySettings',
-            'schemaLinting:modifyOrganizationRules',
-            'billing:describe',
-            'billing:update',
-          ],
-          resource: [`hrn:${args.organizationId}:organization/${args.organizationId}`],
-        });
-        break;
-      }
-      case OrganizationAccessScope.DELETE: {
-        policies.push({
-          effect: 'allow',
-          action: ['organization:delete'],
-          resource: [`hrn:${args.organizationId}:organization/${args.organizationId}`],
-        });
-        break;
-      }
-      case OrganizationAccessScope.INTEGRATIONS: {
-        policies.push({
-          effect: 'allow',
-          action: ['oidc:modify', 'gitHubIntegration:modify', 'slackIntegration:modify'],
-          resource: [`hrn:${args.organizationId}:organization/${args.organizationId}`],
-        });
-        break;
-      }
-      case OrganizationAccessScope.MEMBERS: {
-        policies.push({
-          effect: 'allow',
-          action: [
-            'member:manageInvites',
-            'member:removeMember',
-            'member:assignRole',
-            'member:modifyRole',
-            'member:describe',
-          ],
-          resource: [`hrn:${args.organizationId}:organization/${args.organizationId}`],
-        });
-        break;
-      }
-      case ProjectAccessScope.ALERTS: {
-        policies.push({
-          effect: 'allow',
-          action: ['alert:modify', 'alert:describe'],
-          resource: [`hrn:${args.organizationId}:organization/${args.organizationId}`],
-        });
-        break;
-      }
-      case ProjectAccessScope.READ: {
-        policies.push({
-          effect: 'allow',
-          action: ['project:describe'],
-          resource: [`hrn:${args.organizationId}:organization/${args.organizationId}`],
-        });
-        break;
-      }
-      case ProjectAccessScope.DELETE: {
-        policies.push({
-          effect: 'allow',
-          action: ['project:delete'],
-          resource: [`hrn:${args.organizationId}:organization/${args.organizationId}`],
-        });
-        break;
-      }
-      case ProjectAccessScope.SETTINGS: {
-        policies.push({
-          effect: 'allow',
-          action: ['project:delete', 'project:modifySettings', 'schemaLinting:modifyProjectRules'],
-          resource: [`hrn:${args.organizationId}:organization/${args.organizationId}`],
-        });
-        break;
-      }
-      case TargetAccessScope.READ: {
-        policies.push({
-          effect: 'allow',
-          action: [
-            'appDeployment:describe',
-            'laboratory:describe',
-            'laboratory:createCollection',
-            'laboratory:deleteCollection',
-            'laboratory:modifyCollection',
-            'schemaCheck:approve',
-            'schemaVersion:approve',
-          ],
-          resource: [`hrn:${args.organizationId}:organization/${args.organizationId}`],
-        });
-        break;
-      }
-      case TargetAccessScope.TOKENS_READ: {
-        policies.push({
-          effect: 'allow',
-          action: ['cdnAccessToken:describe', 'targetAccessToken:describe', 'target:create'],
-          resource: [`hrn:${args.organizationId}:organization/${args.organizationId}`],
-        });
-        break;
-      }
-      case TargetAccessScope.TOKENS_WRITE: {
-        policies.push({
-          effect: 'allow',
-          action: [
-            'targetAccessToken:create',
-            'targetAccessToken:delete',
-            'targetAccessToken:describe',
-            'cdnAccessToken:create',
-            'cdnAccessToken:delete',
-            'cdnAccessToken:describe',
-          ],
-          resource: [`hrn:${args.organizationId}:organization/${args.organizationId}`],
-        });
-        break;
-      }
-      case TargetAccessScope.SETTINGS: {
-        policies.push({
-          effect: 'allow',
-          action: ['target:modifySettings'],
-          resource: [`hrn:${args.organizationId}:organization/${args.organizationId}`],
-        });
-        break;
-      }
-      case TargetAccessScope.DELETE: {
-        policies.push({
-          effect: 'allow',
-          action: ['target:delete'],
-          resource: [`hrn:${args.organizationId}:organization/${args.organizationId}`],
-        });
-        break;
-      }
-    }
-  }
+const SuperTokensSessionPayloadV2Model = zod.object({
+  version: zod.literal('2'),
+  superTokensUserId: zod.string(),
+  email: zod.string(),
+  userId: zod.string(),
+  oidcIntegrationId: zod.string().nullable(),
+});
 
-  return policies;
-}
+const SuperTokensSessionPayloadModel = zod.union([
+  SuperTokensSessionPayloadV1Model,
+  SuperTokensSessionPayloadV2Model,
+]);
+
+type SuperTokensSessionPayload = zod.TypeOf<typeof SuperTokensSessionPayloadModel>;
+type SuperTokensSessionPayloadV2 = zod.TypeOf<typeof SuperTokensSessionPayloadV2Model>;

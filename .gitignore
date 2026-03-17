@@ -140,3 +140,19 @@ schema.graphql
 resolvers.generated.ts
 
 docker/docker-compose.override.yml
+
+test-results/
+Cargo.lock
+Cargo.lock
+Cargo.lock
+Cargo.lock
+Cargo.lock
+Cargo.lock
+Cargo.lock
+Cargo.lock
+Cargo.lock
+Cargo.lock
+Cargo.lock
+Cargo.lock
+Cargo.lock
+Cargo.lock

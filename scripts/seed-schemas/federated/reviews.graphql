@@ -1,0 +1,106 @@
+extend schema
+  @link(
+    url: "https://specs.apollo.dev/federation/v2.3"
+    import: ["@key", "@override", "@external", "@provides"]
+  )
+  @link(url: "https://specs.graphql-hive.com/hive/v1.0", import: ["@meta"])
+  @meta(name: "owner", content: "reviews-team")
+  @meta(name: "contact", content: "#reviews-channel")
+
+directive @meta(
+  name: String!
+  content: String!
+) repeatable on SCHEMA | OBJECT | INTERFACE | FIELD_DEFINITION
+
+"""
+Input for creating a new product review
+"""
+input CreateReviewInput {
+  """
+  Universal Product Code of the product being reviewed
+  """
+  productUpc: String!
+  """
+  Rating score (e.g., 1-5 stars)
+  """
+  rating: Int!
+  """
+  Review text content
+  """
+  body: String
+}
+
+"""
+Product review written by a user
+"""
+type Review @key(fields: "id") @meta(name: "domain", content: "reviews") {
+  """
+  Unique identifier for the review
+  """
+  id: ID!
+  """
+  Review text content
+  """
+  body: String
+  """
+  User who wrote the review
+  """
+  author: User
+  """
+  Product being reviewed
+  """
+  product: Product
+}
+
+extend type User @key(fields: "id") {
+  id: ID!
+  reviews: [Review]
+}
+
+extend type Product @key(fields: "upc") {
+  upc: String!
+  reviews: [Review]
+  reviewsCount: Int! @meta(name: "category", content: "analytics")
+  reviewsScore: Float! @override(from: "products") @meta(name: "category", content: "analytics")
+}
+
+type Query {
+  """
+  Get a specific review by ID
+  """
+  review(
+    """
+    Unique identifier of the review to retrieve
+    """
+    id: Int!
+  ): Review
+  """
+  Get reviews filtered by product and rating range
+  """
+  reviews(
+    """
+    Optional Universal Product Code to filter reviews by product
+    """
+    productUpc: String
+    """
+    Minimum rating threshold (inclusive)
+    """
+    minRating: Int
+    """
+    Maximum rating threshold (inclusive)
+    """
+    maxRating: Int
+  ): [Review]
+}
+
+type Mutation {
+  """
+  Create a new product review
+  """
+  createReview(
+    """
+    Review creation data including product UPC, rating, and optional body text
+    """
+    input: CreateReviewInput!
+  ): Review!
+}

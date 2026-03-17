@@ -1,50 +1,61 @@
-import type { FastifyInstance, FastifyPluginAsync } from 'fastify';
-import fp from 'fastify-plugin';
-import * as Sentry from '@sentry/node';
-import { cleanRequestId } from './helpers';
+import { hostname } from 'os';
+import {
+  contextLinesIntegration,
+  dedupeIntegration,
+  extraErrorDataIntegration,
+} from '@sentry/integrations';
+import { httpIntegration, init, linkedErrorsIntegration } from '@sentry/node';
+import { scrubBasicAuth } from './scrub';
 
-const plugin: FastifyPluginAsync = async server => {
-  server.decorateReply('sentry', null);
-
-  server.setErrorHandler((err, req, reply) => {
-    Sentry.withScope(scope => {
-      scope.setUser({
-        ip_address: req.ip,
-      });
-
-      const requestId = cleanRequestId(req.headers['x-request-id']);
-
-      if (requestId) {
-        scope.setTag('request_id', requestId);
+/**
+ * Initialize Sentry SDK with our commong configuration options.
+ */
+export function sentryInit(args: {
+  dist: string;
+  enabled: boolean;
+  environment?: string;
+  dsn: string;
+  release: string;
+}) {
+  return init({
+    serverName: hostname(),
+    enabled: args.enabled,
+    environment: args.environment,
+    dsn: args.dsn,
+    release: args.release,
+    integrations: [
+      httpIntegration({ tracing: false }),
+      contextLinesIntegration({
+        frameContextLines: 0,
+      }),
+      linkedErrorsIntegration(),
+      extraErrorDataIntegration({
+        depth: 2,
+      }),
+      dedupeIntegration(),
+    ],
+    maxBreadcrumbs: 10,
+    defaultIntegrations: false,
+    autoSessionTracking: false,
+    beforeSend(event) {
+      if (event.message) {
+        event.message = scrubBasicAuth(event.message);
       }
 
-      const { referer } = req.headers;
-
-      if (referer) {
-        scope.setTag('referer', referer);
+      if (event.exception?.values) {
+        event.exception.values = event.exception.values.map(value => ({
+          ...value,
+          value: value.value ? scrubBasicAuth(value.value) : value.value,
+        }));
       }
 
-      scope.setTag('path', req.raw.url);
-      scope.setTag('method', req.raw.method);
-      req.log.error(err);
-      Sentry.captureException(err);
-
-      req.log.warn('Replying with 500 Internal Server Error');
-
-      void reply.status(500).send(
-        JSON.stringify({
-          error: 500,
-          message: 'Internal Server Error',
-        }),
-      );
-    });
+      return event;
+    },
+    beforeBreadcrumb(breadcrumb) {
+      if (breadcrumb.message) {
+        breadcrumb.message = scrubBasicAuth(breadcrumb.message);
+      }
+      return breadcrumb;
+    },
   });
-};
-
-const sentryPlugin = fp(plugin, {
-  name: 'fastify-sentry',
-});
-
-export async function useSentryErrorHandler(server: FastifyInstance) {
-  await server.register(sentryPlugin);
 }

@@ -8,6 +8,7 @@ import {
   isAsyncIterable,
   isHiveClient,
 } from '@graphql-hive/core';
+import { version } from './version.js';
 
 export { atLeastOnceSampler, createSchemaFetcher, createServicesFetcher } from '@graphql-hive/core';
 
@@ -16,6 +17,7 @@ export function createHive(clientOrOptions: HivePluginOptions) {
     ...clientOrOptions,
     agent: {
       name: 'hive-client-envelop',
+      version,
       ...clientOrOptions.agent,
     },
   });

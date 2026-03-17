@@ -1,5 +1,5 @@
-import { useEffect, useRef, useState } from 'react';
-import { endOfDay, endOfToday, subMonths } from 'date-fns';
+import { useMemo, useState } from 'react';
+import { endOfDay, endOfToday, formatDate, subMonths } from 'date-fns';
 import { CalendarDays } from 'lucide-react';
 import { DateRange, Matcher } from 'react-day-picker';
 import { DurationUnit, formatDateToString, parse, units } from '@/lib/date-math';
@@ -14,7 +14,7 @@ import { Button } from './button';
 import { Calendar } from './calendar';
 import { Input } from './input';
 import { Label } from './label';
-import { Popover, PopoverContent, PopoverTrigger } from './popover';
+import { Popover, PopoverAnchor, PopoverContent, PopoverTrigger } from './popover';
 
 export interface DateRangePickerProps {
   presets?: Preset[];
@@ -24,20 +24,31 @@ export interface DateRangePickerProps {
   onUpdate?: (values: { preset: Preset }) => void;
   /** Alignment of popover */
   align?: 'start' | 'center' | 'end';
+  /** Side of the trigger to place the popover content */
+  side?: 'top' | 'bottom' | 'left' | 'right';
   /** Option for locale */
   locale?: string;
   /** Date after which a range can be picked. */
   startDate?: Date;
   /** valid units allowed */
   validUnits?: DurationUnit[];
+  /** Custom trigger element. Must forward ref. Replaces the default Button trigger. */
+  trigger?: React.ReactElement;
 }
 
-const formatDate = (date: Date, locale = 'en-us'): string => {
-  return date.toLocaleDateString(locale, {
-    month: 'short',
-    day: 'numeric',
-  });
-};
+export interface DateRangePickerPanelProps {
+  presets?: Preset[];
+  /** the active selected/custom preset */
+  selectedRange?: { from: string; to: string } | null;
+  /** Click handler for applying the updates from DateRangePicker. */
+  onUpdate?: (values: { preset: Preset }) => void;
+  /** Date after which a range can be picked. */
+  startDate?: Date;
+  /** valid units allowed */
+  validUnits?: DurationUnit[];
+  /** Called when a selection is made. Parent should close the container (popover, submenu, etc). */
+  onClose?: () => void;
+}
 
 interface ResolvedDateRange {
   from: Date;
@@ -50,8 +61,17 @@ export type Preset = {
   range: { from: string; to: string };
 };
 
-export function buildDateRangeString(range: ResolvedDateRange, locale = 'en-us'): string {
-  return `${formatDate(range.from, locale)} - ${formatDate(range.to, locale)}`;
+export function buildDateRangeString(range: ResolvedDateRange): string {
+  const fromDate = formatDate(range.from, 'MMM d');
+  const fromTime = formatDate(range.from, 'HH:mm');
+  const toDate = formatDate(range.to, 'MMM d');
+  const toTime = formatDate(range.to, 'HH:mm');
+
+  if (fromDate === toDate) {
+    return `${fromDate}, ${fromTime} - ${toTime}`;
+  }
+
+  return `${fromDate}, ${fromTime} - ${toDate}, ${toTime}`;
 }
 
 function resolveRange(rawFrom: string, rawTo: string): ResolvedDateRange | null {
@@ -62,16 +82,6 @@ function resolveRange(rawFrom: string, rawTo: string): ResolvedDateRange | null 
     return { from, to };
   }
   return null;
-}
-
-function calculateWeight(preset: Preset): number {
-  const from = parse(preset.range.from);
-  const to = parse(preset.range.to);
-  if (from && to) {
-    const durationInMinutes = Math.round((to.getTime() - from.getTime()) / (1000 * 60));
-    return durationInMinutes;
-  }
-  return 0;
 }
 
 export const presetLast7Days: Preset = {
@@ -88,8 +98,12 @@ export const presetLast1Day: Preset = {
 
 // Define presets
 export const availablePresets: Preset[] = [
+  { name: 'last15m', label: 'Last 15 minutes', range: { from: 'now-15m', to: 'now' } },
   { name: 'last30m', label: 'Last 30 minutes', range: { from: 'now-30m', to: 'now' } },
   { name: 'last1h', label: 'Last 1 hour', range: { from: 'now-1h', to: 'now' } },
+  { name: 'last3h', label: 'Last 3 hours', range: { from: 'now-3h', to: 'now' } },
+  { name: 'last6h', label: 'Last 6 hours', range: { from: 'now-6h', to: 'now' } },
+  { name: 'last12h', label: 'Last 12 hours', range: { from: 'now-12h', to: 'now' } },
   presetLast1Day,
   presetLast7Days,
   { name: 'last14d', label: 'Last 14 days', range: { from: 'now-14d', to: 'now' } },
@@ -99,24 +113,109 @@ export const availablePresets: Preset[] = [
   { name: 'last1y', label: 'Last 1 year', range: { from: 'now-364d', to: 'now' } },
 ];
 
-function findMatchingPreset(range: Preset['range']): Preset | undefined {
+function createQuickRangePresets(number: number, validUnits: DurationUnit[]): Preset[] {
+  const presets: Preset[] = [];
+
+  if (validUnits.includes('m')) {
+    presets.push({
+      name: `last${number}min`,
+      label: `Last ${number} minutes`,
+      range: { from: `now-${number}m`, to: 'now' },
+    });
+  }
+  if (validUnits.includes('h')) {
+    presets.push({
+      name: `last${number}h`,
+      label: `Last ${number} hours`,
+      range: { from: `now-${number}h`, to: 'now' },
+    });
+  }
+  if (validUnits.includes('d')) {
+    presets.push({
+      name: `last${number}d`,
+      label: `Last ${number} days`,
+      range: { from: `now-${number}d`, to: 'now' },
+    });
+  }
+  if (validUnits.includes('w')) {
+    presets.push({
+      name: `last${number}w`,
+      label: `Last ${number} weeks`,
+      range: { from: `now-${number}w`, to: 'now' },
+    });
+  }
+  if (validUnits.includes('M')) {
+    presets.push({
+      name: `last${number}M`,
+      label: `Last ${number} months`,
+      range: { from: `now-${number}M`, to: 'now' },
+    });
+  }
+
+  if (validUnits.includes('y')) {
+    presets.push({
+      name: `last${number}y`,
+      label: `Last ${number} years`,
+      range: { from: `now-${number}y`, to: 'now' },
+    });
+  }
+
+  return presets;
+}
+
+export function findMatchingPreset(
+  range: Preset['range'],
+  availablePresets: Preset[],
+): Preset | undefined {
   return availablePresets.find(preset => {
     return preset.range.from === range.from && preset.range.to === range.to;
   });
 }
 
-/** The DateRangePicker component allows a user to select a range of dates */
-export function DateRangePicker(props: DateRangePickerProps): JSX.Element {
+function getDisplayLabel(
+  selectedRange: { from: string; to: string } | null | undefined,
+  presets: Preset[],
+  validUnits: DurationUnit[],
+): string {
+  if (!selectedRange) {
+    return presets.at(0)?.label ?? 'Select range';
+  }
+
+  const staticMatch = findMatchingPreset(selectedRange, presets);
+  if (staticMatch) return staticMatch.label;
+
+  if (selectedRange.from.startsWith('now-')) {
+    const number = parseInt(selectedRange.from.replace(/\D/g, ''), 10);
+    if (!Number.isNaN(number)) {
+      const dynamicMatch = findMatchingPreset(
+        selectedRange,
+        createQuickRangePresets(number, validUnits),
+      );
+      if (dynamicMatch) return dynamicMatch.label;
+    }
+  }
+
+  const resolved = resolveRange(selectedRange.from, selectedRange.to);
+  if (resolved) return buildDateRangeString(resolved);
+
+  return presets.at(0)?.label ?? 'Select range';
+}
+
+/**
+ * The standalone date range picker panel containing all picker UI and state.
+ * Can be rendered inside a Popover, a menu submenu, or any other container.
+ */
+export function DateRangePickerPanel(props: DateRangePickerPanelProps) {
   const validUnits = props.validUnits ?? units;
   const disallowedUnits = units.filter(unit => !validUnits.includes(unit));
   const hasInvalidUnitRegex = disallowedUnits?.length
     ? new RegExp(`[0-9]+(${disallowedUnits.join('|')})`)
     : null;
 
-  let presets = props.presets ?? availablePresets;
+  let staticPresets = props.presets ?? availablePresets;
 
   if (hasInvalidUnitRegex) {
-    presets = presets.filter(
+    staticPresets = staticPresets.filter(
       preset =>
         !hasInvalidUnitRegex.test(preset.range.from) && !hasInvalidUnitRegex.test(preset.range.to),
     );
@@ -134,38 +233,62 @@ export function DateRangePicker(props: DateRangePickerProps): JSX.Element {
     });
   }
 
-  const [isOpen, setIsOpen] = useState(false);
   const [showCalendar, setShowCalendar] = useState(false);
 
   function getInitialPreset() {
-    let preset: Preset | undefined;
+    const fallbackPreset = staticPresets.at(0) ?? null;
+
     if (
-      props.selectedRange &&
-      !hasInvalidUnitRegex?.test(props.selectedRange.from) &&
-      !hasInvalidUnitRegex?.test(props.selectedRange.to)
+      !props.selectedRange ||
+      hasInvalidUnitRegex?.test(props.selectedRange.from) ||
+      hasInvalidUnitRegex?.test(props.selectedRange.to)
     ) {
-      preset = findMatchingPreset(props.selectedRange);
+      return fallbackPreset;
+    }
 
-      if (preset) {
-        return preset;
-      }
+    // Attempt to find preset from out pre-defined presets first
+    const preset = findMatchingPreset(props.selectedRange, staticPresets);
 
-      const resolvedRange = resolveRange(props.selectedRange.from, props.selectedRange.to);
-      if (resolvedRange) {
-        return {
-          name: `${props.selectedRange.from}_${props.selectedRange.to}`,
-          label: buildDateRangeString(resolvedRange),
-          range: props.selectedRange,
-        };
+    if (preset) {
+      return preset;
+    }
+
+    // attempt to find the preset based on dynamic presets (so we show something like "last x days" instead of 10. September - 12.September for `now-2d`)
+    if (props.selectedRange.from.startsWith('now-')) {
+      const number = parseInt(props.selectedRange.from.replace(/\D/g, ''), 10);
+      if (!Number.isNaN(number)) {
+        const quickRangPresets = createQuickRangePresets(number, validUnits);
+
+        const preset = quickRangPresets.find(
+          preset =>
+            preset.range.from === props.selectedRange?.from &&
+            preset.range.to === props.selectedRange.to,
+        );
+
+        if (preset) {
+          return preset;
+        }
       }
     }
 
-    return presets.at(0) ?? null;
+    // if everything else fails we show an absolute range!
+
+    const resolvedRange = resolveRange(props.selectedRange.from, props.selectedRange.to);
+    if (resolvedRange) {
+      return {
+        name: `${props.selectedRange.from}_${props.selectedRange.to}`,
+        label: buildDateRangeString(resolvedRange),
+        range: props.selectedRange,
+      };
+    }
+
+    return fallbackPreset;
   }
 
   const [activePreset, setActivePreset] = useResetState<Preset | null>(getInitialPreset, [
     props.selectedRange,
   ]);
+
   const [fromValue, setFromValue] = useState(activePreset?.range.from ?? '');
   const [toValue, setToValue] = useState(activePreset?.range.to ?? '');
   const [range, setRange] = useState<DateRange | undefined>(undefined);
@@ -174,102 +297,57 @@ export function DateRangePicker(props: DateRangePickerProps): JSX.Element {
   const fromParsed = parse(fromValue);
   const toParsed = parse(toValue);
 
-  const lastPreset = useRef<Preset | null>(activePreset);
+  const PresetButton = useMemo(
+    () =>
+      function PresetButton({ preset }: { preset: Preset }): React.ReactNode {
+        let isDisabled = false;
 
-  useEffect(() => {
-    if (!activePreset || !props.onUpdate) {
-      return;
-    }
+        if (props.startDate) {
+          const from = parse(preset.range.from);
+          const time = from?.getTime();
+          const startTime = props.startDate?.getTime();
 
-    const fromParsed = parse(activePreset.range.from);
-    const toParsed = parse(activePreset.range.to);
+          if (
+            !time ||
+            !startTime ||
+            Number.isNaN(time) ||
+            Number.isNaN(startTime) ||
+            time < props.startDate.getTime()
+          ) {
+            isDisabled = true;
+          }
+        }
 
-    if (fromParsed && toParsed) {
-      const resolvedRange = resolveRange(fromValue, toValue);
-      if (resolvedRange && lastPreset.current?.name !== activePreset.name) {
-        props.onUpdate({
-          preset: activePreset,
-        });
-      }
-    }
-  }, [activePreset]);
+        return (
+          <Button
+            variant="ghost"
+            onClick={() => {
+              setActivePreset(preset);
+              setFromValue(preset.range.from);
+              setToValue(preset.range.to);
+              setRange(undefined);
+              setShowCalendar(false);
+              setQuickRangeFilter('');
+              props.onUpdate?.({ preset });
+              props.onClose?.();
+            }}
+            disabled={isDisabled}
+            className="w-full justify-start text-left"
+          >
+            {preset.label}
+          </Button>
+        );
+      },
+    [props.startDate, props.onClose],
+  );
 
-  useEffect(() => {
-    lastPreset.current = activePreset;
-  }, [activePreset]);
-
-  const resetValues = (): void => {
-    setActivePreset(getInitialPreset());
-  };
-
-  const PresetButton = ({ preset }: { preset: Preset }): JSX.Element => {
-    let isDisabled = false;
-
-    if (props.startDate) {
-      const from = parse(preset.range.from);
-      if (from && from.getTime() < props.startDate.getTime()) {
-        isDisabled = true;
-      }
-    }
-
-    return (
-      <Button
-        variant="ghost"
-        onClick={() => {
-          setActivePreset(preset);
-          setFromValue(preset.range.from);
-          setToValue(preset.range.to);
-          setRange(undefined);
-          setShowCalendar(false);
-          setIsOpen(false);
-          setQuickRangeFilter('');
-        }}
-        disabled={isDisabled}
-        className="w-full justify-start text-left"
-      >
-        {preset.label}
-      </Button>
-    );
-  };
-
-  const [dynamicPresets, setDynamicPresets] = useState<Preset[]>([]);
-  useEffect(() => {
+  const dynamicPresets = useMemo(() => {
     const number = parseInt(quickRangeFilter.replace(/\D/g, ''), 10);
-    const dynamicPresets: Preset[] = [
-      {
-        name: `last${number}min`,
-        label: `Last ${number} minutes`,
-        range: { from: `now-${number}m`, to: 'now' },
-      },
-      {
-        name: `last${number}h`,
-        label: `Last ${number} hours`,
-        range: { from: `now-${number}h`, to: 'now' },
-      },
-      {
-        name: `last${number}d`,
-        label: `Last ${number} days`,
-        range: { from: `now-${number}d`, to: 'now' },
-      },
-      {
-        name: `last${number}w`,
-        label: `Last ${number} weeks`,
-        range: { from: `now-${number}w`, to: 'now' },
-      },
-      {
-        name: `last${number}M`,
-        label: `Last ${number} months`,
-        range: { from: `now-${number}M`, to: 'now' },
-      },
-      {
-        name: `last${number}y`,
-        label: `Last ${number} years`,
-        range: { from: `now-${number}y`, to: 'now' },
-      },
-    ];
+
+    const dynamicPresets = createQuickRangePresets(number, validUnits);
 
     const uniqueDynamicPresets = dynamicPresets.filter(
-      preset => !presets.some(p => p.name === preset.name),
+      preset => !staticPresets.some(p => p.name === preset.name),
     );
 
     const validDynamicPresets = uniqueDynamicPresets.filter(
@@ -279,181 +357,231 @@ export function DateRangePicker(props: DateRangePickerProps): JSX.Element {
     );
 
     if (number > 0 && validDynamicPresets.length > 0) {
-      setDynamicPresets(validDynamicPresets);
-    } else {
-      setDynamicPresets([]);
+      return validDynamicPresets;
     }
-  }, [quickRangeFilter, validUnits]);
-  presets = [...presets, ...dynamicPresets].sort((a, b) => {
-    const aWeight = calculateWeight(a);
-    const bWeight = calculateWeight(b);
 
-    return aWeight - bWeight;
-  });
+    return [];
+  }, [quickRangeFilter, validUnits]);
+
+  return (
+    <div className="flex h-[380px]">
+      <Popover modal open={showCalendar} onOpenChange={setShowCalendar}>
+        <PopoverAnchor asChild>
+          <div className="flex flex-col py-2">
+            <div className="flex flex-col items-center justify-end gap-2 lg:flex-row lg:items-start">
+              <div className="flex flex-col gap-1 pl-3">
+                <div className="mb-2 mt-1 text-sm">Absolute date range</div>
+                <div className="space-y-2">
+                  <div className="grid w-full max-w-sm items-center gap-1.5">
+                    <Label htmlFor="from" className="text-neutral-10 text-xs">
+                      From
+                    </Label>
+                    <div className="flex w-full max-w-sm items-center space-x-2">
+                      <div className="relative flex w-full">
+                        <Input
+                          type="text"
+                          id="from"
+                          value={fromValue}
+                          onChange={ev => {
+                            setFromValue(ev.target.value);
+                          }}
+                          className="font-mono text-xs"
+                        />
+                        <Button
+                          variant="ghost"
+                          className="absolute right-2 top-1/2 size-6 -translate-y-1/2 px-0"
+                          onClick={() => setShowCalendar(true)}
+                        >
+                          <CalendarDays className="size-3.5" />
+                        </Button>
+                      </div>
+                    </div>
+                    <div className="text-red-500">
+                      {hasInvalidUnitRegex?.test(fromValue) ? (
+                        <>Only allowed units are {validUnits.join(', ')}</>
+                      ) : !fromParsed ? (
+                        <>Invalid date string</>
+                      ) : null}
+                    </div>
+                  </div>
+                  <div className="grid w-full max-w-sm items-center gap-1.5">
+                    <Label htmlFor="to" className="text-neutral-10 text-xs">
+                      To
+                    </Label>
+                    <div className="flex w-full max-w-sm items-center space-x-2">
+                      <div className="relative flex w-full">
+                        <Input
+                          type="text"
+                          id="to"
+                          value={toValue}
+                          onChange={ev => {
+                            setToValue(ev.target.value);
+                          }}
+                          className="font-mono text-xs"
+                        />
+                        <Button
+                          variant="ghost"
+                          className="absolute right-2 top-1/2 size-6 -translate-y-1/2 px-0"
+                          onClick={() => setShowCalendar(true)}
+                        >
+                          <CalendarDays className="size-3.5" />
+                        </Button>
+                      </div>
+                    </div>
+                    <div className="text-red-500">
+                      {hasInvalidUnitRegex?.test(toValue) ? (
+                        <>Only allowed units are {validUnits.join(', ')}</>
+                      ) : !toParsed ? (
+                        <>Invalid date string</>
+                      ) : fromParsed && toParsed && fromParsed.getTime() > toParsed.getTime() ? (
+                        <div className="text-red-500">To cannot be before from.</div>
+                      ) : null}
+                    </div>
+                  </div>
+
+                  <Button
+                    variant="primary"
+                    className="w-full text-center"
+                    onClick={() => {
+                      const fromWithoutWhitespace = fromValue.trim();
+                      const toWithoutWhitespace = toValue.trim();
+                      const resolvedRange = resolveRange(fromValue, toValue);
+                      if (resolvedRange) {
+                        const preset = findMatchingPreset(
+                          {
+                            from: fromWithoutWhitespace,
+                            to: toWithoutWhitespace,
+                          },
+                          availablePresets,
+                        ) ?? {
+                          name: `${fromWithoutWhitespace}_${toWithoutWhitespace}`,
+                          label: buildDateRangeString(resolvedRange),
+                          range: { from: fromWithoutWhitespace, to: toWithoutWhitespace },
+                        };
+                        setActivePreset(preset);
+                        setShowCalendar(false);
+                        setQuickRangeFilter('');
+                        props.onUpdate?.({ preset });
+                        props.onClose?.();
+                      }
+                    }}
+                    disabled={
+                      !toParsed ||
+                      !fromParsed ||
+                      (activePreset?.range.from === fromValue.trim() &&
+                        activePreset.range.to === toValue.trim())
+                    }
+                  >
+                    Apply date range
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </PopoverAnchor>
+        <PopoverContent side="left" sideOffset={4} collisionPadding={8} className="w-auto">
+          <Button
+            variant="ghost"
+            size="icon-sm"
+            className="absolute right-2 top-1 rounded-sm bg-transparent opacity-70 transition-opacity hover:bg-transparent hover:opacity-100 focus:outline-none"
+            onClick={() => setShowCalendar(false)}
+          >
+            <Cross1Icon className="size-2" />
+          </Button>
+          <Calendar
+            id="selectedRange"
+            mode="range"
+            defaultMonth={subMonths(new Date(), 1)}
+            numberOfMonths={2}
+            selected={range}
+            onSelect={range => {
+              if (range?.from && range.to) {
+                setFromValue(formatDateToString(range.from));
+                setToValue(formatDateToString(endOfDay(range.to)));
+              }
+              setRange(range);
+            }}
+            disabled={disabledDays}
+          />
+        </PopoverContent>
+      </Popover>
+      <div className="ml-3 flex flex-col gap-1 border-l py-2 pl-3 pr-2">
+        <div className="relative flex items-center">
+          <MagnifyingGlassIcon className="absolute left-2" />
+          <Input
+            placeholder="Filter quick ranges"
+            className="w-full pl-7"
+            value={quickRangeFilter}
+            onChange={ev => setQuickRangeFilter(ev.target.value)}
+          />
+        </div>
+        <div className="flex w-full flex-1 flex-col items-start gap-1 overflow-y-scroll pb-2 pt-1">
+          {dynamicPresets.length > 0
+            ? dynamicPresets
+                .filter(preset =>
+                  preset.label.toLowerCase().includes(quickRangeFilter.toLowerCase().trim()),
+                )
+                .map(preset => <PresetButton key={preset.name} preset={preset} />)
+            : staticPresets
+                .filter(preset =>
+                  preset.label.toLowerCase().includes(quickRangeFilter.toLowerCase().trim()),
+                )
+                .map(preset => <PresetButton key={preset.name} preset={preset} />)}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/** The DateRangePicker component allows a user to select a range of dates */
+export function DateRangePicker(props: DateRangePickerProps): JSX.Element {
+  const [isOpen, setIsOpen] = useState(false);
+
+  const validUnits = props.validUnits ?? units;
+  const disallowedUnits = units.filter(unit => !validUnits.includes(unit));
+  const hasInvalidUnitRegex = disallowedUnits?.length
+    ? new RegExp(`[0-9]+(${disallowedUnits.join('|')})`)
+    : null;
+
+  let staticPresets = props.presets ?? availablePresets;
+  if (hasInvalidUnitRegex) {
+    staticPresets = staticPresets.filter(
+      preset =>
+        !hasInvalidUnitRegex.test(preset.range.from) && !hasInvalidUnitRegex.test(preset.range.to),
+    );
+  }
+
+  const label = getDisplayLabel(props.selectedRange, staticPresets, validUnits);
 
   return (
     <Popover
       modal
       open={isOpen}
       onOpenChange={(open: boolean) => {
-        if (!open) {
-          resetValues();
-        }
         setIsOpen(open);
       }}
     >
-      <PopoverTrigger asChild>
-        <Button variant="outline">
-          {activePreset?.label}
-          <div className="-mr-2 scale-125 pl-1 opacity-60">
-            {isOpen ? <ChevronUpIcon width={24} /> : <ChevronDownIcon width={24} />}
-          </div>
-        </Button>
-      </PopoverTrigger>
-      <PopoverContent align={props.align} className="mt-1 flex h-[380px] w-auto p-0">
-        <div className="flex flex-col py-4">
-          <div className="flex flex-col items-center justify-end gap-2 lg:flex-row lg:items-start">
-            <div className="flex flex-col gap-1 pl-3">
-              <div className="mb-2 font-bold">Absolute time range</div>
-              <div className="space-y-2">
-                <div className="grid w-full max-w-sm items-center gap-1.5">
-                  <Label htmlFor="from">From</Label>
-                  <div className="flex w-full max-w-sm items-center space-x-2">
-                    <Input
-                      type="text"
-                      id="from"
-                      value={fromValue}
-                      onChange={ev => {
-                        setFromValue(ev.target.value);
-                      }}
-                    />
-                    <Button size="icon" variant="ghost" onClick={() => setShowCalendar(true)}>
-                      <CalendarDays className="size-4" />
-                    </Button>
-                  </div>
-                  <div className="text-red-500">
-                    {hasInvalidUnitRegex?.test(fromValue) ? (
-                      <>Only allowed units are {validUnits.join(', ')}</>
-                    ) : !fromParsed ? (
-                      <>Invalid date string</>
-                    ) : null}
-                  </div>
-                </div>
-                <div className="grid w-full max-w-sm items-center gap-1.5">
-                  <Label htmlFor="to">To</Label>
-                  <div className="flex w-full max-w-sm items-center space-x-2">
-                    <Input
-                      type="text"
-                      id="to"
-                      value={toValue}
-                      onChange={ev => {
-                        setToValue(ev.target.value);
-                      }}
-                    />
-                    <Button size="icon" variant="ghost" onClick={() => setShowCalendar(true)}>
-                      <CalendarDays className="size-4" />
-                    </Button>
-                  </div>
-                  <div className="text-red-500">
-                    {hasInvalidUnitRegex?.test(toValue) ? (
-                      <>Only allowed units are {validUnits.join(', ')}</>
-                    ) : !toParsed ? (
-                      <>Invalid date string</>
-                    ) : fromParsed && toParsed && fromParsed.getTime() > toParsed.getTime() ? (
-                      <div className="text-red-500">To cannot be before from.</div>
-                    ) : null}
-                  </div>
-                </div>
-
-                <Button
-                  size="sm"
-                  onClick={() => {
-                    const fromWithoutWhitespace = fromValue.trim();
-                    const toWithoutWhitespace = toValue.trim();
-                    const resolvedRange = resolveRange(fromValue, toValue);
-                    if (resolvedRange) {
-                      setActivePreset(
-                        () =>
-                          findMatchingPreset({
-                            from: fromWithoutWhitespace,
-                            to: toWithoutWhitespace,
-                          }) ?? {
-                            name: `${fromWithoutWhitespace}_${toWithoutWhitespace}`,
-                            label: buildDateRangeString(resolvedRange),
-                            range: { from: fromWithoutWhitespace, to: toWithoutWhitespace },
-                          },
-                      );
-                      setIsOpen(false);
-                      setShowCalendar(false);
-                      setQuickRangeFilter('');
-                    }
-                  }}
-                  disabled={
-                    !toParsed ||
-                    !fromParsed ||
-                    (activePreset?.range.from === fromValue.trim() &&
-                      activePreset.range.to === toValue.trim())
-                  }
-                >
-                  Apply date range
-                </Button>
-              </div>
+      {props.trigger ? (
+        <PopoverTrigger asChild>{props.trigger}</PopoverTrigger>
+      ) : (
+        <PopoverTrigger asChild>
+          <Button variant="outline">
+            {label}
+            <div className="-mr-2 scale-125 pl-1 opacity-60">
+              {isOpen ? <ChevronUpIcon width={24} /> : <ChevronDownIcon width={24} />}
             </div>
-          </div>
-        </div>
-        <div className="ml-3 flex flex-col gap-1 border-l py-2 pl-3 pr-2">
-          <div className="relative flex items-center">
-            <MagnifyingGlassIcon className="absolute left-2" />
-            <Input
-              placeholder="Filter quick ranges"
-              className="w-full pl-7"
-              value={quickRangeFilter}
-              onChange={ev => setQuickRangeFilter(ev.target.value)}
-            />
-          </div>
-          <div className="flex w-full flex-1 flex-col items-start gap-1 overflow-y-scroll pb-2 pt-1">
-            {dynamicPresets.length > 0
-              ? dynamicPresets
-                  .filter(preset =>
-                    preset.label.toLowerCase().includes(quickRangeFilter.toLowerCase().trim()),
-                  )
-                  .map(preset => <PresetButton key={preset.name} preset={preset} />)
-              : presets
-                  .filter(preset =>
-                    preset.label.toLowerCase().includes(quickRangeFilter.toLowerCase().trim()),
-                  )
-                  .map(preset => <PresetButton key={preset.name} preset={preset} />)}
-          </div>
-        </div>
-        {showCalendar && (
-          <div className="absolute left-0 top-0 -translate-x-full">
-            <div className="bg-popover mr-1 rounded-md border p-4">
-              <Button
-                variant="ghost"
-                size="icon-sm"
-                className="absolute right-2 top-1 rounded-sm bg-transparent opacity-70 transition-opacity hover:bg-transparent hover:opacity-100 focus:outline-none"
-                onClick={() => setShowCalendar(false)}
-              >
-                <Cross1Icon className="size-2" />
-              </Button>
-              <Calendar
-                id="selectedRange"
-                mode="range"
-                defaultMonth={subMonths(new Date(), 1)}
-                numberOfMonths={2}
-                selected={range}
-                onSelect={range => {
-                  if (range?.from && range.to) {
-                    setFromValue(formatDateToString(range.from));
-                    setToValue(formatDateToString(endOfDay(range.to)));
-                  }
-                  setRange(range);
-                }}
-                disabled={disabledDays}
-              />
-            </div>
-          </div>
-        )}
+          </Button>
+        </PopoverTrigger>
+      )}
+      <PopoverContent align={props.align} side={props.side} className="mt-1 w-auto p-0">
+        <DateRangePickerPanel
+          presets={props.presets}
+          selectedRange={props.selectedRange}
+          onUpdate={props.onUpdate}
+          startDate={props.startDate}
+          validUnits={props.validUnits}
+          onClose={() => setIsOpen(false)}
+        />
       </PopoverContent>
     </Popover>
   );

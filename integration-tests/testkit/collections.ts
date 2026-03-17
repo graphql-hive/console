@@ -2,7 +2,7 @@ import { graphql } from './gql';
 
 export const FindCollectionQuery = graphql(`
   query Collection($selector: TargetSelectorInput!, $id: ID!) {
-    target(selector: $selector) {
+    target(reference: { bySelector: $selector }) {
       id
       documentCollection(id: $id) {
         id
@@ -198,6 +198,25 @@ export const DeleteOperationMutation = graphql(`
             }
           }
         }
+      }
+    }
+  }
+`);
+
+export const UpdatePreflightScriptMutation = graphql(`
+  mutation UpdatePreflightScript($input: UpdatePreflightScriptInput!) {
+    updatePreflightScript(input: $input) {
+      ok {
+        updatedTarget {
+          id
+          preflightScript {
+            id
+            sourceCode
+          }
+        }
+      }
+      error {
+        message
       }
     }
   }

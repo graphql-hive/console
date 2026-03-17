@@ -2,6 +2,8 @@ import { ReactNode } from 'react';
 import { useForm, UseFormReturn } from 'react-hook-form';
 import { useMutation, useQuery } from 'urql';
 import { z } from 'zod';
+import { Header } from '@/components/navigation/header';
+import { SecondaryNavigation } from '@/components/navigation/secondary-navigation';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -16,48 +18,44 @@ import { Input } from '@/components/ui/input';
 import { useToast } from '@/components/ui/use-toast';
 import { UserMenu } from '@/components/ui/user-menu';
 import { graphql } from '@/gql';
-import { canAccessProject, ProjectAccessScope, useProjectAccess } from '@/lib/access/project';
 import { useToggle } from '@/lib/hooks';
 import { useLastVisitedOrganizationWriter } from '@/lib/last-visited-org';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Link, useRouter } from '@tanstack/react-router';
-import { ProjectMigrationToast } from '../project/migration-toast';
+import { useRouter } from '@tanstack/react-router';
+import { ResourceNotFoundComponent } from '../resource-not-found';
 import { HiveLink } from '../ui/hive-link';
 import { PlusIcon } from '../ui/icon';
-import { Tabs, TabsList, TabsTrigger } from '../ui/tabs';
 import { ProjectSelector } from './project-selector';
 
 export enum Page {
   Targets = 'targets',
   Alerts = 'alerts',
-  Policy = 'policy',
   Settings = 'settings',
 }
 
 const ProjectLayoutQuery = graphql(`
-  query ProjectLayoutQuery {
+  query ProjectLayoutQuery($organizationSlug: String!, $projectSlug: String!) {
     me {
       id
       ...UserMenu_MeFragment
     }
     organizations {
-      nodes {
-        id
-        slug
-        me {
-          id
-          ...CanAccessProject_MemberFragment
-        }
-        projects {
-          nodes {
-            id
-            slug
-            registryModel
-          }
-        }
-      }
       ...ProjectSelector_OrganizationConnectionFragment
       ...UserMenu_OrganizationConnectionFragment
+    }
+    organization: organizationBySlug(organizationSlug: $organizationSlug) {
+      id
+      slug
+      project: projectBySlug(projectSlug: $projectSlug) {
+        id
+        slug
+        viewerCanModifySchemaPolicy
+        viewerCanCreateTarget
+        viewerCanModifyAlerts
+        viewerCanModifySettings
+        viewerCanManageProjectAccessTokens
+      }
+      ...UserMenu_OrganizationFragment
     }
   }
 `);
@@ -66,7 +64,8 @@ export function ProjectLayout({
   children,
   page,
   className,
-  ...props
+  organizationSlug,
+  projectSlug,
 }: {
   page: Page;
   organizationSlug: string;
@@ -74,140 +73,99 @@ export function ProjectLayout({
   className?: string;
   children: ReactNode;
 }) {
+  const params = { organizationSlug, projectSlug };
+
   const [isModalOpen, toggleModalOpen] = useToggle();
   const [query] = useQuery({
     query: ProjectLayoutQuery,
     requestPolicy: 'cache-first',
+    variables: params,
   });
 
   const me = query.data?.me;
-  const currentOrganization = query.data?.organizations.nodes.find(
-    node => node.slug === props.organizationSlug,
-  );
-  const currentProject = currentOrganization?.projects.nodes.find(
-    node => node.slug === props.projectSlug,
-  );
-
-  useProjectAccess({
-    scope: ProjectAccessScope.Read,
-    member: currentOrganization?.me ?? null,
-    redirect: true,
-    organizationSlug: props.organizationSlug,
-    projectSlug: props.projectSlug,
-  });
+  const currentOrganization = query.data?.organization;
+  const currentProject = currentOrganization?.project;
 
   useLastVisitedOrganizationWriter(currentOrganization?.slug);
 
   return (
     <>
-      <header>
-        <div className="container flex h-[--header-height] items-center justify-between">
-          <div className="flex flex-row items-center gap-4">
-            <HiveLink className="size-8" />
-            <ProjectSelector
-              currentOrganizationSlug={props.organizationSlug}
-              currentProjectSlug={props.projectSlug}
-              organizations={query.data?.organizations ?? null}
-            />
-          </div>
-          <div>
-            <UserMenu
-              me={me ?? null}
-              currentOrganizationSlug={props.organizationSlug}
-              organizations={query.data?.organizations ?? null}
-            />
-          </div>
-        </div>
-      </header>
-
-      {page === Page.Settings || currentProject?.registryModel !== 'LEGACY' ? null : (
-        <ProjectMigrationToast
-          organizationSlug={props.organizationSlug}
-          projectSlug={currentProject.slug}
-        />
-      )}
-
-      <div className="relative h-[--tabs-navbar-height] border-b border-gray-800">
-        <div className="container flex items-center justify-between">
-          {currentOrganization && currentProject ? (
-            <Tabs value={page}>
-              <TabsList variant="menu">
-                <TabsTrigger variant="menu" value={Page.Targets} asChild>
-                  <Link
-                    to="/$organizationSlug/$projectSlug"
-                    params={{
-                      organizationSlug: currentOrganization.slug,
-                      projectSlug: currentProject.slug,
-                    }}
-                  >
-                    Targets
-                  </Link>
-                </TabsTrigger>
-                {canAccessProject(ProjectAccessScope.Alerts, currentOrganization.me) && (
-                  <TabsTrigger variant="menu" value={Page.Alerts} asChild>
-                    <Link
-                      to="/$organizationSlug/$projectSlug/view/alerts"
-                      params={{
-                        organizationSlug: currentOrganization.slug,
-                        projectSlug: currentProject.slug,
-                      }}
-                    >
-                      Alerts
-                    </Link>
-                  </TabsTrigger>
-                )}
-                {canAccessProject(ProjectAccessScope.Settings, currentOrganization.me) && (
-                  <>
-                    <TabsTrigger variant="menu" value={Page.Policy} asChild>
-                      <Link
-                        to="/$organizationSlug/$projectSlug/view/policy"
-                        params={{
-                          organizationSlug: currentOrganization.slug,
-                          projectSlug: currentProject.slug,
-                        }}
-                      >
-                        Policy
-                      </Link>
-                    </TabsTrigger>
-                    <TabsTrigger variant="menu" value={Page.Settings} asChild>
-                      <Link
-                        to="/$organizationSlug/$projectSlug/view/settings"
-                        params={{
-                          organizationSlug: currentOrganization.slug,
-                          projectSlug: currentProject.slug,
-                        }}
-                      >
-                        Settings
-                      </Link>
-                    </TabsTrigger>
-                  </>
-                )}
-              </TabsList>
-            </Tabs>
-          ) : (
-            <div className="flex flex-row gap-x-8 border-b-2 border-b-transparent px-4 py-3">
-              <div className="h-5 w-12 animate-pulse rounded-full bg-gray-800" />
-              <div className="h-5 w-12 animate-pulse rounded-full bg-gray-800" />
-              <div className="h-5 w-12 animate-pulse rounded-full bg-gray-800" />
-            </div>
-          )}
-          {currentProject ? (
-            <Button onClick={toggleModalOpen} variant="link" className="text-orange-500">
-              <PlusIcon size={16} className="mr-2" />
-              New target
-            </Button>
-          ) : null}
-          <CreateTargetModal
-            organizationSlug={props.organizationSlug}
-            projectSlug={props.projectSlug}
-            isOpen={isModalOpen}
-            toggleModalOpen={toggleModalOpen}
+      <Header>
+        <div className="flex flex-row items-center gap-4">
+          <HiveLink className="size-8" />
+          <ProjectSelector
+            currentOrganizationSlug={organizationSlug}
+            currentProjectSlug={projectSlug}
+            organizations={query.data?.organizations ?? null}
           />
         </div>
-      </div>
-      <div className="container min-h-[var(--content-height)] pb-7">
-        <div className={className}>{children}</div>
-      </div>
+        <div>
+          <UserMenu
+            me={me ?? null}
+            currentOrganization={currentOrganization ?? null}
+            organizations={query.data?.organizations ?? null}
+          />
+        </div>
+      </Header>
+      {query.fetching === false &&
+      query.stale === false &&
+      (currentProject === null || currentOrganization === null) ? (
+        <ResourceNotFoundComponent title="404 - This project does not seem to exist." />
+      ) : (
+        <>
+          <SecondaryNavigation
+            page={page}
+            loading={!currentOrganization || !currentProject}
+            links={
+              currentOrganization && currentProject
+                ? [
+                    {
+                      value: Page.Targets,
+                      label: 'Targets',
+                      to: '/$organizationSlug/$projectSlug',
+                      params,
+                    },
+                    {
+                      value: Page.Alerts,
+                      label: 'Alerts',
+                      visible: currentProject.viewerCanModifyAlerts,
+                      to: '/$organizationSlug/$projectSlug/view/alerts',
+                      params,
+                    },
+                    {
+                      value: Page.Settings,
+                      label: 'Settings',
+                      visible:
+                        currentProject.viewerCanModifySettings ||
+                        currentProject.viewerCanManageProjectAccessTokens,
+                      to: '/$organizationSlug/$projectSlug/view/settings',
+                      params,
+                    },
+                  ]
+                : []
+            }
+            actions={
+              currentProject?.viewerCanCreateTarget ? (
+                <>
+                  <Button onClick={toggleModalOpen} variant="link">
+                    <PlusIcon size={16} className="mr-2" />
+                    New target
+                  </Button>
+                  <CreateTargetModal
+                    organizationSlug={organizationSlug}
+                    projectSlug={projectSlug}
+                    isOpen={isModalOpen}
+                    toggleModalOpen={toggleModalOpen}
+                  />
+                </>
+              ) : null
+            }
+          />
+          <div className="min-h-(--content-height) container pb-7">
+            <div className={className}>{children}</div>
+          </div>
+        </>
+      )}
     </>
   );
 }
@@ -271,8 +229,12 @@ function CreateTargetModal(props: {
   async function onSubmit(values: z.infer<typeof createTargetFormSchema>) {
     const { data, error } = await mutate({
       input: {
-        projectSlug: props.projectSlug,
-        organizationSlug: props.organizationSlug,
+        project: {
+          bySelector: {
+            projectSlug: props.projectSlug,
+            organizationSlug: props.organizationSlug,
+          },
+        },
         slug: values.targetSlug,
       },
     });
@@ -323,7 +285,7 @@ export function CreateTargetModalContent(props: {
 }) {
   return (
     <Dialog open={props.isOpen} onOpenChange={props.toggleModalOpen}>
-      <DialogContent className="container w-4/5 max-w-[520px] md:w-3/5">
+      <DialogContent className="w-4/5 max-w-[520px] md:w-3/5">
         <Form {...props.form}>
           <form className="space-y-8" onSubmit={props.form.handleSubmit(props.onSubmit)}>
             <DialogHeader>

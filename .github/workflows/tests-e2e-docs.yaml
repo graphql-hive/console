@@ -1,0 +1,45 @@
+name: docs-e2e
+
+on:
+  workflow_call:
+
+jobs:
+  docs-e2e:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: packages/web/docs
+
+    steps:
+      - name: checkout
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
+
+      - name: setup environment
+        uses: ./.github/actions/setup
+        with:
+          codegen: false
+          actor: docs-e2e
+
+      - name: build docs
+        run: pnpm build
+        working-directory: packages/web/docs
+
+      - name: install playwright browsers
+        run: pnpm exec playwright install chromium webkit --with-deps
+        working-directory: packages/web/docs
+
+      - name: run playwright tests
+        run: pnpm test:e2e
+        working-directory: packages/web/docs
+        env:
+          CI: true
+          BASE_URL: http://localhost:3000
+
+      - name: upload playwright report
+        uses: actions/upload-artifact@4cec3d8aa04e39d1a68397de0c4cd6fb9dce8ec1 # v4.6.1
+        if: ${{ failure() }}
+        with:
+          name: docs-playwright-report
+          path: packages/web/docs/.playwright/
+          retention-days: 7

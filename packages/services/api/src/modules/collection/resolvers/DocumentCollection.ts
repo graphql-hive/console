@@ -6,5 +6,7 @@ export const DocumentCollection: DocumentCollectionResolvers = {
   name: root => root.title,
   description: root => root.description,
   operations: (root, args, { injector }) =>
-    injector.get(CollectionProvider).getOperations(root.id, args.first, args.after),
+    injector
+      .get(CollectionProvider)
+      .getOperationsForDocumentCollection(root, args.first, args.after),
 };

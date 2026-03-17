@@ -7,5 +7,4 @@ export const OrganizationGetStarted: Pick<
   | 'enablingUsageBasedBreakingChanges'
   | 'invitingMembers'
   | 'publishingSchema'
-  | '__isTypeOf'
 > = {};

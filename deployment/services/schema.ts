@@ -26,6 +26,9 @@ export function deploySchema({
   docker: Docker;
   sentry: Sentry;
 }) {
+  const minuteInMS = 60 * 1000;
+  const hourInMS = minuteInMS * 60;
+
   return new ServiceDeployment(
     'schema-service',
     {
@@ -38,8 +41,8 @@ export function deploySchema({
         REQUEST_BROKER: '1',
         SCHEMA_CACHE_POLL_INTERVAL_MS: '150',
         SCHEMA_CACHE_TTL_MS: '65000' /* 65s */,
-        SCHEMA_CACHE_SUCCESS_TTL_MS: '43200000' /* 12h */,
-        SCHEMA_COMPOSITION_TIMEOUT_MS: '60000' /* 60s */,
+        SCHEMA_CACHE_SUCCESS_TTL_MS: String(hourInMS * 2),
+        COMPOSITION_WORKER_MAX_OLD_GENERATION_SIZE_MB: '716',
         OPENTELEMETRY_COLLECTOR_ENDPOINT:
           observability.enabled && observability.tracingEndpoint
             ? observability.tracingEndpoint
@@ -49,8 +52,8 @@ export function deploySchema({
       livenessProbe: '/_health',
       startupProbe: '/_health',
       exposesMetrics: true,
-      replicas: environment.isProduction ? 3 : 1,
-      memoryLimit: '1Gi',
+      replicas: environment.podsConfig.general.replicas,
+      memoryLimit: environment.podsConfig.schemaService.memoryLimit,
       pdb: true,
     },
     [redis.deployment, redis.service],

@@ -9,8 +9,8 @@ export default gql`
   }
 
   extend type Project {
-    alertChannels: [AlertChannel!]!
-    alerts: [Alert!]!
+    alertChannels: [AlertChannel!]
+    alerts: [Alert!]
   }
 
   enum AlertChannelType {

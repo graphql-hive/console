@@ -1,5 +1,12 @@
 #!/usr/bin/env pwsh
 
+# Check for x86 architecture and exit if found
+if (![Environment]::Is64BitOperatingSystem) {
+  Write-Host "Unsupported architecture: x86" -ForegroundColor Red
+  Write-Host "GraphQL Hive CLI is only available for x64 systems." -ForegroundColor Red
+  exit 1
+}
+
 $version = if (Test-Path env:HIVE_CLI_VERSION) {
   $Env:HIVE_CLI_VERSION
 } else {
@@ -29,12 +36,7 @@ function ComputeDownloadLink() {
     "https://cli.graphql-hive.com/versions/$version/hive-v$version-win32"
   }
 
-  # Detect if the system is x86 or x64
-  $arch = if ([Environment]::Is64BitOperatingSystem) {
-    "x64"
-  } else {
-    "x86"
-  }
+  $arch = "x64"
 
   # append the arch to the url
   return "$base_url-$arch.tar.gz"
@@ -90,7 +92,7 @@ if (![System.IO.Directory]::Exists($hivePath)) {[void][System.IO.Directory]::Cre
 cd $hivePath
 Write-Output "Extracting hive to $hivePath..."
 $argumentList ="-xf $gunzippedfile"
-Start-Process -FilePath "tar.Exe" -NoNewWindow -Wait -RedirectStandardError "./NUL" -ArgumentList $argumentList 
+Start-Process -FilePath "tar.Exe" -NoNewWindow -Wait -RedirectStandardError "./NUL" -ArgumentList $argumentList
 
 # delete hive temp directory
 Remove-Item -LiteralPath $hiveTmpDir -Force -Recurse

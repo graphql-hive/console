@@ -269,7 +269,7 @@
             "uid": "grafanacloud-prom"
           },
           "editorMode": "code",
-          "expr": "sum by(cache) (rate(schema_external_composition_total{type=\"success\"}[$__rate_interval]))",
+          "expr": "sum by(cache) (rate(schema_composition_total{type=\"success\"}[$__rate_interval]))",
           "instant": false,
           "legendFormat": "{{cache}}",
           "range": true,
@@ -334,7 +334,7 @@
             "uid": "grafanacloud-prom"
           },
           "editorMode": "code",
-          "expr": "sum by(cache) (rate(schema_external_composition_total{type=\"success\"}[$__rate_interval]))",
+          "expr": "sum by(cache) (rate(schema_composition_total{type=\"success\"}[$__rate_interval]))",
           "instant": false,
           "legendFormat": "{{cache}}",
           "range": true,
@@ -426,7 +426,7 @@
             "uid": "grafanacloud-prom"
           },
           "editorMode": "code",
-          "expr": "sum by(cache) (rate(schema_external_composition_total{type=\"failure\"}[$__rate_interval]))",
+          "expr": "sum by(cache) (rate(schema_composition_total{type=\"failure\"}[$__rate_interval]))",
           "instant": false,
           "legendFormat": "{{cache}}",
           "range": true,
@@ -491,7 +491,7 @@
             "uid": "grafanacloud-prom"
           },
           "editorMode": "code",
-          "expr": "sum by(cache) (rate(schema_external_composition_total{type=\"failure\"}[$__rate_interval]))",
+          "expr": "sum by(cache) (rate(schema_composition_total{type=\"failure\"}[$__rate_interval]))",
           "instant": false,
           "legendFormat": "{{cache}}",
           "range": true,
@@ -587,7 +587,7 @@
             "uid": "grafanacloud-prom"
           },
           "editorMode": "code",
-          "expr": "sum by(cache) (rate(schema_external_composition_total{type=\"timeout\"}[$__rate_interval]))",
+          "expr": "sum by(cache) (rate(schema_composition_total{type=\"timeout\"}[$__rate_interval]))",
           "instant": false,
           "legendFormat": "{{cache}}",
           "range": true,
@@ -652,7 +652,7 @@
             "uid": "grafanacloud-prom"
           },
           "editorMode": "code",
-          "expr": "sum by(cache) (rate(schema_external_composition_total{type=\"timeout\"}[$__rate_interval]))",
+          "expr": "sum by(cache) (rate(schema_composition_total{type=\"timeout\"}[$__rate_interval]))",
           "instant": false,
           "legendFormat": "{{cache}}",
           "range": true,

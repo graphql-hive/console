@@ -1,16 +1,13 @@
 import * as pulumi from '@pulumi/pulumi';
 import { serviceLocalHost } from '../utils/local-endpoint';
 import { Observability as ObservabilityInstance } from '../utils/observability';
+import { Environment } from './environment';
 import { deployGrafana } from './grafana';
 
-export function deployObservability(config: {
-  envName: string;
-  /**
-   * Suffix for the table names (production, staging, dev).
-   * It can't be envName as "prod" is not a valid table suffix.
-   */
-  tableSuffix: string;
-}) {
+// Change this to control OTEL tracing for usage service
+const enableTracingForUsageService = true;
+
+export function deployObservability(config: { environment: Environment }) {
   const observabilityConfig = new pulumi.Config('observability');
 
   if (!observabilityConfig.getBoolean('enabled')) {
@@ -19,23 +16,30 @@ export function deployObservability(config: {
     };
   }
 
-  const observability = new ObservabilityInstance(config.envName, {
-    prom: {
-      endpoint: observabilityConfig.require('promEndpoint'),
-      username: observabilityConfig.require('promUsername'),
-      password: observabilityConfig.requireSecret('promPassword'),
-    },
-    loki: {
-      endpoint: observabilityConfig.require('lokiEndpoint'),
-      username: observabilityConfig.require('lokiUsername'),
-      password: observabilityConfig.requireSecret('lokiPassword'),
-    },
-    tempo: {
-      endpoint: observabilityConfig.require('tempoEndpoint'),
-      username: observabilityConfig.require('tempoUsername'),
-      password: observabilityConfig.requireSecret('tempoPassword'),
-    },
-  });
+  const useLocal = observabilityConfig.getBoolean('local');
+
+  const observability = new ObservabilityInstance(
+    config.environment,
+    useLocal
+      ? 'local'
+      : {
+          otlpMetrics: {
+            endpoint: observabilityConfig.require('otlpMetricsEndpoint'),
+            username: observabilityConfig.require('otlpMetricsUsername'),
+            password: observabilityConfig.requireSecret('otlpMetricsPassword'),
+          },
+          loki: {
+            endpoint: observabilityConfig.require('lokiEndpoint'),
+            username: observabilityConfig.require('lokiUsername'),
+            password: observabilityConfig.requireSecret('lokiPassword'),
+          },
+          tempo: {
+            endpoint: observabilityConfig.require('tempoEndpoint'),
+            username: observabilityConfig.require('tempoUsername'),
+            password: observabilityConfig.requireSecret('tempoPassword'),
+          },
+        },
+  );
 
   const observabilityInstance = observability.deploy();
 
@@ -43,13 +47,17 @@ export function deployObservability(config: {
     throw new Error('OTLP collector service is required for observability');
   }
 
+  const tableSuffix =
+    config.environment.envName === 'prod' ? 'production' : config.environment.envName;
+
   return {
     tracingEndpoint: serviceLocalHost(observabilityInstance.otlpCollectorService).apply(
       host => `http://${host}:4318/v1/traces`,
     ),
     observability: observabilityInstance,
-    grafana: deployGrafana(config.envName, config.tableSuffix),
+    grafana: useLocal ? undefined : deployGrafana(config.environment.envName, tableSuffix),
     enabled: true,
+    enabledForUsageService: enableTracingForUsageService,
   };
 }
 

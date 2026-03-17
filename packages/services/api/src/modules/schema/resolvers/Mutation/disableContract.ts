@@ -7,7 +7,7 @@ export const disableContract: NonNullable<MutationResolvers['disableContract']> 
   context,
 ) => {
   const result = await context.injector.get(ContractsManager).disableContract({
-    contractId: args.input.contractId,
+    contractId: args.input.contract.byId,
   });
 
   if (result.type === 'success') {

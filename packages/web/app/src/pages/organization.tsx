@@ -1,4 +1,4 @@
-import { ReactElement, useMemo, useRef } from 'react';
+import { ChangeEvent, ReactElement, useCallback, useMemo, useRef } from 'react';
 import { endOfDay, formatISO, startOfDay } from 'date-fns';
 import * as echarts from 'echarts';
 import ReactECharts from 'echarts-for-react';
@@ -80,9 +80,10 @@ const ProjectCard = (props: {
   const schemaVersionsInDateRange = useFormattedNumber(totalNumberOfVersions);
 
   return (
-    <Card className="h-full self-start bg-gray-900/50 p-5 px-0 pt-4 hover:bg-gray-800/40 hover:shadow-md hover:shadow-gray-800/50">
+    <Card className="hover:bg-neutral-4 hover:shadow-neutral-3/50 h-full self-start p-5 px-0 pt-4 hover:shadow-md">
       <Link
         to="/$organizationSlug/$projectSlug"
+        disabled={props.cleanOrganizationId == null || project?.slug == null}
         params={{
           organizationSlug: props.cleanOrganizationId ?? 'unknown-yet',
           projectSlug: project?.slug ?? 'unknown-yet',
@@ -167,12 +168,12 @@ const ProjectCard = (props: {
                 {project ? (
                   <div>
                     <h4 className="line-clamp-2 text-lg font-bold">{project.slug}</h4>
-                    <p className="text-xs text-gray-300">{projectTypeFullNames[project.type]}</p>
+                    <p className="text-neutral-11 text-xs">{projectTypeFullNames[project.type]}</p>
                   </div>
                 ) : (
                   <div>
-                    <div className="mb-4 h-4 w-48 animate-pulse rounded-full bg-gray-800 py-2" />
-                    <div className="h-2 w-24 animate-pulse rounded-full bg-gray-800" />
+                    <div className="bg-neutral-5 mb-4 h-4 w-48 animate-pulse rounded-full py-2" />
+                    <div className="bg-neutral-5 h-2 w-24 animate-pulse rounded-full" />
                   </div>
                 )}
                 <div className="flex flex-col gap-y-2 py-1">
@@ -181,7 +182,7 @@ const ProjectCard = (props: {
                       <Tooltip>
                         <TooltipTrigger>
                           <div className="flex flex-row items-center gap-x-2">
-                            <Globe className="size-4 text-gray-500" />
+                            <Globe className="text-neutral-10 size-4" />
                             <div className="text-xs">
                               {requestsInDateRange}{' '}
                               {pluralize(totalNumberOfRequests, 'request', 'requests')}
@@ -195,7 +196,7 @@ const ProjectCard = (props: {
                       <Tooltip>
                         <TooltipTrigger>
                           <div className="flex flex-row items-center gap-x-2">
-                            <History className="size-4 text-gray-500" />
+                            <History className="text-neutral-10 size-4" />
                             <div className="text-xs">
                               {schemaVersionsInDateRange}{' '}
                               {pluralize(totalNumberOfVersions, 'commit', 'commits')}
@@ -209,8 +210,8 @@ const ProjectCard = (props: {
                     </>
                   ) : (
                     <>
-                      <div className="my-1 h-2 w-16 animate-pulse rounded-full bg-gray-800" />
-                      <div className="my-1 h-2 w-16 animate-pulse rounded-full bg-gray-800" />
+                      <div className="bg-neutral-5 my-1 h-2 w-16 animate-pulse rounded-full" />
+                      <div className="bg-neutral-5 my-1 h-2 w-16 animate-pulse rounded-full" />
                     </>
                   )}
                 </div>
@@ -229,24 +230,23 @@ const OrganizationProjectsPageQuery = graphql(`
     $chartResolution: Int!
     $period: DateRangeInput!
   ) {
-    organization(selector: { organizationSlug: $organizationSlug }) {
-      organization {
-        id
-        slug
-      }
-    }
-    projects(selector: { organizationSlug: $organizationSlug }) {
-      total
-      nodes {
-        id
-        slug
-        ...ProjectCard_ProjectFragment
-        totalRequests(period: $period)
-        requestsOverTime(resolution: $chartResolution, period: $period) {
-          date
-          value
+    organization: organizationBySlug(organizationSlug: $organizationSlug) {
+      id
+      slug
+      projects {
+        edges {
+          node {
+            id
+            slug
+            ...ProjectCard_ProjectFragment
+            totalRequests(period: $period)
+            requestsOverTime(resolution: $chartResolution, period: $period) {
+              date
+              value
+            }
+            schemaVersionsCount(period: $period)
+          }
         }
-        schemaVersionsCount(period: $period)
       }
     }
   }
@@ -295,15 +295,15 @@ function OrganizationPageContent(
     requestPolicy: 'cache-and-network',
   });
 
-  const currentOrganization = query.data?.organization?.organization;
-  const projectsConnection = query.data?.projects;
+  const currentOrganization = query.data?.organization;
+  const projectsConnection = currentOrganization?.projects;
 
   const highestNumberOfRequests = useMemo(() => {
     let highest = 10;
 
-    if (projectsConnection?.nodes.length) {
-      for (const project of projectsConnection.nodes) {
-        for (const dataPoint of project.requestsOverTime) {
+    if (projectsConnection?.edges.length) {
+      for (const edge of projectsConnection.edges) {
+        for (const dataPoint of edge.node.requestsOverTime) {
           if (dataPoint.value > highest) {
             highest = dataPoint.value;
           }
@@ -321,31 +321,73 @@ function OrganizationPageContent(
 
     const searchPhrase = props.search;
     const newProjects = searchPhrase
-      ? projectsConnection.nodes.filter(project =>
-          project.slug.toLowerCase().includes(searchPhrase.toLowerCase()),
+      ? projectsConnection.edges.filter(edge =>
+          edge.node.slug.toLowerCase().includes(searchPhrase.toLowerCase()),
         )
-      : projectsConnection.nodes.slice();
+      : projectsConnection.edges.slice();
 
-    return newProjects.sort((a, b) => {
-      const diffRequests = b.totalRequests - a.totalRequests;
-      const diffVersions = b.schemaVersionsCount - a.schemaVersionsCount;
+    return newProjects
+      .map(project => project.node)
+      .sort((a, b) => {
+        const diffRequests = b.totalRequests - a.totalRequests;
+        const diffVersions = b.schemaVersionsCount - a.schemaVersionsCount;
 
-      if (sortKey === 'requests' && diffRequests !== 0) {
-        return diffRequests * sortOrder;
-      }
+        if (sortKey === 'requests' && diffRequests !== 0) {
+          return diffRequests * sortOrder;
+        }
 
-      if (sortKey === 'versions' && diffVersions !== 0) {
-        return diffVersions * sortOrder;
-      }
+        if (sortKey === 'versions' && diffVersions !== 0) {
+          return diffVersions * sortOrder;
+        }
 
-      if (sortKey === 'name') {
-        return a.slug.localeCompare(b.slug) * sortOrder * -1;
-      }
+        if (sortKey === 'name') {
+          return a.slug.localeCompare(b.slug) * sortOrder * -1;
+        }
 
-      // falls back to sort by name in ascending order
-      return a.slug.localeCompare(b.slug);
-    });
+        // falls back to sort by name in ascending order
+        return a.slug.localeCompare(b.slug);
+      });
   }, [projectsConnection, props.search, sortKey, sortOrder]);
+
+  const onSearchChange = useCallback(
+    (event: ChangeEvent<HTMLInputElement>) => {
+      void router.navigate({
+        search(params) {
+          return {
+            ...params,
+            search: event.target.value,
+          };
+        },
+        replace: true,
+      });
+    },
+    [router],
+  );
+
+  const onRequestsValueChange = useCallback(
+    (value: string) => {
+      void router.navigate({
+        search(params) {
+          return {
+            ...params,
+            sortBy: value,
+          };
+        },
+      });
+    },
+    [router],
+  );
+
+  const onSortClick = useCallback(() => {
+    void router.navigate({
+      search(params) {
+        return {
+          ...params,
+          sortOrder: props.sortOrder === 'asc' ? 'desc' : 'asc',
+        };
+      },
+    });
+  }, [router, props.sortOrder]);
 
   if (query.error) {
     return <QueryError organizationSlug={props.organizationSlug} error={query.error} />;
@@ -367,39 +409,18 @@ function OrganizationPageContent(
             <div>
               <div className="flex flex-row items-center gap-x-2">
                 <div className="relative">
-                  <SearchIcon className="text-muted-foreground absolute left-2.5 top-2.5 size-4" />
+                  <SearchIcon className="text-neutral-10 absolute left-2.5 top-2.5 size-4" />
                   <Input
                     type="search"
                     placeholder="Search..."
-                    value={props.search}
-                    onChange={event => {
-                      void router.navigate({
-                        search(params) {
-                          return {
-                            ...params,
-                            search: event.target.value,
-                          };
-                        },
-                      });
-                    }}
-                    className="bg-background w-full rounded-lg pl-8 md:w-[200px] lg:w-[336px]"
+                    defaultValue={props.search}
+                    onChange={onSearchChange}
+                    className="dark:bg-neutral-3 bg-neutral-2 w-full rounded-lg pl-8 md:w-[200px] lg:w-[336px]"
                   />
                 </div>
                 <Separator orientation="vertical" className="mx-4 h-8" />
-                <Select
-                  value={props.sortBy ?? 'requests'}
-                  onValueChange={value => {
-                    void router.navigate({
-                      search(params) {
-                        return {
-                          ...params,
-                          sortBy: value,
-                        };
-                      },
-                    });
-                  }}
-                >
-                  <SelectTrigger className="hover:bg-accent bg-transparent">
+                <Select value={props.sortBy ?? 'requests'} onValueChange={onRequestsValueChange}>
+                  <SelectTrigger>
                     {props.sortBy === 'versions'
                       ? 'Schema Versions'
                       : props.sortBy === 'name'
@@ -408,38 +429,24 @@ function OrganizationPageContent(
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="requests">
-                      <div className="font-bold">Requests</div>
-                      <div className="text-muted-foreground text-xs">
+                      <div className="font-medium">Requests</div>
+                      <div className="text-neutral-10 text-xs">
                         GraphQL requests made in the last {days} days.
                       </div>
                     </SelectItem>
                     <SelectItem value="versions">
-                      <div className="font-bold">Schema Versions</div>
-                      <div className="text-muted-foreground text-xs">
+                      <div className="font-medium">Schema Versions</div>
+                      <div className="text-neutral-10 text-xs">
                         Schemas published in last {days} days.
                       </div>
                     </SelectItem>
                     <SelectItem value="name">
-                      <div className="font-bold">Name</div>
-                      <div className="text-muted-foreground text-xs">Sort by project name.</div>
+                      <div className="font-medium">Name</div>
+                      <div className="text-neutral-10 text-xs">Sort by project name.</div>
                     </SelectItem>
                   </SelectContent>
                 </Select>
-                <Button
-                  className="shrink-0"
-                  variant="outline"
-                  size="icon"
-                  onClick={() => {
-                    void router.navigate({
-                      search(params) {
-                        return {
-                          ...params,
-                          sortOrder: props.sortOrder === 'asc' ? 'desc' : 'asc',
-                        };
-                      },
-                    });
-                  }}
-                >
+                <Button className="shrink-0" variant="outline" size="icon" onClick={onSortClick}>
                   {props.sortOrder === 'asc' ? (
                     <MoveUpIcon className="size-4" />
                   ) : (
@@ -450,10 +457,10 @@ function OrganizationPageContent(
             </div>
           </div>
           {currentOrganization && projectsConnection ? (
-            projectsConnection.total === 0 ? (
+            projectsConnection.edges.length === 0 ? (
               <EmptyList
                 title="Hive is waiting for your first project"
-                description='You can create a project by clicking the "Create Project" button'
+                description='You can create a project by clicking the "New Project" button'
                 docsUrl="/management/projects#create-a-new-project"
               />
             ) : (

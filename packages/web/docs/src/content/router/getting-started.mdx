@@ -1,0 +1,156 @@
+---
+title: 'Getting Started'
+---
+
+import { Tabs } from '@theguild/components'
+
+# Getting Started
+
+This guide walks you through setting up Hive Router from scratch. We'll go from zero to a working
+GraphQL API that you can query locally. By the end, you'll have a router serving a federated
+supergraph with real data.
+
+## Installation
+
+Hive Router comes as a standalone binary or Docker image. For trying things out locally, the binary
+is usually the quickest option. For production deployments, you'll probably want the Docker image.
+
+<Tabs items={["Docker Container", "Binary"]} >
+
+{/* Docker */}
+
+<Tabs.Tab>
+
+Pull the official Docker image:
+
+```sh
+docker pull ghcr.io/graphql-hive/router:latest
+```
+
+> We recommend using a pinned version number, instead of `latest`, for any non-development
+> environment.
+>
+> You can find the list of available versions on the
+> [GitHub Releases](https://github.com/graphql-hive/router/releases) page.
+
+</Tabs.Tab>
+
+{/* Binary */}
+
+<Tabs.Tab>
+
+This downloads the right binary for your operating system:
+
+```sh
+curl -o- https://raw.githubusercontent.com/graphql-hive/router/main/install.sh | sh
+```
+
+> Right now we have pre-built binaries for Linux and macOS. Windows users should use the Docker
+> option below.
+
+</Tabs.Tab>
+
+</Tabs>
+
+Check out the [GitHub Releases](https://github.com/graphql-hive/router/releases) page for all
+available versions.
+
+## Get a Sample Schema
+
+For this guide, we'll use a demo supergraph schema. It's the same one from our
+["Get Started with GraphQL Federation"](../schema-registry/get-started/apollo-federation#prerequisites)
+guide.
+
+This schema combines three demo subgraphs:
+[users](https://federation-demo.theguild.workers.dev/users),
+[products](https://federation-demo.theguild.workers.dev/products), and
+[reviews](https://federation-demo.theguild.workers.dev/reviews).
+
+Download the schema file:
+
+```sh
+curl -sSL https://federation-demo.theguild.workers.dev/supergraph.graphql > supergraph.graphql
+```
+
+> **What's a supergraph?** Think of it as a combined schema that merges all your individual subgraph
+> schemas into one unified graph. The router uses this to figure out which subgraphs to talk to for
+> each query.
+
+## Configure the Router
+
+Create a config file called `router.config.yaml` that tells the router where to find your schema:
+
+```yaml filename="router.config.yaml"
+supergraph:
+  source: file
+  path: ./supergraph.graphql
+```
+
+That's it for basic setup. The router will load your supergraph schema from that file. For
+additional configuration options, see the [Supergraph configuration](./supergraph) page.
+
+## Start the Router
+
+Now let's fire it up:
+
+<Tabs items={["Docker Container", "Binary"]} >
+
+{/* Docker */}
+
+<Tabs.Tab>
+
+Mount your files and run the container:
+
+```bash
+docker run \
+  -p 4000:4000 \
+  -v ./supergraph.graphql:/app/supergraph.graphql \
+  -v ./router.config.yaml:/app/router.config.yaml \
+  ghcr.io/graphql-hive/router:latest
+```
+
+</Tabs.Tab>
+
+{/* Binary */}
+
+<Tabs.Tab>
+
+Run the router with your config:
+
+```sh
+./hive_router
+```
+
+</Tabs.Tab>
+
+</Tabs>
+
+If everything works, you'll see logs showing the server starting up on port `4000`.
+
+## Try It Out
+
+Open `http://localhost:4000` in your browser to access the GraphQL IDE. Try running this query to
+see federation in action:
+
+```graphql
+query TopProducts {
+  topProducts {
+    name
+    reviews {
+      body
+      author {
+        name
+      }
+    }
+  }
+}
+```
+
+This query spans multiple subgraphs - it gets product data from the products service, review data
+from the reviews service, and user data from the users service. The router handles all the
+coordination behind the scenes.
+
+## What's Next?
+
+Now that you have the router running, dive into the [Configuration Reference](./configuration) to
+see all the ways you can customize it for your specific needs.

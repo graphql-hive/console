@@ -1,6 +1,6 @@
 {
   "name": "@graphql-hive/yoga",
-  "version": "0.38.2",
+  "version": "0.48.0",
   "type": "module",
   "description": "GraphQL Hive + GraphQL Yoga",
   "repository": {
@@ -44,24 +44,23 @@
   },
   "peerDependencies": {
     "graphql": "^0.13.0 || ^14.0.0 || ^15.0.0 || ^16.0.0",
-    "graphql-yoga": "^5.0.0"
+    "graphql-yoga": "^5.10.8"
   },
   "dependencies": {
     "@graphql-hive/core": "workspace:*",
-    "@graphql-yoga/plugin-persisted-operations": "^3.3.1",
-    "tiny-lru": "8.0.2"
+    "@graphql-hive/logger": "^1.0.9",
+    "@graphql-yoga/plugin-persisted-operations": "^3.9.0"
   },
   "devDependencies": {
-    "@graphql-tools/schema": "10.0.7",
+    "@graphql-tools/schema": "10.0.25",
     "@graphql-yoga/plugin-defer-stream": "3.7.0",
     "@graphql-yoga/plugin-disable-introspection": "2.7.0",
     "@graphql-yoga/plugin-graphql-sse": "3.7.0",
     "@graphql-yoga/plugin-response-cache": "3.9.0",
-    "@whatwg-node/fetch": "0.9.22",
-    "graphql-ws": "5.16.0",
-    "graphql-yoga": "5.7.0",
-    "nock": "14.0.0-beta.7",
-    "vitest": "2.0.5",
+    "@whatwg-node/fetch": "0.10.13",
+    "graphql-ws": "5.16.1",
+    "graphql-yoga": "5.13.3",
+    "vitest": "4.0.9",
     "ws": "8.18.0"
   },
   "publishConfig": {

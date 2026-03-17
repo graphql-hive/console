@@ -4,7 +4,7 @@ import { useOperationFromQueryString } from './useOperationFromQueryString';
 
 const OperationQuery = graphql(`
   query Operation($selector: TargetSelectorInput!, $id: ID!) {
-    target(selector: $selector) {
+    target(reference: { bySelector: $selector }) {
       id
       documentCollectionOperation(id: $id) {
         id
@@ -42,4 +42,30 @@ export function useCurrentOperation(props: {
   });
   // if operationId is undefined `data` could contain previous state
   return operationIdFromSearch ? data?.target?.documentCollectionOperation : null;
+}
+
+export function useCurrentOperationWithFetchingState(props: {
+  organizationSlug: string;
+  projectSlug: string;
+  targetSlug: string;
+}) {
+  const operationIdFromSearch = useOperationFromQueryString();
+  const [{ data, fetching }] = useQuery({
+    query: OperationQuery,
+    variables: {
+      selector: {
+        targetSlug: props.targetSlug,
+        projectSlug: props.projectSlug,
+        organizationSlug: props.organizationSlug,
+      },
+      id: operationIdFromSearch || '',
+    },
+    pause: !operationIdFromSearch,
+    requestPolicy: 'network-only',
+  });
+
+  return {
+    currentOperation: operationIdFromSearch ? data?.target?.documentCollectionOperation : null,
+    fetching,
+  };
 }

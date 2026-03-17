@@ -2,11 +2,16 @@ import { memo, ReactElement, useEffect, useMemo, useState } from 'react';
 import { AlertCircleIcon, PartyPopperIcon } from 'lucide-react';
 import { useQuery } from 'urql';
 import { Page, TargetLayout } from '@/components/layouts/target';
-import { SchemaVariantFilter } from '@/components/target/explorer/filter';
+import {
+  GraphQLFieldsSkeleton,
+  GraphQLTypeCardSkeleton,
+} from '@/components/target/explorer/common';
+import { MetadataFilter, SchemaVariantFilter } from '@/components/target/explorer/filter';
+import { SchemaExplorerProvider } from '@/components/target/explorer/provider';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { DateRangePicker, presetLast7Days } from '@/components/ui/date-range-picker';
-import { EmptyList, noSchemaVersion } from '@/components/ui/empty-list';
+import { NoSchemaVersion } from '@/components/ui/empty-list';
 import { Link } from '@/components/ui/link';
 import { Meta } from '@/components/ui/meta';
 import { Subtitle, Title } from '@/components/ui/page';
@@ -88,7 +93,7 @@ const DeprecatedSchemaView = memo(function _DeprecatedSchemaView(props: {
           <PartyPopperIcon className="size-10 text-emerald-500" />
 
           <h3 className="mt-4 text-lg font-semibold">No deprecations found</h3>
-          <p className="text-muted-foreground mb-4 mt-2 text-sm">
+          <p className="text-neutral-10 mb-4 mt-2 text-sm">
             It looks like you are maintaining your schema well, congratulations!
           </p>
         </div>
@@ -113,9 +118,7 @@ const DeprecatedSchemaView = memo(function _DeprecatedSchemaView(props: {
                   size="sm"
                   className={cn(
                     'rounded-none px-2 py-1',
-                    letter === selectedLetter
-                      ? 'text-orange-500'
-                      : 'text-gray-500 hover:text-orange-500',
+                    letter === selectedLetter ? 'text-accent' : 'text-neutral-10 hover:text-accent',
                   )}
                   key={letter}
                 >
@@ -141,7 +144,6 @@ const DeprecatedSchemaView = memo(function _DeprecatedSchemaView(props: {
               targetSlug={props.targetSlug}
               warnAboutDeprecatedArguments
               warnAboutUnusedArguments={false}
-              styleDeprecated={false}
             />
           );
         })}
@@ -158,12 +160,18 @@ const DeprecatedSchemaExplorer_DeprecatedSchemaQuery = graphql(`
     $period: DateRangeInput!
   ) {
     target(
-      selector: {
-        organizationSlug: $organizationSlug
-        projectSlug: $projectSlug
-        targetSlug: $targetSlug
+      reference: {
+        bySelector: {
+          organizationSlug: $organizationSlug
+          projectSlug: $projectSlug
+          targetSlug: $targetSlug
+        }
       }
     ) {
+      project {
+        id
+        type
+      }
       id
       slug
       latestSchemaVersion {
@@ -172,21 +180,19 @@ const DeprecatedSchemaExplorer_DeprecatedSchemaQuery = graphql(`
       latestValidSchemaVersion {
         __typename
         id
-        valid
-        deprecatedSchema(usage: { period: $period }) {
+        explorer {
+          metadataAttributes {
+            name
+            values
+          }
+        }
+        deprecatedSchema(period: { absoluteRange: $period }) {
           ...DeprecatedSchemaView_DeprecatedSchemaExplorerFragment
         }
       }
-    }
-    operationsStats(
-      selector: {
-        organizationSlug: $organizationSlug
-        projectSlug: $projectSlug
-        targetSlug: $targetSlug
-        period: $period
+      operationsStats(period: $period) {
+        totalRequests
       }
-    ) {
-      totalRequests
     }
   }
 `);
@@ -219,7 +225,13 @@ function DeprecatedSchemaExplorer(props: {
   }, [dateRangeController.resolvedRange]);
 
   if (query.error) {
-    return <QueryError organizationSlug={props.organizationSlug} error={query.error} />;
+    return (
+      <QueryError
+        organizationSlug={props.organizationSlug}
+        error={query.error}
+        showLogoutButton={false}
+      />
+    );
   }
 
   const latestSchemaVersion = query.data?.target?.latestSchemaVersion;
@@ -246,9 +258,12 @@ function DeprecatedSchemaExplorer(props: {
             targetSlug={props.targetSlug}
             variant="deprecated"
           />
+          {latestValidSchemaVersion?.explorer?.metadataAttributes?.length ? (
+            <MetadataFilter options={latestValidSchemaVersion.explorer.metadataAttributes} />
+          ) : null}
         </div>
       </div>
-      {!query.fetching && (
+      {!query.fetching && !query.stale ? (
         <>
           {latestValidSchemaVersion?.deprecatedSchema && latestSchemaVersion ? (
             <>
@@ -279,7 +294,7 @@ function DeprecatedSchemaExplorer(props: {
                 </Alert>
               )}
               <DeprecatedSchemaView
-                totalRequests={query.data?.operationsStats.totalRequests ?? 0}
+                totalRequests={query.data?.target?.operationsStats.totalRequests ?? 0}
                 explorer={latestValidSchemaVersion.deprecatedSchema}
                 organizationSlug={props.organizationSlug}
                 projectSlug={props.projectSlug}
@@ -287,9 +302,16 @@ function DeprecatedSchemaExplorer(props: {
               />
             </>
           ) : (
-            noSchemaVersion
+            <NoSchemaVersion
+              recommendedAction="publish"
+              projectType={query.data?.target?.project?.type ?? null}
+            />
           )}
         </>
+      ) : (
+        <GraphQLTypeCardSkeleton>
+          <GraphQLFieldsSkeleton count={15} />
+        </GraphQLTypeCardSkeleton>
       )}
     </>
   );
@@ -301,14 +323,10 @@ const TargetExplorerDeprecatedSchemaPageQuery = graphql(`
     $projectSlug: String!
     $targetSlug: String!
   ) {
-    organization(selector: { organizationSlug: $organizationSlug }) {
-      organization {
-        id
-        rateLimit {
-          retentionInDays
-        }
-        slug
-      }
+    organization: organizationBySlug(organizationSlug: $organizationSlug) {
+      id
+      usageRetentionInDays
+      slug
     }
     hasCollectedOperations(
       selector: {
@@ -335,38 +353,28 @@ function ExplorerDeprecatedSchemaPageContent(props: {
   });
 
   if (query.error) {
-    return <QueryError organizationSlug={props.organizationSlug} error={query.error} />;
+    return (
+      <QueryError
+        organizationSlug={props.organizationSlug}
+        error={query.error}
+        showLogoutButton={false}
+      />
+    );
   }
 
-  const currentOrganization = query.data?.organization?.organization;
-  const hasCollectedOperations = query.data?.hasCollectedOperations === true;
+  const currentOrganization = query.data?.organization;
+
+  if (!currentOrganization) {
+    return null;
+  }
 
   return (
-    <TargetLayout
+    <DeprecatedSchemaExplorer
+      dataRetentionInDays={currentOrganization.usageRetentionInDays}
       organizationSlug={props.organizationSlug}
       projectSlug={props.projectSlug}
       targetSlug={props.targetSlug}
-      page={Page.Explorer}
-    >
-      {currentOrganization ? (
-        hasCollectedOperations ? (
-          <DeprecatedSchemaExplorer
-            dataRetentionInDays={currentOrganization.rateLimit.retentionInDays}
-            organizationSlug={props.organizationSlug}
-            projectSlug={props.projectSlug}
-            targetSlug={props.targetSlug}
-          />
-        ) : (
-          <div className="py-8">
-            <EmptyList
-              title="Hive is waiting for your first collected operation"
-              description="You can collect usage of your GraphQL API with Hive Client"
-              docsUrl="/features/usage-reporting"
-            />
-          </div>
-        )
-      ) : null}
-    </TargetLayout>
+    />
   );
 }
 
@@ -378,7 +386,16 @@ export function TargetExplorerDeprecatedPage(props: {
   return (
     <>
       <Meta title="Deprecated Schema Explorer" />
-      <ExplorerDeprecatedSchemaPageContent {...props} />
+      <SchemaExplorerProvider>
+        <TargetLayout
+          organizationSlug={props.organizationSlug}
+          projectSlug={props.projectSlug}
+          targetSlug={props.targetSlug}
+          page={Page.Explorer}
+        >
+          <ExplorerDeprecatedSchemaPageContent {...props} />
+        </TargetLayout>
+      </SchemaExplorerProvider>
     </>
   );
 }

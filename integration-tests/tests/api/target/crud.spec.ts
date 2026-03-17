@@ -9,9 +9,13 @@ test.concurrent(`changing a target's slug should result changing its name`, asyn
 
   const renameResult = await updateTargetSlug(
     {
-      organizationSlug: organization.slug,
-      projectSlug: project.slug,
-      targetSlug: target.slug,
+      target: {
+        bySelector: {
+          organizationSlug: organization.slug,
+          projectSlug: project.slug,
+          targetSlug: target.slug,
+        },
+      },
       slug: 'bar',
     },
     ownerToken,
@@ -32,9 +36,13 @@ test.concurrent(
 
     const renameResult = await updateTargetSlug(
       {
-        organizationSlug: organization.slug,
-        projectSlug: project.slug,
-        targetSlug: target.slug,
+        target: {
+          bySelector: {
+            organizationSlug: organization.slug,
+            projectSlug: project.slug,
+            targetSlug: target.slug,
+          },
+        },
         slug: target.slug,
       },
       ownerToken,
@@ -51,7 +59,7 @@ test.concurrent(
   `changing a target's slug to a taken value should result in an error`,
   async ({ expect }) => {
     const { createOrg, ownerToken } = await initSeed().createOwner();
-    const { createProject, organization, projects } = await createOrg();
+    const { createProject, organization } = await createOrg();
     const { project, targets } = await createProject(ProjectType.Single);
 
     const firstTarget = targets[0];
@@ -62,9 +70,13 @@ test.concurrent(
 
     const renameResult = await updateTargetSlug(
       {
-        organizationSlug: organization.slug,
-        projectSlug: project.slug,
-        targetSlug: firstTarget.slug,
+        target: {
+          bySelector: {
+            organizationSlug: organization.slug,
+            projectSlug: project.slug,
+            targetSlug: firstTarget.slug,
+          },
+        },
         slug: secondTarget.slug,
       },
       ownerToken,
@@ -90,9 +102,13 @@ test.concurrent(
 
     await updateTargetSlug(
       {
-        organizationSlug: organization.slug,
-        projectSlug: project2.slug,
-        targetSlug: target2.slug,
+        target: {
+          bySelector: {
+            organizationSlug: organization.slug,
+            projectSlug: project2.slug,
+            targetSlug: target2.slug,
+          },
+        },
         slug: sharedSlug,
       },
       ownerToken,
@@ -100,9 +116,13 @@ test.concurrent(
 
     const renameResult = await updateTargetSlug(
       {
-        organizationSlug: organization.slug,
-        projectSlug: project.slug,
-        targetSlug: target.slug,
+        target: {
+          bySelector: {
+            organizationSlug: organization.slug,
+            projectSlug: project.slug,
+            targetSlug: target.slug,
+          },
+        },
         slug: sharedSlug,
       },
       ownerToken,
@@ -124,9 +144,13 @@ test.concurrent(
 
     const renameResult = await updateTargetSlug(
       {
-        organizationSlug: organization.slug,
-        projectSlug: project.slug,
-        targetSlug: target.slug,
+        target: {
+          bySelector: {
+            organizationSlug: organization.slug,
+            projectSlug: project.slug,
+            targetSlug: target.slug,
+          },
+        },
         slug: 'view',
       },
       ownerToken,
@@ -136,3 +160,33 @@ test.concurrent(
     expect(renameResult.updateTargetSlug.error?.message).toBeDefined();
   },
 );
+
+test.concurrent('organization member user can create a target', async ({ expect }) => {
+  const { createOrg } = await initSeed().createOwner();
+  const { ownerEmail: orgMemberEmail, ownerToken: orgMemberToken } = await initSeed().createOwner();
+  const { createProject, inviteMember, joinMemberUsingCode, organization } = await createOrg();
+  const inviteMemberResult = await inviteMember(
+    orgMemberEmail,
+    undefined,
+    organization.memberRoles?.edges?.find(edge => edge.node.name === 'Admin')?.node.id,
+  );
+
+  if (inviteMemberResult.ok == null) {
+    throw new Error('Invite did not succeed' + JSON.stringify(inviteMemberResult));
+  }
+
+  const joinMemberUsingCodeResult = await joinMemberUsingCode(
+    inviteMemberResult.ok.createdOrganizationInvitation.code,
+    orgMemberToken,
+  ).then(r => r.expectNoGraphQLErrors());
+
+  expect(joinMemberUsingCodeResult.joinOrganization.__typename).toEqual('OrganizationPayload');
+
+  const { createTarget } = await createProject(ProjectType.Single);
+
+  const createTargetResult = await createTarget({
+    accessToken: orgMemberToken,
+  }).then(r => r.expectNoGraphQLErrors());
+  expect(createTargetResult.createTarget.error).toEqual(null);
+  expect(createTargetResult.createTarget.ok).not.toBeNull();
+});

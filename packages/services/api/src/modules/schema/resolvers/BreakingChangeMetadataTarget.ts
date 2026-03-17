@@ -8,4 +8,7 @@ export const BreakingChangeMetadataTarget: BreakingChangeMetadataTargetResolvers
       .getTargetById({ targetId: record.id })
       .catch(() => null);
   },
+  slug: async record => {
+    return record.name;
+  },
 };

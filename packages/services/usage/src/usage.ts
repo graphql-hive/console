@@ -1,9 +1,20 @@
-import { CompressionTypes, Kafka, logLevel, Partitioners, RetryOptions } from 'kafkajs';
-import type { ServiceLogger } from '@hive/service-common';
+import net from 'net';
+import tls from 'tls';
+import {
+  CompressionTypes,
+  ISocketFactory,
+  Kafka,
+  logLevel,
+  Partitioners,
+  RetryOptions,
+} from 'kafkajs';
+import { traceInlineSync, type ServiceLogger } from '@hive/service-common';
 import type { RawOperationMap, RawReport } from '@hive/usage-common';
 import { compress } from '@hive/usage-common';
-import { calculateChunkSize, createKVBuffer, isBufferTooBigError } from './buffer';
+import * as Sentry from '@sentry/node';
+import { calculateChunkSize, createKVBuffer } from './buffer';
 import type { KafkaEnvironment } from './environment';
+import { createFallbackQueue } from './fallback-queue';
 import {
   bufferFlushes,
   compressDuration,
@@ -14,10 +25,10 @@ import {
 } from './metrics';
 
 enum Status {
-  Waiting,
-  Ready,
-  Unhealthy,
-  Stopped,
+  Waiting = 'Waiting',
+  Ready = 'Ready',
+  Unhealthy = 'Unhealthy',
+  Stopped = 'Stopped',
 }
 
 const levelMap = {
@@ -29,11 +40,11 @@ const levelMap = {
 } as const;
 
 const retryOptions = {
-  maxRetryTime: 15 * 1000,
+  maxRetryTime: 30_000,
   initialRetryTime: 300,
   factor: 0.2,
   multiplier: 2,
-  retries: 3,
+  retries: 5,
 } satisfies RetryOptions; // why satisfies? To be able to use `retryOptions.retries` and get `number` instead of `number | undefined`
 
 export function splitReport(report: RawReport, numOfChunks: number) {
@@ -101,6 +112,25 @@ export function createUsage(config: {
 }) {
   const { logger } = config;
 
+  // Default KafkaJS socketFactory implementation with minor optimizations for Azure
+  // https://github.com/tulios/kafkajs/blob/master/src/network/socketFactory.js
+  const socketFactory: ISocketFactory = ({ host, port, ssl, onConnect }) => {
+    const socket = ssl
+      ? tls.connect(
+          Object.assign({ host, port }, !net.isIP(host) ? { servername: host } : {}, ssl),
+          onConnect,
+        )
+      : net.connect({ host, port }, onConnect);
+
+    // This is equivalent to kafka's "connections.max.idle.ms"
+    socket.setKeepAlive(true, 180_000);
+    // disable nagle's algorithm to have higher throughput since this logic
+    // is already buffering messages into large payloads
+    socket.setNoDelay(true);
+
+    return socket;
+  };
+
   const kafka = new Kafka({
     clientId: 'usage',
     brokers: [config.kafka.connection.broker],
@@ -138,11 +168,13 @@ export function createUsage(config: {
       };
     },
     // settings recommended by Azure EventHub https://docs.microsoft.com/en-us/azure/event-hubs/apache-kafka-configurations
-    requestTimeout: 60_000, //
-    connectionTimeout: 5000,
-    authenticationTimeout: 5000,
+    requestTimeout: 30_000,
+    connectionTimeout: 5_000,
+    authenticationTimeout: 5_000,
     retry: retryOptions,
+    socketFactory,
   });
+
   const producer = kafka.producer({
     // settings recommended by Azure EventHub https://docs.microsoft.com/en-us/azure/event-hubs/apache-kafka-configurations
     metadataMaxAge: 180_000,
@@ -155,10 +187,14 @@ export function createUsage(config: {
     interval: config.kafka.buffer.interval,
     limitInBytes: 990_000, // 1MB is the limit of a single request to EventHub, let's keep it below that
     useEstimator: config.kafka.buffer.dynamic,
+    isTooLargePayloadError(error) {
+      return error instanceof Error && 'type' in error && error.type === 'MESSAGE_TOO_LARGE';
+    },
     calculateReportSize(report) {
       return Object.keys(report.map).length;
     },
     split(report, numOfChunks) {
+      logger.debug('Splitting report into %s (id=%s)', numOfChunks, report.id);
       return splitReport(report, numOfChunks);
     },
     onRetry(reports) {
@@ -168,19 +204,17 @@ export function createUsage(config: {
     },
     async sender(reports, estimatedSizeInBytes, batchId, validateSize) {
       const numOfOperations = reports.reduce((sum, report) => report.size + sum, 0);
+      const compressLatencyStop = compressDuration.startTimer();
+      const value = await compress(JSON.stringify(reports)).finally(() => {
+        compressLatencyStop();
+      });
+      estimationError.observe(Math.abs(estimatedSizeInBytes - value.byteLength) / value.byteLength);
+
+      validateSize(value.byteLength); // this will throw if the size is too big
+
       try {
-        const compressLatencyStop = compressDuration.startTimer();
-        const value = await compress(JSON.stringify(reports)).finally(() => {
-          compressLatencyStop();
-        });
-        const stopTimer = kafkaDuration.startTimer();
-
-        estimationError.observe(
-          Math.abs(estimatedSizeInBytes - value.byteLength) / value.byteLength,
-        );
-
-        validateSize(value.byteLength);
         bufferFlushes.inc();
+        const stopTimer = kafkaDuration.startTimer();
         const meta = await producer
           .send({
             topic: config.kafka.topic,
@@ -197,107 +231,122 @@ export function createUsage(config: {
         if (meta[0].errorCode) {
           rawOperationFailures.inc(numOfOperations);
           logger.error(`Failed to flush (id=%s, errorCode=%s)`, batchId, meta[0].errorCode);
+          Sentry.setTags({
+            batchId,
+            errorCode: meta[0].errorCode,
+            numOfOperations,
+          });
+          Sentry.captureException(new Error(`Failed to flush usage reports to Kafka`));
         } else {
           rawOperationWrites.inc(numOfOperations);
           logger.info(`Flushed (id=%s, operations=%s)`, batchId, numOfOperations);
         }
-
-        status = Status.Ready;
       } catch (error: any) {
         rawOperationFailures.inc(numOfOperations);
 
-        if (isBufferTooBigError(error)) {
-          logger.debug('Buffer too big, retrying (id=%s, error=%s)', batchId, error.message);
-        } else {
-          status = Status.Unhealthy;
-          logger.error(`Failed to flush (id=%s, error=%s)`, batchId, error.message);
-          scheduleReconnect();
-        }
+        changeStatus(Status.Unhealthy);
+        logger.error(
+          `Failed to flush. Adding to fallback queue (id=%s, error=%s)`,
+          batchId,
+          error.message,
+        );
+        fallback.add(value, numOfOperations);
 
         throw error;
       }
     },
   });
 
-  let status: Status = Status.Waiting;
-
-  let reconnectTimeout: ReturnType<typeof setTimeout> | null = null;
-  let reconnectCounter = 0;
-  function scheduleReconnect() {
-    logger.info('Scheduling reconnect');
-    if (reconnectTimeout) {
-      logger.info('Reconnect was already scheduled. Waiting...');
-      return;
-    }
-
-    reconnectCounter++;
-
-    if (reconnectCounter > retryOptions.retries) {
-      const message = 'Failed to reconnect Kafka producer. Too many retries.';
-      logger.error(message);
-      status = Status.Unhealthy;
-      void config.onStop(message);
-      return;
-    }
-
-    logger.info('Reconnecting in 1 second... (attempt=%s)', reconnectCounter);
-    reconnectTimeout = setTimeout(() => {
-      logger.info('Reconnecting Kafka producer');
-      status = Status.Waiting;
-      producer
-        .connect()
-        .then(() => {
-          logger.info('Kafka producer reconnected');
-          reconnectCounter = 0;
-        })
-        .catch(error => {
-          logger.error('Failed to reconnect Kafka producer: %s', error.message);
-          logger.info('Reconnecting in 2 seconds...');
-          setTimeout(scheduleReconnect, 2000);
-        })
-        .finally(() => {
-          if (reconnectTimeout != null) {
-            clearTimeout(reconnectTimeout);
-            reconnectTimeout = null;
-          }
+  const fallback = createFallbackQueue({
+    async send(value, numOfOperations) {
+      bufferFlushes.inc();
+      const stopTimer = kafkaDuration.startTimer();
+      try {
+        await producer.send({
+          topic: config.kafka.topic,
+          compression: CompressionTypes.None,
+          messages: [
+            {
+              value,
+            },
+          ],
         });
-    }, 1000);
+        rawOperationWrites.inc(numOfOperations);
+      } catch (error) {
+        rawOperationFailures.inc(numOfOperations);
+        throw error;
+      } finally {
+        stopTimer();
+      }
+
+      if (fallback.size() === 0) {
+        logger.info('Fallback queue flushed');
+        changeStatus(Status.Ready);
+      }
+    },
+    logger: logger.child({ component: 'fallback' }),
+  });
+
+  let status: Status = Status.Waiting;
+  function changeStatus(newStatus: Status) {
+    if (status === newStatus) {
+      return;
+    }
+
+    logger.info('Changing status to %s', newStatus);
+    status = newStatus;
   }
 
   producer.on(producer.events.CONNECT, () => {
-    logger.info('Kafka producer: connected');
-    status = Status.Ready;
-  });
+    logger.info(`Kafka producer: connected`);
 
-  producer.on(producer.events.DISCONNECT, () => {
-    logger.info('Kafka producer: disconnected');
-    status = Status.Stopped;
+    if (status === Status.Unhealthy) {
+      changeStatus(Status.Ready);
+    }
   });
 
   producer.on(producer.events.REQUEST_TIMEOUT, () => {
     logger.info('Kafka producer: request timeout');
   });
 
+  producer.on(producer.events.DISCONNECT, () => {
+    logger.info(`Kafka producer: disconnected`);
+    if (status === Status.Ready) {
+      changeStatus(Status.Unhealthy);
+    }
+  });
+
   async function stop() {
     logger.info('Started Usage shutdown...');
 
-    status = Status.Stopped;
+    changeStatus(Status.Stopped);
     await buffer.stop();
     logger.info(`Buffering stopped`);
+    await fallback.stop();
+    logger.info(`Fallback stopped`);
     await producer.disconnect();
-    logger.info(`Producer disconnected`);
 
     logger.info('Usage stopped');
   }
 
   return {
-    collect(report: RawReport) {
-      if (status !== Status.Ready) {
-        throw new Error('Usage is not ready yet');
-      }
+    collect: traceInlineSync(
+      'collect',
+      {
+        initAttributes: report => ({
+          'hive.service.ready': status == Status.Ready,
+          'hive.input.report.id': report.id,
+          'hive.input.report.size': Object.keys(report.map).length,
+        }),
+      },
+      (report: RawReport) => {
+        if (status !== Status.Ready) {
+          throw new Error('Usage is not ready yet');
+        }
 
-      buffer.add(report);
-    },
+        buffer.add(report);
+      },
+    ),
     readiness() {
       return status === Status.Ready;
     },
@@ -305,9 +354,12 @@ export function createUsage(config: {
       logger.info('Starting Kafka producer');
       await producer.connect();
       buffer.start();
-      status = Status.Ready;
+      changeStatus(Status.Ready);
       logger.info('Kafka producer is ready');
+      fallback.start();
     },
     stop,
   };
 }
+
+export type Usage = ReturnType<typeof createUsage>;

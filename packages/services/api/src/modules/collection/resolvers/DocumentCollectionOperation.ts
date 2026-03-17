@@ -4,10 +4,10 @@ import type { DocumentCollectionOperationResolvers } from './../../../__generate
 export const DocumentCollectionOperation: DocumentCollectionOperationResolvers = {
   name: op => op.title,
   query: op => op.contents,
-  collection: async (op, args, { injector }) => {
+  collection: async (op, _args, { injector }) => {
     const collection = await injector
       .get(CollectionProvider)
-      .getCollection(op.documentCollectionId);
+      .getCollectionForDocumentCollectionOperation(op);
 
     // This should not happen, but we do want to flag this as an unexpected error.
     if (!collection) {

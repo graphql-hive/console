@@ -6,7 +6,7 @@ import { useNotifications } from '@/lib/hooks';
 
 export const CollectionsQuery = graphql(`
   query Collections($selector: TargetSelectorInput!) {
-    target(selector: $selector) {
+    target(reference: { bySelector: $selector }) {
       id
       documentCollections {
         edges {

@@ -12,12 +12,12 @@
 
   # Supports these options of passing a version:
   # 1.
-  #   curl -sSL https://cli.graphql-hive.com/install.sh | HIVE_CLI_VERSION=0.30.1 sh
+  #   curl -sSL https://graphql-hive.com/install.sh | HIVE_CLI_VERSION=0.30.1 sh
   # 2.
   #   export HIVE_CLI_VERSION="0.30.1"
-  #   curl -sSL https://cli.graphql-hive.com/install.sh | sh
+  #   curl -sSL https://graphql-hive.com/install.sh | sh
   # 3.
-  #   curl -sSL https://cli.graphql-hive.com/install.sh | sh -s 0.30.1
+  #   curl -sSL https://graphql-hive.com/install.sh | sh -s 0.30.1
   VERSION_FROM_FIRST_ARG="$1"
   # if HIVE_CLI_VERSION and VERSION_FROM_FIRST_ARG are empty, ignore the HIVE_CLI_VERSION
   if [ -z "$VERSION_FROM_FIRST_ARG" ] && [ -z "$HIVE_CLI_VERSION" ]; then
@@ -29,7 +29,7 @@
   # run inside sudo
   $SUDO sh << SCRIPT
       set -e
-      
+
       OS=""
       ARCH=""
       DOWNLOAD_PATH_BASE=""
@@ -73,18 +73,10 @@
           ARCH=x64
         elif [ "\$ARCH" = "amd64" ]; then
           ARCH=x64
-        elif [ "\$ARCH" = "arm64" ]; then
-          if [ "\$OS" = "darwin" ]; then
-            ARCH=arm64
-          else
-            ARCH=arm
-          fi
-        elif starts_with "aarch" "\$ARCH"; then
-          if [ "\$ARCH" = "aarch64" ]; then
-            ARCH=arm64
-          else
-            ARCH=arm
-          fi
+        elif [ "\$OS" = "darwin" ]; then
+          ARCH=arm64
+        elif [ "\$ARCH" = "aarch64" ]; then
+          ARCH=arm64
         else
          unsupported_arch "\$OS / \$ARCH"
         fi
@@ -111,6 +103,7 @@
 
         echo "Downloaded to \$DOWNLOAD_DIR"
 
+        mkdir -p /usr/local/lib
         rm -rf "/usr/local/lib/hive"
         tar xzf "\$DOWNLOAD_DIR/hive.tar.gz" -C /usr/local/lib
         rm -rf "\$DOWNLOAD_DIR"

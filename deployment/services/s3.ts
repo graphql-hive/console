@@ -34,4 +34,17 @@ export function deployS3Mirror() {
   return { secret };
 }
 
+export function deployS3AuditLog() {
+  const config = new pulumi.Config('audit-log-s3');
+
+  const secret = new S3Secret('audit-log-s3', {
+    endpoint: config.require('endpoint'),
+    bucket: config.require('bucketName'),
+    accessKeyId: config.requireSecret('accessKeyId'),
+    secretAccessKey: config.requireSecret('secretAccessKey'),
+  });
+
+  return { secret };
+}
+
 export type S3 = ReturnType<typeof deployS3>;

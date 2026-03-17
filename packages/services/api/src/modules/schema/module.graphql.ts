@@ -2,38 +2,18 @@ import { gql } from 'graphql-modules';
 
 export default gql`
   extend type Mutation {
-    """
-    Requires API Token
-    """
     schemaPublish(input: SchemaPublishInput!): SchemaPublishPayload!
-    """
-    Requires API Token
-    """
     schemaCheck(input: SchemaCheckInput!): SchemaCheckPayload!
-    """
-    Requires API Token
-    """
     schemaDelete(input: SchemaDeleteInput!): SchemaDeleteResult!
-    """
-    Requires API Token
-
-    Publish a schema of a single or multiple services and compose a supergraph schema,
-    including the rest of the services in the project.
-    """
     schemaCompose(input: SchemaComposeInput!): SchemaComposePayload!
 
-    updateSchemaVersionStatus(input: SchemaVersionUpdateInput!): SchemaVersion!
     updateBaseSchema(input: UpdateBaseSchemaInput!): UpdateBaseSchemaResult!
-    updateNativeFederation(input: UpdateNativeFederationInput!): UpdateNativeFederationResult!
-    enableExternalSchemaComposition(
-      input: EnableExternalSchemaCompositionInput!
-    ): EnableExternalSchemaCompositionResult!
-    disableExternalSchemaComposition(
-      input: DisableExternalSchemaCompositionInput!
-    ): DisableExternalSchemaCompositionResult!
-    updateProjectRegistryModel(
-      input: UpdateProjectRegistryModelInput!
-    ): UpdateProjectRegistryModelResult!
+    """
+    Update the schema composition configuration of a federation project.
+    """
+    updateSchemaComposition(
+      input: UpdateSchemaCompositionInput! @tag(name: "public")
+    ): UpdateSchemaCompositionResult! @tag(name: "public")
     """
     Approve a failed schema check with breaking changes.
     """
@@ -41,75 +21,99 @@ export default gql`
     """
     Create a contract for a given target.
     """
-    createContract(input: CreateContractInput!): CreateContractResult!
+    createContract(input: CreateContractInput! @tag(name: "public")): CreateContractResult!
+      @tag(name: "public")
     """
     Disable a contract.
     """
-    disableContract(input: DisableContractInput!): DisableContractResult!
+    disableContract(input: DisableContractInput! @tag(name: "public")): DisableContractResult!
+      @tag(name: "public")
   }
 
   extend type Query {
+    schemaVersionForActionId(actionId: ID!, target: TargetReferenceInput): SchemaVersion
+      @deprecated(reason: "Use Query.schemaVersionByCommit")
+
     """
-    Requires API Token
+    Returns the latest SchemaVersion associated with a specific commit
     """
-    schemaVersionForActionId(actionId: ID!): SchemaVersion
+    schemaVersionByCommit(commit: String!, target: TargetReferenceInput): SchemaVersion
+    latestValidVersion(target: TargetReferenceInput): SchemaVersion
     """
     Requires API Token
     """
     latestVersion: SchemaVersion
-    """
-    Requires API Token
-    """
-    latestValidVersion: SchemaVersion
     testExternalSchemaComposition(
       selector: TestExternalSchemaCompositionInput!
     ): TestExternalSchemaCompositionResult!
   }
 
-  input UpdateNativeFederationInput {
-    organizationSlug: String!
-    projectSlug: String!
-    enabled: Boolean!
-  }
-
-  """
-  @oneOf
-  """
-  type UpdateNativeFederationResult {
-    ok: Project
-    error: UpdateNativeFederationError
-  }
-
-  type UpdateNativeFederationError implements Error {
-    message: String!
-  }
-
-  input DisableExternalSchemaCompositionInput {
-    organizationSlug: String!
-    projectSlug: String!
-  }
-
-  """
-  @oneOf
-  """
-  type DisableExternalSchemaCompositionResult {
-    ok: Project
-    error: String
-  }
-
-  input EnableExternalSchemaCompositionInput {
-    organizationSlug: String!
-    projectSlug: String!
+  input SchemaCompositionExternalMethodInput @tag(name: "public") {
     endpoint: String!
     secret: String!
   }
 
+  input SchemaCompositionMethodInput @oneOf @tag(name: "public") {
+    """
+    Use the native federation schema composition. This is the default method for new projects.
+    """
+    native: Boolean
+    """
+    Use an external schema composition endpoint.
+    """
+    external: SchemaCompositionExternalMethodInput
+    """
+    Use the legacy federation v1 schema composition.
+    """
+    legacy: Boolean
+  }
+
+  input UpdateSchemaCompositionInput @tag(name: "public") {
+    """
+    Reference to the project on which the schema composition should be applied.
+    """
+    project: ProjectReferenceInput!
+    """
+    The composition method that should be set for the project.
+    """
+    method: SchemaCompositionMethodInput!
+  }
+
+  type UpdateSchemaCompositionResultOk @tag(name: "public") {
+    updatedProject: Project!
+  }
+
   """
   @oneOf
   """
-  type EnableExternalSchemaCompositionResult {
-    ok: Project
-    error: EnableExternalSchemaCompositionError
+  type UpdateSchemaCompositionResult @tag(name: "public") {
+    ok: UpdateSchemaCompositionResultOk
+    error: UpdateSchemaCompositionError
+  }
+
+  interface UpdateSchemaCompositionError @tag(name: "public") {
+    message: String!
+  }
+
+  type UpdateSchemaCompositionNativeError implements UpdateSchemaCompositionError
+    @tag(name: "public") {
+    message: String!
+  }
+
+  type UpdateSchemaCompositionLegacyError implements UpdateSchemaCompositionError
+    @tag(name: "public") {
+    message: String!
+  }
+
+  type UpdateSchemaCompositionExternalError implements UpdateSchemaCompositionError
+    @tag(name: "public") {
+    message: String!
+    inputErrors: UpdateSchemaCompositionExternalInputErrors
+  }
+
+  type UpdateSchemaCompositionExternalInputErrors @tag(name: "public") {
+    endpoint: String
+    secret: String
   }
 
   type ExternalSchemaComposition {
@@ -133,59 +137,48 @@ export default gql`
     message: String!
   }
 
-  input UpdateProjectRegistryModelInput {
-    organizationSlug: String!
-    projectSlug: String!
-    model: RegistryModel!
-  }
-
-  enum RegistryModel {
-    LEGACY
-    MODERN
-  }
-
-  """
-  @oneOf
-  """
-  type UpdateProjectRegistryModelResult {
-    ok: Project
-    error: UpdateProjectRegistryModelError
-  }
-
-  type UpdateProjectRegistryModelError implements Error {
-    message: String!
-  }
-
   extend type Project {
     externalSchemaComposition: ExternalSchemaComposition
-    registryModel: RegistryModel!
     schemaVersionsCount(period: DateRangeInput): Int!
     isNativeFederationEnabled: Boolean!
-    nativeFederationCompatibility: NativeFederationCompatibilityStatus!
+    """
+    Get the status of the native federation compatability for the project.
+    """
+    nativeFederationCompatibility: NativeCompositionCompatibility!
   }
 
   extend type Target {
     schemaVersionsCount(period: DateRangeInput): Int!
   }
 
-  enum NativeFederationCompatibilityStatus {
+  type NativeCompositionVersionStatus {
+    """
+    The schema version we check against.
+    """
+    schemaVersion: SchemaVersion!
+    """
+    The native composition result. The supergraphSdl is sorted and normalized.
+    """
+    nativeCompositionResult: SchemaCompositionResult!
+    """
+    The supergraph of the latest valid schema version (sorted and normalized).
+    """
+    currentSupergraphSdl: String!
+  }
+
+  type NativeCompositionCompatibility {
+    """
+    Whether the schema version is compatible.
+    """
+    status: NativeFederationCompatibilityStatusType!
+    results: [NativeCompositionVersionStatus]!
+  }
+
+  enum NativeFederationCompatibilityStatusType {
     COMPATIBLE
     INCOMPATIBLE
     UNKNOWN
     NOT_APPLICABLE
-  }
-
-  type EnableExternalSchemaCompositionError implements Error {
-    message: String!
-    """
-    The detailed validation error messages for the input fields.
-    """
-    inputErrors: EnableExternalSchemaCompositionInputErrors!
-  }
-
-  type EnableExternalSchemaCompositionInputErrors {
-    endpoint: String
-    secret: String
   }
 
   type UpdateBaseSchemaResult {
@@ -202,31 +195,53 @@ export default gql`
   }
 
   extend type Target {
-    latestSchemaVersion: SchemaVersion
+    """
+    The latest (potentially invalid) schema version.
+    """
+    latestSchemaVersion: SchemaVersion @tag(name: "public")
     """
     The latest valid (composable) schema version.
     """
-    latestValidSchemaVersion: SchemaVersion
+    latestValidSchemaVersion: SchemaVersion @tag(name: "public")
     baseSchema: String
     hasSchema: Boolean!
     """
     Get a schema check for the target by ID.
     """
-    schemaCheck(id: ID!): SchemaCheck
+    schemaCheck(id: ID! @tag(name: "public")): SchemaCheck @tag(name: "public")
     """
     Get a list of paginated schema checks for a target.
     """
-    schemaChecks(first: Int, after: String, filters: SchemaChecksFilter): SchemaCheckConnection!
-    schemaVersions(first: Int, after: String): SchemaVersionConnection!
-    schemaVersion(id: ID!): SchemaVersion
+    schemaChecks(
+      first: Int @tag(name: "public")
+      after: String @tag(name: "public")
+      filters: SchemaChecksFilter
+    ): SchemaCheckConnection! @tag(name: "public")
+    """
+    Paginated list of schema versions, ordered from recent to oldest.
+    """
+    schemaVersions(
+      first: Int @tag(name: "public")
+      after: String @tag(name: "public")
+    ): SchemaVersionConnection! @tag(name: "public")
+    """
+    Retreive a specific schema version in this target by it's id.
+    """
+    schemaVersion(id: ID! @tag(name: "public")): SchemaVersion @tag(name: "public")
     """
     Get a list of paginated schema contracts for the target.
     """
-    contracts(first: Int, after: String): ContractConnection!
+    contracts(
+      first: Int @tag(name: "public")
+      after: String @tag(name: "public")
+    ): ContractConnection! @tag(name: "public")
     """
     Get a list of paginated schema contracts that are active for the target.
     """
-    activeContracts(first: Int, after: String): ContractConnection!
+    activeContracts(
+      first: Int @tag(name: "public")
+      after: String @tag(name: "public")
+    ): ContractConnection! @tag(name: "public")
 
     """
     Whether any subscription operations were reported for this target.
@@ -240,57 +255,70 @@ export default gql`
   }
 
   type SchemaConnection {
-    nodes: [Schema!]!
-    total: Int!
+    nodes: [Schema!]! @deprecated(reason: "Use 'SchemaConnection.edges' instead.")
+    total: Int! @deprecated(reason: "This field will be removed.")
+    edges: [SchemaEdge!]! @tag(name: "public")
+    pageInfo: PageInfo! @tag(name: "public")
   }
 
-  union RegistryLog = PushedSchemaLog | DeletedSchemaLog
+  type SchemaEdge {
+    cursor: String! @tag(name: "public")
+    node: Schema! @tag(name: "public")
+  }
+
+  union RegistryLog @tag(name: "public") = PushedSchemaLog | DeletedSchemaLog
 
   type PushedSchemaLog {
     id: ID!
     author: String!
     date: DateTime!
     commit: ID!
-    service: String
+    """
+    The name of the service that got published.
+    """
+    service: String @tag(name: "public")
     """
     The serviceSDL of the pushed schema. Is null for single schema projects.
     """
-    serviceSdl: String
+    serviceSdl: String @tag(name: "public")
     """
     The previous SDL of the pushed schema. Is null for single schema projects.
     """
-    previousServiceSdl: String
+    previousServiceSdl: String @tag(name: "public")
   }
 
   type DeletedSchemaLog {
     id: ID!
     date: DateTime!
-    deletedService: String!
+    """
+    The name of the service that got deleted.
+    """
+    deletedService: String! @tag(name: "public")
     """
     The previous SDL of the full schema or subgraph.
     """
-    previousServiceSdl: String
+    previousServiceSdl: String @tag(name: "public")
   }
 
-  union Schema = SingleSchema | CompositeSchema
+  union Schema @tag(name: "public") = SingleSchema | CompositeSchema
 
   type SingleSchema {
     id: ID!
-    author: String!
-    source: String!
+    author: String! @tag(name: "public")
+    source: String! @tag(name: "public")
     date: DateTime!
-    commit: ID!
+    commit: ID! @tag(name: "public")
     metadata: String
   }
 
   type CompositeSchema {
     id: ID!
-    author: String!
-    source: String!
+    author: String! @tag(name: "public")
+    source: String! @tag(name: "public")
     date: DateTime!
-    commit: ID!
-    url: String
-    service: String
+    commit: ID! @tag(name: "public")
+    url: String @tag(name: "public")
+    service: String @tag(name: "public")
     metadata: String
   }
 
@@ -315,6 +343,7 @@ export default gql`
   }
 
   input SchemaPublishInput {
+    target: TargetReferenceInput
     service: ID
     url: String
     sdl: String!
@@ -338,10 +367,11 @@ export default gql`
     """
     Whether the CLI supports retrying the schema publish, in case acquiring the schema publish lock fails due to a busy queue.
     """
-    supportsRetry: Boolean = False
+    supportsRetry: Boolean = false
   }
 
   input SchemaComposeInput {
+    target: TargetReferenceInput
     services: [SchemaComposeServiceInput!]!
     """
     Whether to use the latest composable version or just latest schema version for the composition.
@@ -397,19 +427,68 @@ export default gql`
 
   enum CriticalityLevel {
     Breaking
+      @deprecated(
+        reason: "Use 'SeverityLevelType' instead. This field will be removed once it is no longer in use by a client."
+      )
     Dangerous
+      @deprecated(
+        reason: "Use 'SeverityLevelType' instead. This field will be removed once it is no longer in use by a client."
+      )
     Safe
+      @deprecated(
+        reason: "Use 'SeverityLevelType' instead. This field will be removed once it is no longer in use by a client."
+      )
   }
 
+  """
+  Describes the impact of a schema change.
+  """
+  enum SeverityLevelType {
+    """
+    The change is safe and does not break existing clients.
+    """
+    SAFE @tag(name: "public")
+    """
+    The change might break existing clients that do not follow
+    best-practises such as future-proof enums or future-proof interface/union type usages.
+    """
+    DANGEROUS @tag(name: "public")
+    """
+    The change will definetly break GraphQL client users.
+    """
+    BREAKING @tag(name: "public")
+  }
+
+  """
+  Describes a schema change for either a schema version ('SchemaVersion') or schema check ('SchemaCheck').
+  """
   type SchemaChange {
     criticality: CriticalityLevel!
+      @deprecated(
+        reason: "Use 'SchemaChange.severityLevel' instead. This field will be removed once it is no longer in use by a client."
+      )
     criticalityReason: String
+      @deprecated(
+        reason: "Use 'SchemaChange.severityReason' instead. This field will be removed once it is no longer in use by a client."
+      )
+    """
+    The severity level of this schema change.
+    Note: A schema change with the impact 'SeverityLevelType.BREAKING' can still be safe based on the usage ('SchemaChange.isSafeBasedOnUsage').
+    """
+    severityLevel: SeverityLevelType! @tag(name: "public")
+    """
+    The reason for the schema changes severity level ('SchemaChange.severityLevel')
+    """
+    severityReason: String @tag(name: "public")
+    """
+    Message describing the schema change.
+    """
     message(
       """
       Whether to include a note about the safety of the change based on usage data within the message.
       """
       withSafeBasedOnUsageNote: Boolean = true
-    ): String!
+    ): String! @tag(name: "public")
     path: [String!]
     """
     Approval metadata for this schema change.
@@ -419,39 +498,59 @@ export default gql`
     """
     Whether the breaking change is safe based on usage data.
     """
-    isSafeBasedOnUsage: Boolean!
+    isSafeBasedOnUsage: Boolean! @tag(name: "public")
     """
     Usage statistics about the schema change if it is not safe based on usage.
     The statistics are determined based on the breaking change configuration.
     The usage statistics are only available for breaking changes and only represent a snapshot of the usage data at the time of the schema check/schema publish.
     """
-    usageStatistics: SchemaChangeUsageStatistics
+    usageStatistics: SchemaChangeUsageStatistics @tag(name: "public")
+    """
+    List of active app deployments that would be affected by this breaking change.
+    Only populated for breaking changes when app deployments are enabled.
+    """
+    affectedAppDeployments(
+      first: Int
+      after: String
+      firstOperations: Int
+    ): SchemaChangeAffectedAppDeploymentsConnection @tag(name: "public")
+  }
+
+  type SchemaChangeAffectedAppDeploymentsConnection {
+    edges: [SchemaChangeAffectedAppDeploymentEdge!]! @tag(name: "public")
+    totalCount: Int! @tag(name: "public")
+    pageInfo: PageInfo! @tag(name: "public")
+  }
+
+  type SchemaChangeAffectedAppDeploymentEdge {
+    cursor: String! @tag(name: "public")
+    node: SchemaChangeAffectedAppDeployment! @tag(name: "public")
   }
 
   type SchemaChangeUsageStatistics {
     """
     List of the top operations that are affected by this schema change.
     """
-    topAffectedOperations: [SchemaChangeUsageStatisticsAffectedOperation!]!
+    topAffectedOperations: [SchemaChangeUsageStatisticsAffectedOperation!]! @tag(name: "public")
     """
     List of top clients that are affected by this schema change.
     """
-    topAffectedClients: [SchemaChangeUsageStatisticsAffectedClient!]!
+    topAffectedClients: [SchemaChangeUsageStatisticsAffectedClient!]! @tag(name: "public")
   }
 
   type SchemaChangeUsageStatisticsAffectedOperation {
     """
     Name of the operation.
     """
-    name: String!
+    name: String! @tag(name: "public")
     """
     Hash of the operation.
     """
-    hash: String!
+    hash: String! @tag(name: "public")
     """
     The number of times the operation was called in the period.
     """
-    count: Float!
+    count: Float! @tag(name: "public")
     """
     Human readable count value.
     """
@@ -459,7 +558,7 @@ export default gql`
     """
     The percentage share of the operation of the total traffic.
     """
-    percentage: Float!
+    percentage: Float! @tag(name: "public")
     """
     Human readable percentage value.
     """
@@ -470,11 +569,11 @@ export default gql`
     """
     Name of the client.
     """
-    name: String!
+    name: String! @tag(name: "public")
     """
     The number of times the client called the operation in the period.
     """
-    count: Float!
+    count: Float! @tag(name: "public")
     """
     Human readable count value.
     """
@@ -482,11 +581,84 @@ export default gql`
     """
     The percentage share of the client of the total traffic.
     """
-    percentage: Float!
+    percentage: Float! @tag(name: "public")
     """
     Human readable percentage value.
     """
     percentageFormatted: String!
+  }
+
+  """
+  An app deployment that is affected by a breaking schema change.
+  """
+  type SchemaChangeAffectedAppDeployment {
+    """
+    The unique identifier of the app deployment.
+    """
+    id: ID! @tag(name: "public")
+    """
+    The name of the app deployment.
+    """
+    name: String! @tag(name: "public")
+    """
+    The version of the app deployment.
+    """
+    version: String! @tag(name: "public")
+    """
+    The timestamp when the app deployment was created.
+    """
+    createdAt: DateTime @tag(name: "public")
+    """
+    The timestamp when the app deployment was activated.
+    """
+    activatedAt: DateTime @tag(name: "public")
+    """
+    The current status of the app deployment.
+    """
+    status: AppDeploymentStatus!
+    """
+    The timestamp when the app deployment was retired. Only present for retired deployments.
+    """
+    retiredAt: DateTime @tag(name: "public")
+    """
+    The last time a GraphQL request that used the app deployment was reported.
+    """
+    lastUsed: DateTime @tag(name: "public")
+    """
+    The operations within this app deployment that use the affected schema coordinate.
+    """
+    affectedOperations(
+      first: Int
+      after: String
+    ): SchemaChangeAffectedAppDeploymentOperationsConnection! @tag(name: "public")
+    """
+    Total count of operations within this app deployment that use the affected schema coordinate.
+    """
+    totalAffectedOperations: Int! @tag(name: "public")
+  }
+
+  type SchemaChangeAffectedAppDeploymentOperationsConnection {
+    edges: [SchemaChangeAffectedAppDeploymentOperationEdge!]! @tag(name: "public")
+    pageInfo: PageInfo! @tag(name: "public")
+  }
+
+  type SchemaChangeAffectedAppDeploymentOperationEdge {
+    cursor: String! @tag(name: "public")
+    node: SchemaChangeAffectedAppDeploymentOperation! @tag(name: "public")
+  }
+
+  """
+  An operation within an app deployment that is affected by a breaking schema change.
+  """
+  type SchemaChangeAffectedAppDeploymentOperation {
+    """
+    The hash of the operation document.
+    """
+    hash: String! @tag(name: "public")
+    """
+    The name of the operation (if named).
+    """
+    name: String @tag(name: "public")
   }
 
   type SchemaChangeApproval {
@@ -494,6 +666,10 @@ export default gql`
     User that approved this schema change.
     """
     approvedBy: User
+    """
+    CLI approval metadata when approved via CLI (mutually exclusive with approvedBy).
+    """
+    cliApprovalMetadata: CLIApprovalMetadata
     """
     Date of the schema change approval.
     """
@@ -504,19 +680,51 @@ export default gql`
     schemaCheckId: ID!
   }
 
+  """
+  Metadata for approvals made via CLI.
+  """
+  type CLIApprovalMetadata {
+    """
+    Raw author string from the CLI.
+    """
+    author: String!
+    """
+    Parsed display name from the author string.
+    """
+    displayName: String!
+    """
+    Parsed email from the author string (if available).
+    """
+    email: String
+  }
+
   type SchemaError {
-    message: String!
+    message: String! @tag(name: "public")
     path: [String!]
   }
 
   type SchemaChangeConnection {
-    nodes: [SchemaChange!]!
-    total: Int!
+    nodes: [SchemaChange!]! @deprecated(reason: "Use 'SchemaChangeConnection.edges' instead.")
+    total: Int! @deprecated(reason: "This field will be removed in the future.")
+    edges: [SchemaChangeEdge!]! @tag(name: "public")
+    pageInfo: PageInfo! @tag(name: "public")
+  }
+
+  type SchemaChangeEdge {
+    cursor: String! @tag(name: "public")
+    node: SchemaChange! @tag(name: "public")
   }
 
   type SchemaErrorConnection {
-    nodes: [SchemaError!]!
-    total: Int!
+    nodes: [SchemaError!]! @deprecated(reason: "Use 'SchemaErrorConnection.edges' instead.")
+    total: Int! @deprecated(reason: "This field will be removed in the future.")
+    edges: [SchemaErrorEdge!]! @tag(name: "public")
+    pageInfo: PageInfo! @tag(name: "public")
+  }
+
+  type SchemaErrorEdge {
+    cursor: String! @tag(name: "public")
+    node: SchemaError! @tag(name: "public")
   }
 
   type SchemaWarningConnection {
@@ -525,22 +733,24 @@ export default gql`
   }
 
   type BreakingChangeMetadataTarget {
-    name: String!
-    target: Target
+    slug: String! @tag(name: "public")
+    id: ID! @tag(name: "public")
+    target: Target @tag(name: "public")
   }
 
   type SchemaCheckConditionalBreakingChangeMetadataSettings {
-    retentionInDays: Int!
-    percentage: Float!
-    excludedClientNames: [String!]
-    targets: [BreakingChangeMetadataTarget!]!
+    retentionInDays: Int! @tag(name: "public")
+    percentage: Float! @tag(name: "public")
+    excludedClientNames: [String!] @tag(name: "public")
+    excludedAppDeploymentNames: [String!] @tag(name: "public")
+    targets: [BreakingChangeMetadataTarget!]! @tag(name: "public")
   }
 
   type SchemaCheckConditionalBreakingChangeMetadataUsage {
     """
     Total amount of requests for the settings and period.
     """
-    totalRequestCount: Float!
+    totalRequestCount: Float! @tag(name: "public")
     """
     Total request count human readable.
     """
@@ -548,15 +758,20 @@ export default gql`
   }
 
   type SchemaCheckConditionalBreakingChangeMetadata {
-    period: DateRange!
+    period: DateRange! @tag(name: "public")
     settings: SchemaCheckConditionalBreakingChangeMetadataSettings!
-    usage: SchemaCheckConditionalBreakingChangeMetadataUsage!
+    usage: SchemaCheckConditionalBreakingChangeMetadataUsage! @tag(name: "public")
   }
 
   type SchemaCheckSuccess {
     valid: Boolean!
     initial: Boolean!
     changes: SchemaChangeConnection
+    """
+    If the check is associated with a schema proposal, then this contains an unfiltered list of changes
+    to the SDL.
+    """
+    schemaProposalChanges: SchemaChangeConnection
     warnings: SchemaWarningConnection
     schemaCheck: SchemaCheck
   }
@@ -570,6 +785,11 @@ export default gql`
 
   type SchemaCheckError {
     valid: Boolean!
+    """
+    If the check is associated with a schema proposal, then this contains an unfiltered list of changes
+    to the SDL.
+    """
+    schemaProposalChanges: SchemaChangeConnection
     changes: SchemaChangeConnection
     errors: SchemaErrorConnection!
     warnings: SchemaWarningConnection
@@ -625,6 +845,7 @@ export default gql`
   }
 
   input SchemaCheckInput {
+    target: TargetReferenceInput
     service: ID
     sdl: String!
     github: GitHubSchemaCheckInput
@@ -634,9 +855,19 @@ export default gql`
     Manually approved breaking changes will be memorized for schema checks with the same context id.
     """
     contextId: String
+    """
+    Optional url if wanting to show subgraph url changes inside checks.
+    """
+    url: String
+
+    """
+    Optional. Attaches the check to a schema proposal.
+    """
+    schemaProposalId: ID
   }
 
   input SchemaDeleteInput {
+    target: TargetReferenceInput
     serviceName: ID!
     dryRun: Boolean
   }
@@ -677,21 +908,32 @@ export default gql`
   }
 
   type ContractVersionEdge {
-    node: ContractVersion!
-    cursor: String!
+    node: ContractVersion! @tag(name: "public")
+    cursor: String! @tag(name: "public")
   }
 
   type ContractVersionConnection {
-    edges: [ContractVersionEdge!]!
-    pageInfo: PageInfo!
+    edges: [ContractVersionEdge!]! @tag(name: "public")
+    pageInfo: PageInfo! @tag(name: "public")
+  }
+
+  input SchemaExplorerPeriodInput @oneOf {
+    """
+    A full range using a start and end date.
+    """
+    absoluteRange: DateRangeInput @tag(name: "public")
   }
 
   type SchemaVersion {
-    id: ID!
+    id: ID! @tag(name: "public")
     """
     A schema version is valid if the composition and contract compositions are successful.
     """
-    valid: Boolean!
+    valid: Boolean! @deprecated(reason: "Use 'SchemaVersion.isValid' instead.")
+    """
+    A schema version is valid if the composition and contract compositions are successful.
+    """
+    isValid: Boolean! @tag(name: "public")
     """
     Whether this schema version is composable.
     """
@@ -700,12 +942,29 @@ export default gql`
     Whether this schema version has schema changes.
     """
     hasSchemaChanges: Boolean!
+    """
+    The data on which this schema version was published.
+    """
     date: DateTime!
-    log: RegistryLog!
+    """
+    The log that initiated this schema version.
+    For a federation schema this is the published or removed subgraph/service.
+    """
+    log: RegistryLog! @tag(name: "public")
     baseSchema: String
-    schemas: SchemaConnection!
-    supergraph: String
-    sdl: String
+    """
+    The schemas that are composed within this schema version.
+    For federation these are the subgraphs/services.
+    """
+    schemas: SchemaConnection! @tag(name: "public")
+    """
+    The supergraph SDL for a federation schema.
+    """
+    supergraph: String @tag(name: "public")
+    """
+    The (public) schema SDL.
+    """
+    sdl: String @tag(name: "public")
     """
     List of tags in the schema version. E.g. when using Federation.
     Tags can be used for filtering the schema via contracts.
@@ -715,10 +974,36 @@ export default gql`
     Experimental: This field is not stable and may change in the future.
     """
     explorer(usage: SchemaExplorerUsageInput): SchemaExplorer
-    unusedSchema(usage: UnusedSchemaExplorerUsageInput): UnusedSchemaExplorer
-    deprecatedSchema(usage: DeprecatedSchemaExplorerUsageInput): DeprecatedSchemaExplorer
+    """
+    An overview of unused fields and their types within the GraphQL schema.
+    """
+    unusedSchema(
+      """
+      The period to use in order to determind whether a field is unused.
+      A field is unused if it has not been requested within the specified period.
 
-    schemaCompositionErrors: SchemaErrorConnection
+      Defaults to the last 30 days by default.
+      """
+      period: SchemaExplorerPeriodInput @tag(name: "public")
+    ): UnusedSchemaExplorer @tag(name: "public")
+    """
+    An overview of deprecated fields and types with their usage in the GraphQL schema.
+    """
+    deprecatedSchema(
+      """
+      The period for which the usage data should be included within the result.
+
+      Defaults to the last 30 days by default.
+      """
+      period: SchemaExplorerPeriodInput @tag(name: "public")
+    ): DeprecatedSchemaExplorer @tag(name: "public")
+
+    schemaCompositionErrors: SchemaErrorConnection @tag(name: "public")
+
+    """
+    Schema changes that were introduced in this schema version (compared to the previous version).
+    """
+    schemaChanges: SchemaChangeConnection @tag(name: "public")
 
     breakingSchemaChanges: SchemaChangeConnection
     safeSchemaChanges: SchemaChangeConnection
@@ -738,7 +1023,7 @@ export default gql`
     """
     Contract versions of this schema version.
     """
-    contractVersions: ContractVersionConnection
+    contractVersions: ContractVersionConnection @tag(name: "public")
   }
 
   type SchemaVersionGithubMetadata {
@@ -747,28 +1032,26 @@ export default gql`
   }
 
   type SchemaVersionEdge {
-    node: SchemaVersion!
-    cursor: String!
+    node: SchemaVersion! @tag(name: "public")
+    cursor: String! @tag(name: "public")
   }
 
   type SchemaVersionConnection {
-    edges: [SchemaVersionEdge!]!
-    pageInfo: PageInfo!
+    edges: [SchemaVersionEdge!]! @tag(name: "public")
+    pageInfo: PageInfo! @tag(name: "public")
   }
 
   input SchemaExplorerUsageInput {
     period: DateRangeInput!
   }
 
-  input UnusedSchemaExplorerUsageInput {
-    period: DateRangeInput!
-  }
-
-  input DeprecatedSchemaExplorerUsageInput {
-    period: DateRangeInput!
+  type MetadataAttribute {
+    name: String!
+    values: [String!]!
   }
 
   type SchemaExplorer {
+    metadataAttributes: [MetadataAttribute!]
     types: [GraphQLNamedType!]!
     type(name: String!): GraphQLNamedType
     query: GraphQLObjectType
@@ -776,51 +1059,120 @@ export default gql`
     subscription: GraphQLObjectType
   }
 
+  extend type SchemaCoordinateStats {
+    # If associated with a federated project, this contains the metadata for this coordinate.
+    supergraphMetadata: SupergraphMetadata
+  }
+
+  """
+  Explorer for navigating unused schema parts within the contextual provided period.
+  """
   type UnusedSchemaExplorer {
-    types: [GraphQLNamedType!]!
+    """
+    The affected unused types and their fields/values/members etc.
+
+    The types within the result only contain unused fields/values/members, all other entities are excluded,
+    they are not a representation of the full GraphQL schema.
+    """
+    types: [GraphQLNamedType!]! @tag(name: "public")
   }
 
+  """
+  Explorer for navigating the deprecated schema parts with usage data provided by the contextual period.
+  """
   type DeprecatedSchemaExplorer {
-    types: [GraphQLNamedType!]!
+    """
+    The affected types whose fields/values/members are deprecated.
+
+    The types within the result only contain deprecated fields/values/members, all other entities are excluded,
+    they are not a representation of the full GraphQL schema.
+    """
+    types: [GraphQLNamedType!]! @tag(name: "public")
   }
 
-  type SchemaCoordinateUsage {
+  """
+  Information about the schema coordinate usage within the contextual period.
+  """
+  type SchemaCoordinateUsage @tag(name: "public") {
+    """
+    The total amount of usages of the schema coordinate within the contextual period.
+    """
     total: Float!
+    """
+    Whether the schema coordinate is used within the contextual period.
+    """
     isUsed: Boolean!
     """
     A list of clients that use this schema coordinate within GraphQL operation documents.
     Is null if used by none clients.
     """
     usedByClients: [String!]
+    """
+    The top operations executed for this schema coordinate within the contextual period.
+    """
     topOperations(limit: Int!): [SchemaCoordinateUsageOperation!]!
   }
 
-  type SchemaCoordinateUsageOperation {
+  type SchemaCoordinateUsageOperation @tag(name: "public") {
+    """
+    The name of the GraphQL operation.
+    """
     name: String!
+    """
+    The hash of the GraphQL operation
+    """
     hash: String!
     """
-    The number of times the operation was called.
+    The number of times the operation was called within the contextual period.
     """
     count: Float!
   }
 
   type SupergraphMetadata {
+    metadata: [SchemaMetadata!]
     """
     List of service names that own the field/type.
     Resolves to null if the entity (field, type, scalar) does not belong to any service.
     """
-    ownedByServiceNames: [String!]
+    ownedByServiceNames: [String!] @tag(name: "public")
   }
 
-  union GraphQLNamedType =
-    | GraphQLObjectType
-    | GraphQLInterfaceType
-    | GraphQLUnionType
-    | GraphQLEnumType
-    | GraphQLInputObjectType
-    | GraphQLScalarType
+  type SchemaMetadata {
+    """
+    The name or key of the metadata. This may not be unique.
+    """
+    name: String!
+    """
+    The value of the metadata
+    """
+    content: String!
+    """
+    The schema or subgraph name where this metadata originated from.
+    """
+    source: String
+  }
 
-  type GraphQLObjectType {
+  interface GraphQLNamedType @tag(name: "public") {
+    """
+    The name of the GraphQL type.
+    """
+    name: String!
+    """
+    The description of the GraphQL type.
+    """
+    description: String
+    """
+    The usage of the type within the specified period.
+    """
+    usage: SchemaCoordinateUsage!
+    """
+    Metadata specific to Apollo Federation Projects.
+    Is null if no meta information is available (e.g. this is not an apollo federation project).
+    """
+    supergraphMetadata: SupergraphMetadata
+  }
+
+  type GraphQLObjectType implements GraphQLNamedType @tag(name: "public") {
     name: String!
     description: String
     fields: [GraphQLField!]!
@@ -833,7 +1185,7 @@ export default gql`
     supergraphMetadata: SupergraphMetadata
   }
 
-  type GraphQLInterfaceType {
+  type GraphQLInterfaceType implements GraphQLNamedType @tag(name: "public") {
     name: String!
     description: String
     fields: [GraphQLField!]!
@@ -846,7 +1198,7 @@ export default gql`
     supergraphMetadata: SupergraphMetadata
   }
 
-  type GraphQLUnionType {
+  type GraphQLUnionType implements GraphQLNamedType @tag(name: "public") {
     name: String!
     description: String
     members: [GraphQLUnionTypeMember!]!
@@ -858,7 +1210,7 @@ export default gql`
     supergraphMetadata: SupergraphMetadata
   }
 
-  type GraphQLUnionTypeMember {
+  type GraphQLUnionTypeMember @tag(name: "public") {
     name: String!
     usage: SchemaCoordinateUsage!
     """
@@ -868,10 +1220,9 @@ export default gql`
     supergraphMetadata: SupergraphMetadata
   }
 
-  type GraphQLEnumType {
+  type GraphQLEnumType implements GraphQLNamedType @tag(name: "public") {
     name: String!
     description: String
-    deprecationReason: String
     values: [GraphQLEnumValue!]!
     usage: SchemaCoordinateUsage!
     """
@@ -881,7 +1232,7 @@ export default gql`
     supergraphMetadata: SupergraphMetadata
   }
 
-  type GraphQLInputObjectType {
+  type GraphQLInputObjectType implements GraphQLNamedType @tag(name: "public") {
     name: String!
     description: String
     fields: [GraphQLInputField!]!
@@ -893,7 +1244,7 @@ export default gql`
     supergraphMetadata: SupergraphMetadata
   }
 
-  type GraphQLScalarType {
+  type GraphQLScalarType implements GraphQLNamedType @tag(name: "public") {
     name: String!
     description: String
     usage: SchemaCoordinateUsage!
@@ -904,7 +1255,7 @@ export default gql`
     supergraphMetadata: SupergraphMetadata
   }
 
-  type GraphQLField {
+  type GraphQLField @tag(name: "public") {
     name: String!
     description: String
     type: String!
@@ -919,7 +1270,7 @@ export default gql`
     supergraphMetadata: SupergraphMetadata
   }
 
-  type GraphQLInputField {
+  type GraphQLInputField @tag(name: "public") {
     name: String!
     description: String
     type: String!
@@ -934,7 +1285,7 @@ export default gql`
     supergraphMetadata: SupergraphMetadata
   }
 
-  type GraphQLArgument {
+  type GraphQLArgument @tag(name: "public") {
     name: String!
     description: String
     type: String!
@@ -944,7 +1295,7 @@ export default gql`
     usage: SchemaCoordinateUsage!
   }
 
-  type GraphQLEnumValue {
+  type GraphQLEnumValue @tag(name: "public") {
     name: String!
     description: String
     isDeprecated: Boolean!
@@ -980,13 +1331,13 @@ export default gql`
   }
 
   type SchemaCheckMeta {
-    author: String!
-    commit: String!
+    author: String! @tag(name: "public")
+    commit: String! @tag(name: "public")
   }
 
   interface SchemaCheck {
-    id: ID!
-    createdAt: String!
+    id: ID! @tag(name: "public")
+    createdAt: String! @tag(name: "public")
     """
     Optional context ID to group schema checks together.
     """
@@ -994,28 +1345,28 @@ export default gql`
     """
     The SDL of the schema that was checked.
     """
-    schemaSDL: String!
+    schemaSDL: String! @tag(name: "public")
     """
     The previous schema SDL. For composite schemas this is the service.
     """
-    previousSchemaSDL: String
+    previousSchemaSDL: String @tag(name: "public")
     """
     The name of the service that owns the schema. Is null for non composite project types.
     """
-    serviceName: String
+    serviceName: String @tag(name: "public")
     """
     Meta information about the schema check.
     """
-    meta: SchemaCheckMeta
+    meta: SchemaCheckMeta @tag(name: "public")
     """
     The schema version against this check was performed.
     Is null if there is no schema version published yet.
     """
-    schemaVersion: SchemaVersion
+    schemaVersion: SchemaVersion @tag(name: "public")
     """
     The URL of the schema check on the Hive Web App.
     """
-    webUrl: String
+    webUrl: String @tag(name: "public")
     """
     The GitHub repository associated with the schema check.
     """
@@ -1034,6 +1385,13 @@ export default gql`
     """
     hasSchemaChanges: Boolean!
 
+    """
+    If the check is associated with a schema proposal, then this contains an unfiltered list of changes
+    to the SDL.
+    """
+    schemaProposalChanges: SchemaChangeConnection
+
+    schemaChanges: SchemaChangeConnection @tag(name: "public")
     breakingSchemaChanges: SchemaChangeConnection
     safeSchemaChanges: SchemaChangeConnection
     schemaPolicyWarnings: SchemaPolicyWarningConnection
@@ -1041,11 +1399,12 @@ export default gql`
     """
     Results of the contracts
     """
-    contractChecks: ContractCheckConnection
+    contractChecks: ContractCheckConnection @tag(name: "public")
     """
     Conditional breaking change metadata.
     """
     conditionalBreakingChangeMetadata: SchemaCheckConditionalBreakingChangeMetadata
+      @tag(name: "public")
   }
 
   """
@@ -1053,7 +1412,7 @@ export default gql`
   """
   type ContractCheck {
     id: ID!
-    contractName: String!
+    contractName: String! @tag(name: "public")
 
     """
     Whether this schema check has any composition errors.
@@ -1068,45 +1427,47 @@ export default gql`
     """
     hasSchemaChanges: Boolean!
 
-    schemaCompositionErrors: SchemaErrorConnection
+    schemaCompositionErrors: SchemaErrorConnection @tag(name: "public")
+
+    schemaChanges: SchemaChangeConnection @tag(name: "public")
 
     breakingSchemaChanges: SchemaChangeConnection
     safeSchemaChanges: SchemaChangeConnection
 
-    compositeSchemaSDL: String
-    supergraphSDL: String
+    compositeSchemaSDL: String @tag(name: "public")
+    supergraphSDL: String @tag(name: "public")
 
-    isSuccess: Boolean!
+    isSuccess: Boolean! @tag(name: "public")
 
     """
     The contract version against this check was performed.
     """
-    contractVersion: ContractVersion
+    contractVersion: ContractVersion @tag(name: "public")
   }
 
   type ContractCheckEdge {
-    cursor: String!
-    node: ContractCheck!
+    cursor: String! @tag(name: "public")
+    node: ContractCheck! @tag(name: "public")
   }
 
   type ContractCheckConnection {
-    edges: [ContractCheckEdge!]!
-    pageInfo: PageInfo!
+    edges: [ContractCheckEdge!]! @tag(name: "public")
+    pageInfo: PageInfo! @tag(name: "public")
   }
 
   type ContractVersion {
     id: ID!
     createdAt: String!
-    contractName: String!
+    contractName: String! @tag(name: "public")
 
     """
     Whether this contract version is composable.
     """
-    isComposable: Boolean!
-    schemaCompositionErrors: SchemaErrorConnection
+    isComposable: Boolean! @tag(name: "public")
+    schemaCompositionErrors: SchemaErrorConnection @tag(name: "public")
 
-    supergraphSDL: String
-    compositeSchemaSDL: String
+    supergraphSDL: String @tag(name: "public")
+    compositeSchemaSDL: String @tag(name: "public")
     """
     Whether this contract versions has schema changes.
     """
@@ -1120,8 +1481,10 @@ export default gql`
     """
     safeSchemaChanges: SchemaChangeConnection
 
-    previousContractVersion: ContractVersion
-    previousDiffableContractVersion: ContractVersion
+    schemaChanges: SchemaChangeConnection @tag(name: "public")
+
+    previousContractVersion: ContractVersion @tag(name: "public")
+    previousDiffableContractVersion: ContractVersion @tag(name: "public")
 
     isFirstComposableVersion: Boolean!
   }
@@ -1130,8 +1493,8 @@ export default gql`
   A successful schema check.
   """
   type SuccessfulSchemaCheck implements SchemaCheck {
-    id: ID!
-    createdAt: String!
+    id: ID! @tag(name: "public")
+    createdAt: String! @tag(name: "public")
     """
     Optional context ID to group schema checks together.
     """
@@ -1139,28 +1502,28 @@ export default gql`
     """
     The SDL of the schema that was checked.
     """
-    schemaSDL: String!
+    schemaSDL: String! @tag(name: "public")
     """
     The previous schema SDL. For composite schemas this is the service.
     """
-    previousSchemaSDL: String
+    previousSchemaSDL: String @tag(name: "public")
     """
     The name of the service that owns the schema. Is null for non composite project types.
     """
-    serviceName: String
+    serviceName: String @tag(name: "public")
     """
     Meta information about the schema check.
     """
-    meta: SchemaCheckMeta
+    meta: SchemaCheckMeta @tag(name: "public")
     """
     The schema version against this check was performed.
     Is null if there is no schema version published yet.
     """
-    schemaVersion: SchemaVersion
+    schemaVersion: SchemaVersion @tag(name: "public")
     """
     The URL of the schema check on the Hive Web App.
     """
-    webUrl: String
+    webUrl: String @tag(name: "public")
     """
     The GitHub repository associated with the schema check.
     """
@@ -1179,6 +1542,13 @@ export default gql`
     """
     hasSchemaChanges: Boolean!
 
+    """
+    If the check is associated with a schema proposal, then this contains an unfiltered list of changes
+    to the SDL.
+    """
+    schemaProposalChanges: SchemaChangeConnection
+
+    schemaChanges: SchemaChangeConnection @tag(name: "public")
     """
     Breaking changes can exist in an successful schema check if the check was manually approved.
     """
@@ -1195,11 +1565,12 @@ export default gql`
     """
     Results of the contracts
     """
-    contractChecks: ContractCheckConnection
+    contractChecks: ContractCheckConnection @tag(name: "public")
     """
     Conditional breaking change metadata.
     """
     conditionalBreakingChangeMetadata: SchemaCheckConditionalBreakingChangeMetadata
+      @tag(name: "public")
 
     """
     Whether the schema check was manually approved.
@@ -1210,6 +1581,10 @@ export default gql`
     """
     approvedBy: User
     """
+    CLI approval metadata when approved via CLI (mutually exclusive with approvedBy).
+    """
+    cliApprovalMetadata: CLIApprovalMetadata
+    """
     Comment given when the schema check was approved.
     """
     approvalComment: String
@@ -1219,8 +1594,8 @@ export default gql`
   A failed schema check.
   """
   type FailedSchemaCheck implements SchemaCheck {
-    id: ID!
-    createdAt: String!
+    id: ID! @tag(name: "public")
+    createdAt: String! @tag(name: "public")
     """
     Optional context ID to group schema checks together.
     """
@@ -1228,34 +1603,34 @@ export default gql`
     """
     The SDL of the schema that was checked.
     """
-    schemaSDL: String!
+    schemaSDL: String! @tag(name: "public")
     """
     The previous schema SDL. For composite schemas this is the service.
     """
-    previousSchemaSDL: String
+    previousSchemaSDL: String @tag(name: "public")
     """
     The name of the service that owns the schema. Is null for non composite project types.
     """
-    serviceName: String
+    serviceName: String @tag(name: "public")
     """
     Meta information about the schema check.
     """
-    meta: SchemaCheckMeta
+    meta: SchemaCheckMeta @tag(name: "public")
     """
     The schema version against this check was performed.
     Is null if there is no schema version published yet.
     """
-    schemaVersion: SchemaVersion
+    schemaVersion: SchemaVersion @tag(name: "public")
     """
     The URL of the schema check on the Hive Web App.
     """
-    webUrl: String
+    webUrl: String @tag(name: "public")
     """
     The GitHub repository associated with the schema check.
     """
     githubRepository: String
 
-    compositionErrors: SchemaErrorConnection
+    compositionErrors: SchemaErrorConnection @tag(name: "public")
 
     """
     Whether this schema check has any composition errors.
@@ -1270,21 +1645,29 @@ export default gql`
     """
     hasSchemaChanges: Boolean!
 
+    """
+    If the check is associated with a schema proposal, then this contains an unfiltered list of changes
+    to the SDL.
+    """
+    schemaProposalChanges: SchemaChangeConnection
+
+    schemaChanges: SchemaChangeConnection @tag(name: "public")
     breakingSchemaChanges: SchemaChangeConnection
     safeSchemaChanges: SchemaChangeConnection
     schemaPolicyWarnings: SchemaPolicyWarningConnection
     schemaPolicyErrors: SchemaPolicyWarningConnection
 
-    compositeSchemaSDL: String
-    supergraphSDL: String
+    compositeSchemaSDL: String @tag(name: "public")
+    supergraphSDL: String @tag(name: "public")
     """
     Results of the contracts
     """
-    contractChecks: ContractCheckConnection
+    contractChecks: ContractCheckConnection @tag(name: "public")
     """
     Conditional breaking change metadata.
     """
     conditionalBreakingChangeMetadata: SchemaCheckConditionalBreakingChangeMetadata
+      @tag(name: "public")
 
     """
     Whether this schema check can be approved manually.
@@ -1297,23 +1680,23 @@ export default gql`
   }
 
   type SchemaCheckEdge {
-    node: SchemaCheck!
-    cursor: String!
+    node: SchemaCheck! @tag(name: "public")
+    cursor: String! @tag(name: "public")
   }
 
   type SchemaCheckConnection {
-    edges: [SchemaCheckEdge!]!
-    pageInfo: PageInfo!
+    edges: [SchemaCheckEdge!]! @tag(name: "public")
+    pageInfo: PageInfo! @tag(name: "public")
   }
 
   type ContractEdge {
-    node: Contract!
-    cursor: String!
+    node: Contract! @tag(name: "public")
+    cursor: String! @tag(name: "public")
   }
 
   type ContractConnection {
-    edges: [ContractEdge!]!
-    pageInfo: PageInfo!
+    edges: [ContractEdge!]! @tag(name: "public")
+    pageInfo: PageInfo! @tag(name: "public")
   }
 
   input ApproveFailedSchemaCheckInput {
@@ -1326,6 +1709,7 @@ export default gql`
     Give a reason why the schema check was approved.
     """
     comment: String
+    author: String
   }
 
   type ApproveFailedSchemaCheckResult {
@@ -1341,61 +1725,65 @@ export default gql`
     message: String!
   }
 
+  input ContractReferenceInput @oneOf {
+    byId: ID @tag(name: "public")
+  }
+
   input CreateContractInput {
-    targetId: ID!
-    contractName: String!
-    includeTags: [String!]
-    excludeTags: [String!]
-    removeUnreachableTypesFromPublicApiSchema: Boolean!
+    target: TargetReferenceInput! @tag(name: "public")
+    contractName: String! @tag(name: "public")
+    includeTags: [String!] @tag(name: "public")
+    excludeTags: [String!] @tag(name: "public")
+    removeUnreachableTypesFromPublicApiSchema: Boolean! @tag(name: "public")
   }
 
   type CreateContractResult {
-    ok: CreateContractResultOk
-    error: CreateContractResultError
+    ok: CreateContractResultOk @tag(name: "public")
+    error: CreateContractResultError @tag(name: "public")
   }
 
   type CreateContractResultOk {
-    createdContract: Contract!
+    createdContract: Contract! @tag(name: "public")
   }
 
-  type CreateContractResultError implements Error {
-    message: String!
-    details: CreateContractInputErrors!
+  type CreateContractResultError {
+    message: String! @tag(name: "public")
+    details: CreateContractInputErrors! @tag(name: "public")
   }
 
   type CreateContractInputErrors {
-    targetId: String
-    contractName: String
-    includeTags: String
-    excludeTags: String
+    target: String @tag(name: "public")
+    contractName: String @tag(name: "public")
+    includeTags: String @tag(name: "public")
+    excludeTags: String @tag(name: "public")
   }
 
   input DisableContractInput {
-    contractId: ID!
+    contract: ContractReferenceInput! @tag(name: "public")
   }
 
   type DisableContractResult {
-    ok: DisableContractResultOk
-    error: DisableContractResultError
+    ok: DisableContractResultOk @tag(name: "public")
+    error: DisableContractResultError @tag(name: "public")
   }
 
   type DisableContractResultOk {
-    disabledContract: Contract!
+    disabledContract: Contract! @tag(name: "public")
   }
 
-  type DisableContractResultError implements Error {
-    message: String!
+  type DisableContractResultError {
+    message: String! @tag(name: "public")
   }
 
   type Contract {
-    id: ID!
+    id: ID! @tag(name: "public")
     target: Target!
-    contractName: String!
-    includeTags: [String!]
-    excludeTags: [String!]
-    removeUnreachableTypesFromPublicApiSchema: Boolean!
-    createdAt: DateTime!
-    isDisabled: Boolean!
+    contractName: String! @tag(name: "public")
+    includeTags: [String!] @tag(name: "public")
+    excludeTags: [String!] @tag(name: "public")
+    removeUnreachableTypesFromPublicApiSchema: Boolean! @tag(name: "public")
+    createdAt: DateTime! @tag(name: "public")
+    isDisabled: Boolean! @tag(name: "public")
     viewerCanDisableContract: Boolean!
   }
 `;

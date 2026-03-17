@@ -1,7 +1,22 @@
 import type { FastifyInstance, FastifyRequest } from 'fastify';
 import { z } from 'zod';
 import { env } from '@/env/backend';
-import { graphql } from './utils';
+import { graphql } from '@/gql';
+import { graphqlRequest } from './utils';
+
+const GithubIntegration_organizationByGitHubInstallationId = graphql(/* GraphQL */ `
+  query GithubIntegration_organizationByGitHubInstallationId($installationId: ID!) {
+    organizationByGitHubInstallationId(installation: $installationId) {
+      id
+      slug
+    }
+  }
+`);
+const GithubIntegration_addGitHubIntegration = graphql(/* GraphQL */ `
+  mutation GithubIntegration_addGitHubIntegration($input: AddGitHubIntegrationInput!) {
+    addGitHubIntegration(input: $input)
+  }
+`);
 
 const CallbackQuery = z.object({
   installation_id: z.string({
@@ -72,29 +87,18 @@ export function connectGithub(server: FastifyInstance) {
         organizationSlug,
       });
     } else {
-      const result = await graphql<{
-        organizationByGitHubInstallationId?: {
-          slug: string;
-        };
-      }>({
+      const result = await graphqlRequest({
         url: env.graphqlPublicEndpoint,
         headers: {
           ...req.headers,
           'content-type': 'application/json',
-          'graphql-client-name': 'Hive App',
+          'graphql-client-name': 'hive-app',
           'graphql-client-version': env.release,
         },
-        operationName: 'getOrganizationByGitHubInstallationId',
-        query: /* GraphQL */ `
-          query getOrganizationByGitHubInstallationId($installation: ID!) {
-            organizationByGitHubInstallationId(input: $input) {
-              id
-              slug
-            }
-          }
-        `,
+        operationName: 'GithubIntegration_organizationByGitHubInstallationId',
+        document: GithubIntegration_organizationByGitHubInstallationId,
         variables: {
-          installation: installationId,
+          installationId,
         },
       });
 
@@ -141,20 +145,16 @@ async function ensureGithubIntegration(
   },
 ) {
   const { organizationSlug, installationId } = input;
-  await graphql({
+  await graphqlRequest({
     url: env.graphqlPublicEndpoint,
     headers: {
       ...req.headers,
       'content-type': 'application/json',
-      'graphql-client-name': 'Hive App',
+      'graphql-client-name': 'hive-app',
       'graphql-client-version': env.release,
     },
-    operationName: 'addGitHubIntegration',
-    query: /* GraphQL */ `
-      mutation addGitHubIntegration($input: AddGitHubIntegrationInput!) {
-        addGitHubIntegration(input: $input)
-      }
-    `,
+    operationName: 'GithubIntegration_addGitHubIntegration',
+    document: GithubIntegration_addGitHubIntegration,
     variables: {
       input: {
         organizationSlug,

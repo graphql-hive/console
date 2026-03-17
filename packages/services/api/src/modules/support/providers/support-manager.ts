@@ -3,8 +3,9 @@ import { Inject, Injectable, Scope } from 'graphql-modules';
 import { z } from 'zod';
 import { Organization, SupportTicketPriority, SupportTicketStatus } from '../../../shared/entities';
 import { atomic } from '../../../shared/helpers';
+import { AuditLogRecorder } from '../../audit-logs/providers/audit-log-recorder';
 import { Session } from '../../auth/lib/authz';
-import { HttpClient } from '../../shared/providers/http-client';
+import { HiveHttpClientError, HttpClient } from '../../shared/providers/http-client';
 import { Logger } from '../../shared/providers/logger';
 import { Storage } from '../../shared/providers/storage';
 import { OrganizationManager } from './../../organization/providers/organization-manager';
@@ -136,6 +137,7 @@ export class SupportManager {
     private organizationManager: OrganizationManager,
     private storage: Storage,
     private session: Session,
+    private auditLog: AuditLogRecorder,
   ) {
     this.logger = logger.child({ service: 'SupportManager' });
   }
@@ -194,23 +196,29 @@ export class SupportManager {
     organizationId: string;
   }): Promise<string> {
     const organizationZendeskId = await this.ensureZendeskOrganizationId(input.organizationId);
-    const userAsMember = await this.organizationManager.getOrganizationMember({
+    const membership = await this.organizationManager.getOrganizationMember({
       organizationId: input.organizationId,
       userId: input.userId,
     });
 
-    if (!userAsMember.user.zendeskId) {
+    const user = await this.storage.getUserById({ id: membership.userId });
+
+    if (!user) {
+      throw new Error('Missing user.');
+    }
+
+    if (!user.zendeskId) {
       this.logger.info(
         'Attempt to find user via Zendesk API. (organizationID: %s, userId: %s)',
         input.organizationId,
         input.userId,
       );
 
-      const email = userAsMember.user.email;
+      const email = user.email;
 
       // Before attempting to create the user we need to check whether an user with that email might already exist.
       let userZendeskId = await this.httpClient
-        .get(`https://${this.config.subdomain}.zendesk.com/api/v2/users`, {
+        .get(`https://${this.config.subdomain}.zendesk.com/api/v2/users/search`, {
           searchParams: {
             query: email,
           },
@@ -234,9 +242,9 @@ export class SupportManager {
             })
             .parse(res);
 
-          const user = data.users.at(0) ?? null;
+          const user = data.users.find(u => u.email === email) ?? null;
 
-          if (user?.email === email) {
+          if (user) {
             this.logger.info(
               'User found on Zendesk. (organizationID: %s, userId: %s)',
               input.organizationId,
@@ -273,9 +281,9 @@ export class SupportManager {
             },
             json: {
               user: {
-                name: userAsMember.user.fullName,
+                name: user.fullName,
                 email,
-                external_id: userAsMember.user.id,
+                external_id: user.id,
                 identities: [
                   {
                     type: 'foreign',
@@ -301,44 +309,72 @@ export class SupportManager {
         userId: input.userId,
         zendeskId: String(userZendeskId),
       });
-      userAsMember.user.zendeskId = String(userZendeskId);
+      user.zendeskId = String(userZendeskId);
     }
 
-    if (!userAsMember.connectedToZendesk) {
+    if (!membership.connectedToZendesk) {
       this.logger.info(
         'Connecting user to zendesk organization (organization: %s, user: %s)',
         input.organizationId,
         input.userId,
       );
-      // connect user to organization
-      await this.httpClient.post(
-        `https://${this.config.subdomain}.zendesk.com/api/v2/organization_memberships`,
-        {
-          username: this.config.username,
-          password: this.config.password,
-          responseType: 'json',
-          context: {
-            logger: this.logger,
-          },
-          headers: {
-            // v2 post fix is for idemopotency key cache busting.
-            'idempotency-key': input.userId + '|v2',
-          },
-          json: {
-            organization_membership: {
-              user_id: parseInt(userAsMember.user.zendeskId, 10),
-              organization_id: parseInt(organizationZendeskId, 10),
+
+      const zendeskUserId = parseInt(user.zendeskId, 10);
+      const zendeskOrganizationId = parseInt(organizationZendeskId, 10);
+
+      // attempt connect user to organization
+      try {
+        await this.httpClient.post(
+          `https://${this.config.subdomain}.zendesk.com/api/v2/organization_memberships`,
+          {
+            username: this.config.username,
+            password: this.config.password,
+            responseType: 'json',
+            context: {
+              logger: this.logger,
+            },
+            headers: {
+              // v2 post fix is for idemopotency key cache busting.
+              'idempotency-key': input.userId + '|v2',
+            },
+            json: {
+              organization_membership: {
+                user_id: zendeskUserId,
+                organization_id: zendeskOrganizationId,
+              },
             },
           },
-        },
-      );
+        );
+      } catch (err) {
+        if (err instanceof HiveHttpClientError && err.code === '422') {
+          // This user is already a member of this organization.
+          this.logger.debug(
+            'The user was already connected to the zendesk organization. (organization: %s, user: %s, zendeskUserId: %d, zendeskOrganizationId: %d)',
+            input.organizationId,
+            input.userId,
+            zendeskUserId,
+            zendeskOrganizationId,
+          );
+        } else {
+          this.logger.debug(
+            'An unexpected error occured while connecting the user to the zendesk organization. (err=%s, organization: %s, user: %s, zendeskUserId: %d, zendeskOrganizationId: %d)',
+            String(err),
+            input.organizationId,
+            input.userId,
+            zendeskUserId,
+            zendeskOrganizationId,
+          );
+          throw err;
+        }
+      }
+
       await this.storage.setZendeskOrganizationUserConnection({
         userId: input.userId,
         organizationId: input.organizationId,
       });
     }
 
-    return userAsMember.user.zendeskId;
+    return user.zendeskId;
   }
 
   async getUsers(ids: number[]) {
@@ -584,6 +620,17 @@ export class SupportManager {
         }),
       );
 
+    await this.auditLog.record({
+      eventType: 'SUPPORT_TICKET_CREATED',
+      organizationId: input.organizationId,
+      metadata: {
+        ticketDescription: input.description,
+        ticketPriority: input.priority,
+        ticketId: String(response.ticket.id),
+        ticketSubject: input.subject,
+      },
+    });
+
     return {
       ok: {
         supportTicketId: String(response.ticket.id),
@@ -674,6 +721,19 @@ export class SupportManager {
           return Promise.reject(err);
         }),
       );
+
+    await this.auditLog.record({
+      eventType: 'SUPPORT_TICKET_UPDATED',
+      organizationId: input.organizationId,
+      metadata: {
+        ticketId: input.ticketId,
+        updatedFields: JSON.stringify({
+          comment: request.data.body,
+          authorId: internalUserId,
+          public: true,
+        }),
+      },
+    });
 
     return {
       ok: {

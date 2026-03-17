@@ -14,7 +14,8 @@ export const Radio = ({ children, className, ...props }: RadioGroupItemProps): R
   return (
     <Item
       className={clsx(
-        'radix-state-checked:border-orange-500 relative overflow-hidden rounded-sm border text-left hover:border-orange-500/50 focus:ring',
+        'data-[state=checked]:border-neutral-2 relative overflow-hidden rounded-sm border text-left focus:ring',
+        !props.disabled && 'hover:border-neutral-2/50',
         className,
       )}
       {...props}

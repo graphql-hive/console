@@ -1,7 +1,9 @@
 import type { SchemaVersionMapper as SchemaVersion } from '../module.graphql.mappers';
-import { print } from 'graphql';
+import { isTypeSystemExtensionNode, print } from 'graphql';
 import { Injectable, Scope } from 'graphql-modules';
 import { CriticalityLevel } from '@graphql-inspector/core';
+import { mergeTypeDefs } from '@graphql-tools/merge';
+import { traceFn } from '@hive/service-common';
 import type { SchemaChangeType } from '@hive/storage';
 import {
   containsSupergraphSpec,
@@ -10,12 +12,12 @@ import {
 import { ProjectType } from '../../../shared/entities';
 import { cache } from '../../../shared/helpers';
 import { parseGraphQLSource } from '../../../shared/schema';
-import { OrganizationManager } from '../../organization/providers/organization-manager';
 import { ProjectManager } from '../../project/providers/project-manager';
 import { Logger } from '../../shared/providers/logger';
 import { Storage } from '../../shared/providers/storage';
+import { CompositionOrchestrator } from './orchestrator/composition-orchestrator';
 import { RegistryChecks } from './registry-checks';
-import { ensureCompositeSchemas, SchemaHelper } from './schema-helper';
+import { ensureCompositeSchemas, SchemaHelper, toCompositeSchemaInput } from './schema-helper';
 import { SchemaManager } from './schema-manager';
 
 @Injectable({
@@ -32,12 +34,20 @@ export class SchemaVersionHelper {
     private schemaManager: SchemaManager,
     private schemaHelper: SchemaHelper,
     private projectManager: ProjectManager,
-    private organizationManager: OrganizationManager,
     private registryChecks: RegistryChecks,
     private storage: Storage,
     private logger: Logger,
+    private compositionOrchestrator: CompositionOrchestrator,
   ) {}
 
+  @traceFn('SchemaVersionHelper.composeSchemaVersion', {
+    initAttributes: input => ({
+      'hive.target.id': input.targetId,
+      'hive.organization.id': input.organizationId,
+      'hive.project.id': input.projectId,
+      'hive.version.id': input.id,
+    }),
+  })
   @cache<SchemaVersion>(version => version.id)
   private async composeSchemaVersion(schemaVersion: SchemaVersion) {
     const [schemas, project, organization] = await Promise.all([
@@ -48,7 +58,7 @@ export class SchemaVersionHelper {
         organizationId: schemaVersion.organizationId,
         projectId: schemaVersion.projectId,
       }),
-      this.organizationManager.getOrganization({
+      this.storage.getOrganization({
         organizationId: schemaVersion.organizationId,
       }),
     ]);
@@ -57,9 +67,15 @@ export class SchemaVersionHelper {
       return null;
     }
 
-    const orchestrator = this.schemaManager.matchOrchestrator(project.type);
-    const validation = await orchestrator.composeAndValidate(
-      schemas.map(s => this.schemaHelper.createSchemaObject(s)),
+    const validation = await this.compositionOrchestrator.composeAndValidate(
+      CompositionOrchestrator.projectTypeToOrchestratorType(project.type),
+      schemas.map(s =>
+        this.schemaHelper.createSchemaObject({
+          sdl: s.sdl,
+          serviceName: s.kind === 'composite' ? s.service_name : null,
+          serviceUrl: s.kind === 'composite' ? s.service_url : null,
+        }),
+      ),
       {
         external: project.externalComposition,
         native: this.schemaManager.checkProjectNativeFederationSupport({
@@ -89,12 +105,17 @@ export class SchemaVersionHelper {
 
   async getCompositeSchemaSdl(schemaVersion: SchemaVersion) {
     if (schemaVersion.hasPersistedSchemaChanges) {
+      if (!schemaVersion.supergraphSDL) {
+        return schemaVersion.compositeSchemaSDL;
+      }
+
       return schemaVersion.compositeSchemaSDL
         ? this.autoFixCompositeSchemaSdl(schemaVersion.compositeSchemaSDL, schemaVersion.id)
         : null;
     }
 
     const composition = await this.composeSchemaVersion(schemaVersion);
+
     if (composition === null) {
       return null;
     }
@@ -118,6 +139,7 @@ export class SchemaVersionHelper {
   @cache<SchemaVersion>(version => version.id)
   async getCompositeSchemaAst(schemaVersion: SchemaVersion) {
     const compositeSchemaSdl = await this.getCompositeSchemaSdl(schemaVersion);
+
     if (compositeSchemaSdl === null) {
       return null;
     }
@@ -145,16 +167,30 @@ export class SchemaVersionHelper {
     return supergraphAst;
   }
 
+  @traceFn('SchemaVersionHelper._getSchemaChanges', {
+    initAttributes: input => ({
+      'hive.target.id': input.targetId,
+      'hive.organization.id': input.organizationId,
+      'hive.project.id': input.projectId,
+      'hive.version.id': input.id,
+    }),
+    resultAttributes: changes => ({
+      'hive.breaking-changes.count': changes?.breaking?.length,
+      'hive.safe-changes.count': changes?.safe?.length,
+    }),
+  })
   @cache<SchemaVersion>(version => version.id)
-  private async getSchemaChanges(schemaVersion: SchemaVersion) {
+  private async _getSchemaChanges(schemaVersion: SchemaVersion) {
     if (!schemaVersion.isComposable) {
       return null;
     }
 
     if (schemaVersion.hasPersistedSchemaChanges) {
-      const changes = await this.storage.getSchemaChangesForVersion({
-        versionId: schemaVersion.id,
-      });
+      const changes: null | Array<SchemaChangeType> = await this.storage.getSchemaChangesForVersion(
+        {
+          versionId: schemaVersion.id,
+        },
+      );
 
       const safeChanges: Array<SchemaChangeType> = [];
       const breakingChanges: Array<SchemaChangeType> = [];
@@ -170,6 +206,7 @@ export class SchemaVersionHelper {
       return {
         breaking: breakingChanges.length ? breakingChanges : null,
         safe: safeChanges.length ? safeChanges : null,
+        all: changes ?? null,
       };
     }
 
@@ -195,21 +232,31 @@ export class SchemaVersionHelper {
       return null;
     }
 
-    const project = await this.projectManager.getProject({
-      organizationId: schemaVersion.organizationId,
-      projectId: schemaVersion.projectId,
-    });
+    const [project, { failDiffOnDangerousChange }] = await Promise.all([
+      this.projectManager.getProject({
+        organizationId: schemaVersion.organizationId,
+        projectId: schemaVersion.projectId,
+      }),
+      this.storage.getTargetSettings({
+        targetId: schemaVersion.targetId,
+        projectId: schemaVersion.projectId,
+        organizationId: schemaVersion.organizationId,
+      }),
+    ]);
 
     const diffCheck = await this.registryChecks.diff({
       approvedChanges: null,
       existingSdl,
       incomingSdl,
       includeUrlChanges: {
-        schemasBefore: ensureCompositeSchemas(schemaBefore),
-        schemasAfter: ensureCompositeSchemas(schemasAfter),
+        schemasBefore: ensureCompositeSchemas(schemaBefore).map(toCompositeSchemaInput),
+        schemasAfter: ensureCompositeSchemas(schemasAfter).map(toCompositeSchemaInput),
       },
       filterOutFederationChanges: project.type === ProjectType.FEDERATION,
       conditionalBreakingChangeConfig: null,
+      failDiffOnDangerousChange,
+      filterNestedChanges: true,
+      getAffectedAppDeployments: null,
     });
 
     if (diffCheck.status === 'skipped') {
@@ -234,7 +281,7 @@ export class SchemaVersionHelper {
       return null;
     }
 
-    return await this.schemaManager.getVersionBeforeVersionId({
+    return await this.schemaManager.getComposableVersionBeforeVersionId({
       organization: schemaVersion.organizationId,
       project: schemaVersion.projectId,
       target: schemaVersion.targetId,
@@ -244,26 +291,35 @@ export class SchemaVersionHelper {
   }
 
   async getBreakingSchemaChanges(schemaVersion: SchemaVersion) {
-    const changes = await this.getSchemaChanges(schemaVersion);
+    const changes = await this._getSchemaChanges(schemaVersion);
     return changes?.breaking ?? null;
   }
 
   async getSafeSchemaChanges(schemaVersion: SchemaVersion) {
-    const changes = await this.getSchemaChanges(schemaVersion);
+    const changes = await this._getSchemaChanges(schemaVersion);
     return changes?.safe ?? null;
   }
 
+  async getAllSchemaChanges(schemaVersion: SchemaVersion) {
+    const changes = await this._getSchemaChanges(schemaVersion);
+    return changes?.all ?? null;
+  }
+
   async getHasSchemaChanges(schemaVersion: SchemaVersion) {
-    const changes = await this.getSchemaChanges(schemaVersion);
+    const changes = await this._getSchemaChanges(schemaVersion);
     return !!changes?.breaking?.length || !!changes?.safe?.length;
   }
 
   async getIsFirstComposableVersion(schemaVersion: SchemaVersion) {
+    if (!schemaVersion.isComposable) {
+      return false;
+    }
+
     if (schemaVersion.recordVersion === '2024-01-10') {
       return schemaVersion.diffSchemaVersionId === null;
     }
 
-    if (schemaVersion.hasPersistedSchemaChanges && schemaVersion.isComposable) {
+    if (schemaVersion.hasPersistedSchemaChanges) {
       const previousVersion = await this.getPreviousDiffableSchemaVersion(schemaVersion);
       if (previousVersion === null) {
         return true;
@@ -282,6 +338,15 @@ export class SchemaVersionHelper {
     return !composableVersion;
   }
 
+  @traceFn('SchemaVersionHelper.getServiceSdlForPreviousVersionService', {
+    initAttributes: (schemaVersion, serviceName) => ({
+      'hive.organization.id': schemaVersion.organizationId,
+      'hive.project.id': schemaVersion.projectId,
+      'hive.target.id': schemaVersion.targetId,
+      'hive.version.id': schemaVersion.id,
+      'hive.service.name': serviceName,
+    }),
+  })
   async getServiceSdlForPreviousVersionService(schemaVersion: SchemaVersion, serviceName: string) {
     const previousVersion = await this.getPreviousDiffableSchemaVersion(schemaVersion);
     if (!previousVersion) {
@@ -296,45 +361,74 @@ export class SchemaVersionHelper {
     return schemaLog?.sdl ?? null;
   }
 
-  async getIsValid(schemaVersion: SchemaVersion) {
+  getIsValid(schemaVersion: SchemaVersion) {
     return schemaVersion.isComposable && schemaVersion.hasContractCompositionErrors === false;
   }
 
   /**
    * There's a possibility that the composite schema SDL contains parts of the supergraph spec.
+   *
+   *
    * This is a problem because we want to show the public schema to the user, and the supergraph spec is not part of that.
    * This may happen when composite schema was produced with an old version of `transformSupergraphToPublicSchema`
    * or when supergraph sdl contained something new.
    *
    * This function will check if the SDL contains supergraph spec and if it does, it will transform it to public schema.
+   *
+   * ---
+   *
+   * There's also a possibility that the composite schema contains type extensions.
+   * This is a problem, because other parts of the system may expect it to be clean from type extensions.
+   *
+   * This function will check for type system extensions and merge them into matching definitions.
    */
-  private autoFixCompositeSchemaSdl(sdl: string, versionId: string) {
+  private autoFixCompositeSchemaSdl(sdl: string, versionId: string): string {
     const isFederationV1Output = sdl.includes('@core');
+    // Poor's man check for type extensions to avoid parsing the SDL if it's not necessary.
+    // Checks if the `extend` keyword is followed by a space or a newline and it's not a part of a word.
+    const hasPotentiallyTypeExtensions = /\bextend(?=[\s\n])/.test(sdl);
+
     /**
      * If the SDL is clean from Supergraph spec or it's an output of @apollo/federation, we don't need to transform it.
      * We ignore @apollo/federation, because we never really transformed the output of it to public schema.
      * Doing so might be a breaking change for some users (like: removed join__Graph type).
      */
+    if (!isFederationV1Output && containsSupergraphSpec(sdl)) {
+      this.logger.warn(
+        'Composite schema SDL contains supergraph spec, transforming to public schema (versionId: %s)',
+        versionId,
+      );
 
-    if (isFederationV1Output || !containsSupergraphSpec(sdl)) {
-      return sdl;
+      const transformedSdl = print(
+        transformSupergraphToPublicSchema(parseGraphQLSource(sdl, 'autoFixCompositeSchemaSdl')),
+      );
+
+      this.logger.debug(
+        transformedSdl === sdl
+          ? 'Transformation did not change the original SDL'
+          : 'Transformation changed the original SDL',
+      );
+
+      return transformedSdl;
     }
 
-    this.logger.warn(
-      'Composite schema SDL contains supergraph spec, transforming to public schema (versionId: %s)',
-      versionId,
-    );
+    /**
+     * If the SDL has type extensions, we need to merge them into matching definitions.
+     */
+    if (hasPotentiallyTypeExtensions) {
+      const schemaAst = parseGraphQLSource(sdl, 'autoFixCompositeSchemaSdl');
+      const hasTypeExtensions = schemaAst.definitions.some(isTypeSystemExtensionNode);
 
-    const transformedSdl = print(
-      transformSupergraphToPublicSchema(parseGraphQLSource(sdl, 'autoFixCompositeSchemaSdl')),
-    );
+      if (!hasTypeExtensions) {
+        return sdl;
+      }
 
-    this.logger.debug(
-      transformedSdl === sdl
-        ? 'Transformation did not change the original SDL'
-        : 'Transformation changed the original SDL',
-    );
+      this.logger.warn(
+        'Composite schema AST contains type extensions, merging them into matching definitions',
+      );
+      return print(mergeTypeDefs(schemaAst));
+    }
 
-    return transformedSdl;
+    return sdl;
   }
 }

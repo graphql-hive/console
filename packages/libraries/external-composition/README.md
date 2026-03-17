@@ -1,8 +1,10 @@
 # GraphQL Hive - external composition
 
-[GraphQL Hive](https://the-guild.dev/graphql/hive) is a GraphQL schemas registry where you can host,
-manage and collaborate on all your GraphQL schemas and operations, compatible with all architecture:
-schema stitching, federation, or just a good old monolith.
+[Hive](https://the-guild.dev/graphql/hive) is a fully open-source schema registry, analytics,
+metrics and gateway for [GraphQL federation](https://the-guild.dev/graphql/hive/federation) and
+other GraphQL APIs.
+
+---
 
 Read the
 ["External schema composition"](https://the-guild.dev/graphql/hive/docs/features/external-schema-composition)

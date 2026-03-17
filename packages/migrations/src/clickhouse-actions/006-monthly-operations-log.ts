@@ -7,11 +7,11 @@ const MigrationRequirements = zod.object({
     .regex(/^\d{4}-\d{2}-\d{2}$/, 'YYYY-MM-DD format required'),
 });
 
-export const action: Action = async (exec, _query, isHiveCloud) => {
+export const action: Action = async (exec, _query, hiveCloudEnvironment) => {
   let insertAfterDate: string | null = null;
   let where = 'notEmpty(organization)';
 
-  if (isHiveCloud) {
+  if (hiveCloudEnvironment === 'prod') {
     // eslint-disable-next-line no-process-env
     const { CLICKHOUSE_MIGRATION_006_DATE } = MigrationRequirements.parse(process.env);
 
@@ -25,7 +25,7 @@ export const action: Action = async (exec, _query, isHiveCloud) => {
     insertAfterDate = CLICKHOUSE_MIGRATION_006_DATE;
   }
 
-  if (isHiveCloud) {
+  if (hiveCloudEnvironment === 'prod') {
     // Hive Cloud needs to perform a migration and insert data from previous months.
     // This is not needed for Hive On-Premise, as the data is only relevant for rate-limiting and billing.
     //

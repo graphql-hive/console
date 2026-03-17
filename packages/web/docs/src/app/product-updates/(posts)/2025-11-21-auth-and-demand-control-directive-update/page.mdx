@@ -1,0 +1,193 @@
+---
+title: Improved Security and Cost Control in Federation Composition
+description:
+  Stricter validation for authorization and demand controls directives in GraphQL federation
+  schemas.
+date: 2025-11-24
+authors: [kamil]
+---
+
+import { Callout } from '#components/callout'
+import { Tabs } from '@theguild/components'
+
+We recently improved authorization and demand control directives validation in our federation
+composition library. These changes ensure your federated GraphQL schemas are more secure,
+predictable, and properly validated across all subgraphs.
+
+<Callout type="note" title="No Action Needed for Hive Cloud Users">
+  All schemas we've seen in our system are already compliant with these stricter rules. If you're
+  using authorization or demand control directives in your schemas, you shouldn't need to make any
+  changes.
+</Callout>
+
+## Stricter Authorization Directive
+
+Authentication directives (`@authenticated`, `@requiresScopes`, and `@policy`) are critical for
+securing federated GraphQL APIs. To prevent misconfigurations that could compromise security, we've
+introduced stricter rules.
+
+### Authorization Directive on Interfaces
+
+Auth directives are now restricted to object types, their fields, enums, and scalars only.
+Attempting to place these directives on interfaces, interface fields, or `@interfaceObject` types
+will result in a composition error with the new `AUTH_REQUIREMENTS_APPLIED_ON_INTERFACE` rule.
+
+Interface types and fields now inherit `@authenticated`, `@requiresScopes`, and `@policy` directives
+from the object types that implement them. This reduces configuration overhead and ensures
+consistent security policies across your schema.
+
+```graphql filename="Authorization directives are not allowed on interfaces"
+# ❌ Raises `AUTH_REQUIREMENTS_APPLIED_ON_INTERFACE` error
+interface Node @authenticated {
+  id: ID!
+}
+
+type User implements Node {
+  id: ID!
+}
+```
+
+```graphql filename="Authorization directives"
+# ✅ Node interface inherits the auth directive
+interface Node {
+  id: ID!
+}
+
+type User implements Node @authenticated {
+  id: ID!
+}
+```
+
+The composed schema will pass authorization directives from implementing object types to interfaces.
+
+```graphql filename="Supergraph"
+interface Node @authenticated {
+  id: ID!
+}
+
+type User implements Node @authenticated {
+  id: ID!
+}
+```
+
+This prevents security configurations from being silently ignored or applied incorrectly in your
+schema.
+
+### Fields with `@requires` Directive
+
+We added **transitive auth requirements checking** to the validation phase of the federation
+composition. Fields using the `@requires` directive must now specify at least the auth requirements
+of all fields they depend on.
+
+If a field doesn't carry forward the `@authenticated`, `@requiresScopes`, or `@policy` requirements
+from its dependencies, composition fails with a clear `MISSING_TRANSITIVE_AUTH_REQUIREMENTS` error.
+
+```graphql filename="Subgraph A"
+type User @key(fields: "id") {
+  id: ID!
+  email: String @requiresScopes(scopes: [["email:read"]])
+}
+```
+
+<Tabs items={['❌ Invalid Subgraph B', '✅ Valid Subgraph B']}>
+
+<Tabs.Tab>
+
+```graphql
+type User @key(fields: "id") {
+  id: ID!
+  email: String @external
+  # Misses auth requirements from `email` field,
+  # expected to have `@requiresScopes(scopes: [["email:read"]])`
+  contactInfo: ContactInfo @requires(fields: "email")
+}
+```
+
+</Tabs.Tab>
+
+<Tabs.Tab>
+
+```graphql
+type User @key(fields: "id") {
+  id: ID!
+  email: String @external
+  # Carries forward minimum auth requirements from `email` field.
+  contactInfo: ContactInfo @requires(fields: "email") @requiresScopes(scopes: [["email:read"]])
+}
+```
+
+</Tabs.Tab>
+
+</Tabs>
+
+This ensures that authorization requirements flow correctly through your query execution paths.
+
+## Improved Demand Control Directives
+
+The `@cost` and `@listSize` directives provide crucial safeguards against expensive queries. We've
+enhanced their validation to catch configuration errors early.
+
+### `@cost` Directive Restrictions
+
+The `@cost` directive can no longer be placed on interface types, their fields, or field arguments.
+Invalid placements now result in clear composition errors instead of being silently accepted.
+
+This ensures cost calculations remain predictable and properly aligned with your schema structure.
+
+### Enhanced `@listSize` Validation
+
+- **Field Type Validation** - The `sizedFields` argument now validates that referenced fields are
+  actually list types, not integer counters.
+- **Argument Validation** - The `slicingArguments` are now validated to ensure they exist in all
+  subgraphs. Only valid arguments are retained, and invalid ones trigger clear errors.
+
+<Tabs items={['❌ Invalid', '✅ Valid']}>
+
+<Tabs.Tab>
+
+```graphql
+# Raises error: sizedFields must point to list fields
+type Query {
+  users(first: Int): UserConnection @listSize(sizedFields: ["count"], slicingArguments: ["first"])
+}
+
+type UserConnection {
+  count: Int!
+  edges: [User!]!
+}
+```
+
+</Tabs.Tab>
+
+<Tabs.Tab>
+
+```graphql
+# sizedFields points to the actual list field
+type Query {
+  users(first: Int): UserConnection @listSize(sizedFields: ["edges"], slicingArguments: ["first"])
+}
+
+type UserConnection {
+  count: Int!
+  edges: [User!]!
+}
+```
+
+</Tabs.Tab>
+
+</Tabs>
+
+## More Reliable Federation Composition
+
+These changes strengthen the composition process by:
+
+- **Preventing security misconfigurations** that could weaken API protection
+- **Ensuring auth requirements are properly propagated** through your schema
+- **Catching cost calculation errors early** before they reach production
+- **Reducing silent failures** with clear, actionable error messages
+
+---
+
+- [Learn more about Auth Directives](/docs/gateway/authorization-authentication#granular-protection-using-auth-directives-authenticated-requiresscopes-and-policy)
+- [Learn more about Demand Control Directives](/docs/gateway/other-features/security/demand-control)
+- [Federation Composition Release Notes](https://github.com/graphql-hive/federation-composition/releases/tag/v0.21.0)

@@ -1,0 +1,72 @@
+interface Node {
+  id: ID!
+}
+
+interface Character implements Node {
+  id: ID!
+  name: String!
+  friends: [Character]
+  appearsIn: [Episode]!
+}
+
+type Human implements Character & Node {
+  id: ID!
+  name: String!
+  friends: [Character]
+  appearsIn: [Episode]!
+  starships: [Starship]
+  totalCredits: Int
+}
+
+type Droid implements Character & Node {
+  id: ID!
+  name: String!
+  friends: [Character]
+  appearsIn: [Episode]!
+  primaryFunction: String
+}
+
+type Starship {
+  id: ID!
+  name: String!
+  length(unit: LengthUnit = METER): Float
+}
+
+enum LengthUnit {
+  METER
+  LIGHT_YEAR
+}
+
+enum Episode {
+  "Star Wars Episode IV: A New Hope, released in 1977."
+  NEWHOPE
+  "Star Wars Episode V: The Empire Strikes Back, released in 1980."
+  EMPIRE
+  "Star Wars Episode VI: Return of the Jedi, released in 1983."
+  JEDI
+}
+
+"""
+The query type, represents all of the entry points into our object graph
+"""
+type Query {
+  """
+  Fetches the hero of a specified Star Wars film.
+  """
+  hero("The name of the film that the hero appears in." episode: Episode): Character
+}
+
+type Review {
+  episode: Episode
+  stars: Int!
+  commentary: String
+}
+
+input ReviewInput {
+  stars: Int!
+  commentary: String
+}
+
+type Mutation {
+  createReview(episode: Episode, review: ReviewInput!): Review
+}

@@ -3,7 +3,7 @@ import { useQuery } from 'urql';
 import { Page, TargetLayout } from '@/components/layouts/target';
 import { BadgeRounded } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { noSchemaVersion } from '@/components/ui/empty-list';
+import { NoSchemaVersion } from '@/components/ui/empty-list';
 import { Meta } from '@/components/ui/meta';
 import { Subtitle, Title } from '@/components/ui/page';
 import { QueryError } from '@/components/ui/query-error';
@@ -22,10 +22,12 @@ const HistoryPage_VersionsPageQuery = graphql(`
     $after: String
   ) {
     target(
-      selector: {
-        organizationSlug: $organizationSlug
-        projectSlug: $projectSlug
-        targetSlug: $targetSlug
+      reference: {
+        bySelector: {
+          organizationSlug: $organizationSlug
+          projectSlug: $projectSlug
+          targetSlug: $targetSlug
+        }
       }
     ) {
       id
@@ -34,7 +36,7 @@ const HistoryPage_VersionsPageQuery = graphql(`
           node {
             id
             date
-            valid
+            isValid
             log {
               ... on PushedSchemaLog {
                 id
@@ -47,7 +49,6 @@ const HistoryPage_VersionsPageQuery = graphql(`
                 deletedService
               }
             }
-            baseSchema
             githubMetadata {
               repository
               commit
@@ -95,8 +96,8 @@ function ListPage(props: {
         <div
           key={version.id}
           className={cn(
-            'flex flex-col rounded-md p-2.5 hover:bg-gray-800/40',
-            versionId === version.id && 'bg-gray-800/40',
+            'hover:bg-neutral-5/40 flex flex-col rounded-md p-2.5',
+            versionId === version.id && 'bg-neutral-5/40',
           )}
         >
           <Link
@@ -115,15 +116,18 @@ function ListPage(props: {
                 : `Deleted ${version.log.deletedService}`}
             </h3>
             {'author' in version.log ? (
-              <div className="truncate text-xs font-medium text-gray-500">
+              <div className="text-neutral-10 truncate text-xs font-medium">
                 <span className="overflow-hidden truncate">{version.log.author}</span>
               </div>
             ) : null}
-            <div className="mb-1.5 mt-2.5 flex align-middle text-xs font-medium text-[#c4c4c4]">
+            <div className="text-neutral-10 mb-1.5 mt-2.5 flex align-middle text-xs font-medium">
               <div
-                className={cn(!version.valid && 'text-red-500', 'flex flex-row items-center gap-1')}
+                className={cn(
+                  !version.isValid && 'text-red-500',
+                  'flex flex-row items-center gap-1',
+                )}
               >
-                <BadgeRounded color={version.valid ? 'green' : 'red'} /> Published
+                <BadgeRounded color={version.isValid ? 'green' : 'red'} /> Published
                 <TimeAgo date={version.date} />
               </div>
 
@@ -136,7 +140,7 @@ function ListPage(props: {
           </Link>
           {version.githubMetadata ? (
             <a
-              className="-ml-px text-xs font-medium text-gray-500 hover:text-gray-400"
+              className="text-neutral-10 hover:text-neutral-10 -ml-px text-xs font-medium"
               target="_blank"
               rel="noreferrer"
               href={`https://github.com/${version.githubMetadata.repository}/commit/${version.githubMetadata.commit}`}
@@ -170,12 +174,18 @@ const TargetHistoryPageQuery = graphql(`
     $targetSlug: String!
   ) {
     target(
-      selector: {
-        organizationSlug: $organizationSlug
-        projectSlug: $projectSlug
-        targetSlug: $targetSlug
+      reference: {
+        bySelector: {
+          organizationSlug: $organizationSlug
+          projectSlug: $projectSlug
+          targetSlug: $targetSlug
+        }
       }
     ) {
+      project {
+        id
+        type
+      }
       id
       latestSchemaVersion {
         id
@@ -221,55 +231,60 @@ function HistoryPageContent(props: {
   }, [versionId, currentTarget?.latestSchemaVersion?.id]);
 
   if (query.error) {
-    return <QueryError organizationSlug={props.organizationSlug} error={query.error} />;
+    return (
+      <QueryError
+        organizationSlug={props.organizationSlug}
+        error={query.error}
+        showLogoutButton={false}
+      />
+    );
   }
 
-  return (
-    <TargetLayout
-      organizationSlug={props.organizationSlug}
-      projectSlug={props.projectSlug}
-      targetSlug={props.targetSlug}
-      page={Page.History}
-      className="flex flex-row gap-x-6"
-    >
-      {hasVersions ? (
-        <>
-          <div>
-            <div className="py-6">
-              <Title>Versions</Title>
-              <Subtitle>Recently published schemas.</Subtitle>
-            </div>
-            <div className="flex flex-col gap-5">
-              <div className="flex min-w-[420px] grow flex-col gap-2.5 overflow-y-auto rounded-md border border-gray-800/50 bg-gray-900/50 p-2.5">
-                {pageVariables.map((variables, i) => (
-                  <ListPage
-                    key={variables.after || 'initial'}
-                    variables={variables}
-                    isLastPage={i === pageVariables.length - 1}
-                    onLoadMore={after => {
-                      setPageVariables([...pageVariables, { after, first: 10 }]);
-                    }}
-                    versionId={versionId}
-                    organizationSlug={props.organizationSlug}
-                    projectSlug={props.projectSlug}
-                    targetSlug={props.targetSlug}
-                  />
-                ))}
-              </div>
-            </div>
-          </div>
-          <Outlet />
-        </>
-      ) : (
-        <div className="w-full">
+  if (hasVersions) {
+    return (
+      <>
+        <div>
           <div className="py-6">
             <Title>Versions</Title>
             <Subtitle>Recently published schemas.</Subtitle>
           </div>
-          {query.fetching ? null : noSchemaVersion}
+          <div className="flex flex-col gap-5">
+            <div className="border-neutral-5/50 bg-neutral-2/50 flex min-w-[420px] grow flex-col gap-2.5 overflow-y-auto rounded-md border p-2.5">
+              {pageVariables.map((variables, i) => (
+                <ListPage
+                  key={variables.after || 'initial'}
+                  variables={variables}
+                  isLastPage={i === pageVariables.length - 1}
+                  onLoadMore={after => {
+                    setPageVariables([...pageVariables, { after, first: 10 }]);
+                  }}
+                  versionId={versionId}
+                  organizationSlug={props.organizationSlug}
+                  projectSlug={props.projectSlug}
+                  targetSlug={props.targetSlug}
+                />
+              ))}
+            </div>
+          </div>
         </div>
+        <Outlet />
+      </>
+    );
+  }
+
+  return (
+    <div className="w-full">
+      <div className="py-6">
+        <Title>Versions</Title>
+        <Subtitle>Recently published schemas.</Subtitle>
+      </div>
+      {query.fetching ? null : (
+        <NoSchemaVersion
+          recommendedAction="publish"
+          projectType={query.data?.target?.project.type ?? null}
+        />
       )}
-    </TargetLayout>
+    </div>
   );
 }
 
@@ -281,7 +296,15 @@ export function TargetHistoryPage(props: {
   return (
     <>
       <Meta title="History" />
-      <HistoryPageContent {...props} />
+      <TargetLayout
+        organizationSlug={props.organizationSlug}
+        projectSlug={props.projectSlug}
+        targetSlug={props.targetSlug}
+        page={Page.History}
+        className="flex flex-row gap-x-6"
+      >
+        <HistoryPageContent {...props} />
+      </TargetLayout>
     </>
   );
 }

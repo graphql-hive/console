@@ -1,9 +1,9 @@
 import type { Action } from '../clickhouse';
 
-export const action: Action = async (exec, _query, isHiveCloud) => {
+export const action: Action = async (exec, _query, hiveCloudEnvironment) => {
   let where = '';
 
-  if (isHiveCloud) {
+  if (hiveCloudEnvironment === 'prod') {
     // Starts aggregating data the next day of the migration (deployment)
     const tomorrow = new Date();
     tomorrow.setUTCDate(tomorrow.getUTCDate() + 1);

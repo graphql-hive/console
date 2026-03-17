@@ -1,4 +1,5 @@
-import type { FastifyReply, FastifyRequest, ServiceLogger } from '@hive/service-common';
+import { maskToken, type FastifyReply, type FastifyRequest } from '@hive/service-common';
+import { AccessError } from '../../../shared/errors';
 import { Logger } from '../../shared/providers/logger';
 import { TokenStorage } from '../../token/providers/token-storage';
 import { TokensConfig } from '../../token/providers/tokens';
@@ -7,7 +8,7 @@ import {
   ProjectAccessScope,
   TargetAccessScope,
 } from '../providers/scopes';
-import { AuthNStrategy, Session, type AuthorizationPolicyStatement } from './authz';
+import { AuthNStrategy, Permission, Session, type AuthorizationPolicyStatement } from './authz';
 
 export class TargetAccessTokenSession extends Session {
   public readonly organizationId: string;
@@ -43,6 +44,10 @@ export class TargetAccessTokenSession extends Session {
     return this.policies;
   }
 
+  get id(): string {
+    return this.token;
+  }
+
   public getLegacySelector() {
     return {
       token: this.token,
@@ -51,15 +56,24 @@ export class TargetAccessTokenSession extends Session {
       targetId: this.targetId,
     };
   }
+
+  get allowedPermissions(): Array<Permission> {
+    // Since the list is static and computed below, we can safely hard-cast it and treat all policy statements as "allow"
+    return this.policies.map(policy => policy.action) as Array<Permission>;
+  }
+
+  public async getActor(): Promise<never> {
+    throw new AccessError('Authorization token is missing', 'UNAUTHENTICATED');
+  }
 }
 
 export class TargetAccessTokenStrategy extends AuthNStrategy<TargetAccessTokenSession> {
-  private logger: ServiceLogger;
+  private logger: Logger;
   private tokensConfig: TokensConfig;
 
-  constructor(deps: { logger: ServiceLogger; tokensConfig: TokensConfig }) {
+  constructor(deps: { logger: Logger; tokensConfig: TokensConfig }) {
     super();
-    this.logger = deps.logger.child({ module: 'OrganizationAccessTokenStrategy' });
+    this.logger = deps.logger.child({ module: 'TargetAccessTokenStrategy' });
     this.tokensConfig = deps.tokensConfig;
   }
 
@@ -110,16 +124,13 @@ export class TargetAccessTokenStrategy extends AuthNStrategy<TargetAccessTokenSe
       return null;
     }
 
-    // if (accessToken.length !== 32) {
-    //   this.logger.debug('Invalid access token length.');
-    //   return null;
-    // }
-
     const tokens = new TokenStorage(this.logger, this.tokensConfig, {
       requestId: args.req.headers['x-request-id'] as string,
     } as any);
 
     const result = await tokens.getToken({ token: accessToken });
+
+    this.logger.debug('TargetAccessToken session resolved successfully');
 
     return new TargetAccessTokenSession(
       {
@@ -142,14 +153,6 @@ export class TargetAccessTokenStrategy extends AuthNStrategy<TargetAccessTokenSe
   }
 }
 
-function maskToken(token: string) {
-  if (token.length > 6) {
-    return token.substring(0, 3) + '*'.repeat(token.length - 6) + token.substring(token.length - 3);
-  }
-
-  return '*'.repeat(token.length);
-}
-
 function transformAccessTokenLegacyScopes(args: {
   organizationId: string;
   targetId: string;
@@ -159,28 +162,41 @@ function transformAccessTokenLegacyScopes(args: {
   for (const policy of args.scopes) {
     switch (policy) {
       case TargetAccessScope.REGISTRY_READ: {
-        policies.push({
-          effect: 'allow',
-          action: ['schemaCheck:create'],
-          resource: [`hrn:${args.organizationId}:target/${args.targetId}`],
-        });
+        policies.push(
+          {
+            effect: 'allow',
+            action: ['schemaCheck:create'],
+            resource: [`hrn:${args.organizationId}:target/${args.targetId}`],
+          },
+          {
+            effect: 'allow',
+            action: ['organization:describe', 'project:describe', 'laboratory:describe'],
+            resource: [`hrn:${args.organizationId}:organization/${args.organizationId}`],
+          },
+        );
         break;
       }
       case TargetAccessScope.REGISTRY_WRITE: {
-        policies.push({
-          effect: 'allow',
-          action: [
-            'appDeployment:describe',
-            'appDeployment:create',
-            'appDeployment:publish',
-            'appDeployment:retire',
-            'schemaVersion:publish',
-            'schemaVersion:deleteService',
-            'schema:loadFromRegistry',
-            'schemaVersion:publish',
-          ],
-          resource: [`hrn:${args.organizationId}:target/${args.targetId}`],
-        });
+        policies.push(
+          {
+            effect: 'allow',
+            action: [
+              'appDeployment:create',
+              'appDeployment:publish',
+              'appDeployment:retire',
+              'schemaVersion:publish',
+              'schemaVersion:deleteService',
+              'schemaVersion:publish',
+              'schemaCheck:approve',
+            ],
+            resource: [`hrn:${args.organizationId}:target/${args.targetId}`],
+          },
+          {
+            effect: 'allow',
+            action: ['organization:describe', 'project:describe'],
+            resource: [`hrn:${args.organizationId}:organization/${args.organizationId}`],
+          },
+        );
         break;
       }
     }

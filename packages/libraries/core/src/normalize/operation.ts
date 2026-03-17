@@ -3,17 +3,24 @@ import {
   DefinitionNode,
   DirectiveNode,
   DocumentNode,
+  GraphQLSchema,
   Kind,
   OperationDefinitionNode,
   print,
   SelectionNode,
   separateOperations,
   stripIgnoredCharacters,
+  TypeInfo,
   VariableDefinitionNode,
   visit,
 } from 'graphql';
+import { md5 } from 'js-md5';
 import sortBy from 'lodash.sortby';
+import { collectSchemaCoordinates } from '../client/collect-schema-coordinates.js';
 
+/**
+ * Normalize a operation document.
+ */
 export function normalizeOperation({
   document,
   operationName,
@@ -151,4 +158,94 @@ function dropUnusedDefinitions(doc: DocumentNode, operationName?: string) {
   }
 
   return separateOperations(doc)[operationName] ?? doc;
+}
+
+function findOperationDefinition(doc: DocumentNode) {
+  return doc.definitions.find(isOperationDef);
+}
+
+/** normalize a graphql operation into a stable hash as used internally within our ClickHouse Database. */
+export function preprocessOperation(operation: {
+  document: DocumentNode;
+  schemaCoordinates: Iterable<string>;
+  operationName: string | null;
+}) {
+  const body = normalizeOperation({
+    document: operation.document,
+    hideLiterals: true,
+    removeAliases: true,
+  });
+
+  // Two operations with the same hash has to be equal:
+  // 1. body is the same
+  // 2. name is the same
+  // 3. used schema coordinates are equal - this is important to assign schema coordinate to an operation
+
+  const uniqueCoordinatesSet = new Set<string>();
+  for (const field of operation.schemaCoordinates) {
+    uniqueCoordinatesSet.add(field);
+    // Add types as well:
+    // `Query.foo` -> `Query`
+    const at = field.indexOf('.');
+    if (at > -1) {
+      uniqueCoordinatesSet.add(field.substring(0, at));
+    }
+  }
+
+  const sortedCoordinates = Array.from(uniqueCoordinatesSet).sort();
+
+  const operationDefinition = findOperationDefinition(operation.document);
+
+  if (!operationDefinition) {
+    return null;
+  }
+
+  const operationName = operation.operationName ?? operationDefinition.name?.value;
+
+  const hash = md5
+    .create()
+    .update(body)
+    .update(operationName ?? '')
+    .update(sortedCoordinates.join(';')) // we do not need to sort from A to Z, default lexicographic sorting is enough
+    .hex();
+
+  return {
+    type: operationDefinition.operation,
+    hash,
+    body,
+    coordinates: sortedCoordinates,
+    name: operationName || null,
+  };
+}
+
+/**
+ * Hash a executable GraphQL document according to Hive platforms algorithm
+ * for identification.
+ *
+ * Return null if no executable operation definition was found.
+ */
+export function hashOperation(args: {
+  documentNode: DocumentNode;
+  variables: null | {
+    [key: string]: unknown;
+  };
+  operationName: string | null;
+  schema: GraphQLSchema;
+  typeInfo?: TypeInfo;
+}) {
+  const schemaCoordinates = collectSchemaCoordinates({
+    documentNode: args.documentNode,
+    processVariables: args.variables !== null,
+    variables: args.variables ?? {},
+    schema: args.schema,
+    typeInfo: args.typeInfo ?? new TypeInfo(args.schema),
+  });
+
+  const result = preprocessOperation({
+    document: args.documentNode,
+    schemaCoordinates: schemaCoordinates,
+    operationName: args.operationName,
+  });
+
+  return result?.hash ?? null;
 }

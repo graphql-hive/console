@@ -1,40 +1,39 @@
 import * as pulumi from '@pulumi/pulumi';
 import { deployApp } from './services/app';
-import { deployStripeBilling } from './services/billing';
+import { deployAWSArtifactsLambdaFunction } from './services/aws-artifacts-lambda-function';
 import { deployCFBroker } from './services/cf-broker';
 import { deployCFCDN } from './services/cf-cdn';
 import { deployClickhouse } from './services/clickhouse';
 import { deployCloudFlareSecurityTransform } from './services/cloudflare-security';
+import { deployCommerce } from './services/commerce';
 import { deployDatabaseCleanupJob } from './services/database-cleanup';
 import { deployDbMigrations } from './services/db-migrations';
 import { configureDocker } from './services/docker';
-import { deployEmails } from './services/emails';
 import { prepareEnvironment } from './services/environment';
 import { configureGithubApp } from './services/github';
 import { deployGraphQL } from './services/graphql';
 import { deployKafka } from './services/kafka';
 import { deployObservability } from './services/observability';
+import { deployOTELCollector } from './services/otel-collector';
 import { deploySchemaPolicy } from './services/policy';
 import { deployPostgres } from './services/postgres';
 import { deployProxy } from './services/proxy';
-import { deployRateLimit } from './services/rate-limit';
+import { deployPublicGraphQLAPIGateway } from './services/public-graphql-api-gateway';
 import { deployRedis } from './services/redis';
-import { deployS3, deployS3Mirror } from './services/s3';
+import { deployS3, deployS3AuditLog, deployS3Mirror } from './services/s3';
 import { deploySchema } from './services/schema';
 import { configureSentry } from './services/sentry';
-import { deploySentryEventsMonitor } from './services/sentry-events';
 import { configureSlackApp } from './services/slack-app';
-import { deploySuperTokens } from './services/supertokens';
 import { deployTokens } from './services/tokens';
 import { deployUsage } from './services/usage';
-import { deployUsageEstimation } from './services/usage-estimation';
 import { deployUsageIngestor } from './services/usage-ingestor';
-import { deployWebhooks } from './services/webhooks';
+import { deployWorkflows, PostmarkSecret } from './services/workflows';
 import { configureZendesk } from './services/zendesk';
 import { optimizeAzureCluster } from './utils/azure-helpers';
 import { isDefined } from './utils/helpers';
 import { publishAppDeployment } from './utils/publish-app-deployment';
 import { publishGraphQLSchema } from './utils/publish-graphql-schema';
+import { ServiceSecret } from './utils/secrets';
 
 // eslint-disable-next-line no-process-env
 const imagesTag = process.env.DOCKER_IMAGE_TAG as string;
@@ -67,28 +66,37 @@ const docker = configureDocker();
 const envName = pulumi.getStack();
 const heartbeatsConfig = new pulumi.Config('heartbeats');
 
+const emailConfig = new pulumi.Config('email');
+const postmarkSecret = new PostmarkSecret('postmark', {
+  token: emailConfig.requireSecret('token'),
+  from: emailConfig.require('from'),
+  messageStream: emailConfig.require('messageStream'),
+});
+
 const sentry = configureSentry();
 const environment = prepareEnvironment({
   release: imagesTag,
   environment: envName,
   rootDns: new pulumi.Config('common').require('dnsZone'),
 });
-deploySentryEventsMonitor({ docker, environment, sentry });
-const observability = deployObservability({
-  envName,
-  tableSuffix: envName === 'prod' ? 'production' : envName,
-});
+const observability = deployObservability({ environment });
 const clickhouse = deployClickhouse();
 const postgres = deployPostgres();
 const redis = deployRedis({ environment });
 const kafka = deployKafka();
 const s3 = deployS3();
 const s3Mirror = deployS3Mirror();
+const s3AuditLog = deployS3AuditLog();
 
 const cdn = deployCFCDN({
   s3,
   s3Mirror,
   sentry,
+  environment,
+});
+
+const lambdaFunction = deployAWSArtifactsLambdaFunction({
+  s3Mirror,
   environment,
 });
 
@@ -127,57 +135,15 @@ const tokens = deployTokens({
   observability,
 });
 
-const webhooks = deployWebhooks({
-  image: docker.factory.getImageId('webhooks', imagesTag),
-  environment,
-  heartbeat: heartbeatsConfig.get('webhooks'),
-  broker,
-  docker,
-  redis,
-  sentry,
-  observability,
-});
-
-const emails = deployEmails({
-  image: docker.factory.getImageId('emails', imagesTag),
-  docker,
-  environment,
-  redis,
-  sentry,
-  observability,
-});
-
-const usageEstimator = deployUsageEstimation({
-  image: docker.factory.getImageId('usage-estimator', imagesTag),
+const commerce = deployCommerce({
+  image: docker.factory.getImageId('commerce', imagesTag),
   docker,
   environment,
   clickhouse,
   dbMigrations,
   sentry,
   observability,
-});
-
-const billing = deployStripeBilling({
-  image: docker.factory.getImageId('stripe-billing', imagesTag),
-  docker,
   postgres,
-  environment,
-  dbMigrations,
-  usageEstimator,
-  sentry,
-  observability,
-});
-
-const rateLimit = deployRateLimit({
-  image: docker.factory.getImageId('rate-limit', imagesTag),
-  docker,
-  environment,
-  dbMigrations,
-  usageEstimator,
-  emails,
-  postgres,
-  sentry,
-  observability,
 });
 
 const usage = deployUsage({
@@ -185,10 +151,13 @@ const usage = deployUsage({
   docker,
   environment,
   tokens,
+  redis,
+  postgres,
   kafka,
   dbMigrations,
-  rateLimit,
+  commerce,
   sentry,
+  observability,
 });
 
 const usageIngestor = deployUsageIngestor({
@@ -220,7 +189,19 @@ const schemaPolicy = deploySchemaPolicy({
   observability,
 });
 
-const supertokens = deploySuperTokens(postgres, { dependencies: [dbMigrations] }, environment);
+deployWorkflows({
+  image: docker.factory.getImageId('workflows', imagesTag),
+  docker,
+  environment,
+  postgres,
+  postmarkSecret,
+  observability,
+  sentry,
+  heartbeat: heartbeatsConfig.get('webhooks'),
+  schema,
+  redis,
+});
+
 const zendesk = configureZendesk({ environment });
 const githubApp = configureGithubApp();
 const slackApp = configureSlackApp();
@@ -232,58 +213,80 @@ const graphql = deployGraphQL({
   image: docker.factory.getImageId('server', imagesTag),
   docker,
   tokens,
-  webhooks,
   schema,
   schemaPolicy,
   dbMigrations,
   redis,
   usage,
   cdn,
-  usageEstimator,
-  rateLimit,
-  billing,
-  emails,
-  supertokens,
+  commerce,
   s3,
   s3Mirror,
+  s3AuditLog,
   zendesk,
   githubApp,
   sentry,
   observability,
 });
 
-const apiConfig = new pulumi.Config('api');
-const apiEnv = apiConfig.requireObject<Record<string, string>>('env');
-
-const publishGraphQLSchemaCommand = publishGraphQLSchema({
-  graphql,
-  registry: {
-    endpoint: `https://${environment.appDns}/registry`,
-    accessToken: apiEnv.HIVE_API_TOKEN,
-  },
-  version: {
-    commit: imagesTag,
-  },
-  schemaPath: graphqlSchemaAbsolutePath,
+const hiveConfig = new pulumi.Config('hive');
+const hiveConfigSecret = new ServiceSecret('hive-config-secret', {
+  usageAccessToken: hiveConfig.requireSecret('cliAccessToken'),
 });
+
+// You can change this to `false` in cases when you don't want to publish commands.
+// For example, if the entire env is down or if you are having SSL issues.
+// eslint-disable-next-line no-process-env
+const RUN_PUBLISH_COMMANDS: boolean = process.env.SKIP_PUBLISH_COMMANDS !== '1';
+
+const publishGraphQLSchemaCommand = RUN_PUBLISH_COMMANDS
+  ? publishGraphQLSchema({
+      graphql,
+      registry: {
+        endpoint: `https://${environment.appDns}/registry`,
+        accessToken: hiveConfigSecret.raw.usageAccessToken,
+        target: hiveConfig.require('target'),
+      },
+      version: {
+        commit: imagesTag,
+      },
+      schemaPath: graphqlSchemaAbsolutePath,
+    })
+  : null;
 
 let publishAppDeploymentCommand: pulumi.Resource | undefined;
 
-if (hiveAppPersistedDocumentsAbsolutePath) {
+if (hiveAppPersistedDocumentsAbsolutePath && RUN_PUBLISH_COMMANDS) {
   publishAppDeploymentCommand = publishAppDeployment({
     appName: 'hive-app',
     registry: {
       endpoint: `https://${environment.appDns}/registry`,
-      accessToken: apiEnv.HIVE_API_TOKEN,
+      accessToken: hiveConfigSecret.raw.usageAccessToken,
+      target: hiveConfig.require('target'),
     },
     version: {
       commit: imagesTag,
     },
     persistedDocumentsPath: hiveAppPersistedDocumentsAbsolutePath,
+    wakeupClickhouse: environment.isProduction
+      ? null
+      : {
+          clickhouse: clickhouse.secret,
+          dockerSecret: docker.secret,
+        },
     // We need to wait until the new GraphQL schema is published before we can publish the app deployment.
-    dependsOn: [publishGraphQLSchemaCommand],
+    dependsOn: publishGraphQLSchemaCommand ? [publishGraphQLSchemaCommand] : [],
   });
 }
+
+const otelCollector = deployOTELCollector({
+  environment,
+  graphql,
+  dbMigrations,
+  clickhouse,
+  image: docker.factory.getImageId('otel-collector', imagesTag),
+  docker,
+});
 
 const app = deployApp({
   environment,
@@ -293,10 +296,18 @@ const app = deployApp({
   image: docker.factory.getImageId('app', imagesTag),
   docker,
   zendesk,
-  billing,
+  commerce,
   github: githubApp,
   slackApp,
   sentry,
+});
+
+const publicGraphQLAPIGateway = deployPublicGraphQLAPIGateway({
+  environment,
+  graphql,
+  docker,
+  observability,
+  otelCollector,
 });
 
 const proxy = deployProxy({
@@ -305,10 +316,12 @@ const proxy = deployProxy({
   graphql,
   usage,
   environment,
+  publicGraphQLAPIGateway,
+  otelCollector,
 });
 
 deployCloudFlareSecurityTransform({
-  envName,
+  environment,
   // Paths used by 3rd-party software.
   // The CF Page Rules should not affect them and do not apply any special security headers.
   ignoredPaths: [
@@ -320,9 +333,7 @@ deployCloudFlareSecurityTransform({
     '/server',
     '/api/github',
     '/api/slack',
-    '/api/lab',
   ],
-  ignoredHosts: ['cdn.graphql-hive.com', 'cdn.staging.graphql-hive.com'],
 });
 
 export const graphqlApiServiceId = graphql.service.id;
@@ -330,7 +341,8 @@ export const usageApiServiceId = usage.service.id;
 export const usageIngestorApiServiceId = usageIngestor.service.id;
 export const tokensApiServiceId = tokens.service.id;
 export const schemaApiServiceId = schema.service.id;
-export const webhooksApiServiceId = webhooks.service.id;
 
 export const appId = app.deployment.id;
-export const publicIp = proxy!.status.loadBalancer.ingress[0].ip;
+export const otelCollectorId = otelCollector.deployment.id;
+export const publicIp = proxy.get()!.status.loadBalancer.ingress[0].ip;
+export const awsLambdaArtifactsFunctionUrl = lambdaFunction;

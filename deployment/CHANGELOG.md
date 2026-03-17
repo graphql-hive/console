@@ -1,5 +1,2058 @@
 # hive
 
+## 10.0.0
+
+### Major Changes
+
+- [#7705](https://github.com/graphql-hive/console/pull/7705)
+  [`14c73e5`](https://github.com/graphql-hive/console/commit/14c73e57513b5b0df8faa2aca8f4a1eb84088b7c)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - **BREAKING** Remove support for `supertokens`
+  service and replace it with native authentication solution.
+
+  ## Upgrade Guide
+
+  Adjust your docker compose file like the following:
+
+  - Remove `services.supertokens` from your `docker-compose.community.yml` file
+  - Remove the following environment variables from the `services.server.environment`
+    - `SUPERTOKENS_CONNECTION_URI=`
+    - `SUPERTOKENS_API_KEY=`
+  - Set the following environment variables for `services.server.environment`
+    - `SUPERTOKENS_REFRESH_TOKEN_KEY=`
+    - `SUPERTOKENS_ACCESS_TOKEN_KEY=`
+
+  ### Set the refresh token key
+
+  #### Extract from existing `supertokens` deployment
+
+  This method works if you use supertokens before and want to have existing user sessions to
+  continue working. If you want to avoid messing with the database, you can also create a new
+  refresh token key from scratch, the drawback is that users are forced to login again.
+
+  Extract the refresh token key from the supertokens database
+
+  ```sql
+  SELECT
+    "value"
+  FROM
+    "supertokens_key_value"
+  WHERE
+    "name" = 'refresh_token_key';
+  ```
+
+  The key should look similar to this:
+  `1000:15e5968d52a9a48921c1c63d88145441a8099b4a44248809a5e1e733411b3eeb80d87a6e10d3390468c222f6a91fef3427f8afc8b91ea1820ab10c7dfd54a268:39f72164821e08edd6ace99f3bd4e387f45fa4221fe3cd80ecfee614850bc5d647ac2fddc14462a00647fff78c22e8d01bc306a91294f5b889a90ba891bf0aa0`
+
+  Update the docker compose `services.server.environment.SUPERTOKENS_REFRESH_TOKEN_KEY` environment
+  variable value to this string.
+
+  #### Create from scratch
+
+  Run the following command to create a new refresh key from scratch:
+
+  ```sh
+  echo "1000:$(openssl rand -hex 64):$(openssl rand -hex 64)"
+  ```
+
+  ### Set the access token key
+
+  Generate a new access token key using the following instructions:
+
+  ```sh
+  # 1. Generate a unique key name. 'uuidgen' is great for this.
+  #    You can replace this with any string you like, e.g., KEY_NAME="my-app-key-1"
+  KEY_NAME=$(uuidgen)
+  # 2. Generate a 2048-bit RSA private key in PEM format, held in memory.
+  PRIVATE_KEY_PEM=$(openssl genpkey -algorithm RSA -pkeyopt rsa_keygen_bits:2048)
+  # 3. Extract the corresponding public key from the private key, also held in memory.
+  PUBLIC_KEY_PEM=$(echo "$PRIVATE_KEY_PEM" | openssl rsa -pubout)
+  # 4. Strip the headers/footers and newlines from the private key PEM
+  #    to get just the raw Base64 data.
+  PRIVATE_KEY_DATA=$(echo "$PRIVATE_KEY_PEM" | awk 'NF {if (NR!=1 && $0!~/-----END/) print}' | tr -d '\n')
+  # 5. Do the same for the public key PEM.
+  PUBLIC_KEY_DATA=$(echo "$PUBLIC_KEY_PEM" | awk 'NF {if (NR!=1 && $0!~/-----END/) print}' | tr -d '\n')
+  # 6. Echo the final formatted string to the console.
+  echo "${KEY_NAME}|${PUBLIC_KEY_DATA}|${PRIVATE_KEY_DATA}"
+  ```
+
+  Update the docker compose `services.server.environment.SUPERTOKENS_ACCESS_TOKEN_KEY` environment
+  variable value to the formatted string output.
+
+  ## Conclusion
+
+  After performing this updates you can run Hive Console without the need for the `supertokens`
+  service. All the relevant authentication logic resides within the `server` container instead.
+
+  Existing users in the supertokens system will continue to exist when running without the
+  `supertokens` service.
+
+### Patch Changes
+
+- [#7836](https://github.com/graphql-hive/console/pull/7836)
+  [`f42b83a`](https://github.com/graphql-hive/console/commit/f42b83a57efbb963f17ab764e8e5100aa4330320)
+  Thanks [@jonathanawesome](https://github.com/jonathanawesome)! - Suppress Monaco editor errors
+  before sending to Sentry
+
+## 9.7.1
+
+### Patch Changes
+
+- [#7828](https://github.com/graphql-hive/console/pull/7828)
+  [`1b31761`](https://github.com/graphql-hive/console/commit/1b31761cc3f94693ad74498f70cf89faff373b2f)
+  Thanks [@jdolle](https://github.com/jdolle)! - Adjust app deployment schema check to perform
+  database queries in parallel
+
+## 9.7.0
+
+### Minor Changes
+
+- [#7745](https://github.com/graphql-hive/console/pull/7745)
+  [`33bff41`](https://github.com/graphql-hive/console/commit/33bff4134240964bbf3bd97b878572202c13c256)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Allow organization owners register domain
+  ownership. The registration will allow users with matching email domains bypassing mandatory email
+  verification.
+
+### Patch Changes
+
+- [#7810](https://github.com/graphql-hive/console/pull/7810)
+  [`7aac422`](https://github.com/graphql-hive/console/commit/7aac422acc3ef13ec1c199259f5c9c4522481c6f)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Propagate updated email address from OIDC provider.
+  This fixes a bug where a user was locked out of the Hive account after the email of the user on
+  the OIDC provider side changed.
+
+- [#7812](https://github.com/graphql-hive/console/pull/7812)
+  [`2c55d5b`](https://github.com/graphql-hive/console/commit/2c55d5bd1188bc003ccf537095b9813127928693)
+  Thanks [@jdolle](https://github.com/jdolle)! - Explorer page unions now link to the contained
+  types
+
+## 9.6.1
+
+### Patch Changes
+
+- [#7792](https://github.com/graphql-hive/console/pull/7792)
+  [`56086ba`](https://github.com/graphql-hive/console/commit/56086ba42ee301e95a59ec2d7ceec0753063fced)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Address vulnerability
+  [CVE-2026-24051](https://github.com/graphql-hive/console/security/dependabot/517)
+
+- [#7768](https://github.com/graphql-hive/console/pull/7768)
+  [`6b22c3d`](https://github.com/graphql-hive/console/commit/6b22c3d9e2c90585b6680fb9bc8eed60fe878549)
+  Thanks [@jonathanawesome](https://github.com/jonathanawesome)! - Enhanced Insights filters UI with
+  include/exclude options
+
+- [#7792](https://github.com/graphql-hive/console/pull/7792)
+  [`56086ba`](https://github.com/graphql-hive/console/commit/56086ba42ee301e95a59ec2d7ceec0753063fced)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Address vulnerability
+  [CVE-2026-3419](https://github.com/graphql-hive/console/security/dependabot/536)
+
+- [#7797](https://github.com/graphql-hive/console/pull/7797)
+  [`bb74982`](https://github.com/graphql-hive/console/commit/bb74982825d3f7d31c6d6345cf586617cbe728e8)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Revert improvements around federation composition
+  rules introduced in `9.6.1` as it might cause issues for Apollo Gateway.
+
+- [#7795](https://github.com/graphql-hive/console/pull/7795)
+  [`4fef6c7`](https://github.com/graphql-hive/console/commit/4fef6c759d2c82bbc9ac8128f1e56ba31d0e21ca)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Address vulnerability
+  [CVE-2026-0540](https://github.com/graphql-hive/console/security/dependabot/523)
+
+## 9.6.0
+
+### Minor Changes
+
+- [#7769](https://github.com/graphql-hive/console/pull/7769)
+  [`ee2785c`](https://github.com/graphql-hive/console/commit/ee2785c4cc63922bbd45f2557cc6d1e5577c6cca)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - App deployments are now stable and enabled for all
+  organizations by default.
+
+### Patch Changes
+
+- [#7773](https://github.com/graphql-hive/console/pull/7773)
+  [`e3532f2`](https://github.com/graphql-hive/console/commit/e3532f21a31b8510c95c899112a9b21c20d46e69)
+  Thanks [@jdolle](https://github.com/jdolle)! - Add `schemaCheck:approve` permission to
+  organization access token list
+
+- [#7778](https://github.com/graphql-hive/console/pull/7778)
+  [`3c05b96`](https://github.com/graphql-hive/console/commit/3c05b96a10f24c11e24c724e2418eb1944a73b59)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Improve federation composition rules.
+
+  - Fix supergraph `@join__field` generation for `@override` + `@requires` migrations and add a
+    progressive override restriction.
+  - When a field with `@requires` is overridden, composition now ignores `@requires` usage coming
+    only from the overridden source field when deciding whether to keep
+    `@join__field(..., external: true)`. This prevents stale external annotations in the supergraph.
+  - Progressive override (`@override(..., label: ...)`) is now rejected when the overridden source
+    field uses `@requires` (error code: `OVERRIDE_COLLISION_WITH_ANOTHER_DIRECTIVE`).
+    Non-progressive override behavior is unchanged.
+
+## 9.5.0
+
+### Minor Changes
+
+- [#7699](https://github.com/graphql-hive/console/pull/7699)
+  [`5f88ce8`](https://github.com/graphql-hive/console/commit/5f88ce8bd8c68ea198fcec3c6f17ac957436b5e7)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Add experimental support for running without
+  `supertokens` service.
+
+  ## Instructions
+
+  ### Prerequisites
+
+  Adjust your docker compose file like the following:
+
+  - Remove `services.supertokens` from your `docker-compose.community.yml` file
+  - Remove the following environment variables from the `services.server.environment`
+    - `SUPERTOKENS_CONNECTION_URI=`
+    - `SUPERTOKENS_API_KEY=`
+  - Set the following environment variables for `services.server.environment`
+    - `SUPERTOKENS_AT_HOME=1`
+    - `SUPERTOKENS_REFRESH_TOKEN_KEY=`
+    - `SUPERTOKENS_ACCESS_TOKEN_KEY=`
+  - Set the following environment variables for `services.migrations.environment`
+    - `SUPERTOKENS_AT_HOME=1`
+
+  ### Set the refresh token key
+
+  #### Extract from existing `supertokens` deployment
+
+  This method works if you use supertokens before and want to have existing user sessions to
+  continue working. If you want to avoid messing with the database, you can also create a new
+  refresh token key from scratch, the drawback is that users are forced to login again.
+
+  Extract the refresh token key from the supertokens database
+
+  ```sql
+  SELECT
+    "value"
+  FROM
+    "supertokens_key_value"
+  WHERE
+    "name" = 'refresh_token_key';
+  ```
+
+  The key should look similar to this:
+  `1000:15e5968d52a9a48921c1c63d88145441a8099b4a44248809a5e1e733411b3eeb80d87a6e10d3390468c222f6a91fef3427f8afc8b91ea1820ab10c7dfd54a268:39f72164821e08edd6ace99f3bd4e387f45fa4221fe3cd80ecfee614850bc5d647ac2fddc14462a00647fff78c22e8d01bc306a91294f5b889a90ba891bf0aa0`
+
+  Update the docker compose `services.server.environment.SUPERTOKENS_REFRESH_TOKEN_KEY` environment
+  variable value to this string.
+
+  #### Create from scratch
+
+  Run the following command to create a new refresh key from scratch:
+
+  ```sh
+  echo "1000:$(openssl rand -hex 64):$(openssl rand -hex 64)"
+  ```
+
+  Update the docker compose `services.server.environment.SUPERTOKENS_REFRESH_TOKEN_KEY` environment
+  variable value to this string.
+
+  ### Set the access token key
+
+  Generate a new access token key using the following instructions:
+
+  ```sh
+  # 1. Generate a unique key name. 'uuidgen' is great for this.
+  #    You can replace this with any string you like, e.g., KEY_NAME="my-app-key-1"
+  KEY_NAME=$(uuidgen)
+  # 2. Generate a 2048-bit RSA private key in PEM format, held in memory.
+  PRIVATE_KEY_PEM=$(openssl genpkey -algorithm RSA -pkeyopt rsa_keygen_bits:2048)
+  # 3. Extract the corresponding public key from the private key, also held in memory.
+  PUBLIC_KEY_PEM=$(echo "$PRIVATE_KEY_PEM" | openssl rsa -pubout)
+  # 4. Strip the headers/footers and newlines from the private key PEM
+  #    to get just the raw Base64 data.
+  PRIVATE_KEY_DATA=$(echo "$PRIVATE_KEY_PEM" | awk 'NF {if (NR!=1 && $0!~/-----END/) print}' | tr -d '\n')
+  # 5. Do the same for the public key PEM.
+  PUBLIC_KEY_DATA=$(echo "$PUBLIC_KEY_PEM" | awk 'NF {if (NR!=1 && $0!~/-----END/) print}' | tr -d '\n')
+  # 6. Echo the final formatted string to the console.
+  echo "${KEY_NAME}|${PUBLIC_KEY_DATA}|${PRIVATE_KEY_DATA}"
+  ```
+
+  Update the docker compose `services.server.environment.SUPERTOKENS_ACCESS_TOKEN_KEY` environment
+  variable value to the formatted string output.
+
+  ## Conclusion
+
+  After performing this updates you can run Hive Console without the need for the `supertokens`
+  service. All the relevant authentication logic resides within the `server` container instead.
+
+  Existing users in the supertokens system will continue to exist when running without the
+  `supertokens` service.
+
+- [#7706](https://github.com/graphql-hive/console/pull/7706)
+  [`9357d39`](https://github.com/graphql-hive/console/commit/9357d3964624cfe963b95d437113a6b26a03934b)
+  Thanks [@jdolle](https://github.com/jdolle)! - We continue to build and expand the features of
+  schema proposals. In this change, a background composition job was added to allow asynchronous
+  updates to the composition state of a proposal. This composition job uses the schema service's
+  composer but is unique from checks in that it takes the latest state of all subgraphs that are a
+  part of a schema proposal.
+
+  ### Additional environment variables for `workflows` service:
+
+  The `workflow` service calls the `schema` service's composeAndValidate TRPC endpoint and requires
+  the `schema` service endpoint. And the shared instance of Redis, used as a pubsub in the `server`
+  and `api` services, is also now used by `workflows` to update
+  `Subscription.schemaProposalComposition`.
+
+  For self hosters, make sure to provide the following environment variables to the `workflows`
+  service:
+
+  - SCHEMA_ENDPOINT
+  - REDIS_HOST
+  - REDIS_PORT
+  - REDIS_PASSWORD
+
+### Patch Changes
+
+- [#7761](https://github.com/graphql-hive/console/pull/7761)
+  [`14581ba`](https://github.com/graphql-hive/console/commit/14581baf69543afb4ecf524f21c2f6d6d1d823d5)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Correctly display permission group without assigned
+  resources.
+
+- [#7700](https://github.com/graphql-hive/console/pull/7700)
+  [`d777e32`](https://github.com/graphql-hive/console/commit/d777e3252ae54f2b2ee10bb431a73e3a9489e590)
+  Thanks [@adambenhassen](https://github.com/adambenhassen)! - Add server-side sorting to app
+  deployments table (Created, Activated, Last Used).
+
+- [#7677](https://github.com/graphql-hive/console/pull/7677)
+  [`c3cb1ac`](https://github.com/graphql-hive/console/commit/c3cb1acc5c13522ace544aceb240bb54df2c7917)
+  Thanks [@jdolle](https://github.com/jdolle)! - Increase service keepAliveTimeout from 72s to 905s
+
+- [#7746](https://github.com/graphql-hive/console/pull/7746)
+  [`ade45f5`](https://github.com/graphql-hive/console/commit/ade45f5a70727df55402125cf73779009253962a)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - fix unexpected error for support tickets in case
+  the user already exists within zendesk.
+
+- [#7673](https://github.com/graphql-hive/console/pull/7673)
+  [`f8aac8b`](https://github.com/graphql-hive/console/commit/f8aac8b98c5d65d3507597e2cc223a4e1f484887)
+  Thanks [@adambenhassen](https://github.com/adambenhassen)! - Handle OIDC token exchange errors
+  gracefully instead of returning 500. Classifies OAuth 2.0 error codes into user-safe messages
+  without leaking sensitive provider details. Fix OIDC debug log modal not displaying the log area.
+
+- [#7732](https://github.com/graphql-hive/console/pull/7732)
+  [`3567483`](https://github.com/graphql-hive/console/commit/3567483fbd4ddc51ddddd4c4886cc12d251cdbca)
+  Thanks [@jonathanawesome](https://github.com/jonathanawesome)! - fix: correct RPM chart Y-axis
+  scale to match actual values
+
+## 9.4.1
+
+### Patch Changes
+
+- [#7664](https://github.com/graphql-hive/console/pull/7664)
+  [`ddea09b`](https://github.com/graphql-hive/console/commit/ddea09bbc34f5486fa6ddddf4e60a899fc7f43b5)
+  Thanks [@jdolle](https://github.com/jdolle)! - Fix service SDL being printed on a single line in
+  check and publish views
+
+- [#7688](https://github.com/graphql-hive/console/pull/7688)
+  [`fb14a99`](https://github.com/graphql-hive/console/commit/fb14a990871456730c7a5da92d157962fb0599a7)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Fix unexpected error when attempting to select
+  resources in a project without app deployments/services
+
+- [#7687](https://github.com/graphql-hive/console/pull/7687)
+  [`c514e23`](https://github.com/graphql-hive/console/commit/c514e237daa125d8e64d350218ea553fbf4e44a3)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Gracefully handle error when publish lock
+  acquisition fails for clients not supporting retries.
+
+- [#7670](https://github.com/graphql-hive/console/pull/7670)
+  [`8138a6c`](https://github.com/graphql-hive/console/commit/8138a6cb381f1f92eb514c0c9125d3c15df3e9b3)
+  Thanks [@mskorokhodov](https://github.com/mskorokhodov)! - Hive Lab: Better initial state handling
+  for env variables in preflight script
+
+- [#7672](https://github.com/graphql-hive/console/pull/7672)
+  [`21f3aee`](https://github.com/graphql-hive/console/commit/21f3aeeb2a914f8da4bdc913aead3a9400bf75f4)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Fix "see organization as admin" mode for debugging
+  purposes.
+
+- [#7675](https://github.com/graphql-hive/console/pull/7675)
+  [`30238d7`](https://github.com/graphql-hive/console/commit/30238d700b5b094358ebcd13f13b025b9fb33fe1)
+  Thanks [@jdolle](https://github.com/jdolle)! - Add missing message for no details on schema
+  check/push changes
+
+- [#7669](https://github.com/graphql-hive/console/pull/7669)
+  [`a6f5ac4`](https://github.com/graphql-hive/console/commit/a6f5ac4cc61f7c5eee68768c3f82140cb0290dc1)
+  Thanks [@adambenhassen](https://github.com/adambenhassen)! - Add `lastUsed`, `createdAt`,
+  `activatedAt`, and `status` columns to app deployments tables. Fix broken text colors on multiple
+  pages after the recent color palette overhaul.
+
+## 9.4.0
+
+### Minor Changes
+
+- [#7635](https://github.com/graphql-hive/console/pull/7635)
+  [`6c6f5ab`](https://github.com/graphql-hive/console/commit/6c6f5ab5f25a19ca5f2a7f1016ae1bd967542bc8)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Add `Mutation.updateSchemaComposition` to the
+  public GraphQL API schema.
+
+- [#7642](https://github.com/graphql-hive/console/pull/7642)
+  [`a65b0bc`](https://github.com/graphql-hive/console/commit/a65b0bc7721c2b84417d6ba1052ffd03a34b556d)
+  Thanks [@jdolle](https://github.com/jdolle)! - Add Mutation.retireAppDeployments to the public API
+
+### Patch Changes
+
+- [#7614](https://github.com/graphql-hive/console/pull/7614)
+  [`e853916`](https://github.com/graphql-hive/console/commit/e85391651342ab23c0b19b03a93501a4f9abe2d2)
+  Thanks [@mskorokhodov](https://github.com/mskorokhodov)! - Fix for schema sdl resolver to ignore
+  auto fix composite schema execution in case of monolith
+
+- [#7624](https://github.com/graphql-hive/console/pull/7624)
+  [`8afab7d`](https://github.com/graphql-hive/console/commit/8afab7d822527e4eb5d20b59c33d58881afefa3f)
+  Thanks [@adambenhassen](https://github.com/adambenhassen)! - Fix stale app deployments query
+  returning empty results for targets with >1000 deployments
+
+- [#7628](https://github.com/graphql-hive/console/pull/7628)
+  [`c15775a`](https://github.com/graphql-hive/console/commit/c15775a7dcca75d3c82f438baa721f19de79351b)
+  Thanks [@jdolle](https://github.com/jdolle)! - Add created at, last used, and total docs to app
+  deployment view
+
+- [#7622](https://github.com/graphql-hive/console/pull/7622)
+  [`d79d9f1`](https://github.com/graphql-hive/console/commit/d79d9f139e319734ed40c1f886531bcfa20d76b6)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Fix exception raised when performing an email
+  invite.
+
+- [#7653](https://github.com/graphql-hive/console/pull/7653)
+  [`8857722`](https://github.com/graphql-hive/console/commit/88577222d2fa39fa37af363a80b69cafcddb4679)
+  Thanks [@adambenhassen](https://github.com/adambenhassen)! - Fix Clickhouse "Field value too long"
+  error when querying stale app deployments on targets with 1000+ deployments
+
+- [#7667](https://github.com/graphql-hive/console/pull/7667)
+  [`0803ced`](https://github.com/graphql-hive/console/commit/0803cedb3ac585d0e84c2e251f520a5baee36aa1)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Update dependency `axios` to `1.13.5`, to address
+  vulnerability `CVE-2026-25639`.
+
+- [#7619](https://github.com/graphql-hive/console/pull/7619)
+  [`a0e4bbf`](https://github.com/graphql-hive/console/commit/a0e4bbfa5d6109dbee01f6f15b1eaf0a7735887d)
+  Thanks [@jdolle](https://github.com/jdolle)! - Remove initialChecks from schema proposal creation
+  mutation; Show proposal schema check updates in a dialog box
+
+- [#7592](https://github.com/graphql-hive/console/pull/7592)
+  [`6709e71`](https://github.com/graphql-hive/console/commit/6709e719c14ca097761f9eb1f81115c69dc369d4)
+  Thanks [@jonathanawesome](https://github.com/jonathanawesome)! - added light mode to console
+
+## 9.3.0
+
+### Minor Changes
+
+- [#7540](https://github.com/graphql-hive/console/pull/7540)
+  [`903c7f5`](https://github.com/graphql-hive/console/commit/903c7f57c89a85bc2068216292df2ac0c329212b)
+  Thanks [@rickbijkerk](https://github.com/rickbijkerk)! - Improve type sorting within the schema
+  explorer. The changes are now sorted by relevance.
+
+  - Exact matches appear first (e.g., `Product` when searching `product`)
+  - Prefix matches appear second (e.g., `ProductInfo` when searching `prod`)
+  - Contains matches appear last, sorted alphabetically
+
+- [#7432](https://github.com/graphql-hive/console/pull/7432)
+  [`f8e49ae`](https://github.com/graphql-hive/console/commit/f8e49ae53f743a50e104fba216bd4545fb4abdd6)
+  Thanks [@adambenhassen](https://github.com/adambenhassen)! - Add app deployment retirement
+  protection settings. When enabled, prevents retiring app deployments that were recently created or
+  are still actively used, based on configurable inactivity period, creation age, and traffic
+  thresholds.
+
+- [#7584](https://github.com/graphql-hive/console/pull/7584)
+  [`0f0430f`](https://github.com/graphql-hive/console/commit/0f0430f4f56c5508c9bea737d10de14e1a08d5af)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Enable automatic retrieval of schema changes by
+  comparing with the latest composable version. This has already been the default for new projects
+  created after April 2024.
+
+  Federation and schema stitching projects can now publish service schemas to the registry even if
+  those schemas would break composition. This has also been the default behavior for new projects
+  created after April 2024.
+
+  To ensure every version publishd to the schema registry is composable, we recommend to first check
+  the schema against the registry **before** publishing.
+
+- [#7603](https://github.com/graphql-hive/console/pull/7603)
+  [`545349f`](https://github.com/graphql-hive/console/commit/545349fbc76f55c4b79fcb4260ad2fc0453275b7)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Enable email verification against SSO accounts.
+
+  This is a prior step to ensure that all SSO account owners also own their email, before
+  introducing an email-based account linking system.
+
+### Patch Changes
+
+- [#7612](https://github.com/graphql-hive/console/pull/7612)
+  [`1272c1c`](https://github.com/graphql-hive/console/commit/1272c1ca32e6f09659f817301e965840aad621e2)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Address vulnerabilities in dependencies
+  (CVE-2026-25224, CVE-2026-25223).
+
+- [#7552](https://github.com/graphql-hive/console/pull/7552)
+  [`3f1743c`](https://github.com/graphql-hive/console/commit/3f1743c76187adfa9f2a60afbdc8c3b632aaf711)
+  Thanks [@jdolle](https://github.com/jdolle)! - Render directive diff on schema definitions
+
+## 9.2.0
+
+### Minor Changes
+
+- [#7531](https://github.com/graphql-hive/console/pull/7531)
+  [`f4eb13f`](https://github.com/graphql-hive/console/commit/f4eb13f9edad1bc9f4d98afae55a006094b8a030)
+  Thanks [@jdolle](https://github.com/jdolle)! - Store schema proposal changes on a separate column
+  in the schema check; update graphql inspector
+
+### Patch Changes
+
+- [#7491](https://github.com/graphql-hive/console/pull/7491)
+  [`c4776b8`](https://github.com/graphql-hive/console/commit/c4776b80abf7e71f48d82a8988bc6055d14706b0)
+  Thanks [@jdolle](https://github.com/jdolle)! - Support repeat directives in schema proposal diff
+  renderer. This uses an index based approach to identify and render differences in the list of
+  directives used.
+
+- [#7543](https://github.com/graphql-hive/console/pull/7543)
+  [`cf4ff09`](https://github.com/graphql-hive/console/commit/cf4ff0923a85c02a85631e7c2edffd9bb2f83526)
+  Thanks [@jdolle](https://github.com/jdolle)! - Disable project and target cards during loading
+
+- [#7538](https://github.com/graphql-hive/console/pull/7538)
+  [`5a07b98`](https://github.com/graphql-hive/console/commit/5a07b982b1f1617138b9b0e21b12447c8b3ad86b)
+  Thanks [@jdolle](https://github.com/jdolle)! - Fix schema check approval dropdown submit button
+  style
+
+## 9.1.0
+
+### Minor Changes
+
+- [#7388](https://github.com/graphql-hive/console/pull/7388)
+  [`53f9d5e`](https://github.com/graphql-hive/console/commit/53f9d5e30337b10ea0fdc954b56687d495556c77)
+  Thanks [@adambenhassen](https://github.com/adambenhassen)! - Show affected app deployments for
+  breaking schema changes. When a schema check detects breaking changes, it now shows which active
+  app deployments would be affected, including the specific operations within each deployment that
+  use the affected schema coordinates.
+
+## 9.0.0
+
+### Major Changes
+
+- [#7383](https://github.com/graphql-hive/console/pull/7383)
+  [`ec77725`](https://github.com/graphql-hive/console/commit/ec77725ca16db22e238b4f3ba3d9c881ffb0cd62)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Add a new `workflows` service. This service
+  consolidates and replaces the `emails` and `webhooks` services, using a Postgres-backed persistent
+  queue for improved stability and reliability.
+
+  If you are running a self-hosted setup the following docker compose changes are required:
+
+  ```diff
+  services:
+
+  +  workflows:
+  +    image: '${DOCKER_REGISTRY}workflows${DOCKER_TAG}'
+  +    networks:
+  +      - 'stack'
+  +    depends_on:
+  +      db:
+  +        condition: service_healthy
+  +    environment:
+  +      NODE_ENV: production
+  +      PORT: 3014
+  +      POSTGRES_HOST: db
+  +      POSTGRES_PORT: 5432
+  +      POSTGRES_DB: '${POSTGRES_DB}'
+  +      POSTGRES_USER: '${POSTGRES_USER}'
+  +      POSTGRES_PASSWORD: '${POSTGRES_PASSWORD}'
+  +      EMAIL_FROM: no-reply@graphql-hive.com
+  +      EMAIL_PROVIDER: sendmail
+  +      LOG_LEVEL: '${LOG_LEVEL:-debug}'
+  +      SENTRY: '${SENTRY:-0}'
+  +      SENTRY_DSN: '${SENTRY_DSN:-}'
+  +      PROMETHEUS_METRICS: '${PROMETHEUS_METRICS:-}'
+  +      LOG_JSON: '1'
+  -  emails:
+  -    ...
+  -  webhooks:
+  -    ...
+  ```
+
+  For different setups, we recommend using this as a reference.
+
+  **Note:** The workflows service will attempt to run postgres migrations for seeding the required
+  database tables within the `graphile_worker` namespace. Please make sure the database user has
+  sufficient permissions. For more information please refer to the
+  [Graphile Worker documentation](https://worker.graphile.org/).
+
+- [#7492](https://github.com/graphql-hive/console/pull/7492)
+  [`954e9f3`](https://github.com/graphql-hive/console/commit/954e9f3c37c8518a083b330caa160931779d9a84)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Bump Node.js version to `v24.13.0`.
+
+### Minor Changes
+
+- [#7377](https://github.com/graphql-hive/console/pull/7377)
+  [`8549f22`](https://github.com/graphql-hive/console/commit/8549f222405a08dec4b2974a28414415c0859cf9)
+  Thanks [@adambenhassen](https://github.com/adambenhassen)! - Add `activeAppDeployments` GraphQL
+  query to find app deployments based on usage criteria.
+
+  New filter options:
+
+  - `lastUsedBefore`: Find stale deployments that were used but not recently (OR with
+    neverUsedAndCreatedBefore)
+  - `neverUsedAndCreatedBefore`: Find old deployments that have never been used (OR with
+    lastUsedBefore)
+  - `name`: Filter by app deployment name (case-insensitive partial match, AND with date filters)
+
+  Also adds `createdAt` field to the `AppDeployment` type.
+
+  See
+  [Finding Stale App Deployments](https://the-guild.dev/graphql/hive/docs/schema-registry/app-deployments#finding-stale-app-deployments)
+  for more details.
+
+### Patch Changes
+
+- [#7475](https://github.com/graphql-hive/console/pull/7475)
+  [`e022bb4`](https://github.com/graphql-hive/console/commit/e022bb4805afcc4583db26b16ffd03822d22258f)
+  Thanks [@jdolle](https://github.com/jdolle)! - Fix org owner not being able to select a new
+  billing plan after downgrading.
+
+- [#7478](https://github.com/graphql-hive/console/pull/7478)
+  [`8e2e40d`](https://github.com/graphql-hive/console/commit/8e2e40dcf02664b5fe17ed1c7ffbff9e0ec9ffe0)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Improve error message when schema composition
+  exceeds the memory consumption limits.
+
+- [#7485](https://github.com/graphql-hive/console/pull/7485)
+  [`e3006e2`](https://github.com/graphql-hive/console/commit/e3006e22bbe38e673c27b94b080be5f57f3d095d)
+  Thanks [@kamilkisiela](https://github.com/kamilkisiela)! - Fixes a bug in Federation composition
+  and validation where an error was incorrectly reported for interfaces implementing another
+  interface with a `@key`. The validation now correctly applies only to object types implementing
+  the interface.
+
+- [#7508](https://github.com/graphql-hive/console/pull/7508)
+  [`8e111ac`](https://github.com/graphql-hive/console/commit/8e111ac4285c5b13196d11908b5afee512dc0e9b)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Fix federation composition access validation on
+  union members when selecting `__typename` in `@requires` directives.
+
+  The `@requires` directive validation rule (`AuthOnRequiresRule`) was not checking authorization
+  requirements for `__typename` selections on union types. When `__typename` on a union type was
+  selected, code would throw an unexpected error.
+
+## 8.14.1
+
+### Patch Changes
+
+- [#7477](https://github.com/graphql-hive/console/pull/7477)
+  [`b90f215`](https://github.com/graphql-hive/console/commit/b90f215213996ac755caca853a91816350936303)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Show correct error message for insufficient GitHub
+  App installation permissions when attempting to create a check run as part of a schema check.
+
+- [#7459](https://github.com/graphql-hive/console/pull/7459)
+  [`0ce9c82`](https://github.com/graphql-hive/console/commit/0ce9c82b810fef311f3856bb90b2e2a1823a7101)
+  Thanks [@jdolle](https://github.com/jdolle)! - Set usageEstimation year validation range at
+  runtime to avoid issues during the new year. This fixes an issue where the organization settings
+  usage data was not loading for January until the service was deployed again.
+
+- [#7451](https://github.com/graphql-hive/console/pull/7451)
+  [`bd4e36d`](https://github.com/graphql-hive/console/commit/bd4e36d4860c2ae0c2671fa713d0f445b47447d4)
+  Thanks [@jdolle](https://github.com/jdolle)! - Show diff on proposals editor
+
+## 8.14.0
+
+### Minor Changes
+
+- [#6836](https://github.com/graphql-hive/console/pull/6836)
+  [`128ce1b`](https://github.com/graphql-hive/console/commit/128ce1bdf26c07f7bfe7a598951562df6471bb73)
+  Thanks [@jdolle](https://github.com/jdolle)! - adjust change capture and resolvers to optionally
+  provide a full list or the simplified list of changes
+
+- [#7423](https://github.com/graphql-hive/console/pull/7423)
+  [`a71cd2b`](https://github.com/graphql-hive/console/commit/a71cd2bbb9c35203aa6b25bbb3dbef7c4b0c8b68)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Bump minio docker images to latest stable version.
+
+- [#6836](https://github.com/graphql-hive/console/pull/6836)
+  [`128ce1b`](https://github.com/graphql-hive/console/commit/128ce1bdf26c07f7bfe7a598951562df6471bb73)
+  Thanks [@jdolle](https://github.com/jdolle)! - Upgrade graphql-inspector/core to v7 and update the
+  models to be able to handle the new change objects. GraphQL Inspector now supports directive
+  changes and improves the accuracy of the severity level for several change types. This will
+  improve schema checks to make them more accurate and more complete. See graphql-inspector's
+  changelog for details.
+
+- [#7418](https://github.com/graphql-hive/console/pull/7418)
+  [`444c0cc`](https://github.com/graphql-hive/console/commit/444c0cc10dfb90f697aa79b66d4f46da3000913f)
+  Thanks [@jdolle](https://github.com/jdolle)! - Add usage info to public API. This usage data can
+  be requested using the operation:
+
+  ```
+  query OrgUsage($orgReference: OrganizationReferenceInput!, $year: Int!, $month: Int!) {
+      organization(reference: $orgReference) {
+          isMonthlyOperationsLimitExceeded
+          monthlyOperationsLimit
+          usageRetentionInDays
+          usageEstimation(input: { year: $year , month: $month }) {
+              operations
+          }
+      }
+  }
+  ```
+
+- [#7441](https://github.com/graphql-hive/console/pull/7441)
+  [`0d35406`](https://github.com/graphql-hive/console/commit/0d354066b68d4cc414b5ec18f51bd6887c4cbd93)
+  Thanks [@XiNiHa](https://github.com/XiNiHa)! - Add support for specifying additional OIDC scopes
+
+## 8.13.0
+
+### Minor Changes
+
+- [#7303](https://github.com/graphql-hive/console/pull/7303)
+  [`840bc08`](https://github.com/graphql-hive/console/commit/840bc08236dfd635d720566360b176e1cc59ce70)
+  Thanks [@adambenhassen](https://github.com/adambenhassen)! - Add configurable data retention TTL
+  for self-hosted Hive instances. Self-hosted users can now configure retention periods via
+  environment variables instead of hardcoded values.
+
+  New environment variables:
+
+  - `CLICKHOUSE_TTL_TABLES` - Retention for ClickHouse mergetree tables (Default: 1 YEAR)
+  - `CLICKHOUSE_TTL_DAILY_MV_TABLES` - Retention for daily materialized view tables (Default: 1
+    YEAR)
+  - `CLICKHOUSE_TTL_HOURLY_MV_TABLES` - Retention for hourly materialized view tables (Default: 30
+    DAYS)
+  - `CLICKHOUSE_TTL_MINUTELY_MV_TABLES` - Retention for minutely materialized view tables (Default:
+    24 HOURS)
+
+  Supports both numeric days (e.g., `365`) and ClickHouse interval syntax (e.g., `"1 YEAR"`,
+  `"30 DAY"`, `"24 HOUR"`).
+
+  The retention update runs automatically if any retention environment variable is set.
+
+- [#7333](https://github.com/graphql-hive/console/pull/7333)
+  [`4aa5247`](https://github.com/graphql-hive/console/commit/4aa524779c257602864f582fc3eb02b02c86d29a)
+  Thanks [@alexdaima](https://github.com/alexdaima)! - Update Redis client to support connecting to
+  IPv6 networks.
+
+- [#7400](https://github.com/graphql-hive/console/pull/7400)
+  [`c396566`](https://github.com/graphql-hive/console/commit/c396566b077e4b6ce26e0fab2004fa223e7dfc6f)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Add support for retrieving CDN artifacts by version
+  ID.
+
+  New CDN endpoints allow fetching schema artifacts for a specific version:
+
+  - `/artifacts/v1/:targetId/version/:versionId/:artifactType`
+  - `/artifacts/v1/:targetId/version/:versionId/contracts/:contractName/:artifactType`
+
+  Artifacts are now written to both the latest path and a versioned path during schema publish,
+  enabling retrieval of historical versions.
+
+  CDN artifact responses now include the `x-hive-schema-version-id` header, providing the version ID
+  of the schema being served.
+
+### Patch Changes
+
+- [#7381](https://github.com/graphql-hive/console/pull/7381)
+  [`415a9c1`](https://github.com/graphql-hive/console/commit/415a9c19d27e825c55bd9b492f8316624b4d6cf7)
+  Thanks [@jdolle](https://github.com/jdolle)! - Hide unnecessary elements from header when screen
+  is narrow
+
+- [#7352](https://github.com/graphql-hive/console/pull/7352)
+  [`727e525`](https://github.com/graphql-hive/console/commit/727e525abbd26dce638278ee26e0311f725571e1)
+  Thanks [@jdolle](https://github.com/jdolle)! - Correctly check the global environment feature flag
+  in for app deployments and fix app deployment pagination
+
+- [#7402](https://github.com/graphql-hive/console/pull/7402)
+  [`4183e55`](https://github.com/graphql-hive/console/commit/4183e5519851167c29dcc73f738108fad05cdce7)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Improve native federation schema composition.
+  Prevent subgraph-specific federation types and scalars being re-declared within the subgraph
+  leaking into the supergraph.
+
+- [#7391](https://github.com/graphql-hive/console/pull/7391)
+  [`d027f99`](https://github.com/graphql-hive/console/commit/d027f99321aa338209b42a89133a112926a22f7f)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Fix exception raised by server when updating user
+  profile information.
+
+- [#7389](https://github.com/graphql-hive/console/pull/7389)
+  [`a9a3e5f`](https://github.com/graphql-hive/console/commit/a9a3e5f9f1e942302bd6ce884f9afa011f2a7a96)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Do not swallow 4XX HTTP errors as 500 internal
+  server errors when sentry error reporting is enabled.
+
+  Send the same predictable error responses with and without the sentry plugin enabled.
+
+## 8.12.1
+
+### Patch Changes
+
+- [#7350](https://github.com/graphql-hive/console/pull/7350)
+  [`46ccf46`](https://github.com/graphql-hive/console/commit/46ccf4611eefd36ee20ec8598730d5f8b05c743a)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Fix invalid materialized view definition causing
+  failing ClickHouse migrations
+
+- [#7349](https://github.com/graphql-hive/console/pull/7349)
+  [`cf91128`](https://github.com/graphql-hive/console/commit/cf91128bc47b1d3980f5fdc6a05603503274d8ee)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Stricter CORS assessment for requests sending a
+  Origin header.
+
+## 8.12.0
+
+### Minor Changes
+
+- [#7346](https://github.com/graphql-hive/console/pull/7346)
+  [`f266368`](https://github.com/graphql-hive/console/commit/f26636891b8b7e00b9a7823e9d584cedd9dd0f2d)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Upgrade graphql-inspector/core to v7 and update the
+  models to be able to handle the new change objects. GraphQL Inspector now supports directive
+  changes and improves the accuracy of the severity level for several change types. This will
+  improve schema checks to make them more accurate and more complete. See graphql-inspector's
+  changelog for details.
+
+### Patch Changes
+
+- [#7328](https://github.com/graphql-hive/console/pull/7328)
+  [`c024ea7`](https://github.com/graphql-hive/console/commit/c024ea7666ee96517b34286d8da35ef20ed89044)
+  Thanks [@adambenhassen](https://github.com/adambenhassen)! - Expose `Project.createdAt` field via
+  the public GraphQL API.
+
+## 8.11.0
+
+### Minor Changes
+
+- [#7267](https://github.com/graphql-hive/console/pull/7267)
+  [`114cd80`](https://github.com/graphql-hive/console/commit/114cd80a8e419d6ff631631fee28a9922a7b9e5a)
+  Thanks [@jdolle](https://github.com/jdolle)! - Upgrade graphql-inspector/core to v7 and update the
+  models to be able to handle the new change objects. GraphQL Inspector now supports directive
+  changes and improves the accuracy of the severity level for several change types. This will
+  improve schema checks to make them more accurate and more complete. See graphql-inspector's
+  changelog for details.
+
+## 8.10.0
+
+### Minor Changes
+
+- [#7306](https://github.com/graphql-hive/console/pull/7306)
+  [`29de664`](https://github.com/graphql-hive/console/commit/29de664960f3bcbadd3672645ed7fff5126aa012)
+  Thanks [@kamilkisiela](https://github.com/kamilkisiela)! - Updated federation-composition to
+  v0.21.0
+
+  - **Enhanced auth directive validation**: The federation-composition now enforces correct
+    placement of auth directives (`@authenticated`, `@requiresScopes`, `@policy`) by rejecting
+    attempts to place them on interfaces, interface fields, or interface objects with the new
+    `AUTH_REQUIREMENTS_APPLIED_ON_INTERFACE` validation rule.
+  - **Transitive auth requirements checking**: Added a new validation rule that ensures fields using
+    `@requires` specify at least the auth requirements of the fields they select. If a field doesn't
+    carry forward required auth directives, composition fails with a
+    `MISSING_TRANSITIVE_AUTH_REQUIREMENTS` error.
+  - **Auth requirements inheritance**: Interface types and fields now properly inherit
+    `@authenticated`, `@requiresScopes`, and `@policy` directives from the object types that
+    implement them.
+  - **`@cost` directive restrictions**: The `@cost` directive can no longer be placed on interface
+    types, their fields, or field arguments. Invalid placements now result in composition errors
+    instead of being silently accepted.
+  - **Improved `@listSize` validation**: The directive now validates that `sizedFields` point to
+    actual list fields rather than integer counters. Additionally, `slicingArguments` validation has
+    been added to ensure only arguments that exist in all subgraphs are retained.
+  - **Fixed `EXTERNAL_MISSING_ON_BASE` rule**: Resolved false positives when handling
+    `@interfaceObject` corner-cases, particularly for `@external` fields on object types provided by
+    interface objects.
+
+- [#7291](https://github.com/graphql-hive/console/pull/7291)
+  [`802315e`](https://github.com/graphql-hive/console/commit/802315eb849c4933b5e5292c9dcc5245df3aad8b)
+  Thanks [@adambenhassen](https://github.com/adambenhassen)! - eliminate clickhouse query timeouts
+  and improve read times of large amounts of traces in dashboard
+
+## 8.9.0
+
+### Minor Changes
+
+- [#7281](https://github.com/graphql-hive/console/pull/7281)
+  [`791c025`](https://github.com/graphql-hive/console/commit/791c0252a0933d0f5c933eef9053227d7f00c87e)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Introduce rate limiting for email sign up, sign in
+  and password rest. The IP value to use for the rate limiting can be specified via the
+  `SUPERTOKENS_RATE_LIMIT_IP_HEADER_NAME` environment variable. By default the `CF-Connecting-IP`
+  header is being used.
+
+- [#7292](https://github.com/graphql-hive/console/pull/7292)
+  [`9c19215`](https://github.com/graphql-hive/console/commit/9c19215cabd37ee00c9bbd0115e242b7a315e7db)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Add AWS Lambda CDN Artifact Handler.
+
+### Patch Changes
+
+- [#7304](https://github.com/graphql-hive/console/pull/7304)
+  [`172ee83`](https://github.com/graphql-hive/console/commit/172ee83a0ee69f75107525a2d6d3cb1cfadd6530)
+  Thanks [@adambenhassen](https://github.com/adambenhassen)! - Upgrade OpenTelemetry Collector to
+  v0.140.0 (from v0.122.0) and Go to 1.25 (from 1.23). This includes updating all collector
+  component dependencies and adapting the hive auth extension for API compatibility changes.
+
+- [#7295](https://github.com/graphql-hive/console/pull/7295)
+  [`76c700f`](https://github.com/graphql-hive/console/commit/76c700f322d8ec81a4fcea0333283427633f8412)
+  Thanks [@jonathanawesome](https://github.com/jonathanawesome)! - Fixes a UI bug in
+  MembershipInvitation modal when there are many projects/targets/services.
+
+## 8.8.0
+
+### Minor Changes
+
+- [#7252](https://github.com/graphql-hive/console/pull/7252)
+  [`717b5aa`](https://github.com/graphql-hive/console/commit/717b5aa6e839c0e73b85322908331768f0cdcc57)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Support selecting resources when inviting a user
+  via email.
+
+- [#7252](https://github.com/graphql-hive/console/pull/7252)
+  [`717b5aa`](https://github.com/graphql-hive/console/commit/717b5aa6e839c0e73b85322908331768f0cdcc57)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Support assigning default resources for new OIDC
+  members.
+
+## 8.7.1
+
+### Patch Changes
+
+- [#7203](https://github.com/graphql-hive/console/pull/7203)
+  [`a7fed52`](https://github.com/graphql-hive/console/commit/a7fed52e17c8e2f1c38e93523e302a27b4d30f1b)
+  Thanks [@adambenhassen](https://github.com/adambenhassen)! - handle escaped single-quoted strings
+  in schema changes
+
+## 8.7.0
+
+### Minor Changes
+
+- [#7206](https://github.com/graphql-hive/console/pull/7206)
+  [`01963a0`](https://github.com/graphql-hive/console/commit/01963a089968f6d956c9dbc7d090dd6dc907c305)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Introduce personal access tokens (PAT) and project
+  scoped access tokens.
+
+## 8.6.0
+
+### Minor Changes
+
+- [#7202](https://github.com/graphql-hive/console/pull/7202)
+  [`0885253`](https://github.com/graphql-hive/console/commit/0885253d14be7e3e0a973c863e45b115ba84f6e8)
+  Thanks [@noghartt](https://github.com/noghartt)! - Add envs for KV namespace on Cloudflare CDN
+  worker
+
+### Patch Changes
+
+- [#7193](https://github.com/graphql-hive/console/pull/7193)
+  [`543de17`](https://github.com/graphql-hive/console/commit/543de174f5cb8caa46b8e833d13e1831c7ffbfa9)
+  Thanks [@adambenhassen](https://github.com/adambenhassen)! - `schema:check --forceSafe` now
+  properly approves breaking schema changes in Hive (requires write permission registry token)
+
+- [#7234](https://github.com/graphql-hive/console/pull/7234)
+  [`ef46bbf`](https://github.com/graphql-hive/console/commit/ef46bbfeb82f866ddb200dd2cf745176f114c601)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Improve checks for assigning member roles to avoid
+  assigning roles not existing in the organization.
+
+## 8.5.2
+
+### Patch Changes
+
+- [#7185](https://github.com/graphql-hive/console/pull/7185)
+  [`7457e4d`](https://github.com/graphql-hive/console/commit/7457e4de75c51a218493b6c7ea5b0e3823d99f6a)
+  Thanks [@adambenhassen](https://github.com/adambenhassen)! - Fix schema check approval to properly
+  reject checks with policy errors and return descriptive error message instead of generic error
+
+## 8.5.1
+
+### Patch Changes
+
+- [#7177](https://github.com/graphql-hive/console/pull/7177)
+  [`1f7f195`](https://github.com/graphql-hive/console/commit/1f7f1951b2b1ef76d0853a6588e39458e5e1a982)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Fix issue with native federation public SDL
+  generation around inaccessible interfaces.
+
+  **Example supergraph:**
+
+  ```
+  schema
+    @link(
+      url: "https://specs.apollo.dev/federation/v2.3"
+      import: ["@inaccessible"]
+    ) {
+    query: Query
+  }
+
+  type Query {
+    user: User!
+  }
+
+  interface Node @inaccessible {
+    id: ID!
+  }
+
+  type User implements Node {
+    id: ID!
+  }
+  ```
+
+  **Public Schema SDL output:**
+
+  ```diff
+    type Query {
+      user: User!
+    }
+
+  - type User implements Node {
+  + type User {
+      id: ID!
+    }
+  ```
+
+## 8.5.0
+
+### Minor Changes
+
+- [#7155](https://github.com/graphql-hive/console/pull/7155)
+  [`caebbe0`](https://github.com/graphql-hive/console/commit/caebbe093a997022691276e0dc67ce9ab8589112)
+  Thanks [@jdolle](https://github.com/jdolle)! - add schemaVersionByCommit; update docs and cli; fix
+  webhook commit reference
+
+### Patch Changes
+
+- [#7124](https://github.com/graphql-hive/console/pull/7124)
+  [`0e44587`](https://github.com/graphql-hive/console/commit/0e4458772196ad490b682bf9a87971d5179c3985)
+  Thanks [@jdolle](https://github.com/jdolle)! - get latest log in version by commit and add version
+  details to history page
+
+## 8.4.1
+
+### Patch Changes
+
+- [#7123](https://github.com/graphql-hive/console/pull/7123)
+  [`7b636c6`](https://github.com/graphql-hive/console/commit/7b636c6691ea47691b02b41433d2bfc05970b81e)
+  Thanks [@jdolle](https://github.com/jdolle)! - show overflowed client and versions on insights
+
+- [#7119](https://github.com/graphql-hive/console/pull/7119)
+  [`f2e70bb`](https://github.com/graphql-hive/console/commit/f2e70bb0aa477a5cc039e26ea87648a6130e4501)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Fix issue where wrong subgraph is shown as the
+  owner of a schema coordinate/field.
+
+## 8.4.0
+
+### Minor Changes
+
+- [#7085](https://github.com/graphql-hive/console/pull/7085)
+  [`e5aa9bd`](https://github.com/graphql-hive/console/commit/e5aa9bde3e8e2c4fad87bfa26e2841ce92629bb2)
+  Thanks [@egoodwinx](https://github.com/egoodwinx)! - add user message when stripe is blocked
+
+### Patch Changes
+
+- [#7090](https://github.com/graphql-hive/console/pull/7090)
+  [`0d1cf80`](https://github.com/graphql-hive/console/commit/0d1cf80f2894c0e01bb8df4cd3aee31c23b3d975)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Further improve the performance of loading the
+  deprecated schema view for large schemas.
+
+- [#7079](https://github.com/graphql-hive/console/pull/7079)
+  [`cbbd5e5`](https://github.com/graphql-hive/console/commit/cbbd5e52b6b4f538b33e213ff393766c523be08c)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Fix dashboard background using different shades of
+  black.
+
+## 8.3.0
+
+### Minor Changes
+
+- [#7030](https://github.com/graphql-hive/console/pull/7030)
+  [`12c5665`](https://github.com/graphql-hive/console/commit/12c5665a43396388516c31d22ff2f3c719007447)
+  Thanks [@jdolle](https://github.com/jdolle)! - add operation counts by selected client to insights
+  filter
+
+- [#7060](https://github.com/graphql-hive/console/pull/7060)
+  [`93967de`](https://github.com/graphql-hive/console/commit/93967de720fb4f74780d6d5cf760d54eadba8de4)
+  Thanks [@jdolle](https://github.com/jdolle)! - add search to app deployment version by operation
+  name
+
+- [#7035](https://github.com/graphql-hive/console/pull/7035)
+  [`88ce5d3`](https://github.com/graphql-hive/console/commit/88ce5d3587b880ccba58bd9736042a8a8f1ef81f)
+  Thanks [@jdolle](https://github.com/jdolle)! - Add selected counts to insights client filter
+
+- [#7050](https://github.com/graphql-hive/console/pull/7050)
+  [`d1ec149`](https://github.com/graphql-hive/console/commit/d1ec149b9e0178f1ead24a6f79d9c9848f72a762)
+  Thanks [@XiNiHa](https://github.com/XiNiHa)! - Refine schema composition settings UI
+
+### Patch Changes
+
+- [#7033](https://github.com/graphql-hive/console/pull/7033)
+  [`2449790`](https://github.com/graphql-hive/console/commit/2449790e24b807939adf72de13787f7c48719e1b)
+  Thanks [@XiNiHa](https://github.com/XiNiHa)! - Stay in the opened page when switching between
+  targets
+
+- [#7030](https://github.com/graphql-hive/console/pull/7030)
+  [`12c5665`](https://github.com/graphql-hive/console/commit/12c5665a43396388516c31d22ff2f3c719007447)
+  Thanks [@jdolle](https://github.com/jdolle)! - Fix paginated operations list filtering if there
+  are many operations by passing a list of operation IDs to filter on
+
+- [#7067](https://github.com/graphql-hive/console/pull/7067)
+  [`7a39b32`](https://github.com/graphql-hive/console/commit/7a39b323d9167664a6e499dce3bb6f40caaf2e52)
+  Thanks [@jdolle](https://github.com/jdolle)! - Fix input cursor reset for org and project
+
+- [#7045](https://github.com/graphql-hive/console/pull/7045)
+  [`0f26e42`](https://github.com/graphql-hive/console/commit/0f26e4253de96b3107972993410dc32a659dbcc2)
+  Thanks [@jdolle](https://github.com/jdolle)! - Adjust token creation ui to make toggling
+  all/granular and services/apps more intuitive
+
+- [#7066](https://github.com/graphql-hive/console/pull/7066)
+  [`58658a4`](https://github.com/graphql-hive/console/commit/58658a49b5ef23f2d884c4a6966e4dca30b1a1b1)
+  Thanks [@jdolle](https://github.com/jdolle)! - Fix first schema check landing width; fix
+  flickering sidenav on schema check loading"
+
+- [#7061](https://github.com/graphql-hive/console/pull/7061)
+  [`5cac244`](https://github.com/graphql-hive/console/commit/5cac2441fd475aff2d38faac5ebf51a7e08baf58)
+  Thanks [@jdolle](https://github.com/jdolle)! - fix explorer field input cursor reset
+
+- [#7071](https://github.com/graphql-hive/console/pull/7071)
+  [`1b7c7b5`](https://github.com/graphql-hive/console/commit/1b7c7b5506eca9e78fee1a4fef150562e73873c5)
+  Thanks [@jdolle](https://github.com/jdolle)! - fix error printing in logs
+
+- [#7074](https://github.com/graphql-hive/console/pull/7074)
+  [`8eb9e14`](https://github.com/graphql-hive/console/commit/8eb9e144b7e9a452b2d596776d75d136540207ff)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Prevent potential resource exhaustion in the
+  deprecated schema explorer for large schemas.
+
+## 8.2.1
+
+### Patch Changes
+
+- [#6935](https://github.com/graphql-hive/console/pull/6935)
+  [`261daf8`](https://github.com/graphql-hive/console/commit/261daf81c384dc992608431e388836b7dde54336)
+  Thanks [@jdolle](https://github.com/jdolle)! - AppDeployment permissions granted to all if none
+  selected by default in access token UI. Fix app deployments feature flag check
+
+- [#7004](https://github.com/graphql-hive/console/pull/7004)
+  [`07a99f0`](https://github.com/graphql-hive/console/commit/07a99f0f4cd21edae5da734893175e1675c23173)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Improve usability when creating a registry access
+  token.
+
+## 8.2.0
+
+### Minor Changes
+
+- [#6951](https://github.com/graphql-hive/console/pull/6951)
+  [`f567fbb`](https://github.com/graphql-hive/console/commit/f567fbbf49124e0f7ce54fdf8104acd422c543bb)
+  Thanks [@martyganz](https://github.com/martyganz)! - Add `SchemaVersion.unusedSchema` and
+  `SchemaVersion.deprecatedSchema` to the public API schema.
+
+- [#6960](https://github.com/graphql-hive/console/pull/6960)
+  [`e57b6c0`](https://github.com/graphql-hive/console/commit/e57b6c01987e6be9013923ffe760b0fa4fe390a1)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Return all users by default if no `first` value is
+  provided for the `Organization.members` field.
+
+### Patch Changes
+
+- [#6963](https://github.com/graphql-hive/console/pull/6963)
+  [`91e830b`](https://github.com/graphql-hive/console/commit/91e830be6cf9fca238375616a8b79d637ae89e10)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Improve styling of unused schema parts.
+
+- [#6961](https://github.com/graphql-hive/console/pull/6961)
+  [`a66013d`](https://github.com/graphql-hive/console/commit/a66013d5eaa436c8c8106c6c29b546b76b5e50bc)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Prevent editing the base schema showing up for
+  federation projects.
+
+## 8.1.2
+
+### Patch Changes
+
+- [#6924](https://github.com/graphql-hive/console/pull/6924)
+  [`d6cf026`](https://github.com/graphql-hive/console/commit/d6cf02663783076a3ab25d295d1c7a6eb7b2c711)
+  Thanks [@jdolle](https://github.com/jdolle)! - Fix selecting "All" app deployments in target when
+  creating an access token
+
+- [#6909](https://github.com/graphql-hive/console/pull/6909)
+  [`d5218b8`](https://github.com/graphql-hive/console/commit/d5218b8d728c37628ee4a83a89e9bc922af84804)
+  Thanks [@jdolle](https://github.com/jdolle)! - Correctly trim operation name on insights and add
+  popover title
+
+## 8.1.1
+
+### Patch Changes
+
+- [#6867](https://github.com/graphql-hive/console/pull/6867)
+  [`be0d710`](https://github.com/graphql-hive/console/commit/be0d71025b4d1bee06b6059f31bd5039e9709b5d)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Only show the "edit preflight script" button in the
+  laboratory when the users has permissions to edit it.
+
+- [#6881](https://github.com/graphql-hive/console/pull/6881)
+  [`f8a1350`](https://github.com/graphql-hive/console/commit/f8a13506f747b297f6c7bfd295fe13af89153380)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Add `project:create` permission to the acccess
+  token permission selection screen.
+
+- [#6875](https://github.com/graphql-hive/console/pull/6875)
+  [`73864f2`](https://github.com/graphql-hive/console/commit/73864f2b954387406c6d7f3a205d7ee38663e6a4)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Fix default organization resolution and prevent
+  missing permissions error.
+
+- [#6879](https://github.com/graphql-hive/console/pull/6879)
+  [`3779184`](https://github.com/graphql-hive/console/commit/3779184a440743f04bd18943651da7b77f7a43c0)
+  Thanks [@egoodwinx](https://github.com/egoodwinx)! - Fix schema version browser history
+  navigation.
+
+## 8.1.0
+
+### Minor Changes
+
+- [#6843](https://github.com/graphql-hive/console/pull/6843)
+  [`d175fba`](https://github.com/graphql-hive/console/commit/d175fba8f17f36ce3205e14032eee89222f85f08)
+  Thanks [@dotansimha](https://github.com/dotansimha)! - Make `Target.graphqlEndpointUrl` available
+  in public GraphQL API
+
+### Patch Changes
+
+- [#6829](https://github.com/graphql-hive/console/pull/6829)
+  [`e81cea8`](https://github.com/graphql-hive/console/commit/e81cea889c26b3ee0453defbfec5a78ba24e90a6)
+  Thanks [@jdolle](https://github.com/jdolle)! - Add pg index for getSchemaVersionByActionId to
+  improve lookup performance
+
+- [#6850](https://github.com/graphql-hive/console/pull/6850)
+  [`faa22bb`](https://github.com/graphql-hive/console/commit/faa22bbe662f0df7cca3b9045a22d495897714ee)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Fix issue where contract composition marks types
+  occuring in multiple subgraphs as `@inaccessible` despite being used within the public API schema.
+
+- [#6845](https://github.com/graphql-hive/console/pull/6845)
+  [`114e7bc`](https://github.com/graphql-hive/console/commit/114e7bcf6860030b668fb1af7faed3650c278a51)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Update `@theguild/federation-composition` to
+  `0.19.0`
+
+  Increases federation composition compatibility.
+
+  - Fix errors raised by `@requires` with union field selection set
+  - Fix incorrectly raised `IMPLEMENTED_BY_INACCESSIBLE` error for inaccessible object fields where
+    the object type is inaccessible.
+  - Add support for `@provides` fragment selection sets on union type fields.
+  - Fix issue where the satisfiability check raised an exception for fields that share different
+    object type and interface definitions across subgraphs.
+  - Fix issue where scalar type marked with `@inaccessible` does not fail the composition if all
+    usages are not marked with `@inaccessible`.
+  - Support composing executable directives from subgraphs into the supergraph
+
+- [#6862](https://github.com/graphql-hive/console/pull/6862)
+  [`6cf18b9`](https://github.com/graphql-hive/console/commit/6cf18b9d9c10dfcbd95d148571dc305eb5c71b4c)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Show whether a breaking change is safe based on
+  usage within the GitHub check-run summary.
+
+- [#6864](https://github.com/graphql-hive/console/pull/6864)
+  [`35a69a1`](https://github.com/graphql-hive/console/commit/35a69a1064319c74b9b76a521698ce1260383f08)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Validate schema stitching output sdl. Previously,
+  this caused invalid SDL to be promoted as the latest valid schema version.
+
+## 8.0.0
+
+### Major Changes
+
+- [#6810](https://github.com/graphql-hive/console/pull/6810)
+  [`ae65069`](https://github.com/graphql-hive/console/commit/ae65069da79f3863ddfe6c4da80826af2b8c4b0a)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Add mutation fields for managing schema contracts
+  to the public api schema.
+
+  - `Mutation.createContract`
+  - `Mutation.disableContract`
+
+  **BREAKING CHANGE**: This renames and changes the types for existing types within the private
+  GraphQL schema.
+
+- [#6722](https://github.com/graphql-hive/console/pull/6722)
+  [`aab6e7c`](https://github.com/graphql-hive/console/commit/aab6e7c2cfbd8453e0062362fc10244da98d57d1)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Add mutation fields for managing users to the
+  public api schema.
+
+  - `Mutation.assignMemberRole`
+  - `Mutation.createMemberRole`
+  - `Mutation.deleteMemberRole`
+  - `Mutation.deleteOrganizationInvitation`
+  - `Mutation.inviteToOrganizationByEmail`
+  - `Mutation.updateMemberRole`
+
+  **BREAKING CHANGE**: This renames and changes the types for existing types within the private
+  GraphQL schema.
+
+- [#6786](https://github.com/graphql-hive/console/pull/6786)
+  [`20bfc4c`](https://github.com/graphql-hive/console/commit/20bfc4c052367efd9bc4d8e9a35e0a72aee2c95b)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Add mutation fields for managing projects to the
+  public api schema.
+
+  - `Mutation.createProject`
+  - `Mutation.updateProjectSlug`
+  - `Mutation.deleteProject`
+
+  **BREAKING CHANGE**: This renames and changes the types for existing types within the private
+  GraphQL schema.
+
+- [#6795](https://github.com/graphql-hive/console/pull/6795)
+  [`3552957`](https://github.com/graphql-hive/console/commit/3552957eeb2c7bf2bf74d912f58b32e56d6bc69f)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Add fields for querying usage datato the public api
+  schema.
+
+  - `Target.schemaCoordinateStats`
+  - `Target.clientStats`
+  - `Target.operationsStats`
+
+  **BREAKING CHANGE**: This renames and changes the types for existing types within the private
+  GraphQL schema.
+
+### Minor Changes
+
+- [#6764](https://github.com/graphql-hive/console/pull/6764)
+  [`bbd5643`](https://github.com/graphql-hive/console/commit/bbd5643924eb2b32511e96a03a3a5a978a66adee)
+  Thanks [@jdolle](https://github.com/jdolle)! - Track provided operation arguments/inputs and use
+  them to determine conditional breaking changes; Fix null to non-null argument breaking change edge
+  case"
+
+### Patch Changes
+
+- [#6780](https://github.com/graphql-hive/console/pull/6780)
+  [`6c0b6f3`](https://github.com/graphql-hive/console/commit/6c0b6f3051d8ee73307094d124a32496f196a547)
+  Thanks [@jdolle](https://github.com/jdolle)! - Add pg indexes to help with org delete
+
+- [#6814](https://github.com/graphql-hive/console/pull/6814)
+  [`7574cce`](https://github.com/graphql-hive/console/commit/7574cce6d6155628ee8303ad4e7782af4f8a303d)
+  Thanks [@jdolle](https://github.com/jdolle)! - Fix random infinite loop on schema checks page
+
+- [#6791](https://github.com/graphql-hive/console/pull/6791)
+  [`6f43b3e`](https://github.com/graphql-hive/console/commit/6f43b3e753ab16e28a11d14ee5afef96be7e1c0d)
+  Thanks [@jdolle](https://github.com/jdolle)! - Remove redundant pg indices
+
+- [#6792](https://github.com/graphql-hive/console/pull/6792)
+  [`54acc25`](https://github.com/graphql-hive/console/commit/54acc25e156188c22b7aaeb71ae9cce59cc94ba8)
+  Thanks [@jdolle](https://github.com/jdolle)! - Adjust contract to target foreign key reference to
+  cascade delete
+
+- [#6793](https://github.com/graphql-hive/console/pull/6793)
+  [`81df783`](https://github.com/graphql-hive/console/commit/81df78373a0c8a96540740c2a8e3efd9a513640e)
+  Thanks [@jdolle](https://github.com/jdolle)! - Adjust date range selector ui
+
+## 7.0.2
+
+### Patch Changes
+
+- [`8477e2b`](https://github.com/graphql-hive/console/commit/8477e2b7f07bc2260582b5565cee1b139f7a9e97)
+  Thanks [@dotansimha](https://github.com/dotansimha)! - Fix release notes
+
+## 7.0.1
+
+### Patch Changes
+
+- [#6784](https://github.com/graphql-hive/console/pull/6784)
+  [`549ca54`](https://github.com/graphql-hive/console/commit/549ca54909ad7f62892900d737d8ea1fa01d498b)
+  Thanks [@dotansimha](https://github.com/dotansimha)! - Minor bump to address release issues in
+  v7.0.0
+
+## 7.0.0
+
+### Major Changes
+
+- [#6758](https://github.com/graphql-hive/console/pull/6758)
+  [`0cf1194`](https://github.com/graphql-hive/console/commit/0cf1194c89d82f8dd2750fb6187234b084cbfc31)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Add target management fields to the public GraphQL
+  API schema.
+
+  This includes the following fields and related types/fields:
+
+  - `Mutation.updateTargetConditionalBreakingChangeConfiguration`
+  - `Mutation.updateTargetSlug`
+  - `Mutation.updateTargetDangerousChangeClassification`
+  - `Mutation.createTarget`
+  - `Mutation.deleteTarget`
+  - `Mutation.createCdnAccessToken`
+  - `Mutation.deleteCdnAccessToken`
+  - `Target.conditionalBreakingChangeConfiguration`
+  - `Target.failDiffOnDangerousChange`
+  - `Target.cdnAccessTokens`
+  - `Organization.availableOrganizationAccessTokenPermissionGroups`
+
+  **BREAKING CHANGE** This renames existing types and fields within the private GraphQL schema.
+
+### Minor Changes
+
+- [#6771](https://github.com/graphql-hive/console/pull/6771)
+  [`4dcd45a`](https://github.com/graphql-hive/console/commit/4dcd45a683dc6004df003732b94564cfcbf135d7)
+  Thanks [@jdolle](https://github.com/jdolle)! - Add meta and subgraph data to coordinate insights
+  page; Fix SubgraphChip service link
+
+- [#6626](https://github.com/graphql-hive/console/pull/6626)
+  [`2056307`](https://github.com/graphql-hive/console/commit/20563078449dbb6bf33bac3b2e5ac3d2c772fc6f)
+  Thanks [@jdolle](https://github.com/jdolle)! - Add target breaking change setting to turn
+  dangerous changes into breaking changes
+
+- [#6658](https://github.com/graphql-hive/console/pull/6658)
+  [`e6a970f`](https://github.com/graphql-hive/console/commit/e6a970f790b388ff29f97709acdd73136a79dfb7)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Adjust GraphQL schema according to schema design
+  policies.
+
+- [#6701](https://github.com/graphql-hive/console/pull/6701)
+  [`f2fe6c8`](https://github.com/graphql-hive/console/commit/f2fe6c83a2467fcb77ca49c8ed5405d3f6256157)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Print dangerous schema changes as own section in
+  github changes.
+
+- [#6662](https://github.com/graphql-hive/console/pull/6662)
+  [`2b220a5`](https://github.com/graphql-hive/console/commit/2b220a560c4e4777a20ec0cf5f6ee68032055022)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Support federation composition validation for
+  `IMPLEMENTED_BY_INACCESSIBLE`.
+
+- [#6678](https://github.com/graphql-hive/console/pull/6678)
+  [`8fd9ad0`](https://github.com/graphql-hive/console/commit/8fd9ad018a50d54eb61759ea3e178790172d82d6)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Deprecate `CriticalityLevel` scalar and fields
+  referencing it in favor of the `SeverityLevelType` scalar. Expose `SchemaChange.severityLevel` and
+  `SchemaChange.severityReason` via the public API endpoint.
+
+- [#6614](https://github.com/graphql-hive/console/pull/6614)
+  [`c1d9c05`](https://github.com/graphql-hive/console/commit/c1d9c0568d5a4b4671aceb831883d348db5f9a55)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Add new route `/graphql-public` to the `server`
+  service which contains the public GraphQL API (fields and types will follow).
+
+- [#6675](https://github.com/graphql-hive/console/pull/6675)
+  [`ed66171`](https://github.com/graphql-hive/console/commit/ed66171a4b40d439183c91600bd17044dceafcb7)
+  Thanks [@kamilkisiela](https://github.com/kamilkisiela)! - Updates the
+  `@theguild/federation-composition` to `v0.18.1` that includes the following changes:
+
+  - Support progressive overrides (`@override(label: "<value>")`)
+  - Allow to use `@composeDirective` on a built-in scalar (like `@oneOf`)
+  - Performance improvements (lazy compute of errors), especially noticeable in large schemas (2s ->
+    600ms)
+  - Ensure nested key fields are marked as `@shareable`
+  - Stop collecting paths when a leaf field was reached (performance improvement)
+  - Avoid infinite loop when entity field returns itself
+
+- [#6665](https://github.com/graphql-hive/console/pull/6665)
+  [`cb41478`](https://github.com/graphql-hive/console/commit/cb41478829e41695df686e47dd7673a9601d6008)
+  Thanks [@kamilkisiela](https://github.com/kamilkisiela)! - Update
+  `@theguild/federation-composition` to `v0.16.0`.
+
+  - Support Apollo Federation `v2.7`, but without the progressive `@override`.
+  - Support Apollo Federation `v2.8`, but without the `@context` and `@fromContext` directives.
+  - Support Apollo Federation `v2.9`, including `@cost` and `@listSize` directives.
+
+- [#6683](https://github.com/graphql-hive/console/pull/6683)
+  [`ab774b7`](https://github.com/graphql-hive/console/commit/ab774b72bea54b88a2fb2ed1ea01f17a84970fc5)
+  Thanks [@jdolle](https://github.com/jdolle)! - Make url optional for subsequent federated schema
+  publishes
+
+### Patch Changes
+
+- [#6716](https://github.com/graphql-hive/console/pull/6716)
+  [`1767037`](https://github.com/graphql-hive/console/commit/17670374485c36ac459150286559cb3b9edba596)
+  Thanks [@jdolle](https://github.com/jdolle)! - Improve slack alert error logs
+
+- [#6687](https://github.com/graphql-hive/console/pull/6687)
+  [`349b78f`](https://github.com/graphql-hive/console/commit/349b78f39ad8fe28977f05e7542ca3e9c28092fd)
+  Thanks [@jdolle](https://github.com/jdolle)! - Improve resource ID tooltip behavior
+
+- [#6685](https://github.com/graphql-hive/console/pull/6685)
+  [`a107ad3`](https://github.com/graphql-hive/console/commit/a107ad363bf2aee2ffab9d03ecf61ba0e32fac53)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Fix failing schema contract composition.
+
+- [#6729](https://github.com/graphql-hive/console/pull/6729)
+  [`cc552c9`](https://github.com/graphql-hive/console/commit/cc552c973c63f0a4b034b2c489c3925c347a7e75)
+  Thanks [@jdolle](https://github.com/jdolle)! - Disable redis snapshotting
+
+- [#6770](https://github.com/graphql-hive/console/pull/6770)
+  [`8e02a49`](https://github.com/graphql-hive/console/commit/8e02a49b48e0cac392c2a3b4971867f39502c68b)
+  Thanks [@jdolle](https://github.com/jdolle)! - Adjust contract logic to allow removing mutation
+  and subscription types
+
+- [#6602](https://github.com/graphql-hive/console/pull/6602)
+  [`df3e5a2`](https://github.com/graphql-hive/console/commit/df3e5a23e5cd505d346a6d5719a4a7308aba208d)
+  Thanks [@jdolle](https://github.com/jdolle)! - Added directions for publishing on no schema
+  component
+
+- [#6759](https://github.com/graphql-hive/console/pull/6759)
+  [`132feb9`](https://github.com/graphql-hive/console/commit/132feb93e88667f5fdf118eb85f399e9e4330c56)
+  Thanks [@jdolle](https://github.com/jdolle)! - Reduce usage service readiness threshold; Disable
+  nagles algorithm and increase keepAlive from 60s to 180s for KafkaJS
+
+- [#6713](https://github.com/graphql-hive/console/pull/6713)
+  [`4f9aeae`](https://github.com/graphql-hive/console/commit/4f9aeae78a0f8feaec225dd7398aeda3000036f5)
+  Thanks [@jdolle](https://github.com/jdolle)! - Do not store empty metadata in db
+
+- [#6660](https://github.com/graphql-hive/console/pull/6660)
+  [`5ff2aaa`](https://github.com/graphql-hive/console/commit/5ff2aaa624a6b9f6fe2a3633105ec7ce5ce188d5)
+  Thanks [@jdolle](https://github.com/jdolle)! - fix schedule a meeting link
+
+- [#6718](https://github.com/graphql-hive/console/pull/6718)
+  [`fd9b160`](https://github.com/graphql-hive/console/commit/fd9b160015ee139bf8f09a41d14fa5446d60b3f5)
+  Thanks [@jdolle](https://github.com/jdolle)! - upgrade 'got' package to fix TimeoutError case
+
+- [#6752](https://github.com/graphql-hive/console/pull/6752)
+  [`d0404db`](https://github.com/graphql-hive/console/commit/d0404db1cb0121357a9d7ea0fbdd33c03cdf243f)
+  Thanks [@jdolle](https://github.com/jdolle)! - Improve external composer UX: Handle network errors
+  gracefully, do not use native composer when testing, and improve settings UI
+
+- [#6755](https://github.com/graphql-hive/console/pull/6755)
+  [`60981bd`](https://github.com/graphql-hive/console/commit/60981bd94466acad9e0cf461b470c10ffbf80357)
+  Thanks [@jdolle](https://github.com/jdolle)! - Correctly set usage service state to Ready after
+  processing all of the fallback queue.
+
+- [#6632](https://github.com/graphql-hive/console/pull/6632)
+  [`9b2bec6`](https://github.com/graphql-hive/console/commit/9b2bec6185f939b378aa898215c56bb82119d0b6)
+  Thanks [@jdolle](https://github.com/jdolle)! - Capture Stripe.js load error to avoid raising an
+  unhandled error
+
+- [#6706](https://github.com/graphql-hive/console/pull/6706)
+  [`4435820`](https://github.com/graphql-hive/console/commit/4435820a2c666a39580156eea01a482768d61ab9)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Improve contract schema building for subgraphs
+  using the `extend` keyword.
+
+## 6.0.0
+
+### Major Changes
+
+- [#6556](https://github.com/graphql-hive/console/pull/6556)
+  [`7b9129c`](https://github.com/graphql-hive/console/commit/7b9129cd86d4d76873734426b7044203bb389a2c)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Add organization access tokens; a new way to issue
+  access tokens for performing actions with the CLI and doing usage reporting.
+
+  **Breaking Change:** The `usage` service now requires environment variables for Postgres
+  (`POSTGRES_SSL`, `POSTGRES_HOST`, `POSTGRES_PORT`, `POSTGRES_DB`, `POSTGRES_USER`,
+  `POSTGRES_PASSWORD`) and Redis (`REDIS_HOST`, `REDIS_PORT`, `REDIS_PASSWORD`,
+  `REDIS_TLS_ENABLED`).
+
+  For more information please refer to the organization access token documentation.
+
+  - [Product Update: Organization-Level Access Tokens for Enhanced Security & Flexibility](https://the-guild.dev/graphql/hive/product-updates/2025-03-10-new-access-tokens)
+  - [Migration Guide: Moving from Registry Access Tokens to Access Tokens](https://the-guild.dev/graphql/hive/docs/migration-guides/organization-access-tokens)
+  - [Access Token Documentation](https://the-guild.dev/graphql/hive/docs/management/access-tokens)
+
+- [#6613](https://github.com/graphql-hive/console/pull/6613)
+  [`0fd4d96`](https://github.com/graphql-hive/console/commit/0fd4d966ab6f01cd16a5716e1c33363ca5771127)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Restructure the environment variables used for the
+  Hive Cloud hosting. While this is techincally a breaking change it will not really affect people
+  self-hosting Hive.
+
+  **Breaking**: Remove unused environment variable options `HIVE_REPORTING`,
+  `HIVE_REPORTING_ENDPOINT` and `HIVE_USAGE_DATA_RETENTION_PURGE_INTERVAL_MINUTES` from the `server`
+  service.
+
+  These environment variables are obsolete since the Hive GraphQL schema is reported via the Hive
+  CLI instead.
+
+  **Breaking**: Replace the environment variable option `HIVE` with `HIVE_USAGE`, rename environment
+  variable option `HIVE_API_TOKEN` to `HIVE_USAGE_ACCESS_TOKEN` for the `server` service. Require
+  providing the `HIVE_USAGE_ACCESS_TOKEN` environment variable if `HIVE_USAGE` is set to `1`.
+
+### Patch Changes
+
+- [#6594](https://github.com/graphql-hive/console/pull/6594)
+  [`06e7012`](https://github.com/graphql-hive/console/commit/06e70129689570f3602cd01eae4ef7f1dfe24f00)
+  Thanks [@jdolle](https://github.com/jdolle)! - Fix insights range if selecting same start and end
+
+- [#6633](https://github.com/graphql-hive/console/pull/6633)
+  [`a5e00f2`](https://github.com/graphql-hive/console/commit/a5e00f260a6f21b3207fc8257c302e68a0d671b1)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Fix Federation composition error when having an
+  inaccessible default value on an inaccessible field.
+
+- [#6609](https://github.com/graphql-hive/console/pull/6609)
+  [`1c44345`](https://github.com/graphql-hive/console/commit/1c4434522385c744bd484f7964d3c92f73f3641f)
+  Thanks [@kamilkisiela](https://github.com/kamilkisiela)! - Mark usage-ingestor as unhealthy when
+  Kafka consumer crashed
+
+- [#6584](https://github.com/graphql-hive/console/pull/6584)
+  [`d1e6ab0`](https://github.com/graphql-hive/console/commit/d1e6ab094b881a6ce08c55f68a8ecd6018c47613)
+  Thanks [@jdolle](https://github.com/jdolle)! - Add readonly resource ID to settings pages
+
+- [#6585](https://github.com/graphql-hive/console/pull/6585)
+  [`c0d9ca3`](https://github.com/graphql-hive/console/commit/c0d9ca30d4c360e75be7902d2693303ffe622975)
+  Thanks [@jdolle](https://github.com/jdolle)! - Restrict new service names to 64 characters,
+  alphanumberic, `_` and `-`.
+
+- [#6607](https://github.com/graphql-hive/console/pull/6607)
+  [`18f82b4`](https://github.com/graphql-hive/console/commit/18f82b4e3fddb507f685cb85d48e3f42a87a0039)
+  Thanks [@kamilkisiela](https://github.com/kamilkisiela)! - Ensure all materialized views have
+  correct TTL
+
+## 5.1.3
+
+### Patch Changes
+
+- [#6553](https://github.com/graphql-hive/console/pull/6553)
+  [`f0fe03c`](https://github.com/graphql-hive/console/commit/f0fe03c9464815b5f11b8e4715f0182959e8d363)
+  Thanks [@kamilkisiela](https://github.com/kamilkisiela)! - Standardize the design and content of
+  all email templates for consistency.
+
+- [#6571](https://github.com/graphql-hive/console/pull/6571)
+  [`bf06e94`](https://github.com/graphql-hive/console/commit/bf06e94f5f115770f229b0b6e9961a44f057fa4d)
+  Thanks [@kamilkisiela](https://github.com/kamilkisiela)! - Adds ability to all services to write a
+  heap dump to a disk when SIGUSR1 signal is received
+
+- [#6593](https://github.com/graphql-hive/console/pull/6593)
+  [`ef1efbb`](https://github.com/graphql-hive/console/commit/ef1efbb8c26e40a715e5bb14c99b0734c095bef7)
+  Thanks [@jdolle](https://github.com/jdolle)! - Fix operation insights showing loading for missing
+  operations
+
+- [#6582](https://github.com/graphql-hive/console/pull/6582)
+  [`bb2f2aa`](https://github.com/graphql-hive/console/commit/bb2f2aa30f6cd4a5427e7d977c816d7e78499ea2)
+  Thanks [@jdolle](https://github.com/jdolle)! - Adds optional url argument to schema checks
+
+- [#6586](https://github.com/graphql-hive/console/pull/6586)
+  [`e10de03`](https://github.com/graphql-hive/console/commit/e10de0370cd713db1815eee9cabb52725cf5c3b9)
+  Thanks [@kamilkisiela](https://github.com/kamilkisiela)! - Corrected an issue where fields from
+  type extensions were not marked as unused when appropriate
+
+- [#6542](https://github.com/graphql-hive/console/pull/6542)
+  [`719e3e6`](https://github.com/graphql-hive/console/commit/719e3e68643c673c5539cc18b68772661e52a857)
+  Thanks [@kamilkisiela](https://github.com/kamilkisiela)! - Consolidates email templating logic
+  into the `emails` service.
+
+## 5.1.2
+
+### Patch Changes
+
+- [#6518](https://github.com/graphql-hive/console/pull/6518)
+  [`a8a2da5`](https://github.com/graphql-hive/console/commit/a8a2da5d65c09885dd3aa6d9bbe017cf4b9efebf)
+  Thanks [@kamilkisiela](https://github.com/kamilkisiela)! - Ensure response body is read before
+  timeout to avoid abort errors in S3 client (CDN)
+
+- [#6536](https://github.com/graphql-hive/console/pull/6536)
+  [`6cdcef1`](https://github.com/graphql-hive/console/commit/6cdcef1b2a1f75da372f22ddeefe3951a85fd02c)
+  Thanks [@kamilkisiela](https://github.com/kamilkisiela)! - Adds an index to
+  coordinates\_(daily,hourly,minutely) tables to speedup the get_top_operations_for_types ClickHoue
+  query.
+
+  Reading of type and fields usage statisticts should be noticeably faster now on big datasets.
+
+## 5.1.1
+
+### Patch Changes
+
+- [#6502](https://github.com/graphql-hive/console/pull/6502)
+  [`cef7fd8`](https://github.com/graphql-hive/console/commit/cef7fd88e4929942bcaf07aaf3bc226c5d9a38cd)
+  Thanks [@kamilkisiela](https://github.com/kamilkisiela)! - Update @theguild/federation-composition
+  to 0.14.4
+
+  - Fix a child data type field not being accessible via interfaceObject
+  - Respect inaccessible enum values while creating the public schema from the supergraph AST
+
+## 5.1.0
+
+### Minor Changes
+
+- [#6449](https://github.com/graphql-hive/console/pull/6449)
+  [`0504530`](https://github.com/graphql-hive/console/commit/05045306b789e97ec39cbd2c8ee2b4f1b721dc9e)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Modify GraphQL fields used by CLI to accept an
+  optional specified target that is used for identifying the affected target instead of resolving
+  the target from the access token.
+
+### Patch Changes
+
+- [#6472](https://github.com/graphql-hive/console/pull/6472)
+  [`4d3d6fc`](https://github.com/graphql-hive/console/commit/4d3d6fcdc2d7f65e6366fd76a058c3f687c4da4c)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Improve the usage reporting endpoint error
+  responses to include all the errors for invalid JSON bodies.
+
+- [#6455](https://github.com/graphql-hive/console/pull/6455)
+  [`6924a1a`](https://github.com/graphql-hive/console/commit/6924a1abf91c1c663d752949031e0a5c4078392a)
+  Thanks [@jasonkuhrt](https://github.com/jasonkuhrt)! - A minor defect in Laboratory has been fixed
+  that previously caused the application to crash when local storage was in a particular state.
+
+## 5.0.0
+
+### Major Changes
+
+- [#6231](https://github.com/graphql-hive/console/pull/6231)
+  [`b7e4052`](https://github.com/graphql-hive/console/commit/b7e4052ecfd8f70fefe39c27886619a24faa7526)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - New permission system for organization member
+  roles.
+
+  The existing scopes assigned to organization members have been replaced with a permissions-based
+  system, enabling more granular access control and role-based access control (RBAC) in Hive.
+
+  **Breaking Changes**
+
+  - **Viewer Role Adjustments** – Members with the default Viewer role can no longer create targets
+    or projects.
+  - **Restricted Role Management** – Permissions for inviting, removing, and assigning roles have
+    been revoked. An admin must manually reassign these permissions where needed.
+  - **Expanded Role Assignment** Capabilities – Members with permissions to manage invites, remove
+    members, or modify roles can now grant additional permissions without restrictions. Caution is
+    advised when assigning these rights, as they should be reserved for "Admin" roles.
+
+  These changes enhance security and provide greater flexibility in managing user permissions across
+  organizations.
+
+### Minor Changes
+
+- [#6378](https://github.com/graphql-hive/console/pull/6378)
+  [`f14daa8`](https://github.com/graphql-hive/console/commit/f14daa89760149d6b1eb45d5351d73c4376b7418)
+  Thanks [@jasonkuhrt](https://github.com/jasonkuhrt)! - You can now set HTTP headers in your
+  [Laboratory Preflight Script](https://the-guild.dev/graphql/hive/docs/dashboard/laboratory/preflight-scripts).
+  Every time you run a request from Laboratory, your preflight headers, if any, will be merged into
+  the request before it is sent.
+
+  You achieve this by interacting with the
+  [`Headers`](https://developer.mozilla.org/docs/web/api/headers) instance newly available at
+  `lab.request.headers`. For example, this script would would add a `foo` header with the value
+  `bar` to every Laboratory request.
+
+  ```ts
+  lab.request.headers.set('foo', 'bar')
+  ```
+
+  A few notes about how headers are merged:
+
+  1. Unlike static headers, preflight headers do not receive environment variable substitutions on
+     their values.
+  2. Preflight headers take precedence, overwriting any same-named headers already in the Laboratory
+     request.
+
+  Documentation for this new feature is available at
+  https://the-guild.dev/graphql/hive/docs/dashboard/laboratory/preflight-scripts#http-headers.
+
+- [#6123](https://github.com/graphql-hive/console/pull/6123)
+  [`abfd1b1`](https://github.com/graphql-hive/console/commit/abfd1b1ea9b6850683f31c152516d9e0d97d94aa)
+  Thanks [@Intellicode](https://github.com/Intellicode)! - encode postgres variables and introduce
+  optional password
+
+- [#6412](https://github.com/graphql-hive/console/pull/6412)
+  [`f352bba`](https://github.com/graphql-hive/console/commit/f352bbac977902120527fbea2afb0b0b7dd253fb)
+  Thanks [@Intellicode](https://github.com/Intellicode)! - Added a new environment variable
+  `PROMETHEUS_METRICS_PORT` to control the promethus port of the policy service. The default value
+  is `10254` (no action needed).
+
+### Patch Changes
+
+- [#6398](https://github.com/graphql-hive/console/pull/6398)
+  [`0e4be14`](https://github.com/graphql-hive/console/commit/0e4be14256937f492efcb4a7dc97b59918274a2a)
+  Thanks [@kamilkisiela](https://github.com/kamilkisiela)! - Remove the db leftovers related to
+  activities (no longer a thing)
+
+- [#6433](https://github.com/graphql-hive/console/pull/6433)
+  [`a902d8b`](https://github.com/graphql-hive/console/commit/a902d8bb974c0ea707a17ff3d921a6cf13972ead)
+  Thanks [@kamilkisiela](https://github.com/kamilkisiela)! - Improves validation for operation
+  durations and error totals. Prevents processing of invalid usage report data.
+
+- [#6374](https://github.com/graphql-hive/console/pull/6374)
+  [`393ece7`](https://github.com/graphql-hive/console/commit/393ece7eab93ed0b7873e4428f78a5c27cf764fa)
+  Thanks [@kamilkisiela](https://github.com/kamilkisiela)! - Adjust the Kafka message size
+  estimation only when Kafka gives back `MESSAGE_TOO_LARGE` error
+
+- [#6358](https://github.com/graphql-hive/console/pull/6358)
+  [`ab06518`](https://github.com/graphql-hive/console/commit/ab065182d89e6d7e4c90469d0bcaadacfa4c3b1e)
+  Thanks [@jdolle](https://github.com/jdolle)! - Use sum instead of max of top request counts for
+  breaking changes calculation
+
+## 4.1.0
+
+### Minor Changes
+
+- [#6400](https://github.com/graphql-hive/console/pull/6400)
+  [`d2a4387`](https://github.com/graphql-hive/console/commit/d2a4387b64fe71340159c536a05dd38b1a35c751)
+  Thanks [@kamilkisiela](https://github.com/kamilkisiela)! - Display logs from the Preflight Script
+  in Laboratory
+
+- [#6348](https://github.com/graphql-hive/console/pull/6348)
+  [`e754700`](https://github.com/graphql-hive/console/commit/e75470021282b84b622560c8a991c196ee7f24d7)
+  Thanks [@kamilkisiela](https://github.com/kamilkisiela)! - Adds ability to select a default role
+  for new OIDC users
+
+- [#6351](https://github.com/graphql-hive/console/pull/6351)
+  [`ba20748`](https://github.com/graphql-hive/console/commit/ba207485ad8b8868c73b736397c8f7f2416b86d3)
+  Thanks [@dotansimha](https://github.com/dotansimha)! - Added a new environment variable
+  `OPENTELEMETRY_TRACE_USAGE_REQUESTS` for `rate-limit` and `tokens` services.
+
+  Self-hosters who wish to report telemetry information for `usage` service, can opt-in and set
+  `OPENTELEMETRY_TRACE_USAGE_REQUESTS=1` to these services. This will skip sampling and will always
+  trace requests originating from the `usage` service.
+
+- [#6388](https://github.com/graphql-hive/console/pull/6388)
+  [`a8ff443`](https://github.com/graphql-hive/console/commit/a8ff443307fa9929f0b466c6a83d695bd5e707dd)
+  Thanks [@kamilkisiela](https://github.com/kamilkisiela)! - Add multi-column sort to Insights >
+  Operations table
+
+- [#6389](https://github.com/graphql-hive/console/pull/6389)
+  [`781b140`](https://github.com/graphql-hive/console/commit/781b140ffb5d5256913941763b79665965c53a6c)
+  Thanks [@kamilkisiela](https://github.com/kamilkisiela)! - Show Impact metric in the Operations
+  list on the Insights page. Impact equals to the total time spent on this operation in the selected
+  period in seconds. It helps assess which operations contribute the most to overall latency.
+
+  ```
+  Impact = Requests * avg/1000
+  ```
+
+- [#6393](https://github.com/graphql-hive/console/pull/6393)
+  [`84fd770`](https://github.com/graphql-hive/console/commit/84fd770b6c7bc3fdd62af6d337889e3c2596ef15)
+  Thanks [@kamilkisiela](https://github.com/kamilkisiela)! - Add type definitions of global.lab to
+  Preflight Script editor
+
+- [#6351](https://github.com/graphql-hive/console/pull/6351)
+  [`ba20748`](https://github.com/graphql-hive/console/commit/ba207485ad8b8868c73b736397c8f7f2416b86d3)
+  Thanks [@dotansimha](https://github.com/dotansimha)! - Added OpenTelemetry traces to Usage service
+  using a new `OPENTELEMETRY_COLLECTOR_ENDPOINT` env var.
+
+  This option is disabled by default for self-hosting, you can opt-in by setting
+  `OPENTELEMETRY_COLLECTOR_ENDPOINT`.
+
+### Patch Changes
+
+- [#6386](https://github.com/graphql-hive/console/pull/6386)
+  [`d19229f`](https://github.com/graphql-hive/console/commit/d19229fb6e4f48237a925987ff1a60b6b651a784)
+  Thanks [@kamilkisiela](https://github.com/kamilkisiela)! - Remove the code leftovers related to
+  activities (no longer a thing)
+
+- [#6380](https://github.com/graphql-hive/console/pull/6380)
+  [`40213fb`](https://github.com/graphql-hive/console/commit/40213fb7dc39cfb2688e6127e8fe2658f7fceb7f)
+  Thanks [@kamilkisiela](https://github.com/kamilkisiela)! - Update
+  `@theguild/federation-composition` to
+  [v0.14.3](https://github.com/the-guild-org/federation/releases/tag/v0.14.3)
+
+- [#6399](https://github.com/graphql-hive/console/pull/6399)
+  [`607192e`](https://github.com/graphql-hive/console/commit/607192eaa5d6c3dcc6a2d0c4ff406a7d6f06ca42)
+  Thanks [@kamilkisiela](https://github.com/kamilkisiela)! - Disable "select organization" dropdown
+  for OIDC accounts
+
+## 4.0.1
+
+### Patch Changes
+
+- [`c6a21ff`](https://github.com/graphql-hive/console/commit/c6a21ffa1bbb32afef86fd137ec3aec1e9b48545)
+  Thanks [@dotansimha](https://github.com/dotansimha)! - Bump version to test release flow
+
+## 4.0.0
+
+### Major Changes
+
+- [#6259](https://github.com/graphql-hive/console/pull/6259)
+  [`1168564`](https://github.com/graphql-hive/console/commit/1168564ef06e10e90381ad7808f46c5f205be3ea)
+  Thanks [@kamilkisiela](https://github.com/kamilkisiela)! - No longer support the legacy registry
+  models. Announcement https://the-guild.dev/blog/graphql-hive-improvements-in-schema-registry
+
+### Minor Changes
+
+- [#6340](https://github.com/graphql-hive/console/pull/6340)
+  [`3183f5a`](https://github.com/graphql-hive/console/commit/3183f5a9b40ab389b413199747aeff4b9ea1cbe8)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Remove the legacy member role assignment wizard.
+
+- [#6341](https://github.com/graphql-hive/console/pull/6341)
+  [`2fa3352`](https://github.com/graphql-hive/console/commit/2fa33520b36e4a0662ab9c74abc06fb4705d2a53)
+  Thanks [@kamilkisiela](https://github.com/kamilkisiela)! - Allow to close the last tab in
+  Laboratory
+
+- [#6254](https://github.com/graphql-hive/console/pull/6254)
+  [`b58d2c5`](https://github.com/graphql-hive/console/commit/b58d2c5fdb856a3f0710d1551e1e9306eb7cbcc0)
+  Thanks [@jdolle](https://github.com/jdolle)! - Add option for checking breaking changes by a fixed
+  request count
+
+### Patch Changes
+
+- [#6332](https://github.com/graphql-hive/console/pull/6332)
+  [`6b9192c`](https://github.com/graphql-hive/console/commit/6b9192c71845d3312cb2a9b1e7c1d9a552fb6f8f)
+  Thanks [@kamilkisiela](https://github.com/kamilkisiela)! - Assigns custom roles to members without
+  a role to complete https://the-guild.dev/graphql/hive/product-updates/2023-12-05-member-roles
+
+- [#6369](https://github.com/graphql-hive/console/pull/6369)
+  [`b40cabd`](https://github.com/graphql-hive/console/commit/b40cabda747641f13fcf183557ce023d12eec2b1)
+  Thanks [@kamilkisiela](https://github.com/kamilkisiela)! - Fix the audit log export
+
+- [#6368](https://github.com/graphql-hive/console/pull/6368)
+  [`0c2e953`](https://github.com/graphql-hive/console/commit/0c2e953fac76cff1c7cb397468c480c28366f665)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Fix connecting slack integration.
+
+- [#6365](https://github.com/graphql-hive/console/pull/6365)
+  [`bab2cf0`](https://github.com/graphql-hive/console/commit/bab2cf08a596892bc2c7ac0a1e5b00673808bff6)
+  Thanks [@dotansimha](https://github.com/dotansimha)! - Fix release and package flow for Docker
+  images of `hive`
+
+## 3.0.0
+
+### Major Changes
+
+- [#6066](https://github.com/graphql-hive/console/pull/6066)
+  [`e747e4c`](https://github.com/graphql-hive/console/commit/e747e4cd44e6516809754e1be2999a698153c598)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Drop user accounts and organization not linked to a
+  SuperTokens account.
+
+  This is mainly a cleanup for legacy accounts on Hive Cloud that were not migrated from Auth0 some
+  years ago. It should not affect self-hosters.
+
+### Minor Changes
+
+- [#6261](https://github.com/graphql-hive/console/pull/6261)
+  [`09c01d6`](https://github.com/graphql-hive/console/commit/09c01d6491dae9c3963de04c6e841ee9813bcaa3)
+  Thanks [@kamilkisiela](https://github.com/kamilkisiela)! - Adds a response validation of the POST
+  https://slack.com/api/oauth.v2.access request.
+
+  This request is made when connecting Slack to Hive. This is to ensure that the response is a JSON
+  object and that it contains the expected keys and provide informative error messages if it does
+  not.
+
+### Patch Changes
+
+- [#6265](https://github.com/graphql-hive/console/pull/6265)
+  [`cecd95b`](https://github.com/graphql-hive/console/commit/cecd95bc6cdc29f6b81df8b221858201b49184ce)
+  Thanks [@dotansimha](https://github.com/dotansimha)! - Relax `uuid` check for external IDs in
+  audit log metadata. Fixes https://github.com/graphql-hive/console/issues/6264
+
+- [#6262](https://github.com/graphql-hive/console/pull/6262)
+  [`d98e146`](https://github.com/graphql-hive/console/commit/d98e1468a27fafde5b080c0b0ce02696ce4a589d)
+  Thanks [@kamilkisiela](https://github.com/kamilkisiela)! - Resolve the issue where the laboratory
+  mocked endpoint consistently returns: "Please publish your first schema to Hive."
+
+- [#6267](https://github.com/graphql-hive/console/pull/6267)
+  [`817fed3`](https://github.com/graphql-hive/console/commit/817fed329bf10a1c31ab253c00bd4efa13e6699c)
+  Thanks [@dotansimha](https://github.com/dotansimha)! - bugfix: `scrollIntoView` is not a function
+  in lab page (fixed https://github.com/graphql-hive/console/issues/6263)
+
+- [#6282](https://github.com/graphql-hive/console/pull/6282)
+  [`a7f9d50`](https://github.com/graphql-hive/console/commit/a7f9d50fb9026536311b4c973433d38e17ab0e73)
+  Thanks [@kamilkisiela](https://github.com/kamilkisiela)! - Fix editor state and operation handling
+  in Laboratory.
+
+  When opening a new tab or selecting a saved operation, the editor incorrectly populated the query,
+  defaulting to the active query. This made it impossible to view the selected operation.
+  Additionally, the submit button for saving an operation was always disabled, even when the form
+  was in a valid state.
+
+## 2.1.0
+
+### Minor Changes
+
+- [#5564](https://github.com/graphql-hive/console/pull/5564)
+  [`e0eb3bd`](https://github.com/graphql-hive/console/commit/e0eb3bdb289c6349f51d71ba0570328d2f4e98d7)
+  Thanks [@dimaMachina](https://github.com/dimaMachina)! - Add preflight scripts for laboratory.
+
+  It is now possible to add a preflight script within the laboratory that executes before sending a
+  GraphQL request.
+  [Learn more.](https://the-guild.dev/graphql/hive/product-updates/2024-12-27-preflight-script)
+
+- [#5530](https://github.com/graphql-hive/console/pull/5530)
+  [`38c14e2`](https://github.com/graphql-hive/console/commit/38c14e21d8fd76f04a750ede3aac07aa10685687)
+  Thanks [@TuvalSimha](https://github.com/TuvalSimha)! - Add organization audit log.
+
+  Each organization now has an audit log of all user actions that can be exported by admins.
+  Exported audit logs are stored on the pre-configured S3 storage.
+
+  In case you want to store exported audit logs on a separate S3 bucket, you can use the
+  `S3_AUDIT_LOG` prefixed environment variables for the configuration.
+
+  [Learn more.](https://graphql-hive.com/product-updates/2024-12-27-audit-logs)
+
+- [#6234](https://github.com/graphql-hive/console/pull/6234)
+  [`eecd099`](https://github.com/graphql-hive/console/commit/eecd099309e2308f216c709a1fe23f15f6d6318b)
+  Thanks [@kamilkisiela](https://github.com/kamilkisiela)! - Adds
+  `lab.prompt(message, defaultValue)` to Preflight Script API
+
+### Patch Changes
+
+- [#6232](https://github.com/graphql-hive/console/pull/6232)
+  [`ff44b62`](https://github.com/graphql-hive/console/commit/ff44b62aebc4b5d4e3ff321ad3ed59694d94330a)
+  Thanks [@kamilkisiela](https://github.com/kamilkisiela)! - Improvements to UI of Preflight Script
+  (Laboratory)
+
+- [#6233](https://github.com/graphql-hive/console/pull/6233)
+  [`7b0c920`](https://github.com/graphql-hive/console/commit/7b0c920c578a9220c0bad69d2f6b69023f8beece)
+  Thanks [@kamilkisiela](https://github.com/kamilkisiela)! - Tiny UI fixes
+
+## 2.0.1
+
+### Patch Changes
+
+- [#6158](https://github.com/graphql-hive/console/pull/6158)
+  [`3093c9f`](https://github.com/graphql-hive/console/commit/3093c9fc23ab0a53926a187a91fe93ef6fee5be1)
+  Thanks [@dotansimha](https://github.com/dotansimha)! - Added missing index for postgres db field
+  "schema_version_changes.schema_version_id"
+
+## 2.0.0
+
+### Major Changes
+
+- [#6142](https://github.com/graphql-hive/console/pull/6142)
+  [`25f1460`](https://github.com/graphql-hive/console/commit/25f14604f482ac42826c63ec08bc108a67d37fd0)
+  Thanks [@TuvalSimha](https://github.com/TuvalSimha)! - Upgrade the PostgreSQL version for Docker
+  Compose from version 14.13 to use 16.4.
+
+  **This change is published as major, as it requires attention based on your setup.**
+
+  For self-hosters with a managed database, we recommend upgrading PostgreSQL based on your Cloud
+  provider's or IT's recommendation.
+
+  For self-hosters running in Docker, you can read about
+  [upgrading PostgreSQL in a Docker container here](https://helgeklein.com/blog/upgrading-postgresql-in-docker-container/).
+
+  > The Hive data that was previously created with PostgreSQL v14 is compatible with v16.
+
+### Patch Changes
+
+- [#6156](https://github.com/graphql-hive/console/pull/6156)
+  [`b6eb5d0`](https://github.com/graphql-hive/console/commit/b6eb5d0e71e5b1d7575756d440bdbfb3116950b7)
+  Thanks [@dotansimha](https://github.com/dotansimha)! - Improvement for OTEL tracing and added
+  missing attributes
+
+- [#6156](https://github.com/graphql-hive/console/pull/6156)
+  [`b6eb5d0`](https://github.com/graphql-hive/console/commit/b6eb5d0e71e5b1d7575756d440bdbfb3116950b7)
+  Thanks [@dotansimha](https://github.com/dotansimha)! - Performance improvements for Postgres DB
+  calls (specifically `getSchemasOfVersion`, see https://github.com/graphql-hive/console/pull/6154)
+
+## 1.2.4
+
+### Patch Changes
+
+- [#6138](https://github.com/graphql-hive/console/pull/6138)
+  [`349a67d`](https://github.com/graphql-hive/console/commit/349a67d09ccadc22c0f3b84ceafa7157c5f3e979)
+  Thanks [@kamilkisiela](https://github.com/kamilkisiela)! - Prevent stripe.js from loading
+  automatically
+
+## 1.2.3
+
+### Patch Changes
+
+- [#6115](https://github.com/graphql-hive/console/pull/6115)
+  [`0d7ce02`](https://github.com/graphql-hive/console/commit/0d7ce02082a5ac02111b888132209ee0ef34c831)
+  Thanks [@kamilkisiela](https://github.com/kamilkisiela)! - Move information about target and
+  organization to logger's metadata in usage service
+
+- [#6121](https://github.com/graphql-hive/console/pull/6121)
+  [`6d78547`](https://github.com/graphql-hive/console/commit/6d78547a0f29a732713052d33d207396144e0998)
+  Thanks [@kamilkisiela](https://github.com/kamilkisiela)! - Make optional properties optional or
+  nullable in usage report v2
+
+- [#6111](https://github.com/graphql-hive/console/pull/6111)
+  [`cffd08a`](https://github.com/graphql-hive/console/commit/cffd08a53d7e5a53bb59fa68e940b693e9102485)
+  Thanks [@kamilkisiela](https://github.com/kamilkisiela)! - Fix a missing @join\_\_field on a query
+  field where @override is used, but not in all subgraphs.
+
+## 1.2.2
+
+### Patch Changes
+
+- [#6065](https://github.com/graphql-hive/console/pull/6065)
+  [`9297f33`](https://github.com/graphql-hive/console/commit/9297f33ad6c2c0a5ff77ea92c43ca5c97fd9a2d8)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Allow organizations without a GitHub or Slack
+  integration to add and manage integrations.
+
+## 1.2.1
+
+### Patch Changes
+
+- [#5945](https://github.com/graphql-hive/console/pull/5945)
+  [`03f08ca`](https://github.com/graphql-hive/console/commit/03f08ca68bb675696208a31ca002c74a628edbbb)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Require "registry write" permissions for approving
+  failed schema checks, schema versions, and the laboratory.
+
+- [#5989](https://github.com/graphql-hive/console/pull/5989)
+  [`a87a541`](https://github.com/graphql-hive/console/commit/a87a541153db901fc41fae0f33cd5de52324d8dd)
+  Thanks [@kamilkisiela](https://github.com/kamilkisiela)! - Retry calls to Github API when creating
+  check-runs
+
+- [#5989](https://github.com/graphql-hive/console/pull/5989)
+  [`a87a541`](https://github.com/graphql-hive/console/commit/a87a541153db901fc41fae0f33cd5de52324d8dd)
+  Thanks [@kamilkisiela](https://github.com/kamilkisiela)! - Inform users about Github API issues
+  when creating check runs
+
+## 1.2.0
+
+### Minor Changes
+
+- [#5897](https://github.com/graphql-hive/console/pull/5897)
+  [`cd9a13c`](https://github.com/graphql-hive/console/commit/cd9a13cd4f98700c79db89ac4dd60f0578442efe)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Update `supertokens-postgresql` to `9.3`.
+
+### Patch Changes
+
+- [#5924](https://github.com/graphql-hive/console/pull/5924)
+  [`5ad52ba`](https://github.com/graphql-hive/console/commit/5ad52ba4d1ad002a8e3b233cefe762324113cf6a)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Fix logging for invalid operation body within usage
+  reporting.
+
+## 1.1.1
+
+### Patch Changes
+
+- [#5907](https://github.com/graphql-hive/console/pull/5907)
+  [`5adfb6c`](https://github.com/graphql-hive/console/commit/5adfb6c39dce653ffef9fdf6af9a6a582cac0231)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Remove option to remove the organization owner from
+  the organization.
+
+## 1.1.0
+
+### Minor Changes
+
+- [#5884](https://github.com/graphql-hive/platform/pull/5884)
+  [`8aec41a`](https://github.com/graphql-hive/platform/commit/8aec41a36ee897aad0057e6817a9433a545fd18d)
+  Thanks [@andriihrachov](https://github.com/andriihrachov)! - Add `REDIS_TLS_ENABLED` environment
+  variable for enabling and disabling Redis TLS for `emails`, `schema`, `tokens`, `webhooks` and
+  `server` services.
+
+- [#5889](https://github.com/graphql-hive/platform/pull/5889)
+  [`0eef5ed`](https://github.com/graphql-hive/platform/commit/0eef5edc6b8a940d3e70b5ea322a73ac6af07d33)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Update `supertokens-postgresql` to `8.0`.
+
+## 1.0.2
+
+### Patch Changes
+
+- [#5872](https://github.com/graphql-hive/platform/pull/5872)
+  [`580d349`](https://github.com/graphql-hive/platform/commit/580d349d45b85dc6103b39c6e07bc3d81e5d3bc9)
+  Thanks [@kamilkisiela](https://github.com/kamilkisiela)! - Bump @theguild/federation-composition
+  to v0.14.1
+
 ## 1.0.1
 
 ### Patch Changes

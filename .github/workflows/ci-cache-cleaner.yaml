@@ -1,0 +1,19 @@
+name: CI Cache Clean
+on:
+  schedule:
+    # Every 5 days
+    - cron: '0 0 */5 * *'
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch: {}
+
+jobs:
+  update:
+    runs-on: ubuntu-22.04
+    steps:
+      - name: List Actions Cache
+        uses: easimon/wipe-cache@main
+        with:
+          dry-run: 'true'
+
+      - name: Clear Actions Cache
+        uses: easimon/wipe-cache@main

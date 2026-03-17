@@ -1,6 +1,6 @@
 import { ProjectType } from 'testkit/gql/graphql';
 import { history } from '../../../testkit/external-composition';
-import { enableExternalSchemaComposition } from '../../../testkit/flow';
+import { updateSchemaComposition } from '../../../testkit/flow';
 import { initSeed } from '../../../testkit/seed';
 import { generateUnique, getServiceHost } from '../../../testkit/utils';
 
@@ -43,18 +43,26 @@ test.concurrent('call an external service to compose and validate services', asy
   // so we need to use the name and not resolved host
   const dockerAddress = await getServiceHost('external_composition', 3012, false);
   // enable external composition
-  const externalCompositionResult = await enableExternalSchemaComposition(
+  const externalCompositionResult = await updateSchemaComposition(
     {
-      endpoint: `http://${dockerAddress}/compose`,
-      // eslint-disable-next-line no-process-env
-      secret: process.env.EXTERNAL_COMPOSITION_SECRET!,
-      projectSlug: project.slug,
-      organizationSlug: organization.slug,
+      project: {
+        bySelector: {
+          projectSlug: project.slug,
+          organizationSlug: organization.slug,
+        },
+      },
+      method: {
+        external: {
+          endpoint: `http://${dockerAddress}/compose`,
+          // eslint-disable-next-line no-process-env
+          secret: process.env.EXTERNAL_COMPOSITION_SECRET!,
+        },
+      },
     },
     ownerToken,
   ).then(r => r.expectNoGraphQLErrors());
   expect(
-    externalCompositionResult.enableExternalSchemaComposition.ok?.externalSchemaComposition
+    externalCompositionResult.updateSchemaComposition.ok?.updatedProject.externalSchemaComposition
       ?.endpoint,
   ).toBe(`http://${dockerAddress}/compose`);
 
@@ -92,9 +100,8 @@ test.concurrent(
   async ({ expect }) => {
     const { createOrg, ownerToken } = await initSeed().createOwner();
     const { createProject, organization } = await createOrg();
-    const { createTargetAccessToken, project, setNativeFederation } = await createProject(
-      ProjectType.Federation,
-    );
+    const { createTargetAccessToken, project, setNativeFederation, fetchVersions } =
+      await createProject(ProjectType.Federation);
 
     // Create a token with write rights
     const writeToken = await createTargetAccessToken({});
@@ -127,18 +134,26 @@ test.concurrent(
     // so we need to use the name and not resolved host
     const dockerAddress = await getServiceHost('external_composition', 3012, false);
     // enable external composition
-    const externalCompositionResult = await enableExternalSchemaComposition(
+    const externalCompositionResult = await updateSchemaComposition(
       {
-        endpoint: `http://${dockerAddress}/fail_on_signature`,
-        // eslint-disable-next-line no-process-env
-        secret: process.env.EXTERNAL_COMPOSITION_SECRET!,
-        projectSlug: project.slug,
-        organizationSlug: organization.slug,
+        project: {
+          bySelector: {
+            projectSlug: project.slug,
+            organizationSlug: organization.slug,
+          },
+        },
+        method: {
+          external: {
+            endpoint: `http://${dockerAddress}/fail_on_signature`,
+            // eslint-disable-next-line no-process-env
+            secret: process.env.EXTERNAL_COMPOSITION_SECRET!,
+          },
+        },
       },
       ownerToken,
     ).then(r => r.expectNoGraphQLErrors());
     expect(
-      externalCompositionResult.enableExternalSchemaComposition.ok?.externalSchemaComposition
+      externalCompositionResult.updateSchemaComposition.ok?.updatedProject.externalSchemaComposition
         ?.endpoint,
     ).toBe(`http://${dockerAddress}/fail_on_signature`);
 
@@ -180,6 +195,10 @@ test.concurrent(
         },
       }),
     );
+
+    // ensure no new schema version is created for failed external composition
+    const versions = await fetchVersions(20);
+    expect(versions.length).toEqual(1);
   },
 );
 
@@ -188,9 +207,8 @@ test.concurrent(
   async ({ expect }) => {
     const { createOrg, ownerToken } = await initSeed().createOwner();
     const { createProject, organization } = await createOrg();
-    const { createTargetAccessToken, project, setNativeFederation } = await createProject(
-      ProjectType.Federation,
-    );
+    const { createTargetAccessToken, project, setNativeFederation, fetchVersions } =
+      await createProject(ProjectType.Federation);
 
     // Create a token with write rights
     const writeToken = await createTargetAccessToken({});
@@ -223,18 +241,26 @@ test.concurrent(
     // so we need to use the name and not resolved host
     const dockerAddress = await getServiceHost('external_composition', 3012, false);
     // enable external composition
-    const externalCompositionResult = await enableExternalSchemaComposition(
+    const externalCompositionResult = await updateSchemaComposition(
       {
-        endpoint: `http://${dockerAddress}/non-existing-endpoint`,
-        // eslint-disable-next-line no-process-env
-        secret: process.env.EXTERNAL_COMPOSITION_SECRET!,
-        projectSlug: project.slug,
-        organizationSlug: organization.slug,
+        project: {
+          bySelector: {
+            projectSlug: project.slug,
+            organizationSlug: organization.slug,
+          },
+        },
+        method: {
+          external: {
+            endpoint: `http://${dockerAddress}/non-existing-endpoint`,
+            // eslint-disable-next-line no-process-env
+            secret: process.env.EXTERNAL_COMPOSITION_SECRET!,
+          },
+        },
       },
       ownerToken,
     ).then(r => r.expectNoGraphQLErrors());
     expect(
-      externalCompositionResult.enableExternalSchemaComposition.ok?.externalSchemaComposition
+      externalCompositionResult.updateSchemaComposition.ok?.updatedProject.externalSchemaComposition
         ?.endpoint,
     ).toBe(`http://${dockerAddress}/non-existing-endpoint`);
     // set native federation to false to force external composition
@@ -275,15 +301,18 @@ test.concurrent(
         },
       }),
     );
+
+    // ensure no new schema version is created for failed external composition
+    const versions = await fetchVersions(20);
+    expect(versions.length).toEqual(1);
   },
 );
 
 test.concurrent('a timeout error should be visible to the user', async ({ expect }) => {
   const { createOrg, ownerToken } = await initSeed().createOwner();
   const { createProject, organization } = await createOrg();
-  const { createTargetAccessToken, project, setNativeFederation } = await createProject(
-    ProjectType.Federation,
-  );
+  const { createTargetAccessToken, project, setNativeFederation, fetchVersions } =
+    await createProject(ProjectType.Federation);
 
   // Create a token with write rights
   const writeToken = await createTargetAccessToken({});
@@ -316,18 +345,26 @@ test.concurrent('a timeout error should be visible to the user', async ({ expect
   // so we need to use the name and not resolved host
   const dockerAddress = await getServiceHost('external_composition', 3012, false);
   // enable external composition
-  const externalCompositionResult = await enableExternalSchemaComposition(
+  const externalCompositionResult = await updateSchemaComposition(
     {
-      endpoint: `http://${dockerAddress}/timeout`,
-      // eslint-disable-next-line no-process-env
-      secret: process.env.EXTERNAL_COMPOSITION_SECRET!,
-      projectSlug: project.slug,
-      organizationSlug: organization.slug,
+      project: {
+        bySelector: {
+          projectSlug: project.slug,
+          organizationSlug: organization.slug,
+        },
+      },
+      method: {
+        external: {
+          endpoint: `http://${dockerAddress}/timeout`,
+          // eslint-disable-next-line no-process-env
+          secret: process.env.EXTERNAL_COMPOSITION_SECRET!,
+        },
+      },
     },
     ownerToken,
   ).then(r => r.expectNoGraphQLErrors());
   expect(
-    externalCompositionResult.enableExternalSchemaComposition.ok?.externalSchemaComposition
+    externalCompositionResult.updateSchemaComposition.ok?.updatedProject.externalSchemaComposition
       ?.endpoint,
   ).toBe(`http://${dockerAddress}/timeout`);
   // set native federation to false to force external composition
@@ -362,7 +399,7 @@ test.concurrent('a timeout error should be visible to the user', async ({ expect
         total: 1,
         nodes: [
           {
-            message: expect.stringMatching(/timeout/i),
+            message: expect.stringMatching(/The schema composition timed out. Please try again./i),
           },
         ],
       },
@@ -370,4 +407,8 @@ test.concurrent('a timeout error should be visible to the user', async ({ expect
       valid: false,
     }),
   );
+
+  // ensure no new schema version is created for failed external composition
+  const versions = await fetchVersions(20);
+  expect(versions.length).toEqual(1);
 });

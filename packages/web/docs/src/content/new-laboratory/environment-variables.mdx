@@ -1,0 +1,328 @@
+import NextImage from 'next/image'
+import envImage from '../../../public/docs/pages/new-laboratory/env.png'
+
+# Environment Variables
+
+Environment variables in the Laboratory allow you to manage configuration values that can be used
+across all your operations. They're perfect for storing API keys, endpoint URLs, authentication
+tokens, and other environment-specific settings.
+
+<NextImage src={envImage} alt="Environment Variables" />
+
+## What are Environment Variables?
+
+Environment variables are key-value pairs that:
+
+- **Persist across operations** - Set once, use everywhere
+- **Environment-specific** - Different values for dev, staging, production
+- **Secure storage** - Keep sensitive data out of your operations
+- **Easy updates** - Change values in one place
+
+## Accessing Environment Variables
+
+To manage environment variables:
+
+1. Open the Settings menu (gear icon in the left sidebar)
+2. Select "Environment Variables"
+3. Or use the Command Palette (`⌘J`) and select "Open Environment Variables"
+
+## Setting Environment Variables
+
+Environment variables are set in a `.env` file format:
+
+```env
+API_KEY=your-api-key-here
+AUTH_TOKEN=your-auth-token
+ENDPOINT_URL=https://api.example.com/graphql
+ENVIRONMENT=development
+```
+
+### Format
+
+Each line represents one variable:
+
+```
+KEY=value
+```
+
+- **Key** - Variable name (alphanumeric and underscores)
+- **Value** - Variable value (can contain spaces, special characters)
+- **Comments** - Lines starting with `#` are ignored
+- **Empty lines** - Blank lines are ignored
+
+### Examples
+
+```env
+# API Configuration
+API_KEY=sk_live_1234567890
+API_SECRET=secret_abc123
+
+# Environment
+ENV=production
+DEBUG=false
+
+# URLs
+BASE_URL=https://api.example.com
+GRAPHQL_ENDPOINT=/graphql
+```
+
+## Using Environment Variables
+
+### In Preflight Scripts
+
+Environment variables are accessed in preflight scripts using the `lab.environment` API:
+
+```typescript
+// Get a variable
+const apiKey = lab.environment.get('API_KEY')
+
+// Set a variable
+lab.environment.set('API_KEY', 'new-value')
+
+// Delete a variable
+lab.environment.delete('API_KEY')
+```
+
+### In Operations
+
+While environment variables are primarily used in preflight scripts, you can reference them when
+building operations. The exact method depends on how your preflight scripts expose them.
+
+## Common Use Cases
+
+### API Keys
+
+Store API keys securely:
+
+```env
+STRIPE_API_KEY=sk_live_...
+GITHUB_TOKEN=ghp_...
+SENDGRID_API_KEY=SG....
+```
+
+### Authentication Tokens
+
+Manage authentication tokens:
+
+```env
+JWT_TOKEN=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+SESSION_ID=abc123def456
+```
+
+### Endpoint Configuration
+
+Configure different endpoints:
+
+```env
+# Development
+DEV_ENDPOINT=http://localhost:4000/graphql
+
+# Production
+PROD_ENDPOINT=https://api.example.com/graphql
+```
+
+### Feature Flags
+
+Control feature availability:
+
+```env
+ENABLE_ANALYTICS=true
+ENABLE_BETA_FEATURES=false
+```
+
+## Environment-Specific Variables
+
+### Development Environment
+
+```env
+ENVIRONMENT=development
+API_URL=http://localhost:4000
+DEBUG=true
+LOG_LEVEL=debug
+```
+
+### Staging Environment
+
+```env
+ENVIRONMENT=staging
+API_URL=https://staging.example.com
+DEBUG=false
+LOG_LEVEL=info
+```
+
+### Production Environment
+
+```env
+ENVIRONMENT=production
+API_URL=https://api.example.com
+DEBUG=false
+LOG_LEVEL=error
+```
+
+## Best Practices
+
+### Naming Conventions
+
+Use consistent naming:
+
+- **UPPERCASE** - Use uppercase for all variable names
+- **Underscores** - Use underscores to separate words
+- **Descriptive** - Use clear, descriptive names
+- **Prefixes** - Use prefixes for related variables
+
+Good examples:
+
+```
+API_KEY
+AUTH_TOKEN
+GRAPHQL_ENDPOINT
+STRIPE_SECRET_KEY
+```
+
+Bad examples:
+
+```
+key
+token123
+endpoint
+```
+
+### Organization
+
+Organize variables logically:
+
+```env
+# Authentication
+AUTH_TOKEN=...
+REFRESH_TOKEN=...
+
+# API Configuration
+API_BASE_URL=...
+API_VERSION=v1
+
+# Feature Flags
+FEATURE_X_ENABLED=true
+FEATURE_Y_ENABLED=false
+```
+
+### Security
+
+1. **Never commit secrets** - Don't commit environment variables with real secrets to version
+   control
+2. **Use placeholders** - Use placeholder values in shared configurations
+3. **Rotate regularly** - Update API keys and tokens regularly
+4. **Separate environments** - Use different values for dev/staging/production
+
+### Documentation
+
+Document your variables:
+
+```env
+# Stripe API Key for payment processing
+# Get from: https://dashboard.stripe.com/apikeys
+STRIPE_API_KEY=sk_test_...
+
+# GitHub Personal Access Token
+# Create at: https://github.com/settings/tokens
+GITHUB_TOKEN=ghp_...
+```
+
+## Managing Variables
+
+### Adding Variables
+
+1. Open Environment Variables tab
+2. Add a new line with `KEY=value` format
+3. Variables are saved automatically
+
+### Updating Variables
+
+1. Find the variable in the editor
+2. Update the value after the `=` sign
+3. Changes are saved automatically
+
+### Deleting Variables
+
+1. Remove the line containing the variable
+2. Or set it to an empty value: `KEY=`
+3. Changes are saved automatically
+
+### Comments
+
+Add comments to document variables:
+
+```env
+# This is a comment
+API_KEY=value # Inline comment
+```
+
+## Integration with Preflight
+
+Environment variables work seamlessly with preflight scripts:
+
+```typescript
+// Preflight script
+const apiKey = lab.environment.get('API_KEY')
+if (apiKey) {
+  lab.request.headers.set('X-API-Key', apiKey)
+}
+
+// You can also set variables from preflight
+lab.environment.set('LAST_REQUEST_TIME', Date.now().toString())
+```
+
+## Troubleshooting
+
+### Variable Not Found
+
+If a variable isn't found:
+
+1. Check spelling - Variable names are case-sensitive
+2. Verify it's set - Make sure the variable exists in the Environment Variables tab
+3. Check format - Ensure it follows `KEY=value` format
+
+### Variable Not Updating
+
+If changes aren't taking effect:
+
+1. Save the Environment Variables tab
+2. Re-run your operation
+3. Check for syntax errors in the .env format
+
+### Special Characters
+
+If your value contains special characters:
+
+```env
+# Spaces are fine
+MESSAGE=Hello World
+
+# Quotes are included in value
+MESSAGE="Hello World"
+
+# Special characters work
+PASSWORD=P@ssw0rd!123
+```
+
+### Empty Values
+
+To set an empty value:
+
+```env
+OPTIONAL_VAR=
+```
+
+Or simply omit the variable.
+
+## Security Notes
+
+- **Local storage** - Environment variables are stored locally in your browser
+- **Not encrypted** - Values are stored in plain text
+- **Browser-specific** - Variables are per-browser, not synced across devices
+- **Session-based** - Variables persist until you clear browser data
+
+For sensitive production data, consider:
+
+- Using preflight scripts to prompt for values
+- Storing secrets in secure vaults
+- Using organization-level environment management (if available)

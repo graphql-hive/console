@@ -51,7 +51,7 @@ async function fetchLatestVersion() {
   }
 
   const latest = await latestResponse.json();
-  const latestStableVersion = latest.name.replace('v', '');
+  const latestStableVersion = latest.tag_name.replace('v', '');
 
   if (!latestStableVersion) {
     throw new Error('Failed to find latest stable version');

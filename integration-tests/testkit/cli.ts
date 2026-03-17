@@ -19,12 +19,13 @@ async function generateTmpFile(content: string, extension: string) {
   return filepath;
 }
 
-async function exec(cmd: string) {
+async function exec(cmd: string, env?: Record<string, string>) {
   const outout = await execaCommand(`${binPath} ${cmd}`, {
     shell: true,
     env: {
       OCLIF_CLI_CUSTOM_PATH: cliDir,
       NODE_OPTIONS: '--no-deprecation',
+      ...env,
     },
   });
 
@@ -44,11 +45,19 @@ export async function schemaPublish(args: string[]) {
   );
 }
 
-export async function schemaCheck(args: string[]) {
+export async function appRetire(args: string[]) {
+  const registryAddress = await getServiceHost('server', 8082);
+  return await exec(
+    ['app:retire', `--registry.endpoint`, `http://${registryAddress}/graphql`, ...args].join(' '),
+  );
+}
+
+export async function schemaCheck(args: string[], env?: Record<string, string>) {
   const registryAddress = await getServiceHost('server', 8082);
 
   return await exec(
     ['schema:check', `--registry.endpoint`, `http://${registryAddress}/graphql`, ...args].join(' '),
+    env,
   );
 }
 
@@ -62,11 +71,35 @@ export async function schemaDelete(args: string[]) {
   );
 }
 
+export async function schemaFetch(args: string[]) {
+  const registryAddress = await getServiceHost('server', 8082);
+
+  return await exec(
+    ['schema:fetch', `--registry.endpoint`, `http://${registryAddress}/graphql`, ...args].join(' '),
+  );
+}
+
 async function dev(args: string[]) {
   const registryAddress = await getServiceHost('server', 8082);
 
   return await exec(
     ['dev', `--registry.endpoint`, `http://${registryAddress}/graphql`, ...args].join(' '),
+  );
+}
+
+export async function appCreate(args: string[]) {
+  const registryAddress = await getServiceHost('server', 8082);
+
+  return await exec(
+    ['app:create', `--registry.endpoint`, `http://${registryAddress}/graphql`, ...args].join(' '),
+  );
+}
+
+export async function appPublish(args: string[]) {
+  const registryAddress = await getServiceHost('server', 8082);
+
+  return await exec(
+    ['app:publish', `--registry.endpoint`, `http://${registryAddress}/graphql`, ...args].join(' '),
   );
 }
 
@@ -288,10 +321,23 @@ export function createCLI(tokens: { readwrite: string; readonly: string }) {
     ]);
   }
 
+  async function fetchCmd(input: { type: 'subgraphs' | 'supergraph' | 'sdl'; commit?: string }) {
+    const cmd = schemaFetch([
+      '--token',
+      tokens.readwrite,
+      '--type',
+      input.type,
+      ...(input.commit ? [input.commit] : []),
+    ]);
+
+    return cmd;
+  }
+
   return {
     publish,
     check,
     delete: deleteCommand,
     dev: devCmd,
+    fetch: fetchCmd,
   };
 }

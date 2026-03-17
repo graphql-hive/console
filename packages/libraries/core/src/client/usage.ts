@@ -6,7 +6,7 @@ import {
   TypeInfo,
   type ExecutionArgs,
 } from 'graphql';
-import LRU from 'tiny-lru';
+import { lru } from 'tiny-lru';
 import { normalizeOperation } from '../normalize/operation.js';
 import { version } from '../version.js';
 import { createAgent } from './agent.js';
@@ -17,13 +17,13 @@ import type {
   ClientInfo,
   CollectUsageCallback,
   GraphQLErrorsResult,
-  HivePluginOptions,
+  HiveInternalPluginOptions,
   HiveUsagePluginOptions,
 } from './types.js';
 import {
   cache,
   cacheDocumentKey,
-  createHiveLogger,
+  isLegacyAccessToken,
   logIf,
   measureDuration,
   memo,
@@ -51,16 +51,18 @@ function isAbortAction(result: Parameters<CollectUsageCallback>[1]): result is A
   return 'action' in result && result.action === 'abort';
 }
 
-export function createUsage(pluginOptions: HivePluginOptions): UsageCollector {
+const noopUsageCollector: UsageCollector = {
+  collect() {
+    return async () => {};
+  },
+  collectRequest() {},
+  async dispose() {},
+  collectSubscription() {},
+};
+
+export function createUsage(pluginOptions: HiveInternalPluginOptions): UsageCollector {
   if (!pluginOptions.usage || pluginOptions.enabled === false) {
-    return {
-      collect() {
-        return async () => {};
-      },
-      collectRequest() {},
-      async dispose() {},
-      collectSubscription() {},
-    };
+    return noopUsageCollector;
   }
 
   let reportSize = 0;
@@ -71,9 +73,31 @@ export function createUsage(pluginOptions: HivePluginOptions): UsageCollector {
   const options =
     typeof pluginOptions.usage === 'boolean' ? ({} as HiveUsagePluginOptions) : pluginOptions.usage;
   const selfHostingOptions = pluginOptions.selfHosting;
-  const logger = createHiveLogger(pluginOptions.agent?.logger ?? console, '[hive][usage]');
+  const logger = pluginOptions.logger.child({ module: 'hive-usage' });
   const collector = memo(createCollector, arg => arg.schema);
   const excludeSet = new Set(options.exclude ?? []);
+
+  /** Access tokens using the `hvo1/` require a target. */
+  if (!options.target && !isLegacyAccessToken(pluginOptions.token)) {
+    logger.error(
+      "Your access token requires providing the 'target' option." +
+        '\nUsage reporting is disabled.',
+    );
+    return noopUsageCollector;
+  }
+
+  if (options.target && isLegacyAccessToken(pluginOptions.token)) {
+    logger.error(
+      "Using the 'target' option requires using an organization access token (starting with 'hvo1/')." +
+        '\nUsage reporting is disabled.',
+    );
+    return noopUsageCollector;
+  }
+
+  const baseEndpoint =
+    selfHostingOptions?.usageEndpoint ?? options.endpoint ?? 'https://app.graphql-hive.com/usage';
+
+  const endpoint = baseEndpoint + (options?.target ? `/${options.target}` : '');
 
   const agent = createAgent<AgentAction>(
     {
@@ -81,14 +105,11 @@ export function createUsage(pluginOptions: HivePluginOptions): UsageCollector {
         maxSize: 1500,
       }),
       logger,
-      endpoint:
-        selfHostingOptions?.usageEndpoint ??
-        options.endpoint ??
-        'https://app.graphql-hive.com/usage',
+      endpoint,
       token: pluginOptions.token,
       enabled: pluginOptions.enabled,
       debug: pluginOptions.debug,
-      __testing: pluginOptions.agent?.__testing,
+      fetch: pluginOptions.agent?.fetch,
     },
     {
       data: {
@@ -142,8 +163,8 @@ export function createUsage(pluginOptions: HivePluginOptions): UsageCollector {
       },
       headers() {
         return {
-          'graphql-client-name': 'Hive Client',
-          'graphql-client-version': version,
+          'graphql-client-name': pluginOptions.agent?.name ?? 'Hive Client',
+          'graphql-client-version': pluginOptions.agent?.version ?? version,
           'x-usage-api-version': '2',
         };
       },
@@ -365,7 +386,7 @@ export function createCollector({
     function cacheKey(doc, variables) {
       return cacheDocumentKey(doc, processVariables === true ? variables : null);
     },
-    LRU<CacheResult>(max, ttl),
+    lru<CacheResult>(max, ttl),
   );
 }
 
@@ -454,8 +475,8 @@ interface OperationMap {
   [key: string]: OperationMapRecord;
 }
 
-const defaultClientNameHeader = 'x-graphql-client-name';
-const defaultClientVersionHeader = 'x-graphql-client-version';
+const defaultClientNameHeaders = ['x-graphql-client-name', 'graphql-client-name'];
+const defaultClientVersionHeaders = ['x-graphql-client-version', 'graphql-client-version'];
 
 type CreateDefaultClientInfo = {
   /** HTTP configuration */
@@ -470,17 +491,39 @@ type CreateDefaultClientInfo = {
   };
 };
 
+function lookupHeader(
+  headerGetter: (name: string) => string | null | undefined,
+  possibleNames: Set<string>,
+): string | null {
+  for (const name of possibleNames) {
+    const value = headerGetter(name);
+    if (typeof value === 'string') {
+      return value;
+    }
+  }
+  return null;
+}
+
 function createDefaultClientInfo(
   config?: CreateDefaultClientInfo,
 ): (context: unknown) => ClientInfo | null {
-  const clientNameHeader = config?.http?.clientHeaderName ?? defaultClientNameHeader;
-  const clientVersionHeader = config?.http?.versionHeaderName ?? defaultClientVersionHeader;
+  const clientNameHeaders = new Set(
+    config?.http?.clientHeaderName
+      ? [config.http.clientHeaderName, ...defaultClientNameHeaders]
+      : defaultClientNameHeaders,
+  );
+  const clientVersionHeaders = new Set(
+    config?.http?.versionHeaderName
+      ? [config.http.versionHeaderName, ...defaultClientVersionHeaders]
+      : defaultClientVersionHeaders,
+  );
   const clientFieldName = config?.ws?.clientFieldName ?? 'client';
   return function defaultClientInfo(context: any) {
     // whatwg Request
     if (typeof context?.request?.headers?.get === 'function') {
-      const name = context.request.headers.get(clientNameHeader);
-      const version = context.request.headers.get(clientVersionHeader);
+      const headerGetter = (name: string) => context?.request?.headers?.get(name);
+      const name = lookupHeader(headerGetter, clientNameHeaders);
+      const version = lookupHeader(headerGetter, clientVersionHeaders);
       if (typeof name === 'string' && typeof version === 'string') {
         return {
           name,
@@ -493,8 +536,9 @@ function createDefaultClientInfo(
 
     // Node.js IncomingMessage
     if (context?.req?.headers && typeof context.req?.headers === 'object') {
-      const name = context.req.headers[clientNameHeader];
-      const version = context.req.headers[clientVersionHeader];
+      const headerGetter = (name: string) => context.req.headers[name];
+      const name = lookupHeader(headerGetter, clientNameHeaders);
+      const version = lookupHeader(headerGetter, clientVersionHeaders);
       if (typeof name === 'string' && typeof version === 'string') {
         return {
           name,
@@ -506,9 +550,10 @@ function createDefaultClientInfo(
     }
 
     // Plain headers object
-    if (context?.headers && typeof context.req?.headers === 'object') {
-      const name = context.req.headers[clientNameHeader];
-      const version = context.req.headers[clientVersionHeader];
+    if (context?.headers && typeof context.headers === 'object') {
+      const headerGetter = (name: string) => context.headers[name];
+      const name = lookupHeader(headerGetter, clientNameHeaders);
+      const version = lookupHeader(headerGetter, clientVersionHeaders);
       if (typeof name === 'string' && typeof version === 'string') {
         return {
           name,

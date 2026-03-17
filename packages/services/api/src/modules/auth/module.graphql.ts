@@ -5,12 +5,10 @@ export default gql`
     me: User!
   }
 
-  interface Error {
-    message: String!
-  }
-
   extend type Mutation {
     updateMe(input: UpdateMeInput!): UpdateMeResult!
+    sendVerificationEmail(input: SendVerificationEmailInput!): SendVerificationEmailResult!
+    verifyEmail(input: VerifyEmailInput!): VerifyEmailResult!
   }
 
   input UpdateMeInput {
@@ -43,12 +41,57 @@ export default gql`
     error: UpdateMeError
   }
 
-  type User {
-    id: ID!
+  input SendVerificationEmailInput {
+    userIdentityId: ID!
+    resend: Boolean
+  }
+
+  type SendVerificationEmailOk {
+    expiresAt: DateTime!
+  }
+
+  type SendVerificationEmailError implements Error {
+    message: String!
+    emailAlreadyVerified: Boolean!
+  }
+
+  """
+  @oneOf
+  """
+  type SendVerificationEmailResult {
+    ok: SendVerificationEmailOk
+    error: SendVerificationEmailError
+  }
+
+  input VerifyEmailInput {
+    userIdentityId: ID!
     email: String!
+    token: String!
+  }
+
+  type VerifyEmailOk {
+    verified: Boolean!
+  }
+
+  type VerifyEmailError implements Error {
+    message: String!
+  }
+
+  """
+  @oneOf
+  """
+  type VerifyEmailResult {
+    ok: VerifyEmailOk
+    error: VerifyEmailError
+  }
+
+  type User {
+    id: ID! @tag(name: "public")
+    email: String! @tag(name: "public")
     fullName: String!
-    displayName: String!
-    provider: AuthProvider!
+    displayName: String! @tag(name: "public")
+    provider: AuthProviderType! @tag(name: "public")
+    providers: [AuthProviderType!]!
     isAdmin: Boolean!
   }
 
@@ -57,31 +100,17 @@ export default gql`
     total: Int!
   }
 
-  type Member {
-    id: ID!
-    user: User!
-    isOwner: Boolean!
-    organizationAccessScopes: [OrganizationAccessScope!]!
-    projectAccessScopes: [ProjectAccessScope!]!
-    targetAccessScopes: [TargetAccessScope!]!
-  }
-
-  type MemberConnection {
-    nodes: [Member!]!
-    total: Int!
-  }
-
-  enum AuthProvider {
-    GOOGLE
-    GITHUB
+  enum AuthProviderType {
+    GOOGLE @tag(name: "public")
+    GITHUB @tag(name: "public")
     """
     Username-Password-Authentication
     """
-    USERNAME_PASSWORD
+    USERNAME_PASSWORD @tag(name: "public")
     """
     OpenID Connect
     """
-    OIDC
+    OIDC @tag(name: "public")
   }
 
   enum OrganizationAccessScope {
@@ -109,5 +138,33 @@ export default gql`
     REGISTRY_WRITE
     TOKENS_READ
     TOKENS_WRITE
+  }
+
+  enum PermissionLevelType {
+    ORGANIZATION @tag(name: "public")
+    PROJECT @tag(name: "public")
+    TARGET @tag(name: "public")
+    SERVICE @tag(name: "public")
+    APP_DEPLOYMENT @tag(name: "public")
+  }
+
+  type Permission {
+    id: ID! @tag(name: "public")
+    title: String! @tag(name: "public")
+    description: String! @tag(name: "public")
+    level: PermissionLevelType! @tag(name: "public")
+    dependsOnId: ID @tag(name: "public")
+    isReadOnly: Boolean!
+    warning: String
+    """
+    Whether this permission is assignable by the current viewer.
+    """
+    isAssignableByViewer: Boolean!
+  }
+
+  type PermissionGroup {
+    id: ID! @tag(name: "public")
+    title: String! @tag(name: "public")
+    permissions: [Permission!]! @tag(name: "public")
   }
 `;

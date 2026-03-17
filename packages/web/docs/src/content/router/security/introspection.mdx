@@ -1,0 +1,53 @@
+---
+title: 'Introspection'
+---
+
+# Introspection
+
+One of the powerful features of GraphQL is its ability to introspect the schema, allowing clients to
+dynamically explore the types, fields, and operations available in the API. Usually this feature is
+used by tools like GraphiQL, Apollo Studio Explorer, or other visual graph explorers to provide a
+better developer experience. Also other tools like
+[GraphQL Code Generator](https://the-guild.dev/graphql/codegen) to generate type-safe
+client/frontend code based on the schema.
+
+This guide explains how to configure the GraphQL router to disable introspection queries for
+enhanced security in production environments. For the complete configuration options,
+[see `introspection` in the configuration reference](../configuration/introspection).
+
+## Why Disable Introspection?
+
+Introspection queries provide detailed information about the schema of your GraphQL API, which can
+be useful for development and debugging. However, in production environments, exposing this
+information can pose security risks, as it may reveal sensitive details about your API's structure
+and capabilities to potential attackers. By disabling introspection, you can reduce the attack
+surface of your GraphQL API and help protect against unauthorized access.
+
+{/* TODO: Later we'll mention persisted operations here */}
+
+However, there are a lot of valid use cases for keeping introspection enabled even in production
+environments, especially if your GraphQL API is public or consumed by 3rd-party clients. In those
+cases, you might want to consider alternative security measures, such as applying some limitations
+on the complexity of the operations, rate-limiting etc.
+
+## Disabling introspection
+
+To disable introspection in your GraphQL router, you can set the `introspection` configuration
+option to `false` in your `router.config.yaml` file:
+
+```yaml
+introspection: false
+```
+
+## Disabling introspection based on the request
+
+Sometimes you might want to disable introspection based on certain conditions, such as the presence
+of a specific header or the request's origin. You can achieve this by using an expression for
+dynamic evaluation.
+
+```yaml
+introspection:
+  expression: '.request.headers."x-allow-introspection" == "secret-access-key"'
+```
+
+[Learn more how to use expressions in the configuration](./expressions).

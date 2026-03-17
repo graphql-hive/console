@@ -2,16 +2,17 @@ import { createHash } from 'node:crypto';
 import { DocumentNode, GraphQLError, parse, print, SourceLocation } from 'graphql';
 import { z } from 'zod';
 import type { AvailableRulesResponse, PolicyConfigurationObject } from '@hive/policy';
-import type { CompositionFailureError, ContractsInputType } from '@hive/schema';
+import type { CompositionFailureError } from '@hive/schema';
 import type { schema_policy_resource } from '@hive/storage';
 import type {
   AlertChannelType,
   AlertType,
-  AuthProvider,
+  AuthProviderType,
   OrganizationAccessScope,
   ProjectAccessScope,
   TargetAccessScope,
 } from '../__generated__/types';
+import type { ResourceAssignmentGroup } from '../modules/organization/lib/resource-assignment-model';
 import { parseGraphQLSource, sortDocumentNode } from './schema';
 
 export const NameModel = z
@@ -115,11 +116,13 @@ export function createSDLHash(sdl: string): string {
   );
 }
 
-export function createSchemaObject(
-  schema:
-    | Pick<SingleSchema, 'sdl'>
-    | Pick<PushedCompositeSchema, 'sdl' | 'service_name' | 'service_url'>,
-): SchemaObject {
+export type CreateSchemaObjectInput = {
+  sdl: string;
+  serviceName?: string | null;
+  serviceUrl?: string | null;
+};
+
+export function createSchemaObject(schema: CreateSchemaObjectInput): SchemaObject {
   let document: DocumentNode;
 
   try {
@@ -134,8 +137,8 @@ export function createSchemaObject(
   return {
     document,
     raw: schema.sdl,
-    source: 'service_name' in schema ? schema.service_name : emptySource,
-    url: 'service_url' in schema ? schema.service_url : null,
+    source: schema.serviceName ?? emptySource,
+    url: schema.serviceUrl ?? null,
   };
 }
 
@@ -145,7 +148,7 @@ export enum ProjectType {
   SINGLE = 'SINGLE',
 }
 
-export enum NativeFederationCompatibilityStatus {
+export enum NativeFederationCompatibilityStatusType {
   COMPATIBLE = 'COMPATIBLE',
   INCOMPATIBLE = 'INCOMPATIBLE',
   UNKNOWN = 'UNKNOWN',
@@ -174,10 +177,6 @@ export interface Organization {
   getStarted: OrganizationGetStarted;
   featureFlags: {
     /**
-     * @deprecated This feature flag is now a default for newly created organizations and projects.
-     */
-    compareToPreviousComposableVersion: boolean;
-    /**
      * Forces selected targets to use @apollo/federation library
      * when native composition is enabled for a project.
      * This is a temporary solution, requested by one of Hive users.
@@ -190,17 +189,23 @@ export interface Organization {
      */
     forceLegacyCompositionInTargets: string[];
     appDeployments: boolean;
+    otelTracing: boolean;
+    schemaProposals: boolean;
   };
   zendeskId: string | null;
+  /** ID of the user that owns the organization */
+  ownerId: string;
 }
 
 export interface OrganizationInvitation {
-  organization_id: string;
+  id: string;
+  organizationId: string;
   code: string;
   email: string;
-  created_at: string;
-  expires_at: string;
-  role: OrganizationMemberRole;
+  createdAt: string;
+  expiresAt: string;
+  roleId: string;
+  assignedResources: ResourceAssignmentGroup | null;
 }
 
 export interface OrganizationBilling {
@@ -217,7 +222,12 @@ export interface OIDCIntegration {
   tokenEndpoint: string;
   userinfoEndpoint: string;
   authorizationEndpoint: string;
+  additionalScopes: string[];
+  oidcUserJoinOnly: boolean;
   oidcUserAccessOnly: boolean;
+  requireInvitation: boolean;
+  defaultMemberRoleId: string | null;
+  defaultResourceAssignment: ResourceAssignmentGroup | null;
 }
 
 export interface CDNAccessToken {
@@ -234,6 +244,15 @@ export interface DocumentCollection {
   id: string;
   title: string;
   description: string | null;
+  targetId: string;
+  createdByUserId: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface PreflightScript {
+  id: string;
+  sourceCode: string;
   targetId: string;
   createdByUserId: string | null;
   createdAt: string;
@@ -278,12 +297,50 @@ export type PaginatedDocumentCollectionOperations = Readonly<{
   }>;
 }>;
 
+export type SavedFilterVisibility = 'private' | 'shared';
+
+export interface InsightsFilterData {
+  operationHashes: string[];
+  clientFilters: Array<{ name: string; versions: string[] | null }>;
+  dateRange: { from: string; to: string } | null;
+  excludeOperations?: boolean;
+  excludeClientFilters?: boolean;
+}
+
+export interface SavedFilter {
+  id: string;
+  projectId: string;
+  createdByUserId: string;
+  updatedByUserId: string | null;
+  name: string;
+  description: string | null;
+  filters: InsightsFilterData;
+  visibility: SavedFilterVisibility;
+  viewsCount: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export type PaginatedSavedFilters = Readonly<{
+  edges: ReadonlyArray<{
+    node: SavedFilter;
+    cursor: string;
+  }>;
+  pageInfo: Readonly<{
+    hasNextPage: boolean;
+    hasPreviousPage: boolean;
+    startCursor: string;
+    endCursor: string;
+  }>;
+}>;
+
 export interface Project {
   id: string;
   slug: string;
   orgId: string;
   name: string;
   type: ProjectType;
+  createdAt: string;
   buildUrl?: string | null;
   validationUrl?: string | null;
   /**
@@ -291,7 +348,6 @@ export interface Project {
    * TODO: All code referencing this field should be removed at some point.
    */
   gitRepository?: `${string}/${string}` | null;
-  legacyRegistryModel: boolean;
   useProjectNameInGithubCheck: boolean;
   externalComposition: {
     enabled: boolean;
@@ -308,6 +364,7 @@ export interface Target {
   orgId: string;
   name: string;
   graphqlEndpointUrl: string | null;
+  failDiffOnDangerousChange: boolean;
 }
 
 export interface Token {
@@ -318,7 +375,7 @@ export interface Token {
   project: string;
   organization: string;
   date: string;
-  lastUsedAt: string;
+  lastUsedAt: string | null;
   scopes: readonly string[];
 }
 
@@ -327,11 +384,9 @@ export interface User {
   email: string;
   fullName: string;
   displayName: string;
-  provider: AuthProvider;
+  providers: AuthProviderType[];
   superTokensUserId: string | null;
   isAdmin: boolean;
-  externalAuthUserId: string | null;
-  oidcIntegrationId: string | null;
   zendeskId: string | null;
 }
 
@@ -349,18 +404,30 @@ export interface Member {
     scopes: Array<OrganizationAccessScope | ProjectAccessScope | TargetAccessScope>;
     organizationId: string;
     membersCount: number | undefined;
-  } | null;
+  };
   oidcIntegrationId: string | null;
   connectedToZendesk: boolean;
 }
 
 export interface TargetSettings {
   validation: {
-    enabled: boolean;
+    isEnabled: boolean;
     period: number;
     percentage: number;
+    requestCount: number;
+    breakingChangeFormula: 'PERCENTAGE' | 'REQUEST_COUNT';
     targets: string[];
     excludedClients: string[];
+    excludedAppDeployments: string[];
+  };
+  failDiffOnDangerousChange: boolean;
+  appDeploymentProtection: {
+    isEnabled: boolean;
+    minDaysInactive: number;
+    minDaysSinceCreation: number;
+    maxTrafficPercentage: number;
+    trafficPeriodDays: number;
+    ruleLogic: 'AND' | 'OR';
   };
 }
 
@@ -375,17 +442,13 @@ export interface ComposeAndValidateResult {
     supergraph: string | null;
   }> | null;
   tags: Array<string> | null;
-}
-
-export interface Orchestrator {
-  composeAndValidate(
-    schemas: SchemaObject[],
-    config: {
-      external: Project['externalComposition'];
-      native: boolean;
-      contracts: ContractsInputType | null;
-    },
-  ): Promise<ComposeAndValidateResult>;
+  schemaMetadata: Record<
+    string,
+    Array<{ name: string; content: string; source: string | null }>
+  > | null;
+  metadataAttributes: null | Record<string, string[]>;
+  includesNetworkError?: boolean;
+  includesException?: boolean;
 }
 
 export interface AlertChannel {
@@ -432,26 +495,3 @@ export type SchemaPolicy = {
 };
 
 export type SchemaPolicyAvailableRuleObject = AvailableRulesResponse[0];
-
-export const OrganizationMemberRoleModel = z
-  .object({
-    id: z.string(),
-    organization_id: z.string(),
-    name: z.string(),
-    description: z.string(),
-    locked: z.boolean(),
-    scopes: z.array(z.string()),
-    members_count: z.number().optional(),
-  })
-  .transform(role => ({
-    id: role.id,
-    // Why? When using organizationId alias for a column, the column name is converted to organizationid
-    organizationId: role.organization_id,
-    membersCount: role.members_count,
-    name: role.name,
-    description: role.description,
-    locked: role.locked,
-    // Cast string to an array of enum
-    scopes: role.scopes as (OrganizationAccessScope | ProjectAccessScope | TargetAccessScope)[],
-  }));
-export type OrganizationMemberRole = z.infer<typeof OrganizationMemberRoleModel>;
