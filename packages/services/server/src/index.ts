@@ -138,7 +138,7 @@ export async function main() {
       }
 
       if (req.headers.origin !== env.hiveServices.webApp.url) {
-        // return callback(new CorsError());
+        return callback(new CorsError());
       }
 
       // We need to treat requests from the web app a bit differently than others.
