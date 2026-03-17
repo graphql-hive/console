@@ -129,6 +129,7 @@ function smtp(config: SMTPEmailProviderConfig, emailFrom: string) {
         to: email.to,
         subject: email.subject,
         html: email.body,
+        textEncoding: 'base64',
       });
     },
     history: [],
