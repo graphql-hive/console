@@ -505,11 +505,7 @@ export default class Dev extends Command<typeof Dev> {
   }
 
   private async resolveSdlFromUrl(url: string) {
-    // const result = await this.graphql(url).request({ operation: ServiceIntrospectionQuery });
-    // const sdl = result._service.sdl;
-    const sdl = await loadSchema('federation-subgraph-introspection', url).catch(error => {
-      this.handleFetchError(error);
-    });
+    const sdl = await loadSchema('federation-subgraph-introspection', url);
 
     if (!sdl) {
       throw new IntrospectionError();
