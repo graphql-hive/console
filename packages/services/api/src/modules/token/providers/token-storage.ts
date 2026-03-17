@@ -75,16 +75,25 @@ export class TokenStorage {
   }): Promise<readonly string[]> {
     this.logger.debug('Deleting tokens (input=%o)', input);
 
+    const deletedIds: Array<string> = [];
+
     await Promise.all(
       input.tokenIds.map(token =>
-        this.tokensService.deleteToken.mutate({
-          targetId: input.targetId,
-          token,
-        }),
+        this.tokensService.deleteToken
+          .mutate({
+            targetId: input.targetId,
+            token,
+          })
+          .then(didDelete => {
+            if (!didDelete) {
+              return;
+            }
+            deletedIds.push(token);
+          }),
       ),
     );
 
-    return input.tokenIds;
+    return deletedIds;
   }
 
   async invalidateTokens(tokens: string[]) {

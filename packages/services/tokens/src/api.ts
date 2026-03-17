@@ -145,9 +145,12 @@ export const tokensApiRouter = t.router({
     )
     .mutation(async ({ ctx, input }) => {
       try {
-        await ctx.storage.deleteToken({ targetId: input.targetId, hashedToken: input.token });
+        const result = await ctx.storage.deleteToken({
+          targetId: input.targetId,
+          hashedToken: input.token,
+        });
 
-        return true;
+        return result;
       } catch (error) {
         ctx.errorHandler('Failed to delete a token', error as Error);
 

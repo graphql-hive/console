@@ -27,7 +27,7 @@ export interface Storage {
   readTarget(targetId: string): Promise<StorageItem[]>;
   readToken(hashedToken: string, maskedToken: string): Promise<StorageItem | null>;
   writeToken(item: Omit<StorageItem, 'date' | 'lastUsedAt'>): Promise<StorageItem>;
-  deleteToken(args: { targetId: string; hashedToken: string }): Promise<void>;
+  deleteToken(args: { targetId: string; hashedToken: string }): Promise<boolean>;
   invalidateTokens(hashedTokens: string[]): Promise<void>;
 }
 
@@ -253,7 +253,7 @@ export async function createStorage(
       return cacheEntry;
     }),
     deleteToken: tracker.wrap(async args => {
-      await db.deleteToken({
+      return await db.deleteToken({
         targetId: args.targetId,
         token: args.hashedToken,
         async postDeletionTransaction() {
