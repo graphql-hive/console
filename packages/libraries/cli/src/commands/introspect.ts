@@ -25,8 +25,8 @@ export default class Introspect extends Command<typeof Introspect> {
     type: Flags.string({
       aliases: ['t'],
       description:
-        'Type of the endpoint (possible types: federation, graphql).' +
-        'If not provided we first attempt federation introspection, then graphql introspection.',
+        "Type of the endpoint (possible types: 'federation', 'graphql')." +
+        ' If not provided federation introspection followed by graphql introspection is attempted.',
     }),
   };
 
