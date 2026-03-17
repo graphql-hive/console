@@ -1,5 +1,80 @@
 # hive
 
+## 10.1.0
+
+### Minor Changes
+
+- [#7832](https://github.com/graphql-hive/console/pull/7832)
+  [`d9f2d51`](https://github.com/graphql-hive/console/commit/d9f2d51f59b16bd30dc0bec47671090e64801b7b)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Create new ClickHouse materialized views for faster
+  affected app deployment lookups in schema checks and schema version.
+
+  **Caution**: If you are relying on the app deployments feature for schema checks it is recommended
+  to manually perform the following migration against your ClickHouse database after deploying this
+  version to ensure data consistency.
+
+  Substitute `$CLICKHOUSE_DB_USER` and `$CLICKHOUSE_DB_PASSWORD`, with the same credentials that
+  execute these migration.
+
+  ```sql
+  CREATE TABLE "tmp_app_deployments_backfill_target_id" (
+    "app_deployment_id" STRING,
+    "target_id" LowCardinality (STRING)
+  ) ENGINE = Memory;
+  
+  INSERT INTO
+    "tmp_app_deployments_backfill_target_id"
+  SELECT
+    "app_deployment_id",
+    "target_id"
+  FROM
+    "app_deployments";
+  
+  CREATE DICTIONARY "tmp_app_deployments_target_dict" ("app_deployment_id" STRING, "target_id" STRING) PRIMARY KEY "app_deployment_id" SOURCE (
+    CLICKHOUSE (
+      TABLE "tmp_app_deployments_backfill_target_id" USER '$CLICKHOUSE_DB_USER' PASSWORD '$CLICKHOUSE_DB_PASSWORD'
+    )
+  ) LAYOUT (HASHED ()) LIFETIME (3600);
+  
+  ALTER TABLE "app_deployment_documents"
+  UPDATE "target_id" = dictGetString (
+    'tmp_app_deployments_target_dict',
+    'target_id',
+    "app_deployment_id"
+  )
+  WHERE
+    "target_id" = '';
+  
+  INSERT INTO
+    "app_deployment_document_coordinates" (
+      "target_id",
+      "coordinate",
+      "app_deployment_id",
+      "document_hash",
+      "operation_name"
+    )
+  SELECT
+    "target_id",
+    arrayJoin ("schema_coordinates") AS "schema_coordinate",
+    "app_deployment_id",
+    "document_hash",
+    "operation_name"
+  FROM
+    "app_deployment_documents"
+  WHERE
+    "target_id" != "";
+  
+  DROP DICTIONARY "tmp_app_deployments_target_dict";
+  
+  DROP TABLE "tmp_app_deployments_backfill_target_id";
+  ```
+
+### Patch Changes
+
+- [#7851](https://github.com/graphql-hive/console/pull/7851)
+  [`219cac8`](https://github.com/graphql-hive/console/commit/219cac8c4d6e3ee01c28da307c7971cce884bc2c)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Fix access token expiration date.
+
 ## 10.0.0
 
 ### Major Changes
