@@ -1,4 +1,3 @@
-import colors from 'colors';
 import { concatAST, parse, print, stripIgnoredCharacters } from 'graphql';
 import { CodeFileLoader } from '@graphql-tools/code-file-loader';
 import { GraphQLFileLoader } from '@graphql-tools/graphql-file-loader';
@@ -11,8 +10,6 @@ import { FragmentType, graphql, useFragment as unmaskFragment, useFragment } fro
 import { SchemaWarningConnection, SeverityLevelType } from '../gql/graphql';
 import { graphqlRequest } from './graphql-request';
 import { Texture } from './texture/texture';
-
-const indent = '  ';
 
 const severityLevelMap: Record<SeverityLevelType, string> = {
   [SeverityLevelType.Breaking]: Texture.colors.red('-'),

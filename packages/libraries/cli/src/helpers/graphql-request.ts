@@ -25,8 +25,6 @@ export function graphqlRequest(config: {
     ...config.additionalHeaders,
   };
 
-  const isDebug = config.debug;
-
   return {
     request: async <TResult, TVariables>(
       args: {
