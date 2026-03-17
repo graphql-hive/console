@@ -73,7 +73,7 @@
     "@graphql-codegen/typescript-operations": "5.0.2",
     "@graphql-codegen/typescript-resolvers": "5.1.0",
     "@graphql-codegen/urql-introspection": "3.0.1",
-    "@graphql-eslint/eslint-plugin": "3.20.1",
+    "@graphql-eslint/eslint-plugin": "4.4.0",
     "@graphql-inspector/cli": "6.0.6",
     "@graphql-inspector/core": "7.1.2",
     "@graphql-inspector/patch": "0.1.3",

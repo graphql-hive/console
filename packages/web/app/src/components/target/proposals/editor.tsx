@@ -81,6 +81,7 @@ const Proposals_SelectFragment = graphql(`
 
 const Proposals_TargetProjectTypeFragment = graphql(`
   fragment Proposals_TargetProjectTypeFragment on Target {
+    id
     project {
       id
       type
