@@ -23,7 +23,7 @@ import {
 import { Bar, BarChart, ReferenceArea, XAxis } from 'recharts';
 import { useClient, useQuery } from 'urql';
 import { z } from 'zod';
-import { Page, TargetLayout, useTargetReference } from '@/components/layouts/target';
+import { Page, TargetLayout } from '@/components/layouts/target';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -65,7 +65,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { FragmentType, graphql, useFragment } from '@/gql';
 import { useDateRangeController } from '@/lib/hooks/use-date-range-controller';
 import { cn } from '@/lib/utils';
-import { Link, useNavigate, useRouter } from '@tanstack/react-router';
+import { Link, useNavigate, useParams, useRouter } from '@tanstack/react-router';
 import {
   flexRender,
   getCoreRowModel,
@@ -310,7 +310,9 @@ const TracesList = memo(function TracesList(
     [router],
   );
 
-  const targetRef = useTargetReference();
+  const targetRef = useParams({
+    from: '/authenticated/$organizationSlug/$projectSlug/$targetSlug/traces',
+  });
   const table = useReactTable({
     data,
     columns: [
@@ -1109,7 +1111,9 @@ function TargetTracesPageContent(
       range: Preset['range'] | null;
     },
 ) {
-  const targetRef = useTargetReference();
+  const targetRef = useParams({
+    from: '/authenticated/$organizationSlug/$projectSlug/$targetSlug/traces',
+  });
 
   const dateRangeController = useDateRangeController({
     // TODO: ressolve retention from account
