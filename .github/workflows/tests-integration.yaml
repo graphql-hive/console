@@ -40,7 +40,9 @@ jobs:
 
       - name: configure env vars
         if: ${{ inputs.configureEnv != '' }}
-        run: ${{ inputs.configureEnv }}
+        env:
+          CONFIGURE_ENV: ${{ inputs.configureEnv }}
+        run: $CONFIGURE_ENV
 
       - name: setup environment
         uses: ./.github/actions/setup
