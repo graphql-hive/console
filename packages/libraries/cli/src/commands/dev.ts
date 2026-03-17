@@ -497,14 +497,18 @@ export default class Dev extends Command<typeof Dev> {
   }
 
   private async resolveSdlFromPath(path: string) {
-    const sdl = await loadSchema('introspection', path);
+    const sdl = await loadSchema(null, path, {
+      logger: this.logger,
+    });
     invariant(typeof sdl === 'string' && sdl.length > 0, `Read empty schema from ${path}`);
 
     return sdl;
   }
 
   private async resolveSdlFromUrl(url: string) {
-    const sdl = await loadSchema('federation-subgraph-introspection', url);
+    const sdl = await loadSchema('only-federation-introspection', url, {
+      logger: this.logger,
+    });
 
     if (!sdl) {
       throw new IntrospectionError();

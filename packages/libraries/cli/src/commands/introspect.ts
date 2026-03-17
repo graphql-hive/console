@@ -22,9 +22,11 @@ export default class Introspect extends Command<typeof Introspect> {
       description: 'HTTP header to add to the introspection request (in key:value format)',
       multiple: true,
     }),
-    subgraph: Flags.boolean({
-      description: `Use Federation's Query._service field instead of GraphQL's built-in introspection query.`,
-      default: false,
+    type: Flags.string({
+      aliases: ['t'],
+      description:
+        'Type of the endpoint (possible types: federation, graphql).' +
+        'If not provided we first attempt federation introspection, then graphql introspection.',
     }),
   };
 
@@ -52,11 +54,15 @@ export default class Introspect extends Command<typeof Introspect> {
     );
 
     let schema = await loadSchema(
-      flags['subgraph'] === true ? 'federation-subgraph-introspection' : 'introspection',
+      !flags['type']
+        ? 'first-federation-then-graphql-introspection'
+        : flags['type'] === 'federation'
+          ? 'only-federation-introspection'
+          : 'only-graphql-introspection',
       args.location,
       {
         headers,
-        method: 'POST',
+        logger: this.logger,
       },
     ).catch(err => {
       this.logFailure(err);

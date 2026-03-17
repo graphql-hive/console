@@ -1,5 +1,6 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { env } from 'node:process';
+import { Logger } from '@graphql-hive/core';
 import { Command, Flags, Interfaces } from '@oclif/core';
 import { Config, GetConfigurationValueType, ValidConfigurationKeys } from './helpers/config';
 import {
@@ -55,6 +56,16 @@ export default abstract class BaseCommand<T extends typeof Command> extends Comm
     this.flags = flags as Flags<T>;
     this.args = args as Args<T>;
   }
+
+  protected logger: Logger = {
+    info: this.logInfo,
+    error: this.logFailure,
+    debug: (...args) => {
+      if (this.flags.debug) {
+        this.logInfo(...args);
+      }
+    },
+  };
 
   logSuccess(...args: any[]) {
     this.log(Texture.success(...args));
@@ -169,17 +180,8 @@ export default abstract class BaseCommand<T extends typeof Command> extends Comm
     return graphqlRequest({
       endpoint: registry,
       additionalHeaders: requestHeaders,
-      debug: this.flags.debug,
       version: this.config.version,
-      logger: {
-        info: this.logInfo,
-        error: this.logFailure,
-        debug: (...args) => {
-          if (this.config.debug) {
-            this.logInfo(...args);
-          }
-        },
-      },
+      logger: this.logger,
     });
   }
 

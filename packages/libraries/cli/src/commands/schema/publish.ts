@@ -273,7 +273,9 @@ export default class SchemaPublish extends Command<typeof SchemaPublish> {
 
       let sdl: string;
       try {
-        const rawSdl = await loadSchema('introspection', file);
+        const rawSdl = await loadSchema('first-federation-then-graphql-introspection', file, {
+          logger: this.logger,
+        });
         invariant(typeof rawSdl === 'string' && rawSdl.length > 0, 'Schema seems empty');
         const transformedSDL = print(transformCommentsToDescriptions(rawSdl));
         sdl = minifySchema(transformedSDL);

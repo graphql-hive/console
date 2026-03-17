@@ -45,6 +45,10 @@ export async function schemaPublish(args: string[]) {
   );
 }
 
+export async function introspect(args: string[]) {
+  return await exec(['introspect', ...args].join(' '));
+}
+
 export async function appRetire(args: string[]) {
   const registryAddress = await getServiceHost('server', 8082);
   return await exec(

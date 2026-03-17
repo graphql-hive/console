@@ -1,10 +1,11 @@
 import { concatAST, parse, print, stripIgnoredCharacters } from 'graphql';
+import { LegacyLogger } from '@graphql-hive/core/typings/client/types';
 import { CodeFileLoader } from '@graphql-tools/code-file-loader';
 import { GraphQLFileLoader } from '@graphql-tools/graphql-file-loader';
 import { JsonFileLoader } from '@graphql-tools/json-file-loader';
 import { loadTypedefs } from '@graphql-tools/load';
 import { UrlLoader } from '@graphql-tools/url-loader';
-import type { Loader } from '@graphql-tools/utils';
+import type { BaseLoaderOptions, Loader, Source } from '@graphql-tools/utils';
 import type { TypedDocumentNode } from '@graphql-typed-document-node/core';
 import { FragmentType, graphql, useFragment as unmaskFragment, useFragment } from '../gql';
 import { SchemaWarningConnection, SeverityLevelType } from '../gql/graphql';
@@ -163,20 +164,30 @@ export async function loadSchema(
    * because it will try to introspect the schema
    * instead of fetching the SDL with directives.
    */
-  intent: 'introspection' | 'federation-subgraph-introspection',
+  httpLoadingIntent:
+    | 'first-federation-then-graphql-introspection'
+    | 'only-graphql-introspection'
+    | 'only-federation-introspection'
+    | null,
   file: string,
-  options?: {
+  options: {
+    logger: LegacyLogger;
     headers?: Record<string, string>;
     method?: 'GET' | 'POST';
   },
 ) {
-  const loaders: Loader[] = [new CodeFileLoader(), new GraphQLFileLoader(), new JsonFileLoader()];
+  const logger = options?.logger;
+  const loaders: Loader[] = [];
 
-  if (intent === 'federation-subgraph-introspection') {
-    loaders.push(new FederationSubgraphUrlLoader());
-  } else {
-    loaders.push(new UrlLoader());
+  if (httpLoadingIntent === 'first-federation-then-graphql-introspection') {
+    loaders.unshift(new FederationSubgraphIntrospectionThenGraphQLIntrospectionUrlLoader(logger));
+  } else if (httpLoadingIntent === 'only-federation-introspection') {
+    loaders.unshift(new FederationSubgraphUrlLoader(logger));
+  } else if (httpLoadingIntent === 'only-graphql-introspection') {
+    loaders.unshift(new UrlLoader());
   }
+
+  loaders.push(new CodeFileLoader(), new GraphQLFileLoader(), new JsonFileLoader());
 
   const sources = await loadTypedefs(file, {
     ...options,
@@ -192,24 +203,59 @@ export function minifySchema(schema: string): string {
 }
 
 class FederationSubgraphUrlLoader implements Loader {
-  async load(pointer: string) {
+  constructor(private logger?: LegacyLogger) {}
+
+  async load(
+    pointer: string,
+    options?: BaseLoaderOptions & { headers?: Record<string, string> },
+  ): Promise<Array<Source>> {
     if (!pointer.startsWith('http://') && !pointer.startsWith('https://')) {
-      return null;
+      this.logger?.debug?.('Provided endpoint is not HTTP, skip introspection.');
+      return [];
     }
 
-    const response = await graphqlRequest({
+    const client = graphqlRequest({
+      logger: this.logger,
       endpoint: pointer,
-      logger: console,
-    }).request({
-      operation: parse(`
+      additionalHeaders: {
+        ...options?.headers,
+      },
+    });
+
+    this.logger?.debug?.('Attempt "_Service" type lookup via "Query.__type".');
+
+    // We can check if the schema is a subgraph by looking for the `_Service` type.
+    const isSubgraph = await client.request({
+      operation: parse(/* GraphQL */ `
+        {
+          __type(name: "_Service") {
+            name
+          }
+        }
+      `) as TypedDocumentNode<{ __type: null | { name: string } }, {}>,
+    });
+
+    if (isSubgraph.__type === null) {
+      this.logger?.debug?.('Type not found, this is not a Federation subgraph.');
+      return [];
+    }
+
+    this.logger?.debug?.(
+      'Resolved "_Service" type. Federation subgraph detected.' +
+        'Attempt Federation introspection via "Query._service" field.',
+    );
+
+    const response = await client.request({
+      operation: parse(/* GraphQL */ `
         query GetFederationSchema {
           _service {
             sdl
           }
         }
       `) as TypedDocumentNode<{ _service: { sdl: string } }, {}>,
-      variables: undefined,
     });
+
+    this.logger?.debug?.('Resolved subgraph SDL successfully.');
 
     const sdl = minifySchema(response._service.sdl);
 
@@ -219,5 +265,27 @@ class FederationSubgraphUrlLoader implements Loader {
         rawSDL: sdl,
       },
     ];
+  }
+}
+
+class FederationSubgraphIntrospectionThenGraphQLIntrospectionUrlLoader implements Loader {
+  private urlLoader = new UrlLoader();
+  private federationLoader: FederationSubgraphUrlLoader;
+  constructor(private logger?: LegacyLogger) {
+    this.federationLoader = new FederationSubgraphUrlLoader(logger);
+  }
+
+  async load(pointer: string) {
+    if (!pointer.startsWith('http://') && !pointer.startsWith('https://')) {
+      this.logger?.debug?.('Provided endpoint is not HTTP, skip introspection.');
+      return [];
+    }
+    this.logger?.debug?.('Attempt federation introspection');
+    let result = await this.federationLoader.load(pointer);
+    if (!result.length) {
+      this.logger?.debug?.('Attempt GraphQL introspection');
+      result = await this.urlLoader.load(pointer, {});
+    }
+    return result;
   }
 }

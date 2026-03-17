@@ -15,8 +15,7 @@ export function graphqlRequest(config: {
   endpoint: string;
   additionalHeaders?: Record<string, string>;
   version?: string;
-  debug?: boolean;
-  logger: LegacyLogger;
+  logger?: LegacyLogger;
 }) {
   const requestHeaders = {
     'Content-Type': 'application/json',
@@ -94,7 +93,7 @@ export function graphqlRequest(config: {
           throw new InvalidRegistryTokenError();
         }
 
-        config.logger.debug?.(jsonData.errors.map(String).join('\n'));
+        config.logger?.debug?.(jsonData.errors.map(String).join('\n'));
         throw new APIError(
           jsonData.errors.map(e => e.message).join('\n'),
           cleanRequestId(response?.headers?.get('x-request-id')),
