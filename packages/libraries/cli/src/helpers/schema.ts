@@ -227,8 +227,8 @@ class FederationSubgraphUrlLoader implements Loader {
     // We can check if the schema is a subgraph by looking for the `_Service` type.
     const isSubgraph = await client.request({
       operation: parse(/* GraphQL */ `
-        query LookupService {
-          __type(name: "_Service") {
+        query ${'LookupService'} {
+          __type(name: "_Service") ${' '}{
             name
           }
         }
@@ -247,7 +247,7 @@ class FederationSubgraphUrlLoader implements Loader {
 
     const response = await client.request({
       operation: parse(/* GraphQL */ `
-        query GetFederationSchema {
+        query ${'GetFederationSchema'} {
           _service {
             sdl
           }
