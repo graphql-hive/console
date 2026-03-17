@@ -58,8 +58,8 @@ export default abstract class BaseCommand<T extends typeof Command> extends Comm
   }
 
   protected logger: Logger = {
-    info: this.logInfo,
-    error: this.logFailure,
+    info: (...args) => this.logInfo(...args),
+    error: (...args) => this.logFailure(...args),
     debug: (...args) => {
       if (this.flags.debug) {
         this.logInfo(...args);

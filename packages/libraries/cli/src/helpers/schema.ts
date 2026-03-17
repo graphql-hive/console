@@ -270,16 +270,16 @@ class FederationSubgraphIntrospectionThenGraphQLIntrospectionUrlLoader implement
     this.federationLoader = new FederationSubgraphUrlLoader(logger);
   }
 
-  async load(pointer: string) {
+  async load(pointer: string, options: BaseLoaderOptions & { headers?: Record<string, string> }) {
     if (!pointer.startsWith('http://') && !pointer.startsWith('https://')) {
       this.logger?.debug?.('Provided endpoint is not HTTP, skip introspection.');
       return [];
     }
     this.logger?.debug?.('Attempt federation introspection');
-    let result = await this.federationLoader.load(pointer);
+    let result = await this.federationLoader.load(pointer, options);
     if (!result.length) {
       this.logger?.debug?.('Attempt GraphQL introspection');
-      result = await this.urlLoader.load(pointer, {});
+      result = await this.urlLoader.load(pointer, options);
     }
     return result;
   }
