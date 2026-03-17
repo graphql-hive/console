@@ -31,7 +31,8 @@ export const handleTRPCError = experimental_standaloneMiddleware<{
   ctx: {
     req: FastifyRequest;
   };
-  input: Record<string, never> | null;
+  // eslint-disable-next-line
+  input: {};
 }>().create(async opts => {
   const result = await opts.next();
 
