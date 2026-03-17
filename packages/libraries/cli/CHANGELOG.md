@@ -1,5 +1,56 @@
 # @graphql-hive/cli
 
+## 0.59.0
+
+### Minor Changes
+
+- [#7859](https://github.com/graphql-hive/console/pull/7859)
+  [`bf00fbc`](https://github.com/graphql-hive/console/commit/bf00fbcc2d35278b9be46431f4a0c339a29f6de7)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Improve federation composition
+
+  - Support `file:` protocol and non-RFC 3986 in imported `link` url arguments
+  - Fix supergraph `@join__field` emission for Federation v1 `@external` fields and improve
+    `override`/`requires` edge-case handling.
+    - Drop Federation v1 `@join__field(external: true)` fields based on key usage in the subgraph
+      instead of aggregated field key usage across subgraphs.
+    - Avoid emitting redundant `@join__field(external: true)` metadata when a field is only required
+      through overridden paths.
+    - Tighten `@join__field` emission around @override and interface type fields.
+
+- [#5853](https://github.com/graphql-hive/console/pull/5853)
+  [`580918d`](https://github.com/graphql-hive/console/commit/580918de79e290279ae7be93ec7b065b47dff9bf)
+  Thanks [@kamilkisiela](https://github.com/kamilkisiela)! - Support introspection of federated
+  subgraph's schema in the `$ hive introspect` command.
+
+  This change allows developers to extract the schema of a subgraph (GraphQL Federation) from a
+  running service. It is useful if the GraphQL framework used in the subgraph does not emit the
+  schema as `.graphqls` file during build.
+
+  ***
+
+  The CLI attempts to automatically detect whether the endpoint is a a GraphQL Federation, by
+  checking whether the `_Service` type is accessible via introspection.
+
+  If you want to either force Apollo Subgraph or GraphQL introspection you can do that via the
+  `--type` flag.
+
+  ```sh
+  # Force GraphQL Introspection
+  hive introspect --type graphql http://localhost:3000/graphql
+  ```
+
+  ```sh
+  # Force GraphQL Federation Introspection
+  hive introspect --type federation http://localhost:3000/graphql
+  ```
+
+  The federation introspection requires the introspected GraphQL API is capable of resolving the
+  following two queries:
+
+  - **`{ __type(name: "_Service") { name } }`** for looking up whether the GraphQL service is a
+    Federation subgraph
+  - **`{ _service { sdl } }`** for retrieving the subgraph SDL
+
 ## 0.58.5
 
 ### Patch Changes
