@@ -227,7 +227,7 @@ class FederationSubgraphUrlLoader implements Loader {
             name
           }
         }
-      `) as TypedDocumentNode<{ __type: null | { name: string } }, {}>,
+      `) as TypedDocumentNode<{ __type: null | { name: string } }, Record<string, never>>,
     });
 
     if (isSubgraph.__type === null) {
@@ -247,7 +247,7 @@ class FederationSubgraphUrlLoader implements Loader {
             sdl
           }
         }
-      `) as TypedDocumentNode<{ _service: { sdl: string } }, {}>,
+      `) as TypedDocumentNode<{ _service: { sdl: string } }, Record<string, never>>,
     });
 
     this.logger?.debug?.('Resolved subgraph SDL successfully.');

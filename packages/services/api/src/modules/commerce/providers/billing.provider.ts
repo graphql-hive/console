@@ -6,7 +6,9 @@ import { IdTranslator } from '../../shared/providers/id-translator';
 import { Logger } from '../../shared/providers/logger';
 import { Storage } from '../../shared/providers/storage';
 import {
+  COMMERCE_CONFIG,
   COMMERCE_TRPC_CLIENT,
+  type CommerceConfig,
   type CommerceTrpcClient,
   type CommerceTrpcClientInputs,
 } from './commerce-client';
@@ -24,6 +26,7 @@ export class BillingProvider {
 
   constructor(
     @Inject(COMMERCE_TRPC_CLIENT) private client: CommerceTrpcClient,
+    @Inject(COMMERCE_CONFIG) commerceConfig: CommerceConfig,
     logger: Logger,
     private auditLog: AuditLogRecorder,
     private storage: Storage,
@@ -32,7 +35,7 @@ export class BillingProvider {
   ) {
     this.logger = logger.child({ source: 'CommerceProvider' });
 
-    this.enabled = !!client;
+    this.enabled = !!client && commerceConfig.billingEnabled;
   }
 
   async upgradeToPro(input: BillingInput['createSubscriptionForOrganization']) {
@@ -58,7 +61,7 @@ export class BillingProvider {
   }
 
   syncOrganization(input: BillingInput['syncOrganizationToStripe']) {
-    if (!this.client) {
+    if (!this.client || !this.enabled) {
       throw new Error(`Billing service is not configured!`);
     }
 
@@ -67,7 +70,7 @@ export class BillingProvider {
 
   async getAvailablePrices() {
     this.logger.debug('Getting available prices');
-    if (!this.client) {
+    if (!this.client || !this.enabled) {
       return null;
     }
 
@@ -86,7 +89,7 @@ export class BillingProvider {
 
   getActiveSubscription(input: BillingInput['activeSubscription']) {
     this.logger.debug('Fetching active subscription (input=%o)', input);
-    if (!this.client) {
+    if (!this.client || !this.enabled) {
       throw new Error(`Billing service is not configured!`);
     }
 
@@ -95,7 +98,7 @@ export class BillingProvider {
 
   invoices(input: BillingInput['invoices']) {
     this.logger.debug('Fetching invoices (input=%o)', input);
-    if (!this.client) {
+    if (!this.client || !this.enabled) {
       throw new Error(`Billing service is not configured!`);
     }
 
@@ -104,7 +107,7 @@ export class BillingProvider {
 
   upcomingInvoice(input: BillingInput['upcomingInvoice']) {
     this.logger.debug('Fetching upcoming invoices (input=%o)', input);
-    if (!this.client) {
+    if (!this.client || !this.enabled) {
       throw new Error(`Billing service is not configured!`);
     }
 
@@ -113,7 +116,7 @@ export class BillingProvider {
 
   async downgradeToHobby(input: BillingInput['cancelSubscriptionForOrganization']) {
     this.logger.debug('Downgrading to Hobby (input=%o)', input);
-    if (!this.client) {
+    if (!this.client || !this.enabled) {
       throw new Error(`Billing service is not configured!`);
     }
 
@@ -132,7 +135,7 @@ export class BillingProvider {
   async generateStripePortalLink(args: { organizationSlug: string }) {
     this.logger.debug('Generating Stripe portal link for id:' + args.organizationSlug);
 
-    if (!this.client) {
+    if (!this.client || !this.enabled) {
       throw new Error(`Billing service is not configured!`);
     }
 

@@ -37,7 +37,10 @@ const ThirdpartUserModel = z.object({
   timeJoined: z.number(),
 });
 
-const EmailPasswordOrThirdPartyUserModel = z.union([EmailPasswordUserModel, ThirdpartUserModel]);
+export const EmailPasswordOrThirdPartyUserModel = z.union([
+  EmailPasswordUserModel,
+  ThirdpartUserModel,
+]);
 
 export type EmailPasswordOrThirdPartyUser = z.TypeOf<typeof EmailPasswordOrThirdPartyUserModel>;
 

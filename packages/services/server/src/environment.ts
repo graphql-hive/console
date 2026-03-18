@@ -53,6 +53,10 @@ const EnvironmentModel = zod.object({
 
 const CommerceModel = zod.object({
   COMMERCE_ENDPOINT: emptyString(zod.string().url().optional()),
+  COMMERCE_BILLING: zod
+    .union([zod.literal('1'), zod.literal('0')])
+    .default('1')
+    .optional(),
 });
 
 const SentryModel = zod.union([
@@ -401,6 +405,7 @@ export const env = {
       ? {
           endpoint: commerce.COMMERCE_ENDPOINT,
           dateRetentionPurgeIntervalMinutes: 5,
+          billing: commerce.COMMERCE_BILLING === '0' ? false : true,
         }
       : null,
     schemaPolicy: base.SCHEMA_POLICY_ENDPOINT
