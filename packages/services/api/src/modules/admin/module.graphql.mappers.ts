@@ -1,7 +1,7 @@
 import type { Scalars } from '../../__generated__/types';
 import type { AdminOrganizationStats } from '../../shared/entities';
 
-export type AdminQueryMapper = {};
+export type AdminQueryMapper = object;
 export type AdminStatsMapper = {
   period: {
     from: Scalars['DateTime']['input'];

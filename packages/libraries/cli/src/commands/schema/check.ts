@@ -210,6 +210,7 @@ export default class SchemaCheck extends Command<typeof SchemaCheck> {
           description: SchemaCheck.flags['registry.endpoint'].description!,
         });
       } catch (e) {
+        this.logDebug(e);
         throw new MissingEndpointError();
       }
       const file = args.file;
@@ -222,6 +223,7 @@ export default class SchemaCheck extends Command<typeof SchemaCheck> {
           description: SchemaCheck.flags['registry.accessToken'].description!,
         });
       } catch (e) {
+        this.logDebug(e);
         throw new MissingRegistryTokenError();
       }
 

@@ -49,6 +49,7 @@ export default class AppPublish extends Command<typeof AppPublish> {
         description: AppPublish.flags['registry.endpoint'].description!,
       });
     } catch (e) {
+      this.logDebug(e);
       throw new MissingEndpointError();
     }
 
@@ -60,6 +61,7 @@ export default class AppPublish extends Command<typeof AppPublish> {
         description: AppPublish.flags['registry.accessToken'].description!,
       });
     } catch (e) {
+      this.logDebug(e);
       throw new MissingRegistryTokenError();
     }
 
