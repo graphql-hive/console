@@ -61,7 +61,7 @@ export class BillingProvider {
   }
 
   syncOrganization(input: BillingInput['syncOrganizationToStripe']) {
-    if (!this.client) {
+    if (!this.client || !this.enabled) {
       throw new Error(`Billing service is not configured!`);
     }
 
@@ -70,7 +70,7 @@ export class BillingProvider {
 
   async getAvailablePrices() {
     this.logger.debug('Getting available prices');
-    if (!this.client) {
+    if (!this.client || !this.enabled) {
       return null;
     }
 
@@ -89,7 +89,7 @@ export class BillingProvider {
 
   getActiveSubscription(input: BillingInput['activeSubscription']) {
     this.logger.debug('Fetching active subscription (input=%o)', input);
-    if (!this.client) {
+    if (!this.client || !this.enabled) {
       throw new Error(`Billing service is not configured!`);
     }
 
@@ -98,7 +98,7 @@ export class BillingProvider {
 
   invoices(input: BillingInput['invoices']) {
     this.logger.debug('Fetching invoices (input=%o)', input);
-    if (!this.client) {
+    if (!this.client || !this.enabled) {
       throw new Error(`Billing service is not configured!`);
     }
 
@@ -107,7 +107,7 @@ export class BillingProvider {
 
   upcomingInvoice(input: BillingInput['upcomingInvoice']) {
     this.logger.debug('Fetching upcoming invoices (input=%o)', input);
-    if (!this.client) {
+    if (!this.client || !this.enabled) {
       throw new Error(`Billing service is not configured!`);
     }
 
@@ -116,7 +116,7 @@ export class BillingProvider {
 
   async downgradeToHobby(input: BillingInput['cancelSubscriptionForOrganization']) {
     this.logger.debug('Downgrading to Hobby (input=%o)', input);
-    if (!this.client) {
+    if (!this.client || !this.enabled) {
       throw new Error(`Billing service is not configured!`);
     }
 
@@ -135,7 +135,7 @@ export class BillingProvider {
   async generateStripePortalLink(args: { organizationSlug: string }) {
     this.logger.debug('Generating Stripe portal link for id:' + args.organizationSlug);
 
-    if (!this.client) {
+    if (!this.client || !this.enabled) {
       throw new Error(`Billing service is not configured!`);
     }
 
