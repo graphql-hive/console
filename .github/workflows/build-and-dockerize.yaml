@@ -240,13 +240,17 @@ jobs:
 
       - name: 'publish docker multiarch manifest (tag: latest)'
         if: ${{ inputs.publishLatest }}
+        env:
+          TARGETS: ${{ inputs.targets }}
+          REGISTRY: ${{ inputs.registry }}
+          IMAGE_NAME: ${{ inputs.imageName }}
         run: |
-          targets=$(docker buildx bake -f docker/docker.hcl --print "${{ inputs.targets }}" | jq -r '.group."${{ inputs.targets }}".targets[]')
+          targets=$(docker buildx bake -f docker/docker.hcl --print "$TARGETS" | jq -r '.group."'"$TARGETS"'".targets[]')
 
           for target in $targets
           do
               echo "publishing multi-arch manifest for $target"
-              image_name="${{ inputs.registry }}/${{ inputs.imageName }}/$target:latest"
+              image_name="$REGISTRY/$IMAGE_NAME/$target:latest"
               echo "image name: $image_name"
 
               docker manifest create $image_name --amend "$image_name-arm64" --amend "$image_name-amd64"
