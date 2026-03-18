@@ -14,7 +14,8 @@ function filterEmailsByOrg(orgSlug: string, emails: emails.Email[]) {
 
 test('rate limit approaching and reached for organization', async () => {
   const { createOrg, ownerToken, ownerEmail } = await initSeed().createOwner();
-  const { createProject, organization } = await createOrg();
+  const { createProject, organization, overrideOrgPlan } = await createOrg();
+  await overrideOrgPlan('PRO');
   const { createTargetAccessToken, waitForRequestsCollected } = await createProject(
     ProjectType.Single,
   );

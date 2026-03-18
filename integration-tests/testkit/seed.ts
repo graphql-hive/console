@@ -53,7 +53,12 @@ import {
   updateTargetValidationSettings,
 } from './flow';
 import * as GraphQLSchema from './gql/graphql';
-import { ProjectType, SchemaPolicyInput, TargetAccessScope } from './gql/graphql';
+import {
+  ProjectType,
+  SchemaPolicyInput,
+  TargetAccessScope,
+  UpdateOrgRateLimitDocument,
+} from './gql/graphql';
 import { execute } from './graphql';
 import { createOIDCIntegration } from './oidc-integration.js';
 import {
@@ -197,6 +202,31 @@ export function initSeed() {
 
           return {
             organization,
+            async overrideOrgPlan(plan: 'PRO' | 'ENTERPRISE' | 'HOBBY') {
+              const pool = await createConnectionPool();
+
+              await pool.query(sql`
+                UPDATE organizations SET plan_name = ${plan} WHERE id = ${organization.id}
+              `);
+
+              await pool.end();
+            },
+            async updateOrgRateLimit(newLimit: number, token = ownerToken) {
+              const result = await execute({
+                document: UpdateOrgRateLimitDocument,
+                variables: {
+                  selector: {
+                    organizationSlug: organization.slug,
+                  },
+                  monthlyLimits: {
+                    operations: newLimit,
+                  },
+                },
+                authToken: token,
+              }).then(r => r.expectNoGraphQLErrors());
+
+              return result.updateOrgRateLimit;
+            },
             async createOrganizationAccessToken(
               args: {
                 permissions: Array<string>;
