@@ -386,7 +386,7 @@ test.concurrent('pagination', async ({ expect }) => {
 });
 
 test.concurrent(
-  'invalid app name is filtered out from created access token',
+  'invalid app name and service name is filtered out from created access token',
   async ({ expect }) => {
     const { createOrg, ownerToken } = await initSeed().createOwner();
     const org = await createOrg();
