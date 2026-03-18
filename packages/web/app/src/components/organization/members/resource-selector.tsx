@@ -6,6 +6,7 @@ import { Checkbox } from '@/components/base/checkbox/checkbox';
 import { ArrowDownIcon } from '@/components/ui/icon';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { useToast } from '@/components/ui/use-toast';
 import { graphql, useFragment, type FragmentType } from '@/gql';
 import * as GraphQLSchema from '@/gql/graphql';
 import { cn } from '@/lib/utils';
@@ -136,6 +137,7 @@ export function ResourceSelector(props: {
   forProjectId?: string;
   intent?: GraphQLSchema.ResourceSelectorIntentType;
 }) {
+  const { toast } = useToast();
   const organizationId = useFragment(ResourceSelector_OrganizationFragment, props.organization).id;
   const intent = props.intent ?? GraphQLSchema.ResourceSelectorIntentType.Admin;
   const [organizationQuery] = useQuery({
@@ -996,6 +998,21 @@ export function ResourceSelector(props: {
                                   const input: HTMLInputElement = ev.currentTarget;
                                   const serviceName = input.value.trim().toLowerCase();
 
+                                  if (!SERVICE_NAME_REGEX.test(serviceName)) {
+                                    toast({
+                                      description:
+                                        'Service name can only contain lowercase letters, numbers, and hyphens',
+                                    });
+                                    return;
+                                  }
+
+                                  if (serviceName.length > MAX_SERVICE_NAME_LENGTH) {
+                                    toast({
+                                      description: `Service name cannot exceed ${MAX_SERVICE_NAME_LENGTH} characters`,
+                                    });
+                                    return;
+                                  }
+
                                   if (!serviceName) {
                                     return;
                                   }
@@ -1271,3 +1288,6 @@ export function createResourceSelectionFromResourceAssignment(
     })),
   };
 }
+
+const SERVICE_NAME_REGEX = /^[a-z0-9-]+$/;
+const MAX_SERVICE_NAME_LENGTH = 64;
