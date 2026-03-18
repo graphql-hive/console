@@ -433,7 +433,7 @@ const LaboratoryContent = () => {
           <div className="w-full">
             <Tabs />
           </div>
-          <div className="bg-card flex-1 overflow-hidden">{contentNode}</div>
+          <div className="bg-card relative flex-1 overflow-hidden">{contentNode}</div>
         </ResizablePanel>
       </ResizablePanelGroup>
     </div>

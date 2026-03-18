@@ -7,15 +7,23 @@ import {
   FileTextIcon,
   HistoryIcon,
   MoreHorizontalIcon,
+  NetworkIcon,
+  PanelLeftCloseIcon,
+  PanelLeftOpenIcon,
   PlayIcon,
   PowerIcon,
   PowerOffIcon,
   SquarePenIcon,
+  TextAlignStartIcon,
 } from 'lucide-react';
 import { compressToEncodedURIComponent } from 'lz-string';
 import * as monaco from 'monaco-editor/esm/vs/editor/editor.api';
 import { toast } from 'sonner';
 import { z } from 'zod';
+import { GraphQLIcon } from '@/components/icons';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { ToggleGroup, ToggleGroupItem } from '@/laboratory/components/ui/toggle-group';
+import { QueryPlanTree, renderQueryPlan } from '@/lib/query-plan';
 import { DropdownMenuTrigger } from '@radix-ui/react-dropdown-menu';
 import { useForm } from '@tanstack/react-form';
 import type {
@@ -178,6 +186,47 @@ export const ResponsePreflight = ({ historyItem }: { historyItem?: LaboratoryHis
     </ScrollArea>
   );
 };
+export const ResponseQueryPlan = ({ historyItem }: { historyItem?: LaboratoryHistory | null }) => {
+  const [mode, setMode] = useState<'text' | 'visual'>('text');
+  return (
+    <div className="relative size-full">
+      <ToggleGroup
+        className="bg-card z-100 absolute right-3 top-2"
+        type="single"
+        variant="outline"
+        defaultValue={mode}
+        onValueChange={value => setMode(value as 'text' | 'visual')}
+      >
+        <ToggleGroupItem value="text" aria-label="Toggle text">
+          <TextAlignStartIcon className="size-4" />
+          Text
+        </ToggleGroupItem>
+        <ToggleGroupItem value="visual" aria-label="Toggle graph">
+          <NetworkIcon className="size-4" />
+          Graph
+        </ToggleGroupItem>
+      </ToggleGroup>
+      {mode === 'text' ? (
+        <Editor
+          value={renderQueryPlan(
+            JSON.parse((historyItem as LaboratoryHistoryRequest)?.response ?? '{}').extensions
+              ?.queryPlan ?? {},
+          )}
+          defaultLanguage="graphql"
+          theme="hive-laboratory"
+          options={{ readOnly: true }}
+        />
+      ) : (
+        <QueryPlanTree
+          plan={
+            JSON.parse((historyItem as LaboratoryHistoryRequest)?.response ?? '{}').extensions
+              ?.queryPlan ?? {}
+          }
+        />
+      )}
+    </div>
+  );
+};
 
 export const ResponseSubscription = ({
   historyItem,
@@ -245,6 +294,8 @@ export const ResponseSubscription = ({
 };
 
 export const Response = ({ historyItem }: { historyItem?: LaboratoryHistoryRequest | null }) => {
+  const [isMaximized, setIsMaximized] = useState(false);
+
   const isError = useMemo(() => {
     if (!historyItem) {
       return false;
@@ -262,10 +313,37 @@ export const Response = ({ historyItem }: { historyItem?: LaboratoryHistoryReque
   }, [historyItem]);
 
   return (
-    <Tabs defaultValue="response" className="grid size-full grid-rows-[auto_1fr]">
-      <TabsList className="h-[49.5px] w-full justify-start rounded-none border-b bg-transparent p-3">
+    <Tabs
+      defaultValue="response"
+      className={cn('grid size-full grid-rows-[auto_1fr]', {
+        'z-100 absolute inset-0': isMaximized,
+      })}
+    >
+      <TabsList className="bg-card h-[50px] w-full justify-start rounded-none border-b p-3">
+        <Tooltip>
+          <TooltipTrigger className="mr-2">
+            <Button
+              variant="ghost"
+              size="icon-sm"
+              className="p-1! size-6 rounded-sm"
+              onClick={() => setIsMaximized(prev => !prev)}
+            >
+              {isMaximized ? (
+                <PanelLeftOpenIcon className="text-muted-foreground size-4" />
+              ) : (
+                <PanelLeftCloseIcon className="text-muted-foreground size-4" />
+              )}
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>
+            {isMaximized ? 'Minimize panel size' : 'Maxmize panel size'}
+          </TooltipContent>
+        </Tooltip>
         <TabsTrigger value="response" className="grow-0 rounded-sm">
           Response
+        </TabsTrigger>
+        <TabsTrigger value="query-plan" className="grow-0 rounded-sm">
+          Query Plan
         </TabsTrigger>
         <TabsTrigger value="headers" className="grow-0 rounded-sm">
           Headers
@@ -314,6 +392,9 @@ export const Response = ({ historyItem }: { historyItem?: LaboratoryHistoryReque
       </TabsList>
       <TabsContent value="response" className="overflow-hidden">
         <ResponseBody historyItem={historyItem} />
+      </TabsContent>
+      <TabsContent value="query-plan" className="overflow-hidden">
+        <ResponseQueryPlan historyItem={historyItem} />
       </TabsContent>
       <TabsContent value="headers" className="overflow-hidden">
         <ResponseHeaders historyItem={historyItem} />

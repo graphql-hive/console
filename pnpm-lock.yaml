@@ -654,6 +654,9 @@ importers:
 
   packages/libraries/laboratory:
     dependencies:
+      dagrejs:
+        specifier: ^0.2.1
+        version: 0.2.1
       radix-ui:
         specifier: ^1.4.3
         version: 1.4.3(@types/react-dom@18.3.5(@types/react@18.3.18))(@types/react@18.3.18)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
@@ -12555,6 +12558,9 @@ packages:
   dagre-d3-es@7.0.11:
     resolution: {integrity: sha512-tvlJLyQf834SylNKax8Wkzco/1ias1OPw8DcUMDE7oUIoSEW25riQVuiu/0OWEFqT0cxHT3Pa9/D82Jr47IONw==}
 
+  dagrejs@0.2.1:
+    resolution: {integrity: sha512-4bb1y+4aM1xtkK7ieP0V7Xn/34GQfnCapl0yubrOMX8Qb/PIwM1Dii2uUBv/KtuzrQtxPliSP4r5MQBsnP6gNg==}
+
   damerau-levenshtein@1.0.8:
     resolution: {integrity: sha512-sdQSFB7+llfUcQHUQO3+B8ERRj0Oa4w9POWMI/puGtuf7gFywGmkaLCElnudfTiKZV+NvHqL0ifzdrI8Ro7ESA==}
 
@@ -14050,6 +14056,9 @@ packages:
       graphql: ^15.5.0 || ^16.0.0 || ^17.0.0-alpha.2
       react: ^16.8.0 || ^17 || ^18
       react-dom: ^16.8.0 || ^17 || ^18
+
+  graphlib@2.1.8:
+    resolution: {integrity: sha512-jcLLfkpoVGmH7/InMC/1hIvOPSUh38oJtGhvrOFGzioE1DZ+0YW16RgmOJhHiuWTvGiJQ9Z1Ik43JvkRPRvE+A==}
 
   graphql-config@4.5.0:
     resolution: {integrity: sha512-x6D0/cftpLUJ0Ch1e5sj1TZn6Wcxx4oMfmhaG9shM0DKajA9iR+j1z86GSTQ19fShbGvrSSvbIQsHku6aQ6BBw==}
@@ -35480,6 +35489,11 @@ snapshots:
       d3: 7.9.0
       lodash-es: 4.17.23
 
+  dagrejs@0.2.1:
+    dependencies:
+      graphlib: 2.1.8
+      lodash: 4.17.23
+
   damerau-levenshtein@1.0.8: {}
 
   dashdash@1.14.1:
@@ -37346,6 +37360,10 @@ snapshots:
       - '@types/react'
       - '@types/react-dom'
       - graphql-ws
+
+  graphlib@2.1.8:
+    dependencies:
+      lodash: 4.17.23
 
   graphql-config@4.5.0(@types/node@22.10.5)(encoding@0.1.13)(graphql@16.9.0):
     dependencies:
