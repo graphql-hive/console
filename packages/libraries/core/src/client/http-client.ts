@@ -150,9 +150,16 @@ export async function makeFetchCall(
       const timeoutSignal = AbortSignal.timeout(config.timeout ?? 20_000);
       const signal = config.signal ? abortSignalAny([config.signal, timeoutSignal]) : timeoutSignal;
 
+      let body: BodyInit | undefined | null;
+      if (typeof config.body === 'string') {
+        body = config.body;
+      } else if (config.body) {
+        body = new Uint8Array(config.body).buffer;
+      }
+
       const response = await ((config.fetchImplementation ?? fetch) as typeof fetch)(endpoint, {
         method: config.method,
-        body: config.body,
+        body,
         headers: {
           'x-request-id': requestId,
           ...actionHeader,

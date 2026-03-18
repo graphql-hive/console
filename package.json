@@ -85,7 +85,7 @@
     "@theguild/eslint-config": "0.13.1",
     "@theguild/federation-composition": "0.22.1",
     "@theguild/prettier-config": "2.0.7",
-    "@types/node": "22.10.5",
+    "@types/node": "24.10.9",
     "bob-the-bundler": "7.0.1",
     "cypress": "13.17.0",
     "dotenv": "16.4.7",
@@ -110,6 +110,9 @@
     "typescript": "5.7.3",
     "vite-tsconfig-paths": "5.1.4",
     "vitest": "4.0.9"
+  },
+  "resolutions": {
+    "typescript": "5.7.3"
   },
   "pnpm": {
     "overrides.esbuild": "To address CVE: https://github.com/graphql-hive/console/security/dependabot/259",
