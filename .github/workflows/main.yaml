@@ -74,11 +74,6 @@ jobs:
   typescript:
     uses: ./.github/workflows/typescript-typecheck.yaml
 
-  # Deploy Website to CloudFlare Pages
-  website:
-    uses: ./.github/workflows/website.yaml
-    secrets: inherit
-
   # GraphQL Schema Publish
   graphql-schema:
     uses: ./.github/workflows/graphql-schema-publish.yaml
