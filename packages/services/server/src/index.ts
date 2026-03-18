@@ -270,6 +270,7 @@ export async function main() {
       },
       commerce: {
         endpoint: env.hiveServices.commerce ? env.hiveServices.commerce.endpoint : null,
+        billingEnabled: env.hiveServices.commerce ? env.hiveServices.commerce.billing : false,
       },
       schemaService: {
         endpoint: env.hiveServices.schema.endpoint,

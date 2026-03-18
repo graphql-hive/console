@@ -6,7 +6,9 @@ import { IdTranslator } from '../../shared/providers/id-translator';
 import { Logger } from '../../shared/providers/logger';
 import { Storage } from '../../shared/providers/storage';
 import {
+  COMMERCE_CONFIG,
   COMMERCE_TRPC_CLIENT,
+  type CommerceConfig,
   type CommerceTrpcClient,
   type CommerceTrpcClientInputs,
 } from './commerce-client';
@@ -24,6 +26,7 @@ export class BillingProvider {
 
   constructor(
     @Inject(COMMERCE_TRPC_CLIENT) private client: CommerceTrpcClient,
+    @Inject(COMMERCE_CONFIG) commerceConfig: CommerceConfig,
     logger: Logger,
     private auditLog: AuditLogRecorder,
     private storage: Storage,
@@ -32,7 +35,7 @@ export class BillingProvider {
   ) {
     this.logger = logger.child({ source: 'CommerceProvider' });
 
-    this.enabled = !!client;
+    this.enabled = !!client && commerceConfig.billingEnabled;
   }
 
   async upgradeToPro(input: BillingInput['createSubscriptionForOrganization']) {

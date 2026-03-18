@@ -7,6 +7,7 @@ export type CommerceTrpcClient = CreateTRPCProxyClient<CommerceRouter> | null;
 export type CommerceTrpcClientInputs = inferRouterInputs<CommerceRouter>;
 export type CommerceConfig = {
   endpoint: string | null;
+  billingEnabled: boolean;
 };
 
 export const COMMERCE_TRPC_CLIENT = new InjectionToken<CommerceTrpcClient>('commerce-trpc-client');

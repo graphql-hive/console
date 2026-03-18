@@ -27,7 +27,7 @@ test('rate limit approaching and reached for organization', async () => {
       operations: 11,
     },
     ownerToken,
-  );
+  ).then(r => r.expectNoGraphQLErrors());
 
   const { collectLegacyOperations: collectOperations } = await createTargetAccessToken({});
 
