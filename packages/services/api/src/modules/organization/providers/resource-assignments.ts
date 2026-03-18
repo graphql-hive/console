@@ -224,11 +224,16 @@ export class ResourceAssignments {
               : {
                   mode: 'granular',
                   services:
-                    // TODO: it seems like we do not validate service names
-                    targetRecord.services.services?.map(record => ({
-                      type: 'service',
-                      serviceName: record?.serviceName,
-                    })) ?? [],
+                    targetRecord.services.services
+                      // Note: While we are not validating the service name of already existing services with the same name during
+                      // schema publish and schema check because of some legacy projects (that seem to be inactive as well)
+                      // we still enforce it here, as those users are very unlikely to use this feature any time soon.
+                      // in case they still do, we can point them towards migrating to the new service name constraints.
+                      ?.filter(({ serviceName }) => isValidServiceName(serviceName))
+                      ?.map(record => ({
+                        type: 'service',
+                        serviceName: record?.serviceName,
+                      })) ?? [],
                 },
           appDeployments:
             targetRecord.appDeployments.mode === 'ALL'
@@ -589,4 +594,8 @@ export function translateResolvedResourcesToAuthorizationPolicyStatements(
   }
 
   return policyStatements;
+}
+
+function isValidServiceName(service: string): boolean {
+  return service.length <= 64 && /^[a-zA-Z][\w_-]*$/g.test(service);
 }
