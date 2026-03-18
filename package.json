@@ -177,12 +177,9 @@
       "oclif": "patches/oclif.patch",
       "graphiql": "patches/graphiql.patch",
       "@graphiql/react": "patches/@graphiql__react.patch",
-      "countup.js": "patches/countup.js.patch",
       "@oclif/core@4.0.6": "patches/@oclif__core@4.0.6.patch",
       "p-cancelable@4.0.1": "patches/p-cancelable@4.0.1.patch",
       "bentocache": "patches/bentocache.patch",
-      "nextra": "patches/nextra.patch",
-      "nextra-theme-docs": "patches/nextra-theme-docs.patch",
       "@graphql-codegen/schema-ast": "patches/@graphql-codegen__schema-ast.patch",
       "@fastify/vite": "patches/@fastify__vite.patch"
     },
