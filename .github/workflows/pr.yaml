@@ -83,12 +83,6 @@ jobs:
   typescript:
     uses: ./.github/workflows/typescript-typecheck.yaml
 
-  # Deploy Website preview to CloudFlare Pages
-  website-preview:
-    uses: ./.github/workflows/website.yaml
-    if: ${{ !github.event.pull_request.head.repo.fork }}
-    secrets: inherit
-
   # Release alpha version on NPM for Hive libraries
   alpha:
     uses: ./.github/workflows/release-alpha.yaml
