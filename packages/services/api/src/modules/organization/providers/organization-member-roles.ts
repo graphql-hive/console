@@ -368,7 +368,6 @@ function transformOrganizationMemberLegacyScopesIntoPermissionGroup(
         break;
       }
       case ProjectAccessScope.SETTINGS: {
-        permissions.add('project:delete');
         permissions.add('project:modifySettings');
         permissions.add('schemaLinting:modifyProjectRules');
         break;
