@@ -32,7 +32,7 @@ index b91a9fe433dc340f5cdf096ca4c568297c343ab3..401df1272d1c7f344bb956b38cc7dbde
          ended: false,
          mock: false,
 diff --git a/dist/src/types.d.ts b/dist/src/types.d.ts
-index d091b301b1df0f8d9ad9298d587081fe6d33c0be..57ea5a46fbf0878546e34debed2401efcb66d7fb 100644
+index d091b301b1df0f8d9ad9298d587081fe6d33c0be..75a0b76d7fa5d3cff14e6016c4d1aa469649e443 100644
 --- a/dist/src/types.d.ts
 +++ b/dist/src/types.d.ts
 @@ -138,6 +138,7 @@ export declare type DatabasePool = CommonQueryMethods & {
@@ -43,6 +43,41 @@ index d091b301b1df0f8d9ad9298d587081fe6d33c0be..57ea5a46fbf0878546e34debed2401ef
  };
  export declare type DatabaseConnection = DatabasePool | DatabasePoolConnection;
  export declare type QueryResultRowColumn = PrimitiveValueExpression;
+@@ -311,7 +312,7 @@ export declare type SqlTaggedTemplate<T extends UserQueryResultRow = QueryResult
+     jsonb: (value: SerializableValue) => JsonBinarySqlToken;
+     literalValue: (value: string) => SqlSqlToken;
+     timestamp: (date: Date) => TimestampSqlToken;
+-    type: <U>(parser: Parser<U>) => (template: TemplateStringsArray, ...values: ValueExpression[]) => TaggedTemplateLiteralInvocation<U>;
++    type: <U extends UserQueryResultRow = QueryResultRow>(parser: Parser<U>) => (template: TemplateStringsArray, ...values: ValueExpression[]) => TaggedTemplateLiteralInvocation<U>;
+     unnest: (tuples: ReadonlyArray<readonly any[]>, columnTypes: Array<[...string[], TypeNameIdentifier]> | Array<SqlSqlToken | TypeNameIdentifier>) => UnnestSqlToken;
+ };
+ export declare type InternalQueryMethod<R = any> = (log: Logger, connection: PgPoolClient, clientConfiguration: ClientConfiguration, slonikSql: TaggedTemplateLiteralInvocation, uid?: QueryId) => R;
+@@ -321,16 +322,16 @@ export declare type InternalTransactionFunction = <T>(log: Logger, connection: P
+ export declare type InternalNestedTransactionFunction = <T>(log: Logger, connection: PgPoolClient, clientConfiguration: ClientConfiguration, handler: TransactionFunction<T>, transactionDepth: number, transactionRetryLimit?: number) => Promise<T>;
+ export interface TaggedTemplateLiteralInvocation<Result extends UserQueryResultRow = QueryResultRow> extends SqlSqlToken {
+ }
+-export declare type QueryAnyFirstFunction = <T, Row = Record<string, T>>(sql: TaggedTemplateLiteralInvocation<Row>, values?: PrimitiveValueExpression[]) => Promise<ReadonlyArray<Row[keyof Row]>>;
+-export declare type QueryAnyFunction = <T>(sql: TaggedTemplateLiteralInvocation<T>, values?: PrimitiveValueExpression[]) => Promise<readonly T[]>;
++export declare type QueryAnyFirstFunction = (sql: TaggedTemplateLiteralInvocation<any>, values?: PrimitiveValueExpression[]) => Promise<ReadonlyArray<unknown>>;
++export declare type QueryAnyFunction = (sql: TaggedTemplateLiteralInvocation<any>, values?: PrimitiveValueExpression[]) => Promise<readonly unknown[]>;
+ export declare type QueryExistsFunction = (sql: TaggedTemplateLiteralInvocation, values?: PrimitiveValueExpression[]) => Promise<boolean>;
+-export declare type QueryFunction = <T>(sql: TaggedTemplateLiteralInvocation<T>, values?: PrimitiveValueExpression[]) => Promise<QueryResult<T>>;
+-export declare type QueryManyFirstFunction = <T, Row = Record<string, T>>(sql: TaggedTemplateLiteralInvocation<Row>, values?: PrimitiveValueExpression[]) => Promise<ReadonlyArray<Row[keyof Row]>>;
+-export declare type QueryManyFunction = <T>(sql: TaggedTemplateLiteralInvocation<T>, values?: PrimitiveValueExpression[]) => Promise<readonly T[]>;
+-export declare type QueryMaybeOneFirstFunction = <T, Row = Record<string, T>>(sql: TaggedTemplateLiteralInvocation<Row>, values?: PrimitiveValueExpression[]) => Promise<Row[keyof Row] | null>;
+-export declare type QueryMaybeOneFunction = <T>(sql: TaggedTemplateLiteralInvocation<T>, values?: PrimitiveValueExpression[]) => Promise<T | null>;
+-export declare type QueryOneFirstFunction = <T, Row = Record<string, T>>(sql: TaggedTemplateLiteralInvocation<Row>, values?: PrimitiveValueExpression[]) => Promise<Row[keyof Row]>;
+-export declare type QueryOneFunction = <T extends UserQueryResultRow = UserQueryResultRow>(sql: TaggedTemplateLiteralInvocation<T>, values?: PrimitiveValueExpression[]) => Promise<T>;
++export declare type QueryFunction = (sql: TaggedTemplateLiteralInvocation<any>, values?: PrimitiveValueExpression[]) => Promise<QueryResult<unknown>>;
++export declare type QueryManyFirstFunction = (sql: TaggedTemplateLiteralInvocation<any>, values?: PrimitiveValueExpression[]) => Promise<ReadonlyArray<unknown>>;
++export declare type QueryManyFunction =  (sql: TaggedTemplateLiteralInvocation<any>, values?: PrimitiveValueExpression[]) => Promise<readonly unknown[]>;
++export declare type QueryMaybeOneFirstFunction = (sql: TaggedTemplateLiteralInvocation<any>, values?: PrimitiveValueExpression[]) => Promise<unknown | null>;
++export declare type QueryMaybeOneFunction = (sql: TaggedTemplateLiteralInvocation<any>, values?: PrimitiveValueExpression[]) => Promise<unknown | null>;
++export declare type QueryOneFirstFunction = (sql: TaggedTemplateLiteralInvocation<any>, values?: PrimitiveValueExpression[]) => Promise<unknown>;
++export declare type QueryOneFunction = (sql: TaggedTemplateLiteralInvocation<any>, values?: PrimitiveValueExpression[]) => Promise<unknown>;
+ export declare type Interceptor = {
+     readonly afterPoolConnection?: (connectionContext: ConnectionContext, connection: DatabasePoolConnection) => MaybePromise<null>;
+     readonly afterQueryExecution?: (queryContext: QueryContext, query: Query, result: QueryResult<QueryResultRow>) => MaybePromise<null>;
 diff --git a/src/binders/bindPool.ts b/src/binders/bindPool.ts
 index d10bb50117b613f262ee715fc40745e8270a60b3..fde977dd042ec2561163f252c7f76f92cb043eb0 100644
 --- a/src/binders/bindPool.ts
