@@ -7,12 +7,14 @@ import * as Tabs from '@radix-ui/react-tabs';
 import { CallToAction, cn, Heading } from '@theguild/components';
 import { ArrowIcon } from '../arrow-icon';
 import {
+  HemnetLogo,
   KarrotLogo,
   NacelleLogo,
   ProdigyLogo,
   WealthsimpleLogo,
   type LogoProps,
 } from '../company-logos';
+import hemnetPicture from './hemnet-picture.webp';
 import karrotPicture from './karrot-picture.webp';
 import nacellePicture from './nacelle-picture.webp';
 import prodigyPicture from './prodigy-picture.webp';
@@ -84,6 +86,28 @@ const testimonials: Testimonial[] = [
       className: 'bg-[#a9e7f599]',
     },
     data: [{ numbers: '>750M', description: 'requests every month' }],
+  },
+  {
+    company: 'Hemnet',
+    logo: ({ className, ...props }) => (
+      <div className={cn('flex h-8 w-min items-center justify-center', className)}>
+        <HemnetLogo {...props} className="" height={37} />
+      </div>
+    ),
+    text: (
+      <>
+        The single biggest concern going into this migration was latency. Adding any network layer
+        to a production request path is a risk, especially for a platform where page load times
+        directly affect user engagement and, ultimately, real estate transactions. **We expected
+        that moving from a compiled Rust-based Apollo Router to a Node.JS-based one with Hive
+        Gateway would come with a measurable performance cost. Oh! We were wrong.
+      </>
+    ),
+    picture: {
+      img: hemnetPicture,
+      className: 'bg-[#a9e7f599]',
+    },
+    caseStudyHref: '/case-studies/hemnet',
   },
 ];
 

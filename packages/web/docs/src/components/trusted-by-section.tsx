@@ -1,5 +1,12 @@
 import { cn } from '@theguild/components';
-import { AligentLogo, KarrotLogo, LinktreeLogo, MeetupLogo, SoundYXZLogo } from './company-logos';
+import {
+  AligentLogo,
+  HemnetLogo,
+  KarrotLogo,
+  LinktreeLogo,
+  MeetupLogo,
+  SoundYXZLogo,
+} from './company-logos';
 
 export function TrustedBySection(props: React.HTMLAttributes<HTMLElement>) {
   return (
@@ -13,6 +20,7 @@ export function TrustedBySection(props: React.HTMLAttributes<HTMLElement>) {
         <KarrotLogo title="Karrot" height={28} />
         <AligentLogo title="Aligent" height={32} />
         <SoundYXZLogo title="SoundXYZ" height={32} />
+        <HemnetLogo title="Hemnet" height={32} />
       </div>
     </div>
   );

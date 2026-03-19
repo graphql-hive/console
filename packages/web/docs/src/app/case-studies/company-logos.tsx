@@ -1,4 +1,4 @@
-import { SoundYXZLogo, WealthsimpleLogo } from '../../components/company-logos';
+import { HemnetLogo, SoundYXZLogo, WealthsimpleLogo } from '../../components/company-logos';
 
 /**
  * Take note that these logos may have different dimensions than logos used elsewhere.
@@ -6,6 +6,7 @@ import { SoundYXZLogo, WealthsimpleLogo } from '../../components/company-logos';
 export const companyLogos = {
   'sound-xyz': <SoundYXZLogo width={193} height={64} />,
   wealthsimple: <WealthsimpleLogo width={212} height={64} />,
+  hemnet: <HemnetLogo width={212} height={64} />,
 };
 
 export function getCompanyLogo(company: string) {

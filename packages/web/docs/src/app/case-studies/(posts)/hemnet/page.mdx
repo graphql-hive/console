@@ -1,0 +1,259 @@
+---
+title: 'How Hemnet Migrated Its GraphQL Backend Without Anyone Noticing'
+excerpt:
+  'Hemnet is Sweden’s largest property platform, serving millions of users who browse, save, and
+  search through real estate listings every day. Behind the scenes, a GraphQL API handles the bulk
+  of these interactions, powering everything from listing pages and search results to user accounts
+  and saved properties. For years, this API ran on a monolithic GraphQL layer built on top of a
+  Rails stack with PostgreSQL. As the platform grew, so did the pain points, particularly the
+  difficulty of splitting concerns into smaller, independently maintainable chunks. But how do you
+  introduce separation into a backend that was designed to operate as a single entity?'
+category: Real Estate
+date: 2026-03-19
+---
+
+import { DocsIcon, LargeCallout } from '#components/large-callout'
+import { ContactButton } from '@theguild/components'
+
+Hemnet is Sweden’s largest property platform, serving millions of users who browse, save, and search
+through real estate listings every day. Behind the scenes, a GraphQL API handles the bulk of these
+interactions, powering everything from listing pages and search results to user accounts and saved
+properties. For years, this API ran on a monolithic GraphQL layer built on top of a Rails stack with
+PostgreSQL. As the platform grew, so did the pain points, particularly the difficulty of splitting
+concerns into smaller, independently maintainable chunks. But how do you introduce separation into a
+backend that was designed to operate as a single entity?
+
+The idea of GraphQL federation had been floating around the engineering organization for some time.
+Different teams owned different parts of the domain, but they all fed into the same monolithic
+schema. Development takes time because it's just too much code to make sense of. A federation setup
+in which each team could own and evolve its own subgraph independently was the obvious architectural
+goal, but making it work on a live platform with millions of active users seamlessly was far from
+straightforward.
+
+We had already conducted a small-scale experiment a few years earlier with a very small subset of
+the users using Apollo. We thought about using it again, just building on the previous work.
+
+**At Hemnet, we value OSS a lot**, one of our top criteria for choosing a new provider is asking:
+**“Are they Open Source? Do they provide self-hosting options?”**, and this is an important part of
+our culture, because we believe that a **tool built by the collective intelligence is way better
+than to rely on a single person's brilliance**, we are not afraid to open issues, send PRs, and help
+the ecosystem when needed.
+
+The combination of licensing concerns with Apollo, and this desire for an open-source-first approach
+led the team toward the [Hive Platform](https://the-guild.dev/graphql/hive). The results of the
+migration were surprising\!
+
+## The Shift to Federation
+
+The project kicked off in November 2025\. A small, focused group was created with a very specific
+goal: to create the platform for the GraphQL federation. The ambition was clear: take what has been
+learnt so far, replace the Apollo-based infrastructure with the Hive-based one, integrate it into
+Hemnet’s existing APIs, and do it all without any user-visible disruption.
+
+So the project was divided into three phases:
+
+1. Replace the existing GraphQL Apollo Router layer with Hive Gateway while keeping the schema
+   intact.
+2. Introduce schema governance and CI validation using Hive Console.
+3. Prepare the organization and architecture for future domain-based federation.
+
+It is important to note that we did not immediately split the schema into multiple subgraphs.
+
+The first phase focused purely on replacing the routing layer while keeping the monolithic GraphQL
+schema structurally unchanged. The entire API was exposed as a single federated subgraph behind the
+Hive Gateway.
+
+This allowed us to validate performance, stability, and schema governance in isolation without
+mixing infrastructure migration with domain refactoring. By separating infrastructure replacement
+from architectural refactoring, we dramatically reduced the blast radius of the migration.
+
+Initially, we wanted to replace the current DNS routes for the gateway directly, but we then
+realized some of our legacy infrastructure wasn't able to handle some queries, so we needed to phase
+the rollout using a canary approach. The gateway was implemented behind an edge worker acting as a
+proxy, and diverting a percentage of the user traffic to the new router or the old API depending on
+a bucketing strategy.
+
+**Installing Hive was simple, so simple we actually second-guessed if we had done it correctly at
+first,** it's just a Docker image with a TypeScript configuration, we load it all and it's there,
+working. And this setup was already familiar to us since it also mirrored somewhat of the previous
+tests we did with the Apollo router image, which made the transition even simpler since we already
+knew some of the configuration options we needed to set. The main differences were related to
+integrations with our monitoring providers and internal and external authorization, which were very
+easily solved by implementing custom handlers in Typescript and keeping the request flow as close to
+the original as possible.
+
+**Authentication and Header Propagation**
+
+One of the most critical technical requirements during the migration was preserving our existing
+authentication and authorization behavior.
+
+Our legacy GraphQL API relied on session cookies, internal service tokens, and custom headers used
+for downstream authorization decisions.
+
+When introducing Hive Gateway into the request path, we ensured complete header transparency. We
+implemented custom request handlers in the gateway configuration to explicitly forward
+authentication headers, preserve cookies, and maintain OpenTelemetry trace propagation.
+
+Rather than centralizing authorization in the gateway, we deliberately kept it as a transparent
+routing layer. Each downstream service continued enforcing authorization rules exactly as before.
+
+This minimized risk and avoided subtle security regressions during the migration.
+
+## Battle-Testing Hive in Production
+
+One of the defining characteristics of this migration was the canary deployment strategy, executed
+via an edge worker acting as a traffic proxy. Rather than flipping a switch and routing all of
+Hemnet’s GraphQL traffic through the new gateway at once, we implemented a percentage-based rollout
+controlled at the edge.
+
+The rollout was complicated by the fact that Hemnet operates two load balancers: one internal
+(handling server-side rendering) and one external (serving apps and other services). There was no
+straightforward way to gradually redirect on the external load balancer, so the worker became the
+control plane for the canary. This approach meant the team could roll back instantly by simply
+adjusting the percentage at the edge, without touching any infrastructure configuration,which can
+take time to propagate through the environment.
+
+The rollout followed a careful progression. After initial testing in staging during the first two
+weeks, the team pushed the gateway to production on the next day it was at 50%. Two days later, it
+increased to 80%. By the end of the week, it was at 100%. **The entire public-facing traffic from
+our previous API gateway to Hive Gateway took three days**. Soon after we also switched our internal
+API requests to the same gateway and **all the billions of requests Hemnet served were now going
+through our new structure**.
+
+**Handling Legacy Query Incompatibilities**
+
+During rollout, we discovered that a small subset of queries were valid under our legacy Ruby
+GraphQL implementation but did not comply with Hive’s stricter validation rules.
+
+Rather than blocking the migration, we used the Cloudflare Worker to selectively inspect operation
+names and route incompatible queries to the legacy Ruby API while all other traffic flowed through
+Hive.
+
+This gave us time to coordinate with client teams and update non-compliant queries without delaying
+the overall rollout.
+
+Once those queries were updated, the exclusions were removed and traffic was fully consolidated
+under Hive Gateway.
+
+The single biggest concern going into this migration was latency. Adding any network layer to a
+production request path is a risk, especially for a platform where page load times directly affect
+user engagement and, ultimately, real estate transactions. **We expected that moving from a compiled
+Rust-based router to a [Node.js](http://Node.js)\-based one with Hive would come with a measurable
+performance cost. Oh\! We were wrong.**
+
+### Resource Usage and Scale
+
+When the gateway reached 50% of production traffic, the results were immediately encouraging.
+Latency metrics showed GraphQL request latency holding steady at 75ms, and 305ms for p99. These
+numbers were effectively identical to what we had been seeing with the previous API. To not say we
+didn't have any increase, our edge worker added a negligible latency on top of it all.
+
+Internal analysis confirmed the picture. Traces showed that the Hive Gateway accounted for the same
+percentage of time in a request as the previous calls. The average time the gateway itself added to
+a request hovered well below the 100ms mark, and this included the full round trip of parsing,
+planning, executing against the monolithic schema, and returning the response.
+
+This was a particularly notable finding because we had explicitly discussed that if the
+[**Node.js**](http://Node.js)**\-based** gateway proved too slow, we could fall back to the Apollo
+Router or explore Hive’s Rust-based query planner. **In practice, neither was necessary**. We also
+noted that with the **Rust-based query planner feature from Hive**, there was potential to reduce
+the average response time even further below the 60ms mark, but this optimization was not yet
+critical enough to prioritize. We might still do it in the future.
+
+**Beyond latency, the resource footprint was another pleasant surprise.** We expected the
+[Node.js](http://Node.js) gateway to consume significantly more CPU and memory since it's more
+resource-intensive than a Rust-based one. Instead, we found the **Hive Gateway running with less
+than 30% resource usage than Apollo Router**, and it was holding **tens of** **thousands of requests
+per minute**. The resource efficiency reflected strong engineering from the Hive team. The gateway
+does use more resources than the Rust-based counterpart and these numbers vary depending on the
+amount of traffic, but it's really not significant enough to say it's worse or to change it.
+
+### Observability and Collaboration
+
+**The observability story was one of the strongest arguments for Hive**. The gateway natively
+integrates with open telemetry, attaching trace correlation to every request. Validation errors and
+execution errors are tagged on the active span, making it trivial to correlate GraphQL-level
+failures with infrastructure-level traces. We also built custom plugins for error logging and for
+worker metrics, ensuring that every layer of the request pipeline was visible.
+
+On the Hive side, the **Hive Console provided a centralized view of schema changes, operation
+performance, and client usage patterns.** We found particular value in being able to see which
+operations were failing the most, which clients were sending the most traffic, and how the schema
+was evolving over time. Developers now actively use Hive Insights and the schema explorer to
+understand type evolution and assess whether a proposed change would introduce breaking behavior,
+visibility that simply did not exist in our previous setup.
+
+**Schema Governance in CI/CD**
+
+Even before introducing multiple subgraphs, we treated schema management as a first-class concern.
+
+Our monolithic GraphQL schema is built and extracted during CI execution. The pipeline validates the
+schema locally, checks for breaking and dangerous changes against the Hive registry, and blocks the
+build if a breaking change is detected.
+
+Only validated schemas are published to the registry.
+
+Schema validation runs directly at the pull request level. Developers can immediately see whether a
+field removal, nullability change, or type modification would break existing operations and which
+clients are affected.
+
+This PR-level feedback loop significantly improved developer confidence when evolving the schema and
+was widely appreciated across the engineering organization.
+
+## Results, Impact, and Lessons
+
+The migration to Hive Gateway is now complete, with 100% of Hemnet’s public-facing and internal
+GraphQL traffic flowing through the Gateway. The quantifiable achievements speak for themselves: the
+website is as fast as it was before, even with an added network layer. There was no perceptible
+latency regression for end users.
+
+The developer experience improved meaningfully as well. With Hive’s schema registry integrated into
+CI, developers now get immediate feedback when a schema change would break existing operations. The
+Hive Console provides visibility into operation performance, client usage patterns, and schema
+evolution that was previously scattered across multiple tools or simply unavailable.
+
+But the migration was not without its challenges, and being honest about them is what makes this
+case study worth reading.
+
+### Lessons Learned
+
+The complexity of integrating legacy data and APIs was underestimated. Publishing the GraphQL schema
+from CircleCI required solving dependency issues, and we had to create lightweight alternatives to
+avoid booting the entire application just to extract the schema. We also underestimated how strict
+Hive's validation was with our previous schema, which was using a more relaxed approach. This meant
+we had to adjust and review several types to make them on par with how strict our new validation
+rules are now.
+
+The organizational effort required for federation management and team alignment on schema principles
+was substantial. Convincing people across multiple teams about what federation is and what it is
+not, and why it matters, consumed more time than any technical challenge. The project needed buy-in
+from multiple people at multiple organization levels, we had to bring this to the attention of all
+the developers in the company at once, because we were effectively changing their development
+platform, and this was significant work.
+
+The cost of knowledge sharing cannot be overstated. Federation introduces new concepts (subgraphs,
+supergraphs, schema registries, composition) that not every backend developer is familiar with. We
+had to invest time in documentation, town hall presentations, and architectural boards until we were
+sure most of the devs had understood the project.
+
+<LargeCallout
+  icon={<DocsIcon />}
+  heading="Elevate Your GraphQL Journey"
+  variant="primary"
+  cta={<ContactButton variant="secondary-inverted" />}
+>
+  Transform your GraphQL infrastructure like Hemnet. Whether you’re replacing legacy gateways,
+  introducing federation, or improving schema governance, Hive gives you the tools to evolve safely,
+  without disrupting production.
+</LargeCallout>
+
+## Conclusion
+
+Our migration to Hive Gateway is a story of pragmatic engineering execution. **A small team replaced
+the core routing layer of Sweden’s largest property platform in under two months, with zero
+user-visible downtime and no latency regression.**
+
+This highlights how the partnership between **Hemnet and The Guild** demonstrated what’s possible
+when an open-source ecosystem provider and an enterprise consumer collaborate directly: real-time
+feedback loops, rapid iteration on configuration issues, and a shared investment in getting the
+details right.
