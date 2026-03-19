@@ -791,8 +791,6 @@ export const Builder = (props: {
     });
   }, [schema, deferredSearchValue, isSearchActive, tabValue]);
 
-  console.log(searchResult);
-
   const visiblePaths = isSearchActive ? (searchResult?.visiblePaths ?? null) : null;
   const forcedOpenPaths =
     isSearchActive && deferredSearchValue.includes('.')
