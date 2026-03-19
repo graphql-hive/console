@@ -84,7 +84,7 @@ patchedDependencies:
     hash: 195ae63d47810ca4c987421948f15869356e598dccde9e8c9a4ff4efd3e88322
     path: patches/p-cancelable@4.0.1.patch
   slonik@30.4.4:
-    hash: 36080d993c8bbf70d82201a3acd5140e89b2a51ce89497a014d495a708a6bd0e
+    hash: 4414dd43c942f1224dda39fb41df5c9b911161e21dabbd14e4a2329f057a68c5
     path: patches/slonik@30.4.4.patch
 
 importers:
@@ -406,7 +406,7 @@ importers:
         version: 2.7.1
       slonik:
         specifier: 30.4.4
-        version: 30.4.4(patch_hash=36080d993c8bbf70d82201a3acd5140e89b2a51ce89497a014d495a708a6bd0e)
+        version: 30.4.4(patch_hash=4414dd43c942f1224dda39fb41df5c9b911161e21dabbd14e4a2329f057a68c5)
       strip-ansi:
         specifier: 7.1.2
         version: 7.1.2
@@ -1033,7 +1033,7 @@ importers:
         version: 11.10.2(pg-query-stream@4.14.0(pg@8.20.0))
       slonik:
         specifier: 30.4.4
-        version: 30.4.4(patch_hash=36080d993c8bbf70d82201a3acd5140e89b2a51ce89497a014d495a708a6bd0e)
+        version: 30.4.4(patch_hash=4414dd43c942f1224dda39fb41df5c9b911161e21dabbd14e4a2329f057a68c5)
       tslib:
         specifier: 2.8.1
         version: 2.8.1
@@ -1223,7 +1223,7 @@ importers:
         version: 5.0.0-beta.2
       slonik:
         specifier: 30.4.4
-        version: 30.4.4(patch_hash=36080d993c8bbf70d82201a3acd5140e89b2a51ce89497a014d495a708a6bd0e)
+        version: 30.4.4(patch_hash=4414dd43c942f1224dda39fb41df5c9b911161e21dabbd14e4a2329f057a68c5)
       stripe:
         specifier: 17.5.0
         version: 17.5.0
@@ -1729,7 +1729,7 @@ importers:
         version: 15.1.3
       slonik:
         specifier: 30.4.4
-        version: 30.4.4(patch_hash=36080d993c8bbf70d82201a3acd5140e89b2a51ce89497a014d495a708a6bd0e)
+        version: 30.4.4(patch_hash=4414dd43c942f1224dda39fb41df5c9b911161e21dabbd14e4a2329f057a68c5)
       zod:
         specifier: 3.25.76
         version: 3.25.76
@@ -1774,13 +1774,13 @@ importers:
         version: 11.10.2(pg-query-stream@4.14.0(pg@8.20.0))
       slonik:
         specifier: 30.4.4
-        version: 30.4.4(patch_hash=36080d993c8bbf70d82201a3acd5140e89b2a51ce89497a014d495a708a6bd0e)
+        version: 30.4.4(patch_hash=4414dd43c942f1224dda39fb41df5c9b911161e21dabbd14e4a2329f057a68c5)
       slonik-interceptor-query-logging:
         specifier: 46.4.0
-        version: 46.4.0(slonik@30.4.4(patch_hash=36080d993c8bbf70d82201a3acd5140e89b2a51ce89497a014d495a708a6bd0e))
+        version: 46.4.0(slonik@30.4.4(patch_hash=4414dd43c942f1224dda39fb41df5c9b911161e21dabbd14e4a2329f057a68c5))
       slonik-utilities:
         specifier: 1.9.4
-        version: 1.9.4(slonik@30.4.4(patch_hash=36080d993c8bbf70d82201a3acd5140e89b2a51ce89497a014d495a708a6bd0e))
+        version: 1.9.4(slonik@30.4.4(patch_hash=4414dd43c942f1224dda39fb41df5c9b911161e21dabbd14e4a2329f057a68c5))
       tslib:
         specifier: 2.8.1
         version: 2.8.1
@@ -2023,7 +2023,7 @@ importers:
         version: 1.6.1
       slonik:
         specifier: 30.4.4
-        version: 30.4.4(patch_hash=36080d993c8bbf70d82201a3acd5140e89b2a51ce89497a014d495a708a6bd0e)
+        version: 30.4.4(patch_hash=4414dd43c942f1224dda39fb41df5c9b911161e21dabbd14e4a2329f057a68c5)
       zod:
         specifier: 3.25.76
         version: 3.25.76
@@ -41729,14 +41729,14 @@ snapshots:
 
   slick@1.12.2: {}
 
-  slonik-interceptor-query-logging@46.4.0(slonik@30.4.4(patch_hash=36080d993c8bbf70d82201a3acd5140e89b2a51ce89497a014d495a708a6bd0e)):
+  slonik-interceptor-query-logging@46.4.0(slonik@30.4.4(patch_hash=4414dd43c942f1224dda39fb41df5c9b911161e21dabbd14e4a2329f057a68c5)):
     dependencies:
       crack-json: 1.3.0
       pretty-ms: 7.0.1
       serialize-error: 8.1.0
-      slonik: 30.4.4(patch_hash=36080d993c8bbf70d82201a3acd5140e89b2a51ce89497a014d495a708a6bd0e)
+      slonik: 30.4.4(patch_hash=4414dd43c942f1224dda39fb41df5c9b911161e21dabbd14e4a2329f057a68c5)
 
-  slonik-utilities@1.9.4(slonik@30.4.4(patch_hash=36080d993c8bbf70d82201a3acd5140e89b2a51ce89497a014d495a708a6bd0e)):
+  slonik-utilities@1.9.4(slonik@30.4.4(patch_hash=4414dd43c942f1224dda39fb41df5c9b911161e21dabbd14e4a2329f057a68c5)):
     dependencies:
       core-js: 3.25.5
       delay: 4.4.1
@@ -41744,9 +41744,9 @@ snapshots:
       lodash: 4.17.23
       roarr: 7.14.3
       serialize-error: 5.0.0
-      slonik: 30.4.4(patch_hash=36080d993c8bbf70d82201a3acd5140e89b2a51ce89497a014d495a708a6bd0e)
+      slonik: 30.4.4(patch_hash=4414dd43c942f1224dda39fb41df5c9b911161e21dabbd14e4a2329f057a68c5)
 
-  slonik@30.4.4(patch_hash=36080d993c8bbf70d82201a3acd5140e89b2a51ce89497a014d495a708a6bd0e):
+  slonik@30.4.4(patch_hash=4414dd43c942f1224dda39fb41df5c9b911161e21dabbd14e4a2329f057a68c5):
     dependencies:
       concat-stream: 2.0.0
       es6-error: 4.1.1

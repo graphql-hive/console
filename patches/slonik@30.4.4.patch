@@ -31,8 +31,20 @@ index b91a9fe433dc340f5cdf096ca4c568297c343ab3..401df1272d1c7f344bb956b38cc7dbde
      state_1.poolStateMap.set(pool, {
          ended: false,
          mock: false,
+diff --git a/dist/src/factories/createSqlTag.js b/dist/src/factories/createSqlTag.js
+index cd661ac0116275b7b4a4bbf419616faa426516ab..4822737a6d1f177ced74c3ed1202f4f0de459cbc 100644
+--- a/dist/src/factories/createSqlTag.js
++++ b/dist/src/factories/createSqlTag.js
+@@ -143,6 +143,7 @@ sql.unnest = (tuples, columnTypes) => {
+         type: tokens_1.UnnestToken,
+     };
+ };
++sql.unknown = sql;
+ const createSqlTag = () => {
+     return sql;
+ };
 diff --git a/dist/src/types.d.ts b/dist/src/types.d.ts
-index d091b301b1df0f8d9ad9298d587081fe6d33c0be..75a0b76d7fa5d3cff14e6016c4d1aa469649e443 100644
+index d091b301b1df0f8d9ad9298d587081fe6d33c0be..8e8045f90523b3ec421582f177d1af26ce64e40f 100644
 --- a/dist/src/types.d.ts
 +++ b/dist/src/types.d.ts
 @@ -138,6 +138,7 @@ export declare type DatabasePool = CommonQueryMethods & {
@@ -43,15 +55,25 @@ index d091b301b1df0f8d9ad9298d587081fe6d33c0be..75a0b76d7fa5d3cff14e6016c4d1aa46
  };
  export declare type DatabaseConnection = DatabasePool | DatabasePoolConnection;
  export declare type QueryResultRowColumn = PrimitiveValueExpression;
-@@ -311,7 +312,7 @@ export declare type SqlTaggedTemplate<T extends UserQueryResultRow = QueryResult
+@@ -300,7 +301,6 @@ export declare type Parser<T> = {
+ };
+ declare type UserQueryResultRow = Record<string, any>;
+ export declare type SqlTaggedTemplate<T extends UserQueryResultRow = QueryResultRow> = {
+-    <U extends UserQueryResultRow = T>(template: TemplateStringsArray, ...values: ValueExpression[]): TaggedTemplateLiteralInvocation<U>;
+     array: (values: readonly PrimitiveValueExpression[], memberType: SqlToken | TypeNameIdentifier) => ArraySqlToken;
+     binary: (data: Buffer) => BinarySqlToken;
+     date: (date: Date) => DateSqlToken;
+@@ -311,8 +311,9 @@ export declare type SqlTaggedTemplate<T extends UserQueryResultRow = QueryResult
      jsonb: (value: SerializableValue) => JsonBinarySqlToken;
      literalValue: (value: string) => SqlSqlToken;
      timestamp: (date: Date) => TimestampSqlToken;
 -    type: <U>(parser: Parser<U>) => (template: TemplateStringsArray, ...values: ValueExpression[]) => TaggedTemplateLiteralInvocation<U>;
 +    type: <U extends UserQueryResultRow = QueryResultRow>(parser: Parser<U>) => (template: TemplateStringsArray, ...values: ValueExpression[]) => TaggedTemplateLiteralInvocation<U>;
      unnest: (tuples: ReadonlyArray<readonly any[]>, columnTypes: Array<[...string[], TypeNameIdentifier]> | Array<SqlSqlToken | TypeNameIdentifier>) => UnnestSqlToken;
++    unknown: (template: TemplateStringsArray, ...values: ValueExpression[]) => TaggedTemplateLiteralInvocation<any>;
  };
  export declare type InternalQueryMethod<R = any> = (log: Logger, connection: PgPoolClient, clientConfiguration: ClientConfiguration, slonikSql: TaggedTemplateLiteralInvocation, uid?: QueryId) => R;
+ export declare type InternalCopyFromBinaryFunction = (log: Logger, connection: PgPoolClient, clientConfiguration: ClientConfiguration, slonikSql: TaggedTemplateLiteralInvocation, tupleList: ReadonlyArray<readonly any[]>, columnTypes: readonly TypeNameIdentifier[]) => Promise<Record<string, unknown>>;
 @@ -321,16 +322,16 @@ export declare type InternalTransactionFunction = <T>(log: Logger, connection: P
  export declare type InternalNestedTransactionFunction = <T>(log: Logger, connection: PgPoolClient, clientConfiguration: ClientConfiguration, handler: TransactionFunction<T>, transactionDepth: number, transactionRetryLimit?: number) => Promise<T>;
  export interface TaggedTemplateLiteralInvocation<Result extends UserQueryResultRow = QueryResultRow> extends SqlSqlToken {
