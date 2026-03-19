@@ -64,7 +64,6 @@ import {
   type SchemaCheckApprovalMetadata,
   type SchemaCompositionError,
 } from './schema-change-model';
-import type { Slonik } from './shared';
 
 export type { Interceptor };
 
@@ -525,9 +524,9 @@ export async function createStorage(
       return user;
     },
     async getOrganization(userId: string, connection: Connection) {
-      const org = await connection.maybeOne<Slonik<organizations>>(
+      const org = await connection.maybeOne<unknown>(
         sql`/* getOrganization */ SELECT * FROM organizations WHERE user_id = ${userId} AND type = ${'PERSONAL'} LIMIT 1`,
-      );
+      ).then(r => r ? OrganizationModel.parse(r) : null);
 
       return org ? transformOrganization(org) : null;
     },
@@ -967,12 +966,12 @@ export async function createStorage(
     },
     getOrganizationOwnerId: batch(async selectors => {
       const organizations = selectors.map(s => s.organizationId);
-      const owners = await pool.query<Slonik<Pick<organizations, 'user_id' | 'id'>>>(
+      const owners = await pool.query<unknown>(
         sql`/* getOrganizationOwnerId */
         SELECT id, user_id
         FROM organizations
         WHERE id IN (${sql.join(organizations, sql`, `)})`,
-      );
+      ).then(r => ({ ...r, rows: r.rows.map(row => OrganizationUserIdAndIdModel.parse(row)) }));
 
       return organizations.map(async organization => {
         const owner = owners.rows.find(row => row.id === organization);
@@ -1194,9 +1193,7 @@ export async function createStorage(
       });
     },
     async getOrganizationMemberAccessPairs(pairs) {
-      const results = await pool.query<
-        Slonik<Pick<organization_member, 'organization_id' | 'user_id' | 'scopes'>>
-      >(
+      const results = await pool.query<unknown>(
         sql`/* getOrganizationMemberAccessPairs */
           SELECT om.organization_id, om.user_id, omr.scopes as scopes
           FROM organization_member as om
@@ -1206,7 +1203,7 @@ export async function createStorage(
             sql`), (`,
           )}))
         `,
-      );
+      ).then(r => ({ ...r, rows: r.rows.map(row => OrganizationMemberAccessModel.parse(row)) }));
 
       return pairs.map(({ organizationId: organization, userId: user }) => {
         return (results.rows.find(
@@ -1237,12 +1234,12 @@ export async function createStorage(
         return {
           ok: true,
           organization: transformOrganization(
-            await t.one<Slonik<organizations>>(sql`/* updateOrganizationSlug */
+            await t.one(sql`/* updateOrganizationSlug */
               UPDATE organizations
               SET clean_id = ${slug}, name = ${slug}
               WHERE id = ${organization}
               RETURNING *
-            `),
+            `).then(OrganizationModel.parse),
           ),
         };
       });
@@ -1250,23 +1247,23 @@ export async function createStorage(
 
     async updateOrganizationPlan({ billingPlan, organizationId: organization }) {
       return transformOrganization(
-        await pool.one<Slonik<organizations>>(sql`/* updateOrganizationPlan */
+        await pool.one(sql`/* updateOrganizationPlan */
           UPDATE organizations
           SET plan_name = ${billingPlan}
           WHERE id = ${organization}
           RETURNING *
-        `),
+        `).then(OrganizationModel.parse),
       );
     },
     async updateOrganizationRateLimits(args, action) {
       return await tracedTransaction('updateOrganizationRateLimits', pool, async t => {
         const org = transformOrganization(
-          await t.one<Slonik<organizations>>(sql`/* updateOrganizationRateLimits */
+          await t.one(sql`/* updateOrganizationRateLimits */
             UPDATE organizations
             SET limit_operations_monthly = ${args.monthlyRateLimit.operations}, limit_retention_days = ${args.monthlyRateLimit.retentionInDays}
             WHERE id = ${args.organizationId}
             RETURNING *
-          `),
+          `).then(OrganizationModel.parse),
         );
         await action?.();
 
@@ -1386,7 +1383,7 @@ export async function createStorage(
     async createOrganizationTransferRequest({ organizationId: organization, userId: user }) {
       const code = Math.random().toString(16).substring(2, 12);
 
-      await pool.query<Slonik<Pick<organizations, 'ownership_transfer_code'>>>(
+      await pool.query<unknown>(
         sql`/* createOrganizationTransferRequest */
           UPDATE organizations
           SET
@@ -1420,9 +1417,8 @@ export async function createStorage(
       accept,
     }) {
       await tracedTransaction('answerOrganizationTransferRequest', pool, async tsx => {
-        const owner = await tsx.maybeOne<
-          Slonik<Pick<organizations, 'user_id'>>
-        >(sql`/* findOrganizationTransferRequest */
+        const owner = await tsx.maybeOne<unknown>(
+          sql`/* findOrganizationTransferRequest */
           SELECT user_id
           FROM organizations
           WHERE
@@ -1517,13 +1513,13 @@ export async function createStorage(
     },
     async getOrganization({ organizationId }) {
       return transformOrganization(
-        await pool.one<Slonik<organizations>>(
+        await pool.one(
           sql`/* getOrganization */ SELECT * FROM organizations WHERE id = ${organizationId} LIMIT 1`,
-        ),
+        ).then(OrganizationModel.parse),
       );
     },
     async getOrganizations({ userId: user }) {
-      const results = await pool.query<Slonik<organizations>>(
+      const results = await pool.query<unknown>(
         sql`/* getOrganizations */
           SELECT o.*
           FROM organizations as o
@@ -1531,12 +1527,12 @@ export async function createStorage(
           WHERE om.user_id = ${user}
           ORDER BY o.created_at DESC
         `,
-      );
+      ).then(r => ({ ...r, rows: r.rows.map(row => OrganizationModel.parse(row)) }));
 
       return results.rows.map(transformOrganization);
     },
     async getOrganizationByInviteCode({ inviteCode, email }) {
-      const result = await pool.maybeOne<Slonik<organizations>>(
+      const result = await pool.maybeOne<unknown>(
         sql`/* getOrganizationByInviteCode */
           SELECT o.* FROM organizations as o
           LEFT JOIN organization_invitations as i ON (i.organization_id = o.id)
@@ -1547,7 +1543,7 @@ export async function createStorage(
           GROUP BY o.id
           LIMIT 1
         `,
-      );
+      ).then(r => r ? OrganizationModel.parse(r) : null);
 
       if (result) {
         return transformOrganization(result);
@@ -1556,9 +1552,9 @@ export async function createStorage(
       return null;
     },
     async getOrganizationBySlug({ slug }) {
-      const result = await pool.maybeOne<Slonik<organizations>>(
+      const result = await pool.maybeOne<unknown>(
         sql`/* getOrganizationBySlug */ SELECT * FROM organizations WHERE clean_id = ${slug} LIMIT 1`,
-      );
+      ).then(r => r ? OrganizationModel.parse(r) : null);
 
       if (!result) {
         return null;
@@ -1567,13 +1563,13 @@ export async function createStorage(
       return transformOrganization(result);
     },
     async getOrganizationByGitHubInstallationId({ installationId }) {
-      const result = await pool.maybeOne<Slonik<organizations>>(
+      const result = await pool.maybeOne<unknown>(
         sql`/* getOrganizationByGitHubInstallationId */
           SELECT * FROM organizations
           WHERE github_app_installation_id = ${installationId}
           LIMIT 1
         `,
-      );
+      ).then(r => r ? OrganizationModel.parse(r) : null);
 
       if (result) {
         return transformOrganization(result);
@@ -1583,15 +1579,15 @@ export async function createStorage(
     },
     async getProject({ projectId: project }) {
       return transformProject(
-        await pool.one<Slonik<projects>>(
+        await pool.one(
           sql`/* getProject */ SELECT * FROM projects WHERE id = ${project} AND type != 'CUSTOM' LIMIT 1`,
-        ),
+        ).then(ProjectModel.parse),
       );
     },
     async getProjectBySlug({ slug, organizationId: organization }) {
-      const result = await pool.maybeOne<Slonik<projects>>(
+      const result = await pool.maybeOne<unknown>(
         sql`/* getProjectBySlug */ SELECT * FROM projects WHERE clean_id = ${slug} AND org_id = ${organization} AND type != 'CUSTOM' LIMIT 1`,
-      );
+      ).then(r => r ? ProjectModel.parse(r) : null);
 
       if (!result) {
         return null;
@@ -1600,9 +1596,9 @@ export async function createStorage(
       return transformProject(result);
     },
     async getProjects({ organizationId: organization }) {
-      const result = await pool.query<Slonik<projects>>(
+      const result = await pool.query<unknown>(
         sql`/* getProjects */ SELECT * FROM projects WHERE org_id = ${organization} AND type != 'CUSTOM' ORDER BY created_at DESC`,
-      );
+      ).then(r => ({ ...r, rows: r.rows.map(row => ProjectModel.parse(row)) }));
 
       return result.rows.map(transformProject);
     },
@@ -1615,9 +1611,9 @@ export async function createStorage(
           return args.map(async () => allProjectsLookupMap);
         }
 
-        const result = await pool.query<Slonik<projects>>(
+        const result = await pool.query<unknown>(
           sql`/* findProjectsByIds */ SELECT * FROM projects WHERE id = ANY(${sql.array(allProjectIds, 'uuid')}) AND type != 'CUSTOM'`,
-        );
+        ).then(r => ({ ...r, rows: r.rows.map(row => ProjectModel.parse(row)) }));
 
         result.rows.forEach(row => {
           const project = transformProject(row);
@@ -1657,12 +1653,12 @@ export async function createStorage(
         return {
           ok: true,
           project: transformProject(
-            await t.one<Slonik<projects>>(sql`/* updateProjectSlug */
+            await t.one(sql`/* updateProjectSlug */
               UPDATE projects
               SET clean_id = ${slug}, name = ${slug}
               WHERE id = ${project} AND org_id = ${organization}
               RETURNING *
-            `),
+            `).then(ProjectModel.parse),
           ),
         };
       });
@@ -1681,7 +1677,7 @@ export async function createStorage(
     },
     async enableExternalSchemaComposition({ projectId: project, endpoint, encryptedSecret }) {
       return transformProject(
-        await pool.one<Slonik<projects>>(sql`/* enableExternalSchemaComposition */
+        await pool.one(sql`/* enableExternalSchemaComposition */
           UPDATE projects
           SET
             native_federation = FALSE,
@@ -1690,7 +1686,7 @@ export async function createStorage(
             external_composition_secret = ${encryptedSecret}
           WHERE id = ${project}
           RETURNING *
-        `),
+        `).then(ProjectModel.parse),
       );
     },
     async enableProjectNameInGithubCheck({ projectId: project }) {
@@ -1966,23 +1962,23 @@ export async function createStorage(
       },
     ),
     async getTargetIdsOfOrganization({ organizationId: organization }) {
-      const results = await pool.query<Slonik<Pick<targets, 'id'>>>(
+      const results = await pool.query<unknown>(
         sql`/* getTargetIdsOfOrganization */
           SELECT t.id as id FROM targets as t
           LEFT JOIN projects as p ON (p.id = t.project_id)
           WHERE p.org_id = ${organization}
           GROUP BY t.id
         `,
-      );
+      ).then(r => ({ ...r, rows: r.rows.map(row => TargetIdModel.parse(row)) }));
 
       return results.rows.map(r => r.id);
     },
     async getTargetIdsOfProject({ projectId: project }) {
-      const results = await pool.query<Slonik<Pick<targets, 'id'>>>(
+      const results = await pool.query<unknown>(
         sql`/* getTargetIdsOfProject */
           SELECT id FROM targets WHERE project_id = ${project}
         `,
-      );
+      ).then(r => ({ ...r, rows: r.rows.map(row => TargetIdModel.parse(row)) }));
 
       return results.rows.map(r => r.id);
     },
@@ -2870,7 +2866,7 @@ export async function createStorage(
       });
     }),
     async addSlackIntegration({ organizationId: organization, token }) {
-      await pool.query<Slonik<organizations>>(
+      await pool.query<unknown>(
         sql`/* addSlackIntegration */
           UPDATE organizations
           SET slack_token = ${token}
@@ -2879,7 +2875,7 @@ export async function createStorage(
       );
     },
     async deleteSlackIntegration({ organizationId: organization }) {
-      await pool.query<Slonik<organizations>>(
+      await pool.query<unknown>(
         sql`/* deleteSlackIntegration */
           UPDATE organizations
           SET slack_token = NULL
@@ -2899,7 +2895,7 @@ export async function createStorage(
       return result?.slack_token;
     },
     async addGitHubIntegration({ organizationId: organization, installationId }) {
-      await pool.query<Slonik<organizations>>(
+      await pool.query<unknown>(
         sql`/* addGitHubIntegration */
           UPDATE organizations
           SET github_app_installation_id = ${installationId}
@@ -2908,14 +2904,14 @@ export async function createStorage(
       );
     },
     async deleteGitHubIntegration({ organizationId: organization }) {
-      await pool.query<Slonik<organizations>>(
+      await pool.query<unknown>(
         sql`/* deleteGitHubIntegration */
           UPDATE organizations
           SET github_app_installation_id = NULL
           WHERE id = ${organization}
         `,
       );
-      await pool.query<Slonik<projects>>(
+      await pool.query<unknown>(
         sql`/* resetProjectsGitHubRepository */
           UPDATE projects
           SET git_repository = NULL
@@ -2936,7 +2932,7 @@ export async function createStorage(
     },
     async addAlertChannel({ projectId, name, type, slackChannel, webhookEndpoint }) {
       return transformAlertChannel(
-        await pool.one<Slonik<alert_channels>>(
+        await pool.one(
           sql`/* addAlertChannel */
             INSERT INTO alert_channels
               ("name", "type", "project_id", "slack_channel", "webhook_endpoint")
@@ -2944,7 +2940,7 @@ export async function createStorage(
               (${name}, ${type}, ${projectId}, ${slackChannel ?? null}, ${webhookEndpoint ?? null})
             RETURNING *
           `,
-        ),
+        ).then(AlertChannelModel.parse),
       );
     },
     async deleteAlertChannels({ projectId, channelIds }) {
@@ -2961,16 +2957,16 @@ export async function createStorage(
       return result.rows.map(transformAlertChannel);
     },
     async getAlertChannels({ projectId: project }) {
-      const result = await pool.query<Slonik<alert_channels>>(
+      const result = await pool.query<unknown>(
         sql`/* getAlertChannels */ SELECT * FROM alert_channels WHERE project_id = ${project} ORDER BY created_at DESC`,
-      );
+      ).then(r => ({ ...r, rows: r.rows.map(row => AlertChannelModel.parse(row)) }));
 
       return result.rows.map(transformAlertChannel);
     },
 
     async addAlert({ organizationId, projectId, targetId, channelId, type }) {
       return transformAlert(
-        await pool.one<Slonik<alerts>>(
+        await pool.one(
           sql`/* addAlert */
             INSERT INTO alerts
               ("type", "alert_channel_id", "target_id", "project_id")
@@ -2978,12 +2974,12 @@ export async function createStorage(
               (${type}, ${channelId}, ${targetId}, ${projectId})
             RETURNING *
           `,
-        ),
+        ).then(AlertModel.parse),
         organizationId,
       );
     },
     async deleteAlerts({ organizationId: organization, projectId: project, alertIds: alerts }) {
-      const result = await pool.query<Slonik<alerts>>(
+      const result = await pool.query<unknown>(
         sql`/* deleteAlerts */
           DELETE FROM alerts
           WHERE
@@ -2991,24 +2987,19 @@ export async function createStorage(
             id IN (${sql.join(alerts, sql`, `)})
           RETURNING *
         `,
-      );
+      ).then(r => ({ ...r, rows: r.rows.map(row => AlertModel.parse(row)) }));
 
       return result.rows.map(row => transformAlert(row, organization));
     },
     async getAlerts({ organizationId: organization, projectId: project }) {
-      const result = await pool.query<Slonik<alerts>>(
+      const result = await pool.query<unknown>(
         sql`/* getAlerts */ SELECT * FROM alerts WHERE project_id = ${project} ORDER BY created_at DESC`,
-      );
+      ).then(r => ({ ...r, rows: r.rows.map(row => AlertModel.parse(row)) }));
 
       return result.rows.map(row => transformAlert(row, organization));
     },
     async adminGetOrganizationsTargetPairs() {
-      const results = await pool.query<
-        Slonik<{
-          organization: string;
-          target: string;
-        }>
-      >(
+      const results = await pool.query<unknown>(
         sql`/* adminGetOrganizationsTargetPairs */
           SELECT
             o.id as organization,
@@ -3017,7 +3008,7 @@ export async function createStorage(
           LEFT JOIN projects AS p ON (p.id = t.project_id)
           LEFT JOIN organizations AS o ON (o.id = p.org_id)
         `,
-      );
+      ).then(r => ({ ...r, rows: r.rows.map(row => OrganizationTargetPairModel.parse(row)) }));
       return results.rows;
     },
     async getGetOrganizationsAndTargetsWithLimitInfo() {
@@ -3058,13 +3049,8 @@ export async function createStorage(
     },
     async adminGetStats(period: { from: Date; to: Date }) {
       // count schema versions by organization
-      const versionsResult = pool.query<
-        Slonik<
-          Pick<organizations, 'id'> & {
-            total: number;
-          }
-        >
-      >(sql`/* adminCountSchemaVersionsByOrg */
+      const versionsResult = pool.query<unknown>(
+        sql`/* adminCountSchemaVersionsByOrg */
         SELECT
           COUNT(*) as total,
           o.id
@@ -3077,48 +3063,33 @@ export async function createStorage(
           AND
           v.created_at < ${period.to.toISOString()}
         GROUP by o.id
-      `);
+      `).then(r => ({ ...r, rows: r.rows.map(row => OrganizationStatModel.parse(row)) }));
 
       // count users by organization
-      const usersResult = pool.query<
-        Slonik<
-          Pick<organizations, 'id'> & {
-            total: number;
-          }
-        >
-      >(sql`/* adminCountUsersByOrg */
+      const usersResult = pool.query<unknown>(
+        sql`/* adminCountUsersByOrg */
         SELECT
           COUNT(*) as total,
           o.id
         FROM organization_member AS om
         LEFT JOIN organizations AS o ON (o.id = om.organization_id)
         GROUP by o.id
-      `);
+      `).then(r => ({ ...r, rows: r.rows.map(row => OrganizationStatModel.parse(row)) }));
 
       // count projects by organization
-      const projectsResult = pool.query<
-        Slonik<
-          Pick<organizations, 'id'> & {
-            total: number;
-          }
-        >
-      >(sql`/* adminCountProjectsByOrg */
+      const projectsResult = pool.query<unknown>(
+        sql`/* adminCountProjectsByOrg */
         SELECT
           COUNT(*) as total,
           o.id
         FROM projects AS p
         LEFT JOIN organizations AS o ON (o.id = p.org_id)
         GROUP by o.id
-      `);
+      `).then(r => ({ ...r, rows: r.rows.map(row => OrganizationStatModel.parse(row)) }));
 
       // count targets by organization
-      const targetsResult = pool.query<
-        Slonik<
-          Pick<organizations, 'id'> & {
-            total: number;
-          }
-        >
-      >(sql`/* adminCountTargetsByOrg */
+      const targetsResult = pool.query<unknown>(
+        sql`/* adminCountTargetsByOrg */
         SELECT
           COUNT(*) as total,
           o.id
@@ -3126,12 +3097,12 @@ export async function createStorage(
         LEFT JOIN projects AS p ON (p.id = t.project_id)
         LEFT JOIN organizations AS o ON (o.id = p.org_id)
         GROUP by o.id
-      `);
+      `).then(r => ({ ...r, rows: r.rows.map(row => OrganizationStatModel.parse(row)) }));
 
       // get organizations data
-      const organizationsResult = pool.query<Slonik<organizations>>(sql`/* adminGetOrganizations */
+      const organizationsResult = pool.query<unknown>(sql`/* adminGetOrganizations */
         SELECT * FROM organizations
-      `);
+      `).then(r => ({ ...r, rows: r.rows.map(row => OrganizationModel.parse(row)) }));
 
       const [versions, users, projects, targets, organizations] = await Promise.all([
         versionsResult,
@@ -3195,23 +3166,23 @@ export async function createStorage(
       }
     },
     async getBillingParticipants() {
-      const results = await pool.query<Slonik<organizations_billing>>(
+      const results = await pool.query<unknown>(
         sql`/* getBillingParticipants */ SELECT * FROM organizations_billing`,
-      );
+      ).then(r => ({ ...r, rows: r.rows.map(row => OrganizationBillingModel.parse(row)) }));
 
       return results.rows.map(transformOrganizationBilling);
     },
     async getOrganizationBilling(selector) {
-      const results = await pool.query<Slonik<organizations_billing>>(
+      const results = await pool.query<unknown>(
         sql`/* getOrganizationBilling */ SELECT * FROM organizations_billing WHERE organization_id = ${selector.organizationId}`,
-      );
+      ).then(r => ({ ...r, rows: r.rows.map(row => OrganizationBillingModel.parse(row)) }));
 
       const mapped = results.rows.map(transformOrganizationBilling);
 
       return mapped[0] || null;
     },
     async deleteOrganizationBilling(selector) {
-      await pool.query<Slonik<organizations_billing>>(
+      await pool.query<unknown>(
         sql`/* deleteOrganizationBilling */
           DELETE FROM organizations_billing
           WHERE organization_id = ${selector.organizationId}`,
@@ -3223,7 +3194,7 @@ export async function createStorage(
       externalBillingReference,
     }) {
       return transformOrganizationBilling(
-        await pool.one<Slonik<organizations_billing>>(
+        await pool.one(
           sql`/* createOrganizationBilling */
             INSERT INTO organizations_billing
               ("organization_id", "external_billing_reference_id", "billing_email_address")
@@ -3231,7 +3202,7 @@ export async function createStorage(
               (${organizationId}, ${externalBillingReference}, ${billingEmailAddress || null})
             RETURNING *
           `,
-        ),
+        ).then(OrganizationBillingModel.parse),
       );
     },
     async completeGetStartedStep({ organizationId: organization, step }) {
@@ -5819,6 +5790,104 @@ export const userFields = (user: TaggedTemplateLiteralInvocation) => sql`
       ON "sub_stu"."user_id" = "sub_ids"."id"
     ) AS "providers"
 `;
+
+const OrganizationModel = zod.object({
+  id: zod.string(),
+  clean_id: zod.string(),
+  name: zod.string(),
+  limit_retention_days: zod.string(),
+  limit_operations_monthly: zod.string(),
+  plan_name: zod.string(),
+  get_started_creating_project: zod.boolean(),
+  get_started_publishing_schema: zod.boolean(),
+  get_started_checking_schema: zod.boolean(),
+  get_started_inviting_members: zod.boolean(),
+  get_started_reporting_operations: zod.boolean(),
+  get_started_usage_breaking: zod.boolean(),
+  feature_flags: zod.union([
+    zod.null(),
+    zod.string(),
+    zod.number(),
+    zod.boolean(),
+    zod.record(zod.any()),
+    zod.array(zod.any()),
+  ]),
+  zendesk_organization_id: zod.string().nullable(),
+  user_id: zod.string(),
+  ownership_transfer_code: zod.string().nullable(),
+  slack_token: zod.string().nullable(),
+  github_app_installation_id: zod.string().nullable(),
+  created_at: zod.date(),
+  ownership_transfer_expires_at: zod.date().nullable(),
+  ownership_transfer_user_id: zod.string().nullable(),
+});
+
+const ProjectModel = zod.object({
+  id: zod.string(),
+  clean_id: zod.string(),
+  name: zod.string(),
+  org_id: zod.string(),
+  type: zod.string(),
+  created_at: zod.date(),
+  build_url: zod.string().nullable(),
+  validation_url: zod.string().nullable(),
+  git_repository: zod.string().nullable(),
+  github_check_with_project_name: zod.boolean(),
+  external_composition_enabled: zod.boolean(),
+  external_composition_endpoint: zod.string().nullable(),
+  external_composition_secret: zod.string().nullable(),
+  native_federation: zod.boolean().nullable(),
+});
+
+const OrganizationBillingModel = zod.object({
+  organization_id: zod.string(),
+  external_billing_reference_id: zod.string(),
+  billing_email_address: zod.string().nullable(),
+});
+
+const AlertChannelModel = zod.object({
+  id: zod.string(),
+  name: zod.string(),
+  type: zod.enum(['MSTEAMS_WEBHOOK', 'SLACK', 'WEBHOOK']),
+  project_id: zod.string(),
+  created_at: zod.date(),
+  slack_channel: zod.string().nullable(),
+  webhook_endpoint: zod.string().nullable(),
+});
+
+const AlertModel = zod.object({
+  id: zod.string(),
+  type: zod.enum(['SCHEMA_CHANGE_NOTIFICATIONS']),
+  created_at: zod.date(),
+  alert_channel_id: zod.string(),
+  project_id: zod.string(),
+  target_id: zod.string(),
+});
+
+const OrganizationUserIdAndIdModel = zod.object({
+  id: zod.string(),
+  user_id: zod.string(),
+});
+
+const OrganizationMemberAccessModel = zod.object({
+  organization_id: zod.string(),
+  user_id: zod.string(),
+  scopes: zod.array(zod.string()).nullable(),
+});
+
+const TargetIdModel = zod.object({
+  id: zod.string(),
+});
+
+const OrganizationTargetPairModel = zod.object({
+  organization: zod.string(),
+  target: zod.string(),
+});
+
+const OrganizationStatModel = zod.object({
+  id: zod.string(),
+  total: zod.coerce.number(),
+});
 
 export const UserModel = zod.object({
   id: zod.string(),
