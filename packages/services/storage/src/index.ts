@@ -857,14 +857,13 @@ export async function createStorage(
         WHERE o.id = ANY(${sql.array(organizations, 'uuid')})`,
       );
 
+      const parsedOwners = z.array(MemberModel).parse(owners);
+
       return organizations.map(organization => {
-        const owner = owners.find(row => {
-          const parsed = z.object({ organizationId: z.string() }).parse(row);
-          return parsed.organizationId === organization;
-        });
+        const owner = parsedOwners.find(row => row.organization === organization);
 
         if (owner) {
-          return Promise.resolve(MemberModel.parse(owner));
+          return Promise.resolve(owner);
         }
 
         return Promise.reject(new Error(`Owner not found (organization=${organization})`));
@@ -903,14 +902,15 @@ export async function createStorage(
         `,
       );
 
+      const parsedMembers = z.array(MemberModel).parse(membersResult);
+
       return selectors.map(selector => {
-        const member = membersResult.find(row => {
-          const parsed = z.object({ organizationId: z.string(), id: z.string() }).parse(row);
-          return parsed.organizationId === selector.organizationId && parsed.id === selector.userId;
-        });
+        const member = parsedMembers.find(
+          row => row.organization === selector.organizationId && row.id === selector.userId,
+        );
 
         if (member) {
-          return Promise.resolve(MemberModel.parse(member));
+          return Promise.resolve(member);
         }
 
         return Promise.resolve(null);
