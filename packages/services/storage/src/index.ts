@@ -34,14 +34,11 @@ import {
 } from '../../api/src/shared/entities';
 import { batch, batchBy } from '../../api/src/shared/helpers';
 import {
-  alert_channels,
-  alerts,
   getPool,
   organization_invitations,
   organization_member,
   organization_member_roles,
   organizations,
-  organizations_billing,
   projects,
   schema_log as schema_log_in_db,
   schema_policy_config,
@@ -410,37 +407,6 @@ export async function createStorage(
     };
   }
 
-  function transformOrganizationBilling(orgBilling: organizations_billing): OrganizationBilling {
-    return {
-      organizationId: orgBilling.organization_id,
-      externalBillingReference: orgBilling.external_billing_reference_id,
-      billingEmailAddress: orgBilling.billing_email_address,
-    };
-  }
-
-  function transformAlertChannel(channel: alert_channels): AlertChannel {
-    return {
-      id: channel.id,
-      projectId: channel.project_id,
-      name: channel.name,
-      type: channel.type,
-      createdAt: channel.created_at as any,
-      slackChannel: channel.slack_channel,
-      webhookEndpoint: channel.webhook_endpoint,
-    };
-  }
-
-  function transformAlert(alert: alerts, organization: string): Alert {
-    return {
-      id: alert.id,
-      type: alert.type,
-      createdAt: alert.created_at as any,
-      channelId: alert.alert_channel_id,
-      organizationId: organization,
-      projectId: alert.project_id,
-      targetId: alert.target_id,
-    };
-  }
 
   const shared = {
     async getUserBySuperTokenId(
@@ -2931,52 +2897,79 @@ export async function createStorage(
       return result?.github_app_installation_id;
     },
     async addAlertChannel({ projectId, name, type, slackChannel, webhookEndpoint }) {
-      return transformAlertChannel(
-        await pool.one(
+      return AlertChannelModel.parse(
+        await pool.one<unknown>(
           sql`/* addAlertChannel */
             INSERT INTO alert_channels
               ("name", "type", "project_id", "slack_channel", "webhook_endpoint")
             VALUES
               (${name}, ${type}, ${projectId}, ${slackChannel ?? null}, ${webhookEndpoint ?? null})
-            RETURNING *
+            RETURNING
+              "id",
+              "name",
+              "type",
+              "project_id" AS "projectId",
+              "created_at" AS "createdAt",
+              "slack_channel" AS "slackChannel",
+              "webhook_endpoint" AS "webhookEndpoint"
           `,
-        ).then(AlertChannelModel.parse),
+        ),
       );
     },
     async deleteAlertChannels({ projectId, channelIds }) {
-      const result = await pool.query<alert_channels>(
+      return pool.any<unknown>(
         sql`/* deleteAlertChannels */
           DELETE FROM alert_channels
           WHERE
             project_id = ${projectId} AND
             id IN (${sql.join(channelIds, sql`, `)})
-          RETURNING *
+          RETURNING
+            "id",
+            "name",
+            "type",
+            "project_id" AS "projectId",
+            "created_at" AS "createdAt",
+            "slack_channel" AS "slackChannel",
+            "webhook_endpoint" AS "webhookEndpoint"
         `,
-      );
-
-      return result.rows.map(transformAlertChannel);
+      ).then(zod.array(AlertChannelModel).parse);
     },
     async getAlertChannels({ projectId: project }) {
-      const result = await pool.any<unknown>(
-        sql`/* getAlertChannels */ SELECT * FROM alert_channels WHERE project_id = ${project} ORDER BY created_at DESC`,
-      ).then(z.array(AlertChannelModel).parse);
-
-      return result.map(transformAlertChannel);
+      return pool.any<unknown>(
+        sql`/* getAlertChannels */
+          SELECT
+            "id",
+            "name",
+            "type",
+            "project_id" AS "projectId",
+            "created_at" AS "createdAt",
+            "slack_channel" AS "slackChannel",
+            "webhook_endpoint" AS "webhookEndpoint"
+          FROM alert_channels
+          WHERE project_id = ${project}
+          ORDER BY created_at DESC`,
+      ).then(zod.array(AlertChannelModel).parse);
     },
 
     async addAlert({ organizationId, projectId, targetId, channelId, type }) {
-      return transformAlert(
-        await pool.one(
+      return {
+        ...(await pool.one<unknown>(
           sql`/* addAlert */
             INSERT INTO alerts
               ("type", "alert_channel_id", "target_id", "project_id")
             VALUES
               (${type}, ${channelId}, ${targetId}, ${projectId})
-            RETURNING *
+            RETURNING
+              "id",
+              "type",
+              "created_at" AS "createdAt",
+              "alert_channel_id" AS "channelId",
+              "project_id" AS "projectId",
+              "target_id" AS "targetId"
           `,
-        ).then(AlertModel.parse),
+        ).then(AlertModel.parse)),
         organizationId,
-      );
+      };
     },
     async deleteAlerts({ organizationId: organization, projectId: project, alertIds: alerts }) {
       const result = await pool.any<unknown>(
@@ -2985,18 +2978,34 @@ export async function createStorage(
           WHERE
             project_id = ${project} AND
             id IN (${sql.join(alerts, sql`, `)})
-          RETURNING *
+          RETURNING
+            "id",
+            "type",
+            "created_at" AS "createdAt",
+            "alert_channel_id" AS "channelId",
+            "project_id" AS "projectId",
+            "target_id" AS "targetId"
         `,
-      ).then(z.array(AlertModel).parse);
+      ).then(zod.array(AlertModel).parse);
 
-      return result.map(row => transformAlert(row, organization));
+      return result.map(row => ({ ...row, organizationId: organization }));
     },
     async getAlerts({ organizationId: organization, projectId: project }) {
       const result = await pool.any<unknown>(
-        sql`/* getAlerts */ SELECT * FROM alerts WHERE project_id = ${project} ORDER BY created_at DESC`,
-      ).then(z.array(AlertModel).parse);
+        sql`/* getAlerts */
+          SELECT
+            "id",
+            "type",
+            "created_at" AS "createdAt",
+            "alert_channel_id" AS "channelId",
+            "project_id" AS "projectId",
+            "target_id" AS "targetId"
+          FROM alerts
+          WHERE project_id = ${project}
+          ORDER BY created_at DESC`,
+      ).then(zod.array(AlertModel).parse);
 
-      return result.map(row => transformAlert(row, organization));
+      return result.map(row => ({ ...row, organizationId: organization }));
     },
     async adminGetOrganizationsTargetPairs() {
       const results = await pool.any<unknown>(
@@ -3167,19 +3176,28 @@ export async function createStorage(
     },
     async getBillingParticipants() {
       const results = await pool.any<unknown>(
-        sql`/* getBillingParticipants */ SELECT * FROM organizations_billing`,
-      ).then(z.array(OrganizationBillingModel).parse);
+        sql`/* getBillingParticipants */
+          SELECT
+            "organization_id" AS "organizationId",
+            "external_billing_reference_id" AS "externalBillingReference",
+            "billing_email_address" AS "billingEmailAddress"
+          FROM organizations_billing`,
+      ).then(zod.array(OrganizationBillingModel).parse);
 
-      return results.map(transformOrganizationBilling);
+      return results;
     },
     async getOrganizationBilling(selector) {
       const results = await pool.any<unknown>(
-        sql`/* getOrganizationBilling */ SELECT * FROM organizations_billing WHERE organization_id = ${selector.organizationId}`,
-      ).then(z.array(OrganizationBillingModel).parse);
+        sql`/* getOrganizationBilling */
+          SELECT
+            "organization_id" AS "organizationId",
+            "external_billing_reference_id" AS "externalBillingReference",
+            "billing_email_address" AS "billingEmailAddress"
+          FROM organizations_billing
+          WHERE organization_id = ${selector.organizationId}`,
+      ).then(zod.array(OrganizationBillingModel).parse);
 
-      const mapped = results.map(transformOrganizationBilling);
-
-      return mapped[0] || null;
+      return results[0] || null;
     },
     async deleteOrganizationBilling(selector) {
       await pool.any(
@@ -3193,16 +3211,19 @@ export async function createStorage(
       organizationId,
       externalBillingReference,
     }) {
-      return transformOrganizationBilling(
-        await pool.one(
+      return OrganizationBillingModel.parse(
+        await pool.one<unknown>(
           sql`/* createOrganizationBilling */
             INSERT INTO organizations_billing
               ("organization_id", "external_billing_reference_id", "billing_email_address")
             VALUES
               (${organizationId}, ${externalBillingReference}, ${billingEmailAddress || null})
-            RETURNING *
+            RETURNING
+              "organization_id" AS "organizationId",
+              "external_billing_reference_id" AS "externalBillingReference",
+              "billing_email_address" AS "billingEmailAddress"
           `,
-        ).then(OrganizationBillingModel.parse),
+        ),
       );
     },
     async completeGetStartedStep({ organizationId: organization, step }) {
@@ -5840,28 +5861,28 @@ const ProjectModel = zod.object({
 });
 
 const OrganizationBillingModel = zod.object({
-  organization_id: zod.string(),
-  external_billing_reference_id: zod.string(),
-  billing_email_address: zod.string().nullable(),
+  organizationId: zod.string(),
+  externalBillingReference: zod.string(),
+  billingEmailAddress: zod.string().nullable(),
 });
 
 const AlertChannelModel = zod.object({
   id: zod.string(),
   name: zod.string(),
   type: zod.enum(['MSTEAMS_WEBHOOK', 'SLACK', 'WEBHOOK']),
-  project_id: zod.string(),
-  created_at: zod.date(),
-  slack_channel: zod.string().nullable(),
-  webhook_endpoint: zod.string().nullable(),
+  projectId: zod.string(),
+  createdAt: zod.date().transform(d => d.toISOString()),
+  slackChannel: zod.string().nullable(),
+  webhookEndpoint: zod.string().nullable(),
 });
 
 const AlertModel = zod.object({
   id: zod.string(),
   type: zod.enum(['SCHEMA_CHANGE_NOTIFICATIONS']),
-  created_at: zod.date(),
-  alert_channel_id: zod.string(),
-  project_id: zod.string(),
-  target_id: zod.string(),
+  createdAt: zod.date().transform(d => d.toISOString()),
+  channelId: zod.string(),
+  projectId: zod.string(),
+  targetId: zod.string(),
 });
 
 const OrganizationUserIdAndIdModel = zod.object({
