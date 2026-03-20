@@ -1758,7 +1758,9 @@ export async function createStorage(
           sql`/* getTargetSettings */
           SELECT
             ${targetSettingsFields(sql`t.`)}
-            , array_agg(tv.destination_target_id) as targets
+            , array_agg(DISTINCT tv.destination_target_id)
+              FILTER (WHERE tv.destination_target_id IS NOT NULL)
+                AS "targets"
           FROM targets AS t
           LEFT JOIN target_validation AS tv ON (tv.target_id = t.id)
           WHERE t.id = ${target} AND t.project_id = ${project}
@@ -1910,7 +1912,7 @@ export async function createStorage(
               AND project_id = ${project}
             RETURNING
               ${targetSettingsFields(sql``)}
-              , null as targets
+              , targets
           `,
         )
         .then(TargetSettingsModel.parse)
