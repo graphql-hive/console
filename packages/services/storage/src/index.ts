@@ -2012,7 +2012,7 @@ export async function createStorage(
               sl.created_at DESC
           `,
         )
-        .then(SchemaModel.nullable().parse);
+        .then(SchemaPushModel.nullable().parse);
     },
     async getSchemasOfVersion({ versionId: version, includeMetadata: _includeMetadata = false }) {
       return pool
@@ -2032,7 +2032,7 @@ export async function createStorage(
               sl.created_at DESC
           `,
         )
-        .then(z.array(SchemaModel).parse);
+        .then(z.array(SchemaPushModel).parse);
     },
     async getServiceSchemaOfVersion(args) {
       return pool
@@ -2051,7 +2051,7 @@ export async function createStorage(
               AND lower(sl.service_name) = lower(${args.serviceName})
         `,
         )
-        .then(SchemaModel.nullable().parse);
+        .then(SchemaPushModel.nullable().parse);
     },
 
     async getMatchingServiceSchemaOfVersions(versions) {
@@ -2455,7 +2455,7 @@ export async function createStorage(
             )}))
         `,
       );
-      const schemas = z.array(SchemaLogModel).parse(rows);
+      const schemas = z.array(SchemaModel).parse(rows);
 
       return selectors.map(selector => {
         const schema = schemas.find(
@@ -2656,7 +2656,9 @@ export async function createStorage(
               o.limit_operations_monthly,
               o.limit_retention_days,
               o.plan_name as org_plan_name,
-              array_agg(DISTINCT t.id) as targets,
+              array_agg(DISTINCT t.id)
+                FILTER (WHERE t.id IS NOT NULL)
+                as targets,
               split_part(
                 string_agg(
                   DISTINCT u.email, ','
@@ -2679,7 +2681,10 @@ export async function createStorage(
               org_clean_id: z.string(),
               org_plan_name: z.string(),
               owner_email: z.string(),
-              targets: z.array(z.string()),
+              targets: z
+                .array(z.string())
+                .nullable()
+                .transform(value => value ?? []),
               limit_operations_monthly: z.number(),
               limit_retention_days: z.number(),
             }),
@@ -5577,84 +5582,49 @@ const schemaLogFields = (prefix: TaggedTemplateLiteralInvocation) => sql`
 `;
 
 /** Base shape for schema_log DB rows (with SQL aliases from schemaLogFields + p.type) */
-const schemaLogRow = {
+
+const SchemaLogBase = z.object({
   id: z.string(),
-  author: z.string().nullable(),
-  commit: z.string().nullable(),
-  sdl: z.string().nullable(),
-  date: z.any(),
-  target: z.string(),
-  metadata: z
-    .string()
-    .nullish()
-    .transform(v => v ?? null),
-  service_name: z.string().nullable(),
-  service_url: z.string().nullable(),
-  action: z.string(),
-  type: z.string(),
-};
+  author: z.string(),
+  commit: z.string(),
+  sdl: z.string(),
+  date: z.number(),
+  target: z.string().uuid(),
+  metadata: z.string().nullish().default(null),
+});
 
 /** Single-project schema (always PUSH) */
-const SinglePushSchemaModel = z
-  .object(schemaLogRow)
-  .refine(row => (row.type as ProjectType) === ProjectType.SINGLE)
-  .transform(
-    (row): SingleSchema => ({
-      kind: 'single',
-      id: row.id,
-      author: row.author!,
-      sdl: row.sdl!,
-      commit: row.commit!,
-      date: row.date,
-      target: row.target,
-      metadata: row.metadata,
-    }),
-  );
+const SinglePushSchemaModel = SchemaLogBase.extend({
+  action: z.literal('PUSH'),
+  service_name: z.null(),
+  service_url: z.null(),
+}).transform(value => ({
+  ...value,
+  kind: 'single' as const,
+}));
 
 /** Composite-project PUSH schema */
-const PushedCompositeSchemaModel = z
-  .object(schemaLogRow)
-  .refine(row => (row.type as ProjectType) !== ProjectType.SINGLE && row.action === 'PUSH')
-  .transform(
-    (row): PushedCompositeSchema => ({
-      kind: 'composite',
-      id: row.id,
-      author: row.author!,
-      sdl: row.sdl!,
-      commit: row.commit!,
-      date: row.date,
-      service_name: row.service_name!,
-      service_url: row.service_url,
-      target: row.target,
-      action: 'PUSH',
-      metadata: row.metadata,
-    }),
-  );
+const CompositePushSchemaModel = SchemaLogBase.extend({
+  action: z.literal('PUSH'),
+  service_name: z.string(),
+  service_url: z.string(),
+}).transform(value => ({
+  ...value,
+  kind: 'composite' as const,
+}));
 
 /** Composite-project DELETE schema */
-const DeletedCompositeSchemaModel = z
-  .object(schemaLogRow)
-  .refine(row => (row.type as ProjectType) !== ProjectType.SINGLE && row.action === 'DELETE')
-  .transform(
-    (row): DeletedCompositeSchema => ({
-      kind: 'composite',
-      id: row.id,
-      date: row.date,
-      service_name: row.service_name!,
-      target: row.target,
-      action: 'DELETE',
-    }),
-  );
+const CompositeDeletedSchemaModel = SchemaLogBase.extend({
+  action: z.literal('DELETE'),
+  service_name: z.string(),
+}).transform(value => ({
+  ...value,
+  kind: 'composite' as const,
+}));
 
 /** Parses a DB row into a Schema (always PUSH — single or composite) */
-const SchemaModel = z.union([SinglePushSchemaModel, PushedCompositeSchemaModel]);
-
-/** Parses a DB row into a SchemaLog (single push, composite push, or composite delete) */
-const SchemaLogModel = z.union([
-  SinglePushSchemaModel,
-  PushedCompositeSchemaModel,
-  DeletedCompositeSchemaModel,
-]);
+const SchemaPushModel = z.union([SinglePushSchemaModel, CompositePushSchemaModel]);
+const SchemaModel = z.union([SchemaPushModel, CompositeDeletedSchemaModel]);
 
 const OrganizationModel = z
   .object({
