@@ -5757,8 +5757,8 @@ const OrganizationInvitationModel = z
     organizationId: z.string(),
     code: z.string(),
     email: z.string().email(),
-    createdAt: z.number().transform(v => new Date(v).toISOString()),
-    expiresAt: z.number().transform(v => new Date(v).toISOString()),
+    createdAt: z.string().transform(v => new Date(v).toISOString()),
+    expiresAt: z.string().transform(v => new Date(v).toISOString()),
     roleId: z.string(),
     assignedResources: z.any(),
   })
