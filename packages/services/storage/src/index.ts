@@ -8,13 +8,10 @@ import {
 } from 'slonik';
 import { update } from 'slonik-utilities';
 import { TaggedTemplateLiteralInvocation, TransactionFunction } from 'slonik/dist/src/types';
-import zod from 'zod';
+import { z } from 'zod';
 import type {
-  Alert,
-  AlertChannel,
   Member,
   Organization,
-  OrganizationBilling,
   OrganizationInvitation,
   Project,
   Schema,
@@ -407,7 +404,6 @@ export async function createStorage(
     };
   }
 
-
   const shared = {
     async getUserBySuperTokenId(
       { superTokensUserId }: { superTokensUserId: string },
@@ -490,9 +486,11 @@ export async function createStorage(
       return user;
     },
     async getOrganization(userId: string, connection: Connection) {
-      const org = await connection.maybeOne<unknown>(
-        sql`/* getOrganization */ SELECT * FROM organizations WHERE user_id = ${userId} AND type = ${'PERSONAL'} LIMIT 1`,
-      ).then(OrganizationModel.nullable().parse);
+      const org = await connection
+        .maybeOne<unknown>(
+          sql`/* getOrganization */ SELECT * FROM organizations WHERE user_id = ${userId} AND type = ${'PERSONAL'} LIMIT 1`,
+        )
+        .then(OrganizationModel.nullable().parse);
 
       return org ? transformOrganization(org) : null;
     },
@@ -932,12 +930,14 @@ export async function createStorage(
     },
     getOrganizationOwnerId: batch(async selectors => {
       const organizations = selectors.map(s => s.organizationId);
-      const owners = await pool.any<unknown>(
-        sql`/* getOrganizationOwnerId */
+      const owners = await pool
+        .any<unknown>(
+          sql`/* getOrganizationOwnerId */
         SELECT id, user_id
         FROM organizations
         WHERE id IN (${sql.join(organizations, sql`, `)})`,
-      ).then(z.array(OrganizationUserIdAndIdModel).parse);
+        )
+        .then(z.array(OrganizationUserIdAndIdModel).parse);
 
       return organizations.map(async organization => {
         const owner = owners.find(row => row.id === organization);
@@ -1159,8 +1159,9 @@ export async function createStorage(
       });
     },
     async getOrganizationMemberAccessPairs(pairs) {
-      const results = await pool.any<unknown>(
-        sql`/* getOrganizationMemberAccessPairs */
+      const results = await pool
+        .any<unknown>(
+          sql`/* getOrganizationMemberAccessPairs */
           SELECT om.organization_id, om.user_id, omr.scopes as scopes
           FROM organization_member as om
           LEFT JOIN organization_member_roles as omr ON (omr.organization_id = om.organization_id AND omr.id = om.role_id)
@@ -1169,12 +1170,12 @@ export async function createStorage(
             sql`), (`,
           )}))
         `,
-      ).then(z.array(OrganizationMemberAccessModel).parse);
+        )
+        .then(z.array(OrganizationMemberAccessModel).parse);
 
       return pairs.map(({ organizationId: organization, userId: user }) => {
-        return (results.find(
-          row => row.organization_id === organization && row.user_id === user,
-        )?.scopes || []) as Member['scopes'];
+        return (results.find(row => row.organization_id === organization && row.user_id === user)
+          ?.scopes || []) as Member['scopes'];
       });
     },
     async updateOrganizationSlug({ slug, organizationId: organization, reservedSlugs }) {
@@ -1200,12 +1201,16 @@ export async function createStorage(
         return {
           ok: true,
           organization: transformOrganization(
-            await t.one(sql`/* updateOrganizationSlug */
+            await t
+              .one(
+                sql`/* updateOrganizationSlug */
               UPDATE organizations
               SET clean_id = ${slug}, name = ${slug}
               WHERE id = ${organization}
               RETURNING *
-            `).then(OrganizationModel.parse),
+            `,
+              )
+              .then(OrganizationModel.parse),
           ),
         };
       });
@@ -1213,23 +1218,31 @@ export async function createStorage(
 
     async updateOrganizationPlan({ billingPlan, organizationId: organization }) {
       return transformOrganization(
-        await pool.one(sql`/* updateOrganizationPlan */
+        await pool
+          .one(
+            sql`/* updateOrganizationPlan */
           UPDATE organizations
           SET plan_name = ${billingPlan}
           WHERE id = ${organization}
           RETURNING *
-        `).then(OrganizationModel.parse),
+        `,
+          )
+          .then(OrganizationModel.parse),
       );
     },
     async updateOrganizationRateLimits(args, action) {
       return await tracedTransaction('updateOrganizationRateLimits', pool, async t => {
         const org = transformOrganization(
-          await t.one(sql`/* updateOrganizationRateLimits */
+          await t
+            .one(
+              sql`/* updateOrganizationRateLimits */
             UPDATE organizations
             SET limit_operations_monthly = ${args.monthlyRateLimit.operations}, limit_retention_days = ${args.monthlyRateLimit.retentionInDays}
             WHERE id = ${args.organizationId}
             RETURNING *
-          `).then(OrganizationModel.parse),
+          `,
+            )
+            .then(OrganizationModel.parse),
         );
         await action?.();
 
@@ -1392,7 +1405,8 @@ export async function createStorage(
             AND ownership_transfer_user_id = ${user}
             AND ownership_transfer_code = ${code}
             AND ownership_transfer_expires_at > NOW()
-        `);
+        `,
+        );
 
         if (!owner) {
           throw new Error('No organization transfer request found');
@@ -1479,27 +1493,32 @@ export async function createStorage(
     },
     async getOrganization({ organizationId }) {
       return transformOrganization(
-        await pool.one(
-          sql`/* getOrganization */ SELECT * FROM organizations WHERE id = ${organizationId} LIMIT 1`,
-        ).then(OrganizationModel.parse),
+        await pool
+          .one(
+            sql`/* getOrganization */ SELECT * FROM organizations WHERE id = ${organizationId} LIMIT 1`,
+          )
+          .then(OrganizationModel.parse),
       );
     },
     async getOrganizations({ userId: user }) {
-      const results = await pool.any<unknown>(
-        sql`/* getOrganizations */
+      const results = await pool
+        .any<unknown>(
+          sql`/* getOrganizations */
           SELECT o.*
           FROM organizations as o
           LEFT JOIN organization_member as om ON (om.organization_id = o.id)
           WHERE om.user_id = ${user}
           ORDER BY o.created_at DESC
         `,
-      ).then(z.array(OrganizationModel).parse);
+        )
+        .then(z.array(OrganizationModel).parse);
 
       return results.map(transformOrganization);
     },
     async getOrganizationByInviteCode({ inviteCode, email }) {
-      const result = await pool.maybeOne<unknown>(
-        sql`/* getOrganizationByInviteCode */
+      const result = await pool
+        .maybeOne<unknown>(
+          sql`/* getOrganizationByInviteCode */
           SELECT o.* FROM organizations as o
           LEFT JOIN organization_invitations as i ON (i.organization_id = o.id)
           WHERE
@@ -1509,7 +1528,8 @@ export async function createStorage(
           GROUP BY o.id
           LIMIT 1
         `,
-      ).then(OrganizationModel.nullable().parse);
+        )
+        .then(OrganizationModel.nullable().parse);
 
       if (result) {
         return transformOrganization(result);
@@ -1518,9 +1538,11 @@ export async function createStorage(
       return null;
     },
     async getOrganizationBySlug({ slug }) {
-      const result = await pool.maybeOne<unknown>(
-        sql`/* getOrganizationBySlug */ SELECT * FROM organizations WHERE clean_id = ${slug} LIMIT 1`,
-      ).then(OrganizationModel.nullable().parse);
+      const result = await pool
+        .maybeOne<unknown>(
+          sql`/* getOrganizationBySlug */ SELECT * FROM organizations WHERE clean_id = ${slug} LIMIT 1`,
+        )
+        .then(OrganizationModel.nullable().parse);
 
       if (!result) {
         return null;
@@ -1529,13 +1551,15 @@ export async function createStorage(
       return transformOrganization(result);
     },
     async getOrganizationByGitHubInstallationId({ installationId }) {
-      const result = await pool.maybeOne<unknown>(
-        sql`/* getOrganizationByGitHubInstallationId */
+      const result = await pool
+        .maybeOne<unknown>(
+          sql`/* getOrganizationByGitHubInstallationId */
           SELECT * FROM organizations
           WHERE github_app_installation_id = ${installationId}
           LIMIT 1
         `,
-      ).then(OrganizationModel.nullable().parse);
+        )
+        .then(OrganizationModel.nullable().parse);
 
       if (result) {
         return transformOrganization(result);
@@ -1545,15 +1569,19 @@ export async function createStorage(
     },
     async getProject({ projectId: project }) {
       return transformProject(
-        await pool.one(
-          sql`/* getProject */ SELECT * FROM projects WHERE id = ${project} AND type != 'CUSTOM' LIMIT 1`,
-        ).then(ProjectModel.parse),
+        await pool
+          .one(
+            sql`/* getProject */ SELECT * FROM projects WHERE id = ${project} AND type != 'CUSTOM' LIMIT 1`,
+          )
+          .then(ProjectModel.parse),
       );
     },
     async getProjectBySlug({ slug, organizationId: organization }) {
-      const result = await pool.maybeOne<unknown>(
-        sql`/* getProjectBySlug */ SELECT * FROM projects WHERE clean_id = ${slug} AND org_id = ${organization} AND type != 'CUSTOM' LIMIT 1`,
-      ).then(ProjectModel.nullable().parse);
+      const result = await pool
+        .maybeOne<unknown>(
+          sql`/* getProjectBySlug */ SELECT * FROM projects WHERE clean_id = ${slug} AND org_id = ${organization} AND type != 'CUSTOM' LIMIT 1`,
+        )
+        .then(ProjectModel.nullable().parse);
 
       if (!result) {
         return null;
@@ -1562,9 +1590,11 @@ export async function createStorage(
       return transformProject(result);
     },
     async getProjects({ organizationId: organization }) {
-      const result = await pool.any<unknown>(
-        sql`/* getProjects */ SELECT * FROM projects WHERE org_id = ${organization} AND type != 'CUSTOM' ORDER BY created_at DESC`,
-      ).then(z.array(ProjectModel).parse);
+      const result = await pool
+        .any<unknown>(
+          sql`/* getProjects */ SELECT * FROM projects WHERE org_id = ${organization} AND type != 'CUSTOM' ORDER BY created_at DESC`,
+        )
+        .then(z.array(ProjectModel).parse);
 
       return result.map(transformProject);
     },
@@ -1577,9 +1607,11 @@ export async function createStorage(
           return args.map(async () => allProjectsLookupMap);
         }
 
-        const result = await pool.any<unknown>(
-          sql`/* findProjectsByIds */ SELECT * FROM projects WHERE id = ANY(${sql.array(allProjectIds, 'uuid')}) AND type != 'CUSTOM'`,
-        ).then(z.array(ProjectModel).parse);
+        const result = await pool
+          .any<unknown>(
+            sql`/* findProjectsByIds */ SELECT * FROM projects WHERE id = ANY(${sql.array(allProjectIds, 'uuid')}) AND type != 'CUSTOM'`,
+          )
+          .then(z.array(ProjectModel).parse);
 
         result.forEach(row => {
           const project = transformProject(row);
@@ -1619,12 +1651,16 @@ export async function createStorage(
         return {
           ok: true,
           project: transformProject(
-            await t.one(sql`/* updateProjectSlug */
+            await t
+              .one(
+                sql`/* updateProjectSlug */
               UPDATE projects
               SET clean_id = ${slug}, name = ${slug}
               WHERE id = ${project} AND org_id = ${organization}
               RETURNING *
-            `).then(ProjectModel.parse),
+            `,
+              )
+              .then(ProjectModel.parse),
           ),
         };
       });
@@ -1643,7 +1679,9 @@ export async function createStorage(
     },
     async enableExternalSchemaComposition({ projectId: project, endpoint, encryptedSecret }) {
       return transformProject(
-        await pool.one(sql`/* enableExternalSchemaComposition */
+        await pool
+          .one(
+            sql`/* enableExternalSchemaComposition */
           UPDATE projects
           SET
             native_federation = FALSE,
@@ -1652,7 +1690,9 @@ export async function createStorage(
             external_composition_secret = ${encryptedSecret}
           WHERE id = ${project}
           RETURNING *
-        `).then(ProjectModel.parse),
+        `,
+          )
+          .then(ProjectModel.parse),
       );
     },
     async enableProjectNameInGithubCheck({ projectId: project }) {
@@ -1867,7 +1907,9 @@ export async function createStorage(
       };
     },
     async getTargets({ organizationId, projectId }) {
-      const results = await pool.any<unknown>(sql`/* getTargets */
+      const results = await pool
+        .any<unknown>(
+          sql`/* getTargets */
         SELECT
           ${targetSQLFields}
         FROM
@@ -1876,7 +1918,9 @@ export async function createStorage(
           project_id = ${projectId}
         ORDER BY
           created_at DESC
-      `).then(z.array(TargetModel).parse);
+      `,
+        )
+        .then(z.array(TargetModel).parse);
 
       return results.map(r => ({
         ...r,
@@ -1902,14 +1946,18 @@ export async function createStorage(
 
         const orgId = args[0].organizationId;
 
-        const results = await pool.any<unknown>(sql`/* getTargets */
+        const results = await pool
+          .any<unknown>(
+            sql`/* getTargets */
           SELECT
           ${targetSQLFields}
           FROM
           "targets"
           WHERE
           "id" = ANY(${sql.array(allTargetIds, 'uuid')})
-        `).then(z.array(TargetModel).parse);
+        `,
+          )
+          .then(z.array(TargetModel).parse);
 
         for (const row of results) {
           const target: Target = { ...row, orgId };
@@ -1928,23 +1976,27 @@ export async function createStorage(
       },
     ),
     async getTargetIdsOfOrganization({ organizationId: organization }) {
-      const results = await pool.any<unknown>(
-        sql`/* getTargetIdsOfOrganization */
+      const results = await pool
+        .any<unknown>(
+          sql`/* getTargetIdsOfOrganization */
           SELECT t.id as id FROM targets as t
           LEFT JOIN projects as p ON (p.id = t.project_id)
           WHERE p.org_id = ${organization}
           GROUP BY t.id
         `,
-      ).then(z.array(TargetIdModel).parse);
+        )
+        .then(z.array(TargetIdModel).parse);
 
       return results.map(r => r.id);
     },
     async getTargetIdsOfProject({ projectId: project }) {
-      const results = await pool.any<unknown>(
-        sql`/* getTargetIdsOfProject */
+      const results = await pool
+        .any<unknown>(
+          sql`/* getTargetIdsOfProject */
           SELECT id FROM targets WHERE project_id = ${project}
         `,
-      ).then(z.array(TargetIdModel).parse);
+        )
+        .then(z.array(TargetIdModel).parse);
 
       return results.map(r => r.id);
     },
@@ -2782,7 +2834,9 @@ export async function createStorage(
 
     async getSchemaChangesForVersion(args) {
       // TODO: should this be paginated?
-      const changes = await pool.any<unknown>(sql`/* getSchemaChangesForVersion */
+      const changes = await pool
+        .any<unknown>(
+          sql`/* getSchemaChangesForVersion */
         SELECT
           "change_type" as "type",
           "meta",
@@ -2792,7 +2846,9 @@ export async function createStorage(
           "schema_version_changes"
         WHERE
           "schema_version_id" = ${args.versionId}
-      `).then(z.array(HiveSchemaChangeModel).parse);
+      `,
+        )
+        .then(z.array(HiveSchemaChangeModel).parse);
 
       if (changes.length === 0) {
         return null;
@@ -2898,7 +2954,7 @@ export async function createStorage(
     },
     async addAlertChannel({ projectId, name, type, slackChannel, webhookEndpoint }) {
       return AlertChannelModel.parse(
-        await pool.one<unknown>(
+        await pool.one(
           sql`/* addAlertChannel */
             INSERT INTO alert_channels
               ("name", "type", "project_id", "slack_channel", "webhook_endpoint")
@@ -2917,8 +2973,9 @@ export async function createStorage(
       );
     },
     async deleteAlertChannels({ projectId, channelIds }) {
-      return pool.any<unknown>(
-        sql`/* deleteAlertChannels */
+      return pool
+        .any<unknown>(
+          sql`/* deleteAlertChannels */
           DELETE FROM alert_channels
           WHERE
             project_id = ${projectId} AND
@@ -2932,11 +2989,13 @@ export async function createStorage(
             "slack_channel" AS "slackChannel",
             "webhook_endpoint" AS "webhookEndpoint"
         `,
-      ).then(zod.array(AlertChannelModel).parse);
+        )
+        .then(z.array(AlertChannelModel).parse);
     },
     async getAlertChannels({ projectId: project }) {
-      return pool.any<unknown>(
-        sql`/* getAlertChannels */
+      return pool
+        .any<unknown>(
+          sql`/* getAlertChannels */
           SELECT
             "id",
             "name",
@@ -2948,13 +3007,15 @@ export async function createStorage(
           FROM alert_channels
           WHERE project_id = ${project}
           ORDER BY created_at DESC`,
-      ).then(zod.array(AlertChannelModel).parse);
+        )
+        .then(z.array(AlertChannelModel).parse);
     },
 
     async addAlert({ organizationId, projectId, targetId, channelId, type }) {
       return {
-        ...(await pool.one<unknown>(
-          sql`/* addAlert */
+        ...(await pool
+          .one(
+            sql`/* addAlert */
             INSERT INTO alerts
               ("type", "alert_channel_id", "target_id", "project_id")
             VALUES
@@ -2967,13 +3028,15 @@ export async function createStorage(
               "project_id" AS "projectId",
               "target_id" AS "targetId"
           `,
-        ).then(AlertModel.parse)),
+          )
+          .then(AlertModel.parse)),
         organizationId,
       };
     },
     async deleteAlerts({ organizationId: organization, projectId: project, alertIds: alerts }) {
-      const result = await pool.any<unknown>(
-        sql`/* deleteAlerts */
+      const result = await pool
+        .any<unknown>(
+          sql`/* deleteAlerts */
           DELETE FROM alerts
           WHERE
             project_id = ${project} AND
@@ -2986,13 +3049,15 @@ export async function createStorage(
             "project_id" AS "projectId",
             "target_id" AS "targetId"
         `,
-      ).then(zod.array(AlertModel).parse);
+        )
+        .then(z.array(AlertModel).parse);
 
       return result.map(row => ({ ...row, organizationId: organization }));
     },
     async getAlerts({ organizationId: organization, projectId: project }) {
-      const result = await pool.any<unknown>(
-        sql`/* getAlerts */
+      const result = await pool
+        .any<unknown>(
+          sql`/* getAlerts */
           SELECT
             "id",
             "type",
@@ -3003,13 +3068,15 @@ export async function createStorage(
           FROM alerts
           WHERE project_id = ${project}
           ORDER BY created_at DESC`,
-      ).then(zod.array(AlertModel).parse);
+        )
+        .then(z.array(AlertModel).parse);
 
       return result.map(row => ({ ...row, organizationId: organization }));
     },
     async adminGetOrganizationsTargetPairs() {
-      const results = await pool.any<unknown>(
-        sql`/* adminGetOrganizationsTargetPairs */
+      const results = await pool
+        .any<unknown>(
+          sql`/* adminGetOrganizationsTargetPairs */
           SELECT
             o.id as organization,
             t.id as target
@@ -3017,7 +3084,8 @@ export async function createStorage(
           LEFT JOIN projects AS p ON (p.id = t.project_id)
           LEFT JOIN organizations AS o ON (o.id = p.org_id)
         `,
-      ).then(z.array(OrganizationTargetPairModel).parse);
+        )
+        .then(z.array(OrganizationTargetPairModel).parse);
       return results;
     },
     async getGetOrganizationsAndTargetsWithLimitInfo() {
@@ -3058,8 +3126,9 @@ export async function createStorage(
     },
     async adminGetStats(period: { from: Date; to: Date }) {
       // count schema versions by organization
-      const versionsResult = pool.any<unknown>(
-        sql`/* adminCountSchemaVersionsByOrg */
+      const versionsResult = pool
+        .any<unknown>(
+          sql`/* adminCountSchemaVersionsByOrg */
         SELECT
           COUNT(*) as total,
           o.id
@@ -3072,33 +3141,42 @@ export async function createStorage(
           AND
           v.created_at < ${period.to.toISOString()}
         GROUP by o.id
-      `).then(z.array(OrganizationStatModel).parse);
+      `,
+        )
+        .then(z.array(OrganizationStatModel).parse);
 
       // count users by organization
-      const usersResult = pool.any<unknown>(
-        sql`/* adminCountUsersByOrg */
+      const usersResult = pool
+        .any<unknown>(
+          sql`/* adminCountUsersByOrg */
         SELECT
           COUNT(*) as total,
           o.id
         FROM organization_member AS om
         LEFT JOIN organizations AS o ON (o.id = om.organization_id)
         GROUP by o.id
-      `).then(z.array(OrganizationStatModel).parse);
+      `,
+        )
+        .then(z.array(OrganizationStatModel).parse);
 
       // count projects by organization
-      const projectsResult = pool.any<unknown>(
-        sql`/* adminCountProjectsByOrg */
+      const projectsResult = pool
+        .any<unknown>(
+          sql`/* adminCountProjectsByOrg */
         SELECT
           COUNT(*) as total,
           o.id
         FROM projects AS p
         LEFT JOIN organizations AS o ON (o.id = p.org_id)
         GROUP by o.id
-      `).then(z.array(OrganizationStatModel).parse);
+      `,
+        )
+        .then(z.array(OrganizationStatModel).parse);
 
       // count targets by organization
-      const targetsResult = pool.any<unknown>(
-        sql`/* adminCountTargetsByOrg */
+      const targetsResult = pool
+        .any<unknown>(
+          sql`/* adminCountTargetsByOrg */
         SELECT
           COUNT(*) as total,
           o.id
@@ -3106,12 +3184,18 @@ export async function createStorage(
         LEFT JOIN projects AS p ON (p.id = t.project_id)
         LEFT JOIN organizations AS o ON (o.id = p.org_id)
         GROUP by o.id
-      `).then(z.array(OrganizationStatModel).parse);
+      `,
+        )
+        .then(z.array(OrganizationStatModel).parse);
 
       // get organizations data
-      const organizationsResult = pool.any<unknown>(sql`/* adminGetOrganizations */
+      const organizationsResult = pool
+        .any<unknown>(
+          sql`/* adminGetOrganizations */
         SELECT * FROM organizations
-      `).then(z.array(OrganizationModel).parse);
+      `,
+        )
+        .then(z.array(OrganizationModel).parse);
 
       const [versions, users, projects, targets, organizations] = await Promise.all([
         versionsResult,
@@ -3175,27 +3259,31 @@ export async function createStorage(
       }
     },
     async getBillingParticipants() {
-      const results = await pool.any<unknown>(
-        sql`/* getBillingParticipants */
+      const results = await pool
+        .any<unknown>(
+          sql`/* getBillingParticipants */
           SELECT
             "organization_id" AS "organizationId",
             "external_billing_reference_id" AS "externalBillingReference",
             "billing_email_address" AS "billingEmailAddress"
           FROM organizations_billing`,
-      ).then(zod.array(OrganizationBillingModel).parse);
+        )
+        .then(z.array(OrganizationBillingModel).parse);
 
       return results;
     },
     async getOrganizationBilling(selector) {
-      const results = await pool.any<unknown>(
-        sql`/* getOrganizationBilling */
+      const results = await pool
+        .any<unknown>(
+          sql`/* getOrganizationBilling */
           SELECT
             "organization_id" AS "organizationId",
             "external_billing_reference_id" AS "externalBillingReference",
             "billing_email_address" AS "billingEmailAddress"
           FROM organizations_billing
           WHERE organization_id = ${selector.organizationId}`,
-      ).then(zod.array(OrganizationBillingModel).parse);
+        )
+        .then(z.array(OrganizationBillingModel).parse);
 
       return results[0] || null;
     },
@@ -3212,7 +3300,7 @@ export async function createStorage(
       externalBillingReference,
     }) {
       return OrganizationBillingModel.parse(
-        await pool.one<unknown>(
+        await pool.one(
           sql`/* createOrganizationBilling */
             INSERT INTO organizations_billing
               ("organization_id", "external_billing_reference_id", "billing_email_address")
@@ -3869,7 +3957,7 @@ export async function createStorage(
         return null;
       }
 
-      return zod.string().parse(result);
+      return z.string().parse(result);
     },
 
     async updateDocumentCollection(args) {
@@ -4027,7 +4115,7 @@ export async function createStorage(
         return null;
       }
 
-      return zod.string().parse(result);
+      return z.string().parse(result);
     },
 
     async getDocumentCollectionDocument(args) {
@@ -4697,12 +4785,12 @@ export async function createStorage(
     },
 
     async purgeExpiredSchemaChecks(args) {
-      const SchemaCheckModel = zod.object({
-        schemaCheckIds: zod.array(zod.string()),
-        sdlStoreIds: zod.array(zod.string()),
-        contextIds: zod.array(zod.string()),
-        targetIds: zod.array(zod.string()),
-        contractIds: zod.array(zod.string()),
+      const SchemaCheckModel = z.object({
+        schemaCheckIds: z.array(z.string()),
+        sdlStoreIds: z.array(z.string()),
+        contextIds: z.array(z.string()),
+        targetIds: z.array(z.string()),
+        contractIds: z.array(z.string()),
       });
       return await tracedTransaction('purgeExpiredSchemaChecks', pool, async pool => {
         const date = args.expiresAt.toISOString();
@@ -5073,39 +5161,39 @@ function isDefined<T>(val: T | undefined | null): val is T {
   return val !== undefined && val !== null;
 }
 
-const OktaIntegrationBaseModel = zod.object({
-  id: zod.string(),
-  linked_organization_id: zod.string(),
-  client_id: zod.string(),
-  client_secret: zod.string(),
-  additional_scopes: zod
-    .array(zod.string())
+const OktaIntegrationBaseModel = z.object({
+  id: z.string(),
+  linked_organization_id: z.string(),
+  client_id: z.string(),
+  client_secret: z.string(),
+  additional_scopes: z
+    .array(z.string())
     .nullable()
     .transform(value => (value === null ? [] : value)),
-  oidc_user_join_only: zod.boolean(),
-  oidc_user_access_only: zod.boolean(),
-  default_role_id: zod.string().nullable(),
-  default_assigned_resources: zod.any().nullable(),
-  require_invitation: zod.boolean(),
+  oidc_user_join_only: z.boolean(),
+  oidc_user_access_only: z.boolean(),
+  default_role_id: z.string().nullable(),
+  default_assigned_resources: z.any().nullable(),
+  require_invitation: z.boolean(),
 });
 
-const OktaIntegrationLegacyModel = zod.intersection(
+const OktaIntegrationLegacyModel = z.intersection(
   OktaIntegrationBaseModel,
-  zod.object({
-    oauth_api_url: zod.string().url(),
+  z.object({
+    oauth_api_url: z.string().url(),
   }),
 );
 
-const OktaIntegrationModel = zod.intersection(
+const OktaIntegrationModel = z.intersection(
   OktaIntegrationBaseModel,
-  zod.object({
-    token_endpoint: zod.string().url(),
-    userinfo_endpoint: zod.string().url(),
-    authorization_endpoint: zod.string().url(),
+  z.object({
+    token_endpoint: z.string().url(),
+    userinfo_endpoint: z.string().url(),
+    authorization_endpoint: z.string().url(),
   }),
 );
 
-const OktaIntegrationModelUnion = zod.union([OktaIntegrationLegacyModel, OktaIntegrationModel]);
+const OktaIntegrationModelUnion = z.union([OktaIntegrationLegacyModel, OktaIntegrationModel]);
 
 const decodeOktaIntegrationRecord = (result: unknown): OIDCIntegration => {
   const rawRecord = OktaIntegrationModelUnion.parse(result);
@@ -5146,14 +5234,14 @@ const decodeOktaIntegrationRecord = (result: unknown): OIDCIntegration => {
   };
 };
 
-const CDNAccessTokenModel = zod.object({
-  id: zod.string(),
-  target_id: zod.string(),
-  s3_key: zod.string(),
-  first_characters: zod.string(),
-  last_characters: zod.string(),
-  alias: zod.string(),
-  created_at: zod.string(),
+const CDNAccessTokenModel = z.object({
+  id: z.string(),
+  target_id: z.string(),
+  s3_key: z.string(),
+  first_characters: z.string(),
+  last_characters: z.string(),
+  alias: z.string(),
+  created_at: z.string(),
 });
 
 const decodeCDNAccessTokenRecord = (result: unknown): CDNAccessToken => {
@@ -5170,14 +5258,14 @@ const decodeCDNAccessTokenRecord = (result: unknown): CDNAccessToken => {
   };
 };
 
-const FeatureFlagsModel = zod
+const FeatureFlagsModel = z
   .object({
-    forceLegacyCompositionInTargets: zod.array(zod.string()).default([]),
+    forceLegacyCompositionInTargets: z.array(z.string()).default([]),
     /** whether app deployments are enabled for the given organization */
-    appDeployments: zod.boolean().default(false),
+    appDeployments: z.boolean().default(false),
     /** whether otel tracing is enabled for the given organization */
-    otelTracing: zod.boolean().default(false),
-    schemaProposals: zod.boolean().default(false),
+    otelTracing: z.boolean().default(false),
+    schemaProposals: z.boolean().default(false),
   })
   .optional()
   .nullable()
@@ -5197,48 +5285,48 @@ function decodeFeatureFlags(column: unknown) {
 }
 
 /**  This version introduced the "diffSchemaVersionId" column. */
-const SchemaVersionRecordVersion_2024_01_10_Model = zod.literal('2024-01-10');
+const SchemaVersionRecordVersion_2024_01_10_Model = z.literal('2024-01-10');
 
 const SchemaVersionRecordVersionModel = SchemaVersionRecordVersion_2024_01_10_Model;
 
-const SchemaMetadataModel = zod.object({
-  name: zod.string(),
-  content: zod.string(),
-  source: zod.nullable(zod.string()).default(null),
+const SchemaMetadataModel = z.object({
+  name: z.string(),
+  content: z.string(),
+  source: z.nullable(z.string()).default(null),
 });
 
-const SchemaVersionModel = zod.intersection(
-  zod.object({
-    id: zod.string(),
-    isComposable: zod.boolean(),
-    createdAt: zod.string(),
-    baseSchema: zod.nullable(zod.string()),
-    actionId: zod.string(),
-    hasPersistedSchemaChanges: zod.nullable(zod.boolean()).transform(val => val ?? false),
-    previousSchemaVersionId: zod.nullable(zod.string()),
-    diffSchemaVersionId: zod.nullable(zod.string()),
-    compositeSchemaSDL: zod.nullable(zod.string()),
-    supergraphSDL: zod.nullable(zod.string()),
-    schemaCompositionErrors: zod.nullable(zod.array(SchemaCompositionErrorModel)),
-    recordVersion: zod.nullable(SchemaVersionRecordVersionModel),
-    tags: zod.nullable(zod.array(zod.string())),
-    schemaMetadata: zod.nullable(zod.record(zod.string(), zod.array(SchemaMetadataModel))),
-    metadataAttributes: zod.nullable(zod.record(zod.string(), zod.array(zod.string()))),
-    hasContractCompositionErrors: zod
+const SchemaVersionModel = z.intersection(
+  z.object({
+    id: z.string(),
+    isComposable: z.boolean(),
+    createdAt: z.string(),
+    baseSchema: z.nullable(z.string()),
+    actionId: z.string(),
+    hasPersistedSchemaChanges: z.nullable(z.boolean()).transform(val => val ?? false),
+    previousSchemaVersionId: z.nullable(z.string()),
+    diffSchemaVersionId: z.nullable(z.string()),
+    compositeSchemaSDL: z.nullable(z.string()),
+    supergraphSDL: z.nullable(z.string()),
+    schemaCompositionErrors: z.nullable(z.array(SchemaCompositionErrorModel)),
+    recordVersion: z.nullable(SchemaVersionRecordVersionModel),
+    tags: z.nullable(z.array(z.string())),
+    schemaMetadata: z.nullable(z.record(z.string(), z.array(SchemaMetadataModel))),
+    metadataAttributes: z.nullable(z.record(z.string(), z.array(z.string()))),
+    hasContractCompositionErrors: z
       .boolean()
       .nullable()
       .transform(val => val ?? false),
     conditionalBreakingChangeMetadata: ConditionalBreakingChangeMetadataModel.nullable(),
   }),
-  zod
+  z
     .union([
-      zod.object({
-        githubRepository: zod.string(),
-        githubSha: zod.string(),
+      z.object({
+        githubRepository: z.string(),
+        githubSha: z.string(),
       }),
-      zod.object({
-        githubRepository: zod.null(),
-        githubSha: zod.null(),
+      z.object({
+        githubRepository: z.null(),
+        githubSha: z.null(),
       }),
     ])
     .transform(val => ({
@@ -5251,28 +5339,28 @@ const SchemaVersionModel = zod.intersection(
     })),
 );
 
-export type SchemaVersion = zod.infer<typeof SchemaVersionModel>;
+export type SchemaVersion = z.infer<typeof SchemaVersionModel>;
 
-const DocumentCollectionModel = zod.object({
-  id: zod.string(),
-  title: zod.string(),
-  description: zod.union([zod.string(), zod.null()]),
-  targetId: zod.string(),
-  createdByUserId: zod.union([zod.string(), zod.null()]),
-  createdAt: zod.string(),
-  updatedAt: zod.string(),
+const DocumentCollectionModel = z.object({
+  id: z.string(),
+  title: z.string(),
+  description: z.union([z.string(), z.null()]),
+  targetId: z.string(),
+  createdByUserId: z.union([z.string(), z.null()]),
+  createdAt: z.string(),
+  updatedAt: z.string(),
 });
 
-const DocumentCollectionDocumentModel = zod.object({
-  id: zod.string(),
-  title: zod.string(),
-  contents: zod.string(),
-  variables: zod.string().nullable(),
-  headers: zod.string().nullable(),
-  createdByUserId: zod.union([zod.string(), zod.null()]),
-  documentCollectionId: zod.string(),
-  createdAt: zod.string(),
-  updatedAt: zod.string(),
+const DocumentCollectionDocumentModel = z.object({
+  id: z.string(),
+  title: z.string(),
+  contents: z.string(),
+  variables: z.string().nullable(),
+  headers: z.string().nullable(),
+  createdByUserId: z.union([z.string(), z.null()]),
+  documentCollectionId: z.string(),
+  createdAt: z.string(),
+  updatedAt: z.string(),
 });
 
 /**
@@ -5464,7 +5552,7 @@ async function insertSchemaVersionContract(
       "id"
   `);
 
-  return zod.string().parse(id);
+  return z.string().parse(id);
 }
 
 async function updateSchemaCoordinateStatus(
@@ -5717,17 +5805,17 @@ export function findTargetBySlug(deps: { pool: DatabasePool }) {
   };
 }
 
-const TargetModel = zod.object({
-  id: zod.string(),
-  slug: zod.string(),
-  name: zod.string(),
-  projectId: zod.string(),
-  graphqlEndpointUrl: zod.string().nullable(),
-  failDiffOnDangerousChange: zod.boolean(),
+const TargetModel = z.object({
+  id: z.string(),
+  slug: z.string(),
+  name: z.string(),
+  projectId: z.string(),
+  graphqlEndpointUrl: z.string().nullable(),
+  failDiffOnDangerousChange: z.boolean(),
 });
 
 const TargetWithOrgIdModel = TargetModel.extend({
-  orgId: zod.string(),
+  orgId: z.string(),
 });
 
 export * from './schema-change-model';
@@ -5767,15 +5855,15 @@ const getOrganizationInvitationId = (keys: {
   email: string;
   code: string;
 }) => Buffer.from([keys.organizationId, keys.email, keys.code].join(':')).toString('hex');
-const OrganizationInvitationModel = zod
+const OrganizationInvitationModel = z
   .object({
-    organizationId: zod.string(),
-    code: zod.string(),
-    email: zod.string().email(),
-    createdAt: zod.number().transform(v => new Date(v).toISOString()),
-    expiresAt: zod.number().transform(v => new Date(v).toISOString()),
-    roleId: zod.string(),
-    assignedResources: zod.any(),
+    organizationId: z.string(),
+    code: z.string(),
+    email: z.string().email(),
+    createdAt: z.number().transform(v => new Date(v).toISOString()),
+    expiresAt: z.number().transform(v => new Date(v).toISOString()),
+    roleId: z.string(),
+    assignedResources: z.any(),
   })
   .transform(
     invitation =>
@@ -5812,119 +5900,119 @@ export const userFields = (user: TaggedTemplateLiteralInvocation) => sql`
     ) AS "providers"
 `;
 
-const OrganizationModel = zod.object({
-  id: zod.string(),
-  clean_id: zod.string(),
-  name: zod.string(),
-  limit_retention_days: zod.string(),
-  limit_operations_monthly: zod.string(),
-  plan_name: zod.string(),
-  get_started_creating_project: zod.boolean(),
-  get_started_publishing_schema: zod.boolean(),
-  get_started_checking_schema: zod.boolean(),
-  get_started_inviting_members: zod.boolean(),
-  get_started_reporting_operations: zod.boolean(),
-  get_started_usage_breaking: zod.boolean(),
-  feature_flags: zod.union([
-    zod.null(),
-    zod.string(),
-    zod.number(),
-    zod.boolean(),
-    zod.record(zod.any()),
-    zod.array(zod.any()),
+const OrganizationModel = z.object({
+  id: z.string(),
+  clean_id: z.string(),
+  name: z.string(),
+  limit_retention_days: z.string(),
+  limit_operations_monthly: z.string(),
+  plan_name: z.string(),
+  get_started_creating_project: z.boolean(),
+  get_started_publishing_schema: z.boolean(),
+  get_started_checking_schema: z.boolean(),
+  get_started_inviting_members: z.boolean(),
+  get_started_reporting_operations: z.boolean(),
+  get_started_usage_breaking: z.boolean(),
+  feature_flags: z.union([
+    z.null(),
+    z.string(),
+    z.number(),
+    z.boolean(),
+    z.record(z.any()),
+    z.array(z.any()),
   ]),
-  zendesk_organization_id: zod.string().nullable(),
-  user_id: zod.string(),
-  ownership_transfer_code: zod.string().nullable(),
-  slack_token: zod.string().nullable(),
-  github_app_installation_id: zod.string().nullable(),
-  created_at: zod.date(),
-  ownership_transfer_expires_at: zod.date().nullable(),
-  ownership_transfer_user_id: zod.string().nullable(),
+  zendesk_organization_id: z.string().nullable(),
+  user_id: z.string(),
+  ownership_transfer_code: z.string().nullable(),
+  slack_token: z.string().nullable(),
+  github_app_installation_id: z.string().nullable(),
+  created_at: z.date(),
+  ownership_transfer_expires_at: z.date().nullable(),
+  ownership_transfer_user_id: z.string().nullable(),
 });
 
-const ProjectModel = zod.object({
-  id: zod.string(),
-  clean_id: zod.string(),
-  name: zod.string(),
-  org_id: zod.string(),
-  type: zod.string(),
-  created_at: zod.date(),
-  build_url: zod.string().nullable(),
-  validation_url: zod.string().nullable(),
-  git_repository: zod.string().nullable(),
-  github_check_with_project_name: zod.boolean(),
-  external_composition_enabled: zod.boolean(),
-  external_composition_endpoint: zod.string().nullable(),
-  external_composition_secret: zod.string().nullable(),
-  native_federation: zod.boolean().nullable(),
+const ProjectModel = z.object({
+  id: z.string(),
+  clean_id: z.string(),
+  name: z.string(),
+  org_id: z.string(),
+  type: z.string(),
+  created_at: z.date(),
+  build_url: z.string().nullable(),
+  validation_url: z.string().nullable(),
+  git_repository: z.string().nullable(),
+  github_check_with_project_name: z.boolean(),
+  external_composition_enabled: z.boolean(),
+  external_composition_endpoint: z.string().nullable(),
+  external_composition_secret: z.string().nullable(),
+  native_federation: z.boolean().nullable(),
 });
 
-const OrganizationBillingModel = zod.object({
-  organizationId: zod.string(),
-  externalBillingReference: zod.string(),
-  billingEmailAddress: zod.string().nullable(),
+const OrganizationBillingModel = z.object({
+  organizationId: z.string(),
+  externalBillingReference: z.string(),
+  billingEmailAddress: z.string().nullable(),
 });
 
-const AlertChannelModel = zod.object({
-  id: zod.string(),
-  name: zod.string(),
-  type: zod.enum(['MSTEAMS_WEBHOOK', 'SLACK', 'WEBHOOK']),
-  projectId: zod.string(),
-  createdAt: zod.date().transform(d => d.toISOString()),
-  slackChannel: zod.string().nullable(),
-  webhookEndpoint: zod.string().nullable(),
+const AlertChannelModel = z.object({
+  id: z.string(),
+  name: z.string(),
+  type: z.enum(['MSTEAMS_WEBHOOK', 'SLACK', 'WEBHOOK']),
+  projectId: z.string(),
+  createdAt: z.date().transform(d => d.toISOString()),
+  slackChannel: z.string().nullable(),
+  webhookEndpoint: z.string().nullable(),
 });
 
-const AlertModel = zod.object({
-  id: zod.string(),
-  type: zod.enum(['SCHEMA_CHANGE_NOTIFICATIONS']),
-  createdAt: zod.date().transform(d => d.toISOString()),
-  channelId: zod.string(),
-  projectId: zod.string(),
-  targetId: zod.string(),
+const AlertModel = z.object({
+  id: z.string(),
+  type: z.enum(['SCHEMA_CHANGE_NOTIFICATIONS']),
+  createdAt: z.date().transform(d => d.toISOString()),
+  channelId: z.string(),
+  projectId: z.string(),
+  targetId: z.string(),
 });
 
-const OrganizationUserIdAndIdModel = zod.object({
-  id: zod.string(),
-  user_id: zod.string(),
+const OrganizationUserIdAndIdModel = z.object({
+  id: z.string(),
+  user_id: z.string(),
 });
 
-const OrganizationMemberAccessModel = zod.object({
-  organization_id: zod.string(),
-  user_id: zod.string(),
-  scopes: zod.array(zod.string()).nullable(),
+const OrganizationMemberAccessModel = z.object({
+  organization_id: z.string(),
+  user_id: z.string(),
+  scopes: z.array(z.string()).nullable(),
 });
 
-const TargetIdModel = zod.object({
-  id: zod.string(),
+const TargetIdModel = z.object({
+  id: z.string(),
 });
 
-const OrganizationTargetPairModel = zod.object({
-  organization: zod.string(),
-  target: zod.string(),
+const OrganizationTargetPairModel = z.object({
+  organization: z.string(),
+  target: z.string(),
 });
 
-const OrganizationStatModel = zod.object({
-  id: zod.string(),
-  total: zod.coerce.number(),
+const OrganizationStatModel = z.object({
+  id: z.string(),
+  total: z.coerce.number(),
 });
 
-export const UserModel = zod.object({
-  id: zod.string(),
-  email: zod.string(),
-  createdAt: zod.string(),
-  displayName: zod.string(),
-  fullName: zod.string(),
-  superTokensUserId: zod.string().nullable(),
-  isAdmin: zod
+export const UserModel = z.object({
+  id: z.string(),
+  email: z.string(),
+  createdAt: z.string(),
+  displayName: z.string(),
+  fullName: z.string(),
+  superTokensUserId: z.string().nullable(),
+  isAdmin: z
     .boolean()
     .nullable()
     .transform(value => value ?? false),
-  oidcIntegrationId: zod.string().nullable(),
-  zendeskId: zod.string().nullable(),
-  providers: zod.array(
-    zod
+  oidcIntegrationId: z.string().nullable(),
+  zendeskId: z.string().nullable(),
+  providers: z.array(
+    z
       .string()
       .nullable()
       .transform(provider => {
@@ -5942,4 +6030,4 @@ export const UserModel = zod.object({
   ),
 });
 
-type UserType = zod.TypeOf<typeof UserModel>;
+type UserType = z.TypeOf<typeof UserModel>;
