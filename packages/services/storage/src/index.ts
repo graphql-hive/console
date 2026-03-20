@@ -122,14 +122,12 @@ async function tracedTransaction<T>(
   });
 }
 
-
 export async function createStorage(
   connection: string,
   maximumPoolSize: number,
   additionalInterceptors: Interceptor[] = [],
 ): Promise<Storage> {
   const pool = await getPool(connection, maximumPoolSize, additionalInterceptors);
-
 
   function transformSchema(
     schema: Pick<
@@ -340,7 +338,7 @@ export async function createStorage(
       connection: DatabaseTransactionConnection,
     ) {
       const { id } = await connection
-        .one<unknown>(
+        .one(
           sql`/* createUser */
             INSERT INTO users
               ("email", "full_name", "display_name", "supertoken_user_id", "oidc_integration_id")
@@ -688,7 +686,7 @@ export async function createStorage(
         }
 
         const org = await t
-          .one<unknown>(
+          .one(
             sql`/* createOrganization */
             INSERT INTO organizations
               ("name", "clean_id", "user_id")
@@ -760,7 +758,7 @@ export async function createStorage(
 
         return {
           organization: await t
-            .one<unknown>(
+            .one(
               sql`/* deleteOrganization */
                 DELETE FROM organizations
                 WHERE id = ${organization}
@@ -792,7 +790,7 @@ export async function createStorage(
         }
 
         const project = await t
-          .one<unknown>(
+          .one(
             sql`/* createProject */
               INSERT INTO projects
                 ("name", "clean_id", "type", "org_id", "native_federation")
@@ -882,7 +880,7 @@ export async function createStorage(
     }),
     async countOrganizationMembers({ organizationId: organization }) {
       const { total } = await pool
-        .one<unknown>(
+        .one(
           sql`/* countOrganizationMembers */ SELECT COUNT(*) as total FROM organization_member WHERE organization_id = ${organization}`,
         )
         .then(z.object({ total: z.coerce.number() }).parse);
@@ -1083,7 +1081,7 @@ export async function createStorage(
         return {
           ok: true,
           organization: await t
-            .one<unknown>(
+            .one(
               sql`/* updateOrganizationSlug */
               UPDATE organizations
               SET clean_id = ${slug}, name = ${slug}
@@ -1098,7 +1096,7 @@ export async function createStorage(
 
     async updateOrganizationPlan({ billingPlan, organizationId: organization }) {
       return pool
-        .one<unknown>(
+        .one(
           sql`/* updateOrganizationPlan */
           UPDATE organizations
           SET plan_name = ${billingPlan}
@@ -1111,7 +1109,7 @@ export async function createStorage(
     async updateOrganizationRateLimits(args, action) {
       return await tracedTransaction('updateOrganizationRateLimits', pool, async t => {
         const org = await t
-          .one<unknown>(
+          .one(
             sql`/* updateOrganizationRateLimits */
             UPDATE organizations
             SET limit_operations_monthly = ${args.monthlyRateLimit.operations}, limit_retention_days = ${args.monthlyRateLimit.retentionInDays}
@@ -1128,7 +1126,7 @@ export async function createStorage(
     async createOrganizationInvitation(args) {
       return tracedTransaction('createOrganizationInvitation', pool, async trx => {
         const invitation = await trx
-          .one<unknown>(
+          .one(
             sql`/* createOrganizationInvitation */
             INSERT INTO "organization_invitations" (
               "organization_id"
@@ -1158,13 +1156,10 @@ export async function createStorage(
       });
     },
     async deleteOrganizationInvitationByEmail({ organizationId: organization, email }) {
-      return tracedTransaction(
-        'deleteOrganizationInvitationByEmail',
-        pool,
-        async trx => {
-          return trx
-            .maybeOne<unknown>(
-              sql`/* deleteOrganizationInvitationByEmail */
+      return tracedTransaction('deleteOrganizationInvitationByEmail', pool, async trx => {
+        return trx
+          .maybeOne<unknown>(
+            sql`/* deleteOrganizationInvitationByEmail */
                 DELETE FROM organization_invitations
                 WHERE organization_id = ${organization} AND email = ${email}
                 RETURNING
@@ -1176,10 +1171,9 @@ export async function createStorage(
                   , "role_id" AS "roleId"
                   , "assigned_resources" AS "assignedResources"
               `,
-            )
-            .then(OrganizationInvitationModel.nullable().parse);
-        },
-      );
+          )
+          .then(OrganizationInvitationModel.nullable().parse);
+      });
     },
     async addOrganizationMemberViaInvitationCode({
       code,
@@ -1188,7 +1182,7 @@ export async function createStorage(
     }) {
       await tracedTransaction('addOrganizationMemberViaInvitationCode', pool, async trx => {
         const { roleId, assignedResources } = await trx
-          .one<unknown>(
+          .one(
             sql`/* deleteInviteAndGetRoleId */
             DELETE
             FROM
@@ -1202,12 +1196,10 @@ export async function createStorage(
           `,
           )
           .then(
-            z
-              .object({
-                roleId: z.string(),
-                assignedResources: z.record(z.any()).nullable(),
-              })
-              .parse,
+            z.object({
+              roleId: z.string(),
+              assignedResources: z.record(z.any()).nullable(),
+            }).parse,
           );
 
         await trx.query(
@@ -1339,7 +1331,7 @@ export async function createStorage(
     async getProjectId({ projectSlug, organizationSlug }) {
       // Based on project's clean_id and organization's clean_id, resolve the actual uuid of the project
       const result = await pool
-        .one<unknown>(
+        .one(
           sql`/* getProjectId */
           SELECT p.id as id
           FROM projects as p
@@ -1352,7 +1344,7 @@ export async function createStorage(
     },
     async getTargetId(selector) {
       const result = await pool
-        .one<unknown>(
+        .one(
           sql`/* getTargetId (slug) */
             SELECT t.id FROM targets as t
             LEFT JOIN projects AS p ON (p.id = t.project_id)
@@ -1370,7 +1362,7 @@ export async function createStorage(
     },
     async getOrganization({ organizationId }) {
       return pool
-        .one<unknown>(
+        .one(
           sql`/* getOrganization */ SELECT ${organizationFields(sql``)} FROM organizations WHERE id = ${organizationId} LIMIT 1`,
         )
         .then(OrganizationModel.parse);
@@ -2338,7 +2330,7 @@ export async function createStorage(
 
     async getMatchingServiceSchemaOfVersions(versions) {
       const after = await pool
-        .one<unknown>(
+        .one(
           sql`/* getMatchingServiceSchemaOfVersions */
           SELECT sl.service_name, sl.sdl
           FROM schema_versions as sv
@@ -2807,9 +2799,7 @@ export async function createStorage(
             WHERE id = ${organization}
           `,
         )
-        .then(
-          z.object({ github_app_installation_id: z.string().nullable() }).nullable().parse,
-        );
+        .then(z.object({ github_app_installation_id: z.string().nullable() }).nullable().parse);
 
       return result?.github_app_installation_id;
     },
@@ -2976,20 +2966,18 @@ export async function createStorage(
           `,
         )
         .then(
-          z
-            .array(
-              z.object({
-                organization: z.string(),
-                org_name: z.string(),
-                org_clean_id: z.string(),
-                org_plan_name: z.string(),
-                owner_email: z.string(),
-                targets: z.array(z.string().nullable()),
-                limit_operations_monthly: z.coerce.number(),
-                limit_retention_days: z.coerce.number(),
-              }),
-            )
-            .parse,
+          z.array(
+            z.object({
+              organization: z.string(),
+              org_name: z.string(),
+              org_clean_id: z.string(),
+              org_plan_name: z.string(),
+              owner_email: z.string(),
+              targets: z.array(z.string()),
+              limit_operations_monthly: z.coerce.number(),
+              limit_retention_days: z.coerce.number(),
+            }),
+          ).parse,
         );
     },
     async adminGetStats(period: { from: Date; to: Date }) {
@@ -3649,7 +3637,8 @@ export async function createStorage(
 
     async setSchemaPolicyForOrganization(input): Promise<SchemaPolicy> {
       return pool
-        .one<unknown>(sql`/* setSchemaPolicyForOrganization */
+        .one(
+          sql`/* setSchemaPolicyForOrganization */
         INSERT INTO "schema_policy_config"
         ("resource_type", "resource_id", "config", "allow_overriding")
           VALUES ('ORGANIZATION', ${input.organizationId}, ${sql.jsonb(input.policy)}, ${
@@ -3662,12 +3651,14 @@ export async function createStorage(
               "allow_overriding" = ${input.allowOverrides},
               "updated_at" = now()
         RETURNING ${schemaPolicyFields(sql``)};
-      `)
+      `,
+        )
         .then(SchemaPolicyModel.parse);
     },
     async setSchemaPolicyForProject(input): Promise<SchemaPolicy> {
       return pool
-        .one<unknown>(sql`/* setSchemaPolicyForProject */
+        .one<unknown>(
+          sql`/* setSchemaPolicyForProject */
       INSERT INTO "schema_policy_config"
       ("resource_type", "resource_id", "config")
         VALUES ('PROJECT', ${input.projectId}, ${sql.jsonb(input.policy)})
@@ -3677,45 +3668,52 @@ export async function createStorage(
         SET "config" = ${sql.jsonb(input.policy)},
             "updated_at" = now()
       RETURNING ${schemaPolicyFields(sql``)};
-    `)
+    `,
+        )
         .then(SchemaPolicyModel.parse);
     },
     async findInheritedPolicies(selector): Promise<SchemaPolicy[]> {
       const { organizationId: organization, projectId: project } = selector;
 
       return pool
-        .any<unknown>(sql`/* findInheritedPolicies */
+        .any<unknown>(
+          sql`/* findInheritedPolicies */
         SELECT ${schemaPolicyFields(sql``)}
         FROM
           "schema_policy_config"
         WHERE
           ("resource_type" = 'ORGANIZATION' AND "resource_id" = ${organization})
           OR ("resource_type" = 'PROJECT' AND "resource_id" = ${project});
-      `)
+      `,
+        )
         .then(z.array(SchemaPolicyModel).parse);
     },
     async getSchemaPolicyForOrganization(organizationId: string): Promise<SchemaPolicy | null> {
       return pool
-        .maybeOne<unknown>(sql`/* getSchemaPolicyForOrganization */
+        .maybeOne<unknown>(
+          sql`/* getSchemaPolicyForOrganization */
         SELECT ${schemaPolicyFields(sql``)}
         FROM
           "schema_policy_config"
         WHERE
           "resource_type" = 'ORGANIZATION'
           AND "resource_id" = ${organizationId};
-      `)
+      `,
+        )
         .then(SchemaPolicyModel.nullable().parse);
     },
     async getSchemaPolicyForProject(projectId: string): Promise<SchemaPolicy | null> {
       return pool
-        .maybeOne<unknown>(sql`/* getSchemaPolicyForProject */
+        .maybeOne<unknown>(
+          sql`/* getSchemaPolicyForProject */
       SELECT ${schemaPolicyFields(sql``)}
       FROM
         "schema_policy_config"
       WHERE
         "resource_type" = 'PROJECT'
         AND "resource_id" = ${projectId};
-    `)
+    `,
+        )
         .then(SchemaPolicyModel.nullable().parse);
     },
     async getPaginatedDocumentCollectionsForTarget(args) {
@@ -4105,7 +4103,7 @@ export async function createStorage(
         await Promise.all(sdlStoreInserts);
 
         const schemaCheck = await trx
-          .one<unknown>(
+          .one(
             sql`/* createSchemaCheck */
           INSERT INTO "schema_checks" (
               "schema_sdl_store_id"
@@ -4921,13 +4919,13 @@ export async function createStorage(
       // I could do it in one query, but the amount of SQL needed to do it in one go is just not worth it...
       // It is just too complex to understand.
       await pool.transaction(async t => {
-        const { feature_flags } = await t.one<
-          Pick<organizations, 'feature_flags'>
-        >(sql`/* updateTargetSchemaComposition_select */
+        const ff = await t
+          .oneFirst<unknown>(
+            sql`/* updateTargetSchemaComposition_select */
           SELECT feature_flags FROM organizations WHERE id = ${args.organizationId};
-        `);
-
-        const ff = decodeFeatureFlags(feature_flags);
+        `,
+          )
+          .then(FeatureFlagsModel.parse);
 
         let modify = false;
         const includesTarget = ff.forceLegacyCompositionInTargets.includes(args.targetId);
@@ -5844,8 +5842,8 @@ const OrganizationModel = z
     id: z.string(),
     slug: z.string(),
     name: z.string(),
-    limitRetentionDays: z.string(),
-    limitOperationsMonthly: z.string(),
+    limitRetentionDays: z.number(),
+    limitOperationsMonthly: z.number(),
     billingPlan: z.string(),
     getStartedCreatingProject: z.boolean(),
     getStartedPublishingSchema: z.boolean(),
@@ -5853,14 +5851,7 @@ const OrganizationModel = z
     getStartedInvitingMembers: z.boolean(),
     getStartedReportingOperations: z.boolean(),
     getStartedUsageBreaking: z.boolean(),
-    featureFlags: z.union([
-      z.null(),
-      z.string(),
-      z.number(),
-      z.boolean(),
-      z.record(z.any()),
-      z.array(z.any()),
-    ]),
+    featureFlags: FeatureFlagsModel,
     zendeskId: z.string().nullable(),
     ownerId: z.string(),
   })
@@ -5870,8 +5861,8 @@ const OrganizationModel = z
     name: org.name,
     billingPlan: org.billingPlan,
     monthlyRateLimit: {
-      retentionInDays: parseInt(org.limitRetentionDays),
-      operations: parseInt(org.limitOperationsMonthly),
+      retentionInDays: org.limitRetentionDays,
+      operations: org.limitOperationsMonthly,
     },
     getStarted: {
       id: org.id,
@@ -5882,7 +5873,7 @@ const OrganizationModel = z
       reportingOperations: org.getStartedReportingOperations,
       enablingUsageBasedBreakingChanges: org.getStartedUsageBreaking,
     },
-    featureFlags: decodeFeatureFlags(org.featureFlags),
+    featureFlags: org.featureFlags,
     zendeskId: org.zendeskId,
     ownerId: org.ownerId,
   }));
