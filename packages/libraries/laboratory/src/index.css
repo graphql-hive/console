@@ -64,7 +64,7 @@
   --background: var(--hive-laboratory-background, var(--color-neutral-2));
   --foreground: var(--hive-laboratory-foreground, var(--color-neutral-11));
 
-  --muted: var(--hive-laboratory-muted, 24 9.8% 10%);
+  --muted: var(--hive-laboratory-muted, var(--color-neutral-3));
   --muted-foreground: var(--hive-laboratory-muted-foreground, var(--color-neutral-11));
 
   --popover: var(--hive-laboratory-popover, var(--color-neutral-3));
@@ -80,7 +80,7 @@
   --primary-foreground: var(--hive-laboratory-primary-foreground, var(--color-neutral-1));
 
   --secondary: var(--hive-laboratory-secondary, var(--color-neutral-3));
-  --secondary-foreground: var(--hive-laboratory-secondary-foreground, var(--color-neutral-11));
+  --secondary-foreground: var(--hive-laboratory-secondary-foreground, var(--color-neutral-8));
 
   --accent: var(--hive-laboratory-accent, var(--color-neutral-4));
   --accent-foreground: var(--hive-laboratory-accent-foreground, var(--color-neutral-11));

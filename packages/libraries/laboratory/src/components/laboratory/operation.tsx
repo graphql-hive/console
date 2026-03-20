@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
+  AlignLeftIcon,
   BookmarkIcon,
   CircleCheckIcon,
   CircleXIcon,
@@ -7,6 +8,10 @@ import {
   FileTextIcon,
   HistoryIcon,
   MoreHorizontalIcon,
+  NetworkIcon,
+  PanelLeftCloseIcon,
+  PanelLeftOpenIcon,
+  PanelRightCloseIcon,
   PlayIcon,
   PowerIcon,
   PowerOffIcon,
@@ -16,6 +21,9 @@ import { compressToEncodedURIComponent } from 'lz-string';
 import * as monaco from 'monaco-editor/esm/vs/editor/editor.api';
 import { toast } from 'sonner';
 import { z } from 'zod';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { ToggleGroup, ToggleGroupItem } from '@/laboratory/components/ui/toggle-group';
+import { QueryPlanTree, renderQueryPlan } from '@/lib/query-plan';
 import { DropdownMenuTrigger } from '@radix-ui/react-dropdown-menu';
 import { useForm } from '@tanstack/react-form';
 import type {
@@ -178,6 +186,48 @@ export const ResponsePreflight = ({ historyItem }: { historyItem?: LaboratoryHis
     </ScrollArea>
   );
 };
+export const ResponseQueryPlan = ({ historyItem }: { historyItem?: LaboratoryHistory | null }) => {
+  const [mode, setMode] = useState<'text' | 'visual'>('text');
+
+  return (
+    <div className="relative size-full">
+      <ToggleGroup
+        className="bg-card absolute right-4 top-4 z-10 shadow-sm"
+        type="single"
+        variant="outline"
+        value={mode}
+        onValueChange={value => setMode(value as 'text' | 'visual')}
+      >
+        <ToggleGroupItem value="text">
+          <AlignLeftIcon className="size-4" />
+          Text
+        </ToggleGroupItem>
+        <ToggleGroupItem value="visual">
+          <NetworkIcon className="size-4" />
+          Visual
+        </ToggleGroupItem>
+      </ToggleGroup>
+      {mode === 'visual' ? (
+        <QueryPlanTree
+          plan={
+            JSON.parse((historyItem as LaboratoryHistoryRequest)?.response ?? '{}').extensions
+              ?.queryPlan ?? {}
+          }
+        />
+      ) : (
+        <Editor
+          value={renderQueryPlan(
+            JSON.parse((historyItem as LaboratoryHistoryRequest)?.response ?? '{}').extensions
+              ?.queryPlan ?? {},
+          )}
+          defaultLanguage="graphql"
+          theme="hive-laboratory"
+          options={{ readOnly: true }}
+        />
+      )}
+    </div>
+  );
+};
 
 export const ResponseSubscription = ({
   historyItem,
@@ -245,6 +295,8 @@ export const ResponseSubscription = ({
 };
 
 export const Response = ({ historyItem }: { historyItem?: LaboratoryHistoryRequest | null }) => {
+  const [isFullScreen, setIsFullScreen] = useState(false);
+
   const isError = useMemo(() => {
     if (!historyItem) {
       return false;
@@ -262,10 +314,47 @@ export const Response = ({ historyItem }: { historyItem?: LaboratoryHistoryReque
   }, [historyItem]);
 
   return (
-    <Tabs defaultValue="response" className="grid size-full grid-rows-[auto_1fr]">
-      <TabsList className="h-[49.5px] w-full justify-start rounded-none border-b bg-transparent p-3">
+    <Tabs
+      defaultValue="response"
+      className={cn('bg-card grid size-full grid-rows-[auto_1fr]', {
+        'z-100 absolute inset-0 size-full': isFullScreen,
+      })}
+    >
+      <TabsList className="h-[50px] w-full items-center justify-start rounded-none border-b bg-transparent p-3">
+        {isFullScreen ? (
+          <Tooltip>
+            <TooltipTrigger>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="mr-2 mt-0.5 h-6 w-6"
+                onClick={() => setIsFullScreen(false)}
+              >
+                <PanelLeftOpenIcon className="size-4" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent side="bottom">Minimize panel</TooltipContent>
+          </Tooltip>
+        ) : (
+          <Tooltip>
+            <TooltipTrigger>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="mr-2 mt-0.5 h-6 w-6"
+                onClick={() => setIsFullScreen(true)}
+              >
+                <PanelLeftCloseIcon className="size-4" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent side="bottom">Maximize panel</TooltipContent>
+          </Tooltip>
+        )}
         <TabsTrigger value="response" className="grow-0 rounded-sm">
           Response
+        </TabsTrigger>
+        <TabsTrigger value="query-plan" className="grow-0 rounded-sm">
+          Query Plan
         </TabsTrigger>
         <TabsTrigger value="headers" className="grow-0 rounded-sm">
           Headers
@@ -314,6 +403,9 @@ export const Response = ({ historyItem }: { historyItem?: LaboratoryHistoryReque
       </TabsList>
       <TabsContent value="response" className="overflow-hidden">
         <ResponseBody historyItem={historyItem} />
+      </TabsContent>
+      <TabsContent value="query-plan" className="overflow-hidden">
+        <ResponseQueryPlan historyItem={historyItem} />
       </TabsContent>
       <TabsContent value="headers" className="overflow-hidden">
         <ResponseHeaders historyItem={historyItem} />
@@ -735,7 +827,7 @@ export const Operation = (props: {
   }, [props.historyItem]);
 
   return (
-    <div className="bg-card size-full">
+    <div className="bg-card relative size-full">
       <ResizablePanelGroup direction="horizontal" className="size-full">
         <ResizablePanel defaultSize={25}>
           <Builder operation={operation} isReadOnly={isReadOnly} />
