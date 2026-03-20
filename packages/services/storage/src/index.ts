@@ -230,54 +230,6 @@ export async function createStorage(
     return record;
   }
 
-  function transformTargetSettings(
-    row: Pick<
-      targets,
-      | 'validation_enabled'
-      | 'validation_percentage'
-      | 'validation_period'
-      | 'validation_excluded_clients'
-      | 'validation_excluded_app_deployments'
-      | 'validation_request_count'
-      | 'validation_breaking_change_formula'
-      | 'fail_diff_on_dangerous_change'
-      | 'app_deployment_protection_enabled'
-      | 'app_deployment_protection_min_days_inactive'
-      | 'app_deployment_protection_max_traffic_percentage'
-      | 'app_deployment_protection_traffic_period_days'
-      | 'app_deployment_protection_rule_logic'
-      | 'app_deployment_protection_min_days_since_creation'
-    > & {
-      targets: target_validation['destination_target_id'][] | null;
-    },
-  ): TargetSettings {
-    return {
-      failDiffOnDangerousChange: row.fail_diff_on_dangerous_change,
-      validation: {
-        isEnabled: row.validation_enabled,
-        percentage: row.validation_percentage,
-        period: row.validation_period,
-        requestCount: row.validation_request_count ?? 1,
-        breakingChangeFormula: row.validation_breaking_change_formula ?? 'PERCENTAGE',
-        targets: Array.isArray(row.targets) ? row.targets.filter(isDefined) : [],
-        excludedClients: Array.isArray(row.validation_excluded_clients)
-          ? row.validation_excluded_clients.filter(isDefined)
-          : [],
-        excludedAppDeployments: Array.isArray(row.validation_excluded_app_deployments)
-          ? row.validation_excluded_app_deployments.filter(isDefined)
-          : [],
-      },
-      appDeploymentProtection: {
-        isEnabled: row.app_deployment_protection_enabled,
-        minDaysInactive: row.app_deployment_protection_min_days_inactive,
-        minDaysSinceCreation: row.app_deployment_protection_min_days_since_creation,
-        maxTrafficPercentage: Number(row.app_deployment_protection_max_traffic_percentage),
-        trafficPeriodDays: row.app_deployment_protection_traffic_period_days,
-        ruleLogic: row.app_deployment_protection_rule_logic as 'AND' | 'OR',
-      },
-    };
-  }
-
   const shared = {
     async getUserBySuperTokenId(
       { superTokensUserId }: { superTokensUserId: string },
@@ -1853,59 +1805,25 @@ export async function createStorage(
       return results.map(r => r.id);
     },
     async getTargetSettings({ targetId: target, projectId: project }) {
-      const row = await pool.one<
-        Pick<
-          targets,
-          | 'validation_enabled'
-          | 'validation_percentage'
-          | 'validation_period'
-          | 'validation_excluded_clients'
-          | 'validation_excluded_app_deployments'
-          | 'validation_request_count'
-          | 'validation_breaking_change_formula'
-          | 'fail_diff_on_dangerous_change'
-          | 'app_deployment_protection_enabled'
-          | 'app_deployment_protection_min_days_inactive'
-          | 'app_deployment_protection_max_traffic_percentage'
-          | 'app_deployment_protection_traffic_period_days'
-          | 'app_deployment_protection_rule_logic'
-          | 'app_deployment_protection_min_days_since_creation'
-        > & {
-          targets: target_validation['destination_target_id'][];
-        }
-      >(sql`/* getTargetSettings */
-        SELECT
-          t.validation_enabled,
-          t.validation_percentage,
-          t.validation_period,
-          t.validation_excluded_clients,
-          t.validation_excluded_app_deployments,
-          t.validation_request_count,
-          t.validation_breaking_change_formula,
-          array_agg(tv.destination_target_id) as targets,
-          t.fail_diff_on_dangerous_change,
-          t.app_deployment_protection_enabled,
-          t.app_deployment_protection_min_days_inactive,
-          t.app_deployment_protection_min_days_since_creation,
-          t.app_deployment_protection_max_traffic_percentage,
-          t.app_deployment_protection_traffic_period_days,
-          t.app_deployment_protection_rule_logic
-        FROM targets AS t
-        LEFT JOIN target_validation AS tv ON (tv.target_id = t.id)
-        WHERE t.id = ${target} AND t.project_id = ${project}
-        GROUP BY t.id
-        LIMIT 1
-      `);
-
-      return transformTargetSettings(row);
+      return pool
+        .one(sql`/* getTargetSettings */
+          SELECT
+            ${targetSettingsFields(sql`t.`)}
+            , array_agg(tv.destination_target_id) as targets
+          FROM targets AS t
+          LEFT JOIN target_validation AS tv ON (tv.target_id = t.id)
+          WHERE t.id = ${target} AND t.project_id = ${project}
+          GROUP BY t.id
+          LIMIT 1
+        `)
+        .then(TargetSettingsModel.parse);
     },
     async updateTargetDangerousChangeClassification({
       targetId: target,
       projectId: project,
       failDiffOnDangerousChange,
     }) {
-      return transformTargetSettings(
-        await tracedTransaction('updateTargetDangerousChangeClassification', pool, async trx => {
+      return tracedTransaction('updateTargetDangerousChangeClassification', pool, async trx => {
           return trx.one(sql`/* updateTargetValidationSettings */
             UPDATE targets as t
             SET fail_diff_on_dangerous_change = ${failDiffOnDangerousChange}
@@ -1920,10 +1838,11 @@ export async function createStorage(
               LIMIT 1
             ) ret
             WHERE t.id = ret.id
-            RETURNING t.id, t.validation_enabled, t.validation_percentage, t.validation_period, t.validation_excluded_clients, t.validation_excluded_app_deployments, ret.targets, t.validation_request_count, t.validation_breaking_change_formula, t.fail_diff_on_dangerous_change, t.app_deployment_protection_enabled, t.app_deployment_protection_min_days_inactive, t.app_deployment_protection_max_traffic_percentage, t.app_deployment_protection_traffic_period_days, t.app_deployment_protection_rule_logic;
+            RETURNING
+              ${targetSettingsFields(sql`t.`)}
+              , ret.targets
           `);
-        }),
-      );
+        }).then(TargetSettingsModel.parse);
     },
     async updateTargetValidationSettings({
       targetId: target,
@@ -1937,8 +1856,7 @@ export async function createStorage(
       requestCount,
       isEnabled,
     }) {
-      return transformTargetSettings(
-        await tracedTransaction('updateTargetValidationSettings', pool, async trx => {
+      return (await tracedTransaction('updateTargetValidationSettings', pool, async trx => {
           if (targets) {
             await trx.query(sql`/* deleteTargetValidation */
               DELETE
@@ -1998,24 +1916,10 @@ export async function createStorage(
             WHERE
               t.id = ret.id
             RETURNING
-              t.id
-              , t.validation_enabled
-              , t.validation_percentage
-              , t.validation_period
-              , t.validation_excluded_clients
-              , t.validation_excluded_app_deployments
+              ${targetSettingsFields(sql`t.`)}
               , ret.targets
-              , t.validation_request_count
-              , t.validation_breaking_change_formula
-              , t.fail_diff_on_dangerous_change
-              , t.app_deployment_protection_enabled
-              , t.app_deployment_protection_min_days_inactive
-              , t.app_deployment_protection_max_traffic_percentage
-              , t.app_deployment_protection_traffic_period_days
-              , t.app_deployment_protection_rule_logic
           `);
-        }),
-      ).validation;
+        }).then(TargetSettingsModel.parse)).validation;
     },
 
     async updateTargetAppDeploymentProtectionSettings({
@@ -2037,8 +1941,8 @@ export async function createStorage(
       trafficPeriodDays?: number | null;
       ruleLogic?: 'AND' | 'OR' | null;
     }) {
-      return transformTargetSettings(
-        await pool.one(sql`/* updateTargetAppDeploymentProtectionSettings */
+      return pool
+        .one(sql`/* updateTargetAppDeploymentProtectionSettings */
             UPDATE
               targets
             SET
@@ -2052,23 +1956,11 @@ export async function createStorage(
               id = ${target}
               AND project_id = ${project}
             RETURNING
-              id
-              , validation_enabled
-              , validation_percentage
-              , validation_period
-              , validation_excluded_clients
+              ${targetSettingsFields(sql``)}
               , null as targets
-              , validation_request_count
-              , validation_breaking_change_formula
-              , fail_diff_on_dangerous_change
-              , app_deployment_protection_enabled
-              , app_deployment_protection_min_days_inactive
-              , app_deployment_protection_max_traffic_percentage
-              , app_deployment_protection_traffic_period_days
-              , app_deployment_protection_rule_logic
-              , app_deployment_protection_min_days_since_creation
-          `),
-      ).appDeploymentProtection;
+          `)
+        .then(TargetSettingsModel.parse)
+        .then(r => r.appDeploymentProtection);
     },
 
     async countSchemaVersionsOfProject({ projectId: project, period }) {
@@ -2216,116 +2108,62 @@ export async function createStorage(
       return SchemaVersionModel.parse(version);
     },
     async getSchemaByNameOfVersion(args) {
-      const result = await pool.maybeOne(
-        sql`/* getSchemaByNameOfVersion */
-          SELECT
-            sl.id,
-            sl.commit,
-            sl.author,
-            sl.action,
-            sl.sdl,
-            sl.created_at,
-            sl.project_id,
-            lower(sl.service_name) as service_name,
-            sl.service_url,
-            sl.target_id,
-            p.type
-          FROM schema_version_to_log AS svl
-          LEFT JOIN schema_log AS sl ON (sl.id = svl.action_id)
-          LEFT JOIN projects as p ON (p.id = sl.project_id)
-          WHERE
-            svl.version_id = ${args.versionId}
-            AND sl.action = 'PUSH'
-            AND p.type != 'CUSTOM'
-            AND lower(sl.service_name) = lower(${args.serviceName})
-          ORDER BY
-            sl.created_at DESC
-        `,
-      );
-
-      if (!result) {
-        return null;
-      }
-
-      return transformSchema(result as Parameters<typeof transformSchema>[0]);
+      return pool
+        .maybeOne(
+          sql`/* getSchemaByNameOfVersion */
+            SELECT
+              ${schemaLogFields(sql`sl.`)}
+              , p.type
+            FROM schema_version_to_log AS svl
+            LEFT JOIN schema_log AS sl ON (sl.id = svl.action_id)
+            LEFT JOIN projects as p ON (p.id = sl.project_id)
+            WHERE
+              svl.version_id = ${args.versionId}
+              AND sl.action = 'PUSH'
+              AND p.type != 'CUSTOM'
+              AND lower(sl.service_name) = lower(${args.serviceName})
+            ORDER BY
+              sl.created_at DESC
+          `,
+        )
+        .then(SchemaModel.nullable().parse);
     },
-    async getSchemasOfVersion({ versionId: version, includeMetadata = false }) {
-      const result = await pool.any<unknown>(
-        sql`/* getSchemasOfVersion */
-          SELECT
-            sl.id,
-            sl.commit,
-            sl.author,
-            sl.action,
-            sl.sdl,
-            sl.created_at,
-            sl.project_id,
-            lower(sl.service_name) as service_name,
-            sl.service_url,
-            ${includeMetadata ? sql`sl.metadata,` : sql``}
-            sl.target_id,
-            p.type
-          FROM schema_version_to_log AS svl
-          LEFT JOIN schema_log AS sl ON (sl.id = svl.action_id)
-          LEFT JOIN projects as p ON (p.id = sl.project_id)
-          WHERE
-            svl.version_id = ${version}
-            AND sl.action = 'PUSH'
-            AND p.type != 'CUSTOM'
-          ORDER BY
-            sl.created_at DESC
-        `,
-      );
-
-      return (
-        result as Array<
-          Pick<
-            OverrideProp<schema_log, 'action', 'PUSH'>,
-            | 'id'
-            | 'commit'
-            | 'action'
-            | 'author'
-            | 'sdl'
-            | 'created_at'
-            | 'project_id'
-            | 'service_name'
-            | 'service_url'
-            | 'target_id'
-            | 'metadata'
-          > &
-            Pick<projects, 'type'>
-        >
-      ).map(transformSchema);
+    async getSchemasOfVersion({ versionId: version, includeMetadata: _includeMetadata = false }) {
+      return pool
+        .any(
+          sql`/* getSchemasOfVersion */
+            SELECT
+              ${schemaLogFields(sql`sl.`)}
+              , p.type
+            FROM schema_version_to_log AS svl
+            LEFT JOIN schema_log AS sl ON (sl.id = svl.action_id)
+            LEFT JOIN projects as p ON (p.id = sl.project_id)
+            WHERE
+              svl.version_id = ${version}
+              AND sl.action = 'PUSH'
+              AND p.type != 'CUSTOM'
+            ORDER BY
+              sl.created_at DESC
+          `,
+        )
+        .then(z.array(SchemaModel).parse);
     },
     async getServiceSchemaOfVersion(args) {
-      const result = await pool.maybeOne(sql`/* getServiceSchemaOfVersion */
-        SELECT
-            sl.id,
-            sl.commit,
-            sl.author,
-            sl.action,
-            sl.sdl,
-            sl.created_at,
-            sl.project_id,
-            lower(sl.service_name) as service_name,
-            sl.service_url,
-            sl.target_id,
-            p.type
-          FROM schema_version_to_log AS svl
-          LEFT JOIN schema_log AS sl ON (sl.id = svl.action_id)
-          LEFT JOIN projects as p ON (p.id = sl.project_id)
-          WHERE
-            svl.version_id = ${args.schemaVersionId}
-            AND sl.action = 'PUSH'
-            AND p.type != 'CUSTOM'
-            AND lower(sl.service_name) = lower(${args.serviceName})
-      `);
-
-      if (!result) {
-        return null;
-      }
-
-      return transformSchema(result as Parameters<typeof transformSchema>[0]);
+      return pool
+        .maybeOne(sql`/* getServiceSchemaOfVersion */
+          SELECT
+              ${schemaLogFields(sql`sl.`)}
+              , p.type
+            FROM schema_version_to_log AS svl
+            LEFT JOIN schema_log AS sl ON (sl.id = svl.action_id)
+            LEFT JOIN projects as p ON (p.id = sl.project_id)
+            WHERE
+              svl.version_id = ${args.schemaVersionId}
+              AND sl.action = 'PUSH'
+              AND p.type != 'CUSTOM'
+              AND lower(sl.service_name) = lower(${args.serviceName})
+        `)
+        .then(SchemaModel.nullable().parse);
     },
 
     async getMatchingServiceSchemaOfVersions(versions) {
@@ -5841,6 +5679,133 @@ const schemaPolicyFields = (prefix: TaggedTemplateLiteralInvocation) => sql`
   , ${prefix}"updated_at" AS "updatedAt"
 `;
 
+const targetSettingsFields = (prefix: TaggedTemplateLiteralInvocation) => sql`
+  ${prefix}"validation_enabled" AS "validationEnabled"
+  , ${prefix}"validation_percentage" AS "validationPercentage"
+  , ${prefix}"validation_period" AS "validationPeriod"
+  , ${prefix}"validation_excluded_clients" AS "validationExcludedClients"
+  , ${prefix}"validation_excluded_app_deployments" AS "validationExcludedAppDeployments"
+  , ${prefix}"validation_request_count" AS "validationRequestCount"
+  , ${prefix}"validation_breaking_change_formula" AS "validationBreakingChangeFormula"
+  , ${prefix}"fail_diff_on_dangerous_change" AS "failDiffOnDangerousChange"
+  , ${prefix}"app_deployment_protection_enabled" AS "appDeploymentProtectionEnabled"
+  , ${prefix}"app_deployment_protection_min_days_inactive" AS "appDeploymentProtectionMinDaysInactive"
+  , ${prefix}"app_deployment_protection_min_days_since_creation" AS "appDeploymentProtectionMinDaysSinceCreation"
+  , ${prefix}"app_deployment_protection_max_traffic_percentage" AS "appDeploymentProtectionMaxTrafficPercentage"
+  , ${prefix}"app_deployment_protection_traffic_period_days" AS "appDeploymentProtectionTrafficPeriodDays"
+  , ${prefix}"app_deployment_protection_rule_logic" AS "appDeploymentProtectionRuleLogic"
+`;
+
+const schemaLogFields = (prefix: TaggedTemplateLiteralInvocation) => sql`
+  ${prefix}"id"
+  , ${prefix}"author"
+  , ${prefix}"commit"
+  , ${prefix}"sdl"
+  , ${prefix}"created_at" AS "date"
+  , ${prefix}"target_id" AS "target"
+  , ${prefix}"metadata"
+  , lower(${prefix}"service_name") AS "service_name"
+  , ${prefix}"service_url"
+  , ${prefix}"action"
+`;
+
+/** Parses a DB row (with SQL aliases from schemaLogFields + p.type) into a Schema (always PUSH) */
+const SchemaModel = z
+  .object({
+    id: z.string(),
+    author: z.string(),
+    commit: z.string(),
+    sdl: z.string(),
+    date: z.any(),
+    target: z.string(),
+    metadata: z.string().nullish().transform(v => v ?? null),
+    service_name: z.string().nullable(),
+    service_url: z.string().nullable(),
+    action: z.literal('PUSH'),
+    type: z.string(),
+  })
+  .transform((row): Schema => {
+    const isSingleProject = (row.type as ProjectType) === ProjectType.SINGLE;
+    return isSingleProject
+      ? {
+          kind: 'single',
+          id: row.id,
+          author: row.author,
+          sdl: row.sdl,
+          commit: row.commit,
+          date: row.date,
+          target: row.target,
+          metadata: row.metadata,
+        }
+      : {
+          kind: 'composite',
+          id: row.id,
+          author: row.author,
+          sdl: row.sdl,
+          commit: row.commit,
+          date: row.date,
+          service_name: row.service_name!,
+          service_url: row.service_url,
+          target: row.target,
+          action: 'PUSH',
+          metadata: row.metadata,
+        };
+  });
+
+/** Parses a DB row (with SQL aliases from schemaLogFields + p.type) into a SchemaLog (PUSH or DELETE) */
+const SchemaLogModel = z
+  .object({
+    id: z.string(),
+    author: z.string(),
+    commit: z.string(),
+    sdl: z.string().nullable(),
+    date: z.any(),
+    target: z.string(),
+    metadata: z.string().nullish().transform(v => v ?? null),
+    service_name: z.string().nullable(),
+    service_url: z.string().nullable(),
+    action: z.enum(['PUSH', 'DELETE']),
+    type: z.string(),
+  })
+  .transform((row): SchemaLog => {
+    const isSingleProject = (row.type as ProjectType) === ProjectType.SINGLE;
+    if (isSingleProject) {
+      return {
+        kind: 'single',
+        id: row.id,
+        author: row.author,
+        sdl: row.sdl!,
+        commit: row.commit,
+        date: row.date,
+        target: row.target,
+        metadata: row.metadata,
+      };
+    }
+    if (row.action === 'PUSH') {
+      return {
+        kind: 'composite',
+        id: row.id,
+        author: row.author,
+        sdl: row.sdl!,
+        commit: row.commit,
+        date: row.date,
+        service_name: row.service_name!,
+        service_url: row.service_url,
+        target: row.target,
+        action: 'PUSH',
+        metadata: row.metadata,
+      };
+    }
+    return {
+      kind: 'composite',
+      id: row.id,
+      date: row.date,
+      service_name: row.service_name!,
+      target: row.target,
+      action: 'DELETE',
+    };
+  });
+
 const OrganizationModel = z
   .object({
     id: z.string(),
@@ -6042,6 +6007,54 @@ const OrganizationMemberAccessModel = z.object({
   user_id: z.string(),
   scopes: z.array(z.string()).nullable(),
 });
+
+const TargetSettingsModel = z
+  .object({
+    validationEnabled: z.boolean(),
+    validationPercentage: z.number(),
+    validationPeriod: z.number(),
+    validationExcludedClients: z.array(z.string().nullable()).nullable(),
+    validationExcludedAppDeployments: z.array(z.string().nullable()).nullable(),
+    validationRequestCount: z.number().nullable(),
+    validationBreakingChangeFormula: z.string().nullable(),
+    failDiffOnDangerousChange: z.boolean(),
+    targets: z.array(z.string().nullable()).nullable(),
+    appDeploymentProtectionEnabled: z.boolean(),
+    appDeploymentProtectionMinDaysInactive: z.number(),
+    appDeploymentProtectionMinDaysSinceCreation: z.number(),
+    appDeploymentProtectionMaxTrafficPercentage: z.coerce.number(),
+    appDeploymentProtectionTrafficPeriodDays: z.number(),
+    appDeploymentProtectionRuleLogic: z.enum(['AND', 'OR']),
+  })
+  .transform(row => ({
+    failDiffOnDangerousChange: row.failDiffOnDangerousChange,
+    validation: {
+      isEnabled: row.validationEnabled,
+      percentage: row.validationPercentage,
+      period: row.validationPeriod,
+      requestCount: row.validationRequestCount ?? 1,
+      breakingChangeFormula: (row.validationBreakingChangeFormula ?? 'PERCENTAGE') as
+        | 'PERCENTAGE'
+        | 'REQUEST_COUNT',
+      targets: Array.isArray(row.targets)
+        ? row.targets.filter((v): v is string => v != null)
+        : [],
+      excludedClients: Array.isArray(row.validationExcludedClients)
+        ? row.validationExcludedClients.filter((v): v is string => v != null)
+        : [],
+      excludedAppDeployments: Array.isArray(row.validationExcludedAppDeployments)
+        ? row.validationExcludedAppDeployments.filter((v): v is string => v != null)
+        : [],
+    },
+    appDeploymentProtection: {
+      isEnabled: row.appDeploymentProtectionEnabled,
+      minDaysInactive: row.appDeploymentProtectionMinDaysInactive,
+      minDaysSinceCreation: row.appDeploymentProtectionMinDaysSinceCreation,
+      maxTrafficPercentage: row.appDeploymentProtectionMaxTrafficPercentage,
+      trafficPeriodDays: row.appDeploymentProtectionTrafficPeriodDays,
+      ruleLogic: row.appDeploymentProtectionRuleLogic,
+    },
+  }));
 
 const TargetIdModel = z.object({
   id: z.string(),
