@@ -883,7 +883,7 @@ export async function createStorage(
         .one(
           sql`/* countOrganizationMembers */ SELECT COUNT(*) as total FROM organization_member WHERE organization_id = ${organization}`,
         )
-        .then(z.object({ total: z.coerce.number() }).parse);
+        .then(z.object({ total: z.number() }).parse);
 
       return total;
     },
@@ -2084,7 +2084,7 @@ export async function createStorage(
               AND sv.created_at < ${period.to.toISOString()}
           `,
           )
-          .then(z.object({ total: z.coerce.number() }).nullable().parse);
+          .then(z.object({ total: z.number() }).nullable().parse);
         return result?.total ?? 0;
       }
 
@@ -2096,7 +2096,7 @@ export async function createStorage(
           WHERE t.project_id = ${project}
         `,
         )
-        .then(z.object({ total: z.coerce.number() }).nullable().parse);
+        .then(z.object({ total: z.number() }).nullable().parse);
 
       return result?.total ?? 0;
     },
@@ -2112,7 +2112,7 @@ export async function createStorage(
               AND created_at < ${period.to.toISOString()}
           `,
           )
-          .then(z.object({ total: z.coerce.number() }).nullable().parse);
+          .then(z.object({ total: z.number() }).nullable().parse);
         return result?.total ?? 0;
       }
 
@@ -2122,7 +2122,7 @@ export async function createStorage(
           SELECT COUNT(*) as total FROM schema_versions WHERE target_id = ${target}
         `,
         )
-        .then(z.object({ total: z.coerce.number() }).nullable().parse);
+        .then(z.object({ total: z.number() }).nullable().parse);
 
       return result?.total ?? 0;
     },
@@ -2974,8 +2974,8 @@ export async function createStorage(
               org_plan_name: z.string(),
               owner_email: z.string(),
               targets: z.array(z.string()),
-              limit_operations_monthly: z.coerce.number(),
-              limit_retention_days: z.coerce.number(),
+              limit_operations_monthly: z.number(),
+              limit_retention_days: z.number(),
             }),
           ).parse,
         );
@@ -4778,7 +4778,7 @@ export async function createStorage(
             ) SELECT COUNT(*) FROM "deleted"
           `,
             )
-            .then(z.coerce.number().parse);
+            .then(z.number().parse);
         }
 
         if (data.targetIds.length && data.contextIds.length) {
@@ -4809,7 +4809,7 @@ export async function createStorage(
             ) SELECT COUNT(*) FROM "deleted"
           `,
             )
-            .then(z.coerce.number().parse);
+            .then(z.number().parse);
         }
 
         if (data.contractIds.length && data.contextIds.length) {
@@ -4843,7 +4843,7 @@ export async function createStorage(
             ) SELECT COUNT(*) FROM "deleted"
           `,
             )
-            .then(z.coerce.number().parse);
+            .then(z.number().parse);
         }
 
         return {
@@ -6050,7 +6050,7 @@ const OrganizationTargetPairModel = z.object({
 
 const OrganizationStatModel = z.object({
   id: z.string(),
-  total: z.coerce.number(),
+  total: z.number(),
 });
 
 export const UserModel = z.object({
