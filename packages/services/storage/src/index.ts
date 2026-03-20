@@ -5634,7 +5634,7 @@ const PushedCompositeSchemaModel = z
 /** Composite-project DELETE schema */
 const DeletedCompositeSchemaModel = z
   .object(schemaLogRow)
-  .refine(row => row.action === 'DELETE')
+  .refine(row => (row.type as ProjectType) !== ProjectType.SINGLE && row.action === 'DELETE')
   .transform(
     (row): DeletedCompositeSchema => ({
       kind: 'composite',
