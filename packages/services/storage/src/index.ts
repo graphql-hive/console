@@ -32,13 +32,11 @@ import {
 import { batch, batchBy } from '../../api/src/shared/helpers';
 import {
   getPool,
-  organization_invitations,
   organization_member,
   organization_member_roles,
   organizations,
   projects,
   schema_log as schema_log_in_db,
-  schema_policy_config,
   schema_versions,
   target_validation,
   targets,
@@ -130,13 +128,6 @@ async function tracedTransaction<T>(
   });
 }
 
-type MemberRoleColumns = {
-  role_id: organization_member_roles['id'];
-  role_name: organization_member_roles['name'];
-  role_description: organization_member_roles['description'];
-  role_locked: organization_member_roles['locked'];
-  role_scopes: organization_member_roles['scopes'];
-};
 
 export async function createStorage(
   connection: string,
@@ -145,115 +136,6 @@ export async function createStorage(
 ): Promise<Storage> {
   const pool = await getPool(connection, maximumPoolSize, additionalInterceptors);
 
-  function transformSchemaPolicy(schema_policy: schema_policy_config): SchemaPolicy {
-    return {
-      id: `${schema_policy.resource_type}_${schema_policy.resource_id}`,
-      config: schema_policy.config,
-      createdAt: schema_policy.created_at,
-      updatedAt: schema_policy.updated_at,
-      resource: schema_policy.resource_type,
-      resourceId: schema_policy.resource_id,
-      allowOverrides: schema_policy.allow_overriding,
-    };
-  }
-
-  function transformMember(
-    user: users &
-      Pick<organization_member, 'scopes' | 'organization_id' | 'connected_to_zendesk'> & {
-        is_owner: boolean;
-      } & MemberRoleColumns & {
-        provider: string | null;
-      },
-  ): Member {
-    return {
-      id: user.id,
-      isOwner: user.is_owner,
-      user: UserModel.parse(user),
-      // This allows us to have a fallback for users that don't have a role, remove this once we all users have a role
-      scopes: (user.scopes as Member['scopes']) || [],
-      organization: user.organization_id,
-      oidcIntegrationId: user.oidc_integration_id ?? null,
-      connectedToZendesk: user.connected_to_zendesk ?? false,
-      role: {
-        id: user.role_id,
-        name: user.role_name,
-        locked: user.role_locked,
-        description: user.role_description,
-        scopes: user.role_scopes as Member['scopes'],
-        organizationId: user.organization_id,
-        membersCount: undefined, // if it's not defined, the resolver will fetch it
-      },
-    };
-  }
-
-  function transformOrganization(organization: organizations): Organization {
-    return {
-      id: organization.id,
-      slug: organization.clean_id,
-      name: organization.name,
-      monthlyRateLimit: {
-        retentionInDays: parseInt(organization.limit_retention_days),
-        operations: parseInt(organization.limit_operations_monthly),
-      },
-      billingPlan: organization.plan_name,
-      getStarted: {
-        id: organization.id,
-        creatingProject: organization.get_started_creating_project,
-        publishingSchema: organization.get_started_publishing_schema,
-        checkingSchema: organization.get_started_checking_schema,
-        invitingMembers: organization.get_started_inviting_members,
-        reportingOperations: organization.get_started_reporting_operations,
-        enablingUsageBasedBreakingChanges: organization.get_started_usage_breaking,
-      },
-      featureFlags: decodeFeatureFlags(organization.feature_flags),
-      zendeskId: organization.zendesk_organization_id ?? null,
-      ownerId: organization.user_id,
-    };
-  }
-
-  function transformOrganizationInvitation(
-    invitation: organization_invitations & {
-      role: organization_member_roles;
-    },
-  ): OrganizationInvitation {
-    return {
-      get id() {
-        return getOrganizationInvitationId({
-          organizationId: invitation.organization_id,
-          email: invitation.email,
-          code: invitation.code,
-        });
-      },
-      email: invitation.email,
-      organizationId: invitation.organization_id,
-      code: invitation.code,
-      createdAt: invitation.created_at as any,
-      expiresAt: invitation.expires_at as any,
-      roleId: invitation.role.id,
-      assignedResources: invitation.assigned_resources as any,
-    };
-  }
-
-  function transformProject(project: projects): Project {
-    return {
-      id: project.id,
-      slug: project.clean_id,
-      orgId: project.org_id,
-      name: project.name,
-      type: project.type as ProjectType,
-      createdAt: new Date(project.created_at).toISOString(),
-      buildUrl: project.build_url,
-      validationUrl: project.validation_url,
-      gitRepository: project.git_repository as `${string}/${string}` | null,
-      useProjectNameInGithubCheck: project.github_check_with_project_name === true,
-      externalComposition: {
-        enabled: project.external_composition_enabled,
-        endpoint: project.external_composition_endpoint,
-        encryptedSecret: project.external_composition_secret,
-      },
-      nativeFederation: project.native_federation === true,
-    };
-  }
 
   function transformSchema(
     schema: Pick<
@@ -486,13 +368,11 @@ export async function createStorage(
       return user;
     },
     async getOrganization(userId: string, connection: Connection) {
-      const org = await connection
+      return connection
         .maybeOne<unknown>(
-          sql`/* getOrganization */ SELECT * FROM organizations WHERE user_id = ${userId} AND type = ${'PERSONAL'} LIMIT 1`,
+          sql`/* getOrganization */ SELECT ${organizationFields(sql``)} FROM organizations WHERE user_id = ${userId} AND type = ${'PERSONAL'} LIMIT 1`,
         )
         .then(OrganizationModel.nullable().parse);
-
-      return org ? transformOrganization(org) : null;
     },
     async addOrganizationMemberViaOIDCIntegrationId(
       args: {
@@ -804,15 +684,17 @@ export async function createStorage(
           };
         }
 
-        const org = await t.one<organizations>(
-          sql`/* createOrganization */
-          INSERT INTO organizations
-            ("name", "clean_id", "user_id")
-          VALUES
-            (${input.slug}, ${input.slug}, ${input.userId})
-          RETURNING *
-        `,
-        );
+        const org = await t
+          .one<unknown>(
+            sql`/* createOrganization */
+            INSERT INTO organizations
+              ("name", "clean_id", "user_id")
+            VALUES
+              (${input.slug}, ${input.slug}, ${input.userId})
+            RETURNING ${organizationFields(sql``)}
+          `,
+          )
+          .then(OrganizationModel.parse);
 
         // Create default roles for the organization
         const roles = await t.query<
@@ -857,7 +739,7 @@ export async function createStorage(
 
         return {
           ok: true,
-          organization: transformOrganization(org),
+          organization: org,
         };
       });
     },
@@ -868,19 +750,21 @@ export async function createStorage(
         `);
 
         return {
-          organization: await t.one<organizations>(
-            sql`/* deleteOrganization */
-              DELETE FROM organizations
-              WHERE id = ${organization}
-              RETURNING *
-            `,
-          ),
+          organization: await t
+            .one<unknown>(
+              sql`/* deleteOrganization */
+                DELETE FROM organizations
+                WHERE id = ${organization}
+                RETURNING ${organizationFields(sql``)}
+              `,
+            )
+            .then(OrganizationModel.parse),
           tokens: tokensResult.rows.map(row => row.token),
         };
       });
 
       return {
-        ...transformOrganization(result.organization),
+        ...result.organization,
         tokens: result.tokens,
       };
     },
@@ -898,19 +782,21 @@ export async function createStorage(
           };
         }
 
-        const project = await t.one<projects>(
-          sql`/* createProject */
-            INSERT INTO projects
-              ("name", "clean_id", "type", "org_id", "native_federation")
-            VALUES
-              (${slug}, ${slug}, ${type}, ${organization}, ${type === ProjectType.FEDERATION})
-            RETURNING *
-          `,
-        );
+        const project = await t
+          .one<unknown>(
+            sql`/* createProject */
+              INSERT INTO projects
+                ("name", "clean_id", "type", "org_id", "native_federation")
+              VALUES
+                (${slug}, ${slug}, ${type}, ${organization}, ${type === ProjectType.FEDERATION})
+              RETURNING ${projectFields(sql``)}
+            `,
+          )
+          .then(ProjectModel.parse);
 
         return {
           ok: true,
-          project: transformProject(project),
+          project,
         };
       });
     },
@@ -951,24 +837,19 @@ export async function createStorage(
     }),
     getOrganizationOwner: batch(async selectors => {
       const organizations = selectors.map(s => s.organizationId);
-      const owners = await pool.query<
-        users &
-          Pick<organization_member, 'scopes' | 'organization_id' | 'connected_to_zendesk'> &
-          MemberRoleColumns & {
-            provider: string | null;
-          }
-      >(
+      const owners = await pool.any<unknown>(
         sql`/* getOrganizationOwner */
         SELECT
           ${userFields(sql`"u".`)},
           omr.scopes as scopes,
-          om.organization_id,
-          om.connected_to_zendesk,
-          omr.id as role_id,
-          omr.name as role_name,
-          omr.locked as role_locked,
-          omr.scopes as role_scopes,
-          omr.description as role_description
+          om.organization_id AS "organizationId",
+          om.connected_to_zendesk AS "connectedToZendesk",
+          true AS "isOwner",
+          omr.id as "roleId",
+          omr.name as "roleName",
+          omr.locked as "roleLocked",
+          omr.scopes as "roleScopes",
+          omr.description as "roleDescription"
         FROM organizations as o
         LEFT JOIN users as u ON (u.id = o.user_id)
         LEFT JOIN organization_member as om ON (om.user_id = u.id AND om.organization_id = o.id)
@@ -977,15 +858,13 @@ export async function createStorage(
       );
 
       return organizations.map(organization => {
-        const owner = owners.rows.find(row => row.organization_id === organization);
+        const owner = owners.find(row => {
+          const parsed = z.object({ organizationId: z.string() }).parse(row);
+          return parsed.organizationId === organization;
+        });
 
         if (owner) {
-          return Promise.resolve(
-            transformMember({
-              ...owner,
-              is_owner: true,
-            }),
-          );
+          return Promise.resolve(MemberModel.parse(owner));
         }
 
         return Promise.reject(new Error(`Owner not found (organization=${organization})`));
@@ -999,26 +878,19 @@ export async function createStorage(
       return total;
     },
     getOrganizationMember: batch(async selectors => {
-      const membersResult = await pool.query<
-        users &
-          Pick<organization_member, 'organization_id' | 'scopes' | 'connected_to_zendesk'> & {
-            is_owner: boolean;
-          } & MemberRoleColumns & {
-            provider: string | null;
-          }
-      >(
+      const membersResult = await pool.any<unknown>(
         sql`/* getOrganizationMember */
           SELECT
             ${userFields(sql`"u".`)},
             omr.scopes as scopes,
-            om.organization_id,
-            om.connected_to_zendesk,
-            CASE WHEN o.user_id = om.user_id THEN true ELSE false END AS is_owner,
-            omr.id as role_id,
-            omr.name as role_name,
-            omr.locked as role_locked,
-            omr.scopes as role_scopes,
-            omr.description as role_description
+            om.organization_id AS "organizationId",
+            om.connected_to_zendesk AS "connectedToZendesk",
+            CASE WHEN o.user_id = om.user_id THEN true ELSE false END AS "isOwner",
+            omr.id as "roleId",
+            omr.name as "roleName",
+            omr.locked as "roleLocked",
+            omr.scopes as "roleScopes",
+            omr.description as "roleDescription"
           FROM organization_member as om
           LEFT JOIN organizations as o ON (o.id = om.organization_id)
           LEFT JOIN users as u ON (u.id = om.user_id)
@@ -1032,12 +904,13 @@ export async function createStorage(
       );
 
       return selectors.map(selector => {
-        const member = membersResult.rows.find(
-          row => row.organization_id === selector.organizationId && row.id === selector.userId,
-        );
+        const member = membersResult.find(row => {
+          const parsed = z.object({ organizationId: z.string(), id: z.string() }).parse(row);
+          return parsed.organizationId === selector.organizationId && parsed.id === selector.userId;
+        });
 
         if (member) {
-          return Promise.resolve(transformMember(member));
+          return Promise.resolve(MemberModel.parse(member));
         }
 
         return Promise.resolve(null);
@@ -1059,13 +932,13 @@ export async function createStorage(
 
       const query = sql`
         SELECT
-          oi.organization_id
+          oi.organization_id AS "organizationId"
           , oi.code
           , oi.email
-          , to_json(oi.created_at) as "created_at"
-          , to_json(oi.expires_at) as "expires_at"
-          , oi.role_id as "role_id"
-          , to_jsonb(omr.*) as role
+          , to_json(oi.created_at) as "createdAt"
+          , to_json(oi.expires_at) as "expiresAt"
+          , oi.role_id as "roleId"
+          , oi.assigned_resources as "assignedResources"
         FROM
           organization_invitations as oi
         LEFT JOIN organization_member_roles as omr ON (omr.organization_id = oi.organization_id AND omr.id = oi.role_id)
@@ -1091,15 +964,11 @@ export async function createStorage(
         LIMIT ${limit + 1}
       `;
 
-      const result = await pool.any<
-        organization_invitations & {
-          role: organization_member_roles;
-        }
-      >(query);
+      const result = await pool
+        .any<unknown>(query)
+        .then(z.array(OrganizationInvitationModel).parse);
 
-      let edges = result.map(row => {
-        const node = transformOrganizationInvitation(row);
-
+      let edges = result.map(node => {
         return {
           node,
           get cursor() {
@@ -1200,60 +1069,54 @@ export async function createStorage(
 
         return {
           ok: true,
-          organization: transformOrganization(
-            await t
-              .one(
-                sql`/* updateOrganizationSlug */
+          organization: await t
+            .one<unknown>(
+              sql`/* updateOrganizationSlug */
               UPDATE organizations
               SET clean_id = ${slug}, name = ${slug}
               WHERE id = ${organization}
-              RETURNING *
+              RETURNING ${organizationFields(sql``)}
             `,
-              )
-              .then(OrganizationModel.parse),
-          ),
+            )
+            .then(OrganizationModel.parse),
         };
       });
     },
 
     async updateOrganizationPlan({ billingPlan, organizationId: organization }) {
-      return transformOrganization(
-        await pool
-          .one(
-            sql`/* updateOrganizationPlan */
+      return pool
+        .one<unknown>(
+          sql`/* updateOrganizationPlan */
           UPDATE organizations
           SET plan_name = ${billingPlan}
           WHERE id = ${organization}
-          RETURNING *
+          RETURNING ${organizationFields(sql``)}
         `,
-          )
-          .then(OrganizationModel.parse),
-      );
+        )
+        .then(OrganizationModel.parse);
     },
     async updateOrganizationRateLimits(args, action) {
       return await tracedTransaction('updateOrganizationRateLimits', pool, async t => {
-        const org = transformOrganization(
-          await t
-            .one(
-              sql`/* updateOrganizationRateLimits */
+        const org = await t
+          .one<unknown>(
+            sql`/* updateOrganizationRateLimits */
             UPDATE organizations
             SET limit_operations_monthly = ${args.monthlyRateLimit.operations}, limit_retention_days = ${args.monthlyRateLimit.retentionInDays}
             WHERE id = ${args.organizationId}
-            RETURNING *
+            RETURNING ${organizationFields(sql``)}
           `,
-            )
-            .then(OrganizationModel.parse),
-        );
+          )
+          .then(OrganizationModel.parse);
         await action?.();
 
         return org;
       });
     },
     async createOrganizationInvitation(args) {
-      return transformOrganizationInvitation(
-        await tracedTransaction('createOrganizationInvitation', pool, async trx => {
-          const invitation =
-            await trx.one<organization_invitations>(sql`/* createOrganizationInvitation */
+      return tracedTransaction('createOrganizationInvitation', pool, async trx => {
+        const invitation = await trx
+          .one<unknown>(
+            sql`/* createOrganizationInvitation */
             INSERT INTO "organization_invitations" (
               "organization_id"
               , "email"
@@ -1266,57 +1129,44 @@ export async function createStorage(
               , ${args.roleId}
               , ${args.resourceAssignments === null ? null : sql.jsonb(args.resourceAssignments)}
             )
-            RETURNING *
-          `);
+            RETURNING
+              "organization_id" AS "organizationId"
+              , "code"
+              , "email"
+              , to_json("created_at") AS "createdAt"
+              , to_json("expires_at") AS "expiresAt"
+              , "role_id" AS "roleId"
+              , "assigned_resources" AS "assignedResources"
+          `,
+          )
+          .then(OrganizationInvitationModel.parse);
 
-          const role = await trx.one<organization_member_roles>(sql`/* getOrganizationRole */
-            SELECT *
-            FROM
-              "organization_member_roles"
-            WHERE
-              "id" = ${args.roleId}
-            LIMIT 1
-          `);
-
-          return {
-            ...invitation,
-            role,
-          };
-        }),
-      );
+        return invitation;
+      });
     },
     async deleteOrganizationInvitationByEmail({ organizationId: organization, email }) {
-      const result = await tracedTransaction(
+      return tracedTransaction(
         'deleteOrganizationInvitationByEmail',
         pool,
         async trx => {
-          const deleted =
-            await trx.maybeOne<organization_invitations>(sql`/* deleteOrganizationInvitationByEmail */
-        DELETE FROM organization_invitations
-        WHERE organization_id = ${organization} AND email = ${email}
-        RETURNING *
-      `);
-
-          if (!deleted) {
-            return null;
-          }
-
-          const role = await trx.one<organization_member_roles>(sql`/* getOrganizationRole */
-          SELECT * FROM organization_member_roles WHERE id = ${deleted.role_id} LIMIT 1
-        `);
-
-          return {
-            ...deleted,
-            role,
-          };
+          return trx
+            .maybeOne<unknown>(
+              sql`/* deleteOrganizationInvitationByEmail */
+                DELETE FROM organization_invitations
+                WHERE organization_id = ${organization} AND email = ${email}
+                RETURNING
+                  "organization_id" AS "organizationId"
+                  , "code"
+                  , "email"
+                  , to_json("created_at") AS "createdAt"
+                  , to_json("expires_at") AS "expiresAt"
+                  , "role_id" AS "roleId"
+                  , "assigned_resources" AS "assignedResources"
+              `,
+            )
+            .then(OrganizationInvitationModel.nullable().parse);
         },
       );
-
-      if (!result) {
-        return null;
-      }
-
-      return transformOrganizationInvitation(result);
     },
     async addOrganizationMemberViaInvitationCode({
       code,
@@ -1492,19 +1342,17 @@ export async function createStorage(
       return result.id;
     },
     async getOrganization({ organizationId }) {
-      return transformOrganization(
-        await pool
-          .one(
-            sql`/* getOrganization */ SELECT * FROM organizations WHERE id = ${organizationId} LIMIT 1`,
-          )
-          .then(OrganizationModel.parse),
-      );
+      return pool
+        .one<unknown>(
+          sql`/* getOrganization */ SELECT ${organizationFields(sql``)} FROM organizations WHERE id = ${organizationId} LIMIT 1`,
+        )
+        .then(OrganizationModel.parse);
     },
     async getOrganizations({ userId: user }) {
-      const results = await pool
+      return pool
         .any<unknown>(
           sql`/* getOrganizations */
-          SELECT o.*
+          SELECT ${organizationFields(sql`o.`)}
           FROM organizations as o
           LEFT JOIN organization_member as om ON (om.organization_id = o.id)
           WHERE om.user_id = ${user}
@@ -1512,14 +1360,12 @@ export async function createStorage(
         `,
         )
         .then(z.array(OrganizationModel).parse);
-
-      return results.map(transformOrganization);
     },
     async getOrganizationByInviteCode({ inviteCode, email }) {
-      const result = await pool
+      return pool
         .maybeOne<unknown>(
           sql`/* getOrganizationByInviteCode */
-          SELECT o.* FROM organizations as o
+          SELECT ${organizationFields(sql`o.`)} FROM organizations as o
           LEFT JOIN organization_invitations as i ON (i.organization_id = o.id)
           WHERE
             i.code = ${inviteCode}
@@ -1530,73 +1376,45 @@ export async function createStorage(
         `,
         )
         .then(OrganizationModel.nullable().parse);
-
-      if (result) {
-        return transformOrganization(result);
-      }
-
-      return null;
     },
     async getOrganizationBySlug({ slug }) {
-      const result = await pool
+      return pool
         .maybeOne<unknown>(
-          sql`/* getOrganizationBySlug */ SELECT * FROM organizations WHERE clean_id = ${slug} LIMIT 1`,
+          sql`/* getOrganizationBySlug */ SELECT ${organizationFields(sql``)} FROM organizations WHERE clean_id = ${slug} LIMIT 1`,
         )
         .then(OrganizationModel.nullable().parse);
-
-      if (!result) {
-        return null;
-      }
-
-      return transformOrganization(result);
     },
     async getOrganizationByGitHubInstallationId({ installationId }) {
-      const result = await pool
+      return pool
         .maybeOne<unknown>(
           sql`/* getOrganizationByGitHubInstallationId */
-          SELECT * FROM organizations
+          SELECT ${organizationFields(sql``)} FROM organizations
           WHERE github_app_installation_id = ${installationId}
           LIMIT 1
         `,
         )
         .then(OrganizationModel.nullable().parse);
-
-      if (result) {
-        return transformOrganization(result);
-      }
-
-      return null;
     },
     async getProject({ projectId: project }) {
-      return transformProject(
-        await pool
-          .one(
-            sql`/* getProject */ SELECT * FROM projects WHERE id = ${project} AND type != 'CUSTOM' LIMIT 1`,
-          )
-          .then(ProjectModel.parse),
-      );
+      return pool
+        .one<unknown>(
+          sql`/* getProject */ SELECT ${projectFields(sql``)} FROM projects WHERE id = ${project} AND type != 'CUSTOM' LIMIT 1`,
+        )
+        .then(ProjectModel.parse);
     },
     async getProjectBySlug({ slug, organizationId: organization }) {
-      const result = await pool
+      return pool
         .maybeOne<unknown>(
-          sql`/* getProjectBySlug */ SELECT * FROM projects WHERE clean_id = ${slug} AND org_id = ${organization} AND type != 'CUSTOM' LIMIT 1`,
+          sql`/* getProjectBySlug */ SELECT ${projectFields(sql``)} FROM projects WHERE clean_id = ${slug} AND org_id = ${organization} AND type != 'CUSTOM' LIMIT 1`,
         )
         .then(ProjectModel.nullable().parse);
-
-      if (!result) {
-        return null;
-      }
-
-      return transformProject(result);
     },
     async getProjects({ organizationId: organization }) {
-      const result = await pool
+      return pool
         .any<unknown>(
-          sql`/* getProjects */ SELECT * FROM projects WHERE org_id = ${organization} AND type != 'CUSTOM' ORDER BY created_at DESC`,
+          sql`/* getProjects */ SELECT ${projectFields(sql``)} FROM projects WHERE org_id = ${organization} AND type != 'CUSTOM' ORDER BY created_at DESC`,
         )
         .then(z.array(ProjectModel).parse);
-
-      return result.map(transformProject);
     },
     findProjectsByIds: batch<{ projectIds: Array<string> }, Map<string, Project>>(
       async function FindProjectByIdsBatchHandler(args) {
@@ -1609,12 +1427,11 @@ export async function createStorage(
 
         const result = await pool
           .any<unknown>(
-            sql`/* findProjectsByIds */ SELECT * FROM projects WHERE id = ANY(${sql.array(allProjectIds, 'uuid')}) AND type != 'CUSTOM'`,
+            sql`/* findProjectsByIds */ SELECT ${projectFields(sql``)} FROM projects WHERE id = ANY(${sql.array(allProjectIds, 'uuid')}) AND type != 'CUSTOM'`,
           )
           .then(z.array(ProjectModel).parse);
 
-        result.forEach(row => {
-          const project = transformProject(row);
+        result.forEach(project => {
           allProjectsLookupMap.set(project.id, project);
         });
 
@@ -1650,38 +1467,37 @@ export async function createStorage(
 
         return {
           ok: true,
-          project: transformProject(
-            await t
-              .one(
-                sql`/* updateProjectSlug */
+          project: await t
+            .one<unknown>(
+              sql`/* updateProjectSlug */
               UPDATE projects
               SET clean_id = ${slug}, name = ${slug}
               WHERE id = ${project} AND org_id = ${organization}
-              RETURNING *
+              RETURNING ${projectFields(sql``)}
             `,
-              )
-              .then(ProjectModel.parse),
-          ),
+            )
+            .then(ProjectModel.parse),
         };
       });
     },
     async updateNativeSchemaComposition({ projectId: project, enabled }) {
-      return transformProject(
-        await pool.one<projects>(sql`/* updateNativeSchemaComposition */
+      return pool
+        .one<unknown>(
+          sql`/* updateNativeSchemaComposition */
           UPDATE projects
           SET
             native_federation = ${enabled},
             external_composition_enabled = FALSE
           WHERE id = ${project}
-          RETURNING *
-        `),
-      );
+          RETURNING ${projectFields(sql``)}
+        `,
+        )
+        .then(ProjectModel.parse);
     },
     async enableExternalSchemaComposition({ projectId: project, endpoint, encryptedSecret }) {
-      return transformProject(
-        await pool
-          .one(
-            sql`/* enableExternalSchemaComposition */
+      return pool
+        .one<unknown>(
+          sql`/* enableExternalSchemaComposition */
           UPDATE projects
           SET
             native_federation = FALSE,
@@ -1689,21 +1505,22 @@ export async function createStorage(
             external_composition_endpoint = ${endpoint},
             external_composition_secret = ${encryptedSecret}
           WHERE id = ${project}
-          RETURNING *
+          RETURNING ${projectFields(sql``)}
         `,
-          )
-          .then(ProjectModel.parse),
-      );
+        )
+        .then(ProjectModel.parse);
     },
     async enableProjectNameInGithubCheck({ projectId: project }) {
-      return transformProject(
-        await pool.one<projects>(sql`/* enableProjectNameInGithubCheck */
+      return pool
+        .one<unknown>(
+          sql`/* enableProjectNameInGithubCheck */
           UPDATE projects
           SET github_check_with_project_name = true
           WHERE id = ${project}
-          RETURNING *
-        `),
-      );
+          RETURNING ${projectFields(sql``)}
+        `,
+        )
+        .then(ProjectModel.parse);
     },
 
     async deleteProject({ organizationId: organization, projectId: project }) {
@@ -1713,19 +1530,21 @@ export async function createStorage(
         `);
 
         return {
-          project: await t.one<projects>(
-            sql`/* deleteProject */
-              DELETE FROM projects
-              WHERE id = ${project} AND org_id = ${organization}
-              RETURNING *
-            `,
-          ),
+          project: await t
+            .one<unknown>(
+              sql`/* deleteProject */
+                DELETE FROM projects
+                WHERE id = ${project} AND org_id = ${organization}
+                RETURNING ${projectFields(sql``)}
+              `,
+            )
+            .then(ProjectModel.parse),
           tokens: tokensResult.rows.map(row => row.token),
         };
       });
 
       return {
-        ...transformProject(result.project),
+        ...result.project,
         tokens: result.tokens,
       };
     },
@@ -3192,7 +3011,7 @@ export async function createStorage(
       const organizationsResult = pool
         .any<unknown>(
           sql`/* adminGetOrganizations */
-        SELECT * FROM organizations
+        SELECT ${organizationFields(sql``)} FROM organizations
       `,
         )
         .then(z.array(OrganizationModel).parse);
@@ -3229,7 +3048,7 @@ export async function createStorage(
 
       for (const organization of organizations) {
         rows.push({
-          organization: transformOrganization(organization),
+          organization,
           versions: extractTotal(versions, organization.id),
           users: extractTotal(users, organization.id),
           projects: extractTotal(projects, organization.id),
@@ -3770,7 +3589,8 @@ export async function createStorage(
     },
 
     async setSchemaPolicyForOrganization(input): Promise<SchemaPolicy> {
-      const result = await pool.one<schema_policy_config>(sql`/* setSchemaPolicyForOrganization */
+      return pool
+        .one<unknown>(sql`/* setSchemaPolicyForOrganization */
         INSERT INTO "schema_policy_config"
         ("resource_type", "resource_id", "config", "allow_overriding")
           VALUES ('ORGANIZATION', ${input.organizationId}, ${sql.jsonb(input.policy)}, ${
@@ -3782,13 +3602,13 @@ export async function createStorage(
           SET "config" = ${sql.jsonb(input.policy)},
               "allow_overriding" = ${input.allowOverrides},
               "updated_at" = now()
-        RETURNING *;
-      `);
-
-      return transformSchemaPolicy(result);
+        RETURNING ${schemaPolicyFields(sql``)};
+      `)
+        .then(SchemaPolicyModel.parse);
     },
     async setSchemaPolicyForProject(input): Promise<SchemaPolicy> {
-      const result = await pool.one<schema_policy_config>(sql`/* setSchemaPolicyForProject */
+      return pool
+        .one<unknown>(sql`/* setSchemaPolicyForProject */
       INSERT INTO "schema_policy_config"
       ("resource_type", "resource_id", "config")
         VALUES ('PROJECT', ${input.projectId}, ${sql.jsonb(input.policy)})
@@ -3797,49 +3617,47 @@ export async function createStorage(
       DO UPDATE
         SET "config" = ${sql.jsonb(input.policy)},
             "updated_at" = now()
-      RETURNING *;
-    `);
-
-      return transformSchemaPolicy(result);
+      RETURNING ${schemaPolicyFields(sql``)};
+    `)
+        .then(SchemaPolicyModel.parse);
     },
     async findInheritedPolicies(selector): Promise<SchemaPolicy[]> {
       const { organizationId: organization, projectId: project } = selector;
 
-      const result = await pool.any<schema_policy_config>(sql`/* findInheritedPolicies */
-        SELECT *
+      return pool
+        .any<unknown>(sql`/* findInheritedPolicies */
+        SELECT ${schemaPolicyFields(sql``)}
         FROM
           "schema_policy_config"
         WHERE
           ("resource_type" = 'ORGANIZATION' AND "resource_id" = ${organization})
           OR ("resource_type" = 'PROJECT' AND "resource_id" = ${project});
-      `);
-
-      return result.map(transformSchemaPolicy);
+      `)
+        .then(z.array(SchemaPolicyModel).parse);
     },
     async getSchemaPolicyForOrganization(organizationId: string): Promise<SchemaPolicy | null> {
-      const result =
-        await pool.maybeOne<schema_policy_config>(sql`/* getSchemaPolicyForOrganization */
-        SELECT *
+      return pool
+        .maybeOne<unknown>(sql`/* getSchemaPolicyForOrganization */
+        SELECT ${schemaPolicyFields(sql``)}
         FROM
           "schema_policy_config"
         WHERE
           "resource_type" = 'ORGANIZATION'
           AND "resource_id" = ${organizationId};
-      `);
-
-      return result ? transformSchemaPolicy(result) : null;
+      `)
+        .then(SchemaPolicyModel.nullable().parse);
     },
     async getSchemaPolicyForProject(projectId: string): Promise<SchemaPolicy | null> {
-      const result = await pool.maybeOne<schema_policy_config>(sql`/* getSchemaPolicyForProject */
-      SELECT *
+      return pool
+        .maybeOne<unknown>(sql`/* getSchemaPolicyForProject */
+      SELECT ${schemaPolicyFields(sql``)}
       FROM
         "schema_policy_config"
       WHERE
         "resource_type" = 'PROJECT'
         AND "resource_id" = ${projectId};
-    `);
-
-      return result ? transformSchemaPolicy(result) : null;
+    `)
+        .then(SchemaPolicyModel.nullable().parse);
     },
     async getPaginatedDocumentCollectionsForTarget(args) {
       let cursor: null | {
@@ -5900,53 +5718,133 @@ export const userFields = (user: TaggedTemplateLiteralInvocation) => sql`
     ) AS "providers"
 `;
 
-const OrganizationModel = z.object({
-  id: z.string(),
-  clean_id: z.string(),
-  name: z.string(),
-  limit_retention_days: z.string(),
-  limit_operations_monthly: z.string(),
-  plan_name: z.string(),
-  get_started_creating_project: z.boolean(),
-  get_started_publishing_schema: z.boolean(),
-  get_started_checking_schema: z.boolean(),
-  get_started_inviting_members: z.boolean(),
-  get_started_reporting_operations: z.boolean(),
-  get_started_usage_breaking: z.boolean(),
-  feature_flags: z.union([
-    z.null(),
-    z.string(),
-    z.number(),
-    z.boolean(),
-    z.record(z.any()),
-    z.array(z.any()),
-  ]),
-  zendesk_organization_id: z.string().nullable(),
-  user_id: z.string(),
-  ownership_transfer_code: z.string().nullable(),
-  slack_token: z.string().nullable(),
-  github_app_installation_id: z.string().nullable(),
-  created_at: z.date(),
-  ownership_transfer_expires_at: z.date().nullable(),
-  ownership_transfer_user_id: z.string().nullable(),
-});
+const organizationFields = (prefix: TaggedTemplateLiteralInvocation) => sql`
+  ${prefix}"id"
+  , ${prefix}"clean_id" AS "slug"
+  , ${prefix}"name"
+  , ${prefix}"limit_retention_days" AS "limitRetentionDays"
+  , ${prefix}"limit_operations_monthly" AS "limitOperationsMonthly"
+  , ${prefix}"plan_name" AS "billingPlan"
+  , ${prefix}"get_started_creating_project" AS "getStartedCreatingProject"
+  , ${prefix}"get_started_publishing_schema" AS "getStartedPublishingSchema"
+  , ${prefix}"get_started_checking_schema" AS "getStartedCheckingSchema"
+  , ${prefix}"get_started_inviting_members" AS "getStartedInvitingMembers"
+  , ${prefix}"get_started_reporting_operations" AS "getStartedReportingOperations"
+  , ${prefix}"get_started_usage_breaking" AS "getStartedUsageBreaking"
+  , ${prefix}"feature_flags" AS "featureFlags"
+  , ${prefix}"zendesk_organization_id" AS "zendeskId"
+  , ${prefix}"user_id" AS "ownerId"
+`;
 
-const ProjectModel = z.object({
-  id: z.string(),
-  clean_id: z.string(),
-  name: z.string(),
-  org_id: z.string(),
-  type: z.string(),
-  created_at: z.date(),
-  build_url: z.string().nullable(),
-  validation_url: z.string().nullable(),
-  git_repository: z.string().nullable(),
-  github_check_with_project_name: z.boolean(),
-  external_composition_enabled: z.boolean(),
-  external_composition_endpoint: z.string().nullable(),
-  external_composition_secret: z.string().nullable(),
-  native_federation: z.boolean().nullable(),
-});
+const projectFields = (prefix: TaggedTemplateLiteralInvocation) => sql`
+  ${prefix}"id"
+  , ${prefix}"clean_id" AS "slug"
+  , ${prefix}"name"
+  , ${prefix}"org_id" AS "orgId"
+  , ${prefix}"type"
+  , to_json(${prefix}"created_at") AS "createdAt"
+  , ${prefix}"build_url" AS "buildUrl"
+  , ${prefix}"validation_url" AS "validationUrl"
+  , ${prefix}"git_repository" AS "gitRepository"
+  , ${prefix}"github_check_with_project_name" AS "useProjectNameInGithubCheck"
+  , ${prefix}"external_composition_enabled" AS "externalCompositionEnabled"
+  , ${prefix}"external_composition_endpoint" AS "externalCompositionEndpoint"
+  , ${prefix}"external_composition_secret" AS "externalCompositionEncryptedSecret"
+  , ${prefix}"native_federation" AS "nativeFederation"
+`;
+
+const schemaPolicyFields = (prefix: TaggedTemplateLiteralInvocation) => sql`
+  ${prefix}"resource_type" AS "resourceType"
+  , ${prefix}"resource_id" AS "resourceId"
+  , ${prefix}"config"
+  , ${prefix}"allow_overriding" AS "allowOverrides"
+  , ${prefix}"created_at" AS "createdAt"
+  , ${prefix}"updated_at" AS "updatedAt"
+`;
+
+const OrganizationModel = z
+  .object({
+    id: z.string(),
+    slug: z.string(),
+    name: z.string(),
+    limitRetentionDays: z.string(),
+    limitOperationsMonthly: z.string(),
+    billingPlan: z.string(),
+    getStartedCreatingProject: z.boolean(),
+    getStartedPublishingSchema: z.boolean(),
+    getStartedCheckingSchema: z.boolean(),
+    getStartedInvitingMembers: z.boolean(),
+    getStartedReportingOperations: z.boolean(),
+    getStartedUsageBreaking: z.boolean(),
+    featureFlags: z.union([
+      z.null(),
+      z.string(),
+      z.number(),
+      z.boolean(),
+      z.record(z.any()),
+      z.array(z.any()),
+    ]),
+    zendeskId: z.string().nullable(),
+    ownerId: z.string(),
+  })
+  .transform(org => ({
+    id: org.id,
+    slug: org.slug,
+    name: org.name,
+    billingPlan: org.billingPlan,
+    monthlyRateLimit: {
+      retentionInDays: parseInt(org.limitRetentionDays),
+      operations: parseInt(org.limitOperationsMonthly),
+    },
+    getStarted: {
+      id: org.id,
+      creatingProject: org.getStartedCreatingProject,
+      publishingSchema: org.getStartedPublishingSchema,
+      checkingSchema: org.getStartedCheckingSchema,
+      invitingMembers: org.getStartedInvitingMembers,
+      reportingOperations: org.getStartedReportingOperations,
+      enablingUsageBasedBreakingChanges: org.getStartedUsageBreaking,
+    },
+    featureFlags: decodeFeatureFlags(org.featureFlags),
+    zendeskId: org.zendeskId,
+    ownerId: org.ownerId,
+  }));
+
+const ProjectModel = z
+  .object({
+    id: z.string(),
+    slug: z.string(),
+    name: z.string(),
+    orgId: z.string(),
+    type: z.string(),
+    createdAt: z.string(),
+    buildUrl: z.string().nullable(),
+    validationUrl: z.string().nullable(),
+    gitRepository: z.string().nullable(),
+    useProjectNameInGithubCheck: z.boolean(),
+    externalCompositionEnabled: z.boolean(),
+    externalCompositionEndpoint: z.string().nullable(),
+    externalCompositionEncryptedSecret: z.string().nullable(),
+    nativeFederation: z.boolean().nullable(),
+  })
+  .transform(project => ({
+    id: project.id,
+    slug: project.slug,
+    orgId: project.orgId,
+    name: project.name,
+    type: project.type as ProjectType,
+    createdAt: project.createdAt,
+    buildUrl: project.buildUrl,
+    validationUrl: project.validationUrl,
+    gitRepository: project.gitRepository as `${string}/${string}` | null,
+    useProjectNameInGithubCheck: project.useProjectNameInGithubCheck === true,
+    externalComposition: {
+      enabled: project.externalCompositionEnabled,
+      endpoint: project.externalCompositionEndpoint,
+      encryptedSecret: project.externalCompositionEncryptedSecret,
+    },
+    nativeFederation: project.nativeFederation === true,
+  }));
 
 const OrganizationBillingModel = z.object({
   organizationId: z.string(),
@@ -5977,6 +5875,95 @@ const OrganizationUserIdAndIdModel = z.object({
   id: z.string(),
   user_id: z.string(),
 });
+
+const SchemaPolicyModel = z
+  .object({
+    resourceType: z.enum(['ORGANIZATION', 'PROJECT']),
+    resourceId: z.string(),
+    config: z.any(),
+    allowOverrides: z.boolean(),
+    createdAt: z.date(),
+    updatedAt: z.date(),
+  })
+  .transform(sp => ({
+    id: `${sp.resourceType}_${sp.resourceId}`,
+    config: sp.config,
+    createdAt: sp.createdAt,
+    updatedAt: sp.updatedAt,
+    resource: sp.resourceType,
+    resourceId: sp.resourceId,
+    allowOverrides: sp.allowOverrides,
+  }));
+
+const MemberModel = z
+  .object({
+    id: z.string(),
+    isOwner: z.boolean(),
+    scopes: z.array(z.string()).nullable(),
+    organizationId: z.string(),
+    oidcIntegrationId: z.string().nullable(),
+    connectedToZendesk: z.boolean().nullable(),
+    roleId: z.string(),
+    roleName: z.string(),
+    roleLocked: z.boolean(),
+    roleDescription: z.string(),
+    roleScopes: z.array(z.string()).nullable(),
+    // user fields are also present in the row
+    email: z.string(),
+    createdAt: z.string(),
+    displayName: z.string(),
+    fullName: z.string(),
+    superTokensUserId: z.string().nullable(),
+    isAdmin: z
+      .boolean()
+      .nullable()
+      .transform(value => value ?? false),
+    zendeskId: z.string().nullable(),
+    providers: z.array(
+      z
+        .string()
+        .nullable()
+        .transform(provider => {
+          if (provider === 'oidc') {
+            return 'OIDC' as const;
+          }
+          if (provider === 'github') {
+            return 'GITHUB' as const;
+          }
+          if (provider === 'google') {
+            return 'GOOGLE' as const;
+          }
+          return null;
+        }),
+    ),
+  })
+  .transform(row => ({
+    id: row.id,
+    isOwner: row.isOwner,
+    user: {
+      id: row.id,
+      email: row.email,
+      fullName: row.fullName,
+      displayName: row.displayName,
+      providers: row.providers.filter((p): p is NonNullable<typeof p> => p != null),
+      superTokensUserId: row.superTokensUserId,
+      isAdmin: row.isAdmin,
+      zendeskId: row.zendeskId,
+    },
+    scopes: (row.scopes as Member['scopes']) || [],
+    organization: row.organizationId,
+    oidcIntegrationId: row.oidcIntegrationId ?? null,
+    connectedToZendesk: row.connectedToZendesk ?? false,
+    role: {
+      id: row.roleId,
+      name: row.roleName,
+      locked: row.roleLocked,
+      description: row.roleDescription,
+      scopes: (row.roleScopes as Member['scopes']) ?? [],
+      organizationId: row.organizationId,
+      membersCount: undefined as number | undefined,
+    },
+  }));
 
 const OrganizationMemberAccessModel = z.object({
   organization_id: z.string(),
