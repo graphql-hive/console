@@ -526,7 +526,7 @@ export async function createStorage(
     async getOrganization(userId: string, connection: Connection) {
       const org = await connection.maybeOne<unknown>(
         sql`/* getOrganization */ SELECT * FROM organizations WHERE user_id = ${userId} AND type = ${'PERSONAL'} LIMIT 1`,
-      ).then(r => r ? OrganizationModel.parse(r) : null);
+      ).then(OrganizationModel.nullable().parse);
 
       return org ? transformOrganization(org) : null;
     },
@@ -676,7 +676,7 @@ export async function createStorage(
                   )
               `,
             )
-            .then(v => UserModel.nullable().parse(v));
+            .then(UserModel.nullable().parse);
 
           if (!internalUser) {
             // try automatic account linking
@@ -726,7 +726,7 @@ export async function createStorage(
                       , "oi"."assigned_resources" "assignedResources"
                   `,
                 )
-                .then(v => OrganizationInvitationModel.nullable().parse(v));
+                .then(OrganizationInvitationModel.nullable().parse);
             }
 
             if (oidcConfig?.requireInvitation && !invitation) {
@@ -966,15 +966,15 @@ export async function createStorage(
     },
     getOrganizationOwnerId: batch(async selectors => {
       const organizations = selectors.map(s => s.organizationId);
-      const owners = await pool.query<unknown>(
+      const owners = await pool.any<unknown>(
         sql`/* getOrganizationOwnerId */
         SELECT id, user_id
         FROM organizations
         WHERE id IN (${sql.join(organizations, sql`, `)})`,
-      ).then(r => ({ ...r, rows: r.rows.map(row => OrganizationUserIdAndIdModel.parse(row)) }));
+      ).then(z.array(OrganizationUserIdAndIdModel).parse);
 
       return organizations.map(async organization => {
-        const owner = owners.rows.find(row => row.id === organization);
+        const owner = owners.find(row => row.id === organization);
 
         if (owner) {
           return owner.user_id;
@@ -1193,7 +1193,7 @@ export async function createStorage(
       });
     },
     async getOrganizationMemberAccessPairs(pairs) {
-      const results = await pool.query<unknown>(
+      const results = await pool.any<unknown>(
         sql`/* getOrganizationMemberAccessPairs */
           SELECT om.organization_id, om.user_id, omr.scopes as scopes
           FROM organization_member as om
@@ -1203,10 +1203,10 @@ export async function createStorage(
             sql`), (`,
           )}))
         `,
-      ).then(r => ({ ...r, rows: r.rows.map(row => OrganizationMemberAccessModel.parse(row)) }));
+      ).then(z.array(OrganizationMemberAccessModel).parse);
 
       return pairs.map(({ organizationId: organization, userId: user }) => {
-        return (results.rows.find(
+        return (results.find(
           row => row.organization_id === organization && row.user_id === user,
         )?.scopes || []) as Member['scopes'];
       });
@@ -1519,7 +1519,7 @@ export async function createStorage(
       );
     },
     async getOrganizations({ userId: user }) {
-      const results = await pool.query<unknown>(
+      const results = await pool.any<unknown>(
         sql`/* getOrganizations */
           SELECT o.*
           FROM organizations as o
@@ -1527,9 +1527,9 @@ export async function createStorage(
           WHERE om.user_id = ${user}
           ORDER BY o.created_at DESC
         `,
-      ).then(r => ({ ...r, rows: r.rows.map(row => OrganizationModel.parse(row)) }));
+      ).then(z.array(OrganizationModel).parse);
 
-      return results.rows.map(transformOrganization);
+      return results.map(transformOrganization);
     },
     async getOrganizationByInviteCode({ inviteCode, email }) {
       const result = await pool.maybeOne<unknown>(
@@ -1543,7 +1543,7 @@ export async function createStorage(
           GROUP BY o.id
           LIMIT 1
         `,
-      ).then(r => r ? OrganizationModel.parse(r) : null);
+      ).then(OrganizationModel.nullable().parse);
 
       if (result) {
         return transformOrganization(result);
@@ -1554,7 +1554,7 @@ export async function createStorage(
     async getOrganizationBySlug({ slug }) {
       const result = await pool.maybeOne<unknown>(
         sql`/* getOrganizationBySlug */ SELECT * FROM organizations WHERE clean_id = ${slug} LIMIT 1`,
-      ).then(r => r ? OrganizationModel.parse(r) : null);
+      ).then(OrganizationModel.nullable().parse);
 
       if (!result) {
         return null;
@@ -1569,7 +1569,7 @@ export async function createStorage(
           WHERE github_app_installation_id = ${installationId}
           LIMIT 1
         `,
-      ).then(r => r ? OrganizationModel.parse(r) : null);
+      ).then(OrganizationModel.nullable().parse);
 
       if (result) {
         return transformOrganization(result);
@@ -1587,7 +1587,7 @@ export async function createStorage(
     async getProjectBySlug({ slug, organizationId: organization }) {
       const result = await pool.maybeOne<unknown>(
         sql`/* getProjectBySlug */ SELECT * FROM projects WHERE clean_id = ${slug} AND org_id = ${organization} AND type != 'CUSTOM' LIMIT 1`,
-      ).then(r => r ? ProjectModel.parse(r) : null);
+      ).then(ProjectModel.nullable().parse);
 
       if (!result) {
         return null;
@@ -1596,11 +1596,11 @@ export async function createStorage(
       return transformProject(result);
     },
     async getProjects({ organizationId: organization }) {
-      const result = await pool.query<unknown>(
+      const result = await pool.any<unknown>(
         sql`/* getProjects */ SELECT * FROM projects WHERE org_id = ${organization} AND type != 'CUSTOM' ORDER BY created_at DESC`,
-      ).then(r => ({ ...r, rows: r.rows.map(row => ProjectModel.parse(row)) }));
+      ).then(z.array(ProjectModel).parse);
 
-      return result.rows.map(transformProject);
+      return result.map(transformProject);
     },
     findProjectsByIds: batch<{ projectIds: Array<string> }, Map<string, Project>>(
       async function FindProjectByIdsBatchHandler(args) {
@@ -1611,11 +1611,11 @@ export async function createStorage(
           return args.map(async () => allProjectsLookupMap);
         }
 
-        const result = await pool.query<unknown>(
+        const result = await pool.any<unknown>(
           sql`/* findProjectsByIds */ SELECT * FROM projects WHERE id = ANY(${sql.array(allProjectIds, 'uuid')}) AND type != 'CUSTOM'`,
-        ).then(r => ({ ...r, rows: r.rows.map(row => ProjectModel.parse(row)) }));
+        ).then(z.array(ProjectModel).parse);
 
-        result.rows.forEach(row => {
+        result.forEach(row => {
           const project = transformProject(row);
           allProjectsLookupMap.set(project.id, project);
         });
@@ -1857,7 +1857,7 @@ export async function createStorage(
                 )
             `,
           )
-          .then(rows => rows.map(row => TargetModel.parse(row)));
+          .then(z.array(TargetModel).parse);
 
         return selectors.map(selector => {
           const row = rows.find(
@@ -1962,25 +1962,25 @@ export async function createStorage(
       },
     ),
     async getTargetIdsOfOrganization({ organizationId: organization }) {
-      const results = await pool.query<unknown>(
+      const results = await pool.any<unknown>(
         sql`/* getTargetIdsOfOrganization */
           SELECT t.id as id FROM targets as t
           LEFT JOIN projects as p ON (p.id = t.project_id)
           WHERE p.org_id = ${organization}
           GROUP BY t.id
         `,
-      ).then(r => ({ ...r, rows: r.rows.map(row => TargetIdModel.parse(row)) }));
+      ).then(z.array(TargetIdModel).parse);
 
-      return results.rows.map(r => r.id);
+      return results.map(r => r.id);
     },
     async getTargetIdsOfProject({ projectId: project }) {
-      const results = await pool.query<unknown>(
+      const results = await pool.any<unknown>(
         sql`/* getTargetIdsOfProject */
           SELECT id FROM targets WHERE project_id = ${project}
         `,
-      ).then(r => ({ ...r, rows: r.rows.map(row => TargetIdModel.parse(row)) }));
+      ).then(z.array(TargetIdModel).parse);
 
-      return results.rows.map(r => r.id);
+      return results.map(r => r.id);
     },
     async getTargetSettings({ targetId: target, projectId: project }) {
       const row = await pool.one<
@@ -2957,11 +2957,11 @@ export async function createStorage(
       return result.rows.map(transformAlertChannel);
     },
     async getAlertChannels({ projectId: project }) {
-      const result = await pool.query<unknown>(
+      const result = await pool.any<unknown>(
         sql`/* getAlertChannels */ SELECT * FROM alert_channels WHERE project_id = ${project} ORDER BY created_at DESC`,
-      ).then(r => ({ ...r, rows: r.rows.map(row => AlertChannelModel.parse(row)) }));
+      ).then(z.array(AlertChannelModel).parse);
 
-      return result.rows.map(transformAlertChannel);
+      return result.map(transformAlertChannel);
     },
 
     async addAlert({ organizationId, projectId, targetId, channelId, type }) {
@@ -2979,7 +2979,7 @@ export async function createStorage(
       );
     },
     async deleteAlerts({ organizationId: organization, projectId: project, alertIds: alerts }) {
-      const result = await pool.query<unknown>(
+      const result = await pool.any<unknown>(
         sql`/* deleteAlerts */
           DELETE FROM alerts
           WHERE
@@ -2987,19 +2987,19 @@ export async function createStorage(
             id IN (${sql.join(alerts, sql`, `)})
           RETURNING *
         `,
-      ).then(r => ({ ...r, rows: r.rows.map(row => AlertModel.parse(row)) }));
+      ).then(z.array(AlertModel).parse);
 
-      return result.rows.map(row => transformAlert(row, organization));
+      return result.map(row => transformAlert(row, organization));
     },
     async getAlerts({ organizationId: organization, projectId: project }) {
-      const result = await pool.query<unknown>(
+      const result = await pool.any<unknown>(
         sql`/* getAlerts */ SELECT * FROM alerts WHERE project_id = ${project} ORDER BY created_at DESC`,
-      ).then(r => ({ ...r, rows: r.rows.map(row => AlertModel.parse(row)) }));
+      ).then(z.array(AlertModel).parse);
 
-      return result.rows.map(row => transformAlert(row, organization));
+      return result.map(row => transformAlert(row, organization));
     },
     async adminGetOrganizationsTargetPairs() {
-      const results = await pool.query<unknown>(
+      const results = await pool.any<unknown>(
         sql`/* adminGetOrganizationsTargetPairs */
           SELECT
             o.id as organization,
@@ -3008,8 +3008,8 @@ export async function createStorage(
           LEFT JOIN projects AS p ON (p.id = t.project_id)
           LEFT JOIN organizations AS o ON (o.id = p.org_id)
         `,
-      ).then(r => ({ ...r, rows: r.rows.map(row => OrganizationTargetPairModel.parse(row)) }));
-      return results.rows;
+      ).then(z.array(OrganizationTargetPairModel).parse);
+      return results;
     },
     async getGetOrganizationsAndTargetsWithLimitInfo() {
       const results = await pool.query<{
@@ -3049,7 +3049,7 @@ export async function createStorage(
     },
     async adminGetStats(period: { from: Date; to: Date }) {
       // count schema versions by organization
-      const versionsResult = pool.query<unknown>(
+      const versionsResult = pool.any<unknown>(
         sql`/* adminCountSchemaVersionsByOrg */
         SELECT
           COUNT(*) as total,
@@ -3063,10 +3063,10 @@ export async function createStorage(
           AND
           v.created_at < ${period.to.toISOString()}
         GROUP by o.id
-      `).then(r => ({ ...r, rows: r.rows.map(row => OrganizationStatModel.parse(row)) }));
+      `).then(z.array(OrganizationStatModel).parse);
 
       // count users by organization
-      const usersResult = pool.query<unknown>(
+      const usersResult = pool.any<unknown>(
         sql`/* adminCountUsersByOrg */
         SELECT
           COUNT(*) as total,
@@ -3074,10 +3074,10 @@ export async function createStorage(
         FROM organization_member AS om
         LEFT JOIN organizations AS o ON (o.id = om.organization_id)
         GROUP by o.id
-      `).then(r => ({ ...r, rows: r.rows.map(row => OrganizationStatModel.parse(row)) }));
+      `).then(z.array(OrganizationStatModel).parse);
 
       // count projects by organization
-      const projectsResult = pool.query<unknown>(
+      const projectsResult = pool.any<unknown>(
         sql`/* adminCountProjectsByOrg */
         SELECT
           COUNT(*) as total,
@@ -3085,10 +3085,10 @@ export async function createStorage(
         FROM projects AS p
         LEFT JOIN organizations AS o ON (o.id = p.org_id)
         GROUP by o.id
-      `).then(r => ({ ...r, rows: r.rows.map(row => OrganizationStatModel.parse(row)) }));
+      `).then(z.array(OrganizationStatModel).parse);
 
       // count targets by organization
-      const targetsResult = pool.query<unknown>(
+      const targetsResult = pool.any<unknown>(
         sql`/* adminCountTargetsByOrg */
         SELECT
           COUNT(*) as total,
@@ -3097,12 +3097,12 @@ export async function createStorage(
         LEFT JOIN projects AS p ON (p.id = t.project_id)
         LEFT JOIN organizations AS o ON (o.id = p.org_id)
         GROUP by o.id
-      `).then(r => ({ ...r, rows: r.rows.map(row => OrganizationStatModel.parse(row)) }));
+      `).then(z.array(OrganizationStatModel).parse);
 
       // get organizations data
-      const organizationsResult = pool.query<unknown>(sql`/* adminGetOrganizations */
+      const organizationsResult = pool.any<unknown>(sql`/* adminGetOrganizations */
         SELECT * FROM organizations
-      `).then(r => ({ ...r, rows: r.rows.map(row => OrganizationModel.parse(row)) }));
+      `).then(z.array(OrganizationModel).parse);
 
       const [versions, users, projects, targets, organizations] = await Promise.all([
         versionsResult,
@@ -3134,13 +3134,13 @@ export async function createStorage(
         return nodes.find(node => node.id === id)?.total ?? 0;
       }
 
-      for (const organization of organizations.rows) {
+      for (const organization of organizations) {
         rows.push({
           organization: transformOrganization(organization),
-          versions: extractTotal(versions.rows, organization.id),
-          users: extractTotal(users.rows, organization.id),
-          projects: extractTotal(projects.rows, organization.id),
-          targets: extractTotal(targets.rows, organization.id),
+          versions: extractTotal(versions, organization.id),
+          users: extractTotal(users, organization.id),
+          projects: extractTotal(projects, organization.id),
+          targets: extractTotal(targets, organization.id),
           persistedOperations: 0,
           period,
         });
@@ -3166,18 +3166,18 @@ export async function createStorage(
       }
     },
     async getBillingParticipants() {
-      const results = await pool.query<unknown>(
+      const results = await pool.any<unknown>(
         sql`/* getBillingParticipants */ SELECT * FROM organizations_billing`,
-      ).then(r => ({ ...r, rows: r.rows.map(row => OrganizationBillingModel.parse(row)) }));
+      ).then(z.array(OrganizationBillingModel).parse);
 
-      return results.rows.map(transformOrganizationBilling);
+      return results.map(transformOrganizationBilling);
     },
     async getOrganizationBilling(selector) {
-      const results = await pool.query<unknown>(
+      const results = await pool.any<unknown>(
         sql`/* getOrganizationBilling */ SELECT * FROM organizations_billing WHERE organization_id = ${selector.organizationId}`,
-      ).then(r => ({ ...r, rows: r.rows.map(row => OrganizationBillingModel.parse(row)) }));
+      ).then(z.array(OrganizationBillingModel).parse);
 
-      const mapped = results.rows.map(transformOrganizationBilling);
+      const mapped = results.map(transformOrganizationBilling);
 
       return mapped[0] || null;
     },
@@ -4641,7 +4641,7 @@ export async function createStorage(
               INNER JOIN "projects" "p" ON "t"."projectId" = "p"."id"
           `,
         )
-        .then(rows => rows.map(row => TargetWithOrgIdModel.parse(row)));
+        .then(z.array(TargetWithOrgIdModel).parse);
 
       const resultLookupMap = new Map<string, Target>();
       for (const target of rows) {
