@@ -17,7 +17,6 @@ import type {
   Schema,
   Storage,
   Target,
-  TargetSettings,
 } from '@hive/api';
 import { context, SpanKind, SpanStatusCode, trace } from '@hive/service-common';
 import type { SchemaCoordinatesDiffResult } from '../../api/src/modules/schema/providers/inspector';
@@ -30,13 +29,7 @@ import {
   type SchemaPolicy,
 } from '../../api/src/shared/entities';
 import { batch, batchBy } from '../../api/src/shared/helpers';
-import {
-  getPool,
-  organizations,
-  projects,
-  schema_log as schema_log_in_db,
-  target_validation,
-} from './db';
+import { getPool, organizations, projects, schema_log as schema_log_in_db } from './db';
 import {
   AffectedAppDeployments,
   ConditionalBreakingChangeMetadata,
@@ -129,52 +122,6 @@ export async function createStorage(
   additionalInterceptors: Interceptor[] = [],
 ): Promise<Storage> {
   const pool = await getPool(connection, maximumPoolSize, additionalInterceptors);
-
-  function transformSchema(
-    schema: Pick<
-      OverrideProp<schema_log, 'action', 'PUSH'>,
-      | 'id'
-      | 'action'
-      | 'commit'
-      | 'author'
-      | 'sdl'
-      | 'created_at'
-      | 'project_id'
-      | 'service_name'
-      | 'service_url'
-      | 'target_id'
-      | 'metadata'
-    > &
-      Pick<projects, 'type'>,
-  ): Schema {
-    const isSingleProject = (schema.type as ProjectType) === ProjectType.SINGLE;
-    const record: Schema = isSingleProject
-      ? {
-          kind: 'single',
-          id: schema.id,
-          author: schema.author,
-          sdl: ensureDefined(schema.sdl, 'sdl'),
-          commit: schema.commit,
-          date: schema.created_at as any,
-          target: schema.target_id,
-          metadata: schema.metadata ?? null,
-        }
-      : {
-          kind: 'composite',
-          id: schema.id,
-          author: schema.author,
-          sdl: ensureDefined(schema.sdl, 'sdl'),
-          commit: schema.commit,
-          date: schema.created_at as any,
-          service_name: schema.service_name!,
-          service_url: schema.service_url,
-          target: schema.target_id,
-          action: 'PUSH',
-          metadata: schema.metadata ?? null,
-        };
-
-    return record;
-  }
 
   function transformSchemaLog(
     schema: Pick<
@@ -2338,7 +2285,14 @@ export async function createStorage(
               , "target_id" AS "targetId"
           `,
           )
-          .then(z.object({ id: z.string(), createdAt: z.string(), serviceName: z.string() }).parse);
+          .then(
+            z.object({
+              id: z.string(),
+              createdAt: z.string(),
+              serviceName: z.string(),
+              targetId: z.string(),
+            }).parse,
+          );
 
         // creates a new version
         const newVersion = await insertSchemaVersion(trx, {
@@ -4868,10 +4822,6 @@ export function decodeCreatedAtAndHashBasedCursor(cursor: string) {
   };
 }
 
-function isDefined<T>(val: T | undefined | null): val is T {
-  return val !== undefined && val !== null;
-}
-
 const OktaIntegrationBaseModel = z.object({
   id: z.string(),
   linked_organization_id: z.string(),
@@ -4990,10 +4940,6 @@ const FeatureFlagsModel = z
         schemaProposals: false,
       },
   );
-
-function decodeFeatureFlags(column: unknown) {
-  return FeatureFlagsModel.parse(column);
-}
 
 /**  This version introduced the "diffSchemaVersionId" column. */
 const SchemaVersionRecordVersion_2024_01_10_Model = z.literal('2024-01-10');
