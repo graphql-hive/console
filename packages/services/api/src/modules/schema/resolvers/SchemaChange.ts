@@ -46,7 +46,7 @@ export const SchemaChange: Pick<
   severityLevel: change => severityMap[change.criticality],
   severityReason: change => change.reason,
   affectedAppDeployments: (change, args) => {
-    if (!change.affectedAppDeployments) {
+    if (change.affectedAppDeployments === null) {
       return null;
     }
 
