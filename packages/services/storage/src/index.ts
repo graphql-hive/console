@@ -19,16 +19,7 @@ import type {
 } from '@hive/api';
 import { context, SpanKind, SpanStatusCode, trace } from '@hive/service-common';
 import type { SchemaCoordinatesDiffResult } from '../../api/src/modules/schema/providers/inspector';
-import {
-  createSDLHash,
-  ProjectType,
-  type CDNAccessToken,
-  type DeletedCompositeSchema,
-  type OIDCIntegration,
-  type PushedCompositeSchema,
-  type SchemaPolicy,
-  type SingleSchema,
-} from '../../api/src/shared/entities';
+import { createSDLHash, ProjectType } from '../../api/src/shared/entities';
 import { batch, batchBy } from '../../api/src/shared/helpers';
 import { getPool, organizations } from './db';
 import {
@@ -2897,53 +2888,27 @@ export async function createStorage(
     },
 
     async getOIDCIntegrationById({ oidcIntegrationId: integrationId }) {
-      const result = await pool.maybeOne(sql`/* getOIDCIntegrationById */
+      return await pool
+        .maybeOne(
+          sql`/* getOIDCIntegrationById */
         SELECT
-          "id"
-          , "linked_organization_id"
-          , "client_id"
-          , "client_secret"
-          , "oauth_api_url"
-          , "token_endpoint"
-          , "userinfo_endpoint"
-          , "authorization_endpoint"
-          , "additional_scopes"
-          , "oidc_user_join_only"
-          , "oidc_user_access_only"
-          , "default_role_id"
-          , "default_assigned_resources"
-          , "require_invitation"
+          ${oidcIntegrationFields()}
         FROM
           "oidc_integrations"
         WHERE
           "id" = ${integrationId}
         LIMIT 1
-      `);
-
-      if (result === null) {
-        return null;
-      }
-
-      return decodeOktaIntegrationRecord(result);
+      `,
+        )
+        .then(OIDCIntegrationModel.nullable().parse);
     },
 
     getOIDCIntegrationForOrganization: batch(async selectors => {
-      const rows = await pool.any<unknown>(sql`/* getOIDCIntegrationForOrganization */
+      const rows = await pool
+        .any<unknown>(
+          sql`/* getOIDCIntegrationForOrganization */
         SELECT
-          "id"
-          , "linked_organization_id"
-          , "client_id"
-          , "client_secret"
-          , "oauth_api_url"
-          , "token_endpoint"
-          , "userinfo_endpoint"
-          , "authorization_endpoint"
-          , "additional_scopes"
-          , "oidc_user_join_only"
-          , "oidc_user_access_only"
-          , "default_role_id"
-          , "default_assigned_resources"
-          , "require_invitation"
+          ${oidcIntegrationFields()}
         FROM
           "oidc_integrations"
         WHERE
@@ -2951,10 +2916,11 @@ export async function createStorage(
             selectors.map(s => s.organizationId),
             'uuid',
           )})
-      `);
+      `,
+        )
+        .then(z.array(OIDCIntegrationModel).parse);
       const integrations = new Map(
-        rows.map(row => {
-          const integration = decodeOktaIntegrationRecord(row);
+        rows.map(integration => {
           return [integration.linkedOrganizationId, integration] as const;
         }),
       );
@@ -2987,7 +2953,9 @@ export async function createStorage(
 
     async createOIDCIntegrationForOrganization(args) {
       try {
-        const result = await pool.maybeOne(sql`/* createOIDCIntegrationForOrganization */
+        const oidcIntegration = await pool
+          .maybeOne(
+            sql`/* createOIDCIntegrationForOrganization */
           INSERT INTO "oidc_integrations" (
             "linked_organization_id",
             "client_id",
@@ -3007,25 +2975,14 @@ export async function createStorage(
             ${sql.array(args.additionalScopes, 'text')}
           )
           RETURNING
-            "id"
-            , "linked_organization_id"
-            , "client_id"
-            , "client_secret"
-            , "oauth_api_url"
-            , "token_endpoint"
-            , "userinfo_endpoint"
-            , "authorization_endpoint"
-            , "additional_scopes"
-            , "oidc_user_join_only"
-            , "oidc_user_access_only"
-            , "default_role_id"
-            , "default_assigned_resources"
-            , "require_invitation"
-        `);
+            ${oidcIntegrationFields()}
+        `,
+          )
+          .then(OIDCIntegrationModel.parse);
 
         return {
           type: 'ok',
-          oidcIntegration: decodeOktaIntegrationRecord(result),
+          oidcIntegration,
         };
       } catch (error) {
         if (
@@ -3042,7 +2999,9 @@ export async function createStorage(
     },
 
     async updateOIDCIntegration(args) {
-      const result = await pool.maybeOne(sql`/* updateOIDCIntegration */
+      return await pool
+        .one(
+          sql`/* updateOIDCIntegration */
         UPDATE "oidc_integrations"
         SET
           "client_id" = ${args.clientId ?? sql`"client_id"`}
@@ -3067,27 +3026,16 @@ export async function createStorage(
         WHERE
           "id" = ${args.oidcIntegrationId}
         RETURNING
-          "id"
-          , "linked_organization_id"
-          , "client_id"
-          , "client_secret"
-          , "oauth_api_url"
-          , "token_endpoint"
-          , "userinfo_endpoint"
-          , "authorization_endpoint"
-          , "additional_scopes"
-          , "oidc_user_join_only"
-          , "oidc_user_access_only"
-          , "default_role_id"
-          , "default_assigned_resources"
-          , "require_invitation"
-      `);
-
-      return decodeOktaIntegrationRecord(result);
+          ${oidcIntegrationFields()}
+      `,
+        )
+        .then(OIDCIntegrationModel.parse);
     },
 
     async updateOIDCRestrictions(args) {
-      const result = await pool.one(sql`/* updateOIDCRestrictions */
+      return await pool
+        .one(
+          sql`/* updateOIDCRestrictions */
           UPDATE "oidc_integrations"
           SET
             "oidc_user_join_only" = ${args.oidcUserJoinOnly ?? sql`"oidc_user_join_only"`}
@@ -3096,28 +3044,17 @@ export async function createStorage(
           WHERE
             "id" = ${args.oidcIntegrationId}
           RETURNING
-          "id"
-          , "linked_organization_id"
-          , "client_id"
-          , "client_secret"
-          , "oauth_api_url"
-          , "token_endpoint"
-          , "userinfo_endpoint"
-          , "authorization_endpoint"
-          , "additional_scopes"
-          , "oidc_user_join_only"
-          , "oidc_user_access_only"
-          , "default_role_id"
-          , "default_assigned_resources"
-          , "require_invitation"
-      `);
-
-      return decodeOktaIntegrationRecord(result);
+           ${oidcIntegrationFields()}
+      `,
+        )
+        .then(OIDCIntegrationModel.parse);
     },
 
     async updateOIDCDefaultAssignedResources(args) {
       return tracedTransaction('updateOIDCDefaultAssignedResources', pool, async _ => {
-        const result = await pool.one(sql`/* updateOIDCDefaultAssignedResources */
+        return await pool
+          .one(
+            sql`/* updateOIDCDefaultAssignedResources */
           UPDATE "oidc_integrations"
           SET
             "default_assigned_resources" = ${sql.jsonb(args.assignedResources)}
@@ -3138,9 +3075,9 @@ export async function createStorage(
           , "default_role_id"
           , "default_assigned_resources"
           , "require_invitation"
-        `);
-
-        return decodeOktaIntegrationRecord(result);
+        `,
+          )
+          .then(OIDCIntegrationModel.parse);
       });
     },
 
@@ -3164,30 +3101,19 @@ export async function createStorage(
           throw new Error('Role does not exist');
         }
 
-        const result = await pool.one(sql`/* updateOIDCDefaultMemberRole */
+        return await pool
+          .one(
+            sql`/* updateOIDCDefaultMemberRole */
           UPDATE "oidc_integrations"
           SET
             "default_role_id" = ${roleId}
           WHERE
             "id" = ${args.oidcIntegrationId}
           RETURNING
-          "id"
-          , "linked_organization_id"
-          , "client_id"
-          , "client_secret"
-          , "oauth_api_url"
-          , "token_endpoint"
-          , "userinfo_endpoint"
-          , "authorization_endpoint"
-          , "additional_scopes"
-          , "oidc_user_join_only"
-          , "oidc_user_access_only"
-          , "default_role_id"
-          , "default_assigned_resources"
-          , "require_invitation"
-        `);
-
-        return decodeOktaIntegrationRecord(result);
+            ${oidcIntegrationFields()}
+        `,
+          )
+          .then(OIDCIntegrationModel.parse);
       });
     },
 
@@ -3200,7 +3126,9 @@ export async function createStorage(
     },
 
     async createCDNAccessToken(args) {
-      const result = await pool.maybeOne(sql`/* createCDNAccessToken */
+      return await pool
+        .maybeOne(
+          sql`/* createCDNAccessToken */
         INSERT INTO "cdn_access_tokens" (
           "id"
           , "target_id"
@@ -3219,42 +3147,25 @@ export async function createStorage(
         )
         ON CONFLICT ("s3_key") DO NOTHING
         RETURNING
-          "id"
-          , "target_id"
-          , "s3_key"
-          , "first_characters"
-          , "last_characters"
-          , "alias"
-          , to_json("created_at") as "created_at"
-      `);
-
-      if (result === null) {
-        return null;
-      }
-
-      return decodeCDNAccessTokenRecord(result);
+          ${cdnAccessTokenFields()}
+      `,
+        )
+        .then(CDNAccessTokenModel.nullable().parse);
     },
 
     async getCDNAccessTokenById(args) {
-      const result = await pool.maybeOne(sql`/* getCDNAccessTokenById */
+      return await pool
+        .maybeOne(
+          sql`/* getCDNAccessTokenById */
         SELECT
-          "id"
-          , "target_id"
-          , "s3_key"
-          , "first_characters"
-          , "last_characters"
-          , "alias"
-          , to_json("created_at") as "created_at"
+          ${cdnAccessTokenFields()}
         FROM
           "cdn_access_tokens"
         WHERE
           "id" = ${args.cdnAccessTokenId}
-      `);
-
-      if (result == null) {
-        return null;
-      }
-      return decodeCDNAccessTokenRecord(result);
+      `,
+        )
+        .then(CDNAccessTokenModel.nullable().parse);
     },
 
     async deleteCDNAccessToken(args) {
@@ -3283,15 +3194,11 @@ export async function createStorage(
         cursor = decodeCreatedAtAndUUIDIdBasedCursor(args.cursor);
       }
 
-      const result = await pool.any(sql`/* getPaginatedCDNAccessTokensForTarget */
+      const result = await pool
+        .any(
+          sql`/* getPaginatedCDNAccessTokensForTarget */
         SELECT
-          "id"
-          , "target_id"
-          , "s3_key"
-          , "first_characters"
-          , "last_characters"
-          , "alias"
-          , to_json("created_at") as "created_at"
+          ${cdnAccessTokenFields()}
         FROM
           "cdn_access_tokens"
         WHERE
@@ -3314,11 +3221,11 @@ export async function createStorage(
           , "cdn_access_tokens"."created_at" DESC
           , "id" DESC
         LIMIT ${limit + 1}
-      `);
+      `,
+        )
+        .then(z.array(CDNAccessTokenModel).parse);
 
-      let items = result.map(row => {
-        const node = decodeCDNAccessTokenRecord(row);
-
+      let items = result.map(node => {
         return {
           node,
           get cursor() {
@@ -3346,7 +3253,7 @@ export async function createStorage(
       };
     },
 
-    async setSchemaPolicyForOrganization(input): Promise<SchemaPolicy> {
+    async setSchemaPolicyForOrganization(input) {
       return pool
         .one(
           sql`/* setSchemaPolicyForOrganization */
@@ -3366,7 +3273,7 @@ export async function createStorage(
         )
         .then(SchemaPolicyModel.parse);
     },
-    async setSchemaPolicyForProject(input): Promise<SchemaPolicy> {
+    async setSchemaPolicyForProject(input) {
       return pool
         .one(
           sql`/* setSchemaPolicyForProject */
@@ -3383,7 +3290,7 @@ export async function createStorage(
         )
         .then(SchemaPolicyModel.parse);
     },
-    async findInheritedPolicies(selector): Promise<SchemaPolicy[]> {
+    async findInheritedPolicies(selector) {
       const { organizationId: organization, projectId: project } = selector;
 
       return pool
@@ -3399,7 +3306,7 @@ export async function createStorage(
         )
         .then(z.array(SchemaPolicyModel).parse);
     },
-    async getSchemaPolicyForOrganization(organizationId: string): Promise<SchemaPolicy | null> {
+    async getSchemaPolicyForOrganization(organizationId: string) {
       return pool
         .maybeOne(
           sql`/* getSchemaPolicyForOrganization */
@@ -3413,7 +3320,7 @@ export async function createStorage(
         )
         .then(SchemaPolicyModel.nullable().parse);
     },
-    async getSchemaPolicyForProject(projectId: string): Promise<SchemaPolicy | null> {
+    async getSchemaPolicyForProject(projectId: string) {
       return pool
         .maybeOne(
           sql`/* getSchemaPolicyForProject */
@@ -4763,100 +4670,69 @@ export function decodeCreatedAtAndHashBasedCursor(cursor: string) {
 
 const OktaIntegrationBaseModel = z.object({
   id: z.string(),
-  linked_organization_id: z.string(),
-  client_id: z.string(),
-  client_secret: z.string(),
-  additional_scopes: z
+  linkedOrganizationId: z.string(),
+  clientId: z.string(),
+  clientSecret: z.string(),
+  additionalScopes: z
     .array(z.string())
     .nullable()
     .transform(value => (value === null ? [] : value)),
-  oidc_user_join_only: z.boolean(),
-  oidc_user_access_only: z.boolean(),
-  default_role_id: z.string().nullable(),
-  default_assigned_resources: z.any().nullable(),
-  require_invitation: z.boolean(),
+  oidcUserJoinOnly: z.boolean(),
+  oidcUserAccessOnly: z.boolean(),
+  defaultRoleId: z.string().nullable(),
+  defaultAssignedResources: z.any().nullable(),
+  requireInvitation: z.boolean(),
 });
 
-const OktaIntegrationLegacyModel = z.intersection(
-  OktaIntegrationBaseModel,
-  z.object({
-    oauth_api_url: z.string().url(),
-  }),
-);
+const OIDCIntegrationLegacyModel = OktaIntegrationBaseModel.extend({
+  oauthApiUrl: z.string().url(),
+}).transform(record => ({
+  id: record.id,
+  clientId: record.clientId,
+  encryptedClientSecret: record.clientSecret,
+  linkedOrganizationId: record.linkedOrganizationId,
+  tokenEndpoint: `${record.oauthApiUrl}/token`,
+  userinfoEndpoint: `${record.oauthApiUrl}/userinfo`,
+  authorizationEndpoint: `${record.oauthApiUrl}/authorize`,
+  additionalScopes: record.additionalScopes,
+  oidcUserJoinOnly: record.oidcUserJoinOnly,
+  oidcUserAccessOnly: record.oidcUserAccessOnly,
+  requireInvitation: record.requireInvitation,
+  defaultMemberRoleId: record.defaultRoleId,
+  defaultResourceAssignment: record.defaultAssignedResources,
+}));
 
-const OktaIntegrationModel = z.intersection(
-  OktaIntegrationBaseModel,
-  z.object({
-    token_endpoint: z.string().url(),
-    userinfo_endpoint: z.string().url(),
-    authorization_endpoint: z.string().url(),
-  }),
-);
+const LatestOIDCIntegrationModel = OktaIntegrationBaseModel.extend({
+  tokenEndpoint: z.string().url(),
+  userinfoEndpoint: z.string().url(),
+  authorizationEndpoint: z.string().url(),
+}).transform(record => ({
+  id: record.id,
+  clientId: record.clientId,
+  encryptedClientSecret: record.clientSecret,
+  linkedOrganizationId: record.linkedOrganizationId,
+  tokenEndpoint: record.tokenEndpoint,
+  userinfoEndpoint: record.userinfoEndpoint,
+  authorizationEndpoint: record.authorizationEndpoint,
+  additionalScopes: record.additionalScopes,
+  oidcUserJoinOnly: record.oidcUserJoinOnly,
+  oidcUserAccessOnly: record.oidcUserAccessOnly,
+  requireInvitation: record.requireInvitation,
+  defaultMemberRoleId: record.defaultRoleId,
+  defaultResourceAssignment: record.defaultAssignedResources,
+}));
 
-const OktaIntegrationModelUnion = z.union([OktaIntegrationLegacyModel, OktaIntegrationModel]);
-
-const decodeOktaIntegrationRecord = (result: unknown): OIDCIntegration => {
-  const rawRecord = OktaIntegrationModelUnion.parse(result);
-
-  // handle legacy case
-  if ('oauth_api_url' in rawRecord) {
-    return {
-      id: rawRecord.id,
-      clientId: rawRecord.client_id,
-      encryptedClientSecret: rawRecord.client_secret,
-      linkedOrganizationId: rawRecord.linked_organization_id,
-      tokenEndpoint: `${rawRecord.oauth_api_url}/token`,
-      userinfoEndpoint: `${rawRecord.oauth_api_url}/userinfo`,
-      authorizationEndpoint: `${rawRecord.oauth_api_url}/authorize`,
-      additionalScopes: rawRecord.additional_scopes,
-      oidcUserJoinOnly: rawRecord.oidc_user_join_only,
-      oidcUserAccessOnly: rawRecord.oidc_user_access_only,
-      requireInvitation: rawRecord.require_invitation,
-      defaultMemberRoleId: rawRecord.default_role_id,
-      defaultResourceAssignment: rawRecord.default_assigned_resources,
-    };
-  }
-
-  return {
-    id: rawRecord.id,
-    clientId: rawRecord.client_id,
-    encryptedClientSecret: rawRecord.client_secret,
-    linkedOrganizationId: rawRecord.linked_organization_id,
-    tokenEndpoint: rawRecord.token_endpoint,
-    userinfoEndpoint: rawRecord.userinfo_endpoint,
-    authorizationEndpoint: rawRecord.authorization_endpoint,
-    additionalScopes: rawRecord.additional_scopes,
-    oidcUserJoinOnly: rawRecord.oidc_user_join_only,
-    oidcUserAccessOnly: rawRecord.oidc_user_access_only,
-    requireInvitation: rawRecord.require_invitation,
-    defaultMemberRoleId: rawRecord.default_role_id,
-    defaultResourceAssignment: rawRecord.default_assigned_resources,
-  };
-};
+const OIDCIntegrationModel = z.union([OIDCIntegrationLegacyModel, LatestOIDCIntegrationModel]);
 
 const CDNAccessTokenModel = z.object({
   id: z.string(),
-  target_id: z.string(),
-  s3_key: z.string(),
-  first_characters: z.string(),
-  last_characters: z.string(),
+  targetId: z.string(),
+  s3Key: z.string(),
+  firstCharacters: z.string(),
+  lastCharacters: z.string(),
   alias: z.string(),
-  created_at: z.string(),
+  createdAt: z.string(),
 });
-
-const decodeCDNAccessTokenRecord = (result: unknown): CDNAccessToken => {
-  const rawRecord = CDNAccessTokenModel.parse(result);
-
-  return {
-    id: rawRecord.id,
-    targetId: rawRecord.target_id,
-    s3Key: rawRecord.s3_key,
-    firstCharacters: rawRecord.first_characters,
-    lastCharacters: rawRecord.last_characters,
-    alias: rawRecord.alias,
-    createdAt: rawRecord.created_at,
-  };
-};
 
 const FeatureFlagsModel = z
   .object({
@@ -5579,6 +5455,33 @@ const schemaLogFields = (prefix: TaggedTemplateLiteralInvocation) => sql`
   , lower(${prefix}"service_name") AS "service_name"
   , ${prefix}"service_url"
   , ${prefix}"action"
+`;
+
+const cdnAccessTokenFields = (prefix: TaggedTemplateLiteralInvocation = sql``) => sql`
+  ${prefix}"id" AS "id"
+  , ${prefix}"target_id" AS "targetId"
+  , ${prefix}"s3_key" AS "s3Key"
+  , ${prefix}"first_characters" AS "firstCharacters"
+  , ${prefix}"last_characters" AS "lastCharacters"
+  , ${prefix}"alias" AS "alias"
+  , to_json(${prefix}"created_at") as "createdAt"
+`;
+
+const oidcIntegrationFields = (prefix: TaggedTemplateLiteralInvocation = sql``) => sql`
+  ${prefix}"id" AS "id"
+  , ${prefix}"linked_organization_id" AS "linkedOrganizationId"
+  , ${prefix}"client_id" AS "clientId"
+  , ${prefix}"client_secret" AS "clientSecret"
+  , ${prefix}"oauth_api_url" AS "oauthApiUrl"
+  , ${prefix}"token_endpoint" AS "tokenEndpoint"
+  , ${prefix}"userinfo_endpoint" AS "userinfoEndpoint"
+  , ${prefix}"authorization_endpoint" AS "authorizationEndpoint"
+  , ${prefix}"additional_scopes" AS "additionalScopes"
+  , ${prefix}"oidc_user_join_only" AS "oidcUserJoinOnly"
+  , ${prefix}"oidc_user_access_only" AS "oidcUserAccessOnly"
+  , ${prefix}"default_role_id" AS "defaultRoleId"
+  , ${prefix}"default_assigned_resources" AS "defaultAssignedResources"
+  , ${prefix}"require_invitation" AS "requireInvitation"
 `;
 
 /** Base shape for schema_log DB rows (with SQL aliases from schemaLogFields + p.type) */
