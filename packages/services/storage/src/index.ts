@@ -1807,7 +1807,8 @@ export async function createStorage(
     },
     async getTargetSettings({ targetId: target, projectId: project }) {
       return pool
-        .one(sql`/* getTargetSettings */
+        .one(
+          sql`/* getTargetSettings */
           SELECT
             ${targetSettingsFields(sql`t.`)}
             , array_agg(tv.destination_target_id) as targets
@@ -1816,7 +1817,8 @@ export async function createStorage(
           WHERE t.id = ${target} AND t.project_id = ${project}
           GROUP BY t.id
           LIMIT 1
-        `)
+        `,
+        )
         .then(TargetSettingsModel.parse);
     },
     async updateTargetDangerousChangeClassification({
@@ -1825,7 +1827,7 @@ export async function createStorage(
       failDiffOnDangerousChange,
     }) {
       return tracedTransaction('updateTargetDangerousChangeClassification', pool, async trx => {
-          return trx.one(sql`/* updateTargetValidationSettings */
+        return trx.one(sql`/* updateTargetValidationSettings */
             UPDATE targets as t
             SET fail_diff_on_dangerous_change = ${failDiffOnDangerousChange}
             FROM (
@@ -1843,7 +1845,7 @@ export async function createStorage(
               ${targetSettingsFields(sql`t.`)}
               , ret.targets
           `);
-        }).then(TargetSettingsModel.parse);
+      }).then(TargetSettingsModel.parse);
     },
     async updateTargetValidationSettings({
       targetId: target,
@@ -1857,7 +1859,8 @@ export async function createStorage(
       requestCount,
       isEnabled,
     }) {
-      return (await tracedTransaction('updateTargetValidationSettings', pool, async trx => {
+      return (
+        await tracedTransaction('updateTargetValidationSettings', pool, async trx => {
           if (targets) {
             await trx.query(sql`/* deleteTargetValidation */
               DELETE
@@ -1920,7 +1923,8 @@ export async function createStorage(
               ${targetSettingsFields(sql`t.`)}
               , ret.targets
           `);
-        }).then(TargetSettingsModel.parse)).validation;
+        }).then(TargetSettingsModel.parse)
+      ).validation;
     },
 
     async updateTargetAppDeploymentProtectionSettings({
@@ -1943,7 +1947,8 @@ export async function createStorage(
       ruleLogic?: 'AND' | 'OR' | null;
     }) {
       return pool
-        .one(sql`/* updateTargetAppDeploymentProtectionSettings */
+        .one(
+          sql`/* updateTargetAppDeploymentProtectionSettings */
             UPDATE
               targets
             SET
@@ -1959,7 +1964,8 @@ export async function createStorage(
             RETURNING
               ${targetSettingsFields(sql``)}
               , null as targets
-          `)
+          `,
+        )
         .then(TargetSettingsModel.parse)
         .then(r => r.appDeploymentProtection);
     },
@@ -2151,7 +2157,8 @@ export async function createStorage(
     },
     async getServiceSchemaOfVersion(args) {
       return pool
-        .maybeOne(sql`/* getServiceSchemaOfVersion */
+        .maybeOne(
+          sql`/* getServiceSchemaOfVersion */
           SELECT
               ${schemaLogFields(sql`sl.`)}
               , p.type
@@ -2163,7 +2170,8 @@ export async function createStorage(
               AND sl.action = 'PUSH'
               AND p.type != 'CUSTOM'
               AND lower(sl.service_name) = lower(${args.serviceName})
-        `)
+        `,
+        )
         .then(SchemaModel.nullable().parse);
     },
 
@@ -2655,13 +2663,7 @@ export async function createStorage(
             VALUES
               (${name}, ${type}, ${projectId}, ${slackChannel ?? null}, ${webhookEndpoint ?? null})
             RETURNING
-              "id",
-              "name",
-              "type",
-              "project_id" AS "projectId",
-              "created_at" AS "createdAt",
-              "slack_channel" AS "slackChannel",
-              "webhook_endpoint" AS "webhookEndpoint"
+              ${alertChannelFields()}
           `,
         ),
       );
@@ -2675,13 +2677,7 @@ export async function createStorage(
             project_id = ${projectId} AND
             id IN (${sql.join(channelIds, sql`, `)})
           RETURNING
-            "id",
-            "name",
-            "type",
-            "project_id" AS "projectId",
-            "created_at" AS "createdAt",
-            "slack_channel" AS "slackChannel",
-            "webhook_endpoint" AS "webhookEndpoint"
+            ${alertChannelFields()}
         `,
         )
         .then(z.array(AlertChannelModel).parse);
@@ -2691,13 +2687,7 @@ export async function createStorage(
         .any<unknown>(
           sql`/* getAlertChannels */
           SELECT
-            "id",
-            "name",
-            "type",
-            "project_id" AS "projectId",
-            "created_at" AS "createdAt",
-            "slack_channel" AS "slackChannel",
-            "webhook_endpoint" AS "webhookEndpoint"
+            ${alertChannelFields()}
           FROM alert_channels
           WHERE project_id = ${project}
           ORDER BY created_at DESC`,
@@ -2715,12 +2705,7 @@ export async function createStorage(
             VALUES
               (${type}, ${channelId}, ${targetId}, ${projectId})
             RETURNING
-              "id",
-              "type",
-              "created_at" AS "createdAt",
-              "alert_channel_id" AS "channelId",
-              "project_id" AS "projectId",
-              "target_id" AS "targetId"
+              ${alertFields()}
           `,
           )
           .then(AlertModel.parse)),
@@ -2736,12 +2721,7 @@ export async function createStorage(
             project_id = ${project} AND
             id IN (${sql.join(alerts, sql`, `)})
           RETURNING
-            "id",
-            "type",
-            "created_at" AS "createdAt",
-            "alert_channel_id" AS "channelId",
-            "project_id" AS "projectId",
-            "target_id" AS "targetId"
+            ${alertFields()}
         `,
         )
         .then(z.array(AlertModel).parse);
@@ -2753,12 +2733,7 @@ export async function createStorage(
         .any<unknown>(
           sql`/* getAlerts */
           SELECT
-            "id",
-            "type",
-            "created_at" AS "createdAt",
-            "alert_channel_id" AS "channelId",
-            "project_id" AS "projectId",
-            "target_id" AS "targetId"
+            ${alertFields()}
           FROM alerts
           WHERE project_id = ${project}
           ORDER BY created_at DESC`,
@@ -5668,8 +5643,27 @@ const schemaPolicyFields = (prefix: TaggedTemplateLiteralInvocation) => sql`
   , ${prefix}"resource_id" AS "resourceId"
   , ${prefix}"config"
   , ${prefix}"allow_overriding" AS "allowOverrides"
-  , ${prefix}"created_at" AS "createdAt"
-  , ${prefix}"updated_at" AS "updatedAt"
+  , to_json(${prefix}"created_at") AS "createdAt"
+  , to_json(${prefix}"updated_at") AS "updatedAt"
+`;
+
+const alertChannelFields = (prefix: TaggedTemplateLiteralInvocation = sql``) => sql`
+  ${prefix}"id" AS "id",
+  ${prefix}"name" AS "name",
+  ${prefix}"type" AS "type",
+  ${prefix}"project_id" AS "projectId",
+  to_json(${prefix}"created_at") AS "createdAt",
+  ${prefix}"slack_channel" AS "slackChannel",
+  ${prefix}"webhook_endpoint" AS "webhookEndpoint"
+`;
+
+const alertFields = (prefix: TaggedTemplateLiteralInvocation = sql``) => sql`
+  ${prefix}"id" AS "id",
+  ${prefix}"type" AS "type",
+  to_json(${prefix}"created_at") AS "createdAt",
+  ${prefix}"alert_channel_id" AS "channelId",
+  ${prefix}"project_id" AS "projectId",
+  ${prefix}"target_id" AS "targetId"
 `;
 
 const targetSettingsFields = (prefix: TaggedTemplateLiteralInvocation) => sql`
@@ -5711,7 +5705,10 @@ const SchemaModel = z
     sdl: z.string(),
     date: z.any(),
     target: z.string(),
-    metadata: z.string().nullish().transform(v => v ?? null),
+    metadata: z
+      .string()
+      .nullish()
+      .transform(v => v ?? null),
     service_name: z.string().nullable(),
     service_url: z.string().nullable(),
     action: z.literal('PUSH'),
@@ -5754,7 +5751,10 @@ const SchemaLogModel = z
     sdl: z.string().nullable(),
     date: z.any(),
     target: z.string(),
-    metadata: z.string().nullish().transform(v => v ?? null),
+    metadata: z
+      .string()
+      .nullish()
+      .transform(v => v ?? null),
     service_name: z.string().nullable(),
     service_url: z.string().nullable(),
     action: z.enum(['PUSH', 'DELETE']),
@@ -5887,7 +5887,7 @@ const AlertChannelModel = z.object({
   name: z.string(),
   type: z.enum(['MSTEAMS_WEBHOOK', 'SLACK', 'WEBHOOK']),
   projectId: z.string(),
-  createdAt: z.date().transform(d => d.toISOString()),
+  createdAt: z.string(),
   slackChannel: z.string().nullable(),
   webhookEndpoint: z.string().nullable(),
 });
@@ -5895,7 +5895,7 @@ const AlertChannelModel = z.object({
 const AlertModel = z.object({
   id: z.string(),
   type: z.enum(['SCHEMA_CHANGE_NOTIFICATIONS']),
-  createdAt: z.date().transform(d => d.toISOString()),
+  createdAt: z.string(),
   channelId: z.string(),
   projectId: z.string(),
   targetId: z.string(),
@@ -5912,8 +5912,8 @@ const SchemaPolicyModel = z
     resourceId: z.string(),
     config: z.any(),
     allowOverrides: z.boolean(),
-    createdAt: z.date(),
-    updatedAt: z.date(),
+    createdAt: z.string().transform(t => new Date(t)),
+    updatedAt: z.string().transform(t => new Date(t)),
   })
   .transform(sp => ({
     id: `${sp.resourceType}_${sp.resourceId}`,
@@ -6006,12 +6006,12 @@ const TargetSettingsModel = z
     validationEnabled: z.boolean(),
     validationPercentage: z.number(),
     validationPeriod: z.number(),
-    validationExcludedClients: z.array(z.string().nullable()).nullable(),
-    validationExcludedAppDeployments: z.array(z.string().nullable()).nullable(),
+    validationExcludedClients: z.array(z.string()).nullable(),
+    validationExcludedAppDeployments: z.array(z.string()).nullable(),
     validationRequestCount: z.number().nullable(),
     validationBreakingChangeFormula: z.string().nullable(),
     failDiffOnDangerousChange: z.boolean(),
-    targets: z.array(z.string().nullable()).nullable(),
+    targets: z.array(z.string()).nullable(),
     appDeploymentProtectionEnabled: z.boolean(),
     appDeploymentProtectionMinDaysInactive: z.number(),
     appDeploymentProtectionMinDaysSinceCreation: z.number(),
@@ -6029,14 +6029,12 @@ const TargetSettingsModel = z
       breakingChangeFormula: (row.validationBreakingChangeFormula ?? 'PERCENTAGE') as
         | 'PERCENTAGE'
         | 'REQUEST_COUNT',
-      targets: Array.isArray(row.targets)
-        ? row.targets.filter((v): v is string => v != null)
-        : [],
+      targets: Array.isArray(row.targets) ? row.targets : [],
       excludedClients: Array.isArray(row.validationExcludedClients)
-        ? row.validationExcludedClients.filter((v): v is string => v != null)
+        ? row.validationExcludedClients
         : [],
       excludedAppDeployments: Array.isArray(row.validationExcludedAppDeployments)
-        ? row.validationExcludedAppDeployments.filter((v): v is string => v != null)
+        ? row.validationExcludedAppDeployments
         : [],
     },
     appDeploymentProtection: {
