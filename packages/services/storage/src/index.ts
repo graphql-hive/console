@@ -38,6 +38,7 @@ import {
   target_validation,
 } from './db';
 import {
+  AffectedAppDeployments,
   ConditionalBreakingChangeMetadata,
   ConditionalBreakingChangeMetadataModel,
   HiveSchemaChangeModel,
@@ -5397,15 +5398,7 @@ export function toSerializableSchemaChange(change: SchemaChangeType): {
       count: number;
     }>;
   };
-  affectedAppDeployments: null | Array<{
-    id: string;
-    name: string;
-    version: string;
-    affectedOperations: Array<{
-      hash: string;
-      name: string | null;
-    }>;
-  }>;
+  affectedAppDeployments: null | AffectedAppDeployments;
 } {
   return {
     id: change.id,

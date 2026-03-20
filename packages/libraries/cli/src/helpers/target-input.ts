@@ -28,10 +28,7 @@ export function parse(str: string): ParseError | ParseOk {
   }
 
   const parts = str.split('/');
-
-  const organizationSlug = parts.at(0);
-  const projectSlug = parts.at(1);
-  const targetSlug = parts.at(2);
+  const [organizationSlug, projectSlug, targetSlug] = parts;
 
   if (!organizationSlug || !projectSlug || !targetSlug || parts.length > 3) {
     return {

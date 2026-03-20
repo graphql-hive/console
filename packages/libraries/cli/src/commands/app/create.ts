@@ -147,9 +147,8 @@ export default class AppCreate extends Command<typeof AppCreate> {
 
         if (result.addDocumentsToAppDeployment.error) {
           if (result.addDocumentsToAppDeployment.error.details) {
-            const affectedOperation = buffer.at(
-              result.addDocumentsToAppDeployment.error.details.index,
-            );
+            const affectedOperation =
+              buffer[result.addDocumentsToAppDeployment.error.details.index];
 
             const maxCharacters = 40;
 
