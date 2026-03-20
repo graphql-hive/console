@@ -1383,7 +1383,7 @@ export async function createStorage(
     async createOrganizationTransferRequest({ organizationId: organization, userId: user }) {
       const code = Math.random().toString(16).substring(2, 12);
 
-      await pool.query<unknown>(
+      await pool.any(
         sql`/* createOrganizationTransferRequest */
           UPDATE organizations
           SET
@@ -1901,7 +1901,7 @@ export async function createStorage(
       };
     },
     async getTargets({ organizationId, projectId }) {
-      const results = await pool.query<unknown>(sql`/* getTargets */
+      const results = await pool.any<unknown>(sql`/* getTargets */
         SELECT
           ${targetSQLFields}
         FROM
@@ -1910,10 +1910,10 @@ export async function createStorage(
           project_id = ${projectId}
         ORDER BY
           created_at DESC
-      `);
+      `).then(z.array(TargetModel).parse);
 
-      return results.rows.map(r => ({
-        ...TargetModel.parse(r),
+      return results.map(r => ({
+        ...r,
         orgId: organizationId,
       }));
     },
@@ -1936,17 +1936,17 @@ export async function createStorage(
 
         const orgId = args[0].organizationId;
 
-        const results = await pool.query<unknown>(sql`/* getTargets */
+        const results = await pool.any<unknown>(sql`/* getTargets */
           SELECT
           ${targetSQLFields}
           FROM
           "targets"
           WHERE
           "id" = ANY(${sql.array(allTargetIds, 'uuid')})
-        `);
+        `).then(z.array(TargetModel).parse);
 
-        for (const row of results.rows) {
-          const target: Target = { ...TargetModel.parse(row), orgId };
+        for (const row of results) {
+          const target: Target = { ...row, orgId };
           resultLookupMap.set(target.id, target);
         }
 
@@ -2816,7 +2816,7 @@ export async function createStorage(
 
     async getSchemaChangesForVersion(args) {
       // TODO: should this be paginated?
-      const changes = await pool.query<unknown>(sql`/* getSchemaChangesForVersion */
+      const changes = await pool.any<unknown>(sql`/* getSchemaChangesForVersion */
         SELECT
           "change_type" as "type",
           "meta",
@@ -2826,13 +2826,13 @@ export async function createStorage(
           "schema_version_changes"
         WHERE
           "schema_version_id" = ${args.versionId}
-      `);
+      `).then(z.array(HiveSchemaChangeModel).parse);
 
-      if (changes.rows.length === 0) {
+      if (changes.length === 0) {
         return null;
       }
 
-      return changes.rows.map(row => HiveSchemaChangeModel.parse(row));
+      return changes;
     },
 
     getSchemaLog: batch(async selectors => {
@@ -2866,7 +2866,7 @@ export async function createStorage(
       });
     }),
     async addSlackIntegration({ organizationId: organization, token }) {
-      await pool.query<unknown>(
+      await pool.any(
         sql`/* addSlackIntegration */
           UPDATE organizations
           SET slack_token = ${token}
@@ -2875,7 +2875,7 @@ export async function createStorage(
       );
     },
     async deleteSlackIntegration({ organizationId: organization }) {
-      await pool.query<unknown>(
+      await pool.any(
         sql`/* deleteSlackIntegration */
           UPDATE organizations
           SET slack_token = NULL
@@ -2895,7 +2895,7 @@ export async function createStorage(
       return result?.slack_token;
     },
     async addGitHubIntegration({ organizationId: organization, installationId }) {
-      await pool.query<unknown>(
+      await pool.any(
         sql`/* addGitHubIntegration */
           UPDATE organizations
           SET github_app_installation_id = ${installationId}
@@ -2904,14 +2904,14 @@ export async function createStorage(
       );
     },
     async deleteGitHubIntegration({ organizationId: organization }) {
-      await pool.query<unknown>(
+      await pool.any(
         sql`/* deleteGitHubIntegration */
           UPDATE organizations
           SET github_app_installation_id = NULL
           WHERE id = ${organization}
         `,
       );
-      await pool.query<unknown>(
+      await pool.any(
         sql`/* resetProjectsGitHubRepository */
           UPDATE projects
           SET git_repository = NULL
@@ -3182,7 +3182,7 @@ export async function createStorage(
       return mapped[0] || null;
     },
     async deleteOrganizationBilling(selector) {
-      await pool.query<unknown>(
+      await pool.any(
         sql`/* deleteOrganizationBilling */
           DELETE FROM organizations_billing
           WHERE organization_id = ${selector.organizationId}`,
@@ -3250,7 +3250,7 @@ export async function createStorage(
     },
 
     getOIDCIntegrationForOrganization: batch(async selectors => {
-      const result = await pool.query<unknown>(sql`/* getOIDCIntegrationForOrganization */
+      const rows = await pool.any<unknown>(sql`/* getOIDCIntegrationForOrganization */
         SELECT
           "id"
           , "linked_organization_id"
@@ -3275,7 +3275,7 @@ export async function createStorage(
           )})
       `);
       const integrations = new Map(
-        result.rows.map(row => {
+        rows.map(row => {
           const integration = decodeOktaIntegrationRecord(row);
           return [integration.linkedOrganizationId, integration] as const;
         }),
@@ -3506,7 +3506,7 @@ export async function createStorage(
     },
 
     async deleteOIDCIntegration(args) {
-      await pool.query<unknown>(sql`/* deleteOIDCIntegration */
+      await pool.any(sql`/* deleteOIDCIntegration */
         DELETE FROM "oidc_integrations"
         WHERE
           "id" = ${args.oidcIntegrationId}
@@ -4093,7 +4093,7 @@ export async function createStorage(
         const sdlStoreInserts: Array<Promise<unknown>> = [];
 
         function insertSdl(hash: string, sdl: string) {
-          return trx.query<unknown>(sql`/* insertToSdlStore */
+          return trx.any(sql`/* insertToSdlStore */
             INSERT INTO "sdl_store" (id, sdl)
             VALUES (${hash}, ${sdl})
             ON CONFLICT (id) DO NOTHING;
