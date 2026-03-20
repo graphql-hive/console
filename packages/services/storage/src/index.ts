@@ -21,7 +21,7 @@ import { context, SpanKind, SpanStatusCode, trace } from '@hive/service-common';
 import type { SchemaCoordinatesDiffResult } from '../../api/src/modules/schema/providers/inspector';
 import { createSDLHash, ProjectType } from '../../api/src/shared/entities';
 import { batch, batchBy } from '../../api/src/shared/helpers';
-import { getPool, organizations } from './db';
+import { getPool, type organizations } from './db';
 import {
   AffectedAppDeployments,
   ConditionalBreakingChangeMetadata,
@@ -4668,7 +4668,7 @@ export function decodeCreatedAtAndHashBasedCursor(cursor: string) {
   };
 }
 
-const OktaIntegrationBaseModel = z.object({
+const OIDCIntegrationBaseModel = z.object({
   id: z.string(),
   linkedOrganizationId: z.string(),
   clientId: z.string(),
@@ -4684,7 +4684,7 @@ const OktaIntegrationBaseModel = z.object({
   requireInvitation: z.boolean(),
 });
 
-const OIDCIntegrationLegacyModel = OktaIntegrationBaseModel.extend({
+const OIDCIntegrationLegacyModel = OIDCIntegrationBaseModel.extend({
   oauthApiUrl: z.string().url(),
 }).transform(record => ({
   id: record.id,
@@ -4702,7 +4702,7 @@ const OIDCIntegrationLegacyModel = OktaIntegrationBaseModel.extend({
   defaultResourceAssignment: record.defaultAssignedResources,
 }));
 
-const LatestOIDCIntegrationModel = OktaIntegrationBaseModel.extend({
+const LatestOIDCIntegrationModel = OIDCIntegrationBaseModel.extend({
   tokenEndpoint: z.string().url(),
   userinfoEndpoint: z.string().url(),
   authorizationEndpoint: z.string().url(),
