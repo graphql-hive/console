@@ -1,5 +1,6 @@
 import { useMemo } from 'react';
 import { parse, print } from 'graphql';
+import { isArray } from 'lodash';
 import {
   Box,
   Boxes,
@@ -203,6 +204,10 @@ function renderFlattenPathSegment(seg: FlattenNodePathSegment): string {
     return `|[${names.join('|')}]`;
   }
 
+  if (isArray(seg)) {
+    return renderFlattenPath(seg);
+  }
+
   return String(seg);
 }
 
@@ -292,15 +297,13 @@ export function renderFetchNode(node: FetchNodePlan, depth = 0): string {
   lines.push(`${indent(depth)}Fetch(service: "${node.serviceName}") {`);
 
   if (node.requires) {
-    lines.push(`${indent(depth + 1)}requires {`);
+    lines.push(`${indent(depth + 1)} {`);
     const requires = renderSelectionSet(node.requires, depth + 2);
     if (requires) lines.push(requires);
-    lines.push(`${indent(depth + 1)}}`);
+    lines.push(`${indent(depth + 1)}} =>`);
   }
 
-  lines.push(`${indent(depth + 1)}operation {`);
   lines.push(renderMultilineBlock(print(parse(node.operation)), depth + 2));
-  lines.push(`${indent(depth + 1)}}`);
 
   lines.push(`${indent(depth)}}`);
   return lines.join('\n');
@@ -311,18 +314,24 @@ export function renderBatchFetchNode(node: BatchFetchNodePlan, depth = 0): strin
   lines.push(`${indent(depth)}BatchFetch(service: "${node.serviceName}") {`);
 
   for (const alias of node.entityBatch.aliases) {
-    lines.push(`${indent(depth + 1)}alias "${alias.alias}" {`);
-    lines.push(`${indent(depth + 2)}representations: $${alias.representationsVariableName}`);
-    lines.push(`${indent(depth + 2)}paths: [${renderFlattenPath(alias.paths)}]`);
-    lines.push(`${indent(depth + 2)}requires {`);
+    lines.push(`${indent(depth + 1)}${alias.alias} {`);
+    lines.push(`${indent(depth + 2)}paths: [`);
+    lines.push(`${indent(depth + 3)}${renderFlattenPath(alias.paths)}`);
+    lines.push(`${indent(depth + 2)}]`);
+    lines.push(`${indent(depth + 2)}{`);
     const requires = renderSelectionSet(alias.requires, depth + 3);
     if (requires) lines.push(requires);
     lines.push(`${indent(depth + 2)}}`);
     lines.push(`${indent(depth + 1)}}`);
   }
 
-  lines.push(`${indent(depth + 1)}operation {`);
-  lines.push(renderMultilineBlock(print(parse(node.operation)), depth + 2));
+  lines.push(`${indent(depth + 1)}{`);
+  lines.push(
+    renderMultilineBlock(
+      print(parse(node.operation)).split('\n').slice(1, -1).join('\n'),
+      depth + 1,
+    ),
+  );
   lines.push(`${indent(depth + 1)}}`);
 
   return lines.join('\n');
@@ -541,16 +550,20 @@ function extractOperationsFromNode(node: PlanNode, path: string): ExtractedOpera
 
 export interface QueryPlanNode extends FlowNode {
   kind: PlanNode['kind'] | 'Root';
+  parent?: string;
 }
 
 function visitNode(
   node: PlanNode,
-  parentNode: Partial<QueryPlanNode>,
+  parentNode: QueryPlanNode,
   nodes: QueryPlanNode[],
-): void {
-  const result: Partial<QueryPlanNode> = { id: uuidv4() };
-  result.title = node.kind;
-  result.kind = node.kind;
+  cluster?: string,
+): QueryPlanNode {
+  const result: QueryPlanNode = {
+    id: uuidv4(),
+    title: node.kind,
+    kind: node.kind as QueryPlanNode['kind'],
+  };
 
   switch (node.kind) {
     case 'Fetch':
@@ -599,18 +612,18 @@ function visitNode(
           </div>
         );
       };
-      visitNode(node.node, result, nodes);
+      visitNode(node.node, result, nodes, cluster);
       break;
 
     case 'Sequence':
       for (const child of node.nodes) {
-        visitNode(child, result, nodes);
+        visitNode(child, result, nodes, cluster);
       }
       break;
 
     case 'Parallel':
       for (const child of node.nodes) {
-        visitNode(child, result, nodes);
+        visitNode(child, result, nodes, result.id!);
       }
       break;
 
@@ -628,25 +641,25 @@ function visitNode(
 
       if (node.ifClause) {
         result.title = 'Include';
-        visitNode(node.ifClause, result, nodes);
+        visitNode(node.ifClause, result, nodes, cluster);
       }
       if (node.elseClause) {
         result.title = 'Skip';
-        visitNode(node.elseClause, result, nodes);
+        visitNode(node.elseClause, result, nodes, cluster);
       }
       break;
 
     case 'Subscription':
-      visitNode(node.primary, result, nodes);
+      visitNode(node.primary, result, nodes, cluster);
       break;
 
     case 'Defer':
       if (node.primary.node) {
-        visitNode(node.primary.node, result, nodes);
+        visitNode(node.primary.node, result, nodes, cluster);
       }
       for (const deferred of node.deferred) {
         if (deferred.node) {
-          visitNode(deferred.node, result, nodes);
+          visitNode(deferred.node, result, nodes, cluster);
         }
       }
       break;
@@ -655,9 +668,17 @@ function visitNode(
       break;
   }
 
-  parentNode.next = [...(parentNode.next ?? []), result.id!];
+  if (parentNode) {
+    parentNode.next = [...(parentNode.next ?? []), result.id!];
+  }
+
+  if (cluster) {
+    result.parent = cluster;
+  }
 
   nodes.push(result as QueryPlanNode);
+
+  return result as QueryPlanNode;
 }
 
 export const queryPlanNodeIcon = (
@@ -703,7 +724,12 @@ export function QueryPlanTree(props: { plan: QueryPlan }) {
       visitNode(props.plan.node, rootNode, nodes);
     }
 
-    return nodes.map(node => ({ ...node, icon: queryPlanNodeIcon(node.kind) }));
+    return nodes.map(node => {
+      return {
+        ...node,
+        icon: queryPlanNodeIcon(node.kind),
+      } satisfies FlowNode;
+    });
   }, [props.plan]);
 
   return <Flow nodes={nodes} />;

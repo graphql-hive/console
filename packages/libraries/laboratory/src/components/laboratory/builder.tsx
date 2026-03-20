@@ -21,7 +21,6 @@ import {
   SearchIcon,
   TextAlignStartIcon,
 } from 'lucide-react';
-import { ToggleGroup, ToggleGroupItem } from '@/laboratory/components/ui/toggle-group';
 import type { LaboratoryOperation } from '../../lib/operations';
 import {
   getFieldByPath,
@@ -40,6 +39,7 @@ import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from '..
 import { InputGroup, InputGroupAddon, InputGroupButton, InputGroupInput } from '../ui/input-group';
 import { ScrollArea, ScrollBar } from '../ui/scroll-area';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
+import { ToggleGroup, ToggleGroupItem } from '../ui/toggle-group';
 import { Tooltip, TooltipContent, TooltipTrigger } from '../ui/tooltip';
 import { useLaboratory } from './context';
 
@@ -790,8 +790,6 @@ export const Builder = (props: {
       operationTypes: [tabValue],
     });
   }, [schema, deferredSearchValue, isSearchActive, tabValue]);
-
-  console.log(searchResult);
 
   const visiblePaths = isSearchActive ? (searchResult?.visiblePaths ?? null) : null;
   const forcedOpenPaths =

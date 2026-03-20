@@ -11,19 +11,19 @@ import {
   NetworkIcon,
   PanelLeftCloseIcon,
   PanelLeftOpenIcon,
-  PanelRightCloseIcon,
   PlayIcon,
+  PlusCircleIcon,
   PowerIcon,
   PowerOffIcon,
   SquarePenIcon,
+  TrashIcon,
 } from 'lucide-react';
 import { compressToEncodedURIComponent } from 'lz-string';
 import * as monaco from 'monaco-editor/esm/vs/editor/editor.api';
 import { toast } from 'sonner';
 import { z } from 'zod';
+import { Input } from '@/components/ui/input';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
-import { ToggleGroup, ToggleGroupItem } from '@/laboratory/components/ui/toggle-group';
-import { QueryPlanTree, renderQueryPlan } from '@/lib/query-plan';
 import { DropdownMenuTrigger } from '@radix-ui/react-dropdown-menu';
 import { useForm } from '@tanstack/react-form';
 import type {
@@ -32,9 +32,18 @@ import type {
   LaboratoryHistorySubscription,
 } from '../../lib/history';
 import type { LaboratoryOperation } from '../../lib/operations';
+import { QueryPlanTree, renderQueryPlan } from '../../lib/query-plan';
 import { cn } from '../../lib/utils';
 import { Badge } from '../ui/badge';
 import { Button } from '../ui/button';
+import {
+  Combobox,
+  ComboboxContent,
+  ComboboxEmpty,
+  ComboboxInput,
+  ComboboxItem,
+  ComboboxList,
+} from '../ui/combobox';
 import {
   Dialog,
   DialogClose,
@@ -53,6 +62,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { Spinner } from '../ui/spinner';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
 import { Toggle } from '../ui/toggle';
+import { ToggleGroup, ToggleGroupItem } from '../ui/toggle-group';
 import { Builder } from './builder';
 import { useLaboratory } from './context';
 import { Editor } from './editor';
@@ -83,12 +93,133 @@ const Variables = (props: { operation?: LaboratoryOperation | null; isReadOnly?:
   );
 };
 
+const HEADERS_SUGGESTIONS = [
+  'Authorization',
+  'Content-Type',
+  'Accept',
+  'User-Agent',
+  'X-Requested-With',
+  'X-CSRF-Token',
+];
+
 const Headers = (props: { operation?: LaboratoryOperation | null; isReadOnly?: boolean }) => {
   const { activeOperation, updateActiveOperation } = useLaboratory();
 
   const operation = useMemo(() => {
     return props.operation ?? activeOperation ?? null;
   }, [props.operation, activeOperation]);
+
+  // const [headers, setHeaders] = useState<[string, string][]>(() => {
+  //   return Object.entries(JSON.parse(operation?.headers ?? '{}'));
+  // });
+
+  // const updateHeaderKey = useCallback((index: number, newKey: string, value: string) => {
+  //   setHeaders(prev => {
+  //     const newHeaders = [...prev];
+  //     newHeaders[index] = [newKey, value];
+  //     return newHeaders;
+  //   });
+  // }, []);
+
+  // const updateHeaderValue = useCallback((index: number, value: string) => {
+  //   setHeaders(prev => {
+  //     const newHeaders = [...prev];
+  //     newHeaders[index] = [newHeaders[index][0], value];
+  //     return newHeaders;
+  //   });
+  // }, []);
+
+  // const deleteHeader = useCallback((index: number) => {
+  //   setHeaders(prev => {
+  //     const newHeaders = [...prev];
+  //     newHeaders.splice(index, 1);
+  //     return newHeaders;
+  //   });
+  // }, []);
+
+  // const addHeader = useCallback(() => {
+  //   setHeaders(prev => [...prev, ['', '']]);
+  // }, []);
+
+  // useEffect(() => {
+  //   const result = JSON.stringify(Object.fromEntries(headers.filter(([key]) => !!key)));
+
+  //   if (result === operation?.headers) {
+  //     return;
+  //   }
+
+  //   updateActiveOperation({
+  //     headers: JSON.stringify(Object.fromEntries(headers)),
+  //   });
+  // }, [headers, updateActiveOperation, operation?.headers]);
+
+  // console.log(headers.some(header2 => header2[0].toLowerCase() === 'Authorization'.toLowerCase()));
+
+  // return (
+  //   <div className="grid size-full grid-rows-[1fr_auto]">
+  //     <div className="grid gap-2 overflow-y-auto p-3">
+  //       {headers.map((header, index, arr) => (
+  //         <div key={header[0]} className="grid grid-cols-[1fr_1fr_auto] gap-2">
+  //           <Combobox
+  //             items={HEADERS_SUGGESTIONS}
+  //             value={header[0]}
+  //             onValueChange={newKey => {
+  //               updateHeaderKey(index, newKey ?? '', header[1]);
+  //             }}
+  //           >
+  //             <ComboboxInput
+  //               placeholder="Header key"
+  //               aria-invalid={arr.some(
+  //                 header2 =>
+  //                   header2 !== header && header2[0].toLowerCase() === header[0].toLowerCase(),
+  //               )}
+  //             />
+  //             <ComboboxContent className="w-full">
+  //               <ComboboxList>
+  //                 {HEADERS_SUGGESTIONS.map(item => (
+  //                   <ComboboxItem key={item} value={item}>
+  //                     {item}
+  //                   </ComboboxItem>
+  //                 ))}
+  //               </ComboboxList>
+  //             </ComboboxContent>
+  //           </Combobox>
+  //           <Input
+  //             defaultValue={`${header[1]}`}
+  //             placeholder="Value"
+  //             onChange={e => {
+  //               updateHeaderValue(index, e.target.value);
+  //             }}
+  //           />
+  //           <Button
+  //             variant="destructive"
+  //             size="icon"
+  //             className="size-9 rounded-sm"
+  //             disabled={index === 0}
+  //             onClick={() => {
+  //               deleteHeader(index);
+  //             }}
+  //           >
+  //             <TrashIcon className="size-4" />
+  //           </Button>
+  //         </div>
+  //       ))}
+  //     </div>
+  //     <div className="border-t p-3">
+  //       <Button
+  //         variant="link"
+  //         size="sm"
+  //         className="w-full"
+  //         onClick={() => {
+  //           addHeader();
+  //         }}
+  //       >
+  //         <PlusCircleIcon className="size-4" />
+  //         Add header
+  //       </Button>
+  //     </div>
+  //   </div>
+  // );
 
   return (
     <Editor
@@ -313,6 +444,14 @@ export const Response = ({ historyItem }: { historyItem?: LaboratoryHistoryReque
     );
   }, [historyItem]);
 
+  const hasQueryPlan = useMemo(() => {
+    if (!historyItem) {
+      return false;
+    }
+
+    return !!JSON.parse(historyItem.response).extensions?.queryPlan;
+  }, [historyItem?.response]);
+
   return (
     <Tabs
       defaultValue="response"
@@ -353,9 +492,11 @@ export const Response = ({ historyItem }: { historyItem?: LaboratoryHistoryReque
         <TabsTrigger value="response" className="grow-0 rounded-sm">
           Response
         </TabsTrigger>
-        <TabsTrigger value="query-plan" className="grow-0 rounded-sm">
-          Query Plan
-        </TabsTrigger>
+        {hasQueryPlan && (
+          <TabsTrigger value="query-plan" className="grow-0 rounded-sm">
+            Query Plan
+          </TabsTrigger>
+        )}
         <TabsTrigger value="headers" className="grow-0 rounded-sm">
           Headers
         </TabsTrigger>

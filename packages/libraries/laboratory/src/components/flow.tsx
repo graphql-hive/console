@@ -9,6 +9,7 @@ export interface FlowNode {
   next?: string[];
   icon?: (props: LucideProps) => React.ReactNode;
   content?: (props: { node: FlowNode }) => React.ReactNode;
+  parent?: string;
 }
 
 export interface FlowGraphInternal extends FlowNode {
@@ -16,6 +17,7 @@ export interface FlowGraphInternal extends FlowNode {
   y: number;
   width: number;
   height: number;
+  isCluster: boolean;
 }
 
 export type Point = {
@@ -24,36 +26,36 @@ export type Point = {
 };
 
 export function orthogonalPoints(from: Point, to: Point, t = 0.5): [Point, Point, Point, Point] {
-  const midY = from.y + (to.y - from.y) * t;
+  const midX = from.x + (to.x - from.x) * t;
 
-  return [from, { x: from.x, y: midY }, { x: to.x, y: midY }, to];
+  return [from, { x: midX, y: from.y }, { x: midX, y: to.y }, to];
 }
 
 export function roundedOrthogonalPath(
   [p0, p1, p2, p3]: [Point, Point, Point, Point],
   radius = 12,
 ): string {
-  const r1 = Math.min(radius, Math.abs(p1.y - p0.y), Math.abs(p2.x - p1.x));
-  const r2 = Math.min(radius, Math.abs(p2.x - p1.x), Math.abs(p3.y - p2.y));
+  const r1 = Math.min(radius, Math.abs(p1.x - p0.x), Math.abs(p2.y - p1.y));
+  const r2 = Math.min(radius, Math.abs(p2.y - p1.y), Math.abs(p3.x - p2.x));
 
   const p1a = {
-    x: p1.x,
-    y: p1.y - Math.sign(p1.y - p0.y) * r1,
-  };
-
-  const p1b = {
-    x: p1.x + Math.sign(p2.x - p1.x) * r1,
+    x: p1.x - Math.sign(p1.x - p0.x) * r1,
     y: p1.y,
   };
 
+  const p1b = {
+    x: p1.x,
+    y: p1.y + Math.sign(p2.y - p1.y) * r1,
+  };
+
   const p2a = {
-    x: p2.x - Math.sign(p2.x - p1.x) * r2,
-    y: p2.y,
+    x: p2.x,
+    y: p2.y - Math.sign(p2.y - p1.y) * r2,
   };
 
   const p2b = {
-    x: p2.x,
-    y: p2.y + Math.sign(p3.y - p2.y) * r2,
+    x: p2.x + Math.sign(p3.x - p2.x) * r2,
+    y: p2.y,
   };
 
   return [
@@ -66,69 +68,101 @@ export function roundedOrthogonalPath(
   ].join(' ');
 }
 
-export const Flow = (props: { nodes: FlowNode[] }) => {
+export const Flow = (props: { nodes: FlowNode[]; graph?: Record<string, any> }) => {
   const [hoveredNodeId, setHoveredNodeId] = useState<string | null>(null);
   const [nodeSizes, setNodeSizes] = useState<Record<string, { width: number; height: number }>>({});
   const [nodes, edges, graphSize] = useMemo(() => {
     if (Object.keys(nodeSizes).length === 0) {
       return [
-        props.nodes.map(node => ({ ...node, x: 0, y: 0, width: 0, height: 0 })),
+        props.nodes.map(node => ({ ...node, x: 0, y: 0, width: 0, height: 0, isCluster: false })),
         [],
         { width: 0, height: 0 },
       ];
     }
 
-    const graph = new dagre.graphlib.Graph();
+    const result = new dagre.graphlib.Graph({
+      compound: true,
+    })
+      .setGraph({
+        rankdir: 'LR',
+        align: 'UL',
+        nodesep: 32,
+        ranksep: 32,
+        marginx: 32,
+        marginy: 32,
+        // graph: 'tight-tree',
+      })
+      .setDefaultEdgeLabel(() => ({}));
 
-    graph.setDefaultEdgeLabel(() => ({}));
+    console.log(props.nodes);
 
-    graph.setGraph({
-      rankdir: 'TB',
-      nodesep: 36,
-      ranksep: 36,
-      marginx: 24,
-      marginy: 24,
-      graph: 'tight-tree',
-    });
+    const groups = [...new Set(props.nodes.map(node => node.parent))].filter(Boolean);
 
     for (const node of props.nodes) {
-      graph.setNode(node.id, {
-        width: nodeSizes[node.id]?.width ?? 100,
-        height: nodeSizes[node.id]?.height ?? 100,
+      if (!groups.includes(node.id)) {
+        result.setNode(node.id, {
+          width: nodeSizes[node.id]?.width,
+          height: nodeSizes[node.id]?.height,
+        });
+      }
+    }
+
+    for (const group of groups) {
+      result.setNode(group!, {
+        // clusterLabelPos: group!,
       });
+    }
+
+    for (const node of props.nodes) {
+      if (node.parent) {
+        result.setParent(node.id, node.parent);
+      }
     }
 
     for (const node of props.nodes) {
       if (node.next) {
         for (const next of node.next) {
-          graph.setEdge(node.id, next);
+          if (groups.includes(next)) {
+            const nextNode = props.nodes.find(node => node.id === next);
+
+            for (const childNext of nextNode?.next ?? []) {
+              result.setEdge(node.id, childNext);
+            }
+          } else if (!groups.includes(node.id)) {
+            result.setEdge(node.id, next);
+          }
         }
       }
     }
 
-    dagre.layout(graph);
+    dagre.layout(result);
+
+    const graph = result.graph();
 
     return [
       props.nodes.map(node => {
-        const graphNode = graph.node(node.id);
+        const graphNode = result.node(node.id);
 
         return {
           ...node,
+          isCluster: groups.includes(node.id),
           x: graphNode?.x ?? 0,
           y: graphNode?.y ?? 0,
           width: graphNode?.width ?? 0,
           height: graphNode?.height ?? 0,
         };
       }),
-      graph.edges().map(edge => {
+      result.edges().map(edge => {
         return {
           from: edge.v,
           to: edge.w,
         };
       }),
-      { width: graph.graph().width, height: graph.graph().height },
+      { width: graph.width, height: graph.height },
     ];
-  }, [nodeSizes, props.nodes]);
+  }, [nodeSizes, props.nodes, props.graph]);
+
+  console.log({ nodes, edges });
 
   const findFollowers = useCallback(
     (nodeId: string): FlowNode[] => {
@@ -158,14 +192,8 @@ export const Flow = (props: { nodes: FlowNode[] }) => {
   }, [hoveredNodeId, findFollowers]);
 
   return (
-    <div className="bg-background size-full">
-      <div className="relative size-full overflow-auto">
-        <div
-          className={cn(
-            'absolute left-0 top-0 opacity-50 [background-image:radial-gradient(hsl(var(--border))_1px,transparent_1px)] [background-size:20px_20px]',
-          )}
-          style={{ width: graphSize.width, height: graphSize.height }}
-        />
+    <div className={cn('bg-background size-full')}>
+      <div className={cn('relative size-full overflow-auto')}>
         <svg
           className="absolute left-0 top-0"
           style={{ width: graphSize.width, height: graphSize.height }}
@@ -192,12 +220,12 @@ export const Flow = (props: { nodes: FlowNode[] }) => {
                 d={roundedOrthogonalPath(
                   orthogonalPoints(
                     {
-                      x: fromNode.x + fromNode.width / 2,
-                      y: fromNode.y + fromNode.height / 2,
+                      x: fromNode.x - fromNode.width / 2,
+                      y: fromNode.y,
                     },
                     {
-                      x: toNode.x + toNode.width / 2,
-                      y: toNode.y + toNode.height / 2,
+                      x: toNode.x - toNode.width / 2,
+                      y: toNode.y,
                     },
                   ),
                   12,
@@ -228,12 +256,17 @@ export const Flow = (props: { nodes: FlowNode[] }) => {
               className={cn(
                 'bg-card absolute flex w-64 flex-col justify-start gap-2 rounded-lg border p-2 text-sm shadow-sm transition-all',
                 {
-                  'border-primary shadow-primary/5 shadow-xl': isHovered || isFollowingHoveredNode,
+                  'border-primary shadow-primary/5 shadow-xl':
+                    (isHovered || isFollowingHoveredNode) && !node.isCluster,
+                  'pointer-events-none -mt-[10px] w-auto rounded-2xl border-dashed bg-transparent':
+                    node.isCluster,
                 },
               )}
               style={{
-                left: node.x,
-                top: node.y,
+                left: node.x - node.width / 2,
+                top: node.y - node.height / 2,
+                width: node.isCluster ? node.width : undefined,
+                height: node.isCluster ? node.height : undefined,
               }}
               onMouseEnter={() => setHoveredNodeId(node.id)}
               onMouseLeave={() => setHoveredNodeId(null)}
@@ -245,20 +278,20 @@ export const Flow = (props: { nodes: FlowNode[] }) => {
               <div className="bg-secondary w-full rounded-sm p-2 empty:hidden">
                 {node.content ? node.content({ node }) : null}
               </div>
-              {hasFollowers && (
+              {hasFollowers && !node.isCluster && (
                 <div
                   className={cn(
-                    '-translate-x-1.25 border-border bg-background absolute bottom-0 left-1/2 size-2 translate-y-1/2 rounded-full border-2 transition-all',
+                    'border-border bg-background absolute left-full top-1/2 size-2 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 transition-all',
                     {
                       'bg-primary': isHovered || isFollowingHoveredNode,
                     },
                   )}
                 />
               )}
-              {hasPrevious && (
+              {hasPrevious && !node.isCluster && (
                 <div
                   className={cn(
-                    '-translate-x-1.25 border-border bg-background absolute left-1/2 top-0 size-2 -translate-y-1/2 rounded-full border-2 transition-all',
+                    'border-border bg-background absolute left-0 top-1/2 size-2 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 transition-all',
                     {
                       'bg-primary': isFollowingHoveredNode,
                     },
