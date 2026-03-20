@@ -14,7 +14,6 @@ import type {
   Organization,
   OrganizationInvitation,
   Project,
-  Schema,
   Storage,
   Target,
 } from '@hive/api';
@@ -24,12 +23,14 @@ import {
   createSDLHash,
   ProjectType,
   type CDNAccessToken,
+  type DeletedCompositeSchema,
   type OIDCIntegration,
-  type SchemaLog,
+  type PushedCompositeSchema,
   type SchemaPolicy,
+  type SingleSchema,
 } from '../../api/src/shared/entities';
 import { batch, batchBy } from '../../api/src/shared/helpers';
-import { getPool, organizations, projects, schema_log as schema_log_in_db } from './db';
+import { getPool, organizations } from './db';
 import {
   AffectedAppDeployments,
   ConditionalBreakingChangeMetadata,
@@ -54,10 +55,6 @@ export type { tokens, schema_policy_resource } from './db/types';
 
 type Connection = DatabasePool | DatabaseTransactionConnection;
 
-type schema_log = Omit<schema_log_in_db, 'action'> & {
-  action: 'PUSH' | 'DELETE';
-};
-
 const organizationGetStartedMapping: Record<
   Exclude<keyof Organization['getStarted'], 'id'>,
   keyof organizations
@@ -69,14 +66,6 @@ const organizationGetStartedMapping: Record<
   reportingOperations: 'get_started_reporting_operations',
   enablingUsageBasedBreakingChanges: 'get_started_usage_breaking',
 };
-
-function ensureDefined<T>(value: T | null | undefined, propertyName: string): T {
-  if (value == null) {
-    throw new Error(`${propertyName} is null or undefined`);
-  }
-
-  return value;
-}
 
 const tracer = trace.getTracer('storage');
 
@@ -118,61 +107,6 @@ export async function createStorage(
   additionalInterceptors: Interceptor[] = [],
 ): Promise<Storage> {
   const pool = await getPool(connection, maximumPoolSize, additionalInterceptors);
-
-  function transformSchemaLog(
-    schema: Pick<
-      schema_log,
-      | 'id'
-      | 'action'
-      | 'commit'
-      | 'author'
-      | 'sdl'
-      | 'created_at'
-      | 'project_id'
-      | 'service_name'
-      | 'service_url'
-      | 'target_id'
-      | 'metadata'
-    > &
-      Pick<projects, 'type'>,
-  ): SchemaLog {
-    const isSingleProject = (schema.type as ProjectType) === ProjectType.SINGLE;
-    const record: SchemaLog = isSingleProject
-      ? {
-          kind: 'single',
-          id: schema.id,
-          author: schema.author,
-          sdl: ensureDefined(schema.sdl, 'sdl'),
-          commit: schema.commit,
-          date: schema.created_at as any,
-          target: schema.target_id,
-          metadata: schema.metadata ?? null,
-        }
-      : schema.action === 'PUSH'
-        ? {
-            kind: 'composite',
-            id: schema.id,
-            author: schema.author,
-            sdl: ensureDefined(schema.sdl, 'sdl'),
-            commit: schema.commit,
-            date: schema.created_at as any,
-            service_name: schema.service_name!,
-            service_url: schema.service_url,
-            target: schema.target_id,
-            action: 'PUSH',
-            metadata: schema.metadata ?? null,
-          }
-        : {
-            kind: 'composite',
-            id: schema.id,
-            date: schema.created_at as any,
-            service_name: schema.service_name!,
-            target: schema.target_id,
-            action: 'DELETE',
-          };
-
-    return record;
-  }
 
   const shared = {
     async getUserBySuperTokenId(
@@ -2510,7 +2444,9 @@ export async function createStorage(
     getSchemaLog: batch(async selectors => {
       const rows = await pool.many<unknown>(
         sql`/* getSchemaLog */
-            SELECT sl.*, lower(sl.service_name) as service_name, p.type
+            SELECT
+              ${schemaLogFields(sql`sl.`)}
+              , p.type
             FROM schema_log as sl
             LEFT JOIN projects as p ON (p.id = sl.project_id)
             WHERE (sl.id, sl.target_id) IN ((${sql.join(
@@ -2519,7 +2455,7 @@ export async function createStorage(
             )}))
         `,
       );
-      const schemas = (rows as Array<schema_log & Pick<projects, 'type'>>).map(transformSchemaLog);
+      const schemas = z.array(SchemaLogModel).parse(rows);
 
       return selectors.map(selector => {
         const schema = schemas.find(
@@ -5640,108 +5576,85 @@ const schemaLogFields = (prefix: TaggedTemplateLiteralInvocation) => sql`
   , ${prefix}"action"
 `;
 
-/** Parses a DB row (with SQL aliases from schemaLogFields + p.type) into a Schema (always PUSH) */
-const SchemaModel = z
-  .object({
-    id: z.string(),
-    author: z.string(),
-    commit: z.string(),
-    sdl: z.string(),
-    date: z.any(),
-    target: z.string(),
-    metadata: z
-      .string()
-      .nullish()
-      .transform(v => v ?? null),
-    service_name: z.string().nullable(),
-    service_url: z.string().nullable(),
-    action: z.literal('PUSH'),
-    type: z.string(),
-  })
-  .transform((row): Schema => {
-    const isSingleProject = (row.type as ProjectType) === ProjectType.SINGLE;
-    return isSingleProject
-      ? {
-          kind: 'single',
-          id: row.id,
-          author: row.author,
-          sdl: row.sdl,
-          commit: row.commit,
-          date: row.date,
-          target: row.target,
-          metadata: row.metadata,
-        }
-      : {
-          kind: 'composite',
-          id: row.id,
-          author: row.author,
-          sdl: row.sdl,
-          commit: row.commit,
-          date: row.date,
-          service_name: row.service_name!,
-          service_url: row.service_url,
-          target: row.target,
-          action: 'PUSH',
-          metadata: row.metadata,
-        };
-  });
+/** Base shape for schema_log DB rows (with SQL aliases from schemaLogFields + p.type) */
+const schemaLogRow = {
+  id: z.string(),
+  author: z.string().nullable(),
+  commit: z.string().nullable(),
+  sdl: z.string().nullable(),
+  date: z.any(),
+  target: z.string(),
+  metadata: z
+    .string()
+    .nullish()
+    .transform(v => v ?? null),
+  service_name: z.string().nullable(),
+  service_url: z.string().nullable(),
+  action: z.string(),
+  type: z.string(),
+};
 
-/** Parses a DB row (with SQL aliases from schemaLogFields + p.type) into a SchemaLog (PUSH or DELETE) */
-const SchemaLogModel = z
-  .object({
-    id: z.string(),
-    author: z.string(),
-    commit: z.string(),
-    sdl: z.string().nullable(),
-    date: z.any(),
-    target: z.string(),
-    metadata: z
-      .string()
-      .nullish()
-      .transform(v => v ?? null),
-    service_name: z.string().nullable(),
-    service_url: z.string().nullable(),
-    action: z.enum(['PUSH', 'DELETE']),
-    type: z.string(),
-  })
-  .transform((row): SchemaLog => {
-    const isSingleProject = (row.type as ProjectType) === ProjectType.SINGLE;
-    if (isSingleProject) {
-      return {
-        kind: 'single',
-        id: row.id,
-        author: row.author,
-        sdl: row.sdl!,
-        commit: row.commit,
-        date: row.date,
-        target: row.target,
-        metadata: row.metadata,
-      };
-    }
-    if (row.action === 'PUSH') {
-      return {
-        kind: 'composite',
-        id: row.id,
-        author: row.author,
-        sdl: row.sdl!,
-        commit: row.commit,
-        date: row.date,
-        service_name: row.service_name!,
-        service_url: row.service_url,
-        target: row.target,
-        action: 'PUSH',
-        metadata: row.metadata,
-      };
-    }
-    return {
+/** Single-project schema (always PUSH) */
+const SinglePushSchemaModel = z
+  .object(schemaLogRow)
+  .refine(row => (row.type as ProjectType) === ProjectType.SINGLE)
+  .transform(
+    (row): SingleSchema => ({
+      kind: 'single',
+      id: row.id,
+      author: row.author!,
+      sdl: row.sdl!,
+      commit: row.commit!,
+      date: row.date,
+      target: row.target,
+      metadata: row.metadata,
+    }),
+  );
+
+/** Composite-project PUSH schema */
+const PushedCompositeSchemaModel = z
+  .object(schemaLogRow)
+  .refine(row => (row.type as ProjectType) !== ProjectType.SINGLE && row.action === 'PUSH')
+  .transform(
+    (row): PushedCompositeSchema => ({
+      kind: 'composite',
+      id: row.id,
+      author: row.author!,
+      sdl: row.sdl!,
+      commit: row.commit!,
+      date: row.date,
+      service_name: row.service_name!,
+      service_url: row.service_url,
+      target: row.target,
+      action: 'PUSH',
+      metadata: row.metadata,
+    }),
+  );
+
+/** Composite-project DELETE schema */
+const DeletedCompositeSchemaModel = z
+  .object(schemaLogRow)
+  .refine(row => row.action === 'DELETE')
+  .transform(
+    (row): DeletedCompositeSchema => ({
       kind: 'composite',
       id: row.id,
       date: row.date,
       service_name: row.service_name!,
       target: row.target,
       action: 'DELETE',
-    };
-  });
+    }),
+  );
+
+/** Parses a DB row into a Schema (always PUSH — single or composite) */
+const SchemaModel = z.union([SinglePushSchemaModel, PushedCompositeSchemaModel]);
+
+/** Parses a DB row into a SchemaLog (single push, composite push, or composite delete) */
+const SchemaLogModel = z.union([
+  SinglePushSchemaModel,
+  PushedCompositeSchemaModel,
+  DeletedCompositeSchemaModel,
+]);
 
 const OrganizationModel = z
   .object({
