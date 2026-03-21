@@ -1,4 +1,5 @@
 packages:
+  - packages/internal/*
   - packages/services/demo/*
   - packages/services/*
   - packages/migrations

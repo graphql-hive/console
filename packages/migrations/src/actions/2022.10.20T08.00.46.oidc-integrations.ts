@@ -2,7 +2,7 @@ import { type MigrationExecutor } from '../pg-migrator';
 
 export default {
   name: '2022.10.20T08.00.46.oidc-integrations.sql',
-  run: ({ sql }) => sql`
+  run: ({ psql }) => psql`
 CREATE TABLE IF NOT EXISTS
   "oidc_integrations" (
     "id" UUID PRIMARY KEY DEFAULT uuid_generate_v4 (),

@@ -1,6 +1,6 @@
 import { run } from 'graphile-worker';
-import { createPool } from 'slonik';
 import { Logger } from '@graphql-hive/logger';
+import { createPostgresDatabasePool } from '@hive/postgres';
 import { bridgeGraphileLogger, createHivePubSub } from '@hive/pubsub';
 import {
   createServer,
@@ -52,7 +52,9 @@ const crontab = `
   0 3 * * * purgeExpiredDedupeKeys
 `;
 
-const pg = await createPool(env.postgres.connectionString);
+const pg = await createPostgresDatabasePool({
+  connectionParameters: env.postgres.connectionString,
+});
 const logger = new Logger({ level: env.log.level });
 
 logger.info({ pid: process.pid }, 'starting workflow service');
@@ -142,7 +144,7 @@ const shutdownMetrics = env.prometheus
 const runner = await run({
   logger: bridgeGraphileLogger(logger),
   crontab,
-  pgPool: pg.pool,
+  pgPool: pg.getRawPgPool(),
   taskList: Object.fromEntries(modules.map(module => module.task(context))),
   noHandleSignals: true,
   events: createTaskEventEmitter(),

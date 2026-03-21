@@ -2,7 +2,7 @@ import { type MigrationExecutor } from '../pg-migrator';
 
 export default {
   name: '2022.03.28T10.31.26.github-integration.sql',
-  run: ({ sql }) => sql`
+  run: ({ psql }) => psql`
 --slack-integration (up)
 ALTER TABLE
   organizations

@@ -2,7 +2,7 @@ import { type MigrationExecutor } from '../pg-migrator';
 
 export default {
   name: '2026.02.07T00-00-00.saved-filters.ts',
-  run: ({ sql }) => sql`
+  run: ({ psql }) => psql`
 CREATE TYPE "saved_filter_visibility" AS ENUM ('private', 'shared');
 
 CREATE TABLE "saved_filters" (

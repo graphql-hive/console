@@ -1,11 +1,11 @@
-import { Inject, Injectable, Scope } from 'graphql-modules';
-import {
-  sql,
-  UniqueIntegrityConstraintViolationError,
-  type DatabasePool,
-  type PrimitiveValueExpression,
-} from 'slonik';
+import { Injectable, Scope } from 'graphql-modules';
 import { z } from 'zod';
+import {
+  PostgresDatabasePool,
+  psql,
+  UniqueIntegrityConstraintViolationError,
+  type PrimitiveValueExpression,
+} from '@hive/postgres';
 import {
   decodeCreatedAtAndUUIDIdBasedCursor,
   encodeCreatedAtAndUUIDIdBasedCursor,
@@ -17,7 +17,6 @@ import {
 } from '@hive/storage';
 import { isUUID } from '../../../shared/is-uuid';
 import { Logger } from '../../shared/providers/logger';
-import { PG_POOL_CONFIG } from '../../shared/providers/pg-pool';
 import { ArtifactStorageWriter } from './artifact-storage-writer';
 
 @Injectable({
@@ -28,7 +27,7 @@ export class Contracts {
   private logger: Logger;
   constructor(
     logger: Logger,
-    @Inject(PG_POOL_CONFIG) private pool: DatabasePool,
+    private pool: PostgresDatabasePool,
     private artifactStorageWriter: ArtifactStorageWriter,
   ) {
     this.logger = logger.child({ source: 'Contracts' });
@@ -63,7 +62,7 @@ export class Contracts {
 
     let result: unknown;
     try {
-      result = await this.pool.maybeOne<unknown>(sql`
+      result = await this.pool.maybeOne(psql`
         INSERT INTO "contracts" (
           "target_id"
           , "contract_name"
@@ -121,7 +120,7 @@ export class Contracts {
       return null;
     }
 
-    const record = await this.pool.maybeOne<unknown>(sql`
+    const record = await this.pool.maybeOne(psql`
       SELECT
         ${contractFields}
       FROM
@@ -148,7 +147,7 @@ export class Contracts {
       };
     }
 
-    const record = await this.pool.maybeOne<unknown>(sql`
+    const record = await this.pool.maybeOne(psql`
       UPDATE
         "contracts"
       SET
@@ -200,7 +199,7 @@ export class Contracts {
     targetId: string;
   }): Promise<null | Array<Contract>> {
     this.logger.debug('Load active contracts for target. (targetId=%s)', args.targetId);
-    const result = await this.pool.any<unknown>(sql`
+    const result = await this.pool.any(psql`
       SELECT
         ${contractFields}
       FROM
@@ -237,13 +236,13 @@ export class Contracts {
       args.contractIds.join(','),
     );
 
-    const result = await this.pool.any<unknown>(sql`
+    const result = await this.pool.any(psql`
       SELECT DISTINCT ON ("contract_id")
         ${contractVersionsFields}
       FROM
         "contract_versions"
       WHERE
-        "contract_id" = ANY(${sql.array(args.contractIds, 'uuid')})
+        "contract_id" = ANY(${psql.array(args.contractIds, 'uuid')})
         AND "schema_composition_errors" IS NULL
       ORDER BY
         "contract_id" ASC
@@ -307,17 +306,17 @@ export class Contracts {
       cursor = decodeCreatedAtAndUUIDIdBasedCursor(args.cursor);
     }
 
-    const result = await this.pool.any<unknown>(sql`
+    const result = await this.pool.any(psql`
       SELECT
         ${contractFields}
       FROM
         "contracts"
       WHERE
         "target_id" = ${args.targetId}
-        ${args.onlyActive ? sql`AND "is_disabled" = false` : sql``}
+        ${args.onlyActive ? psql`AND "is_disabled" = false` : psql``}
         ${
           cursor
-            ? sql`
+            ? psql`
                 AND (
                   (
                     c."created_at" = ${cursor.createdAt}
@@ -326,7 +325,7 @@ export class Contracts {
                   OR c."created_at" < ${cursor.createdAt}
                 )
               `
-            : sql``
+            : psql``
         }
       ORDER BY
         "target_id" ASC,
@@ -374,7 +373,7 @@ export class Contracts {
       args.schemaCheckId,
     );
 
-    const result = await this.pool.any<unknown>(sql`
+    const result = await this.pool.any(psql`
       SELECT
         "contract_checks"."id"
         , "contract_checks"."schema_check_id" as "schemaCheckId"
@@ -399,14 +398,14 @@ export class Contracts {
         "contract_checks"."schema_check_id" = ${args.schemaCheckId}
         ${
           args.onlyFailedWithBreakingChanges
-            ? sql`
+            ? psql`
                 AND (
                   "contract_checks"."is_success" = FALSE
                   AND "contract_checks"."schema_composition_errors" IS NULL
                   AND "contract_checks"."breaking_schema_changes" IS NOT NULL
 
               )`
-            : sql``
+            : psql``
         }
       ORDER BY
         "contract_checks"."schema_check_id" ASC
@@ -462,7 +461,7 @@ export class Contracts {
     > = [];
 
     for (const contractCheck of contractChecks) {
-      await this.pool.maybeOne(sql`
+      await this.pool.maybeOne(psql`
         UPDATE
           "contract_checks"
         SET
@@ -471,7 +470,7 @@ export class Contracts {
             SELECT json_agg(
               CASE
                 WHEN (COALESCE(jsonb_typeof("change"->'approvalMetadata'), 'null') = 'null' AND "change"->>'isSafeBasedOnUsage' = 'false')
-                  THEN jsonb_set("change", '{approvalMetadata}', ${sql.jsonb(
+                  THEN jsonb_set("change", '{approvalMetadata}', ${psql.jsonb(
                     args.approvalMetadata,
                   )})
                 ELSE "change"
@@ -516,14 +515,14 @@ export class Contracts {
         args.contextId,
       );
       // Try to approve and claim all the breaking schema changes for this context
-      await this.pool.query(sql`
+      await this.pool.query(psql`
         INSERT INTO "contract_schema_change_approvals" (
           "contract_id"
           , "context_id"
           , "schema_change_id"
           , "schema_change"
         )
-        SELECT * FROM ${sql.unnest(breakingChangeApprovalInserts, [
+        SELECT * FROM ${psql.unnest(breakingChangeApprovalInserts, [
           'uuid',
           'text',
           'text',
@@ -540,14 +539,14 @@ export class Contracts {
     contractIds: Array<string>;
     contextId: string;
   }) {
-    const records = await this.pool.any<unknown>(sql`
+    const records = await this.pool.any(psql`
       SELECT
         "contract_id" as "contractId",
         "schema_change" as "schemaChange"
       FROM
         "contract_schema_change_approvals"
       WHERE
-        "contract_id" = ANY(${sql.array(args.contractIds, 'uuid')})
+        "contract_id" = ANY(${psql.array(args.contractIds, 'uuid')})
         AND "context_id" = ${args.contextId}
     `);
 
@@ -611,7 +610,7 @@ export class Contracts {
       args.contractVersionId,
     );
 
-    const result = await this.pool.maybeOne<unknown>(sql`
+    const result = await this.pool.maybeOne(psql`
       SELECT
         ${contractVersionsFields}
       FROM
@@ -633,7 +632,7 @@ export class Contracts {
   public async getPreviousContractVersionForContractVersion(args: {
     contractVersion: ContractVersion;
   }) {
-    const result = await this.pool.maybeOne<unknown>(sql`
+    const result = await this.pool.maybeOne(psql`
       SELECT
         ${contractVersionsFields}
       FROM
@@ -663,7 +662,7 @@ export class Contracts {
   public async getDiffableContractVersionForContractVersion(args: {
     contractVersion: ContractVersion;
   }) {
-    const result = await this.pool.maybeOne<unknown>(sql`
+    const result = await this.pool.maybeOne(psql`
       SELECT
         ${contractVersionsFields}
       FROM
@@ -697,7 +696,7 @@ export class Contracts {
       args.schemaVersionId,
     );
 
-    const result = await this.pool.any<unknown>(sql`
+    const result = await this.pool.any(psql`
       SELECT
         ${contractVersionsFields}
       FROM
@@ -749,7 +748,7 @@ export class Contracts {
   }
 
   public async getBreakingChangesForContractVersion(args: { contractVersionId: string }) {
-    const changes = await this.pool.query<unknown>(sql`
+    const changes = await this.pool.any(psql`
       SELECT
         "change_type" as "type",
         "meta",
@@ -761,15 +760,15 @@ export class Contracts {
         AND "severity_level" = 'BREAKING'
     `);
 
-    if (changes.rows.length === 0) {
+    if (changes.length === 0) {
       return null;
     }
 
-    return changes.rows.map(row => HiveSchemaChangeModel.parse(row));
+    return changes.map(row => HiveSchemaChangeModel.parse(row));
   }
 
   public async getSafeChangesForContractVersion(args: { contractVersionId: string }) {
-    const changes = await this.pool.query<unknown>(sql`
+    const changes = await this.pool.any(psql`
       SELECT
         "change_type" as "type",
         "meta",
@@ -781,15 +780,15 @@ export class Contracts {
         AND "severity_level" <> 'BREAKING'
     `);
 
-    if (changes.rows.length === 0) {
+    if (changes.length === 0) {
       return null;
     }
 
-    return changes.rows.map(row => HiveSchemaChangeModel.parse(row));
+    return changes.map(row => HiveSchemaChangeModel.parse(row));
   }
 
   public async getAllChangesForContractVersion(args: { contractVersionId: string }) {
-    const changes = await this.pool.query<unknown>(sql`
+    const changes = await this.pool.any(psql`
       SELECT
         "change_type" as "type",
         "meta",
@@ -800,11 +799,11 @@ export class Contracts {
         "contract_version_id" = ${args.contractVersionId}
     `);
 
-    if (changes.rows.length === 0) {
+    if (changes.length === 0) {
       return null;
     }
 
-    return changes.rows.map(row => HiveSchemaChangeModel.parse(row));
+    return changes.map(row => HiveSchemaChangeModel.parse(row));
   }
 }
 
@@ -813,10 +812,10 @@ function toNullableTextArray<T extends PrimitiveValueExpression>(value: T[] | nu
     return null;
   }
 
-  return sql.array(value, 'text');
+  return psql.array(value, 'text');
 }
 
-const contractFields = sql`
+const contractFields = psql`
   "id"
   , "target_id" as "targetId"
   , "contract_name" as "contractName"
@@ -888,7 +887,7 @@ function hasIntersection<T>(a: Set<T>, b: Set<T>): boolean {
   return false;
 }
 
-const contractVersionsFields = sql`
+const contractVersionsFields = psql`
   "id"
   , "schema_version_id" as "schemaVersionId"
   , "contract_id" as "contractId"

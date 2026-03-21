@@ -3,10 +3,10 @@ import { type MigrationExecutor } from '../pg-migrator';
 export default {
   name: '2023.10.26T12.44.36.schema-checks-filters-index.ts',
   noTransaction: true,
-  run: ({ sql }) => [
+  run: ({ psql }) => [
     {
       name: 'schema_checks_connection_pagination_with_changes',
-      query: sql`
+      query: psql`
         CREATE INDEX CONCURRENTLY "schema_checks_connection_pagination_with_changes" ON "schema_checks" (
           "target_id" ASC
           , "created_at" DESC
@@ -20,7 +20,7 @@ export default {
     },
     {
       name: 'schema_checks_connection_pagination_with_no_success',
-      query: sql`
+      query: psql`
         CREATE INDEX CONCURRENTLY "schema_checks_connection_pagination_with_no_success" ON "schema_checks" (
           "target_id" ASC
           , "created_at" DESC
@@ -33,7 +33,7 @@ export default {
     },
     {
       name: 'schema_checks_connection_pagination_with_no_success_and_changes',
-      query: sql`
+      query: psql`
         CREATE INDEX CONCURRENTLY "schema_checks_connection_pagination_with_no_success_and_changes" ON "schema_checks" (
           "target_id" ASC
           , "created_at" DESC

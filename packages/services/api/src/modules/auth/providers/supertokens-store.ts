@@ -1,8 +1,6 @@
-import { Inject } from 'graphql-modules';
-import { sql, type DatabasePool } from 'slonik';
 import z from 'zod';
+import { PostgresDatabasePool, psql } from '@hive/postgres';
 import { Logger } from '../../shared/providers/logger';
-import { PG_POOL_CONFIG } from '../../shared/providers/pg-pool';
 
 const SessionInfoModel = z.object({
   sessionHandle: z.string(),
@@ -54,7 +52,7 @@ const EmailPasswordResetTokenModel = z.object({
 export class SuperTokensStore {
   private logger: Logger;
   constructor(
-    @Inject(PG_POOL_CONFIG) private pool: DatabasePool,
+    private pool: PostgresDatabasePool,
     logger: Logger,
   ) {
     this.logger = logger.child({ module: 'SuperTokensStore' });
@@ -63,7 +61,7 @@ export class SuperTokensStore {
   async getSessionInfo(sessionHandle: string) {
     this.logger.debug('Lookup session. (sessionHandle=%s)', sessionHandle);
 
-    const query = sql`
+    const query = psql`
       SELECT
         "session_handle" AS "sessionHandle"
         , "user_id" AS "userId"
@@ -93,7 +91,7 @@ export class SuperTokensStore {
   async deleteSession(sessionHandle: string) {
     this.logger.debug('Delete session. (sessionHandle=%s)', sessionHandle);
 
-    const query = sql`
+    const query = psql`
       DELETE
       FROM "supertokens_session_info"
       WHERE
@@ -106,7 +104,7 @@ export class SuperTokensStore {
   }
 
   async findEmailPasswordUserByEmail(email: string) {
-    const query = sql`
+    const query = psql`
       SELECT
         "user_id" AS "userId"
         , "email" AS "email"
@@ -124,7 +122,7 @@ export class SuperTokensStore {
   }
 
   private async lookupEmailUserByUserId(userId: string) {
-    const query = sql`
+    const query = psql`
       SELECT
         "user_id" AS "userId"
         , "email" AS "email"
@@ -142,7 +140,7 @@ export class SuperTokensStore {
   }
 
   public async lookupEmailUserByEmail(email: string) {
-    const userToTenantQuery = sql`
+    const userToTenantQuery = psql`
       SELECT
         "user_id" AS "userId"
       FROM
@@ -161,7 +159,7 @@ export class SuperTokensStore {
       return null;
     }
 
-    const query = sql`
+    const query = psql`
       SELECT
         "user_id" AS "userId"
         , "email" AS "email"
@@ -179,7 +177,7 @@ export class SuperTokensStore {
   }
 
   private async lookupThirdPartyUserByUserId(userId: string) {
-    const query = sql`
+    const query = psql`
       SELECT
         "user_id" AS "userId"
         , "email" AS "email"
@@ -200,7 +198,7 @@ export class SuperTokensStore {
   async lookupUserByUserId(userId: string) {
     this.logger.debug('Lookup user. (userId=%s)', userId);
 
-    const query = sql`
+    const query = psql`
       SELECT
         "user_id" AS "userId"
         , "recipe_id" AS "recipeId"
@@ -237,7 +235,7 @@ export class SuperTokensStore {
     refreshTokenHash2: string,
     expiresAt: number,
   ) {
-    const query = sql`
+    const query = psql`
       INSERT INTO "supertokens_session_info" (
         "app_id"
         , "tenant_id"
@@ -278,7 +276,7 @@ export class SuperTokensStore {
     lastRefreshTokenHash2: string,
     newRefreshTokenHash2: string,
   ) {
-    const query = sql`
+    const query = psql`
       UPDATE
         "supertokens_session_info"
       SET
@@ -301,7 +299,7 @@ export class SuperTokensStore {
   }
 
   async findThirdPartyUser(args: { thirdPartyId: string; thirdPartyUserId: string }) {
-    const query = sql`
+    const query = psql`
       SELECT
         "user_id" AS "userId"
         , "email" AS "email"
@@ -327,7 +325,7 @@ export class SuperTokensStore {
   }
 
   async updateOIDCUserEmail(args: { userId: string; newEmail: string }) {
-    const query = sql`
+    const query = psql`
       UPDATE
         "supertokens_thirdparty_users"
       SET
@@ -354,7 +352,7 @@ export class SuperTokensStore {
     const userId = crypto.randomUUID();
     const now = Date.now();
 
-    const allRecipeUsersQuery = sql`
+    const allRecipeUsersQuery = psql`
       INSERT INTO "supertokens_all_auth_recipe_users" (
         "app_id"
         , "tenant_id"
@@ -376,7 +374,7 @@ export class SuperTokensStore {
       )
     `;
 
-    const oidcUserQuery = sql`
+    const oidcUserQuery = psql`
       INSERT INTO "supertokens_thirdparty_users" (
         "app_id"
         , "third_party_id"
@@ -400,7 +398,7 @@ export class SuperTokensStore {
         , "time_joined" AS "timeJoined"
     `;
 
-    const appIdToUserIdQuery = sql`
+    const appIdToUserIdQuery = psql`
       INSERT INTO "supertokens_app_id_to_user_id" (
         "app_id"
         , "user_id"
@@ -416,7 +414,7 @@ export class SuperTokensStore {
       )
     `;
 
-    const thirdpartyUserToTenant = sql`
+    const thirdpartyUserToTenant = psql`
       INSERT INTO "supertokens_thirdparty_user_to_tenant" (
         "app_id"
         , "tenant_id"
@@ -433,7 +431,7 @@ export class SuperTokensStore {
     `;
 
     return await this.pool
-      .transaction(async t => {
+      .transaction('createThirdPartyUser', async t => {
         await t.query(appIdToUserIdQuery);
         const result = await t.one(oidcUserQuery);
         await t.query(allRecipeUsersQuery);
@@ -454,7 +452,7 @@ export class SuperTokensStore {
   async createEmailPasswordUser(args: { email: string; passwordHash: string }) {
     const userId = crypto.randomUUID();
     const now = Date.now();
-    const allRecipeUsersQuery = sql`
+    const allRecipeUsersQuery = psql`
       INSERT INTO "supertokens_all_auth_recipe_users" (
         "app_id"
         , "tenant_id"
@@ -476,7 +474,7 @@ export class SuperTokensStore {
       )
     `;
 
-    const emailPasswordUserQuery = sql`
+    const emailPasswordUserQuery = psql`
       INSERT INTO "supertokens_emailpassword_users" (
         "app_id"
         , "user_id"
@@ -497,7 +495,7 @@ export class SuperTokensStore {
         , "time_joined" AS "timeJoined"
     `;
 
-    const appIdToUserIdQuery = sql`
+    const appIdToUserIdQuery = psql`
       INSERT INTO "supertokens_app_id_to_user_id" (
         "app_id"
         , "user_id"
@@ -513,7 +511,7 @@ export class SuperTokensStore {
       )
     `;
 
-    const userToTenantQuery = sql`
+    const userToTenantQuery = psql`
       INSERT INTO "supertokens_emailpassword_user_to_tenant" (
         "app_id"
         , "tenant_id"
@@ -528,7 +526,7 @@ export class SuperTokensStore {
     `;
 
     return await this.pool
-      .transaction(async t => {
+      .transaction('createEmailPasswordUser', async t => {
         await t.query(appIdToUserIdQuery);
         const result = await t.one(emailPasswordUserQuery);
         await t.query(allRecipeUsersQuery);
@@ -543,7 +541,7 @@ export class SuperTokensStore {
     token: string;
     expiresAt: number;
   }) {
-    const deletePendingRequestsQuery = sql`
+    const deletePendingRequestsQuery = psql`
       DELETE
       FROM "supertokens_emailpassword_pswd_reset_tokens"
       WHERE
@@ -551,7 +549,7 @@ export class SuperTokensStore {
         AND "user_id" =${args.user.userId}
     `;
 
-    const query = sql`
+    const query = psql`
       INSERT INTO "supertokens_emailpassword_pswd_reset_tokens" (
         "app_id"
         , "user_id"
@@ -572,14 +570,14 @@ export class SuperTokensStore {
         , "token_expiry" AS "tokenExpiry"
     `;
 
-    return await this.pool.transaction(async t => {
+    return await this.pool.transaction('createEmailPasswordResetToken', async t => {
       await t.query(deletePendingRequestsQuery);
       return await t.one(query).then(EmailPasswordResetTokenModel.parse);
     });
   }
 
   async updateEmailPasswordBasedOnResetToken(args: { token: string; newPasswordHash: string }) {
-    const emailPasswordResetTokenQuery = sql`
+    const emailPasswordResetTokenQuery = psql`
       DELETE
       FROM
         "supertokens_emailpassword_pswd_reset_tokens"
@@ -592,7 +590,7 @@ export class SuperTokensStore {
         , "token_expiry" AS "tokenExpiry"
     `;
 
-    const updatePasswordHash = (userId: string) => sql`
+    const updatePasswordHash = (userId: string) => psql`
       UPDATE "supertokens_emailpassword_users"
       SET
         "password_hash" = ${args.newPasswordHash}
@@ -606,7 +604,7 @@ export class SuperTokensStore {
         , "time_joined" AS "timeJoined"
     `;
 
-    return await this.pool.transaction(async t => {
+    return await this.pool.transaction('updateEmailPasswordBasedOnResetToken', async t => {
       const resetToken = await t
         .maybeOne(emailPasswordResetTokenQuery)
         .then(EmailPasswordResetTokenModel.parse);

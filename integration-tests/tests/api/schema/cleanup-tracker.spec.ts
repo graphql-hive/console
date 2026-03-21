@@ -1,8 +1,8 @@
 import 'reflect-metadata';
-import { sql, type CommonQueryMethods } from 'slonik';
 /* eslint-disable no-process-env */
 import { ProjectType } from 'testkit/gql/graphql';
 import { test } from 'vitest';
+import { psql, type CommonQueryMethods } from '@hive/postgres';
 import { initSeed } from '../../../testkit/seed';
 
 async function fetchCoordinates(db: CommonQueryMethods, target: { id: string }) {
@@ -10,7 +10,7 @@ async function fetchCoordinates(db: CommonQueryMethods, target: { id: string }) 
     coordinate: string;
     created_in_version_id: string;
     deprecated_in_version_id: string | null;
-  }>(sql`
+  }>(psql`
     SELECT coordinate, created_in_version_id, deprecated_in_version_id
     FROM schema_coordinate_status WHERE target_id = ${target.id}
   `);

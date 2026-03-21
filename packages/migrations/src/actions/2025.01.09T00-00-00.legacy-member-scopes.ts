@@ -24,8 +24,8 @@ const QUERY_RESULT = z.array(
 export default {
   name: '2025.01.09T00-00-00.legacy-member-scopes.ts',
   noTransaction: true,
-  async run({ sql, connection }) {
-    const queryResult = await connection.query(sql`
+  async run({ psql, connection }) {
+    const queryResult = await connection.query(psql`
       SELECT
         organization_id as "organizationId",
         sorted_scopes as "sortedScopes",
@@ -75,7 +75,7 @@ export default {
 
       const startedAt = Date.now();
 
-      await connection.query(sql`
+      await connection.query(psql`
         WITH new_role AS (
           INSERT INTO organization_member_roles (
             organization_id, name, description, scopes
@@ -84,13 +84,13 @@ export default {
             ${row.organizationId},
             'Auto Role ' || substring(uuid_generate_v4()::text FROM 1 FOR 8),
             'Auto generated role to assign to members without a role',
-            ${sql.array(row.sortedScopes, 'text')}
+            ${psql.array(row.sortedScopes, 'text')}
           )
           RETURNING id
         )
         UPDATE organization_member
         SET role_id = (SELECT id FROM new_role)
-        WHERE organization_id = ${row.organizationId} AND user_id = ANY(${sql.array(row.userIds, 'uuid')})
+        WHERE organization_id = ${row.organizationId} AND user_id = ANY(${psql.array(row.userIds, 'uuid')})
       `);
 
       console.log(`finished after ${Date.now() - startedAt}ms`);

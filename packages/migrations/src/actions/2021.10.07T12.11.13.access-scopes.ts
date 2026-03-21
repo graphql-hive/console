@@ -2,7 +2,7 @@ import { type MigrationExecutor } from '../pg-migrator';
 
 export default {
   name: '2021.10.07T12.11.13.access-scopes.sql',
-  run: ({ sql }) => sql`
+  run: ({ psql }) => psql`
 -- Adds scopes to tokens
 ALTER TABLE
   tokens

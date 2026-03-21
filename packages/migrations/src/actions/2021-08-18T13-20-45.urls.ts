@@ -2,7 +2,7 @@ import { type MigrationExecutor } from '../pg-migrator';
 
 export default {
   name: '2021-08-18T13-20-45.urls.sql',
-  run: ({ sql }) => sql`
+  run: ({ psql }) => psql`
 --urls (up)
 ALTER TABLE
   version_commit

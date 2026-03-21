@@ -2,7 +2,7 @@ import type { MigrationExecutor } from '../pg-migrator';
 
 export default {
   name: '2024.01.26T00.00.00.contracts.ts',
-  run: ({ sql }) => sql`
+  run: ({ psql }) => psql`
     ALTER TABLE "schema_versions"
       ADD COLUMN "tags" text[]
       , ADD COLUMN "has_contract_composition_errors" boolean

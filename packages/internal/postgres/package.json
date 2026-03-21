@@ -1,0 +1,13 @@
+{
+  "name": "@hive/postgres",
+  "type": "module",
+  "license": "MIT",
+  "private": true,
+  "exports": {
+    "./": "./src/index.ts"
+  },
+  "devDependencies": {
+    "@hive/service-common": "workspace:*",
+    "slonik": "30.4.4"
+  }
+}

@@ -2,7 +2,7 @@ import { type MigrationExecutor } from '../pg-migrator';
 
 export default {
   name: '2024.07.17T00-00-00.app-deployments.ts',
-  run: ({ sql }) => sql`
+  run: ({ psql }) => psql`
     CREATE TABLE IF NOT EXISTS "app_deployments" (
       "id" UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
       "target_id" UUID NOT NULL REFERENCES "targets" ("id") ON DELETE CASCADE,

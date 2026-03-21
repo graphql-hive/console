@@ -1,6 +1,6 @@
 import { Inject, Injectable, Scope } from 'graphql-modules';
-import { sql, type CommonQueryMethods, type DatabasePool } from 'slonik';
 import { z } from 'zod';
+import { PostgresDatabasePool, psql, type CommonQueryMethods } from '@hive/postgres';
 import {
   decodeCreatedAtAndUUIDIdBasedCursor,
   encodeCreatedAtAndUUIDIdBasedCursor,
@@ -27,7 +27,6 @@ import { OTEL_TRACING_ENABLED } from '../../operations/providers/traces';
 import { SCHEMA_PROPOSALS_ENABLED } from '../../proposals/providers/schema-proposals-enabled-token';
 import { IdTranslator } from '../../shared/providers/id-translator';
 import { Logger } from '../../shared/providers/logger';
-import { PG_POOL_CONFIG } from '../../shared/providers/pg-pool';
 import { Storage } from '../../shared/providers/storage';
 import * as OrganizationAccessKey from '../lib/organization-access-key';
 import * as OrganizationAccessTokensPermissions from '../lib/organization-access-token-permissions';
@@ -147,7 +146,7 @@ export class OrganizationAccessTokens {
   private findById: ReturnType<typeof findById>;
 
   constructor(
-    @Inject(PG_POOL_CONFIG) private pool: DatabasePool,
+    private pool: PostgresDatabasePool,
     private cache: OrganizationAccessTokensCache,
     private resourceAssignments: ResourceAssignments,
     private idTranslator: IdTranslator,
@@ -435,7 +434,7 @@ export class OrganizationAccessTokens {
           : OrganizationAccessKey.AccessTokenCategory.organization,
     );
 
-    const result = await this.pool.maybeOne<unknown>(sql`
+    const result = await this.pool.maybeOne(psql`
       INSERT INTO "organization_access_tokens" (
         "id"
         , "organization_id"
@@ -455,8 +454,8 @@ export class OrganizationAccessTokens {
         , ${args.userId ?? null}
         , ${args.title}
         , ${args.description}
-        , ${args.permissions !== null ? sql.array(args.permissions, 'text') : null}
-        , ${sql.jsonb(args.assignedResources)}
+        , ${args.permissions !== null ? psql.array(args.permissions, 'text') : null}
+        , ${psql.jsonb(args.assignedResources)}
         , ${accessKey.hash}
         , ${accessKey.firstCharacters}
       )
@@ -535,7 +534,7 @@ export class OrganizationAccessTokens {
       }
     }
 
-    await this.pool.query(sql`
+    await this.pool.query(psql`
       DELETE
       FROM
         "organization_access_tokens"
@@ -590,7 +589,7 @@ export class OrganizationAccessTokens {
       cursor = decodeCreatedAtAndUUIDIdBasedCursor(args.after);
     }
 
-    const result = await this.pool.any<unknown>(sql` /* OrganizationAccessTokens.getPaginated */
+    const result = await this.pool.any(psql` /* OrganizationAccessTokens.getPaginated */
       SELECT
         ${organizationAccessTokenFields}
       FROM
@@ -599,7 +598,7 @@ export class OrganizationAccessTokens {
         "organization_id" = ${organization.id}
         ${
           cursor
-            ? sql`
+            ? psql`
               AND (
                 (
                   "created_at" = ${cursor.createdAt}
@@ -608,15 +607,15 @@ export class OrganizationAccessTokens {
                 OR "created_at" < ${cursor.createdAt}
               )
             `
-            : sql``
+            : psql``
         }
         ${
           args.includeOnlyOrganizationScoped
-            ? sql`
+            ? psql`
                 AND "project_id" IS NULL
                 AND "user_id" IS NULL
               `
-            : sql``
+            : psql``
         }
       ORDER BY
         "organization_id" ASC
@@ -679,7 +678,7 @@ export class OrganizationAccessTokens {
       cursor = decodeCreatedAtAndUUIDIdBasedCursor(args.after);
     }
 
-    const result = await this.pool.any<unknown>(sql` /* OrganizationAccessTokens.getPaginated */
+    const result = await this.pool.any(psql` /* OrganizationAccessTokens.getPaginated */
       SELECT
         ${organizationAccessTokenFields}
       FROM
@@ -688,7 +687,7 @@ export class OrganizationAccessTokens {
         "project_id" = ${project.id}
         ${
           cursor
-            ? sql`
+            ? psql`
               AND (
                 (
                   "created_at" = ${cursor.createdAt}
@@ -697,7 +696,7 @@ export class OrganizationAccessTokens {
                 OR "created_at" < ${cursor.createdAt}
               )
             `
-            : sql``
+            : psql``
         }
       ORDER BY
         "project_id" ASC
@@ -755,7 +754,7 @@ export class OrganizationAccessTokens {
     }
 
     const result = await this.pool
-      .any<unknown>(sql` /* OrganizationAccessTokens.getPaginatedForMembership */
+      .any(psql` /* OrganizationAccessTokens.getPaginatedForMembership */
       SELECT
         ${organizationAccessTokenFields}
       FROM
@@ -764,7 +763,7 @@ export class OrganizationAccessTokens {
         "user_id" = ${member.userId}
         ${
           cursor
-            ? sql`
+            ? psql`
               AND (
                 (
                   "created_at" = ${cursor.createdAt}
@@ -773,7 +772,7 @@ export class OrganizationAccessTokens {
                 OR "created_at" < ${cursor.createdAt}
               )
             `
-            : sql``
+            : psql``
         }
       ORDER BY
         "user_id" ASC
@@ -1231,7 +1230,7 @@ export function findById(deps: { pool: CommonQueryMethods; logger: Logger }) {
       return null;
     }
 
-    const data = await deps.pool.maybeOne<unknown>(sql` /* OrganizationAccessTokens.findById */
+    const data = await deps.pool.maybeOne(psql` /* OrganizationAccessTokens.findById */
       SELECT
         ${organizationAccessTokenFields}
       FROM
@@ -1261,7 +1260,7 @@ export function findById(deps: { pool: CommonQueryMethods; logger: Logger }) {
   };
 }
 
-const organizationAccessTokenFields = sql`
+const organizationAccessTokenFields = psql`
   "id"
   , "organization_id" AS "organizationId"
   , "project_id" AS "projectId"

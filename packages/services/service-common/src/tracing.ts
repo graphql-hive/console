@@ -3,13 +3,13 @@ import {
   FetchInstrumentation,
   type FetchInstrumentationConfig,
 } from 'opentelemetry-instrumentation-fetch-node';
-import type { Interceptor, Query, QueryContext } from 'slonik';
 import zod from 'zod';
 import {
   HiveTracingSpanProcessor,
   HiveTracingSpanProcessorOptions,
   openTelemetrySetup,
 } from '@graphql-hive/plugin-opentelemetry/setup';
+import type { Interceptor, Query, QueryContext } from '@hive/postgres';
 import {
   Attributes,
   AttributeValue,

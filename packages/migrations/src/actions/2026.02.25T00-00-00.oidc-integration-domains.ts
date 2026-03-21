@@ -2,7 +2,7 @@ import { type MigrationExecutor } from '../pg-migrator';
 
 export default {
   name: '2026.02.25T00-00-00.oidc-integration-domains.ts',
-  run: ({ sql }) => sql`
+  run: ({ psql }) => psql`
     CREATE TABLE IF NOT EXISTS "oidc_integration_domains" (
       "id" uuid NOT NULL DEFAULT uuid_generate_v4()
       , "organization_id" uuid NOT NULL REFERENCES "organizations"("id") ON DELETE CASCADE

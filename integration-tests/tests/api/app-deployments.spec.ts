@@ -1,11 +1,12 @@
 import { buildASTSchema, parse } from 'graphql';
 import { createLogger } from 'graphql-yoga';
-import { sql } from 'slonik';
 import { pollFor } from 'testkit/flow';
 import { initSeed } from 'testkit/seed';
 import { getServiceHost } from 'testkit/utils';
+import z from 'zod';
 import { createHive } from '@graphql-hive/core';
-import { clickHouseInsert, clickHouseQuery } from '../../testkit/clickhouse';
+import { psql } from '@hive/postgres';
+import { clickHouseInsert } from '../../testkit/clickhouse';
 import { graphql } from '../../testkit/gql';
 import { execute } from '../../testkit/graphql';
 
@@ -2056,12 +2057,20 @@ test('activeAppDeployments works for > 1000 records with a date filter (neverUse
   );
 
   // insert into postgres
-  const result = await conn.pool.query(sql`
+  const result = await conn.pool
+    .any(
+      psql`
     INSERT INTO app_deployments ("target_id", "name", "version", "activated_at")
-    SELECT * FROM ${sql.unnest(appDeploymentRows, ['uuid', 'text', 'text', 'timestamptz'])}
+    SELECT * FROM ${psql.unnest(appDeploymentRows, ['uuid', 'text', 'text', 'timestamptz'])}
     RETURNING "id", "target_id", "name", "version"
-  `);
-  expect(result.rowCount).toBe(1200);
+  `,
+    )
+    .then(
+      z.array(
+        z.object({ id: z.string(), target_id: z.string(), name: z.string(), version: z.string() }),
+      ).parse,
+    );
+  expect(result.length).toBe(1200);
 
   // insert into clickhouse and activate
   const query = `INSERT INTO app_deployments (
@@ -2071,7 +2080,7 @@ test('activeAppDeployments works for > 1000 records with a date filter (neverUse
     ,"app_version"
     ,"is_active"
   ) VALUES
-${result.rows
+${result
   .map(
     r => `(
     '${r['target_id']}'

@@ -2,7 +2,7 @@ import { type MigrationExecutor } from '../pg-migrator';
 
 export default {
   name: '2021-04-30T07-01-57.token-per-target.sql',
-  run: ({ sql }) => sql`
+  run: ({ psql }) => psql`
 --token-per-target (up)
 ALTER TABLE
   tokens

@@ -1,6 +1,6 @@
 import zod from 'zod';
+import { PostgresConnectionParamaters } from '@hive/postgres';
 import { OpenTelemetryConfigurationModel } from '@hive/service-common';
-import { createConnectionString } from '@hive/storage';
 import { RequestBroker } from './lib/webhooks/send-webhook.js';
 
 const isNumberString = (input: unknown) => zod.string().regex(/^\d+$/).safeParse(input).success;
@@ -231,14 +231,14 @@ export const env = {
         }
       : null,
   postgres: {
-    connectionString: createConnectionString({
+    connectionString: {
       ssl: postgres.POSTGRES_SSL === '1',
       host: postgres.POSTGRES_HOST,
       db: postgres.POSTGRES_DB,
       password: postgres.POSTGRES_PASSWORD,
       port: postgres.POSTGRES_PORT,
       user: postgres.POSTGRES_USER,
-    }),
+    } satisfies PostgresConnectionParamaters,
   },
   requestBroker:
     requestBroker.REQUEST_BROKER === '1'
