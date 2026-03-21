@@ -112,11 +112,18 @@ export class OrganizationAccessTokensCache {
     id: string,
     /** Request scoped logger so we associate the request-id with any logs occuring during the SQL lookup. */
     logger: Logger,
+    opts: {
+      /** Whether or not to return records that have expired.  */
+      includeExpired?: boolean;
+    },
   ) {
     return this.cache.getOrSet({
       key: id,
       factory: async () => {
-        const record = await findById({ logger, pool: this.pool })(id);
+        const record = await findById({ logger, pool: this.pool })(id, {
+          // @todo figure out caching and expiration interaction
+          includeExpired: opts.includeExpired || undefined,
+        });
         if (!record) {
           return null;
         }

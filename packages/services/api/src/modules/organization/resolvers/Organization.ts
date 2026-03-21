@@ -226,7 +226,9 @@ export const Organization: Pick<
     });
   },
   accessToken: async (organization, args, { injector }) => {
-    return injector.get(OrganizationAccessTokens).getForOrganization(organization, args.id, true);
+    return injector.get(OrganizationAccessTokens).getForOrganization(organization, args.id, {
+      includeExpired: true,
+    });
   },
   viewerCanManagePersonalAccessTokens: async (organization, _arg, { session }) => {
     return session.canPerformAction({
@@ -238,7 +240,9 @@ export const Organization: Pick<
     });
   },
   accessTokenById: async (organization, args, { injector }) => {
-    return injector.get(OrganizationAccessTokens).getForOrganization(organization, args.id);
+    return injector.get(OrganizationAccessTokens).getForOrganization(organization, args.id, {
+      includeExpired: true,
+    });
   },
   async allAccessTokens(organization, args, { injector }) {
     return injector.get(OrganizationAccessTokens).getPaginatedForOrganization(organization, {

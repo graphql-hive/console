@@ -183,5 +183,6 @@ export const runPGMigrations = async (args: { slonik: DatabasePool; runTo?: stri
       await import('./actions/2026.02.19T00-00-00.saved-filter-permission'),
       await import('./actions/2026.02.24T00-00-00.proposal-composition'),
       await import('./actions/2026.02.25T00-00-00.oidc-integration-domains'),
+      await import('./actions/2026.03.25T00-00-00.access-token-expiration'),
     ],
   });

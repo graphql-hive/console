@@ -7,6 +7,7 @@ import * as Table from '@/components/ui/table';
 import { TimeAgo } from '@/components/v2';
 import { graphql, useFragment, type FragmentType } from '@/gql';
 import { DeleteAccessTokenConfirmationDialogue } from '../access-tokens/delete-access-token-confirmation-dialogue';
+import { timeLater } from '../access-tokens/shared-helpers';
 import { PersonalAccessTokenDetailViewSheet } from './personal-access-token-detail-view-sheet';
 
 const privateKeyFiller = new Array(20).fill('•').join('');
@@ -20,6 +21,7 @@ const PersonalAccessTokensTable_PersonalAccessTokenConnectionFragment = graphql(
         title
         firstCharacters
         createdAt
+        expiresAt
       }
     }
     pageInfo {
@@ -108,7 +110,8 @@ export function PersonalAccessTokensTable(props: AccessTokensTable) {
         <Table.TableRow>
           <Table.TableHead>Title</Table.TableHead>
           <Table.TableHead className="w-[100px]">Private Key</Table.TableHead>
-          <Table.TableHead className="text-right">Created At</Table.TableHead>
+          <Table.TableHead className="text-center">Created At</Table.TableHead>
+          <Table.TableHead className="text-center">Expiration</Table.TableHead>
           <Table.TableHead className="text-right" />
         </Table.TableRow>
       </Table.TableHeader>
@@ -119,8 +122,15 @@ export function PersonalAccessTokensTable(props: AccessTokensTable) {
             <Table.TableCell className="font-mono">
               {edge.node.firstCharacters + privateKeyFiller}
             </Table.TableCell>
-            <Table.TableCell className="text-right">
+            <Table.TableCell className="text-center">
               created <TimeAgo date={edge.node.createdAt} />
+            </Table.TableCell>
+            <Table.TableCell className="text-center">
+              {edge.node.expiresAt ? (
+                <>{timeLater(new Date(edge.node.expiresAt), 'expires', 'expired')}</>
+              ) : (
+                'never'
+              )}
             </Table.TableCell>
             <Table.TableCell className="text-right align-middle">
               <DropDownMenu.DropdownMenu>

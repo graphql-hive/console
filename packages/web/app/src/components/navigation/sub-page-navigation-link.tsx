@@ -22,7 +22,7 @@ export function SubPageNavigationLink({
         isActive
           ? 'text-neutral-12 bg-neutral-5 hover:bg-neutral-5 dark:bg-neutral-3 dark:hover:bg-neutral-3'
           : 'text-neutral-11 hover:bg-transparent hover:underline',
-        'justify-start',
+        'h-auto justify-start text-left',
       )}
       onClick={onClick}
     >
