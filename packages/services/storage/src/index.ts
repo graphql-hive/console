@@ -1833,7 +1833,7 @@ export async function createStorage(
               AND project_id = ${project}
             RETURNING
               ${targetSettingsFields(sql``)}
-              , targets
+              , null as targets
           `,
         )
         .then(TargetSettingsModel.parse)
@@ -2003,7 +2003,7 @@ export async function createStorage(
               sl.created_at DESC
           `,
         )
-        .then(SchemaPushModel.nullable().parse);
+        .then(SchemaPushLogModel.nullable().parse);
     },
     async getSchemasOfVersion({ versionId: version, includeMetadata: _includeMetadata = false }) {
       return pool
@@ -2023,7 +2023,7 @@ export async function createStorage(
               sl.created_at DESC
           `,
         )
-        .then(z.array(SchemaPushModel).parse);
+        .then(z.array(SchemaPushLogModel).parse);
     },
     async getServiceSchemaOfVersion(args) {
       return pool
@@ -2042,7 +2042,7 @@ export async function createStorage(
               AND lower(sl.service_name) = lower(${args.serviceName})
         `,
         )
-        .then(SchemaPushModel.nullable().parse);
+        .then(SchemaPushLogModel.nullable().parse);
     },
 
     async getMatchingServiceSchemaOfVersions(versions) {
@@ -2290,11 +2290,13 @@ export async function createStorage(
         return {
           kind: 'composite',
           id: deleteActionResult.id,
-          versionId: deleteActionResult.id,
           date: deleteActionResult.createdAt as any,
           service_name: deleteActionResult.serviceName,
           target: deleteActionResult.targetId,
           action: 'DELETE',
+          versionId: newVersion.id,
+        } satisfies CompositeDeletedSchemaLog & {
+          versionId: string;
         };
       });
     },
@@ -2446,7 +2448,7 @@ export async function createStorage(
             )}))
         `,
       );
-      const schemas = z.array(SchemaModel).parse(rows);
+      const schemas = z.array(SchemaLogModel).parse(rows);
 
       return selectors.map(selector => {
         const schema = schemas.find(
@@ -5484,20 +5486,20 @@ const oidcIntegrationFields = (prefix: TaggedTemplateLiteralInvocation = sql``) 
   , ${prefix}"require_invitation" AS "requireInvitation"
 `;
 
-/** Base shape for schema_log DB rows (with SQL aliases from schemaLogFields + p.type) */
-
 const SchemaLogBase = z.object({
   id: z.string(),
+  date: z.number(),
+  target: z.string().uuid(),
+});
+
+const SchemaPushLogBase = SchemaLogBase.extend({
   author: z.string(),
   commit: z.string(),
   sdl: z.string(),
-  date: z.number(),
-  target: z.string().uuid(),
   metadata: z.string().nullish().default(null),
 });
 
-/** Single-project schema (always PUSH) */
-const SinglePushSchemaModel = SchemaLogBase.extend({
+const SinglePushSchemaLogModel = SchemaPushLogBase.extend({
   action: z.literal('PUSH'),
   service_name: z.null(),
   service_url: z.null(),
@@ -5506,8 +5508,9 @@ const SinglePushSchemaModel = SchemaLogBase.extend({
   kind: 'single' as const,
 }));
 
-/** Composite-project PUSH schema */
-const CompositePushSchemaModel = SchemaLogBase.extend({
+export type SinglePushSchemaLog = z.TypeOf<typeof SinglePushSchemaLogModel>;
+
+const CompositePushSchemaLogModel = SchemaPushLogBase.extend({
   action: z.literal('PUSH'),
   service_name: z.string(),
   service_url: z.string(),
@@ -5516,8 +5519,9 @@ const CompositePushSchemaModel = SchemaLogBase.extend({
   kind: 'composite' as const,
 }));
 
-/** Composite-project DELETE schema */
-const CompositeDeletedSchemaModel = SchemaLogBase.extend({
+export type CompositePushSchemaLog = z.TypeOf<typeof CompositePushSchemaLogModel>;
+
+const CompositeDeletedSchemaLogModel = SchemaLogBase.extend({
   action: z.literal('DELETE'),
   service_name: z.string(),
 }).transform(value => ({
@@ -5525,9 +5529,10 @@ const CompositeDeletedSchemaModel = SchemaLogBase.extend({
   kind: 'composite' as const,
 }));
 
-/** Parses a DB row into a Schema (always PUSH — single or composite) */
-const SchemaPushModel = z.union([SinglePushSchemaModel, CompositePushSchemaModel]);
-const SchemaModel = z.union([SchemaPushModel, CompositeDeletedSchemaModel]);
+export type CompositeDeletedSchemaLog = z.TypeOf<typeof CompositeDeletedSchemaLogModel>;
+
+const SchemaPushLogModel = z.union([SinglePushSchemaLogModel, CompositePushSchemaLogModel]);
+const SchemaLogModel = z.union([SchemaPushLogModel, CompositeDeletedSchemaLogModel]);
 
 const OrganizationModel = z
   .object({

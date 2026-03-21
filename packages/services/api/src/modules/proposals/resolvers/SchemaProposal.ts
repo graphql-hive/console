@@ -43,15 +43,16 @@ export const SchemaProposal: SchemaProposalResolvers = {
               (!node.serviceName && s.kind === 'single') ||
               (s.kind === 'composite' && s.service_name === node.serviceName),
           );
+
           return {
-            kind: schema?.kind ?? 'composite',
+            kind: 'composite',
             action: 'PUSH', // no idea why this is required for `__isTypeOf` in CompositeSchema.
             sdl: node.schemaSDL ?? '', // @todo patch schema changes onto latest
             id: node.id,
             service_name: node.serviceName ?? '',
             target: node.targetId ?? schema?.target,
             service_url:
-              node.serviceUrl ?? (schema?.kind === 'composite' ? schema.service_url : null) ?? null,
+              node.serviceUrl ?? (schema?.kind === 'composite' ? schema.service_url : '') ?? '',
             author: node.meta?.author ?? '',
             date: new Date(node.createdAt).getTime(),
             commit: node.meta?.commit ?? node.id,
