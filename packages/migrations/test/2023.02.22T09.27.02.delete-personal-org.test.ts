@@ -30,7 +30,6 @@ await describe('drop-personal-org', async () => {
             psql`INSERT INTO organizations (clean_id, name, user_id, type) VALUES ('regular-empty', 'regular-empty', ${user.id}, 'REGULAR') RETURNING *;`,
           )
           .then(z.object({ id: z.string() }).parse),
-        ,
       ]);
       const orgsWithProjects = await Promise.all([
         await db

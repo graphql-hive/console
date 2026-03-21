@@ -1,4 +1,4 @@
-import { Inject, Injectable, Scope } from 'graphql-modules';
+import { Injectable, Scope } from 'graphql-modules';
 import * as zod from 'zod';
 import { PostgresDatabasePool, psql } from '@hive/postgres';
 import {

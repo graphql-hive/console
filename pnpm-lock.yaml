@@ -428,13 +428,17 @@ importers:
         version: 1.2.0
 
   packages/internal/postgres:
+    dependencies:
+      slonik:
+        specifier: 30.4.4
+        version: 30.4.4(patch_hash=195b140c0181c27a85a6026c0058087a419e38f6c5d89f5f2c608e39f5bf23e9)
+      slonik-interceptor-query-logging:
+        specifier: 46.4.0
+        version: 46.4.0(slonik@30.4.4(patch_hash=195b140c0181c27a85a6026c0058087a419e38f6c5d89f5f2c608e39f5bf23e9))
     devDependencies:
       '@hive/service-common':
         specifier: workspace:*
         version: link:../../services/service-common
-      slonik:
-        specifier: 30.4.4
-        version: 30.4.4(patch_hash=195b140c0181c27a85a6026c0058087a419e38f6c5d89f5f2c608e39f5bf23e9)
 
   packages/libraries/apollo:
     dependencies:
@@ -1785,15 +1789,9 @@ importers:
       pg-promise:
         specifier: 11.10.2
         version: 11.10.2(pg-query-stream@4.7.0(pg@8.13.1))
-      slonik:
-        specifier: 30.4.4
-        version: 30.4.4(patch_hash=195b140c0181c27a85a6026c0058087a419e38f6c5d89f5f2c608e39f5bf23e9)
-      slonik-interceptor-query-logging:
-        specifier: 46.4.0
-        version: 46.4.0(slonik@30.4.4(patch_hash=195b140c0181c27a85a6026c0058087a419e38f6c5d89f5f2c608e39f5bf23e9))
       slonik-utilities:
         specifier: 1.9.4
-        version: 1.9.4(slonik@30.4.4(patch_hash=195b140c0181c27a85a6026c0058087a419e38f6c5d89f5f2c608e39f5bf23e9))
+        version: 1.9.4
       tslib:
         specifier: 2.8.1
         version: 2.8.1
@@ -41536,7 +41534,7 @@ snapshots:
       serialize-error: 8.1.0
       slonik: 30.4.4(patch_hash=195b140c0181c27a85a6026c0058087a419e38f6c5d89f5f2c608e39f5bf23e9)
 
-  slonik-utilities@1.9.4(slonik@30.4.4(patch_hash=195b140c0181c27a85a6026c0058087a419e38f6c5d89f5f2c608e39f5bf23e9)):
+  slonik-utilities@1.9.4:
     dependencies:
       core-js: 3.25.5
       delay: 4.4.1
@@ -41544,7 +41542,6 @@ snapshots:
       lodash: 4.17.23
       roarr: 7.14.3
       serialize-error: 5.0.0
-      slonik: 30.4.4(patch_hash=195b140c0181c27a85a6026c0058087a419e38f6c5d89f5f2c608e39f5bf23e9)
 
   slonik@30.4.4(patch_hash=195b140c0181c27a85a6026c0058087a419e38f6c5d89f5f2c608e39f5bf23e9):
     dependencies:

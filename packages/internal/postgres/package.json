@@ -6,8 +6,11 @@
   "exports": {
     "./": "./src/index.ts"
   },
+  "dependencies": {
+    "slonik": "30.4.4",
+    "slonik-interceptor-query-logging": "46.4.0"
+  },
   "devDependencies": {
-    "@hive/service-common": "workspace:*",
-    "slonik": "30.4.4"
+    "@hive/service-common": "workspace:*"
   }
 }

@@ -17,8 +17,8 @@
   },
   "devDependencies": {
     "@graphql-inspector/core": "7.1.2",
-    "@hive/service-common": "workspace:*",
     "@hive/postgres": "workspace:*",
+    "@hive/service-common": "workspace:*",
     "@sentry/node": "7.120.2",
     "@sentry/types": "7.120.2",
     "@tgriesser/schemats": "9.0.1",
@@ -29,8 +29,6 @@
     "got": "14.4.7",
     "graphql": "^0.13.0 || ^14.0.0 || ^15.0.0 || ^16.0.0",
     "pg-promise": "11.10.2",
-    "slonik": "30.4.4",
-    "slonik-interceptor-query-logging": "46.4.0",
     "slonik-utilities": "1.9.4",
     "tslib": "2.8.1",
     "typescript": "5.7.3",
