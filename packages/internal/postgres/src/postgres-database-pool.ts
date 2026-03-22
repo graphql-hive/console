@@ -1,11 +1,11 @@
 import {
   createPool,
-  DatabasePool,
-  Interceptor,
-  QueryResultRow,
-  QueryResultRowColumn,
-  CommonQueryMethods as SlonikCommonQueryMethods,
+  type DatabasePool,
+  type Interceptor,
   type PrimitiveValueExpression,
+  type QueryResultRow,
+  type QueryResultRowColumn,
+  type CommonQueryMethods as SlonikCommonQueryMethods,
   type TaggedTemplateLiteralInvocation,
 } from 'slonik';
 import { createQueryLoggingInterceptor } from 'slonik-interceptor-query-logging';

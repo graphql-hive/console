@@ -8,8 +8,7 @@
   },
   "main": "./src/index.ts",
   "exports": {
-    ".": "./src/index.ts",
-    "./db/pool": "./src/db/pool.ts"
+    ".": "./src/index.ts"
   },
   "scripts": {
     "build": "tsx ../../../scripts/runify.ts",

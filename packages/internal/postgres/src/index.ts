@@ -1,7 +1,7 @@
 export {
   PostgresDatabasePool,
   createPostgresDatabasePool,
-  CommonQueryMethods,
+  type CommonQueryMethods,
 } from './postgres-database-pool';
 export { type PostgresConnectionParamaters, createConnectionString } from './connection-string';
 export { psql } from './psql';

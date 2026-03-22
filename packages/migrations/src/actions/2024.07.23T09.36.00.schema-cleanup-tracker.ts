@@ -10,14 +10,14 @@ import {
   isScalarType,
   isUnionType,
 } from 'graphql';
-import { ppsql, type CommonQueryMethods } from '@hive/postgres';
+import { psql, type CommonQueryMethods } from '@hive/postgres';
 import { env } from '../environment';
 import type { MigrationExecutor } from '../pg-migrator';
 
 export default {
   name: '2024.07.23T09.36.00.schema-cleanup-tracker.ts',
   async run({ connection }) {
-    await connection.query(ppsql`
+    await connection.query(psql`
       CREATE TABLE IF NOT EXISTS "schema_coordinate_status" (
         coordinate text NOT NULL,
         created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
@@ -48,7 +48,7 @@ export default {
       return;
     }
 
-    const schemaVersionsTotal = await connection.oneFirst<number>(ppsql`
+    const schemaVersionsTotal = await connection.oneFirst<number>(psql`
       SELECT count(*) as total FROM schema_versions
     `);
     console.log(`Found ${schemaVersionsTotal} schema versions`);
@@ -93,7 +93,7 @@ function diffSchemaCoordinates(
 
 export async function schemaCoordinateStatusMigration(connection: CommonQueryMethods) {
   // Fetch targets
-  const targetResult = await connection.query<{ id: string }>(ppsql`
+  const targetResult = await connection.query<{ id: string }>(psql`
     SELECT id FROM targets WHERE ID NOT IN (SELECT target_id FROM schema_coordinate_status)
   `);
 
@@ -110,7 +110,7 @@ export async function schemaCoordinateStatusMigration(connection: CommonQueryMet
         is_composable: boolean;
         sdl?: string;
         previous_schema_version_id?: string;
-      }>(ppsql`
+      }>(psql`
       SELECT
         id,
         created_at,
@@ -270,10 +270,10 @@ async function insertRemainingCoordinates(
   console.log(
     `Adding remaining ${targetCoordinates.coordinates.size} coordinates for target ${targetId}`,
   );
-  await connection.query(ppsql`
+  await connection.query(psql`
       INSERT INTO schema_coordinate_status
       ( target_id, coordinate, created_at, created_in_version_id )
-      SELECT * FROM ${ppsql.unnest(
+      SELECT * FROM ${psql.unnest(
         Array.from(targetCoordinates.coordinates).map(coordinate => [
           targetId,
           coordinate,
@@ -290,10 +290,10 @@ async function insertRemainingCoordinates(
     console.log(
       `Deprecating remaining ${remainingDeprecated.size} coordinates for target ${targetId}`,
     );
-    await connection.query(ppsql`
+    await connection.query(psql`
       INSERT INTO schema_coordinate_status
       ( target_id, coordinate, created_at, created_in_version_id, deprecated_at, deprecated_in_version_id )
-      SELECT * FROM ${ppsql.unnest(
+      SELECT * FROM ${psql.unnest(
         Array.from(remainingDeprecated).map(coordinate => [
           targetId,
           coordinate,
@@ -349,7 +349,7 @@ async function processVersion(
     previous_schema_version_id?: string;
     created_at: number;
     is_composable: boolean;
-  }>(ppsql`
+  }>(psql`
     SELECT
       id,
       composite_schema_sdl as sdl,
@@ -440,10 +440,10 @@ async function processVersion(
 
   if (added.length) {
     console.log(`Adding ${added.length} coordinates for target ${targetId}`);
-    await connection.query(ppsql`
+    await connection.query(psql`
       INSERT INTO schema_coordinate_status
       ( target_id, coordinate, created_at, created_in_version_id )
-      SELECT * FROM ${ppsql.unnest(
+      SELECT * FROM ${psql.unnest(
         added.map(coordinate => [targetId, coordinate, datePG, after.versionId]),
         ['uuid', 'text', 'date', 'uuid'],
       )}
@@ -456,10 +456,10 @@ async function processVersion(
   if (deprecated.length) {
     console.log(`deprecating ${deprecated.length} coordinates for target ${targetId}`);
 
-    await connection.query(ppsql`
+    await connection.query(psql`
       INSERT INTO schema_coordinate_status
       ( target_id, coordinate, created_at, created_in_version_id, deprecated_at, deprecated_in_version_id )
-      SELECT * FROM ${ppsql.unnest(
+      SELECT * FROM ${psql.unnest(
         deprecated.map(coordinate => [
           targetId,
           coordinate,

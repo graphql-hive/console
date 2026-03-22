@@ -1858,12 +1858,12 @@ importers:
       '@hive/api':
         specifier: workspace:*
         version: link:../api
+      '@hive/postgres':
+        specifier: workspace:*
+        version: link:../../internal/postgres
       '@hive/service-common':
         specifier: workspace:*
         version: link:../service-common
-      '@hive/storage':
-        specifier: workspace:*
-        version: link:../storage
       '@hive/tokens':
         specifier: workspace:*
         version: link:../tokens
