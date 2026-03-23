@@ -4,11 +4,8 @@ import {
   type FetchInstrumentationConfig,
 } from 'opentelemetry-instrumentation-fetch-node';
 import zod from 'zod';
-import {
-  HiveTracingSpanProcessor,
-  HiveTracingSpanProcessorOptions,
-  openTelemetrySetup,
-} from '@graphql-hive/plugin-opentelemetry/setup';
+import { type HiveTracingSpanProcessorOptions } from '@graphql-hive/plugin-opentelemetry/setup';
+import * as hiveOtel from '@graphql-hive/plugin-opentelemetry/setup';
 import type { Interceptor, Query, QueryContext } from '@hive/postgres';
 import {
   Attributes,
@@ -40,6 +37,8 @@ import {
   SEMATTRS_HTTP_USER_AGENT,
 } from '@opentelemetry/semantic-conventions';
 import openTelemetryPlugin, { OpenTelemetryPluginOptions } from './fastify-tracing';
+
+const { HiveTracingSpanProcessor, openTelemetrySetup } = hiveOtel;
 
 export { trace, context, Span, SpanKind, SamplingDecision, SpanStatusCode };
 
