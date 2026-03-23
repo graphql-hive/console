@@ -5473,8 +5473,9 @@ const SchemaPushLogBase = SchemaLogBase.extend({
 
 const SinglePushSchemaLogModel = SchemaPushLogBase.extend({
   action: z.literal('PUSH'),
-  service_name: z.null(),
-  service_url: z.null(),
+  type: z.literal('SINGLE'),
+  service_name: z.string().nullable(),
+  service_url: z.string().nullable(),
 }).transform(value => ({
   ...value,
   kind: 'single' as const,
@@ -5482,8 +5483,11 @@ const SinglePushSchemaLogModel = SchemaPushLogBase.extend({
 
 export type SinglePushSchemaLog = z.TypeOf<typeof SinglePushSchemaLogModel>;
 
+const CompositeSchemaTypeModel = z.union([z.literal('FEDERATION'), z.literal('STITCHING')]);
+
 const CompositePushSchemaLogModel = SchemaPushLogBase.extend({
   action: z.literal('PUSH'),
+  type: CompositeSchemaTypeModel,
   service_name: z.string(),
   service_url: z.string(),
 }).transform(value => ({
