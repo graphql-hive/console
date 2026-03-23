@@ -93,9 +93,9 @@ async function createDbConnection() {
   };
 }
 
-export function initSeed() {
-  let sharedDBPoolPromise: ReturnType<typeof createDbConnection>;
+let sharedDBPoolPromise: ReturnType<typeof createDbConnection>;
 
+export function initSeed() {
   function getPool() {
     if (!sharedDBPoolPromise) {
       sharedDBPoolPromise = createDbConnection();
