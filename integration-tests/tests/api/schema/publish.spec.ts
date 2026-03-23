@@ -3974,7 +3974,7 @@ test.concurrent(
       // We need to seed a legacy entry in the database
 
       const conn = connectionString();
-      pool = await createPostgresDatabasePool(conn);
+      pool = await createPostgresDatabasePool({ connectionParameters: conn });
 
       const sdl = 'type Query { ping: String! }';
 
