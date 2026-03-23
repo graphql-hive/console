@@ -228,6 +228,7 @@ export const Organization: Pick<
   accessToken: async (organization, args, { injector }) => {
     return injector.get(OrganizationAccessTokens).getForOrganization(organization, args.id, {
       includeExpired: true,
+      includeOnlyOrganizationScoped: true,
     });
   },
   viewerCanManagePersonalAccessTokens: async (organization, _arg, { session }) => {

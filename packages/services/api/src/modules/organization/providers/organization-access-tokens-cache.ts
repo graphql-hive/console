@@ -118,7 +118,7 @@ export class OrganizationAccessTokensCache {
     },
   ) {
     return this.cache.getOrSet({
-      key: id,
+      key: `${id}${opts.includeExpired === true ? '' : ':expired'}`,
       factory: async () => {
         const record = await findById({ logger, pool: this.pool })(id, {
           // @todo figure out caching and expiration interaction
@@ -131,7 +131,7 @@ export class OrganizationAccessTokensCache {
         return this.makeCacheRecord(logger, record);
       },
       ttl: '5min',
-      grace: '24h',
+      grace: opts.includeExpired ? '24h' : false,
     });
   }
 

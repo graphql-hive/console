@@ -115,7 +115,7 @@ export const expirationPeriods: { name: string; value: GraphQLSchema.TokenExpira
   },
 ];
 
-export function timeLater(d: Date, prefix: string = '', pastText: string = 'now') {
+export function timeRelative(d: Date, prefix: string = '', pastText: string = 'now') {
   const rtf = new Intl.RelativeTimeFormat('en', { numeric: 'auto' });
   // Define our units in milliseconds
   const units = [
@@ -129,7 +129,7 @@ export function timeLater(d: Date, prefix: string = '', pastText: string = 'now'
   // Find the first unit where the difference is at least 1
   const diffMS = d.getTime() - Date.now();
   for (const unit of units) {
-    const value = Math.floor(diffMS / unit.ms);
+    const value = Math.round(diffMS / unit.ms);
 
     if (value >= 1) {
       return `${prefix.length ? `${prefix} ` : ''}${rtf.format(value, unit.label)}`;
