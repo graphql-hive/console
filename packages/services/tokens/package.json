@@ -9,6 +9,7 @@
     "typecheck": "tsc --noEmit"
   },
   "devDependencies": {
+    "@hive/postgres": "workspace:*",
     "@hive/service-common": "workspace:*",
     "@hive/storage": "workspace:*",
     "@sentry/node": "7.120.2",

@@ -3,7 +3,7 @@ import type { Redis } from 'ioredis';
 import { LRUCache } from 'lru-cache';
 import ms from 'ms';
 import { createConnectionString, type PostgresConnectionParamaters } from '@hive/postgres';
-import { createTokenStorage, Interceptor } from '@hive/storage';
+import { createTokenStorage, type Interceptor } from '@hive/storage';
 import { captureException, captureMessage } from '@sentry/node';
 import { atomic, until, useActionTracker } from './helpers';
 import { recordCacheFill, recordCacheRead } from './metrics';

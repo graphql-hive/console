@@ -1337,6 +1337,9 @@ importers:
       '@hive/api':
         specifier: workspace:*
         version: link:../api
+      '@hive/postgres':
+        specifier: workspace:*
+        version: link:../../internal/postgres
       '@hive/service-common':
         specifier: workspace:*
         version: link:../service-common
@@ -1804,6 +1807,9 @@ importers:
 
   packages/services/tokens:
     devDependencies:
+      '@hive/postgres':
+        specifier: workspace:*
+        version: link:../../internal/postgres
       '@hive/service-common':
         specifier: workspace:*
         version: link:../service-common

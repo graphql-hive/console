@@ -13,7 +13,8 @@
     "db:init": "pnpm db:create && pnpm migration:run",
     "db:migrator": "tsx src/index.ts",
     "migration:run": "pnpm db:migrator up",
-    "test": "WATCH=0 tsup-node --config ../../configs/tsup/dev.config.node.ts ./test/root.ts"
+    "test": "WATCH=0 tsup-node --config ../../configs/tsup/dev.config.node.ts ./test/root.ts",
+    "typecheck": "tsc --noEmit"
   },
   "devDependencies": {
     "@graphql-hive/core": "workspace:*",
