@@ -15,6 +15,7 @@ const CreatePersonalAccessTokenMutation = graphql(`
           title
           description
           createdAt
+          expiresAt
         }
       }
       error {

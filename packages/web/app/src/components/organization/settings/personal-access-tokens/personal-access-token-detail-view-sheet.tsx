@@ -1,9 +1,7 @@
-import { access } from 'fs';
 import { useQuery } from 'urql';
 import * as Sheet from '@/components/ui/sheet';
 import { graphql } from '@/gql';
 import { PermissionDetailView } from '../access-tokens/permission-detail-view';
-import { timeRelative } from '../access-tokens/shared-helpers';
 import { TokenExpiration } from '../access-tokens/token-expiration';
 
 const PersonalAccessTokenDetailViewSheet_OrganizationQuery = graphql(`
