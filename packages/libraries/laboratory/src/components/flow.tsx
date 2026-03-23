@@ -90,11 +90,9 @@ export const Flow = (props: { nodes: FlowNode[]; graph?: Record<string, any> }) 
         ranksep: 32,
         marginx: 32,
         marginy: 32,
-        // graph: 'tight-tree',
+        graph: 'tight-tree',
       })
       .setDefaultEdgeLabel(() => ({}));
-
-    console.log(props.nodes);
 
     const groups = [...new Set(props.nodes.map(node => node.parent))].filter(Boolean);
 
@@ -162,8 +160,6 @@ export const Flow = (props: { nodes: FlowNode[]; graph?: Record<string, any> }) 
     ];
   }, [nodeSizes, props.nodes, props.graph]);
 
-  console.log({ nodes, edges });
-
   const findFollowers = useCallback(
     (nodeId: string): FlowNode[] => {
       const node = nodes.find(node => node.id === nodeId);
@@ -192,48 +188,9 @@ export const Flow = (props: { nodes: FlowNode[]; graph?: Record<string, any> }) 
   }, [hoveredNodeId, findFollowers]);
 
   return (
-    <div className={cn('bg-background size-full')}>
+    <div className={cn('bg-background relative size-full')}>
+      <div className="absolute inset-0 h-full w-full bg-[radial-gradient(hsl(var(--border))_1px,transparent_1px)] bg-size-[16px_16px] opacity-50" />
       <div className={cn('relative size-full overflow-auto')}>
-        <svg
-          className="absolute left-0 top-0"
-          style={{ width: graphSize.width, height: graphSize.height }}
-        >
-          {edges.map(edge => {
-            const fromNode = nodes.find(node => node.id === edge.from);
-            const toNode = nodes.find(node => node.id === edge.to);
-
-            if (!fromNode || !toNode) {
-              return null;
-            }
-
-            const isHovered = hoveredNodeId === edge.from;
-            const isFollowingHoveredNode = hoveredNodeFollowers.some(
-              follower => follower.id === edge.from,
-            );
-
-            return (
-              <path
-                key={edge.from + edge.to}
-                className={cn('stroke-border fill-none stroke-2 transition-all', {
-                  'stroke-primary': isHovered || isFollowingHoveredNode,
-                })}
-                d={roundedOrthogonalPath(
-                  orthogonalPoints(
-                    {
-                      x: fromNode.x - fromNode.width / 2,
-                      y: fromNode.y,
-                    },
-                    {
-                      x: toNode.x - toNode.width / 2,
-                      y: toNode.y,
-                    },
-                  ),
-                  12,
-                )}
-              />
-            );
-          })}
-        </svg>
         {nodes.map(node => {
           const isHovered = hoveredNodeId === node.id;
           const isFollowingHoveredNode = hoveredNodeFollowers.some(
@@ -254,11 +211,11 @@ export const Flow = (props: { nodes: FlowNode[]; graph?: Record<string, any> }) 
                 }
               }}
               className={cn(
-                'bg-card absolute flex w-64 flex-col justify-start gap-2 rounded-lg border p-2 text-sm shadow-sm transition-all',
+                'bg-card absolute z-20 flex w-64 flex-col justify-start gap-2 rounded-lg border p-2 text-sm shadow-sm transition-all',
                 {
                   'border-primary shadow-primary/5 shadow-xl':
                     (isHovered || isFollowingHoveredNode) && !node.isCluster,
-                  'pointer-events-none -mt-[10px] w-auto rounded-2xl border-dashed bg-transparent':
+                  'bg-card/50 pointer-events-none z-10 -mt-[10px] w-auto rounded-2xl border-dashed':
                     node.isCluster,
                 },
               )}
@@ -281,7 +238,7 @@ export const Flow = (props: { nodes: FlowNode[]; graph?: Record<string, any> }) 
               {hasFollowers && !node.isCluster && (
                 <div
                   className={cn(
-                    'border-border bg-background absolute left-full top-1/2 size-2 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 transition-all',
+                    'border-border bg-background absolute top-1/2 left-full size-2 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 transition-all',
                     {
                       'bg-primary': isHovered || isFollowingHoveredNode,
                     },
@@ -291,7 +248,7 @@ export const Flow = (props: { nodes: FlowNode[]; graph?: Record<string, any> }) 
               {hasPrevious && !node.isCluster && (
                 <div
                   className={cn(
-                    'border-border bg-background absolute left-0 top-1/2 size-2 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 transition-all',
+                    'border-border bg-background absolute top-1/2 left-0 size-2 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 transition-all',
                     {
                       'bg-primary': isFollowingHoveredNode,
                     },
@@ -301,6 +258,74 @@ export const Flow = (props: { nodes: FlowNode[]; graph?: Record<string, any> }) 
             </div>
           );
         })}
+        <svg
+          className="pointer-events-none absolute top-0 left-0 z-10"
+          style={{ width: graphSize.width, height: graphSize.height }}
+        >
+          {edges
+            .sort((a, b) => {
+              const isHoveredA = hoveredNodeId === a.from;
+              const isHoveredB = hoveredNodeId === b.from;
+              const isFollowingHoveredNodeA = hoveredNodeFollowers.some(
+                follower => follower.id === a.from,
+              );
+              const isFollowingHoveredNodeB = hoveredNodeFollowers.some(
+                follower => follower.id === b.from,
+              );
+
+              if (
+                (isHoveredA || isFollowingHoveredNodeA) &&
+                (!isHoveredB || !isFollowingHoveredNodeB)
+              ) {
+                return 1;
+              }
+
+              if (
+                (!isHoveredA || !isFollowingHoveredNodeA) &&
+                (isHoveredB || isFollowingHoveredNodeB)
+              ) {
+                return -1;
+              }
+
+              return 0;
+            })
+            .filter(Boolean)
+            .map(edge => {
+              const fromNode = nodes.find(node => node.id === edge.from);
+              const toNode = nodes.find(node => node.id === edge.to);
+
+              if (!fromNode || !toNode) {
+                return null;
+              }
+
+              const isHovered = hoveredNodeId === edge.from;
+              const isFollowingHoveredNode = hoveredNodeFollowers.some(
+                follower => follower.id === edge.from,
+              );
+
+              return (
+                <path
+                  key={edge.from + edge.to}
+                  className={cn('stroke-border fill-none stroke-2 transition-all', {
+                    'stroke-primary': isHovered || isFollowingHoveredNode,
+                  })}
+                  d={roundedOrthogonalPath(
+                    orthogonalPoints(
+                      {
+                        x: fromNode.x + fromNode.width / 2,
+                        y: fromNode.y,
+                      },
+                      {
+                        x: toNode.x - toNode.width / 2,
+                        y: toNode.y,
+                      },
+                    ),
+                    4,
+                  )}
+                />
+              );
+            })}
+        </svg>
       </div>
     </div>
   );

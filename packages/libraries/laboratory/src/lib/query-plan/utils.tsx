@@ -15,169 +15,23 @@ import {
 import { v4 as uuidv4 } from 'uuid';
 import { Flow, FlowNode } from '@/components/flow';
 import { GraphQLIcon } from '@/components/icons';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
-
-export type QueryPlan = {
-  kind: 'QueryPlan';
-  node?: PlanNode | null;
-};
-
-export type PlanNode =
-  | FetchNodePlan
-  | BatchFetchNodePlan
-  | SequenceNodePlan
-  | ParallelNodePlan
-  | FlattenNodePlan
-  | ConditionNodePlan
-  | SubscriptionNodePlan
-  | DeferNodePlan;
-
-export type OperationKind = 'Query' | 'Mutation' | 'Subscription' | string;
-
-export type SubgraphFetchOperation = {
-  documentStr: string;
-  hash?: number | string;
-  document?: unknown;
-};
-
-export type SelectionSet = SelectionItem[];
-
-export type SelectionItem = {
-  kind?: 'InlineFragment';
-  typeCondition?: string | null;
-  selections?:
-    | {
-        kind: 'Field';
-        name: string;
-      }[]
-    | null;
-};
-// | {
-//     kind?: 'FragmentSpread';
-//     name: string;
-//   }
-// | Record<string, unknown>;
-
-export type ValueObject = {
-  [key: string]: Value;
-};
-
-export type Value =
-  | string
-  | number
-  | boolean
-  | null
-  | { kind?: 'Variable'; variable?: string; name?: string }
-  | Value[]
-  | ValueObject;
-
-export type FetchNodePlan = {
-  kind: 'Fetch';
-  serviceName: string;
-  variableUsages?: string[] | Set<string> | null;
-  operationKind?: OperationKind | null;
-  operationName?: string | null;
-  operation: string;
-  requires?: SelectionItem[] | null;
-  inputRewrites?: FetchRewrite[] | null;
-  outputRewrites?: FetchRewrite[] | null;
-};
-
-export type BatchFetchNodePlan = {
-  kind: 'BatchFetch';
-  serviceName: string;
-  variableUsages?: string[] | Set<string> | null;
-  operationKind?: OperationKind | null;
-  operationName?: string | null;
-  operation: string;
-  entityBatch: EntityBatch;
-};
-
-export type EntityBatch = {
-  aliases: EntityBatchAlias[];
-};
-
-export type EntityBatchAlias = {
-  alias: string;
-  representationsVariableName: string;
-  paths: FlattenNodePath;
-  requires: SelectionSet;
-  inputRewrites?: FetchRewrite[] | null;
-  outputRewrites?: FetchRewrite[] | null;
-};
-
-export type FlattenNodePlan = {
-  kind: 'Flatten';
-  path: FlattenNodePath;
-  node: PlanNode;
-};
-
-export type SequenceNodePlan = {
-  kind: 'Sequence';
-  nodes: PlanNode[];
-};
-
-export type ParallelNodePlan = {
-  kind: 'Parallel';
-  nodes: PlanNode[];
-};
-
-export type ConditionNodePlan = {
-  kind: 'Condition';
-  condition: string;
-  ifClause?: PlanNode | null;
-  elseClause?: PlanNode | null;
-};
-
-export type SubscriptionNodePlan = {
-  kind: 'Subscription';
-  primary: PlanNode;
-};
-
-export type DeferNodePlan = {
-  kind: 'Defer';
-  primary: DeferPrimary;
-  deferred: DeferredNode[];
-};
-
-export type DeferPrimary = {
-  subselection?: string | null;
-  node?: PlanNode | null;
-};
-
-export type DeferredNode = {
-  depends: DeferDependency[];
-  label?: string | null;
-  queryPath: string[];
-  subselection?: string | null;
-  node?: PlanNode | null;
-};
-
-export type DeferDependency = {
-  id: string;
-  deferLabel?: string | null;
-};
-
-export type FetchRewrite = ValueSetter | KeyRenamer;
-
-export type ValueSetter = {
-  path: FetchNodePathSegment[];
-  setValueTo: string;
-};
-
-export type KeyRenamer = {
-  path: FetchNodePathSegment[];
-  renameKeyTo: string;
-};
-
-export type FetchNodePathSegment = { Key: string } | { TypenameEquals: string[] | Set<string> };
-
-export type FlattenNodePathSegment =
-  | { Field: string }
-  | { TypeCondition: string[] | Set<string> }
-  | '@';
-
-export type FlattenNodePath = FlattenNodePathSegment[];
+import {
+  BatchFetchNodePlan,
+  ConditionNodePlan,
+  DeferNodePlan,
+  FetchNodePlan,
+  FlattenNodePath,
+  FlattenNodePathSegment,
+  FlattenNodePlan,
+  ParallelNodePlan,
+  PlanNode,
+  QueryPlan,
+  SelectionSet,
+  SequenceNodePlan,
+  SubscriptionNodePlan,
+} from './schema';
 
 function indent(depth: number): string {
   return '  '.repeat(depth);
@@ -229,7 +83,7 @@ export function renderFlattenPath(path: FlattenNodePath): string {
 }
 
 export function renderSelectionSet(
-  selectionSet: SelectionItem[] | null | undefined,
+  selectionSet: SelectionSet | null | undefined,
   depth = 0,
 ): string {
   if (!selectionSet?.length) return '';
@@ -237,10 +91,12 @@ export function renderSelectionSet(
   const lines: string[] = [];
 
   for (const item of selectionSet) {
-    lines.push(`${indent(depth)}... on ${item.typeCondition}`);
+    if (item.kind === 'InlineFragment') {
+      lines.push(`${indent(depth)}... on ${item.typeCondition}`);
 
-    for (const property of item.selections ?? []) {
-      lines.push(`${indent(depth + 1)}${property.name}`);
+      for (const property of item.selections ?? []) {
+        lines.push(`${indent(depth + 1)}${property.name}`);
+      }
     }
   }
 
@@ -303,9 +159,8 @@ export function renderFetchNode(node: FetchNodePlan, depth = 0): string {
     lines.push(`${indent(depth + 1)}} =>`);
   }
 
-  lines.push(renderMultilineBlock(print(parse(node.operation)), depth + 2));
+  lines.push(renderMultilineBlock(print(parse(node.operation)), depth + 2), `${indent(depth)}}`);
 
-  lines.push(`${indent(depth)}}`);
   return lines.join('\n');
 }
 
@@ -314,34 +169,40 @@ export function renderBatchFetchNode(node: BatchFetchNodePlan, depth = 0): strin
   lines.push(`${indent(depth)}BatchFetch(service: "${node.serviceName}") {`);
 
   for (const alias of node.entityBatch.aliases) {
-    lines.push(`${indent(depth + 1)}${alias.alias} {`);
-    lines.push(`${indent(depth + 2)}paths: [`);
-    lines.push(`${indent(depth + 3)}${renderFlattenPath(alias.paths)}`);
-    lines.push(`${indent(depth + 2)}]`);
-    lines.push(`${indent(depth + 2)}{`);
+    lines.push(
+      `${indent(depth + 1)}${alias.alias} {`,
+      `${indent(depth + 2)}paths [`,
+      ...alias.paths.map(
+        (path, index) =>
+          `${indent(depth + 3)}${renderFlattenPath(path)}${index < alias.paths.length - 1 ? ',' : ''}`,
+      ),
+      `${indent(depth + 2)}]`,
+      `${indent(depth + 2)}{`,
+    );
     const requires = renderSelectionSet(alias.requires, depth + 3);
     if (requires) lines.push(requires);
-    lines.push(`${indent(depth + 2)}}`);
-    lines.push(`${indent(depth + 1)}}`);
+    lines.push(
+      `${indent(depth + 2)}}`,
+      `${indent(depth + 1)}}`,
+      `${indent(depth + 1)}{`,
+      renderMultilineBlock(
+        print(parse(node.operation)).split('\n').slice(1, -1).join('\n'),
+        depth + 1,
+      ),
+      `${indent(depth + 1)}}`,
+    );
   }
-
-  lines.push(`${indent(depth + 1)}{`);
-  lines.push(
-    renderMultilineBlock(
-      print(parse(node.operation)).split('\n').slice(1, -1).join('\n'),
-      depth + 1,
-    ),
-  );
-  lines.push(`${indent(depth + 1)}}`);
 
   return lines.join('\n');
 }
 
 export function renderFlattenNode(node: FlattenNodePlan, depth = 0): string {
   const lines: string[] = [];
-  lines.push(`${indent(depth)}Flatten(path: "${renderFlattenPath(node.path)}") {`);
-  lines.push(renderPlanNode(node.node, depth + 1));
-  lines.push(`${indent(depth)}}`);
+  lines.push(
+    `${indent(depth)}Flatten(path: "${renderFlattenPath(node.path)}") {`,
+    renderPlanNode(node.node, depth + 1),
+    `${indent(depth)}}`,
+  );
   return lines.join('\n');
 }
 
@@ -369,28 +230,34 @@ export function renderConditionNode(node: ConditionNodePlan, depth = 0): string 
   const lines: string[] = [];
 
   if (node.ifClause && !node.elseClause) {
-    lines.push(`${indent(depth)}Include(if: $${node.condition}) {`);
-    lines.push(renderPlanNode(node.ifClause, depth + 1));
-    lines.push(`${indent(depth)}}`);
+    lines.push(
+      `${indent(depth)}Include(if: $${node.condition}) {`,
+      renderPlanNode(node.ifClause, depth + 1),
+      `${indent(depth)}}`,
+    );
     return lines.join('\n');
   }
 
   if (!node.ifClause && node.elseClause) {
-    lines.push(`${indent(depth)}Skip(if: $${node.condition}) {`);
-    lines.push(renderPlanNode(node.elseClause, depth + 1));
-    lines.push(`${indent(depth)}}`);
+    lines.push(
+      `${indent(depth)}Skip(if: $${node.condition}) {`,
+      renderPlanNode(node.elseClause, depth + 1),
+      `${indent(depth)}}`,
+    );
     return lines.join('\n');
   }
 
   if (node.ifClause && node.elseClause) {
-    lines.push(`${indent(depth)}Condition(if: $${node.condition}) {`);
-    lines.push(`${indent(depth + 1)}if {`);
-    lines.push(renderPlanNode(node.ifClause, depth + 2));
-    lines.push(`${indent(depth + 1)}}`);
-    lines.push(`${indent(depth + 1)}else {`);
-    lines.push(renderPlanNode(node.elseClause, depth + 2));
-    lines.push(`${indent(depth + 1)}}`);
-    lines.push(`${indent(depth)}}`);
+    lines.push(
+      `${indent(depth)}Condition(if: $${node.condition}) {`,
+      `${indent(depth + 1)}if {`,
+      renderPlanNode(node.ifClause, depth + 2),
+      `${indent(depth + 1)}}`,
+      `${indent(depth + 1)}else {`,
+      renderPlanNode(node.elseClause, depth + 2),
+      `${indent(depth + 1)}}`,
+      `${indent(depth)}}`,
+    );
     return lines.join('\n');
   }
 
@@ -399,19 +266,19 @@ export function renderConditionNode(node: ConditionNodePlan, depth = 0): string 
 
 export function renderSubscriptionNode(node: SubscriptionNodePlan, depth = 0): string {
   const lines: string[] = [];
-  lines.push(`${indent(depth)}Subscription {`);
-  lines.push(`${indent(depth + 1)}primary {`);
-  lines.push(renderPlanNode(node.primary, depth + 2));
-  lines.push(`${indent(depth + 1)}}`);
-  lines.push(`${indent(depth)}}`);
+  lines.push(
+    `${indent(depth)}Subscription {`,
+    `${indent(depth + 1)}primary {`,
+    renderPlanNode(node.primary, depth + 2),
+    `${indent(depth + 1)}}`,
+    `${indent(depth)}}`,
+  );
   return lines.join('\n');
 }
 
 export function renderDeferNode(node: DeferNodePlan, depth = 0): string {
   const lines: string[] = [];
-  lines.push(`${indent(depth)}Defer {`);
-
-  lines.push(`${indent(depth + 1)}primary {`);
+  lines.push(`${indent(depth)}Defer {`, `${indent(depth + 1)}primary {`);
   if (node.primary.subselection) {
     lines.push(`${indent(depth + 2)}subselection: ${JSON.stringify(node.primary.subselection)}`);
   }
@@ -606,9 +473,14 @@ function visitNode(
         return (
           <div className="grid grid-cols-[1fr_auto] items-center gap-2 overflow-hidden font-mono text-xs">
             <span className="font-medium">Path</span>
-            <span className="text-secondary-foreground overflow-hidden text-ellipsis whitespace-nowrap">
-              {renderFlattenPath(node.path)}
-            </span>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <span className="text-secondary-foreground overflow-hidden text-ellipsis whitespace-nowrap">
+                  {renderFlattenPath(node.path)}
+                </span>
+              </TooltipTrigger>
+              <TooltipContent>{renderFlattenPath(node.path)}</TooltipContent>
+            </Tooltip>
           </div>
         );
       };
@@ -616,9 +488,51 @@ function visitNode(
       break;
 
     case 'Sequence':
+      const children: QueryPlanNode[] = [];
+
       for (const child of node.nodes) {
-        visitNode(child, result, nodes, cluster);
+        children.push(visitNode(child, result, nodes, cluster));
       }
+
+      for (let i = 0; i < children.length - 1; i++) {
+        const child = children[i];
+        const nextChild = children[i + 1];
+
+        if (
+          !child.next ||
+          !child.next.length ||
+          !nextChild ||
+          !nextChild.next ||
+          !nextChild.next.length
+        ) {
+          continue;
+        }
+
+        const toNodes = nextChild.next;
+
+        const fromNodes = child.next?.reduce(function handleNodes(acc, next) {
+          const nextNode = nodes.find(node => node.id === next);
+
+          if (!nextNode) {
+            return acc;
+          }
+
+          if (nextNode?.next?.length) {
+            acc.push(...nextNode.next.reduce(handleNodes, [] as QueryPlanNode[]));
+          } else {
+            acc.push(nextNode);
+          }
+
+          return acc;
+        }, [] as QueryPlanNode[]);
+
+        for (const fromNode of fromNodes) {
+          fromNode.next = toNodes;
+        }
+      }
+
+      result.next = children[0].next;
+
       break;
 
     case 'Parallel':
