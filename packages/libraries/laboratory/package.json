@@ -39,8 +39,8 @@
   },
   "dependencies": {
     "@base-ui/react": "^1.1.0",
-    "dagrejs": "^0.2.1",
     "radix-ui": "^1.4.3",
+    "react-zoom-pan-pinch": "^3.7.0",
     "uuid": "^13.0.0"
   },
   "devDependencies": {

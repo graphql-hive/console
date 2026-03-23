@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useLaboratory } from '@/components/laboratory/context';
 import * as TooltipPrimitive from '@radix-ui/react-tooltip';
 import { cn } from '../../lib/utils';
 
@@ -33,7 +34,7 @@ function TooltipContent({
   children,
   ...props
 }: React.ComponentProps<typeof TooltipPrimitive.Content>) {
-  const [container, setContainer] = useState<HTMLDivElement | null>(null);
+  const { container } = useLaboratory();
 
   return (
     <>
@@ -51,7 +52,6 @@ function TooltipContent({
           <TooltipPrimitive.Arrow className="bg-foreground fill-foreground z-50 size-2.5 translate-y-[calc(-50%_-_2px)] rotate-45 rounded-[2px]" />
         </TooltipPrimitive.Content>
       </TooltipPrimitive.Portal>
-      <div ref={setContainer} style={{ display: 'contents' }} />
     </>
   );
 }

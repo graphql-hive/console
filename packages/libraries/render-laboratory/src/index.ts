@@ -8,7 +8,6 @@ import {
   jsonWorker,
   typescriptWorker,
 } from './laboratory.js';
-import { LaboratoryProps } from '@graphql-hive/laboratory';
 
 export const renderLaboratory = (opts?: GraphiQLOptions) => /* HTML */ `
   <!doctype html>

@@ -1,5 +1,8 @@
-import { useCallback, useMemo, useState } from 'react';
-import { LucideProps } from 'lucide-react';
+import { useCallback, useEffect, useMemo, useRef, useState, WheelEvent } from 'react';
+import { LucideProps, ZoomInIcon, ZoomOutIcon } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Slider } from '@/components/ui/slider';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
 import dagre from '@dagrejs/dagre';
 
@@ -9,7 +12,8 @@ export interface FlowNode {
   next?: string[];
   icon?: (props: LucideProps) => React.ReactNode;
   content?: (props: { node: FlowNode }) => React.ReactNode;
-  parent?: string;
+  headerSuffix?: (props: { node: FlowNode }) => React.ReactNode;
+  children?: FlowNode[];
 }
 
 export interface FlowGraphInternal extends FlowNode {
@@ -17,7 +21,6 @@ export interface FlowGraphInternal extends FlowNode {
   y: number;
   width: number;
   height: number;
-  isCluster: boolean;
 }
 
 export type Point = {
@@ -68,8 +71,34 @@ export function roundedOrthogonalPath(
   ].join(' ');
 }
 
-export const Flow = (props: { nodes: FlowNode[]; graph?: Record<string, any> }) => {
+const MIN_SCALE = 0.2;
+const MAX_SCALE = 3;
+const ZOOM_STEP = 0.02;
+
+export const Flow = (props: {
+  nodes: FlowNode[];
+  margin?: number;
+  gapX?: number;
+  gapY?: number;
+  onGraphLayout?: (graph: dagre.graphlib.Graph) => void;
+  disableBackground?: boolean;
+  disableGestures?: boolean;
+  className?: string;
+  containerClassName?: string;
+  isChild?: boolean;
+}) => {
   const [hoveredNodeId, setHoveredNodeId] = useState<string | null>(null);
+  const [isCanvasActive, setIsCanvasActive] = useState(false);
+  const containerRef = useRef<HTMLDivElement | null>(null);
+  const [view, setView] = useState<{ x: number; y: number; scale: number }>({
+    x: 0,
+    y: 0,
+    scale: 1,
+  });
+  const [canvasSize, setCanvasSize] = useState<{ width: number; height: number }>({
+    width: 0,
+    height: 0,
+  });
   const [nodeSizes, setNodeSizes] = useState<Record<string, { width: number; height: number }>>({});
   const [nodes, edges, graphSize] = useMemo(() => {
     if (Object.keys(nodeSizes).length === 0) {
@@ -86,58 +115,36 @@ export const Flow = (props: { nodes: FlowNode[]; graph?: Record<string, any> }) 
       .setGraph({
         rankdir: 'LR',
         align: 'UL',
-        nodesep: 32,
-        ranksep: 32,
-        marginx: 32,
-        marginy: 32,
-        // graph: 'tight-tree',
+        ranksep: props.gapX ?? 48,
+        nodesep: props.gapY ?? 48,
+        marginx: props.margin ?? 32,
+        marginy: props.margin ?? 64,
+        graph: 'tight-tree',
       })
       .setDefaultEdgeLabel(() => ({}));
 
-    console.log(props.nodes);
-
-    const groups = [...new Set(props.nodes.map(node => node.parent))].filter(Boolean);
-
     for (const node of props.nodes) {
-      if (!groups.includes(node.id)) {
-        result.setNode(node.id, {
-          width: nodeSizes[node.id]?.width,
-          height: nodeSizes[node.id]?.height,
-        });
-      }
-    }
-
-    for (const group of groups) {
-      result.setNode(group!, {
-        // clusterLabelPos: group!,
+      result.setNode(node.id, {
+        width: nodeSizes[node.id]?.width,
+        height: nodeSizes[node.id]?.height,
       });
-    }
-
-    for (const node of props.nodes) {
-      if (node.parent) {
-        result.setParent(node.id, node.parent);
-      }
     }
 
     for (const node of props.nodes) {
       if (node.next) {
         for (const next of node.next) {
-          if (groups.includes(next)) {
-            const nextNode = props.nodes.find(node => node.id === next);
-
-            for (const childNext of nextNode?.next ?? []) {
-              result.setEdge(node.id, childNext);
-            }
-          } else if (!groups.includes(node.id)) {
-            result.setEdge(node.id, next);
-          }
+          result.setEdge(node.id, next);
         }
       }
     }
 
     dagre.layout(result);
 
+    props.onGraphLayout?.(result);
+
     const graph = result.graph();
+
+    setCanvasSize({ width: graph.width, height: graph.height });
 
     return [
       props.nodes.map(node => {
@@ -145,7 +152,6 @@ export const Flow = (props: { nodes: FlowNode[]; graph?: Record<string, any> }) 
 
         return {
           ...node,
-          isCluster: groups.includes(node.id),
           x: graphNode?.x ?? 0,
           y: graphNode?.y ?? 0,
           width: graphNode?.width ?? 0,
@@ -160,9 +166,7 @@ export const Flow = (props: { nodes: FlowNode[]; graph?: Record<string, any> }) 
       }),
       { width: graph.width, height: graph.height },
     ];
-  }, [nodeSizes, props.nodes, props.graph]);
-
-  console.log({ nodes, edges });
+  }, [nodeSizes, props.nodes, props.margin, props.gapX]);
 
   const findFollowers = useCallback(
     (nodeId: string): FlowNode[] => {
@@ -191,49 +195,110 @@ export const Flow = (props: { nodes: FlowNode[]; graph?: Record<string, any> }) 
     return findFollowers(hoveredNodeId);
   }, [hoveredNodeId, findFollowers]);
 
+  const handleWheel = useCallback(
+    (event: WheelEvent<HTMLDivElement>) => {
+      if (props.disableGestures) {
+        return;
+      }
+
+      event.preventDefault();
+
+      if (event.ctrlKey || event.metaKey) {
+        const bounds = event.currentTarget.getBoundingClientRect();
+        const pointerX = event.clientX - bounds.left;
+        const pointerY = event.clientY - bounds.top;
+
+        setView(prev => {
+          const zoomFactor = Math.exp(-event.deltaY * ZOOM_STEP);
+          const scale = Math.max(MIN_SCALE, Math.min(MAX_SCALE, prev.scale * zoomFactor));
+          const ratio = scale / prev.scale;
+          const x = pointerX - (pointerX - prev.x) * ratio;
+          const y = pointerY - (pointerY - prev.y) * ratio;
+
+          return { x, y, scale };
+        });
+
+        return;
+      }
+
+      setView(prev => ({
+        ...prev,
+        x: prev.x - event.deltaX,
+        y: prev.y - event.deltaY,
+      }));
+    },
+    [props.disableGestures],
+  );
+
+  useEffect(() => {
+    if (props.disableGestures || !containerRef.current) {
+      return;
+    }
+
+    const element = containerRef.current;
+    const preventNativeGesture = (event: Event) => {
+      event.preventDefault();
+    };
+
+    // Safari emits gesture events for trackpad pinch and can zoom the page.
+    element.addEventListener('gesturestart', preventNativeGesture);
+    element.addEventListener('gesturechange', preventNativeGesture);
+    element.addEventListener('gestureend', preventNativeGesture);
+    element.addEventListener('wheel', preventNativeGesture);
+
+    return () => {
+      element.removeEventListener('gesturestart', preventNativeGesture);
+      element.removeEventListener('gesturechange', preventNativeGesture);
+      element.removeEventListener('gestureend', preventNativeGesture);
+      element.removeEventListener('wheel', preventNativeGesture);
+    };
+  }, [props.disableGestures]);
+
+  useEffect(() => {
+    if (props.disableGestures) {
+      return;
+    }
+
+    const preventBrowserZoomHotkeys = (event: KeyboardEvent) => {
+      if (!isCanvasActive || (!event.metaKey && !event.ctrlKey)) {
+        return;
+      }
+
+      if (['+', '-', '=', '0'].includes(event.key)) {
+        event.preventDefault();
+      }
+    };
+
+    window.addEventListener('keydown', preventBrowserZoomHotkeys);
+
+    return () => {
+      window.removeEventListener('keydown', preventBrowserZoomHotkeys);
+    };
+  }, [isCanvasActive, props.disableGestures]);
+
   return (
-    <div className={cn('bg-background size-full')}>
-      <div className={cn('relative size-full overflow-auto')}>
-        <svg
-          className="absolute left-0 top-0"
-          style={{ width: graphSize.width, height: graphSize.height }}
-        >
-          {edges.map(edge => {
-            const fromNode = nodes.find(node => node.id === edge.from);
-            const toNode = nodes.find(node => node.id === edge.to);
-
-            if (!fromNode || !toNode) {
-              return null;
-            }
-
-            const isHovered = hoveredNodeId === edge.from;
-            const isFollowingHoveredNode = hoveredNodeFollowers.some(
-              follower => follower.id === edge.from,
-            );
-
-            return (
-              <path
-                key={edge.from + edge.to}
-                className={cn('stroke-border fill-none stroke-2 transition-all', {
-                  'stroke-primary': isHovered || isFollowingHoveredNode,
-                })}
-                d={roundedOrthogonalPath(
-                  orthogonalPoints(
-                    {
-                      x: fromNode.x - fromNode.width / 2,
-                      y: fromNode.y,
-                    },
-                    {
-                      x: toNode.x - toNode.width / 2,
-                      y: toNode.y,
-                    },
-                  ),
-                  12,
-                )}
-              />
-            );
-          })}
-        </svg>
+    <div
+      ref={containerRef}
+      className={cn(
+        'bg-background relative min-h-full min-w-full touch-none',
+        props.containerClassName,
+      )}
+      onWheel={handleWheel}
+      onMouseEnter={() => setIsCanvasActive(true)}
+      onMouseLeave={() => setIsCanvasActive(false)}
+    >
+      {!props.disableBackground && (
+        <div className="bg-size-[16px_16px] absolute inset-0 h-full w-full bg-[radial-gradient(hsl(var(--border))_1px,transparent_1px)] opacity-50" />
+      )}
+      <div
+        className={cn('relative', props.className)}
+        style={{
+          width: canvasSize.width,
+          height: canvasSize.height,
+          transform: `translate(${view.x}px, ${view.y}px) scale(${view.scale})`,
+          transformOrigin: '0 0',
+        }}
+      >
         {nodes.map(node => {
           const isHovered = hoveredNodeId === node.id;
           const isFollowingHoveredNode = hoveredNodeFollowers.some(
@@ -241,6 +306,9 @@ export const Flow = (props: { nodes: FlowNode[]; graph?: Record<string, any> }) 
           );
           const hasFollowers = !!node.next?.length;
           const hasPrevious = nodes.some(n => n.next?.includes(node.id));
+          const content = node.content ? node.content({ node }) : null;
+          const hasContent = !!content;
+          const hasChildren = !!node.children?.length;
 
           return (
             <div
@@ -254,31 +322,60 @@ export const Flow = (props: { nodes: FlowNode[]; graph?: Record<string, any> }) 
                 }
               }}
               className={cn(
-                'bg-card absolute flex w-64 flex-col justify-start gap-2 rounded-lg border p-2 text-sm shadow-sm transition-all',
+                'bg-card transition-color absolute flex grid min-w-72 grid-cols-1 grid-rows-1 justify-start gap-2 rounded-lg border p-2 text-sm shadow-sm',
                 {
-                  'border-primary shadow-primary/5 shadow-xl':
-                    (isHovered || isFollowingHoveredNode) && !node.isCluster,
-                  'pointer-events-none -mt-[10px] w-auto rounded-2xl border-dashed bg-transparent':
-                    node.isCluster,
+                  'w-72': !hasChildren,
+                  'grid-rows-[auto_1fr]': hasContent || hasChildren,
+                  'grid-rows-[auto_auto_1fr]': hasContent && hasChildren,
+                  'border-primary shadow-primary/5 shadow-xl': isHovered || isFollowingHoveredNode,
+                  'rounded-xl border-dashed bg-transparent shadow-none': hasChildren,
                 },
               )}
               style={{
                 left: node.x - node.width / 2,
                 top: node.y - node.height / 2,
-                width: node.isCluster ? node.width : undefined,
-                height: node.isCluster ? node.height : undefined,
+                minWidth: Math.max(node.width, 256),
+                minHeight: node.height,
               }}
               onMouseEnter={() => setHoveredNodeId(node.id)}
               onMouseLeave={() => setHoveredNodeId(null)}
             >
-              <div className="flex items-center gap-2">
+              <div className="flex w-full items-center gap-2">
                 {node.icon ? node.icon({ className: 'size-4 text-secondary-foreground' }) : null}
                 <span className="font-medium">{node.title}</span>
+                <div className="ml-auto">
+                  {node.headerSuffix ? node.headerSuffix({ node }) : null}
+                </div>
               </div>
               <div className="bg-secondary w-full rounded-sm p-2 empty:hidden">
                 {node.content ? node.content({ node }) : null}
               </div>
-              {hasFollowers && !node.isCluster && (
+              {!!node.children?.length && (
+                <div className="size-full rounded-sm">
+                  <Flow
+                    nodes={node.children}
+                    margin={0}
+                    gapX={24}
+                    gapY={16}
+                    onGraphLayout={graph => {
+                      const { width, height } = graph.graph();
+
+                      setNodeSizes(prev => ({
+                        ...prev,
+                        [node.id]: {
+                          width: width + 20,
+                          height: node.height + height + 4,
+                        },
+                      }));
+                    }}
+                    disableBackground
+                    disableGestures
+                    className="bg-transparent"
+                    isChild
+                  />
+                </div>
+              )}
+              {hasFollowers && (
                 <div
                   className={cn(
                     'border-border bg-background absolute left-full top-1/2 size-2 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 transition-all',
@@ -288,7 +385,7 @@ export const Flow = (props: { nodes: FlowNode[]; graph?: Record<string, any> }) 
                   )}
                 />
               )}
-              {hasPrevious && !node.isCluster && (
+              {hasPrevious && (
                 <div
                   className={cn(
                     'border-border bg-background absolute left-0 top-1/2 size-2 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 transition-all',
@@ -301,7 +398,115 @@ export const Flow = (props: { nodes: FlowNode[]; graph?: Record<string, any> }) 
             </div>
           );
         })}
+        <svg
+          className="pointer-events-none absolute left-0 top-0 -z-10"
+          style={{ width: graphSize.width, height: graphSize.height }}
+        >
+          {edges
+            .sort((a, b) => {
+              const isHoveredA = hoveredNodeId === a.from;
+              const isHoveredB = hoveredNodeId === b.from;
+              const isFollowingHoveredNodeA = hoveredNodeFollowers.some(
+                follower => follower.id === a.from,
+              );
+              const isFollowingHoveredNodeB = hoveredNodeFollowers.some(
+                follower => follower.id === b.from,
+              );
+
+              if (
+                (isHoveredA || isFollowingHoveredNodeA) &&
+                (!isHoveredB || !isFollowingHoveredNodeB)
+              ) {
+                return 1;
+              }
+
+              if (
+                (!isHoveredA || !isFollowingHoveredNodeA) &&
+                (isHoveredB || isFollowingHoveredNodeB)
+              ) {
+                return -1;
+              }
+
+              return 0;
+            })
+            .filter(Boolean)
+            .map(edge => {
+              const fromNode = nodes.find(node => node.id === edge.from);
+              const toNode = nodes.find(node => node.id === edge.to);
+
+              if (!fromNode || !toNode) {
+                return null;
+              }
+
+              const isHovered = hoveredNodeId === edge.from;
+              const isFollowingHoveredNode = hoveredNodeFollowers.some(
+                follower => follower.id === edge.from,
+              );
+
+              return (
+                <path
+                  key={edge.from + edge.to}
+                  className={cn(
+                    'stroke-border animate-dash transition-color animate-[dash_500ms_linear_infinite] fill-none stroke-2 [stroke-dasharray:12_8]',
+                    {
+                      'stroke-primary': isHovered || isFollowingHoveredNode,
+                    },
+                  )}
+                  d={roundedOrthogonalPath(
+                    orthogonalPoints(
+                      {
+                        x: fromNode.x + fromNode.width / 2,
+                        y: fromNode.y,
+                      },
+                      {
+                        x: toNode.x - toNode.width / 2,
+                        y: toNode.y,
+                      },
+                    ),
+                    4,
+                  )}
+                />
+              );
+            })}
+        </svg>
       </div>
+      {!props.isChild && (
+        <div className="bg-card absolute left-4 top-4 z-10 w-64 rounded-lg border p-2 shadow-sm">
+          <div className="flex items-center gap-2">
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon-sm"
+                  onClick={() => setView(prev => ({ ...prev, scale: prev.scale - ZOOM_STEP }))}
+                >
+                  <ZoomOutIcon className="size-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>Zoom out</TooltipContent>
+            </Tooltip>
+            <Slider
+              value={[view.scale]}
+              onValueChange={value => setView(prev => ({ ...prev, scale: value[0] }))}
+              min={MIN_SCALE}
+              max={MAX_SCALE}
+              step={ZOOM_STEP}
+            />
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon-sm"
+                  onClick={() => setView(prev => ({ ...prev, scale: prev.scale + ZOOM_STEP }))}
+                >
+                  <ZoomInIcon className="size-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>Zoom in</TooltipContent>
+            </Tooltip>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

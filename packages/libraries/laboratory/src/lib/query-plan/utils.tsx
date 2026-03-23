@@ -9,175 +9,41 @@ import {
   Layers2Icon,
   ListOrderedIcon,
   LucideProps,
+  MoreHorizontal,
   NetworkIcon,
   UnlinkIcon,
 } from 'lucide-react';
+import * as monaco from 'monaco-editor';
 import { v4 as uuidv4 } from 'uuid';
 import { Flow, FlowNode } from '@/components/flow';
 import { GraphQLIcon } from '@/components/icons';
+import { Editor } from '@/components/laboratory/editor';
+import { Button } from '@/components/ui/button';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
-
-export type QueryPlan = {
-  kind: 'QueryPlan';
-  node?: PlanNode | null;
-};
-
-export type PlanNode =
-  | FetchNodePlan
-  | BatchFetchNodePlan
-  | SequenceNodePlan
-  | ParallelNodePlan
-  | FlattenNodePlan
-  | ConditionNodePlan
-  | SubscriptionNodePlan
-  | DeferNodePlan;
-
-export type OperationKind = 'Query' | 'Mutation' | 'Subscription' | string;
-
-export type SubgraphFetchOperation = {
-  documentStr: string;
-  hash?: number | string;
-  document?: unknown;
-};
-
-export type SelectionSet = SelectionItem[];
-
-export type SelectionItem = {
-  kind?: 'InlineFragment';
-  typeCondition?: string | null;
-  selections?:
-    | {
-        kind: 'Field';
-        name: string;
-      }[]
-    | null;
-};
-// | {
-//     kind?: 'FragmentSpread';
-//     name: string;
-//   }
-// | Record<string, unknown>;
-
-export type ValueObject = {
-  [key: string]: Value;
-};
-
-export type Value =
-  | string
-  | number
-  | boolean
-  | null
-  | { kind?: 'Variable'; variable?: string; name?: string }
-  | Value[]
-  | ValueObject;
-
-export type FetchNodePlan = {
-  kind: 'Fetch';
-  serviceName: string;
-  variableUsages?: string[] | Set<string> | null;
-  operationKind?: OperationKind | null;
-  operationName?: string | null;
-  operation: string;
-  requires?: SelectionItem[] | null;
-  inputRewrites?: FetchRewrite[] | null;
-  outputRewrites?: FetchRewrite[] | null;
-};
-
-export type BatchFetchNodePlan = {
-  kind: 'BatchFetch';
-  serviceName: string;
-  variableUsages?: string[] | Set<string> | null;
-  operationKind?: OperationKind | null;
-  operationName?: string | null;
-  operation: string;
-  entityBatch: EntityBatch;
-};
-
-export type EntityBatch = {
-  aliases: EntityBatchAlias[];
-};
-
-export type EntityBatchAlias = {
-  alias: string;
-  representationsVariableName: string;
-  paths: FlattenNodePath;
-  requires: SelectionSet;
-  inputRewrites?: FetchRewrite[] | null;
-  outputRewrites?: FetchRewrite[] | null;
-};
-
-export type FlattenNodePlan = {
-  kind: 'Flatten';
-  path: FlattenNodePath;
-  node: PlanNode;
-};
-
-export type SequenceNodePlan = {
-  kind: 'Sequence';
-  nodes: PlanNode[];
-};
-
-export type ParallelNodePlan = {
-  kind: 'Parallel';
-  nodes: PlanNode[];
-};
-
-export type ConditionNodePlan = {
-  kind: 'Condition';
-  condition: string;
-  ifClause?: PlanNode | null;
-  elseClause?: PlanNode | null;
-};
-
-export type SubscriptionNodePlan = {
-  kind: 'Subscription';
-  primary: PlanNode;
-};
-
-export type DeferNodePlan = {
-  kind: 'Defer';
-  primary: DeferPrimary;
-  deferred: DeferredNode[];
-};
-
-export type DeferPrimary = {
-  subselection?: string | null;
-  node?: PlanNode | null;
-};
-
-export type DeferredNode = {
-  depends: DeferDependency[];
-  label?: string | null;
-  queryPath: string[];
-  subselection?: string | null;
-  node?: PlanNode | null;
-};
-
-export type DeferDependency = {
-  id: string;
-  deferLabel?: string | null;
-};
-
-export type FetchRewrite = ValueSetter | KeyRenamer;
-
-export type ValueSetter = {
-  path: FetchNodePathSegment[];
-  setValueTo: string;
-};
-
-export type KeyRenamer = {
-  path: FetchNodePathSegment[];
-  renameKeyTo: string;
-};
-
-export type FetchNodePathSegment = { Key: string } | { TypenameEquals: string[] | Set<string> };
-
-export type FlattenNodePathSegment =
-  | { Field: string }
-  | { TypeCondition: string[] | Set<string> }
-  | '@';
-
-export type FlattenNodePath = FlattenNodePathSegment[];
+import {
+  BatchFetchNodePlan,
+  ConditionNodePlan,
+  DeferNodePlan,
+  FetchNodePlan,
+  FlattenNodePath,
+  FlattenNodePathSegment,
+  FlattenNodePlan,
+  ParallelNodePlan,
+  PlanNode,
+  QueryPlan,
+  SelectionInlineFragment,
+  SelectionSet,
+  SequenceNodePlan,
+  SubscriptionNodePlan,
+} from './schema';
 
 function indent(depth: number): string {
   return '  '.repeat(depth);
@@ -229,7 +95,7 @@ export function renderFlattenPath(path: FlattenNodePath): string {
 }
 
 export function renderSelectionSet(
-  selectionSet: SelectionItem[] | null | undefined,
+  selectionSet: SelectionSet | null | undefined,
   depth = 0,
 ): string {
   if (!selectionSet?.length) return '';
@@ -237,10 +103,12 @@ export function renderSelectionSet(
   const lines: string[] = [];
 
   for (const item of selectionSet) {
-    lines.push(`${indent(depth)}... on ${item.typeCondition}`);
+    if (item.kind === 'InlineFragment') {
+      lines.push(`${indent(depth)}... on ${item.typeCondition}`);
 
-    for (const property of item.selections ?? []) {
-      lines.push(`${indent(depth + 1)}${property.name}`);
+      for (const property of item.selections ?? []) {
+        lines.push(`${indent(depth + 1)}${property.name}`);
+      }
     }
   }
 
@@ -303,9 +171,8 @@ export function renderFetchNode(node: FetchNodePlan, depth = 0): string {
     lines.push(`${indent(depth + 1)}} =>`);
   }
 
-  lines.push(renderMultilineBlock(print(parse(node.operation)), depth + 2));
+  lines.push(renderMultilineBlock(print(parse(node.operation)), depth + 2), `${indent(depth)}}`);
 
-  lines.push(`${indent(depth)}}`);
   return lines.join('\n');
 }
 
@@ -314,34 +181,41 @@ export function renderBatchFetchNode(node: BatchFetchNodePlan, depth = 0): strin
   lines.push(`${indent(depth)}BatchFetch(service: "${node.serviceName}") {`);
 
   for (const alias of node.entityBatch.aliases) {
-    lines.push(`${indent(depth + 1)}${alias.alias} {`);
-    lines.push(`${indent(depth + 2)}paths: [`);
-    lines.push(`${indent(depth + 3)}${renderFlattenPath(alias.paths)}`);
-    lines.push(`${indent(depth + 2)}]`);
-    lines.push(`${indent(depth + 2)}{`);
+    lines.push(
+      `${indent(depth + 1)}${alias.alias} {`,
+      `${indent(depth + 2)}paths [`,
+      ...alias.paths.map(
+        (path, index) =>
+          `${indent(depth + 3)}${renderFlattenPath(path)}${index < alias.paths.length - 1 ? ',' : ''}`,
+      ),
+      `${indent(depth + 2)}]`,
+      `${indent(depth + 2)}{`,
+    );
     const requires = renderSelectionSet(alias.requires, depth + 3);
     if (requires) lines.push(requires);
-    lines.push(`${indent(depth + 2)}}`);
-    lines.push(`${indent(depth + 1)}}`);
+    lines.push(
+      `${indent(depth + 2)}}`,
+      `${indent(depth + 1)}}`,
+      `${indent(depth + 1)}{`,
+      renderMultilineBlock(
+        print(parse(node.operation)).split('\n').slice(1, -1).join('\n'),
+        depth + 1,
+      ),
+      `${indent(depth + 1)}}`,
+    );
   }
-
-  lines.push(`${indent(depth + 1)}{`);
-  lines.push(
-    renderMultilineBlock(
-      print(parse(node.operation)).split('\n').slice(1, -1).join('\n'),
-      depth + 1,
-    ),
-  );
-  lines.push(`${indent(depth + 1)}}`);
+  lines.push(`${indent(depth)}}`);
 
   return lines.join('\n');
 }
 
 export function renderFlattenNode(node: FlattenNodePlan, depth = 0): string {
   const lines: string[] = [];
-  lines.push(`${indent(depth)}Flatten(path: "${renderFlattenPath(node.path)}") {`);
-  lines.push(renderPlanNode(node.node, depth + 1));
-  lines.push(`${indent(depth)}}`);
+  lines.push(
+    `${indent(depth)}Flatten(path: "${renderFlattenPath(node.path)}") {`,
+    renderPlanNode(node.node, depth + 1),
+    `${indent(depth)}}`,
+  );
   return lines.join('\n');
 }
 
@@ -369,28 +243,34 @@ export function renderConditionNode(node: ConditionNodePlan, depth = 0): string 
   const lines: string[] = [];
 
   if (node.ifClause && !node.elseClause) {
-    lines.push(`${indent(depth)}Include(if: $${node.condition}) {`);
-    lines.push(renderPlanNode(node.ifClause, depth + 1));
-    lines.push(`${indent(depth)}}`);
+    lines.push(
+      `${indent(depth)}Include(if: $${node.condition}) {`,
+      renderPlanNode(node.ifClause, depth + 1),
+      `${indent(depth)}}`,
+    );
     return lines.join('\n');
   }
 
   if (!node.ifClause && node.elseClause) {
-    lines.push(`${indent(depth)}Skip(if: $${node.condition}) {`);
-    lines.push(renderPlanNode(node.elseClause, depth + 1));
-    lines.push(`${indent(depth)}}`);
+    lines.push(
+      `${indent(depth)}Skip(if: $${node.condition}) {`,
+      renderPlanNode(node.elseClause, depth + 1),
+      `${indent(depth)}}`,
+    );
     return lines.join('\n');
   }
 
   if (node.ifClause && node.elseClause) {
-    lines.push(`${indent(depth)}Condition(if: $${node.condition}) {`);
-    lines.push(`${indent(depth + 1)}if {`);
-    lines.push(renderPlanNode(node.ifClause, depth + 2));
-    lines.push(`${indent(depth + 1)}}`);
-    lines.push(`${indent(depth + 1)}else {`);
-    lines.push(renderPlanNode(node.elseClause, depth + 2));
-    lines.push(`${indent(depth + 1)}}`);
-    lines.push(`${indent(depth)}}`);
+    lines.push(
+      `${indent(depth)}Condition(if: $${node.condition}) {`,
+      `${indent(depth + 1)}if {`,
+      renderPlanNode(node.ifClause, depth + 2),
+      `${indent(depth + 1)}}`,
+      `${indent(depth + 1)}else {`,
+      renderPlanNode(node.elseClause, depth + 2),
+      `${indent(depth + 1)}}`,
+      `${indent(depth)}}`,
+    );
     return lines.join('\n');
   }
 
@@ -399,19 +279,19 @@ export function renderConditionNode(node: ConditionNodePlan, depth = 0): string 
 
 export function renderSubscriptionNode(node: SubscriptionNodePlan, depth = 0): string {
   const lines: string[] = [];
-  lines.push(`${indent(depth)}Subscription {`);
-  lines.push(`${indent(depth + 1)}primary {`);
-  lines.push(renderPlanNode(node.primary, depth + 2));
-  lines.push(`${indent(depth + 1)}}`);
-  lines.push(`${indent(depth)}}`);
+  lines.push(
+    `${indent(depth)}Subscription {`,
+    `${indent(depth + 1)}primary {`,
+    renderPlanNode(node.primary, depth + 2),
+    `${indent(depth + 1)}}`,
+    `${indent(depth)}}`,
+  );
   return lines.join('\n');
 }
 
 export function renderDeferNode(node: DeferNodePlan, depth = 0): string {
   const lines: string[] = [];
-  lines.push(`${indent(depth)}Defer {`);
-
-  lines.push(`${indent(depth + 1)}primary {`);
+  lines.push(`${indent(depth)}Defer {`, `${indent(depth + 1)}primary {`);
   if (node.primary.subselection) {
     lines.push(`${indent(depth + 2)}subselection: ${JSON.stringify(node.primary.subselection)}`);
   }
@@ -550,16 +430,16 @@ function extractOperationsFromNode(node: PlanNode, path: string): ExtractedOpera
 
 export interface QueryPlanNode extends FlowNode {
   kind: PlanNode['kind'] | 'Root';
-  parent?: string;
+  children?: QueryPlanNode[];
 }
 
 function visitNode(
   node: PlanNode,
-  parentNode: QueryPlanNode,
+  parentNode: QueryPlanNode | null,
   nodes: QueryPlanNode[],
-  cluster?: string,
+  contentPrefix?: React.ReactNode,
 ): QueryPlanNode {
-  const result: QueryPlanNode = {
+  let result: QueryPlanNode | null = {
     id: uuidv4(),
     title: node.kind,
     kind: node.kind as QueryPlanNode['kind'],
@@ -567,99 +447,223 @@ function visitNode(
 
   switch (node.kind) {
     case 'Fetch':
+      const entity = (node.requires?.[0] as SelectionInlineFragment)?.typeCondition;
+
       result.content = () => {
         return (
-          <div className="grid grid-cols-[1fr_auto] items-center gap-2 overflow-hidden font-mono text-xs">
-            <span className="font-medium">Service</span>
-            <span className="text-secondary-foreground overflow-hidden text-ellipsis whitespace-nowrap">
-              {node.serviceName}
-            </span>
+          <div className="flex flex-col gap-2">
+            {contentPrefix}
+            <div className="grid grid-cols-[1fr_auto] items-center gap-8 overflow-hidden font-mono text-xs">
+              <span className="font-medium">Service</span>
+              <span className="text-secondary-foreground overflow-hidden text-ellipsis whitespace-nowrap">
+                {node.serviceName}
+              </span>
+            </div>
+            {entity && (
+              <div className="grid grid-cols-[1fr_auto] items-center gap-8 overflow-hidden font-mono text-xs">
+                <span className="font-medium">Entity</span>
+                <span className="text-secondary-foreground overflow-hidden text-ellipsis whitespace-nowrap">
+                  {entity}
+                </span>
+              </div>
+            )}
+            <div className="border-t border-dashed">
+              <Dialog>
+                <DialogTrigger asChild>
+                  <Button size="sm" variant="link" className="h-auto w-full pt-2 text-xs">
+                    Show details
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="max-w-2xl! max-h-150 h-full w-full">
+                  <DialogHeader>
+                    <DialogTitle>Fetch</DialogTitle>
+                  </DialogHeader>
+                  <div className="h-full overflow-hidden rounded-sm border">
+                    <Editor value={renderFetchNode(node)} language="graphql" />
+                  </div>
+                </DialogContent>
+              </Dialog>
+            </div>
           </div>
         );
       };
       break;
 
     case 'BatchFetch':
+      result.headerSuffix = () => {
+        const totalPaths = node.entityBatch.aliases.reduce(
+          (acc, alias) => acc + alias.paths.length,
+          0,
+        );
+
+        return (
+          <span className="text-primary overflow-hidden text-ellipsis whitespace-nowrap">
+            <div className="bg-primary/10 border-primary rounded-sm border px-1 text-xs font-medium">
+              {totalPaths}
+            </div>
+          </span>
+        );
+      };
       result.content = () => {
         return (
           <div className="*:border-border flex flex-col gap-2 *:border-b *:border-dashed *:pb-2 *:last:border-b-0 *:last:pb-0">
+            <div className="grid grid-cols-[1fr_auto] items-center gap-8 overflow-hidden font-mono text-xs">
+              <span className="font-medium">Service</span>
+              <span className="text-secondary-foreground overflow-hidden text-ellipsis whitespace-nowrap">
+                {node.serviceName}
+              </span>
+            </div>
             {node.entityBatch.aliases.map(alias => {
               return (
-                <div key={alias.alias}>
-                  <span className="mb-2 font-mono text-xs font-bold">{alias.alias}</span>
-                  <div className="grid grid-cols-[1fr_auto] items-center gap-2 overflow-hidden font-mono text-xs">
-                    <span className="font-medium">Paths</span>
+                <div key={alias.alias} className="grid gap-2">
+                  <div className="grid grid-cols-[1fr_auto] items-center gap-8 overflow-hidden font-mono text-xs">
+                    <span className="font-medium">Path</span>
+                    {alias.paths.length > 1 ? (
+                      <span className="text-secondary-foreground overflow-hidden text-ellipsis whitespace-nowrap">
+                        <div className="bg-card rounded-sm border px-1 text-xs font-medium">
+                          {alias.paths.length}
+                        </div>
+                      </span>
+                    ) : (
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <span className="text-secondary-foreground overflow-hidden text-ellipsis whitespace-nowrap">
+                            {renderFlattenPath(alias.paths[0])}
+                          </span>
+                        </TooltipTrigger>
+                        <TooltipContent>{renderFlattenPath(alias.paths[0])}</TooltipContent>
+                      </Tooltip>
+                    )}
+                  </div>
+                  <div className="grid grid-cols-[1fr_auto] items-center gap-8 overflow-hidden font-mono text-xs">
+                    <span className="font-medium">Enitity</span>
                     <span className="text-secondary-foreground overflow-hidden text-ellipsis whitespace-nowrap">
-                      <div className="bg-card rounded-sm border px-1">{alias.paths.length}</div>
+                      {(alias.requires[0] as SelectionInlineFragment).typeCondition}
                     </span>
                   </div>
                 </div>
               );
             })}
+            <div className="-mt-2">
+              <Dialog>
+                <DialogTrigger asChild>
+                  <Button size="sm" variant="link" className="h-auto w-full pt-2 text-xs">
+                    Show details
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="max-w-2xl! max-h-150 h-full w-full">
+                  <DialogHeader>
+                    <DialogTitle>BatchFetch</DialogTitle>
+                  </DialogHeader>
+                  <div className="h-full overflow-hidden rounded-sm border">
+                    <Editor value={renderBatchFetchNode(node)} language="graphql" />
+                  </div>
+                </DialogContent>
+              </Dialog>
+            </div>
           </div>
         );
       };
       break;
 
     case 'Flatten':
-      result.content = () => {
-        return (
-          <div className="grid grid-cols-[1fr_auto] items-center gap-2 overflow-hidden font-mono text-xs">
+      result = null;
+
+      visitNode(
+        node.node,
+        result,
+        nodes,
+        <>
+          {contentPrefix}
+          <div className="grid grid-cols-[1fr_auto] items-center gap-8 overflow-hidden font-mono text-xs">
             <span className="font-medium">Path</span>
-            <span className="text-secondary-foreground overflow-hidden text-ellipsis whitespace-nowrap">
-              {renderFlattenPath(node.path)}
-            </span>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <span className="text-secondary-foreground overflow-hidden text-ellipsis whitespace-nowrap">
+                  {renderFlattenPath(node.path)}
+                </span>
+              </TooltipTrigger>
+              <TooltipContent>{renderFlattenPath(node.path)}</TooltipContent>
+            </Tooltip>
           </div>
-        );
-      };
-      visitNode(node.node, result, nodes, cluster);
+        </>,
+      );
       break;
 
     case 'Sequence':
-      for (const child of node.nodes) {
-        visitNode(child, result, nodes, cluster);
+      result = null;
+
+      let prevChild: QueryPlanNode | null = null;
+
+      for (let i = 0; i < node.nodes.length; i++) {
+        const child = node.nodes[i];
+
+        const childNode = visitNode(child, prevChild, i === 0 ? [] : nodes);
+
+        if (i === 0) {
+          result = childNode;
+        }
+
+        if (prevChild) {
+          prevChild.next = [childNode.id];
+        }
+
+        prevChild = childNode;
       }
+
       break;
 
     case 'Parallel':
+      result.children = [];
+
       for (const child of node.nodes) {
-        visitNode(child, result, nodes, result.id!);
+        visitNode(child, result, result.children);
       }
+
       break;
 
     case 'Condition':
-      result.content = () => {
-        return (
-          <div className="grid grid-cols-[1fr_auto] items-center gap-2 overflow-hidden font-mono text-xs">
-            <span className="font-medium">If</span>
-            <span className="text-secondary-foreground overflow-hidden text-ellipsis whitespace-nowrap">
-              ${node.condition}
-            </span>
-          </div>
-        );
-      };
+      result = null;
 
       if (node.ifClause) {
-        result.title = 'Include';
-        visitNode(node.ifClause, result, nodes, cluster);
+        visitNode(
+          node.ifClause,
+          result,
+          nodes,
+          <div className="grid grid-cols-[1fr_auto] items-center gap-8 overflow-hidden font-mono text-xs">
+            <span className="font-medium">Include</span>
+            <span className="text-secondary-foreground overflow-hidden text-ellipsis whitespace-nowrap">
+              if: ${node.condition}
+            </span>
+          </div>,
+        );
       }
       if (node.elseClause) {
-        result.title = 'Skip';
-        visitNode(node.elseClause, result, nodes, cluster);
+        visitNode(
+          node.elseClause,
+          result,
+          nodes,
+          <div className="grid grid-cols-[1fr_auto] items-center gap-8 overflow-hidden font-mono text-xs">
+            <span className="font-medium">Skip</span>
+            <span className="text-secondary-foreground overflow-hidden text-ellipsis whitespace-nowrap">
+              if: ${node.condition}
+            </span>
+          </div>,
+        );
       }
       break;
 
     case 'Subscription':
-      visitNode(node.primary, result, nodes, cluster);
+      visitNode(node.primary, result, nodes);
       break;
 
     case 'Defer':
       if (node.primary.node) {
-        visitNode(node.primary.node, result, nodes, cluster);
+        visitNode(node.primary.node, result, nodes);
       }
       for (const deferred of node.deferred) {
         if (deferred.node) {
-          visitNode(deferred.node, result, nodes, cluster);
+          visitNode(deferred.node, result, nodes);
         }
       }
       break;
@@ -668,15 +672,13 @@ function visitNode(
       break;
   }
 
-  if (parentNode) {
+  if (parentNode && result) {
     parentNode.next = [...(parentNode.next ?? []), result.id!];
   }
 
-  if (cluster) {
-    result.parent = cluster;
+  if (result) {
+    nodes.push(result as QueryPlanNode);
   }
-
-  nodes.push(result as QueryPlanNode);
 
   return result as QueryPlanNode;
 }
