@@ -617,7 +617,7 @@ export async function createStorage(
           psql`/* getOrganizationOwnerId */
         SELECT id, user_id
         FROM organizations
-        WHERE id IN (${psql.join(organizations, psql`, `)})`,
+        WHERE id IN (${psql.join(organizations, psql.fragment`, `)})`,
         )
         .then(z.array(OrganizationUserIdAndIdModel).parse);
 
@@ -670,7 +670,7 @@ export async function createStorage(
         .maybeOne(
           psql`/* countOrganizationMembers */ SELECT COUNT(*) as total FROM organization_member WHERE organization_id = ${organization}`,
         )
-        .then(z.object({ total: z.number() }).parse);
+        .then(z.object({ total: z.bigint().transform(Number) }).parse);
 
       return total;
     },
@@ -694,7 +694,7 @@ export async function createStorage(
           LEFT JOIN organization_member_roles as omr ON (omr.organization_id = o.id AND omr.id = om.role_id)
           WHERE (om.organization_id, om.user_id) IN ((${psql.join(
             selectors.map(s => psql`${s.organizationId}, ${s.userId}`),
-            psql`), (`,
+            psql.fragment`), (`,
           )}))
           ORDER BY u.created_at DESC
         `,
@@ -836,7 +836,7 @@ export async function createStorage(
           LEFT JOIN organization_member_roles as omr ON (omr.organization_id = om.organization_id AND omr.id = om.role_id)
           WHERE (om.organization_id, om.user_id) IN ((${psql.join(
             pairs.map(p => psql`${p.organizationId}, ${p.userId}`),
-            psql`), (`,
+            psql.fragment`), (`,
           )}))
         `,
         )
@@ -1499,7 +1499,7 @@ export async function createStorage(
                 (id, project_id) IN (
                   (${psql.join(
                     uniqueSelectors.map(s => psql`${s.targetId}, ${s.projectId}`),
-                    psql`), (`,
+                    psql.fragment`), (`,
                   )})
                 )
             `,
@@ -1706,7 +1706,7 @@ export async function createStorage(
               await trx.query(psql`/* deleteTargetValidation */
               DELETE
               FROM target_validation
-              WHERE destination_target_id NOT IN (${psql.join(targets, psql`, `)})
+              WHERE destination_target_id NOT IN (${psql.join(targets, psql.fragment`, `)})
                 AND target_id = ${target}
             `);
 
@@ -1716,8 +1716,8 @@ export async function createStorage(
               VALUES
               (
               ${psql.join(
-                targets.map(dest => psql.join([target, dest], psql`, `)),
-                psql`), (`,
+                targets.map(dest => psql.join([target, dest], psql.fragment`, `)),
+                psql.fragment`), (`,
               )}
               )
               ON CONFLICT (target_id, destination_target_id) DO NOTHING
@@ -1825,7 +1825,7 @@ export async function createStorage(
               AND sv.created_at < ${period.to.toISOString()}
           `,
           )
-          .then(z.object({ total: z.number() }).nullable().parse);
+          .then(z.object({ total: z.bigint().transform(Number) }).nullable().parse);
         return result?.total ?? 0;
       }
 
@@ -1837,7 +1837,7 @@ export async function createStorage(
           WHERE t.project_id = ${project}
         `,
         )
-        .then(z.object({ total: z.number() }).nullable().parse);
+        .then(z.object({ total: z.bigint().transform(Number) }).nullable().parse);
 
       return result?.total ?? 0;
     },
@@ -1853,7 +1853,7 @@ export async function createStorage(
               AND created_at < ${period.to.toISOString()}
           `,
           )
-          .then(z.object({ total: z.number() }).nullable().parse);
+          .then(z.object({ total: z.bigint().transform(Number) }).nullable().parse);
         return result?.total ?? 0;
       }
 
@@ -1863,7 +1863,7 @@ export async function createStorage(
           SELECT COUNT(*) as total FROM schema_versions WHERE target_id = ${target}
         `,
         )
-        .then(z.object({ total: z.number() }).nullable().parse);
+        .then(z.object({ total: z.bigint().transform(Number) }).nullable().parse);
 
       return result?.total ?? 0;
     },
@@ -2416,7 +2416,7 @@ export async function createStorage(
             LEFT JOIN projects as p ON (p.id = sl.project_id)
             WHERE (sl.id, sl.target_id) IN ((${psql.join(
               selectors.map(s => psql`${s.commit}, ${s.targetId}`),
-              psql`), (`,
+              psql.fragment`), (`,
             )}))
         `,
       );
@@ -2526,7 +2526,7 @@ export async function createStorage(
           DELETE FROM alert_channels
           WHERE
             project_id = ${projectId} AND
-            id IN (${psql.join(channelIds, psql`, `)})
+            id IN (${psql.join(channelIds, psql.fragment`, `)})
           RETURNING
             ${alertChannelFields()}
         `,
@@ -2570,7 +2570,7 @@ export async function createStorage(
           DELETE FROM alerts
           WHERE
             project_id = ${project} AND
-            id IN (${psql.join(alerts, psql`, `)})
+            id IN (${psql.join(alerts, psql.fragment`, `)})
           RETURNING
             ${alertFields()}
         `,
@@ -5501,8 +5501,8 @@ const OrganizationModel = z
     id: z.string(),
     slug: z.string(),
     name: z.string(),
-    limitRetentionDays: z.number(),
-    limitOperationsMonthly: z.number(),
+    limitRetentionDays: z.bigint().transform(Number),
+    limitOperationsMonthly: z.bigint().transform(Number),
     billingPlan: z.string(),
     getStartedCreatingProject: z.boolean(),
     getStartedPublishingSchema: z.boolean(),
@@ -5755,7 +5755,7 @@ const OrganizationTargetPairModel = z.object({
 
 const OrganizationStatModel = z.object({
   id: z.string(),
-  total: z.number(),
+  total: z.bigint().transform(Number),
 });
 
 export const UserModel = z.object({

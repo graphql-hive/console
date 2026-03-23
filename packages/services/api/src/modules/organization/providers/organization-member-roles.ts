@@ -33,7 +33,7 @@ const MemberRoleModel = z
     description: z.string(),
     isLocked: z.boolean(),
     organizationId: z.string(),
-    membersCount: z.number(),
+    membersCount: z.bigint().transform(Number),
     legacyScopes: z
       .array(z.string())
       .nullable()

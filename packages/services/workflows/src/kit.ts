@@ -4,7 +4,7 @@ import { makeWorkerUtils, WorkerUtils, type JobHelpers, type Task } from 'graphi
 import type { Pool } from 'pg';
 import { z } from 'zod';
 import { Logger } from '@graphql-hive/logger';
-import { bridgeGraphileLogger } from '@hive/pubsub';
+import { PostgresDatabasePool, psql } from '@hive/postgres';
 import type { Context } from './context';
 
 export type TaskDefinition<TName extends string, TModel> = {
@@ -72,17 +72,12 @@ export function implementTask<TPayload>(
  * Schedule a tasks.
  */
 export class TaskScheduler {
-  tools: Promise<WorkerUtils>;
   cache: BentoCache<{ store: ReturnType<typeof bentostore> }>;
 
   constructor(
-    pgPool: Pool,
+    private pgPool: PostgresDatabasePool,
     private logger: Logger = new Logger(),
   ) {
-    this.tools = makeWorkerUtils({
-      pgPool,
-      logger: bridgeGraphileLogger(logger),
-    });
     this.cache = new BentoCache({
       default: 'taskSchedule',
       stores: {
@@ -119,8 +114,6 @@ export class TaskScheduler {
 
     const input = taskDefinition.schema.parse(payload);
 
-    const tools = await this.tools;
-
     if (opts?.dedupe) {
       const dedupeKey =
         typeof opts.dedupe.key === 'string' ? opts.dedupe.key : opts.dedupe.key(payload);
@@ -128,27 +121,26 @@ export class TaskScheduler {
 
       let shouldSkip = true;
 
+      const { pgPool } = this;
+
       await this.cache.getOrSet({
         key: `${taskDefinition.name}:${dedupeKey}`,
         ttl: opts.dedupe.ttl,
         async factory() {
-          return await tools.withPgClient(async client => {
-            const result = await client.query(
-              `
+          const result = await pgPool.anyFirst(
+            psql`
                INSERT INTO "graphile_worker_deduplication" ("task_name", "dedupe_key", "expires_at")
-               VALUES($1, $2, $3)
+               VALUES(${taskDefinition.name}, ${dedupeKey}, ${expiresAt})
                ON CONFLICT ("task_name", "dedupe_key")
                DO
                  UPDATE SET "expires_at" = EXCLUDED.expires_at
                  WHERE "graphile_worker_deduplication"."expires_at" < NOW()
                RETURNING xmax = 0 AS "inserted"
              `,
-              [taskDefinition.name, dedupeKey, expiresAt],
-            );
+          );
 
-            shouldSkip = result.rows.length === 0;
-            return true;
-          });
+          shouldSkip = result.length === 0;
+          return true;
         },
       });
 
@@ -163,21 +155,25 @@ export class TaskScheduler {
       }
     }
 
-    const job = await tools.addJob(taskDefinition.name, {
-      requestId: opts?.requestId,
-      input,
-    });
+    const result = await this.pgPool
+      .maybeOneFirst(
+        psql`
+      SELECT graphile_worker.add_job(
+        ${taskDefinition.name},
+        ${psql.json({ requestId: opts?.requestId, input })}
+      );
+    `,
+      )
+      .then(z.string().parse);
+
+    const [jobId] = result.substring(1).split(',');
 
     this.logger.info(
       {
         'job.taskId': taskDefinition.name,
-        'job.id': job.id,
+        'job.id': jobId,
       },
       'task enqueued.',
     );
-  }
-
-  async dispose() {
-    await (await this.tools).release();
   }
 }

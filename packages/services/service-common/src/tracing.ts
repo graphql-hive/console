@@ -250,6 +250,7 @@ export const createSlonikInterceptor = (options: SlonikTracingInterceptorOptions
   const shouldExcludeFn = options.shouldExcludeStatement || (() => false);
 
   return {
+    name: 'slonik-tracing-interceptor',
     afterPoolConnection(context) {
       connections[context.connectionId] = {};
 
