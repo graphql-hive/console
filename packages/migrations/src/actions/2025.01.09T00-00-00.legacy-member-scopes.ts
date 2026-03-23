@@ -25,7 +25,7 @@ export default {
   name: '2025.01.09T00-00-00.legacy-member-scopes.ts',
   noTransaction: true,
   async run({ psql, connection }) {
-    const queryResult = await connection.query(psql`
+    const queryResult = await connection.any(psql`
       SELECT
         organization_id as "organizationId",
         sorted_scopes as "sortedScopes",
@@ -49,7 +49,7 @@ export default {
       ORDER BY organization_id;
     `);
 
-    if (queryResult.rowCount === 0) {
+    if (queryResult.length === 0) {
       console.log('No members without role_id found.');
       return;
     }
@@ -57,7 +57,7 @@ export default {
     // rows are sorted by organization_id
     // and grouped by scopes
     // so we can process them in order
-    const rows = QUERY_RESULT.parse(queryResult.rows);
+    const rows = QUERY_RESULT.parse(queryResult);
 
     let counter = 1;
     let previousOrganizationId: string | null = null;
@@ -70,7 +70,7 @@ export default {
       }
 
       console.log(
-        `processing organization_id="${row.organizationId}" (${counter}) with ${row.userIds.length} users | ${index + 1}/${queryResult.rowCount}`,
+        `processing organization_id="${row.organizationId}" (${counter}) with ${row.userIds.length} users | ${index + 1}/${queryResult.length}`,
       );
 
       const startedAt = Date.now();

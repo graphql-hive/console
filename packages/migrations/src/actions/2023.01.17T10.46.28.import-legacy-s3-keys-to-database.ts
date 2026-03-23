@@ -93,8 +93,8 @@ const run: MigrationExecutor['run'] = async ({ connection, psql }) => {
         200
     `;
 
-    const items = await connection.query(query);
-    return TargetsModel.parse(items.rows);
+    const items = await connection.any(query);
+    return TargetsModel.parse(items);
   }
 
   let lastCursor: null | Cursor = null;

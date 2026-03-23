@@ -10,6 +10,7 @@ import {
   isScalarType,
   isUnionType,
 } from 'graphql';
+import z from 'zod';
 import { psql, type CommonQueryMethods } from '@hive/postgres';
 import { env } from '../environment';
 import type { MigrationExecutor } from '../pg-migrator';
@@ -48,9 +49,13 @@ export default {
       return;
     }
 
-    const schemaVersionsTotal = await connection.oneFirst<number>(psql`
+    const schemaVersionsTotal = await connection
+      .oneFirst(
+        psql`
       SELECT count(*) as total FROM schema_versions
-    `);
+    `,
+      )
+      .then(z.number().parse);
     console.log(`Found ${schemaVersionsTotal} schema versions`);
 
     if (schemaVersionsTotal > 1000) {
@@ -93,24 +98,24 @@ function diffSchemaCoordinates(
 
 export async function schemaCoordinateStatusMigration(connection: CommonQueryMethods) {
   // Fetch targets
-  const targetResult = await connection.query<{ id: string }>(psql`
+  const targetResult = await connection
+    .any(
+      psql`
     SELECT id FROM targets WHERE ID NOT IN (SELECT target_id FROM schema_coordinate_status)
-  `);
+  `,
+    )
+    .then(z.array(z.object({ id: z.string() })).parse);
 
-  console.log(`Found ${targetResult.rowCount} targets`);
+  console.log(`Found ${targetResult.length} targets`);
 
   let i = 0;
-  for await (const target of targetResult.rows) {
+  for await (const target of targetResult) {
     try {
-      console.log(`Processing target (${i++}/${targetResult.rowCount}) - ${target.id}`);
+      console.log(`Processing target (${i++}/${targetResult.length}) - ${target.id}`);
 
-      const latestSchema = await connection.maybeOne<{
-        id: string;
-        created_at: number;
-        is_composable: boolean;
-        sdl?: string;
-        previous_schema_version_id?: string;
-      }>(psql`
+      const latestSchema = await connection
+        .maybeOne(
+          psql`
       SELECT
         id,
         created_at,
@@ -121,7 +126,19 @@ export async function schemaCoordinateStatusMigration(connection: CommonQueryMet
       WHERE target_id = ${target.id} AND is_composable = true
       ORDER BY created_at DESC
       LIMIT 1
-    `);
+    `,
+        )
+        .then(
+          z
+            .object({
+              id: z.string(),
+              created_at: z.number(),
+              is_composable: z.boolean(),
+              sdl: z.string().nullable(),
+              previous_schema_version_id: z.string().nullable(),
+            })
+            .nullable().parse,
+        );
 
       if (!latestSchema) {
         console.log('[SKIPPING] No latest composable schema found for target %s', target.id);
@@ -343,13 +360,9 @@ async function processVersion(
     return;
   }
 
-  const versionBefore = await connection.maybeOne<{
-    id: string;
-    sdl?: string;
-    previous_schema_version_id?: string;
-    created_at: number;
-    is_composable: boolean;
-  }>(psql`
+  const versionBefore = await connection
+    .maybeOne(
+      psql`
     SELECT
       id,
       composite_schema_sdl as sdl,
@@ -358,7 +371,19 @@ async function processVersion(
       is_composable
     FROM schema_versions
     WHERE id = ${previousVersionId} AND target_id = ${targetId}
-  `);
+  `,
+    )
+    .then(
+      z
+        .object({
+          id: z.string(),
+          created_at: z.number(),
+          is_composable: z.boolean(),
+          sdl: z.string().nullable(),
+          previous_schema_version_id: z.string().nullable(),
+        })
+        .nullable().parse,
+    );
 
   if (!versionBefore) {
     console.error(
