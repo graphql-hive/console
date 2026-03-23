@@ -97,7 +97,7 @@ export class PostgresDatabasePool implements CommonQueryMethods {
     sql: TaggedTemplateLiteralInvocation,
     values?: PrimitiveValueExpression[],
   ): Promise<unknown> {
-    return await this.pool.oneFirst(sql, values);
+    return await this.pool.maybeOneFirst(sql, values);
   }
 
   async one(
@@ -160,7 +160,7 @@ export class PostgresDatabasePool implements CommonQueryMethods {
               sql: TaggedTemplateLiteralInvocation,
               values?: PrimitiveValueExpression[],
             ): Promise<unknown> {
-              return await methods.oneFirst(sql, values);
+              return await methods.maybeOneFirst(sql, values);
             },
             async anyFirst(
               sql: TaggedTemplateLiteralInvocation,
