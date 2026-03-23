@@ -1864,6 +1864,9 @@ importers:
       '@hive/service-common':
         specifier: workspace:*
         version: link:../service-common
+      '@hive/storage':
+        specifier: workspace:*
+        version: link:../storage
       '@hive/tokens':
         specifier: workspace:*
         version: link:../tokens
