@@ -139,7 +139,7 @@ export class OrganizationAccessTokensCache {
 
     // Apply a post filter if expired should not be included
     if (opts.includeExpired !== true && token?.expiresAt) {
-      return new Date(token.expiresAt) < new Date() ? null : token;
+      return new Date(token.expiresAt) <= new Date() ? null : token;
     }
 
     return token;

@@ -122,6 +122,17 @@ export function initSeed() {
     return auth;
   }
 
+  async function purgeOrganizationAccessTokenById(id: string) {
+    const registryAddress = await getServiceHost('server', 8082);
+    const purged: { deleted: boolean } = await fetch(
+      'http://' + registryAddress + '/cache/organization-access-token-cache/delete/' + id,
+      {
+        method: 'POST',
+      },
+    ).then(res => res.json());
+    expect(purged.deleted).toBe(true);
+  }
+
   return {
     pollForEmailVerificationLink,
     async purgeOIDCDomains() {
@@ -164,15 +175,7 @@ export function initSeed() {
     createDbConnection,
     authenticate: doAuthenticate,
     generateEmail: () => userEmail(generateUnique()),
-    async purgeOrganizationAccessTokenById(id: string) {
-      const registryAddress = await getServiceHost('server', 8082);
-      await fetch(
-        'http://' + registryAddress + '/cache/organization-access-token-cache/delete/' + id,
-        {
-          method: 'POST',
-        },
-      ).then(res => res.json());
-    },
+    purgeOrganizationAccessTokenById,
     async createOwner(verifyEmail: boolean = true) {
       const ownerEmail = userEmail(generateUnique());
       const auth = await doAuthenticate(ownerEmail, {
@@ -303,6 +306,20 @@ export function initSeed() {
               }
 
               return members;
+            },
+            /** Expires tokens  */
+            async forceExpireTokens(tokenIds: string[]) {
+              const pool = await createConnectionPool();
+              const result = await pool.query(sql`
+                UPDATE "organization_access_tokens"
+                SET "expires_at"=NOW()
+                WHERE id IN (${sql.join(tokenIds, sql`, `)}) AND organization_id=${organization.id}
+              `);
+              await pool.end();
+              expect(result.rowCount).toBe(tokenIds.length);
+              for (const id of tokenIds) {
+                await purgeOrganizationAccessTokenById(id);
+              }
             },
             async projects(token = ownerToken) {
               const projectsResult = await getOrganizationProjects(

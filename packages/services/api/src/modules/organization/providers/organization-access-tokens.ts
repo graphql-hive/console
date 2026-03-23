@@ -129,7 +129,6 @@ const OrganizationAccessTokenModel = z
         resolvedResources,
       );
     },
-    expiresAt: record.expiresAt,
   }));
 
 export type OrganizationAccessToken = z.TypeOf<typeof OrganizationAccessTokenModel>;
