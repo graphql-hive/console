@@ -20,7 +20,7 @@ const tokenFields = psql`
   "token"
   , "token_alias" AS "tokenAlias"
   , "name"
-  , "created_at" AS "date"
+  , to_json("created_at") AS "date"
   , "last_used_at" AS "lastUsedAt"
   , "organization_id" AS "organization"
   , "project_id" AS "project"

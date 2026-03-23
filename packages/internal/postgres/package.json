@@ -4,7 +4,7 @@
   "license": "MIT",
   "private": true,
   "exports": {
-    "./": "./src/index.ts"
+    ".": "./src/index.ts"
   },
   "dependencies": {
     "slonik": "30.4.4",
