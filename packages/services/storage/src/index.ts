@@ -3035,20 +3035,7 @@ export async function createStorage(
           WHERE
             "id" = ${args.oidcIntegrationId}
           RETURNING
-          "id"
-          , "linked_organization_id"
-          , "client_id"
-          , "client_secret"
-          , "oauth_api_url"
-          , "token_endpoint"
-          , "userinfo_endpoint"
-          , "authorization_endpoint"
-          , "oidc_user_join_only"
-          , "oidc_user_access_only"
-          , "additional_scopes"
-          , "default_role_id"
-          , "default_assigned_resources"
-          , "require_invitation"
+            ${oidcIntegrationFields()}
         `,
           )
           .then(OIDCIntegrationModel.parse);
@@ -4677,6 +4664,7 @@ const OIDCIntegrationLegacyModel = OIDCIntegrationBaseModel.extend({
 }));
 
 const LatestOIDCIntegrationModel = OIDCIntegrationBaseModel.extend({
+  oauthApiUrl: z.null(),
   tokenEndpoint: z.string().url(),
   userinfoEndpoint: z.string().url(),
   authorizationEndpoint: z.string().url(),
