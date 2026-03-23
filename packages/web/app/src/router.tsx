@@ -115,9 +115,7 @@ if (env.sentry) {
     ],
     beforeSend(event) {
       const isMonacoError = event.exception?.values?.some(exception =>
-        exception.stacktrace?.frames?.some(frame =>
-          frame.filename?.includes('monaco-editor'),
-        ),
+        exception.stacktrace?.frames?.some(frame => frame.filename?.includes('monaco-editor')),
       );
 
       if (isMonacoError) {
