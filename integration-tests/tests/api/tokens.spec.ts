@@ -93,3 +93,54 @@ test.concurrent('cdn token yields correct error message when used for registry',
   const error = result[0];
   expect(error.message).toEqual('Invalid token provided');
 });
+
+test.concurrent(
+  'can not delete token that does not belong to provided selector',
+  async ({ expect }) => {
+    const seed = initSeed();
+    const { createOrg } = await seed.createOwner();
+    const { createProject } = await createOrg();
+    const { createTargetAccessToken } = await createProject(ProjectType.Single);
+
+    const { token, fetchTokenInfo } = await createTargetAccessToken({
+      mode: 'readOnly',
+    });
+
+    const otherOwner = await seed.createOwner();
+    const otherOrg = await otherOwner.createOrg();
+    const otherProject = await otherOrg.createProject();
+
+    const ids = await otherProject.removeTokens([token.id]);
+    expect(ids).toEqual([]);
+
+    const tokenInfo = await fetchTokenInfo();
+
+    if (tokenInfo.__typename === 'TokenNotFoundError') {
+      throw new Error('Token not found');
+    }
+
+    expect(tokenInfo).toMatchInlineSnapshot(`
+    {
+      __typename: TokenInfo,
+      hasOrganizationDelete: false,
+      hasOrganizationIntegrations: false,
+      hasOrganizationMembers: false,
+      hasOrganizationRead: true,
+      hasOrganizationSettings: false,
+      hasProjectAlerts: false,
+      hasProjectDelete: false,
+      hasProjectOperationsStoreRead: false,
+      hasProjectOperationsStoreWrite: false,
+      hasProjectRead: true,
+      hasProjectSettings: false,
+      hasTargetDelete: false,
+      hasTargetRead: true,
+      hasTargetRegistryRead: true,
+      hasTargetRegistryWrite: false,
+      hasTargetSettings: false,
+      hasTargetTokensRead: false,
+      hasTargetTokensWrite: false,
+    }
+  `);
+  },
+);

@@ -43,9 +43,11 @@ function parseResourceIdentifier(resource: string) {
     throw new Error('Invalid resource identifier. Expected type or * (4)');
   }
 
-  // TODO: maybe some stricter validation of the resource id characters
+  // Note: this is theoretically not possible, as we do not allow colons in any resource names
+  // In case it would happen automatically, we handle it gracefully anyways by including the colons.
+  const resourceId = parts.slice(2).join(':');
 
-  return { organizationId, resourceId: parts[2] };
+  return { organizationId, resourceId };
 }
 
 export type UserActor = {

@@ -63,7 +63,7 @@ const UnusedSchemaView_UnusedSchemaExplorerFragment = graphql(`
   }
 `);
 
-const UnusedSchemaView = memo(function _UnusedSchemaView(props: {
+function InternalUnusedSchemaView(props: {
   explorer: FragmentType<typeof UnusedSchemaView_UnusedSchemaExplorerFragment>;
   totalRequests: number;
   organizationSlug: string;
@@ -209,7 +209,9 @@ const UnusedSchemaView = memo(function _UnusedSchemaView(props: {
       </div>
     </div>
   );
-});
+}
+
+const UnusedSchemaView = memo(InternalUnusedSchemaView);
 
 const UnusedSchemaExplorer_UnusedSchemaQuery = graphql(`
   query UnusedSchemaExplorer_UnusedSchemaQuery(

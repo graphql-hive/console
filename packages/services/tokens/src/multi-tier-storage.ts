@@ -27,7 +27,7 @@ export interface Storage {
   readTarget(targetId: string): Promise<StorageItem[]>;
   readToken(hashedToken: string, maskedToken: string): Promise<StorageItem | null>;
   writeToken(item: Omit<StorageItem, 'date' | 'lastUsedAt'>): Promise<StorageItem>;
-  deleteToken(hashedToken: string): Promise<void>;
+  deleteToken(args: { targetId: string; hashedToken: string }): Promise<boolean>;
   invalidateTokens(hashedTokens: string[]): Promise<void>;
 }
 
@@ -252,16 +252,20 @@ export async function createStorage(
 
       return cacheEntry;
     }),
-    deleteToken: tracker.wrap(async hashedToken => {
-      await db.deleteToken({
-        token: hashedToken,
+    deleteToken: tracker.wrap(async args => {
+      return await db.deleteToken({
+        targetId: args.targetId,
+        token: args.hashedToken,
         async postDeletionTransaction() {
           // delete from Redis when the token is deleted from the DB
-          await redis.del([generateRedisKey(hashedToken), generateStaleRedisKey(hashedToken)]);
+          await redis.del([
+            generateRedisKey(args.hashedToken),
+            generateStaleRedisKey(args.hashedToken),
+          ]);
           // only then delete from the in-memory cache.
           // The other replicas will purge the token from
           // their own in-memory caches on their own pace (ttl)
-          cache.delete(hashedToken);
+          cache.delete(args.hashedToken);
         },
       });
     }),

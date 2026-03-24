@@ -37,7 +37,10 @@ const ThirdpartUserModel = z.object({
   timeJoined: z.number(),
 });
 
-const EmailPasswordOrThirdPartyUserModel = z.union([EmailPasswordUserModel, ThirdpartUserModel]);
+export const EmailPasswordOrThirdPartyUserModel = z.union([
+  EmailPasswordUserModel,
+  ThirdpartUserModel,
+]);
 
 export type EmailPasswordOrThirdPartyUser = z.TypeOf<typeof EmailPasswordOrThirdPartyUserModel>;
 
@@ -321,6 +324,26 @@ export class SuperTokensStore {
       thirdPartyId: 'oidc',
       thirdPartyUserId: `${args.oidcIntegrationId}-${args.sub}`,
     });
+  }
+
+  async updateOIDCUserEmail(args: { userId: string; newEmail: string }) {
+    const query = sql`
+      UPDATE
+        "supertokens_thirdparty_users"
+      SET
+        "email" = ${args.newEmail}
+      WHERE
+        "app_id" = 'public'
+        AND "user_id" = ${args.userId}
+      RETURNING
+        "user_id" AS "userId"
+        , "email" AS "email"
+        , "third_party_id" AS "thirdPartyId"
+        , "third_party_user_id" AS "thirdPartyUserId"
+        , "time_joined" AS "timeJoined"
+    `;
+
+    return await this.pool.maybeOne(query).then(ThirdpartUserModel.nullable().parse);
   }
 
   async createThirdPartyUser(args: {

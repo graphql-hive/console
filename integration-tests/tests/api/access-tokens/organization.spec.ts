@@ -49,6 +49,26 @@ const PaginatedAccessTokensQuery = graphql(`
   }
 `);
 
+const AccessTokenByIdQuery = graphql(`
+  query AccessTokenByIdQuery($organizationSlug: String!, $id: ID!) {
+    organization: organizationBySlug(organizationSlug: $organizationSlug) {
+      id
+      slug
+      accessTokenById(id: $id) {
+        id
+        resolvedResourcePermissionGroups {
+          level
+          title
+          resolvedPermissionGroups {
+            title
+          }
+          resolvedResourceIds
+        }
+      }
+    }
+  }
+`);
+
 test.concurrent('create: success', async () => {
   const { createOrg, ownerToken } = await initSeed().createOwner();
   const org = await createOrg();
@@ -364,3 +384,90 @@ test.concurrent('pagination', async ({ expect }) => {
     },
   });
 });
+
+test.concurrent(
+  'invalid app name and service name is filtered out from created access token',
+  async ({ expect }) => {
+    const { createOrg, ownerToken } = await initSeed().createOwner();
+    const org = await createOrg();
+    const project1 = await org.createProject(GraphQLSchema.ProjectType.Federation);
+
+    const result = await createOrganizationAccessToken(
+      {
+        organization: {
+          byId: org.organization.id,
+        },
+        title: 'an access token',
+        description: 'a description',
+        resources: {
+          mode: GraphQLSchema.ResourceAssignmentModeType.Granular,
+          projects: [
+            {
+              projectId: project1.project.id,
+              targets: {
+                mode: GraphQLSchema.ResourceAssignmentModeType.Granular,
+                targets: [
+                  {
+                    targetId: project1.target.id,
+                    services: {
+                      mode: GraphQLSchema.ResourceAssignmentModeType.Granular,
+                      services: [{ serviceName: 'legit' }, { serviceName: 'not-legit:' }],
+                    },
+                    appDeployments: {
+                      mode: GraphQLSchema.ResourceAssignmentModeType.Granular,
+                      appDeployments: [{ appDeployment: 'legit' }, { appDeployment: 'not-legit:' }],
+                    },
+                  },
+                ],
+              },
+            },
+          ],
+        },
+        permissions: [
+          'organization:describe',
+          'project:describe',
+          'appDeployment:retire',
+          'schemaCheck:create',
+        ],
+      },
+      ownerToken,
+    ).then(e => e.expectNoGraphQLErrors());
+
+    expect(result.createOrganizationAccessToken.error).toEqual(null);
+    expect(result.createOrganizationAccessToken.ok).toEqual({
+      privateAccessKey: expect.any(String),
+      createdOrganizationAccessToken: {
+        id: expect.any(String),
+        title: 'an access token',
+        description: 'a description',
+        permissions: [
+          'organization:describe',
+          'project:describe',
+          'appDeployment:retire',
+          'schemaCheck:create',
+        ],
+        createdAt: expect.any(String),
+      },
+    });
+
+    const accessTokenResult = await execute({
+      document: AccessTokenByIdQuery,
+      variables: {
+        id: result.createOrganizationAccessToken.ok!.createdOrganizationAccessToken.id,
+        organizationSlug: org.organization.slug,
+      },
+      authToken: ownerToken,
+    }).then(e => e.expectNoGraphQLErrors());
+
+    expect(
+      accessTokenResult.organization?.accessTokenById?.resolvedResourcePermissionGroups.find(
+        group => group.level === GraphQLSchema.PermissionLevelType.AppDeployment,
+      )?.resolvedResourceIds,
+    ).toHaveLength(1);
+    expect(
+      accessTokenResult.organization?.accessTokenById?.resolvedResourcePermissionGroups.find(
+        group => group.level === GraphQLSchema.PermissionLevelType.Service,
+      )?.resolvedResourceIds,
+    ).toHaveLength(1);
+  },
+);

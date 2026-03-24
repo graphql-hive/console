@@ -25,13 +25,15 @@ runs:
     - name: check pnpm version
       shell: bash
       id: pnpm
+      env:
+        INSTALL_DEPENDENCIES: ${{ inputs.installDependencies }}
       run: |
         PNPM_VERSION=$(cat package.json | jq -r '.packageManager' | awk -F@ '{print $2}')
         PNPM_VERSION=${PNPM_VERSION:-9}
         echo "Using PNPM version $PNPM_VERSION"
         echo "version=$PNPM_VERSION" >> $GITHUB_OUTPUT
 
-        if [ ${{ inputs.installDependencies }} = true ]; then
+        if [ $INSTALL_DEPENDENCIES = true ]; then
           echo "cache=pnpm" >> $GITHUB_OUTPUT
         else
           echo "cache=" >> $GITHUB_OUTPUT

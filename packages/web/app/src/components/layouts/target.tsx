@@ -1,4 +1,4 @@
-import { createContext, ReactElement, ReactNode, useContext, useMemo, useState } from 'react';
+import { ReactElement, ReactNode, useMemo, useState } from 'react';
 import { LinkIcon } from 'lucide-react';
 import { useQuery } from 'urql';
 import { Header } from '@/components/navigation/header';
@@ -46,42 +46,6 @@ export enum Page {
   Proposals = 'proposals',
   Settings = 'settings',
 }
-
-type TargetReference = {
-  organizationSlug: string;
-  projectSlug: string;
-  targetSlug: string;
-};
-
-const TargetReferenceContext = createContext<TargetReference | undefined>(undefined);
-
-type TargetReferenceProviderProps = {
-  children: ReactNode;
-  organizationSlug: string;
-  projectSlug: string;
-  targetSlug: string;
-};
-
-export const TargetReferenceProvider = ({
-  children,
-  organizationSlug,
-  projectSlug,
-  targetSlug,
-}: TargetReferenceProviderProps) => {
-  return (
-    <TargetReferenceContext.Provider value={{ organizationSlug, projectSlug, targetSlug }}>
-      {children}
-    </TargetReferenceContext.Provider>
-  );
-};
-
-export const useTargetReference = () => {
-  const context = useContext(TargetReferenceContext);
-  if (!context) {
-    throw new Error('useTargetReference must be used within a TargetReferenceProvider');
-  }
-  return context;
-};
 
 const TargetLayoutQuery = graphql(`
   query TargetLayoutQuery($organizationSlug: String!, $projectSlug: String!, $targetSlug: String!) {
@@ -157,11 +121,7 @@ export const TargetLayout = ({
   useLastVisitedOrganizationWriter(currentOrganization?.slug);
 
   return (
-    <TargetReferenceProvider
-      organizationSlug={organizationSlug}
-      projectSlug={projectSlug}
-      targetSlug={targetSlug}
-    >
+    <>
       <Header>
         <div className="flex flex-row items-center gap-4">
           <HiveLink className="size-8" />
@@ -291,7 +251,7 @@ export const TargetLayout = ({
           <div className={cn('min-h-(--content-height) container pb-7', className)}>{children}</div>
         </>
       )}
-    </TargetReferenceProvider>
+    </>
   );
 };
 

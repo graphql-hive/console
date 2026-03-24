@@ -52,6 +52,7 @@ import {
   users,
 } from './db';
 import {
+  AffectedAppDeployments,
   ConditionalBreakingChangeMetadata,
   ConditionalBreakingChangeMetadataModel,
   HiveSchemaChangeModel,
@@ -75,7 +76,9 @@ export type { tokens, schema_policy_resource } from './db/types';
 
 type Connection = DatabasePool | DatabaseTransactionConnection;
 
-type OverrideProp<T extends {}, K extends keyof T, V extends T[K]> = Omit<T, K> & { [P in K]: V };
+type OverrideProp<T extends Record<string, any>, K extends keyof T, V extends T[K]> = Omit<T, K> & {
+  [P in K]: V;
+};
 
 type schema_log = Omit<schema_log_in_db, 'action'> & {
   action: 'PUSH' | 'DELETE';
@@ -758,6 +761,15 @@ export async function createStorage(
             action = 'created';
           }
 
+          if (internalUser.email !== email) {
+            await t.query(sql`
+              UPDATE "users"
+              SET "email" = ${email}
+              WHERE "id" = ${internalUser.id}
+            `);
+            internalUser.email = email;
+          }
+
           if (oidcIntegration !== null) {
             // Add user to OIDC linked integration
             await shared.addOrganizationMemberViaOIDCIntegrationId(
@@ -1247,15 +1259,20 @@ export async function createStorage(
         `),
       );
     },
-    async updateOrganizationRateLimits({ monthlyRateLimit, organizationId: organization }) {
-      return transformOrganization(
-        await pool.one<Slonik<organizations>>(sql`/* updateOrganizationRateLimits */
-          UPDATE organizations
-          SET limit_operations_monthly = ${monthlyRateLimit.operations}, limit_retention_days = ${monthlyRateLimit.retentionInDays}
-          WHERE id = ${organization}
-          RETURNING *
-        `),
-      );
+    async updateOrganizationRateLimits(args, action) {
+      return await tracedTransaction('updateOrganizationRateLimits', pool, async t => {
+        const org = transformOrganization(
+          await t.one<Slonik<organizations>>(sql`/* updateOrganizationRateLimits */
+            UPDATE organizations
+            SET limit_operations_monthly = ${args.monthlyRateLimit.operations}, limit_retention_days = ${args.monthlyRateLimit.retentionInDays}
+            WHERE id = ${args.organizationId}
+            RETURNING *
+          `),
+        );
+        await action?.();
+
+        return org;
+      });
     },
     async createOrganizationInvitation(args) {
       return transformOrganizationInvitation(
@@ -5566,15 +5583,7 @@ export function toSerializableSchemaChange(change: SchemaChangeType): {
       count: number;
     }>;
   };
-  affectedAppDeployments: null | Array<{
-    id: string;
-    name: string;
-    version: string;
-    affectedOperations: Array<{
-      hash: string;
-      name: string | null;
-    }>;
-  }>;
+  affectedAppDeployments: null | AffectedAppDeployments;
 } {
   return {
     id: change.id,

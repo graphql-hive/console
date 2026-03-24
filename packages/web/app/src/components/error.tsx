@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { LogOutIcon } from 'lucide-react';
 import { useSessionContext } from 'supertokens-auth-react/recipe/session';
 import { Button } from '@/components/ui/button';
+import { isChunkLoadError, reloadOnChunkError } from '@/lib/chunk-error';
 import { captureException, flush } from '@sentry/react';
 import { useRouter } from '@tanstack/react-router';
 
@@ -16,9 +17,17 @@ export function ErrorComponent(props: { error: any; message?: string }) {
   const session = useSessionContext();
 
   useEffect(() => {
+    // If this is a stale chunk error, attempt a single reload to fetch fresh
+    // HTML. reloadOnChunkError() handles the sessionStorage guard internally
+    // to prevent infinite loops — see lib/chunk-error.ts for details.
+    // If it doesn't reload (flag already set), fall through to report to Sentry.
+    if (isChunkLoadError(props.error)) {
+      reloadOnChunkError();
+    }
+
     captureException(props.error);
     void flush(2000);
-  }, []);
+  }, [props.error]);
 
   const isLoggedIn = !session.loading && session.doesSessionExist;
 

@@ -210,6 +210,7 @@ export default class SchemaCheck extends Command<typeof SchemaCheck> {
           description: SchemaCheck.flags['registry.endpoint'].description!,
         });
       } catch (e) {
+        this.logDebug(e);
         throw new MissingEndpointError();
       }
       const file = args.file;
@@ -222,10 +223,13 @@ export default class SchemaCheck extends Command<typeof SchemaCheck> {
           description: SchemaCheck.flags['registry.accessToken'].description!,
         });
       } catch (e) {
+        this.logDebug(e);
         throw new MissingRegistryTokenError();
       }
 
-      const sdl = await loadSchema(file).catch(e => {
+      const sdl = await loadSchema('first-federation-then-graphql-introspection', file, {
+        logger: this.logger,
+      }).catch(e => {
         throw new SchemaFileNotFoundError(file, e);
       });
       const git = await gitInfo(() => {

@@ -53,6 +53,7 @@ export default class AppRetire extends Command<typeof AppRetire> {
         description: AppRetire.flags['registry.endpoint'].description!,
       });
     } catch (e) {
+      this.logDebug(e);
       throw new MissingEndpointError();
     }
 
@@ -64,6 +65,7 @@ export default class AppRetire extends Command<typeof AppRetire> {
         description: AppRetire.flags['registry.accessToken'].description!,
       });
     } catch (e) {
+      this.logDebug(e);
       throw new MissingRegistryTokenError();
     }
 

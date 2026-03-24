@@ -166,6 +166,7 @@ export default class SchemaPublish extends Command<typeof SchemaPublish> {
 
       return metadata;
     } catch (e) {
+      this.logDebug(e);
       // If we can't parse it, we can try to load it from FS
       return this.readJSON(metadata);
     }
@@ -188,6 +189,7 @@ export default class SchemaPublish extends Command<typeof SchemaPublish> {
           description: SchemaPublish.flags['registry.endpoint'].description!,
         });
       } catch (e) {
+        this.logDebug(e);
         throw new MissingEndpointError();
       }
       try {
@@ -199,6 +201,7 @@ export default class SchemaPublish extends Command<typeof SchemaPublish> {
           description: SchemaPublish.flags['registry.accessToken'].description!,
         });
       } catch (e) {
+        this.logDebug(e);
         throw new MissingRegistryTokenError();
       }
       const service = flags.service;
@@ -273,7 +276,9 @@ export default class SchemaPublish extends Command<typeof SchemaPublish> {
 
       let sdl: string;
       try {
-        const rawSdl = await loadSchema(file);
+        const rawSdl = await loadSchema('first-federation-then-graphql-introspection', file, {
+          logger: this.logger,
+        });
         invariant(typeof rawSdl === 'string' && rawSdl.length > 0, 'Schema seems empty');
         const transformedSDL = print(transformCommentsToDescriptions(rawSdl));
         sdl = minifySchema(transformedSDL);

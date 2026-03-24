@@ -13,6 +13,7 @@ import {
 } from '@hive/storage';
 import { ProjectType } from '../../../shared/entities';
 import { buildSortedSchemaFromSchemaObject } from '../../../shared/schema';
+import { AffectAppDeploymentsBySchemaCoordinate } from '../../app-deployments/providers/app-deployments';
 import { OperationsReader } from '../../operations/providers/operations-reader';
 import { SchemaPolicyProvider } from '../../policy/providers/schema-policy.provider';
 import type {
@@ -62,9 +63,7 @@ export type AffectedAppDeploymentsResult = {
 
 export type GetAffectedAppDeployments = (
   schemaCoordinates: string[],
-  firstDeployments?: number,
-  firstOperations?: number,
-) => Promise<AffectedAppDeploymentsResult>;
+) => Promise<AffectAppDeploymentsBySchemaCoordinate>;
 
 // The reason why I'm using `result` and `reason` instead of just `data` for both:
 // https://bit.ly/hive-check-result-data
@@ -673,7 +672,6 @@ export class RegistryChecks {
         if (change.criticality === CriticalityLevel.Breaking) {
           // Initialize affectedAppDeployments to empty array for all breaking changes
           change.affectedAppDeployments = [];
-
           const coordinate = change.breakingChangeSchemaCoordinate ?? change.path;
           if (coordinate) {
             breakingCoordinates.add(coordinate);
@@ -689,42 +687,31 @@ export class RegistryChecks {
 
         try {
           const result = await args.getAffectedAppDeployments(Array.from(breakingCoordinates));
-          const affectedAppDeployments = result.deployments;
 
-          if (affectedAppDeployments.length > 0) {
-            this.logger.debug(
-              '%d app deployments affected by breaking changes (total: %d)',
-              affectedAppDeployments.length,
-              result.totalDeployments,
-            );
+          if (result.size) {
+            this.logger.debug('app deployments affected by breaking changes');
 
             // Mark changes as unsafe if they affect active app deployments
             for (const change of inspectorChanges) {
-              if (change.criticality === CriticalityLevel.Breaking) {
-                const coordinate = change.breakingChangeSchemaCoordinate ?? change.path;
-                if (coordinate) {
-                  // Check if any deployment is affected by this specific coordinate
-                  const deploymentsForCoordinate = affectedAppDeployments.filter(
-                    d => d.affectedOperationsByCoordinate[coordinate]?.length > 0,
-                  );
-
-                  if (deploymentsForCoordinate.length > 0) {
-                    // Override usage-based safety: change is NOT safe if app deployments are affected
-                    change.isSafeBasedOnUsage = false;
-
-                    // Update affected app deployments for this change
-                    change.affectedAppDeployments = deploymentsForCoordinate.map(d => ({
-                      id: d.appDeployment.id,
-                      name: d.appDeployment.name,
-                      version: d.appDeployment.version,
-                      createdAt: d.appDeployment.createdAt,
-                      activatedAt: d.appDeployment.activatedAt,
-                      retiredAt: d.appDeployment.retiredAt,
-                      affectedOperations: d.affectedOperationsByCoordinate[coordinate],
-                    }));
-                  }
-                }
+              if (change.criticality !== CriticalityLevel.Breaking) {
+                continue;
               }
+              const coordinate = change.breakingChangeSchemaCoordinate ?? change.path;
+              if (!coordinate) {
+                continue;
+              }
+
+              const data = result.get(coordinate);
+
+              if (!data) {
+                continue;
+              }
+
+              // Check if any deployment is affected by this specific coordinate
+              // Override usage-based safety: change is NOT safe if app deployments are affected
+              change.isSafeBasedOnUsage = false;
+              // Update affected app deployments for this change
+              change.affectedAppDeployments = data;
             }
           } else {
             this.logger.debug('No app deployments affected by breaking changes');

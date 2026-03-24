@@ -1,5 +1,229 @@
 # hive
 
+## 10.2.0
+
+### Minor Changes
+
+- [#7859](https://github.com/graphql-hive/console/pull/7859)
+  [`bf00fbc`](https://github.com/graphql-hive/console/commit/bf00fbcc2d35278b9be46431f4a0c339a29f6de7)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Improve federation composition
+
+  - Support `file:` protocol and non-RFC 3986 in imported `link` url arguments
+  - Fix supergraph `@join__field` emission for Federation v1 `@external` fields and improve
+    `override`/`requires` edge-case handling.
+    - Drop Federation v1 `@join__field(external: true)` fields based on key usage in the subgraph
+      instead of aggregated field key usage across subgraphs.
+    - Avoid emitting redundant `@join__field(external: true)` metadata when a field is only required
+      through overridden paths.
+    - Tighten `@join__field` emission around @override and interface type fields.
+
+### Patch Changes
+
+- [#7852](https://github.com/graphql-hive/console/pull/7852)
+  [`67b5949`](https://github.com/graphql-hive/console/commit/67b5949ce7d87d6b3cbeb946dbf7479925a19e19)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Improve access checks for deleting legacy target
+  tokens.
+
+## 10.1.0
+
+### Minor Changes
+
+- [#7832](https://github.com/graphql-hive/console/pull/7832)
+  [`d9f2d51`](https://github.com/graphql-hive/console/commit/d9f2d51f59b16bd30dc0bec47671090e64801b7b)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Create new ClickHouse materialized views for faster
+  affected app deployment lookups in schema checks and schema version.
+
+  **Caution**: If you are relying on the app deployments feature for schema checks it is recommended
+  to manually perform the following migration against your ClickHouse database after deploying this
+  version to ensure data consistency.
+
+  Substitute `$CLICKHOUSE_DB_USER` and `$CLICKHOUSE_DB_PASSWORD`, with the same credentials that
+  execute these migration.
+
+  ```sql
+  CREATE TABLE "tmp_app_deployments_backfill_target_id" (
+    "app_deployment_id" STRING,
+    "target_id" LowCardinality (STRING)
+  ) ENGINE = Memory;
+  
+  INSERT INTO
+    "tmp_app_deployments_backfill_target_id"
+  SELECT
+    "app_deployment_id",
+    "target_id"
+  FROM
+    "app_deployments";
+  
+  CREATE DICTIONARY "tmp_app_deployments_target_dict" ("app_deployment_id" STRING, "target_id" STRING) PRIMARY KEY "app_deployment_id" SOURCE (
+    CLICKHOUSE (
+      TABLE "tmp_app_deployments_backfill_target_id" USER '$CLICKHOUSE_DB_USER' PASSWORD '$CLICKHOUSE_DB_PASSWORD'
+    )
+  ) LAYOUT (HASHED ()) LIFETIME (3600);
+  
+  ALTER TABLE "app_deployment_documents"
+  UPDATE "target_id" = dictGetString (
+    'tmp_app_deployments_target_dict',
+    'target_id',
+    "app_deployment_id"
+  )
+  WHERE
+    "target_id" = '';
+  
+  INSERT INTO
+    "app_deployment_document_coordinates" (
+      "target_id",
+      "coordinate",
+      "app_deployment_id",
+      "document_hash",
+      "operation_name"
+    )
+  SELECT
+    "target_id",
+    arrayJoin ("schema_coordinates") AS "schema_coordinate",
+    "app_deployment_id",
+    "document_hash",
+    "operation_name"
+  FROM
+    "app_deployment_documents"
+  WHERE
+    "target_id" != "";
+  
+  DROP DICTIONARY "tmp_app_deployments_target_dict";
+  
+  DROP TABLE "tmp_app_deployments_backfill_target_id";
+  ```
+
+### Patch Changes
+
+- [#7851](https://github.com/graphql-hive/console/pull/7851)
+  [`219cac8`](https://github.com/graphql-hive/console/commit/219cac8c4d6e3ee01c28da307c7971cce884bc2c)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Fix access token expiration date.
+
+## 10.0.0
+
+### Major Changes
+
+- [#7705](https://github.com/graphql-hive/console/pull/7705)
+  [`14c73e5`](https://github.com/graphql-hive/console/commit/14c73e57513b5b0df8faa2aca8f4a1eb84088b7c)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - **BREAKING** Remove support for `supertokens`
+  service and replace it with native authentication solution.
+
+  ## Upgrade Guide
+
+  Adjust your docker compose file like the following:
+
+  - Remove `services.supertokens` from your `docker-compose.community.yml` file
+  - Remove the following environment variables from the `services.server.environment`
+    - `SUPERTOKENS_CONNECTION_URI=`
+    - `SUPERTOKENS_API_KEY=`
+  - Set the following environment variables for `services.server.environment`
+    - `SUPERTOKENS_REFRESH_TOKEN_KEY=`
+    - `SUPERTOKENS_ACCESS_TOKEN_KEY=`
+
+  ### Set the refresh token key
+
+  #### Extract from existing `supertokens` deployment
+
+  This method works if you use supertokens before and want to have existing user sessions to
+  continue working. If you want to avoid messing with the database, you can also create a new
+  refresh token key from scratch, the drawback is that users are forced to login again.
+
+  Extract the refresh token key from the supertokens database
+
+  ```sql
+  SELECT
+    "value"
+  FROM
+    "supertokens_key_value"
+  WHERE
+    "name" = 'refresh_token_key';
+  ```
+
+  The key should look similar to this:
+  `1000:15e5968d52a9a48921c1c63d88145441a8099b4a44248809a5e1e733411b3eeb80d87a6e10d3390468c222f6a91fef3427f8afc8b91ea1820ab10c7dfd54a268:39f72164821e08edd6ace99f3bd4e387f45fa4221fe3cd80ecfee614850bc5d647ac2fddc14462a00647fff78c22e8d01bc306a91294f5b889a90ba891bf0aa0`
+
+  Update the docker compose `services.server.environment.SUPERTOKENS_REFRESH_TOKEN_KEY` environment
+  variable value to this string.
+
+  #### Create from scratch
+
+  Run the following command to create a new refresh key from scratch:
+
+  ```sh
+  echo "1000:$(openssl rand -hex 64):$(openssl rand -hex 64)"
+  ```
+
+  ### Set the access token key
+
+  Generate a new access token key using the following instructions:
+
+  ```sh
+  # 1. Generate a unique key name. 'uuidgen' is great for this.
+  #    You can replace this with any string you like, e.g., KEY_NAME="my-app-key-1"
+  KEY_NAME=$(uuidgen)
+  # 2. Generate a 2048-bit RSA private key in PEM format, held in memory.
+  PRIVATE_KEY_PEM=$(openssl genpkey -algorithm RSA -pkeyopt rsa_keygen_bits:2048)
+  # 3. Extract the corresponding public key from the private key, also held in memory.
+  PUBLIC_KEY_PEM=$(echo "$PRIVATE_KEY_PEM" | openssl rsa -pubout)
+  # 4. Strip the headers/footers and newlines from the private key PEM
+  #    to get just the raw Base64 data.
+  PRIVATE_KEY_DATA=$(echo "$PRIVATE_KEY_PEM" | awk 'NF {if (NR!=1 && $0!~/-----END/) print}' | tr -d '\n')
+  # 5. Do the same for the public key PEM.
+  PUBLIC_KEY_DATA=$(echo "$PUBLIC_KEY_PEM" | awk 'NF {if (NR!=1 && $0!~/-----END/) print}' | tr -d '\n')
+  # 6. Echo the final formatted string to the console.
+  echo "${KEY_NAME}|${PUBLIC_KEY_DATA}|${PRIVATE_KEY_DATA}"
+  ```
+
+  Update the docker compose `services.server.environment.SUPERTOKENS_ACCESS_TOKEN_KEY` environment
+  variable value to the formatted string output.
+
+  ## Conclusion
+
+  After performing this updates you can run Hive Console without the need for the `supertokens`
+  service. All the relevant authentication logic resides within the `server` container instead.
+
+  Existing users in the supertokens system will continue to exist when running without the
+  `supertokens` service.
+
+### Patch Changes
+
+- [#7836](https://github.com/graphql-hive/console/pull/7836)
+  [`f42b83a`](https://github.com/graphql-hive/console/commit/f42b83a57efbb963f17ab764e8e5100aa4330320)
+  Thanks [@jonathanawesome](https://github.com/jonathanawesome)! - Suppress Monaco editor errors
+  before sending to Sentry
+
+## 9.7.1
+
+### Patch Changes
+
+- [#7828](https://github.com/graphql-hive/console/pull/7828)
+  [`1b31761`](https://github.com/graphql-hive/console/commit/1b31761cc3f94693ad74498f70cf89faff373b2f)
+  Thanks [@jdolle](https://github.com/jdolle)! - Adjust app deployment schema check to perform
+  database queries in parallel
+
+## 9.7.0
+
+### Minor Changes
+
+- [#7745](https://github.com/graphql-hive/console/pull/7745)
+  [`33bff41`](https://github.com/graphql-hive/console/commit/33bff4134240964bbf3bd97b878572202c13c256)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Allow organization owners register domain
+  ownership. The registration will allow users with matching email domains bypassing mandatory email
+  verification.
+
+### Patch Changes
+
+- [#7810](https://github.com/graphql-hive/console/pull/7810)
+  [`7aac422`](https://github.com/graphql-hive/console/commit/7aac422acc3ef13ec1c199259f5c9c4522481c6f)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Propagate updated email address from OIDC provider.
+  This fixes a bug where a user was locked out of the Hive account after the email of the user on
+  the OIDC provider side changed.
+
+- [#7812](https://github.com/graphql-hive/console/pull/7812)
+  [`2c55d5b`](https://github.com/graphql-hive/console/commit/2c55d5bd1188bc003ccf537095b9813127928693)
+  Thanks [@jdolle](https://github.com/jdolle)! - Explorer page unions now link to the contained
+  types
+
 ## 9.6.1
 
 ### Patch Changes

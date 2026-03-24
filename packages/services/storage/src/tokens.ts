@@ -93,15 +93,28 @@ export async function createTokenStorage(
 
       return transformToken(row);
     },
-    async deleteToken(params: { token: string; postDeletionTransaction: () => Promise<void> }) {
-      await pool.transaction(async t => {
-        await t.query(sql`
-          UPDATE tokens
-          SET deleted_at = NOW()
-          WHERE token = ${params.token}
+    async deleteToken(params: {
+      targetId: string;
+      token: string;
+      postDeletionTransaction: () => Promise<void>;
+    }) {
+      return await pool.transaction(async t => {
+        const deleted = await t.maybeOneFirst<boolean>(sql`
+          UPDATE
+            "tokens"
+          SET
+            "deleted_at" = NOW()
+          WHERE
+            "target_id" = ${params.targetId}
+            AND "token" = ${params.token}
+          RETURNING true
         `);
 
-        await params.postDeletionTransaction();
+        if (deleted) {
+          await params.postDeletionTransaction();
+        }
+
+        return deleted ?? false;
       });
     },
     async touchTokens({ tokens }: { tokens: Array<{ token: string; date: Date }> }) {

@@ -1,14 +1,8 @@
-import { readFileSync } from 'fs';
-import { join } from 'path';
 import * as cf from '@pulumi/cloudflare';
 import * as pulumi from '@pulumi/pulumi';
 import { Environment } from './environment';
 
-const webAppPkgJsonFilepath = join(__dirname, '../../packages/web/app/package.json');
-const webAppPkg = JSON.parse(readFileSync(webAppPkgJsonFilepath, 'utf8'));
-
 const cfConfig = new pulumi.Config('cloudflareCustom');
-const monacoEditorVersion = webAppPkg.devDependencies['monaco-editor'];
 
 function toExpressionList(items: string[]): string {
   return items.map(v => `"${v}"`).join(' ');
@@ -23,9 +17,6 @@ export function deployCloudFlareSecurityTransform(options: {
     options.ignoredPaths,
   )} } and not http.host in { ${toExpressionList(ignoredHosts)} }`;
 
-  // TODO: When Preflight PR is merged, we'll need to change this to build this host in a better way.
-  const monacoCdnDynamicBasePath: `https://${string}/` = `https://cdn.jsdelivr.net/npm/monaco-editor@${monacoEditorVersion}/`;
-  const monacoCdnStaticBasePath: `https://${string}/` = `https://cdn.jsdelivr.net/npm/monaco-editor@0.33.0/`;
   const crispHost = 'client.crisp.chat';
   const stripeHost = 'js.stripe.com';
   const gtmHost = 'www.googletagmanager.com';
@@ -45,12 +36,12 @@ export function deployCloudFlareSecurityTransform(options: {
   const contentSecurityPolicy = `
   default-src 'self';
   frame-src ${stripeHost} https://game.crisp.chat https://{DYNAMIC_HOST_PLACEHOLDER};
-  style-src 'self' 'unsafe-inline' ${crispHost} fonts.googleapis.com rsms.me ${monacoCdnDynamicBasePath} ${monacoCdnStaticBasePath};
-  script-src 'self' 'unsafe-eval' 'unsafe-inline' {DYNAMIC_HOST_PLACEHOLDER} ${monacoCdnDynamicBasePath} ${monacoCdnStaticBasePath} ${cspHosts};
+  style-src 'self' 'unsafe-inline' ${crispHost} fonts.googleapis.com rsms.me;
+  script-src 'self' 'unsafe-eval' 'unsafe-inline' {DYNAMIC_HOST_PLACEHOLDER} ${cspHosts};
   connect-src 'self' * {DYNAMIC_HOST_PLACEHOLDER} ${cspHosts};
   media-src ${crispHost};
-  style-src-elem 'self' 'unsafe-inline' ${monacoCdnDynamicBasePath} ${monacoCdnStaticBasePath} fonts.googleapis.com rsms.me ${crispHost};
-  font-src 'self' data: fonts.gstatic.com rsms.me ${monacoCdnDynamicBasePath} ${monacoCdnStaticBasePath} ${crispHost};
+  style-src-elem 'self' 'unsafe-inline' fonts.googleapis.com rsms.me ${crispHost};
+  font-src 'self' data: fonts.gstatic.com rsms.me ${crispHost};
   img-src * 'self' data: https: https://image.crisp.chat https://storage.crisp.chat ${gtmHost} ${crispHost};
   worker-src 'self' blob:;
 `;

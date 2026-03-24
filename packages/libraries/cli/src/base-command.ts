@@ -1,21 +1,14 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { env } from 'node:process';
-import { print } from 'graphql';
-import type { ExecutionResult } from 'graphql';
-import { http } from '@graphql-hive/core';
-import type { TypedDocumentNode } from '@graphql-typed-document-node/core';
+import { Logger } from '@graphql-hive/core';
 import { Command, Flags, Interfaces } from '@oclif/core';
 import { Config, GetConfigurationValueType, ValidConfigurationKeys } from './helpers/config';
 import {
-  APIError,
   FileMissingError,
-  HTTPError,
   InvalidFileContentsError,
-  InvalidRegistryTokenError,
-  isAggregateError,
   MissingArgumentsError,
-  NetworkError,
 } from './helpers/errors';
+import { graphqlRequest } from './helpers/graphql-request';
 import { Texture } from './helpers/texture/texture';
 
 export type Flags<T extends typeof Command> = Interfaces.InferredFlags<
@@ -64,6 +57,12 @@ export default abstract class BaseCommand<T extends typeof Command> extends Comm
     this.args = args as Args<T>;
   }
 
+  protected logger: Logger = {
+    info: (...args) => this.logInfo(...args),
+    error: (...args) => this.logFailure(...args),
+    debug: (...args) => this.logDebug(...args),
+  };
+
   logSuccess(...args: any[]) {
     this.log(Texture.success(...args));
   }
@@ -78,6 +77,12 @@ export default abstract class BaseCommand<T extends typeof Command> extends Comm
 
   logWarning(...args: any[]) {
     this.log(Texture.warning(...args));
+  }
+
+  logDebug(...args: any[]) {
+    if (this.flags.debug) {
+      this.logInfo(...args);
+    }
   }
 
   maybe<TArgs extends Record<string, any>, TKey extends keyof TArgs>({
@@ -167,10 +172,6 @@ export default abstract class BaseCommand<T extends typeof Command> extends Comm
     throw new MissingArgumentsError([String(key), description]);
   }
 
-  cleanRequestId(requestId?: string | null) {
-    return requestId ? requestId.split(',')[0].trim() : undefined;
-  }
-
   registryApi(registry: string, token: string) {
     const requestHeaders = {
       Authorization: `Bearer ${token}`,
@@ -178,112 +179,12 @@ export default abstract class BaseCommand<T extends typeof Command> extends Comm
       'graphql-client-version': this.config.version,
     };
 
-    return this.graphql(registry, requestHeaders);
-  }
-
-  graphql(endpoint: string, additionalHeaders: Record<string, string> = {}) {
-    const requestHeaders = {
-      'Content-Type': 'application/json',
-      Accept: 'application/json',
-      'User-Agent': `hive-cli/${this.config.version}`,
-      ...additionalHeaders,
-    };
-
-    const isDebug = this.flags.debug;
-
-    return {
-      request: async <TResult, TVariables>(
-        args: {
-          operation: TypedDocumentNode<TResult, TVariables>;
-          /** timeout in milliseconds */
-          timeout?: number;
-        } & (TVariables extends Record<string, never>
-          ? {
-              variables?: never;
-            }
-          : {
-              variables: TVariables;
-            }),
-      ): Promise<TResult> => {
-        let response: Response;
-        try {
-          response = await http.post(
-            endpoint,
-            JSON.stringify({
-              query: typeof args.operation === 'string' ? args.operation : print(args.operation),
-              variables: args.variables,
-            }),
-            {
-              logger: isDebug
-                ? {
-                    info: (...args) => {
-                      this.logInfo(...args);
-                    },
-                    error: (...args) => {
-                      this.logWarning(...args);
-                    },
-                    debug: (...args) => {
-                      this.logInfo(...args);
-                    },
-                  }
-                : undefined,
-              headers: requestHeaders,
-              timeout: args.timeout,
-            },
-          );
-        } catch (e: any) {
-          const sourceError = e?.cause ?? e;
-          if (isAggregateError(sourceError)) {
-            throw new NetworkError(sourceError.errors[0]?.message);
-          } else {
-            throw new NetworkError(sourceError);
-          }
-        }
-
-        if (!response.ok) {
-          throw new HTTPError(
-            endpoint,
-            response.status,
-            response.statusText ?? 'Invalid status code for HTTP call',
-          );
-        }
-
-        let jsonData;
-        try {
-          jsonData = (await response.json()) as ExecutionResult<TResult>;
-        } catch (err) {
-          const contentType = response?.headers?.get('content-type');
-          throw new APIError(
-            `Response from graphql was not valid JSON.${contentType ? ` Received "content-type": "${contentType}".` : ''}`,
-            this.cleanRequestId(response?.headers?.get('x-request-id')),
-          );
-        }
-
-        if (jsonData.errors && jsonData.errors.length > 0) {
-          if (jsonData.errors[0].extensions?.code === 'ERR_MISSING_TARGET') {
-            throw new MissingArgumentsError([
-              'target',
-              'The target on which the action is performed.' +
-                ' This can either be a slug following the format "$organizationSlug/$projectSlug/$targetSlug" (e.g "the-guild/graphql-hive/staging")' +
-                ' or an UUID (e.g. "a0f4c605-6541-4350-8cfe-b31f21a4bf80").',
-            ]);
-          }
-          if (jsonData.errors[0].message === 'Invalid token provided') {
-            throw new InvalidRegistryTokenError();
-          }
-
-          if (isDebug) {
-            this.logFailure(jsonData.errors);
-          }
-          throw new APIError(
-            jsonData.errors.map(e => e.message).join('\n'),
-            this.cleanRequestId(response?.headers?.get('x-request-id')),
-          );
-        }
-
-        return jsonData.data!;
-      },
-    };
+    return graphqlRequest({
+      endpoint: registry,
+      additionalHeaders: requestHeaders,
+      version: this.config.version,
+      logger: this.logger,
+    });
   }
 
   async require<
@@ -316,6 +217,7 @@ export default abstract class BaseCommand<T extends typeof Command> extends Comm
 
       return fileContent;
     } catch (e) {
+      this.logFailure(e);
       throw new InvalidFileContentsError(file, 'JSON');
     }
   }

@@ -12,7 +12,7 @@ import { Toaster } from '@/components/ui/toaster';
 import { frontendConfig } from '@/config/supertokens/frontend';
 import { env } from '@/env/frontend';
 import { urqlClient } from '@/lib/urql';
-import { configureScope, init } from '@sentry/react';
+import { getCurrentScope, init } from '@sentry/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import {
   createRootRoute,
@@ -28,9 +28,12 @@ import {
 import { ErrorComponent } from './components/error';
 import { NotFound } from './components/not-found';
 import 'react-toastify/dist/ReactToastify.css';
+import { Page, TargetLayout } from '@/components/layouts/target';
+import { Meta } from '@/components/ui/meta';
 import { useLocalStorage } from '@/lib/hooks';
 import { zodValidator } from '@tanstack/zod-adapter';
 import { authenticated } from './components/authenticated-container';
+import { InsightsFilterSearch } from './components/target/insights/search-schemas';
 import { SchemaProposalStage } from './gql/graphql';
 import { AuthPage } from './pages/auth';
 import { AuthCallbackPage } from './pages/auth-callback';
@@ -74,7 +77,7 @@ import { TargetExplorerTypePage } from './pages/target-explorer-type';
 import { TargetExplorerUnusedPage } from './pages/target-explorer-unused';
 import { TargetHistoryPage } from './pages/target-history';
 import { TargetHistoryVersionPage } from './pages/target-history-version';
-import { InsightsFilterSearch, TargetInsightsPage } from './pages/target-insights';
+import { TargetInsightsPage } from './pages/target-insights';
 import { TargetInsightsClientPage } from './pages/target-insights-client';
 import { TargetInsightsCoordinatePage } from './pages/target-insights-coordinate';
 import { TargetInsightsManageFiltersPage } from './pages/target-insights-manage-filters';
@@ -89,7 +92,7 @@ import { TargetTracePage } from './pages/target-trace';
 import {
   FilterState,
   TargetTracesFilterState,
-  TargetTracesPage,
+  TargetTracesPageContent,
   TargetTracesSort,
 } from './pages/target-traces';
 
@@ -101,6 +104,28 @@ if (env.sentry) {
     dist: 'webapp',
     release: env.release,
     environment: env.environment,
+    ignoreErrors: [
+      // Suppress specific monaco editor internal errors
+      "Failed to execute 'setStart' on 'Range'",
+      "Failed to execute 'setEnd' on 'Range'",
+      /TextModel got disposed/,
+      // Stale chunk errors after deployments — handled by auto-reload in main.tsx
+      /Failed to fetch dynamically imported module/,
+      /Importing a module script failed/,
+    ],
+    beforeSend(event) {
+      const isMonacoError = event.exception?.values?.some(exception =>
+        exception.stacktrace?.frames?.some(frame => frame.filename?.includes('monaco-editor')),
+      );
+
+      if (isMonacoError) {
+        for (const exception of event.exception?.values ?? []) {
+          exception.value &&= `[Monaco] ${exception.value}`;
+        }
+      }
+
+      return event;
+    },
   });
 }
 
@@ -113,9 +138,7 @@ const LazyTanStackRouterDevtools = lazy(() =>
 );
 
 function identifyOnSentry(userId: string, email: string): void {
-  configureScope(scope => {
-    scope.setUser({ id: userId, email });
-  });
+  getCurrentScope().setUser({ id: userId, email });
 }
 
 function RootComponent() {
@@ -777,14 +800,17 @@ const targetTracesRoute = createRoute({
     const range = useMemo(() => (from && to ? { from, to } : null), [from, to]);
 
     return (
-      <TargetTracesPage
-        organizationSlug={organizationSlug}
-        projectSlug={projectSlug}
-        targetSlug={targetSlug}
-        sorting={sort}
-        filter={filter}
-        range={range}
-      />
+      <>
+        <Meta title="Traces" />
+        <TargetLayout
+          organizationSlug={organizationSlug}
+          projectSlug={projectSlug}
+          targetSlug={targetSlug}
+          page={Page.Traces}
+        >
+          <TargetTracesPageContent sorting={sort} filter={filter} range={range} />
+        </TargetLayout>
+      </>
     );
   },
 });
@@ -965,8 +991,8 @@ const targetExplorerUnusedRoute = createRoute({
 const targetChecksRoute = createRoute({
   validateSearch: zodValidator(
     z.object({
-      filter_changed: z.boolean().default(false),
-      filter_failed: z.boolean().default(false),
+      filter_changed: z.boolean().default(false).catch(false),
+      filter_failed: z.boolean().default(false).catch(false),
     }),
   ),
   getParentRoute: () => targetRoute,
@@ -1009,7 +1035,7 @@ const targetProposalsRoute = createRoute({
       .array()
       .optional()
       .catch(() => void 0),
-    user: z.string().array().optional(),
+    user: z.string().array().optional().catch(undefined),
   }),
   component: function TargetProposalsRoute() {
     const { organizationSlug, projectSlug, targetSlug } = targetProposalsRoute.useParams();

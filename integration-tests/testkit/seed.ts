@@ -53,13 +53,9 @@ import {
   updateTargetValidationSettings,
 } from './flow';
 import * as GraphQLSchema from './gql/graphql';
-import {
-  BreakingChangeFormulaType,
-  ProjectType,
-  SchemaPolicyInput,
-  TargetAccessScope,
-} from './gql/graphql';
+import { ProjectType, SchemaPolicyInput, TargetAccessScope } from './gql/graphql';
 import { execute } from './graphql';
+import { createOIDCIntegration } from './oidc-integration.js';
 import {
   CreateSavedFilterMutation,
   DeleteSavedFilterMutation,
@@ -70,7 +66,7 @@ import {
 } from './saved-filters';
 import { UpdateSchemaPolicyForOrganization, UpdateSchemaPolicyForProject } from './schema-policy';
 import { collect, CollectedOperation, legacyCollect } from './usage';
-import { generateUnique, getServiceHost } from './utils';
+import { generateUnique, getServiceHost, pollForEmailVerificationLink } from './utils';
 
 function createConnectionPool() {
   const pg = {
@@ -106,11 +102,28 @@ export function initSeed() {
     return sharedDBPoolPromise.then(res => res.pool);
   }
 
-  async function doAuthenticate(email: string, oidcIntegrationId?: string) {
-    return await authenticate(await getPool(), email, oidcIntegrationId);
+  async function doAuthenticate(
+    email: string,
+    opts?: {
+      oidcIntegrationId?: string;
+      verifyEmail?: boolean;
+    },
+  ) {
+    const auth = await authenticate(await getPool(), email, opts?.oidcIntegrationId);
+
+    if (opts?.verifyEmail ?? true) {
+      const pool = await getPool();
+      await pool.query(sql`
+        INSERT INTO "email_verifications" ("user_identity_id", "email", "verified_at")
+        VALUES (${auth.supertokensUserId}, ${email}, NOW())
+      `);
+    }
+
+    return auth;
   }
 
   return {
+    pollForEmailVerificationLink,
     async purgeOIDCDomains() {
       const pool = await getPool();
       await pool.query(sql`
@@ -162,15 +175,9 @@ export function initSeed() {
     },
     async createOwner(verifyEmail: boolean = true) {
       const ownerEmail = userEmail(generateUnique());
-      const auth = await doAuthenticate(ownerEmail);
-
-      if (verifyEmail) {
-        const pool = await getPool();
-        await pool.query(sql`
-          INSERT INTO "email_verifications" ("user_identity_id", "email", "verified_at")
-          VALUES (${auth.supertokensUserId}, ${ownerEmail}, NOW())
-        `);
-      }
+      const auth = await doAuthenticate(ownerEmail, {
+        verifyEmail,
+      });
 
       const ownerRefreshToken = auth.refresh_token;
       const ownerToken = auth.access_token;
@@ -1159,9 +1166,10 @@ export function initSeed() {
                 },
               );
               const memberEmail = userEmail(generateUnique());
-              const memberToken = await doAuthenticate(memberEmail, oidcIntegrationId).then(
-                r => r.access_token,
-              );
+              const memberToken = await doAuthenticate(memberEmail, {
+                oidcIntegrationId,
+                verifyEmail: true,
+              }).then(r => r.access_token);
 
               if (!oidcIntegrationId) {
                 const invitationResult = await inviteToOrganization(
@@ -1374,6 +1382,13 @@ export function initSeed() {
                   return updatedRole;
                 },
               };
+            },
+            createOIDCIntegration() {
+              return createOIDCIntegration({
+                organizationId: organization.id,
+                accessToken: ownerToken,
+                getPool: getPool,
+              });
             },
           };
         },

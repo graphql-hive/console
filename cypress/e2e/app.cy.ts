@@ -250,7 +250,9 @@ describe('oidc', () => {
     cy.clearAllLocalStorage();
     cy.clearAllSessionStorage();
     cy.visit('/auth/oidc?id=invalid');
-    cy.get('[data-cy="auth-card-header-description"]').contains('Could not find OIDC integration.');
+    cy.get('[data-cy="auth-card-header-description"]').contains(
+      'Something went wrong. Please try again',
+    );
   });
 
   describe('requireInvitation', () => {
@@ -278,7 +280,7 @@ describe('oidc', () => {
 
           // Check if OIDC authentication failed as intended
           cy.get(`a[href="/${slug}"]`).should('not.exist');
-          cy.contains('not invited');
+          cy.contains('Sign in not allowed.');
         });
       });
     });
