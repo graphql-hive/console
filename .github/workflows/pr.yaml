@@ -36,6 +36,30 @@ jobs:
       uploadJavaScriptArtifacts: true
     secrets: inherit
 
+  laboratory-static-preview:
+    name: laboratory static preview
+    runs-on: ubuntu-22.04
+    steps:
+      - name: checkout
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
+
+      - name: setup environment
+        uses: ./.github/actions/setup
+        with:
+          actor: laboratory-static-preview
+          codegen: false
+
+      - name: build static laboratory preview
+        run: pnpm --filter @graphql-hive/laboratory build:static-preview
+
+      - name: upload static laboratory preview artifact
+        uses: actions/upload-artifact@v7.0.0
+        with:
+          name: laboratory-static-preview
+          path: packages/libraries/laboratory/dist/hive-laboratory.static-preview.html
+          if-no-files-found: error
+          archive: false
+
   # Run db migrations tests
   db-migration-tests:
     name: test
