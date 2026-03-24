@@ -10,7 +10,7 @@ export function TokenExpiration(props: { expiresAt: string | null }) {
       return (
         <TooltipProvider>
           <Tooltip>
-            <TooltipTrigger>{text}</TooltipTrigger>
+            <TooltipTrigger className="text-red-500">{text}</TooltipTrigger>
             <TooltipContent align="start">{expiresDate.toLocaleString()}</TooltipContent>
           </Tooltip>
         </TooltipProvider>

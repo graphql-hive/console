@@ -9,7 +9,7 @@ import { TimeAgo } from '@/components/v2';
 import { graphql, useFragment, type DocumentType, type FragmentType } from '@/gql';
 import { AccessTokenDetailViewSheet } from './access-token-detail-view-sheet';
 import { DeleteAccessTokenConfirmationDialogue } from './delete-access-token-confirmation-dialogue';
-import { timeRelative } from './shared-helpers';
+import { TokenExpiration } from './token-expiration';
 
 const privateKeyFiller = new Array(20).fill('•').join('');
 
@@ -124,11 +124,7 @@ export function AccessTokensTable(props: AccessTokensTable) {
               created <TimeAgo date={edge.node.createdAt} />
             </Table.TableCell>
             <Table.TableCell className="text-center">
-              {edge.node.expiresAt ? (
-                <>{timeRelative(new Date(edge.node.expiresAt), 'expires', 'expired')}</>
-              ) : (
-                'never'
-              )}
+              <TokenExpiration expiresAt={edge.node.expiresAt ?? null} />
             </Table.TableCell>
             <Table.TableCell className="text-right align-middle">
               <DropDownMenu.DropdownMenu>
