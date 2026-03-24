@@ -21,6 +21,7 @@
   ],
   "scripts": {
     "build": "vite build --config vite.lib.config.ts && vite build --config vite.umd.config.ts",
+    "build:static-preview": "pnpm run build && node scripts/build-static-preview.mjs",
     "dev": "vite",
     "dev:electron": "VITE_TARGET=electron concurrently \"vite\" \"wait-on http://localhost:5173 && electron .\"",
     "lint": "eslint .",
