@@ -109,9 +109,21 @@ export function AccessTokensSubPage(props: AccessTokensSubPageProps): React.Reac
         )}
         {query.fetching && !query.data?.organization && (
           <div className="space-y-3">
-            <Skeleton className="h-10 w-full" />
-            <Skeleton className="h-10 w-full" />
-            <Skeleton className="h-10 w-full" />
+            <div className="flex w-full items-center space-x-4">
+              <Skeleton className="h-10 w-1/4" />
+              <Skeleton className="h-10 w-1/2" />
+              <Skeleton className="h-10 w-1/4" />
+            </div>
+            <div className="flex w-full items-center space-x-4">
+              <Skeleton className="h-10 w-1/4" />
+              <Skeleton className="h-10 w-1/2" />
+              <Skeleton className="h-10 w-1/4" />
+            </div>
+            <div className="flex w-full items-center space-x-4">
+              <Skeleton className="h-10 w-1/4" />
+              <Skeleton className="h-10 w-1/2" />
+              <Skeleton className="h-10 w-1/4" />
+            </div>
           </div>
         )}
         {query.data?.organization && (
