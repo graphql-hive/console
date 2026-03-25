@@ -324,7 +324,7 @@ function useLaboratoryState(props: {
 
   useEffect(() => {
     let cancelled = false;
-    loadHistory().then(history => {
+    void loadHistory().then(history => {
       if (!cancelled) setHistoryData(history);
     });
     return () => {
