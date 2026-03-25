@@ -213,7 +213,7 @@ export function initSeed() {
             async overrideOrgPlan(plan: 'PRO' | 'ENTERPRISE' | 'HOBBY') {
               const pool = await createConnectionPool();
 
-              await pool.query(sql`
+              await pool.query(psql`
                 UPDATE organizations SET plan_name = ${plan} WHERE id = ${organization.id}
               `);
 
@@ -345,13 +345,15 @@ export function initSeed() {
             /** Expires tokens  */
             async forceExpireTokens(tokenIds: string[]) {
               const pool = await createConnectionPool();
-              const result = await pool.query(sql`
+              const result = await pool.any(psql`
                 UPDATE "organization_access_tokens"
-                SET "expires_at"=NOW()
-                WHERE id IN (${sql.join(tokenIds, sql`, `)}) AND organization_id=${organization.id}
+                SET "expires_at" = NOW()
+                WHERE id IN (${psql.join(tokenIds, psql`, `)}) AND organization_id = ${organization.id}
+                RETURNING
+                  "id"
               `);
               await pool.end();
-              expect(result.rowCount).toBe(tokenIds.length);
+              expect(result.length).toBe(tokenIds.length);
               for (const id of tokenIds) {
                 await purgeOrganizationAccessTokenById(id);
               }

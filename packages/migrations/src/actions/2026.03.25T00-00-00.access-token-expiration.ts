@@ -8,7 +8,7 @@ export default {
    * the timestamp via a filter. Since these lookups are always be done
    * via provider methods and not via a raw table query, this is safe.
    */
-  run: ({ sql }) => sql`
+  run: ({ psql }) => psql`
     ALTER TABLE IF EXISTS organization_access_tokens
     ADD COLUMN IF NOT EXISTS "expires_at" TIMESTAMP WITH TIME ZONE
     ;

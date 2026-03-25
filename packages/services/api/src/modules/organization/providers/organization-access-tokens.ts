@@ -812,9 +812,9 @@ export class OrganizationAccessTokens {
         }
         ${
           args.includeExpired
-            ? sql``
-            : sql`
-              AND (expires_at IS NULL OR expires_at > NOW()) 
+            ? psql``
+            : psql`
+              AND (expires_at IS NULL OR expires_at > NOW())
             `
         }
       ORDER BY
@@ -1296,9 +1296,9 @@ export function findById(deps: { pool: CommonQueryMethods; logger: Logger }) {
         "id" = ${organizationAccessTokenId}
         ${
           opts.includeExpired
-            ? sql``
-            : sql`
-              AND (expires_at IS NULL OR expires_at > NOW()) 
+            ? psql``
+            : psql`
+              AND (expires_at IS NULL OR expires_at > NOW())
             `
         }
       LIMIT 1
