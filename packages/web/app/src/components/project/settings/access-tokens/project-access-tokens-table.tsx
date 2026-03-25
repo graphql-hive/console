@@ -124,7 +124,7 @@ export function ProjectAccessTokensTable(props: ProjectAccessTokensTable) {
             <Table.TableCell className="font-mono">
               {edge.node.firstCharacters + privateKeyFiller}
             </Table.TableCell>
-            <Table.TableCell className="text-right">
+            <Table.TableCell className="text-center">
               created <TimeAgo date={edge.node.createdAt} />
             </Table.TableCell>
             <Table.TableCell className="text-center">
