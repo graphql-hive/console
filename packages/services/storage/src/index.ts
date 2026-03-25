@@ -352,8 +352,8 @@ export async function createStorage(
                       "oi"."organization_id" "organizationId"
                       , "oi"."code" "code"
                       , "oi"."email" "email"
-                      , "oi"."created_at" "createdAt"
-                      , "oi"."expires_at" "expiresAt"
+                      , to_json("oi"."created_at") "createdAt"
+                      , to_json("oi"."expires_at") "expiresAt"
                       , "oi"."role_id" "roleId"
                       , "oi"."assigned_resources" "assignedResources"
                   `,
