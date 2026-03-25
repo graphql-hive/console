@@ -65,14 +65,14 @@ module.exports = {
       parser: '@graphql-eslint/eslint-plugin',
       plugins: ['@graphql-eslint'],
       parserOptions: {
+        schema: SCHEMA_PATH,
+        operations: OPERATIONS_PATHS,
         graphQLConfig: {
-          schema: SCHEMA_PATH,
-          operations: OPERATIONS_PATHS,
           documents: OPERATIONS_PATHS,
         },
       },
       rules: {
-        '@graphql-eslint/require-selections': 'error',
+        '@graphql-eslint/require-id-when-available': 'error',
       },
     },
     {
