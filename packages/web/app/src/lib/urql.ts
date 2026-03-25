@@ -42,6 +42,10 @@ export const urqlClient = createClient({
         },
         Organization: {
           accessTokens: relayPagination(),
+          allAccessTokens: relayPagination(),
+        },
+        Project: {
+          accessTokens: relayPagination(),
         },
       },
       keys: {
