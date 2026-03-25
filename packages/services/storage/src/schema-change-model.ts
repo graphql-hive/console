@@ -1525,7 +1525,7 @@ export const InsertConditionalBreakingChangeMetadataModel =
     },
   })).nullable();
 
-export const SchemaCheckInputModel = z.union([
+const SchemaCheckInputModel = z.union([
   z.intersection(
     z.object({
       isSuccess: z.literal(false),

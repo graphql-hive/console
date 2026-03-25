@@ -191,6 +191,7 @@ export interface organization_access_tokens {
   assigned_resources: any | null;
   created_at: Date;
   description: string;
+  expires_at: Date | null;
   first_characters: string;
   hash: string;
   id: string;

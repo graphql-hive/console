@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Heading } from '@/components/ui/heading';
 import { ArrowDownIcon, CheckIcon } from '@/components/ui/icon';
 import { Input, Modal } from '@/components/v2';
-import { DocumentType, FragmentType, graphql, useFragment } from '@/gql';
+import { FragmentType, graphql, useFragment } from '@/gql';
 import { useNotifications } from '@/lib/hooks';
 import { Combobox as HeadlessCombobox, Transition as HeadlessTransition } from '@headlessui/react';
 
@@ -37,6 +37,7 @@ const TransferOrganizationOwnership_Members = graphql(`
           node {
             id
             isOwner
+            ...MemberFields
             user {
               id
               fullName
@@ -50,9 +51,22 @@ const TransferOrganizationOwnership_Members = graphql(`
   }
 `);
 
+const MemberFields = graphql(`
+  fragment MemberFields on Member {
+    id
+    user {
+      id
+      fullName
+      displayName
+      email
+    }
+    isOwner
+  }
+`);
+
 type Member = NonNullable<
-  DocumentType<typeof TransferOrganizationOwnership_Members>['organization']
->['members']['edges'][number]['node'];
+  FragmentType<typeof MemberFields>[' $fragmentRefs']
+>['MemberFieldsFragment'];
 
 const TransferOrganizationOwnershipModal_OrganizationFragment = graphql(`
   fragment TransferOrganizationOwnershipModal_OrganizationFragment on Organization {

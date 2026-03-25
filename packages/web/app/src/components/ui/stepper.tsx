@@ -222,7 +222,7 @@ const defineStepper = <const Steps extends Stepperize.Step[]>(
           )}
 
           {variant === 'vertical' && (
-            <div className="flex gap-4">
+            <div>
               {!isLast && (
                 <div className="flex justify-center ps-5">
                   <StepperSeparator
@@ -393,7 +393,7 @@ const CircleStepIndicator = ({
 const listVariants = cva('flex gap-2', {
   variants: {
     variant: {
-      horizontal: 'flex-row items-center justify-between',
+      horizontal: 'flex-row items-center justify-between flex-wrap',
       vertical: 'flex-col',
       circle: 'flex-row items-center justify-between',
     },

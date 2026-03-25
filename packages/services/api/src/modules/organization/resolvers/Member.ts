@@ -66,12 +66,15 @@ export const Member: MemberResolvers = {
     return injector.get(OrganizationAccessTokens).getAvailablePermissionGroupsForMembership(member);
   },
   accessToken(member, args, { injector }) {
-    return injector.get(OrganizationAccessTokens).getForMembership(member, args.id);
+    return injector
+      .get(OrganizationAccessTokens)
+      .getForMembership(member, args.id, { includeExpired: args.includeExpired });
   },
   accessTokens(member, args, { injector }) {
     return injector.get(OrganizationAccessTokens).getPaginatedForMembership(member, {
       first: args.first ?? null,
       after: args.after ?? null,
+      includeExpired: args.includeExpired,
     });
   },
 };

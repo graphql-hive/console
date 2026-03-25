@@ -47,7 +47,6 @@ const ChangesBlock_SchemaCheckConditionalBreakingChangeMetadataFragment = graphq
     settings {
       retentionInDays
       targets {
-        id
         slug
         target {
           id

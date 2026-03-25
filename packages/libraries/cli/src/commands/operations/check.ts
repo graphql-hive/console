@@ -111,7 +111,6 @@ export default class OperationsCheck extends Command<typeof OperationsCheck> {
           description: OperationsCheck.flags['registry.endpoint'].description!,
         });
       } catch (e) {
-        this.logDebug(e);
         throw new MissingEndpointError();
       }
 
@@ -124,7 +123,6 @@ export default class OperationsCheck extends Command<typeof OperationsCheck> {
           description: OperationsCheck.flags['registry.accessToken'].description!,
         });
       } catch (e) {
-        this.logDebug(e);
         throw new MissingRegistryTokenError();
       }
 

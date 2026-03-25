@@ -46,7 +46,7 @@ import { cn } from '@/lib/utils';
 import * as SliderPrimitive from '@radix-ui/react-slider';
 import * as dateMath from '../../lib/date-math';
 
-type FilterInputProps = InputHTMLAttributes<HTMLInputElement>;
+interface FilterInputProps extends InputHTMLAttributes<HTMLInputElement> {}
 
 export const FilterInput = forwardRef<HTMLInputElement, FilterInputProps>(
   ({ className, type, ...props }, ref) => {
