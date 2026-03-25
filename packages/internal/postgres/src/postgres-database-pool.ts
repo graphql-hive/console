@@ -1,5 +1,6 @@
 import {
   createPool,
+  createTypeParserPreset,
   type DatabasePool,
   type Interceptor,
   type PrimitiveValueExpression,
@@ -10,6 +11,7 @@ import { createQueryLoggingInterceptor } from 'slonik-interceptor-query-logging'
 import { context, SpanKind, SpanStatusCode, trace } from '@hive/service-common';
 import type { StandardSchemaV1 } from '@standard-schema/spec';
 import { createConnectionString, type PostgresConnectionParamaters } from './connection-string';
+import { PgPoolBridge } from './pg-pool-bridge';
 
 const tracer = trace.getTracer('storage');
 
@@ -53,6 +55,10 @@ export interface CommonQueryMethods {
 
 export class PostgresDatabasePool implements CommonQueryMethods {
   constructor(private pool: DatabasePool) {}
+
+  getPgPoolCompat() {
+    return new PgPoolBridge(this.pool);
+  }
 
   /** Retrieve the raw Slonik instance. Refrain from using this API. */
   getSlonikPool() {
@@ -167,6 +173,14 @@ export class PostgresDatabasePool implements CommonQueryMethods {
 
 const dbInterceptors: Interceptor[] = [createQueryLoggingInterceptor()];
 
+const typeParsers = [
+  ...createTypeParserPreset().filter(parser => parser.name !== 'int8'),
+  {
+    name: 'int8',
+    parse: (value: string) => parseInt(value, 10),
+  },
+];
+
 export async function createPostgresDatabasePool(args: {
   connectionParameters: PostgresConnectionParamaters | string;
   maximumPoolSize?: number;
@@ -179,6 +193,7 @@ export async function createPostgresDatabasePool(args: {
       : createConnectionString(args.connectionParameters);
   const pool = await createPool(connectionString, {
     interceptors: dbInterceptors.concat(args.additionalInterceptors ?? []),
+    typeParsers,
     captureStackTrace: false,
     maximumPoolSize: args.maximumPoolSize,
     idleTimeout: 30000,

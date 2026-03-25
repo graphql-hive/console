@@ -1,10 +1,10 @@
 import { BentoCache, bentostore } from 'bentocache';
 import { memoryDriver } from 'bentocache/build/src/drivers/memory';
 import { makeWorkerUtils, WorkerUtils, type JobHelpers, type Task } from 'graphile-worker';
-import type { Pool } from 'pg';
 import { z } from 'zod';
 import { Logger } from '@graphql-hive/logger';
 import { PostgresDatabasePool, psql } from '@hive/postgres';
+import { bridgeGraphileLogger } from '@hive/pubsub';
 import type { Context } from './context';
 
 export type TaskDefinition<TName extends string, TModel> = {
@@ -72,12 +72,17 @@ export function implementTask<TPayload>(
  * Schedule a tasks.
  */
 export class TaskScheduler {
+  tools: Promise<WorkerUtils>;
   cache: BentoCache<{ store: ReturnType<typeof bentostore> }>;
 
   constructor(
     private pgPool: PostgresDatabasePool,
     private logger: Logger = new Logger(),
   ) {
+    this.tools = makeWorkerUtils({
+      pgPool: pgPool.getPgPoolCompat(),
+      logger: bridgeGraphileLogger(logger),
+    });
     this.cache = new BentoCache({
       default: 'taskSchedule',
       stores: {
@@ -113,6 +118,7 @@ export class TaskScheduler {
     );
 
     const input = taskDefinition.schema.parse(payload);
+    const tools = await this.tools;
 
     if (opts?.dedupe) {
       const dedupeKey =
@@ -155,23 +161,15 @@ export class TaskScheduler {
       }
     }
 
-    const result = await this.pgPool
-      .maybeOneFirst(
-        psql`
-      SELECT graphile_worker.add_job(
-        ${taskDefinition.name},
-        ${psql.json({ requestId: opts?.requestId, input })}
-      );
-    `,
-      )
-      .then(z.string().parse);
-
-    const [jobId] = result.substring(1).split(',');
+    const job = await tools.addJob(taskDefinition.name, {
+      requestId: opts?.requestId,
+      input,
+    });
 
     this.logger.info(
       {
         'job.taskId': taskDefinition.name,
-        'job.id': jobId,
+        'job.id': job.id,
       },
       'task enqueued.',
     );

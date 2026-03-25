@@ -670,7 +670,7 @@ export async function createStorage(
         .maybeOne(
           psql`/* countOrganizationMembers */ SELECT COUNT(*) as total FROM organization_member WHERE organization_id = ${organization}`,
         )
-        .then(z.object({ total: z.bigint().transform(Number) }).parse);
+        .then(z.object({ total: z.number() }).parse);
 
       return total;
     },
@@ -1825,7 +1825,7 @@ export async function createStorage(
               AND sv.created_at < ${period.to.toISOString()}
           `,
           )
-          .then(z.object({ total: z.bigint().transform(Number) }).nullable().parse);
+          .then(z.object({ total: z.number() }).nullable().parse);
         return result?.total ?? 0;
       }
 
@@ -1837,7 +1837,7 @@ export async function createStorage(
           WHERE t.project_id = ${project}
         `,
         )
-        .then(z.object({ total: z.bigint().transform(Number) }).nullable().parse);
+        .then(z.object({ total: z.number() }).nullable().parse);
 
       return result?.total ?? 0;
     },
@@ -1853,7 +1853,7 @@ export async function createStorage(
               AND created_at < ${period.to.toISOString()}
           `,
           )
-          .then(z.object({ total: z.bigint().transform(Number) }).nullable().parse);
+          .then(z.object({ total: z.number() }).nullable().parse);
         return result?.total ?? 0;
       }
 
@@ -1863,7 +1863,7 @@ export async function createStorage(
           SELECT COUNT(*) as total FROM schema_versions WHERE target_id = ${target}
         `,
         )
-        .then(z.object({ total: z.bigint().transform(Number) }).nullable().parse);
+        .then(z.object({ total: z.number() }).nullable().parse);
 
       return result?.total ?? 0;
     },
@@ -5501,8 +5501,8 @@ const OrganizationModel = z
     id: z.string(),
     slug: z.string(),
     name: z.string(),
-    limitRetentionDays: z.bigint().transform(Number),
-    limitOperationsMonthly: z.bigint().transform(Number),
+    limitRetentionDays: z.number(),
+    limitOperationsMonthly: z.number(),
     billingPlan: z.string(),
     getStartedCreatingProject: z.boolean(),
     getStartedPublishingSchema: z.boolean(),
@@ -5755,7 +5755,7 @@ const OrganizationTargetPairModel = z.object({
 
 const OrganizationStatModel = z.object({
   id: z.string(),
-  total: z.bigint().transform(Number),
+  total: z.number(),
 });
 
 export const UserModel = z.object({

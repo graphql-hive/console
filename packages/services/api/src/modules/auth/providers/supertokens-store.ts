@@ -6,8 +6,8 @@ const SessionInfoModel = z.object({
   sessionHandle: z.string(),
   userId: z.string(),
   sessionData: z.string(),
-  expiresAt: z.bigint().transform(Number),
-  createdAt: z.bigint().transform(Number),
+  expiresAt: z.number(),
+  createdAt: z.number(),
   refreshTokenHash2: z.string(),
 });
 
@@ -22,7 +22,7 @@ const EmailPasswordUserModel = z.object({
   userId: z.string(),
   email: z.string(),
   passwordHash: z.string(),
-  timeJoined: z.bigint().transform(Number),
+  timeJoined: z.number(),
 });
 
 type EmailPasswordUser = z.TypeOf<typeof EmailPasswordUserModel>;
@@ -32,7 +32,7 @@ const ThirdpartUserModel = z.object({
   thirdPartyUserId: z.string(),
   userId: z.string(),
   email: z.string(),
-  timeJoined: z.bigint().transform(Number),
+  timeJoined: z.number(),
 });
 
 export const EmailPasswordOrThirdPartyUserModel = z.union([
@@ -46,7 +46,7 @@ const EmailPasswordResetTokenModel = z.object({
   userId: z.string(),
   token: z.string(),
   email: z.string(),
-  tokenExpiry: z.bigint().transform(Number),
+  tokenExpiry: z.number(),
 });
 
 export class SuperTokensStore {

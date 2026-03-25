@@ -439,6 +439,9 @@ importers:
       slonik-interceptor-query-logging:
         specifier: 48.13.2
         version: 48.13.2(slonik@48.13.2)
+      slonik-sql-tag-raw:
+        specifier: 48.13.2
+        version: 48.13.2(slonik@48.13.2)
     devDependencies:
       '@hive/service-common':
         specifier: workspace:*
@@ -17479,6 +17482,12 @@ packages:
 
   slonik-interceptor-query-logging@48.13.2:
     resolution: {integrity: sha512-/Ib0eIj7pIki+czELuMFvP6z5FWH4m5pCkhWR1QbiCxDB7Zmf705bSkWcux2iChTu2WcWVcAnBdcdk/iZS9fpw==}
+    engines: {node: '>=24'}
+    peerDependencies:
+      slonik: '>=45.0.0'
+
+  slonik-sql-tag-raw@48.13.2:
+    resolution: {integrity: sha512-1bMik7cU7usGIiOtn3Yjzw8p+enS/mAAjzwDyYoeoIUiEivUJytMBBZMP0V7JaeI5BeE89jRCx5LLDUFk3Tqhg==}
     engines: {node: '>=24'}
     peerDependencies:
       slonik: '>=45.0.0'
@@ -40067,6 +40076,12 @@ snapshots:
       crack-json: 1.3.0
       pretty-ms: 9.3.0
       serialize-error: 12.0.0
+      slonik: 48.13.2
+
+  slonik-sql-tag-raw@48.13.2(slonik@48.13.2):
+    dependencies:
+      '@slonik/sql-tag': 48.13.2
+      roarr: 7.21.4
       slonik: 48.13.2
 
   slonik-utilities@1.9.4:

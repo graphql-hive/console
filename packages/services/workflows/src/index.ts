@@ -144,7 +144,7 @@ const shutdownMetrics = env.prometheus
 const runner = await run({
   logger: bridgeGraphileLogger(logger),
   crontab,
-  pgPool: pg.getRawPgPool(),
+  pgPool: pg.getPgPoolCompat(),
   taskList: Object.fromEntries(modules.map(module => module.task(context))),
   noHandleSignals: true,
   events: createTaskEventEmitter(),

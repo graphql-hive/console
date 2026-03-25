@@ -9,7 +9,8 @@
   "dependencies": {
     "@standard-schema/spec": "1.0.0",
     "slonik": "48.13.2",
-    "slonik-interceptor-query-logging": "48.13.2"
+    "slonik-interceptor-query-logging": "48.13.2",
+    "slonik-sql-tag-raw": "48.13.2"
   },
   "devDependencies": {
     "@hive/service-common": "workspace:*"
