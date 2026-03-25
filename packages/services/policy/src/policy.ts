@@ -95,9 +95,7 @@ export async function schemaPolicyCheck(input: {
     input.source,
     {
       parser: '@graphql-eslint/eslint-plugin',
-      parserOptions: {
-        schemaSdl: input.schema,
-      },
+      parserOptions: { schema: input.schema },
       rules: input.policy,
     },
     'schema.graphql',

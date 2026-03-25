@@ -228,7 +228,6 @@ const ConditionalBreakingChangesMetadataSection_SchemaCheckFragment = graphql(`
         percentage
         excludedClientNames
         targets {
-          id
           slug
           target {
             id

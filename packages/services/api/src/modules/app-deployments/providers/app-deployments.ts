@@ -52,7 +52,7 @@ export class AppDeployments {
     private storage: Storage,
     private schemaVersionHelper: SchemaVersionHelper,
     private persistedDocumentScheduler: PersistedDocumentScheduler,
-    @Inject(APP_DEPLOYMENTS_ENABLED) private appDeploymentsEnabled: boolean,
+    @Inject(APP_DEPLOYMENTS_ENABLED) private appDeploymentsEnabled: Boolean,
   ) {
     this.logger = logger.child({ source: 'AppDeployments' });
   }

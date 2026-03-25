@@ -149,7 +149,6 @@ export default class SchemaFetch extends Command<typeof SchemaFetch> {
         description: SchemaFetch.flags['registry.endpoint'].description!,
       });
     } catch (e) {
-      this.logDebug(e);
       throw new MissingEndpointError();
     }
     try {
@@ -161,7 +160,6 @@ export default class SchemaFetch extends Command<typeof SchemaFetch> {
         description: SchemaFetch.flags['registry.accessToken'].description!,
       });
     } catch (e) {
-      this.logDebug(e);
       throw new MissingRegistryTokenError();
     }
 

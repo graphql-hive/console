@@ -55,8 +55,6 @@ module.exports = {
     'packages/web/app/src/gql/**/*',
     'codegen.cjs',
     'tsup',
-    'packages/libraries/render-laboratory/src/laboratory.ts',
-    'packages/web/app/vite.config.ts',
   ],
   overrides: [
     {
@@ -65,14 +63,8 @@ module.exports = {
       parser: '@graphql-eslint/eslint-plugin',
       plugins: ['@graphql-eslint'],
       parserOptions: {
-        graphQLConfig: {
-          schema: SCHEMA_PATH,
-          operations: OPERATIONS_PATHS,
-          documents: OPERATIONS_PATHS,
-        },
-      },
-      rules: {
-        '@graphql-eslint/require-selections': 'error',
+        schema: SCHEMA_PATH,
+        operations: OPERATIONS_PATHS,
       },
     },
     {
@@ -84,6 +76,7 @@ module.exports = {
       files: ['packages/web/app/**/*.graphql'],
       plugins: ['@graphql-eslint'],
       rules: {
+        '@graphql-eslint/require-id-when-available': 'error',
         '@graphql-eslint/no-deprecated': 'error',
       },
     },
@@ -151,16 +144,6 @@ module.exports = {
         '@typescript-eslint/no-empty-function': 'off',
         '@typescript-eslint/ban-types': 'off',
         '@typescript-eslint/triple-slash-reference': 'off',
-        '@typescript-eslint/no-unused-vars': [
-          'error',
-          {
-            argsIgnorePattern: '^_',
-            caughtErrors: 'none',
-            caughtErrorsIgnorePattern: '^_',
-            destructuredArrayIgnorePattern: '^_',
-            varsIgnorePattern: '^_',
-          },
-        ],
       },
     },
     {

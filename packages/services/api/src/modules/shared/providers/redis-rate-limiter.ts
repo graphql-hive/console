@@ -52,6 +52,8 @@ export class RedisRateLimiter {
       }
     }
 
+    req.routeOptions.url;
+
     let ip = req.ip;
 
     if (this.config.config.ipHeaderName && req.headers[this.config.config.ipHeaderName]) {
