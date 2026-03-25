@@ -1,4 +1,7 @@
-import { OrganizationAccessTokens } from '../../providers/organization-access-tokens';
+import {
+  expirationPeriodToDate,
+  OrganizationAccessTokens,
+} from '../../providers/organization-access-tokens';
 import type { MutationResolvers } from './../../../../__generated__/types';
 
 export const createPersonalAccessToken: NonNullable<
@@ -10,6 +13,7 @@ export const createPersonalAccessToken: NonNullable<
     description: args.input.description ?? null,
     permissions: args.input.permissions ?? null,
     assignedResources: args.input.resources ?? null,
+    expiresAt: expirationPeriodToDate(args.input.expirationPeriod ?? 'NEVER'),
   });
 
   if (result.type === 'success') {

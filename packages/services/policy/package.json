@@ -9,7 +9,7 @@
     "typecheck": "tsc --noEmit"
   },
   "devDependencies": {
-    "@graphql-eslint/eslint-plugin": "4.4.0",
+    "@graphql-eslint/eslint-plugin": "3.20.1",
     "@hive/service-common": "workspace:*",
     "@sentry/node": "7.120.2",
     "@sentry/tracing": "7.114.0",

@@ -81,7 +81,6 @@ const Proposals_SelectFragment = graphql(`
 
 const Proposals_TargetProjectTypeFragment = graphql(`
   fragment Proposals_TargetProjectTypeFragment on Target {
-    id
     project {
       id
       type
@@ -275,8 +274,7 @@ export function ProposalEditor(props: {
           onValueChange={idx => {
             try {
               setActiveTab(parseInt(idx, 10));
-              // eslint-disable-next-line @typescript-eslint/no-unused-vars
-            } catch (_e: unknown) {
+            } catch (e) {
               console.error('Cannot set active tab. Could not parse index.');
             }
           }}

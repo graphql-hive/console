@@ -1,3 +1,4 @@
+import { addDays, addMonths, addYears } from 'date-fns';
 import { Inject, Injectable, Scope } from 'graphql-modules';
 import { sql, type CommonQueryMethods, type DatabasePool } from 'slonik';
 import { z } from 'zod';
@@ -75,6 +76,7 @@ const OrganizationAccessTokenModel = z
     ),
     firstCharacters: z.string(),
     hash: z.string(),
+    expiresAt: z.string().nullable(),
   })
   .transform(record => ({
     ...record,
@@ -138,6 +140,30 @@ const validProjectResourceLevels: ReadonlySet<string> = new Set<string>([
   'appDeployment',
 ]);
 
+export function expirationPeriodToDate(period: GraphQLSchema.TokenExpirationPeriod): Date | null {
+  const now = new Date();
+  switch (period) {
+    case 'NEVER': {
+      return null;
+    }
+    case 'ONE_WEEK': {
+      return addDays(now, 7);
+    }
+    case 'TWO_WEEKS': {
+      return addDays(now, 14);
+    }
+    case 'ONE_MONTH': {
+      return addMonths(now, 1);
+    }
+    case 'SIX_MONTHS': {
+      return addMonths(now, 6);
+    }
+    case 'ONE_YEAR': {
+      return addYears(now, 1);
+    }
+  }
+}
+
 @Injectable({
   scope: Scope.Operation,
 })
@@ -191,6 +217,7 @@ export class OrganizationAccessTokens {
     description: string | null;
     permissions: Array<string>;
     assignedResources: GraphQLSchema.ProjectTargetsResourceAssignmentInput | null;
+    expiresAt: Date | null;
   }) {
     this.logger.debug('create access token for project (project=%o)', args.project);
 
@@ -241,6 +268,7 @@ export class OrganizationAccessTokens {
       description: args.description,
       assignedResources,
       permissions,
+      expiresAt: args.expiresAt,
     });
   }
 
@@ -253,6 +281,7 @@ export class OrganizationAccessTokens {
     description: string | null;
     permissions: Array<string>;
     assignedResources: GraphQLSchema.ResourceAssignmentInput;
+    expiresAt: Date | null;
   }) {
     const error = this._validateCreateInputError(args);
 
@@ -301,6 +330,7 @@ export class OrganizationAccessTokens {
       description: args.description,
       assignedResources,
       permissions,
+      expiresAt: args.expiresAt,
     });
   }
 
@@ -311,6 +341,7 @@ export class OrganizationAccessTokens {
     description: string | null;
     permissions: ReadonlyArray<string> | null;
     assignedResources: GraphQLSchema.ResourceAssignmentInput | null;
+    expiresAt: Date | null;
   }) {
     const error = this._validateCreateInputError(args);
 
@@ -393,6 +424,7 @@ export class OrganizationAccessTokens {
       description: args.description,
       assignedResources,
       permissions,
+      expiresAt: args.expiresAt,
     });
   }
 
@@ -401,6 +433,7 @@ export class OrganizationAccessTokens {
       title: string;
       description: string | null;
       assignedResources: ResourceAssignmentGroup;
+      expiresAt: Date | null;
     } & (
       | {
           // Organization Scope
@@ -447,6 +480,7 @@ export class OrganizationAccessTokens {
         , "assigned_resources"
         , "hash"
         , "first_characters"
+        , "expires_at"
       )
       VALUES (
         ${id}
@@ -459,6 +493,7 @@ export class OrganizationAccessTokens {
         , ${sql.jsonb(args.assignedResources)}
         , ${accessKey.hash}
         , ${accessKey.firstCharacters}
+        , ${args.expiresAt?.toISOString() ?? null}
       )
       RETURNING
         ${organizationAccessTokenFields}
@@ -492,7 +527,7 @@ export class OrganizationAccessTokens {
   async delete(args: { accessTokenId: string; onlyOrganizationScoped?: true }) {
     this.logger.debug('Delete access token. (accessTokenId=%s)', args.accessTokenId);
 
-    const record = await this.findById(args.accessTokenId);
+    const record = await this.findById(args.accessTokenId, { includeExpired: true });
     if (record === null || (args.onlyOrganizationScoped && (record.projectId || record.userId))) {
       this.logger.debug('Delete failed. Token not found. (accessTokenId=%s)', args.accessTokenId);
 
@@ -741,6 +776,7 @@ export class OrganizationAccessTokens {
     args: {
       first: number | null;
       after: string | null;
+      includeExpired?: boolean;
     },
   ) {
     let cursor: null | {
@@ -774,6 +810,13 @@ export class OrganizationAccessTokens {
               )
             `
             : sql``
+        }
+        ${
+          args.includeExpired
+            ? sql``
+            : sql`
+              AND (expires_at IS NULL OR expires_at > NOW()) 
+            `
         }
       ORDER BY
         "user_id" ASC
@@ -813,17 +856,20 @@ export class OrganizationAccessTokens {
   }
 
   /** Get an access token by it's ID without performing any permission checks. */
-  async getById(id: string) {
+  async getById(id: string, opts: { includeExpired?: boolean }) {
     return await findById({
       logger: this.logger,
       pool: this.pool,
-    })(id);
+    })(id, { includeExpired: opts.includeExpired });
   }
 
   async getForOrganization(
     organization: Organization,
     id: string,
-    includeOnlyOrganizationScoped?: true,
+    opts: {
+      includeExpired?: true;
+      includeOnlyOrganizationScoped?: true;
+    },
   ) {
     await this.session.assertPerformAction({
       organizationId: organization.id,
@@ -831,21 +877,27 @@ export class OrganizationAccessTokens {
       action: 'accessToken:modify',
     });
 
-    const accessToken = await this.getById(id);
+    const accessToken = await this.getById(id, { includeExpired: opts?.includeExpired });
 
     if (!accessToken || accessToken?.organizationId !== organization.id) {
       return null;
     }
 
-    if (includeOnlyOrganizationScoped && (accessToken.projectId || accessToken.userId)) {
+    if (opts.includeOnlyOrganizationScoped && (accessToken.projectId || accessToken.userId)) {
       return null;
     }
 
     return accessToken;
   }
 
-  async getForMembership(membership: OrganizationMembership, id: string) {
-    const accessToken = await this.getById(id);
+  async getForMembership(
+    membership: OrganizationMembership,
+    id: string,
+    opts: { includeExpired?: boolean },
+  ) {
+    const accessToken = await this.getById(id, {
+      includeExpired: opts.includeExpired,
+    });
 
     if (
       !accessToken ||
@@ -859,14 +911,16 @@ export class OrganizationAccessTokens {
     return accessToken;
   }
 
-  async getForProject(project: Project, id: string) {
+  async getForProject(project: Project, id: string, opts: { includeExpired?: boolean }) {
     await this.session.assertPerformAction({
       organizationId: project.orgId,
       params: { organizationId: project.orgId, projectId: project.id },
       action: 'projectAccessToken:modify',
     });
 
-    const accessToken = await this.getById(id);
+    const accessToken = await this.getById(id, {
+      includeExpired: opts.includeExpired,
+    });
 
     if (!accessToken || accessToken?.projectId !== project.id) {
       return null;
@@ -1217,7 +1271,10 @@ export type GraphQLResolvedResourcePermissionGroupOutput = ResolveType<
  * It is a function, so we can use it for the organization access tokens cache.
  */
 export function findById(deps: { pool: CommonQueryMethods; logger: Logger }) {
-  return async function findByIdImplementation(organizationAccessTokenId: string) {
+  return async function findByIdImplementation(
+    organizationAccessTokenId: string,
+    opts: { includeExpired?: boolean },
+  ) {
     deps.logger.debug(
       'Resolve organization access token by id. (organizationAccessTokenId=%s)',
       organizationAccessTokenId,
@@ -1238,6 +1295,13 @@ export function findById(deps: { pool: CommonQueryMethods; logger: Logger }) {
         "organization_access_tokens"
       WHERE
         "id" = ${organizationAccessTokenId}
+        ${
+          opts.includeExpired
+            ? sql``
+            : sql`
+              AND (expires_at IS NULL OR expires_at > NOW()) 
+            `
+        }
       LIMIT 1
     `);
 
@@ -1273,4 +1337,5 @@ const organizationAccessTokenFields = sql`
   , "assigned_resources" AS "assignedResources"
   , "first_characters" AS "firstCharacters"
   , "hash"
+  , to_json("expires_at") AS "expiresAt"
 `;

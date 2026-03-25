@@ -67,7 +67,6 @@ const DeleteGitHubIntegrationMutation = graphql(`
 
 const GitHubIntegrationSection_OrganizationFragment = graphql(`
   fragment GitHubIntegrationSection_OrganizationFragment on Organization {
-    id
     hasGitHubIntegration
     slug
   }
@@ -114,7 +113,6 @@ function GitHubIntegrationSection(props: {
 
 const SlackIntegrationSection_OrganizationFragment = graphql(`
   fragment SlackIntegrationSection_OrganizationFragment on Organization {
-    id
     hasSlackIntegration
     slug
   }

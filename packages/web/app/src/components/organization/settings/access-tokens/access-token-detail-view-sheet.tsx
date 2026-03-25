@@ -2,6 +2,7 @@ import { useQuery } from 'urql';
 import * as Sheet from '@/components/ui/sheet';
 import { graphql } from '@/gql';
 import { PermissionDetailView } from './permission-detail-view';
+import { TokenExpiration } from './token-expiration';
 
 const AccessTokenDetailViewSheet_OrganizationQuery = graphql(`
   query AccessTokenDetailViewSheet_OrganizationQuery(
@@ -14,6 +15,7 @@ const AccessTokenDetailViewSheet_OrganizationQuery = graphql(`
         id
         title
         description
+        expiresAt
         resolvedResourcePermissionGroups(includeAll: true) {
           title
           ...PermissionDetailView_ResolvedResourcePermissionGroup
@@ -38,15 +40,19 @@ export function AccessTokenDetailViewSheet(props: AccessTokenDetailViewSheetProp
     },
   });
 
+  const accessToken = query.data?.organization?.accessToken;
+
   return (
     <Sheet.Sheet open onOpenChange={props.onClose}>
       <Sheet.SheetContent className="flex max-h-screen min-w-[700px] flex-col overflow-y-scroll">
         <Sheet.SheetHeader>
-          <Sheet.SheetTitle>
-            Access Token: {query.data?.organization?.accessToken?.title}
-          </Sheet.SheetTitle>
+          <Sheet.SheetTitle>Access Token: {accessToken?.title}</Sheet.SheetTitle>
           <Sheet.SheetDescription>
-            {query.data?.organization?.accessToken?.description}
+            <div>{accessToken?.description}</div>
+            <div>
+              <span className="font-medium">Expires:</span>{' '}
+              <TokenExpiration expiresAt={accessToken?.expiresAt ?? null} />
+            </div>
           </Sheet.SheetDescription>
         </Sheet.SheetHeader>
         {query.data?.organization?.accessToken?.resolvedResourcePermissionGroups.map(

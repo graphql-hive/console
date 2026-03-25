@@ -461,7 +461,7 @@ export async function main() {
       method: ['GET', 'HEAD'],
       url: '/_health',
       async handler(_, res) {
-        res.status(200).send();
+        res.status(200).send(); // eslint-disable-line @typescript-eslint/no-floating-promises -- false positive, FastifyReply.then returns void
       },
     });
 
@@ -490,7 +490,7 @@ export async function main() {
             req.log.error(`Readiness check failed: [${response.statusCode}] ${response.body}`);
           } else {
             reportReadiness(true);
-            res.status(200).send();
+            res.status(200).send(); // eslint-disable-line @typescript-eslint/no-floating-promises -- false positive, FastifyReply.then returns void
             return;
           }
         } catch (error) {
@@ -498,7 +498,7 @@ export async function main() {
         }
 
         reportReadiness(false);
-        res.status(400).send();
+        res.status(400).send(); // eslint-disable-line @typescript-eslint/no-floating-promises -- false positive, FastifyReply.then returns void
       },
     });
 

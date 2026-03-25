@@ -73,7 +73,6 @@ export function graphqlRequest(config: {
       try {
         jsonData = (await response.json()) as ExecutionResult<TResult>;
       } catch (err) {
-        config.logger?.debug?.(String(err));
         const contentType = response?.headers?.get('content-type');
         throw new APIError(
           `Response from graphql was not valid JSON.${contentType ? ` Received "content-type": "${contentType}".` : ''}`,

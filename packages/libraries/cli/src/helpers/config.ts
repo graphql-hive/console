@@ -142,7 +142,7 @@ export class Config {
           throw new Error('Invalid config.');
         }
       }
-    } catch (_error) {
+    } catch (error) {
       this.cache = {
         registry: {
           endpoint: undefined,

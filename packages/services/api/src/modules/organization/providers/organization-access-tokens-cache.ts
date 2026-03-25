@@ -27,6 +27,7 @@ export type CachedAccessToken = {
   authorizationPolicyStatements: Array<AuthorizationPolicyStatement>;
   hash: string;
   firstCharacters: string;
+  expiresAt: string | null;
 };
 
 /**
@@ -105,18 +106,27 @@ export class OrganizationAccessTokensCache {
         authorizationPolicyStatements ?? accessToken.authorizationPolicyStatements,
       hash: accessToken.hash,
       firstCharacters: accessToken.firstCharacters,
+      expiresAt: accessToken.expiresAt,
     };
   }
 
-  get(
+  async get(
     id: string,
     /** Request scoped logger so we associate the request-id with any logs occuring during the SQL lookup. */
     logger: Logger,
+    opts: {
+      /** Whether or not to return records that have expired.  */
+      includeExpired?: boolean;
+    },
   ) {
-    return this.cache.getOrSet({
+    const token = await this.cache.getOrSet({
       key: id,
       factory: async () => {
-        const record = await findById({ logger, pool: this.pool })(id);
+        const record = await findById({ logger, pool: this.pool })(id, {
+          // always fetch all access tokens to avoid caching issues between expired and not expired.
+          // We perform a post-filter depending on whether expired should be returned or not
+          includeExpired: true,
+        });
         if (!record) {
           return null;
         }
@@ -126,6 +136,13 @@ export class OrganizationAccessTokensCache {
       ttl: '5min',
       grace: '24h',
     });
+
+    // Apply a post filter if expired should not be included
+    if (opts.includeExpired !== true && token?.expiresAt) {
+      return new Date(token.expiresAt) <= new Date() ? null : token;
+    }
+
+    return token;
   }
 
   async add(logger: Logger, record: OrganizationAccessToken) {

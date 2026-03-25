@@ -29,9 +29,9 @@ const getHiveClientVersion = (userAgent: string | null) => {
 };
 
 export function useArmor<
-  PluginContext extends Record<string, any> = object,
-  TServerContext extends Record<string, any> = object,
-  TUserContext = object,
+  PluginContext extends Record<string, any> = {},
+  TServerContext extends Record<string, any> = {},
+  TUserContext = {},
 >(): Plugin<PluginContext, TServerContext, TUserContext> {
   return {
     onValidate(ctx) {

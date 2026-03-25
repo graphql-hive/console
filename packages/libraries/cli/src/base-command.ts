@@ -60,7 +60,11 @@ export default abstract class BaseCommand<T extends typeof Command> extends Comm
   protected logger: Logger = {
     info: (...args) => this.logInfo(...args),
     error: (...args) => this.logFailure(...args),
-    debug: (...args) => this.logDebug(...args),
+    debug: (...args) => {
+      if (this.flags.debug) {
+        this.logInfo(...args);
+      }
+    },
   };
 
   logSuccess(...args: any[]) {
@@ -77,12 +81,6 @@ export default abstract class BaseCommand<T extends typeof Command> extends Comm
 
   logWarning(...args: any[]) {
     this.log(Texture.warning(...args));
-  }
-
-  logDebug(...args: any[]) {
-    if (this.flags.debug) {
-      this.logInfo(...args);
-    }
   }
 
   maybe<TArgs extends Record<string, any>, TKey extends keyof TArgs>({
@@ -217,7 +215,6 @@ export default abstract class BaseCommand<T extends typeof Command> extends Comm
 
       return fileContent;
     } catch (e) {
-      this.logFailure(e);
       throw new InvalidFileContentsError(file, 'JSON');
     }
   }

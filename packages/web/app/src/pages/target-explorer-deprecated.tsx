@@ -49,7 +49,7 @@ const DeprecatedSchemaView_DeprecatedSchemaExplorerFragment = graphql(`
   }
 `);
 
-function InternalDeprecatedSchemaView(props: {
+const DeprecatedSchemaView = memo(function _DeprecatedSchemaView(props: {
   explorer: FragmentType<typeof DeprecatedSchemaView_DeprecatedSchemaExplorerFragment>;
   totalRequests: number;
   organizationSlug: string;
@@ -150,9 +150,7 @@ function InternalDeprecatedSchemaView(props: {
       </div>
     </div>
   );
-}
-
-const DeprecatedSchemaView = memo(InternalDeprecatedSchemaView);
+});
 
 const DeprecatedSchemaExplorer_DeprecatedSchemaQuery = graphql(`
   query DeprecatedSchemaExplorer_DeprecatedSchemaQuery(

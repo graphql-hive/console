@@ -456,7 +456,7 @@ type FunctionTraceOptions<TArgs extends any[], TResult> = {
   errorAttributes?: Attributes | ((error: Error) => Attributes);
 };
 
-export function traceFn<This extends object, TArgs extends any[], TResult>(
+export function traceFn<This extends Object, TArgs extends any[], TResult>(
   spanName: string,
   options?: FunctionTraceOptions<TArgs, Awaited<TResult>>,
 ) {

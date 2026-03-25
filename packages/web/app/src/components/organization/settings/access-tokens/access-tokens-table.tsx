@@ -9,6 +9,7 @@ import { TimeAgo } from '@/components/v2';
 import { graphql, useFragment, type DocumentType, type FragmentType } from '@/gql';
 import { AccessTokenDetailViewSheet } from './access-token-detail-view-sheet';
 import { DeleteAccessTokenConfirmationDialogue } from './delete-access-token-confirmation-dialogue';
+import { TokenExpiration } from './token-expiration';
 
 const privateKeyFiller = new Array(20).fill('•').join('');
 
@@ -22,6 +23,7 @@ const AccessTokensTable_AccessTokenConnectionFragment = graphql(`
         title
         firstCharacters
         createdAt
+        expiresAt
       }
     }
     pageInfo {
@@ -103,7 +105,8 @@ export function AccessTokensTable(props: AccessTokensTable) {
           <Table.TableHead>Title</Table.TableHead>
           <Table.TableHead className="w-[100px]">Private Key</Table.TableHead>
           <Table.TableHead className="pl-10">Scope</Table.TableHead>
-          <Table.TableHead className="text-right">Created At</Table.TableHead>
+          <Table.TableHead className="text-center">Created At</Table.TableHead>
+          <Table.TableHead className="text-center">Expiration</Table.TableHead>
           <Table.TableHead className="text-right" />
         </Table.TableRow>
       </Table.TableHeader>
@@ -117,8 +120,11 @@ export function AccessTokensTable(props: AccessTokensTable) {
             <Table.TableCell className="pl-10 font-mono">
               <Badge variant="success">{typenameToScope(edge.node.__typename)}</Badge>
             </Table.TableCell>
-            <Table.TableCell className="text-right">
+            <Table.TableCell className="text-center">
               created <TimeAgo date={edge.node.createdAt} />
+            </Table.TableCell>
+            <Table.TableCell className="text-center">
+              <TokenExpiration expiresAt={edge.node.expiresAt ?? null} />
             </Table.TableCell>
             <Table.TableCell className="text-right align-middle">
               <DropDownMenu.DropdownMenu>
