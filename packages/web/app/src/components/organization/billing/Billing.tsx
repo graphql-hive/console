@@ -15,6 +15,7 @@ const BillingView_OrganizationFragment = graphql(`
 const BillingView_QueryFragment = graphql(`
   fragment BillingView_QueryFragment on Query {
     billingPlans {
+      id
       planType
       ...PlanSummary_PlanFragment
     }

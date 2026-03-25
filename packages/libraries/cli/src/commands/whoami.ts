@@ -78,6 +78,7 @@ export default class WhoAmI extends Command<typeof WhoAmI> {
         description: WhoAmI.flags['registry.endpoint'].description!,
       });
     } catch (e) {
+      this.logDebug(e);
       throw new MissingEndpointError();
     }
 
@@ -90,6 +91,7 @@ export default class WhoAmI extends Command<typeof WhoAmI> {
         description: WhoAmI.flags['registry.accessToken'].description!,
       });
     } catch (e) {
+      this.logDebug(e);
       throw new MissingRegistryTokenError();
     }
 

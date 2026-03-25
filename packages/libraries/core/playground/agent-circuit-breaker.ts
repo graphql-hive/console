@@ -6,9 +6,9 @@
 
 import { createAgent } from '../src/client/agent.js';
 
-let data: Array<{}> = [];
+let data: Array<object> = [];
 
-const agent = createAgent<{}>(
+const agent = createAgent<object>(
   {
     debug: true,
     endpoint: 'http://127.0.0.1',
