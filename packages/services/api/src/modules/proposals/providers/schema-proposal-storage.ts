@@ -39,7 +39,7 @@ export class SchemaProposalStorage {
     logger: Logger,
     private pool: PostgresDatabasePool,
     private storage: Storage,
-    @Inject(SCHEMA_PROPOSALS_ENABLED) private schemaProposalsEnabled: Boolean,
+    @Inject(SCHEMA_PROPOSALS_ENABLED) private schemaProposalsEnabled: boolean,
     private taskScheduler: TaskScheduler,
   ) {
     this.logger = logger.child({ source: 'SchemaProposalStorage' });

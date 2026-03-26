@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import clsx from 'clsx';
 import { buildSchema, introspectionFromSchema, Kind, parse, print } from 'graphql';
 import { throttle } from 'lodash';
@@ -30,6 +30,7 @@ import { useCurrentOperationWithFetchingState } from '@/lib/hooks/laboratory/use
 import { TargetLaboratoryPageQuery } from '@/lib/hooks/laboratory/use-operation-collections-plugin';
 import { useOperationFromQueryString } from '@/lib/hooks/laboratory/useOperationFromQueryString';
 import { useResetState } from '@/lib/hooks/use-reset-state';
+import { loadHistory, saveHistory } from '@/lib/laboratory-history-storage';
 import { cn } from '@/lib/utils';
 import {
   Laboratory,
@@ -319,6 +320,18 @@ function useLaboratoryState(props: {
     },
   });
 
+  const [historyData, setHistoryData] = useState<LaboratoryHistory[] | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    void loadHistory().then(history => {
+      if (!cancelled) setHistoryData(history);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   const preflight = useFragment(LaboratoryPreflightScriptTargetFragment, data?.target ?? null);
 
   const collections = useMemo(
@@ -566,18 +579,21 @@ function useLaboratoryState(props: {
   const operationIdFromSearch = useOperationFromQueryString();
 
   const fetching = useMemo(() => {
+    if (historyData === null) {
+      return true;
+    }
     if (operationIdFromSearch) {
       return dataFetching || currentOperationFetching;
     }
 
     return dataFetching;
-  }, [dataFetching, currentOperationFetching, operationIdFromSearch]);
+  }, [dataFetching, currentOperationFetching, operationIdFromSearch, historyData]);
 
   return {
     fetching,
     defaultCollections: collections,
     defaultOperations,
-    defaultHistory: getLocalStorageState('history', []),
+    defaultHistory: historyData ?? [],
     defaultTabs,
     defaultActiveTabId: getLocalStorageState('activeTabId', null),
     defaultSettings: getLocalStorageState('settings', {
@@ -603,7 +619,7 @@ function useLaboratoryState(props: {
       setLocalStorageState('operations', operations);
     },
     onHistoryChange: (history: LaboratoryHistory[]) => {
-      setLocalStorageState('history', history);
+      void saveHistory(history);
     },
     onTabsChange: (tabs: LaboratoryTab[]) => {
       setLocalStorageState('tabs', tabs);

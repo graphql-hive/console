@@ -111,6 +111,7 @@ export default class SchemaDelete extends Command<typeof SchemaDelete> {
           description: SchemaDelete.flags['registry.endpoint'].description!,
         });
       } catch (e) {
+        this.logDebug(e);
         throw new MissingEndpointError();
       }
       try {
@@ -122,6 +123,7 @@ export default class SchemaDelete extends Command<typeof SchemaDelete> {
           description: SchemaDelete.flags['registry.accessToken'].description!,
         });
       } catch (e) {
+        this.logDebug(e);
         throw new MissingRegistryTokenError();
       }
 

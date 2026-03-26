@@ -55,6 +55,8 @@ module.exports = {
     'packages/web/app/src/gql/**/*',
     'codegen.cjs',
     'tsup',
+    'packages/libraries/render-laboratory/src/laboratory.ts',
+    'packages/web/app/vite.config.ts',
   ],
   overrides: [
     {
@@ -66,6 +68,10 @@ module.exports = {
         schema: SCHEMA_PATH,
         operations: OPERATIONS_PATHS,
       },
+      rules: {
+        '@graphql-eslint/no-deprecated': 'error',
+        '@graphql-eslint/require-id-when-available': 'error',
+      },
     },
     {
       // Setup processor for operations/fragments definitions on code-files
@@ -76,8 +82,8 @@ module.exports = {
       files: ['packages/web/app/**/*.graphql'],
       plugins: ['@graphql-eslint'],
       rules: {
-        '@graphql-eslint/require-id-when-available': 'error',
         '@graphql-eslint/no-deprecated': 'error',
+        '@graphql-eslint/require-id-when-available': 'error',
       },
     },
     {
@@ -144,6 +150,16 @@ module.exports = {
         '@typescript-eslint/no-empty-function': 'off',
         '@typescript-eslint/ban-types': 'off',
         '@typescript-eslint/triple-slash-reference': 'off',
+        '@typescript-eslint/no-unused-vars': [
+          'error',
+          {
+            argsIgnorePattern: '^_',
+            caughtErrors: 'none',
+            caughtErrorsIgnorePattern: '^_',
+            destructuredArrayIgnorePattern: '^_',
+            varsIgnorePattern: '^_',
+          },
+        ],
       },
     },
     {

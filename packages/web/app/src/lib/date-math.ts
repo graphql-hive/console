@@ -37,7 +37,7 @@ const dateStringFormat = 'yyyy-MM-dd HH:mm';
 function parseDateString(input: string) {
   try {
     return parseDate(input, dateStringFormat, new UTCDate());
-  } catch (error) {
+  } catch (_error: unknown) {
     return undefined;
   }
 }

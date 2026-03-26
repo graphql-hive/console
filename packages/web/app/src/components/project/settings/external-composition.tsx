@@ -40,12 +40,14 @@ const ExternalCompositionStatus_TestQuery = graphql(`
 
 const ExternalCompositionSettings_OrganizationFragment = graphql(`
   fragment ExternalCompositionSettings_OrganizationFragment on Organization {
+    id
     slug
   }
 `);
 
 const ExternalCompositionSettings_ProjectFragment = graphql(`
   fragment ExternalCompositionSettings_ProjectFragment on Project {
+    id
     slug
     isNativeFederationEnabled
     externalSchemaComposition {
@@ -58,6 +60,7 @@ const ExternalCompositionSettings_UpdateResultFragment = graphql(`
   fragment ExternalCompositionSettings_UpdateResultFragment on UpdateSchemaCompositionResult {
     ok {
       updatedProject {
+        id
         externalSchemaComposition {
           endpoint
         }

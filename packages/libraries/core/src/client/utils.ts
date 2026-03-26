@@ -139,7 +139,7 @@ export function addProperty<T, K extends string, V>(
   value: V,
   obj: T,
 ): T & {
-  [k in K]: V;
+  [_k in K]: V;
 };
 export function addProperty<T, K extends string, V>(
   key: K,

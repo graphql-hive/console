@@ -63,7 +63,7 @@
     "@apollo/composition": "2.13.2",
     "@types/node": "24.10.9",
     "esbuild": "0.25.9",
-    "fastify": "5.8.1",
+    "fastify": "5.8.3",
     "graphql": "16.9.0"
   },
   "publishConfig": {

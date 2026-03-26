@@ -11,11 +11,11 @@ export type NullableAndPartial<T> = {
 export type NullableDictionary<T> = { [P in keyof T]: T[P] | null };
 
 export type Listify<T, K extends keyof T> = Omit<T, K> & {
-  [key in K]: T[K] | readonly T[K][];
+  [_key in K]: T[K] | readonly T[K][];
 };
 
 export type MapToArray<T, K extends keyof T> = Omit<T, K> & {
-  [key in K]: readonly T[K][];
+  [_key in K]: readonly T[K][];
 };
 
 export function uuid(len = 13) {

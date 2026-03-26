@@ -8,15 +8,10 @@ interface Email {
   date: Date;
 }
 
-const emailProviders = {
-  postmark,
-  mock,
-  smtp,
-  sendmail,
-};
+type EmailProviders = 'postmark' | 'mock' | 'smtp' | 'sendmail';
 
 export interface EmailProvider {
-  id: keyof typeof emailProviders;
+  id: EmailProviders;
   send(email: Omit<Email, 'date'>): Promise<void>;
   history: Email[];
 }

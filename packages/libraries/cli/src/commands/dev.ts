@@ -211,6 +211,7 @@ export default class Dev extends Command<typeof Dev> {
             description: Dev.flags['registry.endpoint'].description!,
           });
         } catch (e) {
+          this.logDebug(e);
           throw new MissingEndpointError();
         }
         try {
@@ -222,6 +223,7 @@ export default class Dev extends Command<typeof Dev> {
             description: Dev.flags['registry.accessToken'].description!,
           });
         } catch (e) {
+          this.logDebug(e);
           throw new MissingRegistryTokenError();
         }
 
@@ -270,6 +272,7 @@ export default class Dev extends Command<typeof Dev> {
           description: Dev.flags['registry.endpoint'].description!,
         });
       } catch (e) {
+        this.logDebug(e);
         throw new MissingEndpointError();
       }
       try {
@@ -281,6 +284,7 @@ export default class Dev extends Command<typeof Dev> {
           description: Dev.flags['registry.accessToken'].description!,
         });
       } catch (e) {
+        this.logDebug(e);
         throw new MissingRegistryTokenError();
       }
 
