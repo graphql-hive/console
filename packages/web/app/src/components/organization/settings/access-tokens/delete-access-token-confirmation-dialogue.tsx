@@ -40,7 +40,8 @@ export function DeleteAccessTokenConfirmationDialogue(
             Do you want to delete this access token?
           </AlertDialog.AlertDialogTitle>
           <AlertDialog.AlertDialogDescription>
-            Deleting will invalidate the access token. Once deleted, this token cannot be recovered.
+            Deleting will invalidate the access token within 5 minutes. Once deleted, this token
+            cannot be recovered.
           </AlertDialog.AlertDialogDescription>
         </AlertDialog.AlertDialogHeader>
         <AlertDialog.AlertDialogFooter>
