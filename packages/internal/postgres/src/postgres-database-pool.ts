@@ -41,8 +41,6 @@ export interface CommonQueryMethods {
     sql: TaggedTemplateLiteralInvocation,
     values?: PrimitiveValueExpression[],
   ): Promise<unknown>;
-  // maybe support nested transactions in the future if needed
-  // transaction<T = void>(handler: (methods: CommonQueryMethods) => Promise<T>): Promise<T>;
 }
 
 export class PostgresDatabasePool implements CommonQueryMethods {

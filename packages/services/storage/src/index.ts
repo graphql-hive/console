@@ -2495,17 +2495,15 @@ export async function createStorage(
       );
     },
     async getGitHubIntegrationInstallationId({ organizationId: organization }) {
-      const result = await pool
-        .maybeOne(
+      return await pool
+        .maybeOneFirst(
           psql`/* getGitHubIntegrationInstallationId */
             SELECT github_app_installation_id
             FROM organizations
             WHERE id = ${organization}
           `,
         )
-        .then(z.object({ github_app_installation_id: z.string().nullable() }).nullable().parse);
-
-      return result?.github_app_installation_id;
+        .then(z.string().nullable().parse);
     },
     async addAlertChannel({ projectId, name, type, slackChannel, webhookEndpoint }) {
       return AlertChannelModel.parse(

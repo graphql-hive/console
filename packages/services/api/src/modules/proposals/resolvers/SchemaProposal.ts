@@ -45,8 +45,8 @@ export const SchemaProposal: SchemaProposalResolvers = {
           );
 
           return {
-            kind: 'composite',
-            type: 'FEDERATION',
+            kind: schema?.kind ?? 'composite',
+            type: schema?.type ?? 'FEDERATION',
             action: 'PUSH', // no idea why this is required for `__isTypeOf` in CompositeSchema.
             sdl: node.schemaSDL ?? '', // @todo patch schema changes onto latest
             id: node.id,
@@ -58,7 +58,7 @@ export const SchemaProposal: SchemaProposalResolvers = {
             date: new Date(node.createdAt).getTime(),
             commit: node.meta?.commit ?? node.id,
             metadata: node.meta ? JSON.stringify(node.meta) : null,
-          };
+          } as Schema;
         });
       }
     }
