@@ -35,7 +35,7 @@ export class PgPoolBridge {
 
     // Slonik connect works in a way where the client is reserved for the Promise returned in the handler.
     // We need to be a bit more creative to support the "pg.Pool" API :)
-    this.pool.connect(async client => {
+    void this.pool.connect(async client => {
       pgClientAvailableP.resolve(new PgClientBridge(client, pgClientReleasedP.resolve));
       await pgClientReleasedP.promise;
     });

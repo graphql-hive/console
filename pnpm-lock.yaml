@@ -445,6 +445,9 @@ importers:
       slonik-sql-tag-raw:
         specifier: 48.13.2
         version: 48.13.2(slonik@48.13.2)
+      zod:
+        specifier: 3.25.76
+        version: 3.25.76
     devDependencies:
       '@hive/service-common':
         specifier: workspace:*
