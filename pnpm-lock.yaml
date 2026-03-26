@@ -16183,12 +16183,12 @@ packages:
     resolution: {integrity: sha512-0ypsOQt9D4e3hziV8O4elD9uN0z/jtUEfxVRtNaAAtXIyUx9m/SzlO020i8YNL2aL/E6blOvvHQcin6HZlFy/w==}
     engines: {node: '>=8.6'}
 
-  picomatch@2.3.1:
-    resolution: {integrity: sha512-JU3teHTNjmE2VCGFzuY8EXzCDVwEqB2a8fsIvwaStHhAWJEeVd1o1QD80CU6+ZdEXXSLbSsuLwJjkCBWqRQUVA==}
+  picomatch@2.3.2:
+    resolution: {integrity: sha512-V7+vQEJ06Z+c5tSye8S+nHUfI51xoXIXjHQ99cQtKUkQqqO1kO/KCJUfZXuB47h/YBlDhah2H3hdUGXn8ie0oA==}
     engines: {node: '>=8.6'}
 
-  picomatch@3.0.1:
-    resolution: {integrity: sha512-I3EurrIQMlRc9IaAZnqRR044Phh2DXY+55o7uJ0V+hYZAcQYSuFWsc9q5PvyDHUSCe1Qxn/iBz+78s86zWnGag==}
+  picomatch@3.0.2:
+    resolution: {integrity: sha512-cfDHL6LStTEKlNilboNtobT/kEa30PtAf2Q1OgszfrG/rpVl1xaFWT9ktfkS306GmHgmnad1Sw4wabhlvFtsTw==}
     engines: {node: '>=10'}
 
   picomatch@4.0.4:
@@ -27336,7 +27336,7 @@ snapshots:
       '@types/semver': 7.5.6
       '@types/tmp': 0.2.6
       execa: 5.1.1
-      fdir: 6.5.0(picomatch@3.0.1)
+      fdir: 6.5.0(picomatch@3.0.2)
       google-protobuf: 3.21.4
       got: 11.8.6
       ini: 2.0.0
@@ -27344,7 +27344,7 @@ snapshots:
       minimist: 1.2.8
       normalize-package-data: 6.0.0
       package-directory: 8.1.0
-      picomatch: 3.0.1
+      picomatch: 3.0.2
       require-from-string: 2.0.2
       semver: 7.7.2
       source-map-support: 0.5.21
@@ -28971,13 +28971,13 @@ snapshots:
   '@rollup/pluginutils@4.2.1':
     dependencies:
       estree-walker: 2.0.2
-      picomatch: 2.3.1
+      picomatch: 2.3.2
 
   '@rollup/pluginutils@5.0.2(rollup@4.59.0)':
     dependencies:
       '@types/estree': 1.0.8
       estree-walker: 2.0.2
-      picomatch: 2.3.1
+      picomatch: 2.3.2
     optionalDependencies:
       rollup: 4.59.0
 
@@ -31870,7 +31870,7 @@ snapshots:
   anymatch@3.1.2:
     dependencies:
       normalize-path: 3.0.0
-      picomatch: 2.3.1
+      picomatch: 2.3.2
 
   apollo-reporting-protobuf@3.3.3:
     dependencies:
@@ -34338,9 +34338,9 @@ snapshots:
     optionalDependencies:
       picomatch: 4.0.4
 
-  fdir@6.5.0(picomatch@3.0.1):
+  fdir@6.5.0(picomatch@3.0.2):
     optionalDependencies:
-      picomatch: 3.0.1
+      picomatch: 3.0.2
 
   fdir@6.5.0(picomatch@4.0.4):
     optionalDependencies:
@@ -37302,7 +37302,7 @@ snapshots:
   micromatch@4.0.8:
     dependencies:
       braces: 3.0.3
-      picomatch: 2.3.1
+      picomatch: 2.3.2
 
   mime-db@1.52.0: {}
 
@@ -38585,9 +38585,9 @@ snapshots:
 
   picomatch-browser@2.2.6: {}
 
-  picomatch@2.3.1: {}
+  picomatch@2.3.2: {}
 
-  picomatch@3.0.1: {}
+  picomatch@3.0.2: {}
 
   picomatch@4.0.4: {}
 
@@ -38784,7 +38784,7 @@ snapshots:
       ignore: 5.3.2
       mri: 1.2.0
       picocolors: 1.1.1
-      picomatch: 3.0.1
+      picomatch: 3.0.2
       prettier: 3.4.2
       tslib: 2.8.1
 
@@ -39268,7 +39268,7 @@ snapshots:
 
   readdirp@3.6.0:
     dependencies:
-      picomatch: 2.3.1
+      picomatch: 2.3.2
 
   readdirp@4.1.2: {}
 
