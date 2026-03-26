@@ -69,6 +69,7 @@ module.exports = {
         operations: OPERATIONS_PATHS,
       },
       rules: {
+        '@graphql-eslint/no-deprecated': 'error',
         '@graphql-eslint/require-id-when-available': 'error',
       },
     },
@@ -82,6 +83,7 @@ module.exports = {
       plugins: ['@graphql-eslint'],
       rules: {
         '@graphql-eslint/no-deprecated': 'error',
+        '@graphql-eslint/require-id-when-available': 'error',
       },
     },
     {
