@@ -40,7 +40,7 @@ export function DeleteAccessTokenConfirmationDialogue(
             Do you want to delete this access token?
           </AlertDialog.AlertDialogTitle>
           <AlertDialog.AlertDialogDescription>
-            If you cancel now, any draft information will be lost.
+            Deleting will invalidate the access token. Once deleted, this token cannot be recovered.
           </AlertDialog.AlertDialogDescription>
         </AlertDialog.AlertDialogHeader>
         <AlertDialog.AlertDialogFooter>
