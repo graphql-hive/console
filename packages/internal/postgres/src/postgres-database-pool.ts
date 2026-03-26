@@ -1,3 +1,4 @@
+import type { Pool } from 'pg';
 import {
   createPool,
   createTypeParserPreset,
@@ -50,8 +51,8 @@ export interface CommonQueryMethods {
 export class PostgresDatabasePool implements CommonQueryMethods {
   constructor(private pool: DatabasePool) {}
 
-  getPgPoolCompat() {
-    return new PgPoolBridge(this.pool);
+  getPgPoolCompat(): Pool {
+    return new PgPoolBridge(this.pool) as any;
   }
 
   /** Retrieve the raw Slonik instance. Refrain from using this API. */
