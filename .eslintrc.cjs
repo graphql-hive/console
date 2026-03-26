@@ -67,9 +67,6 @@ module.exports = {
       parserOptions: {
         schema: SCHEMA_PATH,
         operations: OPERATIONS_PATHS,
-        graphQLConfig: {
-          documents: OPERATIONS_PATHS,
-        },
       },
       rules: {
         '@graphql-eslint/require-id-when-available': 'error',
