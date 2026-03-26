@@ -1,4 +1,3 @@
-import { update } from 'slonik-utilities';
 import { z } from 'zod';
 import type {
   Member,
@@ -235,6 +234,21 @@ export async function createStorage(
 
       return roleId;
     },
+    getOIDCIntegrationById(args: { oidcIntegrationId: string }, connection: CommonQueryMethods) {
+      return connection
+        .maybeOne(
+          psql`/* getOIDCIntegrationById */
+        SELECT
+          ${oidcIntegrationFields()}
+        FROM
+          "oidc_integrations"
+        WHERE
+          "id" = ${args.oidcIntegrationId}
+        LIMIT 1
+      `,
+        )
+        .then(OIDCIntegrationModel.nullable().parse);
+    },
   };
 
   function buildUserData(input: {
@@ -335,9 +349,12 @@ export async function createStorage(
           let invitation: OrganizationInvitation | null = null;
 
           if (oidcIntegration?.id) {
-            const oidcConfig = await this.getOIDCIntegrationById({
-              oidcIntegrationId: oidcIntegration.id,
-            });
+            const oidcConfig = await shared.getOIDCIntegrationById(
+              {
+                oidcIntegrationId: oidcIntegration.id,
+              },
+              t,
+            );
 
             if (oidcConfig) {
               invitation = await t
@@ -363,10 +380,31 @@ export async function createStorage(
 
             if (oidcConfig?.requireInvitation && !invitation) {
               const member = internalUser
-                ? await this.getOrganizationMember({
-                    organizationId: oidcConfig.linkedOrganizationId,
-                    userId: internalUser.id,
-                  })
+                ? await pool
+                    .maybeOne(
+                      psql`/* getOrganizationMember */
+                    SELECT
+                      ${userFields(psql`"u".`)},
+                      omr.scopes as scopes,
+                      om.organization_id AS "organizationId",
+                      om.connected_to_zendesk AS "connectedToZendesk",
+                      CASE WHEN o.user_id = om.user_id THEN true ELSE false END AS "isOwner",
+                      omr.id as "roleId",
+                      omr.name as "roleName",
+                      omr.locked as "roleLocked",
+                      omr.scopes as "roleScopes",
+                      omr.description as "roleDescription"
+                    FROM organization_member as om
+                    LEFT JOIN organizations as o ON (o.id = om.organization_id)
+                    LEFT JOIN users as u ON (u.id = om.user_id)
+                    LEFT JOIN organization_member_roles as omr ON (omr.organization_id = o.id AND omr.id = om.role_id)
+                    WHERE
+                      om.organization_id = ${oidcConfig.linkedOrganizationId}
+                      AND om.user_id = ${internalUser.id}
+                    ORDER BY u.created_at DESC
+                  `,
+                    )
+                    .then(MemberModel.nullable().parse)
                 : null;
 
               if (!member) {
@@ -2277,7 +2315,7 @@ export async function createStorage(
       const service = input.service ?? null;
 
       const output = await pool.transaction('createVersion', async trx => {
-        const log = await pool
+        const log = await trx
           .maybeOne(
             psql`/* createVersion */
             INSERT INTO schema_log
@@ -2846,33 +2884,19 @@ export async function createStorage(
         ),
       );
     },
-    async completeGetStartedStep({ organizationId: organization, step }) {
-      await update(
-        pool.getSlonikPool(),
-        'organizations',
-        {
-          [organizationGetStartedMapping[step]]: true,
-        },
-        {
-          id: organization,
-        },
-      );
+    async completeGetStartedStep({ organizationId, step }) {
+      await pool.query(psql`
+        UPDATE
+          "organizations"
+        SET
+          ${psql.identifier([organizationGetStartedMapping[step]])} = True
+        WHERE
+          "organizations"."id" = ${organizationId}
+      `);
     },
 
-    async getOIDCIntegrationById({ oidcIntegrationId: integrationId }) {
-      return await pool
-        .maybeOne(
-          psql`/* getOIDCIntegrationById */
-        SELECT
-          ${oidcIntegrationFields()}
-        FROM
-          "oidc_integrations"
-        WHERE
-          "id" = ${integrationId}
-        LIMIT 1
-      `,
-        )
-        .then(OIDCIntegrationModel.nullable().parse);
+    async getOIDCIntegrationById(args) {
+      return shared.getOIDCIntegrationById(args, pool);
     },
 
     getOIDCIntegrationForOrganization: batch(async selectors => {
