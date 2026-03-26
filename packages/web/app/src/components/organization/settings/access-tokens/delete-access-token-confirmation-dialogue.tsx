@@ -77,7 +77,6 @@ export function DeleteAccessTokenConfirmationDialogue(
                   toast({
                     variant: 'default',
                     title: 'Access Token deleted.',
-                    description: 'It can take up to 5 minutes for changes to propagate.',
                   });
                   props.onConfirm();
                 }
