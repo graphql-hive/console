@@ -263,7 +263,7 @@ export function implement<Model = never>() {
   return {
     with: <
       Schema extends Implements<Model> & {
-        [unknownKey in Exclude<keyof Schema, keyof Model>]: never;
+        [_Key in Exclude<keyof Schema, keyof Model>]: never;
       },
     >(
       schema: Schema,

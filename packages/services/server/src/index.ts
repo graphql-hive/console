@@ -461,7 +461,7 @@ export async function main() {
       method: ['GET', 'HEAD'],
       url: '/_health',
       async handler(_, res) {
-        res.status(200).send();
+        void res.status(200).send();
       },
     });
 
@@ -490,7 +490,7 @@ export async function main() {
             req.log.error(`Readiness check failed: [${response.statusCode}] ${response.body}`);
           } else {
             reportReadiness(true);
-            res.status(200).send();
+            void res.status(200).send();
             return;
           }
         } catch (error) {
@@ -498,7 +498,7 @@ export async function main() {
         }
 
         reportReadiness(false);
-        res.status(400).send();
+        void res.status(400).send();
       },
     });
 
