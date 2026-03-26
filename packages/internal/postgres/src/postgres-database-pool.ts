@@ -40,17 +40,11 @@ export interface CommonQueryMethods {
   anyFirst<T extends StandardSchemaV1>(
     sql: QuerySqlToken<T>,
     values?: PrimitiveValueExpression[],
-<<<<<<< HEAD
-  ): Promise<unknown>;
-=======
   ): Promise<ReadonlyArray<StandardSchemaV1.InferOutput<T>[keyof StandardSchemaV1.InferOutput<T>]>>;
   maybeOneFirst<T extends StandardSchemaV1>(
     sql: QuerySqlToken<T>,
     values?: PrimitiveValueExpression[],
   ): Promise<null | StandardSchemaV1.InferOutput<T>[keyof StandardSchemaV1.InferOutput<T>]>;
-  // maybe support nested transactions in the future if needed
-  // transaction<T = void>(handler: (methods: CommonQueryMethods) => Promise<T>): Promise<T>;
->>>>>>> b79833643 (feat: slonik major upgrade)
 }
 
 export class PostgresDatabasePool implements CommonQueryMethods {
