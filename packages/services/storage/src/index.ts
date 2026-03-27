@@ -380,7 +380,7 @@ export async function createStorage(
 
             if (oidcConfig?.requireInvitation && !invitation) {
               const member = internalUser
-                ? await pool
+                ? await t
                     .maybeOne(
                       psql`/* getOrganizationMember */
                     SELECT
