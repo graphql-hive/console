@@ -3084,7 +3084,7 @@ export async function createStorage(
           throw new Error('Role does not exist');
         }
 
-        return await pool
+        return await trx
           .maybeOne(
             psql`/* updateOIDCDefaultMemberRole */
           UPDATE "oidc_integrations"
