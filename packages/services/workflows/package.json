@@ -28,7 +28,7 @@
     "graphql-yoga": "5.13.3",
     "ioredis": "5.8.2",
     "mjml": "4.14.0",
-    "nodemailer": "7.0.11",
+    "nodemailer": "8.0.4",
     "sendmail": "1.6.1",
     "slonik": "30.4.4",
     "zod": "3.25.76"
