@@ -610,7 +610,12 @@ function ProposalsNewContent(
                   )
                 }
               />
-              <ChangesTab diffs={serviceDiff} />
+              <ChangesTab
+                organizationSlug={props.organizationSlug}
+                projectSlug={props.projectSlug}
+                targetSlug={props.targetSlug}
+                diffs={serviceDiff}
+              />
             </>
           )}
         </div>
@@ -619,13 +624,19 @@ function ProposalsNewContent(
   );
 }
 
-function ChangesTab(props: {
+function ChangesTab({
+  diffs,
+  ...slugs
+}: {
+  organizationSlug: string;
+  projectSlug: string;
+  targetSlug: string;
   diffs: Array<{ title: string; changes: Change[]; error?: string }> | null;
 }) {
   return (
     <TabsContent value="changes">
-      {props.diffs === null && <Spinner />}
-      {props.diffs?.length === 0 && (
+      {diffs === null && <Spinner />}
+      {diffs?.length === 0 && (
         <div className="mt-8 text-center">
           <Title className="text-center">No changes</Title>
           <Subtitle className="text-center">
@@ -633,26 +644,44 @@ function ChangesTab(props: {
           </Subtitle>
         </div>
       )}
-      {props.diffs?.map((changeProps, idx) => <DiffService key={idx} {...changeProps} />)}
+      {diffs?.map((changeProps, idx) => <DiffService key={idx} {...slugs} {...changeProps} />)}
     </TabsContent>
   );
 }
 
-function DiffService(props: { title: string; changes: Change<any>[]; error?: string }) {
+function DiffService({
+  title,
+  changes,
+  error,
+  ...slugs
+}: {
+  title: string;
+  changes: Change<any>[];
+  error?: string;
+  organizationSlug: string;
+  projectSlug: string;
+  targetSlug: string;
+}) {
   return (
     <div>
-      <Title>{props.title}</Title>
+      <Title>{title}</Title>
       <div className="mb-6">
-        {props.error ? (
+        {error ? (
           <div className="flex items-center text-red-500">
             <ExclamationTriangleIcon className="mr-2" />
-            {props.error}
+            {error}
           </div>
         ) : (
-          props.changes.length === 0 && <div className="italic">No changes to schema yet.</div>
+          changes.length === 0 && <div className="italic">No changes to schema yet.</div>
         )}
-        {props.changes.map((c, changeIndex) => {
-          return <ProposalChangeDetail change={c} key={`${c.type}-${c.path ?? changeIndex}`} />;
+        {changes.map((c, changeIndex) => {
+          return (
+            <ProposalChangeDetail
+              key={`${c.type}-${c.path ?? changeIndex}`}
+              change={c}
+              {...slugs}
+            />
+          );
         })}
       </div>
     </div>

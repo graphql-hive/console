@@ -71,13 +71,45 @@ export const SchemaVersion: SchemaVersionResolvers = {
     return injector.get(SchemaVersionHelper).getSchemaCompositionErrors(version);
   },
   breakingSchemaChanges: async (version, _, { injector }) => {
-    return injector.get(SchemaVersionHelper).getBreakingSchemaChanges(version);
+    // @todo assign the selector in SchemaVersionHelper to avoid
+    // having to map everywhere
+    const selector = {
+      targetId: version.targetId,
+      projectId: version.projectId,
+      organizationId: version.organizationId,
+      schemaProposalId: null,
+    };
+    const changes = await injector.get(SchemaVersionHelper).getBreakingSchemaChanges(version);
+    return changes?.map(c => ({
+      ...c,
+      selector,
+    }));
   },
   safeSchemaChanges: async (version, _, { injector }) => {
-    return injector.get(SchemaVersionHelper).getSafeSchemaChanges(version);
+    const selector = {
+      targetId: version.targetId,
+      projectId: version.projectId,
+      organizationId: version.organizationId,
+      schemaProposalId: null,
+    };
+    const changes = await injector.get(SchemaVersionHelper).getSafeSchemaChanges(version);
+    return changes?.map(c => ({
+      ...c,
+      selector,
+    }));
   },
   schemaChanges: async (version, _, { injector }) => {
-    return injector.get(SchemaVersionHelper).getAllSchemaChanges(version);
+    const selector = {
+      targetId: version.targetId,
+      projectId: version.projectId,
+      organizationId: version.organizationId,
+      schemaProposalId: null,
+    };
+    const changes = await injector.get(SchemaVersionHelper).getAllSchemaChanges(version);
+    return changes?.map(c => ({
+      ...c,
+      selector,
+    }));
   },
   supergraph: async (version, _, { injector }) => {
     return injector.get(SchemaVersionHelper).getSupergraphSdl(version);

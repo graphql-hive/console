@@ -2,6 +2,7 @@ import { parseCliAuthor } from '../lib/parse-cli-author';
 import { ContractsManager } from '../providers/contracts-manager';
 import { SchemaCheckManager } from '../providers/schema-check-manager';
 import { SchemaManager } from '../providers/schema-manager';
+import { withSelector } from '../utils';
 import type { SuccessfulSchemaCheckResolvers } from './../../../__generated__/types';
 
 export const SuccessfulSchemaCheck: SuccessfulSchemaCheckResolvers = {
@@ -9,10 +10,24 @@ export const SuccessfulSchemaCheck: SuccessfulSchemaCheckResolvers = {
     return injector.get(SchemaCheckManager).getSchemaVersion(schemaCheck);
   },
   safeSchemaChanges: (schemaCheck, _, { injector }) => {
-    return injector.get(SchemaCheckManager).getSafeSchemaChanges(schemaCheck);
+    const selector = {
+      organizationId: schemaCheck.selector.organizationId,
+      projectId: schemaCheck.selector.projectId,
+      targetId: schemaCheck.targetId,
+      schemaProposalId: schemaCheck.schemaProposalId,
+    };
+    const changes = injector.get(SchemaCheckManager).getSafeSchemaChanges(schemaCheck);
+    return changes ? withSelector(changes, selector) : null;
   },
   breakingSchemaChanges: (schemaCheck, _, { injector }) => {
-    return injector.get(SchemaCheckManager).getBreakingSchemaChanges(schemaCheck);
+    const selector = {
+      organizationId: schemaCheck.selector.organizationId,
+      projectId: schemaCheck.selector.projectId,
+      targetId: schemaCheck.targetId,
+      schemaProposalId: schemaCheck.schemaProposalId,
+    };
+    const changes = injector.get(SchemaCheckManager).getBreakingSchemaChanges(schemaCheck);
+    return changes ? withSelector(changes, selector) : null;
   },
   hasSchemaCompositionErrors: (schemaCheck, _, { injector }) => {
     return injector.get(SchemaCheckManager).getHasSchemaCompositionErrors(schemaCheck);
@@ -71,6 +86,31 @@ export const SuccessfulSchemaCheck: SuccessfulSchemaCheckResolvers = {
     return injector.get(SchemaCheckManager).getConditionalBreakingChangeMetadata(schemaCheck);
   },
   schemaChanges: (schemaCheck, _, { injector }) => {
-    return injector.get(SchemaCheckManager).getAllSchemaChanges(schemaCheck);
+    const selector = {
+      organizationId: schemaCheck.selector.organizationId,
+      projectId: schemaCheck.selector.projectId,
+      targetId: schemaCheck.targetId,
+      schemaProposalId: schemaCheck.schemaProposalId,
+    };
+    const changes = injector.get(SchemaCheckManager).getAllSchemaChanges(schemaCheck);
+    return changes ? withSelector(changes, selector) : null;
+  },
+  schemaProposalChanges: async ({
+    schemaProposalChanges,
+    schemaProposalId,
+    targetId,
+    selector,
+  }) => {
+    const select = {
+      organizationId: selector.organizationId,
+      projectId: selector.projectId,
+      targetId: targetId,
+      schemaProposalId,
+    };
+    if (!schemaProposalChanges) {
+      return null;
+    }
+
+    return schemaProposalChanges ? withSelector(schemaProposalChanges, select) : null;
   },
 };

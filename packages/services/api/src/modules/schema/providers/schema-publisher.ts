@@ -35,6 +35,7 @@ import { Mutex, MutexResourceLockedError } from '../../shared/providers/mutex';
 import { Storage, type TargetSelector } from '../../shared/providers/storage';
 import { TargetManager } from '../../target/providers/target-manager';
 import { toGraphQLSchemaCheck } from '../to-graphql-schema-check';
+import { withSelector } from '../utils';
 import { ArtifactStorageWriter } from './artifact-storage-writer';
 import type { SchemaModuleConfig } from './config';
 import { SCHEMA_MODULE_CONFIG } from './config';
@@ -104,6 +105,14 @@ export type PublishInput = Types.SchemaPublishInput & {
   isSchemaPublishMissingUrlErrorSelected: boolean;
 };
 
+type SchemaCheckParentTypes = Types.ResolversParentTypes[
+  | 'SchemaCheckSuccess'
+  | 'GitHubSchemaCheckSuccess'
+  | 'SchemaCheckError'
+  | 'GitHubSchemaCheckError'];
+
+type CheckResult = SchemaCheckParentTypes & Required<Pick<SchemaCheckParentTypes, '__typename'>>;
+
 type BreakPromise<T> = T extends Promise<infer U> ? U : never;
 
 type PublishResult =
@@ -113,7 +122,7 @@ type PublishResult =
       message: 'Missing service name';
     }
   | {
-      readonly __typename: 'SchemaPublishRetry';
+      __typename: 'SchemaPublishRetry';
       readonly reason: string;
     };
 
@@ -309,7 +318,7 @@ export class SchemaPublisher {
       'hive.check.result': result.__typename,
     }),
   })
-  private async internalCheck(input: CheckInput) {
+  private async internalCheck(input: CheckInput): Promise<CheckResult> {
     this.logger.info('Checking schema (input=%o)', lodash.omit(input, ['sdl']));
 
     const selector = await this.idTranslator.resolveTargetReference({
@@ -360,7 +369,7 @@ export class SchemaPublisher {
 
     if (input.schemaProposalId && schemaProposal?.targetId !== selector.targetId) {
       return {
-        __typename: 'SchemaCheckError',
+        __typename: 'SchemaCheckError' as const,
         valid: false,
         changes: [],
         warnings: [],
@@ -370,7 +379,7 @@ export class SchemaPublisher {
               'Invalid schema proposal reference. No proposal found with that ID for the target.',
           },
         ],
-      } as const;
+      };
     }
 
     const [latestVersion, latestComposableVersion] = await Promise.all([
@@ -393,7 +402,7 @@ export class SchemaPublisher {
       // this is a new service. Validate the service name.
       if (!serviceExists && !isValidServiceName(input.service)) {
         return {
-          __typename: 'SchemaCheckError',
+          __typename: 'SchemaCheckError' as const,
           valid: false,
           changes: [],
           warnings: [],
@@ -403,7 +412,7 @@ export class SchemaPublisher {
                 'Invalid service name. Service name must be 64 characters or less, must start with a letter, and can only contain alphanumeric characters, dash (-), or underscore (_).',
             },
           ],
-        } as const;
+        };
       }
     }
 
@@ -424,7 +433,7 @@ export class SchemaPublisher {
       increaseSchemaCheckCountMetric('rejected');
 
       return {
-        __typename: 'SchemaCheckError',
+        __typename: 'SchemaCheckError' as const,
         valid: false,
         changes: [],
         warnings: [],
@@ -433,7 +442,7 @@ export class SchemaPublisher {
             message: 'url is only supported by distributed projects',
           },
         ],
-      } as const;
+      };
     }
 
     if (
@@ -444,7 +453,7 @@ export class SchemaPublisher {
       increaseSchemaCheckCountMetric('rejected');
 
       return {
-        __typename: 'SchemaCheckError',
+        __typename: 'SchemaCheckError' as const,
         valid: false,
         changes: [],
         warnings: [],
@@ -453,7 +462,7 @@ export class SchemaPublisher {
             message: 'Missing service name',
           },
         ],
-      } as const;
+      };
     }
 
     let githubCheckRun: GitHubCheckRun | null = null;
@@ -530,7 +539,7 @@ export class SchemaPublisher {
       const result = SchemaCheckContextIdModel.safeParse(input.contextId);
       if (!result.success) {
         return {
-          __typename: 'SchemaCheckError',
+          __typename: 'SchemaCheckError' as const,
           valid: false,
           changes: [],
           warnings: [],
@@ -539,7 +548,7 @@ export class SchemaPublisher {
               message: result.error.errors[0].message,
             },
           ],
-        } as const;
+        };
       }
       contextId = result.data;
     } else if (input.github?.repository && input.github.pullRequestNumber) {
@@ -678,6 +687,10 @@ export class SchemaPublisher {
           }
         }
 
+        // The check is where the changes are determined... Should this also be where
+        // it's associated proposal is found?...
+        // While I don't love this, it does make returning the change record nicer.
+        // @todo
         checkResult = await this.models[project.type].check({
           input: {
             sdl,
@@ -1025,43 +1038,60 @@ export class SchemaPublisher {
       projectId: target.projectId,
     };
 
+    const schemaChangeSelector = {
+      organizationId: target.orgId,
+      projectId: target.projectId,
+      targetId: target.id,
+      schemaProposalId: schemaCheck.schemaProposalId,
+    };
+
     if (checkResult.conclusion === SchemaCheckConclusion.Success) {
       increaseSchemaCheckCountMetric('accepted');
       return {
-        __typename: 'SchemaCheckSuccess',
+        __typename: 'SchemaCheckSuccess' as const,
         valid: true,
-        schemaProposalChanges: schemaCheck.schemaProposalChanges,
-        changes: [
-          ...(checkResult.state?.schemaChanges?.all ?? []),
-          ...(checkResult.state?.contracts?.flatMap(contract => [
-            ...(contract.schemaChanges?.all?.map(change => ({
-              ...change,
-              message: `[${contract.contractName}] ${change.message}`,
-            })) ?? []),
-          ]) ?? []),
-        ],
+        schemaProposalChanges: schemaCheck.schemaProposalChanges
+          ? withSelector(schemaCheck.schemaProposalChanges, schemaChangeSelector)
+          : null,
+        changes: withSelector(
+          [
+            ...(checkResult.state?.schemaChanges?.all ?? []),
+            ...(checkResult.state?.contracts?.flatMap(contract => [
+              ...(contract.schemaChanges?.all?.map(change => ({
+                ...change,
+                message: `[${contract.contractName}] ${change.message}`,
+              })) ?? []),
+            ]) ?? []),
+          ],
+          schemaChangeSelector,
+        ),
         warnings: checkResult.state?.schemaPolicyWarnings ?? [],
         initial: latestVersion == null,
         schemaCheck: toGraphQLSchemaCheck(schemaCheckSelector, schemaCheck),
-      } as const;
+      };
     }
 
     if (checkResult.conclusion === SchemaCheckConclusion.Failure) {
       increaseSchemaCheckCountMetric('rejected');
 
       return {
-        __typename: 'SchemaCheckError',
+        __typename: 'SchemaCheckError' as const,
         valid: false,
-        schemaProposalChanges: schemaCheck.schemaProposalChanges,
-        changes: [
-          ...(checkResult.state.schemaChanges?.all ?? []),
-          ...(checkResult.state.contracts?.flatMap(contract => [
-            ...(contract.schemaChanges?.all?.map(change => ({
-              ...change,
-              message: `[${contract.contractName}] ${change.message}`,
-            })) ?? []),
-          ]) ?? []),
-        ],
+        schemaProposalChanges: schemaCheck.schemaProposalChanges
+          ? withSelector(schemaCheck.schemaProposalChanges, schemaChangeSelector)
+          : null,
+        changes: await withSelector(
+          [
+            ...(checkResult.state.schemaChanges?.all ?? []),
+            ...(checkResult.state.contracts?.flatMap(contract => [
+              ...(contract.schemaChanges?.all?.map(change => ({
+                ...change,
+                message: `[${contract.contractName}] ${change.message}`,
+              })) ?? []),
+            ]) ?? []),
+          ],
+          schemaChangeSelector,
+        ),
         warnings: checkResult.state.schemaPolicy?.warnings ?? [],
         errors: [
           ...(checkResult.state.schemaChanges?.breaking?.filter(
@@ -1086,9 +1116,9 @@ export class SchemaPublisher {
                 message: `[${contract.contractName}] ${change.message}`,
               })) ?? []),
           ]) ?? []),
-        ],
+        ].map(error => ({ ...error, path: 'path' in error ? error.path?.split('.') : null })),
         schemaCheck: toGraphQLSchemaCheck(schemaCheckSelector, schemaCheck),
-      } as const;
+      };
     }
 
     // SchemaCheckConclusion.Skip
@@ -1100,14 +1130,16 @@ export class SchemaPublisher {
     if (latestVersion.version.isComposable) {
       increaseSchemaCheckCountMetric('accepted');
       return {
-        __typename: 'SchemaCheckSuccess',
+        __typename: 'SchemaCheckSuccess' as const,
         valid: true,
-        schemaProposalChanges: schemaCheck.schemaProposalChanges,
+        schemaProposalChanges: schemaCheck.schemaProposalChanges
+          ? withSelector(schemaCheck.schemaProposalChanges, schemaChangeSelector)
+          : null,
         changes: [],
         warnings: [],
         initial: false,
         schemaCheck: toGraphQLSchemaCheck(schemaCheckSelector, schemaCheck),
-      } as const;
+      };
     }
 
     const contractVersions = await this.contracts.getContractVersionsForSchemaVersion({
@@ -1116,9 +1148,11 @@ export class SchemaPublisher {
 
     increaseSchemaCheckCountMetric('rejected');
     return {
-      __typename: 'SchemaCheckError',
+      __typename: 'SchemaCheckError' as const,
       valid: false,
-      schemaProposalChanges: schemaCheck.schemaProposalChanges,
+      schemaProposalChanges: schemaCheck.schemaProposalChanges
+        ? withSelector(schemaCheck.schemaProposalChanges, schemaChangeSelector)
+        : null,
       changes: [],
       warnings: [],
       errors: [
@@ -1134,7 +1168,7 @@ export class SchemaPublisher {
         ]) ?? []),
       ],
       schemaCheck: toGraphQLSchemaCheck(schemaCheckSelector, schemaCheck),
-    } as const;
+    };
   }
 
   async check(input: CheckInput) {
@@ -1219,7 +1253,7 @@ export class SchemaPublisher {
         return {
           __typename: 'SchemaPublishMissingServiceError' as const,
           message: 'Missing service name',
-        } as const;
+        } satisfies PublishResult;
       }
 
       let serviceExists = false;
@@ -1232,7 +1266,7 @@ export class SchemaPublisher {
       // this is a new service. Validate the service name.
       if (!serviceExists && !isValidServiceName(input.service)) {
         return {
-          __typename: 'SchemaPublishError',
+          __typename: 'SchemaPublishError' as const,
           valid: false,
           changes: [],
           errors: [
@@ -1241,7 +1275,7 @@ export class SchemaPublisher {
                 'Invalid service name. Service name must be 64 characters or less, must start with a letter, and can only contain alphanumeric characters, dash (-), or underscore (_).',
             },
           ],
-        };
+        } satisfies PublishResult;
       }
     }
 
@@ -2239,7 +2273,7 @@ export class SchemaPublisher {
     }> | null;
     schemaCheckId: string | null;
     failedContractCompositionCount: number;
-  }) {
+  }): Promise<Required<Types.GitHubSchemaCheckSuccess | Types.GitHubSchemaCheckError>> {
     try {
       let title: string;
       let summary: string;
@@ -2287,7 +2321,7 @@ export class SchemaPublisher {
           .join('\n\n');
       }
 
-      const checkRun = await this.gitHubIntegrationManager.updateCheckRun({
+      await this.gitHubIntegrationManager.updateCheckRun({
         organizationId: args.project.orgId,
         conclusion: conclusion === SchemaCheckConclusion.Success ? 'success' : 'failure',
         githubCheckRun: args.githubCheckRun,
@@ -2310,7 +2344,7 @@ export class SchemaPublisher {
       return {
         __typename: 'GitHubSchemaCheckSuccess' as const,
         message: 'Check-run created',
-        checkRun,
+        // checkRun,
       };
     } catch (error: any) {
       Sentry.captureException(error);

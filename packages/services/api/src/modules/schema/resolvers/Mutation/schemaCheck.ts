@@ -13,17 +13,30 @@ export const schemaCheck: NonNullable<MutationResolvers['schemaCheck']> = async 
     schemaProposalId: input.schemaProposalId, // @todo check permission
   });
 
-  if ('changes' in result && result.changes) {
-    return {
-      ...result,
-      schemaProposalChanges: result.schemaProposalChanges,
-      changes: result.changes,
-      errors:
-        result.errors?.map(error => ({
-          ...error,
-          path: 'path' in error ? error.path?.split('.') : null,
-        })) ?? [],
-    };
+  if ('changes' in result) {
+    if (result.changes) {
+      const proposalId = input.schemaProposalId;
+      const schemaProposalChanges =
+        result.schemaProposalChanges?.map(c => {
+          return {
+            ...c,
+            schemaProposalChangeDetails:
+              typeof proposalId === 'string'
+                ? {
+                    schemaProposal: {
+                      id: proposalId,
+                    },
+                    implementedBy: null, // when running a check, there's no way that this has already been implemented
+                  }
+                : null,
+          };
+        }) ?? null;
+
+      return {
+        ...result,
+        schemaProposalChanges,
+      };
+    }
   }
 
   return result;

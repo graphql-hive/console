@@ -114,7 +114,7 @@ export function useArmor<
       function parseWithTokenLimit(source: string | Source, options: ParseOptions) {
         const parser = new MaxTokensParserWLexer(source, {
           ...options,
-          n: 800,
+          n: 1_000,
           onReject: [
             (_, error) => {
               rejectedRequests.inc({

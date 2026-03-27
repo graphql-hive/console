@@ -432,3 +432,17 @@ export function memo<R, A, K>(fn: (arg: A) => R, cacheKeyFn: (arg: A) => K): (ar
     return memoizedResult;
   };
 }
+
+export function withSelector<T extends object, S extends object>(
+  t: T[],
+  selector: {
+    organizationId: string;
+    projectId: string;
+    targetId: string;
+  } & S,
+) {
+  return t.map(o => ({
+    ...o,
+    selector,
+  }));
+}

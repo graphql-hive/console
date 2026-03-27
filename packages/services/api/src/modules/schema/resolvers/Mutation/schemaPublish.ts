@@ -1,4 +1,5 @@
 import { parseResolveInfo } from 'graphql-parse-resolve-info';
+import { SchemaChangeType } from '@hive/storage';
 import { SchemaPublisher } from '../../providers/schema-publisher';
 import type { MutationResolvers } from './../../../../__generated__/types';
 
@@ -26,7 +27,7 @@ export const schemaPublish: NonNullable<MutationResolvers['schemaPublish']> = as
   if ('changes' in result) {
     return {
       ...result,
-      changes: result.changes,
+      changes: (result.changes as SchemaChangeType[]) ?? null,
     };
   }
 
