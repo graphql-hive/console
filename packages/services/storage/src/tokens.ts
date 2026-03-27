@@ -75,7 +75,7 @@ export async function createTokenStorage(
           LIMIT 1
         `,
         )
-        .then(TokenModel.parse);
+        .then(TokenModel.nullable().parse);
     },
     async createToken({
       token,

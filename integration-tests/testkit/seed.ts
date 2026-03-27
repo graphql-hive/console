@@ -74,7 +74,7 @@ import { UpdateSchemaPolicyForOrganization, UpdateSchemaPolicyForProject } from 
 import { collect, CollectedOperation, legacyCollect } from './usage';
 import { generateUnique, getServiceHost, pollForEmailVerificationLink } from './utils';
 
-function createConnectionPool() {
+function getPGConnectionString() {
   const pg = {
     user: ensureEnv('POSTGRES_USER'),
     password: ensureEnv('POSTGRES_PASSWORD'),
@@ -83,8 +83,12 @@ function createConnectionPool() {
     db: ensureEnv('POSTGRES_DB'),
   };
 
+  return `postgres://${pg.user}:${pg.password}@${pg.host}:${pg.port}/${pg.db}?sslmode=disable`;
+}
+
+function createConnectionPool() {
   return createPostgresDatabasePool({
-    connectionParameters: `postgres://${pg.user}:${pg.password}@${pg.host}:${pg.port}/${pg.db}?sslmode=disable`,
+    connectionParameters: getPGConnectionString(),
   });
 }
 
@@ -141,6 +145,7 @@ export function initSeed() {
 
   return {
     pollForEmailVerificationLink,
+    getPGConnectionString,
     async purgeOIDCDomains() {
       const pool = await getPool();
       await pool.query(psql`
