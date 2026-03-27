@@ -101,6 +101,8 @@ export class Proxy {
         // headers to add to the response in case of a rate limit
         responseHeadersToAdd?: Record<string, string>;
       };
+      /** Default to Cookie auth */
+      loadBalanceStrategy?: 'WeightedLeastRequest' | 'RoundRobin' | 'Random' | 'Cookie';
     }[],
   ) {
     const cert = new k8s.apiextensions.CustomResource(`cert-${dns.record}`, {
@@ -155,7 +157,7 @@ export class Proxy {
             ],
             // https://projectcontour.io/docs/1.29/config/request-routing/#session-affinity
             loadBalancerPolicy: {
-              strategy: 'Cookie',
+              strategy: route.loadBalanceStrategy ?? 'Cookie',
             },
             // https://projectcontour.io/docs/1.29/config/rate-limiting/#local-rate-limiting
             rateLimitPolicy: route.rateLimit

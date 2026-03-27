@@ -78,6 +78,7 @@ export function deployProxy({
         service: graphql.service,
         requestTimeout: '60s',
         retriable: true,
+        loadBalanceStrategy: 'RoundRobin',
       },
       {
         name: 'graphql-api-subscriptions',
@@ -106,6 +107,7 @@ export function deployProxy({
         path: '/usage',
         service: usage.service,
         retriable: true,
+        loadBalanceStrategy: 'RoundRobin',
       },
     ])
     .registerService({ record: environment.apiDns }, [
