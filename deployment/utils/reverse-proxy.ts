@@ -101,7 +101,10 @@ export class Proxy {
         // headers to add to the response in case of a rate limit
         responseHeadersToAdd?: Record<string, string>;
       };
-      /** Default to Cookie auth */
+      /**
+       * The load balancing strategy.
+       * @default 'Cookie'
+       */
       loadBalanceStrategy?: 'WeightedLeastRequest' | 'RoundRobin' | 'Random' | 'Cookie';
     }[],
   ) {
