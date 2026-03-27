@@ -60,7 +60,7 @@ export function prepareEnvironment(input: {
         memoryLimit: isProduction || isStaging ? '3584Mi' : '1Gi',
       },
       usageService: {
-        replicas: isProduction || isStaging ? 3 : 1,
+        replicas: isProduction || isStaging ? 6 : 1,
         cpuLimit: isProduction ? '1000m' : '100m',
         maxReplicas: isProduction || isStaging ? 6 : 1,
         cpuAverageToScale: 60,
