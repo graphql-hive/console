@@ -2,28 +2,14 @@ import type { PoolClient } from 'pg';
 import { sql, type DatabasePool, type DatabasePoolConnection } from 'slonik';
 import { raw } from 'slonik-sql-tag-raw';
 
-/** Bridge {slonik.DatabasePool} to an {pg.Pool} for usage with Postgraphile Workers. */
+/**
+ * Bridge {slonik.DatabasePool} to an {pg.Pool} for usage with Postgraphile Workers.
+ *
+ * This is a very very pragmatic approach, since slonik moved away from using {pg.Pool} internally.
+ * https://github.com/gajus/slonik/issues/768
+ **/
 export class PgPoolBridge {
   constructor(private pool: DatabasePool) {}
-
-  get totalCount() {
-    return this.pool.state().acquiredConnections + this.pool.state().pendingConnections;
-  }
-  get idleCount() {
-    return this.pool.state().idleConnections;
-  }
-  get waitingCount() {
-    return 0;
-  }
-  get expiredCount() {
-    return 0;
-  }
-  get ending() {
-    return false;
-  }
-  get ended() {
-    return false;
-  }
 
   end(): never {
     throw new Error('Not implemented.');
@@ -33,8 +19,11 @@ export class PgPoolBridge {
     const pgClientAvailableP = Promise.withResolvers<any>();
     const pgClientReleasedP = Promise.withResolvers<void>();
 
-    // Slonik connect works in a way where the client is reserved for the Promise returned in the handler.
-    // We need to be a bit more creative to support the "pg.Pool" API :)
+    // slonik connect works in a way where the client is acquired for the the callback handler only.
+    // It is released once the Promise returned from the handler resolves.
+    // We need to be a bit creative to support the "pg.Pool" API and obviously
+    // trust graphile-workers to call the `release` method on our fake {pg.Client} :)
+    // so the client is released back to the pool
     void this.pool.connect(async client => {
       pgClientAvailableP.resolve(new PgClientBridge(client, pgClientReleasedP.resolve));
       await pgClientReleasedP.promise;
@@ -43,7 +32,9 @@ export class PgPoolBridge {
     return pgClientAvailableP.promise;
   }
 
+  /** Some of graphile-workers logic just calls the `query` method on {pg.Pool} - without first acquiring a connection.  */
   query(query: unknown, values?: unknown, callback?: unknown): any {
+    // not used, but just in case so we can catch it in the future...
     if (typeof callback !== 'undefined') {
       throw new Error('PgClientBridge.query: callback not supported');
     }
@@ -59,13 +50,10 @@ export class PgPoolBridge {
     return this.pool.query(sql.unsafe`${raw((query as any).text as any, (query as any).values)}`);
   }
 
-  on(event: unknown, handler: unknown): this {
-    if (event === 'error') {
-      this.pool.on('error', handler as any);
-    } else if (event !== 'connect') {
-      // Note: we can skip connect, as slonik already handles these errors gracefully.
-      throw new Error(`Not implemented. PgPoolBridge.on("${event}")`);
-    }
+  on(): this {
+    // Note: we can skip setting up event handlers, as graphile workers is only setting up error handlers to avoid uncaught exceptions
+    // For us, the error handlers are already set up by slonik
+    // https://github.com/graphile/worker/blob/5650fbc4406fa3ce197b2ab582e08fd20974e50c/src/lib.ts#L351-L359
     return this;
   }
 }
