@@ -81,11 +81,12 @@ export function deployUsage({
         exposesMetrics: true,
         port: 4000,
         pdb: true,
+        cpu: {
+          limit: environment.podsConfig.usageService.cpuMax,
+          requests: environment.podsConfig.usageService.cpuMin,
+        },
         autoScaling: {
-          cpu: {
-            cpuAverageToScale: environment.podsConfig.usageService.cpuAverageToScale,
-            limit: environment.podsConfig.usageService.cpuLimit,
-          },
+          cpuAverageToScale: environment.podsConfig.usageService.cpuAverageToScale,
           maxReplicas: environment.podsConfig.usageService.maxReplicas,
         },
       },

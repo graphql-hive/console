@@ -348,8 +348,6 @@ export async function getOperationHash(
   operation: Pick<LaboratoryOperation, 'query' | 'variables'>,
 ) {
   try {
-    console.log(operation.query, operation.variables);
-
     const canonicalQuery = print(parse(operation.query));
     const canonicalVariables = '';
     const canonical = `${canonicalQuery}\n${canonicalVariables}`;

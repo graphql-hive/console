@@ -18,12 +18,15 @@ export class Redis {
     },
   ) {}
 
-  deploy(input: { limits: { memory: string; cpu: string } }) {
+  deploy(input: { limits: { memory: string; cpu: string }; requests: { cpu: string } }) {
     const redisService = getLocalComposeConfig().service('redis');
     const name = 'redis-store';
     const limits: k8s.types.input.core.v1.ResourceRequirements['limits'] = {
       memory: input.limits.memory,
       cpu: input.limits.cpu,
+    };
+    const requests: k8s.types.input.core.v1.ResourceRequirements['requests'] = {
+      cpu: input.requests.cpu,
     };
 
     const env: k8s.types.input.core.v1.EnvVar[] = normalizeEnv(this.options.env ?? {}).concat([
@@ -100,6 +103,7 @@ export class Redis {
           ports: [{ containerPort: REDIS_PORT, protocol: 'TCP' }],
           resources: {
             limits,
+            requests,
           },
           livenessProbe: {
             initialDelaySeconds: 3,
@@ -138,6 +142,10 @@ export class Redis {
             limits: {
               cpu: '200m',
               memory: '200Mi',
+            },
+            requests: {
+              cpu: '100m',
+              memory: '100Mi',
             },
           },
         },

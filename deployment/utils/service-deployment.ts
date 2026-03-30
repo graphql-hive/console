@@ -46,7 +46,14 @@ export class ServiceDeployment {
       livenessProbe?: string | ProbeConfig;
       readinessProbe?: string | ProbeConfig;
       startupProbe?: string | ProbeConfig;
-      memoryLimit?: string;
+      memory?: {
+        limit?: string;
+        requests?: string;
+      };
+      cpu?: {
+        limit?: string;
+        requests?: string;
+      };
       volumes?: k8s.types.input.core.v1.Volume[];
       volumeMounts?: k8s.types.input.core.v1.VolumeMount[];
       /**
@@ -58,10 +65,7 @@ export class ServiceDeployment {
       autoScaling?: {
         minReplicas?: number;
         maxReplicas: number;
-        cpu: {
-          limit: string;
-          cpuAverageToScale: number;
-        };
+        cpuAverageToScale: number;
       };
       availabilityOnEveryNode?: boolean;
       command?: pulumi.Input<pulumi.Input<string>[]>;
@@ -205,14 +209,23 @@ export class ServiceDeployment {
       });
     }
 
-    const resourcesLimits: Record<string, string> = {};
+    const resourcesLimits: { cpu?: string; memory?: string } = {};
+    const resourcesRequests: { cpu?: string; memory?: string } = {};
 
-    if (this.options?.autoScaling?.cpu.limit) {
-      resourcesLimits.cpu = this.options.autoScaling.cpu.limit;
+    if (this.options?.cpu?.limit) {
+      resourcesLimits.cpu = this.options?.cpu?.limit;
     }
 
-    if (this.options.memoryLimit) {
-      resourcesLimits.memory = this.options.memoryLimit;
+    if (this.options?.cpu?.requests) {
+      resourcesRequests.cpu = this.options?.cpu?.requests;
+    }
+
+    if (this.options?.memory?.limit) {
+      resourcesLimits.memory = this.options?.memory?.limit;
+    }
+
+    if (this.options?.memory?.requests) {
+      resourcesRequests.memory = this.options?.memory?.requests;
     }
 
     const pb = new PodBuilder({
@@ -248,6 +261,7 @@ export class ServiceDeployment {
           image: this.options.image,
           resources: {
             limits: resourcesLimits,
+            requests: resourcesRequests,
           },
           args: this.options.args,
           ports: {
@@ -342,7 +356,7 @@ export class ServiceDeployment {
                   name: 'cpu',
                   target: {
                     type: 'Utilization',
-                    averageUtilization: this.options.autoScaling.cpu.cpuAverageToScale,
+                    averageUtilization: this.options.autoScaling.cpuAverageToScale,
                   },
                 },
               },
