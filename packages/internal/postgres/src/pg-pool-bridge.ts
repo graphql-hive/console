@@ -19,7 +19,7 @@ export class PgPoolBridge {
     const pgClientAvailableP = Promise.withResolvers<any>();
     const pgClientReleasedP = Promise.withResolvers<void>();
 
-    // slonik connect works in a way where the client is acquired for the the callback handler only.
+    // slonik connect works in a way where the client is acquired for the callback handler closure only.
     // It is released once the Promise returned from the handler resolves.
     // We need to be a bit creative to support the "pg.Pool" API and obviously
     // trust graphile-workers to call the `release` method on our fake {pg.Client} :)
