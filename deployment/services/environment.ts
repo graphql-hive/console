@@ -76,7 +76,7 @@ export function prepareEnvironment(input: {
       redis: {
         memoryLimit: isProduction || isStaging ? '4Gi' : '100Mi',
         cpuMax: isProduction || isStaging ? '1000m' : '100m',
-        cpuMin: isProduction || isStaging ? '100m' : '100m',
+        cpuMin: isProduction || isStaging ? '100m' : '50m',
       },
       internalObservability: {
         cpuLimit: isProduction ? '512m' : '150m',
@@ -84,7 +84,7 @@ export function prepareEnvironment(input: {
       },
       tracingCollector: {
         cpuMax: isProduction || isStaging ? '1000m' : '300m',
-        cpuMin: isProduction || isStaging ? '100m' : '100m',
+        cpuMin: '100m',
         memoryLimit: isProduction || isStaging ? '1000Mi' : '512Mi',
         maxReplicas: isProduction || isStaging ? 3 : 1,
         replicas: 1,
