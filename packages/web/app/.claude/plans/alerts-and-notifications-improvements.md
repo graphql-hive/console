@@ -34,6 +34,19 @@ ALTER TYPE alert_channel_type ADD VALUE 'EMAIL';
 ALTER TABLE alert_channels ADD COLUMN email_addresses TEXT[];
 ```
 
+**Important:** This migration must use `noTransaction: true` because PostgreSQL does not allow `ALTER TYPE ... ADD VALUE` inside a transaction block. The migration runner (`pg-migrator.ts`) wraps migrations in transactions by default — the `noTransaction` flag opts out. There are 18+ existing migrations using this pattern (e.g., index creation with `CREATE INDEX CONCURRENTLY`). Note: the existing MS Teams migration (`2024.06.11T10-10-00.ms-teams-webhook.ts`) is missing this flag, which is a latent bug.
+
+```typescript
+export default {
+  name: '2026.03.27T00-00-00.email-alert-channel.ts',
+  noTransaction: true,
+  run: ({ sql }) => [
+    { name: 'Add EMAIL to alert_channel_type', query: sql`ALTER TYPE alert_channel_type ADD VALUE 'EMAIL'` },
+    { name: 'Add email_addresses column', query: sql`ALTER TABLE alert_channels ADD COLUMN email_addresses TEXT[]` },
+  ],
+} satisfies MigrationExecutor;
+```
+
 Register in `packages/migrations/src/run-pg-migrations.ts`.
 
 ### 1.2 Data Access
@@ -353,23 +366,45 @@ The ingestion pipeline (API buffer → Kafka → ClickHouse async insert) has a 
 
 **Key optimization**: Fetch both windows and all metrics in a **single query** per `(target, filter)` group. This serves latency, error rate, and traffic alerts simultaneously and halves round-trips by returning both the current and previous window in one result.
 
+The query uses **explicit sliding windows** rather than `toStartOfInterval` bucketing. Using `toStartOfInterval` would snap to fixed time boundaries, producing partial buckets at the edges (and potentially 3 rows instead of 2), leading to incorrect metric calculations. Instead, we define two exact non-overlapping ranges and use a `CASE` expression to label each row:
+
+```
+now = current time
+offset = 1 minute (ingestion pipeline latency buffer)
+W = windowMinutes
+
+currentWindow:  [now - offset - W, now - offset)
+previousWindow: [now - offset - 2W, now - offset - W)
+```
+
 ```sql
 SELECT
-  toStartOfInterval(timestamp, INTERVAL {windowMinutes} MINUTE) as window,
+  CASE
+    WHEN timestamp >= {currentWindowStart} THEN 'current'
+    ELSE 'previous'
+  END as window,
   sum(total) as total,
   sum(total_ok) as total_ok,
   avgMerge(duration_avg) as average,
   quantilesMerge(0.75, 0.90, 0.95, 0.99)(duration_quantiles) as percentiles
 FROM operations_minutely
 WHERE target = {targetId}
-  AND timestamp >= {previousWindowStart} AND timestamp < {currentWindowEnd}
+  AND timestamp >= {previousWindowStart}
+  AND timestamp < {currentWindowEnd}
   [AND hash IN/NOT IN ({operationIds})]
   [AND (client_name, client_version) IN/NOT IN ({clientFilters})]
 GROUP BY window
 ORDER BY window
 ```
 
-Returns 2 rows (previous and current window). From these:
+Where the boundaries are computed as:
+- `currentWindowEnd = now - 1 minute`
+- `currentWindowStart = now - 1 minute - W`
+- `previousWindowStart = now - 1 minute - 2W`
+
+This always returns exactly 2 rows (one per label), each aggregating a complete window with no partial-bucket artifacts.
+
+From these:
 - **Latency**: pick the relevant percentile or average from each row
 - **Error rate**: `(total - total_ok) / total * 100` per row
 - **Traffic**: `total` per row
@@ -379,7 +414,11 @@ Returns 2 rows (previous and current window). From these:
 - **FIXED_VALUE**: `currentValue > thresholdValue` (or `<` for BELOW direction)
 - **PERCENTAGE_CHANGE**: `((currentValue - previousValue) / previousValue) * 100 > thresholdValue`
 
-Edge cases: skip if both windows have 0 data; treat as absolute if previous is 0 with relative threshold.
+**Edge cases:**
+- **Both windows have 0 data**: Skip evaluation entirely (no meaningful comparison possible).
+- **Previous window is 0, current is > 0 (PERCENTAGE_CHANGE)**: Division by zero. Fall back to FIXED_VALUE comparison against the threshold — i.e., check `currentValue > thresholdValue` directly. This avoids a runtime error while still alerting on a meaningful spike from zero baseline.
+- **Previous window is 0, current is 0 (PERCENTAGE_CHANGE)**: No change, treat as OK.
+- **Current window has data but previous doesn't exist** (e.g., alert was just created): Skip evaluation until both windows have data.
 
 ### 2.5 Notifications from Workflows
 
@@ -464,9 +503,9 @@ The evaluation engine automatically selects the appropriate table based on windo
 
 **Granularity vs. sensitivity**: Larger windows require coarser-grained tables. A 7-day alert uses the hourly table, meaning data is aggregated in 1-hour buckets. A brief 10-minute latency spike would be smoothed into an hourly average and might not trigger the alert. For use cases like weekly traffic totals this is fine, but for spike detection shorter windows are more appropriate.
 
-**Evaluation frequency vs. window size**: The cron job runs every 5 minutes. For a 7-day window, the result shifts by 5 minutes out of 10,080 — consecutive evaluations produce nearly identical values. This is harmless but slightly wasteful. A future optimization could scale evaluation frequency with window size (e.g., hourly evaluation for daily/weekly alerts).
+**Evaluation frequency vs. window size**: The cron job runs every minute (see section 2.4). For a 7-day window, the result shifts by 1 minute out of 10,080 — consecutive evaluations produce nearly identical values. This is harmless but slightly wasteful. A future optimization could scale evaluation frequency with window size (e.g., hourly evaluation for daily/weekly alerts).
 
-**ClickHouse query cost**: The single-query optimization (fetching both windows in one `GROUP BY` query) works regardless of window size — it always returns 2 rows. Query cost scales with the number of distinct `(target, filter)` groups, not with window length. At ~100 groups, that's ~100 queries every 5 minutes, which is modest given ClickHouse's primary key efficiency (`target` is the first key, timestamp is in the sort order, and daily partitions auto-prune irrelevant data).
+**ClickHouse query cost**: The single-query optimization (fetching both windows in one `CASE`-labeled query) works regardless of window size — it always returns 2 rows. Query cost scales with the number of distinct `(target, filter)` groups, not with window length. At ~100 groups, that's ~100 queries per minute, which is modest given ClickHouse's primary key efficiency (`target` is the first key, timestamp is in the sort order, and daily partitions auto-prune irrelevant data).
 
 ### Recommendation
 
