@@ -3,11 +3,10 @@ import { memoryDriver } from 'bentocache/build/src/drivers/memory';
 import { redisDriver } from 'bentocache/build/src/drivers/redis';
 import { Inject, Injectable, Scope } from 'graphql-modules';
 import type Redis from 'ioredis';
-import type { DatabasePool } from 'slonik';
 import { prometheusPlugin } from '@bentocache/plugin-prometheus';
+import { PostgresDatabasePool } from '@hive/postgres';
 import { AuthorizationPolicyStatement } from '../../auth/lib/authz';
 import { Logger } from '../../shared/providers/logger';
-import { PG_POOL_CONFIG } from '../../shared/providers/pg-pool';
 import { PrometheusConfig } from '../../shared/providers/prometheus-config';
 import { REDIS_INSTANCE } from '../../shared/providers/redis';
 import {
@@ -42,7 +41,7 @@ export class OrganizationAccessTokensCache {
 
   constructor(
     @Inject(REDIS_INSTANCE) redis: Redis,
-    @Inject(PG_POOL_CONFIG) private pool: DatabasePool,
+    private pool: PostgresDatabasePool,
     prometheusConfig: PrometheusConfig,
   ) {
     this.cache = new BentoCache({

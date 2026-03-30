@@ -2,7 +2,7 @@ import { type MigrationExecutor } from '../pg-migrator';
 
 export default {
   name: '2025.01.10T00.00.00.breaking-changes-request-count.ts',
-  run: ({ sql }) => sql`
+  run: ({ psql }) => psql`
 CREATE TYPE
   breaking_change_formula AS ENUM('PERCENTAGE', 'REQUEST_COUNT');
 

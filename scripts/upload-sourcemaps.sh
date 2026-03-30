@@ -9,13 +9,13 @@ for dir in packages/services/*/dist; do
   pnpm sentry-cli sourcemaps inject $dir
 
   if [[ $name == *-worker ]]; then
-    pnpm sentry-cli sourcemaps upload --release=$SENTRY_RELEASE $dir --dist $name \;
+    pnpm sentry-cli sourcemaps upload --release=$SENTRY_RELEASE $dir --dist $name
   else
-    pnpm sentry-cli sourcemaps upload --release=$SENTRY_RELEASE $dir --dist $name --url-prefix /usr/src/app/\@hive/$name \;
+    pnpm sentry-cli sourcemaps upload --release=$SENTRY_RELEASE $dir --dist $name --url-prefix /usr/src/app/\@hive/$name
   fi
 done
 
 pnpm sentry-cli sourcemaps inject packages/web/app/dist
-pnpm sentry-cli sourcemaps upload --release=$SENTRY_RELEASE $dir --dist webapp --url-prefix ~/ \;
+pnpm sentry-cli sourcemaps upload --release=$SENTRY_RELEASE packages/web/app/dist --dist webapp --url-prefix ~/
 
 pnpm sentry-cli releases finalize "$SENTRY_RELEASE"

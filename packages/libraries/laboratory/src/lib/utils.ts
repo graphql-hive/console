@@ -17,3 +17,26 @@ export function splitIdentifier(input: string): string[] {
     .split(/\s+/)
     .map(w => w.toLowerCase());
 }
+
+export async function asyncInterval(
+  fn: () => Promise<void>,
+  delay: number,
+  signal?: AbortSignal,
+): Promise<void> {
+  while (!signal?.aborted) {
+    await fn();
+
+    await new Promise<void>((resolve, reject) => {
+      const timer = setTimeout(resolve, delay);
+
+      signal?.addEventListener(
+        'abort',
+        () => {
+          clearTimeout(timer);
+          reject(new DOMException('Aborted', 'AbortError'));
+        },
+        { once: true },
+      );
+    });
+  }
+}

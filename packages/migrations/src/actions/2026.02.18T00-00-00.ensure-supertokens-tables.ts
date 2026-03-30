@@ -2,10 +2,10 @@ import { type MigrationExecutor } from '../pg-migrator';
 
 export default {
   name: '2026.02.18T00-00-00.ensure-supertokens-tables.ts',
-  run: ({ sql }) => [
+  run: ({ psql }) => [
     {
       name: 'seed required tables',
-      query: sql`
+      query: psql`
 
 CREATE TABLE IF NOT EXISTS supertokens_apps (
 	app_id varchar(64) DEFAULT 'public'::character varying NOT NULL,
@@ -138,7 +138,7 @@ CREATE INDEX IF NOT EXISTS emailpassword_pswd_reset_tokens_user_id_index ON supe
     },
     {
       name: 'ensure app exists',
-      query: sql`
+      query: psql`
         INSERT INTO "supertokens_apps" (
           app_id
           , created_at_time
@@ -151,7 +151,7 @@ CREATE INDEX IF NOT EXISTS emailpassword_pswd_reset_tokens_user_id_index ON supe
     },
     {
       name: 'ensure app exists',
-      query: sql`
+      query: psql`
         INSERT INTO "supertokens_tenants" (
           app_id
           , tenant_id

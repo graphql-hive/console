@@ -1,9 +1,9 @@
 import type { AddressInfo } from 'node:net';
 import humanId from 'human-id';
 import setCookie from 'set-cookie-parser';
-import { sql, type DatabasePool } from 'slonik';
 import z from 'zod';
 import formDataPlugin from '@fastify/formbody';
+import { psql, type PostgresDatabasePool } from '@hive/postgres';
 import { createServer, type FastifyReply, type FastifyRequest } from '@hive/service-common';
 import { graphql } from './gql';
 import { execute } from './graphql';
@@ -157,7 +157,7 @@ const VerifyEmailMutation = graphql(`
 export async function createOIDCIntegration(args: {
   organizationId: string;
   accessToken: string;
-  getPool: () => Promise<DatabasePool>;
+  getPool: () => Promise<PostgresDatabasePool>;
 }) {
   const { accessToken: authToken, getPool } = args;
   const result = await execute({
@@ -192,7 +192,7 @@ export async function createOIDCIntegration(args: {
         }) + '.local';
 
       const pool = await getPool();
-      const query = sql`
+      const query = psql`
         INSERT INTO "oidc_integration_domains" (
           "organization_id"
           , "oidc_integration_id"

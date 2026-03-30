@@ -1,10 +1,10 @@
-import { DatabasePool } from 'slonik';
 import {
   AccessTokenKeyContainer,
   hashPassword,
 } from '@hive/api/modules/auth/lib/supertokens-at-home/crypto';
 import { SuperTokensStore } from '@hive/api/modules/auth/providers/supertokens-store';
 import { NoopLogger } from '@hive/api/modules/shared/providers/logger';
+import { PostgresDatabasePool } from '@hive/postgres';
 import type { InternalApi } from '@hive/server';
 import { createNewSession } from '@hive/server/supertokens-at-home/shared';
 import { createTRPCProxyClient, httpLink } from '@trpc/client';
@@ -76,7 +76,7 @@ const tokenResponsePromise: {
 } = {};
 
 export async function authenticate(
-  pool: DatabasePool,
+  pool: PostgresDatabasePool,
   email: string,
   oidcIntegrationId?: string,
 ): Promise<{ access_token: string; refresh_token: string; supertokensUserId: string }> {

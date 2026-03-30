@@ -2,7 +2,7 @@ import { type MigrationExecutor } from '../pg-migrator';
 
 export default {
   name: '2023.09.01T09.54.00.zendesk-support.ts',
-  run: ({ sql }) => sql`
+  run: ({ psql }) => psql`
     ALTER TABLE "users" ADD COLUMN "zendesk_user_id" TEXT UNIQUE DEFAULT NULL;
     CREATE INDEX "users_by_zendesk_user_id" ON "users" ("zendesk_user_id" ASC);
 

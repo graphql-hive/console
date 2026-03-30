@@ -1,6 +1,7 @@
 import assert from 'node:assert';
 import { describe, test } from 'node:test';
-import { sql } from 'slonik';
+import z from 'zod';
+import { psql } from '@hive/postgres';
 import { createStorage } from '../../services/storage/src/index';
 import { initMigrationTestingEnvironment } from './utils/testkit';
 
@@ -81,33 +82,33 @@ await describe('migration: legacy-member-socpes', async () => {
       ];
 
       // Create an invitation to simulate a pending invitation
-      await db.query(sql`
+      await db.query(psql`
         INSERT INTO organization_invitations (organization_id, email) VALUES (${organization.id}, 'invited@test.com')
       `);
 
-      await db.query(sql`
+      await db.query(psql`
         INSERT INTO organization_member (organization_id, user_id, scopes)
         VALUES
-          (${organization.id}, ${admin.id}, ${sql.array(adminScopes, 'text')}),
-          (${organization.id}, ${contributor.id}, ${sql.array(contributorScopes, 'text')}),
-          (${organization.id}, ${noRoleUser.id}, ${sql.array(noRoleUserScopes, 'text')})
+          (${organization.id}, ${admin.id}, ${psql.array(adminScopes, 'text')}),
+          (${organization.id}, ${contributor.id}, ${psql.array(contributorScopes, 'text')}),
+          (${organization.id}, ${noRoleUser.id}, ${psql.array(noRoleUserScopes, 'text')})
       `);
 
       // assert correct scopes
       assert.deepStrictEqual(
-        await db.oneFirst(sql`
+        await db.oneFirst(psql`
         SELECT scopes FROM organization_member WHERE user_id = ${admin.id}
         `),
         adminScopes,
       );
       assert.deepStrictEqual(
-        await db.oneFirst(sql`
+        await db.oneFirst(psql`
         SELECT scopes FROM organization_member WHERE user_id = ${contributor.id}
         `),
         contributorScopes,
       );
       assert.deepStrictEqual(
-        await db.oneFirst(sql`
+        await db.oneFirst(psql`
         SELECT scopes FROM organization_member WHERE user_id = ${noRoleUser.id}
         `),
         noRoleUserScopes,
@@ -118,19 +119,19 @@ await describe('migration: legacy-member-socpes', async () => {
 
       // assert scopes are still in place and identical
       assert.deepStrictEqual(
-        await db.oneFirst(sql`
+        await db.oneFirst(psql`
         SELECT scopes FROM organization_member WHERE user_id = ${admin.id}
         `),
         adminScopes,
       );
       assert.deepStrictEqual(
-        await db.oneFirst(sql`
+        await db.oneFirst(psql`
         SELECT scopes FROM organization_member WHERE user_id = ${contributor.id}
         `),
         contributorScopes,
       );
       assert.deepStrictEqual(
-        await db.oneFirst(sql`
+        await db.oneFirst(psql`
         SELECT scopes FROM organization_member WHERE user_id = ${noRoleUser.id}
         `),
         noRoleUserScopes,
@@ -138,31 +139,43 @@ await describe('migration: legacy-member-socpes', async () => {
 
       // assert assigned roles have identical scopes
 
-      const adminRole = await db.one<{
-        scopes: string[];
-        id: string;
-      }>(sql`
+      const adminRole = await db
+        .one(
+          psql`
         SELECT omr.scopes, omr.id
         FROM organization_member as om
         LEFT JOIN organization_member_roles as omr ON omr.id = om.role_id
         WHERE om.user_id = ${admin.id} AND om.organization_id = ${organization.id}
-      `);
+      `,
+        )
+        .then(
+          z.object({
+            scopes: z.array(z.string()),
+            id: z.string(),
+          }).parse,
+        );
       assert.deepStrictEqual(adminRole.scopes, adminScopes);
 
-      const contributorRole = await db.one<{
-        scopes: string[];
-        id: string;
-      }>(sql`
+      const contributorRole = await db
+        .one(
+          psql`
         SELECT omr.scopes, omr.id
         FROM organization_member as om
         LEFT JOIN organization_member_roles as omr ON omr.id = om.role_id
         WHERE om.user_id = ${contributor.id} AND om.organization_id = ${organization.id}
-        `);
+        `,
+        )
+        .then(
+          z.object({
+            scopes: z.array(z.string()),
+            id: z.string(),
+          }).parse,
+        );
       assert.deepStrictEqual(contributorRole.scopes, contributorScopes);
 
       // assert no role user has no role
       assert.strictEqual(
-        await db.oneFirst(sql`
+        await db.oneFirst(psql`
         SELECT role_id FROM organization_member WHERE user_id = ${noRoleUser.id}
         `),
         null,
@@ -172,15 +185,21 @@ await describe('migration: legacy-member-socpes', async () => {
 
       // assert that the migration created a new role for the non-role user
       // and the role has exact same scopes as the user
-      const previouslyNoRoleUser = await db.one<{
-        scopes: string[];
-        name: string;
-      }>(sql`
+      const previouslyNoRoleUser = await db
+        .one(
+          psql`
         SELECT omr.scopes, omr.name
         FROM organization_member as om
         LEFT JOIN organization_member_roles as omr ON omr.id = om.role_id
         WHERE om.user_id = ${noRoleUser.id} AND om.organization_id = ${organization.id}
-      `);
+      `,
+        )
+        .then(
+          z.object({
+            scopes: z.array(z.string()),
+            name: z.string(),
+          }).parse,
+        );
 
       assert.deepStrictEqual(previouslyNoRoleUser.scopes, noRoleUserScopes);
 
@@ -190,22 +209,30 @@ await describe('migration: legacy-member-socpes', async () => {
       // asser that users with roles were not affected,
       // meaning the role was exactly the same as before
       assert.deepStrictEqual(
-        await db.oneFirst<string>(sql`
+        await db
+          .oneFirst(
+            psql`
           SELECT omr.id
           FROM organization_member as om
           LEFT JOIN organization_member_roles as omr ON omr.id = om.role_id
           WHERE om.user_id = ${admin.id} AND om.organization_id = ${organization.id}
-        `),
+        `,
+          )
+          .then(z.string().parse),
         adminRole.id,
       );
 
       assert.deepStrictEqual(
-        await db.oneFirst<string>(sql`
+        await db
+          .oneFirst(
+            psql`
           SELECT omr.id
           FROM organization_member as om
           LEFT JOIN organization_member_roles as omr ON omr.id = om.role_id
           WHERE om.user_id = ${contributor.id} AND om.organization_id = ${organization.id}
-        `),
+        `,
+          )
+          .then(z.string().parse),
         contributorRole.id,
       );
     } finally {

@@ -7,16 +7,16 @@ export default {
   // we do not run this in a transaction as each user processing delete takes around 300ms.
   // and we do not want to mess with live traffic.
   noTransaction: true,
-  async run({ sql, connection }) {
+  async run({ psql, connection }) {
     const userIds = await connection
       .anyFirst(
-        sql`
+        psql`
           SELECT
             "id"
           FROM
             "users"
           WHERE
-            "supertoken_user_id" IS NULL  
+            "supertoken_user_id" IS NULL
         `,
       )
       .then(value => z.array(z.string()).parse(value));
@@ -32,7 +32,7 @@ export default {
         `processing userId="${userId}" (${counter.toPrecision().padStart(padAmount, '0')}/${total})`,
       );
       // ON DELETE SET null constraint is missing, so we need to first update it manually
-      await connection.query(sql`
+      await connection.query(psql`
         UPDATE
           "organizations"
         SET
@@ -41,14 +41,14 @@ export default {
           "ownership_transfer_user_id" = ${userId}
       `);
       // Delete the organizations of these users
-      await connection.query(sql`
+      await connection.query(psql`
         DELETE
         FROM
           "organizations"
         WHERE
           "user_id" = ${userId}
       `);
-      await connection.query(sql`
+      await connection.query(psql`
         DELETE
         FROM
           "users"

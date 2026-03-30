@@ -1,5 +1,6 @@
 import { forwardRef, useEffect, useId, useImperativeHandle, useRef, useState } from 'react';
 import * as monaco from 'monaco-editor';
+import { MonacoGraphQLAPI } from 'monaco-graphql/esm/api.js';
 import { initializeMode } from 'monaco-graphql/initializeMode';
 import MonacoEditor, { loader } from '@monaco-editor/react';
 import { useLaboratory } from './context';
@@ -128,34 +129,44 @@ const EditorInner = forwardRef<EditorHandle, EditorProps>((props, ref) => {
   const editorRef = useRef<monaco.editor.IStandaloneCodeEditor | null>(null);
   const { introspection, endpoint, theme } = useLaboratory();
   const [typescriptReady, setTypescriptReady] = useState(!!monaco.languages.typescript);
+  const apiRef = useRef<MonacoGraphQLAPI | null>(null);
 
   useEffect(() => {
     if (introspection) {
-      const api = initializeMode({
-        schemas: [
+      if (apiRef.current) {
+        apiRef.current.setSchemaConfig([
           {
             introspectionJSON: introspection,
             uri: `schema_${endpoint}.graphql`,
           },
-        ],
-        diagnosticSettings:
-          props.uri && props.variablesUri
-            ? {
-                validateVariablesJSON: {
-                  [props.uri.toString()]: [props.variablesUri.toString()],
-                },
-                jsonDiagnosticSettings: {
-                  allowComments: true, // allow json, parse with a jsonc parser to make requests
-                },
-              }
-            : undefined,
-      });
+        ]);
+      } else {
+        apiRef.current = initializeMode({
+          schemas: [
+            {
+              introspectionJSON: introspection,
+              uri: `schema_${endpoint}.graphql`,
+            },
+          ],
+          diagnosticSettings:
+            props.uri && props.variablesUri
+              ? {
+                  validateVariablesJSON: {
+                    [props.uri.toString()]: [props.variablesUri.toString()],
+                  },
+                  jsonDiagnosticSettings: {
+                    allowComments: true, // allow json, parse with a jsonc parser to make requests
+                  },
+                }
+              : undefined,
+        });
 
-      api.setCompletionSettings({
-        __experimental__fillLeafsOnComplete: true,
-      });
+        apiRef.current.setCompletionSettings({
+          __experimental__fillLeafsOnComplete: true,
+        });
+      }
     }
-  }, [introspection, props.uri?.toString(), props.variablesUri?.toString()]);
+  }, [endpoint, introspection, props.uri?.toString(), props.variablesUri?.toString()]);
 
   useEffect(() => {
     void (async function () {

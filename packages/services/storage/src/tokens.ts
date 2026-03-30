@@ -1,27 +1,43 @@
-import { Interceptor, sql } from 'slonik';
-import { getPool, toDate, tokens } from './db';
-import type { Slonik } from './shared';
+import { z } from 'zod';
+import { createPostgresDatabasePool, psql, toDate, type Interceptor } from '@hive/postgres';
 
-function transformToken(row: tokens) {
-  return {
-    token: row.token,
-    tokenAlias: row.token_alias,
-    name: row.name,
-    date: row.created_at as unknown as string,
-    lastUsedAt: row.last_used_at as unknown as string | null,
-    organization: row.organization_id,
-    project: row.project_id,
-    target: row.target_id,
-    scopes: row.scopes || [],
-  };
-}
+const TokenModel = z.object({
+  token: z.string(),
+  tokenAlias: z.string(),
+  name: z.string(),
+  date: z.string(),
+  lastUsedAt: z.string().nullable(),
+  organization: z.string(),
+  project: z.string(),
+  target: z.string(),
+  scopes: z
+    .array(z.string())
+    .nullable()
+    .transform(value => value ?? []),
+});
+
+const tokenFields = psql`
+  "token"
+  , "token_alias" AS "tokenAlias"
+  , "name"
+  , to_json("created_at") AS "date"
+  , to_json("last_used_at") AS "lastUsedAt"
+  , "organization_id" AS "organization"
+  , "project_id" AS "project"
+  , "target_id" AS "target"
+  , "scopes"
+`;
 
 export async function createTokenStorage(
   connection: string,
   maximumPoolSize: number,
   additionalInterceptors: Interceptor[] = [],
 ) {
-  const pool = await getPool(connection, maximumPoolSize, additionalInterceptors);
+  const pool = await createPostgresDatabasePool({
+    connectionParameters: connection,
+    maximumPoolSize,
+    additionalInterceptors,
+  });
 
   return {
     destroy() {
@@ -29,37 +45,37 @@ export async function createTokenStorage(
     },
     async isReady() {
       try {
-        await pool.exists(sql`SELECT 1`);
+        await pool.exists(psql`SELECT 1`);
         return true;
       } catch {
         return false;
       }
     },
     async getTokens({ target }: { target: string }) {
-      const result = await pool.query<Slonik<tokens>>(
-        sql`
-          SELECT *
+      return await pool
+        .any(
+          psql`
+          SELECT ${tokenFields}
           FROM tokens
           WHERE
             target_id = ${target}
             AND deleted_at IS NULL
           ORDER BY created_at DESC
         `,
-      );
-
-      return result.rows.map(transformToken);
+        )
+        .then(z.array(TokenModel).parse);
     },
     async getToken({ token }: { token: string }) {
-      const row = await pool.maybeOne<Slonik<tokens>>(
-        sql`
-          SELECT *
+      return await pool
+        .maybeOne(
+          psql`
+          SELECT ${tokenFields}
           FROM tokens
           WHERE token = ${token} AND deleted_at IS NULL
           LIMIT 1
         `,
-      );
-
-      return row ? transformToken(row) : null;
+        )
+        .then(TokenModel.nullable().parse);
     },
     async createToken({
       token,
@@ -78,28 +94,28 @@ export async function createTokenStorage(
       organization: string;
       scopes: readonly string[];
     }) {
-      const row = await pool.one<Slonik<tokens>>(
-        sql`
+      return await pool
+        .one(
+          psql`
           INSERT INTO tokens
             (name, token, token_alias, target_id, project_id, organization_id, scopes)
           VALUES
-            (${name}, ${token}, ${tokenAlias}, ${target}, ${project}, ${organization}, ${sql.array(
+            (${name}, ${token}, ${tokenAlias}, ${target}, ${project}, ${organization}, ${psql.array(
               scopes,
               'text',
             )})
-          RETURNING *
+          RETURNING ${tokenFields}
         `,
-      );
-
-      return transformToken(row);
+        )
+        .then(TokenModel.parse);
     },
     async deleteToken(params: {
       targetId: string;
       token: string;
       postDeletionTransaction: () => Promise<void>;
     }) {
-      return await pool.transaction(async t => {
-        const deleted = await t.maybeOneFirst<boolean>(sql`
+      return await pool.transaction('deleteToken', async t => {
+        const deleted = await t.maybeOneFirst(psql`
           UPDATE
             "tokens"
           SET
@@ -114,18 +130,18 @@ export async function createTokenStorage(
           await params.postDeletionTransaction();
         }
 
-        return deleted ?? false;
+        return !!deleted;
       });
     },
     async touchTokens({ tokens }: { tokens: Array<{ token: string; date: Date }> }) {
-      await pool.query(sql`
+      await pool.query(psql`
         UPDATE tokens as t
         SET last_used_at = c.last_used_at
         FROM (
             VALUES
-              (${sql.join(
-                tokens.map(t => sql`${t.token}, ${toDate(t.date)}`),
-                sql`), (`,
+              (${psql.join(
+                tokens.map(t => psql`${t.token}, ${toDate(t.date)}`),
+                psql`), (`,
               )})
         ) as c(token, last_used_at)
         WHERE c.token = t.token;

@@ -2,7 +2,7 @@ import { type MigrationExecutor } from '../pg-migrator';
 
 export default {
   name: '2021-03-15T19-32-01.commit-project-id.sql',
-  run: ({ sql }) => sql`
+  run: ({ psql }) => psql`
 --commit-project-id (up)
 ALTER TABLE
   commits

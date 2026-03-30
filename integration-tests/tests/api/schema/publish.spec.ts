@@ -1,10 +1,11 @@
 import 'reflect-metadata';
-import { createPool, sql } from 'slonik';
 import { graphql } from 'testkit/gql';
 /* eslint-disable no-process-env */
 import { ProjectType } from 'testkit/gql/graphql';
 import { execute } from 'testkit/graphql';
 import { assertNonNull, getServiceHost } from 'testkit/utils';
+import z from 'zod';
+import { createPostgresDatabasePool, psql } from '@hive/postgres';
 // eslint-disable-next-line import/no-extraneous-dependencies
 import { createStorage } from '@hive/storage';
 import { createTarget, publishSchema, updateSchemaComposition } from '../../../testkit/flow';
@@ -3820,7 +3821,7 @@ test.concurrent(
 );
 
 const insertLegacyVersion = async (
-  pool: Awaited<ReturnType<typeof createPool>>,
+  pool: Awaited<ReturnType<typeof createPostgresDatabasePool>>,
   args: {
     sdl: string;
     projectId: string;
@@ -3828,7 +3829,9 @@ const insertLegacyVersion = async (
     serviceUrl: string;
   },
 ) => {
-  const logId = await pool.oneFirst<string>(sql`
+  const logId = await pool
+    .oneFirst(
+      psql`
         INSERT INTO schema_log
           (
             author,
@@ -3854,9 +3857,13 @@ const insertLegacyVersion = async (
             'PUSH'
           )
         RETURNING id
-      `);
+      `,
+    )
+    .then(z.string().parse);
 
-  const versionId = await pool.oneFirst<string>(sql`
+  const versionId = await pool
+    .oneFirst(
+      psql`
         INSERT INTO schema_versions
           (
             is_composable,
@@ -3870,9 +3877,11 @@ const insertLegacyVersion = async (
             ${logId}
           )
         RETURNING "id"
-      `);
+      `,
+    )
+    .then(z.string().parse);
 
-  await pool.query(sql`
+  await pool.query(psql`
         INSERT INTO
           schema_version_to_log
           (version_id, action_id)
@@ -3886,7 +3895,7 @@ const insertLegacyVersion = async (
 test.concurrent(
   'service url change from legacy to new version is displayed correctly',
   async ({ expect }) => {
-    let pool: Awaited<ReturnType<typeof createPool>> | undefined;
+    let pool: Awaited<ReturnType<typeof createPostgresDatabasePool>> | undefined;
     try {
       const { createOrg } = await initSeed().createOwner();
       const { createProject } = await createOrg();
@@ -3899,7 +3908,9 @@ test.concurrent(
       // We need to seed a legacy entry in the database
 
       const conn = connectionString();
-      pool = await createPool(conn);
+      pool = await createPostgresDatabasePool({
+        connectionParameters: conn,
+      });
 
       const sdl = 'type Query { ping: String! }';
 
@@ -3950,7 +3961,7 @@ test.concurrent(
 test.concurrent(
   'service url change from legacy to legacy version is displayed correctly',
   async ({ expect }) => {
-    let pool: Awaited<ReturnType<typeof createPool>> | undefined;
+    let pool: Awaited<ReturnType<typeof createPostgresDatabasePool>> | undefined;
     try {
       const { createOrg } = await initSeed().createOwner();
       const { createProject } = await createOrg();
@@ -3963,7 +3974,7 @@ test.concurrent(
       // We need to seed a legacy entry in the database
 
       const conn = connectionString();
-      pool = await createPool(conn);
+      pool = await createPostgresDatabasePool({ connectionParameters: conn });
 
       const sdl = 'type Query { ping: String! }';
 

@@ -2,7 +2,7 @@ import { type MigrationExecutor } from '../pg-migrator';
 
 export default {
   name: '2024.12.27T00.00.00.create-preflight-scripts.ts',
-  run: ({ sql }) => sql`
+  run: ({ psql }) => psql`
 CREATE TABLE IF NOT EXISTS "document_preflight_scripts" (
   "id" uuid NOT NULL DEFAULT uuid_generate_v4(),
   "source_code" text NOT NULL,

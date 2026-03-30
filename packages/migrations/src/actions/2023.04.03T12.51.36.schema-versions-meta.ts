@@ -2,7 +2,7 @@ import { type MigrationExecutor } from '../pg-migrator';
 
 export default {
   name: '2023.04.03T12.51.36.schema-versions-meta.sql',
-  run: ({ sql }) => sql`
+  run: ({ psql }) => psql`
 CREATE TABLE
   "schema_version_changes" (
     "id" UUID PRIMARY KEY DEFAULT uuid_generate_v4 (),

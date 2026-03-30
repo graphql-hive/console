@@ -6,6 +6,8 @@ import {
   type IntrospectionQuery,
 } from 'graphql';
 import { toast } from 'sonner';
+import z from 'zod';
+import { asyncInterval } from '@/lib/utils';
 
 export interface LaboratoryEndpointState {
   endpoint: string | null;
@@ -19,6 +21,16 @@ export interface LaboratoryEndpointActions {
   fetchSchema: () => void;
   restoreDefaultEndpoint: () => void;
 }
+
+const GraphQLResponseErrorSchema = z
+  .object({
+    errors: z.array(
+      z.object({
+        message: z.string(),
+      }),
+    ),
+  })
+  .strict();
 
 export const useEndpoint = (props: {
   defaultEndpoint?: string | null;
@@ -40,35 +52,87 @@ export const useEndpoint = (props: {
     return introspection ? buildClientSchema(introspection) : null;
   }, [introspection]);
 
-  const fetchSchema = useCallback(async () => {
-    if (endpoint === props.defaultEndpoint && props.defaultSchemaIntrospection) {
-      setIntrospection(props.defaultSchemaIntrospection);
+  const fetchSchema = useCallback(
+    async (signal?: AbortSignal) => {
+      if (endpoint === props.defaultEndpoint && props.defaultSchemaIntrospection) {
+        setIntrospection(props.defaultSchemaIntrospection);
+        return;
+      }
+
+      if (!endpoint) {
+        setIntrospection(null);
+        return;
+      }
+
+      try {
+        const response = await fetch(endpoint, {
+          signal,
+          method: 'POST',
+          body: JSON.stringify({
+            query: getIntrospectionQuery(),
+          }),
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        }).then(r => r.json());
+
+        const parsedResponse = GraphQLResponseErrorSchema.safeParse(response);
+
+        if (parsedResponse.success) {
+          throw new Error(parsedResponse.data.errors.map(e => e.message).join('\n'));
+        }
+
+        if (response.error && typeof response.error === 'string') {
+          throw new Error(response.error);
+        }
+
+        setIntrospection(response.data as IntrospectionQuery);
+      } catch (error: unknown) {
+        if (
+          error &&
+          typeof error === 'object' &&
+          'message' in error &&
+          typeof error.message === 'string'
+        ) {
+          toast.error(error.message);
+        } else {
+          toast.error('Failed to fetch schema');
+        }
+
+        setIntrospection(null);
+
+        throw error;
+      }
+    },
+    [endpoint],
+  );
+
+  const shouldPollSchema = useMemo(() => {
+    return endpoint !== props.defaultEndpoint || !props.defaultSchemaIntrospection;
+  }, [endpoint, props.defaultEndpoint, props.defaultSchemaIntrospection]);
+
+  useEffect(() => {
+    if (!shouldPollSchema || !endpoint) {
       return;
     }
 
-    if (!endpoint) {
-      setIntrospection(null);
-      return;
-    }
+    const intervalController = new AbortController();
 
-    try {
-      const response = await fetch(endpoint, {
-        method: 'POST',
-        body: JSON.stringify({
-          query: getIntrospectionQuery(),
-        }),
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      }).then(r => r.json());
-
-      setIntrospection(response.data as IntrospectionQuery);
-    } catch {
-      toast.error('Failed to fetch schema');
-      setIntrospection(null);
-      return;
-    }
-  }, [endpoint]);
+    void asyncInterval(
+      async () => {
+        try {
+          await fetchSchema(intervalController.signal);
+        } catch {
+          intervalController.abort();
+        }
+      },
+      5000,
+      intervalController.signal,
+    );
+    return () => {
+      intervalController.abort();
+    };
+  }, [shouldPollSchema, fetchSchema]);
 
   const restoreDefaultEndpoint = useCallback(() => {
     if (props.defaultEndpoint) {
@@ -77,10 +141,10 @@ export const useEndpoint = (props: {
   }, [props.defaultEndpoint]);
 
   useEffect(() => {
-    if (endpoint) {
+    if (endpoint && !shouldPollSchema) {
       void fetchSchema();
     }
-  }, [endpoint, fetchSchema]);
+  }, [endpoint, fetchSchema, shouldPollSchema]);
 
   return {
     endpoint,

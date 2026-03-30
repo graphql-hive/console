@@ -203,7 +203,7 @@ export class SchemaManager {
         input.services.map(service => ({
           serviceName: service.name,
           sdl: service.sdl,
-          serviceUrl: service.url ?? null,
+          serviceUrl: service.url ?? '',
         })),
       )
       .map(service => this.schemaHelper.createSchemaObject(service));

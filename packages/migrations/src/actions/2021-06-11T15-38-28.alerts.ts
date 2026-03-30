@@ -2,7 +2,7 @@ import { type MigrationExecutor } from '../pg-migrator';
 
 export default {
   name: '2021-06-11T15-38-28.alerts.sql',
-  run: ({ sql }) => sql`
+  run: ({ psql }) => psql`
 --alerts (up)
 CREATE TYPE
   alert_channel_type AS ENUM('SLACK', 'WEBHOOK');

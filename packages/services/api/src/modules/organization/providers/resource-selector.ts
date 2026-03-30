@@ -1,5 +1,6 @@
 import { Injectable, Scope } from 'graphql-modules';
-import { sql } from 'slonik';
+import z from 'zod';
+import { psql } from '@hive/postgres';
 import * as GraphQLSchema from '../../../__generated__/types';
 import { Organization, ProjectType } from '../../../shared/entities';
 import { AccessError } from '../../../shared/errors';
@@ -164,8 +165,9 @@ export class ResourceSelector {
     }
     const latest = await this.storage.getMaybeLatestValidVersion({ targetId: target.targetId });
     if (latest) {
-      return await this.storage.pool.anyFirst<string>(
-        sql`/* getServicesFromTargetForResourceSelector */
+      return await this.storage.pool
+        .anyFirst(
+          psql`/* getServicesFromTargetForResourceSelector */
           SELECT
             lower(sl.service_name) as service_name
           FROM schema_version_to_log AS svl
@@ -178,15 +180,17 @@ export class ResourceSelector {
           ORDER BY
             sl.created_at DESC
         `,
-      );
+        )
+        .then(z.array(z.string()).parse);
     }
 
     return [];
   }
 
   async getAppDeploymentsFromTargetForResourceSelector(target: TargetForResourceSelector) {
-    const apps = await this.storage.pool.anyFirst<string>(
-      sql`
+    const apps = await this.storage.pool
+      .anyFirst(
+        psql`
         SELECT DISTINCT ON ("name")
           "name"
         FROM
@@ -195,7 +199,8 @@ export class ResourceSelector {
           "target_id" = ${target.targetId}
           AND "retired_at" IS NULL
       `,
-    );
+      )
+      .then(z.array(z.string()).parse);
 
     return apps;
   }

@@ -1,6 +1,6 @@
-import { Inject, Injectable, Scope } from 'graphql-modules';
-import { sql, type DatabasePool } from 'slonik';
+import { Injectable, Scope } from 'graphql-modules';
 import * as zod from 'zod';
+import { PostgresDatabasePool, psql } from '@hive/postgres';
 import {
   decodeCreatedAtAndUUIDIdBasedCursor,
   encodeCreatedAtAndUUIDIdBasedCursor,
@@ -10,7 +10,6 @@ import type {
   SavedFilter,
   SavedFilterVisibility,
 } from '../../../shared/entities';
-import { PG_POOL_CONFIG } from '../../shared/providers/pg-pool';
 
 const SavedFilterModel = zod.object({
   id: zod.string(),
@@ -46,10 +45,10 @@ const SavedFilterModel = zod.object({
   scope: Scope.Operation,
 })
 export class SavedFiltersStorage {
-  constructor(@Inject(PG_POOL_CONFIG) private pool: DatabasePool) {}
+  constructor(private pool: PostgresDatabasePool) {}
 
   async getSavedFilter(args: { id: string }): Promise<SavedFilter | null> {
-    const result = await this.pool.maybeOne(sql`/* getSavedFilter */
+    const result = await this.pool.maybeOne(psql`/* getSavedFilter */
       SELECT
         "id"
         , "project_id" as "projectId"
@@ -99,15 +98,15 @@ export class SavedFiltersStorage {
     // that allows better index usage than OR conditions
     const visibilityCondition =
       args.visibility === 'shared'
-        ? sql`"visibility" = 'shared'`
+        ? psql`"visibility" = 'shared'`
         : args.visibility === 'private'
-          ? sql`"visibility" = 'private' AND "created_by_user_id" = ${args.userId}`
-          : sql`(
+          ? psql`"visibility" = 'private' AND "created_by_user_id" = ${args.userId}`
+          : psql`(
               "visibility" = 'shared'
               OR ("visibility" = 'private' AND "created_by_user_id" = ${args.userId})
             )`;
 
-    const result = await this.pool.any(sql`/* getPaginatedSavedFiltersForProject */
+    const result = await this.pool.any(psql`/* getPaginatedSavedFiltersForProject */
       SELECT
         "id"
         , "project_id" as "projectId"
@@ -127,17 +126,17 @@ export class SavedFiltersStorage {
         AND ${visibilityCondition}
         ${
           args.search
-            ? sql`
+            ? psql`
               AND (
                 "name" ILIKE ${'%' + args.search + '%'}
                 OR "description" ILIKE ${'%' + args.search + '%'}
               )
             `
-            : sql``
+            : psql``
         }
         ${
           cursor
-            ? sql`
+            ? psql`
               AND (
                 (
                   "created_at" = ${cursor.createdAt}
@@ -146,7 +145,7 @@ export class SavedFiltersStorage {
                 OR "created_at" < ${cursor.createdAt}
               )
             `
-            : sql``
+            : psql``
         }
       ORDER BY
         "project_id" ASC
@@ -193,7 +192,7 @@ export class SavedFiltersStorage {
     filters: InsightsFilterData;
     visibility: SavedFilterVisibility;
   }): Promise<SavedFilter> {
-    const result = await this.pool.one(sql`/* createSavedFilter */
+    const result = await this.pool.one(psql`/* createSavedFilter */
       INSERT INTO "saved_filters" (
         "project_id"
         , "created_by_user_id"
@@ -235,7 +234,7 @@ export class SavedFiltersStorage {
     filters: InsightsFilterData | null;
     visibility: SavedFilterVisibility | null;
   }): Promise<SavedFilter | null> {
-    const result = await this.pool.maybeOne(sql`/* updateSavedFilter */
+    const result = await this.pool.maybeOne(psql`/* updateSavedFilter */
       UPDATE
         "saved_filters"
       SET
@@ -269,7 +268,7 @@ export class SavedFiltersStorage {
   }
 
   async deleteSavedFilter(args: { id: string }): Promise<string | null> {
-    const result = await this.pool.maybeOneFirst(sql`/* deleteSavedFilter */
+    const result = await this.pool.maybeOneFirst(psql`/* deleteSavedFilter */
       DELETE
       FROM
         "saved_filters"
@@ -287,7 +286,7 @@ export class SavedFiltersStorage {
   }
 
   async incrementSavedFilterViews(args: { id: string }): Promise<void> {
-    await this.pool.query(sql`/* incrementSavedFilterViews */
+    await this.pool.query(psql`/* incrementSavedFilterViews */
       UPDATE
         "saved_filters"
       SET

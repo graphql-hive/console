@@ -53,7 +53,9 @@ export function deploySchema({
       startupProbe: '/_health',
       exposesMetrics: true,
       replicas: environment.podsConfig.general.replicas,
-      memoryLimit: environment.podsConfig.schemaService.memoryLimit,
+      memory: {
+        limit: environment.podsConfig.schemaService.memoryLimit,
+      },
       pdb: true,
     },
     [redis.deployment, redis.service],
