@@ -50,8 +50,8 @@ export function prepareEnvironment(input: {
       },
       envoy: {
         replicas: isProduction || isStaging ? 3 : 1,
-        cpuLimit: isProduction ? '1500m' : '120m',
-        memoryLimit: isProduction ? '2Gi' : '200Mi',
+        cpuLimit: isProduction || isStaging ? '1500m' : '120m',
+        memoryLimit: isProduction || isStaging ? '2Gi' : '200Mi',
         timeouts: {
           idleTimeout: 905,
         },
@@ -61,26 +61,30 @@ export function prepareEnvironment(input: {
       },
       usageService: {
         replicas: isProduction || isStaging ? 6 : 1,
-        cpuLimit: isProduction ? '1000m' : '100m',
+        cpuMin: isProduction || isStaging ? '200m' : '100m',
+        cpuMax: isProduction || isStaging ? '1000m' : '100m',
         maxReplicas: isProduction || isStaging ? 6 : 1,
         cpuAverageToScale: 60,
       },
       usageIngestorService: {
         replicas: isProduction || isStaging ? 6 : 1,
-        cpuLimit: isProduction ? '1000m' : '100m',
+        cpuMax: isProduction || isStaging ? '1000m' : '100m',
+        cpuMin: isProduction || isStaging ? '300m' : '100m',
         maxReplicas: isProduction || isStaging ? /* numberOfPartitions */ 16 : 2,
         cpuAverageToScale: 60,
       },
       redis: {
-        memoryLimit: isProduction ? '4Gi' : '100Mi',
-        cpuLimit: isProduction ? '1000m' : '50m',
+        memoryLimit: isProduction || isStaging ? '4Gi' : '100Mi',
+        cpuMax: isProduction || isStaging ? '1000m' : '100m',
+        cpuMin: isProduction || isStaging ? '100m' : '100m',
       },
       internalObservability: {
         cpuLimit: isProduction ? '512m' : '150m',
         memoryLimit: isProduction ? '1000Mi' : '300Mi',
       },
       tracingCollector: {
-        cpuLimit: isProduction || isStaging ? '1000m' : '100m',
+        cpuMax: isProduction || isStaging ? '1000m' : '300m',
+        cpuMin: isProduction || isStaging ? '100m' : '100m',
         memoryLimit: isProduction || isStaging ? '1000Mi' : '512Mi',
         maxReplicas: isProduction || isStaging ? 3 : 1,
         replicas: 1,
