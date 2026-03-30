@@ -125,7 +125,6 @@ test.concurrent('email invitation', async ({ expect }) => {
 
   await pollFor(async () => {
     const sentEmails = await history(inviteEmail);
-    console.log(sentEmails);
     return sentEmails.length > 0;
   });
   const sentEmails = await history(inviteEmail);
