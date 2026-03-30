@@ -9,11 +9,9 @@ import {
   Layers2Icon,
   ListOrderedIcon,
   LucideProps,
-  MoreHorizontal,
   NetworkIcon,
   UnlinkIcon,
 } from 'lucide-react';
-import * as monaco from 'monaco-editor';
 import { v4 as uuidv4 } from 'uuid';
 import { Flow, FlowNode } from '@/components/flow';
 import { GraphQLIcon } from '@/components/icons';
@@ -447,9 +445,9 @@ function visitNode(
 
   switch (node.kind) {
     case 'Fetch':
-      const entity = (node.requires?.[0] as SelectionInlineFragment)?.typeCondition;
-
       result.content = () => {
+        const entity = (node.requires?.[0] as SelectionInlineFragment)?.typeCondition;
+
         return (
           <div className="flex flex-col gap-2">
             {contentPrefix}
@@ -497,11 +495,12 @@ function visitNode(
         );
 
         return (
-          <span className="text-primary overflow-hidden text-ellipsis whitespace-nowrap">
-            <div className="bg-primary/10 border-primary rounded-sm border px-1 text-xs font-medium">
+          <div className="bg-muted flex items-center gap-1 rounded-md p-0.5 pl-1 font-mono text-xs leading-none">
+            Total paths:
+            <div className="bg-primary/10 border-primary text-primary rounded-sm border px-1 text-xs font-medium leading-none">
               {totalPaths}
             </div>
-          </span>
+          </div>
         );
       };
       result.content = () => {
@@ -519,15 +518,22 @@ function visitNode(
                   <div className="grid grid-cols-[1fr_auto] items-center gap-8 overflow-hidden font-mono text-xs">
                     <span className="font-medium">Path</span>
                     {alias.paths.length > 1 ? (
-                      <span className="text-secondary-foreground overflow-hidden text-ellipsis whitespace-nowrap">
-                        <div className="bg-card rounded-sm border px-1 text-xs font-medium">
-                          {alias.paths.length}
-                        </div>
-                      </span>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <span className="text-secondary-foreground cursor-auto overflow-hidden text-ellipsis whitespace-nowrap">
+                            <div className="bg-card rounded-sm border px-1 text-xs font-medium">
+                              {alias.paths.length}
+                            </div>
+                          </span>
+                        </TooltipTrigger>
+                        <TooltipContent className="whitespace-pre-wrap font-mono">
+                          {alias.paths.map(path => renderFlattenPath(path)).join(',\n')}
+                        </TooltipContent>
+                      </Tooltip>
                     ) : (
                       <Tooltip>
                         <TooltipTrigger asChild>
-                          <span className="text-secondary-foreground overflow-hidden text-ellipsis whitespace-nowrap">
+                          <span className="text-secondary-foreground cursor-auto overflow-hidden text-ellipsis whitespace-nowrap">
                             {renderFlattenPath(alias.paths[0])}
                           </span>
                         </TooltipTrigger>
@@ -564,6 +570,7 @@ function visitNode(
           </div>
         );
       };
+
       break;
 
     case 'Flatten':
@@ -579,7 +586,7 @@ function visitNode(
             <span className="font-medium">Path</span>
             <Tooltip>
               <TooltipTrigger asChild>
-                <span className="text-secondary-foreground overflow-hidden text-ellipsis whitespace-nowrap">
+                <span className="text-secondary-foreground cursor-auto overflow-hidden text-ellipsis whitespace-nowrap">
                   {renderFlattenPath(node.path)}
                 </span>
               </TooltipTrigger>
@@ -677,6 +684,7 @@ function visitNode(
   }
 
   if (result) {
+    result.icon = queryPlanNodeIcon(result.kind);
     nodes.push(result as QueryPlanNode);
   }
 
@@ -689,7 +697,9 @@ export const queryPlanNodeIcon = (
   return (props: LucideProps) => {
     switch (kind) {
       case 'Root':
-        return <GraphQLIcon {...props} />;
+        return (
+          <GraphQLIcon {...props} className={cn(props.className, 'size-6 min-w-6 text-pink-500')} />
+        );
       case 'Fetch':
         return <Box {...props} />;
       case 'BatchFetch':
@@ -716,8 +726,9 @@ export function QueryPlanTree(props: { plan: QueryPlan }) {
 
     const rootNode: QueryPlanNode = {
       id: uuidv4(),
-      title: 'QueryPlan',
+      title: '',
       kind: 'Root',
+      maxWidth: 42,
     };
 
     nodes.push(rootNode);

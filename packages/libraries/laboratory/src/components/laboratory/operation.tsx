@@ -94,6 +94,7 @@ const Headers = (props: { operation?: LaboratoryOperation | null; isReadOnly?: b
     <Editor
       uri={monaco.Uri.file('headers.json')}
       value={operation?.headers ?? ''}
+      language="json"
       onChange={value => {
         updateActiveOperation({
           headers: value ?? '',
@@ -117,6 +118,7 @@ const Extensions = (props: { operation?: LaboratoryOperation | null; isReadOnly?
     <Editor
       uri={monaco.Uri.file('extensions.json')}
       value={operation?.extensions ?? ''}
+      language="json"
       onChange={value => {
         updateActiveOperation({
           extensions: value ?? '',

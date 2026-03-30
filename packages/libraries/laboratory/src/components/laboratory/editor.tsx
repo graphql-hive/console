@@ -127,7 +127,11 @@ const EditorInner = forwardRef<EditorHandle, EditorProps>((props, ref) => {
   const id = useId();
   const editorRef = useRef<monaco.editor.IStandaloneCodeEditor | null>(null);
   const { introspection, endpoint, theme } = useLaboratory();
+  const wantsJson = props.language === 'json' || props.defaultLanguage === 'json';
   const [typescriptReady, setTypescriptReady] = useState(!!monaco.languages.typescript);
+  const [jsonReady, setJsonReady] = useState(
+    monaco.languages.getLanguages().some(language => language.id === 'json'),
+  );
 
   useEffect(() => {
     if (introspection) {
@@ -159,13 +163,18 @@ const EditorInner = forwardRef<EditorHandle, EditorProps>((props, ref) => {
 
   useEffect(() => {
     void (async function () {
-      if (!props.extraLibs?.length) {
-        return;
+      if (wantsJson && !jsonReady) {
+        await import('monaco-editor/esm/vs/language/json/monaco.contribution');
+        setJsonReady(true);
       }
 
       if (!monaco.languages.typescript) {
         await import('monaco-editor/esm/vs/language/typescript/monaco.contribution');
         setTypescriptReady(true);
+      }
+
+      if (!props.extraLibs?.length) {
+        return;
       }
 
       const ts = monaco.languages.typescript;
@@ -197,7 +206,7 @@ const EditorInner = forwardRef<EditorHandle, EditorProps>((props, ref) => {
         })),
       );
     })();
-  }, [id, props.extraLibs]);
+  }, [id, jsonReady, props.extraLibs, wantsJson]);
 
   useImperativeHandle(
     ref,
@@ -212,6 +221,10 @@ const EditorInner = forwardRef<EditorHandle, EditorProps>((props, ref) => {
   );
 
   if (!typescriptReady && props.language === 'typescript') {
+    return null;
+  }
+
+  if (!jsonReady && wantsJson) {
     return null;
   }
 

@@ -52,10 +52,6 @@ export default {
     },
   },
   optimizeDeps: {
-    include: [
-      'monaco-editor/esm/vs/editor/editor.api',
-      'monaco-editor/esm/vs/language/json/monaco.contribution',
-      'monaco-graphql/esm/monaco.contribution',
-    ],
+    include: ['monaco-editor/esm/vs/editor/editor.api', 'monaco-graphql/esm/monaco.contribution'],
   },
 } satisfies UserConfig;

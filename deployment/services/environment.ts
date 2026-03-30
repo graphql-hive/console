@@ -83,6 +83,7 @@ export function prepareEnvironment(input: {
         cpuLimit: isProduction || isStaging ? '1000m' : '100m',
         memoryLimit: isProduction || isStaging ? '1000Mi' : '512Mi',
         maxReplicas: isProduction || isStaging ? 3 : 1,
+        replicas: 1,
       },
     },
   };
