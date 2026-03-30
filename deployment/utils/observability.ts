@@ -314,7 +314,7 @@ export class Observability {
                     {
                       role: 'pod',
                       namespaces: {
-                        names: ['default'],
+                        names: ['default', 'contour'],
                       },
                     },
                   ],
