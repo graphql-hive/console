@@ -2,7 +2,7 @@ import { type MigrationExecutor } from '../pg-migrator';
 
 export default {
   name: '2021.11.22T11.23.44.base-schema.sql',
-  run: ({ sql }) => sql`
+  run: ({ psql }) => psql`
 -- Adds a base schema column in target table and versions table
 ALTER TABLE
   targets

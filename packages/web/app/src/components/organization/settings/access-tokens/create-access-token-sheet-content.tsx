@@ -10,6 +10,13 @@ import * as Form from '@/components/ui/form';
 import { Heading } from '@/components/ui/heading';
 import { Input } from '@/components/ui/input';
 import { InputCopy } from '@/components/ui/input-copy';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import * as Sheet from '@/components/ui/sheet';
 import { defineStepper } from '@/components/ui/stepper';
 import { Textarea } from '@/components/ui/textarea';
@@ -25,7 +32,11 @@ import {
   type ResourceSelection,
 } from '../../members/resource-selector';
 import { SelectedPermissionOverview } from '../../members/selected-permission-overview';
-import { permissionLevelToResourceName, resolveResources } from './shared-helpers';
+import {
+  expirationPeriods,
+  permissionLevelToResourceName,
+  resolveResources,
+} from './shared-helpers';
 
 /** @soure packages/services/api/src/modules/organization/providers/organization-access-tokens.ts */
 export const TitleInputModel = z
@@ -46,6 +57,14 @@ const CreateAccessTokenFormModel = z.object({
   title: TitleInputModel,
   description: DescriptionInputModel,
   permissions: z.array(z.string()).min(1, 'Please select at least one permission.'),
+  expirationPeriod: z.enum([
+    GraphQLSchema.TokenExpirationPeriod.Never,
+    GraphQLSchema.TokenExpirationPeriod.OneMonth,
+    GraphQLSchema.TokenExpirationPeriod.OneWeek,
+    GraphQLSchema.TokenExpirationPeriod.OneYear,
+    GraphQLSchema.TokenExpirationPeriod.SixMonths,
+    GraphQLSchema.TokenExpirationPeriod.TwoWeeks,
+  ]),
 });
 
 const CreateAccessTokenSheetContent_OrganizationFragment = graphql(`
@@ -127,6 +146,7 @@ export function CreateAccessTokenSheetContent(
       title: '',
       description: '',
       permissions: [],
+      expirationPeriod: GraphQLSchema.TokenExpirationPeriod.Never,
     },
   });
 
@@ -151,6 +171,7 @@ export function CreateAccessTokenSheetContent(
         description: formValues.description ?? '',
         permissions: formValues.permissions,
         resources: resourceSlectionToGraphQLSchemaResourceAssignmentInput(resourceSelection),
+        expirationPeriod: formValues.expirationPeriod,
       },
     });
 
@@ -182,7 +203,7 @@ export function CreateAccessTokenSheetContent(
   }
 
   return (
-    <Sheet.SheetContent className="flex max-h-screen min-w-[700px] flex-col overflow-y-scroll">
+    <Sheet.SheetContent className="max-w-screen flex max-h-screen w-[700px] min-w-[60%] flex-col overflow-y-scroll">
       <Sheet.SheetHeader>
         <Sheet.SheetTitle>Create Access Token</Sheet.SheetTitle>
         <Sheet.SheetDescription>
@@ -237,6 +258,36 @@ export function CreateAccessTokenSheetContent(
                                 </Form.FormControl>
                                 <Form.FormDescription>
                                   Description of the access token.
+                                </Form.FormDescription>
+                                <Form.FormMessage />
+                              </Form.FormItem>
+                            )}
+                          />
+                        </div>
+
+                        <div className="grid w-full max-w-sm items-center gap-1.5">
+                          <Form.FormField
+                            control={form.control}
+                            name="expirationPeriod"
+                            render={({ field, fieldState }) => (
+                              <Form.FormItem aria-invalid={fieldState.invalid}>
+                                <Form.FormLabel>Expiration</Form.FormLabel>
+                                <Form.FormControl>
+                                  <Select {...field} onValueChange={field.onChange}>
+                                    <SelectTrigger id={field.name}>
+                                      <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                      {expirationPeriods.map(c => (
+                                        <SelectItem key={c.value} value={c.value}>
+                                          {c.name}
+                                        </SelectItem>
+                                      ))}
+                                    </SelectContent>
+                                  </Select>
+                                </Form.FormControl>
+                                <Form.FormDescription>
+                                  Expire the token automatically after a period of time.
                                 </Form.FormDescription>
                                 <Form.FormMessage />
                               </Form.FormItem>

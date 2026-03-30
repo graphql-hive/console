@@ -113,6 +113,19 @@ if (env.sentry) {
       /Failed to fetch dynamically imported module/,
       /Importing a module script failed/,
     ],
+    beforeSend(event) {
+      const isMonacoError = event.exception?.values?.some(exception =>
+        exception.stacktrace?.frames?.some(frame => frame.filename?.includes('monaco-editor')),
+      );
+
+      if (isMonacoError) {
+        for (const exception of event.exception?.values ?? []) {
+          exception.value &&= `[Monaco] ${exception.value}`;
+        }
+      }
+
+      return event;
+    },
   });
 }
 

@@ -107,6 +107,8 @@ export class OrganizationAccessTokenStrategy extends AuthNStrategy<OrganizationA
     const organizationAccessToken = await this.organizationAccessTokenCache.get(
       result.accessKey.id,
       this.logger,
+      // don't allow expired sessions
+      { includeExpired: false },
     );
 
     if (!organizationAccessToken) {

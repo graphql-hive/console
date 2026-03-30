@@ -2,7 +2,7 @@ import { type MigrationExecutor } from '../pg-migrator';
 
 export default {
   name: '2023.06.06T11.26.04.schema-checks.sql',
-  run: ({ sql }) => sql`
+  run: ({ psql }) => psql`
 CREATE TABLE "schema_checks" (
   "id" uuid PRIMARY KEY NOT NULL DEFAULT uuid_generate_v4()
   , "created_at" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()

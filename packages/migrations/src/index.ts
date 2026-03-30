@@ -1,13 +1,13 @@
 #!/usr/bin/env node
-import { createPool } from 'slonik';
+import { createPostgresDatabasePool } from '@hive/postgres';
 import { schemaCoordinateStatusMigration } from './actions/2024.07.23T09.36.00.schema-cleanup-tracker';
 import { migrateClickHouse } from './clickhouse';
-import { createConnectionString } from './connection-string';
 import { env } from './environment';
 import { runPGMigrations } from './run-pg-migrations';
 import { updateRetention } from './scripts/update-retention';
 
-const slonik = await createPool(createConnectionString(env.postgres), {
+const slonik = await createPostgresDatabasePool({
+  connectionParameters: env.postgres,
   // 10 minute timeout per statement
   statementTimeout: 10 * 60 * 1000,
 });

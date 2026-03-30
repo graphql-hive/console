@@ -1,8 +1,9 @@
 import { formatISO, subHours } from 'date-fns';
 import { humanId } from 'human-id';
-import { createPool, sql } from 'slonik';
+import z from 'zod';
 import { NoopLogger } from '@hive/api/modules/shared/providers/logger';
 import { createRedisClient } from '@hive/api/modules/shared/providers/redis';
+import { createPostgresDatabasePool, psql } from '@hive/postgres';
 import type { Report } from '../../packages/libraries/core/src/client/usage.js';
 import { authenticate, userEmail } from './auth';
 import {
@@ -53,7 +54,12 @@ import {
   updateTargetValidationSettings,
 } from './flow';
 import * as GraphQLSchema from './gql/graphql';
-import { ProjectType, SchemaPolicyInput, TargetAccessScope } from './gql/graphql';
+import {
+  ProjectType,
+  SchemaPolicyInput,
+  TargetAccessScope,
+  UpdateOrgRateLimitDocument,
+} from './gql/graphql';
 import { execute } from './graphql';
 import { createOIDCIntegration } from './oidc-integration.js';
 import {
@@ -68,7 +74,7 @@ import { UpdateSchemaPolicyForOrganization, UpdateSchemaPolicyForProject } from 
 import { collect, CollectedOperation, legacyCollect } from './usage';
 import { generateUnique, getServiceHost, pollForEmailVerificationLink } from './utils';
 
-function createConnectionPool() {
+function getPGConnectionString() {
   const pg = {
     user: ensureEnv('POSTGRES_USER'),
     password: ensureEnv('POSTGRES_PASSWORD'),
@@ -77,9 +83,13 @@ function createConnectionPool() {
     db: ensureEnv('POSTGRES_DB'),
   };
 
-  return createPool(
-    `postgres://${pg.user}:${pg.password}@${pg.host}:${pg.port}/${pg.db}?sslmode=disable`,
-  );
+  return `postgres://${pg.user}:${pg.password}@${pg.host}:${pg.port}/${pg.db}?sslmode=disable`;
+}
+
+function createConnectionPool() {
+  return createPostgresDatabasePool({
+    connectionParameters: getPGConnectionString(),
+  });
 }
 
 async function createDbConnection() {
@@ -92,9 +102,9 @@ async function createDbConnection() {
   };
 }
 
-export function initSeed() {
-  let sharedDBPoolPromise: ReturnType<typeof createDbConnection>;
+let sharedDBPoolPromise: ReturnType<typeof createDbConnection>;
 
+export function initSeed() {
   function getPool() {
     if (!sharedDBPoolPromise) {
       sharedDBPoolPromise = createDbConnection();
@@ -113,7 +123,7 @@ export function initSeed() {
 
     if (opts?.verifyEmail ?? true) {
       const pool = await getPool();
-      await pool.query(sql`
+      await pool.query(psql`
         INSERT INTO "email_verifications" ("user_identity_id", "email", "verified_at")
         VALUES (${auth.supertokensUserId}, ${email}, NOW())
       `);
@@ -122,22 +132,38 @@ export function initSeed() {
     return auth;
   }
 
+  async function purgeOrganizationAccessTokenById(id: string) {
+    const registryAddress = await getServiceHost('server', 8082);
+    const purged: { deleted: boolean } = await fetch(
+      'http://' + registryAddress + '/cache/organization-access-token-cache/delete/' + id,
+      {
+        method: 'POST',
+      },
+    ).then(res => res.json());
+    expect(purged.deleted).toBe(true);
+  }
+
   return {
     pollForEmailVerificationLink,
+    getPGConnectionString,
     async purgeOIDCDomains() {
       const pool = await getPool();
-      await pool.query(sql`
+      await pool.query(psql`
         TRUNCATE "oidc_integration_domains"
       `);
     },
     async forgeOIDCDNSChallenge(orgSlug: string) {
       const pool = await getPool();
 
-      const domainChallengeId = await pool.oneFirst<string>(sql`
+      const domainChallengeId = await pool
+        .oneFirst(
+          psql`
       SELECT "oidc_integration_domains"."id"
       FROM "oidc_integration_domains" INNER JOIN "organizations" ON "oidc_integration_domains"."organization_id" = "organizations"."id"
       WHERE "organizations"."clean_id" = ${orgSlug}
-    `);
+      `,
+        )
+        .then(z.string().parse);
       const key = `hive:oidcDomainChallenge:${domainChallengeId}`;
 
       const challenge = {
@@ -164,15 +190,7 @@ export function initSeed() {
     createDbConnection,
     authenticate: doAuthenticate,
     generateEmail: () => userEmail(generateUnique()),
-    async purgeOrganizationAccessTokenById(id: string) {
-      const registryAddress = await getServiceHost('server', 8082);
-      await fetch(
-        'http://' + registryAddress + '/cache/organization-access-token-cache/delete/' + id,
-        {
-          method: 'POST',
-        },
-      ).then(res => res.json());
-    },
+    purgeOrganizationAccessTokenById,
     async createOwner(verifyEmail: boolean = true) {
       const ownerEmail = userEmail(generateUnique());
       const auth = await doAuthenticate(ownerEmail, {
@@ -197,6 +215,31 @@ export function initSeed() {
 
           return {
             organization,
+            async overrideOrgPlan(plan: 'PRO' | 'ENTERPRISE' | 'HOBBY') {
+              const pool = await createConnectionPool();
+
+              await pool.query(psql`
+                UPDATE organizations SET plan_name = ${plan} WHERE id = ${organization.id}
+              `);
+
+              await pool.end();
+            },
+            async updateOrgRateLimit(newLimit: number, token = ownerToken) {
+              const result = await execute({
+                document: UpdateOrgRateLimitDocument,
+                variables: {
+                  selector: {
+                    organizationSlug: organization.slug,
+                  },
+                  monthlyLimits: {
+                    operations: newLimit,
+                  },
+                },
+                authToken: token,
+              }).then(r => r.expectNoGraphQLErrors());
+
+              return result.updateOrgRateLimit;
+            },
             async createOrganizationAccessToken(
               args: {
                 permissions: Array<string>;
@@ -227,8 +270,8 @@ export function initSeed() {
             async setFeatureFlag(name: string, value: boolean | string[]) {
               const pool = await createConnectionPool();
 
-              await pool.query(sql`
-                UPDATE organizations SET feature_flags = ${sql.jsonb({
+              await pool.query(psql`
+                UPDATE organizations SET feature_flags = ${psql.jsonb({
                   [name]: value,
                 })}
                 WHERE id = ${organization.id}
@@ -239,7 +282,7 @@ export function initSeed() {
             async setDataRetention(days: number) {
               const pool = await createConnectionPool();
 
-              await pool.query(sql`
+              await pool.query(psql`
                 UPDATE organizations SET limit_retention_days = ${days} WHERE id = ${organization.id}
               `);
 
@@ -304,6 +347,22 @@ export function initSeed() {
 
               return members;
             },
+            /** Expires tokens  */
+            async forceExpireTokens(tokenIds: string[]) {
+              const pool = await createConnectionPool();
+              const result = await pool.any(psql`
+                UPDATE "organization_access_tokens"
+                SET "expires_at" = NOW()
+                WHERE id IN (${psql.join(tokenIds, psql`, `)}) AND organization_id = ${organization.id}
+                RETURNING
+                  "id"
+              `);
+              await pool.end();
+              expect(result.length).toBe(tokenIds.length);
+              for (const id of tokenIds) {
+                await purgeOrganizationAccessTokenById(id);
+              }
+            },
             async projects(token = ownerToken) {
               const projectsResult = await getOrganizationProjects(
                 { organizationSlug: organization.slug },
@@ -343,7 +402,7 @@ export function initSeed() {
                 async setNativeFederation(enabled: boolean) {
                   const pool = await createConnectionPool();
 
-                  await pool.query(sql`
+                  await pool.query(psql`
                     UPDATE projects SET native_federation = ${enabled} WHERE id = ${project.id}
                   `);
 

@@ -1,5 +1,5 @@
-import { sql } from 'slonik';
 import { z } from 'zod';
+import { psql } from '@hive/postgres';
 import { defineTask, implementTask } from '../kit.js';
 
 export const PurgeExpiredDedupeKeysTask = defineTask({
@@ -9,7 +9,7 @@ export const PurgeExpiredDedupeKeysTask = defineTask({
 
 export const task = implementTask(PurgeExpiredDedupeKeysTask, async args => {
   args.logger.debug('purging expired postgraphile task dedupe keys');
-  const result = await args.context.pg.oneFirst(sql`
+  const result = await args.context.pg.oneFirst(psql`
       WITH "deleted" AS (
         DELETE FROM "graphile_worker_deduplication"
         WHERE "expires_at" < NOW()

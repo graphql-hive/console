@@ -2,7 +2,7 @@ import { type MigrationExecutor } from '../pg-migrator';
 
 export default {
   name: '2023.01.12T17.00.23.cdn-tokens.sql',
-  run: ({ sql }) => sql`
+  run: ({ psql }) => psql`
 CREATE TABLE
   "cdn_access_tokens" (
     "id" UUID PRIMARY KEY DEFAULT uuid_generate_v4 (),

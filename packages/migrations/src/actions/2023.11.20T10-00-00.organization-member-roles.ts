@@ -3,10 +3,10 @@ import { type MigrationExecutor } from '../pg-migrator';
 export default {
   name: '2023.11.20T10-00-00.organization-member-roles.ts',
   noTransaction: true,
-  run: ({ sql }) => [
+  run: ({ psql }) => [
     {
       name: 'Create organization_roles and alter organization_member table',
-      query: sql`
+      query: psql`
         CREATE TABLE organization_member_roles (
           "id" uuid NOT NULL UNIQUE DEFAULT uuid_generate_v4(),
           "organization_id" uuid NOT NULL REFERENCES "organizations" ("id") ON DELETE CASCADE,
@@ -26,7 +26,7 @@ export default {
     },
     {
       name: 'Create Admin role',
-      query: sql`
+      query: psql`
         INSERT INTO organization_member_roles
           (
             organization_id,
@@ -68,7 +68,7 @@ export default {
     },
     {
       name: 'Create Contributor role',
-      query: sql`
+      query: psql`
         INSERT INTO organization_member_roles
           (
             organization_id,
@@ -104,7 +104,7 @@ export default {
     },
     {
       name: 'Create Viewer role',
-      query: sql`
+      query: psql`
         INSERT INTO organization_member_roles
           (
             organization_id,
@@ -133,12 +133,12 @@ export default {
     },
     {
       name: 'Assign roles to users with matching scopes',
-      query: sql`
+      query: psql`
         UPDATE organization_member
         SET role_id = (
             SELECT id
             FROM organization_member_roles
-            WHERE 
+            WHERE
                 organization_member_roles.organization_id = organization_member.organization_id
               AND
                 ARRAY(SELECT unnest(organization_member_roles.scopes) ORDER BY 1)
@@ -150,14 +150,14 @@ export default {
     },
     {
       name: 'Migrate organization_invitations table to use Viewer role',
-      query: sql`
+      query: psql`
         ALTER TABLE organization_invitations ADD COLUMN "role_id" uuid REFERENCES "organization_member_roles" ("id");
 
         UPDATE organization_invitations
         SET role_id = (
             SELECT id
             FROM organization_member_roles
-            WHERE 
+            WHERE
                 organization_member_roles.organization_id = organization_invitations.organization_id
               AND
                 locked = true

@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 import 'reflect-metadata';
+import { createConnectionString } from '@hive/postgres';
 import {
   configureTracing,
   createServer,
@@ -10,7 +11,7 @@ import {
   startMetrics,
   TracingInstance,
 } from '@hive/service-common';
-import { createConnectionString, createStorage as createPostgreSQLStorage } from '@hive/storage';
+import { createStorage } from '@hive/storage';
 import { TaskScheduler } from '@hive/workflows/kit';
 import * as Sentry from '@sentry/node';
 import { commerceRouter } from './api';
@@ -52,13 +53,13 @@ async function main() {
   });
 
   try {
-    const postgres = await createPostgreSQLStorage(
+    const storage = await createStorage(
       createConnectionString(env.postgres),
       5,
       tracing ? [tracing.instrumentSlonik()] : undefined,
     );
 
-    const taskScheduler = new TaskScheduler(postgres.pool.pool);
+    const taskScheduler = new TaskScheduler(storage.pool.getRawPgPool());
 
     const usageEstimator = createEstimator({
       logger: server.log,
@@ -78,7 +79,7 @@ async function main() {
       },
       usageEstimator,
       taskScheduler,
-      storage: postgres,
+      storage,
     });
 
     const stripeBilling = createStripeBilling({
@@ -88,7 +89,7 @@ async function main() {
         syncIntervalMs: env.stripe.syncIntervalMs,
       },
       usageEstimator,
-      storage: postgres,
+      storage,
     });
 
     registerShutdown({
@@ -96,7 +97,7 @@ async function main() {
       async onShutdown() {
         await server.close();
         await Promise.all([usageEstimator.stop(), rateLimiter.stop(), stripeBilling.stop()]);
-        await postgres.destroy();
+        await storage.destroy();
       },
     });
 
@@ -127,7 +128,7 @@ async function main() {
         const readinessChecks = await Promise.all([
           usageEstimator.readiness(),
           rateLimiter.readiness(),
-          postgres.isReady(),
+          storage.isReady(),
         ]);
         const isReady = readinessChecks.every(val => val === true);
         reportReadiness(isReady);

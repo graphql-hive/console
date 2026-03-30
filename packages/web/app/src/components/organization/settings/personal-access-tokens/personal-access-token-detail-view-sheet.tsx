@@ -2,6 +2,7 @@ import { useQuery } from 'urql';
 import * as Sheet from '@/components/ui/sheet';
 import { graphql } from '@/gql';
 import { PermissionDetailView } from '../access-tokens/permission-detail-view';
+import { TokenExpiration } from '../access-tokens/token-expiration';
 
 const PersonalAccessTokenDetailViewSheet_OrganizationQuery = graphql(`
   query PersonalAccessTokenDetailViewSheet_OrganizationQuery(
@@ -16,6 +17,7 @@ const PersonalAccessTokenDetailViewSheet_OrganizationQuery = graphql(`
           id
           title
           description
+          expiresAt
           resolvedResourcePermissionGroups(includeAll: true) {
             title
             ...PermissionDetailView_ResolvedResourcePermissionGroup
@@ -41,25 +43,27 @@ export function PersonalAccessTokenDetailViewSheet(props: PersonalAccessTokenDet
     },
   });
 
+  const accessToken = query.data?.organization?.me?.accessToken;
+
   return (
     <Sheet.Sheet open onOpenChange={props.onClose}>
       <Sheet.SheetContent className="flex max-h-screen min-w-[700px] flex-col overflow-y-scroll">
         <Sheet.SheetHeader>
-          <Sheet.SheetTitle>
-            Access Token: {query.data?.organization?.me?.accessToken?.title}
-          </Sheet.SheetTitle>
+          <Sheet.SheetTitle>Access Token: {accessToken?.title}</Sheet.SheetTitle>
           <Sheet.SheetDescription>
-            {query.data?.organization?.me?.accessToken?.description}
+            <div>{accessToken?.description}</div>
+            <div>
+              <span className="font-medium">Expires:</span>{' '}
+              <TokenExpiration expiresAt={accessToken?.expiresAt ?? null} />
+            </div>
           </Sheet.SheetDescription>
         </Sheet.SheetHeader>
-        {query.data?.organization?.me?.accessToken?.resolvedResourcePermissionGroups.map(
-          resolvedResourcePermissionGroup => (
-            <PermissionDetailView
-              resolvedResourcePermissionGroup={resolvedResourcePermissionGroup}
-              key={resolvedResourcePermissionGroup.title}
-            />
-          ),
-        )}
+        {accessToken?.resolvedResourcePermissionGroups.map(resolvedResourcePermissionGroup => (
+          <PermissionDetailView
+            resolvedResourcePermissionGroup={resolvedResourcePermissionGroup}
+            key={resolvedResourcePermissionGroup.title}
+          />
+        ))}
       </Sheet.SheetContent>
     </Sheet.Sheet>
   );

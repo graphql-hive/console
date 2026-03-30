@@ -2,7 +2,7 @@ import { type MigrationExecutor } from '../pg-migrator';
 
 export default {
   name: '2021-03-09T10-30-35.roles.sql',
-  run: ({ sql }) => sql`
+  run: ({ psql }) => psql`
 --roles (up)
 CREATE TYPE
   user_role AS ENUM('ADMIN', 'MEMBER');

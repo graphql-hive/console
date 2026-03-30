@@ -10,6 +10,13 @@ import * as Form from '@/components/ui/form';
 import { Heading } from '@/components/ui/heading';
 import { Input } from '@/components/ui/input';
 import { InputCopy } from '@/components/ui/input-copy';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import * as Sheet from '@/components/ui/sheet';
 import { defineStepper } from '@/components/ui/stepper';
 import { Textarea } from '@/components/ui/textarea';
@@ -30,6 +37,7 @@ import {
   TitleInputModel,
 } from '../../../organization/settings/access-tokens/create-access-token-sheet-content';
 import {
+  expirationPeriods,
   permissionLevelToResourceName,
   resolveResources,
 } from '../../../organization/settings/access-tokens/shared-helpers';
@@ -38,6 +46,14 @@ const CreateAccessTokenFormModel = z.object({
   title: TitleInputModel,
   description: DescriptionInputModel,
   permissions: z.array(z.string()).min(1, 'Please select at least one permission.'),
+  expirationPeriod: z.enum([
+    GraphQLSchema.TokenExpirationPeriod.Never,
+    GraphQLSchema.TokenExpirationPeriod.OneMonth,
+    GraphQLSchema.TokenExpirationPeriod.OneWeek,
+    GraphQLSchema.TokenExpirationPeriod.OneYear,
+    GraphQLSchema.TokenExpirationPeriod.SixMonths,
+    GraphQLSchema.TokenExpirationPeriod.TwoWeeks,
+  ]),
 });
 
 const CreateProjectAccessTokenSheetContent_OrganizationFragment = graphql(`
@@ -137,6 +153,7 @@ export function CreateProjectAccessTokenSheetContent(
       title: '',
       description: '',
       permissions: [],
+      expirationPeriod: GraphQLSchema.TokenExpirationPeriod.Never,
     },
   });
 
@@ -166,6 +183,7 @@ export function CreateProjectAccessTokenSheetContent(
           mode: GraphQLSchema.ResourceAssignmentModeType.Granular,
           targets: [],
         },
+        expirationPeriod: formValues.expirationPeriod,
       },
     });
 
@@ -252,6 +270,36 @@ export function CreateProjectAccessTokenSheetContent(
                                 </Form.FormControl>
                                 <Form.FormDescription>
                                   Description of the access token.
+                                </Form.FormDescription>
+                                <Form.FormMessage />
+                              </Form.FormItem>
+                            )}
+                          />
+                        </div>
+
+                        <div className="grid w-full max-w-sm items-center gap-1.5">
+                          <Form.FormField
+                            control={form.control}
+                            name="expirationPeriod"
+                            render={({ field, fieldState }) => (
+                              <Form.FormItem aria-invalid={fieldState.invalid}>
+                                <Form.FormLabel>Expiration</Form.FormLabel>
+                                <Form.FormControl>
+                                  <Select {...field} onValueChange={field.onChange}>
+                                    <SelectTrigger id={field.name}>
+                                      <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                      {expirationPeriods.map(c => (
+                                        <SelectItem key={c.value} value={c.value}>
+                                          {c.name}
+                                        </SelectItem>
+                                      ))}
+                                    </SelectContent>
+                                  </Select>
+                                </Form.FormControl>
+                                <Form.FormDescription>
+                                  Expire the token automatically after a period of time.
                                 </Form.FormDescription>
                                 <Form.FormMessage />
                               </Form.FormItem>

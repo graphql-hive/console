@@ -1,8 +1,7 @@
 #!/usr/bin/env node
 import { got, HTTPError } from 'got';
-import { createPool, sql } from 'slonik';
 import { z } from 'zod';
-import { createConnectionString } from '../connection-string';
+import { createPostgresDatabasePool, psql } from '@hive/postgres';
 import { env } from '../environment';
 
 interface QueryResponse<T> {
@@ -183,17 +182,18 @@ function createClickHouseHelpers(endpoint: string, username: string, password: s
 }
 
 async function updatePostgreSQLRetention(retention: RetentionValue) {
-  const pool = await createPool(createConnectionString(env.postgres), {
+  const pool = await createPostgresDatabasePool({
+    connectionParameters: env.postgres,
     statementTimeout: 10 * 60 * 1000, // 10 minute timeout
   });
 
   try {
-    const result = await pool.query(sql`
+    const result = await pool.any(psql`
       UPDATE organizations
       SET limit_retention_days = ${retention.days}
     `);
 
-    const updatedCount = result.rowCount;
+    const updatedCount = result.length;
     console.log(
       `Updated ${updatedCount} organization(s) (limit_retention_days: ${retention.days})`,
     );

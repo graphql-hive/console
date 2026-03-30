@@ -2,7 +2,6 @@
 import crypto from 'node:crypto';
 import stableJSONStringify from 'fast-json-stable-stringify';
 import { Kind } from 'graphql';
-import { SerializableValue } from 'slonik';
 import { z } from 'zod';
 import {
   ChangeType,
@@ -89,6 +88,7 @@ import {
   UnionMemberAddedChange,
   UnionMemberRemovedChange,
 } from '@graphql-inspector/core';
+import { SerializableValue } from '@hive/postgres';
 import {
   RegistryServiceUrlChangeSerializableChange,
   schemaChangeFromSerializableChange,
@@ -263,7 +263,7 @@ export function implement<Model = never>() {
   return {
     with: <
       Schema extends Implements<Model> & {
-        [unknownKey in Exclude<keyof Schema, keyof Model>]: never;
+        [_Key in Exclude<keyof Schema, keyof Model>]: never;
       },
     >(
       schema: Schema,

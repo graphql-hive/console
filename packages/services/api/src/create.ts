@@ -1,5 +1,6 @@
 import { CONTEXT, createApplication, Provider, Scope } from 'graphql-modules';
 import { Redis } from 'ioredis';
+import { PostgresDatabasePool } from '@hive/postgres';
 import { TaskScheduler } from '@hive/workflows/kit';
 import { adminModule } from './modules/admin';
 import { alertsModule } from './modules/alerts';
@@ -58,7 +59,6 @@ import {
 } from './modules/shared/providers/in-memory-rate-limiter';
 import { Logger } from './modules/shared/providers/logger';
 import { Mutex } from './modules/shared/providers/mutex';
-import { PG_POOL_CONFIG } from './modules/shared/providers/pg-pool';
 import { PrometheusConfig } from './modules/shared/providers/prometheus-config';
 import { HivePubSub, PUB_SUB_CONFIG } from './modules/shared/providers/pub-sub';
 import { REDIS_INSTANCE } from './modules/shared/providers/redis';
@@ -312,7 +312,7 @@ export function createRegistry({
       scope: Scope.Singleton,
     },
     {
-      provide: PG_POOL_CONFIG,
+      provide: PostgresDatabasePool,
       scope: Scope.Singleton,
       useValue: storage.pool,
     },

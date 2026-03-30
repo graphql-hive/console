@@ -25,6 +25,7 @@
     "moduleResolution": "node",
     "strict": true,
     "paths": {
+      "@hive/postgres": ["./packages/internal/postgres/src/index.ts"],
       "@hive/api": ["./packages/services/api/src/index.ts"],
       "@hive/api/*": ["./packages/services/api/src/*"],
       "@hive/service-common": ["./packages/services/service-common/src/index.ts"],

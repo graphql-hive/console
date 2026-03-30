@@ -24,7 +24,7 @@ function hashToken(token: string) {
   return createHash('sha256').update(token).digest('hex');
 }
 
-function generateToken() {
+export function generateToken() {
   const token = createHash('md5')
     .update(String(Math.random()))
     .update(String(Date.now()))

@@ -169,6 +169,11 @@ export default gql`
     Permissions are inherited by sub-resources.
     """
     resources: ResourceAssignmentInput
+
+    """
+    Set this in order to automatically expire this token after a period of time.
+    """
+    expirationPeriod: TokenExpirationPeriod = NEVER
   }
 
   """
@@ -263,6 +268,11 @@ export default gql`
     Permissions are inherited by sub-resources.
     """
     resources: ProjectTargetsResourceAssignmentInput!
+
+    """
+    Set this in order to automatically expire this token after a period of time.
+    """
+    expirationPeriod: TokenExpirationPeriod = NEVER
   }
 
   """
@@ -374,6 +384,11 @@ export default gql`
     Permissions are inherited by sub-resources.
     """
     resources: ResourceAssignmentInput! @tag(name: "public")
+
+    """
+    Set this in order to automatically expire this token after a period of time.
+    """
+    expirationPeriod: TokenExpirationPeriod = NEVER
   }
 
   """
@@ -467,6 +482,11 @@ export default gql`
     createdAt: DateTime!
 
     """
+    If set, then this is when the token will expire and become invalid.
+    """
+    expiresAt: DateTime
+
+    """
     A list of resource levels, their assigned resources, and the granted permissions on each resource.
     """
     resolvedResourcePermissionGroups(
@@ -499,6 +519,11 @@ export default gql`
     resources: ResourceAssignment! @tag(name: "public")
     firstCharacters: String! @tag(name: "public")
     createdAt: DateTime! @tag(name: "public")
+
+    """
+    If set, then this is when the token will expire and become invalid.
+    """
+    expiresAt: DateTime
 
     """
     A list of resource levels, their assigned resources, and the granted permissions on each resource.
@@ -543,6 +568,11 @@ export default gql`
     createdAt: DateTime! @tag(name: "public")
 
     """
+    If set, then this is when the token will expire and become invalid.
+    """
+    expiresAt: DateTime
+
+    """
     A list of resource levels, their assigned resources, and the granted permissions on each resource.
     """
     resolvedResourcePermissionGroups(
@@ -559,6 +589,11 @@ export default gql`
     description: String @tag(name: "public")
     firstCharacters: String! @tag(name: "public")
     createdAt: DateTime! @tag(name: "public")
+
+    """
+    If set, then this is when the token will expire and become invalid.
+    """
+    expiresAt: DateTime
 
     """
     A list of the resource levels, the assigned resources and the granted permissions on each of those resources.
@@ -1414,11 +1449,15 @@ export default gql`
     """
     Paginated list of access tokens issued for the project.
     """
-    accessTokens(first: Int, after: String): PersonalAccessTokenConnection!
+    accessTokens(
+      first: Int
+      after: String
+      includeExpired: Boolean = true
+    ): PersonalAccessTokenConnection!
     """
     Access token for project.
     """
-    accessToken(id: ID!): PersonalAccessToken
+    accessToken(id: ID!, includeExpired: Boolean = true): PersonalAccessToken
   }
 
   """

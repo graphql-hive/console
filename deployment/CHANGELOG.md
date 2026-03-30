@@ -1,5 +1,57 @@
 # hive
 
+## 11.0.1
+
+### Patch Changes
+
+- [#7909](https://github.com/graphql-hive/console/pull/7909)
+  [`484054b`](https://github.com/graphql-hive/console/commit/484054be2773431a419be2c5ab16742f81d6b895)
+  Thanks [@jdolle](https://github.com/jdolle)! - Support project level token expiration
+
+- [#7908](https://github.com/graphql-hive/console/pull/7908)
+  [`70b3e19`](https://github.com/graphql-hive/console/commit/70b3e19fe2e6e064f5693f8acfbfcae8182faac4)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Fix web app pagination for access tokens.
+
+- [#7893](https://github.com/graphql-hive/console/pull/7893)
+  [`e5711a5`](https://github.com/graphql-hive/console/commit/e5711a52a87b9e66147de08378f8c3d17336d175)
+  Thanks [@jdolle](https://github.com/jdolle)! - Add expiration to all tokens; fix token ui spacing
+  issues
+
+## 11.0.0
+
+### Major Changes
+
+- [#7837](https://github.com/graphql-hive/console/pull/7837)
+  [`c00ea50`](https://github.com/graphql-hive/console/commit/c00ea5091c4ce9c939f1072876e6ebc4e991b1eb)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Improved performance when looking up affected app
+  deployments for breaking change detection.
+
+  **BREAKING CHANGE**
+
+  This release introduces a breaking change because it depends on a manual database migration
+  introduced in `10.1.0`.
+
+  If you use the app deployments feature for conditional breaking change detection, you should:
+
+  1. Upgrade to `10.1.0`
+  2. Perform the manual database migration steps described in that version
+  3. Then upgrade to this release
+
+  **Alternative upgrade path**
+
+  If you want to avoid performing the manual database migration:
+
+  1. Upgrade to `10.1.0`
+  2. Wait until all app deployments created **before** the rollout of `10.1.0` are retired
+  3. Then upgrade to this release
+
+### Patch Changes
+
+- [#7866](https://github.com/graphql-hive/console/pull/7866)
+  [`66a4f6b`](https://github.com/graphql-hive/console/commit/66a4f6bef8818dc160fce7e83e446063c262e2fc)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Fix legacy member scope mappings granting access to
+  deleting projects.
+
 ## 10.2.0
 
 ### Minor Changes

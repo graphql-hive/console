@@ -26,6 +26,7 @@ import { ArtifactStorageReader } from '@hive/cdn-script/artifact-storage-reader'
 import { AwsClient } from '@hive/cdn-script/aws';
 import { createIsAppDeploymentActive } from '@hive/cdn-script/is-app-deployment-active';
 import { createIsKeyValid } from '@hive/cdn-script/key-validation';
+import { createConnectionString } from '@hive/postgres';
 import { createHivePubSub } from '@hive/pubsub';
 import {
   configureTracing,
@@ -37,7 +38,7 @@ import {
   startMetrics,
   TracingInstance,
 } from '@hive/service-common';
-import { createConnectionString, createStorage as createPostgreSQLStorage } from '@hive/storage';
+import { createStorage as createPostgreSQLStorage } from '@hive/storage';
 import { TaskScheduler } from '@hive/workflows/kit';
 import { captureException, SeverityLevel } from '@sentry/node';
 import { createServerAdapter } from '@whatwg-node/server';
@@ -168,7 +169,7 @@ export async function main() {
     10,
     tracing ? [tracing.instrumentSlonik()] : [],
   );
-  const taskScheduler = new TaskScheduler(storage.pool.pool);
+  const taskScheduler = new TaskScheduler(storage.pool.getRawPgPool());
 
   const redis = createRedisClient('Redis', env.redis, server.log.child({ source: 'Redis' }));
 
@@ -461,7 +462,7 @@ export async function main() {
       method: ['GET', 'HEAD'],
       url: '/_health',
       async handler(_, res) {
-        res.status(200).send();
+        void res.status(200).send();
       },
     });
 
@@ -490,7 +491,7 @@ export async function main() {
             req.log.error(`Readiness check failed: [${response.statusCode}] ${response.body}`);
           } else {
             reportReadiness(true);
-            res.status(200).send();
+            void res.status(200).send();
             return;
           }
         } catch (error) {
@@ -498,7 +499,7 @@ export async function main() {
         }
 
         reportReadiness(false);
-        res.status(400).send();
+        void res.status(400).send();
       },
     });
 

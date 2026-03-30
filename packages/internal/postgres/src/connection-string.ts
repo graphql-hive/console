@@ -1,11 +1,14 @@
-export function createConnectionString(config: {
+export type PostgresConnectionParamaters = {
   host: string;
   port: number;
   password: string | undefined;
   user: string;
   db: string;
   ssl: boolean;
-}) {
+};
+
+/** Create a Postgres Connection String */
+export function createConnectionString(config: PostgresConnectionParamaters) {
   // prettier-ignore
   const encodedUser = encodeURIComponent(config.user);
   const encodedPassword =

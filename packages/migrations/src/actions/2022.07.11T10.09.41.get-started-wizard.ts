@@ -2,7 +2,7 @@ import { type MigrationExecutor } from '../pg-migrator';
 
 export default {
   name: '2022.07.11T10.09.41.get-started-wizard.sql',
-  run: ({ sql }) => sql`
+  run: ({ psql }) => psql`
 -- Tracks feature discovery progress
 ALTER TABLE
   organizations

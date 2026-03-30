@@ -202,7 +202,7 @@ type OptionalWhenFalse<T, KCond extends keyof T, KExcluded extends keyof T> =
   // untouched by default or when true
   | T
   // when false, make KExcluded optional
-  | (Omit<T, KExcluded> & { [P in KCond]: false } & { [P in KExcluded]?: T[KExcluded] });
+  | (Omit<T, KExcluded> & { [_P in KCond]: false } & { [_P in KExcluded]?: T[KExcluded] });
 
 export type HivePluginOptions = OptionalWhenFalse<
   {

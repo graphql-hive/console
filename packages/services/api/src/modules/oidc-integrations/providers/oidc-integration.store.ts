@@ -1,9 +1,8 @@
 import { Inject, Injectable, Scope } from 'graphql-modules';
-import { sql, type DatabasePool } from 'slonik';
 import { z } from 'zod';
+import { PostgresDatabasePool, psql } from '@hive/postgres';
 import { sha256 } from '../../auth/lib/supertokens-at-home/crypto';
 import { Logger } from '../../shared/providers/logger';
-import { PG_POOL_CONFIG } from '../../shared/providers/pg-pool';
 import { REDIS_INSTANCE, type Redis } from '../../shared/providers/redis';
 
 const SharedOIDCIntegrationDomainFieldsModel = z.object({
@@ -29,7 +28,7 @@ const OIDCIntegrationDomainModel = z.union([
 
 export type OIDCIntegrationDomain = z.TypeOf<typeof OIDCIntegrationDomainModel>;
 
-const oidcIntegrationDomainsFields = sql`
+const oidcIntegrationDomainsFields = psql`
   "id"
   , "organization_id" AS "organizationId"
   , "oidc_integration_id" AS "oidcIntegrationId"
@@ -48,7 +47,7 @@ export class OIDCIntegrationStore {
   private logger: Logger;
 
   constructor(
-    @Inject(PG_POOL_CONFIG) private pool: DatabasePool,
+    private pool: PostgresDatabasePool,
     @Inject(REDIS_INSTANCE) private redis: Redis,
     logger: Logger,
   ) {
@@ -61,7 +60,7 @@ export class OIDCIntegrationStore {
       oidcIntegrationId,
     );
 
-    const query = sql`
+    const query = psql`
       SELECT
         ${oidcIntegrationDomainsFields}
       FROM
@@ -79,7 +78,7 @@ export class OIDCIntegrationStore {
       oidcIntegrationId,
     );
 
-    const query = sql`
+    const query = psql`
       INSERT INTO "oidc_integration_domains" (
         "organization_id"
         , "oidc_integration_id"
@@ -101,7 +100,7 @@ export class OIDCIntegrationStore {
   async deleteDomain(domainId: string) {
     this.logger.debug('delete domain on oidc integration. (oidcIntegrationId=%s)', domainId);
 
-    const query = sql`
+    const query = psql`
       DELETE
       FROM
         "oidc_integration_domains"
@@ -113,7 +112,7 @@ export class OIDCIntegrationStore {
   }
 
   async findDomainById(domainId: string) {
-    const query = sql`
+    const query = psql`
       SELECT
         ${oidcIntegrationDomainsFields}
       FROM
@@ -126,7 +125,7 @@ export class OIDCIntegrationStore {
   }
 
   async findVerifiedDomainByName(domainName: string) {
-    const query = sql`
+    const query = psql`
       SELECT
         ${oidcIntegrationDomainsFields}
       FROM
@@ -143,7 +142,7 @@ export class OIDCIntegrationStore {
     oidcIntegrationId: string,
     domainName: string,
   ) {
-    const query = sql`
+    const query = psql`
       SELECT
         ${oidcIntegrationDomainsFields}
       FROM
@@ -165,7 +164,7 @@ export class OIDCIntegrationStore {
 
     // The NOT EXISTS statement is to avoid verifying the domain twice for two different otganizations
     // only one org can own a domain
-    const query = sql`
+    const query = psql`
       UPDATE
         "oidc_integration_domains"
       SET

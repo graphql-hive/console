@@ -1,6 +1,6 @@
 import { Injectable } from 'graphql-modules';
-import type { DatabasePool } from 'slonik';
 import type { PolicyConfigurationObject } from '@hive/policy';
+import { PostgresDatabasePool } from '@hive/postgres';
 import type {
   ConditionalBreakingChangeMetadata,
   PaginatedOrganizationInvitationConnection,
@@ -67,7 +67,7 @@ type CreateContractVersionInput = {
 
 // eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging
 export interface Storage {
-  pool: DatabasePool;
+  pool: PostgresDatabasePool;
   destroy(): Promise<void>;
   isReady(): Promise<boolean>;
   ensureUserExists(_: {

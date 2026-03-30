@@ -13,7 +13,9 @@ export const whoAmI: NonNullable<QueryResolvers['whoAmI']> = async (
   const accessTokens = injector.get(OrganizationAccessTokens);
 
   if (session instanceof OrganizationAccessTokenSession) {
-    const accessToken = await accessTokens.getById(session.id);
+    const accessToken = await accessTokens.getById(session.id, {
+      includeExpired: false,
+    });
 
     if (!accessToken) {
       throw new Error('This one is invalid :D');
