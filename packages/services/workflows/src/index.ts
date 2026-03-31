@@ -57,7 +57,7 @@ const pg = await createPostgresDatabasePool({
 });
 const logger = new Logger({ level: env.log.level });
 
-logger.info({ pid: process.pid }, 'starting workflow service');
+logger.info({ pid: process.pid }, 'starting workflow service ' + process.pid);
 
 const stopHttpHeartbeat = env.httpHeartbeat
   ? startHeartbeats({

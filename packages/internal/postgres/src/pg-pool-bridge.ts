@@ -56,6 +56,12 @@ export class PgPoolBridge {
     // https://github.com/graphile/worker/blob/5650fbc4406fa3ce197b2ab582e08fd20974e50c/src/lib.ts#L351-L359
     return this;
   }
+
+  removeListener(): this {
+    // Note: we can skip tearing down event handlers, since we ship setting them up in the first place
+    // https://github.com/graphile/worker/blob/5650fbc4406fa3ce197b2ab582e08fd20974e50c/src/lib.ts#L351-L359
+    return this;
+  }
 }
 
 class PgClientBridge {
