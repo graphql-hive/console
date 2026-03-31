@@ -96,10 +96,6 @@ export function deployProxy({
         service: graphql.service,
         requestTimeout: '60s',
         retriable: true,
-        rateLimit: {
-          maxRequests: 10,
-          unit: 'minute',
-        },
       },
       {
         name: 'usage',
