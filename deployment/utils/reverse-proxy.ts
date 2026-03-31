@@ -84,6 +84,12 @@ export class Proxy {
       requestTimeout?: `${number}s` | 'infinity';
       idleTimeout?: `${number}s`;
       retriable?: boolean;
+      loadBalancerPolicy?:
+        | 'WeightedLeastRequest'
+        | 'RoundRobin'
+        | 'Random'
+        | 'RequestHash'
+        | 'Cookie';
       customRewrite?: string;
       virtualHost?: Output<string>;
       httpsUpstream?: boolean;
@@ -153,9 +159,9 @@ export class Proxy {
                 port: route.service.spec.ports[0].port,
               },
             ],
-            // https://projectcontour.io/docs/1.29/config/request-routing/#session-affinity
+            // https://projectcontour.io/docs/1.31/config/request-routing/
             loadBalancerPolicy: {
-              strategy: 'Cookie',
+              strategy: route.loadBalancerPolicy ?? 'RoundRobin',
             },
             // https://projectcontour.io/docs/1.29/config/rate-limiting/#local-rate-limiting
             rateLimitPolicy: route.rateLimit
