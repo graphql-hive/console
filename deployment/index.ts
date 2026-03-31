@@ -19,6 +19,7 @@ import { deploySchemaPolicy } from './services/policy';
 import { deployPostgres } from './services/postgres';
 import { deployProxy } from './services/proxy';
 import { deployPublicGraphQLAPIGateway } from './services/public-graphql-api-gateway';
+import { deployPublicGraphQLAPIRouter } from './services/public-graphql-api-router';
 import { deployRedis } from './services/redis';
 import { deployS3, deployS3AuditLog, deployS3Mirror } from './services/s3';
 import { deploySchema } from './services/schema';
@@ -310,6 +311,14 @@ const publicGraphQLAPIGateway = deployPublicGraphQLAPIGateway({
   otelCollector,
 });
 
+const publicGraphQLAPIRouter = deployPublicGraphQLAPIRouter({
+  environment,
+  graphql,
+  docker,
+  observability,
+  otelCollector,
+});
+
 const proxy = deployProxy({
   observability,
   app,
@@ -317,6 +326,7 @@ const proxy = deployProxy({
   usage,
   environment,
   publicGraphQLAPIGateway,
+  publicGraphQLAPIRouter,
   otelCollector,
 });
 
