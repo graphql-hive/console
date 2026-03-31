@@ -923,7 +923,6 @@ function SchemaChecksView(props: {
   organizationSlug: string;
   projectSlug: string;
   targetSlug: string;
-  scrollToLine?: number;
 }) {
   const schemaCheck = useFragment(SchemaChecksView_SchemaCheckFragment, props.schemaCheck);
 
