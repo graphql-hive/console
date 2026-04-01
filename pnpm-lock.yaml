@@ -91,6 +91,9 @@ patchedDependencies:
   p-cancelable@4.0.1:
     hash: 195ae63d47810ca4c987421948f15869356e598dccde9e8c9a4ff4efd3e88322
     path: patches/p-cancelable@4.0.1.patch
+  slonik:
+    hash: e16e74ebc8c5f42be257d540b5ac7d175ff3264481046b5c33fc647c9997acdc
+    path: patches/slonik.patch
 
 importers:
 
@@ -438,13 +441,13 @@ importers:
         version: 1.0.0
       slonik:
         specifier: 48.13.2
-        version: 48.13.2
+        version: 48.13.2(patch_hash=e16e74ebc8c5f42be257d540b5ac7d175ff3264481046b5c33fc647c9997acdc)
       slonik-interceptor-query-logging:
         specifier: 48.13.2
-        version: 48.13.2(slonik@48.13.2)
+        version: 48.13.2(slonik@48.13.2(patch_hash=e16e74ebc8c5f42be257d540b5ac7d175ff3264481046b5c33fc647c9997acdc))
       slonik-sql-tag-raw:
         specifier: 48.13.2
-        version: 48.13.2(slonik@48.13.2)
+        version: 48.13.2(slonik@48.13.2(patch_hash=e16e74ebc8c5f42be257d540b5ac7d175ff3264481046b5c33fc647c9997acdc))
       zod:
         specifier: 3.25.76
         version: 3.25.76
@@ -39990,20 +39993,20 @@ snapshots:
 
   slick@1.12.2: {}
 
-  slonik-interceptor-query-logging@48.13.2(slonik@48.13.2):
+  slonik-interceptor-query-logging@48.13.2(slonik@48.13.2(patch_hash=e16e74ebc8c5f42be257d540b5ac7d175ff3264481046b5c33fc647c9997acdc)):
     dependencies:
       crack-json: 1.3.0
       pretty-ms: 9.3.0
       serialize-error: 12.0.0
-      slonik: 48.13.2
+      slonik: 48.13.2(patch_hash=e16e74ebc8c5f42be257d540b5ac7d175ff3264481046b5c33fc647c9997acdc)
 
-  slonik-sql-tag-raw@48.13.2(slonik@48.13.2):
+  slonik-sql-tag-raw@48.13.2(slonik@48.13.2(patch_hash=e16e74ebc8c5f42be257d540b5ac7d175ff3264481046b5c33fc647c9997acdc)):
     dependencies:
       '@slonik/sql-tag': 48.13.2
       roarr: 7.21.4
-      slonik: 48.13.2
+      slonik: 48.13.2(patch_hash=e16e74ebc8c5f42be257d540b5ac7d175ff3264481046b5c33fc647c9997acdc)
 
-  slonik@48.13.2:
+  slonik@48.13.2(patch_hash=e16e74ebc8c5f42be257d540b5ac7d175ff3264481046b5c33fc647c9997acdc):
     dependencies:
       '@opentelemetry/api': 1.9.0
       '@slonik/driver': 48.13.2(zod@4.3.6)
