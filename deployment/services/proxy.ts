@@ -50,14 +50,12 @@ export function deployProxy({
         path: '/',
         service: app.service,
         requestTimeout: '60s',
-        loadBalancerPolicy: 'Cookie',
       },
       {
         name: 'server',
         path: '/server',
         service: graphql.service,
         requestTimeout: '60s',
-        loadBalancerPolicy: 'Cookie',
       },
       {
         name: 'registry-api-health',
@@ -72,7 +70,6 @@ export function deployProxy({
         service: graphql.service,
         requestTimeout: '60s',
         retriable: true,
-        loadBalancerPolicy: 'Cookie',
       },
       {
         name: 'graphql-api',
@@ -81,7 +78,6 @@ export function deployProxy({
         service: graphql.service,
         requestTimeout: '60s',
         retriable: true,
-        loadBalancerPolicy: 'Cookie',
       },
       {
         name: 'graphql-api-subscriptions',
@@ -100,7 +96,6 @@ export function deployProxy({
         service: graphql.service,
         requestTimeout: '60s',
         retriable: true,
-        loadBalancerPolicy: 'Cookie',
       },
       {
         name: 'usage',
