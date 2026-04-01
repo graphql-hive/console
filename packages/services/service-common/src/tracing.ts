@@ -17,6 +17,7 @@ import {
   SpanKind,
   SpanStatusCode,
   trace,
+  type Span,
 } from '@opentelemetry/api';
 import { AsyncLocalStorageContextManager } from '@opentelemetry/context-async-hooks';
 import { OTLPTraceExporter } from '@opentelemetry/exporter-trace-otlp-http';
@@ -27,7 +28,6 @@ import {
   Sampler,
   SamplingDecision,
   SpanProcessor,
-  type Span,
 } from '@opentelemetry/sdk-trace-node';
 import {
   SEMATTRS_HTTP_METHOD,
@@ -309,7 +309,7 @@ export const createSlonikInterceptor = (options: SlonikTracingInterceptorOptions
         },
       });
 
-      connections[context.connectionId][context.queryId] = span as any;
+      connections[context.connectionId][context.queryId] = span;
 
       return null;
     },
