@@ -309,7 +309,7 @@ export const createSlonikInterceptor = (options: SlonikTracingInterceptorOptions
         },
       });
 
-      connections[context.connectionId][context.queryId] = span;
+      connections[context.connectionId][context.queryId] = span as any;
 
       return null;
     },
