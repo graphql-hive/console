@@ -17,7 +17,6 @@ import {
   SpanKind,
   SpanStatusCode,
   trace,
-  type Span,
 } from '@opentelemetry/api';
 import { AsyncLocalStorageContextManager } from '@opentelemetry/context-async-hooks';
 import { OTLPTraceExporter } from '@opentelemetry/exporter-trace-otlp-http';
@@ -28,6 +27,7 @@ import {
   Sampler,
   SamplingDecision,
   SpanProcessor,
+  type Span,
 } from '@opentelemetry/sdk-trace-node';
 import {
   SEMATTRS_HTTP_METHOD,
@@ -520,15 +520,6 @@ export function traceFn<This extends object, TArgs extends any[], TResult>(
 
 class ServiceBatchSpanProcessor extends BatchSpanProcessor {
   onEnd(span: ReadableSpan): void {
-    // filter our slonik noise
-    if (
-      span.instrumentationScope.name === 'slonik.interceptors' ||
-      span.instrumentationScope.name === 'slonik' ||
-      span.instrumentationScope.name === 'pg-slonik-connection-pool'
-    ) {
-      return;
-    }
-
     return super.onEnd(span);
   }
 }
