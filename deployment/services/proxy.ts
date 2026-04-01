@@ -102,6 +102,7 @@ export function deployProxy({
         path: '/usage',
         service: usage.service,
         retriable: true,
+        loadBalancerPolicy: 'WeightedLeastRequest',
       },
     ])
     .registerService({ record: environment.apiDns }, [
