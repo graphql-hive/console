@@ -8,6 +8,8 @@ import {
 import { toast } from 'sonner';
 import z from 'zod';
 import { asyncInterval } from '@/lib/utils';
+import { createRequestSignal } from './request';
+import type { LaboratorySettingsActions, LaboratorySettingsState } from './settings';
 
 export interface LaboratoryEndpointState {
   endpoint: string | null;
@@ -20,6 +22,21 @@ export interface LaboratoryEndpointActions {
   setEndpoint: (endpoint: string) => void;
   fetchSchema: () => void;
   restoreDefaultEndpoint: () => void;
+}
+
+function buildIntrospectionRequest(
+  queryName?: string,
+  method?: 'GET' | 'POST',
+  schemaDescription?: boolean,
+) {
+  const query = getIntrospectionQuery({
+    schemaDescription,
+  }).replace('query IntrospectionQuery', `query ${queryName ?? 'IntrospectionQuery'}`);
+
+  return {
+    method,
+    query,
+  } as const;
 }
 
 const GraphQLResponseErrorSchema = z
@@ -36,6 +53,7 @@ export const useEndpoint = (props: {
   defaultEndpoint?: string | null;
   onEndpointChange?: (endpoint: string | null) => void;
   defaultSchemaIntrospection?: IntrospectionQuery | null;
+  settingsApi?: LaboratorySettingsState & LaboratorySettingsActions;
 }): LaboratoryEndpointState & LaboratoryEndpointActions => {
   const [endpoint, _setEndpoint] = useState<string | null>(props.defaultEndpoint ?? null);
   const [introspection, setIntrospection] = useState<IntrospectionQuery | null>(null);
@@ -65,15 +83,40 @@ export const useEndpoint = (props: {
       }
 
       try {
-        const response = await fetch(endpoint, {
+        const introspectionRequest = buildIntrospectionRequest(
+          props.settingsApi?.settings.introspection.queryName,
+          props.settingsApi?.settings.introspection.method,
+          props.settingsApi?.settings.introspection.schemaDescription,
+        );
+
+        const requestSignal = createRequestSignal(
           signal,
-          method: 'POST',
-          body: JSON.stringify({
-            query: getIntrospectionQuery(),
-          }),
-          headers: {
-            'Content-Type': 'application/json',
-          },
+          props.settingsApi?.settings.fetch.timeout,
+        );
+        const requestUrl =
+          introspectionRequest.method === 'GET'
+            ? (() => {
+                const url = new URL(endpoint);
+                url.searchParams.set('query', introspectionRequest.query);
+                return url.toString();
+              })()
+            : endpoint;
+
+        const response = await fetch(requestUrl, {
+          signal: requestSignal,
+          method: introspectionRequest.method,
+          body:
+            introspectionRequest.method === 'POST'
+              ? JSON.stringify({
+                  query: introspectionRequest.query,
+                })
+              : undefined,
+          headers:
+            introspectionRequest.method === 'POST'
+              ? {
+                  'Content-Type': 'application/json',
+                }
+              : undefined,
         }).then(r => r.json());
 
         const parsedResponse = GraphQLResponseErrorSchema.safeParse(response);
@@ -104,7 +147,13 @@ export const useEndpoint = (props: {
         throw error;
       }
     },
-    [endpoint],
+    [
+      endpoint,
+      props.settingsApi?.settings.fetch.timeout,
+      props.settingsApi?.settings.introspection.queryName,
+      props.settingsApi?.settings.introspection.method,
+      props.settingsApi?.settings.introspection.schemaDescription,
+    ],
   );
 
   const shouldPollSchema = useMemo(() => {
@@ -129,6 +178,7 @@ export const useEndpoint = (props: {
       5000,
       intervalController.signal,
     );
+
     return () => {
       intervalController.abort();
     };

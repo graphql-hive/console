@@ -250,7 +250,7 @@ const LaboratoryContent = () => {
         }
 
         return (
-          <Empty className="w-full px-0!">
+          <Empty className="px-0! w-full">
             <EmptyHeader>
               <EmptyMedia variant="icon">
                 <FileIcon className="text-muted-foreground size-6" />
@@ -344,7 +344,7 @@ const LaboratoryContent = () => {
         </Tooltip>
         <div
           className={cn(
-            'relative z-100 mt-auto flex aspect-square h-12 w-full items-center justify-center border-l-2 border-transparent',
+            'z-100 relative mt-auto flex aspect-square h-12 w-full items-center justify-center border-l-2 border-transparent',
             {
               'border-primary': activePanel === 'settings',
             },
@@ -402,7 +402,7 @@ const LaboratoryContent = () => {
                 >
                   Preflight Script
                 </DropdownMenuItem>
-                {/* <DropdownMenuSeparator />
+                <DropdownMenuSeparator />
                 <DropdownMenuItem
                   onSelect={() => {
                     const tab =
@@ -416,7 +416,7 @@ const LaboratoryContent = () => {
                   }}
                 >
                   Settings
-                </DropdownMenuItem> */}
+                </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
             <TooltipContent side="right">Settings</TooltipContent>
@@ -514,7 +514,10 @@ export const Laboratory = (
   const pluginsApi = usePlugins(props);
   const testsApi = useTests(props);
   const tabsApi = useTabs(props);
-  const endpointApi = useEndpoint(props);
+  const endpointApi = useEndpoint({
+    ...props,
+    settingsApi,
+  });
   const collectionsApi = useCollections({
     ...props,
     tabsApi,

@@ -87,8 +87,12 @@ export const Settings = () => {
                       <Input
                         type="number"
                         name={field.name}
-                        value={field.state.value}
-                        onChange={e => field.handleChange(Number(e.target.value))}
+                        value={field.state.value ?? ''}
+                        onChange={e =>
+                          field.handleChange(
+                            e.target.value === '' ? undefined : Number(e.target.value),
+                          )
+                        }
                       />
                     </Field>
                   );
@@ -102,8 +106,12 @@ export const Settings = () => {
                       <Input
                         type="number"
                         name={field.name}
-                        value={field.state.value}
-                        onChange={e => field.handleChange(Number(e.target.value))}
+                        value={field.state.value ?? ''}
+                        onChange={e =>
+                          field.handleChange(
+                            e.target.value === '' ? undefined : Number(e.target.value),
+                          )
+                        }
                       />
                     </Field>
                   );
@@ -115,7 +123,7 @@ export const Settings = () => {
                     <Field className="flex-row items-center">
                       <Switch
                         className="!w-8"
-                        checked={field.state.value}
+                        checked={field.state.value ?? false}
                         onCheckedChange={field.handleChange}
                       />
                       <FieldLabel htmlFor={field.name}>Use GET for queries</FieldLabel>
@@ -182,8 +190,8 @@ export const Settings = () => {
                       <FieldLabel htmlFor={field.name}>Query name</FieldLabel>
                       <Input
                         name={field.name}
-                        value={field.state.value}
-                        onChange={e => field.handleChange(e.target.value)}
+                        value={field.state.value ?? ''}
+                        onChange={e => field.handleChange(e.target.value || undefined)}
                       />
                     </Field>
                   );
@@ -219,7 +227,7 @@ export const Settings = () => {
                     <Field className="flex-row items-center">
                       <Switch
                         className="!w-8"
-                        checked={field.state.value}
+                        checked={field.state.value ?? false}
                         onCheckedChange={field.handleChange}
                       />
                       <FieldLabel htmlFor={field.name}>Schema description</FieldLabel>

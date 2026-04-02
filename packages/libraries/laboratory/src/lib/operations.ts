@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import type { GraphQLSchema } from 'graphql';
-import { createClient } from 'graphql-ws';
+import { getOperationAST, parse, type GraphQLSchema } from 'graphql';
 import { decompressFromEncodedURIComponent } from 'lz-string';
 import { v4 as uuidv4 } from 'uuid';
 import { LaboratoryPermission, LaboratoryPermissions } from '../components/laboratory/context';
@@ -20,8 +19,18 @@ import {
 } from './operations.utils';
 import { LaboratoryPlugin, LaboratoryPluginsActions, LaboratoryPluginsState } from './plugins';
 import type { LaboratoryPreflightActions, LaboratoryPreflightState } from './preflight';
+import { createRequestSignal, fetchWithRetry } from './request';
 import type { LaboratorySettingsActions, LaboratorySettingsState } from './settings';
+import { createSubscriptionExecutor } from './subscriptions';
 import type { LaboratoryTabOperation, LaboratoryTabsActions, LaboratoryTabsState } from './tabs';
+
+function getOperationType(query: string): 'query' | 'mutation' | 'subscription' | null {
+  try {
+    return getOperationAST(parse(query))?.operation ?? null;
+  } catch {
+    return null;
+  }
+}
 
 export interface LaboratoryOperation {
   id: string;
@@ -381,36 +390,14 @@ export const useOperations = (
             }),
           )
         : {};
+      const operationType = getOperationType(activeOperation.query);
 
-      if (activeOperation.query.startsWith('subscription')) {
-        const client = createClient({
-          url: endpoint.replace('http', 'ws'),
-          connectionParams: {
-            ...mergedHeaders,
-          },
-        });
-
-        client.on('connected', () => {
-          console.log('connected');
-        });
-
-        client.on('error', () => {
-          setStopOperationsFunctions(prev => {
-            const newStopOperationsFunctions = { ...prev };
-            delete newStopOperationsFunctions[activeOperation.id];
-            return newStopOperationsFunctions;
-          });
-        });
-
-        client.on('closed', () => {
-          setStopOperationsFunctions(prev => {
-            const newStopOperationsFunctions = { ...prev };
-            delete newStopOperationsFunctions[activeOperation.id];
-            return newStopOperationsFunctions;
-          });
-        });
-
-        client.subscribe(
+      if (operationType === 'subscription') {
+        const unsubscribe = createSubscriptionExecutor({
+          endpoint,
+          protocol: props.settingsApi?.settings.subscriptions.protocol ?? 'WS',
+          headers: mergedHeaders,
+        }).subscribe(
           {
             query: activeOperation.query,
             variables,
@@ -420,15 +407,27 @@ export const useOperations = (
             next: message => {
               options?.onResponse?.(JSON.stringify(message ?? {}));
             },
-            error: () => {},
-            complete: () => {},
+            error: () => {
+              setStopOperationsFunctions(prev => {
+                const newStopOperationsFunctions = { ...prev };
+                delete newStopOperationsFunctions[activeOperation.id];
+                return newStopOperationsFunctions;
+              });
+            },
+            complete: () => {
+              setStopOperationsFunctions(prev => {
+                const newStopOperationsFunctions = { ...prev };
+                delete newStopOperationsFunctions[activeOperation.id];
+                return newStopOperationsFunctions;
+              });
+            },
           },
         );
 
         setStopOperationsFunctions(prev => ({
           ...prev,
           [activeOperation.id]: () => {
-            void client.dispose();
+            unsubscribe();
             setStopOperationsFunctions(prev => {
               const newStopOperationsFunctions = { ...prev };
               delete newStopOperationsFunctions[activeOperation.id];
@@ -441,21 +440,48 @@ export const useOperations = (
       }
 
       const abortController = new AbortController();
+      const signal = createRequestSignal(
+        abortController.signal,
+        props.settingsApi?.settings.fetch.timeout,
+      );
 
-      const response = fetch(endpoint, {
-        method: 'POST',
-        credentials: props.settingsApi?.settings.fetch.credentials,
-        body: JSON.stringify({
-          query: activeOperation.query,
-          variables,
-          extensions,
-        }),
-        headers: {
-          ...mergedHeaders,
-          'Content-Type': 'application/json',
+      const shouldUseGet =
+        props.settingsApi?.settings.fetch.useGETForQueries === true && operationType === 'query';
+      const requestUrl = shouldUseGet
+        ? (() => {
+            const url = new URL(endpoint);
+            url.searchParams.set('query', activeOperation.query);
+            if (Object.keys(variables).length > 0) {
+              url.searchParams.set('variables', JSON.stringify(variables));
+            }
+            if (Object.keys(extensions).length > 0) {
+              url.searchParams.set('extensions', JSON.stringify(extensions));
+            }
+            return url.toString();
+          })()
+        : endpoint;
+
+      const response = fetchWithRetry(
+        requestUrl,
+        {
+          method: shouldUseGet ? 'GET' : 'POST',
+          body: shouldUseGet
+            ? undefined
+            : JSON.stringify({
+                query: activeOperation.query,
+                variables,
+                extensions,
+              }),
+          headers: shouldUseGet
+            ? mergedHeaders
+            : {
+                ...mergedHeaders,
+                'Content-Type': 'application/json',
+              },
+          signal,
         },
-        signal: abortController.signal,
-      }).finally(() => {
+        props.settingsApi?.settings.fetch.retry,
+      ).finally(() => {
         setStopOperationsFunctions(prev => {
           const newStopOperationsFunctions = { ...prev };
           delete newStopOperationsFunctions[activeOperation.id];
@@ -471,11 +497,11 @@ export const useOperations = (
 
       return response;
     },
-    [activeOperation, props.preflightApi, props.envApi, props.pluginsApi],
+    [activeOperation, props.preflightApi, props.envApi, props.pluginsApi, props.settingsApi],
   );
 
   const isOperationSubscription = useCallback((operation: LaboratoryOperation) => {
-    return operation.query?.startsWith('subscription') ?? false;
+    return getOperationType(operation.query) === 'subscription';
   }, []);
 
   const isActiveOperationSubscription = useMemo(() => {
