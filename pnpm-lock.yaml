@@ -835,7 +835,7 @@ importers:
         version: 6.0.6(graphql@16.12.0)(ws@8.18.0)
       lodash:
         specifier: ^4.17.23
-        version: 4.17.23
+        version: 4.18.1
       lucide-react:
         specifier: ^0.548.0
         version: 0.548.0(react@18.3.1)
@@ -1223,7 +1223,7 @@ importers:
         version: 9.0.3
       lodash:
         specifier: ^4.17.23
-        version: 4.17.23
+        version: 4.18.1
       lru-cache:
         specifier: 7.18.3
         version: 7.18.3
@@ -2359,7 +2359,7 @@ importers:
         version: 2.2.0
       lodash:
         specifier: ^4.17.23
-        version: 4.17.23
+        version: 4.18.1
       lodash.debounce:
         specifier: 4.0.8
         version: 4.0.8
@@ -14785,8 +14785,8 @@ packages:
     resolution: {integrity: sha512-iPZK6eYjbxRu3uB4/WZ3EsEIMJFMqAoopl3R+zuq0UjcAm/MO6KCweDgPfP3elTztoKP3KtnVHxTn2NHBSDVUw==}
     engines: {node: '>=10'}
 
-  lodash-es@4.17.23:
-    resolution: {integrity: sha512-kVI48u3PZr38HdYz98UmfPnXl2DXrpdctLrFLCd3kOx1xUkOmpFPx7gCWWM5MPkL/fD8zb+Ph0QzjGFs4+hHWg==}
+  lodash-es@4.18.1:
+    resolution: {integrity: sha512-J8xewKD/Gk22OZbhpOVSwcs60zhd95ESDwezOFuA3/099925PdHJ7OFHNTGtajL3AlZkykD32HykiMo+BIBI8A==}
 
   lodash.camelcase@4.3.0:
     resolution: {integrity: sha512-TwuEnCnxbc3rAvhf/LbG7tJUDzhqXyFnv3dtzLOPgCG/hODL7WFnsbwktkD7yUV0RrreP/l1PALq/YSg6VvjlA==}
@@ -14852,8 +14852,8 @@ packages:
   lodash.xorby@4.7.0:
     resolution: {integrity: sha512-gYiD6nvuQy0AEkMoUju+t4f4Rn18fjsLB/7x7YZFqtFT9kmegRLrj/uGEQVyVDy7otTmSrIMXNOk2wwuLcfHCQ==}
 
-  lodash@4.17.23:
-    resolution: {integrity: sha512-LgVTMpQtIopCi79SJeDiP0TfWi5CNEc/L/aRdTh3yIvmZXTnheWpKjSZhnvMl8iXbC1tFg9gdHHDMLoV7CnG+w==}
+  lodash@4.18.1:
+    resolution: {integrity: sha512-dMInicTPVE8d1e5otfwmmjlxkZoUpiVLwyeTdUsi/Caj/gfzzblBcCE5sRHV/AsjuCmxWrte2TNGSYuCeCq+0Q==}
 
   log-symbols@4.1.0:
     resolution: {integrity: sha512-8XPvpAA8uyhfteu8pIvQxpJZ7SYYdpUivZpGy6sFsBuKRY/7rQGavedeB8aK+Zkyq6upMFVL/9AW6vOYzfRyLg==}
@@ -22192,7 +22192,7 @@ snapshots:
       common-tags: 1.8.2
       graphql: 16.9.0
       import-from: 4.0.0
-      lodash: 4.17.23
+      lodash: 4.18.1
       tslib: 2.4.1
 
   '@graphql-codegen/plugin-helpers@6.0.0(graphql@16.9.0)':
@@ -22202,7 +22202,7 @@ snapshots:
       common-tags: 1.8.2
       graphql: 16.9.0
       import-from: 4.0.0
-      lodash: 4.17.23
+      lodash: 4.18.1
       tslib: 2.6.3
 
   '@graphql-codegen/plugin-helpers@6.1.0(graphql@16.9.0)':
@@ -22212,7 +22212,7 @@ snapshots:
       common-tags: 1.8.2
       graphql: 16.9.0
       import-from: 4.0.0
-      lodash: 4.17.23
+      lodash: 4.18.1
       tslib: 2.6.3
 
   '@graphql-codegen/schema-ast@5.0.0(patch_hash=2280c6d4f2e9268fc118d06dc95deea7e9b58200010db1b332004627d6793a9f)(graphql@16.9.0)':
@@ -25829,7 +25829,7 @@ snapshots:
       '@rushstack/terminal': 0.21.0(@types/node@24.10.9)
       '@rushstack/ts-command-line': 5.2.0(@types/node@24.10.9)
       diff: 8.0.3
-      lodash: 4.17.23
+      lodash: 4.18.1
       minimatch: 10.2.4
       resolve: 1.22.11
       semver: 7.5.4
@@ -26181,7 +26181,7 @@ snapshots:
       ansis: 3.17.0
       debug: 4.4.3(supports-color@8.1.1)
       http-call: 5.3.0
-      lodash: 4.17.23
+      lodash: 4.18.1
       registry-auth-token: 5.1.0
     transitivePeerDependencies:
       - supports-color
@@ -30628,7 +30628,7 @@ snapshots:
     dependencies:
       bluebird: 3.7.2
       diff: 8.0.3
-      lodash: 4.17.23
+      lodash: 4.18.1
       mz: 2.7.0
       typescript: 5.7.3
       yargs: 16.2.0
@@ -32272,7 +32272,7 @@ snapshots:
 
   browser-tabs-lock@1.3.0:
     dependencies:
-      lodash: 4.17.23
+      lodash: 4.18.1
 
   browserslist@4.28.1:
     dependencies:
@@ -32999,7 +32999,7 @@ snapshots:
       is-installed-globally: 0.4.0
       lazy-ass: 1.6.0
       listr2: 3.14.0(enquirer@2.4.1)
-      lodash: 4.17.23
+      lodash: 4.18.1
       log-symbols: 4.1.0
       minimist: 1.2.8
       ospath: 1.2.2
@@ -34523,8 +34523,8 @@ snapshots:
       '@types/hoist-non-react-statics': 3.3.5
       deepmerge: 2.2.1
       hoist-non-react-statics: 3.3.2
-      lodash: 4.17.23
-      lodash-es: 4.17.23
+      lodash: 4.18.1
+      lodash-es: 4.18.1
       react: 18.3.1
       react-fast-compare: 2.0.4
       tiny-warning: 1.0.3
@@ -35712,7 +35712,7 @@ snapshots:
       code-excerpt: 4.0.0
       indent-string: 5.0.0
       is-in-ci: 0.1.0
-      lodash: 4.17.23
+      lodash: 4.18.1
       patch-console: 2.0.0
       react: 18.3.1
       react-reconciler: 0.29.2(react@18.3.1)
@@ -36238,7 +36238,7 @@ snapshots:
       '@types/lodash': 4.17.13
       is-glob: 4.0.3
       js-yaml: 4.1.1
-      lodash: 4.17.23
+      lodash: 4.18.1
       minimist: 1.2.8
       prettier: 3.4.2
       tinyglobby: 0.2.10
@@ -36252,7 +36252,7 @@ snapshots:
   json-schema-yup-transformer@1.6.12:
     dependencies:
       is-relative-url: 3.0.0
-      lodash: 4.17.23
+      lodash: 4.18.1
       stringify-object: 3.3.0
       yup: 0.29.3
 
@@ -36636,7 +36636,7 @@ snapshots:
     dependencies:
       p-locate: 5.0.0
 
-  lodash-es@4.17.23: {}
+  lodash-es@4.18.1: {}
 
   lodash.camelcase@4.3.0: {}
 
@@ -36680,7 +36680,7 @@ snapshots:
 
   lodash.xorby@4.7.0: {}
 
-  lodash@4.17.23: {}
+  lodash@4.18.1: {}
 
   log-symbols@4.1.0:
     dependencies:
@@ -37439,7 +37439,7 @@ snapshots:
   mjml-accordion@4.14.0(encoding@0.1.13):
     dependencies:
       '@babel/runtime': 7.26.10
-      lodash: 4.17.23
+      lodash: 4.18.1
       mjml-core: 4.14.0(patch_hash=52f1e476e154edea0222aa95e55676888525198d882becc3b362511b77fd7e7f)(encoding@0.1.13)
     transitivePeerDependencies:
       - encoding
@@ -37447,7 +37447,7 @@ snapshots:
   mjml-body@4.14.0(encoding@0.1.13):
     dependencies:
       '@babel/runtime': 7.26.10
-      lodash: 4.17.23
+      lodash: 4.18.1
       mjml-core: 4.14.0(patch_hash=52f1e476e154edea0222aa95e55676888525198d882becc3b362511b77fd7e7f)(encoding@0.1.13)
     transitivePeerDependencies:
       - encoding
@@ -37455,7 +37455,7 @@ snapshots:
   mjml-button@4.14.0(encoding@0.1.13):
     dependencies:
       '@babel/runtime': 7.26.10
-      lodash: 4.17.23
+      lodash: 4.18.1
       mjml-core: 4.14.0(patch_hash=52f1e476e154edea0222aa95e55676888525198d882becc3b362511b77fd7e7f)(encoding@0.1.13)
     transitivePeerDependencies:
       - encoding
@@ -37463,7 +37463,7 @@ snapshots:
   mjml-carousel@4.14.0(encoding@0.1.13):
     dependencies:
       '@babel/runtime': 7.26.10
-      lodash: 4.17.23
+      lodash: 4.18.1
       mjml-core: 4.14.0(patch_hash=52f1e476e154edea0222aa95e55676888525198d882becc3b362511b77fd7e7f)(encoding@0.1.13)
     transitivePeerDependencies:
       - encoding
@@ -37474,7 +37474,7 @@ snapshots:
       chokidar: 3.6.0
       glob: 7.2.3
       js-beautify: 1.14.6
-      lodash: 4.17.23
+      lodash: 4.18.1
       mjml-core: 4.14.0(patch_hash=52f1e476e154edea0222aa95e55676888525198d882becc3b362511b77fd7e7f)(encoding@0.1.13)
       mjml-migrate: 4.14.0(encoding@0.1.13)
       mjml-parser-xml: 4.14.0
@@ -37486,7 +37486,7 @@ snapshots:
   mjml-column@4.14.0(encoding@0.1.13):
     dependencies:
       '@babel/runtime': 7.26.10
-      lodash: 4.17.23
+      lodash: 4.18.1
       mjml-core: 4.14.0(patch_hash=52f1e476e154edea0222aa95e55676888525198d882becc3b362511b77fd7e7f)(encoding@0.1.13)
     transitivePeerDependencies:
       - encoding
@@ -37498,7 +37498,7 @@ snapshots:
       detect-node: 2.0.4
       js-beautify: 1.14.6
       juice: 9.1.0(encoding@0.1.13)
-      lodash: 4.17.23
+      lodash: 4.18.1
       mjml-migrate: 4.14.0(encoding@0.1.13)
       mjml-parser-xml: 4.14.0
       mjml-validator: 4.13.0
@@ -37508,7 +37508,7 @@ snapshots:
   mjml-divider@4.14.0(encoding@0.1.13):
     dependencies:
       '@babel/runtime': 7.26.10
-      lodash: 4.17.23
+      lodash: 4.18.1
       mjml-core: 4.14.0(patch_hash=52f1e476e154edea0222aa95e55676888525198d882becc3b362511b77fd7e7f)(encoding@0.1.13)
     transitivePeerDependencies:
       - encoding
@@ -37516,7 +37516,7 @@ snapshots:
   mjml-group@4.14.0(encoding@0.1.13):
     dependencies:
       '@babel/runtime': 7.26.10
-      lodash: 4.17.23
+      lodash: 4.18.1
       mjml-core: 4.14.0(patch_hash=52f1e476e154edea0222aa95e55676888525198d882becc3b362511b77fd7e7f)(encoding@0.1.13)
     transitivePeerDependencies:
       - encoding
@@ -37524,7 +37524,7 @@ snapshots:
   mjml-head-attributes@4.14.0(encoding@0.1.13):
     dependencies:
       '@babel/runtime': 7.26.10
-      lodash: 4.17.23
+      lodash: 4.18.1
       mjml-core: 4.14.0(patch_hash=52f1e476e154edea0222aa95e55676888525198d882becc3b362511b77fd7e7f)(encoding@0.1.13)
     transitivePeerDependencies:
       - encoding
@@ -37532,7 +37532,7 @@ snapshots:
   mjml-head-breakpoint@4.14.0(encoding@0.1.13):
     dependencies:
       '@babel/runtime': 7.26.10
-      lodash: 4.17.23
+      lodash: 4.18.1
       mjml-core: 4.14.0(patch_hash=52f1e476e154edea0222aa95e55676888525198d882becc3b362511b77fd7e7f)(encoding@0.1.13)
     transitivePeerDependencies:
       - encoding
@@ -37540,7 +37540,7 @@ snapshots:
   mjml-head-font@4.14.0(encoding@0.1.13):
     dependencies:
       '@babel/runtime': 7.26.10
-      lodash: 4.17.23
+      lodash: 4.18.1
       mjml-core: 4.14.0(patch_hash=52f1e476e154edea0222aa95e55676888525198d882becc3b362511b77fd7e7f)(encoding@0.1.13)
     transitivePeerDependencies:
       - encoding
@@ -37548,7 +37548,7 @@ snapshots:
   mjml-head-html-attributes@4.14.0(encoding@0.1.13):
     dependencies:
       '@babel/runtime': 7.26.10
-      lodash: 4.17.23
+      lodash: 4.18.1
       mjml-core: 4.14.0(patch_hash=52f1e476e154edea0222aa95e55676888525198d882becc3b362511b77fd7e7f)(encoding@0.1.13)
     transitivePeerDependencies:
       - encoding
@@ -37556,7 +37556,7 @@ snapshots:
   mjml-head-preview@4.14.0(encoding@0.1.13):
     dependencies:
       '@babel/runtime': 7.26.10
-      lodash: 4.17.23
+      lodash: 4.18.1
       mjml-core: 4.14.0(patch_hash=52f1e476e154edea0222aa95e55676888525198d882becc3b362511b77fd7e7f)(encoding@0.1.13)
     transitivePeerDependencies:
       - encoding
@@ -37564,7 +37564,7 @@ snapshots:
   mjml-head-style@4.14.0(encoding@0.1.13):
     dependencies:
       '@babel/runtime': 7.26.10
-      lodash: 4.17.23
+      lodash: 4.18.1
       mjml-core: 4.14.0(patch_hash=52f1e476e154edea0222aa95e55676888525198d882becc3b362511b77fd7e7f)(encoding@0.1.13)
     transitivePeerDependencies:
       - encoding
@@ -37572,7 +37572,7 @@ snapshots:
   mjml-head-title@4.14.0(encoding@0.1.13):
     dependencies:
       '@babel/runtime': 7.26.10
-      lodash: 4.17.23
+      lodash: 4.18.1
       mjml-core: 4.14.0(patch_hash=52f1e476e154edea0222aa95e55676888525198d882becc3b362511b77fd7e7f)(encoding@0.1.13)
     transitivePeerDependencies:
       - encoding
@@ -37580,7 +37580,7 @@ snapshots:
   mjml-head@4.14.0(encoding@0.1.13):
     dependencies:
       '@babel/runtime': 7.26.10
-      lodash: 4.17.23
+      lodash: 4.18.1
       mjml-core: 4.14.0(patch_hash=52f1e476e154edea0222aa95e55676888525198d882becc3b362511b77fd7e7f)(encoding@0.1.13)
     transitivePeerDependencies:
       - encoding
@@ -37588,7 +37588,7 @@ snapshots:
   mjml-hero@4.14.0(encoding@0.1.13):
     dependencies:
       '@babel/runtime': 7.26.10
-      lodash: 4.17.23
+      lodash: 4.18.1
       mjml-core: 4.14.0(patch_hash=52f1e476e154edea0222aa95e55676888525198d882becc3b362511b77fd7e7f)(encoding@0.1.13)
     transitivePeerDependencies:
       - encoding
@@ -37596,7 +37596,7 @@ snapshots:
   mjml-image@4.14.0(encoding@0.1.13):
     dependencies:
       '@babel/runtime': 7.26.10
-      lodash: 4.17.23
+      lodash: 4.18.1
       mjml-core: 4.14.0(patch_hash=52f1e476e154edea0222aa95e55676888525198d882becc3b362511b77fd7e7f)(encoding@0.1.13)
     transitivePeerDependencies:
       - encoding
@@ -37605,7 +37605,7 @@ snapshots:
     dependencies:
       '@babel/runtime': 7.26.10
       js-beautify: 1.14.6
-      lodash: 4.17.23
+      lodash: 4.18.1
       mjml-core: 4.14.0(patch_hash=52f1e476e154edea0222aa95e55676888525198d882becc3b362511b77fd7e7f)(encoding@0.1.13)
       mjml-parser-xml: 4.14.0
       yargs: 16.2.0
@@ -37615,7 +37615,7 @@ snapshots:
   mjml-navbar@4.14.0(encoding@0.1.13):
     dependencies:
       '@babel/runtime': 7.26.10
-      lodash: 4.17.23
+      lodash: 4.18.1
       mjml-core: 4.14.0(patch_hash=52f1e476e154edea0222aa95e55676888525198d882becc3b362511b77fd7e7f)(encoding@0.1.13)
     transitivePeerDependencies:
       - encoding
@@ -37625,7 +37625,7 @@ snapshots:
       '@babel/runtime': 7.26.10
       detect-node: 2.0.4
       htmlparser2: 4.1.0
-      lodash: 4.17.23
+      lodash: 4.18.1
 
   mjml-preset-core@4.14.0(encoding@0.1.13):
     dependencies:
@@ -37661,7 +37661,7 @@ snapshots:
   mjml-raw@4.14.0(encoding@0.1.13):
     dependencies:
       '@babel/runtime': 7.26.10
-      lodash: 4.17.23
+      lodash: 4.18.1
       mjml-core: 4.14.0(patch_hash=52f1e476e154edea0222aa95e55676888525198d882becc3b362511b77fd7e7f)(encoding@0.1.13)
     transitivePeerDependencies:
       - encoding
@@ -37669,7 +37669,7 @@ snapshots:
   mjml-section@4.14.0(encoding@0.1.13):
     dependencies:
       '@babel/runtime': 7.26.10
-      lodash: 4.17.23
+      lodash: 4.18.1
       mjml-core: 4.14.0(patch_hash=52f1e476e154edea0222aa95e55676888525198d882becc3b362511b77fd7e7f)(encoding@0.1.13)
     transitivePeerDependencies:
       - encoding
@@ -37677,7 +37677,7 @@ snapshots:
   mjml-social@4.14.0(encoding@0.1.13):
     dependencies:
       '@babel/runtime': 7.26.10
-      lodash: 4.17.23
+      lodash: 4.18.1
       mjml-core: 4.14.0(patch_hash=52f1e476e154edea0222aa95e55676888525198d882becc3b362511b77fd7e7f)(encoding@0.1.13)
     transitivePeerDependencies:
       - encoding
@@ -37685,7 +37685,7 @@ snapshots:
   mjml-spacer@4.14.0(encoding@0.1.13):
     dependencies:
       '@babel/runtime': 7.26.10
-      lodash: 4.17.23
+      lodash: 4.18.1
       mjml-core: 4.14.0(patch_hash=52f1e476e154edea0222aa95e55676888525198d882becc3b362511b77fd7e7f)(encoding@0.1.13)
     transitivePeerDependencies:
       - encoding
@@ -37693,7 +37693,7 @@ snapshots:
   mjml-table@4.14.0(encoding@0.1.13):
     dependencies:
       '@babel/runtime': 7.26.10
-      lodash: 4.17.23
+      lodash: 4.18.1
       mjml-core: 4.14.0(patch_hash=52f1e476e154edea0222aa95e55676888525198d882becc3b362511b77fd7e7f)(encoding@0.1.13)
     transitivePeerDependencies:
       - encoding
@@ -37701,7 +37701,7 @@ snapshots:
   mjml-text@4.14.0(encoding@0.1.13):
     dependencies:
       '@babel/runtime': 7.26.10
-      lodash: 4.17.23
+      lodash: 4.18.1
       mjml-core: 4.14.0(patch_hash=52f1e476e154edea0222aa95e55676888525198d882becc3b362511b77fd7e7f)(encoding@0.1.13)
     transitivePeerDependencies:
       - encoding
@@ -37713,7 +37713,7 @@ snapshots:
   mjml-wrapper@4.14.0(encoding@0.1.13):
     dependencies:
       '@babel/runtime': 7.26.10
-      lodash: 4.17.23
+      lodash: 4.18.1
       mjml-core: 4.14.0(patch_hash=52f1e476e154edea0222aa95e55676888525198d882becc3b362511b77fd7e7f)(encoding@0.1.13)
       mjml-section: 4.14.0(encoding@0.1.13)
     transitivePeerDependencies:
@@ -38143,7 +38143,7 @@ snapshots:
       fs-extra: 8.1.0
       github-slugger: 2.0.0
       got: 13.0.0
-      lodash: 4.17.23
+      lodash: 4.18.1
       normalize-package-data: 6.0.0
       semver: 7.7.3
       sort-package-json: 2.15.1
@@ -39289,7 +39289,7 @@ snapshots:
     dependencies:
       clsx: 2.1.1
       eventemitter3: 4.0.7
-      lodash: 4.17.23
+      lodash: 4.18.1
       react: 18.3.1
       react-dom: 18.3.1(react@18.3.1)
       react-is: 18.3.1
@@ -39977,7 +39977,7 @@ snapshots:
       core-js: 3.25.5
       delay: 4.4.1
       es6-error: 4.1.1
-      lodash: 4.17.23
+      lodash: 4.18.1
       roarr: 7.14.3
       serialize-error: 5.0.0
 
@@ -41494,7 +41494,7 @@ snapshots:
     dependencies:
       axios: 1.13.5
       joi: 18.0.2
-      lodash: 4.17.23
+      lodash: 4.18.1
       minimist: 1.2.8
       rxjs: 7.8.2
     transitivePeerDependencies:
@@ -41725,7 +41725,7 @@ snapshots:
   yaml-eslint-parser@1.2.2:
     dependencies:
       eslint-visitor-keys: 3.4.3
-      lodash: 4.17.23
+      lodash: 4.18.1
       yaml: 2.8.3
 
   yaml@1.10.3: {}
@@ -41784,8 +41784,8 @@ snapshots:
     dependencies:
       '@babel/runtime': 7.26.10
       fn-name: 3.0.0
-      lodash: 4.17.23
-      lodash-es: 4.17.23
+      lodash: 4.18.1
+      lodash-es: 4.18.1
       property-expr: 2.0.5
       synchronous-promise: 2.0.17
       toposort: 2.0.2

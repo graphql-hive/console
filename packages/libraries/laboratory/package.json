@@ -97,7 +97,7 @@
     "globals": "^16.5.0",
     "graphql": "^16.12.0",
     "graphql-ws": "^6.0.6",
-    "lodash": "^4.17.23",
+    "lodash": "^4.18.1",
     "lucide-react": "^0.548.0",
     "lz-string": "^1.5.0",
     "monaco-editor": "^0.52.2",

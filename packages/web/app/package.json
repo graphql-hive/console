@@ -112,7 +112,7 @@
     "json-schema-typed": "8.0.1",
     "json-schema-yup-transformer": "1.6.12",
     "jsurl2": "2.2.0",
-    "lodash": "4.17.23",
+    "lodash": "4.18.1",
     "lodash.debounce": "4.0.8",
     "lucide-react": "0.548.0",
     "lz-string": "^1.5.0",
