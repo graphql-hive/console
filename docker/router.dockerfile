@@ -2,7 +2,7 @@
 FROM scratch AS router_pkg
 FROM scratch AS config
 
-FROM rust:1.91.1-slim-bookworm AS build
+FROM rust:1.94.1-slim-bookworm AS build
 
 # Required by Apollo Router
 RUN apt-get update
@@ -58,5 +58,7 @@ COPY --from=router_pkg router.yaml /dist/config/router.yaml
 WORKDIR /dist
 
 ENV APOLLO_ROUTER_CONFIG_PATH="/dist/config/router.yaml"
+
+USER router
 
 ENTRYPOINT ["./router"]
