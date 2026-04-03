@@ -1,7 +1,16 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { getOperationAST, parse, type GraphQLSchema } from 'graphql';
+import {
+  DocumentNode,
+  ExecutionResult,
+  getOperationAST,
+  Kind,
+  parse,
+  type GraphQLSchema,
+} from 'graphql';
+import { isAsyncIterable } from 'graphql-sse';
 import { decompressFromEncodedURIComponent } from 'lz-string';
 import { v4 as uuidv4 } from 'uuid';
+import { SubscriptionProtocol, UrlLoader } from '@graphql-tools/url-loader';
 import { LaboratoryPermission, LaboratoryPermissions } from '../components/laboratory/context';
 import type {
   LaboratoryCollectionOperation,
@@ -19,9 +28,7 @@ import {
 } from './operations.utils';
 import { LaboratoryPlugin, LaboratoryPluginsActions, LaboratoryPluginsState } from './plugins';
 import type { LaboratoryPreflightActions, LaboratoryPreflightState } from './preflight';
-import { createRequestSignal, fetchWithRetry } from './request';
 import type { LaboratorySettingsActions, LaboratorySettingsState } from './settings';
-import { createSubscriptionExecutor } from './subscriptions';
 import type { LaboratoryTabOperation, LaboratoryTabsActions, LaboratoryTabsState } from './tabs';
 
 function getOperationType(query: string): 'query' | 'mutation' | 'subscription' | null {
@@ -65,7 +72,7 @@ export interface LaboratoryOperationsActions {
       headers?: Record<string, string>;
       onResponse?: (response: string) => void;
     },
-  ) => Promise<Response | null>;
+  ) => Promise<ExecutionResult | null>;
   stopActiveOperation: (() => void) | null;
   isActiveOperationLoading: boolean;
   isOperationLoading: (operationId: string) => boolean;
@@ -78,6 +85,27 @@ export interface LaboratoryOperationsCallbacks {
   onOperationUpdate?: (operation: LaboratoryOperation) => void;
   onOperationDelete?: (operation: LaboratoryOperation) => void;
 }
+
+const getOperationWithFragments = (
+  document: DocumentNode,
+  operationName?: string,
+): DocumentNode => {
+  const definitions = document.definitions.filter(definition => {
+    if (
+      definition.kind === Kind.OPERATION_DEFINITION &&
+      operationName &&
+      definition.name?.value !== operationName
+    ) {
+      return false;
+    }
+    return true;
+  });
+
+  return {
+    kind: Kind.DOCUMENT,
+    definitions,
+  };
+};
 
 export const useOperations = (
   props: {
@@ -325,6 +353,8 @@ export const useOperations = (
     return activeOperation ? isOperationLoading(activeOperation.id) : false;
   }, [activeOperation, isOperationLoading]);
 
+  const loader = useMemo(() => new UrlLoader(), []);
+
   const runActiveOperation = useCallback(
     async (
       endpoint: string,
@@ -335,7 +365,7 @@ export const useOperations = (
       },
       plugins: LaboratoryPlugin[] = props.pluginsApi?.plugins ?? [],
       pluginsState: Record<string, any> = props.pluginsApi?.pluginsState ?? {},
-    ) => {
+    ): Promise<ExecutionResult | null> => {
       if (!activeOperation?.query) {
         return null;
       }
@@ -390,110 +420,67 @@ export const useOperations = (
             }),
           )
         : {};
-      const operationType = getOperationType(activeOperation.query);
 
-      if (operationType === 'subscription') {
-        const unsubscribe = createSubscriptionExecutor({
-          endpoint,
-          protocol: props.settingsApi?.settings.subscriptions.protocol ?? 'WS',
-          headers: mergedHeaders,
-        }).subscribe(
-          {
-            query: activeOperation.query,
-            variables,
-            extensions,
-          },
-          {
-            next: message => {
-              options?.onResponse?.(JSON.stringify(message ?? {}));
-            },
-            error: () => {
-              setStopOperationsFunctions(prev => {
-                const newStopOperationsFunctions = { ...prev };
-                delete newStopOperationsFunctions[activeOperation.id];
-                return newStopOperationsFunctions;
-              });
-            },
-            complete: () => {
-              setStopOperationsFunctions(prev => {
-                const newStopOperationsFunctions = { ...prev };
-                delete newStopOperationsFunctions[activeOperation.id];
-                return newStopOperationsFunctions;
-              });
-            },
-          },
-        );
+      const executor = loader.getExecutorAsync(endpoint, {
+        subscriptionsEndpoint: endpoint,
+        subscriptionsProtocol:
+          (props.settingsApi?.settings.subscriptions.protocol as SubscriptionProtocol) ??
+          SubscriptionProtocol.GRAPHQL_SSE,
+        credentials: props.settingsApi?.settings.fetch.credentials,
+        specifiedByUrl: true,
+        directiveIsRepeatable: true,
+        inputValueDeprecation: true,
+        retry: props.settingsApi?.settings.fetch.retry,
+        timeout: props.settingsApi?.settings.fetch.timeout,
+        useGETForQueries: props.settingsApi?.settings.fetch.useGETForQueries,
+        exposeHTTPDetailsInExtensions: true,
+        fetch,
+      });
 
-        setStopOperationsFunctions(prev => ({
-          ...prev,
-          [activeOperation.id]: () => {
-            unsubscribe();
-            setStopOperationsFunctions(prev => {
-              const newStopOperationsFunctions = { ...prev };
-              delete newStopOperationsFunctions[activeOperation.id];
-              return newStopOperationsFunctions;
-            });
-          },
-        }));
-
-        return Promise.resolve(new Response());
-      }
+      const document = getOperationWithFragments(parse(activeOperation.query));
 
       const abortController = new AbortController();
-      const signal = createRequestSignal(
-        abortController.signal,
-        props.settingsApi?.settings.fetch.timeout,
-      );
-
-      const shouldUseGet =
-        props.settingsApi?.settings.fetch.useGETForQueries === true && operationType === 'query';
-      const requestUrl = shouldUseGet
-        ? (() => {
-            const url = new URL(endpoint);
-            url.searchParams.set('query', activeOperation.query);
-            if (Object.keys(variables).length > 0) {
-              url.searchParams.set('variables', JSON.stringify(variables));
-            }
-            if (Object.keys(extensions).length > 0) {
-              url.searchParams.set('extensions', JSON.stringify(extensions));
-            }
-            return url.toString();
-          })()
-        : endpoint;
-
-      const response = fetchWithRetry(
-        requestUrl,
-        {
-          method: shouldUseGet ? 'GET' : 'POST',
-          body: shouldUseGet
-            ? undefined
-            : JSON.stringify({
-                query: activeOperation.query,
-                variables,
-                extensions,
-              }),
-          headers: shouldUseGet
-            ? mergedHeaders
-            : {
-                ...mergedHeaders,
-                'Content-Type': 'application/json',
-              },
-          signal,
-        },
-        props.settingsApi?.settings.fetch.retry,
-      ).finally(() => {
-        setStopOperationsFunctions(prev => {
-          const newStopOperationsFunctions = { ...prev };
-          delete newStopOperationsFunctions[activeOperation.id];
-
-          return newStopOperationsFunctions;
-        });
-      });
 
       setStopOperationsFunctions(prev => ({
         ...prev,
-        [activeOperation.id]: () => abortController.abort(),
+        [activeOperation.id]: () => {
+          abortController.abort();
+        },
       }));
+
+      const response = await executor({
+        document,
+        variables,
+        extensions: {
+          ...extensions,
+          headers: mergedHeaders,
+        },
+        signal: abortController.signal,
+      });
+
+      if (isAsyncIterable(response)) {
+        try {
+          for await (const item of response) {
+            options?.onResponse?.(JSON.stringify(item ?? {}));
+          }
+        } finally {
+          setStopOperationsFunctions(prev => {
+            const newStopOperationsFunctions = { ...prev };
+            delete newStopOperationsFunctions[activeOperation.id];
+            return newStopOperationsFunctions;
+          });
+        }
+
+        return null;
+      } else {
+        delete response.extensions.response.body;
+
+        setStopOperationsFunctions(prev => {
+          const newStopOperationsFunctions = { ...prev };
+          delete newStopOperationsFunctions[activeOperation.id];
+          return newStopOperationsFunctions;
+        });
+      }
 
       return response;
     },

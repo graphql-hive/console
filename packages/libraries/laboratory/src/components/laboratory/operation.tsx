@@ -535,16 +535,28 @@ export const Query = (props: {
         return;
       }
 
-      const status = response.status;
+      const extensionsResponse = response.extensions?.response as {
+        status: number;
+        headers: Record<string, string>;
+      };
+
+      delete response.extensions?.request;
+      delete response.extensions?.response;
+
+      if (Object.keys(response.extensions ?? {}).length === 0) {
+        delete response.extensions;
+      }
+
+      const status = extensionsResponse.status;
       const duration = performance.now() - startTime;
-      const responseText = await response.text();
+      const responseText = JSON.stringify(response, null, 2);
       const size = responseText.length;
 
       const newItemHistory = addHistory({
         status,
         duration,
         size,
-        headers: JSON.stringify(Object.fromEntries(response.headers.entries()), null, 2),
+        headers: JSON.stringify(extensionsResponse.headers, null, 2),
         operation,
         preflightLogs: result?.logs ?? [],
         response: responseText,
