@@ -61,32 +61,36 @@ Write a comprehensive seed script that creates a compelling demo environment. Ba
 
 ---
 
-### Step 2: Auto-Login Middleware
+### Step 2: Auto-Login Route
 
-Add middleware that detects the demo environment and automatically creates/injects a SuperTokens session.
+Add a Fastify route that creates a demo session and redirects to the dashboard.
 
-**Approach:** In the Next.js web app, add a server-side middleware that:
-1. Checks if `ENVIRONMENT === 'demo'`
-2. Checks if the request already has valid session cookies (`sAccessToken`, `sRefreshToken`)
-3. If no session, calls the SuperTokens sign-in API internally for the demo user
-4. Sets the session cookies on the response
-5. Redirects to the org dashboard (`/acme-corp`)
+**Architecture context:** The web app uses Vite + Fastify (`@fastify/vite`) with TanStack Router. The Fastify server has **no auth middleware** — it's a transparent proxy that forwards cookies to the GraphQL API. Auth is entirely client-side (SuperTokens React SDK) + API-side. Existing API routes follow the `/api/*` convention (`/api/health`, `/api/github/callback`, `/api/slack/callback`).
+
+**Approach:** Add a `/api/demo-login` Fastify route that:
+1. Only registers when `ENVIRONMENT === 'demo'` (route doesn't exist in other environments)
+2. Uses SuperTokens `Session.createNewSession()` to create a session programmatically for the demo user — this is the SuperTokens-blessed API for server-side session creation, no sign-in flow needed
+3. Cookies are automatically set on the response by SuperTokens
+4. Redirects to `/acme-corp` (or a `redirectToPath` query param)
+
+**Client-side redirect:** On the frontend, when `ENVIRONMENT === 'demo'` and `Session.doesSessionExist()` returns false, redirect to `/api/demo-login`. This matches the existing pattern where unauthenticated users get redirected to `/auth?redirectToPath=...`.
 
 **Key files to modify:**
-- `packages/web/app/src/lib/supertokens/` — understand session cookie format
-- `packages/web/app/src/server/` or create `packages/web/app/src/middleware.ts` — Next.js middleware
-- `packages/web/app/src/env/frontend.ts` — already has `ENVIRONMENT` variable
+- `packages/web/app/src/server/` — add `demo-login.ts` route (follows pattern of `github.ts`, `slack.ts`)
+- `packages/web/app/src/server/index.ts` — register the route conditionally on `ENVIRONMENT === 'demo'`
+- Client-side: update the auth redirect logic to point to `/api/demo-login` in demo mode
 
-**Alternative simpler approach:** Instead of middleware, create a `/demo-login` API route that:
-1. Signs in as the demo user via SuperTokens
-2. Sets cookies
-3. Redirects to `/acme-corp`
-Then configure the app's root route to redirect unauthenticated users to `/demo-login` in demo mode.
+**Key files to reference:**
+- `packages/web/app/src/server/github.ts` — existing route pattern with redirects and cookie handling
+- `packages/web/app/src/lib/urql.ts` — `UNAUTHENTICATED` error handling and redirect logic
+- `packages/web/app/src/config/supertokens/frontend.ts` — client-side SuperTokens config
+- SuperTokens docs: `Session.createNewSession(req, res, "public", recipeUserId)` API
 
 **Pain points:**
-- SuperTokens session tokens have expiry. Need to handle refresh or set long TTLs.
-- If the demo user gets deleted (full write access!), auto-login breaks. The reset cron fixes this.
-- Need to ensure the demo user's password is not easily guessable for the _real_ app (use env var).
+- The demo user must exist in the SuperTokens database before `createNewSession()` can reference their user ID. The seed script (Step 1) must run first.
+- SuperTokens session tokens have expiry. The existing client-side refresh flow (`Session.attemptRefreshingSession()`) should handle this automatically.
+- If the demo user gets deleted (full write access!), auto-login breaks. The periodic reset (Step 4) restores it.
+- The `/api/demo-login` route must be gated to demo environment only — it must never exist in production.
 
 ---
 
