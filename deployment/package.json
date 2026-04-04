@@ -25,7 +25,7 @@
     "@graphql-hive/gateway": "^2.1.19",
     "@types/js-yaml": "4.0.9",
     "@types/mime-types": "2.1.4",
-    "@types/node": "24.10.9",
+    "@types/node": "24.12.2",
     "@types/tmp": "0.2.6",
     "json-schema-to-typescript": "15.0.3",
     "tmp": "0.2.5",
