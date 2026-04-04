@@ -210,7 +210,7 @@ In the API server, for demo environment, block specific destructive mutations:
 
 Add a check in the relevant resolvers:
 ```typescript
-if (process.env.ENVIRONMENT === 'demo') {
+if (injector.get(Environment).environment === 'demo') {
   throw new HiveError('This action is disabled in the demo environment');
 }
 ```
