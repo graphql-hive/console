@@ -102,11 +102,13 @@ export function renderSelectionSet(
 
   for (const item of selectionSet) {
     if (item.kind === 'InlineFragment') {
-      lines.push(`${indent(depth)}... on ${item.typeCondition}`);
+      lines.push(`${indent(depth)}... on ${item.typeCondition} {`);
 
       for (const property of item.selections ?? []) {
         lines.push(`${indent(depth + 1)}${property.name}`);
       }
+
+      lines.push(`${indent(depth)}}`);
     }
   }
 
@@ -169,7 +171,23 @@ export function renderFetchNode(node: FetchNodePlan, depth = 0): string {
     lines.push(`${indent(depth + 1)}} =>`);
   }
 
-  lines.push(renderMultilineBlock(print(parse(node.operation)), depth + 2), `${indent(depth)}}`);
+  const slice = node.operation.includes('_entities') ? 2 : 1;
+
+  try {
+    lines.push(
+      `${indent(depth + 1)}{`,
+      renderMultilineBlock(
+        print(parse(node.operation))
+          .split('\n')
+          .slice(slice, slice * -1)
+          .join('\n'),
+        depth + 1,
+      ),
+      `${indent(depth + 1)}}`,
+    );
+  } catch {
+    lines.push(`${indent(depth + 1)}${node.operation}`);
+  }
 
   return lines.join('\n');
 }
@@ -178,21 +196,29 @@ export function renderBatchFetchNode(node: BatchFetchNodePlan, depth = 0): strin
   const lines: string[] = [];
   lines.push(`${indent(depth)}BatchFetch(service: "${node.serviceName}") {`);
 
-  for (const alias of node.entityBatch.aliases) {
+  for (let i = 0; i < node.entityBatch.aliases.length; i++) {
+    const alias = node.entityBatch.aliases[i];
+
     lines.push(
       `${indent(depth + 1)}${alias.alias} {`,
-      `${indent(depth + 2)}paths [`,
-      ...alias.paths.map(
-        (path, index) =>
-          `${indent(depth + 3)}${renderFlattenPath(path)}${index < alias.paths.length - 1 ? ',' : ''}`,
-      ),
+      `${indent(depth + 2)}paths: [`,
+      ...alias.paths.map(path => `${indent(depth + 3)}"${renderFlattenPath(path)}"`),
       `${indent(depth + 2)}]`,
-      `${indent(depth + 2)}{`,
     );
+
     const requires = renderSelectionSet(alias.requires, depth + 3);
-    if (requires) lines.push(requires);
+
+    if (requires) {
+      lines.push(`${indent(depth + 2)}{`, requires, `${indent(depth + 2)}}`);
+    }
+
+    if (i < node.entityBatch.aliases.length - 1) {
+      lines.push(`${indent(depth + 1)}}`);
+    }
+  }
+
+  try {
     lines.push(
-      `${indent(depth + 2)}}`,
       `${indent(depth + 1)}}`,
       `${indent(depth + 1)}{`,
       renderMultilineBlock(
@@ -200,9 +226,11 @@ export function renderBatchFetchNode(node: BatchFetchNodePlan, depth = 0): strin
         depth + 1,
       ),
       `${indent(depth + 1)}}`,
+      `${indent(depth)}}`,
     );
+  } catch {
+    lines.push(`${indent(depth + 1)}${node.operation}`);
   }
-  lines.push(`${indent(depth)}}`);
 
   return lines.join('\n');
 }
@@ -597,7 +625,7 @@ function visitNode(
       );
       break;
 
-    case 'Sequence':
+    case 'Sequence': {
       result = null;
 
       let prevChild: QueryPlanNode | null = null;
@@ -619,6 +647,7 @@ function visitNode(
       }
 
       break;
+    }
 
     case 'Parallel':
       result.children = [];

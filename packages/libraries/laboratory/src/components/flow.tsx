@@ -239,14 +239,10 @@ export const Flow = (props: {
 
     const { width: containerWidth, height: containerHeight } = container.getBoundingClientRect();
 
-    console.log({
-      width,
-      height,
-      containerWidth,
-      containerHeight,
-    });
-
-    const scale = Math.min(MAX_SCALE, Math.max(MIN_SCALE, containerWidth / width));
+    const scale = Math.min(
+      MAX_SCALE,
+      Math.max(MIN_SCALE, Math.min(containerWidth / width, containerHeight / height)),
+    );
 
     setView(prev => ({
       ...prev,
