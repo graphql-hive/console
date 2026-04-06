@@ -24,6 +24,7 @@ import { OTLPTraceExporter } from '@opentelemetry/exporter-trace-otlp-http';
 import { Instrumentation, registerInstrumentations } from '@opentelemetry/instrumentation';
 import {
   BatchSpanProcessor,
+  ReadableSpan,
   Sampler,
   SamplingDecision,
   SpanProcessor,
@@ -63,7 +64,7 @@ export class TracingInstance {
     if (this.options.collectorEndpoint) {
       // Grafana endpoint
       const httpExporter = new OTLPTraceExporter({ url: this.options.collectorEndpoint });
-      processors.push(new BatchSpanProcessor(httpExporter));
+      processors.push(new ServiceBatchSpanProcessor(httpExporter));
     }
     if (this.options.hiveTracing) {
       // Hive Tracing endpoint
@@ -245,11 +246,12 @@ function extractParts(sqlStatement: string): {
 }
 
 export const createSlonikInterceptor = (options: SlonikTracingInterceptorOptions): Interceptor => {
-  const tracer = trace.getTracer('slonik');
+  const tracer = trace.getTracer('slonik-service-common');
   const connections: Record<string, Record<string, Span>> = {};
   const shouldExcludeFn = options.shouldExcludeStatement || (() => false);
 
   return {
+    name: 'slonik-tracing-interceptor',
     afterPoolConnection(context) {
       connections[context.connectionId] = {};
 
@@ -514,4 +516,10 @@ export function traceFn<This extends object, TArgs extends any[], TResult>(
       });
     } as any;
   };
+}
+
+class ServiceBatchSpanProcessor extends BatchSpanProcessor {
+  onEnd(span: ReadableSpan): void {
+    return super.onEnd(span);
+  }
 }

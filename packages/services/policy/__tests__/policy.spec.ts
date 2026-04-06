@@ -105,6 +105,111 @@ describe('policy checks', () => {
     `);
   });
 
+  it('refreshes edge types per run', async () => {
+    const caller = schemaPolicyApiRouter.createCaller({ req: { log: console } as any });
+    const userSchema = `
+      type Query {
+        # 'first' limits results; 'after' is the cursor to start from
+        users(first: Int, after: String): UserConnection!
+      }
+
+      type UserConnection {
+        edges: [UserEdge!]!
+        pageInfo: PageInfo!
+        totalCount: Int!
+      }
+
+      type UserEdge {
+        node: User!
+        cursor: String!
+      }
+
+      type PageInfo {
+        hasNextPage: Boolean!
+        endCursor: String
+      }
+
+      interface Node {
+        id: ID!
+      }
+
+      type User {
+        id: ID!
+        name: String!
+      }
+    `;
+    const result = await caller.checkPolicy({
+      source: userSchema,
+      schema: userSchema,
+      target: '1',
+      policy: {
+        'relay-edge-types': [
+          2,
+          {
+            withEdgeSuffix: true,
+            shouldImplementNode: true,
+            listTypeCanWrapOnlyEdgeType: false,
+          },
+        ],
+      },
+    });
+
+    expect(result.length).toBe(1);
+    expect(result[0].message).toBe("Edge type's field \`node\` must implement \`Node\` interface.");
+
+    const noUserSchema = `
+      type Query {
+        # 'first' limits results; 'after' is the cursor to start from
+        noUsers(first: Int, after: String): NoUserConnection!
+      }
+
+      type NoUserConnection {
+        edges: [NoUserEdge!]!
+        pageInfo: PageInfo!
+        totalCount: Int!
+      }
+
+      type NoUserEdge {
+        node: NoUser!
+        cursor: String!
+      }
+
+      type PageInfo {
+        hasNextPage: Boolean!
+        endCursor: String
+      }
+
+      interface Node {
+        id: ID!
+      }
+
+      type NoUser {
+        id: ID!
+        name: String!
+      }
+    `;
+    const noUserResult = await caller.checkPolicy({
+      source: noUserSchema,
+      schema: noUserSchema,
+      target: '1',
+      policy: {
+        'relay-edge-types': [
+          2,
+          {
+            withEdgeSuffix: true,
+            shouldImplementNode: true,
+            listTypeCanWrapOnlyEdgeType: false,
+          },
+        ],
+      },
+    });
+
+    expect(noUserResult.length).toBe(1);
+    expect(noUserResult[0].message).toBe(
+      "Edge type's field \`node\` must implement \`Node\` interface.",
+    );
+  });
+
   /** To ensure existing policies dont break during upgrades */
   it.each(policies)('should support existing policies', async policy => {
     await expect(

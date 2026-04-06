@@ -1,54 +1,58 @@
+import type { Pool } from 'pg';
 import {
   createPool,
+  createTypeParserPreset,
   type DatabasePool,
   type Interceptor,
   type PrimitiveValueExpression,
-  type QueryResultRow,
-  type QueryResultRowColumn,
+  type QuerySqlToken,
   type CommonQueryMethods as SlonikCommonQueryMethods,
-  type TaggedTemplateLiteralInvocation,
 } from 'slonik';
 import { createQueryLoggingInterceptor } from 'slonik-interceptor-query-logging';
 import { context, SpanKind, SpanStatusCode, trace } from '@hive/service-common';
+import type { StandardSchemaV1 } from '@standard-schema/spec';
 import { createConnectionString, type PostgresConnectionParamaters } from './connection-string';
+import { PgPoolBridge } from './pg-pool-bridge';
 
 const tracer = trace.getTracer('storage');
 
 export interface CommonQueryMethods {
-  exists(
-    sql: TaggedTemplateLiteralInvocation,
+  exists<T extends StandardSchemaV1>(
+    sql: QuerySqlToken<T>,
     values?: PrimitiveValueExpression[],
   ): Promise<boolean>;
-  any(
-    sql: TaggedTemplateLiteralInvocation,
+  any<T extends StandardSchemaV1>(
+    sql: QuerySqlToken<T>,
     values?: PrimitiveValueExpression[],
-  ): Promise<ReadonlyArray<unknown>>;
-  maybeOne(
-    sql: TaggedTemplateLiteralInvocation,
+  ): Promise<ReadonlyArray<StandardSchemaV1.InferOutput<T>>>;
+  maybeOne<T extends StandardSchemaV1>(
+    sql: QuerySqlToken<T>,
     values?: PrimitiveValueExpression[],
-  ): Promise<unknown>;
-  query(sql: TaggedTemplateLiteralInvocation, values?: PrimitiveValueExpression[]): Promise<void>;
-  oneFirst(
-    sql: TaggedTemplateLiteralInvocation,
+  ): Promise<null | StandardSchemaV1.InferOutput<T>>;
+  query(sql: QuerySqlToken<any>, values?: PrimitiveValueExpression[]): Promise<void>;
+  oneFirst<T extends StandardSchemaV1>(
+    sql: QuerySqlToken<T>,
     values?: PrimitiveValueExpression[],
-  ): Promise<unknown>;
-  one(sql: TaggedTemplateLiteralInvocation, values?: PrimitiveValueExpression[]): Promise<unknown>;
-  anyFirst(
-    sql: TaggedTemplateLiteralInvocation,
+  ): Promise<StandardSchemaV1.InferOutput<T>[keyof StandardSchemaV1.InferOutput<T>]>;
+  one<T extends StandardSchemaV1>(
+    sql: QuerySqlToken<T>,
     values?: PrimitiveValueExpression[],
-  ): Promise<ReadonlyArray<unknown>>;
-  maybeOneFirst(
-    sql: TaggedTemplateLiteralInvocation,
+  ): Promise<StandardSchemaV1.InferOutput<T>>;
+  anyFirst<T extends StandardSchemaV1>(
+    sql: QuerySqlToken<T>,
     values?: PrimitiveValueExpression[],
-  ): Promise<unknown>;
+  ): Promise<ReadonlyArray<StandardSchemaV1.InferOutput<T>[keyof StandardSchemaV1.InferOutput<T>]>>;
+  maybeOneFirst<T extends StandardSchemaV1>(
+    sql: QuerySqlToken<T>,
+    values?: PrimitiveValueExpression[],
+  ): Promise<null | StandardSchemaV1.InferOutput<T>[keyof StandardSchemaV1.InferOutput<T>]>;
 }
 
 export class PostgresDatabasePool implements CommonQueryMethods {
   constructor(private pool: DatabasePool) {}
 
-  /** Retrieve the raw PgPool instance. Refrain from using this API. It only exists for postgraphile workers */
-  getRawPgPool() {
-    return this.pool.pool;
+  getPgPoolCompat(): Pool {
+    return new PgPoolBridge(this.pool) as any;
   }
 
   /** Retrieve the raw Slonik instance. Refrain from using this API. */
@@ -56,59 +60,58 @@ export class PostgresDatabasePool implements CommonQueryMethods {
     return this.pool;
   }
 
-  async exists(
-    sql: TaggedTemplateLiteralInvocation,
+  async exists<T extends StandardSchemaV1>(
+    sql: QuerySqlToken<T>,
     values?: PrimitiveValueExpression[],
   ): Promise<boolean> {
     return this.pool.exists(sql, values);
   }
 
-  async any(
-    sql: TaggedTemplateLiteralInvocation,
+  async any<T extends StandardSchemaV1>(
+    sql: QuerySqlToken<T>,
     values?: PrimitiveValueExpression[],
-  ): Promise<ReadonlyArray<unknown>> {
-    return this.pool.any<unknown>(sql, values);
+  ): Promise<ReadonlyArray<StandardSchemaV1.InferOutput<T>>> {
+    return this.pool.any(sql, values);
   }
 
-  async maybeOne(
-    sql: TaggedTemplateLiteralInvocation,
+  async maybeOne<T extends StandardSchemaV1>(
+    sql: QuerySqlToken<T>,
     values?: PrimitiveValueExpression[],
-  ): Promise<unknown> {
+  ): Promise<null | StandardSchemaV1.InferOutput<T>> {
     return this.pool.maybeOne(sql, values);
   }
 
-  async query(
-    sql: TaggedTemplateLiteralInvocation,
-    values?: PrimitiveValueExpression[],
-  ): Promise<void> {
-    await this.pool.query<unknown>(sql, values);
+  async query(sql: QuerySqlToken<any>, values?: PrimitiveValueExpression[]): Promise<void> {
+    await this.pool.query(sql, values);
   }
 
-  async oneFirst(
-    sql: TaggedTemplateLiteralInvocation,
+  async oneFirst<T extends StandardSchemaV1>(
+    sql: QuerySqlToken<T>,
     values?: PrimitiveValueExpression[],
-  ): Promise<unknown> {
+  ): Promise<StandardSchemaV1.InferOutput<T>[keyof StandardSchemaV1.InferOutput<T>]> {
     return await this.pool.oneFirst(sql, values);
   }
 
-  async maybeOneFirst(
-    sql: TaggedTemplateLiteralInvocation,
+  async maybeOneFirst<T extends StandardSchemaV1>(
+    sql: QuerySqlToken<T>,
     values?: PrimitiveValueExpression[],
-  ): Promise<unknown> {
+  ): Promise<null | StandardSchemaV1.InferOutput<T>[keyof StandardSchemaV1.InferOutput<T>]> {
     return await this.pool.maybeOneFirst(sql, values);
   }
 
-  async one(
-    sql: TaggedTemplateLiteralInvocation,
+  async one<T extends StandardSchemaV1>(
+    sql: QuerySqlToken<T>,
     values?: PrimitiveValueExpression[],
-  ): Promise<unknown> {
+  ): Promise<StandardSchemaV1.InferOutput<T>> {
     return await this.pool.one(sql, values);
   }
 
-  async anyFirst(
-    sql: TaggedTemplateLiteralInvocation,
+  async anyFirst<T extends StandardSchemaV1>(
+    sql: QuerySqlToken<T>,
     values?: PrimitiveValueExpression[],
-  ): Promise<ReadonlyArray<unknown>> {
+  ): Promise<
+    ReadonlyArray<StandardSchemaV1.InferOutput<T>[keyof StandardSchemaV1.InferOutput<T>]>
+  > {
     return await this.pool.anyFirst(sql, values);
   }
 
@@ -124,54 +127,19 @@ export class PostgresDatabasePool implements CommonQueryMethods {
       return await this.pool.transaction(async methods => {
         try {
           return await handler({
-            async exists(
-              sql: TaggedTemplateLiteralInvocation,
-              values?: PrimitiveValueExpression[],
-            ): Promise<boolean> {
-              return methods.exists(sql, values);
-            },
-            async any(
-              sql: TaggedTemplateLiteralInvocation,
-              values?: PrimitiveValueExpression[],
-            ): Promise<ReadonlyArray<unknown>> {
-              return methods.any<unknown>(sql, values);
-            },
-            async maybeOne(
-              sql: TaggedTemplateLiteralInvocation,
-              values?: PrimitiveValueExpression[],
-            ): Promise<unknown> {
-              return methods.maybeOne(sql, values);
-            },
+            exists: methods.exists,
+            any: methods.any,
+            maybeOne: methods.maybeOne,
             async query(
-              sql: TaggedTemplateLiteralInvocation,
+              sql: QuerySqlToken<any>,
               values?: PrimitiveValueExpression[],
             ): Promise<void> {
-              await methods.query<unknown>(sql, values);
+              await methods.query(sql, values);
             },
-            async oneFirst(
-              sql: TaggedTemplateLiteralInvocation,
-              values?: PrimitiveValueExpression[],
-            ): Promise<unknown> {
-              return await methods.oneFirst(sql, values);
-            },
-            async maybeOneFirst(
-              sql: TaggedTemplateLiteralInvocation,
-              values?: PrimitiveValueExpression[],
-            ): Promise<unknown> {
-              return await methods.maybeOneFirst(sql, values);
-            },
-            async anyFirst(
-              sql: TaggedTemplateLiteralInvocation,
-              values?: PrimitiveValueExpression[],
-            ): Promise<ReadonlyArray<unknown>> {
-              return await methods.anyFirst(sql, values);
-            },
-            async one(
-              sql: TaggedTemplateLiteralInvocation,
-              values?: PrimitiveValueExpression[],
-            ): Promise<unknown> {
-              return await methods.one(sql, values);
-            },
+            oneFirst: methods.oneFirst,
+            maybeOneFirst: methods.maybeOneFirst,
+            anyFirst: methods.anyFirst,
+            one: methods.one,
           });
         } catch (err) {
           span.setAttribute('error', 'true');
@@ -200,6 +168,14 @@ export class PostgresDatabasePool implements CommonQueryMethods {
 
 const dbInterceptors: Interceptor[] = [createQueryLoggingInterceptor()];
 
+const typeParsers = [
+  ...createTypeParserPreset().filter(parser => parser.name !== 'int8'),
+  {
+    name: 'int8',
+    parse: (value: string) => parseInt(value, 10),
+  },
+];
+
 export async function createPostgresDatabasePool(args: {
   connectionParameters: PostgresConnectionParamaters | string;
   maximumPoolSize?: number;
@@ -212,6 +188,7 @@ export async function createPostgresDatabasePool(args: {
       : createConnectionString(args.connectionParameters);
   const pool = await createPool(connectionString, {
     interceptors: dbInterceptors.concat(args.additionalInterceptors ?? []),
+    typeParsers,
     captureStackTrace: false,
     maximumPoolSize: args.maximumPoolSize,
     idleTimeout: 30000,
@@ -223,10 +200,10 @@ export async function createPostgresDatabasePool(args: {
   ) {
     const original: SlonikCommonQueryMethods[K] = pool[methodName];
 
-    function interceptor<T extends QueryResultRow>(
+    function interceptor(
       this: any,
-      sql: TaggedTemplateLiteralInvocation<T>,
-      values?: QueryResultRowColumn[],
+      sql: QuerySqlToken<any>,
+      values?: PrimitiveValueExpression[],
     ): any {
       return (original as any).call(this, sql, values).catch((error: any) => {
         error.sql = sql.sql;
@@ -236,7 +213,7 @@ export async function createPostgresDatabasePool(args: {
       });
     }
 
-    pool[methodName] = interceptor;
+    pool[methodName] = interceptor as any;
   }
 
   interceptError('one');

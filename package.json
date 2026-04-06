@@ -175,7 +175,6 @@
       "eslint@8.57.1": "patches/eslint@8.57.1.patch",
       "@graphql-eslint/eslint-plugin@3.20.1": "patches/@graphql-eslint__eslint-plugin@3.20.1.patch",
       "got@14.4.7": "patches/got@14.4.7.patch",
-      "slonik@30.4.4": "patches/slonik@30.4.4.patch",
       "@oclif/core@3.26.6": "patches/@oclif__core@3.26.6.patch",
       "oclif": "patches/oclif.patch",
       "graphiql": "patches/graphiql.patch",
@@ -184,7 +183,9 @@
       "p-cancelable@4.0.1": "patches/p-cancelable@4.0.1.patch",
       "bentocache": "patches/bentocache.patch",
       "@graphql-codegen/schema-ast": "patches/@graphql-codegen__schema-ast.patch",
-      "@fastify/vite": "patches/@fastify__vite.patch"
+      "@fastify/vite": "patches/@fastify__vite.patch",
+      "@slonik/pg-driver": "patches/@slonik__pg-driver.patch",
+      "slonik": "patches/slonik.patch"
     },
     "onlyBuiltDependencies": [
       "msw"

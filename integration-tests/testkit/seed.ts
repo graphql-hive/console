@@ -353,7 +353,7 @@ export function initSeed() {
               const result = await pool.any(psql`
                 UPDATE "organization_access_tokens"
                 SET "expires_at" = NOW()
-                WHERE id IN (${psql.join(tokenIds, psql`, `)}) AND organization_id = ${organization.id}
+                WHERE id IN (${psql.join(tokenIds, psql.fragment`, `)}) AND organization_id = ${organization.id}
                 RETURNING
                   "id"
               `);

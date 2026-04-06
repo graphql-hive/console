@@ -107,7 +107,7 @@ export class SingleModel {
     });
 
     if (checksumResult === 'unchanged') {
-      this.logger.debug('No changes detected, skipping schema check');
+      this.logger.info('No changes detected, skipping schema check');
       return {
         conclusion: SchemaCheckConclusion.Skip,
       };
