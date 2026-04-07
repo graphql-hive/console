@@ -58,4 +58,11 @@ export default {
       'monaco-graphql/esm/monaco.contribution',
     ],
   },
+  environments: {
+    client: {
+      build: {
+        sourcemap: 'hidden',
+      },
+    },
+  },
 } satisfies UserConfig;
