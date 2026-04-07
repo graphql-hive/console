@@ -13,6 +13,7 @@ function DialogTrigger({ ...props }: React.ComponentProps<typeof DialogPrimitive
 
 function DialogPortal({ ...props }: React.ComponentProps<typeof DialogPrimitive.Portal>) {
   const { container } = useLaboratory();
+
   return <DialogPrimitive.Portal data-slot="dialog-portal" {...props} container={container} />;
 }
 
@@ -44,8 +45,10 @@ function DialogContent({
 }: React.ComponentProps<typeof DialogPrimitive.Content> & {
   showCloseButton?: boolean;
 }) {
+  const { container } = useLaboratory();
+
   return (
-    <DialogPortal data-slot="dialog-portal">
+    <DialogPortal data-slot="dialog-portal" container={container}>
       <DialogOverlay />
       <DialogPrimitive.Content
         data-slot="dialog-content"
