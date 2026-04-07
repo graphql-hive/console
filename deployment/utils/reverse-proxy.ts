@@ -4,7 +4,7 @@ import { ContourValues } from './contour.types';
 import { helmChart } from './helm';
 
 // prettier-ignore
-export const CONTOUR_CHART = helmChart('https://raw.githubusercontent.com/bitnami/charts/refs/heads/index/bitnami/', 'contour', '20.0.3');
+export const CONTOUR_CHART = helmChart('https://projectcontour.github.io/helm-charts/', 'contour', '0.4.0');
 
 export class Proxy {
   private lbService: Output<k8s.core.v1.Service> | null = null;
@@ -91,22 +91,6 @@ export class Proxy {
         | 'RequestHash'
         | 'Cookie';
       customRewrite?: string;
-      virtualHost?: Output<string>;
-      httpsUpstream?: boolean;
-      withWwwDomain?: boolean;
-      // https://projectcontour.io/docs/1.29/config/rate-limiting/#local-rate-limiting
-      rateLimit?: {
-        // Max amount of request allowed with the "unit" parameter.
-        maxRequests: number;
-        unit: 'second' | 'minute' | 'hour';
-        // defining the number of requests above the baseline rate that are allowed in a short period of time.
-        // This would allow occasional larger bursts of traffic not to be rate limited.
-        burst?: number;
-        // default 429
-        responseStatusCode?: number;
-        // headers to add to the response in case of a rate limit
-        responseHeadersToAdd?: Record<string, string>;
-      };
     }[],
   ) {
     const cert = new k8s.apiextensions.CustomResource(`cert-${dns.record}`, {
@@ -159,32 +143,10 @@ export class Proxy {
                 port: route.service.spec.ports[0].port,
               },
             ],
-            // https://projectcontour.io/docs/1.31/config/request-routing/
+            // https://projectcontour.io/docs/1.33/config/request-routing/
             loadBalancerPolicy: {
               strategy: route.loadBalancerPolicy ?? 'RoundRobin',
             },
-            // https://projectcontour.io/docs/1.29/config/rate-limiting/#local-rate-limiting
-            rateLimitPolicy: route.rateLimit
-              ? {
-                  local: {
-                    requests: route.rateLimit.maxRequests,
-                    unit: route.rateLimit.unit,
-                    responseHeadersToAdd: [
-                      {
-                        name: 'x-rate-limit-active',
-                        value: 'true',
-                      },
-                      ...(route.rateLimit.responseHeadersToAdd
-                        ? Object.entries(route.rateLimit.responseHeadersToAdd).map(
-                            ([key, value]) => ({ name: key, value }),
-                          )
-                        : []),
-                    ],
-                    responseStatusCode: route.rateLimit.responseStatusCode || 429,
-                    burst: route.rateLimit.burst,
-                  },
-                }
-              : undefined,
             ...(route.path === '/'
               ? {}
               : {
@@ -318,16 +280,7 @@ export class Proxy {
             }
           : {}),
       },
-      // Needed because we override the `contour.image.repository` field.
-      global: {
-        security: {
-          allowInsecureImages: true,
-        },
-      },
       contour: {
-        image: {
-          repository: 'bitnamilegacy/contour',
-        },
         podAnnotations: {
           'prometheus.io/scrape': 'true',
           'prometheus.io/port': '8000',
@@ -337,14 +290,13 @@ export class Proxy {
         podLabels: {
           'vector.dev/exclude': 'true',
         },
+        // Placeholder, see below
         resources: {
           limits: {},
         },
       },
       envoy: {
-        image: {
-          repository: 'bitnamilegacy/envoy',
-        },
+        // Placeholder, see below
         resources: {
           limits: {},
         },
@@ -386,7 +338,7 @@ export class Proxy {
     const proxyController = new k8s.helm.v3.Chart('contour-proxy', {
       ...CONTOUR_CHART,
       namespace: ns.metadata.name,
-      // https://github.com/bitnami/charts/tree/master/bitnami/contour
+      // https://artifacthub.io/packages/helm/contour/contour
       values: chartValues,
     });
 
