@@ -1,5 +1,5 @@
 import { forwardRef, useEffect, useId, useImperativeHandle, useRef, useState } from 'react';
-import * as monaco from 'monaco-editor';
+import * as monaco from 'monaco-editor/esm/vs/editor/editor.api';
 import { MonacoGraphQLAPI } from 'monaco-graphql/esm/api.js';
 import { initializeMode } from 'monaco-graphql/initializeMode';
 import MonacoEditor, { loader } from '@monaco-editor/react';

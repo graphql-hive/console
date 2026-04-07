@@ -1,5 +1,5 @@
 import { ReactElement, useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { editor } from 'monaco-editor';
+import { editor } from 'monaco-editor/esm/vs/editor/editor.api';
 import { Button } from '@/components/ui/button';
 import { CardDescription } from '@/components/ui/card';
 import { AlertTriangleIcon, XIcon } from '@/components/ui/icon';
