@@ -1573,6 +1573,7 @@ export class AppDeployments {
     targetId: string;
     appName: string;
     hashes: readonly string[];
+    appDeploymentId?: string;
   }): Promise<string[]> {
     this.logger.debug(
       'get existing document hashes (targetId=%s, appName=%s, inputHashes=%d)',
@@ -1591,11 +1592,14 @@ export class AppDeployments {
         query: cSql`
           SELECT DISTINCT document_hash AS hash
           FROM app_deployment_documents
-          PREWHERE app_deployment_id IN (
-            SELECT DISTINCT app_deployment_id
-            FROM app_deployments
-            PREWHERE target_id = ${args.targetId}
-              AND app_name = ${args.appName}
+          PREWHERE (
+            app_deployment_id IN (
+              SELECT DISTINCT app_deployment_id
+              FROM app_deployments
+              PREWHERE target_id = ${args.targetId}
+                AND app_name = ${args.appName}
+            )
+            ${args.appDeploymentId ? cSql`OR app_deployment_id = ${args.appDeploymentId}` : cSql``}
           )
           AND document_hash IN (${cSql.longArray(args.hashes, 'String')})
         `,

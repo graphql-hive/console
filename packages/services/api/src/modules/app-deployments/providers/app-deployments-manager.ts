@@ -103,6 +103,7 @@ export class AppDeploymentsManager {
           targetId: selector.targetId,
           appName: args.appDeployment.name,
           hashes: args.hashes,
+          appDeploymentId: result.appDeployment.id,
         })
       : [];
 

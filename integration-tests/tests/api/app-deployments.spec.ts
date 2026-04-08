@@ -6070,3 +6070,81 @@ test('rejects mixing v1 and v2 document formats on the same deployment', async (
     'Cannot mix document formats',
   );
 });
+
+const CreateAppDeploymentWithHashes = graphql(`
+  mutation CreateAppDeploymentWithHashes($input: CreateAppDeploymentInput!) {
+    createAppDeployment(input: $input) {
+      error {
+        message
+      }
+      ok {
+        createdAppDeployment {
+          id
+          name
+          version
+          status
+        }
+        existingHashes
+      }
+    }
+  }
+`);
+
+test('re-running app:create deduplicates documents from the pending deployment', async () => {
+  const { createOrg } = await initSeed().createOwner();
+  const { createProject, setFeatureFlag } = await createOrg();
+  await setFeatureFlag('appDeployments', true);
+  const { createTargetAccessToken } = await createProject();
+  const token = await createTargetAccessToken({});
+
+  await token.publishSchema({
+    sdl: /* GraphQL */ `
+      type Query {
+        hello: String
+      }
+    `,
+  });
+
+  const sha256Hash = 'ec2e01311ab3b02f3d8c8c712f9e579356d332cd007ac4c1ea5df727f482f05f';
+
+  // First create + upload
+  await execute({
+    document: CreateAppDeployment,
+    variables: {
+      input: {
+        appName: 'my-app',
+        appVersion: '1.0.0',
+      },
+    },
+    authToken: token.secret,
+  }).then(res => res.expectNoGraphQLErrors());
+
+  await execute({
+    document: AddDocumentsToAppDeploymentWithFormat,
+    variables: {
+      input: {
+        appName: 'my-app',
+        appVersion: '1.0.0',
+        documents: [{ hash: sha256Hash, body: 'query { hello }' }],
+        format: AppDeploymentFormatType.V2,
+      },
+    },
+    authToken: token.secret,
+  }).then(res => res.expectNoGraphQLErrors());
+
+  // Second create with same version, should find the existing hash
+  const { createAppDeployment } = await execute({
+    document: CreateAppDeploymentWithHashes,
+    variables: {
+      input: {
+        appName: 'my-app',
+        appVersion: '1.0.0',
+        hashes: [sha256Hash, 'nonexistent-hash'],
+      },
+    },
+    authToken: token.secret,
+  }).then(res => res.expectNoGraphQLErrors());
+
+  expect(createAppDeployment.ok?.existingHashes).toContain(sha256Hash);
+  expect(createAppDeployment.ok?.existingHashes).not.toContain('nonexistent-hash');
+});
