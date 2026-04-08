@@ -2,7 +2,10 @@ import { differenceInCalendarDays, startOfDay, subDays } from 'date-fns';
 import { Inject, Injectable, Scope } from 'graphql-modules';
 import { sql, UniqueIntegrityConstraintViolationError, type DatabasePool } from 'slonik';
 import { z } from 'zod';
-import { buildAppDeploymentIsEnabledKey } from '@hive/cdn-script/artifact-storage-reader';
+import {
+  buildAppDeploymentIsEnabledKey,
+  buildV2HashManifestKey,
+} from '@hive/cdn-script/artifact-storage-reader';
 import {
   decodeCreatedAtAndUUIDIdBasedCursor,
   decodeHashBasedCursor,
@@ -450,6 +453,48 @@ export class AppDeployments {
       };
     }
 
+    // Write v2 hash manifest BEFORE the apps-enabled flag to avoid a race condition
+    // where the CDN sees the deployment as active but the manifest doesn't exist yet.
+    const deploymentFormat = await this.getDeploymentDocumentFormat(appDeployment.id);
+    if (deploymentFormat === 'v2') {
+      const hashesResult = await this.clickhouse.query({
+        query: cSql`
+          SELECT document_hash AS hash
+          FROM app_deployment_documents
+          PREWHERE app_deployment_id = ${appDeployment.id}
+        `,
+        queryId: 'get-deployment-hashes-for-manifest',
+        timeout: 30_000,
+      });
+      const manifestHashes = z
+        .array(z.object({ hash: z.string() }))
+        .parse(hashesResult.data)
+        .map(row => row.hash);
+
+      const manifestKey = buildV2HashManifestKey(
+        appDeployment.targetId,
+        appDeployment.name,
+        appDeployment.version,
+      );
+      const manifestBody = manifestHashes.join('\n');
+
+      for (const s3 of this.s3) {
+        const manifestResult = await s3.client.fetch(
+          [s3.endpoint, s3.bucket, manifestKey].join('/'),
+          {
+            method: 'PUT',
+            body: manifestBody,
+            headers: { 'content-type': 'text/plain' },
+            aws: { signQuery: true },
+          },
+        );
+        if (manifestResult.statusCode !== 200) {
+          throw new Error(`Failed to write v2 hash manifest: ${manifestResult.statusMessage}`);
+        }
+      }
+    }
+
+    // Write apps-enabled flag AFTER manifest to ensure the CDN can always verify hashes
     for (const s3 of this.s3) {
       const result = await s3.client.fetch(
         [
@@ -1635,9 +1680,7 @@ export class AppDeployments {
    * Check the format of existing documents for a deployment by sampling one hash.
    * Returns 'v1', 'v2', or null if no documents exist.
    */
-  async getDeploymentDocumentFormat(
-    appDeploymentId: string,
-  ): Promise<'v1' | 'v2' | null> {
+  async getDeploymentDocumentFormat(appDeploymentId: string): Promise<'v1' | 'v2' | null> {
     const result = await this.clickhouse.query({
       query: cSql`
         SELECT document_hash AS hash

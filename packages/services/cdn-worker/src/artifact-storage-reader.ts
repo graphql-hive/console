@@ -70,6 +70,16 @@ export function buildAppDeploymentIsEnabledKey(
 }
 
 /**
+ * S3 key for the v2 hash manifest, a newline-separated list of valid document hashes
+ * for a specific app deployment version. Used by the CDN to enforce version isolation.
+ */
+export function buildV2HashManifestKey(
+  ...args: [targetId: string, appName: string, appVersion: string]
+) {
+  return ['app-v2-manifest', ...AppDeploymentIsEnabledKeyModel.parse(args)].join('/');
+}
+
+/**
  * Read an artifact/app deployment operation from S3.
  */
 export class ArtifactStorageReader {
@@ -377,21 +387,25 @@ export class ArtifactStorageReader {
       headers['if-none-match'] = etagValue;
     }
 
-    // Try v2 key first
+    // Try v2 key first: fetch document and hash manifest in parallel
     const keyV2 = buildOperationS3BucketKeyV2(targetId, appName, hash);
+    const manifestKey = buildV2HashManifestKey(targetId, appName, appVersion);
 
-    const responseV2 = await this.request({
-      key: keyV2,
-      method: 'GET',
-      headers,
-      onAttempt: args => {
+    const makeOnAttempt =
+      (trackedKey: string) =>
+      (args: {
+        isMirror: boolean;
+        attempt: number;
+        duration: number;
+        result: { type: 'error'; error: Error } | { type: 'success'; response: Response };
+      }) => {
         if (args.result.type === 'error') {
           this.breadcrumb(
-            `Fetch attempt failed (source=${args.isMirror ? 'mirror' : 'primary'}, attempt=${args.attempt} duration=${args.duration}, result=${args.result.type}, key=${keyV2}, message=${args.result.error.message})`,
+            `Fetch attempt failed (source=${args.isMirror ? 'mirror' : 'primary'}, attempt=${args.attempt} duration=${args.duration}, result=${args.result.type}, key=${trackedKey}, message=${args.result.error.message})`,
           );
         } else {
           this.breadcrumb(
-            `Fetch attempt succeeded (source=${args.isMirror ? 'mirror' : 'primary'}, attempt=${args.attempt} duration=${args.duration}, result=${args.result.type}, key=${keyV2})`,
+            `Fetch attempt succeeded (source=${args.isMirror ? 'mirror' : 'primary'}, attempt=${args.attempt} duration=${args.duration}, result=${args.result.type}, key=${trackedKey})`,
           );
         }
         this.analytics?.track(
@@ -406,8 +420,37 @@ export class ArtifactStorageReader {
           },
           targetId,
         );
-      },
-    });
+      };
+
+    // Fetch document and hash manifest in parallel
+    const [responseV2, manifestResponse] = await Promise.all([
+      this.request({
+        key: keyV2,
+        method: 'GET',
+        headers,
+        onAttempt: makeOnAttempt(keyV2),
+      }),
+      this.request({
+        key: manifestKey,
+        method: 'GET',
+        onAttempt: makeOnAttempt(manifestKey),
+      }),
+    ]);
+
+    // Verify version isolation via manifest
+    if (manifestResponse.status === 200) {
+      const manifestBody = await manifestResponse.text();
+      const allowedHashes = new Set(manifestBody.split('\n').filter(Boolean));
+      if (!allowedHashes.has(hash)) {
+        this.breadcrumb(`Version isolation: hash ${hash} not in manifest for ${manifestKey}`);
+        return { type: 'notFound' } as const;
+      }
+    } else if (responseV2.status === 200) {
+      // V2 document exists but no manifest. legacy deployment activated before manifest support.
+      this.breadcrumb(
+        `Version isolation: manifest not found (status=${manifestResponse.status}, key=${manifestKey}), skipping check`,
+      );
+    }
 
     if (etagValue && responseV2.status === 304) {
       return { type: 'notModified' } as const;
@@ -415,10 +458,7 @@ export class ArtifactStorageReader {
 
     if (responseV2.status === 200) {
       const body = await responseV2.text();
-      return {
-        type: 'body',
-        body,
-      } as const;
+      return { type: 'body', body } as const;
     }
 
     // Fallback to v1 key
@@ -429,29 +469,7 @@ export class ArtifactStorageReader {
         key: keyV1,
         method: 'GET',
         headers,
-        onAttempt: args => {
-          if (args.result.type === 'error') {
-            this.breadcrumb(
-              `Fetch attempt failed (source=${args.isMirror ? 'mirror' : 'primary'}, attempt=${args.attempt} duration=${args.duration}, result=${args.result.type}, key=${keyV1}, message=${args.result.error.message})`,
-            );
-          } else {
-            this.breadcrumb(
-              `Fetch attempt succeeded (source=${args.isMirror ? 'mirror' : 'primary'}, attempt=${args.attempt} duration=${args.duration}, result=${args.result.type}, key=${keyV1})`,
-            );
-          }
-          this.analytics?.track(
-            {
-              type: args.isMirror ? 's3' : 'r2',
-              statusCodeOrErrCode:
-                args.result.type === 'error'
-                  ? String(args.result.error.name ?? 'unknown')
-                  : args.result.response.status,
-              action: 'GET persistedOperation',
-              duration: args.duration,
-            },
-            targetId,
-          );
-        },
+        onAttempt: makeOnAttempt(keyV1),
       });
 
       if (etagValue && responseV1.status === 304) {
@@ -460,10 +478,7 @@ export class ArtifactStorageReader {
 
       if (responseV1.status === 200) {
         const body = await responseV1.text();
-        return {
-          type: 'body',
-          body,
-        } as const;
+        return { type: 'body', body } as const;
       }
 
       if (responseV1.status === 404) {

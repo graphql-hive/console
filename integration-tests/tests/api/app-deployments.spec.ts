@@ -6148,3 +6148,94 @@ test('re-running app:create deduplicates documents from the pending deployment',
   expect(createAppDeployment.ok?.existingHashes).toContain(sha256Hash);
   expect(createAppDeployment.ok?.existingHashes).not.toContain('nonexistent-hash');
 });
+
+test('v2 version isolation: CDN rejects hash not belonging to the requested version', async () => {
+  const { createOrg } = await initSeed().createOwner();
+  const { createProject, setFeatureFlag } = await createOrg();
+  await setFeatureFlag('appDeployments', true);
+  const { createTargetAccessToken, createCdnAccess } = await createProject();
+  const token = await createTargetAccessToken({});
+
+  await token.publishSchema({
+    sdl: /* GraphQL */ `
+      type Query {
+        hello: String
+        goodbye: String
+      }
+    `,
+  });
+
+  const cdnAccess = await createCdnAccess();
+
+  // sha256('query { hello }')
+  const hashV1 = 'ec2e01311ab3b02f3d8c8c712f9e579356d332cd007ac4c1ea5df727f482f05f';
+  // sha256('query { goodbye }')
+  const hashV2Only = 'e52e356849e68a88ee16be34b3e7271b1b69bd4e7b6bce69f3e93ae2bb59e15e';
+
+  // Create v1.0.0 with hashV1
+  await execute({
+    document: CreateAppDeployment,
+    variables: { input: { appName: 'my-app', appVersion: '1.0.0' } },
+    authToken: token.secret,
+  }).then(res => res.expectNoGraphQLErrors());
+
+  await execute({
+    document: AddDocumentsToAppDeploymentWithFormat,
+    variables: {
+      input: {
+        appName: 'my-app',
+        appVersion: '1.0.0',
+        documents: [{ hash: hashV1, body: 'query { hello }' }],
+        format: AppDeploymentFormatType.V2,
+      },
+    },
+    authToken: token.secret,
+  }).then(res => res.expectNoGraphQLErrors());
+
+  await execute({
+    document: ActivateAppDeployment,
+    variables: { input: { appName: 'my-app', appVersion: '1.0.0' } },
+    authToken: token.secret,
+  }).then(res => res.expectNoGraphQLErrors());
+
+  // Create v2.0.0 with hashV2Only (does NOT include hashV1)
+  await execute({
+    document: CreateAppDeployment,
+    variables: { input: { appName: 'my-app', appVersion: '2.0.0' } },
+    authToken: token.secret,
+  }).then(res => res.expectNoGraphQLErrors());
+
+  await execute({
+    document: AddDocumentsToAppDeploymentWithFormat,
+    variables: {
+      input: {
+        appName: 'my-app',
+        appVersion: '2.0.0',
+        documents: [{ hash: hashV2Only, body: 'query { goodbye }' }],
+        format: AppDeploymentFormatType.V2,
+      },
+    },
+    authToken: token.secret,
+  }).then(res => res.expectNoGraphQLErrors());
+
+  await execute({
+    document: ActivateAppDeployment,
+    variables: { input: { appName: 'my-app', appVersion: '2.0.0' } },
+    authToken: token.secret,
+  }).then(res => res.expectNoGraphQLErrors());
+
+  // hashV2Only should be accessible via v2.0.0
+  const validResponse = await fetch(`${cdnAccess.cdnUrl}/apps/my-app/2.0.0/${hashV2Only}`, {
+    method: 'GET',
+    headers: { 'X-Hive-CDN-Key': cdnAccess.secretAccessToken },
+  });
+  expect(validResponse.status).toBe(200);
+  expect(await validResponse.text()).toBe('query { goodbye }');
+
+  // hashV1 exists in S3 (from v1.0.0) but should NOT be accessible via v2.0.0
+  const isolatedResponse = await fetch(`${cdnAccess.cdnUrl}/apps/my-app/2.0.0/${hashV1}`, {
+    method: 'GET',
+    headers: { 'X-Hive-CDN-Key': cdnAccess.secretAccessToken },
+  });
+  expect(isolatedResponse.status).toBe(404);
+});

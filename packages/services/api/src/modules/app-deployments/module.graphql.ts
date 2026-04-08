@@ -138,10 +138,7 @@ export default gql`
     Given a list of document hashes, returns the subset that already exist for this app (across all versions).
     Used for delta uploads - CLI can skip uploading documents that already exist.
     """
-    appDeploymentDocumentHashes(
-      appName: String!
-      hashes: [String!]!
-    ): [String!]!
+    appDeploymentDocumentHashes(appName: String!, hashes: [String!]!): [String!]!
   }
 
   extend type Mutation {

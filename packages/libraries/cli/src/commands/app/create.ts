@@ -221,8 +221,7 @@ export default class AppCreate extends Command<typeof AppCreate> {
               appName: flags['name'],
               appVersion: flags['version'],
               documents: buffer,
-              format:
-                format === 'v1' ? AppDeploymentFormatType.V1 : AppDeploymentFormatType.V2,
+              format: format === 'v1' ? AppDeploymentFormatType.V1 : AppDeploymentFormatType.V2,
               showTimings: flags.showTiming || undefined,
             },
           },
