@@ -4,7 +4,7 @@ import { createServerAdapter } from '@whatwg-node/server';
 import { createArtifactRequestHandler } from './artifact-handler';
 import { ArtifactStorageReader } from './artifact-storage-reader';
 import { AwsClient } from './aws';
-import { createIsAppDeploymentActive } from './is-app-deployment-active';
+import { createGetAppDeploymentStatus } from './is-app-deployment-active';
 import { createIsKeyValid } from './key-validation';
 
 const env = z
@@ -42,7 +42,7 @@ const artifactHandler = createArtifactRequestHandler({
     captureException() {},
   }),
   artifactStorageReader,
-  isAppDeploymentActive: createIsAppDeploymentActive({
+  getAppDeploymentStatus: createGetAppDeploymentStatus({
     artifactStorageReader,
     getCache: null,
     waitUntil: null,

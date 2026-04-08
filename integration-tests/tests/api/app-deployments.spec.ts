@@ -5894,9 +5894,9 @@ test('v2 format enables cross-version document sharing', async () => {
   expect(await responseV2.text()).toBe('query { hello }');
 });
 
-test('v2 CDN lookup falls back to v1 key when v2 key not found', async () => {
-  // This test verifies that documents deployed with v1 format are still accessible
-  // after the CDN worker added v2 key lookup (which tries v2 key first, then falls back to v1)
+test('v1 format documents are accessible via CDN using format from apps-enabled key', async () => {
+  // This test verifies that documents deployed with v1 format are still accessible.
+  // The CDN reads the format from the apps-enabled key and uses the v1 S3 key directly.
   const { createOrg } = await initSeed().createOwner();
   const { createProject, setFeatureFlag } = await createOrg();
   await setFeatureFlag('appDeployments', true);
@@ -5954,8 +5954,7 @@ test('v2 CDN lookup falls back to v1 key when v2 key not found', async () => {
     authToken: token.secret,
   }).then(res => res.expectNoGraphQLErrors());
 
-  // The CDN worker will try v2 key first (which won't exist), then fall back to v1 key
-  // This should still succeed because fallback logic preserves v1 document access
+  // The CDN reads format from apps-enabled (v1) and uses the v1 S3 key directly
   const response = await fetch(`${cdnAccess.cdnUrl}/apps/my-app/1.0.0/my-legacy-hash`, {
     method: 'GET',
     headers: {
@@ -5965,6 +5964,41 @@ test('v2 CDN lookup falls back to v1 key when v2 key not found', async () => {
 
   expect(response.status).toBe(200);
   expect(await response.text()).toBe('query { hello }');
+
+  // v1 inactive: upload documents but don't activate, should not be accessible
+  await execute({
+    document: CreateAppDeployment,
+    variables: {
+      input: {
+        appName: 'my-app',
+        appVersion: '2.0.0',
+      },
+    },
+    authToken: token.secret,
+  }).then(res => res.expectNoGraphQLErrors());
+
+  await execute({
+    document: AddDocumentsToAppDeploymentWithFormat,
+    variables: {
+      input: {
+        appName: 'my-app',
+        appVersion: '2.0.0',
+        documents: [{ hash: 'another-hash', body: 'query { hello }' }],
+        format: AppDeploymentFormatType.V1,
+      },
+    },
+    authToken: token.secret,
+  }).then(res => res.expectNoGraphQLErrors());
+
+  // Not activated: apps-enabled body should be v1-inactive, CDN should reject
+  const inactiveResponse = await fetch(
+    `${cdnAccess.cdnUrl}/apps/my-app/2.0.0/another-hash`,
+    {
+      method: 'GET',
+      headers: { 'X-Hive-CDN-Key': cdnAccess.secretAccessToken },
+    },
+  );
+  expect(inactiveResponse.status).toBe(404);
 });
 
 test('appDeploymentDocumentHashes returns empty array for app with no previous documents', async () => {
@@ -6238,4 +6272,90 @@ test('v2 version isolation: CDN rejects hash not belonging to the requested vers
     headers: { 'X-Hive-CDN-Key': cdnAccess.secretAccessToken },
   });
   expect(isolatedResponse.status).toBe(404);
+});
+
+test('CDN uses format from apps-enabled key to resolve documents without fallback', async () => {
+  // This test verifies the format encoding in apps-enabled: v2 deployments are resolved
+  // directly using the v2 S3 key, not by trying v2 first then falling back to v1.
+  const { createOrg } = await initSeed().createOwner();
+  const { createProject, setFeatureFlag } = await createOrg();
+  await setFeatureFlag('appDeployments', true);
+  const { createTargetAccessToken, createCdnAccess } = await createProject();
+  const token = await createTargetAccessToken({});
+
+  await token.publishSchema({
+    sdl: /* GraphQL */ `
+      type Query {
+        hello: String
+      }
+    `,
+  });
+
+  const cdnAccess = await createCdnAccess();
+  const sha256Hash =
+    'ec2e01311ab3b02f3d8c8c712f9e579356d332cd007ac4c1ea5df727f482f05f';
+
+  // Deploy with v2 format
+  await execute({
+    document: CreateAppDeployment,
+    variables: { input: { appName: 'my-app', appVersion: '1.0.0' } },
+    authToken: token.secret,
+  }).then(res => res.expectNoGraphQLErrors());
+
+  await execute({
+    document: AddDocumentsToAppDeploymentWithFormat,
+    variables: {
+      input: {
+        appName: 'my-app',
+        appVersion: '1.0.0',
+        documents: [{ hash: sha256Hash, body: 'query { hello }' }],
+        format: AppDeploymentFormatType.V2,
+      },
+    },
+    authToken: token.secret,
+  }).then(res => res.expectNoGraphQLErrors());
+
+  await execute({
+    document: ActivateAppDeployment,
+    variables: { input: { appName: 'my-app', appVersion: '1.0.0' } },
+    authToken: token.secret,
+  }).then(res => res.expectNoGraphQLErrors());
+
+  // CDN reads format from apps-enabled (v2) and resolves directly with v2 key
+  const response = await fetch(`${cdnAccess.cdnUrl}/apps/my-app/1.0.0/${sha256Hash}`, {
+    method: 'GET',
+    headers: { 'X-Hive-CDN-Key': cdnAccess.secretAccessToken },
+  });
+  expect(response.status).toBe(200);
+  expect(await response.text()).toBe('query { hello }');
+
+  // Inactive deployment should not be accessible
+  await execute({
+    document: CreateAppDeployment,
+    variables: { input: { appName: 'my-app', appVersion: '2.0.0' } },
+    authToken: token.secret,
+  }).then(res => res.expectNoGraphQLErrors());
+
+  await execute({
+    document: AddDocumentsToAppDeploymentWithFormat,
+    variables: {
+      input: {
+        appName: 'my-app',
+        appVersion: '2.0.0',
+        documents: [{ hash: sha256Hash, body: 'query { hello }' }],
+        format: AppDeploymentFormatType.V2,
+      },
+    },
+    authToken: token.secret,
+  }).then(res => res.expectNoGraphQLErrors());
+
+  // v2.0.0 is not activated, apps-enabled body should be v2-inactive
+  const inactiveResponse = await fetch(
+    `${cdnAccess.cdnUrl}/apps/my-app/2.0.0/${sha256Hash}`,
+    {
+      method: 'GET',
+      headers: { 'X-Hive-CDN-Key': cdnAccess.secretAccessToken },
+    },
+  );
+  expect(inactiveResponse.status).toBe(404);
 });

@@ -7,7 +7,7 @@ import { AwsClient } from './aws';
 import './dev-polyfill';
 import { env } from './dev-polyfill';
 import { createRequestHandler } from './handler';
-import { createIsAppDeploymentActive } from './is-app-deployment-active';
+import { createGetAppDeploymentStatus } from './is-app-deployment-active';
 import { createIsKeyValid } from './key-validation';
 
 const s3 = {
@@ -63,7 +63,7 @@ const handleArtifactRequest = createArtifactRequestHandler({
       console.error(error);
     },
   }),
-  isAppDeploymentActive: createIsAppDeploymentActive({
+  getAppDeploymentStatus: createGetAppDeploymentStatus({
     artifactStorageReader,
     getCache: null,
     waitUntil: null,

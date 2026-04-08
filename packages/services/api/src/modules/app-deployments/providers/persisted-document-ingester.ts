@@ -4,6 +4,7 @@ import PromiseQueue from 'p-queue';
 import { z } from 'zod';
 import { collectSchemaCoordinates, preprocessOperation } from '@graphql-hive/core';
 import {
+  buildAppDeploymentIsEnabledKey,
   buildOperationS3BucketKey,
   buildOperationS3BucketKeyV2,
 } from '@hive/cdn-script/artifact-storage-reader';
@@ -314,6 +315,22 @@ export class PersistedDocumentIngester {
       });
       clickhouseMs = timing.clickhouseMs;
       s3Ms = timing.s3Ms;
+
+      // Write format to apps-enabled as inactive (activation will strip the -inactive suffix)
+      const enabledKey = buildAppDeploymentIsEnabledKey(
+        data.targetId,
+        data.appDeployment.name,
+        data.appDeployment.version,
+      );
+      const formatValue = data.isV1Format ? 'v1-inactive' : 'v2-inactive';
+      for (const s3 of this.s3) {
+        await s3.client.fetch([s3.endpoint, s3.bucket, enabledKey].join('/'), {
+          method: 'PUT',
+          body: formatValue,
+          headers: { 'content-type': 'text/plain' },
+          aws: { signQuery: true },
+        });
+      }
     }
 
     const totalMs = performance.now() - timingStart;

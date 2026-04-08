@@ -24,6 +24,8 @@ type SDLArtifactTypes = `sdl${'.graphql' | '.graphqls' | ''}`;
 
 export type ArtifactsType = SDLArtifactTypes | 'metadata' | 'services' | 'supergraph';
 
+export type AppDeploymentStatus = { enabled: false } | { enabled: true; format: 'v1' | 'v2' };
+
 const OperationS3BucketKeyModel = zod.tuple([
   zod.string().uuid(),
   zod.string().min(1),
@@ -341,12 +343,16 @@ export class ArtifactStorageReader {
     throw new Error(`GET request failed with status ${response.status}: ${body}`);
   }
 
-  async isAppDeploymentEnabled(targetId: string, appName: string, appVersion: string) {
+  async getAppDeploymentStatus(
+    targetId: string,
+    appName: string,
+    appVersion: string,
+  ): Promise<AppDeploymentStatus> {
     const key = buildAppDeploymentIsEnabledKey(targetId, appName, appVersion);
 
     const response = await this.request({
       key,
-      method: 'HEAD',
+      method: 'GET',
       onAttempt: args => {
         if (args.result.type === 'error') {
           this.breadcrumb(
@@ -364,7 +370,7 @@ export class ArtifactStorageReader {
               args.result.type === 'error'
                 ? String(args.result.error.name ?? 'unknown')
                 : args.result.response.status,
-            action: 'HEAD appDeploymentIsEnabled',
+            action: 'GET appDeploymentStatus',
             duration: args.duration,
           },
           targetId,
@@ -372,7 +378,18 @@ export class ArtifactStorageReader {
       },
     });
 
-    return response.status === 200;
+    if (response.status !== 200) {
+      return { enabled: false };
+    }
+
+    const body = await response.text();
+    // Inactive deployments (written during upload, not yet activated)
+    if (body.includes('-inactive')) {
+      return { enabled: false };
+    }
+    // 'v2' = active v2, 'v1' or '1' or anything else = active v1 (backward compat)
+    const format = body === 'v2' ? 'v2' : 'v1';
+    return { enabled: true, format };
   }
 
   async loadAppDeploymentPersistedOperation(
@@ -381,15 +398,12 @@ export class ArtifactStorageReader {
     appVersion: string,
     hash: string,
     etagValue: string | null,
+    format: 'v1' | 'v2',
   ) {
     const headers: Record<string, string> = {};
     if (etagValue) {
       headers['if-none-match'] = etagValue;
     }
-
-    // Try v2 key first: fetch document and hash manifest in parallel
-    const keyV2 = buildOperationS3BucketKeyV2(targetId, appName, hash);
-    const manifestKey = buildV2HashManifestKey(targetId, appName, appVersion);
 
     const makeOnAttempt =
       (trackedKey: string) =>
@@ -422,75 +436,71 @@ export class ArtifactStorageReader {
         );
       };
 
-    // Fetch document and hash manifest in parallel
-    const [responseV2, manifestResponse] = await Promise.all([
-      this.request({
-        key: keyV2,
-        method: 'GET',
-        headers,
-        onAttempt: makeOnAttempt(keyV2),
-      }),
-      this.request({
-        key: manifestKey,
-        method: 'GET',
-        onAttempt: makeOnAttempt(manifestKey),
-      }),
-    ]);
+    if (format === 'v2') {
+      // Fetch document and hash manifest in parallel for version isolation
+      const key = buildOperationS3BucketKeyV2(targetId, appName, hash);
+      const manifestKey = buildV2HashManifestKey(targetId, appName, appVersion);
 
-    // Verify version isolation via manifest
-    if (manifestResponse.status === 200) {
-      const manifestBody = await manifestResponse.text();
-      const allowedHashes = new Set(manifestBody.split('\n').filter(Boolean));
-      if (!allowedHashes.has(hash)) {
-        this.breadcrumb(`Version isolation: hash ${hash} not in manifest for ${manifestKey}`);
-        return { type: 'notFound' } as const;
+      const [response, manifestResponse] = await Promise.all([
+        this.request({ key, method: 'GET', headers, onAttempt: makeOnAttempt(key) }),
+        this.request({
+          key: manifestKey,
+          method: 'GET',
+          onAttempt: makeOnAttempt(manifestKey),
+        }),
+      ]);
+
+      // Verify version isolation via manifest
+      if (manifestResponse.status === 200) {
+        const manifestBody = await manifestResponse.text();
+        const allowedHashes = new Set(manifestBody.split('\n').filter(Boolean));
+        if (!allowedHashes.has(hash)) {
+          this.breadcrumb(
+            `Version isolation: hash ${hash} not in manifest for ${manifestKey}`,
+          );
+          return { type: 'notFound' } as const;
+        }
+      } else {
+        this.breadcrumb(
+          `Version isolation: manifest not found (status=${manifestResponse.status}, key=${manifestKey}), skipping check`,
+        );
       }
-    } else if (responseV2.status === 200) {
-      // V2 document exists but no manifest. legacy deployment activated before manifest support.
-      this.breadcrumb(
-        `Version isolation: manifest not found (status=${manifestResponse.status}, key=${manifestKey}), skipping check`,
-      );
-    }
 
-    if (etagValue && responseV2.status === 304) {
-      return { type: 'notModified' } as const;
-    }
-
-    if (responseV2.status === 200) {
-      const body = await responseV2.text();
-      return { type: 'body', body } as const;
-    }
-
-    // Fallback to v1 key
-    if (responseV2.status === 404) {
-      const keyV1 = buildOperationS3BucketKey(targetId, appName, appVersion, hash);
-
-      const responseV1 = await this.request({
-        key: keyV1,
-        method: 'GET',
-        headers,
-        onAttempt: makeOnAttempt(keyV1),
-      });
-
-      if (etagValue && responseV1.status === 304) {
+      if (etagValue && response.status === 304) {
         return { type: 'notModified' } as const;
       }
-
-      if (responseV1.status === 200) {
-        const body = await responseV1.text();
+      if (response.status === 200) {
+        const body = await response.text();
         return { type: 'body', body } as const;
       }
-
-      if (responseV1.status === 404) {
+      if (response.status === 404) {
         return { type: 'notFound' } as const;
       }
-
-      const body = await responseV1.text();
-      throw new Error(`GET request failed with status ${responseV1.status}: ${body}`);
+      const body = await response.text();
+      throw new Error(`GET request failed with status ${response.status}: ${body}`);
     }
 
-    const body = await responseV2.text();
-    throw new Error(`GET request failed with status ${responseV2.status}: ${body}`);
+    // V1: direct lookup with version in the key
+    const key = buildOperationS3BucketKey(targetId, appName, appVersion, hash);
+    const response = await this.request({
+      key,
+      method: 'GET',
+      headers,
+      onAttempt: makeOnAttempt(key),
+    });
+
+    if (etagValue && response.status === 304) {
+      return { type: 'notModified' } as const;
+    }
+    if (response.status === 200) {
+      const body = await response.text();
+      return { type: 'body', body } as const;
+    }
+    if (response.status === 404) {
+      return { type: 'notFound' } as const;
+    }
+    const body = await response.text();
+    throw new Error(`GET request failed with status ${response.status}: ${body}`);
   }
 
   async readLegacyAccessKey(targetId: string) {

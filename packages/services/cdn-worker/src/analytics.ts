@@ -61,7 +61,7 @@ type Event =
         | 'GET cdn-legacy-keys'
         | 'GET cdn-access-token'
         | 'GET persistedOperation'
-        | 'HEAD appDeploymentIsEnabled';
+        | 'GET appDeploymentStatus';
       // Either 3 digit status code or error code e.g. timeout, http error etc.
       statusCodeOrErrCode: number | string;
       /** duration in milliseconds */

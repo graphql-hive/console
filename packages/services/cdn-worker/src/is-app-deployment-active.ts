@@ -1,5 +1,8 @@
 import zod from 'zod';
-import { type ArtifactStorageReader } from './artifact-storage-reader';
+import {
+  type AppDeploymentStatus,
+  type ArtifactStorageReader,
+} from './artifact-storage-reader';
 
 const AppDeploymentIsEnabledKeyModel = zod.tuple([
   zod.string().uuid(),
@@ -10,21 +13,23 @@ const AppDeploymentIsEnabledKeyModel = zod.tuple([
 type GetCache = () => Promise<Cache | null>;
 type WaitUntil = (promise: Promise<void>) => void;
 
-export type IsAppDeploymentActive = (
+export type { AppDeploymentStatus };
+
+export type GetAppDeploymentStatus = (
   targetId: string,
   appName: string,
   appVersion: string,
-) => Promise<boolean>;
+) => Promise<AppDeploymentStatus>;
 
-/** check whether an app deployment is active (optionally using a cache to avoid accessing S3) */
-export function createIsAppDeploymentActive(deps: {
+/** Check app deployment status, including format. Optionally caches to avoid S3 access. */
+export function createGetAppDeploymentStatus(deps: {
   artifactStorageReader: ArtifactStorageReader;
   waitUntil: null | WaitUntil;
   getCache: null | GetCache;
-}): IsAppDeploymentActive {
-  return async function isAppDeploymentActive(
+}): GetAppDeploymentStatus {
+  return async function getAppDeploymentStatus(
     ...args: [targetId: string, appName: string, appVersion: string]
-  ): Promise<boolean> {
+  ): Promise<AppDeploymentStatus> {
     const [targetId, appName, appVersion] = AppDeploymentIsEnabledKeyModel.parse(args);
     const cache = await (deps.getCache ? deps.getCache() : null);
     const cacheKey = new Request(
@@ -46,20 +51,22 @@ export function createIsAppDeploymentActive(deps: {
 
       if (response) {
         const responseValue = await response.text();
-        return responseValue === '1';
+        return parseStatus(responseValue);
       }
     }
 
-    const isEnabled = await deps.artifactStorageReader.isAppDeploymentEnabled(
+    const status = await deps.artifactStorageReader.getAppDeploymentStatus(
       targetId,
       appName,
       appVersion,
     );
 
     if (cache) {
+      // Cache the raw value: 'v1', 'v2' for enabled, '0' for disabled
+      const cacheValue = status.enabled ? status.format : '0';
       const promise = cache.put(
         cacheKey,
-        new Response(isEnabled ? '1' : '0', {
+        new Response(cacheValue, {
           status: 200,
           headers: {
             'Cache-Control': `s-maxage=${60 * 5}`,
@@ -74,6 +81,14 @@ export function createIsAppDeploymentActive(deps: {
       }
     }
 
-    return isEnabled;
+    return status;
   };
+}
+
+function parseStatus(value: string): AppDeploymentStatus {
+  if (value === '0' || value.includes('-inactive')) {
+    return { enabled: false };
+  }
+  // 'v2' = active v2, 'v1' or '1' or anything else = active v1 (backward compat)
+  return { enabled: true, format: value === 'v2' ? 'v2' : 'v1' };
 }

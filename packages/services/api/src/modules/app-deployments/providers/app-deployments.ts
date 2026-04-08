@@ -494,21 +494,30 @@ export class AppDeployments {
       }
     }
 
-    // Write apps-enabled flag AFTER manifest to ensure the CDN can always verify hashes
+    // Read the current apps-enabled value (written during upload as v1-inactive or v2-inactive)
+    // and strip -inactive to activate. Fall back to 'v1' for deployments created before format tracking.
+    const enabledKey = buildAppDeploymentIsEnabledKey(
+      appDeployment.targetId,
+      appDeployment.name,
+      appDeployment.version,
+    );
+    let activeFormat = 'v1';
+    const existingValue = await this.s3[0].client.fetch(
+      [this.s3[0].endpoint, this.s3[0].bucket, enabledKey].join('/'),
+      { method: 'GET', aws: { signQuery: true } },
+    );
+    if (existingValue.statusCode === 200) {
+      const body = existingValue.body;
+      activeFormat = body.replace('-inactive', '');
+    }
+
+    // Write the active format to all S3 endpoints
     for (const s3 of this.s3) {
       const result = await s3.client.fetch(
-        [
-          s3.endpoint,
-          s3.bucket,
-          buildAppDeploymentIsEnabledKey(
-            appDeployment.targetId,
-            appDeployment.name,
-            appDeployment.version,
-          ),
-        ].join('/'),
+        [s3.endpoint, s3.bucket, enabledKey].join('/'),
         {
           method: 'PUT',
-          body: '1',
+          body: activeFormat,
           headers: {
             'content-type': 'text/plain',
           },

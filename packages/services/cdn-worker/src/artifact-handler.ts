@@ -4,7 +4,7 @@ import { createAnalytics, type Analytics } from './analytics';
 import { type ArtifactStorageReader, type ArtifactsType } from './artifact-storage-reader';
 import { createBreadcrumb, type Breadcrumb } from './breadcrumbs';
 import { InvalidAuthKeyResponse, MissingAuthKeyResponse } from './errors';
-import { IsAppDeploymentActive } from './is-app-deployment-active';
+import { type GetAppDeploymentStatus } from './is-app-deployment-active';
 import type { KeyValidator } from './key-validation';
 import { createResponse } from './tracked-response';
 
@@ -22,7 +22,7 @@ export type GetArtifactActionFn = (
 type ArtifactRequestHandler = {
   artifactStorageReader: ArtifactStorageReader;
   isKeyValid: KeyValidator;
-  isAppDeploymentActive: IsAppDeploymentActive;
+  getAppDeploymentStatus: GetAppDeploymentStatus;
   analytics?: Analytics;
   breadcrumb?: Breadcrumb;
   fallback?: (
@@ -406,10 +406,13 @@ export const createArtifactRequestHandler = (deps: ArtifactRequestHandler) => {
         return response;
       }
 
-      if (
-        false ===
-        (await deps.isAppDeploymentActive(params.targetId, params.appName, params.appVersion))
-      ) {
+      const deploymentStatus = await deps.getAppDeploymentStatus(
+        params.targetId,
+        params.appName,
+        params.appVersion,
+      );
+
+      if (!deploymentStatus.enabled) {
         analytics.track(
           { type: 'error', value: ['app-deployment-not-active'] },
           request.params?.targetId ?? 'unknown',
@@ -436,6 +439,7 @@ export const createArtifactRequestHandler = (deps: ArtifactRequestHandler) => {
         params.appVersion,
         params.operationHash,
         eTag,
+        deploymentStatus.format,
       );
 
       if (result.type === 'notModified') {

@@ -6,7 +6,7 @@ import { ArtifactStorageReader } from './artifact-storage-reader';
 import { AwsClient } from './aws';
 import { UnexpectedError } from './errors';
 import { createRequestHandler } from './handler';
-import { createIsAppDeploymentActive } from './is-app-deployment-active';
+import { createGetAppDeploymentStatus } from './is-app-deployment-active';
 import { createIsKeyValid } from './key-validation';
 import { createResponse } from './tracked-response';
 
@@ -189,7 +189,7 @@ const handler: ExportedHandler<Env> = {
         sentry.addBreadcrumb({ message });
       },
       artifactStorageReader,
-      isAppDeploymentActive: createIsAppDeploymentActive({
+      getAppDeploymentStatus: createGetAppDeploymentStatus({
         artifactStorageReader,
         getCache: () => caches.open('artifacts-auth'),
         waitUntil: p => ctx.waitUntil(p),

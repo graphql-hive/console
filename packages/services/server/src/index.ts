@@ -29,7 +29,7 @@ import { TargetsBySlugCache } from '@hive/api/modules/target/providers/targets-b
 import { createArtifactRequestHandler } from '@hive/cdn-script/artifact-handler';
 import { ArtifactStorageReader } from '@hive/cdn-script/artifact-storage-reader';
 import { AwsClient } from '@hive/cdn-script/aws';
-import { createIsAppDeploymentActive } from '@hive/cdn-script/is-app-deployment-active';
+import { createGetAppDeploymentStatus } from '@hive/cdn-script/is-app-deployment-active';
 import { createIsKeyValid } from '@hive/cdn-script/key-validation';
 import {
   configureTracing,
@@ -635,7 +635,7 @@ export async function main() {
           },
         }),
         artifactStorageReader,
-        isAppDeploymentActive: createIsAppDeploymentActive({
+        getAppDeploymentStatus: createGetAppDeploymentStatus({
           artifactStorageReader,
           getCache: null,
           waitUntil: null,
