@@ -48,6 +48,9 @@ LABEL org.opencontainers.image.vendor="Kamil Kisiela"
 LABEL org.opencontainers.image.url="https://github.com/graphql-hive/console"
 LABEL org.opencontainers.image.source="https://github.com/graphql-hive/console"
 
+RUN useradd -m router
+USER router
+
 RUN mkdir -p /dist/config
 RUN mkdir /dist/schema
 
@@ -58,7 +61,5 @@ COPY --from=router_pkg router.yaml /dist/config/router.yaml
 WORKDIR /dist
 
 ENV APOLLO_ROUTER_CONFIG_PATH="/dist/config/router.yaml"
-
-USER router
 
 ENTRYPOINT ["./router"]
