@@ -4,7 +4,10 @@ import { TaskScheduler } from '@hive/workflows/kit';
 import { adminModule } from './modules/admin';
 import { alertsModule } from './modules/alerts';
 import { appDeploymentsModule } from './modules/app-deployments';
-import { APP_DEPLOYMENTS_ENABLED } from './modules/app-deployments/providers/app-deployments-enabled-token';
+import {
+  APP_DEPLOYMENT_TIMINGS_ENABLED,
+  APP_DEPLOYMENTS_ENABLED,
+} from './modules/app-deployments/providers/app-deployments-enabled-token';
 import { auditLogsModule } from './modules/audit-logs';
 import { AuditLogRecorder } from './modules/audit-logs/providers/audit-log-recorder';
 import { AuditLogS3Config } from './modules/audit-logs/providers/audit-logs-manager';
@@ -115,6 +118,7 @@ export function createRegistry({
   organizationOIDC,
   pubSub,
   appDeploymentsEnabled,
+  appDeploymentTimingsEnabled,
   schemaProposalsEnabled,
   otelTracingEnabled,
   prometheus,
@@ -160,6 +164,7 @@ export function createRegistry({
   organizationOIDC: boolean;
   pubSub: HivePubSub;
   appDeploymentsEnabled: boolean;
+  appDeploymentTimingsEnabled: boolean;
   schemaProposalsEnabled: boolean;
   otelTracingEnabled: boolean;
   prometheus: null | Record<string, unknown>;
@@ -281,6 +286,11 @@ export function createRegistry({
     {
       provide: APP_DEPLOYMENTS_ENABLED,
       useValue: appDeploymentsEnabled,
+      scope: Scope.Singleton,
+    },
+    {
+      provide: APP_DEPLOYMENT_TIMINGS_ENABLED,
+      useValue: appDeploymentTimingsEnabled,
       scope: Scope.Singleton,
     },
     {

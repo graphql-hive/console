@@ -373,6 +373,7 @@ export async function main() {
       supportConfig: env.zendeskSupport,
       pubSub,
       appDeploymentsEnabled: env.featureFlags.appDeploymentsEnabled,
+      appDeploymentTimingsEnabled: env.featureFlags.appDeploymentTimingsEnabled,
       schemaProposalsEnabled: env.featureFlags.schemaProposalsEnabled,
       otelTracingEnabled: env.featureFlags.otelTracingEnabled,
       prometheus: env.prometheus,

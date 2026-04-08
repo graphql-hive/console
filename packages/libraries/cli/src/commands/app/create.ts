@@ -223,6 +223,7 @@ export default class AppCreate extends Command<typeof AppCreate> {
               documents: buffer,
               format:
                 format === 'v1' ? AppDeploymentFormatType.V1 : AppDeploymentFormatType.V2,
+              showTimings: flags.showTiming || undefined,
             },
           },
         });
@@ -251,11 +252,11 @@ export default class AppCreate extends Command<typeof AppCreate> {
           throw new APIError(result.addDocumentsToAppDeployment.error.message);
         }
 
-        if (flags.showTiming && result.addDocumentsToAppDeployment.ok?.timing) {
-          const t = result.addDocumentsToAppDeployment.ok.timing;
-          this.log(
-            `  Batch timing: ${t.totalMs}ms total (${t.documentsProcessed} docs, parse: ${t.parsingMs}ms, validate: ${t.validationMs}ms, coords: ${t.coordinateExtractionMs}ms, ch: ${t.clickhouseMs}ms, s3: ${t.s3Ms}ms)`,
-          );
+        if (flags.showTiming && result.addDocumentsToAppDeployment.ok?.timings?.length) {
+          const parts = result.addDocumentsToAppDeployment.ok.timings
+            .map(t => `${t.label}: ${t.duration}ms`)
+            .join(', ');
+          this.log(`  Batch timing: ${parts}`);
         }
 
         buffer = [];
@@ -319,14 +320,9 @@ const AddDocumentsToAppDeploymentMutation = graphql(/* GraphQL */ `
           version
           status
         }
-        timing {
-          totalMs
-          parsingMs
-          validationMs
-          coordinateExtractionMs
-          clickhouseMs
-          s3Ms
-          documentsProcessed
+        timings {
+          label
+          duration
         }
       }
       error {

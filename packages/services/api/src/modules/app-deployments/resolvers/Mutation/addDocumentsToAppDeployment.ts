@@ -1,3 +1,4 @@
+import { APP_DEPLOYMENT_TIMINGS_ENABLED } from '../../providers/app-deployments-enabled-token';
 import { AppDeploymentsManager } from '../../providers/app-deployments-manager';
 import type { MutationResolvers } from './../../../../__generated__/types';
 
@@ -24,11 +25,13 @@ export const addDocumentsToAppDeployment: NonNullable<
     };
   }
 
+  const timingsEnabled = injector.get<boolean>(APP_DEPLOYMENT_TIMINGS_ENABLED);
+
   return {
     error: null,
     ok: {
       appDeployment: result.appDeployment,
-      timing: result.timing,
+      timings: timingsEnabled && input.showTimings ? result.timing : null,
     },
   };
 };

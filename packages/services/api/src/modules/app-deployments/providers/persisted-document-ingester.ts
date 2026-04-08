@@ -24,15 +24,7 @@ type DocumentRecord = {
   schemaCoordinates: Array<string>;
 };
 
-export type ProcessingTiming = {
-  totalMs: number;
-  parsingMs: number;
-  validationMs: number;
-  coordinateExtractionMs: number;
-  clickhouseMs: number;
-  s3Ms: number;
-  documentsProcessed: number;
-};
+export type ProcessingTiming = Array<{ label: string; duration: number }>;
 
 const AppDeploymentOperationHashModel = z
   .string()
@@ -328,15 +320,14 @@ export class PersistedDocumentIngester {
 
     return {
       type: 'success' as const,
-      timing: {
-        totalMs: Math.round(totalMs),
-        parsingMs: Math.round(parsingMs),
-        validationMs: Math.round(validationMs),
-        coordinateExtractionMs: Math.round(coordinateExtractionMs),
-        clickhouseMs: Math.round(clickhouseMs),
-        s3Ms: Math.round(s3Ms),
-        documentsProcessed: documents.length,
-      },
+      timing: [
+        { label: 'total', duration: Math.round(totalMs) },
+        { label: 'parsing', duration: Math.round(parsingMs) },
+        { label: 'validation', duration: Math.round(validationMs) },
+        { label: 'coordinate-extraction', duration: Math.round(coordinateExtractionMs) },
+        { label: 'clickhouse', duration: Math.round(clickhouseMs) },
+        { label: 's3', duration: Math.round(s3Ms) },
+      ],
     };
   }
 
@@ -521,7 +512,7 @@ export class PersistedDocumentIngester {
       })(),
       (async () => {
         const start = performance.now();
-        await this.insertS3Documents({ ...args, isV1Format: args.isV1Format });
+        await this.insertS3Documents(args);
         return performance.now() - start;
       })(),
     ]);

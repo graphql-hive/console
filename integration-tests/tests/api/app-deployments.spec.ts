@@ -93,10 +93,9 @@ const AddDocumentsToAppDeployment = graphql(`
           version
           status
         }
-        timing {
-          totalMs
-          s3Ms
-          clickhouseMs
+        timings {
+          label
+          duration
         }
       }
     }
@@ -306,7 +305,7 @@ test('create app deployment, add operations, publish, access via CDN (happy path
         version: '1.0.0',
         status: 'pending',
       },
-      timing: expect.any(Object),
+      timings: null,
     },
   });
 

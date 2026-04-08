@@ -290,6 +290,11 @@ export default gql`
     V2 enables cross-version deduplication and delta uploads (requires SHA256 hashes).
     """
     format: AppDeploymentFormatType
+    """
+    When true, the response will include timing measurements for document processing.
+    Intended for benchmarking; requires server-side timing to be enabled.
+    """
+    showTimings: Boolean
   }
 
   type AddDocumentsToAppDeploymentErrorDetails {
@@ -312,42 +317,22 @@ export default gql`
   }
 
   """
-  Timing breakdown for document upload operations. All time values are in milliseconds.
+  A labeled timing measurement from document upload processing.
   """
   type DocumentUploadTiming {
     """
-    Total elapsed time for the entire batch processing.
+    Identifies the processing phase (e.g., "total", "parsing", "validation", "s3", "clickhouse").
     """
-    totalMs: Int!
+    label: String!
     """
-    Time spent parsing GraphQL documents.
+    Duration in milliseconds.
     """
-    parsingMs: Int!
-    """
-    Time spent validating documents against the schema.
-    """
-    validationMs: Int!
-    """
-    Time spent extracting schema coordinates from documents.
-    """
-    coordinateExtractionMs: Int!
-    """
-    Time spent inserting records into ClickHouse.
-    """
-    clickhouseMs: Int!
-    """
-    Time spent uploading documents to S3.
-    """
-    s3Ms: Int!
-    """
-    Number of documents successfully processed.
-    """
-    documentsProcessed: Int!
+    duration: Int!
   }
 
   type AddDocumentsToAppDeploymentOk {
     appDeployment: AppDeployment!
-    timing: DocumentUploadTiming
+    timings: [DocumentUploadTiming!]
   }
 
   type AddDocumentsToAppDeploymentResult {
