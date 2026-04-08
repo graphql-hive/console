@@ -303,6 +303,22 @@ export class AppDeployments {
       };
     }
 
+    // Prevent mixing v1 and v2 formats on the same deployment
+    const existingFormat = await this.getDeploymentDocumentFormat(appDeployment.id);
+    if (existingFormat !== null) {
+      const incomingIsV2 = !args.isV1Format;
+      const existingIsV2 = existingFormat === 'v2';
+      if (incomingIsV2 !== existingIsV2) {
+        return {
+          type: 'error' as const,
+          error: {
+            message: `Cannot mix document formats. This deployment already has ${existingFormat} documents. Use --format=${existingFormat} or create a new deployment version.`,
+            details: null,
+          },
+        };
+      }
+    }
+
     if (args.operations.length !== 0) {
       const latestSchemaVersion = await this.storage.getMaybeLatestValidVersion({
         targetId: args.targetId,
@@ -1609,6 +1625,35 @@ export class AppDeployments {
     );
 
     return hashes;
+  }
+
+  /**
+   * Check the format of existing documents for a deployment by sampling one hash.
+   * Returns 'v1', 'v2', or null if no documents exist.
+   */
+  async getDeploymentDocumentFormat(
+    appDeploymentId: string,
+  ): Promise<'v1' | 'v2' | null> {
+    const result = await this.clickhouse.query({
+      query: cSql`
+        SELECT document_hash AS hash
+        FROM app_deployment_documents
+        PREWHERE app_deployment_id = ${appDeploymentId}
+        LIMIT 1
+      `,
+      queryId: 'get-deployment-document-format',
+      timeout: 10_000,
+    });
+
+    const model = z.array(z.object({ hash: z.string() }));
+    const parsed = model.parse(result.data);
+
+    if (parsed.length === 0) {
+      return null;
+    }
+
+    const sha256Regex = /^(sha256:)?[a-f0-9]{64}$/i;
+    return sha256Regex.test(parsed[0].hash) ? 'v2' : 'v1';
   }
 }
 
