@@ -1553,27 +1553,35 @@ export class AppDeployments {
     };
   }
 
-  async getExistingDocumentHashes(args: { targetId: string; appName: string }): Promise<string[]> {
+  async getExistingDocumentHashes(args: {
+    targetId: string;
+    appName: string;
+    hashes: readonly string[];
+  }): Promise<string[]> {
     this.logger.debug(
-      'get existing document hashes (targetId=%s, appName=%s)',
+      'get existing document hashes (targetId=%s, appName=%s, inputHashes=%d)',
       args.targetId,
       args.appName,
+      args.hashes.length,
     );
+
+    if (args.hashes.length === 0) {
+      return [];
+    }
 
     let result;
     try {
       result = await this.clickhouse.query({
         query: cSql`
-          SELECT document_hash AS hash
+          SELECT DISTINCT document_hash AS hash
           FROM app_deployment_documents
           PREWHERE app_deployment_id IN (
-            SELECT app_deployment_id
+            SELECT DISTINCT app_deployment_id
             FROM app_deployments
             PREWHERE target_id = ${args.targetId}
               AND app_name = ${args.appName}
-            GROUP BY app_deployment_id
           )
-          GROUP BY document_hash
+          AND document_hash IN (${cSql.longArray(args.hashes, 'String')})
         `,
         queryId: 'get-existing-document-hashes',
         timeout: 30_000,
@@ -1593,8 +1601,9 @@ export class AppDeployments {
     const hashes = parsed.map(row => row.hash);
 
     this.logger.debug(
-      'found %d existing document hashes (targetId=%s, appName=%s)',
+      'found %d existing document hashes out of %d input (targetId=%s, appName=%s)',
       hashes.length,
+      args.hashes.length,
       args.targetId,
       args.appName,
     );

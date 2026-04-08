@@ -5220,9 +5220,13 @@ test('retire app deployment with --force bypasses protection', async () => {
 });
 
 const GetExistingDocumentHashes = graphql(`
-  query GetExistingDocumentHashes($targetSelector: TargetSelectorInput!, $appName: String!) {
+  query GetExistingDocumentHashes(
+    $targetSelector: TargetSelectorInput!
+    $appName: String!
+    $hashes: [String!]!
+  ) {
     target(reference: { bySelector: $targetSelector }) {
-      appDeploymentDocumentHashes(appName: $appName) {
+      appDeploymentDocumentHashes(appName: $appName, hashes: $hashes) {
         ok {
           hashes
         }
@@ -5638,7 +5642,7 @@ test('appDeploymentDocumentHashes returns existing hashes for delta upload', asy
     authToken: token.secret,
   }).then(res => res.expectNoGraphQLErrors());
 
-  // Query existing hashes
+  // Query existing hashes by sending local hashes
   const { target: targetResult } = await execute({
     document: GetExistingDocumentHashes,
     variables: {
@@ -5648,6 +5652,7 @@ test('appDeploymentDocumentHashes returns existing hashes for delta upload', asy
         targetSlug: target.slug,
       },
       appName: 'my-app',
+      hashes: [hash1, hash2, 'nonexistent-hash'],
     },
     authToken: token.secret,
   }).then(res => res.expectNoGraphQLErrors());
@@ -5848,6 +5853,7 @@ test('v2 format enables cross-version document sharing', async () => {
         targetSlug: target.slug,
       },
       appName: 'my-app',
+      hashes: [sharedHash],
     },
     authToken: token.secret,
   }).then(res => res.expectNoGraphQLErrors());
@@ -5995,6 +6001,7 @@ test('appDeploymentDocumentHashes returns empty array for app with no previous d
         targetSlug: target.slug,
       },
       appName: 'non-existent-app',
+      hashes: ['some-hash'],
     },
     authToken: token.secret,
   }).then(res => res.expectNoGraphQLErrors());

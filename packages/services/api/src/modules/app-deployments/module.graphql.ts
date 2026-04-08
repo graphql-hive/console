@@ -135,10 +135,13 @@ export default gql`
       filter: ActiveAppDeploymentsFilter! @tag(name: "public")
     ): AppDeploymentConnection! @tag(name: "public")
     """
-    Get list of document hashes that already exist for this app (across all versions).
+    Given a list of document hashes, returns the subset that already exist for this app (across all versions).
     Used for delta uploads - CLI can skip uploading documents that already exist.
     """
-    appDeploymentDocumentHashes(appName: String!): AppDeploymentDocumentHashesResult!
+    appDeploymentDocumentHashes(
+      appName: String!
+      hashes: [String!]!
+    ): AppDeploymentDocumentHashesResult!
   }
 
   type AppDeploymentDocumentHashesResult {

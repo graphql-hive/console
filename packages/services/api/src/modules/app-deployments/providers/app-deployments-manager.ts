@@ -284,6 +284,7 @@ export class AppDeploymentsManager {
     projectId: string;
     targetId: string;
     appName: string;
+    hashes: readonly string[];
   }): Promise<
     { type: 'success'; hashes: string[] } | { type: 'error'; error: { message: string } }
   > {
@@ -301,6 +302,7 @@ export class AppDeploymentsManager {
     const hashes = await this.appDeployments.getExistingDocumentHashes({
       targetId: args.targetId,
       appName: args.appName,
+      hashes: args.hashes,
     });
 
     return {

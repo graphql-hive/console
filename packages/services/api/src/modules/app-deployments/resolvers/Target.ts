@@ -63,6 +63,7 @@ export const Target: Pick<
       projectId: target.projectId,
       targetId: target.id,
       appName: args.appName,
+      hashes: args.hashes,
     });
 
     if (result.type === 'error') {

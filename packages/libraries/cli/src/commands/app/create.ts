@@ -186,11 +186,13 @@ export default class AppCreate extends Command<typeof AppCreate> {
           'The --target flag is required when using --format=v2 for delta optimization.',
         );
       }
+      const localHashes = allDocuments.map(([hash]) => hash);
       const hashesResult = await this.registryApi(endpoint, accessToken).request({
         operation: GetExistingDocumentHashesQuery,
         variables: {
           target,
           appName: flags['name'],
+          hashes: localHashes,
         },
       });
 
@@ -362,9 +364,13 @@ const AddDocumentsToAppDeploymentMutation = graphql(/* GraphQL */ `
 `);
 
 const GetExistingDocumentHashesQuery = graphql(/* GraphQL */ `
-  query GetExistingDocumentHashes($target: TargetReferenceInput!, $appName: String!) {
+  query GetExistingDocumentHashes(
+    $target: TargetReferenceInput!
+    $appName: String!
+    $hashes: [String!]!
+  ) {
     target(reference: $target) {
-      appDeploymentDocumentHashes(appName: $appName) {
+      appDeploymentDocumentHashes(appName: $appName, hashes: $hashes) {
         ok {
           hashes
         }
