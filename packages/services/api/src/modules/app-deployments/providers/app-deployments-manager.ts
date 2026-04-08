@@ -67,6 +67,7 @@ export class AppDeploymentsManager {
       name: string;
       version: string;
     };
+    hashes?: readonly string[] | null;
   }) {
     const selector = await this.idTranslator.resolveTargetReference({
       reference: args.reference,
@@ -87,11 +88,28 @@ export class AppDeploymentsManager {
       },
     });
 
-    return await this.appDeployments.createAppDeployment({
+    const result = await this.appDeployments.createAppDeployment({
       organizationId: selector.organizationId,
       targetId: selector.targetId,
       appDeployment: args.appDeployment,
     });
+
+    if (result.type !== 'success') {
+      return result;
+    }
+
+    const existingHashes = args.hashes?.length
+      ? await this.appDeployments.getExistingDocumentHashes({
+          targetId: selector.targetId,
+          appName: args.appDeployment.name,
+          hashes: args.hashes,
+        })
+      : [];
+
+    return {
+      ...result,
+      existingHashes,
+    };
   }
 
   async addDocumentsToAppDeployment(args: {

@@ -211,6 +211,12 @@ export default gql`
     target: TargetReferenceInput
     appName: String!
     appVersion: String!
+    """
+    Optional list of document hashes the client intends to upload.
+    If provided, the response will include the subset that already exist on the server,
+    enabling delta uploads (skip uploading documents that already exist).
+    """
+    hashes: [String!]
   }
 
   type CreateAppDeploymentErrorDetails {
@@ -231,6 +237,11 @@ export default gql`
 
   type CreateAppDeploymentOk {
     createdAppDeployment: AppDeployment!
+    """
+    Document hashes from the input that already exist on the server.
+    Only populated when hashes are provided in the input.
+    """
+    existingHashes: [String!]!
   }
 
   type CreateAppDeploymentResult {

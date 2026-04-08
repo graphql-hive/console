@@ -12,6 +12,7 @@ export const createAppDeployment: NonNullable<MutationResolvers['createAppDeploy
       name: input.appName,
       version: input.appVersion,
     },
+    hashes: input.hashes,
   });
 
   if (result.type === 'error') {
@@ -28,6 +29,7 @@ export const createAppDeployment: NonNullable<MutationResolvers['createAppDeploy
     error: null,
     ok: {
       createdAppDeployment: result.appDeployment,
+      existingHashes: result.existingHashes,
     },
   };
 };

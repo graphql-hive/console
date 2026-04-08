@@ -44,8 +44,7 @@ export default class AppCreate extends Command<typeof AppCreate> {
     }),
     format: Flags.string({
       description:
-        'Storage format version. "v1" (default) uses per-version storage and allows any hash format. "v2" enables cross-version deduplication and requires sha256 hashes.',
-      default: 'v1',
+        'Storage format version. "v1" uses per-version storage and allows any hash format. "v2" enables cross-version deduplication and requires sha256 hashes. Auto-detected from hash format if not specified.',
       options: ['v1', 'v2'],
     }),
   };
@@ -105,35 +104,38 @@ export default class AppCreate extends Command<typeof AppCreate> {
       throw new PersistedOperationsMalformedError(file);
     }
 
-    // Validate hashes are sha256 and match content (unless v1 format)
-    if (flags.format !== 'v1') {
+    // Auto-detect format from hash patterns if not explicitly specified
+    let format: 'v1' | 'v2';
+    if (flags.format === 'v1' || flags.format === 'v2') {
+      format = flags.format;
+    } else {
       const sha256Regex = /^(sha256:)?[a-f0-9]{64}$/i;
-      const invalidFormatHashes: string[] = [];
+      const hashes = Object.keys(validationResult.data);
+      const allSha256 = hashes.length > 0 && hashes.every(hash => sha256Regex.test(hash));
+      format = allSha256 ? 'v2' : 'v1';
+
+      if (format === 'v2') {
+        this.log(
+          `Detected sha256 hashes — using v2 format for faster uploads and cross-version deduplication.`,
+        );
+      } else {
+        this.log(
+          `Hashes are not sha256 — using v1 format. For faster uploads and cross-version deduplication, ` +
+            `configure your code generator to use sha256 hashes. See https://the-guild.dev/graphql/hive/docs/schema-registry/app-deployments`,
+        );
+      }
+    }
+
+    // Validate hashes match content for v2 format
+    if (format === 'v2') {
       const mismatchedHashes: Array<{ hash: string; expected: string }> = [];
 
       for (const [hash, body] of Object.entries(validationResult.data)) {
-        if (!sha256Regex.test(hash)) {
-          invalidFormatHashes.push(hash);
-        } else {
-          // Verify hash matches content
-          const computedHash = createHash('sha256').update(body).digest('hex');
-          const providedHash = hash.replace(/^sha256:/i, '').toLowerCase();
-          if (computedHash !== providedHash) {
-            mismatchedHashes.push({ hash: providedHash, expected: computedHash });
-          }
+        const computedHash = createHash('sha256').update(body).digest('hex');
+        const providedHash = hash.replace(/^sha256:/i, '').toLowerCase();
+        if (computedHash !== providedHash) {
+          mismatchedHashes.push({ hash: providedHash, expected: computedHash });
         }
-      }
-
-      if (invalidFormatHashes.length > 0) {
-        const examples = invalidFormatHashes.slice(0, 3).join(', ');
-        const more =
-          invalidFormatHashes.length > 3 ? ` (and ${invalidFormatHashes.length - 3} more)` : '';
-        throw new APIError(
-          `Invalid hash format detected: ${examples}${more}\n` +
-            `Hashes must be sha256 (64 hexadecimal characters, optionally prefixed with "sha256:").\n` +
-            `This is required for safe cross-version document deduplication.\n` +
-            `Use --format=v1 to bypass this check (disables cross-version deduplication).`,
-        );
       }
 
       if (mismatchedHashes.length > 0) {
@@ -149,6 +151,9 @@ export default class AppCreate extends Command<typeof AppCreate> {
       }
     }
 
+    const allDocuments = Object.entries(validationResult.data);
+    const localHashes = format === 'v2' ? allDocuments.map(([hash]) => hash) : undefined;
+
     const result = await this.registryApi(endpoint, accessToken).request({
       operation: CreateAppDeploymentMutation,
       variables: {
@@ -156,6 +161,7 @@ export default class AppCreate extends Command<typeof AppCreate> {
           appName: flags['name'],
           appVersion: flags['version'],
           target,
+          hashes: localHashes,
         },
       },
     });
@@ -175,37 +181,12 @@ export default class AppCreate extends Command<typeof AppCreate> {
       return;
     }
 
-    const allDocuments = Object.entries(validationResult.data);
     const totalDocuments = allDocuments.length;
 
-    // Fetch existing hashes for delta upload
-    let existingHashes = new Set<string>();
-    if (flags.format !== 'v1') {
-      if (!target) {
-        throw new APIError(
-          'The --target flag is required when using --format=v2 for delta optimization.',
-        );
-      }
-      const localHashes = allDocuments.map(([hash]) => hash);
-      const hashesResult = await this.registryApi(endpoint, accessToken).request({
-        operation: GetExistingDocumentHashesQuery,
-        variables: {
-          target,
-          appName: flags['name'],
-          hashes: localHashes,
-        },
-      });
-
-      if (!hashesResult.target) {
-        this.logWarning(
-          `Target not found when fetching existing hashes. Delta optimization disabled.`,
-        );
-      } else {
-        existingHashes = new Set(hashesResult.target.appDeploymentDocumentHashes);
-        if (flags.showTiming) {
-          this.log(`Found ${existingHashes.size} existing documents (will skip)`);
-        }
-      }
+    // Use existing hashes from createAppDeployment response for delta upload
+    const existingHashes = new Set(result.createAppDeployment.ok.existingHashes);
+    if (flags.showTiming && existingHashes.size > 0) {
+      this.log(`Found ${existingHashes.size} existing documents (will skip)`);
     }
 
     // Filter out already-existing documents
@@ -241,7 +222,7 @@ export default class AppCreate extends Command<typeof AppCreate> {
               appVersion: flags['version'],
               documents: buffer,
               format:
-                flags.format === 'v1' ? AppDeploymentFormatType.V1 : AppDeploymentFormatType.V2,
+                format === 'v1' ? AppDeploymentFormatType.V1 : AppDeploymentFormatType.V2,
             },
           },
         });
@@ -319,6 +300,7 @@ const CreateAppDeploymentMutation = graphql(/* GraphQL */ `
           version
           status
         }
+        existingHashes
       }
       error {
         message
@@ -355,18 +337,6 @@ const AddDocumentsToAppDeploymentMutation = graphql(/* GraphQL */ `
           __typename
         }
       }
-    }
-  }
-`);
-
-const GetExistingDocumentHashesQuery = graphql(/* GraphQL */ `
-  query GetExistingDocumentHashes(
-    $target: TargetReferenceInput!
-    $appName: String!
-    $hashes: [String!]!
-  ) {
-    target(reference: $target) {
-      appDeploymentDocumentHashes(appName: $appName, hashes: $hashes)
     }
   }
 `);
