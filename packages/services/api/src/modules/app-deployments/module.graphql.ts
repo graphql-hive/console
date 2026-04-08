@@ -141,23 +141,7 @@ export default gql`
     appDeploymentDocumentHashes(
       appName: String!
       hashes: [String!]!
-    ): AppDeploymentDocumentHashesResult!
-  }
-
-  type AppDeploymentDocumentHashesResult {
-    ok: AppDeploymentDocumentHashesOk
-    error: AppDeploymentDocumentHashesError
-  }
-
-  type AppDeploymentDocumentHashesOk {
-    """
-    List of document hashes that already exist for this app.
-    """
-    hashes: [String!]!
-  }
-
-  type AppDeploymentDocumentHashesError implements Error {
-    message: String!
+    ): [String!]!
   }
 
   extend type Mutation {

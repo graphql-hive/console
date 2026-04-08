@@ -196,19 +196,15 @@ export default class AppCreate extends Command<typeof AppCreate> {
         },
       });
 
-      if (hashesResult.target?.appDeploymentDocumentHashes.error) {
-        this.logWarning(
-          `Could not fetch existing document hashes: ${hashesResult.target.appDeploymentDocumentHashes.error.message}. Delta optimization disabled.`,
-        );
-      } else if (hashesResult.target?.appDeploymentDocumentHashes.ok?.hashes) {
-        existingHashes = new Set(hashesResult.target.appDeploymentDocumentHashes.ok.hashes);
-        if (flags.showTiming) {
-          this.log(`Found ${existingHashes.size} existing documents (will skip)`);
-        }
-      } else if (!hashesResult.target) {
+      if (!hashesResult.target) {
         this.logWarning(
           `Target not found when fetching existing hashes. Delta optimization disabled.`,
         );
+      } else {
+        existingHashes = new Set(hashesResult.target.appDeploymentDocumentHashes);
+        if (flags.showTiming) {
+          this.log(`Found ${existingHashes.size} existing documents (will skip)`);
+        }
       }
     }
 
@@ -370,14 +366,7 @@ const GetExistingDocumentHashesQuery = graphql(/* GraphQL */ `
     $hashes: [String!]!
   ) {
     target(reference: $target) {
-      appDeploymentDocumentHashes(appName: $appName, hashes: $hashes) {
-        ok {
-          hashes
-        }
-        error {
-          message
-        }
-      }
+      appDeploymentDocumentHashes(appName: $appName, hashes: $hashes)
     }
   }
 `);

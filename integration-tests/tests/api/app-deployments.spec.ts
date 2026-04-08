@@ -5226,14 +5226,7 @@ const GetExistingDocumentHashes = graphql(`
     $hashes: [String!]!
   ) {
     target(reference: { bySelector: $targetSelector }) {
-      appDeploymentDocumentHashes(appName: $appName, hashes: $hashes) {
-        ok {
-          hashes
-        }
-        error {
-          message
-        }
-      }
+      appDeploymentDocumentHashes(appName: $appName, hashes: $hashes)
     }
   }
 `);
@@ -5657,9 +5650,10 @@ test('appDeploymentDocumentHashes returns existing hashes for delta upload', asy
     authToken: token.secret,
   }).then(res => res.expectNoGraphQLErrors());
 
-  expect(targetResult?.appDeploymentDocumentHashes.ok?.hashes).toContain(hash1);
-  expect(targetResult?.appDeploymentDocumentHashes.ok?.hashes).toContain(hash2);
-  expect(targetResult?.appDeploymentDocumentHashes.ok?.hashes?.length).toBe(2);
+  expect(targetResult?.appDeploymentDocumentHashes).toContain(hash1);
+  expect(targetResult?.appDeploymentDocumentHashes).toContain(hash2);
+  expect(targetResult?.appDeploymentDocumentHashes).not.toContain('nonexistent-hash');
+  expect(targetResult?.appDeploymentDocumentHashes?.length).toBe(2);
 });
 
 test('v2 format prevents hash collision by rejecting non-sha256 hashes', async () => {
@@ -5858,7 +5852,7 @@ test('v2 format enables cross-version document sharing', async () => {
     authToken: token.secret,
   }).then(res => res.expectNoGraphQLErrors());
 
-  expect(targetResult?.appDeploymentDocumentHashes.ok?.hashes).toContain(sharedHash);
+  expect(targetResult?.appDeploymentDocumentHashes).toContain(sharedHash);
 
   // Add the same document to v2.0.0 (should succeed, uses shared storage)
   const { addDocumentsToAppDeployment } = await execute({
@@ -6007,6 +6001,5 @@ test('appDeploymentDocumentHashes returns empty array for app with no previous d
   }).then(res => res.expectNoGraphQLErrors());
 
   // Should return empty array, not error
-  expect(targetResult?.appDeploymentDocumentHashes.ok?.hashes).toEqual([]);
-  expect(targetResult?.appDeploymentDocumentHashes.error).toBeNull();
+  expect(targetResult?.appDeploymentDocumentHashes).toEqual([]);
 });

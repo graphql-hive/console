@@ -57,29 +57,13 @@ export const Target: Pick<
       },
     });
   },
-  appDeploymentDocumentHashes: async (target, args, { injector }) => {
-    const result = await injector.get(AppDeploymentsManager).getExistingDocumentHashes({
+  appDeploymentDocumentHashes: (target, args, { injector }) => {
+    return injector.get(AppDeploymentsManager).getExistingDocumentHashes({
       organizationId: target.orgId,
       projectId: target.projectId,
       targetId: target.id,
       appName: args.appName,
       hashes: args.hashes,
     });
-
-    if (result.type === 'error') {
-      return {
-        ok: null,
-        error: {
-          message: result.error.message,
-        },
-      };
-    }
-
-    return {
-      ok: {
-        hashes: result.hashes,
-      },
-      error: null,
-    };
   },
 };

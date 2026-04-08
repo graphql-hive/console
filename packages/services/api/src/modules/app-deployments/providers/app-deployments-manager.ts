@@ -285,9 +285,7 @@ export class AppDeploymentsManager {
     targetId: string;
     appName: string;
     hashes: readonly string[];
-  }): Promise<
-    { type: 'success'; hashes: string[] } | { type: 'error'; error: { message: string } }
-  > {
+  }): Promise<string[]> {
     await this.session.assertPerformAction({
       action: 'appDeployment:create',
       organizationId: args.organizationId,
@@ -299,15 +297,10 @@ export class AppDeploymentsManager {
       },
     });
 
-    const hashes = await this.appDeployments.getExistingDocumentHashes({
+    return this.appDeployments.getExistingDocumentHashes({
       targetId: args.targetId,
       appName: args.appName,
       hashes: args.hashes,
     });
-
-    return {
-      type: 'success',
-      hashes,
-    };
   }
 }
