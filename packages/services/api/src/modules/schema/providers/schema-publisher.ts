@@ -687,10 +687,6 @@ export class SchemaPublisher {
           }
         }
 
-        // The check is where the changes are determined... Should this also be where
-        // it's associated proposal is found?...
-        // While I don't love this, it does make returning the change record nicer.
-        // @todo
         checkResult = await this.models[project.type].check({
           input: {
             sdl,

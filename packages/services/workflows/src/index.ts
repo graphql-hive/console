@@ -43,6 +43,7 @@ const modules = await Promise.all([
   import('./tasks/usage-rate-limit-exceeded.js'),
   import('./tasks/usage-rate-limit-warning.js'),
   import('./tasks/schema-proposal-composition.js'),
+  import('./tasks/schema-proposal-approval.js'),
 ]);
 
 const crontab = `

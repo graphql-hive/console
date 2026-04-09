@@ -1,11 +1,12 @@
 import { DocumentNode, GraphQLError, parse, print, SourceLocation } from 'graphql';
 import { z } from 'zod';
 import type { Logger } from '@graphql-hive/logger';
+import { generateChangeHash } from '@graphql-inspector/compare-changes';
 import type { Change } from '@graphql-inspector/core';
 import { errors, patch } from '@graphql-inspector/patch';
 import type { Project, SchemaObject } from '@hive/api';
 import type { ComposeAndValidateResult } from '@hive/api/shared/entities';
-import { PostgresDatabasePool, psql } from '@hive/postgres';
+import { CommonQueryMethods, PostgresDatabasePool, psql } from '@hive/postgres';
 import type { ContractsInputType, SchemaBuilderApi } from '@hive/schema';
 import { decodeCreatedAtAndUUIDIdBasedCursor, HiveSchemaChangeModel } from '@hive/storage';
 import { createTRPCProxyClient, httpLink } from '@trpc/client';
@@ -31,6 +32,8 @@ const SchemaProposalChangesModel = z.object({
   schemaProposalChanges: z.array(HiveSchemaChangeModel).default([]),
   createdAt: z.string(),
 });
+
+type SchemaProposalChangesModelType = z.TypeOf<typeof SchemaProposalChangesModel>;
 
 function createExternalConfig(config: Project['externalComposition']) {
   // : ExternalCompositionConfig {
@@ -270,12 +273,25 @@ export function schemaProvider(providerConfig: SchemaProviderConfig) {
       return baseSchema;
     },
 
-    async proposedSchemas(args: {
-      targetId: string;
-      proposalId: string;
-      cursor?: string | null;
-      pool: PostgresDatabasePool;
-    }) {
+    /**
+     * Loops through all schema checks that are part of the schema proposal. This uses pagination
+     * to avoid loading too much at once
+     *
+     * This is hard capped at 2_000 subgraphs for safety.
+     **/
+    async forEachProposalCheck(
+      args: {
+        targetId: string;
+        proposalId: string;
+        cursor?: string | null;
+        pool: PostgresDatabasePool;
+      },
+      callback: (
+        change: Omit<SchemaProposalChangesModelType, 'schemaProposalChanges'> & {
+          schemaProposalChanges: Change[];
+        },
+      ) => void | Promise<void>,
+    ) {
       const now = new Date().toISOString();
       let cursor: {
         createdAt: string;
@@ -288,11 +304,6 @@ export function schemaProvider(providerConfig: SchemaProviderConfig) {
 
       // fetch all latest schemas. Support up to 2_000 subgraphs.
       const maxLoops = 100;
-      const services = await this.latestComposableSchemas({
-        targetId: args.targetId,
-        pool: args.pool,
-      });
-
       let nextCursor = cursor;
       // collect changes in paginated requests to avoid stalling the db
       let i = 0;
@@ -350,48 +361,96 @@ export function schemaProvider(providerConfig: SchemaProviderConfig) {
           LIMIT 20
         `);
 
-        const changes = result.map(row => {
-          const value = SchemaProposalChangesModel.parse(row);
+        const checks = result.map(row => {
+          const check = SchemaProposalChangesModel.parse(row);
           return {
-            ...value,
-            schemaProposalChanges: value.schemaProposalChanges.map(c => {
-              const change: Change<any> = {
-                ...c,
+            ...check,
+            schemaProposalChanges: check.schemaProposalChanges.map((c): Change<any> => {
+              return {
+                message: c.message,
+                meta: c.meta,
+                type: c.type,
                 path: c.path ?? undefined,
                 criticality: {
                   level: c.criticality,
                 },
-              };
-              return change;
+              } satisfies Change<any>;
             }),
           };
         });
 
-        if (changes.length === 20) {
+        for (const check of checks) {
+          await callback(check);
+        }
+
+        if (checks.length === 20) {
           nextCursor = {
             // Keep the created at because we want the same set of checks when joining on the "latest".
-            createdAt: nextCursor?.createdAt ?? changes[0]?.createdAt ?? now,
-            id: changes[changes.length - 1].id,
+            createdAt: nextCursor?.createdAt ?? checks[0]?.createdAt ?? now,
+            id: checks[checks.length - 1].id,
           };
         } else {
           nextCursor = null;
         }
+      } while (nextCursor && ++i < maxLoops);
+    },
 
-        for (const change of changes) {
-          const service = services.find(s => change.serviceName === s.serviceName);
-          if (service) {
-            const ast = parse(service.sdl, { noLocation: true });
-            service.sdl = print(
-              patch(ast, change.schemaProposalChanges, { onError: errors.looseErrorHandler }),
-            );
-            if (change.serviceUrl) {
-              service.serviceUrl = change.serviceUrl;
-            }
+    async proposedSchemas(args: {
+      targetId: string;
+      proposalId: string;
+      cursor?: string | null;
+      pool: PostgresDatabasePool;
+    }) {
+      const services = await this.latestComposableSchemas({
+        targetId: args.targetId,
+        pool: args.pool,
+      });
+
+      await this.forEachProposalCheck(args, change => {
+        const service = services.find(s => change.serviceName === s.serviceName);
+        if (service) {
+          const ast = parse(service.sdl, { noLocation: true });
+          service.sdl = print(
+            patch(ast, change.schemaProposalChanges, { onError: errors.looseErrorHandler }),
+          );
+          if (change.serviceUrl) {
+            service.serviceUrl = change.serviceUrl;
           }
         }
-      } while (nextCursor && ++i < maxLoops);
+      });
 
       return services;
+    },
+
+    async approveChanges(
+      conn: CommonQueryMethods,
+      records: {
+        change: Change;
+        proposalId: string;
+        service?: string;
+        targetId: string;
+      }[],
+    ) {
+      const values = records.map(
+        r => psql`(
+          ${generateChangeHash(r.change)}
+          ,${JSON.stringify(r.change)}
+          ,${r.proposalId}
+          ,${r.service ?? null}
+          ,${r.targetId}
+        )`,
+      );
+
+      await conn.query(psql`
+          INSERT INTO "proposal_approved_changes" (
+             hash
+            ,change
+            ,proposal_id
+            ,service
+            ,target_id
+          )
+          VALUES ${psql.join(values, psql.fragment`,`)}
+        `);
     },
   };
 }

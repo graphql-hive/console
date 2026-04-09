@@ -5,13 +5,14 @@ import { Inject, Injectable, Scope } from 'graphql-modules';
 import { z } from 'zod';
 import { generateChangeHash, isChangeEqual } from '@graphql-inspector/compare-changes';
 import { Change } from '@graphql-inspector/core';
-import { CommonQueryMethods, PostgresDatabasePool, psql } from '@hive/postgres';
+import { PostgresDatabasePool, psql } from '@hive/postgres';
 import {
   decodeCreatedAtAndUUIDIdBasedCursor,
   encodeCreatedAtAndUUIDIdBasedCursor,
   SchemaChangeModel,
 } from '@hive/storage';
 import { TaskScheduler } from '@hive/workflows/kit';
+import { SchemaProposalApprovalTask } from '@hive/workflows/tasks/schema-proposal-approval';
 import { SchemaProposalCompositionTask } from '@hive/workflows/tasks/schema-proposal-composition';
 import { SchemaProposalStage } from '../../../__generated__/types';
 import { Logger } from '../../shared/providers/logger';
@@ -59,6 +60,10 @@ export class SchemaProposalStorage {
     native: boolean;
   }) {
     await this.taskScheduler.scheduleTask(SchemaProposalCompositionTask, input);
+  }
+
+  async runBackgroundApproval(input: { proposalId: string; targetId: string }) {
+    await this.taskScheduler.scheduleTask(SchemaProposalApprovalTask, input);
   }
 
   private async assertSchemaProposalsEnabled(args: {
@@ -130,18 +135,24 @@ export class SchemaProposalStorage {
       );
 
       const row = await conn.maybeOne(psql`
-        INSERT INTO schema_proposal_reviews
-          ("schema_proposal_id", "stage_transition", "author", "service_name")
-        VALUES (
-          ${args.id}
-          , ${args.stage}
-          , ${args.author}
-          , ${args.serviceName}
-        )
-        RETURNING ${schemaProposalReviewFields}
-      `);
+          INSERT INTO schema_proposal_reviews
+            ("schema_proposal_id", "stage_transition", "author", "service_name")
+          VALUES (
+            ${args.id}
+            , ${args.stage}
+            , ${args.author}
+            , ${args.serviceName}
+          )
+          RETURNING ${schemaProposalReviewFields}
+        `);
+
       return SchemaProposalReviewModel.parse(row);
     });
+
+    // @todo rollback if this fails
+    if (args.stage === 'APPROVED') {
+      await this.runBackgroundApproval({ proposalId: args.id, targetId: args.targetId });
+    }
 
     return {
       type: 'ok' as const,
@@ -382,37 +393,6 @@ export class SchemaProposalStorage {
         startCursor: items[0]?.cursor ?? '',
       },
     };
-  }
-
-  async _approveChanges(
-    conn: CommonQueryMethods,
-    records: {
-      change: Change;
-      proposalId: string;
-      service?: string;
-      targetId: string;
-    }[],
-  ) {
-    const values = records.map(
-      r => psql`(
-      ${generateChangeHash(r.change)},
-      ,${JSON.stringify(r.change)}
-      ,${r.proposalId}
-      ,${r.service ?? null}
-      ,${r.targetId}
-    )`,
-    );
-
-    await conn.query(psql`
-      INSERT INTO "proposal_approved_changes" (
-         hash
-        ,change
-        ,proposal_id
-        ,service
-        ,target_id
-      )
-      VALUES ${psql.join(values, psql.fragment`,`)}
-    `);
   }
 
   /**

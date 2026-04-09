@@ -17,7 +17,7 @@ export const SchemaProposalChangeDetails: SchemaProposalChangeDetailsResolvers =
       .getProposal({ id: schemaProposalId });
 
     if (!proposal) {
-      throw new Error('Something went wrong!');
+      throw new Error('Proposal not found');
     }
     const ref = await injector
       .get(IdTranslator)
@@ -25,8 +25,6 @@ export const SchemaProposalChangeDetails: SchemaProposalChangeDetailsResolvers =
     if (!ref) {
       throw new HiveError('Target not found');
     }
-    // @todo consider passing in these values to avoid the lookup
-    // const { organizationId, projectId, targetId } = parent.selector;
 
     const version = await injector.get(SchemaManager).getSchemaVersion({
       versionId,
@@ -39,6 +37,7 @@ export const SchemaProposalChangeDetails: SchemaProposalChangeDetailsResolvers =
   },
   schemaProposal: async (parent, _arg, { injector }) => {
     if (!parent) {
+      // this should never happen
       throw new Error('Uh oh');
     }
     const schemaProposalId = parent.schemaProposal.id;
@@ -48,7 +47,7 @@ export const SchemaProposalChangeDetails: SchemaProposalChangeDetailsResolvers =
       .getProposal({ id: schemaProposalId });
 
     if (!proposal) {
-      throw new Error('Something went wrong!');
+      throw new Error('Proposal not found');
     }
     return proposal;
   },

@@ -10,10 +10,14 @@ export const ContractVersion: ContractVersionResolvers = {
       .get(ContractsManager)
       .getHasSchemaChangesForContractVersion(contractVersion);
   },
-  breakingSchemaChanges: (contractVersion, _, context) =>
-    context.injector.get(ContractsManager).getBreakingChangesForContractVersion(contractVersion),
-  safeSchemaChanges: (contractVersion, _, context) =>
-    context.injector.get(ContractsManager).getSafeChangesForContractVersion(contractVersion),
+  breakingSchemaChanges: (contractVersion, _, context) => {
+    return context.injector
+      .get(ContractsManager)
+      .getBreakingChangesForContractVersion(contractVersion);
+  },
+  safeSchemaChanges: (contractVersion, _, context) => {
+    return context.injector.get(ContractsManager).getSafeChangesForContractVersion(contractVersion);
+  },
   compositeSchemaSDL: contractVersion => contractVersion.compositeSchemaSdl,
   supergraphSDL: contractVersion => contractVersion.supergraphSdl,
   previousContractVersion: (contractVersion, _, context) =>
@@ -28,6 +32,7 @@ export const ContractVersion: ContractVersionResolvers = {
     context.injector
       .get(ContractsManager)
       .getIsFirstComposableVersionForContractVersion(contractVersion),
-  schemaChanges: async (contractVersion, _, context) =>
-    context.injector.get(ContractsManager).getAllChangesForContractVersion(contractVersion),
+  schemaChanges: async (contractVersion, _, context) => {
+    return context.injector.get(ContractsManager).getAllChangesForContractVersion(contractVersion);
+  },
 };

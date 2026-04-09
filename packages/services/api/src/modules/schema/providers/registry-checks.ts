@@ -2,7 +2,6 @@ import { URL } from 'node:url';
 import { type GraphQLSchema } from 'graphql';
 import { Injectable, Scope } from 'graphql-modules';
 import hashObject from 'object-hash';
-import { generateChangeHash } from '@graphql-inspector/compare-changes';
 import { ChangeType, CriticalityLevel, DiffRule, TypeOfChangeType } from '@graphql-inspector/core';
 import type { CheckPolicyResponse } from '@hive/policy';
 import type { CompositionFailureError, ContractsInputType } from '@hive/schema';
@@ -736,18 +735,6 @@ export class RegistryChecks {
         ),
       );
     }
-
-    const test = await Promise.all(
-      inspectorChanges.map(async change => {
-        const hash = generateChangeHash(
-          change as unknown as Parameters<typeof generateChangeHash>[0],
-        );
-        // @todo batch lookup based on hashes
-        return hash;
-      }),
-    );
-    // @todo
-    console.log(JSON.stringify(test));
 
     let isFailure = false;
     const safeChanges: Array<SchemaChangeType> = [];

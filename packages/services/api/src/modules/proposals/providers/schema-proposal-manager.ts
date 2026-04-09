@@ -66,7 +66,7 @@ export class SchemaProposalManager {
 
         // fetch the groups
         const approvedProposedChangesByCacheId = await Promise.all(
-          groupedSelectors.entries().map(async ([targetId, changes]) => {
+          Array.from(groupedSelectors.entries()).map(async ([targetId, changes]) => {
             const result = await this.proposalStorage.getEquivalentUnimplementedApprovedChanges({
               changes: changes as unknown as Change<any>[],
               targetId,
@@ -409,16 +409,13 @@ export class SchemaProposalManager {
           change as unknown as Change<any>,
         ) && implementedChange.schemaVersionId,
     );
-    if (implementation) {
-      return {
-        schemaProposal: { id: schemaProposalId },
-        implementedBy: implementation?.schemaVersionId
-          ? {
-              id: implementation.schemaVersionId,
-            }
-          : null,
-      };
-    }
-    return null;
+    return {
+      schemaProposal: { id: schemaProposalId },
+      implementedBy: implementation?.schemaVersionId
+        ? {
+            id: implementation.schemaVersionId,
+          }
+        : null,
+    };
   }
 }
