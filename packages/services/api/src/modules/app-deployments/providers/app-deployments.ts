@@ -513,19 +513,16 @@ export class AppDeployments {
 
     // Write the active format to all S3 endpoints
     for (const s3 of this.s3) {
-      const result = await s3.client.fetch(
-        [s3.endpoint, s3.bucket, enabledKey].join('/'),
-        {
-          method: 'PUT',
-          body: activeFormat,
-          headers: {
-            'content-type': 'text/plain',
-          },
-          aws: {
-            signQuery: true,
-          },
+      const result = await s3.client.fetch([s3.endpoint, s3.bucket, enabledKey].join('/'), {
+        method: 'PUT',
+        body: activeFormat,
+        headers: {
+          'content-type': 'text/plain',
         },
-      );
+        aws: {
+          signQuery: true,
+        },
+      });
 
       if (result.statusCode !== 200) {
         throw new Error(`Failed to enable app deployment: ${result.statusMessage}`);
@@ -1710,6 +1707,27 @@ export class AppDeployments {
 
     const sha256Regex = /^(sha256:)?[a-f0-9]{64}$/i;
     return sha256Regex.test(parsed[0].hash) ? 'v2' : 'v1';
+  }
+
+  /** Write the format to the apps-enabled S3 key */
+  async writeAppDeploymentFormat(args: {
+    targetId: string;
+    appName: string;
+    appVersion: string;
+    format: string;
+  }) {
+    const enabledKey = buildAppDeploymentIsEnabledKey(args.targetId, args.appName, args.appVersion);
+    for (const s3 of this.s3) {
+      const result = await s3.client.fetch([s3.endpoint, s3.bucket, enabledKey].join('/'), {
+        method: 'PUT',
+        body: args.format,
+        headers: { 'content-type': 'text/plain' },
+        aws: { signQuery: true },
+      });
+      if (result.statusCode !== 200) {
+        throw new Error(`Failed to write app deployment format: ${result.statusMessage}`);
+      }
+    }
   }
 }
 

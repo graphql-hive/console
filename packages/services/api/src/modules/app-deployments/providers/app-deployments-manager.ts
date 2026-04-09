@@ -98,11 +98,24 @@ export class AppDeploymentsManager {
       return result;
     }
 
-    const existingHashes = args.hashes?.length
+    const hashes = args.hashes != null && args.hashes.length > 0 ? args.hashes : null;
+
+    // Write format to apps-enabled immediately so activation knows the format,
+    // even if all documents are deduped and no upload happens.
+    if (hashes) {
+      await this.appDeployments.writeAppDeploymentFormat({
+        targetId: selector.targetId,
+        appName: args.appDeployment.name,
+        appVersion: args.appDeployment.version,
+        format: 'v2-inactive',
+      });
+    }
+
+    const existingHashes = hashes
       ? await this.appDeployments.getExistingDocumentHashes({
           targetId: selector.targetId,
           appName: args.appDeployment.name,
-          hashes: args.hashes,
+          hashes,
           appDeploymentId: result.appDeployment.id,
         })
       : [];

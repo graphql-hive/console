@@ -5991,13 +5991,10 @@ test('v1 format documents are accessible via CDN using format from apps-enabled 
   }).then(res => res.expectNoGraphQLErrors());
 
   // Not activated: apps-enabled body should be v1-inactive, CDN should reject
-  const inactiveResponse = await fetch(
-    `${cdnAccess.cdnUrl}/apps/my-app/2.0.0/another-hash`,
-    {
-      method: 'GET',
-      headers: { 'X-Hive-CDN-Key': cdnAccess.secretAccessToken },
-    },
-  );
+  const inactiveResponse = await fetch(`${cdnAccess.cdnUrl}/apps/my-app/2.0.0/another-hash`, {
+    method: 'GET',
+    headers: { 'X-Hive-CDN-Key': cdnAccess.secretAccessToken },
+  });
   expect(inactiveResponse.status).toBe(404);
 });
 
@@ -6292,8 +6289,7 @@ test('CDN uses format from apps-enabled key to resolve documents without fallbac
   });
 
   const cdnAccess = await createCdnAccess();
-  const sha256Hash =
-    'ec2e01311ab3b02f3d8c8c712f9e579356d332cd007ac4c1ea5df727f482f05f';
+  const sha256Hash = 'ec2e01311ab3b02f3d8c8c712f9e579356d332cd007ac4c1ea5df727f482f05f';
 
   // Deploy with v2 format
   await execute({
@@ -6350,12 +6346,85 @@ test('CDN uses format from apps-enabled key to resolve documents without fallbac
   }).then(res => res.expectNoGraphQLErrors());
 
   // v2.0.0 is not activated, apps-enabled body should be v2-inactive
-  const inactiveResponse = await fetch(
-    `${cdnAccess.cdnUrl}/apps/my-app/2.0.0/${sha256Hash}`,
-    {
-      method: 'GET',
-      headers: { 'X-Hive-CDN-Key': cdnAccess.secretAccessToken },
-    },
-  );
+  const inactiveResponse = await fetch(`${cdnAccess.cdnUrl}/apps/my-app/2.0.0/${sha256Hash}`, {
+    method: 'GET',
+    headers: { 'X-Hive-CDN-Key': cdnAccess.secretAccessToken },
+  });
   expect(inactiveResponse.status).toBe(404);
+});
+
+test('v2 deployment with 100% dedup still resolves correctly via CDN', async () => {
+  const { createOrg } = await initSeed().createOwner();
+  const { createProject, setFeatureFlag } = await createOrg();
+  await setFeatureFlag('appDeployments', true);
+  const { createTargetAccessToken, createCdnAccess } = await createProject();
+  const token = await createTargetAccessToken({});
+
+  await token.publishSchema({
+    sdl: /* GraphQL */ `
+      type Query {
+        hello: String
+      }
+    `,
+  });
+
+  const cdnAccess = await createCdnAccess();
+  const sha256Hash = 'ec2e01311ab3b02f3d8c8c712f9e579356d332cd007ac4c1ea5df727f482f05f';
+
+  // Create and upload v1.0.0 with the document
+  await execute({
+    document: CreateAppDeployment,
+    variables: { input: { appName: 'my-app', appVersion: '1.0.0' } },
+    authToken: token.secret,
+  }).then(res => res.expectNoGraphQLErrors());
+
+  await execute({
+    document: AddDocumentsToAppDeploymentWithFormat,
+    variables: {
+      input: {
+        appName: 'my-app',
+        appVersion: '1.0.0',
+        documents: [{ hash: sha256Hash, body: 'query { hello }' }],
+        format: AppDeploymentFormatType.V2,
+      },
+    },
+    authToken: token.secret,
+  }).then(res => res.expectNoGraphQLErrors());
+
+  await execute({
+    document: ActivateAppDeployment,
+    variables: { input: { appName: 'my-app', appVersion: '1.0.0' } },
+    authToken: token.secret,
+  }).then(res => res.expectNoGraphQLErrors());
+
+  // Create v2.0.0 with hashes: all documents already exist (100% dedup)
+  const { createAppDeployment } = await execute({
+    document: CreateAppDeploymentWithHashes,
+    variables: {
+      input: {
+        appName: 'my-app',
+        appVersion: '2.0.0',
+        hashes: [sha256Hash],
+      },
+    },
+    authToken: token.secret,
+  }).then(res => res.expectNoGraphQLErrors());
+
+  // All hashes should be existing: CLI would skip upload entirely
+  expect(createAppDeployment.ok?.existingHashes).toContain(sha256Hash);
+
+  // Activate v2.0.0 (no documents were uploaded, but format should be v2)
+  await execute({
+    document: ActivateAppDeployment,
+    variables: { input: { appName: 'my-app', appVersion: '2.0.0' } },
+    authToken: token.secret,
+  }).then(res => res.expectNoGraphQLErrors());
+
+  // CDN should resolve the document via v2 key (format was written during createAppDeployment)
+  const response = await fetch(`${cdnAccess.cdnUrl}/apps/my-app/2.0.0/${sha256Hash}`, {
+    method: 'GET',
+    headers: { 'X-Hive-CDN-Key': cdnAccess.secretAccessToken },
+  });
+  expect(response.status).toBe(200);
+  expect(await response.text()).toBe('query { hello }');
 });

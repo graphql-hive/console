@@ -455,9 +455,7 @@ export class ArtifactStorageReader {
         const manifestBody = await manifestResponse.text();
         const allowedHashes = new Set(manifestBody.split('\n').filter(Boolean));
         if (!allowedHashes.has(hash)) {
-          this.breadcrumb(
-            `Version isolation: hash ${hash} not in manifest for ${manifestKey}`,
-          );
+          this.breadcrumb(`Version isolation: hash ${hash} not in manifest for ${manifestKey}`);
           return { type: 'notFound' } as const;
         }
       } else {

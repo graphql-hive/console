@@ -1,8 +1,5 @@
 import zod from 'zod';
-import {
-  type AppDeploymentStatus,
-  type ArtifactStorageReader,
-} from './artifact-storage-reader';
+import { type AppDeploymentStatus, type ArtifactStorageReader } from './artifact-storage-reader';
 
 const AppDeploymentIsEnabledKeyModel = zod.tuple([
   zod.string().uuid(),
