@@ -42,6 +42,10 @@
   height: 100%;
 }
 
+.hive-laboratory .inactive-line {
+  opacity: 0.5;
+}
+
 .hive-laboratory {
   --color-neutral-1: 0 0% 99%;
   --color-neutral-2: 180 9% 97%;

@@ -45,15 +45,25 @@ export interface LaboratoryOperationsActions {
   setOperations: (operations: LaboratoryOperation[]) => void;
   updateActiveOperation: (operation: Partial<Omit<LaboratoryOperation, 'id'>>) => void;
   deleteOperation: (operationId: string) => void;
-  addPathToActiveOperation: (path: string) => void;
-  deletePathFromActiveOperation: (path: string) => void;
-  addArgToActiveOperation: (path: string, argName: string, schema: GraphQLSchema) => void;
-  deleteArgFromActiveOperation: (path: string, argName: string) => void;
+  addPathToActiveOperation: (path: string, operationName?: string | null) => void;
+  deletePathFromActiveOperation: (path: string, operationName?: string | null) => void;
+  addArgToActiveOperation: (
+    path: string,
+    argName: string,
+    schema: GraphQLSchema,
+    operationName?: string | null,
+  ) => void;
+  deleteArgFromActiveOperation: (
+    path: string,
+    argName: string,
+    operationName?: string | null,
+  ) => void;
   runActiveOperation: (
     endpoint: string,
     options?: {
       env?: LaboratoryEnv;
       headers?: Record<string, string>;
+      operationName?: string;
       onResponse?: (response: string) => void;
     },
   ) => Promise<Response | null>;
@@ -243,13 +253,13 @@ export const useOperations = (
   );
 
   const addPathToActiveOperation = useCallback(
-    (path: string) => {
+    (path: string, operationName?: string | null) => {
       if (!activeOperation) {
         return;
       }
       const newActiveOperation = {
         ...activeOperation,
-        query: addPathToQuery(activeOperation.query, path),
+        query: addPathToQuery(activeOperation.query, path, operationName),
       };
       updateActiveOperation(newActiveOperation);
     },
@@ -257,14 +267,14 @@ export const useOperations = (
   );
 
   const deletePathFromActiveOperation = useCallback(
-    (path: string) => {
+    (path: string, operationName?: string | null) => {
       if (!activeOperation?.query) {
         return;
       }
 
       const newActiveOperation = {
         ...activeOperation,
-        query: deletePathFromQuery(activeOperation.query, path),
+        query: deletePathFromQuery(activeOperation.query, path, operationName),
       };
       updateActiveOperation(newActiveOperation);
     },
@@ -272,14 +282,14 @@ export const useOperations = (
   );
 
   const addArgToActiveOperation = useCallback(
-    (path: string, argName: string, schema: GraphQLSchema) => {
+    (path: string, argName: string, schema: GraphQLSchema, operationName?: string | null) => {
       if (!activeOperation?.query) {
         return;
       }
 
       const newActiveOperation = {
         ...activeOperation,
-        query: addArgToField(activeOperation.query, path, argName, schema),
+        query: addArgToField(activeOperation.query, path, argName, schema, operationName),
       };
       updateActiveOperation(newActiveOperation);
     },
@@ -287,14 +297,14 @@ export const useOperations = (
   );
 
   const deleteArgFromActiveOperation = useCallback(
-    (path: string, argName: string) => {
+    (path: string, argName: string, operationName?: string | null) => {
       if (!activeOperation?.query) {
         return;
       }
 
       const newActiveOperation = {
         ...activeOperation,
-        query: removeArgFromField(activeOperation.query, path, argName),
+        query: removeArgFromField(activeOperation.query, path, argName, operationName),
       };
       updateActiveOperation(newActiveOperation);
     },
@@ -323,6 +333,7 @@ export const useOperations = (
         env?: LaboratoryEnv;
         headers?: Record<string, string>;
         onResponse?: (response: string) => void;
+        operationName?: string;
       },
       plugins: LaboratoryPlugin[] = props.pluginsApi?.plugins ?? [],
       pluginsState: Record<string, any> = props.pluginsApi?.pluginsState ?? {},
@@ -447,6 +458,7 @@ export const useOperations = (
         credentials: props.settingsApi?.settings.fetch.credentials,
         body: JSON.stringify({
           query: activeOperation.query,
+          operationName: options?.operationName,
           variables,
           extensions,
         }),
