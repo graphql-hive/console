@@ -19,12 +19,16 @@ This proposal covers two workstreams:
 ### Design decisions made so far
 
 - **Resolved notifications**: Send a "resolved" notification when a metric alert transitions from
-  FIRING back to OK
+  FIRING through RECOVERING back to NORMAL
 - **Alert scoping**: Metric alerts can optionally be scoped to a specific insights filter (operation
   IDs and/or client name+version combinations)
 - **Multiple email recipients**: Email channels support an array of addresses
 - **Severity levels**: Alerts carry a user-defined severity label (info, warning, critical) for
   organizational purposes
+- **Four-state alert lifecycle**: Alerts transition through NORMAL → PENDING → FIRING → RECOVERING
+  → NORMAL. The pending and recovering states require the condition to hold for a configurable
+  number of consecutive minutes (`confirmation_minutes`) before escalating or resolving, preventing
+  flapping (rapid normal→firing→normal→firing cycles). All four states are user-facing.
 
 ---
 
@@ -269,6 +273,8 @@ CREATE TYPE metric_alert_direction AS ENUM('ABOVE', 'BELOW');
 
 CREATE TYPE metric_alert_severity AS ENUM('INFO', 'WARNING', 'CRITICAL');
 
+CREATE TYPE metric_alert_state AS ENUM('NORMAL', 'PENDING', 'FIRING', 'RECOVERING');
+
 -- Alert configuration (what to monitor and how)
 CREATE TABLE metric_alerts (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid (),
@@ -287,6 +293,12 @@ CREATE TABLE metric_alerts (
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   enabled BOOLEAN NOT NULL DEFAULT TRUE,
   last_evaluated_at TIMESTAMPTZ,
+  -- Alert state machine
+  state metric_alert_state NOT NULL DEFAULT 'NORMAL',
+  state_changed_at TIMESTAMPTZ,           -- when the current state began
+  -- How many consecutive minutes the condition must hold before
+  -- PENDING → FIRING or RECOVERING → NORMAL (prevents flapping)
+  confirmation_minutes INT NOT NULL DEFAULT 5,
   -- Optional insights filter scoping (stored as JSONB)
   -- Matches OperationStatsFilterInput: { operationIds?, excludeOperations?,
   --   clientVersionFilters?: [{clientName, versions?}], excludeClientVersionFilters? }
@@ -341,9 +353,9 @@ Alert configuration CRUD:
 Incident management:
 
 - `createIncident(alertId, currentValue, previousValue, thresholdValue)` — called when alert
-  transitions OK → FIRING
-- `resolveIncident(alertId)` — sets `resolved_at` on the open incident when alert transitions FIRING
-  → OK
+  transitions PENDING → FIRING
+- `resolveIncident(alertId)` — sets `resolved_at` on the open incident when alert transitions
+  RECOVERING → NORMAL
 - `getOpenIncident(alertId)` — find currently firing incident (where `resolved_at IS NULL`)
 - `getIncidentHistory(alertId, limit, offset)` — paginated history for the UI
 
@@ -377,6 +389,12 @@ enum MetricAlertSeverity {
   WARNING
   CRITICAL
 }
+enum MetricAlertState {
+  NORMAL
+  PENDING
+  FIRING
+  RECOVERING
+}
 
 type MetricAlert {
   id: ID!
@@ -390,14 +408,12 @@ type MetricAlert {
   thresholdValue: Float!
   direction: MetricAlertDirection!
   severity: MetricAlertSeverity!
+  state: MetricAlertState!
+  confirmationMinutes: Int!
   enabled: Boolean!
   lastEvaluatedAt: DateTime
   createdAt: DateTime!
   filter: OperationStatsFilterInput
-  """
-  Whether this alert is currently firing (has an open incident)
-  """
-  isFiring: Boolean!
   """
   The currently open incident, if any
   """
@@ -467,12 +483,26 @@ available. This gives on-call engineers a worst-case ~2 minute detection time.
 3. Query ClickHouse for current window and previous window (with 1-minute offset to account for
    ingestion pipeline latency)
 4. Compare metric values against thresholds
-5. State transitions (determined by whether an open incident exists for the alert):
-   - **OK → FIRING**: create a new incident row, send notification, update `last_evaluated_at`
-   - **FIRING → FIRING**: no notification (prevent spam), update `last_evaluated_at`
-   - **FIRING → OK**: set `resolved_at` on the open incident, send "resolved" notification, update
-     `last_evaluated_at`
-   - **OK → OK**: update `last_evaluated_at` only
+5. State machine transitions (using `state` and `state_changed_at` on the alert row):
+
+   **When threshold IS breached:**
+   - **NORMAL → PENDING**: set state to PENDING, set `state_changed_at` to now. No notification yet.
+   - **PENDING (held < confirmation_minutes)**: remain PENDING, no action.
+   - **PENDING (held >= confirmation_minutes) → FIRING**: create incident row, send alert
+     notification, update state + `state_changed_at`.
+   - **FIRING → FIRING**: no notification (prevent spam), update `last_evaluated_at`.
+   - **RECOVERING → FIRING**: condition failed again before recovery confirmed. Set state back to
+     FIRING, update `state_changed_at`. No notification (already sent).
+
+   **When threshold is NOT breached:**
+   - **NORMAL → NORMAL**: update `last_evaluated_at` only.
+   - **PENDING → NORMAL**: false alarm — condition didn't hold long enough. Reset state to NORMAL,
+     update `state_changed_at`. No notification.
+   - **FIRING → RECOVERING**: set state to RECOVERING, set `state_changed_at` to now. No
+     notification yet.
+   - **RECOVERING (held < confirmation_minutes)**: remain RECOVERING, no action.
+   - **RECOVERING (held >= confirmation_minutes) → NORMAL**: set `resolved_at` on open incident,
+     send "resolved" notification, update state + `state_changed_at`.
 
 #### ClickHouse Query Design
 
