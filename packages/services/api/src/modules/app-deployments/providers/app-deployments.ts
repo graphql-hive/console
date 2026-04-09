@@ -453,44 +453,42 @@ export class AppDeployments {
       };
     }
 
-    // Write v2 hash manifest BEFORE the apps-enabled flag to avoid a race condition
-    // where the CDN sees the deployment as active but the manifest doesn't exist yet.
+    // Write v2 hash manifest if not already written during createAppDeployment.
+    // This handles deployments that didn't use the hashes input (legacy flow).
     const deploymentFormat = await this.getDeploymentDocumentFormat(appDeployment.id);
     if (deploymentFormat === 'v2') {
-      const hashesResult = await this.clickhouse.query({
-        query: cSql`
-          SELECT document_hash AS hash
-          FROM app_deployment_documents
-          PREWHERE app_deployment_id = ${appDeployment.id}
-        `,
-        queryId: 'get-deployment-hashes-for-manifest',
-        timeout: 30_000,
-      });
-      const manifestHashes = z
-        .array(z.object({ hash: z.string() }))
-        .parse(hashesResult.data)
-        .map(row => row.hash);
-
       const manifestKey = buildV2HashManifestKey(
         appDeployment.targetId,
         appDeployment.name,
         appDeployment.version,
       );
-      const manifestBody = manifestHashes.join('\n');
+      // Check if manifest already exists (written during createAppDeployment)
+      const existingManifest = await this.s3[0].client.fetch(
+        [this.s3[0].endpoint, this.s3[0].bucket, manifestKey].join('/'),
+        { method: 'HEAD', aws: { signQuery: true } },
+      );
+      if (existingManifest.statusCode !== 200) {
+        // Manifest doesn't exist, build it from clickhouse (only has uploaded hashes, not deduped)
+        const hashesResult = await this.clickhouse.query({
+          query: cSql`
+            SELECT document_hash AS hash
+            FROM app_deployment_documents
+            PREWHERE app_deployment_id = ${appDeployment.id}
+          `,
+          queryId: 'get-deployment-hashes-for-manifest',
+          timeout: 30_000,
+        });
+        const manifestHashes = z
+          .array(z.object({ hash: z.string() }))
+          .parse(hashesResult.data)
+          .map(row => row.hash);
 
-      for (const s3 of this.s3) {
-        const manifestResult = await s3.client.fetch(
-          [s3.endpoint, s3.bucket, manifestKey].join('/'),
-          {
-            method: 'PUT',
-            body: manifestBody,
-            headers: { 'content-type': 'text/plain' },
-            aws: { signQuery: true },
-          },
-        );
-        if (manifestResult.statusCode !== 200) {
-          throw new Error(`Failed to write v2 hash manifest: ${manifestResult.statusMessage}`);
-        }
+        await this.writeV2HashManifest({
+          targetId: appDeployment.targetId,
+          appName: appDeployment.name,
+          appVersion: appDeployment.version,
+          hashes: manifestHashes,
+        });
       }
     }
 
@@ -1726,6 +1724,28 @@ export class AppDeployments {
       });
       if (result.statusCode !== 200) {
         throw new Error(`Failed to write app deployment format: ${result.statusMessage}`);
+      }
+    }
+  }
+
+  /** Write the full hash manifest for a v2 deployment version to S3 */
+  async writeV2HashManifest(args: {
+    targetId: string;
+    appName: string;
+    appVersion: string;
+    hashes: readonly string[];
+  }) {
+    const manifestKey = buildV2HashManifestKey(args.targetId, args.appName, args.appVersion);
+    const manifestBody = args.hashes.join('\n');
+    for (const s3 of this.s3) {
+      const result = await s3.client.fetch([s3.endpoint, s3.bucket, manifestKey].join('/'), {
+        method: 'PUT',
+        body: manifestBody,
+        headers: { 'content-type': 'text/plain' },
+        aws: { signQuery: true },
+      });
+      if (result.statusCode !== 200) {
+        throw new Error(`Failed to write v2 hash manifest: ${result.statusMessage}`);
       }
     }
   }

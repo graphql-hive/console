@@ -100,15 +100,24 @@ export class AppDeploymentsManager {
 
     const hashes = args.hashes != null && args.hashes.length > 0 ? args.hashes : null;
 
-    // Write format to apps-enabled immediately so activation knows the format,
+    // Write format and hash manifest immediately so activation has them,
     // even if all documents are deduped and no upload happens.
+    // The manifest must contain ALL hashes (not just newly uploaded ones) for version isolation.
     if (hashes) {
-      await this.appDeployments.writeAppDeploymentFormat({
-        targetId: selector.targetId,
-        appName: args.appDeployment.name,
-        appVersion: args.appDeployment.version,
-        format: 'v2-inactive',
-      });
+      await Promise.all([
+        this.appDeployments.writeAppDeploymentFormat({
+          targetId: selector.targetId,
+          appName: args.appDeployment.name,
+          appVersion: args.appDeployment.version,
+          format: 'v2-inactive',
+        }),
+        this.appDeployments.writeV2HashManifest({
+          targetId: selector.targetId,
+          appName: args.appDeployment.name,
+          appVersion: args.appDeployment.version,
+          hashes,
+        }),
+      ]);
     }
 
     const existingHashes = hashes

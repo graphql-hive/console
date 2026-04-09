@@ -6201,7 +6201,7 @@ test('v2 version isolation: CDN rejects hash not belonging to the requested vers
   // sha256('query { hello }')
   const hashV1 = 'ec2e01311ab3b02f3d8c8c712f9e579356d332cd007ac4c1ea5df727f482f05f';
   // sha256('query { goodbye }')
-  const hashV2Only = 'e52e356849e68a88ee16be34b3e7271b1b69bd4e7b6bce69f3e93ae2bb59e15e';
+  const hashV2Only = '736bc03162a1aca7327174a6f7f34e5165d2fbc4698ec87ba8f7c0fb7ecf4c9b';
 
   // Create v1.0.0 with hashV1
   await execute({
@@ -6427,4 +6427,104 @@ test('v2 deployment with 100% dedup still resolves correctly via CDN', async () 
   });
   expect(response.status).toBe(200);
   expect(await response.text()).toBe('query { hello }');
+});
+
+test('v2 deployment with partial dedup resolves both shared and new hashes', async () => {
+  const { createOrg } = await initSeed().createOwner();
+  const { createProject, setFeatureFlag } = await createOrg();
+  await setFeatureFlag('appDeployments', true);
+  const { createTargetAccessToken, createCdnAccess } = await createProject();
+  const token = await createTargetAccessToken({});
+
+  await token.publishSchema({
+    sdl: /* GraphQL */ `
+      type Query {
+        hello: String
+        goodbye: String
+      }
+    `,
+  });
+
+  const cdnAccess = await createCdnAccess();
+  // sha256('query { hello }')
+  const sharedHash = 'ec2e01311ab3b02f3d8c8c712f9e579356d332cd007ac4c1ea5df727f482f05f';
+  // sha256('query { goodbye }')
+  const newHash = '736bc03162a1aca7327174a6f7f34e5165d2fbc4698ec87ba8f7c0fb7ecf4c9b';
+
+  // Create v1.0.0 with sharedHash
+  await execute({
+    document: CreateAppDeployment,
+    variables: { input: { appName: 'my-app', appVersion: '1.0.0' } },
+    authToken: token.secret,
+  }).then(res => res.expectNoGraphQLErrors());
+
+  await execute({
+    document: AddDocumentsToAppDeploymentWithFormat,
+    variables: {
+      input: {
+        appName: 'my-app',
+        appVersion: '1.0.0',
+        documents: [{ hash: sharedHash, body: 'query { hello }' }],
+        format: AppDeploymentFormatType.V2,
+      },
+    },
+    authToken: token.secret,
+  }).then(res => res.expectNoGraphQLErrors());
+
+  await execute({
+    document: ActivateAppDeployment,
+    variables: { input: { appName: 'my-app', appVersion: '1.0.0' } },
+    authToken: token.secret,
+  }).then(res => res.expectNoGraphQLErrors());
+
+  // Create v2.0.0 with both hashes: sharedHash is deduped, newHash is new
+  const { createAppDeployment } = await execute({
+    document: CreateAppDeploymentWithHashes,
+    variables: {
+      input: {
+        appName: 'my-app',
+        appVersion: '2.0.0',
+        hashes: [sharedHash, newHash],
+      },
+    },
+    authToken: token.secret,
+  }).then(res => res.expectNoGraphQLErrors());
+
+  expect(createAppDeployment.ok?.existingHashes).toContain(sharedHash);
+  expect(createAppDeployment.ok?.existingHashes).not.toContain(newHash);
+
+  // Upload only the new document
+  await execute({
+    document: AddDocumentsToAppDeploymentWithFormat,
+    variables: {
+      input: {
+        appName: 'my-app',
+        appVersion: '2.0.0',
+        documents: [{ hash: newHash, body: 'query { goodbye }' }],
+        format: AppDeploymentFormatType.V2,
+      },
+    },
+    authToken: token.secret,
+  }).then(res => res.expectNoGraphQLErrors());
+
+  await execute({
+    document: ActivateAppDeployment,
+    variables: { input: { appName: 'my-app', appVersion: '2.0.0' } },
+    authToken: token.secret,
+  }).then(res => res.expectNoGraphQLErrors());
+
+  // Both hashes should be accessible via v2.0.0 (manifest has all hashes, not just new ones)
+  const sharedResponse = await fetch(`${cdnAccess.cdnUrl}/apps/my-app/2.0.0/${sharedHash}`, {
+    method: 'GET',
+    headers: { 'X-Hive-CDN-Key': cdnAccess.secretAccessToken },
+  });
+  expect(sharedResponse.status).toBe(200);
+  expect(await sharedResponse.text()).toBe('query { hello }');
+
+  const newResponse = await fetch(`${cdnAccess.cdnUrl}/apps/my-app/2.0.0/${newHash}`, {
+    method: 'GET',
+    headers: { 'X-Hive-CDN-Key': cdnAccess.secretAccessToken },
+  });
+  expect(newResponse.status).toBe(200);
+  expect(await newResponse.text()).toBe('query { goodbye }');
 });
