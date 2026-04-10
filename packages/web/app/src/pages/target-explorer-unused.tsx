@@ -63,7 +63,7 @@ const UnusedSchemaView_UnusedSchemaExplorerFragment = graphql(`
   }
 `);
 
-const UnusedSchemaView = memo(function _UnusedSchemaView(props: {
+function InternalUnusedSchemaView(props: {
   explorer: FragmentType<typeof UnusedSchemaView_UnusedSchemaExplorerFragment>;
   totalRequests: number;
   organizationSlug: string;
@@ -138,7 +138,7 @@ const UnusedSchemaView = memo(function _UnusedSchemaView(props: {
           <PartyPopperIcon className="size-10 text-emerald-500" />
 
           <h3 className="mt-4 text-lg font-semibold">No unused types</h3>
-          <p className="text-muted-foreground mb-4 mt-2 text-sm">
+          <p className="text-neutral-10 mb-4 mt-2 text-sm">
             It looks like you are using all typea in your schema, congratulations!
           </p>
         </div>
@@ -161,7 +161,7 @@ const UnusedSchemaView = memo(function _UnusedSchemaView(props: {
     <div className="space-y-6">
       {unusedFieldsMessage.length ? (
         <div>
-          <p className="text-sm text-gray-400">
+          <p className="text-neutral-10 text-sm">
             You have a total of {unusedFieldsMessage} within {unused.types} different types in the
             selected time period
           </p>
@@ -178,9 +178,7 @@ const UnusedSchemaView = memo(function _UnusedSchemaView(props: {
                   size="sm"
                   className={cn(
                     'rounded-none px-2 py-1',
-                    letter === selectedLetter
-                      ? 'text-orange-500'
-                      : 'text-gray-500 hover:text-orange-500',
+                    letter === selectedLetter ? 'text-accent' : 'text-neutral-10 hover:text-accent',
                   )}
                   key={letter}
                 >
@@ -211,7 +209,9 @@ const UnusedSchemaView = memo(function _UnusedSchemaView(props: {
       </div>
     </div>
   );
-});
+}
+
+const UnusedSchemaView = memo(InternalUnusedSchemaView);
 
 const UnusedSchemaExplorer_UnusedSchemaQuery = graphql(`
   query UnusedSchemaExplorer_UnusedSchemaQuery(

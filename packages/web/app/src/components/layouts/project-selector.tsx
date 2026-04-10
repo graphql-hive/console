@@ -1,6 +1,7 @@
+import { PrimaryNavigationLink } from '@/components/navigation/primary-navigation-link';
 import { Select, SelectContent, SelectItem, SelectTrigger } from '@/components/ui/select';
 import { FragmentType, graphql, useFragment } from '@/gql';
-import { Link, useRouter } from '@tanstack/react-router';
+import { useRouter } from '@tanstack/react-router';
 
 const ProjectSelector_OrganizationConnectionFragment = graphql(`
   fragment ProjectSelector_OrganizationConnectionFragment on OrganizationConnection {
@@ -43,19 +44,19 @@ export function ProjectSelector(props: {
   return (
     <>
       {currentOrganization ? (
-        <Link
-          to="/$organizationSlug"
-          params={{ organizationSlug: props.currentOrganizationSlug }}
-          className="max-w-[200px] shrink-0 truncate font-medium"
-        >
-          {currentOrganization.slug}
-        </Link>
+        <PrimaryNavigationLink
+          linkProps={{
+            to: '/$organizationSlug',
+            params: { organizationSlug: props.currentOrganizationSlug },
+          }}
+          linkText={currentOrganization.slug}
+        />
       ) : (
-        <div className="h-5 w-48 max-w-[200px] animate-pulse rounded-full bg-gray-800" />
+        <div className="bg-neutral-5 h-5 w-48 max-w-[200px] animate-pulse rounded-full" />
       )}
       {projectEdges?.length && currentProject ? (
         <>
-          <div className="italic text-gray-500">/</div>
+          <div className="text-neutral-10 italic">/</div>
           <Select
             value={props.currentProjectSlug}
             onValueChange={id => {
@@ -87,7 +88,7 @@ export function ProjectSelector(props: {
           </Select>
         </>
       ) : (
-        <div className="h-5 w-48 animate-pulse rounded-full bg-gray-800" />
+        <div className="bg-neutral-5 h-5 w-48 animate-pulse rounded-full" />
       )}
     </>
   );

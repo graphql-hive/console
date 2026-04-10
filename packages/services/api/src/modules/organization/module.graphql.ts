@@ -169,6 +169,11 @@ export default gql`
     Permissions are inherited by sub-resources.
     """
     resources: ResourceAssignmentInput
+
+    """
+    Set this in order to automatically expire this token after a period of time.
+    """
+    expirationPeriod: TokenExpirationPeriod = NEVER
   }
 
   """
@@ -263,6 +268,11 @@ export default gql`
     Permissions are inherited by sub-resources.
     """
     resources: ProjectTargetsResourceAssignmentInput!
+
+    """
+    Set this in order to automatically expire this token after a period of time.
+    """
+    expirationPeriod: TokenExpirationPeriod = NEVER
   }
 
   """
@@ -374,6 +384,11 @@ export default gql`
     Permissions are inherited by sub-resources.
     """
     resources: ResourceAssignmentInput! @tag(name: "public")
+
+    """
+    Set this in order to automatically expire this token after a period of time.
+    """
+    expirationPeriod: TokenExpirationPeriod = NEVER
   }
 
   """
@@ -467,6 +482,11 @@ export default gql`
     createdAt: DateTime!
 
     """
+    If set, then this is when the token will expire and become invalid.
+    """
+    expiresAt: DateTime
+
+    """
     A list of resource levels, their assigned resources, and the granted permissions on each resource.
     """
     resolvedResourcePermissionGroups(
@@ -499,6 +519,11 @@ export default gql`
     resources: ResourceAssignment! @tag(name: "public")
     firstCharacters: String! @tag(name: "public")
     createdAt: DateTime! @tag(name: "public")
+
+    """
+    If set, then this is when the token will expire and become invalid.
+    """
+    expiresAt: DateTime
 
     """
     A list of resource levels, their assigned resources, and the granted permissions on each resource.
@@ -543,6 +568,11 @@ export default gql`
     createdAt: DateTime! @tag(name: "public")
 
     """
+    If set, then this is when the token will expire and become invalid.
+    """
+    expiresAt: DateTime
+
+    """
     A list of resource levels, their assigned resources, and the granted permissions on each resource.
     """
     resolvedResourcePermissionGroups(
@@ -559,6 +589,11 @@ export default gql`
     description: String @tag(name: "public")
     firstCharacters: String! @tag(name: "public")
     createdAt: DateTime! @tag(name: "public")
+
+    """
+    If set, then this is when the token will expire and become invalid.
+    """
+    expiresAt: DateTime
 
     """
     A list of the resource levels, the assigned resources and the granted permissions on each of those resources.
@@ -888,7 +923,10 @@ export default gql`
     cleanId: ID! @deprecated(reason: "Use the 'slug' field instead.")
     name: String! @deprecated(reason: "Use the 'slug' field instead.")
     owner: Member! @tag(name: "public")
-    me: Member!
+    """
+    Returns 'null' if the user is not a member of the organization, but able to see the organization (admin user).
+    """
+    me: Member
     members(
       first: Int @tag(name: "public")
       after: String @tag(name: "public")
@@ -1254,6 +1292,7 @@ export default gql`
   type Member {
     id: ID!
     user: User! @tag(name: "public")
+    authProviders: [MemberAuthProvider!]!
     isOwner: Boolean! @tag(name: "public")
     canLeaveOrganization: Boolean!
     role: MemberRole! @tag(name: "public")
@@ -1381,6 +1420,11 @@ export default gql`
     projects: [ProjectResourceAssignment!] @tag(name: "public")
   }
 
+  type MemberAuthProvider {
+    type: AuthProviderType!
+    disabledReason: String
+  }
+
   extend type Project {
     """
     Paginated list of access tokens issued for the project.
@@ -1405,11 +1449,15 @@ export default gql`
     """
     Paginated list of access tokens issued for the project.
     """
-    accessTokens(first: Int, after: String): PersonalAccessTokenConnection!
+    accessTokens(
+      first: Int
+      after: String
+      includeExpired: Boolean = true
+    ): PersonalAccessTokenConnection!
     """
     Access token for project.
     """
-    accessToken(id: ID!): PersonalAccessToken
+    accessToken(id: ID!, includeExpired: Boolean = true): PersonalAccessToken
   }
 
   """
@@ -1459,6 +1507,7 @@ export default gql`
     - **App Deployment** "the-guild/graphql-hive/production/appDeployment/production"
 
     These ids can also contain wildcards, e.g. "the-guild/graphql-hive/*", to reference all targets in a project.
+    If the field resolves to 'null', the permission group is not granted on any resource.
     """
     resolvedResourceIds: [String!]
     """

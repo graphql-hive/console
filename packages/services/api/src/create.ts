@@ -1,5 +1,6 @@
 import { CONTEXT, createApplication, Provider, Scope } from 'graphql-modules';
 import { Redis } from 'ioredis';
+import { PostgresDatabasePool } from '@hive/postgres';
 import { TaskScheduler } from '@hive/workflows/kit';
 import { adminModule } from './modules/admin';
 import { alertsModule } from './modules/alerts';
@@ -42,6 +43,7 @@ import {
 import { projectModule } from './modules/project';
 import { proposalsModule } from './modules/proposals';
 import { SCHEMA_PROPOSALS_ENABLED } from './modules/proposals/providers/schema-proposals-enabled-token';
+import { savedFiltersModule } from './modules/saved-filters';
 import { schemaModule } from './modules/schema';
 import { ArtifactStorageWriter } from './modules/schema/providers/artifact-storage-writer';
 import { provideSchemaModuleConfig, SchemaModuleConfig } from './modules/schema/providers/config';
@@ -60,13 +62,13 @@ import {
 } from './modules/shared/providers/in-memory-rate-limiter';
 import { Logger } from './modules/shared/providers/logger';
 import { Mutex } from './modules/shared/providers/mutex';
-import { PG_POOL_CONFIG } from './modules/shared/providers/pg-pool';
 import { PrometheusConfig } from './modules/shared/providers/prometheus-config';
 import { HivePubSub, PUB_SUB_CONFIG } from './modules/shared/providers/pub-sub';
 import { REDIS_INSTANCE } from './modules/shared/providers/redis';
+import { RedisRateLimiter } from './modules/shared/providers/redis-rate-limiter';
 import { S3_CONFIG, type S3Config } from './modules/shared/providers/s3-config';
 import { Storage } from './modules/shared/providers/storage';
-import { WEB_APP_URL } from './modules/shared/providers/tokens';
+import { RateLimitConfig, WEB_APP_URL } from './modules/shared/providers/tokens';
 import { supportModule } from './modules/support';
 import { provideSupportConfig, SupportConfig } from './modules/support/providers/config';
 import { targetModule } from './modules/target';
@@ -91,6 +93,7 @@ const modules = [
   oidcIntegrationsModule,
   schemaPolicyModule,
   collectionModule,
+  savedFiltersModule,
   appDeploymentsModule,
   auditLogsModule,
   proposalsModule,
@@ -158,6 +161,10 @@ export function createRegistry({
   encryptionSecret: string;
   app: {
     baseUrl: string;
+    rateLimit: null | {
+      ipHeaderName: string;
+      bypassKey: string | null;
+    };
   } | null;
   schemaConfig: SchemaModuleConfig;
   supportConfig: SupportConfig | null;
@@ -220,6 +227,7 @@ export function createRegistry({
     CryptoProvider,
     InMemoryRateLimitStore,
     InMemoryRateLimiter,
+    RedisRateLimiter,
     {
       provide: AuditLogS3Config,
       useValue: auditLogS3Config,
@@ -309,7 +317,12 @@ export function createRegistry({
       scope: Scope.Singleton,
     },
     {
-      provide: PG_POOL_CONFIG,
+      provide: RateLimitConfig,
+      useValue: new RateLimitConfig(app?.rateLimit ?? null),
+      scope: Scope.Singleton,
+    },
+    {
+      provide: PostgresDatabasePool,
       scope: Scope.Singleton,
       useValue: storage.pool,
     },

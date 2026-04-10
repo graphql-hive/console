@@ -7,7 +7,7 @@ type TextareaProps = React.TextareaHTMLAttributes<HTMLTextAreaElement>;
 const Textarea = React.forwardRef<HTMLTextAreaElement, TextareaProps & { autoSize?: boolean }>(
   ({ className, autoSize, ...props }, ref) => {
     const classNameFinal = cn(
-      'border-input bg-background ring-offset-background placeholder:text-muted-foreground focus-visible:ring-ring flex min-h-[80px] w-full rounded-md border px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50',
+      'border-neutral-5 bg-neutral-3 ring-offset-neutral-2 placeholder:text-neutral-10 focus-visible:ring-ring flex min-h-[80px] w-full rounded-md border px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50',
       autoSize && 'min-h-[0px]',
       className,
     );

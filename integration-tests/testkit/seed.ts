@@ -1,6 +1,9 @@
 import { formatISO, subHours } from 'date-fns';
 import { humanId } from 'human-id';
-import { createPool, sql } from 'slonik';
+import z from 'zod';
+import { NoopLogger } from '@hive/api/modules/shared/providers/logger';
+import { createRedisClient } from '@hive/api/modules/shared/providers/redis';
+import { createPostgresDatabasePool, psql } from '@hive/postgres';
 import type { Report } from '../../packages/libraries/core/src/client/usage.js';
 import { authenticate, userEmail } from './auth';
 import {
@@ -52,55 +55,148 @@ import {
 } from './flow';
 import * as GraphQLSchema from './gql/graphql';
 import {
-  BreakingChangeFormulaType,
   ProjectType,
   SchemaPolicyInput,
   TargetAccessScope,
+  UpdateOrgRateLimitDocument,
 } from './gql/graphql';
 import { execute } from './graphql';
+import { createOIDCIntegration } from './oidc-integration.js';
+import {
+  CreateSavedFilterMutation,
+  DeleteSavedFilterMutation,
+  GetSavedFilterQuery,
+  GetSavedFiltersQuery,
+  TrackSavedFilterViewMutation,
+  UpdateSavedFilterMutation,
+} from './saved-filters';
 import { UpdateSchemaPolicyForOrganization, UpdateSchemaPolicyForProject } from './schema-policy';
 import { collect, CollectedOperation, legacyCollect } from './usage';
-import { generateUnique, getServiceHost } from './utils';
+import { generateUnique, getServiceHost, pollForEmailVerificationLink } from './utils';
+
+function getPGConnectionString() {
+  const pg = {
+    user: ensureEnv('POSTGRES_USER'),
+    password: ensureEnv('POSTGRES_PASSWORD'),
+    host: ensureEnv('POSTGRES_HOST'),
+    port: ensureEnv('POSTGRES_PORT'),
+    db: ensureEnv('POSTGRES_DB'),
+  };
+
+  return `postgres://${pg.user}:${pg.password}@${pg.host}:${pg.port}/${pg.db}?sslmode=disable`;
+}
+
+function createConnectionPool() {
+  return createPostgresDatabasePool({
+    connectionParameters: getPGConnectionString(),
+  });
+}
+
+async function createDbConnection() {
+  const pool = await createConnectionPool();
+  return {
+    pool,
+    [Symbol.asyncDispose]: async () => {
+      await pool.end();
+    },
+  };
+}
+
+let sharedDBPoolPromise: ReturnType<typeof createDbConnection>;
 
 export function initSeed() {
-  function createConnectionPool() {
-    const pg = {
-      user: ensureEnv('POSTGRES_USER'),
-      password: ensureEnv('POSTGRES_PASSWORD'),
-      host: ensureEnv('POSTGRES_HOST'),
-      port: ensureEnv('POSTGRES_PORT'),
-      db: ensureEnv('POSTGRES_DB'),
-    };
+  function getPool() {
+    if (!sharedDBPoolPromise) {
+      sharedDBPoolPromise = createDbConnection();
+    }
+    return sharedDBPoolPromise.then(res => res.pool);
+  }
 
-    return createPool(
-      `postgres://${pg.user}:${pg.password}@${pg.host}:${pg.port}/${pg.db}?sslmode=disable`,
-    );
+  async function doAuthenticate(
+    email: string,
+    opts?: {
+      oidcIntegrationId?: string;
+      verifyEmail?: boolean;
+    },
+  ) {
+    const auth = await authenticate(await getPool(), email, opts?.oidcIntegrationId);
+
+    if (opts?.verifyEmail ?? true) {
+      const pool = await getPool();
+      await pool.query(psql`
+        INSERT INTO "email_verifications" ("user_identity_id", "email", "verified_at")
+        VALUES (${auth.supertokensUserId}, ${email}, NOW())
+      `);
+    }
+
+    return auth;
+  }
+
+  async function purgeOrganizationAccessTokenById(id: string) {
+    const registryAddress = await getServiceHost('server', 8082);
+    const purged: { deleted: boolean } = await fetch(
+      'http://' + registryAddress + '/cache/organization-access-token-cache/delete/' + id,
+      {
+        method: 'POST',
+      },
+    ).then(res => res.json());
+    expect(purged.deleted).toBe(true);
   }
 
   return {
-    async createDbConnection() {
-      const pool = await createConnectionPool();
-      return {
-        pool,
-        [Symbol.asyncDispose]: async () => {
-          await pool.end();
-        },
+    pollForEmailVerificationLink,
+    getPGConnectionString,
+    async purgeOIDCDomains() {
+      const pool = await getPool();
+      await pool.query(psql`
+        TRUNCATE "oidc_integration_domains"
+      `);
+    },
+    async forgeOIDCDNSChallenge(orgSlug: string) {
+      const pool = await getPool();
+
+      const domainChallengeId = await pool
+        .oneFirst(
+          psql`
+      SELECT "oidc_integration_domains"."id"
+      FROM "oidc_integration_domains" INNER JOIN "organizations" ON "oidc_integration_domains"."organization_id" = "organizations"."id"
+      WHERE "organizations"."clean_id" = ${orgSlug}
+      `,
+        )
+        .then(z.string().parse);
+      const key = `hive:oidcDomainChallenge:${domainChallengeId}`;
+
+      const challenge = {
+        id: domainChallengeId,
+        recordName: `_hive-challenge`,
+        // hardcoded value
+        value: 'a894723a5d52a30d73790752b0169835e6f81dd77d2737dba809bee7fde39092',
       };
-    },
-    authenticate,
-    generateEmail: () => userEmail(generateUnique()),
-    async purgeOrganizationAccessTokenById(id: string) {
-      const registryAddress = await getServiceHost('server', 8082);
-      await fetch(
-        'http://' + registryAddress + '/cache/organization-access-token-cache/delete/' + id,
+
+      const redis = createRedisClient(
+        '',
         {
-          method: 'POST',
+          host: ensureEnv('REDIS_HOST'),
+          password: ensureEnv('REDIS_PASSWORD'),
+          port: parseInt(ensureEnv('REDIS_PORT'), 10),
+          tlsEnabled: false,
         },
-      ).then(res => res.json());
+        new NoopLogger(),
+      );
+
+      await redis.set(key, JSON.stringify(challenge));
+      await redis.disconnect();
     },
-    async createOwner() {
+    createDbConnection,
+    authenticate: doAuthenticate,
+    generateEmail: () => userEmail(generateUnique()),
+    purgeOrganizationAccessTokenById,
+    async createOwner(verifyEmail: boolean = true) {
       const ownerEmail = userEmail(generateUnique());
-      const auth = await authenticate(ownerEmail);
+      const auth = await doAuthenticate(ownerEmail, {
+        verifyEmail,
+      });
+
       const ownerRefreshToken = auth.refresh_token;
       const ownerToken = auth.access_token;
 
@@ -119,6 +215,31 @@ export function initSeed() {
 
           return {
             organization,
+            async overrideOrgPlan(plan: 'PRO' | 'ENTERPRISE' | 'HOBBY') {
+              const pool = await createConnectionPool();
+
+              await pool.query(psql`
+                UPDATE organizations SET plan_name = ${plan} WHERE id = ${organization.id}
+              `);
+
+              await pool.end();
+            },
+            async updateOrgRateLimit(newLimit: number, token = ownerToken) {
+              const result = await execute({
+                document: UpdateOrgRateLimitDocument,
+                variables: {
+                  selector: {
+                    organizationSlug: organization.slug,
+                  },
+                  monthlyLimits: {
+                    operations: newLimit,
+                  },
+                },
+                authToken: token,
+              }).then(r => r.expectNoGraphQLErrors());
+
+              return result.updateOrgRateLimit;
+            },
             async createOrganizationAccessToken(
               args: {
                 permissions: Array<string>;
@@ -149,8 +270,8 @@ export function initSeed() {
             async setFeatureFlag(name: string, value: boolean | string[]) {
               const pool = await createConnectionPool();
 
-              await pool.query(sql`
-                UPDATE organizations SET feature_flags = ${sql.jsonb({
+              await pool.query(psql`
+                UPDATE organizations SET feature_flags = ${psql.jsonb({
                   [name]: value,
                 })}
                 WHERE id = ${organization.id}
@@ -161,7 +282,7 @@ export function initSeed() {
             async setDataRetention(days: number) {
               const pool = await createConnectionPool();
 
-              await pool.query(sql`
+              await pool.query(psql`
                 UPDATE organizations SET limit_retention_days = ${days} WHERE id = ${organization.id}
               `);
 
@@ -226,6 +347,22 @@ export function initSeed() {
 
               return members;
             },
+            /** Expires tokens  */
+            async forceExpireTokens(tokenIds: string[]) {
+              const pool = await createConnectionPool();
+              const result = await pool.any(psql`
+                UPDATE "organization_access_tokens"
+                SET "expires_at" = NOW()
+                WHERE id IN (${psql.join(tokenIds, psql.fragment`, `)}) AND organization_id = ${organization.id}
+                RETURNING
+                  "id"
+              `);
+              await pool.end();
+              expect(result.length).toBe(tokenIds.length);
+              for (const id of tokenIds) {
+                await purgeOrganizationAccessTokenById(id);
+              }
+            },
             async projects(token = ownerToken) {
               const projectsResult = await getOrganizationProjects(
                 { organizationSlug: organization.slug },
@@ -265,7 +402,7 @@ export function initSeed() {
                 async setNativeFederation(enabled: boolean) {
                   const pool = await createConnectionPool();
 
-                  await pool.query(sql`
+                  await pool.query(psql`
                     UPDATE projects SET native_federation = ${enabled} WHERE id = ${project.id}
                   `);
 
@@ -478,6 +615,187 @@ export function initSeed() {
 
                   return result.updateOperationInDocumentCollection;
                 },
+                async getSavedFilter({
+                  filterId,
+                  token = ownerToken,
+                }: {
+                  filterId: string;
+                  token?: string;
+                }) {
+                  const result = await execute({
+                    document: GetSavedFilterQuery,
+                    variables: {
+                      id: filterId,
+                      selector: {
+                        organizationSlug: organization.slug,
+                        projectSlug: project.slug,
+                        targetSlug: target.slug,
+                      },
+                    },
+                    authToken: token,
+                  }).then(r => r.expectNoGraphQLErrors());
+
+                  return result.target?.savedFilter;
+                },
+                async getSavedFilters({
+                  first = 20,
+                  after,
+                  visibility,
+                  search,
+                  token = ownerToken,
+                }: {
+                  first?: number;
+                  after?: string;
+                  visibility?: GraphQLSchema.SavedFilterVisibilityType;
+                  search?: string;
+                  token?: string;
+                }) {
+                  const result = await execute({
+                    document: GetSavedFiltersQuery,
+                    variables: {
+                      first,
+                      after,
+                      visibility,
+                      search,
+                      selector: {
+                        organizationSlug: organization.slug,
+                        projectSlug: project.slug,
+                        targetSlug: target.slug,
+                      },
+                    },
+                    authToken: token,
+                  }).then(r => r.expectNoGraphQLErrors());
+
+                  return {
+                    savedFilters: result.target?.savedFilters,
+                    viewerCanCreateSavedFilter: result.target?.viewerCanCreateSavedFilter,
+                  };
+                },
+                async createSavedFilter({
+                  name,
+                  description,
+                  visibility,
+                  insightsFilter,
+                  token = ownerToken,
+                }: {
+                  name: string;
+                  description?: string;
+                  visibility: GraphQLSchema.SavedFilterVisibilityType;
+                  insightsFilter?: GraphQLSchema.InsightsFilterConfigurationInput;
+                  token?: string;
+                }) {
+                  const result = await execute({
+                    document: CreateSavedFilterMutation,
+                    variables: {
+                      input: {
+                        target: {
+                          bySelector: {
+                            organizationSlug: organization.slug,
+                            projectSlug: project.slug,
+                            targetSlug: target.slug,
+                          },
+                        },
+                        name,
+                        description,
+                        visibility,
+                        insightsFilter,
+                      },
+                    },
+                    authToken: token,
+                  }).then(r => r.expectNoGraphQLErrors());
+
+                  return result.createSavedFilter;
+                },
+                async updateSavedFilter({
+                  filterId,
+                  name,
+                  description,
+                  visibility,
+                  insightsFilter,
+                  token = ownerToken,
+                }: {
+                  filterId: string;
+                  name?: string;
+                  description?: string;
+                  visibility?: GraphQLSchema.SavedFilterVisibilityType;
+                  insightsFilter?: GraphQLSchema.InsightsFilterConfigurationInput;
+                  token?: string;
+                }) {
+                  const result = await execute({
+                    document: UpdateSavedFilterMutation,
+                    variables: {
+                      input: {
+                        target: {
+                          bySelector: {
+                            organizationSlug: organization.slug,
+                            projectSlug: project.slug,
+                            targetSlug: target.slug,
+                          },
+                        },
+                        id: filterId,
+                        name,
+                        description,
+                        visibility,
+                        insightsFilter,
+                      },
+                    },
+                    authToken: token,
+                  }).then(r => r.expectNoGraphQLErrors());
+
+                  return result.updateSavedFilter;
+                },
+                async deleteSavedFilter({
+                  filterId,
+                  token = ownerToken,
+                }: {
+                  filterId: string;
+                  token?: string;
+                }) {
+                  const result = await execute({
+                    document: DeleteSavedFilterMutation,
+                    variables: {
+                      input: {
+                        target: {
+                          bySelector: {
+                            organizationSlug: organization.slug,
+                            projectSlug: project.slug,
+                            targetSlug: target.slug,
+                          },
+                        },
+                        id: filterId,
+                      },
+                    },
+                    authToken: token,
+                  }).then(r => r.expectNoGraphQLErrors());
+
+                  return result.deleteSavedFilter;
+                },
+                async trackSavedFilterView({
+                  filterId,
+                  token = ownerToken,
+                }: {
+                  filterId: string;
+                  token?: string;
+                }) {
+                  const result = await execute({
+                    document: TrackSavedFilterViewMutation,
+                    variables: {
+                      input: {
+                        target: {
+                          bySelector: {
+                            organizationSlug: organization.slug,
+                            projectSlug: project.slug,
+                            targetSlug: target.slug,
+                          },
+                        },
+                        id: filterId,
+                      },
+                    },
+                    authToken: token,
+                  }).then(r => r.expectNoGraphQLErrors());
+
+                  return result.trackSavedFilterView;
+                },
                 async addAlert(
                   input: {
                     token?: string;
@@ -565,6 +883,7 @@ export function initSeed() {
                         commit: string;
                       },
                       contextId?: string,
+                      schemaProposalId?: string,
                     ) {
                       return await checkSchema(
                         {
@@ -572,6 +891,7 @@ export function initSeed() {
                           service,
                           meta,
                           contextId,
+                          schemaProposalId,
                         },
                         secret,
                       );
@@ -817,6 +1137,7 @@ export function initSeed() {
                   from: string,
                   to: string,
                   ttarget: TargetOverwrite = target,
+                  filter: GraphQLSchema.OperationStatsFilterInput = {},
                 ) {
                   const statsResult = await readOperationsStats(
                     { byId: ttarget.id },
@@ -824,7 +1145,7 @@ export function initSeed() {
                       from,
                       to,
                     },
-                    {},
+                    filter,
                     ownerToken,
                   ).then(r => r.expectNoGraphQLErrors());
 
@@ -891,48 +1212,69 @@ export function initSeed() {
                 },
               };
             },
-            async inviteAndJoinMember(
-              inviteToken: string = ownerToken,
-              memberRoleId: string | undefined = undefined,
-              resources: GraphQLSchema.ResourceAssignmentInput | undefined = undefined,
-            ) {
-              const memberEmail = userEmail(generateUnique());
-              const memberToken = await authenticate(memberEmail).then(r => r.access_token);
-
-              const invitationResult = await inviteToOrganization(
+            async inviteAndJoinMember(options?: {
+              inviteToken?: string;
+              memberRoleId?: string | undefined;
+              oidcIntegrationId?: string | undefined;
+              resources?: GraphQLSchema.ResourceAssignmentInput | undefined;
+            }) {
+              const { inviteToken, memberRoleId, oidcIntegrationId, resources } = Object.assign(
+                options ?? {},
                 {
-                  organization: {
-                    bySelector: {
-                      organizationSlug: organization.slug,
-                    },
-                  },
-                  email: memberEmail,
-                  memberRoleId,
-                  resources,
+                  inviteToken: ownerToken,
                 },
-                inviteToken,
-              ).then(r => r.expectNoGraphQLErrors());
+              );
+              const memberEmail = userEmail(generateUnique());
+              const memberToken = await doAuthenticate(memberEmail, {
+                oidcIntegrationId,
+                verifyEmail: true,
+              }).then(r => r.access_token);
 
-              const code =
-                invitationResult.inviteToOrganizationByEmail.ok?.createdOrganizationInvitation.code;
+              if (!oidcIntegrationId) {
+                const invitationResult = await inviteToOrganization(
+                  {
+                    organization: {
+                      bySelector: {
+                        organizationSlug: organization.slug,
+                      },
+                    },
+                    email: memberEmail,
+                    memberRoleId,
+                    resources,
+                  },
+                  inviteToken,
+                ).then(r => r.expectNoGraphQLErrors());
+                const code =
+                  invitationResult.inviteToOrganizationByEmail.ok?.createdOrganizationInvitation
+                    .code;
 
-              if (!code) {
-                throw new Error(
-                  `Could not create invitation for ${memberEmail} to join org ${organization.slug}`,
+                if (!code) {
+                  throw new Error(
+                    `Could not create invitation for ${memberEmail} to join org ${organization.slug}`,
+                  );
+                }
+
+                const joinResult = await joinOrganization(code, memberToken).then(r =>
+                  r.expectNoGraphQLErrors(),
                 );
+
+                if (joinResult.joinOrganization.__typename !== 'OrganizationPayload') {
+                  throw new Error(
+                    `Member ${memberEmail} could not join organization ${organization.slug}`,
+                  );
+                }
               }
 
-              const joinResult = await joinOrganization(code, memberToken).then(r =>
+              const orgAfterJoin = await getOrganization(organization.slug, memberToken).then(r =>
                 r.expectNoGraphQLErrors(),
               );
+              const member = orgAfterJoin.organization?.me;
 
-              if (joinResult.joinOrganization.__typename !== 'OrganizationPayload') {
+              if (!member) {
                 throw new Error(
-                  `Member ${memberEmail} could not join organization ${organization.slug}`,
+                  `Could not retrieve membership for ${memberEmail} in ${organization.slug} after joining`,
                 );
               }
-
-              const member = joinResult.joinOrganization.organization.me;
 
               return {
                 member,
@@ -1099,6 +1441,13 @@ export function initSeed() {
                   return updatedRole;
                 },
               };
+            },
+            createOIDCIntegration() {
+              return createOIDCIntegration({
+                organizationId: organization.id,
+                accessToken: ownerToken,
+                getPool: getPool,
+              });
             },
           };
         },

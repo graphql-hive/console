@@ -1,20 +1,19 @@
 #!/usr/bin/env node
 import 'reflect-metadata';
-import { hostname } from 'os';
 import Redis from 'ioredis';
 import { PrometheusConfig } from '@hive/api/modules/shared/providers/prometheus-config';
 import { TargetsByIdCache } from '@hive/api/modules/target/providers/targets-by-id-cache';
 import { TargetsBySlugCache } from '@hive/api/modules/target/providers/targets-by-slug-cache';
+import { createPostgresDatabasePool } from '@hive/postgres';
 import {
   configureTracing,
   createServer,
   registerShutdown,
   reportReadiness,
+  sentryInit,
   startMetrics,
   TracingInstance,
 } from '@hive/service-common';
-import { createConnectionString } from '@hive/storage';
-import { getPool } from '@hive/storage/db/pool';
 import * as Sentry from '@sentry/node';
 import { createAuthN } from './authn';
 import { env } from './environment';
@@ -44,8 +43,7 @@ async function main() {
   }
 
   if (env.sentry) {
-    Sentry.init({
-      serverName: hostname(),
+    sentryInit({
       dist: 'usage',
       enabled: !!env.sentry,
       environment: env.environment,
@@ -73,11 +71,11 @@ async function main() {
     },
   });
 
-  const pgPool = await getPool(
-    createConnectionString(env.postgres),
-    5,
-    tracing ? [tracing.instrumentSlonik()] : [],
-  );
+  const pgPool = await createPostgresDatabasePool({
+    connectionParameters: env.postgres,
+    maximumPoolSize: 5,
+    additionalInterceptors: tracing ? [tracing.instrumentSlonik()] : undefined,
+  });
 
   const authN = createAuthN({
     pgPool,

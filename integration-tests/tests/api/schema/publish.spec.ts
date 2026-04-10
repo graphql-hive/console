@@ -1,10 +1,11 @@
 import 'reflect-metadata';
-import { createPool, sql } from 'slonik';
 import { graphql } from 'testkit/gql';
 /* eslint-disable no-process-env */
 import { ProjectType } from 'testkit/gql/graphql';
 import { execute } from 'testkit/graphql';
 import { assertNonNull, getServiceHost } from 'testkit/utils';
+import z from 'zod';
+import { createPostgresDatabasePool, psql } from '@hive/postgres';
 // eslint-disable-next-line import/no-extraneous-dependencies
 import { createStorage } from '@hive/storage';
 import { createTarget, publishSchema, updateSchemaComposition } from '../../../testkit/flow';
@@ -116,7 +117,10 @@ test.concurrent(
     expect(firstNode).toEqual(
       expect.objectContaining({
         commit: '2',
-        source: expect.stringContaining('type Query { ping: String @auth pong: String }'),
+        source: `type Query {
+  ping: String @auth
+  pong: String
+}`,
       }),
     );
     expect(firstNode).not.toEqual(
@@ -158,9 +162,14 @@ test.concurrent('directives should not be removed (federation)', async () => {
   expect(latestResult.latestVersion?.schemas.nodes[0]).toEqual(
     expect.objectContaining({
       commit: 'abc123',
-      source: expect.stringContaining(
-        `type Query { me: User } type User @key(fields: "id") { id: ID! name: String }`,
-      ),
+      source: `type Query {
+  me: User
+}
+
+type User @key(fields: "id") {
+  id: ID!
+  name: String
+}`,
     }),
   );
 });
@@ -194,9 +203,14 @@ test.concurrent('directives should not be removed (stitching)', async () => {
   expect(latestResult.latestVersion?.schemas.nodes[0]).toEqual(
     expect.objectContaining({
       commit: 'abc123',
-      source: expect.stringContaining(
-        `type Query { me: User } type User @key(selectionSet: "{ id }") { id: ID! name: String }`,
-      ),
+      source: `type Query {
+  me: User
+}
+
+type User @key(selectionSet: "{ id }") {
+  id: ID!
+  name: String
+}`,
     }),
   );
 });
@@ -229,9 +243,16 @@ test.concurrent('directives should not be removed (single)', async () => {
   expect(latestResult.latestVersion?.schemas.nodes[0]).toEqual(
     expect.objectContaining({
       commit: 'abc123',
-      source: expect.stringContaining(
-        `directive @auth on FIELD_DEFINITION type Query { me: User @auth } type User { id: ID! name: String }`,
-      ),
+      source: `directive @auth on FIELD_DEFINITION
+
+type Query {
+  me: User @auth
+}
+
+type User {
+  id: ID!
+  name: String
+}`,
     }),
   );
 });
@@ -3377,12 +3398,18 @@ test('Composition Error (Federation 2) can be served from the database', async (
 
     await updateSchemaComposition(
       {
-        external: {
-          endpoint: `http://${serviceAddress}/compose`,
-          // eslint-disable-next-line no-process-env
-          secret: process.env.EXTERNAL_COMPOSITION_SECRET!,
-          projectSlug: project.slug,
-          organizationSlug: organization.slug,
+        project: {
+          bySelector: {
+            projectSlug: project.slug,
+            organizationSlug: organization.slug,
+          },
+        },
+        method: {
+          external: {
+            endpoint: `http://${serviceAddress}/compose`,
+            // eslint-disable-next-line no-process-env
+            secret: process.env.EXTERNAL_COMPOSITION_SECRET!,
+          },
         },
       },
       ownerToken,
@@ -3500,12 +3527,18 @@ test('Composition Network Failure (Federation 2)', async () => {
 
     await updateSchemaComposition(
       {
-        external: {
-          endpoint: `http://${serviceAddress}/compose`,
-          // eslint-disable-next-line no-process-env
-          secret: process.env.EXTERNAL_COMPOSITION_SECRET!,
-          projectSlug: project.slug,
-          organizationSlug: organization.slug,
+        project: {
+          bySelector: {
+            projectSlug: project.slug,
+            organizationSlug: organization.slug,
+          },
+        },
+        method: {
+          external: {
+            endpoint: `http://${serviceAddress}/compose`,
+            // eslint-disable-next-line no-process-env
+            secret: process.env.EXTERNAL_COMPOSITION_SECRET!,
+          },
         },
       },
       ownerToken,
@@ -3543,11 +3576,18 @@ test('Composition Network Failure (Federation 2)', async () => {
 
     await updateSchemaComposition(
       {
-        external: {
-          endpoint: `http://${serviceAddress}/no_compose`,
-          secret: process.env.EXTERNAL_COMPOSITION_SECRET!,
-          projectSlug: project.slug,
-          organizationSlug: organization.slug,
+        project: {
+          bySelector: {
+            projectSlug: project.slug,
+            organizationSlug: organization.slug,
+          },
+        },
+        method: {
+          external: {
+            endpoint: `http://${serviceAddress}/no_compose`,
+            // eslint-disable-next-line no-process-env
+            secret: process.env.EXTERNAL_COMPOSITION_SECRET!,
+          },
         },
       },
       ownerToken,
@@ -3781,7 +3821,7 @@ test.concurrent(
 );
 
 const insertLegacyVersion = async (
-  pool: Awaited<ReturnType<typeof createPool>>,
+  pool: Awaited<ReturnType<typeof createPostgresDatabasePool>>,
   args: {
     sdl: string;
     projectId: string;
@@ -3789,7 +3829,9 @@ const insertLegacyVersion = async (
     serviceUrl: string;
   },
 ) => {
-  const logId = await pool.oneFirst<string>(sql`
+  const logId = await pool
+    .oneFirst(
+      psql`
         INSERT INTO schema_log
           (
             author,
@@ -3815,9 +3857,13 @@ const insertLegacyVersion = async (
             'PUSH'
           )
         RETURNING id
-      `);
+      `,
+    )
+    .then(z.string().parse);
 
-  const versionId = await pool.oneFirst<string>(sql`
+  const versionId = await pool
+    .oneFirst(
+      psql`
         INSERT INTO schema_versions
           (
             is_composable,
@@ -3831,9 +3877,11 @@ const insertLegacyVersion = async (
             ${logId}
           )
         RETURNING "id"
-      `);
+      `,
+    )
+    .then(z.string().parse);
 
-  await pool.query(sql`
+  await pool.query(psql`
         INSERT INTO
           schema_version_to_log
           (version_id, action_id)
@@ -3847,7 +3895,7 @@ const insertLegacyVersion = async (
 test.concurrent(
   'service url change from legacy to new version is displayed correctly',
   async ({ expect }) => {
-    let pool: Awaited<ReturnType<typeof createPool>> | undefined;
+    let pool: Awaited<ReturnType<typeof createPostgresDatabasePool>> | undefined;
     try {
       const { createOrg } = await initSeed().createOwner();
       const { createProject } = await createOrg();
@@ -3860,7 +3908,9 @@ test.concurrent(
       // We need to seed a legacy entry in the database
 
       const conn = connectionString();
-      pool = await createPool(conn);
+      pool = await createPostgresDatabasePool({
+        connectionParameters: conn,
+      });
 
       const sdl = 'type Query { ping: String! }';
 
@@ -3911,7 +3961,7 @@ test.concurrent(
 test.concurrent(
   'service url change from legacy to legacy version is displayed correctly',
   async ({ expect }) => {
-    let pool: Awaited<ReturnType<typeof createPool>> | undefined;
+    let pool: Awaited<ReturnType<typeof createPostgresDatabasePool>> | undefined;
     try {
       const { createOrg } = await initSeed().createOwner();
       const { createProject } = await createOrg();
@@ -3924,7 +3974,7 @@ test.concurrent(
       // We need to seed a legacy entry in the database
 
       const conn = connectionString();
-      pool = await createPool(conn);
+      pool = await createPostgresDatabasePool({ connectionParameters: conn });
 
       const sdl = 'type Query { ping: String! }';
 

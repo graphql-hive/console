@@ -22,7 +22,6 @@ import {
   Tooltip,
   Tr,
 } from '@/components/v2';
-import { CHART_PRIMARY_COLOR } from '@/constants';
 import { env } from '@/env/frontend';
 import { DocumentType, FragmentType, graphql, useFragment } from '@/gql';
 import { theme } from '@/lib/charts';
@@ -85,7 +84,7 @@ function CollectedOperationsOverTime(props: {
   const dataRef = useRef<[string, number][]>();
   dataRef.current ||= operations.map(node => [node.date, node.count]);
   const data = dataRef.current;
-  const chartStyles = useChartStyles();
+  const { styles: chartStyles, colors } = useChartStyles();
 
   return (
     <AutoSizer disableHeight>
@@ -117,7 +116,7 @@ function CollectedOperationsOverTime(props: {
                 min: 0,
                 splitLine: {
                   lineStyle: {
-                    color: '#595959',
+                    color: colors.grid,
                     type: 'dashed',
                   },
                 },
@@ -132,7 +131,7 @@ function CollectedOperationsOverTime(props: {
                 name: 'Collected operations',
                 showSymbol: false,
                 smooth: true,
-                color: CHART_PRIMARY_COLOR,
+                color: colors.primary,
                 areaStyle: {},
                 emphasis: {
                   focus: 'series',
@@ -426,7 +425,7 @@ export function AdminStats({
     <DataWrapper query={query} organizationSlug={null}>
       {({ data }) => (
         <div className="flex flex-col gap-6">
-          <div className="flex justify-between rounded-md border border-gray-800 bg-gray-900/50 p-5">
+          <div className="border-neutral-5 bg-neutral-2/50 flex justify-between rounded-md border p-5">
             <OverallStat label="Users" value={overall.users} />
             <OverallStat label="Organizations" value={overall.organizations} />
             <OverallStat label="Projects" value={overall.projects} />

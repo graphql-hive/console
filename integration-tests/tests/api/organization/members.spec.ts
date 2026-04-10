@@ -1,3 +1,4 @@
+import { pollFor } from 'testkit/flow';
 import { graphql } from 'testkit/gql';
 import { ResourceAssignmentModeType } from 'testkit/gql/graphql';
 import { execute } from 'testkit/graphql';
@@ -30,6 +31,7 @@ test.concurrent('owner of an organization should have all scopes', async ({ expe
       project:delete,
       project:modifySettings,
       projectAccessToken:modify,
+      sharedSavedFilter:modify,
       schemaLinting:modifyProjectRules,
       target:create,
       alert:modify,
@@ -114,15 +116,19 @@ test.concurrent('cannot delete a role with members', async ({ expect }) => {
 test.concurrent('email invitation', async ({ expect }) => {
   const seed = initSeed();
   const { createOrg } = await seed.createOwner();
-  const { inviteMember } = await createOrg();
+  const { inviteMember, organization } = await createOrg();
 
   const inviteEmail = seed.generateEmail();
   const invitationResult = await inviteMember(inviteEmail);
   const inviteCode = invitationResult.ok?.createdOrganizationInvitation.code;
   expect(inviteCode).toBeDefined();
 
-  const sentEmails = await history();
-  expect(sentEmails).toContainEqual(expect.objectContaining({ to: inviteEmail }));
+  await pollFor(async () => {
+    const sentEmails = await history(inviteEmail);
+    return sentEmails.length > 0;
+  });
+  const sentEmails = await history(inviteEmail);
+  expect(sentEmails[0].subject).toEqual('You have been invited to join ' + organization.slug);
 });
 
 test.concurrent('can not invite with role not existing in organization', async ({ expect }) => {
@@ -156,18 +162,21 @@ test.concurrent('invite user with assigned resouces', async ({ expect }) => {
   const m = await org.inviteAndJoinMember();
   const role = await m.createMemberRole(['organization:describe', 'project:describe']);
 
-  const member = await org.inviteAndJoinMember(undefined, role.id, {
-    mode: ResourceAssignmentModeType.Granular,
-    projects: [
-      {
-        projectId: project1.id,
-        targets: { mode: ResourceAssignmentModeType.Granular, targets: [] },
-      },
-      {
-        projectId: project3.id,
-        targets: { mode: ResourceAssignmentModeType.Granular, targets: [] },
-      },
-    ],
+  const member = await org.inviteAndJoinMember({
+    memberRoleId: role.id,
+    resources: {
+      mode: ResourceAssignmentModeType.Granular,
+      projects: [
+        {
+          projectId: project1.id,
+          targets: { mode: ResourceAssignmentModeType.Granular, targets: [] },
+        },
+        {
+          projectId: project3.id,
+          targets: { mode: ResourceAssignmentModeType.Granular, targets: [] },
+        },
+      ],
+    },
   });
 
   const result = await org.projects(member.memberToken);
@@ -184,12 +193,12 @@ test.concurrent(
     const { inviteMember, joinMemberUsingCode } = await createOrg();
 
     // Invite
-    const invitationResult = await inviteMember();
+    const extra = seed.generateEmail();
+    const invitationResult = await inviteMember(extra);
     const inviteCode = invitationResult.ok!.createdOrganizationInvitation.code;
     expect(inviteCode).toBeDefined();
 
     // Join
-    const extra = seed.generateEmail();
     const { access_token: member_access_token } = await seed.authenticate(extra);
     const joinResult = await (
       await joinMemberUsingCode(inviteCode, member_access_token)

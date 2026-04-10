@@ -41,7 +41,6 @@ export class AuditLogRecorder {
               email: actor.user.email,
               fullName: actor.user.fullName,
               displayName: actor.user.displayName,
-              provider: actor.user.provider,
             }
           : undefined;
       const accessToken =

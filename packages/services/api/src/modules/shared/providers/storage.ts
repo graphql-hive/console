@@ -1,6 +1,6 @@
 import { Injectable } from 'graphql-modules';
-import type { DatabasePool } from 'slonik';
 import type { PolicyConfigurationObject } from '@hive/policy';
+import { PostgresDatabasePool } from '@hive/postgres';
 import type {
   ConditionalBreakingChangeMetadata,
   PaginatedOrganizationInvitationConnection,
@@ -67,7 +67,7 @@ type CreateContractVersionInput = {
 
 // eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging
 export interface Storage {
-  pool: DatabasePool;
+  pool: PostgresDatabasePool;
   destroy(): Promise<void>;
   isReady(): Promise<boolean>;
   ensureUserExists(_: {
@@ -79,7 +79,17 @@ export interface Storage {
     };
     firstName: string | null;
     lastName: string | null;
-  }): Promise<'created' | 'no_action'>;
+  }): Promise<
+    | {
+        ok: true;
+        user: User;
+        action: 'created' | 'no_action';
+      }
+    | {
+        ok: false;
+        reason: string;
+      }
+  >;
 
   getUserBySuperTokenId(_: { superTokensUserId: string }): Promise<User | null>;
   getUserById(_: { id: string }): Promise<User | null>;
@@ -87,7 +97,10 @@ export interface Storage {
   updateUser(_: { id: string; fullName: string; displayName: string }): Promise<User | never>;
 
   getOrganizationId(_: { organizationSlug: string }): Promise<string | null>;
-  getOrganizationByInviteCode(_: { inviteCode: string }): Promise<Organization | null>;
+  getOrganizationByInviteCode(_: {
+    inviteCode: string;
+    email: string;
+  }): Promise<Organization | null>;
   getOrganizationBySlug(_: { slug: string }): Promise<Organization | null>;
   getOrganizationByGitHubInstallationId(_: {
     installationId: string;
@@ -137,6 +150,7 @@ export interface Storage {
 
   updateOrganizationRateLimits(
     _: OrganizationSelector & Pick<Organization, 'monthlyRateLimit'>,
+    action?: () => Promise<void>,
   ): Promise<Organization | never>;
 
   createOrganizationInvitation(
@@ -400,7 +414,6 @@ export interface Storage {
     first: number | null;
     cursor: null | string;
   }): Promise<PaginatedSchemaVersionConnection>;
-  // @todo consider moving to proposals provider
   getPaginatedSchemaChecksForSchemaProposal<
     TransformedSchemaCheck extends SchemaCheck = SchemaCheck,
   >(_: {
@@ -642,7 +655,9 @@ export interface Storage {
 
   updateOIDCRestrictions(_: {
     oidcIntegrationId: string;
-    oidcUserAccessOnly: boolean;
+    oidcUserJoinOnly: boolean | null;
+    oidcUserAccessOnly: boolean | null;
+    requireInvitation: boolean | null;
   }): Promise<OIDCIntegration>;
 
   updateOIDCDefaultMemberRole(_: {

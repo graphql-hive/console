@@ -1102,3 +1102,91 @@ test.concurrent(
     }
   },
 );
+
+test.concurrent('schema:publish ignores SDL formatting', async ({ expect }) => {
+  const { createOrg } = await initSeed().createOwner();
+  const { inviteAndJoinMember, createProject, organization } = await createOrg();
+  await inviteAndJoinMember();
+  const { createTargetAccessToken, project, target } = await createProject(ProjectType.Federation);
+  const { secret, latestSchema } = await createTargetAccessToken({});
+
+  const targetSlug = [organization.slug, project.slug, target.slug].join('/');
+
+  await expect(
+    schemaPublish([
+      '--registry.accessToken',
+      secret,
+      '--author',
+      'Kamil',
+      '--target',
+      targetSlug,
+      '--service',
+      'whitespace',
+      '--url',
+      'https://example.graphql-hive.com/graphql',
+      'fixtures/whitespace-oddity.graphql',
+    ]),
+  ).resolves.toMatchInlineSnapshot(`
+      :::::::::::::::: CLI SUCCESS OUTPUT :::::::::::::::::
+
+      stdout--------------------------------------------:
+      ✔ Published initial schema.
+      ℹ Available at http://__URL__
+    `);
+
+  const latest = await latestSchema();
+  expect(latest.latestVersion?.isValid).toBe(true);
+  expect(latest.latestVersion?.schemas.nodes?.[0]?.source).toMatchInlineSnapshot(`
+    directive @inline on FIELD_DEFINITION
+
+    """
+    Multi line description:
+    1. Foo
+    2. Bar
+    3. Should stay in a list format
+
+    # with single line comment
+    """
+    type Query {
+      status: Status @inline
+      value: Boolean @deprecated
+    }
+
+    enum Status {
+      ACTIVE
+      INACTIVE
+      PENDING
+    }
+
+    type User
+
+    extend type User {
+      id: ID!
+      email: String
+    }
+  `);
+
+  // API Schema maintains the multiline description's formatting
+  expect(latest.latestVersion?.sdl).toEqual(
+    expect.stringContaining(`"""
+Multi line description:
+1. Foo
+2. Bar
+3. Should stay in a list format
+
+# with single line comment
+"""`),
+  );
+
+  // Supergraph maintains formatting
+  expect(latest.latestVersion?.supergraph).toEqual(
+    expect.stringContaining(`"""
+Multi line description:
+1. Foo
+2. Bar
+3. Should stay in a list format
+
+# with single line comment
+"""`),
+  );
+});

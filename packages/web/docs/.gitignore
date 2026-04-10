@@ -1,9 +1,0 @@
-out
-build
-temp
-public/sitemap.xml
-public/changelog.json
-public/_pagefind/
-
-# Playwright
-.playwright/

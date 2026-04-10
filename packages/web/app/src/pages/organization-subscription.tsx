@@ -86,7 +86,7 @@ function SubscriptionPageContent(props: { organizationSlug: string }) {
 
   const organization = useFragment(SubscriptionPage_OrganizationFragment, currentOrganization);
   const queryForBilling = useFragment(SubscriptionPage_QueryFragment, query.data);
-  const styles = useChartStyles();
+  const { styles } = useChartStyles();
 
   const monthlyUsage = query.data?.monthlyUsage ?? [];
   const monthlyUsagePoints: [string, number][] = useMemo(
@@ -160,7 +160,7 @@ function SubscriptionPageContent(props: { organizationSlug: string }) {
           </Card>
           <Card className="mt-8">
             <Heading>Current Usage</Heading>
-            <p className="text-sm text-gray-500">
+            <p className="text-neutral-10 text-sm">
               {DateFormatter.format(start)} — {DateFormatter.format(end)}
             </p>
             <div className="mt-4">

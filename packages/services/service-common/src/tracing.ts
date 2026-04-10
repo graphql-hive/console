@@ -3,13 +3,10 @@ import {
   FetchInstrumentation,
   type FetchInstrumentationConfig,
 } from 'opentelemetry-instrumentation-fetch-node';
-import type { Interceptor, Query, QueryContext } from 'slonik';
 import zod from 'zod';
-import {
-  HiveTracingSpanProcessor,
-  HiveTracingSpanProcessorOptions,
-  openTelemetrySetup,
-} from '@graphql-hive/plugin-opentelemetry/setup';
+import { type HiveTracingSpanProcessorOptions } from '@graphql-hive/plugin-opentelemetry/setup';
+import * as hiveOtel from '@graphql-hive/plugin-opentelemetry/setup';
+import type { Interceptor, Query, QueryContext } from '@hive/postgres';
 import {
   Attributes,
   AttributeValue,
@@ -27,6 +24,7 @@ import { OTLPTraceExporter } from '@opentelemetry/exporter-trace-otlp-http';
 import { Instrumentation, registerInstrumentations } from '@opentelemetry/instrumentation';
 import {
   BatchSpanProcessor,
+  ReadableSpan,
   Sampler,
   SamplingDecision,
   SpanProcessor,
@@ -40,6 +38,8 @@ import {
   SEMATTRS_HTTP_USER_AGENT,
 } from '@opentelemetry/semantic-conventions';
 import openTelemetryPlugin, { OpenTelemetryPluginOptions } from './fastify-tracing';
+
+const { HiveTracingSpanProcessor, openTelemetrySetup } = hiveOtel;
 
 export { trace, context, Span, SpanKind, SamplingDecision, SpanStatusCode };
 
@@ -64,7 +64,7 @@ export class TracingInstance {
     if (this.options.collectorEndpoint) {
       // Grafana endpoint
       const httpExporter = new OTLPTraceExporter({ url: this.options.collectorEndpoint });
-      processors.push(new BatchSpanProcessor(httpExporter));
+      processors.push(new ServiceBatchSpanProcessor(httpExporter));
     }
     if (this.options.hiveTracing) {
       // Hive Tracing endpoint
@@ -246,11 +246,12 @@ function extractParts(sqlStatement: string): {
 }
 
 export const createSlonikInterceptor = (options: SlonikTracingInterceptorOptions): Interceptor => {
-  const tracer = trace.getTracer('slonik');
+  const tracer = trace.getTracer('slonik-service-common');
   const connections: Record<string, Record<string, Span>> = {};
   const shouldExcludeFn = options.shouldExcludeStatement || (() => false);
 
   return {
+    name: 'slonik-tracing-interceptor',
     afterPoolConnection(context) {
       connections[context.connectionId] = {};
 
@@ -456,7 +457,7 @@ type FunctionTraceOptions<TArgs extends any[], TResult> = {
   errorAttributes?: Attributes | ((error: Error) => Attributes);
 };
 
-export function traceFn<This extends Object, TArgs extends any[], TResult>(
+export function traceFn<This extends object, TArgs extends any[], TResult>(
   spanName: string,
   options?: FunctionTraceOptions<TArgs, Awaited<TResult>>,
 ) {
@@ -515,4 +516,10 @@ export function traceFn<This extends Object, TArgs extends any[], TResult>(
       });
     } as any;
   };
+}
+
+class ServiceBatchSpanProcessor extends BatchSpanProcessor {
+  onEnd(span: ReadableSpan): void {
+    return super.onEnd(span);
+  }
 }

@@ -7,8 +7,8 @@ import { LinkOptions, RegisteredRouter, Link as RouterLink } from '@tanstack/rea
 const linkVariants = cva('font-medium transition-colors', {
   variants: {
     variant: {
-      primary: 'text-orange-500 hover:underline',
-      secondary: 'text-gray-500 hover:text-gray-300',
+      primary: 'text-accent hover:underline',
+      secondary: 'text-neutral-10 hover:text-neutral-11',
     },
   },
   defaultVariants: {

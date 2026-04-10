@@ -41,6 +41,7 @@ export default class ArtifactsFetch extends Command<typeof ArtifactsFetch> {
         description: ArtifactsFetch.flags['cdn.endpoint'].description!,
       });
     } catch (e) {
+      this.logDebug(e);
       throw new MissingCdnEndpointError();
     }
 
@@ -52,6 +53,7 @@ export default class ArtifactsFetch extends Command<typeof ArtifactsFetch> {
         description: ArtifactsFetch.flags['cdn.accessToken'].description!,
       });
     } catch (e) {
+      this.logDebug(e);
       throw new MissingCdnKeyError();
     }
 

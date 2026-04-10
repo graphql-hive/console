@@ -46,7 +46,7 @@ export const SchemaChange: Pick<
   severityLevel: change => severityMap[change.criticality],
   severityReason: change => change.reason,
   affectedAppDeployments: (change, args) => {
-    if (!change.affectedAppDeployments) {
+    if (change.affectedAppDeployments === null) {
       return null;
     }
 
@@ -74,6 +74,10 @@ export const SchemaChange: Pick<
         id: d.id,
         name: d.name,
         version: d.version,
+        createdAt: d.createdAt ?? null,
+        activatedAt: d.activatedAt ?? null,
+        retiredAt: d.retiredAt ?? null,
+        status: d.retiredAt ? ('retired' as const) : ('active' as const),
         operations: d.affectedOperations,
         totalOperations: d.affectedOperations.length,
       },

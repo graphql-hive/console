@@ -2,7 +2,7 @@ import type { MigrationExecutor } from '../pg-migrator';
 
 export default {
   name: '2023.11.09T00.00.00.schema-check-approval.ts',
-  run: ({ sql }) => sql`
+  run: ({ psql }) => psql`
     CREATE TABLE "schema_change_approvals" (
       "target_id" UUID NOT NULL REFERENCES "targets" ("id") ON DELETE CASCADE,
       "context_id" text NOT NULL,

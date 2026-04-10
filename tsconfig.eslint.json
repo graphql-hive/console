@@ -4,7 +4,8 @@
   "extends": "./tsconfig.json",
   "compilerOptions": {
     // ensure that nobody can accidentally use this config for a build
-    "noEmit": true
+    "noEmit": true,
+    "jsx": "react-jsx"
   },
   "include": [
     "deployment",
@@ -15,7 +16,6 @@
     ".eslintrc.cjs",
     "vitest.config.ts",
     "scripts/serializer.ts",
-    "packages/web/app/.babelrc.cjs",
     "configs",
     "codegen.mts"
   ],

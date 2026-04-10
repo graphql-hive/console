@@ -1,5 +1,125 @@
 # @graphql-hive/cli
 
+## 0.59.0
+
+### Minor Changes
+
+- [#7859](https://github.com/graphql-hive/console/pull/7859)
+  [`bf00fbc`](https://github.com/graphql-hive/console/commit/bf00fbcc2d35278b9be46431f4a0c339a29f6de7)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Improve federation composition
+
+  - Support `file:` protocol and non-RFC 3986 in imported `link` url arguments
+  - Fix supergraph `@join__field` emission for Federation v1 `@external` fields and improve
+    `override`/`requires` edge-case handling.
+    - Drop Federation v1 `@join__field(external: true)` fields based on key usage in the subgraph
+      instead of aggregated field key usage across subgraphs.
+    - Avoid emitting redundant `@join__field(external: true)` metadata when a field is only required
+      through overridden paths.
+    - Tighten `@join__field` emission around @override and interface type fields.
+
+- [#5853](https://github.com/graphql-hive/console/pull/5853)
+  [`580918d`](https://github.com/graphql-hive/console/commit/580918de79e290279ae7be93ec7b065b47dff9bf)
+  Thanks [@kamilkisiela](https://github.com/kamilkisiela)! - Support introspection of federated
+  subgraph's schema in the `$ hive introspect` command.
+
+  This change allows developers to extract the schema of a subgraph (GraphQL Federation) from a
+  running service. It is useful if the GraphQL framework used in the subgraph does not emit the
+  schema as `.graphqls` file during build.
+
+  ***
+
+  The CLI attempts to automatically detect whether the endpoint is a a GraphQL Federation, by
+  checking whether the `_Service` type is accessible via introspection.
+
+  If you want to either force Apollo Subgraph or GraphQL introspection you can do that via the
+  `--type` flag.
+
+  ```sh
+  # Force GraphQL Introspection
+  hive introspect --type graphql http://localhost:3000/graphql
+  ```
+
+  ```sh
+  # Force GraphQL Federation Introspection
+  hive introspect --type federation http://localhost:3000/graphql
+  ```
+
+  The federation introspection requires the introspected GraphQL API is capable of resolving the
+  following two queries:
+
+  - **`{ __type(name: "_Service") { name } }`** for looking up whether the GraphQL service is a
+    Federation subgraph
+  - **`{ _service { sdl } }`** for retrieving the subgraph SDL
+
+## 0.58.5
+
+### Patch Changes
+
+- [#7797](https://github.com/graphql-hive/console/pull/7797)
+  [`bb74982`](https://github.com/graphql-hive/console/commit/bb74982825d3f7d31c6d6345cf586617cbe728e8)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Revert improvements around federation composition
+  rules introduced in `0.58.4` as it might cause issues for Apollo Gateway.
+
+## 0.58.4
+
+### Patch Changes
+
+- [#7778](https://github.com/graphql-hive/console/pull/7778)
+  [`3c05b96`](https://github.com/graphql-hive/console/commit/3c05b96a10f24c11e24c724e2418eb1944a73b59)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Improve federation composition rules.
+
+  - Fix supergraph `@join__field` generation for `@override` + `@requires` migrations and add a
+    progressive override restriction.
+  - When a field with `@requires` is overridden, composition now ignores `@requires` usage coming
+    only from the overridden source field when deciding whether to keep
+    `@join__field(..., external: true)`. This prevents stale external annotations in the supergraph.
+  - Progressive override (`@override(..., label: ...)`) is now rejected when the overridden source
+    field uses `@requires` (error code: `OVERRIDE_COLLISION_WITH_ANOTHER_DIRECTIVE`).
+    Non-progressive override behavior is unchanged.
+
+- Updated dependencies
+  [[`ee2785c`](https://github.com/graphql-hive/console/commit/ee2785c4cc63922bbd45f2557cc6d1e5577c6cca)]:
+  - @graphql-hive/core@0.21.0
+
+## 0.58.3
+
+### Patch Changes
+
+- [#7712](https://github.com/graphql-hive/console/pull/7712)
+  [`a95deb7`](https://github.com/graphql-hive/console/commit/a95deb75632ae63cb812731f914000e75c010ea8)
+  Thanks [@jdolle](https://github.com/jdolle)! - Replace custom regex logic that stripped all spaces
+  on publish. Use graphqljs' stripIgnoredCharacters function instead. This maintains the useful
+  spacing in multiline descriptions while stripping out other unnecessary characters
+
+## 0.58.2
+
+### Patch Changes
+
+- [#7707](https://github.com/graphql-hive/console/pull/7707)
+  [`4d36f7a`](https://github.com/graphql-hive/console/commit/4d36f7aeb06a911d844b74b9f556e11f353771a8)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Fix schema SDL becoming invalid through
+  minification.
+
+## 0.58.1
+
+### Patch Changes
+
+- [#7664](https://github.com/graphql-hive/console/pull/7664)
+  [`ddea09b`](https://github.com/graphql-hive/console/commit/ddea09bbc34f5486fa6ddddf4e60a899fc7f43b5)
+  Thanks [@jdolle](https://github.com/jdolle)! - Do not minify multiline descriptions in SDL on
+  check/push
+
+## 0.58.0
+
+### Minor Changes
+
+- [#7432](https://github.com/graphql-hive/console/pull/7432)
+  [`f8e49ae`](https://github.com/graphql-hive/console/commit/f8e49ae53f743a50e104fba216bd4545fb4abdd6)
+  Thanks [@adambenhassen](https://github.com/adambenhassen)! - Add app deployment retirement
+  protection settings. When enabled, prevents retiring app deployments that were recently created or
+  are still actively used, based on configurable inactivity period, creation age, and traffic
+  thresholds.
+
 ## 0.57.4
 
 ### Patch Changes

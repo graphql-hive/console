@@ -61,7 +61,7 @@ function ChangelogPopover(props: { changes: Changelog[] }) {
             Latest changes
             {displayDot ? (
               <div className="absolute right-0 top-0 -mr-1 -mt-1 flex size-2">
-                <div className="absolute inline-flex size-full animate-pulse rounded-full bg-orange-500" />
+                <div className="bg-accent absolute inline-flex size-full animate-pulse rounded-full" />
               </div>
             ) : null}
           </Button>
@@ -71,8 +71,8 @@ function ChangelogPopover(props: { changes: Changelog[] }) {
         <PopoverArrow />
         <div className="grid">
           <div className="space-y-2 p-4">
-            <h4 className="font-medium leading-none">What's new in GraphQL Hive</h4>
-            <p className="text-muted-foreground text-sm">
+            <h4 className="text-neutral-12 font-medium leading-none">What's new in GraphQL Hive</h4>
+            <p className="text-neutral-11 text-sm">
               Find out about the newest features, and enhancements
             </p>
           </div>
@@ -81,17 +81,14 @@ function ChangelogPopover(props: { changes: Changelog[] }) {
               <li
                 className={cn(
                   'border-l-2 pl-4',
-                  readChanges.includes(change.href) ? 'border-transparent' : 'border-orange-700',
+                  readChanges.includes(change.href) ? 'border-transparent' : 'border-accent_80',
                 )}
                 key={index}
               >
-                <time
-                  className="text-muted-foreground mb-1 text-sm font-normal"
-                  dateTime={change.date}
-                >
+                <time className="text-neutral-10 mb-1 text-xs font-normal" dateTime={change.date}>
                   {format(new Date(change.date), 'do MMMM yyyy')}
                 </time>
-                <h3 className="text-pretty text-base font-semibold text-white hover:underline">
+                <h3 className="text-neutral-12 text-pretty text-base font-medium hover:underline">
                   <a
                     target="_blank"
                     rel="noreferrer"
@@ -101,7 +98,7 @@ function ChangelogPopover(props: { changes: Changelog[] }) {
                     {change.title}
                   </a>
                 </h3>
-                <div className="mb-4 mt-1 text-pretty text-sm font-normal text-white/80">
+                <div className="text-neutral-11 mb-4 text-pretty text-sm font-normal">
                   {change.description}
                 </div>
               </li>
@@ -109,7 +106,7 @@ function ChangelogPopover(props: { changes: Changelog[] }) {
           </ol>
         </div>
         <div className="flex flex-row items-center justify-center">
-          <Button variant="link" asChild className="text-left text-sm">
+          <Button variant="link" asChild className="text-neutral-11 text-left text-sm">
             <a
               rel="noopener noreferrer"
               href="https://the-guild.dev/graphql/hive/product-updates"

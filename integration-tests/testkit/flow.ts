@@ -156,6 +156,17 @@ export function getOrganization(organizationSlug: string, authToken: string) {
             reportingOperations
             enablingUsageBasedBreakingChanges
           }
+          me {
+            id
+            user {
+              id
+            }
+            role {
+              id
+              name
+              permissions
+            }
+          }
         }
       }
     `),
@@ -1196,6 +1207,9 @@ export function fetchLatestSchema(token: string) {
               deletedService
             }
           }
+          isValid
+          sdl
+          supergraph
           schemas {
             nodes {
               ... on SingleSchema {
@@ -1242,6 +1256,7 @@ export function fetchLatestValidSchema(token: string) {
             }
           }
           tags
+          sdl
           schemas {
             nodes {
               ... on SingleSchema {
@@ -1515,9 +1530,11 @@ export async function updateSchemaComposition(input: UpdateSchemaCompositionInpu
       mutation updateSchemaComposition($input: UpdateSchemaCompositionInput!) {
         updateSchemaComposition(input: $input) {
           ok {
-            id
-            externalSchemaComposition {
-              endpoint
+            updatedProject {
+              id
+              externalSchemaComposition {
+                endpoint
+              }
             }
           }
           error {

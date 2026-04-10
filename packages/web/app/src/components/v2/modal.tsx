@@ -45,12 +45,12 @@ const Modal = ({
       <Root open={open} onOpenChange={onOpenChange}>
         <Trigger asChild>{trigger}</Trigger>
         <Portal>
-          <Overlay className="hive-modal-overlay fixed inset-0 z-50 bg-gray-800/80">
+          <Overlay className="hive-modal-overlay bg-neutral-5/80 fixed inset-0 z-50">
             <TooltipProvider>
               <Content
                 ref={ref => setState(ref)}
                 className={clsx(
-                  'hive-modal relative left-1/2 top-1/2 max-h-[95%] max-w-[95%] overflow-auto rounded-md bg-black p-7',
+                  'hive-modal bg-neutral-1 relative left-1/2 top-1/2 max-h-[95%] max-w-[95%] overflow-auto rounded-md p-7',
                   className,
                   widthBySize[size],
                 )}
@@ -61,7 +61,7 @@ const Modal = ({
                   <Button
                     variant="ghost"
                     size="icon"
-                    className="absolute right-5 top-5 text-gray-500 hover:border-gray-500 hover:text-orange-500"
+                    className="text-neutral-10 hover:border-neutral-10 hover:text-neutral-12 absolute right-5 top-5"
                   >
                     <XIcon />
                   </Button>
@@ -93,7 +93,7 @@ Modal.Description = ({
   ...props
 }: DialogDescriptionProps & { children: ReactNode }): ReactElement => {
   return (
-    <Description className={clsx('text-sm font-medium text-gray-500', className)} {...props}>
+    <Description className={clsx('text-neutral-10 text-sm font-medium', className)} {...props}>
       {children}
     </Description>
   );

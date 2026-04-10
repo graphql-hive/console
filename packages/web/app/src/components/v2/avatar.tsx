@@ -26,7 +26,7 @@ export const Avatar = ({
     <Root
       className={clsx(
         // By default Root has `span` element with `display: inline` property
-        'flex shrink-0 items-center justify-center overflow-hidden bg-gray-900',
+        'bg-accent_10 flex shrink-0 items-center justify-center overflow-hidden',
         shape === 'square' ? (size === 'lg' ? 'rounded-md' : 'rounded-sm') : 'rounded-full',
         {
           xs: 'h-5 w-5',
@@ -43,7 +43,7 @@ export const Avatar = ({
           <Image src={src ?? undefined} alt={alt} className="drag-none size-full object-cover" />
         </>
       ) : (
-        <PersonIcon />
+        <PersonIcon className="text-neutral-12 fill-current" />
       )}
     </Root>
   );

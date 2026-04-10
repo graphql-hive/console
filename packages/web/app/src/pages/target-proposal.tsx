@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
-import { buildSchema, GraphQLSchema } from 'graphql';
-import { useMutation, useQuery, UseQueryExecute } from 'urql';
+import { buildASTSchema, buildSchema, GraphQLSchema, parse } from 'graphql';
+import { useMutation, useQuery } from 'urql';
 import { Page, TargetLayout } from '@/components/layouts/target';
 import { CompositionErrorsSection_SchemaErrorConnection } from '@/components/target/history/errors-and-changes';
 import {
@@ -8,22 +8,21 @@ import {
   Proposal_ReviewsFragment,
   toUpperSnakeCase,
 } from '@/components/target/proposals';
+import { SaveProposalProvider } from '@/components/target/proposals/save-proposal-modal';
 import { StageTransitionSelect } from '@/components/target/proposals/stage-transition-select';
-import {
-  ProposalQuery_VersionsListFragment,
-  VersionSelect,
-} from '@/components/target/proposals/version-select';
 import { CardDescription } from '@/components/ui/card';
-import { DiffIcon, EditIcon, GraphQLIcon } from '@/components/ui/icon';
+import { CheckIcon, DiffIcon, EditIcon, GraphQLIcon, XIcon } from '@/components/ui/icon';
 import { Meta } from '@/components/ui/meta';
 import { Subtitle, Title } from '@/components/ui/page';
 import { SubPageLayoutHeader } from '@/components/ui/page-content-layout';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Spinner } from '@/components/ui/spinner';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { TimeAgo } from '@/components/v2';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import { ProjectType } from '@/gql/graphql';
+import { addTypeForExtensions } from '@/lib/proposals/utils';
 import { Change } from '@graphql-inspector/core';
 import { errors, patchSchema } from '@graphql-inspector/patch';
 import { NoopError, ValueMismatchError } from '@graphql-inspector/patch/errors';
@@ -78,9 +77,9 @@ const ProposalQuery = graphql(/* GraphQL  */ `
       stage
       title
       description
-      versions: checks(after: null, input: {}) {
-        ...ProposalQuery_VersionsListFragment
-      }
+      compositionStatus
+      compositionTimestamp
+      compositionStatusReason
       checks(after: $version, input: {}) {
         ...ProposalOverview_ChecksFragment
       }
@@ -160,6 +159,7 @@ export function TargetProposalsSinglePage(props: {
   proposalId: string;
   tab?: string;
   version?: string;
+  timestamp?: number;
 }) {
   return (
     <>
@@ -197,16 +197,21 @@ const ProposalsContent = (props: Parameters<typeof TargetProposalsSinglePage>[0]
       },
       id: props.proposalId,
       version: props.version,
+      // pass the timestamp to force a refresh when proposals are updated
+      timestamp: props.timestamp,
     },
     requestPolicy: 'cache-and-network',
   });
 
   // fetch all proposed changes for the selected version
-  const [changesQuery, refreshChanges] = useQuery({
+  const [changesQuery] = useQuery({
     query: ProposalChangesQuery,
     variables: {
       id: props.proposalId,
       v: props.version,
+      // pass the timestamp to force a refresh when proposals are updated
+      timestamp: props.timestamp,
+
       // @todo deal with pagination
     },
     // don't cache this because caching can make it behave strangely --
@@ -245,9 +250,12 @@ const ProposalsContent = (props: Parameters<typeof TargetProposalsSinglePage>[0]
                 (proposalVersion.serviceName == null || proposalVersion.serviceName === '') */,
           )?.node.source;
 
-          const beforeSchema = existingSchema?.length
-            ? buildSchema(existingSchema, { assumeValid: true, assumeValidSDL: true })
-            : null;
+          let beforeSchema: GraphQLSchema | null = null;
+          if (existingSchema?.length) {
+            const ast = addTypeForExtensions(parse(existingSchema));
+            beforeSchema = buildASTSchema(ast, { assumeValid: true, assumeValidSDL: true });
+          }
+
           // @todo better handle pagination
           const allChanges =
             proposalVersion.schemaChanges?.edges
@@ -363,15 +371,10 @@ const ProposalsContent = (props: Parameters<typeof TargetProposalsSinglePage>[0]
         services={services ?? []}
         reviews={proposal.reviews ?? {}}
         checks={proposal.checks ?? null}
-        versions={proposal.versions ?? null}
         isDistributedGraph={isDistributedGraph}
         proposal={proposal}
         target={query.data.target}
         me={query.data.me}
-        refreshData={(...args) => {
-          refreshProposal(args);
-          refreshChanges(args);
-        }}
       />
     );
   }, [
@@ -392,7 +395,7 @@ const ProposalsContent = (props: Parameters<typeof TargetProposalsSinglePage>[0]
             subPageTitle={
               <span className="flex items-center">
                 <Link
-                  className="text-white"
+                  className="text-neutral-12"
                   to="/$organizationSlug/$projectSlug/$targetSlug/proposals"
                   params={{
                     organizationSlug: props.organizationSlug,
@@ -402,7 +405,7 @@ const ProposalsContent = (props: Parameters<typeof TargetProposalsSinglePage>[0]
                 >
                   Schema Proposals
                 </Link>{' '}
-                <span className="inline-block px-2 italic text-gray-500">/</span>{' '}
+                <span className="text-neutral-10 inline-block px-2 italic">/</span>{' '}
                 {/* @todo use query data to show loading */}
                 {props.proposalId ? (
                   `${props.proposalId}`
@@ -419,19 +422,51 @@ const ProposalsContent = (props: Parameters<typeof TargetProposalsSinglePage>[0]
           />
         </div>
       </div>
-      <div className="flex w-full grow flex-col rounded-sm bg-gray-900/50 p-4">
+      <div className="bg-neutral-2/50 flex w-full grow flex-col rounded-sm p-4">
         {query.fetching ? (
           <Spinner />
         ) : (
           proposal && (
             <>
-              <div className="grid grid-cols-2">
-                <VersionSelect proposalId={props.proposalId} versions={proposal.versions ?? {}} />
-                <div className="flex justify-end">
+              <div className="flex flex-col gap-2 sm:flex-row">
+                {/* <VersionSelect proposalId={props.proposalId} versions={proposal.versions ?? {}} /> */}
+                <Title className="flex grow flex-row items-center gap-2 truncate">
+                  <div className="truncate">{proposal.title}</div>
+                  <TooltipProvider delayDuration={0}>
+                    <Tooltip>
+                      <TooltipTrigger>
+                        {proposal?.compositionStatus === 'ERROR' ? (
+                          <XIcon className="text-red-600" />
+                        ) : null}
+                        {proposal?.compositionStatus === 'SUCCESS' ? (
+                          <CheckIcon className="text-emerald-500" />
+                        ) : null}
+                      </TooltipTrigger>
+                      <TooltipContent align="start">
+                        {proposal?.compositionStatus === 'ERROR' ? (
+                          <>
+                            Composition Error{' '}
+                            {proposal.compositionTimestamp ? (
+                              <>
+                                (<TimeAgo date={proposal.compositionTimestamp} />)
+                              </>
+                            ) : null}
+                            {proposal.compositionStatusReason
+                              ?.split('\n')
+                              .map((e, i) => <div key={i}>- {e}</div>) ?? 'Unknown cause.'}{' '}
+                          </>
+                        ) : null}
+                        {proposal?.compositionStatus === 'SUCCESS' ? 'Composes Successfully' : null}
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                </Title>
+                <div className="flex-col justify-end">
                   <StageTransitionSelect
+                    className="w-full sm:w-auto"
                     stage={proposal.stage}
                     onSelect={async stage => {
-                      const review = await reviewSchemaProposal({
+                      const _review = await reviewSchemaProposal({
                         input: {
                           schemaProposalId: props.proposalId,
                           stageTransition: stage,
@@ -439,18 +474,19 @@ const ProposalsContent = (props: Parameters<typeof TargetProposalsSinglePage>[0]
                           serviceName: '',
                         },
                       });
-                      console.log('@todo ', review);
+                      // @todo use urqlCache to invalidate the proposal and refresh?
                       refreshProposal();
                     }}
                   />
                 </div>
               </div>
-              <div className="p-4 py-8">
-                <Title className="text-orange-500">{proposal.title}</Title>
-                <div className="text-xs text-gray-400">
+              <div className="mb-6 mt-2">
+                {proposal.description ? (
+                  <div className="w-full border-l-2 p-4">{proposal.description}</div>
+                ) : null}
+                <div className="text-neutral-10 mt-4 pr-2 text-right text-xs">
                   proposed <TimeAgo date={proposal.createdAt} /> by {proposal.author}
                 </div>
-                <div className="w-full p-2 pt-4">{proposal.description}</div>
               </div>
             </>
           )
@@ -471,16 +507,14 @@ function TabbedContent(props: {
   services: ServiceProposalDetails[];
   reviews: FragmentType<typeof Proposal_ReviewsFragment>;
   checks: FragmentType<typeof ProposalOverview_ChecksFragment> | null;
-  versions: FragmentType<typeof ProposalQuery_VersionsListFragment> | null;
   proposal: FragmentType<typeof Proposals_EditProposalProposalFragment>;
   target: FragmentType<typeof Proposals_EditProposalTargetFragment>;
   me: FragmentType<typeof Proposals_EditProposalMeFragment> | null;
   isDistributedGraph: boolean;
-  refreshData: UseQueryExecute;
 }) {
   return (
     <Tabs value={props.page} defaultValue={Tab.DETAILS}>
-      <TabsList variant="menu" className="w-full">
+      <TabsList variant="menu" className="border-b-1 w-full">
         <TabsTrigger variant="menu" value={Tab.DETAILS} asChild>
           <Link
             to="/$organizationSlug/$projectSlug/$targetSlug/proposals/$proposalId"
@@ -586,7 +620,9 @@ function TabbedContent(props: {
       </TabsContent>
       <TabsContent value={Tab.EDIT} variant="content" className="w-full">
         <div className="flex grow flex-row">
-          <TargetProposalEditPage {...props} />
+          <SaveProposalProvider>
+            <TargetProposalEditPage {...props} />
+          </SaveProposalProvider>
         </div>
       </TabsContent>
     </Tabs>

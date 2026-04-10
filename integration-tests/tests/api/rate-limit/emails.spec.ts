@@ -14,7 +14,8 @@ function filterEmailsByOrg(orgSlug: string, emails: emails.Email[]) {
 
 test('rate limit approaching and reached for organization', async () => {
   const { createOrg, ownerToken, ownerEmail } = await initSeed().createOwner();
-  const { createProject, organization } = await createOrg();
+  const { createProject, organization, overrideOrgPlan } = await createOrg();
+  await overrideOrgPlan('PRO');
   const { createTargetAccessToken, waitForRequestsCollected } = await createProject(
     ProjectType.Single,
   );
@@ -27,7 +28,7 @@ test('rate limit approaching and reached for organization', async () => {
       operations: 11,
     },
     ownerToken,
-  );
+  ).then(r => r.expectNoGraphQLErrors());
 
   const { collectLegacyOperations: collectOperations } = await createTargetAccessToken({});
 
@@ -59,6 +60,7 @@ test('rate limit approaching and reached for organization', async () => {
   expect(sent).toEqual([
     {
       to: ownerEmail,
+      date: expect.any(String),
       subject: `${organization.slug} is approaching its rate limit`,
       body: expect.any(String),
     },
@@ -82,6 +84,7 @@ test('rate limit approaching and reached for organization', async () => {
 
   expect(sent).toContainEqual({
     to: ownerEmail,
+    date: expect.any(String),
     subject: `GraphQL-Hive operations quota for ${organization.slug} exceeded`,
     body: expect.any(String),
   });

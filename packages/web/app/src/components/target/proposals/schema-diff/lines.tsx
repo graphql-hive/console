@@ -30,7 +30,7 @@ export function LineGroup(props: { children?: ReactElement[]; collapsible?: bool
       <tbody>
         {props.children?.slice(0, 3)}
         <tr>
-          <td colSpan={3} className="text-gray-500">
+          <td colSpan={3} className="text-neutral-8">
             ...
           </td>
         </tr>
@@ -42,7 +42,7 @@ export function LineGroup(props: { children?: ReactElement[]; collapsible?: bool
           </td>
         </tr>
         <tr>
-          <td colSpan={3} className="text-gray-500">
+          <td colSpan={3} className="text-neutral-8">
             ...
           </td>
         </tr>
@@ -68,7 +68,7 @@ export function Line(props: LineProps & { beforeLine: number; afterLine: number 
       {props.annotations?.map((node, i) => (
         <Fragment key={`annotations-${i}`}>
           {node.lineText && (
-            <code className="mb-3 block w-full bg-gray-900 p-3 pl-6 text-white">
+            <code className="bg-neutral-3 text-neutral-12 mb-3 block w-full p-3 pl-6">
               {node.lineText}
             </code>
           )}

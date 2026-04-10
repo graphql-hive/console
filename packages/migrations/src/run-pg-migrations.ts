@@ -1,5 +1,5 @@
 import migration_2023_07_27T11_44_36_graphql_endpoint from './actions/2023.07.27T11.44.36.graphql-endpoint';
-import { type DatabasePool } from 'slonik';
+import { type PostgresDatabasePool } from '@hive/postgres';
 import migration_2021_03_05T19_06_23_initial from './actions/2021-03-05T19-06-23.initial';
 import migration_2021_03_08T11_02_26_urls from './actions/2021-03-08T11-02-26.urls';
 import migration_2021_03_09T10_30_35_roles from './actions/2021-03-09T10-30-35.roles';
@@ -69,7 +69,7 @@ import migration_2024_07_17T00_00_00_app_deployments from './actions/2024.07.17T
 import migration_2024_07_23T_09_36_00_schema_cleanup_tracker from './actions/2024.07.23T09.36.00.schema-cleanup-tracker';
 import { runMigrations } from './pg-migrator';
 
-export const runPGMigrations = async (args: { slonik: DatabasePool; runTo?: string }) =>
+export const runPGMigrations = async (args: { slonik: PostgresDatabasePool; runTo?: string }) =>
   runMigrations({
     slonik: args.slonik,
     runTo: args.runTo,
@@ -142,11 +142,6 @@ export const runPGMigrations = async (args: { slonik: DatabasePool; runTo?: stri
       migration_2024_07_16T13_44_00_oidc_only_access,
       migration_2024_07_17T00_00_00_app_deployments,
       migration_2024_07_23T_09_36_00_schema_cleanup_tracker,
-      await import('./actions/2024.11.11T00-00-00.supertokens-8.0'),
-      await import('./actions/2024.11.12T00-00-00.supertokens-9.0'),
-      await import('./actions/2024.11.12T00-00-00.supertokens-9.1'),
-      await import('./actions/2024.11.12T00-00-00.supertokens-9.2'),
-      await import('./actions/2024.11.12T00-00-00.supertokens-9.3'),
       await import('./actions/2024.12.23T00-00-00.improve-version-index'),
       await import('./actions/2024.12.24T00-00-00.improve-version-index-2'),
       await import('./actions/2024.12.27T00.00.00.create-preflight-scripts'),
@@ -179,5 +174,15 @@ export const runPGMigrations = async (args: { slonik: DatabasePool; runTo?: stri
       await import('./actions/2026.01.09T10.00.00.target-validation-app-deployment-exclusion'),
       await import('./actions/2026.01.25T00-00-00.checks-proposals-changes'),
       await import('./actions/2026.01.27T00-00-00.app-deployment-protection'),
+      await import('./actions/2026.01.09T00-00-00.email-verifications'),
+      await import('./actions/2026.02.07T00-00-00.saved-filters'),
+      await import('./actions/2026.01.30T00-00-00.account-linking'),
+      await import('./actions/2026.02.06T00-00-00.zendesk-unique'),
+      await import('./actions/2026.01.30T10-00-00.oidc-require-invitation'),
+      await import('./actions/2026.02.18T00-00-00.ensure-supertokens-tables'),
+      await import('./actions/2026.02.19T00-00-00.saved-filter-permission'),
+      await import('./actions/2026.02.24T00-00-00.proposal-composition'),
+      await import('./actions/2026.02.25T00-00-00.oidc-integration-domains'),
+      await import('./actions/2026.03.25T00-00-00.access-token-expiration'),
     ],
   });

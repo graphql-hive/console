@@ -176,7 +176,7 @@ export function compareDirectiveLists(
     const newItems = newMap[itemName];
     const oldItems = oldMap[itemName];
     for (let i = (oldItems ?? []).length; i < (newItems ?? []).length; i++) {
-      const oldItem = oldItems[i];
+      const oldItem = oldItems?.[i];
       const newItem = newItems[i];
       if (oldItem === undefined) {
         added.push(newItem);

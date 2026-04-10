@@ -109,7 +109,7 @@ function PolicySettingsListForm({
         <>
           {children ? children(props) : null}
           <div className="flex items-center justify-end">
-            {props.dirty ? <p className="pr-2 text-sm text-gray-500">Unsaved changes</p> : null}
+            {props.dirty ? <p className="text-neutral-10 pr-2 text-sm">Unsaved changes</p> : null}
 
             <Button
               disabled={!props.dirty || saving || !props.isValid || !onSave}
@@ -127,7 +127,7 @@ function PolicySettingsListForm({
               {error}
             </Callout>
           ) : null}
-          <div className="grid grid-cols-1 divide-y divide-gray-800">
+          <div className="divide-neutral-5 grid grid-cols-1 divide-y">
             {availableRules.map(availableRule => (
               <PolicyListItem
                 disabled={!onSave}

@@ -5,38 +5,39 @@ import type { MutationResolvers } from './../../../../__generated__/types';
 
 export const updateSchemaComposition: NonNullable<
   MutationResolvers['updateSchemaComposition']
-> = async (_, { input }, { injector }) => {
+> = async (_, { input }, { injector, session }) => {
   const translator = injector.get(IdTranslator);
-  const commonInput = input.native ?? input.external ?? input.legacy;
-  const [organization, project] = await Promise.all([
-    translator.translateOrganizationId(commonInput),
-    translator.translateProjectId(commonInput),
-  ]);
+  const projectReference = await translator.resolveProjectReference({
+    reference: input.project,
+  });
 
-  if (input.native) {
+  if (!projectReference) {
+    return session.raise('project:describe');
+  }
+
+  if (input.method.native) {
     return injector.get(SchemaManager).updateSchemaComposition({
-      projectId: project,
-      organizationId: organization,
+      projectId: projectReference.projectId,
+      organizationId: projectReference.organizationId,
       mode: 'native',
     });
   }
-  if (input.legacy) {
+  if (input.method.legacy) {
     return injector.get(SchemaManager).updateSchemaComposition({
-      projectId: project,
-      organizationId: organization,
+      projectId: projectReference.projectId,
+      organizationId: projectReference.organizationId,
       mode: 'legacy',
     });
   }
-  if (input.external) {
+  if (input.method.external) {
     return injector.get(SchemaManager).updateSchemaComposition({
-      projectId: project,
-      organizationId: organization,
+      projectId: projectReference.projectId,
+      organizationId: projectReference.organizationId,
       mode: 'external',
-      endpoint: input.external.endpoint,
-      secret: input.external.secret,
+      endpoint: input.method.external.endpoint,
+      secret: input.method.external.secret,
     });
   }
 
-  const __: never = input;
   throw new HiveError('Unexpected input');
 };

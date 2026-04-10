@@ -614,9 +614,7 @@ export class SchemaPublisher {
               existing: latestVersion
                 ? toSingleSchemaInput(ensureSingleSchema(latestVersion.schemas))
                 : null,
-              incoming: {
-                sdl,
-              },
+              incoming: { sdl },
             });
             if ('result' in diffSchema) {
               proposalChanges = diffSchema.result ?? null;
@@ -627,9 +625,7 @@ export class SchemaPublisher {
         }
 
         checkResult = await this.models[ProjectType.SINGLE].check({
-          input: {
-            sdl: input.sdl,
-          },
+          input: { sdl },
           selector,
           latest: latestVersion
             ? {
@@ -731,6 +727,15 @@ export class SchemaPublisher {
 
     const retention = await this.rateLimit.getRetention({ targetId: target.id });
     const expiresAt = retention ? new Date(Date.now() + retention * millisecondsPerDay) : null;
+
+    if (input.schemaProposalId) {
+      await this.schemaProposals.runBackgroundComposition({
+        externalComposition: project.externalComposition,
+        native: project.nativeFederation,
+        proposalId: input.schemaProposalId,
+        targetId: target.id,
+      });
+    }
 
     if (checkResult.conclusion === SchemaCheckConclusion.Failure) {
       schemaCheck = await this.storage.createSchemaCheck({
@@ -1047,6 +1052,7 @@ export class SchemaPublisher {
       return {
         __typename: 'SchemaCheckError',
         valid: false,
+        schemaProposalChanges: schemaCheck.schemaProposalChanges,
         changes: [
           ...(checkResult.state.schemaChanges?.all ?? []),
           ...(checkResult.state.contracts?.flatMap(contract => [
@@ -1096,6 +1102,7 @@ export class SchemaPublisher {
       return {
         __typename: 'SchemaCheckSuccess',
         valid: true,
+        schemaProposalChanges: schemaCheck.schemaProposalChanges,
         changes: [],
         warnings: [],
         initial: false,
@@ -1111,6 +1118,7 @@ export class SchemaPublisher {
     return {
       __typename: 'SchemaCheckError',
       valid: false,
+      schemaProposalChanges: schemaCheck.schemaProposalChanges,
       changes: [],
       warnings: [],
       errors: [
@@ -1288,6 +1296,7 @@ export class SchemaPublisher {
             executor: () =>
               this.internalPublish({
                 ...input,
+                sdl: tryPrettifySDL(input.sdl),
                 checksum,
                 selector,
               }),
@@ -1295,10 +1304,24 @@ export class SchemaPublisher {
         },
       )
       .catch((error: unknown) => {
-        if (error instanceof MutexResourceLockedError && input.supportsRetry === true) {
+        if (error instanceof MutexResourceLockedError) {
+          if (input.supportsRetry === true) {
+            return {
+              __typename: 'SchemaPublishRetry',
+              reason: 'Another schema publish is currently in progress.',
+            } satisfies PublishResult;
+          }
+
           return {
-            __typename: 'SchemaPublishRetry',
-            reason: 'Another schema publish is currently in progress.',
+            __typename: 'SchemaPublishError',
+            valid: false,
+            changes: [],
+            errors: [
+              {
+                message:
+                  'Another schema publish is currently in progress. Please retry the publish.',
+              },
+            ],
           } satisfies PublishResult;
         }
 

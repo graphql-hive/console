@@ -366,7 +366,8 @@ export class PersistedDocumentIngester {
     await this.clickhouse.insert({
       query: c_sql`
         INSERT INTO "app_deployment_documents" (
-          "app_deployment_id"
+          "target_id"
+          , "app_deployment_id"
           , "document_hash"
           , "document_body"
           , "operation_name"
@@ -375,6 +376,7 @@ export class PersistedDocumentIngester {
         )
         FORMAT CSV`,
       data: args.documents.map(document => [
+        args.targetId,
         document.appDeploymentId,
         document.hash,
         document.body,

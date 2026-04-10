@@ -1,4 +1,5 @@
-import { Checkbox, Table, Tag, TBody, Td, Tr } from '@/components/v2';
+import { Checkbox } from '@/components/base/checkbox/checkbox';
+import { Table, Tag, TBody, Td, Tr } from '@/components/v2';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import { AlertChannelType, ChannelsTable_AlertChannelFragmentFragment } from '@/gql/graphql';
 
@@ -60,7 +61,7 @@ export function ChannelsTable(props: {
               />
             </Td>
             <Td className="text-ellipsis whitespace-nowrap">{channel.name}</Td>
-            <Td className="max-w-xs truncate text-xs text-gray-400">
+            <Td className="text-neutral-10 max-w-xs truncate text-xs">
               {renderChannelEndpoint(channel)}
             </Td>
             <Td className="flex max-w-24 content-end">

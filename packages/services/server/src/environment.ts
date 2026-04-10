@@ -38,7 +38,10 @@ const EnvironmentModel = zod.object({
     zod.union([zod.literal('1'), zod.literal('0')]).optional(),
   ),
   FEATURE_FLAGS_APP_DEPLOYMENTS_ENABLED: emptyString(
-    zod.union([zod.literal('1'), zod.literal('0')]).optional(),
+    zod
+      .union([zod.literal('1'), zod.literal('0')])
+      .optional()
+      .default('1'),
   ),
   FEATURE_FLAGS_APP_DEPLOYMENT_TIMINGS_ENABLED: emptyString(
     zod.union([zod.literal('1'), zod.literal('0')]).optional(),
@@ -53,6 +56,10 @@ const EnvironmentModel = zod.object({
 
 const CommerceModel = zod.object({
   COMMERCE_ENDPOINT: emptyString(zod.string().url().optional()),
+  COMMERCE_BILLING: zod
+    .union([zod.literal('1'), zod.literal('0')])
+    .default('1')
+    .optional(),
 });
 
 const SentryModel = zod.union([
@@ -103,9 +110,11 @@ const RedisModel = zod.object({
 });
 
 const SuperTokensModel = zod.object({
-  SUPERTOKENS_CONNECTION_URI: zod.string().url(),
-  SUPERTOKENS_API_KEY: zod.string(),
+  SUPERTOKENS_REFRESH_TOKEN_KEY: zod.string(),
+  SUPERTOKENS_ACCESS_TOKEN_KEY: zod.string(),
+  SUPERTOKENS_RATE_LIMIT: emptyString(zod.union([zod.literal('1'), zod.literal('0')]).optional()),
   SUPERTOKENS_RATE_LIMIT_IP_HEADER_NAME: emptyString(zod.string().optional()),
+  SUPERTOKENS_RATE_LIMIT_BYPASS_KEY: emptyString(zod.string().optional()),
 });
 
 const GitHubModel = zod.union([
@@ -400,6 +409,7 @@ export const env = {
       ? {
           endpoint: commerce.COMMERCE_ENDPOINT,
           dateRetentionPurgeIntervalMinutes: 5,
+          billing: commerce.COMMERCE_BILLING === '0' ? false : true,
         }
       : null,
     schemaPolicy: base.SCHEMA_POLICY_ENDPOINT
@@ -435,9 +445,17 @@ export const env = {
     tlsEnabled: redis.REDIS_TLS_ENABLED === '1',
   },
   supertokens: {
-    connectionURI: supertokens.SUPERTOKENS_CONNECTION_URI,
-    apiKey: supertokens.SUPERTOKENS_API_KEY,
-    rateLimitIPHeaderName: supertokens.SUPERTOKENS_RATE_LIMIT_IP_HEADER_NAME ?? 'CF-Connecting-IP',
+    secrets: {
+      refreshTokenKey: supertokens.SUPERTOKENS_REFRESH_TOKEN_KEY,
+      accessTokenKey: supertokens.SUPERTOKENS_ACCESS_TOKEN_KEY,
+    },
+    rateLimit:
+      supertokens.SUPERTOKENS_RATE_LIMIT === '0'
+        ? null
+        : {
+            ipHeaderName: supertokens.SUPERTOKENS_RATE_LIMIT_IP_HEADER_NAME ?? 'CF-Connecting-IP',
+            bypassKey: supertokens.SUPERTOKENS_RATE_LIMIT_BYPASS_KEY ?? null,
+          },
   },
   auth: {
     github:

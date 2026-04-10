@@ -15,7 +15,7 @@ const reactScanPlugin: Plugin = {
     if (ctx.server?.config.command === 'serve') {
       return html.replace(
         '<head>',
-        '<head><script src="https://unpkg.com/react-scan/dist/auto.global.js"></script>',
+        '<head><script src="https://unpkg.com/react-scan@0.4.3/dist/auto.global.js"></script>',
       );
     }
 
@@ -49,9 +49,6 @@ export default {
         index: resolve(__dirname, 'index.html'),
         ['preflight-worker-embed']: resolve(__dirname, 'preflight-worker-embed.html'),
       },
-      output: {
-        entryFileNames: '[name].js',
-      },
     },
   },
   optimizeDeps: {
@@ -60,5 +57,12 @@ export default {
       'monaco-editor/esm/vs/language/json/monaco.contribution',
       'monaco-graphql/esm/monaco.contribution',
     ],
+  },
+  environments: {
+    client: {
+      build: {
+        sourcemap: 'hidden',
+      },
+    },
   },
 } satisfies UserConfig;

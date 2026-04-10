@@ -1,14 +1,14 @@
 /**
  * This wraps the higher level logic with schema proposals.
  */
-import { Injectable, Scope } from 'graphql-modules';
+import { Inject, Injectable, Scope } from 'graphql-modules';
 import { TargetReferenceInput } from 'packages/libraries/core/src/client/__generated__/types';
-import { SchemaProposalCheckInput, SchemaProposalStage } from '../../../__generated__/types';
+import type { SchemaProposalStage } from '../../../__generated__/types';
 import { HiveError } from '../../../shared/errors';
 import { Session } from '../../auth/lib/authz';
-import { SchemaPublisher } from '../../schema/providers/schema-publisher';
 import { IdTranslator } from '../../shared/providers/id-translator';
 import { Logger } from '../../shared/providers/logger';
+import { PUB_SUB_CONFIG, type HivePubSub } from '../../shared/providers/pub-sub';
 import { Storage } from '../../shared/providers/storage';
 import { SchemaProposalStorage } from './schema-proposal-storage';
 
@@ -24,9 +24,39 @@ export class SchemaProposalManager {
     private storage: Storage,
     private session: Session,
     private idTranslator: IdTranslator,
-    private schemaPublisher: SchemaPublisher,
+    @Inject(PUB_SUB_CONFIG) private pubSub: HivePubSub,
   ) {
     this.logger = logger.child({ source: 'SchemaProposalsManager' });
+  }
+
+  async subscribeToSchemaProposalCompositions(args: { proposalId: string }) {
+    const proposal = await this.proposalStorage.getProposalTargetId({
+      id: args.proposalId,
+    });
+
+    if (!proposal) {
+      this.session.raise('schemaProposal:describe');
+    }
+
+    const selector = await this.idTranslator.resolveTargetReference({
+      reference: {
+        byId: proposal.targetId,
+      },
+    });
+
+    if (!selector) {
+      this.session.raise('schemaProposal:describe');
+    }
+
+    await this.session.assertPerformAction({
+      organizationId: selector.organizationId,
+      action: 'schemaProposal:describe',
+      params: selector,
+    });
+
+    this.logger.info(`Subscribed to "schemaProposalComposition" (id=${args.proposalId})`);
+
+    return this.pubSub.subscribe('schemaProposalComposition', args.proposalId);
   }
 
   async proposeSchema(args: {
@@ -35,12 +65,17 @@ export class SchemaProposalManager {
     description: string;
     isDraft: boolean;
     author: string;
-    initialChecks: ReadonlyArray<SchemaProposalCheckInput>;
   }) {
     const selector = await this.idTranslator.resolveTargetReference({ reference: args.target });
     if (selector === null) {
       this.session.raise('schemaProposal:modify');
     }
+
+    await this.session.assertPerformAction({
+      action: 'schemaProposal:modify',
+      organizationId: selector.organizationId,
+      params: selector,
+    });
 
     const createProposalResult = await this.proposalStorage.createProposal({
       organizationId: selector.organizationId,
@@ -56,48 +91,6 @@ export class SchemaProposalManager {
     }
 
     const proposal = createProposalResult.proposal;
-    const checkPromises = args.initialChecks.map(async check => {
-      const result = await this.schemaPublisher.check({
-        ...check,
-        service: check.service?.toLowerCase(),
-        target: { byId: selector.targetId },
-        schemaProposalId: proposal.id,
-      });
-      if ('changes' in result && result.changes) {
-        return {
-          ...result,
-          errors:
-            result.errors?.map(error => ({
-              ...error,
-              path: 'path' in error ? error.path?.split('.') : null,
-            })) ?? [],
-        };
-      }
-    });
-
-    // @todo roll back the proposal creation... Or run checks first and then associate them with the proposal
-    const checksResult = await Promise.all(checkPromises);
-    const errorResult = checksResult.find(check => check?.errors.length);
-    if (errorResult !== undefined) {
-      // has errors
-      return {
-        type: 'error' as const,
-        error: {
-          message:
-            errorResult.message ?? errorResult.errors.map(e => `- ${e.message}`).join('\n') ?? '',
-          details: {
-            title: null,
-            description: null,
-          },
-        },
-      };
-    }
-
-    // @todo consider mapping this here vs using the nested resolver... This is more efficient but riskier bc logic lives in two places.
-    // const checkEdges = checks.map(check => ({
-    //   node: check,
-    //   cursor: 'schemaCheck' in check && encodeCreatedAtAndUUIDIdBasedCursor({ id: check.schemaCheck!.id, createdAt: check.schemaCheck!.createdAt} ) || undefined,
-    // })) as any; // @todo
     return {
       type: 'ok' as const,
       schemaProposal: {
@@ -110,23 +103,38 @@ export class SchemaProposalManager {
         targetId: proposal.targetId,
         reviews: null,
         author: args.author,
-        // checks: {
-        //   edges: checkEdges,
-        //   pageInfo: {
-        //     hasNextPage: false,
-        //     hasPreviousPage: false,
-        //     startCursor: checkEdges[0]?.cursor || '',
-        //     endCursor: checkEdges[checkEdges.length -1]?.cursor || '',
-        //   },
-        // },
-        // rebasedSchemaSDL(checkId: ID): [SubgraphSchema!]
-        // rebasedSupergraphSDL(versionId: ID): String
+        checks: {
+          edges: [],
+          pageInfo: {
+            hasNextPage: false,
+            hasPreviousPage: false,
+            startCursor: '',
+            endCursor: '',
+          },
+        },
       },
     };
   }
 
   async getProposal(args: { id: string }) {
-    return this.proposalStorage.getProposal(args);
+    const proposal = await this.proposalStorage.getProposal(args);
+
+    if (proposal) {
+      const selector = await this.idTranslator.resolveTargetReference({
+        reference: {
+          byId: proposal.targetId,
+        },
+      });
+      if (selector === null) {
+        this.session.raise('schemaProposal:describe');
+      }
+      await this.session.assertPerformAction({
+        action: 'schemaProposal:describe',
+        organizationId: selector.organizationId,
+        params: selector,
+      });
+    }
+    return proposal;
   }
 
   async getPaginatedReviews(args: {
@@ -137,6 +145,23 @@ export class SchemaProposalManager {
     authors: string[];
   }) {
     this.logger.debug('Get paginated reviews (target=%s, after=%s)', args.proposalId, args.after);
+    const proposal = await this.proposalStorage.getProposalTargetId({ id: args.proposalId });
+
+    if (proposal) {
+      const selector = await this.idTranslator.resolveTargetReference({
+        reference: {
+          byId: proposal.targetId,
+        },
+      });
+      if (selector === null) {
+        this.session.raise('schemaProposal:describe');
+      }
+      await this.session.assertPerformAction({
+        action: 'schemaProposal:describe',
+        organizationId: selector.organizationId,
+        params: selector,
+      });
+    }
 
     return this.proposalStorage.getPaginatedReviews(args);
   }
@@ -157,8 +182,14 @@ export class SchemaProposalManager {
       reference: args.target,
     });
     if (selector === null) {
-      this.session.raise('schemaProposal:modify');
+      this.session.raise('schemaProposal:describe');
     }
+
+    await this.session.assertPerformAction({
+      action: 'schemaProposal:describe',
+      organizationId: selector.organizationId,
+      params: selector,
+    });
 
     return this.proposalStorage.getPaginatedProposals({
       targetId: selector.targetId,
@@ -176,14 +207,28 @@ export class SchemaProposalManager {
   }) {
     this.logger.debug(`Reviewing proposal (proposal=%s, stage=%s)`, args.proposalId, args.stage);
 
-    // @todo check permissions for user
-    const proposal = await this.proposalStorage.getProposal({ id: args.proposalId });
+    const proposal = await this.proposalStorage.getProposalTargetId({ id: args.proposalId });
+
+    if (!proposal) {
+      throw new HiveError('Proposal target lookup failed.');
+    }
+
     const user = await this.session.getViewer();
     const target = await this.storage.getTargetById(proposal.targetId);
 
     if (!target) {
       throw new HiveError('Proposal target lookup failed.');
     }
+
+    await this.session.assertPerformAction({
+      action: 'schemaProposal:describe',
+      organizationId: target.orgId,
+      params: {
+        organizationId: target.orgId,
+        projectId: target.projectId,
+        targetId: proposal.targetId,
+      },
+    });
 
     if (args.stage) {
       const review = await this.proposalStorage.manuallyTransitionProposal({

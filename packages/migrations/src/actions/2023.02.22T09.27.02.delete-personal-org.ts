@@ -2,7 +2,7 @@ import { type MigrationExecutor } from '../pg-migrator';
 
 export default {
   name: '2023.02.22T09.27.02.delete-personal-org.sql',
-  run: ({ sql }) => sql`
+  run: ({ psql }) => psql`
 -- Find and delete all organizations of type PERSONAL that have no projects
 DELETE FROM
   organizations AS o

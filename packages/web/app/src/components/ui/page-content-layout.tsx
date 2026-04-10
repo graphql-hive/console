@@ -37,7 +37,7 @@ const PageLayoutContent = forwardRef<HTMLDivElement, PageLayoutContentProps>(
       {mainTitlePage ? (
         <>
           <h1 className="mb-2 text-2xl font-semibold">{mainTitlePage}</h1>
-          <div className="mb-3 h-[1px] w-full bg-gray-700" />
+          <div className="bg-neutral-2 mb-3 h-[1px] w-full" />
         </>
       ) : null}
       {children}

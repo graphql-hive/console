@@ -2,7 +2,7 @@ import { type MigrationExecutor } from '../pg-migrator';
 
 export default {
   name: '2022.07.11T20.09.37.migrate-pro-hobby-retention.sql',
-  run: ({ sql }) => sql`
+  run: ({ psql }) => psql`
 -- Update Hobby with 3d to 7d
 UPDATE
   organizations

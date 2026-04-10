@@ -3,7 +3,7 @@ import type { MigrationExecutor } from '../pg-migrator';
 export default {
   name: '2025.03.20T00-00-00.dangerous_breaking.ts',
   noTransaction: true,
-  run: ({ sql }) => sql`
+  run: ({ psql }) => psql`
     ALTER TABLE
       targets
     ADD COLUMN

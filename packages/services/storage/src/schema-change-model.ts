@@ -2,7 +2,6 @@
 import crypto from 'node:crypto';
 import stableJSONStringify from 'fast-json-stable-stringify';
 import { Kind } from 'graphql';
-import { SerializableValue } from 'slonik';
 import { z } from 'zod';
 import {
   ChangeType,
@@ -89,6 +88,7 @@ import {
   UnionMemberAddedChange,
   UnionMemberRemovedChange,
 } from '@graphql-inspector/core';
+import { SerializableValue } from '@hive/postgres';
 import {
   RegistryServiceUrlChangeSerializableChange,
   schemaChangeFromSerializableChange,
@@ -263,7 +263,7 @@ export function implement<Model = never>() {
   return {
     with: <
       Schema extends Implements<Model> & {
-        [unknownKey in Exclude<keyof Schema, keyof Model>]: never;
+        [_Key in Exclude<keyof Schema, keyof Model>]: never;
       },
     >(
       schema: Schema,
@@ -1267,6 +1267,25 @@ function isInputFieldAddedChange(change: Change): change is z.TypeOf<typeof Inpu
   return change.type === 'INPUT_FIELD_ADDED';
 }
 
+const AffectedAppDeploymentModel = z.object({
+  id: z.string(),
+  name: z.string(),
+  version: z.string(),
+  createdAt: z.string().nullable().optional(),
+  activatedAt: z.string().nullable().optional(),
+  retiredAt: z.string().nullable().optional(),
+  affectedOperations: z.array(
+    z.object({
+      hash: z.string(),
+      name: z.string().nullable(),
+    }),
+  ),
+});
+
+const AffectedAppDeploymentsModel = z.array(AffectedAppDeploymentModel);
+
+export type AffectedAppDeployments = z.TypeOf<typeof AffectedAppDeploymentsModel>;
+
 export const HiveSchemaChangeModel = z
   .intersection(
     SchemaChangeModel,
@@ -1298,21 +1317,7 @@ export const HiveSchemaChangeModel = z
         .optional()
         .transform(value => value ?? null),
       /** App deployments affected by this breaking change */
-      affectedAppDeployments: z
-        .array(
-          z.object({
-            id: z.string(),
-            name: z.string(),
-            version: z.string(),
-            affectedOperations: z.array(
-              z.object({
-                hash: z.string(),
-                name: z.string().nullable(),
-              }),
-            ),
-          }),
-        )
-        .nullable()
+      affectedAppDeployments: AffectedAppDeploymentsModel.nullable()
         .optional()
         .transform(value => value ?? null),
     }),
@@ -1344,6 +1349,9 @@ export const HiveSchemaChangeModel = z
             id: string;
             name: string;
             version: string;
+            createdAt?: string | null;
+            activatedAt?: string | null;
+            retiredAt?: string | null;
             affectedOperations: { hash: string; name: string | null }[];
           }[]
         | null;
@@ -1517,7 +1525,7 @@ export const InsertConditionalBreakingChangeMetadataModel =
     },
   })).nullable();
 
-const SchemaCheckInputModel = z.union([
+export const SchemaCheckInputModel = z.union([
   z.intersection(
     z.object({
       isSuccess: z.literal(false),

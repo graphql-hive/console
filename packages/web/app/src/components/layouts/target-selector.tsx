@@ -1,6 +1,7 @@
+import { PrimaryNavigationLink } from '@/components/navigation/primary-navigation-link';
 import { Select, SelectContent, SelectItem, SelectTrigger } from '@/components/ui/select';
 import { FragmentType, graphql, useFragment } from '@/gql';
-import { Link, useRouter } from '@tanstack/react-router';
+import { useRouter } from '@tanstack/react-router';
 
 const TargetSelector_OrganizationConnectionFragment = graphql(`
   fragment TargetSelector_OrganizationConnectionFragment on OrganizationConnection {
@@ -53,34 +54,32 @@ export function TargetSelector(props: {
   return (
     <>
       {currentOrganization ? (
-        <Link
-          to="/$organizationSlug"
-          params={{
-            organizationSlug: currentOrganization.slug,
+        <PrimaryNavigationLink
+          linkProps={{
+            to: '/$organizationSlug',
+            params: { organizationSlug: currentOrganization.slug },
           }}
-          className="max-w-[200px] shrink-0 truncate font-medium"
-        >
-          {currentOrganization.slug}
-        </Link>
+          linkText={currentOrganization.slug}
+        />
       ) : (
-        <div className="h-5 w-48 max-w-[200px] animate-pulse rounded-full bg-gray-800" />
+        <div className="bg-neutral-5 h-5 w-48 max-w-[200px] animate-pulse rounded-full" />
       )}
-      <div className="italic text-gray-500">/</div>
+      <div className="text-neutral-10 italic">/</div>
       {currentOrganization && currentProject ? (
-        <Link
-          to="/$organizationSlug/$projectSlug"
-          params={{
-            organizationSlug: props.currentOrganizationSlug,
-            projectSlug: props.currentProjectSlug,
+        <PrimaryNavigationLink
+          linkProps={{
+            to: '/$organizationSlug/$projectSlug',
+            params: {
+              organizationSlug: props.currentOrganizationSlug,
+              projectSlug: props.currentProjectSlug,
+            },
           }}
-          className="max-w-[200px] shrink-0 truncate font-medium"
-        >
-          {currentProject.slug}
-        </Link>
+          linkText={currentProject.slug}
+        />
       ) : (
-        <div className="h-5 w-48 max-w-[200px] animate-pulse rounded-full bg-gray-800" />
+        <div className="bg-neutral-5 h-5 w-48 max-w-[200px] animate-pulse rounded-full" />
       )}
-      <div className="italic text-gray-500">/</div>
+      <div className="text-neutral-10 italic">/</div>
       {targetEdges?.length && currentOrganization && currentProject && currentTarget ? (
         <>
           <Select
@@ -112,7 +111,7 @@ export function TargetSelector(props: {
           </Select>
         </>
       ) : (
-        <div className="h-5 w-48 max-w-[200px] animate-pulse rounded-full bg-gray-800" />
+        <div className="bg-neutral-5 h-5 w-48 max-w-[200px] animate-pulse rounded-full" />
       )}
     </>
   );

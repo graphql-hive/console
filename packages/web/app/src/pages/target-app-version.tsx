@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { format } from 'date-fns';
 import { LoaderCircleIcon } from 'lucide-react';
 import { useClient, useQuery } from 'urql';
 import { AppFilter } from '@/components/apps/AppFilter';
@@ -6,6 +7,7 @@ import { NotFoundContent } from '@/components/common/not-found-content';
 import { Page, TargetLayout } from '@/components/layouts/target';
 import { Button } from '@/components/ui/button';
 import { CardDescription } from '@/components/ui/card';
+import { DateWithTimeAgo } from '@/components/ui/date-with-time-ago';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -28,7 +30,9 @@ import {
 } from '@/components/ui/table';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { graphql } from '@/gql';
+import { AppDeploymentStatus } from '@/gql/graphql';
 import { useRedirect } from '@/lib/access/common';
+import { cn } from '@/lib/utils';
 import { DotsHorizontalIcon } from '@radix-ui/react-icons';
 import { Link, useRouter } from '@tanstack/react-router';
 
@@ -57,6 +61,12 @@ const TargetAppsVersionQuery = graphql(`
         id
         name
         version
+        createdAt
+        activatedAt
+        retiredAt
+        lastUsed
+        totalDocumentCount
+        status
         documents(first: $first, filter: $documentsFilter) {
           pageInfo {
             hasNextPage
@@ -196,7 +206,8 @@ function TargetAppVersionContent(props: {
     return null;
   }
 
-  if (!data.fetching && !data.stale && !data?.data?.target?.appDeployment) {
+  const appDeployment = data.data?.target?.appDeployment;
+  if (!data.fetching && !data.stale && !appDeployment) {
     return (
       <>
         <Meta title="App Version Not found" />
@@ -225,9 +236,9 @@ function TargetAppVersionContent(props: {
               >
                 App Deployments
               </Link>{' '}
-              <span className="inline-block px-2 italic text-gray-500">/</span>{' '}
-              {data.data?.target?.appDeployment ? (
-                `${data.data.target.appDeployment.name}@${data.data.target.appDeployment.version}`
+              <span className="text-neutral-10 inline-block px-2 italic">/</span>{' '}
+              {appDeployment ? (
+                `${appDeployment.name}@${appDeployment.version}`
               ) : (
                 <Skeleton className="inline-block h-5 w-[150px]" />
               )}
@@ -242,7 +253,7 @@ function TargetAppVersionContent(props: {
               {/* <CardDescription>
                   <DocsLink
                     href="/management/targets#cdn-access-tokens"
-                    className="text-gray-500 hover:text-gray-300"
+                    className="text-neutral-10 hover:text-neutral-11"
                   >
                     Learn more about App Deployments
                   </DocsLink>
@@ -256,7 +267,7 @@ function TargetAppVersionContent(props: {
           <div className="mt-4 flex items-center justify-between rounded-md border border-orange-500/50 bg-orange-500/10 px-4 py-2 text-sm">
             <span>
               Showing operations affected by{' '}
-              <code className="rounded-sm bg-gray-800 px-1 py-0.5 font-mono text-orange-400">
+              <code className="bg-neutral-5 rounded-sm px-1 py-0.5 font-mono text-orange-400">
                 {coordinates}
               </code>
             </span>
@@ -301,6 +312,76 @@ function TargetAppVersionContent(props: {
           />
         ) : (
           <>
+            <div className="mb-3">
+              <div className="border-neutral-5 text-neutral-10 grid grid-flow-col grid-rows-2 items-center justify-between gap-4 rounded-md border px-4 py-3 font-medium md:grid-rows-1">
+                <div className="min-w-0">
+                  <div className="text-xs">Status</div>
+                  <div
+                    className={cn(
+                      'text-neutral-12 truncate text-sm font-semibold',
+                      appDeployment?.status === AppDeploymentStatus.Retired && 'text-red-600',
+                      appDeployment?.status === AppDeploymentStatus.Pending && 'text-neutral-11',
+                    )}
+                  >
+                    {appDeployment?.status === AppDeploymentStatus.Retired &&
+                    appDeployment?.retiredAt ? (
+                      <span>
+                        RETIRED ({format(appDeployment.retiredAt, 'MMM d, yyyy HH:mm:ss')})
+                      </span>
+                    ) : (
+                      (appDeployment?.status.toUpperCase() ?? '...')
+                    )}
+                  </div>
+                </div>
+                <div className="min-w-0">
+                  <div className="text-xs">Total Documents</div>
+                  <div className={cn('text-neutral-12 truncate text-center text-sm font-semibold')}>
+                    {appDeployment?.totalDocumentCount ?? '...'}
+                  </div>
+                </div>
+                <div className="min-w-0">
+                  <div className="text-xs">Created</div>
+                  <div className="text-neutral-12 text-sm font-semibold">
+                    {appDeployment?.createdAt ? (
+                      <DateWithTimeAgo
+                        date={appDeployment.createdAt}
+                        dateFormatStr="MMM d, yyyy HH:mm:ss"
+                      />
+                    ) : (
+                      '...'
+                    )}
+                  </div>
+                </div>
+                <div className="min-w-0">
+                  <div className="text-xs">Activated</div>
+                  <div className="text-neutral-12 text-sm font-semibold">
+                    {appDeployment?.activatedAt ? (
+                      <DateWithTimeAgo
+                        date={appDeployment.activatedAt}
+                        dateFormatStr="MMM d, yyyy HH:mm:ss"
+                      />
+                    ) : (
+                      <span className="text-neutral-10 font-normal">—</span>
+                    )}
+                  </div>
+                </div>
+                <div className="min-w-0">
+                  <div className="text-xs">Last Used</div>
+                  <div className="text-neutral-12 text-sm font-semibold">
+                    {data.fetching ? (
+                      '...'
+                    ) : appDeployment?.lastUsed ? (
+                      <DateWithTimeAgo
+                        date={appDeployment.lastUsed}
+                        dateFormatStr="MMM d, yyyy HH:mm:ss"
+                      />
+                    ) : (
+                      <span className="text-neutral-10 font-normal">No Usage Data</span>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
             <div className="rounded-md border">
               <Table>
                 <TableHeader>
@@ -317,7 +398,7 @@ function TargetAppVersionContent(props: {
                   {data.data?.target?.appDeployment.documents?.edges.map((edge, i) => (
                     <TableRow key={i}>
                       <TableCell>
-                        <span className="rounded-sm bg-gray-800 p-1 font-mono text-sm">
+                        <span className="bg-neutral-5 rounded-sm p-1 font-mono text-sm">
                           {edge.node.hash}
                         </span>
                       </TableCell>
@@ -334,13 +415,13 @@ function TargetAppVersionContent(props: {
                             </Tooltip>
                           </TooltipProvider>
                         ) : (
-                          <span className="rounded-sm bg-gray-800 p-1 font-mono text-xs">
+                          <span className="bg-neutral-5 rounded-sm p-1 font-mono text-xs">
                             {edge.node.operationName}
                           </span>
                         )}
                       </TableCell>
                       <TableCell className="text-end">
-                        <span className="rounded-sm bg-gray-800 p-1 font-mono text-xs">
+                        <span className="bg-neutral-5 rounded-sm p-1 font-mono text-xs">
                           {edge.node.body.length > 43
                             ? edge.node.body.substring(0, 43).replace(/\n/g, '\\n') + '...'
                             : edge.node.body}
@@ -391,7 +472,13 @@ function TargetAppVersionContent(props: {
                 </TableBody>
               </Table>
             </div>
-            <div className="mt-2">
+            <div
+              className={cn(
+                'mt-2',
+                data?.data?.target?.appDeployment?.documents?.pageInfo?.hasNextPage === false &&
+                  'hidden',
+              )}
+            >
               <Button
                 size="sm"
                 variant="outline"

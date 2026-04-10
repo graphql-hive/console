@@ -2,7 +2,6 @@
 import Redis from 'ioredis';
 import ms from 'ms';
 import 'reflect-metadata';
-import { hostname } from 'os';
 import { lru } from 'tiny-lru';
 import {
   configureTracing,
@@ -12,6 +11,7 @@ import {
   registerTRPC,
   reportReadiness,
   SamplingDecision,
+  sentryInit,
   startHeartbeats,
   startMetrics,
   TracingInstance,
@@ -46,13 +46,12 @@ export async function main() {
   }
 
   if (env.sentry) {
-    Sentry.init({
-      dist: 'tokens',
-      serverName: hostname(),
+    sentryInit({
       enabled: true,
       environment: env.environment,
       dsn: env.sentry.dsn,
       release: env.release,
+      dist: 'tokens',
     });
   }
 

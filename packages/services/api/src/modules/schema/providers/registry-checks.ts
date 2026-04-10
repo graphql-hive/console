@@ -13,6 +13,7 @@ import {
 } from '@hive/storage';
 import { ProjectType } from '../../../shared/entities';
 import { buildSortedSchemaFromSchemaObject } from '../../../shared/schema';
+import { AffectAppDeploymentsBySchemaCoordinate } from '../../app-deployments/providers/app-deployments';
 import { OperationsReader } from '../../operations/providers/operations-reader';
 import { SchemaPolicyProvider } from '../../policy/providers/schema-policy.provider';
 import type {
@@ -25,7 +26,13 @@ import { Logger } from './../../shared/providers/logger';
 import { diffSchemaCoordinates, Inspector, SchemaCoordinatesDiffResult } from './inspector';
 import { SchemaCheckWarning } from './models/shared';
 import { CompositionOrchestrator } from './orchestrator/composition-orchestrator';
-import { CompositeSchemaInput, extendWithBase, SchemaHelper, SchemaInput } from './schema-helper';
+import {
+  addTypeForExtensions,
+  CompositeSchemaInput,
+  extendWithBase,
+  SchemaHelper,
+  SchemaInput,
+} from './schema-helper';
 
 export type ConditionalBreakingChangeDiffConfig = {
   period: DateRange;
@@ -40,6 +47,9 @@ export type AffectedAppDeployment = {
     id: string;
     name: string;
     version: string;
+    createdAt: string | null;
+    activatedAt: string | null;
+    retiredAt: string | null;
   };
   affectedOperationsByCoordinate: Record<string, Array<{ hash: string; name: string | null }>>;
   countByCoordinate: Record<string, number>;
@@ -53,9 +63,7 @@ export type AffectedAppDeploymentsResult = {
 
 export type GetAffectedAppDeployments = (
   schemaCoordinates: string[],
-  firstDeployments?: number,
-  firstOperations?: number,
-) => Promise<AffectedAppDeploymentsResult>;
+) => Promise<AffectAppDeploymentsBySchemaCoordinate>;
 
 // The reason why I'm using `result` and `reason` instead of just `data` for both:
 // https://bit.ly/hive-check-result-data
@@ -217,7 +225,7 @@ export class RegistryChecks {
     );
 
     if (!args.existing) {
-      this.logger.debug('No exiting version');
+      this.logger.debug('No existing version');
       return 'initial' as const;
     }
 
@@ -392,7 +400,7 @@ export class RegistryChecks {
       this.logger.debug('Skip policy check due to no SDL being composed.');
       return {
         status: 'skipped',
-      };
+      } satisfies CheckResult;
     }
 
     const policyResult = await this.policy.checkPolicy(incomingSdl, modifiedSdl, selector);
@@ -426,6 +434,8 @@ export class RegistryChecks {
   /**
    * Intended to be used for subgraph/service schemas only. This does not check conditional breaking changes
    * or policy logic. This function strictly calculates the diff between two SDL and returns the list of changes.
+   * This also handles raw SDL which might include type extensions -- which cannot be used by themselves to build
+   * a schema and therefore must have the type definition added
    */
   async serviceDiff(args: {
     /** The existing SDL */
@@ -436,23 +446,26 @@ export class RegistryChecks {
     let existingSchema: GraphQLSchema | null;
     let incomingSchema: GraphQLSchema | null;
 
-    try {
-      existingSchema = args.existing
-        ? buildSortedSchemaFromSchemaObject(this.helper.createSchemaObject(args.existing))
-        : null;
+    const createSchema = (sdl: Pick<SchemaInput, 'sdl'>) => {
+      const obj = this.helper.createSchemaObject(sdl);
+      obj.document = addTypeForExtensions(obj.document);
+      return buildSortedSchemaFromSchemaObject(obj);
+    };
 
-      incomingSchema = args.incoming
-        ? buildSortedSchemaFromSchemaObject(this.helper.createSchemaObject(args.incoming))
-        : null;
+    try {
+      existingSchema = args.existing ? createSchema(args.existing) : null;
+      incomingSchema = args.incoming ? createSchema(args.incoming) : null;
     } catch (error) {
-      this.logger.error('Failed to build schema for diff. Skip diff check.');
+      this.logger.error('Failed to build schema for serviceDiff. Skip serviceDiff check.');
       return {
         status: 'skipped',
       } satisfies CheckResult;
     }
 
     if (!existingSchema || !incomingSchema) {
-      this.logger.debug('Skip diff check due to either existing or incoming SDL being absent.');
+      this.logger.debug(
+        'Skip serviceDiff check due to either existing or incoming SDL being absent.',
+      );
       return {
         status: 'skipped',
       } satisfies CheckResult;
@@ -659,7 +672,6 @@ export class RegistryChecks {
         if (change.criticality === CriticalityLevel.Breaking) {
           // Initialize affectedAppDeployments to empty array for all breaking changes
           change.affectedAppDeployments = [];
-
           const coordinate = change.breakingChangeSchemaCoordinate ?? change.path;
           if (coordinate) {
             breakingCoordinates.add(coordinate);
@@ -675,39 +687,31 @@ export class RegistryChecks {
 
         try {
           const result = await args.getAffectedAppDeployments(Array.from(breakingCoordinates));
-          const affectedAppDeployments = result.deployments;
 
-          if (affectedAppDeployments.length > 0) {
-            this.logger.debug(
-              '%d app deployments affected by breaking changes (total: %d)',
-              affectedAppDeployments.length,
-              result.totalDeployments,
-            );
+          if (result.size) {
+            this.logger.debug('app deployments affected by breaking changes');
 
             // Mark changes as unsafe if they affect active app deployments
             for (const change of inspectorChanges) {
-              if (change.criticality === CriticalityLevel.Breaking) {
-                const coordinate = change.breakingChangeSchemaCoordinate ?? change.path;
-                if (coordinate) {
-                  // Check if any deployment is affected by this specific coordinate
-                  const deploymentsForCoordinate = affectedAppDeployments.filter(
-                    d => d.affectedOperationsByCoordinate[coordinate]?.length > 0,
-                  );
-
-                  if (deploymentsForCoordinate.length > 0) {
-                    // Override usage-based safety: change is NOT safe if app deployments are affected
-                    change.isSafeBasedOnUsage = false;
-
-                    // Update affected app deployments for this change
-                    change.affectedAppDeployments = deploymentsForCoordinate.map(d => ({
-                      id: d.appDeployment.id,
-                      name: d.appDeployment.name,
-                      version: d.appDeployment.version,
-                      affectedOperations: d.affectedOperationsByCoordinate[coordinate],
-                    }));
-                  }
-                }
+              if (change.criticality !== CriticalityLevel.Breaking) {
+                continue;
               }
+              const coordinate = change.breakingChangeSchemaCoordinate ?? change.path;
+              if (!coordinate) {
+                continue;
+              }
+
+              const data = result.get(coordinate);
+
+              if (!data) {
+                continue;
+              }
+
+              // Check if any deployment is affected by this specific coordinate
+              // Override usage-based safety: change is NOT safe if app deployments are affected
+              change.isSafeBasedOnUsage = false;
+              // Update affected app deployments for this change
+              change.affectedAppDeployments = data;
             }
           } else {
             this.logger.debug('No app deployments affected by breaking changes');

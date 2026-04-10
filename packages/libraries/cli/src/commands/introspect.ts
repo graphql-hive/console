@@ -3,7 +3,11 @@ import { extname, resolve } from 'node:path';
 import { buildSchema, introspectionFromSchema } from 'graphql';
 import { Args, Flags } from '@oclif/core';
 import Command from '../base-command';
-import { APIError, UnexpectedError, UnsupportedFileExtensionError } from '../helpers/errors';
+import {
+  IntrospectionError,
+  UnexpectedError,
+  UnsupportedFileExtensionError,
+} from '../helpers/errors';
 import { loadSchema } from '../helpers/schema';
 
 export default class Introspect extends Command<typeof Introspect> {
@@ -17,6 +21,12 @@ export default class Introspect extends Command<typeof Introspect> {
       aliases: ['H'],
       description: 'HTTP header to add to the introspection request (in key:value format)',
       multiple: true,
+    }),
+    type: Flags.string({
+      aliases: ['t'],
+      description:
+        "Type of the endpoint (possible types: 'federation', 'graphql')." +
+        ' If not provided federation introspection followed by graphql introspection is attempted.',
     }),
   };
 
@@ -43,11 +53,20 @@ export default class Introspect extends Command<typeof Introspect> {
       {} as Record<string, string>,
     );
 
-    const schema = await loadSchema(args.location, {
-      headers,
-      method: 'POST',
-    }).catch(err => {
-      throw new APIError(err);
+    let schema = await loadSchema(
+      !flags['type']
+        ? 'first-federation-then-graphql-introspection'
+        : flags['type'] === 'federation'
+          ? 'only-federation-introspection'
+          : 'only-graphql-introspection',
+      args.location,
+      {
+        headers,
+        logger: this.logger,
+      },
+    ).catch(err => {
+      this.logFailure(err);
+      throw new IntrospectionError();
     });
 
     if (!schema) {

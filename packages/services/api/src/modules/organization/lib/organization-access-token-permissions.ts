@@ -94,6 +94,16 @@ export const permissionGroups: Array<PermissionGroup> = [
         title: 'Manage CDN access tokens',
         description: 'Allow managing access tokens for the CDN.',
       },
+      {
+        id: 'schemaProposal:modify',
+        title: 'Create and edit schema proposals',
+        description: 'Allow managing schema proposals.',
+      },
+      {
+        id: 'schemaProposal:describe',
+        title: 'View schema proposals',
+        description: 'Allow viewing schema proposals and adding comments.',
+      },
     ],
   },
   {
@@ -135,6 +145,11 @@ export const permissionGroups: Array<PermissionGroup> = [
         id: 'schemaVersion:deleteService',
         title: 'Delete service',
         description: 'Deletes a service from the schema registry.',
+      },
+      {
+        id: 'schemaCheck:approve',
+        title: 'Approve schema check',
+        description: 'Grant access to approve failed schema checks.',
       },
     ],
   },

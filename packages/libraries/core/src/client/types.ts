@@ -41,7 +41,7 @@ export interface HiveClient {
   createInstrumentedExecute(executeImpl: any): any;
   createInstrumentedSubscribe(executeImpl: any): any;
   dispose(): Promise<void>;
-  experimental__persistedDocuments: null | {
+  persistedDocuments: null | {
     resolve(
       documentId: string,
       context?: { waitUntil?: (promise: Promise<void> | void) => void },
@@ -202,7 +202,7 @@ type OptionalWhenFalse<T, KCond extends keyof T, KExcluded extends keyof T> =
   // untouched by default or when true
   | T
   // when false, make KExcluded optional
-  | (Omit<T, KExcluded> & { [P in KCond]: false } & { [P in KExcluded]?: T[KExcluded] });
+  | (Omit<T, KExcluded> & { [_P in KCond]: false } & { [_P in KExcluded]?: T[KExcluded] });
 
 export type HivePluginOptions = OptionalWhenFalse<
   {
@@ -265,10 +265,10 @@ export type HivePluginOptions = OptionalWhenFalse<
      */
     autoDispose?: boolean | NodeJS.Signals[];
     /**
-     * Experimental persisted documents configuration.
+     * Persisted documents configuration.
      *
      **/
-    experimental__persistedDocuments?: PersistedDocumentsConfiguration;
+    persistedDocuments?: PersistedDocumentsConfiguration;
   },
   'enabled',
   'token'
@@ -454,7 +454,7 @@ export type PersistedDocumentsConfiguration = {
    * await redis.connect();
    *
    * const hive = createHive({
-   *   experimental__persistedDocuments: {
+   *   persistedDocuments: {
    *     cdn: { endpoint: '...', accessToken: '...' },
    *     layer2Cache: {
    *       cache: {

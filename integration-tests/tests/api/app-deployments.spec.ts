@@ -3,7 +3,10 @@ import { createLogger } from 'graphql-yoga';
 import { pollFor } from 'testkit/flow';
 import { initSeed } from 'testkit/seed';
 import { getServiceHost } from 'testkit/utils';
+import z from 'zod';
 import { createHive } from '@graphql-hive/core';
+import { psql } from '@hive/postgres';
+import { clickHouseInsert } from '../../testkit/clickhouse';
 import { graphql } from '../../testkit/gql';
 import { AppDeploymentFormatType } from '../../testkit/gql/graphql';
 import { execute } from '../../testkit/graphql';
@@ -2034,6 +2037,94 @@ test('activeAppDeployments filters by neverUsedAndCreatedBefore', async () => {
     lastUsed: null,
   });
   expect(result.target?.activeAppDeployments.edges[0].node.createdAt).toBeTruthy();
+});
+
+test('activeAppDeployments works for > 1000 records with a date filter (neverUsedAndCreatedBefore) set', async () => {
+  const seed = await initSeed();
+  await using conn = await seed.createDbConnection();
+  const { createOrg, ownerToken } = await seed.createOwner();
+  const { createProject, setFeatureFlag, organization } = await createOrg();
+  await setFeatureFlag('appDeployments', true);
+  const { project, target } = await createProject();
+
+  // seed 1,200 app deployments
+  const apps = ['web-app', 'mobile-app', 'admin-dashboard', 'cli-tool'];
+  const now = new Date().toISOString();
+  const appDeploymentRows = apps.flatMap((app, minor) =>
+    Array.from({ length: 300 }).map(
+      (_, patch) =>
+        [
+          target.id, // target_id
+          app, // name
+          [1, minor, patch].join('.'), // version
+          now, // activated_at
+        ] as const,
+    ),
+  );
+
+  // insert into postgres
+  const result = await conn.pool
+    .any(
+      psql`
+    INSERT INTO app_deployments ("target_id", "name", "version", "activated_at")
+    SELECT * FROM ${psql.unnest(appDeploymentRows, ['uuid', 'text', 'text', 'timestamptz'])}
+    RETURNING "id", "target_id", "name", "version"
+  `,
+    )
+    .then(
+      z.array(
+        z.object({ id: z.string(), target_id: z.string(), name: z.string(), version: z.string() }),
+      ).parse,
+    );
+  expect(result.length).toBe(1200);
+
+  // insert into clickhouse and activate
+  const query = `INSERT INTO app_deployments (
+    "target_id"
+    ,"app_deployment_id"
+    ,"app_name"
+    ,"app_version"
+    ,"is_active"
+  ) VALUES
+${result
+  .map(
+    r => `(
+    '${r['target_id']}'
+    , '${r['id']}'
+    , '${r['name']}'
+    , '${r['version']}'
+    , True
+  )`,
+  )
+  .join(',')};`;
+  await clickHouseInsert(query);
+
+  // Query for deployments never used and created before tomorrow
+  const tomorrow = new Date();
+  tomorrow.setDate(tomorrow.getDate() + 1);
+
+  let cursor: string | undefined;
+  for (let page = 0; page < Math.ceil(1200 / 20); page++) {
+    const result = await execute({
+      document: GetActiveAppDeployments,
+      variables: {
+        targetSelector: {
+          organizationSlug: organization.slug,
+          projectSlug: project.slug,
+          targetSlug: target.slug,
+        },
+        first: 20,
+        after: cursor,
+        filter: {
+          neverUsedAndCreatedBefore: tomorrow.toISOString(),
+        },
+      },
+      authToken: ownerToken,
+    }).then(res => res.expectNoGraphQLErrors());
+    // all should be full pages
+    expect(result.target?.activeAppDeployments.edges).toHaveLength(20);
+    cursor = result.target?.activeAppDeployments.pageInfo.endCursor;
+  }
 });
 
 test('activeAppDeployments filters by name', async () => {

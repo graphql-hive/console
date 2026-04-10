@@ -2,11 +2,12 @@ import { existsSync, rmSync, writeFileSync } from 'node:fs';
 import { createServer } from 'node:http';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { MaybePromise } from 'slonik/dist/src/types';
 import { ProjectType } from 'testkit/gql/graphql';
 import { initSeed } from 'testkit/seed';
 import { getServiceHost } from 'testkit/utils';
 import { execa } from '@esm2cjs/execa';
+
+type MaybePromise<T> = T | Promise<T>;
 
 describe('Apollo Router Integration', () => {
   const getAvailablePort = () =>

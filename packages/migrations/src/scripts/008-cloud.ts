@@ -1,8 +1,7 @@
 import got from 'got';
 import pLimit from 'p-limit';
-import { createPool, sql } from 'slonik';
 import z from 'zod';
-import { createConnectionString } from '../connection-string.js';
+import { createPostgresDatabasePool, psql } from '@hive/postgres';
 import { env } from './environment.js';
 
 function log(...args: any[]) {
@@ -94,7 +93,8 @@ async function main() {
   const limit = pLimit(poolSize);
   const startedAt = Date.now();
 
-  const slonik = await createPool(createConnectionString(postgres), {
+  const slonik = await createPostgresDatabasePool({
+    connectionParameters: postgres,
     // 30 seconds timeout per statement
     statementTimeout: 30 * 1000,
     maximumPoolSize: poolSize,
@@ -169,14 +169,18 @@ async function main() {
 
   async function fetchTargets(organizationId: string) {
     log(`Fetching targets for organization ${organizationId}`);
-    return slonik.oneFirst<string[]>(sql`
+    return slonik
+      .oneFirst(
+        psql`
       SELECT array_agg(DISTINCT t.id) as targets
       FROM organizations AS o
       LEFT JOIN projects AS p ON (p.org_id = o.id)
       LEFT JOIN targets as t ON (t.project_id = p.id)
       WHERE o.id = ${organizationId}
       GROUP BY o.id
-    `);
+    `,
+      )
+      .then(z.array(z.string()).parse);
   }
 
   async function migrateOrganization(organizationId: string, migrationDate: string): Promise<void> {
@@ -196,7 +200,7 @@ async function main() {
     const pastMonthResponse = await execute(
       `
         SELECT sum(total) as total, toDate(timestamp) as date FROM operations_daily
-        WHERE 
+        WHERE
           target IN (${targetIdsArray})
           AND toDate(timestamp) >= (toDate('${migrationDate}') - INTERVAL 1 MONTH)
           AND toDate(timestamp) < toDate('${migrationDate}')

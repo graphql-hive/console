@@ -1,5 +1,16 @@
 # 16.10.2024
 
+## 3.0.3
+
+### Patch Changes
+
+- [#7815](https://github.com/graphql-hive/console/pull/7815)
+  [`078e661`](https://github.com/graphql-hive/console/commit/078e6611cbbd94b2ba325dc35bfbf636d2458f24)
+  Thanks [@ardatan](https://github.com/ardatan)! - Bump `hive-console-sdk` to `0.3.7` to pin
+  `graphql-tools` to a compatible version. The previous `hive-console-sdk@0.3.5` allowed
+  `graphql-tools@^0.5` which resolves to `0.5.2`, a version that removes public API traits
+  (`SchemaDocumentExtension`, `FieldByNameExtension`, etc.) that `hive-console-sdk` depends on.
+
 ## 3.0.2
 
 ### Patch Changes

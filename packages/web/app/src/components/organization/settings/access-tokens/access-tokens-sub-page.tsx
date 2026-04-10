@@ -6,6 +6,7 @@ import { CardDescription } from '@/components/ui/card';
 import { DocsLink } from '@/components/ui/docs-note';
 import { SubPageLayout, SubPageLayoutHeader } from '@/components/ui/page-content-layout';
 import { Sheet, SheetTrigger } from '@/components/ui/sheet';
+import { Skeleton } from '@/components/ui/skeleton';
 import { graphql } from '@/gql';
 import { AccessTokensTable } from './access-tokens-table';
 import { CreateAccessTokenSheetContent } from './create-access-token-sheet-content';
@@ -64,7 +65,7 @@ export function AccessTokensSubPage(props: AccessTokensSubPageProps): React.Reac
             <CardDescription>
               <DocsLink
                 href="/management/access-tokens"
-                className="text-gray-500 hover:text-gray-300"
+                className="text-neutral-10 hover:text-neutral-11"
               >
                 Learn more about Access Tokens
               </DocsLink>
@@ -105,6 +106,25 @@ export function AccessTokensSubPage(props: AccessTokensSubPageProps): React.Reac
             onContinue={() => setCreateAccessTokenState(CreateAccessTokenState.open)}
             onDiscard={() => setCreateAccessTokenState(CreateAccessTokenState.closed)}
           />
+        )}
+        {query.fetching && !query.data?.organization && (
+          <div className="space-y-3">
+            <div className="flex w-full items-center space-x-4">
+              <Skeleton className="h-10 w-1/4" />
+              <Skeleton className="h-10 w-1/2" />
+              <Skeleton className="h-10 w-1/4" />
+            </div>
+            <div className="flex w-full items-center space-x-4">
+              <Skeleton className="h-10 w-1/4" />
+              <Skeleton className="h-10 w-1/2" />
+              <Skeleton className="h-10 w-1/4" />
+            </div>
+            <div className="flex w-full items-center space-x-4">
+              <Skeleton className="h-10 w-1/4" />
+              <Skeleton className="h-10 w-1/2" />
+              <Skeleton className="h-10 w-1/4" />
+            </div>
+          </div>
         )}
         {query.data?.organization && (
           <AccessTokensTable

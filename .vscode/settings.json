@@ -36,6 +36,9 @@
   "typescript.tsdk": "node_modules/typescript/lib",
   "typescript.enablePromptUseWorkspaceTsdk": true,
   "git.mergeEditor": false,
+  "tailwindCSS.experimental.configFile": {
+    "packages/web/app/src/index.css": "packages/web/app/**"
+  },
   "tailwindCSS.classFunctions": ["cva", "cx", "cn", "clsx"],
   "[typescript]": {
     "editor.defaultFormatter": "esbenp.prettier-vscode"

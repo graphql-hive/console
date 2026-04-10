@@ -12,7 +12,7 @@ import { Toaster } from '@/components/ui/toaster';
 import { frontendConfig } from '@/config/supertokens/frontend';
 import { env } from '@/env/frontend';
 import { urqlClient } from '@/lib/urql';
-import { configureScope, init } from '@sentry/react';
+import { getCurrentScope, init } from '@sentry/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import {
   createRootRoute,
@@ -28,9 +28,12 @@ import {
 import { ErrorComponent } from './components/error';
 import { NotFound } from './components/not-found';
 import 'react-toastify/dist/ReactToastify.css';
+import { Page, TargetLayout } from '@/components/layouts/target';
+import { Meta } from '@/components/ui/meta';
 import { useLocalStorage } from '@/lib/hooks';
 import { zodValidator } from '@tanstack/zod-adapter';
 import { authenticated } from './components/authenticated-container';
+import { InsightsFilterSearch } from './components/target/insights/search-schemas';
 import { SchemaProposalStage } from './gql/graphql';
 import { AuthPage } from './pages/auth';
 import { AuthCallbackPage } from './pages/auth-callback';
@@ -49,6 +52,7 @@ import { OrganizationIndexRouteSearch, OrganizationPage } from './pages/organiza
 import { JoinOrganizationPage } from './pages/organization-join';
 import { OrganizationMembersPage } from './pages/organization-members';
 import { NewOrgPage } from './pages/organization-new';
+import { OrganizationOIDCRequestPage } from './pages/organization-oidc-request';
 import {
   OrganizationSettingsPage,
   OrganizationSettingsPageEnum,
@@ -63,7 +67,7 @@ import { ProjectAlertsPage } from './pages/project-alerts';
 import { ProjectSettingsPage, ProjectSettingsPageEnum } from './pages/project-settings';
 import { TargetPage } from './pages/target';
 import { TargetAppVersionPage } from './pages/target-app-version';
-import { TargetAppsPage } from './pages/target-apps';
+import { TargetAppsPage, TargetAppsSortSchema, type SortState } from './pages/target-apps';
 import { TargetChecksPage } from './pages/target-checks';
 import { TargetChecksAffectedDeploymentsPage } from './pages/target-checks-affected-deployments';
 import { TargetChecksSinglePage } from './pages/target-checks-single';
@@ -76,6 +80,7 @@ import { TargetHistoryVersionPage } from './pages/target-history-version';
 import { TargetInsightsPage } from './pages/target-insights';
 import { TargetInsightsClientPage } from './pages/target-insights-client';
 import { TargetInsightsCoordinatePage } from './pages/target-insights-coordinate';
+import { TargetInsightsManageFiltersPage } from './pages/target-insights-manage-filters';
 import { TargetInsightsOperationPage } from './pages/target-insights-operation';
 import { TargetLaboratoryPage } from './pages/target-laboratory';
 import { TargetLaboratoryPage as TargetLaboratoryPageNew } from './pages/target-laboratory-new';
@@ -87,7 +92,7 @@ import { TargetTracePage } from './pages/target-trace';
 import {
   FilterState,
   TargetTracesFilterState,
-  TargetTracesPage,
+  TargetTracesPageContent,
   TargetTracesSort,
 } from './pages/target-traces';
 
@@ -99,6 +104,28 @@ if (env.sentry) {
     dist: 'webapp',
     release: env.release,
     environment: env.environment,
+    ignoreErrors: [
+      // Suppress specific monaco editor internal errors
+      "Failed to execute 'setStart' on 'Range'",
+      "Failed to execute 'setEnd' on 'Range'",
+      /TextModel got disposed/,
+      // Stale chunk errors after deployments — handled by auto-reload in main.tsx
+      /Failed to fetch dynamically imported module/,
+      /Importing a module script failed/,
+    ],
+    beforeSend(event) {
+      const isMonacoError = event.exception?.values?.some(exception =>
+        exception.stacktrace?.frames?.some(frame => frame.filename?.includes('monaco-editor')),
+      );
+
+      if (isMonacoError) {
+        for (const exception of event.exception?.values ?? []) {
+          exception.value &&= `[Monaco] ${exception.value}`;
+        }
+      }
+
+      return event;
+    },
   });
 }
 
@@ -111,9 +138,7 @@ const LazyTanStackRouterDevtools = lazy(() =>
 );
 
 function identifyOnSentry(userId: string, email: string): void {
-  configureScope(scope => {
-    scope.setUser({ id: userId, email });
-  });
+  getCurrentScope().setUser({ id: userId, email });
 }
 
 function RootComponent() {
@@ -278,10 +303,25 @@ const authSignUpRoute = createRoute({
   component: AuthSignUpPage,
 });
 
-const authVerifyEmailRoute = createRoute({
+const AuthVerifyEmailSearch = z.union([
+  z.object({
+    userIdentityId: z.string(),
+    email: z.string(),
+    token: z.string(),
+  }),
+  z.object({
+    userIdentityId: z.undefined().optional(),
+    email: z.undefined().optional(),
+    token: z.undefined().optional(),
+  }),
+]);
+export const authVerifyEmailRoute = createRoute({
   getParentRoute: () => authRoute,
   path: 'verify-email',
-  component: AuthVerifyEmailPage,
+  validateSearch(search) {
+    return AuthVerifyEmailSearch.parse(search);
+  },
+  component: authenticated(AuthVerifyEmailPage),
 });
 
 const indexRoute = createRoute({
@@ -352,6 +392,29 @@ const organizationRoute = createRoute({
   path: '$organizationSlug',
   notFoundComponent: NotFound,
   errorComponent: ErrorComponent,
+});
+
+const OrganizationOIDCRequestRouteSearch = z.object({
+  id: z.string({ required_error: 'OIDC ID is required' }),
+  redirectToPath: z.string().optional().default('/'),
+});
+const organizationOIDCRequestRoute = createRoute({
+  getParentRoute: () => organizationRoute,
+  path: 'oidc-request',
+  validateSearch(search) {
+    return OrganizationOIDCRequestRouteSearch.parse(search);
+  },
+  component: function OrganizationOIDCRequestRoute() {
+    const { organizationSlug } = organizationRoute.useParams();
+    const { id, redirectToPath } = organizationOIDCRequestRoute.useSearch();
+    return (
+      <OrganizationOIDCRequestPage
+        organizationSlug={organizationSlug}
+        oidcId={id}
+        redirectToPath={redirectToPath}
+      />
+    );
+  },
 });
 
 const organizationIndexRoute = createRoute({
@@ -617,16 +680,28 @@ const targetLaboratoryRoute = createRoute({
   },
 });
 
+const TargetAppsRouteSearch = z.object({
+  sort: TargetAppsSortSchema.optional(),
+});
+
 const targetAppsRoute = createRoute({
   getParentRoute: () => targetRoute,
   path: 'apps',
+  validateSearch: TargetAppsRouteSearch.parse,
   component: function TargetAppsRoute() {
     const { organizationSlug, projectSlug, targetSlug } = targetAppsRoute.useParams();
+    const {
+      sort = {
+        field: 'ACTIVATED_AT',
+        direction: 'DESC',
+      } satisfies SortState,
+    } = targetAppsRoute.useSearch();
     return (
       <TargetAppsPage
         organizationSlug={organizationSlug}
         projectSlug={projectSlug}
         targetSlug={targetSlug}
+        sorting={sort}
       />
     );
   },
@@ -653,13 +728,30 @@ const targetAppVersionRoute = createRoute({
   },
 });
 
-const targetInsightsRoute = createRoute({
+export const targetInsightsRoute = createRoute({
   getParentRoute: () => targetRoute,
   path: 'insights',
+  validateSearch: InsightsFilterSearch.parse,
   component: function TargetInsightsRoute() {
     const { organizationSlug, projectSlug, targetSlug } = targetInsightsRoute.useParams();
     return (
       <TargetInsightsPage
+        organizationSlug={organizationSlug}
+        projectSlug={projectSlug}
+        targetSlug={targetSlug}
+      />
+    );
+  },
+});
+
+const targetInsightsManageFiltersRoute = createRoute({
+  getParentRoute: () => targetRoute,
+  path: 'insights/manage-filters',
+  component: function TargetInsightsManageFiltersRoute() {
+    const { organizationSlug, projectSlug, targetSlug } =
+      targetInsightsManageFiltersRoute.useParams();
+    return (
+      <TargetInsightsManageFiltersPage
         organizationSlug={organizationSlug}
         projectSlug={projectSlug}
         targetSlug={targetSlug}
@@ -708,14 +800,17 @@ const targetTracesRoute = createRoute({
     const range = useMemo(() => (from && to ? { from, to } : null), [from, to]);
 
     return (
-      <TargetTracesPage
-        organizationSlug={organizationSlug}
-        projectSlug={projectSlug}
-        targetSlug={targetSlug}
-        sorting={sort}
-        filter={filter}
-        range={range}
-      />
+      <>
+        <Meta title="Traces" />
+        <TargetLayout
+          organizationSlug={organizationSlug}
+          projectSlug={projectSlug}
+          targetSlug={targetSlug}
+          page={Page.Traces}
+        >
+          <TargetTracesPageContent sorting={sort} filter={filter} range={range} />
+        </TargetLayout>
+      </>
     );
   },
 });
@@ -896,8 +991,8 @@ const targetExplorerUnusedRoute = createRoute({
 const targetChecksRoute = createRoute({
   validateSearch: zodValidator(
     z.object({
-      filter_changed: z.boolean().default(false),
-      filter_failed: z.boolean().default(false),
+      filter_changed: z.boolean().default(false).catch(false),
+      filter_failed: z.boolean().default(false).catch(false),
     }),
   ),
   getParentRoute: () => targetRoute,
@@ -940,7 +1035,7 @@ const targetProposalsRoute = createRoute({
       .array()
       .optional()
       .catch(() => void 0),
-    user: z.string().array().optional(),
+    user: z.string().array().optional().catch(undefined),
   }),
   component: function TargetProposalsRoute() {
     const { organizationSlug, projectSlug, targetSlug } = targetProposalsRoute.useParams();
@@ -982,6 +1077,7 @@ const targetProposalsSingleRoute = createRoute({
   getParentRoute: () => targetRoute,
   path: 'proposals/$proposalId',
   validateSearch: z.object({
+    ts: z.number().optional(),
     page: z
       .enum(Object.values(ProposalTab).map(s => s.toLowerCase()) as [string, ...string[]])
       .optional()
@@ -991,7 +1087,7 @@ const targetProposalsSingleRoute = createRoute({
   component: function TargetProposalRoute() {
     const { organizationSlug, projectSlug, targetSlug, proposalId } =
       targetProposalsSingleRoute.useParams();
-    const { page, version } = targetProposalsSingleRoute.useSearch();
+    const { page, version, ts } = targetProposalsSingleRoute.useSearch();
     return (
       <TargetProposalsSinglePage
         organizationSlug={organizationSlug}
@@ -1000,6 +1096,7 @@ const targetProposalsSingleRoute = createRoute({
         proposalId={proposalId}
         tab={page ?? (ProposalTab.DETAILS as string)}
         version={version}
+        timestamp={ts}
       />
     );
   },
@@ -1050,6 +1147,7 @@ const routeTree = root.addChildren([
       organizationIndexRoute,
       joinOrganizationRoute,
       transferOrganizationRoute,
+      organizationOIDCRequestRoute,
       organizationSupportRoute,
       organizationSupportTicketRoute,
       organizationSubscriptionRoute,
@@ -1065,6 +1163,7 @@ const routeTree = root.addChildren([
       targetLaboratoryRoute,
       targetHistoryRoute.addChildren([targetHistoryVersionRoute]),
       targetInsightsRoute,
+      targetInsightsManageFiltersRoute,
       targetTraceRoute,
       targetTracesRoute,
       targetInsightsCoordinateRoute,
@@ -1083,16 +1182,22 @@ const routeTree = root.addChildren([
   ]),
 ]);
 
+/** Routes whose search params contain arrays or objects and need jsurl2 encoding. */
+function needsJsurl2() {
+  const path = window.location.pathname;
+  return path.endsWith('/insights') || path.endsWith('/traces') || path.endsWith('/proposals');
+}
+
 export const router = createRouter({
   routeTree,
   parseSearch: parseSearchWith(str => {
-    if (window.location.pathname.endsWith('/traces')) {
+    if (needsJsurl2()) {
       return jsUrlParse(str);
     }
     return JSON.parse(str);
   }),
   stringifySearch: stringifySearchWith(search => {
-    if (window.location.pathname.endsWith('/traces')) {
+    if (needsJsurl2()) {
       return jsUrlStringify(search);
     }
     return JSON.stringify(search);

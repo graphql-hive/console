@@ -4,6 +4,8 @@ import { useForm, UseFormReturn } from 'react-hook-form';
 import { useMutation, useQuery } from 'urql';
 import { z } from 'zod';
 import { NotFoundContent } from '@/components/common/not-found-content';
+import { Header } from '@/components/navigation/header';
+import { SecondaryNavigation } from '@/components/navigation/secondary-navigation';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -25,21 +27,20 @@ import { Input } from '@/components/ui/input';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { useToast } from '@/components/ui/use-toast';
 import { UserMenu } from '@/components/ui/user-menu';
-import { graphql, useFragment } from '@/gql';
-import { AuthProviderType, ProjectType } from '@/gql/graphql';
+import { graphql } from '@/gql';
+import { ProjectType } from '@/gql/graphql';
 import { getIsStripeEnabled } from '@/lib/billing/stripe-public-key';
 import { useToggle } from '@/lib/hooks';
 import { useLastVisitedOrganizationWriter } from '@/lib/last-visited-org';
 import { cn } from '@/lib/utils';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Slot } from '@radix-ui/react-slot';
-import { Link, useRouter } from '@tanstack/react-router';
+import { useRouter } from '@tanstack/react-router';
 import { ProPlanBilling } from '../organization/billing/ProPlanBillingWarm';
 import { RateLimitWarn } from '../organization/billing/RateLimitWarn';
 import { HiveLink } from '../ui/hive-link';
 import { PlusIcon } from '../ui/icon';
 import { QueryError } from '../ui/query-error';
-import { Tabs, TabsList, TabsTrigger } from '../ui/tabs';
 import { OrganizationSelector } from './organization-selectors';
 
 export enum Page {
@@ -49,36 +50,30 @@ export enum Page {
   Support = 'support',
   Subscription = 'subscription',
 }
-
-const OrganizationLayout_OrganizationFragment = graphql(`
-  fragment OrganizationLayout_OrganizationFragment on Organization {
-    id
-    slug
-    viewerCanCreateProject
-    viewerCanManageSupportTickets
-    viewerCanDescribeBilling
-    viewerCanSeeMembers
-    ...ProPlanBilling_OrganizationFragment
-    ...RateLimitWarn_OrganizationFragment
-  }
-`);
-
 const OrganizationLayoutQuery = graphql(`
-  query OrganizationLayoutQuery($organizationSlug: String!) {
+  query OrganizationLayoutQuery($organizationSlug: String!, $minimal: Boolean!) {
     me {
       id
       provider
       ...UserMenu_MeFragment
     }
-    organizationBySlug(organizationSlug: $organizationSlug) {
+    organizationBySlug(organizationSlug: $organizationSlug) @skip(if: $minimal) {
       id
+      slug
+      viewerCanCreateProject
+      viewerCanManageSupportTickets
+      viewerCanDescribeBilling
+      viewerCanSeeMembers
+      viewerCanAccessSettings
+      viewerCanManageAccessTokens
+      viewerCanManagePersonalAccessTokens
+      ...UserMenu_OrganizationFragment
+      ...ProPlanBilling_OrganizationFragment
+      ...RateLimitWarn_OrganizationFragment
     }
     organizations {
       ...OrganizationSelector_OrganizationConnectionFragment
       ...UserMenu_OrganizationConnectionFragment
-      nodes {
-        ...OrganizationLayout_OrganizationFragment
-      }
     }
   }
 `);
@@ -87,10 +82,12 @@ export function OrganizationLayout({
   children,
   page,
   className,
-  ...props
+  organizationSlug,
+  minimal,
 }: {
   page?: Page;
   className?: string;
+  minimal?: boolean;
   organizationSlug: string;
   children: ReactNode;
 }): ReactElement | null {
@@ -98,134 +95,106 @@ export function OrganizationLayout({
   const [query] = useQuery({
     query: OrganizationLayoutQuery,
     variables: {
-      organizationSlug: props.organizationSlug,
+      organizationSlug,
+      minimal: minimal ?? false,
     },
     requestPolicy: 'cache-first',
   });
 
-  const organizationExists = query.data?.organizationBySlug;
-
-  const organizations = useFragment(
-    OrganizationLayout_OrganizationFragment,
-    query.data?.organizations.nodes,
-  );
-  const currentOrganization = organizations?.find(org => org.slug === props.organizationSlug);
-
+  const currentOrganization = query.data?.organizationBySlug;
   useLastVisitedOrganizationWriter(currentOrganization?.slug);
 
   if (query.error) {
-    return <QueryError error={query.error} organizationSlug={props.organizationSlug} />;
+    return <QueryError error={query.error} organizationSlug={organizationSlug} />;
   }
 
   // Only show the null state state if the query has finished fetching and data is not stale
   // This prevents showing null state when switching between orgs with cached data
-  const shouldShowNoOrg = !query.fetching && !query.stale && !organizationExists;
+  const shouldShowNoOrg = !query.fetching && !query.stale && !currentOrganization && !minimal;
 
   return (
     <>
-      <header>
-        <div className="h-(--header-height) container flex items-center justify-between">
-          <div className="flex flex-row items-center gap-4">
-            <HiveLink className="size-8" />
-            <OrganizationSelector
-              isOIDCUser={query.data?.me.provider === AuthProviderType.Oidc}
-              currentOrganizationSlug={props.organizationSlug}
-              organizations={query.data?.organizations ?? null}
-            />
-          </div>
-          <div>
-            <UserMenu
-              me={query.data?.me ?? null}
-              currentOrganizationSlug={props.organizationSlug}
-              organizations={query.data?.organizations ?? null}
-            />
-          </div>
+      <Header>
+        <div className="flex flex-row items-center gap-4">
+          <HiveLink className="size-8" />
+          <OrganizationSelector
+            currentOrganizationSlug={organizationSlug}
+            organizations={query.data?.organizations ?? null}
+          />
         </div>
-      </header>
-      <div className="h-(--tabs-navbar-height) relative border-b border-gray-800">
-        <div className="container flex items-center justify-between">
-          {currentOrganization ? (
-            <Tabs value={page} className="min-w-[600px]">
-              <TabsList variant="menu">
-                <TabsTrigger variant="menu" value={Page.Overview} asChild>
-                  <Link
-                    to="/$organizationSlug"
-                    params={{ organizationSlug: currentOrganization.slug }}
-                  >
-                    Overview
-                  </Link>
-                </TabsTrigger>
-                {currentOrganization.viewerCanSeeMembers && (
-                  <TabsTrigger variant="menu" value={Page.Members} asChild>
-                    <Link
-                      to="/$organizationSlug/view/members"
-                      params={{ organizationSlug: currentOrganization.slug }}
-                      search={{ page: 'list' }}
-                    >
-                      Members
-                    </Link>
-                  </TabsTrigger>
-                )}
-                <TabsTrigger variant="menu" value={Page.Settings} asChild>
-                  <Link
-                    to="/$organizationSlug/view/settings"
-                    params={{ organizationSlug: currentOrganization.slug }}
-                  >
-                    Settings
-                  </Link>
-                </TabsTrigger>
-                {currentOrganization.viewerCanManageSupportTickets && (
-                  <TabsTrigger variant="menu" value={Page.Support} asChild>
-                    <Link
-                      to="/$organizationSlug/view/support"
-                      params={{ organizationSlug: currentOrganization.slug }}
-                    >
-                      Support
-                    </Link>
-                  </TabsTrigger>
-                )}
-                {getIsStripeEnabled() && currentOrganization.viewerCanDescribeBilling && (
-                  <TabsTrigger variant="menu" value={Page.Subscription} asChild>
-                    <Link
-                      to="/$organizationSlug/view/subscription"
-                      params={{ organizationSlug: currentOrganization.slug }}
-                    >
-                      Subscription
-                    </Link>
-                  </TabsTrigger>
-                )}
-              </TabsList>
-            </Tabs>
-          ) : (
-            <div className="flex flex-row gap-x-8 border-b-2 border-b-transparent px-4 py-3">
-              <div className="h-5 w-12 animate-pulse rounded-full bg-gray-800" />
-              <div className="h-5 w-12 animate-pulse rounded-full bg-gray-800" />
-              <div className="h-5 w-12 animate-pulse rounded-full bg-gray-800" />
-            </div>
-          )}
-          {currentOrganization?.viewerCanCreateProject ? (
+        <UserMenu
+          me={query.data?.me ?? null}
+          currentOrganization={query.data?.organizationBySlug ?? null}
+          organizations={query.data?.organizations ?? null}
+        />
+      </Header>
+      <SecondaryNavigation
+        page={page}
+        loading={!currentOrganization}
+        className="min-w-[600px]"
+        links={
+          currentOrganization
+            ? [
+                {
+                  value: Page.Overview,
+                  label: 'Overview',
+                  to: '/$organizationSlug',
+                  params: { organizationSlug: currentOrganization.slug },
+                },
+                {
+                  value: Page.Members,
+                  label: 'Members',
+                  visible: currentOrganization.viewerCanSeeMembers,
+                  to: '/$organizationSlug/view/members',
+                  params: { organizationSlug: currentOrganization.slug },
+                  search: { page: 'list' },
+                },
+                {
+                  value: Page.Settings,
+                  label: 'Settings',
+                  visible:
+                    currentOrganization.viewerCanAccessSettings ||
+                    currentOrganization.viewerCanManageAccessTokens ||
+                    currentOrganization.viewerCanManagePersonalAccessTokens,
+                  to: '/$organizationSlug/view/settings',
+                  params: { organizationSlug: currentOrganization.slug },
+                },
+                {
+                  value: Page.Support,
+                  label: 'Support',
+                  visible: currentOrganization.viewerCanManageSupportTickets,
+                  to: '/$organizationSlug/view/support',
+                  params: { organizationSlug: currentOrganization.slug },
+                },
+                {
+                  value: Page.Subscription,
+                  label: 'Subscription',
+                  visible: getIsStripeEnabled() && currentOrganization.viewerCanDescribeBilling,
+                  to: '/$organizationSlug/view/subscription',
+                  params: { organizationSlug: currentOrganization.slug },
+                },
+              ]
+            : []
+        }
+        actions={
+          currentOrganization?.viewerCanCreateProject ? (
             <>
-              <Button
-                onClick={toggleModalOpen}
-                variant="link"
-                className="text-orange-500"
-                data-cy="new-project-button"
-              >
+              <Button onClick={toggleModalOpen} variant="link" data-cy="new-project-button">
                 <PlusIcon size={16} className="mr-2" />
                 New project
               </Button>
               <CreateProjectModal
-                organizationSlug={props.organizationSlug}
+                organizationSlug={organizationSlug}
                 isOpen={isModalOpen}
                 toggleModalOpen={toggleModalOpen}
                 // reset the form every time it is closed
                 key={String(isModalOpen)}
               />
             </>
-          ) : null}
-        </div>
-      </div>
-      <div className="container min-h-[var(--content-height)] pb-7">
+          ) : null
+        }
+      />
+      <div className="min-h-(--content-height) container pb-7">
         {currentOrganization ? (
           <>
             <ProPlanBilling organization={currentOrganization} />
@@ -297,15 +266,15 @@ function ProjectTypeCard(props: {
 }) {
   return (
     <FormItem>
-      <FormLabel className="[&:has([data-state=checked])>div]:border-primary cursor-pointer">
+      <FormLabel className="[&:has([data-state=checked])>div]:border-accent_80 cursor-pointer">
         <FormControl>
           <RadioGroupItem value={props.type} className="sr-only" />
         </FormControl>
-        <div className="border-muted hover:border-accent hover:bg-accent flex items-center gap-4 rounded-md border-2 p-4">
-          <Slot className="size-8 text-gray-400">{props.icon}</Slot>
+        <div className="border-neutral-5 hover:border-neutral-2 flex items-center gap-4 rounded-md border p-4">
+          <Slot className="text-neutral-12 size-8">{props.icon}</Slot>
           <div>
-            <span className="text-sm font-medium">{props.title}</span>
-            <p className="text-sm text-gray-400">{props.description}</p>
+            <span className="text-neutral-12 text-sm font-medium">{props.title}</span>
+            <p className="text-neutral-11 text-sm">{props.description}</p>
           </div>
         </div>
       </FormLabel>
@@ -427,7 +396,9 @@ export function CreateProjectModalContent(props: {
                           description="Single GraphQL schema developed as a monolith"
                           icon={
                             <BoxIcon
-                              className={cn(field.value === ProjectType.Single && 'text-white')}
+                              className={cn(
+                                field.value === ProjectType.Single && 'text-neutral-12',
+                              )}
                             />
                           }
                         />
@@ -437,7 +408,9 @@ export function CreateProjectModalContent(props: {
                           description="Project developed according to Apollo Federation specification"
                           icon={
                             <BlocksIcon
-                              className={cn(field.value === ProjectType.Federation && 'text-white')}
+                              className={cn(
+                                field.value === ProjectType.Federation && 'text-neutral-12',
+                              )}
                             />
                           }
                         />
@@ -447,7 +420,9 @@ export function CreateProjectModalContent(props: {
                           description="Project that stitches together multiple GraphQL APIs"
                           icon={
                             <FoldVerticalIcon
-                              className={cn(field.value === ProjectType.Stitching && 'text-white')}
+                              className={cn(
+                                field.value === ProjectType.Stitching && 'text-neutral-12',
+                              )}
                             />
                           }
                         />

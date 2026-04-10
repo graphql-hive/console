@@ -1,8 +1,7 @@
 import got from 'got';
 import pLimit from 'p-limit';
-import { createPool, sql } from 'slonik';
 import z from 'zod';
-import { createConnectionString } from '../connection-string.js';
+import { createPostgresDatabasePool, psql } from '@hive/postgres';
 import { env } from './environment.js';
 
 function log(...args: any[]) {
@@ -60,7 +59,8 @@ async function main() {
   const limit = pLimit(poolSize);
   const startedAt = Date.now();
 
-  const slonik = await createPool(createConnectionString(postgres), {
+  const slonik = await createPostgresDatabasePool({
+    connectionParameters: postgres,
     // 30 seconds timeout per statement
     statementTimeout: 30 * 1000,
     maximumPoolSize: poolSize,
@@ -106,19 +106,23 @@ async function main() {
 
   function fetchOrganizations() {
     log('Fetching organizations');
-    return slonik.manyFirst<string>(sql`SELECT id FROM organizations`);
+    return slonik.anyFirst(psql`SELECT id FROM organizations`).then(z.array(z.string()).parse);
   }
 
   function fetchTargets(organizationId: string) {
     log(`Fetching targets for organization ${organizationId}`);
-    return slonik.oneFirst<string[]>(sql`
+    return slonik
+      .oneFirst(
+        psql`
       SELECT array_agg(DISTINCT t.id) as targets
       FROM organizations AS o
       LEFT JOIN projects AS p ON (p.org_id = o.id)
       LEFT JOIN targets as t ON (t.project_id = p.id)
       WHERE o.id = ${organizationId}
       GROUP BY o.id
-    `);
+    `,
+      )
+      .then(z.array(z.string()).parse);
   }
 
   async function migrateOrganization(organizationId: string): Promise<void> {
@@ -138,7 +142,7 @@ async function main() {
     const currentMonthResponse = await execute(
       `
         SELECT sum(total) as total FROM operations_daily
-        WHERE 
+        WHERE
           target IN (${targetIdsArray})
           AND toDate(timestamp) >= toDate(toStartOfMonth(toDate('${CLICKHOUSE_MIGRATION_006_DATE}')))
           AND toDate(timestamp) < toDate('${CLICKHOUSE_MIGRATION_006_DATE}')
@@ -202,7 +206,7 @@ async function main() {
           sum(total) as total,
           toDate(toStartOfMonth(timestamp)) as date
         FROM operations_daily
-        WHERE 
+        WHERE
           target IN (${targetIdsArray})
           AND toDate(timestamp) < toDate(toStartOfMonth(toDate('${CLICKHOUSE_MIGRATION_006_DATE}')))
         GROUP BY date

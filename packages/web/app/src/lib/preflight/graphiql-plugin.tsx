@@ -145,6 +145,21 @@ export const enum PreflightWorkerState {
   ready,
 }
 
+function PromiseWithResolvers<T>() {
+  let resolve: (value: T) => void;
+  let reject: (error: any) => void;
+  const promise = new Promise<T>((res, rej) => {
+    resolve = res;
+    reject = rej;
+  });
+
+  return {
+    promise,
+    reject: reject!,
+    resolve: resolve!,
+  };
+}
+
 export function usePreflight(args: {
   target: FragmentType<typeof PreflightScript_TargetFragment> | null;
 }) {
@@ -233,7 +248,7 @@ export function usePreflight(args: {
       );
 
       let isFinished = false;
-      const isFinishedD = Promise.withResolvers<void>();
+      const isFinishedD = PromiseWithResolvers<void>();
       const openedPromptIds = new Set<number>();
 
       // eslint-disable-next-line no-inner-declarations
@@ -558,7 +573,7 @@ function PreflightContent() {
       <Subtitle className="mb-3 cursor-not-allowed">Read-only view of the script</Subtitle>
       <div className="relative">
         {preflight.isEnabled ? null : (
-          <div className="absolute inset-0 z-20 flex items-center justify-center bg-[#030711]/90 p-4 text-white">
+          <div className="text-neutral-12 absolute inset-0 z-20 flex items-center justify-center bg-[#030711]/90 p-4">
             <div className="rounded-md bg-[#0f1520] p-4 text-sm">
               Preflight Script is disabled and will not be executed
             </div>
@@ -644,7 +659,11 @@ function PreflightModal({
     envEditorRef.current = editor;
   }, []);
 
-  const handleMonacoEditorBeforeMount = useCallback((monaco: Monaco) => {
+  const handleMonacoEditorBeforeMount = useCallback(async (monaco: Monaco) => {
+    if (monaco.languages.typescript) {
+      await import('monaco-editor/esm/vs/language/typescript/monaco.contribution');
+    }
+
     // Add custom typings for globalThis
     monaco.languages.typescript.javascriptDefaults.addExtraLib(
       `
@@ -816,7 +835,7 @@ const LOG_COLORS = {
   error: 'text-red-400',
   info: 'text-emerald-400',
   warn: 'text-yellow-400',
-  log: 'text-gray-400',
+  log: 'text-neutral-10',
 };
 
 export function LogLine({ log }: { log: LogRecord }) {

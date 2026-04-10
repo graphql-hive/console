@@ -5,8 +5,8 @@ import { TaskScheduler } from '@hive/workflows/kit';
 import { OrganizationInvitationTask } from '@hive/workflows/tasks/organization-invitation';
 import { OrganizationOwnershipTransferTask } from '@hive/workflows/tasks/organization-ownership-transfer';
 import * as GraphQLSchema from '../../../__generated__/types';
-import { Organization } from '../../../shared/entities';
-import { HiveError } from '../../../shared/errors';
+import { Organization, User } from '../../../shared/entities';
+import { AccessError, HiveError, OIDCRequiredError } from '../../../shared/errors';
 import { AuditLogRecorder } from '../../audit-logs/providers/audit-log-recorder';
 import { Session } from '../../auth/lib/authz';
 import { AuthManager } from '../../auth/providers/auth-manager';
@@ -103,13 +103,21 @@ export class OrganizationManager {
       return null;
     }
 
-    const canAccess = await this.session.canPerformAction({
-      action: 'organization:describe',
-      organizationId: organization.id,
-      params: {
+    const canAccess = await this.session
+      .assertPerformAction({
+        action: 'organization:describe',
         organizationId: organization.id,
-      },
-    });
+        params: {
+          organizationId: organization.id,
+        },
+      })
+      .then(() => true)
+      .catch(err => {
+        if (err instanceof AccessError && !(err instanceof OIDCRequiredError)) {
+          return false;
+        }
+        return Promise.reject(err);
+      });
 
     if (canAccess === false) {
       return null;
@@ -217,17 +225,30 @@ export class OrganizationManager {
 
   async getOrganizationByInviteCode({
     code,
+    user: maybeUser,
   }: {
     code: string;
+    user?: User;
   }): Promise<Organization | { message: string } | never> {
     this.logger.debug('Fetching organization (inviteCode=%s)', code);
+
+    let user = maybeUser;
+    if (!user) {
+      const actor = await this.session.getActor();
+      if (actor.type !== 'user') {
+        throw new Error('Only users can fetch organization by invite code');
+      }
+      user = actor.user;
+    }
+
     const organization = await this.storage.getOrganizationByInviteCode({
       inviteCode: code,
+      email: user.email,
     });
 
     if (!organization) {
       return {
-        message: 'Invitation expired',
+        message: 'Invitation is invalid or expired',
       };
     }
 
@@ -299,19 +320,10 @@ export class OrganizationManager {
     user: {
       id: string;
       superTokensUserId: string | null;
-      oidcIntegrationId: string | null;
     };
   }) {
     const { slug, user } = input;
     this.logger.info('Creating an organization (input=%o)', input);
-
-    if (user.oidcIntegrationId) {
-      this.logger.debug(
-        'Failed to create organization as oidc user is not allowed to do so (input=%o)',
-        input,
-      );
-      throw new HiveError('Cannot create organization with OIDC user.');
-    }
 
     const result = await this.storage.createOrganization({
       slug,
@@ -416,19 +428,22 @@ export class OrganizationManager {
       organizationId: input.organizationId,
     });
 
-    const result = await this.storage.updateOrganizationRateLimits({
-      monthlyRateLimit,
-      organizationId: organization.id,
-    });
-
-    if (this.billingProvider.enabled) {
-      await this.billingProvider.syncOrganization({
+    const result = await this.storage.updateOrganizationRateLimits(
+      {
+        monthlyRateLimit,
         organizationId: organization.id,
-        reserved: {
-          operations: Math.floor(input.monthlyRateLimit.operations / 1_000_000),
-        },
-      });
-    }
+      },
+      async () => {
+        if (this.billingProvider.enabled) {
+          await this.billingProvider.syncOrganization({
+            organizationId: organization.id,
+            reserved: {
+              operations: Math.floor(input.monthlyRateLimit.operations / 1_000_000),
+            },
+          });
+        }
+      },
+    );
 
     await this.auditLog.record({
       eventType: 'SUBSCRIPTION_UPDATED',
@@ -525,8 +540,10 @@ export class OrganizationManager {
     role: string | null;
     resources: GraphQLSchema.ResourceAssignmentInput | null;
   }) {
+    const actor = await this.session.getActor();
     await this.inMemoryRateLimiter.check(
       'inviteToOrganizationByEmail',
+      actor.type === 'user' ? actor.user.id : actor.organizationAccessToken.id,
       5_000, // 5 seconds
       6, // 6 invites
       `Exceeded rate limit for inviting to organization by email.`,
@@ -565,7 +582,7 @@ export class OrganizationManager {
 
     const { email } = input;
     this.logger.info(
-      'Inviting to the organization (email=%s, organization=%s, role=%s)',
+      'Inviting to the organization (email=%s, organization=%o, role=%s)',
       email,
       input.organization,
       input.role,
@@ -654,17 +671,14 @@ export class OrganizationManager {
   async joinOrganization({ code }: { code: string }): Promise<Organization | { message: string }> {
     this.logger.info('Joining an organization (code=%s)', code);
 
-    const user = await this.session.getViewer();
-    const isOIDCUser = user.oidcIntegrationId !== null;
-
-    if (isOIDCUser) {
-      return {
-        message: `You cannot join an organization with an OIDC account.`,
-      };
+    const actor = await this.session.getActor();
+    if (actor.type !== 'user') {
+      throw new Error('Only users can join organizations');
     }
 
     const organization = await this.getOrganizationByInviteCode({
       code,
+      user: actor.user,
     });
 
     if ('message' in organization) {
@@ -676,10 +690,12 @@ export class OrganizationManager {
         organizationId: organization.id,
       });
 
-      if (oidcIntegration?.oidcUserAccessOnly && !isOIDCUser) {
-        return {
-          message: 'Non-OIDC users are not allowed to join this organization.',
-        };
+      if (oidcIntegration?.oidcUserJoinOnly && actor.oidcIntegrationId !== oidcIntegration.id) {
+        throw new OIDCRequiredError(
+          organization.slug,
+          oidcIntegration.id,
+          'The user should be authenticated through the OIDC provider linked to the organization',
+        );
       }
     }
 
@@ -687,7 +703,7 @@ export class OrganizationManager {
 
     await this.storage.addOrganizationMemberViaInvitationCode({
       code,
-      userId: user.id,
+      userId: actor.user.id,
       organizationId: organization.id,
     });
 
@@ -703,7 +719,7 @@ export class OrganizationManager {
         eventType: 'USER_JOINED',
         organizationId: organization.id,
         metadata: {
-          inviteeEmail: user.email,
+          inviteeEmail: actor.user.email,
         },
       }),
     ]);

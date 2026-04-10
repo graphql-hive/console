@@ -1,4 +1,4 @@
-import { useCallback } from 'react';
+import { useCallback, useEffect } from 'react';
 import { LogOutIcon } from 'lucide-react';
 import { SessionAuth, useSessionContext } from 'supertokens-auth-react/recipe/session';
 import { useMutation, useQuery } from 'urql';
@@ -92,24 +92,29 @@ export function JoinOrganizationPage(props: { inviteCode: string }) {
       ? query.data.organizationByInviteCode.name
       : null;
 
+  useEffect(() => {
+    if (!session.loading && !session.doesSessionExist) {
+      toast({
+        title: 'Account Required',
+        description:
+          'To accept an organization invite, you must first have an account, log in, and then use the invitation.',
+        variant: 'default',
+        duration: 10_000,
+      });
+      void router.navigate({
+        to: '/auth/sign-in',
+        search: {
+          redirectToPath: router.latestLocation.pathname,
+        },
+      });
+    }
+  }, [!session.loading && !session.doesSessionExist, toast, router]);
+
   if (session.loading) {
     return <Spinner className="m-auto mt-6" />;
   }
 
-  if (!session.loading && !session.doesSessionExist) {
-    toast({
-      title: 'Account Required',
-      description:
-        'To accept an organization invite, you must first have an account, log in, and then use the invitation.',
-      variant: 'default',
-      duration: 10_000,
-    });
-    void router.navigate({
-      to: '/auth/sign-in',
-      search: {
-        redirectToPath: router.latestLocation.pathname,
-      },
-    });
+  if (!session.doesSessionExist) {
     return <></>;
   }
 
@@ -138,7 +143,7 @@ export function JoinOrganizationPage(props: { inviteCode: string }) {
 
                 if (invitation.__typename === 'OrganizationInvitationError') {
                   return (
-                    <div className="bg-black">
+                    <div className="bg-neutral-1">
                       <Card>
                         <CardHeader>
                           <CardTitle>Invitation Error</CardTitle>
@@ -155,7 +160,7 @@ export function JoinOrganizationPage(props: { inviteCode: string }) {
                 }
 
                 return (
-                  <div className="bg-black">
+                  <div className="bg-neutral-1">
                     <Card>
                       <CardHeader>
                         <CardTitle>Join "{invitation.name}" organization</CardTitle>
@@ -165,7 +170,7 @@ export function JoinOrganizationPage(props: { inviteCode: string }) {
                           You've been invited to become a member of{' '}
                           <span className="font-semibold">{invitation.name}</span>.
                         </p>
-                        <p className="text-muted-foreground mt-2">
+                        <p className="text-neutral-10 mt-2">
                           By accepting the invitation, you will be able to collaborate with other
                           members of this organization.
                         </p>

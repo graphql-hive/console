@@ -74,10 +74,10 @@ function Header({
           triggerClassName,
         )}
       >
-        <span className="text-sm font-medium text-gray-100">{children}</span>
+        <span className="text-neutral-11 text-sm font-medium">{children}</span>
         <ChevronDownIcon
           className={clsx(
-            'ml-2 size-5 shrink-0 text-gray-400 ease-in-out',
+            'text-neutral-11 ml-2 size-5 shrink-0 ease-in-out',
             'group-data-[state=open]:rotate-180 group-data-[state=open]:duration-300',
           )}
         />
@@ -95,7 +95,7 @@ function Content({
 }): ReactElement {
   return (
     <A.Content className={clsx('w-full rounded-b-lg px-4 pb-3 pt-1', className)}>
-      <div className="text-sm text-gray-400">{children}</div>
+      <div className="text-neutral-12 text-sm">{children}</div>
     </A.Content>
   );
 }

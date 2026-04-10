@@ -25,6 +25,7 @@
     "moduleResolution": "node",
     "strict": true,
     "paths": {
+      "@hive/postgres": ["./packages/internal/postgres/src/index.ts"],
       "@hive/api": ["./packages/services/api/src/index.ts"],
       "@hive/api/*": ["./packages/services/api/src/*"],
       "@hive/service-common": ["./packages/services/service-common/src/index.ts"],
@@ -41,6 +42,7 @@
       ],
       "@hive/cdn-script/aws": ["./packages/services/cdn-worker/src/aws.ts"],
       "@hive/server": ["./packages/services/server/src/api.ts"],
+      "@hive/server/*": ["./packages/services/server/src/*"],
       "@hive/schema": ["./packages/services/schema/src/api.ts"],
       "@hive/schema/*": ["./packages/services/schema/src/*"],
       "@hive/usage-common": ["./packages/services/usage-common/src/index.ts"],
@@ -73,7 +75,8 @@
       ],
       "@graphql-hive/plugin-opentelemetry/setup": [
         "./node_modules/@graphql-hive/plugin-opentelemetry/dist/setup.d.ts"
-      ]
+      ],
+      "@hive/pubsub": ["./packages/libraries/pubsub/src/index.ts"]
     }
   },
   "include": ["packages", "tsup.config.node.ts"],

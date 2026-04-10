@@ -80,10 +80,6 @@ export const parseGraphQLSource = traceInlineSync(
   },
 );
 
-export function minifySchema(schema: string): string {
-  return schema.replace(/\s+/g, ' ').trim();
-}
-
 export function createConnection<TInput>(): {
   nodes(nodes: readonly TInput[]): readonly TInput[];
   total(nodes: readonly TInput[]): number;

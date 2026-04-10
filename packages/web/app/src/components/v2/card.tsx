@@ -13,7 +13,7 @@ const Card = forwardRef<HTMLDivElement, CardProps>(
     return (
       <Comp
         ref={forwardedRef}
-        className={cn('rounded-md border border-gray-800 p-5', className)}
+        className={cn('border-neutral-5 rounded-md border p-5', className)}
         {...props}
       >
         {children}

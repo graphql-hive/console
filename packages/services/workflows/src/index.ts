@@ -1,28 +1,30 @@
-import { hostname } from 'node:os';
 import { run } from 'graphile-worker';
-import { createPool } from 'slonik';
 import { Logger } from '@graphql-hive/logger';
+import { createPostgresDatabasePool } from '@hive/postgres';
+import { bridgeGraphileLogger, createHivePubSub } from '@hive/pubsub';
 import {
   createServer,
   registerShutdown,
   reportReadiness,
+  sentryInit,
   startHeartbeats,
   startMetrics,
 } from '@hive/service-common';
-import * as Sentry from '@sentry/node';
 import { Context } from './context.js';
 import { env } from './environment.js';
 import { createEmailProvider } from './lib/emails/providers.js';
-import { bridgeFastifyLogger, bridgeGraphileLogger } from './logger.js';
+import { schemaProvider } from './lib/schema/provider.js';
+import { bridgeFastifyLogger } from './logger.js';
+import { createRedisClient } from './redis';
 import { createTaskEventEmitter } from './task-events.js';
 
 if (env.sentry) {
-  Sentry.init({
-    serverName: hostname(),
+  sentryInit({
     dist: 'workflows',
     environment: env.environment,
     dsn: env.sentry.dsn,
     release: env.release,
+    enabled: !!env.sentry,
   });
 }
 
@@ -40,6 +42,7 @@ const modules = await Promise.all([
   import('./tasks/schema-change-notification.js'),
   import('./tasks/usage-rate-limit-exceeded.js'),
   import('./tasks/usage-rate-limit-warning.js'),
+  import('./tasks/schema-proposal-composition.js'),
 ]);
 
 const crontab = `
@@ -49,10 +52,12 @@ const crontab = `
   0 3 * * * purgeExpiredDedupeKeys
 `;
 
-const pg = await createPool(env.postgres.connectionString);
+const pg = await createPostgresDatabasePool({
+  connectionParameters: env.postgres.connectionString,
+});
 const logger = new Logger({ level: env.log.level });
 
-logger.info({ pid: process.pid }, 'starting workflow service');
+logger.info({ pid: process.pid }, 'starting workflow service ' + process.pid);
 
 const stopHttpHeartbeat = env.httpHeartbeat
   ? startHeartbeats({
@@ -64,18 +69,34 @@ const stopHttpHeartbeat = env.httpHeartbeat
     })
   : null;
 
-const context: Context = {
-  logger,
-  email: createEmailProvider(env.email.provider, env.email.emailFrom),
-  pg,
-  requestBroker: env.requestBroker,
-};
-
 const server = await createServer({
   sentryErrorHandler: !!env.sentry,
   name: 'workflows',
   log: logger,
 });
+
+const redis = createRedisClient('Redis', env.redis, server.log.child({ source: 'Redis' }));
+
+const pubSub = createHivePubSub({
+  publisher: redis,
+  subscriber: createRedisClient(
+    'subscriber',
+    env.redis,
+    server.log.child({ source: 'RedisSubscribe' }),
+  ),
+});
+
+const context: Context = {
+  logger,
+  email: createEmailProvider(env.email.provider, env.email.emailFrom),
+  pg,
+  requestBroker: env.requestBroker,
+  schema: schemaProvider({
+    logger,
+    schemaServiceUrl: env.schema.serviceUrl,
+  }),
+  pubSub,
+};
 
 server.route({
   method: ['GET', 'HEAD'],
@@ -98,7 +119,14 @@ if (context.email.id === 'mock') {
   server.route({
     method: ['GET'],
     url: '/_history',
-    handler(_, res) {
+    handler(req, res) {
+      const query = new URLSearchParams(req.query as any);
+      const after = query.get('after');
+      if (after) {
+        return void res
+          .status(200)
+          .send(context.email.history.filter(h => h.date > new Date(after)));
+      }
       void res.status(200).send(context.email.history);
     },
   });
@@ -116,7 +144,7 @@ const shutdownMetrics = env.prometheus
 const runner = await run({
   logger: bridgeGraphileLogger(logger),
   crontab,
-  pgPool: pg.pool,
+  pgPool: pg.getPgPoolCompat(),
   taskList: Object.fromEntries(modules.map(module => module.task(context))),
   noHandleSignals: true,
   events: createTaskEventEmitter(),
@@ -133,6 +161,8 @@ registerShutdown({
       logger.info('Shutdown postgres connection.');
       await pg.end();
       logger.info('Shutdown postgres connection successful.');
+      logger.info('Shutdown redis connection.');
+      redis.disconnect(false);
       if (shutdownMetrics) {
         logger.info('Stopping prometheus endpoint');
         await shutdownMetrics();

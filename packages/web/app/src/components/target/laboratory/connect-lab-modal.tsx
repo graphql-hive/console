@@ -63,16 +63,16 @@ export const ConnectLabModalContent = (props: {
         </DialogHeader>
         {props?.isCDNEnabled ? (
           <div>
-            <h3 className="text-sm text-white">High-availability CDN:</h3>
+            <h3 className="text-neutral-12 text-sm">High-availability CDN:</h3>
             <Callout className="mt-2" type="info">
               If you want to consume the GraphQL schema for a tool like GraphQL Code Generator, we
               instead recommend using the high-availability CDN instead.
             </Callout>
           </div>
         ) : null}
-        <span className="text-sm text-white">You can use the following endpoint:</span>
+        <span className="text-neutral-12 text-sm">You can use the following endpoint:</span>
         <InputCopy value={props.endpoint} />
-        <span className="text-sm text-white">
+        <span className="text-neutral-12 text-sm">
           To authenticate, use the following HTTP headers, with a token that has `target:read`
           scope:
         </span>
@@ -89,7 +89,7 @@ export const ConnectLabModalContent = (props: {
             YOUR_TOKEN_HERE
           </Link>
         </Tag>
-        <p className="text-sm text-gray-500">
+        <p className="text-neutral-10 text-sm">
           Read the{' '}
           <Link as="a" variant="primary" target="_blank" rel="noreferrer" href={props.docsUrl}>
             Managing Tokens

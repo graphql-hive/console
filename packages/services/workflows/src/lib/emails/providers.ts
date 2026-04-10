@@ -5,18 +5,14 @@ interface Email {
   to: string;
   subject: string;
   body: string;
+  date: Date;
 }
 
-const emailProviders = {
-  postmark,
-  mock,
-  smtp,
-  sendmail,
-};
+type EmailProviders = 'postmark' | 'mock' | 'smtp' | 'sendmail';
 
 export interface EmailProvider {
-  id: keyof typeof emailProviders;
-  send(email: Email): Promise<void>;
+  id: EmailProviders;
+  send(email: Omit<Email, 'date'>): Promise<void>;
   history: Email[];
 }
 
@@ -102,7 +98,10 @@ function mock(_config: MockEmailProviderConfig, _emailFrom: string): EmailProvid
   return {
     id: 'mock' as const,
     async send(email: Email) {
-      history.push(email);
+      history.push({
+        ...email,
+        date: new Date(),
+      });
     },
     history,
   };

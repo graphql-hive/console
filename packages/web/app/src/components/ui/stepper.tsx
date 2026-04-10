@@ -222,7 +222,7 @@ const defineStepper = <const Steps extends Stepperize.Step[]>(
           )}
 
           {variant === 'vertical' && (
-            <div className="flex gap-4">
+            <div>
               {!isLast && (
                 <div className="flex justify-center ps-5">
                   <StepperSeparator
@@ -294,7 +294,7 @@ const StepperDescription = ({
   const Comp = asChild ? Slot : 'p';
 
   return (
-    <Comp className={cn('text-muted-foreground text-sm', className)} {...props}>
+    <Comp className={cn('text-neutral-10 text-sm', className)} {...props}>
       {children}
     </Comp>
   );
@@ -362,7 +362,7 @@ const CircleStepIndicator = ({
           fill="none"
           stroke="currentColor"
           strokeWidth={strokeWidth}
-          className="text-muted-foreground"
+          className="text-neutral-10"
         />
         <circle
           cx={size / 2}
@@ -373,7 +373,7 @@ const CircleStepIndicator = ({
           strokeWidth={strokeWidth}
           strokeDasharray={circumference}
           strokeDashoffset={dashOffset}
-          className="text-primary transition-all duration-300 ease-in-out"
+          className="text-neutral-11 transition-all duration-300 ease-in-out"
           transform={`rotate(-90 ${size / 2} ${size / 2})`}
         />
       </svg>
@@ -393,7 +393,7 @@ const CircleStepIndicator = ({
 const listVariants = cva('flex gap-2', {
   variants: {
     variant: {
-      horizontal: 'flex-row items-center justify-between',
+      horizontal: 'flex-row items-center justify-between flex-wrap',
       vertical: 'flex-col',
       circle: 'flex-row items-center justify-between',
     },
@@ -402,8 +402,8 @@ const listVariants = cva('flex gap-2', {
 
 const classForSeparator = cva(
   [
-    'bg-muted',
-    'data-[state=completed]:bg-primary data-disabled:opacity-50',
+    'bg-neutral-3',
+    'data-[state=completed]:bg-neutral-11 data-disabled:opacity-50',
     'transition-all duration-300 ease-in-out',
   ],
   {

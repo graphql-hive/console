@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import { ChevronsUpDown } from 'lucide-react';
 import { useQuery } from 'urql';
+import { Checkbox } from '@/components/base/checkbox/checkbox';
 import { Button } from '@/components/ui/button';
 import {
   Command,
@@ -11,7 +12,6 @@ import {
 } from '@/components/ui/command';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Checkbox } from '@/components/v2';
 import { graphql } from '@/gql';
 import { useRouter, useSearch } from '@tanstack/react-router';
 
@@ -112,8 +112,8 @@ export const UserFilter = ({
                   }}
                   className="cursor-pointer truncate"
                 >
-                  <div className="flex w-[270px] min-w-0 flex-row items-center truncate">
-                    <Checkbox className="mr-[6px]" checked={selectedUsers.includes(user.id)} />
+                  <div className="flex w-[270px] min-w-0 flex-row items-center gap-1.5 truncate">
+                    <Checkbox size="sm" checked={selectedUsers.includes(user.id)} />
                     <span className="truncate">{user.displayName ?? user.fullName}</span>
                   </div>
                 </CommandItem>

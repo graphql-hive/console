@@ -59,13 +59,13 @@ export function QueryError({
                 <p>
                   {commonErrorStrings.track}{' '}
                   {organizationSlug ? (
-                    <Button variant="link" className="h-auto p-0 text-orange-500" asChild>
+                    <Button variant="link" className="h-auto p-0" asChild>
                       <Link to="/$organizationSlug/view/support" params={{ organizationSlug }}>
                         {commonErrorStrings.link}
                       </Link>
                     </Button>
                   ) : (
-                    <Button variant="link" className="h-auto p-0 text-orange-500" asChild>
+                    <Button variant="link" className="h-auto p-0" asChild>
                       <a href="mailto:support@graphql-hive.com">{commonErrorStrings.link}</a>
                     </Button>
                   )}
@@ -76,7 +76,7 @@ export function QueryError({
 
             {requestId ? (
               <div className="mt-6 text-xs">
-                <div className="inline-flex items-center text-gray-300">
+                <div className="text-neutral-11 inline-flex items-center">
                   <div className="rounded-l-sm bg-yellow-500/10 p-2">Error ID</div>
                   <div className="rounded-r-sm bg-yellow-500/5 p-2">{requestId}</div>
                 </div>

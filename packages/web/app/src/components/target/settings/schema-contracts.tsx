@@ -3,10 +3,10 @@ import { useFormik } from 'formik';
 import { Check, MoreHorizontal, X } from 'lucide-react';
 import { useMutation, useQuery } from 'urql';
 import * as Yup from 'yup';
+import { Checkbox } from '@/components/base/checkbox/checkbox';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { CardDescription } from '@/components/ui/card';
-import { Checkbox } from '@/components/ui/checkbox';
 import { Command, CommandGroup, CommandItem, CommandList } from '@/components/ui/command';
 import {
   Dialog,
@@ -181,7 +181,7 @@ export function SchemaContracts(props: {
               <CardDescription>
                 <DocsLink
                   href="/management/contracts"
-                  className="text-gray-500 hover:text-gray-300"
+                  className="text-neutral-10 hover:text-neutral-11"
                 >
                   Learn more about Schema Contracts
                 </DocsLink>
@@ -700,7 +700,7 @@ function CreateContractDialogContent(props: {
                 />
                 <label
                   htmlFor="removeUnreachableTypesFromPublicApiSchema"
-                  className="ml-2 inline-block cursor-pointer text-sm text-gray-300"
+                  className="text-neutral-11 ml-2 inline-block cursor-pointer text-sm"
                 >
                   Remove unreachable types from public API schema
                 </label>

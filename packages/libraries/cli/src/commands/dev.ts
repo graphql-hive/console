@@ -1,7 +1,6 @@
 import { writeFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import { parse } from 'graphql';
-import type { TypedDocumentNode } from '@graphql-typed-document-node/core';
 import { Flags } from '@oclif/core';
 import {
   composeServices,
@@ -48,22 +47,6 @@ const CLI_SchemaComposeMutation = graphql(/* GraphQL */ `
     }
   }
 `);
-
-const ServiceIntrospectionQuery = /* GraphQL */ `
-  query ServiceSdlQuery {
-    _service {
-      sdl
-    }
-  }
-` as unknown as TypedDocumentNode<
-  {
-    __typename?: 'Query';
-    _service: { sdl: string };
-  },
-  {
-    [key: string]: never;
-  }
->;
 
 type ServiceName = string;
 type Sdl = string;
@@ -228,6 +211,7 @@ export default class Dev extends Command<typeof Dev> {
             description: Dev.flags['registry.endpoint'].description!,
           });
         } catch (e) {
+          this.logDebug(e);
           throw new MissingEndpointError();
         }
         try {
@@ -239,6 +223,7 @@ export default class Dev extends Command<typeof Dev> {
             description: Dev.flags['registry.accessToken'].description!,
           });
         } catch (e) {
+          this.logDebug(e);
           throw new MissingRegistryTokenError();
         }
 
@@ -287,6 +272,7 @@ export default class Dev extends Command<typeof Dev> {
           description: Dev.flags['registry.endpoint'].description!,
         });
       } catch (e) {
+        this.logDebug(e);
         throw new MissingEndpointError();
       }
       try {
@@ -298,6 +284,7 @@ export default class Dev extends Command<typeof Dev> {
           description: Dev.flags['registry.accessToken'].description!,
         });
       } catch (e) {
+        this.logDebug(e);
         throw new MissingRegistryTokenError();
       }
 
@@ -514,16 +501,18 @@ export default class Dev extends Command<typeof Dev> {
   }
 
   private async resolveSdlFromPath(path: string) {
-    const sdl = await loadSchema(path);
+    const sdl = await loadSchema(null, path, {
+      logger: this.logger,
+    });
     invariant(typeof sdl === 'string' && sdl.length > 0, `Read empty schema from ${path}`);
 
     return sdl;
   }
 
   private async resolveSdlFromUrl(url: string) {
-    const result = await this.graphql(url).request({ operation: ServiceIntrospectionQuery });
-
-    const sdl = result._service.sdl;
+    const sdl = await loadSchema('only-federation-introspection', url, {
+      logger: this.logger,
+    });
 
     if (!sdl) {
       throw new IntrospectionError();

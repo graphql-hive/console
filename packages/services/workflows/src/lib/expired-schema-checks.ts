@@ -1,5 +1,5 @@
-import { DatabasePool, sql } from 'slonik';
 import { z } from 'zod';
+import { PostgresDatabasePool, psql } from '@hive/postgres';
 
 const SchemaCheckModel = z.object({
   schemaCheckIds: z.array(z.string()),
@@ -9,10 +9,13 @@ const SchemaCheckModel = z.object({
   contractIds: z.array(z.string()),
 });
 
-export async function purgeExpiredSchemaChecks(args: { pool: DatabasePool; expiresAt: Date }) {
-  return await args.pool.transaction(async pool => {
+export async function purgeExpiredSchemaChecks(args: {
+  pool: PostgresDatabasePool;
+  expiresAt: Date;
+}) {
+  return await args.pool.transaction('purgeExpiredSchemaChecks', async pool => {
     const date = args.expiresAt.toISOString();
-    const rawData = await pool.maybeOne<unknown>(sql`/* findSchemaChecksToPurge */
+    const rawData = await pool.maybeOne(psql`/* findSchemaChecksToPurge */
       WITH "filtered_schema_checks" AS (
         SELECT *
         FROM "schema_checks"
@@ -70,22 +73,24 @@ export async function purgeExpiredSchemaChecks(args: { pool: DatabasePool; expir
     let deletedSchemaChangeApprovalCount = 0;
     let deletedContractSchemaChangeApprovalCount = 0;
 
-    await pool.any<unknown>(sql`/* purgeExpiredSchemaChecks */
+    await pool.any(psql`/* purgeExpiredSchemaChecks */
       DELETE
       FROM "schema_checks"
       WHERE
-        "id" = ANY(${sql.array(data.schemaCheckIds, 'uuid')})
+        "id" = ANY(${psql.array(data.schemaCheckIds, 'uuid')})
     `);
 
     if (data.sdlStoreIds.length) {
-      deletedSdlStoreCount = await pool.oneFirst<number>(sql`/* purgeExpiredSdlStore */
+      deletedSdlStoreCount = await pool
+        .oneFirst(
+          psql`/* purgeExpiredSdlStore */
         WITH "deleted" AS (
           DELETE
           FROM
             "sdl_store"
           WHERE
             "id" = ANY(
-              ${sql.array(data.sdlStoreIds, 'text')}
+              ${psql.array(data.sdlStoreIds, 'text')}
             )
             AND NOT EXISTS (
               SELECT
@@ -109,22 +114,25 @@ export async function purgeExpiredSchemaChecks(args: { pool: DatabasePool; expir
           RETURNING
             "id"
         ) SELECT COUNT(*) FROM "deleted"
-      `);
+      `,
+        )
+        .then(z.number().parse);
     }
 
     if (data.targetIds.length && data.contextIds.length) {
-      deletedSchemaChangeApprovalCount =
-        await pool.oneFirst<number>(sql`/* purgeExpiredSchemaChangeApprovals */
+      deletedSchemaChangeApprovalCount = await pool
+        .oneFirst(
+          psql`/* purgeExpiredSchemaChangeApprovals */
         WITH "deleted" AS (
           DELETE
           FROM
             "schema_change_approvals"
           WHERE
             "target_id" = ANY(
-              ${sql.array(data.targetIds, 'uuid')}
+              ${psql.array(data.targetIds, 'uuid')}
             )
             AND "context_id" = ANY(
-              ${sql.array(data.contextIds, 'text')}
+              ${psql.array(data.contextIds, 'text')}
             )
             AND NOT EXISTS (
               SELECT
@@ -137,22 +145,25 @@ export async function purgeExpiredSchemaChecks(args: { pool: DatabasePool; expir
           RETURNING
             "target_id"
         ) SELECT COUNT(*) FROM "deleted"
-      `);
+      `,
+        )
+        .then(z.number().parse);
     }
 
     if (data.contractIds.length && data.contextIds.length) {
-      deletedContractSchemaChangeApprovalCount =
-        await pool.oneFirst<number>(sql`/* purgeExpiredContractSchemaChangeApprovals */
+      deletedContractSchemaChangeApprovalCount = await pool
+        .oneFirst(
+          psql`/* purgeExpiredContractSchemaChangeApprovals */
         WITH "deleted" AS (
           DELETE
           FROM
             "contract_schema_change_approvals"
           WHERE
             "contract_id" = ANY(
-              ${sql.array(data.contractIds, 'uuid')}
+              ${psql.array(data.contractIds, 'uuid')}
             )
             AND "context_id" = ANY(
-              ${sql.array(data.contextIds, 'text')}
+              ${psql.array(data.contextIds, 'text')}
             )
             AND NOT EXISTS (
               SELECT
@@ -168,7 +179,9 @@ export async function purgeExpiredSchemaChecks(args: { pool: DatabasePool; expir
           RETURNING
             "contract_id"
         ) SELECT COUNT(*) FROM "deleted"
-      `);
+      `,
+        )
+        .then(z.number().parse);
     }
 
     return {

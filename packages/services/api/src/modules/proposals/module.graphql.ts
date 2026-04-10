@@ -60,22 +60,6 @@ export default gql`
     details: CreateSchemaProposalErrorDetails!
   }
 
-  input SchemaProposalCheckInput {
-    service: ID
-    sdl: String!
-    github: GitHubSchemaCheckInput
-    meta: SchemaCheckMetaInput
-    """
-    Optional context ID to group schema checks together.
-    Manually approved breaking changes will be memorized for schema checks with the same context id.
-    """
-    contextId: String
-    """
-    Optional url if wanting to show subgraph url changes inside checks.
-    """
-    url: String
-  }
-
   input CreateSchemaProposalInput {
     """
     Reference to the proposal's target. Either an ID or path.
@@ -102,11 +86,6 @@ export default gql`
     as a DRAFT instead.
     """
     isDraft: Boolean! = false
-
-    """
-    The initial proposed service changes to be ran as checks
-    """
-    initialChecks: [SchemaProposalCheckInput!]!
   }
 
   input ReviewSchemaProposalInput {
@@ -141,6 +120,21 @@ export default gql`
   input ReplyToSchemaProposalReviewInput {
     schemaProposalReviewId: ID!
     body: String!
+  }
+
+  extend type Subscription {
+    schemaProposalComposition(
+      input: SchemaProposalCompositionSubscriptionInput!
+    ): SchemaProposalCompositionEvent!
+  }
+
+  type SchemaProposalCompositionEvent {
+    status: ProposalCompositionStatus!
+    timestamp: String!
+  }
+
+  input SchemaProposalCompositionSubscriptionInput {
+    proposalId: ID!
   }
 
   extend type Query {
@@ -261,6 +255,15 @@ export default gql`
       """
       fromCursor: String
     ): String
+
+    compositionStatus: ProposalCompositionStatus
+    compositionTimestamp: DateTime
+    compositionStatusReason: String
+  }
+
+  enum ProposalCompositionStatus {
+    ERROR
+    SUCCESS
   }
 
   input SchemaProposalChecksInput {

@@ -1,0 +1,16 @@
+diff --git a/mode/development.js b/mode/development.js
+index 47e217ceaa567ca1c013fc51541a8ac462607605..2fc2df318cd9feedbade9489f473a5fda98d2021 100644
+--- a/mode/development.js
++++ b/mode/development.js
+@@ -127,7 +127,10 @@ async function setup(config) {
+         }
+       }
+     }
+-    const indexHtmlPath = join(config.vite.root, 'index.html')
++    // Request is decorated with viteHtmlFile in: packages/web/app/src/server/index.ts
++    // It is used to render more than one html file
++    const htmlFileName = req.viteHtmlFile ?? 'index.html';
++    const indexHtmlPath = join(config.vite.root,htmlFileName)
+     const indexHtml = await read(indexHtmlPath, 'utf8')
+     const transformedHtml = await this.devServer.transformIndexHtml(req.url, indexHtml)
+ 

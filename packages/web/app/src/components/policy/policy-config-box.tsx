@@ -16,7 +16,7 @@ export function PolicyConfigBox(props: Props) {
     >
       {'title' in props ? (
         <>
-          <div className="pb-1 text-xs text-gray-600">{props.title}</div>
+          <div className="text-neutral-8 pb-1 text-xs">{props.title}</div>
           <div>{props.children}</div>
         </>
       ) : (

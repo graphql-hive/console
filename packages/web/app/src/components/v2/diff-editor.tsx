@@ -1,7 +1,8 @@
-import { ReactElement, useEffect, useRef, useState } from 'react';
+import { ReactElement, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { parse, print } from 'graphql';
-import { editor } from 'monaco-editor';
+import { editor } from 'monaco-editor/esm/vs/editor/editor.api';
 import { MonacoDiffEditor, MonacoEditor } from '@/components/schema-editor';
+import { useTheme } from '@/components/theme/theme-provider';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
@@ -21,6 +22,7 @@ export const DiffEditor = (props: {
   onMount?: (editor: editor.IStandaloneCodeEditor) => void;
   onChange?: (source: string | undefined) => void;
 }): ReactElement => {
+  const { resolvedTheme } = useTheme();
   const [showDiff, setShowDiff] = useState<boolean>(true);
   const sdlBefore = usePrettify(props.before);
   // runs once on mount then uses internal monaco state to manage
@@ -33,10 +35,32 @@ export const DiffEditor = (props: {
     }
   }, []);
   const editorRef = useRef<OriginalMonacoDiffEditor | null>(null);
+  const modelsRef = useRef<{
+    original: editor.ITextModel | null;
+    modified: editor.ITextModel | null;
+  }>({ original: null, modified: null });
+
+  // useLayoutEffect cleanup runs before @monaco-editor/react's useEffect cleanup.
+  // This lets us call setModel(null) to detach models from the widget, removing
+  // Monaco's onWillDispose listeners that throw "TextModel got disposed before
+  // DiffEditorWidget model got reset".
+  useLayoutEffect(() => {
+    return () => {
+      editorRef.current?.setModel(null);
+      modelsRef.current.original?.dispose();
+      modelsRef.current.modified?.dispose();
+      modelsRef.current = { original: null, modified: null };
+      editorRef.current = null;
+    };
+  }, []);
 
   function handleEditorDidMount(editor: OriginalMonacoDiffEditor, monaco: Monaco) {
     addKeyBindings(editor, monaco);
     editorRef.current = editor;
+    modelsRef.current = {
+      original: editor.getOriginalEditor().getModel(),
+      modified: editor.getModifiedEditor().getModel(),
+    };
     props.onMount?.(editor.getModifiedEditor());
 
     editor.getModifiedEditor().onDidChangeModelContent(() => {
@@ -58,7 +82,7 @@ export const DiffEditor = (props: {
 
   return (
     <div className="w-full">
-      <div className="border-muted mb-2 flex items-center justify-between border-b px-2 py-1">
+      <div className="border-neutral-3 mb-2 flex items-center justify-between border-b px-2 py-1">
         <div className="px-2 font-bold">Diff View</div>
         <div className="ml-auto flex h-[36px] items-center px-2">
           {sdlAfter && props.downloadFileName && (
@@ -111,13 +135,16 @@ export const DiffEditor = (props: {
       </div>
       {showDiff ? (
         <MonacoDiffEditor
+          // this outputs either "vs-light" or "vs-dark"
+          theme={`vs-${resolvedTheme}`}
           width="100%"
           height="70vh"
           language="graphql"
-          theme="vs-dark"
           loading={<Spinner />}
           original={sdlBefore ?? undefined}
           modified={sdlAfter ?? undefined}
+          keepCurrentOriginalModel
+          keepCurrentModifiedModel
           options={{
             originalEditable: false,
             renderLineHighlightOnlyWhenFocus: true,
@@ -129,10 +156,11 @@ export const DiffEditor = (props: {
         />
       ) : (
         <MonacoEditor
+          // this outputs either "vs-light" or "vs-dark"
+          theme={`vs-${resolvedTheme}`}
           width="100%"
           height="70vh"
           language="graphql"
-          theme="vs-dark"
           loading={<Spinner />}
           value={sdlAfter ?? undefined}
           onMount={props.onMount}

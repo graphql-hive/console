@@ -2,7 +2,7 @@ import { type MigrationExecutor } from '../pg-migrator';
 
 export default {
   name: '2025.12.12T00-00-00.workflows-deduplication.ts',
-  run: ({ sql }) => sql`
+  run: ({ psql }) => psql`
       CREATE TABLE "graphile_worker_deduplication" (
           "task_name"   text        NOT NULL,
           "dedupe_key"  text        NOT NULL,

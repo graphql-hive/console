@@ -1,6 +1,5 @@
 #!/usr/bin/env node
 import 'reflect-metadata';
-import { hostname } from 'os';
 import Redis from 'ioredis';
 import {
   configureTracing,
@@ -9,6 +8,7 @@ import {
   registerShutdown,
   registerTRPC,
   reportReadiness,
+  sentryInit,
   startMetrics,
   TracingInstance,
 } from '@hive/service-common';
@@ -32,8 +32,7 @@ async function main() {
   }
 
   if (env.sentry) {
-    Sentry.init({
-      serverName: hostname(),
+    sentryInit({
       dist: 'schema',
       enabled: !!env.sentry,
       environment: env.environment,

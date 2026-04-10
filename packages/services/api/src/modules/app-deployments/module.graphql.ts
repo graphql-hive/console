@@ -17,6 +17,14 @@ export default gql`
     """
     createdAt: DateTime! @tag(name: "public")
     """
+    The timestamp when the app deployment was activated.
+    """
+    activatedAt: DateTime @tag(name: "public")
+    """
+    The timestamp when the app deployment was retired. Only present for retired deployments.
+    """
+    retiredAt: DateTime @tag(name: "public")
+    """
     The last time a GraphQL request that used the app deployment was reported.
     """
     lastUsed: DateTime @tag(name: "public")
@@ -48,6 +56,23 @@ export default gql`
     V2
   }
 
+  """
+  Fields available for sorting app deployments.
+  """
+  enum AppDeploymentsSortField {
+    CREATED_AT
+    ACTIVATED_AT
+    LAST_USED
+  }
+
+  """
+  Sort configuration for app deployments.
+  """
+  input AppDeploymentsSortInput {
+    field: AppDeploymentsSortField!
+    direction: SortDirectionType!
+  }
+
   type GraphQLDocumentConnection {
     pageInfo: PageInfo!
     edges: [GraphQLDocumentEdge!]!
@@ -71,6 +96,10 @@ export default gql`
   type AppDeploymentConnection {
     pageInfo: PageInfo! @tag(name: "public")
     edges: [AppDeploymentEdge!]! @tag(name: "public")
+    """
+    The total number of app deployments for this target.
+    """
+    total: Int! @tag(name: "public")
   }
 
   type AppDeploymentEdge {
@@ -116,7 +145,11 @@ export default gql`
     """
     The app deployments for this target.
     """
-    appDeployments(first: Int, after: String): AppDeploymentConnection
+    appDeployments(
+      first: Int
+      after: String
+      sort: AppDeploymentsSortInput
+    ): AppDeploymentConnection
     appDeployment(appName: String!, appVersion: String!): AppDeployment
     """
     Whether the viewer can access the app deployments within a target.
@@ -147,17 +180,32 @@ export default gql`
       input: AddDocumentsToAppDeploymentInput!
     ): AddDocumentsToAppDeploymentResult!
     activateAppDeployment(input: ActivateAppDeploymentInput!): ActivateAppDeploymentResult!
-    retireAppDeployment(input: RetireAppDeploymentInput!): RetireAppDeploymentResult!
+    retireAppDeployment(
+      input: RetireAppDeploymentInput! @tag(name: "public")
+    ): RetireAppDeploymentResult! @tag(name: "public")
   }
 
   input RetireAppDeploymentInput {
-    target: TargetReferenceInput
-    appName: String!
-    appVersion: String!
     """
-    Force retirement even if protection rules would prevent it.
+    If using an organization access token, then a target must be provided.
+    If using a target's access token, then this should be null.
     """
-    force: Boolean
+    target: TargetReferenceInput @tag(name: "public")
+
+    """
+    The identifying application name
+    """
+    appName: String! @tag(name: "public")
+
+    """
+    The exact version of the application to retire
+    """
+    appVersion: String! @tag(name: "public")
+
+    """
+    Force retirement even if protection rules would prevent it. Disabled by default.
+    """
+    force: Boolean! = false @tag(name: "public")
   }
 
   """
@@ -167,41 +215,41 @@ export default gql`
     """
     The last time the app deployment was used.
     """
-    lastUsed: DateTime
+    lastUsed: DateTime @tag(name: "public")
     """
     Days since the app deployment was last used.
     """
-    daysSinceLastUsed: Int
+    daysSinceLastUsed: Int @tag(name: "public")
     """
     Required minimum days of inactivity.
     """
-    requiredMinDaysInactive: Int!
+    requiredMinDaysInactive: Int! @tag(name: "public")
     """
     Current traffic percentage of this app deployment.
     """
-    currentTrafficPercentage: Float
+    currentTrafficPercentage: Float @tag(name: "public")
     """
     Maximum traffic percentage allowed for retirement.
     """
-    maxTrafficPercentage: Float!
+    maxTrafficPercentage: Float! @tag(name: "public")
   }
 
   type RetireAppDeploymentError implements Error {
-    message: String!
+    message: String! @tag(name: "public")
     """
     Details about why protection prevented retirement.
     Only present when retirement was blocked due to protection rules.
     """
-    protectionDetails: AppDeploymentProtectionBlockDetails
+    protectionDetails: AppDeploymentProtectionBlockDetails @tag(name: "public")
   }
 
   type RetireAppDeploymentOk {
-    retiredAppDeployment: AppDeployment!
+    retiredAppDeployment: AppDeployment! @tag(name: "public")
   }
 
   type RetireAppDeploymentResult {
-    error: RetireAppDeploymentError
-    ok: RetireAppDeploymentOk
+    error: RetireAppDeploymentError @tag(name: "public")
+    ok: RetireAppDeploymentOk @tag(name: "public")
   }
 
   input CreateAppDeploymentInput {

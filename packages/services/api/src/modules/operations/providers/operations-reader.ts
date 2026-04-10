@@ -455,12 +455,18 @@ export class OperationsReader {
     period,
     operations,
     clients,
+    clientVersionFilters,
+    excludeOperations,
+    excludeClientVersionFilters,
     schemaCoordinate,
   }: {
     target: string | readonly string[];
     period: DateRange;
     operations?: readonly string[];
     clients?: readonly string[];
+    clientVersionFilters?: readonly { clientName: string; versions: readonly string[] | null }[];
+    excludeOperations?: boolean;
+    excludeClientVersionFilters?: boolean;
     schemaCoordinate?: string;
   }): Promise<{
     total: number;
@@ -481,6 +487,9 @@ export class OperationsReader {
             period,
             operations,
             clients,
+            clientVersionFilters,
+            excludeOperations,
+            excludeClientVersionFilters,
             extra: schemaCoordinate
               ? [
                   sql`hash IN (SELECT hash FROM ${aggregationTableName('coordinates')} ${this.createFilter(
@@ -517,13 +526,27 @@ export class OperationsReader {
     period,
     operations,
     clients,
+    clientVersionFilters,
+    excludeOperations,
+    excludeClientVersionFilters,
   }: {
     target: string;
     period: DateRange;
     operations?: readonly string[];
     clients?: readonly string[];
+    clientVersionFilters?: readonly { clientName: string; versions: readonly string[] | null }[];
+    excludeOperations?: boolean;
+    excludeClientVersionFilters?: boolean;
   }): Promise<number> {
-    return this.countRequests({ target, period, operations, clients }).then(r => r.notOk);
+    return this.countRequests({
+      target,
+      period,
+      operations,
+      clients,
+      clientVersionFilters,
+      excludeOperations,
+      excludeClientVersionFilters,
+    }).then(r => r.notOk);
   }
 
   async countUniqueDocuments({
@@ -531,11 +554,17 @@ export class OperationsReader {
     period,
     operations,
     clients,
+    clientVersionFilters,
+    excludeOperations,
+    excludeClientVersionFilters,
   }: {
     target: string;
     period: DateRange;
     operations?: readonly string[];
     clients?: readonly string[];
+    clientVersionFilters?: readonly { clientName: string; versions: readonly string[] | null }[];
+    excludeOperations?: boolean;
+    excludeClientVersionFilters?: boolean;
   }): Promise<number> {
     const query = this.pickAggregationByPeriod({
       period,
@@ -551,6 +580,9 @@ export class OperationsReader {
             period,
             operations,
             clients,
+            clientVersionFilters,
+            excludeOperations,
+            excludeClientVersionFilters,
           },
         )}`,
       queryId: aggregation => `count_unique_documents_${aggregation}`,
@@ -568,12 +600,18 @@ export class OperationsReader {
     period,
     operations,
     clients,
+    clientVersionFilters,
+    excludeOperations,
+    excludeClientVersionFilters,
     schemaCoordinate,
   }: {
     target: string;
     period: DateRange;
     operations?: readonly string[];
     clients?: readonly string[];
+    clientVersionFilters?: readonly { clientName: string; versions: readonly string[] | null }[];
+    excludeOperations?: boolean;
+    excludeClientVersionFilters?: boolean;
     schemaCoordinate?: string;
   }): Promise<
     Array<{
@@ -600,6 +638,9 @@ export class OperationsReader {
           period,
           operations,
           clients,
+          clientVersionFilters,
+          excludeOperations,
+          excludeClientVersionFilters,
           extra: schemaCoordinate
             ? [
                 sql`hash IN (SELECT hash FROM ${aggregationTableName('coordinates')} ${this.createFilter(
@@ -643,6 +684,9 @@ export class OperationsReader {
                       target,
                       period,
                       operations,
+                      clientVersionFilters,
+                      excludeOperations,
+                      excludeClientVersionFilters,
                       extra: schemaCoordinate
                         ? [
                             sql`hash IN (SELECT hash FROM ${sql.raw('coordinates_' + query.queryType)} ${this.createFilter(
@@ -796,12 +840,18 @@ export class OperationsReader {
     period,
     operations,
     clients,
+    clientVersionFilters,
+    excludeOperations,
+    excludeClientVersionFilters,
     schemaCoordinate,
   }: {
     target: string;
     period: DateRange;
     operations?: readonly string[];
     clients?: readonly string[];
+    clientVersionFilters?: readonly { clientName: string; versions: readonly string[] | null }[];
+    excludeOperations?: boolean;
+    excludeClientVersionFilters?: boolean;
     schemaCoordinate?: string;
   }): Promise<
     Array<{
@@ -832,6 +882,9 @@ export class OperationsReader {
                 period,
                 operations,
                 clients,
+                clientVersionFilters,
+                excludeOperations,
+                excludeClientVersionFilters,
                 extra: schemaCoordinate
                   ? [
                       sql`hash IN (SELECT hash FROM ${aggregationTableName('coordinates')} ${this.createFilter(
@@ -1713,6 +1766,9 @@ export class OperationsReader {
     resolution,
     operations,
     clients,
+    clientVersionFilters,
+    excludeOperations,
+    excludeClientVersionFilters,
     schemaCoordinate,
   }: {
     target: string;
@@ -1720,6 +1776,9 @@ export class OperationsReader {
     resolution: number;
     operations?: readonly string[];
     clients?: readonly string[];
+    clientVersionFilters?: readonly { clientName: string; versions: readonly string[] | null }[];
+    excludeOperations?: boolean;
+    excludeClientVersionFilters?: boolean;
     schemaCoordinate?: string;
   }) {
     const results = await this.getDurationAndCountOverTime({
@@ -1728,6 +1787,9 @@ export class OperationsReader {
       resolution,
       operations,
       clients,
+      clientVersionFilters,
+      excludeOperations,
+      excludeClientVersionFilters,
       schemaCoordinate,
     });
 
@@ -1743,12 +1805,18 @@ export class OperationsReader {
     resolution,
     operations,
     clients,
+    clientVersionFilters,
+    excludeOperations,
+    excludeClientVersionFilters,
   }: {
     target: string;
     period: DateRange;
     resolution: number;
     operations?: readonly string[];
     clients?: readonly string[];
+    clientVersionFilters?: readonly { clientName: string; versions: readonly string[] | null }[];
+    excludeOperations?: boolean;
+    excludeClientVersionFilters?: boolean;
   }) {
     const result = await this.getDurationAndCountOverTime({
       target,
@@ -1756,6 +1824,9 @@ export class OperationsReader {
       resolution,
       operations,
       clients,
+      clientVersionFilters,
+      excludeOperations,
+      excludeClientVersionFilters,
     });
 
     return result.map(row => ({
@@ -1770,10 +1841,16 @@ export class OperationsReader {
     resolution,
     operations,
     clients,
+    clientVersionFilters,
+    excludeOperations,
+    excludeClientVersionFilters,
   }: {
     target: string;
     period: DateRange;
     resolution: number;
+    clientVersionFilters?: readonly { clientName: string; versions: readonly string[] | null }[];
+    excludeOperations?: boolean;
+    excludeClientVersionFilters?: boolean;
     operations?: readonly string[];
     clients?: readonly string[];
   }): Promise<
@@ -1788,6 +1865,9 @@ export class OperationsReader {
       resolution,
       operations,
       clients,
+      clientVersionFilters,
+      excludeOperations,
+      excludeClientVersionFilters,
     });
   }
 
@@ -1796,11 +1876,17 @@ export class OperationsReader {
     period,
     operations,
     clients,
+    clientVersionFilters,
+    excludeOperations,
+    excludeClientVersionFilters,
   }: {
     target: string;
     period: DateRange;
     operations?: readonly string[];
     clients?: readonly string[];
+    clientVersionFilters?: readonly { clientName: string; versions: readonly string[] | null }[];
+    excludeOperations?: boolean;
+    excludeClientVersionFilters?: boolean;
   }): Promise<DurationMetrics> {
     const result = await this.clickHouse.query<{
       percentiles: [number, number, number, number];
@@ -1812,7 +1898,7 @@ export class OperationsReader {
             avgMerge(duration_avg) as average,
             quantilesMerge(0.75, 0.90, 0.95, 0.99)(duration_quantiles) as percentiles
           FROM ${aggregationTableName('operations')}
-            ${this.createFilter({ target, period, operations, clients })}
+            ${this.createFilter({ target, period, operations, clients, clientVersionFilters, excludeOperations, excludeClientVersionFilters })}
         `,
         queryId: aggregation => `general_duration_percentiles_${aggregation}`,
         timeout: 15_000,
@@ -1828,8 +1914,14 @@ export class OperationsReader {
     period,
     operations,
     clients,
+    clientVersionFilters,
+    excludeOperations,
+    excludeClientVersionFilters,
     schemaCoordinate,
   }: {
+    clientVersionFilters?: readonly { clientName: string; versions: readonly string[] | null }[];
+    excludeOperations?: boolean;
+    excludeClientVersionFilters?: boolean;
     target: string;
     period: DateRange;
     operations?: readonly string[];
@@ -1853,6 +1945,9 @@ export class OperationsReader {
                 period,
                 operations,
                 clients,
+                clientVersionFilters,
+                excludeOperations,
+                excludeClientVersionFilters,
                 extra: schemaCoordinate
                   ? [
                       sql`hash IN (SELECT hash FROM ${aggregationTableName('coordinates')} ${this.createFilter(
@@ -1914,6 +2009,9 @@ export class OperationsReader {
     resolution,
     operations,
     clients,
+    clientVersionFilters,
+    excludeOperations,
+    excludeClientVersionFilters,
     schemaCoordinate,
   }: {
     target: string;
@@ -1921,6 +2019,9 @@ export class OperationsReader {
     resolution: number;
     operations?: readonly string[];
     clients?: readonly string[];
+    clientVersionFilters?: readonly { clientName: string; versions: readonly string[] | null }[];
+    excludeOperations?: boolean;
+    excludeClientVersionFilters?: boolean;
     schemaCoordinate?: string;
   }) {
     const interval = calculateTimeWindow({ period, resolution });
@@ -1963,6 +2064,9 @@ export class OperationsReader {
             period: roundedPeriod,
             operations,
             clients,
+            clientVersionFilters,
+            excludeOperations,
+            excludeClientVersionFilters,
             extra: schemaCoordinate
               ? [
                   sql`hash IN (SELECT hash FROM ${aggregationTableName('coordinates')} ${this.createFilter(
@@ -2255,6 +2359,9 @@ export class OperationsReader {
     period,
     operations,
     clients,
+    clientVersionFilters,
+    excludeOperations,
+    excludeClientVersionFilters,
     extra = [],
     skipWhere = false,
     namespace,
@@ -2263,6 +2370,9 @@ export class OperationsReader {
     period?: DateRange;
     operations?: readonly string[];
     clients?: readonly string[];
+    clientVersionFilters?: readonly { clientName: string; versions: readonly string[] | null }[];
+    excludeOperations?: boolean;
+    excludeClientVersionFilters?: boolean;
     extra?: SqlValue[];
     skipWhere?: boolean;
     namespace?: string;
@@ -2287,11 +2397,32 @@ export class OperationsReader {
     }
 
     if (operations?.length) {
-      where.push(sql`(${columnPrefix}hash) IN (${sql.array(operations, 'String')})`);
+      if (excludeOperations) {
+        where.push(sql`(${columnPrefix}hash) NOT IN (${sql.array(operations, 'String')})`);
+      } else {
+        where.push(sql`(${columnPrefix}hash) IN (${sql.array(operations, 'String')})`);
+      }
     }
 
     if (clients?.length) {
       where.push(sql`${sql.raw(namespace ?? '')}client_name IN (${sql.array(clients, 'String')})`);
+    }
+
+    if (clientVersionFilters?.length) {
+      // Build OR conditions for each client+versions combination
+      const versionConditions = clientVersionFilters.map(filter => {
+        const clientName = filter.clientName === 'unknown' ? '' : filter.clientName;
+        if (!filter.versions?.length) {
+          // null/empty versions = all versions of this client
+          return sql`(${columnPrefix}client_name = ${clientName})`;
+        }
+        return sql`(${columnPrefix}client_name = ${clientName} AND ${columnPrefix}client_version IN (${sql.array(filter.versions, 'String')}))`;
+      });
+      if (excludeClientVersionFilters) {
+        where.push(sql`NOT (${sql.join(versionConditions, ' OR ')})`);
+      } else {
+        where.push(sql`(${sql.join(versionConditions, ' OR ')})`);
+      }
     }
 
     if (extra.length) {

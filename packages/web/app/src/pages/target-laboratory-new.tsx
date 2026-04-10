@@ -1,16 +1,37 @@
-import { useCallback, useEffect, useMemo } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import clsx from 'clsx';
-import { buildSchema, introspectionFromSchema } from 'graphql';
+import { buildSchema, introspectionFromSchema, Kind, parse, print } from 'graphql';
 import { throttle } from 'lodash';
+import { toast } from 'sonner';
 import { useMutation, useQuery } from 'urql';
 import { Page, TargetLayout } from '@/components/layouts/target';
 import { ConnectLabModal } from '@/components/target/laboratory/connect-lab-modal';
+import { useTheme } from '@/components/theme/theme-provider';
 import { Button } from '@/components/ui/button';
+import {
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import { DocsLink } from '@/components/ui/docs-note';
 import { Meta } from '@/components/ui/meta';
 import { Subtitle, Title } from '@/components/ui/page';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ToggleGroup, ToggleGroupItem } from '@/components/v2/toggle-group';
 import { graphql, useFragment } from '@/gql';
+import { TargetEnvPlugin } from '@/laboratory/plugins/target-env';
+import { useRedirect } from '@/lib/access/common';
+import { useLocalStorage, useToggle } from '@/lib/hooks';
+import { useCurrentOperationWithFetchingState } from '@/lib/hooks/laboratory/use-current-operation';
+import { TargetLaboratoryPageQuery } from '@/lib/hooks/laboratory/use-operation-collections-plugin';
+import { useOperationFromQueryString } from '@/lib/hooks/laboratory/useOperationFromQueryString';
+import { useResetState } from '@/lib/hooks/use-reset-state';
+import { loadHistory, saveHistory } from '@/lib/laboratory-history-storage';
+import { cn } from '@/lib/utils';
 import {
   Laboratory,
   LaboratoryCollection,
@@ -21,25 +42,9 @@ import {
   LaboratoryPreflight,
   LaboratorySettings,
   LaboratoryTab,
-} from '@/laboratory';
-import { LaboratoryApi } from '@/laboratory/components/laboratory/context';
-import {
-  Dialog,
-  DialogClose,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/laboratory/components/ui/dialog';
-import { Tabs, TabsList, TabsTrigger } from '@/laboratory/components/ui/tabs';
-import { TargetEnvPlugin } from '@/laboratory/plugins/target-env';
-import { useRedirect } from '@/lib/access/common';
-import { useLocalStorage, useToggle } from '@/lib/hooks';
-import { TargetLaboratoryPageQuery } from '@/lib/hooks/laboratory/use-operation-collections-plugin';
-import { useResetState } from '@/lib/hooks/use-reset-state';
-import { cn } from '@/lib/utils';
-import { Link as RouterLink } from '@tanstack/react-router';
+  LaboratoryTabOperation,
+} from '@graphql-hive/laboratory';
+import { Link as RouterLink, useRouter } from '@tanstack/react-router';
 
 function useApiTabValueState(graphqlEndpointUrl: string | null) {
   const [state, setState] = useResetState<'mockApi' | 'linkedApi'>(() => {
@@ -302,8 +307,9 @@ function useLaboratoryState(props: {
   organizationSlug: string;
   projectSlug: string;
   targetSlug: string;
-}): Partial<LaboratoryApi> & { fetching: boolean } {
-  const [{ data, fetching }] = useQuery({
+  defaultEndpoint: string | null;
+}) {
+  const [{ data, fetching: dataFetching }] = useQuery({
     query: LaboratoryQuery,
     variables: {
       selector: {
@@ -313,6 +319,18 @@ function useLaboratoryState(props: {
       },
     },
   });
+
+  const [historyData, setHistoryData] = useState<LaboratoryHistory[] | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    void loadHistory().then(history => {
+      if (!cancelled) setHistoryData(history);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const preflight = useFragment(LaboratoryPreflightScriptTargetFragment, data?.target ?? null);
 
@@ -397,7 +415,7 @@ function useLaboratoryState(props: {
 
   const deleteOperation = useMemo(
     () =>
-      throttle((collection: LaboratoryCollection, operation: LaboratoryCollectionOperation) => {
+      throttle((_collection: LaboratoryCollection, operation: LaboratoryCollectionOperation) => {
         void mutateDelete({
           selector: {
             targetSlug: props.targetSlug,
@@ -465,12 +483,118 @@ function useLaboratoryState(props: {
     [mutateUpdatePreflight, props.targetSlug, props.organizationSlug, props.projectSlug],
   );
 
+  const { currentOperation, fetching: currentOperationFetching } =
+    useCurrentOperationWithFetchingState({
+      organizationSlug: props.organizationSlug,
+      projectSlug: props.projectSlug,
+      targetSlug: props.targetSlug,
+    });
+
+  const router = useRouter();
+  const { search } = router.latestLocation;
+  const operationString =
+    'operationString' in search && typeof search.operationString === 'string'
+      ? search.operationString
+      : null;
+
+  const operationFromQueryString = useMemo(() => {
+    if (operationString) {
+      try {
+        const parsed = parse(operationString);
+        const name = parsed.definitions.find(v => v.kind === Kind.OPERATION_DEFINITION)?.name
+          ?.value;
+
+        return {
+          id: crypto.randomUUID(),
+          name: name ?? 'Untitled',
+          query: print(parsed),
+          variables: '{}',
+          headers: '{}',
+          extensions: '{}',
+        } satisfies LaboratoryOperation;
+      } catch (error) {
+        console.error(error);
+        return null;
+      }
+    }
+
+    return null;
+  }, [operationString]);
+
+  const defaultOperations = useMemo(() => {
+    if (operationFromQueryString) {
+      return [...getLocalStorageState('operations', []), operationFromQueryString];
+    }
+
+    if (currentOperation) {
+      return [
+        ...getLocalStorageState('operations', []),
+        {
+          id: currentOperation.id,
+          name: currentOperation.name,
+          query: currentOperation.query,
+          variables: currentOperation.variables ?? '{}',
+          headers: currentOperation.headers ?? '{}',
+          extensions: '{}',
+        } satisfies LaboratoryOperation,
+      ];
+    }
+
+    return getLocalStorageState('operations', []);
+  }, [currentOperation, operationFromQueryString]);
+
+  const defaultTabs = useMemo(() => {
+    if (operationFromQueryString) {
+      return [
+        ...getLocalStorageState('tabs', []),
+        {
+          id: operationFromQueryString.id,
+          type: 'operation',
+          data: operationFromQueryString,
+        } satisfies LaboratoryTabOperation,
+      ];
+    }
+
+    if (currentOperation) {
+      return [
+        ...getLocalStorageState('tabs', []),
+        {
+          id: currentOperation.id,
+          type: 'operation',
+          data: {
+            id: currentOperation.id,
+            type: 'operation',
+            data: {
+              id: currentOperation.id,
+              name: currentOperation.name,
+            },
+          } satisfies LaboratoryTabOperation,
+        },
+      ];
+    }
+
+    return getLocalStorageState('tabs', []);
+  }, [currentOperation, operationFromQueryString]);
+
+  const operationIdFromSearch = useOperationFromQueryString();
+
+  const fetching = useMemo(() => {
+    if (historyData === null) {
+      return true;
+    }
+    if (operationIdFromSearch) {
+      return dataFetching || currentOperationFetching;
+    }
+
+    return dataFetching;
+  }, [dataFetching, currentOperationFetching, operationIdFromSearch, historyData]);
+
   return {
     fetching,
     defaultCollections: collections,
-    defaultOperations: getLocalStorageState('operations', []),
-    defaultHistory: getLocalStorageState('history', []),
-    defaultTabs: getLocalStorageState('tabs', []),
+    defaultOperations,
+    defaultHistory: historyData ?? [],
+    defaultTabs,
     defaultActiveTabId: getLocalStorageState('activeTabId', null),
     defaultSettings: getLocalStorageState('settings', {
       fetch: {
@@ -495,7 +619,7 @@ function useLaboratoryState(props: {
       setLocalStorageState('operations', operations);
     },
     onHistoryChange: (history: LaboratoryHistory[]) => {
-      setLocalStorageState('history', history);
+      void saveHistory(history);
     },
     onTabsChange: (tabs: LaboratoryTab[]) => {
       setLocalStorageState('tabs', tabs);
@@ -559,12 +683,6 @@ function LaboratoryPageContent(props: {
   defaultLaboratoryTab: 'graphiql' | 'hive-laboratory';
   onLaboratoryTabChange: (tab: 'graphiql' | 'hive-laboratory') => void;
 }) {
-  const laboratoryState = useLaboratoryState({
-    organizationSlug: props.organizationSlug,
-    projectSlug: props.projectSlug,
-    targetSlug: props.targetSlug,
-  });
-
   const [query] = useQuery({
     query: TargetLaboratoryPageQuery,
     variables: {
@@ -573,8 +691,6 @@ function LaboratoryPageContent(props: {
       targetSlug: props.targetSlug,
     },
   });
-
-  const [isConnectLabModalOpen, toggleConnectLabModal] = useToggle();
 
   const [actualSelectedApiEndpoint, setEndpointType] = useApiTabValueState(
     query.data?.target?.graphqlEndpointUrl ?? null,
@@ -586,6 +702,15 @@ function LaboratoryPageContent(props: {
     (actualSelectedApiEndpoint === 'linkedApi'
       ? query.data?.target?.graphqlEndpointUrl
       : undefined) ?? mockEndpoint;
+
+  const laboratoryState = useLaboratoryState({
+    organizationSlug: props.organizationSlug,
+    projectSlug: props.projectSlug,
+    targetSlug: props.targetSlug,
+    defaultEndpoint: url ?? null,
+  });
+
+  const [isConnectLabModalOpen, toggleConnectLabModal] = useToggle();
 
   useRedirect({
     canAccess: query.data?.target?.viewerCanViewLaboratory === true,
@@ -602,11 +727,24 @@ function LaboratoryPageContent(props: {
     entity: query.data?.target,
   });
 
+  const { resolvedTheme } = useTheme();
+
   const sdl = query.data?.target?.latestSchemaVersion?.sdl;
-  const introspection = useMemo(
-    () => (sdl ? introspectionFromSchema(buildSchema(sdl)) : null),
-    [sdl],
-  );
+
+  const introspection = useMemo(() => {
+    if (!sdl) {
+      return null;
+    }
+
+    try {
+      return introspectionFromSchema(buildSchema(sdl));
+    } catch (err) {
+      toast.error('Failed to fetch schema', {
+        description: err instanceof Error ? err.message : 'Unknown error',
+      });
+      return null;
+    }
+  }, [sdl]);
 
   if (laboratoryState.fetching) {
     return null;
@@ -625,7 +763,7 @@ function LaboratoryPageContent(props: {
           <div className="flex-1">
             <div className="flex items-center gap-2">
               <Title>Laboratory</Title>
-              <div className="h-4 w-px bg-gray-800" />
+              <div className="bg-neutral-5 h-4 w-px" />
               <Tabs
                 defaultValue={props.defaultLaboratoryTab}
                 onValueChange={value =>
@@ -638,7 +776,7 @@ function LaboratoryPageContent(props: {
                   </TabsTrigger>
                   <TabsTrigger value="hive-laboratory" className="px-2 py-0">
                     Hive Laboratory
-                    <div className="size-2 rounded-full bg-orange-500" />
+                    <div className="bg-accent ml-1 size-2 rounded-full" />
                   </TabsTrigger>
                 </TabsList>
               </Tabs>
@@ -647,10 +785,7 @@ function LaboratoryPageContent(props: {
               Explore your GraphQL schema and run queries against your GraphQL API.
             </Subtitle>
             <p>
-              <DocsLink
-                className="text-muted-foreground text-sm"
-                href="/schema-registry/laboratory"
-              >
+              <DocsLink className="text-neutral-10 text-sm" href="/schema-registry/laboratory">
                 Learn more about the Laboratory
               </DocsLink>
             </p>
@@ -685,17 +820,17 @@ function LaboratoryPageContent(props: {
                 }}
                 value="mock"
                 type="single"
-                className="bg-gray-900/50 text-gray-500"
+                className="text-neutral-10 bg-neutral-2/50"
               >
                 <ToggleGroupItem
                   key="mockApi"
                   value="mockApi"
                   title="Use Mock Schema"
                   className={clsx(
-                    'text-xs hover:text-white',
+                    'hover:text-neutral-12 text-xs',
                     !query.fetching &&
                       actualSelectedApiEndpoint === 'mockApi' &&
-                      'bg-gray-800 text-white',
+                      'bg-neutral-5 text-neutral-12',
                   )}
                   disabled={query.fetching}
                 >
@@ -706,10 +841,10 @@ function LaboratoryPageContent(props: {
                   value="linkedApi"
                   title="Use API endpoint"
                   className={cn(
-                    'text-xs hover:text-white',
+                    'hover:text-neutral-12 text-xs',
                     !query.fetching &&
                       actualSelectedApiEndpoint === 'linkedApi' &&
-                      'bg-gray-800 text-white',
+                      'bg-neutral-5 text-neutral-12',
                   )}
                   disabled={!query.data?.target?.graphqlEndpointUrl || query.fetching}
                 >
@@ -723,6 +858,7 @@ function LaboratoryPageContent(props: {
           <Laboratory
             key={url}
             defaultEndpoint={url}
+            theme={resolvedTheme}
             defaultSchemaIntrospection={introspection}
             {...laboratoryState}
             plugins={[

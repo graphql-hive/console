@@ -38,6 +38,7 @@ export function deployProxy({
         replicas: environment.podsConfig.envoy.replicas,
         cpu: environment.podsConfig.envoy.cpuLimit,
         memory: environment.podsConfig.envoy.memoryLimit,
+        timeouts: environment.podsConfig.envoy.timeouts,
       },
       tracing: observability.enabled
         ? { collectorService: observability.observability!.otlpCollectorService }
@@ -95,16 +96,13 @@ export function deployProxy({
         service: graphql.service,
         requestTimeout: '60s',
         retriable: true,
-        rateLimit: {
-          maxRequests: 10,
-          unit: 'minute',
-        },
       },
       {
         name: 'usage',
         path: '/usage',
         service: usage.service,
         retriable: true,
+        loadBalancerPolicy: 'WeightedLeastRequest',
       },
     ])
     .registerService({ record: environment.apiDns }, [

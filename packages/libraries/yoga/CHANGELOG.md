@@ -1,5 +1,43 @@
 # @graphql-hive/yoga
 
+## 0.48.0
+
+### Minor Changes
+
+- [#7769](https://github.com/graphql-hive/console/pull/7769)
+  [`ee2785c`](https://github.com/graphql-hive/console/commit/ee2785c4cc63922bbd45f2557cc6d1e5577c6cca)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - The persisted documents feature is now stable.
+  Please use the `persistedDocuments` configuration option instead of
+  `experimental__persistedDocuments`.
+
+  ```diff
+    useHive({
+  -   experimental__persistedDocuments: {
+  +   persistedDocuments: {
+        cdn: {
+          endpoint: 'https://cdn.graphql-hive.com/artifacts/v1/<target_id>',
+          accessToken: '<cdn_access_token>'
+        },
+      },
+    })
+  ```
+
+### Patch Changes
+
+- Updated dependencies
+  [[`ee2785c`](https://github.com/graphql-hive/console/commit/ee2785c4cc63922bbd45f2557cc6d1e5577c6cca)]:
+  - @graphql-hive/core@0.21.0
+
+## 0.47.3
+
+### Patch Changes
+
+- [#7605](https://github.com/graphql-hive/console/pull/7605)
+  [`efa0772`](https://github.com/graphql-hive/console/commit/efa077294bd759e5814f03dab9edac1d3141cea8)
+  Thanks [@adambenhassen](https://github.com/adambenhassen)! - Fix 500 error when malformed document
+  IDs are passed to persisted documents. Now returns a proper GraphQL error with
+  `INVALID_DOCUMENT_ID` code.
+
 ## 0.47.2
 
 ### Patch Changes

@@ -1,6 +1,6 @@
-import { Inject, Injectable, Scope } from 'graphql-modules';
-import { CommonQueryMethods, sql, type DatabasePool } from 'slonik';
+import { Injectable, Scope } from 'graphql-modules';
 import { z } from 'zod';
+import { CommonQueryMethods, PostgresDatabasePool, psql } from '@hive/postgres';
 import {
   decodeCreatedAtAndUUIDIdBasedCursor,
   encodeCreatedAtAndUUIDIdBasedCursor,
@@ -9,7 +9,6 @@ import { type Organization } from '../../../shared/entities';
 import { batchBy } from '../../../shared/helpers';
 import { AuthorizationPolicyStatement } from '../../auth/lib/authz';
 import { Logger } from '../../shared/providers/logger';
-import { PG_POOL_CONFIG } from '../../shared/providers/pg-pool';
 import {
   ResourceAssignmentModel,
   type ResourceAssignmentGroup,
@@ -68,7 +67,7 @@ export class OrganizationMembers {
   private logger: Logger;
 
   constructor(
-    @Inject(PG_POOL_CONFIG) private pool: DatabasePool,
+    private pool: PostgresDatabasePool,
     private organizationMemberRoles: OrganizationMemberRoles,
     logger: Logger,
   ) {
@@ -81,17 +80,17 @@ export class OrganizationMembers {
     organizationId: string,
     userIds: Array<string> | null = null,
   ) {
-    const query = sql`
+    const query = psql`
       SELECT
-        ${organizationMemberFields(sql`"om"`)}
+        ${organizationMemberFields(psql`"om"`)}
       FROM
         "organization_member" AS "om"
       WHERE
         "om"."organization_id" = ${organizationId}
-        ${userIds ? sql`AND "om"."user_id" = ANY(${sql.array(userIds, 'uuid')})` : sql``}
+        ${userIds ? psql`AND "om"."user_id" = ANY(${psql.array(userIds, 'uuid')})` : psql``}
     `;
 
-    const result = await this.pool.any<unknown>(query);
+    const result = await this.pool.any(query);
     return result.map(row => RawOrganizationMembershipModel.parse(row));
   }
 
@@ -160,24 +159,24 @@ export class OrganizationMembers {
     const searchTerm = args.searchTerm?.trim() ?? '';
     const searching = searchTerm.length > 0;
 
-    const query = sql`
+    const query = psql`
       SELECT
-        ${organizationMemberFields(sql`"om"`)}
+        ${organizationMemberFields(psql`"om"`)}
       FROM
         "organization_member" AS "om"
       ${
         searching
-          ? sql`
+          ? psql`
             JOIN "users" as "u"
             ON "om"."user_id" = "u"."id"
           `
-          : sql``
+          : psql``
       }
       WHERE
         "om"."organization_id" = ${organization.id}
         ${
           cursor
-            ? sql`
+            ? psql`
                 AND (
                   "om"."created_at" < ${cursor.createdAt}
                   OR (
@@ -186,9 +185,9 @@ export class OrganizationMembers {
                   )
                 )
               `
-            : sql``
+            : psql``
         }
-        ${searching ? sql`AND "u"."display_name" || ' ' || "u"."email" ILIKE ${'%' + searchTerm + '%'}` : sql``}
+        ${searching ? psql`AND "u"."display_name" || ' ' || "u"."email" ILIKE ${'%' + searchTerm + '%'}` : psql``}
       ORDER BY
         "om"."organization_id" DESC
         , "om"."created_at" DESC
@@ -196,7 +195,7 @@ export class OrganizationMembers {
       LIMIT ${first + 1}
     `;
 
-    const result = await this.pool.any<unknown>(query);
+    const result = await this.pool.any(query);
     const hasNextPage = first !== null ? result.length > first : false;
 
     const organizationMembers = result
@@ -273,9 +272,9 @@ export class OrganizationMembers {
       organization.id,
       email,
     );
-    const query = sql`
+    const query = psql`
       SELECT
-        ${organizationMemberFields(sql`"om"`)}
+        ${organizationMemberFields(psql`"om"`)}
       FROM
         "organization_member" AS "om"
         INNER JOIN "users" AS "u"
@@ -286,7 +285,7 @@ export class OrganizationMembers {
       LIMIT 1
     `;
 
-    const result = await this.pool.maybeOne<unknown>(query);
+    const result = await this.pool.maybeOne(query);
     if (result === null) {
       return null;
     }
@@ -303,7 +302,7 @@ export class OrganizationMembers {
     resourceAssignmentGroup: ResourceAssignmentGroup;
   }) {
     await this.pool.query(
-      sql`/* assignOrganizationMemberRole */
+      psql`/* assignOrganizationMemberRole */
         UPDATE
           "organization_member"
         SET
@@ -368,9 +367,9 @@ export class OrganizationMembers {
         userId,
       );
 
-      const query = sql`
+      const query = psql`
           SELECT
-            ${organizationMemberFields(sql`"om"`)}
+            ${organizationMemberFields(psql`"om"`)}
           FROM
             "organization_member" AS "om"
           WHERE
@@ -378,7 +377,7 @@ export class OrganizationMembers {
             AND "om"."user_id" = ${userId}
         `;
 
-      const result = await deps.pool.maybeOne<unknown>(query);
+      const result = await deps.pool.maybeOne(query);
 
       if (result == null) {
         deps.logger.debug(
@@ -415,7 +414,7 @@ export class OrganizationMembers {
   }
 }
 
-const organizationMemberFields = (prefix = sql`"organization_member"`) => sql`
+const organizationMemberFields = (prefix = psql`"organization_member"`) => psql`
   ${prefix}."organization_id" AS "organizationId"
   , ${prefix}."user_id" AS "userId"
   , ${prefix}."role_id" AS "roleId"

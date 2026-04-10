@@ -2,7 +2,7 @@ import { type MigrationExecutor } from '../pg-migrator';
 
 export default {
   name: '2021.12.20T14.05.30.commits-with-targets.sql',
-  run: ({ sql }) => sql`
+  run: ({ psql }) => psql`
 --creates and fills a target_id column on commits
 ALTER TABLE
   commits

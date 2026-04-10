@@ -10,6 +10,7 @@
 export type alert_channel_type = 'MSTEAMS_WEBHOOK' | 'SLACK' | 'WEBHOOK';
 export type alert_type = 'SCHEMA_CHANGE_NOTIFICATIONS';
 export type breaking_change_formula = 'PERCENTAGE' | 'REQUEST_COUNT';
+export type saved_filter_visibility = 'private' | 'shared';
 export type schema_policy_resource = 'ORGANIZATION' | 'PROJECT';
 export type schema_proposal_stage = 'APPROVED' | 'CLOSED' | 'DRAFT' | 'IMPLEMENTED' | 'OPEN';
 export type user_role = 'ADMIN' | 'MEMBER';
@@ -136,6 +137,16 @@ export interface document_preflight_scripts {
   updated_at: Date;
 }
 
+export interface email_verifications {
+  created_at: Date;
+  email: string;
+  expires_at: Date | null;
+  id: string;
+  token_hash: string | null;
+  user_identity_id: string;
+  verified_at: Date | null;
+}
+
 export interface graphile_worker_deduplication {
   dedupe_key: string;
   expires_at: Date;
@@ -146,6 +157,15 @@ export interface migration {
   date: Date;
   hash: string;
   name: string;
+}
+
+export interface oidc_integration_domains {
+  created_at: Date;
+  domain_name: string;
+  id: string;
+  oidc_integration_id: string;
+  organization_id: string;
+  verified_at: Date | null;
 }
 
 export interface oidc_integrations {
@@ -160,6 +180,8 @@ export interface oidc_integrations {
   linked_organization_id: string;
   oauth_api_url: string | null;
   oidc_user_access_only: boolean;
+  oidc_user_join_only: boolean;
+  require_invitation: boolean;
   token_endpoint: string | null;
   updated_at: Date;
   userinfo_endpoint: string | null;
@@ -169,6 +191,7 @@ export interface organization_access_tokens {
   assigned_resources: any | null;
   created_at: Date;
   description: string;
+  expires_at: Date | null;
   first_characters: string;
   hash: string;
   id: string;
@@ -256,6 +279,20 @@ export interface projects {
   org_id: string;
   type: string;
   validation_url: string | null;
+}
+
+export interface saved_filters {
+  created_at: Date;
+  created_by_user_id: string;
+  description: string | null;
+  filters: any;
+  id: string;
+  name: string;
+  project_id: string;
+  updated_at: Date;
+  updated_by_user_id: string | null;
+  views_count: number;
+  visibility: saved_filter_visibility;
 }
 
 export interface schema_change_approvals {
@@ -356,6 +393,9 @@ export interface schema_proposal_reviews {
 export interface schema_proposals {
   author: string;
   comments_count: number;
+  composition_status: string | null;
+  composition_status_reason: string | null;
+  composition_timestamp: Date | null;
   created_at: Date;
   description: string;
   id: string;
@@ -463,6 +503,12 @@ export interface users {
   zendesk_user_id: string | null;
 }
 
+export interface users_linked_identities {
+  created_at: Date;
+  identity_id: string;
+  user_id: string;
+}
+
 export interface version_commit {
   commit_id: string;
   url: string | null;
@@ -491,8 +537,10 @@ export interface DBTables {
   document_collection_documents: document_collection_documents;
   document_collections: document_collections;
   document_preflight_scripts: document_preflight_scripts;
+  email_verifications: email_verifications;
   graphile_worker_deduplication: graphile_worker_deduplication;
   migration: migration;
+  oidc_integration_domains: oidc_integration_domains;
   oidc_integrations: oidc_integrations;
   organization_access_tokens: organization_access_tokens;
   organization_invitations: organization_invitations;
@@ -501,6 +549,7 @@ export interface DBTables {
   organizations: organizations;
   organizations_billing: organizations_billing;
   projects: projects;
+  saved_filters: saved_filters;
   schema_change_approvals: schema_change_approvals;
   schema_checks: schema_checks;
   schema_coordinate_status: schema_coordinate_status;
@@ -517,6 +566,7 @@ export interface DBTables {
   targets: targets;
   tokens: tokens;
   users: users;
+  users_linked_identities: users_linked_identities;
   version_commit: version_commit;
   versions: versions;
 }

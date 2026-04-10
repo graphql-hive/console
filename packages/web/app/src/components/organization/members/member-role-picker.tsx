@@ -120,7 +120,7 @@ export function MemberRolePicker(props: {
           selectedRoleId={selectedRoleId}
           onSelectRoleId={roleId => setSelectedRoleId(roleId)}
         />
-        <p className="text-muted-foreground mt-2 text-sm">
+        <p className="text-neutral-10 mt-2 text-sm">
           The role assigned to the user that will grant permissions.
         </p>
         {selectedRole && (
@@ -136,7 +136,7 @@ export function MemberRolePicker(props: {
         <Heading size="lg" className="mb-1 text-sm">
           Assigned Resources
         </Heading>
-        <p className="text-muted-foreground mt-2 text-sm">
+        <p className="text-neutral-10 mt-2 text-sm">
           Specify the resources on which the permissions will be granted.
         </p>
         <ResourceSelector

@@ -21,7 +21,7 @@ for (const [ruleId, rule] of Object.entries(rules)) {
 const RULE_LEVEL = z.union([z.number().min(0).max(2), z.enum(['off', 'warn', 'error'])]);
 
 type RulemapValidationType = {
-  [RuleKey in keyof typeof rules]: ZodType;
+  [_RuleKey in keyof typeof rules]: ZodType;
 };
 
 export function normalizeAjvSchema(

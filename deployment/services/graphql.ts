@@ -16,7 +16,6 @@ import { Redis } from './redis';
 import { S3 } from './s3';
 import { Schema } from './schema';
 import { Sentry } from './sentry';
-import { Supertokens } from './supertokens';
 import { Tokens } from './tokens';
 import { Usage } from './usage';
 import { Zendesk } from './zendesk';
@@ -40,7 +39,6 @@ export function deployGraphQL({
   usage,
   commerce,
   dbMigrations,
-  supertokens,
   s3,
   s3Mirror,
   s3AuditLog,
@@ -68,12 +66,12 @@ export function deployGraphQL({
   usage: Usage;
   dbMigrations: DbMigrations;
   commerce: CommerceService;
-  supertokens: Supertokens;
   zendesk: Zendesk;
   docker: Docker;
   sentry: Sentry;
 }) {
   const apiConfig = new pulumi.Config('api');
+  const supertokensConfig = new pulumi.Config('supertokens');
   const apiEnv = apiConfig.requireObject<Record<string, string>>('env');
 
   const hiveConfig = new pulumi.Config('hive');
@@ -93,6 +91,11 @@ export function deployGraphQL({
   });
   const hiveUsageSecret = new ServiceSecret('hive-usage', {
     usageAccessToken: hiveConfig.requireSecret('usageAccessToken'),
+  });
+  const supertokensSecrets = new ServiceSecret('supertokens-at-home', {
+    refreshTokenKey: supertokensConfig.requireSecret('refreshTokenKey'),
+    accessTokenKey: supertokensConfig.requireSecret('accessTokenKey'),
+    bypassRateLimitKey: supertokensConfig.requireSecret('bypassRateLimitKey'),
   });
 
   return (
@@ -138,7 +141,6 @@ export function deployGraphQL({
           ZENDESK_SUPPORT: zendesk.enabled ? '1' : '0',
           INTEGRATION_GITHUB: '1',
           // Auth
-          SUPERTOKENS_CONNECTION_URI: supertokens.localEndpoint,
           AUTH_GITHUB: '1',
           AUTH_GOOGLE: '1',
           AUTH_ORGANIZATION_OIDC: '1',
@@ -202,7 +204,6 @@ export function deployGraphQL({
       .withSecret('S3_AUDIT_LOG_BUCKET_NAME', s3AuditLog.secret, 'bucket')
       .withSecret('S3_AUDIT_LOG_ENDPOINT', s3AuditLog.secret, 'endpoint')
       // Auth
-      .withSecret('SUPERTOKENS_API_KEY', supertokens.secret, 'apiKey')
       .withSecret('AUTH_GITHUB_CLIENT_ID', githubOAuthSecret, 'clientId')
       .withSecret('AUTH_GITHUB_CLIENT_SECRET', githubOAuthSecret, 'clientSecret')
       .withSecret('AUTH_GOOGLE_CLIENT_ID', googleOAuthSecret, 'clientId')
@@ -215,6 +216,10 @@ export function deployGraphQL({
         persistedDocumentsSecret,
         'cdnAccessKeyId',
       )
+      // Supertokens
+      .withSecret('SUPERTOKENS_REFRESH_TOKEN_KEY', supertokensSecrets, 'refreshTokenKey')
+      .withSecret('SUPERTOKENS_ACCESS_TOKEN_KEY', supertokensSecrets, 'accessTokenKey')
+      .withSecret('SUPERTOKENS_RATE_LIMIT_BYPASS_KEY', supertokensSecrets, 'bypassRateLimitKey')
       // Zendesk
       .withConditionalSecret(zendesk.enabled, 'ZENDESK_SUBDOMAIN', zendesk.secret, 'subdomain')
       .withConditionalSecret(zendesk.enabled, 'ZENDESK_USERNAME', zendesk.secret, 'username')

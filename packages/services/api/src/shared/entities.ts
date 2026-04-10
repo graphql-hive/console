@@ -3,7 +3,12 @@ import { DocumentNode, GraphQLError, parse, print, SourceLocation } from 'graphq
 import { z } from 'zod';
 import type { AvailableRulesResponse, PolicyConfigurationObject } from '@hive/policy';
 import type { CompositionFailureError } from '@hive/schema';
-import type { schema_policy_resource } from '@hive/storage';
+import type {
+  CompositeDeletedSchemaLog,
+  CompositePushSchemaLog,
+  schema_policy_resource,
+  SinglePushSchemaLog,
+} from '@hive/storage';
 import type {
   AlertChannelType,
   AlertType,
@@ -22,49 +27,9 @@ export const NameModel = z
     `Name restricted to alphanumerical characters, spaces and . , _ - / &`,
   );
 
-export const SingleSchemaModel = z
-  .object({
-    kind: z.literal('single'),
-    id: z.string(),
-    author: z.string(),
-    date: z.number(),
-    commit: z.string(),
-    target: z.string(),
-    sdl: z.string(),
-    metadata: z.string().nullish(),
-  })
-  .required();
-
-export const DeletedCompositeSchemaModel = z
-  .object({
-    kind: z.literal('composite'),
-    id: z.string(),
-    date: z.number(),
-    target: z.string(),
-    service_name: z.string(),
-    action: z.literal('DELETE'),
-  })
-  .required();
-
-export const PushedCompositeSchemaModel = z
-  .object({
-    kind: z.literal('composite'),
-    id: z.string(),
-    author: z.string(),
-    date: z.number(),
-    commit: z.string(),
-    target: z.string(),
-    sdl: z.string(),
-    service_name: z.string(),
-    service_url: z.string().nullable(),
-    action: z.literal('PUSH'),
-    metadata: z.string().nullish(),
-  })
-  .required();
-
-export type SingleSchema = z.infer<typeof SingleSchemaModel>;
-export type DeletedCompositeSchema = z.infer<typeof DeletedCompositeSchemaModel>;
-export type PushedCompositeSchema = z.infer<typeof PushedCompositeSchemaModel>;
+export type SingleSchema = SinglePushSchemaLog;
+export type DeletedCompositeSchema = CompositeDeletedSchemaLog;
+export type PushedCompositeSchema = CompositePushSchemaLog;
 export type CompositeSchema = PushedCompositeSchema;
 
 export type Schema = SingleSchema | CompositeSchema;
@@ -223,7 +188,9 @@ export interface OIDCIntegration {
   userinfoEndpoint: string;
   authorizationEndpoint: string;
   additionalScopes: string[];
+  oidcUserJoinOnly: boolean;
   oidcUserAccessOnly: boolean;
+  requireInvitation: boolean;
   defaultMemberRoleId: string | null;
   defaultResourceAssignment: ResourceAssignmentGroup | null;
 }
@@ -295,6 +262,43 @@ export type PaginatedDocumentCollectionOperations = Readonly<{
   }>;
 }>;
 
+export type SavedFilterVisibility = 'private' | 'shared';
+
+export interface InsightsFilterData {
+  operationHashes: string[];
+  clientFilters: Array<{ name: string; versions: string[] | null }>;
+  dateRange: { from: string; to: string } | null;
+  excludeOperations?: boolean;
+  excludeClientFilters?: boolean;
+}
+
+export interface SavedFilter {
+  id: string;
+  projectId: string;
+  createdByUserId: string;
+  updatedByUserId: string | null;
+  name: string;
+  description: string | null;
+  filters: InsightsFilterData;
+  visibility: SavedFilterVisibility;
+  viewsCount: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export type PaginatedSavedFilters = Readonly<{
+  edges: ReadonlyArray<{
+    node: SavedFilter;
+    cursor: string;
+  }>;
+  pageInfo: Readonly<{
+    hasNextPage: boolean;
+    hasPreviousPage: boolean;
+    startCursor: string;
+    endCursor: string;
+  }>;
+}>;
+
 export interface Project {
   id: string;
   slug: string;
@@ -345,10 +349,9 @@ export interface User {
   email: string;
   fullName: string;
   displayName: string;
-  provider: AuthProviderType;
+  providers: AuthProviderType[];
   superTokensUserId: string | null;
   isAdmin: boolean;
-  oidcIntegrationId: string | null;
   zendeskId: string | null;
 }
 

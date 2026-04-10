@@ -1,6 +1,6 @@
 import zod from 'zod';
+import { PostgresConnectionParamaters } from '@hive/postgres';
 import { OpenTelemetryConfigurationModel } from '@hive/service-common';
-import { createConnectionString } from '@hive/storage';
 import { RequestBroker } from './lib/webhooks/send-webhook.js';
 
 const isNumberString = (input: unknown) => zod.string().regex(/^\d+$/).safeParse(input).success;
@@ -26,6 +26,7 @@ const EnvironmentModel = zod.object({
   RELEASE: emptyString(zod.string().optional()),
   HEARTBEAT_ENDPOINT: emptyString(zod.string().url().optional()),
   EMAIL_FROM: zod.string().email(),
+  SCHEMA_ENDPOINT: zod.string().url(),
 });
 
 const SentryModel = zod.union([
@@ -82,6 +83,13 @@ const EmailProviderModel = zod.union([
   SendmailEmailModel,
 ]);
 
+const RedisModel = zod.object({
+  REDIS_HOST: zod.string(),
+  REDIS_PORT: NumberFromString,
+  REDIS_PASSWORD: emptyString(zod.string().optional()),
+  REDIS_TLS_ENABLED: emptyString(zod.union([zod.literal('1'), zod.literal('0')]).optional()),
+});
+
 const RequestBrokerModel = zod.union([
   zod.object({
     REQUEST_BROKER: emptyString(zod.literal('0').optional()),
@@ -127,6 +135,7 @@ const configs = {
   log: LogModel.safeParse(process.env),
   tracing: OpenTelemetryConfigurationModel.safeParse(process.env),
   requestBroker: RequestBrokerModel.safeParse(process.env),
+  redis: RedisModel.safeParse(process.env),
 };
 
 const environmentErrors: Array<string> = [];
@@ -158,6 +167,7 @@ const prometheus = extractConfig(configs.prometheus);
 const log = extractConfig(configs.log);
 const tracing = extractConfig(configs.tracing);
 const requestBroker = extractConfig(configs.requestBroker);
+const redis = extractConfig(configs.redis);
 
 const emailProviderConfig =
   email.EMAIL_PROVIDER === 'postmark'
@@ -204,6 +214,9 @@ export const env = {
     provider: emailProviderConfig,
     emailFrom: base.EMAIL_FROM,
   },
+  schema: {
+    serviceUrl: base.SCHEMA_ENDPOINT,
+  },
   sentry: sentry.SENTRY === '1' ? { dsn: sentry.SENTRY_DSN } : null,
   log: {
     level: log.LOG_LEVEL ?? 'info',
@@ -218,14 +231,14 @@ export const env = {
         }
       : null,
   postgres: {
-    connectionString: createConnectionString({
+    connectionString: {
       ssl: postgres.POSTGRES_SSL === '1',
       host: postgres.POSTGRES_HOST,
       db: postgres.POSTGRES_DB,
       password: postgres.POSTGRES_PASSWORD,
       port: postgres.POSTGRES_PORT,
       user: postgres.POSTGRES_USER,
-    }),
+    } satisfies PostgresConnectionParamaters,
   },
   requestBroker:
     requestBroker.REQUEST_BROKER === '1'
@@ -235,4 +248,10 @@ export const env = {
         } satisfies RequestBroker)
       : null,
   httpHeartbeat: base.HEARTBEAT_ENDPOINT ? { endpoint: base.HEARTBEAT_ENDPOINT } : null,
+  redis: {
+    host: redis.REDIS_HOST,
+    port: redis.REDIS_PORT,
+    password: redis.REDIS_PASSWORD ?? '',
+    tlsEnabled: redis.REDIS_TLS_ENABLED === '1',
+  },
 } as const;

@@ -46,6 +46,7 @@ module.exports = {
     'rules',
     'out',
     '.hive',
+    'packages/web/app/.ladle/**',
     'public',
     'packages/web/app/src/graphql/index.ts',
     'packages/libraries/cli/src/sdk.ts',
@@ -54,6 +55,8 @@ module.exports = {
     'packages/web/app/src/gql/**/*',
     'codegen.cjs',
     'tsup',
+    'packages/libraries/render-laboratory/src/laboratory.ts',
+    'packages/web/app/vite.config.ts',
   ],
   overrides: [
     {
@@ -65,6 +68,10 @@ module.exports = {
         schema: SCHEMA_PATH,
         operations: OPERATIONS_PATHS,
       },
+      rules: {
+        '@graphql-eslint/no-deprecated': 'error',
+        '@graphql-eslint/require-id-when-available': 'error',
+      },
     },
     {
       // Setup processor for operations/fragments definitions on code-files
@@ -75,8 +82,8 @@ module.exports = {
       files: ['packages/web/app/**/*.graphql'],
       plugins: ['@graphql-eslint'],
       rules: {
-        '@graphql-eslint/require-id-when-available': 'error',
         '@graphql-eslint/no-deprecated': 'error',
+        '@graphql-eslint/require-id-when-available': 'error',
       },
     },
     {
@@ -108,6 +115,8 @@ module.exports = {
               'packages/migrations/**',
               // We bundle it all anyway, so there are no node_modules
               'packages/web/app/**',
+              // We bundle it all anyway, so there are no node_modules
+              'packages/libraries/laboratory/**',
               '**/*.spec.ts',
               '**/*.test.ts',
               '**/*.e2e.ts',
@@ -141,6 +150,16 @@ module.exports = {
         '@typescript-eslint/no-empty-function': 'off',
         '@typescript-eslint/ban-types': 'off',
         '@typescript-eslint/triple-slash-reference': 'off',
+        '@typescript-eslint/no-unused-vars': [
+          'error',
+          {
+            argsIgnorePattern: '^_',
+            caughtErrors: 'none',
+            caughtErrorsIgnorePattern: '^_',
+            destructuredArrayIgnorePattern: '^_',
+            varsIgnorePattern: '^_',
+          },
+        ],
       },
     },
     {
@@ -161,7 +180,7 @@ module.exports = {
       rules: {
         // conflicts with official prettier-plugin-tailwindcss and tailwind v3
         'better-tailwindcss/enforce-consistent-class-order': 'off',
-        'better-tailwindcss/enforce-canonical-classes': 'warn',
+        'better-tailwindcss/enforce-canonical-classes': 'off',
         // keeping classes in one line helps prettier-plugin-tailwindcss
         // enable wrapping in text editors to make classes human readable
         'better-tailwindcss/enforce-consistent-line-wrapping': 'off',
@@ -214,10 +233,6 @@ module.exports = {
           {
             ignore: [
               'drag-none',
-              // Tailwind v4 semantic colors from @theme in index.css
-              // Regex patterns to match all utility variants (bg-*, text-*, border-*, etc.)
-              // Includes optional opacity modifier (/40, /60, etc.)
-              '(bg|text|border|ring|outline|shadow|from|via|to|fill|stroke|caret|accent|divide|placeholder)-(background|foreground|card|card-foreground|popover|popover-foreground|primary|primary-foreground|secondary|secondary-foreground|muted|muted-foreground|accent|accent-foreground|destructive|destructive-foreground|border|input|ring|sidebar|sidebar-background|sidebar-foreground|sidebar-primary|sidebar-primary-foreground|sidebar-accent|sidebar-accent-foreground|sidebar-border|sidebar-ring|chart-1|chart-2)(/.*)?',
               // Animation utilities (from index.css, replaces tailwindcss-animate)
               'animate-in',
               'animate-out',

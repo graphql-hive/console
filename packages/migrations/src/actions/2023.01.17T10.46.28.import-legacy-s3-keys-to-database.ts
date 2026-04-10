@@ -39,7 +39,7 @@ type Cursor = {
   lastCreatedAt: string;
 };
 
-const run: MigrationExecutor['run'] = async ({ connection, sql }) => {
+const run: MigrationExecutor['run'] = async ({ connection, psql }) => {
   // eslint-disable-next-line no-process-env
   const eenv = shouldRunModel.parse(process.env);
   const shouldRun = eenv.RUN_S3_LEGACY_CDN_KEY_IMPORT === '1';
@@ -71,7 +71,7 @@ const run: MigrationExecutor['run'] = async ({ connection, sql }) => {
     // Also all this code runs inside a database transaction.
     // This will block any other writes to the table.
     // As the table should not be heavily in use when this is being run, it does not really matter.
-    const query = sql`
+    const query = psql`
       SELECT
         "id"
         , to_json("created_at") as "created_at_cursor"
@@ -79,12 +79,12 @@ const run: MigrationExecutor['run'] = async ({ connection, sql }) => {
         "targets"
       ${
         cursor
-          ? sql`
+          ? psql`
               WHERE
                 ("created_at" = ${cursor.lastCreatedAt} AND "id" > ${cursor.lastId})
                 OR "created_at" > ${cursor.lastCreatedAt}
             `
-          : sql``
+          : psql``
       }
       ORDER BY
         "created_at" ASC
@@ -93,8 +93,8 @@ const run: MigrationExecutor['run'] = async ({ connection, sql }) => {
         200
     `;
 
-    const items = await connection.query(query);
-    return TargetsModel.parse(items.rows);
+    const items = await connection.any(query);
+    return TargetsModel.parse(items);
   }
 
   let lastCursor: null | Cursor = null;
@@ -120,7 +120,7 @@ const run: MigrationExecutor['run'] = async ({ connection, sql }) => {
       throw new Error(`Unexpected Status for storing key. (status=${response.status})`);
     }
 
-    const query = sql`
+    const query = psql`
       INSERT INTO
         "cdn_access_tokens"
         (

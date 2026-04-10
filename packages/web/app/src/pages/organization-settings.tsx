@@ -3,14 +3,15 @@ import { ArrowRightIcon } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { useMutation, useQuery } from 'urql';
 import { z } from 'zod';
+import { Checkbox } from '@/components/base/checkbox/checkbox';
 import { OrganizationLayout, Page } from '@/components/layouts/organization';
+import { SubPageNavigationLink } from '@/components/navigation/sub-page-navigation-link';
 import { AccessTokensSubPage } from '@/components/organization/settings/access-tokens/access-tokens-sub-page';
-import { OIDCIntegrationSection } from '@/components/organization/settings/oidc-integration-section';
 import { PersonalAccessTokensSubPage } from '@/components/organization/settings/personal-access-tokens/personal-access-tokens-sub-page';
+import { SingleSignOnSubpage } from '@/components/organization/settings/single-sign-on/single-sign-on-subpage';
 import { PolicySettings } from '@/components/policy/policy-settings';
 import { Button } from '@/components/ui/button';
 import { CardDescription } from '@/components/ui/card';
-import { Checkbox } from '@/components/ui/checkbox';
 import {
   Dialog,
   DialogContent,
@@ -39,7 +40,6 @@ import { env } from '@/env/frontend';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import { useRedirect } from '@/lib/access/common';
 import { useToggle } from '@/lib/hooks';
-import { cn } from '@/lib/utils';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useRouter } from '@tanstack/react-router';
 
@@ -67,6 +67,7 @@ const DeleteGitHubIntegrationMutation = graphql(`
 
 const GitHubIntegrationSection_OrganizationFragment = graphql(`
   fragment GitHubIntegrationSection_OrganizationFragment on Organization {
+    id
     hasGitHubIntegration
     slug
   }
@@ -113,6 +114,7 @@ function GitHubIntegrationSection(props: {
 
 const SlackIntegrationSection_OrganizationFragment = graphql(`
   fragment SlackIntegrationSection_OrganizationFragment on Organization {
+    id
     hasSlackIntegration
     slug
   }
@@ -184,7 +186,6 @@ const SettingsPageRenderer_OrganizationFragment = graphql(`
     viewerCanModifySlackIntegration
     viewerCanModifyGitHubIntegration
     viewerCanExportAuditLogs
-    ...OIDCIntegrationSection_OrganizationFragment
     ...TransferOrganizationOwnershipModal_OrganizationFragment
     ...GitHubIntegrationSection_OrganizationFragment
     ...SlackIntegrationSection_OrganizationFragment
@@ -282,7 +283,7 @@ const OrganizationSettingsContent = (props: {
                     </CardDescription>
                     <CardDescription>
                       <DocsLink
-                        className="text-muted-foreground text-sm"
+                        className="text-neutral-10 text-sm"
                         href="/management/organizations#change-slug-of-organization"
                       >
                         You can read more about it in the documentation
@@ -298,7 +299,7 @@ const OrganizationSettingsContent = (props: {
                   <FormItem>
                     <FormControl>
                       <div className="flex items-center">
-                        <div className="border-input text-muted-foreground h-10 rounded-md rounded-r-none border-y border-l bg-gray-900 px-3 py-2 text-sm">
+                        <div className="border-neutral-5 text-neutral-10 bg-neutral-2 h-10 rounded-md rounded-r-none border-y border-l px-3 py-2 text-sm">
                           {env.appBaseUrl.replace(/https?:\/\//i, '')}/
                         </div>
                         <Input placeholder="slug" className="w-48 rounded-l-none" {...field} />
@@ -316,33 +317,6 @@ const OrganizationSettingsContent = (props: {
         </Form>
       )}
 
-      {organization.viewerCanManageOIDCIntegration && (
-        <SubPageLayout>
-          <SubPageLayoutHeader
-            subPageTitle="Single Sign On Provider"
-            description={
-              <>
-                <CardDescription>
-                  Link your Hive organization to a single-sign-on provider such as Okta or Microsoft
-                  Entra ID via OpenID Connect.
-                </CardDescription>
-                <CardDescription>
-                  <DocsLink
-                    className="text-muted-foreground text-sm"
-                    href="/management/sso-oidc-provider"
-                  >
-                    Instructions for connecting your provider.
-                  </DocsLink>
-                </CardDescription>
-              </>
-            }
-          />
-          <div className="text-gray-500">
-            <OIDCIntegrationSection organization={organization} />
-          </div>
-        </SubPageLayout>
-      )}
-
       {organization.viewerCanModifySlackIntegration && (
         <SubPageLayout>
           <SubPageLayoutHeader
@@ -354,7 +328,7 @@ const OrganizationSettingsContent = (props: {
                 </CardDescription>
                 <CardDescription>
                   <DocsLink
-                    className="text-muted-foreground text-sm"
+                    className="text-neutral-10 text-sm"
                     href="/management/organizations#slack"
                   >
                     Learn more.
@@ -376,7 +350,7 @@ const OrganizationSettingsContent = (props: {
                 <CardDescription>Link your Hive organization with GitHub.</CardDescription>
                 <CardDescription>
                   <DocsLink
-                    className="text-muted-foreground text-sm"
+                    className="text-neutral-10 text-sm"
                     href="/management/organizations#github"
                   >
                     Learn more.
@@ -401,7 +375,7 @@ const OrganizationSettingsContent = (props: {
                 </CardDescription>
                 <CardDescription>
                   <DocsLink
-                    className="text-muted-foreground text-sm"
+                    className="text-neutral-10 text-sm"
                     href="/management/organizations#transfer-ownership"
                   >
                     Learn more about the process
@@ -433,7 +407,7 @@ const OrganizationSettingsContent = (props: {
                 </CardDescription>
                 <CardDescription>
                   <DocsLink
-                    className="text-muted-foreground text-sm"
+                    className="text-neutral-10 text-sm"
                     href="/management/organizations#delete-an-organization"
                   >
                     <span>
@@ -466,7 +440,7 @@ const OrganizationSettingsContent = (props: {
                   View a history of changes made to the organization settings.
                 </CardDescription>
                 <CardDescription>
-                  <DocsLink className="text-muted-foreground text-sm" href="/management/audit-logs">
+                  <DocsLink className="text-neutral-10 text-sm" href="/management/audit-logs">
                     Learn more.
                   </DocsLink>
                 </CardDescription>
@@ -550,7 +524,7 @@ function OrganizationPolicySettings(props: {
             <br />
             At the project level, policies can be overridden or extended.
             <br />
-            <DocsLink className="text-muted-foreground" href="/features/schema-policy">
+            <DocsLink className="text-neutral-10" href="/features/schema-policy">
               Learn more
             </DocsLink>
           </CardDescription>
@@ -603,7 +577,7 @@ function OrganizationPolicySettings(props: {
               onCheckedChange={newValue => form.setFieldValue('allowOverrides', newValue)}
               disabled={!currentOrganization.viewerCanModifySchemaPolicy}
             />
-            <label htmlFor="allowOverrides" className="ml-2 inline-block text-sm text-gray-300">
+            <label htmlFor="allowOverrides" className="text-neutral-11 ml-2 inline-block text-sm">
               Allow projects to override or disable rules
             </label>
           </div>
@@ -621,12 +595,14 @@ const OrganizationSettingsPageQuery = graphql(`
       viewerCanAccessSettings
       viewerCanManageAccessTokens
       viewerCanManagePersonalAccessTokens
+      viewerCanManageOIDCIntegration
     }
   }
 `);
 
 export const OrganizationSettingsPageEnum = z.enum([
   'general',
+  'sso',
   'policy',
   'access-tokens',
   'personal-access-tokens',
@@ -664,6 +640,13 @@ function SettingsPageContent(props: {
       key: 'policy',
       title: 'Policy',
     });
+
+    if (currentOrganization?.viewerCanManageOIDCIntegration) {
+      pages.push({
+        key: 'sso',
+        title: 'Single Sign On',
+      });
+    }
 
     if (currentOrganization?.viewerCanManageAccessTokens) {
       pages.push({
@@ -715,10 +698,10 @@ function SettingsPageContent(props: {
         <NavLayout>
           {subPages.map(subPage => {
             return (
-              <Button
+              <SubPageNavigationLink
+                dataCy={`link-${subPage.key}`}
                 key={subPage.key}
-                data-cy={`target-settings-${subPage.key}-link`}
-                variant="ghost"
+                isActive={resolvedPage.key === subPage.key}
                 onClick={() => {
                   void router.navigate({
                     search: {
@@ -726,15 +709,8 @@ function SettingsPageContent(props: {
                     },
                   });
                 }}
-                className={cn(
-                  resolvedPage.key === subPage.key
-                    ? 'bg-muted hover:bg-muted'
-                    : 'hover:bg-transparent hover:underline',
-                  'w-full justify-start text-left',
-                )}
-              >
-                {subPage.title}
-              </Button>
+                title={subPage.title}
+              />
             );
           })}
         </NavLayout>
@@ -745,6 +721,9 @@ function SettingsPageContent(props: {
                 organizationSlug={props.organizationSlug}
                 organization={currentOrganization}
               />
+            ) : null}
+            {resolvedPage.key === 'sso' ? (
+              <SingleSignOnSubpage organizationSlug={props.organizationSlug} />
             ) : null}
             {resolvedPage.key === 'policy' ? (
               <OrganizationPolicySettings organization={currentOrganization} />
@@ -967,7 +946,7 @@ function AuditLogsOrganizationModal(props: {
                 )}
               />
               <div className="mt-2">
-                <ArrowRightIcon className="text-muted-foreground size-6" />
+                <ArrowRightIcon className="text-neutral-10 size-6" />
               </div>
               <FormField
                 control={form.control}

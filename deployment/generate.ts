@@ -32,7 +32,7 @@ async function generateVectorDevTypes() {
 }
 
 async function generateContourTypes() {
-  const helmValuesFileUrl = `https://raw.githubusercontent.com/bitnami/charts/contour/${CONTOUR_CHART.version}/bitnami/contour/values.yaml`;
+  const helmValuesFileUrl = `https://raw.githubusercontent.com/projectcontour/helm-charts/refs/tags/contour-${CONTOUR_CHART.version}/charts/contour/values.yaml`;
   const valuesFile = await fetch(helmValuesFileUrl).then(r => r.text());
 
   const valuesTempFile = fileSync();

@@ -7,6 +7,8 @@ export default gql`
 
   extend type Mutation {
     updateMe(input: UpdateMeInput!): UpdateMeResult!
+    sendVerificationEmail(input: SendVerificationEmailInput!): SendVerificationEmailResult!
+    verifyEmail(input: VerifyEmailInput!): VerifyEmailResult!
   }
 
   input UpdateMeInput {
@@ -39,12 +41,57 @@ export default gql`
     error: UpdateMeError
   }
 
+  input SendVerificationEmailInput {
+    userIdentityId: ID!
+    resend: Boolean
+  }
+
+  type SendVerificationEmailOk {
+    expiresAt: DateTime!
+  }
+
+  type SendVerificationEmailError implements Error {
+    message: String!
+    emailAlreadyVerified: Boolean!
+  }
+
+  """
+  @oneOf
+  """
+  type SendVerificationEmailResult {
+    ok: SendVerificationEmailOk
+    error: SendVerificationEmailError
+  }
+
+  input VerifyEmailInput {
+    userIdentityId: ID!
+    email: String!
+    token: String!
+  }
+
+  type VerifyEmailOk {
+    verified: Boolean!
+  }
+
+  type VerifyEmailError implements Error {
+    message: String!
+  }
+
+  """
+  @oneOf
+  """
+  type VerifyEmailResult {
+    ok: VerifyEmailOk
+    error: VerifyEmailError
+  }
+
   type User {
     id: ID! @tag(name: "public")
     email: String! @tag(name: "public")
     fullName: String!
     displayName: String! @tag(name: "public")
     provider: AuthProviderType! @tag(name: "public")
+    providers: [AuthProviderType!]!
     isAdmin: Boolean!
   }
 

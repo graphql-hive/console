@@ -1,4 +1,6 @@
+import 'reflect-metadata';
 import * as fs from 'node:fs';
+import asyncRetry from 'async-retry';
 // eslint-disable-next-line import/no-extraneous-dependencies -- cypress SHOULD be a dev dependency
 import { defineConfig } from 'cypress';
 import { initSeed } from './integration-tests/testkit/seed';
@@ -29,6 +31,24 @@ export default defineConfig({
   e2e: {
     setupNodeEvents(on) {
       on('task', {
+        async seedOrg() {
+          const owner = await seed.createOwner();
+          const org = await owner.createOrg();
+
+          return {
+            slug: org.organization.slug,
+            refreshToken: owner.ownerRefreshToken,
+            email: owner.ownerEmail,
+          };
+        },
+        async purgeOIDCDomains() {
+          await seed.purgeOIDCDomains();
+          return {};
+        },
+        async forgeOIDCDNSChallenge(orgSlug: string) {
+          await seed.forgeOIDCDNSChallenge(orgSlug);
+          return {};
+        },
         async seedTarget() {
           const owner = await seed.createOwner();
           const org = await owner.createOrg();
@@ -39,6 +59,10 @@ export default defineConfig({
             refreshToken: owner.ownerRefreshToken,
             email: owner.ownerEmail,
           };
+        },
+        async getEmailConfirmationLink(input: string | { email: string; now: number }) {
+          const url = await seed.pollForEmailVerificationLink(input);
+          return url.pathname + url.search;
         },
       });
 
@@ -54,6 +78,9 @@ export default defineConfig({
           }
         }
       });
+    },
+    env: {
+      RUN_AGAINST_LOCAL_SERVICES: process.env.RUN_AGAINST_LOCAL_SERVICES || '0',
     },
   },
 });

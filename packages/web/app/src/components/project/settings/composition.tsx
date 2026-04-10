@@ -48,7 +48,9 @@ const CompositionSettings_UpdateMutation = graphql(`
   mutation CompositionSettings_UpdateMutation($input: UpdateSchemaCompositionInput!) {
     updateSchemaComposition(input: $input) {
       ok {
-        ...CompositionSettings_ProjectFragment
+        updatedProject {
+          ...CompositionSettings_ProjectFragment
+        }
       }
       ...NativeCompositionSettings_UpdateResultFragment
       ...ExternalCompositionSettings_UpdateResultFragment

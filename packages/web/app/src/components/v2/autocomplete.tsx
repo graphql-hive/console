@@ -1,4 +1,4 @@
-import { ComponentPropsWithRef, ReactElement } from 'react';
+import { ComponentPropsWithRef, ReactElement, useEffect, useRef } from 'react';
 import { ChevronDown } from 'lucide-react';
 import Highlighter from 'react-highlight-words';
 import Select, {
@@ -9,26 +9,50 @@ import Select, {
   Props as SelectProps,
   StylesConfig,
 } from 'react-select';
-import { FixedSizeList } from 'react-window';
+import { useVirtualizer } from '@tanstack/react-virtual';
 import { SelectOption } from './radix-select';
 
-const height = 40;
+const ITEM_HEIGHT = 40;
 
 function MenuList(props: any): ReactElement {
   const { options, children, maxHeight, getValue } = props;
   const [value] = getValue();
-  const initialOffset = options.indexOf(value) * height;
+  const scrollRef = useRef<HTMLDivElement>(null);
+
+  const virtualizer = useVirtualizer({
+    count: children.length,
+    getScrollElement: () => scrollRef.current,
+    estimateSize: () => ITEM_HEIGHT,
+    overscan: 5,
+  });
+
+  useEffect(() => {
+    const index = options.indexOf(value);
+    if (index > 0) {
+      virtualizer.scrollToIndex(index);
+    }
+  }, []);
 
   return (
-    <FixedSizeList
-      width="100%"
-      height={maxHeight}
-      itemCount={children.length}
-      itemSize={height}
-      initialScrollOffset={initialOffset}
-    >
-      {({ index, style }) => <div style={style}>{children[index]}</div>}
-    </FixedSizeList>
+    <div ref={scrollRef} style={{ maxHeight, overflow: 'auto' }}>
+      <div style={{ height: virtualizer.getTotalSize(), position: 'relative' }}>
+        {virtualizer.getVirtualItems().map(virtualItem => (
+          <div
+            key={virtualItem.index}
+            style={{
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              width: '100%',
+              height: virtualItem.size,
+              transform: `translateY(${virtualItem.start}px)`,
+            }}
+          >
+            {children[virtualItem.index]}
+          </div>
+        ))}
+      </div>
+    </div>
   );
 }
 
@@ -47,7 +71,7 @@ const IndicatorSeparator = (_: IndicatorSeparatorProps<unknown, boolean>) => {
 const styles: StylesConfig = {
   input: styles => ({
     ...styles,
-    color: '#fff',
+    color: 'var(--color-neutral-12)',
     fontSize: '14px',
   }),
   placeholder: styles => ({
@@ -56,34 +80,34 @@ const styles: StylesConfig = {
   }),
   control: styles => ({
     ...styles,
-    backgroundColor: '#121217',
+    backgroundColor: 'var(--color-neutral-2)',
     borderWidth: 1,
-    borderColor: '#282524',
+    borderColor: 'var(--color-neutral-5)',
     paddingTop: 1,
     paddingBottom: 1,
     borderRadius: 6,
     ':hover': {
       cursor: 'pointer',
-      borderColor: '#282524',
+      borderColor: 'var(--color-neutral-5)',
     },
   }),
   singleValue: styles => ({
     ...styles,
-    color: '#fff',
+    color: 'var(--color-neutral-10)',
     fontSize: '14px',
   }),
   option: styles => ({
     ...styles,
-    color: '#fff',
+    color: 'var(--color-neutral-10)',
     fontSize: '14px',
-    backgroundColor: '#121217',
+    backgroundColor: 'var(--color-neutral-3)',
     ':hover': {
-      backgroundColor: '#282524',
+      backgroundColor: 'var(--color-neutral-5)',
     },
   }),
   menu: styles => ({
     ...styles,
-    backgroundColor: '#121217',
+    backgroundColor: 'var(--color-neutral-3)',
   }),
 };
 
@@ -108,6 +132,7 @@ export function Autocomplete(props: {
   disabled?: boolean;
   loading?: boolean;
   className?: string;
+  onInputChange?: (value: string) => void;
 }): ReactElement {
   return (
     <Select
@@ -125,6 +150,11 @@ export function Autocomplete(props: {
       isClearable
       closeMenuOnSelect
       onChange={option => props.onChange(option as SelectOption)}
+      onInputChange={(value, { action }) => {
+        if (action === 'input-change') {
+          props.onInputChange?.(value);
+        }
+      }}
       isDisabled={props.disabled}
       isLoading={props.loading}
       placeholder={props.placeholder}

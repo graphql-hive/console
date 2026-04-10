@@ -102,7 +102,7 @@ extend type Query {
     """
     id: ID!
   ): User
-  users: [User]
+  users(limit: Int! = 30): [User]
 }
 
 extend type Mutation {

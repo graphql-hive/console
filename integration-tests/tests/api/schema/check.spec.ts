@@ -606,14 +606,14 @@ test.concurrent('failed check due to policy error is persisted', async ({ expect
             {
               node: {
                 end: {
-                  column: 17,
-                  line: 2,
+                  column: 11,
+                  line: 1,
                 },
                 message: 'Description is required for type "Query"',
                 ruleId: 'require-description',
                 start: {
-                  column: 12,
-                  line: 2,
+                  column: 6,
+                  line: 1,
                 },
               },
             },

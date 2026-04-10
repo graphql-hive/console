@@ -746,3 +746,69 @@ test.concurrent(
     });
   },
 );
+
+test.concurrent('query GraphQL API on resources after token expiration', async ({ expect }) => {
+  const { createOrg, ownerToken } = await initSeed().createOwner();
+  const org = await createOrg();
+  const project1 = await org.createProject(GraphQLSchema.ProjectType.Federation);
+  const project2 = await org.createProject(GraphQLSchema.ProjectType.Federation);
+
+  const result = await execute({
+    document: CreatePersonalAccessTokenMutation,
+    variables: {
+      input: {
+        organization: {
+          byId: org.organization.id,
+        },
+        title: 'an access token',
+        description: 'a description',
+        resources: {
+          mode: GraphQLSchema.ResourceAssignmentModeType.Granular,
+          projects: [
+            {
+              projectId: project1.project.id,
+              targets: { mode: GraphQLSchema.ResourceAssignmentModeType.All },
+            },
+          ],
+        },
+        expirationPeriod: GraphQLSchema.TokenExpirationPeriod.OneWeek,
+        permissions: ['organization:describe', 'project:describe'],
+      },
+    },
+    authToken: ownerToken,
+  }).then(e => e.expectNoGraphQLErrors());
+  expect(result.createPersonalAccessToken.error).toEqual(null);
+  assertNonNullish(result.createPersonalAccessToken.ok);
+  const personalAccessToken = result.createPersonalAccessToken.ok.privateAccessKey;
+
+  const projectQuery = await execute({
+    document: OrganizationProjectTargetQuery1,
+    variables: {
+      organizationSlug: org.organization.slug,
+      projectSlug: project2.project.slug,
+      targetSlug: project2.target.slug,
+    },
+    authToken: personalAccessToken,
+  }).then(e => e.expectNoGraphQLErrors());
+  expect(projectQuery).toEqual({
+    organization: {
+      id: expect.any(String),
+      project: null,
+      slug: org.organization.slug,
+    },
+  });
+
+  await org.forceExpireTokens([result.createPersonalAccessToken.ok.createdPersonalAccessToken.id]);
+
+  const expiredResult = await execute({
+    document: OrganizationProjectTargetQuery1,
+    variables: {
+      organizationSlug: org.organization.slug,
+      projectSlug: project2.project.slug,
+      targetSlug: project2.target.slug,
+    },
+    authToken: personalAccessToken,
+  }).then(e => e.expectGraphQLErrors());
+  const error = expiredResult[0];
+  expect(error.message).toEqual('Invalid token provided');
+});

@@ -11,7 +11,6 @@ import { type HiveUsageConfig } from './environment';
 import {
   reqIdGenerate,
   useHiveErrorHandler,
-  useHiveSentry,
   useHiveTracing,
   type Context,
 } from './graphql-handler';
@@ -43,14 +42,13 @@ export const createPublicGraphQLHandler = (
     },
     plugins: [
       useArmor(),
-      useHiveSentry(),
       useGraphQLModules(args.registry),
       useSchema(publicSchema),
       useExtendContext(async context => ({
         session: await args.authN.authenticate(context),
       })),
-      useHiveErrorHandler(error => {
-        server.logger.error(error);
+      useHiveErrorHandler(err => {
+        args.logger.error(err, 'Unexpected error occured while handling exception.');
       }),
       useHive({
         debug: true,

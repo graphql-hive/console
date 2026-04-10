@@ -1,3 +1,4 @@
+import { AuthProviderType } from '../../__generated__/types';
 import type {
   Organization,
   OrganizationGetStarted,
@@ -20,6 +21,10 @@ export type MemberRoleMapper = OrganizationMemberRole;
 export type OrganizationGetStartedMapper = OrganizationGetStarted;
 export type OrganizationInvitationMapper = OrganizationInvitation;
 export type MemberMapper = OrganizationMembership;
+export type MemberAuthProviderMapper = {
+  type: AuthProviderType;
+  disabledReason?: string | null | undefined;
+};
 export type OrganizationAccessTokenMapper = OrganizationAccessToken;
 export type PersonalAccessTokenMapper = OrganizationAccessToken;
 export type ProjectAccessTokenMapper = OrganizationAccessToken;

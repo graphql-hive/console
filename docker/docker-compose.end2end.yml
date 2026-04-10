@@ -33,9 +33,23 @@ services:
     networks:
       - 'stack'
 
-  supertokens:
+  db:
     ports:
-      - '3567:3567'
+      - '5432:5432'
 
+  workflows:
+    ports:
+      - '3014:3014'
+    environment:
+      EMAIL_PROVIDER: mock
+
+  redis:
+    ports:
+      - '6379:6379'
+
+  server:
+    environment:
+      SUPERTOKENS_RATE_LIMIT: '0'
+      AUTH_REQUIRE_EMAIL_VERIFICATION: '1'
 networks:
   stack: {}

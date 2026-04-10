@@ -2,14 +2,21 @@ import { useMemo, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { useMutation } from 'urql';
 import { z } from 'zod';
+import { Checkbox } from '@/components/base/checkbox/checkbox';
 import * as AlertDialog from '@/components/ui/alert-dialog';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Checkbox } from '@/components/ui/checkbox';
 import * as Form from '@/components/ui/form';
 import { Heading } from '@/components/ui/heading';
 import { Input } from '@/components/ui/input';
 import { InputCopy } from '@/components/ui/input-copy';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import * as Sheet from '@/components/ui/sheet';
 import { defineStepper } from '@/components/ui/stepper';
 import { Textarea } from '@/components/ui/textarea';
@@ -29,12 +36,24 @@ import {
   DescriptionInputModel,
   TitleInputModel,
 } from '../access-tokens/create-access-token-sheet-content';
-import { permissionLevelToResourceName, resolveResources } from '../access-tokens/shared-helpers';
+import {
+  expirationPeriods,
+  permissionLevelToResourceName,
+  resolveResources,
+} from '../access-tokens/shared-helpers';
 
 const CreateAccessTokenFormModel = z.object({
   title: TitleInputModel,
   description: DescriptionInputModel,
   permissions: z.array(z.string()).min(1, 'Please select at least one permission.'),
+  expirationPeriod: z.enum([
+    GraphQLSchema.TokenExpirationPeriod.Never,
+    GraphQLSchema.TokenExpirationPeriod.OneMonth,
+    GraphQLSchema.TokenExpirationPeriod.OneWeek,
+    GraphQLSchema.TokenExpirationPeriod.OneYear,
+    GraphQLSchema.TokenExpirationPeriod.SixMonths,
+    GraphQLSchema.TokenExpirationPeriod.TwoWeeks,
+  ]),
 });
 
 const CreatePersonalAccessTokenSheetContent_OrganizationFragment = graphql(`
@@ -119,6 +138,7 @@ export function CreatePersonalAccessTokenSheetContent(
       title: '',
       description: '',
       permissions: [],
+      expirationPeriod: GraphQLSchema.TokenExpirationPeriod.Never,
     },
   });
 
@@ -143,6 +163,7 @@ export function CreatePersonalAccessTokenSheetContent(
         description: formValues.description ?? '',
         permissions: formValues.permissions,
         resources: resourceSlectionToGraphQLSchemaResourceAssignmentInput(resourceSelection),
+        expirationPeriod: formValues.expirationPeriod,
       },
     });
 
@@ -174,7 +195,7 @@ export function CreatePersonalAccessTokenSheetContent(
   }
 
   return (
-    <Sheet.SheetContent className="flex max-h-screen min-w-[700px] flex-col overflow-y-scroll">
+    <Sheet.SheetContent className="max-w-screen flex max-h-screen w-[700px] min-w-[60%] flex-col overflow-y-scroll">
       <Sheet.SheetHeader>
         <Sheet.SheetTitle>Create Access Token</Sheet.SheetTitle>
         <Sheet.SheetDescription>
@@ -235,6 +256,36 @@ export function CreatePersonalAccessTokenSheetContent(
                             )}
                           />
                         </div>
+
+                        <div className="grid w-full max-w-sm items-center gap-1.5">
+                          <Form.FormField
+                            control={form.control}
+                            name="expirationPeriod"
+                            render={({ field, fieldState }) => (
+                              <Form.FormItem aria-invalid={fieldState.invalid}>
+                                <Form.FormLabel>Expiration</Form.FormLabel>
+                                <Form.FormControl>
+                                  <Select {...field} onValueChange={field.onChange}>
+                                    <SelectTrigger id={field.name}>
+                                      <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                      {expirationPeriods.map(c => (
+                                        <SelectItem key={c.value} value={c.value}>
+                                          {c.name}
+                                        </SelectItem>
+                                      ))}
+                                    </SelectContent>
+                                  </Select>
+                                </Form.FormControl>
+                                <Form.FormDescription>
+                                  Expire the token automatically after a period of time.
+                                </Form.FormDescription>
+                                <Form.FormMessage />
+                              </Form.FormItem>
+                            )}
+                          />
+                        </div>
                       </>
                     ),
                     'step-2-permissions': () => (
@@ -250,7 +301,8 @@ export function CreatePersonalAccessTokenSheetContent(
                               <Form.FormControl>
                                 <PermissionSelector
                                   permissionGroups={
-                                    organization.me.availablePersonalAccessTokenPermissionGroups
+                                    organization.me?.availablePersonalAccessTokenPermissionGroups ??
+                                    []
                                   }
                                   selectedPermissionIds={new Set(form.getValues()['permissions'])}
                                   onSelectedPermissionsChange={selectedPermissionIds => {
@@ -293,7 +345,7 @@ export function CreatePersonalAccessTokenSheetContent(
                     'step-4-confirmation': () => (
                       <>
                         <Heading>Confirm and create Access Token</Heading>
-                        <p className="text-muted-foreground text-sm">
+                        <p className="text-neutral-10 text-sm">
                           Please please review the selected permissions and resources to ensure they
                           align with your intended access needs.
                         </p>
@@ -303,7 +355,7 @@ export function CreatePersonalAccessTokenSheetContent(
                           <SelectedPermissionOverview
                             activePermissionIds={form.getValues().permissions}
                             permissionsGroups={
-                              organization.me.availablePersonalAccessTokenPermissionGroups
+                              organization.me?.availablePersonalAccessTokenPermissionGroups ?? []
                             }
                             showOnlyAllowedPermissions
                             isExpanded
@@ -313,7 +365,7 @@ export function CreatePersonalAccessTokenSheetContent(
                                   <>Granted on all {permissionLevelToResourceName(group.level)}</>
                                 ) : (
                                   <>
-                                    <p className="text-gray-400">
+                                    <p className="text-neutral-10">
                                       Granted on {permissionLevelToResourceName(group.level)}:
                                     </p>
                                     <ul className="flex list-none flex-wrap gap-1">
@@ -330,7 +382,7 @@ export function CreatePersonalAccessTokenSheetContent(
                                       {resolvedResources[group.level].map(id => (
                                         <li key={id}>
                                           <Badge
-                                            className="px-3 py-1 font-mono text-xs text-gray-300"
+                                            className="text-neutral-11 px-3 py-1 font-mono text-xs"
                                             variant="outline"
                                           >
                                             {id}

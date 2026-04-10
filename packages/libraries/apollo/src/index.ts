@@ -190,11 +190,11 @@ export function createHive(clientOrOptions: HivePluginOptions, ctx?: GraphQLServ
       version,
       ...clientOrOptions.agent,
     },
-    experimental__persistedDocuments: clientOrOptions.experimental__persistedDocuments
+    persistedDocuments: clientOrOptions.persistedDocuments
       ? {
-          ...clientOrOptions.experimental__persistedDocuments,
+          ...clientOrOptions.persistedDocuments,
           layer2Cache: (() => {
-            const userL2Config = clientOrOptions.experimental__persistedDocuments?.layer2Cache;
+            const userL2Config = clientOrOptions.persistedDocuments?.layer2Cache;
             if (persistedDocumentsCache) {
               return {
                 cache: persistedDocumentsCache,
@@ -306,7 +306,7 @@ export function useHive(clientOrOptions: HiveClient | HivePluginOptions): Apollo
         let persistedDocumentError: GraphQLError | null = null;
         let persistedDocumentHash: string | undefined;
 
-        if (hive.experimental__persistedDocuments) {
+        if (hive.persistedDocuments) {
           if (
             context.request.http?.body &&
             typeof context.request.http.body === 'object' &&
@@ -319,7 +319,7 @@ export function useHive(clientOrOptions: HiveClient | HivePluginOptions): Apollo
               const contextValue = isLegacyV3
                 ? (context as any).context
                 : (context as any).contextValue;
-              const document = await hive.experimental__persistedDocuments.resolve(
+              const document = await hive.persistedDocuments.resolve(
                 context.request.http.body.documentId,
                 { waitUntil: contextValue?.waitUntil },
               );
@@ -360,7 +360,7 @@ export function useHive(clientOrOptions: HiveClient | HivePluginOptions): Apollo
             }
           } else if (
             false ===
-            (await hive.experimental__persistedDocuments.allowArbitraryDocuments({
+            (await hive.persistedDocuments.allowArbitraryDocuments({
               headers: {
                 get(name: string) {
                   return context.request.http?.headers?.get(name) ?? null;

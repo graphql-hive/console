@@ -2,15 +2,16 @@
  * This wraps the database calls for schema proposals and required validation
  */
 import { Inject, Injectable, Scope } from 'graphql-modules';
-import { sql, type DatabasePool } from 'slonik';
 import { z } from 'zod';
+import { PostgresDatabasePool, psql } from '@hive/postgres';
 import {
   decodeCreatedAtAndUUIDIdBasedCursor,
   encodeCreatedAtAndUUIDIdBasedCursor,
 } from '@hive/storage';
+import { TaskScheduler } from '@hive/workflows/kit';
+import { SchemaProposalCompositionTask } from '@hive/workflows/tasks/schema-proposal-composition';
 import { SchemaProposalStage } from '../../../__generated__/types';
 import { Logger } from '../../shared/providers/logger';
-import { PG_POOL_CONFIG } from '../../shared/providers/pg-pool';
 import { Storage } from '../../shared/providers/storage';
 import { SCHEMA_PROPOSALS_ENABLED } from './schema-proposals-enabled-token';
 
@@ -36,11 +37,25 @@ export class SchemaProposalStorage {
 
   constructor(
     logger: Logger,
-    @Inject(PG_POOL_CONFIG) private pool: DatabasePool,
+    private pool: PostgresDatabasePool,
     private storage: Storage,
-    @Inject(SCHEMA_PROPOSALS_ENABLED) private schemaProposalsEnabled: Boolean, // @todo
+    @Inject(SCHEMA_PROPOSALS_ENABLED) private schemaProposalsEnabled: boolean,
+    private taskScheduler: TaskScheduler,
   ) {
     this.logger = logger.child({ source: 'SchemaProposalStorage' });
+  }
+
+  async runBackgroundComposition(input: {
+    proposalId: string;
+    targetId: string;
+    externalComposition: {
+      enabled: boolean;
+      endpoint?: string | null;
+      encryptedSecret?: string | null;
+    };
+    native: boolean;
+  }) {
+    await this.taskScheduler.scheduleTask(SchemaProposalCompositionTask, input);
   }
 
   private async assertSchemaProposalsEnabled(args: {
@@ -102,15 +117,15 @@ export class SchemaProposalStorage {
         },
       };
     }
-    const review = await this.pool.transaction(async conn => {
-      await conn.maybeOne<unknown>(
-        sql`
+    const review = await this.pool.transaction('manuallyTransitionProposal', async conn => {
+      await conn.query(
+        psql`
             UPDATE "schema_proposals"
             SET "stage" = ${args.stage}
             WHERE "id" = ${args.id} AND "stage" <> 'IMPLEMENTED'
           `,
       );
-      const row = await conn.maybeOne(sql`
+      const row = await conn.maybeOne(psql`
           INSERT INTO schema_proposal_reviews
             ("schema_proposal_id", "stage_transition", "author", "service_name")
           VALUES (
@@ -166,8 +181,8 @@ export class SchemaProposalStorage {
       };
     }
     const proposal = await this.pool
-      .maybeOne<unknown>(
-        sql`
+      .maybeOne(
+        psql`
           INSERT INTO "schema_proposals" as "sp"
             ("target_id", "title", "description", "stage", "author")
           VALUES
@@ -189,11 +204,34 @@ export class SchemaProposalStorage {
     };
   }
 
+  /**
+   * A stripped down version of getProposal that only returns the ID. This is intended
+   * to be used
+   */
+  async getProposalTargetId(args: { id: string }) {
+    this.logger.debug('Get proposal target ID (proposal=%s)', args.id);
+    const result = await this.pool
+      .maybeOne(
+        psql`
+          SELECT
+              id
+            , target_id as "targetId"
+          FROM
+            "schema_proposals"
+          WHERE
+            id=${args.id}
+        `,
+      )
+      .then(row => SchemaProposalTargetIdModel.safeParse(row));
+
+    return result.data ?? null;
+  }
+
   async getProposal(args: { id: string }) {
     this.logger.debug('Get proposal (proposal=%s)', args.id);
     const result = await this.pool
-      .maybeOne<unknown>(
-        sql`
+      .maybeOne(
+        psql`
           SELECT
             ${schemaProposalFields}
           FROM
@@ -202,9 +240,9 @@ export class SchemaProposalStorage {
             "sp"."id" = ${args.id}
         `,
       )
-      .then(row => SchemaProposalModel.parse(row));
+      .then(row => SchemaProposalModel.safeParse(row));
 
-    return result;
+    return result.data ?? null;
   }
 
   async getPaginatedProposals(args: {
@@ -228,7 +266,7 @@ export class SchemaProposalStorage {
       cursor,
       limit,
     );
-    const result = await this.pool.query<unknown>(sql`
+    const result = await this.pool.any(psql`
       SELECT
         ${schemaProposalFields}
       FROM
@@ -237,7 +275,7 @@ export class SchemaProposalStorage {
         sp."target_id" = ${args.targetId}
         ${
           cursor
-            ? sql`
+            ? psql`
                 AND (
                   (
                     sp."created_at" = ${cursor.createdAt}
@@ -246,22 +284,22 @@ export class SchemaProposalStorage {
                   OR sp."created_at" < ${cursor.createdAt}
                 )
               `
-            : sql``
+            : psql``
         }
         ${
           args.stages.length > 0
-            ? sql`
+            ? psql`
               AND (
-                sp."stage" = ANY(${sql.array(args.stages, 'schema_proposal_stage')})
+                sp."stage" = ANY(${psql.array(args.stages, 'schema_proposal_stage')})
               )
               `
-            : sql``
+            : psql``
         }
       ORDER BY sp."created_at" DESC, sp."id"
       LIMIT ${limit + 1}
     `);
 
-    let items = result.rows.map(row => {
+    let items = result.map(row => {
       const node = SchemaProposalModel.parse(row);
 
       return {
@@ -295,7 +333,7 @@ export class SchemaProposalStorage {
       cursor,
       limit,
     );
-    const result = await this.pool.query<unknown>(sql`
+    const result = await this.pool.any(psql`
       SELECT
         ${schemaProposalReviewFields}
       FROM
@@ -304,7 +342,7 @@ export class SchemaProposalStorage {
         "schema_proposal_id" = ${args.proposalId}
         ${
           cursor
-            ? sql`
+            ? psql`
                 AND (
                   (
                     "created_at" = ${cursor.createdAt}
@@ -313,13 +351,13 @@ export class SchemaProposalStorage {
                   OR "created_at" < ${cursor.createdAt}
                 )
               `
-            : sql``
+            : psql``
         }
       ORDER BY "created_at" DESC, "id"
       LIMIT ${limit + 1}
     `);
 
-    let items = result.rows.map(row => {
+    let items = result.map(row => {
       const node = SchemaProposalReviewModel.parse(row);
 
       return {
@@ -343,8 +381,8 @@ export class SchemaProposalStorage {
   }
 }
 
-const schemaProposalFields = sql`
-  sp."id"
+const schemaProposalFields = psql`
+    sp."id"
   , to_json(sp."created_at") as "createdAt"
   , to_json(sp."updated_at") as "updatedAt"
   , sp."title"
@@ -352,9 +390,12 @@ const schemaProposalFields = sql`
   , sp."stage"
   , sp."target_id" as "targetId"
   , sp."author"
+  , sp."composition_status" as "compositionStatus"
+  , to_json(sp."composition_timestamp") as "compositionTimestamp"
+  , sp."composition_status_reason" as "compositionStatusReason"
 `;
 
-const schemaProposalReviewFields = sql`
+const schemaProposalReviewFields = psql`
   "id"
   , "schema_proposal_id"
   , to_json("created_at") as "createdAt"
@@ -388,6 +429,17 @@ const SchemaProposalModel = z.object({
   stage: StageModel,
   targetId: z.string(),
   author: z.string(),
+  compositionStatus: z.enum(['ERROR', 'SUCCESS']).nullable(),
+  compositionStatusReason: z.string().nullable(),
+  compositionTimestamp: z.string().nullable(),
+});
+
+/**
+ * Minimal model for extracting just the target Id for permission checks.
+ */
+const SchemaProposalTargetIdModel = z.object({
+  id: z.string(),
+  targetId: z.string(),
 });
 
 export type SchemaProposalRecord = z.infer<typeof SchemaProposalModel>;
