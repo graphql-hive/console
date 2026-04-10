@@ -45,7 +45,7 @@ function appendMcpDirectives(schemaSdl: string): string {
 
   result += MCP_DIRECTIVES_SDL;
 
-  if (!/\bscalar JSON\b/.test(result)) {
+  if (!/(^|\n)\s*scalar\s+JSON\b/.test(result)) {
     result += '\nscalar JSON';
   }
 
