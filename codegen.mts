@@ -73,7 +73,9 @@ const config: CodegenConfig = {
         },
       },
       presetConfig: {
-        persistedDocuments: true,
+        persistedDocuments: {
+          hashAlgorithm: 'sha256',
+        },
       },
       plugins: [],
       documentTransforms: [addTypenameSelectionDocumentTransform],
