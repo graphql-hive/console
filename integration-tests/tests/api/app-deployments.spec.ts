@@ -958,6 +958,153 @@ test('add documents to app deployment fails if document does not pass validation
   });
 });
 
+test('add documents to app deployment succeeds with MCP directives even when schema does not define them', async () => {
+  const { createOrg } = await initSeed().createOwner();
+  const { createProject, setFeatureFlag } = await createOrg();
+  await setFeatureFlag('appDeployments', true);
+  const { createTargetAccessToken } = await createProject();
+  const token = await createTargetAccessToken({});
+
+  await token.publishSchema({
+    sdl: /* GraphQL */ `
+      type Query {
+        weather(location: String!): Weather
+      }
+      type Weather {
+        temp: Float
+        conditions: String
+      }
+    `,
+  });
+
+  const { createAppDeployment } = await execute({
+    document: CreateAppDeployment,
+    variables: {
+      input: {
+        appName: 'mcp-test',
+        appVersion: '1.0.0',
+      },
+    },
+    authToken: token.secret,
+  }).then(res => res.expectNoGraphQLErrors());
+
+  expect(createAppDeployment).toEqual({
+    error: null,
+    ok: {
+      createdAppDeployment: {
+        id: expect.any(String),
+        name: 'mcp-test',
+        version: '1.0.0',
+        status: 'pending',
+      },
+    },
+  });
+
+  const { addDocumentsToAppDeployment } = await execute({
+    document: AddDocumentsToAppDeployment,
+    variables: {
+      input: {
+        appName: 'mcp-test',
+        appVersion: '1.0.0',
+        documents: [
+          {
+            hash: 'mcp-weather',
+            body: 'query GetWeather($location: String! @mcpDescription(provider: "langfuse:loc")) @mcpTool(name: "get_weather", description: "Get weather") { weather(location: $location) { temp conditions } }',
+          },
+        ],
+      },
+    },
+    authToken: token.secret,
+  }).then(res => res.expectNoGraphQLErrors());
+
+  expect(addDocumentsToAppDeployment).toEqual({
+    error: null,
+    ok: {
+      appDeployment: {
+        id: expect.any(String),
+        name: 'mcp-test',
+        version: '1.0.0',
+        status: 'pending',
+      },
+    },
+  });
+});
+
+test('add documents to app deployment succeeds with MCP directives when schema already defines them', async () => {
+  const { createOrg } = await initSeed().createOwner();
+  const { createProject, setFeatureFlag } = await createOrg();
+  await setFeatureFlag('appDeployments', true);
+  const { createTargetAccessToken } = await createProject();
+  const token = await createTargetAccessToken({});
+
+  await token.publishSchema({
+    sdl: /* GraphQL */ `
+      directive @mcpTool(name: String!, description: String) on QUERY | MUTATION
+      directive @mcpDescription(provider: String!) on VARIABLE_DEFINITION | FIELD
+      directive @mcpHeader(name: String!) on VARIABLE_DEFINITION
+      type Query {
+        weather(location: String!): Weather
+      }
+      type Weather {
+        temp: Float
+        conditions: String
+      }
+    `,
+  });
+
+  const { createAppDeployment } = await execute({
+    document: CreateAppDeployment,
+    variables: {
+      input: {
+        appName: 'mcp-existing',
+        appVersion: '1.0.0',
+      },
+    },
+    authToken: token.secret,
+  }).then(res => res.expectNoGraphQLErrors());
+
+  expect(createAppDeployment).toEqual({
+    error: null,
+    ok: {
+      createdAppDeployment: {
+        id: expect.any(String),
+        name: 'mcp-existing',
+        version: '1.0.0',
+        status: 'pending',
+      },
+    },
+  });
+
+  const { addDocumentsToAppDeployment } = await execute({
+    document: AddDocumentsToAppDeployment,
+    variables: {
+      input: {
+        appName: 'mcp-existing',
+        appVersion: '1.0.0',
+        documents: [
+          {
+            hash: 'mcp-weather-existing',
+            body: 'query GetWeather($location: String! @mcpDescription(provider: "langfuse:loc")) @mcpTool(name: "get_weather", description: "Get weather") { weather(location: $location) { temp conditions } }',
+          },
+        ],
+      },
+    },
+    authToken: token.secret,
+  }).then(res => res.expectNoGraphQLErrors());
+
+  expect(addDocumentsToAppDeployment).toEqual({
+    error: null,
+    ok: {
+      appDeployment: {
+        id: expect.any(String),
+        name: 'mcp-existing',
+        version: '1.0.0',
+        status: 'pending',
+      },
+    },
+  });
+});
+
 test('add documents to app deployment fails if document contains multiple executable operation definitions', async () => {
   const { createOrg } = await initSeed().createOwner();
   const { createProject, setFeatureFlag } = await createOrg();

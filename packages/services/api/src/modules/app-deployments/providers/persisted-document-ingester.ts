@@ -30,6 +30,28 @@ const AppDeploymentOperationHashModel = z
 
 const AppDeploymentOperationBodyModel = z.string().min(3, 'Body must be at least 3 character long');
 
+const MCP_DIRECTIVES_SDL = /* GraphQL */ `
+  directive @mcpTool(name: String!, description: String, title: String, descriptionProvider: String, meta: JSON) on QUERY | MUTATION
+  directive @mcpDescription(provider: String!) on VARIABLE_DEFINITION | FIELD
+  directive @mcpHeader(name: String!) on VARIABLE_DEFINITION
+`;
+
+function appendMcpDirectives(schemaSdl: string): string {
+  // Strip any existing MCP directive definitions (they may have outdated arguments)
+  let result = schemaSdl
+    .replace(/^[ \t]*directive @mcpTool\b.*$/gm, '')
+    .replace(/^[ \t]*directive @mcpDescription\b.*$/gm, '')
+    .replace(/^[ \t]*directive @mcpHeader\b.*$/gm, '');
+
+  result += MCP_DIRECTIVES_SDL;
+
+  if (!/\bscalar JSON\b/.test(result)) {
+    result += '\nscalar JSON';
+  }
+
+  return result;
+}
+
 export type BatchProcessEvent = {
   event: 'PROCESS';
   id: string;
@@ -107,7 +129,8 @@ export class PersistedDocumentIngester {
       data.documents.length,
     );
 
-    const schema = buildSchema(data.schemaSdl);
+    const schemaSdl = appendMcpDirectives(data.schemaSdl);
+    const schema = buildSchema(schemaSdl);
     const typeInfo = new TypeInfo(schema);
     const documents: Array<DocumentRecord> = [];
 
