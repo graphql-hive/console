@@ -31,7 +31,13 @@ const AppDeploymentOperationHashModel = z
 const AppDeploymentOperationBodyModel = z.string().min(3, 'Body must be at least 3 character long');
 
 const MCP_DIRECTIVES_SDL = /* GraphQL */ `
-  directive @mcpTool(name: String!, description: String, title: String, descriptionProvider: String, meta: JSON) on QUERY | MUTATION
+  directive @mcpTool(
+    name: String!
+    description: String
+    title: String
+    descriptionProvider: String
+    meta: JSON
+  ) on QUERY | MUTATION
   directive @mcpDescription(provider: String!) on VARIABLE_DEFINITION | FIELD
   directive @mcpHeader(name: String!) on VARIABLE_DEFINITION
 `;
