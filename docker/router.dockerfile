@@ -59,7 +59,4 @@ WORKDIR /dist
 
 ENV APOLLO_ROUTER_CONFIG_PATH="/dist/config/router.yaml"
 
-RUN useradd -m router
-USER router
-
 ENTRYPOINT ["./router"]
