@@ -254,13 +254,13 @@ alerts need substantially different configuration: time windows, metric selector
 types/values, comparison direction, severity, evaluation state, and optional operation/client
 filters.
 
-A new `metric_alerts` table keeps both systems clean and independently evolvable. It reuses the
+A new `metric_alert_rules` table keeps both systems clean and independently evolvable. It reuses the
 existing `alert_channels` table (including the new EMAIL type from Phase 1) for notification
 delivery.
 
 ### 2.1 Database Migration
 
-**New file:** `packages/migrations/src/actions/2026.03.27T00-00-01.metric-alerts.ts`
+**New file:** `packages/migrations/src/actions/2026.03.27T00-00-01.metric-alert-rules.ts`
 
 ```sql
 CREATE TYPE metric_alert_type AS ENUM('LATENCY', 'ERROR_RATE', 'TRAFFIC');
@@ -276,7 +276,7 @@ CREATE TYPE metric_alert_severity AS ENUM('INFO', 'WARNING', 'CRITICAL');
 CREATE TYPE metric_alert_state AS ENUM('NORMAL', 'PENDING', 'FIRING', 'RECOVERING');
 
 -- Alert configuration (what to monitor and how)
-CREATE TABLE metric_alerts (
+CREATE TABLE metric_alert_rules (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid (),
   organization_id UUID NOT NULL REFERENCES organizations (id) ON DELETE CASCADE,
   project_id UUID NOT NULL REFERENCES projects (id) ON DELETE CASCADE,
@@ -303,7 +303,7 @@ CREATE TABLE metric_alerts (
   -- Matches OperationStatsFilterInput: { operationIds?, excludeOperations?,
   --   clientVersionFilters?: [{clientName, versions?}], excludeClientVersionFilters? }
   FILTER JSONB,
-  CONSTRAINT metric_alerts_metric_required CHECK (
+  CONSTRAINT metric_alert_rules_metric_required CHECK (
     (
       type = 'LATENCY'
       AND metric IS NOT NULL
@@ -315,14 +315,14 @@ CREATE TABLE metric_alerts (
   )
 );
 
-CREATE INDEX idx_metric_alerts_enabled ON metric_alerts (enabled)
+CREATE INDEX idx_metric_alert_rules_enabled ON metric_alert_rules (enabled)
 WHERE
   enabled = TRUE;
 
 -- Alert incident history (each time an alert fires and resolves)
 CREATE TABLE metric_alert_incidents (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid (),
-  metric_alert_id UUID NOT NULL REFERENCES metric_alerts (id) ON DELETE CASCADE,
+  metric_alert_rule_id UUID NOT NULL REFERENCES metric_alert_rules (id) ON DELETE CASCADE,
   started_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   resolved_at TIMESTAMPTZ, -- NULL while still firing
   current_value DOUBLE PRECISION NOT NULL,
@@ -330,85 +330,115 @@ CREATE TABLE metric_alert_incidents (
   threshold_value DOUBLE PRECISION NOT NULL -- snapshot of threshold at time of incident
 );
 
-CREATE INDEX idx_metric_alert_incidents_alert ON metric_alert_incidents (metric_alert_id);
+CREATE INDEX idx_metric_alert_incidents_alert ON metric_alert_incidents (metric_alert_rule_id);
 
-CREATE INDEX idx_metric_alert_incidents_open ON metric_alert_incidents (metric_alert_id)
+CREATE INDEX idx_metric_alert_incidents_open ON metric_alert_incidents (metric_alert_rule_id)
 WHERE
   resolved_at IS NULL;
+
+-- State transition log (powers alert history UI: event list, bar chart, state timeline)
+-- Retention: 7 days for Hobby/Pro, 30 days for Enterprise (set at insert time via expires_at)
+CREATE TABLE metric_alert_state_log (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid (),
+  metric_alert_rule_id UUID NOT NULL REFERENCES metric_alert_rules (id) ON DELETE CASCADE,
+  target_id UUID NOT NULL REFERENCES targets (id) ON DELETE CASCADE,
+  from_state metric_alert_state NOT NULL,
+  to_state metric_alert_state NOT NULL,
+  -- Value snapshot at the time of transition (for historical accuracy even if rule changes)
+  value DOUBLE PRECISION,                  -- current window's metric value
+  previous_value DOUBLE PRECISION,         -- previous window's metric value
+  threshold_value DOUBLE PRECISION,        -- snapshot of rule.threshold_value at transition time
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  expires_at TIMESTAMPTZ NOT NULL          -- set based on org plan at insert time
+);
+
+CREATE INDEX idx_metric_alert_state_log_rule ON metric_alert_state_log (metric_alert_rule_id, created_at);
+CREATE INDEX idx_metric_alert_state_log_target ON metric_alert_state_log (target_id, created_at);
+CREATE INDEX idx_metric_alert_state_log_expires ON metric_alert_state_log (expires_at);
 ```
 
 ### 2.2 Data Access
 
-**New file:** `packages/services/api/src/modules/alerts/providers/metric-alerts-storage.ts`
+**New file:** `packages/services/api/src/modules/alerts/providers/metric-alert-rules-storage.ts`
 
 Module-level provider with direct `PG_POOL_CONFIG` injection (same modern pattern as Phase 1).
 Provides:
 
 Alert configuration CRUD:
 
-- `addMetricAlert(input)`, `updateMetricAlert(id, fields)`, `deleteMetricAlerts(ids)`
-- `getMetricAlerts(projectId)`, `getMetricAlertsByTarget(targetId)`
-- `getAllEnabledMetricAlerts()` — used by the workflows evaluation task
+- `addMetricAlertRuleRule(input)`, `updateMetricAlertRuleRule(id, fields)`, `deleteMetricAlertRuless(ids)`
+- `getMetricAlertRules(projectId)`, `getMetricAlertRulesByTarget(targetId)`
+- `getAllEnabledMetricAlertRules()` — used by the workflows evaluation task
 
 Incident management:
 
-- `createIncident(alertId, currentValue, previousValue, thresholdValue)` — called when alert
+- `createIncident(ruleId, currentValue, previousValue, thresholdValue)` — called when rule
   transitions PENDING → FIRING
-- `resolveIncident(alertId)` — sets `resolved_at` on the open incident when alert transitions
+- `resolveIncident(ruleId)` — sets `resolved_at` on the open incident when rule transitions
   RECOVERING → NORMAL
-- `getOpenIncident(alertId)` — find currently firing incident (where `resolved_at IS NULL`)
-- `getIncidentHistory(alertId, limit, offset)` — paginated history for the UI
+- `getOpenIncident(ruleId)` — find currently firing incident (where `resolved_at IS NULL`)
+- `getIncidentHistory(ruleId, limit, offset)` — paginated history for the UI
+
+State log (powers alert history UI):
+
+- `logStateTransition(ruleId, targetId, fromState, toState, value, previousValue, thresholdValue, expiresAt)` —
+  called on every state transition during evaluation. `thresholdValue` is snapshotted from the rule
+  at transition time so historical events remain accurate even if the rule is later edited.
+  `expiresAt` is computed from the org's plan: `NOW() + 7 days` for Hobby/Pro, `NOW() + 30 days`
+  for Enterprise.
+- `getStateLog(ruleId, from, to)` — state changes for a single alert rule within a time range
+- `getStateLogByTarget(targetId, from, to)` — all state changes across all rules for a target
 
 ### 2.3 GraphQL API
 
 **File:** `packages/services/api/src/modules/alerts/module.graphql.ts`
 
 ```graphql
-enum MetricAlertType {
+enum MetricAlertRuleType {
   LATENCY
   ERROR_RATE
   TRAFFIC
 }
-enum MetricAlertMetric {
+enum MetricAlertRuleMetric {
   avg
   p75
   p90
   p95
   p99
 }
-enum MetricAlertThresholdType {
+enum MetricAlertRuleThresholdType {
   FIXED_VALUE
   PERCENTAGE_CHANGE
 }
-enum MetricAlertDirection {
+enum MetricAlertRuleDirection {
   ABOVE
   BELOW
 }
-enum MetricAlertSeverity {
+enum MetricAlertRuleSeverity {
   INFO
   WARNING
   CRITICAL
 }
-enum MetricAlertState {
+enum MetricAlertRuleState {
   NORMAL
   PENDING
   FIRING
   RECOVERING
 }
 
-type MetricAlert {
+type MetricAlertRule {
   id: ID!
   name: String!
-  type: MetricAlertType!
+  type: MetricAlertRuleType!
   target: Target!
   channel: AlertChannel!
   timeWindowMinutes: Int!
-  metric: MetricAlertMetric
-  thresholdType: MetricAlertThresholdType!
+  metric: MetricAlertRuleMetric
+  thresholdType: MetricAlertRuleThresholdType!
   thresholdValue: Float!
-  direction: MetricAlertDirection!
-  severity: MetricAlertSeverity!
-  state: MetricAlertState!
+  direction: MetricAlertRuleDirection!
+  severity: MetricAlertRuleSeverity!
+  state: MetricAlertRuleState!
   confirmationMinutes: Int!
   enabled: Boolean!
   lastEvaluatedAt: DateTime
@@ -417,14 +447,14 @@ type MetricAlert {
   """
   The currently open incident, if any
   """
-  currentIncident: MetricAlertIncident
+  currentIncident: MetricAlertRuleIncident
   """
   Past incidents for this alert
   """
-  incidents(first: Int, after: String): MetricAlertIncidentConnection!
+  incidents(first: Int, after: String): MetricAlertRuleIncidentConnection!
 }
 
-type MetricAlertIncident {
+type MetricAlertRuleIncident {
   id: ID!
   startedAt: DateTime!
   resolvedAt: DateTime
@@ -433,16 +463,40 @@ type MetricAlertIncident {
   thresholdValue: Float!
 }
 
-extend type Project {
-  metricAlerts: [MetricAlert!]
+type MetricAlertRuleStateChange {
+  id: ID!
+  fromState: MetricAlertRuleState!
+  toState: MetricAlertRuleState!
+  """Metric value in the current window at transition time"""
+  value: Float
+  """Metric value in the previous (comparison) window at transition time"""
+  previousValue: Float
+  """Threshold value snapshotted at transition time (survives rule edits)"""
+  thresholdValue: Float
+  createdAt: DateTime!
+  rule: MetricAlertRule!
 }
 
-# Mutations: addMetricAlert, updateMetricAlert, deleteMetricAlerts
+extend type MetricAlertRule {
+  """State change history for this rule (powers the state timeline)"""
+  stateLog(from: DateTime!, to: DateTime!): [MetricAlertRuleStateChange!]!
+}
+
+extend type Target {
+  """State changes across all alert rules for this target (powers the alert events chart + list)"""
+  metricAlertRuleStateLog(from: DateTime!, to: DateTime!): [MetricAlertRuleStateChange!]!
+}
+
+extend type Project {
+  metricAlertRules: [MetricAlertRule!]
+}
+
+# Mutations: addMetricAlertRuleRule, updateMetricAlertRuleRule, deleteMetricAlertRuless
 # (standard ok/error result pattern)
 ```
 
-**New resolver files:** `MetricAlert.ts`, `Mutation/addMetricAlert.ts`,
-`Mutation/updateMetricAlert.ts`, `Mutation/deleteMetricAlerts.ts`
+**New resolver files:** `MetricAlertRule.ts`, `Mutation/addMetricAlertRuleRule.ts`,
+`Mutation/updateMetricAlertRuleRule.ts`, `Mutation/deleteMetricAlertRuless.ts`
 
 Uses `alert:modify` permission.
 
@@ -469,9 +523,11 @@ HTTP client so it can query operations metrics.
 
 #### Evaluation Task
 
-**New file:** `packages/services/workflows/src/tasks/evaluate-metric-alerts.ts`
+**New file:** `packages/services/workflows/src/tasks/evaluate-metric-alert-rules.ts`
 
-Cron: `* * * * * evaluateMetricAlerts` (every minute)
+Cron:
+- `* * * * * evaluateMetricAlertRules` (every minute)
+- `0 4 * * * purgeExpiredAlertStateLog` (daily at 4:00 AM — deletes rows where `expires_at < NOW()`)
 
 The ingestion pipeline (API buffer → Kafka → ClickHouse async insert) has a worst-case latency of
 ~31 seconds, so by the time each 1-minute cron tick fires, the previous minute's data is reliably
@@ -619,7 +675,24 @@ Webhook payload:
 }
 ```
 
-### 2.6 Deployment
+### 2.6 Alert State Log Retention
+
+Alert state log retention is plan-gated, following the same pattern as operations data retention
+(see `packages/services/api/src/modules/commerce/constants.ts`):
+
+| Plan       | State log retention |
+|------------|---------------------|
+| Hobby      | 7 days              |
+| Pro        | 7 days              |
+| Enterprise | 30 days             |
+
+When logging a state transition, the evaluation task looks up the organization's plan and sets
+`expires_at` accordingly. A daily cron task (`purgeExpiredAlertStateLog`) deletes expired rows.
+
+**File:** `packages/services/api/src/modules/commerce/constants.ts` — add
+`alertStateLogRetentionDays` to each plan's limits.
+
+### 2.7 Deployment
 
 **File:** `deployment/services/workflows.ts` — add ClickHouse env vars to the workflows service
 deployment config.
@@ -628,17 +701,19 @@ deployment config.
 
 | File                                                                          | Change                               |
 | ----------------------------------------------------------------------------- | ------------------------------------ |
-| `packages/migrations/src/actions/2026.03.27T00-00-01.metric-alerts.ts`        | **New** — migration                  |
-| `packages/services/api/src/modules/alerts/providers/metric-alerts-storage.ts` | **New** — module-level CRUD provider |
-| `packages/services/api/src/modules/alerts/module.graphql.ts`                  | Add MetricAlert types/mutations      |
+| `packages/migrations/src/actions/2026.03.27T00-00-01.metric-alert-rules.ts`        | **New** — migration                  |
+| `packages/services/api/src/modules/alerts/providers/metric-alert-rules-storage.ts` | **New** — module-level CRUD provider |
+| `packages/services/api/src/modules/alerts/module.graphql.ts`                  | Add MetricAlertRule types/mutations      |
 | `packages/services/api/src/modules/alerts/resolvers/`                         | New resolver files                   |
 | `packages/services/api/src/modules/alerts/providers/alerts-manager.ts`        | Add metric alert methods             |
 | `packages/services/workflows/src/environment.ts`                              | Add ClickHouse env vars              |
 | `packages/services/workflows/src/context.ts`                                  | Add clickhouse to Context            |
 | `packages/services/workflows/src/lib/clickhouse-client.ts`                    | **New** — lightweight CH client      |
-| `packages/services/workflows/src/tasks/evaluate-metric-alerts.ts`             | **New** — evaluation cron task       |
+| `packages/services/workflows/src/tasks/evaluate-metric-alert-rules.ts`             | **New** — evaluation cron task       |
 | `packages/services/workflows/src/lib/metric-alert-notifier.ts`                | **New** — notification sender        |
-| `packages/services/workflows/src/index.ts`                                    | Register task + crontab              |
+| `packages/services/workflows/src/tasks/purge-expired-alert-state-log.ts`      | **New** — daily purge task           |
+| `packages/services/workflows/src/index.ts`                                    | Register tasks + crontab             |
+| `packages/services/api/src/modules/commerce/constants.ts`                     | Add alertStateLogRetentionDays       |
 | `deployment/services/workflows.ts`                                            | ClickHouse env vars                  |
 
 ---
@@ -830,8 +905,8 @@ ClickHouse connection pool (32 sockets) and the 60-second task timeout.
 
 ### Phase 2
 
-1. Run migration, verify `metric_alerts` table created
+1. Run migration, verify `metric_alert_rules` table created
 2. CRUD metric alerts via GraphQL playground
-3. Trigger `evaluateMetricAlerts` task manually, verify ClickHouse queries and state transitions
+3. Trigger `evaluateMetricAlertRules` task manually, verify ClickHouse queries and state transitions
 4. Create a webhook metric alert, simulate threshold breach, verify webhook receives payload
 5. Add integration test in `integration-tests/tests/api/project/alerts.spec.ts`
