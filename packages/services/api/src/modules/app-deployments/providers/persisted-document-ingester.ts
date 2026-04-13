@@ -47,11 +47,11 @@ const MCP_DIRECTIVES_DOC = parse(/* GraphQL */ `
     description: String
     title: String
     descriptionProvider: String
-    meta: JSON
+    meta: _HiveMCPJSON
   ) on QUERY | MUTATION
   directive @mcpDescription(provider: String!) on VARIABLE_DEFINITION | FIELD
   directive @mcpHeader(name: String!) on VARIABLE_DEFINITION
-  scalar JSON
+  scalar _HiveMCPJSON
 `);
 
 /**
