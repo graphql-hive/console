@@ -1,14 +1,18 @@
 import { DocumentNode, GraphQLError, parse, print, SourceLocation } from 'graphql';
 import { z } from 'zod';
 import type { Logger } from '@graphql-hive/logger';
-import { generateChangeHash } from '@graphql-inspector/compare-changes';
+import { generateChangeHash, isChangeEqual } from '@graphql-inspector/compare-changes';
 import type { Change } from '@graphql-inspector/core';
 import { errors, patch } from '@graphql-inspector/patch';
 import type { Project, SchemaObject } from '@hive/api';
 import type { ComposeAndValidateResult } from '@hive/api/shared/entities';
 import { CommonQueryMethods, PostgresDatabasePool, psql } from '@hive/postgres';
 import type { ContractsInputType, SchemaBuilderApi } from '@hive/schema';
-import { decodeCreatedAtAndUUIDIdBasedCursor, HiveSchemaChangeModel } from '@hive/storage';
+import {
+  decodeCreatedAtAndUUIDIdBasedCursor,
+  HiveSchemaChangeModel,
+  SchemaChangeModel,
+} from '@hive/storage';
 import { createTRPCProxyClient, httpLink } from '@trpc/client';
 
 type SchemaProviderConfig = {
@@ -431,6 +435,11 @@ export function schemaProvider(providerConfig: SchemaProviderConfig) {
         targetId: string;
       }[],
     ) {
+      providerConfig.logger.info(
+        'Approving changes (%s): %o',
+        records.map(r => generateChangeHash(r.change)).join(', '),
+        records[0]?.change,
+      );
       const values = records.map(
         r => psql`(
           ${generateChangeHash(r.change)}
@@ -452,5 +461,129 @@ export function schemaProvider(providerConfig: SchemaProviderConfig) {
           VALUES ${psql.join(values, psql.fragment`,`)}
         `);
     },
+
+    async implementChanges(
+      conn: CommonQueryMethods,
+      records: {
+        /** Change ID */
+        id: string;
+
+        schemaVersionId: string;
+      }[],
+    ) {
+      await conn.query(psql`
+          UPDATE proposal_approved_changes as p
+          SET schema_version_id = v."schemaVersionId"
+          FROM jsonb_to_recordset(
+            ${psql.jsonb(records)}
+          ) as v(id uuid, "schemaVersionId" uuid)
+          WHERE p.id = v.id;
+        `);
+    },
+
+    /**
+     * If we have a set of changes, this looks up to determine whether or not those changes
+     * have been approved. This is useful for looking up (on check or publish) whether the
+     * change matches any of the approved proposals' changess, because in this situation
+     * there is no known proposal or schema version to match on. This function queries for all
+     * passed in changes, so any batching/pagination should be done prior to calling this function.
+     *
+     * This is also ran for the schema checks page to display whether or not a change has
+     * been approved by a proposal or not.
+     *
+     * @returns An array of change approval records. The index corresponds with the original
+     *          changes array passed.
+     */
+    async getEquivalentUnimplementedApprovedChanges(
+      conn: CommonQueryMethods,
+      args: { changes: Change[]; targetId: string },
+    ) {
+      // calculate hashes the same order as the changes
+      const hashes = args.changes.map(generateChangeHash);
+
+      // fetch the changes based on the hash. Note that ordering is not guaranteed here
+      const result = await conn.any(psql`
+        SELECT ${proposalApprovedChangeFields(psql`"c"`)}
+        FROM "proposal_approved_changes" as "c"
+        WHERE hash = ANY(${psql.array(hashes, 'text')})
+          AND target_id = ${args.targetId}
+          AND schema_version_id IS NULL
+      `);
+
+      const approvedChanges = result.map(row => ProposalApprovedChangeModel.parse(row));
+      const approvedChangeLookup = Map.groupBy(approvedChanges, c => c.hash);
+
+      // iterate over all changes and hashes, determine if this change is within the approvedChanges list
+      return args.changes.map((change, i) => {
+        const hash = hashes[i];
+        const approvedMatch = approvedChangeLookup.get(hash);
+        const changeApproval =
+          approvedMatch?.find(match => {
+            return isChangeEqual(match.change as Change<any>, change);
+          }) ?? null;
+
+        return changeApproval;
+      });
+    },
+
+    async schemaVersionChanges({
+      pool,
+      versionId,
+    }: {
+      pool: PostgresDatabasePool;
+      versionId: string;
+    }) {
+      const changes = await pool
+        .any(
+          psql`/* getSchemaChangesForVersion */
+        SELECT
+          "change_type" as "type",
+          "meta",
+          "severity_level" as "severityLevel",
+          "is_safe_based_on_usage" as "isSafeBasedOnUsage"
+        FROM
+          "schema_version_changes"
+        WHERE
+          "schema_version_id" = ${versionId}
+      `,
+        )
+        .then(z.array(HiveSchemaChangeModel).parse);
+
+      if (changes.length === 0) {
+        return null;
+      }
+
+      return changes;
+    },
   };
 }
+
+const proposalApprovedChangeFields = (prefix = psql`"proposal_approved_changes"`) => psql`
+     ${prefix}."id"
+    ,${prefix}."hash"
+    ,${prefix}."change"
+    ,${prefix}."proposal_id" as "proposalId"
+    ,${prefix}."schema_version_id" as "schemaVersionId"
+    ,${prefix}."service"
+    ,${prefix}."target_id" as "targetId"
+`;
+
+const ProposalApprovedChangeModel = z
+  .object({
+    id: z.string(),
+    // the type and path of the change is baked into the hash, so it's safe
+    hash: z.string(),
+    change: SchemaChangeModel,
+    proposalId: z.string(),
+    schemaVersionId: z.string().nullable(),
+    service: z.string().nullable(),
+    targetId: z.string(),
+  })
+  .transform(data => ({
+    ...data,
+    change: {
+      // add back the path since that doesn't get saved to the db except for in the hash
+      path: data.hash.split(':')[1] as string | undefined,
+      ...data.change,
+    },
+  }));

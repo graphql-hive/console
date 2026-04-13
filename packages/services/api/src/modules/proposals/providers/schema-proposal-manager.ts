@@ -336,7 +336,7 @@ export class SchemaProposalManager {
     throw new HiveError('Not implemented');
   }
 
-  @traceFn('SchemaProposalManager.getChangeDetailsForCheck', {
+  @traceFn('SchemaProposalManager._getImplementedVersionsByProposalId', {
     initAttributes: input => ({
       'hive.schema_proposal.id': input.schemaProposalId || '',
       'hive.target.id': input.targetId,
@@ -352,6 +352,29 @@ export class SchemaProposalManager {
   async _getImplementedVersionsByProposalId(args: { schemaProposalId: string; targetId: string }) {
     return this.proposalStorage.getImplementedVersionsByProposalId({
       schemaProposalId: args.schemaProposalId,
+      targetId: args.targetId,
+    });
+  }
+
+  @traceFn('SchemaProposalManager._getImplementedVersionsBySchemaVersionId', {
+    initAttributes: input => ({
+      'hive.schema_proposal.id': input.schemaVersionId,
+      'hive.target.id': input.targetId,
+    }),
+    resultAttributes: result => ({
+      'hive.proposals.details.length': result?.length || 0,
+    }),
+  })
+  @cache<{
+    schemaVersionId: string;
+    targetId: string;
+  }>(({ schemaVersionId, targetId }) => `${targetId}/${schemaVersionId}`)
+  async _getImplementedVersionsBySchemaVersionId(args: {
+    schemaVersionId: string;
+    targetId: string;
+  }) {
+    return this.proposalStorage.getImplementedApprovedChangesByVersionId({
+      schemaVersionId: args.schemaVersionId,
       targetId: args.targetId,
     });
   }
@@ -409,6 +432,7 @@ export class SchemaProposalManager {
           change as unknown as Change<any>,
         ) && implementedChange.schemaVersionId,
     );
+
     return {
       schemaProposal: { id: schemaProposalId },
       implementedBy: implementation?.schemaVersionId
@@ -417,5 +441,46 @@ export class SchemaProposalManager {
           }
         : null,
     };
+  }
+
+  async getImplementedVersionsBySchemaVersionId({
+    targetId,
+    schemaVersionId,
+    change,
+  }: {
+    targetId: string;
+    schemaVersionId: string;
+
+    // The change record. Used to compare against the returned implemented change
+    // to verify that they are equal.
+    change: SchemaChangeType;
+  }) {
+    // `_getImplementedVersionsBySchemaVersionId` is cached so it's safe to call multiple times.
+    // This is intended to be used by the SchemaChange resolver and would be called on every
+    // SchemaChange.
+    const implementedChanges = await this._getImplementedVersionsBySchemaVersionId({
+      targetId,
+      schemaVersionId,
+    });
+
+    // Verify which versions implement the associated changes using an exact compare
+    const implementation = implementedChanges.find(
+      (
+        implementedChange,
+      ): implementedChange is typeof implementedChange & { schemaVersionId: string } =>
+        isChangeEqual(
+          implementedChange.change as unknown as Change<any>,
+          change as unknown as Change<any>,
+        ) && !!implementedChange.schemaVersionId,
+    );
+    if (implementation) {
+      return {
+        schemaProposal: { id: implementation.proposalId },
+        implementedBy: {
+          id: implementation.schemaVersionId,
+        },
+      };
+    }
+    return null;
   }
 }

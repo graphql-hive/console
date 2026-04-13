@@ -4,6 +4,7 @@ import { parse, print } from 'graphql';
 import { Inject, Injectable, Scope } from 'graphql-modules';
 import lodash from 'lodash';
 import { z } from 'zod';
+import { CommonQueryMethods } from '@hive/postgres';
 import { trace, traceFn } from '@hive/service-common';
 import type {
   ConditionalBreakingChangeMetadata,
@@ -439,7 +440,7 @@ export class SchemaManager {
       base_schema: string | null;
       metadata: string | null;
       projectType: ProjectType;
-      actionFn(versionId: string): Promise<void>;
+      actionFn(versionId: string, trx: CommonQueryMethods): Promise<void>;
       changes: Array<SchemaChangeType>;
       coordinatesDiff: SchemaCoordinatesDiffResult | null;
       previousSchemaVersion: string | null;

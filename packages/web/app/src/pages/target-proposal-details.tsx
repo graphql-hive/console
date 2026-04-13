@@ -54,7 +54,11 @@ export function TargetProposalDetailsPage(props: {
           if (ignored) {
             return null;
           }
-          return { change: c };
+          return {
+            change: c,
+            implementedBy: c.schemaProposalChangeDetails?.implementedBy?.id,
+            proposedBy: c.schemaProposalChangeDetails?.schemaProposal.id,
+          };
         });
 
         const breaking: MappedChange[] = [];

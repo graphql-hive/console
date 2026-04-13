@@ -6,6 +6,7 @@ import lodash from 'lodash';
 import promClient from 'prom-client';
 import { z } from 'zod';
 import { CriticalityLevel } from '@graphql-inspector/core';
+import { CommonQueryMethods } from '@hive/postgres';
 import { trace, traceFn } from '@hive/service-common';
 import type {
   ConditionalBreakingChangeMetadata,
@@ -1039,6 +1040,7 @@ export class SchemaPublisher {
       projectId: target.projectId,
       targetId: target.id,
       schemaProposalId: schemaCheck.schemaProposalId,
+      schemaVersionId: null,
     };
 
     if (checkResult.conclusion === SchemaCheckConclusion.Success) {
@@ -2059,7 +2061,15 @@ export class SchemaPublisher {
       metadata: input.metadata ?? null,
       projectType: project.type,
       github,
-      actionFn: async (versionId: string) => {
+      actionFn: async (versionId: string, trx: CommonQueryMethods) => {
+        await this.schemaProposals.runBackgroundImplementationTracker(
+          {
+            targetId: target.id,
+            schemaVersionId: versionId,
+          },
+          trx,
+        );
+
         if (composable && fullSchemaSdl) {
           const contracts: Array<{ name: string; sdl: string; supergraph: string }> = [];
           for (const contract of publishState.contracts ?? []) {

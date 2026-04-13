@@ -71,13 +71,12 @@ export const SchemaVersion: SchemaVersionResolvers = {
     return injector.get(SchemaVersionHelper).getSchemaCompositionErrors(version);
   },
   breakingSchemaChanges: async (version, _, { injector }) => {
-    // @todo assign the selector in SchemaVersionHelper to avoid
-    // having to map everywhere
     const selector = {
       targetId: version.targetId,
       projectId: version.projectId,
       organizationId: version.organizationId,
       schemaProposalId: null,
+      schemaVersionId: version.id,
     };
     const changes = await injector.get(SchemaVersionHelper).getBreakingSchemaChanges(version);
     return changes?.map(c => ({
@@ -91,6 +90,7 @@ export const SchemaVersion: SchemaVersionResolvers = {
       projectId: version.projectId,
       organizationId: version.organizationId,
       schemaProposalId: null,
+      schemaVersionId: version.id,
     };
     const changes = await injector.get(SchemaVersionHelper).getSafeSchemaChanges(version);
     return changes?.map(c => ({
@@ -104,6 +104,7 @@ export const SchemaVersion: SchemaVersionResolvers = {
       projectId: version.projectId,
       organizationId: version.organizationId,
       schemaProposalId: null,
+      schemaVersionId: version.id,
     };
     const changes = await injector.get(SchemaVersionHelper).getAllSchemaChanges(version);
     return changes?.map(c => ({

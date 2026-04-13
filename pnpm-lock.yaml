@@ -1102,8 +1102,8 @@ importers:
         specifier: 1.0.0
         version: 1.0.0
       '@graphql-inspector/compare-changes':
-        specifier: 0.1.0-alpha-20260328000712-2cf98744a012fa66614588ed89ba99719b0f461b
-        version: 0.1.0-alpha-20260328000712-2cf98744a012fa66614588ed89ba99719b0f461b(graphql@16.9.0)
+        specifier: 0.1.0-alpha-20260410200850-4134db734dce207751762bfcbe74ab87eab30fe9
+        version: 0.1.0-alpha-20260410200850-4134db734dce207751762bfcbe74ab87eab30fe9(graphql@16.9.0)
       '@graphql-inspector/core':
         specifier: 7.1.2
         version: 7.1.2(graphql@16.9.0)
@@ -1998,8 +1998,8 @@ importers:
         specifier: 1.0.9
         version: 1.0.9(pino@10.3.0)
       '@graphql-inspector/compare-changes':
-        specifier: 0.1.0-alpha-20260328000712-2cf98744a012fa66614588ed89ba99719b0f461b
-        version: 0.1.0-alpha-20260328000712-2cf98744a012fa66614588ed89ba99719b0f461b(graphql@16.9.0)
+        specifier: 0.1.0-alpha-20260410200850-4134db734dce207751762bfcbe74ab87eab30fe9
+        version: 0.1.0-alpha-20260410200850-4134db734dce207751762bfcbe74ab87eab30fe9(graphql@16.9.0)
       '@graphql-inspector/core':
         specifier: 7.1.2
         version: 7.1.2(graphql@16.9.0)
@@ -4383,8 +4383,8 @@ packages:
       graphql: ^14.0.0 || ^15.0.0 || ^16.0.0
       yargs: 17.7.2
 
-  '@graphql-inspector/compare-changes@0.1.0-alpha-20260328000712-2cf98744a012fa66614588ed89ba99719b0f461b':
-    resolution: {integrity: sha512-G4FDMTgVo1pds8NfleHf+C2f0RFPG0o9yjlJpeX/19dUaeDvurvl5hjg7bbMI5B7hba5GZpNatN2Qt5kxGIt/g==}
+  '@graphql-inspector/compare-changes@0.1.0-alpha-20260410200850-4134db734dce207751762bfcbe74ab87eab30fe9':
+    resolution: {integrity: sha512-pv/2OBpbGBW31Vr6umW/RRarQ1QMBRbgDyOKQgFa+IfRla1s3nvO2n8g3Cn8D16hJQStk8HYnDtz0CoxiUl1Bg==}
     engines: {node: '>=18.0.0'}
     peerDependencies:
       graphql: ^14.0.0 || ^15.0.0 || ^16.0.0
@@ -22860,7 +22860,7 @@ snapshots:
       tslib: 2.6.2
       yargs: 17.7.2
 
-  '@graphql-inspector/compare-changes@0.1.0-alpha-20260328000712-2cf98744a012fa66614588ed89ba99719b0f461b(graphql@16.9.0)':
+  '@graphql-inspector/compare-changes@0.1.0-alpha-20260410200850-4134db734dce207751762bfcbe74ab87eab30fe9(graphql@16.9.0)':
     dependencies:
       graphql: 16.9.0
       tslib: 2.6.2

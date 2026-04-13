@@ -5,7 +5,7 @@ import { Inject, Injectable, Scope } from 'graphql-modules';
 import { z } from 'zod';
 import { generateChangeHash, isChangeEqual } from '@graphql-inspector/compare-changes';
 import { Change } from '@graphql-inspector/core';
-import { PostgresDatabasePool, psql } from '@hive/postgres';
+import { CommonQueryMethods, PostgresDatabasePool, psql } from '@hive/postgres';
 import {
   decodeCreatedAtAndUUIDIdBasedCursor,
   encodeCreatedAtAndUUIDIdBasedCursor,
@@ -14,6 +14,7 @@ import {
 import { TaskScheduler } from '@hive/workflows/kit';
 import { SchemaProposalApprovalTask } from '@hive/workflows/tasks/schema-proposal-approval';
 import { SchemaProposalCompositionTask } from '@hive/workflows/tasks/schema-proposal-composition';
+import { SchemaProposalImplementationTask } from '@hive/workflows/tasks/schema-proposal-implementation';
 import { SchemaProposalStage } from '../../../__generated__/types';
 import { Logger } from '../../shared/providers/logger';
 import { Storage } from '../../shared/providers/storage';
@@ -64,6 +65,20 @@ export class SchemaProposalStorage {
 
   async runBackgroundApproval(input: { proposalId: string; targetId: string }) {
     await this.taskScheduler.scheduleTask(SchemaProposalApprovalTask, input);
+  }
+
+  /**
+   * Kicks off a job to check and update all changes that are part of the schema version, to flag them as
+   * implemented if they represent an approved schema change
+   */
+  async runBackgroundImplementationTracker(
+    input: {
+      targetId: string;
+      schemaVersionId: string;
+    },
+    conn: CommonQueryMethods = this.pool,
+  ) {
+    await this.taskScheduler.scheduleTask(SchemaProposalImplementationTask, input, { trx: conn });
   }
 
   private async assertSchemaProposalsEnabled(args: {
@@ -454,7 +469,7 @@ export class SchemaProposalStorage {
       .any(
         psql`
       SELECT ${proposalApprovedChangeFields(psql`"c"`)}
-      FROM "proposal_approved_changes" as "c"
+      FROM proposal_approved_changes as "c"
       WHERE schema_version_id = ${args.schemaVersionId}
         AND target_id = ${args.targetId}
     `,
@@ -476,12 +491,15 @@ export class SchemaProposalStorage {
    * @returns An array of change approval records. The index corresponds with the original
    *          changes array passed.
    */
-  async getEquivalentUnimplementedApprovedChanges(args: { changes: Change[]; targetId: string }) {
+  async getEquivalentUnimplementedApprovedChanges(
+    args: { changes: Change[]; targetId: string },
+    conn: CommonQueryMethods = this.pool,
+  ) {
     // calculate hashes the same order as the changes
     const hashes = args.changes.map(generateChangeHash);
 
     // fetch the changes based on the hash. Note that ordering is not guaranteed here
-    const result = await this.pool.any(psql`
+    const result = await conn.any(psql`
       SELECT ${proposalApprovedChangeFields(psql`"c"`)}
       FROM "proposal_approved_changes" as "c"
       WHERE hash = ANY(${psql.array(hashes, 'text')})
@@ -493,28 +511,39 @@ export class SchemaProposalStorage {
     const approvedChangeLookup = Map.groupBy(approvedChanges, c => c.hash);
 
     // iterate over all changes and hashes, determine if this change is within the approvedChanges list
-    return args.changes.map((approvedChange, i) => {
-      const hashMatches = approvedChangeLookup.get(hashes[i]);
+    return args.changes.map((change, i) => {
+      const hash = hashes[i];
+      const approvedMatch = approvedChangeLookup.get(hash);
       const changeApproval =
-        hashMatches?.find(hashMatchChange =>
-          isChangeEqual(hashMatchChange as unknown as Change<any>, approvedChange),
-        ) ?? null;
+        approvedMatch?.find(match => {
+          return isChangeEqual(match.change as Change<any>, change);
+        }) ?? null;
 
       return changeApproval;
     });
   }
 }
 
-const ProposalApprovedChangeModel = z.object({
-  id: z.string(),
-  // the type and path of the change is baked into the hash, so it's safe
-  hash: z.string(),
-  change: SchemaChangeModel,
-  proposalId: z.string(),
-  schemaVersionId: z.string().nullable(),
-  service: z.string().nullable(),
-  targetId: z.string(),
-});
+// @todo dedupe from the implementation workflow
+const ProposalApprovedChangeModel = z
+  .object({
+    id: z.string(),
+    // the type and path of the change is baked into the hash, so it's safe
+    hash: z.string(),
+    change: SchemaChangeModel,
+    proposalId: z.string(),
+    schemaVersionId: z.string().nullable(),
+    service: z.string().nullable(),
+    targetId: z.string(),
+  })
+  .transform(data => ({
+    ...data,
+    change: {
+      // add back the path since that doesn't get saved to the db except for in the hash
+      path: data.hash.split(':')[1] as string | undefined,
+      ...data.change,
+    },
+  }));
 
 const proposalApprovedChangeFields = (prefix = psql`"proposal_approved_changes"`) => psql`
      ${prefix}."id"

@@ -26,7 +26,10 @@ export type SchemaChangeMapper = SchemaChangeType & {
     organizationId: string;
     projectId: string;
     targetId: string;
+    /** If viewing from a schema proposal */
     schemaProposalId: string | null;
+    /** If viewing from a schema version */
+    schemaVersionId: string | null;
   };
 };
 export type SchemaChangeApprovalMapper = SchemaCheckApprovalMetadata;

@@ -24,17 +24,31 @@ export const SchemaChange: Pick<SchemaChangeResolvers, 'meta' | 'schemaProposalC
     }
 
     const proposalManager = injector.get(SchemaProposalManager);
-    if (!selector.schemaProposalId) {
-      // this finds a matching approved change record based on
-      // the change hash (because the ID will be different)
-      // and returns which schema proposal approved the change
-      return proposalManager.getMatchingApprovedProposalChangeDetails({
+    /**
+     * If the change belongs to a schema proposal, then fetch the changes just
+     * for that proposal
+     */
+    if (selector.schemaProposalId) {
+      return proposalManager.getProposalChangeDetails({
         targetId: selector.targetId,
+        schemaProposalId: selector.schemaProposalId,
         change,
       });
     }
-    return proposalManager.getProposalChangeDetails({
-      schemaProposalId: selector.schemaProposalId,
+
+    /** If this change is for a pushed schema (in history) */
+    if (selector.schemaVersionId) {
+      return proposalManager.getImplementedVersionsBySchemaVersionId({
+        targetId: selector.targetId,
+        schemaVersionId: selector.schemaVersionId,
+        change,
+      });
+    }
+
+    // this finds a matching approved change record based on
+    // the change hash (because the ID will be different)
+    // and returns which schema proposal approved the change
+    return proposalManager.getMatchingApprovedProposalChangeDetails({
       targetId: selector.targetId,
       change,
     });

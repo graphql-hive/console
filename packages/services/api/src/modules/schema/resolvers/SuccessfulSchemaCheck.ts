@@ -15,6 +15,7 @@ export const SuccessfulSchemaCheck: SuccessfulSchemaCheckResolvers = {
       projectId: schemaCheck.selector.projectId,
       targetId: schemaCheck.targetId,
       schemaProposalId: schemaCheck.schemaProposalId,
+      schemaVersionId: null,
     };
     const changes = injector.get(SchemaCheckManager).getSafeSchemaChanges(schemaCheck);
     return changes ? withSelector(changes, selector) : null;
@@ -25,6 +26,7 @@ export const SuccessfulSchemaCheck: SuccessfulSchemaCheckResolvers = {
       projectId: schemaCheck.selector.projectId,
       targetId: schemaCheck.targetId,
       schemaProposalId: schemaCheck.schemaProposalId,
+      schemaVersionId: null,
     };
     const changes = injector.get(SchemaCheckManager).getBreakingSchemaChanges(schemaCheck);
     return changes ? withSelector(changes, selector) : null;
@@ -91,6 +93,7 @@ export const SuccessfulSchemaCheck: SuccessfulSchemaCheckResolvers = {
       projectId: schemaCheck.selector.projectId,
       targetId: schemaCheck.targetId,
       schemaProposalId: schemaCheck.schemaProposalId,
+      schemaVersionId: null,
     };
     const changes = injector.get(SchemaCheckManager).getAllSchemaChanges(schemaCheck);
     return changes ? withSelector(changes, selector) : null;
@@ -106,6 +109,7 @@ export const SuccessfulSchemaCheck: SuccessfulSchemaCheckResolvers = {
       projectId: selector.projectId,
       targetId: targetId,
       schemaProposalId,
+      schemaVersionId: null,
     };
     if (!schemaProposalChanges) {
       return null;

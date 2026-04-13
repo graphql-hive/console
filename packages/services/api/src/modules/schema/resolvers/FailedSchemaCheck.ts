@@ -13,6 +13,7 @@ export const FailedSchemaCheck: FailedSchemaCheckResolvers = {
       projectId: schemaCheck.selector.projectId,
       targetId: schemaCheck.targetId,
       schemaProposalId: schemaCheck.schemaProposalId,
+      schemaVersionId: null,
     };
     return injector
       .get(SchemaCheckManager)
@@ -28,6 +29,7 @@ export const FailedSchemaCheck: FailedSchemaCheckResolvers = {
       projectId: schemaCheck.selector.projectId,
       targetId: schemaCheck.targetId,
       schemaProposalId: schemaCheck.schemaProposalId,
+      schemaVersionId: null,
     };
     return injector
       .get(SchemaCheckManager)
@@ -76,6 +78,7 @@ export const FailedSchemaCheck: FailedSchemaCheckResolvers = {
       projectId: schemaCheck.selector.projectId,
       targetId: schemaCheck.targetId,
       schemaProposalId: schemaCheck.schemaProposalId,
+      schemaVersionId: null,
     };
     return injector
       .get(SchemaCheckManager)
