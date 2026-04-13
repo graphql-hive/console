@@ -1,4 +1,13 @@
-import { buildSchema, DocumentNode, GraphQLError, Kind, parse, TypeInfo, validate } from 'graphql';
+import {
+  buildSchema,
+  DocumentNode,
+  GraphQLError,
+  Kind,
+  parse,
+  print,
+  TypeInfo,
+  validate,
+} from 'graphql';
 import PromiseQueue from 'p-queue';
 import { z } from 'zod';
 import { collectSchemaCoordinates, preprocessOperation } from '@graphql-hive/core';
@@ -30,7 +39,7 @@ const AppDeploymentOperationHashModel = z
 
 const AppDeploymentOperationBodyModel = z.string().min(3, 'Body must be at least 3 character long');
 
-const MCP_DIRECTIVES_SDL = /* GraphQL */ `
+const MCP_DIRECTIVES_DOC = parse(/* GraphQL */ `
   directive @mcpTool(
     name: String!
     description: String
@@ -40,22 +49,44 @@ const MCP_DIRECTIVES_SDL = /* GraphQL */ `
   ) on QUERY | MUTATION
   directive @mcpDescription(provider: String!) on VARIABLE_DEFINITION | FIELD
   directive @mcpHeader(name: String!) on VARIABLE_DEFINITION
-`;
+  scalar JSON
+`);
 
-function appendMcpDirectives(schemaSdl: string): string {
-  // Strip any existing MCP directive definitions (they may have outdated arguments)
-  let result = schemaSdl
-    .replace(/^[ \t]*directive @mcpTool\b.*$/gm, '')
-    .replace(/^[ \t]*directive @mcpDescription\b.*$/gm, '')
-    .replace(/^[ \t]*directive @mcpHeader\b.*$/gm, '');
+/**
+ * Persisted operation documents may use MCP directives (`@mcpTool`, `@mcpDescription`,
+ * `@mcpHeader`) and the `JSON` scalar (`@mcpTool`'s `meta` arg) that are not part of the
+ * user's schema. We inject any missing definitions so that `validate()` does not reject
+ * the documents for unknown directives or types.
+ *
+ * Only definitions absent from the SDL are added, when the user already defines an MCP
+ * directive (e.g. with a narrower arg set), their definition takes precedence.
+ */
+function injectMcpDirectives(schemaSdl: string): string {
+  const schemaDoc = parse(schemaSdl);
 
-  result += MCP_DIRECTIVES_SDL;
-
-  if (!/(^|\n)\s*scalar\s+JSON\b/.test(result)) {
-    result += '\nscalar JSON';
+  const existingNames = new Set<string>();
+  for (const def of schemaDoc.definitions) {
+    if (
+      def.kind === Kind.DIRECTIVE_DEFINITION ||
+      def.kind === Kind.SCALAR_TYPE_DEFINITION ||
+      def.kind === Kind.SCALAR_TYPE_EXTENSION
+    ) {
+      existingNames.add(def.name.value);
+    }
   }
 
-  return result;
+  const missing = MCP_DIRECTIVES_DOC.definitions.filter(def => {
+    if (def.kind === Kind.DIRECTIVE_DEFINITION || def.kind === Kind.SCALAR_TYPE_DEFINITION) {
+      return !existingNames.has(def.name.value);
+    }
+    return false;
+  });
+
+  if (missing.length === 0) {
+    return schemaSdl;
+  }
+
+  return schemaSdl + '\n' + print({ ...MCP_DIRECTIVES_DOC, definitions: missing });
 }
 
 export type BatchProcessEvent = {
@@ -135,7 +166,7 @@ export class PersistedDocumentIngester {
       data.documents.length,
     );
 
-    const schemaSdl = appendMcpDirectives(data.schemaSdl);
+    const schemaSdl = injectMcpDirectives(data.schemaSdl);
     const schema = buildSchema(schemaSdl);
     const typeInfo = new TypeInfo(schema);
     const documents: Array<DocumentRecord> = [];
