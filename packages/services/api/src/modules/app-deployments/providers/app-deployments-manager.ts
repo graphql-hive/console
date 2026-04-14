@@ -322,28 +322,4 @@ export class AppDeploymentsManager {
     return appDeploymentIds.map(id => Promise.resolve(dateMap.get(id) ?? null));
   });
 
-  async getExistingDocumentHashes(args: {
-    organizationId: string;
-    projectId: string;
-    targetId: string;
-    appName: string;
-    hashes: readonly string[];
-  }): Promise<string[]> {
-    await this.session.assertPerformAction({
-      action: 'appDeployment:create',
-      organizationId: args.organizationId,
-      params: {
-        organizationId: args.organizationId,
-        projectId: args.projectId,
-        targetId: args.targetId,
-        appDeploymentName: args.appName,
-      },
-    });
-
-    return this.appDeployments.getExistingDocumentHashes({
-      targetId: args.targetId,
-      appName: args.appName,
-      hashes: args.hashes,
-    });
-  }
 }

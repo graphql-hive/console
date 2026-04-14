@@ -5218,18 +5218,6 @@ test('retire app deployment with --force bypasses protection', async () => {
   });
 });
 
-const GetExistingDocumentHashes = graphql(`
-  query GetExistingDocumentHashes(
-    $targetSelector: TargetSelectorInput!
-    $appName: String!
-    $hashes: [String!]!
-  ) {
-    target(reference: { bySelector: $targetSelector }) {
-      appDeploymentDocumentHashes(appName: $appName, hashes: $hashes)
-    }
-  }
-`);
-
 const AddDocumentsToAppDeploymentWithFormat = graphql(`
   mutation AddDocumentsToAppDeploymentWithFormat($input: AddDocumentsToAppDeploymentInput!) {
     addDocumentsToAppDeployment(input: $input) {
@@ -5575,85 +5563,6 @@ test('v2 format accepts sha256 hashes and CDN access works', async () => {
   expect(await response.text()).toBe('query { hello }');
 });
 
-test('appDeploymentDocumentHashes returns existing hashes for delta upload', async () => {
-  const { createOrg } = await initSeed().createOwner();
-  const { createProject, setFeatureFlag, organization } = await createOrg();
-  await setFeatureFlag('appDeployments', true);
-  const { createTargetAccessToken, project, target } = await createProject();
-  const token = await createTargetAccessToken({});
-
-  await token.publishSchema({
-    sdl: /* GraphQL */ `
-      type Query {
-        hello: String
-      }
-    `,
-  });
-
-  // Create first version with some documents
-  await execute({
-    document: CreateAppDeployment,
-    variables: {
-      input: {
-        appName: 'my-app',
-        appVersion: '1.0.0',
-      },
-    },
-    authToken: token.secret,
-  }).then(res => res.expectNoGraphQLErrors());
-
-  // sha256('query { hello }')
-  const hash1 = 'ec2e01311ab3b02f3d8c8c712f9e579356d332cd007ac4c1ea5df727f482f05f';
-  // sha256('query hello { hello }')
-  const hash2 = '56a61ffe6bb6ed7e5163569143f0c73fc8e663c1843a8cc0776a818f1cb71faa';
-
-  await execute({
-    document: AddDocumentsToAppDeploymentWithFormat,
-    variables: {
-      input: {
-        appName: 'my-app',
-        appVersion: '1.0.0',
-        documents: [
-          { hash: hash1, body: 'query { hello }' },
-          { hash: hash2, body: 'query hello { hello }' },
-        ],
-        format: AppDeploymentFormatType.V2,
-      },
-    },
-    authToken: token.secret,
-  }).then(res => res.expectNoGraphQLErrors());
-
-  await execute({
-    document: ActivateAppDeployment,
-    variables: {
-      input: {
-        appName: 'my-app',
-        appVersion: '1.0.0',
-      },
-    },
-    authToken: token.secret,
-  }).then(res => res.expectNoGraphQLErrors());
-
-  // Query existing hashes by sending local hashes
-  const { target: targetResult } = await execute({
-    document: GetExistingDocumentHashes,
-    variables: {
-      targetSelector: {
-        organizationSlug: organization.slug,
-        projectSlug: project.slug,
-        targetSlug: target.slug,
-      },
-      appName: 'my-app',
-      hashes: [hash1, hash2, 'nonexistent-hash'],
-    },
-    authToken: token.secret,
-  }).then(res => res.expectNoGraphQLErrors());
-
-  expect(targetResult?.appDeploymentDocumentHashes).toContain(hash1);
-  expect(targetResult?.appDeploymentDocumentHashes).toContain(hash2);
-  expect(targetResult?.appDeploymentDocumentHashes).not.toContain('nonexistent-hash');
-  expect(targetResult?.appDeploymentDocumentHashes?.length).toBe(2);
-});
 
 test('v2 format prevents hash collision by rejecting non-sha256 hashes', async () => {
   // This test verifies the fix for: if someone uses operation name as hash (e.g., "GetUser"),
@@ -5824,34 +5733,21 @@ test('v2 format enables cross-version document sharing', async () => {
     authToken: token.secret,
   }).then(res => res.expectNoGraphQLErrors());
 
-  // Create v2.0.0 - the same hash should be available via delta query
-  await execute({
-    document: CreateAppDeployment,
+  // Create v2.0.0 with hashes; the shared hash should be returned as existing
+  const { createAppDeployment } = await execute({
+    document: CreateAppDeploymentWithHashes,
     variables: {
       input: {
         appName: 'my-app',
         appVersion: '2.0.0',
+        format: AppDeploymentFormatType.V2,
+        hashes: [sharedHash],
       },
     },
     authToken: token.secret,
   }).then(res => res.expectNoGraphQLErrors());
 
-  // Query should show the hash from v1.0.0
-  const { target: targetResult } = await execute({
-    document: GetExistingDocumentHashes,
-    variables: {
-      targetSelector: {
-        organizationSlug: organization.slug,
-        projectSlug: project.slug,
-        targetSlug: target.slug,
-      },
-      appName: 'my-app',
-      hashes: [sharedHash],
-    },
-    authToken: token.secret,
-  }).then(res => res.expectNoGraphQLErrors());
-
-  expect(targetResult?.appDeploymentDocumentHashes).toContain(sharedHash);
+  expect(createAppDeployment.ok?.existingHashes).toContain(sharedHash);
 
   // Add the same document to v2.0.0 (should succeed, uses shared storage)
   const { addDocumentsToAppDeployment } = await execute({
@@ -5996,42 +5892,6 @@ test('v1 format documents are accessible via CDN using format from apps-enabled 
     headers: { 'X-Hive-CDN-Key': cdnAccess.secretAccessToken },
   });
   expect(inactiveResponse.status).toBe(404);
-});
-
-test('appDeploymentDocumentHashes returns empty array for app with no previous documents', async () => {
-  // This test verifies that the delta upload query returns an empty array (not null/error)
-  // when an app exists but has no documents yet
-  const { createOrg } = await initSeed().createOwner();
-  const { createProject, setFeatureFlag, organization } = await createOrg();
-  await setFeatureFlag('appDeployments', true);
-  const { createTargetAccessToken, project, target } = await createProject();
-  const token = await createTargetAccessToken({});
-
-  await token.publishSchema({
-    sdl: /* GraphQL */ `
-      type Query {
-        hello: String
-      }
-    `,
-  });
-
-  // Query for an app name that has no deployments
-  const { target: targetResult } = await execute({
-    document: GetExistingDocumentHashes,
-    variables: {
-      targetSelector: {
-        organizationSlug: organization.slug,
-        projectSlug: project.slug,
-        targetSlug: target.slug,
-      },
-      appName: 'non-existent-app',
-      hashes: ['some-hash'],
-    },
-    authToken: token.secret,
-  }).then(res => res.expectNoGraphQLErrors());
-
-  // Should return empty array, not error
-  expect(targetResult?.appDeploymentDocumentHashes).toEqual([]);
 });
 
 test('rejects mixing v1 and v2 document formats on the same deployment', async () => {

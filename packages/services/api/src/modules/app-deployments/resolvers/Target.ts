@@ -16,7 +16,6 @@ export const Target: Pick<
   TargetResolvers,
   | 'activeAppDeployments'
   | 'appDeployment'
-  | 'appDeploymentDocumentHashes'
   | 'appDeployments'
   | 'viewerCanViewAppDeployments'
 > = {
@@ -55,15 +54,6 @@ export const Target: Pick<
         lastUsedBefore: args.filter.lastUsedBefore?.toISOString() ?? null,
         neverUsedAndCreatedBefore: args.filter.neverUsedAndCreatedBefore?.toISOString() ?? null,
       },
-    });
-  },
-  appDeploymentDocumentHashes: (target, args, { injector }) => {
-    return injector.get(AppDeploymentsManager).getExistingDocumentHashes({
-      organizationId: target.orgId,
-      projectId: target.projectId,
-      targetId: target.id,
-      appName: args.appName,
-      hashes: args.hashes,
     });
   },
 };
