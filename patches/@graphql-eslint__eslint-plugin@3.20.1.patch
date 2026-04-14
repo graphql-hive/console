@@ -120,6 +120,40 @@ index d952cee1e10976459e7c5836b86ba6540c45fdb6..d314997bfd26477c7d823cad397eb5d6
    return {
      [ruleId]: {
        meta: {
+diff --git a/esm/rules/no-unreachable-types.js b/esm/rules/no-unreachable-types.js
+index 17e9394c80ebb2257ec6145421fafa227872d0ca..f39ad76d7948ccc4e35f6b7d4adb26dee9e4a71b 100644
+--- a/esm/rules/no-unreachable-types.js
++++ b/esm/rules/no-unreachable-types.js
+@@ -51,8 +51,15 @@ function getReachableTypes(schema) {
+       for (const { astNode } of [...objects, ...interfaces]) {
+         visit(astNode, visitor);
+       }
+-    } else if (type == null ? void 0 : type.astNode) {
+-      visit(type.astNode, visitor);
++    } else {
++      if (type == null ? void 0 : type.astNode) {
++        visit(type.astNode, visitor);
++      }
++      if (type == null ? void 0 : type.extensionASTNodes) {
++        for (const ext of type.extensionASTNodes) {
++          visit(ext, visitor);
++        }
++      }
+     }
+   };
+   const visitor = {
+@@ -74,6 +81,11 @@ function getReachableTypes(schema) {
+     if (type == null ? void 0 : type.astNode) {
+       visit(type.astNode, visitor);
+     }
++    if (type == null ? void 0 : type.extensionASTNodes) {
++      for (const ext of type.extensionASTNodes) {
++        visit(ext, visitor);
++      }
++    }
+   }
+   for (const node of schema.getDirectives()) {
+     if (node.locations.some((location) => RequestDirectiveLocations.has(location))) {
 diff --git a/esm/rules/relay-edge-types.js b/esm/rules/relay-edge-types.js
 index 7a7eb179786103d9d72a4a84fb4bf811d11a4286..6fb12a5f56b71f56c9a14018d0494e9c7584f935 100644
 --- a/esm/rules/relay-edge-types.js
