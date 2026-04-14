@@ -135,6 +135,7 @@ export class AppDeployments {
       name: string;
       version: string;
     };
+    format: 'v1' | 'v2' | null;
   }) {
     this.logger.debug(
       'create app deployment (targetId=%s, appName=%s, appVersion=%s)',
@@ -193,11 +194,13 @@ export class AppDeployments {
             "target_id"
             , "name"
             , "version"
+            , "format"
           )
           VALUES (
             ${args.targetId}
             , ${args.appDeployment.name}
             , ${args.appDeployment.version}
+            , ${args.format}
           )
           RETURNING
             ${appDeploymentFields}
@@ -257,7 +260,7 @@ export class AppDeployments {
       hash: string;
       body: string;
     }>;
-    isV1Format: boolean;
+    format: 'v1' | 'v2' | null;
   }) {
     if (this.appDeploymentsEnabled === false) {
       const organization = await this.storage.getOrganization({
@@ -306,21 +309,20 @@ export class AppDeployments {
       };
     }
 
+    // Resolve effective format: client-specified > PG-stored > default v1
+    const effectiveFormat = args.format ?? appDeployment.format ?? 'v1';
+
     // Prevent mixing v1 and v2 formats on the same deployment
-    const existingFormat = await this.getDeploymentDocumentFormat(appDeployment.id);
-    if (existingFormat !== null) {
-      const incomingIsV2 = !args.isV1Format;
-      const existingIsV2 = existingFormat === 'v2';
-      if (incomingIsV2 !== existingIsV2) {
-        return {
-          type: 'error' as const,
-          error: {
-            message: `Cannot mix document formats. This deployment already has ${existingFormat} documents. Use --format=${existingFormat} or create a new deployment version.`,
-            details: null,
-          },
-        };
-      }
+    if (appDeployment.format !== null && effectiveFormat !== appDeployment.format) {
+      return {
+        type: 'error' as const,
+        error: {
+          message: `Cannot mix document formats. This deployment already has ${appDeployment.format} documents. Use --format=${appDeployment.format} or create a new deployment version.`,
+          details: null,
+        },
+      };
     }
+    const isV1Format = effectiveFormat === 'v1';
 
     if (args.operations.length !== 0) {
       const latestSchemaVersion = await this.storage.getMaybeLatestValidVersion({
@@ -364,7 +366,7 @@ export class AppDeployments {
           version: args.appDeployment.version,
         },
         documents: args.operations,
-        isV1Format: args.isV1Format,
+        isV1Format,
       });
 
       if (result.type === 'error') {
@@ -455,8 +457,7 @@ export class AppDeployments {
 
     // Verify v2 hash manifest exists. It must be written during createAppDeployment
     // (which requires hashes for V2 format). If missing, something went wrong.
-    const deploymentFormat = await this.getDeploymentDocumentFormat(appDeployment.id);
-    if (deploymentFormat === 'v2') {
+    if (appDeployment.format === 'v2') {
       const manifestKey = buildV2HashManifestKey(
         appDeployment.targetId,
         appDeployment.name,
@@ -474,25 +475,12 @@ export class AppDeployments {
       }
     }
 
-    // Read the current apps-enabled value (written during upload as v1-inactive or v2-inactive)
-    // and strip -inactive to activate. Fall back to 'v1' for deployments created before format tracking.
     const enabledKey = buildAppDeploymentIsEnabledKey(
       appDeployment.targetId,
       appDeployment.name,
       appDeployment.version,
     );
-    let activeFormat = 'v1';
-    const existingValue = await this.s3[0].client.fetch(
-      [this.s3[0].endpoint, this.s3[0].bucket, enabledKey].join('/'),
-      { method: 'GET', aws: { signQuery: true } },
-    );
-    if (existingValue.statusCode === 200) {
-      activeFormat = existingValue.body.replace('-inactive', '');
-    } else if (existingValue.statusCode !== 404) {
-      throw new Error(
-        `Failed to read app deployment format for ${appDeployment.name}@${appDeployment.version}: ${existingValue.statusCode} ${existingValue.statusMessage}`,
-      );
-    }
+    const activeFormat = appDeployment.format ?? 'v1';
 
     // Write the active format to all S3 endpoints
     for (const s3 of this.s3) {
@@ -1665,33 +1653,6 @@ export class AppDeployments {
     return hashes;
   }
 
-  /**
-   * Check the format of existing documents for a deployment by sampling one hash.
-   * Returns 'v1', 'v2', or null if no documents exist.
-   */
-  async getDeploymentDocumentFormat(appDeploymentId: string): Promise<'v1' | 'v2' | null> {
-    const result = await this.clickhouse.query({
-      query: cSql`
-        SELECT document_hash AS hash
-        FROM app_deployment_documents
-        PREWHERE app_deployment_id = ${appDeploymentId}
-        LIMIT 1
-      `,
-      queryId: 'get-deployment-document-format',
-      timeout: 10_000,
-    });
-
-    const model = z.array(z.object({ hash: z.string() }));
-    const parsed = model.parse(result.data);
-
-    if (parsed.length === 0) {
-      return null;
-    }
-
-    const sha256Regex = /^(sha256:)?[a-f0-9]{64}$/i;
-    return sha256Regex.test(parsed[0].hash) ? 'v2' : 'v1';
-  }
-
   /** Write the format to the apps-enabled S3 key */
   async writeAppDeploymentFormat(args: {
     targetId: string;
@@ -1741,6 +1702,7 @@ const appDeploymentFields = sql`
   , "target_id" AS "targetId"
   , "name"
   , "version"
+  , "format"
   , to_json("created_at") AS "createdAt"
   , to_json("activated_at") AS "activatedAt"
   , to_json("retired_at") AS "retiredAt"
@@ -1752,6 +1714,7 @@ const AppDeploymentModel = z.intersection(
     targetId: z.string(),
     name: z.string(),
     version: z.string(),
+    format: z.enum(['v1', 'v2']).nullable(),
     createdAt: z.string(),
   }),
   z.union([

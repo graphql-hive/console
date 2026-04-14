@@ -25,6 +25,7 @@ export const createAppDeployment: NonNullable<MutationResolvers['createAppDeploy
       version: input.appVersion,
     },
     hashes: isV2 ? input.hashes! : undefined,
+    format: isV2 ? 'v2' : input.format === 'V1' ? 'v1' : null,
   });
 
   if (result.type === 'error') {

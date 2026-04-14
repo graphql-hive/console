@@ -68,6 +68,7 @@ export class AppDeploymentsManager {
       version: string;
     };
     hashes?: readonly string[] | null;
+    format: 'v1' | 'v2' | null;
   }) {
     const selector = await this.idTranslator.resolveTargetReference({
       reference: args.reference,
@@ -92,6 +93,7 @@ export class AppDeploymentsManager {
       organizationId: selector.organizationId,
       targetId: selector.targetId,
       appDeployment: args.appDeployment,
+      format: args.format,
     });
 
     if (result.type !== 'success') {
@@ -147,7 +149,7 @@ export class AppDeploymentsManager {
       hash: string;
       body: string;
     }>;
-    isV1Format: boolean;
+    format: 'v1' | 'v2' | null;
   }) {
     const selector = await this.idTranslator.resolveTargetReference({
       reference: args.reference,
@@ -174,7 +176,7 @@ export class AppDeploymentsManager {
       targetId: selector.targetId,
       appDeployment: args.appDeployment,
       operations: args.documents,
-      isV1Format: args.isV1Format,
+      format: args.format,
     });
   }
 

@@ -316,22 +316,24 @@ export class PersistedDocumentIngester {
       clickhouseMs = timing.clickhouseMs;
       s3Ms = timing.s3Ms;
 
-      // Write format to apps-enabled as inactive (activation will strip the -inactive suffix)
-      const enabledKey = buildAppDeploymentIsEnabledKey(
-        data.targetId,
-        data.appDeployment.name,
-        data.appDeployment.version,
-      );
-      const formatValue = data.isV1Format ? 'v1-inactive' : 'v2-inactive';
-      for (const s3 of this.s3) {
-        const result = await s3.client.fetch([s3.endpoint, s3.bucket, enabledKey].join('/'), {
-          method: 'PUT',
-          body: formatValue,
-          headers: { 'content-type': 'text/plain' },
-          aws: { signQuery: true },
-        });
-        if (result.statusCode !== 200) {
-          throw new Error(`Failed to write app deployment format: ${result.statusMessage}`);
+      // Write V1 format to apps-enabled as inactive (activation will strip the -inactive suffix).
+      // V2 format is already written during createAppDeployment by the manager.
+      if (data.isV1Format) {
+        const enabledKey = buildAppDeploymentIsEnabledKey(
+          data.targetId,
+          data.appDeployment.name,
+          data.appDeployment.version,
+        );
+        for (const s3 of this.s3) {
+          const result = await s3.client.fetch([s3.endpoint, s3.bucket, enabledKey].join('/'), {
+            method: 'PUT',
+            body: 'v1-inactive',
+            headers: { 'content-type': 'text/plain' },
+            aws: { signQuery: true },
+          });
+          if (result.statusCode !== 200) {
+            throw new Error(`Failed to write app deployment format: ${result.statusMessage}`);
+          }
         }
       }
     }

@@ -12,7 +12,7 @@ export const addDocumentsToAppDeployment: NonNullable<
       version: input.appVersion,
     },
     documents: input.documents,
-    isV1Format: input.format !== 'V2',
+    format: input.format === 'V2' ? 'v2' : input.format === 'V1' ? 'v1' : null,
   });
 
   if (result.type === 'error') {

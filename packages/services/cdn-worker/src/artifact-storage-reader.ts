@@ -458,9 +458,10 @@ export class ArtifactStorageReader {
           this.breadcrumb(`Version isolation: hash ${hash} not in manifest for ${manifestKey}`);
           return { type: 'notFound' } as const;
         }
-      } else {
-        this.breadcrumb(
-          `Version isolation: manifest not found (status=${manifestResponse.status}, key=${manifestKey}), skipping check`,
+      } else if (manifestResponse.status !== 404) {
+        const body = await manifestResponse.text();
+        throw new Error(
+          `Failed to fetch v2 hash manifest (status=${manifestResponse.status}, key=${manifestKey}): ${body}`,
         );
       }
 
