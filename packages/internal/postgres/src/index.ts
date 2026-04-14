@@ -4,11 +4,10 @@ export {
   type CommonQueryMethods,
 } from './postgres-database-pool';
 export { type PostgresConnectionParamaters, createConnectionString } from './connection-string';
-export { psql } from './psql';
+export { psql, type TaggedTemplateLiteralInvocation } from './psql';
 export {
   UniqueIntegrityConstraintViolationError,
   ForeignKeyIntegrityConstraintViolationError,
-  type TaggedTemplateLiteralInvocation,
   type PrimitiveValueExpression,
   type SerializableValue,
   type Interceptor,

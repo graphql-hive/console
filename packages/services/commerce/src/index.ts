@@ -59,7 +59,7 @@ async function main() {
       tracing ? [tracing.instrumentSlonik()] : undefined,
     );
 
-    const taskScheduler = new TaskScheduler(storage.pool.getRawPgPool());
+    const taskScheduler = new TaskScheduler(storage.pool);
 
     const usageEstimator = createEstimator({
       logger: server.log,

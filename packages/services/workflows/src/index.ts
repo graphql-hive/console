@@ -57,7 +57,7 @@ const pg = await createPostgresDatabasePool({
 });
 const logger = new Logger({ level: env.log.level });
 
-logger.info({ pid: process.pid }, 'starting workflow service');
+logger.info({ pid: process.pid }, 'starting workflow service ' + process.pid);
 
 const stopHttpHeartbeat = env.httpHeartbeat
   ? startHeartbeats({
@@ -144,7 +144,7 @@ const shutdownMetrics = env.prometheus
 const runner = await run({
   logger: bridgeGraphileLogger(logger),
   crontab,
-  pgPool: pg.getRawPgPool(),
+  pgPool: pg.getPgPoolCompat(),
   taskList: Object.fromEntries(modules.map(module => module.task(context))),
   noHandleSignals: true,
   events: createTaskEventEmitter(),

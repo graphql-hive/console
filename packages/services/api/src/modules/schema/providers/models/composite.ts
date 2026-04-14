@@ -241,6 +241,7 @@ export class CompositeModel {
       }),
       this.checks.policyCheck({
         selector,
+        // if schema check does not compose then there's no point in linting. Pass in null in this case.
         incomingSdl: compositionCheck.result?.fullSchemaSdl ?? null,
         modifiedSdl: incoming.sdl,
       }),

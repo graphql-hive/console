@@ -1,9 +1,9 @@
 import { BentoCache, bentostore } from 'bentocache';
 import { memoryDriver } from 'bentocache/build/src/drivers/memory';
 import { makeWorkerUtils, WorkerUtils, type JobHelpers, type Task } from 'graphile-worker';
-import type { Pool } from 'pg';
 import { z } from 'zod';
 import { Logger } from '@graphql-hive/logger';
+import { PostgresDatabasePool, psql } from '@hive/postgres';
 import { bridgeGraphileLogger } from '@hive/pubsub';
 import type { Context } from './context';
 
@@ -76,11 +76,11 @@ export class TaskScheduler {
   cache: BentoCache<{ store: ReturnType<typeof bentostore> }>;
 
   constructor(
-    pgPool: Pool,
+    private pgPool: PostgresDatabasePool,
     private logger: Logger = new Logger(),
   ) {
     this.tools = makeWorkerUtils({
-      pgPool,
+      pgPool: pgPool.getPgPoolCompat(),
       logger: bridgeGraphileLogger(logger),
     });
     this.cache = new BentoCache({
@@ -118,7 +118,6 @@ export class TaskScheduler {
     );
 
     const input = taskDefinition.schema.parse(payload);
-
     const tools = await this.tools;
 
     if (opts?.dedupe) {
@@ -128,27 +127,26 @@ export class TaskScheduler {
 
       let shouldSkip = true;
 
+      const { pgPool } = this;
+
       await this.cache.getOrSet({
         key: `${taskDefinition.name}:${dedupeKey}`,
         ttl: opts.dedupe.ttl,
         async factory() {
-          return await tools.withPgClient(async client => {
-            const result = await client.query(
-              `
+          const result = await pgPool.anyFirst(
+            psql`
                INSERT INTO "graphile_worker_deduplication" ("task_name", "dedupe_key", "expires_at")
-               VALUES($1, $2, $3)
+               VALUES(${taskDefinition.name}, ${dedupeKey}, ${expiresAt})
                ON CONFLICT ("task_name", "dedupe_key")
                DO
                  UPDATE SET "expires_at" = EXCLUDED.expires_at
                  WHERE "graphile_worker_deduplication"."expires_at" < NOW()
                RETURNING xmax = 0 AS "inserted"
              `,
-              [taskDefinition.name, dedupeKey, expiresAt],
-            );
+          );
 
-            shouldSkip = result.rows.length === 0;
-            return true;
-          });
+          shouldSkip = result.length === 0;
+          return true;
         },
       });
 
@@ -175,9 +173,5 @@ export class TaskScheduler {
       },
       'task enqueued.',
     );
-  }
-
-  async dispose() {
-    await (await this.tools).release();
   }
 }

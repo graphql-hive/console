@@ -120,3 +120,29 @@ index d952cee1e10976459e7c5836b86ba6540c45fdb6..d314997bfd26477c7d823cad397eb5d6
    return {
      [ruleId]: {
        meta: {
+diff --git a/esm/rules/relay-edge-types.js b/esm/rules/relay-edge-types.js
+index 7a7eb179786103d9d72a4a84fb4bf811d11a4286..6fb12a5f56b71f56c9a14018d0494e9c7584f935 100644
+--- a/esm/rules/relay-edge-types.js
++++ b/esm/rules/relay-edge-types.js
+@@ -12,11 +12,7 @@ const MESSAGE_MUST_BE_OBJECT_TYPE = "MESSAGE_MUST_BE_OBJECT_TYPE";
+ const MESSAGE_MISSING_EDGE_SUFFIX = "MESSAGE_MISSING_EDGE_SUFFIX";
+ const MESSAGE_LIST_TYPE_ONLY_EDGE_TYPE = "MESSAGE_LIST_TYPE_ONLY_EDGE_TYPE";
+ const MESSAGE_SHOULD_IMPLEMENTS_NODE = "MESSAGE_SHOULD_IMPLEMENTS_NODE";
+-let edgeTypesCache;
+ function getEdgeTypes(schema2) {
+-  if (edgeTypesCache) {
+-    return edgeTypesCache;
+-  }
+   const edgeTypes = /* @__PURE__ */ new Set();
+   const visitor = {
+     ObjectTypeDefinition(node) {
+@@ -38,8 +34,7 @@ function getEdgeTypes(schema2) {
+   };
+   const astNode = getDocumentNodeFromSchema(schema2);
+   visit(astNode, visitor);
+-  edgeTypesCache = edgeTypes;
+-  return edgeTypesCache;
++  return edgeTypes;
+ }
+ const schema = {
+   type: "array",

@@ -141,7 +141,7 @@ export async function createTokenStorage(
             VALUES
               (${psql.join(
                 tokens.map(t => psql`${t.token}, ${toDate(t.date)}`),
-                psql`), (`,
+                psql.fragment`), (`,
               )})
         ) as c(token, last_used_at)
         WHERE c.token = t.token;

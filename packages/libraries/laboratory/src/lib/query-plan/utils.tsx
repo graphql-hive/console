@@ -102,11 +102,13 @@ export function renderSelectionSet(
 
   for (const item of selectionSet) {
     if (item.kind === 'InlineFragment') {
-      lines.push(`${indent(depth)}... on ${item.typeCondition}`);
+      lines.push(`${indent(depth)}... on ${item.typeCondition} {`);
 
       for (const property of item.selections ?? []) {
         lines.push(`${indent(depth + 1)}${property.name}`);
       }
+
+      lines.push(`${indent(depth)}}`);
     }
   }
 
@@ -163,13 +165,31 @@ export function renderFetchNode(node: FetchNodePlan, depth = 0): string {
   lines.push(`${indent(depth)}Fetch(service: "${node.serviceName}") {`);
 
   if (node.requires) {
-    lines.push(`${indent(depth + 1)} {`);
+    lines.push(`${indent(depth + 1)}{`);
     const requires = renderSelectionSet(node.requires, depth + 2);
     if (requires) lines.push(requires);
     lines.push(`${indent(depth + 1)}} =>`);
   }
 
-  lines.push(renderMultilineBlock(print(parse(node.operation)), depth + 2), `${indent(depth)}}`);
+  const slice = node.operation.includes('_entities') ? 2 : 1;
+
+  try {
+    lines.push(
+      `${indent(depth + 1)}{`,
+      renderMultilineBlock(
+        print(parse(node.operation))
+          .split('\n')
+          .slice(slice, slice * -1)
+          .join('\n'),
+        depth + 2 - slice,
+      ),
+      `${indent(depth + 1)}}`,
+    );
+  } catch {
+    lines.push(`${indent(depth + 1)}${node.operation}`);
+  }
+
+  lines.push(`${indent(depth)}}`);
 
   return lines.join('\n');
 }
@@ -178,21 +198,29 @@ export function renderBatchFetchNode(node: BatchFetchNodePlan, depth = 0): strin
   const lines: string[] = [];
   lines.push(`${indent(depth)}BatchFetch(service: "${node.serviceName}") {`);
 
-  for (const alias of node.entityBatch.aliases) {
+  for (let i = 0; i < node.entityBatch.aliases.length; i++) {
+    const alias = node.entityBatch.aliases[i];
+
     lines.push(
       `${indent(depth + 1)}${alias.alias} {`,
-      `${indent(depth + 2)}paths [`,
-      ...alias.paths.map(
-        (path, index) =>
-          `${indent(depth + 3)}${renderFlattenPath(path)}${index < alias.paths.length - 1 ? ',' : ''}`,
-      ),
+      `${indent(depth + 2)}paths: [`,
+      ...alias.paths.map(path => `${indent(depth + 3)}"${renderFlattenPath(path)}"`),
       `${indent(depth + 2)}]`,
-      `${indent(depth + 2)}{`,
     );
+
     const requires = renderSelectionSet(alias.requires, depth + 3);
-    if (requires) lines.push(requires);
+
+    if (requires) {
+      lines.push(`${indent(depth + 2)}{`, requires, `${indent(depth + 2)}}`);
+    }
+
+    if (i < node.entityBatch.aliases.length - 1) {
+      lines.push(`${indent(depth + 1)}}`);
+    }
+  }
+
+  try {
     lines.push(
-      `${indent(depth + 2)}}`,
       `${indent(depth + 1)}}`,
       `${indent(depth + 1)}{`,
       renderMultilineBlock(
@@ -200,9 +228,11 @@ export function renderBatchFetchNode(node: BatchFetchNodePlan, depth = 0): strin
         depth + 1,
       ),
       `${indent(depth + 1)}}`,
+      `${indent(depth)}}`,
     );
+  } catch {
+    lines.push(`${indent(depth + 1)}${node.operation}`);
   }
-  lines.push(`${indent(depth)}}`);
 
   return lines.join('\n');
 }
@@ -436,6 +466,7 @@ function visitNode(
   parentNode: QueryPlanNode | null,
   nodes: QueryPlanNode[],
   contentPrefix?: React.ReactNode,
+  detailsContent?: string,
 ): QueryPlanNode {
   let result: QueryPlanNode | null = {
     id: uuidv4(),
@@ -447,7 +478,6 @@ function visitNode(
     case 'Fetch':
       result.content = () => {
         const entity = (node.requires?.[0] as SelectionInlineFragment)?.typeCondition;
-
         return (
           <div className="flex flex-col gap-2">
             {contentPrefix}
@@ -477,7 +507,7 @@ function visitNode(
                     <DialogTitle>Fetch</DialogTitle>
                   </DialogHeader>
                   <div className="h-full overflow-hidden rounded-sm border">
-                    <Editor value={renderFetchNode(node)} language="graphql" />
+                    <Editor value={detailsContent ?? renderFetchNode(node)} language="graphql" />
                   </div>
                 </DialogContent>
               </Dialog>
@@ -557,7 +587,13 @@ function visitNode(
                     Show details
                   </Button>
                 </DialogTrigger>
-                <DialogContent className="max-w-2xl! max-h-150 h-full w-full">
+                <DialogContent
+                  className="max-w-2xl! max-h-150 h-full w-full"
+                  onMouseDown={e => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                  }}
+                >
                   <DialogHeader>
                     <DialogTitle>BatchFetch</DialogTitle>
                   </DialogHeader>
@@ -594,10 +630,11 @@ function visitNode(
             </Tooltip>
           </div>
         </>,
+        detailsContent ?? renderFlattenNode(node),
       );
       break;
 
-    case 'Sequence':
+    case 'Sequence': {
       result = null;
 
       let prevChild: QueryPlanNode | null = null;
@@ -605,7 +642,13 @@ function visitNode(
       for (let i = 0; i < node.nodes.length; i++) {
         const child = node.nodes[i];
 
-        const childNode = visitNode(child, prevChild, i === 0 ? [] : nodes);
+        const childNode = visitNode(
+          child,
+          prevChild,
+          i === 0 ? [] : nodes,
+          contentPrefix,
+          detailsContent,
+        );
 
         if (i === 0) {
           result = childNode;
@@ -619,12 +662,13 @@ function visitNode(
       }
 
       break;
+    }
 
     case 'Parallel':
       result.children = [];
 
       for (const child of node.nodes) {
-        visitNode(child, result, result.children);
+        visitNode(child, result, result.children, contentPrefix, detailsContent);
       }
 
       break;
@@ -643,6 +687,7 @@ function visitNode(
               if: ${node.condition}
             </span>
           </div>,
+          renderConditionNode(node),
         );
       }
       if (node.elseClause) {
@@ -656,21 +701,22 @@ function visitNode(
               if: ${node.condition}
             </span>
           </div>,
+          renderConditionNode(node),
         );
       }
       break;
 
     case 'Subscription':
-      visitNode(node.primary, result, nodes);
+      visitNode(node.primary, result, nodes, contentPrefix, detailsContent);
       break;
 
     case 'Defer':
       if (node.primary.node) {
-        visitNode(node.primary.node, result, nodes);
+        visitNode(node.primary.node, result, nodes, contentPrefix, detailsContent);
       }
       for (const deferred of node.deferred) {
         if (deferred.node) {
-          visitNode(deferred.node, result, nodes);
+          visitNode(deferred.node, result, nodes, contentPrefix, detailsContent);
         }
       }
       break;

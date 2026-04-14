@@ -1,5 +1,20 @@
 # hive
 
+## 11.0.2
+
+### Patch Changes
+
+- [#7940](https://github.com/graphql-hive/console/pull/7940)
+  [`742f50c`](https://github.com/graphql-hive/console/commit/742f50c52e846ab63843635c6f408016a30f6288)
+  Thanks [@jdolle](https://github.com/jdolle)! - Fix lint policy block title color; add policy link
+  to lines and rule id tooltip
+
+- [#7936](https://github.com/graphql-hive/console/pull/7936)
+  [`96bd390`](https://github.com/graphql-hive/console/commit/96bd390c7ffa75baf7db0c0bb3a3117c6ef6f631)
+  Thanks [@jdolle](https://github.com/jdolle)! - Do not cache edge types in graphql eslint. This
+  fixes an issue where edge types were cached between runs and only the cached edge types would be
+  referenced for subsequent runs
+
 ## 11.0.1
 
 ### Patch Changes

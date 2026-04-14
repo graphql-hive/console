@@ -199,6 +199,14 @@ export const Flow = (props: {
 
   const handleMouseDown = useCallback(
     (event: MouseEvent<HTMLDivElement>) => {
+      if (!containerRef.current) {
+        return;
+      }
+
+      if (!event.nativeEvent.composedPath().includes(containerRef.current)) {
+        return;
+      }
+
       if (props.disableGestures) {
         return;
       }
@@ -206,6 +214,17 @@ export const Flow = (props: {
       event.preventDefault();
       setIsPanning(true);
       panStartRef.current = { x: event.clientX, y: event.clientY };
+
+      function handleMouseUp() {
+        stopPanning();
+        setIsCanvasActive(false);
+      }
+
+      document.addEventListener('mouseup', handleMouseUp);
+
+      return () => {
+        document.removeEventListener('mouseup', handleMouseUp);
+      };
     },
     [props.disableGestures],
   );
@@ -240,13 +259,17 @@ export const Flow = (props: {
     const { width: containerWidth, height: containerHeight } = container.getBoundingClientRect();
 
     console.log({
-      width,
-      height,
+      container,
       containerWidth,
       containerHeight,
+      width,
+      height,
     });
 
-    const scale = Math.min(MAX_SCALE, Math.max(MIN_SCALE, containerWidth / width));
+    const scale = Math.min(
+      MAX_SCALE,
+      Math.max(MIN_SCALE, Math.min(containerWidth / width, containerHeight / height)),
+    );
 
     setView(prev => ({
       ...prev,
@@ -306,7 +329,7 @@ export const Flow = (props: {
     <div
       ref={containerRef}
       className={cn(
-        'bg-background relative min-h-full min-w-full touch-none',
+        'bg-background relative h-full w-full touch-none',
         {
           'cursor-grab': !props.disableGestures && !isPanning,
           'cursor-grabbing': !props.disableGestures && isPanning,
@@ -316,7 +339,6 @@ export const Flow = (props: {
       onWheel={handleWheel}
       onMouseDown={handleMouseDown}
       onMouseMove={handleMouseMove}
-      onMouseUp={stopPanning}
       onMouseLeave={() => {
         stopPanning();
         setIsCanvasActive(false);
