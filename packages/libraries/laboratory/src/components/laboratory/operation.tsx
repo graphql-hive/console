@@ -192,15 +192,19 @@ export const ResponseQueryPlan = ({ historyItem }: { historyItem?: LaboratoryHis
   const [mode, setMode] = useState<'text' | 'visual'>('text');
 
   const queryPlan = useMemo(() => {
-    const queryPlan =
-      JSON.parse((historyItem as LaboratoryHistoryRequest)?.response ?? '{}').extensions
-        ?.queryPlan ?? {};
+    try {
+      const queryPlan =
+        JSON.parse((historyItem as LaboratoryHistoryRequest)?.response ?? '{}').extensions
+          ?.queryPlan ?? {};
 
-    if (!queryPlan) {
+      if (!queryPlan) {
+        return null;
+      }
+
+      return QueryPlanSchema.safeParse(queryPlan).success ? queryPlan : null;
+    } catch {
       return null;
     }
-
-    return QueryPlanSchema.safeParse(queryPlan).success ? queryPlan : null;
   }, [historyItem]);
 
   return (
