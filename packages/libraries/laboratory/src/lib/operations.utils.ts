@@ -391,7 +391,12 @@ export function getOperationType(query: string) {
   }
 }
 
-export function isArgInQuery(query: string, path: string, argName: string, operationName?: string) {
+export function isArgInQuery(
+  query: string,
+  path: string,
+  argName: string,
+  operationName?: string | null,
+) {
   if (!query || !path) {
     return false;
   }
