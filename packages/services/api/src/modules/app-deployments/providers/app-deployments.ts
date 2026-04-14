@@ -481,16 +481,18 @@ export class AppDeployments {
       appDeployment.name,
       appDeployment.version,
     );
+    let activeFormat = 'v1';
     const existingValue = await this.s3[0].client.fetch(
       [this.s3[0].endpoint, this.s3[0].bucket, enabledKey].join('/'),
       { method: 'GET', aws: { signQuery: true } },
     );
-    if (existingValue.statusCode !== 200) {
+    if (existingValue.statusCode === 200) {
+      activeFormat = existingValue.body.replace('-inactive', '');
+    } else if (existingValue.statusCode !== 404) {
       throw new Error(
         `Failed to read app deployment format for ${appDeployment.name}@${appDeployment.version}: ${existingValue.statusCode} ${existingValue.statusMessage}`,
       );
     }
-    const activeFormat = existingValue.body.replace('-inactive', '');
 
     // Write the active format to all S3 endpoints
     for (const s3 of this.s3) {

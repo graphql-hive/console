@@ -5358,20 +5358,21 @@ test('v2 format accepts sha256 hash with sha256: prefix', async () => {
 
   const cdnAccess = await createCdnAccess();
 
+  const sha256Hash = 'ec2e01311ab3b02f3d8c8c712f9e579356d332cd007ac4c1ea5df727f482f05f';
+  const sha256HashWithPrefix = `sha256:${sha256Hash}`;
+
   await execute({
-    document: CreateAppDeployment,
+    document: CreateAppDeploymentWithHashes,
     variables: {
       input: {
         appName: 'my-app',
         appVersion: '1.0.0',
+        format: AppDeploymentFormatType.V2,
+        hashes: [sha256HashWithPrefix],
       },
     },
     authToken: token.secret,
   }).then(res => res.expectNoGraphQLErrors());
-
-  // Valid sha256 hash that matches the content: sha256('query { hello }'), with prefix
-  const sha256Hash = 'ec2e01311ab3b02f3d8c8c712f9e579356d332cd007ac4c1ea5df727f482f05f';
-  const sha256HashWithPrefix = `sha256:${sha256Hash}`;
 
   const { addDocumentsToAppDeployment } = await execute({
     document: AddDocumentsToAppDeploymentWithFormat,
@@ -5507,19 +5508,21 @@ test('v2 format accepts sha256 hashes and CDN access works', async () => {
 
   const cdnAccess = await createCdnAccess();
 
+  // Valid sha256 hash that matches the content: sha256('query { hello }')
+  const sha256Hash = 'ec2e01311ab3b02f3d8c8c712f9e579356d332cd007ac4c1ea5df727f482f05f';
+
   await execute({
-    document: CreateAppDeployment,
+    document: CreateAppDeploymentWithHashes,
     variables: {
       input: {
         appName: 'my-app',
         appVersion: '1.0.0',
+        format: AppDeploymentFormatType.V2,
+        hashes: [sha256Hash],
       },
     },
     authToken: token.secret,
   }).then(res => res.expectNoGraphQLErrors());
-
-  // Valid sha256 hash that matches the content: sha256('query { hello }')
-  const sha256Hash = 'ec2e01311ab3b02f3d8c8c712f9e579356d332cd007ac4c1ea5df727f482f05f';
 
   const { addDocumentsToAppDeployment } = await execute({
     document: AddDocumentsToAppDeploymentWithFormat,
@@ -5699,11 +5702,13 @@ test('v2 format enables cross-version document sharing', async () => {
 
   // Create v1.0.0 with a document
   await execute({
-    document: CreateAppDeployment,
+    document: CreateAppDeploymentWithHashes,
     variables: {
       input: {
         appName: 'my-app',
         appVersion: '1.0.0',
+        format: AppDeploymentFormatType.V2,
+        hashes: [sharedHash],
       },
     },
     authToken: token.secret,
@@ -6196,8 +6201,15 @@ test('v2 version isolation: CDN rejects hash not belonging to the requested vers
 
   // Create v1.0.0 with hashV1
   await execute({
-    document: CreateAppDeployment,
-    variables: { input: { appName: 'my-app', appVersion: '1.0.0' } },
+    document: CreateAppDeploymentWithHashes,
+    variables: {
+      input: {
+        appName: 'my-app',
+        appVersion: '1.0.0',
+        format: AppDeploymentFormatType.V2,
+        hashes: [hashV1],
+      },
+    },
     authToken: token.secret,
   }).then(res => res.expectNoGraphQLErrors());
 
@@ -6222,8 +6234,15 @@ test('v2 version isolation: CDN rejects hash not belonging to the requested vers
 
   // Create v2.0.0 with hashV2Only (does NOT include hashV1)
   await execute({
-    document: CreateAppDeployment,
-    variables: { input: { appName: 'my-app', appVersion: '2.0.0' } },
+    document: CreateAppDeploymentWithHashes,
+    variables: {
+      input: {
+        appName: 'my-app',
+        appVersion: '2.0.0',
+        format: AppDeploymentFormatType.V2,
+        hashes: [hashV2Only],
+      },
+    },
     authToken: token.secret,
   }).then(res => res.expectNoGraphQLErrors());
 
@@ -6284,8 +6303,15 @@ test('CDN uses format from apps-enabled key to resolve documents without fallbac
 
   // Deploy with v2 format
   await execute({
-    document: CreateAppDeployment,
-    variables: { input: { appName: 'my-app', appVersion: '1.0.0' } },
+    document: CreateAppDeploymentWithHashes,
+    variables: {
+      input: {
+        appName: 'my-app',
+        appVersion: '1.0.0',
+        format: AppDeploymentFormatType.V2,
+        hashes: [sha256Hash],
+      },
+    },
     authToken: token.secret,
   }).then(res => res.expectNoGraphQLErrors());
 
@@ -6364,8 +6390,15 @@ test('v2 deployment with 100% dedup still resolves correctly via CDN', async () 
 
   // Create and upload v1.0.0 with the document
   await execute({
-    document: CreateAppDeployment,
-    variables: { input: { appName: 'my-app', appVersion: '1.0.0' } },
+    document: CreateAppDeploymentWithHashes,
+    variables: {
+      input: {
+        appName: 'my-app',
+        appVersion: '1.0.0',
+        format: AppDeploymentFormatType.V2,
+        hashes: [sha256Hash],
+      },
+    },
     authToken: token.secret,
   }).then(res => res.expectNoGraphQLErrors());
 
@@ -6445,8 +6478,15 @@ test('v2 deployment with partial dedup resolves both shared and new hashes', asy
 
   // Create v1.0.0 with sharedHash
   await execute({
-    document: CreateAppDeployment,
-    variables: { input: { appName: 'my-app', appVersion: '1.0.0' } },
+    document: CreateAppDeploymentWithHashes,
+    variables: {
+      input: {
+        appName: 'my-app',
+        appVersion: '1.0.0',
+        format: AppDeploymentFormatType.V2,
+        hashes: [sharedHash],
+      },
+    },
     authToken: token.secret,
   }).then(res => res.expectNoGraphQLErrors());
 
