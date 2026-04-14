@@ -13,7 +13,8 @@
   "tasks": {
     "build": {
       "dependsOn": ["^build"],
-      "outputs": ["dist/**"]
+      "outputs": ["dist/**"],
+      "passThroughEnv": ["SENTRY_AUTH_TOKEN", "SENTRY_ORG", "SENTRY_PROJECT", "RELEASE"]
     },
     "check:build": {
       "outputs": [""]
