@@ -225,7 +225,7 @@ export class RegistryChecks {
     );
 
     if (!args.existing) {
-      this.logger.debug('No exiting version');
+      this.logger.debug('No existing version');
       return 'initial' as const;
     }
 
@@ -400,7 +400,7 @@ export class RegistryChecks {
       this.logger.debug('Skip policy check due to no SDL being composed.');
       return {
         status: 'skipped',
-      };
+      } satisfies CheckResult;
     }
 
     const policyResult = await this.policy.checkPolicy(incomingSdl, modifiedSdl, selector);

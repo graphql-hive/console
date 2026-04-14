@@ -45,6 +45,9 @@ jobs:
             suffix: '-arm64'
     runs-on: ${{ matrix.builder }}
     name: dockerize (${{ matrix.platform }})
+    env:
+      SENTRY_ORG: the-guild-z4
+      SENTRY_PROJECT: graphql-hive
     permissions:
       contents: read
       packages: write
@@ -66,6 +69,8 @@ jobs:
         run: pnpm build
         env:
           NODE_OPTIONS: '--max-old-space-size=14336' # GitHub Actions gives us 16GB, it's ok to use 80%
+          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+          RELEASE: ${{ inputs.imageTag }}
 
       - name: test ESM & CJS exports integrity
         if: ${{ inputs.build }}
@@ -191,8 +196,6 @@ jobs:
         if: ${{ inputs.publishSourceMaps }}
         env:
           SENTRY_DSN: ${{ secrets.SENTRY_DSN }}
-          SENTRY_ORG: the-guild-z4
-          SENTRY_PROJECT: graphql-hive
           SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
           SENTRY_RELEASE: ${{ inputs.imageTag }}
         run: pnpm upload-sourcemaps

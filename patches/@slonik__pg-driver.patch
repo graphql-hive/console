@@ -1,0 +1,28 @@
+diff --git a/dist/factories/createPgDriverFactory.js b/dist/factories/createPgDriverFactory.js
+index ed4601ac233435cc8ea5e546c722ede4bd8873d7..b57306c66a3e2176a6fda9d749f870a1b1158007 100644
+--- a/dist/factories/createPgDriverFactory.js
++++ b/dist/factories/createPgDriverFactory.js
+@@ -230,7 +230,8 @@ export const createPgDriverFactory = () => {
+                             });
+                         }
+                         if (Array.isArray(result)) {
+-                            throw new InvalidInputError("Must not use multiple statements in a single query.");
++                          result = result[result.length - 1]
++                          // throw new InvalidInputError("Must not use multiple statements in a single query.");
+                         }
+                         return {
+                             command: result.command,
+diff --git a/src/factories/createPgDriverFactory.ts b/src/factories/createPgDriverFactory.ts
+index 608ed21b07e90fb67dc1d778a836e3554ff50671..c606167619280e58df26601ff1bc7a903dead48d 100644
+--- a/src/factories/createPgDriverFactory.ts
++++ b/src/factories/createPgDriverFactory.ts
+@@ -314,7 +314,8 @@ export const createPgDriverFactory = (): DriverFactory => {
+             }
+ 
+             if (Array.isArray(result)) {
+-              throw new InvalidInputError("Must not use multiple statements in a single query.");
++              result = result[result.length - 1]
++              // throw new InvalidInputError("Must not use multiple statements in a single query.");
+             }
+ 
+             return {

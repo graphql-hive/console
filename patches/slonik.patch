@@ -1,0 +1,242 @@
+diff --git a/dist/factories/createConnection.js b/dist/factories/createConnection.js
+index 35b11d4d843c273aa4e0a5003cd1b8e082c41286..82bbb30c22b9f4bb7666f65afa483d71b33e51cd 100644
+--- a/dist/factories/createConnection.js
++++ b/dist/factories/createConnection.js
+@@ -56,23 +56,8 @@ export const createConnection = async (parentLog, pool, clientConfiguration, con
+     for (const interceptor of clientConfiguration.interceptors) {
+         const beforePoolConnection = interceptor.beforePoolConnection;
+         if (beforePoolConnection) {
+-            const maybeNewPool = await tracer.startActiveSpan("slonik.interceptor.beforePoolConnection", async (interceptorSpan) => {
+-                interceptorSpan.setAttribute("interceptor.name", interceptor.name);
+-                try {
+-                    return await beforePoolConnection(connectionContext);
+-                }
+-                catch (error) {
+-                    interceptorSpan.recordException(error);
+-                    interceptorSpan.setStatus({
+-                        code: SpanStatusCode.ERROR,
+-                        message: String(error),
+-                    });
+-                    throw error;
+-                }
+-                finally {
+-                    interceptorSpan.end();
+-                }
+-            });
++            const maybeNewPool = await beforePoolConnection(connectionContext);
++
+             if (maybeNewPool) {
+                 return await poolHandler(maybeNewPool);
+             }
+diff --git a/dist/factories/createConnectionPool.js b/dist/factories/createConnectionPool.js
+index 5d7d7de147c6c3d9f835ba987c61d34f179bba9d..1df983bf044a9fa5081b19cd181663f897344e35 100644
+--- a/dist/factories/createConnectionPool.js
++++ b/dist/factories/createConnectionPool.js
+@@ -291,13 +291,7 @@ export const createConnectionPool = ({ driver, events, idleTimeout, maximumConne
+         isEnded = true;
+     };
+     const acquire = async () => {
+-        return tracer.startActiveSpan("slonik.connection.acquire", async (span) => {
+             try {
+-                span.setAttribute("slonik.pool.id", id);
+-                span.setAttribute("slonik.pool.connections.total", connections.size);
+-                span.setAttribute("slonik.pool.connections.pending", pendingConnections.size);
+-                span.setAttribute("slonik.pool.waitingClients", waitingClients.length);
+-                span.setAttribute("slonik.pool.maximumSize", maximumPoolSize);
+                 if (isEnded) {
+                     span.setStatus({
+                         code: SpanStatusCode.ERROR,
+@@ -368,17 +362,11 @@ export const createConnectionPool = ({ driver, events, idleTimeout, maximumConne
+                     }
+                 }
+                 if (idleConnection) {
+-                    span.setAttribute("slonik.connection.id", idleConnection.id());
+-                    span.setAttribute("method", "acquire:reuse-idle");
+-                    span.setStatus({ code: SpanStatusCode.OK });
+                     return idleConnection;
+                 }
+                 if (pendingConnections.size + activeConnectionCount() - destroyedInLoop < maximumPoolSize) {
+-                    const newConnection = await addConnection(span);
++                    const newConnection = await addConnection(/*span*/);
+                     newConnection.acquire();
+-                    span.setAttribute("slonik.connection.id", newConnection.id());
+-                    span.setAttribute("method", "acquire:add-connection");
+-                    span.setStatus({ code: SpanStatusCode.OK });
+                     return newConnection;
+                 }
+                 if (isEnding || isEnded) {
+@@ -406,25 +394,12 @@ export const createConnectionPool = ({ driver, events, idleTimeout, maximumConne
+                         connectionId: connection.id(),
+                         duration: Number(process.hrtime.bigint() - queuedAt) / 1e6,
+                     }, "connection has been acquired from the queue");
+-                    span.setAttribute("queuedMs", Number(process.hrtime.bigint() - queuedAt) / 1e6);
+-                    span.setAttribute("slonik.connection.id", connection.id());
+-                    span.setAttribute("method", "acquire:queued");
+-                    span.setStatus({ code: SpanStatusCode.OK });
+                     return connection;
+                 });
+             }
+             catch (error) {
+-                span.recordException(error);
+-                span.setStatus({
+-                    code: SpanStatusCode.ERROR,
+-                    message: error instanceof Error ? error.message : String(error),
+-                });
+                 throw error;
+             }
+-            finally {
+-                span.end();
+-            }
+-        });
+     };
+     const warmup = async () => {
+         if (minimumPoolSize <= 0 || isEnding || isEnded) {
+diff --git a/dist/routines/establishConnection.js b/dist/routines/establishConnection.js
+index cec0de8d60542a48c47656b0d706de641d4e184e..6ca217362c42878449d1933de4953e3bb0612730 100644
+--- a/dist/routines/establishConnection.js
++++ b/dist/routines/establishConnection.js
+@@ -5,7 +5,6 @@ import { generateUid } from "@slonik/utilities";
+ import { serializeError } from "serialize-error";
+ const tracer = trace.getTracer("slonik");
+ export const establishConnection = async (parentLog, pool, connectionRetryLimit) => {
+-    return await tracer.startActiveSpan("slonik.acquireConnection", async (span) => {
+         let connection;
+         let remainingConnectionRetryLimit = connectionRetryLimit + 1;
+         while (true) {
+@@ -31,11 +30,6 @@ export const establishConnection = async (parentLog, pool, connectionRetryLimit)
+                     continue;
+                 }
+                 else {
+-                    span.recordException(error);
+-                    span.setStatus({
+-                        code: SpanStatusCode.ERROR,
+-                        message: String(error),
+-                    });
+                     throw new ConnectionError(error.message, {
+                         cause: error,
+                     });
+@@ -45,8 +39,6 @@ export const establishConnection = async (parentLog, pool, connectionRetryLimit)
+         if (!connection) {
+             throw new UnexpectedStateError("Connection handle is not present.");
+         }
+-        span.end();
+         return connection;
+-    });
+ };
+ //# sourceMappingURL=establishConnection.js.map
+\ No newline at end of file
+diff --git a/dist/routines/executeQuery.js b/dist/routines/executeQuery.js
+index 7446ec489a4fa4728be4e4abaa2495592bf9da9f..9256a675171fea8b42ce5a3895620472d7ff6eb7 100644
+--- a/dist/routines/executeQuery.js
++++ b/dist/routines/executeQuery.js
+@@ -145,26 +145,8 @@ const executeQueryInternal = async (connectionLogger, connection, clientConfigur
+         for (const interceptor of clientConfiguration.interceptors) {
+             const beforeQueryExecution = interceptor.beforeQueryExecution;
+             if (beforeQueryExecution) {
+-                result = await tracer.startActiveSpan("slonik.interceptor.beforeQueryExecution", {
+-                    attributes: {
+-                        "interceptor.name": interceptor.name,
+-                    },
+-                }, async (span) => {
+-                    try {
+-                        return await beforeQueryExecution(executionContext, actualQuery);
+-                    }
+-                    catch (error) {
+-                        span.recordException(error);
+-                        span.setStatus({
+-                            code: SpanStatusCode.ERROR,
+-                            message: String(error),
+-                        });
+-                        throw error;
+-                    }
+-                    finally {
+-                        span.end();
+-                    }
+-                });
++                result = await beforeQueryExecution(executionContext, actualQuery);
++
+                 if (result) {
+                     log.info("beforeQueryExecution interceptor produced a result; short-circuiting query execution using beforeQueryExecution result");
+                     return result;
+@@ -315,26 +297,7 @@ const executeQueryInternal = async (connectionLogger, connection, clientConfigur
+     for (const interceptor of interceptors) {
+         const afterQueryExecution = interceptor.afterQueryExecution;
+         if (afterQueryExecution) {
+-            await tracer.startActiveSpan("slonik.interceptor.afterQueryExecution", {
+-                attributes: {
+-                    "interceptor.name": interceptor.name,
+-                },
+-            }, async (span) => {
+-                try {
+-                    await afterQueryExecution(executionContext, actualQuery, result);
+-                }
+-                catch (error) {
+-                    span.recordException(error);
+-                    span.setStatus({
+-                        code: SpanStatusCode.ERROR,
+-                        message: String(error),
+-                    });
+-                    throw error;
+-                }
+-                finally {
+-                    span.end();
+-                }
+-            });
++                await afterQueryExecution(executionContext, actualQuery, result);
+         }
+     }
+     for (const interceptor of interceptors) {
+@@ -405,50 +368,12 @@ const executeQueryInternal = async (connectionLogger, connection, clientConfigur
+     for (const interceptor of interceptors) {
+         const beforeQueryResult = interceptor.beforeQueryResult;
+         if (beforeQueryResult) {
+-            await tracer.startActiveSpan("slonik.interceptor.beforeQueryResult", {
+-                attributes: {
+-                    "interceptor.name": interceptor.name,
+-                },
+-            }, async (span) => {
+-                try {
+-                    await beforeQueryResult(executionContext, actualQuery, result);
+-                }
+-                catch (error) {
+-                    span.recordException(error);
+-                    span.setStatus({
+-                        code: SpanStatusCode.ERROR,
+-                        message: String(error),
+-                    });
+-                    throw error;
+-                }
+-                finally {
+-                    span.end();
+-                }
+-            });
++            await beforeQueryResult(executionContext, actualQuery, result);
+         }
+     }
+     return result;
+ };
+ export const executeQuery = async (connectionLogger, connection, clientConfiguration, query, inheritedQueryId, executionRoutine, stream, integrityValidation) => {
+-    return await tracer.startActiveSpan("slonik.executeQuery", {
+-        attributes: {
+-            sql: query.sql,
+-        },
+-    }, async (span) => {
+-        try {
+-            return await executeQueryInternal(connectionLogger, connection, clientConfiguration, query, inheritedQueryId, executionRoutine, integrityValidation, stream);
+-        }
+-        catch (error) {
+-            span.recordException(error);
+-            span.setStatus({
+-                code: SpanStatusCode.ERROR,
+-                message: String(error),
+-            });
+-            throw error;
+-        }
+-        finally {
+-            span.end();
+-        }
+-    });
++    return await executeQueryInternal(connectionLogger, connection, clientConfiguration, query, inheritedQueryId, executionRoutine, integrityValidation, stream);
+ };
+ //# sourceMappingURL=executeQuery.js.map
+\ No newline at end of file

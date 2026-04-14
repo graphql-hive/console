@@ -7,8 +7,11 @@
     ".": "./src/index.ts"
   },
   "dependencies": {
-    "slonik": "30.4.4",
-    "slonik-interceptor-query-logging": "46.4.0"
+    "@standard-schema/spec": "1.0.0",
+    "slonik": "48.13.2",
+    "slonik-interceptor-query-logging": "48.13.2",
+    "slonik-sql-tag-raw": "48.13.2",
+    "zod": "3.25.76"
   },
   "devDependencies": {
     "@hive/service-common": "workspace:*"

@@ -2,7 +2,7 @@
 name = "hive-apollo-router-plugin"
 authors = ["Kamil Kisiela <kamil.kisiela@gmail.com>"]
 repository = "https://github.com/graphql-hive/console/"
-edition = "2021"
+edition = "2024"
 license = "MIT"
 publish = true
 version = "3.0.3"

@@ -169,7 +169,7 @@ export async function main() {
     10,
     tracing ? [tracing.instrumentSlonik()] : [],
   );
-  const taskScheduler = new TaskScheduler(storage.pool.getRawPgPool());
+  const taskScheduler = new TaskScheduler(storage.pool);
 
   const redis = createRedisClient('Redis', env.redis, server.log.child({ source: 'Redis' }));
 

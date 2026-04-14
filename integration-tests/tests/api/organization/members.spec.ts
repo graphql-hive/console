@@ -1,3 +1,4 @@
+import { pollFor } from 'testkit/flow';
 import { graphql } from 'testkit/gql';
 import { ResourceAssignmentModeType } from 'testkit/gql/graphql';
 import { execute } from 'testkit/graphql';
@@ -115,15 +116,19 @@ test.concurrent('cannot delete a role with members', async ({ expect }) => {
 test.concurrent('email invitation', async ({ expect }) => {
   const seed = initSeed();
   const { createOrg } = await seed.createOwner();
-  const { inviteMember } = await createOrg();
+  const { inviteMember, organization } = await createOrg();
 
   const inviteEmail = seed.generateEmail();
   const invitationResult = await inviteMember(inviteEmail);
   const inviteCode = invitationResult.ok?.createdOrganizationInvitation.code;
   expect(inviteCode).toBeDefined();
 
-  const sentEmails = await history();
-  expect(sentEmails).toContainEqual(expect.objectContaining({ to: inviteEmail }));
+  await pollFor(async () => {
+    const sentEmails = await history(inviteEmail);
+    return sentEmails.length > 0;
+  });
+  const sentEmails = await history(inviteEmail);
+  expect(sentEmails[0].subject).toEqual('You have been invited to join ' + organization.slug);
 });
 
 test.concurrent('can not invite with role not existing in organization', async ({ expect }) => {

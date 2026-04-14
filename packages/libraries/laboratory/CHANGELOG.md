@@ -1,5 +1,14 @@
 # @graphql-hive/laboratory
 
+## 0.1.3
+
+### Patch Changes
+
+- [#7888](https://github.com/graphql-hive/console/pull/7888)
+  [`574a5d8`](https://github.com/graphql-hive/console/commit/574a5d823e71ca1d0628897a73e2fab1d0d5bfe0)
+  Thanks [@mskorokhodov](https://github.com/mskorokhodov)! - If schema introspection isn't provided
+  as property to Laboratory, lab will start interval to fetch schema every second.
+
 ## 0.1.2
 
 ### Patch Changes
