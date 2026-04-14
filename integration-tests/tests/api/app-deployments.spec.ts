@@ -6102,6 +6102,71 @@ test('rejects mixing v1 and v2 document formats on the same deployment', async (
   );
 });
 
+test('rejects mixing v2 and v1 document formats on the same deployment', async () => {
+  const { createOrg } = await initSeed().createOwner();
+  const { createProject, setFeatureFlag } = await createOrg();
+  await setFeatureFlag('appDeployments', true);
+  const { createTargetAccessToken } = await createProject();
+  const token = await createTargetAccessToken({});
+
+  await token.publishSchema({
+    sdl: /* GraphQL */ `
+      type Query {
+        hello: String
+      }
+    `,
+  });
+
+  const sha256Hash = 'ec2e01311ab3b02f3d8c8c712f9e579356d332cd007ac4c1ea5df727f482f05f';
+
+  // Create deployment
+  await execute({
+    document: CreateAppDeployment,
+    variables: {
+      input: {
+        appName: 'my-app',
+        appVersion: '1.0.0',
+      },
+    },
+    authToken: token.secret,
+  }).then(res => res.expectNoGraphQLErrors());
+
+  // Upload v2 documents first
+  const v2Result = await execute({
+    document: AddDocumentsToAppDeploymentWithFormat,
+    variables: {
+      input: {
+        appName: 'my-app',
+        appVersion: '1.0.0',
+        documents: [{ hash: sha256Hash, body: 'query { hello }' }],
+        format: AppDeploymentFormatType.V2,
+      },
+    },
+    authToken: token.secret,
+  }).then(res => res.expectNoGraphQLErrors());
+
+  expect(v2Result.addDocumentsToAppDeployment.error).toBeNull();
+
+  // Attempt to upload v1 documents to the same deployment, should fail
+  const v1Result = await execute({
+    document: AddDocumentsToAppDeploymentWithFormat,
+    variables: {
+      input: {
+        appName: 'my-app',
+        appVersion: '1.0.0',
+        documents: [{ hash: 'GetHello', body: 'query { hello }' }],
+        format: AppDeploymentFormatType.V1,
+      },
+    },
+    authToken: token.secret,
+  }).then(res => res.expectNoGraphQLErrors());
+
+  expect(v1Result.addDocumentsToAppDeployment.error).toBeTruthy();
+  expect(v1Result.addDocumentsToAppDeployment.error?.message).toContain(
+    'Cannot mix document formats',
+  );
+});
+
 const CreateAppDeploymentWithHashes = graphql(`
   mutation CreateAppDeploymentWithHashes($input: CreateAppDeploymentInput!) {
     createAppDeployment(input: $input) {
@@ -6120,6 +6185,71 @@ const CreateAppDeploymentWithHashes = graphql(`
     }
   }
 `);
+
+test('createAppDeployment with V2 format and no hashes returns error', async () => {
+  const { createOrg } = await initSeed().createOwner();
+  const { createProject, setFeatureFlag } = await createOrg();
+  await setFeatureFlag('appDeployments', true);
+  const { createTargetAccessToken } = await createProject();
+  const token = await createTargetAccessToken({});
+
+  await token.publishSchema({
+    sdl: /* GraphQL */ `
+      type Query {
+        hello: String
+      }
+    `,
+  });
+
+  const { createAppDeployment } = await execute({
+    document: CreateAppDeploymentWithHashes,
+    variables: {
+      input: {
+        appName: 'my-app',
+        appVersion: '1.0.0',
+        format: AppDeploymentFormatType.V2,
+      },
+    },
+    authToken: token.secret,
+  }).then(res => res.expectNoGraphQLErrors());
+
+  expect(createAppDeployment.error?.message).toContain('hashes are required');
+  expect(createAppDeployment.ok).toBeNull();
+});
+
+test('createAppDeployment with V1 format ignores hashes', async () => {
+  const { createOrg } = await initSeed().createOwner();
+  const { createProject, setFeatureFlag } = await createOrg();
+  await setFeatureFlag('appDeployments', true);
+  const { createTargetAccessToken } = await createProject();
+  const token = await createTargetAccessToken({});
+
+  await token.publishSchema({
+    sdl: /* GraphQL */ `
+      type Query {
+        hello: String
+      }
+    `,
+  });
+
+  const sha256Hash = 'ec2e01311ab3b02f3d8c8c712f9e579356d332cd007ac4c1ea5df727f482f05f';
+
+  const { createAppDeployment } = await execute({
+    document: CreateAppDeploymentWithHashes,
+    variables: {
+      input: {
+        appName: 'my-app',
+        appVersion: '1.0.0',
+        format: AppDeploymentFormatType.V1,
+        hashes: [sha256Hash],
+      },
+    },
+    authToken: token.secret,
+  }).then(res => res.expectNoGraphQLErrors());
+
+  expect(createAppDeployment.ok).not.toBeNull();
+  expect(createAppDeployment.ok?.existingHashes).toEqual([]);
+});
 
 test('re-running app:create deduplicates documents from the pending deployment', async () => {
   const { createOrg } = await initSeed().createOwner();
