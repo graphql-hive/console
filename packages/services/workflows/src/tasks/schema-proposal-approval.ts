@@ -40,6 +40,14 @@ export const task = implementTask(SchemaProposalApprovalTask, async args => {
       },
     );
 
+    if (changes.length === 0) {
+      args.logger.info(
+        'No changes found on proposal to approve. (proposal=%s)',
+        args.input.proposalId,
+      );
+      return;
+    }
+
     args.logger.info(
       'Approving changes (count=%d, proposal=%s)',
       changes.length,

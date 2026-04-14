@@ -2,21 +2,7 @@ import { graphql } from 'testkit/gql';
 import { ProjectType, ResourceAssignmentModeType } from 'testkit/gql/graphql';
 import { execute, subscribe } from 'testkit/graphql';
 import { initSeed } from 'testkit/seed';
-
-const CreateProposalMutation = graphql(`
-  mutation CreateProposalMutation($input: CreateSchemaProposalInput!) {
-    createSchemaProposal(input: $input) {
-      ok {
-        schemaProposal {
-          id
-        }
-      }
-      error {
-        message
-      }
-    }
-  }
-`);
+import { checkSchema, CreateProposalMutation } from './operations';
 
 const ProposalCompositionSubscription = graphql(`
   subscription ProposalCompositionSubscription(
@@ -61,14 +47,14 @@ async function setup(input: { tokenPermissions: string[] }) {
     ownerToken,
   );
   const proposalId = result.createSchemaProposal.ok?.schemaProposal.id!;
-  return { accessKey, proposalId, project };
+  return { ownerToken, accessKey, proposalId, project, targetId: project.target.id };
 }
 
 describe('Schema Proposals', () => {
   test.concurrent(
     'can subscribe for proposal events with "schemaProposal:describe" permission',
     async ({ expect }) => {
-      const { accessKey, proposalId, project } = await setup({
+      const { accessKey, proposalId, project, targetId, ownerToken } = await setup({
         tokenPermissions: ['schemaProposal:describe'],
       });
 
@@ -93,20 +79,23 @@ describe('Schema Proposals', () => {
         service: 'example',
         url: 'http://localhost:4001',
       });
-      const checkResultErrors = await token
-        .checkSchema(
-          /* GraphQL */ `
+      const checkResultErrors = await checkSchema({
+        input: {
+          sdl: /* GraphQL */ `
             type Query {
               ping: String
               pong: String
             }
           `,
-          'example',
-          undefined,
-          undefined,
-          proposalId,
-        )
-        .then(r => r.expectNoGraphQLErrors());
+          service: 'example',
+          schemaProposalId: proposalId,
+          target: {
+            byId: targetId,
+          },
+        },
+        accessKey: ownerToken, // use owner token here because we need schemaProposal:modify
+      }).then(r => r.expectNoGraphQLErrors());
+
       expect(checkResultErrors.schemaCheck.__typename).toBe(`SchemaCheckSuccess`);
       const { value } = await query.next();
       expect(value.data.schemaProposalComposition.status).toBe(`SUCCESS`);

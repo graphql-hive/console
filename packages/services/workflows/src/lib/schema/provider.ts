@@ -33,7 +33,10 @@ const SchemaProposalChangesModel = z.object({
   id: z.string().uuid(),
   serviceName: z.string().nullable(),
   serviceUrl: z.string().nullable(),
-  schemaProposalChanges: z.array(HiveSchemaChangeModel).default([]),
+  schemaProposalChanges: z
+    .array(HiveSchemaChangeModel)
+    .nullable()
+    .transform(a => a ?? []),
   createdAt: z.string(),
 });
 
@@ -369,7 +372,7 @@ export function schemaProvider(providerConfig: SchemaProviderConfig) {
           const check = SchemaProposalChangesModel.parse(row);
           return {
             ...check,
-            schemaProposalChanges: check.schemaProposalChanges.map((c): Change<any> => {
+            schemaProposalChanges: check.schemaProposalChanges?.map((c): Change<any> => {
               return {
                 message: c.message,
                 meta: c.meta,
@@ -384,7 +387,9 @@ export function schemaProvider(providerConfig: SchemaProviderConfig) {
         });
 
         for (const check of checks) {
-          await callback(check);
+          if (check.schemaProposalChanges.length !== 0) {
+            await callback(check);
+          }
         }
 
         if (checks.length === 20) {
@@ -435,11 +440,9 @@ export function schemaProvider(providerConfig: SchemaProviderConfig) {
         targetId: string;
       }[],
     ) {
-      providerConfig.logger.info(
-        'Approving changes (%s): %o',
-        records.map(r => generateChangeHash(r.change)).join(', '),
-        records[0]?.change,
-      );
+      if (records.length === 0) {
+        return;
+      }
       const values = records.map(
         r => psql`(
           ${generateChangeHash(r.change)}
@@ -498,6 +501,10 @@ export function schemaProvider(providerConfig: SchemaProviderConfig) {
       conn: CommonQueryMethods,
       args: { changes: Change[]; targetId: string },
     ) {
+      if (args.changes.length === 0) {
+        return [];
+      }
+
       // calculate hashes the same order as the changes
       const hashes = args.changes.map(generateChangeHash);
 

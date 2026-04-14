@@ -1,6 +1,11 @@
 import { z } from 'zod';
 import { defineTask, implementTask } from '../kit.js';
 
+/**
+ * Runs a check to determine if the changes done in a specific schema version
+ * correspond to any of the target's approved schema proposals. If they match,
+ * then this inserts a record to track the implementation.
+ */
 export const SchemaProposalImplementationTask = defineTask({
   name: 'schemaProposalImplementation',
   schema: z.object({
@@ -18,9 +23,9 @@ export const task = implementTask(SchemaProposalImplementationTask, async args =
       versionId: args.input.schemaVersionId,
     });
 
-    if (!implementedChanges) {
+    if (!implementedChanges || implementedChanges.length === 0) {
       args.logger.info(
-        'No changes found for schema version (version=%s, target=%s)',
+        'No changes found for schema version. Ignoring. (version=%s, target=%s)',
         args.input.schemaVersionId,
         args.input.targetId,
       );
