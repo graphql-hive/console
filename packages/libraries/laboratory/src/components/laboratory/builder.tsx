@@ -21,7 +21,7 @@ import {
   SearchIcon,
   TextAlignStartIcon,
 } from 'lucide-react';
-import { ToggleGroup, ToggleGroupItem } from '@/laboratory/components/ui/toggle-group';
+import { toast } from 'sonner';
 import type { LaboratoryOperation } from '../../lib/operations';
 import {
   getFieldByPath,
@@ -40,6 +40,7 @@ import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from '..
 import { InputGroup, InputGroupAddon, InputGroupButton, InputGroupInput } from '../ui/input-group';
 import { ScrollArea, ScrollBar } from '../ui/scroll-area';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
+import { ToggleGroup, ToggleGroupItem } from '../ui/toggle-group';
 import { Tooltip, TooltipContent, TooltipTrigger } from '../ui/tooltip';
 import { useLaboratory } from './context';
 
@@ -838,6 +839,8 @@ export const Builder = (props: {
   const restoreEndpoint = useCallback(() => {
     setEndpointValue(endpoint ?? '');
     setEndpoint(defaultEndpoint ?? '');
+
+    toast.success('Endpoint restored to default');
   }, [defaultEndpoint, setEndpointValue]);
 
   return (
@@ -873,14 +876,18 @@ export const Builder = (props: {
           </InputGroupAddon>
           {defaultEndpoint && (
             <InputGroupAddon align="inline-end">
-              <InputGroupButton className="rounded-full" size="icon-xs" onClick={restoreEndpoint}>
-                <Tooltip>
-                  <TooltipTrigger>
+              <Tooltip>
+                <TooltipTrigger>
+                  <InputGroupButton
+                    className="rounded-full"
+                    size="icon-xs"
+                    onClick={restoreEndpoint}
+                  >
                     <RotateCcwIcon className="size-4" />
-                  </TooltipTrigger>
-                  <TooltipContent>Restore default endpoint</TooltipContent>
-                </Tooltip>
-              </InputGroupButton>
+                  </InputGroupButton>
+                </TooltipTrigger>
+                <TooltipContent>Restore default endpoint</TooltipContent>
+              </Tooltip>
             </InputGroupAddon>
           )}
         </InputGroup>
