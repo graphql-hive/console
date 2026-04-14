@@ -330,8 +330,6 @@ export const Response = ({ historyItem }: { historyItem?: LaboratoryHistoryReque
       return false;
     }
 
-    console.log(QueryPlanSchema.safeParse(queryPlan).error?.message);
-
     return QueryPlanSchema.safeParse(queryPlan).success;
   }, [historyItem?.response]);
 
