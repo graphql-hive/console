@@ -3,6 +3,7 @@ import type { Plugin, UserConfig } from 'vite';
 import monacoEditor from 'vite-plugin-monaco-editor';
 import tsconfigPaths from 'vite-tsconfig-paths';
 import viteFastify from '@fastify/vite/plugin';
+import { sentryVitePlugin } from '@sentry/vite-plugin';
 import tailwindcss from '@tailwindcss/vite';
 import react from '@vitejs/plugin-react';
 
@@ -31,6 +32,11 @@ export default {
     react(),
     tailwindcss(),
     reactScanPlugin,
+    sentryVitePlugin({
+      org: process.env.SENTRY_ORG,
+      project: process.env.SENTRY_PROJECT,
+      release: { name: process.env.RELEASE, dist: 'webapp' },
+    }),
     // @ts-expect-error temp
     monacoEditor.default({
       languageWorkers: ['json', 'typescript', 'editorWorkerService'],
@@ -53,5 +59,12 @@ export default {
   },
   optimizeDeps: {
     include: ['monaco-editor/esm/vs/editor/editor.api', 'monaco-graphql/esm/monaco.contribution'],
+  },
+  environments: {
+    client: {
+      build: {
+        sourcemap: 'hidden',
+      },
+    },
   },
 } satisfies UserConfig;
