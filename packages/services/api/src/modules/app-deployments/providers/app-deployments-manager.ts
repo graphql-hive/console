@@ -103,7 +103,9 @@ export class AppDeploymentsManager {
     // Write format and hash manifest immediately so activation has them,
     // even if all documents are deduped and no upload happens.
     // The manifest must contain ALL hashes (not just newly uploaded ones) for version isolation.
-    if (hashes) {
+    // Only write for pending deployments, re-creating an active/retired deployment must not
+    // overwrite the apps-enabled key (which would deactivate it).
+    if (hashes && result.appDeployment.activatedAt === null) {
       await Promise.all([
         this.appDeployments.writeAppDeploymentFormat({
           targetId: selector.targetId,
