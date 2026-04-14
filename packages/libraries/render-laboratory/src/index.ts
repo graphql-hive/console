@@ -1,4 +1,5 @@
 import type { GraphiQLOptions } from 'graphql-yoga';
+import type { LaboratoryProps } from '@graphql-hive/laboratory';
 import {
   editorWorkerService,
   favicon,
@@ -8,6 +9,31 @@ import {
   jsonWorker,
   typescriptWorker,
 } from './laboratory.js';
+
+const mapGraphiQLOptionsToLaboratoryProps = (opts?: GraphiQLOptions): LaboratoryProps => {
+  if (!opts) {
+    return {};
+  }
+
+  return {
+    defaultSettings: {
+      fetch: {
+        credentials: opts.credentials ?? 'same-origin',
+        timeout: opts.timeout,
+        retry: opts.retry,
+        useGETForQueries: opts.useGETForQueries,
+      },
+      subscriptions: {
+        protocol: opts.subscriptionsProtocol ?? 'WS',
+      },
+      introspection: {
+        queryName: opts.introspectionQueryName,
+        method: opts.method,
+        schemaDescription: opts.schemaDescription,
+      },
+    },
+  } satisfies LaboratoryProps;
+};
 
 export const renderLaboratory = (opts?: GraphiQLOptions) => /* HTML */ `
   <!doctype html>
@@ -63,7 +89,10 @@ export const renderLaboratory = (opts?: GraphiQLOptions) => /* HTML */ `
 
         ${js};
 
-        HiveLaboratory.renderLaboratory(window.document.querySelector('#root'));
+        HiveLaboratory.renderLaboratory(
+          window.document.querySelector('#root'),
+          ${JSON.stringify(mapGraphiQLOptionsToLaboratoryProps(opts))},
+        );
       </script>
     </body>
   </html>
