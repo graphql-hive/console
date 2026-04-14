@@ -37,15 +37,15 @@ export default gql`
   """
   enum AppDeploymentFormatType {
     """
-    V1 format: version-scoped storage. Each version stores documents separately.
+    Custom hash format: version-scoped storage. Each version stores documents separately.
     Allows any hash format. No cross-version deduplication.
     """
-    V1
+    CUSTOM
     """
-    V2 format: content-addressed storage with SHA256 hashes.
+    SHA256 hash format: content-addressed storage.
     Enables cross-version deduplication and delta uploads.
     """
-    V2
+    SHA256
   }
 
   type GraphQLDocumentConnection {
@@ -205,7 +205,7 @@ export default gql`
     appVersion: String!
     """
     Storage format for documents. Defaults to V1 for backwards compatibility.
-    V2 enables cross-version deduplication and delta uploads (requires SHA256 hashes).
+    SHA256 format enables cross-version deduplication and delta uploads.
     """
     format: AppDeploymentFormatType
     """
@@ -284,7 +284,7 @@ export default gql`
     documents: [DocumentInput!]!
     """
     Storage format for documents. Defaults to V1 for backwards compatibility.
-    V2 enables cross-version deduplication and delta uploads (requires SHA256 hashes).
+    SHA256 format enables cross-version deduplication and delta uploads.
     """
     format: AppDeploymentFormatType
     """

@@ -44,8 +44,8 @@ export default class AppCreate extends Command<typeof AppCreate> {
     }),
     format: Flags.string({
       description:
-        'Storage format version. "v1" uses per-version storage and allows any hash format. "v2" enables cross-version deduplication and requires sha256 hashes. Auto-detected from hash format if not specified.',
-      options: ['v1', 'v2'],
+        'Storage format. "custom" uses per-version storage and allows any hash format. "sha256" enables cross-version deduplication and requires sha256 hashes. Auto-detected from hash format if not specified.',
+      options: ['custom', 'sha256'],
     }),
   };
 
@@ -105,29 +105,29 @@ export default class AppCreate extends Command<typeof AppCreate> {
     }
 
     // Auto-detect format from hash patterns if not explicitly specified
-    let format: 'v1' | 'v2';
-    if (flags.format === 'v1' || flags.format === 'v2') {
+    let format: 'custom' | 'sha256';
+    if (flags.format === 'custom' || flags.format === 'sha256') {
       format = flags.format;
     } else {
       const sha256Regex = /^(sha256:)?[a-f0-9]{64}$/i;
       const hashes = Object.keys(validationResult.data);
       const allSha256 = hashes.length > 0 && hashes.every(hash => sha256Regex.test(hash));
-      format = allSha256 ? 'v2' : 'v1';
+      format = allSha256 ? 'sha256' : 'custom';
 
-      if (format === 'v2') {
+      if (format === 'sha256') {
         this.log(
-          `Detected sha256 hashes — using v2 format for faster uploads and cross-version deduplication.`,
+          `Detected sha256 hashes — using sha256 format for faster uploads and cross-version deduplication.`,
         );
       } else {
         this.log(
-          `Hashes are not sha256 — using v1 format. For faster uploads and cross-version deduplication, ` +
+          `Hashes are not sha256 — using custom format. For faster uploads and cross-version deduplication, ` +
             `configure your code generator to use sha256 hashes. See https://the-guild.dev/graphql/hive/docs/schema-registry/app-deployments`,
         );
       }
     }
 
-    // Validate hashes match content for v2 format
-    if (format === 'v2') {
+    // Validate hashes match content for sha256 format
+    if (format === 'sha256') {
       const mismatchedHashes: Array<{ hash: string; expected: string }> = [];
 
       for (const [hash, body] of Object.entries(validationResult.data)) {
@@ -152,7 +152,7 @@ export default class AppCreate extends Command<typeof AppCreate> {
     }
 
     const allDocuments = Object.entries(validationResult.data);
-    const localHashes = format === 'v2' ? allDocuments.map(([hash]) => hash) : undefined;
+    const localHashes = format === 'sha256' ? allDocuments.map(([hash]) => hash) : undefined;
 
     const result = await this.registryApi(endpoint, accessToken).request({
       operation: CreateAppDeploymentMutation,
@@ -161,7 +161,7 @@ export default class AppCreate extends Command<typeof AppCreate> {
           appName: flags['name'],
           appVersion: flags['version'],
           target,
-          format: format === 'v2' ? AppDeploymentFormatType.V2 : AppDeploymentFormatType.V1,
+          format: format === 'sha256' ? AppDeploymentFormatType.Sha256 : AppDeploymentFormatType.Custom,
           hashes: localHashes,
         },
       },
@@ -222,7 +222,7 @@ export default class AppCreate extends Command<typeof AppCreate> {
               appName: flags['name'],
               appVersion: flags['version'],
               documents: buffer,
-              format: format === 'v1' ? AppDeploymentFormatType.V1 : AppDeploymentFormatType.V2,
+              format: format === 'custom' ? AppDeploymentFormatType.Custom : AppDeploymentFormatType.Sha256,
               showTimings: flags.showTiming || undefined,
             },
           },

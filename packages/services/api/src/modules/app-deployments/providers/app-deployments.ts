@@ -135,7 +135,7 @@ export class AppDeployments {
       name: string;
       version: string;
     };
-    format: 'v1' | 'v2' | null;
+    format: 'custom' | 'sha256' | null;
   }) {
     this.logger.debug(
       'create app deployment (targetId=%s, appName=%s, appVersion=%s)',
@@ -260,7 +260,7 @@ export class AppDeployments {
       hash: string;
       body: string;
     }>;
-    format: 'v1' | 'v2' | null;
+    format: 'custom' | 'sha256' | null;
   }) {
     if (this.appDeploymentsEnabled === false) {
       const organization = await this.storage.getOrganization({
@@ -310,7 +310,7 @@ export class AppDeployments {
     }
 
     // Resolve effective format: client-specified > PG-stored > default v1
-    const effectiveFormat = args.format ?? appDeployment.format ?? 'v1';
+    const effectiveFormat = args.format ?? appDeployment.format ?? 'custom';
 
     // Prevent mixing v1 and v2 formats on the same deployment
     if (appDeployment.format !== null && effectiveFormat !== appDeployment.format) {
@@ -322,7 +322,7 @@ export class AppDeployments {
         },
       };
     }
-    const isV1Format = effectiveFormat === 'v1';
+    const isV1Format = effectiveFormat === 'custom';
 
     if (args.operations.length !== 0) {
       const latestSchemaVersion = await this.storage.getMaybeLatestValidVersion({
@@ -457,7 +457,7 @@ export class AppDeployments {
 
     // Verify v2 hash manifest exists. It must be written during createAppDeployment
     // (which requires hashes for V2 format). If missing, something went wrong.
-    if (appDeployment.format === 'v2') {
+    if (appDeployment.format === 'sha256') {
       const manifestKey = buildV2HashManifestKey(
         appDeployment.targetId,
         appDeployment.name,
@@ -480,7 +480,7 @@ export class AppDeployments {
       appDeployment.name,
       appDeployment.version,
     );
-    const activeFormat = appDeployment.format ?? 'v1';
+    const activeFormat = appDeployment.format ?? 'custom';
 
     // Write the active format to all S3 endpoints
     for (const s3 of this.s3) {
@@ -1714,7 +1714,7 @@ const AppDeploymentModel = z.intersection(
     targetId: z.string(),
     name: z.string(),
     version: z.string(),
-    format: z.enum(['v1', 'v2']).nullable(),
+    format: z.enum(['custom', 'sha256']).nullable(),
     createdAt: z.string(),
   }),
   z.union([

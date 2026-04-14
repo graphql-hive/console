@@ -12,7 +12,7 @@ export const addDocumentsToAppDeployment: NonNullable<
       version: input.appVersion,
     },
     documents: input.documents,
-    format: input.format === 'V2' ? 'v2' : input.format === 'V1' ? 'v1' : null,
+    format: input.format === 'SHA256' ? 'sha256' : input.format === 'CUSTOM' ? 'custom' : null,
   });
 
   if (result.type === 'error') {

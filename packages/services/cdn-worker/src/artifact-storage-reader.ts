@@ -24,7 +24,7 @@ type SDLArtifactTypes = `sdl${'.graphql' | '.graphqls' | ''}`;
 
 export type ArtifactsType = SDLArtifactTypes | 'metadata' | 'services' | 'supergraph';
 
-export type AppDeploymentStatus = { enabled: false } | { enabled: true; format: 'v1' | 'v2' };
+export type AppDeploymentStatus = { enabled: false } | { enabled: true; format: 'custom' | 'sha256' };
 
 const OperationS3BucketKeyModel = zod.tuple([
   zod.string().uuid(),
@@ -387,8 +387,8 @@ export class ArtifactStorageReader {
     if (body.includes('-inactive')) {
       return { enabled: false };
     }
-    // 'v2' = active v2, 'v1' or '1' or anything else = active v1 (backward compat)
-    const format = body === 'v2' ? 'v2' : 'v1';
+    // 'sha256' = active sha256, 'custom' or '1' or anything else = active custom (backward compat)
+    const format = body === 'sha256' ? 'sha256' : 'custom';
     return { enabled: true, format };
   }
 
@@ -398,7 +398,7 @@ export class ArtifactStorageReader {
     appVersion: string,
     hash: string,
     etagValue: string | null,
-    format: 'v1' | 'v2',
+    format: 'custom' | 'sha256',
   ) {
     const headers: Record<string, string> = {};
     if (etagValue) {
@@ -436,7 +436,7 @@ export class ArtifactStorageReader {
         );
       };
 
-    if (format === 'v2') {
+    if (format === 'sha256') {
       // Fetch document and hash manifest in parallel for version isolation
       const key = buildOperationS3BucketKeyV2(targetId, appName, hash);
       const manifestKey = buildV2HashManifestKey(targetId, appName, appVersion);

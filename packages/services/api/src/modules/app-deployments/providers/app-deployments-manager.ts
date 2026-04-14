@@ -68,7 +68,7 @@ export class AppDeploymentsManager {
       version: string;
     };
     hashes?: readonly string[] | null;
-    format: 'v1' | 'v2' | null;
+    format: 'custom' | 'sha256' | null;
   }) {
     const selector = await this.idTranslator.resolveTargetReference({
       reference: args.reference,
@@ -113,7 +113,7 @@ export class AppDeploymentsManager {
           targetId: selector.targetId,
           appName: args.appDeployment.name,
           appVersion: args.appDeployment.version,
-          format: 'v2-inactive',
+          format: 'sha256-inactive',
         }),
         this.appDeployments.writeV2HashManifest({
           targetId: selector.targetId,
@@ -149,7 +149,7 @@ export class AppDeploymentsManager {
       hash: string;
       body: string;
     }>;
-    format: 'v1' | 'v2' | null;
+    format: 'custom' | 'sha256' | null;
   }) {
     const selector = await this.idTranslator.resolveTargetReference({
       reference: args.reference,

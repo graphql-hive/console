@@ -59,7 +59,7 @@ export function createGetAppDeploymentStatus(deps: {
     );
 
     if (cache) {
-      // Cache the raw value: 'v1', 'v2' for enabled, '0' for disabled
+      // Cache the raw value: 'custom', 'sha256' for enabled, '0' for disabled
       const cacheValue = status.enabled ? status.format : '0';
       const promise = cache.put(
         cacheKey,
@@ -86,6 +86,6 @@ function parseStatus(value: string): AppDeploymentStatus {
   if (value === '0' || value.includes('-inactive')) {
     return { enabled: false };
   }
-  // 'v2' = active v2, 'v1' or '1' or anything else = active v1 (backward compat)
-  return { enabled: true, format: value === 'v2' ? 'v2' : 'v1' };
+  // 'sha256' = active sha256, 'custom' or '1' or anything else = active custom (backward compat)
+  return { enabled: true, format: value === 'sha256' ? 'sha256' : 'custom' };
 }

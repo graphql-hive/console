@@ -247,7 +247,7 @@ async function runBenchmarkForDocCount(
     '--registry.accessToken',
     TOKEN,
     '--format',
-    'v1',
+    'custom',
     '--showTiming',
   ]);
 
@@ -291,7 +291,7 @@ async function runBenchmarkForDocCount(
     '--registry.accessToken',
     TOKEN,
     '--format',
-    'v2',
+    'sha256',
     '--showTiming',
   ]);
 
@@ -337,7 +337,7 @@ async function runBenchmarkForDocCount(
     '--registry.accessToken',
     TOKEN,
     '--format',
-    'v2',
+    'sha256',
     '--showTiming',
   ]);
 

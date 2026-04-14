@@ -6,12 +6,12 @@ export const createAppDeployment: NonNullable<MutationResolvers['createAppDeploy
   { input },
   { injector },
 ) => {
-  const isV2 = input.format === 'V2';
+  const isSha256 = input.format === 'SHA256';
 
-  if (isV2 && (!input.hashes || input.hashes.length === 0)) {
+  if (isSha256 && (!input.hashes || input.hashes.length === 0)) {
     return {
       error: {
-        message: 'hashes are required when using V2 format.',
+        message: 'hashes are required when using SHA256 format.',
         details: null,
       },
       ok: null,
@@ -24,8 +24,8 @@ export const createAppDeployment: NonNullable<MutationResolvers['createAppDeploy
       name: input.appName,
       version: input.appVersion,
     },
-    hashes: isV2 ? input.hashes! : undefined,
-    format: isV2 ? 'v2' : input.format === 'V1' ? 'v1' : null,
+    hashes: isSha256 ? input.hashes! : undefined,
+    format: isSha256 ? 'sha256' : input.format === 'CUSTOM' ? 'custom' : null,
   });
 
   if (result.type === 'error') {

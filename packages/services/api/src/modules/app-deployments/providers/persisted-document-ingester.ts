@@ -327,7 +327,7 @@ export class PersistedDocumentIngester {
         for (const s3 of this.s3) {
           const result = await s3.client.fetch([s3.endpoint, s3.bucket, enabledKey].join('/'), {
             method: 'PUT',
-            body: 'v1-inactive',
+            body: 'custom-inactive',
             headers: { 'content-type': 'text/plain' },
             aws: { signQuery: true },
           });
