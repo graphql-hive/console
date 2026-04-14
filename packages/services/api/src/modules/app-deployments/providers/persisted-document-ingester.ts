@@ -324,12 +324,15 @@ export class PersistedDocumentIngester {
       );
       const formatValue = data.isV1Format ? 'v1-inactive' : 'v2-inactive';
       for (const s3 of this.s3) {
-        await s3.client.fetch([s3.endpoint, s3.bucket, enabledKey].join('/'), {
+        const result = await s3.client.fetch([s3.endpoint, s3.bucket, enabledKey].join('/'), {
           method: 'PUT',
           body: formatValue,
           headers: { 'content-type': 'text/plain' },
           aws: { signQuery: true },
         });
+        if (result.statusCode !== 200) {
+          throw new Error(`Failed to write app deployment format: ${result.statusMessage}`);
+        }
       }
     }
 
