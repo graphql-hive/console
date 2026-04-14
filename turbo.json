@@ -14,7 +14,8 @@
     "build": {
       "dependsOn": ["^build"],
       "outputs": ["dist/**"],
-      "passThroughEnv": ["SENTRY_AUTH_TOKEN", "SENTRY_ORG", "SENTRY_PROJECT", "RELEASE"]
+      "env": ["SENTRY_ORG", "SENTRY_PROJECT", "RELEASE"],
+      "passThroughEnv": ["SENTRY_AUTH_TOKEN"]
     },
     "check:build": {
       "outputs": [""]
