@@ -6,13 +6,25 @@ export const createAppDeployment: NonNullable<MutationResolvers['createAppDeploy
   { input },
   { injector },
 ) => {
+  const isV2 = input.format === 'V2';
+
+  if (isV2 && (!input.hashes || input.hashes.length === 0)) {
+    return {
+      error: {
+        message: 'hashes are required when using V2 format.',
+        details: null,
+      },
+      ok: null,
+    };
+  }
+
   const result = await injector.get(AppDeploymentsManager).createAppDeployment({
     reference: input.target ?? null,
     appDeployment: {
       name: input.appName,
       version: input.appVersion,
     },
-    hashes: input.hashes,
+    hashes: isV2 ? input.hashes! : undefined,
   });
 
   if (result.type === 'error') {

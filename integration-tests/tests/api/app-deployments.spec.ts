@@ -6170,6 +6170,7 @@ test('re-running app:create deduplicates documents from the pending deployment',
       input: {
         appName: 'my-app',
         appVersion: '1.0.0',
+        format: AppDeploymentFormatType.V2,
         hashes: [sha256Hash, 'nonexistent-hash'],
       },
     },
@@ -6404,6 +6405,7 @@ test('v2 deployment with 100% dedup still resolves correctly via CDN', async () 
       input: {
         appName: 'my-app',
         appVersion: '2.0.0',
+        format: AppDeploymentFormatType.V2,
         hashes: [sha256Hash],
       },
     },
@@ -6484,6 +6486,7 @@ test('v2 deployment with partial dedup resolves both shared and new hashes', asy
       input: {
         appName: 'my-app',
         appVersion: '2.0.0',
+        format: AppDeploymentFormatType.V2,
         hashes: [sharedHash, newHash],
       },
     },

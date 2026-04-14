@@ -161,6 +161,7 @@ export default class AppCreate extends Command<typeof AppCreate> {
           appName: flags['name'],
           appVersion: flags['version'],
           target,
+          format: format === 'v2' ? AppDeploymentFormatType.V2 : AppDeploymentFormatType.V1,
           hashes: localHashes,
         },
       },

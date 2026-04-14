@@ -209,9 +209,14 @@ export default gql`
     appName: String!
     appVersion: String!
     """
-    Optional list of document hashes the client intends to upload.
-    If provided, the response will include the subset that already exist on the server,
-    enabling delta uploads (skip uploading documents that already exist).
+    Storage format for documents. Defaults to V1 for backwards compatibility.
+    V2 enables cross-version deduplication and delta uploads (requires SHA256 hashes).
+    """
+    format: AppDeploymentFormatType
+    """
+    List of document hashes the client intends to upload.
+    Required when format is V2. The response will include the subset that already exist
+    on the server, enabling delta uploads (skip uploading documents that already exist).
     """
     hashes: [String!]
   }
