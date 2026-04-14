@@ -237,7 +237,7 @@ const EditorInner = forwardRef<EditorHandle, EditorProps>((props, ref) => {
     (editor: monaco.editor.IStandaloneCodeEditor) => {
       let decorationsCollection: monaco.editor.IEditorDecorationsCollection | null = null;
 
-      return editor.onDidChangeCursorPosition(() => {
+      const handler = () => {
         decorationsCollection?.clear();
 
         try {
@@ -306,7 +306,11 @@ const EditorInner = forwardRef<EditorHandle, EditorProps>((props, ref) => {
             );
           }
         } catch (error) {}
-      });
+      };
+
+      editor.onDidChangeCursorPosition(handler);
+
+      handler();
     },
     [props.onOperationNameChange],
   );
@@ -314,24 +318,10 @@ const EditorInner = forwardRef<EditorHandle, EditorProps>((props, ref) => {
   const handleMount = useCallback(
     (editor: monaco.editor.IStandaloneCodeEditor) => {
       editorRef.current = editor;
-      const disposer = setupDecorationsHandler(editor);
-
-      return () => {
-        disposer.dispose();
-      };
+      setupDecorationsHandler(editor);
     },
     [setupDecorationsHandler],
   );
-
-  useEffect(() => {
-    if (editorRef.current) {
-      const disposer = setupDecorationsHandler(editorRef.current);
-
-      return () => {
-        disposer.dispose();
-      };
-    }
-  }, [setupDecorationsHandler]);
 
   const recentCursorPosition = useRef<{ lineNumber: number; column: number } | null>(null);
 

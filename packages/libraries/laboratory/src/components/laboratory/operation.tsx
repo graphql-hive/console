@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { parse } from 'graphql';
 import {
   BookmarkIcon,
   CircleCheckIcon,
