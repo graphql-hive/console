@@ -392,7 +392,7 @@ export const Response = ({ historyItem }: { historyItem?: LaboratoryHistoryReque
         )}
         {historyItem ? (
           <div className="ml-auto flex items-center gap-2">
-            {historyItem?.status && (
+            {!!historyItem?.status && (
               <Badge
                 className={cn('bg-green-400/10 text-green-500', {
                   'bg-red-400/10 text-red-500': isError,
@@ -537,9 +537,12 @@ export const Query = (props: {
         return;
       }
 
-      const extensionsResponse = response.extensions?.response as {
+      const extensionsResponse = (response.extensions?.response as {
         status: number;
         headers: Record<string, string>;
+      }) ?? {
+        status: 0,
+        headers: {},
       };
 
       delete response.extensions?.request;

@@ -11,7 +11,6 @@ export type LaboratorySettings = {
     protocol: 'SSE' | 'GRAPHQL_SSE' | 'WS' | 'LEGACY_WS';
   };
   introspection: {
-    queryName?: string;
     method?: 'GET' | 'POST';
     schemaDescription?: boolean;
   };
@@ -28,7 +27,6 @@ export const defaultLaboratorySettings: LaboratorySettings = {
     protocol: 'WS',
   },
   introspection: {
-    queryName: 'IntrospectionQuery',
     method: 'POST',
     schemaDescription: false,
   },
@@ -48,8 +46,6 @@ export const normalizeLaboratorySettings = (
     protocol: settings?.subscriptions?.protocol ?? defaultLaboratorySettings.subscriptions.protocol,
   },
   introspection: {
-    queryName:
-      settings?.introspection?.queryName ?? defaultLaboratorySettings.introspection.queryName,
     method: settings?.introspection?.method ?? defaultLaboratorySettings.introspection.method,
     schemaDescription:
       settings?.introspection?.schemaDescription ??

@@ -18,7 +18,6 @@ const settingsFormSchema = z.object({
     protocol: z.enum(['SSE', 'GRAPHQL_SSE', 'WS', 'LEGACY_WS']),
   }),
   introspection: z.object({
-    queryName: z.string().optional(),
     method: z.enum(['GET', 'POST']).optional(),
     schemaDescription: z.boolean().optional(),
   }),
@@ -183,20 +182,6 @@ export const Settings = () => {
           </CardHeader>
           <CardContent>
             <FieldGroup>
-              <form.Field name="introspection.queryName">
-                {field => {
-                  return (
-                    <Field>
-                      <FieldLabel htmlFor={field.name}>Query name</FieldLabel>
-                      <Input
-                        name={field.name}
-                        value={field.state.value ?? ''}
-                        onChange={e => field.handleChange(e.target.value || undefined)}
-                      />
-                    </Field>
-                  );
-                }}
-              </form.Field>
               <form.Field name="introspection.method">
                 {field => {
                   const isInvalid = field.state.meta.isTouched && !field.state.meta.isValid;

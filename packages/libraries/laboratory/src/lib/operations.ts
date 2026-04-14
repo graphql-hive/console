@@ -474,7 +474,9 @@ export const useOperations = (
         return null;
       }
 
-      delete response.extensions.response.body;
+      if (response.extensions?.response?.body) {
+        delete response.extensions.response.body;
+      }
 
       setStopOperationsFunctions(prev => {
         const newStopOperationsFunctions = { ...prev };
