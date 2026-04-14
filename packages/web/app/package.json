@@ -3,7 +3,7 @@
   "type": "module",
   "private": true,
   "scripts": {
-    "build": "tsx ../../../scripts/runify.ts src/server/index.ts && NODE_OPTIONS='--max-old-space-size=6144' vite build",
+    "build": "tsx ../../../scripts/runify.ts src/server/index.ts && NODE_OPTIONS='--max-old-space-size=8192' vite build",
     "dev": "tsx watch --clear-screen=false --exclude \"./**/*.mjs\" src/server/dev.ts",
     "generate-changelog": "node ../../../scripts/generate-changelog.js",
     "ladle": "ladle serve",
@@ -62,6 +62,7 @@
     "@sentry/node": "7.120.2",
     "@sentry/react": "7.120.2",
     "@sentry/types": "7.120.2",
+    "@sentry/vite-plugin": "^5.2.0",
     "@stepperize/react": "5.1.7",
     "@stripe/react-stripe-js": "3.1.1",
     "@stripe/stripe-js": "5.5.0",
