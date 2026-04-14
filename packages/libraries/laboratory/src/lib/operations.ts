@@ -472,15 +472,15 @@ export const useOperations = (
         }
 
         return null;
-      } else {
-        delete response.extensions.response.body;
-
-        setStopOperationsFunctions(prev => {
-          const newStopOperationsFunctions = { ...prev };
-          delete newStopOperationsFunctions[activeOperation.id];
-          return newStopOperationsFunctions;
-        });
       }
+
+      delete response.extensions.response.body;
+
+      setStopOperationsFunctions(prev => {
+        const newStopOperationsFunctions = { ...prev };
+        delete newStopOperationsFunctions[activeOperation.id];
+        return newStopOperationsFunctions;
+      });
 
       return response;
     },

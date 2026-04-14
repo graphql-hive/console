@@ -16,17 +16,15 @@ export async function fetchWithRetry(
   init: RequestInit,
   retryCount = 0,
 ): Promise<Response> {
-  let attempt = 0;
-
-  while (true) {
+  for (let attempt = 0; attempt <= retryCount; attempt++) {
     try {
       return await fetch(input, init);
     } catch (error) {
       if (attempt >= retryCount) {
         throw error;
       }
-
-      attempt++;
     }
   }
+
+  throw new Error('Unreachable');
 }
