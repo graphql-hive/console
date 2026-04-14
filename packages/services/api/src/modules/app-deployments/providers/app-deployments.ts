@@ -453,8 +453,8 @@ export class AppDeployments {
       };
     }
 
-    // Write v2 hash manifest if not already written during createAppDeployment.
-    // This handles deployments that didn't use the hashes input (legacy flow).
+    // Verify v2 hash manifest exists. It must be written during createAppDeployment
+    // (which requires hashes for V2 format). If missing, something went wrong.
     const deploymentFormat = await this.getDeploymentDocumentFormat(appDeployment.id);
     if (deploymentFormat === 'v2') {
       const manifestKey = buildV2HashManifestKey(
@@ -462,33 +462,15 @@ export class AppDeployments {
         appDeployment.name,
         appDeployment.version,
       );
-      // Check if manifest already exists (written during createAppDeployment)
       const existingManifest = await this.s3[0].client.fetch(
         [this.s3[0].endpoint, this.s3[0].bucket, manifestKey].join('/'),
         { method: 'HEAD', aws: { signQuery: true } },
       );
       if (existingManifest.statusCode !== 200) {
-        // Manifest doesn't exist, build it from clickhouse (only has uploaded hashes, not deduped)
-        const hashesResult = await this.clickhouse.query({
-          query: cSql`
-            SELECT document_hash AS hash
-            FROM app_deployment_documents
-            PREWHERE app_deployment_id = ${appDeployment.id}
-          `,
-          queryId: 'get-deployment-hashes-for-manifest',
-          timeout: 30_000,
-        });
-        const manifestHashes = z
-          .array(z.object({ hash: z.string() }))
-          .parse(hashesResult.data)
-          .map(row => row.hash);
-
-        await this.writeV2HashManifest({
-          targetId: appDeployment.targetId,
-          appName: appDeployment.name,
-          appVersion: appDeployment.version,
-          hashes: manifestHashes,
-        });
+        throw new Error(
+          `V2 hash manifest missing for ${appDeployment.name}@${appDeployment.version} (status=${existingManifest.statusCode}). ` +
+            `Manifest must be written during createAppDeployment with hashes.`,
+        );
       }
     }
 
@@ -499,15 +481,16 @@ export class AppDeployments {
       appDeployment.name,
       appDeployment.version,
     );
-    let activeFormat = 'v1';
     const existingValue = await this.s3[0].client.fetch(
       [this.s3[0].endpoint, this.s3[0].bucket, enabledKey].join('/'),
       { method: 'GET', aws: { signQuery: true } },
     );
-    if (existingValue.statusCode === 200) {
-      const body = existingValue.body;
-      activeFormat = body.replace('-inactive', '');
+    if (existingValue.statusCode !== 200) {
+      throw new Error(
+        `Failed to read app deployment format for ${appDeployment.name}@${appDeployment.version}: ${existingValue.statusCode} ${existingValue.statusMessage}`,
+      );
     }
+    const activeFormat = existingValue.body.replace('-inactive', '');
 
     // Write the active format to all S3 endpoints
     for (const s3 of this.s3) {
