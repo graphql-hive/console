@@ -210,6 +210,20 @@ describe('policy checks', () => {
     );
   });
 
+  it('should support type extensions', async () => {
+    const result = await schemaPolicyApiRouter
+      .createCaller({ req: { log: console } as any })
+      .checkPolicy({
+        source: `type Query extend type Query { foo: Foo } type Foo { id: ID! }`,
+        schema: `type Query extend type Query { foo: Foo } type Foo { id: ID! }`,
+        target: '1',
+        policy: {
+          'no-unreachable-types': [2],
+        },
+      });
+    expect(result).toHaveLength(0);
+  });
+
   /** To ensure existing policies dont break during upgrades */
   it.each(policies)('should support existing policies', async policy => {
     await expect(

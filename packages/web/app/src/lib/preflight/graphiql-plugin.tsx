@@ -660,7 +660,11 @@ function PreflightModal({
   }, []);
 
   const handleMonacoEditorBeforeMount = useCallback(async (monaco: Monaco) => {
-    if (monaco.languages.typescript) {
+    // Lazy-load the TS language service on first preflight mount if it hasn't
+    // already been registered. `schema-editor.ts` configures Monaco with the
+    // lean `editor.api` entry (no languages bundled), so `monaco.languages
+    // .typescript` is only defined after this side-effect import has run.
+    if (!monaco.languages.typescript) {
       await import('monaco-editor/esm/vs/language/typescript/monaco.contribution');
     }
 
