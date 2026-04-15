@@ -1,6 +1,14 @@
 import { lazy } from 'react';
+// Import from `editor.api` rather than the `monaco-editor` main entry to keep
+// the bundle lean — the main entry auto-registers every basic language, which
+// bloats our client sourcemaps. We opt in to the contributions we actually use
+// via the side-effect imports below.
 import * as monaco from 'monaco-editor/esm/vs/editor/editor.api';
+// Enables the read-only tooltip shown when users type into a read-only model.
 import 'monaco-editor/esm/vs/editor/contrib/readOnlyMessage/browser/contribution.js';
+// Registers the basic GraphQL Monarch tokenizer so `language="graphql"` models
+// get syntax highlighting. Without this, `editor.api` ships no languages.
+import 'monaco-editor/esm/vs/basic-languages/graphql/graphql.contribution';
 import {
   loader,
   DiffEditor as MonacoDiffEditor,
