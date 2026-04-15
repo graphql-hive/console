@@ -201,9 +201,9 @@ export function SupergraphMetadataList(props: {
   const [previewItems, allItems] = items ?? [null, null];
 
   return (
-    <div className="flex w-full justify-end">
+    <div className="flex w-full justify-end gap-1">
       {meta}
-      {previewItems}{' '}
+      {previewItems}
       {allItems && (
         <Tooltip
           content={
