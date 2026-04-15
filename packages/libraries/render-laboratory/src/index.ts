@@ -27,7 +27,6 @@ const mapGraphiQLOptionsToLaboratoryProps = (opts?: GraphiQLOptions): Laboratory
         protocol: opts.subscriptionsProtocol ?? 'WS',
       },
       introspection: {
-        queryName: opts.introspectionQueryName,
         method: opts.method,
         schemaDescription: opts.schemaDescription,
       },
