@@ -36,12 +36,4 @@ export const ContractCheck: ContractCheckResolvers = {
       })) ?? []),
     ];
   },
-  breakingSchemaChanges: ({ breakingSchemaChanges }, _arg, _ctx) => {
-    /* ContractCheck.breakingSchemaChanges resolver is required because ContractCheck.breakingSchemaChanges and ContractCheckMapper.breakingSchemaChanges are not compatible */
-    return breakingSchemaChanges;
-  },
-  safeSchemaChanges: ({ safeSchemaChanges }, _arg, _ctx) => {
-    /* ContractCheck.safeSchemaChanges resolver is required because ContractCheck.safeSchemaChanges and ContractCheckMapper.safeSchemaChanges are not compatible */
-    return safeSchemaChanges;
-  },
 };
