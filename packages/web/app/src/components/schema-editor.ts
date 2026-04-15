@@ -9,6 +9,10 @@ import 'monaco-editor/esm/vs/editor/contrib/readOnlyMessage/browser/contribution
 // Registers the basic GraphQL Monarch tokenizer so `language="graphql"` models
 // get syntax highlighting. Without this, `editor.api` ships no languages.
 import 'monaco-editor/esm/vs/basic-languages/graphql/graphql.contribution.js';
+// Registers the JSON language service (`monaco.languages.json`) — required by
+// the policy naming-convention rule editor, which configures JSON schema
+// diagnostics in `beforeMount`.
+import 'monaco-editor/esm/vs/language/json/monaco.contribution.js';
 import {
   loader,
   DiffEditor as MonacoDiffEditor,
