@@ -3,6 +3,17 @@ import { useCallback, useState } from 'react';
 export type LaboratorySettings = {
   fetch: {
     credentials: 'include' | 'omit' | 'same-origin';
+    timeout?: number;
+    retry?: number;
+    useGETForQueries?: boolean;
+  };
+  subscriptions: {
+    protocol: 'SSE' | 'GRAPHQL_SSE' | 'WS' | 'LEGACY_WS';
+  };
+  introspection: {
+    queryName?: string;
+    method?: 'GET' | 'POST';
+    schemaDescription?: boolean;
   };
 };
 
@@ -22,6 +33,17 @@ export const useSettings = (props: {
     props.defaultSettings ?? {
       fetch: {
         credentials: 'same-origin',
+        timeout: 10000,
+        retry: 3,
+        useGETForQueries: false,
+      },
+      subscriptions: {
+        protocol: 'WS',
+      },
+      introspection: {
+        queryName: 'IntrospectionQuery',
+        method: 'POST',
+        schemaDescription: false,
       },
     },
   );

@@ -402,7 +402,7 @@ const LaboratoryContent = () => {
                 >
                   Preflight Script
                 </DropdownMenuItem>
-                <DropdownMenuSeparator />
+                {/* <DropdownMenuSeparator />
                 <DropdownMenuItem
                   onSelect={() => {
                     const tab =
@@ -416,7 +416,7 @@ const LaboratoryContent = () => {
                   }}
                 >
                   Settings
-                </DropdownMenuItem>
+                </DropdownMenuItem> */}
               </DropdownMenuContent>
             </DropdownMenu>
             <TooltipContent side="right">Settings</TooltipContent>
@@ -433,7 +433,7 @@ const LaboratoryContent = () => {
           <div className="w-full">
             <Tabs />
           </div>
-          <div className="bg-card flex-1 overflow-hidden">{contentNode}</div>
+          <div className="bg-card relative flex-1 overflow-hidden">{contentNode}</div>
         </ResizablePanel>
       </ResizablePanelGroup>
     </div>
@@ -623,7 +623,7 @@ export const Laboratory = (
     [],
   );
 
-  const containerRef = useRef<HTMLDivElement>(null);
+  const [container, setContainer] = useState<HTMLDivElement | null>(null);
 
   const [isFullScreen, setIsFullScreen] = useState(false);
 
@@ -642,7 +642,7 @@ export const Laboratory = (
         className={cn('hive-laboratory bg-background size-full', props.theme, {
           'fixed inset-0 z-50': isFullScreen,
         })}
-        ref={containerRef}
+        ref={setContainer}
       >
         <Toaster richColors closeButton position="top-right" theme={props.theme} />
         <Dialog open={isUpdateEndpointDialogOpen} onOpenChange={setIsUpdateEndpointDialogOpen}>
@@ -809,7 +809,7 @@ export const Laboratory = (
           {...collectionsApi}
           {...operationsApi}
           {...historyApi}
-          container={containerRef.current}
+          container={container}
           openAddCollectionDialog={openAddCollectionDialog}
           openUpdateEndpointDialog={openUpdateEndpointDialog}
           openAddTestDialog={openAddTestDialog}

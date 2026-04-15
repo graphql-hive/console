@@ -21,7 +21,7 @@ import {
   SearchIcon,
   TextAlignStartIcon,
 } from 'lucide-react';
-import { ToggleGroup, ToggleGroupItem } from '@/laboratory/components/ui/toggle-group';
+import { toast } from 'sonner';
 import type { LaboratoryOperation } from '../../lib/operations';
 import {
   getFieldByPath,
@@ -40,6 +40,7 @@ import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from '..
 import { InputGroup, InputGroupAddon, InputGroupButton, InputGroupInput } from '../ui/input-group';
 import { ScrollArea, ScrollBar } from '../ui/scroll-area';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
+import { ToggleGroup, ToggleGroupItem } from '../ui/toggle-group';
 import { Tooltip, TooltipContent, TooltipTrigger } from '../ui/tooltip';
 import { useLaboratory } from './context';
 
@@ -48,6 +49,7 @@ export const BuilderArgument = (props: {
   path: string[];
   isReadOnly?: boolean;
   operation?: LaboratoryOperation | null;
+  operationName?: string | null;
 }) => {
   const {
     schema,
@@ -89,9 +91,18 @@ export const BuilderArgument = (props: {
           }
 
           if (checked) {
-            addArgToActiveOperation(props.path.join('.'), props.field.name, schema);
+            addArgToActiveOperation(
+              props.path.join('.'),
+              props.field.name,
+              schema,
+              props.operationName,
+            );
           } else {
-            deleteArgFromActiveOperation(props.path.join('.'), props.field.name);
+            deleteArgFromActiveOperation(
+              props.path.join('.'),
+              props.field.name,
+              props.operationName,
+            );
           }
         }}
       />
@@ -111,6 +122,7 @@ export const BuilderScalarField = (props: {
   isSearchActive?: boolean;
   isReadOnly?: boolean;
   operation?: LaboratoryOperation | null;
+  operationName?: string | null;
   searchValue?: string;
   label?: React.ReactNode;
   disableChildren?: boolean;
@@ -140,16 +152,18 @@ export const BuilderScalarField = (props: {
   );
 
   const isInQuery = useMemo(() => {
-    return isPathInQuery(operation?.query ?? '', path);
-  }, [operation?.query, path]);
+    return isPathInQuery(operation?.query ?? '', path, props.operationName);
+  }, [operation?.query, path, props.operationName]);
 
   const args = useMemo(() => {
     return (props.field as GraphQLField<unknown, unknown, unknown>).args ?? [];
   }, [props.field]);
 
   const hasArgs = useMemo(() => {
-    return args.some(arg => isArgInQuery(operation?.query ?? '', path, arg.name));
-  }, [operation?.query, args, path]);
+    return args.some(arg =>
+      isArgInQuery(operation?.query ?? '', path, arg.name, props.operationName),
+    );
+  }, [operation?.query, args, path, props.operationName]);
 
   const shouldHighlight = useMemo(() => {
     const splittedName = splitIdentifier(props.field.name);
@@ -185,9 +199,9 @@ export const BuilderScalarField = (props: {
           onCheckedChange={checked => {
             if (checked) {
               setIsOpen(true);
-              addPathToActiveOperation(path);
+              addPathToActiveOperation(path, props.operationName);
             } else {
-              deletePathFromActiveOperation(path);
+              deletePathFromActiveOperation(path, props.operationName);
             }
           }}
         />
@@ -237,9 +251,9 @@ export const BuilderScalarField = (props: {
               onCheckedChange={checked => {
                 if (checked) {
                   setIsOpen(true);
-                  addPathToActiveOperation(path);
+                  addPathToActiveOperation(path, props.operationName);
                 } else {
-                  deletePathFromActiveOperation(path);
+                  deletePathFromActiveOperation(path, props.operationName);
                 }
               }}
             />
@@ -321,9 +335,9 @@ export const BuilderScalarField = (props: {
         disabled={activeTab?.type !== 'operation'}
         onCheckedChange={checked => {
           if (checked) {
-            addPathToActiveOperation(props.path.join('.'));
+            addPathToActiveOperation(props.path.join('.'), props.operationName);
           } else {
-            deletePathFromActiveOperation(props.path.join('.'));
+            deletePathFromActiveOperation(props.path.join('.'), props.operationName);
           }
         }}
       />
@@ -352,6 +366,7 @@ export const BuilderObjectField = (props: {
   isSearchActive?: boolean;
   isReadOnly?: boolean;
   operation?: LaboratoryOperation | null;
+  operationName?: string | null;
   searchValue?: string;
   label?: React.ReactNode;
   disableChildren?: boolean;
@@ -441,9 +456,9 @@ export const BuilderObjectField = (props: {
           onCheckedChange={checked => {
             if (checked) {
               setIsOpen(true);
-              addPathToActiveOperation(path);
+              addPathToActiveOperation(path, props.operationName);
             } else {
-              deletePathFromActiveOperation(path);
+              deletePathFromActiveOperation(path, props.operationName);
             }
           }}
         />
@@ -492,9 +507,9 @@ export const BuilderObjectField = (props: {
             onCheckedChange={checked => {
               if (checked) {
                 setIsOpen(true);
-                addPathToActiveOperation(path);
+                addPathToActiveOperation(path, props.operationName);
               } else {
-                deletePathFromActiveOperation(path);
+                deletePathFromActiveOperation(path, props.operationName);
               }
             }}
           />
@@ -564,6 +579,7 @@ export const BuilderObjectField = (props: {
                 isSearchActive={props.isSearchActive}
                 isReadOnly={props.isReadOnly}
                 operation={operation}
+                operationName={props.operationName}
                 searchValue={props.searchValue}
               />
             ))}
@@ -583,6 +599,7 @@ export const BuilderField = (props: {
   forcedOpenPaths?: Set<string> | null;
   isSearchActive?: boolean;
   operation?: LaboratoryOperation | null;
+  operationName?: string | null;
   isReadOnly?: boolean;
   searchValue?: string;
   label?: React.ReactNode;
@@ -609,6 +626,7 @@ export const BuilderField = (props: {
         isSearchActive={props.isSearchActive}
         isReadOnly={props.isReadOnly}
         operation={props.operation}
+        operationName={props.operationName}
         searchValue={props.searchValue}
         label={props.label}
         disableChildren={props.disableChildren}
@@ -627,6 +645,7 @@ export const BuilderField = (props: {
       isSearchActive={props.isSearchActive}
       isReadOnly={props.isReadOnly}
       operation={props.operation}
+      operationName={props.operationName}
       searchValue={props.searchValue}
       label={props.label}
       disableChildren={props.disableChildren}
@@ -651,6 +670,7 @@ export const BuilderSearchResults = (props: {
   mode: BuilderSearchResultMode;
   isReadOnly: boolean;
   operation: LaboratoryOperation | null;
+  operationName?: string | null;
   searchValue: string;
   schema: GraphQLSchema;
   tab: OperationTypeNode;
@@ -675,6 +695,7 @@ export const BuilderSearchResults = (props: {
           isSearchActive={props.isSearchActive}
           isReadOnly={props.isReadOnly}
           operation={props.operation}
+          operationName={props.operationName}
           searchValue={props.searchValue}
           disableChildren
           label={
@@ -726,6 +747,7 @@ export const BuilderSearchResults = (props: {
           isSearchActive={props.isSearchActive}
           isReadOnly={props.isReadOnly}
           operation={props.operation}
+          operationName={props.operationName}
           searchValue={props.searchValue}
         />
       );
@@ -734,6 +756,7 @@ export const BuilderSearchResults = (props: {
 
 export const Builder = (props: {
   operation?: LaboratoryOperation | null;
+  operationName?: string | null;
   isReadOnly?: boolean;
 }) => {
   const { schema, activeOperation, endpoint, setEndpoint, defaultEndpoint } = useLaboratory();
@@ -816,6 +839,8 @@ export const Builder = (props: {
   const restoreEndpoint = useCallback(() => {
     setEndpointValue(endpoint ?? '');
     setEndpoint(defaultEndpoint ?? '');
+
+    toast.success('Endpoint restored to default');
   }, [defaultEndpoint, setEndpointValue]);
 
   return (
@@ -851,14 +876,18 @@ export const Builder = (props: {
           </InputGroupAddon>
           {defaultEndpoint && (
             <InputGroupAddon align="inline-end">
-              <InputGroupButton className="rounded-full" size="icon-xs" onClick={restoreEndpoint}>
-                <Tooltip>
-                  <TooltipTrigger>
+              <Tooltip>
+                <TooltipTrigger>
+                  <InputGroupButton
+                    className="rounded-full"
+                    size="icon-xs"
+                    onClick={restoreEndpoint}
+                  >
                     <RotateCcwIcon className="size-4" />
-                  </TooltipTrigger>
-                  <TooltipContent>Restore default endpoint</TooltipContent>
-                </Tooltip>
-              </InputGroupButton>
+                  </InputGroupButton>
+                </TooltipTrigger>
+                <TooltipContent>Restore default endpoint</TooltipContent>
+              </Tooltip>
             </InputGroupAddon>
           )}
         </InputGroup>
@@ -973,6 +1002,7 @@ export const Builder = (props: {
                           isSearchActive={isSearchActive}
                           isReadOnly={props.isReadOnly}
                           operation={operation}
+                          operationName={props.operationName}
                           searchValue={deferredSearchValue}
                         />
                       ))
@@ -1009,6 +1039,7 @@ export const Builder = (props: {
                           isSearchActive={isSearchActive}
                           isReadOnly={props.isReadOnly}
                           operation={operation}
+                          operationName={props.operationName}
                           searchValue={deferredSearchValue}
                         />
                       ))
@@ -1045,6 +1076,7 @@ export const Builder = (props: {
                           isSearchActive={isSearchActive}
                           isReadOnly={props.isReadOnly}
                           operation={operation}
+                          operationName={props.operationName}
                           searchValue={deferredSearchValue}
                         />
                       ))
