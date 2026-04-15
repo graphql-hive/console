@@ -4,7 +4,8 @@
   "license": "MIT",
   "private": true,
   "exports": {
-    ".": "./src/index.ts"
+    ".": "./src/index.ts",
+    "./listen-options": "./src/listen-options.ts"
   },
   "peerDependencies": {
     "@sentry/node": "^7.0.0",
