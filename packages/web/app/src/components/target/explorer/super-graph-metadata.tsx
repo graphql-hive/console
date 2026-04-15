@@ -55,8 +55,8 @@ function SubgraphChip(props: {
       search={{
         service: props.text,
       }}
-      style={{ backgroundColor: stringToHslColor(props.text) }}
-      className="my-[2px] ml-[6px] inline-block h-[22px] max-w-[100px] cursor-pointer items-center justify-between truncate rounded-[16px] py-0 pl-[8px] pr-[6px] text-[10px] font-normal normal-case leading-loose text-[#4f4f4f]"
+      style={{ backgroundColor: stringToHslColor(props.text), color: '#4f4f4f' }}
+      className="my-0.5 ml-1.5 inline-flex h-6 max-w-24 cursor-pointer items-center justify-between truncate rounded-full px-2 text-[10px] font-normal leading-none"
     >
       {props.text}
       <PackageIcon size={10} className="ml-1 inline-block" />
