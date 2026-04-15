@@ -106,7 +106,6 @@ const SupergraphMetadataList_SupergraphMetadataFragment = graphql(`
   }
 `);
 
-const tooltipColor = 'rgb(36, 39, 46)';
 const DEFAULT_PREVIEW_THRESHOLD = 3;
 
 export function SupergraphMetadataList(props: {
@@ -209,16 +208,8 @@ export function SupergraphMetadataList(props: {
           content={
             <>
               <div className="mb-2 font-bold">All Subgraphs</div>
-              <div className="relative size-[250px]">
-                <div className="absolute inset-0 size-[250px] overflow-y-scroll py-2">
-                  {allItems}
-                </div>
-                <div
-                  className="pointer-events-none absolute inset-0"
-                  style={{
-                    boxShadow: `inset 0px 11px 8px -10px ${tooltipColor}, inset 0px -11px 8px -10px ${tooltipColor}`,
-                  }}
-                />
+              <div className="flex max-h-[250px] w-[250px] flex-wrap gap-1 overflow-y-auto py-1">
+                {allItems}
               </div>
             </>
           }
