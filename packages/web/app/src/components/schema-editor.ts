@@ -8,7 +8,7 @@ import * as monaco from 'monaco-editor/esm/vs/editor/editor.api';
 import 'monaco-editor/esm/vs/editor/contrib/readOnlyMessage/browser/contribution.js';
 // Registers the basic GraphQL Monarch tokenizer so `language="graphql"` models
 // get syntax highlighting. Without this, `editor.api` ships no languages.
-import 'monaco-editor/esm/vs/basic-languages/graphql/graphql.contribution';
+import 'monaco-editor/esm/vs/basic-languages/graphql/graphql.contribution.js';
 import {
   loader,
   DiffEditor as MonacoDiffEditor,
