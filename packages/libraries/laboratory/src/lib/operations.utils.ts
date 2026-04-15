@@ -31,7 +31,7 @@ export function healQuery(query: string) {
   return query.replace(/\{(\s+)?\}/g, '');
 }
 
-export function isPathInQuery(query: string, path: string, operationName?: string) {
+export function isPathInQuery(query: string, path: string, operationName?: string | null) {
   if (!query || !path) {
     return false;
   }
@@ -98,7 +98,7 @@ export function isPathInQuery(query: string, path: string, operationName?: strin
   return found;
 }
 
-export function addPathToQuery(query: string, path: string, operationName?: string) {
+export function addPathToQuery(query: string, path: string, operationName?: string | null) {
   query = healQuery(query);
 
   const [operation, ...parts] = path.split('.') as [OperationTypeNode, ...string[]];
@@ -244,7 +244,7 @@ export function addPathToQuery(query: string, path: string, operationName?: stri
   return print(doc);
 }
 
-export function deletePathFromQuery(query: string, path: string, operationName?: string) {
+export function deletePathFromQuery(query: string, path: string, operationName?: string | null) {
   query = healQuery(query);
 
   const [operation, ...segments] = path.split('.') as [OperationTypeNode, ...string[]];
@@ -391,7 +391,12 @@ export function getOperationType(query: string) {
   }
 }
 
-export function isArgInQuery(query: string, path: string, argName: string, operationName?: string) {
+export function isArgInQuery(
+  query: string,
+  path: string,
+  argName: string,
+  operationName?: string | null,
+) {
   if (!query || !path) {
     return false;
   }
@@ -525,7 +530,7 @@ export function addArgToField(
   path: string,
   argName: string,
   schema: GraphQLSchema,
-  operationName?: string,
+  operationName?: string | null,
 ) {
   query = healQuery(query);
 
@@ -782,7 +787,7 @@ export function removeArgFromField(
   query: string,
   path: string,
   argName: string,
-  operationName?: string,
+  operationName?: string | null,
 ) {
   query = healQuery(query);
 

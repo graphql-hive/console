@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
+  AlignLeftIcon,
   BookmarkIcon,
   CircleCheckIcon,
   CircleXIcon,
@@ -7,6 +8,9 @@ import {
   FileTextIcon,
   HistoryIcon,
   MoreHorizontalIcon,
+  NetworkIcon,
+  PanelLeftCloseIcon,
+  PanelLeftOpenIcon,
   PlayIcon,
   PowerIcon,
   PowerOffIcon,
@@ -16,6 +20,8 @@ import { compressToEncodedURIComponent } from 'lz-string';
 import * as monaco from 'monaco-editor/esm/vs/editor/editor.api';
 import { toast } from 'sonner';
 import { z } from 'zod';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { QueryPlanSchema } from '@/lib/query-plan/schema';
 import { DropdownMenuTrigger } from '@radix-ui/react-dropdown-menu';
 import { useForm } from '@tanstack/react-form';
 import type {
@@ -24,6 +30,7 @@ import type {
   LaboratoryHistorySubscription,
 } from '../../lib/history';
 import type { LaboratoryOperation } from '../../lib/operations';
+import { QueryPlanTree, renderQueryPlan } from '../../lib/query-plan/utils';
 import { cn } from '../../lib/utils';
 import { Badge } from '../ui/badge';
 import { Button } from '../ui/button';
@@ -45,6 +52,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { Spinner } from '../ui/spinner';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
 import { Toggle } from '../ui/toggle';
+import { ToggleGroup, ToggleGroupItem } from '../ui/toggle-group';
 import { Builder } from './builder';
 import { useLaboratory } from './context';
 import { Editor } from './editor';
@@ -86,6 +94,7 @@ const Headers = (props: { operation?: LaboratoryOperation | null; isReadOnly?: b
     <Editor
       uri={monaco.Uri.file('headers.json')}
       value={operation?.headers ?? ''}
+      language="json"
       onChange={value => {
         updateActiveOperation({
           headers: value ?? '',
@@ -109,6 +118,7 @@ const Extensions = (props: { operation?: LaboratoryOperation | null; isReadOnly?
     <Editor
       uri={monaco.Uri.file('extensions.json')}
       value={operation?.extensions ?? ''}
+      language="json"
       onChange={value => {
         updateActiveOperation({
           extensions: value ?? '',
@@ -178,6 +188,56 @@ export const ResponsePreflight = ({ historyItem }: { historyItem?: LaboratoryHis
     </ScrollArea>
   );
 };
+export const ResponseQueryPlan = ({ historyItem }: { historyItem?: LaboratoryHistory | null }) => {
+  const [mode, setMode] = useState<'text' | 'visual'>('text');
+
+  const queryPlan = useMemo(() => {
+    try {
+      const queryPlan =
+        JSON.parse((historyItem as LaboratoryHistoryRequest)?.response ?? '{}').extensions
+          ?.queryPlan ?? {};
+
+      if (!queryPlan) {
+        return null;
+      }
+
+      return QueryPlanSchema.safeParse(queryPlan).success ? queryPlan : null;
+    } catch {
+      return null;
+    }
+  }, [historyItem]);
+
+  return (
+    <div className="relative size-full">
+      <ToggleGroup
+        className="bg-card absolute right-4 top-4 z-10 shadow-sm"
+        type="single"
+        variant="outline"
+        value={mode}
+        onValueChange={value => setMode(value as 'text' | 'visual')}
+      >
+        <ToggleGroupItem value="text">
+          <AlignLeftIcon className="size-4" />
+          Text
+        </ToggleGroupItem>
+        <ToggleGroupItem value="visual">
+          <NetworkIcon className="size-4" />
+          Visual
+        </ToggleGroupItem>
+      </ToggleGroup>
+      {mode === 'visual' ? (
+        <QueryPlanTree key={historyItem?.id} plan={queryPlan} />
+      ) : (
+        <Editor
+          value={renderQueryPlan(queryPlan)}
+          defaultLanguage="graphql"
+          theme="hive-laboratory"
+          options={{ readOnly: true }}
+        />
+      )}
+    </div>
+  );
+};
 
 export const ResponseSubscription = ({
   historyItem,
@@ -245,6 +305,8 @@ export const ResponseSubscription = ({
 };
 
 export const Response = ({ historyItem }: { historyItem?: LaboratoryHistoryRequest | null }) => {
+  const [isFullScreen, setIsFullScreen] = useState(false);
+
   const isError = useMemo(() => {
     if (!historyItem) {
       return false;
@@ -261,12 +323,65 @@ export const Response = ({ historyItem }: { historyItem?: LaboratoryHistoryReque
     );
   }, [historyItem]);
 
+  const hasValidQueryPlan = useMemo(() => {
+    if (!historyItem) {
+      return false;
+    }
+
+    const queryPlan = JSON.parse(historyItem.response).extensions?.queryPlan;
+
+    if (!queryPlan) {
+      return false;
+    }
+
+    return QueryPlanSchema.safeParse(queryPlan).success;
+  }, [historyItem?.response]);
+
   return (
-    <Tabs defaultValue="response" className="grid size-full grid-rows-[auto_1fr]">
-      <TabsList className="h-[49.5px] w-full justify-start rounded-none border-b bg-transparent p-3">
+    <Tabs
+      defaultValue="response"
+      className={cn('bg-card grid size-full grid-rows-[auto_1fr]', {
+        'z-100 absolute inset-0 size-full': isFullScreen,
+      })}
+    >
+      <TabsList className="h-[50px] w-full items-center justify-start rounded-none border-b bg-transparent p-3">
+        {isFullScreen ? (
+          <Tooltip>
+            <TooltipTrigger>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="mr-2 mt-0.5 h-6 w-6"
+                onClick={() => setIsFullScreen(false)}
+              >
+                <PanelLeftOpenIcon className="size-4" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent side="bottom">Minimize panel</TooltipContent>
+          </Tooltip>
+        ) : (
+          <Tooltip>
+            <TooltipTrigger>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="mr-2 mt-0.5 h-6 w-6"
+                onClick={() => setIsFullScreen(true)}
+              >
+                <PanelLeftCloseIcon className="size-4" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent side="bottom">Maximize panel</TooltipContent>
+          </Tooltip>
+        )}
         <TabsTrigger value="response" className="grow-0 rounded-sm">
           Response
         </TabsTrigger>
+        {hasValidQueryPlan && (
+          <TabsTrigger value="query-plan" className="grow-0 rounded-sm">
+            Query Plan
+          </TabsTrigger>
+        )}
         <TabsTrigger value="headers" className="grow-0 rounded-sm">
           Headers
         </TabsTrigger>
@@ -315,6 +430,9 @@ export const Response = ({ historyItem }: { historyItem?: LaboratoryHistoryReque
       <TabsContent value="response" className="overflow-hidden">
         <ResponseBody historyItem={historyItem} />
       </TabsContent>
+      <TabsContent value="query-plan" className="overflow-hidden">
+        <ResponseQueryPlan historyItem={historyItem} />
+      </TabsContent>
       <TabsContent value="headers" className="overflow-hidden">
         <ResponseHeaders historyItem={historyItem} />
       </TabsContent>
@@ -332,6 +450,7 @@ const saveToCollectionFormSchema = z.object({
 export const Query = (props: {
   onAfterOperationRun?: (historyItem: LaboratoryHistory | null) => void;
   operation?: LaboratoryOperation | null;
+  onOperationNameChange?: (operationName: string | null) => void;
   isReadOnly?: boolean;
 }) => {
   const {
@@ -357,6 +476,8 @@ export const Query = (props: {
     pluginsState,
     setPluginsState,
   } = useLaboratory();
+
+  const [operationName, setOperationName] = useState<string | null>(null);
 
   const operation = useMemo(() => {
     return props.operation ?? activeOperation ?? null;
@@ -401,6 +522,7 @@ export const Query = (props: {
       void runActiveOperation(endpoint, {
         env: result?.env,
         headers: result?.headers,
+        operationName: operationName ?? undefined,
         onResponse: data => {
           addResponseToHistory(newItemHistory.id, data);
         },
@@ -413,6 +535,7 @@ export const Query = (props: {
       const response = await runActiveOperation(endpoint, {
         env: result?.env,
         headers: result?.headers,
+        operationName: operationName ?? undefined,
       });
 
       if (!response) {
@@ -439,6 +562,7 @@ export const Query = (props: {
     }
   }, [
     operation,
+    operationName,
     endpoint,
     isActiveOperationSubscription,
     addHistory,
@@ -700,6 +824,10 @@ export const Query = (props: {
             query: value ?? '',
           });
         }}
+        onOperationNameChange={operationName => {
+          setOperationName(operationName);
+          props.onOperationNameChange?.(operationName);
+        }}
         language="graphql"
         theme="hive-laboratory"
         options={{
@@ -715,6 +843,7 @@ export const Operation = (props: {
   historyItem?: LaboratoryHistory;
 }) => {
   const { activeOperation, history } = useLaboratory();
+  const [operationName, setOperationName] = useState<string | null>(null);
 
   const operation = useMemo(() => {
     return props.operation ?? activeOperation ?? null;
@@ -735,16 +864,20 @@ export const Operation = (props: {
   }, [props.historyItem]);
 
   return (
-    <div className="bg-card size-full">
+    <div className="bg-card relative size-full">
       <ResizablePanelGroup direction="horizontal" className="size-full">
         <ResizablePanel defaultSize={25}>
-          <Builder operation={operation} isReadOnly={isReadOnly} />
+          <Builder operation={operation} operationName={operationName} isReadOnly={isReadOnly} />
         </ResizablePanel>
         <ResizableHandle />
         <ResizablePanel minSize={10} defaultSize={40}>
           <ResizablePanelGroup direction="vertical">
             <ResizablePanel defaultSize={70}>
-              <Query operation={operation} isReadOnly={isReadOnly} />
+              <Query
+                operation={operation}
+                isReadOnly={isReadOnly}
+                onOperationNameChange={setOperationName}
+              />
             </ResizablePanel>
             <ResizableHandle />
             <ResizablePanel minSize={10} defaultSize={30}>

@@ -1,6 +1,6 @@
 import { ReactElement, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { parse, print } from 'graphql';
-import { editor } from 'monaco-editor';
+import { editor } from 'monaco-editor/esm/vs/editor/editor.api';
 import { MonacoDiffEditor, MonacoEditor } from '@/components/schema-editor';
 import { useTheme } from '@/components/theme/theme-provider';
 import { Button } from '@/components/ui/button';

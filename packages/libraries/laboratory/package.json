@@ -38,11 +38,13 @@
     "zod": "^4.1.12"
   },
   "dependencies": {
+    "@base-ui/react": "^1.1.0",
     "radix-ui": "^1.4.3",
+    "react-zoom-pan-pinch": "^3.7.0",
     "uuid": "^13.0.0"
   },
   "devDependencies": {
-    "@dagrejs/dagre": "^1.1.8",
+    "@dagrejs/dagre": "^2.0.4",
     "@dnd-kit/core": "^6.3.1",
     "@dnd-kit/modifiers": "^9.0.0",
     "@dnd-kit/sortable": "^10.0.0",

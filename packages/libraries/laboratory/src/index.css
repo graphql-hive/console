@@ -42,6 +42,10 @@
   height: 100%;
 }
 
+.hive-laboratory .inactive-line {
+  opacity: 0.5;
+}
+
 .hive-laboratory {
   --color-neutral-1: 0 0% 99%;
   --color-neutral-2: 180 9% 97%;
@@ -57,14 +61,14 @@
   --color-neutral-12: 175 23% 10%;
 
   --color-accent: 206 96% 35%;
-
   --color-ring: 216 58% 49%;
+  --color-destructive: 357 96% 58%;
 
   --radius: var(--hive-laboratory-radius, 0.5rem);
   --background: var(--hive-laboratory-background, var(--color-neutral-2));
   --foreground: var(--hive-laboratory-foreground, var(--color-neutral-11));
 
-  --muted: var(--hive-laboratory-muted, 24 9.8% 10%);
+  --muted: var(--hive-laboratory-muted, var(--color-neutral-3));
   --muted-foreground: var(--hive-laboratory-muted-foreground, var(--color-neutral-11));
 
   --popover: var(--hive-laboratory-popover, var(--color-neutral-3));
@@ -80,12 +84,12 @@
   --primary-foreground: var(--hive-laboratory-primary-foreground, var(--color-neutral-1));
 
   --secondary: var(--hive-laboratory-secondary, var(--color-neutral-3));
-  --secondary-foreground: var(--hive-laboratory-secondary-foreground, var(--color-neutral-11));
+  --secondary-foreground: var(--hive-laboratory-secondary-foreground, var(--color-neutral-8));
 
   --accent: var(--hive-laboratory-accent, var(--color-neutral-4));
   --accent-foreground: var(--hive-laboratory-accent-foreground, var(--color-neutral-11));
 
-  --destructive: var(--hive-laboratory-destructive, var(--red-500));
+  --destructive: var(--hive-laboratory-destructive, var(--color-destructive));
   --destructive-foreground: var(--hive-laboratory-destructive-foreground, var(--color-neutral-1));
 
   --ring: var(--hive-laboratory-ring, var(--color-ring));
@@ -106,6 +110,7 @@
   --color-neutral-12: 204 14% 93%;
 
   --color-accent: 48 100% 83%;
+  --color-destructive: 358.75 100% 70%;
 
   --radius: var(--hive-laboratory-radius, 0.5rem);
   --background: var(--hive-laboratory-background, var(--color-neutral-1));
@@ -132,7 +137,7 @@
   --accent: var(--hive-laboratory-accent, var(--color-neutral-6));
   --accent-foreground: var(--hive-laboratory-accent-foreground, var(--color-neutral-11));
 
-  --destructive: var(--hive-laboratory-destructive, var(--red-500));
+  --destructive: var(--hive-laboratory-destructive, var(--color-destructive));
   --destructive-foreground: var(--hive-laboratory-destructive-foreground, var(--color-neutral-1));
 
   --ring: var(--hive-laboratory-ring, var(--color-ring));
@@ -157,5 +162,11 @@
 @layer color {
   .hive-laboratory {
     @apply bg-background text-foreground;
+  }
+}
+
+@keyframes dash {
+  to {
+    stroke-dashoffset: -20;
   }
 }

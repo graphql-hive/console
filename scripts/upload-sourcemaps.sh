@@ -15,7 +15,9 @@ for dir in packages/services/*/dist; do
   fi
 done
 
-pnpm sentry-cli sourcemaps inject packages/web/app/dist
-pnpm sentry-cli sourcemaps upload --release=$SENTRY_RELEASE packages/web/app/dist --dist webapp --url-prefix ~/
+# Client sourcemaps handled by @sentry/vite-plugin during build
+
+# Server sourcemaps (dist: app, matching backend.ts SDK init)
+pnpm sentry-cli sourcemaps upload --release=$SENTRY_RELEASE packages/web/app/dist --dist app --url-prefix /usr/src/app/\@hive/app --ignore client
 
 pnpm sentry-cli releases finalize "$SENTRY_RELEASE"

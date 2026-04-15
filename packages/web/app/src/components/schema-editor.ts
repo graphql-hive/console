@@ -1,5 +1,6 @@
 import { lazy } from 'react';
-import * as monaco from 'monaco-editor';
+import * as monaco from 'monaco-editor/esm/vs/editor/editor.api';
+import 'monaco-editor/esm/vs/editor/contrib/readOnlyMessage/browser/contribution.js';
 import {
   loader,
   DiffEditor as MonacoDiffEditor,
