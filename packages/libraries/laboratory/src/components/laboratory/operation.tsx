@@ -450,6 +450,7 @@ const saveToCollectionFormSchema = z.object({
 export const Query = (props: {
   onAfterOperationRun?: (historyItem: LaboratoryHistory | null) => void;
   operation?: LaboratoryOperation | null;
+  onOperationNameChange?: (operationName: string | null) => void;
   isReadOnly?: boolean;
 }) => {
   const {
@@ -475,6 +476,8 @@ export const Query = (props: {
     pluginsState,
     setPluginsState,
   } = useLaboratory();
+
+  const [operationName, setOperationName] = useState<string | null>(null);
 
   const operation = useMemo(() => {
     return props.operation ?? activeOperation ?? null;
@@ -519,6 +522,7 @@ export const Query = (props: {
       void runActiveOperation(endpoint, {
         env: result?.env,
         headers: result?.headers,
+        operationName: operationName ?? undefined,
         onResponse: data => {
           addResponseToHistory(newItemHistory.id, data);
         },
@@ -531,6 +535,7 @@ export const Query = (props: {
       const response = await runActiveOperation(endpoint, {
         env: result?.env,
         headers: result?.headers,
+        operationName: operationName ?? undefined,
       });
 
       if (!response) {
@@ -572,6 +577,7 @@ export const Query = (props: {
     }
   }, [
     operation,
+    operationName,
     endpoint,
     isActiveOperationSubscription,
     addHistory,
@@ -833,6 +839,10 @@ export const Query = (props: {
             query: value ?? '',
           });
         }}
+        onOperationNameChange={operationName => {
+          setOperationName(operationName);
+          props.onOperationNameChange?.(operationName);
+        }}
         language="graphql"
         theme="hive-laboratory"
         options={{
@@ -848,6 +858,7 @@ export const Operation = (props: {
   historyItem?: LaboratoryHistory;
 }) => {
   const { activeOperation, history } = useLaboratory();
+  const [operationName, setOperationName] = useState<string | null>(null);
 
   const operation = useMemo(() => {
     return props.operation ?? activeOperation ?? null;
@@ -871,13 +882,17 @@ export const Operation = (props: {
     <div className="bg-card relative size-full">
       <ResizablePanelGroup direction="horizontal" className="size-full">
         <ResizablePanel defaultSize={25}>
-          <Builder operation={operation} isReadOnly={isReadOnly} />
+          <Builder operation={operation} operationName={operationName} isReadOnly={isReadOnly} />
         </ResizablePanel>
         <ResizableHandle />
         <ResizablePanel minSize={10} defaultSize={40}>
           <ResizablePanelGroup direction="vertical">
             <ResizablePanel defaultSize={70}>
-              <Query operation={operation} isReadOnly={isReadOnly} />
+              <Query
+                operation={operation}
+                isReadOnly={isReadOnly}
+                onOperationNameChange={setOperationName}
+              />
             </ResizablePanel>
             <ResizableHandle />
             <ResizablePanel minSize={10} defaultSize={30}>
