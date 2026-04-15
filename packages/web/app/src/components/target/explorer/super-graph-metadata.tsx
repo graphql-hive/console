@@ -1,18 +1,24 @@
 import { Fragment, useMemo } from 'react';
+import { useTheme } from '@/components/theme/theme-provider';
 import { PackageIcon } from '@/components/ui/icon';
 import { Tooltip } from '@/components/v2';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import { LayersIcon as MetadataIcon } from '@radix-ui/react-icons';
 import { Link } from '@tanstack/react-router';
 
-function stringToHslColor(str: string, s = 30, l = 80) {
+function stringToHue(str: string) {
   let hash = 0;
   for (let i = 0; i < str.length; i++) {
     hash = str.charCodeAt(i) + ((hash << 5) - hash);
   }
+  return hash % 360;
+}
 
-  const h = hash % 360;
-  return 'hsl(' + h + ', ' + s + '%, ' + l + '%)';
+function subgraphChipColors(str: string, theme: 'light' | 'dark') {
+  const h = stringToHue(str);
+  return theme === 'dark'
+    ? { backgroundColor: `hsl(${h}, 45%, 32%)`, color: '#f2f2f2' }
+    : { backgroundColor: `hsl(${h}, 30%, 80%)`, color: '#4f4f4f' };
 }
 
 function Metadata(props: { supergraphMetadata: Array<{ name: string; content: string }> }) {
@@ -44,6 +50,8 @@ function SubgraphChip(props: {
   targetSlug: string;
   metadata?: Array<{ name: string; content: string }>;
 }): React.ReactElement {
+  const { resolvedTheme } = useTheme();
+
   const inner = (
     <Link
       to="/$organizationSlug/$projectSlug/$targetSlug"
@@ -55,7 +63,7 @@ function SubgraphChip(props: {
       search={{
         service: props.text,
       }}
-      style={{ backgroundColor: stringToHslColor(props.text), color: '#4f4f4f' }}
+      style={subgraphChipColors(props.text, resolvedTheme)}
       className="my-0.5 ml-1.5 inline-flex h-6 max-w-24 cursor-pointer items-center gap-1 rounded-full px-2 text-[10px] font-normal leading-none"
     >
       <span className="min-w-0 truncate">{props.text}</span>
