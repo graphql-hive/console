@@ -42,7 +42,7 @@
     "prerelease": "pnpm build:libraries",
     "prettier": "prettier --cache --write --list-different --ignore-unknown \"**/*\"",
     "release": "pnpm build:libraries && changeset publish",
-    "release:version": "changeset version && pnpm --filter hive-apollo-router-plugin sync-cargo-file && pnpm build:libraries && pnpm --filter @graphql-hive/cli oclif:readme",
+    "release:version": "changeset version && pnpm build:libraries && pnpm --filter @graphql-hive/cli oclif:readme",
     "seed:app-deployments": "tsx scripts/seed-app-deployments.mts",
     "seed:insights": "tsx scripts/seed-insights.mts",
     "seed:org": "tsx scripts/seed-organization.mts",
@@ -54,7 +54,6 @@
     "test:e2e:local": "CYPRESS_BASE_URL=http://localhost:3000 RUN_AGAINST_LOCAL_SERVICES=1 cypress open --browser chrome",
     "test:e2e:open": "CYPRESS_BASE_URL=$HIVE_APP_BASE_URL cypress open",
     "test:integration": "cd integration-tests && pnpm test:integration",
-    "test:integration:apollo-router": "cd integration-tests && pnpm test:integration:apollo-router",
     "typecheck": "pnpm run -r --filter '!hive' typecheck",
     "upload-sourcemaps": "./scripts/upload-sourcemaps.sh",
     "workspace": "pnpm run --filter $1 $2"
