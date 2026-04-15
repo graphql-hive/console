@@ -56,11 +56,11 @@ function SubgraphChip(props: {
         service: props.text,
       }}
       style={{ backgroundColor: stringToHslColor(props.text), color: '#4f4f4f' }}
-      className="my-0.5 ml-1.5 inline-flex h-6 max-w-24 cursor-pointer items-center justify-between truncate rounded-full px-2 text-[10px] font-normal leading-none"
+      className="my-0.5 ml-1.5 inline-flex h-6 max-w-24 cursor-pointer items-center gap-1 rounded-full px-2 text-[10px] font-normal leading-none"
     >
-      {props.text}
-      <PackageIcon size={10} className="ml-1 inline-block" />
-      {props.metadata?.length && <span className="inline-block text-[8px] font-bold">*</span>}
+      <span className="min-w-0 truncate">{props.text}</span>
+      <PackageIcon size={10} className="shrink-0" />
+      {props.metadata?.length && <span className="shrink-0 text-[8px] font-bold">*</span>}
     </Link>
   );
 
