@@ -724,7 +724,7 @@ function ProposedByBadge(props: {
   schemaProposalTitle: string;
 }) {
   return (
-    <div className="inline-flex items-center">
+    <div className="mb-2 flex items-center">
       Implements a proposed change from{' '}
       <UILink
         className="inline-flex items-center"
