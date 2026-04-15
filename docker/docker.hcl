@@ -337,25 +337,6 @@ target "app" {
   ]
 }
 
-target "apollo-router" {
-  inherits = ["router-base", get_target()]
-  contexts = {
-    router_pkg = "${PWD}/packages/libraries/router"
-    config = "${PWD}/configs/cargo"
-  }
-  args = {
-    IMAGE_TITLE = "graphql-hive/apollo-router"
-    PORT = "4000"
-    IMAGE_DESCRIPTION = "Apollo Router for GraphQL Hive."
-  }
-  tags = [
-    local_image_tag("apollo-router"),
-    stable_image_tag("apollo-router"),
-    image_tag("apollo-router", COMMIT_SHA),
-    image_tag("apollo-router", BRANCH_NAME)
-  ]
-}
-
 target "otel-collector" {
   inherits = ["otel-collector-base", get_target()]
   context = "${PWD}/docker/configs/otel-collector"
@@ -418,12 +399,6 @@ group "integration-tests" {
     "composition-federation-2",
     "workflows",
     "otel-collector"
-  ]
-}
-
-group "apollo-router-hive-build" {
-  targets = [
-    "apollo-router"
   ]
 }
 

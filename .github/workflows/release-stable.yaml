@@ -118,11 +118,3 @@ jobs:
         env:
           VERSION: ${{ steps.cli.outputs.version }}
         run: pnpm oclif promote --no-xz --sha ${GITHUB_SHA:0:7} --version $VERSION
-
-      - name: release to Crates.io
-        if:
-          steps.changesets.outputs.published && contains(steps.changesets.outputs.publishedPackages,
-          '"hive-apollo-router-plugin"')
-        run: |
-          cargo login ${{ secrets.CARGO_REGISTRY_TOKEN }}
-          cargo publish --allow-dirty --no-verify
