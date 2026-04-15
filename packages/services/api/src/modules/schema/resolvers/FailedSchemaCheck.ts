@@ -88,8 +88,4 @@ export const FailedSchemaCheck: FailedSchemaCheckResolvers = {
         selector,
       }));
   },
-  schemaProposalChanges: ({ schemaProposalChanges }, _arg, _ctx) => {
-    /* FailedSchemaCheck.schemaProposalChanges resolver is required because FailedSchemaCheck.schemaProposalChanges and FailedSchemaCheckMapper.schemaProposalChanges are not compatible */
-    return schemaProposalChanges;
-  },
 };
