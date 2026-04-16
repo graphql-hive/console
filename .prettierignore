@@ -26,6 +26,7 @@ pnpm-lock.yaml
 .bob/
 
 .changeset/
+.claude/
 CHANGELOG.md
 
 # temp volumes
