@@ -11,10 +11,11 @@ We also lack email as a notification channel, which is table stakes for an alert
 
 This proposal covers two workstreams:
 
-1. **Email alert channel** — Add EMAIL as a new notification channel type, benefiting both existing
-   schema-change alerts and the new metric alerts
-2. **Metric-based alerts** — Add configurable alerts for latency, error rate, and traffic with
+1. **Metric-based alerts** — Add configurable alerts for latency, error rate, and traffic with
    periodic evaluation against ClickHouse data
+2. **Email alert channel** — Add EMAIL as a new notification channel type, benefiting both existing
+   schema-change alerts and the new metric alerts (deferred until after Phase 1 ships; design
+   decisions around team-member vs. group-email handling are still being finalized)
 
 ### Design decisions made so far
 
@@ -32,219 +33,56 @@ This proposal covers two workstreams:
 
 ---
 
-## Phase 1: Email Alert Channel
+## Pre-flight review (pre-implementation validation)
 
-Follows the exact same pattern used when MS Teams was added
-(`2024.06.11T10-10-00.ms-teams-webhook.ts`).
+The plan was reviewed against the current codebase on 2026-04-15. The following items were
+validated and are reflected in the sections below. Anything an implementer should double-check
+before their first commit is called out explicitly.
 
-### 1.1 Database Migration
+**Validated as matching current conventions:**
 
-**New file:** `packages/migrations/src/actions/2026.03.27T00-00-00.email-alert-channel.ts`
+- Migration file naming (`YYYY.MM.DDTHH-MM-SS.description.ts`) and registration via
+  `await import()` in `run-pg-migrations.ts`.
+- `MigrationExecutor` interface supports `noTransaction: true` — correct for the Phase 2
+  `ALTER TYPE ... ADD VALUE` migration.
+- `uuid_generate_v4()` is the default-UUID convention (not `gen_random_uuid()`). Adjusted
+  throughout.
+- `saved_filters` table exists (migration `2026.02.07T00-00-00.saved-filters.ts`) with
+  `id UUID`, `project_id UUID`, `filters JSONB`. FK from `metric_alert_rules.saved_filter_id`
+  is safe.
+- `alert:modify` permission exists at
+  `packages/services/api/src/modules/auth/lib/authz.ts` (~line 405) and is already used by the
+  existing `AlertsManager`. Reused for metric alert rules — no new permission needed.
+- Mutation result shape (`{ ok, error }` discriminated union) matches
+  `saved-filters/resolvers/Mutation/createSavedFilter.ts`.
+- Module-level storage providers with `@Inject(PG_POOL_CONFIG)` are the modern pattern
+  (saved-filters, proposals, oidc-integrations all follow it). Legacy
+  `packages/services/storage/src/index.ts` is intentionally not extended.
+- Graphile-Worker cron deduplication is automatic — an overrunning evaluation task will not
+  spawn a concurrent instance on the next tick.
+- `send-webhook.ts` in workflows already uses `got` + retries; reusable for metric-alert
+  webhook delivery with zero infrastructure changes.
+- Email provider abstraction (`context.email.send({ to, subject, body })`) in workflows is
+  reusable for Phase 2 email delivery.
 
-```sql
-ALTER TYPE alert_channel_type
-ADD VALUE 'EMAIL';
+**Gaps the implementer must close during Phase 1:**
 
--- Array of email addresses to support multiple recipients per channel
-ALTER TABLE alert_channels
-ADD COLUMN email_addresses TEXT [];
-```
-
-**Important:** This migration must use `noTransaction: true` because PostgreSQL does not allow
-`ALTER TYPE ... ADD VALUE` inside a transaction block. The migration runner (`pg-migrator.ts`) wraps
-migrations in transactions by default — the `noTransaction` flag opts out. There are 18+ existing
-migrations using this pattern (e.g., index creation with `CREATE INDEX CONCURRENTLY`). Note: the
-existing MS Teams migration (`2024.06.11T10-10-00.ms-teams-webhook.ts`) is missing this flag, which
-is a latent bug.
-
-```typescript
-export default {
-  name: '2026.03.27T00-00-00.email-alert-channel.ts',
-  noTransaction: true,
-  run: ({ sql }) => [
-    {
-      name: 'Add EMAIL to alert_channel_type',
-      query: sql`ALTER TYPE alert_channel_type ADD VALUE 'EMAIL'`
-    },
-    {
-      name: 'Add email_addresses column',
-      query: sql`ALTER TABLE alert_channels ADD COLUMN email_addresses TEXT[]`
-    }
-  ]
-} satisfies MigrationExecutor
-```
-
-Register in `packages/migrations/src/run-pg-migrations.ts`.
-
-### 1.2 Data Access
-
-The legacy storage service (`packages/services/storage/src/index.ts`) will not be extended. Instead,
-following the modern pattern used by recent modules (app-deployments, schema-proposals,
-saved-filters), we create a module-level provider that injects `PG_POOL_CONFIG` directly.
-
-**New file:** `packages/services/api/src/modules/alerts/providers/alert-channels-storage.ts`
-
-```typescript
-@Injectable({ scope: Scope.Operation })
-export class AlertChannelsStorage {
-  constructor(@Inject(PG_POOL_CONFIG) private pool: DatabasePool) {}
-
-  async addAlertChannel(input: { ... emailAddresses?: string[] | null }) { ... }
-  async getAlertChannels(projectId: string) { ... }
-  async deleteAlertChannels(projectId: string, channelIds: string[]) { ... }
-}
-```
-
-This provider takes over alert channel CRUD from the legacy storage module. Existing callers in
-`AlertsManager` are updated to use this new provider instead.
-
-**File:** `packages/services/api/src/shared/entities.ts` — add `emailAddresses: string[] | null` to
-`AlertChannel` interface.
-
-### 1.3 GraphQL API
-
-**File:** `packages/services/api/src/modules/alerts/module.graphql.ts`
-
-```graphql
-# Add EMAIL to existing enum
-enum AlertChannelType { SLACK, WEBHOOK, MSTEAMS_WEBHOOK, EMAIL }
-
-# New implementing type
-type AlertEmailChannel implements AlertChannel {
-  id: ID!
-  name: String!
-  type: AlertChannelType!
-  emails: [String!]!
-}
-
-# New input — accepts multiple recipients
-input EmailChannelInput {
-  emails: [String!]!
-}
-
-# Update AddAlertChannelInput to include email field
-input AddAlertChannelInput {
-  ...existing fields...
-  email: EmailChannelInput
-}
-```
-
-### 1.4 Resolvers
-
-**New file:** `packages/services/api/src/modules/alerts/resolvers/AlertEmailChannel.ts`
-
-```typescript
-export const AlertEmailChannel: AlertEmailChannelResolvers = {
-  __isTypeOf: channel => channel.type === 'EMAIL',
-  emails: channel => channel.emailAddresses ?? []
-}
-```
-
-**File:** `packages/services/api/src/modules/alerts/resolvers/Mutation/addAlertChannel.ts`
-
-- Add Zod validation:
-  `email: MaybeModel(z.object({ emails: z.array(z.string().email().max(255)).min(1).max(10) }))`
-- Pass `emailAddresses: input.email?.emails` to AlertsManager
-
-### 1.5 AlertsManager
-
-**File:** `packages/services/api/src/modules/alerts/providers/alerts-manager.ts`
-
-- Update `addChannel()` input to accept `emailAddresses?: string[] | null`
-- Pass through to storage
-- Update `triggerChannelConfirmation()` to handle EMAIL type
-- Update `triggerSchemaChangeNotifications()` to dispatch via email adapter
-
-### 1.6 Email Communication Adapter
-
-**New file:** `packages/services/api/src/modules/alerts/providers/adapters/email.ts`
-
-Implements `CommunicationAdapter` interface. Uses `TaskScheduler` to schedule an email task in the
-workflows service (same pattern as `WebhookCommunicationAdapter` which schedules
-`SchemaChangeNotificationTask`).
-
-```typescript
-@Injectable()
-export class EmailCommunicationAdapter implements CommunicationAdapter {
-  constructor(
-    private taskScheduler: TaskScheduler,
-    private logger: Logger
-  ) {}
-
-  async sendSchemaChangeNotification(input: SchemaChangeNotificationInput) {
-    await this.taskScheduler.scheduleTask(AlertEmailNotificationTask, {
-      recipients: input.channel.emailAddresses ?? [],
-      event: {
-        /* schema change details */
-      }
-    })
-  }
-
-  async sendChannelConfirmation(input: ChannelConfirmationInput) {
-    await this.taskScheduler.scheduleTask(AlertEmailConfirmationTask, {
-      recipients: input.channel.emailAddresses ?? [],
-      event: input.event
-    })
-  }
-}
-```
-
-### 1.7 Email Task + Template (Workflows Service)
-
-**New file:** `packages/services/workflows/src/tasks/alert-email-notification.ts`
-
-- Define `AlertEmailNotificationTask` and `AlertEmailConfirmationTask`
-- Send emails using `context.email.send()` with MJML templates (same pattern as
-  `email-verification.ts`)
-
-**New file:** `packages/services/workflows/src/lib/emails/templates/alert-notification.ts`
-
-- MJML email template for schema change notifications (use existing `email()`, `paragraph()`,
-  `button()` helpers from `components.ts`)
-
-**File:** `packages/services/workflows/src/index.ts` — register new task module
-
-### 1.8 Module Registration
-
-**File:** `packages/services/api/src/modules/alerts/index.ts` — add `EmailCommunicationAdapter` to
-providers
-
-### 1.9 Frontend
-
-**File:** `packages/web/app/src/components/project/alerts/create-channel.tsx`
-
-- Add email addresses field with Zod validation (the existing form uses Yup + Formik, but new form
-  code should use Zod + react-hook-form to match the current codebase convention)
-- Show email input when type === EMAIL
-- Pass `email: { emails: values.emailAddresses }` in mutation
-
-**File:** `packages/web/app/src/components/project/alerts/channels-table.tsx`
-
-- Handle `AlertEmailChannel` typename to display the email addresses
-
-### Key files for Phase 1
-
-| File                                                                             | Change                                                         |
-| -------------------------------------------------------------------------------- | -------------------------------------------------------------- |
-| `packages/migrations/src/actions/2026.03.27T00-00-00.email-alert-channel.ts`     | **New** — migration                                            |
-| `packages/migrations/src/run-pg-migrations.ts`                                   | Register migration                                             |
-| `packages/services/api/src/modules/alerts/providers/alert-channels-storage.ts`   | **New** — module-level CRUD provider (replaces legacy storage) |
-| `packages/services/api/src/shared/entities.ts`                                   | Add emailAddresses to AlertChannel                             |
-| `packages/services/api/src/modules/alerts/module.graphql.ts`                     | Add AlertEmailChannel type + EmailChannelInput                 |
-| `packages/services/api/src/modules/alerts/resolvers/AlertEmailChannel.ts`        | **New** — resolver                                             |
-| `packages/services/api/src/modules/alerts/resolvers/Mutation/addAlertChannel.ts` | Add email validation + input                                   |
-| `packages/services/api/src/modules/alerts/providers/alerts-manager.ts`           | Handle EMAIL in dispatch                                       |
-| `packages/services/api/src/modules/alerts/providers/adapters/email.ts`           | **New** — adapter                                              |
-| `packages/services/api/src/modules/alerts/index.ts`                              | Register adapter                                               |
-| `packages/services/workflows/src/tasks/alert-email-notification.ts`              | **New** — email task                                           |
-| `packages/services/workflows/src/lib/emails/templates/alert-notification.ts`     | **New** — MJML template                                        |
-| `packages/services/workflows/src/index.ts`                                       | Register task                                                  |
-| `packages/web/app/src/components/project/alerts/create-channel.tsx`              | Add email form field                                           |
-| `packages/web/app/src/components/project/alerts/channels-table.tsx`              | Display email channels                                         |
+1. **Add `@slack/web-api` to `packages/services/workflows/package.json`.** Currently only the
+   API package has it. Pin to the same version as the API package for parity.
+2. **Cross-scope validation in mutation resolvers.** The FKs on `metric_alert_rules` cannot
+   enforce that all `channelIds` and the `saved_filter_id` belong to the same project as the
+   rule's target. Explicit validation in `addMetricAlertRule` / `updateMetricAlertRule` is
+   required. See section 1.3 for details.
+3. **Regenerate GraphQL types.** Run `pnpm graphql:generate` from repo root after schema edits.
+   Generated files appear in `packages/services/api/src/__generated__/types.ts` and each
+   module's `resolvers.generated.ts` — do not hand-edit.
+4. **Add `alertStateLogRetentionDays` to commerce plan constants.** The retention column on
+   `metric_alert_state_log` uses per-plan values (7d Hobby/Pro, 30d Enterprise) driven from
+   `packages/services/api/src/modules/commerce/constants.ts`.
 
 ---
 
-## Phase 2: Metric-Based Alerts
+## Phase 1: Metric-Based Alerts
 
 ### Why a new table?
 
@@ -255,12 +93,45 @@ types/values, comparison direction, severity, evaluation state, and optional ope
 filters.
 
 A new `metric_alert_rules` table keeps both systems clean and independently evolvable. It reuses the
-existing `alert_channels` table (including the new EMAIL type from Phase 1) for notification
-delivery.
+existing `alert_channels` table (Slack, Webhook, MS Teams) for notification delivery. EMAIL support
+will be added in Phase 2.
 
-### 2.1 Database Migration
+### Conventions to follow (validated against codebase)
 
-**New file:** `packages/migrations/src/actions/2026.03.27T00-00-01.metric-alert-rules.ts`
+These were verified during a final pre-implementation review against current patterns in the repo.
+
+- **Migration filename format**: `YYYY.MM.DDTHH-MM-SS.description.ts` (matches latest migrations
+  like `2026.03.25T00-00-00.access-token-expiration.ts`).
+- **Migration registration**: Use the dynamic `await import('./actions/...')` pattern in
+  `packages/migrations/src/run-pg-migrations.ts` (the convention adopted post-Dec 2024). Static
+  imports exist in older entries but new migrations should use the async form.
+- **UUID defaults**: Use `uuid_generate_v4()` (the existing convention) — not `gen_random_uuid()`.
+  The uuid extension is enabled in the base schema migration.
+- **Timestamp columns**: `created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()` and an
+  `updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()` are present on most modern tables. Apply this
+  to `metric_alert_rules` (we already have `created_at`; add `updated_at`).
+- **Module-level data access**: Inject `PG_POOL_CONFIG` directly via `@Inject(PG_POOL_CONFIG)
+  private pool: DatabasePool` in an `@Injectable({ scope: Scope.Operation })` class. Mirror the
+  shape of `packages/services/api/src/modules/saved-filters/providers/saved-filters-storage.ts`.
+  Do NOT extend the legacy `packages/services/storage/src/index.ts`.
+- **Permissions**: Reuse the existing `alert:modify` action (`packages/services/api/src/modules/auth/lib/authz.ts`
+  ~line 405) for both reads and writes of metric alert rules, matching how the existing
+  `AlertsManager` handles channels and schema-change alerts. Do not introduce a new `alert:read`
+  permission — that would expand authz scope unnecessarily.
+- **Mutation result shape**: Use the discriminated `{ ok: { ... } } | { error: { message } }`
+  pattern as shown in `packages/services/api/src/modules/saved-filters/resolvers/Mutation/createSavedFilter.ts`.
+- **Connection pattern**: Mirror `SavedFilterConnection` for `MetricAlertRuleIncidentConnection`
+  and any other paginated connections.
+- **GraphQL codegen**: Run `pnpm graphql:generate` from repo root after schema edits. Generated
+  resolver types appear under `packages/services/api/src/__generated__/types.ts` and module
+  `resolvers.generated.ts` files (do NOT hand-edit those).
+- **GraphQL mappers**: Add `MetricAlertRuleMapper`, `MetricAlertRuleIncidentMapper`,
+  `MetricAlertRuleStateChangeMapper` to `packages/services/api/src/modules/alerts/module.graphql.mappers.ts`,
+  pointing at internal entity types defined in `packages/services/api/src/shared/entities.ts`.
+
+### 1.1 Database Migration
+
+**New file:** `packages/migrations/src/actions/2026.04.15T00-00-01.metric-alert-rules.ts`
 
 ```sql
 CREATE TYPE metric_alert_type AS ENUM('LATENCY', 'ERROR_RATE', 'TRAFFIC');
@@ -277,11 +148,10 @@ CREATE TYPE metric_alert_state AS ENUM('NORMAL', 'PENDING', 'FIRING', 'RECOVERIN
 
 -- Alert configuration (what to monitor and how)
 CREATE TABLE metric_alert_rules (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid (),
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4 (),
   organization_id UUID NOT NULL REFERENCES organizations (id) ON DELETE CASCADE,
   project_id UUID NOT NULL REFERENCES projects (id) ON DELETE CASCADE,
   target_id UUID NOT NULL REFERENCES targets (id) ON DELETE CASCADE,
-  alert_channel_id UUID NOT NULL REFERENCES alert_channels (id) ON DELETE CASCADE,
   type metric_alert_type NOT NULL,
   time_window_minutes INT NOT NULL DEFAULT 30,
   metric metric_alert_metric, -- only for LATENCY type
@@ -291,18 +161,28 @@ CREATE TABLE metric_alert_rules (
   severity metric_alert_severity NOT NULL DEFAULT 'WARNING',
   name TEXT NOT NULL,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   enabled BOOLEAN NOT NULL DEFAULT TRUE,
   last_evaluated_at TIMESTAMPTZ,
+  last_triggered_at TIMESTAMPTZ,           -- denormalized; updated on PENDING → FIRING transitions
   -- Alert state machine
   state metric_alert_state NOT NULL DEFAULT 'NORMAL',
-  state_changed_at TIMESTAMPTZ,           -- when the current state began
+  state_changed_at TIMESTAMPTZ,            -- when the current state began
   -- How many consecutive minutes the condition must hold before
   -- PENDING → FIRING or RECOVERING → NORMAL (prevents flapping)
   confirmation_minutes INT NOT NULL DEFAULT 5,
-  -- Optional insights filter scoping (stored as JSONB)
-  -- Matches OperationStatsFilterInput: { operationIds?, excludeOperations?,
-  --   clientVersionFilters?: [{clientName, versions?}], excludeClientVersionFilters? }
-  FILTER JSONB,
+  -- Optional insights filter scoping. References a saved filter by ID; the UI picks a saved
+  -- filter by name (see packages/services/api/src/modules/saved-filters/). If the saved filter
+  -- is later edited, the rule automatically uses the updated filter contents at evaluation time.
+  -- If the saved filter is deleted, the rule becomes unscoped (applies to the whole target).
+  --
+  -- IMPORTANT: saved_filters are project-scoped (saved_filters.project_id), not target-scoped.
+  -- The addMetricAlertRule / updateMetricAlertRule resolvers MUST validate
+  -- `savedFilter.projectId === target.projectId` before writing, since the FK alone cannot
+  -- enforce this cross-column invariant. See the pattern used in
+  -- packages/services/api/src/modules/saved-filters/providers/saved-filters.provider.ts
+  -- around the `projectId !== target.projectId` check.
+  saved_filter_id UUID REFERENCES saved_filters (id) ON DELETE SET NULL,
   CONSTRAINT metric_alert_rules_metric_required CHECK (
     (
       type = 'LATENCY'
@@ -319,9 +199,19 @@ CREATE INDEX idx_metric_alert_rules_enabled ON metric_alert_rules (enabled)
 WHERE
   enabled = TRUE;
 
+-- Many-to-many: each rule can notify multiple channels; each channel can serve multiple rules.
+-- Matches the UI where users add multiple destinations per alert (e.g. Slack #alerts + Email).
+CREATE TABLE metric_alert_rule_channels (
+  metric_alert_rule_id UUID NOT NULL REFERENCES metric_alert_rules (id) ON DELETE CASCADE,
+  alert_channel_id UUID NOT NULL REFERENCES alert_channels (id) ON DELETE CASCADE,
+  PRIMARY KEY (metric_alert_rule_id, alert_channel_id)
+);
+
+CREATE INDEX idx_marc_channel ON metric_alert_rule_channels (alert_channel_id);
+
 -- Alert incident history (each time an alert fires and resolves)
 CREATE TABLE metric_alert_incidents (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid (),
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4 (),
   metric_alert_rule_id UUID NOT NULL REFERENCES metric_alert_rules (id) ON DELETE CASCADE,
   started_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   resolved_at TIMESTAMPTZ, -- NULL while still firing
@@ -339,7 +229,7 @@ WHERE
 -- State transition log (powers alert history UI: event list, bar chart, state timeline)
 -- Retention: 7 days for Hobby/Pro, 30 days for Enterprise (set at insert time via expires_at)
 CREATE TABLE metric_alert_state_log (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid (),
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4 (),
   metric_alert_rule_id UUID NOT NULL REFERENCES metric_alert_rules (id) ON DELETE CASCADE,
   target_id UUID NOT NULL REFERENCES targets (id) ON DELETE CASCADE,
   from_state metric_alert_state NOT NULL,
@@ -357,18 +247,27 @@ CREATE INDEX idx_metric_alert_state_log_target ON metric_alert_state_log (target
 CREATE INDEX idx_metric_alert_state_log_expires ON metric_alert_state_log (expires_at);
 ```
 
-### 2.2 Data Access
+### 1.2 Data Access
 
 **New file:** `packages/services/api/src/modules/alerts/providers/metric-alert-rules-storage.ts`
 
-Module-level provider with direct `PG_POOL_CONFIG` injection (same modern pattern as Phase 1).
+Module-level provider with direct `PG_POOL_CONFIG` injection (the modern pattern used by recent
+modules like app-deployments, schema-proposals, saved-filters — not the legacy storage service).
 Provides:
 
 Alert configuration CRUD:
 
-- `addMetricAlertRuleRule(input)`, `updateMetricAlertRuleRule(id, fields)`, `deleteMetricAlertRuless(ids)`
+- `addMetricAlertRule(input)`, `updateMetricAlertRule(id, fields)`, `deleteMetricAlertRules(ids)`
 - `getMetricAlertRules(projectId)`, `getMetricAlertRulesByTarget(targetId)`
-- `getAllEnabledMetricAlertRules()` — used by the workflows evaluation task
+- `getAllEnabledMetricAlertRules()` — used by the workflows evaluation task; returns rules joined
+  with their channels (via `metric_alert_rule_channels`), saved filter contents (via
+  `saved_filters.id`), target, project, organization
+
+Channel management (multi-destination):
+
+- `setRuleChannels(ruleId, channelIds[])` — replaces the full set of channels attached to a rule
+  (called from add/update mutations)
+- `getRuleChannels(ruleId)` — all channels attached to a rule
 
 Incident management:
 
@@ -389,7 +288,7 @@ State log (powers alert history UI):
 - `getStateLog(ruleId, from, to)` — state changes for a single alert rule within a time range
 - `getStateLogByTarget(targetId, from, to)` — all state changes across all rules for a target
 
-### 2.3 GraphQL API
+### 1.3 GraphQL API
 
 **File:** `packages/services/api/src/modules/alerts/module.graphql.ts`
 
@@ -431,7 +330,11 @@ type MetricAlertRule {
   name: String!
   type: MetricAlertRuleType!
   target: Target!
-  channel: AlertChannel!
+  """
+  Destinations that receive notifications when this rule fires or resolves.
+  Backed by the metric_alert_rule_channels join table.
+  """
+  channels: [AlertChannel!]!
   timeWindowMinutes: Int!
   metric: MetricAlertRuleMetric
   thresholdType: MetricAlertRuleThresholdType!
@@ -442,8 +345,18 @@ type MetricAlertRule {
   confirmationMinutes: Int!
   enabled: Boolean!
   lastEvaluatedAt: DateTime
+  """Most recent time this rule transitioned PENDING → FIRING (null if never fired)"""
+  lastTriggeredAt: DateTime
   createdAt: DateTime!
-  filter: OperationStatsFilterInput
+  """
+  The saved filter that scopes this rule (null = applies to the whole target).
+  """
+  savedFilter: SavedFilter
+  """
+  Count of state transitions logged for this rule in the given time range.
+  Powers the "Events" column on the alert rules list.
+  """
+  eventCount(from: DateTime!, to: DateTime!): Int!
   """
   The currently open incident, if any
   """
@@ -491,16 +404,40 @@ extend type Project {
   metricAlertRules: [MetricAlertRule!]
 }
 
-# Mutations: addMetricAlertRuleRule, updateMetricAlertRuleRule, deleteMetricAlertRuless
-# (standard ok/error result pattern)
+# Mutations (standard ok/error result pattern):
+# - addMetricAlertRule(input: AddMetricAlertRuleInput!)
+# - updateMetricAlertRule(input: UpdateMetricAlertRuleInput!)
+# - deleteMetricAlertRules(input: DeleteMetricAlertRulesInput!)
+#
+# AddMetricAlertRuleInput / UpdateMetricAlertRuleInput include:
+#   channelIds: [ID!]!           # attach one or more channels (multi-destination)
+#   savedFilterId: ID            # optional FK to a saved filter
+#   confirmationMinutes: Int     # defaults to 5; UI defaults to 0 for long windows
 ```
 
-**New resolver files:** `MetricAlertRule.ts`, `Mutation/addMetricAlertRuleRule.ts`,
-`Mutation/updateMetricAlertRuleRule.ts`, `Mutation/deleteMetricAlertRuless.ts`
+**New resolver files:** `MetricAlertRule.ts`, `MetricAlertRuleIncident.ts`,
+`MetricAlertRuleIncidentConnection.ts`, `MetricAlertRuleStateChange.ts`,
+`Mutation/addMetricAlertRule.ts`, `Mutation/updateMetricAlertRule.ts`,
+`Mutation/deleteMetricAlertRules.ts`.
 
-Uses `alert:modify` permission.
+Uses `alert:modify` permission for both reads and writes (no separate `alert:read` exists; this
+matches how the existing `AlertsManager` handles schema-change alerts).
 
-### 2.4 Evaluation Engine (Workflows Service)
+**Cross-scope validation in mutations**: The `addMetricAlertRule` / `updateMetricAlertRule`
+resolvers must validate — *before* writing — that:
+
+1. All provided `channelIds` belong to the same project as `targetId`. Each `alert_channels` row
+   has a `project_id` column; join and reject with an error if any channel's project doesn't
+   match.
+2. If `savedFilterId` is provided, `savedFilter.projectId === target.projectId`. The FK to
+   `saved_filters(id)` cannot enforce this cross-column invariant on its own. Follow the
+   validation pattern already in use at
+   `packages/services/api/src/modules/saved-filters/providers/saved-filters.provider.ts`.
+
+Both failures should surface as structured errors via the `{ error: { message } }` result branch,
+not thrown exceptions.
+
+### 1.4 Evaluation Engine (Workflows Service)
 
 #### Why the workflows service?
 
@@ -517,8 +454,10 @@ HTTP client so it can query operations metrics.
 - `packages/services/workflows/src/environment.ts` — add `CLICKHOUSE_HOST`, `CLICKHOUSE_PORT`,
   `CLICKHOUSE_USERNAME`, `CLICKHOUSE_PASSWORD`
 - `packages/services/workflows/src/context.ts` — add `clickhouse` to Context
-- `packages/services/workflows/src/lib/clickhouse-client.ts` — **new**, simple fetch-based HTTP
-  client (the API's ClickHouse client is DI-heavy; we just need raw query execution)
+- `packages/services/workflows/src/lib/clickhouse-client.ts` — **new**, simple HTTP client built
+  on `got` (matching the pattern used by `packages/services/workflows/src/lib/webhooks/send-webhook.ts`).
+  The API's ClickHouse client is DI-heavy and ships with `agentkeepalive`; we just need raw query
+  execution with retry on 5xx.
 - `packages/services/workflows/src/index.ts` — instantiate and inject
 
 #### Evaluation Task
@@ -533,9 +472,12 @@ The ingestion pipeline (API buffer → Kafka → ClickHouse async insert) has a 
 ~31 seconds, so by the time each 1-minute cron tick fires, the previous minute's data is reliably
 available. This gives on-call engineers a worst-case ~2 minute detection time.
 
-1. Fetch all enabled metric alerts from PostgreSQL (join with `alert_channels`, `targets`,
-   `projects`, `organizations`)
-2. Group by `(target_id, time_window_minutes, filter)` to batch ClickHouse queries
+1. Fetch all enabled metric alert rules from PostgreSQL. Single query joins with
+   `metric_alert_rule_channels` → `alert_channels` (returning an array of channels per rule),
+   `saved_filters` (via `saved_filter_id`, for filter contents), `targets`, `projects`,
+   `organizations`.
+2. Group by `(target_id, time_window_minutes, saved_filter_id)` to batch ClickHouse queries.
+   Rules pointing at the same saved filter share a query.
 3. Query ClickHouse for current window and previous window (with 1-minute offset to account for
    ingestion pipeline latency)
 4. Compare metric values against thresholds
@@ -545,7 +487,8 @@ available. This gives on-call engineers a worst-case ~2 minute detection time.
    - **NORMAL → PENDING**: set state to PENDING, set `state_changed_at` to now. No notification yet.
    - **PENDING (held < confirmation_minutes)**: remain PENDING, no action.
    - **PENDING (held >= confirmation_minutes) → FIRING**: create incident row, send alert
-     notification, update state + `state_changed_at`.
+     notification to **all** channels attached via `metric_alert_rule_channels`, update state +
+     `state_changed_at`, set `last_triggered_at = NOW()`.
    - **FIRING → FIRING**: no notification (prevent spam), update `last_evaluated_at`.
    - **RECOVERING → FIRING**: condition failed again before recovery confirmed. Set state back to
      FIRING, update `state_changed_at`. No notification (already sent).
@@ -558,7 +501,8 @@ available. This gives on-call engineers a worst-case ~2 minute detection time.
      notification yet.
    - **RECOVERING (held < confirmation_minutes)**: remain RECOVERING, no action.
    - **RECOVERING (held >= confirmation_minutes) → NORMAL**: set `resolved_at` on open incident,
-     send "resolved" notification, update state + `state_changed_at`.
+     send "resolved" notification to **all** channels attached via `metric_alert_rule_channels`,
+     update state + `state_changed_at`.
 
 #### ClickHouse Query Design
 
@@ -631,20 +575,28 @@ From these:
 - **Current window has data but previous doesn't exist** (e.g., alert was just created): Skip
   evaluation until both windows have data.
 
-### 2.5 Notifications from Workflows
+### 1.5 Notifications from Workflows
 
 **New file:** `packages/services/workflows/src/lib/metric-alert-notifier.ts`
 
 Sends notifications directly from the workflows service (the API's DI container is not available
 here):
 
-- **Webhooks**: Use existing `RequestBroker` / `send-webhook.ts` already in the workflows service
-- **Slack**: Direct HTTP POST using `@slack/web-api`. The bot token is stored on the `organizations`
-  table as `slack_token` and can be queried via PostgreSQL, which the workflows service already has
-  access to.
-- **Teams**: Direct HTTP POST to the webhook URL stored on the channel (simple fetch, same pattern
-  as the API's `TeamsCommunicationAdapter`)
-- **Email**: Use `context.email.send()` (from Phase 1 infrastructure)
+- **Webhooks**: Reuse `packages/services/workflows/src/lib/webhooks/send-webhook.ts` directly. It
+  already handles the `RequestBroker` path, retries via `args.helpers.job.attempts`, and uses
+  `got`. No changes needed to webhook infrastructure.
+- **Slack**: Instantiate `new WebClient(token)` from `@slack/web-api` and call
+  `client.chat.postMessage(...)`. The token is fetched from PostgreSQL:
+  `SELECT slack_token FROM organizations WHERE id = $1`. Mirror the message formatting from
+  `packages/services/api/src/modules/alerts/providers/adapters/slack.ts` (color-coded
+  `MessageAttachment[]`, mrkdwn, severity badges).
+
+  > **Action required**: Add `"@slack/web-api": "7.10.0"` to
+  > `packages/services/workflows/package.json` dependencies. It's currently only installed in the
+  > API package. Keep the version aligned with `packages/services/api/package.json`.
+- **Teams**: Raw `got.post()` to the channel's `webhook_endpoint` with a MessageCard JSON body.
+  Mirror the payload shape from the API's `TeamsCommunicationAdapter` (truncated to 27KB).
+- **Email**: Use `context.email.send()` (added in Phase 2).
 
 Example messages:
 
@@ -668,14 +620,14 @@ Webhook payload:
   "previousValue": 200,
   "changePercent": 125,
   "threshold": { "type": "FIXED_VALUE", "value": 200, "direction": "ABOVE" },
-  "filter": { "operationIds": ["abc123"] },
+  "filter": { "savedFilterId": "...", "name": "My Filter", "contents": { "operationIds": ["abc123"] } },
   "target": { "slug": "..." },
   "project": { "slug": "..." },
   "organization": { "slug": "..." }
 }
 ```
 
-### 2.6 Alert State Log Retention
+### 1.6 Alert State Log Retention
 
 Alert state log retention is plan-gated, following the same pattern as operations data retention
 (see `packages/services/api/src/modules/commerce/constants.ts`):
@@ -692,20 +644,21 @@ When logging a state transition, the evaluation task looks up the organization's
 **File:** `packages/services/api/src/modules/commerce/constants.ts` — add
 `alertStateLogRetentionDays` to each plan's limits.
 
-### 2.7 Deployment
+### 1.7 Deployment
 
 **File:** `deployment/services/workflows.ts` — add ClickHouse env vars to the workflows service
 deployment config.
 
-### Key files for Phase 2
+### Key files for Phase 1
 
 | File                                                                          | Change                               |
 | ----------------------------------------------------------------------------- | ------------------------------------ |
-| `packages/migrations/src/actions/2026.03.27T00-00-01.metric-alert-rules.ts`        | **New** — migration                  |
-| `packages/services/api/src/modules/alerts/providers/metric-alert-rules-storage.ts` | **New** — module-level CRUD provider |
-| `packages/services/api/src/modules/alerts/module.graphql.ts`                  | Add MetricAlertRule types/mutations      |
+| `packages/migrations/src/actions/2026.04.15T00-00-01.metric-alert-rules.ts`        | **New** — migration (rules, incidents, state log, **rule_channels join table**) |
+| `packages/services/api/src/modules/alerts/providers/metric-alert-rules-storage.ts` | **New** — module-level CRUD provider (incl. setRuleChannels) |
+| `packages/services/api/src/modules/alerts/module.graphql.ts`                  | Add MetricAlertRule types/mutations (multi-channel + savedFilter FK + eventCount + lastTriggeredAt) |
 | `packages/services/api/src/modules/alerts/resolvers/`                         | New resolver files                   |
 | `packages/services/api/src/modules/alerts/providers/alerts-manager.ts`        | Add metric alert methods             |
+| `packages/services/workflows/package.json`                                    | Add `@slack/web-api` dependency      |
 | `packages/services/workflows/src/environment.ts`                              | Add ClickHouse env vars              |
 | `packages/services/workflows/src/context.ts`                                  | Add clickhouse to Context            |
 | `packages/services/workflows/src/lib/clickhouse-client.ts`                    | **New** — lightweight CH client      |
@@ -715,6 +668,222 @@ deployment config.
 | `packages/services/workflows/src/index.ts`                                    | Register tasks + crontab             |
 | `packages/services/api/src/modules/commerce/constants.ts`                     | Add alertStateLogRetentionDays       |
 | `deployment/services/workflows.ts`                                            | ClickHouse env vars                  |
+
+---
+
+## Phase 2: Email Alert Channel
+
+> **Status:** Deferred. This phase ships after Phase 1. Open design questions remain around how
+> recipients are represented (free-form email strings vs. references to team members vs. a mix), and
+> we want to gather feedback from the Phase 1 rollout before committing to a schema.
+
+Follows the exact same pattern used when MS Teams was added
+(`2024.06.11T10-10-00.ms-teams-webhook.ts`).
+
+### 2.1 Database Migration
+
+**New file:** `packages/migrations/src/actions/2026.04.15T00-00-00.email-alert-channel.ts`
+
+```sql
+ALTER TYPE alert_channel_type
+ADD VALUE 'EMAIL';
+
+-- Array of email addresses to support multiple recipients per channel
+ALTER TABLE alert_channels
+ADD COLUMN email_addresses TEXT [];
+```
+
+**Important:** This migration must use `noTransaction: true` because PostgreSQL does not allow
+`ALTER TYPE ... ADD VALUE` inside a transaction block. The migration runner (`pg-migrator.ts`) wraps
+migrations in transactions by default — the `noTransaction` flag opts out. There are 18+ existing
+migrations using this pattern (e.g., index creation with `CREATE INDEX CONCURRENTLY`). Note: the
+existing MS Teams migration (`2024.06.11T10-10-00.ms-teams-webhook.ts`) is missing this flag, which
+is a latent bug.
+
+```typescript
+export default {
+  name: '2026.04.15T00-00-00.email-alert-channel.ts',
+  noTransaction: true,
+  run: ({ sql }) => [
+    {
+      name: 'Add EMAIL to alert_channel_type',
+      query: sql`ALTER TYPE alert_channel_type ADD VALUE 'EMAIL'`
+    },
+    {
+      name: 'Add email_addresses column',
+      query: sql`ALTER TABLE alert_channels ADD COLUMN email_addresses TEXT[]`
+    }
+  ]
+} satisfies MigrationExecutor
+```
+
+Register in `packages/migrations/src/run-pg-migrations.ts`.
+
+### 2.2 Data Access
+
+The legacy storage service (`packages/services/storage/src/index.ts`) will not be extended. Instead,
+following the modern pattern used by recent modules (app-deployments, schema-proposals,
+saved-filters), we create a module-level provider that injects `PG_POOL_CONFIG` directly.
+
+**New file:** `packages/services/api/src/modules/alerts/providers/alert-channels-storage.ts`
+
+```typescript
+@Injectable({ scope: Scope.Operation })
+export class AlertChannelsStorage {
+  constructor(@Inject(PG_POOL_CONFIG) private pool: DatabasePool) {}
+
+  async addAlertChannel(input: { ... emailAddresses?: string[] | null }) { ... }
+  async getAlertChannels(projectId: string) { ... }
+  async deleteAlertChannels(projectId: string, channelIds: string[]) { ... }
+}
+```
+
+This provider takes over alert channel CRUD from the legacy storage module. Existing callers in
+`AlertsManager` are updated to use this new provider instead.
+
+**File:** `packages/services/api/src/shared/entities.ts` — add `emailAddresses: string[] | null` to
+`AlertChannel` interface.
+
+### 2.3 GraphQL API
+
+**File:** `packages/services/api/src/modules/alerts/module.graphql.ts`
+
+```graphql
+# Add EMAIL to existing enum
+enum AlertChannelType { SLACK, WEBHOOK, MSTEAMS_WEBHOOK, EMAIL }
+
+# New implementing type
+type AlertEmailChannel implements AlertChannel {
+  id: ID!
+  name: String!
+  type: AlertChannelType!
+  emails: [String!]!
+}
+
+# New input — accepts multiple recipients
+input EmailChannelInput {
+  emails: [String!]!
+}
+
+# Update AddAlertChannelInput to include email field
+input AddAlertChannelInput {
+  ...existing fields...
+  email: EmailChannelInput
+}
+```
+
+### 2.4 Resolvers
+
+**New file:** `packages/services/api/src/modules/alerts/resolvers/AlertEmailChannel.ts`
+
+```typescript
+export const AlertEmailChannel: AlertEmailChannelResolvers = {
+  __isTypeOf: channel => channel.type === 'EMAIL',
+  emails: channel => channel.emailAddresses ?? []
+}
+```
+
+**File:** `packages/services/api/src/modules/alerts/resolvers/Mutation/addAlertChannel.ts`
+
+- Add Zod validation:
+  `email: MaybeModel(z.object({ emails: z.array(z.string().email().max(255)).min(1).max(10) }))`
+- Pass `emailAddresses: input.email?.emails` to AlertsManager
+
+### 2.5 AlertsManager
+
+**File:** `packages/services/api/src/modules/alerts/providers/alerts-manager.ts`
+
+- Update `addChannel()` input to accept `emailAddresses?: string[] | null`
+- Pass through to storage
+- Update `triggerChannelConfirmation()` to handle EMAIL type
+- Update `triggerSchemaChangeNotifications()` to dispatch via email adapter
+
+### 2.6 Email Communication Adapter
+
+**New file:** `packages/services/api/src/modules/alerts/providers/adapters/email.ts`
+
+Implements `CommunicationAdapter` interface. Uses `TaskScheduler` to schedule an email task in the
+workflows service (same pattern as `WebhookCommunicationAdapter` which schedules
+`SchemaChangeNotificationTask`).
+
+```typescript
+@Injectable()
+export class EmailCommunicationAdapter implements CommunicationAdapter {
+  constructor(
+    private taskScheduler: TaskScheduler,
+    private logger: Logger
+  ) {}
+
+  async sendSchemaChangeNotification(input: SchemaChangeNotificationInput) {
+    await this.taskScheduler.scheduleTask(AlertEmailNotificationTask, {
+      recipients: input.channel.emailAddresses ?? [],
+      event: {
+        /* schema change details */
+      }
+    })
+  }
+
+  async sendChannelConfirmation(input: ChannelConfirmationInput) {
+    await this.taskScheduler.scheduleTask(AlertEmailConfirmationTask, {
+      recipients: input.channel.emailAddresses ?? [],
+      event: input.event
+    })
+  }
+}
+```
+
+### 2.7 Email Task + Template (Workflows Service)
+
+**New file:** `packages/services/workflows/src/tasks/alert-email-notification.ts`
+
+- Define `AlertEmailNotificationTask` and `AlertEmailConfirmationTask`
+- Send emails using `context.email.send()` with MJML templates (same pattern as
+  `email-verification.ts`)
+
+**New file:** `packages/services/workflows/src/lib/emails/templates/alert-notification.ts`
+
+- MJML email template for schema change notifications (use existing `email()`, `paragraph()`,
+  `button()` helpers from `components.ts`)
+
+**File:** `packages/services/workflows/src/index.ts` — register new task module
+
+### 2.8 Module Registration
+
+**File:** `packages/services/api/src/modules/alerts/index.ts` — add `EmailCommunicationAdapter` to
+providers
+
+### 2.9 Frontend
+
+**File:** `packages/web/app/src/components/project/alerts/create-channel.tsx`
+
+- Add email addresses field with Zod validation (the existing form uses Yup + Formik, but new form
+  code should use Zod + react-hook-form to match the current codebase convention)
+- Show email input when type === EMAIL
+- Pass `email: { emails: values.emailAddresses }` in mutation
+
+**File:** `packages/web/app/src/components/project/alerts/channels-table.tsx`
+
+- Handle `AlertEmailChannel` typename to display the email addresses
+
+### Key files for Phase 2
+
+| File                                                                             | Change                                                         |
+| -------------------------------------------------------------------------------- | -------------------------------------------------------------- |
+| `packages/migrations/src/actions/2026.04.15T00-00-00.email-alert-channel.ts`     | **New** — migration                                            |
+| `packages/migrations/src/run-pg-migrations.ts`                                   | Register migration                                             |
+| `packages/services/api/src/modules/alerts/providers/alert-channels-storage.ts`   | **New** — module-level CRUD provider (replaces legacy storage) |
+| `packages/services/api/src/shared/entities.ts`                                   | Add emailAddresses to AlertChannel                             |
+| `packages/services/api/src/modules/alerts/module.graphql.ts`                     | Add AlertEmailChannel type + EmailChannelInput                 |
+| `packages/services/api/src/modules/alerts/resolvers/AlertEmailChannel.ts`        | **New** — resolver                                             |
+| `packages/services/api/src/modules/alerts/resolvers/Mutation/addAlertChannel.ts` | Add email validation + input                                   |
+| `packages/services/api/src/modules/alerts/providers/alerts-manager.ts`           | Handle EMAIL in dispatch                                       |
+| `packages/services/api/src/modules/alerts/providers/adapters/email.ts`           | **New** — adapter                                              |
+| `packages/services/api/src/modules/alerts/index.ts`                              | Register adapter                                               |
+| `packages/services/workflows/src/tasks/alert-email-notification.ts`              | **New** — email task                                           |
+| `packages/services/workflows/src/lib/emails/templates/alert-notification.ts`     | **New** — MJML template                                        |
+| `packages/services/workflows/src/index.ts`                                       | Register task                                                  |
+| `packages/web/app/src/components/project/alerts/create-channel.tsx`              | Add email form field                                           |
+| `packages/web/app/src/components/project/alerts/channels-table.tsx`              | Display email channels                                         |
 
 ---
 
@@ -837,8 +1006,8 @@ alert query would scan ~60 rows instead of ~300,000.
 
 - Additional write amplification — every INSERT into `operations` triggers one more MV
   materialization
-- Alerts with operation or client filters can't use this view — they still need
-  `operations_minutely` to filter by `hash` or `client_name`/`client_version`
+- Rules scoped to a saved filter (operation/client filters) can't use this view — they still
+  need `operations_minutely` to filter by `hash` or `client_name`/`client_version`
 - One more table to maintain and migrate
 
 ### Recommendation
@@ -897,16 +1066,16 @@ ClickHouse connection pool (32 sockets) and the 60-second task timeout.
 
 ### Phase 1
 
-1. Run migration, verify `alert_channel_type` enum has `EMAIL` and `email_addresses` column exists
-2. Create an EMAIL channel via GraphQL playground, verify it persists
-3. Create a schema-change alert using the EMAIL channel, publish a schema change, verify email is
-   sent
-4. Verify frontend form shows email option and validates correctly
-
-### Phase 2
-
 1. Run migration, verify `metric_alert_rules` table created
 2. CRUD metric alerts via GraphQL playground
 3. Trigger `evaluateMetricAlertRules` task manually, verify ClickHouse queries and state transitions
 4. Create a webhook metric alert, simulate threshold breach, verify webhook receives payload
 5. Add integration test in `integration-tests/tests/api/project/alerts.spec.ts`
+
+### Phase 2
+
+1. Run migration, verify `alert_channel_type` enum has `EMAIL` and `email_addresses` column exists
+2. Create an EMAIL channel via GraphQL playground, verify it persists
+3. Create a schema-change alert using the EMAIL channel, publish a schema change, verify email is
+   sent
+4. Verify frontend form shows email option and validates correctly
