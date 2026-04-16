@@ -6,6 +6,7 @@ import {
   CircleXIcon,
   ClockIcon,
   FileTextIcon,
+  FolderIcon,
   HistoryIcon,
   MoreHorizontalIcon,
   NetworkIcon,
@@ -44,7 +45,14 @@ import {
   DialogTitle,
 } from '../ui/dialog';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem } from '../ui/dropdown-menu';
-import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from '../ui/empty';
+import {
+  Empty,
+  EmptyContent,
+  EmptyDescription,
+  EmptyHeader,
+  EmptyMedia,
+  EmptyTitle,
+} from '../ui/empty';
 import { Field, FieldGroup, FieldLabel } from '../ui/field';
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '../ui/resizable';
 import { ScrollArea, ScrollBar } from '../ui/scroll-area';
@@ -461,6 +469,7 @@ export const Query = (props: {
     updateActiveOperation,
     collections,
     addOperationToCollection,
+    openAddCollectionDialog,
     addHistory,
     stopActiveOperation,
     addResponseToHistory,
@@ -653,49 +662,67 @@ export const Query = (props: {
       <Dialog open={isSaveToCollectionDialogOpen} onOpenChange={setIsSaveToCollectionDialogOpen}>
         <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
-            <DialogTitle>Add collection</DialogTitle>
-            <DialogDescription>
-              Add a new collection of operations to your laboratory.
-            </DialogDescription>
+            <DialogTitle>Save operation to collection</DialogTitle>
+            <DialogDescription>Save the current operation to a collection.</DialogDescription>
           </DialogHeader>
           <div className="grid gap-4">
-            <form
-              id="save-to-collection"
-              onSubmit={e => {
-                e.preventDefault();
-                void saveToCollectionForm.handleSubmit();
-              }}
-            >
-              <FieldGroup>
-                <saveToCollectionForm.Field name="collectionId">
-                  {field => {
-                    const isInvalid = field.state.meta.isTouched && !field.state.meta.isValid;
+            {collections.length > 0 ? (
+              <form
+                id="save-to-collection"
+                onSubmit={e => {
+                  e.preventDefault();
+                  void saveToCollectionForm.handleSubmit();
+                }}
+              >
+                <FieldGroup>
+                  <saveToCollectionForm.Field name="collectionId">
+                    {field => {
+                      const isInvalid = field.state.meta.isTouched && !field.state.meta.isValid;
 
-                    return (
-                      <Field data-invalid={isInvalid}>
-                        <FieldLabel htmlFor={field.name}>Collection</FieldLabel>
-                        <Select
-                          name={field.name}
-                          value={field.state.value}
-                          onValueChange={field.handleChange}
-                        >
-                          <SelectTrigger id={field.name} aria-invalid={isInvalid}>
-                            <SelectValue placeholder="Select collection" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {collections.map(c => (
-                              <SelectItem key={c.id} value={c.id}>
-                                {c.name}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </Field>
-                    );
-                  }}
-                </saveToCollectionForm.Field>
-              </FieldGroup>
-            </form>
+                      return (
+                        <Field data-invalid={isInvalid}>
+                          <FieldLabel htmlFor={field.name}>Collection</FieldLabel>
+                          <Select
+                            name={field.name}
+                            value={field.state.value}
+                            onValueChange={field.handleChange}
+                          >
+                            <SelectTrigger id={field.name} aria-invalid={isInvalid}>
+                              <SelectValue placeholder="Select collection" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {collections.map(c => (
+                                <SelectItem key={c.id} value={c.id}>
+                                  {c.name}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </Field>
+                      );
+                    }}
+                  </saveToCollectionForm.Field>
+                </FieldGroup>
+              </form>
+            ) : (
+              <Empty className="px-0! bg-card w-full">
+                <EmptyHeader>
+                  <EmptyMedia variant="icon">
+                    <FolderIcon className="text-muted-foreground size-6" />
+                  </EmptyMedia>
+                  <EmptyTitle className="text-base">No collections yet</EmptyTitle>
+                  <EmptyDescription className="text-xs">
+                    You haven't created any collections yet. Get started by adding your first
+                    collection.
+                  </EmptyDescription>
+                </EmptyHeader>
+                <EmptyContent>
+                  <Button variant="secondary" size="sm" onClick={openAddCollectionDialog}>
+                    Add collection
+                  </Button>
+                </EmptyContent>
+              </Empty>
+            )}
           </div>
           <DialogFooter>
             <DialogClose asChild>
