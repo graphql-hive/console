@@ -26,56 +26,55 @@ This proposal covers two workstreams:
 - **Multiple email recipients**: Email channels support an array of addresses
 - **Severity levels**: Alerts carry a user-defined severity label (info, warning, critical) for
   organizational purposes
-- **Four-state alert lifecycle**: Alerts transition through NORMAL → PENDING → FIRING → RECOVERING
-  → NORMAL. The pending and recovering states require the condition to hold for a configurable
-  number of consecutive minutes (`confirmation_minutes`) before escalating or resolving, preventing
+- **Four-state alert lifecycle**: Alerts transition through NORMAL → PENDING → FIRING → RECOVERING →
+  NORMAL. The pending and recovering states require the condition to hold for a configurable number
+  of consecutive minutes (`confirmation_minutes`) before escalating or resolving, preventing
   flapping (rapid normal→firing→normal→firing cycles). All four states are user-facing.
 
 ---
 
 ## Pre-flight review (pre-implementation validation)
 
-The plan was reviewed against the current codebase on 2026-04-15. The following items were
-validated and are reflected in the sections below. Anything an implementer should double-check
-before their first commit is called out explicitly.
+The plan was reviewed against the current codebase on 2026-04-15. The following items were validated
+and are reflected in the sections below. Anything an implementer should double-check before their
+first commit is called out explicitly.
 
 **Validated as matching current conventions:**
 
-- Migration file naming (`YYYY.MM.DDTHH-MM-SS.description.ts`) and registration via
-  `await import()` in `run-pg-migrations.ts`.
+- Migration file naming (`YYYY.MM.DDTHH-MM-SS.description.ts`) and registration via `await import()`
+  in `run-pg-migrations.ts`.
 - `MigrationExecutor` interface supports `noTransaction: true` — correct for the Phase 2
   `ALTER TYPE ... ADD VALUE` migration.
 - `uuid_generate_v4()` is the default-UUID convention (not `gen_random_uuid()`). Adjusted
   throughout.
-- `saved_filters` table exists (migration `2026.02.07T00-00-00.saved-filters.ts`) with
-  `id UUID`, `project_id UUID`, `filters JSONB`. FK from `metric_alert_rules.saved_filter_id`
-  is safe.
-- `alert:modify` permission exists at
-  `packages/services/api/src/modules/auth/lib/authz.ts` (~line 405) and is already used by the
-  existing `AlertsManager`. Reused for metric alert rules — no new permission needed.
+- `saved_filters` table exists (migration `2026.02.07T00-00-00.saved-filters.ts`) with `id UUID`,
+  `project_id UUID`, `filters JSONB`. FK from `metric_alert_rules.saved_filter_id` is safe.
+- `alert:modify` permission exists at `packages/services/api/src/modules/auth/lib/authz.ts`
+  (~line 405) and is already used by the existing `AlertsManager`. Reused for metric alert rules —
+  no new permission needed.
 - Mutation result shape (`{ ok, error }` discriminated union) matches
   `saved-filters/resolvers/Mutation/createSavedFilter.ts`.
 - Module-level storage providers with `@Inject(PG_POOL_CONFIG)` are the modern pattern
   (saved-filters, proposals, oidc-integrations all follow it). Legacy
   `packages/services/storage/src/index.ts` is intentionally not extended.
-- Graphile-Worker cron deduplication is automatic — an overrunning evaluation task will not
-  spawn a concurrent instance on the next tick.
-- `send-webhook.ts` in workflows already uses `got` + retries; reusable for metric-alert
-  webhook delivery with zero infrastructure changes.
-- Email provider abstraction (`context.email.send({ to, subject, body })`) in workflows is
-  reusable for Phase 2 email delivery.
+- Graphile-Worker cron deduplication is automatic — an overrunning evaluation task will not spawn a
+  concurrent instance on the next tick.
+- `send-webhook.ts` in workflows already uses `got` + retries; reusable for metric-alert webhook
+  delivery with zero infrastructure changes.
+- Email provider abstraction (`context.email.send({ to, subject, body })`) in workflows is reusable
+  for Phase 2 email delivery.
 
 **Gaps the implementer must close during Phase 1:**
 
-1. **Add `@slack/web-api` to `packages/services/workflows/package.json`.** Currently only the
-   API package has it. Pin to the same version as the API package for parity.
-2. **Cross-scope validation in mutation resolvers.** The FKs on `metric_alert_rules` cannot
-   enforce that all `channelIds` and the `saved_filter_id` belong to the same project as the
-   rule's target. Explicit validation in `addMetricAlertRule` / `updateMetricAlertRule` is
-   required. See section 1.3 for details.
+1. **Add `@slack/web-api` to `packages/services/workflows/package.json`.** Currently only the API
+   package has it. Pin to the same version as the API package for parity.
+2. **Cross-scope validation in mutation resolvers.** The FKs on `metric_alert_rules` cannot enforce
+   that all `channelIds` and the `saved_filter_id` belong to the same project as the rule's target.
+   Explicit validation in `addMetricAlertRule` / `updateMetricAlertRule` is required. See section
+   1.3 for details.
 3. **Regenerate GraphQL types.** Run `pnpm graphql:generate` from repo root after schema edits.
-   Generated files appear in `packages/services/api/src/__generated__/types.ts` and each
-   module's `resolvers.generated.ts` — do not hand-edit.
+   Generated files appear in `packages/services/api/src/__generated__/types.ts` and each module's
+   `resolvers.generated.ts` — do not hand-edit.
 4. **Add `alertStateLogRetentionDays` to commerce plan constants.** The retention column on
    `metric_alert_state_log` uses per-plan values (7d Hobby/Pro, 30d Enterprise) driven from
    `packages/services/api/src/modules/commerce/constants.ts`.
@@ -108,26 +107,30 @@ These were verified during a final pre-implementation review against current pat
 - **UUID defaults**: Use `uuid_generate_v4()` (the existing convention) — not `gen_random_uuid()`.
   The uuid extension is enabled in the base schema migration.
 - **Timestamp columns**: `created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()` and an
-  `updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()` are present on most modern tables. Apply this
-  to `metric_alert_rules` (we already have `created_at`; add `updated_at`).
-- **Module-level data access**: Inject `PG_POOL_CONFIG` directly via `@Inject(PG_POOL_CONFIG)
-  private pool: DatabasePool` in an `@Injectable({ scope: Scope.Operation })` class. Mirror the
-  shape of `packages/services/api/src/modules/saved-filters/providers/saved-filters-storage.ts`.
-  Do NOT extend the legacy `packages/services/storage/src/index.ts`.
-- **Permissions**: Reuse the existing `alert:modify` action (`packages/services/api/src/modules/auth/lib/authz.ts`
-  ~line 405) for both reads and writes of metric alert rules, matching how the existing
-  `AlertsManager` handles channels and schema-change alerts. Do not introduce a new `alert:read`
-  permission — that would expand authz scope unnecessarily.
+  `updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()` are present on most modern tables. Apply this to
+  `metric_alert_rules` (we already have `created_at`; add `updated_at`).
+- **Module-level data access**: Inject `PG_POOL_CONFIG` directly via
+  `@Inject(PG_POOL_CONFIG) private pool: DatabasePool` in an
+  `@Injectable({ scope: Scope.Operation })` class. Mirror the shape of
+  `packages/services/api/src/modules/saved-filters/providers/saved-filters-storage.ts`. Do NOT
+  extend the legacy `packages/services/storage/src/index.ts`.
+- **Permissions**: Reuse the existing `alert:modify` action
+  (`packages/services/api/src/modules/auth/lib/authz.ts` ~line 405) for both reads and writes of
+  metric alert rules, matching how the existing `AlertsManager` handles channels and schema-change
+  alerts. Do not introduce a new `alert:read` permission — that would expand authz scope
+  unnecessarily.
 - **Mutation result shape**: Use the discriminated `{ ok: { ... } } | { error: { message } }`
-  pattern as shown in `packages/services/api/src/modules/saved-filters/resolvers/Mutation/createSavedFilter.ts`.
-- **Connection pattern**: Mirror `SavedFilterConnection` for `MetricAlertRuleIncidentConnection`
-  and any other paginated connections.
+  pattern as shown in
+  `packages/services/api/src/modules/saved-filters/resolvers/Mutation/createSavedFilter.ts`.
+- **Connection pattern**: Mirror `SavedFilterConnection` for `MetricAlertRuleIncidentConnection` and
+  any other paginated connections.
 - **GraphQL codegen**: Run `pnpm graphql:generate` from repo root after schema edits. Generated
   resolver types appear under `packages/services/api/src/__generated__/types.ts` and module
   `resolvers.generated.ts` files (do NOT hand-edit those).
 - **GraphQL mappers**: Add `MetricAlertRuleMapper`, `MetricAlertRuleIncidentMapper`,
-  `MetricAlertRuleStateChangeMapper` to `packages/services/api/src/modules/alerts/module.graphql.mappers.ts`,
-  pointing at internal entity types defined in `packages/services/api/src/shared/entities.ts`.
+  `MetricAlertRuleStateChangeMapper` to
+  `packages/services/api/src/modules/alerts/module.graphql.mappers.ts`, pointing at internal entity
+  types defined in `packages/services/api/src/shared/entities.ts`.
 
 ### 1.1 Database Migration
 
@@ -164,10 +167,10 @@ CREATE TABLE metric_alert_rules (
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   enabled BOOLEAN NOT NULL DEFAULT TRUE,
   last_evaluated_at TIMESTAMPTZ,
-  last_triggered_at TIMESTAMPTZ,           -- denormalized; updated on PENDING → FIRING transitions
+  last_triggered_at TIMESTAMPTZ, -- denormalized; updated on PENDING → FIRING transitions
   -- Alert state machine
   state metric_alert_state NOT NULL DEFAULT 'NORMAL',
-  state_changed_at TIMESTAMPTZ,            -- when the current state began
+  state_changed_at TIMESTAMPTZ, -- when the current state began
   -- How many consecutive minutes the condition must hold before
   -- PENDING → FIRING or RECOVERING → NORMAL (prevents flapping)
   confirmation_minutes INT NOT NULL DEFAULT 5,
@@ -235,15 +238,17 @@ CREATE TABLE metric_alert_state_log (
   from_state metric_alert_state NOT NULL,
   to_state metric_alert_state NOT NULL,
   -- Value snapshot at the time of transition (for historical accuracy even if rule changes)
-  value DOUBLE PRECISION,                  -- current window's metric value
-  previous_value DOUBLE PRECISION,         -- previous window's metric value
-  threshold_value DOUBLE PRECISION,        -- snapshot of rule.threshold_value at transition time
+  VALUE DOUBLE PRECISION, -- current window's metric value
+  previous_value DOUBLE PRECISION, -- previous window's metric value
+  threshold_value DOUBLE PRECISION, -- snapshot of rule.threshold_value at transition time
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-  expires_at TIMESTAMPTZ NOT NULL          -- set based on org plan at insert time
+  expires_at TIMESTAMPTZ NOT NULL -- set based on org plan at insert time
 );
 
 CREATE INDEX idx_metric_alert_state_log_rule ON metric_alert_state_log (metric_alert_rule_id, created_at);
+
 CREATE INDEX idx_metric_alert_state_log_target ON metric_alert_state_log (target_id, created_at);
+
 CREATE INDEX idx_metric_alert_state_log_expires ON metric_alert_state_log (expires_at);
 ```
 
@@ -280,11 +285,11 @@ Incident management:
 
 State log (powers alert history UI):
 
-- `logStateTransition(ruleId, targetId, fromState, toState, value, previousValue, thresholdValue, expiresAt)` —
-  called on every state transition during evaluation. `thresholdValue` is snapshotted from the rule
-  at transition time so historical events remain accurate even if the rule is later edited.
-  `expiresAt` is computed from the org's plan: `NOW() + 7 days` for Hobby/Pro, `NOW() + 30 days`
-  for Enterprise.
+- `logStateTransition(ruleId, targetId, fromState, toState, value, previousValue, thresholdValue, expiresAt)`
+  — called on every state transition during evaluation. `thresholdValue` is snapshotted from the
+  rule at transition time so historical events remain accurate even if the rule is later edited.
+  `expiresAt` is computed from the org's plan: `NOW() + 7 days` for Hobby/Pro, `NOW() + 30 days` for
+  Enterprise.
 - `getStateLog(ruleId, from, to)` — state changes for a single alert rule within a time range
 - `getStateLogByTarget(targetId, from, to)` — all state changes across all rules for a target
 
@@ -345,7 +350,9 @@ type MetricAlertRule {
   confirmationMinutes: Int!
   enabled: Boolean!
   lastEvaluatedAt: DateTime
-  """Most recent time this rule transitioned PENDING → FIRING (null if never fired)"""
+  """
+  Most recent time this rule transitioned PENDING → FIRING (null if never fired)
+  """
   lastTriggeredAt: DateTime
   createdAt: DateTime!
   """
@@ -380,23 +387,33 @@ type MetricAlertRuleStateChange {
   id: ID!
   fromState: MetricAlertRuleState!
   toState: MetricAlertRuleState!
-  """Metric value in the current window at transition time"""
+  """
+  Metric value in the current window at transition time
+  """
   value: Float
-  """Metric value in the previous (comparison) window at transition time"""
+  """
+  Metric value in the previous (comparison) window at transition time
+  """
   previousValue: Float
-  """Threshold value snapshotted at transition time (survives rule edits)"""
+  """
+  Threshold value snapshotted at transition time (survives rule edits)
+  """
   thresholdValue: Float
   createdAt: DateTime!
   rule: MetricAlertRule!
 }
 
 extend type MetricAlertRule {
-  """State change history for this rule (powers the state timeline)"""
+  """
+  State change history for this rule (powers the state timeline)
+  """
   stateLog(from: DateTime!, to: DateTime!): [MetricAlertRuleStateChange!]!
 }
 
 extend type Target {
-  """State changes across all alert rules for this target (powers the alert events chart + list)"""
+  """
+  State changes across all alert rules for this target (powers the alert events chart + list)
+  """
   metricAlertRuleStateLog(from: DateTime!, to: DateTime!): [MetricAlertRuleStateChange!]!
 }
 
@@ -424,14 +441,13 @@ Uses `alert:modify` permission for both reads and writes (no separate `alert:rea
 matches how the existing `AlertsManager` handles schema-change alerts).
 
 **Cross-scope validation in mutations**: The `addMetricAlertRule` / `updateMetricAlertRule`
-resolvers must validate — *before* writing — that:
+resolvers must validate — _before_ writing — that:
 
-1. All provided `channelIds` belong to the same project as `targetId`. Each `alert_channels` row
-   has a `project_id` column; join and reject with an error if any channel's project doesn't
-   match.
+1. All provided `channelIds` belong to the same project as `targetId`. Each `alert_channels` row has
+   a `project_id` column; join and reject with an error if any channel's project doesn't match.
 2. If `savedFilterId` is provided, `savedFilter.projectId === target.projectId`. The FK to
-   `saved_filters(id)` cannot enforce this cross-column invariant on its own. Follow the
-   validation pattern already in use at
+   `saved_filters(id)` cannot enforce this cross-column invariant on its own. Follow the validation
+   pattern already in use at
    `packages/services/api/src/modules/saved-filters/providers/saved-filters.provider.ts`.
 
 Both failures should surface as structured errors via the `{ error: { message } }` result branch,
@@ -454,10 +470,10 @@ HTTP client so it can query operations metrics.
 - `packages/services/workflows/src/environment.ts` — add `CLICKHOUSE_HOST`, `CLICKHOUSE_PORT`,
   `CLICKHOUSE_USERNAME`, `CLICKHOUSE_PASSWORD`
 - `packages/services/workflows/src/context.ts` — add `clickhouse` to Context
-- `packages/services/workflows/src/lib/clickhouse-client.ts` — **new**, simple HTTP client built
-  on `got` (matching the pattern used by `packages/services/workflows/src/lib/webhooks/send-webhook.ts`).
-  The API's ClickHouse client is DI-heavy and ships with `agentkeepalive`; we just need raw query
-  execution with retry on 5xx.
+- `packages/services/workflows/src/lib/clickhouse-client.ts` — **new**, simple HTTP client built on
+  `got` (matching the pattern used by
+  `packages/services/workflows/src/lib/webhooks/send-webhook.ts`). The API's ClickHouse client is
+  DI-heavy and ships with `agentkeepalive`; we just need raw query execution with retry on 5xx.
 - `packages/services/workflows/src/index.ts` — instantiate and inject
 
 #### Evaluation Task
@@ -465,6 +481,7 @@ HTTP client so it can query operations metrics.
 **New file:** `packages/services/workflows/src/tasks/evaluate-metric-alert-rules.ts`
 
 Cron:
+
 - `* * * * * evaluateMetricAlertRules` (every minute)
 - `0 4 * * * purgeExpiredAlertStateLog` (daily at 4:00 AM — deletes rows where `expires_at < NOW()`)
 
@@ -476,14 +493,15 @@ available. This gives on-call engineers a worst-case ~2 minute detection time.
    `metric_alert_rule_channels` → `alert_channels` (returning an array of channels per rule),
    `saved_filters` (via `saved_filter_id`, for filter contents), `targets`, `projects`,
    `organizations`.
-2. Group by `(target_id, time_window_minutes, saved_filter_id)` to batch ClickHouse queries.
-   Rules pointing at the same saved filter share a query.
+2. Group by `(target_id, time_window_minutes, saved_filter_id)` to batch ClickHouse queries. Rules
+   pointing at the same saved filter share a query.
 3. Query ClickHouse for current window and previous window (with 1-minute offset to account for
    ingestion pipeline latency)
 4. Compare metric values against thresholds
 5. State machine transitions (using `state` and `state_changed_at` on the alert row):
 
    **When threshold IS breached:**
+
    - **NORMAL → PENDING**: set state to PENDING, set `state_changed_at` to now. No notification yet.
    - **PENDING (held < confirmation_minutes)**: remain PENDING, no action.
    - **PENDING (held >= confirmation_minutes) → FIRING**: create incident row, send alert
@@ -494,6 +512,7 @@ available. This gives on-call engineers a worst-case ~2 minute detection time.
      FIRING, update `state_changed_at`. No notification (already sent).
 
    **When threshold is NOT breached:**
+
    - **NORMAL → NORMAL**: update `last_evaluated_at` only.
    - **PENDING → NORMAL**: false alarm — condition didn't hold long enough. Reset state to NORMAL,
      update `state_changed_at`. No notification.
@@ -583,8 +602,8 @@ Sends notifications directly from the workflows service (the API's DI container 
 here):
 
 - **Webhooks**: Reuse `packages/services/workflows/src/lib/webhooks/send-webhook.ts` directly. It
-  already handles the `RequestBroker` path, retries via `args.helpers.job.attempts`, and uses
-  `got`. No changes needed to webhook infrastructure.
+  already handles the `RequestBroker` path, retries via `args.helpers.job.attempts`, and uses `got`.
+  No changes needed to webhook infrastructure.
 - **Slack**: Instantiate `new WebClient(token)` from `@slack/web-api` and call
   `client.chat.postMessage(...)`. The token is fetched from PostgreSQL:
   `SELECT slack_token FROM organizations WHERE id = $1`. Mirror the message formatting from
@@ -594,6 +613,7 @@ here):
   > **Action required**: Add `"@slack/web-api": "7.10.0"` to
   > `packages/services/workflows/package.json` dependencies. It's currently only installed in the
   > API package. Keep the version aligned with `packages/services/api/package.json`.
+
 - **Teams**: Raw `got.post()` to the channel's `webhook_endpoint` with a MessageCard JSON body.
   Mirror the payload shape from the API's `TeamsCommunicationAdapter` (truncated to 27KB).
 - **Email**: Use `context.email.send()` (added in Phase 2).
@@ -620,7 +640,11 @@ Webhook payload:
   "previousValue": 200,
   "changePercent": 125,
   "threshold": { "type": "FIXED_VALUE", "value": 200, "direction": "ABOVE" },
-  "filter": { "savedFilterId": "...", "name": "My Filter", "contents": { "operationIds": ["abc123"] } },
+  "filter": {
+    "savedFilterId": "...",
+    "name": "My Filter",
+    "contents": { "operationIds": ["abc123"] }
+  },
   "target": { "slug": "..." },
   "project": { "slug": "..." },
   "organization": { "slug": "..." }
@@ -633,7 +657,7 @@ Alert state log retention is plan-gated, following the same pattern as operation
 (see `packages/services/api/src/modules/commerce/constants.ts`):
 
 | Plan       | State log retention |
-|------------|---------------------|
+| ---------- | ------------------- |
 | Hobby      | 7 days              |
 | Pro        | 7 days              |
 | Enterprise | 30 days             |
@@ -651,23 +675,23 @@ deployment config.
 
 ### Key files for Phase 1
 
-| File                                                                          | Change                               |
-| ----------------------------------------------------------------------------- | ------------------------------------ |
-| `packages/migrations/src/actions/2026.04.15T00-00-01.metric-alert-rules.ts`        | **New** — migration (rules, incidents, state log, **rule_channels join table**) |
-| `packages/services/api/src/modules/alerts/providers/metric-alert-rules-storage.ts` | **New** — module-level CRUD provider (incl. setRuleChannels) |
-| `packages/services/api/src/modules/alerts/module.graphql.ts`                  | Add MetricAlertRule types/mutations (multi-channel + savedFilter FK + eventCount + lastTriggeredAt) |
-| `packages/services/api/src/modules/alerts/resolvers/`                         | New resolver files                   |
-| `packages/services/api/src/modules/alerts/providers/alerts-manager.ts`        | Add metric alert methods             |
-| `packages/services/workflows/package.json`                                    | Add `@slack/web-api` dependency      |
-| `packages/services/workflows/src/environment.ts`                              | Add ClickHouse env vars              |
-| `packages/services/workflows/src/context.ts`                                  | Add clickhouse to Context            |
-| `packages/services/workflows/src/lib/clickhouse-client.ts`                    | **New** — lightweight CH client      |
-| `packages/services/workflows/src/tasks/evaluate-metric-alert-rules.ts`             | **New** — evaluation cron task       |
-| `packages/services/workflows/src/lib/metric-alert-notifier.ts`                | **New** — notification sender        |
-| `packages/services/workflows/src/tasks/purge-expired-alert-state-log.ts`      | **New** — daily purge task           |
-| `packages/services/workflows/src/index.ts`                                    | Register tasks + crontab             |
-| `packages/services/api/src/modules/commerce/constants.ts`                     | Add alertStateLogRetentionDays       |
-| `deployment/services/workflows.ts`                                            | ClickHouse env vars                  |
+| File                                                                               | Change                                                                                              |
+| ---------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------- |
+| `packages/migrations/src/actions/2026.04.15T00-00-01.metric-alert-rules.ts`        | **New** — migration (rules, incidents, state log, **rule_channels join table**)                     |
+| `packages/services/api/src/modules/alerts/providers/metric-alert-rules-storage.ts` | **New** — module-level CRUD provider (incl. setRuleChannels)                                        |
+| `packages/services/api/src/modules/alerts/module.graphql.ts`                       | Add MetricAlertRule types/mutations (multi-channel + savedFilter FK + eventCount + lastTriggeredAt) |
+| `packages/services/api/src/modules/alerts/resolvers/`                              | New resolver files                                                                                  |
+| `packages/services/api/src/modules/alerts/providers/alerts-manager.ts`             | Add metric alert methods                                                                            |
+| `packages/services/workflows/package.json`                                         | Add `@slack/web-api` dependency                                                                     |
+| `packages/services/workflows/src/environment.ts`                                   | Add ClickHouse env vars                                                                             |
+| `packages/services/workflows/src/context.ts`                                       | Add clickhouse to Context                                                                           |
+| `packages/services/workflows/src/lib/clickhouse-client.ts`                         | **New** — lightweight CH client                                                                     |
+| `packages/services/workflows/src/tasks/evaluate-metric-alert-rules.ts`             | **New** — evaluation cron task                                                                      |
+| `packages/services/workflows/src/lib/metric-alert-notifier.ts`                     | **New** — notification sender                                                                       |
+| `packages/services/workflows/src/tasks/purge-expired-alert-state-log.ts`           | **New** — daily purge task                                                                          |
+| `packages/services/workflows/src/index.ts`                                         | Register tasks + crontab                                                                            |
+| `packages/services/api/src/modules/commerce/constants.ts`                          | Add alertStateLogRetentionDays                                                                      |
+| `deployment/services/workflows.ts`                                                 | ClickHouse env vars                                                                                 |
 
 ---
 
@@ -1006,8 +1030,8 @@ alert query would scan ~60 rows instead of ~300,000.
 
 - Additional write amplification — every INSERT into `operations` triggers one more MV
   materialization
-- Rules scoped to a saved filter (operation/client filters) can't use this view — they still
-  need `operations_minutely` to filter by `hash` or `client_name`/`client_version`
+- Rules scoped to a saved filter (operation/client filters) can't use this view — they still need
+  `operations_minutely` to filter by `hash` or `client_name`/`client_version`
 - One more table to maintain and migrate
 
 ### Recommendation
