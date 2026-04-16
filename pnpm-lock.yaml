@@ -851,12 +851,6 @@ importers:
       graphql:
         specifier: ^16.12.0
         version: 16.12.0
-      graphql-sse:
-        specifier: ^2.5.3
-        version: 2.6.0(graphql@16.12.0)
-      graphql-ws:
-        specifier: ^6.0.6
-        version: 6.0.6(graphql@16.12.0)(ws@8.18.0)
       lodash:
         specifier: ^4.17.23
         version: 4.18.1
@@ -982,8 +976,6 @@ importers:
         specifier: 5.13.3
         version: 5.13.3(graphql@16.12.0)
     publishDirectory: dist
-
-  packages/libraries/router: {}
 
   packages/libraries/yoga:
     dependencies:
@@ -35486,10 +35478,6 @@ snapshots:
   graphql-sse@2.5.3(graphql@16.9.0):
     dependencies:
       graphql: 16.9.0
-
-  graphql-sse@2.6.0(graphql@16.12.0):
-    dependencies:
-      graphql: 16.12.0
 
   graphql-sse@2.6.0(graphql@16.9.0):
     dependencies:

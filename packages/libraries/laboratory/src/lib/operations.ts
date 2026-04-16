@@ -7,9 +7,9 @@ import {
   parse,
   type GraphQLSchema,
 } from 'graphql';
-import { isAsyncIterable } from 'graphql-sse';
 import { decompressFromEncodedURIComponent } from 'lz-string';
 import { v4 as uuidv4 } from 'uuid';
+import { isAsyncIterable } from '@/lib/utils';
 import { SubscriptionProtocol, UrlLoader } from '@graphql-tools/url-loader';
 import { LaboratoryPermission, LaboratoryPermissions } from '../components/laboratory/context';
 import type {

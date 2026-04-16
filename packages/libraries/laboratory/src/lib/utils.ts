@@ -40,3 +40,7 @@ export async function asyncInterval(
     });
   }
 }
+
+export function isAsyncIterable<T>(val: unknown): val is AsyncIterable<T> {
+  return typeof Object(val)[Symbol.asyncIterator] === 'function';
+}
