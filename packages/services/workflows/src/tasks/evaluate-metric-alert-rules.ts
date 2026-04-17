@@ -7,6 +7,7 @@ import {
   groupRulesByQuery,
   queryClickHouseWindows,
 } from '../lib/metric-alert-evaluator.js';
+import { sendMetricAlertNotifications } from '../lib/metric-alert-notifier.js';
 
 export const EvaluateMetricAlertRulesTask = defineTask({
   name: 'evaluateMetricAlertRules',
@@ -65,6 +66,18 @@ export const task = implementTask(EvaluateMetricAlertRulesTask, async args => {
       continue;
     }
 
+    // Fetch slugs for notification messages (once per group since all share a target)
+    const slugs = (await context.pg.maybeOne(psql`
+      SELECT
+        o."slug" as "organizationSlug"
+        , p."slug" as "projectSlug"
+        , t."slug" as "targetSlug"
+      FROM "targets" t
+      INNER JOIN "projects" p ON p."id" = t."project_id"
+      INNER JOIN "organizations" o ON o."id" = p."org_id"
+      WHERE t."id" = ${representative.targetId}
+    `)) as { organizationSlug: string; projectSlug: string; targetSlug: string } | null;
+
     for (const rule of groupRules) {
       await evaluateRule({
         rule,
@@ -72,6 +85,30 @@ export const task = implementTask(EvaluateMetricAlertRulesTask, async args => {
         previous: windows.previous,
         pg: context.pg,
         logger,
+        onTransition: async ({ rule: r, fromState, toState, currentValue, previousValue }) => {
+          if (!slugs) return;
+
+          const isFiring = toState === 'FIRING';
+          const isResolved = fromState === 'RECOVERING' && toState === 'NORMAL';
+
+          if (isFiring || isResolved) {
+            await sendMetricAlertNotifications({
+              ruleId: r.id,
+              event: {
+                state: isFiring ? 'firing' : 'resolved',
+                rule: r,
+                currentValue,
+                previousValue,
+                organizationSlug: slugs.organizationSlug,
+                projectSlug: slugs.projectSlug,
+                targetSlug: slugs.targetSlug,
+              },
+              pg: context.pg,
+              requestBroker: context.requestBroker,
+              logger,
+            });
+          }
+        },
       });
     }
   }

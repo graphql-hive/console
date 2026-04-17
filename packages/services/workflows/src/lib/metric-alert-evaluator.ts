@@ -8,12 +8,14 @@ export type MetricAlertRuleRow = {
   organizationId: string;
   projectId: string;
   targetId: string;
+  name: string;
   type: 'LATENCY' | 'ERROR_RATE' | 'TRAFFIC';
   timeWindowMinutes: number;
   metric: 'avg' | 'p75' | 'p90' | 'p95' | 'p99' | null;
   thresholdType: 'FIXED_VALUE' | 'PERCENTAGE_CHANGE';
   thresholdValue: number;
   direction: 'ABOVE' | 'BELOW';
+  severity: 'INFO' | 'WARNING' | 'CRITICAL';
   state: 'NORMAL' | 'PENDING' | 'FIRING' | 'RECOVERING';
   stateChangedAt: string | null;
   confirmationMinutes: number;
@@ -105,12 +107,14 @@ export async function fetchEnabledRules(pg: PostgresDatabasePool): Promise<Metri
       , "organization_id" as "organizationId"
       , "project_id" as "projectId"
       , "target_id" as "targetId"
+      , "name"
       , "type"
       , "time_window_minutes" as "timeWindowMinutes"
       , "metric"
       , "threshold_type" as "thresholdType"
       , "threshold_value" as "thresholdValue"
       , "direction"
+      , "severity"
       , "state"
       , to_json("state_changed_at") as "stateChangedAt"
       , "confirmation_minutes" as "confirmationMinutes"
@@ -183,14 +187,23 @@ export async function queryClickHouseWindows(
   };
 }
 
+export type OnStateTransition = (args: {
+  rule: MetricAlertRuleRow;
+  fromState: MetricAlertRuleRow['state'];
+  toState: MetricAlertRuleRow['state'];
+  currentValue: number;
+  previousValue: number;
+}) => Promise<void>;
+
 export async function evaluateRule(args: {
   rule: MetricAlertRuleRow;
   current: ClickHouseWindowRow;
   previous: ClickHouseWindowRow;
   pg: PostgresDatabasePool;
   logger: Logger;
+  onTransition?: OnStateTransition;
 }): Promise<void> {
-  const { rule, current, previous, pg, logger } = args;
+  const { rule, current, previous, pg, logger, onTransition } = args;
   const now = new Date();
 
   const currentValue = extractMetricValue(current, rule);
@@ -220,7 +233,13 @@ export async function evaluateRule(args: {
             )
           `);
           logger.info({ ruleId: rule.id }, 'Alert rule entered FIRING state');
-          // TODO: Send notifications to all channels
+          await onTransition?.({
+            rule,
+            fromState: 'PENDING',
+            toState: 'FIRING',
+            currentValue,
+            previousValue,
+          });
         }
         break;
       }
@@ -267,7 +286,13 @@ export async function evaluateRule(args: {
             WHERE "metric_alert_rule_id" = ${rule.id} AND "resolved_at" IS NULL
           `);
           logger.info({ ruleId: rule.id }, 'Alert rule resolved, back to NORMAL');
-          // TODO: Send resolved notifications to all channels
+          await onTransition?.({
+            rule,
+            fromState: 'RECOVERING',
+            toState: 'NORMAL',
+            currentValue,
+            previousValue,
+          });
         }
         break;
       }
