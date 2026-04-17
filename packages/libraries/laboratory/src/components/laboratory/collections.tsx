@@ -110,6 +110,7 @@ export const CollectionItem = (props: { collection: LaboratoryCollection }) => {
                   e.stopPropagation();
 
                   setIsEditing(false);
+                  setEditedName(props.collection.name);
                 }}
               >
                 <XIcon />

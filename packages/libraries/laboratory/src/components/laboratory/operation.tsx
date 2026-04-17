@@ -6,7 +6,6 @@ import {
   CircleXIcon,
   ClockIcon,
   FileTextIcon,
-  FolderIcon,
   HistoryIcon,
   MoreHorizontalIcon,
   NetworkIcon,
@@ -21,6 +20,7 @@ import { compressToEncodedURIComponent } from 'lz-string';
 import * as monaco from 'monaco-editor/esm/vs/editor/editor.api';
 import { toast } from 'sonner';
 import { z } from 'zod';
+import { Input } from '@/components/ui/input';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { QueryPlanSchema } from '@/lib/query-plan/schema';
 import { DropdownMenuTrigger } from '@radix-ui/react-dropdown-menu';
@@ -45,15 +45,8 @@ import {
   DialogTitle,
 } from '../ui/dialog';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem } from '../ui/dropdown-menu';
-import {
-  Empty,
-  EmptyContent,
-  EmptyDescription,
-  EmptyHeader,
-  EmptyMedia,
-  EmptyTitle,
-} from '../ui/empty';
-import { Field, FieldGroup, FieldLabel } from '../ui/field';
+import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from '../ui/empty';
+import { Field, FieldError, FieldGroup, FieldLabel } from '../ui/field';
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '../ui/resizable';
 import { ScrollArea, ScrollBar } from '../ui/scroll-area';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
@@ -469,7 +462,7 @@ export const Query = (props: {
     updateActiveOperation,
     collections,
     addOperationToCollection,
-    openAddCollectionDialog,
+    addCollection,
     addHistory,
     stopActiveOperation,
     addResponseToHistory,
@@ -610,15 +603,34 @@ export const Query = (props: {
         return;
       }
 
-      addOperationToCollection(value.collectionId, {
-        id: operation.id ?? '',
-        name: operation.name ?? '',
-        query: operation.query ?? '',
-        variables: operation.variables ?? '',
-        headers: operation.headers ?? '',
-        extensions: operation.extensions ?? '',
-        description: '',
-      });
+      const collection = collections.find(c => c.id === value.collectionId);
+
+      if (!collection) {
+        addCollection({
+          name: value.collectionId,
+          operations: [
+            {
+              id: operation.id ?? '',
+              name: operation.name ?? '',
+              query: operation.query ?? '',
+              variables: operation.variables ?? '',
+              headers: operation.headers ?? '',
+              extensions: operation.extensions ?? '',
+              description: '',
+            },
+          ],
+        });
+      } else {
+        addOperationToCollection(value.collectionId, {
+          id: operation.id ?? '',
+          name: operation.name ?? '',
+          query: operation.query ?? '',
+          variables: operation.variables ?? '',
+          headers: operation.headers ?? '',
+          extensions: operation.extensions ?? '',
+          description: '',
+        });
+      }
 
       setIsSaveToCollectionDialogOpen(false);
     },
@@ -666,15 +678,15 @@ export const Query = (props: {
             <DialogDescription>Save the current operation to a collection.</DialogDescription>
           </DialogHeader>
           <div className="grid gap-4">
-            {collections.length > 0 ? (
-              <form
-                id="save-to-collection"
-                onSubmit={e => {
-                  e.preventDefault();
-                  void saveToCollectionForm.handleSubmit();
-                }}
-              >
-                <FieldGroup>
+            <form
+              id="save-to-collection"
+              onSubmit={e => {
+                e.preventDefault();
+                void saveToCollectionForm.handleSubmit();
+              }}
+            >
+              <FieldGroup>
+                {collections.length > 0 ? (
                   <saveToCollectionForm.Field name="collectionId">
                     {field => {
                       const isInvalid = field.state.meta.isTouched && !field.state.meta.isValid;
@@ -702,27 +714,32 @@ export const Query = (props: {
                       );
                     }}
                   </saveToCollectionForm.Field>
-                </FieldGroup>
-              </form>
-            ) : (
-              <Empty className="px-0! bg-card w-full">
-                <EmptyHeader>
-                  <EmptyMedia variant="icon">
-                    <FolderIcon className="text-muted-foreground size-6" />
-                  </EmptyMedia>
-                  <EmptyTitle className="text-base">No collections yet</EmptyTitle>
-                  <EmptyDescription className="text-xs">
-                    You haven't created any collections yet. Get started by adding your first
-                    collection.
-                  </EmptyDescription>
-                </EmptyHeader>
-                <EmptyContent>
-                  <Button variant="secondary" size="sm" onClick={openAddCollectionDialog}>
-                    Add collection
-                  </Button>
-                </EmptyContent>
-              </Empty>
-            )}
+                ) : (
+                  <saveToCollectionForm.Field name="collectionId">
+                    {field => {
+                      const isInvalid = field.state.meta.isTouched && !field.state.meta.isValid;
+
+                      return (
+                        <Field data-invalid={isInvalid}>
+                          <FieldLabel htmlFor={field.name}>New collection name</FieldLabel>
+                          <Input
+                            id={field.name}
+                            name={field.name}
+                            value={field.state.value}
+                            onBlur={field.handleBlur}
+                            onChange={e => field.handleChange(e.target.value)}
+                            aria-invalid={isInvalid}
+                            placeholder="Enter name of the collection"
+                            autoComplete="off"
+                          />
+                          {isInvalid && <FieldError errors={field.state.meta.errors} />}
+                        </Field>
+                      );
+                    }}
+                  </saveToCollectionForm.Field>
+                )}
+              </FieldGroup>
+            </form>
           </div>
           <DialogFooter>
             <DialogClose asChild>
