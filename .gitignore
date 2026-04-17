@@ -142,3 +142,5 @@ docker/docker-compose.override.yml
 test-results/
 
 target
+Cargo.lock
+Cargo.lock

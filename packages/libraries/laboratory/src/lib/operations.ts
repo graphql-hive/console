@@ -3,6 +3,7 @@ import {
   DocumentNode,
   ExecutionResult,
   getOperationAST,
+  GraphQLError,
   Kind,
   parse,
   type GraphQLSchema,
@@ -459,43 +460,58 @@ export const useOperations = (
         },
       }));
 
-      const response = await executor({
-        document,
-        variables,
-        extensions: {
-          ...extensions,
-          headers: mergedHeaders,
-        },
-        signal: abortController.signal,
-      });
+      try {
+        const response = await executor({
+          document,
+          operationName: options?.operationName,
+          variables,
+          extensions: {
+            ...extensions,
+            headers: mergedHeaders,
+          },
+          signal: abortController.signal,
+        });
 
-      if (isAsyncIterable(response)) {
-        try {
-          for await (const item of response) {
-            options?.onResponse?.(JSON.stringify(item ?? {}));
+        if (isAsyncIterable(response)) {
+          try {
+            for await (const item of response) {
+              options?.onResponse?.(JSON.stringify(item ?? {}));
+            }
+          } finally {
+            setStopOperationsFunctions(prev => {
+              const newStopOperationsFunctions = { ...prev };
+              delete newStopOperationsFunctions[activeOperation.id];
+              return newStopOperationsFunctions;
+            });
           }
-        } finally {
-          setStopOperationsFunctions(prev => {
-            const newStopOperationsFunctions = { ...prev };
-            delete newStopOperationsFunctions[activeOperation.id];
-            return newStopOperationsFunctions;
-          });
+
+          return null;
         }
 
-        return null;
+        if (response.extensions?.response?.body) {
+          delete response.extensions.response.body;
+        }
+
+        setStopOperationsFunctions(prev => {
+          const newStopOperationsFunctions = { ...prev };
+          delete newStopOperationsFunctions[activeOperation.id];
+          return newStopOperationsFunctions;
+        });
+
+        return response;
+      } catch (error) {
+        setStopOperationsFunctions(prev => {
+          const newStopOperationsFunctions = { ...prev };
+          delete newStopOperationsFunctions[activeOperation.id];
+          return newStopOperationsFunctions;
+        });
+
+        if (error instanceof Error) {
+          return new GraphQLError(error.message);
+        }
+
+        return new GraphQLError('An unknown error occurred');
       }
-
-      if (response.extensions?.response?.body) {
-        delete response.extensions.response.body;
-      }
-
-      setStopOperationsFunctions(prev => {
-        const newStopOperationsFunctions = { ...prev };
-        delete newStopOperationsFunctions[activeOperation.id];
-        return newStopOperationsFunctions;
-      });
-
-      return response;
     },
     [activeOperation, props.preflightApi, props.envApi, props.pluginsApi, props.settingsApi],
   );

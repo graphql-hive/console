@@ -1,12 +1,20 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
+  CheckIcon,
   FolderIcon,
   FolderOpenIcon,
   FolderPlusIcon,
+  PencilIcon,
   SearchIcon,
   TrashIcon,
   XIcon,
 } from 'lucide-react';
+import {
+  InputGroup,
+  InputGroupAddon,
+  InputGroupButton,
+  InputGroupInput,
+} from '@/components/ui/input-group';
 import { TooltipTrigger } from '@radix-ui/react-tooltip';
 import type { LaboratoryCollection, LaboratoryCollectionOperation } from '../../lib/collections';
 import { cn } from '../../lib/utils';
@@ -44,6 +52,7 @@ export const CollectionItem = (props: { collection: LaboratoryCollection }) => {
     addOperation,
     setActiveOperation,
     deleteCollection,
+    updateCollection,
     deleteOperationFromCollection,
     addTab,
     setActiveTab,
@@ -51,67 +60,155 @@ export const CollectionItem = (props: { collection: LaboratoryCollection }) => {
   } = useLaboratory();
 
   const [isOpen, setIsOpen] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editedName, setEditedName] = useState(props.collection.name);
+
+  const hasActiveOperation = useMemo(() => {
+    return props.collection.operations.some(operation => operation.id === activeOperation?.id);
+  }, [props.collection.operations, activeOperation]);
+
+  useEffect(() => {
+    if (hasActiveOperation) {
+      setIsOpen(true);
+    }
+  }, [hasActiveOperation]);
 
   return (
     <Collapsible open={isOpen} onOpenChange={setIsOpen}>
       <CollapsibleTrigger asChild>
-        <Button
-          variant="ghost"
-          className="bg-background group sticky top-0 w-full justify-start px-2"
-          size="sm"
-        >
-          {isOpen ? (
-            <FolderOpenIcon className="text-muted-foreground size-4" />
-          ) : (
-            <FolderIcon className="text-muted-foreground size-4" />
-          )}
-          {props.collection.name}
-          {checkPermissions?.('collections:delete') && (
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <AlertDialog>
-                  <AlertDialogTrigger asChild>
+        {isEditing ? (
+          <InputGroup className="!bg-accent/50 h-8 border-none">
+            <InputGroupAddon className="pl-2.5">
+              {isOpen ? (
+                <FolderOpenIcon className="text-muted-foreground size-4" />
+              ) : (
+                <FolderIcon className="text-muted-foreground size-4" />
+              )}
+            </InputGroupAddon>
+            <InputGroupInput
+              autoFocus
+              defaultValue={editedName}
+              className="!pl-1.5 font-medium"
+              onChange={e => setEditedName(e.target.value)}
+              onKeyDown={e => {
+                if (e.key === 'Enter') {
+                  updateCollection(props.collection.id, {
+                    name: editedName,
+                  });
+                  setIsEditing(false);
+                }
+                if (e.key === 'Escape') {
+                  setEditedName(props.collection.name);
+                  setIsEditing(false);
+                }
+              }}
+            />
+            <InputGroupAddon align="inline-end">
+              <InputGroupButton
+                className="p-1!"
+                onClick={e => {
+                  e.stopPropagation();
+
+                  updateCollection(props.collection.id, {
+                    name: editedName,
+                  });
+
+                  setIsEditing(false);
+                }}
+              >
+                <CheckIcon />
+              </InputGroupButton>
+              <InputGroupButton
+                className="p-1!"
+                onClick={e => {
+                  e.stopPropagation();
+
+                  setIsEditing(false);
+                  setEditedName(props.collection.name);
+                }}
+              >
+                <XIcon />
+              </InputGroupButton>
+            </InputGroupAddon>
+          </InputGroup>
+        ) : (
+          <Button
+            variant="ghost"
+            className="bg-background !hover:bg-accent/50 group sticky top-0 w-full justify-start px-2"
+            size="sm"
+          >
+            {isOpen ? (
+              <FolderOpenIcon className="text-muted-foreground size-4" />
+            ) : (
+              <FolderIcon className="text-muted-foreground size-4" />
+            )}
+            {props.collection.name}
+            <div className="ml-auto flex items-center gap-2">
+              {checkPermissions?.('collections:update') && (
+                <Tooltip>
+                  <TooltipTrigger>
                     <Button
                       variant="link"
-                      className="text-muted-foreground hover:text-destructive p-1! pr-0! ml-auto opacity-0 transition-opacity group-hover:opacity-100"
+                      className="text-muted-foreground p-1! pr-0! opacity-0 transition-opacity group-hover:opacity-100"
                       onClick={e => {
                         e.stopPropagation();
+                        setIsEditing(true);
                       }}
                     >
-                      <TrashIcon />
+                      <PencilIcon />
                     </Button>
-                  </AlertDialogTrigger>
-                  <AlertDialogContent>
-                    <AlertDialogHeader>
-                      <AlertDialogTitle>
-                        Are you sure you want to delete collection?
-                      </AlertDialogTitle>
-                      <AlertDialogDescription>
-                        {props.collection.name} will be permanently deleted. All operations in this
-                        collection will be deleted as well.
-                      </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                      <AlertDialogCancel>Cancel</AlertDialogCancel>
-                      <AlertDialogAction asChild>
+                  </TooltipTrigger>
+                  <TooltipContent>Edit collection</TooltipContent>
+                </Tooltip>
+              )}
+              {checkPermissions?.('collections:delete') && (
+                <Tooltip>
+                  <TooltipTrigger>
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
                         <Button
-                          variant="destructive"
+                          variant="link"
+                          className="text-muted-foreground hover:text-destructive p-1! pr-0! opacity-0 transition-opacity group-hover:opacity-100"
                           onClick={e => {
                             e.stopPropagation();
-                            deleteCollection(props.collection.id);
                           }}
                         >
-                          Delete
+                          <TrashIcon />
                         </Button>
-                      </AlertDialogAction>
-                    </AlertDialogFooter>
-                  </AlertDialogContent>
-                </AlertDialog>
-              </TooltipTrigger>
-              <TooltipContent>Delete collection</TooltipContent>
-            </Tooltip>
-          )}
-        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>
+                            Are you sure you want to delete collection?
+                          </AlertDialogTitle>
+                          <AlertDialogDescription>
+                            {props.collection.name} will be permanently deleted. All operations in
+                            this collection will be deleted as well.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Cancel</AlertDialogCancel>
+                          <AlertDialogAction asChild>
+                            <Button
+                              variant="destructive"
+                              onClick={e => {
+                                e.stopPropagation();
+                                deleteCollection(props.collection.id);
+                              }}
+                            >
+                              Delete
+                            </Button>
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                  </TooltipTrigger>
+                  <TooltipContent>Delete collection</TooltipContent>
+                </Tooltip>
+              )}
+            </div>
+          </Button>
+        )}
       </CollapsibleTrigger>
       <CollapsibleContent className={cn('border-border ml-4 flex flex-col gap-1 border-l pl-2')}>
         {isOpen &&

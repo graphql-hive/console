@@ -18,7 +18,7 @@
     "@dnd-kit/sortable": "^10.0.0",
     "@dnd-kit/utilities": "^3.2.2",
     "@fastify/cors": "11.2.0",
-    "@fastify/static": "9.0.0",
+    "@fastify/static": "9.1.1",
     "@fastify/vite": "8.4.1",
     "@graphiql/plugin-explorer": "4.0.0-alpha.2",
     "@graphiql/react": "1.0.0-alpha.4",

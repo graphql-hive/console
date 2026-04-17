@@ -648,157 +648,6 @@ export const Laboratory = (
         ref={setContainer}
       >
         <Toaster richColors closeButton position="top-right" theme={props.theme} />
-        <Dialog open={isUpdateEndpointDialogOpen} onOpenChange={setIsUpdateEndpointDialogOpen}>
-          <DialogContent className="sm:max-w-[425px]">
-            <DialogHeader>
-              <DialogTitle>Update endpoint</DialogTitle>
-              <DialogDescription>Update the endpoint of your laboratory.</DialogDescription>
-            </DialogHeader>
-            <div className="grid gap-4">
-              <form
-                id="update-endpoint-form"
-                onSubmit={e => {
-                  e.preventDefault();
-                  void updateEndpointForm.handleSubmit();
-                }}
-              >
-                <FieldGroup>
-                  <updateEndpointForm.Field name="endpoint">
-                    {field => {
-                      const isInvalid = field.state.meta.isTouched && !field.state.meta.isValid;
-
-                      return (
-                        <Input
-                          id={field.name}
-                          name={field.name}
-                          value={field.state.value}
-                          onBlur={field.handleBlur}
-                          onChange={e => field.handleChange(e.target.value)}
-                          aria-invalid={isInvalid}
-                          placeholder="Enter endpoint"
-                          autoComplete="off"
-                        />
-                      );
-                    }}
-                  </updateEndpointForm.Field>
-                </FieldGroup>
-              </form>
-            </div>
-            <DialogFooter>
-              <DialogClose asChild>
-                <Button variant="outline">Cancel</Button>
-              </DialogClose>
-              <Button type="submit" form="update-endpoint-form">
-                Update endpoint
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
-        <PreflightPromptModal
-          open={isPreflightPromptModalOpen}
-          onOpenChange={setIsPreflightPromptModalOpen}
-          {...preflightPromptModalProps}
-        />
-        <Dialog open={isAddCollectionDialogOpen} onOpenChange={setIsAddCollectionDialogOpen}>
-          <DialogContent className="sm:max-w-[425px]">
-            <DialogHeader>
-              <DialogTitle>Add collection</DialogTitle>
-              <DialogDescription>
-                Add a new collection of operations to your laboratory.
-              </DialogDescription>
-            </DialogHeader>
-            <div className="grid gap-4">
-              <form
-                id="add-collection-form"
-                onSubmit={e => {
-                  e.preventDefault();
-                  void addCollectionForm.handleSubmit();
-                }}
-              >
-                <FieldGroup>
-                  <addCollectionForm.Field name="name">
-                    {field => {
-                      const isInvalid = field.state.meta.isTouched && !field.state.meta.isValid;
-                      return (
-                        <Field data-invalid={isInvalid}>
-                          <FieldLabel htmlFor={field.name}>Name</FieldLabel>
-                          <Input
-                            id={field.name}
-                            name={field.name}
-                            value={field.state.value}
-                            onBlur={field.handleBlur}
-                            onChange={e => field.handleChange(e.target.value)}
-                            aria-invalid={isInvalid}
-                            placeholder="Enter name of the collection"
-                            autoComplete="off"
-                          />
-                          {isInvalid && <FieldError errors={field.state.meta.errors} />}
-                        </Field>
-                      );
-                    }}
-                  </addCollectionForm.Field>
-                </FieldGroup>
-              </form>
-            </div>
-            <DialogFooter>
-              <DialogClose asChild>
-                <Button variant="outline">Cancel</Button>
-              </DialogClose>
-              <Button type="submit" form="add-collection-form">
-                Add collection
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
-        <Dialog open={isAddTestDialogOpen} onOpenChange={setIsAddTestDialogOpen}>
-          <DialogContent className="sm:max-w-[425px]">
-            <DialogHeader>
-              <DialogTitle>Add test</DialogTitle>
-              <DialogDescription>Add a new test to your laboratory.</DialogDescription>
-            </DialogHeader>
-            <div className="grid gap-4">
-              <form
-                id="add-test-form"
-                onSubmit={e => {
-                  e.preventDefault();
-                  void addTestForm.handleSubmit();
-                }}
-              >
-                <FieldGroup>
-                  <addTestForm.Field name="name">
-                    {field => {
-                      const isInvalid = field.state.meta.isTouched && !field.state.meta.isValid;
-                      return (
-                        <Field data-invalid={isInvalid}>
-                          <FieldLabel htmlFor={field.name}>Name</FieldLabel>
-                          <Input
-                            id={field.name}
-                            name={field.name}
-                            value={field.state.value}
-                            onBlur={field.handleBlur}
-                            onChange={e => field.handleChange(e.target.value)}
-                            aria-invalid={isInvalid}
-                            placeholder="Enter name of the test"
-                            autoComplete="off"
-                          />
-                          {isInvalid && <FieldError errors={field.state.meta.errors} />}
-                        </Field>
-                      );
-                    }}
-                  </addTestForm.Field>
-                </FieldGroup>
-              </form>
-            </div>
-            <DialogFooter>
-              <DialogClose asChild>
-                <Button variant="outline">Cancel</Button>
-              </DialogClose>
-              <Button type="submit" form="add-test-form">
-                Add test
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
 
         <LaboratoryProvider
           {...props}
@@ -822,6 +671,157 @@ export const Laboratory = (
           isFullScreen={isFullScreen}
           checkPermissions={checkPermissions}
         >
+          <Dialog open={isUpdateEndpointDialogOpen} onOpenChange={setIsUpdateEndpointDialogOpen}>
+            <DialogContent className="sm:max-w-[425px]">
+              <DialogHeader>
+                <DialogTitle>Update endpoint</DialogTitle>
+                <DialogDescription>Update the endpoint of your laboratory.</DialogDescription>
+              </DialogHeader>
+              <div className="grid gap-4">
+                <form
+                  id="update-endpoint-form"
+                  onSubmit={e => {
+                    e.preventDefault();
+                    void updateEndpointForm.handleSubmit();
+                  }}
+                >
+                  <FieldGroup>
+                    <updateEndpointForm.Field name="endpoint">
+                      {field => {
+                        const isInvalid = field.state.meta.isTouched && !field.state.meta.isValid;
+
+                        return (
+                          <Input
+                            id={field.name}
+                            name={field.name}
+                            value={field.state.value}
+                            onBlur={field.handleBlur}
+                            onChange={e => field.handleChange(e.target.value)}
+                            aria-invalid={isInvalid}
+                            placeholder="Enter endpoint"
+                            autoComplete="off"
+                          />
+                        );
+                      }}
+                    </updateEndpointForm.Field>
+                  </FieldGroup>
+                </form>
+              </div>
+              <DialogFooter>
+                <DialogClose asChild>
+                  <Button variant="outline">Cancel</Button>
+                </DialogClose>
+                <Button type="submit" form="update-endpoint-form">
+                  Update endpoint
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+          <PreflightPromptModal
+            open={isPreflightPromptModalOpen}
+            onOpenChange={setIsPreflightPromptModalOpen}
+            {...preflightPromptModalProps}
+          />
+          <Dialog open={isAddCollectionDialogOpen} onOpenChange={setIsAddCollectionDialogOpen}>
+            <DialogContent className="sm:max-w-[425px]">
+              <DialogHeader>
+                <DialogTitle>Add collection</DialogTitle>
+                <DialogDescription>
+                  Add a new collection of operations to your laboratory.
+                </DialogDescription>
+              </DialogHeader>
+              <div className="grid gap-4">
+                <form
+                  id="add-collection-form"
+                  onSubmit={e => {
+                    e.preventDefault();
+                    void addCollectionForm.handleSubmit();
+                  }}
+                >
+                  <FieldGroup>
+                    <addCollectionForm.Field name="name">
+                      {field => {
+                        const isInvalid = field.state.meta.isTouched && !field.state.meta.isValid;
+                        return (
+                          <Field data-invalid={isInvalid}>
+                            <FieldLabel htmlFor={field.name}>Name</FieldLabel>
+                            <Input
+                              id={field.name}
+                              name={field.name}
+                              value={field.state.value}
+                              onBlur={field.handleBlur}
+                              onChange={e => field.handleChange(e.target.value)}
+                              aria-invalid={isInvalid}
+                              placeholder="Enter name of the collection"
+                              autoComplete="off"
+                            />
+                            {isInvalid && <FieldError errors={field.state.meta.errors} />}
+                          </Field>
+                        );
+                      }}
+                    </addCollectionForm.Field>
+                  </FieldGroup>
+                </form>
+              </div>
+              <DialogFooter>
+                <DialogClose asChild>
+                  <Button variant="outline">Cancel</Button>
+                </DialogClose>
+                <Button type="submit" form="add-collection-form">
+                  Add collection
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+          <Dialog open={isAddTestDialogOpen} onOpenChange={setIsAddTestDialogOpen}>
+            <DialogContent className="sm:max-w-[425px]">
+              <DialogHeader>
+                <DialogTitle>Add test</DialogTitle>
+                <DialogDescription>Add a new test to your laboratory.</DialogDescription>
+              </DialogHeader>
+              <div className="grid gap-4">
+                <form
+                  id="add-test-form"
+                  onSubmit={e => {
+                    e.preventDefault();
+                    void addTestForm.handleSubmit();
+                  }}
+                >
+                  <FieldGroup>
+                    <addTestForm.Field name="name">
+                      {field => {
+                        const isInvalid = field.state.meta.isTouched && !field.state.meta.isValid;
+                        return (
+                          <Field data-invalid={isInvalid}>
+                            <FieldLabel htmlFor={field.name}>Name</FieldLabel>
+                            <Input
+                              id={field.name}
+                              name={field.name}
+                              value={field.state.value}
+                              onBlur={field.handleBlur}
+                              onChange={e => field.handleChange(e.target.value)}
+                              aria-invalid={isInvalid}
+                              placeholder="Enter name of the test"
+                              autoComplete="off"
+                            />
+                            {isInvalid && <FieldError errors={field.state.meta.errors} />}
+                          </Field>
+                        );
+                      }}
+                    </addTestForm.Field>
+                  </FieldGroup>
+                </form>
+              </div>
+              <DialogFooter>
+                <DialogClose asChild>
+                  <Button variant="outline">Cancel</Button>
+                </DialogClose>
+                <Button type="submit" form="add-test-form">
+                  Add test
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
           <LaboratoryContent />
         </LaboratoryProvider>
       </div>
