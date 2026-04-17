@@ -1,8 +1,16 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import type { GraphQLSchema } from 'graphql';
-import { createClient } from 'graphql-ws';
+import {
+  DocumentNode,
+  ExecutionResult,
+  getOperationAST,
+  Kind,
+  parse,
+  type GraphQLSchema,
+} from 'graphql';
 import { decompressFromEncodedURIComponent } from 'lz-string';
 import { v4 as uuidv4 } from 'uuid';
+import { isAsyncIterable } from '@/lib/utils';
+import { SubscriptionProtocol, UrlLoader } from '@graphql-tools/url-loader';
 import { LaboratoryPermission, LaboratoryPermissions } from '../components/laboratory/context';
 import type {
   LaboratoryCollectionOperation,
@@ -22,6 +30,14 @@ import { LaboratoryPlugin, LaboratoryPluginsActions, LaboratoryPluginsState } fr
 import type { LaboratoryPreflightActions, LaboratoryPreflightState } from './preflight';
 import type { LaboratorySettingsActions, LaboratorySettingsState } from './settings';
 import type { LaboratoryTabOperation, LaboratoryTabsActions, LaboratoryTabsState } from './tabs';
+
+function getOperationType(query: string): 'query' | 'mutation' | 'subscription' | null {
+  try {
+    return getOperationAST(parse(query))?.operation ?? null;
+  } catch {
+    return null;
+  }
+}
 
 export interface LaboratoryOperation {
   id: string;
@@ -66,7 +82,7 @@ export interface LaboratoryOperationsActions {
       operationName?: string;
       onResponse?: (response: string) => void;
     },
-  ) => Promise<Response | null>;
+  ) => Promise<ExecutionResult | null>;
   stopActiveOperation: (() => void) | null;
   isActiveOperationLoading: boolean;
   isOperationLoading: (operationId: string) => boolean;
@@ -79,6 +95,27 @@ export interface LaboratoryOperationsCallbacks {
   onOperationUpdate?: (operation: LaboratoryOperation) => void;
   onOperationDelete?: (operation: LaboratoryOperation) => void;
 }
+
+const getOperationWithFragments = (
+  document: DocumentNode,
+  operationName?: string,
+): DocumentNode => {
+  const definitions = document.definitions.filter(definition => {
+    if (
+      definition.kind === Kind.OPERATION_DEFINITION &&
+      operationName &&
+      definition.name?.value !== operationName
+    ) {
+      return false;
+    }
+    return true;
+  });
+
+  return {
+    kind: Kind.DOCUMENT,
+    definitions,
+  };
+};
 
 export const useOperations = (
   props: {
@@ -326,6 +363,8 @@ export const useOperations = (
     return activeOperation ? isOperationLoading(activeOperation.id) : false;
   }, [activeOperation, isOperationLoading]);
 
+  const loader = useMemo(() => new UrlLoader(), []);
+
   const runActiveOperation = useCallback(
     async (
       endpoint: string,
@@ -337,7 +376,7 @@ export const useOperations = (
       },
       plugins: LaboratoryPlugin[] = props.pluginsApi?.plugins ?? [],
       pluginsState: Record<string, any> = props.pluginsApi?.pluginsState ?? {},
-    ) => {
+    ): Promise<ExecutionResult | null> => {
       if (!activeOperation?.query) {
         return null;
       }
@@ -393,101 +432,76 @@ export const useOperations = (
           )
         : {};
 
-      if (activeOperation.query.startsWith('subscription')) {
-        const client = createClient({
-          url: endpoint.replace('http', 'ws'),
-          connectionParams: {
-            ...mergedHeaders,
-          },
-        });
+      const executor = loader.getExecutorAsync(endpoint, {
+        subscriptionsEndpoint: endpoint,
+        subscriptionsProtocol:
+          (props.settingsApi?.settings.subscriptions.protocol as SubscriptionProtocol) ??
+          SubscriptionProtocol.GRAPHQL_SSE,
+        credentials: props.settingsApi?.settings.fetch.credentials,
+        specifiedByUrl: true,
+        directiveIsRepeatable: true,
+        inputValueDeprecation: true,
+        retry: props.settingsApi?.settings.fetch.retry,
+        timeout: props.settingsApi?.settings.fetch.timeout,
+        useGETForQueries: props.settingsApi?.settings.fetch.useGETForQueries,
+        exposeHTTPDetailsInExtensions: true,
+        fetch,
+      });
 
-        client.on('connected', () => {
-          console.log('connected');
-        });
-
-        client.on('error', () => {
-          setStopOperationsFunctions(prev => {
-            const newStopOperationsFunctions = { ...prev };
-            delete newStopOperationsFunctions[activeOperation.id];
-            return newStopOperationsFunctions;
-          });
-        });
-
-        client.on('closed', () => {
-          setStopOperationsFunctions(prev => {
-            const newStopOperationsFunctions = { ...prev };
-            delete newStopOperationsFunctions[activeOperation.id];
-            return newStopOperationsFunctions;
-          });
-        });
-
-        client.subscribe(
-          {
-            query: activeOperation.query,
-            variables,
-            extensions,
-          },
-          {
-            next: message => {
-              options?.onResponse?.(JSON.stringify(message ?? {}));
-            },
-            error: () => {},
-            complete: () => {},
-          },
-        );
-
-        setStopOperationsFunctions(prev => ({
-          ...prev,
-          [activeOperation.id]: () => {
-            void client.dispose();
-            setStopOperationsFunctions(prev => {
-              const newStopOperationsFunctions = { ...prev };
-              delete newStopOperationsFunctions[activeOperation.id];
-              return newStopOperationsFunctions;
-            });
-          },
-        }));
-
-        return Promise.resolve(new Response());
-      }
+      const document = getOperationWithFragments(parse(activeOperation.query));
 
       const abortController = new AbortController();
 
-      const response = fetch(endpoint, {
-        method: 'POST',
-        credentials: props.settingsApi?.settings.fetch.credentials,
-        body: JSON.stringify({
-          query: activeOperation.query,
-          operationName: options?.operationName,
-          variables,
-          extensions,
-        }),
-        headers: {
-          ...mergedHeaders,
-          'Content-Type': 'application/json',
-        },
-        signal: abortController.signal,
-      }).finally(() => {
-        setStopOperationsFunctions(prev => {
-          const newStopOperationsFunctions = { ...prev };
-          delete newStopOperationsFunctions[activeOperation.id];
-
-          return newStopOperationsFunctions;
-        });
-      });
-
       setStopOperationsFunctions(prev => ({
         ...prev,
-        [activeOperation.id]: () => abortController.abort(),
+        [activeOperation.id]: () => {
+          abortController.abort();
+        },
       }));
+
+      const response = await executor({
+        document,
+        variables,
+        extensions: {
+          ...extensions,
+          headers: mergedHeaders,
+        },
+        signal: abortController.signal,
+      });
+
+      if (isAsyncIterable(response)) {
+        try {
+          for await (const item of response) {
+            options?.onResponse?.(JSON.stringify(item ?? {}));
+          }
+        } finally {
+          setStopOperationsFunctions(prev => {
+            const newStopOperationsFunctions = { ...prev };
+            delete newStopOperationsFunctions[activeOperation.id];
+            return newStopOperationsFunctions;
+          });
+        }
+
+        return null;
+      }
+
+      if (response.extensions?.response?.body) {
+        delete response.extensions.response.body;
+      }
+
+      setStopOperationsFunctions(prev => {
+        const newStopOperationsFunctions = { ...prev };
+        delete newStopOperationsFunctions[activeOperation.id];
+        return newStopOperationsFunctions;
+      });
 
       return response;
     },
-    [activeOperation, props.preflightApi, props.envApi, props.pluginsApi],
+    [activeOperation, props.preflightApi, props.envApi, props.pluginsApi, props.settingsApi],
   );
 
   const isOperationSubscription = useCallback((operation: LaboratoryOperation) => {
-    return operation.query?.startsWith('subscription') ?? false;
+    return getOperationType(operation.query) === 'subscription';
   }, []);
 
   const isActiveOperationSubscription = useMemo(() => {

@@ -596,11 +596,7 @@ function useLaboratoryState(props: {
     defaultHistory: historyData ?? [],
     defaultTabs,
     defaultActiveTabId: getLocalStorageState('activeTabId', null),
-    defaultSettings: getLocalStorageState('settings', {
-      fetch: {
-        credentials: 'same-origin',
-      },
-    }),
+    defaultSettings: getLocalStorageState('settings', null),
     defaultPreflight: preflight?.preflightScript?.sourceCode
       ? {
           script: preflight.preflightScript.sourceCode,

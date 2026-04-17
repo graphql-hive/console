@@ -1,37 +1,32 @@
 /// @ts-check
-import fs from 'node:fs';
+import * as fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import matter from 'gray-matter';
+import { XMLParser } from 'fast-xml-parser';
 
 const __dirname = fileURLToPath(new URL('.', import.meta.url));
 
-const productUpdatesDirectory = path.join(
-  __dirname,
-  '../packages/web/docs/src/app/product-updates',
-);
-
-const files = fs.globSync('**/*.mdx', { cwd: productUpdatesDirectory });
-const changelogRecords = [];
-
-for (const file of files) {
-  if (!file.endsWith('.mdx') || file.endsWith('index.mdx')) {
-    continue;
+const feedUrl = 'https://the-guild.dev/graphql/hive/feed.xml';
+const feed = await fetch(feedUrl).then(async res => {
+  if (res.status !== 200) {
+    console.log('skip feed building; feed is unavailable.');
+    return [];
   }
 
-  const filePath = path.join(productUpdatesDirectory, file);
-  const content = fs.readFileSync(filePath, 'utf-8');
-  const { data } = matter(content);
+  const parser = new XMLParser();
 
-  if (data.title && data.date) {
-    const pathname = file
-      .replace('.mdx', '')
-      .replace('(posts)/', '')
-      .replace(/\/page$/, '');
+  const body = await res.text();
+  const data = parser.parse(body);
+  return data['rss']?.['channel']?.['item'] ?? [];
+});
 
+const changelogRecords = [];
+
+for (const data of feed) {
+  if (data.title && data.pubDate && data.link) {
     changelogRecords.push({
-      date: new Date(data.date).toISOString().split('T')[0],
-      href: `https://the-guild.dev/graphql/hive/product-updates/${pathname}`,
+      date: new Date(data.pubDate).toISOString().split('T')[0],
+      href: data.link,
       title: data.title,
       description: data.description || '',
     });

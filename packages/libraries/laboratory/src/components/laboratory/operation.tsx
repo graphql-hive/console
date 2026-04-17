@@ -392,7 +392,7 @@ export const Response = ({ historyItem }: { historyItem?: LaboratoryHistoryReque
         )}
         {historyItem ? (
           <div className="ml-auto flex items-center gap-2">
-            {historyItem?.status && (
+            {!!historyItem?.status && (
               <Badge
                 className={cn('bg-green-400/10 text-green-500', {
                   'bg-red-400/10 text-red-500': isError,
@@ -542,16 +542,31 @@ export const Query = (props: {
         return;
       }
 
-      const status = response.status;
+      const extensionsResponse = (response.extensions?.response as {
+        status: number;
+        headers: Record<string, string>;
+      }) ?? {
+        status: 0,
+        headers: {},
+      };
+
+      delete response.extensions?.request;
+      delete response.extensions?.response;
+
+      if (Object.keys(response.extensions ?? {}).length === 0) {
+        delete response.extensions;
+      }
+
+      const status = extensionsResponse.status;
       const duration = performance.now() - startTime;
-      const responseText = await response.text();
+      const responseText = JSON.stringify(response, null, 2);
       const size = responseText.length;
 
       const newItemHistory = addHistory({
         status,
         duration,
         size,
-        headers: JSON.stringify(Object.fromEntries(response.headers.entries()), null, 2),
+        headers: JSON.stringify(extensionsResponse.headers, null, 2),
         operation,
         preflightLogs: result?.logs ?? [],
         response: responseText,
