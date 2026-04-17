@@ -87,6 +87,10 @@ export const CollectionItem = (props: { collection: LaboratoryCollection }) => {
                   });
                   setIsEditing(false);
                 }
+                if (e.key === 'Escape') {
+                  setEditedName(props.collection.name);
+                  setIsEditing(false);
+                }
               }}
             />
             <InputGroupAddon align="inline-end">
