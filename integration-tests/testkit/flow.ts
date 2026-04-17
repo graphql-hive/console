@@ -2,6 +2,9 @@ import { graphql } from './gql';
 import type {
   AddAlertChannelInput,
   AddAlertInput,
+  AddMetricAlertRuleInput,
+  DeleteMetricAlertRulesInput,
+  UpdateMetricAlertRuleInput,
   AnswerOrganizationTransferRequestInput,
   AssignMemberRoleInput,
   CreateMemberRoleInput,
@@ -643,6 +646,92 @@ export function addAlert(input: AddAlertInput, authToken: string) {
     variables: {
       input,
     },
+    authToken,
+  });
+}
+
+export function addMetricAlertRule(input: AddMetricAlertRuleInput, authToken: string) {
+  return execute({
+    document: graphql(`
+      mutation IntegrationTests_AddMetricAlertRule($input: AddMetricAlertRuleInput!) {
+        addMetricAlertRule(input: $input) {
+          ok {
+            addedMetricAlertRule {
+              id
+              name
+              type
+              metric
+              thresholdType
+              thresholdValue
+              direction
+              severity
+              state
+              timeWindowMinutes
+              confirmationMinutes
+              enabled
+              channels {
+                id
+                name
+                type
+              }
+            }
+          }
+          error {
+            message
+          }
+        }
+      }
+    `),
+    variables: { input },
+    authToken,
+  });
+}
+
+export function updateMetricAlertRule(input: UpdateMetricAlertRuleInput, authToken: string) {
+  return execute({
+    document: graphql(`
+      mutation IntegrationTests_UpdateMetricAlertRule($input: UpdateMetricAlertRuleInput!) {
+        updateMetricAlertRule(input: $input) {
+          ok {
+            updatedMetricAlertRule {
+              id
+              name
+              type
+              metric
+              thresholdType
+              thresholdValue
+              direction
+              severity
+              state
+              enabled
+            }
+          }
+          error {
+            message
+          }
+        }
+      }
+    `),
+    variables: { input },
+    authToken,
+  });
+}
+
+export function deleteMetricAlertRules(input: DeleteMetricAlertRulesInput, authToken: string) {
+  return execute({
+    document: graphql(`
+      mutation IntegrationTests_DeleteMetricAlertRules($input: DeleteMetricAlertRulesInput!) {
+        deleteMetricAlertRules(input: $input) {
+          ok {
+            deletedMetricAlertRuleIds
+          }
+          error {
+            message
+          }
+        }
+      }
+    `),
+    variables: { input },
     authToken,
   });
 }

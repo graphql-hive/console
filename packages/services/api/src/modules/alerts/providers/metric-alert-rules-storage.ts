@@ -8,29 +8,34 @@ import type {
   MetricAlertStateLogEntry,
 } from '../../../shared/entities';
 
-const MetricAlertRuleModel = zod.object({
-  id: zod.string(),
-  organizationId: zod.string(),
-  projectId: zod.string(),
-  targetId: zod.string(),
-  type: zod.enum(['LATENCY', 'ERROR_RATE', 'TRAFFIC']),
-  timeWindowMinutes: zod.number(),
-  metric: zod.enum(['avg', 'p75', 'p90', 'p95', 'p99']).nullable(),
-  thresholdType: zod.enum(['FIXED_VALUE', 'PERCENTAGE_CHANGE']),
-  thresholdValue: zod.number(),
-  direction: zod.enum(['ABOVE', 'BELOW']),
-  severity: zod.enum(['INFO', 'WARNING', 'CRITICAL']),
-  name: zod.string(),
-  createdAt: zod.string(),
-  updatedAt: zod.string(),
-  enabled: zod.boolean(),
-  lastEvaluatedAt: zod.string().nullable(),
-  lastTriggeredAt: zod.string().nullable(),
-  state: zod.enum(['NORMAL', 'PENDING', 'FIRING', 'RECOVERING']),
-  stateChangedAt: zod.string().nullable(),
-  confirmationMinutes: zod.number(),
-  savedFilterId: zod.string().nullable(),
-});
+const MetricAlertRuleModel = zod
+  .object({
+    id: zod.string(),
+    organizationId: zod.string(),
+    projectId: zod.string(),
+    targetId: zod.string(),
+    type: zod.enum(['LATENCY', 'ERROR_RATE', 'TRAFFIC']),
+    timeWindowMinutes: zod.number(),
+    metric: zod.enum(['avg', 'p75', 'p90', 'p95', 'p99']).nullable(),
+    thresholdType: zod.enum(['FIXED_VALUE', 'PERCENTAGE_CHANGE']),
+    thresholdValue: zod.number(),
+    direction: zod.enum(['ABOVE', 'BELOW']),
+    severity: zod.enum(['INFO', 'WARNING', 'CRITICAL']),
+    name: zod.string(),
+    createdAt: zod.string(),
+    updatedAt: zod.string(),
+    enabled: zod.boolean(),
+    lastEvaluatedAt: zod.string().nullable(),
+    lastTriggeredAt: zod.string().nullable(),
+    state: zod.enum(['NORMAL', 'PENDING', 'FIRING', 'RECOVERING']),
+    stateChangedAt: zod.string().nullable(),
+    confirmationMinutes: zod.number(),
+    savedFilterId: zod.string().nullable(),
+  })
+  .refine(
+    data => (data.type === 'LATENCY') === (data.metric !== null),
+    { message: 'metric must be set for LATENCY type and null for other types' },
+  );
 
 const MetricAlertIncidentModel = zod.object({
   id: zod.string(),

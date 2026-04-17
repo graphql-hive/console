@@ -1,4 +1,3 @@
-import got from 'got';
 import type { Logger } from '@graphql-hive/logger';
 import type { PostgresDatabasePool } from '@hive/postgres';
 import { psql } from '@hive/postgres';
@@ -69,7 +68,7 @@ export async function sendMetricAlertNotifications(args: {
           break;
         }
         case 'MSTEAMS_WEBHOOK': {
-          await sendTeamsNotification({ channel, event, logger });
+          await sendTeamsNotification({ channel, event, requestBroker: args.requestBroker, logger });
           break;
         }
       }
@@ -175,6 +174,7 @@ async function sendWebhookNotification(args: {
 async function sendTeamsNotification(args: {
   channel: AlertChannelRow;
   event: NotificationEvent;
+  requestBroker: RequestBroker | null;
   logger: Logger;
 }) {
   const { channel, event, logger } = args;
@@ -209,9 +209,11 @@ async function sendTeamsNotification(args: {
     ],
   };
 
-  await got.post(channel.webhookEndpoint, {
-    json: card,
-    timeout: { request: 10_000 },
+  await sendWebhook(logger, args.requestBroker, {
+    attempt: 0,
+    maxAttempts: 5,
+    endpoint: channel.webhookEndpoint,
+    data: card,
   });
 
   logger.debug({ channelId: channel.id }, 'Teams notification sent');

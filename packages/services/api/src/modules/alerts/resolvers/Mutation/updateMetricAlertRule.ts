@@ -27,6 +27,22 @@ export const updateMetricAlertRule: NonNullable<
     };
   }
 
+  // Validate metric constraint against the effective type after update
+  const effectiveType = input.type ?? existing.type;
+  const effectiveMetric = input.metric !== undefined ? input.metric : existing.metric;
+
+  if (effectiveType === 'LATENCY' && !effectiveMetric) {
+    return {
+      error: { message: 'Metric is required for LATENCY alert type.' },
+    };
+  }
+
+  if (effectiveType !== 'LATENCY' && effectiveMetric) {
+    return {
+      error: { message: 'Metric should only be set for LATENCY alert type.' },
+    };
+  }
+
   const rule = await storage.updateMetricAlertRule({
     id: input.ruleId,
     type: input.type ?? undefined,

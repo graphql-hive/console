@@ -90,6 +90,23 @@ function isThresholdBreached(
     : compareValue < rule.thresholdValue;
 }
 
+const ALERT_STATE_LOG_RETENTION_DAYS: Record<string, number> = {
+  HOBBY: 7,
+  PRO: 7,
+  ENTERPRISE: 30,
+};
+
+async function getAlertStateLogRetentionDays(
+  pg: PostgresDatabasePool,
+  organizationId: string,
+): Promise<number> {
+  const result = await pg.maybeOneFirst(psql`
+    SELECT "plan_name" FROM "organizations" WHERE "id" = ${organizationId}
+  `);
+  const planName = typeof result === 'string' ? result : 'HOBBY';
+  return ALERT_STATE_LOG_RETENTION_DAYS[planName] ?? 7;
+}
+
 function hasElapsed(stateChangedAt: string | null, minutes: number): boolean {
   if (!stateChangedAt) return true;
   const changedAt = new Date(stateChangedAt).getTime();
@@ -332,8 +349,8 @@ async function logTransition(
   value: number,
   previousValue: number,
 ) {
-  // TODO: Look up org plan to determine expires_at (7d hobby/pro, 30d enterprise)
-  const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+  const retentionDays = await getAlertStateLogRetentionDays(pg, rule.organizationId);
+  const expiresAt = new Date(Date.now() + retentionDays * 24 * 60 * 60 * 1000);
 
   await pg.query(psql`
     INSERT INTO "metric_alert_state_log" (
