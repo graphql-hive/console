@@ -1,5 +1,83 @@
 # hive
 
+## 11.0.3
+
+### Patch Changes
+
+- [#7993](https://github.com/graphql-hive/console/pull/7993)
+  [`730771f`](https://github.com/graphql-hive/console/commit/730771fb503fd91974c1494944cd5426cf74a552)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Address vulnerability
+  [GHSA-72c6-fx6q-fr5w](https://github.com/advisories/GHSA-72c6-fx6q-fr5w).
+
+- [#7988](https://github.com/graphql-hive/console/pull/7988)
+  [`d7e7025`](https://github.com/graphql-hive/console/commit/d7e7025624ba66459515778c0724a58397a5f1b4)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Address vulnerability
+  [GHSA-247c-9743-5963](https://github.com/advisories/GHSA-247c-9743-5963).
+
+- [#7961](https://github.com/graphql-hive/console/pull/7961)
+  [`40fd27d`](https://github.com/graphql-hive/console/commit/40fd27d9c060df5417c18c750b02af65451e5323)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Update
+  [`nodemailer`](https://github.com/nodemailer/nodemailer) to address vulnerability
+  [GHSA-vvjj-xcjg-gr5g](https://github.com/advisories/GHSA-vvjj-xcjg-gr5g).
+
+- [#7993](https://github.com/graphql-hive/console/pull/7993)
+  [`730771f`](https://github.com/graphql-hive/console/commit/730771fb503fd91974c1494944cd5426cf74a552)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Address vulnerability
+  [GHSA-v9ww-2j6r-98q6](https://github.com/advisories/GHSA-v9ww-2j6r-98q6).
+
+- [#7976](https://github.com/graphql-hive/console/pull/7976)
+  [`ed9ab34`](https://github.com/graphql-hive/console/commit/ed9ab34c705be4b7946dfcbede91926f00f1ed4a)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - address vulnerability
+  [GHSA-r4q5-vmmm-2653](https://github.com/advisories/GHSA-r4q5-vmmm-2653)
+
+- [#7967](https://github.com/graphql-hive/console/pull/7967)
+  [`9708f71`](https://github.com/graphql-hive/console/commit/9708f71aa3e6dcd613f3877a0777c1e72710b200)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Fix schema contract composition applying
+  `@inaccessible` on the federation types `ContextArgument` and `FieldValue` on the supergraph SDL.
+
+  This mitigates the following error in apollo-router upon processing the supergraph:
+
+  ```
+  could not create router: Api error(s): The supergraph schema failed to produce a valid API schema: The following errors occurred:
+    - Core feature type `join__ContextArgument` cannot use @inaccessible.
+    - Core feature type `join__FieldValue` cannot use @inaccessible.
+  ```
+
+- [#7993](https://github.com/graphql-hive/console/pull/7993)
+  [`730771f`](https://github.com/graphql-hive/console/commit/730771fb503fd91974c1494944cd5426cf74a552)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Address vulnerability
+  [GHSA-xq3m-2v4x-88gg](https://github.com/advisories/GHSA-xq3m-2v4x-88gg).
+
+- [#7978](https://github.com/graphql-hive/console/pull/7978)
+  [`9c6989c`](https://github.com/graphql-hive/console/commit/9c6989cd929df3b071cba2c5652cc18988127897)
+  Thanks [@jdolle](https://github.com/jdolle)! - Add schema linting support for type extensions
+
+- [#7993](https://github.com/graphql-hive/console/pull/7993)
+  [`730771f`](https://github.com/graphql-hive/console/commit/730771fb503fd91974c1494944cd5426cf74a552)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Address vulnerability
+  [CVE-2026-6414](https://github.com/advisories/GHSA-x428-ghpx-8j92).
+
+- [#7988](https://github.com/graphql-hive/console/pull/7988)
+  [`d7e7025`](https://github.com/graphql-hive/console/commit/d7e7025624ba66459515778c0724a58397a5f1b4)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Address vulnerability
+  [GHSA-39q2-94rc-95cp](https://github.com/advisories/GHSA-39q2-94rc-95cp).
+
+- [#7980](https://github.com/graphql-hive/console/pull/7980)
+  [`c46b2f2`](https://github.com/graphql-hive/console/commit/c46b2f221936ca60e49bce3a2fea25bb40378266)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Address vulnerability
+  [GHSA-fvcv-3m26-pcqx](https://github.com/advisories/GHSA-fvcv-3m26-pcqx).
+
+- [#7993](https://github.com/graphql-hive/console/pull/7993)
+  [`730771f`](https://github.com/graphql-hive/console/commit/730771fb503fd91974c1494944cd5426cf74a552)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Address vulnerability
+  [CVE-2026-6410](https://github.com/advisories/GHSA-pr96-94w5-mx2h).
+
+- [#7961](https://github.com/graphql-hive/console/pull/7961)
+  [`40fd27d`](https://github.com/graphql-hive/console/commit/40fd27d9c060df5417c18c750b02af65451e5323)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Update
+  [`opentelemetry-go`](https://github.com/open-telemetry/opentelemetry-go) to address vulnerability
+  [CVE-2026-39883](https://github.com/advisories/GHSA-hfvc-g4fc-pqhx).
+
 ## 11.0.2
 
 ### Patch Changes
