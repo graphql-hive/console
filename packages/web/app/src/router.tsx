@@ -87,6 +87,11 @@ import { TargetLaboratoryPage as TargetLaboratoryPageNew } from './pages/target-
 import { ProposalTab, TargetProposalsSinglePage } from './pages/target-proposal';
 import { TargetProposalsPage } from './pages/target-proposals';
 import { TargetProposalsNewPage } from './pages/target-proposals-new';
+import { TargetAlertsPage } from './pages/target-alerts';
+import { TargetAlertsActivityPage } from './pages/target-alerts-activity';
+import { TargetAlertsCreatePage } from './pages/target-alerts-create';
+import { TargetAlertsDetailPage } from './pages/target-alerts-detail';
+import { TargetAlertsRulesPage } from './pages/target-alerts-rules';
 import { TargetSettingsPage, TargetSettingsPageEnum } from './pages/target-settings';
 import { TargetTracePage } from './pages/target-trace';
 import {
@@ -641,6 +646,79 @@ const targetSettingsRoute = createRoute({
   },
 });
 
+// --- Alerts (nested routes with Outlet) ---
+
+const targetAlertsRoute = createRoute({
+  getParentRoute: () => targetRoute,
+  path: 'alerts',
+  component: function TargetAlertsRoute() {
+    const { organizationSlug, projectSlug, targetSlug } = targetAlertsRoute.useParams();
+    return (
+      <TargetLayout
+        page={Page.Alerts}
+        organizationSlug={organizationSlug}
+        projectSlug={projectSlug}
+        targetSlug={targetSlug}
+      >
+        <TargetAlertsPage
+          organizationSlug={organizationSlug}
+          projectSlug={projectSlug}
+          targetSlug={targetSlug}
+        />
+      </TargetLayout>
+    );
+  },
+});
+
+const targetAlertsIndexRoute = createRoute({
+  getParentRoute: () => targetAlertsRoute,
+  path: '/',
+  component: function TargetAlertsIndexRoute() {
+    const params = targetAlertsIndexRoute.useParams();
+    return (
+      <Navigate
+        to="/$organizationSlug/$projectSlug/$targetSlug/alerts/rules"
+        params={params}
+      />
+    );
+  },
+});
+
+const targetAlertsRulesRoute = createRoute({
+  getParentRoute: () => targetAlertsRoute,
+  path: 'rules',
+  component: TargetAlertsRulesPage,
+});
+
+const targetAlertsActivityRoute = createRoute({
+  getParentRoute: () => targetAlertsRoute,
+  path: 'activity',
+  component: TargetAlertsActivityPage,
+});
+
+const targetAlertsCreateRoute = createRoute({
+  getParentRoute: () => targetAlertsRoute,
+  path: 'create',
+  component: TargetAlertsCreatePage,
+});
+
+const targetAlertsDetailRoute = createRoute({
+  getParentRoute: () => targetAlertsRoute,
+  path: '$ruleId',
+  component: function TargetAlertsDetailRoute() {
+    const { organizationSlug, projectSlug, targetSlug, ruleId } =
+      targetAlertsDetailRoute.useParams();
+    return (
+      <TargetAlertsDetailPage
+        organizationSlug={organizationSlug}
+        projectSlug={projectSlug}
+        targetSlug={targetSlug}
+        ruleId={ruleId}
+      />
+    );
+  },
+});
+
 const targetLaboratoryRoute = createRoute({
   getParentRoute: () => targetRoute,
   path: 'laboratory',
@@ -1178,6 +1256,13 @@ const routeTree = root.addChildren([
       targetAppVersionRoute,
       targetAppsRoute,
       targetProposalsRoute.addChildren([targetProposalsNewRoute, targetProposalsSingleRoute]),
+      targetAlertsRoute.addChildren([
+        targetAlertsIndexRoute,
+        targetAlertsRulesRoute,
+        targetAlertsActivityRoute,
+        targetAlertsCreateRoute,
+        targetAlertsDetailRoute,
+      ]),
     ]),
   ]),
 ]);

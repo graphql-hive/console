@@ -44,6 +44,7 @@ export enum Page {
   Laboratory = 'laboratory',
   Apps = 'apps',
   Proposals = 'proposals',
+  Alerts = 'alerts',
   Settings = 'settings',
 }
 
@@ -214,6 +215,12 @@ export const TargetLayout = ({
                       label: 'Proposals',
                       visible: currentTarget.viewerCanViewSchemaProposals,
                       to: '/$organizationSlug/$projectSlug/$targetSlug/proposals',
+                      params,
+                    },
+                    {
+                      value: Page.Alerts,
+                      label: 'Alerts',
+                      to: '/$organizationSlug/$projectSlug/$targetSlug/alerts',
                       params,
                     },
                     {
