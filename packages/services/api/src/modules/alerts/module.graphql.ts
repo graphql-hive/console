@@ -154,4 +154,193 @@ export default gql`
     channel: AlertChannel!
     target: Target!
   }
+
+  # --- Metric Alert Rules ---
+
+  enum MetricAlertRuleType {
+    LATENCY
+    ERROR_RATE
+    TRAFFIC
+  }
+
+  enum MetricAlertRuleMetric {
+    avg
+    p75
+    p90
+    p95
+    p99
+  }
+
+  enum MetricAlertRuleThresholdType {
+    FIXED_VALUE
+    PERCENTAGE_CHANGE
+  }
+
+  enum MetricAlertRuleDirection {
+    ABOVE
+    BELOW
+  }
+
+  enum MetricAlertRuleSeverity {
+    INFO
+    WARNING
+    CRITICAL
+  }
+
+  enum MetricAlertRuleState {
+    NORMAL
+    PENDING
+    FIRING
+    RECOVERING
+  }
+
+  type MetricAlertRule {
+    id: ID!
+    name: String!
+    type: MetricAlertRuleType!
+    target: Target!
+    """Destinations that receive notifications when this rule fires or resolves."""
+    channels: [AlertChannel!]!
+    timeWindowMinutes: Int!
+    metric: MetricAlertRuleMetric
+    thresholdType: MetricAlertRuleThresholdType!
+    thresholdValue: Float!
+    direction: MetricAlertRuleDirection!
+    severity: MetricAlertRuleSeverity!
+    state: MetricAlertRuleState!
+    confirmationMinutes: Int!
+    enabled: Boolean!
+    lastEvaluatedAt: DateTime
+    """Most recent time this rule transitioned PENDING → FIRING (null if never fired)."""
+    lastTriggeredAt: DateTime
+    createdAt: DateTime!
+    """The saved filter that scopes this rule (null = applies to the whole target)."""
+    savedFilter: SavedFilter
+    """Count of state transitions logged for this rule in the given time range."""
+    eventCount(from: DateTime!, to: DateTime!): Int!
+    """The currently open incident, if any."""
+    currentIncident: MetricAlertRuleIncident
+    """Past incidents for this alert rule."""
+    incidentHistory(limit: Int, offset: Int): [MetricAlertRuleIncident!]!
+    """State change history for this rule (powers the state timeline)."""
+    stateLog(from: DateTime!, to: DateTime!): [MetricAlertRuleStateChange!]!
+  }
+
+  type MetricAlertRuleIncident {
+    id: ID!
+    startedAt: DateTime!
+    resolvedAt: DateTime
+    currentValue: Float!
+    previousValue: Float
+    thresholdValue: Float!
+  }
+
+  type MetricAlertRuleStateChange {
+    id: ID!
+    fromState: MetricAlertRuleState!
+    toState: MetricAlertRuleState!
+    """Metric value in the current window at transition time."""
+    value: Float
+    """Metric value in the previous (comparison) window at transition time."""
+    previousValue: Float
+    """Threshold value snapshotted at transition time (survives rule edits)."""
+    thresholdValue: Float
+    createdAt: DateTime!
+    rule: MetricAlertRule!
+  }
+
+  extend type Target {
+    """State changes across all alert rules for this target (powers the alert events chart + list)."""
+    metricAlertRuleStateLog(from: DateTime!, to: DateTime!): [MetricAlertRuleStateChange!]!
+  }
+
+  extend type Project {
+    metricAlertRules: [MetricAlertRule!]!
+  }
+
+  extend type Mutation {
+    addMetricAlertRule(input: AddMetricAlertRuleInput!): AddMetricAlertRuleResult!
+    updateMetricAlertRule(input: UpdateMetricAlertRuleInput!): UpdateMetricAlertRuleResult!
+    deleteMetricAlertRules(input: DeleteMetricAlertRulesInput!): DeleteMetricAlertRulesResult!
+  }
+
+  input AddMetricAlertRuleInput {
+    organizationSlug: String!
+    projectSlug: String!
+    targetSlug: String!
+    name: String!
+    type: MetricAlertRuleType!
+    timeWindowMinutes: Int!
+    metric: MetricAlertRuleMetric
+    thresholdType: MetricAlertRuleThresholdType!
+    thresholdValue: Float!
+    direction: MetricAlertRuleDirection!
+    severity: MetricAlertRuleSeverity!
+    confirmationMinutes: Int
+    channelIds: [ID!]!
+    savedFilterId: ID
+  }
+
+  input UpdateMetricAlertRuleInput {
+    organizationSlug: String!
+    projectSlug: String!
+    ruleId: ID!
+    name: String
+    type: MetricAlertRuleType
+    timeWindowMinutes: Int
+    metric: MetricAlertRuleMetric
+    thresholdType: MetricAlertRuleThresholdType
+    thresholdValue: Float
+    direction: MetricAlertRuleDirection
+    severity: MetricAlertRuleSeverity
+    confirmationMinutes: Int
+    channelIds: [ID!]
+    savedFilterId: ID
+    enabled: Boolean
+  }
+
+  input DeleteMetricAlertRulesInput {
+    organizationSlug: String!
+    projectSlug: String!
+    ruleIds: [ID!]!
+  }
+
+  type AddMetricAlertRuleResult {
+    ok: AddMetricAlertRuleOk
+    error: AddMetricAlertRuleError
+  }
+
+  type AddMetricAlertRuleOk {
+    addedMetricAlertRule: MetricAlertRule!
+  }
+
+  type AddMetricAlertRuleError implements Error {
+    message: String!
+  }
+
+  type UpdateMetricAlertRuleResult {
+    ok: UpdateMetricAlertRuleOk
+    error: UpdateMetricAlertRuleError
+  }
+
+  type UpdateMetricAlertRuleOk {
+    updatedMetricAlertRule: MetricAlertRule!
+  }
+
+  type UpdateMetricAlertRuleError implements Error {
+    message: String!
+  }
+
+  type DeleteMetricAlertRulesResult {
+    ok: DeleteMetricAlertRulesOk
+    error: DeleteMetricAlertRulesError
+  }
+
+  type DeleteMetricAlertRulesOk {
+    deletedMetricAlertRuleIds: [ID!]!
+  }
+
+  type DeleteMetricAlertRulesError implements Error {
+    message: String!
+  }
 `;

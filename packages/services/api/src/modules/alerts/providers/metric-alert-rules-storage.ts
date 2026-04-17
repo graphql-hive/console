@@ -271,7 +271,7 @@ export class MetricAlertRulesStorage {
     ruleId: string;
     channelIds: string[];
   }): Promise<void> {
-    await this.pool.transaction(async trx => {
+    await this.pool.transaction('setRuleChannels', async trx => {
       await trx.query(psql`
         DELETE FROM "metric_alert_rule_channels"
         WHERE "metric_alert_rule_id" = ${args.ruleId}
