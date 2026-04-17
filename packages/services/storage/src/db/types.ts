@@ -159,15 +159,6 @@ export interface migration {
   name: string;
 }
 
-export interface oidc_integration_domains {
-  created_at: Date;
-  domain_name: string;
-  id: string;
-  oidc_integration_id: string;
-  organization_id: string;
-  verified_at: Date | null;
-}
-
 export interface oidc_integrations {
   additional_scopes: Array<string> | null;
   authorization_endpoint: string | null;
@@ -191,7 +182,6 @@ export interface organization_access_tokens {
   assigned_resources: any | null;
   created_at: Date;
   description: string;
-  expires_at: Date | null;
   first_characters: string;
   hash: string;
   id: string;
@@ -393,9 +383,6 @@ export interface schema_proposal_reviews {
 export interface schema_proposals {
   author: string;
   comments_count: number;
-  composition_status: string | null;
-  composition_status_reason: string | null;
-  composition_timestamp: Date | null;
   created_at: Date;
   description: string;
   id: string;
@@ -540,7 +527,6 @@ export interface DBTables {
   email_verifications: email_verifications;
   graphile_worker_deduplication: graphile_worker_deduplication;
   migration: migration;
-  oidc_integration_domains: oidc_integration_domains;
   oidc_integrations: oidc_integrations;
   organization_access_tokens: organization_access_tokens;
   organization_invitations: organization_invitations;
