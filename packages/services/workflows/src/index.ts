@@ -12,6 +12,7 @@ import {
 } from '@hive/service-common';
 import { Context } from './context.js';
 import { env } from './environment.js';
+import { ClickHouseClient } from './lib/clickhouse-client.js';
 import { createEmailProvider } from './lib/emails/providers.js';
 import { schemaProvider } from './lib/schema/provider.js';
 import { bridgeFastifyLogger } from './logger.js';
@@ -43,6 +44,8 @@ const modules = await Promise.all([
   import('./tasks/usage-rate-limit-exceeded.js'),
   import('./tasks/usage-rate-limit-warning.js'),
   import('./tasks/schema-proposal-composition.js'),
+  import('./tasks/evaluate-metric-alert-rules.js'),
+  import('./tasks/purge-expired-alert-state-log.js'),
 ]);
 
 const crontab = `
@@ -50,6 +53,10 @@ const crontab = `
   0 10 * * 0 purgeExpiredSchemaChecks
   # Every day at 3:00 AM
   0 3 * * * purgeExpiredDedupeKeys
+  # Evaluate metric alert rules every minute
+  * * * * * evaluateMetricAlertRules
+  # Purge expired alert state log entries daily at 4:00 AM
+  0 4 * * * purgeExpiredAlertStateLog
 `;
 
 const pg = await createPostgresDatabasePool({
@@ -86,10 +93,15 @@ const pubSub = createHivePubSub({
   ),
 });
 
+const clickhouse = env.clickhouse
+  ? new ClickHouseClient(env.clickhouse, logger.child({ source: 'ClickHouse' }))
+  : null;
+
 const context: Context = {
   logger,
   email: createEmailProvider(env.email.provider, env.email.emailFrom),
   pg,
+  clickhouse,
   requestBroker: env.requestBroker,
   schema: schemaProvider({
     logger,
