@@ -18,8 +18,5 @@ export const task = implementTask(PurgeExpiredAlertStateLogTask, async args => {
     SELECT COUNT(*)::int FROM "deleted";
   `);
   const amount = z.number().parse(result);
-  args.logger.debug(
-    { purgedCount: amount },
-    'finished purging expired alert state log entries',
-  );
+  args.logger.debug({ purgedCount: amount }, 'finished purging expired alert state log entries');
 });

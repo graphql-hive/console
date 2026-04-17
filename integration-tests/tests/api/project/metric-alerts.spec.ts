@@ -13,8 +13,14 @@ import { initSeed } from '../../../testkit/seed';
 test.concurrent('can create, read, update, and delete a metric alert rule', async ({ expect }) => {
   const { createOrg } = await initSeed().createOwner();
   const { createProject, organization } = await createOrg();
-  const { project, target, addAlertChannel, addMetricAlertRule, updateMetricAlertRule, deleteMetricAlertRules } =
-    await createProject(ProjectType.Single);
+  const {
+    project,
+    target,
+    addAlertChannel,
+    addMetricAlertRule,
+    updateMetricAlertRule,
+    deleteMetricAlertRules,
+  } = await createProject(ProjectType.Single);
 
   const organizationSlug = organization.slug;
   const projectSlug = project.slug;
@@ -99,8 +105,9 @@ test.concurrent(
   async ({ expect }) => {
     const { createOrg } = await initSeed().createOwner();
     const { createProject, organization } = await createOrg();
-    const { project, target, addAlertChannel, addMetricAlertRule } =
-      await createProject(ProjectType.Single);
+    const { project, target, addAlertChannel, addMetricAlertRule } = await createProject(
+      ProjectType.Single,
+    );
 
     const organizationSlug = organization.slug;
     const projectSlug = project.slug;
@@ -178,8 +185,9 @@ test.concurrent('requires at least one channel', async ({ expect }) => {
 test.concurrent('supports multiple channels on a single rule', async ({ expect }) => {
   const { createOrg } = await initSeed().createOwner();
   const { createProject, organization } = await createOrg();
-  const { project, target, addAlertChannel, addMetricAlertRule } =
-    await createProject(ProjectType.Single);
+  const { project, target, addAlertChannel, addMetricAlertRule } = await createProject(
+    ProjectType.Single,
+  );
 
   const organizationSlug = organization.slug;
   const projectSlug = project.slug;

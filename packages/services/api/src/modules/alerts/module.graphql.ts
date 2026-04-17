@@ -199,7 +199,9 @@ export default gql`
     name: String!
     type: MetricAlertRuleType!
     target: Target!
-    """Destinations that receive notifications when this rule fires or resolves."""
+    """
+    Destinations that receive notifications when this rule fires or resolves.
+    """
     channels: [AlertChannel!]!
     timeWindowMinutes: Int!
     metric: MetricAlertRuleMetric
@@ -211,18 +213,31 @@ export default gql`
     confirmationMinutes: Int!
     enabled: Boolean!
     lastEvaluatedAt: DateTime
-    """Most recent time this rule transitioned PENDING → FIRING (null if never fired)."""
+    """
+    Most recent time this rule transitioned PENDING → FIRING (null if never fired).
+    """
     lastTriggeredAt: DateTime
     createdAt: DateTime!
-    """The saved filter that scopes this rule (null = applies to the whole target)."""
+    createdBy: User
+    """
+    The saved filter that scopes this rule (null = applies to the whole target).
+    """
     savedFilter: SavedFilter
-    """Count of state transitions logged for this rule in the given time range."""
+    """
+    Count of state transitions logged for this rule in the given time range.
+    """
     eventCount(from: DateTime!, to: DateTime!): Int!
-    """The currently open incident, if any."""
+    """
+    The currently open incident, if any.
+    """
     currentIncident: MetricAlertRuleIncident
-    """Past incidents for this alert rule."""
+    """
+    Past incidents for this alert rule.
+    """
     incidentHistory(limit: Int, offset: Int): [MetricAlertRuleIncident!]!
-    """State change history for this rule (powers the state timeline)."""
+    """
+    State change history for this rule (powers the state timeline).
+    """
     stateLog(from: DateTime!, to: DateTime!): [MetricAlertRuleStateChange!]!
   }
 
@@ -239,22 +254,30 @@ export default gql`
     id: ID!
     fromState: MetricAlertRuleState!
     toState: MetricAlertRuleState!
-    """Metric value in the current window at transition time."""
+    """
+    Metric value in the current window at transition time.
+    """
     value: Float
-    """Metric value in the previous (comparison) window at transition time."""
+    """
+    Metric value in the previous (comparison) window at transition time.
+    """
     previousValue: Float
-    """Threshold value snapshotted at transition time (survives rule edits)."""
+    """
+    Threshold value snapshotted at transition time (survives rule edits).
+    """
     thresholdValue: Float
     createdAt: DateTime!
     rule: MetricAlertRule!
   }
 
   extend type Target {
-    """State changes across all alert rules for this target (powers the alert events chart + list)."""
+    """
+    State changes across all alert rules for this target (powers the alert events chart + list).
+    """
     metricAlertRuleStateLog(from: DateTime!, to: DateTime!): [MetricAlertRuleStateChange!]!
   }
 
-  extend type Project {
+  extend type Target {
     metricAlertRules: [MetricAlertRule!]!
   }
 

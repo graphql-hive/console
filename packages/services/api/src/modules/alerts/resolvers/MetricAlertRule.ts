@@ -1,10 +1,17 @@
 import { SavedFiltersStorage } from '../../saved-filters/providers/saved-filters-storage';
+import { Storage } from '../../shared/providers/storage';
 import { TargetManager } from '../../target/providers/target-manager';
 import { AlertsManager } from '../providers/alerts-manager';
 import { MetricAlertRulesStorage } from '../providers/metric-alert-rules-storage';
 import type { MetricAlertRuleResolvers } from './../../../__generated__/types';
 
 export const MetricAlertRule: MetricAlertRuleResolvers = {
+  createdBy: (rule, _, { injector }) => {
+    if (!rule.createdByUserId) {
+      return null;
+    }
+    return injector.get(Storage).getUserById({ id: rule.createdByUserId });
+  },
   target: (rule, _, { injector }) => {
     return injector.get(TargetManager).getTarget({
       targetId: rule.targetId,

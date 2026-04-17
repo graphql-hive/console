@@ -6,7 +6,7 @@ import type { MutationResolvers } from './../../../../__generated__/types';
 export const addMetricAlertRule: NonNullable<MutationResolvers['addMetricAlertRule']> = async (
   _,
   { input },
-  { injector },
+  { injector, session },
 ) => {
   const translator = injector.get(IdTranslator);
   const [organizationId, projectId, targetId] = await Promise.all([
@@ -20,6 +20,8 @@ export const addMetricAlertRule: NonNullable<MutationResolvers['addMetricAlertRu
     organizationId,
     params: { organizationId, projectId },
   });
+
+  const currentUser = await session.getViewer();
 
   if (input.type === 'LATENCY' && !input.metric) {
     return {
@@ -45,6 +47,7 @@ export const addMetricAlertRule: NonNullable<MutationResolvers['addMetricAlertRu
     organizationId,
     projectId,
     targetId,
+    createdByUserId: currentUser.id,
     type: input.type,
     timeWindowMinutes: input.timeWindowMinutes,
     metric: input.metric ?? null,

@@ -20,8 +20,6 @@ import {
   addAlert,
   addAlertChannel,
   addMetricAlertRule,
-  deleteMetricAlertRules,
-  updateMetricAlertRule,
   assignMemberRole,
   checkSchema,
   compareToPreviousVersion,
@@ -33,6 +31,7 @@ import {
   createTarget,
   createToken,
   deleteMemberRole,
+  deleteMetricAlertRules,
   deleteSchema,
   deleteTokens,
   fetchLatestSchema,
@@ -54,6 +53,7 @@ import {
   readTokenInfo,
   updateBaseSchema,
   updateMemberRole,
+  updateMetricAlertRule,
   updateTargetValidationSettings,
 } from './flow';
 import * as GraphQLSchema from './gql/graphql';
@@ -820,19 +820,17 @@ export function initSeed() {
                 async addMetricAlertRule(
                   input: { token?: string } & Parameters<typeof addMetricAlertRule>[0],
                 ) {
-                  const result = await addMetricAlertRule(
-                    input,
-                    input.token || ownerToken,
-                  ).then(r => r.expectNoGraphQLErrors());
+                  const result = await addMetricAlertRule(input, input.token || ownerToken).then(
+                    r => r.expectNoGraphQLErrors(),
+                  );
                   return result.addMetricAlertRule;
                 },
                 async updateMetricAlertRule(
                   input: { token?: string } & Parameters<typeof updateMetricAlertRule>[0],
                 ) {
-                  const result = await updateMetricAlertRule(
-                    input,
-                    input.token || ownerToken,
-                  ).then(r => r.expectNoGraphQLErrors());
+                  const result = await updateMetricAlertRule(input, input.token || ownerToken).then(
+                    r => r.expectNoGraphQLErrors(),
+                  );
                   return result.updateMetricAlertRule;
                 },
                 async deleteMetricAlertRules(

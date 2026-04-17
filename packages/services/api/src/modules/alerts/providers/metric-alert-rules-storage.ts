@@ -14,6 +14,7 @@ const MetricAlertRuleModel = zod
     organizationId: zod.string(),
     projectId: zod.string(),
     targetId: zod.string(),
+    createdByUserId: zod.string().nullable(),
     type: zod.enum(['LATENCY', 'ERROR_RATE', 'TRAFFIC']),
     timeWindowMinutes: zod.number(),
     metric: zod.enum(['avg', 'p75', 'p90', 'p95', 'p99']).nullable(),
@@ -32,10 +33,9 @@ const MetricAlertRuleModel = zod
     confirmationMinutes: zod.number(),
     savedFilterId: zod.string().nullable(),
   })
-  .refine(
-    data => (data.type === 'LATENCY') === (data.metric !== null),
-    { message: 'metric must be set for LATENCY type and null for other types' },
-  );
+  .refine(data => (data.type === 'LATENCY') === (data.metric !== null), {
+    message: 'metric must be set for LATENCY type and null for other types',
+  });
 
 const MetricAlertIncidentModel = zod.object({
   id: zod.string(),
@@ -65,6 +65,7 @@ const METRIC_ALERT_RULE_SELECT = psql`
   , "organization_id" as "organizationId"
   , "project_id" as "projectId"
   , "target_id" as "targetId"
+  , "created_by_user_id" as "createdByUserId"
   , "type"
   , "time_window_minutes" as "timeWindowMinutes"
   , "metric"
@@ -166,6 +167,7 @@ export class MetricAlertRulesStorage {
     organizationId: string;
     projectId: string;
     targetId: string;
+    createdByUserId: string | null;
     type: MetricAlertRule['type'];
     timeWindowMinutes: number;
     metric: MetricAlertRule['metric'];
@@ -182,6 +184,7 @@ export class MetricAlertRulesStorage {
         "organization_id"
         , "project_id"
         , "target_id"
+        , "created_by_user_id"
         , "type"
         , "time_window_minutes"
         , "metric"
@@ -197,6 +200,7 @@ export class MetricAlertRulesStorage {
         ${args.organizationId}
         , ${args.projectId}
         , ${args.targetId}
+        , ${args.createdByUserId}
         , ${args.type}
         , ${args.timeWindowMinutes}
         , ${args.metric}
@@ -272,10 +276,7 @@ export class MetricAlertRulesStorage {
 
   // --- Rule Channels (many-to-many) ---
 
-  async setRuleChannels(args: {
-    ruleId: string;
-    channelIds: string[];
-  }): Promise<void> {
+  async setRuleChannels(args: { ruleId: string; channelIds: string[] }): Promise<void> {
     await this.pool.transaction('setRuleChannels', async trx => {
       await trx.query(psql`
         DELETE FROM "metric_alert_rule_channels"
@@ -475,11 +476,7 @@ export class MetricAlertRulesStorage {
     return result.map(row => MetricAlertStateLogModel.parse(row) as MetricAlertStateLogEntry);
   }
 
-  async getEventCount(args: {
-    ruleId: string;
-    from: Date;
-    to: Date;
-  }): Promise<number> {
+  async getEventCount(args: { ruleId: string; from: Date; to: Date }): Promise<number> {
     const result = await this.pool.oneFirst(psql`/* getEventCount */
       SELECT count(*)::int
       FROM "metric_alert_state_log"

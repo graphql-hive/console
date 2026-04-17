@@ -68,7 +68,12 @@ export async function sendMetricAlertNotifications(args: {
           break;
         }
         case 'MSTEAMS_WEBHOOK': {
-          await sendTeamsNotification({ channel, event, requestBroker: args.requestBroker, logger });
+          await sendTeamsNotification({
+            channel,
+            event,
+            requestBroker: args.requestBroker,
+            logger,
+          });
           break;
         }
       }
@@ -223,11 +228,17 @@ function formatChangeText(event: NotificationEvent): string {
   const { rule, currentValue, previousValue } = event;
   const unit = rule.type === 'LATENCY' ? 'ms' : rule.type === 'ERROR_RATE' ? '%' : ' requests';
   const metricLabel =
-    rule.type === 'LATENCY' ? `${rule.metric} latency` : rule.type === 'ERROR_RATE' ? 'Error rate' : 'Traffic';
+    rule.type === 'LATENCY'
+      ? `${rule.metric} latency`
+      : rule.type === 'ERROR_RATE'
+        ? 'Error rate'
+        : 'Traffic';
 
   if (event.state === 'firing') {
     const changePercent =
-      previousValue !== 0 ? (((currentValue - previousValue) / previousValue) * 100).toFixed(1) : 'N/A';
+      previousValue !== 0
+        ? (((currentValue - previousValue) / previousValue) * 100).toFixed(1)
+        : 'N/A';
     return `${metricLabel}: **${currentValue.toFixed(2)}${unit}** (was ${previousValue.toFixed(2)}${unit}, ${changePercent}% change) — Threshold: ${rule.direction.toLowerCase()} ${rule.thresholdValue}${rule.thresholdType === 'PERCENTAGE_CHANGE' ? '%' : unit}`;
   }
 

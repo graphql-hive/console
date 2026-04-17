@@ -15,6 +15,7 @@ CREATE TABLE "metric_alert_rules" (
   "organization_id" uuid NOT NULL REFERENCES "organizations"("id") ON DELETE CASCADE,
   "project_id" uuid NOT NULL REFERENCES "projects"("id") ON DELETE CASCADE,
   "target_id" uuid NOT NULL REFERENCES "targets"("id") ON DELETE CASCADE,
+  "created_by_user_id" uuid REFERENCES "users"("id") ON DELETE SET NULL,
   "type" "metric_alert_type" NOT NULL,
   "time_window_minutes" integer NOT NULL DEFAULT 30,
   "metric" "metric_alert_metric",
