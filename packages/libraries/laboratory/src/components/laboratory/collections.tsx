@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
   CheckIcon,
   FolderIcon,
@@ -62,6 +62,16 @@ export const CollectionItem = (props: { collection: LaboratoryCollection }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [editedName, setEditedName] = useState(props.collection.name);
+
+  const hasActiveOperation = useMemo(() => {
+    return props.collection.operations.some(operation => operation.id === activeOperation?.id);
+  }, [props.collection.operations, activeOperation]);
+
+  useEffect(() => {
+    if (hasActiveOperation) {
+      setIsOpen(true);
+    }
+  }, [hasActiveOperation]);
 
   return (
     <Collapsible open={isOpen} onOpenChange={setIsOpen}>
