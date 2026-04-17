@@ -45,6 +45,7 @@
     "release:version": "changeset version && pnpm build:libraries && pnpm --filter @graphql-hive/cli oclif:readme",
     "seed:app-deployments": "tsx scripts/seed-app-deployments.mts",
     "seed:insights": "tsx scripts/seed-insights.mts",
+    "seed:metric-alerts": "tsx scripts/seed-metric-alerts.mts",
     "seed:org": "tsx scripts/seed-organization.mts",
     "seed:schemas": "tsx scripts/seed-schemas.ts",
     "seed:usage": "tsx scripts/seed-usage.ts",
