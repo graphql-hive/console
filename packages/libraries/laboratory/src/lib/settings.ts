@@ -11,11 +11,47 @@ export type LaboratorySettings = {
     protocol: 'SSE' | 'GRAPHQL_SSE' | 'WS' | 'LEGACY_WS';
   };
   introspection: {
-    queryName?: string;
     method?: 'GET' | 'POST';
     schemaDescription?: boolean;
   };
 };
+
+export const defaultLaboratorySettings: LaboratorySettings = {
+  fetch: {
+    credentials: 'same-origin',
+    timeout: 10000,
+    retry: 3,
+    useGETForQueries: false,
+  },
+  subscriptions: {
+    protocol: 'WS',
+  },
+  introspection: {
+    method: 'POST',
+    schemaDescription: false,
+  },
+};
+
+export const normalizeLaboratorySettings = (
+  settings?: Partial<LaboratorySettings> | null,
+): LaboratorySettings => ({
+  fetch: {
+    credentials: settings?.fetch?.credentials ?? defaultLaboratorySettings.fetch.credentials,
+    timeout: settings?.fetch?.timeout ?? defaultLaboratorySettings.fetch.timeout,
+    retry: settings?.fetch?.retry ?? defaultLaboratorySettings.fetch.retry,
+    useGETForQueries:
+      settings?.fetch?.useGETForQueries ?? defaultLaboratorySettings.fetch.useGETForQueries,
+  },
+  subscriptions: {
+    protocol: settings?.subscriptions?.protocol ?? defaultLaboratorySettings.subscriptions.protocol,
+  },
+  introspection: {
+    method: settings?.introspection?.method ?? defaultLaboratorySettings.introspection.method,
+    schemaDescription:
+      settings?.introspection?.schemaDescription ??
+      defaultLaboratorySettings.introspection.schemaDescription,
+  },
+});
 
 export interface LaboratorySettingsState {
   settings: LaboratorySettings;
@@ -30,28 +66,14 @@ export const useSettings = (props: {
   onSettingsChange?: (settings: LaboratorySettings | null) => void;
 }): LaboratorySettingsState & LaboratorySettingsActions => {
   const [settings, _setSettings] = useState<LaboratorySettings>(
-    props.defaultSettings ?? {
-      fetch: {
-        credentials: 'same-origin',
-        timeout: 10000,
-        retry: 3,
-        useGETForQueries: false,
-      },
-      subscriptions: {
-        protocol: 'WS',
-      },
-      introspection: {
-        queryName: 'IntrospectionQuery',
-        method: 'POST',
-        schemaDescription: false,
-      },
-    },
+    normalizeLaboratorySettings(props.defaultSettings),
   );
 
   const setSettings = useCallback(
     (settings: LaboratorySettings) => {
-      _setSettings(settings);
-      props.onSettingsChange?.(settings);
+      const normalizedSettings = normalizeLaboratorySettings(settings);
+      _setSettings(normalizedSettings);
+      props.onSettingsChange?.(normalizedSettings);
     },
     [props],
   );

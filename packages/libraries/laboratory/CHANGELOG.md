@@ -1,5 +1,20 @@
 # @graphql-hive/laboratory
 
+## 0.1.4
+
+### Patch Changes
+
+- [#7963](https://github.com/graphql-hive/console/pull/7963)
+  [`4a8bd4f`](https://github.com/graphql-hive/console/commit/4a8bd4fd1b4fbb34076e97d06ed1341432de451d)
+  Thanks [@mskorokhodov](https://github.com/mskorokhodov)! - Implemented functionality that allows
+  to have multiple queries in same operation while working only with focused one (run button, query
+  builder)
+
+- [#7892](https://github.com/graphql-hive/console/pull/7892)
+  [`fab4b03`](https://github.com/graphql-hive/console/commit/fab4b03ace2ff20759bbcd33465d00a5cbbc4c97)
+  Thanks [@mskorokhodov](https://github.com/mskorokhodov)! - Hive Laboratory renders Hive Router
+  query plan if included in response extensions
+
 ## 0.1.3
 
 ### Patch Changes

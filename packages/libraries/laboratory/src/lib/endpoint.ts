@@ -1,13 +1,15 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   buildClientSchema,
-  getIntrospectionQuery,
   GraphQLSchema,
+  introspectionFromSchema,
   type IntrospectionQuery,
 } from 'graphql';
 import { toast } from 'sonner';
-import z from 'zod';
+// import z from 'zod';
 import { asyncInterval } from '@/lib/utils';
+import { SubscriptionProtocol, UrlLoader } from '@graphql-tools/url-loader';
+import type { LaboratorySettingsActions, LaboratorySettingsState } from './settings';
 
 export interface LaboratoryEndpointState {
   endpoint: string | null;
@@ -22,20 +24,11 @@ export interface LaboratoryEndpointActions {
   restoreDefaultEndpoint: () => void;
 }
 
-const GraphQLResponseErrorSchema = z
-  .object({
-    errors: z.array(
-      z.object({
-        message: z.string(),
-      }),
-    ),
-  })
-  .strict();
-
 export const useEndpoint = (props: {
   defaultEndpoint?: string | null;
   onEndpointChange?: (endpoint: string | null) => void;
   defaultSchemaIntrospection?: IntrospectionQuery | null;
+  settingsApi?: LaboratorySettingsState & LaboratorySettingsActions;
 }): LaboratoryEndpointState & LaboratoryEndpointActions => {
   const [endpoint, _setEndpoint] = useState<string | null>(props.defaultEndpoint ?? null);
   const [introspection, setIntrospection] = useState<IntrospectionQuery | null>(null);
@@ -52,6 +45,8 @@ export const useEndpoint = (props: {
     return introspection ? buildClientSchema(introspection) : null;
   }, [introspection]);
 
+  const loader = useMemo(() => new UrlLoader(), []);
+
   const fetchSchema = useCallback(
     async (signal?: AbortSignal) => {
       if (endpoint === props.defaultEndpoint && props.defaultSchemaIntrospection) {
@@ -65,28 +60,37 @@ export const useEndpoint = (props: {
       }
 
       try {
-        const response = await fetch(endpoint, {
-          signal,
-          method: 'POST',
-          body: JSON.stringify({
-            query: getIntrospectionQuery(),
-          }),
-          headers: {
-            'Content-Type': 'application/json',
-          },
-        }).then(r => r.json());
+        const result = await loader.load(endpoint, {
+          subscriptionsEndpoint: endpoint,
+          subscriptionsProtocol:
+            (props.settingsApi?.settings.subscriptions.protocol as SubscriptionProtocol) ??
+            SubscriptionProtocol.GRAPHQL_SSE,
+          credentials: props.settingsApi?.settings.fetch.credentials,
+          specifiedByUrl: true,
+          directiveIsRepeatable: true,
+          inputValueDeprecation: true,
+          retry: props.settingsApi?.settings.fetch.retry,
+          timeout: props.settingsApi?.settings.fetch.timeout,
+          useGETForQueries: props.settingsApi?.settings.fetch.useGETForQueries,
+          exposeHTTPDetailsInExtensions: true,
+          descriptions: props.settingsApi?.settings.introspection.schemaDescription ?? false,
+          method: props.settingsApi?.settings.introspection.method ?? 'POST',
+          fetch: (input: string | URL | Request, init?: RequestInit) =>
+            fetch(input, {
+              ...init,
+              signal,
+            }),
+        });
 
-        const parsedResponse = GraphQLResponseErrorSchema.safeParse(response);
-
-        if (parsedResponse.success) {
-          throw new Error(parsedResponse.data.errors.map(e => e.message).join('\n'));
+        if (result.length === 0) {
+          throw new Error('Failed to fetch schema');
         }
 
-        if (response.error && typeof response.error === 'string') {
-          throw new Error(response.error);
+        if (!result[0].schema) {
+          throw new Error('Failed to fetch schema');
         }
 
-        setIntrospection(response.data as IntrospectionQuery);
+        setIntrospection(introspectionFromSchema(result[0].schema));
       } catch (error: unknown) {
         if (
           error &&
@@ -104,7 +108,12 @@ export const useEndpoint = (props: {
         throw error;
       }
     },
-    [endpoint],
+    [
+      endpoint,
+      props.settingsApi?.settings.fetch.timeout,
+      props.settingsApi?.settings.introspection.method,
+      props.settingsApi?.settings.introspection.schemaDescription,
+    ],
   );
 
   const shouldPollSchema = useMemo(() => {
@@ -129,6 +138,7 @@ export const useEndpoint = (props: {
       5000,
       intervalController.signal,
     );
+
     return () => {
       intervalController.abort();
     };
