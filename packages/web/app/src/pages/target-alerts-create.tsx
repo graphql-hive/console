@@ -7,7 +7,7 @@ export function TargetAlertsCreatePage() {
         subPageTitle="Create a new alert"
         description="Select the alert type and range for this alert."
       />
-      <p className="text-muted-foreground text-sm">Create alert form coming soon.</p>
+      <p className="text-neutral-10 text-sm">Create alert form coming soon.</p>
     </SubPageLayout>
   );
 }

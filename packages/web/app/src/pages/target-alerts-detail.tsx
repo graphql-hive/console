@@ -8,11 +8,8 @@ export function TargetAlertsDetailPage(props: {
 }) {
   return (
     <SubPageLayout>
-      <SubPageLayoutHeader
-        subPageTitle="Alert Detail"
-        description={`Rule ID: ${props.ruleId}`}
-      />
-      <p className="text-muted-foreground text-sm">Alert detail view coming soon.</p>
+      <SubPageLayoutHeader subPageTitle="Alert Detail" description={`Rule ID: ${props.ruleId}`} />
+      <p className="text-neutral-10 text-sm">Alert detail view coming soon.</p>
     </SubPageLayout>
   );
 }

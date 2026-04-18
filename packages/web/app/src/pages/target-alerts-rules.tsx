@@ -7,7 +7,7 @@ export function TargetAlertsRulesPage() {
         subPageTitle="Configured alerts"
         description="The following alerts are currently active for this target."
       />
-      <p className="text-muted-foreground text-sm">Alert rules list coming soon.</p>
+      <p className="text-neutral-10 text-sm">Alert rules list coming soon.</p>
     </SubPageLayout>
   );
 }

@@ -1,7 +1,7 @@
-import { Link, Outlet } from '@tanstack/react-router';
 import { Button } from '@/components/ui/button';
 import { Meta } from '@/components/ui/meta';
 import { NavLayout, PageLayout, PageLayoutContent } from '@/components/ui/page-content-layout';
+import { Link, Outlet } from '@tanstack/react-router';
 
 const navItems = [
   { label: 'Alert activity', segment: 'activity' },

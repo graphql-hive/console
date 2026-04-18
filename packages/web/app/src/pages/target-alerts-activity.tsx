@@ -7,7 +7,7 @@ export function TargetAlertsActivityPage() {
         subPageTitle="Alert activity"
         description="Monitor alert firings, recoveries, and state changes."
       />
-      <p className="text-muted-foreground text-sm">Alert activity coming soon.</p>
+      <p className="text-neutral-10 text-sm">Alert activity coming soon.</p>
     </SubPageLayout>
   );
 }

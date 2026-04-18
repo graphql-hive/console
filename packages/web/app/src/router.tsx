@@ -66,6 +66,11 @@ import { ProjectIndexRouteSearch, ProjectPage } from './pages/project';
 import { ProjectAlertsPage } from './pages/project-alerts';
 import { ProjectSettingsPage, ProjectSettingsPageEnum } from './pages/project-settings';
 import { TargetPage } from './pages/target';
+import { TargetAlertsPage } from './pages/target-alerts';
+import { TargetAlertsActivityPage } from './pages/target-alerts-activity';
+import { TargetAlertsCreatePage } from './pages/target-alerts-create';
+import { TargetAlertsDetailPage } from './pages/target-alerts-detail';
+import { TargetAlertsRulesPage } from './pages/target-alerts-rules';
 import { TargetAppVersionPage } from './pages/target-app-version';
 import { TargetAppsPage, TargetAppsSortSchema, type SortState } from './pages/target-apps';
 import { TargetChecksPage } from './pages/target-checks';
@@ -87,11 +92,6 @@ import { TargetLaboratoryPage as TargetLaboratoryPageNew } from './pages/target-
 import { ProposalTab, TargetProposalsSinglePage } from './pages/target-proposal';
 import { TargetProposalsPage } from './pages/target-proposals';
 import { TargetProposalsNewPage } from './pages/target-proposals-new';
-import { TargetAlertsPage } from './pages/target-alerts';
-import { TargetAlertsActivityPage } from './pages/target-alerts-activity';
-import { TargetAlertsCreatePage } from './pages/target-alerts-create';
-import { TargetAlertsDetailPage } from './pages/target-alerts-detail';
-import { TargetAlertsRulesPage } from './pages/target-alerts-rules';
 import { TargetSettingsPage, TargetSettingsPageEnum } from './pages/target-settings';
 import { TargetTracePage } from './pages/target-trace';
 import {
@@ -676,10 +676,7 @@ const targetAlertsIndexRoute = createRoute({
   component: function TargetAlertsIndexRoute() {
     const params = targetAlertsIndexRoute.useParams();
     return (
-      <Navigate
-        to="/$organizationSlug/$projectSlug/$targetSlug/alerts/rules"
-        params={params}
-      />
+      <Navigate to="/$organizationSlug/$projectSlug/$targetSlug/alerts/rules" params={params} />
     );
   },
 });
