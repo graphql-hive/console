@@ -1,8 +1,9 @@
 /**
- * Seeds a complete Insights development environment from scratch.
+ * Seeds a complete Insights + Alerts development environment from scratch.
  *
  * Creates: owner account, org, project, target, schema, usage data (30 days),
- * and saved filters with view counts.
+ * saved filters with view counts, alert channels, metric alert rules (all types),
+ * and 30 days of historical alert state transitions + incidents.
  *
  * Prerequisites:
  *   - Docker Compose is running (pnpm local:setup)
@@ -12,99 +13,130 @@
  *   bun scripts/seed-insights.mts
  */
 
+import 'reflect-metadata';
 import * as readline from 'node:readline/promises';
-import setCookie from 'set-cookie-parser';
 import type { CollectedOperation } from '../integration-tests/testkit/usage';
 
 process.env.RUN_AGAINST_LOCAL_SERVICES = '1';
 await import('../integration-tests/local-dev.ts');
 
+const { createPostgresDatabasePool, psql } = await import('@hive/postgres');
+const { authenticate } = await import('../integration-tests/testkit/auth');
 const { ensureEnv } = await import('../integration-tests/testkit/env');
-const { createOrganization, createProject, createToken, publishSchema } = await import(
-  '../integration-tests/testkit/flow'
-);
+const {
+  addAlertChannel,
+  addMetricAlertRule,
+  createOrganization,
+  createProject,
+  createToken,
+  publishSchema,
+} = await import('../integration-tests/testkit/flow');
 const { execute } = await import('../integration-tests/testkit/graphql');
 const { legacyCollect } = await import('../integration-tests/testkit/usage');
-const { generateUnique, getServiceHost } = await import('../integration-tests/testkit/utils');
-const { TargetAccessScope, ProjectType, SavedFilterVisibilityType } = await import(
-  '../integration-tests/testkit/gql/graphql'
-);
+const { generateUnique } = await import('../integration-tests/testkit/utils');
+const {
+  AlertChannelType,
+  MetricAlertRuleDirection,
+  MetricAlertRuleMetric,
+  MetricAlertRuleSeverity,
+  MetricAlertRuleThresholdType,
+  MetricAlertRuleType,
+  ProjectType,
+  SavedFilterVisibilityType,
+  TargetAccessScope,
+} = await import('../integration-tests/testkit/gql/graphql');
 const { CreateSavedFilterMutation, TrackSavedFilterViewMutation } = await import(
   '../integration-tests/testkit/saved-filters'
 );
 
 // ---------------------------------------------------------------------------
-// Auth helper — handles both new and existing SuperTokens users
+// Auth helper — creates a new user or creates a session for an existing one
 // ---------------------------------------------------------------------------
 
 const password = 'ilikebigturtlesandicannotlie47';
 
-async function signInOrSignUp(
+function getSeedPGConnectionString() {
+  const pg = {
+    user: ensureEnv('POSTGRES_USER'),
+    password: ensureEnv('POSTGRES_PASSWORD'),
+    host: ensureEnv('POSTGRES_HOST'),
+    port: ensureEnv('POSTGRES_PORT'),
+    db: ensureEnv('POSTGRES_DB'),
+  };
+  return `postgres://${pg.user}:${pg.password}@${pg.host}:${pg.port}/${pg.db}?sslmode=disable`;
+}
+
+async function getOrCreateAuth(
   email: string,
-): Promise<{ access_token: string; refresh_token: string }> {
-  const graphqlAddress = await getServiceHost('server', 8082);
-
-  let response = await fetch(`http://${graphqlAddress}/auth-api/signup`, {
-    method: 'POST',
-    body: JSON.stringify({
-      formFields: [
-        {
-          id: 'email',
-          value: email,
-        },
-        {
-          id: 'password',
-          value: password,
-        },
-      ],
-    }),
-    headers: {
-      'content-type': 'application/json',
-    },
+): Promise<{ access_token: string; refresh_token: string; isExistingUser: boolean }> {
+  const pool = await createPostgresDatabasePool({
+    connectionParameters: getSeedPGConnectionString(),
   });
+  try {
+    // Check if the user already exists
+    const existingUserId = await pool.maybeOneFirst(psql`
+      SELECT "user_id" FROM "supertokens_emailpassword_users"
+      WHERE "app_id" = 'public' AND "email" = lower(${email})
+    `);
 
-  let body = await response.json();
-  if (body.status === 'OK') {
-    const cookies = setCookie.parse(response.headers.getSetCookie());
-    return {
-      access_token: cookies.find(c => c.name === 'sAccessToken')?.value ?? '',
-      refresh_token: cookies.find(c => c.name === 'sRefreshToken')?.value ?? '',
-    };
-  }
+    if (existingUserId) {
+      // Existing user — create a session directly without signup
+      console.log(`   Found existing user: ${email}`);
+      const { SuperTokensStore } = await import(
+        '@hive/api/modules/auth/providers/supertokens-store'
+      );
+      const { NoopLogger } = await import('@hive/api/modules/shared/providers/logger');
+      const { AccessTokenKeyContainer } = await import(
+        '@hive/api/modules/auth/lib/supertokens-at-home/crypto'
+      );
+      const { createNewSession } = await import('@hive/server/supertokens-at-home/shared');
+      const { createTRPCProxyClient, httpLink } = await import('@trpc/client');
+      const { getServiceHost } = await import('../integration-tests/testkit/utils');
+      const graphqlAddress = await getServiceHost('server', 8082);
 
-  console.log('signup response', JSON.stringify(body, null, 2));
-  console.log('attempt sign in');
+      type InternalApi = import('@hive/server').InternalApi;
+      const internalApi = createTRPCProxyClient<InternalApi>({
+        links: [httpLink({ url: `http://${graphqlAddress}/trpc`, fetch })],
+      });
 
-  response = await fetch(`http://${graphqlAddress}/auth-api/signin`, {
-    method: 'POST',
-    body: JSON.stringify({
-      formFields: [
+      const ensureUserResult = await internalApi.ensureUser.mutate({
+        superTokensUserId: existingUserId as string,
+        email,
+        oidcIntegrationId: null,
+        firstName: null,
+        lastName: null,
+      });
+      if (!ensureUserResult.ok) {
+        throw new Error(`ensureUser failed: ${ensureUserResult.reason}`);
+      }
+
+      const supertokensStore = new SuperTokensStore(pool, new NoopLogger());
+      const session = await createNewSession(
+        supertokensStore,
         {
-          id: 'email',
-          value: email,
+          superTokensUserId: existingUserId as string,
+          hiveUser: ensureUserResult.user,
+          oidcIntegrationId: null,
         },
         {
-          id: 'password',
-          value: password,
+          refreshTokenKey: process.env.SUPERTOKENS_REFRESH_TOKEN_KEY!,
+          accessTokenKey: new AccessTokenKeyContainer(process.env.SUPERTOKENS_ACCESS_TOKEN_KEY!),
         },
-      ],
-    }),
-    headers: {
-      'content-type': 'application/json',
-    },
-  });
+      );
 
-  body = await response.json();
+      return {
+        access_token: session.accessToken.token,
+        refresh_token: session.refreshToken,
+        isExistingUser: true,
+      };
+    }
 
-  if (body.status === 'OK') {
-    const cookies = setCookie.parse(response.headers.getSetCookie());
-    return {
-      access_token: cookies.find(c => c.name === 'sAccessToken')?.value ?? '',
-      refresh_token: cookies.find(c => c.name === 'sRefreshToken')?.value ?? '',
-    };
+    // New user — authenticate creates the user + session
+    const auth = await authenticate(pool, email);
+    return { access_token: auth.access_token, refresh_token: auth.refresh_token, isExistingUser: false };
+  } finally {
+    await pool.end();
   }
-
-  throw new Error('Failed to sign in or up ' + JSON.stringify(body, null, 2));
 }
 
 // ---------------------------------------------------------------------------
@@ -453,7 +485,7 @@ async function main() {
   const ownerEmail = inputEmail || `${generateUnique()}-${Date.now()}@localhost.localhost`;
 
   console.log(`\n🚀 Creating owner (${ownerEmail}), org, project...`);
-  const auth = await signInOrSignUp(ownerEmail);
+  const auth = await getOrCreateAuth(ownerEmail);
   const ownerToken = auth.access_token;
 
   // Create organization
@@ -565,10 +597,6 @@ async function main() {
     }
   }
 
-  // Wait for ingestion
-  console.log('⏳ Waiting for usage ingestion (15s)...');
-  await new Promise(resolve => setTimeout(resolve, 15_000));
-
   // Helper for saved filter operations
   const targetSelector = {
     organizationSlug: organization.slug,
@@ -576,35 +604,11 @@ async function main() {
     targetSlug: target.slug,
   };
 
-  // Fetch actual operation hashes from ingested data
-  console.log('🔍 Fetching operation hashes...');
+  // Wait for ingestion — poll until operations appear in ClickHouse
   const { parse } = await import('graphql');
-  const opsResult = await execute({
-    document: parse(/* GraphQL */ `
-      query SeedGetOperationHashes($target: TargetReferenceInput!, $period: DateRangeInput!) {
-        target(reference: $target) {
-          operationsStats(period: $period) {
-            operations {
-              edges {
-                node {
-                  name
-                  operationHash
-                }
-              }
-            }
-          }
-        }
-      }
-    `) as any,
-    variables: {
-      target: { bySelector: targetSelector },
-      period: {
-        from: new Date(now - THIRTY_DAYS_MS).toISOString(),
-        to: new Date(now).toISOString(),
-      },
-    },
-    authToken: ownerToken,
-  }).then(r => r.expectNoGraphQLErrors());
+  const MAX_WAIT_MS = 120_000; // 2 minutes max
+  const POLL_INTERVAL_MS = 5_000; // check every 5s
+  const waitStart = Date.now();
 
   type OpsResult = {
     target?: {
@@ -615,20 +619,65 @@ async function main() {
       };
     };
   };
-  const operationEdges = (opsResult as OpsResult).target?.operationsStats?.operations?.edges ?? [];
-  const operationHashMap = new Map<string, string>();
-  for (const edge of operationEdges) {
-    if (edge.node.operationHash && edge.node.name) {
-      // API returns names as "{hashPrefix}_{operationName}", extract the operationName part
-      const underscoreIdx = edge.node.name.indexOf('_');
-      const operationName =
-        underscoreIdx >= 0 ? edge.node.name.slice(underscoreIdx + 1) : edge.node.name;
-      operationHashMap.set(operationName, edge.node.operationHash);
+
+  async function fetchOperationHashes(): Promise<Map<string, string>> {
+    const result = await execute({
+      document: parse(/* GraphQL */ `
+        query SeedGetOperationHashes($target: TargetReferenceInput!, $period: DateRangeInput!) {
+          target(reference: $target) {
+            operationsStats(period: $period) {
+              operations {
+                edges {
+                  node {
+                    name
+                    operationHash
+                  }
+                }
+              }
+            }
+          }
+        }
+      `) as any,
+      variables: {
+        target: { bySelector: targetSelector },
+        period: {
+          from: new Date(now - THIRTY_DAYS_MS).toISOString(),
+          to: new Date(now).toISOString(),
+        },
+      },
+      authToken: ownerToken,
+    }).then(r => r.expectNoGraphQLErrors());
+
+    const edges = (result as OpsResult).target?.operationsStats?.operations?.edges ?? [];
+    const hashMap = new Map<string, string>();
+    for (const edge of edges) {
+      if (edge.node.operationHash && edge.node.name) {
+        const underscoreIdx = edge.node.name.indexOf('_');
+        const operationName =
+          underscoreIdx >= 0 ? edge.node.name.slice(underscoreIdx + 1) : edge.node.name;
+        hashMap.set(operationName, edge.node.operationHash);
+      }
     }
+    return hashMap;
   }
-  console.log(
-    `   Found ${operationHashMap.size} operations: ${[...operationHashMap.keys()].join(', ')}`,
-  );
+
+  console.log('⏳ Waiting for usage ingestion (polling up to 2 minutes)...');
+  let operationHashMap = new Map<string, string>();
+
+  while (Date.now() - waitStart < MAX_WAIT_MS) {
+    await new Promise(resolve => setTimeout(resolve, POLL_INTERVAL_MS));
+    operationHashMap = await fetchOperationHashes();
+    const elapsed = Math.round((Date.now() - waitStart) / 1000);
+    if (operationHashMap.size > 0) {
+      console.log(`   Found ${operationHashMap.size} operations after ${elapsed}s`);
+      break;
+    }
+    process.stdout.write(`   ${elapsed}s — no operations yet, retrying...\n`);
+  }
+
+  if (operationHashMap.size === 0) {
+    console.warn('⚠️  No operations found after 2 minutes. Saved filters will have 0 ops.');
+  }
 
   async function createSavedFilter(input: {
     name: string;
@@ -864,16 +913,346 @@ async function main() {
     console.log(`   "${filter.name}": ${filter.views} views`);
   }
 
+  // -------------------------------------------------------------------------
+  // 6. Metric Alert Rules
+  // -------------------------------------------------------------------------
+
+  console.log('\n🚨 Creating metric alert rules...');
+
+  // Use Webhook channels for seeding — Slack channels require a Slack token on the org
+  // which isn't available in local dev.
+  const channel1 = await addAlertChannel(
+    {
+      organizationSlug: organization.slug,
+      projectSlug: project.slug,
+      name: 'Slack #alerts (webhook)',
+      type: AlertChannelType.Webhook,
+      webhook: { endpoint: 'http://localhost:9999/slack-alerts' },
+    },
+    ownerToken,
+  ).then(r => r.expectNoGraphQLErrors());
+
+  const channel2 = await addAlertChannel(
+    {
+      organizationSlug: organization.slug,
+      projectSlug: project.slug,
+      name: 'PagerDuty Webhook',
+      type: AlertChannelType.Webhook,
+      webhook: { endpoint: 'http://localhost:9999/pagerduty' },
+    },
+    ownerToken,
+  ).then(r => r.expectNoGraphQLErrors());
+
+  const slackChannelId = channel1.addAlertChannel.ok!.addedAlertChannel.id;
+  const webhookChannelId = channel2.addAlertChannel.ok!.addedAlertChannel.id;
+  console.log(`   Channels: #alerts (${slackChannelId}), PagerDuty (${webhookChannelId})`);
+
+  const alertRuleDefs = [
+    {
+      name: 'Error Rate Above 10% - Last 5 Min',
+      type: MetricAlertRuleType.ErrorRate,
+      timeWindowMinutes: 5,
+      thresholdType: MetricAlertRuleThresholdType.FixedValue,
+      thresholdValue: 10,
+      direction: MetricAlertRuleDirection.Above,
+      severity: MetricAlertRuleSeverity.Critical,
+      channelIds: [slackChannelId, webhookChannelId],
+      desiredState: 'FIRING' as const,
+    },
+    {
+      name: 'Error Rate Above 5%',
+      type: MetricAlertRuleType.ErrorRate,
+      timeWindowMinutes: 60,
+      thresholdType: MetricAlertRuleThresholdType.FixedValue,
+      thresholdValue: 5,
+      direction: MetricAlertRuleDirection.Above,
+      severity: MetricAlertRuleSeverity.Info,
+      channelIds: [slackChannelId, webhookChannelId],
+      desiredState: 'FIRING' as const,
+    },
+    {
+      name: 'Error Rate Increased by 75% - Last Hour',
+      type: MetricAlertRuleType.ErrorRate,
+      timeWindowMinutes: 60,
+      thresholdType: MetricAlertRuleThresholdType.PercentageChange,
+      thresholdValue: 75,
+      direction: MetricAlertRuleDirection.Above,
+      severity: MetricAlertRuleSeverity.Critical,
+      channelIds: [slackChannelId],
+      desiredState: 'NORMAL' as const,
+    },
+    {
+      name: 'P99 Latency Above 2000ms',
+      type: MetricAlertRuleType.Latency,
+      metric: MetricAlertRuleMetric.P99,
+      timeWindowMinutes: 30,
+      thresholdType: MetricAlertRuleThresholdType.FixedValue,
+      thresholdValue: 2000,
+      direction: MetricAlertRuleDirection.Above,
+      severity: MetricAlertRuleSeverity.Warning,
+      channelIds: [slackChannelId, webhookChannelId],
+      desiredState: 'FIRING' as const,
+    },
+    {
+      name: 'P95 Latency Increased by 25%',
+      type: MetricAlertRuleType.Latency,
+      metric: MetricAlertRuleMetric.P95,
+      timeWindowMinutes: 30,
+      thresholdType: MetricAlertRuleThresholdType.PercentageChange,
+      thresholdValue: 25,
+      direction: MetricAlertRuleDirection.Above,
+      severity: MetricAlertRuleSeverity.Warning,
+      channelIds: [webhookChannelId],
+      desiredState: 'NORMAL' as const,
+    },
+    {
+      name: 'P99 Latency Increased by 50%',
+      type: MetricAlertRuleType.Latency,
+      metric: MetricAlertRuleMetric.P99,
+      timeWindowMinutes: 60,
+      thresholdType: MetricAlertRuleThresholdType.PercentageChange,
+      thresholdValue: 50,
+      direction: MetricAlertRuleDirection.Above,
+      severity: MetricAlertRuleSeverity.Critical,
+      channelIds: [slackChannelId],
+      desiredState: 'NORMAL' as const,
+    },
+    {
+      name: 'Request Rate Below 100 rpm',
+      type: MetricAlertRuleType.Traffic,
+      timeWindowMinutes: 30,
+      thresholdType: MetricAlertRuleThresholdType.FixedValue,
+      thresholdValue: 100,
+      direction: MetricAlertRuleDirection.Below,
+      severity: MetricAlertRuleSeverity.Critical,
+      channelIds: [slackChannelId, webhookChannelId],
+      desiredState: 'NORMAL' as const,
+    },
+    {
+      name: 'Traffic Decreased by 60% - Last Hour',
+      type: MetricAlertRuleType.Traffic,
+      timeWindowMinutes: 60,
+      thresholdType: MetricAlertRuleThresholdType.PercentageChange,
+      thresholdValue: 60,
+      direction: MetricAlertRuleDirection.Below,
+      severity: MetricAlertRuleSeverity.Warning,
+      channelIds: [webhookChannelId],
+      desiredState: 'NORMAL' as const,
+    },
+    {
+      name: 'Traffic Increased by 150% - Last 30 Min',
+      type: MetricAlertRuleType.Traffic,
+      timeWindowMinutes: 30,
+      thresholdType: MetricAlertRuleThresholdType.PercentageChange,
+      thresholdValue: 150,
+      direction: MetricAlertRuleDirection.Above,
+      severity: MetricAlertRuleSeverity.Info,
+      channelIds: [slackChannelId, webhookChannelId],
+      desiredState: 'FIRING' as const,
+    },
+    {
+      name: 'Traffic Increased by 200% - Last 15 Min',
+      type: MetricAlertRuleType.Traffic,
+      timeWindowMinutes: 15,
+      thresholdType: MetricAlertRuleThresholdType.PercentageChange,
+      thresholdValue: 200,
+      direction: MetricAlertRuleDirection.Above,
+      severity: MetricAlertRuleSeverity.Warning,
+      channelIds: [webhookChannelId],
+      desiredState: 'PENDING' as const,
+    },
+    {
+      name: 'Request Rate Above 10,000 rpm',
+      type: MetricAlertRuleType.Traffic,
+      timeWindowMinutes: 5,
+      thresholdType: MetricAlertRuleThresholdType.FixedValue,
+      thresholdValue: 10000,
+      direction: MetricAlertRuleDirection.Above,
+      severity: MetricAlertRuleSeverity.Warning,
+      channelIds: [slackChannelId],
+      desiredState: 'RECOVERING' as const,
+    },
+  ];
+
+  const createdAlertRules: Array<{ id: string; name: string; desiredState: string }> = [];
+
+  for (const def of alertRuleDefs) {
+    const result = await addMetricAlertRule(
+      {
+        organizationSlug: organization.slug,
+        projectSlug: project.slug,
+        targetSlug: target.slug,
+        name: def.name,
+        type: def.type,
+        metric: 'metric' in def ? (def as any).metric : undefined,
+        timeWindowMinutes: def.timeWindowMinutes,
+        thresholdType: def.thresholdType,
+        thresholdValue: def.thresholdValue,
+        direction: def.direction,
+        severity: def.severity,
+        channelIds: def.channelIds,
+      },
+      ownerToken,
+    ).then(r => r.expectNoGraphQLErrors());
+
+    const rule = result.addMetricAlertRule.ok?.addedMetricAlertRule;
+    if (rule) {
+      createdAlertRules.push({ id: rule.id, name: def.name, desiredState: def.desiredState });
+      console.log(`   ✓ ${def.name}`);
+    } else {
+      console.error(`   ✗ Failed: ${def.name}`);
+    }
+  }
+
+  // Seed historical state transitions and incidents
+  console.log('\n📊 Seeding 30 days of alert history + 7 days ahead...');
+
+  const alertPool = await createPostgresDatabasePool({
+    connectionParameters: getSeedPGConnectionString(),
+  });
+
+  const ALERT_DAYS_PAST = 30;
+  const ALERT_DAYS_AHEAD = 7;
+  const alertTotalHours = (ALERT_DAYS_PAST + ALERT_DAYS_AHEAD) * 24;
+  const alertNowHoursFromStart = ALERT_DAYS_PAST * 24;
+
+  function hoursAgo(hours: number): Date {
+    return new Date(Date.now() - hours * 60 * 60 * 1000);
+  }
+
+  function randomBetween(min: number, max: number): number {
+    return Math.random() * (max - min) + min;
+  }
+
+  const targetId = target.id;
+  const alertExpiresAt = new Date(Date.now() + (ALERT_DAYS_AHEAD + 1) * 24 * 60 * 60 * 1000);
+
+  for (const rule of createdAlertRules) {
+    const transitions: Array<{
+      fromState: string;
+      toState: string;
+      value: number;
+      previousValue: number;
+      thresholdValue: number;
+      createdAt: Date;
+    }> = [];
+
+    let currentState = 'NORMAL';
+    let hour = 0;
+
+    while (hour < alertTotalHours) {
+      hour += Math.floor(randomBetween(4, 48));
+      if (hour >= alertTotalHours) break;
+
+      const eventTime = hoursAgo(alertNowHoursFromStart - hour);
+      const value = randomBetween(50, 500);
+      const previousValue = randomBetween(30, 300);
+
+      if (currentState === 'NORMAL') {
+        transitions.push({
+          fromState: 'NORMAL', toState: 'PENDING',
+          value, previousValue, thresholdValue: value * 0.8, createdAt: eventTime,
+        });
+        currentState = 'PENDING';
+
+        const firingTime = new Date(eventTime.getTime() + randomBetween(2, 10) * 60000);
+        transitions.push({
+          fromState: 'PENDING', toState: 'FIRING',
+          value: value * 1.1, previousValue: value, thresholdValue: value * 0.8, createdAt: firingTime,
+        });
+        currentState = 'FIRING';
+
+        const recoverTime = new Date(firingTime.getTime() + randomBetween(10, 180) * 60000);
+        transitions.push({
+          fromState: 'FIRING', toState: 'RECOVERING',
+          value: value * 0.5, previousValue: value * 1.1, thresholdValue: value * 0.8, createdAt: recoverTime,
+        });
+        currentState = 'RECOVERING';
+
+        const normalTime = new Date(recoverTime.getTime() + randomBetween(3, 15) * 60000);
+        transitions.push({
+          fromState: 'RECOVERING', toState: 'NORMAL',
+          value: value * 0.3, previousValue: value * 0.5, thresholdValue: value * 0.8, createdAt: normalTime,
+        });
+        currentState = 'NORMAL';
+      }
+    }
+
+    for (const t of transitions) {
+      await alertPool.query(psql`
+        INSERT INTO "metric_alert_state_log" (
+          "metric_alert_rule_id", "target_id", "from_state", "to_state",
+          "value", "previous_value", "threshold_value", "created_at", "expires_at"
+        ) VALUES (
+          ${rule.id}, ${targetId}, ${t.fromState}, ${t.toState},
+          ${t.value}, ${t.previousValue}, ${t.thresholdValue},
+          ${t.createdAt.toISOString()}, ${alertExpiresAt.toISOString()}
+        )
+      `);
+    }
+
+    const firingTransitions = transitions.filter(t => t.toState === 'FIRING');
+    const resolvedTransitions = transitions.filter(t => t.fromState === 'RECOVERING' && t.toState === 'NORMAL');
+
+    for (let i = 0; i < firingTransitions.length; i++) {
+      const firing = firingTransitions[i];
+      const resolved = resolvedTransitions[i];
+      await alertPool.query(psql`
+        INSERT INTO "metric_alert_incidents" (
+          "metric_alert_rule_id", "started_at", "resolved_at",
+          "current_value", "previous_value", "threshold_value"
+        ) VALUES (
+          ${rule.id}, ${firing.createdAt.toISOString()},
+          ${resolved ? resolved.createdAt.toISOString() : null},
+          ${firing.value}, ${firing.previousValue}, ${firing.thresholdValue}
+        )
+      `);
+    }
+
+    if (rule.desiredState !== 'NORMAL') {
+      const stateChangedAt = hoursAgo(randomBetween(0.5, 3));
+      await alertPool.query(psql`
+        UPDATE "metric_alert_rules"
+        SET "state" = ${rule.desiredState}, "state_changed_at" = ${stateChangedAt.toISOString()},
+            "last_evaluated_at" = NOW(), "updated_at" = NOW()
+        WHERE "id" = ${rule.id}
+      `);
+
+      if (rule.desiredState === 'FIRING') {
+        await alertPool.query(psql`
+          INSERT INTO "metric_alert_incidents" (
+            "metric_alert_rule_id", "started_at", "current_value", "previous_value", "threshold_value"
+          ) VALUES (
+            ${rule.id}, ${stateChangedAt.toISOString()},
+            ${randomBetween(100, 500)}, ${randomBetween(30, 100)}, ${randomBetween(50, 200)}
+          )
+        `);
+      }
+    }
+
+    console.log(
+      `   📈 ${rule.name}: ${transitions.length} transitions, ${firingTransitions.length} incidents${rule.desiredState !== 'NORMAL' ? ` [${rule.desiredState}]` : ''}`,
+    );
+  }
+
+  await alertPool.end();
+
   console.log(`
 ✅ Seed complete!
 
 Credentials:
   Email:    ${ownerEmail}
-  Password: ${password}
+  Password: ${auth.isExistingUser ? '(use existing password)' : password}
 
 Navigate to:
   http://localhost:3000/${organization.slug}/${project.slug}/${target.slug}/insights
-  http://localhost:3000/${organization.slug}/${project.slug}/${target.slug}/insights/manage-filters
+  http://localhost:3000/${organization.slug}/${project.slug}/${target.slug}/alerts
+
+Rules in non-NORMAL states (for polling testing):
+${createdAlertRules
+  .filter(r => r.desiredState !== 'NORMAL')
+  .map(r => `  ${r.desiredState.padEnd(12)} ${r.name}`)
+  .join('\n')}
 `);
 }
 
