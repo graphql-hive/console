@@ -2,7 +2,7 @@ import { type MigrationExecutor } from '../pg-migrator';
 
 export default {
   name: '2026.04.20T10.00.00.graph-variant-versions.ts',
-  run: ({ sql }) => sql`
+  run: ({ psql }) => psql`
     CREATE TABLE IF NOT EXISTS "graph_variants" (
       "id" uuid DEFAULT uuid_generate_v4() PRIMARY KEY NOT NULL
       , "target_id" uuid NOT NULL REFERENCES "targets"("id") ON DELETE CASCADE
@@ -14,7 +14,7 @@ export default {
     CREATE INDEX IF NOT EXISTS "idx_graph_variants_target_id"
       ON "graph_variants" ("target_id")
     ;
-    CREATE UNIQUE INDEX IF NOT EXISTS "uniq_feature_flags_target_id_name"
+    CREATE UNIQUE INDEX IF NOT EXISTS "uniq_graph_variants_target_id_name"
       ON "graph_variants" ("target_id", "name")
     ;
 
@@ -34,7 +34,7 @@ export default {
       ON "graph_variant_versions" ("graph_variant_id")
     ;
     CREATE INDEX IF NOT EXISTS "idx_graph_variant_versions_previous_graph_variant_version_id"
-      ON "graph_variant_versions" ("id")
+      ON "graph_variant_versions" ("previous_graph_variant_version_id")
     ;
     CREATE INDEX IF NOT EXISTS "idx_graph_variant_versions_schema_log_id"
       ON "graph_variant_versions" ("schema_log_id")

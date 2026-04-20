@@ -3,6 +3,7 @@ import { SchemaProposalStorage } from '../proposals/providers/schema-proposal-st
 import { BreakingSchemaChangeUsageHelper } from './providers/breaking-schema-changes-helper';
 import { Contracts } from './providers/contracts';
 import { ContractsManager } from './providers/contracts-manager';
+import { GraphVariants } from './providers/graph-variants';
 import { Inspector } from './providers/inspector';
 import { models } from './providers/models';
 import { CompositionOrchestrator } from './providers/orchestrator/composition-orchestrator';
@@ -34,5 +35,6 @@ export const schemaModule = createModule({
     CompositionOrchestrator,
     ...models,
     SchemaProposalStorage,
+    GraphVariants,
   ],
 });

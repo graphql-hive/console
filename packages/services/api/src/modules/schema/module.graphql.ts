@@ -351,6 +351,10 @@ export default gql`
     commit: String!
     force: Boolean @deprecated(reason: "Enabled by default for newly created projects")
     """
+    Variant name.
+    """
+    variant: String
+    """
     Accept breaking changes and mark schema as valid (if composable)
     """
     experimental_acceptBreakingChanges: Boolean

@@ -39,6 +39,12 @@ import { ArtifactStorageWriter } from './artifact-storage-writer';
 import type { SchemaModuleConfig } from './config';
 import { SCHEMA_MODULE_CONFIG } from './config';
 import { Contracts } from './contracts';
+import {
+  ActiveGraphVariant,
+  GraphVariant,
+  GraphVariantNameModel,
+  GraphVariants,
+} from './graph-variants';
 import { CompositeModel } from './models/composite';
 import {
   DeleteFailureReasonCode,
@@ -121,7 +127,7 @@ function registryLockId(targetId: string) {
   return `registry-lock:${targetId}`;
 }
 
-function assertNonNull<T>(value: T | null, message: string): T {
+function assertNonNull<T>(value: T | null, message: string = "Can't be null"): T {
   if (value === null) {
     throw new Error(message);
   }
@@ -165,6 +171,7 @@ export class SchemaPublisher {
     private schemaVersionHelper: SchemaVersionHelper,
     private operationsReader: OperationsReader,
     private idTranslator: IdTranslator,
+    private schemaVariants: GraphVariants,
     @Inject(SCHEMA_MODULE_CONFIG) private schemaModuleConfig: SchemaModuleConfig,
     singleModel: SingleModel,
     compositeModel: CompositeModel,
@@ -1207,11 +1214,12 @@ export class SchemaPublisher {
       }),
     ]);
 
-    const [contracts, latestVersion] = await Promise.all([
+    const [contracts, latestVersion, activeVariants] = await Promise.all([
       this.contracts.getActiveContractsByTargetId({ targetId: selector.targetId }),
       this.schemaManager.getLatestSchemaVersionWithSchemaLogs({
         target,
       }),
+      this.schemaVariants.getActiveGraphVariantsForTarget(target),
     ]);
 
     if (project.type !== Types.ProjectType.SINGLE) {
@@ -1239,6 +1247,53 @@ export class SchemaPublisher {
             {
               message:
                 'Invalid service name. Service name must be 64 characters or less, must start with a letter, and can only contain alphanumeric characters, dash (-), or underscore (_).',
+            },
+          ],
+        };
+      }
+    }
+
+    if (input.variant) {
+      if (project.type !== Types.ProjectType.FEDERATION) {
+        return {
+          __typename: 'SchemaPublishError',
+          valid: false,
+          changes: [],
+          errors: [
+            {
+              message: 'Publishing a to a graph variant is only supported for Federation projects.',
+            },
+          ],
+        };
+      }
+      // Validate variant name
+      // see if variant already exists
+      const variantValidation = GraphVariantNameModel.safeParse(input.variant);
+
+      if (!variantValidation.success) {
+        return {
+          __typename: 'SchemaPublishError',
+          valid: false,
+          changes: [],
+          errors: [
+            {
+              message:
+                'Invalid variant name provided. ' + variantValidation.error.errors[0].message,
+            },
+          ],
+        };
+      }
+
+      const variant = activeVariants.find(variant => variant.name === input.variant);
+
+      if (variant == null && activeVariants.length >= 3) {
+        return {
+          __typename: 'SchemaPublishError',
+          valid: false,
+          changes: [],
+          errors: [
+            {
+              message: 'The maximum amount of graph variants for this target has been exceeded.',
             },
           ],
         };
@@ -1669,16 +1724,6 @@ export class SchemaPublisher {
       }),
     ]);
 
-    const [latestVersion, latestComposable] = await Promise.all([
-      this.schemaManager.getLatestSchemaVersionWithSchemaLogs({
-        target,
-      }),
-      this.schemaManager.getLatestSchemaVersionWithSchemaLogs({
-        target,
-        onlyComposable: true,
-      }),
-    ]);
-
     function increaseSchemaPublishCountMetric(conclusion: 'rejected' | 'accepted' | 'ignored') {
       schemaPublishCount.inc({
         model: 'modern',
@@ -1750,6 +1795,19 @@ export class SchemaPublisher {
       githubCheckRun = result.data;
     }
 
+    const [latestVersion, latestComposable, graphVariants] = await Promise.all([
+      this.schemaManager.getLatestSchemaVersionWithSchemaLogs({
+        target,
+      }),
+      this.schemaManager.getLatestSchemaVersionWithSchemaLogs({
+        target,
+        onlyComposable: true,
+      }),
+      project.type === Types.ProjectType.FEDERATION
+        ? this.schemaVariants.getActiveGraphVariantsForTarget(target)
+        : null,
+    ]);
+
     await this.schemaManager.completeGetStartedCheck({
       organizationId: project.orgId,
       step: 'publishingSchema',
@@ -1779,15 +1837,30 @@ export class SchemaPublisher {
         })
       : null;
 
-    let publishResult: SchemaPublishResult;
+    let modelPublishState:
+      | {
+          type: 'default';
+          result: SchemaPublishResult;
+          variants: Array<{
+            graphVariantName: string;
+            graphVariant: GraphVariant | null;
+            result: SchemaPublishResult;
+          }> | null;
+        }
+      | {
+          type: 'variant';
+          result: SchemaPublishResult;
+          graphVariantName: string;
+          graphVariant: GraphVariant | null;
+        };
 
     switch (project.type) {
-      case ProjectType.SINGLE:
+      case ProjectType.SINGLE: {
         this.logger.debug(
           'Using SINGLE registry model (featureFlags=%o)',
           organization.featureFlags,
         );
-        publishResult = await this.models[ProjectType.SINGLE].publish({
+        const result = await this.models[ProjectType.SINGLE].publish({
           input: {
             sdl: input.sdl,
             metadata: input.metadata ?? null,
@@ -1814,20 +1887,143 @@ export class SchemaPublisher {
             conditionalBreakingChangeConfiguration?.conditionalBreakingChangeDiffConfig ?? null,
           failDiffOnDangerousChange,
         });
+        modelPublishState = {
+          type: 'default',
+          result,
+          variants: null,
+        };
         break;
+      }
       case ProjectType.FEDERATION:
-      case ProjectType.STITCHING:
+      case ProjectType.STITCHING: {
         this.logger.debug(
           'Using %s registry model (featureFlags=%o)',
           project.type,
           organization.featureFlags,
         );
 
+        const model = this.models[project.type];
+        let result;
+
         if (!input.service) {
           throw new Error('Invalid state. input.service should have been validated by now.');
         }
 
-        publishResult = await this.models[project.type].publish({
+        if (input.variant) {
+          this.logger.debug(
+            'This schema publish is for a single single graph variant. (schemaVariantName=%s)',
+            input.variant,
+          );
+
+          const graphVariant =
+            graphVariants?.find(variant => variant.name === input.variant) ?? null;
+
+          if (graphVariant === null) {
+            // If this schema variant does not yet exist
+            // we take the main schema registry state as the basis for the variant
+            // and replace the service that might - or might not yet exist there
+            this.logger.debug(
+              'This is the first publish to this graph variant. Use the latest schema version as the basis for the initial graph variant version. (schemaVariantName=%s, latestSchemaVersionId=%s)',
+              input.variant,
+              latestVersion,
+            );
+
+            result = await model.publish({
+              input: {
+                sdl: input.sdl,
+                service: input.service,
+                // TODO: metadata pls 🦧 We propbably do not need this it was a hack for stitching and everyone is moving to federation anyways
+                metadata: null,
+                // TODO: think about whether we should enforce that a url is provided (and that the URL is different from the default graph service url)
+                // The idea of a variant is to publish two versions of a service to production
+                // It would not really make a lot of sense if the service that is overwritten
+                // in the variant has the same URL as the main graph.
+                // We should potentially be strict about this and assert it.
+                url: input.url ?? null,
+              },
+              latest: latestVersion
+                ? {
+                    isComposable: latestVersion.version.isComposable,
+                    sdl: latestVersion.version.compositeSchemaSDL,
+                    schemas: ensureCompositeSchemas(latestVersion.schemas).map(
+                      toCompositeSchemaInput,
+                    ),
+                    contractNames:
+                      latestSchemaVersionContracts?.edges.map(edge => edge.node.contractName) ??
+                      null,
+                  }
+                : null,
+              // TODO: should we show a diff against the default graph here?
+              // Should we show a changelog to the latest default graph composable version?
+              // Or should we just show "initial version" on the Hive UI?
+              // If we decide to show a diff against the latest composable version from the main graph, we should also create
+              // a link on the database level
+              latestComposable: /* latestComposable
+                ? {
+                    isComposable: latestComposable.version.isComposable,
+                    sdl: latestComposable.version.compositeSchemaSDL,
+                    schemas: ensureCompositeSchemas(latestComposable.schemas).map(
+                      toCompositeSchemaInput,
+                    ),
+                  }
+                : */ null,
+              organization,
+              project,
+              target,
+              baseSchema,
+              // For now we are not providing contracts for graph variants, but we could support it.
+              // Let's avoid any unnecessary complexity though unless someone explicitly asked for it.
+              contracts: null,
+              conditionalBreakingChangeDiffConfig:
+                conditionalBreakingChangeConfiguration?.conditionalBreakingChangeDiffConfig ?? null,
+              failDiffOnDangerousChange,
+            });
+          } else {
+            this.logger.debug(
+              'The graph variant already exists. Using the latest graph variant version as the basis for the new graph variant version. (schemaVariantName=%s, latestGraphVersionId=%s)',
+              graphVariant.name,
+              graphVariant.id,
+            );
+
+            const { latest, latestComposable } =
+              await this.retrieveLatestGraphVariantState(graphVariant);
+
+            result = await model.publish({
+              input: {
+                sdl: input.sdl,
+                service: input.service,
+                metadata: null,
+                // TODO: Figure out how to deal with url
+                url: input.url ?? null,
+              },
+              // TODO: metadata property 🦧
+              latest,
+              // TODO: should we use the main registry schema here if there is no composable schema variant version yet?
+              // TODO: metadata property 🦧
+              latestComposable,
+              organization,
+              project,
+              target,
+              baseSchema,
+              contracts: null,
+              conditionalBreakingChangeDiffConfig:
+                conditionalBreakingChangeConfiguration?.conditionalBreakingChangeDiffConfig ?? null,
+              failDiffOnDangerousChange,
+            });
+          }
+
+          modelPublishState = {
+            type: 'variant',
+            graphVariantName: input.variant,
+            graphVariant: graphVariant,
+            result,
+          };
+          break;
+        }
+
+        this.logger.debug('This schema publish is for the default graph.');
+
+        result = await model.publish({
           input: {
             sdl: input.sdl,
             service: input.service,
@@ -1861,14 +2057,181 @@ export class SchemaPublisher {
             conditionalBreakingChangeConfiguration?.conditionalBreakingChangeDiffConfig ?? null,
           failDiffOnDangerousChange,
         });
+
+        // shortcut to null if default schema is rejected
+        let variants = null;
+
+        if (graphVariants?.length && result.conclusion !== 'REJECT') {
+          this.logger.debug(
+            'Identify affected graph variants. (availableVariantNames=%o)',
+            graphVariants.map(variant => variant.name),
+          );
+
+          // A graph variant is affected by this schema publish if:
+          // - The service name does not yet exists within the latest graph variant version
+          // - The latest graph variant version as well as the latest default graph version have the same ID for the service (TODO: seems like this cannot really happen in practise ?)
+
+          // The ID of the latest default registry schema log with the same name
+          const latestSchemaLogIdForService =
+            latestVersion?.schemas.find(
+              log => log.kind === 'composite' && log.service_name === input.service,
+            )?.id ?? null;
+
+          const schemaVariantStates = await Promise.all(
+            graphVariants.map(variant => this.retrieveLatestGraphVariantState(variant)),
+          );
+
+          variants = [];
+
+          for (const schemaVariantState of schemaVariantStates) {
+            const serviceLog = schemaVariantState.latest.schemas.find(
+              log => log.serviceName === input.service,
+            );
+
+            // the service already exists in the variant, but did not yet exist in the main registry
+            // in that scenario we do not need to add it to this variant, as it diverged
+            if (serviceLog && latestSchemaLogIdForService === null) {
+              continue;
+            }
+
+            if (
+              // This service does not exist in the variant -> we need to add it
+              // TODO: there might be an edge case where the variant wants to test a delete action (we need to think about that)
+              serviceLog == null ||
+              // the service is in sync for the default graph and this variant graph
+              // thus we need to publish it to the variant
+              latestSchemaLogIdForService === serviceLog.id
+            ) {
+              variants.push({
+                graphVariantName: schemaVariantState.graphVariant.name,
+                graphVariant: schemaVariantState.graphVariant,
+                result: await model.publish({
+                  input: {
+                    sdl: input.sdl,
+                    service: input.service,
+                    // TODO: metadata 🦧
+                    metadata: null,
+                    // TODO: Figure out how to deal with url
+                    url: input.url ?? null,
+                  },
+                  // TODO: metadata 🦧
+                  latest: schemaVariantState.latest,
+                  // TODO: metadata 🦧
+                  latestComposable: schemaVariantState.latestComposable,
+                  organization,
+                  project,
+                  target,
+                  baseSchema,
+                  contracts: null,
+                  conditionalBreakingChangeDiffConfig:
+                    conditionalBreakingChangeConfiguration?.conditionalBreakingChangeDiffConfig ??
+                    null,
+                  failDiffOnDangerousChange,
+                }),
+              });
+            }
+          }
+        }
+
+        modelPublishState = {
+          type: 'default',
+          result,
+          variants,
+        };
         break;
+      }
       default: {
         this.logger.debug('Unsupported project type (type=%s)', project.type);
         throw new HiveError(`${project.type} project not supported`);
       }
     }
 
+    if (modelPublishState.type === 'variant') {
+      if (modelPublishState.result.conclusion === 'IGNORE') {
+        return {
+          __typename: 'SchemaPublishSuccess',
+          initial: false,
+          valid: true,
+          changes: [],
+          linkToWebsite: 'TODO: link to variant version on web app',
+        } as const;
+      }
+      if (modelPublishState.result.conclusion === 'REJECT') {
+        if (
+          getReasonByCode(
+            modelPublishState.result.reasons,
+            PublishFailureReasonCode.MissingServiceUrl,
+          )
+        ) {
+          return {
+            __typename: 'SchemaPublishMissingUrlError' as const,
+            message: 'Missing service url',
+          } as const;
+        }
+
+        throw new Error('TODO: figure out other reasons why the schema publish might be rejected.');
+      }
+
+      const state = modelPublishState.result.state;
+
+      await this.schemaVariants.createGraphVariantVersion({
+        graphVariant: modelPublishState.graphVariant
+          ? { type: 'exists', value: modelPublishState.graphVariant }
+          : {
+              type: 'doesNotExist',
+              name: modelPublishState.graphVariantName,
+              targetId: target.id,
+            },
+        // If the schema publish is to a single schema variant,
+        // we need to create a new schema log that only exists for this specific schema variant.
+        schemaLog: {
+          type: 'doesNotExist',
+          input: {
+            projectId: project.id,
+            targetId: target.id,
+            commit: input.commit,
+            author: input.author,
+            sdl: state.schema.sdl,
+            // Note:
+            // `serviceName` and `serviceUrl` can not be `null` at this stage
+            // if they were, `modelPublishState.result.conclusion` would have been `'REJECT'`
+            // currently it is kind of hard to express this in the type system as
+            // we have mixed monolith and federation/stitching logic in this code.
+            serviceName: assertNonNull(state.schema.serviceName),
+            serviceUrl: assertNonNull(state.schema.serviceUrl),
+          },
+        },
+        supergraphSdl: state.supergraph,
+        compositeSchemaSdl: state.fullSchemaSdl,
+        schemaCompositionErrors: state.compositionErrors,
+        // exclude the current published schema - it needs to be created first.
+        schemaLogIds: state.schemas.filter(s => s.id !== state.schema.id).map(s => s.id),
+        schemaChanges: state.changes,
+      });
+
+      // TODO: write assets to the CDN 😃
+
+      return {
+        __typename: 'SchemaPublishSuccess' as const,
+        initial: false,
+        valid: state.composable,
+        changes: null,
+        message: '',
+        linkToWebsite: 'foobarsbro',
+      };
+    }
+
+    const publishResult = modelPublishState.result;
+
     if (publishResult.conclusion === SchemaPublishConclusion.Ignore) {
+      // TODO: if the variants are no ignores, we need to handle this here!
+      if (modelPublishState.variants) {
+        // I think here we would need to figure out the schema log that already exists for the default graph ?
+        // And then also link it to the variant?
+        // Definetly need to first create some kind of test that covers this scenario
+        throw new Error('TODO: handle variant results in case default schema is ignored.');
+      }
+
       this.logger.debug('Publish ignored (reasons=%s)', publishResult.reason);
 
       increaseSchemaPublishCountMetric('ignored');
@@ -1967,6 +2330,16 @@ export class SchemaPublisher {
         changes,
         errors,
       };
+    }
+
+    if (
+      modelPublishState.variants?.some(
+        variant => variant.result.conclusion === SchemaPublishConclusion.Reject,
+      )
+    ) {
+      // TODO: handle reject
+      // Can this even happen? Wouldn't the default graph be rejected in that case as well?
+      throw new Error('TODO: handle case where a variant might be rejected.');
     }
 
     const errors = (
@@ -2084,15 +2457,52 @@ export class SchemaPublisher {
         : {
             compositeSchemaSDL: null,
             supergraphSDL: null,
-            schemaCompositionErrors: assertNonNull(
-              publishResult.state.compositionErrors,
-              "Can't be null",
-            ),
+            schemaCompositionErrors: assertNonNull(publishResult.state.compositionErrors),
             tags: null,
             schemaMetadata: null,
             metadataAttributes: null,
           }),
     });
+
+    if (modelPublishState.variants) {
+      this.logger.debug(
+        'Publish affected graph variants. (variantNames=%o)',
+        modelPublishState.variants.map(variant => variant.graphVariantName),
+      );
+      const schemaLogId = schemaVersion.actionId;
+
+      for (const variantState of modelPublishState.variants) {
+        if (variantState.result.conclusion !== 'PUBLISH') {
+          this.logger.debug('Skip variant, which is unaffected by this schema publish.');
+          continue;
+        }
+
+        const state = variantState.result.state;
+
+        await this.schemaVariants.createGraphVariantVersion({
+          graphVariant: variantState.graphVariant
+            ? { type: 'exists', value: variantState.graphVariant }
+            : {
+                type: 'doesNotExist',
+                name: variantState.graphVariantName,
+                targetId: target.id,
+              },
+          schemaLog: {
+            type: 'exists',
+            id: schemaLogId,
+          },
+          supergraphSdl: state.supergraph,
+          compositeSchemaSdl: state.fullSchemaSdl,
+          schemaCompositionErrors: state.compositionErrors,
+          schemaLogIds: state.schemas
+            .filter(s => s.id !== state.schema.id) // do not include the incoming schema
+            .map(s => s.id),
+          schemaChanges: state.changes,
+        });
+
+        // TODO: we still need to write the variants to the CDN 😃
+      }
+    }
 
     if (changes.length > 0 || errors.length > 0) {
       void this.alertsManager
@@ -2554,6 +2964,42 @@ export class SchemaPublisher {
         message: `Failed to create the check-run`,
       } as const;
     }
+  }
+
+  // TODO: this method is probably better off within the GraphVariants class
+  private async retrieveLatestGraphVariantState(graphVariant: ActiveGraphVariant) {
+    const [latestGraphVariantWithSchemaLogs, latestComposableGraphVariantWithSchemaLogs] =
+      await Promise.all([
+        this.schemaVariants.getLatestGraphVariantVersionWithLogs(graphVariant),
+        this.schemaVariants.getLatestComposableGraphVariantVersionWithLogs(graphVariant),
+      ]);
+
+    if (!latestGraphVariantWithSchemaLogs) {
+      throw new Error(
+        'This can not happen. We have an inconsistent database state.' +
+          ' A graph variant should never be created without an initial version.',
+      );
+    }
+
+    return {
+      graphVariant,
+      latest: {
+        isComposable: !latestGraphVariantWithSchemaLogs.version.schemaCompositionErrors,
+        contractNames: null,
+        sdl: latestGraphVariantWithSchemaLogs.version.compositeSchemaSdl,
+        // TODO: metadata 🦧
+        schemas: latestGraphVariantWithSchemaLogs.logs,
+      } satisfies Parameters<CompositeModel['publish']>[0]['latest'],
+      latestComposable: latestComposableGraphVariantWithSchemaLogs
+        ? ({
+            isComposable:
+              !latestComposableGraphVariantWithSchemaLogs.version.schemaCompositionErrors,
+            sdl: latestComposableGraphVariantWithSchemaLogs.version.compositeSchemaSdl,
+            // TODO: metadata 🦧
+            schemas: latestComposableGraphVariantWithSchemaLogs.logs,
+          } satisfies Parameters<CompositeModel['publish']>[0]['latestComposable'])
+        : null,
+    };
   }
 
   private errorsToMarkdown(
