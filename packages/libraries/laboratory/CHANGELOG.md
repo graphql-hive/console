@@ -1,5 +1,15 @@
 # @graphql-hive/laboratory
 
+## 0.1.5
+
+### Patch Changes
+
+- [#7989](https://github.com/graphql-hive/console/pull/7989)
+  [`863f920`](https://github.com/graphql-hive/console/commit/863f920b86505a3d84c9001fef1c3e8a723bdca9)
+  Thanks [@mskorokhodov](https://github.com/mskorokhodov)! - Enhanced behavior when no collection
+  exists and the user attempts to save an operation, along with the ability to edit the collection
+  name.
+
 ## 0.1.4
 
 ### Patch Changes
