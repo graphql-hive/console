@@ -1,8 +1,9 @@
 import { forwardRef } from 'react';
 import { cva, type VariantProps } from 'class-variance-authority';
 import { type LucideIcon } from 'lucide-react';
+import { disabledStyle, segmentSeparator } from './shared-styles';
 
-const triggerButtonVariants = cva(
+export const triggerButtonVariants = cva(
   'group inline-flex items-center rounded-sm border text-xs font-medium transition-colors',
   {
     variants: {
@@ -30,8 +31,6 @@ const triggerButtonVariants = cva(
   },
 );
 
-const separatorClass = 'border-l [border-left-color:inherit]';
-
 type CommonProps = Omit<React.ButtonHTMLAttributes<HTMLButtonElement>, 'className' | 'style'> &
   VariantProps<typeof triggerButtonVariants> & {
     /** When true, the button is visually dimmed and non-interactive */
@@ -40,8 +39,12 @@ type CommonProps = Omit<React.ButtonHTMLAttributes<HTMLButtonElement>, 'classNam
 
 type LabelLayout = CommonProps & {
   layout?: 'label';
-  /** Button label text (always shown) */
-  label: string;
+  /**
+   * Button label content (always shown).
+   * Accepts a string for static labels, or a ReactNode for dynamic content
+   * (e.g. `<BaseSelect.Value />` when used as a Select trigger).
+   */
+  label: React.ReactNode;
   /** Icon rendered to the right of label */
   rightIcon?: {
     action?: () => void;
@@ -78,7 +81,7 @@ export const TriggerButton = forwardRef<HTMLButtonElement, TriggerButtonProps>(
         ref={ref}
         className={triggerButtonVariants({ variant })}
         disabled={disabled}
-        style={disabled ? { opacity: 0.5, pointerEvents: 'none' } : undefined}
+        style={disabled ? disabledStyle : undefined}
         {...domProps}
       >
         {props.layout === 'iconOnly' ? (
@@ -90,7 +93,9 @@ export const TriggerButton = forwardRef<HTMLButtonElement, TriggerButtonProps>(
             <span className="px-3 py-1.5 text-[13px]">{props.label}</span>
 
             {props.accessoryInformation != null && (
-              <span className={`${separatorClass} px-3 py-1.5`}>{props.accessoryInformation}</span>
+              <span className={`${segmentSeparator} px-3 py-1.5`}>
+                {props.accessoryInformation}
+              </span>
             )}
             {props.rightIcon && (
               <span
@@ -124,7 +129,7 @@ export const TriggerButton = forwardRef<HTMLButtonElement, TriggerButtonProps>(
                       }
                     : undefined
                 }
-                className={`${props.rightIcon.withSeparator && separatorClass} text-neutral-8 ${props.rightIcon.action ? 'hover:text-neutral-11' : 'group-hover:text-neutral-12'} flex items-center px-2 py-1.5 transition-colors`}
+                className={`${props.rightIcon.withSeparator && segmentSeparator} text-neutral-8 ${props.rightIcon.action ? 'hover:text-neutral-11' : 'group-hover:text-neutral-12'} flex items-center px-2 py-1.5 transition-colors`}
               >
                 <props.rightIcon.icon className="size-4" />
               </span>

@@ -1,21 +1,7 @@
-import { cva, type VariantProps } from 'class-variance-authority';
 import { X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Popover as BasePopover } from '@base-ui/react/popover';
-
-const popoverPopupVariants = cva(
-  'z-50 rounded-md border shadow-md shadow-neutral-1/30 outline-none',
-  {
-    variants: {
-      variant: {
-        default: 'bg-neutral-2 border-neutral-5 dark:bg-neutral-4 dark:border-neutral-5',
-      },
-    },
-    defaultVariants: {
-      variant: 'default',
-    },
-  },
-);
+import { type FloatingProps, popupVariants } from '../shared-styles';
 
 const widthMap = {
   sm: 'w-64',
@@ -23,23 +9,9 @@ const widthMap = {
   lg: 'w-96',
 } as const;
 
-type PopoverCommonProps = {
-  /** Element that triggers the popover on click */
-  trigger: React.ReactElement;
-  /** Which side of the trigger to position on */
-  side?: 'top' | 'bottom' | 'left' | 'right';
-  /** Alignment along the side */
-  align?: 'start' | 'center' | 'end';
-  /** Gap between trigger and popup in px */
-  sideOffset?: number;
-  /** Visual variant */
-  variant?: VariantProps<typeof popoverPopupVariants>['variant'];
+type PopoverCommonProps = FloatingProps & {
   /** Show an arrow pointing to the trigger */
   arrow?: boolean;
-  /** Controlled open state */
-  open?: boolean;
-  /** Callback when open state changes */
-  onOpenChange?: (open: boolean) => void;
 };
 
 /** Raw mode: full control over content */
@@ -75,7 +47,6 @@ export function Popover(props: PopoverProps) {
     side = 'bottom',
     align,
     sideOffset = 8,
-    variant,
     arrow,
     open,
     onOpenChange,
@@ -117,7 +88,7 @@ export function Popover(props: PopoverProps) {
           sideOffset={sideOffset}
           className="outline-none"
         >
-          <BasePopover.Popup className={popoverPopupVariants({ variant })}>
+          <BasePopover.Popup className={popupVariants({ padding: 'none' })}>
             {arrow && <PopoverArrow />}
             {inner}
           </BasePopover.Popup>

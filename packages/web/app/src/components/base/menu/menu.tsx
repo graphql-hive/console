@@ -7,11 +7,10 @@ import {
   useRef,
   type ReactNode,
 } from 'react';
-import { cva, type VariantProps } from 'class-variance-authority';
+import { type VariantProps } from 'class-variance-authority';
 import { ArrowRight, ChevronRight } from 'lucide-react';
 import { Menu as BaseMenu } from '@base-ui/react/menu';
-
-// --- Contexts ---
+import { itemVariants, popupVariants, type FloatingProps } from '../shared-styles';
 
 const MenuDepthContext = createContext(0);
 
@@ -23,71 +22,19 @@ type SubmenuTriggerContextValue = {
 
 const SubmenuTriggerContext = createContext<SubmenuTriggerContextValue>(null);
 
-// --- Styles ---
-
-const menuVariants = cva(
-  'px-2 pb-2 z-50 text-[13px] rounded-md border shadow-md shadow-neutral-1/30 outline-none bg-neutral-2 border-neutral-5 dark:bg-neutral-4 dark:border-neutral-5',
-  {
-    variants: {
-      maxWidth: {
-        default: 'max-w-75', // 300px
-        none: 'max-w-none',
-        sm: 'max-w-60', // 240px
-        lg: 'max-w-[380px]',
-      },
-      minWidth: {
-        default: 'min-w-[12rem]',
-        none: 'min-w-0',
-      },
-    },
-    defaultVariants: {
-      maxWidth: 'default',
-      minWidth: 'default',
-    },
-  },
-);
-
-const menuItemVariants = cva(
-  'flex h-7 cursor-pointer select-none items-center rounded-sm outline-none gap-2.5 first:mt-2',
-  {
-    variants: {
-      variant: {
-        default: 'px-2 text-neutral-10',
-        navigationLink: 'hover:text-accent text-accent_80 justify-end pr-2 hover:bg-transparent',
-        action: 'pl-2 hover:bg-accent_10 hover:text-accent text-accent_80',
-        destructiveAction: 'pl-2 text-red-400  hover:bg-red-300/10',
-      },
-      highlighted: {
-        true: '',
-        false: '',
-      },
-      disabled: {
-        true: 'pointer-events-none opacity-50',
-        false: '',
-      },
-    },
-    compoundVariants: [{ highlighted: true, className: 'bg-neutral-5 text-neutral-12' }],
-    defaultVariants: {
-      variant: 'default',
-      highlighted: false,
-      disabled: false,
-    },
-  },
-);
-
-// --- Helpers ---
-
 function menuItemClassName(
   state: { highlighted: boolean; disabled: boolean },
   {
     variant,
   }: {
-    variant?: VariantProps<typeof menuItemVariants>['variant'];
+    variant?: VariantProps<typeof itemVariants>['variant'];
   },
 ) {
-  return menuItemVariants({
+  return itemVariants({
     variant,
     highlighted: state.highlighted,
+    // gap-2.5 overrides the shared gap-2 for menu items; first:mt-2 adds top spacing
+    className: 'gap-2.5 first:mt-2',
     disabled: state.disabled,
   });
 }
@@ -115,8 +62,6 @@ function renderSections(sections: Array<ReactNode | ReactNode[]>): ReactNode {
 
   return result;
 }
-
-// --- Hooks ---
 
 /**
  * Returns a callback ref that locks a popup's width after first layout.
@@ -149,17 +94,9 @@ function useStableWidth(enabled: boolean) {
   );
 }
 
-// --- Menu ---
-
-type MenuProps = {
-  trigger: React.ReactElement;
+type MenuProps = FloatingProps & {
   sections: Array<ReactNode | ReactNode[]>;
-  open?: boolean;
-  onOpenChange?: (open: boolean) => void;
   modal?: boolean;
-  side?: 'top' | 'bottom' | 'left' | 'right';
-  align?: 'start' | 'center' | 'end';
-  sideOffset?: number;
   /** Controls the max-width of the popup. Defaults to 300px. */
   maxWidth?: 'default' | 'none' | 'sm' | 'lg';
   /** Controls the min-width of the popup. Defaults to 12rem. Use 'none' for compact menus. */
@@ -244,7 +181,10 @@ function Menu({
             sideOffset={resolvedSideOffset}
             className="outline-none"
           >
-            <BaseMenu.Popup ref={popupRef} className={menuVariants({ maxWidth, minWidth })}>
+            <BaseMenu.Popup
+              ref={popupRef}
+              className={popupVariants({ padding: 'menu', maxWidth, minWidth })}
+            >
               {popupContent}
             </BaseMenu.Popup>
           </BaseMenu.Positioner>
@@ -263,7 +203,10 @@ function Menu({
           sideOffset={resolvedSideOffset}
           className="outline-none"
         >
-          <BaseMenu.Popup ref={popupRef} className={menuVariants({ maxWidth, minWidth })}>
+          <BaseMenu.Popup
+            ref={popupRef}
+            className={popupVariants({ padding: 'menu', maxWidth, minWidth })}
+          >
             {popupContent}
           </BaseMenu.Popup>
         </BaseMenu.Positioner>
@@ -272,10 +215,8 @@ function Menu({
   );
 }
 
-// --- MenuItem ---
-
 type MenuItemProps = Omit<BaseMenu.Item.Props, 'className'> & {
-  variant?: VariantProps<typeof menuItemVariants>['variant'];
+  variant?: VariantProps<typeof itemVariants>['variant'];
 };
 
 function MenuItem({ variant, children, ...props }: MenuItemProps) {
