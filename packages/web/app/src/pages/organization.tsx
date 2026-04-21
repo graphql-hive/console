@@ -1,5 +1,5 @@
 import { ChangeEvent, ReactElement, useCallback, useMemo, useRef } from 'react';
-import { endOfDay, formatISO, startOfDay } from 'date-fns';
+import { differenceInMilliseconds, endOfDay, formatISO, startOfDay } from 'date-fns';
 import * as echarts from 'echarts';
 import ReactECharts from 'echarts-for-react';
 import { Globe, History, MoveDownIcon, MoveUpIcon, SearchIcon } from 'lucide-react';
@@ -18,10 +18,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger } from '@/components/u
 import { Separator } from '@/components/ui/separator';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { FragmentType, graphql, useFragment } from '@/gql';
-import { ProjectType } from '@/gql/graphql';
+import { OperationsStats, ProjectType } from '@/gql/graphql';
 import { subDays } from '@/lib/date-time';
-import { useFormattedNumber } from '@/lib/hooks';
-import { pluralize } from '@/lib/utils';
+import { toDecimal, useFormattedNumber, useFormattedThroughput } from '@/lib/hooks';
+import { cn, hexToRgba, pluralize, useChartStyles } from '@/lib/utils';
 import { UTCDate } from '@date-fns/utc';
 import { Link, useRouter } from '@tanstack/react-router';
 
@@ -38,6 +38,83 @@ const ProjectCard_ProjectFragment = graphql(`
     id
     slug
     type
+  }
+`);
+
+const TargetCard_TargetFragment = graphql(`
+  fragment TargetCard_TargetFragment on Target {
+    id
+    slug
+  }
+`);
+
+export const OverTimeStats_OrganizationProjectsPageFragment = graphql(`
+  fragment OverTimeStats_OrganizationProjectsPageFragment on OperationsStats {
+    failuresOverTime(resolution: $chartResolution) {
+      date
+      value
+    }
+    requestsOverTime(resolution: $chartResolution) {
+      date
+      value
+    }
+  }
+`);
+
+const OrganizationProjectsPageQuery = graphql(`
+  query OrganizationProjectsPageQuery(
+    $organizationSlug: String!
+    $chartResolution: Int!
+    $period: DateRangeInput!
+  ) {
+    organization: organizationBySlug(organizationSlug: $organizationSlug) {
+      id
+      slug
+      projects {
+        edges {
+          node {
+            id
+            slug
+            ...ProjectCard_ProjectFragment
+            totalRequests(period: $period)
+            requestsOverTime(resolution: $chartResolution, period: $period) {
+              date
+              value
+            }
+            schemaVersionsCount(period: $period)
+            targets {
+              edges {
+                node {
+                  id
+                  slug
+                  ...TargetCard_TargetFragment
+                  totalRequests(period: $period)
+                  requestsOverTime(resolution: $chartResolution, period: $period) {
+                    date
+                    value
+                  }
+                  schemaVersionsCount(period: $period)
+                  operationsStats(period: $period) {
+                    ... on OperationsStats {
+                      totalRequests
+                      totalFailures
+                      totalOperations
+                      duration {
+                        p75
+                        p90
+                        p95
+                        p99
+                      }
+                    }
+                    ...OverTimeStats_OrganizationProjectsPageFragment
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
   }
 `);
 
@@ -224,33 +301,387 @@ const ProjectCard = (props: {
   );
 };
 
-const OrganizationProjectsPageQuery = graphql(`
-  query OrganizationProjectsPageQuery(
-    $organizationSlug: String!
-    $chartResolution: Int!
-    $period: DateRangeInput!
-  ) {
-    organization: organizationBySlug(organizationSlug: $organizationSlug) {
-      id
-      slug
-      projects {
-        edges {
-          node {
-            id
-            slug
-            ...ProjectCard_ProjectFragment
-            totalRequests(period: $period)
-            requestsOverTime(resolution: $chartResolution, period: $period) {
-              date
-              value
-            }
-            schemaVersionsCount(period: $period)
-          }
-        }
-      }
+const NewProjectCardTargetCardCount = (props: {
+  title: string;
+  count: string;
+  description: string;
+}) => {
+  return (
+    <div className="bg-neutral-2 dark:bg-neutral-2 border-neutral-5 dark:border-neutral-4 flex flex-col rounded-lg border p-4">
+      <div className="mb-2 text-xs font-medium">{props.title}</div>
+      <div className="text-2xl font-bold">{props.count}</div>
+      <div className="whitespace-nowrap text-xs">{props.description}</div>
+    </div>
+  );
+};
+
+export const NewProjectCardTargetCard = (props: {
+  target: FragmentType<typeof TargetCard_TargetFragment> | null;
+  className?: string;
+  highestNumberOfRequests: number;
+  requestsOverTime: { date: string; value: number }[] | null;
+  schemaVersionsCount: number | null;
+  days: number;
+  organizationSlug: string;
+  projectSlug: string;
+  operationsStats: Partial<OperationsStats> | null;
+  operationStatsFragment: FragmentType<
+    typeof OverTimeStats_OrganizationProjectsPageFragment
+  > | null;
+}): ReactElement => {
+  const target = useFragment(TargetCard_TargetFragment, props.target);
+  const { highestNumberOfRequests } = props;
+  const operationStatsOverTime = useFragment(
+    OverTimeStats_OrganizationProjectsPageFragment,
+    props.operationStatsFragment,
+  );
+  const period = {
+    from: formatISO(startOfDay(subDays(new Date(), props.days))),
+    to: formatISO(endOfDay(new Date())),
+  };
+
+  const requests = useMemo(() => {
+    if (operationStatsOverTime?.requestsOverTime?.length) {
+      return operationStatsOverTime.requestsOverTime.map<[string, number]>(node => [
+        node.date,
+        node.value,
+      ]);
     }
+
+    return [
+      [new Date(subDays(new Date(), props.days)).toISOString(), 0],
+      [new Date().toISOString(), 0],
+    ] as [string, number][];
+  }, [operationStatsOverTime?.requestsOverTime]);
+
+  const failures = useMemo(() => {
+    if (operationStatsOverTime?.failuresOverTime?.length) {
+      return operationStatsOverTime.failuresOverTime.map<[string, number]>(node => [
+        node.date,
+        node.value,
+      ]);
+    }
+
+    return [
+      [new Date(subDays(new Date(), props.days)).toISOString(), 0],
+      [new Date().toISOString(), 0],
+    ] as [string, number][];
+  }, [operationStatsOverTime?.failuresOverTime]);
+
+  const totalNumberOfRequests = useMemo(
+    () => requests.reduce((acc, [_, value]) => acc + value, 0),
+    [requests],
+  );
+  const totalNumberOfVersions = props.schemaVersionsCount ?? 0;
+  const requestsInDateRange = useFormattedNumber(totalNumberOfRequests);
+  const schemaVersionsInDateRange = useFormattedNumber(totalNumberOfVersions);
+  const rpm = useFormattedThroughput({
+    requests: totalNumberOfRequests,
+    window: differenceInMilliseconds(new Date(period.to), new Date(period.from)),
+  });
+  const totalFailures = props.operationsStats?.totalFailures ?? 0;
+
+  const successRate = useMemo(() => {
+    return totalNumberOfRequests || totalFailures
+      ? `${toDecimal(((totalNumberOfRequests - totalFailures) * 100) / totalNumberOfRequests)}%`
+      : '-';
+  }, [totalNumberOfRequests, totalFailures]);
+
+  const failureRate = useMemo(() => {
+    return totalNumberOfRequests || totalFailures
+      ? `${toDecimal((totalFailures * 100) / totalNumberOfRequests)}%`
+      : '-';
+  }, [totalNumberOfRequests, totalFailures]);
+
+  const { colors } = useChartStyles();
+
+  return (
+    <Link
+      to="/$organizationSlug/$projectSlug/$targetSlug"
+      disabled={props.organizationSlug == null || props.projectSlug == null || target?.slug == null}
+      params={{
+        organizationSlug: props.organizationSlug ?? 'unknown-yet',
+        projectSlug: props.projectSlug ?? 'unknown-yet',
+        targetSlug: target?.slug ?? 'unknown-yet',
+      }}
+    >
+      <TooltipProvider>
+        <div className={cn('space-y-4 p-4', props.className)}>
+          <div className="grid grid-cols-[auto_1fr] gap-4">
+            <div className="grid grid-cols-2 gap-2">
+              <NewProjectCardTargetCardCount
+                title="Requests"
+                count={`${requestsInDateRange}`}
+                description="Requests served"
+              />
+              <NewProjectCardTargetCardCount
+                title="RPM"
+                count={`${rpm}`}
+                description="Throughput"
+              />
+              <NewProjectCardTargetCardCount
+                title="Success rate"
+                count={successRate}
+                description="Successfull requests"
+              />
+              <NewProjectCardTargetCardCount
+                title="Errors"
+                count={failureRate}
+                description="Failed requests"
+              />
+            </div>
+            <div>
+              <AutoSizer>
+                {size => (
+                  <ReactECharts
+                    style={{ width: size.width, height: size.height }}
+                    option={{
+                      animation: !!target,
+                      color: ['#f4b740'],
+                      grid: {
+                        left: 0,
+                        top: 10,
+                        right: 0,
+                        bottom: 10,
+                      },
+                      tooltip: {
+                        trigger: 'axis',
+                        axisPointer: {
+                          label: {
+                            formatter({ value }: { value: number }) {
+                              return new Date(value).toDateString();
+                            },
+                          },
+                        },
+                      },
+                      xAxis: [
+                        {
+                          show: false,
+                          type: 'time',
+                          boundaryGap: false,
+                        },
+                      ],
+                      yAxis: [
+                        {
+                          show: false,
+                          type: 'value',
+                          min: 0,
+                          max: highestNumberOfRequests,
+                        },
+                      ],
+                      series: [
+                        {
+                          name: 'Requests',
+                          type: 'line',
+                          smooth: false,
+                          lineStyle: {
+                            width: 2,
+                          },
+                          showSymbol: false,
+                          color: colors.primary,
+                          areaStyle: {
+                            opacity: 0.8,
+                            color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+                              {
+                                offset: 0,
+                                color: colors.primary,
+                              },
+                              {
+                                offset: 1,
+                                color: hexToRgba(colors.primary, 0),
+                              },
+                            ]),
+                          },
+                          emphasis: {
+                            focus: 'series',
+                          },
+                          data: requests,
+                        },
+                        {
+                          name: 'Failures',
+                          type: 'line',
+                          smooth: false,
+                          lineStyle: {
+                            width: 2,
+                          },
+                          showSymbol: false,
+                          color: colors.error,
+                          areaStyle: {
+                            opacity: 0.8,
+                            color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+                              {
+                                offset: 0,
+                                color: colors.error,
+                              },
+                              {
+                                offset: 1,
+                                color: hexToRgba(colors.error, 0),
+                              },
+                            ]),
+                          },
+                          emphasis: {
+                            focus: 'series',
+                          },
+                          data: failures,
+                        },
+                      ],
+                    }}
+                  />
+                )}
+              </AutoSizer>
+            </div>
+          </div>
+          <div className="grid w-full grid-cols-[1fr_auto] items-center gap-8 overflow-hidden">
+            <div>
+              <h4 className="line-clamp-2 text-lg font-bold">{target?.slug}</h4>
+              <p className="text-neutral-11 text-xs">{target?.type}</p>
+            </div>
+            <div className="ml-auto flex flex-col gap-y-2">
+              <Tooltip>
+                <TooltipTrigger>
+                  <div className="flex flex-row items-center gap-x-2">
+                    <History className="text-neutral-10 size-4" />
+                    <div className="text-xs">
+                      {schemaVersionsInDateRange}{' '}
+                      {pluralize(totalNumberOfVersions, 'commit', 'commits')}
+                    </div>
+                  </div>
+                </TooltipTrigger>
+                <TooltipContent>
+                  Number of schemas pushed to this project in the last {props.days} days.
+                </TooltipContent>
+              </Tooltip>
+            </div>
+          </div>
+        </div>
+      </TooltipProvider>
+    </Link>
+  );
+};
+
+const NewProjectCard = (props: {
+  project: FragmentType<typeof ProjectCard_ProjectFragment> | null;
+  cleanOrganizationId: string | null;
+  highestNumberOfRequests: number;
+  requestsOverTime: { date: string; value: number }[] | null;
+  schemaVersionsCount: number | null;
+  days: number;
+  targets: FragmentType<typeof TargetCard_TargetFragment>[] | null;
+  organizationSlug: string;
+  projectSlug: string;
+  sortKey: string;
+  sortOrder: number;
+}) => {
+  const project = useFragment(ProjectCard_ProjectFragment, props.project);
+
+  const requests = useMemo(() => {
+    if (props.requestsOverTime?.length) {
+      return props.requestsOverTime.map<[string, number]>(node => [node.date, node.value]);
+    }
+
+    return [
+      [new Date(subDays(new Date(), props.days)).toISOString(), 0],
+      [new Date().toISOString(), 0],
+    ] as [string, number][];
+  }, [props.requestsOverTime]);
+
+  const totalNumberOfRequests = useMemo(
+    () => requests.reduce((acc, [_, value]) => acc + value, 0),
+    [requests],
+  );
+  const totalNumberOfVersions = props.schemaVersionsCount ?? 0;
+
+  const requestsInDateRange = useFormattedNumber(totalNumberOfRequests);
+  const schemaVersionsInDateRange = useFormattedNumber(totalNumberOfVersions);
+
+  const sortedTargets = useMemo(() => {
+    return props.targets?.sort((a, b) => {
+      const diffRequests = b.totalRequests - a.totalRequests;
+      const diffVersions = b.schemaVersionsCount - a.schemaVersionsCount;
+
+      if (props.sortKey === 'requests' && diffRequests !== 0) {
+        return diffRequests * props.sortOrder;
+      }
+
+      if (props.sortKey === 'versions' && diffVersions !== 0) {
+        return diffVersions * props.sortOrder;
+      }
+
+      if (props.sortKey === 'name') {
+        return a.slug.localeCompare(b.slug) * props.sortOrder * -1;
+      }
+
+      // falls back to sort by name in ascending order
+      return a.slug.localeCompare(b.slug);
+    });
+  }, [props.targets, props.sortKey, props.sortOrder]);
+
+  if (!project) {
+    return null;
   }
-`);
+
+  return (
+    <TooltipProvider>
+      <div className="border-neutral-5 dark:border-neutral-4 bg-neutral-4 dark:bg-neutral-1 overflow-hidden rounded-lg border">
+        <Link
+          to="/$organizationSlug/$projectSlug"
+          params={{ organizationSlug: props.organizationSlug, projectSlug: props.projectSlug }}
+          className="grid w-full grid-cols-[1fr_auto] items-center gap-8 overflow-hidden p-4"
+        >
+          <div>
+            <h4 className="line-clamp-2 text-lg font-bold">{project.slug}</h4>
+            <p className="text-neutral-11 text-xs">{projectTypeFullNames[project.type]}</p>
+          </div>
+          <div className="ml-auto flex flex-col gap-y-2">
+            <Tooltip>
+              <TooltipTrigger>
+                <div className="flex flex-row items-center gap-x-2">
+                  <Globe className="text-neutral-10 size-4" />
+                  <div className="text-xs">
+                    {requestsInDateRange} {pluralize(totalNumberOfRequests, 'request', 'requests')}
+                  </div>
+                </div>
+              </TooltipTrigger>
+              <TooltipContent>
+                Number of GraphQL requests in the last {props.days} days.
+              </TooltipContent>
+            </Tooltip>
+            <Tooltip>
+              <TooltipTrigger>
+                <div className="flex flex-row items-center gap-x-2">
+                  <History className="text-neutral-10 size-4" />
+                  <div className="text-xs">
+                    {schemaVersionsInDateRange}{' '}
+                    {pluralize(totalNumberOfVersions, 'commit', 'commits')}
+                  </div>
+                </div>
+              </TooltipTrigger>
+              <TooltipContent>
+                Number of schemas pushed to this project in the last {props.days} days.
+              </TooltipContent>
+            </Tooltip>
+          </div>
+        </Link>
+        <div className="bg-neutral-1 dark:bg-neutral-3 border-t-neutral-6 dark:border-t-neutral-5 divide-neutral-6 dark:divide-neutral-5 -mb-1 -mr-1 grid grid-cols-[repeat(auto-fit,minmax(calc(var(--spacing)*128),1fr))] divide-x divide-y rounded-t-lg border-t">
+          {sortedTargets?.map(target => (
+            <NewProjectCardTargetCard
+              key={target.id}
+              target={target}
+              highestNumberOfRequests={props.highestNumberOfRequests}
+              requestsOverTime={target.requestsOverTime}
+              schemaVersionsCount={target.schemaVersionsCount}
+              operationStatsFragment={target.operationsStats}
+              operationsStats={target.operationsStats}
+              days={props.days}
+              organizationSlug={props.organizationSlug}
+              projectSlug={props.projectSlug}
+            />
+          ))}
+        </div>
+      </div>
+    </TooltipProvider>
+  );
+};
 
 function OrganizationPageContent(
   props: {
@@ -464,9 +895,9 @@ function OrganizationPageContent(
                 docsUrl="/management/projects#create-a-new-project"
               />
             ) : (
-              <div className="grid grid-cols-2 items-stretch gap-5 xl:grid-cols-3">
+              <div className="flex w-full flex-col gap-y-8">
                 {projects.map(project => (
-                  <ProjectCard
+                  <NewProjectCard
                     key={project.id}
                     cleanOrganizationId={currentOrganization.slug}
                     days={days}
@@ -474,14 +905,19 @@ function OrganizationPageContent(
                     project={project}
                     requestsOverTime={project.requestsOverTime}
                     schemaVersionsCount={project.schemaVersionsCount}
+                    targets={project.targets.edges.map(edge => edge.node)}
+                    organizationSlug={props.organizationSlug}
+                    projectSlug={project.slug}
+                    sortKey={sortKey}
+                    sortOrder={sortOrder}
                   />
                 ))}
               </div>
             )
           ) : (
-            <div className="grid grid-cols-2 items-stretch gap-5 xl:grid-cols-3">
+            <div className="flex w-full flex-col gap-y-8">
               {Array.from({ length: 4 }).map((_, index) => (
-                <ProjectCard
+                <NewProjectCard
                   key={index}
                   days={days}
                   highestNumberOfRequests={highestNumberOfRequests}
@@ -489,6 +925,7 @@ function OrganizationPageContent(
                   cleanOrganizationId={null}
                   requestsOverTime={null}
                   schemaVersionsCount={null}
+                  targets={[]}
                 />
               ))}
             </div>

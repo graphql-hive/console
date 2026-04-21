@@ -23,6 +23,14 @@ function hslToHex(h: number, s: number, l: number): string {
   return `#${f(0)}${f(8)}${f(4)}`;
 }
 
+export const hexToRgba = (hex: string, alpha: number) => {
+  const r = parseInt(hex.slice(1, 3), 16);
+  const g = parseInt(hex.slice(3, 5), 16);
+  const b = parseInt(hex.slice(5, 7), 16);
+
+  return `rgba(${r},${g},${b},${alpha})`;
+};
+
 function readChartStyles() {
   const s = getComputedStyle(document.documentElement);
   const textColor = s.getPropertyValue('--color-neutral-12').trim();

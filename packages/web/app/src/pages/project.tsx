@@ -23,6 +23,7 @@ import { useFormattedNumber } from '@/lib/hooks';
 import { cn, pluralize } from '@/lib/utils';
 import { UTCDate } from '@date-fns/utc';
 import { Link, useRouter } from '@tanstack/react-router';
+import { NewProjectCardTargetCard } from './organization';
 
 const TargetCard_TargetFragment = graphql(`
   fragment TargetCard_TargetFragment on Target {
@@ -419,7 +420,7 @@ const ProjectsPageContent = (
           'grow',
           targetConnection?.edges.length === 0
             ? ''
-            : 'grid grid-cols-2 items-stretch gap-5 xl:grid-cols-3',
+            : 'grid grid-cols-[repeat(auto-fit,minmax(calc(var(--spacing)*128),1fr))] items-stretch gap-5',
         )}
       >
         {targetConnection ? (
@@ -431,7 +432,7 @@ const ProjectsPageContent = (
             />
           ) : (
             targets.map(target => (
-              <TargetCard
+              <NewProjectCardTargetCard
                 key={target.id}
                 target={target}
                 days={days}
@@ -440,13 +441,16 @@ const ProjectsPageContent = (
                 schemaVersionsCount={target.schemaVersionsCount}
                 organizationSlug={props.organizationSlug}
                 projectSlug={props.projectSlug}
+                operationsStats={target.operationsStats}
+                operationStatsFragment={target.operationsStats}
+                className="bg-neutral-1 dark:bg-neutral-3 border-neutral-6 dark:border-neutral-5 rounded-lg border"
               />
             ))
           )
         ) : (
           <>
             {Array.from({ length: 4 }).map((_, index) => (
-              <TargetCard
+              <NewProjectCardTargetCard
                 key={index}
                 target={null}
                 days={days}
@@ -455,6 +459,9 @@ const ProjectsPageContent = (
                 schemaVersionsCount={null}
                 organizationSlug={props.organizationSlug}
                 projectSlug={props.projectSlug}
+                operationsStats={null}
+                operationStatsFragment={null}
+                className="bg-neutral-1 dark:bg-neutral-3 border-neutral-6 dark:border-neutral-5 rounded-lg border"
               />
             ))}
           </>
@@ -483,6 +490,20 @@ const ProjectOverviewPageQuery = graphql(`
             value
           }
           schemaVersionsCount(period: $period)
+          operationsStats(period: $period) {
+            ... on OperationsStats {
+              totalRequests
+              totalFailures
+              totalOperations
+              duration {
+                p75
+                p90
+                p95
+                p99
+              }
+            }
+            ...OverTimeStats_OrganizationProjectsPageFragment
+          }
         }
       }
     }
