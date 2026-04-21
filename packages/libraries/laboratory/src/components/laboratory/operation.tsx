@@ -208,6 +208,10 @@ export const ResponseQueryPlan = ({ historyItem }: { historyItem?: LaboratoryHis
     }
   }, [historyItem]);
 
+  if (!queryPlan) {
+    return null;
+  }
+
   return (
     <div className="relative size-full">
       <ToggleGroup
