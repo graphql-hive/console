@@ -21,13 +21,14 @@ export default {
     CREATE TABLE IF NOT EXISTS "graph_variant_versions" (
       "id" uuid DEFAULT uuid_generate_v4() PRIMARY KEY NOT NULL
       , "graph_variant_id" uuid REFERENCES "graph_variants"("id") ON DELETE CASCADE
-      , "schema_log_id" uuid REFERENCES "schema_log"("id") ON DELETE CASCADE
       , "schema_composition_errors" jsonb DEFAULT NULL
-      , "compositite_schema_sdl" text DEFAULT NULL
       , "supergraph_sdl" text DEFAULT NULL
-      , "schema_changes" jsonb DEFAULT NULL
+      , "supergraph_schema_changes" jsonb DEFAULT NULL
+      , "public_sdl" text DEFAULT NULL
+      , "public_schema_changes" jsonb DEFAULT NULL
       , "created_at" timestamptz NOT NULL DEFAULT NOW()
       , "previous_graph_variant_version_id" uuid REFERENCES "graph_variant_versions" ("id") ON DELETE CASCADE
+      , "origin" JSONB NOT NULL
     );
 
     CREATE INDEX IF NOT EXISTS "idx_graph_variant_versions_graph_variant_id"
@@ -35,9 +36,6 @@ export default {
     ;
     CREATE INDEX IF NOT EXISTS "idx_graph_variant_versions_previous_graph_variant_version_id"
       ON "graph_variant_versions" ("previous_graph_variant_version_id")
-    ;
-    CREATE INDEX IF NOT EXISTS "idx_graph_variant_versions_schema_log_id"
-      ON "graph_variant_versions" ("schema_log_id")
     ;
     CREATE INDEX IF NOT EXISTS "idx_graph_variant_versions_variant_created_at_id"
       ON "graph_variant_versions" (
@@ -50,6 +48,8 @@ export default {
     CREATE TABLE IF NOT EXISTS "graph_variants_version_to_log" (
       "graph_variant_version_id" uuid REFERENCES "graph_variant_versions"("id") ON DELETE CASCADE
       , "schema_log_id" uuid REFERENCES "schema_log"("id") ON DELETE CASCADE
+      , "previous_schema_log_id" uuid REFERENCES "schema_log"("id") ON DELETE CASCADE
+      , "previous_schema_log_changes" jsonb DEFAULT NULL
       , CONSTRAINT "graph_variants_version_to_log_pkey" PRIMARY KEY ("graph_variant_version_id", "schema_log_id")
     );
 

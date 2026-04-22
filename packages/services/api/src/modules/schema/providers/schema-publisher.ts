@@ -3,6 +3,7 @@ import stringify from 'fast-json-stable-stringify';
 import { parse, print } from 'graphql';
 import { Inject, Injectable, Scope } from 'graphql-modules';
 import lodash from 'lodash';
+import { TargetReferenceInput } from 'packages/libraries/core/src/client/__generated__/types';
 import promClient from 'prom-client';
 import { z } from 'zod';
 import { CriticalityLevel } from '@graphql-inspector/core';
@@ -14,7 +15,7 @@ import type {
 } from '@hive/storage';
 import * as Sentry from '@sentry/node';
 import * as Types from '../../../__generated__/types';
-import { Organization, Project, ProjectType, Target } from '../../../shared/entities';
+import { Project, ProjectType, type Organization, type Target } from '../../../shared/entities';
 import { HiveError } from '../../../shared/errors';
 import { createPeriod } from '../../../shared/helpers';
 import { isGitHubRepositoryString } from '../../../shared/is-github-repository-string';
@@ -44,6 +45,7 @@ import {
   GraphVariant,
   GraphVariantNameModel,
   GraphVariants,
+  GraphVariantVersion,
 } from './graph-variants';
 import { CompositeModel } from './models/composite';
 import {
@@ -171,7 +173,7 @@ export class SchemaPublisher {
     private schemaVersionHelper: SchemaVersionHelper,
     private operationsReader: OperationsReader,
     private idTranslator: IdTranslator,
-    private schemaVariants: GraphVariants,
+    private graphVariants: GraphVariants,
     @Inject(SCHEMA_MODULE_CONFIG) private schemaModuleConfig: SchemaModuleConfig,
     singleModel: SingleModel,
     compositeModel: CompositeModel,
@@ -1219,7 +1221,7 @@ export class SchemaPublisher {
       this.schemaManager.getLatestSchemaVersionWithSchemaLogs({
         target,
       }),
-      this.schemaVariants.getActiveGraphVariantsForTarget(target),
+      this.graphVariants.getActiveGraphVariantsForTarget(target),
     ]);
 
     if (project.type !== Types.ProjectType.SINGLE) {
@@ -1253,7 +1255,7 @@ export class SchemaPublisher {
       }
     }
 
-    if (input.variant) {
+    if (input.graph !== 'default') {
       if (project.type !== Types.ProjectType.FEDERATION) {
         return {
           __typename: 'SchemaPublishError',
@@ -1268,7 +1270,7 @@ export class SchemaPublisher {
       }
       // Validate variant name
       // see if variant already exists
-      const variantValidation = GraphVariantNameModel.safeParse(input.variant);
+      const variantValidation = GraphVariantNameModel.safeParse(input.graph);
 
       if (!variantValidation.success) {
         return {
@@ -1277,16 +1279,15 @@ export class SchemaPublisher {
           changes: [],
           errors: [
             {
-              message:
-                'Invalid variant name provided. ' + variantValidation.error.errors[0].message,
+              message: 'Invalid graph name provided. ' + variantValidation.error.errors[0].message,
             },
           ],
         };
       }
 
-      const variant = activeVariants.find(variant => variant.name === input.variant);
+      const variant = activeVariants.find(variant => variant.name === input.graph);
 
-      if (variant == null && activeVariants.length >= 3) {
+      if (variant == null) {
         return {
           __typename: 'SchemaPublishError',
           valid: false,
@@ -1388,6 +1389,376 @@ export class SchemaPublisher {
 
         throw error;
       });
+  }
+
+  @traceFn('SchemaPublisher.cloneGraph')
+  async cloneGraph(
+    args: { target: TargetReferenceInput; newGraphName: string },
+    signal: AbortSignal,
+  ) {
+    this.logger.debug('Start graph clone.');
+
+    const selector = await this.idTranslator.resolveTargetReference({
+      reference: args.target,
+    });
+
+    // there should be a standalone permission for this probably
+    // Why? Because this issa not about a single version. We are cloning the whole schema version
+    if (!selector) {
+      this.session.raise('schemaVersion:publish');
+    }
+
+    trace.getActiveSpan()?.setAttributes({
+      'hive.organization.id': selector.organizationId,
+      'hive.target.id': selector.targetId,
+      'hive.project.id': selector.projectId,
+    });
+
+    await this.session.assertPerformAction({
+      action: 'schemaVersion:publish',
+      organizationId: selector.organizationId,
+      params: {
+        targetId: selector.targetId,
+        projectId: selector.projectId,
+        organizationId: selector.organizationId,
+        // TODO: service? :thinking:
+        // This is not about a single service
+        serviceName: null,
+      },
+    });
+
+    const [project] = await Promise.all([
+      this.storage.getProject({
+        organizationId: selector.organizationId,
+        projectId: selector.projectId,
+      }),
+    ]);
+
+    if (project.type !== Types.ProjectType.FEDERATION) {
+      return {
+        type: 'error' as const,
+        message: 'Only Federation projects are supported.',
+      };
+    }
+
+    // Validate variant name
+    // see if variant already exists
+    const graphNameValidation = GraphVariantNameModel.safeParse(args.newGraphName);
+
+    if (!graphNameValidation.success) {
+      return {
+        type: 'error' as const,
+        message: 'Invalid graph name provided. ' + graphNameValidation.error.errors[0].message,
+      };
+    }
+
+    if (graphNameValidation.data === 'default') {
+      return {
+        type: 'error' as const,
+        message: 'Invalid graph name "default" is reserved.',
+      };
+    }
+
+    return this.mutex
+      .perform(
+        registryLockId(selector.targetId),
+        {
+          /**
+           * The global request timeout is 60 seconds.
+           * We don't want to try acquiring the lock longer than 30 seconds.
+           * If it succeeds after 30 seconds,
+           * we have 30 seconds for actually running the business logic.
+           *
+           * If we would wait longer we risk the user facing 504 errors.
+           */
+          retries: 30,
+          retryDelay: 1_000,
+          signal,
+        },
+        async () => {
+          return await this.internalCloneGraph({
+            targetId: selector.targetId,
+            newGraphName: graphNameValidation.data,
+          });
+        },
+      )
+      .catch((error: unknown) => {
+        if (error instanceof MutexResourceLockedError) {
+          // TODO: support retry
+          return {
+            type: 'error' as const,
+            message: 'Please try again later.',
+          };
+        }
+        throw error;
+      });
+  }
+
+  private async internalCloneGraph(args: { targetId: string; newGraphName: string }) {
+    const target = await this.storage.getTargetById(args.targetId);
+    if (!target) {
+      return {
+        type: 'error' as const,
+        message: 'Target does not exist.',
+      };
+    }
+
+    // get all the active graph variants, so we can later on write the manifest
+    const graphVariants = await Promise.all(
+      await this.graphVariants.getActiveGraphVariantsForTarget(target).then(graphVariants =>
+        graphVariants.map(async graphVariant => ({
+          graphVariant,
+          latestComposableVersion:
+            await this.graphVariants.getLatestComposableGraphVariantVersion(graphVariant),
+        })),
+      ),
+    );
+
+    // check if a variant with the name already exists
+    const existingGraphVariant = graphVariants.find(
+      variant => variant.graphVariant.name === args.newGraphName,
+    );
+
+    if (existingGraphVariant) {
+      return {
+        type: 'error' as const,
+        message: 'A graph with the provided name already exists.',
+      };
+    }
+
+    // Retrieve the latest version of the default graph
+    // TODO: also support retrieving a specifc schema version
+    const [latestVersion, latestComposableVersion] = await Promise.all([
+      this.schemaManager.getLatestSchemaVersionWithSchemaLogs({
+        target,
+        onlyComposable: false,
+      }),
+      this.schemaManager.getLatestSchemaVersionWithSchemaLogs({
+        target,
+        onlyComposable: true,
+      }),
+    ]);
+
+    if (!latestVersion) {
+      return {
+        type: 'error' as const,
+        message: 'No schema version to publish as the initial graph version could be identified.',
+      };
+    }
+
+    // create new variant and version in transaction
+    const result = await this.graphVariants.createInitialClonedGraphVariantVersion({
+      targetId: target.id,
+      graphVariantName: args.newGraphName,
+      schemaLogIds: latestVersion.schemas.map(schema => schema.id),
+      schemaCompositionErrors: latestVersion.version.schemaCompositionErrors,
+      publicSchemaSdl: latestVersion.version.compositeSchemaSDL,
+      supergraphSdl: latestVersion.version.supergraphSDL,
+      origin: {
+        sourceGraphName: 'default',
+        sourceGraphVersionId: latestVersion.version.id,
+      },
+    });
+
+    // TODO: write CDN state if needed
+    if (result.graphVariantVersion.schemaCompositionErrors === null) {
+      await this.publishGraphVersionToCDN(target, {
+        graphName: result.graphVariant.name,
+        graphVersionId: result.graphVariantVersion.id,
+        sdl: result.graphVariantVersion.publicSdl,
+        supergraph: result.graphVariantVersion.supergraphSdl,
+        subgraphs: [],
+      });
+
+      const graphs: Array<{ graphName: string; graphVersionId: string }> = [];
+
+      if (latestComposableVersion) {
+        graphs.push({ graphName: 'default', graphVersionId: latestComposableVersion.version.id });
+      }
+
+      for (const graphVariant of graphVariants) {
+        if (!graphVariant.latestComposableVersion) {
+          continue;
+        }
+        graphs.push({
+          graphName: graphVariant.graphVariant.name,
+          graphVersionId: graphVariant.latestComposableVersion.id,
+        });
+      }
+
+      graphs.push({
+        graphName: result.graphVariant.name,
+        graphVersionId: result.graphVariantVersion.id,
+      });
+
+      await this.publishGraphtManifestToCDN(target, graphs);
+    }
+
+    return {
+      type: 'success' as const,
+      graphVariant: result.graphVariant,
+    };
+  }
+
+  @traceFn('SchemaPublisher.deleteGraph')
+  async deleteGraph(
+    args: { target: TargetReferenceInput; graphName: string },
+    signal: AbortSignal,
+  ) {
+    this.logger.debug('Start graph delete.');
+
+    if (args.graphName === 'default') {
+      return {
+        type: 'error' as const,
+        message: 'The default graph can not be deleted.',
+      };
+    }
+
+    const selector = await this.idTranslator.resolveTargetReference({
+      reference: args.target,
+    });
+
+    // there should be a standalone permission for this probably
+    // Why? Because this issa not about a single version. We are cloning the whole schema version
+    if (!selector) {
+      this.session.raise('schemaVersion:publish');
+    }
+
+    trace.getActiveSpan()?.setAttributes({
+      'hive.organization.id': selector.organizationId,
+      'hive.target.id': selector.targetId,
+      'hive.project.id': selector.projectId,
+    });
+
+    await this.session.assertPerformAction({
+      action: 'schemaVersion:publish',
+      organizationId: selector.organizationId,
+      params: {
+        targetId: selector.targetId,
+        projectId: selector.projectId,
+        organizationId: selector.organizationId,
+        // TODO: service? :thinking:
+        // This is not about a single service
+        serviceName: null,
+      },
+    });
+
+    const [target, project] = await Promise.all([
+      this.storage.getTarget({
+        organizationId: selector.organizationId,
+        projectId: selector.projectId,
+        targetId: selector.targetId,
+      }),
+      this.storage.getProject({
+        organizationId: selector.organizationId,
+        projectId: selector.projectId,
+      }),
+    ]);
+
+    if (project.type !== Types.ProjectType.FEDERATION) {
+      return {
+        type: 'error' as const,
+        message: 'Graphs can only be deleted on federation projects.',
+      };
+    }
+
+    return this.mutex
+      .perform(
+        registryLockId(selector.targetId),
+        {
+          /**
+           * The global request timeout is 60 seconds.
+           * We don't want to try acquiring the lock longer than 30 seconds.
+           * If it succeeds after 30 seconds,
+           * we have 30 seconds for actually running the business logic.
+           *
+           * If we would wait longer we risk the user facing 504 errors.
+           */
+          retries: 30,
+          retryDelay: 1_000,
+          signal,
+        },
+        async () => {
+          return await this.internalDeleteGraph({
+            targetId: target.id,
+            graphName: args.graphName,
+          });
+        },
+      )
+      .catch((error: unknown) => {
+        if (error instanceof MutexResourceLockedError) {
+          // TODO: support retry
+          return {
+            type: 'error' as const,
+            message: 'Please try again later.',
+          };
+        }
+        throw error;
+      });
+  }
+
+  private async internalDeleteGraph(args: { targetId: string; graphName: string }) {
+    const target = await this.storage.getTargetById(args.targetId);
+    if (!target) {
+      return {
+        type: 'error' as const,
+        message: 'Target does not exist.',
+      };
+    }
+
+    // get all the active graph variants, so we can later on write the manifest
+    const graphVariants = await Promise.all(
+      await this.graphVariants.getActiveGraphVariantsForTarget(target).then(graphVariants =>
+        graphVariants.map(async graphVariant => ({
+          graphVariant,
+          latestComposableVersion:
+            await this.graphVariants.getLatestComposableGraphVariantVersion(graphVariant),
+        })),
+      ),
+    );
+
+    const latestComposableVersion = await this.schemaManager.getLatestSchemaVersionWithSchemaLogs({
+      target,
+      onlyComposable: true,
+    });
+
+    const graphVariant = graphVariants.find(
+      variant => variant.graphVariant.name === args.graphName,
+    );
+
+    if (!graphVariant) {
+      return {
+        type: 'error' as const,
+        message: `The graph "${args.graphName}" does not exist.`,
+      };
+    }
+
+    await this.graphVariants.deleteGraphVariant({
+      targetId: target.id,
+      graphVariantId: graphVariant.graphVariant.id,
+    });
+
+    const graphs: Array<{ graphName: string; graphVersionId: string }> = [];
+
+    if (latestComposableVersion) {
+      graphs.push({ graphName: 'default', graphVersionId: latestComposableVersion.version.id });
+    }
+
+    for (const graphVariant of graphVariants) {
+      if (!graphVariant.latestComposableVersion) {
+        continue;
+      }
+      graphs.push({
+        graphName: graphVariant.graphVariant.name,
+        graphVersionId: graphVariant.latestComposableVersion.id,
+      });
+    }
+
+    await this.publishGraphtManifestToCDN(target, graphs);
+
+    return {
+      type: 'success' as const,
+    };
   }
 
   @traceFn('SchemaPublisher.delete', {
@@ -1804,7 +2175,7 @@ export class SchemaPublisher {
         onlyComposable: true,
       }),
       project.type === Types.ProjectType.FEDERATION
-        ? this.schemaVariants.getActiveGraphVariantsForTarget(target)
+        ? this.graphVariants.getActiveGraphVariantsForTarget(target)
         : null,
     ]);
 
@@ -1843,7 +2214,11 @@ export class SchemaPublisher {
           result: SchemaPublishResult;
           variants: Array<{
             graphVariantName: string;
-            graphVariant: GraphVariant | null;
+            graphVariant: {
+              variant: GraphVariant;
+              latestVersion: GraphVariantVersion | null;
+              latestComposableVersion: GraphVariantVersion | null;
+            };
             result: SchemaPublishResult;
           }> | null;
         }
@@ -1851,7 +2226,11 @@ export class SchemaPublisher {
           type: 'variant';
           result: SchemaPublishResult;
           graphVariantName: string;
-          graphVariant: GraphVariant | null;
+          graphVariant: {
+            variant: GraphVariant;
+            latestVersion: GraphVariantVersion | null;
+            latestComposableVersion: GraphVariantVersion | null;
+          };
         };
 
     switch (project.type) {
@@ -1909,75 +2288,84 @@ export class SchemaPublisher {
           throw new Error('Invalid state. input.service should have been validated by now.');
         }
 
-        if (input.variant) {
+        if (input.graph !== 'default') {
           this.logger.debug(
-            'This schema publish is for a single single graph variant. (schemaVariantName=%s)',
-            input.variant,
+            'This schema publish is for a single single graph. (schemaVariantName=%s)',
+            input.graph,
           );
 
-          const graphVariant =
-            graphVariants?.find(variant => variant.name === input.variant) ?? null;
+          const graphVariant = graphVariants?.find(variant => variant.name === input.graph) ?? null;
 
-          if (graphVariant === null) {
-            // If this schema variant does not yet exist
-            // we take the main schema registry state as the basis for the variant
-            // and replace the service that might - or might not yet exist there
-            this.logger.debug(
-              'This is the first publish to this graph variant. Use the latest schema version as the basis for the initial graph variant version. (schemaVariantName=%s, latestSchemaVersionId=%s)',
-              input.variant,
-              latestVersion,
+          if (graphVariant == null) {
+            throw new Error(
+              'INVARIANT: This is currently not implemented. Each graph variant should have an initial version when created as it needs to branch off from something.',
             );
+            // // If this schema variant does not yet exist
+            // // we take the main schema registry state as the basis for the variant
+            // // and replace the service that might - or might not yet exist there
+            // this.logger.debug(
+            //   'This is the first publish to this graph. Use the latest schema version as the basis for the initial graph variant version. (schemaVariantName=%s, latestSchemaVersionId=%s)',
+            //   input.graph,
+            //   latestVersion,
+            // );
 
-            result = await model.publish({
-              input: {
-                sdl: input.sdl,
-                service: input.service,
-                // TODO: metadata pls 🦧 We propbably do not need this it was a hack for stitching and everyone is moving to federation anyways
-                metadata: null,
-                // TODO: think about whether we should enforce that a url is provided (and that the URL is different from the default graph service url)
-                // The idea of a variant is to publish two versions of a service to production
-                // It would not really make a lot of sense if the service that is overwritten
-                // in the variant has the same URL as the main graph.
-                // We should potentially be strict about this and assert it.
-                url: input.url ?? null,
-              },
-              latest: latestVersion
-                ? {
-                    isComposable: latestVersion.version.isComposable,
-                    sdl: latestVersion.version.compositeSchemaSDL,
-                    schemas: ensureCompositeSchemas(latestVersion.schemas).map(
-                      toCompositeSchemaInput,
-                    ),
-                    contractNames:
-                      latestSchemaVersionContracts?.edges.map(edge => edge.node.contractName) ??
-                      null,
-                  }
-                : null,
-              // TODO: should we show a diff against the default graph here?
-              // Should we show a changelog to the latest default graph composable version?
-              // Or should we just show "initial version" on the Hive UI?
-              // If we decide to show a diff against the latest composable version from the main graph, we should also create
-              // a link on the database level
-              latestComposable: /* latestComposable
-                ? {
-                    isComposable: latestComposable.version.isComposable,
-                    sdl: latestComposable.version.compositeSchemaSDL,
-                    schemas: ensureCompositeSchemas(latestComposable.schemas).map(
-                      toCompositeSchemaInput,
-                    ),
-                  }
-                : */ null,
-              organization,
-              project,
-              target,
-              baseSchema,
-              // For now we are not providing contracts for graph variants, but we could support it.
-              // Let's avoid any unnecessary complexity though unless someone explicitly asked for it.
-              contracts: null,
-              conditionalBreakingChangeDiffConfig:
-                conditionalBreakingChangeConfiguration?.conditionalBreakingChangeDiffConfig ?? null,
-              failDiffOnDangerousChange,
-            });
+            // result = await model.publish({
+            //   input: {
+            //     sdl: input.sdl,
+            //     service: input.service,
+            //     // TODO: metadata pls 🦧 We propbably do not need this it was a hack for stitching and everyone is moving to federation anyways
+            //     metadata: null,
+            //     // TODO: think about whether we should enforce that a url is provided (and that the URL is different from the default graph service url)
+            //     // The idea of a variant is to publish two versions of a service to production
+            //     // It would not really make a lot of sense if the service that is overwritten
+            //     // in the variant has the same URL as the main graph.
+            //     // We should potentially be strict about this and assert it.
+            //     url: input.url ?? null,
+            //   },
+            //   latest: latestVersion
+            //     ? {
+            //         isComposable: latestVersion.version.isComposable,
+            //         sdl: latestVersion.version.compositeSchemaSDL,
+            //         schemas: ensureCompositeSchemas(latestVersion.schemas).map(
+            //           toCompositeSchemaInput,
+            //         ),
+            //         contractNames:
+            //           latestSchemaVersionContracts?.edges.map(edge => edge.node.contractName) ??
+            //           null,
+            //       }
+            //     : null,
+            //   // TODO: should we show a diff against the default graph here?
+            //   // Should we show a changelog to the latest default graph composable version?
+            //   // Or should we just show "initial version" on the Hive UI?
+            //   // If we decide to show a diff against the latest composable version from the main graph, we should also create
+            //   // a link on the database level
+            //   latestComposable: /* latestComposable
+            //     ? {
+            //         isComposable: latestComposable.version.isComposable,
+            //         sdl: latestComposable.version.compositeSchemaSDL,
+            //         schemas: ensureCompositeSchemas(latestComposable.schemas).map(
+            //           toCompositeSchemaInput,
+            //         ),
+            //       }
+            //     : */ null,
+            //   organization,
+            //   project,
+            //   target,
+            //   baseSchema,
+            //   // For now we are not providing contracts for graph variants, but we could support it.
+            //   // Let's avoid any unnecessary complexity though unless someone explicitly asked for it.
+            //   contracts: null,
+            //   conditionalBreakingChangeDiffConfig:
+            //     conditionalBreakingChangeConfiguration?.conditionalBreakingChangeDiffConfig ?? null,
+            //   failDiffOnDangerousChange,
+            // });
+
+            // modelPublishState = {
+            //   type: 'variant',
+            //   graphVariantName: input.variant,
+            //   graphVariant: null,
+            //   result,
+            // };
           } else {
             this.logger.debug(
               'The graph variant already exists. Using the latest graph variant version as the basis for the new graph variant version. (schemaVariantName=%s, latestGraphVersionId=%s)',
@@ -1985,7 +2373,7 @@ export class SchemaPublisher {
               graphVariant.id,
             );
 
-            const { latest, latestComposable } =
+            const { latest, latestComposable, latestVersion, latestComposableVersion } =
               await this.retrieveLatestGraphVariantState(graphVariant);
 
             result = await model.publish({
@@ -2010,14 +2398,18 @@ export class SchemaPublisher {
                 conditionalBreakingChangeConfiguration?.conditionalBreakingChangeDiffConfig ?? null,
               failDiffOnDangerousChange,
             });
-          }
 
-          modelPublishState = {
-            type: 'variant',
-            graphVariantName: input.variant,
-            graphVariant: graphVariant,
-            result,
-          };
+            modelPublishState = {
+              type: 'variant',
+              graphVariantName: input.graph,
+              graphVariant: {
+                variant: graphVariant,
+                latestVersion,
+                latestComposableVersion,
+              },
+              result,
+            };
+          }
           break;
         }
 
@@ -2104,7 +2496,11 @@ export class SchemaPublisher {
             ) {
               variants.push({
                 graphVariantName: schemaVariantState.graphVariant.name,
-                graphVariant: schemaVariantState.graphVariant,
+                graphVariant: {
+                  graphVariant: schemaVariantState.graphVariant,
+                  latestVersion: schemaVariantState.latestVersion,
+                  latestComposableVersion: schemaVariantState.latestComposableVersion,
+                },
                 result: await model.publish({
                   input: {
                     sdl: input.sdl,
@@ -2153,7 +2549,7 @@ export class SchemaPublisher {
           initial: false,
           valid: true,
           changes: [],
-          linkToWebsite: 'TODO: link to variant version on web app',
+          linkToWebsite: `http://localhost:3000/${organization.slug}/${project.slug}/${target.slug}/history/${modelPublishState.graphVariantName}/version/${modelPublishState.graphVariant?.latestVersion?.id}`,
         } as const;
       }
       if (modelPublishState.result.conclusion === 'REJECT') {
@@ -2174,14 +2570,12 @@ export class SchemaPublisher {
 
       const state = modelPublishState.result.state;
 
-      await this.schemaVariants.createGraphVariantVersion({
-        graphVariant: modelPublishState.graphVariant
-          ? { type: 'exists', value: modelPublishState.graphVariant }
-          : {
-              type: 'doesNotExist',
-              name: modelPublishState.graphVariantName,
-              targetId: target.id,
-            },
+      const version = await this.graphVariants.createSubgraphPublishGraphVariantVersion({
+        graphVariant: {
+          graphVariant: modelPublishState.graphVariant.variant,
+          previousVersion: modelPublishState.graphVariant.latestVersion,
+          diffVersion: modelPublishState.graphVariant.latestComposableVersion,
+        },
         // If the schema publish is to a single schema variant,
         // we need to create a new schema log that only exists for this specific schema variant.
         schemaLog: {
@@ -2206,7 +2600,12 @@ export class SchemaPublisher {
         schemaCompositionErrors: state.compositionErrors,
         // exclude the current published schema - it needs to be created first.
         schemaLogIds: state.schemas.filter(s => s.id !== state.schema.id).map(s => s.id),
-        schemaChanges: state.changes,
+        previousSchemaLogId:
+          state.previousSchemas?.find(schema => schema.serviceName === state.schema.serviceName)
+            ?.id ?? null,
+        publicSchemaChanges: state.changes,
+        supergraphSchemaChanges: state.supergraphChanges,
+        serviceChanges: state.serviceChanges,
       });
 
       // TODO: write assets to the CDN 😃
@@ -2217,7 +2616,7 @@ export class SchemaPublisher {
         valid: state.composable,
         changes: null,
         message: '',
-        linkToWebsite: 'foobarsbro',
+        linkToWebsite: `http://localhost:3000/${organization.slug}/${project.slug}/${target.slug}/history/${modelPublishState.graphVariantName}/version/${version.id}`,
       };
     }
 
@@ -2464,45 +2863,44 @@ export class SchemaPublisher {
           }),
     });
 
-    if (modelPublishState.variants) {
-      this.logger.debug(
-        'Publish affected graph variants. (variantNames=%o)',
-        modelPublishState.variants.map(variant => variant.graphVariantName),
-      );
-      const schemaLogId = schemaVersion.actionId;
+    // if (modelPublishState.variants) {
+    //   this.logger.debug(
+    //     'Publish affected graph variants. (variantNames=%o)',
+    //     modelPublishState.variants.map(variant => variant.graphVariantName),
+    //   );
+    //   const schemaLogId = schemaVersion.actionId;
 
-      for (const variantState of modelPublishState.variants) {
-        if (variantState.result.conclusion !== 'PUBLISH') {
-          this.logger.debug('Skip variant, which is unaffected by this schema publish.');
-          continue;
-        }
+    // for (const variantState of modelPublishState.variants) {
+    //   if (variantState.result.conclusion !== 'PUBLISH') {
+    //     this.logger.debug('Skip variant, which is unaffected by this schema publish.');
+    //     continue;
+    //   }
 
-        const state = variantState.result.state;
+    //   const state = variantState.result.state;
 
-        await this.schemaVariants.createGraphVariantVersion({
-          graphVariant: variantState.graphVariant
-            ? { type: 'exists', value: variantState.graphVariant }
-            : {
-                type: 'doesNotExist',
-                name: variantState.graphVariantName,
-                targetId: target.id,
-              },
-          schemaLog: {
-            type: 'exists',
-            id: schemaLogId,
-          },
-          supergraphSdl: state.supergraph,
-          compositeSchemaSdl: state.fullSchemaSdl,
-          schemaCompositionErrors: state.compositionErrors,
-          schemaLogIds: state.schemas
-            .filter(s => s.id !== state.schema.id) // do not include the incoming schema
-            .map(s => s.id),
-          schemaChanges: state.changes,
-        });
-
-        // TODO: we still need to write the variants to the CDN 😃
-      }
-    }
+    //   await this.graphVariants.createSubgraphPublishGraphVariantVersion({
+    //     graphVariant: {
+    //       graphVariant: variantState.graphVariant.variant,
+    //       previousVersion: variantState.graphVariant.latestVersion,
+    //       diffVersion: variantState.graphVariant.latestComposableVersion,
+    //     },
+    //     schemaLog: {
+    //       type: 'exists',
+    //       id: schemaLogId,
+    //     },
+    //     supergraphSdl: state.supergraph,
+    //     compositeSchemaSdl: state.fullSchemaSdl,
+    //     schemaCompositionErrors: state.compositionErrors,
+    //     schemaLogIds: state.schemas
+    //       .filter(s => s.id !== state.schema.id) // do not include the incoming schema
+    //       .map(s => s.id),
+    //     publicSchemaChanges: state.changes,
+    //     supergraphSchemaChanges: state.supergraphChanges,
+    //     serviceChanges: state.serviceChanges,
+    //   });
+    //   // TODO: we still need to write the variants to the CDN 😃
+    // }
+    // }
 
     if (changes.length > 0 || errors.length > 0) {
       void this.alertsManager
@@ -2850,6 +3248,33 @@ export class SchemaPublisher {
     await Promise.all(actions);
   }
 
+  @traceFn('SchemaPublisher.publishGraphtManifestToCDN')
+  private async publishGraphtManifestToCDN(
+    target: Target,
+    graphs: Array<{ graphName: string; graphVersionId: string }>,
+  ) {
+    await this.artifactStorageWriter.writeGraphManifest({
+      targetId: target.id,
+      graphManifest: Object.fromEntries(
+        graphs.map(graph => [graph.graphName, graph.graphVersionId]),
+      ),
+    });
+  }
+
+  @traceFn('SchemaPublisher.publishGraphToCDN')
+  private async publishGraphVersionToCDN(
+    target: Target,
+    graph: {
+      graphName: string;
+      graphVersionId: string;
+      sdl: string;
+      supergraph: string;
+      subgraphs: Array<{ sdl: string; name: string; id: string }>;
+    },
+  ) {
+    console.log('TODO: WRITE SDL/SUPERGRAPH ETC TO CDN');
+  }
+
   private async createGithubCheckRunForSchemaPublish(args: {
     organizationId: string;
     github: {
@@ -2970,8 +3395,8 @@ export class SchemaPublisher {
   private async retrieveLatestGraphVariantState(graphVariant: ActiveGraphVariant) {
     const [latestGraphVariantWithSchemaLogs, latestComposableGraphVariantWithSchemaLogs] =
       await Promise.all([
-        this.schemaVariants.getLatestGraphVariantVersionWithLogs(graphVariant),
-        this.schemaVariants.getLatestComposableGraphVariantVersionWithLogs(graphVariant),
+        this.graphVariants.getLatestGraphVariantVersionWithLogs(graphVariant),
+        this.graphVariants.getLatestComposableGraphVariantVersionWithLogs(graphVariant),
       ]);
 
     if (!latestGraphVariantWithSchemaLogs) {
@@ -2983,10 +3408,12 @@ export class SchemaPublisher {
 
     return {
       graphVariant,
+      latestVersion: latestGraphVariantWithSchemaLogs.version,
+      latestComposableVersion: latestComposableGraphVariantWithSchemaLogs?.version ?? null,
       latest: {
         isComposable: !latestGraphVariantWithSchemaLogs.version.schemaCompositionErrors,
         contractNames: null,
-        sdl: latestGraphVariantWithSchemaLogs.version.compositeSchemaSdl,
+        sdl: latestGraphVariantWithSchemaLogs.version.publicSdl,
         // TODO: metadata 🦧
         schemas: latestGraphVariantWithSchemaLogs.logs,
       } satisfies Parameters<CompositeModel['publish']>[0]['latest'],
@@ -2994,7 +3421,8 @@ export class SchemaPublisher {
         ? ({
             isComposable:
               !latestComposableGraphVariantWithSchemaLogs.version.schemaCompositionErrors,
-            sdl: latestComposableGraphVariantWithSchemaLogs.version.compositeSchemaSdl,
+            sdl: latestComposableGraphVariantWithSchemaLogs.version.publicSdl,
+            supergraphSdl: latestGraphVariantWithSchemaLogs.version.supergraphSdl,
             // TODO: metadata 🦧
             schemas: latestComposableGraphVariantWithSchemaLogs.logs,
           } satisfies Parameters<CompositeModel['publish']>[0]['latestComposable'])

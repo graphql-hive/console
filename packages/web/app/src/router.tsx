@@ -21,6 +21,7 @@ import {
   Navigate,
   Outlet,
   parseSearchWith,
+  redirect,
   stringifySearchWith,
   useNavigate,
   useParams,
@@ -76,6 +77,7 @@ import { TargetExplorerDeprecatedPage } from './pages/target-explorer-deprecated
 import { TargetExplorerTypePage } from './pages/target-explorer-type';
 import { TargetExplorerUnusedPage } from './pages/target-explorer-unused';
 import { TargetHistoryPage } from './pages/target-history';
+import { TargetHistoryGraphVersionPage } from './pages/target-history-graph-version';
 import { TargetHistoryVersionPage } from './pages/target-history-version';
 import { TargetInsightsPage } from './pages/target-insights';
 import { TargetInsightsClientPage } from './pages/target-insights-client';
@@ -909,18 +911,55 @@ const targetHistoryRoute = createRoute({
   },
 });
 
-const targetHistoryVersionRoute = createRoute({
+const targetHistoryGraphVersionRoute = createRoute({
   getParentRoute: () => targetHistoryRoute,
-  path: '$versionId',
+  path: '$graphName',
+  loader(args) {
+    if (z.string().uuid().safeParse(args.params.graphName).success) {
+      throw redirect({
+        to: '/$organizationSlug/$projectSlug/$targetSlug/history/$graphName/version/$graphVersionId',
+        params: {
+          ...args.params,
+          graphName: 'default',
+          graphVersionId: args.params.graphName,
+        },
+      });
+    }
+  },
+});
+
+const targetHistoryGraphVersionIndexRoute = createRoute({
+  getParentRoute: () => targetHistoryGraphVersionRoute,
+  path: '/',
+  component: function Noop() {
+    return null;
+  },
+});
+
+const targetHistoryVersionRoute = createRoute({
+  getParentRoute: () => targetHistoryGraphVersionRoute,
+  path: 'version/$graphVersionId',
   component: function TargetHistoryVersionRoute() {
-    const { organizationSlug, projectSlug, targetSlug, versionId } =
+    const { organizationSlug, projectSlug, targetSlug, graphName, graphVersionId } =
       targetHistoryVersionRoute.useParams();
+    if (graphName === 'default') {
+      return (
+        <TargetHistoryVersionPage
+          organizationSlug={organizationSlug}
+          projectSlug={projectSlug}
+          targetSlug={targetSlug}
+          versionId={graphVersionId}
+        />
+      );
+    }
+
     return (
-      <TargetHistoryVersionPage
+      <TargetHistoryGraphVersionPage
         organizationSlug={organizationSlug}
         projectSlug={projectSlug}
         targetSlug={targetSlug}
-        versionId={versionId}
+        graphName={graphName}
+        graphVersionId={graphVersionId}
       />
     );
   },
@@ -1161,7 +1200,12 @@ const routeTree = root.addChildren([
       targetIndexRoute,
       targetSettingsRoute,
       targetLaboratoryRoute,
-      targetHistoryRoute.addChildren([targetHistoryVersionRoute]),
+      targetHistoryRoute.addChildren([
+        targetHistoryGraphVersionRoute.addChildren([
+          targetHistoryGraphVersionIndexRoute,
+          targetHistoryVersionRoute,
+        ]),
+      ]),
       targetInsightsRoute,
       targetInsightsManageFiltersRoute,
       targetTraceRoute,

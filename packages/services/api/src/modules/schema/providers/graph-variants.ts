@@ -1,6 +1,7 @@
 import { Injectable, Scope } from 'graphql-modules';
 import z from 'zod';
 import { batch } from '@hive/api/shared/helpers';
+import { isUUID } from '@hive/api/shared/is-uuid';
 import { CommonQueryMethods, PostgresDatabasePool, psql } from '@hive/postgres';
 import {
   decodeCreatedAtAndUUIDIdBasedCursor,
@@ -49,9 +50,40 @@ export class GraphVariants {
     return result.map(record => ActiveGraphVariantModel.parse(record));
   }
 
-  // async getActiveGraphVariantsForTargetWithLatestVersions
+  async getGraphVariantForTargetByName(target: Target, variantName: string) {
+    const query = psql`
+      SELECT
+        ${graphVariantFields}
+      FROM
+        "graph_variants"
+      WHERE
+        "target_id" = ${target.id}
+        AND "name" = ${variantName}
+      LIMIT 1
+    `;
 
-  // TODO: probably remove pagination.
+    const graphVariant = await this.pg.maybeOne(query).then(GraphVariantModel.nullable().parse);
+    return graphVariant;
+  }
+
+  async getGraphVariantForTargetById(target: Target, graphVariantId: string) {
+    if (!isUUID(graphVariantId)) {
+      return null;
+    }
+
+    const query = psql`
+      SELECT
+        ${graphVariantFields}
+      FROM
+        "graph_variants"
+      WHERE
+        "id" = ${graphVariantId}
+        AND "target_id" = ${target.id}
+      LIMIT 1
+    `;
+    return await this.pg.maybeOne(query).then(GraphVariantModel.nullable().parse);
+  }
+
   async getGraphVariantsForTarget(
     target: Target,
     args: {
@@ -267,6 +299,139 @@ export class GraphVariants {
     },
   );
 
+  async getSubgraphDiffForGraphVariantVersion(version: GraphVariantVersion) {
+    const graphVariantsToVersionLogQuery = psql`
+      SELECT
+        ${graphVariantsVersionToLogFields}
+      FROM
+        "graph_variants_version_to_log"
+      WHERE
+        "graph_variant_version_id" = ${version.id}
+    `;
+
+    const edges = await this.pg
+      .any(graphVariantsToVersionLogQuery)
+      .then(z.array(GraphVariantsToLogModel).parse);
+
+    const allLogIds = new Set<string>();
+    for (const edge of edges) {
+      allLogIds.add(edge.schemaLogId);
+      if (edge.previousSchemaLogId) {
+        allLogIds.add(edge.previousSchemaLogId);
+      }
+    }
+
+    const schemaLogsQuery = psql`
+      SELECT
+        ${schemaLogFields}
+      FROM
+        "schema_log"
+      WHERE
+        "id" = ANY(${psql.array(Array.from(allLogIds), 'uuid')})
+    `;
+
+    const nodes = await this.pg.any(schemaLogsQuery).then(z.array(ServiceSchemaLogModel).parse);
+    const map = new Map<string, ServiceSchemaLog>();
+    for (const node of nodes) {
+      map.set(node.id, node);
+    }
+
+    const subgraphDiffs: Array<
+      | {
+          type: 'unchanged';
+          log: ServiceSchemaPushLog;
+        }
+      | {
+          type: 'removed';
+          log: ServiceSchemaRemoveLog;
+          previousLog: ServiceSchemaPushLog;
+        }
+      | {
+          type: 'added';
+          log: ServiceSchemaPushLog;
+        }
+      | {
+          type: 'changed';
+          log: ServiceSchemaPushLog;
+          previousLog: ServiceSchemaPushLog;
+          changes: Array<SchemaChangeType> | null;
+        }
+    > = [];
+
+    for (const edge of edges) {
+      const node = map.get(edge.schemaLogId);
+      const previousNode = edge.previousSchemaLogId ? map.get(edge.previousSchemaLogId) : null;
+
+      if (!node) {
+        throw new Error('Something went wrong. Could not find node for edge.');
+      }
+
+      if (node.action === 'DELETE') {
+        if (edge.previousSchemaLogId === edge.schemaLogId) {
+          throw new Error(
+            'This should not happen. A deleted schema log is never copied to the follow up graph version.',
+          );
+        }
+        if (!previousNode) {
+          throw new Error(
+            'This should not happen. A removed log should always have a previous version.',
+          );
+        }
+
+        if (previousNode.action !== 'PUSH') {
+          throw new Error(
+            'This should not happen. A removed log should always have a previous push version.',
+          );
+        }
+
+        subgraphDiffs.push({
+          type: 'removed',
+          log: node,
+          previousLog: previousNode,
+        });
+        continue;
+      }
+
+      // PUSH
+      if (!edge.previousSchemaLogId) {
+        subgraphDiffs.push({
+          type: 'added',
+          log: node,
+        });
+        continue;
+      }
+
+      if (edge.schemaLogId === edge.previousSchemaLogId) {
+        subgraphDiffs.push({
+          type: 'unchanged' as const,
+          log: node,
+        });
+        continue;
+      }
+
+      if (!previousNode) {
+        throw new Error('This should not happen. The previous schema log must be available.');
+      }
+
+      if (previousNode.action !== 'PUSH') {
+        throw new Error(
+          'This should not happen. A push log should always have a previous push version.',
+        );
+      }
+
+      console.log(edge);
+
+      subgraphDiffs.push({
+        type: 'changed' as const,
+        log: node,
+        previousLog: previousNode,
+        changes: edge.previousSchemaLogChanges,
+      });
+    }
+
+    return subgraphDiffs;
+  }
+
   private async createSchemaLog(args: CreateSchemaLogInput, pg: CommonQueryMethods) {
     const query = psql`
       INSERT INTO "schema_log" (
@@ -296,7 +461,10 @@ export class GraphVariants {
   }
 
   private async createGraphVariant(
-    args: { name: string; targetId: string },
+    args: {
+      name: string;
+      targetId: string;
+    },
     pg: CommonQueryMethods,
   ) {
     const query = psql`
@@ -314,81 +482,324 @@ export class GraphVariants {
     return await pg.one(query).then(GraphVariantModel.parse);
   }
 
-  async createGraphVariantVersion(
+  private async _createGraphVariantVersion(
     args: {
-      graphVariant:
-        | { type: 'exists'; value: GraphVariant }
-        | { type: 'doesNotExist'; name: string; targetId: string };
-      schemaLog:
-        | { type: 'exists'; id: string }
-        | { type: 'doesNotExist'; input: CreateSchemaLogInput };
+      graphVariantId: string;
       schemaCompositionErrors: null | Array<SchemaCompositionError>;
       supergraphSdl: string | null;
-      compositeSchemaSdl: string | null;
-      schemaChanges: Array<SchemaChangeType> | null;
-      schemaLogIds: Array<string>;
+      publicSchemaSdl: string | null;
+      publicSchemaChanges: Array<SchemaChangeType> | null;
+      supergraphSchemaChanges: Array<SchemaChangeType> | null;
+      previousGraphVersion: null | string;
+      origin:
+        | GraphVariantVersionOriginGraphVersionPromotion
+        | GraphVariantVersionOriginSubgraphPublish;
     },
-    // TODO: this should all be within a single transaction
-    pg: CommonQueryMethods = this.pg,
+    pg: CommonQueryMethods,
   ) {
-    const newSchemaLogId =
-      args.schemaLog.type === 'exists'
-        ? args.schemaLog.id
-        : (await this.createSchemaLog(args.schemaLog.input, pg)).id;
-
-    const graphVariant =
-      args.graphVariant.type === 'exists'
-        ? args.graphVariant.value
-        : await this.createGraphVariant(
-            {
-              name: args.graphVariant.name,
-              targetId: args.graphVariant.targetId,
-            },
-            pg,
-          );
-
     const graphVariantVersionQuery = psql`
       INSERT INTO "graph_variant_versions" (
         "graph_variant_id"
-        , "schema_log_id"
         , "schema_composition_errors"
         , "supergraph_sdl"
-        , "compositite_schema_sdl"
-        , "schema_changes"
+        , "supergraph_schema_changes"
+        , "public_sdl"
+        , "public_schema_changes"
+        , "previous_graph_variant_version_id"
+        , "origin"
       )
       VALUES (
-        ${graphVariant.id}
-        , ${newSchemaLogId}
+        ${args.graphVariantId}
         , ${args.schemaCompositionErrors ? psql.jsonb(args.schemaCompositionErrors) : null}
         , ${args.supergraphSdl}
-        , ${args.compositeSchemaSdl}
-        , ${args.schemaChanges ? psql.jsonb(args.schemaChanges.map(toSerializableSchemaChange)) : null}
+        , ${args.supergraphSchemaChanges ? psql.jsonb(args.supergraphSchemaChanges.map(toSerializableSchemaChange)) : null}
+        , ${args.publicSchemaSdl}
+        , ${args.publicSchemaChanges ? psql.jsonb(args.publicSchemaChanges.map(toSerializableSchemaChange)) : null}
+        , ${args.previousGraphVersion}
+        , ${psql.jsonb(GraphVariantVersionOriginModel.parse(args.origin))}
       )
       RETURNING
         ${graphVariantVersionFields}
     `;
 
-    const version = await pg.one(graphVariantVersionQuery).then(GraphVariantVersionModel.parse);
+    return await pg.one(graphVariantVersionQuery).then(GraphVariantVersionModel.parse);
+  }
 
-    let schemaLogsIds = args.schemaLogIds;
+  async createInitialClonedGraphVariantVersion(args: {
+    targetId: string;
+    graphVariantName: string;
+    schemaLogIds: Array<string>;
+    supergraphSdl: string | null;
+    publicSchemaSdl: string | null;
+    schemaCompositionErrors: null | Array<SchemaCompositionError>;
+    origin: {
+      sourceGraphName: string;
+      sourceGraphVersionId: string;
+    };
+  }) {
+    return await this.pg.transaction('createInitialClonedGraphVariantVersion', async pg => {
+      const graphVariant = await this.createGraphVariant(
+        { name: args.graphVariantName, targetId: args.targetId },
+        pg,
+      );
 
-    if (newSchemaLogId) {
-      schemaLogsIds = schemaLogsIds.concat(newSchemaLogId);
+      const graphVariantVersion = await this._createGraphVariantVersion(
+        {
+          graphVariantId: graphVariant.id,
+          schemaCompositionErrors: args.schemaCompositionErrors,
+          supergraphSdl: args.supergraphSdl,
+          publicSchemaSdl: args.publicSchemaSdl,
+          publicSchemaChanges: null,
+          supergraphSchemaChanges: null,
+          previousGraphVersion: null,
+          origin: {
+            type: 'graphVersionPromotion',
+            sourceGraphName: args.origin.sourceGraphName,
+            sourceGraphVersionId: args.origin.sourceGraphVersionId,
+          },
+        },
+        pg,
+      );
+
+      const graphVariantSchemaLogsQuery = psql`
+        INSERT INTO "graph_variants_version_to_log" (
+          "graph_variant_version_id"
+          , "schema_log_id"
+          , "previous_schema_log_id"
+        )
+        SELECT * FROM
+          ${psql.unnest(
+            args.schemaLogIds.map(
+              // These are all unchanged (for now; this might change later if we allow publishing musltiple services at the same time or delete a service)
+              actionId => [graphVariantVersion.id, actionId, actionId] as const,
+            ),
+            ['uuid', 'uuid', 'uuid'],
+          )}
+      `;
+
+      await pg.query(graphVariantSchemaLogsQuery);
+      return { graphVariant, graphVariantVersion };
+    });
+  }
+
+  async deleteGraphVariant(args: { targetId: string; graphVariantId: string }) {
+    await this.pg.query(psql`
+      DELETE FROM "graph_variants"
+      WHERE
+        "target_id" = ${args.targetId}
+        AND "id" = ${args.graphVariantId}
+    `);
+  }
+
+  async createSubgraphPublishGraphVariantVersion(
+    args: {
+      graphVariant: {
+        graphVariant: GraphVariant;
+        previousVersion: GraphVariantVersion | null;
+        diffVersion: GraphVariantVersion | null;
+      };
+      schemaLog:
+        | { type: 'exists'; id: string; serviceName: string }
+        | { type: 'doesNotExist'; input: CreateSchemaLogInput };
+      /** The ID of the previous schema log (against which we diffed). The previous schema log must always be a PUSH log. */
+      previousSchemaLogId: string | null;
+      schemaCompositionErrors: null | Array<SchemaCompositionError>;
+      supergraphSdl: string | null;
+      compositeSchemaSdl: string | null;
+      publicSchemaChanges: Array<SchemaChangeType> | null;
+      supergraphSchemaChanges: Array<SchemaChangeType> | null;
+      serviceChanges: Array<SchemaChangeType> | null;
+      schemaLogIds: Array<string>;
+    },
+    // TODO: this should all be within a single transaction
+    pg: CommonQueryMethods = this.pg,
+  ) {
+    return await this.pg.transaction('createSubgraphPublishGraphVariantVersion', async pg => {
+      const schemaLog =
+        args.schemaLog.type === 'exists'
+          ? args.schemaLog
+          : await this.createSchemaLog(args.schemaLog.input, pg);
+      const graphVariant = args.graphVariant.graphVariant;
+
+      const version = await this._createGraphVariantVersion(
+        {
+          graphVariantId: graphVariant.id,
+          schemaCompositionErrors: args.schemaCompositionErrors,
+          supergraphSdl: args.supergraphSdl,
+          publicSchemaSdl: args.compositeSchemaSdl,
+          publicSchemaChanges: args.publicSchemaChanges,
+          supergraphSchemaChanges: args.supergraphSchemaChanges,
+          previousGraphVersion: args.graphVariant.diffVersion?.id ?? null,
+          origin: {
+            type: 'subgraphPublish',
+            subgraphs: [
+              {
+                name: schemaLog.serviceName,
+                versionId: schemaLog.id,
+              },
+            ],
+          },
+        },
+        pg,
+      );
+
+      const graphVariantSchemaLogsQuery = psql`
+        INSERT INTO "graph_variants_version_to_log" (
+          "graph_variant_version_id"
+          , "schema_log_id"
+          , "previous_schema_log_id"
+        )
+        SELECT * FROM
+          ${psql.unnest(
+            args.schemaLogIds.map(
+              // These are all unchanged (for now; this might change later if we allow publishing musltiple services at the same time or delete a service)
+              actionId => [version.id, actionId, actionId] as const,
+            ),
+            ['uuid', 'uuid', 'uuid'],
+          )}
+      `;
+
+      await pg.query(graphVariantSchemaLogsQuery);
+
+      await pg.query(psql`
+        INSERT INTO "graph_variants_version_to_log" (
+          "graph_variant_version_id"
+          , "schema_log_id"
+          , "previous_schema_log_id"
+          , "previous_schema_log_changes"
+        )
+        VALUES (
+          ${version.id}
+          , ${schemaLog.id}
+          , ${args.previousSchemaLogId}
+          , ${
+            args.serviceChanges
+              ? psql.jsonb(args.serviceChanges.map(toSerializableSchemaChange))
+              : null
+          }
+        )
+      `);
+
+      return version;
+    });
+  }
+
+  async getPaginatedGraphVariantVersionsForGraphVariant(
+    graphVariant: GraphVariant,
+    args: { after: string | null; first: number },
+  ) {
+    let afterCursor: null | {
+      createdAt: string;
+      id: string;
+    } = null;
+
+    const limit = args.first ? (args.first > 0 ? Math.min(args.first, 20) : 20) : 20;
+
+    if (args.after) {
+      afterCursor = decodeCreatedAtAndUUIDIdBasedCursor(args.after);
     }
 
-    const graphVariantSchemaLogsQuery = psql`
-      INSERT INTO "graph_variants_version_to_log" (
-        "graph_variant_version_id"
-        , "schema_log_id"
-      )
-      SELECT * FROM
-        ${psql.unnest(
-          schemaLogsIds.map(actionId => [version.id, actionId]),
-          ['uuid', 'uuid'],
-        )}
+    const query = psql`/* getPaginatedGraphVariantVersionsForTarget */
+      SELECT
+        ${graphVariantVersionFields}
+      FROM
+        "graph_variant_versions"
+      WHERE
+        "graph_variant_id" = ${graphVariant.id}
+        ${
+          afterCursor
+            ? psql`
+              AND (
+                (
+                  "created_at" = ${afterCursor.createdAt}
+                  AND "id" < ${afterCursor.id}
+                )
+                OR "created_at" < ${afterCursor.createdAt}
+              )
+            `
+            : psql``
+        }
+      ORDER BY
+        "created_at" DESC
+        , "id" DESC
+      LIMIT ${limit + 1}
     `;
 
-    await pg.query(graphVariantSchemaLogsQuery);
+    const result = await this.pg.any(query);
+
+    let edges = result.map(row => {
+      const node = GraphVariantVersionModel.parse(row);
+
+      return {
+        node,
+        get cursor() {
+          return encodeCreatedAtAndUUIDIdBasedCursor(node);
+        },
+      };
+    });
+
+    const hasNextPage = edges.length > limit;
+    edges = edges.slice(0, limit);
+
+    return {
+      edges,
+      pageInfo: {
+        hasNextPage,
+        hasPreviousPage: afterCursor !== null,
+        get endCursor() {
+          return edges[edges.length - 1]?.cursor ?? '';
+        },
+        get startCursor() {
+          return edges[0]?.cursor ?? '';
+        },
+      },
+    };
+  }
+
+  private async getGraphVariantVersionById(graphVariantVersionId: string) {
+    const query = psql`
+      SELECT
+        ${graphVariantVersionFields}
+      FROM
+        "graph_variant_versions"
+      WHERE
+        "id" = ${graphVariantVersionId}
+      LIMIT 1
+    `;
+
+    return await this.pg.maybeOne(query).then(GraphVariantVersionModel.nullable().parse);
+  }
+
+  async getGraphVariantVersionByIdForGraphVariant(
+    graphVariant: GraphVariant,
+    graphVariantVersionId: string,
+  ) {
+    if (!isUUID(graphVariantVersionId)) {
+      return null;
+    }
+    const version = await this.getGraphVariantVersionById(graphVariantVersionId);
+
+    if (!version) {
+      return null;
+    }
+
+    if (version.graphVariantId !== graphVariant.id) {
+      return null;
+    }
+
+    return version;
+  }
+
+  async getPreviousDiffableGraphVersionForGraphVersion(graphVariant: GraphVariantVersion) {
+    if (!graphVariant.previousGraphVariantVersionId) {
+      return null;
+    }
+
+    const graphVersion = await this.getGraphVariantVersionById(
+      graphVariant.previousGraphVariantVersionId,
+    );
+
+    return graphVersion;
   }
 }
 
@@ -441,28 +852,59 @@ const graphVariantVersionFields = psql`
   , "graph_variant_id" AS "graphVariantId"
   , "previous_graph_variant_version_id" AS "previousGraphVariantVersionId"
   , to_json("created_at") AS "createdAt"
-  , "schema_log_id" AS "schemaLogId"
   , "schema_composition_errors" AS "schemaCompositionErrors"
-  , "compositite_schema_sdl" AS "compositeSchemaSdl"
+  , "public_sdl" AS "publicSdl"
+  , "public_schema_changes" AS "publicSchemaChanges"
   , "supergraph_sdl" AS "supergraphSdl"
-  , "schema_changes" AS "schemaChanges"
+  , "supergraph_schema_changes" AS "supergraphSchemaChanges"
+  , "origin"
 `;
+
+const GraphVariantVersionOriginGraphVersionPromotionModel = z.object({
+  type: z.literal('graphVersionPromotion'),
+  sourceGraphName: z.string(),
+  sourceGraphVersionId: z.string(),
+});
+
+type GraphVariantVersionOriginGraphVersionPromotion = z.TypeOf<
+  typeof GraphVariantVersionOriginGraphVersionPromotionModel
+>;
+
+const GraphVariantVersionOriginSubgraphPublishModel = z.object({
+  type: z.literal('subgraphPublish'),
+  subgraphs: z.array(
+    z.object({
+      name: z.string(),
+      versionId: z.string(),
+    }),
+  ),
+});
+
+type GraphVariantVersionOriginSubgraphPublish = z.TypeOf<
+  typeof GraphVariantVersionOriginSubgraphPublishModel
+>;
+
+const GraphVariantVersionOriginModel = z.union([
+  GraphVariantVersionOriginGraphVersionPromotionModel,
+  GraphVariantVersionOriginSubgraphPublishModel,
+]);
 
 const SharedGraphVariantVersionFieldsModel = z.object({
   id: z.string(),
   graphVariantId: z.string(),
   previousGraphVariantVersionId: z.string().nullable(),
   createdAt: z.string(),
-  schemaLogId: z.string(),
+  origin: GraphVariantVersionOriginModel,
 });
 
 const ComposableGraphVariantVersionModel = z.intersection(
   SharedGraphVariantVersionFieldsModel,
   z.object({
     schemaCompositionErrors: z.null(),
-    compositeSchemaSdl: z.string(),
+    publicSdl: z.string(),
     supergraphSdl: z.string(),
-    schemaChanges: z.array(HiveSchemaChangeModel).nullable(),
+    supergraphSchemaChanges: z.array(HiveSchemaChangeModel).nullable(),
+    publicSchemaChanges: z.array(HiveSchemaChangeModel).nullable(),
   }),
 );
 
@@ -472,9 +914,10 @@ const UncomposableGraphVariantVersionModel = z.intersection(
   SharedGraphVariantVersionFieldsModel,
   z.object({
     schemaCompositionErrors: z.array(SchemaCompositionErrorModel),
-    compositeSchemaSdl: z.null(),
+    publicSdl: z.null(),
+    publicSchemaChanges: z.null(),
     supergraphSdl: z.null(),
-    schemaChanges: z.null(),
+    supergraphSchemaChanges: z.null(),
   }),
 );
 
@@ -483,17 +926,34 @@ const GraphVariantVersionModel = z.union([
   UncomposableGraphVariantVersionModel,
 ]);
 
-type GraphVariantVersion = z.TypeOf<typeof GraphVariantVersionModel>;
+export type GraphVariantVersion = z.TypeOf<typeof GraphVariantVersionModel>;
 
 const graphVariantsVersionToLogFields = psql`
   "graph_variant_version_id" AS "graphVariantVersionId"
   , "schema_log_id" AS "schemaLogId"
+  , "previous_schema_log_id" AS "previousSchemaLogId"
+  , "previous_schema_log_changes" AS "previousSchemaLogChanges"
 `;
 
-const GraphVariantsToLogModel = z.object({
+const GraphVariantsToLogBaseModel = z.object({
   graphVariantVersionId: z.string(),
   schemaLogId: z.string(),
 });
+
+const GraphVariantsToLogNoPreviousLogModel = GraphVariantsToLogBaseModel.extend({
+  previousSchemaLogId: z.null(),
+  previousSchemaLogChanges: z.null(),
+});
+
+const GraphVariantsToLogPreviousLogModel = GraphVariantsToLogBaseModel.extend({
+  previousSchemaLogId: z.string(),
+  previousSchemaLogChanges: z.array(HiveSchemaChangeModel).nullable(),
+});
+
+const GraphVariantsToLogModel = z.union([
+  GraphVariantsToLogNoPreviousLogModel,
+  GraphVariantsToLogPreviousLogModel,
+]);
 
 const schemaLogFields = psql`
   "id"
@@ -501,6 +961,7 @@ const schemaLogFields = psql`
   , "service_name" AS "serviceName"
   , "service_url" AS "serviceUrl"
   , "sdl"
+  , "action"
 `;
 
 /** Schema log that is a "PUSH" aka not a removal etc. */
@@ -510,6 +971,21 @@ const ServiceSchemaPushLogModel = z.object({
   serviceName: z.string(),
   serviceUrl: z.string(),
   sdl: z.string(),
+  action: z.literal('PUSH'),
 });
 
+const ServiceSchemaRemoveLogModel = z.object({
+  id: z.string(),
+  createdAt: z.string(),
+  serviceName: z.string(),
+  serviceUrl: z.null(),
+  sdl: z.null(),
+  action: z.literal('DELETE'),
+});
+
+const ServiceSchemaLogModel = z.union([ServiceSchemaPushLogModel, ServiceSchemaRemoveLogModel]);
+
 type ServiceSchemaPushLog = z.TypeOf<typeof ServiceSchemaPushLogModel>;
+type ServiceSchemaRemoveLog = z.TypeOf<typeof ServiceSchemaRemoveLogModel>;
+
+type ServiceSchemaLog = z.TypeOf<typeof ServiceSchemaLogModel>;

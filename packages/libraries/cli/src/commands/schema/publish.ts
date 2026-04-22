@@ -144,8 +144,10 @@ export default class SchemaPublish extends Command<typeof SchemaPublish> {
         ' This can either be a slug following the format "$organizationSlug/$projectSlug/$targetSlug" (e.g "the-guild/graphql-hive/staging")' +
         ' or an UUID (e.g. "a0f4c605-6541-4350-8cfe-b31f21a4bf80").',
     }),
-    variant: Flags.string({
-      description: 'Placeholder',
+    graph: Flags.string({
+      description:
+        'The graph the schema should be published to. Only supported for Federation projects.' +
+        ' The default value is the default graph "default".',
     }),
   };
 
@@ -310,7 +312,7 @@ export default class SchemaPublish extends Command<typeof SchemaPublish> {
               gitHub,
               supportsRetry: true,
               target,
-              variant: flags.variant,
+              graph: flags.graph,
             },
             usesGitHubApp: !!gitHub,
           },

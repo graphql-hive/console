@@ -15,8 +15,11 @@ import type {
   ContractVersion,
   PaginatedContractConnection,
 } from './providers/contracts';
+import type { GraphVariant, GraphVariantVersion } from './providers/graph-variants';
 import type { SchemaCheckWarning } from './providers/models/shared';
 
+export type GraphVersionMapper = GraphVariantVersion;
+export type GraphMapper = GraphVariant;
 export type SchemaChangeConnectionMapper = ReadonlyArray<SchemaChangeMapper>;
 export type SchemaChangeMapper = SchemaChangeType;
 export type SchemaChangeApprovalMapper = SchemaCheckApprovalMetadata;

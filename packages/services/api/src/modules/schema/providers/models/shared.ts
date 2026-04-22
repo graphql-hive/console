@@ -226,6 +226,8 @@ type SchemaPublishSuccess = {
     initial: boolean;
     coordinatesDiff: SchemaCoordinatesDiffResult | null;
     changes: Array<SchemaChangeType> | null;
+    serviceChanges: Array<SchemaChangeType> | null;
+    supergraphChanges: Array<SchemaChangeType> | null;
     messages: string[] | null;
     breakingChanges: Array<{
       message: string;
@@ -233,6 +235,7 @@ type SchemaPublishSuccess = {
     compositionErrors: Array<SchemaCompositionError> | null;
     schema: SingleSchemaInput | CompositeSchemaInput;
     schemas: [SingleSchemaInput] | CompositeSchemaInput[];
+    previousSchemas: CompositeSchemaInput[] | null;
     supergraph: string | null;
     fullSchemaSdl: string | null;
     tags: null | Array<string>;
