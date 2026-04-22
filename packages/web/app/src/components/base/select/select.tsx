@@ -1,8 +1,8 @@
 import { type ReactNode } from 'react';
 import { Check, ChevronDown } from 'lucide-react';
 import { Select as BaseSelect } from '@base-ui/react/select';
+import { Button } from '../button/button';
 import { itemVariants, popupVariants, type FloatingProps } from '../shared-styles';
-import { TriggerButton } from '../trigger-button';
 
 export type SelectOption = {
   value: string;
@@ -10,7 +10,9 @@ export type SelectOption = {
   icon?: ReactNode;
 };
 
-type SelectProps = Partial<Pick<FloatingProps, 'trigger' | 'side' | 'align' | 'sideOffset'>> & {
+type SelectProps = Partial<
+  Pick<FloatingProps, 'trigger' | 'side' | 'align' | 'sideOffset' | 'open' | 'onOpenChange'>
+> & {
   /** Options to display in the dropdown */
   options: SelectOption[];
   /** Currently selected value */
@@ -33,7 +35,11 @@ export function Select({
   align = 'start',
   sideOffset = 4,
   disabled,
+  open,
+  onOpenChange,
 }: SelectProps) {
+  const selectedLabel = options.find(o => o.value === value)?.label;
+
   return (
     <BaseSelect.Root
       value={value}
@@ -42,17 +48,20 @@ export function Select({
           onValueChange(val);
         }
       }}
+      open={open}
+      onOpenChange={onOpenChange}
       disabled={disabled}
     >
       <BaseSelect.Trigger
         render={
-          trigger ?? (
-            <TriggerButton
-              label={<BaseSelect.Value placeholder={placeholder} />}
+          trigger ??
+          ((
+            <Button
+              label={selectedLabel ?? placeholder}
               rightIcon={{ icon: ChevronDown, withSeparator: true }}
               disabled={disabled}
             />
-          )
+          ) as React.ReactElement)
         }
       />
 
@@ -73,11 +82,12 @@ export function Select({
                   itemVariants({
                     highlighted: state.highlighted,
                     selected: state.selected,
+                    className: 'relative pl-7',
                   })
                 }
               >
-                <BaseSelect.ItemIndicator>
-                  <Check className="size-3.5" />
+                <BaseSelect.ItemIndicator className="absolute left-2 inline-flex items-center">
+                  <Check className="size-3" />
                 </BaseSelect.ItemIndicator>
                 <BaseSelect.ItemText>
                   <span className="flex items-center gap-1.5">
