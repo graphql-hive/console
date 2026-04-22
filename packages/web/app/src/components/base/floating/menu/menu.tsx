@@ -10,7 +10,7 @@ import {
 import { type VariantProps } from 'class-variance-authority';
 import { ArrowRight, ChevronRight } from 'lucide-react';
 import { Menu as BaseMenu } from '@base-ui/react/menu';
-import { itemVariants, popupVariants, type FloatingProps } from '../shared-styles';
+import { itemVariants, floatingVariants, type FloatingProps } from '../shared-styles';
 
 const MenuDepthContext = createContext(0);
 
@@ -183,7 +183,7 @@ function Menu({
           >
             <BaseMenu.Popup
               ref={popupRef}
-              className={popupVariants({ padding: 'menu', maxWidth, minWidth })}
+              className={floatingVariants({ padding: 'menu', maxWidth, minWidth })}
             >
               {popupContent}
             </BaseMenu.Popup>
@@ -205,7 +205,7 @@ function Menu({
         >
           <BaseMenu.Popup
             ref={popupRef}
-            className={popupVariants({ padding: 'menu', maxWidth, minWidth })}
+            className={floatingVariants({ padding: 'menu', maxWidth, minWidth })}
           >
             {popupContent}
           </BaseMenu.Popup>

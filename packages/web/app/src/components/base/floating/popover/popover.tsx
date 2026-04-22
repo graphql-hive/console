@@ -1,7 +1,7 @@
 import { X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Popover as BasePopover } from '@base-ui/react/popover';
-import { type FloatingProps, popupVariants } from '../shared-styles';
+import { type FloatingProps, floatingVariants } from '../shared-styles';
 
 const widthMap = {
   sm: 'w-64',
@@ -88,7 +88,7 @@ export function Popover(props: PopoverProps) {
           sideOffset={sideOffset}
           className="outline-none"
         >
-          <BasePopover.Popup className={popupVariants({ padding: 'none' })}>
+          <BasePopover.Popup className={floatingVariants({ padding: 'none' })}>
             {arrow && <PopoverArrow />}
             {inner}
           </BasePopover.Popup>

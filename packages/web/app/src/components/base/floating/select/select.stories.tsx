@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import type { Story, StoryDefault } from '@ladle/react';
 import { Select } from './select';
-import { Flex } from '../story-utils';
+import { Flex } from '../../story-utils';
 
 export default {
   title: 'UI / Select',
@@ -92,3 +92,27 @@ export const Disabled: Story = () => (
     <Select options={metricOptions} value="TRAFFIC" disabled />
   </Flex>
 );
+
+const manyOptions = [
+  { value: '', label: 'No filter (all operations)' },
+  ...Array.from({ length: 20 }, (_, i) => ({
+    value: `filter-${i + 1}`,
+    label: `Saved filter ${i + 1}`,
+  })),
+];
+
+export const Searchable: Story = () => {
+  const [value, setValue] = useState('');
+
+  return (
+    <Flex>
+      <Select
+        options={manyOptions}
+        value={value}
+        onValueChange={setValue}
+        placeholder="Select a filter"
+        searchable
+      />
+    </Flex>
+  );
+};

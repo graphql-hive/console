@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { X } from 'lucide-react';
-import { Menu, MenuItem } from '@/components/base/menu/menu';
+import { Menu, MenuItem } from '../menu/menu';
+import { disabledStyle, segmentSeparator, segmentButton } from '@/components/base/shared-styles';
+import { buttonVariants } from '@/components/base/button/button';
 import { FilterContent } from './filter-content';
 import type { FilterItem, FilterSelection } from './types';
 
@@ -25,13 +27,7 @@ export type FilterDropdownProps = {
   onExcludeModeChange?: (exclude: boolean) => void;
 };
 
-const chipClass =
-  'inline-flex items-center rounded-sm border text-xs font-medium bg-neutral-2 border-neutral-5 text-neutral-9 dark:text-neutral-11 dark:bg-neutral-3 dark:border-neutral-4';
-
-const segmentSeparator = 'border-l [border-left-color:inherit]';
-
-const segmentButton =
-  'px-2.5 py-1.5 text-[13px] transition-colors cursor-pointer hover:bg-neutral-4/50 hover:text-neutral-12';
+const chipClass = buttonVariants({ variant: 'default' });
 
 function pluralize(count: number, singular: string): string {
   const lower = singular.toLowerCase();
@@ -58,7 +54,7 @@ export function FilterDropdown({
       role="group"
       aria-label={`${label} filter`}
       className={chipClass}
-      style={disabled ? { opacity: 0.5, pointerEvents: 'none' } : undefined}
+      style={disabled ? disabledStyle : undefined}
     >
       {/* Label — static */}
       <span className="px-2.5 py-1.5 text-[13px]">{label}</span>

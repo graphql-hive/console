@@ -1,10 +1,10 @@
-type FilterListSearchProps = {
+type FloatingSearchProps = {
   label: string;
   onSearch: (value: string) => void;
   value: string;
 };
 
-export function FilterListSearch({ label, onSearch, value }: FilterListSearchProps) {
+export function FloatingSearch({ label, onSearch, value }: FloatingSearchProps) {
   return (
     <div className="relative -mx-2">
       <input

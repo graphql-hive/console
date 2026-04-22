@@ -1,8 +1,8 @@
 import { ReactElement, useCallback, useEffect, useMemo } from 'react';
 import { ChevronDown, RefreshCw } from 'lucide-react';
 import { useMutation, useQuery } from 'urql';
-import { FilterDropdown } from '@/components/base/filter-dropdown/filter-dropdown';
-import type { FilterItem, FilterSelection } from '@/components/base/filter-dropdown/types';
+import { FilterDropdown } from '@/components/base/floating/filter-dropdown/filter-dropdown';
+import type { FilterItem, FilterSelection } from '@/components/base/floating/filter-dropdown/types';
 import type { SavedFilterView } from '@/components/base/insights-filters';
 import { InsightsFilters } from '@/components/base/insights-filters';
 import { Button } from '@/components/base/button/button';

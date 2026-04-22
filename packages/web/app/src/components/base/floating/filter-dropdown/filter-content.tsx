@@ -1,5 +1,6 @@
 import { useCallback, useDeferredValue, useMemo, useRef, useState } from 'react';
-import { FilterListSearch } from '@/components/base/filter-dropdown/filter-list-search';
+import { FloatingSearch } from '../floating-search';
+import { floatingEmptyState } from '../shared-styles';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { ItemRow } from './item-row';
 import type { FilterItem, FilterSelection } from './types';
@@ -113,7 +114,7 @@ export function FilterContent({
 
   return (
     <div role="group">
-      <FilterListSearch label={label} onSearch={setSearch} value={search} />
+      <FloatingSearch label={label} onSearch={setSearch} value={search} />
       {/* Note about unavailable items */}
       {items.some(item => item.unavailable) && (
         <div className="text-neutral-11 mt-2 px-4 py-1 text-xs">
@@ -166,9 +167,7 @@ export function FilterContent({
           </div>
         </div>
       ) : (
-        <div className="text-neutral-10 pb-2 pt-4 text-center text-[13px] italic">
-          No items found
-        </div>
+        <div className={floatingEmptyState}>No items found</div>
       )}
     </div>
   );

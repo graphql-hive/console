@@ -1,6 +1,6 @@
 import { memo } from 'react';
 import { Checkbox } from '@/components/base/checkbox/checkbox';
-import { Menu, MenuItem } from '@/components/base/menu/menu';
+import { Menu, MenuItem } from '../menu/menu';
 import type { FilterItem, FilterSelection } from './types';
 import { ValuesSubPanel } from './values-sub-panel';
 

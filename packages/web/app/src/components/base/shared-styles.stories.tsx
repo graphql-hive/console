@@ -1,10 +1,10 @@
 import { useState } from 'react';
 import { Check, FileText, LogOut, Settings } from 'lucide-react';
 import type { Story, StoryDefault } from '@ladle/react';
-import { Menu, MenuItem } from './menu/menu';
-import { Popover } from './popover/popover';
-import { Select } from './select/select';
-import { TriggerButton } from './trigger-button';
+import { Menu, MenuItem } from './floating/menu/menu';
+import { Popover } from './floating/popover/popover';
+import { Select } from './floating/select/select';
+import { Button } from './button/button';
 
 export default {
   title: 'UI / Shared Styles',
@@ -28,9 +28,7 @@ export const SideBySide: Story = () => {
         <div>
           <p className="text-neutral-10 mb-2 text-xs">Default</p>
           <Menu
-            trigger={
-              <TriggerButton label="Open Menu" />
-            }
+            trigger={<Button label="Open Menu" />}
             sections={[
               [
                 <MenuItem key="settings">
@@ -53,9 +51,7 @@ export const SideBySide: Story = () => {
         <div>
           <p className="text-neutral-10 mb-2 text-xs">With action variant</p>
           <Menu
-            trigger={
-              <TriggerButton label="Actions" variant="action" />
-            }
+            trigger={<Button label="Actions" variant="action" />}
             sections={[
               [
                 <MenuItem key="approve" variant="action">
@@ -78,11 +74,7 @@ export const SideBySide: Story = () => {
 
         <div>
           <p className="text-neutral-10 mb-2 text-xs">Default</p>
-          <Select
-            options={selectOptions}
-            value={selectValue}
-            onValueChange={setSelectValue}
-          />
+          <Select options={selectOptions} value={selectValue} onValueChange={setSelectValue} />
         </div>
 
         <div>
@@ -100,10 +92,7 @@ export const SideBySide: Story = () => {
 
         <div>
           <p className="text-neutral-10 mb-2 text-xs">Placeholder</p>
-          <Select
-            options={selectOptions}
-            placeholder="Choose metric…"
-          />
+          <Select options={selectOptions} placeholder="Choose metric…" />
         </div>
 
         <div>
@@ -113,7 +102,10 @@ export const SideBySide: Story = () => {
             value={selectValue}
             onValueChange={setSelectValue}
             trigger={
-              <TriggerButton label={selectOptions.find(o => o.value === selectValue)?.label ?? 'Pick…'} variant="action" />
+              <Button
+                label={selectOptions.find(o => o.value === selectValue)?.label ?? 'Pick…'}
+                variant="action"
+              />
             }
           />
         </div>
@@ -126,9 +118,7 @@ export const SideBySide: Story = () => {
         <div>
           <p className="text-neutral-10 mb-2 text-xs">Structured (with title)</p>
           <Popover
-            trigger={
-              <TriggerButton label="Open Popover" />
-            }
+            trigger={<Button label="Open Popover" />}
             title="Alert details"
             description="Configure the alert threshold and notification settings."
             content={
@@ -136,9 +126,7 @@ export const SideBySide: Story = () => {
                 <div className="text-neutral-11 text-sm">
                   Status: <span className="text-green-400">Normal</span>
                 </div>
-                <div className="text-neutral-11 text-sm">
-                  Last evaluated: 2 minutes ago
-                </div>
+                <div className="text-neutral-11 text-sm">Last evaluated: 2 minutes ago</div>
               </div>
             }
           />
@@ -147,9 +135,7 @@ export const SideBySide: Story = () => {
         <div>
           <p className="text-neutral-10 mb-2 text-xs">Raw content</p>
           <Popover
-            trigger={
-              <TriggerButton label="Info" />
-            }
+            trigger={<Button label="Info" />}
             content={
               <div className="p-3">
                 <p className="text-neutral-11 text-sm">
@@ -163,14 +149,10 @@ export const SideBySide: Story = () => {
         <div>
           <p className="text-neutral-10 mb-2 text-xs">With arrow</p>
           <Popover
-            trigger={
-              <TriggerButton label="With Arrow" />
-            }
+            trigger={<Button label="With Arrow" />}
             title="Tooltip-style"
             content={
-              <p className="text-neutral-11 text-sm">
-                Arrows point to the trigger element.
-              </p>
+              <p className="text-neutral-11 text-sm">Arrows point to the trigger element.</p>
             }
             arrow
           />

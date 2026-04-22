@@ -1,7 +1,8 @@
 import { useMemo, useState } from 'react';
 import { Checkbox } from '@/components/base/checkbox/checkbox';
-import { FilterListSearch } from '@/components/base/filter-dropdown/filter-list-search';
-import { MenuItem } from '@/components/base/menu/menu';
+import { FloatingSearch } from '../floating-search';
+import { MenuItem } from '../menu/menu';
+import { floatingEmptyState, floatingScrollArea } from '../shared-styles';
 
 type ValuesSubPanelProps = {
   itemName: string;
@@ -56,14 +57,14 @@ export function ValuesSubPanel({
 
   return (
     <div>
-      <FilterListSearch
+      <FloatingSearch
         label={`Search ${valuesLabel} for ${itemName}`}
         onSearch={setSearch}
         value={search}
       />
 
       {/* Values list */}
-      <div className="max-h-64 overflow-y-auto [scrollbar-color:var(--color-neutral-7)_transparent] [scrollbar-width:thin]">
+      <div className={`max-h-64 ${floatingScrollArea}`}>
         {/* All values toggle */}
         <MenuItem closeOnClick={false} onClick={toggleAllValues}>
           <Checkbox checked={allSelected} size="sm" visual />
@@ -81,7 +82,7 @@ export function ValuesSubPanel({
           );
         })}
         {filteredValues.length === 0 && (
-          <div className="text-neutral-8 px-2 py-4 text-center text-sm">No {valuesLabel} found</div>
+          <div className={floatingEmptyState}>No {valuesLabel} found</div>
         )}
       </div>
     </div>
