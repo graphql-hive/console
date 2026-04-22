@@ -10,7 +10,7 @@ import {
 import { type VariantProps } from 'class-variance-authority';
 import { ArrowRight, ChevronRight } from 'lucide-react';
 import { Menu as BaseMenu } from '@base-ui/react/menu';
-import { itemVariants, floatingVariants, type FloatingProps } from '../shared-styles';
+import { floatingVariants, itemVariants, type FloatingProps } from '../shared-styles';
 
 const MenuDepthContext = createContext(0);
 

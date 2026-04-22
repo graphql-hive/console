@@ -17,6 +17,7 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/base/card/card';
+import { Select } from '@/components/base/floating/select/select';
 import {
   Form,
   FormControl,
@@ -28,7 +29,6 @@ import {
 } from '@/components/base/form/form';
 import { Input } from '@/components/base/input/input';
 import { RadioGroup, RadioItem } from '@/components/base/radio-group/radio-group';
-import { Select } from '@/components/base/select/select';
 import { AlertPreview } from '@/components/target/alerts/alert-notification-preview';
 import { useToast } from '@/components/ui/use-toast';
 import { graphql } from '@/gql';
@@ -482,7 +482,12 @@ export function TargetAlertsCreatePage(props: {
                           render={({ field }) => {
                             const isLoading = savedFiltersQuery.fetching;
                             const savedFilterOptions = [
-                              { value: '', label: isLoading ? 'Loading filters...' : 'No filter (all operations)' },
+                              {
+                                value: '',
+                                label: isLoading
+                                  ? 'Loading filters...'
+                                  : 'No filter (all operations)',
+                              },
                               ...(savedFiltersQuery.data?.target?.savedFilters?.edges?.map(
                                 edge => ({
                                   value: edge.node.id,
@@ -500,6 +505,7 @@ export function TargetAlertsCreatePage(props: {
                                     value={field.value || ''}
                                     onValueChange={field.onChange}
                                     placeholder="Select a filter name"
+                                    searchable={savedFilterOptions.length > 10}
                                   />
                                 </FormControl>
                               </FormItem>

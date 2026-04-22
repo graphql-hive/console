@@ -1,11 +1,11 @@
 import { ReactElement, useCallback, useEffect, useMemo } from 'react';
 import { ChevronDown, RefreshCw } from 'lucide-react';
 import { useMutation, useQuery } from 'urql';
+import { Button } from '@/components/base/button/button';
 import { FilterDropdown } from '@/components/base/floating/filter-dropdown/filter-dropdown';
 import type { FilterItem, FilterSelection } from '@/components/base/floating/filter-dropdown/types';
 import type { SavedFilterView } from '@/components/base/insights-filters';
 import { InsightsFilters } from '@/components/base/insights-filters';
-import { Button } from '@/components/base/button/button';
 import { Page, TargetLayout } from '@/components/layouts/target';
 import { OperationsList } from '@/components/target/insights/list';
 import { SaveFilterButton } from '@/components/target/insights/save-filter-button';

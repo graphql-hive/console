@@ -1,7 +1,7 @@
 import { useCallback, useDeferredValue, useMemo, useRef, useState } from 'react';
+import { useVirtualizer } from '@tanstack/react-virtual';
 import { FloatingSearch } from '../floating-search';
 import { floatingEmptyState } from '../shared-styles';
-import { useVirtualizer } from '@tanstack/react-virtual';
 import { ItemRow } from './item-row';
 import type { FilterItem, FilterSelection } from './types';
 

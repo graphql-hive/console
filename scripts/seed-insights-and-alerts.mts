@@ -133,7 +133,11 @@ async function getOrCreateAuth(
 
     // New user — authenticate creates the user + session
     const auth = await authenticate(pool, email);
-    return { access_token: auth.access_token, refresh_token: auth.refresh_token, isExistingUser: false };
+    return {
+      access_token: auth.access_token,
+      refresh_token: auth.refresh_token,
+      isExistingUser: false,
+    };
   } finally {
     await pool.end();
   }
@@ -1150,29 +1154,45 @@ async function main() {
 
       if (currentState === 'NORMAL') {
         transitions.push({
-          fromState: 'NORMAL', toState: 'PENDING',
-          value, previousValue, thresholdValue: value * 0.8, createdAt: eventTime,
+          fromState: 'NORMAL',
+          toState: 'PENDING',
+          value,
+          previousValue,
+          thresholdValue: value * 0.8,
+          createdAt: eventTime,
         });
         currentState = 'PENDING';
 
         const firingTime = new Date(eventTime.getTime() + randomBetween(2, 10) * 60000);
         transitions.push({
-          fromState: 'PENDING', toState: 'FIRING',
-          value: value * 1.1, previousValue: value, thresholdValue: value * 0.8, createdAt: firingTime,
+          fromState: 'PENDING',
+          toState: 'FIRING',
+          value: value * 1.1,
+          previousValue: value,
+          thresholdValue: value * 0.8,
+          createdAt: firingTime,
         });
         currentState = 'FIRING';
 
         const recoverTime = new Date(firingTime.getTime() + randomBetween(10, 180) * 60000);
         transitions.push({
-          fromState: 'FIRING', toState: 'RECOVERING',
-          value: value * 0.5, previousValue: value * 1.1, thresholdValue: value * 0.8, createdAt: recoverTime,
+          fromState: 'FIRING',
+          toState: 'RECOVERING',
+          value: value * 0.5,
+          previousValue: value * 1.1,
+          thresholdValue: value * 0.8,
+          createdAt: recoverTime,
         });
         currentState = 'RECOVERING';
 
         const normalTime = new Date(recoverTime.getTime() + randomBetween(3, 15) * 60000);
         transitions.push({
-          fromState: 'RECOVERING', toState: 'NORMAL',
-          value: value * 0.3, previousValue: value * 0.5, thresholdValue: value * 0.8, createdAt: normalTime,
+          fromState: 'RECOVERING',
+          toState: 'NORMAL',
+          value: value * 0.3,
+          previousValue: value * 0.5,
+          thresholdValue: value * 0.8,
+          createdAt: normalTime,
         });
         currentState = 'NORMAL';
       }
@@ -1192,7 +1212,9 @@ async function main() {
     }
 
     const firingTransitions = transitions.filter(t => t.toState === 'FIRING');
-    const resolvedTransitions = transitions.filter(t => t.fromState === 'RECOVERING' && t.toState === 'NORMAL');
+    const resolvedTransitions = transitions.filter(
+      t => t.fromState === 'RECOVERING' && t.toState === 'NORMAL',
+    );
 
     for (let i = 0; i < firingTransitions.length; i++) {
       const firing = firingTransitions[i];

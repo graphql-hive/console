@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import type { Story, StoryDefault } from '@ladle/react';
-import { Select } from './select';
 import { Flex } from '../../story-utils';
+import { Select } from './select';
 
 export default {
   title: 'UI / Select',
@@ -47,12 +47,7 @@ export const CompactRange: Story = () => {
 
   return (
     <Flex>
-      <Select
-        options={rangeOptions}
-        value={value}
-        onValueChange={setValue}
-        placeholder="Range"
-      />
+      <Select options={rangeOptions} value={value} onValueChange={setValue} placeholder="Range" />
     </Flex>
   );
 };

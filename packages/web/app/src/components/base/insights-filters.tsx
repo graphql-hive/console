@@ -1,9 +1,9 @@
 import { useState } from 'react';
 import { ListFilter, X } from 'lucide-react';
+import { Button } from '@/components/base/button/button';
 import { FilterContent } from '@/components/base/floating/filter-dropdown/filter-content';
 import { FilterItem, FilterSelection } from '@/components/base/floating/filter-dropdown/types';
 import { Menu, MenuItem } from '@/components/base/floating/menu/menu';
-import { Button } from '@/components/base/button/button';
 
 export type SavedFilterView = {
   id: string;

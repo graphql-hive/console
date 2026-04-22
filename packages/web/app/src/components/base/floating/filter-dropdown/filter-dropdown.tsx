@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import { X } from 'lucide-react';
-import { Menu, MenuItem } from '../menu/menu';
-import { disabledStyle, segmentSeparator, segmentButton } from '@/components/base/shared-styles';
 import { buttonVariants } from '@/components/base/button/button';
+import { disabledStyle, segmentButton, segmentSeparator } from '@/components/base/shared-styles';
+import { Menu, MenuItem } from '../menu/menu';
 import { FilterContent } from './filter-content';
 import type { FilterItem, FilterSelection } from './types';
 

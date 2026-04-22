@@ -2,9 +2,17 @@ import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import type { Story, StoryDefault } from '@ladle/react';
-import { Input } from '../input/input';
 import { Button } from '../button/button';
-import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from './form';
+import { Input } from '../input/input';
+import {
+  Form,
+  FormControl,
+  FormDescription,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from './form';
 
 export default {
   title: 'UI / Form',
@@ -68,10 +76,7 @@ export const WithErrors: Story = () => {
   return (
     <div className="max-w-sm p-8">
       <Form {...form}>
-        <form
-          onSubmit={form.handleSubmit(() => {})}
-          className="space-y-4"
-        >
+        <form onSubmit={form.handleSubmit(() => {})} className="space-y-4">
           <FormField
             control={form.control}
             name="name"

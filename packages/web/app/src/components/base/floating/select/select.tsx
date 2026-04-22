@@ -1,9 +1,15 @@
-import { type ReactNode, useState } from 'react';
+import { useState, type ReactNode } from 'react';
 import { Check, ChevronDown } from 'lucide-react';
 import { Select as BaseSelect } from '@base-ui/react/select';
 import { Button } from '../../button/button';
 import { FloatingSearch } from '../floating-search';
-import { floatingEmptyState, floatingScrollArea, itemVariants, floatingVariants, type FloatingProps } from '../shared-styles';
+import {
+  floatingEmptyState,
+  floatingScrollArea,
+  floatingVariants,
+  itemVariants,
+  type FloatingProps,
+} from '../shared-styles';
 
 export type SelectOption = {
   value: string;
@@ -47,9 +53,7 @@ export function Select({
 
   const displayedOptions =
     searchable && search
-      ? options.filter(
-          o => o.value === '' || o.label.toLowerCase().includes(search.toLowerCase()),
-        )
+      ? options.filter(o => o.value === '' || o.label.toLowerCase().includes(search.toLowerCase()))
       : options;
 
   const handleOpenChange = (nextOpen: boolean) => {
@@ -91,9 +95,7 @@ export function Select({
           className="outline-none"
         >
           <BaseSelect.Popup className={floatingVariants({ padding: 'sm' })}>
-            {searchable && (
-              <FloatingSearch label="options" onSearch={setSearch} value={search} />
-            )}
+            {searchable && <FloatingSearch label="options" onSearch={setSearch} value={search} />}
             <div className={searchable ? `${floatingScrollArea} h-64` : ''}>
               {displayedOptions.length === 0 ? (
                 <div className={floatingEmptyState}>No matches</div>

@@ -1,9 +1,9 @@
 import { useState } from 'react';
 import { FileText, LogOut, Plus, Settings, Users } from 'lucide-react';
 import { Checkbox } from '@/components/base/checkbox/checkbox';
-import { Menu, MenuItem } from './menu';
 import type { Story, StoryDefault } from '@ladle/react';
 import { Flex } from '../../story-utils';
+import { Menu, MenuItem } from './menu';
 
 export default {
   title: 'UI / Menu',

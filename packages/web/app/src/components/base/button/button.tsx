@@ -26,8 +26,10 @@ export const buttonVariants = cva(
         ],
         // Standard button styles (for form actions)
         primary: 'bg-neutral-12 text-neutral-1 hover:bg-neutral-11 border-transparent',
-        outline: 'border-neutral-5 bg-transparent text-neutral-11 hover:bg-neutral-3 hover:text-neutral-12',
-        ghost: 'border-transparent bg-transparent text-neutral-11 hover:bg-neutral-3 hover:text-neutral-12',
+        outline:
+          'border-neutral-5 bg-transparent text-neutral-11 hover:bg-neutral-3 hover:text-neutral-12',
+        ghost:
+          'border-transparent bg-transparent text-neutral-11 hover:bg-neutral-3 hover:text-neutral-12',
       },
       size: {
         default: '',
@@ -132,9 +134,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button
           <span className="px-3 py-1.5 text-[13px]">{props.label}</span>
 
           {props.accessoryInformation != null && (
-            <span className={`${segmentSeparator} px-3 py-1.5`}>
-              {props.accessoryInformation}
-            </span>
+            <span className={`${segmentSeparator} px-3 py-1.5`}>{props.accessoryInformation}</span>
           )}
           {props.rightIcon && (
             <span

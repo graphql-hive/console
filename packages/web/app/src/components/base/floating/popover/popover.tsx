@@ -1,7 +1,7 @@
 import { X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Popover as BasePopover } from '@base-ui/react/popover';
-import { type FloatingProps, floatingVariants } from '../shared-styles';
+import { floatingVariants, type FloatingProps } from '../shared-styles';
 
 const widthMap = {
   sm: 'w-64',
@@ -42,15 +42,7 @@ function isStructured(props: PopoverProps): props is PopoverStructuredProps {
 }
 
 export function Popover(props: PopoverProps) {
-  const {
-    trigger,
-    side = 'bottom',
-    align,
-    sideOffset = 8,
-    arrow,
-    open,
-    onOpenChange,
-  } = props;
+  const { trigger, side = 'bottom', align, sideOffset = 8, arrow, open, onOpenChange } = props;
 
   let inner: React.ReactNode;
 

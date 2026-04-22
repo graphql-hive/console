@@ -1,10 +1,10 @@
 import { useState } from 'react';
 import { Check, FileText, LogOut, Settings } from 'lucide-react';
 import type { Story, StoryDefault } from '@ladle/react';
+import { Button } from './button/button';
 import { Menu, MenuItem } from './floating/menu/menu';
 import { Popover } from './floating/popover/popover';
 import { Select } from './floating/select/select';
-import { Button } from './button/button';
 
 export default {
   title: 'UI / Shared Styles',
