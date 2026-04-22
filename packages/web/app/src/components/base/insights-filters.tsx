@@ -3,7 +3,7 @@ import { ListFilter, X } from 'lucide-react';
 import { FilterContent } from '@/components/base/filter-dropdown/filter-content';
 import { FilterItem, FilterSelection } from '@/components/base/filter-dropdown/types';
 import { Menu, MenuItem } from '@/components/base/menu/menu';
-import { TriggerButton } from '@/components/base/trigger-button';
+import { Button } from '@/components/base/button/button';
 
 export type SavedFilterView = {
   id: string;
@@ -88,7 +88,7 @@ export function InsightsFilters({
   return (
     <Menu
       trigger={
-        <TriggerButton
+        <Button
           label={activeViewName ?? 'Filter'}
           variant="default"
           rightIcon={

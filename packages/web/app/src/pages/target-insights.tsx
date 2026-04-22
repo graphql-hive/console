@@ -5,7 +5,7 @@ import { FilterDropdown } from '@/components/base/filter-dropdown/filter-dropdow
 import type { FilterItem, FilterSelection } from '@/components/base/filter-dropdown/types';
 import type { SavedFilterView } from '@/components/base/insights-filters';
 import { InsightsFilters } from '@/components/base/insights-filters';
-import { TriggerButton } from '@/components/base/trigger-button';
+import { Button } from '@/components/base/button/button';
 import { Page, TargetLayout } from '@/components/layouts/target';
 import { OperationsList } from '@/components/target/insights/list';
 import { SaveFilterButton } from '@/components/target/insights/save-filter-button';
@@ -325,7 +325,7 @@ function OperationsView({
             />
             <DateRangePicker
               trigger={
-                <TriggerButton
+                <Button
                   label={dateRangeController.selectedPreset.label}
                   variant="default"
                   rightIcon={{ icon: ChevronDown, withSeparator: true }}
@@ -433,7 +433,7 @@ function OperationsView({
             )}
           </div>
           <div className="flex items-center gap-x-2">
-            <TriggerButton
+            <Button
               layout="iconOnly"
               icon={RefreshCw}
               aria-label="Refresh"

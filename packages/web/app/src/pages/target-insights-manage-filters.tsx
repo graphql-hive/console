@@ -5,7 +5,7 @@ import { useMutation, useQuery } from 'urql';
 import { FilterDropdown } from '@/components/base/filter-dropdown/filter-dropdown';
 import type { FilterItem, FilterSelection } from '@/components/base/filter-dropdown/types';
 import { Menu, MenuItem } from '@/components/base/menu/menu';
-import { TriggerButton } from '@/components/base/trigger-button';
+import { Button as BaseButton } from '@/components/base/button/button';
 import { Page, TargetLayout } from '@/components/layouts/target';
 import { savedFilterToSearchParams } from '@/components/target/insights/search-params';
 import { Button } from '@/components/ui/button';
@@ -689,7 +689,7 @@ function SavedFilterRowFilters({
       <div className="flex flex-wrap items-center gap-2">
         <DateRangePicker
           trigger={
-            <TriggerButton
+            <BaseButton
               label={selectedPreset.label}
               variant="default"
               rightIcon={{ icon: ChevronDown, withSeparator: true }}
