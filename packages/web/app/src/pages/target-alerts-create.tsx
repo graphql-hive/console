@@ -1,13 +1,628 @@
-import { SubPageLayout, SubPageLayoutHeader } from '@/components/ui/page-content-layout';
+import { useCallback, useState } from 'react';
+import { Plus, X } from 'lucide-react';
+import { useFieldArray, useForm } from 'react-hook-form';
+import { useMutation, useQuery } from 'urql';
+import { z } from 'zod';
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from '@/components/base/accordion/accordion';
+import { Button } from '@/components/base/button/button';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/base/card/card';
+import {
+  Form,
+  FormControl,
+  FormDescription,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from '@/components/base/form/form';
+import { Input } from '@/components/base/input/input';
+import { RadioGroup, RadioItem } from '@/components/base/radio-group/radio-group';
+import { Select } from '@/components/base/select/select';
+import { AlertPreview } from '@/components/target/alerts/alert-notification-preview';
+import { useToast } from '@/components/ui/use-toast';
+import { graphql } from '@/gql';
+import {
+  MetricAlertRuleDirection,
+  MetricAlertRuleMetric,
+  MetricAlertRuleSeverity,
+  MetricAlertRuleThresholdType,
+  MetricAlertRuleType,
+} from '@/gql/graphql';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { useNavigate } from '@tanstack/react-router';
 
-export function TargetAlertsCreatePage() {
+const CreateAlertPage_ChannelsQuery = graphql(`
+  query CreateAlertPage_ChannelsQuery($organizationSlug: String!, $projectSlug: String!) {
+    project(
+      reference: { bySelector: { organizationSlug: $organizationSlug, projectSlug: $projectSlug } }
+    ) {
+      id
+      alertChannels {
+        id
+        name
+        type
+      }
+    }
+  }
+`);
+
+const CreateAlertPage_SavedFiltersQuery = graphql(`
+  query CreateAlertPage_SavedFiltersQuery(
+    $organizationSlug: String!
+    $projectSlug: String!
+    $targetSlug: String!
+  ) {
+    target(
+      reference: {
+        bySelector: {
+          organizationSlug: $organizationSlug
+          projectSlug: $projectSlug
+          targetSlug: $targetSlug
+        }
+      }
+    ) {
+      id
+      savedFilters(first: 50) {
+        edges {
+          node {
+            id
+            name
+          }
+        }
+      }
+    }
+  }
+`);
+
+const CreateAlertPage_AddMetricAlertRuleMutation = graphql(`
+  mutation CreateAlertPage_AddMetricAlertRule($input: AddMetricAlertRuleInput!) {
+    addMetricAlertRule(input: $input) {
+      ok {
+        addedMetricAlertRule {
+          id
+          name
+        }
+      }
+      error {
+        message
+      }
+    }
+  }
+`);
+
+const METRIC_OPTIONS = [
+  { value: 'TRAFFIC', label: 'Total requests' },
+  { value: 'ERROR_RATE', label: 'Error rate' },
+  { value: 'LATENCY:p75', label: 'p75 latency' },
+  { value: 'LATENCY:p90', label: 'p90 latency' },
+  { value: 'LATENCY:p95', label: 'p95 latency' },
+  { value: 'LATENCY:p99', label: 'p99 latency' },
+] as const;
+
+const RANGE_OPTIONS = [
+  { value: '5', label: '5m' },
+  { value: '15', label: '15m' },
+  { value: '30', label: '30m' },
+  { value: '60', label: '1h' },
+  { value: '360', label: '6h' },
+  { value: '1440', label: '1d' },
+  { value: '10080', label: '7d' },
+  { value: '20160', label: '14d' },
+] as const;
+
+const CONDITION_OPTIONS = [
+  { value: 'ABOVE', label: 'Above' },
+  { value: 'BELOW', label: 'Below' },
+] as const;
+
+const THRESHOLD_TYPE_OPTIONS = [
+  { value: 'FIXED_VALUE', label: 'Fixed value' },
+  { value: 'PERCENTAGE_CHANGE', label: 'Relative (%)' },
+] as const;
+
+const SEVERITIES = [
+  { value: 'INFO' as const, label: 'Info', dotClass: 'bg-blue-400' },
+  { value: 'WARNING' as const, label: 'Warning', dotClass: 'bg-yellow-400' },
+  { value: 'CRITICAL' as const, label: 'Critical', dotClass: 'bg-red-400' },
+];
+
+const CreateAlertFormSchema = z.object({
+  metricSelection: z.string().min(1, 'Metric is required'),
+  timeWindowMinutes: z.string().min(1, 'Range is required'),
+  name: z.string().min(1, 'Name is required'),
+  severity: z.enum(['INFO', 'WARNING', 'CRITICAL']),
+  direction: z.string().min(1),
+  thresholdType: z.string().min(1),
+  thresholdValue: z.string().min(1, 'Value is required'),
+  savedFilterId: z.string().optional(),
+  confirmationMinutes: z.string().default('0'),
+  channels: z
+    .array(
+      z.object({
+        channelId: z.string().min(1, 'Select a channel'),
+      }),
+    )
+    .min(1, 'At least one destination is required'),
+});
+
+const METRIC_TYPE_MAP: Record<string, MetricAlertRuleType> = {
+  TRAFFIC: MetricAlertRuleType.Traffic,
+  ERROR_RATE: MetricAlertRuleType.ErrorRate,
+  LATENCY: MetricAlertRuleType.Latency,
+};
+
+const METRIC_MAP: Record<string, MetricAlertRuleMetric> = {
+  avg: MetricAlertRuleMetric.Avg,
+  p75: MetricAlertRuleMetric.P75,
+  p90: MetricAlertRuleMetric.P90,
+  p95: MetricAlertRuleMetric.P95,
+  p99: MetricAlertRuleMetric.P99,
+};
+
+const DIRECTION_MAP: Record<string, MetricAlertRuleDirection> = {
+  ABOVE: MetricAlertRuleDirection.Above,
+  BELOW: MetricAlertRuleDirection.Below,
+};
+
+const THRESHOLD_TYPE_MAP: Record<string, MetricAlertRuleThresholdType> = {
+  FIXED_VALUE: MetricAlertRuleThresholdType.FixedValue,
+  PERCENTAGE_CHANGE: MetricAlertRuleThresholdType.PercentageChange,
+};
+
+const SEVERITY_MAP: Record<string, MetricAlertRuleSeverity> = {
+  INFO: MetricAlertRuleSeverity.Info,
+  WARNING: MetricAlertRuleSeverity.Warning,
+  CRITICAL: MetricAlertRuleSeverity.Critical,
+};
+
+function parseMetricSelection(selection: string): {
+  type: MetricAlertRuleType;
+  metric?: MetricAlertRuleMetric;
+} {
+  if (selection.startsWith('LATENCY:')) {
+    const metricKey = selection.split(':')[1];
+    return { type: MetricAlertRuleType.Latency, metric: METRIC_MAP[metricKey] };
+  }
+  return { type: METRIC_TYPE_MAP[selection] };
+}
+
+export function TargetAlertsCreatePage(props: {
+  organizationSlug: string;
+  projectSlug: string;
+  targetSlug: string;
+}) {
+  const { organizationSlug, projectSlug, targetSlug } = props;
+  const navigate = useNavigate();
+  const { toast } = useToast();
+
+  const [channelsQuery] = useQuery({
+    query: CreateAlertPage_ChannelsQuery,
+    variables: { organizationSlug, projectSlug },
+  });
+
+  const [savedFiltersQuery] = useQuery({
+    query: CreateAlertPage_SavedFiltersQuery,
+    variables: { organizationSlug, projectSlug, targetSlug },
+  });
+
+  const [, addMetricAlertRule] = useMutation(CreateAlertPage_AddMetricAlertRuleMutation);
+
+  const form = useForm<z.infer<typeof CreateAlertFormSchema>>({
+    resolver: zodResolver(CreateAlertFormSchema),
+    defaultValues: {
+      metricSelection: 'TRAFFIC',
+      timeWindowMinutes: '10080',
+      name: '',
+      severity: 'WARNING',
+      direction: 'ABOVE',
+      thresholdType: 'FIXED_VALUE',
+      thresholdValue: '',
+      savedFilterId: '',
+      confirmationMinutes: '0',
+      channels: [{ channelId: '' }],
+    },
+  });
+
+  const { fields, append, remove } = useFieldArray({
+    control: form.control,
+    name: 'channels',
+  });
+
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const onSubmit = useCallback(
+    async (values: z.infer<typeof CreateAlertFormSchema>) => {
+      setIsSubmitting(true);
+      try {
+        const { type, metric } = parseMetricSelection(values.metricSelection);
+
+        const result = await addMetricAlertRule({
+          input: {
+            organizationSlug,
+            projectSlug,
+            targetSlug,
+            name: values.name,
+            type,
+            metric: metric ?? null,
+            timeWindowMinutes: parseInt(values.timeWindowMinutes, 10),
+            thresholdType: THRESHOLD_TYPE_MAP[values.thresholdType],
+            thresholdValue: parseFloat(values.thresholdValue),
+            direction: DIRECTION_MAP[values.direction],
+            severity: SEVERITY_MAP[values.severity],
+            confirmationMinutes: parseInt(values.confirmationMinutes || '0', 10),
+            channelIds: values.channels.map(c => c.channelId),
+            savedFilterId: values.savedFilterId || null,
+          },
+        });
+
+        if (result.data?.addMetricAlertRule.ok) {
+          const ruleId = result.data.addMetricAlertRule.ok.addedMetricAlertRule.id;
+          toast({
+            title: 'Alert created',
+            description: `"${values.name}" has been created.`,
+          });
+          void navigate({
+            to: '/$organizationSlug/$projectSlug/$targetSlug/alerts/$ruleId',
+            params: { organizationSlug, projectSlug, targetSlug, ruleId },
+          });
+        } else {
+          toast({
+            title: 'Failed to create alert',
+            description: result.data?.addMetricAlertRule.error?.message ?? 'Unknown error',
+            variant: 'destructive',
+          });
+        }
+      } finally {
+        setIsSubmitting(false);
+      }
+    },
+    [addMetricAlertRule, navigate, organizationSlug, projectSlug, targetSlug, toast],
+  );
+
+  const alertChannels = channelsQuery.data?.project?.alertChannels ?? [];
+
+  const channelOptions = alertChannels.map(ch => ({
+    value: ch.id,
+    label: `${ch.name} (${ch.type})`,
+  }));
+
+  // Live preview data
+  const watchedValues = form.watch();
+  const metricOption = METRIC_OPTIONS.find(o => o.value === watchedValues.metricSelection);
+  const firstChannelId = watchedValues.channels?.[0]?.channelId;
+  const firstChannel = alertChannels.find(ch => ch.id === firstChannelId);
+
+  const previewAlertType = watchedValues.metricSelection?.startsWith('LATENCY')
+    ? 'LATENCY'
+    : watchedValues.metricSelection || 'TRAFFIC';
+
   return (
-    <SubPageLayout>
-      <SubPageLayoutHeader
-        subPageTitle="Create a new alert"
-        description="Select the alert type and range for this alert."
-      />
-      <p className="text-neutral-10 text-sm">Create alert form coming soon.</p>
-    </SubPageLayout>
+    <Form {...form}>
+      <form onSubmit={form.handleSubmit(onSubmit)} className="flex gap-8">
+        {/* Left: Form sections */}
+        <div className="min-w-0 max-w-[700px] space-y-6">
+          {/* Section 1: Alert type and range */}
+          <Card>
+            <CardHeader>
+              <CardTitle title="1. Alert type and range" />
+              <CardDescription description="Select the alert type and range for this alert." />
+            </CardHeader>
+            <CardContent>
+              <div className="flex items-start gap-6">
+                <FormField
+                  control={form.control}
+                  name="metricSelection"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel label="Metric" />
+                      <FormControl>
+                        <Select
+                          options={[...METRIC_OPTIONS]}
+                          value={field.value}
+                          onValueChange={field.onChange}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="timeWindowMinutes"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel label="Range" />
+                      <FormControl>
+                        <Select
+                          options={[...RANGE_OPTIONS]}
+                          value={field.value}
+                          onValueChange={field.onChange}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Section 2: Alert name and severity */}
+          <Card>
+            <CardHeader>
+              <CardTitle title="2. Alert name and severity" />
+              <CardDescription description="Choose a name for your alert and the severity level." />
+            </CardHeader>
+            <CardContent>
+              <div className="flex items-start gap-6">
+                <FormField
+                  control={form.control}
+                  name="name"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel label="Alert name" />
+                      <FormControl>
+                        <Input placeholder="Some cool alert name" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="severity"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel label="Severity" />
+                      <FormControl>
+                        <RadioGroup value={field.value} onValueChange={field.onChange}>
+                          {SEVERITIES.map(sev => (
+                            <RadioItem
+                              key={sev.value}
+                              value={sev.value}
+                              label={sev.label}
+                              indicator={<span className={`size-2 rounded-full ${sev.dotClass}`} />}
+                            />
+                          ))}
+                        </RadioGroup>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Section 3: Condition, threshold, value */}
+          <Card>
+            <CardHeader>
+              <CardTitle title="3. Condition, threshold, value" />
+              <CardDescription description="Select the firing condition, threshold type, and value for this alert. Use advanced settings to debounce false positives." />
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-6">
+                <div className="flex items-start gap-6">
+                  <FormField
+                    control={form.control}
+                    name="direction"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel label="Condition" />
+                        <FormControl>
+                          <Select
+                            options={[...CONDITION_OPTIONS]}
+                            value={field.value}
+                            onValueChange={field.onChange}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="thresholdType"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel label="Threshold type" />
+                        <FormControl>
+                          <Select
+                            options={[...THRESHOLD_TYPE_OPTIONS]}
+                            value={field.value}
+                            onValueChange={field.onChange}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="thresholdValue"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel label="Value" />
+                        <FormControl>
+                          <Input type="number" placeholder="Enter a value" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+
+                {/* Chart preview placeholder */}
+                <div className="bg-neutral-2 dark:bg-neutral-3 border-neutral-5 rounded-md border p-4">
+                  <p className="text-neutral-10 text-center text-sm">
+                    Chart preview will be added in a follow-up.
+                  </p>
+                </div>
+
+                {/* Advanced settings */}
+                <Accordion>
+                  <AccordionItem value={0}>
+                    <AccordionTrigger label="Advanced settings" variant="accent" />
+                    <AccordionContent>
+                      <div className="space-y-4">
+                        <FormField
+                          control={form.control}
+                          name="savedFilterId"
+                          render={({ field }) => {
+                            const isLoading = savedFiltersQuery.fetching;
+                            const savedFilterOptions = [
+                              { value: '', label: isLoading ? 'Loading filters...' : 'No filter (all operations)' },
+                              ...(savedFiltersQuery.data?.target?.savedFilters?.edges?.map(
+                                edge => ({
+                                  value: edge.node.id,
+                                  label: edge.node.name,
+                                }),
+                              ) ?? []),
+                            ];
+
+                            return (
+                              <FormItem>
+                                <FormLabel label="On filter" />
+                                <FormControl>
+                                  <Select
+                                    options={savedFilterOptions}
+                                    value={field.value || ''}
+                                    onValueChange={field.onChange}
+                                    placeholder="Select a filter name"
+                                  />
+                                </FormControl>
+                              </FormItem>
+                            );
+                          }}
+                        />
+                        <FormField
+                          control={form.control}
+                          name="confirmationMinutes"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel label="Hold minutes" />
+                              <FormControl>
+                                <Input type="number" min={0} {...field} />
+                              </FormControl>
+                              <FormDescription
+                                description={
+                                  <>
+                                    Wait for the condition to exist for{' '}
+                                    <span className="text-neutral-12 font-medium">
+                                      {field.value || '0'}
+                                    </span>{' '}
+                                    minutes before firing. Helps prevent false alarms from brief
+                                    spikes. Leave at 0 to fire immediately (recommended for alert
+                                    ranges greater than 1 day).
+                                  </>
+                                }
+                              />
+                            </FormItem>
+                          )}
+                        />
+                      </div>
+                    </AccordionContent>
+                  </AccordionItem>
+                </Accordion>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Section 4: Destination */}
+          <Card>
+            <CardHeader>
+              <CardTitle title="4. Destination" />
+              <CardDescription
+                description={
+                  <>
+                    Select the target destination for this alert. Configure destinations{' '}
+                    <a href="#" className="underline">
+                      here
+                    </a>
+                    .
+                  </>
+                }
+              />
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {fields.map((field, index) => (
+                  <div key={field.id} className="flex items-end gap-3">
+                    <FormField
+                      control={form.control}
+                      name={`channels.${index}.channelId`}
+                      render={({ field: channelField }) => (
+                        <FormItem>
+                          {index === 0 && <FormLabel label="Channel" />}
+                          <FormControl>
+                            <Select
+                              options={channelOptions}
+                              value={channelField.value}
+                              onValueChange={channelField.onChange}
+                              placeholder="Select a channel"
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    {fields.length > 1 && (
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon-sm"
+                        onClick={() => remove(index)}
+                      >
+                        <X className="size-4" />
+                      </Button>
+                    )}
+                  </div>
+                ))}
+                <Button type="button" variant="outline" onClick={() => append({ channelId: '' })}>
+                  <Plus className="mr-1 size-3.5" />
+                  Add another destination
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Submit */}
+          <div className="flex justify-end">
+            <Button type="submit" disabled={isSubmitting}>
+              {isSubmitting ? 'Creating...' : 'Save alert'}
+            </Button>
+          </div>
+        </div>
+
+        {/* Right: Live notification preview */}
+        <div className="sticky top-6 min-w-0 flex-1 self-start">
+          <AlertPreview
+            alertName={watchedValues.name}
+            metricLabel={metricOption?.label ?? 'Total requests'}
+            alertType={previewAlertType}
+            severity={watchedValues.severity ?? 'WARNING'}
+            direction={watchedValues.direction ?? 'ABOVE'}
+            thresholdType={watchedValues.thresholdType ?? 'FIXED_VALUE'}
+            thresholdValue={watchedValues.thresholdValue ?? ''}
+            channelType={
+              (firstChannel?.type as 'SLACK' | 'WEBHOOK' | 'MSTEAMS_WEBHOOK' | null) ?? null
+            }
+            targetSlug={targetSlug}
+            projectSlug={projectSlug}
+          />
+        </div>
+      </form>
+    </Form>
   );
 }
