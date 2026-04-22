@@ -94,11 +94,11 @@ export function Select({
             {searchable && (
               <FloatingSearch label="options" onSearch={setSearch} value={search} />
             )}
-            {displayedOptions.length === 0 ? (
-              <div className={floatingEmptyState}>No matches</div>
-            ) : (
-              <div className={searchable ? `${floatingScrollArea} max-h-64` : ''}>
-                {displayedOptions.map(option => (
+            <div className={searchable ? `${floatingScrollArea} h-64` : ''}>
+              {displayedOptions.length === 0 ? (
+                <div className={floatingEmptyState}>No matches</div>
+              ) : (
+                displayedOptions.map(option => (
                   <BaseSelect.Item
                     key={option.value}
                     value={option.value}
@@ -120,9 +120,9 @@ export function Select({
                       </span>
                     </BaseSelect.ItemText>
                   </BaseSelect.Item>
-                ))}
-              </div>
-            )}
+                ))
+              )}
+            </div>
           </BaseSelect.Popup>
         </BaseSelect.Positioner>
       </BaseSelect.Portal>
