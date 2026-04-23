@@ -69,6 +69,16 @@ function readChartStyles() {
       overlayText: hex('--neutral-1'),
       /** Semi-transparent text color — for subtle borders on colored surfaces. */
       overlayBorder: rgba('--neutral-12', 0.2),
+      /** Muted axis label color. */
+      axisLabel: hex('--neutral-10'),
+      /** Subtle grid line color. */
+      gridSubtle: hex('--neutral-6'),
+      /** Line color for single-series charts. */
+      line: hex('--neutral-9'),
+      /** Area fill gradient top (neutral-1). */
+      areaFillFrom: hex('--neutral-1'),
+      /** Area fill gradient bottom (neutral-4). */
+      areaFillTo: hex('--neutral-4'),
     },
   };
 }

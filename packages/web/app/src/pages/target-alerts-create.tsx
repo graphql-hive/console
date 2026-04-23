@@ -29,6 +29,7 @@ import {
 } from '@/components/base/form/form';
 import { Input } from '@/components/base/input/input';
 import { RadioGroup, RadioItem } from '@/components/base/radio-group/radio-group';
+import { AlertMetricChart } from '@/components/target/alerts/alert-metric-chart';
 import { AlertPreview } from '@/components/target/alerts/alert-notification-preview';
 import { useToast } from '@/components/ui/use-toast';
 import { graphql } from '@/gql';
@@ -300,22 +301,82 @@ export function TargetAlertsCreatePage(props: {
   // Live preview data
   const watchedValues = form.watch();
   const metricOption = METRIC_OPTIONS.find(o => o.value === watchedValues.metricSelection);
-  const firstChannelId = watchedValues.channels?.[0]?.channelId;
-  const firstChannel = alertChannels.find(ch => ch.id === firstChannelId);
 
   const previewAlertType = watchedValues.metricSelection?.startsWith('LATENCY')
     ? 'LATENCY'
     : watchedValues.metricSelection || 'TRAFFIC';
+
+  const selectedChannels = (watchedValues.channels ?? [])
+    .map(c => alertChannels.find(ch => ch.id === c.channelId))
+    .filter((ch): ch is NonNullable<typeof ch> => ch != null);
 
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="flex gap-8">
         {/* Left: Form sections */}
         <div className="min-w-0 max-w-[700px] space-y-6">
-          {/* Section 1: Alert type and range */}
+          {/* Section 1: Destination */}
           <Card>
             <CardHeader>
-              <CardTitle title="1. Alert type and range" />
+              <CardTitle title="1. Destination" />
+              <CardDescription
+                description={
+                  <>
+                    Select the target destination for this alert. Configure destinations{' '}
+                    <a href="#" className="text-accent underline">
+                      here
+                    </a>
+                    .
+                  </>
+                }
+              />
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {fields.map((field, index) => (
+                  <div key={field.id} className="flex items-end gap-3">
+                    <FormField
+                      control={form.control}
+                      name={`channels.${index}.channelId`}
+                      render={({ field: channelField }) => (
+                        <FormItem>
+                          {index === 0 && <FormLabel label="Channel" />}
+                          <FormControl>
+                            <Select
+                              options={channelOptions}
+                              value={channelField.value}
+                              onValueChange={channelField.onChange}
+                              placeholder="Select a channel"
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    {fields.length > 1 && (
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon-sm"
+                        onClick={() => remove(index)}
+                      >
+                        <X className="size-4" />
+                      </Button>
+                    )}
+                  </div>
+                ))}
+                <Button type="button" variant="outline" onClick={() => append({ channelId: '' })}>
+                  <Plus className="mr-1 size-3.5" />
+                  Add another destination
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Section 2: Alert type and range */}
+          <Card>
+            <CardHeader>
+              <CardTitle title="2. Alert type and range" />
               <CardDescription description="Select the alert type and range for this alert." />
             </CardHeader>
             <CardContent>
@@ -358,10 +419,10 @@ export function TargetAlertsCreatePage(props: {
             </CardContent>
           </Card>
 
-          {/* Section 2: Alert name and severity */}
+          {/* Section 3: Alert name and severity */}
           <Card>
             <CardHeader>
-              <CardTitle title="2. Alert name and severity" />
+              <CardTitle title="3. Alert name and severity" />
               <CardDescription description="Choose a name for your alert and the severity level." />
             </CardHeader>
             <CardContent>
@@ -405,10 +466,10 @@ export function TargetAlertsCreatePage(props: {
             </CardContent>
           </Card>
 
-          {/* Section 3: Condition, threshold, value */}
+          {/* Section 4: Condition, threshold, value */}
           <Card>
             <CardHeader>
-              <CardTitle title="3. Condition, threshold, value" />
+              <CardTitle title="4. Condition, threshold, value" />
               <CardDescription description="Select the firing condition, threshold type, and value for this alert. Use advanced settings to debounce false positives." />
             </CardHeader>
             <CardContent>
@@ -463,12 +524,19 @@ export function TargetAlertsCreatePage(props: {
                   />
                 </div>
 
-                {/* Chart preview placeholder */}
-                <div className="bg-neutral-2 dark:bg-neutral-3 border-neutral-5 rounded-md border p-4">
-                  <p className="text-neutral-10 text-center text-sm">
-                    Chart preview will be added in a follow-up.
-                  </p>
-                </div>
+                {/* Metric chart with threshold line */}
+                <AlertMetricChart
+                  organizationSlug={organizationSlug}
+                  projectSlug={projectSlug}
+                  targetSlug={targetSlug}
+                  metricSelection={watchedValues.metricSelection}
+                  timeWindowMinutes={parseInt(watchedValues.timeWindowMinutes, 10) || 10_080}
+                  thresholdValue={
+                    watchedValues.thresholdValue ? parseFloat(watchedValues.thresholdValue) : null
+                  }
+                  direction={watchedValues.direction}
+                  thresholdType={watchedValues.thresholdType}
+                />
 
                 {/* Advanced settings */}
                 <Accordion>
@@ -545,64 +613,6 @@ export function TargetAlertsCreatePage(props: {
             </CardContent>
           </Card>
 
-          {/* Section 4: Destination */}
-          <Card>
-            <CardHeader>
-              <CardTitle title="4. Destination" />
-              <CardDescription
-                description={
-                  <>
-                    Select the target destination for this alert. Configure destinations{' '}
-                    <a href="#" className="underline">
-                      here
-                    </a>
-                    .
-                  </>
-                }
-              />
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {fields.map((field, index) => (
-                  <div key={field.id} className="flex items-end gap-3">
-                    <FormField
-                      control={form.control}
-                      name={`channels.${index}.channelId`}
-                      render={({ field: channelField }) => (
-                        <FormItem>
-                          {index === 0 && <FormLabel label="Channel" />}
-                          <FormControl>
-                            <Select
-                              options={channelOptions}
-                              value={channelField.value}
-                              onValueChange={channelField.onChange}
-                              placeholder="Select a channel"
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    {fields.length > 1 && (
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon-sm"
-                        onClick={() => remove(index)}
-                      >
-                        <X className="size-4" />
-                      </Button>
-                    )}
-                  </div>
-                ))}
-                <Button type="button" variant="outline" onClick={() => append({ channelId: '' })}>
-                  <Plus className="mr-1 size-3.5" />
-                  Add another destination
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-
           {/* Submit */}
           <div className="flex justify-end">
             <Button type="submit" disabled={isSubmitting}>
@@ -622,7 +632,7 @@ export function TargetAlertsCreatePage(props: {
             thresholdType={watchedValues.thresholdType ?? 'FIXED_VALUE'}
             thresholdValue={watchedValues.thresholdValue ?? ''}
             channelType={
-              (firstChannel?.type as 'SLACK' | 'WEBHOOK' | 'MSTEAMS_WEBHOOK' | null) ?? null
+              (selectedChannels[0]?.type as 'SLACK' | 'WEBHOOK' | 'MSTEAMS_WEBHOOK' | null) ?? null
             }
             targetSlug={targetSlug}
             projectSlug={projectSlug}
