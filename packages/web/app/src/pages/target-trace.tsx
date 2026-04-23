@@ -429,7 +429,7 @@ function NodeElement(props: NodeElementProps) {
       }}
     >
       <div
-        className="absolute top-1/2 flex -translate-y-1/2 items-center whitespace-nowrap px-[4px] font-mono leading-none"
+        className="text-neutral-11 absolute top-1/2 flex -translate-y-1/2 items-center whitespace-nowrap px-[4px] font-mono leading-none"
         style={{
           fontSize: '11px',
           ...(props.isNearRightEdge ? { right: '6px' } : { left: 'calc(100% + 6px)' }),
