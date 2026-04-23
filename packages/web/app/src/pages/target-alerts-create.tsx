@@ -41,7 +41,7 @@ import {
   MetricAlertRuleType,
 } from '@/gql/graphql';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useNavigate } from '@tanstack/react-router';
+import { Link, useNavigate } from '@tanstack/react-router';
 
 const CreateAlertPage_ChannelsQuery = graphql(`
   query CreateAlertPage_ChannelsQuery($organizationSlug: String!, $projectSlug: String!) {
@@ -306,9 +306,10 @@ export function TargetAlertsCreatePage(props: {
     ? 'LATENCY'
     : watchedValues.metricSelection || 'TRAFFIC';
 
-  const selectedChannels = (watchedValues.channels ?? [])
-    .map(c => alertChannels.find(ch => ch.id === c.channelId))
-    .filter((ch): ch is NonNullable<typeof ch> => ch != null);
+  const firstChannelId = watchedValues.channels?.[0]?.channelId;
+  const firstChannel = firstChannelId
+    ? alertChannels.find(ch => ch.id === firstChannelId)
+    : undefined;
 
   return (
     <Form {...form}>
@@ -323,9 +324,13 @@ export function TargetAlertsCreatePage(props: {
                 description={
                   <>
                     Select the target destination for this alert. Configure destinations{' '}
-                    <a href="#" className="text-accent underline">
+                    <Link
+                      to="/$organizationSlug/$projectSlug/view/alerts"
+                      params={{ organizationSlug, projectSlug }}
+                      className="text-accent underline"
+                    >
                       here
-                    </a>
+                    </Link>
                     .
                   </>
                 }
@@ -632,7 +637,7 @@ export function TargetAlertsCreatePage(props: {
             thresholdType={watchedValues.thresholdType ?? 'FIXED_VALUE'}
             thresholdValue={watchedValues.thresholdValue ?? ''}
             channelType={
-              (selectedChannels[0]?.type as 'SLACK' | 'WEBHOOK' | 'MSTEAMS_WEBHOOK' | null) ?? null
+              (firstChannel?.type as 'SLACK' | 'WEBHOOK' | 'MSTEAMS_WEBHOOK' | null) ?? null
             }
             targetSlug={targetSlug}
             projectSlug={projectSlug}
