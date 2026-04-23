@@ -50,6 +50,21 @@ export class GraphVariants {
     return result.map(record => ActiveGraphVariantModel.parse(record));
   }
 
+  async getGraphVariantForGraphVariantVersion(graphVariantVersion: GraphVariantVersion) {
+    const query = psql`
+      SELECT
+        ${graphVariantFields}
+      FROM
+        "graph_variants"
+      WHERE
+        "id" = ${graphVariantVersion.graphVariantId}
+      LIMIT 1
+    `;
+
+    const graphVariant = await this.pg.maybeOne(query).then(GraphVariantModel.nullable().parse);
+    return graphVariant;
+  }
+
   async getGraphVariantForTargetByName(target: Target, variantName: string) {
     const query = psql`
       SELECT
@@ -214,6 +229,20 @@ export class GraphVariants {
     };
   }
 
+  async getSchemaLogsByIds(schemaLogIds: Array<string>) {
+    const schemaLogsQuery = psql`
+      SELECT
+        ${schemaLogFields}
+      FROM
+        "schema_log"
+      WHERE
+        "id" = ANY(${psql.array(schemaLogIds, 'uuid')})
+        AND "action" = 'PUSH'
+    `;
+
+    return await this.pg.any(schemaLogsQuery).then(z.array(ServiceSchemaPushLogModel).parse);
+  }
+
   getSchemaLogsForGraphVersion = batch<GraphVariantVersion, Array<ServiceSchemaPushLog>>(
     async graphVariantVersions => {
       const graphVariantVersionIds = graphVariantVersions.map(version => version.id);
@@ -299,7 +328,7 @@ export class GraphVariants {
     },
   );
 
-  async getSubgraphDiffForGraphVariantVersion(version: GraphVariantVersion) {
+  async getGraphVariantVersionToLogsForGraphVariantVersion(version: GraphVariantVersion) {
     const graphVariantsToVersionLogQuery = psql`
       SELECT
         ${graphVariantsVersionToLogFields}
@@ -309,9 +338,111 @@ export class GraphVariants {
         "graph_variant_version_id" = ${version.id}
     `;
 
-    const edges = await this.pg
+    return await this.pg
       .any(graphVariantsToVersionLogQuery)
       .then(z.array(GraphVariantsToLogModel).parse);
+  }
+
+  async promoteGraphVariantVersionToGraphVariant(args: {
+    /** Where is this version promoted to? */
+    target: {
+      graph: GraphVariant;
+      version: GraphVariantVersion;
+    };
+    /** From where is this version promoted? */
+    origin: {
+      graph: GraphVariant;
+      version: GraphVariantVersion;
+    };
+    deleteLogs: Array<{ id: string; serviceName: string; targetId: string; projectId: string }>;
+    newLogEdges: Array<{
+      logId: string;
+      previousLogId: string | null;
+      changes: Array<SchemaChangeType> | null;
+    }>;
+    publicSchemaChanges: Array<SchemaChangeType> | null;
+    supergraphSchemaChanges: Array<SchemaChangeType> | null;
+  }) {
+    return await this.pg.transaction('promoteGraphVariantVersionToGraphVariant', async pg => {
+      // create graph version
+      const version = await this._createGraphVariantVersion(
+        {
+          graphVariantId: args.target.graph.id,
+          origin: {
+            type: 'graphVersionPromotion',
+            sourceGraphName: args.origin.graph.name,
+            sourceGraphVersionId: args.origin.version.id,
+          },
+          supergraphSdl: args.origin.version.supergraphSdl,
+          publicSchemaSdl: args.origin.version.publicSdl,
+          schemaCompositionErrors: args.origin.version.schemaCompositionErrors,
+          previousGraphVersionId: args.target.version.id,
+          publicSchemaChanges: args.publicSchemaChanges,
+          supergraphSchemaChanges: args.supergraphSchemaChanges,
+        },
+        pg,
+      );
+
+      // insert new delete schema logs if needed
+      if (args.deleteLogs.length) {
+        const query = psql`
+          INSERT INTO "schema_log" (
+            "id"
+            , "project_id"
+            , "target_id"
+            , "author"
+            , "commit"
+            , "service_name"
+            , "action"
+          )
+          SELECT * FROM ${psql.unnest(
+            args.deleteLogs.map(log => [
+              log.id,
+              log.projectId,
+              log.targetId,
+              'PLACEHOLDER',
+              'PLACEHOLDER',
+              log.serviceName,
+              'DELETE',
+            ]),
+            ['uuid', 'uuid', 'uuid', 'text', 'text', 'text', 'text'],
+          )}
+        `;
+
+        await pg.query(query);
+      }
+
+      // insert new edges
+      const graphVariantSchemaLogsQuery = psql`
+        INSERT INTO "graph_variants_version_to_log" (
+          "graph_variant_version_id"
+          , "schema_log_id"
+          , "previous_schema_log_id"
+          , "previous_schema_log_changes"
+        )
+        SELECT * FROM
+          ${psql.unnest(
+            args.newLogEdges.map(
+              // These are all unchanged (for now; this might change later if we allow publishing musltiple services at the same time or delete a service)
+              edge =>
+                [
+                  version.id,
+                  edge.logId,
+                  edge.previousLogId,
+                  JSON.stringify(edge.changes?.map(toSerializableSchemaChange) ?? null),
+                ] as const,
+            ),
+            ['uuid', 'uuid', 'uuid', 'jsonb'],
+          )}
+      `;
+
+      await pg.query(graphVariantSchemaLogsQuery);
+      return version;
+    });
+  }
+
+  async getSubgraphDiffForGraphVariantVersion(version: GraphVariantVersion) {
+    const edges = await this.getGraphVariantVersionToLogsForGraphVariantVersion(version);
 
     const allLogIds = new Set<string>();
     for (const edge of edges) {
@@ -419,8 +550,6 @@ export class GraphVariants {
         );
       }
 
-      console.log(edge);
-
       subgraphDiffs.push({
         type: 'changed' as const,
         log: node,
@@ -442,7 +571,6 @@ export class GraphVariants {
         , "service_name"
         , "service_url"
         , "sdl"
-
       )
       VALUES (
         ${args.projectId}
@@ -490,7 +618,7 @@ export class GraphVariants {
       publicSchemaSdl: string | null;
       publicSchemaChanges: Array<SchemaChangeType> | null;
       supergraphSchemaChanges: Array<SchemaChangeType> | null;
-      previousGraphVersion: null | string;
+      previousGraphVersionId: null | string;
       origin:
         | GraphVariantVersionOriginGraphVersionPromotion
         | GraphVariantVersionOriginSubgraphPublish;
@@ -515,7 +643,7 @@ export class GraphVariants {
         , ${args.supergraphSchemaChanges ? psql.jsonb(args.supergraphSchemaChanges.map(toSerializableSchemaChange)) : null}
         , ${args.publicSchemaSdl}
         , ${args.publicSchemaChanges ? psql.jsonb(args.publicSchemaChanges.map(toSerializableSchemaChange)) : null}
-        , ${args.previousGraphVersion}
+        , ${args.previousGraphVersionId}
         , ${psql.jsonb(GraphVariantVersionOriginModel.parse(args.origin))}
       )
       RETURNING
@@ -551,7 +679,7 @@ export class GraphVariants {
           publicSchemaSdl: args.publicSchemaSdl,
           publicSchemaChanges: null,
           supergraphSchemaChanges: null,
-          previousGraphVersion: null,
+          previousGraphVersionId: null,
           origin: {
             type: 'graphVersionPromotion',
             sourceGraphName: args.origin.sourceGraphName,
@@ -629,7 +757,7 @@ export class GraphVariants {
           publicSchemaSdl: args.compositeSchemaSdl,
           publicSchemaChanges: args.publicSchemaChanges,
           supergraphSchemaChanges: args.supergraphSchemaChanges,
-          previousGraphVersion: args.graphVariant.diffVersion?.id ?? null,
+          previousGraphVersionId: args.graphVariant.diffVersion?.id ?? null,
           origin: {
             type: 'subgraphPublish',
             subgraphs: [
@@ -756,7 +884,11 @@ export class GraphVariants {
     };
   }
 
-  private async getGraphVariantVersionById(graphVariantVersionId: string) {
+  async getGraphVariantVersionById(graphVariantVersionId: string) {
+    if (!isUUID(graphVariantVersionId)) {
+      return null;
+    }
+
     const query = psql`
       SELECT
         ${graphVariantVersionFields}
@@ -774,9 +906,6 @@ export class GraphVariants {
     graphVariant: GraphVariant,
     graphVariantVersionId: string,
   ) {
-    if (!isUUID(graphVariantVersionId)) {
-      return null;
-    }
     const version = await this.getGraphVariantVersionById(graphVariantVersionId);
 
     if (!version) {
@@ -864,6 +993,7 @@ const GraphVariantVersionOriginGraphVersionPromotionModel = z.object({
   type: z.literal('graphVersionPromotion'),
   sourceGraphName: z.string(),
   sourceGraphVersionId: z.string(),
+  // todo: maybe also tarck the target here
 });
 
 type GraphVariantVersionOriginGraphVersionPromotion = z.TypeOf<
@@ -908,7 +1038,7 @@ const ComposableGraphVariantVersionModel = z.intersection(
   }),
 );
 
-type ComposableGraphVariantVersion = z.TypeOf<typeof ComposableGraphVariantVersionModel>;
+export type ComposableGraphVariantVersion = z.TypeOf<typeof ComposableGraphVariantVersionModel>;
 
 const UncomposableGraphVariantVersionModel = z.intersection(
   SharedGraphVariantVersionFieldsModel,
@@ -985,7 +1115,7 @@ const ServiceSchemaRemoveLogModel = z.object({
 
 const ServiceSchemaLogModel = z.union([ServiceSchemaPushLogModel, ServiceSchemaRemoveLogModel]);
 
-type ServiceSchemaPushLog = z.TypeOf<typeof ServiceSchemaPushLogModel>;
+export type ServiceSchemaPushLog = z.TypeOf<typeof ServiceSchemaPushLogModel>;
 type ServiceSchemaRemoveLog = z.TypeOf<typeof ServiceSchemaRemoveLogModel>;
 
 type ServiceSchemaLog = z.TypeOf<typeof ServiceSchemaLogModel>;

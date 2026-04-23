@@ -42,10 +42,12 @@ import { SCHEMA_MODULE_CONFIG } from './config';
 import { Contracts } from './contracts';
 import {
   ActiveGraphVariant,
-  GraphVariant,
   GraphVariantNameModel,
   GraphVariants,
   GraphVariantVersion,
+  ServiceSchemaPushLog,
+  type ComposableGraphVariantVersion,
+  type GraphVariant,
 } from './graph-variants';
 import { CompositeModel } from './models/composite';
 import {
@@ -61,7 +63,7 @@ import {
   SchemaPublishResult,
 } from './models/shared';
 import { SingleModel } from './models/single';
-import type { ConditionalBreakingChangeDiffConfig } from './registry-checks';
+import { RegistryChecks, type ConditionalBreakingChangeDiffConfig } from './registry-checks';
 import {
   ensureCompositeSchemas,
   ensureSingleSchema,
@@ -174,6 +176,7 @@ export class SchemaPublisher {
     private operationsReader: OperationsReader,
     private idTranslator: IdTranslator,
     private graphVariants: GraphVariants,
+    private registryChecks: RegistryChecks,
     @Inject(SCHEMA_MODULE_CONFIG) private schemaModuleConfig: SchemaModuleConfig,
     singleModel: SingleModel,
     compositeModel: CompositeModel,
@@ -1560,38 +1563,10 @@ export class SchemaPublisher {
       },
     });
 
-    // TODO: write CDN state if needed
     if (result.graphVariantVersion.schemaCompositionErrors === null) {
-      await this.publishGraphVersionToCDN(target, {
-        graphName: result.graphVariant.name,
-        graphVersionId: result.graphVariantVersion.id,
-        sdl: result.graphVariantVersion.publicSdl,
-        supergraph: result.graphVariantVersion.supergraphSdl,
-        subgraphs: [],
-      });
-
-      const graphs: Array<{ graphName: string; graphVersionId: string }> = [];
-
-      if (latestComposableVersion) {
-        graphs.push({ graphName: 'default', graphVersionId: latestComposableVersion.version.id });
-      }
-
-      for (const graphVariant of graphVariants) {
-        if (!graphVariant.latestComposableVersion) {
-          continue;
-        }
-        graphs.push({
-          graphName: graphVariant.graphVariant.name,
-          graphVersionId: graphVariant.latestComposableVersion.id,
-        });
-      }
-
-      graphs.push({
-        graphName: result.graphVariant.name,
-        graphVersionId: result.graphVariantVersion.id,
-      });
-
-      await this.publishGraphtManifestToCDN(target, graphs);
+      this.logger.debug('New graph version is composable. Publish to CDN.');
+      await this.publishGraphVersionToCDN(target, result.graphVariant, result.graphVariantVersion);
+      await this.publishGraphManifestToCDN(target);
     }
 
     return {
@@ -1717,11 +1692,6 @@ export class SchemaPublisher {
       ),
     );
 
-    const latestComposableVersion = await this.schemaManager.getLatestSchemaVersionWithSchemaLogs({
-      target,
-      onlyComposable: true,
-    });
-
     const graphVariant = graphVariants.find(
       variant => variant.graphVariant.name === args.graphName,
     );
@@ -1738,26 +1708,392 @@ export class SchemaPublisher {
       graphVariantId: graphVariant.graphVariant.id,
     });
 
-    const graphs: Array<{ graphName: string; graphVersionId: string }> = [];
-
-    if (latestComposableVersion) {
-      graphs.push({ graphName: 'default', graphVersionId: latestComposableVersion.version.id });
-    }
-
-    for (const graphVariant of graphVariants) {
-      if (!graphVariant.latestComposableVersion) {
-        continue;
-      }
-      graphs.push({
-        graphName: graphVariant.graphVariant.name,
-        graphVersionId: graphVariant.latestComposableVersion.id,
-      });
-    }
-
-    await this.publishGraphtManifestToCDN(target, graphs);
+    await this.publishGraphManifestToCDN(target);
 
     return {
       type: 'success' as const,
+    };
+  }
+
+  @traceFn('SchemaPublisher.promoteGraph')
+  async promoteGraph(
+    args: { target: TargetReferenceInput; graphName: string; graphVersionId: string },
+    signal: AbortSignal,
+  ) {
+    this.logger.debug('Start promote graph.');
+
+    if (args.graphName === 'default') {
+      return {
+        type: 'error' as const,
+        message: 'Promoting to the default graph is currently not supported.',
+      };
+    }
+
+    const selector = await this.idTranslator.resolveTargetReference({
+      reference: args.target,
+    });
+
+    // there should be a standalone permission for this probably
+    // Why? Because this issa not about a single version. We are cloning the whole schema version
+    if (!selector) {
+      this.session.raise('schemaVersion:publish');
+    }
+
+    trace.getActiveSpan()?.setAttributes({
+      'hive.organization.id': selector.organizationId,
+      'hive.target.id': selector.targetId,
+      'hive.project.id': selector.projectId,
+    });
+
+    await this.session.assertPerformAction({
+      action: 'schemaVersion:publish',
+      organizationId: selector.organizationId,
+      params: {
+        targetId: selector.targetId,
+        projectId: selector.projectId,
+        organizationId: selector.organizationId,
+        // TODO: service? :thinking:
+        // This is not about a single service
+        serviceName: null,
+      },
+    });
+
+    const [project] = await Promise.all([
+      this.storage.getProject({
+        organizationId: selector.organizationId,
+        projectId: selector.projectId,
+      }),
+    ]);
+
+    if (project.type !== Types.ProjectType.FEDERATION) {
+      return {
+        type: 'error' as const,
+        message: 'Only Federation projects are supported.',
+      };
+    }
+
+    return this.mutex
+      .perform(
+        registryLockId(selector.targetId),
+        {
+          /**
+           * The global request timeout is 60 seconds.
+           * We don't want to try acquiring the lock longer than 30 seconds.
+           * If it succeeds after 30 seconds,
+           * we have 30 seconds for actually running the business logic.
+           *
+           * If we would wait longer we risk the user facing 504 errors.
+           */
+          retries: 30,
+          retryDelay: 1_000,
+          signal,
+        },
+        async () => {
+          return await this.internalPromoteGraph({
+            targetId: selector.targetId,
+            graphName: args.graphName,
+            graphVersionId: args.graphVersionId,
+          });
+        },
+      )
+      .catch((error: unknown) => {
+        if (error instanceof MutexResourceLockedError) {
+          // TODO: support retry
+          return {
+            type: 'error' as const,
+            message: 'Please try again later.',
+          };
+        }
+        throw error;
+      });
+  }
+
+  private async internalPromoteGraph(args: {
+    targetId: string;
+    graphName: string;
+    graphVersionId: string;
+  }) {
+    this.logger.debug('start graph promotion process');
+
+    const target = await this.storage.getTargetById(args.targetId);
+    if (!target) {
+      return {
+        type: 'error' as const,
+        message: 'Target does not exist.',
+      };
+    }
+
+    const targetGraphVariant = await this.graphVariants.getGraphVariantForTargetByName(
+      target,
+      args.graphName,
+    );
+
+    if (!targetGraphVariant) {
+      return {
+        type: 'error' as const,
+        message: 'Graph does not exist.',
+      };
+    }
+
+    const originGraphVersion = await this.graphVariants.getGraphVariantVersionById(
+      args.graphVersionId,
+    );
+
+    if (!originGraphVersion) {
+      return {
+        type: 'error' as const,
+        message: 'Graph Version not found.',
+      };
+    }
+
+    const originGraphVariant =
+      await this.graphVariants.getGraphVariantForGraphVariantVersion(originGraphVersion);
+
+    if (!originGraphVariant) {
+      return {
+        type: 'error' as const,
+        message: 'Graph Version not found.',
+      };
+    }
+
+    const originTarget = await this.storage.getTargetById(originGraphVariant.targetId);
+
+    if (!originTarget) {
+      return {
+        type: 'error' as const,
+        message: 'Graph Version not found.',
+      };
+    }
+
+    // only allow cross graph promotion in the same project.
+    if (originTarget.projectId !== target.projectId) {
+      return {
+        type: 'error' as const,
+        message: 'Graph Version not found.',
+      };
+    }
+
+    // todo: get latest version in target graph with schema logs
+    const [latestTargetGraphVersion, latestComposableTargetGraphVersion] = await Promise.all([
+      this.graphVariants.getLatestGraphVariantVersion(targetGraphVariant),
+      this.graphVariants.getLatestComposableGraphVariantVersion(targetGraphVariant),
+    ]);
+
+    if (!latestTargetGraphVersion) {
+      throw new Error('INVARIANT: Graph cannot be empty (no version)?');
+    }
+
+    // get all schema logs of origin graph version and target graph version
+    const [originLogEdges, targetLogEdges] = await Promise.all([
+      this.graphVariants.getGraphVariantVersionToLogsForGraphVariantVersion(originGraphVersion),
+      this.graphVariants.getGraphVariantVersionToLogsForGraphVariantVersion(
+        latestTargetGraphVersion,
+      ),
+    ]);
+
+    const allSchemaLogIds = new Set<string>();
+
+    const maximumLength = Math.max(originLogEdges.length, targetLogEdges.length);
+    for (let index = 0; index <= maximumLength; index++) {
+      const currentOriginLogEdge = originLogEdges.at(index);
+      const currentTargetLogEdge = targetLogEdges.at(index);
+      if (currentOriginLogEdge) {
+        allSchemaLogIds.add(currentOriginLogEdge.schemaLogId);
+      }
+      if (currentTargetLogEdge) {
+        allSchemaLogIds.add(currentTargetLogEdge.schemaLogId);
+      }
+    }
+
+    const schemaLogs = await this.graphVariants.getSchemaLogsByIds(Array.from(allSchemaLogIds));
+
+    const schemaLogsById = new Map<string, ServiceSchemaPushLog>(
+      schemaLogs.map(log => [log.id, log]),
+    );
+
+    const diffMap = new Map<
+      /* service name */ string,
+      | {
+          type: 'removed';
+          previousLog: ServiceSchemaPushLog;
+        }
+      | {
+          type: 'unchanged';
+          log: ServiceSchemaPushLog;
+        }
+      | {
+          type: 'changed';
+          newlog: ServiceSchemaPushLog;
+          previousLog: ServiceSchemaPushLog;
+        }
+      | {
+          type: 'added';
+          newLog: ServiceSchemaPushLog;
+        }
+    >();
+
+    // First we fill the map with our target edges
+    // We treat every single one as "removed"
+    for (const targetLogEdge of targetLogEdges) {
+      const log = schemaLogsById.get(targetLogEdge.schemaLogId);
+      if (!log) {
+        throw new Error('INVARIANT: Invalid database state. Log could not be found.');
+      }
+      if (diffMap.has(log.serviceName)) {
+        throw new Error(
+          'INVARIANT: Invalid database state. A log for the same service can not appear more than once.',
+        );
+      }
+
+      diffMap.set(log.serviceName, {
+        type: 'removed',
+        previousLog: log,
+      });
+    }
+
+    // Then we iteratre over the origin edges and update the initial seeded "removed" ones to the correct 'unchanged', 'changed'
+    // While also adding new "added" ones
+    for (const originLogEdge of originLogEdges) {
+      const originLog = schemaLogsById.get(originLogEdge.schemaLogId);
+      if (!originLog) {
+        throw new Error('INVARIANT: Invalid database state. Log could not be found.');
+      }
+
+      let record = diffMap.get(originLog.serviceName);
+
+      if (!record) {
+        diffMap.set(originLog.serviceName, {
+          type: 'added',
+          newLog: originLog,
+        });
+        continue;
+      }
+
+      if (record.type !== 'removed') {
+        throw new Error('INVARIANT: At this point the type can only be removed.');
+      }
+
+      if (originLog.id === record.previousLog.id) {
+        diffMap.set(originLog.serviceName, {
+          type: 'unchanged',
+          log: record.previousLog,
+        });
+        continue;
+      }
+
+      if (originLog.id !== record.previousLog.id) {
+        diffMap.set(originLog.serviceName, {
+          type: 'changed',
+          newlog: originLog,
+          previousLog: record.previousLog,
+        });
+      }
+    }
+
+    const deleteLogs: Array<{
+      id: string;
+      serviceName: string;
+      targetId: string;
+      projectId: string;
+    }> = [];
+    const newLogEdges: Array<{
+      logId: string;
+      previousLogId: string | null;
+      changes: Array<SchemaChangeType> | null;
+    }> = [];
+
+    // At this point `diffMap` contains the full Diff of all services!
+    // Let's create the new Graph version edges and delete logs (if needed)
+    for (const diff of diffMap.values()) {
+      if (diff.type === 'removed') {
+        const logId = crypto.randomUUID();
+        deleteLogs.push({
+          id: logId,
+          serviceName: diff.previousLog.serviceName,
+          targetId: target.id,
+          projectId: target.projectId,
+        });
+        newLogEdges.push({ logId, previousLogId: diff.previousLog.id, changes: null });
+        continue;
+      }
+      if (diff.type === 'added') {
+        newLogEdges.push({ logId: diff.newLog.id, previousLogId: null, changes: null });
+        continue;
+      }
+      if (diff.type === 'unchanged') {
+        newLogEdges.push({ logId: diff.log.id, previousLogId: diff.log.id, changes: null });
+        continue;
+      }
+      if (diff.type === 'changed') {
+        const changes = await this.registryChecks.serviceDiff({
+          existing: { sdl: diff.previousLog.sdl },
+          incoming: { sdl: diff.newlog.sdl },
+        });
+
+        diff.newlog.sdl;
+        diff.previousLog.sdl;
+        newLogEdges.push({
+          logId: diff.newlog.id,
+          previousLogId: diff.previousLog.id,
+          changes: changes.result ?? null,
+        });
+        continue;
+      }
+
+      throw new Error(`INVARIANT: Uncovered case.`);
+    }
+
+    const [publicSchemaChanges, supergraphSchemaChanges] = await Promise.all([
+      this.registryChecks.diff({
+        existingSdl: latestComposableTargetGraphVersion?.publicSdl ?? null,
+        incomingSdl: originGraphVersion.publicSdl ?? null,
+        conditionalBreakingChangeConfig: null,
+        includeUrlChanges: false,
+        filterOutFederationChanges: true,
+        approvedChanges: null,
+        failDiffOnDangerousChange: false,
+        getAffectedAppDeployments: null,
+        filterNestedChanges: true,
+      }),
+      this.registryChecks.diff({
+        existingSdl: latestComposableTargetGraphVersion?.supergraphSdl ?? null,
+        incomingSdl: originGraphVersion.supergraphSdl ?? null,
+        conditionalBreakingChangeConfig: null,
+        includeUrlChanges: false,
+        filterOutFederationChanges: false,
+        approvedChanges: null,
+        failDiffOnDangerousChange: false,
+        getAffectedAppDeployments: null,
+        filterNestedChanges: true,
+      }),
+    ]);
+
+    const graphVersion = await this.graphVariants.promoteGraphVariantVersionToGraphVariant({
+      origin: {
+        graph: originGraphVariant,
+        version: originGraphVersion,
+      },
+      target: {
+        graph: targetGraphVariant,
+        version: latestTargetGraphVersion,
+      },
+      deleteLogs,
+      newLogEdges,
+      publicSchemaChanges:
+        publicSchemaChanges.result?.all ?? publicSchemaChanges.reason?.all ?? null,
+      supergraphSchemaChanges:
+        supergraphSchemaChanges.result?.all ?? supergraphSchemaChanges.reason?.all ?? null,
+    });
+
+    if (graphVersion.schemaCompositionErrors === null) {
+      this.logger.debug('New graph version is composable. Publish to CDN.');
+      await this.publishGraphVersionToCDN(target, targetGraphVariant, graphVersion);
+      await this.publishGraphManifestToCDN(target);
+    }
+
+    return {
+      type: 'success' as const,
+      graphVersion,
     };
   }
 
@@ -3248,31 +3584,62 @@ export class SchemaPublisher {
     await Promise.all(actions);
   }
 
-  @traceFn('SchemaPublisher.publishGraphtManifestToCDN')
-  private async publishGraphtManifestToCDN(
+  @traceFn('SchemaPublisher.publishGraphToCDN')
+  private async publishGraphVersionToCDN(
     target: Target,
-    graphs: Array<{ graphName: string; graphVersionId: string }>,
+    graph: GraphVariant,
+    graphVersion: ComposableGraphVariantVersion,
   ) {
+    await this.artifactStorageWriter.writeVersionedGraphArtifacts({
+      targetId: target.id,
+      graphName: graph.name,
+      graphVersionId: graphVersion.id,
+      sdl: graphVersion.publicSdl,
+      supergraph: graphVersion.supergraphSdl,
+    });
+  }
+
+  @traceFn('SchemaPublisher.publishGraphtManifestToCDN')
+  private async publishGraphManifestToCDN(target: Target) {
+    this.logger.debug('Write graph manifest to CDN.');
+    const latestComposableVersion = await this.schemaManager.getLatestSchemaVersionWithSchemaLogs({
+      target,
+      onlyComposable: true,
+    });
+
+    // get all the active graph variants, so we can later on write the manifest
+    const graphVariantsWithLatestComposableVersion = await Promise.all(
+      await this.graphVariants.getActiveGraphVariantsForTarget(target).then(graphVariants =>
+        graphVariants.map(async graphVariant => ({
+          graphVariant,
+          latestComposableVersion:
+            await this.graphVariants.getLatestComposableGraphVariantVersion(graphVariant),
+        })),
+      ),
+    );
+
+    const graphs: Array<{ graphName: string; graphVersionId: string }> = [];
+
+    if (latestComposableVersion) {
+      graphs.push({ graphName: 'default', graphVersionId: latestComposableVersion.version.id });
+    }
+
+    for (const graphVariant of graphVariantsWithLatestComposableVersion) {
+      if (!graphVariant.latestComposableVersion) {
+        continue;
+      }
+      graphs.push({
+        graphName: graphVariant.graphVariant.name,
+        graphVersionId: graphVariant.latestComposableVersion.id,
+      });
+    }
+
     await this.artifactStorageWriter.writeGraphManifest({
       targetId: target.id,
       graphManifest: Object.fromEntries(
         graphs.map(graph => [graph.graphName, graph.graphVersionId]),
       ),
     });
-  }
-
-  @traceFn('SchemaPublisher.publishGraphToCDN')
-  private async publishGraphVersionToCDN(
-    target: Target,
-    graph: {
-      graphName: string;
-      graphVersionId: string;
-      sdl: string;
-      supergraph: string;
-      subgraphs: Array<{ sdl: string; name: string; id: string }>;
-    },
-  ) {
-    console.log('TODO: WRITE SDL/SUPERGRAPH ETC TO CDN');
   }
 
   private async createGithubCheckRunForSchemaPublish(args: {

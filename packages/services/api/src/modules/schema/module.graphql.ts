@@ -8,6 +8,7 @@ export default gql`
     schemaCompose(input: SchemaComposeInput!): SchemaComposePayload!
 
     graphClone(input: GraphCloneInput!): GraphCloneResult!
+    graphPromote(input: GraphPromoteInput!): GraphPromoteResult!
     graphDelete(input: GraphDeleteInput!): GraphDeleteResult!
 
     updateBaseSchema(input: UpdateBaseSchemaInput!): UpdateBaseSchemaResult!
@@ -49,6 +50,25 @@ export default gql`
     testExternalSchemaComposition(
       selector: TestExternalSchemaCompositionInput!
     ): TestExternalSchemaCompositionResult!
+  }
+
+  input GraphPromoteInput {
+    target: TargetReferenceInput!
+    graphName: String!
+    graphVersionId: String!
+  }
+
+  type GraphPromoteResultOk {
+    newGraphVersion: GraphVersion!
+  }
+
+  type GraphPromoteResultError {
+    message: String!
+  }
+
+  type GraphPromoteResult {
+    ok: GraphPromoteResultOk
+    error: GraphPromoteResultError
   }
 
   input GraphDeleteInput {
