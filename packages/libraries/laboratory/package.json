@@ -42,7 +42,7 @@
     "@graphql-tools/url-loader": "^9.1.0",
     "radix-ui": "^1.4.3",
     "react-zoom-pan-pinch": "^3.7.0",
-    "uuid": "^13.0.0"
+    "uuid": "^14.0.0"
   },
   "devDependencies": {
     "@dagrejs/dagre": "^2.0.4",
