@@ -115,7 +115,7 @@ function Alerts(props: {
             <br />
             <DocsLink
               className="text-neutral-10 text-sm"
-              href="/management/projects#alerts-and-notifications-1"
+              href="/schema-registry/management/projects#alerts-and-notifications"
             >
               Learn more
             </DocsLink>
