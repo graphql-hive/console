@@ -1,12 +1,13 @@
 import { ReactElement, useCallback, useEffect, useMemo, useState } from 'react';
 import { formatDate, formatISO, subDays } from 'date-fns';
-import { ArrowLeft, ChevronDown, ChevronRight, Lock, MoreVertical, Users } from 'lucide-react';
+import { ChevronDown, ChevronRight, Lock, MoreVertical, Users } from 'lucide-react';
 import { useMutation, useQuery } from 'urql';
 import { Button as BaseButton } from '@/components/base/button/button';
 import { FilterDropdown } from '@/components/base/floating/filter-dropdown/filter-dropdown';
 import type { FilterItem, FilterSelection } from '@/components/base/floating/filter-dropdown/types';
 import { Menu, MenuItem } from '@/components/base/floating/menu/menu';
 import { Page, TargetLayout } from '@/components/layouts/target';
+import { BackLink } from '@/components/navigation/back-link';
 import { savedFilterToSearchParams } from '@/components/target/insights/search-params';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -886,7 +887,11 @@ function StatCard({ label, value }: { label: string; value: number }) {
   );
 }
 
-export function TargetInsightsManageFiltersPage(props: {
+export function TargetInsightsManageFiltersPage({
+  organizationSlug,
+  projectSlug,
+  targetSlug,
+}: {
   organizationSlug: string;
   projectSlug: string;
   targetSlug: string;
@@ -895,29 +900,33 @@ export function TargetInsightsManageFiltersPage(props: {
     <>
       <Meta title="Manage saved filters" />
       <TargetLayout
-        organizationSlug={props.organizationSlug}
-        projectSlug={props.projectSlug}
-        targetSlug={props.targetSlug}
+        organizationSlug={organizationSlug}
+        projectSlug={projectSlug}
+        targetSlug={targetSlug}
         page={Page.Insights}
       >
         <div className="py-6">
-          <Link
-            to="/$organizationSlug/$projectSlug/$targetSlug/insights"
-            params={{
-              organizationSlug: props.organizationSlug,
-              projectSlug: props.projectSlug,
-              targetSlug: props.targetSlug,
+          <BackLink
+            copy="Back to Insights"
+            link={{
+              params: {
+                organizationSlug,
+                projectSlug,
+                targetSlug,
+              },
+              search: {},
+              to: '/$organizationSlug/$projectSlug/$targetSlug/insights',
             }}
-            search={{}}
-            className="text-neutral-10 hover:text-neutral-12 mb-4 inline-flex items-center gap-1 text-sm transition-colors"
-          >
-            <ArrowLeft className="size-4" />
-            Back to Insights
-          </Link>
+          />
+
           <Title>Manage saved filters</Title>
           <Subtitle>View and manage your saved filter views</Subtitle>
         </div>
-        <ManageFiltersContent {...props} />
+        <ManageFiltersContent
+          organizationSlug={organizationSlug}
+          projectSlug={projectSlug}
+          targetSlug={targetSlug}
+        />
       </TargetLayout>
     </>
   );
