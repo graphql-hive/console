@@ -12,6 +12,12 @@ export const MetricAlertRule: MetricAlertRuleResolvers = {
     }
     return injector.get(Storage).getUserById({ id: rule.createdByUserId });
   },
+  updatedBy: (rule, _, { injector }) => {
+    if (!rule.updatedByUserId) {
+      return null;
+    }
+    return injector.get(Storage).getUserById({ id: rule.updatedByUserId });
+  },
   target: (rule, _, { injector }) => {
     return injector.get(TargetManager).getTarget({
       targetId: rule.targetId,

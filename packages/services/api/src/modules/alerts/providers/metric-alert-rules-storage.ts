@@ -15,6 +15,7 @@ const MetricAlertRuleModel = zod
     projectId: zod.string(),
     targetId: zod.string(),
     createdByUserId: zod.string().nullable(),
+    updatedByUserId: zod.string().nullable(),
     type: zod.enum(['LATENCY', 'ERROR_RATE', 'TRAFFIC']),
     timeWindowMinutes: zod.number(),
     metric: zod.enum(['avg', 'p75', 'p90', 'p95', 'p99']).nullable(),
@@ -66,6 +67,7 @@ const METRIC_ALERT_RULE_SELECT = psql`
   , "project_id" as "projectId"
   , "target_id" as "targetId"
   , "created_by_user_id" as "createdByUserId"
+  , "updated_by_user_id" as "updatedByUserId"
   , "type"
   , "time_window_minutes" as "timeWindowMinutes"
   , "metric"
@@ -220,6 +222,7 @@ export class MetricAlertRulesStorage {
 
   async updateMetricAlertRule(args: {
     id: string;
+    updatedByUserId: string | null;
     type?: MetricAlertRule['type'];
     timeWindowMinutes?: number;
     metric?: MetricAlertRule['metric'];
@@ -247,6 +250,7 @@ export class MetricAlertRulesStorage {
         , "saved_filter_id" = COALESCE(${args.savedFilterId ?? null}, "saved_filter_id")
         , "enabled" = COALESCE(${args.enabled ?? null}, "enabled")
         , "updated_at" = NOW()
+        , "updated_by_user_id" = ${args.updatedByUserId}
       WHERE
         "id" = ${args.id}
       RETURNING ${METRIC_ALERT_RULE_SELECT}

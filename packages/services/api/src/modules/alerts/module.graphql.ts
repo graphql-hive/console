@@ -219,6 +219,8 @@ export default gql`
     lastTriggeredAt: DateTime
     createdAt: DateTime!
     createdBy: User
+    updatedAt: DateTime!
+    updatedBy: User
     """
     The saved filter that scopes this rule (null = applies to the whole target).
     """
@@ -279,6 +281,11 @@ export default gql`
 
   extend type Target {
     metricAlertRules: [MetricAlertRule!]!
+    """
+    A single metric alert rule scoped to this target. Returns null if the id does not
+    resolve to a rule belonging to this target.
+    """
+    metricAlertRule(id: ID!): MetricAlertRule
   }
 
   extend type Mutation {

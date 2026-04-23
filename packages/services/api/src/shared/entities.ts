@@ -449,6 +449,7 @@ export interface MetricAlertRule {
   projectId: string;
   targetId: string;
   createdByUserId: string | null;
+  updatedByUserId: string | null;
   type: MetricAlertRuleType;
   timeWindowMinutes: number;
   metric: MetricAlertRuleMetric | null;

@@ -5,7 +5,7 @@ import type { MutationResolvers } from './../../../../__generated__/types';
 
 export const updateMetricAlertRule: NonNullable<
   MutationResolvers['updateMetricAlertRule']
-> = async (_, { input }, { injector }) => {
+> = async (_, { input }, { injector, session }) => {
   const translator = injector.get(IdTranslator);
   const [organizationId, projectId] = await Promise.all([
     translator.translateOrganizationId(input),
@@ -17,6 +17,8 @@ export const updateMetricAlertRule: NonNullable<
     organizationId,
     params: { organizationId, projectId },
   });
+
+  const currentUser = await session.getViewer();
 
   const storage = injector.get(MetricAlertRulesStorage);
 
@@ -45,6 +47,7 @@ export const updateMetricAlertRule: NonNullable<
 
   const rule = await storage.updateMetricAlertRule({
     id: input.ruleId,
+    updatedByUserId: currentUser.id,
     type: input.type ?? undefined,
     timeWindowMinutes: input.timeWindowMinutes ?? undefined,
     metric: input.metric ?? undefined,
