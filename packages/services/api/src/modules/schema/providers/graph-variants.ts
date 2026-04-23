@@ -292,13 +292,12 @@ export class GraphVariants {
           "schema_log"
         WHERE
           "id" = ANY(${psql.array(Array.from(allSchemaLogIds), 'uuid')})
-          AND "action" = 'PUSH'
       `;
 
       const schemaLogsResult = await this.pg.any(schemaLogsQuery);
-      const schemaLogsById = new Map</** schema_log_id */ string, ServiceSchemaPushLog>();
+      const schemaLogsById = new Map</** schema_log_id */ string, ServiceSchemaLog>();
       for (const rawRecord of schemaLogsResult) {
-        const record = ServiceSchemaPushLogModel.parse(rawRecord);
+        const record = ServiceSchemaLogModel.parse(rawRecord);
         schemaLogsById.set(record.id, record);
       }
 
@@ -311,19 +310,25 @@ export class GraphVariants {
               `\nNo schema logs where retrieved for graph variant version '${graphVariantVersionId}'.`,
           );
         }
-
-        return Array.from(schemaLogIds).map(schemaLogId => {
-          const record = schemaLogsById.get(schemaLogId);
+        const pushRecords: Array<ServiceSchemaPushLog> = [];
+        for (const id of schemaLogIds) {
+          const record = schemaLogsById.get(id);
 
           if (record === undefined) {
             throw new Error(
               'Inconcistent state detected.' +
-                `\nSchema log with id '${schemaLogId}' was never retrieved for graph variant version '${graphVariantVersionId}'.`,
+                `\nSchema log with id '${id}' was never retrieved for graph variant version '${graphVariantVersionId}'.`,
             );
           }
 
-          return record;
-        });
+          if (record.action === 'DELETE') {
+            continue;
+          }
+
+          pushRecords.push(record);
+        }
+
+        return pushRecords;
       });
     },
   );

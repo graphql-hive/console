@@ -79,7 +79,7 @@ export class ArtifactStorageWriter {
   }
 
   async writeGraphManifest(args: { targetId: string; graphManifest: Record<string, string> }) {
-    const key = buildArtifactStorageKey(args.targetId, 'graphs', null, null);
+    const key = buildArtifactStorageKey(args.targetId, 'graphs-manifest.json', null, null);
     for (const s3 of this.s3Mirrors) {
       this.logger.debug('Writing graph manifest to S3 (targetId=%s)', args.targetId);
       const versionedResult = await s3.client.fetch([s3.endpoint, s3.bucket, key].join('/'), {

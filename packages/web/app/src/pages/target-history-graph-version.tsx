@@ -28,7 +28,7 @@ import { TimeAgo } from '@/components/v2';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import { useResetState } from '@/lib/hooks/use-reset-state';
 import { cn } from '@/lib/utils';
-import { File, FileDiff, MultiFileDiff } from '@pierre/diffs/react';
+import { File, MultiFileDiff } from '@pierre/diffs/react';
 import {
   CheckCircledIcon,
   CrossCircledIcon,
@@ -157,6 +157,32 @@ const GraphVersionView_GraphVersionFragment = graphql(`
     }
     subgraphDiffs {
       ...GraphVersionSubgraphView__SubgraphDiffFragment
+      ... on SubgraphDiffAdded {
+        addedSubgraphVersion {
+          serviceName
+          id
+        }
+      }
+      ... on SubgraphDiffRemoved {
+        removedSubgraphVersion {
+          serviceName
+          id
+        }
+      }
+      ... on SubgraphDiffChanged {
+        subgraphVersion {
+          serviceName
+          id
+        }
+        previousSubgraphVersion {
+          id
+        }
+        changes {
+          edges {
+            __typename
+          }
+        }
+      }
     }
     origin {
       ...GraphVersionHeader_GraphVersionOriginFragment
@@ -275,6 +301,49 @@ function GraphVersionView(props: GraphVersionViewProps) {
                 />
               )}
               <ul>
+                {graphVersion.subgraphDiffs.map(diff => {
+                  if (diff.__typename === 'SubgraphDiffAdded') {
+                    return (
+                      <li>
+                        Subgraph{' '}
+                        <span className="font-mono">
+                          {diff.addedSubgraphVersion.serviceName}@$
+                          {diff.addedSubgraphVersion.id.substring(0, 8)}
+                        </span>{' '}
+                        was added
+                      </li>
+                    );
+                  }
+                  if (diff.__typename === 'SubgraphDiffChanged') {
+                    return (
+                      <li>
+                        Subgraph{' '}
+                        <span className="font-mono">{diff.subgraphVersion.serviceName}</span> was
+                        changed from{' '}
+                        <span className="font-mono">
+                          {diff.previousSubgraphVersion.id.substring(0, 8)}
+                        </span>{' '}
+                        to{' '}
+                        <span className="font-mono">{diff.subgraphVersion.id.substring(0, 8)}</span>
+                        {diff.changes?.edges.length && ` (${diff.changes?.edges.length} changes)`}
+                      </li>
+                    );
+                  }
+                  if (diff.__typename === 'SubgraphDiffRemoved') {
+                    return (
+                      <li>
+                        Subgraph{' '}
+                        <span className="font-mono">
+                          {diff.removedSubgraphVersion.serviceName}@
+                          {diff.removedSubgraphVersion.id.substring(0, 8)}
+                        </span>{' '}
+                        was removed
+                      </li>
+                    );
+                  }
+
+                  return null;
+                })}
                 {graphVersion.supergraphChanges?.edges.length && (
                   <li>{graphVersion.supergraphChanges?.edges.length} change(s) to Supergraph</li>
                 )}
@@ -444,7 +513,7 @@ function GraphVersionSubgraphView(props: {
       if (diff.__typename === 'SubgraphDiffChanged') {
         return (
           <>
-            <div className="mt-2 flex flex-wrap items-end justify-between gap-4">
+            <div className="mt-4 flex flex-wrap items-end justify-between gap-4">
               <div>
                 <h2 className="text-foreground text-base font-semibold">
                   Subgraph <span className="font-mono">{diff.subgraphVersion.serviceName}</span>
@@ -463,6 +532,38 @@ function GraphVersionSubgraphView(props: {
         );
       }
 
+      if (diff.__typename === 'SubgraphDiffRemoved') {
+        return (
+          <>
+            <div className="mt-4 flex flex-wrap items-end justify-between gap-4">
+              <div>
+                <h2 className="text-foreground text-base font-semibold">
+                  Subgraph{' '}
+                  <span className="font-mono">{diff.removedSubgraphVersion.serviceName}</span>
+                </h2>
+                <p className="text-muted-foreground text-sm">This subgraph was removed.</p>
+              </div>
+            </div>
+          </>
+        );
+      }
+
+      if (diff.__typename === 'SubgraphDiffAdded') {
+        return (
+          <>
+            <div className="mt-4 flex flex-wrap items-end justify-between gap-4">
+              <div>
+                <h2 className="text-foreground text-base font-semibold">
+                  Subgraph{' '}
+                  <span className="font-mono">{diff.addedSubgraphVersion.serviceName}</span>
+                </h2>
+                <p className="text-muted-foreground text-sm">This subgraph was added.</p>
+              </div>
+            </div>
+          </>
+        );
+      }
+
       return null;
     });
 
@@ -475,7 +576,7 @@ function GraphVersionSubgraphView(props: {
           </div>
           <ViewModeToggle active={viewMode} onChange={setViewMode} />
         </div>
-        <div className="mt-6">{nodes}</div>
+        <div className="mt-8">{nodes}</div>
       </>
     );
   }
@@ -526,6 +627,19 @@ function GraphVersionSubgraphView(props: {
                   className="pb-2"
                 />
                 <div className="text-neutral-8 mt-2 px-4 pb-4">No Changes</div>
+              </div>
+            );
+          }
+
+          if (diff.__typename === 'SubgraphDiffRemoved') {
+            return (
+              <div className="bg-neutral-1 mt-4">
+                <SubgraphHeader
+                  id={diff.removedSubgraphVersion.id}
+                  serviceName={diff.removedSubgraphVersion.serviceName}
+                  className="pb-2"
+                />
+                <div className="text-neutral-8 mt-2 px-4 pb-4">This subgraph was removed</div>
               </div>
             );
           }
@@ -835,10 +949,8 @@ export const ViewModeToggle = (props: {
             key={m.id}
             onClick={() => props.onChange(m.id)}
             className={cn(
-              'inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-[12.5px] transition-colors',
-              isActive
-                ? 'bg-surface-hover text-foreground'
-                : 'text-muted-foreground hover:text-foreground',
+              'hover:bg-neutral-5/50 inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-[12.5px] transition-colors',
+              isActive ? 'bg-neutral-5/40 text-foreground' : 'hover:text-foreground',
             )}
           >
             <Icon className="h-3.5 w-3.5" />

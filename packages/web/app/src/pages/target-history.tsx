@@ -468,6 +468,7 @@ function HistoryPageContent(props: {
                       projectSlug={props.projectSlug}
                       targetSlug={props.targetSlug}
                       graphName={activeGraphName}
+                      activeVersionId={graphVersionId}
                     />
                   ))}
                 </>

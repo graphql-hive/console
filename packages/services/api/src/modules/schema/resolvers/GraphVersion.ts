@@ -63,7 +63,6 @@ export const GraphVersion: GraphVersionResolvers = {
         } satisfies ResolversUnionTypes<any>['SubgraphDiff'];
       }
       if (diff.type === 'changed') {
-        console.log(diff);
         return {
           __typename: 'SubgraphDiffChanged',
           previousSubgraphVersion: {
