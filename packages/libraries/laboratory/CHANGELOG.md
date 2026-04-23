@@ -1,5 +1,14 @@
 # @graphql-hive/laboratory
 
+## 0.1.6
+
+### Patch Changes
+
+- [#7998](https://github.com/graphql-hive/console/pull/7998)
+  [`20b6892`](https://github.com/graphql-hive/console/commit/20b689279f3e8203f5568908b7452324c1c75019)
+  Thanks [@mskorokhodov](https://github.com/mskorokhodov)! - Proper handling of flatter/condition as
+  high order nodes to not break lab qp
+
 ## 0.1.5
 
 ### Patch Changes
