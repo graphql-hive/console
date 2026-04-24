@@ -441,9 +441,7 @@ const ProjectsPageContent = (
                 schemaVersionsCount={target.schemaVersionsCount}
                 organizationSlug={props.organizationSlug}
                 projectSlug={props.projectSlug}
-                operationsStats={target.operationsStats}
-                operationStatsFragment={target.operationsStats}
-                className="bg-neutral-1 dark:bg-neutral-3 border-neutral-6 dark:border-neutral-5 rounded-lg border"
+                className="bg-neutral-1 dark:bg-neutral-3 border-neutral-4 dark:border-neutral-5 rounded-lg border"
               />
             ))
           )
@@ -459,8 +457,6 @@ const ProjectsPageContent = (
                 schemaVersionsCount={null}
                 organizationSlug={props.organizationSlug}
                 projectSlug={props.projectSlug}
-                operationsStats={null}
-                operationStatsFragment={null}
                 className="bg-neutral-1 dark:bg-neutral-3 border-neutral-6 dark:border-neutral-5 rounded-lg border"
               />
             ))}
@@ -490,20 +486,6 @@ const ProjectOverviewPageQuery = graphql(`
             value
           }
           schemaVersionsCount(period: $period)
-          operationsStats(period: $period) {
-            ... on OperationsStats {
-              totalRequests
-              totalFailures
-              totalOperations
-              duration {
-                p75
-                p90
-                p95
-                p99
-              }
-            }
-            ...OverTimeStats_OrganizationProjectsPageFragment
-          }
         }
       }
     }

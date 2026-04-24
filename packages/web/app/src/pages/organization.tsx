@@ -1,4 +1,14 @@
-import { ChangeEvent, ReactElement, useCallback, useMemo, useRef } from 'react';
+import {
+  ChangeEvent,
+  ReactElement,
+  useCallback,
+  useEffect,
+  useM,
+  useMemo,
+  useRef,
+  useState,
+  useStateemo,
+} from 'react';
 import { differenceInMilliseconds, endOfDay, formatISO, startOfDay } from 'date-fns';
 import * as echarts from 'echarts';
 import ReactECharts from 'echarts-for-react';
@@ -61,6 +71,50 @@ export const OverTimeStats_OrganizationProjectsPageFragment = graphql(`
   }
 `);
 
+const TargetCardQuery = graphql(`
+  query TargetCardQuery(
+    $organizationSlug: String!
+    $projectSlug: String!
+    $targetSlug: String!
+    $chartResolution: Int!
+    $period: DateRangeInput!
+  ) {
+    target: target(
+      reference: {
+        bySelector: {
+          organizationSlug: $organizationSlug
+          projectSlug: $projectSlug
+          targetSlug: $targetSlug
+        }
+      }
+    ) {
+      id
+      slug
+      ...TargetCard_TargetFragment
+      totalRequests(period: $period)
+      requestsOverTime(resolution: $chartResolution, period: $period) {
+        date
+        value
+      }
+      schemaVersionsCount(period: $period)
+      operationsStats(period: $period) {
+        ... on OperationsStats {
+          totalRequests
+          totalFailures
+          totalOperations
+          duration {
+            p75
+            p90
+            p95
+            p99
+          }
+        }
+        ...OverTimeStats_OrganizationProjectsPageFragment
+      }
+    }
+  }
+`);
+
 const OrganizationProjectsPageQuery = graphql(`
   query OrganizationProjectsPageQuery(
     $organizationSlug: String!
@@ -87,27 +141,7 @@ const OrganizationProjectsPageQuery = graphql(`
                 node {
                   id
                   slug
-                  ...TargetCard_TargetFragment
                   totalRequests(period: $period)
-                  requestsOverTime(resolution: $chartResolution, period: $period) {
-                    date
-                    value
-                  }
-                  schemaVersionsCount(period: $period)
-                  operationsStats(period: $period) {
-                    ... on OperationsStats {
-                      totalRequests
-                      totalFailures
-                      totalOperations
-                      duration {
-                        p75
-                        p90
-                        p95
-                        p99
-                      }
-                    }
-                    ...OverTimeStats_OrganizationProjectsPageFragment
-                  }
                 }
               }
             }
@@ -124,183 +158,6 @@ const projectTypeFullNames = {
   [ProjectType.Single]: 'Monolithic Schema',
 };
 
-const ProjectCard = (props: {
-  project: FragmentType<typeof ProjectCard_ProjectFragment> | null;
-  cleanOrganizationId: string | null;
-  highestNumberOfRequests: number;
-  requestsOverTime: { date: string; value: number }[] | null;
-  schemaVersionsCount: number | null;
-  days: number;
-}): ReactElement | null => {
-  const project = useFragment(ProjectCard_ProjectFragment, props.project);
-
-  const { highestNumberOfRequests } = props;
-
-  const requests = useMemo(() => {
-    if (props.requestsOverTime?.length) {
-      return props.requestsOverTime.map<[string, number]>(node => [node.date, node.value]);
-    }
-
-    return [
-      [new Date(subDays(new Date(), props.days)).toISOString(), 0],
-      [new Date().toISOString(), 0],
-    ] as [string, number][];
-  }, [props.requestsOverTime]);
-
-  const totalNumberOfRequests = useMemo(
-    () => requests.reduce((acc, [_, value]) => acc + value, 0),
-    [requests],
-  );
-  const totalNumberOfVersions = props.schemaVersionsCount ?? 0;
-
-  const requestsInDateRange = useFormattedNumber(totalNumberOfRequests);
-  const schemaVersionsInDateRange = useFormattedNumber(totalNumberOfVersions);
-
-  return (
-    <Card className="hover:bg-neutral-4 hover:shadow-neutral-3/50 h-full self-start p-5 px-0 pt-4 hover:shadow-md">
-      <Link
-        to="/$organizationSlug/$projectSlug"
-        disabled={props.cleanOrganizationId == null || project?.slug == null}
-        params={{
-          organizationSlug: props.cleanOrganizationId ?? 'unknown-yet',
-          projectSlug: project?.slug ?? 'unknown-yet',
-        }}
-      >
-        <TooltipProvider>
-          <div className="flex items-start gap-x-2">
-            <div className="grow">
-              <div>
-                <AutoSizer disableHeight>
-                  {size => (
-                    <ReactECharts
-                      style={{ width: size.width, height: 90 }}
-                      option={{
-                        animation: !!project,
-                        color: ['#f4b740'],
-                        grid: {
-                          left: 0,
-                          top: 10,
-                          right: 0,
-                          bottom: 10,
-                        },
-                        tooltip: {
-                          trigger: 'axis',
-                          axisPointer: {
-                            label: {
-                              formatter({ value }: { value: number }) {
-                                return new Date(value).toDateString();
-                              },
-                            },
-                          },
-                        },
-                        xAxis: [
-                          {
-                            show: false,
-                            type: 'time',
-                            boundaryGap: false,
-                          },
-                        ],
-                        yAxis: [
-                          {
-                            show: false,
-                            type: 'value',
-                            min: 0,
-                            max: highestNumberOfRequests,
-                          },
-                        ],
-                        series: [
-                          {
-                            name: 'Requests',
-                            type: 'line',
-                            smooth: false,
-                            lineStyle: {
-                              width: 2,
-                            },
-                            showSymbol: false,
-                            areaStyle: {
-                              opacity: 0.8,
-                              color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
-                                {
-                                  offset: 0,
-                                  color: 'rgba(244, 184, 64, 0.20)',
-                                },
-                                {
-                                  offset: 1,
-                                  color: 'rgba(244, 184, 64, 0)',
-                                },
-                              ]),
-                            },
-                            emphasis: {
-                              focus: 'series',
-                            },
-                            data: requests,
-                          },
-                        ],
-                      }}
-                    />
-                  )}
-                </AutoSizer>
-              </div>
-              <div className="flex flex-row items-center justify-between gap-y-3 px-4 pt-4">
-                {project ? (
-                  <div>
-                    <h4 className="line-clamp-2 text-lg font-bold">{project.slug}</h4>
-                    <p className="text-neutral-11 text-xs">{projectTypeFullNames[project.type]}</p>
-                  </div>
-                ) : (
-                  <div>
-                    <div className="bg-neutral-5 mb-4 h-4 w-48 animate-pulse rounded-full py-2" />
-                    <div className="bg-neutral-5 h-2 w-24 animate-pulse rounded-full" />
-                  </div>
-                )}
-                <div className="flex flex-col gap-y-2 py-1">
-                  {project ? (
-                    <>
-                      <Tooltip>
-                        <TooltipTrigger>
-                          <div className="flex flex-row items-center gap-x-2">
-                            <Globe className="text-neutral-10 size-4" />
-                            <div className="text-xs">
-                              {requestsInDateRange}{' '}
-                              {pluralize(totalNumberOfRequests, 'request', 'requests')}
-                            </div>
-                          </div>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          Number of GraphQL requests in the last {props.days} days.
-                        </TooltipContent>
-                      </Tooltip>
-                      <Tooltip>
-                        <TooltipTrigger>
-                          <div className="flex flex-row items-center gap-x-2">
-                            <History className="text-neutral-10 size-4" />
-                            <div className="text-xs">
-                              {schemaVersionsInDateRange}{' '}
-                              {pluralize(totalNumberOfVersions, 'commit', 'commits')}
-                            </div>
-                          </div>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          Number of schemas pushed to this project in the last {props.days} days.
-                        </TooltipContent>
-                      </Tooltip>
-                    </>
-                  ) : (
-                    <>
-                      <div className="bg-neutral-5 my-1 h-2 w-16 animate-pulse rounded-full" />
-                      <div className="bg-neutral-5 my-1 h-2 w-16 animate-pulse rounded-full" />
-                    </>
-                  )}
-                </div>
-              </div>
-            </div>
-          </div>
-        </TooltipProvider>
-      </Link>
-    </Card>
-  );
-};
-
 const NewProjectCardTargetCardCount = (props: {
   title: string;
   count: string;
@@ -315,6 +172,26 @@ const NewProjectCardTargetCardCount = (props: {
   );
 };
 
+const useIsInView = (ref: React.RefObject<HTMLDivElement>) => {
+  const [isInView, setIsInView] = useState(false);
+
+  useEffect(() => {
+    if (ref.current) {
+      const observer = new IntersectionObserver(([entry]) => {
+        if (entry.isIntersecting) {
+          setIsInView(entry.isIntersecting);
+        }
+      });
+
+      observer.observe(ref.current);
+
+      return () => observer.disconnect();
+    }
+  }, [ref]);
+
+  return isInView;
+};
+
 export const NewProjectCardTargetCard = (props: {
   target: FragmentType<typeof TargetCard_TargetFragment> | null;
   className?: string;
@@ -324,39 +201,46 @@ export const NewProjectCardTargetCard = (props: {
   days: number;
   organizationSlug: string;
   projectSlug: string;
-  operationsStats: Partial<OperationsStats> | null;
-  operationStatsFragment: FragmentType<
-    typeof OverTimeStats_OrganizationProjectsPageFragment
-  > | null;
 }): ReactElement => {
-  const target = useFragment(TargetCard_TargetFragment, props.target);
+  const ref = useRef<HTMLDivElement>(null);
+  const isInView = useIsInView(ref);
+
   const { highestNumberOfRequests } = props;
-  const operationStatsOverTime = useFragment(
-    OverTimeStats_OrganizationProjectsPageFragment,
-    props.operationStatsFragment,
-  );
+
   const period = {
     from: formatISO(startOfDay(subDays(new Date(), props.days))),
     to: formatISO(endOfDay(new Date())),
   };
 
+  const [query] = useQuery({
+    query: TargetCardQuery,
+    variables: {
+      organizationSlug: props.organizationSlug,
+      projectSlug: props.projectSlug,
+      targetSlug: props.target?.slug ?? '',
+      chartResolution: props.days,
+      period,
+    },
+    requestPolicy: 'network-only',
+    pause: !isInView || !props.target?.slug,
+  });
+
+  const target = query.data?.target;
+
   const requests = useMemo(() => {
-    if (operationStatsOverTime?.requestsOverTime?.length) {
-      return operationStatsOverTime.requestsOverTime.map<[string, number]>(node => [
-        node.date,
-        node.value,
-      ]);
+    if (target?.requestsOverTime?.length) {
+      return target.requestsOverTime.map<[string, number]>(node => [node.date, node.value]);
     }
 
     return [
       [new Date(subDays(new Date(), props.days)).toISOString(), 0],
       [new Date().toISOString(), 0],
     ] as [string, number][];
-  }, [operationStatsOverTime?.requestsOverTime]);
+  }, [target?.requestsOverTime]);
 
   const failures = useMemo(() => {
-    if (operationStatsOverTime?.failuresOverTime?.length) {
-      return operationStatsOverTime.failuresOverTime.map<[string, number]>(node => [
+    if (target?.operationsStats?.failuresOverTime?.length) {
+      return target.operationsStats.failuresOverTime.map<[string, number]>(node => [
         node.date,
         node.value,
       ]);
@@ -366,7 +250,7 @@ export const NewProjectCardTargetCard = (props: {
       [new Date(subDays(new Date(), props.days)).toISOString(), 0],
       [new Date().toISOString(), 0],
     ] as [string, number][];
-  }, [operationStatsOverTime?.failuresOverTime]);
+  }, [target?.operationsStats?.failuresOverTime]);
 
   const totalNumberOfRequests = useMemo(
     () => requests.reduce((acc, [_, value]) => acc + value, 0),
@@ -379,7 +263,7 @@ export const NewProjectCardTargetCard = (props: {
     requests: totalNumberOfRequests,
     window: differenceInMilliseconds(new Date(period.to), new Date(period.from)),
   });
-  const totalFailures = props.operationsStats?.totalFailures ?? 0;
+  const totalFailures = target?.operationsStats?.totalFailures ?? 0;
 
   const successRate = useMemo(() => {
     return totalNumberOfRequests || totalFailures
@@ -406,7 +290,7 @@ export const NewProjectCardTargetCard = (props: {
       }}
     >
       <TooltipProvider>
-        <div className={cn('space-y-4 p-4', props.className)}>
+        <div ref={ref} className={cn('space-y-4 p-4', props.className)}>
           <div className="grid grid-cols-[auto_1fr] gap-4">
             <div className="grid grid-cols-2 gap-2">
               <NewProjectCardTargetCardCount
@@ -662,16 +546,12 @@ const NewProjectCard = (props: {
             </Tooltip>
           </div>
         </Link>
-        <div className="bg-neutral-1 dark:bg-neutral-3 border-t-neutral-6 dark:border-t-neutral-5 divide-neutral-6 dark:divide-neutral-5 -mb-1 -mr-1 grid grid-cols-[repeat(auto-fit,minmax(calc(var(--spacing)*128),1fr))] divide-x divide-y rounded-t-lg border-t">
+        <div className="bg-neutral-1 dark:bg-neutral-3 border-t-neutral-6 dark:border-t-neutral-5 divide-neutral-4 dark:divide-neutral-5 -mb-1 -mr-1 grid grid-cols-[repeat(auto-fit,minmax(calc(var(--spacing)*128),1fr))] divide-x divide-y rounded-t-lg border-t">
           {sortedTargets?.map(target => (
             <NewProjectCardTargetCard
               key={target.id}
               target={target}
               highestNumberOfRequests={props.highestNumberOfRequests}
-              requestsOverTime={target.requestsOverTime}
-              schemaVersionsCount={target.schemaVersionsCount}
-              operationStatsFragment={target.operationsStats}
-              operationsStats={target.operationsStats}
               days={props.days}
               organizationSlug={props.organizationSlug}
               projectSlug={props.projectSlug}
