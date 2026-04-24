@@ -5,6 +5,7 @@ import type { TypedDocumentNode } from '@graphql-typed-document-node/core';
 import {
   APIError,
   HTTPError,
+  IntrospectionError,
   InvalidRegistryTokenError,
   isAggregateError,
   MissingArgumentsError,
@@ -93,6 +94,9 @@ export function graphqlRequest(config: {
         if (jsonData.errors[0].message === 'Invalid token provided') {
           throw new InvalidRegistryTokenError();
         }
+        if (isIntrospectionDisabledMessage(jsonData.errors[0].message)) {
+          throw new IntrospectionError(jsonData.errors[0].message);
+        }
 
         config.logger?.debug?.(jsonData.errors.map(String).join('\n'));
         throw new APIError(
@@ -108,4 +112,16 @@ export function graphqlRequest(config: {
 
 export function cleanRequestId(requestId?: string | null) {
   return requestId ? requestId.split(',')[0].trim() : undefined;
+}
+
+// Apollo Server, GraphQL Yoga, and others emit messages like
+// "GraphQL introspection is not allowed by Apollo Server..." or
+// "GraphQL introspection has been disabled, but the requested query contained..."
+// when introspection is turned off in production. Detecting this up front lets
+// us throw IntrospectionError (116) instead of a generic APIError (115) so
+// every CLI command that talks to the user's origin server surfaces a
+// consistent, actionable error code.
+export function isIntrospectionDisabledMessage(message: string | undefined | null): boolean {
+  if (!message) return false;
+  return /graphql\s+introspection\s+(is\s+not\s+allowed|has\s+been\s+disabled)/i.test(message);
 }
