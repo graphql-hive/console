@@ -456,7 +456,7 @@ export const useOperations = (
       setStopOperationsFunctions(prev => ({
         ...prev,
         [activeOperation.id]: () => {
-          abortController.abort();
+          abortController.abort('Operation aborted by user');
         },
       }));
 
@@ -505,6 +505,10 @@ export const useOperations = (
           delete newStopOperationsFunctions[activeOperation.id];
           return newStopOperationsFunctions;
         });
+
+        if (abortController.signal.aborted) {
+          return null;
+        }
 
         if (error instanceof Error) {
           return new GraphQLError(error.message);

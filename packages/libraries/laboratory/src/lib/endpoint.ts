@@ -132,7 +132,7 @@ export const useEndpoint = (props: {
         try {
           await fetchSchema(intervalController.signal);
         } catch {
-          intervalController.abort();
+          intervalController.abort('Polling schema failed');
         }
       },
       5000,
@@ -140,7 +140,7 @@ export const useEndpoint = (props: {
     );
 
     return () => {
-      intervalController.abort();
+      intervalController.abort('Polling schema aborted');
     };
   }, [shouldPollSchema, fetchSchema]);
 
