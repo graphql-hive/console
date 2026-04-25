@@ -684,7 +684,16 @@ const targetAlertsIndexRoute = createRoute({
 const targetAlertsRulesRoute = createRoute({
   getParentRoute: () => targetAlertsRoute,
   path: 'rules',
-  component: TargetAlertsRulesPage,
+  component: function TargetAlertsRulesRoute() {
+    const { organizationSlug, projectSlug, targetSlug } = targetAlertsRulesRoute.useParams();
+    return (
+      <TargetAlertsRulesPage
+        organizationSlug={organizationSlug}
+        projectSlug={projectSlug}
+        targetSlug={targetSlug}
+      />
+    );
+  },
 });
 
 const targetAlertsActivityRoute = createRoute({
