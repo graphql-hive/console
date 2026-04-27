@@ -235,7 +235,7 @@ export function AlertEventsTable({
     columnHelper.accessor('createdAt', {
       header: 'Timestamp',
       cell: info => (
-        <span className="text-neutral-11 font-mono text-xs tracking-wide">
+        <span className="text-neutral-12 font-mono text-[11px] tracking-wide">
           {formatTimestamp(info.getValue())}
         </span>
       ),
@@ -290,7 +290,7 @@ export function AlertEventsTable({
       getRowId={row => row.id}
       emptyMessage="No state transitions in the selected time range."
       renderSubComponent={row => (
-        <div className="space-y-4 px-4 py-4">
+        <div className="space-y-4 px-4 pb-4">
           <div
             className={`rounded-md border px-3 py-2 text-[13px] ${STATE_SUMMARY_CLASS[row.original.toState]}`}
           >

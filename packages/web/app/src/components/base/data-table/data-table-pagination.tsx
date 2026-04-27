@@ -45,7 +45,7 @@ export function DataTablePagination({
     <nav
       role="navigation"
       aria-label="Pagination"
-      className="flex items-center justify-center gap-1 text-sm"
+      className="bg-neutral-3 flex h-[36px] items-center justify-center gap-1 text-sm"
     >
       <button
         type="button"
@@ -74,8 +74,8 @@ export function DataTablePagination({
             onClick={() => onPageChange(page)}
             className={
               page === pageIndex
-                ? 'bg-neutral-5 text-neutral-12 inline-flex size-8 items-center justify-center rounded-md'
-                : 'text-neutral-10 hover:text-neutral-12 hover:bg-neutral-4 inline-flex size-8 items-center justify-center rounded-md transition-colors'
+                ? 'bg-neutral-5 text-neutral-12 inline-flex size-6 items-center justify-center rounded-full font-mono text-[12px]'
+                : 'text-neutral-10 hover:text-neutral-12 hover:bg-neutral-4 inline-flex size-6 items-center justify-center rounded-full font-mono text-[12px] transition-colors'
             }
           >
             {page + 1}

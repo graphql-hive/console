@@ -14,10 +14,11 @@ import {
   Table,
   TableBody,
   TableCell,
+  TableExpandedRow,
   TableHead,
   TableHeader,
   TableRow,
-} from '@/components/ui/table';
+} from '@/components/base/table/table';
 import { DataTablePagination } from './data-table-pagination';
 
 export type DataTableProps<TData> = {
@@ -56,7 +57,7 @@ export function DataTable<TData>({
   const totalColumnCount = columns.length + (renderSubComponent ? 1 : 0);
 
   return (
-    <div className="space-y-4">
+    <div className="border-neutral-4 overflow-hidden rounded-md border">
       <Table>
         <TableHeader>
           {table.getHeaderGroups().map(headerGroup => (
@@ -68,14 +69,14 @@ export function DataTable<TData>({
                     : flexRender(header.column.columnDef.header, header.getContext())}
                 </TableHead>
               ))}
-              {renderSubComponent ? <TableHead className="w-10" aria-hidden /> : null}
+              {renderSubComponent ? <TableHead compact /> : null}
             </TableRow>
           ))}
         </TableHeader>
         <TableBody>
           {rows.length === 0 ? (
             <TableRow>
-              <TableCell colSpan={totalColumnCount} className="text-neutral-10 h-24 text-center">
+              <TableCell colSpan={totalColumnCount} variant="empty">
                 {emptyMessage}
               </TableCell>
             </TableRow>
@@ -85,13 +86,6 @@ export function DataTable<TData>({
                 <TableRow
                   data-state={row.getIsExpanded() ? 'expanded' : undefined}
                   onClick={renderSubComponent ? () => row.toggleExpanded() : undefined}
-                  className={
-                    renderSubComponent
-                      ? row.getIsExpanded()
-                        ? 'bg-neutral-3 hover:bg-neutral-3 cursor-pointer'
-                        : 'cursor-pointer'
-                      : undefined
-                  }
                 >
                   {row.getVisibleCells().map(cell => (
                     <TableCell key={cell.id}>
@@ -99,7 +93,7 @@ export function DataTable<TData>({
                     </TableCell>
                   ))}
                   {renderSubComponent ? (
-                    <TableCell className="text-neutral-10 w-10">
+                    <TableCell variant="compact">
                       <ChevronDown
                         className={`size-4 transition-transform ${
                           row.getIsExpanded() ? 'rotate-180' : ''
@@ -109,11 +103,9 @@ export function DataTable<TData>({
                   ) : null}
                 </TableRow>
                 {renderSubComponent && row.getIsExpanded() ? (
-                  <TableRow className="bg-neutral-3 hover:bg-neutral-3">
-                    <TableCell colSpan={totalColumnCount} className="bg-neutral-3 p-0">
-                      {renderSubComponent(row)}
-                    </TableCell>
-                  </TableRow>
+                  <TableExpandedRow colSpan={totalColumnCount}>
+                    {renderSubComponent(row)}
+                  </TableExpandedRow>
                 ) : null}
               </Fragment>
             ))
@@ -121,11 +113,13 @@ export function DataTable<TData>({
         </TableBody>
       </Table>
       {table.getPageCount() > 1 ? (
-        <DataTablePagination
-          pageIndex={table.getState().pagination.pageIndex}
-          pageCount={table.getPageCount()}
-          onPageChange={page => table.setPageIndex(page)}
-        />
+        <div className="border-neutral-4 border-t">
+          <DataTablePagination
+            pageIndex={table.getState().pagination.pageIndex}
+            pageCount={table.getPageCount()}
+            onPageChange={page => table.setPageIndex(page)}
+          />
+        </div>
       ) : null}
     </div>
   );

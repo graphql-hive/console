@@ -194,7 +194,7 @@ export function AlertConditionsPanel({
               {
                 term: 'Severity',
                 description: (
-                  <span className="inline-flex items-center gap-1.5">
+                  <span className="inline-flex items-center gap-0.5">
                     <BadgeRounded color={SEVERITY_DOT_COLOR[rule.severity]} className="size-2" />
                     <span className="capitalize">{rule.severity.toLowerCase()}</span>
                   </span>
