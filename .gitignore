@@ -140,8 +140,3 @@ resolvers.generated.ts
 docker/docker-compose.override.yml
 
 test-results/
-
-target
-Cargo.lock
-Cargo.lock
-Cargo.lock
