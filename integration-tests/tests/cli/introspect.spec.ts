@@ -289,7 +289,7 @@ test.concurrent('can introspect protected federation with header', async ({ expe
   `);
 });
 
-test.concurrent('error handling on server with no introspection enabeld', async ({ expect }) => {
+test.concurrent('error handling on server with no introspection enabled', async ({ expect }) => {
   const server = await createHTTPGraphQLServer();
   const command = introspect([server.url + '/graphql-federation-no-introspection']);
   await expect(command).rejects.toThrowError(
