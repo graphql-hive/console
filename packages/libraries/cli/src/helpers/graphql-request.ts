@@ -1,10 +1,11 @@
-import { print, type ExecutionResult } from 'graphql';
+import { print, type ExecutionResult, type GraphQLError } from 'graphql';
 import { http } from '@graphql-hive/core';
 import { LegacyLogger } from '@graphql-hive/core/typings/client/types';
 import type { TypedDocumentNode } from '@graphql-typed-document-node/core';
 import {
   APIError,
   HTTPError,
+  IntrospectionError,
   InvalidRegistryTokenError,
   isAggregateError,
   MissingArgumentsError,
@@ -93,6 +94,9 @@ export function graphqlRequest(config: {
         if (jsonData.errors[0].message === 'Invalid token provided') {
           throw new InvalidRegistryTokenError();
         }
+        if (isIntrospectionDisabledError(jsonData.errors[0])) {
+          throw new IntrospectionError();
+        }
 
         config.logger?.debug?.(jsonData.errors.map(String).join('\n'));
         throw new APIError(
@@ -108,4 +112,23 @@ export function graphqlRequest(config: {
 
 export function cleanRequestId(requestId?: string | null) {
   return requestId ? requestId.split(',')[0].trim() : undefined;
+}
+
+export function isIntrospectionDisabledError(error: GraphQLError): boolean {
+  // Default implementation - this is the string used by graphql-js and thus the majority of all other implementations
+  // as they use graphql-js as a reference.
+  // https://github.com/graphql/graphql-js/blob/8eb6383ae7447514343457abb2063c40e5dc81bc/src/validation/rules/custom/NoSchemaIntrospectionCustomRule.ts#L30
+  if (error.message.includes('GraphQL introspection has been disabled')) {
+    return true;
+  }
+  // Apollo Server
+  // https://github.com/apollographql/apollo-server/blob/19d0ffca703f85f0184532393aa3fff687f30bca/packages/server/src/validationRules/NoIntrospection.ts#L20
+  if (error.extensions['validationErrorCode'] === 'INTROSPECTION_DISABLED') {
+    return true;
+  }
+  // https://github.com/apollographql/apollo-server/blob/19d0ffca703f85f0184532393aa3fff687f30bca/packages/server/src/validationRules/NoIntrospection.ts#L15
+  if (error.message.includes('GraphQL introspection is not allowed')) {
+    return true;
+  }
+  return false;
 }

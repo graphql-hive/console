@@ -295,5 +295,6 @@ test.concurrent('error handling on server with no introspection enabled', async 
   await expect(command).rejects.toThrowError(
     'Could not get introspection result from the service.',
   );
-  await expect(command).rejects.toThrowError('[115]');
+  await expect(command).rejects.toThrow('[116]');
+  await expect(command).rejects.not.toThrow('[115]');
 });

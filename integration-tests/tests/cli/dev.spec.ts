@@ -343,5 +343,6 @@ describe('dev --remote', () => {
     );
     // make sure correct error  code is being thrown
     await expect(cmd).rejects.toThrowError('[116]');
+    await expect(cmd).rejects.not.toThrow('[115]');
   });
 });
