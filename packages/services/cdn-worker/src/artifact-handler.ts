@@ -467,9 +467,6 @@ export const createArtifactRequestHandler = (deps: ArtifactRequestHandler) => {
         const response = createResponse(
           analytics,
           result.body,
-          // We're using here a public location, because we expose the Location to the end user and
-          // the public S3 endpoint may differ from the internal S3 endpoint. E.g. within a docker network.
-          // If they are the same, private and public locations will be the same.
           { status: 200 },
           params.targetId,
           request,
@@ -531,9 +528,6 @@ export const createArtifactRequestHandler = (deps: ArtifactRequestHandler) => {
       const response = createResponse(
         analytics,
         JSON.stringify(manifest),
-        // We're using here a public location, because we expose the Location to the end user and
-        // the public S3 endpoint may differ from the internal S3 endpoint. E.g. within a docker network.
-        // If they are the same, private and public locations will be the same.
         {
           status: 200,
           headers: {
