@@ -408,7 +408,6 @@ export class ArtifactStorageReader {
     }
 
     const body = await response.json();
-    console.log(body);
     return AppDeploymentManifestModel.parse(body);
   }
 
