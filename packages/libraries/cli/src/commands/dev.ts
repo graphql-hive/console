@@ -490,7 +490,7 @@ export default class Dev extends Command<typeof Dev> {
         return {
           name: input.name,
           url: input.url,
-          sdl: await this.resolveSdlFromUrl(input.url),
+          sdl: await this.resolveSdlFromUrl(input.name, input.url),
           input: {
             kind: 'url' as const,
             url: input.url,
@@ -509,13 +509,16 @@ export default class Dev extends Command<typeof Dev> {
     return sdl;
   }
 
-  private async resolveSdlFromUrl(url: string) {
+  private async resolveSdlFromUrl(serviceName: string, url: string) {
     const sdl = await loadSchema('only-federation-introspection', url, {
       logger: this.logger,
+    }).catch(err => {
+      this.logFailure(err);
+      throw new IntrospectionError(serviceName);
     });
 
     if (!sdl) {
-      throw new IntrospectionError();
+      throw new IntrospectionError(serviceName);
     }
 
     return sdl;
