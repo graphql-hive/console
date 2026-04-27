@@ -69,6 +69,12 @@ const VersionedParamsModel = zod.object({
     .transform(value => value ?? null),
 });
 
+export const AppDeploymentsManifestParamsModel = zod.object({
+  targetId: zod.string(),
+  appName: zod.string(),
+  appVersion: zod.string(),
+});
+
 const PersistedOperationParamsModel = zod.object({
   targetId: zod.string(),
   appName: zod.string(),
@@ -472,6 +478,73 @@ export const createArtifactRequestHandler = (deps: ArtifactRequestHandler) => {
         deps.requestCache?.set(request, response);
         return response;
       }
+    },
+  );
+  router.get(
+    '/artifacts/v1/:targetId/apps/:appName/:appVersion',
+    async function AppDeploymentManifestHandler(request) {
+      const parseResult = AppDeploymentsManifestParamsModel.safeParse(request.params);
+
+      if (parseResult.success === false) {
+        analytics.track(
+          { type: 'error', value: ['invalid-params'] },
+          request.params?.targetId ?? 'unknown',
+        );
+
+        return createResponse(
+          analytics,
+          'Not found.',
+          {
+            status: 404,
+          },
+          request.params?.targetId ?? 'unknown',
+          request,
+        );
+      }
+
+      const params = parseResult.data;
+
+      const maybeResponse = await authenticate(request, params.targetId);
+
+      if (maybeResponse !== null) {
+        return maybeResponse;
+      }
+
+      const manifest = await deps.artifactStorageReader.readAppDeploymentManifest(
+        params.targetId,
+        params.appName,
+        params.appVersion,
+      );
+
+      if (manifest === null) {
+        return createResponse(
+          analytics,
+          'Not found.',
+          {
+            status: 404,
+          },
+          request.params?.targetId ?? 'unknown',
+          request,
+        );
+      }
+
+      const response = createResponse(
+        analytics,
+        JSON.stringify(manifest),
+        // We're using here a public location, because we expose the Location to the end user and
+        // the public S3 endpoint may differ from the internal S3 endpoint. E.g. within a docker network.
+        // If they are the same, private and public locations will be the same.
+        {
+          status: 200,
+          headers: {
+            'content-type': 'application/json',
+          },
+        },
+        params.targetId,
+        request,
+      );
+
+      return response;
     },
   );
 
