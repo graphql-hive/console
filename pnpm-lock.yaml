@@ -40,7 +40,6 @@ overrides:
   yauzl@2.x.x: ^3.2.1
   glob@10.x.x: ^10.5.0
   path-to-regexp@0.x.x: ^0.1.13
-  uuid@<14.0.0: ^14.0.0
 
 patchedDependencies:
   '@apollo/federation@0.38.1':
@@ -18505,8 +18504,24 @@ packages:
   uuid-parse@1.1.0:
     resolution: {integrity: sha512-OdmXxA8rDsQ7YpNVbKSJkNzTw2I+S5WsbMDnCtIWSQaosNAcWtFuI/YK1TjzUI6nbkgiqEyh8gWngfcv8Asd9A==}
 
+  uuid@10.0.0:
+    resolution: {integrity: sha512-8XkAphELsDnEGrDxUOHB3RGvXz6TeuYSGEZBOjtTtPm2lwhGBjLgOzLHB63IUWfBpNucQjND6d3AOudO+H3RWQ==}
+    hasBin: true
+
+  uuid@11.1.0:
+    resolution: {integrity: sha512-0/A9rDy9P7cJ+8w1c9WD9V//9Wj15Ce2MPz8Ri6032usz+NfePxx5AcN3bN+r6ZL6jEo066/yNYB3tn4pQEx+A==}
+    hasBin: true
+
   uuid@14.0.0:
     resolution: {integrity: sha512-Qo+uWgilfSmAhXCMav1uYFynlQO7fMFiMVZsQqZRMIXp0O7rR7qjkj+cPvBHLgBqi960QCoo/PH2/6ZtVqKvrg==}
+    hasBin: true
+
+  uuid@8.3.2:
+    resolution: {integrity: sha512-+NYs2QeMWy+GWFOEm9xnn6HCDp0l7QBD7ml8zLUmJ+93Q5NF0NocErnwkTkXVFNiX3/fpC6afS8Dhb/gz7R7eg==}
+    hasBin: true
+
+  uuid@9.0.1:
+    resolution: {integrity: sha512-b+1eJOlsR9K8HJpow9Ok3fiWOWSIcIzXodvv0rQjVoOVNpWMpxf1wZNpt4y9h10odCNrqnYp1OBzRktckBe3sA==}
     hasBin: true
 
   v8-compile-cache-lib@3.0.1:
@@ -19089,7 +19104,7 @@ snapshots:
       chalk: 4.1.2
       graphql: 16.9.0
       js-levenshtein: 1.1.6
-      uuid: 14.0.0
+      uuid: 9.0.1
 
   '@apollo/federation@0.38.1(patch_hash=cb592719b35ac58f48c97dd557e19223b45b2c5544bec4f6f2e741c58b7f1de9)(encoding@0.1.13)(graphql@16.9.0)':
     dependencies:
@@ -19162,7 +19177,7 @@ snapshots:
       deep-equal: 2.1.0
       graphql: 16.9.0
       ts-graphviz: 1.5.5
-      uuid: 14.0.0
+      uuid: 9.0.1
 
   '@apollo/query-planner@2.13.2(graphql@16.9.0)':
     dependencies:
@@ -19220,7 +19235,7 @@ snapshots:
       loglevel: 1.9.2
       lru-cache: 11.2.6
       negotiator: 1.0.0
-      uuid: 14.0.0
+      uuid: 11.1.0
       whatwg-mimetype: 4.0.0
     transitivePeerDependencies:
       - supports-color
@@ -21014,7 +21029,7 @@ snapshots:
       safe-buffer: 5.2.1
       tough-cookie: 5.1.2
       tunnel-agent: 0.6.0
-      uuid: 14.0.0
+      uuid: 8.3.2
 
   '@cypress/xvfb@1.2.4(supports-color@8.1.1)':
     dependencies:
@@ -32962,7 +32977,7 @@ snapshots:
       docker-modem: 5.0.6
       protobufjs: 7.5.5
       tar-fs: 2.1.4
-      uuid: 14.0.0
+      uuid: 10.0.0
     transitivePeerDependencies:
       - supports-color
 
@@ -34282,7 +34297,7 @@ snapshots:
       https-proxy-agent: 7.0.6
       is-stream: 2.0.1
       node-fetch: 2.6.12(encoding@0.1.13)
-      uuid: 14.0.0
+      uuid: 9.0.1
     transitivePeerDependencies:
       - encoding
       - supports-color
@@ -35227,7 +35242,7 @@ snapshots:
   hyperid@3.3.0:
     dependencies:
       buffer: 5.7.1
-      uuid: 14.0.0
+      uuid: 8.3.2
       uuid-parse: 1.1.0
 
   hyperlinker@1.0.0: {}
@@ -35758,7 +35773,7 @@ snapshots:
       node-int64: 0.4.0
       opentracing: 0.14.7
       thriftrw: 3.11.4
-      uuid: 14.0.0
+      uuid: 8.3.2
       xorshift: 1.2.0
 
   jake@10.8.5:
@@ -40813,7 +40828,15 @@ snapshots:
 
   uuid-parse@1.1.0: {}
 
+  uuid@10.0.0: {}
+
+  uuid@11.1.0: {}
+
   uuid@14.0.0: {}
+
+  uuid@8.3.2: {}
+
+  uuid@9.0.1: {}
 
   v8-compile-cache-lib@3.0.1:
     optional: true
