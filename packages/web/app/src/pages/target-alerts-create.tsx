@@ -79,6 +79,19 @@ const CreateAlertPage_SavedFiltersQuery = graphql(`
           node {
             id
             name
+            filters {
+              operationHashes
+              clientFilters {
+                name
+                versions
+              }
+              dateRange {
+                from
+                to
+              }
+              excludeOperations
+              excludeClientFilters
+            }
           }
         }
       }

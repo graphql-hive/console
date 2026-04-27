@@ -1,7 +1,7 @@
 import { Button } from '@/components/ui/button';
 import { Meta } from '@/components/ui/meta';
 import { NavLayout, PageLayout, PageLayoutContent } from '@/components/ui/page-content-layout';
-import { Link, Outlet } from '@tanstack/react-router';
+import { Link, Outlet, useLocation } from '@tanstack/react-router';
 
 const navItems = [
   { label: 'Alert activity', segment: 'activity' },
@@ -19,6 +19,22 @@ export function TargetAlertsPage(props: {
     projectSlug: props.projectSlug,
     targetSlug: props.targetSlug,
   };
+
+  // The detail page (path matches /alerts/{ruleId}) renders full-width without the
+  // secondary nav. The literal segment routes (rules / activity / create) keep the nav.
+  const location = useLocation();
+  const lastSegment = location.pathname.replace(/\/$/, '').split('/').pop();
+  const literalSegments = new Set(['alerts', 'rules', 'activity', 'create']);
+  const isDetailRoute = !!lastSegment && !literalSegments.has(lastSegment);
+
+  if (isDetailRoute) {
+    return (
+      <>
+        <Meta title="Alerts" />
+        <Outlet />
+      </>
+    );
+  }
 
   return (
     <>

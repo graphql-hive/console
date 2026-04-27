@@ -1,7 +1,7 @@
-import { Link } from '@tanstack/react-router';
 import { useQuery } from 'urql';
-import { SubPageLayout, SubPageLayoutHeader } from '@/components/ui/page-content-layout';
+import { PageLead } from '@/components/base/page-lead';
 import { graphql } from '@/gql';
+import { Link } from '@tanstack/react-router';
 
 const TargetAlertsRulesPage_Query = graphql(`
   query TargetAlertsRulesPage_Query(
@@ -46,11 +46,12 @@ export function TargetAlertsRulesPage(props: {
   const rules = result.data?.target?.metricAlertRules ?? [];
 
   return (
-    <SubPageLayout>
-      <SubPageLayoutHeader
-        subPageTitle="Configured alerts"
+    <>
+      <PageLead
         description="The following alerts are currently active for this target."
+        title="Configured alerts"
       />
+
       {result.fetching && rules.length === 0 ? (
         <p className="text-neutral-10 text-sm">Loading…</p>
       ) : rules.length === 0 ? (
@@ -77,6 +78,6 @@ export function TargetAlertsRulesPage(props: {
           ))}
         </ul>
       )}
-    </SubPageLayout>
+    </>
   );
 }

@@ -85,7 +85,13 @@ export function DataTable<TData>({
                 <TableRow
                   data-state={row.getIsExpanded() ? 'expanded' : undefined}
                   onClick={renderSubComponent ? () => row.toggleExpanded() : undefined}
-                  className={renderSubComponent ? 'cursor-pointer' : undefined}
+                  className={
+                    renderSubComponent
+                      ? row.getIsExpanded()
+                        ? 'bg-neutral-3 hover:bg-neutral-3 cursor-pointer'
+                        : 'cursor-pointer'
+                      : undefined
+                  }
                 >
                   {row.getVisibleCells().map(cell => (
                     <TableCell key={cell.id}>
@@ -103,8 +109,8 @@ export function DataTable<TData>({
                   ) : null}
                 </TableRow>
                 {renderSubComponent && row.getIsExpanded() ? (
-                  <TableRow className="hover:bg-transparent">
-                    <TableCell colSpan={totalColumnCount} className="bg-neutral-2/50 p-0">
+                  <TableRow className="bg-neutral-3 hover:bg-neutral-3">
+                    <TableCell colSpan={totalColumnCount} className="bg-neutral-3 p-0">
                       {renderSubComponent(row)}
                     </TableCell>
                   </TableRow>

@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import { subMinutes } from 'date-fns';
 import { useQuery } from 'urql';
 import { Select } from '@/components/base/floating/select/select';
+import { PageLead } from '@/components/base/page-lead';
 import { BackLink } from '@/components/navigation/back-link';
 import { AlertConditionsPanel } from '@/components/target/alerts/alert-conditions-panel';
 import { AlertEventsTable } from '@/components/target/alerts/alert-events-table';
@@ -55,6 +56,19 @@ const TargetAlertsDetailPage_Query = graphql(`
         savedFilter {
           id
           name
+          filters {
+            operationHashes
+            clientFilters {
+              name
+              versions
+            }
+            dateRange {
+              from
+              to
+            }
+            excludeOperations
+            excludeClientFilters
+          }
         }
         createdAt
         updatedAt
@@ -189,7 +203,7 @@ export function TargetAlertsDetailPage(props: {
   }
 
   return (
-    <div className="flex gap-8">
+    <div className="flex gap-8 pt-7">
       <div className="min-w-0 flex-1 space-y-6">
         <BackLink
           copy="Back to Alerts"
@@ -203,10 +217,7 @@ export function TargetAlertsDetailPage(props: {
           }}
         />
 
-        <div>
-          <h1 className="text-neutral-12 text-2xl font-semibold">{rule.name}</h1>
-          <p className="text-neutral-10 mt-1 text-sm">{buildDescription(rule)}</p>
-        </div>
+        <PageLead description={buildDescription(rule)} title={rule.name} />
 
         <div className="flex">
           <Select
@@ -216,13 +227,13 @@ export function TargetAlertsDetailPage(props: {
           />
         </div>
 
-        <section className="space-y-3">
-          <h2 className="text-neutral-12 text-sm font-semibold">Status transitions</h2>
+        <section className="space-y-2">
+          <h2 className="text-neutral-12 m-0 mb-2 text-sm font-medium">Status transitions</h2>
           <AlertStateTransitionsBar stateLog={rule.stateLog} from={from} to={to} />
         </section>
 
-        <section className="space-y-3">
-          <h2 className="text-neutral-12 text-sm font-semibold">
+        <section className="space-y-2">
+          <h2 className="text-neutral-12 m-0 text-sm font-medium">
             {rule.type === MetricAlertRuleType.ErrorRate
               ? 'Error rate over time'
               : rule.type === MetricAlertRuleType.Latency
@@ -241,10 +252,16 @@ export function TargetAlertsDetailPage(props: {
           />
         </section>
 
-        <AlertEventsTable stateLog={rule.stateLog} ruleType={rule.type} />
+        <AlertEventsTable
+          stateLog={rule.stateLog}
+          rule={rule}
+          organizationSlug={organizationSlug}
+          projectSlug={projectSlug}
+          targetSlug={targetSlug}
+        />
       </div>
 
-      <aside className="sticky top-6 w-80 shrink-0 self-start">
+      <aside className="w-87 sticky top-6 shrink-0 self-start">
         <AlertConditionsPanel
           rule={rule}
           organizationSlug={organizationSlug}

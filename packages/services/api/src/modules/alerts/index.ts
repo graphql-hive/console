@@ -1,4 +1,5 @@
 import { createModule } from 'graphql-modules';
+import { SavedFiltersStorage } from '../saved-filters/providers/saved-filters-storage';
 import { TeamsCommunicationAdapter } from './providers/adapters/msteams';
 import { SlackCommunicationAdapter } from './providers/adapters/slack';
 import { WebhookCommunicationAdapter } from './providers/adapters/webhook';
@@ -15,6 +16,7 @@ export const alertsModule = createModule({
   providers: [
     AlertsManager,
     MetricAlertRulesStorage,
+    SavedFiltersStorage,
     SlackCommunicationAdapter,
     WebhookCommunicationAdapter,
     TeamsCommunicationAdapter,
