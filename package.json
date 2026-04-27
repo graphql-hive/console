@@ -128,7 +128,6 @@
     "overrides.ajv@8.x.x": "address https://github.com/graphql-hive/console/security/dependabot/507",
     "overrides.yauzl@2.x.x": "address https://github.com/graphql-hive/console/security/dependabot/542",
     "overrides.path-to-regexp@0.x.x": "address https://github.com/graphql-hive/console/security/dependabot/619",
-    "overrides.uuid@<14.0.0": "address https://github.com/advisories/GHSA-w5hq-g745-h8pq",
     "overrides": {
       "esbuild": "0.25.9",
       "csstype": "3.1.2",
