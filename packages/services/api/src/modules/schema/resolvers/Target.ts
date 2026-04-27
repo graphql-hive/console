@@ -1,6 +1,7 @@
 import { parseDateRangeInput } from '../../../shared/helpers';
 import { OperationsManager } from '../../operations/providers/operations-manager';
 import { ContractsManager } from '../providers/contracts-manager';
+import { GraphVariants } from '../providers/graph-variants';
 import { SchemaManager } from '../providers/schema-manager';
 import { toGraphQLSchemaCheck, toGraphQLSchemaCheckCurry } from '../to-graphql-schema-check';
 import type { TargetResolvers } from './../../../__generated__/types';
@@ -8,8 +9,10 @@ import type { TargetResolvers } from './../../../__generated__/types';
 export const Target: Pick<
   TargetResolvers,
   | 'activeContracts'
+  | 'activeGraphs'
   | 'baseSchema'
   | 'contracts'
+  | 'graph'
   | 'hasCollectedSubscriptionOperations'
   | 'hasSchema'
   | 'latestSchemaVersion'
@@ -48,7 +51,7 @@ export const Target: Pick<
       targetId: target.id,
     };
   },
-  latestSchemaVersion: (target, _, { injector }) => {
+  latestSchemaVersion: (target, _args, { injector }) => {
     return injector.get(SchemaManager).getMaybeLatestVersion(target);
   },
   latestValidSchemaVersion: async (target, __, { injector }) => {
@@ -113,11 +116,17 @@ export const Target: Pick<
       first: args.first ?? null,
     });
   },
-  hasCollectedSubscriptionOperations: async (target, _, { injector }) => {
+  hasCollectedSubscriptionOperations: async (target, _args, { injector }) => {
     return await injector.get(OperationsManager).hasCollectedSubscriptionOperations({
       targetId: target.id,
       projectId: target.projectId,
       organizationId: target.orgId,
     });
+  },
+  activeGraphs: async (target, _args, { injector }) => {
+    return injector.get(GraphVariants).getActiveGraphVariantsForTarget(target);
+  },
+  graph: async (target, args, { injector }) => {
+    return injector.get(GraphVariants).getGraphVariantForTargetByName(target, args.name);
   },
 };

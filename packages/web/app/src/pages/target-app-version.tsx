@@ -222,7 +222,7 @@ function TargetAppVersionContent(props: {
   return (
     <>
       <Meta title={title} />
-      <div className="flex h-full flex-1 flex-col py-6">
+      <div className="flex h-full min-w-0 flex-1 flex-col py-6">
         <SubPageLayoutHeader
           subPageTitle={
             <span className="flex items-center">

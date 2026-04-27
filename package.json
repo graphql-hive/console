@@ -163,7 +163,8 @@
       "ajv@8.x.x": "^8.18.0",
       "yauzl@2.x.x": "^3.2.1",
       "glob@10.x.x": "^10.5.0",
-      "path-to-regexp@0.x.x": "^0.1.13"
+      "path-to-regexp@0.x.x": "^0.1.13",
+      "@theguild/federation-composition": "0.22.3-alpha-20260420112644-a174fe2b2b471cb99c3bb99818ca0844b7bf3f0d"
     },
     "patchedDependencies": {
       "mjml-core@4.14.0": "patches/mjml-core@4.14.0.patch",

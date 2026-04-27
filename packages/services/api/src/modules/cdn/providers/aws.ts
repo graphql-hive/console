@@ -150,7 +150,7 @@ export class AwsClient {
       region: init?.aws?.region || this.region,
       cache: init?.aws?.cache || this.cache,
       datetime: init?.aws?.datetime,
-      signQuery: init?.aws?.signQuery,
+      signQuery: init?.aws?.signQuery ?? true,
       appendSessionToken: init?.aws?.appendSessionToken,
       allHeaders: init?.aws?.allHeaders,
       singleEncode: init?.aws?.singleEncode,

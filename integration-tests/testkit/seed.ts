@@ -906,6 +906,7 @@ export function initSeed() {
                       service?: string;
                       url?: string;
                       metadata?: string;
+                      variant?: string;
                       /**
                        * @deprecated
                        */
@@ -923,6 +924,7 @@ export function initSeed() {
                           experimental_acceptBreakingChanges:
                             options.experimental_acceptBreakingChanges,
                           github: options.github,
+                          variant: options.variant,
                         },
                         secret,
                         options.headerName || 'authorization',

@@ -328,6 +328,7 @@ export class CompositeModel {
     } | null;
     latestComposable: {
       isComposable: boolean;
+      supergraphSdl: string | null;
       sdl: string | null;
       schemas: CompositeSchemaInput[];
     } | null;
@@ -469,6 +470,18 @@ export class CompositeModel {
       getAffectedAppDeployments: getAffectedAppDeploymentsForPublish,
     });
 
+    const serviceDiffCheck = await this.checks.serviceDiff({
+      existing: previousService ?? null,
+      incoming: input,
+    });
+
+    const supergraphDiffCheck = await this.checks.serviceDiff({
+      existing: latestComposable?.supergraphSdl ? { sdl: latestComposable.supergraphSdl } : null,
+      incoming: compositionCheck.result?.supergraph
+        ? { sdl: compositionCheck.result.supergraph }
+        : null,
+    });
+
     const contractChecks = await this.getContractChecks({
       contracts,
       compositionCheck,
@@ -493,6 +506,8 @@ export class CompositeModel {
         composable: compositionCheck.status === 'completed',
         initial: latestSchemaVersion === null,
         changes: diffCheck.result?.all ?? diffCheck.reason?.all ?? null,
+        serviceChanges: serviceDiffCheck.result ?? null,
+        supergraphChanges: supergraphDiffCheck.result ?? null,
         coordinatesDiff:
           diffCheck.result?.coordinatesDiff ??
           diffCheck.reason?.coordinatesDiff ??
@@ -503,6 +518,7 @@ export class CompositeModel {
         compositionErrors: compositionCheck.reason?.errors ?? null,
         schema: incoming,
         schemas,
+        previousSchemas: latest?.schemas ?? null,
         supergraph: compositionCheck.result?.supergraph ?? null,
         fullSchemaSdl: compositionCheck.result?.fullSchemaSdl ?? null,
         tags: compositionCheck.result?.tags ?? null,

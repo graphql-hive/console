@@ -1,8 +1,10 @@
 import { Inject } from 'graphql-modules';
+import z from 'zod';
 import { buildArtifactStorageKey } from '@hive/cdn-script/artifact-storage-reader';
 import { traceFn } from '@hive/service-common';
 import { Logger } from '../../shared/providers/logger';
 import { S3_CONFIG, type S3Config } from '../../shared/providers/s3-config';
+import type { ComposableGraphVariantVersion, GraphVariant } from './graph-variants';
 
 const artifactMeta = {
   sdl: {
@@ -33,7 +35,71 @@ export class ArtifactStorageWriter {
     @Inject(S3_CONFIG) private s3Mirrors: S3Config,
     logger: Logger,
   ) {
-    this.logger = logger.child({ service: 'f' });
+    this.logger = logger.child({ service: 'ArtifactStorageWriter' });
+  }
+
+  async writeVersionedGraphArtifacts(args: {
+    targetId: string;
+    graphName: string;
+    graphVersionId: string;
+    sdl: string;
+    supergraph: string;
+  }) {
+    const keyBase = ['artifact', args.targetId, 'graphs', args.graphName, args.graphVersionId].join(
+      '/',
+    );
+    const sdlKey = [keyBase, 'sdl'].join('/');
+    const supergraphKey = [keyBase, 'supergraph'].join('/');
+
+    for (const s3 of this.s3Mirrors) {
+      const [sdlResult, supergraphResult] = await Promise.all([
+        s3.client.fetch([s3.endpoint, s3.bucket, sdlKey].join('/'), {
+          method: 'PUT',
+          headers: {
+            'content-type': artifactMeta['sdl'].contentType,
+          },
+          body: args.sdl,
+        }),
+        s3.client.fetch([s3.endpoint, s3.bucket, supergraphKey].join('/'), {
+          method: 'PUT',
+          headers: {
+            'content-type': artifactMeta['supergraph'].contentType,
+          },
+          body: args.supergraph,
+        }),
+      ]);
+
+      if (sdlResult.statusCode !== 200) {
+        throw new Error('OI');
+      }
+      if (supergraphResult.statusCode !== 200) {
+        throw new Error('OI');
+      }
+    }
+  }
+
+  async writeGraphManifest(args: { targetId: string; graphManifest: Record<string, string> }) {
+    const key = buildArtifactStorageKey(args.targetId, 'graphs-manifest.json', null, null);
+    for (const s3 of this.s3Mirrors) {
+      this.logger.debug('Writing graph manifest to S3 (targetId=%s)', args.targetId);
+      const versionedResult = await s3.client.fetch([s3.endpoint, s3.bucket, key].join('/'), {
+        method: 'PUT',
+        headers: {
+          'content-type': 'application/json',
+        },
+        body: JSON.stringify(z.record(z.string()).parse(args.graphManifest), null, 2),
+        aws: {
+          signQuery: true,
+        },
+      });
+
+      if (versionedResult.statusCode !== 200) {
+        this.logger.error('Writing graph manifest to S3 (targetId=%s)', args.targetId);
+        throw new Error(
+          `Unexpected status code ${versionedResult.statusCode} when writing graph manifest (targetId=${args.targetId})`,
+        );
+      }
+    }
   }
 
   @traceFn('CDN: Write Artifact', {

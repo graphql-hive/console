@@ -7,6 +7,10 @@ export default gql`
     schemaDelete(input: SchemaDeleteInput!): SchemaDeleteResult!
     schemaCompose(input: SchemaComposeInput!): SchemaComposePayload!
 
+    graphClone(input: GraphCloneInput!): GraphCloneResult!
+    graphPromote(input: GraphPromoteInput!): GraphPromoteResult!
+    graphDelete(input: GraphDeleteInput!): GraphDeleteResult!
+
     updateBaseSchema(input: UpdateBaseSchemaInput!): UpdateBaseSchemaResult!
     """
     Update the schema composition configuration of a federation project.
@@ -46,6 +50,94 @@ export default gql`
     testExternalSchemaComposition(
       selector: TestExternalSchemaCompositionInput!
     ): TestExternalSchemaCompositionResult!
+  }
+
+  input GraphPromoteInput {
+    target: TargetReferenceInput!
+    graphName: String!
+    graphVersionId: String!
+  }
+
+  type GraphPromoteResultOk {
+    newGraphVersion: GraphVersion!
+  }
+
+  type GraphPromoteResultError {
+    message: String!
+  }
+
+  type GraphPromoteResult {
+    ok: GraphPromoteResultOk
+    error: GraphPromoteResultError
+  }
+
+  input GraphDeleteInput {
+    target: TargetReferenceInput!
+    graphName: String!
+  }
+
+  type GraphDeleteResultOk {
+    deletedGraphName: String!
+  }
+
+  type GraphDeleteResultError {
+    message: String!
+  }
+
+  type GraphDeleteResult {
+    ok: GraphDeleteResultOk
+    error: GraphDeleteResultError
+  }
+
+  # input GraphCloneFromOriginInput @oneOf {
+  #   """
+  #   Pick a specific graph version to branch off from.
+  #   """
+  #   byGraphVersionId: ID
+  #   """
+  #   Pick a specific graph and branch off the latest version from that graph.
+  #   """
+  #   byGraphName: String
+  #   # """
+  #   # Create a new empty graph.
+  #   # """
+  #   # empty: Boolean!
+  # }
+
+  input GraphCloneInput {
+    """
+    The target in which the graph should be created.
+    """
+    target: TargetReferenceInput!
+    """
+    The name of the new graph that should be created
+    """
+    newGraphName: String!
+    # """
+    # What origin the graph should branch off.
+    # If not specified the "default" graph of the specified "GraphCloneInput.target" is being used.
+    # """
+    # fromOrigin: GraphCloneFromOriginInput = null
+  }
+
+  type GraphCloneResultOk {
+    """
+    The newly created graph.
+    """
+    newGraph: Graph!
+    """
+    The URL for viewing the Graph.
+    """
+    newGraphUrl: String
+  }
+
+  type GraphCloneResultError {
+    message: String!
+  }
+
+  type GraphCloneResult {
+    ok: GraphCloneResultOk
+    error: GraphCloneResultError
   }
 
   input SchemaCompositionExternalMethodInput @tag(name: "public") {
@@ -194,7 +286,172 @@ export default gql`
     message: String!
   }
 
+  type SubgraphVersion {
+    id: ID!
+    sdl: String!
+    url: String!
+    serviceName: String!
+  }
+
+  union SubgraphDiff =
+    | SubgraphDiffChanged
+    | SubgraphDiffRemoved
+    | SubgraphDiffUnchanged
+    | SubgraphDiffAdded
+
+  type SubgraphDiffAdded {
+    """
+    The added subgraph version.
+    """
+    addedSubgraphVersion: SubgraphVersion!
+  }
+
+  type SubgraphDiffChanged {
+    """
+    The current subgraph version.
+    """
+    subgraphVersion: SubgraphVersion!
+    """
+    The previous subgraph version.
+    """
+    previousSubgraphVersion: SubgraphVersion!
+    """
+    The changes from one to the next service version.
+    """
+    changes: SchemaChangeConnection
+  }
+
+  type SubgraphDiffRemoved {
+    """
+    The subgraph version that was removed.
+    """
+    removedSubgraphVersion: SubgraphVersion!
+  }
+
+  type SubgraphDiffUnchanged {
+    """
+    The current subgraph version.
+    """
+    subgraphVersion: SubgraphVersion!
+  }
+
+  union GraphVersionOrigin =
+    | GraphVersionPromotionOrigin
+    | SubgraphPublishOrigin
+    | SubgraphRemoveOrigin
+
+  type GraphVersionPromotionOrigin {
+    sourceGraphName: String!
+    sourceGraphVersionId: ID!
+  }
+
+  type SubgraphOriginSubgraphReference {
+    name: String!
+    versionId: ID!
+  }
+
+  type SubgraphRemoveOrigin {
+    removedSubgraphs: [SubgraphOriginSubgraphReference!]!
+  }
+
+  type SubgraphPublishOrigin {
+    publishedSubgraphs: [SubgraphOriginSubgraphReference!]!
+  }
+
+  type GraphVersion {
+    """
+    ID of the Graph version.
+    """
+    id: ID!
+    """
+    The data on which this schema version was published.
+    """
+    createdAt: DateTime!
+    """
+    A graph version is valid if the composition is successful.
+    """
+    isValid: Boolean!
+    """
+    Whether this graph version is composable.
+    """
+    isComposable: Boolean!
+    """
+    Whether this is the first ever composable version of this graph.
+    """
+    isFirstComposableVersion: Boolean!
+    """
+    Composition errors
+    """
+    schemaCompositionErrors: SchemaErrorConnection
+    """
+    The supergraph SDL for a federation schema.
+    """
+    supergraphSdl: String
+    supergraphChanges: SchemaChangeConnection
+    """
+    The (public) schema SDL.
+    """
+    sdl: String
+    sdlChanges: SchemaChangeConnection
+    previousDiffableGraphVersion: GraphVersion
+    hasSchemaChanges: Boolean!
+    """
+    The diffs of the individual services compared to the latest graph version.
+    """
+    subgraphDiffs: [SubgraphDiff!]!
+    origin: GraphVersionOrigin!
+  }
+
+  type GraphVersionEdge {
+    cursor: String!
+    node: GraphVersion!
+  }
+
+  type GraphVersionConnection {
+    pageInfo: PageInfo!
+    edges: [GraphVersionEdge!]!
+  }
+
+  type Graph {
+    """
+    ID of the graph
+    """
+    id: ID!
+    """
+    Name of the graph.
+    """
+    name: String!
+    """
+    Whether this Graph is still active or not.
+    """
+    isActive: Boolean!
+    """
+    Historical list of all Graph versions.
+    """
+    versions(first: Int! = 20, after: String): GraphVersionConnection!
+    """
+    Retrieve a specific graph version by ID
+    """
+    graphVersion(id: ID!): GraphVersion
+    """
+    The latest published graph version.
+    """
+    latestGraphVersion: GraphVersion
+  }
+
+  type GraphEdge {
+    cursor: String!
+    node: Graph!
+  }
+
+  type GraphConnection {
+    pageInfo: PageInfo!
+    edges: [GraphEdge!]!
+  }
+
   extend type Target {
+    activeGraphs: [Graph!]!
+    graph(name: String!): Graph
     """
     The latest (potentially invalid) schema version.
     """
@@ -350,6 +607,11 @@ export default gql`
     author: String!
     commit: String!
     force: Boolean @deprecated(reason: "Enabled by default for newly created projects")
+    """
+    The graph to which this schema/subgraph is published.
+    Only supported for federation project.s
+    """
+    graph: String! = "default"
     """
     Accept breaking changes and mark schema as valid (if composable)
     """
