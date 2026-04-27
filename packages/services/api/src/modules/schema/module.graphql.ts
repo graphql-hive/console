@@ -335,20 +335,27 @@ export default gql`
     subgraphVersion: SubgraphVersion!
   }
 
-  union GraphVersionOrigin = GraphVersionPromotionOrigin | SubgraphPublishOrigin
+  union GraphVersionOrigin =
+    | GraphVersionPromotionOrigin
+    | SubgraphPublishOrigin
+    | SubgraphRemoveOrigin
 
   type GraphVersionPromotionOrigin {
     sourceGraphName: String!
     sourceGraphVersionId: ID!
   }
 
-  type SubgraphPublishOriginSubgraph {
+  type SubgraphOriginSubgraphReference {
     name: String!
     versionId: ID!
   }
 
+  type SubgraphRemoveOrigin {
+    removedSubgraphs: [SubgraphOriginSubgraphReference!]!
+  }
+
   type SubgraphPublishOrigin {
-    publishedSubgraphs: [SubgraphPublishOriginSubgraph!]!
+    publishedSubgraphs: [SubgraphOriginSubgraphReference!]!
   }
 
   type GraphVersion {

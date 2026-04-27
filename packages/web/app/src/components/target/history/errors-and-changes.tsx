@@ -27,6 +27,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { TimeAgo } from '@/components/v2';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import { SeverityLevelType } from '@/gql/graphql';
+import { cn } from '@/lib/utils';
 import { CheckCircledIcon, InfoCircledIcon } from '@radix-ui/react-icons';
 import { Link } from '@tanstack/react-router';
 
@@ -754,6 +755,7 @@ export const CompositionErrorsSection_SchemaErrorConnection = graphql(`
 
 export function CompositionErrorsSection(props: {
   compositionErrors: FragmentType<typeof CompositionErrorsSection_SchemaErrorConnection>;
+  className?: string;
 }) {
   const compositionErrors = useFragment(
     CompositionErrorsSection_SchemaErrorConnection,
@@ -761,7 +763,7 @@ export function CompositionErrorsSection(props: {
   );
 
   return (
-    <div className="mb-2 px-2">
+    <div className={cn('mb-2 px-2', props.className)}>
       <TooltipProvider>
         <Heading className="my-2">
           Composition Errors
@@ -795,7 +797,7 @@ export function CompositionErrorsSection(props: {
   );
 }
 
-function CompositionError(props: { message: string }) {
+export function CompositionError(props: { message: string }) {
   return reactStringReplace(
     reactStringReplace(
       reactStringReplace(props.message, /"([^"]+)"/g, (match, index) => {

@@ -998,7 +998,7 @@ const GraphVariantVersionOriginGraphVersionPromotionModel = z.object({
   type: z.literal('graphVersionPromotion'),
   sourceGraphName: z.string(),
   sourceGraphVersionId: z.string(),
-  // todo: maybe also tarck the target here
+  // todo: maybe also track the target id here
 });
 
 type GraphVariantVersionOriginGraphVersionPromotion = z.TypeOf<
@@ -1015,6 +1015,16 @@ const GraphVariantVersionOriginSubgraphPublishModel = z.object({
   ),
 });
 
+const GraphVariantVersionOriginSubgraphRemoveModel = z.object({
+  type: z.literal('subgraphRemove'),
+  subgraphs: z.array(
+    z.object({
+      name: z.string(),
+      versionId: z.string(),
+    }),
+  ),
+});
+
 type GraphVariantVersionOriginSubgraphPublish = z.TypeOf<
   typeof GraphVariantVersionOriginSubgraphPublishModel
 >;
@@ -1022,6 +1032,7 @@ type GraphVariantVersionOriginSubgraphPublish = z.TypeOf<
 const GraphVariantVersionOriginModel = z.union([
   GraphVariantVersionOriginGraphVersionPromotionModel,
   GraphVariantVersionOriginSubgraphPublishModel,
+  GraphVariantVersionOriginSubgraphRemoveModel,
 ]);
 
 const SharedGraphVariantVersionFieldsModel = z.object({
