@@ -564,7 +564,6 @@ function DefaultSchemaView(props: {
                   targetSlug={props.targetSlug}
                   schemaCheckId={schemaCheck.id}
                   title={<BreakingChangesTitle />}
-                  severityLevel={SeverityLevelType.Breaking}
                   changesWithUsage={schemaCheck.breakingSchemaChanges.edges.map(edge => edge.node)}
                   conditionBreakingChangeMetadata={schemaCheck.conditionalBreakingChangeMetadata}
                 />
@@ -578,7 +577,6 @@ function DefaultSchemaView(props: {
                   targetSlug={props.targetSlug}
                   schemaCheckId={schemaCheck.id}
                   title="Safe Changes"
-                  severityLevel={SeverityLevelType.Safe}
                   changes={schemaCheck.safeSchemaChanges.edges.map(edge => edge.node)}
                 />
               </div>
@@ -768,7 +766,6 @@ function ContractCheckView(props: {
                   targetSlug={props.targetSlug}
                   schemaCheckId={schemaCheck.id}
                   title={<BreakingChangesTitle />}
-                  severityLevel={SeverityLevelType.Breaking}
                   changesWithUsage={contractCheck.breakingSchemaChanges.edges.map(
                     edge => edge.node,
                   )}
@@ -784,7 +781,6 @@ function ContractCheckView(props: {
                   targetSlug={props.targetSlug}
                   schemaCheckId={schemaCheck.id}
                   title="Safe Changes"
-                  severityLevel={SeverityLevelType.Safe}
                   changes={contractCheck.safeSchemaChanges.edges.map(edge => edge.node)}
                 />
               </div>

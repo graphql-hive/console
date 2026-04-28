@@ -20,8 +20,6 @@ import {
   Layers,
   ListTree,
   Minus,
-  OctagonAlert,
-  OctagonAlertIcon,
   Plus,
   XCircleIcon,
 } from 'lucide-react';
@@ -950,20 +948,20 @@ const CompositionErrors = (props: {
 
   return (
     <div className="bg-neutral-1 overflow-hidden rounded-xl border border-red-300/20">
-      <div className="flex items-start gap-3 border-b border-red-300/20 bg-red-200 px-5 py-4">
+      <div className="flex items-start gap-3 border-b border-red-300/20 bg-red-700 px-5 py-4 dark:bg-red-900/40">
         <div className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-red-300/20">
           <XCircleIcon className="h-4 w-4 text-red-500" />
         </div>
 
-        <div className="min-w-0">
-          <h3 className="text-sm font-semibold text-white">Supergraph not composable</h3>
+        <div className="text-neutral-4 dark:text-neutral-12 min-w-0">
+          <h3 className="text-sm font-semibold">Supergraph not composable</h3>
           <p className="mt-0.5 text-[12.5px]">
             Errors occurred while attempting to compose the supergraph from its subgraphs.
           </p>
         </div>
 
-        <span className="ml-auto inline-flex items-center gap-1.5 rounded-full border border-red-300 px-2.5 py-1 font-mono text-xs uppercase tracking-wider text-red-500">
-          <span className="h-1.5 w-1.5 rounded-full bg-red-500 shadow-[0_0_8px_rgba(237,46,57,0.7)]" />
+        <span className="focus:ring-ring ml-auto inline-flex items-center rounded-full border border-red-700 bg-red-900 px-2.5 py-0.5 text-[10px] font-semibold text-red-300 transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2">
+          <span className="mr-1 h-1.5 w-1.5 rounded-full bg-red-500 shadow-[0_0_8px_rgba(237,46,57,0.7)]" />
           {compositionErrors.edges.length} error
           {compositionErrors.edges.length === 1 ? '' : 's'}
         </span>
@@ -1154,7 +1152,7 @@ export const GraphVersionSummary = (props: {
       <div>
         <h2 className="text-foreground text-base font-semibold">Summary</h2>
         <p className="text-muted-foreground mt-0.5 text-[13px]">
-          Subgraph composition changes introduced by this version.
+          Changes introduced by this version.
         </p>
       </div>
 
@@ -1203,12 +1201,8 @@ export const GraphVersionSummary = (props: {
       <div className="border-border bg-neutral-2 dark:bg-neutral-3 overflow-hidden rounded-xl border">
         <div className="border-border flex items-center justify-between border-b px-5 py-3">
           <div className="text-muted-foreground flex items-center gap-2 text-[11px] font-medium uppercase tracking-[0.14em]">
-            <span>Subgraph Overview</span>
+            <span>Subgraph Change Overview</span>
           </div>
-          <span className="font-mono-tight text-muted-foreground text-[11px]">
-            {graphVersion.subgraphDiffs.length} subgraph
-            {graphVersion.subgraphDiffs.length === 1 ? '' : 's'}
-          </span>
         </div>
         <ul className="divide-y">
           {graphVersion.subgraphDiffs
