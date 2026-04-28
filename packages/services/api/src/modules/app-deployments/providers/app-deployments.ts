@@ -376,13 +376,13 @@ export class AppDeployments {
     return await this.clickhouse
       .query({
         query: cSql`
-        SELECT
-          DISTINCT "document_hash" AS "hash"
-        FROM
-          "app_deployment_documents"
-        WHERE
-          "app_deployment_id" = ${appDeployment.id}
-      `,
+          SELECT
+            DISTINCT "document_hash" AS "hash"
+          FROM
+            "app_deployment_documents"
+          WHERE
+            "app_deployment_id" = ${appDeployment.id}
+        `,
         queryId: 'app-deployment-document-ids',
         timeout: 10_000,
       })
