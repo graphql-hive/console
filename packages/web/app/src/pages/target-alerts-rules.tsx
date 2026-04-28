@@ -4,7 +4,6 @@ import { ArrowDown } from 'lucide-react';
 import { useQuery } from 'urql';
 import { DataTable } from '@/components/base/data-table/data-table';
 import { PageLead } from '@/components/base/page-lead';
-import { type TableRowTint } from '@/components/base/table/table';
 import { BadgeRounded } from '@/components/ui/badge';
 import { Avatar } from '@/components/v2/avatar';
 import { graphql } from '@/gql';
@@ -122,18 +121,6 @@ function destinationLabel(channels: ReadonlyArray<{ type: string }>): string {
 function relativeTime(iso?: string | null): string {
   if (!iso) return '—';
   return formatDistanceToNow(new Date(iso), { addSuffix: true });
-}
-
-function ruleTint(row: RuleRow): TableRowTint | undefined {
-  if (row.state !== MetricAlertRuleState.Firing) return undefined;
-  switch (row.severity) {
-    case MetricAlertRuleSeverity.Critical:
-      return 'critical';
-    case MetricAlertRuleSeverity.Warning:
-      return 'warning';
-    case MetricAlertRuleSeverity.Info:
-      return 'info';
-  }
 }
 
 function SortableHeader({ column, label }: { column: Column<RuleRow, unknown>; label: string }) {
@@ -284,7 +271,6 @@ export function TargetAlertsRulesPage(props: {
           columns={RULE_COLUMNS}
           getRowId={r => r.id}
           emptyMessage="No alerts configured yet."
-          getRowTint={ruleTint}
           onRowClick={r => {
             void navigate({
               to: '/$organizationSlug/$projectSlug/$targetSlug/alerts/$ruleId',

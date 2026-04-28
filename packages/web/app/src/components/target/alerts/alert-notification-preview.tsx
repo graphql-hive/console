@@ -175,6 +175,7 @@ function WebhookPreview(props: PreviewProps) {
         </pre>
       </div>
       <Button
+        type="button"
         label="Copy JSON Schema"
         rightIcon={{
           icon: Copy,

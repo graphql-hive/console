@@ -18,7 +18,6 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-  type TableRowTint,
 } from '@/components/base/table/table';
 import { DataTablePagination } from './data-table-pagination';
 
@@ -35,8 +34,6 @@ export type DataTableProps<TData> = {
   renderSubComponent?: (row: Row<TData>) => ReactNode;
   /** Click handler invoked when a row is clicked (mutually exclusive with renderSubComponent). */
   onRowClick?: (row: TData) => void;
-  /** Tint applied to a row based on its data. */
-  getRowTint?: (row: TData) => TableRowTint | undefined;
 };
 
 export function DataTable<TData>({
@@ -47,7 +44,6 @@ export function DataTable<TData>({
   emptyMessage = 'No rows to display.',
   renderSubComponent,
   onRowClick,
-  getRowTint,
 }: DataTableProps<TData>) {
   const hasTrailingColumn = !!renderSubComponent || !!onRowClick;
   const table = useReactTable({
@@ -100,7 +96,6 @@ export function DataTable<TData>({
                   <TableRow
                     data-state={row.getIsExpanded() ? 'expanded' : undefined}
                     onClick={handleClick}
-                    tint={getRowTint?.(row.original)}
                   >
                     {row.getVisibleCells().map(cell => (
                       <TableCell key={cell.id}>
