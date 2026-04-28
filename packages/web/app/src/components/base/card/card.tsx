@@ -1,11 +1,7 @@
 import { type ReactElement, type ReactNode } from 'react';
 
 export function Card({ children }: { children: ReactNode }) {
-  return (
-    <div className="bg-neutral-2 dark:bg-neutral-1 border-neutral-4 rounded-lg border">
-      {children}
-    </div>
-  );
+  return <div className="bg-neutral-1 border-neutral-4 rounded-lg border">{children}</div>;
 }
 
 export function CardHeader({ children }: { children: ReactNode }) {

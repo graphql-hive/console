@@ -40,7 +40,7 @@ export type DataTableProps<TData> = {
 export function DataTable<TData>({
   data,
   columns,
-  pageSize = 10,
+  pageSize = 20,
   getRowId,
   emptyMessage = 'No rows to display.',
   renderSubComponent,
