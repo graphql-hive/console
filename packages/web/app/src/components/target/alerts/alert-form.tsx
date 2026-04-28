@@ -319,7 +319,9 @@ export function ruleToFormDefaults(rule: AlertFormRuleSeed): AlertFormValues {
     savedFilterId: rule.savedFilter?.id ?? '',
     confirmationMinutes: String(rule.confirmationMinutes),
     channels:
-      rule.channels.length > 0 ? rule.channels.map(c => ({ channelId: c.id })) : [{ channelId: '' }],
+      rule.channels.length > 0
+        ? rule.channels.map(c => ({ channelId: c.id }))
+        : [{ channelId: '' }],
   };
 }
 
@@ -497,9 +499,7 @@ export function AlertForm(props: AlertFormProps) {
         className={showPreview ? 'flex gap-8' : undefined}
       >
         <div
-          className={
-            showPreview ? 'min-w-0 max-w-[700px] space-y-6' : 'min-w-0 flex-1 space-y-6'
-          }
+          className={showPreview ? 'min-w-0 max-w-[700px] space-y-6' : 'min-w-0 flex-1 space-y-6'}
         >
           {/* Section 1: Destination */}
           <Card>
@@ -643,9 +643,7 @@ export function AlertForm(props: AlertFormProps) {
                               key={sev.value}
                               value={sev.value}
                               label={sev.label}
-                              indicator={
-                                <span className={`size-2 rounded-full ${sev.dotClass}`} />
-                              }
+                              indicator={<span className={`size-2 rounded-full ${sev.dotClass}`} />}
                             />
                           ))}
                         </RadioGroup>

@@ -2,8 +2,8 @@ import { useState, type ReactNode } from 'react';
 import { Check, ChevronDown } from 'lucide-react';
 import { Select as BaseSelect } from '@base-ui/react/select';
 import { Button } from '../../button/button';
-import { FloatingSearch } from '../floating-search';
 import { useFloatingPortalContainer } from '../floating-portal-container';
+import { FloatingSearch } from '../floating-search';
 import {
   floatingEmptyState,
   floatingScrollArea,

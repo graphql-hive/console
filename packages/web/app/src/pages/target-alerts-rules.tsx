@@ -13,8 +13,8 @@ import {
   MetricAlertRuleState,
   MetricAlertRuleType,
 } from '@/gql/graphql';
-import { createColumnHelper, type Column, type ColumnDef } from '@tanstack/react-table';
 import { useNavigate } from '@tanstack/react-router';
+import { createColumnHelper, type Column, type ColumnDef } from '@tanstack/react-table';
 
 const TargetAlertsRulesPage_Query = graphql(`
   query TargetAlertsRulesPage_Query(
@@ -173,12 +173,8 @@ const RULE_COLUMNS: ColumnDef<RuleRow, any>[] = [
   columnHelper.accessor('lastTriggeredAt', {
     header: ({ column }) => <SortableHeader column={column} label="Last triggered" />,
     sortingFn: (a, b) => {
-      const av = a.original.lastTriggeredAt
-        ? new Date(a.original.lastTriggeredAt).getTime()
-        : 0;
-      const bv = b.original.lastTriggeredAt
-        ? new Date(b.original.lastTriggeredAt).getTime()
-        : 0;
+      const av = a.original.lastTriggeredAt ? new Date(a.original.lastTriggeredAt).getTime() : 0;
+      const bv = b.original.lastTriggeredAt ? new Date(b.original.lastTriggeredAt).getTime() : 0;
       return av - bv;
     },
     cell: info => (

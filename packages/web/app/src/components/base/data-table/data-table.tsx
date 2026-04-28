@@ -1,6 +1,15 @@
 import { Fragment, type ReactNode } from 'react';
 import { ChevronDown, ChevronRight } from 'lucide-react';
 import {
+  Table,
+  TableBody,
+  TableCell,
+  TableExpandedRow,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/base/table/table';
+import {
   flexRender,
   getCoreRowModel,
   getExpandedRowModel,
@@ -10,15 +19,6 @@ import {
   type ColumnDef,
   type Row,
 } from '@tanstack/react-table';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableExpandedRow,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/base/table/table';
 import { DataTablePagination } from './data-table-pagination';
 
 export type DataTableProps<TData> = {

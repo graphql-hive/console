@@ -17,7 +17,7 @@ const sample: Alert[] = Array.from({ length: 47 }, (_, i) => ({
   id: `alert-${i + 1}`,
   name: `Alert rule #${i + 1}`,
   severity: (['Info', 'Warning', 'Critical'] as const)[i % 3],
-  firedAt: new Date(Date.now() - i * 3600_000).toISOString(),
+  firedAt: new Date(Date.now() - i * 3_600_000).toISOString(),
 }));
 
 const columnHelper = createColumnHelper<Alert>();
