@@ -67,6 +67,7 @@ import { ProjectAlertsPage } from './pages/project-alerts';
 import { ProjectSettingsPage, ProjectSettingsPageEnum } from './pages/project-settings';
 import { TargetPage } from './pages/target';
 import { TargetAlertsPage } from './pages/target-alerts';
+import { AlertActivitySearch } from './components/target/alerts/search-schemas';
 import { TargetAlertsActivityPage } from './pages/target-alerts-activity';
 import { TargetAlertsCreatePage } from './pages/target-alerts-create';
 import { TargetAlertsDetailPage } from './pages/target-alerts-detail';
@@ -676,7 +677,7 @@ const targetAlertsIndexRoute = createRoute({
   component: function TargetAlertsIndexRoute() {
     const params = targetAlertsIndexRoute.useParams();
     return (
-      <Navigate to="/$organizationSlug/$projectSlug/$targetSlug/alerts/rules" params={params} />
+      <Navigate to="/$organizationSlug/$projectSlug/$targetSlug/alerts/activity" params={params} />
     );
   },
 });
@@ -699,6 +700,7 @@ const targetAlertsRulesRoute = createRoute({
 const targetAlertsActivityRoute = createRoute({
   getParentRoute: () => targetAlertsRoute,
   path: 'activity',
+  validateSearch: AlertActivitySearch.parse,
   component: function TargetAlertsActivityRoute() {
     const { organizationSlug, projectSlug, targetSlug } = targetAlertsActivityRoute.useParams();
     return (
