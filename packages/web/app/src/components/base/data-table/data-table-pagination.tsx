@@ -45,7 +45,7 @@ export function DataTablePagination({
     <nav
       role="navigation"
       aria-label="Pagination"
-      className="bg-neutral-2 dark:bg-neutral-3 flex h-[36px] items-center justify-center gap-1 text-sm"
+      className="border-neutral-4 bg-neutral-2 dark:bg-neutral-3 flex h-[36px] w-full items-center justify-center gap-1 border-t text-sm"
     >
       <button
         type="button"

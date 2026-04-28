@@ -1,13 +1,5 @@
 import type React from 'react';
 
-export function DataTableContainer({ children }: { children: React.ReactNode }) {
-  return (
-    <div className="relative w-full overflow-auto">
-      <table className="w-full text-sm">{children}</table>
-    </div>
-  );
-}
-
 export function DataTableHeader({ children }: { children: React.ReactNode }) {
   return <thead className="[&_tr:hover]:bg-transparent">{children}</thead>;
 }
@@ -67,7 +59,7 @@ export function DataTableCell({
       : variant === 'empty'
         ? 'text-neutral-10 h-24 text-center align-middle'
         : variant === 'panel'
-          ? 'bg-neutral-2 p-0 align-middle'
+          ? 'p-0 align-middle'
           : 'h-12 px-4 align-middle';
   return (
     <td colSpan={colSpan} className={className}>
@@ -84,7 +76,7 @@ export function DataTableExpandedRow({
   children: React.ReactNode;
 }) {
   return (
-    <tr className="bg-neutral-2">
+    <tr className="bg-neutral-3 border-neutral-5 border-b">
       <DataTableCell colSpan={colSpan} variant="panel">
         {children}
       </DataTableCell>
