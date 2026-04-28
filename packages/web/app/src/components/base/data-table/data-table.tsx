@@ -1,15 +1,6 @@
 import { Fragment, type ReactNode } from 'react';
 import { ChevronDown, ChevronRight } from 'lucide-react';
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableExpandedRow,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/base/table/table';
-import {
   flexRender,
   getCoreRowModel,
   getExpandedRowModel,
@@ -19,6 +10,15 @@ import {
   type ColumnDef,
   type Row,
 } from '@tanstack/react-table';
+import {
+  DataTableBody,
+  DataTableCell,
+  DataTableContainer,
+  DataTableExpandedRow,
+  DataTableHead,
+  DataTableHeader,
+  DataTableRow,
+} from './data-table-components';
 import { DataTablePagination } from './data-table-pagination';
 
 export type DataTableProps<TData> = {
@@ -65,28 +65,28 @@ export function DataTable<TData>({
 
   return (
     <div className="border-neutral-4 bg-neutral-1 dark:bg-neutral-2 overflow-hidden rounded-md border">
-      <Table>
-        <TableHeader>
+      <DataTableContainer>
+        <DataTableHeader>
           {table.getHeaderGroups().map(headerGroup => (
-            <TableRow key={headerGroup.id}>
+            <DataTableRow key={headerGroup.id}>
               {headerGroup.headers.map(header => (
-                <TableHead key={header.id}>
+                <DataTableHead key={header.id}>
                   {header.isPlaceholder
                     ? null
                     : flexRender(header.column.columnDef.header, header.getContext())}
-                </TableHead>
+                </DataTableHead>
               ))}
-              {hasTrailingColumn ? <TableHead compact /> : null}
-            </TableRow>
+              {hasTrailingColumn ? <DataTableHead compact /> : null}
+            </DataTableRow>
           ))}
-        </TableHeader>
-        <TableBody>
+        </DataTableHeader>
+        <DataTableBody>
           {rows.length === 0 ? (
-            <TableRow>
-              <TableCell colSpan={totalColumnCount} variant="empty">
+            <DataTableRow>
+              <DataTableCell colSpan={totalColumnCount} variant="empty">
                 {emptyMessage}
-              </TableCell>
-            </TableRow>
+              </DataTableCell>
+            </DataTableRow>
           ) : (
             rows.map(row => {
               const handleClick = renderSubComponent
@@ -96,17 +96,17 @@ export function DataTable<TData>({
                   : undefined;
               return (
                 <Fragment key={row.id}>
-                  <TableRow
+                  <DataTableRow
                     data-state={row.getIsExpanded() ? 'expanded' : undefined}
                     onClick={handleClick}
                   >
                     {row.getVisibleCells().map(cell => (
-                      <TableCell key={cell.id}>
+                      <DataTableCell key={cell.id}>
                         {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                      </TableCell>
+                      </DataTableCell>
                     ))}
                     {hasTrailingColumn ? (
-                      <TableCell variant="compact">
+                      <DataTableCell variant="compact">
                         {renderSubComponent ? (
                           <ChevronDown
                             className={`size-4 transition-transform ${
@@ -116,20 +116,20 @@ export function DataTable<TData>({
                         ) : (
                           <ChevronRight className="size-4" />
                         )}
-                      </TableCell>
+                      </DataTableCell>
                     ) : null}
-                  </TableRow>
+                  </DataTableRow>
                   {renderSubComponent && row.getIsExpanded() ? (
-                    <TableExpandedRow colSpan={totalColumnCount}>
+                    <DataTableExpandedRow colSpan={totalColumnCount}>
                       {renderSubComponent(row)}
-                    </TableExpandedRow>
+                    </DataTableExpandedRow>
                   ) : null}
                 </Fragment>
               );
             })
           )}
-        </TableBody>
-      </Table>
+        </DataTableBody>
+      </DataTableContainer>
       {table.getPageCount() > 1 ? (
         <div className="border-neutral-4 bg-neutral-2 border-t">
           <DataTablePagination

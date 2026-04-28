@@ -1,6 +1,6 @@
 import type React from 'react';
 
-export function Table({ children }: { children: React.ReactNode }) {
+export function DataTableContainer({ children }: { children: React.ReactNode }) {
   return (
     <div className="relative w-full overflow-auto">
       <table className="w-full text-sm">{children}</table>
@@ -8,15 +8,15 @@ export function Table({ children }: { children: React.ReactNode }) {
   );
 }
 
-export function TableHeader({ children }: { children: React.ReactNode }) {
+export function DataTableHeader({ children }: { children: React.ReactNode }) {
   return <thead className="[&_tr:hover]:bg-transparent">{children}</thead>;
 }
 
-export function TableBody({ children }: { children: React.ReactNode }) {
+export function DataTableBody({ children }: { children: React.ReactNode }) {
   return <tbody className="[&>tr:last-child]:border-0">{children}</tbody>;
 }
 
-export function TableRow({
+export function DataTableRow({
   children,
   onClick,
   'data-state': dataState,
@@ -26,7 +26,7 @@ export function TableRow({
   'data-state'?: 'expanded';
 }) {
   const base =
-    'border-neutral-4 hover:bg-neutral-2 dark:hover:bg-neutral-3 data-[state=expanded]:bg-neutral-4 data-[state=expanded]:hover:bg-neutral-4 data-[state=expanded]:border-b-0 border-b transition-colors';
+    'border-neutral-5 hover:bg-neutral-3 dark:hover:bg-neutral-3 data-[state=expanded]:bg-neutral-3 data-[state=expanded]:border-b-0 border-b transition-colors';
   const interactive = onClick ? ' cursor-pointer' : '';
   return (
     <tr data-state={dataState} onClick={onClick} className={base + interactive}>
@@ -35,7 +35,7 @@ export function TableRow({
   );
 }
 
-export function TableHead({
+export function DataTableHead({
   children,
   compact,
 }: {
@@ -52,7 +52,7 @@ export function TableHead({
   );
 }
 
-export function TableCell({
+export function DataTableCell({
   children,
   colSpan,
   variant,
@@ -76,7 +76,7 @@ export function TableCell({
   );
 }
 
-export function TableExpandedRow({
+export function DataTableExpandedRow({
   colSpan,
   children,
 }: {
@@ -85,9 +85,9 @@ export function TableExpandedRow({
 }) {
   return (
     <tr className="bg-neutral-2">
-      <TableCell colSpan={colSpan} variant="panel">
+      <DataTableCell colSpan={colSpan} variant="panel">
         {children}
-      </TableCell>
+      </DataTableCell>
     </tr>
   );
 }
