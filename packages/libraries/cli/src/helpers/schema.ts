@@ -9,6 +9,7 @@ import type { BaseLoaderOptions, Loader, Source } from '@graphql-tools/utils';
 import type { TypedDocumentNode } from '@graphql-typed-document-node/core';
 import { FragmentType, graphql, useFragment as unmaskFragment, useFragment } from '../gql';
 import { SchemaWarningConnection, SeverityLevelType } from '../gql/graphql';
+import { APIError, InvalidFederationSubgraphError } from './errors';
 import { graphqlRequest } from './graphql-request';
 import { Texture } from './texture/texture';
 
@@ -217,6 +218,65 @@ class FederationSubgraphUrlLoader implements Loader {
       },
     });
 
+    try {
+      const response = await client.request({
+        operation: parse(/* GraphQL */ `
+        query ${'GetFederationSchema'} {
+          _service {
+            sdl
+          }
+        }
+      `) as TypedDocumentNode<{ _service: { sdl: string } }, Record<string, never>>,
+      });
+
+      this.logger?.debug?.('Resolved subgraph SDL successfully.');
+
+      const sdl = minifySchema(response._service.sdl);
+
+      return [
+        {
+          document: parse(sdl),
+          rawSDL: sdl,
+        },
+      ];
+    } catch (err) {
+      if (
+        err instanceof APIError &&
+        err.graphQLErrors?.some(
+          err =>
+            err.message.includes('Cannot query field "_service" on type "Query"') ||
+            err.message.includes('Cannot query field "_sdl" on type "_Service"'),
+        )
+      ) {
+        throw new InvalidFederationSubgraphError(
+          'The GraphQL server responded with the following errors:\n' +
+            err.graphQLErrors.map(error => `- ${error.message}`).join('\n'),
+        );
+      }
+      throw err;
+    }
+  }
+}
+
+class FederationSubgraphIntrospectionThenGraphQLIntrospectionUrlLoader implements Loader {
+  private urlLoader = new UrlLoader();
+  private federationLoader: FederationSubgraphUrlLoader;
+
+  constructor(private logger?: LegacyLogger) {
+    this.federationLoader = new FederationSubgraphUrlLoader(logger);
+  }
+
+  async load(pointer: string, options: BaseLoaderOptions & { headers?: Record<string, string> }) {
+    const client = graphqlRequest({
+      logger: this.logger,
+      endpoint: pointer,
+      additionalHeaders: {
+        ...options?.headers,
+      },
+    });
+
+    this.logger?.debug?.('Identify whether the service is a Federation subgraph.');
+
     this.logger?.debug?.('Attempt "_Service" type lookup via "Query.__type".');
 
     // We can check if the schema is a subgraph by looking for the `_Service` type.
@@ -230,53 +290,12 @@ class FederationSubgraphUrlLoader implements Loader {
       `) as TypedDocumentNode<{ __type: null | { name: string } }, Record<string, never>>,
     });
 
-    if (isSubgraph.__type === null) {
-      this.logger?.debug?.('Type not found, this is not a Federation subgraph.');
-      return [];
+    if (isSubgraph.__type !== null) {
+      this.logger?.debug?.('Type found, this is a Federation subgraph.');
+      return await this.federationLoader.load(pointer, options);
     }
 
-    this.logger?.debug?.(
-      'Resolved "_Service" type. Federation subgraph detected.' +
-        'Attempt Federation introspection via "Query._service" field.',
-    );
-
-    const response = await client.request({
-      operation: parse(/* GraphQL */ `
-        query ${'GetFederationSchema'} {
-          _service {
-            sdl
-          }
-        }
-      `) as TypedDocumentNode<{ _service: { sdl: string } }, Record<string, never>>,
-    });
-
-    this.logger?.debug?.('Resolved subgraph SDL successfully.');
-
-    const sdl = minifySchema(response._service.sdl);
-
-    return [
-      {
-        document: parse(sdl),
-        rawSDL: sdl,
-      },
-    ];
-  }
-}
-
-class FederationSubgraphIntrospectionThenGraphQLIntrospectionUrlLoader implements Loader {
-  private urlLoader = new UrlLoader();
-  private federationLoader: FederationSubgraphUrlLoader;
-  constructor(private logger?: LegacyLogger) {
-    this.federationLoader = new FederationSubgraphUrlLoader(logger);
-  }
-
-  async load(pointer: string, options: BaseLoaderOptions & { headers?: Record<string, string> }) {
-    this.logger?.debug?.('Attempt federation introspection');
-    let result = await this.federationLoader.load(pointer, options);
-    if (!result.length) {
-      this.logger?.debug?.('Attempt GraphQL introspection');
-      result = await this.urlLoader.load(pointer, options);
-    }
-    return result;
+    this.logger?.debug?.('Type not found, this is a not a Federation subgraph.');
+    return await this.urlLoader.load(pointer, options);
   }
 }

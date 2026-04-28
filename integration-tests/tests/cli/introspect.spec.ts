@@ -298,3 +298,17 @@ test.concurrent('error handling on server with no introspection enabled', async 
   await expect(command).rejects.toThrow('[116]');
   await expect(command).rejects.not.toThrow('[115]');
 });
+
+test.concurrent(
+  'federation can be introspected when explicitly defined even if introspection is disabled',
+  async ({ expect }) => {
+    const server = await createHTTPGraphQLServer();
+    const command = introspect([
+      server.url + '/graphql-federation-no-introspection',
+      '--type',
+      'federation',
+    ]);
+
+    await expect(command).resolves.toContain('type Query {');
+  },
+);

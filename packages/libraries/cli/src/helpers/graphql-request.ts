@@ -102,6 +102,7 @@ export function graphqlRequest(config: {
         throw new APIError(
           jsonData.errors.map(e => e.message).join('\n'),
           cleanRequestId(response?.headers?.get('x-request-id')),
+          jsonData.errors,
         );
       }
 

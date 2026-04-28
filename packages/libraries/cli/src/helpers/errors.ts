@@ -228,7 +228,11 @@ export class NetworkError extends HiveCLIError {
 /** GraphQL Errors returned from an operation. Note that some GraphQL Errors that require specific steps to correct are handled through other error types. */
 export class APIError extends HiveCLIError {
   public ref?: string;
-  constructor(cause: Error | string, requestId?: string) {
+  constructor(
+    cause: Error | string,
+    requestId?: string,
+    public graphQLErrors?: ReadonlyArray<GraphQLError>,
+  ) {
     super(
       ExitCode.ERROR,
       errorCode(ErrorCategory.GENERIC, 15),
@@ -392,6 +396,16 @@ export class InvalidTargetError extends HiveCLIError {
       ExitCode.BAD_INIT,
       errorCode(ErrorCategory.GENERIC, 20),
       `Invalid slug or ID provided for option "--target". Must match target slug "$organization_slug/$project_slug/$target_slug" (e.g. "the-guild/graphql-hive/staging") or UUID (e.g. c8164307-0b42-473e-a8c5-2860bb4beff6).`,
+    );
+  }
+}
+
+export class InvalidFederationSubgraphError extends HiveCLIError {
+  constructor(reason?: string) {
+    super(
+      ExitCode.BAD_INIT,
+      errorCode(ErrorCategory.GENERIC, 21),
+      `The provided service URL does not point to a valid Federation subgraph.${reason ? `\n${reason}\n` : ''}`,
     );
   }
 }
