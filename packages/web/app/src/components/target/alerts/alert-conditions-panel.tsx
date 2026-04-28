@@ -1,9 +1,18 @@
+import { useState } from 'react';
 import { formatDistanceToNow } from 'date-fns';
 import { ExternalLink, Info } from 'lucide-react';
 import { Button } from '@/components/base/button/button';
 import { DescriptionList } from '@/components/base/description-list/description-list';
+import { FloatingPortalContainerProvider } from '@/components/base/floating/floating-portal-container';
 import { savedFilterToSearchParams } from '@/components/target/insights/search-params';
 import { BadgeRounded } from '@/components/ui/badge';
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+} from '@/components/ui/sheet';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Avatar } from '@/components/v2/avatar';
 import {
@@ -13,6 +22,7 @@ import {
   MetricAlertRuleType,
 } from '@/gql/graphql';
 import { Link } from '@tanstack/react-router';
+import { AlertForm, ruleToFormDefaults } from './alert-form';
 
 const TYPE_CATEGORY: Record<MetricAlertRuleType, string> = {
   [MetricAlertRuleType.ErrorRate]: 'Reliability',
@@ -45,15 +55,20 @@ const CHANNEL_TYPE_LABEL: Record<string, string> = {
 
 function destinationLabel(channels: ReadonlyArray<{ type: string }>): string {
   if (channels.length === 0) return '—';
-  // Dedupe by type, preserve first-seen order, fall back to raw type if unknown.
-  const seen = new Set<string>();
-  const labels: string[] = [];
+  // Group by type, preserve first-seen order, suffix with a count when there are multiples.
+  const counts = new Map<string, number>();
+  const order: string[] = [];
   for (const c of channels) {
-    if (seen.has(c.type)) continue;
-    seen.add(c.type);
-    labels.push(CHANNEL_TYPE_LABEL[c.type] ?? c.type);
+    if (!counts.has(c.type)) order.push(c.type);
+    counts.set(c.type, (counts.get(c.type) ?? 0) + 1);
   }
-  return labels.join(', ');
+  return order
+    .map(type => {
+      const label = CHANNEL_TYPE_LABEL[type] ?? type;
+      const count = counts.get(type) ?? 0;
+      return count > 1 ? `${label} (${count})` : label;
+    })
+    .join(', ');
 }
 
 function formatTimeWindow(minutes: number): string {
@@ -85,6 +100,8 @@ type SavedFilter = {
 
 export type AlertConditionsPanelProps = {
   rule: {
+    id: string;
+    name: string;
     type: MetricAlertRuleType;
     metric?: string | null;
     severity: MetricAlertRuleSeverity;
@@ -107,7 +124,7 @@ export type AlertConditionsPanelProps = {
 
 function RelativeTimestamp({ iso }: { iso: string }) {
   return (
-    <span className="text-neutral-12 inline-flex items-center gap-1 font-mono text-[12px]">
+    <span className="text-neutral-12 inline-flex items-center gap-1 font-mono text-[11px]">
       {formatDistanceToNow(new Date(iso), { addSuffix: true })}
       <TooltipProvider delayDuration={100}>
         <Tooltip>
@@ -139,6 +156,7 @@ export function AlertConditionsPanel({
   projectSlug,
   targetSlug,
 }: AlertConditionsPanelProps) {
+  console.log('AlertConditionsPanel', { rule });
   const metricLabel =
     rule.type === MetricAlertRuleType.Latency && rule.metric
       ? `${rule.metric.toLowerCase()} latency`
@@ -241,18 +259,61 @@ export function AlertConditionsPanel({
         ]}
       />
 
-      <TooltipProvider delayDuration={100}>
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <div className="flex">
-              <Button disabled label="Modify this alert" />
-            </div>
-          </TooltipTrigger>
-          <TooltipContent>
-            <span className="text-xs">Coming soon</span>
-          </TooltipContent>
-        </Tooltip>
-      </TooltipProvider>
+      <ModifyAlertSheet
+        rule={rule}
+        organizationSlug={organizationSlug}
+        projectSlug={projectSlug}
+        targetSlug={targetSlug}
+      />
     </div>
+  );
+}
+
+function ModifyAlertSheet({
+  rule,
+  organizationSlug,
+  projectSlug,
+  targetSlug,
+}: {
+  rule: AlertConditionsPanelProps['rule'];
+  organizationSlug: string;
+  projectSlug: string;
+  targetSlug: string;
+}) {
+  const [open, setOpen] = useState(false);
+  const [contentEl, setContentEl] = useState<HTMLElement | null>(null);
+
+  return (
+    <Sheet open={open} onOpenChange={setOpen}>
+      <div className="flex">
+        <Button label="Modify this alert" onClick={() => setOpen(true)} />
+      </div>
+      <SheetContent
+        ref={setContentEl}
+        side="right"
+        className="flex max-h-screen w-[640px] min-w-[600px] flex-col overflow-y-auto"
+      >
+        <SheetHeader>
+          <SheetTitle>Modify alert</SheetTitle>
+          <SheetDescription>
+            Update the conditions and destinations for this alert.
+          </SheetDescription>
+        </SheetHeader>
+        {open ? (
+          <FloatingPortalContainerProvider container={contentEl}>
+            <AlertForm
+              mode="edit"
+              ruleId={rule.id}
+              organizationSlug={organizationSlug}
+              projectSlug={projectSlug}
+              targetSlug={targetSlug}
+              defaultValues={ruleToFormDefaults(rule)}
+              onSuccess={() => setOpen(false)}
+              onCancel={() => setOpen(false)}
+            />
+          </FloatingPortalContainerProvider>
+        ) : null}
+      </SheetContent>
+    </Sheet>
   );
 }

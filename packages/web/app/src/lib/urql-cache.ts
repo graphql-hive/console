@@ -387,6 +387,12 @@ const deleteSavedFilter: TypedDocumentNodeUpdateResolver<
   );
 };
 
+const updateMetricAlertRule: UpdateResolver = (_result, args, cache) => {
+  const ruleId = (args as { input?: { ruleId?: string } } | null)?.input?.ruleId;
+  if (!ruleId) return;
+  cache.invalidate({ __typename: 'MetricAlertRule', id: ruleId });
+};
+
 // UpdateResolver
 export const Mutation = {
   createOrganization,
@@ -405,4 +411,5 @@ export const Mutation = {
   deleteOperationInDocumentCollection,
   createOperationInDocumentCollection,
   deleteSavedFilter,
+  updateMetricAlertRule,
 };
