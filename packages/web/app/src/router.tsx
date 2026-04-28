@@ -702,16 +702,23 @@ const targetAlertsActivityRoute = createRoute({
   component: TargetAlertsActivityPage,
 });
 
+const TargetAlertsCreateSearch = z.object({
+  savedFilterId: z.string().optional(),
+});
+
 const targetAlertsCreateRoute = createRoute({
   getParentRoute: () => targetAlertsRoute,
   path: 'create',
+  validateSearch: TargetAlertsCreateSearch.parse,
   component: function TargetAlertsCreateRoute() {
     const { organizationSlug, projectSlug, targetSlug } = targetAlertsCreateRoute.useParams();
+    const { savedFilterId } = targetAlertsCreateRoute.useSearch();
     return (
       <TargetAlertsCreatePage
         organizationSlug={organizationSlug}
         projectSlug={projectSlug}
         targetSlug={targetSlug}
+        savedFilterId={savedFilterId}
       />
     );
   },

@@ -1,13 +1,22 @@
-import { AlertForm } from '@/components/target/alerts/alert-form';
+import {
+  AlertForm,
+  DEFAULT_ALERT_FORM_VALUES,
+  type AlertFormValues,
+} from '@/components/target/alerts/alert-form';
 import { useNavigate } from '@tanstack/react-router';
 
 export function TargetAlertsCreatePage(props: {
   organizationSlug: string;
   projectSlug: string;
   targetSlug: string;
+  savedFilterId?: string;
 }) {
-  const { organizationSlug, projectSlug, targetSlug } = props;
+  const { organizationSlug, projectSlug, targetSlug, savedFilterId } = props;
   const navigate = useNavigate();
+
+  const defaultValues: AlertFormValues | undefined = savedFilterId
+    ? { ...DEFAULT_ALERT_FORM_VALUES, savedFilterId }
+    : undefined;
 
   return (
     <AlertForm
@@ -15,6 +24,8 @@ export function TargetAlertsCreatePage(props: {
       organizationSlug={organizationSlug}
       projectSlug={projectSlug}
       targetSlug={targetSlug}
+      defaultValues={defaultValues}
+      expandAdvanced={!!savedFilterId}
       showPreview
       onSuccess={ruleId => {
         void navigate({

@@ -1,11 +1,13 @@
 import { ReactElement, useCallback, useEffect, useMemo, useState } from 'react';
 import { formatDate, formatISO, subDays } from 'date-fns';
-import { ChevronDown, ChevronRight, Lock, MoreVertical, Users } from 'lucide-react';
+import { ChevronDown, Lock, MoreVertical, Users } from 'lucide-react';
 import { useMutation, useQuery } from 'urql';
 import { Button as BaseButton } from '@/components/base/button/button';
+import { DataTable } from '@/components/base/data-table/data-table';
 import { FilterDropdown } from '@/components/base/floating/filter-dropdown/filter-dropdown';
 import type { FilterItem, FilterSelection } from '@/components/base/floating/filter-dropdown/types';
 import { Menu, MenuItem } from '@/components/base/floating/menu/menu';
+import { PageLead } from '@/components/base/page-lead';
 import { Page, TargetLayout } from '@/components/layouts/target';
 import { BackLink } from '@/components/navigation/back-link';
 import { savedFilterToSearchParams } from '@/components/target/insights/search-params';
@@ -20,23 +22,15 @@ import {
 import { EmptyList } from '@/components/ui/empty-list';
 import { Input } from '@/components/ui/input';
 import { Meta } from '@/components/ui/meta';
-import { Subtitle, Title } from '@/components/ui/page';
 import { QueryError } from '@/components/ui/query-error';
 import { Spinner } from '@/components/ui/spinner';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
 import { useToast } from '@/components/ui/use-toast';
 import { graphql } from '@/gql';
 import { SavedFilterVisibilityType } from '@/gql/graphql';
 import { parse } from '@/lib/date-math';
 import type { ResultOf } from '@graphql-typed-document-node/core';
 import { Link } from '@tanstack/react-router';
+import { createColumnHelper, type ColumnDef } from '@tanstack/react-table';
 
 export const ManageFilters_SavedFiltersQuery = graphql(`
   query ManageFilters_SavedFiltersQuery(
@@ -169,43 +163,42 @@ type SavedFilterNode = NonNullable<
   ResultOf<typeof ManageFilters_SavedFiltersQuery>['target']
 >['savedFilters']['edges'][number]['node'];
 
-function SavedFilterRow({
+function NameCell({
   filter,
-  expanded,
-  onToggleExpand,
+  isRenaming,
+  onStopRename,
   organizationSlug,
   projectSlug,
   targetSlug,
-  dataRetentionInDays,
 }: {
   filter: SavedFilterNode;
-  expanded: boolean;
-  onToggleExpand: () => void;
+  isRenaming: boolean;
+  onStopRename: () => void;
   organizationSlug: string;
   projectSlug: string;
   targetSlug: string;
-  dataRetentionInDays: number;
 }) {
-  const [, deleteSavedFilter] = useMutation(ManageFilters_DeleteSavedFilterMutation);
   const [updateResult, updateSavedFilter] = useMutation(ManageFilters_UpdateSavedFilterMutation);
   const { toast } = useToast();
-  const [isRenaming, setIsRenaming] = useState(false);
   const [renameValue, setRenameValue] = useState(filter.name);
+
+  useEffect(() => {
+    if (isRenaming) setRenameValue(filter.name);
+  }, [isRenaming, filter.name]);
 
   const handleRename = useCallback(async () => {
     const trimmed = renameValue.trim();
-    if (!trimmed || trimmed === filter.name) return;
-
+    if (!trimmed || trimmed === filter.name) {
+      onStopRename();
+      return;
+    }
     const result = await updateSavedFilter({
       input: {
         id: filter.id,
-        target: {
-          bySelector: { organizationSlug, projectSlug, targetSlug },
-        },
+        target: { bySelector: { organizationSlug, projectSlug, targetSlug } },
         name: trimmed,
       },
     });
-
     if (result.error || result.data?.updateSavedFilter.error) {
       toast({
         variant: 'destructive',
@@ -213,11 +206,8 @@ function SavedFilterRow({
         description: result.error?.message || result.data?.updateSavedFilter.error?.message,
       });
     } else {
-      toast({
-        title: 'Filter renamed',
-        description: 'The saved filter has been renamed.',
-      });
-      setIsRenaming(false);
+      toast({ title: 'Filter renamed', description: 'The saved filter has been renamed.' });
+      onStopRename();
     }
   }, [
     renameValue,
@@ -228,170 +218,126 @@ function SavedFilterRow({
     targetSlug,
     updateSavedFilter,
     toast,
+    onStopRename,
   ]);
 
-  const handleDelete = useCallback(() => {
-    void deleteSavedFilter({
-      input: {
-        target: {
-          bySelector: {
-            organizationSlug,
-            projectSlug,
-            targetSlug,
-          },
-        },
-        id: filter.id,
-      },
-    }).then(result => {
-      if (result.error || result.data?.deleteSavedFilter.error) {
-        toast({
-          variant: 'destructive',
-          title: 'Error',
-          description: result.error?.message || result.data?.deleteSavedFilter.error?.message,
-        });
-      } else {
-        toast({
-          title: 'Filter deleted',
-          description: 'The saved filter has been deleted.',
-        });
-      }
-    });
-  }, [deleteSavedFilter, filter.id, organizationSlug, projectSlug, targetSlug, toast]);
-
-  const canManage = filter.viewerCanUpdate || filter.viewerCanDelete;
-  const ChevronIcon = expanded ? ChevronDown : ChevronRight;
+  if (!isRenaming) return <span className="font-medium">{filter.name}</span>;
 
   return (
-    <>
-      <TableRow
-        className={canManage ? 'cursor-pointer' : 'hover:bg-transparent'}
-        onClick={canManage ? onToggleExpand : undefined}
+    <span className="flex items-center gap-2" onClick={e => e.stopPropagation()}>
+      <Input
+        value={renameValue}
+        onChange={e => setRenameValue(e.target.value)}
+        onKeyDown={e => {
+          if (e.key === 'Enter') void handleRename();
+          else if (e.key === 'Escape') onStopRename();
+        }}
+        className="h-8"
+      />
+      <Button
+        variant="primary"
+        size="sm"
+        onClick={() => void handleRename()}
+        disabled={
+          updateResult.fetching || !renameValue.trim() || renameValue.trim() === filter.name
+        }
       >
-        <TableCell className="w-8">
-          {canManage && <ChevronIcon className="text-neutral-10 size-4" />}
-        </TableCell>
-        <TableCell
-          className="font-medium"
-          onClick={isRenaming ? e => e.stopPropagation() : undefined}
-        >
-          {isRenaming ? (
-            <span className="flex items-center gap-2">
-              <Input
-                value={renameValue}
-                onChange={e => setRenameValue(e.target.value)}
-                onKeyDown={e => {
-                  if (e.key === 'Enter') {
-                    void handleRename();
-                  } else if (e.key === 'Escape') {
-                    setIsRenaming(false);
-                    setRenameValue(filter.name);
-                  }
-                }}
-                className="h-8"
-              />
-              <Button
-                variant="primary"
-                size="sm"
-                onClick={() => void handleRename()}
-                disabled={
-                  updateResult.fetching || renameValue.trim() === filter.name || !renameValue.trim()
-                }
-              >
-                Save
-              </Button>
-            </span>
-          ) : (
-            filter.name
-          )}
-        </TableCell>
-        <TableCell>{filter.viewsCount.toLocaleString()}</TableCell>
-        <TableCell>{formatDate(filter.createdAt, 'MMM d, yyyy')}</TableCell>
-        <TableCell>{formatDate(filter.updatedAt, 'MMM d, yyyy')}</TableCell>
-        <TableCell>
-          <span className="flex items-center gap-1.5">
-            {filter.visibility === SavedFilterVisibilityType.Shared ? (
-              <>
-                <Users className="text-neutral-10 size-4" />
-                Shared
-              </>
-            ) : (
-              <>
-                <Lock className="text-neutral-10 size-4" />
-                Private
-              </>
-            )}
-          </span>
-        </TableCell>
-        <TableCell
-          className="w-12 text-right"
-          onClick={e => {
-            e.stopPropagation();
-          }}
-        >
-          <Menu
-            trigger={
-              <Button variant="ghost" className="flex size-8 p-0">
-                <MoreVertical className="size-4" />
-                <span className="sr-only">Open menu</span>
-              </Button>
-            }
-            align="end"
-            sections={[
-              [
-                <MenuItem
-                  key="view"
-                  render={
-                    <Link
-                      to="/$organizationSlug/$projectSlug/$targetSlug/insights"
-                      params={{ organizationSlug, projectSlug, targetSlug }}
-                      search={savedFilterToSearchParams({
-                        ...filter,
-                        filters: {
-                          ...filter.filters,
-                          excludeOperations: filter.filters.excludeOperations ?? undefined,
-                          excludeClientFilters: filter.filters.excludeClientFilters ?? undefined,
-                        },
-                      })}
-                    />
-                  }
-                >
-                  View in Insights
-                </MenuItem>,
-                filter.viewerCanUpdate && (
-                  <MenuItem
-                    key="rename"
-                    onClick={() => {
-                      setRenameValue(filter.name);
-                      setIsRenaming(true);
-                    }}
-                  >
-                    Rename
-                  </MenuItem>
-                ),
-                filter.viewerCanDelete && (
-                  <MenuItem key="delete" variant="destructiveAction" onClick={handleDelete}>
-                    Delete
-                  </MenuItem>
-                ),
-              ],
-            ]}
-          />
-        </TableCell>
-      </TableRow>
-      {canManage && expanded && (
-        <TableRow>
-          <TableCell colSpan={7} className="px-10 py-4">
-            <SavedFilterRowFilters
-              filter={filter}
-              organizationSlug={organizationSlug}
-              projectSlug={projectSlug}
-              targetSlug={targetSlug}
-              dataRetentionInDays={dataRetentionInDays}
-            />
-          </TableCell>
-        </TableRow>
+        Save
+      </Button>
+    </span>
+  );
+}
+
+function VisibilityCell({ filter }: { filter: SavedFilterNode }) {
+  return (
+    <span className="flex items-center gap-1.5">
+      {filter.visibility === SavedFilterVisibilityType.Shared ? (
+        <>
+          <Users className="text-neutral-10 size-4" />
+          Shared
+        </>
+      ) : (
+        <>
+          <Lock className="text-neutral-10 size-4" />
+          Private
+        </>
       )}
-    </>
+    </span>
+  );
+}
+
+function ActionsCell({
+  filter,
+  onRename,
+  onDelete,
+  organizationSlug,
+  projectSlug,
+  targetSlug,
+}: {
+  filter: SavedFilterNode;
+  onRename: () => void;
+  onDelete: () => void;
+  organizationSlug: string;
+  projectSlug: string;
+  targetSlug: string;
+}) {
+  return (
+    <span className="flex justify-end" onClick={e => e.stopPropagation()}>
+      <Menu
+        trigger={
+          <Button variant="ghost" className="flex size-8 p-0">
+            <MoreVertical className="size-4" />
+            <span className="sr-only">Open menu</span>
+          </Button>
+        }
+        align="end"
+        sections={[
+          [
+            <MenuItem
+              key="view"
+              render={
+                <Link
+                  to="/$organizationSlug/$projectSlug/$targetSlug/insights"
+                  params={{ organizationSlug, projectSlug, targetSlug }}
+                  search={savedFilterToSearchParams({
+                    ...filter,
+                    filters: {
+                      ...filter.filters,
+                      excludeOperations: filter.filters.excludeOperations ?? undefined,
+                      excludeClientFilters: filter.filters.excludeClientFilters ?? undefined,
+                    },
+                  })}
+                />
+              }
+            >
+              View in Insights
+            </MenuItem>,
+            <MenuItem
+              key="create-alert"
+              render={
+                <Link
+                  to="/$organizationSlug/$projectSlug/$targetSlug/alerts/create"
+                  params={{ organizationSlug, projectSlug, targetSlug }}
+                  search={{ savedFilterId: filter.id }}
+                />
+              }
+            >
+              Create alert
+            </MenuItem>,
+            filter.viewerCanUpdate && (
+              <MenuItem key="rename" onClick={onRename}>
+                Rename
+              </MenuItem>
+            ),
+            filter.viewerCanDelete && (
+              <MenuItem key="delete" variant="destructiveAction" onClick={onDelete}>
+                Delete
+              </MenuItem>
+            ),
+          ],
+        ]}
+      />
+    </span>
   );
 }
 
@@ -410,7 +356,6 @@ function SavedFilterRowFilters({
 }) {
   const { operationHashes, clientFilters } = filter.filters;
 
-  // Date range state (relative strings like 'now-7d')
   const savedDateRange = filter.filters.dateRange ?? DEFAULT_DATE_RANGE;
   const [dateRange, setDateRange] = useState(savedDateRange);
 
@@ -435,7 +380,6 @@ function SavedFilterRowFilters({
     return { name: 'last7d', label: 'Last 7 days', range: DEFAULT_DATE_RANGE };
   }, [dateRange]);
 
-  // Resolve relative date range to ISO strings for the operationsStats query
   const resolvedPeriod = useMemo(() => {
     const from = parse(dateRange.from);
     const to = parse(dateRange.to);
@@ -447,7 +391,6 @@ function SavedFilterRowFilters({
     return { from: formatISO(fallbackFrom), to: formatISO(fallbackTo) };
   }, [dateRange]);
 
-  // Fetch all operations and clients for the date range
   const [opsQuery] = useQuery({
     query: ManageFilters_OperationStatsQuery,
     variables: {
@@ -456,7 +399,6 @@ function SavedFilterRowFilters({
     },
   });
 
-  // Build merged operation items (all from stats + any saved hashes not in stats)
   const { allOperationItems, hashToNameMap } = useMemo(() => {
     const map = new Map<string, string>();
     const statsOps = opsQuery.data?.target?.operationsStats?.operations?.edges ?? [];
@@ -475,7 +417,6 @@ function SavedFilterRowFilters({
         values: [],
       }));
 
-    // Add any saved hashes that aren't in the current stats (fallback: show hash as name)
     for (const hash of operationHashes) {
       if (!map.has(hash)) {
         items.push({ id: hash, name: hash, values: [], unavailable: true });
@@ -485,7 +426,6 @@ function SavedFilterRowFilters({
     return { allOperationItems: items, hashToNameMap: map };
   }, [opsQuery.data, operationHashes]);
 
-  // Build merged client items (all from stats + any saved clients not in stats)
   const allClientItems = useMemo<FilterItem[]>(() => {
     const statsClients = opsQuery.data?.target?.operationsStats?.clients?.edges ?? [];
     const clientNameSet = new Set(statsClients.map(e => e.node.name));
@@ -495,7 +435,6 @@ function SavedFilterRowFilters({
       values: e.node.versions.map(v => v.version),
     }));
 
-    // Add saved clients not in current stats, preserving their versions
     for (const cf of clientFilters) {
       if (!clientNameSet.has(cf.name)) {
         items.push({ name: cf.name, values: cf.versions ?? [], unavailable: true });
@@ -505,7 +444,6 @@ function SavedFilterRowFilters({
     return items;
   }, [opsQuery.data, clientFilters]);
 
-  // While stats are loading, use saved data as fallback for items
   const operationItems = opsQuery.fetching
     ? operationHashes.map(hash => ({ id: hash, name: hash, values: [] as string[] }))
     : allOperationItems;
@@ -513,7 +451,6 @@ function SavedFilterRowFilters({
     ? clientFilters.map(c => ({ name: c.name, values: c.versions ?? [] }))
     : allClientItems;
 
-  // Compute the "saved" selections (what's persisted in the database)
   const savedOperationSelections = useMemo<FilterSelection[]>(
     () =>
       operationHashes.map(hash => ({
@@ -532,7 +469,6 @@ function SavedFilterRowFilters({
     [clientFilters],
   );
 
-  // Mutable selections (initialized from saved data)
   const [operationSelections, setOperationSelections] =
     useState<FilterSelection[]>(savedOperationSelections);
   const [clientSelections, setClientSelections] =
@@ -546,7 +482,6 @@ function SavedFilterRowFilters({
     filter.filters.excludeClientFilters ?? false,
   );
 
-  // Sync state when saved filter data changes (e.g. after mutation updates cache)
   const filterDataKey = JSON.stringify(filter.filters);
   useEffect(() => {
     setOperationSelections(savedOperationSelections);
@@ -558,7 +493,6 @@ function SavedFilterRowFilters({
     setExcludeClientFilters(filter.filters.excludeClientFilters ?? false);
   }, [filterDataKey]);
 
-  // Detect changes from saved state (compare by identifiers, not display names)
   const hasChanges = useMemo(() => {
     if (showOperationFilter !== operationHashes.length > 0) return true;
     if (showClientFilter !== clientFilters.length > 0) return true;
@@ -600,7 +534,6 @@ function SavedFilterRowFilters({
     filter.filters.excludeClientFilters,
   ]);
 
-  // Cancel → reset to saved state
   const handleCancel = useCallback(() => {
     setOperationSelections(savedOperationSelections);
     setClientSelections(savedClientSelections);
@@ -619,12 +552,10 @@ function SavedFilterRowFilters({
     filter.filters.excludeClientFilters,
   ]);
 
-  // Update mutation
   const [updateResult, updateSavedFilter] = useMutation(ManageFilters_UpdateSavedFilterMutation);
   const { toast } = useToast();
 
   const handleSave = useCallback(async () => {
-    // Extract hashes from selections (id is the hash, fallback to name for backwards compat)
     const newOperationHashes = showOperationFilter
       ? operationSelections.map(s => s.id ?? s.name)
       : [];
@@ -640,9 +571,7 @@ function SavedFilterRowFilters({
     await updateSavedFilter({
       input: {
         id: filter.id,
-        target: {
-          bySelector: { organizationSlug, projectSlug, targetSlug },
-        },
+        target: { bySelector: { organizationSlug, projectSlug, targetSlug } },
         insightsFilter: {
           operationHashes: newOperationHashes,
           clientFilters: newClientFilters,
@@ -686,7 +615,7 @@ function SavedFilterRowFilters({
   const loading = opsQuery.fetching;
 
   return (
-    <div>
+    <div className="px-10 py-4">
       <div className="flex flex-wrap items-center gap-2">
         <DateRangePicker
           trigger={
@@ -761,53 +690,115 @@ function SavedFilterRowFilters({
   );
 }
 
+const columnHelper = createColumnHelper<SavedFilterNode>();
+
 function ManageFiltersContent(props: {
   organizationSlug: string;
   projectSlug: string;
   targetSlug: string;
 }) {
-  const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
+  const { organizationSlug, projectSlug, targetSlug } = props;
+  const [renamingId, setRenamingId] = useState<string | null>(null);
+  const [, deleteSavedFilter] = useMutation(ManageFilters_DeleteSavedFilterMutation);
+  const { toast } = useToast();
   const [query] = useQuery({
     query: ManageFilters_SavedFiltersQuery,
     variables: {
-      organizationSlug: props.organizationSlug,
-      selector: {
-        organizationSlug: props.organizationSlug,
-        projectSlug: props.projectSlug,
-        targetSlug: props.targetSlug,
-      },
+      organizationSlug,
+      selector: { organizationSlug, projectSlug, targetSlug },
     },
   });
 
   const dataRetentionInDays = query.data?.organization?.usageRetentionInDays ?? 30;
-
-  const toggleRow = useCallback((id: string) => {
-    setExpandedRows(prev => {
-      const next = new Set(prev);
-      if (next.has(id)) {
-        next.delete(id);
-      } else {
-        next.add(id);
-      }
-      return next;
-    });
-  }, []);
-
   const edges = query.data?.target?.savedFilters.edges ?? [];
 
-  const stats = useMemo(() => {
-    const filters = edges.map(e => e.node);
-    return {
+  const handleDelete = useCallback(
+    (filter: SavedFilterNode) => {
+      void deleteSavedFilter({
+        input: {
+          target: { bySelector: { organizationSlug, projectSlug, targetSlug } },
+          id: filter.id,
+        },
+      }).then(result => {
+        if (result.error || result.data?.deleteSavedFilter.error) {
+          toast({
+            variant: 'destructive',
+            title: 'Error',
+            description: result.error?.message || result.data?.deleteSavedFilter.error?.message,
+          });
+        } else {
+          toast({ title: 'Filter deleted', description: 'The saved filter has been deleted.' });
+        }
+      });
+    },
+    [deleteSavedFilter, organizationSlug, projectSlug, targetSlug, toast],
+  );
+
+  const filters: SavedFilterNode[] = useMemo(() => edges.map(e => e.node), [edges]);
+
+  const stats = useMemo(
+    () => ({
       total: filters.length,
       shared: filters.filter(f => f.visibility === SavedFilterVisibilityType.Shared).length,
       totalViews: filters.reduce((sum, f) => sum + f.viewsCount, 0),
-    };
-  }, [edges]);
+    }),
+    [filters],
+  );
+
+  const columns = useMemo<ColumnDef<SavedFilterNode, any>[]>(
+    () => [
+      columnHelper.accessor('name', {
+        header: 'Name',
+        cell: info => (
+          <NameCell
+            filter={info.row.original}
+            isRenaming={renamingId === info.row.original.id}
+            onStopRename={() => setRenamingId(null)}
+            organizationSlug={organizationSlug}
+            projectSlug={projectSlug}
+            targetSlug={targetSlug}
+          />
+        ),
+      }),
+      columnHelper.accessor('viewsCount', {
+        header: 'Views',
+        cell: info => info.getValue().toLocaleString(),
+      }),
+      columnHelper.accessor('createdAt', {
+        header: 'Created',
+        cell: info => formatDate(info.getValue(), 'MMM d, yyyy'),
+      }),
+      columnHelper.accessor('updatedAt', {
+        header: 'Modified',
+        cell: info => formatDate(info.getValue(), 'MMM d, yyyy'),
+      }),
+      columnHelper.display({
+        id: 'visibility',
+        header: 'Visibility',
+        cell: ctx => <VisibilityCell filter={ctx.row.original} />,
+      }),
+      columnHelper.display({
+        id: 'actions',
+        header: '',
+        cell: ctx => (
+          <ActionsCell
+            filter={ctx.row.original}
+            onRename={() => setRenamingId(ctx.row.original.id)}
+            onDelete={() => handleDelete(ctx.row.original)}
+            organizationSlug={organizationSlug}
+            projectSlug={projectSlug}
+            targetSlug={targetSlug}
+          />
+        ),
+      }),
+    ],
+    [renamingId, handleDelete, organizationSlug, projectSlug, targetSlug],
+  );
 
   if (query.error) {
     return (
       <QueryError
-        organizationSlug={props.organizationSlug}
+        organizationSlug={organizationSlug}
         error={query.error}
         showLogoutButton={false}
       />
@@ -822,7 +813,7 @@ function ManageFiltersContent(props: {
     );
   }
 
-  if (edges.length === 0) {
+  if (filters.length === 0) {
     return (
       <div className="py-8">
         <EmptyList
@@ -835,40 +826,28 @@ function ManageFiltersContent(props: {
 
   return (
     <>
-      <div className="mt-6 grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-3 gap-4">
         <StatCard label="Total Filters" value={stats.total} />
         <StatCard label="Shared Filters" value={stats.shared} />
         <StatCard label="Total Views" value={stats.totalViews} />
       </div>
 
       <div className="mt-8">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead className="w-8" />
-              <TableHead>Name</TableHead>
-              <TableHead>Views</TableHead>
-              <TableHead>Created</TableHead>
-              <TableHead>Modified</TableHead>
-              <TableHead>Visibility</TableHead>
-              <TableHead className="w-12" />
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {edges.map(edge => (
-              <SavedFilterRow
-                key={edge.node.id}
-                filter={edge.node}
-                expanded={expandedRows.has(edge.node.id)}
-                onToggleExpand={() => toggleRow(edge.node.id)}
-                organizationSlug={props.organizationSlug}
-                projectSlug={props.projectSlug}
-                targetSlug={props.targetSlug}
-                dataRetentionInDays={dataRetentionInDays}
-              />
-            ))}
-          </TableBody>
-        </Table>
+        <DataTable
+          data={filters}
+          columns={columns}
+          getRowId={f => f.id}
+          hideRowIndicator
+          renderSubComponent={row => (
+            <SavedFilterRowFilters
+              filter={row.original}
+              organizationSlug={organizationSlug}
+              projectSlug={projectSlug}
+              targetSlug={targetSlug}
+              dataRetentionInDays={dataRetentionInDays}
+            />
+          )}
+        />
       </div>
     </>
   );
@@ -905,22 +884,20 @@ export function TargetInsightsManageFiltersPage({
         targetSlug={targetSlug}
         page={Page.Insights}
       >
-        <div className="py-6">
+        <div className="pb-3 pt-6">
           <BackLink
             copy="Back to Insights"
             link={{
-              params: {
-                organizationSlug,
-                projectSlug,
-                targetSlug,
-              },
+              params: { organizationSlug, projectSlug, targetSlug },
               search: {},
               to: '/$organizationSlug/$projectSlug/$targetSlug/insights',
             }}
           />
 
-          <Title>Manage saved filters</Title>
-          <Subtitle>View and manage your saved filter views</Subtitle>
+          <PageLead
+            title="Manage saved filters"
+            description="View and manage your saved filter views"
+          />
         </div>
         <ManageFiltersContent
           organizationSlug={organizationSlug}

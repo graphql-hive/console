@@ -34,6 +34,8 @@ export type DataTableProps<TData> = {
   renderSubComponent?: (row: Row<TData>) => ReactNode;
   /** Click handler invoked when a row is clicked (mutually exclusive with renderSubComponent). */
   onRowClick?: (row: TData) => void;
+  /** Hide the trailing chevron indicator (rows stay clickable; hover signals interactivity). */
+  hideRowIndicator?: boolean;
 };
 
 export function DataTable<TData>({
@@ -44,8 +46,9 @@ export function DataTable<TData>({
   emptyMessage = 'No rows to display.',
   renderSubComponent,
   onRowClick,
+  hideRowIndicator = false,
 }: DataTableProps<TData>) {
-  const hasTrailingColumn = !!renderSubComponent || !!onRowClick;
+  const hasTrailingColumn = !hideRowIndicator && (!!renderSubComponent || !!onRowClick);
   const table = useReactTable({
     data,
     columns,
@@ -61,7 +64,7 @@ export function DataTable<TData>({
   const totalColumnCount = columns.length + (hasTrailingColumn ? 1 : 0);
 
   return (
-    <div className="border-neutral-4 overflow-hidden rounded-md border">
+    <div className="border-neutral-4 bg-neutral-1 dark:bg-neutral-2 overflow-hidden rounded-md border">
       <Table>
         <TableHeader>
           {table.getHeaderGroups().map(headerGroup => (
@@ -128,7 +131,7 @@ export function DataTable<TData>({
         </TableBody>
       </Table>
       {table.getPageCount() > 1 ? (
-        <div className="border-neutral-4 border-t">
+        <div className="border-neutral-4 bg-neutral-2 border-t">
           <DataTablePagination
             pageIndex={table.getState().pagination.pageIndex}
             pageCount={table.getPageCount()}

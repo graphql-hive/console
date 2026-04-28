@@ -329,6 +329,8 @@ type AlertFormProps = {
   targetSlug: string;
   defaultValues?: AlertFormValues;
   showPreview?: boolean;
+  /** When true, the "Advanced settings" accordion is expanded by default. */
+  expandAdvanced?: boolean;
   onSuccess?: (ruleId: string) => void;
   onCancel?: () => void;
 } & ({ mode: 'create' } | { mode: 'edit'; ruleId: string });
@@ -340,6 +342,7 @@ export function AlertForm(props: AlertFormProps) {
     targetSlug,
     defaultValues,
     showPreview = false,
+    expandAdvanced = false,
     onSuccess,
     onCancel,
     mode,
@@ -726,7 +729,7 @@ export function AlertForm(props: AlertFormProps) {
                   thresholdType={watchedValues.thresholdType}
                 />
 
-                <Accordion>
+                <Accordion defaultValue={expandAdvanced ? [0] : undefined}>
                   <AccordionItem value={0}>
                     <AccordionTrigger label="Advanced settings" variant="accent" />
                     <AccordionContent>

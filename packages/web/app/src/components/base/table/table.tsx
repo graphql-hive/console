@@ -26,7 +26,7 @@ export function TableRow({
   'data-state'?: 'expanded';
 }) {
   const base =
-    'border-neutral-4 hover:bg-neutral-3/40 data-[state=expanded]:bg-neutral-3 data-[state=expanded]:hover:bg-neutral-3 data-[state=expanded]:border-b-0 border-b transition-colors';
+    'border-neutral-4 hover:bg-neutral-2 dark:hover:bg-neutral-3 data-[state=expanded]:bg-neutral-4 data-[state=expanded]:hover:bg-neutral-4 data-[state=expanded]:border-b-0 border-b transition-colors';
   const interactive = onClick ? ' cursor-pointer' : '';
   return (
     <tr data-state={dataState} onClick={onClick} className={base + interactive}>
@@ -43,10 +43,10 @@ export function TableHead({
   compact?: boolean;
 }) {
   if (compact) {
-    return <th className="bg-neutral-3 h-10 w-10" aria-hidden />;
+    return <th className="bg-neutral-2 dark:bg-neutral-3 h-10 w-10" aria-hidden />;
   }
   return (
-    <th className="bg-neutral-3 text-neutral-10 h-10 px-4 text-left align-middle text-xs font-medium">
+    <th className="bg-neutral-2 dark:bg-neutral-3 text-neutral-10 h-10 px-4 text-left align-middle text-xs font-medium">
       {children}
     </th>
   );
@@ -67,7 +67,7 @@ export function TableCell({
       : variant === 'empty'
         ? 'text-neutral-10 h-24 text-center align-middle'
         : variant === 'panel'
-          ? 'bg-neutral-3 p-0 align-middle'
+          ? 'bg-neutral-2 p-0 align-middle'
           : 'h-12 px-4 align-middle';
   return (
     <td colSpan={colSpan} className={className}>
@@ -84,7 +84,7 @@ export function TableExpandedRow({
   children: React.ReactNode;
 }) {
   return (
-    <tr className="bg-neutral-3">
+    <tr className="bg-neutral-2">
       <TableCell colSpan={colSpan} variant="panel">
         {children}
       </TableCell>
