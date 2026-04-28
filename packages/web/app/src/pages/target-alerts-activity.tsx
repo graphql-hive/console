@@ -1,20 +1,18 @@
 import { useMemo, useState } from 'react';
 import { subMinutes } from 'date-fns';
 import { useQuery } from 'urql';
+import { Filters } from '@/components/base/floating/filter-menu/filters';
 import { Select } from '@/components/base/floating/select/select';
 import { PageLead } from '@/components/base/page-lead';
 import { AlertActivityChartStub } from '@/components/target/alerts/alert-activity-chart-stub';
-import {
-  ActivityFilters,
-  AlertActivityFilterChips,
-  AlertActivityFilterMenu,
-  EMPTY_ACTIVITY_FILTERS,
-} from '@/components/target/alerts/alert-activity-filters';
+import { useActivityFilterDimensions } from '@/components/target/alerts/alert-activity-filters';
 import {
   AlertActivityTable,
   type ActivityEventRow,
 } from '@/components/target/alerts/alert-activity-table';
 import { graphql } from '@/gql';
+import { MetricAlertRuleSeverity, MetricAlertRuleType } from '@/gql/graphql';
+import { useNavigate, useSearch } from '@tanstack/react-router';
 
 const TargetAlertsActivityPage_Query = graphql(`
   query TargetAlertsActivityPage_Query(
@@ -87,15 +85,19 @@ const VIEW_RANGE_OPTIONS = [
   { value: '43200', label: 'Last 30 days' },
 ] as const;
 
+const ACTIVITY_ROUTE =
+  '/authenticated/$organizationSlug/$projectSlug/$targetSlug/alerts/activity';
+
 export function TargetAlertsActivityPage(props: {
   organizationSlug: string;
   projectSlug: string;
   targetSlug: string;
 }) {
   const { organizationSlug, projectSlug, targetSlug } = props;
+  const search = useSearch({ from: ACTIVITY_ROUTE });
+  const navigate = useNavigate();
 
   const [viewRangeMinutes, setViewRangeMinutes] = useState('60');
-  const [filters, setFilters] = useState<ActivityFilters>(EMPTY_ACTIVITY_FILTERS);
 
   const { from, to } = useMemo(() => {
     const now = new Date();
@@ -148,19 +150,25 @@ export function TargetAlertsActivityPage(props: {
     return Array.from(seen.values());
   }, [allEvents]);
 
+  const dimensions = useActivityFilterDimensions({ search, navigate, createdByUsers });
+
   const visibleEvents = useMemo(() => {
-    const { severities, types, createdByIds } = filters;
+    const severities = new Set(search.severities ?? []);
+    const types = new Set(search.types ?? []);
+    const createdByIds = new Set(search.createdByIds ?? []);
     if (severities.size === 0 && types.size === 0 && createdByIds.size === 0) return allEvents;
     return allEvents.filter(e => {
-      if (severities.size > 0 && !severities.has(e.rule.severity)) return false;
-      if (types.size > 0 && !types.has(e.rule.type)) return false;
+      if (severities.size > 0 && !severities.has(e.rule.severity as MetricAlertRuleSeverity)) {
+        return false;
+      }
+      if (types.size > 0 && !types.has(e.rule.type as MetricAlertRuleType)) return false;
       if (createdByIds.size > 0) {
         const id = e.rule.createdBy?.id;
         if (!id || !createdByIds.has(id)) return false;
       }
       return true;
     });
-  }, [allEvents, filters]);
+  }, [allEvents, search.severities, search.types, search.createdByIds]);
 
   return (
     <>
@@ -169,21 +177,16 @@ export function TargetAlertsActivityPage(props: {
         description="Monitor alert firings, recoveries, and state changes."
       />
 
-      <div className="mt-6 flex items-center gap-2">
-        <AlertActivityFilterMenu
-          value={filters}
-          onChange={setFilters}
-          createdByUsers={createdByUsers}
-        />
-        <Select
-          options={[...VIEW_RANGE_OPTIONS]}
-          value={viewRangeMinutes}
-          onValueChange={setViewRangeMinutes}
-        />
-        <AlertActivityFilterChips
-          value={filters}
-          onChange={setFilters}
-          createdByUsers={createdByUsers}
+      <div className="mt-6">
+        <Filters
+          dimensions={dimensions}
+          pinnedControls={
+            <Select
+              options={[...VIEW_RANGE_OPTIONS]}
+              value={viewRangeMinutes}
+              onValueChange={setViewRangeMinutes}
+            />
+          }
         />
       </div>
 

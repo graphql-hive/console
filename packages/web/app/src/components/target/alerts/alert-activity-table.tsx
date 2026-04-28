@@ -3,9 +3,9 @@ import { DataTable } from '@/components/base/data-table/data-table';
 import { BadgeRounded } from '@/components/ui/badge';
 import { Avatar } from '@/components/v2/avatar';
 import {
+  MetricAlertRuleType,
   type MetricAlertRuleSeverity,
   type MetricAlertRuleState,
-  MetricAlertRuleType,
 } from '@/gql/graphql';
 import { createColumnHelper } from '@tanstack/react-table';
 import {
@@ -82,16 +82,12 @@ const COLUMNS = [
   columnHelper.display({
     id: 'name',
     header: 'Alert name',
-    cell: ctx => (
-      <span className="text-neutral-12 font-medium">{ctx.row.original.rule.name}</span>
-    ),
+    cell: ctx => <span className="text-neutral-12 font-medium">{ctx.row.original.rule.name}</span>,
   }),
   columnHelper.display({
     id: 'type',
     header: 'Type',
-    cell: ctx => (
-      <span className="text-neutral-11">{TYPE_LABEL[ctx.row.original.rule.type]}</span>
-    ),
+    cell: ctx => <span className="text-neutral-11">{TYPE_LABEL[ctx.row.original.rule.type]}</span>,
   }),
   columnHelper.display({
     id: 'severity',
@@ -138,7 +134,6 @@ export function AlertActivityTable({
       data={events}
       columns={COLUMNS}
       getRowId={row => row.id}
-      pageSize={20}
       emptyMessage="No alert activity in the selected time range."
       renderSubComponent={row => (
         <AlertEventDetail

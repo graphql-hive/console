@@ -2,7 +2,7 @@ import { useCallback, useState } from 'react';
 import { useMutation } from 'urql';
 import { Button as BaseButton } from '@/components/base/button/button';
 import { Popover } from '@/components/base/floating/popover/popover';
-import type { SavedFilterView } from '@/components/target/insights/insights-filters';
+import type { SavedFilterView } from '@/components/target/insights/use-insights-filter-extra-sections';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {

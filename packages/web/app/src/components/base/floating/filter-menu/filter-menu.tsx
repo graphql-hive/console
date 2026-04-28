@@ -1,52 +1,39 @@
-import { type ReactElement, type ReactNode } from 'react';
+import { type ReactNode } from 'react';
+import { ListFilter, X } from 'lucide-react';
+import { Button } from '../../button/button';
 import { FilterDropdown } from '../filter-dropdown/filter-dropdown';
 import { FilterContent } from '../filter-dropdown/filter-content';
-import type { FilterItem, FilterSelection } from '../filter-dropdown/types';
 import { Menu, MenuItem } from '../menu/menu';
+import type { FilterDimension } from './types';
 
-export type FilterDimension = {
-  /** Stable key for the dimension (used for React reconciliation). */
-  key: string;
-  /** Label shown in the menu and in the FilterContent search aria. */
-  label: string;
-  /** Items available for this dimension. Use `values: []` for flat (no sub-values). */
-  items: FilterItem[];
-  /** Currently selected items. */
-  selectedItems: FilterSelection[];
-  /** Called when the selection changes. */
-  onChange: (next: FilterSelection[]) => void;
-  /**
-   * Called when the chip's X is clicked. Defaults to `onChange([])`. Override
-   * if removing the chip should also clear other URL state (e.g. exclude flags).
-   */
-  onRemove?: () => void;
-  /** Label for sub-values (e.g. "versions"). Only meaningful when items have values. */
-  valuesLabel?: string;
-  /** When true, the chip's "is/is not" toggle is shown and the chip indicates exclude. */
-  excludeMode?: boolean;
-  /** Called when the chip's "is/is not" toggle changes. Required to render the toggle. */
-  onExcludeModeChange?: (exclude: boolean) => void;
-};
+export type { FilterDimension, FilterItem, FilterSelection } from './types';
 
 /**
- * A single "Filter" trigger that opens a menu of dimensions. Each dimension
- * opens a sub-menu containing a `FilterContent` panel for picking items.
+ * The trigger that opens a menu of dimensions. Each dimension opens a
+ * sub-menu containing a `FilterContent` panel for picking items.
  *
- * Use `extraSections` to append other content (e.g. saved-filter lists) below
- * the dimensions.
+ * Default trigger reads "Filter" with a list-filter icon. When `activeLabel`
+ * is provided, the trigger morphs to show that label with a clear-X icon
+ * (use this for saved-view labels, etc. — clicking the X calls
+ * `onClearActive`). If you need additional menu content (e.g. saved-filter
+ * sub-menus), pass it via `extraSections`.
  */
 export function FilterMenu({
-  trigger,
   dimensions,
   extraSections = [],
   open,
   onOpenChange,
+  activeLabel,
+  onClearActive,
 }: {
-  trigger: ReactElement;
   dimensions: FilterDimension[];
   extraSections?: Array<ReactNode | ReactNode[]>;
   open?: boolean;
   onOpenChange?: (open: boolean) => void;
+  /** When set, the trigger shows this label and a clear-X icon instead of "Filter". */
+  activeLabel?: string;
+  /** Called when the trigger's X icon is clicked. Required to render the X. */
+  onClearActive?: () => void;
 }) {
   const dimensionSection = dimensions.map(d => (
     <Menu
@@ -67,6 +54,26 @@ export function FilterMenu({
     />
   ));
 
+  const trigger =
+    activeLabel && onClearActive ? (
+      <Button
+        label={activeLabel}
+        variant="default"
+        rightIcon={{
+          icon: X,
+          action: onClearActive,
+          label: 'Clear active view',
+          withSeparator: true,
+        }}
+      />
+    ) : (
+      <Button
+        label="Filter"
+        variant="default"
+        rightIcon={{ icon: ListFilter, withSeparator: true }}
+      />
+    );
+
   return (
     <Menu
       trigger={trigger}
@@ -83,8 +90,8 @@ export function FilterMenu({
 
 /**
  * Renders a `FilterDropdown` chip for each dimension that has at least one
- * selected item. Pair with `FilterMenu` so users can manage filters from either
- * the chip or the menu — both views share the same `dimensions` array.
+ * selected item. Pair with `FilterMenu` so users can manage filters from
+ * either the chip or the menu — both views share the same `dimensions` array.
  */
 export function FilterChips({ dimensions }: { dimensions: FilterDimension[] }) {
   return (

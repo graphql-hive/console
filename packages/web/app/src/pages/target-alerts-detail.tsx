@@ -4,11 +4,12 @@ import { useQuery } from 'urql';
 import { Select } from '@/components/base/floating/select/select';
 import { PageLead } from '@/components/base/page-lead';
 import { BackLink } from '@/components/navigation/back-link';
+import { ResourceNotFoundComponent } from '@/components/resource-not-found';
 import { AlertConditionsPanel } from '@/components/target/alerts/alert-conditions-panel';
 import { AlertEventsTable } from '@/components/target/alerts/alert-events-table';
 import { AlertMetricChart } from '@/components/target/alerts/alert-metric-chart';
 import { AlertStateTransitionsBar } from '@/components/target/alerts/alert-state-transitions-bar';
-import { SubPageLayout } from '@/components/ui/page-content-layout';
+import { Spinner } from '@/components/ui/spinner';
 import { graphql } from '@/gql';
 import {
   MetricAlertRuleDirection,
@@ -175,31 +176,19 @@ export function TargetAlertsDetailPage(props: {
 
   const rule = result.data?.target?.metricAlertRule;
 
-  if (result.fetching && !rule) {
+  // Show the spinner until we either have a rule or have a confirmed
+  // no-data response. Avoids flashing "not found" while the first fetch is
+  // in-flight or while urql hasn't populated `data` yet.
+  if (result.fetching || !result.data) {
     return (
-      <SubPageLayout>
-        <p className="text-neutral-10 text-sm">Loading alert...</p>
-      </SubPageLayout>
+      <div className="flex h-fit flex-1 items-center justify-center py-28">
+        <Spinner />
+      </div>
     );
   }
 
   if (!rule) {
-    return (
-      <SubPageLayout>
-        <BackLink
-          copy="Back to Alerts"
-          link={{
-            params: {
-              organizationSlug,
-              projectSlug,
-              targetSlug,
-            },
-            to: '/$organizationSlug/$projectSlug/$targetSlug/alerts/rules',
-          }}
-        />
-        <p className="text-neutral-10 text-sm">Alert rule not found.</p>
-      </SubPageLayout>
-    );
+    return <ResourceNotFoundComponent title="Alert rule not found" />;
   }
 
   return (

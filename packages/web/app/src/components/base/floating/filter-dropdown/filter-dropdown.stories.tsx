@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { InsightsFilters } from '@/components/target/insights/insights-filters';
 import { cn } from '@/lib/utils';
 import { Menu as BaseMenu } from '@base-ui/react/menu';
 import type { Story, StoryDefault } from '@ladle/react';
@@ -169,69 +168,3 @@ const mockOperations: FilterItem[] = [
   { name: 'ProcessPayment', values: [] },
 ];
 
-export const InsightsFiltersDropdown: Story = () => {
-  const [clientSelections, setClientSelections] = useState<FilterSelection[]>([]);
-  const [operationSelections, setOperationSelections] = useState<FilterSelection[]>([]);
-  const [excludeOperations, setExcludeOperations] = useState(false);
-  const [excludeClients, setExcludeClients] = useState(false);
-
-  return (
-    <div className="p-8">
-      <div className="flex flex-wrap items-center gap-2">
-        <InsightsFilters
-          clientFilterItems={mockClients}
-          clientFilterSelections={clientSelections}
-          operationFilterItems={mockOperations}
-          operationFilterSelections={operationSelections}
-          setClientSelections={setClientSelections}
-          setOperationSelections={setOperationSelections}
-          privateSavedFilterViews={[
-            {
-              id: '1',
-              name: 'My production filter',
-              viewerCanUpdate: true,
-              filters: {
-                operationHashes: [],
-                clientFilters: [],
-                dateRange: null,
-                excludeOperations: false,
-                excludeClientFilters: false,
-              },
-            },
-          ]}
-          sharedSavedFilterViews={[]}
-          onApplySavedFilters={() => {}}
-        />
-        {operationSelections.length > 0 && (
-          <FilterDropdown
-            label="Operation"
-            items={mockOperations}
-            selectedItems={operationSelections}
-            onChange={setOperationSelections}
-            onRemove={() => {
-              setOperationSelections([]);
-              setExcludeOperations(false);
-            }}
-            excludeMode={excludeOperations}
-            onExcludeModeChange={setExcludeOperations}
-          />
-        )}
-        {clientSelections.length > 0 && (
-          <FilterDropdown
-            label="Client"
-            items={mockClients}
-            selectedItems={clientSelections}
-            onChange={setClientSelections}
-            onRemove={() => {
-              setClientSelections([]);
-              setExcludeClients(false);
-            }}
-            valuesLabel="versions"
-            excludeMode={excludeClients}
-            onExcludeModeChange={setExcludeClients}
-          />
-        )}
-      </div>
-    </div>
-  );
-};
