@@ -1,4 +1,4 @@
-import type { SavedFilterView } from '@/components/base/insights-filters';
+import type { SavedFilterView } from '@/components/target/insights/insights-filters';
 
 export type CurrentFilters = {
   operations: string[];

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { InsightsFilters } from '@/components/base/insights-filters';
+import { InsightsFilters } from '@/components/target/insights/insights-filters';
 import { cn } from '@/lib/utils';
 import { Menu as BaseMenu } from '@base-ui/react/menu';
 import type { Story, StoryDefault } from '@ladle/react';

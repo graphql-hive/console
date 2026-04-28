@@ -699,7 +699,16 @@ const targetAlertsRulesRoute = createRoute({
 const targetAlertsActivityRoute = createRoute({
   getParentRoute: () => targetAlertsRoute,
   path: 'activity',
-  component: TargetAlertsActivityPage,
+  component: function TargetAlertsActivityRoute() {
+    const { organizationSlug, projectSlug, targetSlug } = targetAlertsActivityRoute.useParams();
+    return (
+      <TargetAlertsActivityPage
+        organizationSlug={organizationSlug}
+        projectSlug={projectSlug}
+        targetSlug={targetSlug}
+      />
+    );
+  },
 });
 
 const TargetAlertsCreateSearch = z.object({

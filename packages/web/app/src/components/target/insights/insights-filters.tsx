@@ -1,8 +1,14 @@
 import { useState } from 'react';
 import { ListFilter, X } from 'lucide-react';
 import { Button } from '@/components/base/button/button';
-import { FilterContent } from '@/components/base/floating/filter-dropdown/filter-content';
-import { FilterItem, FilterSelection } from '@/components/base/floating/filter-dropdown/types';
+import {
+  FilterMenu,
+  type FilterDimension,
+} from '@/components/base/floating/filter-menu/filter-menu';
+import type {
+  FilterItem,
+  FilterSelection,
+} from '@/components/base/floating/filter-dropdown/types';
 import { Menu, MenuItem } from '@/components/base/floating/menu/menu';
 
 export type SavedFilterView = {
@@ -79,14 +85,33 @@ export function InsightsFilters({
 
   const handleApplySavedFilter = (view: SavedFilterView) => {
     setOpen(false);
-    // Defer navigation to next frame so the menu portals unmount first
     requestAnimationFrame(() => {
       onApplySavedFilters(view);
     });
   };
 
+  const dimensions: FilterDimension[] = [
+    {
+      key: 'operations',
+      label: 'Operations',
+      items: operationFilterItems,
+      selectedItems: operationFilterSelections,
+      onChange: setOperationSelections,
+    },
+    {
+      key: 'clients',
+      label: 'Clients',
+      items: clientFilterItems,
+      selectedItems: clientFilterSelections,
+      onChange: setClientSelections,
+      valuesLabel: 'versions',
+    },
+  ];
+
   return (
-    <Menu
+    <FilterMenu
+      open={open}
+      onOpenChange={setOpen}
       trigger={
         <Button
           label={activeViewName ?? 'Filter'}
@@ -103,46 +128,8 @@ export function InsightsFilters({
           }
         />
       }
-      open={open}
-      onOpenChange={setOpen}
-      modal={false}
-      lockScroll
-      side="bottom"
-      align="start"
-      sections={[
-        [
-          <Menu
-            key="operations"
-            trigger={<MenuItem>Operations</MenuItem>}
-            maxWidth="lg"
-            stableWidth
-            sections={[
-              <FilterContent
-                key="content"
-                label="operations"
-                items={operationFilterItems}
-                selectedItems={operationFilterSelections}
-                onChange={setOperationSelections}
-              />,
-            ]}
-          />,
-          <Menu
-            key="clients"
-            trigger={<MenuItem>Clients</MenuItem>}
-            maxWidth="lg"
-            stableWidth
-            sections={[
-              <FilterContent
-                key="content"
-                label="clients"
-                items={clientFilterItems}
-                selectedItems={clientFilterSelections}
-                onChange={setClientSelections}
-                valuesLabel="versions"
-              />,
-            ]}
-          />,
-        ],
+      dimensions={dimensions}
+      extraSections={[
         [
           <Menu
             key="private"
@@ -169,9 +156,17 @@ export function InsightsFilters({
             ]}
           />,
         ],
-        <MenuItem key="manage" variant="navigationLink" onClick={onManageSavedFilters}>
-          Manage saved filters
-        </MenuItem>,
+        ...(onManageSavedFilters
+          ? [
+              <MenuItem
+                key="manage"
+                variant="navigationLink"
+                onClick={onManageSavedFilters}
+              >
+                Manage saved filters
+              </MenuItem>,
+            ]
+          : []),
       ]}
     />
   );
