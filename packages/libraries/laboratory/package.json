@@ -42,7 +42,7 @@
     "@graphql-tools/url-loader": "^9.1.0",
     "radix-ui": "^1.4.3",
     "react-zoom-pan-pinch": "^3.7.0",
-    "uuid": "^13.0.0"
+    "uuid": "^14.0.0"
   },
   "devDependencies": {
     "@dagrejs/dagre": "^2.0.4",
@@ -106,7 +106,7 @@
     "monaco-graphql": "^1.7.3",
     "monacopilot": "^1.2.12",
     "next-themes": "^0.4.6",
-    "postcss": "^8.5.6",
+    "postcss": "^8.5.12",
     "postcss-prefixwrap": "^1.57.2",
     "react": "18.3.1",
     "react-dom": "18.3.1",

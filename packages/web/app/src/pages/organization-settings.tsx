@@ -440,7 +440,10 @@ const OrganizationSettingsContent = (props: {
                   View a history of changes made to the organization settings.
                 </CardDescription>
                 <CardDescription>
-                  <DocsLink className="text-neutral-10 text-sm" href="/management/audit-logs">
+                  <DocsLink
+                    className="text-neutral-10 text-sm"
+                    href="/schema-registry/management/audit-logs"
+                  >
                     Learn more.
                   </DocsLink>
                 </CardDescription>

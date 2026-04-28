@@ -47,7 +47,7 @@ export const noSchema = (
   <EmptyList
     title="Schema Registry contains no schema"
     description="You can publish a schema with Hive CLI and Hive Client"
-    docsUrl="/features/schema-registry#publish-a-schema"
+    docsUrl="/schema-registry#publish-a-schema"
   />
 );
 
@@ -113,6 +113,6 @@ export const noValidSchemaVersion = (
   <EmptyList
     title="Hive is waiting for your first composable schema version"
     description="You can publish a schema with Hive CLI and Hive Client"
-    docsUrl="/features/schema-registry#publish-a-schema"
+    docsUrl="/schema-registry#publish-a-schema"
   />
 );

@@ -153,7 +153,7 @@
       "lodash-es@4.x.x": "^4.17.23",
       "lodash@4.x.x": "^4.17.23",
       "seroval@<1.4.1": "^1.4.1",
-      "fast-xml-parser@<5.5.7": "^5.5.7",
+      "fast-xml-parser@<5.7.0": "^5.7.2",
       "minimatch@10.x.x": "^10.2.2",
       "amqplib": "^0.8.0",
       "minimatch@9.x.x": "^9.0.6",

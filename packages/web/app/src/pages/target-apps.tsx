@@ -324,7 +324,7 @@ function TargetAppsView(props: {
         <EmptyList
           title="Hive is waiting for your first app deployment"
           description="You can create an app deployment with the Hive CLI"
-          docsUrl="/features/schema-registry#app-deplyments"
+          docsUrl="/schema-registry/app-deployments"
         />
       ) : (
         <div>
