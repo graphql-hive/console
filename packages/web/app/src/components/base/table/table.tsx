@@ -16,20 +16,41 @@ export function TableBody({ children }: { children: React.ReactNode }) {
   return <tbody className="[&>tr:last-child]:border-0">{children}</tbody>;
 }
 
+const TINT_CLASSES = {
+  critical:
+    'bg-critical_08 hover:bg-critical_10 data-[state=expanded]:bg-critical_10 data-[state=expanded]:hover:bg-critical_10',
+  warning:
+    'bg-warning_08 hover:bg-warning_10 data-[state=expanded]:bg-warning_10 data-[state=expanded]:hover:bg-warning_10',
+  info: 'bg-info_08 hover:bg-info_10 data-[state=expanded]:bg-info_10 data-[state=expanded]:hover:bg-info_10',
+  success:
+    'bg-success_08 hover:bg-success_10 data-[state=expanded]:bg-success_10 data-[state=expanded]:hover:bg-success_10',
+} as const;
+
+export type TableRowTint = keyof typeof TINT_CLASSES;
+
 export function TableRow({
   children,
   onClick,
   'data-state': dataState,
+  tint,
 }: {
   children: React.ReactNode;
   onClick?: () => void;
   'data-state'?: 'expanded';
+  tint?: TableRowTint;
 }) {
+  const palette = tint
+    ? TINT_CLASSES[tint]
+    : 'hover:bg-neutral-3/40 data-[state=expanded]:bg-neutral-3 data-[state=expanded]:hover:bg-neutral-3';
   const base =
-    'border-neutral-4 hover:bg-neutral-3/40 data-[state=expanded]:bg-neutral-3 data-[state=expanded]:hover:bg-neutral-3 data-[state=expanded]:border-b-0 border-b transition-colors';
+    'border-neutral-4 data-[state=expanded]:border-b-0 border-b transition-colors';
   const interactive = onClick ? ' cursor-pointer' : '';
   return (
-    <tr data-state={dataState} onClick={onClick} className={base + interactive}>
+    <tr
+      data-state={dataState}
+      onClick={onClick}
+      className={`${palette} ${base}${interactive}`}
+    >
       {children}
     </tr>
   );

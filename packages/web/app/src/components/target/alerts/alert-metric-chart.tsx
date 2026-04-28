@@ -49,7 +49,7 @@ type AlertMetricChartProps = {
   metricSelection: string;
   /** Time window in minutes */
   timeWindowMinutes: number;
-  /** Threshold value to show as a horizontal marker line */
+  /** Threshold value to show as a horizontal marker line (only drawn for FIXED_VALUE rules) */
   thresholdValue: number | null;
   /** 'ABOVE' or 'BELOW' */
   direction: string;

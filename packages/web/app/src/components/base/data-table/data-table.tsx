@@ -1,5 +1,5 @@
 import { Fragment, type ReactNode } from 'react';
-import { ChevronDown } from 'lucide-react';
+import { ChevronDown, ChevronRight } from 'lucide-react';
 import {
   flexRender,
   getCoreRowModel,
@@ -18,6 +18,7 @@ import {
   TableHead,
   TableHeader,
   TableRow,
+  type TableRowTint,
 } from '@/components/base/table/table';
 import { DataTablePagination } from './data-table-pagination';
 
@@ -32,6 +33,10 @@ export type DataTableProps<TData> = {
    * an inline panel rendered by this function.
    */
   renderSubComponent?: (row: Row<TData>) => ReactNode;
+  /** Click handler invoked when a row is clicked (mutually exclusive with renderSubComponent). */
+  onRowClick?: (row: TData) => void;
+  /** Tint applied to a row based on its data. */
+  getRowTint?: (row: TData) => TableRowTint | undefined;
 };
 
 export function DataTable<TData>({
@@ -41,7 +46,10 @@ export function DataTable<TData>({
   getRowId,
   emptyMessage = 'No rows to display.',
   renderSubComponent,
+  onRowClick,
+  getRowTint,
 }: DataTableProps<TData>) {
+  const hasTrailingColumn = !!renderSubComponent || !!onRowClick;
   const table = useReactTable({
     data,
     columns,
@@ -54,7 +62,7 @@ export function DataTable<TData>({
   });
 
   const rows = table.getRowModel().rows;
-  const totalColumnCount = columns.length + (renderSubComponent ? 1 : 0);
+  const totalColumnCount = columns.length + (hasTrailingColumn ? 1 : 0);
 
   return (
     <div className="border-neutral-4 overflow-hidden rounded-md border">
@@ -69,7 +77,7 @@ export function DataTable<TData>({
                     : flexRender(header.column.columnDef.header, header.getContext())}
                 </TableHead>
               ))}
-              {renderSubComponent ? <TableHead compact /> : null}
+              {hasTrailingColumn ? <TableHead compact /> : null}
             </TableRow>
           ))}
         </TableHeader>
@@ -81,34 +89,46 @@ export function DataTable<TData>({
               </TableCell>
             </TableRow>
           ) : (
-            rows.map(row => (
-              <Fragment key={row.id}>
-                <TableRow
-                  data-state={row.getIsExpanded() ? 'expanded' : undefined}
-                  onClick={renderSubComponent ? () => row.toggleExpanded() : undefined}
-                >
-                  {row.getVisibleCells().map(cell => (
-                    <TableCell key={cell.id}>
-                      {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                    </TableCell>
-                  ))}
-                  {renderSubComponent ? (
-                    <TableCell variant="compact">
-                      <ChevronDown
-                        className={`size-4 transition-transform ${
-                          row.getIsExpanded() ? 'rotate-180' : ''
-                        }`}
-                      />
-                    </TableCell>
+            rows.map(row => {
+              const handleClick = renderSubComponent
+                ? () => row.toggleExpanded()
+                : onRowClick
+                  ? () => onRowClick(row.original)
+                  : undefined;
+              return (
+                <Fragment key={row.id}>
+                  <TableRow
+                    data-state={row.getIsExpanded() ? 'expanded' : undefined}
+                    onClick={handleClick}
+                    tint={getRowTint?.(row.original)}
+                  >
+                    {row.getVisibleCells().map(cell => (
+                      <TableCell key={cell.id}>
+                        {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                      </TableCell>
+                    ))}
+                    {hasTrailingColumn ? (
+                      <TableCell variant="compact">
+                        {renderSubComponent ? (
+                          <ChevronDown
+                            className={`size-4 transition-transform ${
+                              row.getIsExpanded() ? 'rotate-180' : ''
+                            }`}
+                          />
+                        ) : (
+                          <ChevronRight className="size-4" />
+                        )}
+                      </TableCell>
+                    ) : null}
+                  </TableRow>
+                  {renderSubComponent && row.getIsExpanded() ? (
+                    <TableExpandedRow colSpan={totalColumnCount}>
+                      {renderSubComponent(row)}
+                    </TableExpandedRow>
                   ) : null}
-                </TableRow>
-                {renderSubComponent && row.getIsExpanded() ? (
-                  <TableExpandedRow colSpan={totalColumnCount}>
-                    {renderSubComponent(row)}
-                  </TableExpandedRow>
-                ) : null}
-              </Fragment>
-            ))
+                </Fragment>
+              );
+            })
           )}
         </TableBody>
       </Table>
