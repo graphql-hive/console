@@ -245,7 +245,7 @@ class FederationSubgraphUrlLoader implements Loader {
         err.graphQLErrors?.some(
           err =>
             err.message.includes('Cannot query field "_service" on type "Query"') ||
-            err.message.includes('Cannot query field "_sdl" on type "_Service"'),
+            err.message.includes('Cannot query field "sdl" on type "_Service"'),
         )
       ) {
         throw new InvalidFederationSubgraphError(
