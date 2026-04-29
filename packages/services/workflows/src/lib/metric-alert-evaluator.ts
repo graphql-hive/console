@@ -90,6 +90,12 @@ function isThresholdBreached(
     : compareValue < rule.thresholdValue;
 }
 
+/**
+ * Alert state-log retention per plan, in days. Workflows doesn't depend on
+ * `@hive/api` so this is mirrored from the canonical source at
+ * `packages/services/api/src/modules/commerce/constants.ts`
+ * (`ALERT_STATE_LOG_RETENTION_DAYS`). Keep these two in sync.
+ */
 const ALERT_STATE_LOG_RETENTION_DAYS: Record<string, number> = {
   HOBBY: 7,
   PRO: 7,

@@ -8,6 +8,27 @@ import type {
   MetricAlertStateLogEntry,
 } from '../../../shared/entities';
 
+/**
+ * Cursor encoding for `getIncidentConnection`. Encodes both `started_at` and
+ * `id` so the cursor is stable under concurrent inserts (newer incidents
+ * inserted between page fetches don't shift the page boundary).
+ */
+export function encodeIncidentCursor(incident: { startedAt: string; id: string }): string {
+  return Buffer.from(`${incident.startedAt}|${incident.id}`, 'utf8').toString('base64url');
+}
+
+export function decodeIncidentCursor(cursor: string): { startedAt: Date; id: string } | null {
+  try {
+    const [startedAtIso, id] = Buffer.from(cursor, 'base64url').toString('utf8').split('|');
+    if (!startedAtIso || !id) return null;
+    const startedAt = new Date(startedAtIso);
+    if (Number.isNaN(startedAt.getTime())) return null;
+    return { startedAt, id };
+  } catch {
+    return null;
+  }
+}
+
 const MetricAlertRuleModel = zod
   .object({
     id: zod.string(),
@@ -306,6 +327,36 @@ export class MetricAlertRulesStorage {
     return result.map(id => zod.string().parse(id));
   }
 
+  /**
+   * Returns the `project_id` for each existing channel in `channelIds`.
+   * Used by mutation resolvers to validate that channels belong to the same
+   * project as the rule's target. Missing rows (channelId not found) are
+   * silently dropped — the caller compares the result length against the
+   * input length to detect them.
+   */
+  async getChannelProjectIds(channelIds: ReadonlyArray<string>): Promise<string[]> {
+    if (channelIds.length === 0) return [];
+    const result = await this.pool.anyFirst(psql`/* getChannelProjectIds */
+      SELECT "project_id"
+      FROM "alert_channels"
+      WHERE "id" = ANY(${psql.array([...channelIds], 'uuid')})
+    `);
+    return result.map(id => zod.string().parse(id));
+  }
+
+  /**
+   * Returns the `project_id` of the saved filter, or null if not found.
+   * Used by mutation resolvers to validate cross-scope.
+   */
+  async getSavedFilterProjectId(savedFilterId: string): Promise<string | null> {
+    const result = await this.pool.maybeOneFirst(psql`/* getSavedFilterProjectId */
+      SELECT "project_id"
+      FROM "saved_filters"
+      WHERE "id" = ${savedFilterId}
+    `);
+    return result === null ? null : zod.string().parse(result);
+  }
+
   // --- Alert State Updates (used by evaluation engine) ---
 
   async updateRuleState(args: {
@@ -388,21 +439,58 @@ export class MetricAlertRulesStorage {
     return MetricAlertIncidentModel.parse(result) as MetricAlertIncident;
   }
 
-  async getIncidentHistory(args: {
+  /**
+   * Cursor-paginated incident history (newest first). The cursor is base64 of
+   * `${started_at_iso}|${id}` so it's stable under concurrent inserts: a
+   * newer incident inserted between page fetches doesn't shift the boundary
+   * because the cursor encodes both the timestamp and the row's id.
+   */
+  async getIncidentConnection(args: {
     ruleId: string;
-    limit: number;
-    offset: number;
-  }): Promise<MetricAlertIncident[]> {
-    const result = await this.pool.any(psql`/* getIncidentHistory */
+    first?: number | null;
+    after?: string | null;
+  }) {
+    const limit = Math.min(Math.max(args.first ?? 20, 1), 100);
+    const cursor = args.after ? decodeIncidentCursor(args.after) : null;
+
+    // Fetch limit + 1 to detect hasNextPage without a separate count query.
+    const result = await this.pool.any(psql`/* getIncidentConnection */
       SELECT ${METRIC_ALERT_INCIDENT_SELECT}
       FROM "metric_alert_incidents"
-      WHERE "metric_alert_rule_id" = ${args.ruleId}
-      ORDER BY "started_at" DESC
-      LIMIT ${args.limit}
-      OFFSET ${args.offset}
+      WHERE
+        "metric_alert_rule_id" = ${args.ruleId}
+        ${
+          cursor
+            ? psql`AND ("started_at", "id") < (${cursor.startedAt.toISOString()}, ${cursor.id})`
+            : psql``
+        }
+      ORDER BY "started_at" DESC, "id" DESC
+      LIMIT ${limit + 1}
     `);
 
-    return result.map(row => MetricAlertIncidentModel.parse(row) as MetricAlertIncident);
+    const rows = result.map(row => MetricAlertIncidentModel.parse(row) as MetricAlertIncident);
+    const hasNextPage = rows.length > limit;
+    const items = hasNextPage ? rows.slice(0, limit) : rows;
+    const edges = items.map(node => ({
+      node,
+      get cursor() {
+        return encodeIncidentCursor(node);
+      },
+    }));
+
+    return {
+      edges,
+      pageInfo: {
+        hasNextPage,
+        hasPreviousPage: cursor !== null,
+        get endCursor() {
+          return edges[edges.length - 1]?.cursor ?? '';
+        },
+        get startCursor() {
+          return edges[0]?.cursor ?? '';
+        },
+      },
+    };
   }
 
   // --- State Log ---

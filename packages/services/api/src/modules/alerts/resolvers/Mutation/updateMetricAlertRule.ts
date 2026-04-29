@@ -45,6 +45,31 @@ export const updateMetricAlertRule: NonNullable<
     };
   }
 
+  // Cross-scope validation: channels and the saved filter must belong to the
+  // same project as the target. Only check fields actually being changed.
+  if (input.channelIds) {
+    const channelProjectIds = await storage.getChannelProjectIds(input.channelIds);
+    if (
+      channelProjectIds.length !== input.channelIds.length ||
+      channelProjectIds.some(id => id !== projectId)
+    ) {
+      return {
+        error: {
+          message: 'All notification channels must belong to the same project as the target.',
+        },
+      };
+    }
+  }
+
+  if (input.savedFilterId) {
+    const filterProjectId = await storage.getSavedFilterProjectId(input.savedFilterId);
+    if (filterProjectId !== projectId) {
+      return {
+        error: { message: 'Saved filter must belong to the same project as the target.' },
+      };
+    }
+  }
+
   const rule = await storage.updateMetricAlertRule({
     id: input.ruleId,
     updatedByUserId: currentUser.id,

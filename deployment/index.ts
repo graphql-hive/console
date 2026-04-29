@@ -200,6 +200,7 @@ deployWorkflows({
   heartbeat: heartbeatsConfig.get('webhooks'),
   schema,
   redis,
+  clickhouse,
 });
 
 const zendesk = configureZendesk({ environment });

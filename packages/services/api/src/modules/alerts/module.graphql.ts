@@ -234,9 +234,9 @@ export default gql`
     """
     currentIncident: MetricAlertRuleIncident
     """
-    Past incidents for this alert rule.
+    Past incidents for this alert rule, paginated newest-first.
     """
-    incidentHistory(limit: Int, offset: Int): [MetricAlertRuleIncident!]!
+    incidents(first: Int, after: String): MetricAlertRuleIncidentConnection!
     """
     State change history for this rule (powers the state timeline).
     """
@@ -250,6 +250,16 @@ export default gql`
     currentValue: Float!
     previousValue: Float
     thresholdValue: Float!
+  }
+
+  type MetricAlertRuleIncidentEdge {
+    node: MetricAlertRuleIncident!
+    cursor: String!
+  }
+
+  type MetricAlertRuleIncidentConnection {
+    edges: [MetricAlertRuleIncidentEdge!]!
+    pageInfo: PageInfo!
   }
 
   type MetricAlertRuleStateChange {

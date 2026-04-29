@@ -43,6 +43,30 @@ export const addMetricAlertRule: NonNullable<MutationResolvers['addMetricAlertRu
 
   const storage = injector.get(MetricAlertRulesStorage);
 
+  // Cross-scope validation: channels and the saved filter must belong to the
+  // same project as the target. The DB FKs allow cross-project references on
+  // their own; explicit checks close that gap.
+  const channelProjectIds = await storage.getChannelProjectIds(input.channelIds);
+  if (
+    channelProjectIds.length !== input.channelIds.length ||
+    channelProjectIds.some(id => id !== projectId)
+  ) {
+    return {
+      error: {
+        message: 'All notification channels must belong to the same project as the target.',
+      },
+    };
+  }
+
+  if (input.savedFilterId) {
+    const filterProjectId = await storage.getSavedFilterProjectId(input.savedFilterId);
+    if (filterProjectId !== projectId) {
+      return {
+        error: { message: 'Saved filter must belong to the same project as the target.' },
+      };
+    }
+  }
+
   const rule = await storage.addMetricAlertRule({
     organizationId,
     projectId,

@@ -51,11 +51,11 @@ export const MetricAlertRule: MetricAlertRuleResolvers = {
   currentIncident: (rule, _, { injector }) => {
     return injector.get(MetricAlertRulesStorage).getOpenIncident({ ruleId: rule.id });
   },
-  incidentHistory: (rule, { limit, offset }, { injector }) => {
-    return injector.get(MetricAlertRulesStorage).getIncidentHistory({
+  incidents: (rule, { first, after }, { injector }) => {
+    return injector.get(MetricAlertRulesStorage).getIncidentConnection({
       ruleId: rule.id,
-      limit: limit ?? 20,
-      offset: offset ?? 0,
+      first,
+      after,
     });
   },
   stateLog: (rule, { from, to }, { injector }) => {

@@ -2,6 +2,7 @@ import * as pulumi from '@pulumi/pulumi';
 import { serviceLocalEndpoint } from '../utils/local-endpoint';
 import { ServiceSecret } from '../utils/secrets';
 import { ServiceDeployment } from '../utils/service-deployment';
+import { Clickhouse } from './clickhouse';
 import { Docker } from './docker';
 import { Environment } from './environment';
 import { Observability } from './observability';
@@ -27,6 +28,7 @@ export function deployWorkflows({
   postmarkSecret,
   schema,
   redis,
+  clickhouse,
 }: {
   postgres: Postgres;
   observability: Observability;
@@ -38,6 +40,7 @@ export function deployWorkflows({
   postmarkSecret: PostmarkSecret;
   schema: Schema;
   redis: Redis;
+  clickhouse: Clickhouse;
 }) {
   return (
     new ServiceDeployment(
@@ -80,6 +83,12 @@ export function deployWorkflows({
       .withSecret('REDIS_HOST', redis.secret, 'host')
       .withSecret('REDIS_PORT', redis.secret, 'port')
       .withSecret('REDIS_PASSWORD', redis.secret, 'password')
+      // ClickHouse — required by `evaluateMetricAlertRules` task
+      .withSecret('CLICKHOUSE_HOST', clickhouse.secret, 'host')
+      .withSecret('CLICKHOUSE_PORT', clickhouse.secret, 'port')
+      .withSecret('CLICKHOUSE_USERNAME', clickhouse.secret, 'username')
+      .withSecret('CLICKHOUSE_PASSWORD', clickhouse.secret, 'password')
+      .withSecret('CLICKHOUSE_PROTOCOL', clickhouse.secret, 'protocol')
       .deploy()
   );
 }
