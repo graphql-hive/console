@@ -12,11 +12,12 @@ import {
 import { differenceInMilliseconds, endOfDay, formatISO, startOfDay } from 'date-fns';
 import * as echarts from 'echarts';
 import ReactECharts from 'echarts-for-react';
-import { Globe, History, MoveDownIcon, MoveUpIcon, SearchIcon } from 'lucide-react';
+import { ArrowUpRight, Globe, History, MoveDownIcon, MoveUpIcon, SearchIcon } from 'lucide-react';
 import AutoSizer from 'react-virtualized-auto-sizer';
 import { useQuery } from 'urql';
 import { z } from 'zod';
 import { OrganizationLayout, Page } from '@/components/layouts/organization';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { EmptyList } from '@/components/ui/empty-list';
@@ -24,7 +25,13 @@ import { Input } from '@/components/ui/input';
 import { Meta } from '@/components/ui/meta';
 import { Subtitle, Title } from '@/components/ui/page';
 import { QueryError } from '@/components/ui/query-error';
-import { Select, SelectContent, SelectItem, SelectTrigger } from '@/components/ui/select';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { FragmentType, graphql, useFragment } from '@/gql';
@@ -279,167 +286,191 @@ export const NewProjectCardTargetCard = (props: {
 
   const { colors } = useChartStyles();
 
+  const [selectedLatencyKind, setSelectedLatencyKind] = useState<'p75' | 'p90' | 'p95' | 'p99'>(
+    'p95',
+  );
+
   return (
-    <Link
-      to="/$organizationSlug/$projectSlug/$targetSlug"
-      disabled={props.organizationSlug == null || props.projectSlug == null || target?.slug == null}
-      params={{
-        organizationSlug: props.organizationSlug ?? 'unknown-yet',
-        projectSlug: props.projectSlug ?? 'unknown-yet',
-        targetSlug: target?.slug ?? 'unknown-yet',
-      }}
-    >
-      <TooltipProvider>
-        <div ref={ref} className={cn('space-y-4 p-4', props.className)}>
-          <div className="grid grid-cols-[auto_1fr] gap-4">
-            <div className="grid grid-cols-2 gap-2">
-              <NewProjectCardTargetCardCount
-                title="Requests"
-                count={`${requestsInDateRange}`}
-                description="Requests served"
-              />
-              <NewProjectCardTargetCardCount
-                title="RPM"
-                count={`${rpm}`}
-                description="Throughput"
-              />
-              <NewProjectCardTargetCardCount
-                title="Success rate"
-                count={successRate}
-                description="Successfull requests"
-              />
-              <NewProjectCardTargetCardCount
-                title="Errors"
-                count={failureRate}
-                description="Failed requests"
-              />
-            </div>
-            <div>
-              <AutoSizer>
-                {size => (
-                  <ReactECharts
-                    style={{ width: size.width, height: size.height }}
-                    option={{
-                      animation: !!target,
-                      color: ['#f4b740'],
-                      grid: {
-                        left: 0,
-                        top: 10,
-                        right: 0,
-                        bottom: 10,
-                      },
-                      tooltip: {
-                        trigger: 'axis',
-                        axisPointer: {
-                          label: {
-                            formatter({ value }: { value: number }) {
-                              return new Date(value).toDateString();
-                            },
-                          },
-                        },
-                      },
-                      xAxis: [
-                        {
-                          show: false,
-                          type: 'time',
-                          boundaryGap: false,
-                        },
-                      ],
-                      yAxis: [
-                        {
-                          show: false,
-                          type: 'value',
-                          min: 0,
-                          max: highestNumberOfRequests,
-                        },
-                      ],
-                      series: [
-                        {
-                          name: 'Requests',
-                          type: 'line',
-                          smooth: false,
-                          lineStyle: {
-                            width: 2,
-                          },
-                          showSymbol: false,
-                          color: colors.primary,
-                          areaStyle: {
-                            opacity: 0.8,
-                            color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
-                              {
-                                offset: 0,
-                                color: colors.primary,
-                              },
-                              {
-                                offset: 1,
-                                color: hexToRgba(colors.primary, 0),
-                              },
-                            ]),
-                          },
-                          emphasis: {
-                            focus: 'series',
-                          },
-                          data: requests,
-                        },
-                        {
-                          name: 'Failures',
-                          type: 'line',
-                          smooth: false,
-                          lineStyle: {
-                            width: 2,
-                          },
-                          showSymbol: false,
-                          color: colors.error,
-                          areaStyle: {
-                            opacity: 0.8,
-                            color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
-                              {
-                                offset: 0,
-                                color: colors.error,
-                              },
-                              {
-                                offset: 1,
-                                color: hexToRgba(colors.error, 0),
-                              },
-                            ]),
-                          },
-                          emphasis: {
-                            focus: 'series',
-                          },
-                          data: failures,
-                        },
-                      ],
-                    }}
-                  />
-                )}
-              </AutoSizer>
+    <TooltipProvider>
+      <div ref={ref} className={cn('space-y-4 p-4', props.className)}>
+        <Link
+          to="/$organizationSlug/$projectSlug/$targetSlug"
+          disabled={
+            props.organizationSlug == null || props.projectSlug == null || target?.slug == null
+          }
+          params={{
+            organizationSlug: props.organizationSlug ?? 'unknown-yet',
+            projectSlug: props.projectSlug ?? 'unknown-yet',
+            targetSlug: target?.slug ?? 'unknown-yet',
+          }}
+          className="group grid w-full grid-cols-[1fr_auto] items-center gap-8 overflow-hidden"
+        >
+          <h4 className="line-clamp-1 text-lg font-medium">{target?.slug}</h4>
+          <div className="text-neutral-11 flex items-center gap-1 group-hover:underline">
+            Open <ArrowUpRight className="size-4" />
+          </div>
+        </Link>
+        <div className="space-y-4">
+          <div className="grid grid-cols-2 gap-2">
+            <div className="text-neutral-11">Requests</div>
+            <div className="text-right font-medium">
+              {requestsInDateRange} ({rpm} RPM)
             </div>
           </div>
-          <div className="grid w-full grid-cols-[1fr_auto] items-center gap-8 overflow-hidden">
-            <div>
-              <h4 className="line-clamp-2 text-lg font-bold">{target?.slug}</h4>
-              <p className="text-neutral-11 text-xs">{target?.type}</p>
+          <div className="bg-neutral-4 dark:bg-neutral-5 h-px w-full" />
+          <div className="space-y-2">
+            <div className="grid grid-cols-2 gap-2">
+              <div className="text-neutral-11">Success rate</div>
+              <div className="text-right font-medium">{successRate}</div>
             </div>
-            <div className="ml-auto flex flex-col gap-y-2">
-              <Tooltip>
-                <TooltipTrigger>
-                  <div className="flex flex-row items-center gap-x-2">
-                    <History className="text-neutral-10 size-4" />
-                    <div className="text-xs">
-                      {schemaVersionsInDateRange}{' '}
-                      {pluralize(totalNumberOfVersions, 'commit', 'commits')}
-                    </div>
-                  </div>
-                </TooltipTrigger>
-                <TooltipContent>
-                  Number of schemas pushed to this project in the last {props.days} days.
-                </TooltipContent>
-              </Tooltip>
+            <div className="bg-neutral-2 relative h-1 w-full overflow-hidden rounded-lg">
+              <div
+                className="absolute bottom-0 right-0 top-0 h-full bg-red-900"
+                style={{
+                  width: failureRate,
+                  left: successRate,
+                }}
+              />
+              <div
+                className="absolute bottom-0 left-0 top-0 h-full bg-green-500"
+                style={{ width: successRate }}
+              />
             </div>
+          </div>
+          <div className="bg-neutral-4 dark:bg-neutral-5 h-px w-full" />
+          <div className="grid grid-cols-2 gap-2">
+            <div className="text-neutral-11 -my-2 flex items-center gap-2">
+              Latency
+              <Select
+                value={selectedLatencyKind}
+                onValueChange={value => setSelectedLatencyKind(value as typeof selectedLatencyKind)}
+              >
+                <SelectTrigger className="w-16! h-6! px-2!">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="p75">p75</SelectItem>
+                  <SelectItem value="p90">p90</SelectItem>
+                  <SelectItem value="p95">p95</SelectItem>
+                  <SelectItem value="p99">p99</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="text-right font-medium uppercase">
+              {target?.operationsStats?.duration?.[selectedLatencyKind]}ms
+            </div>
+          </div>
+          <div className="bg-neutral-4 dark:bg-neutral-5 h-px w-full" />
+          <div className="grid grid-cols-2 gap-2">
+            <div className="text-neutral-11 uppercase">Commits</div>
+            <div className="text-right font-medium uppercase">
+              {schemaVersionsInDateRange}{' '}
+              <span className="text-neutral-10">in the last {props.days} days</span>
+            </div>
+          </div>
+          <div className="h-24">
+            <AutoSizer>
+              {size => (
+                <ReactECharts
+                  style={{ width: size.width, height: size.height }}
+                  option={{
+                    animation: !!target,
+                    color: ['#f4b740'],
+                    grid: {
+                      left: 0,
+                      top: 10,
+                      right: 0,
+                      bottom: 10,
+                    },
+                    tooltip: {
+                      trigger: 'axis',
+                      axisPointer: {
+                        label: {
+                          formatter({ value }: { value: number }) {
+                            return new Date(value).toDateString();
+                          },
+                        },
+                      },
+                    },
+                    xAxis: [
+                      {
+                        show: false,
+                        type: 'time',
+                        boundaryGap: false,
+                      },
+                    ],
+                    yAxis: [
+                      {
+                        show: false,
+                        type: 'value',
+                        min: 0,
+                        max: highestNumberOfRequests,
+                      },
+                    ],
+                    series: [
+                      {
+                        name: 'Failures',
+                        type: 'line',
+                        smooth: false,
+                        lineStyle: {
+                          width: 2,
+                        },
+                        showSymbol: false,
+                        color: colors.error,
+                        areaStyle: {
+                          opacity: 0.8,
+                          color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+                            {
+                              offset: 0,
+                              color: colors.error,
+                            },
+                            {
+                              offset: 1,
+                              color: hexToRgba(colors.error, 0),
+                            },
+                          ]),
+                        },
+                        emphasis: {
+                          focus: 'series',
+                        },
+                        data: failures,
+                      },
+                      {
+                        name: 'Requests',
+                        type: 'line',
+                        smooth: false,
+                        lineStyle: {
+                          width: 2,
+                        },
+                        showSymbol: false,
+                        color: colors.primary,
+                        areaStyle: {
+                          opacity: 0.8,
+                          color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+                            {
+                              offset: 0,
+                              color: colors.primary,
+                            },
+                            {
+                              offset: 1,
+                              color: hexToRgba(colors.primary, 0),
+                            },
+                          ]),
+                        },
+                        emphasis: {
+                          focus: 'series',
+                        },
+                        data: requests,
+                      },
+                    ],
+                  }}
+                />
+              )}
+            </AutoSizer>
           </div>
         </div>
-      </TooltipProvider>
-    </Link>
+      </div>
+    </TooltipProvider>
   );
 };
 
@@ -506,47 +537,21 @@ const NewProjectCard = (props: {
 
   return (
     <TooltipProvider>
-      <div className="border-neutral-5 dark:border-neutral-4 bg-neutral-4 dark:bg-neutral-1 overflow-hidden rounded-lg border">
+      <div className="border-neutral-5 dark:border-neutral-4 bg-neutral-1 dark:bg-neutral-3 overflow-hidden rounded-lg border">
         <Link
           to="/$organizationSlug/$projectSlug"
           params={{ organizationSlug: props.organizationSlug, projectSlug: props.projectSlug }}
-          className="grid w-full grid-cols-[1fr_auto] items-center gap-8 overflow-hidden p-4"
+          className="group grid w-full grid-cols-[1fr_auto] items-center gap-8 overflow-hidden p-4"
         >
-          <div>
-            <h4 className="line-clamp-2 text-lg font-bold">{project.slug}</h4>
-            <p className="text-neutral-11 text-xs">{projectTypeFullNames[project.type]}</p>
+          <div className="flex gap-x-2">
+            <h4 className="line-clamp-2 text-lg font-medium">{project.slug}</h4>
+            <Badge variant="secondary">{projectTypeFullNames[project.type]}</Badge>
           </div>
-          <div className="ml-auto flex flex-col gap-y-2">
-            <Tooltip>
-              <TooltipTrigger>
-                <div className="flex flex-row items-center gap-x-2">
-                  <Globe className="text-neutral-10 size-4" />
-                  <div className="text-xs">
-                    {requestsInDateRange} {pluralize(totalNumberOfRequests, 'request', 'requests')}
-                  </div>
-                </div>
-              </TooltipTrigger>
-              <TooltipContent>
-                Number of GraphQL requests in the last {props.days} days.
-              </TooltipContent>
-            </Tooltip>
-            <Tooltip>
-              <TooltipTrigger>
-                <div className="flex flex-row items-center gap-x-2">
-                  <History className="text-neutral-10 size-4" />
-                  <div className="text-xs">
-                    {schemaVersionsInDateRange}{' '}
-                    {pluralize(totalNumberOfVersions, 'commit', 'commits')}
-                  </div>
-                </div>
-              </TooltipTrigger>
-              <TooltipContent>
-                Number of schemas pushed to this project in the last {props.days} days.
-              </TooltipContent>
-            </Tooltip>
+          <div className="text-neutral-11 flex items-center gap-1 group-hover:underline">
+            Open <ArrowUpRight className="size-4" />
           </div>
         </Link>
-        <div className="bg-neutral-1 dark:bg-neutral-3 border-t-neutral-6 dark:border-t-neutral-5 divide-neutral-4 dark:divide-neutral-5 -mb-1 -mr-1 grid grid-cols-[repeat(auto-fit,minmax(calc(var(--spacing)*128),1fr))] divide-x divide-y rounded-t-lg border-t">
+        <div className="border-t-neutral-6 dark:border-t-neutral-5 divide-neutral-4 dark:divide-neutral-5 -mb-1 -mr-1 grid grid-cols-[repeat(auto-fit,minmax(calc(var(--spacing)*128),1fr))] divide-x divide-y border-t">
           {sortedTargets?.map(target => (
             <NewProjectCardTargetCard
               key={target.id}

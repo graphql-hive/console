@@ -4,7 +4,7 @@ import { formatNumber } from './use-formatted-number';
 
 export function formatRpm(rpm: number) {
   if (rpm === 0) {
-    return '-';
+    return '0';
   }
 
   if (rpm >= 1000) {
