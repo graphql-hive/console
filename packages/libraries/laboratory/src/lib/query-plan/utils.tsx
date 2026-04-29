@@ -610,9 +610,7 @@ function visitNode(
       break;
 
     case 'Flatten':
-      result = null;
-
-      visitNode(
+      result = visitNode(
         node.node,
         result,
         nodes,
@@ -674,10 +672,8 @@ function visitNode(
       break;
 
     case 'Condition':
-      result = null;
-
       if (node.ifClause) {
-        visitNode(
+        result = visitNode(
           node.ifClause,
           result,
           nodes,
@@ -689,9 +685,8 @@ function visitNode(
           </div>,
           renderConditionNode(node),
         );
-      }
-      if (node.elseClause) {
-        visitNode(
+      } else if (node.elseClause) {
+        result = visitNode(
           node.elseClause,
           result,
           nodes,

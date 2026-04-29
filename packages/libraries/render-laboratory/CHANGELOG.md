@@ -1,5 +1,51 @@
 # @graphql-yoga/render-graphiql
 
+## 0.1.6
+
+### Patch Changes
+
+- [#7998](https://github.com/graphql-hive/console/pull/7998)
+  [`20b6892`](https://github.com/graphql-hive/console/commit/20b689279f3e8203f5568908b7452324c1c75019)
+  Thanks [@mskorokhodov](https://github.com/mskorokhodov)! - Proper handling of flatter/condition as
+  high order nodes to not break lab qp
+
+- Updated dependencies
+  [[`20b6892`](https://github.com/graphql-hive/console/commit/20b689279f3e8203f5568908b7452324c1c75019)]:
+  - @graphql-hive/laboratory@0.1.6
+
+## 0.1.5
+
+### Patch Changes
+
+- [#7989](https://github.com/graphql-hive/console/pull/7989)
+  [`863f920`](https://github.com/graphql-hive/console/commit/863f920b86505a3d84c9001fef1c3e8a723bdca9)
+  Thanks [@mskorokhodov](https://github.com/mskorokhodov)! - Enhanced behavior when no collection
+  exists and the user attempts to save an operation, along with the ability to edit the collection
+  name.
+- Updated dependencies
+  [[`863f920`](https://github.com/graphql-hive/console/commit/863f920b86505a3d84c9001fef1c3e8a723bdca9)]:
+  - @graphql-hive/laboratory@0.1.5
+
+## 0.1.4
+
+### Patch Changes
+
+- [#7963](https://github.com/graphql-hive/console/pull/7963)
+  [`4a8bd4f`](https://github.com/graphql-hive/console/commit/4a8bd4fd1b4fbb34076e97d06ed1341432de451d)
+  Thanks [@mskorokhodov](https://github.com/mskorokhodov)! - Implemented functionality that allows
+  to have multiple queries in same operation while working only with focused one (run button, query
+  builder)
+
+- [#7892](https://github.com/graphql-hive/console/pull/7892)
+  [`fab4b03`](https://github.com/graphql-hive/console/commit/fab4b03ace2ff20759bbcd33465d00a5cbbc4c97)
+  Thanks [@mskorokhodov](https://github.com/mskorokhodov)! - Hive Laboratory renders Hive Router
+  query plan if included in response extensions
+
+- Updated dependencies
+  [[`4a8bd4f`](https://github.com/graphql-hive/console/commit/4a8bd4fd1b4fbb34076e97d06ed1341432de451d),
+  [`fab4b03`](https://github.com/graphql-hive/console/commit/fab4b03ace2ff20759bbcd33465d00a5cbbc4c97)]:
+  - @graphql-hive/laboratory@0.1.4
+
 ## 0.1.3
 
 ### Patch Changes

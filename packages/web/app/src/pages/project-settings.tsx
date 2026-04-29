@@ -266,7 +266,7 @@ function ProjectSettingsPage_SlugForm(props: { organizationSlug: string; project
                 <br />
                 <DocsLink
                   className="text-neutral-10 text-sm"
-                  href="/management/projects#change-slug-of-a-project"
+                  href="/schema-registry/management/projects#change-slug-of-a-project"
                 >
                   You can read more about it in the documentation
                 </DocsLink>

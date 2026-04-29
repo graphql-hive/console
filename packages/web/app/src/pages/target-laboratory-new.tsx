@@ -168,6 +168,26 @@ export const CreateCollectionMutation = graphql(`
   }
 `);
 
+const UpdateCollectionMutation = graphql(`
+  mutation LaboratoryUpdateCollection(
+    $selector: TargetSelectorInput!
+    $input: UpdateDocumentCollectionInput!
+  ) {
+    updateDocumentCollection(selector: $selector, input: $input) {
+      error {
+        message
+      }
+      ok {
+        collection {
+          id
+          name
+          description
+        }
+      }
+    }
+  }
+`);
+
 const UpdateOperationMutation = graphql(`
   mutation LaboratoryUpdateOperation(
     $selector: TargetSelectorInput!
@@ -464,6 +484,26 @@ function useLaboratoryState(props: {
     [mutateAddCollection, props.targetSlug, props.organizationSlug, props.projectSlug],
   );
 
+  const [, mutateUpdateCollection] = useMutation(UpdateCollectionMutation);
+  const updateCollection = useMemo(
+    () =>
+      throttle((collection: LaboratoryCollection) => {
+        void mutateUpdateCollection({
+          selector: {
+            targetSlug: props.targetSlug,
+            organizationSlug: props.organizationSlug,
+            projectSlug: props.projectSlug,
+          },
+          input: {
+            collectionId: collection.id,
+            name: collection.name,
+            description: collection.description,
+          },
+        });
+      }, 1000),
+    [mutateUpdateCollection, props.targetSlug, props.organizationSlug, props.projectSlug],
+  );
+
   const [, mutateUpdatePreflight] = useMutation(UpdatePreflightScriptMutation);
 
   const updatePreflight = useMemo(
@@ -647,6 +687,9 @@ function useLaboratoryState(props: {
     onCollectionCreate: (collection: LaboratoryCollection) => {
       addCollection(collection);
     },
+    onCollectionUpdate: (collection: LaboratoryCollection) => {
+      updateCollection(collection);
+    },
     onSettingsChange: (settings: LaboratorySettings | null) => {
       setLocalStorageState('settings', settings);
     },
@@ -660,6 +703,7 @@ function useLaboratoryState(props: {
       },
       collections: {
         create: data?.target?.viewerCanModifyLaboratory === true,
+        update: data?.target?.viewerCanModifyLaboratory === true,
         delete: data?.target?.viewerCanModifyLaboratory === true,
       },
       collectionsOperations: {

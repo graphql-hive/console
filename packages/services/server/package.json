@@ -39,7 +39,7 @@
     "@hive/workflows": "workspace:*",
     "@sentry/node": "7.120.2",
     "@swc/core": "1.13.5",
-    "@theguild/federation-composition": "0.22.2",
+    "@theguild/federation-composition": "0.22.3",
     "@trpc/client": "10.45.3",
     "@trpc/server": "10.45.3",
     "@whatwg-node/server": "0.10.17",

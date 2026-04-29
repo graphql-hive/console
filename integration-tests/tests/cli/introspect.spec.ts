@@ -2,10 +2,11 @@ import { AddressInfo } from 'node:net';
 import { parse } from 'graphql';
 import { createSchema, createYoga } from 'graphql-yoga';
 import { buildSubgraphSchema } from '@apollo/subgraph';
+import { useDisableIntrospection } from '@graphql-yoga/plugin-disable-introspection';
 import { createServer } from '@hive/service-common';
 import { introspect } from '../../testkit/cli';
 
-async function createHTTPGraphQLServer() {
+export async function createHTTPGraphQLServer() {
   const server = await createServer({
     sentryErrorHandler: false,
     log: {
@@ -98,6 +99,27 @@ async function createHTTPGraphQLServer() {
     ],
   });
 
+  const yogaNoIntrospection = createYoga({
+    graphqlEndpoint: '/graphql-federation-no-introspection',
+    logging: false,
+    schema: buildSubgraphSchema({
+      typeDefs: parse(/* GraphQL */ `
+        extend type Query {
+          me: User
+          user(id: ID!): User
+          users: [User]
+        }
+
+        type User @key(fields: "id") {
+          id: ID!
+          name: String
+          username: String
+        }
+      `),
+    }),
+    plugins: [useDisableIntrospection()],
+  });
+
   server.route({
     // Bind to the Yoga's endpoint to avoid rendering on any path
     url: yoga.graphqlEndpoint,
@@ -124,6 +146,13 @@ async function createHTTPGraphQLServer() {
     url: yogaFederationProtected.graphqlEndpoint,
     method: ['GET', 'POST', 'OPTIONS'],
     handler: (req, reply) => yogaFederationProtected.handleNodeRequestAndResponse(req, reply),
+  });
+
+  server.route({
+    // Bind to the Yoga's endpoint to avoid rendering on any path
+    url: yogaNoIntrospection.graphqlEndpoint,
+    method: ['GET', 'POST', 'OPTIONS'],
+    handler: (req, reply) => yogaNoIntrospection.handleNodeRequestAndResponse(req, reply),
   });
 
   await server.listen({
@@ -258,4 +287,14 @@ test.concurrent('can introspect protected federation with header', async ({ expe
 
     union _Entity = User
   `);
+});
+
+test.concurrent('error handling on server with no introspection enabled', async ({ expect }) => {
+  const server = await createHTTPGraphQLServer();
+  const command = introspect([server.url + '/graphql-federation-no-introspection']);
+  await expect(command).rejects.toThrowError(
+    'Could not get introspection result from the service.',
+  );
+  await expect(command).rejects.toThrow('[116]');
+  await expect(command).rejects.not.toThrow('[115]');
 });
