@@ -240,11 +240,11 @@ export class APIError extends HiveCLIError {
 }
 
 export class IntrospectionError extends HiveCLIError {
-  constructor() {
+  constructor(serviceName?: string) {
     super(
       ExitCode.ERROR,
       errorCode(ErrorCategory.GENERIC, 16),
-      'Could not get introspection result from the service. Make sure introspection is enabled by the server.',
+      `Could not get introspection result from the service${serviceName ? ` '${serviceName}'` : ''}. Make sure introspection is enabled by the server.`,
     );
   }
 }
