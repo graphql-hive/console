@@ -267,14 +267,6 @@ class FederationSubgraphIntrospectionThenGraphQLIntrospectionUrlLoader implement
   }
 
   async load(pointer: string, options: BaseLoaderOptions & { headers?: Record<string, string> }) {
-    const client = graphqlRequest({
-      logger: this.logger,
-      endpoint: pointer,
-      additionalHeaders: {
-        ...options?.headers,
-      },
-    });
-
     try {
       return await this.federationLoader.load(pointer, options);
     } catch (e) {
