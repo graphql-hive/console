@@ -12,27 +12,25 @@ export type { FilterDimension, FilterItem, FilterSelection } from './types';
  * The trigger that opens a menu of dimensions. Each dimension opens a
  * sub-menu containing a `FilterContent` panel for picking items.
  *
- * Default trigger reads "Filter" with a list-filter icon. When `activeLabel`
- * is provided, the trigger morphs to show that label with a clear-X icon
- * (use this for saved-view labels, etc. — clicking the X calls
- * `onClearActive`). If you need additional menu content (e.g. saved-filter
- * sub-menus), pass it via `extraSections`.
+ * Default trigger reads "Filter" with a list-filter icon. To swap the
+ * trigger to a custom label with a clear-X icon (e.g. for an active saved
+ * view), pass *both* `activeLabel` and `onClearActive` — they're a
+ * matched pair, the trigger only morphs when both are present.
+ *
+ * Pass `extraSections` to inject additional menu content (e.g. saved-filter
+ * sub-menus) below the dimensions list.
  */
 export function FilterMenu({
   dimensions,
   extraSections = [],
-  open,
-  onOpenChange,
   activeLabel,
   onClearActive,
 }: {
   dimensions: FilterDimension[];
   extraSections?: Array<ReactNode | ReactNode[]>;
-  open?: boolean;
-  onOpenChange?: (open: boolean) => void;
-  /** When set, the trigger shows this label and a clear-X icon instead of "Filter". */
+  /** Active-state label for the trigger. Pair with `onClearActive`. */
   activeLabel?: string;
-  /** Called when the trigger's X icon is clicked. Required to render the X. */
+  /** Handler for the trigger's clear-X icon. Pair with `activeLabel`. */
   onClearActive?: () => void;
 }) {
   const dimensionSection = dimensions.map(d => (
@@ -77,8 +75,6 @@ export function FilterMenu({
   return (
     <Menu
       trigger={trigger}
-      open={open}
-      onOpenChange={onOpenChange}
       modal={false}
       lockScroll
       side="bottom"

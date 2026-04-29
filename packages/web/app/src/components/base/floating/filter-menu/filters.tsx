@@ -27,9 +27,13 @@ export function Filters({
   pinnedControls?: ReactNode;
   /** Rendered after the chips. */
   afterChips?: ReactNode;
-  /** When set, the menu trigger shows this label and a clear-X (e.g. active saved view). */
+  /**
+   * Active-state label for the menu trigger (e.g. an active saved-view name).
+   * Matched pair with `onClearActive` — the trigger only morphs when both
+   * are present.
+   */
   activeLabel?: string;
-  /** Called when the trigger's X icon is clicked. */
+  /** Handler for the trigger's clear-X icon. Matched pair with `activeLabel`. */
   onClearActive?: () => void;
 }) {
   return (
