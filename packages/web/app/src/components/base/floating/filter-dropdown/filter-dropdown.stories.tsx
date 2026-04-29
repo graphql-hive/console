@@ -156,15 +156,3 @@ export const SubPanel: Story = () => {
     </div>
   );
 };
-
-const mockOperations: FilterItem[] = [
-  { name: 'GetUser', values: [] },
-  { name: 'ListProducts', values: [] },
-  { name: 'CreateOrder', values: [] },
-  { name: 'UpdateCart', values: [] },
-  { name: 'DeleteItem', values: [] },
-  { name: 'SearchInventory', values: [] },
-  { name: 'GetRecommendations', values: [] },
-  { name: 'ProcessPayment', values: [] },
-];
-

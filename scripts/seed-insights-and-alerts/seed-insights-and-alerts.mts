@@ -491,9 +491,7 @@ type Mutation { createReview(episode: Episode, review: ReviewInput!): Review }
 const SEED_DAYS_PAST = Number(process.env.SEED_DAYS_PAST ?? 30);
 const SEED_DAYS_AHEAD = Number(process.env.SEED_DAYS_AHEAD ?? 7);
 const SEED_BATCH_SIZE = Number(process.env.SEED_BATCH_SIZE ?? 500);
-const SEED_RULE_LIMIT = process.env.SEED_RULE_LIMIT
-  ? Number(process.env.SEED_RULE_LIMIT)
-  : null;
+const SEED_RULE_LIMIT = process.env.SEED_RULE_LIMIT ? Number(process.env.SEED_RULE_LIMIT) : null;
 
 const BATCH_SIZE = SEED_BATCH_SIZE;
 const THIRTY_DAYS_MS = SEED_DAYS_PAST * 24 * 60 * 60 * 1000;
@@ -1761,16 +1759,15 @@ async function main() {
   for (const filter of createdFilters) {
     for (let i = 0; i < filter.views; i += VIEW_CONCURRENCY) {
       const chunk = Math.min(VIEW_CONCURRENCY, filter.views - i);
-      await Promise.all(
-        Array.from({ length: chunk }, () => trackSavedFilterView(filter.id)),
-      );
+      await Promise.all(Array.from({ length: chunk }, () => trackSavedFilterView(filter.id)));
     }
     totalViews += filter.views;
     console.log(`   "${filter.name}": ${filter.views} views`);
   }
   console.log(
     `   ✓ ${totalViews} views across ${createdFilters.length} filters in ${(
-      (Date.now() - viewStart) / 1000
+      (Date.now() - viewStart) /
+      1000
     ).toFixed(1)}s`,
   );
 

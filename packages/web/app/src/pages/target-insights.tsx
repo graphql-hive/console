@@ -9,12 +9,12 @@ import { OperationsList } from '@/components/target/insights/list';
 import { SaveFilterButton } from '@/components/target/insights/save-filter-button';
 import { savedFilterToSearchParams } from '@/components/target/insights/search-params';
 import { InsightsFilterState } from '@/components/target/insights/search-schemas';
+import { OperationsStats } from '@/components/target/insights/stats';
 import { useInsightsFilterDimensions } from '@/components/target/insights/use-insights-filter-dimensions';
 import {
   useInsightsFilterExtraSections,
   type SavedFilterView,
 } from '@/components/target/insights/use-insights-filter-extra-sections';
-import { OperationsStats } from '@/components/target/insights/stats';
 import { DateRangePicker, presetLast7Days } from '@/components/ui/date-range-picker';
 import { EmptyList } from '@/components/ui/empty-list';
 import { Meta } from '@/components/ui/meta';

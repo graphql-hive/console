@@ -1,8 +1,8 @@
 import { type ReactNode } from 'react';
 import { ListFilter, X } from 'lucide-react';
 import { Button } from '../../button/button';
-import { FilterDropdown } from '../filter-dropdown/filter-dropdown';
 import { FilterContent } from '../filter-dropdown/filter-content';
+import { FilterDropdown } from '../filter-dropdown/filter-dropdown';
 import { Menu, MenuItem } from '../menu/menu';
 import type { FilterDimension } from './types';
 

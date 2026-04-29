@@ -278,7 +278,7 @@ export function AlertEventDetail({
             className={buttonVariants({ variant: 'primary' })}
           >
             <span className="px-2.5 py-1.5 text-[13px]">View alert rule detail</span>
-            <span className="border-l border-l-current/20 px-2 py-1.5">
+            <span className="border-l-current/20 border-l px-2 py-1.5">
               <ArrowRight className="size-3.5" />
             </span>
           </Link>

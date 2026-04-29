@@ -29,11 +29,21 @@ export function urlFilterDimension<TSearch extends Record<string, unknown>>(conf
   /** Optional sub-values label (e.g. "versions"). */
   valuesLabel?: string;
 }): FilterDimension {
-  const { navigate, search, searchKey, excludeKey, key, label, items, encode, decode, valuesLabel } =
-    config;
+  const {
+    navigate,
+    search,
+    searchKey,
+    excludeKey,
+    key,
+    label,
+    items,
+    encode,
+    decode,
+    valuesLabel,
+  } = config;
 
   const selectedItems = decode(search[searchKey]);
-  const excludeMode = excludeKey !== undefined ? Boolean(search[excludeKey]) : undefined;
+  const excludeMode = excludeKey !== undefined ? !!search[excludeKey] : undefined;
 
   const onChange = (next: FilterSelection[]) => {
     const encoded = encode(next);
@@ -85,10 +95,7 @@ export function encodeIdSelections(selections: FilterSelection[]): string[] | un
 }
 
 /** Decode `string[]` of ids to `FilterSelection[]` by looking up display names in `items`. */
-export function decodeIdSelections(
-  value: unknown,
-  items: FilterItem[],
-): FilterSelection[] {
+export function decodeIdSelections(value: unknown, items: FilterItem[]): FilterSelection[] {
   if (!Array.isArray(value) || value.length === 0) return [];
   const ids = new Set(value as string[]);
   return items
