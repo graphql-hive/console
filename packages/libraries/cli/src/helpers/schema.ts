@@ -270,10 +270,13 @@ class FederationSubgraphIntrospectionThenGraphQLIntrospectionUrlLoader implement
     try {
       return await this.federationLoader.load(pointer, options);
     } catch (e) {
-      // if this error is
+      // if this error is because because federated introspection isnt supported, then ignore and try
+      // normal introspection.
       if (!(e instanceof IntrospectionError || e instanceof InvalidFederationSubgraphError)) {
-        this.logger?.error?.(e);
-        throw e;
+        // otherwise, raise an introspection error because some unknown error happened during introspection.
+        // this may be unintuitive, but we don't want to raise an API Error since users may believe our API is the one at fault.
+        // We'd rather nudge them to look into their service's behavior.
+        throw new IntrospectionError();
       }
     }
 
