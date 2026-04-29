@@ -172,14 +172,15 @@ export function TargetAlertsDetailPage(props: {
   const [result] = useQuery({
     query: TargetAlertsDetailPage_Query,
     variables: { organizationSlug, projectSlug, targetSlug, ruleId, from, to },
+    requestPolicy: 'cache-and-network',
   });
 
   const rule = result.data?.target?.metricAlertRule;
 
-  // Show the spinner until we either have a rule or have a confirmed
-  // no-data response. Avoids flashing "not found" while the first fetch is
-  // in-flight or while urql hasn't populated `data` yet.
-  if (result.fetching || !result.data) {
+  // Spinner while loading (initial fetch, or revalidation after navigation
+  // where urql briefly serves stale `metricAlertRule: null`). Only render
+  // not-found once the network has confirmed it.
+  if (result.fetching || result.stale || !result.data) {
     return (
       <div className="flex h-fit flex-1 items-center justify-center py-28">
         <Spinner />
