@@ -49,6 +49,9 @@ const EnvironmentModel = zod.object({
   FEATURE_FLAGS_OTEL_TRACING_ENABLED: emptyString(
     zod.union([zod.literal('1'), zod.literal('0')]).optional(),
   ),
+  FEATURE_FLAGS_METRIC_ALERT_RULES_ENABLED: emptyString(
+    zod.union([zod.literal('1'), zod.literal('0')]).optional(),
+  ),
 });
 
 const CommerceModel = zod.object({
@@ -575,5 +578,7 @@ export const env = {
     schemaProposalsEnabled: base.FEATURE_FLAGS_SCHEMA_PROPOSALS_ENABLED === '1',
     /** Whether OTEL tracing should be enabled for all organizations. */
     otelTracingEnabled: base.FEATURE_FLAGS_OTEL_TRACING_ENABLED === '1',
+    /** Whether metric alert rules should be enabled cluster-wide. */
+    metricAlertRulesEnabled: base.FEATURE_FLAGS_METRIC_ALERT_RULES_ENABLED === '1',
   },
 } as const;

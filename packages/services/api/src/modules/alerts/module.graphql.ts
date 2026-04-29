@@ -296,6 +296,11 @@ export default gql`
     resolve to a rule belonging to this target.
     """
     metricAlertRule(id: ID!): MetricAlertRule
+    """
+    Whether the metric alert rules feature is enabled on this Hive instance.
+    Used by the frontend to hide alert routes/links when the feature flag is off.
+    """
+    viewerCanUseMetricAlertRules: Boolean!
   }
 
   extend type Mutation {

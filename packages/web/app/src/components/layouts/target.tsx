@@ -73,6 +73,7 @@ const TargetLayoutQuery = graphql(`
           viewerCanAccessSettings
           viewerCanAccessTraces
           viewerCanViewSchemaProposals
+          viewerCanUseMetricAlertRules
           latestSchemaVersion {
             id
           }
@@ -220,6 +221,7 @@ export const TargetLayout = ({
                     {
                       value: Page.Alerts,
                       label: 'Alerts',
+                      visible: currentTarget.viewerCanUseMetricAlertRules,
                       to: '/$organizationSlug/$projectSlug/$targetSlug/alerts',
                       params,
                     },

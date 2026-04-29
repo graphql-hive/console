@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { psql } from '@hive/postgres';
+import { env } from '../environment.js';
 import { defineTask, implementTask } from '../kit.js';
 
 export const PurgeExpiredAlertStateLogTask = defineTask({
@@ -8,6 +9,10 @@ export const PurgeExpiredAlertStateLogTask = defineTask({
 });
 
 export const task = implementTask(PurgeExpiredAlertStateLogTask, async args => {
+  if (!env.featureFlags.metricAlertRulesEnabled) {
+    args.logger.debug('Metric alert rules feature flag disabled, skipping purge');
+    return;
+  }
   args.logger.debug('purging expired alert state log entries');
   const result = await args.context.pg.oneFirst(psql`
     WITH "deleted" AS (

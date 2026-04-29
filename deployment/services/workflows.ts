@@ -42,6 +42,7 @@ export function deployWorkflows({
   redis: Redis;
   clickhouse: Clickhouse;
 }) {
+  const featureFlagsConfig = new pulumi.Config('featureFlags');
   return (
     new ServiceDeployment(
       'workflow-service',
@@ -58,6 +59,8 @@ export function deployWorkflows({
               : '',
           LOG_JSON: '1',
           SCHEMA_ENDPOINT: serviceLocalEndpoint(schema.service),
+          FEATURE_FLAGS_METRIC_ALERT_RULES_ENABLED:
+            featureFlagsConfig.get('metricAlertRulesEnabled') ?? '0',
         },
         readinessProbe: '/_readiness',
         livenessProbe: '/_health',

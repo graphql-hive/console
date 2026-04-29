@@ -123,6 +123,12 @@ const PrometheusModel = zod.object({
   PROMETHEUS_METRICS_PORT: emptyString(NumberFromString.optional()).default(10254),
 });
 
+const FeatureFlagsModel = zod.object({
+  FEATURE_FLAGS_METRIC_ALERT_RULES_ENABLED: emptyString(
+    zod.union([zod.literal('1'), zod.literal('0')]).optional(),
+  ),
+});
+
 const LogModel = zod.object({
   LOG_LEVEL: emptyString(
     zod
@@ -151,6 +157,7 @@ const configs = {
   clickhouse: ClickHouseModel.safeParse(process.env),
   requestBroker: RequestBrokerModel.safeParse(process.env),
   redis: RedisModel.safeParse(process.env),
+  featureFlags: FeatureFlagsModel.safeParse(process.env),
 };
 
 const environmentErrors: Array<string> = [];
@@ -184,6 +191,7 @@ const tracing = extractConfig(configs.tracing);
 const clickhouse = extractConfig(configs.clickhouse);
 const requestBroker = extractConfig(configs.requestBroker);
 const redis = extractConfig(configs.redis);
+const featureFlags = extractConfig(configs.featureFlags);
 
 const emailProviderConfig =
   email.EMAIL_PROVIDER === 'postmark'
@@ -279,5 +287,8 @@ export const env = {
     port: redis.REDIS_PORT,
     password: redis.REDIS_PASSWORD ?? '',
     tlsEnabled: redis.REDIS_TLS_ENABLED === '1',
+  },
+  featureFlags: {
+    metricAlertRulesEnabled: featureFlags.FEATURE_FLAGS_METRIC_ALERT_RULES_ENABLED === '1',
   },
 } as const;

@@ -1,6 +1,9 @@
+import { useQuery } from 'urql';
 import { Button } from '@/components/ui/button';
 import { Meta } from '@/components/ui/meta';
 import { NavLayout, PageLayout, PageLayoutContent } from '@/components/ui/page-content-layout';
+import { graphql } from '@/gql';
+import { useRedirect } from '@/lib/access/common';
 import { Link, Outlet, useLocation } from '@tanstack/react-router';
 
 const navItems = [
@@ -8,6 +11,27 @@ const navItems = [
   { label: 'Alert rules', segment: 'rules' },
   { label: 'Create a new alert', segment: 'create' },
 ] as const;
+
+const TargetAlertsPageQuery = graphql(`
+  query TargetAlertsPageQuery(
+    $organizationSlug: String!
+    $projectSlug: String!
+    $targetSlug: String!
+  ) {
+    target(
+      reference: {
+        bySelector: {
+          organizationSlug: $organizationSlug
+          projectSlug: $projectSlug
+          targetSlug: $targetSlug
+        }
+      }
+    ) {
+      id
+      viewerCanUseMetricAlertRules
+    }
+  }
+`);
 
 export function TargetAlertsPage(props: {
   organizationSlug: string;
@@ -20,9 +44,31 @@ export function TargetAlertsPage(props: {
     targetSlug: props.targetSlug,
   };
 
+  const [data] = useQuery({
+    query: TargetAlertsPageQuery,
+    variables: params,
+  });
+  const target = data.data?.target;
+  const location = useLocation();
+
+  useRedirect({
+    entity: target,
+    canAccess: target?.viewerCanUseMetricAlertRules === true,
+    redirectTo(router) {
+      void router.navigate({
+        to: '/$organizationSlug/$projectSlug/$targetSlug',
+        params,
+        replace: true,
+      });
+    },
+  });
+
+  if (target?.viewerCanUseMetricAlertRules === false) {
+    return null;
+  }
+
   // The detail page (path matches /alerts/{ruleId}) renders full-width without the
   // secondary nav. The literal segment routes (rules / activity / create) keep the nav.
-  const location = useLocation();
   const lastSegment = location.pathname.replace(/\/$/, '').split('/').pop();
   const literalSegments = new Set(['alerts', 'rules', 'activity', 'create']);
   const isDetailRoute = !!lastSegment && !literalSegments.has(lastSegment);

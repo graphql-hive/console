@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { psql } from '@hive/postgres';
+import { env } from '../environment.js';
 import { defineTask, implementTask } from '../kit.js';
 import {
   evaluateRule,
@@ -16,6 +17,11 @@ export const EvaluateMetricAlertRulesTask = defineTask({
 
 export const task = implementTask(EvaluateMetricAlertRulesTask, async args => {
   const { context, logger } = args;
+
+  if (!env.featureFlags.metricAlertRulesEnabled) {
+    logger.debug('Metric alert rules feature flag disabled, skipping evaluation');
+    return;
+  }
 
   if (!context.clickhouse) {
     logger.debug('ClickHouse not configured, skipping metric alert evaluation');
