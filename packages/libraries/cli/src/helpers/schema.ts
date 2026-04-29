@@ -9,7 +9,7 @@ import type { BaseLoaderOptions, Loader, Source } from '@graphql-tools/utils';
 import type { TypedDocumentNode } from '@graphql-typed-document-node/core';
 import { FragmentType, graphql, useFragment as unmaskFragment, useFragment } from '../gql';
 import { SchemaWarningConnection, SeverityLevelType } from '../gql/graphql';
-import { APIError, InvalidFederationSubgraphError } from './errors';
+import { APIError, IntrospectionError, InvalidFederationSubgraphError } from './errors';
 import { graphqlRequest } from './graphql-request';
 import { Texture } from './texture/texture';
 
@@ -275,27 +275,17 @@ class FederationSubgraphIntrospectionThenGraphQLIntrospectionUrlLoader implement
       },
     });
 
-    this.logger?.debug?.('Identify whether the service is a Federation subgraph.');
-
-    this.logger?.debug?.('Attempt "_Service" type lookup via "Query.__type".');
-
-    // We can check if the schema is a subgraph by looking for the `_Service` type.
-    const isSubgraph = await client.request({
-      operation: parse(/* GraphQL */ `
-        query ${'LookupService'} {
-          __type(name: "_Service") ${' '}{
-            name
-          }
-        }
-      `) as TypedDocumentNode<{ __type: null | { name: string } }, Record<string, never>>,
-    });
-
-    if (isSubgraph.__type !== null) {
-      this.logger?.debug?.('Type found, this is a Federation subgraph.');
+    try {
       return await this.federationLoader.load(pointer, options);
+    } catch (e) {
+      // if this error is
+      if (!(e instanceof IntrospectionError || e instanceof InvalidFederationSubgraphError)) {
+        this.logger?.error?.(e);
+        throw e;
+      }
     }
 
-    this.logger?.debug?.('Type not found, this is a not a Federation subgraph.');
+    this.logger?.debug?.('Query._service not found. This is a not a Federation subgraph.');
     return await this.urlLoader.load(pointer, options);
   }
 }

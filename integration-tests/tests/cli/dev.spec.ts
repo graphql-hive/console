@@ -366,12 +366,12 @@ describe('dev --remote', () => {
         write: supergraph.filepath,
       });
 
-      await expect(cmd).rejects.toThrowError(
+      await expect(cmd).rejects.toThrow(
         `The provided service URL does not point to a valid Federation subgraph.`,
       );
       // make sure correct error  code is being thrown
-      await expect(cmd).rejects.toThrowError('Cannot query field "_service" on type "Query"');
-      await expect(cmd).rejects.toThrowError('[121]');
+      await expect(cmd).rejects.toThrow('Cannot query field "_service" on type "Query"');
+      await expect(cmd).rejects.toThrow('[121]');
     },
   );
 });
