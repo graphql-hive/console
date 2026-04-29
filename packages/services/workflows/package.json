@@ -22,7 +22,7 @@
     "@types/mjml": "4.7.1",
     "@types/nodemailer": "7.0.4",
     "@types/sendmail": "1.4.7",
-    "bentocache": "1.1.0",
+    "bentocache": "1.5.1",
     "dotenv": "16.4.7",
     "graphile-worker": "0.16.6",
     "graphql": "16.9.0",
