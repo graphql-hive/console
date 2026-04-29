@@ -98,6 +98,7 @@ export function FilterChips({ dimensions }: { dimensions: FilterDimension[] }) {
           <FilterDropdown
             key={d.key}
             label={d.label}
+            labelPlural={d.labelPlural}
             items={d.items}
             selectedItems={d.selectedItems}
             onChange={d.onChange}

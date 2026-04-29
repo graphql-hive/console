@@ -7,6 +7,8 @@ import type { FilterItem, FilterSelection } from './types';
 
 const ITEM_HEIGHT = 28; // h-7
 const MAX_LIST_HEIGHT = 256; // max-h-64
+/** Hide the search input when the list is short enough to scan at a glance. */
+const SEARCH_VISIBILITY_THRESHOLD = 15;
 
 function getKey(item: FilterItem | FilterSelection): string {
   return item.id ?? item.name;
@@ -112,9 +114,13 @@ export function FilterContent({
 
   const listHeight = Math.min(virtualizer.getTotalSize(), MAX_LIST_HEIGHT);
 
+  const showSearch = items.length >= SEARCH_VISIBILITY_THRESHOLD;
+
   return (
-    <div role="group">
-      <FloatingSearch label={label} onSearch={setSearch} value={search} />
+    // Modest min-width so the popover doesn't collapse to a single 1–2 char
+    // item, but still sizes naturally to fit the content of small lists.
+    <div role="group" className="min-w-[120px]">
+      {showSearch && <FloatingSearch label={label} onSearch={setSearch} value={search} />}
       {/* Note about unavailable items */}
       {items.some(item => item.unavailable) && (
         <div className="text-neutral-11 mt-2 px-4 py-1 text-xs">

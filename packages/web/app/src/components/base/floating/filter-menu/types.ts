@@ -17,8 +17,14 @@ export interface FilterSelection {
 export type FilterDimension = {
   /** Stable key for the dimension (used for React reconciliation). */
   key: string;
-  /** Label shown in the menu and in the FilterContent search aria. */
+  /** Singular label shown in the menu and in the FilterContent search aria. */
   label: string;
+  /**
+   * Plural form of `label` used in the chip count (e.g. "3 severities").
+   * Defaults to `${label.toLowerCase()}s`, which is wrong for words like
+   * "severity" or "status" — provide an explicit plural in those cases.
+   */
+  labelPlural?: string;
   /** Items available for this dimension. Use `values: []` for flat (no sub-values). */
   items: FilterItem[];
   /** Currently selected items. */

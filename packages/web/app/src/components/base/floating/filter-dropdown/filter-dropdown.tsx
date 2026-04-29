@@ -2,13 +2,20 @@ import { useState } from 'react';
 import { X } from 'lucide-react';
 import { buttonVariants } from '@/components/base/button/button';
 import { disabledStyle, segmentButton, segmentSeparator } from '@/components/base/shared-styles';
+import { pluralize } from '@/lib/utils';
 import { Menu, MenuItem } from '../menu/menu';
 import { FilterContent } from './filter-content';
 import type { FilterItem, FilterSelection } from './types';
 
 export type FilterDropdownProps = {
-  /** Label shown on the trigger button */
+  /** Singular label shown on the trigger button. */
   label: string;
+  /**
+   * Plural form of `label` for the chip count (e.g. "severities" for
+   * "severity"). Defaults to `${label.toLowerCase()}s`, which is wrong for
+   * words like "severity" or "status" — provide an explicit plural there.
+   */
+  labelPlural?: string;
   /** Available items and their sub-values */
   items: FilterItem[];
   /** Currently selected items */
@@ -29,13 +36,9 @@ export type FilterDropdownProps = {
 
 const chipClass = buttonVariants({ variant: 'default' });
 
-function pluralize(count: number, singular: string): string {
-  const lower = singular.toLowerCase();
-  return `${count} ${count === 1 ? lower : `${lower}s`}`;
-}
-
 export function FilterDropdown({
   label,
+  labelPlural,
   items,
   selectedItems,
   onChange,
@@ -48,6 +51,9 @@ export function FilterDropdown({
   const [filterOpen, setFilterOpen] = useState(false);
 
   const selectedCount = selectedItems.length;
+  const singular = label.toLowerCase();
+  const plural = labelPlural ?? `${singular}s`;
+  const countLabel = `${selectedCount} ${pluralize(selectedCount, singular, plural)}`;
 
   return (
     <div
@@ -100,7 +106,7 @@ export function FilterDropdown({
         <Menu
           trigger={
             <button type="button" className={segmentButton}>
-              {pluralize(selectedCount, label)}
+              {countLabel}
             </button>
           }
           open={filterOpen}
