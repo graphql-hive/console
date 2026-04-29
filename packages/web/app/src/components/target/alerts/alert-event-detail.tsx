@@ -191,7 +191,7 @@ export function StateFlow({
         <StateBadge state={fromState} />
         <span className="capitalize">{ALERT_STATE_LABEL[fromState].toLowerCase()}</span>
       </div>
-      <ArrowRight className="text-neutral-10 size-3" />
+      <ArrowRight className="text-neutral-8 size-3" />
       <div className="inline-flex gap-1">
         <StateBadge state={toState} />
         <span className="capitalize">{ALERT_STATE_LABEL[toState].toLowerCase()}</span>

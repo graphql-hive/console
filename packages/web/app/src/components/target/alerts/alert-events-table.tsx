@@ -55,7 +55,7 @@ const COLUMNS = [
     cell: ctx => (
       <div className="text-neutral-11 inline-flex items-center gap-2">
         <StateBadge state={ctx.row.original.fromState as MetricAlertRuleState} />
-        <ArrowRight className="text-neutral-10 size-3.5" />
+        <ArrowRight className="text-neutral-8 size-3.5" />
         <StateBadge state={ctx.row.original.toState as MetricAlertRuleState} />
       </div>
     ),

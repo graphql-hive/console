@@ -45,10 +45,10 @@ const TYPE_LABEL: Record<MetricAlertRuleType, string> = {
   [MetricAlertRuleType.Traffic]: 'Traffic',
 };
 
-const SEVERITY_DOT_COLOR: Record<string, 'red' | 'yellow' | 'gray'> = {
-  CRITICAL: 'red',
-  WARNING: 'yellow',
-  INFO: 'gray',
+const SEVERITY_DOT_COLOR: Record<string, 'critical' | 'warning' | 'info'> = {
+  CRITICAL: 'critical',
+  WARNING: 'warning',
+  INFO: 'info',
 };
 
 const SEVERITY_LABEL: Record<string, string> = {
@@ -74,7 +74,7 @@ const COLUMNS = [
     cell: ctx => (
       <div className="text-neutral-11 inline-flex items-center gap-2">
         <StateBadge state={ctx.row.original.fromState as MetricAlertRuleState} />
-        <ArrowRight className="text-neutral-10 size-3.5" />
+        <ArrowRight className="text-neutral-8 size-3.5" />
         <StateBadge state={ctx.row.original.toState as MetricAlertRuleState} />
       </div>
     ),
@@ -96,7 +96,7 @@ const COLUMNS = [
       const sev = String(ctx.row.original.rule.severity);
       return (
         <span className="text-neutral-12 inline-flex items-center gap-1.5">
-          <BadgeRounded color={SEVERITY_DOT_COLOR[sev] ?? 'gray'} className="size-2" />
+          <BadgeRounded color={SEVERITY_DOT_COLOR[sev] ?? 'info'} className="size-2" />
           {SEVERITY_LABEL[sev] ?? sev}
         </span>
       );

@@ -85,8 +85,7 @@ const VIEW_RANGE_OPTIONS = [
   { value: '43200', label: 'Last 30 days' },
 ] as const;
 
-const ACTIVITY_ROUTE =
-  '/authenticated/$organizationSlug/$projectSlug/$targetSlug/alerts/activity';
+const ACTIVITY_ROUTE = '/authenticated/$organizationSlug/$projectSlug/$targetSlug/alerts/activity';
 
 export function TargetAlertsActivityPage(props: {
   organizationSlug: string;
@@ -191,7 +190,7 @@ export function TargetAlertsActivityPage(props: {
       </div>
 
       <div className="mt-6">
-        <AlertActivityChartStub />
+        <AlertActivityChartStub events={visibleEvents} from={from} to={to} />
       </div>
 
       <div className="mt-6">

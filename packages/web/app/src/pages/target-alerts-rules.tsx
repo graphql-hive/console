@@ -77,10 +77,10 @@ const TYPE_LABEL: Record<MetricAlertRuleType, string> = {
   [MetricAlertRuleType.Traffic]: 'Traffic',
 };
 
-const SEVERITY_DOT_COLOR: Record<MetricAlertRuleSeverity, 'red' | 'yellow' | 'gray'> = {
-  [MetricAlertRuleSeverity.Critical]: 'red',
-  [MetricAlertRuleSeverity.Warning]: 'yellow',
-  [MetricAlertRuleSeverity.Info]: 'gray',
+const SEVERITY_DOT_COLOR: Record<MetricAlertRuleSeverity, 'critical' | 'warning' | 'info'> = {
+  [MetricAlertRuleSeverity.Critical]: 'critical',
+  [MetricAlertRuleSeverity.Warning]: 'warning',
+  [MetricAlertRuleSeverity.Info]: 'info',
 };
 
 const SEVERITY_LABEL: Record<MetricAlertRuleSeverity, string> = {

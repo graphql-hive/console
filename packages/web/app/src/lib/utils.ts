@@ -79,6 +79,11 @@ function readChartStyles() {
       areaFillFrom: hex('--neutral-1'),
       /** Area fill gradient bottom (neutral-4). */
       areaFillTo: hex('--neutral-4'),
+      /** Severity / state semantic colors — match the in-app icon colors. */
+      critical: hex('--critical'),
+      warning: hex('--warning'),
+      info: hex('--info'),
+      success: hex('--success'),
     },
   };
 }

@@ -41,10 +41,10 @@ const THRESHOLD_TYPE_LABEL: Record<MetricAlertRuleThresholdType, string> = {
   [MetricAlertRuleThresholdType.PercentageChange]: 'Relative (%)',
 };
 
-const SEVERITY_DOT_COLOR: Record<MetricAlertRuleSeverity, 'red' | 'yellow' | 'gray'> = {
-  [MetricAlertRuleSeverity.Critical]: 'red',
-  [MetricAlertRuleSeverity.Warning]: 'yellow',
-  [MetricAlertRuleSeverity.Info]: 'gray',
+const SEVERITY_DOT_COLOR: Record<MetricAlertRuleSeverity, 'critical' | 'warning' | 'info'> = {
+  [MetricAlertRuleSeverity.Critical]: 'critical',
+  [MetricAlertRuleSeverity.Warning]: 'warning',
+  [MetricAlertRuleSeverity.Info]: 'info',
 };
 
 const CHANNEL_TYPE_LABEL: Record<string, string> = {
