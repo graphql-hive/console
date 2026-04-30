@@ -1,3 +1,4 @@
+import DataLoader from 'dataloader';
 import { Injectable, Scope } from 'graphql-modules';
 import * as zod from 'zod';
 import { PostgresDatabasePool, psql } from '@hive/postgres';
@@ -135,6 +136,33 @@ const METRIC_ALERT_STATE_LOG_SELECT = psql`
   scope: Scope.Operation,
 })
 export class MetricAlertRulesStorage {
+  // Per-request batcher: when a list of rules is queried and each rule
+  // resolves its `channels` field, this collapses N independent SELECTs on
+  // `metric_alert_rule_channels` into a single IN-list query. Operation-scoped
+  // so it's torn down at the end of each GraphQL request.
+  private channelIdsByRuleLoader = new DataLoader<string, string[]>(
+    async ruleIds => {
+      const rows = await this.pool.any(psql`/* batchedRuleChannelIds */
+        SELECT "metric_alert_rule_id" as "ruleId", "alert_channel_id" as "channelId"
+        FROM "metric_alert_rule_channels"
+        WHERE "metric_alert_rule_id" = ANY(${psql.array([...ruleIds], 'uuid')})
+      `);
+      const rowSchema = zod.object({ ruleId: zod.string(), channelId: zod.string() });
+      const byRule = new Map<string, string[]>();
+      for (const raw of rows) {
+        const row = rowSchema.parse(raw);
+        const list = byRule.get(row.ruleId);
+        if (list) {
+          list.push(row.channelId);
+        } else {
+          byRule.set(row.ruleId, [row.channelId]);
+        }
+      }
+      return ruleIds.map(id => byRule.get(id) ?? []);
+    },
+    { cache: true },
+  );
+
   constructor(private pool: PostgresDatabasePool) {}
 
   // --- Alert Rule CRUD ---
@@ -315,16 +343,13 @@ export class MetricAlertRulesStorage {
         `);
       }
     });
+    // Prime the loader so the post-mutation response read returns the values
+    // we just wrote, not whatever was cached before the update.
+    this.channelIdsByRuleLoader.clear(args.ruleId).prime(args.ruleId, [...args.channelIds]);
   }
 
   async getRuleChannelIds(args: { ruleId: string }): Promise<string[]> {
-    const result = await this.pool.anyFirst(psql`/* getRuleChannelIds */
-      SELECT "alert_channel_id"
-      FROM "metric_alert_rule_channels"
-      WHERE "metric_alert_rule_id" = ${args.ruleId}
-    `);
-
-    return result.map(id => zod.string().parse(id));
+    return this.channelIdsByRuleLoader.load(args.ruleId);
   }
 
   /**

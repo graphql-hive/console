@@ -1,5 +1,5 @@
 import type { Logger } from '@graphql-hive/logger';
-import type { PostgresDatabasePool } from '@hive/postgres';
+import type { CommonQueryMethods, PostgresDatabasePool } from '@hive/postgres';
 import { psql } from '@hive/postgres';
 import type { ClickHouseClient } from './clickhouse-client.js';
 
@@ -20,6 +20,8 @@ export type MetricAlertRuleRow = {
   stateChangedAt: string | null;
   confirmationMinutes: number;
   savedFilterId: string | null;
+  /** Plan name of the rule's organization. Drives state-log retention. */
+  organizationPlanName: string | null;
 };
 
 type ClickHouseWindowRow = {
@@ -78,8 +80,14 @@ function isThresholdBreached(
     compareValue = currentValue;
   } else {
     if (previousValue === 0) {
+      // Going from 0 → 0 is no change, not breached regardless of direction.
       if (currentValue === 0) return false;
-      compareValue = currentValue;
+      // Going from 0 → any positive value is mathematically an infinite
+      // percentage increase. ABOVE thresholds should always fire (Infinity
+      // exceeds any finite percent). BELOW thresholds should never fire
+      // (an increase isn't a decrease). Metrics are always non-negative
+      // (rates / counts / durations), so currentValue > 0 here.
+      compareValue = Number.POSITIVE_INFINITY;
     } else {
       compareValue = ((currentValue - previousValue) / previousValue) * 100;
     }
@@ -102,15 +110,8 @@ const ALERT_STATE_LOG_RETENTION_DAYS: Record<string, number> = {
   ENTERPRISE: 30,
 };
 
-async function getAlertStateLogRetentionDays(
-  pg: PostgresDatabasePool,
-  organizationId: string,
-): Promise<number> {
-  const result = await pg.maybeOneFirst(psql`
-    SELECT "plan_name" FROM "organizations" WHERE "id" = ${organizationId}
-  `);
-  const planName = typeof result === 'string' ? result : 'HOBBY';
-  return ALERT_STATE_LOG_RETENTION_DAYS[planName] ?? 7;
+function getAlertStateLogRetentionDays(planName: string | null): number {
+  return ALERT_STATE_LOG_RETENTION_DAYS[planName ?? 'HOBBY'] ?? 7;
 }
 
 function hasElapsed(stateChangedAt: string | null, minutes: number): boolean {
@@ -149,6 +150,7 @@ export async function fetchEnabledRules(
       , to_json(r."state_changed_at") as "stateChangedAt"
       , r."confirmation_minutes" as "confirmationMinutes"
       , r."saved_filter_id" as "savedFilterId"
+      , o."plan_name" as "organizationPlanName"
     FROM "metric_alert_rules" r
     INNER JOIN "organizations" o ON o."id" = r."organization_id"
     WHERE r."enabled" = true
@@ -246,11 +248,38 @@ export async function evaluateRule(args: {
   const previousValue = extractMetricValue(previous, rule);
   const breached = isThresholdBreached(currentValue, previousValue, rule);
 
+  // State-log retention is derived from the rule's organization plan, which
+  // is included on the row by `fetchEnabledRules` (single JOIN) — no extra
+  // database round-trip per rule.
+  const retentionDays = getAlertStateLogRetentionDays(rule.organizationPlanName);
+
+  // Notification side-effects fire AFTER the DB transaction commits. Sending
+  // a Slack/webhook for a transition that didn't actually persist would be
+  // worse than missing one, so we collect the intent here and fan out below.
+  let pendingNotification:
+    | {
+        fromState: MetricAlertRuleRow['state'];
+        toState: MetricAlertRuleRow['state'];
+        currentValue: number;
+        previousValue: number;
+      }
+    | null = null;
+
   if (breached) {
     switch (rule.state) {
       case 'NORMAL': {
-        await updateState(pg, rule.id, 'PENDING', now);
-        await logTransition(pg, rule, 'NORMAL', 'PENDING', currentValue, previousValue);
+        await pg.transaction('alertEval:normalToPending', async trx => {
+          await updateState(trx, rule.id, 'PENDING', now);
+          await logTransition(
+            trx,
+            rule,
+            'NORMAL',
+            'PENDING',
+            currentValue,
+            previousValue,
+            retentionDays,
+          );
+        });
         logger.info({ ruleId: rule.id }, 'Alert rule entered PENDING state');
         break;
       }
@@ -259,23 +288,32 @@ export async function evaluateRule(args: {
           rule.confirmationMinutes === 0 ||
           hasElapsed(rule.stateChangedAt, rule.confirmationMinutes)
         ) {
-          await updateState(pg, rule.id, 'FIRING', now, now);
-          await logTransition(pg, rule, 'PENDING', 'FIRING', currentValue, previousValue);
-          await pg.query(psql`
-            INSERT INTO "metric_alert_incidents" (
-              "metric_alert_rule_id", "current_value", "previous_value", "threshold_value"
-            ) VALUES (
-              ${rule.id}, ${currentValue}, ${previousValue}, ${rule.thresholdValue}
-            )
-          `);
+          await pg.transaction('alertEval:pendingToFiring', async trx => {
+            await updateState(trx, rule.id, 'FIRING', now, now);
+            await logTransition(
+              trx,
+              rule,
+              'PENDING',
+              'FIRING',
+              currentValue,
+              previousValue,
+              retentionDays,
+            );
+            await trx.query(psql`
+              INSERT INTO "metric_alert_incidents" (
+                "metric_alert_rule_id", "current_value", "previous_value", "threshold_value"
+              ) VALUES (
+                ${rule.id}, ${currentValue}, ${previousValue}, ${rule.thresholdValue}
+              )
+            `);
+          });
           logger.info({ ruleId: rule.id }, 'Alert rule entered FIRING state');
-          await onTransition?.({
-            rule,
+          pendingNotification = {
             fromState: 'PENDING',
             toState: 'FIRING',
             currentValue,
             previousValue,
-          });
+          };
         }
         break;
       }
@@ -283,8 +321,18 @@ export async function evaluateRule(args: {
         break;
       }
       case 'RECOVERING': {
-        await updateState(pg, rule.id, 'FIRING', now);
-        await logTransition(pg, rule, 'RECOVERING', 'FIRING', currentValue, previousValue);
+        await pg.transaction('alertEval:recoveringToFiring', async trx => {
+          await updateState(trx, rule.id, 'FIRING', now);
+          await logTransition(
+            trx,
+            rule,
+            'RECOVERING',
+            'FIRING',
+            currentValue,
+            previousValue,
+            retentionDays,
+          );
+        });
         logger.info({ ruleId: rule.id }, 'Alert rule re-entered FIRING from RECOVERING');
         break;
       }
@@ -295,8 +343,18 @@ export async function evaluateRule(args: {
         break;
       }
       case 'PENDING': {
-        await updateState(pg, rule.id, 'NORMAL', now);
-        await logTransition(pg, rule, 'PENDING', 'NORMAL', currentValue, previousValue);
+        await pg.transaction('alertEval:pendingToNormal', async trx => {
+          await updateState(trx, rule.id, 'NORMAL', now);
+          await logTransition(
+            trx,
+            rule,
+            'PENDING',
+            'NORMAL',
+            currentValue,
+            previousValue,
+            retentionDays,
+          );
+        });
         logger.info(
           { ruleId: rule.id },
           'Alert rule returned to NORMAL from PENDING (false alarm)',
@@ -304,8 +362,18 @@ export async function evaluateRule(args: {
         break;
       }
       case 'FIRING': {
-        await updateState(pg, rule.id, 'RECOVERING', now);
-        await logTransition(pg, rule, 'FIRING', 'RECOVERING', currentValue, previousValue);
+        await pg.transaction('alertEval:firingToRecovering', async trx => {
+          await updateState(trx, rule.id, 'RECOVERING', now);
+          await logTransition(
+            trx,
+            rule,
+            'FIRING',
+            'RECOVERING',
+            currentValue,
+            previousValue,
+            retentionDays,
+          );
+        });
         logger.info({ ruleId: rule.id }, 'Alert rule entered RECOVERING state');
         break;
       }
@@ -314,42 +382,57 @@ export async function evaluateRule(args: {
           rule.confirmationMinutes === 0 ||
           hasElapsed(rule.stateChangedAt, rule.confirmationMinutes)
         ) {
-          await updateState(pg, rule.id, 'NORMAL', now);
-          await logTransition(pg, rule, 'RECOVERING', 'NORMAL', currentValue, previousValue);
-          await pg.query(psql`
-            UPDATE "metric_alert_incidents"
-            SET "resolved_at" = NOW()
-            WHERE "metric_alert_rule_id" = ${rule.id} AND "resolved_at" IS NULL
-          `);
+          await pg.transaction('alertEval:recoveringToNormal', async trx => {
+            await updateState(trx, rule.id, 'NORMAL', now);
+            await logTransition(
+              trx,
+              rule,
+              'RECOVERING',
+              'NORMAL',
+              currentValue,
+              previousValue,
+              retentionDays,
+            );
+            await trx.query(psql`
+              UPDATE "metric_alert_incidents"
+              SET "resolved_at" = NOW()
+              WHERE "metric_alert_rule_id" = ${rule.id} AND "resolved_at" IS NULL
+            `);
+          });
           logger.info({ ruleId: rule.id }, 'Alert rule resolved, back to NORMAL');
-          await onTransition?.({
-            rule,
+          pendingNotification = {
             fromState: 'RECOVERING',
             toState: 'NORMAL',
             currentValue,
             previousValue,
-          });
+          };
         }
         break;
       }
     }
   }
 
+  // Single-statement housekeeping; doesn't need to share a transaction with
+  // the state-machine writes above.
   await pg.query(psql`
     UPDATE "metric_alert_rules"
     SET "last_evaluated_at" = NOW(), "updated_at" = NOW()
     WHERE "id" = ${rule.id}
   `);
+
+  if (pendingNotification) {
+    await onTransition?.({ rule, ...pendingNotification });
+  }
 }
 
 async function updateState(
-  pg: PostgresDatabasePool,
+  conn: CommonQueryMethods,
   ruleId: string,
   state: string,
   stateChangedAt: Date,
   lastTriggeredAt?: Date,
 ) {
-  await pg.query(psql`
+  await conn.query(psql`
     UPDATE "metric_alert_rules"
     SET
       "state" = ${state}
@@ -361,17 +444,17 @@ async function updateState(
 }
 
 async function logTransition(
-  pg: PostgresDatabasePool,
+  conn: CommonQueryMethods,
   rule: MetricAlertRuleRow,
   fromState: string,
   toState: string,
   value: number,
   previousValue: number,
+  retentionDays: number,
 ) {
-  const retentionDays = await getAlertStateLogRetentionDays(pg, rule.organizationId);
   const expiresAt = new Date(Date.now() + retentionDays * 24 * 60 * 60 * 1000);
 
-  await pg.query(psql`
+  await conn.query(psql`
     INSERT INTO "metric_alert_state_log" (
       "metric_alert_rule_id"
       , "target_id"
