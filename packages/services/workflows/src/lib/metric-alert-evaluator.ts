@@ -123,27 +123,40 @@ function formatClickHouseDate(date: Date): string {
   return date.toISOString().replace('T', ' ').replace('Z', '').slice(0, 19);
 }
 
-export async function fetchEnabledRules(pg: PostgresDatabasePool): Promise<MetricAlertRuleRow[]> {
+export async function fetchEnabledRules(
+  pg: PostgresDatabasePool,
+  clusterFlagEnabled: boolean,
+): Promise<MetricAlertRuleRow[]> {
+  // OR-style feature gate: when the cluster env-var is on, evaluate every
+  // enabled rule. When it's off, only evaluate rules whose organization has
+  // opted in via the per-org JSONB feature flag. Mirrors the resolver-side
+  // OR gate at alerts/resolvers/Target.ts.
   const result = await pg.any(psql`
     SELECT
-      "id"
-      , "organization_id" as "organizationId"
-      , "project_id" as "projectId"
-      , "target_id" as "targetId"
-      , "name"
-      , "type"
-      , "time_window_minutes" as "timeWindowMinutes"
-      , "metric"
-      , "threshold_type" as "thresholdType"
-      , "threshold_value" as "thresholdValue"
-      , "direction"
-      , "severity"
-      , "state"
-      , to_json("state_changed_at") as "stateChangedAt"
-      , "confirmation_minutes" as "confirmationMinutes"
-      , "saved_filter_id" as "savedFilterId"
-    FROM "metric_alert_rules"
-    WHERE "enabled" = true
+      r."id"
+      , r."organization_id" as "organizationId"
+      , r."project_id" as "projectId"
+      , r."target_id" as "targetId"
+      , r."name"
+      , r."type"
+      , r."time_window_minutes" as "timeWindowMinutes"
+      , r."metric"
+      , r."threshold_type" as "thresholdType"
+      , r."threshold_value" as "thresholdValue"
+      , r."direction"
+      , r."severity"
+      , r."state"
+      , to_json(r."state_changed_at") as "stateChangedAt"
+      , r."confirmation_minutes" as "confirmationMinutes"
+      , r."saved_filter_id" as "savedFilterId"
+    FROM "metric_alert_rules" r
+    INNER JOIN "organizations" o ON o."id" = r."organization_id"
+    WHERE r."enabled" = true
+      ${
+        clusterFlagEnabled
+          ? psql``
+          : psql`AND COALESCE((o."feature_flags"->>'metricAlertRules')::boolean, false) IS TRUE`
+      }
   `);
 
   return result as unknown as MetricAlertRuleRow[];

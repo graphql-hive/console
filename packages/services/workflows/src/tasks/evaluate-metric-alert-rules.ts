@@ -18,17 +18,15 @@ export const EvaluateMetricAlertRulesTask = defineTask({
 export const task = implementTask(EvaluateMetricAlertRulesTask, async args => {
   const { context, logger } = args;
 
-  if (!env.featureFlags.metricAlertRulesEnabled) {
-    logger.debug('Metric alert rules feature flag disabled, skipping evaluation');
-    return;
-  }
-
   if (!context.clickhouse) {
     logger.debug('ClickHouse not configured, skipping metric alert evaluation');
     return;
   }
 
-  const rules = await fetchEnabledRules(context.pg);
+  // OR-style gate: when cluster flag is on, evaluate every rule; when off,
+  // fetchEnabledRules filters to rules belonging to opted-in orgs only.
+  const clusterFlagEnabled = env.featureFlags.metricAlertRulesEnabled;
+  const rules = await fetchEnabledRules(context.pg, clusterFlagEnabled);
 
   if (rules.length === 0) {
     logger.debug('No enabled metric alert rules found');

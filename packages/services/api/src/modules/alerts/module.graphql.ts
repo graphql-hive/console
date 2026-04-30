@@ -297,8 +297,9 @@ export default gql`
     """
     metricAlertRule(id: ID!): MetricAlertRule
     """
-    Whether the metric alert rules feature is enabled on this Hive instance.
-    Used by the frontend to hide alert routes/links when the feature flag is off.
+    True when the cluster-wide kill-switch is enabled OR this organization has
+    opted in via its per-org feature flag. Used by the frontend to hide alert
+    routes/links when neither gate allows the feature.
     """
     viewerCanUseMetricAlertRules: Boolean!
   }
