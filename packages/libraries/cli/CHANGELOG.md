@@ -1,5 +1,20 @@
 # @graphql-hive/cli
 
+## 0.59.1
+
+### Patch Changes
+
+- [#8018](https://github.com/graphql-hive/console/pull/8018)
+  [`083a4a7`](https://github.com/graphql-hive/console/commit/083a4a7d9f17b5cc86483c5ce274ec0496bcfdc1)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Correct fallback behavior for subgraph
+  introspection. If subgraph introspection using graphql's standard introspection query fails, then
+  it will fall back to Federation's Query.\_service query.
+
+- [#8014](https://github.com/graphql-hive/console/pull/8014)
+  [`32cdd14`](https://github.com/graphql-hive/console/commit/32cdd1474e510af21d5aa94029c3ad813e5baafd)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Show correct error code (116) with origin service
+  for failed introspection result.
+
 ## 0.59.0
 
 ### Minor Changes
