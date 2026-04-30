@@ -36,6 +36,14 @@ export const Proposal_ChangeFragment = graphql(/* GraphQL */ `
     message(withSafeBasedOnUsageNote: false)
     path
     severityLevel
+    schemaProposalChangeDetails {
+      implementedBy {
+        id
+      }
+      schemaProposal {
+        id
+      }
+    }
     meta {
       ... on FieldArgumentDescriptionChanged {
         argumentName

@@ -18,7 +18,20 @@ import type {
 import type { SchemaCheckWarning } from './providers/models/shared';
 
 export type SchemaChangeConnectionMapper = ReadonlyArray<SchemaChangeMapper>;
-export type SchemaChangeMapper = SchemaChangeType;
+export type SchemaChangeMapper = SchemaChangeType & {
+  /**
+   * Pass a selector to allow
+   */
+  selector?: {
+    organizationId: string;
+    projectId: string;
+    targetId: string;
+    /** If viewing from a schema proposal */
+    schemaProposalId: string | null;
+    /** If viewing from a schema version */
+    schemaVersionId: string | null;
+  };
+};
 export type SchemaChangeApprovalMapper = SchemaCheckApprovalMetadata;
 export type SchemaErrorConnectionMapper = readonly SchemaError[];
 export type SchemaWarningConnectionMapper = readonly SchemaCheckWarning[];

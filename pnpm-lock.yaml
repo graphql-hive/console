@@ -1107,6 +1107,9 @@ importers:
       '@graphql-hive/signal':
         specifier: 1.0.0
         version: 1.0.0
+      '@graphql-inspector/compare-changes':
+        specifier: 0.1.0-alpha-20260410200850-4134db734dce207751762bfcbe74ab87eab30fe9
+        version: 0.1.0-alpha-20260410200850-4134db734dce207751762bfcbe74ab87eab30fe9(graphql@16.9.0)
       '@graphql-inspector/core':
         specifier: 7.1.2
         version: 7.1.2(graphql@16.9.0)
@@ -2000,6 +2003,9 @@ importers:
       '@graphql-hive/logger':
         specifier: 1.0.9
         version: 1.0.9(pino@10.3.0)
+      '@graphql-inspector/compare-changes':
+        specifier: 0.1.0-alpha-20260410200850-4134db734dce207751762bfcbe74ab87eab30fe9
+        version: 0.1.0-alpha-20260410200850-4134db734dce207751762bfcbe74ab87eab30fe9(graphql@16.9.0)
       '@graphql-inspector/core':
         specifier: 7.1.2
         version: 7.1.2(graphql@16.9.0)
@@ -4327,6 +4333,12 @@ packages:
       '@graphql-inspector/loaders': ^4.1.0
       graphql: ^14.0.0 || ^15.0.0 || ^16.0.0
       yargs: 17.7.2
+
+  '@graphql-inspector/compare-changes@0.1.0-alpha-20260410200850-4134db734dce207751762bfcbe74ab87eab30fe9':
+    resolution: {integrity: sha512-pv/2OBpbGBW31Vr6umW/RRarQ1QMBRbgDyOKQgFa+IfRla1s3nvO2n8g3Cn8D16hJQStk8HYnDtz0CoxiUl1Bg==}
+    engines: {node: '>=18.0.0'}
+    peerDependencies:
+      graphql: ^14.0.0 || ^15.0.0 || ^16.0.0
 
   '@graphql-inspector/config@4.0.2':
     resolution: {integrity: sha512-fnIwVpGM5AtTr4XyV8NJkDnwpXxZSBzi3BopjuXwBPXXD1F3tcVkCKNT6/5WgUQGfNPskBVbitcOPtM4hIYAOQ==}
@@ -22549,6 +22561,11 @@ snapshots:
       graphql: 16.9.0
       tslib: 2.6.2
       yargs: 17.7.2
+
+  '@graphql-inspector/compare-changes@0.1.0-alpha-20260410200850-4134db734dce207751762bfcbe74ab87eab30fe9(graphql@16.9.0)':
+    dependencies:
+      graphql: 16.9.0
+      tslib: 2.6.2
 
   '@graphql-inspector/config@4.0.2(graphql@16.9.0)':
     dependencies:

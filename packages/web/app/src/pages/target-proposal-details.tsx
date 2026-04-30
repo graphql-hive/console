@@ -16,6 +16,8 @@ type MappedChange = {
   change: Change<any>;
   error?: Error;
   mergeStatus?: MergeStatus;
+  implementedBy?: string;
+  proposedBy?: string;
 };
 
 export function TargetProposalDetailsPage(props: {
@@ -44,13 +46,19 @@ export function TargetProposalDetailsPage(props: {
               change: c,
               error: conflict.error,
               mergeStatus: MergeStatus.CONFLICT,
+              implementedBy: c.schemaProposalChangeDetails?.implementedBy?.id,
+              proposedBy: c.schemaProposalChangeDetails?.schemaProposal.id,
             };
           }
           const ignored = ignoredChanges.find(({ change }) => c === change);
           if (ignored) {
             return null;
           }
-          return { change: c };
+          return {
+            change: c,
+            implementedBy: c.schemaProposalChangeDetails?.implementedBy?.id,
+            proposedBy: c.schemaProposalChangeDetails?.schemaProposal.id,
+          };
         });
 
         const breaking: MappedChange[] = [];
@@ -118,21 +126,33 @@ export function TargetProposalDetailsPage(props: {
                   changes={breaking}
                   title="Breaking Changes"
                   info="Changes that will break existing operations."
+                  organizationSlug={props.organizationSlug}
+                  projectSlug={props.projectSlug}
+                  targetSlug={props.targetSlug}
                 />
                 <ChangeBlock
                   changes={dangerous}
                   title="Dangerous Changes"
                   info="Changes that could cause different behavior that might cause issues for existing operations."
+                  organizationSlug={props.organizationSlug}
+                  projectSlug={props.projectSlug}
+                  targetSlug={props.targetSlug}
                 />
                 <ChangeBlock
                   changes={safe}
                   title="Safe Changes"
                   info="Changes that do not run a risk of breaking any existing operations."
+                  organizationSlug={props.organizationSlug}
+                  projectSlug={props.projectSlug}
+                  targetSlug={props.targetSlug}
                 />
                 <ChangeBlock
                   changes={ignored}
                   title="Ignored Changes"
                   info="Changes that result in no difference when applied to the current version of the schemas. These can be safely ignored but are kept as part of the proposal unless explicitly removed."
+                  organizationSlug={props.organizationSlug}
+                  projectSlug={props.projectSlug}
+                  targetSlug={props.targetSlug}
                 />
               </div>
             </Fragment>

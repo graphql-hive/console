@@ -8,10 +8,36 @@ export const FailedSchemaCheck: FailedSchemaCheckResolvers = {
     return injector.get(SchemaCheckManager).getSchemaVersion(schemaCheck);
   },
   safeSchemaChanges: (schemaCheck, _, { injector }) => {
-    return injector.get(SchemaCheckManager).getSafeSchemaChanges(schemaCheck);
+    const selector = {
+      organizationId: schemaCheck.selector.organizationId,
+      projectId: schemaCheck.selector.projectId,
+      targetId: schemaCheck.targetId,
+      schemaProposalId: schemaCheck.schemaProposalId,
+      schemaVersionId: null,
+    };
+    return injector
+      .get(SchemaCheckManager)
+      .getSafeSchemaChanges(schemaCheck)
+      ?.map(c => ({
+        ...c,
+        selector,
+      }));
   },
   breakingSchemaChanges: (schemaCheck, _, { injector }) => {
-    return injector.get(SchemaCheckManager).getBreakingSchemaChanges(schemaCheck);
+    const selector = {
+      organizationId: schemaCheck.selector.organizationId,
+      projectId: schemaCheck.selector.projectId,
+      targetId: schemaCheck.targetId,
+      schemaProposalId: schemaCheck.schemaProposalId,
+      schemaVersionId: null,
+    };
+    return injector
+      .get(SchemaCheckManager)
+      .getBreakingSchemaChanges(schemaCheck)
+      ?.map(c => ({
+        ...c,
+        selector,
+      }));
   },
   compositionErrors: schemaCheck => {
     return schemaCheck.schemaCompositionErrors;
@@ -47,6 +73,19 @@ export const FailedSchemaCheck: FailedSchemaCheckResolvers = {
     return injector.get(SchemaCheckManager).getConditionalBreakingChangeMetadata(schemaCheck);
   },
   schemaChanges: (schemaCheck, _, { injector }) => {
-    return injector.get(SchemaCheckManager).getAllSchemaChanges(schemaCheck);
+    const selector = {
+      organizationId: schemaCheck.selector.organizationId,
+      projectId: schemaCheck.selector.projectId,
+      targetId: schemaCheck.targetId,
+      schemaProposalId: schemaCheck.schemaProposalId,
+      schemaVersionId: null,
+    };
+    return injector
+      .get(SchemaCheckManager)
+      .getAllSchemaChanges(schemaCheck)
+      ?.map(c => ({
+        ...c,
+        selector,
+      }));
   },
 };

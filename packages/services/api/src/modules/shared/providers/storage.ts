@@ -1,6 +1,6 @@
 import { Injectable } from 'graphql-modules';
 import type { PolicyConfigurationObject } from '@hive/policy';
-import { PostgresDatabasePool } from '@hive/postgres';
+import { CommonQueryMethods, PostgresDatabasePool } from '@hive/postgres';
 import type {
   ConditionalBreakingChangeMetadata,
   PaginatedOrganizationInvitationConnection,
@@ -443,7 +443,7 @@ export interface Storage {
     _: {
       serviceName: string;
       composable: boolean;
-      actionFn(versionId: string): Promise<void>;
+      actionFn(versionId: string, trx: CommonQueryMethods): Promise<void>;
       changes: Array<SchemaChangeType> | null;
       diffSchemaVersionId: string | null;
       conditionalBreakingChangeMetadata: null | ConditionalBreakingChangeMetadata;
@@ -484,7 +484,7 @@ export interface Storage {
       commit: string;
       logIds: string[];
       base_schema: string | null;
-      actionFn(versionId: string): Promise<void>;
+      actionFn(versionId: string, trx: CommonQueryMethods): Promise<void>;
       changes: Array<SchemaChangeType>;
       previousSchemaVersion: null | string;
       diffSchemaVersionId: null | string;

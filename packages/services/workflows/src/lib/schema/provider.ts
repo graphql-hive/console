@@ -1,13 +1,18 @@
 import { DocumentNode, GraphQLError, parse, print, SourceLocation } from 'graphql';
 import { z } from 'zod';
 import type { Logger } from '@graphql-hive/logger';
+import { generateChangeHash, isChangeEqual } from '@graphql-inspector/compare-changes';
 import type { Change } from '@graphql-inspector/core';
 import { errors, patch } from '@graphql-inspector/patch';
 import type { Project, SchemaObject } from '@hive/api';
 import type { ComposeAndValidateResult } from '@hive/api/shared/entities';
-import { PostgresDatabasePool, psql } from '@hive/postgres';
+import { CommonQueryMethods, PostgresDatabasePool, psql } from '@hive/postgres';
 import type { ContractsInputType, SchemaBuilderApi } from '@hive/schema';
-import { decodeCreatedAtAndUUIDIdBasedCursor, HiveSchemaChangeModel } from '@hive/storage';
+import {
+  decodeCreatedAtAndUUIDIdBasedCursor,
+  HiveSchemaChangeModel,
+  SchemaChangeModel,
+} from '@hive/storage';
 import { createTRPCProxyClient, httpLink } from '@trpc/client';
 
 type SchemaProviderConfig = {
@@ -28,9 +33,14 @@ const SchemaProposalChangesModel = z.object({
   id: z.string().uuid(),
   serviceName: z.string().nullable(),
   serviceUrl: z.string().nullable(),
-  schemaProposalChanges: z.array(HiveSchemaChangeModel).default([]),
+  schemaProposalChanges: z
+    .array(HiveSchemaChangeModel)
+    .nullable()
+    .transform(a => a ?? []),
   createdAt: z.string(),
 });
+
+type SchemaProposalChangesModelType = z.TypeOf<typeof SchemaProposalChangesModel>;
 
 function createExternalConfig(config: Project['externalComposition']) {
   // : ExternalCompositionConfig {
@@ -270,12 +280,25 @@ export function schemaProvider(providerConfig: SchemaProviderConfig) {
       return baseSchema;
     },
 
-    async proposedSchemas(args: {
-      targetId: string;
-      proposalId: string;
-      cursor?: string | null;
-      pool: PostgresDatabasePool;
-    }) {
+    /**
+     * Loops through all schema checks that are part of the schema proposal. This uses pagination
+     * to avoid loading too much at once
+     *
+     * This is hard capped at 2_000 subgraphs for safety.
+     **/
+    async forEachProposalCheck(
+      args: {
+        targetId: string;
+        proposalId: string;
+        cursor?: string | null;
+        pool: PostgresDatabasePool;
+      },
+      callback: (
+        change: Omit<SchemaProposalChangesModelType, 'schemaProposalChanges'> & {
+          schemaProposalChanges: Change[];
+        },
+      ) => void | Promise<void>,
+    ) {
       const now = new Date().toISOString();
       let cursor: {
         createdAt: string;
@@ -288,11 +311,6 @@ export function schemaProvider(providerConfig: SchemaProviderConfig) {
 
       // fetch all latest schemas. Support up to 2_000 subgraphs.
       const maxLoops = 100;
-      const services = await this.latestComposableSchemas({
-        targetId: args.targetId,
-        pool: args.pool,
-      });
-
       let nextCursor = cursor;
       // collect changes in paginated requests to avoid stalling the db
       let i = 0;
@@ -350,48 +368,229 @@ export function schemaProvider(providerConfig: SchemaProviderConfig) {
           LIMIT 20
         `);
 
-        const changes = result.map(row => {
-          const value = SchemaProposalChangesModel.parse(row);
+        const checks = result.map(row => {
+          const check = SchemaProposalChangesModel.parse(row);
           return {
-            ...value,
-            schemaProposalChanges: value.schemaProposalChanges.map(c => {
-              const change: Change<any> = {
-                ...c,
+            ...check,
+            schemaProposalChanges: check.schemaProposalChanges?.map((c): Change<any> => {
+              return {
+                message: c.message,
+                meta: c.meta,
+                type: c.type,
                 path: c.path ?? undefined,
                 criticality: {
                   level: c.criticality,
                 },
-              };
-              return change;
+              } satisfies Change<any>;
             }),
           };
         });
 
-        if (changes.length === 20) {
+        for (const check of checks) {
+          if (check.schemaProposalChanges.length !== 0) {
+            await callback(check);
+          }
+        }
+
+        if (checks.length === 20) {
           nextCursor = {
             // Keep the created at because we want the same set of checks when joining on the "latest".
-            createdAt: nextCursor?.createdAt ?? changes[0]?.createdAt ?? now,
-            id: changes[changes.length - 1].id,
+            createdAt: nextCursor?.createdAt ?? checks[0]?.createdAt ?? now,
+            id: checks[checks.length - 1].id,
           };
         } else {
           nextCursor = null;
         }
+      } while (nextCursor && ++i < maxLoops);
+    },
 
-        for (const change of changes) {
-          const service = services.find(s => change.serviceName === s.serviceName);
-          if (service) {
-            const ast = parse(service.sdl, { noLocation: true });
-            service.sdl = print(
-              patch(ast, change.schemaProposalChanges, { onError: errors.looseErrorHandler }),
-            );
-            if (change.serviceUrl) {
-              service.serviceUrl = change.serviceUrl;
-            }
+    async proposedSchemas(args: {
+      targetId: string;
+      proposalId: string;
+      cursor?: string | null;
+      pool: PostgresDatabasePool;
+    }) {
+      const services = await this.latestComposableSchemas({
+        targetId: args.targetId,
+        pool: args.pool,
+      });
+
+      await this.forEachProposalCheck(args, change => {
+        const service = services.find(s => change.serviceName === s.serviceName);
+        if (service) {
+          const ast = parse(service.sdl, { noLocation: true });
+          service.sdl = print(
+            patch(ast, change.schemaProposalChanges, { onError: errors.looseErrorHandler }),
+          );
+          if (change.serviceUrl) {
+            service.serviceUrl = change.serviceUrl;
           }
         }
-      } while (nextCursor && ++i < maxLoops);
+      });
 
       return services;
     },
+
+    async approveChanges(
+      conn: CommonQueryMethods,
+      records: {
+        change: Change;
+        proposalId: string;
+        service?: string;
+        targetId: string;
+      }[],
+    ) {
+      if (records.length === 0) {
+        return;
+      }
+      const values = records.map(
+        r => psql`(
+          ${generateChangeHash(r.change)}
+          ,${JSON.stringify(r.change)}
+          ,${r.proposalId}
+          ,${r.service ?? null}
+          ,${r.targetId}
+        )`,
+      );
+
+      await conn.query(psql`
+          INSERT INTO "proposal_approved_changes" (
+             hash
+            ,change
+            ,proposal_id
+            ,service
+            ,target_id
+          )
+          VALUES ${psql.join(values, psql.fragment`,`)}
+        `);
+    },
+
+    async implementChanges(
+      conn: CommonQueryMethods,
+      records: {
+        /** Change ID */
+        id: string;
+
+        schemaVersionId: string;
+      }[],
+    ) {
+      await conn.query(psql`
+          UPDATE proposal_approved_changes as p
+          SET schema_version_id = v."schemaVersionId"
+          FROM jsonb_to_recordset(
+            ${psql.jsonb(records)}
+          ) as v(id uuid, "schemaVersionId" uuid)
+          WHERE p.id = v.id;
+        `);
+    },
+
+    /**
+     * If we have a set of changes, this looks up to determine whether or not those changes
+     * have been approved. This is useful for looking up (on check or publish) whether the
+     * change matches any of the approved proposals' changess, because in this situation
+     * there is no known proposal or schema version to match on. This function queries for all
+     * passed in changes, so any batching/pagination should be done prior to calling this function.
+     *
+     * This is also ran for the schema checks page to display whether or not a change has
+     * been approved by a proposal or not.
+     *
+     * @returns An array of change approval records. The index corresponds with the original
+     *          changes array passed.
+     */
+    async getEquivalentUnimplementedApprovedChanges(
+      conn: CommonQueryMethods,
+      args: { changes: Change[]; targetId: string },
+    ) {
+      if (args.changes.length === 0) {
+        return [];
+      }
+
+      // calculate hashes the same order as the changes
+      const hashes = args.changes.map(generateChangeHash);
+
+      // fetch the changes based on the hash. Note that ordering is not guaranteed here
+      const result = await conn.any(psql`
+        SELECT ${proposalApprovedChangeFields(psql`"c"`)}
+        FROM "proposal_approved_changes" as "c"
+        WHERE hash = ANY(${psql.array(hashes, 'text')})
+          AND target_id = ${args.targetId}
+          AND schema_version_id IS NULL
+      `);
+
+      const approvedChanges = result.map(row => ProposalApprovedChangeModel.parse(row));
+      const approvedChangeLookup = Map.groupBy(approvedChanges, c => c.hash);
+
+      // iterate over all changes and hashes, determine if this change is within the approvedChanges list
+      return args.changes.map((change, i) => {
+        const hash = hashes[i];
+        const approvedMatch = approvedChangeLookup.get(hash);
+        const changeApproval =
+          approvedMatch?.find(match => {
+            return isChangeEqual(match.change as Change<any>, change);
+          }) ?? null;
+
+        return changeApproval;
+      });
+    },
+
+    async schemaVersionChanges({
+      pool,
+      versionId,
+    }: {
+      pool: PostgresDatabasePool;
+      versionId: string;
+    }) {
+      const changes = await pool
+        .any(
+          psql`/* getSchemaChangesForVersion */
+        SELECT
+          "change_type" as "type",
+          "meta",
+          "severity_level" as "severityLevel",
+          "is_safe_based_on_usage" as "isSafeBasedOnUsage"
+        FROM
+          "schema_version_changes"
+        WHERE
+          "schema_version_id" = ${versionId}
+      `,
+        )
+        .then(z.array(HiveSchemaChangeModel).parse);
+
+      if (changes.length === 0) {
+        return null;
+      }
+
+      return changes;
+    },
   };
 }
+
+const proposalApprovedChangeFields = (prefix = psql`"proposal_approved_changes"`) => psql`
+     ${prefix}."id"
+    ,${prefix}."hash"
+    ,${prefix}."change"
+    ,${prefix}."proposal_id" as "proposalId"
+    ,${prefix}."schema_version_id" as "schemaVersionId"
+    ,${prefix}."service"
+    ,${prefix}."target_id" as "targetId"
+`;
+
+const ProposalApprovedChangeModel = z
+  .object({
+    id: z.string(),
+    // the type and path of the change is baked into the hash, so it's safe
+    hash: z.string(),
+    change: SchemaChangeModel,
+    proposalId: z.string(),
+    schemaVersionId: z.string().nullable(),
+    service: z.string().nullable(),
+    targetId: z.string(),
+  })
+  .transform(data => ({
+    ...data,
+    change: {
+      // add back the path since that doesn't get saved to the db except for in the hash
+      path: data.hash.split(':')[1] as string | undefined,
+      ...data.change,
+    },
+  }));

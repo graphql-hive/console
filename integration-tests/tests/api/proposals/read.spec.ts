@@ -1,45 +1,12 @@
-import { graphql } from 'testkit/gql';
 import { ProjectType, ResourceAssignmentModeType } from 'testkit/gql/graphql';
 import { execute } from 'testkit/graphql';
 import { initSeed } from 'testkit/seed';
-
-const CreateProposalMutation = graphql(`
-  mutation CreateProposalMutation($input: CreateSchemaProposalInput!) {
-    createSchemaProposal(input: $input) {
-      ok {
-        schemaProposal {
-          id
-        }
-      }
-      error {
-        message
-      }
-    }
-  }
-`);
-
-const ReadProposalQuery = graphql(`
-  query ReadProposalQuery($input: SchemaProposalInput!) {
-    schemaProposal(input: $input) {
-      title
-      description
-      checks(input: { latestPerService: true }) {
-        edges {
-          node {
-            id
-          }
-        }
-      }
-    }
-  }
-`);
+import { CreateProposalMutation, readProposal, ReadProposalQuery } from './operations';
 
 /**
  * Creates a proposal and returns a token with specified permissions
  **/
-async function setup(input: {
-  tokenPermissions: string[];
-}): Promise<{ accessKey: string; proposalId: string }> {
+async function setup(input: { tokenPermissions: string[] }) {
   const { createOrg, ownerToken } = await initSeed().createOwner();
   const { createProject, createOrganizationAccessToken, setFeatureFlag } = await createOrg();
   await setFeatureFlag('schemaProposals', true);
@@ -68,26 +35,23 @@ async function setup(input: {
     ownerToken,
   );
   const proposalId = result.createSchemaProposal.ok?.schemaProposal.id!;
-  return { accessKey, proposalId };
+  return { accessKey, proposalId, target };
 }
 
 describe('Schema Proposals', () => {
   test.concurrent(
     'can read proposal with "schemaProposal:describe" permission',
     async ({ expect }) => {
-      const { accessKey, proposalId } = await setup({
+      const { accessKey, proposalId, target } = await setup({
         tokenPermissions: ['schemaProposal:describe'],
       });
 
       {
-        const proposal = await execute({
-          document: ReadProposalQuery,
-          variables: {
-            input: {
-              id: proposalId,
-            },
+        const proposal = await readProposal({
+          input: {
+            id: proposalId,
           },
-          token: accessKey,
+          accessKey,
         }).then(r => r.expectNoGraphQLErrors());
 
         expect(proposal.schemaProposal?.title).toMatchInlineSnapshot(

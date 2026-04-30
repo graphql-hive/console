@@ -4,12 +4,19 @@ import type { Proposal_ChangeFragment } from '@/components/target/proposals';
 import { FragmentType } from '@/gql';
 import type { Change } from '@graphql-inspector/core';
 
+type ChangeProposalDetails = {
+  schemaProposalChangeDetails: {
+    implementedBy?: { id: string } | null;
+    schemaProposal: { id: string };
+  } | null;
+};
+
 export type ServiceProposalDetails = {
   compositionErrors?: FragmentType<typeof CompositionErrorsSection_SchemaErrorConnection>;
   beforeSchema: GraphQLSchema | null;
   afterSchema: GraphQLSchema | null;
   buildError: Error | null;
-  allChanges: Change<any>[];
+  allChanges: (Change<any> & ChangeProposalDetails)[];
   // Required because the component ChangesBlock uses this fragment.
   rawChanges: FragmentType<typeof Proposal_ChangeFragment>[];
   ignoredChanges: Array<{

@@ -1,4 +1,5 @@
 import { createModule } from 'graphql-modules';
+import { SchemaProposalManager } from '../proposals/providers/schema-proposal-manager';
 import { SchemaProposalStorage } from '../proposals/providers/schema-proposal-storage';
 import { BreakingSchemaChangeUsageHelper } from './providers/breaking-schema-changes-helper';
 import { Contracts } from './providers/contracts';
@@ -34,5 +35,6 @@ export const schemaModule = createModule({
     CompositionOrchestrator,
     ...models,
     SchemaProposalStorage,
+    SchemaProposalManager,
   ],
 });

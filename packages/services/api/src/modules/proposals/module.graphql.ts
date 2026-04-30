@@ -331,12 +331,6 @@ export default gql`
     """
     serviceName: String!
 
-    # @todo
-    # """
-    # The specific version of the proposal that this review is for.
-    # """
-    # schemaProposalVersion: SchemaProposalVersion
-
     """
     If null then this review is just a comment. Otherwise, the reviewer changed the state of the
     proposal as part of their review. E.g. The reviewer can approve a version with a comment.
@@ -375,6 +369,26 @@ export default gql`
 
   extend type SchemaChange {
     meta: SchemaChangeMeta
+
+    """
+    If this change was proposed by a schema proposal, then this returns
+    details about that proposal and where the change was implemented.
+    """
+    schemaProposalChangeDetails: SchemaProposalChangeDetails
+  }
+
+  type SchemaProposalChangeDetails {
+    """
+    If this schema change is associated with a proposal, this returns that proposal
+    This is useful for matching changes from a schema check or schema history/version to a proposal.
+    """
+    schemaProposal: SchemaProposal!
+
+    """
+    If this change is for a schema proposal, this is the schema version
+    (viewable in the History) where the change was implemented.
+    """
+    implementedBy: SchemaVersion
   }
 
   union SchemaChangeMeta =

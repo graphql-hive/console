@@ -3,7 +3,7 @@ import { memoryDriver } from 'bentocache/build/src/drivers/memory';
 import { makeWorkerUtils, WorkerUtils, type JobHelpers, type Task } from 'graphile-worker';
 import { z } from 'zod';
 import { Logger } from '@graphql-hive/logger';
-import { PostgresDatabasePool, psql } from '@hive/postgres';
+import { CommonQueryMethods, PostgresDatabasePool, psql } from '@hive/postgres';
 import { bridgeGraphileLogger } from '@hive/pubsub';
 import type { Context } from './context';
 
@@ -108,6 +108,7 @@ export class TaskScheduler {
         /** how long should the task be de-duped in milliseconds */
         ttl: number;
       };
+      trx?: CommonQueryMethods;
     },
   ) {
     this.logger.info(
@@ -127,13 +128,13 @@ export class TaskScheduler {
 
       let shouldSkip = true;
 
-      const { pgPool } = this;
+      const conn = opts?.trx ?? this.pgPool;
 
       await this.cache.getOrSet({
         key: `${taskDefinition.name}:${dedupeKey}`,
         ttl: opts.dedupe.ttl,
         async factory() {
-          const result = await pgPool.anyFirst(
+          const result = await conn.anyFirst(
             psql`
                INSERT INTO "graphile_worker_deduplication" ("task_name", "dedupe_key", "expires_at")
                VALUES(${taskDefinition.name}, ${dedupeKey}, ${expiresAt})
@@ -161,10 +162,21 @@ export class TaskScheduler {
       }
     }
 
-    const job = await tools.addJob(taskDefinition.name, {
-      requestId: opts?.requestId,
-      input,
-    });
+    let job: { id: string };
+    if (opts?.trx) {
+      job = (await opts.trx.maybeOne(
+        psql`
+        SELECT id FROM graphile_worker.add_job(
+           ${taskDefinition.name}
+          ,${JSON.stringify({ input, requestId: opts.requestId })}
+        )`,
+      )) as { id: string };
+    } else {
+      job = await tools.addJob(taskDefinition.name, {
+        requestId: opts?.requestId,
+        input,
+      });
+    }
 
     this.logger.info(
       {

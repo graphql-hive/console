@@ -3,13 +3,18 @@
  */
 import { Inject, Injectable, Scope } from 'graphql-modules';
 import { z } from 'zod';
-import { PostgresDatabasePool, psql } from '@hive/postgres';
+import { generateChangeHash, isChangeEqual } from '@graphql-inspector/compare-changes';
+import { Change } from '@graphql-inspector/core';
+import { CommonQueryMethods, PostgresDatabasePool, psql } from '@hive/postgres';
 import {
   decodeCreatedAtAndUUIDIdBasedCursor,
   encodeCreatedAtAndUUIDIdBasedCursor,
+  SchemaChangeModel,
 } from '@hive/storage';
 import { TaskScheduler } from '@hive/workflows/kit';
+import { SchemaProposalApprovalTask } from '@hive/workflows/tasks/schema-proposal-approval';
 import { SchemaProposalCompositionTask } from '@hive/workflows/tasks/schema-proposal-composition';
+import { SchemaProposalImplementationTask } from '@hive/workflows/tasks/schema-proposal-implementation';
 import { SchemaProposalStage } from '../../../__generated__/types';
 import { Logger } from '../../shared/providers/logger';
 import { Storage } from '../../shared/providers/storage';
@@ -56,6 +61,24 @@ export class SchemaProposalStorage {
     native: boolean;
   }) {
     await this.taskScheduler.scheduleTask(SchemaProposalCompositionTask, input);
+  }
+
+  async runBackgroundApproval(input: { proposalId: string; targetId: string }) {
+    await this.taskScheduler.scheduleTask(SchemaProposalApprovalTask, input);
+  }
+
+  /**
+   * Kicks off a job to check and update all changes that are part of the schema version, to flag them as
+   * implemented if they represent an approved schema change
+   */
+  async runBackgroundImplementationTracker(
+    input: {
+      targetId: string;
+      schemaVersionId: string;
+    },
+    conn: CommonQueryMethods = this.pool,
+  ) {
+    await this.taskScheduler.scheduleTask(SchemaProposalImplementationTask, input, { trx: conn });
   }
 
   private async assertSchemaProposalsEnabled(args: {
@@ -125,6 +148,7 @@ export class SchemaProposalStorage {
             WHERE "id" = ${args.id} AND "stage" <> 'IMPLEMENTED'
           `,
       );
+
       const row = await conn.maybeOne(psql`
           INSERT INTO schema_proposal_reviews
             ("schema_proposal_id", "stage_transition", "author", "service_name")
@@ -136,8 +160,14 @@ export class SchemaProposalStorage {
           )
           RETURNING ${schemaProposalReviewFields}
         `);
+
       return SchemaProposalReviewModel.parse(row);
     });
+
+    // @todo rollback if this fails
+    if (args.stage === 'APPROVED') {
+      await this.runBackgroundApproval({ proposalId: args.id, targetId: args.targetId });
+    }
 
     return {
       type: 'ok' as const,
@@ -193,7 +223,7 @@ export class SchemaProposalStorage {
               , ${args.stage}
               , ${args.author}
             )
-          RETURNING ${schemaProposalFields}
+          RETURNING ${schemaProposalFields(psql`sp`)}
         `,
       )
       .then(row => SchemaProposalModel.parse(row));
@@ -233,7 +263,7 @@ export class SchemaProposalStorage {
       .maybeOne(
         psql`
           SELECT
-            ${schemaProposalFields}
+            ${schemaProposalFields(psql`sp`)}
           FROM
             "schema_proposals" AS "sp"
           WHERE
@@ -268,7 +298,7 @@ export class SchemaProposalStorage {
     );
     const result = await this.pool.any(psql`
       SELECT
-        ${schemaProposalFields}
+        ${schemaProposalFields(psql`sp`)}
       FROM
         "schema_proposals" as "sp"
       WHERE
@@ -379,20 +409,164 @@ export class SchemaProposalStorage {
       },
     };
   }
+
+  /**
+   * Updates an approved change to set the schema version where it has been implemented.
+   */
+  async implementApprovedChange(args: {
+    // the approved change's ID
+    id: string;
+    targetId: string;
+    // the schema version where this change has been implemented
+    implementingSchemaVersionId: string;
+  }) {
+    this.logger.debug(
+      'Marking approved change as implemented by schema version (id=%s, target=%s, schema_version=%s)',
+      args.id,
+      args.targetId,
+      args.implementingSchemaVersionId,
+    );
+    await this.pool.query(psql`
+      UPDATE "proposal_approved_changes"
+      SET "schema_version_id" = ${args.implementingSchemaVersionId}
+      WHERE id = ${args.id}
+        AND target_id = ${args.targetId}
+        AND schema_version_id IS NULL
+    `);
+  }
+
+  /**
+   * This looks up the change approval records for a schema proposal, and finds
+   * where they have been implemented in a schema version.
+   */
+  async getImplementedVersionsByProposalId(args: { schemaProposalId: string; targetId: string }) {
+    // fetch the changes based on the hash. Note that ordering is not guaranteed here
+    const implementedChanges = await this.pool
+      .any(
+        psql`
+      SELECT ${proposalApprovedChangeFields(psql`"c"`)}
+      FROM "proposal_approved_changes" as "c"
+      WHERE proposal_id = ${args.schemaProposalId}
+        AND target_id = ${args.targetId}
+        AND schema_version_id IS NOT NULL
+    `,
+      )
+      .then(result => result.map(row => ProposalApprovedChangeModel.parse(row)));
+    return implementedChanges;
+  }
+
+  /**
+   * This looks up the change approval record for an existing schema version.
+   * This is used on the schema history page to show which proposal each change
+   * belongs to
+   */
+  async getImplementedApprovedChangesByVersionId(args: {
+    schemaVersionId: string;
+    targetId: string;
+  }) {
+    // fetch the changes based on the hash. Note that ordering is not guaranteed here
+    const implementedChanges = await this.pool
+      .any(
+        psql`
+      SELECT ${proposalApprovedChangeFields(psql`"c"`)}
+      FROM proposal_approved_changes as "c"
+      WHERE schema_version_id = ${args.schemaVersionId}
+        AND target_id = ${args.targetId}
+    `,
+      )
+      .then(result => result.map(row => ProposalApprovedChangeModel.parse(row)));
+    return implementedChanges;
+  }
+
+  /**
+   * If we have a set of changes, this looks up to determine whether or not those changes
+   * have been approved. This is useful for looking up (on check or publish) whether the
+   * change matches any of the approved proposals' changess, because in this situation
+   * there is no known proposal or schema version to match on. This function queries for all
+   * passed in changes, so any batching/pagination should be done prior to calling this function.
+   *
+   * This is also ran for the schema checks page to display whether or not a change has
+   * been approved by a proposal or not.
+   *
+   * @returns An array of change approval records. The index corresponds with the original
+   *          changes array passed.
+   */
+  async getEquivalentUnimplementedApprovedChanges(
+    args: { changes: Change[]; targetId: string },
+    conn: CommonQueryMethods = this.pool,
+  ) {
+    // calculate hashes the same order as the changes
+    const hashes = args.changes.map(generateChangeHash);
+
+    // fetch the changes based on the hash. Note that ordering is not guaranteed here
+    const result = await conn.any(psql`
+      SELECT ${proposalApprovedChangeFields(psql`"c"`)}
+      FROM "proposal_approved_changes" as "c"
+      WHERE hash = ANY(${psql.array(hashes, 'text')})
+        AND target_id = ${args.targetId}
+        AND schema_version_id IS NULL
+    `);
+
+    const approvedChanges = result.map(row => ProposalApprovedChangeModel.parse(row));
+    const approvedChangeLookup = Map.groupBy(approvedChanges, c => c.hash);
+
+    // iterate over all changes and hashes, determine if this change is within the approvedChanges list
+    return args.changes.map((change, i) => {
+      const hash = hashes[i];
+      const approvedMatch = approvedChangeLookup.get(hash);
+      const changeApproval =
+        approvedMatch?.find(match => {
+          return isChangeEqual(match.change as Change<any>, change);
+        }) ?? null;
+
+      return changeApproval;
+    });
+  }
 }
 
-const schemaProposalFields = psql`
-    sp."id"
-  , to_json(sp."created_at") as "createdAt"
-  , to_json(sp."updated_at") as "updatedAt"
-  , sp."title"
-  , sp."description"
-  , sp."stage"
-  , sp."target_id" as "targetId"
-  , sp."author"
-  , sp."composition_status" as "compositionStatus"
-  , to_json(sp."composition_timestamp") as "compositionTimestamp"
-  , sp."composition_status_reason" as "compositionStatusReason"
+// @todo dedupe from the implementation workflow
+const ProposalApprovedChangeModel = z
+  .object({
+    id: z.string(),
+    // the type and path of the change is baked into the hash, so it's safe
+    hash: z.string(),
+    change: SchemaChangeModel,
+    proposalId: z.string(),
+    schemaVersionId: z.string().nullable(),
+    service: z.string().nullable(),
+    targetId: z.string(),
+  })
+  .transform(data => ({
+    ...data,
+    change: {
+      // add back the path since that doesn't get saved to the db except for in the hash
+      path: data.hash.split(':')[1] as string | undefined,
+      ...data.change,
+    },
+  }));
+
+const proposalApprovedChangeFields = (prefix = psql`"proposal_approved_changes"`) => psql`
+     ${prefix}."id"
+    ,${prefix}."hash"
+    ,${prefix}."change"
+    ,${prefix}."proposal_id" as "proposalId"
+    ,${prefix}."schema_version_id" as "schemaVersionId"
+    ,${prefix}."service"
+    ,${prefix}."target_id" as "targetId"
+`;
+
+const schemaProposalFields = (prefix = psql`"schema_proposals"`) => psql`
+    ${prefix}."id"
+  , to_json(${prefix}."created_at") as "createdAt"
+  , to_json(${prefix}."updated_at") as "updatedAt"
+  , ${prefix}."title"
+  , ${prefix}."description"
+  , ${prefix}."stage"
+  , ${prefix}."target_id" as "targetId"
+  , ${prefix}."author"
+  , ${prefix}."composition_status" as "compositionStatus"
+  , to_json(${prefix}."composition_timestamp") as "compositionTimestamp"
+  , ${prefix}."composition_status_reason" as "compositionStatusReason"
 `;
 
 const schemaProposalReviewFields = psql`

@@ -281,6 +281,16 @@ export interface projects {
   validation_url: string | null;
 }
 
+export interface proposal_approved_changes {
+  change: any;
+  hash: string;
+  id: string;
+  proposal_id: string;
+  schema_version_id: string | null;
+  service: string | null;
+  target_id: string;
+}
+
 export interface saved_filters {
   created_at: Date;
   created_by_user_id: string;
@@ -549,6 +559,7 @@ export interface DBTables {
   organizations: organizations;
   organizations_billing: organizations_billing;
   projects: projects;
+  proposal_approved_changes: proposal_approved_changes;
   saved_filters: saved_filters;
   schema_change_approvals: schema_change_approvals;
   schema_checks: schema_checks;

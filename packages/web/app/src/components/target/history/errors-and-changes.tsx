@@ -1,7 +1,7 @@
 import { ReactElement } from 'react';
 import { clsx } from 'clsx';
 import { format } from 'date-fns';
-import { BoxIcon, CheckIcon } from 'lucide-react';
+import { BoxIcon, CheckIcon, NotebookIcon } from 'lucide-react';
 import reactStringReplace from 'react-string-replace';
 import { Label, Label as LegacyLabel } from '@/components/common';
 import {
@@ -14,6 +14,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Heading } from '@/components/ui/heading';
 import { PulseIcon } from '@/components/ui/icon';
+import { Link as UILink } from '@/components/ui/link';
 import { Popover, PopoverArrow, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import {
   Table,
@@ -119,6 +120,12 @@ const ChangesBlock_SchemaChangeWithUsageFragment = graphql(`
       }
       totalCount
     }
+    schemaProposalChangeDetails {
+      schemaProposal {
+        id
+        title
+      }
+    }
   }
 `);
 
@@ -132,6 +139,12 @@ export const ChangesBlock_SchemaChangeFragment = graphql(`
       ...ChangesBlock_SchemaChangeApprovalFragment
     }
     isSafeBasedOnUsage
+    schemaProposalChangeDetails {
+      schemaProposal {
+        id
+        title
+      }
+    }
   }
 `);
 
@@ -290,6 +303,17 @@ function ChangeItem(
           </AccordionTrigger>
         </AccordionHeader>
         <AccordionContent className="pb-8 pt-4">
+          {change.schemaProposalChangeDetails && (
+            <>
+              <ProposedByBadge
+                organizationSlug={props.organizationSlug}
+                projectSlug={props.projectSlug}
+                targetSlug={props.targetSlug}
+                schemaProposalId={change.schemaProposalChangeDetails.schemaProposal.id}
+                schemaProposalTitle={change.schemaProposalChangeDetails.schemaProposal.title}
+              />
+            </>
+          )}
           {change.approval && (
             <SchemaChangeApproval
               organizationSlug={props.organizationSlug}
@@ -679,14 +703,44 @@ function ChangeItem(
           ) : (
             <>
               {change.severityReason ??
-                `No details available for this ${
-                  change.severityLevel === SeverityLevelType.Breaking ? 'breaking ' : ''
-                }change.`}
+                (!change.schemaProposalChangeDetails &&
+                  !change.approval &&
+                  `No details available for this ${
+                    change.severityLevel === SeverityLevelType.Breaking ? 'breaking ' : ''
+                  }change.`)}
             </>
           )}
         </AccordionContent>
       </AccordionItem>
     </Accordion>
+  );
+}
+
+function ProposedByBadge(props: {
+  organizationSlug: string;
+  projectSlug: string;
+  targetSlug: string;
+  schemaProposalId: string;
+  schemaProposalTitle: string;
+}) {
+  return (
+    <div className="mb-2 flex items-center">
+      Implements a proposed change from{' '}
+      <UILink
+        className="inline-flex items-center"
+        variant="primary"
+        to="/$organizationSlug/$projectSlug/$targetSlug/proposals/$proposalId"
+        params={{
+          organizationSlug: props.organizationSlug,
+          projectSlug: props.projectSlug,
+          targetSlug: props.targetSlug,
+          proposalId: props.schemaProposalId,
+        }}
+      >
+        <NotebookIcon className="ml-1 inline size-4" /> {props.schemaProposalTitle}
+      </UILink>
+      .
+    </div>
   );
 }
 

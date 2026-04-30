@@ -260,7 +260,7 @@ const ProposalsContent = (props: Parameters<typeof TargetProposalsSinglePage>[0]
           const allChanges =
             proposalVersion.schemaChanges?.edges
               .filter(c => !!c)
-              ?.map(({ node: change }): Change<any> => {
+              ?.map(({ node: change }) => {
                 // @todo don't useFragment here...
                 // eslint-disable-next-line react-hooks/rules-of-hooks
                 const c = useFragment(Proposal_ChangeFragment, change);
@@ -274,7 +274,8 @@ const ProposalsContent = (props: Parameters<typeof TargetProposalsSinglePage>[0]
                   meta: c.meta,
                   type: (c.meta && toUpperSnakeCase(c.meta?.__typename)) ?? '', // convert to upper snake
                   path: c.path?.join('.'),
-                };
+                  schemaProposalChangeDetails: c.schemaProposalChangeDetails ?? null,
+                } satisfies ServiceProposalDetails['allChanges'][number];
               }) ?? [];
 
           const conflictingChanges: Array<{ change: Change; error: Error }> = [];

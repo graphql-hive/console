@@ -26,8 +26,14 @@ export const ContractCheck: ContractCheckResolvers = {
     }
 
     return [
-      ...(contractCheck.breakingSchemaChanges ?? []),
-      ...(contractCheck.safeSchemaChanges ?? []),
+      ...(contractCheck.breakingSchemaChanges?.map(v => ({
+        ...v,
+        schemaProposalChangeDetails: null, // contracts are not supported by proposals yet
+      })) ?? []),
+      ...(contractCheck.safeSchemaChanges?.map(v => ({
+        ...v,
+        schemaProposalChangeDetails: null,
+      })) ?? []),
     ];
   },
 };
