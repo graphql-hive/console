@@ -106,7 +106,7 @@ test.concurrent(
   async ({ expect }) => {
     const { createOrg } = await initSeed().createOwner();
     const { createProject, organization, setFeatureFlag } = await createOrg();
-  await setFeatureFlag('metricAlertRules', true);
+    await setFeatureFlag('metricAlertRules', true);
     const { project, target, addAlertChannel, addMetricAlertRule } = await createProject(
       ProjectType.Single,
     );
