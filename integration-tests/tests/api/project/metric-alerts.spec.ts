@@ -12,7 +12,8 @@ import { initSeed } from '../../../testkit/seed';
 
 test.concurrent('can create, read, update, and delete a metric alert rule', async ({ expect }) => {
   const { createOrg } = await initSeed().createOwner();
-  const { createProject, organization } = await createOrg();
+  const { createProject, organization, setFeatureFlag } = await createOrg();
+  await setFeatureFlag('metricAlertRules', true);
   const {
     project,
     target,
@@ -104,7 +105,8 @@ test.concurrent(
   'validates that LATENCY type requires metric and non-LATENCY rejects it',
   async ({ expect }) => {
     const { createOrg } = await initSeed().createOwner();
-    const { createProject, organization } = await createOrg();
+    const { createProject, organization, setFeatureFlag } = await createOrg();
+  await setFeatureFlag('metricAlertRules', true);
     const { project, target, addAlertChannel, addMetricAlertRule } = await createProject(
       ProjectType.Single,
     );
@@ -162,7 +164,8 @@ test.concurrent(
 
 test.concurrent('requires at least one channel', async ({ expect }) => {
   const { createOrg } = await initSeed().createOwner();
-  const { createProject, organization } = await createOrg();
+  const { createProject, organization, setFeatureFlag } = await createOrg();
+  await setFeatureFlag('metricAlertRules', true);
   const { project, target, addMetricAlertRule } = await createProject(ProjectType.Single);
 
   const result = await addMetricAlertRule({
@@ -184,7 +187,8 @@ test.concurrent('requires at least one channel', async ({ expect }) => {
 
 test.concurrent('supports multiple channels on a single rule', async ({ expect }) => {
   const { createOrg } = await initSeed().createOwner();
-  const { createProject, organization } = await createOrg();
+  const { createProject, organization, setFeatureFlag } = await createOrg();
+  await setFeatureFlag('metricAlertRules', true);
   const { project, target, addAlertChannel, addMetricAlertRule } = await createProject(
     ProjectType.Single,
   );
