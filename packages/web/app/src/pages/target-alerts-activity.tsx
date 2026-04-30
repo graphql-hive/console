@@ -4,7 +4,7 @@ import { useQuery } from 'urql';
 import { Filters } from '@/components/base/floating/filter-menu/filters';
 import { Select } from '@/components/base/floating/select/select';
 import { PageLead } from '@/components/base/page-lead';
-import { AlertActivityChartStub } from '@/components/target/alerts/alert-activity-chart-stub';
+import { AlertActivityChart } from '@/components/target/alerts/alert-activity-chart';
 import { useActivityFilterDimensions } from '@/components/target/alerts/alert-activity-filters';
 import {
   AlertActivityTable,
@@ -190,7 +190,7 @@ export function TargetAlertsActivityPage(props: {
       </div>
 
       <div className="mt-6">
-        <AlertActivityChartStub events={visibleEvents} from={from} to={to} />
+        <AlertActivityChart events={visibleEvents} from={from} to={to} />
       </div>
 
       <div className="mt-6">

@@ -42,7 +42,7 @@ function pickBucketMs(rangeMs: number): number {
   return 1 * day;
 }
 
-export function AlertActivityChartStub({ events, from, to }: ChartProps) {
+export function AlertActivityChart({ events, from, to }: ChartProps) {
   const { colors } = useChartStyles();
 
   const { buckets, bucketStartMs, bucketMs } = useMemo(() => {
