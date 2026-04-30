@@ -256,14 +256,12 @@ export async function evaluateRule(args: {
   // Notification side-effects fire AFTER the DB transaction commits. Sending
   // a Slack/webhook for a transition that didn't actually persist would be
   // worse than missing one, so we collect the intent here and fan out below.
-  let pendingNotification:
-    | {
-        fromState: MetricAlertRuleRow['state'];
-        toState: MetricAlertRuleRow['state'];
-        currentValue: number;
-        previousValue: number;
-      }
-    | null = null;
+  let pendingNotification: {
+    fromState: MetricAlertRuleRow['state'];
+    toState: MetricAlertRuleRow['state'];
+    currentValue: number;
+    previousValue: number;
+  } | null = null;
 
   if (breached) {
     switch (rule.state) {
