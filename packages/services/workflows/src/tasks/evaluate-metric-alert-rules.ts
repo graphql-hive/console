@@ -55,19 +55,28 @@ export const task = implementTask(EvaluateMetricAlertRulesTask, async args => {
       continue;
     }
 
+    // Treat a missing window as a zero-value window. Skipping evaluation
+    // would leave BELOW-threshold alerts (e.g., "fire when traffic drops
+    // below N") unable to fire when traffic drops to zero, and FIRING
+    // rules whose target stops getting traffic stuck in FIRING forever.
+    // With zeros, ABOVE thresholds correctly fall out of breach (so the
+    // rule recovers) and BELOW thresholds correctly stay in breach (zero
+    // is below any positive threshold). evaluateRule itself updates
+    // last_evaluated_at, so the inline UPDATE loop is no longer needed.
+    const ZERO_WINDOW = {
+      total: '0',
+      total_ok: '0',
+      average: 0,
+      percentiles: [0, 0, 0, 0] as [number, number, number, number],
+    };
+    const current = windows.current ?? { window: 'current' as const, ...ZERO_WINDOW };
+    const previous = windows.previous ?? { window: 'previous' as const, ...ZERO_WINDOW };
+
     if (!windows.current || !windows.previous) {
       logger.debug(
         { targetId: representative.targetId },
-        'Insufficient data for evaluation (need both current and previous windows)',
+        'No traffic in window(s), evaluating against zeros',
       );
-      for (const rule of groupRules) {
-        await context.pg.query(psql`
-          UPDATE "metric_alert_rules"
-          SET "last_evaluated_at" = NOW(), "updated_at" = NOW()
-          WHERE "id" = ${rule.id}
-        `);
-      }
-      continue;
     }
 
     // Fetch slugs for notification messages (once per group since all share a target)
@@ -85,8 +94,8 @@ export const task = implementTask(EvaluateMetricAlertRulesTask, async args => {
     for (const rule of groupRules) {
       await evaluateRule({
         rule,
-        current: windows.current,
-        previous: windows.previous,
+        current,
+        previous,
         pg: context.pg,
         logger,
         onTransition: async ({ rule: r, fromState, toState, currentValue, previousValue }) => {
