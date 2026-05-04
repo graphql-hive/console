@@ -318,31 +318,60 @@ describe('dev --remote', () => {
     await expect(cmd).rejects.toThrowError('Non-shareable field');
   });
 
-  test.concurrent('correct error on failed introspection', async ({ expect }) => {
-    const server = await createHTTPGraphQLServer();
-    const { createOrg } = await initSeed().createOwner();
-    const { createProject } = await createOrg();
-    const { createTargetAccessToken } = await createProject(ProjectType.Federation);
-    const { secret } = await createTargetAccessToken({});
-    const cli = createCLI({ readwrite: secret, readonly: secret });
+  test.concurrent(
+    'subgraph introspection via `Query._service` succeeds when graphql introspection is disabled',
+    async ({ expect }) => {
+      const server = await createHTTPGraphQLServer();
+      const { createOrg } = await initSeed().createOwner();
+      const { createProject } = await createOrg();
+      const { createTargetAccessToken } = await createProject(ProjectType.Federation);
+      const { secret } = await createTargetAccessToken({});
+      const cli = createCLI({ readwrite: secret, readonly: secret });
 
-    const supergraph = tmpFile('graphql');
-    const cmd = cli.dev({
-      remote: true,
-      services: [
-        {
-          name: 'bar',
-          url: server.url + '/graphql-federation-no-introspection',
-        },
-      ],
-      write: supergraph.filepath,
-    });
+      const supergraph = tmpFile('graphql');
+      const cmd = cli.dev({
+        remote: true,
+        services: [
+          {
+            name: 'bar',
+            url: server.url + '/graphql-federation-no-introspection',
+          },
+        ],
+        write: supergraph.filepath,
+      });
 
-    await expect(cmd).rejects.toThrowError(
-      `Could not get introspection result from the service 'bar'`,
-    );
-    // make sure correct error  code is being thrown
-    await expect(cmd).rejects.toThrowError('[116]');
-    await expect(cmd).rejects.not.toThrow('[115]');
-  });
+      await expect(cmd).resolves.toContain('Composition successful');
+    },
+  );
+
+  test.concurrent(
+    'subgraph introspection fails when target is not a subgraph',
+    async ({ expect }) => {
+      const server = await createHTTPGraphQLServer();
+      const { createOrg } = await initSeed().createOwner();
+      const { createProject } = await createOrg();
+      const { createTargetAccessToken } = await createProject(ProjectType.Federation);
+      const { secret } = await createTargetAccessToken({});
+      const cli = createCLI({ readwrite: secret, readonly: secret });
+
+      const supergraph = tmpFile('graphql');
+      const cmd = cli.dev({
+        remote: true,
+        services: [
+          {
+            name: 'bar',
+            url: server.url + '/graphql',
+          },
+        ],
+        write: supergraph.filepath,
+      });
+
+      await expect(cmd).rejects.toThrow(
+        `The provided service URL does not point to a valid Federation subgraph.`,
+      );
+      // make sure correct error  code is being thrown
+      await expect(cmd).rejects.toThrow('Cannot query field "_service" on type "Query"');
+      await expect(cmd).rejects.toThrow('[121]');
+    },
+  );
 });

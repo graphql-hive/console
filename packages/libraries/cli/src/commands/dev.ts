@@ -514,7 +514,7 @@ export default class Dev extends Command<typeof Dev> {
       logger: this.logger,
     }).catch(err => {
       this.logFailure(err);
-      throw new IntrospectionError(serviceName);
+      throw err;
     });
 
     if (!sdl) {

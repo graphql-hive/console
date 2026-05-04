@@ -100,6 +100,43 @@ export async function createHTTPGraphQLServer() {
   });
 
   const yogaNoIntrospection = createYoga({
+    logging: false,
+    graphqlEndpoint: '/graphql-no-introspection',
+    schema: createSchema({
+      typeDefs: /* GraphQL */ `
+        type Query {
+          hello: String!
+        }
+      `,
+    }),
+    plugins: [useDisableIntrospection()],
+  });
+
+  const yogaBadService = createYoga({
+    logging: false,
+    graphqlEndpoint: '/graphql-bad-service',
+    schema: createSchema({
+      typeDefs: /* GraphQL */ `
+        type _Service {
+          sdl: String
+        }
+
+        type Query {
+          _service: _Service
+          hello: String!
+        }
+      `,
+      resolvers: {
+        Query: {
+          _service: () => {
+            throw new Error('Something went wrong');
+          },
+        },
+      },
+    }),
+  });
+
+  const yogaFederationNoIntrospection = createYoga({
     graphqlEndpoint: '/graphql-federation-no-introspection',
     logging: false,
     schema: buildSubgraphSchema({
@@ -150,9 +187,21 @@ export async function createHTTPGraphQLServer() {
 
   server.route({
     // Bind to the Yoga's endpoint to avoid rendering on any path
+    url: yogaFederationNoIntrospection.graphqlEndpoint,
+    method: ['GET', 'POST', 'OPTIONS'],
+    handler: (req, reply) => yogaFederationNoIntrospection.handleNodeRequestAndResponse(req, reply),
+  });
+
+  server.route({
     url: yogaNoIntrospection.graphqlEndpoint,
     method: ['GET', 'POST', 'OPTIONS'],
     handler: (req, reply) => yogaNoIntrospection.handleNodeRequestAndResponse(req, reply),
+  });
+
+  server.route({
+    url: yogaBadService.graphqlEndpoint,
+    method: ['GET', 'POST', 'OPTIONS'],
+    handler: (req, reply) => yogaBadService.handleNodeRequestAndResponse(req, reply),
   });
 
   await server.listen({
@@ -289,12 +338,46 @@ test.concurrent('can introspect protected federation with header', async ({ expe
   `);
 });
 
-test.concurrent('error handling on server with no introspection enabled', async ({ expect }) => {
+test.concurrent(
+  'error handling on server with introspection is disabled and _service does not respond',
+  async ({ expect }) => {
+    const server = await createHTTPGraphQLServer();
+    const command = introspect([server.url + '/graphql-no-introspection']);
+    await expect(command).rejects.toThrow('Could not get introspection result from the service.');
+    await expect(command).rejects.toThrow('[116]');
+    await expect(command).rejects.not.toThrow('[115]');
+  },
+);
+
+test.concurrent(
+  'can introspect federated service even if introspection is disabled',
+  async ({ expect }) => {
+    const server = await createHTTPGraphQLServer();
+    const command = introspect([server.url + '/graphql-federation-no-introspection']);
+
+    await expect(command).resolves.toContain('type Query {');
+  },
+);
+
+test.concurrent('error is thrown when _service exists but fails', async ({ expect }) => {
   const server = await createHTTPGraphQLServer();
-  const command = introspect([server.url + '/graphql-federation-no-introspection']);
-  await expect(command).rejects.toThrowError(
-    'Could not get introspection result from the service.',
-  );
+  const command = introspect([server.url + '/graphql-bad-service']);
+
+  await expect(command).rejects.toThrow('Could not get introspection result from the service.');
   await expect(command).rejects.toThrow('[116]');
   await expect(command).rejects.not.toThrow('[115]');
 });
+
+test.concurrent(
+  'federation can be introspected when explicitly defined even if introspection is disabled',
+  async ({ expect }) => {
+    const server = await createHTTPGraphQLServer();
+    const command = introspect([
+      server.url + '/graphql-federation-no-introspection',
+      '--type',
+      'federation',
+    ]);
+
+    await expect(command).resolves.toContain('type Query {');
+  },
+);

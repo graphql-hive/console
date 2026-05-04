@@ -1,6 +1,6 @@
 {
   "name": "@graphql-hive/laboratory",
-  "version": "0.1.6",
+  "version": "0.1.7",
   "type": "module",
   "license": "MIT",
   "main": "./dist/hive-laboratory.cjs.js",

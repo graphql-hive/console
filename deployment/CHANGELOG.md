@@ -1,5 +1,41 @@
 # hive
 
+## 11.0.4
+
+### Patch Changes
+
+- [#8016](https://github.com/graphql-hive/console/pull/8016)
+  [`d0f3ef0`](https://github.com/graphql-hive/console/commit/d0f3ef04f5d1ffc70fdb7af2114cc7a5649ee763)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Fix Federation composition rule
+  `REQUIRED_INACCESSIBLE` reporting a composition error if `@inaccessible` is applied on a
+  non-nullable field with a default value.
+
+  In the following example schema the `Query.ping(message:)` argument no longer raises
+  `REQUIRED_INACCESSIBLE`, as a default value for the argument is provided. The same behaviour
+  applies for input type fields.
+
+  ```graphql
+  extend schema @link(url: "https://specs.apollo.dev/federation/v2.9", import: ["@inaccessible"])
+
+  type Query {
+    ping(message: String! = "pong" @inaccessible): String!
+  }
+  ```
+
+- [#8003](https://github.com/graphql-hive/console/pull/8003)
+  [`bea8b7c`](https://github.com/graphql-hive/console/commit/bea8b7c4f62be5e704c8709a50ae3ea7d0466fe3)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Address vulnerability
+  [GHSA-gh4j-gqv2-49f6](https://github.com/advisories/GHSA-gh4j-gqv2-49f6).
+
+- [#8004](https://github.com/graphql-hive/console/pull/8004)
+  [`c2d8360`](https://github.com/graphql-hive/console/commit/c2d83604b59b1f96c3382049c8a523d1fc0fd110)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Fix various links to documentation pages.
+
+- [#8003](https://github.com/graphql-hive/console/pull/8003)
+  [`bea8b7c`](https://github.com/graphql-hive/console/commit/bea8b7c4f62be5e704c8709a50ae3ea7d0466fe3)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Address vulnerability
+  [GHSA-w5hq-g745-h8pq](https://github.com/advisories/GHSA-w5hq-g745-h8pq).
+
 ## 11.0.3
 
 ### Patch Changes
