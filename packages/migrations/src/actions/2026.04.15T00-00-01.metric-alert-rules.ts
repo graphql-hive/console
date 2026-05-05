@@ -40,11 +40,16 @@ CREATE TABLE "metric_alert_rules" (
   )
 );
 
-CREATE INDEX "idx_metric_alert_rules_enabled" ON "metric_alert_rules" ("enabled") WHERE "enabled" = true;
+-- Evaluator hot path. The cron's fetchEnabledRules query scans this and the
+-- application groups by (target_id, ...) for ClickHouse batching. Indexing
+-- on target_id (partial on enabled = true) lets a future fan-out worker
+-- slice the work by target_id range or hash without re-scanning the table.
+CREATE INDEX "idx_metric_alert_rules_enabled_target" ON "metric_alert_rules" ("target_id") WHERE "enabled" = true;
 -- FK-cascade indexes. Every "ON DELETE CASCADE / SET NULL" needs an index on
 -- its referencing column or the cascade falls back to a full table scan when
--- the parent row is deleted. target_id and project_id are also used by
--- application-level reads (rule lists per target/project).
+-- the parent row is deleted. target_id and project_id also serve
+-- application-level reads (rule lists per target/project) including disabled
+-- rules; the partial above doesn't cover those.
 CREATE INDEX "idx_metric_alert_rules_organization" ON "metric_alert_rules" ("organization_id");
 CREATE INDEX "idx_metric_alert_rules_project" ON "metric_alert_rules" ("project_id");
 CREATE INDEX "idx_metric_alert_rules_target" ON "metric_alert_rules" ("target_id");
