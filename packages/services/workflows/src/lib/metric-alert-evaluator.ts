@@ -1,6 +1,7 @@
 import type { Logger } from '@graphql-hive/logger';
 import type { CommonQueryMethods, PostgresDatabasePool } from '@hive/postgres';
 import { psql } from '@hive/postgres';
+import { metricAlertClickHouseQueryDuration } from '../metrics.js';
 import type { ClickHouseClient } from './clickhouse-client.js';
 
 export type MetricAlertRuleRow = {
@@ -217,7 +218,25 @@ export async function queryClickHouseWindows(
     ORDER BY window
   `;
 
-  const rows = await clickhouse.query<ClickHouseWindowRow>(sql);
+  // Time every ClickHouse round-trip so the Metric-Alerts dashboard / alert
+  // rules can flag degraded latency or rising error rate before users notice
+  // stale alert state. Bucketed by outcome so a partial outage shows up
+  // distinctly from a slowdown.
+  const startMs = Date.now();
+  let rows: ClickHouseWindowRow[];
+  try {
+    rows = await clickhouse.query<ClickHouseWindowRow>(sql);
+  } catch (error) {
+    metricAlertClickHouseQueryDuration.observe(
+      { outcome: 'error' },
+      (Date.now() - startMs) / 1000,
+    );
+    throw error;
+  }
+  metricAlertClickHouseQueryDuration.observe(
+    { outcome: 'success' },
+    (Date.now() - startMs) / 1000,
+  );
 
   return {
     current: rows.find(r => r.window === 'current') ?? null,

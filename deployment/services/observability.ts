@@ -3,6 +3,7 @@ import { serviceLocalHost } from '../utils/local-endpoint';
 import { Observability as ObservabilityInstance } from '../utils/observability';
 import { Environment } from './environment';
 import { deployGrafana } from './grafana';
+import { deployGrafanaAlerts } from './grafana-alerts';
 
 // Change this to control OTEL tracing for usage service
 const enableTracingForUsageService = true;
@@ -56,6 +57,7 @@ export function deployObservability(config: { environment: Environment }) {
     ),
     observability: observabilityInstance,
     grafana: useLocal ? undefined : deployGrafana(config.environment.envName, tableSuffix),
+    grafanaAlerts: useLocal ? undefined : deployGrafanaAlerts(config.environment.envName),
     enabled: true,
     enabledForUsageService: enableTracingForUsageService,
   };
