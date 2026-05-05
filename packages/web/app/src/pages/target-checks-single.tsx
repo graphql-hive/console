@@ -1165,7 +1165,7 @@ const ActiveSchemaCheck = (props: {
         className="border-0"
         title="Check not found"
         description="Learn how to check your schema with Hive CLI"
-        docsUrl="/features/schema-registry#check-a-schema"
+        docsUrl="/schema-registry#check-a-schema"
       />
     );
   }

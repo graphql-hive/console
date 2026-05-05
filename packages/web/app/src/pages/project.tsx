@@ -427,7 +427,7 @@ const ProjectsPageContent = (
             <EmptyList
               title="Hive is waiting for your first target"
               description='You can create a target by clicking the "New Target" button'
-              docsUrl="/management/targets#create-a-new-target"
+              docsUrl="/schema-registry/management/targets#create-a-new-target"
             />
           ) : (
             targets.map(target => (
