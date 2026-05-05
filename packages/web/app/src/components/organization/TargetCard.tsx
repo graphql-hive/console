@@ -140,12 +140,20 @@ export const TargetCard = (props: {
   });
 
   const successRate = useMemo(() => {
+    if (!totalNumberOfRequests) {
+      return '-';
+    }
+
     return totalNumberOfRequests || totalNumberOfFailures
       ? `${toDecimal(((totalNumberOfRequests - totalNumberOfFailures) * 100) / totalNumberOfRequests)}%`
       : '-';
   }, [totalNumberOfRequests, totalNumberOfFailures]);
 
   const failureRate = useMemo(() => {
+    if (!totalNumberOfRequests) {
+      return '-';
+    }
+
     return totalNumberOfRequests || totalNumberOfFailures
       ? `${toDecimal((totalNumberOfFailures * 100) / totalNumberOfRequests)}%`
       : '-';

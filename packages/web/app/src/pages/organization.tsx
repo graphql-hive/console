@@ -95,7 +95,11 @@ const ProjectCard = (props: {
   sortOrder: number;
 }) => {
   const sortedTargets = useMemo(() => {
-    return props.targets?.sort((a, b) => {
+    if (!props.targets) {
+      return [];
+    }
+
+    return props.targets.sort((a, b) => {
       const diffRequests = b.totalRequests - a.totalRequests;
       const diffVersions = b.schemaVersionsCount - a.schemaVersionsCount;
 
