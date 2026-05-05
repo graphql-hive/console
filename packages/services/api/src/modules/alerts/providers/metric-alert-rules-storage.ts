@@ -391,29 +391,16 @@ export class MetricAlertRulesStorage {
     return result === null ? null : zod.string().parse(result);
   }
 
-  // --- Alert State Updates (used by evaluation engine) ---
-
-  async updateRuleState(args: {
-    id: string;
-    state: MetricAlertRuleState;
-    stateChangedAt?: Date;
-    lastEvaluatedAt?: Date;
-    lastTriggeredAt?: Date;
-  }): Promise<void> {
-    await this.pool.query(psql`/* updateRuleState */
-      UPDATE "metric_alert_rules"
-      SET
-        "state" = ${args.state}
-        , "state_changed_at" = COALESCE(${args.stateChangedAt?.toISOString() ?? null}, "state_changed_at")
-        , "last_evaluated_at" = COALESCE(${args.lastEvaluatedAt?.toISOString() ?? null}, "last_evaluated_at")
-        , "last_triggered_at" = COALESCE(${args.lastTriggeredAt?.toISOString() ?? null}, "last_triggered_at")
-        , "updated_at" = NOW()
-      WHERE
-        "id" = ${args.id}
-    `);
-  }
-
   // --- Incidents ---
+  //
+  // Note: state-machine writes (state / state_changed_at / last_triggered_at)
+  // happen exclusively from the workflows evaluator's `updateState` helper at
+  // packages/services/workflows/src/lib/metric-alert-evaluator.ts. The
+  // evaluator only bumps `last_triggered_at` on the genuine PENDING → FIRING
+  // transition; subsequent FIRING ticks and RECOVERING → FIRING re-entries
+  // leave it untouched, so it always reflects the current incident's first
+  // trigger time. If a future API-side caller needs to mutate rule state, it
+  // should preserve those semantics.
 
   async createIncident(args: {
     ruleId: string;
