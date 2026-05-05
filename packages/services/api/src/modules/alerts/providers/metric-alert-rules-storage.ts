@@ -229,53 +229,76 @@ export class MetricAlertRulesStorage {
     name: string;
     confirmationMinutes: number;
     savedFilterId: string | null;
+    channelIds: ReadonlyArray<string>;
   }): Promise<MetricAlertRule> {
+    // The rule row and its channel-link rows have to land atomically: a
+    // partial commit (rule inserted, channels insert fails) leaves a
+    // rule with no notification destinations and a request that can't
+    // be safely retried because the rule name (or other unique-per-
+    // request fields) would conflict.
+    //
     // `enabled` and `state` are domain invariants for newly-created rules:
     // every rule is created enabled, and every rule starts in the NORMAL
-    // state of the evaluation state machine. We set them here rather than at
-    // the DB layer (no column DEFAULTs) so the application stays the source
-    // of truth for these values.
-    const result = await this.pool.one(psql`/* addMetricAlertRule */
-      INSERT INTO "metric_alert_rules" (
-        "organization_id"
-        , "project_id"
-        , "target_id"
-        , "created_by_user_id"
-        , "type"
-        , "time_window_minutes"
-        , "metric"
-        , "threshold_type"
-        , "threshold_value"
-        , "direction"
-        , "severity"
-        , "name"
-        , "confirmation_minutes"
-        , "saved_filter_id"
-        , "enabled"
-        , "state"
-      )
-      VALUES (
-        ${args.organizationId}
-        , ${args.projectId}
-        , ${args.targetId}
-        , ${args.createdByUserId}
-        , ${args.type}
-        , ${args.timeWindowMinutes}
-        , ${args.metric}
-        , ${args.thresholdType}
-        , ${args.thresholdValue}
-        , ${args.direction}
-        , ${args.severity}
-        , ${args.name}
-        , ${args.confirmationMinutes}
-        , ${args.savedFilterId}
-        , true
-        , 'NORMAL'
-      )
-      RETURNING ${METRIC_ALERT_RULE_SELECT}
-    `);
+    // state of the evaluation state machine. We set them here rather than
+    // at the DB layer (no column DEFAULTs) so the application stays the
+    // source of truth for these values.
+    const result = await this.pool.transaction('addMetricAlertRule', async trx => {
+      const ruleRow = await trx.one(psql`/* addMetricAlertRule:rule */
+        INSERT INTO "metric_alert_rules" (
+          "organization_id"
+          , "project_id"
+          , "target_id"
+          , "created_by_user_id"
+          , "type"
+          , "time_window_minutes"
+          , "metric"
+          , "threshold_type"
+          , "threshold_value"
+          , "direction"
+          , "severity"
+          , "name"
+          , "confirmation_minutes"
+          , "saved_filter_id"
+          , "enabled"
+          , "state"
+        )
+        VALUES (
+          ${args.organizationId}
+          , ${args.projectId}
+          , ${args.targetId}
+          , ${args.createdByUserId}
+          , ${args.type}
+          , ${args.timeWindowMinutes}
+          , ${args.metric}
+          , ${args.thresholdType}
+          , ${args.thresholdValue}
+          , ${args.direction}
+          , ${args.severity}
+          , ${args.name}
+          , ${args.confirmationMinutes}
+          , ${args.savedFilterId}
+          , true
+          , 'NORMAL'
+        )
+        RETURNING ${METRIC_ALERT_RULE_SELECT}
+      `);
+      const rule = MetricAlertRuleModel.parse(ruleRow) as MetricAlertRule;
 
-    return MetricAlertRuleModel.parse(result) as MetricAlertRule;
+      if (args.channelIds.length > 0) {
+        await trx.query(psql`/* addMetricAlertRule:channels */
+          INSERT INTO "metric_alert_rule_channels" ("metric_alert_rule_id", "alert_channel_id")
+          SELECT ${rule.id}, unnest(${psql.array([...args.channelIds], 'uuid')})
+        `);
+      }
+
+      return rule;
+    });
+
+    // Prime the channel-IDs DataLoader so the post-mutation response read
+    // returns what we just wrote, not whatever was cached before the insert.
+    this.channelIdsByRuleLoader.clear(result.id).prime(result.id, [...args.channelIds]);
+
+    return result;
   }
 
   async updateMetricAlertRule(args: {
@@ -292,33 +315,62 @@ export class MetricAlertRulesStorage {
     confirmationMinutes?: number;
     savedFilterId?: string | null;
     enabled?: boolean;
+    /**
+     * When provided, replaces the rule's full set of channel links. Pass
+     * `undefined` to leave the existing channels untouched. The rule update
+     * and the channel replacement happen in a single transaction so a
+     * failure on either side rolls back the other.
+     */
+    channelIds?: ReadonlyArray<string>;
   }): Promise<MetricAlertRule | null> {
-    const result = await this.pool.maybeOne(psql`/* updateMetricAlertRule */
-      UPDATE "metric_alert_rules"
-      SET
-        "type" = COALESCE(${args.type ?? null}, "type")
-        , "time_window_minutes" = COALESCE(${args.timeWindowMinutes ?? null}, "time_window_minutes")
-        , "metric" = COALESCE(${args.metric ?? null}, "metric")
-        , "threshold_type" = COALESCE(${args.thresholdType ?? null}, "threshold_type")
-        , "threshold_value" = COALESCE(${args.thresholdValue ?? null}, "threshold_value")
-        , "direction" = COALESCE(${args.direction ?? null}, "direction")
-        , "severity" = COALESCE(${args.severity ?? null}, "severity")
-        , "name" = COALESCE(${args.name ?? null}, "name")
-        , "confirmation_minutes" = COALESCE(${args.confirmationMinutes ?? null}, "confirmation_minutes")
-        , "saved_filter_id" = COALESCE(${args.savedFilterId ?? null}, "saved_filter_id")
-        , "enabled" = COALESCE(${args.enabled ?? null}, "enabled")
-        , "updated_at" = NOW()
-        , "updated_by_user_id" = ${args.updatedByUserId}
-      WHERE
-        "id" = ${args.id}
-      RETURNING ${METRIC_ALERT_RULE_SELECT}
-    `);
+    const result = await this.pool.transaction('updateMetricAlertRule', async trx => {
+      const ruleRow = await trx.maybeOne(psql`/* updateMetricAlertRule:rule */
+        UPDATE "metric_alert_rules"
+        SET
+          "type" = COALESCE(${args.type ?? null}, "type")
+          , "time_window_minutes" = COALESCE(${args.timeWindowMinutes ?? null}, "time_window_minutes")
+          , "metric" = COALESCE(${args.metric ?? null}, "metric")
+          , "threshold_type" = COALESCE(${args.thresholdType ?? null}, "threshold_type")
+          , "threshold_value" = COALESCE(${args.thresholdValue ?? null}, "threshold_value")
+          , "direction" = COALESCE(${args.direction ?? null}, "direction")
+          , "severity" = COALESCE(${args.severity ?? null}, "severity")
+          , "name" = COALESCE(${args.name ?? null}, "name")
+          , "confirmation_minutes" = COALESCE(${args.confirmationMinutes ?? null}, "confirmation_minutes")
+          , "saved_filter_id" = COALESCE(${args.savedFilterId ?? null}, "saved_filter_id")
+          , "enabled" = COALESCE(${args.enabled ?? null}, "enabled")
+          , "updated_at" = NOW()
+          , "updated_by_user_id" = ${args.updatedByUserId}
+        WHERE
+          "id" = ${args.id}
+        RETURNING ${METRIC_ALERT_RULE_SELECT}
+      `);
 
-    if (result === null) {
-      return null;
+      if (ruleRow === null) {
+        return null;
+      }
+
+      if (args.channelIds !== undefined) {
+        await trx.query(psql`/* updateMetricAlertRule:clearChannels */
+          DELETE FROM "metric_alert_rule_channels"
+          WHERE "metric_alert_rule_id" = ${args.id}
+        `);
+
+        if (args.channelIds.length > 0) {
+          await trx.query(psql`/* updateMetricAlertRule:setChannels */
+            INSERT INTO "metric_alert_rule_channels" ("metric_alert_rule_id", "alert_channel_id")
+            SELECT ${args.id}, unnest(${psql.array([...args.channelIds], 'uuid')})
+          `);
+        }
+      }
+
+      return MetricAlertRuleModel.parse(ruleRow) as MetricAlertRule;
+    });
+
+    if (result !== null && args.channelIds !== undefined) {
+      this.channelIdsByRuleLoader.clear(args.id).prime(args.id, [...args.channelIds]);
     }
 
-    return MetricAlertRuleModel.parse(result) as MetricAlertRule;
+    return result;
   }
 
   async deleteMetricAlertRules(args: {
@@ -337,25 +389,12 @@ export class MetricAlertRulesStorage {
   }
 
   // --- Rule Channels (many-to-many) ---
-
-  async setRuleChannels(args: { ruleId: string; channelIds: string[] }): Promise<void> {
-    await this.pool.transaction('setRuleChannels', async trx => {
-      await trx.query(psql`
-        DELETE FROM "metric_alert_rule_channels"
-        WHERE "metric_alert_rule_id" = ${args.ruleId}
-      `);
-
-      if (args.channelIds.length > 0) {
-        await trx.query(psql`
-          INSERT INTO "metric_alert_rule_channels" ("metric_alert_rule_id", "alert_channel_id")
-          SELECT ${args.ruleId}, unnest(${psql.array(args.channelIds, 'uuid')})
-        `);
-      }
-    });
-    // Prime the loader so the post-mutation response read returns the values
-    // we just wrote, not whatever was cached before the update.
-    this.channelIdsByRuleLoader.clear(args.ruleId).prime(args.ruleId, [...args.channelIds]);
-  }
+  //
+  // Channel-link writes (insert / replace) are inlined into
+  // `addMetricAlertRule` and `updateMetricAlertRule` so the rule-row write
+  // and channel-link writes share a transaction. A standalone setRuleChannels
+  // helper used to live here, but every caller needed the rule write and
+  // channel write to be atomic, so the helper just hid that need.
 
   async getRuleChannelIds(args: { ruleId: string }): Promise<string[]> {
     return this.channelIdsByRuleLoader.load(args.ruleId);

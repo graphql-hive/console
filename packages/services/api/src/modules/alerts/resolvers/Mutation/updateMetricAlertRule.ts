@@ -85,6 +85,10 @@ export const updateMetricAlertRule: NonNullable<
     }
   }
 
+  // Rule update + optional channel replacement happen in a single
+  // transaction inside `updateMetricAlertRule`. Avoids the partial-state
+  // window where the rule's row is updated but the new channel set fails
+  // to land.
   const rule = await storage.updateMetricAlertRule({
     id: input.ruleId,
     updatedByUserId: currentUser.id,
@@ -99,19 +103,13 @@ export const updateMetricAlertRule: NonNullable<
     confirmationMinutes: input.confirmationMinutes ?? undefined,
     savedFilterId: input.savedFilterId ?? undefined,
     enabled: input.enabled ?? undefined,
+    channelIds: input.channelIds ?? undefined,
   });
 
   if (!rule) {
     return {
       error: { message: 'Failed to update metric alert rule.' },
     };
-  }
-
-  if (input.channelIds) {
-    await storage.setRuleChannels({
-      ruleId: rule.id,
-      channelIds: [...input.channelIds],
-    });
   }
 
   return {

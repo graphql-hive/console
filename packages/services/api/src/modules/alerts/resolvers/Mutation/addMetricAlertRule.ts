@@ -82,6 +82,11 @@ export const addMetricAlertRule: NonNullable<MutationResolvers['addMetricAlertRu
     }
   }
 
+  // The rule row + channel-link rows are written in a single transaction
+  // inside `addMetricAlertRule` so a failure on either side rolls back the
+  // other. Avoids the previously-possible "rule with no channels" partial
+  // state when the channel insert errored after the rule was already
+  // committed.
   const rule = await storage.addMetricAlertRule({
     organizationId,
     projectId,
@@ -97,11 +102,7 @@ export const addMetricAlertRule: NonNullable<MutationResolvers['addMetricAlertRu
     name: input.name,
     confirmationMinutes: input.confirmationMinutes ?? 0,
     savedFilterId: input.savedFilterId ?? null,
-  });
-
-  await storage.setRuleChannels({
-    ruleId: rule.id,
-    channelIds: [...input.channelIds],
+    channelIds: input.channelIds,
   });
 
   return {
