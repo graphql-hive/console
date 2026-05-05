@@ -20,6 +20,7 @@ const settingsFormSchema = z.object({
   introspection: z.object({
     method: z.enum(['GET', 'POST']).optional(),
     schemaDescription: z.boolean().optional(),
+    headers: z.string().optional(),
   }),
 });
 

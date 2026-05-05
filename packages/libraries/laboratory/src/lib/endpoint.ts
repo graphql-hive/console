@@ -5,7 +5,12 @@ import {
   introspectionFromSchema,
   type IntrospectionQuery,
 } from 'graphql';
+import { throttle } from 'lodash';
 import { toast } from 'sonner';
+import { LaboratoryEnv, LaboratoryEnvActions, LaboratoryEnvState } from '@/lib/env';
+import { LaboratoryOperationsActions, LaboratoryOperationsState } from '@/lib/operations';
+import { handleTemplate } from '@/lib/operations.utils';
+import { LaboratoryPluginsActions, LaboratoryPluginsState } from '@/lib/plugins';
 // import z from 'zod';
 import { asyncInterval } from '@/lib/utils';
 import { SubscriptionProtocol, UrlLoader } from '@graphql-tools/url-loader';
@@ -24,11 +29,16 @@ export interface LaboratoryEndpointActions {
   restoreDefaultEndpoint: () => void;
 }
 
+export const EXPECTED_ERROR_REASON = 'Expected error reason';
+
 export const useEndpoint = (props: {
   defaultEndpoint?: string | null;
   onEndpointChange?: (endpoint: string | null) => void;
   defaultSchemaIntrospection?: IntrospectionQuery | null;
   settingsApi?: LaboratorySettingsState & LaboratorySettingsActions;
+  operationsApi?: LaboratoryOperationsState & LaboratoryOperationsActions;
+  envApi?: LaboratoryEnvState & LaboratoryEnvActions;
+  pluginsApi?: LaboratoryPluginsState & LaboratoryPluginsActions;
 }): LaboratoryEndpointState & LaboratoryEndpointActions => {
   const [endpoint, _setEndpoint] = useState<string | null>(props.defaultEndpoint ?? null);
   const [introspection, setIntrospection] = useState<IntrospectionQuery | null>(null);
@@ -47,72 +57,99 @@ export const useEndpoint = (props: {
 
   const loader = useMemo(() => new UrlLoader(), []);
 
-  const fetchSchema = useCallback(
-    async (signal?: AbortSignal) => {
-      if (endpoint === props.defaultEndpoint && props.defaultSchemaIntrospection) {
-        setIntrospection(props.defaultSchemaIntrospection);
-        return;
-      }
+  const fetchSchema = useMemo(
+    () =>
+      throttle(
+        async (
+          signal?: AbortSignal,
+          options?: {
+            env?: LaboratoryEnv;
+            pluginsState?: Record<string, any>;
+          },
+        ) => {
+          if (endpoint === props.defaultEndpoint && props.defaultSchemaIntrospection) {
+            setIntrospection(props.defaultSchemaIntrospection);
+            return;
+          }
 
-      if (!endpoint) {
-        setIntrospection(null);
-        return;
-      }
+          if (!endpoint) {
+            setIntrospection(null);
+            return;
+          }
 
-      try {
-        const result = await loader.load(endpoint, {
-          subscriptionsEndpoint: endpoint,
-          subscriptionsProtocol:
-            (props.settingsApi?.settings.subscriptions.protocol as SubscriptionProtocol) ??
-            SubscriptionProtocol.GRAPHQL_SSE,
-          credentials: props.settingsApi?.settings.fetch.credentials,
-          specifiedByUrl: true,
-          directiveIsRepeatable: true,
-          inputValueDeprecation: true,
-          retry: props.settingsApi?.settings.fetch.retry,
-          timeout: props.settingsApi?.settings.fetch.timeout,
-          useGETForQueries: props.settingsApi?.settings.fetch.useGETForQueries,
-          exposeHTTPDetailsInExtensions: true,
-          descriptions: props.settingsApi?.settings.introspection.schemaDescription ?? false,
-          method: props.settingsApi?.settings.introspection.method ?? 'POST',
-          fetch: (input: string | URL | Request, init?: RequestInit) =>
-            fetch(input, {
-              ...init,
-              signal,
-            }),
-        });
+          try {
+            const parsedHeaders = props.operationsApi?.activeOperation?.headers
+              ? JSON.parse(
+                  handleTemplate(props.operationsApi?.activeOperation?.headers, {
+                    ...(options?.env?.variables ?? {}),
+                    plugins: options?.pluginsState ?? {},
+                  }),
+                )
+              : {};
 
-        if (result.length === 0) {
-          throw new Error('Failed to fetch schema');
-        }
+            const result = await loader.load(endpoint, {
+              subscriptionsEndpoint: endpoint,
+              subscriptionsProtocol:
+                (props.settingsApi?.settings.subscriptions.protocol as SubscriptionProtocol) ??
+                SubscriptionProtocol.GRAPHQL_SSE,
+              headers: parsedHeaders,
+              credentials: props.settingsApi?.settings.fetch.credentials,
+              specifiedByUrl: true,
+              directiveIsRepeatable: true,
+              inputValueDeprecation: true,
+              retry: props.settingsApi?.settings.fetch.retry,
+              timeout: props.settingsApi?.settings.fetch.timeout,
+              useGETForQueries: props.settingsApi?.settings.fetch.useGETForQueries,
+              exposeHTTPDetailsInExtensions: true,
+              descriptions: props.settingsApi?.settings.introspection.schemaDescription ?? false,
+              method: props.settingsApi?.settings.introspection.method ?? 'POST',
+              fetch: (input: string | URL | Request, init?: RequestInit) =>
+                fetch(input, {
+                  ...init,
+                  signal,
+                }),
+            });
 
-        if (!result[0].schema) {
-          throw new Error('Failed to fetch schema');
-        }
+            if (result.length === 0) {
+              throw new Error('Failed to fetch schema');
+            }
 
-        setIntrospection(introspectionFromSchema(result[0].schema));
-      } catch (error: unknown) {
-        if (
-          error &&
-          typeof error === 'object' &&
-          'message' in error &&
-          typeof error.message === 'string'
-        ) {
-          toast.error(error.message);
-        } else {
-          toast.error('Failed to fetch schema');
-        }
+            if (!result[0].schema) {
+              throw new Error('Failed to fetch schema');
+            }
 
-        setIntrospection(null);
+            setIntrospection(introspectionFromSchema(result[0].schema));
+          } catch (error: unknown) {
+            if (
+              error &&
+              typeof error === 'object' &&
+              'message' in error &&
+              typeof error.message === 'string'
+            ) {
+              if (error.message === EXPECTED_ERROR_REASON) {
+                return;
+              }
 
-        throw error;
-      }
-    },
+              toast.error(error.message);
+            } else {
+              toast.error('Failed to fetch schema');
+            }
+
+            setIntrospection(null);
+
+            throw error;
+          }
+        },
+        500,
+      ),
     [
       endpoint,
       props.settingsApi?.settings.fetch.timeout,
       props.settingsApi?.settings.introspection.method,
       props.settingsApi?.settings.introspection.schemaDescription,
+      props.operationsApi?.activeOperation?.headers,
+      props.envApi?.env?.variables,
+      props.pluginsApi?.pluginsState,
     ],
   );
 
@@ -132,7 +169,7 @@ export const useEndpoint = (props: {
         try {
           await fetchSchema(intervalController.signal);
         } catch {
-          intervalController.abort();
+          intervalController.abort(new Error('Aborted because of schema polling error'));
         }
       },
       5000,
@@ -140,7 +177,7 @@ export const useEndpoint = (props: {
     );
 
     return () => {
-      intervalController.abort();
+      intervalController.abort(new Error(EXPECTED_ERROR_REASON));
     };
   }, [shouldPollSchema, fetchSchema]);
 
@@ -152,7 +189,13 @@ export const useEndpoint = (props: {
 
   useEffect(() => {
     if (endpoint && !shouldPollSchema) {
-      void fetchSchema();
+      const abortController = new AbortController();
+
+      void fetchSchema(abortController.signal);
+
+      return () => {
+        abortController.abort(new Error(EXPECTED_ERROR_REASON));
+      };
     }
   }, [endpoint, fetchSchema, shouldPollSchema]);
 
