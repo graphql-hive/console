@@ -31,7 +31,7 @@ const WEBHOOK_JSON_SCHEMA = {
       properties: {
         name: { type: 'string' },
         type: { enum: ['LATENCY', 'ERROR_RATE', 'TRAFFIC'] },
-        metric: { enum: ['avg', 'p75', 'p90', 'p95', 'p99', null] },
+        metric: { enum: ['AVG', 'P75', 'P90', 'P95', 'P99', null] },
         severity: { enum: ['info', 'warning', 'critical'] },
       },
     },

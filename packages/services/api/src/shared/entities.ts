@@ -438,7 +438,7 @@ export interface Alert {
 }
 
 export type MetricAlertRuleType = 'LATENCY' | 'ERROR_RATE' | 'TRAFFIC';
-export type MetricAlertRuleMetric = 'avg' | 'p75' | 'p90' | 'p95' | 'p99';
+export type MetricAlertRuleMetric = 'AVG' | 'P75' | 'P90' | 'P95' | 'P99';
 export type MetricAlertRuleThresholdType = 'FIXED_VALUE' | 'PERCENTAGE_CHANGE';
 export type MetricAlertRuleDirection = 'ABOVE' | 'BELOW';
 export type MetricAlertRuleSeverity = 'INFO' | 'WARNING' | 'CRITICAL';

@@ -176,10 +176,10 @@ const AlertForm_UpdateMetricAlertRuleMutation = graphql(`
 const METRIC_OPTIONS = [
   { value: 'TRAFFIC', label: 'Total requests' },
   { value: 'ERROR_RATE', label: 'Error rate' },
-  { value: 'LATENCY:p75', label: 'p75 latency' },
-  { value: 'LATENCY:p90', label: 'p90 latency' },
-  { value: 'LATENCY:p95', label: 'p95 latency' },
-  { value: 'LATENCY:p99', label: 'p99 latency' },
+  { value: 'LATENCY:P75', label: 'p75 latency' },
+  { value: 'LATENCY:P90', label: 'p90 latency' },
+  { value: 'LATENCY:P95', label: 'p95 latency' },
+  { value: 'LATENCY:P99', label: 'p99 latency' },
 ] as const;
 
 const RANGE_OPTIONS = [
@@ -237,11 +237,11 @@ const METRIC_TYPE_MAP: Record<string, MetricAlertRuleType> = {
 };
 
 const METRIC_MAP: Record<string, MetricAlertRuleMetric> = {
-  avg: MetricAlertRuleMetric.Avg,
-  p75: MetricAlertRuleMetric.P75,
-  p90: MetricAlertRuleMetric.P90,
-  p95: MetricAlertRuleMetric.P95,
-  p99: MetricAlertRuleMetric.P99,
+  AVG: MetricAlertRuleMetric.Avg,
+  P75: MetricAlertRuleMetric.P75,
+  P90: MetricAlertRuleMetric.P90,
+  P95: MetricAlertRuleMetric.P95,
+  P99: MetricAlertRuleMetric.P99,
 };
 
 const DIRECTION_MAP: Record<string, MetricAlertRuleDirection> = {

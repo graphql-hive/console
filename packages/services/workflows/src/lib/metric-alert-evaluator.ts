@@ -12,7 +12,7 @@ export type MetricAlertRuleRow = {
   name: string;
   type: 'LATENCY' | 'ERROR_RATE' | 'TRAFFIC';
   timeWindowMinutes: number;
-  metric: 'avg' | 'p75' | 'p90' | 'p95' | 'p99' | null;
+  metric: 'AVG' | 'P75' | 'P90' | 'P95' | 'P99' | null;
   thresholdType: 'FIXED_VALUE' | 'PERCENTAGE_CHANGE';
   thresholdValue: number;
   direction: 'ABOVE' | 'BELOW';
@@ -59,11 +59,11 @@ function extractMetricValue(row: ClickHouseWindowRow, rule: MetricAlertRuleRow):
       return total > 0 ? ((total - totalOk) / total) * 100 : 0;
     case 'LATENCY': {
       const metricMap: Record<string, number> = {
-        avg: row.average,
-        p75: row.percentiles[0],
-        p90: row.percentiles[1],
-        p95: row.percentiles[2],
-        p99: row.percentiles[3],
+        AVG: row.average,
+        P75: row.percentiles[0],
+        P90: row.percentiles[1],
+        P95: row.percentiles[2],
+        P99: row.percentiles[3],
       };
       return metricMap[rule.metric!] ?? 0;
     }

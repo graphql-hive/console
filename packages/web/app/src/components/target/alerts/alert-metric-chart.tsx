@@ -93,14 +93,19 @@ export function AlertMetricChart({
 
   const stats = result.data?.target?.operationsStats;
   const isLatency = metricSelection.startsWith('LATENCY:');
-  const latencyPercentile = isLatency ? metricSelection.split(':')[1] : null;
+  // metricSelection is `LATENCY:${MetricAlertRuleMetric}` (uppercase enum
+  // value, e.g. P99). The DurationValues GraphQL type uses lowercase field
+  // names (p99), so we map down here.
+  const latencyPercentile = isLatency
+    ? (metricSelection.split(':')[1].toLowerCase() as 'avg' | 'p75' | 'p90' | 'p95' | 'p99')
+    : null;
   const isErrorRate = metricSelection === 'ERROR_RATE';
 
   const { data, yAxisFormatter, seriesName } = useMemo(() => {
     if (!stats) return { data: [], yAxisFormatter: formatNumber, seriesName: '' };
 
-    if (isLatency && latencyPercentile) {
-      const key = latencyPercentile as 'p75' | 'p90' | 'p95' | 'p99';
+    if (isLatency && latencyPercentile && latencyPercentile !== 'avg') {
+      const key = latencyPercentile;
       return {
         data: (stats.durationOverTime ?? []).map<[string, number]>(node => [
           node.date,

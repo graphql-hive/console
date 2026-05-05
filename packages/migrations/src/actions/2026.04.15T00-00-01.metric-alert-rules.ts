@@ -4,7 +4,7 @@ export default {
   name: '2026.04.15T00-00-01.metric-alert-rules.ts',
   run: ({ psql }) => psql`
 CREATE TYPE "metric_alert_type" AS ENUM ('LATENCY', 'ERROR_RATE', 'TRAFFIC');
-CREATE TYPE "metric_alert_metric" AS ENUM ('avg', 'p75', 'p90', 'p95', 'p99');
+CREATE TYPE "metric_alert_metric" AS ENUM ('AVG', 'P75', 'P90', 'P95', 'P99');
 CREATE TYPE "metric_alert_threshold_type" AS ENUM ('FIXED_VALUE', 'PERCENTAGE_CHANGE');
 CREATE TYPE "metric_alert_direction" AS ENUM ('ABOVE', 'BELOW');
 CREATE TYPE "metric_alert_severity" AS ENUM ('INFO', 'WARNING', 'CRITICAL');

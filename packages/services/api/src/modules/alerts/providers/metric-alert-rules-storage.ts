@@ -40,7 +40,7 @@ const MetricAlertRuleModel = zod
     updatedByUserId: zod.string().nullable(),
     type: zod.enum(['LATENCY', 'ERROR_RATE', 'TRAFFIC']),
     timeWindowMinutes: zod.number(),
-    metric: zod.enum(['avg', 'p75', 'p90', 'p95', 'p99']).nullable(),
+    metric: zod.enum(['AVG', 'P75', 'P90', 'P95', 'P99']).nullable(),
     thresholdType: zod.enum(['FIXED_VALUE', 'PERCENTAGE_CHANGE']),
     thresholdValue: zod.number(),
     direction: zod.enum(['ABOVE', 'BELOW']),

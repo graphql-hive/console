@@ -164,11 +164,11 @@ export default gql`
   }
 
   enum MetricAlertRuleMetric {
-    avg
-    p75
-    p90
-    p95
-    p99
+    AVG
+    P75
+    P90
+    P95
+    P99
   }
 
   enum MetricAlertRuleThresholdType {

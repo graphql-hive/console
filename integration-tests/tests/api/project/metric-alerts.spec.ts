@@ -59,7 +59,7 @@ test.concurrent('can create, read, update, and delete a metric alert rule', asyn
   const rule = addResult.ok!.addedMetricAlertRule;
   expect(rule.name).toBe('P99 Latency Spike');
   expect(rule.type).toBe('LATENCY');
-  expect(rule.metric).toBe('p99');
+  expect(rule.metric).toBe('P99');
   expect(rule.thresholdType).toBe('FIXED_VALUE');
   expect(rule.thresholdValue).toBe(200);
   expect(rule.direction).toBe('ABOVE');
@@ -89,7 +89,7 @@ test.concurrent('can create, read, update, and delete a metric alert rule', asyn
   expect(updated.severity).toBe('WARNING');
   // Unchanged fields should persist
   expect(updated.type).toBe('LATENCY');
-  expect(updated.metric).toBe('p99');
+  expect(updated.metric).toBe('P99');
 
   // Delete the rule
   const deleteResult = await deleteMetricAlertRules({

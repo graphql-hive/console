@@ -229,7 +229,7 @@ function formatChangeText(event: NotificationEvent): string {
   const unit = rule.type === 'LATENCY' ? 'ms' : rule.type === 'ERROR_RATE' ? '%' : ' requests';
   const metricLabel =
     rule.type === 'LATENCY'
-      ? `${rule.metric} latency`
+      ? `${rule.metric?.toLowerCase()} latency`
       : rule.type === 'ERROR_RATE'
         ? 'Error rate'
         : 'Traffic';
