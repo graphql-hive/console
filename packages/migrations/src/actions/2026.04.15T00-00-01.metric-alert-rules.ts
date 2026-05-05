@@ -41,6 +41,16 @@ CREATE TABLE "metric_alert_rules" (
 );
 
 CREATE INDEX "idx_metric_alert_rules_enabled" ON "metric_alert_rules" ("enabled") WHERE "enabled" = true;
+-- FK-cascade indexes. Every "ON DELETE CASCADE / SET NULL" needs an index on
+-- its referencing column or the cascade falls back to a full table scan when
+-- the parent row is deleted. target_id and project_id are also used by
+-- application-level reads (rule lists per target/project).
+CREATE INDEX "idx_metric_alert_rules_organization" ON "metric_alert_rules" ("organization_id");
+CREATE INDEX "idx_metric_alert_rules_project" ON "metric_alert_rules" ("project_id");
+CREATE INDEX "idx_metric_alert_rules_target" ON "metric_alert_rules" ("target_id");
+CREATE INDEX "idx_metric_alert_rules_created_by" ON "metric_alert_rules" ("created_by_user_id");
+CREATE INDEX "idx_metric_alert_rules_updated_by" ON "metric_alert_rules" ("updated_by_user_id");
+CREATE INDEX "idx_metric_alert_rules_saved_filter" ON "metric_alert_rules" ("saved_filter_id");
 
 CREATE TABLE "metric_alert_rule_channels" (
   "metric_alert_rule_id" uuid NOT NULL REFERENCES "metric_alert_rules"("id") ON DELETE CASCADE,
