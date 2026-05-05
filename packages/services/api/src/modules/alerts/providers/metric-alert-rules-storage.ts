@@ -230,6 +230,11 @@ export class MetricAlertRulesStorage {
     confirmationMinutes: number;
     savedFilterId: string | null;
   }): Promise<MetricAlertRule> {
+    // `enabled` and `state` are domain invariants for newly-created rules:
+    // every rule is created enabled, and every rule starts in the NORMAL
+    // state of the evaluation state machine. We set them here rather than at
+    // the DB layer (no column DEFAULTs) so the application stays the source
+    // of truth for these values.
     const result = await this.pool.one(psql`/* addMetricAlertRule */
       INSERT INTO "metric_alert_rules" (
         "organization_id"
@@ -246,6 +251,8 @@ export class MetricAlertRulesStorage {
         , "name"
         , "confirmation_minutes"
         , "saved_filter_id"
+        , "enabled"
+        , "state"
       )
       VALUES (
         ${args.organizationId}
@@ -262,6 +269,8 @@ export class MetricAlertRulesStorage {
         , ${args.name}
         , ${args.confirmationMinutes}
         , ${args.savedFilterId}
+        , true
+        , 'NORMAL'
       )
       RETURNING ${METRIC_ALERT_RULE_SELECT}
     `);
