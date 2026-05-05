@@ -9,6 +9,7 @@ import type { BaseLoaderOptions, Loader, Source } from '@graphql-tools/utils';
 import type { TypedDocumentNode } from '@graphql-typed-document-node/core';
 import { FragmentType, graphql, useFragment as unmaskFragment, useFragment } from '../gql';
 import { SchemaWarningConnection, SeverityLevelType } from '../gql/graphql';
+import { APIError, IntrospectionError, InvalidFederationSubgraphError } from './errors';
 import { graphqlRequest } from './graphql-request';
 import { Texture } from './texture/texture';
 
@@ -217,66 +218,69 @@ class FederationSubgraphUrlLoader implements Loader {
       },
     });
 
-    this.logger?.debug?.('Attempt "_Service" type lookup via "Query.__type".');
-
-    // We can check if the schema is a subgraph by looking for the `_Service` type.
-    const isSubgraph = await client.request({
-      operation: parse(/* GraphQL */ `
-        query ${'LookupService'} {
-          __type(name: "_Service") ${' '}{
-            name
-          }
-        }
-      `) as TypedDocumentNode<{ __type: null | { name: string } }, Record<string, never>>,
-    });
-
-    if (isSubgraph.__type === null) {
-      this.logger?.debug?.('Type not found, this is not a Federation subgraph.');
-      return [];
-    }
-
-    this.logger?.debug?.(
-      'Resolved "_Service" type. Federation subgraph detected.' +
-        'Attempt Federation introspection via "Query._service" field.',
-    );
-
-    const response = await client.request({
-      operation: parse(/* GraphQL */ `
+    try {
+      const response = await client.request({
+        operation: parse(/* GraphQL */ `
         query ${'GetFederationSchema'} {
           _service {
             sdl
           }
         }
       `) as TypedDocumentNode<{ _service: { sdl: string } }, Record<string, never>>,
-    });
+      });
 
-    this.logger?.debug?.('Resolved subgraph SDL successfully.');
+      this.logger?.debug?.('Resolved subgraph SDL successfully.');
 
-    const sdl = minifySchema(response._service.sdl);
+      const sdl = minifySchema(response._service.sdl);
 
-    return [
-      {
-        document: parse(sdl),
-        rawSDL: sdl,
-      },
-    ];
+      return [
+        {
+          document: parse(sdl),
+          rawSDL: sdl,
+        },
+      ];
+    } catch (err) {
+      if (
+        err instanceof APIError &&
+        err.graphQLErrors?.some(
+          err =>
+            err.message.includes('Cannot query field "_service" on type "Query"') ||
+            err.message.includes('Cannot query field "sdl" on type "_Service"'),
+        )
+      ) {
+        throw new InvalidFederationSubgraphError(
+          'The GraphQL server responded with the following errors:\n' +
+            err.graphQLErrors.map(error => `- ${error.message}`).join('\n'),
+        );
+      }
+      throw err;
+    }
   }
 }
 
 class FederationSubgraphIntrospectionThenGraphQLIntrospectionUrlLoader implements Loader {
   private urlLoader = new UrlLoader();
   private federationLoader: FederationSubgraphUrlLoader;
+
   constructor(private logger?: LegacyLogger) {
     this.federationLoader = new FederationSubgraphUrlLoader(logger);
   }
 
   async load(pointer: string, options: BaseLoaderOptions & { headers?: Record<string, string> }) {
-    this.logger?.debug?.('Attempt federation introspection');
-    let result = await this.federationLoader.load(pointer, options);
-    if (!result.length) {
-      this.logger?.debug?.('Attempt GraphQL introspection');
-      result = await this.urlLoader.load(pointer, options);
+    try {
+      return await this.federationLoader.load(pointer, options);
+    } catch (e) {
+      // if this error is because because federated introspection isnt supported, then ignore and try
+      // normal introspection.
+      if (!(e instanceof IntrospectionError || e instanceof InvalidFederationSubgraphError)) {
+        // otherwise, raise an introspection error because some unknown error happened during introspection.
+        // this may be unintuitive, but we don't want to raise an API Error since users may believe our API is the one at fault.
+        // We'd rather nudge them to look into their service's behavior.
+        throw new IntrospectionError();
+      }
     }
-    return result;
+
+    this.logger?.debug?.('Query._service not found. This is a not a Federation subgraph.');
+    return await this.urlLoader.load(pointer, options);
   }
 }

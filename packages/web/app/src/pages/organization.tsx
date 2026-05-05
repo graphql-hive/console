@@ -380,7 +380,7 @@ function OrganizationPageContent(
               <EmptyList
                 title="Hive is waiting for your first project"
                 description='You can create a project by clicking the "New Project" button'
-                docsUrl="/management/projects#create-a-new-project"
+                docsUrl="/schema-registry/management/projects#create-a-new-project"
               />
             ) : (
               <div className="flex w-full flex-col gap-y-8">

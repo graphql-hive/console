@@ -1,5 +1,19 @@
 # @graphql-yoga/render-graphiql
 
+## 0.1.7
+
+### Patch Changes
+
+- [#8012](https://github.com/graphql-hive/console/pull/8012)
+  [`16a03c8`](https://github.com/graphql-hive/console/commit/16a03c8f2cad3c9a3693d69a8ffbd916e9ea8008)
+  Thanks [@mskorokhodov](https://github.com/mskorokhodov)! - Better reasons for abort controllers in
+  lab
+
+- Updated dependencies
+  [[`16a03c8`](https://github.com/graphql-hive/console/commit/16a03c8f2cad3c9a3693d69a8ffbd916e9ea8008),
+  [`bea8b7c`](https://github.com/graphql-hive/console/commit/bea8b7c4f62be5e704c8709a50ae3ea7d0466fe3)]:
+  - @graphql-hive/laboratory@0.1.7
+
 ## 0.1.6
 
 ### Patch Changes

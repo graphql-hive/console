@@ -294,7 +294,7 @@ export function createCLI(tokens: { readwrite: string; readonly: string }) {
     services: Array<{
       name: string;
       url: string;
-      sdl: string;
+      sdl?: string;
     }>;
     remote: boolean;
     write?: string;
@@ -317,8 +317,7 @@ export function createCLI(tokens: { readwrite: string; readonly: string }) {
             name,
             '--url',
             url,
-            '--schema',
-            await generateTmpFile(sdl, 'graphql'),
+            ...(sdl ? ['--schema', await generateTmpFile(sdl, 'graphql')] : []),
           ].join(' ');
         }),
       )),

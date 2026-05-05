@@ -308,7 +308,7 @@ function TargetAppVersionContent(props: {
                 ? 'No operations in this deployment use this schema coordinate'
                 : 'You can upload documents via the Hive CLI'
             }
-            docsUrl="/features/schema-registry#app-deplyments"
+            docsUrl="/schema-registry/app-deployments"
           />
         ) : (
           <>
