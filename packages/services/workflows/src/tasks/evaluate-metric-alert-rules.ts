@@ -99,8 +99,5 @@ export const task = implementTask(EvaluateMetricAlertRulesTask, async args => {
     }
   }
 
-  logger.info(
-    { groupsAttempted: groups.size, groupsFailed },
-    'Metric alert evaluation complete',
-  );
+  logger.info({ groupsAttempted: groups.size, groupsFailed }, 'Metric alert evaluation complete');
 });

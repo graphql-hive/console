@@ -9,6 +9,8 @@ export const MetricAlertRuleStateChange: MetricAlertRuleStateChangeResolvers = {
   // frontend list views filter null rules at render time so a transient miss
   // doesn't fail the whole response.
   rule: async (entry, _, { injector }) => {
-    return injector.get(MetricAlertRulesStorage).getMetricAlertRule({ id: entry.metricAlertRuleId });
+    return injector
+      .get(MetricAlertRulesStorage)
+      .getMetricAlertRule({ id: entry.metricAlertRuleId });
   },
 };
