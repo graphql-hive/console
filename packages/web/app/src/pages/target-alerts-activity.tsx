@@ -1,8 +1,8 @@
-import { useMemo, useState } from 'react';
-import { subMinutes } from 'date-fns';
+import { useEffect, useMemo } from 'react';
+import { ChevronDown } from 'lucide-react';
 import { useQuery } from 'urql';
+import { Button } from '@/components/base/button/button';
 import { Filters } from '@/components/base/floating/filter-menu/filters';
-import { Select } from '@/components/base/floating/select/select';
 import { PageLead } from '@/components/base/page-lead';
 import { AlertActivityChart } from '@/components/target/alerts/alert-activity-chart';
 import { useActivityFilterDimensions } from '@/components/target/alerts/alert-activity-filters';
@@ -10,9 +10,32 @@ import {
   AlertActivityTable,
   type ActivityEventRow,
 } from '@/components/target/alerts/alert-activity-table';
+import { DateRangePicker, type Preset } from '@/components/ui/date-range-picker';
 import { graphql } from '@/gql';
 import { MetricAlertRuleSeverity, MetricAlertRuleType } from '@/gql/graphql';
+import { useDateRangeController } from '@/lib/hooks/use-date-range-controller';
 import { useNavigate, useSearch } from '@tanstack/react-router';
+
+const TargetAlertsActivityPage_RetentionQuery = graphql(`
+  query TargetAlertsActivityPage_RetentionQuery(
+    $organizationSlug: String!
+    $projectSlug: String!
+    $targetSlug: String!
+  ) {
+    target(
+      reference: {
+        bySelector: {
+          organizationSlug: $organizationSlug
+          projectSlug: $projectSlug
+          targetSlug: $targetSlug
+        }
+      }
+    ) {
+      id
+      metricAlertStateLogRetentionDays
+    }
+  }
+`);
 
 const TargetAlertsActivityPage_Query = graphql(`
   query TargetAlertsActivityPage_Query(
@@ -77,13 +100,11 @@ const TargetAlertsActivityPage_Query = graphql(`
   }
 `);
 
-const VIEW_RANGE_OPTIONS = [
-  { value: '60', label: 'Last 1 hour' },
-  { value: '360', label: 'Last 6 hours' },
-  { value: '1440', label: 'Last 24 hours' },
-  { value: '10080', label: 'Last 7 days' },
-  { value: '43200', label: 'Last 30 days' },
-] as const;
+const presetLast1Hour: Preset = {
+  name: 'last1h',
+  label: 'Last 1 hour',
+  range: { from: 'now-1h', to: 'now' },
+};
 
 const ACTIVITY_ROUTE = '/authenticated/$organizationSlug/$projectSlug/$targetSlug/alerts/activity';
 
@@ -93,23 +114,69 @@ export function TargetAlertsActivityPage(props: {
   targetSlug: string;
 }) {
   const { organizationSlug, projectSlug, targetSlug } = props;
+  // Mirror the insights pattern: parent fetches the plan-gated retention so
+  // the picker's earliest-selectable date is correct on first render. The
+  // inner component owns the date-range controller, which would otherwise
+  // create a circular read between retention and the main query.
+  const [retentionResult] = useQuery({
+    query: TargetAlertsActivityPage_RetentionQuery,
+    variables: { organizationSlug, projectSlug, targetSlug },
+  });
+  const retentionInDays = retentionResult.data?.target?.metricAlertStateLogRetentionDays;
+
+  if (retentionInDays === undefined) {
+    return null;
+  }
+
+  return (
+    <ActivityView
+      organizationSlug={organizationSlug}
+      projectSlug={projectSlug}
+      targetSlug={targetSlug}
+      retentionInDays={retentionInDays}
+    />
+  );
+}
+
+function ActivityView(props: {
+  organizationSlug: string;
+  projectSlug: string;
+  targetSlug: string;
+  retentionInDays: number;
+}) {
+  const { organizationSlug, projectSlug, targetSlug, retentionInDays } = props;
   const search = useSearch({ from: ACTIVITY_ROUTE });
   const navigate = useNavigate();
 
-  const [viewRangeMinutes, setViewRangeMinutes] = useState('60');
+  // Populate URL with the default range on first load so refresh and shared
+  // links stay in sync. Skipped when from/to are already present.
+  useEffect(() => {
+    if (search.from === undefined && search.to === undefined) {
+      void navigate({
+        search: prev => ({
+          ...prev,
+          from: presetLast1Hour.range.from,
+          to: presetLast1Hour.range.to,
+        }),
+        replace: true,
+      });
+    }
+  }, []);
 
-  const { from, to } = useMemo(() => {
-    const now = new Date();
-    const minutes = parseInt(viewRangeMinutes, 10) || 60;
-    return {
-      from: subMinutes(now, minutes).toISOString(),
-      to: now.toISOString(),
-    };
-  }, [viewRangeMinutes]);
+  const dateRangeController = useDateRangeController({
+    dataRetentionInDays: retentionInDays,
+    defaultPreset: presetLast1Hour,
+  });
 
   const [result] = useQuery({
     query: TargetAlertsActivityPage_Query,
-    variables: { organizationSlug, projectSlug, targetSlug, from, to },
+    variables: {
+      organizationSlug,
+      projectSlug,
+      targetSlug,
+      from: dateRangeController.resolvedRange.from,
+      to: dateRangeController.resolvedRange.to,
+    },
   });
 
   // Drop entries whose rule was deleted between fetching the state-log and
@@ -166,17 +233,30 @@ export function TargetAlertsActivityPage(props: {
         <Filters
           dimensions={dimensions}
           pinnedControls={
-            <Select
-              options={[...VIEW_RANGE_OPTIONS]}
-              value={viewRangeMinutes}
-              onValueChange={setViewRangeMinutes}
+            <DateRangePicker
+              trigger={
+                <Button
+                  label={dateRangeController.selectedPreset.label}
+                  variant="default"
+                  rightIcon={{ icon: ChevronDown, withSeparator: true }}
+                />
+              }
+              selectedRange={dateRangeController.selectedPreset.range}
+              onUpdate={args => dateRangeController.setSelectedPreset(args.preset)}
+              startDate={dateRangeController.startDate}
+              validUnits={['d', 'h', 'm']}
+              align="start"
             />
           }
         />
       </div>
 
       <div className="mt-6">
-        <AlertActivityChart events={visibleEvents} from={from} to={to} />
+        <AlertActivityChart
+          events={visibleEvents}
+          from={dateRangeController.resolvedRange.from}
+          to={dateRangeController.resolvedRange.to}
+        />
       </div>
 
       <div className="mt-6">

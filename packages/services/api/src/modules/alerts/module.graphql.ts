@@ -299,6 +299,12 @@ export default gql`
     State changes across all alert rules for this target (powers the alert events chart + list).
     """
     metricAlertRuleStateLog(from: DateTime!, to: DateTime!): [MetricAlertRuleStateChange!]!
+    """
+    How many days of alert state-log history are retained for the organization
+    that owns this target. Plan-gated; HOBBY/PRO get 7 days, ENTERPRISE gets 30.
+    The frontend uses this to bound the activity-page date-range picker.
+    """
+    metricAlertStateLogRetentionDays: Int!
   }
 
   extend type Target {

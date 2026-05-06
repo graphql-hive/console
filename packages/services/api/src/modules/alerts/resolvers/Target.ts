@@ -1,3 +1,4 @@
+import { ALERT_STATE_LOG_RETENTION_DAYS } from '../../commerce/constants';
 import { OrganizationManager } from '../../organization/providers/organization-manager';
 import { METRIC_ALERT_RULES_ENABLED } from '../providers/metric-alert-rules-flag-token';
 import { MetricAlertRulesStorage } from '../providers/metric-alert-rules-storage';
@@ -21,6 +22,7 @@ export const Target: Pick<
   | 'metricAlertRule'
   | 'metricAlertRuleStateLog'
   | 'metricAlertRules'
+  | 'metricAlertStateLogRetentionDays'
   | 'viewerCanUseMetricAlertRules'
 > = {
   metricAlertRules: async (target, _, { injector }) => {
@@ -53,5 +55,12 @@ export const Target: Pick<
   },
   viewerCanUseMetricAlertRules: (target, _args, { injector }) => {
     return isMetricAlertRulesEnabled(injector, target.orgId);
+  },
+  metricAlertStateLogRetentionDays: async (target, _args, { injector }) => {
+    const organization = await injector
+      .get(OrganizationManager)
+      .getOrganization({ organizationId: target.orgId });
+    const plan = organization.billingPlan as keyof typeof ALERT_STATE_LOG_RETENTION_DAYS;
+    return ALERT_STATE_LOG_RETENTION_DAYS[plan] ?? ALERT_STATE_LOG_RETENTION_DAYS.HOBBY;
   },
 };
