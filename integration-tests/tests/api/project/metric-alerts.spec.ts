@@ -162,7 +162,15 @@ test.concurrent(
   },
 );
 
-test.concurrent('requires at least one channel', async ({ expect }) => {
+test.concurrent('allows creating a rule with zero channels', async ({ expect }) => {
+  // Zero channels is a valid state for two reasons:
+  //   1. ON DELETE CASCADE on alert_channels can leave a rule with zero
+  //      channels post-creation when the only attached channel is deleted.
+  //   2. It enables a "test mode" workflow where a rule can be observed
+  //      transitioning state without firing notifications, then have
+  //      channels attached once its behavior is trusted.
+  // The UI form intentionally allows zero channels too so this workflow is
+  // accessible without dropping into the API directly.
   const { createOrg } = await initSeed().createOwner();
   const { createProject, organization, setFeatureFlag } = await createOrg();
   await setFeatureFlag('metricAlertRules', true);
@@ -181,8 +189,9 @@ test.concurrent('requires at least one channel', async ({ expect }) => {
     severity: MetricAlertRuleSeverity.Info,
     channelIds: [],
   });
-  expect(result.error).toBeTruthy();
-  expect(result.error!.message).toContain('At least one channel');
+  expect(result.ok).toBeTruthy();
+  expect(result.error).toBeNull();
+  expect(result.ok!.addedMetricAlertRule.channels).toHaveLength(0);
 });
 
 test.concurrent('supports multiple channels on a single rule', async ({ expect }) => {

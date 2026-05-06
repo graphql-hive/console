@@ -50,14 +50,21 @@ export const addMetricAlertRule: NonNullable<MutationResolvers['addMetricAlertRu
     };
   }
 
-  if (input.channelIds.length === 0) {
-    return {
-      error: { message: 'At least one channel is required.' },
-    };
-  }
-
   const storage = injector.get(MetricAlertRulesStorage);
 
+  // Zero channels is intentionally allowed. Two reasons:
+  //   1. ON DELETE CASCADE on alert_channels can leave a rule with zero
+  //      channels post-creation (when the user deletes the only channel
+  //      attached to a rule). Forbidding zero at create-time but tolerating
+  //      it after channel deletion would be a confusing inconsistency.
+  //   2. It enables a "test mode" workflow: create a rule, watch it move
+  //      through state transitions without firing notifications, then
+  //      attach channels once the rule's behavior is trusted.
+  // The UI form mirrors this (no minimum-channels validation) so the
+  // workflow is accessible without dropping into the API. A separate UI
+  // badge surfaces zero-channel rules clearly so users don't accidentally
+  // save a silent alert.
+  //
   // Cross-scope validation: channels and the saved filter must belong to the
   // same project as the target. The DB FKs allow cross-project references on
   // their own; explicit checks close that gap.

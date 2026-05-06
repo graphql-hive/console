@@ -219,13 +219,16 @@ export const AlertFormSchema = z.object({
   thresholdValue: z.string().min(1, 'Value is required'),
   savedFilterId: z.string().optional(),
   confirmationMinutes: z.string().default('0'),
-  channels: z
-    .array(
-      z.object({
-        channelId: z.string().min(1, 'Select a channel'),
-      }),
-    )
-    .min(1, 'At least one destination is required'),
+  // Zero channels is intentionally allowed here so users can create a rule
+  // and observe its state transitions in the UI without firing notifications
+  // ("test mode"), then attach destinations once the rule's behavior is
+  // trusted. The .min(1, 'Select a channel') below still requires every
+  // channel row the user actually adds to have a real selection.
+  channels: z.array(
+    z.object({
+      channelId: z.string().min(1, 'Select a channel'),
+    }),
+  ),
 });
 
 export type AlertFormValues = z.infer<typeof AlertFormSchema>;
@@ -543,21 +546,19 @@ export function AlertForm(props: AlertFormProps) {
                         </FormItem>
                       )}
                     />
-                    {fields.length > 1 && (
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon-sm"
-                        onClick={() => remove(index)}
-                      >
-                        <X className="size-4" />
-                      </Button>
-                    )}
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon-sm"
+                      onClick={() => remove(index)}
+                    >
+                      <X className="size-4" />
+                    </Button>
                   </div>
                 ))}
                 <Button type="button" variant="outline" onClick={() => append({ channelId: '' })}>
                   <Plus className="mr-1 size-3.5" />
-                  Add another destination
+                  {fields.length === 0 ? 'Add destination' : 'Add another destination'}
                 </Button>
               </div>
             </CardContent>
