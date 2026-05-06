@@ -115,10 +115,10 @@ function getAlertStateLogRetentionDays(planName: string | null): number {
   return ALERT_STATE_LOG_RETENTION_DAYS[planName ?? 'HOBBY'] ?? 7;
 }
 
-function hasElapsed(stateChangedAt: string | null, minutes: number): boolean {
+function hasElapsed(stateChangedAt: string | null, minutes: number, evaluationTime: Date): boolean {
   if (!stateChangedAt) return true;
   const changedAt = new Date(stateChangedAt).getTime();
-  return Date.now() - changedAt >= minutes * 60_000;
+  return evaluationTime.getTime() - changedAt >= minutes * 60_000;
 }
 
 export async function fetchEnabledRules(
@@ -181,14 +181,19 @@ export async function queryClickHouseWindows(
   clickhouse: ClickHouseClient,
   targetId: string,
   timeWindowMinutes: number,
+  // Anchor windows to the cron's scheduled run time (graphile-worker's
+  // job.run_at), not wall-clock now. If the worker is backed up and picks
+  // this job up late, using wall-clock would shift the queried window
+  // forward and could miss the spike that should have fired the alert.
+  evaluationTime: Date,
 ): Promise<{ current: ClickHouseWindowRow | null; previous: ClickHouseWindowRow | null }> {
-  const now = Date.now();
+  const anchorMs = evaluationTime.getTime();
   const offsetMs = 60_000;
   const windowMs = timeWindowMinutes * 60_000;
 
-  const currentWindowEnd = new Date(now - offsetMs);
-  const currentWindowStart = new Date(now - offsetMs - windowMs);
-  const previousWindowStart = new Date(now - offsetMs - 2 * windowMs);
+  const currentWindowEnd = new Date(anchorMs - offsetMs);
+  const currentWindowStart = new Date(anchorMs - offsetMs - windowMs);
+  const previousWindowStart = new Date(anchorMs - offsetMs - 2 * windowMs);
 
   const tableName = timeWindowMinutes <= 360 ? 'operations_minutely' : 'operations_hourly';
 
@@ -240,9 +245,14 @@ export async function evaluateRule(args: {
   previous: ClickHouseWindowRow;
   pg: PostgresDatabasePool;
   logger: Logger;
+  // Anchor for state_changed_at, last_triggered_at, expires_at, and
+  // confirmation-minutes elapsed checks. Passed in (rather than read from
+  // the wall clock) so a backed-up worker still produces results consistent
+  // with the cron schedule it was meant to run on.
+  evaluationTime: Date;
 }): Promise<void> {
-  const { rule, current, previous, pg, logger } = args;
-  const now = new Date();
+  const { rule, current, previous, pg, logger, evaluationTime } = args;
+  const now = evaluationTime;
 
   const currentValue = extractMetricValue(current, rule);
   const previousValue = extractMetricValue(previous, rule);
@@ -266,6 +276,7 @@ export async function evaluateRule(args: {
             currentValue,
             previousValue,
             retentionDays,
+            evaluationTime,
           );
         });
         logger.info({ ruleId: rule.id }, 'Alert rule entered PENDING state');
@@ -274,7 +285,7 @@ export async function evaluateRule(args: {
       case 'PENDING': {
         if (
           rule.confirmationMinutes === 0 ||
-          hasElapsed(rule.stateChangedAt, rule.confirmationMinutes)
+          hasElapsed(rule.stateChangedAt, rule.confirmationMinutes, evaluationTime)
         ) {
           await pg.transaction('alertEval:pendingToFiring', async trx => {
             await updateState(trx, rule.id, 'FIRING', now, now);
@@ -286,6 +297,7 @@ export async function evaluateRule(args: {
               currentValue,
               previousValue,
               retentionDays,
+              evaluationTime,
             );
             await trx.query(psql`
               INSERT INTO "metric_alert_incidents" (
@@ -314,6 +326,7 @@ export async function evaluateRule(args: {
             currentValue,
             previousValue,
             retentionDays,
+            evaluationTime,
           );
         });
         logger.info({ ruleId: rule.id }, 'Alert rule re-entered FIRING from RECOVERING');
@@ -336,6 +349,7 @@ export async function evaluateRule(args: {
             currentValue,
             previousValue,
             retentionDays,
+            evaluationTime,
           );
         });
         logger.info(
@@ -355,6 +369,7 @@ export async function evaluateRule(args: {
             currentValue,
             previousValue,
             retentionDays,
+            evaluationTime,
           );
         });
         logger.info({ ruleId: rule.id }, 'Alert rule entered RECOVERING state');
@@ -363,7 +378,7 @@ export async function evaluateRule(args: {
       case 'RECOVERING': {
         if (
           rule.confirmationMinutes === 0 ||
-          hasElapsed(rule.stateChangedAt, rule.confirmationMinutes)
+          hasElapsed(rule.stateChangedAt, rule.confirmationMinutes, evaluationTime)
         ) {
           await pg.transaction('alertEval:recoveringToNormal', async trx => {
             await updateState(trx, rule.id, 'NORMAL', now);
@@ -375,6 +390,7 @@ export async function evaluateRule(args: {
               currentValue,
               previousValue,
               retentionDays,
+              evaluationTime,
             );
             await trx.query(psql`
               UPDATE "metric_alert_incidents"
@@ -425,8 +441,9 @@ async function logTransition(
   value: number,
   previousValue: number,
   retentionDays: number,
+  evaluationTime: Date,
 ): Promise<string> {
-  const expiresAt = new Date(Date.now() + retentionDays * 24 * 60 * 60 * 1000);
+  const expiresAt = new Date(evaluationTime.getTime() + retentionDays * 24 * 60 * 60 * 1000);
 
   const id = await conn.oneFirst(psql`
     INSERT INTO "metric_alert_state_log" (

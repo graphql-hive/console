@@ -14,12 +14,19 @@ export const EvaluateMetricAlertRulesTask = defineTask({
 });
 
 export const task = implementTask(EvaluateMetricAlertRulesTask, async args => {
-  const { context, logger } = args;
+  const { context, logger, helpers } = args;
 
   if (!context.clickhouse) {
     logger.debug('ClickHouse not configured, skipping metric alert evaluation');
     return;
   }
+
+  // Anchor every evaluation in this run to the cron's scheduled time. If the
+  // worker is backed up, wall-clock would shift queried windows past the
+  // minute that should have fired the alert; run_at keeps results consistent
+  // with the schedule. Falls back to wall-clock for ad-hoc / manually-queued
+  // runs that have no scheduled time.
+  const evaluationTime = helpers.job.run_at ?? new Date();
 
   // OR-style gate: when cluster flag is on, evaluate every rule; when off,
   // fetchEnabledRules filters to rules belonging to opted-in orgs only.
@@ -45,6 +52,7 @@ export const task = implementTask(EvaluateMetricAlertRulesTask, async args => {
         context.clickhouse,
         representative.targetId,
         representative.timeWindowMinutes,
+        evaluationTime,
       );
     } catch (error) {
       logger.error(
@@ -86,6 +94,7 @@ export const task = implementTask(EvaluateMetricAlertRulesTask, async args => {
         previous,
         pg: context.pg,
         logger,
+        evaluationTime,
       });
     }
   }
