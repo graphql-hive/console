@@ -227,16 +227,10 @@ export async function queryClickHouseWindows(
   try {
     rows = await clickhouse.query<ClickHouseWindowRow>(sql);
   } catch (error) {
-    metricAlertClickHouseQueryDuration.observe(
-      { outcome: 'error' },
-      (Date.now() - startMs) / 1000,
-    );
+    metricAlertClickHouseQueryDuration.observe({ outcome: 'error' }, (Date.now() - startMs) / 1000);
     throw error;
   }
-  metricAlertClickHouseQueryDuration.observe(
-    { outcome: 'success' },
-    (Date.now() - startMs) / 1000,
-  );
+  metricAlertClickHouseQueryDuration.observe({ outcome: 'success' }, (Date.now() - startMs) / 1000);
 
   return {
     current: rows.find(r => r.window === 'current') ?? null,
