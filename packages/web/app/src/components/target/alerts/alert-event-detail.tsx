@@ -140,7 +140,7 @@ function valueWithDelta(
   if (rule.type === MetricAlertRuleType.ErrorRate) {
     const delta = current - previous;
     const sign = delta >= 0 ? '+' : '';
-    return `${currentText} (was ${previousText}, ${sign}${delta.toFixed(1)}pp)`;
+    return `${currentText} (was ${previousText}, ${sign}${delta.toFixed(1)}%)`;
   }
   if (previous !== 0) {
     const pct = ((current - previous) / previous) * 100;
