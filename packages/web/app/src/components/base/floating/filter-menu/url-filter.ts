@@ -89,7 +89,12 @@ export function urlFilterDimension<TSearch extends Record<string, unknown>>(conf
   };
 }
 
-/** Encode `FilterSelection[]` as `string[]` of ids — the common flat case. */
+/**
+ * Encode `FilterSelection[]` as `string[]` of ids — the common flat case.
+ * Returns `undefined` for an empty selection so the URL key is stripped
+ * (matching the `encode` contract on `urlFilterDimension`); leaving an
+ * empty array would serialize as `?key=` and clutter the URL.
+ */
 export function encodeIdSelections(selections: FilterSelection[]): string[] | undefined {
   return selections.length > 0 ? selections.map(s => s.id ?? s.name) : undefined;
 }
