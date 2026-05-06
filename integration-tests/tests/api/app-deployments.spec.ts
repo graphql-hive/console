@@ -2217,6 +2217,18 @@ test('app deployment manifest is written to and accessible via CDN', async () =>
   }).then(res => res.expectNoGraphQLErrors());
   expect(addDocumentsToAppDeployment.error).toBeNull();
 
+  const cdnAccess = await createCdnAccess();
+  const persistedOperationUrl = `${cdnAccess.cdnUrl}/apps/app-name/app-version`;
+
+  let response = await fetch(persistedOperationUrl, {
+    method: 'GET',
+    headers: {
+      'X-Hive-CDN-Key': cdnAccess.secretAccessToken,
+    },
+  });
+  // before the app deployment is activated it shall not exist.
+  expect(response.status).toEqual(404);
+
   const { activateAppDeployment } = await execute({
     document: ActivateAppDeployment,
     variables: {
@@ -2229,14 +2241,13 @@ test('app deployment manifest is written to and accessible via CDN', async () =>
   }).then(res => res.expectNoGraphQLErrors());
   expect(activateAppDeployment.error).toBeNull();
 
-  const cdnAccess = await createCdnAccess();
-  const persistedOperationUrl = `${cdnAccess.cdnUrl}/apps/app-name/app-version`;
-  let response = await fetch(persistedOperationUrl, {
+  response = await fetch(persistedOperationUrl, {
     method: 'GET',
     headers: {
       'X-Hive-CDN-Key': cdnAccess.secretAccessToken,
     },
   });
+  expect(response.status).toEqual(200);
   let manifest = await response.json();
   expect(manifest).toMatchObject({
     appName: 'app-name',
@@ -2266,6 +2277,7 @@ test('app deployment manifest is written to and accessible via CDN', async () =>
       'X-Hive-CDN-Key': cdnAccess.secretAccessToken,
     },
   });
+  expect(response.status).toEqual(200);
   manifest = await response.json();
   expect(manifest).toMatchObject({
     appName: 'app-name',
