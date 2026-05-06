@@ -13,8 +13,7 @@ Developing Hive locally requires you to have the following software installed lo
 
 - Clone the repository locally
 - Make sure to install the recommended VSCode extensions (defined in `.vscode/extensions.json`)
-- In the root of the repo, run `nvm use` (or `fnm use`) to use the same version of node as mentioned
-  above
+- In the root of the repo, run `nvm use` (or `fnm use`) to use the required Node.js version
 - Create `.env` file in the root, and use the following:
 
 ```dotenv
