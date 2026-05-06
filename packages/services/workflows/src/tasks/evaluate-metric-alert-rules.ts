@@ -36,6 +36,8 @@ export const task = implementTask(EvaluateMetricAlertRulesTask, async args => {
   logger.info({ count: rules.length }, 'Evaluating metric alert rules');
 
   const groups = groupRulesByQuery(rules);
+  let groupsFailed = 0;
+  let transitionCount = 0;
 
   for (const [, groupRules] of groups) {
     const representative = groupRules[0];
@@ -52,6 +54,7 @@ export const task = implementTask(EvaluateMetricAlertRulesTask, async args => {
         { error, targetId: representative.targetId },
         'Failed to query ClickHouse for alert evaluation',
       );
+      groupsFailed++;
       continue;
     }
 
@@ -99,6 +102,7 @@ export const task = implementTask(EvaluateMetricAlertRulesTask, async args => {
         pg: context.pg,
         logger,
         onTransition: async ({ rule: r, fromState, toState, currentValue, previousValue }) => {
+          transitionCount++;
           if (!slugs) return;
 
           const isFiring = toState === 'FIRING';
@@ -126,5 +130,8 @@ export const task = implementTask(EvaluateMetricAlertRulesTask, async args => {
     }
   }
 
-  logger.info('Metric alert evaluation complete');
+  logger.info(
+    { groupsAttempted: groups.size, groupsFailed, transitionCount },
+    'Metric alert evaluation complete',
+  );
 });
