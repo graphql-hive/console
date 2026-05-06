@@ -18,12 +18,23 @@ export const MetricAlertRule: MetricAlertRuleResolvers = {
     }
     return injector.get(Storage).getUserById({ id: rule.updatedByUserId });
   },
-  target: (rule, _, { injector }) => {
-    return injector.get(TargetManager).getTarget({
-      targetId: rule.targetId,
-      projectId: rule.projectId,
-      organizationId: rule.organizationId,
-    });
+  // Returns null when the parent rule's target has been deleted between the
+  // rule fetch and this field's resolution. The cascade on
+  // `metric_alert_rules.target_id ... ON DELETE CASCADE` makes this rare in
+  // practice, but it CAN happen during a concurrent delete. The schema is
+  // `target: Target` (nullable); frontend list views filter rules with null
+  // targets at render time so a transient miss doesn't fail the whole
+  // response.
+  target: async (rule, _, { injector }) => {
+    try {
+      return await injector.get(TargetManager).getTarget({
+        targetId: rule.targetId,
+        projectId: rule.projectId,
+        organizationId: rule.organizationId,
+      });
+    } catch {
+      return null;
+    }
   },
   channels: async (rule, _, { injector }) => {
     const channelIds = await injector.get(MetricAlertRulesStorage).getRuleChannelIds({

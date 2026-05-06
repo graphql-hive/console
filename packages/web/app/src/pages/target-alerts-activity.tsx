@@ -112,30 +112,16 @@ export function TargetAlertsActivityPage(props: {
     variables: { organizationSlug, projectSlug, targetSlug, from, to },
   });
 
+  // Drop entries whose rule was deleted between fetching the state-log and
+  // resolving each entry's rule field. Rare in practice (the cascade on
+  // metric_alert_state_log normally removes the entry alongside the rule)
+  // but a concurrent delete can leave the response holding a state-log
+  // row whose rule resolved to null. Next refresh re-queries cleanly.
   const allEvents: ActivityEventRow[] = useMemo(
     () =>
-      (result.data?.target?.metricAlertRuleStateLog ?? []).map(e => ({
-        id: e.id,
-        fromState: e.fromState,
-        toState: e.toState,
-        value: e.value,
-        previousValue: e.previousValue,
-        thresholdValue: e.thresholdValue,
-        createdAt: e.createdAt,
-        rule: {
-          id: e.rule.id,
-          name: e.rule.name,
-          type: e.rule.type,
-          metric: e.rule.metric,
-          severity: e.rule.severity,
-          direction: e.rule.direction,
-          thresholdType: e.rule.thresholdType,
-          thresholdValue: e.rule.thresholdValue,
-          timeWindowMinutes: e.rule.timeWindowMinutes,
-          savedFilter: e.rule.savedFilter,
-          createdBy: e.rule.createdBy,
-        },
-      })),
+      (result.data?.target?.metricAlertRuleStateLog ?? [])
+        .filter((e): e is typeof e & { rule: NonNullable<typeof e.rule> } => e.rule !== null)
+        .map(e => ({ ...e, rule: { ...e.rule } })),
     [result.data?.target?.metricAlertRuleStateLog],
   );
 

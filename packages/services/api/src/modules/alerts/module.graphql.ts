@@ -198,7 +198,13 @@ export default gql`
     id: ID!
     name: String!
     type: MetricAlertRuleType!
-    target: Target!
+    """
+    The target this rule is scoped to. Nullable to tolerate the brief race
+    between fetching a rule and resolving its target when the target has
+    been deleted (which cascade-deletes the rule itself). Frontend list
+    views filter rules with null targets at render time.
+    """
+    target: Target
     """
     Destinations that receive notifications when this rule fires or resolves.
     """
@@ -279,7 +285,13 @@ export default gql`
     """
     thresholdValue: Float
     createdAt: DateTime!
-    rule: MetricAlertRule!
+    """
+    The rule that produced this transition. Nullable to tolerate the brief
+    race between fetching a state-log entry and resolving its rule when the
+    rule has been deleted (which cascade-deletes the state-log row itself).
+    Frontend list views filter entries with null rules at render time.
+    """
+    rule: MetricAlertRule
   }
 
   extend type Target {
