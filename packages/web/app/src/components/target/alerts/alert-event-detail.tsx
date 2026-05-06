@@ -76,6 +76,18 @@ const METRIC_LABEL_BY_TYPE: Record<MetricAlertRuleType, string> = {
   [MetricAlertRuleType.Traffic]: 'total requests',
 };
 
+const COLUMN_LABEL_BY_TYPE: Record<MetricAlertRuleType, string> = {
+  [MetricAlertRuleType.ErrorRate]: 'Error rate',
+  [MetricAlertRuleType.Latency]: 'Latency',
+  [MetricAlertRuleType.Traffic]: 'Total requests',
+};
+
+const VALUE_FORMATTER_BY_TYPE: Record<MetricAlertRuleType, (n: number) => string> = {
+  [MetricAlertRuleType.ErrorRate]: n => `${n.toFixed(1)}%`,
+  [MetricAlertRuleType.Latency]: n => formatDuration(n, true),
+  [MetricAlertRuleType.Traffic]: n => String(formatNumber(n)),
+};
+
 function metricLabel(rule: AlertEventDetailRule): string {
   if (rule.type === MetricAlertRuleType.Latency && rule.metric) {
     return `${rule.metric.toLowerCase()} latency`;
@@ -84,18 +96,16 @@ function metricLabel(rule: AlertEventDetailRule): string {
 }
 
 function metricColumnLabel(rule: AlertEventDetailRule): string {
-  if (rule.type === MetricAlertRuleType.Latency) {
-    return rule.metric ? `${rule.metric} latency` : 'Latency';
+  // Latency keeps a contextual override when a sub-metric (P95 etc.) is set.
+  if (rule.type === MetricAlertRuleType.Latency && rule.metric) {
+    return `${rule.metric} latency`;
   }
-  if (rule.type === MetricAlertRuleType.ErrorRate) return 'Error rate';
-  return 'Total requests';
+  return COLUMN_LABEL_BY_TYPE[rule.type];
 }
 
 function formatRawValue(type: MetricAlertRuleType, value: number | null | undefined): string {
   if (value === null || value === undefined) return '—';
-  if (type === MetricAlertRuleType.Latency) return formatDuration(value, true);
-  if (type === MetricAlertRuleType.ErrorRate) return `${value.toFixed(1)}%`;
-  return String(formatNumber(value));
+  return VALUE_FORMATTER_BY_TYPE[type](value);
 }
 
 function formatTimeWindow(minutes: number): string {

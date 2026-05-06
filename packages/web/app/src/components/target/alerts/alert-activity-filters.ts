@@ -15,11 +15,18 @@ const SEVERITY_ITEMS: FilterItem[] = [
   { id: MetricAlertRuleSeverity.Info, name: 'Info', values: [] },
 ];
 
-const TYPE_ITEMS: FilterItem[] = [
-  { id: MetricAlertRuleType.ErrorRate, name: 'Reliability', values: [] },
-  { id: MetricAlertRuleType.Latency, name: 'Latency', values: [] },
-  { id: MetricAlertRuleType.Traffic, name: 'Traffic', values: [] },
-];
+// Derived from a Record so adding a new MetricAlertRuleType fails the build
+// here until a label is provided, rather than silently dropping the type
+// from the filter UI.
+const FILTER_LABEL_BY_TYPE: Record<MetricAlertRuleType, string> = {
+  [MetricAlertRuleType.ErrorRate]: 'Reliability',
+  [MetricAlertRuleType.Latency]: 'Latency',
+  [MetricAlertRuleType.Traffic]: 'Traffic',
+};
+
+const TYPE_ITEMS: FilterItem[] = (
+  Object.entries(FILTER_LABEL_BY_TYPE) as Array<[MetricAlertRuleType, string]>
+).map(([id, name]) => ({ id, name, values: [] }));
 
 type CreatedByUser = { id: string; displayName: string };
 
