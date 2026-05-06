@@ -30,7 +30,6 @@ const TIMESTAMP_FORMAT = new Intl.DateTimeFormat('en-US', {
   minute: '2-digit',
   second: '2-digit',
   hour12: true,
-  timeZone: 'UTC',
   timeZoneName: 'short',
 });
 
