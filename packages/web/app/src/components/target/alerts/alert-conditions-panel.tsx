@@ -156,7 +156,6 @@ export function AlertConditionsPanel({
   projectSlug,
   targetSlug,
 }: AlertConditionsPanelProps) {
-  console.log('AlertConditionsPanel', { rule });
   const metricLabel =
     rule.type === MetricAlertRuleType.Latency && rule.metric
       ? `${rule.metric.toLowerCase()} latency`
