@@ -16,6 +16,8 @@ export async function sendWebhook(
     endpoint: string;
     /** JSON data to be sent to the endpoint */
     data: unknown;
+    /** extra headers to forward to the destination (e.g. Idempotency-Key) */
+    headers?: Record<string, string>;
   },
 ) {
   if (args.attempt < args.maxAttempts) {
@@ -28,6 +30,7 @@ export async function sendWebhook(
             Accept: 'application/json',
             'Accept-Encoding': 'gzip, deflate, br',
             'Content-Type': 'application/json',
+            ...args.headers,
           },
           timeout: {
             request: 10_000,
@@ -52,6 +55,7 @@ export async function sendWebhook(
             Accept: 'application/json',
             'Accept-Encoding': 'gzip, deflate, br',
             'Content-Type': 'application/json',
+            ...args.headers,
           },
           body: JSON.stringify(args.data),
           resolveResponseBody: false,

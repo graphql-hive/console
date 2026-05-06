@@ -96,5 +96,19 @@ CREATE TABLE "metric_alert_state_log" (
 CREATE INDEX "idx_metric_alert_state_log_rule" ON "metric_alert_state_log" ("metric_alert_rule_id", "created_at");
 CREATE INDEX "idx_metric_alert_state_log_target" ON "metric_alert_state_log" ("target_id", "created_at");
 CREATE INDEX "idx_metric_alert_state_log_expires" ON "metric_alert_state_log" ("expires_at");
+
+-- Per-(state_log, channel) record of successful dispatch. The
+-- sendMetricAlertChannelNotification task checks here before sending and
+-- inserts on success; lets graphile-worker retries be safe (at-least-once
+-- with best-effort dedup, since external destinations like Slack lack an
+-- idempotency-key API).
+CREATE TABLE "metric_alert_notifications_sent" (
+  "state_log_id" uuid NOT NULL REFERENCES "metric_alert_state_log"("id") ON DELETE CASCADE,
+  "alert_channel_id" uuid NOT NULL REFERENCES "alert_channels"("id") ON DELETE CASCADE,
+  "sent_at" timestamptz NOT NULL DEFAULT now(),
+  PRIMARY KEY ("state_log_id", "alert_channel_id")
+);
+
+CREATE INDEX "idx_metric_alert_notifications_sent_channel" ON "metric_alert_notifications_sent" ("alert_channel_id");
 `,
 } satisfies MigrationExecutor;

@@ -45,6 +45,7 @@ const modules = await Promise.all([
   import('./tasks/usage-rate-limit-warning.js'),
   import('./tasks/schema-proposal-composition.js'),
   import('./tasks/evaluate-metric-alert-rules.js'),
+  import('./tasks/send-metric-alert-channel-notification.js'),
   import('./tasks/purge-expired-alert-state-log.js'),
 ]);
 

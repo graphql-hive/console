@@ -5,7 +5,7 @@ import { WebClient } from '@slack/web-api';
 import type { MetricAlertRuleRow } from './metric-alert-evaluator.js';
 import { sendWebhook, type RequestBroker } from './webhooks/send-webhook.js';
 
-type AlertChannelRow = {
+export type AlertChannelRow = {
   id: string;
   type: 'SLACK' | 'WEBHOOK' | 'MSTEAMS_WEBHOOK';
   name: string;
@@ -13,7 +13,7 @@ type AlertChannelRow = {
   webhookEndpoint: string | null;
 };
 
-type NotificationEvent = {
+export type NotificationEvent = {
   state: 'firing' | 'resolved';
   rule: MetricAlertRuleRow;
   currentValue: number;
@@ -23,70 +23,7 @@ type NotificationEvent = {
   targetSlug: string;
 };
 
-export async function sendMetricAlertNotifications(args: {
-  ruleId: string;
-  event: NotificationEvent;
-  pg: PostgresDatabasePool;
-  requestBroker: RequestBroker | null;
-  logger: Logger;
-}): Promise<void> {
-  const { ruleId, event, pg, logger } = args;
-
-  // Fetch channels attached to this rule
-  const channels = (await pg.any(psql`
-    SELECT
-      ac."id"
-      , ac."type"
-      , ac."name"
-      , ac."slack_channel" as "slackChannel"
-      , ac."webhook_endpoint" as "webhookEndpoint"
-    FROM "alert_channels" ac
-    INNER JOIN "metric_alert_rule_channels" marc
-      ON marc."alert_channel_id" = ac."id"
-    WHERE marc."metric_alert_rule_id" = ${ruleId}
-  `)) as unknown as AlertChannelRow[];
-
-  if (channels.length === 0) {
-    logger.warn({ ruleId }, 'No channels configured for metric alert rule');
-    return;
-  }
-
-  for (const channel of channels) {
-    try {
-      switch (channel.type) {
-        case 'SLACK': {
-          await sendSlackNotification({ channel, event, pg, logger });
-          break;
-        }
-        case 'WEBHOOK': {
-          await sendWebhookNotification({
-            channel,
-            event,
-            requestBroker: args.requestBroker,
-            logger,
-          });
-          break;
-        }
-        case 'MSTEAMS_WEBHOOK': {
-          await sendTeamsNotification({
-            channel,
-            event,
-            requestBroker: args.requestBroker,
-            logger,
-          });
-          break;
-        }
-      }
-    } catch (error) {
-      logger.error(
-        { error, channelId: channel.id, channelType: channel.type },
-        'Failed to send metric alert notification',
-      );
-    }
-  }
-}
-
-async function sendSlackNotification(args: {
+export async function sendSlackNotification(args: {
   channel: AlertChannelRow;
   event: NotificationEvent;
   pg: PostgresDatabasePool;
@@ -99,7 +36,6 @@ async function sendSlackNotification(args: {
     return;
   }
 
-  // Fetch the org's Slack token
   const tokenResult = await pg.maybeOneFirst(psql`
     SELECT "slack_token"
     FROM "organizations"
@@ -151,11 +87,14 @@ async function sendSlackNotification(args: {
   logger.debug({ channelId: channel.id }, 'Slack notification sent');
 }
 
-async function sendWebhookNotification(args: {
+export async function sendWebhookNotification(args: {
   channel: AlertChannelRow;
   event: NotificationEvent;
   requestBroker: RequestBroker | null;
   logger: Logger;
+  idempotencyKey: string;
+  attempt: number;
+  maxAttempts: number;
 }) {
   const { channel, event, logger } = args;
 
@@ -167,20 +106,24 @@ async function sendWebhookNotification(args: {
   const payload = buildWebhookPayload(event);
 
   await sendWebhook(logger, args.requestBroker, {
-    attempt: 0,
-    maxAttempts: 5,
+    attempt: args.attempt,
+    maxAttempts: args.maxAttempts,
     endpoint: channel.webhookEndpoint,
     data: payload,
+    headers: { 'Idempotency-Key': args.idempotencyKey },
   });
 
   logger.debug({ channelId: channel.id }, 'Webhook notification sent');
 }
 
-async function sendTeamsNotification(args: {
+export async function sendTeamsNotification(args: {
   channel: AlertChannelRow;
   event: NotificationEvent;
   requestBroker: RequestBroker | null;
   logger: Logger;
+  idempotencyKey: string;
+  attempt: number;
+  maxAttempts: number;
 }) {
   const { channel, event, logger } = args;
 
@@ -215,10 +158,11 @@ async function sendTeamsNotification(args: {
   };
 
   await sendWebhook(logger, args.requestBroker, {
-    attempt: 0,
-    maxAttempts: 5,
+    attempt: args.attempt,
+    maxAttempts: args.maxAttempts,
     endpoint: channel.webhookEndpoint,
     data: card,
+    headers: { 'Idempotency-Key': args.idempotencyKey },
   });
 
   logger.debug({ channelId: channel.id }, 'Teams notification sent');

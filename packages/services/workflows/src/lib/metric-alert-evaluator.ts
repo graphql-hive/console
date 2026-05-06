@@ -121,10 +121,6 @@ function hasElapsed(stateChangedAt: string | null, minutes: number): boolean {
   return Date.now() - changedAt >= minutes * 60_000;
 }
 
-function formatClickHouseDate(date: Date): string {
-  return date.toISOString().replace('T', ' ').replace('Z', '').slice(0, 19);
-}
-
 export async function fetchEnabledRules(
   pg: PostgresDatabasePool,
   clusterFlagEnabled: boolean,
@@ -203,7 +199,7 @@ export async function queryClickHouseWindows(
   const sql = `
     SELECT
       CASE
-        WHEN timestamp >= '${formatClickHouseDate(currentWindowStart)}' THEN 'current'
+        WHEN timestamp >= fromUnixTimestamp64Milli(${currentWindowStart.getTime()}) THEN 'current'
         ELSE 'previous'
       END as window,
       sum(total) as total,
@@ -212,8 +208,8 @@ export async function queryClickHouseWindows(
       quantilesMerge(0.75, 0.90, 0.95, 0.99)(duration_quantiles) as percentiles
     FROM ${tableName}
     WHERE target = '${safeTargetId}'
-      AND timestamp >= '${formatClickHouseDate(previousWindowStart)}'
-      AND timestamp < '${formatClickHouseDate(currentWindowEnd)}'
+      AND timestamp >= fromUnixTimestamp64Milli(${previousWindowStart.getTime()})
+      AND timestamp < fromUnixTimestamp64Milli(${currentWindowEnd.getTime()})
     GROUP BY window
     ORDER BY window
   `;
@@ -238,23 +234,14 @@ export async function queryClickHouseWindows(
   };
 }
 
-export type OnStateTransition = (args: {
-  rule: MetricAlertRuleRow;
-  fromState: MetricAlertRuleRow['state'];
-  toState: MetricAlertRuleRow['state'];
-  currentValue: number;
-  previousValue: number;
-}) => Promise<void>;
-
 export async function evaluateRule(args: {
   rule: MetricAlertRuleRow;
   current: ClickHouseWindowRow;
   previous: ClickHouseWindowRow;
   pg: PostgresDatabasePool;
   logger: Logger;
-  onTransition?: OnStateTransition;
 }): Promise<void> {
-  const { rule, current, previous, pg, logger, onTransition } = args;
+  const { rule, current, previous, pg, logger } = args;
   const now = new Date();
 
   const currentValue = extractMetricValue(current, rule);
@@ -265,16 +252,6 @@ export async function evaluateRule(args: {
   // is included on the row by `fetchEnabledRules` (single JOIN) — no extra
   // database round-trip per rule.
   const retentionDays = getAlertStateLogRetentionDays(rule.organizationPlanName);
-
-  // Notification side-effects fire AFTER the DB transaction commits. Sending
-  // a Slack/webhook for a transition that didn't actually persist would be
-  // worse than missing one, so we collect the intent here and fan out below.
-  let pendingNotification: {
-    fromState: MetricAlertRuleRow['state'];
-    toState: MetricAlertRuleRow['state'];
-    currentValue: number;
-    previousValue: number;
-  } | null = null;
 
   if (breached) {
     switch (rule.state) {
@@ -301,7 +278,7 @@ export async function evaluateRule(args: {
         ) {
           await pg.transaction('alertEval:pendingToFiring', async trx => {
             await updateState(trx, rule.id, 'FIRING', now, now);
-            await logTransition(
+            const stateLogId = await logTransition(
               trx,
               rule,
               'PENDING',
@@ -317,14 +294,9 @@ export async function evaluateRule(args: {
                 ${rule.id}, ${currentValue}, ${previousValue}, ${rule.thresholdValue}
               )
             `);
+            await enqueueChannelNotifications(trx, rule.id, stateLogId);
           });
           logger.info({ ruleId: rule.id }, 'Alert rule entered FIRING state');
-          pendingNotification = {
-            fromState: 'PENDING',
-            toState: 'FIRING',
-            currentValue,
-            previousValue,
-          };
         }
         break;
       }
@@ -395,7 +367,7 @@ export async function evaluateRule(args: {
         ) {
           await pg.transaction('alertEval:recoveringToNormal', async trx => {
             await updateState(trx, rule.id, 'NORMAL', now);
-            await logTransition(
+            const stateLogId = await logTransition(
               trx,
               rule,
               'RECOVERING',
@@ -409,14 +381,9 @@ export async function evaluateRule(args: {
               SET "resolved_at" = NOW()
               WHERE "metric_alert_rule_id" = ${rule.id} AND "resolved_at" IS NULL
             `);
+            await enqueueChannelNotifications(trx, rule.id, stateLogId);
           });
           logger.info({ ruleId: rule.id }, 'Alert rule resolved, back to NORMAL');
-          pendingNotification = {
-            fromState: 'RECOVERING',
-            toState: 'NORMAL',
-            currentValue,
-            previousValue,
-          };
         }
         break;
       }
@@ -430,10 +397,6 @@ export async function evaluateRule(args: {
     SET "last_evaluated_at" = NOW(), "updated_at" = NOW()
     WHERE "id" = ${rule.id}
   `);
-
-  if (pendingNotification) {
-    await onTransition?.({ rule, ...pendingNotification });
-  }
 }
 
 async function updateState(
@@ -462,10 +425,10 @@ async function logTransition(
   value: number,
   previousValue: number,
   retentionDays: number,
-) {
+): Promise<string> {
   const expiresAt = new Date(Date.now() + retentionDays * 24 * 60 * 60 * 1000);
 
-  await conn.query(psql`
+  const id = await conn.oneFirst(psql`
     INSERT INTO "metric_alert_state_log" (
       "metric_alert_rule_id"
       , "target_id"
@@ -485,5 +448,33 @@ async function logTransition(
       , ${rule.thresholdValue}
       , ${expiresAt.toISOString()}
     )
+    RETURNING "id"
+  `);
+
+  return id as string;
+}
+
+// Enqueues one `sendMetricAlertChannelNotification` task per channel attached
+// to the rule, using graphile-worker's add_job SQL function on the same
+// connection as the surrounding tx. If the outer tx rolls back, the enqueued
+// jobs roll back too — true atomicity between the state transition and the
+// notification intent.
+async function enqueueChannelNotifications(
+  conn: CommonQueryMethods,
+  ruleId: string,
+  stateLogId: string,
+) {
+  await conn.query(psql`
+    SELECT graphile_worker.add_job(
+      'sendMetricAlertChannelNotification',
+      payload => json_build_object(
+        'input', json_build_object(
+          'stateLogId', ${stateLogId}::text,
+          'channelId', marc."alert_channel_id"::text
+        )
+      )
+    )
+    FROM "metric_alert_rule_channels" marc
+    WHERE marc."metric_alert_rule_id" = ${ruleId}
   `);
 }
