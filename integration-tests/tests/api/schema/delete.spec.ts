@@ -225,6 +225,7 @@ test.concurrent(
 
     try {
       storage = await createStorage(connectionString(), 1);
+      const schemaVersions = new SchemaVersionStore(storage.pool);
       const { createOrg, ownerToken } = await initSeed().createOwner();
       const { createProject, organization } = await createOrg();
       const { createTargetAccessToken, project, target, setNativeFederation } = await createProject(
@@ -307,11 +308,7 @@ test.concurrent(
         .then(r => r.expectNoGraphQLErrors());
       expect(deleteServiceResult.schemaDelete.__typename).toBe('SchemaDeleteSuccess');
 
-      const latestVersion = await storage.getMaybeLatestVersion({
-        targetId: target.id,
-        projectId: project.id,
-        organizationId: organization.id,
-      });
+      const latestVersion = await schemaVersions.getMaybeLatestSchemaVersionForTargetId(target.id);
       assertNonNull(latestVersion);
 
       expect(latestVersion.compositeSchemaSDL).toEqual(null);

@@ -3340,6 +3340,7 @@ test('Target.schemaVersion: result is read from the database', async () => {
 
 test('Composition Error (Federation 2) can be served from the database', async () => {
   const storage = await createStorage(connectionString(), 1);
+  const schemaVersions = new SchemaVersionStore(storage.pool);
   const serviceAddress = await getServiceHost('composition_federation_2', 3069, false);
 
   try {
@@ -3438,11 +3439,7 @@ test('Composition Error (Federation 2) can be served from the database', async (
       return;
     }
 
-    const latestVersion = await storage.getMaybeLatestVersion({
-      targetId: target.id,
-      projectId: project.id,
-      organizationId: organization.id,
-    });
+    const latestVersion = await schemaVersions.getMaybeLatestSchemaVersionForTargetId(target.id);
     assertNonNull(latestVersion);
 
     const result = await execute({
