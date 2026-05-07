@@ -23,6 +23,10 @@ export function deployGrafanaAlerts(envName: string) {
 
   // Single rule group for the metric-alerts feature; evaluation interval
   // matches the cron that produces the underlying metrics (every minute).
+  // @ts-expect-error @lbrlabs/pulumi-grafana@0.1.0 marks orgId required on
+  // RuleGroupArgs but optional on Folder/Dashboard; per the library docstring,
+  // omitting it falls back to the provider's configured org (same as how the
+  // Folder above and Dashboards in services/grafana.ts are set up).
   const ruleGroup = new RuleGroup('metric-alerts-evaluator', {
     folderUid: folder.uid,
     name: 'metric-alerts-evaluator',
