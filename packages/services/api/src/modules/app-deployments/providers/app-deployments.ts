@@ -1,7 +1,11 @@
 import { differenceInCalendarDays, startOfDay, subDays } from 'date-fns';
 import { Inject, Injectable, Scope } from 'graphql-modules';
 import { z } from 'zod';
-import { buildAppDeploymentIsEnabledKey } from '@hive/cdn-script/artifact-storage-reader';
+import {
+  AppDeploymentManifestModel,
+  buildAppDeploymentIsEnabledKey,
+  buildAppDeploymentManifestKey,
+} from '@hive/cdn-script/artifact-storage-reader';
 import {
   PostgresDatabasePool,
   psql,
@@ -366,6 +370,27 @@ export class AppDeployments {
     };
   }
 
+  private async _getAllDocumentHashesForAppDeployment(
+    appDeployment: AppDeploymentRecord,
+  ): Promise<Array<string>> {
+    return await this.clickhouse
+      .query({
+        query: cSql`
+          SELECT
+            DISTINCT "document_hash" AS "hash"
+          FROM
+            "app_deployment_documents"
+          WHERE
+            "app_deployment_id" = ${appDeployment.id}
+        `,
+        queryId: 'app-deployment-document-ids',
+        timeout: 10_000,
+      })
+      .then(res =>
+        z.array(z.object({ hash: z.string() }).transform(row => row.hash)).parse(res.data),
+      );
+  }
+
   async activateAppDeployment(args: {
     organizationId: string;
     targetId: string;
@@ -431,8 +456,11 @@ export class AppDeployments {
       };
     }
 
+    const appDeploymentDocumentHashes =
+      await this._getAllDocumentHashesForAppDeployment(appDeployment);
+
     for (const s3 of this.s3) {
-      const result = await s3.client.fetch(
+      let result = await s3.client.fetch(
         [
           s3.endpoint,
           s3.bucket,
@@ -456,6 +484,38 @@ export class AppDeployments {
 
       if (result.statusCode !== 200) {
         throw new Error(`Failed to enable app deployment: ${result.statusMessage}`);
+      }
+
+      result = await s3.client.fetch(
+        [
+          s3.endpoint,
+          s3.bucket,
+          buildAppDeploymentManifestKey(
+            appDeployment.targetId,
+            appDeployment.name,
+            appDeployment.version,
+          ),
+        ].join('/'),
+        {
+          method: 'PUT',
+          body: JSON.stringify({
+            id: appDeployment.id,
+            appName: appDeployment.name,
+            appVersion: appDeployment.version,
+            documentHashes: appDeploymentDocumentHashes.sort(),
+            isActive: true,
+          } satisfies z.TypeOf<typeof AppDeploymentManifestModel>),
+          headers: {
+            'content-type': 'application/json',
+          },
+          aws: {
+            signQuery: true,
+          },
+        },
+      );
+
+      if (result.statusCode !== 200) {
+        throw new Error(`Failed to write app manifest: ${result.statusMessage}`);
       }
     }
 
@@ -690,8 +750,11 @@ export class AppDeployments {
       }
     }
 
+    const appDeploymentDocumentHashes =
+      await this._getAllDocumentHashesForAppDeployment(appDeployment);
+
     for (const s3 of this.s3) {
-      const result = await s3.client.fetch(
+      let result = await s3.client.fetch(
         [
           s3.endpoint,
           s3.bucket,
@@ -721,6 +784,38 @@ export class AppDeployments {
         throw new Error(
           `Failed to disable app deployment. Request failed with status code "${result.statusMessage}".`,
         );
+      }
+
+      result = await s3.client.fetch(
+        [
+          s3.endpoint,
+          s3.bucket,
+          buildAppDeploymentManifestKey(
+            appDeployment.targetId,
+            appDeployment.name,
+            appDeployment.version,
+          ),
+        ].join('/'),
+        {
+          method: 'PUT',
+          body: JSON.stringify({
+            id: appDeployment.id,
+            appName: appDeployment.name,
+            appVersion: appDeployment.version,
+            documentHashes: appDeploymentDocumentHashes.sort(),
+            isActive: false,
+          } satisfies z.TypeOf<typeof AppDeploymentManifestModel>),
+          headers: {
+            'content-type': 'application/json',
+          },
+          aws: {
+            signQuery: true,
+          },
+        },
+      );
+
+      if (result.statusCode !== 200) {
+        throw new Error(`Failed to write app manifest: ${result.statusMessage}`);
       }
     }
 
