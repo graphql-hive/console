@@ -330,16 +330,20 @@ export class SchemaManager {
       return null;
     }
 
-    const result = await this.schemaVersions.getSchemaVersionById(selector.versionId);
+    const version = await this.schemaVersions.getSchemaVersionById(selector.versionId);
 
-    if (!result) {
+    if (!version) {
+      return null;
+    }
+
+    if (version.targetId !== selector.targetId) {
       return null;
     }
 
     return {
       projectId: selector.projectId,
       organizationId: selector.organizationId,
-      ...result,
+      ...version,
     };
   }
 
