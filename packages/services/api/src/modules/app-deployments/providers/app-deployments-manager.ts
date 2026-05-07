@@ -124,10 +124,10 @@ export class AppDeploymentsManager {
       },
     });
 
+    const target = await this.targetManager.getTarget(selector);
+
     return await this.appDeployments.addDocumentsToAppDeployment({
-      organizationId: selector.organizationId,
-      projectId: selector.projectId,
-      targetId: selector.targetId,
+      target,
       appDeployment: args.appDeployment,
       operations: args.documents,
     });

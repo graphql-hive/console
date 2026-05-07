@@ -1,10 +1,5 @@
 import type { DocumentNode, GraphQLSchema, Kind } from 'graphql';
-import type {
-  SchemaChangeType,
-  SchemaCheck,
-  SchemaCheckApprovalMetadata,
-  SchemaVersion,
-} from '@hive/storage';
+import type { SchemaChangeType, SchemaCheck, SchemaCheckApprovalMetadata } from '@hive/storage';
 import type { SchemaError } from '../../__generated__/types';
 import type { DateRange, PushedCompositeSchema, SingleSchema } from '../../shared/entities';
 import type { PromiseOrValue } from '../../shared/helpers';
@@ -16,6 +11,7 @@ import type {
   PaginatedContractConnection,
 } from './providers/contracts';
 import type { SchemaCheckWarning } from './providers/models/shared';
+import type { SchemaVersion } from './providers/schema-version-store';
 
 export type SchemaChangeConnectionMapper = ReadonlyArray<SchemaChangeMapper>;
 export type SchemaChangeMapper = SchemaChangeType;
