@@ -1,17 +1,16 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   buildClientSchema,
   GraphQLSchema,
   introspectionFromSchema,
   type IntrospectionQuery,
 } from 'graphql';
-import { throttle } from 'lodash';
+import { debounce } from 'lodash';
 import { toast } from 'sonner';
 import { LaboratoryEnv, LaboratoryEnvActions, LaboratoryEnvState } from '@/lib/env';
 import { LaboratoryOperationsActions, LaboratoryOperationsState } from '@/lib/operations';
 import { handleTemplate } from '@/lib/operations.utils';
 import { LaboratoryPluginsActions, LaboratoryPluginsState } from '@/lib/plugins';
-// import z from 'zod';
 import { asyncInterval } from '@/lib/utils';
 import { SubscriptionProtocol, UrlLoader } from '@graphql-tools/url-loader';
 import type { LaboratorySettingsActions, LaboratorySettingsState } from './settings';
@@ -57,9 +56,21 @@ export const useEndpoint = (props: {
 
   const loader = useMemo(() => new UrlLoader(), []);
 
+  const activeOperationHeadersRef = useRef<string | null | undefined>(
+    props.operationsApi?.activeOperation?.headers,
+  );
+  const envVariablesRef = useRef<LaboratoryEnv['variables'] | undefined>(
+    props.envApi?.env?.variables,
+  );
+  const pluginsStateRef = useRef<Record<string, any> | undefined>(props.pluginsApi?.pluginsState);
+
+  activeOperationHeadersRef.current = props.operationsApi?.activeOperation?.headers;
+  envVariablesRef.current = props.envApi?.env?.variables;
+  pluginsStateRef.current = props.pluginsApi?.pluginsState;
+
   const fetchSchema = useMemo(
     () =>
-      throttle(
+      debounce(
         async (
           signal?: AbortSignal,
           options?: {
@@ -78,14 +89,20 @@ export const useEndpoint = (props: {
           }
 
           try {
-            const parsedHeaders = props.operationsApi?.activeOperation?.headers
-              ? JSON.parse(
-                  handleTemplate(props.operationsApi?.activeOperation?.headers, {
-                    ...(options?.env?.variables ?? {}),
-                    plugins: options?.pluginsState ?? {},
-                  }),
-                )
-              : {};
+            let parsedHeaders: Record<string, string> = {};
+
+            try {
+              parsedHeaders = activeOperationHeadersRef.current
+                ? JSON.parse(
+                    handleTemplate(activeOperationHeadersRef.current, {
+                      ...(options?.env?.variables ?? envVariablesRef.current ?? {}),
+                      plugins: options?.pluginsState ?? pluginsStateRef.current ?? {},
+                    }),
+                  )
+                : {};
+            } catch (error: unknown) {
+              toast.error('Failed to parse headers');
+            }
 
             const result = await loader.load(endpoint, {
               subscriptionsEndpoint: endpoint,
@@ -147,11 +164,14 @@ export const useEndpoint = (props: {
       props.settingsApi?.settings.fetch.timeout,
       props.settingsApi?.settings.introspection.method,
       props.settingsApi?.settings.introspection.schemaDescription,
-      props.operationsApi?.activeOperation?.headers,
-      props.envApi?.env?.variables,
-      props.pluginsApi?.pluginsState,
     ],
   );
+
+  useEffect(() => {
+    return () => {
+      fetchSchema.cancel();
+    };
+  }, [fetchSchema]);
 
   const shouldPollSchema = useMemo(() => {
     return endpoint !== props.defaultEndpoint || !props.defaultSchemaIntrospection;
@@ -198,6 +218,29 @@ export const useEndpoint = (props: {
       };
     }
   }, [endpoint, fetchSchema, shouldPollSchema]);
+
+  useEffect(() => {
+    if (!endpoint || !shouldPollSchema) {
+      return;
+    }
+
+    const abortController = new AbortController();
+    void fetchSchema(abortController.signal, {
+      env: props.envApi?.env ?? undefined,
+      pluginsState: props.pluginsApi?.pluginsState,
+    });
+
+    return () => {
+      abortController.abort(new Error(EXPECTED_ERROR_REASON));
+    };
+  }, [
+    endpoint,
+    shouldPollSchema,
+    fetchSchema,
+    props.operationsApi?.activeOperation?.headers,
+    props.envApi?.env?.variables,
+    props.pluginsApi?.pluginsState,
+  ]);
 
   return {
     endpoint,
