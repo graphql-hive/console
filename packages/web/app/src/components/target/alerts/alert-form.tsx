@@ -580,7 +580,7 @@ export function AlertForm(props: AlertFormProps) {
                       <FormLabel label="Metric" />
                       <FormControl>
                         <Select
-                          options={[...METRIC_OPTIONS]}
+                          options={METRIC_OPTIONS}
                           value={field.value}
                           onValueChange={field.onChange}
                         />
@@ -597,7 +597,7 @@ export function AlertForm(props: AlertFormProps) {
                       <FormLabel label="Range" />
                       <FormControl>
                         <Select
-                          options={[...RANGE_OPTIONS]}
+                          options={RANGE_OPTIONS}
                           value={field.value}
                           onValueChange={field.onChange}
                         />
@@ -674,7 +674,7 @@ export function AlertForm(props: AlertFormProps) {
                         <FormLabel label="Condition" />
                         <FormControl>
                           <Select
-                            options={[...CONDITION_OPTIONS]}
+                            options={CONDITION_OPTIONS}
                             value={field.value}
                             onValueChange={field.onChange}
                           />
@@ -691,7 +691,7 @@ export function AlertForm(props: AlertFormProps) {
                         <FormLabel label="Threshold type" />
                         <FormControl>
                           <Select
-                            options={[...THRESHOLD_TYPE_OPTIONS]}
+                            options={THRESHOLD_TYPE_OPTIONS}
                             value={field.value}
                             onValueChange={field.onChange}
                           />

@@ -22,7 +22,7 @@ type SelectProps = Partial<
   Pick<FloatingProps, 'trigger' | 'side' | 'align' | 'sideOffset' | 'open' | 'onOpenChange'>
 > & {
   /** Options to display in the dropdown */
-  options: SelectOption[];
+  options: readonly SelectOption[];
   /** Currently selected value */
   value?: string;
   /** Callback when value changes */

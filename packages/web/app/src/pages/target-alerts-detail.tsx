@@ -211,7 +211,7 @@ export function TargetAlertsDetailPage(props: {
 
         <div className="flex">
           <Select
-            options={[...VIEW_RANGE_OPTIONS]}
+            options={VIEW_RANGE_OPTIONS}
             value={viewRangeMinutes}
             onValueChange={setViewRangeMinutes}
           />
