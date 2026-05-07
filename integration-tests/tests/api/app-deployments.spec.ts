@@ -2157,6 +2157,137 @@ test('app deployment usage reporting', async () => {
   expect(data.target?.appDeployment?.lastUsed).toEqual(expect.any(String));
 });
 
+test('app deployment manifest is written to and accessible via CDN', async () => {
+  const { createOrg } = await initSeed().createOwner();
+  const { createProject, setFeatureFlag } = await createOrg();
+  await setFeatureFlag('appDeployments', true);
+  const { createTargetAccessToken, createCdnAccess } = await createProject();
+  const token = await createTargetAccessToken({});
+
+  const { createAppDeployment } = await execute({
+    document: CreateAppDeployment,
+    variables: {
+      input: {
+        appName: 'app-name',
+        appVersion: 'app-version',
+      },
+    },
+    authToken: token.secret,
+  }).then(res => res.expectNoGraphQLErrors());
+  expect(createAppDeployment.error).toBeNull();
+
+  await token.publishSchema({
+    sdl: /* GraphQL */ `
+      type Query {
+        a: String
+        b: String
+        c: String
+        d: String
+      }
+    `,
+  });
+
+  const { addDocumentsToAppDeployment } = await execute({
+    document: AddDocumentsToAppDeployment,
+    variables: {
+      input: {
+        appName: 'app-name',
+        appVersion: 'app-version',
+        documents: [
+          {
+            hash: 'aaa',
+            body: 'query { a }',
+          },
+          {
+            hash: 'bbb',
+            body: 'query { b }',
+          },
+          {
+            hash: 'ccc',
+            body: 'query { c }',
+          },
+          {
+            hash: 'ddd',
+            body: 'query { d }',
+          },
+        ],
+      },
+    },
+    authToken: token.secret,
+  }).then(res => res.expectNoGraphQLErrors());
+  expect(addDocumentsToAppDeployment.error).toBeNull();
+
+  const cdnAccess = await createCdnAccess();
+  const persistedOperationUrl = `${cdnAccess.cdnUrl}/apps/app-name/app-version`;
+
+  let response = await fetch(persistedOperationUrl, {
+    method: 'GET',
+    headers: {
+      'X-Hive-CDN-Key': cdnAccess.secretAccessToken,
+    },
+  });
+  // before the app deployment is activated it shall not exist.
+  expect(response.status).toEqual(404);
+
+  const { activateAppDeployment } = await execute({
+    document: ActivateAppDeployment,
+    variables: {
+      input: {
+        appName: 'app-name',
+        appVersion: 'app-version',
+      },
+    },
+    authToken: token.secret,
+  }).then(res => res.expectNoGraphQLErrors());
+  expect(activateAppDeployment.error).toBeNull();
+
+  response = await fetch(persistedOperationUrl, {
+    method: 'GET',
+    headers: {
+      'X-Hive-CDN-Key': cdnAccess.secretAccessToken,
+    },
+  });
+  expect(response.status).toEqual(200);
+  let manifest = await response.json();
+  expect(manifest).toMatchObject({
+    appName: 'app-name',
+    appVersion: 'app-version',
+    documentHashes: ['aaa', 'bbb', 'ccc', 'ddd'],
+    id: expect.any(String),
+    isActive: true,
+  });
+
+  // Retire flow.
+
+  const { retireAppDeployment } = await execute({
+    document: RetireAppDeployment,
+    variables: {
+      input: {
+        appName: 'app-name',
+        appVersion: 'app-version',
+      },
+    },
+    authToken: token.secret,
+  }).then(res => res.expectNoGraphQLErrors());
+  expect(retireAppDeployment.error).toBeNull();
+
+  response = await fetch(persistedOperationUrl, {
+    method: 'GET',
+    headers: {
+      'X-Hive-CDN-Key': cdnAccess.secretAccessToken,
+    },
+  });
+  expect(response.status).toEqual(200);
+  manifest = await response.json();
+  expect(manifest).toMatchObject({
+    appName: 'app-name',
+    appVersion: 'app-version',
+    documentHashes: ['aaa', 'bbb', 'ccc', 'ddd'],
+    id: expect.any(String),
+    isActive: false,
+  });
+});
+
 test('activeAppDeployments returns empty list when no active deployments exist', async () => {
   const { createOrg, ownerToken } = await initSeed().createOwner();
   const { createProject, setFeatureFlag, organization } = await createOrg();

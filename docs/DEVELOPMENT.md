@@ -4,8 +4,8 @@
 
 Developing Hive locally requires you to have the following software installed locally:
 
-- Node.js >=22 (or `nvm` or `fnm`)
-- pnpm >=10.16.0
+- Node.js (or `nvm` or `fnm`): check the `package.json` `engines` entry for the correct version
+- pnpm: check the `package.json` `engines` entry for the correct version
 - Docker version 26.1.1 or later(previous versions will not work correctly on arm64)
 - make sure these ports are free: 5432, 6379, 9000, 9001, 8123, 9092, 8081, 8082, 9644, 3567, 7043
 
@@ -13,7 +13,7 @@ Developing Hive locally requires you to have the following software installed lo
 
 - Clone the repository locally
 - Make sure to install the recommended VSCode extensions (defined in `.vscode/extensions.json`)
-- In the root of the repo, run `nvm use` to use the same version of node as mentioned above
+- In the root of the repo, run `nvm use` (or `fnm use`) to use the required Node.js version
 - Create `.env` file in the root, and use the following:
 
 ```dotenv
@@ -42,7 +42,8 @@ Add "user" field to ./docker/docker-compose.dev.yml
 - Run `pnpm generate` to generate the typings from the graphql files (use `pnpm graphql:generate` if
   you only need to run GraphQL Codegen)
 - Run `pnpm build` to build all services
-- Click on `Start Hive` in the bottom bar of VSCode
+- Click on `Start Hive` in the bottom bar of VSCode (alternatively you can manually start the
+  services you need)
 - Open the UI (`http://localhost:3000` by default) and Sign in with any of the identity provider
 - Once this is done, you should be able to log in and use the project
 
