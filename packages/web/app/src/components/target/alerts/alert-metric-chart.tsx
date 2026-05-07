@@ -5,6 +5,7 @@ import ReactECharts from 'echarts-for-react';
 import AutoSizer from 'react-virtualized-auto-sizer';
 import { useQuery } from 'urql';
 import { graphql } from '@/gql';
+import { MetricAlertRuleMetric, MetricAlertRuleType } from '@/gql/graphql';
 import { resolveRangeAndResolution } from '@/lib/hooks/use-date-range-controller';
 import { formatDuration } from '@/lib/hooks/use-formatted-duration';
 import { formatNumber } from '@/lib/hooks/use-formatted-number';
@@ -45,8 +46,9 @@ type AlertMetricChartProps = {
   organizationSlug: string;
   projectSlug: string;
   targetSlug: string;
-  /** e.g. 'TRAFFIC', 'ERROR_RATE', 'LATENCY:p99' */
-  metricSelection: string;
+  type: MetricAlertRuleType;
+  /** Sub-metric for LATENCY rules (P75/P90/...); null for ERROR_RATE / TRAFFIC */
+  metric?: MetricAlertRuleMetric | null;
   /** Time window in minutes */
   timeWindowMinutes: number;
   /** Threshold value to show as a horizontal marker line (only drawn for FIXED_VALUE rules) */
@@ -57,11 +59,26 @@ type AlertMetricChartProps = {
   thresholdType: string;
 };
 
+// Maps the GraphQL enum to the lowercase field names on DurationValues
+// (`p99`, `p95`, ...). Exhaustive Record so adding a new MetricAlertRuleMetric
+// fails the build until the mapping is updated.
+const PERCENTILE_FIELD_BY_METRIC: Record<
+  MetricAlertRuleMetric,
+  'avg' | 'p75' | 'p90' | 'p95' | 'p99'
+> = {
+  [MetricAlertRuleMetric.Avg]: 'avg',
+  [MetricAlertRuleMetric.P75]: 'p75',
+  [MetricAlertRuleMetric.P90]: 'p90',
+  [MetricAlertRuleMetric.P95]: 'p95',
+  [MetricAlertRuleMetric.P99]: 'p99',
+};
+
 export function AlertMetricChart({
   organizationSlug,
   projectSlug,
   targetSlug,
-  metricSelection,
+  type,
+  metric,
   timeWindowMinutes,
   thresholdValue,
   direction,
@@ -92,14 +109,9 @@ export function AlertMetricChart({
   });
 
   const stats = result.data?.target?.operationsStats;
-  const isLatency = metricSelection.startsWith('LATENCY:');
-  // metricSelection is `LATENCY:${MetricAlertRuleMetric}` (uppercase enum
-  // value, e.g. P99). The DurationValues GraphQL type uses lowercase field
-  // names (p99), so we map down here.
-  const latencyPercentile = isLatency
-    ? (metricSelection.split(':')[1].toLowerCase() as 'avg' | 'p75' | 'p90' | 'p95' | 'p99')
-    : null;
-  const isErrorRate = metricSelection === 'ERROR_RATE';
+  const isLatency = type === MetricAlertRuleType.Latency;
+  const isErrorRate = type === MetricAlertRuleType.ErrorRate;
+  const latencyPercentile = isLatency && metric ? PERCENTILE_FIELD_BY_METRIC[metric] : null;
 
   const { data, yAxisFormatter, seriesName } = useMemo(() => {
     if (!stats) return { data: [], yAxisFormatter: formatNumber, seriesName: '' };

@@ -109,15 +109,6 @@ const METRIC_LABEL_BY_TYPE: Record<MetricAlertRuleType, string> = {
   [MetricAlertRuleType.Traffic]: 'total requests',
 };
 
-function ruleToMetricSelection(
-  type: MetricAlertRuleType,
-  metric: string | null | undefined,
-): string {
-  if (type === MetricAlertRuleType.Latency && metric) return `LATENCY:${metric}`;
-  if (type === MetricAlertRuleType.ErrorRate) return 'ERROR_RATE';
-  return 'TRAFFIC';
-}
-
 function formatWindowHuman(minutes: number): string {
   if (minutes >= 24 * 60) {
     const days = minutes / (24 * 60);
@@ -234,7 +225,8 @@ export function TargetAlertsDetailPage(props: {
             organizationSlug={organizationSlug}
             projectSlug={projectSlug}
             targetSlug={targetSlug}
-            metricSelection={ruleToMetricSelection(rule.type, rule.metric)}
+            type={rule.type}
+            metric={rule.metric}
             timeWindowMinutes={parseInt(viewRangeMinutes, 10) || 60}
             thresholdValue={rule.thresholdValue}
             direction={rule.direction}

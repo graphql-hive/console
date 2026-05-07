@@ -477,9 +477,11 @@ export function AlertForm(props: AlertFormProps) {
   const watchedValues = form.watch();
   const metricOption = METRIC_OPTIONS.find(o => o.value === watchedValues.metricSelection);
 
-  const previewAlertType = watchedValues.metricSelection?.startsWith('LATENCY')
-    ? 'LATENCY'
-    : watchedValues.metricSelection || 'TRAFFIC';
+  // Parse once at the form boundary so downstream components don't need to
+  // re-decode the colon-encoded Select value.
+  const parsedMetric = watchedValues.metricSelection
+    ? parseMetricSelection(watchedValues.metricSelection)
+    : { type: MetricAlertRuleType.Traffic };
 
   const firstChannelId = watchedValues.channels?.[0]?.channelId;
   const firstChannel = firstChannelId
@@ -719,7 +721,8 @@ export function AlertForm(props: AlertFormProps) {
                   organizationSlug={organizationSlug}
                   projectSlug={projectSlug}
                   targetSlug={targetSlug}
-                  metricSelection={watchedValues.metricSelection}
+                  type={parsedMetric.type}
+                  metric={parsedMetric.metric}
                   // Render ~2× the rule's evaluation window so a breach is
                   // visible alongside its surrounding context — picking a
                   // threshold from a chart that only shows the rule window
@@ -827,7 +830,7 @@ export function AlertForm(props: AlertFormProps) {
             <AlertPreview
               alertName={watchedValues.name}
               metricLabel={metricOption?.label ?? 'Total requests'}
-              alertType={previewAlertType}
+              alertType={parsedMetric.type}
               severity={watchedValues.severity ?? 'WARNING'}
               direction={watchedValues.direction ?? 'ABOVE'}
               thresholdType={watchedValues.thresholdType ?? 'FIXED_VALUE'}
