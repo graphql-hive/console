@@ -1,0 +1,25 @@
+{
+  "compilerOptions": {
+    "module": "esnext",
+    "target": "esnext",
+    "lib": ["esnext", "dom"],
+    "types": ["node", "@playwright/test", "vitest/globals"],
+    "baseUrl": "..",
+    "moduleResolution": "node",
+    "strict": true,
+    "skipLibCheck": true,
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+    "noEmit": true,
+    "paths": {
+      "@hive/api": ["./packages/services/api/src/index.ts"],
+      "@hive/api/*": ["./packages/services/api/src/*"],
+      "@hive/postgres": ["./packages/internal/postgres/src/index.ts"],
+      "@hive/server": ["./packages/services/server/src/api.ts"],
+      "@hive/server/*": ["./packages/services/server/src/*"],
+      "@hive/service-common": ["./packages/services/service-common/src/index.ts"],
+      "testkit/*": ["./integration-tests/testkit/*"]
+    }
+  },
+  "include": ["**/*.ts", "../playwright.config.ts"]
+}
