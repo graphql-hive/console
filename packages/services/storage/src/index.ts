@@ -3111,15 +3111,15 @@ export async function createStorage(
               ${schemaSDLHash}
             , ${args.serviceName}
             , ${args.serviceUrl}
-            , ${jsonify(args.meta)}
+            , ${psql.jsonbOrNull(args.meta)}
             , ${args.targetId}
             , ${args.schemaVersionId}
             , ${args.isSuccess}
-            , ${jsonify(args.schemaCompositionErrors)}
-            , ${jsonify(args.breakingSchemaChanges?.map(toSerializableSchemaChange))}
-            , ${jsonify(args.safeSchemaChanges?.map(toSerializableSchemaChange))}
-            , ${jsonify(args.schemaPolicyWarnings?.map(w => SchemaPolicyWarningModel.parse(w)))}
-            , ${jsonify(args.schemaPolicyErrors?.map(w => SchemaPolicyWarningModel.parse(w)))}
+            , ${psql.jsonbOrNull(args.schemaCompositionErrors)}
+            , ${psql.jsonbOrNull(args.breakingSchemaChanges?.map(toSerializableSchemaChange))}
+            , ${psql.jsonbOrNull(args.safeSchemaChanges?.map(toSerializableSchemaChange))}
+            , ${psql.jsonbOrNull(args.schemaPolicyWarnings?.map(w => SchemaPolicyWarningModel.parse(w)))}
+            , ${psql.jsonbOrNull(args.schemaPolicyErrors?.map(w => SchemaPolicyWarningModel.parse(w)))}
             , ${compositeSchemaSDLHash}
             , ${supergraphSDLHash}
             , ${args.isManuallyApproved}
@@ -3134,9 +3134,9 @@ export async function createStorage(
                 c => c.breakingSchemaChanges?.length || c.safeSchemaChanges?.length,
               ) ?? false
             }
-            , ${jsonify(InsertConditionalBreakingChangeMetadataModel.parse(args.conditionalBreakingChangeMetadata))}
+            , ${psql.jsonbOrNull(InsertConditionalBreakingChangeMetadataModel.parse(args.conditionalBreakingChangeMetadata))}
             , ${args.schemaProposalId ?? null}
-            , ${jsonify(args.schemaProposalChanges?.map(toSerializableSchemaChange))}
+            , ${psql.jsonbOrNull(args.schemaProposalChanges?.map(toSerializableSchemaChange))}
           )
           RETURNING
             "id"
@@ -3178,9 +3178,9 @@ export async function createStorage(
                 , ${contract.contractId}
                 , ${compositeSchemaSdlHash}
                 , ${supergraphSchemaSdlHash}
-                , ${jsonify(contract.schemaCompositionErrors)}
-                , ${jsonify(contract.breakingSchemaChanges?.map(toSerializableSchemaChange))}
-                , ${jsonify(contract.safeSchemaChanges?.map(toSerializableSchemaChange))}
+                , ${psql.jsonbOrNull(contract.schemaCompositionErrors)}
+                , ${psql.jsonbOrNull(contract.breakingSchemaChanges?.map(toSerializableSchemaChange))}
+                , ${psql.jsonbOrNull(contract.safeSchemaChanges?.map(toSerializableSchemaChange))}
               )
             `);
           }
@@ -4107,14 +4107,6 @@ const DocumentCollectionDocumentModel = z.object({
   createdAt: z.string(),
   updatedAt: z.string(),
 });
-
-/**
- * Small helper utility for jsonifying a nullable object.
- */
-function jsonify<T>(obj: T | null | undefined) {
-  if (obj == null) return null;
-  return psql`${JSON.stringify(obj)}::jsonb`;
-}
 
 /**
  * Utility function for stripping a schema change of its computable properties for efficient storage in the database.
