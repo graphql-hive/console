@@ -217,6 +217,11 @@ export function AlertMetricChart({
                 splitLine: { show: false },
                 axisLabel: {
                   ...axisLabel,
+                  // Drop labels that would otherwise overlap. Without this,
+                  // narrow ranges (e.g. 30m) cram every bucket's tick label
+                  // edge-to-edge ("6:42 PM6:44 PM..."). echarts still picks
+                  // a sensible subset on its own once we opt in.
+                  hideOverlap: true,
                   formatter: (value: number) => timeFormatter.format(value),
                 },
               },

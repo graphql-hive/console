@@ -720,7 +720,15 @@ export function AlertForm(props: AlertFormProps) {
                   projectSlug={projectSlug}
                   targetSlug={targetSlug}
                   metricSelection={watchedValues.metricSelection}
-                  timeWindowMinutes={parseInt(watchedValues.timeWindowMinutes, 10) || 10_080}
+                  // Render ~2× the rule's evaluation window so a breach is
+                  // visible alongside its surrounding context — picking a
+                  // threshold from a chart that only shows the rule window
+                  // hides what "normal" looks like just outside it. Capped
+                  // at 30d to stay within sensible chart resolutions.
+                  timeWindowMinutes={Math.min(
+                    (parseInt(watchedValues.timeWindowMinutes, 10) || 10_080) * 2,
+                    43_200,
+                  )}
                   thresholdValue={
                     watchedValues.thresholdValue ? parseFloat(watchedValues.thresholdValue) : null
                   }
