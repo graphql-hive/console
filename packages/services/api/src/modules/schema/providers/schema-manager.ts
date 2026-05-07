@@ -432,10 +432,8 @@ export class SchemaManager {
       url?: string | null;
       base_schema: string | null;
       metadata: string | null;
-      projectType: ProjectType;
       actionFn(versionId: string): Promise<void>;
       changes: Array<SchemaChangeType>;
-      coordinatesDiff: SchemaCoordinatesDiffResult | null;
       previousSchemaVersion: string | null;
       diffSchemaVersionId: string | null;
       github: null | {
@@ -483,7 +481,6 @@ export class SchemaManager {
         'service',
         'logIds',
         'url',
-        'projectType',
         'previousSchemaVersion',
         'diffSchemaVersionId',
         'github',

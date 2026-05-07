@@ -1,7 +1,6 @@
 import { differenceInCalendarDays, startOfDay, subDays } from 'date-fns';
 import { Inject, Injectable, Scope } from 'graphql-modules';
 import { z } from 'zod';
-import { Target } from '@hive/api';
 import {
   AppDeploymentManifestModel,
   buildAppDeploymentIsEnabledKey,
@@ -21,6 +20,7 @@ import {
   encodeCreatedAtAndUUIDIdBasedCursor,
   encodeHashBasedCursor,
 } from '@hive/storage';
+import type { Target } from '../../../shared/entities';
 import { ClickHouse, sql as cSql } from '../../operations/providers/clickhouse-client';
 import { SchemaVersionHelper } from '../../schema/providers/schema-version-helper';
 import { SchemaVersionStore } from '../../schema/providers/schema-version-store';

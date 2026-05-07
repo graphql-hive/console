@@ -22,11 +22,9 @@ import { batch, batchBy } from '../../api/src/shared/helpers';
 import { type organizations } from './db';
 import {
   AffectedAppDeployments,
-  ConditionalBreakingChangeMetadataModel,
   HiveSchemaChangeModel,
   InsertConditionalBreakingChangeMetadataModel,
   SchemaCheckModel,
-  SchemaCompositionErrorModel,
   SchemaPolicyWarningModel,
   TargetBreadcrumbModel,
   type SchemaChangeType,

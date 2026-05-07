@@ -2012,7 +2012,7 @@ export class SchemaPublisher {
       serviceUrl = pushedSchema.serviceUrl;
     }
 
-    const schemaVersion = await this.schemaVersions.createSchemaVersion({
+    const schemaVersion = await this.schemaManager.createVersion({
       valid: composable,
       organizationId: organizationId,
       projectId: project.id,

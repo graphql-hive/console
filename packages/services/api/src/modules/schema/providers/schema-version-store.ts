@@ -1,7 +1,5 @@
 import { Injectable, Scope } from 'graphql-modules';
 import { z } from 'zod';
-import { Project, Target } from '@hive/api';
-import { batch } from '@hive/api/shared/helpers';
 import { CommonQueryMethods, PostgresDatabasePool, psql } from '@hive/postgres';
 import {
   ConditionalBreakingChangeMetadata,
@@ -14,6 +12,8 @@ import {
   SchemaCompositionError,
   SchemaCompositionErrorModel,
 } from '@hive/storage';
+import type { Project, Target } from '../../../shared/entities';
+import { batch } from '../../../shared/helpers';
 
 @Injectable({
   scope: Scope.Operation,
