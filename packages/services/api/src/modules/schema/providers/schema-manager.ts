@@ -43,7 +43,6 @@ import { TargetManager } from '../../target/providers/target-manager';
 import { BreakingSchemaChangeUsageHelper } from './breaking-schema-changes-helper';
 import { SCHEMA_MODULE_CONFIG, type SchemaModuleConfig } from './config';
 import { Contracts } from './contracts';
-import type { SchemaCoordinatesDiffResult } from './inspector';
 import { CompositionOrchestrator } from './orchestrator/composition-orchestrator';
 import { ensureCompositeSchemas, removeDescriptions, SchemaHelper } from './schema-helper';
 import { SchemaVersionStore } from './schema-version-store';
