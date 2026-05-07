@@ -11,7 +11,7 @@ export type alert_channel_type = 'MSTEAMS_WEBHOOK' | 'SLACK' | 'WEBHOOK';
 export type alert_type = 'SCHEMA_CHANGE_NOTIFICATIONS';
 export type breaking_change_formula = 'PERCENTAGE' | 'REQUEST_COUNT';
 export type metric_alert_direction = 'ABOVE' | 'BELOW';
-export type metric_alert_metric = 'avg' | 'p75' | 'p90' | 'p95' | 'p99';
+export type metric_alert_metric = 'AVG' | 'P75' | 'P90' | 'P95' | 'P99';
 export type metric_alert_severity = 'CRITICAL' | 'INFO' | 'WARNING';
 export type metric_alert_state = 'FIRING' | 'NORMAL' | 'PENDING' | 'RECOVERING';
 export type metric_alert_threshold_type = 'FIXED_VALUE' | 'PERCENTAGE_CHANGE';
@@ -167,6 +167,12 @@ export interface metric_alert_incidents {
   resolved_at: Date | null;
   started_at: Date;
   threshold_value: number;
+}
+
+export interface metric_alert_notifications_sent {
+  alert_channel_id: string;
+  sent_at: Date;
+  state_log_id: string;
 }
 
 export interface metric_alert_rule_channels {
@@ -600,6 +606,7 @@ export interface DBTables {
   email_verifications: email_verifications;
   graphile_worker_deduplication: graphile_worker_deduplication;
   metric_alert_incidents: metric_alert_incidents;
+  metric_alert_notifications_sent: metric_alert_notifications_sent;
   metric_alert_rule_channels: metric_alert_rule_channels;
   metric_alert_rules: metric_alert_rules;
   metric_alert_state_log: metric_alert_state_log;
