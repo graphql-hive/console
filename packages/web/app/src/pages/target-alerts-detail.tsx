@@ -210,7 +210,12 @@ export function TargetAlertsDetailPage(props: {
 
         <section className="space-y-2">
           <h2 className="text-neutral-12 m-0 mb-2 text-sm font-medium">Status transitions</h2>
-          <AlertStateTransitionsBar stateLog={rule.stateLog} from={from} to={to} />
+          <AlertStateTransitionsBar
+            stateLog={rule.stateLog}
+            from={from}
+            to={to}
+            ruleCreatedAt={rule.createdAt}
+          />
         </section>
 
         <section className="space-y-2">

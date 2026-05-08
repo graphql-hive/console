@@ -38,7 +38,27 @@ type AlertStateTransitionsBarProps = {
   to: string;
   /** State the rule was in before the window started (defaults to Normal). */
   initialState?: MetricAlertRuleState;
+  /**
+   * When the rule was created. The slice of the window before this timestamp
+   * is rendered as "no data" rather than NORMAL — without it, a brand-new
+   * rule's bar would falsely claim it was Normal for the entire pre-creation
+   * window.
+   */
+  ruleCreatedAt?: string;
 };
+
+type SegmentState = MetricAlertRuleState | 'NO_DATA';
+
+const NO_DATA_COLOR = 'bg-neutral-6';
+const NO_DATA_LABEL = 'No data';
+
+function colorForSegment(state: SegmentState): string {
+  return state === 'NO_DATA' ? NO_DATA_COLOR : ALERT_STATE_COLOR[state];
+}
+
+function labelForSegment(state: SegmentState): string {
+  return state === 'NO_DATA' ? NO_DATA_LABEL : ALERT_STATE_LABEL[state];
+}
 
 const TICK_COUNT = 7;
 
@@ -61,10 +81,12 @@ export function AlertStateTransitionsBar({
   from,
   to,
   initialState = MetricAlertRuleState.Normal,
+  ruleCreatedAt,
 }: AlertStateTransitionsBarProps) {
   const fromMs = new Date(from).getTime();
   const toMs = new Date(to).getTime();
   const rangeMs = Math.max(1, toMs - fromMs);
+  const ruleCreatedAtMs = ruleCreatedAt ? new Date(ruleCreatedAt).getTime() : null;
 
   // Sort transitions ascending by createdAt
   const sorted = [...stateLog].sort(
@@ -73,13 +95,22 @@ export function AlertStateTransitionsBar({
 
   // Build segments: one per state period between transitions.
   const segments: Array<{
-    state: MetricAlertRuleState;
+    state: SegmentState;
     startMs: number;
     endMs: number;
-    transition: StateChange | null;
   }> = [];
 
   let cursorMs = fromMs;
+
+  // Prepend a "no data" segment for the slice of the window before the rule
+  // existed. Without this, a brand-new rule's bar shows green across its
+  // entire pre-creation window, falsely implying it was Normal then.
+  if (ruleCreatedAtMs !== null && ruleCreatedAtMs > fromMs) {
+    const noDataEnd = Math.min(ruleCreatedAtMs, toMs);
+    segments.push({ state: 'NO_DATA', startMs: fromMs, endMs: noDataEnd });
+    cursorMs = noDataEnd;
+  }
+
   let cursorState: MetricAlertRuleState = sorted[0]?.fromState ?? initialState;
 
   for (const change of sorted) {
@@ -92,7 +123,6 @@ export function AlertStateTransitionsBar({
       state: cursorState,
       startMs: cursorMs,
       endMs: Math.min(changeMs, toMs),
-      transition: null,
     });
     cursorMs = changeMs;
     cursorState = change.toState;
@@ -100,7 +130,7 @@ export function AlertStateTransitionsBar({
   }
 
   if (cursorMs < toMs) {
-    segments.push({ state: cursorState, startMs: cursorMs, endMs: toMs, transition: null });
+    segments.push({ state: cursorState, startMs: cursorMs, endMs: toMs });
   }
 
   const ticks = Array.from({ length: TICK_COUNT }, (_, i) => {
@@ -119,18 +149,16 @@ export function AlertStateTransitionsBar({
               <Tooltip key={i}>
                 <TooltipTrigger asChild>
                   <div
-                    className={`${ALERT_STATE_COLOR[seg.state]} h-full`}
+                    className={`${colorForSegment(seg.state)} h-full`}
                     style={{ width: `${widthPct}%` }}
-                    aria-label={`${ALERT_STATE_LABEL[seg.state]} ${formatTimestamp(
+                    aria-label={`${labelForSegment(seg.state)} ${formatTimestamp(
                       new Date(seg.startMs).toISOString(),
                     )} - ${formatTimestamp(new Date(seg.endMs).toISOString())}`}
                   />
                 </TooltipTrigger>
                 <TooltipContent>
                   <div className="text-xs">
-                    <div className="text-neutral-12 font-medium">
-                      {ALERT_STATE_LABEL[seg.state]}
-                    </div>
+                    <div className="text-neutral-12 font-medium">{labelForSegment(seg.state)}</div>
                     <div className="text-neutral-10">
                       {formatTimestamp(new Date(seg.startMs).toISOString())} →{' '}
                       {formatTimestamp(new Date(seg.endMs).toISOString())}
