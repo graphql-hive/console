@@ -266,7 +266,7 @@ export default gql`
     node: Schema! @tag(name: "public")
   }
 
-  union RegistryLog @tag(name: "public") = PushedSchemaLog | DeletedSchemaLog
+  union RegistryLog @tag(name: "public") = PushedSchemaLog | DeletedSchemaLog | PromotionSchemaLog
 
   type PushedSchemaLog {
     id: ID!
@@ -298,6 +298,20 @@ export default gql`
     The previous SDL of the full schema or subgraph.
     """
     previousServiceSdl: String @tag(name: "public")
+  }
+
+  type PromotionSchemaLog {
+    """
+    The origin of this schema log promotion.
+    """
+    origin: SchemaPromotionOrigin! @tag(name: "public")
+  }
+
+  type SchemaPromotionOrigin {
+    schemaVersionId: ID! @tag(name: "public")
+    schemaVersion: SchemaVersion
+    targetId: ID! @tag(name: "public")
+    target: Target
   }
 
   union Schema @tag(name: "public") = SingleSchema | CompositeSchema
