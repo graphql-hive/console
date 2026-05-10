@@ -18,46 +18,7 @@ export const SchemaVersion: SchemaVersionResolvers = {
     return injector.get(SchemaVersionHelper).getHasSchemaChanges(version);
   },
   log: async (version, _, { injector }) => {
-    const log = await injector.get(SchemaManager).getSchemaLogById(version.actionId);
-
-    if (log.kind === 'single') {
-      return {
-        __typename: 'PushedSchemaLog',
-        author: log.author,
-        commit: log.commit,
-        date: log.date as any,
-        id: log.id,
-        service: null,
-        serviceSdl: null,
-      };
-    }
-
-    if (log.action === 'DELETE') {
-      return {
-        __typename: 'DeletedSchemaLog',
-        author: 'system',
-        commit: 'system',
-        date: log.date as any,
-        id: log.id,
-        deletedService: log.service_name,
-        previousServiceSdl: await injector
-          .get(SchemaVersionHelper)
-          .getServiceSdlForPreviousVersionService(version, log.service_name),
-      };
-    }
-
-    return {
-      __typename: 'PushedSchemaLog',
-      author: log.author,
-      commit: log.commit,
-      date: log.date as any,
-      id: log.id,
-      service: log.service_name,
-      serviceSdl: log.sdl,
-      previousServiceSdl: await injector
-        .get(SchemaVersionHelper)
-        .getServiceSdlForPreviousVersionService(version, log.service_name),
-    };
+    return injector.get(SchemaVersionHelper).getGraphQLRegistryLogForSchemaVersion(version);
   },
   schemas: (version, _, { injector }) => {
     return injector.get(SchemaManager).getMaybeSchemasOfVersion(version);
@@ -239,5 +200,13 @@ export const SchemaVersion: SchemaVersionResolvers = {
   },
   contractVersions: (version, _, { injector }) => {
     return injector.get(ContractsManager).getContractVersionsForSchemaVersion(version);
+  },
+  subgraphDiffs: async (version, _, { injector }) => {
+    return await injector.get(SchemaVersionHelper).getGraphQLSubgraphDiffsForSchemaVersion(version);
+  },
+  origin: async (version, _, { injector }) => {
+    return await injector
+      .get(SchemaVersionHelper)
+      .getGraphQLSchemaVersionOriginForSchemaVersion(version);
   },
 };

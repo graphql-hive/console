@@ -6,6 +6,11 @@ export default gql`
     schemaCheck(input: SchemaCheckInput!): SchemaCheckPayload!
     schemaDelete(input: SchemaDeleteInput!): SchemaDeleteResult!
     schemaCompose(input: SchemaComposeInput!): SchemaComposePayload!
+    """
+    Promote a schema version within a project to a graph.
+    e.g. for rollbacks within a target or multi-stage environment deployments cross targets.
+    """
+    schemaVersionPromote(input: SchemaVersionPromoteInput!): SchemaVersionPromoteResult!
 
     updateBaseSchema(input: UpdateBaseSchemaInput!): UpdateBaseSchemaResult!
     """
@@ -304,14 +309,7 @@ export default gql`
     """
     The origin of this schema log promotion.
     """
-    origin: SchemaPromotionOrigin! @tag(name: "public")
-  }
-
-  type SchemaPromotionOrigin {
-    schemaVersionId: ID! @tag(name: "public")
-    schemaVersion: SchemaVersion
-    targetId: ID! @tag(name: "public")
-    target: Target
+    _: Boolean @tag(name: "public")
   }
 
   union Schema @tag(name: "public") = SingleSchema | CompositeSchema
@@ -964,7 +962,9 @@ export default gql`
     The log that initiated this schema version.
     For a federation schema this is the published or removed subgraph/service.
     """
-    log: RegistryLog! @tag(name: "public")
+    log: RegistryLog!
+      @tag(name: "public")
+      @deprecated(reason: "Please use 'SchemaVersion.origin' instead.")
     baseSchema: String
     """
     The schemas that are composed within this schema version.
@@ -1038,6 +1038,13 @@ export default gql`
     Contract versions of this schema version.
     """
     contractVersions: ContractVersionConnection @tag(name: "public")
+
+    """
+    The diffs of the individual services compared to the latest version.
+    This is only available for non monolithic projects.
+    """
+    subgraphDiffs: [SubgraphDiff!]
+    origin: SchemaVersionOrigin!
   }
 
   type SchemaVersionGithubMetadata {
@@ -1799,5 +1806,103 @@ export default gql`
     createdAt: DateTime! @tag(name: "public")
     isDisabled: Boolean! @tag(name: "public")
     viewerCanDisableContract: Boolean!
+  }
+
+  type SubgraphVersion {
+    id: ID!
+    serviceName: String!
+    sdl: String!
+    url: String!
+  }
+
+  union SubgraphDiff =
+    | SubgraphDiffChanged
+    | SubgraphDiffRemoved
+    | SubgraphDiffUnchanged
+    | SubgraphDiffAdded
+
+  type SubgraphDiffAdded {
+    """
+    The added subgraph version.
+    """
+    addedSubgraphVersion: SubgraphVersion!
+  }
+
+  type SubgraphDiffChanged {
+    """
+    The current subgraph version.
+    """
+    subgraphVersion: SubgraphVersion!
+    """
+    The previous subgraph version.
+    """
+    previousSubgraphVersion: SubgraphVersion!
+    """
+    The changes from one to the next service version.
+    """
+    changes: SchemaChangeConnection
+  }
+
+  type SubgraphDiffRemoved {
+    """
+    The subgraph version that was removed.
+    """
+    removedSubgraphVersion: SubgraphVersion!
+  }
+
+  type SubgraphDiffUnchanged {
+    """
+    The current subgraph version.
+    """
+    subgraphVersion: SubgraphVersion!
+  }
+
+  union SchemaVersionOrigin =
+    | SchemaVersionPublishOrigin
+    | SchemaVersionSubgraphRemoveOrigin
+    | SchemaVersionPromoteOrigin
+
+  type SchemaVersionPromoteOrigin {
+    targetId: ID!
+    targetName: String!
+    schemaVersionId: ID!
+  }
+
+  type SubgraphOriginSubgraphReference {
+    name: String!
+    versionId: ID!
+  }
+
+  type SchemaVersionSubgraphRemoveOrigin {
+    """
+    The subgraphs that were removed in this version.
+    """
+    removedSubgraphs: [SubgraphOriginSubgraphReference!]!
+  }
+
+  type SchemaVersionPublishOrigin {
+    """
+    The subgraphs published as part of this version.
+    This value is 'null' for non-federation projects.
+    """
+    publishedSubgraphs: [SubgraphOriginSubgraphReference!]
+  }
+
+  input SchemaVersionPromoteInput {
+    target: TargetReferenceInput!
+    schemaVersionId: ID!
+  }
+
+  type SchemaVersionPromoteResultOk {
+    newSchemaVersion: SchemaVersion!
+  }
+
+  type SchemaVersionPromoteResultError {
+    message: String!
+  }
+
+  type SchemaVersionPromoteResult {
+    ok: SchemaVersionPromoteResultOk
+    error: SchemaVersionPromoteResultError
   }
 `;

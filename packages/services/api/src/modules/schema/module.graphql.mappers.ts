@@ -35,11 +35,11 @@ export type SchemaVersionConnectionMapper = Readonly<{
     endCursor: string;
   }>;
 }>;
-export interface SchemaVersionMapper extends SchemaVersion {
+export type SchemaVersionMapper = SchemaVersion & {
   projectId: string;
   targetId: string;
   organizationId: string;
-}
+};
 export type SingleSchemaMapper = SingleSchema;
 export type CompositeSchemaMapper = PushedCompositeSchema;
 export type SchemaMapper = SingleSchemaMapper | CompositeSchemaMapper; // TODO: eddeee888 to check if union is wired up correctly by Server Preset

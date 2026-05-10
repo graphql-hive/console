@@ -1,15 +1,16 @@
 import type { SchemaVersionMapper as SchemaVersion } from '../module.graphql.mappers';
-import { isTypeSystemExtensionNode, print } from 'graphql';
+import { __Type, isTypeSystemExtensionNode, print } from 'graphql';
 import { Injectable, Scope } from 'graphql-modules';
 import { CriticalityLevel } from '@graphql-inspector/core';
 import { mergeTypeDefs } from '@graphql-tools/merge';
+import { ResolversUnionTypes } from '@hive/api/__generated__/types';
 import { traceFn } from '@hive/service-common';
 import type { SchemaChangeType } from '@hive/storage';
 import {
   containsSupergraphSpec,
   transformSupergraphToPublicSchema,
 } from '@theguild/federation-composition';
-import { ProjectType } from '../../../shared/entities';
+import { ProjectType, SchemaLog } from '../../../shared/entities';
 import { cache } from '../../../shared/helpers';
 import { parseGraphQLSource } from '../../../shared/schema';
 import { ProjectManager } from '../../project/providers/project-manager';
@@ -346,6 +347,255 @@ export class SchemaVersionHelper {
     return schemaVersion.isComposable && schemaVersion.hasContractCompositionErrors === false;
   }
 
+  async getGraphQLSubgraphDiffsForSchemaVersion(schemaVersion: SchemaVersion) {
+    const project = await this.projectManager.getProject(schemaVersion);
+
+    // For non multi-service projects we dont need a subgraph diff
+    if (project.type !== ProjectType.FEDERATION && project.type !== ProjectType.STITCHING) {
+      return null;
+    }
+
+    const edges =
+      await this.schemaVersions.getSchemaLogEdgesWithNodesForSchemaVersion(schemaVersion);
+
+    const previousSchemaLogPromises: Array<Promise<void>> = [];
+    const previousSchemaLogsById = new Map<string, SchemaLog>();
+
+    for (const edge of edges) {
+      if (edge.previousActionId && edge.actionId !== edge.previousActionId) {
+        previousSchemaLogPromises.push(
+          this.schemaVersions.getSchemaLogNodeByNodeId(edge.previousActionId).then(log => {
+            previousSchemaLogsById.set(log.id, log);
+          }),
+        );
+      }
+    }
+
+    await Promise.all(previousSchemaLogPromises);
+
+    return edges.map(edge => {
+      if (edge.type === 'unchanged') {
+        if (edge.node.kind !== 'composite') {
+          throw new Error('INVARIANT: This can not happen.');
+        }
+        return {
+          __typename: 'SubgraphDiffUnchanged',
+          subgraphVersion: {
+            id: edge.node.id,
+            sdl: edge.node.sdl,
+            serviceName: edge.node.service_name,
+            url: edge.node.service_url,
+          },
+        } satisfies ResolversUnionTypes<any>['SubgraphDiff'];
+      }
+      if (edge.type === 'added') {
+        return {
+          __typename: 'SubgraphDiffAdded',
+          addedSubgraphVersion: {
+            id: edge.node.id,
+            sdl: edge.node.sdl,
+            serviceName: edge.node.service_name,
+            url: edge.node.service_url,
+          },
+        } satisfies ResolversUnionTypes<any>['SubgraphDiff'];
+      }
+      if (edge.type === 'changed') {
+        if (edge.node.kind !== 'composite') {
+          throw new Error('INVARIANT: This can not happen.');
+        }
+
+        const previousLog = previousSchemaLogsById.get(edge.previousActionId);
+
+        if (!previousLog || previousLog.action !== 'PUSH' || previousLog.kind !== 'composite') {
+          throw new Error('INVARIANT: This can not happen.');
+        }
+
+        return {
+          __typename: 'SubgraphDiffChanged',
+          previousSubgraphVersion: {
+            id: previousLog.id,
+            sdl: previousLog.sdl,
+            serviceName: previousLog.service_name,
+            url: previousLog.service_url,
+          },
+          subgraphVersion: {
+            id: edge.node.id,
+            sdl: edge.node.sdl,
+            serviceName: edge.node.service_name,
+            url: edge.node.service_url,
+          },
+          changes: edge.schemaChanges,
+        } satisfies ResolversUnionTypes<any>['SubgraphDiff'];
+      }
+      if (edge.type === 'removed') {
+        const previousLog = previousSchemaLogsById.get(edge.previousActionId);
+
+        if (!previousLog || previousLog.action !== 'PUSH' || previousLog.kind !== 'composite') {
+          throw new Error('INVARIANT: This can not happen.');
+        }
+
+        return {
+          __typename: 'SubgraphDiffRemoved',
+          removedSubgraphVersion: {
+            id: previousLog.id,
+            sdl: previousLog.sdl,
+            serviceName: previousLog.service_name,
+            url: previousLog.service_url,
+          },
+        } satisfies ResolversUnionTypes<any>['SubgraphDiff'];
+      }
+
+      throw new Error('Noop');
+    });
+  }
+
+  async getGraphQLRegistryLogForSchemaVersion(schemaVersion: SchemaVersion) {
+    let log: SchemaLog | null = null;
+
+    if (schemaVersion.actionId) {
+      log = await this.schemaVersions.getSchemaLogById(schemaVersion.actionId);
+    }
+
+    if (schemaVersion.origin) {
+      if (schemaVersion.origin.type === 'delete') {
+        log = await this.schemaVersions.getSchemaLogById(
+          schemaVersion.origin.services[0].versionId,
+        );
+      }
+
+      if (schemaVersion.origin.type === 'publish') {
+        let actionId = schemaVersion.origin.services?.[0].versionId;
+
+        if (!actionId) {
+          const schemas = await this.schemaVersions.getSchemasBySchemaVersionId(schemaVersion.id);
+          actionId = schemas[0].id;
+        }
+
+        log = await this.schemaVersions.getSchemaLogById(actionId);
+      }
+
+      if (schemaVersion.origin.type === 'promotion') {
+        return {
+          __typename: 'PromotionSchemaLog',
+        } satisfies ResolversUnionTypes<any>['RegistryLog'];
+      }
+    }
+
+    if (!log) {
+      throw new Error('INVARIANT: Could not retrieve log');
+    }
+
+    if (log.kind === 'single') {
+      return {
+        __typename: 'PushedSchemaLog',
+        author: log.author,
+        commit: log.commit,
+        date: log.date,
+        id: log.id,
+        service: null,
+        serviceSdl: null,
+      } satisfies ResolversUnionTypes<any>['RegistryLog'];
+    }
+
+    if (log.action === 'DELETE') {
+      return {
+        __typename: 'DeletedSchemaLog',
+        date: log.date,
+        id: log.id,
+        deletedService: log.service_name,
+        previousServiceSdl: await this.getServiceSdlForPreviousVersionService(
+          schemaVersion,
+          log.service_name,
+        ),
+      } satisfies ResolversUnionTypes<any>['RegistryLog'];
+    }
+
+    return {
+      __typename: 'PushedSchemaLog',
+      author: log.author,
+      commit: log.commit,
+      date: log.date,
+      id: log.id,
+      service: log.service_name,
+      serviceSdl: log.sdl,
+      previousServiceSdl: await this.getServiceSdlForPreviousVersionService(
+        schemaVersion,
+        log.service_name,
+      ),
+    } satisfies ResolversUnionTypes<any>['RegistryLog'];
+  }
+
+  async getGraphQLSchemaVersionOriginForSchemaVersion(schemaVersion: SchemaVersion) {
+    const project = await this.projectManager.getProject(schemaVersion);
+
+    if (schemaVersion.actionId) {
+      if (project.type === ProjectType.SINGLE) {
+        return {
+          __typename: 'SchemaVersionPublishOrigin',
+          publishedSubgraphs: null,
+        } satisfies ResolversUnionTypes<any>['SchemaVersionOrigin'];
+      }
+
+      const log = await this.schemaVersions.getSchemaLogNodeByNodeId(schemaVersion.actionId);
+      if (!log.service_name) {
+        throw new Error('INVARIANT: Service name must be defined');
+      }
+
+      if (log.action === 'PUSH') {
+        return {
+          __typename: 'SchemaVersionPublishOrigin',
+          publishedSubgraphs: [
+            {
+              name: log.service_name,
+              versionId: log.id,
+            },
+          ],
+        } satisfies ResolversUnionTypes<any>['SchemaVersionOrigin'];
+      }
+      if (log.action === 'DELETE') {
+        return {
+          __typename: 'SchemaVersionSubgraphRemoveOrigin',
+          removedSubgraphs: [
+            {
+              name: log.service_name,
+              versionId: log.id,
+            },
+          ],
+        } satisfies ResolversUnionTypes<any>['SchemaVersionOrigin'];
+      }
+
+      log satisfies never;
+    }
+
+    if (schemaVersion.origin) {
+      if (schemaVersion.origin.type === 'publish') {
+        return {
+          __typename: 'SchemaVersionPublishOrigin',
+          publishedSubgraphs: schemaVersion.origin.services ?? null,
+        } satisfies ResolversUnionTypes<any>['SchemaVersionOrigin'];
+      }
+
+      if (schemaVersion.origin.type === 'delete') {
+        return {
+          __typename: 'SchemaVersionSubgraphRemoveOrigin',
+          removedSubgraphs: schemaVersion.origin.services ?? null,
+        } satisfies ResolversUnionTypes<any>['SchemaVersionOrigin'];
+      }
+
+      if (schemaVersion.origin.type === 'promotion') {
+        return {
+          __typename: 'SchemaVersionPromoteOrigin',
+          schemaVersionId: schemaVersion.origin.source.schemaVersion.id,
+          targetId: schemaVersion.origin.source.target.id,
+          targetName: schemaVersion.origin.source.target.name,
+        } satisfies ResolversUnionTypes<any>['SchemaVersionOrigin'];
+      }
+
+      schemaVersion.origin satisfies never;
+    }
+
+    throw new Error('INVARIANT: SchemaVersion either needs to have actionId or origin property.');
+  }
   /**
    * There's a possibility that the composite schema SDL contains parts of the supergraph spec.
    *

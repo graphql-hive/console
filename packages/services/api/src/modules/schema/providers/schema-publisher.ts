@@ -14,7 +14,7 @@ import type {
 } from '@hive/storage';
 import * as Sentry from '@sentry/node';
 import * as Types from '../../../__generated__/types';
-import { Organization, Project, ProjectType, Target } from '../../../shared/entities';
+import { Organization, Project, ProjectType, Schema, Target } from '../../../shared/entities';
 import { HiveError } from '../../../shared/errors';
 import { createPeriod } from '../../../shared/helpers';
 import { isGitHubRepositoryString } from '../../../shared/is-github-repository-string';
@@ -53,7 +53,7 @@ import {
   SchemaPublishResult,
 } from './models/shared';
 import { SingleModel } from './models/single';
-import type { ConditionalBreakingChangeDiffConfig } from './registry-checks';
+import { RegistryChecks, type ConditionalBreakingChangeDiffConfig } from './registry-checks';
 import {
   ensureCompositeSchemas,
   ensureSingleSchema,
@@ -63,7 +63,7 @@ import {
 } from './schema-helper';
 import { SchemaManager } from './schema-manager';
 import { SchemaVersionHelper } from './schema-version-helper';
-import { SchemaVersionStore } from './schema-version-store';
+import { SchemaLogDiffInput, SchemaVersionStore } from './schema-version-store';
 
 const schemaCheckCount = new promClient.Counter({
   name: 'registry_check_count',
@@ -167,6 +167,7 @@ export class SchemaPublisher {
     private operationsReader: OperationsReader,
     private idTranslator: IdTranslator,
     private schemaVersions: SchemaVersionStore,
+    private registryChecks: RegistryChecks,
     @Inject(SCHEMA_MODULE_CONFIG) private schemaModuleConfig: SchemaModuleConfig,
     singleModel: SingleModel,
     compositeModel: CompositeModel,
@@ -1430,9 +1431,9 @@ export class SchemaPublisher {
           organization.featureFlags,
         );
 
-        const serviceExists = schemas.some(s => s.service_name === input.serviceName);
+        const affectedService = schemas.find(s => s.service_name === input.serviceName);
 
-        if (!serviceExists) {
+        if (!affectedService) {
           return {
             __typename: 'SchemaDeleteError',
             valid: false,
@@ -1473,6 +1474,7 @@ export class SchemaPublisher {
             ? {
                 isComposable: latestComposableVersion.version.isComposable,
                 sdl: latestComposableVersion.version.compositeSchemaSDL ?? null,
+                supergraphSdl: latestComposableVersion.version.supergraphSDL,
                 schemas: ensureCompositeSchemas(latestComposableVersion.schemas).map(
                   toCompositeSchemaInput,
                 ),
@@ -1496,7 +1498,10 @@ export class SchemaPublisher {
           this.logger.debug('Delete accepted');
           if (input.dryRun !== true) {
             const schemaVersion = await this.schemaVersions.deleteSubgraphFromTarget(target, {
-              serviceName: input.serviceName,
+              service: {
+                name: affectedService.service_name,
+                versionId: affectedService.id,
+              },
               composable: deleteResult.state.composable,
               diffSchemaVersionId: latestComposableVersion?.version.id ?? null,
               changes: deleteResult.state.changes,
@@ -1513,6 +1518,7 @@ export class SchemaPublisher {
                 ? {
                     compositeSchemaSDL: deleteResult.state.fullSchemaSdl,
                     supergraphSDL: deleteResult.state.supergraph,
+                    supergraphChanges: deleteResult.state.supergraphChanges,
                     schemaCompositionErrors: null,
                     tags: deleteResult.state.tags,
                     schemaMetadata: deleteResult.state.schemaMetadata,
@@ -1521,6 +1527,7 @@ export class SchemaPublisher {
                 : {
                     compositeSchemaSDL: null,
                     supergraphSDL: null,
+                    supergraphChanges: null,
                     schemaCompositionErrors: deleteResult.state.compositionErrors ?? [],
                     tags: null,
                     schemaMetadata: null,
@@ -1845,6 +1852,7 @@ export class SchemaPublisher {
             ? {
                 isComposable: latestComposable.version.isComposable,
                 sdl: latestComposable.version.compositeSchemaSDL,
+                supergraphSdl: latestComposable.version.supergraphSDL,
                 schemas: ensureCompositeSchemas(latestComposable.schemas).map(
                   toCompositeSchemaInput,
                 ),
@@ -1993,13 +2001,16 @@ export class SchemaPublisher {
     const initial = publishResult.state.initial;
     const pushedSchema = publishResult.state.schema;
     const schemas = [...publishResult.state.schemas];
-    const schemaLogIds = schemas
+    const previousSchemaLogs = schemas
       .filter(s => s.id !== pushedSchema.id) // do not include the incoming schema
-      .map(s => s.id);
+      .map(s => ({
+        id: s.id,
+        serviceName: s.serviceName,
+      }));
 
     const supergraph = publishResult.state.supergraph ?? null;
 
-    this.logger.debug(`Assigning ${schemaLogIds.length} schemas to new version`);
+    this.logger.debug(`Assigning ${previousSchemaLogs.length} schemas to new version`);
 
     const serviceName = input.service;
     let serviceUrl = input.url;
@@ -2012,17 +2023,26 @@ export class SchemaPublisher {
       serviceUrl = pushedSchema.serviceUrl;
     }
 
-    const schemaVersion = await this.schemaManager.createVersion({
+    const schemaVersion = await this.schemaManager.createPublishVersion({
       valid: composable,
       organizationId: organizationId,
       projectId: project.id,
       targetId: target.id,
       commit: input.commit,
-      logIds: schemaLogIds,
+      existingSchemaLogs: previousSchemaLogs,
       schema: input.sdl,
       author: input.author,
-      service: serviceName,
-      url: serviceUrl,
+      previousSchemaLogId:
+        publishResult.state.previousSchemas?.find(schema => schema.serviceName === serviceName)
+          ?.id ?? null,
+      service:
+        serviceUrl && serviceName
+          ? {
+              name: serviceName,
+              url: serviceUrl,
+            }
+          : null,
+      serviceChanges: publishResult.state.serviceChanges ?? null,
       base_schema: baseSchema,
       metadata: input.metadata ?? null,
       github,
@@ -2072,6 +2092,7 @@ export class SchemaPublisher {
         ? {
             compositeSchemaSDL: fullSchemaSdl,
             supergraphSDL: supergraph,
+            supergraphChanges: publishResult.state.supergraphChanges ?? null,
             schemaCompositionErrors: null,
             tags: publishResult.state?.tags ?? null,
             schemaMetadata: publishResult.state?.schemaMetadata ?? null,
@@ -2080,6 +2101,7 @@ export class SchemaPublisher {
         : {
             compositeSchemaSDL: null,
             supergraphSDL: null,
+            supergraphChanges: null,
             schemaCompositionErrors: assertNonNull(
               publishResult.state.compositionErrors,
               "Can't be null",
@@ -2158,6 +2180,385 @@ export class SchemaPublisher {
       changes: null,
       message: (publishResult.state.messages ?? []).join('\n'),
       linkToWebsite,
+    };
+  }
+
+  @traceFn('SchemaPublisher.promoteSchemaVersion')
+  async promoteSchemaVersion(
+    args: { target: Types.TargetReferenceInput; schemaVersionId: string },
+    signal: AbortSignal,
+  ) {
+    this.logger.debug('Start promote graph.');
+
+    const selector = await this.idTranslator.resolveTargetReference({
+      reference: args.target,
+    });
+
+    // there should be a standalone permission for this probably
+    // Why? Because this issa not about a single version. We are cloning the whole schema version
+    if (!selector) {
+      this.session.raise('schemaVersion:publish');
+    }
+
+    trace.getActiveSpan()?.setAttributes({
+      'hive.organization.id': selector.organizationId,
+      'hive.target.id': selector.targetId,
+      'hive.project.id': selector.projectId,
+    });
+
+    // TODO: this should probably be another permission...
+    await this.session.assertPerformAction({
+      action: 'schemaVersion:publish',
+      organizationId: selector.organizationId,
+      params: {
+        targetId: selector.targetId,
+        projectId: selector.projectId,
+        organizationId: selector.organizationId,
+        // TODO: service? :thinking:
+        // This is not about a single service
+        serviceName: null,
+      },
+    });
+
+    const [project] = await Promise.all([
+      this.storage.getProject({
+        organizationId: selector.organizationId,
+        projectId: selector.projectId,
+      }),
+    ]);
+
+    if (project.type !== Types.ProjectType.FEDERATION) {
+      return {
+        type: 'error' as const,
+        message: 'Only Federation projects are supported.',
+      };
+    }
+
+    return this.mutex
+      .perform(
+        registryLockId(selector.targetId),
+        {
+          /**
+           * The global request timeout is 60 seconds.
+           * We don't want to try acquiring the lock longer than 30 seconds.
+           * If it succeeds after 30 seconds,
+           * we have 30 seconds for actually running the business logic.
+           *
+           * If we would wait longer we risk the user facing 504 errors.
+           */
+          retries: 30,
+          retryDelay: 1_000,
+          signal,
+        },
+        async () => {
+          return await this.internalPromoteSchemaVersion({
+            targetId: selector.targetId,
+            projectId: selector.projectId,
+            schemaVersionId: args.schemaVersionId,
+          });
+        },
+      )
+      .catch((error: unknown) => {
+        if (error instanceof MutexResourceLockedError) {
+          // TODO: support retry
+          return {
+            type: 'error' as const,
+            message: 'Please try again later.',
+          };
+        }
+        throw error;
+      });
+  }
+
+  private async internalPromoteSchemaVersion(args: {
+    projectId: string;
+    targetId: string;
+    schemaVersionId: string;
+  }) {
+    this.logger.debug('start graph promotion process');
+    const [project, target] = await Promise.all([
+      this.storage.getProjectById(args.projectId),
+      this.storage.getTargetById(args.targetId),
+    ]);
+
+    if (!target || !project) {
+      return {
+        type: 'error' as const,
+        message: 'Target does not exist.',
+      };
+    }
+
+    const originSchemaVersionLookup = await this.schemaManager.getSchemaVersionByIdForProject(
+      project,
+      args.schemaVersionId,
+    );
+
+    if (!originSchemaVersionLookup) {
+      return {
+        type: 'error' as const,
+        message: 'Schema Version not found.',
+      };
+    }
+
+    const originTarget = originSchemaVersionLookup.target;
+    const originSchemaVersion = originSchemaVersionLookup.schemaVersion;
+
+    // get latest version in target graph with schema logs
+    const [targetLatestSchemaVersion, targetLatestValidSchemaVersion] = await Promise.all([
+      this.schemaManager.getMaybeLatestVersion(target),
+      this.schemaManager.getMaybeLatestValidVersion(target),
+    ]);
+
+    //
+    const [originPublicSchemaSdl, originSupergraphSdl] = await Promise.all([
+      this.schemaVersionHelper.getCompositeSchemaSdl(originSchemaVersion),
+      this.schemaVersionHelper.getSupergraphSdl(originSchemaVersion),
+    ]);
+
+    const [originLogEdges, targetLogEdges] = await Promise.all([
+      this.schemaVersions.getSchemaLogEdgesWithNodesForSchemaVersion(originSchemaVersion),
+      targetLatestSchemaVersion
+        ? this.schemaVersions.getSchemaLogEdgesWithNodesForSchemaVersion(targetLatestSchemaVersion)
+        : [],
+    ]);
+
+    const diffMap = new Map<
+      /* service name */ string,
+      | {
+          type: 'removed';
+          previousLog: Schema;
+        }
+      | {
+          type: 'unchanged';
+          log: Schema;
+        }
+      | {
+          type: 'changed';
+          newLog: Schema;
+          previousLog: Schema;
+        }
+      | {
+          type: 'added';
+          newLog: Schema;
+        }
+    >();
+
+    for (const targetLogEdge of targetLogEdges) {
+      if (targetLogEdge.node.action === 'DELETE') {
+        continue;
+      }
+
+      // Note: we use fallback value of '' to support single schema workflows.
+      const serviceName = targetLogEdge.node.service_name ?? '';
+      if (diffMap.has(serviceName)) {
+        throw new Error(
+          'INVARIANT: Invalid database state. A log for the same service can not appear more than once.',
+        );
+      }
+
+      diffMap.set(serviceName, {
+        type: 'removed',
+        previousLog: targetLogEdge.node,
+      });
+    }
+
+    for (const originLogEdge of originLogEdges) {
+      if (originLogEdge.node.action === 'DELETE') {
+        continue;
+      }
+
+      const serviceName = originLogEdge.node.service_name ?? '';
+
+      let record = diffMap.get(serviceName);
+
+      if (!record) {
+        if (originLogEdge.node.service_name == null) {
+          throw new Error('INVARIANT: This can not happen. A service name must exist.');
+        }
+
+        diffMap.set(originLogEdge.node.service_name, {
+          type: 'added',
+          newLog: originLogEdge.node,
+        });
+        continue;
+      }
+
+      if (record.type !== 'removed') {
+        throw new Error('INVARIANT: At this point the type can only be removed.');
+      }
+
+      if (record.previousLog.id === originLogEdge.node.id) {
+        diffMap.set(serviceName, {
+          type: 'unchanged',
+          log: record.previousLog,
+        });
+        continue;
+      }
+
+      if (record.previousLog.id !== originLogEdge.node.id) {
+        diffMap.set(serviceName, {
+          type: 'changed',
+          newLog: originLogEdge.node,
+          previousLog: record.previousLog,
+        });
+        continue;
+      }
+    }
+
+    // At this point `diffMap` contains the full Diff of all services!
+    // Let's create the new Graph version edges and delete logs (if needed)
+
+    const schemaLogs: SchemaLogDiffInput = {
+      deleted: [],
+      added: [],
+      changed: [],
+      unchanged: [],
+    };
+
+    for (const diff of diffMap.values()) {
+      if (diff.type === 'removed') {
+        if (diff.previousLog.service_name == null) {
+          throw new Error('INVARIANT: Remove logs require a service name.');
+        }
+        // Note: we seed the ID here so we do not need to map some more within the logic within `SchemaVersions.promoteSchemaVersionToTarget`
+        const logId = crypto.randomUUID();
+        schemaLogs.deleted.push({
+          id: logId,
+          previousId: diff.previousLog.id,
+          serviceName: diff.previousLog.service_name,
+          targetId: target.id,
+          projectId: target.projectId,
+        });
+      }
+
+      if (diff.type === 'added') {
+        if (diff.newLog.service_name == null) {
+          throw new Error('INVARIANT: Added logs require a service name.');
+        }
+        schemaLogs.added.push({
+          id: diff.newLog.id,
+          serviceName: diff.newLog.service_name,
+          projectId: project.id,
+          targetId: target.id,
+        });
+        continue;
+      }
+
+      if (diff.type === 'unchanged') {
+        schemaLogs.unchanged.push({ id: diff.log.id, serviceName: diff.log.service_name });
+        continue;
+      }
+
+      if (diff.type === 'changed') {
+        let changes = null;
+
+        // We only want a diff for non-monolith schemas
+        if (diff.newLog.service_name) {
+          changes = await this.registryChecks
+            .diff({
+              existingSdl: diff.previousLog.sdl ?? null,
+              incomingSdl: diff.newLog.sdl ?? null,
+              approvedChanges: null,
+              conditionalBreakingChangeConfig: null,
+              includeUrlChanges: false,
+              filterOutFederationChanges: false,
+              failDiffOnDangerousChange: false,
+              filterNestedChanges: true,
+              getAffectedAppDeployments: null,
+            })
+            .then(r => r.result?.all ?? r.reason?.all ?? null);
+        }
+
+        schemaLogs.changed.push({
+          id: diff.newLog.id,
+          previousId: diff.previousLog.id,
+          serviceName: diff.newLog.service_name,
+          changes,
+        });
+        continue;
+      }
+
+      throw new Error(`INVARIANT: Uncovered case.`);
+    }
+
+    const [publicSchemaChanges, supergraphSchemaChanges] = await Promise.all([
+      this.registryChecks
+        .diff({
+          existingSdl: targetLatestValidSchemaVersion?.compositeSchemaSDL ?? null,
+          incomingSdl: originPublicSchemaSdl,
+          conditionalBreakingChangeConfig: null,
+          includeUrlChanges: false,
+          filterOutFederationChanges: true,
+          approvedChanges: null,
+          failDiffOnDangerousChange: false,
+          getAffectedAppDeployments: null,
+          filterNestedChanges: true,
+        })
+        .then(r => r.result?.all ?? r.reason?.all ?? null),
+      this.registryChecks
+        .diff({
+          existingSdl: targetLatestValidSchemaVersion?.supergraphSDL ?? null,
+          incomingSdl: originSupergraphSdl,
+          conditionalBreakingChangeConfig: null,
+          includeUrlChanges: false,
+          filterOutFederationChanges: false,
+          approvedChanges: null,
+          failDiffOnDangerousChange: false,
+          getAffectedAppDeployments: null,
+          filterNestedChanges: true,
+        })
+        .then(r => r.result?.all ?? r.reason?.all ?? null),
+    ]);
+
+    // todo: create new version
+    const schemaVersion = await this.schemaVersions.createPromotionSchemaVersion({
+      target: {
+        target,
+        latestVersion: targetLatestSchemaVersion,
+        latestValidVersion: targetLatestValidSchemaVersion,
+      },
+      origin: {
+        target: originTarget,
+        version: originSchemaVersion,
+        publicSchemaSdl: originPublicSchemaSdl,
+        supergraphSdl: originSupergraphSdl,
+      },
+      schemaLogs,
+      publicSchemaChanges,
+      supergraphSchemaChanges,
+      contracts: null,
+      conditionalBreakingChangeMetadata: null,
+    });
+
+    if (schemaVersion.schemaCompositionErrors === null) {
+      if (!schemaVersion.compositeSchemaSDL) {
+        throw new Error(
+          'Invariant: This should never happen. We have now an inconsistent state...',
+        );
+      }
+
+      await this.publishToCDN({
+        target,
+        project,
+        contracts: null,
+        schemas: ensureCompositeSchemas(
+          originLogEdges
+            .map(edge => edge.node)
+            .filter((node): node is Schema => node.action === 'PUSH'),
+        ).map(toCompositeSchemaInput),
+        fullSchemaSdl: schemaVersion.compositeSchemaSDL,
+        supergraph: schemaVersion.supergraphSDL,
+        versionId: schemaVersion.id,
+      });
+    }
+
+    return {
+      type: 'success' as const,
+      schemaVersion: {
+        ...schemaVersion,
+        projectId: target.projectId,
+        organizationId: target.orgId,
+      },
     };
   }
 
