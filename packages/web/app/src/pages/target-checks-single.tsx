@@ -578,7 +578,6 @@ function DefaultSchemaView(props: {
                   targetSlug={props.targetSlug}
                   schemaCheckId={schemaCheck.id}
                   title="Safe Changes"
-                  severityLevel={SeverityLevelType.Safe}
                   changes={schemaCheck.safeSchemaChanges.edges.map(edge => edge.node)}
                 />
               </div>
@@ -784,7 +783,6 @@ function ContractCheckView(props: {
                   targetSlug={props.targetSlug}
                   schemaCheckId={schemaCheck.id}
                   title="Safe Changes"
-                  severityLevel={SeverityLevelType.Safe}
                   changes={contractCheck.safeSchemaChanges.edges.map(edge => edge.node)}
                 />
               </div>

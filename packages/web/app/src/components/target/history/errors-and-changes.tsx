@@ -138,7 +138,6 @@ export const ChangesBlock_SchemaChangeFragment = graphql(`
 export function ChangesBlock(
   props: {
     title: string | React.ReactElement;
-    severityLevel: SeverityLevelType;
     organizationSlug: string;
     projectSlug: string;
     targetSlug: string;
