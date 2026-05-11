@@ -35,7 +35,7 @@ import { TimeAgo } from '@/components/ui/time-ago';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { DiffEditor } from '@/components/v2/diff-editor';
 import { FragmentType, graphql, useFragment } from '@/gql';
-import { ProjectType, SeverityLevelType } from '@/gql/graphql';
+import { ProjectType } from '@/gql/graphql';
 import { cn } from '@/lib/utils';
 import {
   CheckIcon,
@@ -564,7 +564,6 @@ function DefaultSchemaView(props: {
                   targetSlug={props.targetSlug}
                   schemaCheckId={schemaCheck.id}
                   title={<BreakingChangesTitle />}
-                  severityLevel={SeverityLevelType.Breaking}
                   changesWithUsage={schemaCheck.breakingSchemaChanges.edges.map(edge => edge.node)}
                   conditionBreakingChangeMetadata={schemaCheck.conditionalBreakingChangeMetadata}
                 />
@@ -767,7 +766,6 @@ function ContractCheckView(props: {
                   targetSlug={props.targetSlug}
                   schemaCheckId={schemaCheck.id}
                   title={<BreakingChangesTitle />}
-                  severityLevel={SeverityLevelType.Breaking}
                   changesWithUsage={contractCheck.breakingSchemaChanges.edges.map(
                     edge => edge.node,
                   )}
