@@ -304,7 +304,7 @@ function ConditionalBreakingChangesMetadataSection(props: {
         Get more out of schema checks by enabling conditional breaking changes based on usage data.
         <br />
         <DocsLink
-          href="/management/targets#conditional-breaking-changes"
+          href="/schema-registry/management/targets#conditional-breaking-changes"
           className="text-neutral-10 hover:text-neutral-11"
         >
           Learn more about conditional breaking changes.
@@ -387,7 +387,7 @@ function ConditionalBreakingChangesMetadataSection(props: {
         ).
         <br />
         <DocsLink
-          href="/management/targets#conditional-breaking-changes"
+          href="/schema-registry/management/targets#conditional-breaking-changes"
           className="text-neutral-10 hover:text-neutral-11"
         >
           Learn more about conditional breaking changes.
@@ -578,7 +578,6 @@ function DefaultSchemaView(props: {
                   targetSlug={props.targetSlug}
                   schemaCheckId={schemaCheck.id}
                   title="Safe Changes"
-                  severityLevel={SeverityLevelType.Safe}
                   changes={schemaCheck.safeSchemaChanges.edges.map(edge => edge.node)}
                 />
               </div>
@@ -784,7 +783,6 @@ function ContractCheckView(props: {
                   targetSlug={props.targetSlug}
                   schemaCheckId={schemaCheck.id}
                   title="Safe Changes"
-                  severityLevel={SeverityLevelType.Safe}
                   changes={contractCheck.safeSchemaChanges.edges.map(edge => edge.node)}
                 />
               </div>
