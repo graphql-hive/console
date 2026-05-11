@@ -26,7 +26,6 @@ import {
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { TimeAgo } from '@/components/v2';
 import { FragmentType, graphql, useFragment } from '@/gql';
-import { SeverityLevelType } from '@/gql/graphql';
 import { CheckCircledIcon, InfoCircledIcon } from '@radix-ui/react-icons';
 import { Link } from '@tanstack/react-router';
 
