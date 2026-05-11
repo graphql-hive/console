@@ -10932,8 +10932,8 @@ packages:
     resolution: {integrity: sha512-BASOg+YwO2C+346x3LZOeoovTIoTrRqEsqMa6fmfAV0P+U9mFr9NsyOEpiYvFjbc64NMrSswhV50WdXzdb/Z5A==}
     engines: {node: '>=4'}
 
-  axios@1.15.0:
-    resolution: {integrity: sha512-wWyJDlAatxk30ZJer+GeCWS209sA42X+N5jU2jy6oHTp7ufw8uzUTVFBX9+wTfAlhiJXGS0Bq7X6efruWjuK9Q==}
+  axios@1.16.0:
+    resolution: {integrity: sha512-6hp5CwvTPlN2A31g5dxnwAX0orzM7pmCRDLnZSX772mv8WDqICwFjowHuPs04Mc8deIld1+ejhtaMn5vp6b+1w==}
 
   axobject-query@4.1.0:
     resolution: {integrity: sha512-qIj0G9wZbMGNLjLmg1PT6v2mE9AH2zlnADJD/2tC6E00hgmhUOfEB6greHPAfLRSufHqROIUTkw6E+M3lH0PTQ==}
@@ -29196,7 +29196,7 @@ snapshots:
       '@slack/types': 2.16.0
       '@types/node': 24.12.2
       '@types/retry': 0.12.0
-      axios: 1.15.0
+      axios: 1.16.0
       eventemitter3: 5.0.1
       form-data: 4.0.4
       is-electron: 2.2.2
@@ -31745,7 +31745,7 @@ snapshots:
 
   axe-core@4.11.1: {}
 
-  axios@1.15.0:
+  axios@1.16.0:
     dependencies:
       follow-redirects: 1.16.0
       form-data: 4.0.5
@@ -41113,7 +41113,7 @@ snapshots:
 
   wait-on@9.0.3:
     dependencies:
-      axios: 1.15.0
+      axios: 1.16.0
       joi: 18.0.2
       lodash: 4.18.1
       minimist: 1.2.8
