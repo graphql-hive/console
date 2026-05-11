@@ -15,7 +15,7 @@ import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { DiffEditor, TimeAgo } from '@/components/v2';
 import { FragmentType, graphql, useFragment } from '@/gql';
-import { ProjectType, SeverityLevelType } from '@/gql/graphql';
+import { ProjectType } from '@/gql/graphql';
 import { cn, isValidUUID } from '@/lib/utils';
 import {
   CheckCircledIcon,
