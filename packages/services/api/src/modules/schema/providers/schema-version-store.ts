@@ -411,14 +411,16 @@ export class SchemaVersionStore {
       const latestVersion = await trx
         .maybeOne(
           psql`/* findLatestSchemaVersion */
-          SELECT sv.id, sv.base_schema
-          FROM schema_versions as sv
-          WHERE sv.target_id = ${target.id}
-          ORDER BY sv.created_at DESC
+          SELECT
+            "id"
+            , "base_schema" AS "baseSchema"
+          FROM "schema_versions"
+          WHERE "target_id" = ${target.id}
+          ORDER BY "created_at" DESC
           LIMIT 1
         `,
         )
-        .then(z.object({ id: z.string(), base_schema: z.string().nullable() }).parse);
+        .then(z.object({ id: z.string(), baseSchema: z.string().nullable() }).parse);
 
       // create a new action
       const deleteActionResult = await trx
@@ -463,7 +465,7 @@ export class SchemaVersionStore {
         isComposable: args.composable,
         targetId: target.id,
         actionId: deleteActionResult.id,
-        baseSchema: latestVersion.base_schema,
+        baseSchema: latestVersion.baseSchema,
         previousSchemaVersion: latestVersion.id,
         diffSchemaVersionId: args.diffSchemaVersionId,
         compositeSchemaSDL: args.compositeSchemaSDL,
