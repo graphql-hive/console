@@ -564,7 +564,6 @@ function DefaultSchemaView(props: {
                   targetSlug={props.targetSlug}
                   schemaCheckId={schemaCheck.id}
                   title={<BreakingChangesTitle />}
-                  severityLevel={SeverityLevelType.Breaking}
                   changesWithUsage={schemaCheck.breakingSchemaChanges.edges.map(edge => edge.node)}
                   conditionBreakingChangeMetadata={schemaCheck.conditionalBreakingChangeMetadata}
                 />
