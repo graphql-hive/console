@@ -298,7 +298,7 @@ export class SchemaVersionStore {
     const url = args.url ?? null;
     const service = args.service ?? null;
 
-    const output = await this.pg.transaction('createVersion', async trx => {
+    const output = await this.pg.transaction('createSchemaVersion', async trx => {
       const log = await this.insertPushSchemaLog(trx, {
         author: args.author,
         commit: args.commit,
