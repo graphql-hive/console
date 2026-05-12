@@ -18,6 +18,7 @@ import {
 import { isUUID } from '../../../shared/is-uuid';
 import { Logger } from '../../shared/providers/logger';
 import { ArtifactStorageWriter } from './artifact-storage-writer';
+import { SchemaVersion } from './schema-version-store';
 
 @Injectable({
   scope: Scope.Singleton,
@@ -284,6 +285,82 @@ export class Contracts {
     return contracts.map(contract => ({
       contract,
       latestValidVersion: latestValidContractVersions.get(contract.id) ?? null,
+    }));
+  }
+
+  public async loadContractsWithLatestValidContractVersioAndLatestContractVersionForSchemaVersion(
+    schemaVersion: SchemaVersion,
+  ) {
+    const contracts = await this.getActiveContractsByTargetId({ targetId: schemaVersion.targetId });
+    if (contracts === null) {
+      return null;
+    }
+
+    const contractIds = contracts.map(contract => contract.id);
+
+    const latestContractVersionQueryResult = await this.pool.any(psql`
+      SELECT DISTINCT ON ("contract_id")
+        ${contractVersionsFields}
+      FROM
+        "contract_versions"
+      WHERE
+        "schema_version_id" = ${schemaVersion.id}
+        AND "contract_id" = ANY(${psql.array(contractIds, 'uuid')})
+      ORDER BY
+        , "contract_id" ASC
+        , "created_at" DESC
+    `);
+
+    const contractIdsWhereWeNeedToGetTheLatestValidVersion: Array<ContractVersion> = [];
+
+    const latestContractVersionsByContractId = new Map<string, ContractVersion>();
+    const latestValidContractVersionByContractId = new Map<string, ValidContractVersion>();
+
+    for (const raw of latestContractVersionQueryResult) {
+      const record = ContractVersionModel.parse(raw);
+      latestContractVersionsByContractId.set(record.contractId, record);
+      if (record.isComposable === false) {
+        contractIdsWhereWeNeedToGetTheLatestValidVersion.push(record);
+      } else {
+        latestValidContractVersionByContractId.set(record.contractId, record);
+      }
+    }
+
+    if (contractIdsWhereWeNeedToGetTheLatestValidVersion.length) {
+      const latestValidContractVersionQueryResult = await this.pool.any(psql`
+        SELECT DISTINCT ON ("contract_id")
+          ${contractVersionsFields}
+        FROM
+          "contract_versions"
+        JOIN (
+          VALUES
+          ${psql.unnest(
+            contractIdsWhereWeNeedToGetTheLatestValidVersion.map(version => [
+              version.contractId,
+              version.createdAt,
+            ]),
+            ['uuid', 'timestamptz'],
+          )}
+        ) AS "filters" ("ccontract_id", "cutoff_date")
+          ON "ccontract_id" = "filters"."ccontract_id"
+        WHERE
+          "created_at" < filters."cutoff_date"
+          AND "schema_composition_errors" IS NULL
+        ORDER BY
+          "contract_id" ASC
+          , "created_at" DESC
+      `);
+
+      for (const raw of latestValidContractVersionQueryResult) {
+        const record = ValidContractVersionModel.parse(raw);
+        latestValidContractVersionByContractId.set(record.contractId, record);
+      }
+    }
+
+    return contracts.map(contract => ({
+      contract,
+      latestVersion: latestContractVersionsByContractId.get(contract.id) ?? null,
+      latestValidVersion: latestValidContractVersionByContractId.get(contract.id) ?? null,
     }));
   }
 
@@ -898,27 +975,37 @@ const contractVersionsFields = psql`
   , to_json("created_at") as "createdAt"
 `;
 
-const ValidContractVersionModel = z.object({
-  id: z.string().uuid(),
-  schemaVersionId: z.string().uuid(),
-  contractId: z.string(),
-  contractName: z.string(),
-  schemaCompositionErrors: z.null(),
-  compositeSchemaSdl: z.string().nullable(),
-  supergraphSdl: z.string(),
-  createdAt: z.string(),
-});
+const ValidContractVersionModel = z
+  .object({
+    id: z.string().uuid(),
+    schemaVersionId: z.string().uuid(),
+    contractId: z.string(),
+    contractName: z.string(),
+    schemaCompositionErrors: z.null(),
+    compositeSchemaSdl: z.string().nullable(),
+    supergraphSdl: z.string(),
+    createdAt: z.string(),
+  })
+  .transform(record => ({
+    ...record,
+    isComposable: true as const,
+  }));
 
-const InvalidContractVersionModel = z.object({
-  id: z.string().uuid(),
-  schemaVersionId: z.string().uuid(),
-  contractId: z.string(),
-  contractName: z.string(),
-  schemaCompositionErrors: z.array(SchemaCompositionErrorModel).nullable(),
-  compositeSchemaSdl: z.string().nullable(),
-  supergraphSdl: z.string().nullable(),
-  createdAt: z.string(),
-});
+const InvalidContractVersionModel = z
+  .object({
+    id: z.string().uuid(),
+    schemaVersionId: z.string().uuid(),
+    contractId: z.string(),
+    contractName: z.string(),
+    schemaCompositionErrors: z.array(SchemaCompositionErrorModel).nullable(),
+    compositeSchemaSdl: z.string().nullable(),
+    supergraphSdl: z.string().nullable(),
+    createdAt: z.string(),
+  })
+  .transform(record => ({
+    ...record,
+    isComposable: false as const,
+  }));
 
 const ContractVersionModel = z.union([ValidContractVersionModel, InvalidContractVersionModel]);
 

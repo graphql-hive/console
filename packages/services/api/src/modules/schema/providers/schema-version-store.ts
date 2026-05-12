@@ -1398,7 +1398,20 @@ export class SchemaVersionStore {
         await trx.query(insertAddedAndChangedSchemaLogEdges);
       }
 
-      // TODO: think about them contracts
+      for (const contract of args.contracts ?? []) {
+        const schemaVersionContractId = await this.insertSchemaVersionContract(trx, {
+          schemaVersionId: schemaVersion.id,
+          contractId: contract.contractId,
+          contractName: contract.contractName,
+          schemaCompositionErrors: contract.schemaCompositionErrors,
+          compositeSchemaSDL: contract.compositeSchemaSDL,
+          supergraphSDL: contract.supergraphSDL,
+        });
+        await this.insertSchemaVersionContractChanges(trx, {
+          schemaVersionContractId,
+          changes: contract.changes,
+        });
+      }
 
       return schemaVersion;
     });
@@ -1442,7 +1455,7 @@ const schemaLogFields = (prefix = psql``) => psql`
   , ${prefix}"action"
 `;
 
-type CreateContractVersionInput = {
+export type CreateContractVersionInput = {
   contractId: string;
   contractName: string;
   compositeSchemaSDL: string | null;
