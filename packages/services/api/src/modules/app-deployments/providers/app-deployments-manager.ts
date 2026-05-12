@@ -124,7 +124,7 @@ export class AppDeploymentsManager {
       },
     });
 
-    const target = await this.targetManager.getTarget(selector);
+    const target = await this.targetManager.getTargetById(selector);
 
     return await this.appDeployments.addDocumentsToAppDeployment({
       target,
