@@ -1,5 +1,14 @@
 # @graphql-hive/cli
 
+## 0.59.2
+
+### Patch Changes
+
+- [#8035](https://github.com/graphql-hive/console/pull/8035)
+  [`0cd6cc5`](https://github.com/graphql-hive/console/commit/0cd6cc5606e8cf3c952583feec956c8f024ee615)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Address vulnerability
+  [GHSA-rpmf-866q-6p89](https://github.com/advisories/GHSA-rpmf-866q-6p89)
+
 ## 0.59.1
 
 ### Patch Changes
