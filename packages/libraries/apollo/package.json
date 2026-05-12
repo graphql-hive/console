@@ -48,7 +48,7 @@
   },
   "dependencies": {
     "@graphql-hive/core": "workspace:*",
-    "@graphql-hive/logger": "^1.0.9"
+    "@graphql-hive/logger": "^1.1.0"
   },
   "devDependencies": {
     "@apollo/server": "5.5.0",
