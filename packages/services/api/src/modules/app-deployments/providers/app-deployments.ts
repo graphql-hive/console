@@ -20,8 +20,10 @@ import {
   encodeCreatedAtAndUUIDIdBasedCursor,
   encodeHashBasedCursor,
 } from '@hive/storage';
+import type { Target } from '../../../shared/entities';
 import { ClickHouse, sql as cSql } from '../../operations/providers/clickhouse-client';
 import { SchemaVersionHelper } from '../../schema/providers/schema-version-helper';
+import { SchemaVersionStore } from '../../schema/providers/schema-version-store';
 import { Logger } from '../../shared/providers/logger';
 import { S3_CONFIG, type S3Config } from '../../shared/providers/s3-config';
 import { Storage } from '../../shared/providers/storage';
@@ -59,6 +61,7 @@ export class AppDeployments {
     private storage: Storage,
     private schemaVersionHelper: SchemaVersionHelper,
     private persistedDocumentScheduler: PersistedDocumentScheduler,
+    private schemaVersions: SchemaVersionStore,
     @Inject(APP_DEPLOYMENTS_ENABLED) private appDeploymentsEnabled: boolean,
   ) {
     this.logger = logger.child({ source: 'AppDeployments' });
@@ -253,9 +256,7 @@ export class AppDeployments {
   }
 
   async addDocumentsToAppDeployment(args: {
-    organizationId: string;
-    projectId: string;
-    targetId: string;
+    target: Target;
     appDeployment: {
       name: string;
       version: string;
@@ -267,7 +268,7 @@ export class AppDeployments {
   }) {
     if (this.appDeploymentsEnabled === false) {
       const organization = await this.storage.getOrganization({
-        organizationId: args.organizationId,
+        organizationId: args.target.orgId,
       });
       if (organization.featureFlags.appDeployments === false) {
         this.logger.debug(
@@ -287,7 +288,7 @@ export class AppDeployments {
     // todo: validate input
 
     const appDeployment = await this.findAppDeployment({
-      targetId: args.targetId,
+      targetId: args.target.id,
       name: args.appDeployment.name,
       version: args.appDeployment.version,
     });
@@ -313,9 +314,9 @@ export class AppDeployments {
     }
 
     if (args.operations.length !== 0) {
-      const latestSchemaVersion = await this.storage.getMaybeLatestValidVersion({
-        targetId: args.targetId,
-      });
+      const latestSchemaVersion = await this.schemaVersions.getMaybeLatestValidSchemaVersion(
+        args.target,
+      );
 
       if (latestSchemaVersion === null) {
         return {
@@ -330,9 +331,9 @@ export class AppDeployments {
 
       const compositeSchemaSdl = await this.schemaVersionHelper.getCompositeSchemaSdl({
         ...latestSchemaVersion,
-        organizationId: args.organizationId,
-        projectId: args.projectId,
-        targetId: args.targetId,
+        organizationId: args.target.orgId,
+        projectId: args.target.projectId,
+        targetId: args.target.id,
       });
       if (compositeSchemaSdl === null) {
         // No valid schema found.
@@ -347,7 +348,7 @@ export class AppDeployments {
 
       const result = await this.persistedDocumentScheduler.processBatch({
         schemaSdl: compositeSchemaSdl,
-        targetId: args.targetId,
+        targetId: args.target.id,
         appDeployment: {
           id: appDeployment.id,
           name: args.appDeployment.name,

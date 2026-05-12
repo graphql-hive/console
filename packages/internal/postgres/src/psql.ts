@@ -18,6 +18,20 @@ function psqlFn(template: TemplateStringsArray, ...values: ValueExpression[]) {
   return tag.type(z.unknown())(template, ...values);
 }
 
-Object.assign(psqlFn, createSqlTag());
+/**
+ * Small helper utility for jsonifying a nullable object.
+ */
+function jsonbOrNull<T>(obj: T | null | undefined) {
+  if (obj == null) return null;
+  return psqlFn`${JSON.stringify(obj)}::jsonb`;
+}
 
-export const psql = psqlFn as any as SqlTag<any> & CallableTag;
+Object.assign(psqlFn, tag, {
+  jsonbOrNull,
+});
+
+type UtilityExtensions = {
+  jsonbOrNull: typeof jsonbOrNull;
+};
+
+export const psql = psqlFn as any as SqlTag<any> & CallableTag & UtilityExtensions;

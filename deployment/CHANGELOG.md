@@ -1,5 +1,72 @@
 # hive
 
+## 11.1.0
+
+### Minor Changes
+
+- [#8015](https://github.com/graphql-hive/console/pull/8015)
+  [`80b7600`](https://github.com/graphql-hive/console/commit/80b76004da822f9f526fef3160b51c834865d266)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Write app deployment manifest to CDN upon app
+  activation and retirement. The app deployment manifest can be used to discover what hashes belong
+  to an app deployment version.
+
+- [#7982](https://github.com/graphql-hive/console/pull/7982)
+  [`63e6827`](https://github.com/graphql-hive/console/commit/63e682791fbb3c53f05e34329043c8fc8b705189)
+  Thanks [@jetocotoje](https://github.com/jetocotoje)! - Add configuration for specifying services
+  listening host. It is now possible to specify on which host the services are listening.
+  Furthermore, the services can be configured to only listing on IPv6.
+
+  The behaviour can be configrued via the two new environment variables `SERVER_HOST` and
+  `SERVER_HOST_IPV6_ONLY` for each service.
+
+  ```
+  SERVER_HOST="::"
+  SERVER_HOST_IPV6_ONLY="0"
+  ```
+
+### Patch Changes
+
+- [#8020](https://github.com/graphql-hive/console/pull/8020)
+  [`a989647`](https://github.com/graphql-hive/console/commit/a989647908ad7635831d7bd753076fb12f98dbe8)
+  Thanks [@jdolle](https://github.com/jdolle)! - OIDC verification domains are now inserted and
+  compared against lowercase domains. Any existing domains that use an uppercase letter must be
+  converted to lowercase. This is to avoid an unnecessary convert to LOWER() in the SQL statements.
+
+  To convert existing domains, run the SQL query:
+
+  ```
+  UPDATE oidc_integration_domains
+  SET domain_name=LOWER(domain_name)
+  WHERE domain_name != LOWER(domain_name)
+  ;
+  ```
+
+- [#8040](https://github.com/graphql-hive/console/pull/8040)
+  [`931c327`](https://github.com/graphql-hive/console/commit/931c3274bf69984d00a3db3e6e20adcfcd39ad4b)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Address vulnerabilityies
+  [GHSA-q7rr-3cgh-j5r3](https://github.com/advisories/GHSA-q7rr-3cgh-j5r3).
+
+- [#8035](https://github.com/graphql-hive/console/pull/8035)
+  [`0cd6cc5`](https://github.com/graphql-hive/console/commit/0cd6cc5606e8cf3c952583feec956c8f024ee615)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Address vulnerability
+  [GHSA-pf86-5x62-jrwf](https://github.com/advisories/GHSA-pf86-5x62-jrwf)
+
+- [#8021](https://github.com/graphql-hive/console/pull/8021)
+  [`51e5baa`](https://github.com/graphql-hive/console/commit/51e5baa0dd42b9a5fcd499e60f03baa0c45c8da9)
+  Thanks [@jdolle](https://github.com/jdolle)! - "INPUT_FIELD_ADDED" is now classified as Dangerous
+  (was NonBreaking) when the added field has a default value, since rolling deploys can expose
+  consumers to the default before producers are ready.
+
+- [#8035](https://github.com/graphql-hive/console/pull/8035)
+  [`0cd6cc5`](https://github.com/graphql-hive/console/commit/0cd6cc5606e8cf3c952583feec956c8f024ee615)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Address vulnerability
+  [GHSA-5wm8-gmm8-39j9](https://github.com/advisories/GHSA-5wm8-gmm8-39j9)
+
+- [#8035](https://github.com/graphql-hive/console/pull/8035)
+  [`0cd6cc5`](https://github.com/graphql-hive/console/commit/0cd6cc5606e8cf3c952583feec956c8f024ee615)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Address vulnerability
+  [GHSA-q3j6-qgpj-74h6](https://github.com/advisories/GHSA-q3j6-qgpj-74h6)
+
 ## 11.0.4
 
 ### Patch Changes

@@ -5,6 +5,7 @@ import { ProjectType } from 'testkit/gql/graphql';
 import { execute } from 'testkit/graphql';
 import { assertNonNull, getServiceHost } from 'testkit/utils';
 import z from 'zod';
+import { SchemaVersionStore } from '@hive/api/modules/schema/providers/schema-version-store';
 import { createPostgresDatabasePool, psql } from '@hive/postgres';
 // eslint-disable-next-line import/no-extraneous-dependencies
 import { createStorage } from '@hive/storage';
@@ -627,16 +628,12 @@ describe('schema publishing changes are persisted', () => {
         return;
       }
 
-      const latestVersion = await storage.getMaybeLatestVersion({
-        targetId: target.id,
-        projectId: project.id,
-        organizationId: organization.id,
-      });
+      const schemaVersions = new SchemaVersionStore(storage.pool);
+
+      const latestVersion = await schemaVersions.getMaybeLatestSchemaVersionForTargetId(target.id);
       assertNonNull(latestVersion);
 
-      const changes = await storage.getSchemaChangesForVersion({
-        versionId: latestVersion.id,
-      });
+      const changes = await schemaVersions.getSchemaSchangesForSchemaVersion(latestVersion);
 
       if (!Array.isArray(changes)) {
         throw new Error('Expected changes to be an array');
@@ -3263,6 +3260,7 @@ const SchemaCompareToPreviousVersionQuery = graphql(`
 
 test('Target.schemaVersion: result is read from the database', async () => {
   const storage = await createStorage(connectionString(), 1);
+  const schemaVersions = new SchemaVersionStore(storage.pool);
 
   try {
     const serviceName = {
@@ -3305,11 +3303,7 @@ test('Target.schemaVersion: result is read from the database', async () => {
       return;
     }
 
-    const latestVersion = await storage.getMaybeLatestVersion({
-      targetId: target.id,
-      projectId: project.id,
-      organizationId: organization.id,
-    });
+    const latestVersion = await schemaVersions.getMaybeLatestSchemaVersionForTargetId(target.id);
     assertNonNull(latestVersion);
 
     const result = await execute({
@@ -3346,6 +3340,7 @@ test('Target.schemaVersion: result is read from the database', async () => {
 
 test('Composition Error (Federation 2) can be served from the database', async () => {
   const storage = await createStorage(connectionString(), 1);
+  const schemaVersions = new SchemaVersionStore(storage.pool);
   const serviceAddress = await getServiceHost('composition_federation_2', 3069, false);
 
   try {
@@ -3444,11 +3439,7 @@ test('Composition Error (Federation 2) can be served from the database', async (
       return;
     }
 
-    const latestVersion = await storage.getMaybeLatestVersion({
-      targetId: target.id,
-      projectId: project.id,
-      organizationId: organization.id,
-    });
+    const latestVersion = await schemaVersions.getMaybeLatestSchemaVersionForTargetId(target.id);
     assertNonNull(latestVersion);
 
     const result = await execute({
@@ -3476,6 +3467,7 @@ test('Composition Error (Federation 2) can be served from the database', async (
 
 test('Composition Network Failure (Federation 2)', async () => {
   const storage = await createStorage(connectionString(), 1);
+  const schemaVersions = new SchemaVersionStore(storage.pool);
   const serviceAddress = await getServiceHost('composition_federation_2', 3069, false);
 
   try {
@@ -3610,11 +3602,7 @@ test('Composition Network Failure (Federation 2)', async () => {
       return;
     }
 
-    const latestVersion = await storage.getMaybeLatestVersion({
-      targetId: target.id,
-      projectId: project.id,
-      organizationId: organization.id,
-    });
+    const latestVersion = await schemaVersions.getMaybeLatestSchemaVersionForTargetId(target.id);
     assertNonNull(latestVersion);
 
     const result = await execute({
@@ -4543,7 +4531,8 @@ test.concurrent(
 
     const conn = connectionString();
     const storage = await createStorage(conn, 2);
-    await storage.createVersion({
+    const schemaVersions = new SchemaVersionStore(storage.pool);
+    await schemaVersions.createSchemaVersion({
       schema: brokenSdl,
       author: 'Jochen',
       async actionFn() {},
@@ -4553,7 +4542,6 @@ test.concurrent(
       compositeSchemaSDL: null,
       conditionalBreakingChangeMetadata: null,
       contracts: null,
-      coordinatesDiff: null,
       diffSchemaVersionId: null,
       github: null,
       metadata: null,

@@ -19,6 +19,7 @@ import { CompositionOrchestrator } from './orchestrator/composition-orchestrator
 import { RegistryChecks } from './registry-checks';
 import { ensureCompositeSchemas, SchemaHelper, toCompositeSchemaInput } from './schema-helper';
 import { SchemaManager } from './schema-manager';
+import { SchemaVersionStore } from './schema-version-store';
 
 @Injectable({
   scope: Scope.Operation,
@@ -38,6 +39,7 @@ export class SchemaVersionHelper {
     private storage: Storage,
     private logger: Logger,
     private compositionOrchestrator: CompositionOrchestrator,
+    private schemaVersions: SchemaVersionStore,
   ) {}
 
   @traceFn('SchemaVersionHelper.composeSchemaVersion', {
@@ -51,9 +53,7 @@ export class SchemaVersionHelper {
   @cache<SchemaVersion>(version => version.id)
   private async composeSchemaVersion(schemaVersion: SchemaVersion) {
     const [schemas, project, organization] = await Promise.all([
-      this.storage.getSchemasOfVersion({
-        versionId: schemaVersion.id,
-      }),
+      this.schemaVersions.getSchemasBySchemaVersionId(schemaVersion.id),
       this.projectManager.getProject({
         organizationId: schemaVersion.organizationId,
         projectId: schemaVersion.projectId,
@@ -186,11 +186,8 @@ export class SchemaVersionHelper {
     }
 
     if (schemaVersion.hasPersistedSchemaChanges) {
-      const changes: null | Array<SchemaChangeType> = await this.storage.getSchemaChangesForVersion(
-        {
-          versionId: schemaVersion.id,
-        },
-      );
+      const changes: null | Array<SchemaChangeType> =
+        await this.schemaVersions.getSchemaSchangesForSchemaVersion(schemaVersion);
 
       const safeChanges: Array<SchemaChangeType> = [];
       const breakingChanges: Array<SchemaChangeType> = [];
@@ -220,12 +217,8 @@ export class SchemaVersionHelper {
     const incomingSdl = await this.getCompositeSchemaSdl(schemaVersion);
 
     const [schemaBefore, schemasAfter] = await Promise.all([
-      this.storage.getSchemasOfVersion({
-        versionId: schemaVersion.id,
-      }),
-      this.storage.getSchemasOfVersion({
-        versionId: previousVersion.id,
-      }),
+      this.schemaVersions.getSchemasBySchemaVersionId(schemaVersion.id),
+      this.schemaVersions.getSchemasBySchemaVersionId(previousVersion.id),
     ]);
 
     if (!existingSdl || !incomingSdl) {
@@ -271,7 +264,7 @@ export class SchemaVersionHelper {
   ): Promise<SchemaVersion | null> {
     if (schemaVersion.recordVersion === '2024-01-10') {
       if (schemaVersion.diffSchemaVersionId) {
-        return await this.schemaManager.getSchemaVersion({
+        return await this.schemaManager.getSchemaVersionBySelector({
           organizationId: schemaVersion.organizationId,
           projectId: schemaVersion.projectId,
           targetId: schemaVersion.targetId,
@@ -281,13 +274,7 @@ export class SchemaVersionHelper {
       return null;
     }
 
-    return await this.schemaManager.getComposableVersionBeforeVersionId({
-      organization: schemaVersion.organizationId,
-      project: schemaVersion.projectId,
-      target: schemaVersion.targetId,
-      beforeVersionId: schemaVersion.id,
-      beforeVersionCreatedAt: schemaVersion.createdAt,
-    });
+    return await this.schemaManager.getComposableVersionBeforeVersionId(schemaVersion);
   }
 
   async getBreakingSchemaChanges(schemaVersion: SchemaVersion) {
@@ -327,13 +314,7 @@ export class SchemaVersionHelper {
     }
 
     const composableVersion =
-      await this.schemaManager.getFirstComposableSchemaVersionBeforeVersionId({
-        organization: schemaVersion.organizationId,
-        project: schemaVersion.projectId,
-        target: schemaVersion.targetId,
-        beforeVersionId: schemaVersion.id,
-        beforeVersionCreatedAt: schemaVersion.createdAt,
-      });
+      await this.schemaManager.getFirstComposableSchemaVersionBeforeSchemaVersion(schemaVersion);
 
     return !composableVersion;
   }
@@ -353,10 +334,10 @@ export class SchemaVersionHelper {
       return null;
     }
 
-    const schemaLog = await this.storage.getServiceSchemaOfVersion({
-      schemaVersionId: previousVersion.id,
+    const schemaLog = await this.schemaVersions.getServiceSchemaOfVersion(
+      schemaVersion,
       serviceName,
-    });
+    );
 
     return schemaLog?.sdl ?? null;
   }

@@ -3,6 +3,7 @@ import {
   ResourceAssignmentModeType,
   RuleInstanceSeverityLevel,
 } from 'testkit/gql/graphql';
+import { SchemaVersionStore } from '@hive/api/modules/schema/providers/schema-version-store';
 // eslint-disable-next-line import/no-extraneous-dependencies
 import { createStorage } from '@hive/storage';
 import { graphql } from '../../../testkit/gql';
@@ -2103,7 +2104,8 @@ test.concurrent(
 
     const conn = connectionString();
     const storage = await createStorage(conn, 2);
-    await storage.createVersion({
+    const schemaVersions = new SchemaVersionStore(storage.pool);
+    await schemaVersions.createSchemaVersion({
       schema: brokenSdl,
       author: 'Jochen',
       async actionFn() {},
@@ -2113,7 +2115,6 @@ test.concurrent(
       compositeSchemaSDL: null,
       conditionalBreakingChangeMetadata: null,
       contracts: null,
-      coordinatesDiff: null,
       diffSchemaVersionId: null,
       github: null,
       metadata: null,

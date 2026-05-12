@@ -12,6 +12,7 @@ import { SchemaHelper } from './providers/schema-helper';
 import { SchemaManager } from './providers/schema-manager';
 import { SchemaPublisher } from './providers/schema-publisher';
 import { SchemaVersionHelper } from './providers/schema-version-helper';
+import { SchemaVersionStore } from './providers/schema-version-store';
 import { resolvers } from './resolvers.generated';
 import typeDefs from './module.graphql';
 
@@ -21,6 +22,7 @@ export const schemaModule = createModule({
   typeDefs,
   resolvers,
   providers: [
+    SchemaVersionStore,
     SchemaManager,
     SchemaPublisher,
     Inspector,

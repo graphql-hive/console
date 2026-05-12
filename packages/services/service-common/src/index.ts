@@ -5,6 +5,7 @@ export * from './metrics';
 export * from './heartbeats';
 export * from './trpc';
 export * from './tracing';
+export { resolveServerListenOptions } from './listen-options';
 export { registerShutdown } from './graceful-shutdown';
 export { cleanRequestId, maskToken } from './helpers';
 export { sentryInit } from './sentry';

@@ -10,7 +10,8 @@
     "./modules/auth/lib/supertokens-at-home/crypto": "./src/modules/auth/lib/supertokens-at-home/crypto.ts",
     "./modules/auth/providers/supertokens-store": "./src/modules/auth/providers/supertokens-store.ts",
     "./modules/shared/providers/logger": "./src/modules/shared/providers/logger.ts",
-    "./modules/shared/providers/redis": "./src/modules/shared/providers/redis.ts"
+    "./modules/shared/providers/redis": "./src/modules/shared/providers/redis.ts",
+    "./modules/schema/providers/schema-version-store": "./src/modules/schema/providers/schema-version-store.ts"
   },
   "peerDependencies": {
     "graphql": "^16.0.0",

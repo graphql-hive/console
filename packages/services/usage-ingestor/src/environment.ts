@@ -1,5 +1,6 @@
 import * as fs from 'fs';
 import zod from 'zod';
+import { resolveServerListenOptions } from '@hive/service-common';
 
 const isNumberString = (input: unknown) => zod.string().regex(/^\d+$/).safeParse(input).success;
 
@@ -20,6 +21,8 @@ const emptyString = <T extends zod.ZodType>(input: T) => {
 
 const EnvironmentModel = zod.object({
   PORT: emptyString(NumberFromString.optional()),
+  SERVER_HOST: emptyString(zod.string().optional()),
+  SERVER_HOST_IPV6_ONLY: emptyString(zod.union([zod.literal('1'), zod.literal('0')]).optional()),
   ENVIRONMENT: emptyString(zod.string().optional()),
   RELEASE: emptyString(zod.string().optional()),
   HEARTBEAT_ENDPOINT: emptyString(zod.string().url().optional()),
@@ -162,6 +165,10 @@ export const env = {
   release: base.RELEASE ?? 'local',
   http: {
     port: base.PORT ?? 5000,
+    ...resolveServerListenOptions({
+      serverHost: base.SERVER_HOST,
+      serverHostIpv6Only: base.SERVER_HOST_IPV6_ONLY,
+    }),
   },
   kafka: {
     concurrency: kafka.KAFKA_CONCURRENCY,

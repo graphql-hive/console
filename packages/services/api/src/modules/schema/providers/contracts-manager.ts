@@ -1,5 +1,5 @@
 import { Injectable, Scope } from 'graphql-modules';
-import type { SchemaCheck, SchemaVersion } from '@hive/storage';
+import type { SchemaCheck } from '@hive/storage';
 import * as GraphQLSchema from '../../../__generated__/types';
 import type { Target } from '../../../shared/entities';
 import { cache } from '../../../shared/helpers';
@@ -15,6 +15,7 @@ import {
   type ContractVersion,
   type CreateContractInput,
 } from './contracts';
+import type { SchemaVersion } from './schema-version-store';
 
 @Injectable({
   scope: Scope.Operation,
