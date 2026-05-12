@@ -1324,7 +1324,7 @@ export class SchemaVersionStore {
               log.projectId,
               log.targetId,
               'system',
-              'syestem',
+              'system',
               log.serviceName,
               'DELETE',
             ]),
