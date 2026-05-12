@@ -15,10 +15,10 @@ What gets created:
 - ~10 saved filters with realistic view counts.
 - Three alert channels (Slack/Webhook/MS Teams via webhooks — Slack tokens aren't available in local
   dev, so all three use webhook endpoints).
-- 7 metric alert rules covering every state in the evaluation state machine (NORMAL,
-  PENDING, FIRING, RECOVERING) across the three rule types (latency, reliability, traffic) and
-  both threshold modes (fixed value, percentage change). The seed deliberately leaves headroom
-  inside the per-target cap of 10 so a tester can exercise the create flow end-to-end.
+- 7 metric alert rules covering every state in the evaluation state machine (NORMAL, PENDING,
+  FIRING, RECOVERING) across the three rule types (latency, reliability, traffic) and both threshold
+  modes (fixed value, percentage change). The seed deliberately leaves headroom inside the
+  per-target cap of 10 so a tester can exercise the create flow end-to-end.
 
 ### Prerequisites
 

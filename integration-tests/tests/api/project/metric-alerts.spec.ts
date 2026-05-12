@@ -239,39 +239,20 @@ test.concurrent('supports multiple channels on a single rule', async ({ expect }
   expect(result.ok!.addedMetricAlertRule.channels).toHaveLength(2);
 });
 
-test.concurrent(
-  'enforces the per-target cap of 10 metric alert rules',
-  async ({ expect }) => {
-    const { createOrg } = await initSeed().createOwner();
-    const { createProject, organization, setFeatureFlag } = await createOrg();
-    await setFeatureFlag('metricAlertRules', true);
-    const { project, target, addMetricAlertRule } = await createProject(ProjectType.Single);
+test.concurrent('enforces the per-target cap of 10 metric alert rules', async ({ expect }) => {
+  const { createOrg } = await initSeed().createOwner();
+  const { createProject, organization, setFeatureFlag } = await createOrg();
+  await setFeatureFlag('metricAlertRules', true);
+  const { project, target, addMetricAlertRule } = await createProject(ProjectType.Single);
 
-    // Create exactly 10 rules. Each is intentionally simple (zero channels,
-    // distinct names) so the cap is the only variable.
-    for (let i = 0; i < 10; i++) {
-      const result = await addMetricAlertRule({
-        organizationSlug: organization.slug,
-        projectSlug: project.slug,
-        targetSlug: target.slug,
-        name: `Rule ${i + 1}`,
-        type: MetricAlertRuleType.Traffic,
-        timeWindowMinutes: 5,
-        thresholdType: MetricAlertRuleThresholdType.FixedValue,
-        thresholdValue: 1000,
-        direction: MetricAlertRuleDirection.Above,
-        severity: MetricAlertRuleSeverity.Info,
-        channelIds: [],
-      });
-      expect(result.ok).toBeTruthy();
-    }
-
-    // 11th creation must return the structured limit error.
-    const overflow = await addMetricAlertRule({
+  // Create exactly 10 rules. Each is intentionally simple (zero channels,
+  // distinct names) so the cap is the only variable.
+  for (let i = 0; i < 10; i++) {
+    const result = await addMetricAlertRule({
       organizationSlug: organization.slug,
       projectSlug: project.slug,
       targetSlug: target.slug,
-      name: 'Rule 11',
+      name: `Rule ${i + 1}`,
       type: MetricAlertRuleType.Traffic,
       timeWindowMinutes: 5,
       thresholdType: MetricAlertRuleThresholdType.FixedValue,
@@ -280,53 +261,43 @@ test.concurrent(
       severity: MetricAlertRuleSeverity.Info,
       channelIds: [],
     });
-    expect(overflow.error).toBeTruthy();
-    expect(overflow.error!.message).toContain('Limit of 10');
-    expect(overflow.ok).toBeNull();
-  },
-);
+    expect(result.ok).toBeTruthy();
+  }
 
-test.concurrent(
-  'deleting a rule frees a slot inside the cap',
-  async ({ expect }) => {
-    const { createOrg } = await initSeed().createOwner();
-    const { createProject, organization, setFeatureFlag } = await createOrg();
-    await setFeatureFlag('metricAlertRules', true);
-    const { project, target, addMetricAlertRule, deleteMetricAlertRules } = await createProject(
-      ProjectType.Single,
-    );
+  // 11th creation must return the structured limit error.
+  const overflow = await addMetricAlertRule({
+    organizationSlug: organization.slug,
+    projectSlug: project.slug,
+    targetSlug: target.slug,
+    name: 'Rule 11',
+    type: MetricAlertRuleType.Traffic,
+    timeWindowMinutes: 5,
+    thresholdType: MetricAlertRuleThresholdType.FixedValue,
+    thresholdValue: 1000,
+    direction: MetricAlertRuleDirection.Above,
+    severity: MetricAlertRuleSeverity.Info,
+    channelIds: [],
+  });
+  expect(overflow.error).toBeTruthy();
+  expect(overflow.error!.message).toContain('Limit of 10');
+  expect(overflow.ok).toBeNull();
+});
 
-    const ruleIds: string[] = [];
-    for (let i = 0; i < 10; i++) {
-      const result = await addMetricAlertRule({
-        organizationSlug: organization.slug,
-        projectSlug: project.slug,
-        targetSlug: target.slug,
-        name: `Rule ${i + 1}`,
-        type: MetricAlertRuleType.Traffic,
-        timeWindowMinutes: 5,
-        thresholdType: MetricAlertRuleThresholdType.FixedValue,
-        thresholdValue: 1000,
-        direction: MetricAlertRuleDirection.Above,
-        severity: MetricAlertRuleSeverity.Info,
-        channelIds: [],
-      });
-      ruleIds.push(result.ok!.addedMetricAlertRule.id);
-    }
+test.concurrent('deleting a rule frees a slot inside the cap', async ({ expect }) => {
+  const { createOrg } = await initSeed().createOwner();
+  const { createProject, organization, setFeatureFlag } = await createOrg();
+  await setFeatureFlag('metricAlertRules', true);
+  const { project, target, addMetricAlertRule, deleteMetricAlertRules } = await createProject(
+    ProjectType.Single,
+  );
 
-    // Delete one rule, then a fresh insert must succeed.
-    const deleteResult = await deleteMetricAlertRules({
-      organizationSlug: organization.slug,
-      projectSlug: project.slug,
-      ruleIds: [ruleIds[0]],
-    });
-    expect(deleteResult.ok).toBeTruthy();
-
-    const recreate = await addMetricAlertRule({
+  const ruleIds: string[] = [];
+  for (let i = 0; i < 10; i++) {
+    const result = await addMetricAlertRule({
       organizationSlug: organization.slug,
       projectSlug: project.slug,
       targetSlug: target.slug,
-      name: 'Replacement rule',
+      name: `Rule ${i + 1}`,
       type: MetricAlertRuleType.Traffic,
       timeWindowMinutes: 5,
       thresholdType: MetricAlertRuleThresholdType.FixedValue,
@@ -335,56 +306,49 @@ test.concurrent(
       severity: MetricAlertRuleSeverity.Info,
       channelIds: [],
     });
-    expect(recreate.ok).toBeTruthy();
-    expect(recreate.error).toBeNull();
-  },
-);
+    ruleIds.push(result.ok!.addedMetricAlertRule.id);
+  }
 
-test.concurrent(
-  'disabled rules still count toward the cap',
-  async ({ expect }) => {
-    const { createOrg } = await initSeed().createOwner();
-    const { createProject, organization, setFeatureFlag } = await createOrg();
-    await setFeatureFlag('metricAlertRules', true);
-    const { project, target, addMetricAlertRule, updateMetricAlertRule } = await createProject(
-      ProjectType.Single,
-    );
+  // Delete one rule, then a fresh insert must succeed.
+  const deleteResult = await deleteMetricAlertRules({
+    organizationSlug: organization.slug,
+    projectSlug: project.slug,
+    ruleIds: [ruleIds[0]],
+  });
+  expect(deleteResult.ok).toBeTruthy();
 
-    const ruleIds: string[] = [];
-    for (let i = 0; i < 10; i++) {
-      const result = await addMetricAlertRule({
-        organizationSlug: organization.slug,
-        projectSlug: project.slug,
-        targetSlug: target.slug,
-        name: `Rule ${i + 1}`,
-        type: MetricAlertRuleType.Traffic,
-        timeWindowMinutes: 5,
-        thresholdType: MetricAlertRuleThresholdType.FixedValue,
-        thresholdValue: 1000,
-        direction: MetricAlertRuleDirection.Above,
-        severity: MetricAlertRuleSeverity.Info,
-        channelIds: [],
-      });
-      ruleIds.push(result.ok!.addedMetricAlertRule.id);
-    }
+  const recreate = await addMetricAlertRule({
+    organizationSlug: organization.slug,
+    projectSlug: project.slug,
+    targetSlug: target.slug,
+    name: 'Replacement rule',
+    type: MetricAlertRuleType.Traffic,
+    timeWindowMinutes: 5,
+    thresholdType: MetricAlertRuleThresholdType.FixedValue,
+    thresholdValue: 1000,
+    direction: MetricAlertRuleDirection.Above,
+    severity: MetricAlertRuleSeverity.Info,
+    channelIds: [],
+  });
+  expect(recreate.ok).toBeTruthy();
+  expect(recreate.error).toBeNull();
+});
 
-    // Disable 5 of the 10 rules. The cap counts every row regardless of
-    // enabled state — disabling rules should NOT free slots.
-    for (let i = 0; i < 5; i++) {
-      const disableResult = await updateMetricAlertRule({
-        organizationSlug: organization.slug,
-        projectSlug: project.slug,
-        ruleId: ruleIds[i],
-        enabled: false,
-      });
-      expect(disableResult.ok).toBeTruthy();
-    }
+test.concurrent('disabled rules still count toward the cap', async ({ expect }) => {
+  const { createOrg } = await initSeed().createOwner();
+  const { createProject, organization, setFeatureFlag } = await createOrg();
+  await setFeatureFlag('metricAlertRules', true);
+  const { project, target, addMetricAlertRule, updateMetricAlertRule } = await createProject(
+    ProjectType.Single,
+  );
 
-    const overflow = await addMetricAlertRule({
+  const ruleIds: string[] = [];
+  for (let i = 0; i < 10; i++) {
+    const result = await addMetricAlertRule({
       organizationSlug: organization.slug,
       projectSlug: project.slug,
       targetSlug: target.slug,
-      name: 'Rule 11',
+      name: `Rule ${i + 1}`,
       type: MetricAlertRuleType.Traffic,
       timeWindowMinutes: 5,
       thresholdType: MetricAlertRuleThresholdType.FixedValue,
@@ -393,7 +357,34 @@ test.concurrent(
       severity: MetricAlertRuleSeverity.Info,
       channelIds: [],
     });
-    expect(overflow.error).toBeTruthy();
-    expect(overflow.error!.message).toContain('Limit of 10');
-  },
-);
+    ruleIds.push(result.ok!.addedMetricAlertRule.id);
+  }
+
+  // Disable 5 of the 10 rules. The cap counts every row regardless of
+  // enabled state — disabling rules should NOT free slots.
+  for (let i = 0; i < 5; i++) {
+    const disableResult = await updateMetricAlertRule({
+      organizationSlug: organization.slug,
+      projectSlug: project.slug,
+      ruleId: ruleIds[i],
+      enabled: false,
+    });
+    expect(disableResult.ok).toBeTruthy();
+  }
+
+  const overflow = await addMetricAlertRule({
+    organizationSlug: organization.slug,
+    projectSlug: project.slug,
+    targetSlug: target.slug,
+    name: 'Rule 11',
+    type: MetricAlertRuleType.Traffic,
+    timeWindowMinutes: 5,
+    thresholdType: MetricAlertRuleThresholdType.FixedValue,
+    thresholdValue: 1000,
+    direction: MetricAlertRuleDirection.Above,
+    severity: MetricAlertRuleSeverity.Info,
+    channelIds: [],
+  });
+  expect(overflow.error).toBeTruthy();
+  expect(overflow.error!.message).toContain('Limit of 10');
+});
