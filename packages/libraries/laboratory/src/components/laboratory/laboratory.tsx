@@ -534,6 +534,7 @@ export const Laboratory = (
     operationsApi,
     envApi,
     pluginsApi,
+    preflightApi,
   });
 
   const historyApi = useHistory(props);

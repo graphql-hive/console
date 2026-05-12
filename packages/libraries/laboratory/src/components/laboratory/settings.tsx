@@ -1,9 +1,11 @@
+import { useEffect } from 'react';
 import { z } from 'zod';
+import { Editor } from '@/components/laboratory/editor';
 import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
 import { useForm } from '@tanstack/react-form';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card';
-import { Field, FieldGroup, FieldLabel } from '../ui/field';
+import { Field, FieldDescription, FieldGroup, FieldLabel } from '../ui/field';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { useLaboratory } from './context';
 
@@ -20,6 +22,8 @@ const settingsFormSchema = z.object({
   introspection: z.object({
     method: z.enum(['GET', 'POST']).optional(),
     schemaDescription: z.boolean().optional(),
+    headers: z.string().optional(),
+    includeActiveOperationHeaders: z.boolean().optional(),
   }),
 });
 
@@ -31,19 +35,17 @@ export const Settings = () => {
     validators: {
       onSubmit: settingsFormSchema,
     },
-    onSubmit: ({ value }) => {
-      setSettings(value as typeof settings);
-    },
   });
+
+  useEffect(() => {
+    form.store.subscribe(state => {
+      setSettings(state.currentVal.values);
+    });
+  }, [setSettings]);
 
   return (
     <div className="bg-card size-full overflow-y-auto p-3">
-      <form
-        id="settings-form"
-        onSubmit={form.handleSubmit}
-        onChange={form.handleSubmit}
-        className="mx-auto flex max-w-2xl flex-col gap-4"
-      >
+      <form id="settings-form" className="mx-auto flex max-w-2xl flex-col gap-4">
         <Card>
           <CardHeader>
             <CardTitle>Fetch</CardTitle>
@@ -216,6 +218,43 @@ export const Settings = () => {
                         onCheckedChange={field.handleChange}
                       />
                       <FieldLabel htmlFor={field.name}>Schema description</FieldLabel>
+                    </Field>
+                  );
+                }}
+              </form.Field>
+              <form.Field name="introspection.headers">
+                {field => {
+                  return (
+                    <Field>
+                      <FieldLabel htmlFor={field.name}>Headers</FieldLabel>
+                      <Editor
+                        value={field.state.value ?? '{}'}
+                        onChange={field.handleChange}
+                        defaultLanguage="json"
+                        theme="hive-laboratory"
+                        className="bg-input/30 border-input focus-within:border-ring focus-within:ring-ring/50 h-64 rounded rounded-md border focus-within:ring-[3px]"
+                      />
+                    </Field>
+                  );
+                }}
+              </form.Field>
+              <form.Field name="introspection.includeActiveOperationHeaders">
+                {field => {
+                  return (
+                    <Field className="flex-row items-start">
+                      <Switch
+                        className="mt-0.5 !w-8"
+                        checked={field.state.value ?? false}
+                        onCheckedChange={field.handleChange}
+                      />
+                      <div>
+                        <FieldLabel htmlFor={field.name}>
+                          Include active operation headers
+                        </FieldLabel>
+                        <FieldDescription>
+                          Active operation (tab) headers will be included in the introspection query
+                        </FieldDescription>
+                      </div>
                     </Field>
                   );
                 }}

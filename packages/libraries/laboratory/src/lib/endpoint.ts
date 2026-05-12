@@ -11,6 +11,7 @@ import { LaboratoryEnv, LaboratoryEnvActions, LaboratoryEnvState } from '@/lib/e
 import { LaboratoryOperationsActions, LaboratoryOperationsState } from '@/lib/operations';
 import { handleTemplate } from '@/lib/operations.utils';
 import { LaboratoryPluginsActions, LaboratoryPluginsState } from '@/lib/plugins';
+import { LaboratoryPreflightActions, LaboratoryPreflightState } from '@/lib/preflight';
 import { asyncInterval } from '@/lib/utils';
 import { SubscriptionProtocol, UrlLoader } from '@graphql-tools/url-loader';
 import type { LaboratorySettingsActions, LaboratorySettingsState } from './settings';
@@ -20,6 +21,7 @@ export interface LaboratoryEndpointState {
   schema: GraphQLSchema | null;
   introspection: IntrospectionQuery | null;
   defaultEndpoint: string | null;
+  shouldPollSchema: boolean;
 }
 
 export interface LaboratoryEndpointActions {
@@ -38,6 +40,7 @@ export const useEndpoint = (props: {
   operationsApi?: LaboratoryOperationsState & LaboratoryOperationsActions;
   envApi?: LaboratoryEnvState & LaboratoryEnvActions;
   pluginsApi?: LaboratoryPluginsState & LaboratoryPluginsActions;
+  preflightApi?: LaboratoryPreflightState & LaboratoryPreflightActions;
 }): LaboratoryEndpointState & LaboratoryEndpointActions => {
   const [endpoint, _setEndpoint] = useState<string | null>(props.defaultEndpoint ?? null);
   const [introspection, setIntrospection] = useState<IntrospectionQuery | null>(null);
@@ -89,19 +92,67 @@ export const useEndpoint = (props: {
           }
 
           try {
+            let env = options?.env?.variables ?? envVariablesRef.current ?? {};
+            let plugins = options?.pluginsState ?? pluginsStateRef.current ?? {};
+
+            let sourceHeaders: Record<string, string> = {};
+
+            if (props.settingsApi?.settings.introspection.headers) {
+              try {
+                sourceHeaders = JSON.parse(props.settingsApi?.settings.introspection.headers);
+              } catch {}
+            }
+
+            if (
+              props.settingsApi?.settings.introspection.includeActiveOperationHeaders &&
+              activeOperationHeadersRef.current
+            ) {
+              try {
+                sourceHeaders = {
+                  ...sourceHeaders,
+                  ...JSON.parse(activeOperationHeadersRef.current),
+                };
+              } catch {}
+            }
+
+            let stringifiedHeaders = JSON.stringify(sourceHeaders);
+
+            if (stringifiedHeaders.includes('{{')) {
+              try {
+                const preflightResult = await props.preflightApi?.runPreflight?.(
+                  props.pluginsApi?.plugins ?? [],
+                  props.pluginsApi?.pluginsState ?? {},
+                );
+
+                props?.envApi?.setEnv(preflightResult?.env ?? { variables: {} });
+                props?.pluginsApi?.setPluginsState(preflightResult?.pluginsState ?? {});
+
+                env = preflightResult?.env?.variables ?? {};
+                plugins = preflightResult?.pluginsState ?? {};
+
+                if (preflightResult?.headers) {
+                  stringifiedHeaders = JSON.stringify({
+                    ...sourceHeaders,
+                    ...preflightResult?.headers,
+                  });
+                }
+              } catch (error: unknown) {
+                toast.error('Failed to run preflight');
+              }
+            }
+
             let parsedHeaders: Record<string, string> = {};
 
             try {
-              parsedHeaders = activeOperationHeadersRef.current
-                ? JSON.parse(
-                    handleTemplate(activeOperationHeadersRef.current, {
-                      ...(options?.env?.variables ?? envVariablesRef.current ?? {}),
-                      plugins: options?.pluginsState ?? pluginsStateRef.current ?? {},
-                    }),
-                  )
-                : {};
+              parsedHeaders = JSON.parse(
+                handleTemplate(stringifiedHeaders, {
+                  ...env,
+                  plugins,
+                }),
+              );
             } catch (error: unknown) {
               toast.error('Failed to parse headers');
+              parsedHeaders = {};
             }
 
             const result = await loader.load(endpoint, {
@@ -164,6 +215,8 @@ export const useEndpoint = (props: {
       props.settingsApi?.settings.fetch.timeout,
       props.settingsApi?.settings.introspection.method,
       props.settingsApi?.settings.introspection.schemaDescription,
+      props.settingsApi?.settings.introspection.headers,
+      props.settingsApi?.settings.introspection.includeActiveOperationHeaders,
     ],
   );
 
@@ -237,9 +290,8 @@ export const useEndpoint = (props: {
     endpoint,
     shouldPollSchema,
     fetchSchema,
-    props.operationsApi?.activeOperation?.headers,
-    props.envApi?.env?.variables,
-    props.pluginsApi?.pluginsState,
+    props.settingsApi?.settings.introspection.headers,
+    props.settingsApi?.settings.introspection.includeActiveOperationHeaders,
   ]);
 
   return {
@@ -250,5 +302,6 @@ export const useEndpoint = (props: {
     fetchSchema,
     restoreDefaultEndpoint,
     defaultEndpoint: props.defaultEndpoint ?? null,
+    shouldPollSchema,
   };
 };

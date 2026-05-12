@@ -19,6 +19,7 @@ import {
   ListTreeIcon,
   RotateCcwIcon,
   SearchIcon,
+  SettingsIcon,
   TextAlignStartIcon,
 } from 'lucide-react';
 import { toast } from 'sonner';
@@ -759,7 +760,17 @@ export const Builder = (props: {
   operationName?: string | null;
   isReadOnly?: boolean;
 }) => {
-  const { schema, activeOperation, endpoint, setEndpoint, defaultEndpoint } = useLaboratory();
+  const {
+    schema,
+    activeOperation,
+    endpoint,
+    setEndpoint,
+    defaultEndpoint,
+    tabs,
+    addTab,
+    setActiveTab,
+    shouldPollSchema,
+  } = useLaboratory();
 
   const [endpointValue, setEndpointValue] = useState<string>(endpoint ?? '');
   const [searchValue, setSearchValue] = useState<string>('');
@@ -845,23 +856,45 @@ export const Builder = (props: {
 
   return (
     <div className="bg-card flex size-full flex-col overflow-hidden">
-      <div className="flex items-center px-3 pt-3">
+      <div className="flex items-center gap-3 px-3 pt-3">
         <span className="text-base font-medium">Builder</span>
-        <div className="ml-auto flex items-center">
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                onClick={() => setOpenPaths([])}
-                variant="ghost"
-                size="icon-sm"
-                className="p-1! size-6 rounded-sm"
-                disabled={openPaths.length === 0}
-              >
-                <CopyMinusIcon className="text-muted-foreground size-4" />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>Collapse all</TooltipContent>
-          </Tooltip>
+        <div className="ml-auto flex items-center gap-3">
+          {shouldPollSchema && (
+            <Button
+              onClick={() => {
+                const tab =
+                  tabs.find(t => t.type === 'settings') ??
+                  addTab({
+                    type: 'settings',
+                    data: {},
+                  });
+
+                setActiveTab(tab);
+              }}
+              variant="ghost"
+              size="sm"
+              className="p-1! h-6 rounded-sm !px-1.5"
+            >
+              <SettingsIcon className="size-4" />
+              Introspection settings
+            </Button>
+          )}
+          <div className="flex items-center">
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  onClick={() => setOpenPaths([])}
+                  variant="ghost"
+                  size="icon-sm"
+                  className="p-1! size-6 rounded-sm"
+                  disabled={openPaths.length === 0}
+                >
+                  <CopyMinusIcon className="text-muted-foreground size-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>Collapse all</TooltipContent>
+            </Tooltip>
+          </div>
         </div>
       </div>
       <div className="px-3 pt-3">
