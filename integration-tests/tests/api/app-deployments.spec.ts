@@ -1787,6 +1787,9 @@ test('get app deployment documents via GraphQL API', async () => {
       input: {
         appName: 'app-name',
         appVersion: 'app-version',
+        target: {
+          byId: target.id,
+        },
         documents: [
           {
             hash: 'aaa',
@@ -1822,7 +1825,7 @@ test('get app deployment documents via GraphQL API', async () => {
       appDeploymentName: 'app-name',
       appDeploymentVersion: 'app-version',
     },
-    authToken: organizationAccessToken.privateAccessKey,
+    authToken: token.secret,
   }).then(res => res.expectNoGraphQLErrors());
   expect(result.target).toMatchObject({
     appDeployment: {
