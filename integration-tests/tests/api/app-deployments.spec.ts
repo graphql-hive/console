@@ -1,6 +1,7 @@
 import { buildASTSchema, parse } from 'graphql';
 import { createLogger } from 'graphql-yoga';
 import { pollFor } from 'testkit/flow';
+import { ResourceAssignmentModeType } from 'testkit/gql/graphql';
 import { initSeed } from 'testkit/seed';
 import { getServiceHost } from 'testkit/utils';
 import z from 'zod';
@@ -1742,8 +1743,9 @@ test('retire app deployments fails without feature flag enabled for organization
 });
 
 test('get app deployment documents via GraphQL API', async () => {
-  const { createOrg, ownerToken } = await initSeed().createOwner();
-  const { createProject, setFeatureFlag, organization } = await createOrg();
+  const { createOrg } = await initSeed().createOwner();
+  const { createProject, setFeatureFlag, organization, createOrganizationAccessToken } =
+    await createOrg();
   await setFeatureFlag('appDeployments', true);
   const { createTargetAccessToken, project, target } = await createProject();
   const token = await createTargetAccessToken({});
@@ -1769,6 +1771,14 @@ test('get app deployment documents via GraphQL API', async () => {
         d: String
       }
     `,
+  });
+
+  // Ensure this is possible with the minimal available permissions.
+  const organizationAccessToken = await createOrganizationAccessToken({
+    permissions: ['appDeployment:create'],
+    resources: {
+      mode: ResourceAssignmentModeType.All,
+    },
   });
 
   const { addDocumentsToAppDeployment } = await execute({
@@ -1797,7 +1807,7 @@ test('get app deployment documents via GraphQL API', async () => {
         ],
       },
     },
-    authToken: token.secret,
+    authToken: organizationAccessToken.privateAccessKey,
   }).then(res => res.expectNoGraphQLErrors());
   expect(addDocumentsToAppDeployment.error).toBeNull();
 
@@ -1812,7 +1822,7 @@ test('get app deployment documents via GraphQL API', async () => {
       appDeploymentName: 'app-name',
       appDeploymentVersion: 'app-version',
     },
-    authToken: ownerToken,
+    authToken: organizationAccessToken.privateAccessKey,
   }).then(res => res.expectNoGraphQLErrors());
   expect(result.target).toMatchObject({
     appDeployment: {
