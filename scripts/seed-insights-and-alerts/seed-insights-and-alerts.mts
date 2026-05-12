@@ -1172,19 +1172,6 @@ async function main() {
   // Thresholds sized relative to ~60 ops/hr, ~2% error, ~200ms median latency baseline.
   const ruleShapes: AlertRuleShape[] = [
     {
-      // "Quiet majority of the time, occasional bumps"
-      name: 'Error Rate Above 5% - Last Hour',
-      type: MetricAlertRuleType.ErrorRate,
-      timeWindowMinutes: 60,
-      thresholdType: MetricAlertRuleThresholdType.FixedValue,
-      thresholdValue: 5,
-      direction: MetricAlertRuleDirection.Above,
-      severity: MetricAlertRuleSeverity.Info,
-      channelKeys: ['webhook'],
-      desiredState: 'NORMAL',
-      scenario: 'occasional',
-    },
-    {
       // "Latency degrades during peak business hours"
       name: 'P95 Latency Above 800ms - Last 30 Min',
       type: MetricAlertRuleType.Latency,
@@ -1263,33 +1250,6 @@ async function main() {
       channelKeys: ['slack', 'webhook'],
       desiredState: 'FIRING',
       scenario: 'degrading_trend',
-    },
-    {
-      // "DDoS / abuse — rare but huge surges"
-      name: 'Request Rate Above 200 - Last 5 Min',
-      type: MetricAlertRuleType.Traffic,
-      timeWindowMinutes: 5,
-      thresholdType: MetricAlertRuleThresholdType.FixedValue,
-      thresholdValue: 200,
-      direction: MetricAlertRuleDirection.Above,
-      severity: MetricAlertRuleSeverity.Critical,
-      channelKeys: ['slack', 'webhook'],
-      desiredState: 'FIRING',
-      scenario: 'rare_long',
-    },
-    {
-      // "Latency degrades during business hours; just recovered"
-      name: 'P75 Latency Above 400ms - Last 30 Min',
-      type: MetricAlertRuleType.Latency,
-      metric: MetricAlertRuleMetric.P75,
-      timeWindowMinutes: 30,
-      thresholdType: MetricAlertRuleThresholdType.FixedValue,
-      thresholdValue: 400,
-      direction: MetricAlertRuleDirection.Above,
-      severity: MetricAlertRuleSeverity.Warning,
-      channelKeys: ['slack', 'webhook'],
-      desiredState: 'RECOVERING',
-      scenario: 'business_hours',
     },
     {
       // "Failed deploy → error spike → rollback. Just recovered."

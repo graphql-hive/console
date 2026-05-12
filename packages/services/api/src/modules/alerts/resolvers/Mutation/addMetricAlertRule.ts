@@ -1,8 +1,12 @@
 import { Session } from '../../../auth/lib/authz';
+import { METRIC_ALERT_RULES_PER_TARGET_LIMIT } from '../../../commerce/constants';
 import { OrganizationManager } from '../../../organization/providers/organization-manager';
 import { IdTranslator } from '../../../shared/providers/id-translator';
 import { METRIC_ALERT_RULES_ENABLED } from '../../providers/metric-alert-rules-flag-token';
-import { MetricAlertRulesStorage } from '../../providers/metric-alert-rules-storage';
+import {
+  MetricAlertRuleLimitExceededError,
+  MetricAlertRulesStorage,
+} from '../../providers/metric-alert-rules-storage';
 import type { MutationResolvers } from './../../../../__generated__/types';
 
 export const addMetricAlertRule: NonNullable<MutationResolvers['addMetricAlertRule']> = async (
@@ -89,28 +93,53 @@ export const addMetricAlertRule: NonNullable<MutationResolvers['addMetricAlertRu
     }
   }
 
+  // Best-effort cap check. The race-safe guard inside the storage transaction
+  // is what actually enforces the limit; this check just keeps the common
+  // "user clicks submit at 10/10" path out of the transaction (and out of
+  // the FOR UPDATE lock) entirely.
+  const currentRuleCount = await storage.countMetricAlertRulesByTarget({ targetId });
+  if (currentRuleCount >= METRIC_ALERT_RULES_PER_TARGET_LIMIT) {
+    return {
+      error: {
+        message: `Limit of ${METRIC_ALERT_RULES_PER_TARGET_LIMIT} metric alert rules per target reached.`,
+      },
+    };
+  }
+
   // The rule row + channel-link rows are written in a single transaction
   // inside `addMetricAlertRule` so a failure on either side rolls back the
   // other. Avoids the previously-possible "rule with no channels" partial
   // state when the channel insert errored after the rule was already
   // committed.
-  const rule = await storage.addMetricAlertRule({
-    organizationId,
-    projectId,
-    targetId,
-    createdByUserId: currentUser.id,
-    type: input.type,
-    timeWindowMinutes: input.timeWindowMinutes,
-    metric: input.metric ?? null,
-    thresholdType: input.thresholdType,
-    thresholdValue: input.thresholdValue,
-    direction: input.direction,
-    severity: input.severity,
-    name: input.name,
-    confirmationMinutes: input.confirmationMinutes ?? 0,
-    savedFilterId: input.savedFilterId ?? null,
-    channelIds: input.channelIds,
-  });
+  let rule;
+  try {
+    rule = await storage.addMetricAlertRule({
+      organizationId,
+      projectId,
+      targetId,
+      createdByUserId: currentUser.id,
+      type: input.type,
+      timeWindowMinutes: input.timeWindowMinutes,
+      metric: input.metric ?? null,
+      thresholdType: input.thresholdType,
+      thresholdValue: input.thresholdValue,
+      direction: input.direction,
+      severity: input.severity,
+      name: input.name,
+      confirmationMinutes: input.confirmationMinutes ?? 0,
+      savedFilterId: input.savedFilterId ?? null,
+      channelIds: input.channelIds,
+    });
+  } catch (error) {
+    // The race-safe guard inside the transaction throws this when a
+    // concurrent request commits between the resolver-layer count check and
+    // this transaction's count + insert. Translates to the same structured
+    // error the early check returns above.
+    if (error instanceof MetricAlertRuleLimitExceededError) {
+      return { error: { message: error.message } };
+    }
+    throw error;
+  }
 
   return {
     ok: { addedMetricAlertRule: rule },

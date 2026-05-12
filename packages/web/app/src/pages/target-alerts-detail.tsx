@@ -16,6 +16,7 @@ import {
   MetricAlertRuleThresholdType,
   MetricAlertRuleType,
 } from '@/gql/graphql';
+import { useNavigate } from '@tanstack/react-router';
 
 const TargetAlertsDetailPage_Query = graphql(`
   query TargetAlertsDetailPage_Query(
@@ -148,6 +149,7 @@ export function TargetAlertsDetailPage(props: {
   ruleId: string;
 }) {
   const { organizationSlug, projectSlug, targetSlug, ruleId } = props;
+  const navigate = useNavigate();
 
   const [viewRangeMinutes, setViewRangeMinutes] = useState('60');
 
@@ -254,6 +256,12 @@ export function TargetAlertsDetailPage(props: {
           organizationSlug={organizationSlug}
           projectSlug={projectSlug}
           targetSlug={targetSlug}
+          onRuleDeleted={() => {
+            void navigate({
+              to: '/$organizationSlug/$projectSlug/$targetSlug/alerts/rules',
+              params: { organizationSlug, projectSlug, targetSlug },
+            });
+          }}
         />
       </aside>
     </div>

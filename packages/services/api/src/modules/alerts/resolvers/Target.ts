@@ -1,4 +1,7 @@
-import { ALERT_STATE_LOG_RETENTION_DAYS } from '../../commerce/constants';
+import {
+  ALERT_STATE_LOG_RETENTION_DAYS,
+  METRIC_ALERT_RULES_PER_TARGET_LIMIT,
+} from '../../commerce/constants';
 import { OrganizationManager } from '../../organization/providers/organization-manager';
 import { METRIC_ALERT_RULES_ENABLED } from '../providers/metric-alert-rules-flag-token';
 import { MetricAlertRulesStorage } from '../providers/metric-alert-rules-storage';
@@ -22,6 +25,7 @@ export const Target: Pick<
   | 'metricAlertRule'
   | 'metricAlertRuleStateLog'
   | 'metricAlertRules'
+  | 'metricAlertRulesLimit'
   | 'metricAlertStateLogRetentionDays'
   | 'viewerCanUseMetricAlertRules'
 > = {
@@ -63,4 +67,5 @@ export const Target: Pick<
     const plan = organization.billingPlan as keyof typeof ALERT_STATE_LOG_RETENTION_DAYS;
     return ALERT_STATE_LOG_RETENTION_DAYS[plan] ?? ALERT_STATE_LOG_RETENTION_DAYS.HOBBY;
   },
+  metricAlertRulesLimit: () => METRIC_ALERT_RULES_PER_TARGET_LIMIT,
 };

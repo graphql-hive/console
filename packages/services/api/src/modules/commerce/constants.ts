@@ -27,3 +27,11 @@ export const ALERT_STATE_LOG_RETENTION_DAYS: Record<'HOBBY' | 'PRO' | 'ENTERPRIS
   PRO: 7,
   ENTERPRISE: 30,
 };
+
+/**
+ * Maximum number of metric alert rules permitted per target. Flat across all
+ * plans so the UX is predictable and free-tier users hit the same ceiling
+ * paid users do. Counted against every row (enabled or disabled) so a user
+ * cannot circumvent the cap by toggling rules off.
+ */
+export const METRIC_ALERT_RULES_PER_TARGET_LIMIT = 10;

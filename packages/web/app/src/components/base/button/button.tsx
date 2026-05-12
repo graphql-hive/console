@@ -30,6 +30,9 @@ export const buttonVariants = cva(
           'border-neutral-5 bg-transparent text-neutral-11 hover:bg-neutral-3 hover:text-neutral-12',
         ghost:
           'border-transparent bg-transparent text-neutral-11 hover:bg-neutral-3 hover:text-neutral-12',
+        destructive: [
+          'bg-critical_08 border-critical_30 text-critical hover:bg-critical_10 hover:border-critical hover:text-critical',
+        ],
       },
       size: {
         default: '',

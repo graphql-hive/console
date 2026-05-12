@@ -305,6 +305,12 @@ export default gql`
     The frontend uses this to bound the activity-page date-range picker.
     """
     metricAlertStateLogRetentionDays: Int!
+    """
+    Maximum metric alert rules permitted per target. Flat across all plans.
+    The frontend reads this to render an "X of N rules" indicator and to
+    disable the "Add rule" affordance when the cap is reached.
+    """
+    metricAlertRulesLimit: Int!
   }
 
   extend type Target {

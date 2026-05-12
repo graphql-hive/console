@@ -23,6 +23,7 @@ import {
 } from '@/gql/graphql';
 import { Link } from '@tanstack/react-router';
 import { AlertForm, ruleToFormDefaults } from './alert-form';
+import { DeleteRuleConfirmationDialog } from './delete-rule-confirmation-dialog';
 
 const TYPE_CATEGORY: Record<MetricAlertRuleType, string> = {
   [MetricAlertRuleType.ErrorRate]: 'Reliability',
@@ -120,6 +121,12 @@ export type AlertConditionsPanelProps = {
   organizationSlug: string;
   projectSlug: string;
   targetSlug: string;
+  /**
+   * Called after the user confirms a delete via the Delete-rule dialog. The
+   * page that hosts this panel is responsible for navigation (typically back
+   * to the rules list) and any query invalidation.
+   */
+  onRuleDeleted?: () => void;
 };
 
 function RelativeTimestamp({ iso }: { iso: string }) {
@@ -155,6 +162,7 @@ export function AlertConditionsPanel({
   organizationSlug,
   projectSlug,
   targetSlug,
+  onRuleDeleted,
 }: AlertConditionsPanelProps) {
   const metricLabel =
     rule.type === MetricAlertRuleType.Latency && rule.metric
@@ -258,12 +266,21 @@ export function AlertConditionsPanel({
         ]}
       />
 
-      <ModifyAlertSheet
-        rule={rule}
-        organizationSlug={organizationSlug}
-        projectSlug={projectSlug}
-        targetSlug={targetSlug}
-      />
+      <div className="flex items-center gap-2">
+        <ModifyAlertSheet
+          rule={rule}
+          organizationSlug={organizationSlug}
+          projectSlug={projectSlug}
+          targetSlug={targetSlug}
+        />
+        <DeleteRuleButton
+          ruleId={rule.id}
+          ruleName={rule.name}
+          organizationSlug={organizationSlug}
+          projectSlug={projectSlug}
+          onDeleted={onRuleDeleted}
+        />
+      </div>
     </div>
   );
 }
@@ -284,9 +301,7 @@ function ModifyAlertSheet({
 
   return (
     <Sheet open={open} onOpenChange={setOpen}>
-      <div className="flex">
-        <Button label="Modify this alert" onClick={() => setOpen(true)} />
-      </div>
+      <Button label="Modify this alert" onClick={() => setOpen(true)} />
       <SheetContent
         ref={setContentEl}
         side="right"
@@ -314,5 +329,39 @@ function ModifyAlertSheet({
         ) : null}
       </SheetContent>
     </Sheet>
+  );
+}
+
+function DeleteRuleButton({
+  ruleId,
+  ruleName,
+  organizationSlug,
+  projectSlug,
+  onDeleted,
+}: {
+  ruleId: string;
+  ruleName: string;
+  organizationSlug: string;
+  projectSlug: string;
+  onDeleted?: () => void;
+}) {
+  const [open, setOpen] = useState(false);
+  return (
+    <>
+      <Button variant="destructive" label="Delete rule" onClick={() => setOpen(true)} />
+      {open ? (
+        <DeleteRuleConfirmationDialog
+          ruleId={ruleId}
+          ruleName={ruleName}
+          organizationSlug={organizationSlug}
+          projectSlug={projectSlug}
+          onCancel={() => setOpen(false)}
+          onConfirm={() => {
+            setOpen(false);
+            onDeleted?.();
+          }}
+        />
+      ) : null}
+    </>
   );
 }

@@ -8,6 +8,21 @@ import type {
   MetricAlertRuleState,
   MetricAlertStateLogEntry,
 } from '../../../shared/entities';
+import { METRIC_ALERT_RULES_PER_TARGET_LIMIT } from '../../commerce/constants';
+
+/**
+ * Thrown by `addMetricAlertRule` when the per-target cap is reached. The
+ * resolver catches this to translate into the structured `{ error: { message } }`
+ * mutation result. The check happens inside the same transaction as the
+ * insert (after `SELECT ... FOR UPDATE` on the target row) so concurrent
+ * submissions cannot bypass the cap.
+ */
+export class MetricAlertRuleLimitExceededError extends Error {
+  constructor(public readonly limit: number) {
+    super(`Limit of ${limit} metric alert rules per target reached.`);
+    this.name = 'MetricAlertRuleLimitExceededError';
+  }
+}
 
 /**
  * Cursor encoding for `getIncidentConnection`. Encodes both `started_at` and
@@ -214,6 +229,15 @@ export class MetricAlertRulesStorage {
     return result.map(row => MetricAlertRuleModel.parse(row) as MetricAlertRule);
   }
 
+  async countMetricAlertRulesByTarget(args: { targetId: string }): Promise<number> {
+    const result = await this.pool.oneFirst(psql`/* countMetricAlertRulesByTarget */
+      SELECT count(*)::int
+      FROM "metric_alert_rules"
+      WHERE "target_id" = ${args.targetId}
+    `);
+    return zod.number().parse(result);
+  }
+
   async addMetricAlertRule(args: {
     organizationId: string;
     projectId: string;
@@ -243,6 +267,27 @@ export class MetricAlertRulesStorage {
     // at the DB layer (no column DEFAULTs) so the application stays the
     // source of truth for these values.
     const result = await this.pool.transaction('addMetricAlertRule', async trx => {
+      // Race-safe per-target cap. SELECT ... FOR UPDATE on the target row
+      // serializes concurrent rule creates against the same target so the
+      // count below reflects every prior committed insert. The lock is held
+      // only for the duration of this transaction (count + inserts), and
+      // only blocks other writers — concurrent reads of the rule list are
+      // unaffected. Resolver-layer best-effort check at addMetricAlertRule.ts
+      // handles the common UX path; this guard catches the rare race window.
+      await trx.query(psql`/* addMetricAlertRule:lockTarget */
+        SELECT "id" FROM "targets" WHERE "id" = ${args.targetId} FOR UPDATE
+      `);
+      const currentCount = zod.number().parse(
+        await trx.oneFirst(psql`/* addMetricAlertRule:count */
+          SELECT count(*)::int
+          FROM "metric_alert_rules"
+          WHERE "target_id" = ${args.targetId}
+        `),
+      );
+      if (currentCount >= METRIC_ALERT_RULES_PER_TARGET_LIMIT) {
+        throw new MetricAlertRuleLimitExceededError(METRIC_ALERT_RULES_PER_TARGET_LIMIT);
+      }
+
       const ruleRow = await trx.one(psql`/* addMetricAlertRule:rule */
         INSERT INTO "metric_alert_rules" (
           "organization_id"

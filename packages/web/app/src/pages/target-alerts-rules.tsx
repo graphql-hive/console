@@ -34,6 +34,7 @@ const TargetAlertsRulesPage_Query = graphql(`
       }
     ) {
       id
+      metricAlertRulesLimit
       metricAlertRules {
         id
         name
@@ -212,6 +213,29 @@ const RULE_COLUMNS: ColumnDef<RuleRow, any>[] = [
   }),
 ];
 
+function UsageChip({ used, limit }: { used: number; limit: number }) {
+  const ratio = limit > 0 ? used / limit : 0;
+  const color =
+    used >= limit
+      ? 'border-critical_30 bg-critical_08 text-critical'
+      : ratio >= 0.8
+        ? 'border-warning/40 bg-warning/10 text-warning'
+        : 'border-neutral-5 bg-neutral-3 text-neutral-11';
+  const label = `${used} / ${limit} rules`;
+  const title =
+    used >= limit
+      ? 'Limit reached. Delete a rule to free a slot.'
+      : `${used} of ${limit} configured rules used.`;
+  return (
+    <span
+      title={title}
+      className={`inline-flex items-center rounded-sm border px-1.5 py-0.5 text-[11px] font-medium tabular-nums ${color}`}
+    >
+      {label}
+    </span>
+  );
+}
+
 export function TargetAlertsRulesPage(props: {
   organizationSlug: string;
   projectSlug: string;
@@ -252,11 +276,16 @@ export function TargetAlertsRulesPage(props: {
     [result.data?.target?.metricAlertRules],
   );
 
+  const limit = result.data?.target?.metricAlertRulesLimit;
+
   return (
     <>
       <PageLead
-        description="The following alerts are currently active for this target."
         title="Configured alerts"
+        description="The following alerts are currently active for this target."
+        titleAccessory={
+          limit !== undefined ? <UsageChip used={rules.length} limit={limit} /> : null
+        }
       />
 
       {result.fetching && rules.length === 0 ? (
