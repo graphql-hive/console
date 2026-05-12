@@ -222,8 +222,7 @@ export const AlertFormSchema = z.object({
   // Zero channels is intentionally allowed here so users can create a rule
   // and observe its state transitions in the UI without firing notifications
   // ("test mode"), then attach destinations once the rule's behavior is
-  // trusted. The .min(1, 'Select a channel') below still requires every
-  // channel row the user actually adds to have a real selection.
+  // trusted.
   channels: z.array(
     z.object({
       channelId: z.string().min(1, 'Select a channel'),
@@ -284,7 +283,7 @@ export const DEFAULT_ALERT_FORM_VALUES: AlertFormValues = {
   thresholdValue: '',
   savedFilterId: '',
   confirmationMinutes: '0',
-  channels: [{ channelId: '' }],
+  channels: [],
 };
 
 export type AlertFormRuleSeed = {
