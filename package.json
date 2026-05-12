@@ -165,7 +165,8 @@
       "yauzl@2.x.x": "^3.2.1",
       "glob@10.x.x": "^10.5.0",
       "path-to-regexp@0.x.x": "^0.1.13",
-      "fast-uri@2.x.x": "3.x.x"
+      "fast-uri@2.x.x": "3.x.x",
+      "protobufjs@8.x.x": "^8.0.2"
     },
     "patchedDependencies": {
       "mjml-core@4.14.0": "patches/mjml-core@4.14.0.patch",
