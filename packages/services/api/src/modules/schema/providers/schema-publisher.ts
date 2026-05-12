@@ -66,6 +66,7 @@ import { SchemaVersionHelper } from './schema-version-helper';
 import {
   CreateContractVersionInput,
   SchemaLogDiffInput,
+  SchemaVersion,
   SchemaVersionStore,
 } from './schema-version-store';
 
@@ -2189,7 +2190,7 @@ export class SchemaPublisher {
 
   @traceFn('SchemaPublisher.promoteSchemaVersion')
   async promoteSchemaVersion(
-    args: { target: Types.TargetReferenceInput; schemaVersionId: string },
+    args: { target: Types.TargetReferenceInput; source: Types.SchemaVersionPromoteSourceInput },
     signal: AbortSignal,
   ) {
     this.logger.debug('Start promote graph.');
@@ -2204,11 +2205,65 @@ export class SchemaPublisher {
       this.session.raise('schemaVersion:publish');
     }
 
-    trace.getActiveSpan()?.setAttributes({
-      'hive.organization.id': selector.organizationId,
-      'hive.target.id': selector.targetId,
-      'hive.project.id': selector.projectId,
-    });
+    let source:
+      | {
+          type: 'target';
+          targetId: string;
+        }
+      | {
+          type: 'schemaVersion';
+          schemaVersionId: string;
+        };
+
+    if (args.source.fromTarget) {
+      const target = await this.idTranslator.resolveTargetReference({
+        reference: args.target,
+      });
+
+      if (!target) {
+        this.session.raise('schemaVersion:publish');
+      }
+
+      if (target?.projectId !== selector.projectId) {
+        this.session.raise('schemaVersion:publish');
+      }
+
+      source = {
+        type: 'target',
+        targetId: target.targetId,
+      };
+    }
+
+    if (args.source.fromSchemaVersionById) {
+      const project = await this.storage.getProject({
+        organizationId: selector.organizationId,
+        projectId: selector.projectId,
+      });
+
+      const schemaVersion = await this.schemaManager.getSchemaVersionByIdForProject(
+        project,
+        args.source.fromSchemaVersionById,
+      );
+
+      if (!schemaVersion) {
+        return {
+          type: 'error' as const,
+          message: 'Schema Version not found.',
+        };
+      }
+
+      source = {
+        type: 'schemaVersion',
+        schemaVersionId: args.source.fromSchemaVersionById,
+      };
+    }
+
+    if (args.source.fromTarget)
+      trace.getActiveSpan()?.setAttributes({
+        'hive.organization.id': selector.organizationId,
+        'hive.target.id': selector.targetId,
+        'hive.project.id': selector.projectId,
+      });
 
     // TODO: this should probably be another permission...
     await this.session.assertPerformAction({
@@ -2223,20 +2278,6 @@ export class SchemaPublisher {
         serviceName: null,
       },
     });
-
-    const [project] = await Promise.all([
-      this.storage.getProject({
-        organizationId: selector.organizationId,
-        projectId: selector.projectId,
-      }),
-    ]);
-
-    if (project.type !== Types.ProjectType.FEDERATION) {
-      return {
-        type: 'error' as const,
-        message: 'Only Federation projects are supported.',
-      };
-    }
 
     return this.mutex
       .perform(
@@ -2259,7 +2300,7 @@ export class SchemaPublisher {
             organizationId: selector.organizationId,
             targetId: selector.targetId,
             projectId: selector.projectId,
-            schemaVersionId: args.schemaVersionId,
+            source,
           });
         },
       )
@@ -2279,7 +2320,15 @@ export class SchemaPublisher {
     organizationId: string;
     projectId: string;
     targetId: string;
-    schemaVersionId: string;
+    source:
+      | {
+          type: 'target';
+          targetId: string;
+        }
+      | {
+          type: 'schemaVersion';
+          schemaVersionId: string;
+        };
   }) {
     this.logger.debug('start graph promotion process');
     const [organization, project, target] = await Promise.all([
@@ -2295,10 +2344,46 @@ export class SchemaPublisher {
       };
     }
 
-    const originSchemaVersionLookup = await this.schemaManager.getSchemaVersionByIdForProject(
-      project,
-      args.schemaVersionId,
-    );
+    let originSchemaVersionLookup: {
+      target: Target;
+      schemaVersion: SchemaVersion & {
+        projectId: string;
+        organizationId: string;
+      };
+    } | null = null;
+
+    if (args.source.type === 'schemaVersion') {
+      originSchemaVersionLookup = await this.schemaManager.getSchemaVersionByIdForProject(
+        project,
+        args.source.schemaVersionId,
+      );
+    }
+
+    if (args.source.type === 'target') {
+      const sourceTarget =
+        args.targetId === target.id ? target : await this.storage.getTargetById(args.targetId);
+
+      if (!sourceTarget) {
+        return {
+          type: 'error' as const,
+          message: 'Source target does not exist.',
+        };
+      }
+
+      const schemaVersion = await this.schemaManager.getMaybeLatestVersion(sourceTarget);
+
+      if (!schemaVersion) {
+        return {
+          type: 'error' as const,
+          message: 'Source target has no schema version.',
+        };
+      }
+
+      originSchemaVersionLookup = {
+        target,
+        schemaVersion,
+      };
+    }
 
     if (!originSchemaVersionLookup) {
       return {

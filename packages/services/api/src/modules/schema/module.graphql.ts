@@ -1888,9 +1888,34 @@ export default gql`
     publishedSubgraphs: [SubgraphOriginSubgraphReference!]
   }
 
+  input SchemaVersionPromoteTargetInput @oneOf {
+    toTarget: TargetReferenceInput
+  }
+
+  input SchemaVersionPromoteSourceInput @oneOf {
+    """
+    The latest version within the target should be promoted.
+    """
+    fromTarget: TargetReferenceInput
+    """
+    A specific version should be promoted.
+    """
+    fromSchemaVersionById: ID
+  }
+
+  """
+  Input for a schema version promotion.
+  Both the source and target must be within the same project.
+  """
   input SchemaVersionPromoteInput {
-    target: TargetReferenceInput!
-    schemaVersionId: ID!
+    """
+    The source of the schema promotion.
+    """
+    source: SchemaVersionPromoteSourceInput!
+    """
+    Where the schema version should be promoted to.
+    """
+    target: SchemaVersionPromoteTargetInput!
   }
 
   type SchemaVersionPromoteResultOk {

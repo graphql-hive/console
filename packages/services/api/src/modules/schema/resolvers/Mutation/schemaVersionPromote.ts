@@ -8,8 +8,8 @@ export const schemaVersionPromote: NonNullable<MutationResolvers['schemaVersionP
 ) => {
   const result = await injector.get(SchemaPublisher).promoteSchemaVersion(
     {
-      target: args.input.target,
-      schemaVersionId: args.input.schemaVersionId,
+      target: args.input.target.toTarget,
+      source: args.input.source,
     },
     request.signal,
   );
