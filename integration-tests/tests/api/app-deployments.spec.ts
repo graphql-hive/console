@@ -1,7 +1,6 @@
 import { buildASTSchema, parse } from 'graphql';
 import { createLogger } from 'graphql-yoga';
 import { pollFor } from 'testkit/flow';
-import { ResourceAssignmentModeType } from 'testkit/gql/graphql';
 import { initSeed } from 'testkit/seed';
 import { getServiceHost } from 'testkit/utils';
 import z from 'zod';
@@ -9,6 +8,7 @@ import { createHive } from '@graphql-hive/core';
 import { psql } from '@hive/postgres';
 import { clickHouseInsert } from '../../testkit/clickhouse';
 import { graphql } from '../../testkit/gql';
+import { ResourceAssignmentModeType } from '../../testkit/gql/graphql';
 import { execute } from '../../testkit/graphql';
 
 const CreateAppDeployment = graphql(`
