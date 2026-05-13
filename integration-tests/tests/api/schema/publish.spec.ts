@@ -4532,7 +4532,7 @@ test.concurrent(
     const conn = connectionString();
     const storage = await createStorage(conn, 2);
     const schemaVersions = new SchemaVersionStore(storage.pool);
-    await schemaVersions.createSchemaVersion({
+    await schemaVersions.createPublishSchemaVersion({
       schema: brokenSdl,
       author: 'Jochen',
       async actionFn() {},
