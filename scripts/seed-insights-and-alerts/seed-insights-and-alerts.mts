@@ -507,9 +507,28 @@ async function promptForEmail(): Promise<string> {
   }
 }
 
+type BillingPlan = 'HOBBY' | 'PRO' | 'ENTERPRISE';
+
+async function promptForPlan(): Promise<BillingPlan> {
+  const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
+  try {
+    const answer = (
+      await rl.question('Choose plan — [H]obby (default) / [P]ro / [E]nterprise: ')
+    )
+      .trim()
+      .toLowerCase();
+    if (answer.startsWith('e')) return 'ENTERPRISE';
+    if (answer.startsWith('p')) return 'PRO';
+    return 'HOBBY';
+  } finally {
+    rl.close();
+  }
+}
+
 async function main() {
   const inputEmail = await promptForEmail();
   const ownerEmail = inputEmail || `${generateUnique()}-${Date.now()}@localhost.localhost`;
+  const plan = await promptForPlan();
 
   console.log(`\n🚀 Creating owner (${ownerEmail}), org, project...`);
   const auth = await getOrCreateAuth(ownerEmail);
@@ -521,6 +540,21 @@ async function main() {
     r.expectNoGraphQLErrors(),
   );
   const organization = orgResult.createOrganization.ok!.createdOrganizationPayload.organization;
+
+  // Upgrade plan if requested. The GraphQL API only exposes upgradeToPro / downgradeToHobby,
+  // so ENTERPRISE (and PRO without going through Stripe) is set by direct UPDATE.
+  if (plan !== 'HOBBY') {
+    const planPool = await createPostgresDatabasePool({
+      connectionParameters: getSeedPGConnectionString(),
+    });
+    try {
+      await planPool.query(psql`
+        UPDATE "organizations" SET "plan_name" = ${plan} WHERE "id" = ${organization.id}
+      `);
+    } finally {
+      await planPool.end();
+    }
+  }
 
   // Create project
   const projectResult = await createProject(
@@ -535,7 +569,7 @@ async function main() {
   const project = projectResult.createProject.ok!.createdProject;
   const target = projectResult.createProject.ok!.createdTargets[0];
 
-  console.log(`   Org: ${organization.slug}`);
+  console.log(`   Org: ${organization.slug} (${plan})`);
   console.log(`   Project: ${project.slug}`);
   console.log(`   Target: ${target.slug}`);
 
