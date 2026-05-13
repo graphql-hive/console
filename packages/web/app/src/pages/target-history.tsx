@@ -1,17 +1,17 @@
 import { ReactElement, useEffect, useState } from 'react';
-import { CheckCircle2, GitCommitVerticalIcon, TriangleAlert } from 'lucide-react';
+import { FileSymlinkIcon, GitCommitVerticalIcon } from 'lucide-react';
 import { useQuery } from 'urql';
 import { Page, TargetLayout } from '@/components/layouts/target';
-import { Badge } from '@/components/ui/badge';
+import { BadgeRounded } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { NoSchemaVersion } from '@/components/ui/empty-list';
+import { PackageIcon } from '@/components/ui/icon';
 import { Meta } from '@/components/ui/meta';
 import { Subtitle, Title } from '@/components/ui/page';
 import { QueryError } from '@/components/ui/query-error';
 import { TimeAgo } from '@/components/ui/time-ago';
 import { graphql } from '@/gql';
 import { cn } from '@/lib/utils';
-import { ExternalLinkIcon } from '@radix-ui/react-icons';
 import { Link, Outlet, useParams, useRouter } from '@tanstack/react-router';
 
 const HistoryPage_VersionsPageQuery = graphql(`
@@ -109,7 +109,7 @@ function ListPage(props: {
         <Link
           key={version.id}
           className={cn(
-            'flex items-start items-stretch gap-3 rounded-lg px-3 py-3',
+            'flex items-start items-stretch gap-3 rounded-lg py-3 pl-2 pr-3',
             'hover:bg-neutral-5/40',
             versionId === version.id && 'bg-neutral-5/40',
           )}
@@ -121,26 +121,28 @@ function ListPage(props: {
             versionId: version.id,
           }}
         >
-          <div className="mt-0.5 flex-shrink-0">
-            {version.isValid ? (
-              <CheckCircle2 className={cn('size-4 text-green-500')} />
-            ) : (
-              <TriangleAlert className={cn('size-4 text-yellow-500')} />
-            )}
+          <div>
+            <BadgeRounded color={version.isValid ? 'green' : 'red'} className="mt-0.5 block" />
           </div>
           <div className="min-w-0 flex-1">
-            <div className="mb-1 flex flex-wrap items-center gap-2">
-              <div className="truncate font-mono text-xs font-semibold">
+            <div className="mb-1 flex flex-wrap items-center gap-3">
+              <div className="mr-1 truncate font-mono text-xs font-semibold">
                 {version.id.substring(0, 8)}
               </div>
               {version.origin.__typename === 'SchemaVersionPublishOrigin' && (
-                <Badge variant="success">Published</Badge>
+                <span className="font-mono text-[10px] text-xs uppercase tracking-wide text-emerald-400">
+                  Published
+                </span>
               )}
               {version.origin.__typename === 'SchemaVersionSubgraphRemoveOrigin' && (
-                <Badge variant="failure">Service Removed</Badge>
+                <span className="font-mono text-[10px] text-xs uppercase tracking-wide text-red-500">
+                  Removed
+                </span>
               )}
               {version.origin.__typename === 'SchemaVersionPromoteOrigin' && (
-                <Badge variant="informal">Promoted</Badge>
+                <span className="font-mono text-[10px] text-xs uppercase tracking-wide text-blue-500">
+                  Promoted
+                </span>
               )}
             </div>
 
@@ -148,25 +150,31 @@ function ListPage(props: {
               version.origin.publishedSubgraphs && (
                 <div className="mb-1 flex flex-wrap gap-1">
                   {version.origin.publishedSubgraphs.map((service, idx) => (
-                    <Badge key={idx} variant="outline" className="h-5 px-1.5 py-0 text-xs">
-                      {service.name}@{service.versionId.substring(0, 8)}
-                    </Badge>
+                    <span key={idx} className="text-xs">
+                      <PackageIcon className="mt-0.25 mr-1 inline size-3" />
+                      <span className="font-mono">
+                        {service.name}@{service.versionId.substring(0, 8)}
+                      </span>
+                    </span>
                   ))}
                 </div>
               )}
             {version.origin.__typename === 'SchemaVersionSubgraphRemoveOrigin' && (
               <div className="mb-1 flex flex-wrap gap-1">
                 {version.origin.removedSubgraphs.map((service, idx) => (
-                  <Badge key={idx} variant="outline" className="h-5 px-1.5 py-0 text-xs">
-                    {service.name}@{service.versionId.substring(0, 8)}
-                  </Badge>
+                  <span key={idx} className="text-xs">
+                    <PackageIcon className="mt-0.25 mr-1 inline size-3" />
+                    <span className="font-mono">
+                      {service.name}@{service.versionId.substring(0, 8)}
+                    </span>
+                  </span>
                 ))}
               </div>
             )}
             {version.origin.__typename === 'SchemaVersionPromoteOrigin' && (
-              <p className="text-muted-foreground text-xs">
-                Promoted from{' '}
-                <span className="text-foreground font-mono">
+              <p className="flex content-center text-xs">
+                <FileSymlinkIcon className="mt-0.25 mr-1 inline size-3" />
+                <span className="font-mono">
                   {version.origin.targetName}@{version.origin.schemaVersionId.substring(0, 8)}
                 </span>
               </p>
@@ -284,7 +292,7 @@ function HistoryPageContent(props: {
         <div>
           <div className="py-6">
             <Title>Versions</Title>
-            <Subtitle>Recently published schemas.</Subtitle>
+            <Subtitle>Recently published versions.</Subtitle>
           </div>
           <div className="flex flex-col gap-5">
             <div className="border-neutral-5/50 bg-neutral-2/50 flex min-w-[420px] grow flex-col gap-2.5 overflow-y-auto rounded-md border p-2.5">
@@ -314,7 +322,7 @@ function HistoryPageContent(props: {
     <div className="w-full">
       <div className="py-6">
         <Title>Versions</Title>
-        <Subtitle>Recently published schemas.</Subtitle>
+        <Subtitle>Recently published versions.</Subtitle>
       </div>
       {query.fetching ? null : (
         <NoSchemaVersion
@@ -344,5 +352,13 @@ export function TargetHistoryPage(props: {
         <HistoryPageContent {...props} />
       </TargetLayout>
     </>
+  );
+}
+
+function Badge(props: React.ComponentProps<'span'>) {
+  return (
+    <span className="focus-visible:border-ring focus-visible:ring-ring/50 aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive inline-flex w-fit shrink-0 items-center justify-center gap-1 overflow-hidden whitespace-nowrap rounded-md border px-2 py-0.5 text-xs font-medium transition-[color,box-shadow] focus-visible:ring-[3px] [&>svg]:pointer-events-none [&>svg]:size-3">
+      {props.children}
+    </span>
   );
 }

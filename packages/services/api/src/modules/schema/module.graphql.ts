@@ -1018,6 +1018,10 @@ export default gql`
     Schema changes that were introduced in this schema version (compared to the previous version).
     """
     schemaChanges: SchemaChangeConnection @tag(name: "public")
+    """
+    A list of the supergraph changes.
+    """
+    supergraphChanges: SchemaChangeConnection
 
     breakingSchemaChanges: SchemaChangeConnection
     safeSchemaChanges: SchemaChangeConnection

@@ -77,6 +77,7 @@ import { TargetExplorerTypePage } from './pages/target-explorer-type';
 import { TargetExplorerUnusedPage } from './pages/target-explorer-unused';
 import { TargetHistoryPage } from './pages/target-history';
 import { TargetHistoryVersionPage } from './pages/target-history-version';
+import { TargetHistorySchemaVersionPage } from './pages/target-history-version-new';
 import { TargetInsightsPage } from './pages/target-insights';
 import { TargetInsightsClientPage } from './pages/target-insights-client';
 import { TargetInsightsCoordinatePage } from './pages/target-insights-coordinate';
@@ -916,11 +917,11 @@ const targetHistoryVersionRoute = createRoute({
     const { organizationSlug, projectSlug, targetSlug, versionId } =
       targetHistoryVersionRoute.useParams();
     return (
-      <TargetHistoryVersionPage
+      <TargetHistorySchemaVersionPage
         organizationSlug={organizationSlug}
         projectSlug={projectSlug}
         targetSlug={targetSlug}
-        versionId={versionId}
+        schemaVersionId={versionId}
       />
     );
   },
