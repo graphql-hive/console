@@ -209,4 +209,18 @@ export const SchemaVersion: SchemaVersionResolvers = {
       .get(SchemaVersionHelper)
       .getGraphQLSchemaVersionOriginForSchemaVersion(version);
   },
+  meta: async (version, _, { injector }) => {
+    if (version.meta) {
+      return version.meta;
+    }
+
+    const log = await injector
+      .get(SchemaVersionHelper)
+      .getGraphQLRegistryLogForSchemaVersion(version);
+
+    return {
+      author: log.author ?? null,
+      commit: log.commit ?? null,
+    };
+  },
 };

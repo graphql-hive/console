@@ -448,7 +448,7 @@ export class SchemaVersionHelper {
       throw new Error('Noop');
     });
   }
-
+  @cache((schemaVersion: SchemaVersion) => schemaVersion.id)
   async getGraphQLRegistryLogForSchemaVersion(schemaVersion: SchemaVersion) {
     let log: SchemaLog | null = null;
 

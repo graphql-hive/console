@@ -1045,6 +1045,21 @@ export default gql`
     """
     subgraphDiffs: [SubgraphDiff!]
     origin: SchemaVersionOrigin!
+    """
+    Additional metadata associated with the schema version that help identifying it.
+    """
+    meta: SchemaVersionMeta
+  }
+
+  type SchemaVersionMeta {
+    """
+    The author of the schema version
+    """
+    author: String
+    """
+    A user associated string that helps identifying the schema version.
+    """
+    commit: String
   }
 
   type SchemaVersionGithubMetadata {

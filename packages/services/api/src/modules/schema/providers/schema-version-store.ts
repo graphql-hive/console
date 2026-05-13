@@ -55,6 +55,7 @@ export class SchemaVersionStore {
         sha: string;
         repository: string;
       };
+      meta: SchemaVersionOriginMeta | null;
       conditionalBreakingChangeMetadata: ConditionalBreakingChangeMetadata | null;
     },
   ) {
@@ -79,7 +80,8 @@ export class SchemaVersionStore {
           "conditional_breaking_change_metadata",
           "schema_metadata",
           "metadata_attributes",
-          "origin"
+          "origin",
+          "meta"
         )
       VALUES
         (
@@ -101,7 +103,8 @@ export class SchemaVersionStore {
           ${psql.jsonbOrNull(InsertConditionalBreakingChangeMetadataModel.parse(args.conditionalBreakingChangeMetadata))},
           ${psql.jsonbOrNull(args.schemaMetadata)},
           ${psql.jsonbOrNull(args.metadataAttributes)},
-          ${psql.jsonb(SchemaVersionOriginModel.parse(args.origin))}
+          ${psql.jsonb(SchemaVersionOriginModel.parse(args.origin))},
+          ${psql.jsonbOrNull(SchemaVersionMetaModel.nullable().parse(args.meta))}
         )
       RETURNING
         ${schemaVersionSQLFields()}
@@ -345,6 +348,10 @@ export class SchemaVersionStore {
         supergraphChanges: args.supergraphChanges,
         schemaCompositionErrors: args.schemaCompositionErrors,
         github: args.github,
+        meta: {
+          author: args.author,
+          commit: args.commit,
+        },
         tags: args.tags,
         schemaMetadata: args.schemaMetadata,
         metadataAttributes: args.metadataAttributes,
@@ -514,6 +521,7 @@ export class SchemaVersionStore {
         targetId: target.id,
         origin: {
           type: 'delete',
+          // TODO: we should also allow users to provide metadata for delete actions
           services: [{ name: args.service.name, versionId: args.service.versionId }],
         },
         baseSchema: latestVersion.baseSchema,
@@ -525,6 +533,7 @@ export class SchemaVersionStore {
         schemaCompositionErrors: args.schemaCompositionErrors,
         // Deleting a schema is done via CLI and not associated to a commit or a pull request.
         github: null,
+        meta: null,
         tags: args.tags,
         schemaMetadata: args.schemaMetadata,
         metadataAttributes: args.metadataAttributes,
@@ -951,6 +960,9 @@ export class SchemaVersionStore {
             AND "schema_log"."commit" = ${commit}
           ORDER BY "schema_log"."created_at" DESC
         )
+      ORDER BY
+        "target_id"
+        , "created_at" DESC
       LIMIT 1
     `);
 
@@ -1285,6 +1297,7 @@ export class SchemaVersionStore {
         targetId: args.target.target.id,
         origin: {
           type: 'promotion',
+          // TODO: for full backwards-compatibility we also need to look at action_id...
           source: {
             schemaVersion: { id: args.origin.version.id },
             target: { id: args.origin.target.id, name: args.origin.target.name },
@@ -1299,6 +1312,7 @@ export class SchemaVersionStore {
         schemaCompositionErrors: args.origin.version.schemaCompositionErrors,
         // A promotion is not associated with a commit or a pull request.
         github: null,
+        meta: args.origin.version?.meta ?? null,
         tags: args.origin.version.tags,
         schemaMetadata: args.origin.version.schemaMetadata,
         metadataAttributes: args.origin.version.metadataAttributes,
@@ -1448,6 +1462,7 @@ const schemaVersionSQLFields = (t = psql``) => psql`
   , ${t}"metadata_attributes" as "metadataAttributes"
   , ${t}"target_id" as "targetId"
   , ${t}"origin"
+  , ${t}"meta"
   , ${t}"supergraph_changes" as "supergraphChanges"
 `;
 
@@ -1581,6 +1596,14 @@ const SchemaVersionOriginModel = z.union([
   SchemaVersionOriginDeleteModel,
 ]);
 
+/** Optional metadata that the users can associate with a schema version in order to identify it on their end. */
+const SchemaVersionMetaModel = z.object({
+  author: z.string().nullable(),
+  commit: z.string().nullable(),
+});
+
+type SchemaVersionOriginMeta = z.TypeOf<typeof SchemaVersionMetaModel>;
+
 type SchemaVersionOrigin = z.TypeOf<typeof SchemaVersionOriginModel>;
 
 const SchemaVersionModel = z
@@ -1606,6 +1629,7 @@ const SchemaVersionModel = z
       .transform(val => val ?? false),
     conditionalBreakingChangeMetadata: ConditionalBreakingChangeMetadataModel.nullable(),
     targetId: z.string(),
+    meta: SchemaVersionMetaModel.nullable(),
   })
   .and(
     z
