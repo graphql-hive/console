@@ -1989,6 +1989,14 @@ async function main() {
         r.stateChangedAt.toISOString(),
         r.lastTriggeredAt ? r.lastTriggeredAt.toISOString() : null,
       ]);
+      // Backdate created_at to the start of the seeded history window so the
+      // detail-page "status transitions" chart doesn't render a "no data
+      // (rule did not exist yet)" gray segment over historical state-log
+      // entries. The mutation set created_at to NOW(), but the seed
+      // intentionally fabricates ~SEED_DAYS_PAST days of transitions, so
+      // pretending the rule has existed across that whole window is
+      // consistent with the rest of the seeded fiction.
+      const seededCreatedAt = new Date(Date.now() - THIRTY_DAYS_MS);
       await alertPool.query(psql`
         UPDATE "metric_alert_rules" AS r
         SET
@@ -1996,6 +2004,7 @@ async function main() {
           "state_changed_at" = u.state_changed_at,
           "last_evaluated_at" = NOW(),
           "last_triggered_at" = u.last_triggered_at,
+          "created_at" = ${seededCreatedAt.toISOString()},
           "updated_at" = NOW()
         FROM ${psql.unnest(ruleRows, ['uuid', 'text', 'timestamptz', 'timestamptz'])}
           AS u(id, state, state_changed_at, last_triggered_at)
