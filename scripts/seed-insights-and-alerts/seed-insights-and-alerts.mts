@@ -512,9 +512,7 @@ type BillingPlan = 'HOBBY' | 'PRO' | 'ENTERPRISE';
 async function promptForPlan(): Promise<BillingPlan> {
   const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
   try {
-    const answer = (
-      await rl.question('Choose plan — [H]obby (default) / [P]ro / [E]nterprise: ')
-    )
+    const answer = (await rl.question('Choose plan — [H]obby (default) / [P]ro / [E]nterprise: '))
       .trim()
       .toLowerCase();
     if (answer.startsWith('e')) return 'ENTERPRISE';
@@ -961,10 +959,21 @@ async function main() {
       if (def.thresholdType === MetricAlertRuleThresholdType.FixedValue) {
         return Math.max(1, Math.ceil((def.thresholdValue * intensity) / def.timeWindowMinutes));
       }
-      return Math.max(
-        2,
-        Math.ceil((BASELINE_OPS_PER_HOUR / 60) * (1 + (def.thresholdValue * intensity) / 100)),
-      );
+      // PERCENTAGE_CHANGE: evaluator compares the current rolling W-min sum
+      // against the non-overlapping previous W-min sum and fires when
+      // (current - previous) / previous × 100 > thresholdValue. signalToOps
+      // pre-warms (W-1) minutes before startMin so the boost lands fully inside
+      // the current window without bleeding into the previous one — contrast is
+      // preserved as long as the per-minute boost dominates whatever else is
+      // happening in those minutes. The "what else" varies a lot: ~1 op/min for
+      // ancient slots that don't overlap any other rule's incident, vs.
+      // 100+ ops/min near "now" when the PENDING/FIRING anchors from the error
+      // rate + latency rules all overlap. Size the injection against the worst
+      // case so the chart shows a clear visual spike that backs up the state
+      // log, even in the noisy recent region.
+      const ESTIMATED_PEAK_NOISE_PER_MIN = 130;
+      const targetRatio = 1 + (def.thresholdValue * intensity) / 100;
+      return Math.max(2, Math.ceil(ESTIMATED_PEAK_NOISE_PER_MIN * (targetRatio - 1) * 1.3));
     }
     if (def.type === MetricAlertRuleType.ErrorRate) return 30;
     return 40;
@@ -1872,9 +1881,11 @@ async function main() {
     const ops = signalToOps(def, plan);
     const { transitions, incidents } = signalToStateLog(rule.id, def, plan);
 
-    signalOps.push(...ops);
-    allTransitions.push(...transitions);
-    allIncidents.push(...incidents);
+    // Use a loop instead of spread — PERCENTAGE_CHANGE rules can emit 50k+ ops
+    // per rule, which blows V8's argument count limit when spread into .push().
+    for (const op of ops) signalOps.push(op);
+    for (const t of transitions) allTransitions.push(t);
+    for (const inc of incidents) allIncidents.push(inc);
 
     ruleStateWrites.push({
       id: rule.id,
