@@ -535,9 +535,17 @@ export class SchemaVersionStore {
 
       // Move all the schema_version_to_log entries of the previous version to the new version
       await trx.query(psql`/* moveSchemaVersionToLog */
-        INSERT INTO schema_version_to_log
-          (version_id, action_id)
-        SELECT ${newVersion.id}::uuid as version_id, svl.action_id
+        INSERT INTO schema_version_to_log (
+          version_id
+          , action_id
+          , type
+          , subgraph_name
+        )
+        SELECT
+          ${newVersion.id}::uuid as version_id
+          , svl.action_id as action_id
+          , 'unchanged'
+          , sl.service_name as subgraph_name
         FROM schema_version_to_log svl
         LEFT JOIN schema_log sl ON (sl.id = svl.action_id)
         WHERE svl.version_id = ${latestVersion.id} AND sl.action = 'PUSH' AND lower(sl.service_name) != lower(${args.service.name})
@@ -545,9 +553,9 @@ export class SchemaVersionStore {
 
       await trx.query(psql`/* insertSchemaVersionToLog */
         INSERT INTO schema_version_to_log
-          (version_id, action_id)
+          ("version_id", "action_id", "type", "previous_action_id", "subgraph_name")
         VALUES
-          (${newVersion.id}, ${deleteActionResult.id})
+          (${newVersion.id}, ${deleteActionResult.id}, 'removed', ${args.service.versionId}, lower(${args.service.name}))
       `);
 
       if (args.changes != null) {
