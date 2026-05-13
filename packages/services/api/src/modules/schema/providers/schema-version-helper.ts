@@ -351,9 +351,14 @@ export class SchemaVersionHelper {
     const project = await this.projectManager.getProject(schemaVersion);
 
     // For non multi-service projects we dont need a subgraph diff
-    if (project.type !== ProjectType.FEDERATION && project.type !== ProjectType.STITCHING) {
+    if (project.type === ProjectType.SINGLE) {
       return null;
     }
+
+    this.logger.debug(
+      'Generate subgraph diff for schema version. (schemaVersionId=%s)',
+      schemaVersion.id,
+    );
 
     const edges =
       await this.schemaVersions.getSchemaLogEdgesWithNodesForSchemaVersion(schemaVersion);

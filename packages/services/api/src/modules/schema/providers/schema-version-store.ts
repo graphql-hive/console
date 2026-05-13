@@ -1028,7 +1028,7 @@ export class SchemaVersionStore {
     async schemaVersionIds => {
       const edgesQuery = psql`
         SELECT
-        ${schemaLogEdgesFields()}
+          ${schemaLogEdgesFields()}
         FROM
           "schema_version_to_log"
         WHERE
@@ -1119,7 +1119,7 @@ export class SchemaVersionStore {
       if (edge.type !== null) {
         edgesWithNodes.push(
           SchemaLogWithEdgesModel.parse({
-            edge,
+            ...edge,
             node,
           }),
         );
