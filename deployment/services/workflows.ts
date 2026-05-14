@@ -61,6 +61,12 @@ export function deployWorkflows({
           SCHEMA_ENDPOINT: serviceLocalEndpoint(schema.service),
           FEATURE_FLAGS_METRIC_ALERT_RULES_ENABLED:
             featureFlagsConfig.get('metricAlertRulesEnabled') ?? '0',
+          // Activate the ClickHouse client; without this toggle the workflows
+          // env model picks the CLICKHOUSE-disabled union variant and
+          // `env.clickhouse` resolves to null, which makes the
+          // `evaluateMetricAlertRules` cron silently bail every minute even
+          // when the secret values below are wired in correctly.
+          CLICKHOUSE: '1',
         },
         readinessProbe: '/_readiness',
         livenessProbe: '/_health',
