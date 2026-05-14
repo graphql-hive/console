@@ -36,8 +36,10 @@ process.env.RUN_AGAINST_LOCAL_SERVICES = '1';
 await import('../../integration-tests/local-dev.ts');
 
 const { createPostgresDatabasePool, psql } = await import('@hive/postgres');
-const { authenticate } = await import('../../integration-tests/testkit/auth');
-const { ensureEnv } = await import('../../integration-tests/testkit/env');
+const { DEV_USER_PASSWORD, getOrCreateAuth, getSeedPGConnectionString } = await import(
+  '../utils/get-or-create-auth'
+);
+const { promptForEmail } = await import('../utils/prompt-for-email');
 const {
   addAlertChannel,
   addMetricAlertRule,
@@ -64,99 +66,8 @@ const { CreateSavedFilterMutation, TrackSavedFilterViewMutation } = await import
   '../../integration-tests/testkit/saved-filters'
 );
 
-// ---------------------------------------------------------------------------
-// Auth helper — creates a new user or creates a session for an existing one
-// ---------------------------------------------------------------------------
-
-const password = 'ilikebigturtlesandicannotlie47';
-
-function getSeedPGConnectionString() {
-  const pg = {
-    user: ensureEnv('POSTGRES_USER'),
-    password: ensureEnv('POSTGRES_PASSWORD'),
-    host: ensureEnv('POSTGRES_HOST'),
-    port: ensureEnv('POSTGRES_PORT'),
-    db: ensureEnv('POSTGRES_DB'),
-  };
-  return `postgres://${pg.user}:${pg.password}@${pg.host}:${pg.port}/${pg.db}?sslmode=disable`;
-}
-
-async function getOrCreateAuth(
-  email: string,
-): Promise<{ access_token: string; refresh_token: string; isExistingUser: boolean }> {
-  const pool = await createPostgresDatabasePool({
-    connectionParameters: getSeedPGConnectionString(),
-  });
-  try {
-    // Check if the user already exists
-    const existingUserId = await pool.maybeOneFirst(psql`
-      SELECT "user_id" FROM "supertokens_emailpassword_users"
-      WHERE "app_id" = 'public' AND "email" = lower(${email})
-    `);
-
-    if (existingUserId) {
-      // Existing user — create a session directly without signup
-      console.log(`   Found existing user: ${email}`);
-      const { SuperTokensStore } = await import(
-        '@hive/api/modules/auth/providers/supertokens-store'
-      );
-      const { NoopLogger } = await import('@hive/api/modules/shared/providers/logger');
-      const { AccessTokenKeyContainer } = await import(
-        '@hive/api/modules/auth/lib/supertokens-at-home/crypto'
-      );
-      const { createNewSession } = await import('@hive/server/supertokens-at-home/shared');
-      const { createTRPCProxyClient, httpLink } = await import('@trpc/client');
-      const { getServiceHost } = await import('../../integration-tests/testkit/utils');
-      const graphqlAddress = await getServiceHost('server', 8082);
-
-      type InternalApi = import('@hive/server').InternalApi;
-      const internalApi = createTRPCProxyClient<InternalApi>({
-        links: [httpLink({ url: `http://${graphqlAddress}/trpc`, fetch })],
-      });
-
-      const ensureUserResult = await internalApi.ensureUser.mutate({
-        superTokensUserId: existingUserId as string,
-        email,
-        oidcIntegrationId: null,
-        firstName: null,
-        lastName: null,
-      });
-      if (!ensureUserResult.ok) {
-        throw new Error(`ensureUser failed: ${ensureUserResult.reason}`);
-      }
-
-      const supertokensStore = new SuperTokensStore(pool, new NoopLogger());
-      const session = await createNewSession(
-        supertokensStore,
-        {
-          superTokensUserId: existingUserId as string,
-          hiveUser: ensureUserResult.user,
-          oidcIntegrationId: null,
-        },
-        {
-          refreshTokenKey: process.env.SUPERTOKENS_REFRESH_TOKEN_KEY!,
-          accessTokenKey: new AccessTokenKeyContainer(process.env.SUPERTOKENS_ACCESS_TOKEN_KEY!),
-        },
-      );
-
-      return {
-        access_token: session.accessToken.token,
-        refresh_token: session.refreshToken,
-        isExistingUser: true,
-      };
-    }
-
-    // New user — authenticate creates the user + session
-    const auth = await authenticate(pool, email);
-    return {
-      access_token: auth.access_token,
-      refresh_token: auth.refresh_token,
-      isExistingUser: false,
-    };
-  } finally {
-    await pool.end();
-  }
-}
+// Auth helper extracted to scripts/utils/auth-via-existing-user.ts so the
+// live-alerts demo script (and any future seeds) can reuse it.
 
 // ---------------------------------------------------------------------------
 // 1. Operations — ~1000 distinct queries/mutations against the Star Wars schema
@@ -496,16 +407,6 @@ const SEED_RULE_LIMIT = process.env.SEED_RULE_LIMIT ? Number(process.env.SEED_RU
 const BATCH_SIZE = SEED_BATCH_SIZE;
 const THIRTY_DAYS_MS = SEED_DAYS_PAST * 24 * 60 * 60 * 1000;
 const ONE_HOUR_MS = 60 * 60 * 1000;
-
-async function promptForEmail(): Promise<string> {
-  const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
-  try {
-    const email = await rl.question('Enter owner email (or press Enter to auto-generate): ');
-    return email.trim();
-  } finally {
-    rl.close();
-  }
-}
 
 type BillingPlan = 'HOBBY' | 'PRO' | 'ENTERPRISE';
 
@@ -2039,7 +1940,7 @@ async function main() {
 
 Credentials:
   Email:    ${ownerEmail}
-  Password: ${auth.isExistingUser ? '(use existing password)' : password}
+  Password: ${auth.isExistingUser ? '(use existing password)' : DEV_USER_PASSWORD}
 
 Navigate to:
   http://localhost:3000/${organization.slug}/${project.slug}/${target.slug}/insights

@@ -43,6 +43,8 @@
     "prettier": "prettier --cache --write --list-different --ignore-unknown \"**/*\"",
     "release": "pnpm build:libraries && changeset publish",
     "release:version": "changeset version && pnpm build:libraries && pnpm --filter @graphql-hive/cli oclif:readme",
+    "seed:alerts-live": "tsx scripts/seed-alerts-live/seed-alerts-live.mts",
+    "seed:alerts-live:cleanup": "tsx scripts/seed-alerts-live/cleanup.mts",
     "seed:app-deployments": "tsx scripts/seed-app-deployments.mts",
     "seed:insights-and-alerts": "tsx scripts/seed-insights-and-alerts/seed-insights-and-alerts.mts",
     "seed:org": "tsx scripts/seed-organization.mts",
