@@ -86,9 +86,9 @@ export const task = implementTask(SendMetricAlertChannelNotificationTask, async 
       , ac."name" as "channelName"
       , ac."slack_channel" as "slackChannel"
       , ac."webhook_endpoint" as "webhookEndpoint"
-      , o."slug" as "organizationSlug"
-      , p."slug" as "projectSlug"
-      , t."slug" as "targetSlug"
+      , o."clean_id" as "organizationSlug"
+      , p."clean_id" as "projectSlug"
+      , t."clean_id" as "targetSlug"
     FROM "metric_alert_state_log" sl
     INNER JOIN "metric_alert_rules" r ON r."id" = sl."metric_alert_rule_id"
     INNER JOIN "alert_channels" ac ON ac."id" = ${channelId}
