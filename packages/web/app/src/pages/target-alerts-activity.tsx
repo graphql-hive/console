@@ -14,6 +14,7 @@ import { DateRangePicker, type Preset } from '@/components/ui/date-range-picker'
 import { graphql } from '@/gql';
 import { MetricAlertRuleSeverity, MetricAlertRuleType } from '@/gql/graphql';
 import { useDateRangeController } from '@/lib/hooks/use-date-range-controller';
+import { useTickCounter } from '@/lib/hooks/use-tick-counter';
 import { useNavigate, useSearch } from '@tanstack/react-router';
 
 const TargetAlertsActivityPage_RetentionQuery = graphql(`
@@ -167,6 +168,14 @@ function ActivityView(props: {
     dataRetentionInDays: retentionInDays,
     defaultPreset: presetLast1Hour,
   });
+
+  // Advance the picker's resolved range every 15s so the queried window's
+  // `to` moves forward with wall-clock time and new state-log entries land
+  // in the response. urql sees the changed variables and refires.
+  const tick = useTickCounter(15_000);
+  useEffect(() => {
+    dateRangeController.refreshResolvedRange();
+  }, [tick]);
 
   const [result] = useQuery({
     query: TargetAlertsActivityPage_Query,

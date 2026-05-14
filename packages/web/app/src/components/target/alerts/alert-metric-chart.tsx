@@ -9,6 +9,7 @@ import { MetricAlertRuleMetric, MetricAlertRuleType } from '@/gql/graphql';
 import { resolveRangeAndResolution } from '@/lib/hooks/use-date-range-controller';
 import { formatDuration } from '@/lib/hooks/use-formatted-duration';
 import { formatNumber } from '@/lib/hooks/use-formatted-number';
+import { useTickCounter } from '@/lib/hooks/use-tick-counter';
 import { useChartStyles } from '@/lib/utils';
 
 const AlertMetricChart_Query = graphql(`
@@ -86,6 +87,11 @@ export function AlertMetricChart({
 }: AlertMetricChartProps) {
   const { colors } = useChartStyles();
 
+  // Advance the rolling window every 15s so the metric line chart picks
+  // up new ClickHouse data as the workflows evaluator drives transitions.
+  // Including `tick` in the useMemo deps recomputes `period` with a fresh
+  // `now`, which changes the variables, which causes urql to refire.
+  const tick = useTickCounter(15_000);
   const { resolution, period } = useMemo(() => {
     const now = new Date();
     const from = subMinutes(now, timeWindowMinutes);
@@ -97,7 +103,7 @@ export function AlertMetricChart({
         to: resolved.range.to.toISOString(),
       },
     };
-  }, [timeWindowMinutes]);
+  }, [timeWindowMinutes, tick]);
 
   const [result] = useQuery({
     query: AlertMetricChart_Query,

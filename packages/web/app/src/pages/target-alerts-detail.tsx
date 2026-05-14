@@ -16,6 +16,7 @@ import {
   MetricAlertRuleThresholdType,
   MetricAlertRuleType,
 } from '@/gql/graphql';
+import { useTickCounter } from '@/lib/hooks/use-tick-counter';
 import { useNavigate } from '@tanstack/react-router';
 
 const TargetAlertsDetailPage_Query = graphql(`
@@ -153,6 +154,12 @@ export function TargetAlertsDetailPage(props: {
 
   const [viewRangeMinutes, setViewRangeMinutes] = useState('60');
 
+  // Advance the rolling window every 15s so the state-transitions bar,
+  // events table, and metric snapshots reflect transitions the workflows
+  // evaluator drives on its 60s cron cadence. Including `tick` in the
+  // useMemo deps recomputes `now`, which changes the variables, which
+  // urql treats as a new query and refires automatically.
+  const tick = useTickCounter(15_000);
   const { from, to } = useMemo(() => {
     const now = new Date();
     const minutes = parseInt(viewRangeMinutes, 10) || 60;
@@ -160,7 +167,7 @@ export function TargetAlertsDetailPage(props: {
       from: subMinutes(now, minutes).toISOString(),
       to: now.toISOString(),
     };
-  }, [viewRangeMinutes]);
+  }, [viewRangeMinutes, tick]);
 
   const [result] = useQuery({
     query: TargetAlertsDetailPage_Query,

@@ -1,4 +1,4 @@
-import { useMemo, useRef } from 'react';
+import { useMemo } from 'react';
 import { formatDistanceToNow, subDays } from 'date-fns';
 import { ArrowDown } from 'lucide-react';
 import { useQuery } from 'urql';
@@ -13,6 +13,7 @@ import {
   MetricAlertRuleState,
   MetricAlertRuleType,
 } from '@/gql/graphql';
+import { useTickCounter } from '@/lib/hooks/use-tick-counter';
 import { useNavigate } from '@tanstack/react-router';
 import { createColumnHelper, type Column, type ColumnDef } from '@tanstack/react-table';
 
@@ -244,12 +245,15 @@ export function TargetAlertsRulesPage(props: {
   const { organizationSlug, projectSlug, targetSlug } = props;
   const navigate = useNavigate();
 
-  const rangeRef = useRef<{ from: string; to: string } | null>(null);
-  if (rangeRef.current === null) {
+  // Advance the rolling time window every 15s so the eventCount(from, to)
+  // sub-fields and other "since N" data reflect transitions the workflows
+  // evaluator makes on its 60s cron cadence without the user having to F5.
+  // urql refires automatically when the variables change.
+  const tick = useTickCounter(15_000);
+  const { from, to } = useMemo(() => {
     const now = new Date();
-    rangeRef.current = { from: subDays(now, 90).toISOString(), to: now.toISOString() };
-  }
-  const { from, to } = rangeRef.current;
+    return { from: subDays(now, 90).toISOString(), to: now.toISOString() };
+  }, [tick]);
 
   const [result] = useQuery({
     query: TargetAlertsRulesPage_Query,
