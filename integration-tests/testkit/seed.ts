@@ -1,8 +1,6 @@
 import { formatISO, subHours } from 'date-fns';
 import { humanId } from 'human-id';
 import z from 'zod';
-import { NoopLogger } from '@hive/api/modules/shared/providers/logger';
-import { createRedisClient } from '@hive/api/modules/shared/providers/redis';
 import { createPostgresDatabasePool, psql } from '@hive/postgres';
 import type { Report } from '../../packages/libraries/core/src/client/usage.js';
 import { authenticate, userEmail } from './auth';
@@ -152,6 +150,53 @@ export function initSeed() {
         TRUNCATE "oidc_integration_domains"
       `);
     },
+    async purgeUserByEmail(email: string) {
+      const pool = await getPool();
+      const supertokensUserIds = await pool
+        .any(
+          psql`
+          SELECT "user_id"::text
+          FROM "supertokens_emailpassword_users"
+          WHERE "email" = ${email}
+          UNION
+          SELECT "user_id"::text
+          FROM "supertokens_thirdparty_users"
+          WHERE "email" = ${email}
+        `,
+        )
+        .then(rows => rows.map(row => z.string().parse(row.user_id)));
+      const internalUserIds = await pool
+        .any(
+          psql`
+          SELECT "id"::text
+          FROM "users"
+          WHERE "email" = ${email}
+        `,
+        )
+        .then(rows => rows.map(row => z.string().parse(row.id)));
+
+      if (internalUserIds.length) {
+        await pool.query(psql`
+          DELETE FROM "organizations"
+          WHERE "user_id" = ANY(${psql.array(internalUserIds, 'uuid')})
+        `);
+        await pool.query(psql`
+          DELETE FROM "users"
+          WHERE "id" = ANY(${psql.array(internalUserIds, 'uuid')})
+        `);
+      }
+
+      if (supertokensUserIds.length) {
+        await pool.query(psql`
+          DELETE FROM "email_verifications"
+          WHERE "user_identity_id" = ANY(${psql.array(supertokensUserIds, 'uuid')})
+        `);
+        await pool.query(psql`
+          DELETE FROM "supertokens_app_id_to_user_id"
+          WHERE "user_id"::text = ANY(${psql.array(supertokensUserIds, 'text')})
+        `);
+      }
+    },
     async forgeOIDCDNSChallenge(orgSlug: string) {
       const pool = await getPool();
 
@@ -164,28 +209,11 @@ export function initSeed() {
       `,
         )
         .then(z.string().parse);
-      const key = `hive:oidcDomainChallenge:${domainChallengeId}`;
-
-      const challenge = {
-        id: domainChallengeId,
-        recordName: `_hive-challenge`,
-        // hardcoded value
-        value: 'a894723a5d52a30d73790752b0169835e6f81dd77d2737dba809bee7fde39092',
-      };
-
-      const redis = createRedisClient(
-        '',
-        {
-          host: ensureEnv('REDIS_HOST'),
-          password: ensureEnv('REDIS_PASSWORD'),
-          port: parseInt(ensureEnv('REDIS_PORT'), 10),
-          tlsEnabled: false,
-        },
-        new NoopLogger(),
-      );
-
-      await redis.set(key, JSON.stringify(challenge));
-      await redis.disconnect();
+      await pool.query(psql`
+        UPDATE "oidc_integration_domains"
+        SET "verified_at" = NOW()
+        WHERE "id" = ${domainChallengeId}
+      `);
     },
     createDbConnection,
     authenticate: doAuthenticate,

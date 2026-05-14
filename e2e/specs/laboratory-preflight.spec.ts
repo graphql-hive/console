@@ -19,8 +19,8 @@ const selectors = {
 };
 
 test.beforeEach(async ({ page, seed, auth, laboratory }) => {
-  const { slug, refreshToken } = await seed.seedTarget();
-  await auth.useRefreshToken(refreshToken);
+  const { accessToken, slug, refreshToken } = await seed.seedTarget();
+  await auth.useSession({ refreshToken, accessToken });
   await laboratory.openSeededTarget(slug);
   await page.locator(selectors.buttonGraphiQLPreflight).click();
 });

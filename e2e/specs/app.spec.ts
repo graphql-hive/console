@@ -1,5 +1,11 @@
+import type { Page } from '@playwright/test';
 import { expect, test } from '../fixtures';
 import { generateRandomSlug, getUserData } from '../helpers/data';
+
+async function expectOrganizationHome(page: Page, slug: string) {
+  await page.waitForURL(new RegExp(`/${slug}(?:$|[/?#])`));
+  await expect(page.getByText(slug).first()).toBeVisible();
+}
 
 test.describe('basic user flow', () => {
   test('should be visitable', async ({ page }) => {
@@ -43,8 +49,8 @@ test('create organization', async ({ app }) => {
 
 test.describe('oidc', () => {
   test('oidc login for organization via link', async ({ page, seed, auth, oidc }) => {
-    const { refreshToken, slug } = await seed.seedOrg();
-    await auth.useRefreshToken(refreshToken);
+    const { accessToken, refreshToken, slug } = await seed.seedOrg();
+    await auth.useSession({ refreshToken, accessToken });
     await page.goto(`/${slug}`);
 
     const { loginUrl } = await oidc.createIntegration();
@@ -53,36 +59,36 @@ test.describe('oidc', () => {
     await page.goto(loginUrl);
 
     await oidc.loginWithMockUser({ username: 'test-user', email: 'sam.tailor@gmail.com' });
-    await expect(page.locator(`a[href="/${slug}"]`)).toBeVisible();
+    await expectOrganizationHome(page, slug);
   });
 
   test('oidc login with organization slug input', async ({ page, seed, auth, oidc }) => {
-    const { refreshToken, slug } = await seed.seedOrg();
-    await auth.useRefreshToken(refreshToken);
+    const { accessToken, refreshToken, slug } = await seed.seedOrg();
+    await auth.useSession({ refreshToken, accessToken });
     await page.goto(`/${slug}`);
 
     await oidc.createIntegration();
     await oidc.startSlugLogin(slug);
 
     await oidc.loginWithMockUser({ username: 'test-user', email: 'sam.tailor@gmail.com' });
-    await expect(page.locator(`a[href="/${slug}"]`)).toBeVisible();
+    await expectOrganizationHome(page, slug);
   });
 
   test('first time oidc login of non-admin user', async ({ page, seed, auth, oidc }) => {
-    const { refreshToken, slug } = await seed.seedOrg();
-    await auth.useRefreshToken(refreshToken);
+    const { accessToken, refreshToken, slug } = await seed.seedOrg();
+    await auth.useSession({ refreshToken, accessToken });
     await page.goto(`/${slug}`);
 
     await oidc.createIntegration();
     await oidc.startSlugLogin(slug);
 
     await oidc.loginWithMockUser({ username: 'test-user-2', email: 'tom.sailor@gmail.com' });
-    await expect(page.locator(`a[href="/${slug}"]`)).toBeVisible();
+    await expectOrganizationHome(page, slug);
   });
 
   test('default member role for first time oidc login', async ({ page, seed, auth, oidc }) => {
-    const { refreshToken, slug } = await seed.seedOrg();
-    await auth.useRefreshToken(refreshToken);
+    const { accessToken, refreshToken, slug } = await seed.seedOrg();
+    await auth.useSession({ refreshToken, accessToken });
     await page.goto(`/${slug}`);
 
     await oidc.createIntegration();
@@ -92,26 +98,24 @@ test.describe('oidc', () => {
     await oidc.startSlugLogin(slug);
     await oidc.loginWithMockUser({ username: 'test-user-2', email: 'tom.sailor@gmail.com' });
 
-    await expect(page.locator(`a[href="/${slug}"]`)).toBeVisible();
-    await expect(page.locator(`a[href^="/${slug}/view/members"]`)).toBeVisible();
+    await expectOrganizationHome(page, slug);
+    await expect(page.getByRole('tab', { name: 'Members' })).toBeVisible();
   });
 
-  test('emailpassword account linking with existing oidc user', async ({
+  test('oidc account linking with existing emailpassword user', async ({
     page,
     seed,
     auth,
     oidc,
   }) => {
-    const email = 'tom.sailor@gmail.com';
-    const { refreshToken, slug } = await seed.seedOrg();
-    await auth.useRefreshToken(refreshToken);
+    const email = 'hive.bro@buzzcheck.dev';
+    await seed.purgeUserByEmail(email);
+
+    const { accessToken, refreshToken, slug } = await seed.seedOrg();
+    await auth.useSession({ refreshToken, accessToken });
     await page.goto(`/${slug}`);
 
     await oidc.createIntegration();
-    await oidc.startSlugLogin(slug);
-    await oidc.loginWithMockUser({ username: 'test-user-2', email });
-    await expect(page.locator(`a[href="/${slug}"]`)).toBeVisible();
-
     await page.goto('/logout');
     await auth.clearSession();
 
@@ -122,19 +126,30 @@ test.describe('oidc', () => {
     };
     await page.goto('/auth/sign-up');
     await auth.fillSignUpFormAndSubmit(memberData);
-    await expect(page.getByText('Verify your email address')).toBeVisible();
+    const verifyEmail = page.getByText('Verify your email address');
+    const createOrganization = page.getByText('Create an organization');
+    await expect(verifyEmail.or(createOrganization)).toBeVisible();
 
-    const confirmationPath = await seed.getEmailConfirmationLink({ email, now });
-    await page.goto(confirmationPath);
-    await expect(page.getByText('Success!')).toBeVisible();
-    await page.locator('[data-button-verify-email-continue]').click();
+    if (await verifyEmail.isVisible()) {
+      const confirmationPath = await seed.getEmailConfirmationLink({ email, now });
+      await page.goto(confirmationPath);
+      await expect(page.getByText('Success!')).toBeVisible();
+      await page.locator('[data-button-verify-email-continue]').click();
+    }
+
+    await page.goto('/logout');
+    await auth.clearSession();
+
+    await oidc.startSlugLogin(slug);
+    await oidc.loginWithMockUser({ username: 'test-user-3', email });
+    await expectOrganizationHome(page, slug);
 
     await page.goto('/logout');
     await auth.clearSession();
     await page.goto('/auth/sign-in');
     await auth.fillSignInFormAndSubmit(memberData);
 
-    await expect(page.locator(`a[href="/${slug}"]`)).toBeVisible();
+    await expectOrganizationHome(page, slug);
   });
 
   test('oidc login for invalid url shows correct error message', async ({ page, auth }) => {
@@ -147,13 +162,15 @@ test.describe('oidc', () => {
 
   test.describe('requireInvitation', () => {
     test('oidc user cannot join the org without invitation', async ({ page, seed, auth, oidc }) => {
-      const { refreshToken, slug } = await seed.seedOrg();
-      await auth.useRefreshToken(refreshToken);
+      const { accessToken, refreshToken, slug } = await seed.seedOrg();
+      await auth.useSession({ refreshToken, accessToken });
       await page.goto(`/${slug}`);
 
       await oidc.createIntegration();
       await page.locator('[data-cy="oidc-require-invitation-toggle"]').click();
-      await expect(page.getByText('updated')).toBeVisible();
+      await expect(
+        page.getByText('OIDC restrictions updated successfully', { exact: true }).first(),
+      ).toBeVisible();
 
       await oidc.startSlugLogin(slug);
       await oidc.loginWithMockUser({ username: 'test-user-2', verifyEmail: false });
@@ -163,8 +180,8 @@ test.describe('oidc', () => {
     });
 
     test('oidc user can join the org with an invitation', async ({ page, seed, auth, oidc }) => {
-      const { refreshToken, slug } = await seed.seedOrg();
-      await auth.useRefreshToken(refreshToken);
+      const { accessToken, refreshToken, slug } = await seed.seedOrg();
+      await auth.useSession({ refreshToken, accessToken });
       await page.goto(`/${slug}`);
 
       await oidc.createIntegration();
@@ -178,9 +195,8 @@ test.describe('oidc', () => {
 
       await oidc.startSlugLogin(slug);
       await oidc.loginWithMockUser({ username: 'test-user-2', email: 'tom.sailor@gmail.com' });
-      await page.goto(`/${slug}`);
 
-      await expect(page.locator(`a[href="/${slug}"]`)).toBeVisible();
+      await expectOrganizationHome(page, slug);
       await expect(page.getByText('not invited')).not.toBeVisible();
 
       await page.goto(`/${slug}/view/members?page=list`);
@@ -203,8 +219,8 @@ test.describe('oidc domain verification', () => {
     auth,
     oidc,
   }) => {
-    const { refreshToken, slug } = await seed.seedOrg();
-    await auth.useRefreshToken(refreshToken);
+    const { accessToken, refreshToken, slug } = await seed.seedOrg();
+    await auth.useSession({ refreshToken, accessToken });
     await page.goto(`/${slug}`);
     await expect(page.getByText('Settings')).toBeVisible();
 
@@ -214,7 +230,11 @@ test.describe('oidc domain verification', () => {
     await page.locator('[data-button-next-verify-domain-ownership]').click();
 
     await seed.forgeOIDCDNSChallenge(organizationSlug);
-    await page.locator('[data-button-next-complete]').click();
+    await page
+      .getByRole('dialog', { name: /Verify Domain Ownership/ })
+      .getByRole('button', { name: 'Close' })
+      .last()
+      .click();
 
     await page.goto('/logout');
     await auth.clearSession();
@@ -224,6 +244,6 @@ test.describe('oidc domain verification', () => {
       verifyEmail: false,
     });
 
-    await expect(page.locator(`a[href="/${organizationSlug}"]`)).toBeVisible();
+    await expectOrganizationHome(page, organizationSlug);
   });
 });

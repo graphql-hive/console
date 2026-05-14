@@ -8,6 +8,7 @@ async function createCollection(page: Page, args: { name: string; description: s
     .locator('div[data-cy="create-collection-modal"] input[name="description"]')
     .fill(args.description);
   await page.locator('div[data-cy="create-collection-modal"] button[type="submit"]').click();
+  await expect(page.locator('div[data-cy="create-collection-modal"]')).not.toBeVisible();
 }
 
 async function clickCollectionButton(page: Page, name: string) {
@@ -26,6 +27,7 @@ async function saveCurrentOperationAs(page: Page, args: { name: string; collecti
     .getByText(args.collectionName)
     .click();
   await page.locator('div[data-cy="create-operation-modal"] button[type="submit"]').click();
+  await expect(page.locator('div[data-cy="create-operation-modal"]')).not.toBeVisible();
 }
 
 async function openOperationMenu(page: Page, name: string) {
@@ -49,8 +51,8 @@ function collectionButton(page: Page, name: string) {
 }
 
 test.beforeEach(async ({ seed, auth, laboratory }) => {
-  const { slug, refreshToken } = await seed.seedTarget();
-  await auth.useRefreshToken(refreshToken);
+  const { accessToken, slug, refreshToken } = await seed.seedTarget();
+  await auth.useSession({ refreshToken, accessToken });
   await laboratory.openSeededTarget(slug);
   await laboratory.openCollectionsPanel();
 });

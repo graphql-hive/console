@@ -19,12 +19,20 @@ export type OIDCHelper = {
 };
 
 export function createOIDCHelper(page: Page, seed: SeedHelper, auth: AuthHelper): OIDCHelper {
-  const isLocal = process.env.RUN_AGAINST_LOCAL_SERVICES === '1';
+  const isLocal =
+    process.env.RUN_AGAINST_LOCAL_SERVICES === '1' ||
+    process.env.HIVE_APP_BASE_URL?.startsWith('http://localhost:3000') === true;
+  const appOrigin = new URL(process.env.HIVE_APP_BASE_URL || 'http://localhost:3000').origin;
 
   return {
     async createIntegration() {
-      await page.getByRole('link', { name: 'Settings' }).click();
-      await page.locator('[data-cy="link-sso"]').click();
+      const organizationSlug = new URL(page.url()).pathname.split('/')[1];
+
+      if (!organizationSlug) {
+        throw new Error(`Failed to resolve organization slug from URL: ${page.url()}`);
+      }
+
+      await page.goto(`/${organizationSlug}/view/settings?page=sso`);
       await page.locator('button[data-button-connect-open-id-provider]').click();
       await page.locator('button[data-button-oidc-manual]').click();
 
@@ -45,7 +53,11 @@ export function createOIDCHelper(page: Page, seed: SeedHelper, auth: AuthHelper)
         );
       await form
         .locator('input[name="authorization_endpoint"]')
-        .fill('http://localhost:7043/connect/authorize');
+        .fill(
+          isLocal
+            ? 'http://localhost:7043/connect/authorize'
+            : 'http://oidc-server-mock:80/connect/authorize',
+        );
       await form.locator('input[name="clientId"]').fill('implicit-mock-client');
       await form
         .locator('input[name="clientSecret"]')
@@ -58,12 +70,6 @@ export function createOIDCHelper(page: Page, seed: SeedHelper, auth: AuthHelper)
         throw new Error('Failed to resolve OIDC integration URL');
       }
 
-      const organizationSlug = new URL(page.url()).pathname.split('/')[1];
-
-      if (!organizationSlug) {
-        throw new Error(`Failed to resolve organization slug from URL: ${page.url()}`);
-      }
-
       return {
         loginUrl,
         organizationSlug,
@@ -73,14 +79,36 @@ export function createOIDCHelper(page: Page, seed: SeedHelper, auth: AuthHelper)
       await page.locator('#Input_Username').fill(input.username);
       await page.locator('#Input_Password').fill('password');
       await page.locator('button[value="login"]').click();
+      await page.waitForURL(url => url.origin === appOrigin);
+
+      const verifyEmail = page.getByText('Verify your email address');
+      const signInNotAllowed = page.getByText('Sign in not allowed.');
+
+      await Promise.race([
+        verifyEmail.waitFor({ state: 'visible', timeout: 15_000 }).catch(() => undefined),
+        signInNotAllowed.waitFor({ state: 'visible', timeout: 15_000 }).catch(() => undefined),
+        page
+          .waitForURL(
+            url => url.origin === appOrigin && !url.pathname.startsWith('/auth/callback/oidc'),
+            { timeout: 15_000 },
+          )
+          .catch(() => undefined),
+      ]);
 
       if (input.verifyEmail !== false && input.email) {
+        if (!(await verifyEmail.isVisible({ timeout: 5_000 }))) {
+          return;
+        }
+
         const confirmationPath = await seed.getEmailConfirmationLink(
           input.since ? { email: input.email, now: input.since } : input.email,
         );
         await page.goto(confirmationPath);
         await page.getByText('Success!').waitFor();
-        await page.locator('[data-button-verify-email-continue]').click();
+        await page.locator('[data-button-verify-email-continue]').click({ noWaitAfter: true });
+        await page.waitForURL(url => !url.pathname.startsWith('/auth/verify-email'), {
+          waitUntil: 'commit',
+        });
       }
     },
     async startSlugLogin(slug) {

@@ -1,8 +1,8 @@
 import { expect, test } from '../fixtures';
 
 test.beforeEach(async ({ seed, auth, laboratory }) => {
-  const { slug, refreshToken } = await seed.seedTarget();
-  await auth.useRefreshToken(refreshToken);
+  const { accessToken, slug, refreshToken } = await seed.seedTarget();
+  await auth.useSession({ refreshToken, accessToken });
   await laboratory.openSeededTarget(slug);
 });
 

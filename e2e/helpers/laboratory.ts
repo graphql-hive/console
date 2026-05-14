@@ -41,9 +41,7 @@ export function createLaboratoryHelper(page: Page): LaboratoryHelper {
     },
     async openNewTab() {
       await page.locator('button[aria-label="New tab"]').click();
-      await expect(page.locator('button[aria-controls="graphiql-session"]')).toContainText(
-        'untitled',
-      );
+      await this.assertActiveTab('untitled');
     },
     async assertActiveTab(name) {
       await expect(
