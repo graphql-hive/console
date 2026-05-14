@@ -141,4 +141,4 @@ docker/docker-compose.override.yml
 
 test-results/
 
-docs/superpowers
+playwright-report

@@ -56,7 +56,6 @@ export function createUsageHelper(page: Page, request: APIRequestContext): Usage
       });
 
       expect(response.status()).toBe(200);
-      await page.waitForTimeout(2_000);
     },
     async expectInsightOperation(operationName) {
       await expect(

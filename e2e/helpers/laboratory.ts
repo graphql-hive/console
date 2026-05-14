@@ -52,8 +52,12 @@ export function createLaboratoryHelper(page: Page): LaboratoryHelper {
       await page.locator('li.graphiql-tab-active > button.graphiql-tab-close').click();
     },
     async closeTabsUntilOneLeft() {
-      while ((await page.locator('li.graphiql-tab').count()) > 1) {
+      const tabs = page.locator('li.graphiql-tab');
+
+      while ((await tabs.count()) > 1) {
+        const initialCount = await tabs.count();
         await this.closeActiveTab();
+        await expect(tabs).toHaveCount(initialCount - 1);
       }
     },
     async setMonacoEditorContents(editorCyName, text) {
