@@ -32,6 +32,7 @@ const AlertMetricChart_Query = graphql(`
         durationOverTime(resolution: $resolution) {
           date
           duration {
+            avg
             p75
             p90
             p95
@@ -122,7 +123,7 @@ export function AlertMetricChart({
   const { data, yAxisFormatter, seriesName } = useMemo(() => {
     if (!stats) return { data: [], yAxisFormatter: formatNumber, seriesName: '' };
 
-    if (isLatency && latencyPercentile && latencyPercentile !== 'avg') {
+    if (isLatency && latencyPercentile) {
       const key = latencyPercentile;
       return {
         data: (stats.durationOverTime ?? []).map<[string, number]>(node => [
@@ -130,7 +131,7 @@ export function AlertMetricChart({
           node.duration[key],
         ]),
         yAxisFormatter: (value: number) => formatDuration(value, true),
-        seriesName: `${latencyPercentile} latency`,
+        seriesName: key === 'avg' ? 'Avg latency' : `${key} latency`,
       };
     }
 
