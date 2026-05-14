@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { psql } from '@hive/postgres';
 import { env } from '../environment.js';
 import { defineTask, implementTask } from '../kit.js';
 import {
@@ -7,6 +8,12 @@ import {
   groupRulesByQuery,
   queryClickHouseWindows,
 } from '../lib/metric-alert-evaluator.js';
+
+// How many groups to evaluate in parallel. Each group = 1 ClickHouse round-trip
+// plus a per-rule state-machine evaluation that holds a Postgres connection for
+// the duration of its transaction. Keep this comfortably below the PG pool size
+// (slonik default 10) so transactions never starve.
+const GROUP_CONCURRENCY = 5;
 
 export const EvaluateMetricAlertRulesTask = defineTask({
   name: 'evaluateMetricAlertRules',
@@ -48,15 +55,18 @@ export const task = implementTask(EvaluateMetricAlertRulesTask, async args => {
   logger.info({ count: rules.length }, 'Evaluating metric alert rules');
 
   const groups = groupRulesByQuery(rules);
-  let groupsFailed = 0;
+  const groupList = [...groups.values()];
 
-  for (const [, groupRules] of groups) {
+  async function processGroup(groupRules: (typeof rules)[number][]): Promise<{
+    failed: boolean;
+    evaluatedIds: string[];
+  }> {
     const representative = groupRules[0];
 
     let windows;
     try {
       windows = await queryClickHouseWindows(
-        context.clickhouse,
+        context.clickhouse!,
         representative.targetId,
         representative.timeWindowMinutes,
         evaluationTime,
@@ -66,8 +76,7 @@ export const task = implementTask(EvaluateMetricAlertRulesTask, async args => {
         { error, targetId: representative.targetId },
         'Failed to query ClickHouse for alert evaluation',
       );
-      groupsFailed++;
-      continue;
+      return { failed: true, evaluatedIds: [] };
     }
 
     // Treat a missing window as a zero-value window. Skipping evaluation
@@ -76,8 +85,7 @@ export const task = implementTask(EvaluateMetricAlertRulesTask, async args => {
     // rules whose target stops getting traffic stuck in FIRING forever.
     // With zeros, ABOVE thresholds correctly fall out of breach (so the
     // rule recovers) and BELOW thresholds correctly stay in breach (zero
-    // is below any positive threshold). evaluateRule itself updates
-    // last_evaluated_at, so the inline UPDATE loop is no longer needed.
+    // is below any positive threshold).
     const ZERO_WINDOW = {
       total: '0',
       total_ok: '0',
@@ -94,6 +102,7 @@ export const task = implementTask(EvaluateMetricAlertRulesTask, async args => {
       );
     }
 
+    const evaluatedIds: string[] = [];
     for (const rule of groupRules) {
       await evaluateRule({
         rule,
@@ -103,8 +112,49 @@ export const task = implementTask(EvaluateMetricAlertRulesTask, async args => {
         logger,
         evaluationTime,
       });
+      evaluatedIds.push(rule.id);
+    }
+    return { failed: false, evaluatedIds };
+  }
+
+  // Bounded parallelism over groups: each group = 1 CH query + per-rule state
+  // writes. allSettled (not Promise.all) so that one unexpected throw inside
+  // evaluateRule doesn't strand the rest of the batch's successful work; the
+  // throwing group's rules get re-evaluated on the next cron tick (60s) rather
+  // than via graphile-worker retries, which would otherwise re-run work that's
+  // already idempotently committed. With GROUP_CONCURRENCY=5 we cut wall-clock
+  // per tick by up to 5x without exhausting the PG pool.
+  let groupsFailed = 0;
+  const evaluatedRuleIds: string[] = [];
+  for (let i = 0; i < groupList.length; i += GROUP_CONCURRENCY) {
+    const batch = groupList.slice(i, i + GROUP_CONCURRENCY);
+    const results = await Promise.allSettled(batch.map(processGroup));
+    for (const r of results) {
+      if (r.status === 'rejected') {
+        groupsFailed++;
+        logger.error({ error: r.reason }, 'Group evaluation threw unexpectedly');
+      } else if (r.value.failed) {
+        groupsFailed++;
+      } else {
+        evaluatedRuleIds.push(...r.value.evaluatedIds);
+      }
     }
   }
 
-  logger.info({ groupsAttempted: groups.size, groupsFailed }, 'Metric alert evaluation complete');
+  // One batched UPDATE for all successfully-evaluated rules' last_evaluated_at,
+  // replacing what used to be N per-rule UPDATEs inside evaluateRule. All rules
+  // evaluated in this tick share the same scheduled evaluationTime, which is
+  // more correct than NOW() (which would drift across the tick).
+  if (evaluatedRuleIds.length > 0) {
+    await context.pg.query(psql`
+      UPDATE "metric_alert_rules"
+      SET "last_evaluated_at" = ${evaluationTime.toISOString()}
+      WHERE "id" = ANY(${psql.array(evaluatedRuleIds, 'uuid')})
+    `);
+  }
+
+  logger.info(
+    { groupsAttempted: groups.size, groupsFailed, rulesEvaluated: evaluatedRuleIds.length },
+    'Metric alert evaluation complete',
+  );
 });

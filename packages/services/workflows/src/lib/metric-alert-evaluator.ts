@@ -436,14 +436,6 @@ export async function evaluateRule(args: {
       }
     }
   }
-
-  // Single-statement housekeeping; doesn't need to share a transaction with
-  // the state-machine writes above.
-  await pg.query(psql`
-    UPDATE "metric_alert_rules"
-    SET "last_evaluated_at" = NOW(), "updated_at" = NOW()
-    WHERE "id" = ${rule.id}
-  `);
 }
 
 async function updateState(
