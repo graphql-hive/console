@@ -84,17 +84,13 @@ async function preflight() {
   console.log(`   ✓ Port ${WEBHOOK_PORT} free`);
 
   if (!(await canReachService('server', 8082))) {
-    console.error(
-      '   ✗ API server unreachable at port 8082. Is `pnpm dev:hive` running?',
-    );
+    console.error('   ✗ API server unreachable at port 8082. Is `pnpm dev:hive` running?');
     process.exit(1);
   }
   console.log('   ✓ API server reachable');
 
   if (!(await canReachService('usage', 8081))) {
-    console.error(
-      '   ✗ Usage service unreachable at port 8081. Is `pnpm dev:hive` running?',
-    );
+    console.error('   ✗ Usage service unreachable at port 8081. Is `pnpm dev:hive` running?');
     process.exit(1);
   }
   console.log('   ✓ Usage service reachable');
@@ -404,7 +400,9 @@ function printSummary(ctx: Ctx) {
   const path = `/${ctx.orgSlug}/${ctx.projectSlug}/${ctx.targetSlug}/alerts/rules`;
   console.log('\n┌─ Demo ready ───────────────────────────────────────');
   console.log(`│ Email:      ${ctx.ownerEmail}`);
-  console.log(`│ Password:   ${ctx.isExistingUser ? '(use existing password)' : DEV_USER_PASSWORD}`);
+  console.log(
+    `│ Password:   ${ctx.isExistingUser ? '(use existing password)' : DEV_USER_PASSWORD}`,
+  );
   console.log(`│ Open in UI: ${DASHBOARD_URL}${path}`);
   console.log('│');
   console.log('│ The alerts pages auto-poll every 15s. The cron evaluator');
@@ -524,9 +522,7 @@ async function runMainLoop(ctx: Ctx, abortSignal: AbortSignal) {
           `[${stamp}]   tick ${tickInPhase} — pushed ${report.operations!.length} ops (50% errors, p95=2000ms)`,
         );
         if (result.status !== 200) {
-          console.warn(
-            `  ⚠ usage POST returned ${result.status}: ${JSON.stringify(result.body)}`,
-          );
+          console.warn(`  ⚠ usage POST returned ${result.status}: ${JSON.stringify(result.body)}`);
         }
       } catch (err) {
         console.warn('  ⚠ usage POST failed:', err);
@@ -537,7 +533,9 @@ async function runMainLoop(ctx: Ctx, abortSignal: AbortSignal) {
       // the missing rows correctly: traffic resolves to 0, latency to 0,
       // error rate to 0 — which makes ABOVE-threshold rules recover and
       // BELOW-threshold rules breach.
-      console.log(`[${stamp}]   tick ${tickInPhase} — no traffic injected (silence is the breach for rule 4)`);
+      console.log(
+        `[${stamp}]   tick ${tickInPhase} — no traffic injected (silence is the breach for rule 4)`,
+      );
     }
 
     tickInPhase++;
@@ -558,9 +556,7 @@ async function main() {
 
   // Accept an existing dev's email so they can keep using their already-
   // authenticated browser tab. Blank → auto-generate a fresh email.
-  const inputEmail = await promptForEmail(
-    'Owner email (Enter to auto-generate a fresh user): ',
-  );
+  const inputEmail = await promptForEmail('Owner email (Enter to auto-generate a fresh user): ');
   const ownerEmail = inputEmail || `live-alerts-demo-${Date.now()}@localhost.localhost`;
 
   const webhookServer = startWebhookReceiver();
