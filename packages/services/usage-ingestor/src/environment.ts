@@ -26,6 +26,7 @@ const EnvironmentModel = zod.object({
   ENVIRONMENT: emptyString(zod.string().optional()),
   RELEASE: emptyString(zod.string().optional()),
   HEARTBEAT_ENDPOINT: emptyString(zod.string().url().optional()),
+  AWS_REGION: emptyString(zod.string().optional()),
 });
 
 const SentryModel = zod.union([
@@ -47,6 +48,10 @@ const KafkaBaseModel = zod.object({
   KAFKA_CONCURRENCY: NumberFromString,
   KAFKA_CONSUMER_GROUP: zod.string(),
   KAFKA_TOPIC: zod.string(),
+  KAFKA_AWS_REGION: emptyString(zod.string().optional()),
+  KAFKA_AWS_IAM_AUTH_ENABLED: emptyString(
+    zod.union([zod.literal('0'), zod.literal('1')]).optional(),
+  ),
 });
 
 const KafkaModel = zod.union([
@@ -189,13 +194,18 @@ export const env = {
             : true
           : false,
       sasl:
-        kafka.KAFKA_SASL_MECHANISM != null
+        base.AWS_REGION != null && kafka.KAFKA_AWS_IAM_AUTH_ENABLED === '1'
           ? {
-              mechanism: kafka.KAFKA_SASL_MECHANISM,
-              username: kafka.KAFKA_SASL_USERNAME,
-              password: kafka.KAFKA_SASL_PASSWORD,
+              mechanism: 'aws-iam' as const,
+              region: kafka.KAFKA_AWS_REGION ?? base.AWS_REGION,
             }
-          : null,
+          : kafka.KAFKA_SASL_MECHANISM != null
+            ? {
+                mechanism: kafka.KAFKA_SASL_MECHANISM,
+                username: kafka.KAFKA_SASL_USERNAME,
+                password: kafka.KAFKA_SASL_PASSWORD,
+              }
+            : null,
     },
   },
   clickhouse: {

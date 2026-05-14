@@ -28,6 +28,7 @@ const EnvironmentModel = zod.object({
   RATE_LIMIT_TTL: emptyString(NumberFromString.optional()).default(30_000),
   ENVIRONMENT: emptyString(zod.string().optional()),
   RELEASE: emptyString(zod.string().optional()),
+  AWS_REGION: emptyString(zod.string().optional()),
 });
 
 const SentryModel = zod.union([
@@ -50,6 +51,10 @@ const KafkaBaseModel = zod.object({
   KAFKA_BUFFER_SIZE: NumberFromString,
   KAFKA_BUFFER_INTERVAL: NumberFromString,
   KAFKA_BUFFER_DYNAMIC: zod.union([zod.literal('1'), zod.literal('0')]),
+  KAFKA_AWS_REGION: emptyString(zod.string().optional()),
+  KAFKA_AWS_IAM_AUTH_ENABLED: emptyString(
+    zod.union([zod.literal('0'), zod.literal('1')]).optional(),
+  ),
 });
 
 const KafkaModel = zod.union([
@@ -191,13 +196,18 @@ export const env = {
             : true
           : false,
       sasl:
-        kafka.KAFKA_SASL_MECHANISM != null
+        base.AWS_REGION != null && kafka.KAFKA_AWS_IAM_AUTH_ENABLED === '1'
           ? {
-              mechanism: kafka.KAFKA_SASL_MECHANISM,
-              username: kafka.KAFKA_SASL_USERNAME,
-              password: kafka.KAFKA_SASL_PASSWORD,
+              mechanism: 'aws-iam' as const,
+              region: kafka.KAFKA_AWS_REGION ?? base.AWS_REGION,
             }
-          : null,
+          : kafka.KAFKA_SASL_MECHANISM != null
+            ? {
+                mechanism: kafka.KAFKA_SASL_MECHANISM,
+                username: kafka.KAFKA_SASL_USERNAME,
+                password: kafka.KAFKA_SASL_PASSWORD,
+              }
+            : null,
     },
     buffer: {
       size: kafka.KAFKA_BUFFER_SIZE,

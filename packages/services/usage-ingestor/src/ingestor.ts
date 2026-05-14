@@ -1,5 +1,6 @@
 import { Kafka, KafkaMessage, logLevel } from 'kafkajs';
 import type { ServiceLogger } from '@hive/service-common';
+import { createMskIamTokenProvider } from '@hive/service-common';
 import type { RawReport } from '@hive/usage-common';
 import { decompress } from '@hive/usage-common';
 import type { KafkaEnvironment } from './environment';
@@ -51,7 +52,7 @@ export function createIngestor(config: {
 
   const kafka = new Kafka({
     clientId: 'usage-ingestor',
-    brokers: [config.kafka.connection.broker],
+    brokers: config.kafka.connection.broker.split(','),
     ssl: config.kafka.connection.ssl,
     sasl:
       config.kafka.connection.sasl?.mechanism === 'plain'
@@ -72,7 +73,14 @@ export function createIngestor(config: {
                 username: config.kafka.connection.sasl.username,
                 password: config.kafka.connection.sasl.password,
               }
-            : undefined,
+            : config.kafka.connection.sasl?.mechanism === 'aws-iam'
+              ? {
+                  mechanism: 'oauthbearer',
+                  oauthBearerProvider: createMskIamTokenProvider(
+                    config.kafka.connection.sasl.region,
+                  ),
+                }
+              : undefined,
     logLevel: logLevel.INFO,
     logCreator() {
       return entry => {
@@ -141,6 +149,7 @@ export function createIngestor(config: {
     changeStatus(Status.Waiting);
 
     logger.info('Connecting Kafka Consumer');
+    logger.debug(`Kafka SASL mechanism: ${config.kafka.connection.sasl?.mechanism ?? 'none'}`);
     await consumer.connect();
 
     changeStatus(Status.Connected);
