@@ -211,6 +211,7 @@ export interface metric_alert_state_log {
   expires_at: Date;
   from_state: metric_alert_state;
   id: string;
+  incident_id: string | null;
   metric_alert_rule_id: string;
   previous_value: number | null;
   target_id: string;
