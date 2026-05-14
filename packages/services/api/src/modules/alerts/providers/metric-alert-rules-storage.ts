@@ -655,9 +655,7 @@ export class MetricAlertRulesStorage {
     return result.map(row => MetricAlertStateLogModel.parse(row) as MetricAlertStateLogEntry);
   }
 
-  async getStateLogByIncident(args: {
-    incidentId: string;
-  }): Promise<MetricAlertStateLogEntry[]> {
+  async getStateLogByIncident(args: { incidentId: string }): Promise<MetricAlertStateLogEntry[]> {
     const result = await this.pool.any(psql`/* getStateLogByIncident */
       SELECT ${METRIC_ALERT_STATE_LOG_SELECT}
       FROM "metric_alert_state_log"
