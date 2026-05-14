@@ -26,7 +26,14 @@ export const task = implementTask(EvaluateMetricAlertRulesTask, async args => {
   // minute that should have fired the alert; run_at keeps results consistent
   // with the schedule. Falls back to wall-clock for ad-hoc / manually-queued
   // runs that have no scheduled time.
-  const evaluationTime = helpers.job.run_at ?? new Date();
+  //
+  // `helpers.job.run_at` is typed as Date but arrives as an ISO string at
+  // runtime — graphile-worker JSON-serializes job rows out of PG and never
+  // hydrates the timestamp back into a Date. Wrap defensively so downstream
+  // `.getTime()` calls work regardless of what shape we got.
+  const rawRunAt = helpers.job.run_at;
+  const evaluationTime =
+    rawRunAt instanceof Date ? rawRunAt : rawRunAt ? new Date(rawRunAt) : new Date();
 
   // OR-style gate: when cluster flag is on, evaluate every rule; when off,
   // fetchEnabledRules filters to rules belonging to opted-in orgs only.
