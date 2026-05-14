@@ -338,7 +338,7 @@ function SchemaVersionView(props: SchemaVersionViewProps) {
                         <TooltipTrigger>
                           <ExclamationTriangleIcon className="size-4 pl-1 text-yellow-500" />
                         </TooltipTrigger>
-                        <TooltipContent>Contract composition failed.</TooltipContent>
+                        <TooltipContent>Composition failed.</TooltipContent>
                       </>
                     )}
                   </Tooltip>
@@ -429,36 +429,48 @@ function SchemaVersionView(props: SchemaVersionViewProps) {
               )}
             </>
           )}
-          {selectedView === 'full-schema' && (
-            <GraphQLSchemaView
-              title="Public GraphQL Schema"
-              subtitle="The GraphQL Schema used by GraphQL consumers."
-              changes={contractOrVersion.sdlChanges?.edges.map(edge => edge.node) ?? null}
-              currentSdl={contractOrVersion.sdl ?? ''}
-              previousSdl={contractOrVersion.previousDiffableVersion?.sdl ?? null}
-              fromName={
-                contractOrVersion.previousDiffableVersion
-                  ? `schema@${contractOrVersion.previousDiffableVersion.id.substring(0, 8)}`
-                  : null
-              }
-              toName={`schema@${contractOrVersion.id.substring(0, 8)}`}
-            />
-          )}
-          {selectedView === 'supergraph' && (
-            <GraphQLSchemaView
-              title="Supergraph"
-              subtitle="Learn how the supergraph consumed by the Federation Router is affected."
-              changes={contractOrVersion.supergraphChanges?.edges.map(edge => edge.node) ?? null}
-              currentSdl={contractOrVersion.supergraphSdl ?? ''}
-              previousSdl={contractOrVersion.previousDiffableVersion?.supergraphSdl ?? null}
-              fromName={
-                contractOrVersion.previousDiffableVersion
-                  ? `supergraph@${contractOrVersion.previousDiffableVersion.id.substring(0, 8)}`
-                  : null
-              }
-              toName={`supergraph@${schemaVersion.id.substring(0, 8)}`}
-            />
-          )}
+          {selectedView === 'full-schema' &&
+            (contractOrVersion.schemaCompositionErrors ? (
+              <>
+                <CompositionErrors compositionErrors={contractOrVersion.schemaCompositionErrors} />
+                <p>No schema available as the composition did not succeed.</p>
+              </>
+            ) : (
+              <GraphQLSchemaView
+                title="Public GraphQL Schema"
+                subtitle="The GraphQL Schema used by GraphQL consumers."
+                changes={contractOrVersion.sdlChanges?.edges.map(edge => edge.node) ?? null}
+                currentSdl={contractOrVersion.sdl ?? ''}
+                previousSdl={contractOrVersion.previousDiffableVersion?.sdl ?? null}
+                fromName={
+                  contractOrVersion.previousDiffableVersion
+                    ? `schema@${contractOrVersion.previousDiffableVersion.id.substring(0, 8)}`
+                    : null
+                }
+                toName={`schema@${contractOrVersion.id.substring(0, 8)}`}
+              />
+            ))}
+          {selectedView === 'supergraph' &&
+            (contractOrVersion.schemaCompositionErrors ? (
+              <>
+                <CompositionErrors compositionErrors={contractOrVersion.schemaCompositionErrors} />
+                <p>No supergraph available as the composition did not succeed.</p>
+              </>
+            ) : (
+              <GraphQLSchemaView
+                title="Supergraph"
+                subtitle="Learn how the supergraph consumed by the Federation Router is affected."
+                changes={contractOrVersion.supergraphChanges?.edges.map(edge => edge.node) ?? null}
+                currentSdl={contractOrVersion.supergraphSdl ?? ''}
+                previousSdl={contractOrVersion.previousDiffableVersion?.supergraphSdl ?? null}
+                fromName={
+                  contractOrVersion.previousDiffableVersion
+                    ? `supergraph@${contractOrVersion.previousDiffableVersion.id.substring(0, 8)}`
+                    : null
+                }
+                toName={`supergraph@${schemaVersion.id.substring(0, 8)}`}
+              />
+            ))}
           {selectedView === 'service-schema' && schemaVersion.subgraphDiffs && (
             <GraphVersionSubgraphView subgraphDiffs={schemaVersion.subgraphDiffs} />
           )}
@@ -638,13 +650,17 @@ function GraphVersionSubgraphView(props: {
             diff={diff}
             renderChildren={() => (
               <div className="px-5">
-                <ChangesBlock
-                  changes={diff.changes?.edges.map(edge => edge.node) ?? []}
-                  projectSlug=""
-                  organizationSlug=""
-                  schemaCheckId=""
-                  targetSlug=""
-                />
+                {diff.changes ? (
+                  <ChangesBlock
+                    changes={diff.changes?.edges.map(edge => edge.node) ?? []}
+                    projectSlug=""
+                    organizationSlug=""
+                    schemaCheckId=""
+                    targetSlug=""
+                  />
+                ) : (
+                  <div className="py-3">No changes available.</div>
+                )}
               </div>
             )}
           />
@@ -1369,8 +1385,8 @@ export const GraphVersionSummary = (props: {
                 <TooltipProvider>
                   <Tooltip>
                     <TooltipTrigger>
-                      <span className="pl-2 text-base text-red-500/80">
-                        <ShieldAlertIcon size="14" className="inline" />
+                      <span className="flex items-center gap-0.5 text-base text-xs text-red-500/80 lg:text-sm">
+                        <ShieldAlertIcon className="inline size-2 md:size-3" />
                         {publicChangeStats.breakingChanges} not safe
                       </span>
                     </TooltipTrigger>
@@ -1403,7 +1419,7 @@ export const GraphVersionSummary = (props: {
       <div className="border-border bg-neutral-2 dark:bg-neutral-3 overflow-hidden rounded-xl border">
         <div className="border-border flex items-center justify-between border-b px-5 py-3">
           <div className="text-muted-foreground flex items-center gap-2 text-[11px] font-medium uppercase tracking-[0.14em]">
-            <span>Subgraph Change Overview</span>
+            <span>Subgraph Overview</span>
           </div>
         </div>
         <ul className="divide-y">
