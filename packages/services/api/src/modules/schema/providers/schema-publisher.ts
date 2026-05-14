@@ -2792,10 +2792,21 @@ export class SchemaPublisher {
         );
       }
 
+      const publishContracts: Array<{ name: string; sdl: string; supergraph: string }> = [];
+      for (const contract of contracts ?? []) {
+        if (contract.compositeSchemaSDL && contract.supergraphSDL) {
+          publishContracts.push({
+            name: contract.contractName,
+            sdl: contract.compositeSchemaSDL,
+            supergraph: contract.supergraphSDL,
+          });
+        }
+      }
+
       await this.publishToCDN({
         target,
         project,
-        contracts: null,
+        contracts: publishContracts,
         schemas: ensureCompositeSchemas(
           originLogEdges
             .map(edge => edge.node)
