@@ -11,3 +11,14 @@ packages:
   - scripts
   - rules
   - load-tests/otel-traces
+
+minimumReleaseAge: 1440
+minimumReleaseAgeExclude:
+  - 'envelop'
+  - '@envelop/*'
+  - 'graphql-yoga'
+  - '@graphql-yoga/*'
+  - 'graphql-hive/*'
+  - '@graphql-inspector/*'
+  - '@graphql-tools/*'
+  - '@theguild/federation-composition'
