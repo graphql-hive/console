@@ -256,6 +256,14 @@ export default gql`
     currentValue: Float!
     previousValue: Float
     thresholdValue: Float!
+    """
+    State-log entries that belong to this incident, oldest first. Includes the
+    PENDING→FIRING transition that opened it, any FIRING↔RECOVERING flapping,
+    and (for resolved incidents) the RECOVERING→NORMAL transition that closed
+    it. Entries are subject to plan-gated retention; rows that have aged out
+    are no longer returned.
+    """
+    stateLog: [MetricAlertRuleStateChange!]!
   }
 
   type MetricAlertRuleIncidentEdge {

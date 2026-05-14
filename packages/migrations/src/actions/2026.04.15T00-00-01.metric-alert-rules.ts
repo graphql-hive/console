@@ -83,6 +83,11 @@ CREATE TABLE "metric_alert_state_log" (
   "id" uuid NOT NULL DEFAULT uuid_generate_v4(),
   "metric_alert_rule_id" uuid NOT NULL REFERENCES "metric_alert_rules"("id") ON DELETE CASCADE,
   "target_id" uuid NOT NULL REFERENCES "targets"("id") ON DELETE CASCADE,
+  -- Set on transitions that conceptually belong to an incident (the four
+  -- edges between PENDING/FIRING/RECOVERING). NULL for the other transitions
+  -- (NORMAL→PENDING, PENDING→NORMAL false-alarms) — those don't open or
+  -- belong to an incident.
+  "incident_id" uuid REFERENCES "metric_alert_incidents"("id") ON DELETE CASCADE,
   "from_state" "metric_alert_state" NOT NULL,
   "to_state" "metric_alert_state" NOT NULL,
   "value" double precision,
@@ -96,6 +101,7 @@ CREATE TABLE "metric_alert_state_log" (
 CREATE INDEX "idx_metric_alert_state_log_rule" ON "metric_alert_state_log" ("metric_alert_rule_id", "created_at");
 CREATE INDEX "idx_metric_alert_state_log_target" ON "metric_alert_state_log" ("target_id", "created_at");
 CREATE INDEX "idx_metric_alert_state_log_expires" ON "metric_alert_state_log" ("expires_at");
+CREATE INDEX "idx_metric_alert_state_log_incident" ON "metric_alert_state_log" ("incident_id", "created_at") WHERE "incident_id" IS NOT NULL;
 
 -- Per-(state_log, channel) record of successful dispatch. The
 -- sendMetricAlertChannelNotification task checks here before sending and

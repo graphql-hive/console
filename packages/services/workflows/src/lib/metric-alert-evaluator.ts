@@ -1,4 +1,5 @@
 import type { Logger } from '@graphql-hive/logger';
+import { z } from 'zod';
 import type { CommonQueryMethods, PostgresDatabasePool } from '@hive/postgres';
 import { psql } from '@hive/postgres';
 import { metricAlertClickHouseQueryDuration } from '../metrics.js';
@@ -289,6 +290,16 @@ export async function evaluateRule(args: {
         ) {
           await pg.transaction('alertEval:pendingToFiring', async trx => {
             await updateState(trx, rule.id, 'FIRING', now, now);
+            const incidentId = await trx
+              .oneFirst(psql`
+                INSERT INTO "metric_alert_incidents" (
+                  "metric_alert_rule_id", "current_value", "previous_value", "threshold_value"
+                ) VALUES (
+                  ${rule.id}, ${currentValue}, ${previousValue}, ${rule.thresholdValue}
+                )
+                RETURNING "id"
+              `)
+              .then(z.string().parse);
             const stateLogId = await logTransition(
               trx,
               rule,
@@ -298,14 +309,8 @@ export async function evaluateRule(args: {
               previousValue,
               retentionDays,
               evaluationTime,
+              incidentId,
             );
-            await trx.query(psql`
-              INSERT INTO "metric_alert_incidents" (
-                "metric_alert_rule_id", "current_value", "previous_value", "threshold_value"
-              ) VALUES (
-                ${rule.id}, ${currentValue}, ${previousValue}, ${rule.thresholdValue}
-              )
-            `);
             await enqueueChannelNotifications(trx, rule.id, stateLogId);
           });
           logger.info({ ruleId: rule.id }, 'Alert rule entered FIRING state');
@@ -318,6 +323,12 @@ export async function evaluateRule(args: {
       case 'RECOVERING': {
         await pg.transaction('alertEval:recoveringToFiring', async trx => {
           await updateState(trx, rule.id, 'FIRING', now);
+          const incidentId = await trx
+            .maybeOneFirst(psql`
+              SELECT "id" FROM "metric_alert_incidents"
+              WHERE "metric_alert_rule_id" = ${rule.id} AND "resolved_at" IS NULL
+            `)
+            .then(z.string().nullable().parse);
           await logTransition(
             trx,
             rule,
@@ -327,6 +338,7 @@ export async function evaluateRule(args: {
             previousValue,
             retentionDays,
             evaluationTime,
+            incidentId,
           );
         });
         logger.info({ ruleId: rule.id }, 'Alert rule re-entered FIRING from RECOVERING');
@@ -361,6 +373,12 @@ export async function evaluateRule(args: {
       case 'FIRING': {
         await pg.transaction('alertEval:firingToRecovering', async trx => {
           await updateState(trx, rule.id, 'RECOVERING', now);
+          const incidentId = await trx
+            .maybeOneFirst(psql`
+              SELECT "id" FROM "metric_alert_incidents"
+              WHERE "metric_alert_rule_id" = ${rule.id} AND "resolved_at" IS NULL
+            `)
+            .then(z.string().nullable().parse);
           await logTransition(
             trx,
             rule,
@@ -370,6 +388,7 @@ export async function evaluateRule(args: {
             previousValue,
             retentionDays,
             evaluationTime,
+            incidentId,
           );
         });
         logger.info({ ruleId: rule.id }, 'Alert rule entered RECOVERING state');
@@ -382,6 +401,14 @@ export async function evaluateRule(args: {
         ) {
           await pg.transaction('alertEval:recoveringToNormal', async trx => {
             await updateState(trx, rule.id, 'NORMAL', now);
+            const incidentId = await trx
+              .maybeOneFirst(psql`
+                UPDATE "metric_alert_incidents"
+                SET "resolved_at" = NOW()
+                WHERE "metric_alert_rule_id" = ${rule.id} AND "resolved_at" IS NULL
+                RETURNING "id"
+              `)
+              .then(z.string().nullable().parse);
             const stateLogId = await logTransition(
               trx,
               rule,
@@ -391,12 +418,8 @@ export async function evaluateRule(args: {
               previousValue,
               retentionDays,
               evaluationTime,
+              incidentId,
             );
-            await trx.query(psql`
-              UPDATE "metric_alert_incidents"
-              SET "resolved_at" = NOW()
-              WHERE "metric_alert_rule_id" = ${rule.id} AND "resolved_at" IS NULL
-            `);
             await enqueueChannelNotifications(trx, rule.id, stateLogId);
           });
           logger.info({ ruleId: rule.id }, 'Alert rule resolved, back to NORMAL');
@@ -442,6 +465,7 @@ async function logTransition(
   previousValue: number,
   retentionDays: number,
   evaluationTime: Date,
+  incidentId: string | null = null,
 ): Promise<string> {
   const expiresAt = new Date(evaluationTime.getTime() + retentionDays * 24 * 60 * 60 * 1000);
 
@@ -449,6 +473,7 @@ async function logTransition(
     INSERT INTO "metric_alert_state_log" (
       "metric_alert_rule_id"
       , "target_id"
+      , "incident_id"
       , "from_state"
       , "to_state"
       , "value"
@@ -458,6 +483,7 @@ async function logTransition(
     ) VALUES (
       ${rule.id}
       , ${rule.targetId}
+      , ${incidentId}
       , ${fromState}
       , ${toState}
       , ${value}
