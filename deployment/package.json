@@ -1,6 +1,6 @@
 {
   "name": "hive",
-  "version": "11.0.4",
+  "version": "11.1.0",
   "private": true,
   "scripts": {
     "generate": "tsx generate.ts",
@@ -22,7 +22,7 @@
     "prettier": "3.4.2"
   },
   "devDependencies": {
-    "@graphql-hive/gateway": "^2.1.19",
+    "@graphql-hive/gateway": "2.7.2",
     "@types/js-yaml": "4.0.9",
     "@types/mime-types": "2.1.4",
     "@types/node": "24.12.2",

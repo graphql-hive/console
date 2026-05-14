@@ -15,7 +15,7 @@ import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { DiffEditor, TimeAgo } from '@/components/v2';
 import { FragmentType, graphql, useFragment } from '@/gql';
-import { ProjectType, SeverityLevelType } from '@/gql/graphql';
+import { ProjectType } from '@/gql/graphql';
 import { cn, isValidUUID } from '@/lib/utils';
 import {
   CheckCircledIcon,
@@ -394,7 +394,6 @@ function DefaultSchemaVersionView(props: {
                   targetSlug={props.targetSlug}
                   schemaCheckId=""
                   title="Breaking Changes"
-                  severityLevel={SeverityLevelType.Breaking}
                   changes={schemaVersion.breakingSchemaChanges.edges.map(edge => edge.node)}
                 />
               </div>
@@ -407,7 +406,6 @@ function DefaultSchemaVersionView(props: {
                   targetSlug={props.targetSlug}
                   schemaCheckId=""
                   title="Safe Changes"
-                  severityLevel={SeverityLevelType.Safe}
                   changes={schemaVersion.safeSchemaChanges.edges.map(edge => edge.node)}
                 />
               </div>
@@ -569,7 +567,6 @@ function ContractVersionView(props: {
                   targetSlug={props.targetSlug}
                   schemaCheckId=""
                   title="Breaking Changes"
-                  severityLevel={SeverityLevelType.Breaking}
                   changes={contractVersion.breakingSchemaChanges.edges.map(edge => edge.node)}
                 />
               </div>
@@ -582,7 +579,6 @@ function ContractVersionView(props: {
                   targetSlug={props.targetSlug}
                   schemaCheckId=""
                   title="Safe Changes"
-                  severityLevel={SeverityLevelType.Safe}
                   changes={contractVersion.safeSchemaChanges.edges.map(edge => edge.node)}
                 />
               </div>

@@ -63,6 +63,7 @@ import {
 } from './schema-helper';
 import { SchemaManager } from './schema-manager';
 import { SchemaVersionHelper } from './schema-version-helper';
+import { SchemaVersionStore } from './schema-version-store';
 
 const schemaCheckCount = new promClient.Counter({
   name: 'registry_check_count',
@@ -165,6 +166,7 @@ export class SchemaPublisher {
     private schemaVersionHelper: SchemaVersionHelper,
     private operationsReader: OperationsReader,
     private idTranslator: IdTranslator,
+    private schemaVersions: SchemaVersionStore,
     @Inject(SCHEMA_MODULE_CONFIG) private schemaModuleConfig: SchemaModuleConfig,
     singleModel: SingleModel,
     compositeModel: CompositeModel,
@@ -1493,15 +1495,11 @@ export class SchemaPublisher {
         if (deleteResult.conclusion === SchemaDeleteConclusion.Accept) {
           this.logger.debug('Delete accepted');
           if (input.dryRun !== true) {
-            const schemaVersion = await this.storage.deleteSchema({
-              organizationId: selector.organizationId,
-              projectId: selector.projectId,
-              targetId: selector.targetId,
+            const schemaVersion = await this.schemaVersions.deleteSubgraphFromTarget(target, {
               serviceName: input.serviceName,
               composable: deleteResult.state.composable,
               diffSchemaVersionId: latestComposableVersion?.version.id ?? null,
               changes: deleteResult.state.changes,
-              coordinatesDiff: deleteResult.state.coordinatesDiff,
               contracts:
                 deleteResult.state.contracts?.map(contract => ({
                   contractId: contract.contractId,
@@ -2027,7 +2025,6 @@ export class SchemaPublisher {
       url: serviceUrl,
       base_schema: baseSchema,
       metadata: input.metadata ?? null,
-      projectType: project.type,
       github,
       actionFn: async (versionId: string) => {
         if (composable && fullSchemaSdl) {
@@ -2054,7 +2051,6 @@ export class SchemaPublisher {
         }
       },
       changes,
-      coordinatesDiff: publishResult.state.coordinatesDiff,
       diffSchemaVersionId: latestComposable?.version.id ?? null,
       previousSchemaVersion: latestVersion?.version.id ?? null,
       conditionalBreakingChangeMetadata: await this.getConditionalBreakingChangeMetadata({

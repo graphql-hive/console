@@ -80,11 +80,16 @@ async function main() {
     });
 
     if (env.prometheus) {
-      await startMetrics(env.prometheus.labels.instance, env.prometheus.port);
+      await startMetrics(env.prometheus.labels.instance, {
+        port: env.prometheus.port,
+        host: env.http.host,
+        ipv6Only: env.http.ipv6Only,
+      });
     }
     await server.listen({
       port: env.http.port,
-      host: '::',
+      host: env.http.host,
+      ipv6Only: env.http.ipv6Only,
     });
     await start();
   } catch (error) {

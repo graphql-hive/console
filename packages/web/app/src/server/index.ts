@@ -126,7 +126,11 @@ async function main() {
     });
   });
 
-  await server.listen({ port: env.port, host: '::' });
+  await server.listen({
+    port: env.port,
+    host: env.host,
+    ipv6Only: env.ipv6Only,
+  });
 }
 
 main().catch(err => {
