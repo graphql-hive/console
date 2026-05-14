@@ -1,8 +1,8 @@
 # Live alerts demo
 
 A long-running script that lets you **watch metric alert rules fire and recover in real time**
-against the running workflows evaluator. Useful for developing the alerts UI, capturing screen
-recordings, or sanity-checking the end-to-end notification path.
+against the running workflows evaluator. Useful for developing the alerts UI and sanity-checking the
+end-to-end notification path.
 
 ## What this is (and isn't)
 
@@ -13,10 +13,10 @@ the thing that _feeds_ it.
 
 After a brief setup phase (org / project / target / rules — all created via the same GraphQL
 mutations the UI uses), the **only ongoing thing this script does is push usage data**. Every 5
-seconds it POSTs a `Report` to the local usage service at port 8081 via the canonical `collect` path
-— byte-for-byte the same wire format a real Hive client uses in production.
+seconds it POSTs a `Report` to the local usage service via the canonical `collect` path —
+byte-for-byte the same wire format a real Hive client uses in production.
 
-That's it. Everything else — state transitions, notifications, the auto-updating UI — comes from the
+That's it. Everything else (state transitions, notifications, the auto-updating UI) comes from the
 existing system reacting to that data:
 
 - ClickHouse aggregates the operations into `operations_minutely` (materialized view).
@@ -26,30 +26,33 @@ existing system reacting to that data:
 - The alerts pages in the web app poll every 15s and re-render as Postgres state changes.
 
 The script also runs a tiny webhook receiver on port 9999 (the URL the demo's webhook channel points
-at) and pretty-prints every incoming payload — so you can see the notification bodies the workflows
+at) and pretty-prints every incoming payload so you can see the notification bodies the workflows
 service is dispatching.
 
 ## What it does at startup (one-shot)
 
 1. Preflight checks (port 9999 free, API and usage services reachable).
-2. Starts the webhook receiver on port 9999.
-3. Creates a dedicated `live-alerts-demo-{timestamp}` org / project / target via GraphQL mutations.
-4. Enables the per-org `metricAlertRules` feature flag (direct PG `UPDATE`, since the cluster env
+2. Prompts for an owner email. Press Enter to auto-generate a fresh
+   `live-alerts-demo-{ts}@localhost.localhost` user, or paste an existing dev account email to reuse
+   it (handy if you already have a browser tab signed in as that user).
+3. Starts the webhook receiver on port 9999.
+4. Creates a dedicated `live-alerts-demo-{timestamp}` org / project / target via GraphQL mutations.
+5. Enables the per-org `metricAlertRules` feature flag (direct PG `UPDATE`, since the cluster env
    var is usually off in local dev).
-5. Publishes a tiny schema (so the usage service will accept operations against the target).
-6. Creates 7 short-window alert rules (each `timeWindowMinutes: 1`) and one webhook channel pointing
+6. Publishes a tiny schema (so the usage service will accept operations against the target).
+7. Creates 7 short-window alert rules (each `timeWindowMinutes: 1`) and one webhook channel pointing
    at port 9999.
-7. Pre-seeds ~60s of backdated breach-shaped data so the first evaluator tick after rule creation
+8. Pre-seeds ~60s of backdated breach-shaped data so the first evaluator tick after rule creation
    already sees a fully-formed breach window in `operations_minutely`. Cuts time-to-first-FIRING
-   from ~2–3 min to ~2 min.
+   from ~2-3 min to ~2 min.
 
 ## What it does continuously (the loop)
 
 Alternates 3-minute BREACH and NORMAL phases:
 
-- **BREACH** — pushes one `Report` every 5 seconds (~20 ops with 50% errors, p95≈2000ms). Above the
+- **BREACH**: pushes one `Report` every 5 seconds (~20 ops with 50% errors, p95≈2000ms). Above the
   thresholds of rules 1, 2, 3, 5, 6, 7. Above rule 4's BELOW-direction floor, so rule 4 recovers.
-- **NORMAL** — pushes **nothing**. Silence is the breach for rule 4: with zero traffic, the
+- **NORMAL**: pushes **nothing**. Silence is the breach for rule 4: with zero traffic, the
   evaluator's zero-window-synthesis path resolves TRAFFIC=0, below rule 4's `< 10/min` floor, so
   rule 4 fires. Rules 1, 2, 3, 5, 6, 7 recover during NORMAL because their thresholds resolve to 0
   (or, for rule 2, the PERCENTAGE_CHANGE settles).
@@ -74,12 +77,7 @@ The rule mix is intentionally varied so the demo exercises the feature surface:
 
 ## Prerequisites
 
-- `pnpm local:setup` — brings up the Docker Compose stack (Postgres, **ClickHouse**, Redis, etc.).
-  The ClickHouse container in particular has to be healthy; the workflows service's evaluator
-  silently bails if it can't reach CH. Confirm with `docker ps | grep clickhouse` — you should see a
-  running container exposing port 8123.
-- `pnpm dev:hive` — starts the local services (API, usage, **workflows**, etc.). The workflows
-  service's evaluator cron is what actually drives every alert state transition this demo produces.
+- Hive dev running locally. Ensure that clickhouse is up and running.
 - The workflows service's `.env` must have `CLICKHOUSE=1` + the host/port/user/password/protocol
   values populated. This repo's
   [`packages/services/workflows/.env.template`](../../packages/services/workflows/.env.template)
@@ -93,9 +91,6 @@ The rule mix is intentionally varied so the demo exercises the feature surface:
 ```sh
 pnpm seed:alerts-live
 ```
-
-Setup completes in ~3 seconds and prints the dev-owner email, the org slug, and the dashboard URL.
-Sign in as that owner at `http://localhost:3000` and navigate to the demo org → Alerts → Rules.
 
 Stop with Ctrl+C. The org is left in place so you can inspect artifacts (state-log rows, incident
 history, etc.) after the script exits.
@@ -117,7 +112,10 @@ service dispatches them.
 ## Cleanup
 
 After running the script repeatedly during a debugging session, you'll have several
-`live-alerts-demo-*` orgs cluttering your local DB. Drop them with:
+`live-alerts-demo-*` orgs accumulated in your local DB. Each one's rules keep getting evaluated by
+the workflows cron every minute, and notification dispatch tries to POST to the now-dead
+`localhost:9999` (the webhook receiver dies with the script), which fills your `pnpm dev:hive`
+terminal with ECONNREFUSED retry failures. Drop them with:
 
 ```sh
 pnpm seed:alerts-live:cleanup
@@ -190,8 +188,8 @@ still empty, check that the usage service is healthy.
    ✓ Pre-seeded ~60s of breach data
 
 ┌─ Demo ready ───────────────────────────────────────
-│ Sign in as:  live-alerts-demo-1715520000000@localhost.localhost
-│ Open in UI:  http://localhost:3000/live-alerts-demo-1715520000000/demo/production/alerts/rules
+│ Email:      live-alerts-demo-1715520000000@localhost.localhost
+│ Open in UI: http://localhost:3000/live-alerts-demo-1715520000000/demo/production/alerts/rules
 │
 │ The alerts pages refresh every 15s. The cron evaluator
 │ runs every minute. Expect the first NORMAL → PENDING →
