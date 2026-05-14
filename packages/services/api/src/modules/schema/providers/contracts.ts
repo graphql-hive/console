@@ -307,7 +307,7 @@ export class Contracts {
         "schema_version_id" = ${schemaVersion.id}
         AND "contract_id" = ANY(${psql.array(contractIds, 'uuid')})
       ORDER BY
-        , "contract_id" ASC
+        "contract_id" ASC
         , "created_at" DESC
     `);
 

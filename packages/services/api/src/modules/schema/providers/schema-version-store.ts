@@ -1408,7 +1408,7 @@ export class SchemaVersionStore {
                   schemaVersion.id,
                   log.id,
                   'unchanged',
-                  log.id,
+                  null,
                   null,
                   log.serviceName,
                 ]),
