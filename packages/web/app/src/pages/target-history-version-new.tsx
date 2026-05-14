@@ -1,6 +1,7 @@
 import { ReactElement, ReactNode, useMemo, useState } from 'react';
 import {
   ArrowRight,
+  ArrowRightIcon,
   BoxIcon,
   Check,
   CheckIcon,
@@ -16,6 +17,7 @@ import {
   GitCommit,
   GitCompare,
   GitCompareArrows,
+  GitCompareIcon,
   InfoIcon,
   Layers,
   ListTree,
@@ -142,6 +144,7 @@ const SchemaVersionViewNew_SchemaVersionFragment = graphql(`
     id
     date
     isComposable
+    hasSchemaChanges
     isValid
     isFirstComposableVersion
     schemaCompositionErrors {
@@ -164,7 +167,7 @@ const SchemaVersionViewNew_SchemaVersionFragment = graphql(`
         }
       }
     }
-    previousDiffableSchemaVersion {
+    previousDiffableVersion: previousDiffableSchemaVersion {
       id
       supergraphSdl: supergraph
       sdl
@@ -174,6 +177,36 @@ const SchemaVersionViewNew_SchemaVersionFragment = graphql(`
     }
     ...SchemaVersionHeader_SchemaVersionFragment
     ...SchemaVersionSummary_SchemaVersionFragment
+    contractVersions {
+      edges {
+        node {
+          id
+          contractName
+          hasSchemaChanges
+          isComposable
+          isFirstComposableVersion
+          supergraphSdl: supergraphSDL
+          sdl: compositeSchemaSDL
+          sdlChanges: schemaChanges {
+            edges {
+              node {
+                ...ChangesBlock_SchemaChangeFragment
+                severityLevel
+              }
+            }
+          }
+          schemaCompositionErrors {
+            ...CompositionErrorsSection_SchemaErrorConnection
+          }
+          previousDiffableVersion: previousDiffableContractVersion {
+            id
+            supergraphSdl: supergraphSDL
+            sdl: compositeSchemaSDL
+          }
+          ...SchemaVersionSummary_ContractVersionFragment
+        }
+      }
+    }
   }
 `);
 
@@ -189,6 +222,13 @@ function SchemaVersionView(props: SchemaVersionViewProps) {
     props.schemaVersion,
   );
 
+  const [selectedItem, setSelectedItem] = useState<string>('default');
+  const contractVersionNode = useMemo(
+    () =>
+      schemaVersion.contractVersions?.edges?.find(edge => edge.node.id === selectedItem)?.node ??
+      null,
+    [selectedItem],
+  );
   const [selectedView, setSelectedView] = useState<string>('details');
 
   const availableViews: Array<{
@@ -196,23 +236,18 @@ function SchemaVersionView(props: SchemaVersionViewProps) {
     label: string | ReactElement;
     tooltip: string;
     icon: ReactElement;
-    disabledReason: null | string;
   }> = [
     {
       value: 'details',
       icon: <ListBulletIcon className="h-4 w-auto flex-none" />,
       label: 'Summary',
       tooltip: 'A summary of the changes.',
-      disabledReason: null,
     },
     {
       value: 'full-schema',
       icon: <FileCode2 className="h-4 w-auto flex-none" />,
       label: 'Schema',
       tooltip: 'Show diff of the schema',
-      disabledReason: schemaVersion?.schemaCompositionErrors
-        ? 'Not available as the supergraph composition failed.'
-        : null,
     },
   ];
 
@@ -223,21 +258,43 @@ function SchemaVersionView(props: SchemaVersionViewProps) {
         icon: <Layers className="h-4 w-auto flex-none" />,
         label: 'Supergraph',
         tooltip: 'Show diff of the supergraph',
-        disabledReason: schemaVersion?.schemaCompositionErrors
-          ? 'Not available as the supergraph composition failed.'
-          : schemaVersion?.supergraphSdl
-            ? null
-            : 'No supergraph.',
       },
       {
         value: 'service-schema',
         icon: <CubeIcon className="h-4 w-auto flex-none" />,
         label: 'Subgraphs',
         tooltip: 'Show diff of the subgraphs',
-        disabledReason: null,
       },
     );
   }
+
+  const contractOrVersion = useMemo(() => {
+    if (contractVersionNode) {
+      return {
+        id: contractVersionNode.id,
+        schemaCompositionErrors: contractVersionNode.schemaCompositionErrors,
+        isFirstComposableVersion: contractVersionNode.isFirstComposableVersion,
+        isComposable: contractVersionNode.isComposable,
+        sdlChanges: contractVersionNode.sdlChanges,
+        sdl: contractVersionNode.sdl,
+        supergraphSdl: contractVersionNode.supergraphSdl,
+        supergraphChanges: null,
+        previousDiffableVersion: contractVersionNode.previousDiffableVersion,
+      };
+    }
+
+    return {
+      id: schemaVersion.id,
+      schemaCompositionErrors: schemaVersion.schemaCompositionErrors,
+      isFirstComposableVersion: schemaVersion.isFirstComposableVersion,
+      isComposable: schemaVersion.isComposable,
+      sdlChanges: schemaVersion.sdlChanges,
+      sdl: schemaVersion.sdl,
+      supergraphSdl: schemaVersion.supergraphSdl,
+      supergraphChanges: schemaVersion.supergraphChanges,
+      previousDiffableVersion: schemaVersion.previousDiffableVersion,
+    };
+  }, [schemaVersion, contractVersionNode]);
 
   return (
     <div className="flex w-full min-w-0 flex-1 flex-col py-6">
@@ -247,6 +304,87 @@ function SchemaVersionView(props: SchemaVersionViewProps) {
           organizationSlug={props.organizationSlug}
           projectSlug={props.projectSlug}
         />
+        {schemaVersion.contractVersions?.edges && (
+          <Tabs
+            defaultValue="default"
+            className="mt-3"
+            value={selectedItem}
+            onValueChange={value => setSelectedItem(value)}
+          >
+            <TabsList className="w-full justify-start rounded-b-none bg-transparent px-2 py-0">
+              <TabsTrigger
+                value="default"
+                className="data-[state=active]:bg-neutral-5 dark:data-[state=active]:bg-neutral-3 border-neutral-5 dark:border-neutral-3 mt-1 rounded-b-none border py-2"
+              >
+                <span className="font-mono text-[12px]">Default Graph</span>
+                <TooltipProvider>
+                  <Tooltip>
+                    {schemaVersion.hasSchemaChanges ? (
+                      <>
+                        <TooltipTrigger>
+                          <GitCompareIcon className="size-4 pl-1" />
+                        </TooltipTrigger>
+                        <TooltipContent>Main graph schema changed</TooltipContent>
+                      </>
+                    ) : schemaVersion.isComposable ? (
+                      <>
+                        <TooltipTrigger>
+                          <CheckIcon className="size-4 pl-1" />
+                        </TooltipTrigger>
+                        <TooltipContent>Composition succeeded.</TooltipContent>
+                      </>
+                    ) : (
+                      <>
+                        <TooltipTrigger>
+                          <ExclamationTriangleIcon className="size-4 pl-1 text-yellow-500" />
+                        </TooltipTrigger>
+                        <TooltipContent>Contract composition failed.</TooltipContent>
+                      </>
+                    )}
+                  </Tooltip>
+                </TooltipProvider>
+              </TabsTrigger>
+              {schemaVersion.contractVersions?.edges.map(edge => (
+                <TabsTrigger
+                  value={edge.node.id}
+                  key={edge.node.id}
+                  className="data-[state=active]:bg-neutral-5 dark:data-[state=active]:bg-neutral-3 border-neutral-5 dark:border-neutral-3 mt-1 rounded-b-none border py-2"
+                >
+                  <span className="font-mono text-[12px]">
+                    {edge.node.contractName}@{edge.node.id.substring(0, 8)}
+                  </span>
+
+                  <TooltipProvider>
+                    <Tooltip>
+                      {edge.node.hasSchemaChanges ? (
+                        <>
+                          <TooltipTrigger>
+                            <GitCompareIcon className="size-4 pl-1" />
+                          </TooltipTrigger>
+                          <TooltipContent>Contract schema changed</TooltipContent>
+                        </>
+                      ) : edge.node.isComposable ? (
+                        <>
+                          <TooltipTrigger>
+                            <CheckIcon className="size-4 pl-1" />
+                          </TooltipTrigger>
+                          <TooltipContent>Contract composition succeeded.</TooltipContent>
+                        </>
+                      ) : (
+                        <>
+                          <TooltipTrigger>
+                            <ExclamationTriangleIcon className="size-4 pl-1 text-yellow-500" />
+                          </TooltipTrigger>
+                          <TooltipContent>Contract composition failed.</TooltipContent>
+                        </>
+                      )}
+                    </Tooltip>
+                  </TooltipProvider>
+                </TabsTrigger>
+              ))}
+            </TabsList>
+          </Tabs>
+        )}
         <TooltipProvider>
           <Tabs
             value={selectedView}
@@ -254,27 +392,18 @@ function SchemaVersionView(props: SchemaVersionViewProps) {
             className="mt-6"
           >
             <TabsList variant="content">
-              {availableViews.map((item, index) => (
+              {availableViews.map(item => (
                 <Tooltip key={item.value}>
                   <TooltipTrigger>
                     <TabsTrigger
                       value={item.value}
-                      disabled={!!item.disabledReason}
                       variant="content"
-                      className={cn(
-                        'items-center-safe mx-3 inline-flex pb-2',
-                        item.disabledReason && 'text-neutral-8 hover:text-neutral-8',
-                      )}
+                      className={cn('items-center-safe mx-3 inline-flex pb-2')}
                     >
                       {item.icon}
                       <span className="ml-2">{item.label}</span>
                     </TabsTrigger>
                   </TooltipTrigger>
-                  {item.disabledReason && (
-                    <TooltipContent className="font-sm max-w-md p-2">
-                      {item.disabledReason}
-                    </TooltipContent>
-                  )}
                 </Tooltip>
               ))}
             </TabsList>
@@ -283,14 +412,19 @@ function SchemaVersionView(props: SchemaVersionViewProps) {
         <div className="mt-8 space-y-8 px-4">
           {selectedView === 'details' && (
             <>
-              {schemaVersion.isFirstComposableVersion ? (
+              {contractOrVersion.isFirstComposableVersion ? (
                 <FirstComposableGraphVersion />
               ) : (
                 <>
-                  {schemaVersion.schemaCompositionErrors && (
-                    <CompositionErrors compositionErrors={schemaVersion.schemaCompositionErrors} />
+                  {contractOrVersion.schemaCompositionErrors && (
+                    <CompositionErrors
+                      compositionErrors={contractOrVersion.schemaCompositionErrors}
+                    />
                   )}
-                  <GraphVersionSummary schemaVersion={schemaVersion} />
+                  <GraphVersionSummary
+                    schemaVersion={schemaVersion}
+                    contractVersion={contractVersionNode}
+                  />
                 </>
               )}
             </>
@@ -299,20 +433,30 @@ function SchemaVersionView(props: SchemaVersionViewProps) {
             <GraphQLSchemaView
               title="Public GraphQL Schema"
               subtitle="The GraphQL Schema used by GraphQL consumers."
-              changes={schemaVersion.sdlChanges?.edges.map(edge => edge.node) ?? null}
-              currentSdl={schemaVersion.sdl ?? ''}
-              previousSdl={schemaVersion.previousDiffableSchemaVersion?.sdl ?? null}
-              name={`schema@${schemaVersion.id.substring(0, 8)}`}
+              changes={contractOrVersion.sdlChanges?.edges.map(edge => edge.node) ?? null}
+              currentSdl={contractOrVersion.sdl ?? ''}
+              previousSdl={contractOrVersion.previousDiffableVersion?.sdl ?? null}
+              fromName={
+                contractOrVersion.previousDiffableVersion
+                  ? `schema@${contractOrVersion.previousDiffableVersion.id.substring(0, 8)}`
+                  : null
+              }
+              toName={`schema@${contractOrVersion.id.substring(0, 8)}`}
             />
           )}
           {selectedView === 'supergraph' && (
             <GraphQLSchemaView
               title="Supergraph"
               subtitle="Learn how the supergraph consumed by the Federation Router is affected."
-              changes={schemaVersion.supergraphChanges?.edges.map(edge => edge.node) ?? null}
-              currentSdl={schemaVersion.supergraphSdl ?? ''}
-              previousSdl={schemaVersion.previousDiffableSchemaVersion?.supergraphSdl ?? null}
-              name={`supergraph@${schemaVersion.id.substring(0, 8)}`}
+              changes={contractOrVersion.supergraphChanges?.edges.map(edge => edge.node) ?? null}
+              currentSdl={contractOrVersion.supergraphSdl ?? ''}
+              previousSdl={contractOrVersion.previousDiffableVersion?.supergraphSdl ?? null}
+              fromName={
+                contractOrVersion.previousDiffableVersion
+                  ? `supergraph@${contractOrVersion.previousDiffableVersion.id.substring(0, 8)}`
+                  : null
+              }
+              toName={`supergraph@${schemaVersion.id.substring(0, 8)}`}
             />
           )}
           {selectedView === 'service-schema' && schemaVersion.subgraphDiffs && (
@@ -330,7 +474,8 @@ function GraphQLSchemaView(props: {
   changes: Array<FragmentType<typeof ChangesBlock_SchemaChangeFragment>> | null;
   currentSdl: string;
   previousSdl: string | null;
-  name: string;
+  fromName: string | null;
+  toName: string;
 }): ReactElement {
   const [viewMode, setViewMode] = useResetState<'changes' | 'diff' | 'raw'>(() => {
     if (!props.previousSdl) {
@@ -338,6 +483,18 @@ function GraphQLSchemaView(props: {
     }
     return 'changes';
   }, [props.previousSdl, props.currentSdl]);
+
+  const titleNode = (
+    <span className="flex items-center gap-1">
+      {props.fromName && (
+        <>
+          {props.fromName}
+          <ArrowRightIcon className="inline size-3" />
+        </>
+      )}
+      {props.toName}
+    </span>
+  );
 
   return (
     <>
@@ -350,7 +507,7 @@ function GraphQLSchemaView(props: {
       </div>
       {viewMode === 'changes' && (
         <GenericGraphCard
-          title={<>{props.name}</>}
+          title={titleNode}
           children={
             <div className="px-5">
               {props.changes?.length ? (
@@ -372,14 +529,20 @@ function GraphQLSchemaView(props: {
           }
         ></GenericGraphCard>
       )}
-      {viewMode === 'raw' && props.currentSdl && (
-        <GenericGraphCard title={<>{props.name}</>}>
-          <SDLView sdl={props.currentSdl} />
+      {viewMode === 'diff' && (
+        <GenericGraphCard title={titleNode}>
+          {(props.previousSdl ?? '' === props.currentSdl) ? (
+            <div className="px-5 py-3">
+              <NoGraphChanges />
+            </div>
+          ) : (
+            <SDLDiffView before={props.previousSdl ?? ''} after={props.currentSdl} />
+          )}
         </GenericGraphCard>
       )}
-      {viewMode === 'diff' && (
-        <GenericGraphCard title={<>{props.name}</>}>
-          <SDLDiffView before={props.previousSdl ?? ''} after={props.currentSdl} />
+      {viewMode === 'raw' && props.currentSdl && (
+        <GenericGraphCard title={<>{props.toName}</>}>
+          <SDLView sdl={props.currentSdl} />
         </GenericGraphCard>
       )}
     </>
@@ -528,7 +691,9 @@ function GraphVersionSubgraphView(props: {
           </div>
           <ViewModeToggle active={viewMode} onChange={setViewMode} />
         </div>
-        <div className="space-y-4">{nodes}</div>
+        <div className="space-y-4">
+          {nodes.some(node => node !== null) ? nodes : <>No Changes</>}
+        </div>
       </>
     );
   }
@@ -1108,9 +1273,18 @@ const SchemaVersionSummary_SchemaVersionFragment = graphql(`
         }
       }
     }
-    supergraphChanges {
+  }
+`);
+
+const SchemaVersionSummary_ContractVersionFragment = graphql(`
+  fragment SchemaVersionSummary_ContractVersionFragment on ContractVersion {
+    id
+    sdlChanges: schemaChanges {
       edges {
-        __typename
+        node {
+          isSafeBasedOnUsage
+          severityLevel
+        }
       }
     }
   }
@@ -1118,8 +1292,13 @@ const SchemaVersionSummary_SchemaVersionFragment = graphql(`
 
 export const GraphVersionSummary = (props: {
   schemaVersion: FragmentType<typeof SchemaVersionSummary_SchemaVersionFragment>;
+  contractVersion: null | FragmentType<typeof SchemaVersionSummary_ContractVersionFragment>;
 }) => {
   const graphVersion = useFragment(SchemaVersionSummary_SchemaVersionFragment, props.schemaVersion);
+  const contractVersion = useFragment(
+    SchemaVersionSummary_ContractVersionFragment,
+    props.contractVersion,
+  );
 
   const subgraphStats = useMemo(() => {
     const data = {
@@ -1151,12 +1330,12 @@ export const GraphVersionSummary = (props: {
 
   const publicChangeStats = useMemo(() => {
     const data = {
-      totalChanges: graphVersion.sdlChanges?.edges.length ?? 0,
+      totalChanges: (contractVersion ?? graphVersion).sdlChanges?.edges.length ?? 0,
       breakingChanges: 0,
       notSafeChanges: 0,
     };
 
-    for (const change of graphVersion.sdlChanges?.edges ?? []) {
+    for (const change of (contractVersion ?? graphVersion).sdlChanges?.edges ?? []) {
       if (change.node.severityLevel === SeverityLevelType.Breaking) {
         data.breakingChanges++;
 
@@ -1167,7 +1346,7 @@ export const GraphVersionSummary = (props: {
     }
 
     return data;
-  }, [graphVersion.sdlChanges]);
+  }, [graphVersion.sdlChanges, contractVersion?.sdlChanges]);
 
   return (
     <div className="flex flex-col gap-6">
@@ -1303,7 +1482,7 @@ const kindMeta = {
   SubgraphDiffUnchanged: {
     label: 'Unchanged',
     Icon: CircleIcon,
-    text: 'text-neutral-7',
+    text: 'text-neutral-800',
     bg: 'bg-neutral-3',
     ring: 'ring-neutral-6',
     dot: 'bg-neutral-5',

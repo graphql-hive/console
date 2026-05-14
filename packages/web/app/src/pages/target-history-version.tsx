@@ -428,7 +428,12 @@ function DefaultSchemaVersionView(props: {
         )}
         {selectedView === 'service-schema' && (
           <DiffEditor
-            before={schemaVersion?.log?.previousServiceSdl ?? null}
+            before={
+              (schemaVersion?.log &&
+                'previousServiceSdl' in schemaVersion.log &&
+                schemaVersion.log.previousServiceSdl) ||
+              null
+            }
             after={('serviceSdl' in schemaVersion.log && schemaVersion.log.serviceSdl) || null}
             downloadFileName="service.graphql"
           />
