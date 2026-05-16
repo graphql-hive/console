@@ -7,7 +7,10 @@ Developing Hive locally requires you to have the following software installed lo
 - Node.js (or `nvm` or `fnm`): check the `package.json` `engines` entry for the correct version
 - pnpm: check the `package.json` `engines` entry for the correct version
 - Docker version 26.1.1 or later(previous versions will not work correctly on arm64)
-- make sure these ports are free: 5432, 6379, 9000, 9001, 8123, 9092, 8081, 8082, 9644, 3567, 7043
+- make sure these ports are free: 5432, 6379, 9000, 9001, 8123, 9092, 8081, 8082, 9644, 3567, 7043,
+  10255 (OTEL collector `/metrics`)
+- If using the optional observability profile (see below), additionally: 3030 (Grafana), 9090
+  (Prometheus)
 
 ## Setup Instructions
 
@@ -81,6 +84,71 @@ We recommend the following flow if you are having issues with running Hive local
 4. Delete local `docker/.hive` and `docker/.hive-dev` dir used by Docker volumes.
 5. Reinstall dependencies using `pnpm install`
 6. Force-generate new `.env` files: `pnpm env:sync --force`
+
+## Local Grafana + Prometheus (optional)
+
+The dev stack includes an opt-in `observability` profile that runs Grafana and Prometheus locally
+with the production dashboards. It's useful when working on metrics, alerts, or anything that
+relies on visualizing what services emit. The default `pnpm local:setup` and the VSCode
+`Start Hive` button do not start it.
+
+The observability profile runs **alongside** the default stack, not instead of it. Start the
+default stack first (either way works), then add the observability profile on top.
+
+If you already started Hive via `pnpm local:setup` or the VSCode `Start Hive` button:
+
+```bash
+docker compose -f docker/docker-compose.dev.yml --profile observability up -d
+```
+
+If you're starting from scratch and want both at once:
+
+```bash
+docker compose -f docker/docker-compose.dev.yml --profile observability up -d --remove-orphans
+```
+
+Either command is idempotent and safe to re-run.
+
+- Grafana: <http://localhost:3030> (anonymous admin enabled, local only). All dashboards from
+  `deployment/grafana-dashboards/` appear under the "Hive Monitoring (local)" folder.
+- Prometheus: <http://localhost:9090>, scrape targets at <http://localhost:9090/targets>.
+- Datasource UID locally: `local-prom` (clearly distinct from the prod UID `grafanacloud-prom` so
+  there's no ambiguity about which environment you're looking at).
+
+### How dashboards get to local Grafana
+
+A small `grafana-dashboard-init` container copies the JSON files from
+`deployment/grafana-dashboards/` into `docker/.hive-dev/grafana/dashboards/` at startup, performing
+the same parameter substitution Pulumi does (`PROM_DATASOURCE_UID` becomes `local-prom`,
+`TABLE_SUFFIX` becomes `dev`). Grafana picks them up via file-based provisioning. The source JSONs
+stay the single source of truth.
+
+### Scraping host-running services
+
+Prometheus is configured to scrape `host.docker.internal:10254`, which is where Hive services
+expose `/metrics` by default (their `PROMETHEUS_METRICS_PORT` env var defaults to `10254`). The
+compose file sets `extra_hosts: host.docker.internal:host-gateway` on the prometheus service so
+this resolves on Linux too (Docker Desktop on macOS/Windows provides it automatically).
+
+The OTEL collector container internally listens on `10254` as well, but
+[docker/docker-compose.dev.yml](../docker/docker-compose.dev.yml) publishes that container port on
+host port **10255**, not 10254, so the host's port 10254 stays free for any Hive service a
+developer runs natively (via `pnpm dev` or the VSCode `Start Hive` button). Prometheus reaches the
+OTEL collector via docker DNS (`otel-collector:10254`), which is unaffected by the host mapping
+choice.
+
+If you run more than one Hive service natively at the same time, only the first can use port
+10254. For the others, set `PROMETHEUS_METRICS_PORT` to a different free port and add it as an
+extra target in
+[docker/configs/prometheus/prometheus.yml](../docker/configs/prometheus/prometheus.yml).
+
+### Linux: filesystem permissions on `.hive-dev/grafana/data`
+
+Grafana inside the container runs as UID 472. On Linux bind mounts that can produce
+permission-denied errors when Grafana tries to write to `docker/.hive-dev/grafana/data`. The same
+UID/GID workaround documented above for `clickhouse`/`db` applies: add `user: '${UID}:${GID}'` to
+the `grafana` service entry in `docker/docker-compose.dev.yml` (and ensure those env vars are
+exported in your shell). macOS does not need this.
 
 ## Publish your first schema (manually)
 
