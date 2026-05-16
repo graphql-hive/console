@@ -40,5 +40,11 @@ grafanaDashboards:params:
 Then, in the dashboard's JSON model file, you can use the variable name, as is (we do a simple
 string replacement).
 
-> The `TABLE_SUFFIX` is injected automatically, with the name of the Pulumi stack ("prod" is
-> replaced with "production").
+The following parameters are injected automatically by the deployment code (no stack config
+entry required):
+
+- `TABLE_SUFFIX`: name of the Pulumi stack ("prod" is replaced with "production").
+- `PROM_DATASOURCE_UID`: defaults to `grafanacloud-prom`. Local dev overrides this to
+  `local-prom` via the docker compose `observability` profile (see
+  [docs/DEVELOPMENT.md](../../docs/DEVELOPMENT.md)). Override per-stack in
+  `Pulumi.<stack>.yaml` only if a deploy needs a different Prometheus datasource UID.
