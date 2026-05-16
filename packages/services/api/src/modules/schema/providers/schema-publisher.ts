@@ -2217,7 +2217,7 @@ export class SchemaPublisher {
 
     if (args.source.fromTarget) {
       const target = await this.idTranslator.resolveTargetReference({
-        reference: args.target,
+        reference: args.source.fromTarget,
       });
 
       if (!target) {
@@ -2265,7 +2265,6 @@ export class SchemaPublisher {
         'hive.project.id': selector.projectId,
       });
 
-    // TODO: this should probably be another permission...
     await this.session.assertPerformAction({
       action: 'schemaVersion:publish',
       organizationId: selector.organizationId,
@@ -2273,9 +2272,7 @@ export class SchemaPublisher {
         targetId: selector.targetId,
         projectId: selector.projectId,
         organizationId: selector.organizationId,
-        // TODO: service? :thinking:
-        // This is not about a single service
-        serviceName: null,
+        serviceName: '*',
       },
     });
 
@@ -2353,6 +2350,7 @@ export class SchemaPublisher {
     } | null = null;
 
     if (args.source.type === 'schemaVersion') {
+      this.logger.debug('use specific schema version by id as the source.');
       originSchemaVersionLookup = await this.schemaManager.getSchemaVersionByIdForProject(
         project,
         args.source.schemaVersionId,
@@ -2360,8 +2358,12 @@ export class SchemaPublisher {
     }
 
     if (args.source.type === 'target') {
+      this.logger.debug('use a target as the source. %s', args.targetId);
+
       const sourceTarget =
-        args.targetId === target.id ? target : await this.storage.getTargetById(args.targetId);
+        args.source.targetId === target.id
+          ? target
+          : await this.storage.getTargetById(args.source.targetId);
 
       if (!sourceTarget) {
         return {
@@ -2401,7 +2403,6 @@ export class SchemaPublisher {
       this.schemaManager.getMaybeLatestValidVersion(target),
     ]);
 
-    //
     const [originPublicSchemaSdl, originSupergraphSdl] = await Promise.all([
       this.schemaVersionHelper.getCompositeSchemaSdl(originSchemaVersion),
       this.schemaVersionHelper.getSupergraphSdl(originSchemaVersion),
