@@ -119,7 +119,7 @@ export function assertNonNullish<T>(
   value: T | null | undefined,
   message = 'Expected non-null value.',
 ): asserts value is T {
-  if (value === null) {
+  if (value == null) {
     throw new Error(message);
   }
 }

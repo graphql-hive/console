@@ -81,13 +81,23 @@ describe.each([ProjectType.Stitching, ProjectType.Federation])('$projectType', p
     expect(versionsBeforeDelete).toEqual(
       expect.arrayContaining([
         expect.objectContaining({
-          log: expect.objectContaining({
-            service: 'myservice',
+          origin: expect.objectContaining({
+            __typename: 'SchemaVersionPublishOrigin',
+            publishedSubgraphs: [
+              {
+                name: 'myservice',
+              },
+            ],
           }),
         }),
         expect.objectContaining({
-          log: expect.objectContaining({
-            service: 'myotherservice',
+          origin: expect.objectContaining({
+            __typename: 'SchemaVersionPublishOrigin',
+            publishedSubgraphs: [
+              {
+                name: 'myotherservice',
+              },
+            ],
           }),
         }),
       ]),
@@ -109,10 +119,9 @@ describe.each([ProjectType.Stitching, ProjectType.Federation])('$projectType', p
 
     // We should have 3 versions (push, push, delete)
     expect(versions).toHaveLength(3);
-    // Most recent version should be a delete action
-    expect(versions[0].log).toEqual({
-      __typename: 'DeletedSchemaLog',
-      deletedService: 'myotherservice',
+    expect(versions[0].origin).toEqual({
+      __typename: 'SchemaVersionSubgraphRemoveOrigin',
+      removedSubgraphs: [{ name: 'myotherservice' }],
     });
   });
 });
@@ -184,9 +193,9 @@ describe.each([ProjectType.Stitching, ProjectType.Federation])('$projectType', p
       // We should have 3 versions (push, push, delete)
       expect(versions).toHaveLength(3);
       // Most recent version should be a delete action
-      expect(versions[0].log).toEqual({
-        __typename: 'DeletedSchemaLog',
-        deletedService: 'service-b',
+      expect(versions[0].origin).toEqual({
+        __typename: 'SchemaVersionSubgraphRemoveOrigin',
+        removedSubgraphs: [{ name: 'service-b' }],
       });
 
       await publishSchema({
@@ -202,7 +211,10 @@ describe.each([ProjectType.Stitching, ProjectType.Federation])('$projectType', p
 
       const latestValid = await fetchLatestValidSchema();
       expect(latestValid.latestValidVersion).toBeDefined();
-      expect(latestValid.latestValidVersion?.log.__typename).toEqual('PushedSchemaLog');
+      expect(latestValid.latestValidVersion?.origin).toEqual({
+        __typename: 'SchemaVersionPublishOrigin',
+        publishedSubgraphs: [{ name: 'service-b' }],
+      });
       expect(latestValid.latestValidVersion?.schemas.nodes).toHaveLength(2);
       expect(latestValid.latestValidVersion?.schemas.nodes).toContainEqual(
         expect.objectContaining({
