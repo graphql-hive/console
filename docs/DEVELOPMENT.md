@@ -88,12 +88,12 @@ We recommend the following flow if you are having issues with running Hive local
 ## Local Grafana + Prometheus (optional)
 
 The dev stack includes an opt-in `observability` profile that runs Grafana and Prometheus locally
-with the production dashboards. It's useful when working on metrics, alerts, or anything that
-relies on visualizing what services emit. The default `pnpm local:setup` and the VSCode
-`Start Hive` button do not start it.
+with the production dashboards. It's useful when working on metrics, alerts, or anything that relies
+on visualizing what services emit. The default `pnpm local:setup` and the VSCode `Start Hive` button
+do not start it.
 
-The observability profile runs **alongside** the default stack, not instead of it. Start the
-default stack first (either way works), then add the observability profile on top.
+The observability profile runs **alongside** the default stack, not instead of it. Start the default
+stack first (either way works), then add the observability profile on top.
 
 If you already started Hive via `pnpm local:setup` or the VSCode `Start Hive` button:
 
@@ -125,22 +125,20 @@ stay the single source of truth.
 
 ### Scraping host-running services
 
-Prometheus is configured to scrape `host.docker.internal:10254`, which is where Hive services
-expose `/metrics` by default (their `PROMETHEUS_METRICS_PORT` env var defaults to `10254`). The
-compose file sets `extra_hosts: host.docker.internal:host-gateway` on the prometheus service so
-this resolves on Linux too (Docker Desktop on macOS/Windows provides it automatically).
+Prometheus is configured to scrape `host.docker.internal:10254`, which is where Hive services expose
+`/metrics` by default (their `PROMETHEUS_METRICS_PORT` env var defaults to `10254`). The compose
+file sets `extra_hosts: host.docker.internal:host-gateway` on the prometheus service so this
+resolves on Linux too (Docker Desktop on macOS/Windows provides it automatically).
 
 The OTEL collector container internally listens on `10254` as well, but
 [docker/docker-compose.dev.yml](../docker/docker-compose.dev.yml) publishes that container port on
-host port **10255**, not 10254, so the host's port 10254 stays free for any Hive service a
-developer runs natively (via `pnpm dev` or the VSCode `Start Hive` button). Prometheus reaches the
-OTEL collector via docker DNS (`otel-collector:10254`), which is unaffected by the host mapping
-choice.
+host port **10255**, not 10254, so the host's port 10254 stays free for any Hive service a developer
+runs natively (via `pnpm dev` or the VSCode `Start Hive` button). Prometheus reaches the OTEL
+collector via docker DNS (`otel-collector:10254`), which is unaffected by the host mapping choice.
 
-If you run more than one Hive service natively at the same time, only the first can use port
-10254. For the others, set `PROMETHEUS_METRICS_PORT` to a different free port and add it as an
-extra target in
-[docker/configs/prometheus/prometheus.yml](../docker/configs/prometheus/prometheus.yml).
+If you run more than one Hive service natively at the same time, only the first can use port 10254.
+For the others, set `PROMETHEUS_METRICS_PORT` to a different free port and add it as an extra target
+in [docker/configs/prometheus/prometheus.yml](../docker/configs/prometheus/prometheus.yml).
 
 ### Linux: filesystem permissions on `.hive-dev/grafana/data`
 
