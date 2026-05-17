@@ -899,7 +899,7 @@ export class SchemaVersionStore {
     return SchemaVersionModel.nullable().parse(record);
   }
 
-  getSchemLogById = batch<string, SchemaLog>(async schemaLogIds => {
+  getSchemaLogById = batch<string, SchemaLog>(async schemaLogIds => {
     const rows = await this.pg.any(
       psql`/* getSchemaLog */
           SELECT

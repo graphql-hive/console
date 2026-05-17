@@ -404,7 +404,7 @@ export class SchemaManager {
 
   async getSchemaLogById(schemaLogId: string) {
     this.logger.debug('Fetching schema log by id (schemaLogId=%s)', schemaLogId);
-    return this.schemaVersions.getSchemLogById(schemaLogId);
+    return this.schemaVersions.getSchemaLogById(schemaLogId);
   }
 
   @traceFn('SchemaManager.createVersion', {
