@@ -469,10 +469,14 @@ export class SchemaVersionHelper {
 
         if (!actionId) {
           const schemas = await this.schemaVersions.getSchemasBySchemaVersionId(schemaVersion.id);
-          actionId = schemas[0].id;
+          if (schemas[0]) {
+            actionId = schemas[0].id;
+          }
         }
 
-        log = await this.schemaVersions.getSchemaLogById(actionId);
+        if (actionId) {
+          log = await this.schemaVersions.getSchemaLogById(actionId);
+        }
       }
 
       if (schemaVersion.origin.type === 'promotion') {
@@ -480,7 +484,9 @@ export class SchemaVersionHelper {
           __typename: 'PromotionSchemaLog',
         } satisfies ResolversUnionTypes<any>['RegistryLog'];
       }
-    } else if (schemaVersion.actionId) {
+    }
+
+    if (!log) {
       log = await this.schemaVersions.getSchemaLogById(schemaVersion.actionId);
     }
 
