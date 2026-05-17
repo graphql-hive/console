@@ -10,6 +10,7 @@
 export type alert_channel_type = 'MSTEAMS_WEBHOOK' | 'SLACK' | 'WEBHOOK';
 export type alert_type = 'SCHEMA_CHANGE_NOTIFICATIONS';
 export type breaking_change_formula = 'PERCENTAGE' | 'REQUEST_COUNT';
+export type hive_subgraph_log_type = 'added' | 'changed' | 'removed' | 'unchanged';
 export type saved_filter_visibility = 'private' | 'shared';
 export type schema_policy_resource = 'ORGANIZATION' | 'PROJECT';
 export type schema_proposal_stage = 'APPROVED' | 'CLOSED' | 'DRAFT' | 'IMPLEMENTED' | 'OPEN';
@@ -416,6 +417,10 @@ export interface schema_version_changes {
 
 export interface schema_version_to_log {
   action_id: string;
+  previous_action_id: string | null;
+  schema_changes: any | null;
+  subgraph_name: string | null;
+  type: hive_subgraph_log_type | null;
   version_id: string;
 }
 
