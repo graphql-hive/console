@@ -530,7 +530,6 @@ export class SchemaVersionStore {
         targetId: target.id,
         origin: {
           type: 'delete',
-          // TODO: we should also allow users to provide metadata for delete actions
           services: [{ name: args.service.name, versionId: args.service.versionId }],
         },
         baseSchema: latestVersion.baseSchema,
