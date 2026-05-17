@@ -1929,6 +1929,7 @@ export default gql`
   input SchemaVersionPromoteInput {
     """
     The source of the schema promotion.
+    This can either be a target or a specific schema version.
     """
     source: SchemaVersionPromoteSourceInput!
     """

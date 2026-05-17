@@ -38,7 +38,13 @@ import { toGraphQLSchemaCheck } from '../to-graphql-schema-check';
 import { ArtifactStorageWriter } from './artifact-storage-writer';
 import type { SchemaModuleConfig } from './config';
 import { SCHEMA_MODULE_CONFIG } from './config';
-import { Contract, Contracts, ValidContractVersion } from './contracts';
+import {
+  Contracts,
+  type Contract,
+  type ContractWithLatestValidVersion,
+  type ContractWithLatestVersions,
+  type ValidContractVersion,
+} from './contracts';
 import { CompositeModel } from './models/composite';
 import {
   DeleteFailureReasonCode,
@@ -46,28 +52,29 @@ import {
   getReasonByCode,
   PublishFailureReasonCode,
   SchemaCheckConclusion,
-  SchemaCheckResult,
-  SchemaCheckWarning,
   SchemaDeleteConclusion,
   SchemaPublishConclusion,
-  SchemaPublishResult,
+  type SchemaCheckResult,
+  type SchemaCheckWarning,
+  type SchemaPublishResult,
 } from './models/shared';
 import { SingleModel } from './models/single';
 import { RegistryChecks, type ConditionalBreakingChangeDiffConfig } from './registry-checks';
 import {
   ensureCompositeSchemas,
   ensureSingleSchema,
-  SchemaInput,
   toCompositeSchemaInput,
   toSingleSchemaInput,
+  type SchemaInput,
 } from './schema-helper';
 import { SchemaManager } from './schema-manager';
 import { SchemaVersionHelper } from './schema-version-helper';
 import {
-  CreateContractVersionInput,
-  SchemaLogDiffInput,
-  SchemaVersion,
   SchemaVersionStore,
+  type CreateContractVersionInput,
+  type SchemaLogDiffInput,
+  type SchemaLogWithEdges,
+  type SchemaVersion,
 } from './schema-version-store';
 
 const schemaCheckCount = new promClient.Counter({
@@ -2190,20 +2197,43 @@ export class SchemaPublisher {
 
   @traceFn('SchemaPublisher.promoteSchemaVersion')
   async promoteSchemaVersion(
-    args: { target: Types.TargetReferenceInput; source: Types.SchemaVersionPromoteSourceInput },
+    args: {
+      /** Where the schema version is promoted to. */
+      target: Types.TargetReferenceInput;
+      /** Which schema version is promoted. This can be either a target or specific schema version by id. */
+      source: Types.SchemaVersionPromoteSourceInput;
+    },
     signal: AbortSignal,
   ) {
-    this.logger.debug('Start promote graph.');
+    this.logger.debug('Start promote schema version.');
 
     const selector = await this.idTranslator.resolveTargetReference({
       reference: args.target,
     });
 
-    // there should be a standalone permission for this probably
-    // Why? Because this issa not about a single version. We are cloning the whole schema version
     if (!selector) {
-      this.session.raise('schemaVersion:publish');
+      this.session.raise('schemaVersion:promote');
     }
+
+    await this.session.assertPerformAction({
+      action: 'schemaVersion:promote',
+      organizationId: selector.organizationId,
+      params: {
+        organizationId: selector.organizationId,
+        projectId: selector.projectId,
+        targetId: selector.targetId,
+      },
+    });
+
+    trace.getActiveSpan()?.setAttributes({
+      'hive.organization.id': selector.organizationId,
+      'hive.target.id': selector.targetId,
+      'hive.project.id': selector.projectId,
+    });
+
+    // First we resolve the source and make sure it exists within our system
+    // If it does not we can fail quickly and avoid acquiring a lock that would block other
+    // schema publishes etc.
 
     let source:
       | {
@@ -2232,20 +2262,23 @@ export class SchemaPublisher {
         type: 'target',
         targetId: target.targetId,
       };
-    }
 
-    if (args.source.fromSchemaVersionById) {
+      trace.getActiveSpan()?.setAttributes({
+        'hive.source.type': source.type,
+        'hive.source.target.id': target.targetId,
+      });
+    } else if (args.source.fromSchemaVersionById) {
       const project = await this.storage.getProject({
         organizationId: selector.organizationId,
         projectId: selector.projectId,
       });
 
-      const schemaVersion = await this.schemaManager.getSchemaVersionByIdForProject(
+      const result = await this.schemaManager.getSchemaVersionWithTargetBySchemaVersionIdForProject(
         project,
         args.source.fromSchemaVersionById,
       );
 
-      if (!schemaVersion) {
+      if (!result) {
         return {
           type: 'error' as const,
           message: 'Schema Version not found.',
@@ -2254,27 +2287,14 @@ export class SchemaPublisher {
 
       source = {
         type: 'schemaVersion',
-        schemaVersionId: args.source.fromSchemaVersionById,
+        schemaVersionId: result.schemaVersion.id,
       };
-    }
 
-    if (args.source.fromTarget)
       trace.getActiveSpan()?.setAttributes({
-        'hive.organization.id': selector.organizationId,
-        'hive.target.id': selector.targetId,
-        'hive.project.id': selector.projectId,
+        'hive.source.type': source.type,
+        'hive.source.schemaVersion.id': result.schemaVersion.id,
       });
-
-    await this.session.assertPerformAction({
-      action: 'schemaVersion:publish',
-      organizationId: selector.organizationId,
-      params: {
-        targetId: selector.targetId,
-        projectId: selector.projectId,
-        organizationId: selector.organizationId,
-        serviceName: '*',
-      },
-    });
+    }
 
     return this.mutex
       .perform(
@@ -2294,9 +2314,7 @@ export class SchemaPublisher {
         },
         async () => {
           return await this.internalPromoteSchemaVersion({
-            organizationId: selector.organizationId,
-            targetId: selector.targetId,
-            projectId: selector.projectId,
+            target: selector,
             source,
           });
         },
@@ -2313,121 +2331,14 @@ export class SchemaPublisher {
       });
   }
 
-  private async internalPromoteSchemaVersion(args: {
-    organizationId: string;
-    projectId: string;
-    targetId: string;
-    source:
-      | {
-          type: 'target';
-          targetId: string;
-        }
-      | {
-          type: 'schemaVersion';
-          schemaVersionId: string;
-        };
-  }) {
-    this.logger.debug('start graph promotion process');
-    const [organization, project, target] = await Promise.all([
-      this.storage.getOrganization({ organizationId: args.organizationId }),
-      this.storage.getProjectById(args.projectId),
-      this.storage.getTargetById(args.targetId),
-    ]);
-
-    if (!organization || !target || !project) {
-      return {
-        type: 'error' as const,
-        message: 'Target does not exist.',
-      };
-    }
-
-    let originSchemaVersionLookup: {
-      target: Target;
-      schemaVersion: SchemaVersion & {
-        projectId: string;
-        organizationId: string;
-      };
-    } | null = null;
-
-    if (args.source.type === 'schemaVersion') {
-      this.logger.debug('use specific schema version by id as the source.');
-      originSchemaVersionLookup = await this.schemaManager.getSchemaVersionByIdForProject(
-        project,
-        args.source.schemaVersionId,
-      );
-    }
-
-    if (args.source.type === 'target') {
-      this.logger.debug('use a target as the source. %s', args.targetId);
-
-      const sourceTarget =
-        args.source.targetId === target.id
-          ? target
-          : await this.storage.getTargetById(args.source.targetId);
-
-      if (!sourceTarget) {
-        return {
-          type: 'error' as const,
-          message: 'Source target does not exist.',
-        };
-      }
-
-      const schemaVersion = await this.schemaManager.getMaybeLatestVersion(sourceTarget);
-
-      if (!schemaVersion) {
-        return {
-          type: 'error' as const,
-          message: 'Source target has no schema version.',
-        };
-      }
-
-      originSchemaVersionLookup = {
-        target,
-        schemaVersion,
-      };
-    }
-
-    if (!originSchemaVersionLookup) {
-      return {
-        type: 'error' as const,
-        message: 'Schema Version not found.',
-      };
-    }
-
-    const originTarget = originSchemaVersionLookup.target;
-    const originSchemaVersion = originSchemaVersionLookup.schemaVersion;
-
-    // get latest version in target graph with schema logs
-    const [targetLatestSchemaVersion, targetLatestValidSchemaVersion] = await Promise.all([
-      this.schemaManager.getMaybeLatestVersion(target),
-      this.schemaManager.getMaybeLatestValidVersion(target),
-    ]);
-
-    const [originPublicSchemaSdl, originSupergraphSdl] = await Promise.all([
-      this.schemaVersionHelper.getCompositeSchemaSdl(originSchemaVersion),
-      this.schemaVersionHelper.getSupergraphSdl(originSchemaVersion),
-    ]);
-
-    const [originLogEdges, targetLogEdges] = await Promise.all([
-      this.schemaVersions.getSchemaLogEdgesWithNodesForSchemaVersion(originSchemaVersion),
-      targetLatestSchemaVersion
-        ? this.schemaVersions.getSchemaLogEdgesWithNodesForSchemaVersion(targetLatestSchemaVersion)
-        : [],
-    ]);
-
-    const contractsWithLatestOriginVersions =
-      project.type === ProjectType.FEDERATION
-        ? await this.contracts.loadContractsWithLatestValidContractVersioAndLatestContractVersionForSchemaVersion(
-            originSchemaVersion,
-          )
-        : null;
-
-    const contractsWithLatestTargetVersions =
-      project.type === ProjectType.FEDERATION
-        ? await this.contracts.loadActiveContractsWithLatestValidContractVersionsByTargetId({
-            targetId: target.id,
-          })
-        : null;
+  private async diffSchemaLogs(args: {
+    logs: {
+      target: Array<SchemaLogWithEdges>;
+      origin: Array<SchemaLogWithEdges>;
+    };
+    target: Target;
+  }): Promise<SchemaLogDiffInput> {
+    this.logger.debug('produce schema log diff.');
 
     const diffMap = new Map<
       /* service name */ string,
@@ -2450,7 +2361,7 @@ export class SchemaPublisher {
         }
     >();
 
-    for (const targetLogEdge of targetLogEdges) {
+    for (const targetLogEdge of args.logs.target) {
       if (targetLogEdge.node.action === 'DELETE') {
         continue;
       }
@@ -2469,7 +2380,7 @@ export class SchemaPublisher {
       });
     }
 
-    for (const originLogEdge of originLogEdges) {
+    for (const originLogEdge of args.logs.origin) {
       if (originLogEdge.node.action === 'DELETE') {
         continue;
       }
@@ -2533,8 +2444,8 @@ export class SchemaPublisher {
           id: logId,
           previousId: diff.previousLog.id,
           serviceName: diff.previousLog.service_name,
-          targetId: target.id,
-          projectId: target.projectId,
+          targetId: args.target.id,
+          projectId: args.target.projectId,
         });
       }
 
@@ -2545,8 +2456,8 @@ export class SchemaPublisher {
         schemaLogs.added.push({
           id: diff.newLog.id,
           serviceName: diff.newLog.service_name,
-          projectId: project.id,
-          targetId: target.id,
+          projectId: args.target.projectId,
+          targetId: args.target.id,
         });
         continue;
       }
@@ -2588,24 +2499,69 @@ export class SchemaPublisher {
       throw new Error(`INVARIANT: Uncovered case.`);
     }
 
-    const [publicSchemaChanges, supergraphSchemaChanges] = await Promise.all([
-      this.registryChecks
+    this.logger.debug(
+      'producing schema log diff finished (addedCount=%d, deletedCount=%d, changedCount=%d).',
+      schemaLogs.added.length,
+      schemaLogs.deleted.length,
+      schemaLogs.changed.length,
+      schemaLogs.unchanged.length,
+    );
+
+    return schemaLogs;
+  }
+
+  private async handlePromotionSchemaContracts(args: {
+    organization: Organization;
+    project: Project;
+    target: Target;
+    logs: {
+      origin: Array<SchemaLogWithEdges>;
+    };
+    contractsWithLatestOriginVersions: Array<ContractWithLatestVersions>;
+    contractsWithLatestTargetVersions: Array<ContractWithLatestValidVersion>;
+  }) {
+    this.logger.debug('process schema contracts for schema promotion.');
+
+    const contracts: Array<CreateContractVersionInput> = [];
+
+    if (!args.contractsWithLatestOriginVersions.length) {
+      this.logger.debug('no active contract definitions exist, no contracts must be computed.');
+      return contracts;
+    }
+
+    this.logger.debug(
+      '%d contract definitions found in target.',
+      args.contractsWithLatestOriginVersions.length,
+    );
+
+    const targetLatestValidContractVersionByContractId = new Map<string, ValidContractVersion>();
+
+    for (const contract of args.contractsWithLatestTargetVersions) {
+      if (!contract.latestValidVersion) {
+        continue;
+      }
+
+      targetLatestValidContractVersionByContractId.set(
+        contract.contract.id,
+        contract.latestValidVersion,
+      );
+    }
+
+    // these contracts need to be composed as the origin schema version does not have them.
+    const contractsThatNeedComposition: Array<Contract> = [];
+
+    for (const targetContract of args.contractsWithLatestOriginVersions) {
+      if (!targetContract.latestVersion) {
+        contractsThatNeedComposition.push(targetContract.contract);
+        continue;
+      }
+
+      const changes = await this.registryChecks
         .diff({
-          existingSdl: targetLatestValidSchemaVersion?.compositeSchemaSDL ?? null,
-          incomingSdl: originPublicSchemaSdl,
-          conditionalBreakingChangeConfig: null,
-          includeUrlChanges: false,
-          filterOutFederationChanges: true,
-          approvedChanges: null,
-          failDiffOnDangerousChange: false,
-          getAffectedAppDeployments: null,
-          filterNestedChanges: true,
-        })
-        .then(r => r.result?.all ?? r.reason?.all ?? null),
-      this.registryChecks
-        .diff({
-          existingSdl: targetLatestValidSchemaVersion?.supergraphSDL ?? null,
-          incomingSdl: originSupergraphSdl,
+          existingSdl:
+            targetLatestValidContractVersionByContractId.get(targetContract.contract.id)
+              ?.compositeSchemaSdl ?? null,
+          incomingSdl: targetContract.latestVersion?.compositeSchemaSdl ?? null,
           conditionalBreakingChangeConfig: null,
           includeUrlChanges: false,
           filterOutFederationChanges: false,
@@ -2614,46 +2570,92 @@ export class SchemaPublisher {
           getAffectedAppDeployments: null,
           filterNestedChanges: true,
         })
-        .then(r => r.result?.all ?? r.reason?.all ?? null),
-    ]);
+        .then(r => r.result?.all ?? r.reason?.all ?? null);
 
-    // Contracts are a bit tricky.
-    // When promoting a schema version we want to re-use existing values for the newly created schema version.
-    // However, the contract definitions might have changed and the origin schema version might not have a contract version.
-    // In that case we need to ad-hoc compose the contract version.
+      contracts.push({
+        contractId: targetContract.contract.id,
+        contractName: targetContract.contract.contractName,
+        compositeSchemaSDL: targetContract.latestVersion.compositeSchemaSdl,
+        schemaCompositionErrors: targetContract.latestVersion.schemaCompositionErrors,
+        supergraphSDL: targetContract.latestVersion.supergraphSdl,
+        changes: changes,
+      });
+    }
 
-    let contracts: Array<CreateContractVersionInput> = [];
+    if (contractsThatNeedComposition.length) {
+      this.logger.debug(
+        '%d contract(s) did not exist on promoted schema version and must be composed from scratch.',
+        args.contractsWithLatestOriginVersions.length,
+      );
 
-    if (contractsWithLatestOriginVersions?.length) {
-      this.logger.debug('contract definitions found in target.');
-
-      const targetLatestValidContractVersionByContractId = new Map<string, ValidContractVersion>();
-
-      for (const contract of contractsWithLatestTargetVersions ?? []) {
-        if (!contract.latestValidVersion) {
+      const schemas: SchemaInput[] = [];
+      for (const edge of args.logs.origin) {
+        if (edge.node.action != 'PUSH' || edge.node.kind !== 'composite') {
           continue;
         }
-        targetLatestValidContractVersionByContractId.set(
-          contract.contract.id,
-          contract.latestValidVersion,
-        );
+
+        schemas.push({
+          id: edge.node.id,
+          sdl: edge.node.sdl,
+          serviceName: edge.node.service_name,
+          serviceUrl: edge.node.service_url,
+          metadata: edge.node.metadata,
+        });
       }
+      const result = await this.registryChecks.composition({
+        baseSchema: null,
+        organization: args.organization,
+        project: args.project,
+        targetId: args.target.id,
+        schemas,
+        contracts: contractsThatNeedComposition.map(contract => ({
+          id: contract.id,
+          filter: {
+            removeUnreachableTypesFromPublicApiSchema:
+              contract.removeUnreachableTypesFromPublicApiSchema,
+            exclude: contract.excludeTags,
+            include: contract.includeTags,
+          },
+        })),
+      });
 
-      // these contracts need to be composed as the origin schema version does not have them.
-      const contractsThatNeedComposition: Array<Contract> = [];
+      for (const [index, contract] of contractsThatNeedComposition.entries()) {
+        if (result.reason) {
+          contracts.push({
+            changes: null,
+            compositeSchemaSDL: null,
+            supergraphSDL: null,
+            schemaCompositionErrors: result.reason.errors,
+            contractId: contract.id,
+            contractName: contract.contractName,
+          });
+          continue;
+        }
 
-      for (const targetContract of contractsWithLatestOriginVersions) {
-        if (!targetContract.latestVersion) {
-          contractsThatNeedComposition.push(targetContract.contract);
+        const contractResult = result?.result?.contracts?.at(index);
+
+        if (!contractResult) {
+          throw new Error('INVARIANT: The contract at the input index must exist.');
+        }
+
+        if (contractResult.reason) {
+          contracts.push({
+            changes: null,
+            compositeSchemaSDL: null,
+            supergraphSDL: null,
+            schemaCompositionErrors: contractResult.reason.errors,
+            contractId: contract.id,
+            contractName: contract.contractName,
+          });
           continue;
         }
 
         const changes = await this.registryChecks
           .diff({
             existingSdl:
-              targetLatestValidContractVersionByContractId.get(targetContract.contract.id)
-                ?.compositeSchemaSdl ?? null,
-            incomingSdl: targetContract.latestVersion?.compositeSchemaSdl ?? null,
+              targetLatestValidContractVersionByContractId.get(contract.id)?.compositeSchemaSdl ??
+              null,
+            incomingSdl: contractResult.result.fullSchemaSdl,
             conditionalBreakingChangeConfig: null,
             includeUrlChanges: false,
             filterOutFederationChanges: false,
@@ -2665,104 +2667,236 @@ export class SchemaPublisher {
           .then(r => r.result?.all ?? r.reason?.all ?? null);
 
         contracts.push({
-          contractId: targetContract.contract.id,
-          contractName: targetContract.contract.contractName,
-          compositeSchemaSDL: targetContract.latestVersion.compositeSchemaSdl,
-          schemaCompositionErrors: targetContract.latestVersion.schemaCompositionErrors,
-          supergraphSDL: targetContract.latestVersion.supergraphSdl,
-          changes: changes,
+          changes,
+          compositeSchemaSDL: contractResult.result.fullSchemaSdl,
+          supergraphSDL: contractResult.result.supergraph,
+          schemaCompositionErrors: null,
+          contractId: contract.id,
+          contractName: contract.contractName,
         });
-      }
-
-      if (contractsThatNeedComposition.length) {
-        const schemas: SchemaInput[] = [];
-        for (const edge of originLogEdges) {
-          if (edge.node.action != 'PUSH' || edge.node.kind !== 'composite') {
-            continue;
-          }
-          schemas.push({
-            id: edge.node.id,
-            sdl: edge.node.sdl,
-            serviceName: edge.node.service_name,
-            serviceUrl: edge.node.service_url,
-            metadata: edge.node.metadata,
-          });
-        }
-        const result = await this.registryChecks.composition({
-          baseSchema: null,
-          organization,
-          project,
-          targetId: target.id,
-          schemas,
-          contracts: contractsThatNeedComposition.map(contract => ({
-            id: contract.id,
-            filter: {
-              removeUnreachableTypesFromPublicApiSchema:
-                contract.removeUnreachableTypesFromPublicApiSchema,
-              exclude: contract.excludeTags,
-              include: contract.includeTags,
-            },
-          })),
-        });
-
-        for (const [index, contract] of contractsThatNeedComposition.entries()) {
-          if (result.reason) {
-            contracts.push({
-              changes: null,
-              compositeSchemaSDL: null,
-              supergraphSDL: null,
-              schemaCompositionErrors: result.reason.errors,
-              contractId: contract.id,
-              contractName: contract.contractName,
-            });
-            continue;
-          }
-
-          const contractResult = result?.result?.contracts?.at(index);
-
-          if (!contractResult) {
-            throw new Error('INVARIANT: this should not happen.');
-          }
-
-          if (contractResult.reason) {
-            contracts.push({
-              changes: null,
-              compositeSchemaSDL: null,
-              supergraphSDL: null,
-              schemaCompositionErrors: contractResult.reason.errors,
-              contractId: contract.id,
-              contractName: contract.contractName,
-            });
-            continue;
-          }
-
-          const changes = await this.registryChecks
-            .diff({
-              existingSdl:
-                targetLatestValidContractVersionByContractId.get(contract.id)?.compositeSchemaSdl ??
-                null,
-              incomingSdl: contractResult.result.fullSchemaSdl,
-              conditionalBreakingChangeConfig: null,
-              includeUrlChanges: false,
-              filterOutFederationChanges: false,
-              approvedChanges: null,
-              failDiffOnDangerousChange: false,
-              getAffectedAppDeployments: null,
-              filterNestedChanges: true,
-            })
-            .then(r => r.result?.all ?? r.reason?.all ?? null);
-
-          contracts.push({
-            changes,
-            compositeSchemaSDL: contractResult.result.fullSchemaSdl,
-            supergraphSDL: contractResult.result.supergraph,
-            schemaCompositionErrors: null,
-            contractId: contract.id,
-            contractName: contract.contractName,
-          });
-        }
       }
     }
+
+    this.logger.debug(
+      '%d contract(s) version diffs were successfully processed.',
+      contracts.length,
+    );
+
+    return contracts;
+  }
+
+  private async internalPromoteSchemaVersion(args: {
+    target: {
+      organizationId: string;
+      projectId: string;
+      targetId: string;
+    };
+    source:
+      | {
+          type: 'target';
+          targetId: string;
+        }
+      | {
+          type: 'schemaVersion';
+          schemaVersionId: string;
+        };
+  }) {
+    this.logger.debug('start schema version promotion process');
+    const [organization, project, target] = await Promise.all([
+      this.storage.getOrganization({ organizationId: args.target.organizationId }),
+      this.storage.getProjectById(args.target.projectId),
+      this.storage.getTargetById(args.target.targetId),
+    ]);
+
+    if (!organization || !target || !project) {
+      this.logger.debug(
+        'Could not resolve org, target or project. They might have been deleted while the lock was acquired.',
+      );
+      return {
+        type: 'error' as const,
+        message: 'Target does not exist.',
+      };
+    }
+
+    let originSchemaVersionLookup: {
+      target: Target;
+      schemaVersion: SchemaVersion & {
+        projectId: string;
+        organizationId: string;
+      };
+    };
+
+    if (args.source.type === 'schemaVersion') {
+      this.logger.debug(
+        'use specific schema version by id as the source. (schemaVersionId=%s)',
+        args.source.schemaVersionId,
+      );
+      const lookup = await this.schemaManager.getSchemaVersionWithTargetBySchemaVersionIdForProject(
+        project,
+        args.source.schemaVersionId,
+      );
+
+      if (!lookup) {
+        this.logger.debug(
+          'the specified schema version could not be found for this project. (schemaVersionId=%s)',
+          args.source.schemaVersionId,
+        );
+        return {
+          type: 'error' as const,
+          message: 'Schema Version not found.',
+        };
+      }
+
+      originSchemaVersionLookup = lookup;
+    } else if (args.source.type === 'target') {
+      this.logger.debug('use a target as the source. (targetId=%s)', args.target.targetId);
+
+      // If we promote within the same target, we can skip one database roundtrip and re-use the already loaded record :)
+      const sourceTarget =
+        args.source.targetId === target.id
+          ? target
+          : await this.storage.getTargetById(args.source.targetId);
+
+      if (!sourceTarget) {
+        this.logger.debug(
+          'the source target could not be found. (targetId=%s)',
+          args.source.targetId,
+        );
+
+        return {
+          type: 'error' as const,
+          message: 'Source target does not exist.',
+        };
+      }
+
+      const schemaVersion = await this.schemaManager.getMaybeLatestVersion(sourceTarget);
+
+      if (!schemaVersion) {
+        this.logger.debug(
+          'the source target has no schema version. (targetId=%s)',
+          args.source.targetId,
+        );
+        return {
+          type: 'error' as const,
+          message: 'Source target has no schema version.',
+        };
+      }
+
+      this.logger.debug(
+        'resolved latest schema version from source target. (targetId=%s, schemaVersionId=%s)',
+        args.target.targetId,
+        schemaVersion.id,
+      );
+
+      originSchemaVersionLookup = {
+        target,
+        schemaVersion,
+      };
+    } else {
+      throw Error(
+        'INVARIANT: It seems like a new source type has been added, but not implemented.',
+      );
+    }
+
+    // Here we start loading a bunch of things that we need in order to insert the new schema version
+
+    const originTarget = originSchemaVersionLookup.target;
+    const originSchemaVersion = originSchemaVersionLookup.schemaVersion;
+
+    this.logger.debug('load required data for generating new schema version.');
+
+    // get latest version in target graph with schema logs
+    const [
+      targetLatestSchemaVersion,
+      targetLatestValidSchemaVersion,
+      originPublicSchemaSdl,
+      originSupergraphSdl,
+      originLogEdges,
+      contractsWithLatestOriginVersions,
+      contractsWithLatestTargetVersions,
+    ] = await Promise.all([
+      // The latest versions within the target we promote to
+      this.schemaManager.getMaybeLatestVersion(target),
+      this.schemaManager.getMaybeLatestValidVersion(target),
+      // We have some old schema versions that do not store the SDLs on the record
+      // we need to use the helpers to ensure the SDL is produced for these
+      this.schemaVersionHelper.getCompositeSchemaSdl(originSchemaVersion),
+      this.schemaVersionHelper.getSupergraphSdl(originSchemaVersion),
+      // We need to get all the schema logs that we need to attach to the new schema version
+      // we are about to create
+      this.schemaVersions.getSchemaLogEdgesWithNodesForSchemaVersion(originSchemaVersion),
+      // Contracts only exist for Federation projects, so we attempt to load these conditionally as a small optimization :)
+      project.type === ProjectType.FEDERATION
+        ? this.contracts.loadContractsWithLatestValidContractVersioAndLatestContractVersionForSchemaVersion(
+            originSchemaVersion,
+          )
+        : null,
+      project.type === ProjectType.FEDERATION
+        ? this.contracts.loadActiveContractsWithLatestValidContractVersionsByTargetId({
+            targetId: target.id,
+          })
+        : null,
+    ]);
+
+    const targetLogEdges = await (targetLatestSchemaVersion
+      ? this.schemaVersions.getSchemaLogEdgesWithNodesForSchemaVersion(targetLatestSchemaVersion)
+      : []);
+
+    // Once we loaded everything we can generate
+    // - a diff between the latest schema version in the target
+    //   - Subgraphs
+    //   - Public SDL Changes
+    //   - Supergraph SDL Changes
+    //   - Contracts Changes
+
+    this.logger.debug('compute data for new schema version.');
+
+    const [schemaLogDiffs, publicSchemaChanges, supergraphSchemaChanges, contracts] =
+      await Promise.all([
+        this.diffSchemaLogs({
+          logs: {
+            target: targetLogEdges,
+            origin: originLogEdges,
+          },
+          target,
+        }),
+        this.registryChecks
+          .diff({
+            existingSdl: targetLatestValidSchemaVersion?.compositeSchemaSDL ?? null,
+            incomingSdl: originPublicSchemaSdl,
+            conditionalBreakingChangeConfig: null,
+            includeUrlChanges: false,
+            filterOutFederationChanges: true,
+            approvedChanges: null,
+            failDiffOnDangerousChange: false,
+            getAffectedAppDeployments: null,
+            filterNestedChanges: true,
+          })
+          .then(r => r.result?.all ?? r.reason?.all ?? null),
+        this.registryChecks
+          .diff({
+            existingSdl: targetLatestValidSchemaVersion?.supergraphSDL ?? null,
+            incomingSdl: originSupergraphSdl,
+            conditionalBreakingChangeConfig: null,
+            includeUrlChanges: false,
+            filterOutFederationChanges: false,
+            approvedChanges: null,
+            failDiffOnDangerousChange: false,
+            getAffectedAppDeployments: null,
+            filterNestedChanges: true,
+          })
+          .then(r => r.result?.all ?? r.reason?.all ?? null),
+        this.handlePromotionSchemaContracts({
+          organization,
+          project,
+          target,
+          logs: {
+            origin: originLogEdges,
+          },
+          contractsWithLatestOriginVersions: contractsWithLatestOriginVersions ?? [],
+          contractsWithLatestTargetVersions: contractsWithLatestTargetVersions ?? [],
+        }),
+      ]);
 
     // NOTE: We re-use the values (sdl; errors; etc) from the existing origin values were possible to ensure a promotion results in the !!exact state!!
     // e.g. if we would compose from scratch but the external composition has changed a promotion would be unpredictable
@@ -2779,7 +2913,7 @@ export class SchemaPublisher {
         publicSchemaSdl: originPublicSchemaSdl,
         supergraphSdl: originSupergraphSdl,
       },
-      schemaLogs,
+      schemaLogs: schemaLogDiffs,
       publicSchemaChanges,
       supergraphSchemaChanges,
       contracts,
@@ -2789,9 +2923,11 @@ export class SchemaPublisher {
     if (schemaVersion.schemaCompositionErrors === null) {
       if (!schemaVersion.compositeSchemaSDL) {
         throw new Error(
-          'Invariant: This should never happen. We have now an inconsistent state...',
+          'INVARIANT: A newly created schema version should always have a public schema SDL if there is no composition errors.',
         );
       }
+
+      this.logger.debug('update CDN state for target. (targetId=%s)', target.id);
 
       const publishContracts: Array<{ name: string; sdl: string; supergraph: string }> = [];
       for (const contract of contracts ?? []) {
@@ -2818,6 +2954,12 @@ export class SchemaPublisher {
         versionId: schemaVersion.id,
       });
     }
+
+    this.logger.debug(
+      'successfully promoted schema version. (targetId=%s, schemaVersionId)',
+      target.id,
+      schemaVersion.id,
+    );
 
     return {
       type: 'success' as const,

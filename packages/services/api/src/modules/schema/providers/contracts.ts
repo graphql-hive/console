@@ -290,7 +290,7 @@ export class Contracts {
 
   public async loadContractsWithLatestValidContractVersioAndLatestContractVersionForSchemaVersion(
     schemaVersion: SchemaVersion,
-  ) {
+  ): Promise<Array<ContractWithLatestVersions> | null> {
     const contracts = await this.getActiveContractsByTargetId({ targetId: schemaVersion.targetId });
     if (contracts === null) {
       return null;
@@ -357,11 +357,14 @@ export class Contracts {
       }
     }
 
-    return contracts.map(contract => ({
-      contract,
-      latestVersion: latestContractVersionsByContractId.get(contract.id) ?? null,
-      latestValidVersion: latestValidContractVersionByContractId.get(contract.id) ?? null,
-    }));
+    return contracts.map(
+      contract =>
+        ({
+          contract,
+          latestVersion: latestContractVersionsByContractId.get(contract.id) ?? null,
+          latestValidVersion: latestValidContractVersionByContractId.get(contract.id) ?? null,
+        }) as ContractWithLatestVersions,
+    );
   }
 
   public async getPaginatedContractsByTargetId(args: {
@@ -1068,3 +1071,14 @@ export type PaginatedContractCheckConnection = Readonly<{
     endCursor: string;
   }>;
 }>;
+
+export type ContractWithLatestVersions = {
+  contract: Contract;
+  latestVersion: ContractVersion | null;
+  latestValidVersion: ValidContractVersion | null;
+};
+
+export type ContractWithLatestValidVersion = {
+  contract: Contract;
+  latestValidVersion: ValidContractVersion | null;
+};

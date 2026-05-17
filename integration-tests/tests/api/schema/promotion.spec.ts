@@ -53,7 +53,7 @@ test.concurrent(
       resources: {
         mode: ResourceAssignmentModeType.All,
       },
-      permissions: ['schemaVersion:publish'],
+      permissions: ['schemaVersion:publish', 'schemaVersion:promote'],
     });
 
     const publishResult = await publishSchema(
@@ -123,7 +123,7 @@ test.concurrent(
       resources: {
         mode: ResourceAssignmentModeType.All,
       },
-      permissions: ['schemaVersion:publish'],
+      permissions: ['schemaVersion:publish', 'schemaVersion:promote'],
     });
 
     const publishResult = await publishSchema(
@@ -196,7 +196,7 @@ test.concurrent(
       resources: {
         mode: ResourceAssignmentModeType.All,
       },
-      permissions: ['schemaVersion:publish'],
+      permissions: ['schemaVersion:publish', 'schemaVersion:promote'],
     });
 
     let publishResult = await publishSchema(
@@ -285,7 +285,7 @@ test.concurrent('promote specific schema version within the same target', async 
     resources: {
       mode: ResourceAssignmentModeType.All,
     },
-    permissions: ['schemaVersion:publish'],
+    permissions: ['schemaVersion:publish', 'schemaVersion:promote'],
   });
 
   let publishResult = await publishSchema(
@@ -392,7 +392,7 @@ test.concurrent('promote non-existing schema version yields error', async ({ exp
     resources: {
       mode: ResourceAssignmentModeType.All,
     },
-    permissions: ['schemaVersion:publish'],
+    permissions: ['schemaVersion:publish', 'schemaVersion:promote'],
   });
 
   const promoteResult = await schemaVersionPromote(
@@ -429,7 +429,7 @@ test.concurrent(
       resources: {
         mode: ResourceAssignmentModeType.All,
       },
-      permissions: ['schemaVersion:publish'],
+      permissions: ['schemaVersion:publish', 'schemaVersion:promote'],
     });
 
     let publishResult = await publishSchema(
@@ -509,7 +509,7 @@ test.concurrent('missing schema publish permissions target yields error', async 
   ).then(r => r.expectGraphQLErrors());
   expect(promoteResultErrors.length).toEqual(1);
   expect(promoteResultErrors.at(0)?.message).toEqual(
-    `No access (reason: "Missing permission for performing 'schemaVersion:publish' on resource")`,
+    `No access (reason: "Missing permission for performing 'schemaVersion:promote' on resource")`,
   );
   expect(promoteResultErrors.at(0)?.extensions?.code).toEqual(`UNAUTHORISED`);
 });
@@ -524,7 +524,7 @@ test.concurrent(
       resources: {
         mode: ResourceAssignmentModeType.All,
       },
-      permissions: ['schemaVersion:publish'],
+      permissions: ['schemaVersion:publish', 'schemaVersion:promote'],
     });
 
     const publishResult = await publishSchema(
@@ -594,7 +594,7 @@ test.concurrent(
       resources: {
         mode: ResourceAssignmentModeType.All,
       },
-      permissions: ['schemaVersion:publish'],
+      permissions: ['schemaVersion:publish', 'schemaVersion:promote'],
     });
 
     await publishSchema(
@@ -657,7 +657,12 @@ test.concurrent(
       resources: {
         mode: ResourceAssignmentModeType.All,
       },
-      permissions: ['schemaVersion:publish', 'target:modifySettings', 'project:describe'],
+      permissions: [
+        'schemaVersion:publish',
+        'target:modifySettings',
+        'project:describe',
+        'schemaVersion:promote',
+      ],
     });
 
     await createContract(
@@ -736,7 +741,12 @@ test.concurrent(
       resources: {
         mode: ResourceAssignmentModeType.All,
       },
-      permissions: ['schemaVersion:publish', 'target:modifySettings', 'project:describe'],
+      permissions: [
+        'schemaVersion:publish',
+        'target:modifySettings',
+        'project:describe',
+        'schemaVersion:promote',
+      ],
     });
 
     await createContract(

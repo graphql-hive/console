@@ -1772,4 +1772,4 @@ const SchemaLogWithEdgesModel = z.union([
   }),
 ]);
 
-type SchemaLogWithEdges = z.TypeOf<typeof SchemaLogWithEdgesModel>;
+export type SchemaLogWithEdges = z.TypeOf<typeof SchemaLogWithEdgesModel>;

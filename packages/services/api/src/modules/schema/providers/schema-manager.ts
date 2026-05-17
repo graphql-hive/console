@@ -299,7 +299,7 @@ export class SchemaManager {
     };
   }
 
-  async getSchemaVersionByIdForProject(
+  async getSchemaVersionWithTargetBySchemaVersionIdForProject(
     project: Project,
     schemaVersionId: string,
   ): Promise<null | {
@@ -310,21 +310,42 @@ export class SchemaManager {
       organizationId: string;
     };
   }> {
+    this.logger.debug(
+      'Lookup up schema version by id for project (projectId=%s, schemaVersionId=%s)',
+      project.id,
+      schemaVersionId,
+    );
     const schemaVersion = await this.schemaVersions.getSchemaVersionById(schemaVersionId);
 
     if (!schemaVersion) {
+      this.logger.debug('The schema version was not found. (schemaVersionId=%s)', schemaVersionId);
       return null;
     }
 
     const target = await this.storage.getTargetById(schemaVersion.targetId);
 
     if (!target) {
+      this.logger.debug(
+        'The target of the schema version was not found. (targetId=%s)',
+        schemaVersion.targetId,
+      );
       return null;
     }
 
     if (target.projectId !== project.id) {
+      this.logger.debug(
+        'The found schema version does not belong to the specified target. (expectedProjectId=%s, actualProjectId=%s)',
+        project.id,
+        target.projectId,
+      );
       return null;
     }
+
+    this.logger.debug(
+      'The schema version and its target were found.. (targetId=%s, schemaVersionId=%s)',
+      schemaVersion.targetId,
+      schemaVersion.id,
+    );
 
     return {
       target,
