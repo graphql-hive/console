@@ -1307,7 +1307,6 @@ export class SchemaVersionStore {
         targetId: args.target.target.id,
         origin: {
           type: 'promotion',
-          // TODO: for full backwards-compatibility we also need to look at action_id...
           source: {
             schemaVersion: { id: args.origin.version.id },
             target: { id: args.origin.target.id, name: args.origin.target.name },
@@ -1318,7 +1317,7 @@ export class SchemaVersionStore {
         diffSchemaVersionId: args.target.latestValidVersion?.id ?? null,
         compositeSchemaSDL: args.origin.publicSchemaSdl,
         supergraphSDL: args.origin.supergraphSdl,
-        supergraphChanges: args.origin.version.supergraphChanges,
+        supergraphChanges: args.supergraphSchemaChanges,
         schemaCompositionErrors: args.origin.version.schemaCompositionErrors,
         // A promotion is not associated with a commit or a pull request.
         github: null,

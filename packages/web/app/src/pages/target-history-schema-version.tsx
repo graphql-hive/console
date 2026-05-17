@@ -921,7 +921,7 @@ function CopyChip(props: { value: string; label?: string }) {
 function MetaCell(props: { label: string; children: ReactNode }): ReactElement {
   return (
     <div className="min-w-0">
-      <div className="text-xs font-bold uppercase tracking-[0.05em]">{props.label}</div>
+      <div className="text-xs font-bold uppercase tracking-[0.025em]">{props.label}</div>
       <div className="mt-1">{props.children}</div>
     </div>
   );
@@ -1047,7 +1047,7 @@ function SchemaVersionHeader(props: {
           )}
         </MetaCell>
         {schemaVersion.githubMetadata ? (
-          <MetaCell label="Source">
+          <MetaCell label="Source Control">
             <span className="mt-1 inline-flex items-center gap-1.5 text-sm">
               <GitCommit className="h-3.5 w-3.5" />
               <CopyChip
@@ -1061,7 +1061,7 @@ function SchemaVersionHeader(props: {
             </span>
           </MetaCell>
         ) : schemaVersion.meta?.commit ? (
-          <MetaCell label="Source">
+          <MetaCell label="Source Control">
             <span className="mt-1 inline-flex items-center gap-1.5 text-sm">
               <GitCommit className="h-3.5 w-3.5" />
               <CopyChip
