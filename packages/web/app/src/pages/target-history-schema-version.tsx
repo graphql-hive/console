@@ -418,7 +418,7 @@ function SchemaVersionView(props: SchemaVersionViewProps) {
                       compositionErrors={contractOrVersion.schemaCompositionErrors}
                     />
                   )}
-                  <GraphVersionSummary
+                  <SchemaVersionSummary
                     schemaVersion={schemaVersion}
                     contractVersion={contractVersionNode}
                   />
@@ -1285,11 +1285,14 @@ const SchemaVersionSummary_ContractVersionFragment = graphql(`
   }
 `);
 
-export const GraphVersionSummary = (props: {
+export const SchemaVersionSummary = (props: {
   schemaVersion: FragmentType<typeof SchemaVersionSummary_SchemaVersionFragment>;
   contractVersion: null | FragmentType<typeof SchemaVersionSummary_ContractVersionFragment>;
 }) => {
-  const graphVersion = useFragment(SchemaVersionSummary_SchemaVersionFragment, props.schemaVersion);
+  const schemaVersion = useFragment(
+    SchemaVersionSummary_SchemaVersionFragment,
+    props.schemaVersion,
+  );
   const contractVersion = useFragment(
     SchemaVersionSummary_ContractVersionFragment,
     props.contractVersion,
@@ -1303,7 +1306,7 @@ export const GraphVersionSummary = (props: {
       updated: 0,
     };
 
-    for (const diff of graphVersion.subgraphDiffs ?? []) {
+    for (const diff of schemaVersion.subgraphDiffs ?? []) {
       if (diff.__typename === 'SubgraphDiffAdded') {
         data.total++;
         data.added++;
@@ -1321,16 +1324,16 @@ export const GraphVersionSummary = (props: {
     }
 
     return data;
-  }, [graphVersion.subgraphDiffs]);
+  }, [schemaVersion.subgraphDiffs]);
 
   const publicChangeStats = useMemo(() => {
     const data = {
-      totalChanges: (contractVersion ?? graphVersion).sdlChanges?.edges.length ?? 0,
+      totalChanges: (contractVersion ?? schemaVersion).sdlChanges?.edges.length ?? 0,
       breakingChanges: 0,
       notSafeChanges: 0,
     };
 
-    for (const change of (contractVersion ?? graphVersion).sdlChanges?.edges ?? []) {
+    for (const change of (contractVersion ?? schemaVersion).sdlChanges?.edges ?? []) {
       if (change.node.severityLevel === SeverityLevelType.Breaking) {
         data.breakingChanges++;
 
@@ -1342,7 +1345,7 @@ export const GraphVersionSummary = (props: {
     }
 
     return data;
-  }, [graphVersion.sdlChanges, contractVersion?.sdlChanges]);
+  }, [schemaVersion.sdlChanges, contractVersion?.sdlChanges]);
 
   return (
     <div className="flex flex-col gap-6">
@@ -1358,7 +1361,7 @@ export const GraphVersionSummary = (props: {
           value={publicChangeStats.breakingChanges}
           tone="muted"
           additionalValue={
-            publicChangeStats.breakingChanges && graphVersion.isComposable ? (
+            publicChangeStats.breakingChanges && schemaVersion.isComposable ? (
               publicChangeStats.notSafeChanges ? (
                 <TooltipProvider>
                   <Tooltip>
@@ -1401,12 +1404,12 @@ export const GraphVersionSummary = (props: {
           </div>
         </div>
         <ul className="divide-y">
-          {(graphVersion.subgraphDiffs ?? [])
+          {(schemaVersion.subgraphDiffs ?? [])
             .sort(diff => (diff.__typename === 'SubgraphDiffUnchanged' ? 1 : -1))
             .map((diff, index) => (
               <li
                 className={cn(diff.__typename === 'SubgraphDiffUnchanged' && 'opacity-50')}
-                key={`${graphVersion.id}_${index}`}
+                key={`${schemaVersion.id}_${index}`}
               >
                 <SubgraphRow subgraphDiff={diff} />
               </li>
