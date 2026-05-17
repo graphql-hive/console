@@ -2323,7 +2323,6 @@ export class SchemaPublisher {
       )
       .catch((error: unknown) => {
         if (error instanceof MutexResourceLockedError) {
-          // TODO: support retry
           return {
             type: 'error' as const,
             message: 'Please try again later.',
