@@ -457,10 +457,6 @@ export class SchemaVersionHelper {
   async getGraphQLRegistryLogForSchemaVersion(schemaVersion: SchemaVersion) {
     let log: SchemaLog | null = null;
 
-    if (schemaVersion.actionId) {
-      log = await this.schemaVersions.getSchemaLogById(schemaVersion.actionId);
-    }
-
     if (schemaVersion.origin) {
       if (schemaVersion.origin.type === 'delete') {
         log = await this.schemaVersions.getSchemaLogById(
@@ -484,6 +480,8 @@ export class SchemaVersionHelper {
           __typename: 'PromotionSchemaLog',
         } satisfies ResolversUnionTypes<any>['RegistryLog'];
       }
+    } else if (schemaVersion.actionId) {
+      log = await this.schemaVersions.getSchemaLogById(schemaVersion.actionId);
     }
 
     if (!log) {
@@ -533,45 +531,6 @@ export class SchemaVersionHelper {
   async getGraphQLSchemaVersionOriginForSchemaVersion(schemaVersion: SchemaVersion) {
     const project = await this.projectManager.getProject(schemaVersion);
 
-    if (schemaVersion.actionId) {
-      if (project.type === ProjectType.SINGLE) {
-        return {
-          __typename: 'SchemaVersionPublishOrigin',
-          publishedSubgraphs: null,
-        } satisfies ResolversUnionTypes<any>['SchemaVersionOrigin'];
-      }
-
-      const log = await this.schemaVersions.getSchemaLogNodeByNodeId(schemaVersion.actionId);
-      if (!log.service_name) {
-        throw new Error('INVARIANT: Service name must be defined');
-      }
-
-      if (log.action === 'PUSH') {
-        return {
-          __typename: 'SchemaVersionPublishOrigin',
-          publishedSubgraphs: [
-            {
-              name: log.service_name,
-              versionId: log.id,
-            },
-          ],
-        } satisfies ResolversUnionTypes<any>['SchemaVersionOrigin'];
-      }
-      if (log.action === 'DELETE') {
-        return {
-          __typename: 'SchemaVersionSubgraphRemoveOrigin',
-          removedSubgraphs: [
-            {
-              name: log.service_name,
-              versionId: log.id,
-            },
-          ],
-        } satisfies ResolversUnionTypes<any>['SchemaVersionOrigin'];
-      }
-
-      log satisfies never;
-    }
-
     if (schemaVersion.origin) {
       if (schemaVersion.origin.type === 'publish') {
         return {
@@ -599,6 +558,42 @@ export class SchemaVersionHelper {
       schemaVersion.origin satisfies never;
     }
 
+    if (project.type === ProjectType.SINGLE) {
+      return {
+        __typename: 'SchemaVersionPublishOrigin',
+        publishedSubgraphs: null,
+      } satisfies ResolversUnionTypes<any>['SchemaVersionOrigin'];
+    }
+
+    const log = await this.schemaVersions.getSchemaLogNodeByNodeId(schemaVersion.actionId);
+    if (!log.service_name) {
+      throw new Error('INVARIANT: Service name must be defined');
+    }
+
+    if (log.action === 'PUSH') {
+      return {
+        __typename: 'SchemaVersionPublishOrigin',
+        publishedSubgraphs: [
+          {
+            name: log.service_name,
+            versionId: log.id,
+          },
+        ],
+      } satisfies ResolversUnionTypes<any>['SchemaVersionOrigin'];
+    }
+    if (log.action === 'DELETE') {
+      return {
+        __typename: 'SchemaVersionSubgraphRemoveOrigin',
+        removedSubgraphs: [
+          {
+            name: log.service_name,
+            versionId: log.id,
+          },
+        ],
+      } satisfies ResolversUnionTypes<any>['SchemaVersionOrigin'];
+    }
+
+    log satisfies never;
     throw new Error('INVARIANT: SchemaVersion either needs to have actionId or origin property.');
   }
   /**

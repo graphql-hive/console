@@ -57,6 +57,12 @@ export class SchemaVersionStore {
       };
       meta: SchemaVersionOriginMeta | null;
       conditionalBreakingChangeMetadata: ConditionalBreakingChangeMetadata | null;
+      /**
+       * The action ID that caused this version.
+       * This column is a leftover, so we can easily rollback the introduced changes.
+       * In the future we should delete this column fully and instead sorely use the `origin` column.
+       **/
+      actionId: string;
     },
   ) {
     const query = psql`/* insertSchemaVersion */
@@ -81,7 +87,8 @@ export class SchemaVersionStore {
           "schema_metadata",
           "metadata_attributes",
           "origin",
-          "meta"
+          "meta",
+          "action_id"
         )
       VALUES
         (
@@ -104,7 +111,8 @@ export class SchemaVersionStore {
           ${psql.jsonbOrNull(args.schemaMetadata)},
           ${psql.jsonbOrNull(args.metadataAttributes)},
           ${psql.jsonb(SchemaVersionOriginModel.parse(args.origin))},
-          ${psql.jsonbOrNull(SchemaVersionMetaModel.nullable().parse(args.meta))}
+          ${psql.jsonbOrNull(SchemaVersionMetaModel.nullable().parse(args.meta))},
+          ${args.actionId}
         )
       RETURNING
         ${schemaVersionSQLFields()}
@@ -358,6 +366,7 @@ export class SchemaVersionStore {
         hasContractCompositionErrors:
           args.contracts?.some(c => c.schemaCompositionErrors != null) ?? false,
         conditionalBreakingChangeMetadata: args.conditionalBreakingChangeMetadata,
+        actionId: newLog.id,
       });
 
       await trx.query(psql`/* insertSchemaVersionToLog */
@@ -540,6 +549,7 @@ export class SchemaVersionStore {
         hasContractCompositionErrors:
           args.contracts?.some(c => c.schemaCompositionErrors != null) ?? false,
         conditionalBreakingChangeMetadata: args.conditionalBreakingChangeMetadata,
+        actionId: deleteActionResult.id,
       });
 
       // Move all the schema_version_to_log entries of the previous version to the new version
@@ -1319,6 +1329,12 @@ export class SchemaVersionStore {
         hasContractCompositionErrors:
           args.contracts?.some(c => c.schemaCompositionErrors != null) ?? false,
         conditionalBreakingChangeMetadata: args.conditionalBreakingChangeMetadata,
+        // Note: we re-use the original version action id here to allow rolling back the introduced changes easily.
+        // In the future we will make the actionId column nullable and remove it from being inserted here.
+        // In case we would rollback the schema promotion feature, the users would still see the promoted schema versions
+        // even though the action would be misleading. This is a trade-off to make sure we can quickly rollback the schema promotion feature
+        // in case it causes unexpected issues.
+        actionId: args.origin.version.actionId,
       });
 
       if (args.publicSchemaChanges?.length) {
@@ -1630,6 +1646,8 @@ const SchemaVersionModel = z
     conditionalBreakingChangeMetadata: ConditionalBreakingChangeMetadataModel.nullable(),
     targetId: z.string(),
     meta: SchemaVersionMetaModel.nullable(),
+    actionId: z.string(),
+    origin: SchemaVersionOriginModel.nullable(),
   })
   .and(
     z
@@ -1651,18 +1669,6 @@ const SchemaVersionModel = z
             }
           : null,
       })),
-  )
-  .and(
-    z.union([
-      z.object({
-        actionId: z.string(),
-        origin: z.null(),
-      }),
-      z.object({
-        actionId: z.null(),
-        origin: SchemaVersionOriginModel,
-      }),
-    ]),
   );
 
 export type SchemaVersion = z.infer<typeof SchemaVersionModel>;

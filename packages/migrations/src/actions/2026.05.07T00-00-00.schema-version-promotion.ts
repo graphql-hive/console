@@ -22,8 +22,7 @@ export default {
     ;
 
     ALTER TABLE "schema_versions"
-      ALTER COLUMN "action_id" DROP NOT NULL
-      , ADD COLUMN IF NOT EXISTS "origin" jsonb NULL
+      ADD COLUMN IF NOT EXISTS "origin" jsonb NULL
       , ADD COLUMN IF NOT EXISTS "supergraph_changes" jsonb NULL
       , ADD COLUMN IF NOT EXISTS "meta" jsonb NULL
     ;
