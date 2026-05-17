@@ -20,6 +20,7 @@ import { createPeriod } from '../../../shared/helpers';
 import { isGitHubRepositoryString } from '../../../shared/is-github-repository-string';
 import { bolderize } from '../../../shared/markdown';
 import { AlertsManager } from '../../alerts/providers/alerts-manager';
+import { AppDeployments } from '../../app-deployments/providers/app-deployments';
 import { Session } from '../../auth/lib/authz';
 import { RateLimitProvider } from '../../commerce/providers/rate-limit.provider';
 import {
@@ -180,6 +181,7 @@ export class SchemaPublisher {
     private idTranslator: IdTranslator,
     private schemaVersions: SchemaVersionStore,
     private registryChecks: RegistryChecks,
+    private appDeployments: AppDeployments,
     @Inject(SCHEMA_MODULE_CONFIG) private schemaModuleConfig: SchemaModuleConfig,
     singleModel: SingleModel,
     compositeModel: CompositeModel,
@@ -2331,6 +2333,7 @@ export class SchemaPublisher {
       });
   }
 
+  @traceFn('SchemaPublisher.diffSchemaLogs')
   private async diffSchemaLogs(args: {
     logs: {
       target: Array<SchemaLogWithEdges>;
@@ -2510,6 +2513,7 @@ export class SchemaPublisher {
     return schemaLogs;
   }
 
+  @traceFn('SchemaPublisher.handlePromotionSchemaContracts')
   private async handlePromotionSchemaContracts(args: {
     organization: Organization;
     project: Project;
@@ -2685,6 +2689,7 @@ export class SchemaPublisher {
     return contracts;
   }
 
+  @traceFn('SchemaPublisher.internalPromoteSchemaVersion')
   private async internalPromoteSchemaVersion(args: {
     target: {
       organizationId: string;
@@ -2814,6 +2819,7 @@ export class SchemaPublisher {
       originLogEdges,
       contractsWithLatestOriginVersions,
       contractsWithLatestTargetVersions,
+      { conditionalBreakingChangeConfiguration },
     ] = await Promise.all([
       // The latest versions within the target we promote to
       this.schemaManager.getMaybeLatestVersion(target),
@@ -2836,6 +2842,13 @@ export class SchemaPublisher {
             targetId: target.id,
           })
         : null,
+      this.getBreakingChangeConfiguration({
+        selector: {
+          targetId: target.id,
+          projectId: project.id,
+          organizationId: organization.id,
+        },
+      }),
     ]);
 
     const targetLogEdges = await (targetLatestSchemaVersion
@@ -2851,52 +2864,71 @@ export class SchemaPublisher {
 
     this.logger.debug('compute data for new schema version.');
 
-    const [schemaLogDiffs, publicSchemaChanges, supergraphSchemaChanges, contracts] =
-      await Promise.all([
-        this.diffSchemaLogs({
-          logs: {
-            target: targetLogEdges,
-            origin: originLogEdges,
-          },
-          target,
-        }),
-        this.registryChecks
-          .diff({
-            existingSdl: targetLatestValidSchemaVersion?.compositeSchemaSDL ?? null,
-            incomingSdl: originPublicSchemaSdl,
-            conditionalBreakingChangeConfig: null,
-            includeUrlChanges: false,
-            filterOutFederationChanges: true,
-            approvedChanges: null,
-            failDiffOnDangerousChange: false,
-            getAffectedAppDeployments: null,
-            filterNestedChanges: true,
-          })
-          .then(r => r.result?.all ?? r.reason?.all ?? null),
-        this.registryChecks
-          .diff({
-            existingSdl: targetLatestValidSchemaVersion?.supergraphSDL ?? null,
-            incomingSdl: originSupergraphSdl,
-            conditionalBreakingChangeConfig: null,
-            includeUrlChanges: false,
-            filterOutFederationChanges: false,
-            approvedChanges: null,
-            failDiffOnDangerousChange: false,
-            getAffectedAppDeployments: null,
-            filterNestedChanges: true,
-          })
-          .then(r => r.result?.all ?? r.reason?.all ?? null),
-        this.handlePromotionSchemaContracts({
-          organization,
-          project,
-          target,
-          logs: {
-            origin: originLogEdges,
-          },
-          contractsWithLatestOriginVersions: contractsWithLatestOriginVersions ?? [],
-          contractsWithLatestTargetVersions: contractsWithLatestTargetVersions ?? [],
-        }),
-      ]);
+    const [
+      schemaLogDiffs,
+      publicSchemaChanges,
+      supergraphSchemaChanges,
+      contracts,
+      conditionalBreakingChangeMetadata,
+    ] = await Promise.all([
+      this.diffSchemaLogs({
+        logs: {
+          target: targetLogEdges,
+          origin: originLogEdges,
+        },
+        target,
+      }),
+      this.registryChecks
+        .diff({
+          existingSdl: targetLatestValidSchemaVersion?.compositeSchemaSDL ?? null,
+          incomingSdl: originPublicSchemaSdl,
+          conditionalBreakingChangeConfig:
+            conditionalBreakingChangeConfiguration?.conditionalBreakingChangeDiffConfig ?? null,
+          includeUrlChanges: false,
+          filterOutFederationChanges: true,
+          approvedChanges: null,
+          failDiffOnDangerousChange: false,
+          getAffectedAppDeployments: schemaCoordinates =>
+            this.appDeployments.getAffectedAppDeploymentsBySchemaCoordinates({
+              targetId: target.id,
+              schemaCoordinates,
+              excludedAppDeploymentNames:
+                conditionalBreakingChangeConfiguration?.conditionalBreakingChangeDiffConfig
+                  ?.excludedAppDeploymentNames ?? null,
+            }),
+          filterNestedChanges: true,
+        })
+        .then(r => r.result?.all ?? r.reason?.all ?? null),
+      this.registryChecks
+        .diff({
+          existingSdl: targetLatestValidSchemaVersion?.supergraphSDL ?? null,
+          incomingSdl: originSupergraphSdl,
+          conditionalBreakingChangeConfig: null,
+          includeUrlChanges: false,
+          filterOutFederationChanges: false,
+          approvedChanges: null,
+          failDiffOnDangerousChange: false,
+          getAffectedAppDeployments: null,
+          filterNestedChanges: true,
+        })
+        .then(r => r.result?.all ?? r.reason?.all ?? null),
+      this.handlePromotionSchemaContracts({
+        organization,
+        project,
+        target,
+        logs: {
+          origin: originLogEdges,
+        },
+        contractsWithLatestOriginVersions: contractsWithLatestOriginVersions ?? [],
+        contractsWithLatestTargetVersions: contractsWithLatestTargetVersions ?? [],
+      }),
+      this.getConditionalBreakingChangeMetadata({
+        conditionalBreakingChangeConfiguration,
+        organizationId: organization.id,
+        projectId: project.id,
+        targetId: target.id,
+      }),
+    ]);
 
     // NOTE: We re-use the values (sdl; errors; etc) from the existing origin values were possible to ensure a promotion results in the !!exact state!!
     // e.g. if we would compose from scratch but the external composition has changed a promotion would be unpredictable
@@ -2917,7 +2949,7 @@ export class SchemaPublisher {
       publicSchemaChanges,
       supergraphSchemaChanges,
       contracts,
-      conditionalBreakingChangeMetadata: null,
+      conditionalBreakingChangeMetadata,
     });
 
     if (schemaVersion.schemaCompositionErrors === null) {

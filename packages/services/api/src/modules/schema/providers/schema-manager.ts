@@ -1354,10 +1354,7 @@ export class SchemaManager {
     const log = await this.getSchemaLogById(schemaVersion.actionId);
 
     if ('commit' in log && log.commit) {
-      const project = await this.storage.getProject({
-        organizationId: schemaVersion.organizationId,
-        projectId: schemaVersion.projectId,
-      });
+      const project = await this.projectManager.getProjectById(schemaVersion.projectId);
 
       if (project.gitRepository) {
         return {

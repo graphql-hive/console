@@ -16,6 +16,7 @@ import { parseGraphQLSource } from '../../../shared/schema';
 import { ProjectManager } from '../../project/providers/project-manager';
 import { Logger } from '../../shared/providers/logger';
 import { Storage } from '../../shared/providers/storage';
+import { BreakingSchemaChangeUsageHelper } from './breaking-schema-changes-helper';
 import { CompositionOrchestrator } from './orchestrator/composition-orchestrator';
 import { RegistryChecks } from './registry-checks';
 import { ensureCompositeSchemas, SchemaHelper, toCompositeSchemaInput } from './schema-helper';
@@ -41,6 +42,7 @@ export class SchemaVersionHelper {
     private logger: Logger,
     private compositionOrchestrator: CompositionOrchestrator,
     private schemaVersions: SchemaVersionStore,
+    private breakingSchemaChangesHelper: BreakingSchemaChangeUsageHelper,
   ) {}
 
   @traceFn('SchemaVersionHelper.composeSchemaVersion', {
@@ -55,10 +57,7 @@ export class SchemaVersionHelper {
   private async composeSchemaVersion(schemaVersion: SchemaVersion) {
     const [schemas, project, organization] = await Promise.all([
       this.schemaVersions.getSchemasBySchemaVersionId(schemaVersion.id),
-      this.projectManager.getProject({
-        organizationId: schemaVersion.organizationId,
-        projectId: schemaVersion.projectId,
-      }),
+      this.projectManager.getProjectById(schemaVersion.projectId),
       this.storage.getOrganization({
         organizationId: schemaVersion.organizationId,
       }),
@@ -196,6 +195,12 @@ export class SchemaVersionHelper {
       for (const change of changes ?? []) {
         if (change.criticality === CriticalityLevel.Breaking) {
           breakingChanges.push(change);
+          if (schemaVersion.conditionalBreakingChangeMetadata) {
+            this.breakingSchemaChangesHelper.registerMetadataForBreakingSchemaChange(
+              change,
+              schemaVersion.conditionalBreakingChangeMetadata,
+            );
+          }
           continue;
         }
         safeChanges.push(change);
@@ -227,10 +232,7 @@ export class SchemaVersionHelper {
     }
 
     const [project, { failDiffOnDangerousChange }] = await Promise.all([
-      this.projectManager.getProject({
-        organizationId: schemaVersion.organizationId,
-        projectId: schemaVersion.projectId,
-      }),
+      this.projectManager.getProjectById(schemaVersion.projectId),
       this.storage.getTargetSettings({
         targetId: schemaVersion.targetId,
         projectId: schemaVersion.projectId,
@@ -348,7 +350,7 @@ export class SchemaVersionHelper {
   }
 
   async getGraphQLSubgraphDiffsForSchemaVersion(schemaVersion: SchemaVersion) {
-    const project = await this.projectManager.getProject(schemaVersion);
+    const project = await this.projectManager.getProjectById(schemaVersion.projectId);
 
     // For non multi-service projects we dont need a subgraph diff
     if (project.type === ProjectType.SINGLE) {
@@ -535,7 +537,7 @@ export class SchemaVersionHelper {
   }
 
   async getGraphQLSchemaVersionOriginForSchemaVersion(schemaVersion: SchemaVersion) {
-    const project = await this.projectManager.getProject(schemaVersion);
+    const project = await this.projectManager.getProjectById(schemaVersion.projectId);
 
     if (schemaVersion.origin) {
       if (schemaVersion.origin.type === 'publish') {

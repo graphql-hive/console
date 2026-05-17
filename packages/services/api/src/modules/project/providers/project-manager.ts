@@ -202,6 +202,16 @@ export class ProjectManager {
     return this.storage.getProject(selector);
   }
 
+  @cache((projectId: string) => projectId)
+  async getProjectById(projectId: string): Promise<Project> {
+    this.logger.debug('Fetching project by id (projectId=%s)', projectId);
+    const project = await this.storage.getProjectById(projectId);
+    if (!project) {
+      throw new Error('Could not find project.');
+    }
+    return project;
+  }
+
   async getProjectByRereference(reference: ProjectReferenceInput): Promise<Project | null> {
     const selector = await this.idTranslator.resolveProjectReference({ reference });
 

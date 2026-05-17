@@ -1335,6 +1335,7 @@ export const GraphVersionSummary = (props: {
         data.breakingChanges++;
 
         if (!change.node.isSafeBasedOnUsage) {
+          console.log(change.node);
           data.notSafeChanges++;
         }
       }
@@ -1364,7 +1365,7 @@ export const GraphVersionSummary = (props: {
                     <TooltipTrigger>
                       <span className="flex items-center gap-0.5 text-xs text-red-500/80 lg:text-sm">
                         <ShieldAlertIcon className="inline size-2 md:size-3" />
-                        {publicChangeStats.breakingChanges} not safe
+                        {publicChangeStats.notSafeChanges} not safe
                       </span>
                     </TooltipTrigger>
                     <TooltipContent>Some changes are not safe based on usage data.</TooltipContent>{' '}

@@ -386,7 +386,7 @@ export class Contracts {
       cursor = decodeCreatedAtAndUUIDIdBasedCursor(args.cursor);
     }
 
-    const result = await this.pool.any(psql`
+    const result = await this.pool.any(psql` /* getPaginatedContractsByTargetId */
       SELECT
         ${contractFields}
       FROM
