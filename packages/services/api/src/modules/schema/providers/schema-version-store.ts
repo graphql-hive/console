@@ -881,14 +881,14 @@ export class SchemaVersionStore {
       FROM
         "schema_versions"
       WHERE
-        "action_id" = (
+        "target_id" = ${target.id}
+        AND "action_id" = (
           SELECT
             "id"
           FROM
             "schema_log"
           WHERE
             "schema_log"."project_id" = ${target.projectId}
-            AND "schema_log"."target_id" = ${target.id}
             AND "schema_log"."commit" = ${commit}
           ORDER BY "schema_log"."created_at" DESC
           LIMIT 1
