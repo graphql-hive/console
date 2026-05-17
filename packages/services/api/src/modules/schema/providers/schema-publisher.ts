@@ -2930,6 +2930,13 @@ export class SchemaPublisher {
       }),
     ]);
 
+    const actionLog =
+      originLogEdges.find(log => log.actionId === originSchemaVersion.actionId)?.node ?? null;
+
+    if (!actionLog) {
+      throw new Error('INVARIANT: Could not find action log that caused the origin version.');
+    }
+
     // NOTE: We re-use the values (sdl; errors; etc) from the existing origin values were possible to ensure a promotion results in the !!exact state!!
     // e.g. if we would compose from scratch but the external composition has changed a promotion would be unpredictable
     // the only exception is contracts, as the contract definitions might have changed and we might not have a contract version in the origin schema version
@@ -2945,6 +2952,7 @@ export class SchemaPublisher {
         publicSchemaSdl: originPublicSchemaSdl,
         supergraphSdl: originSupergraphSdl,
       },
+      actionLog,
       schemaLogs: schemaLogDiffs,
       publicSchemaChanges,
       supergraphSchemaChanges,

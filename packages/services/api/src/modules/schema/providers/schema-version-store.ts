@@ -55,7 +55,7 @@ export class SchemaVersionStore {
         sha: string;
         repository: string;
       };
-      meta: SchemaVersionOriginMeta | null;
+      meta: SchemaVersionMeta | null;
       conditionalBreakingChangeMetadata: ConditionalBreakingChangeMetadata | null;
       /**
        * The action ID that caused this version.
@@ -608,6 +608,8 @@ export class SchemaVersionStore {
         service_name: deleteActionResult.serviceName,
         action: 'DELETE',
         versionId: newVersion.id,
+        author: deleteActionResult.author,
+        commit: deleteActionResult.commit,
       } satisfies CompositeDeletedSchemaLog & {
         versionId: string;
       };
@@ -1295,6 +1297,7 @@ export class SchemaVersionStore {
       latestVersion: SchemaVersion | null;
       latestValidVersion: SchemaVersion | null;
     };
+    actionLog: SchemaLog;
     schemaLogs: SchemaLogDiffInput;
     publicSchemaChanges: Array<SchemaChangeType> | null;
     supergraphSchemaChanges: Array<SchemaChangeType> | null;
@@ -1302,6 +1305,16 @@ export class SchemaVersionStore {
     conditionalBreakingChangeMetadata: null | ConditionalBreakingChangeMetadata;
   }) {
     return await this.pg.transaction('promoteSchemaVersionToTarget', async trx => {
+      let meta: SchemaVersionMeta | null = args.origin.version.meta;
+      // when the "origin" is null "meta" is null as well (as those properties were introduced in the same update)
+      // in that case we need to retrieve the meta from the action_id
+      if (!meta) {
+        meta = {
+          author: args.actionLog.author,
+          commit: args.actionLog.commit,
+        };
+      }
+
       const schemaVersion = await this.insertSchemaVersion(trx, {
         isComposable: args.origin.version.isComposable,
         targetId: args.target.target.id,
@@ -1319,9 +1332,8 @@ export class SchemaVersionStore {
         supergraphSDL: args.origin.supergraphSdl,
         supergraphChanges: args.supergraphSchemaChanges,
         schemaCompositionErrors: args.origin.version.schemaCompositionErrors,
-        // A promotion is not associated with a commit or a pull request.
-        github: null,
-        meta: args.origin.version?.meta ?? null,
+        github: args.origin.version.github,
+        meta,
         tags: args.origin.version.tags,
         schemaMetadata: args.origin.version.schemaMetadata,
         metadataAttributes: args.origin.version.metadataAttributes,
@@ -1508,8 +1520,6 @@ const SchemaLogBase = z.object({
 });
 
 const SchemaPushLogBase = SchemaLogBase.extend({
-  author: z.string(),
-  commit: z.string(),
   sdl: z.string(),
   metadata: z.string().nullish().default(null),
 });
@@ -1617,7 +1627,7 @@ const SchemaVersionMetaModel = z.object({
   commit: z.string().nullable(),
 });
 
-type SchemaVersionOriginMeta = z.TypeOf<typeof SchemaVersionMetaModel>;
+type SchemaVersionMeta = z.TypeOf<typeof SchemaVersionMetaModel>;
 
 type SchemaVersionOrigin = z.TypeOf<typeof SchemaVersionOriginModel>;
 
