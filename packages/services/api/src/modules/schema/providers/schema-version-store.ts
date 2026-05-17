@@ -1563,7 +1563,7 @@ const SchemaVersionOriginPromotionModel = z.object({
   }),
 });
 
-type SchemaVersionOriginPromotion = z.TypeOf<typeof SchemaVersionOriginPromotionModel>;
+// type SchemaVersionOriginPromotion = z.TypeOf<typeof SchemaVersionOriginPromotionModel>;
 
 const SchemaVersionOriginPublishModel = z.object({
   type: z.literal('publish'),
@@ -1588,7 +1588,7 @@ const SchemaVersionOriginDeleteModel = z.object({
   ),
 });
 
-type SchemaVersionOriginPublish = z.TypeOf<typeof SchemaVersionOriginPublishModel>;
+// type SchemaVersionOriginPublish = z.TypeOf<typeof SchemaVersionOriginPublishModel>;
 
 const SchemaVersionOriginModel = z.union([
   SchemaVersionOriginPromotionModel,
@@ -1687,7 +1687,7 @@ const SchemaLogEdgeAddedModel = SchemaLogEdgeModelBaseModel.extend({
   previousActionId: z.null(),
 });
 
-type SchemaLogEdgeAdded = z.TypeOf<typeof SchemaLogEdgeAddedModel>;
+// type SchemaLogEdgeAdded = z.TypeOf<typeof SchemaLogEdgeAddedModel>;
 
 const SchemaLogEdgeRemovedModel = SchemaLogEdgeModelBaseModel.extend({
   type: z.literal('removed'),
@@ -1696,7 +1696,7 @@ const SchemaLogEdgeRemovedModel = SchemaLogEdgeModelBaseModel.extend({
   previousActionId: z.string(),
 });
 
-type SchemaLogEdgeRemoved = z.TypeOf<typeof SchemaLogEdgeRemovedModel>;
+// type SchemaLogEdgeRemoved = z.TypeOf<typeof SchemaLogEdgeRemovedModel>;
 
 const SchemaLogEdgeUnchangedModel = SchemaLogEdgeModelBaseModel.extend({
   type: z.literal('unchanged'),
@@ -1706,7 +1706,7 @@ const SchemaLogEdgeUnchangedModel = SchemaLogEdgeModelBaseModel.extend({
   previousActionId: z.null(),
 });
 
-type SchemaLogEdgeUnchanged = z.TypeOf<typeof SchemaLogEdgeUnchangedModel>;
+// type SchemaLogEdgeUnchanged = z.TypeOf<typeof SchemaLogEdgeUnchangedModel>;
 
 const SchemaLogEdgeChangedModel = SchemaLogEdgeModelBaseModel.extend({
   type: z.literal('changed'),
@@ -1715,7 +1715,7 @@ const SchemaLogEdgeChangedModel = SchemaLogEdgeModelBaseModel.extend({
   previousActionId: z.string(),
 });
 
-type SchemaLogEdgeChanged = z.TypeOf<typeof SchemaLogEdgeChangedModel>;
+// type SchemaLogEdgeChanged = z.TypeOf<typeof SchemaLogEdgeChangedModel>;
 
 const SchemaLogEdgeModel = z.union([
   SchemaLogEdgeAddedModel,

@@ -73,7 +73,7 @@ export default class SchemaPromote extends Command<typeof SchemaPromote> {
 
   async run() {
     try {
-      const { flags, args } = await this.parse(SchemaPromote);
+      const { flags } = await this.parse(SchemaPromote);
 
       let accessToken: string, endpoint: string;
       try {

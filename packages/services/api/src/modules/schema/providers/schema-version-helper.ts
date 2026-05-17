@@ -3,13 +3,13 @@ import { __Type, isTypeSystemExtensionNode, print } from 'graphql';
 import { Injectable, Scope } from 'graphql-modules';
 import { CriticalityLevel } from '@graphql-inspector/core';
 import { mergeTypeDefs } from '@graphql-tools/merge';
-import { ResolversUnionTypes } from '@hive/api/__generated__/types';
 import { traceFn } from '@hive/service-common';
 import type { SchemaChangeType } from '@hive/storage';
 import {
   containsSupergraphSpec,
   transformSupergraphToPublicSchema,
 } from '@theguild/federation-composition';
+import type { ResolversUnionTypes } from '../../../__generated__/types';
 import { ProjectType, SchemaLog } from '../../../shared/entities';
 import { cache } from '../../../shared/helpers';
 import { parseGraphQLSource } from '../../../shared/schema';

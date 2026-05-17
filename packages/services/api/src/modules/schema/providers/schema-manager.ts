@@ -20,7 +20,6 @@ import {
   Organization,
   Project,
   ProjectType,
-  SchemaLog,
   Target,
   User,
 } from '../../../shared/entities';

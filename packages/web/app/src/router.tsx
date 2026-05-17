@@ -76,8 +76,7 @@ import { TargetExplorerDeprecatedPage } from './pages/target-explorer-deprecated
 import { TargetExplorerTypePage } from './pages/target-explorer-type';
 import { TargetExplorerUnusedPage } from './pages/target-explorer-unused';
 import { TargetHistoryPage } from './pages/target-history';
-import { TargetHistoryVersionPage } from './pages/target-history-version';
-import { TargetHistorySchemaVersionPage } from './pages/target-history-version-new';
+import { TargetHistorySchemaVersionPage } from './pages/target-history-schema-version';
 import { TargetInsightsPage } from './pages/target-insights';
 import { TargetInsightsClientPage } from './pages/target-insights-client';
 import { TargetInsightsCoordinatePage } from './pages/target-insights-coordinate';

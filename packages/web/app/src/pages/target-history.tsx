@@ -109,7 +109,7 @@ function ListPage(props: {
         <Link
           key={version.id}
           className={cn(
-            'flex items-start items-stretch gap-3 rounded-lg py-3 pl-2 pr-3',
+            'flex items-stretch gap-3 rounded-lg py-3 pl-2 pr-3',
             'hover:bg-neutral-5/40',
             versionId === version.id && 'bg-neutral-5/40',
           )}
@@ -181,16 +181,16 @@ function ListPage(props: {
             )}
           </div>
 
-          <div className="flex flex-shrink-0 flex-col">
+          <div className="flex shrink-0 flex-col">
             <div className="flex gap-3">
               {version.meta?.commit && (
-                <code className="text-muted-foreground flex hidden items-center font-mono text-xs md:block">
+                <code className="hidden items-center font-mono text-xs md:flex">
                   <GitCommitVerticalIcon size="14" className="inline" />
                   {version.meta.commit.slice(0, 7)}
                 </code>
               )}
             </div>
-            <div className="text-muted-foreground mb-0 mt-auto hidden text-right text-xs sm:block">
+            <div className="mb-0 mt-auto hidden text-right text-xs sm:block">
               <TimeAgo date={version.date} />
             </div>
           </div>
@@ -352,13 +352,5 @@ export function TargetHistoryPage(props: {
         <HistoryPageContent {...props} />
       </TargetLayout>
     </>
-  );
-}
-
-function Badge(props: React.ComponentProps<'span'>) {
-  return (
-    <span className="focus-visible:border-ring focus-visible:ring-ring/50 aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive inline-flex w-fit shrink-0 items-center justify-center gap-1 overflow-hidden whitespace-nowrap rounded-md border px-2 py-0.5 text-xs font-medium transition-[color,box-shadow] focus-visible:ring-[3px] [&>svg]:pointer-events-none [&>svg]:size-3">
-      {props.children}
-    </span>
   );
 }

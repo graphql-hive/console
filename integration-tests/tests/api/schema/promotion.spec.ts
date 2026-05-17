@@ -828,7 +828,12 @@ test.concurrent(
       resources: {
         mode: ResourceAssignmentModeType.All,
       },
-      permissions: ['schemaVersion:publish', 'target:modifySettings', 'project:describe'],
+      permissions: [
+        'schemaVersion:publish',
+        'target:modifySettings',
+        'project:describe',
+        'schemaVersion:promote',
+      ],
     });
 
     await publishSchema(
