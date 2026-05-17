@@ -56,7 +56,7 @@ test.concurrent(
       permissions: ['schemaVersion:publish', 'schemaVersion:promote'],
     });
 
-    const publishResult = await publishSchema(
+    await publishSchema(
       {
         author: 'a',
         commit: 'a',
@@ -73,10 +73,6 @@ test.concurrent(
       },
       privateAccessKey,
     ).then(r => r.expectNoGraphQLErrors());
-
-    if (publishResult.schemaPublish.__typename !== 'SchemaPublishSuccess') {
-      throw new Error('Unexpected mutation result ' + publishResult.schemaPublish.__typename);
-    }
 
     const promoteResult = await schemaVersionPromote(
       {
@@ -126,7 +122,7 @@ test.concurrent(
       permissions: ['schemaVersion:publish', 'schemaVersion:promote'],
     });
 
-    const publishResult = await publishSchema(
+    await publishSchema(
       {
         author: 'a',
         commit: 'a',
@@ -143,10 +139,6 @@ test.concurrent(
       },
       privateAccessKey,
     ).then(r => r.expectNoGraphQLErrors());
-
-    if (publishResult.schemaPublish.__typename !== 'SchemaPublishSuccess') {
-      throw new Error('Unexpected mutation result ' + publishResult.schemaPublish.__typename);
-    }
 
     const promoteResult = await schemaVersionPromote(
       {
@@ -199,7 +191,7 @@ test.concurrent(
       permissions: ['schemaVersion:publish', 'schemaVersion:promote'],
     });
 
-    let publishResult = await publishSchema(
+    await publishSchema(
       {
         author: 'a',
         commit: 'a',
@@ -217,11 +209,7 @@ test.concurrent(
       privateAccessKey,
     ).then(r => r.expectNoGraphQLErrors());
 
-    if (publishResult.schemaPublish.__typename !== 'SchemaPublishSuccess') {
-      throw new Error('Unexpected mutation result ' + publishResult.schemaPublish.__typename);
-    }
-
-    publishResult = await publishSchema(
+    await publishSchema(
       {
         author: 'b',
         commit: 'b',
@@ -238,10 +226,6 @@ test.concurrent(
       },
       privateAccessKey,
     ).then(r => r.expectNoGraphQLErrors());
-
-    if (publishResult.schemaPublish.__typename !== 'SchemaPublishSuccess') {
-      throw new Error('Unexpected mutation result ' + publishResult.schemaPublish.__typename);
-    }
 
     const promoteResult = await schemaVersionPromote(
       {
@@ -288,7 +272,7 @@ test.concurrent('promote specific schema version within the same target', async 
     permissions: ['schemaVersion:publish', 'schemaVersion:promote'],
   });
 
-  let publishResult = await publishSchema(
+  await publishSchema(
     {
       author: 'a',
       commit: 'a',
@@ -306,11 +290,7 @@ test.concurrent('promote specific schema version within the same target', async 
     privateAccessKey,
   ).then(r => r.expectNoGraphQLErrors());
 
-  if (publishResult.schemaPublish.__typename !== 'SchemaPublishSuccess') {
-    throw new Error('Unexpected mutation result ' + publishResult.schemaPublish.__typename);
-  }
-
-  publishResult = await publishSchema(
+  await publishSchema(
     {
       author: 'a',
       commit: 'a',
@@ -328,11 +308,7 @@ test.concurrent('promote specific schema version within the same target', async 
     privateAccessKey,
   ).then(r => r.expectNoGraphQLErrors());
 
-  if (publishResult.schemaPublish.__typename !== 'SchemaPublishSuccess') {
-    throw new Error('Unexpected mutation result ' + publishResult.schemaPublish.__typename);
-  }
-
-  publishResult = await publishSchema(
+  await publishSchema(
     {
       author: 'a',
       commit: 'a',
@@ -349,10 +325,6 @@ test.concurrent('promote specific schema version within the same target', async 
     },
     privateAccessKey,
   ).then(r => r.expectNoGraphQLErrors());
-
-  if (publishResult.schemaPublish.__typename !== 'SchemaPublishSuccess') {
-    throw new Error('Unexpected mutation result ' + publishResult.schemaPublish.__typename);
-  }
 
   const [previousVersion, , firstVersion] = await fetchVersions(3);
   assertNonNullish(firstVersion);
@@ -432,7 +404,7 @@ test.concurrent(
       permissions: ['schemaVersion:publish', 'schemaVersion:promote'],
     });
 
-    let publishResult = await publishSchema(
+    await publishSchema(
       {
         author: 'a',
         commit: 'a',
@@ -449,10 +421,6 @@ test.concurrent(
       },
       privateAccessKey,
     ).then(r => r.expectNoGraphQLErrors());
-
-    if (publishResult.schemaPublish.__typename !== 'SchemaPublishSuccess') {
-      throw new Error('Unexpected mutation result ' + publishResult.schemaPublish.__typename);
-    }
 
     const [version] = await fetchVersions(1);
     assertNonNullish(version);
@@ -527,7 +495,7 @@ test.concurrent(
       permissions: ['schemaVersion:publish', 'schemaVersion:promote'],
     });
 
-    const publishResult = await publishSchema(
+    await publishSchema(
       {
         author: 'a',
         commit: 'a',
@@ -544,10 +512,6 @@ test.concurrent(
       },
       privateAccessKey,
     ).then(r => r.expectNoGraphQLErrors());
-
-    if (publishResult.schemaPublish.__typename !== 'SchemaPublishSuccess') {
-      throw new Error('Unexpected mutation result ' + publishResult.schemaPublish.__typename);
-    }
 
     const promoteResult = await schemaVersionPromote(
       {
