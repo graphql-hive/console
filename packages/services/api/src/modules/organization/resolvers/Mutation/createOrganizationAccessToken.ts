@@ -10,7 +10,7 @@ export const createOrganizationAccessToken: NonNullable<
   const result = await injector.get(OrganizationAccessTokens).createForOrganization({
     organization: args.input.organization,
     title: args.input.title,
-    description: args.input.description ?? null,
+    description: args.input.description ?? '',
     permissions: [...args.input.permissions],
     assignedResources: args.input.resources,
     expiresAt: expirationPeriodToDate(args.input.expirationPeriod ?? 'NEVER'),
