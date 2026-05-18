@@ -8,6 +8,7 @@ import { createHive } from '@graphql-hive/core';
 import { psql } from '@hive/postgres';
 import { clickHouseInsert } from '../../testkit/clickhouse';
 import { graphql } from '../../testkit/gql';
+import { ResourceAssignmentModeType } from '../../testkit/gql/graphql';
 import { execute } from '../../testkit/graphql';
 
 const CreateAppDeployment = graphql(`
@@ -1742,8 +1743,9 @@ test('retire app deployments fails without feature flag enabled for organization
 });
 
 test('get app deployment documents via GraphQL API', async () => {
-  const { createOrg, ownerToken } = await initSeed().createOwner();
-  const { createProject, setFeatureFlag, organization } = await createOrg();
+  const { createOrg } = await initSeed().createOwner();
+  const { createProject, setFeatureFlag, organization, createOrganizationAccessToken } =
+    await createOrg();
   await setFeatureFlag('appDeployments', true);
   const { createTargetAccessToken, project, target } = await createProject();
   const token = await createTargetAccessToken({});
@@ -1771,12 +1773,23 @@ test('get app deployment documents via GraphQL API', async () => {
     `,
   });
 
+  // Ensure this is possible with the minimal available permissions.
+  const organizationAccessToken = await createOrganizationAccessToken({
+    permissions: ['appDeployment:create'],
+    resources: {
+      mode: ResourceAssignmentModeType.All,
+    },
+  });
+
   const { addDocumentsToAppDeployment } = await execute({
     document: AddDocumentsToAppDeployment,
     variables: {
       input: {
         appName: 'app-name',
         appVersion: 'app-version',
+        target: {
+          byId: target.id,
+        },
         documents: [
           {
             hash: 'aaa',
@@ -1797,7 +1810,7 @@ test('get app deployment documents via GraphQL API', async () => {
         ],
       },
     },
-    authToken: token.secret,
+    authToken: organizationAccessToken.privateAccessKey,
   }).then(res => res.expectNoGraphQLErrors());
   expect(addDocumentsToAppDeployment.error).toBeNull();
 
@@ -1812,7 +1825,7 @@ test('get app deployment documents via GraphQL API', async () => {
       appDeploymentName: 'app-name',
       appDeploymentVersion: 'app-version',
     },
-    authToken: ownerToken,
+    authToken: token.secret,
   }).then(res => res.expectNoGraphQLErrors());
   expect(result.target).toMatchObject({
     appDeployment: {

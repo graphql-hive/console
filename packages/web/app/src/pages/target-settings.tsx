@@ -749,7 +749,7 @@ const BreakingChanges = (props: {
               </CardDescription>
               <CardDescription>
                 <DocsLink
-                  href="/management/targets#dangerous-changes"
+                  href="/schema-registry/management/targets#dangerous-changes"
                   className="text-neutral-10 hover:text-neutral-11"
                 >
                   Learn more

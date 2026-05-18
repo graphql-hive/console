@@ -514,15 +514,10 @@ export const Laboratory = (
   const pluginsApi = usePlugins(props);
   const testsApi = useTests(props);
   const tabsApi = useTabs(props);
-  const endpointApi = useEndpoint({
-    ...props,
-    settingsApi,
-  });
   const collectionsApi = useCollections({
     ...props,
     tabsApi,
   });
-
   const operationsApi = useOperations({
     ...props,
     collectionsApi,
@@ -532,6 +527,14 @@ export const Laboratory = (
     settingsApi,
     pluginsApi,
     checkPermissions,
+  });
+  const endpointApi = useEndpoint({
+    ...props,
+    settingsApi,
+    operationsApi,
+    envApi,
+    pluginsApi,
+    preflightApi,
   });
 
   const historyApi = useHistory(props);

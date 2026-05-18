@@ -1,4 +1,5 @@
 import zod from 'zod';
+import { resolveServerListenOptions } from '@hive/service-common/listen-options';
 import * as Sentry from '@sentry/node';
 import { ALLOWED_ENVIRONMENT_VARIABLES } from './frontend-public-variables';
 
@@ -41,6 +42,8 @@ const BaseSchema = zod.object({
   NODE_ENV: zod.string().default('development'),
   ENVIRONMENT: zod.string(),
   PORT: emptyString(NumberFromString().optional()),
+  SERVER_HOST: emptyString(zod.string().optional()),
+  SERVER_HOST_IPV6_ONLY: emptyString(zod.union([zod.literal('1'), zod.literal('0')]).optional()),
   APP_BASE_URL: zod.string().url(),
   GRAPHQL_PUBLIC_ENDPOINT: zod.string().url(),
   GRAPHQL_PUBLIC_SUBSCRIPTION_ENDPOINT: zod.string().url(),
@@ -172,6 +175,10 @@ function buildConfig() {
 
   const config = {
     port: base.PORT ?? 3000,
+    ...resolveServerListenOptions({
+      serverHost: base.SERVER_HOST,
+      serverHostIpv6Only: base.SERVER_HOST_IPV6_ONLY,
+    }),
     release: base.RELEASE ?? 'local',
     nodeEnv: base.NODE_ENV,
     environment: base.ENVIRONMENT,

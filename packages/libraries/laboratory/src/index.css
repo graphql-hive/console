@@ -93,6 +93,10 @@
   --destructive-foreground: var(--hive-laboratory-destructive-foreground, var(--color-neutral-1));
 
   --ring: var(--hive-laboratory-ring, var(--color-ring));
+
+  & .monaco-editor {
+    --vscode-focusBorder: transparent !important;
+  }
 }
 
 .hive-laboratory.dark {
