@@ -1,0 +1,37 @@
+import { type MigrationExecutor } from '../pg-migrator';
+
+export default {
+  name: '2026.05.18T00-00-00.scim-user-group-provisioning.ts',
+  run: ({ psql }) => psql`
+    CREATE TABLE IF NOT EXISTS "groups" (
+      "id" UUID PRIMARY KEY DEFAULT uuid_generate_v4()
+      , "organization_id" UUID REFERENCES "organizations"("id") ON DELETE CASCADE
+      , "display_name" text
+      , "created_at" timestamptz DEFAULT NOW()
+      , "disabled_at" timestamptz DEFAULT NULL
+      , "external_group_id" text
+    );
+
+    CREATE TABLE IF NOT EXISTS "group_role_assignments" (
+      "id" UUID PRIMARY KEY DEFAULT uuid_generate_v4()
+      , "organization_id" UUID REFERENCES "organizations"("id") ON DELETE CASCADE
+      , "group_id" UUID REFERENCES "groups"("id") ON DELETE CASCADE
+      , "role_id" UUID REFERENCES "organization_member_roles" ("id") ON DELETE CASCADE
+      , "assigned_resources" JSONB
+    );
+
+    CREATE TABLE IF NOT EXISTS "group_members" (
+      "id" UUID PRIMARY KEY DEFAULT uuid_generate_v4()
+      , "organization_id" UUID REFERENCES "organizations"("id") ON DELETE CASCADE
+      , "user_id" UUID REFERENCES "users"("id") ON DELETE CASCADE
+      , "group_id" UUID REFERENCES "groups"("id") ON DELETE CASCADE
+    );
+
+    ALTER TABLE "users"
+      ADD COLUMN "provisioned_by_organization_id" UUID NULL
+        REFERENCES "organizations"("id") ON DELETE CASCADE
+      , ADD COLUMN IF NOT EXISTS "external_id" TEXT NULL
+      , ADD COLUMN IF NOT EXISTS "deactivated_at" TIMESTAMPTZ NULL
+    ;
+  `,
+} satisfies MigrationExecutor;
