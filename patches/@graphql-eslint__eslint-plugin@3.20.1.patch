@@ -14,7 +14,7 @@ index a3c0ee23c61d97142dca320d85e9cc28fc643677..beee60afe96e6b0bb0866dad663d0ebb
 +      }
 +      if (type == null ? void 0 : type.extensionASTNodes) {
 +        for (const ext of type.extensionASTNodes) {
-+          import_graphql.visit(ext, visitor);
++          (0, import_graphql.visit)(ext, visitor);
 +        }
 +      }
      }
