@@ -13,7 +13,7 @@
     "@trpc/server": "10.45.3"
   },
   "devDependencies": {
-    "aws-msk-iam-sasl-signer-js": "1.0.0",
+    "aws-msk-iam-sasl-signer-js": "1.0.3",
     "@fastify/cors": "11.2.0",
     "@graphql-hive/logger": "1.1.0",
     "@graphql-hive/plugin-opentelemetry": "1.4.26",

@@ -132,6 +132,19 @@ for (const config of Object.values(configs)) {
   }
 }
 
+if (configs.kafka.success && configs.kafka.data.KAFKA_AWS_IAM_AUTH_ENABLED === '1') {
+  const missingKafkaIamVars: string[] = [];
+  if (configs.kafka.data.KAFKA_SSL !== '1')
+    missingKafkaIamVars.push('KAFKA_SSL must be enabled (MSK IAM requires TLS)');
+  if (!configs.kafka.data.KAFKA_AWS_REGION && !configs.base.data?.AWS_REGION)
+    missingKafkaIamVars.push('KAFKA_AWS_REGION or AWS_REGION');
+  if (missingKafkaIamVars.length > 0) {
+    environmentErrors.push(
+      `KAFKA_AWS_IAM_AUTH_ENABLED is enabled but the following required variables are missing or invalid: ${missingKafkaIamVars.join(', ')}`,
+    );
+  }
+}
+
 if (environmentErrors.length) {
   const fullError = environmentErrors.join(`\n`);
   console.error('❌ Invalid environment variables:', fullError);
@@ -196,10 +209,10 @@ export const env = {
             : true
           : false,
       sasl:
-        base.AWS_REGION != null && kafka.KAFKA_AWS_IAM_AUTH_ENABLED === '1'
+        kafka.KAFKA_AWS_IAM_AUTH_ENABLED === '1'
           ? {
               mechanism: 'aws-iam' as const,
-              region: kafka.KAFKA_AWS_REGION ?? base.AWS_REGION,
+              region: (kafka.KAFKA_AWS_REGION ?? base.AWS_REGION)!,
             }
           : kafka.KAFKA_SASL_MECHANISM != null
             ? {
