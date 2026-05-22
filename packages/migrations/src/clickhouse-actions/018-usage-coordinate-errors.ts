@@ -43,7 +43,7 @@ export const action: Action = async exec => {
     CREATE TABLE IF NOT EXISTS default.coordinate_errors_minutely
     (
       target UUID
-      , hash FixedString(16) CODEC(LZ4)
+      , hash FixedString(16) CODEC(ZSTD(1))
       , timestamp DateTime('UTC') CODEC(DoubleDelta, ZSTD(1))
       , expires_at DateTime('UTC') CODEC(DoubleDelta, ZSTD(1))
       , coordinate String CODEC(ZSTD(1))
