@@ -125,7 +125,7 @@ export const action: Action = async exec => {
     SETTINGS index_granularity = 8192
     ;
   `);
-  exec(`
+  await exec(`
     CREATE MATERIALIZED VIEW IF NOT EXISTS mv_coordinate_errors_hourly
     TO default.coordinate_errors_hourly
     AS
