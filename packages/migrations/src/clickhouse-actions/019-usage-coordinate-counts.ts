@@ -12,7 +12,7 @@ export const action: Action = async exec => {
     -- field availability is not based on operation count, which would skew the availability
     -- to show a higher error rate (e.g. if an array has one object that errored, then the
     -- availability) should be (1-N)/N, not 0%
-    ADD COLUMN IF NOT EXISTS coordinate_totals Map(String, UInt32) CODEC(ZSTD(1)) DEFAULT map()
+    ADD COLUMN IF NOT EXISTS coordinate_totals Map(String, UInt32) CODEC(ZSTD(1))
     ;
   `);
 
@@ -60,13 +60,14 @@ export const action: Action = async exec => {
       , hash
       , toStartOfMinute(timestamp) AS timestamp
       , toStartOfMinute(expires_at) AS expires_at
-      , total.0 as coordinate
-      , sum(total.1) as total
+      , coord_total.1 as coordinate
+      -- Cast the UInt64 sum back down to UInt32 to match the target table
+      , CAST(sum(coord_total.2) AS UInt32) as total
     FROM default.operations
-    ARRAY JOIN coordinate_totals as total
+    ARRAY JOIN coordinate_totals as coord_total
     GROUP BY
         target
-      , total.0
+      , coord_total.1
       , hash
       , timestamp
       -- expires at is important in the group by to avoid overriding metrics early if the plan changes
@@ -106,7 +107,7 @@ export const action: Action = async exec => {
       , toStartOfHour(timestamp) AS timestamp
       , toStartOfHour(expires_at) AS expires_at
       , coordinate
-      , sum(total) as total
+      , CAST(sum(total) AS UInt32) as total
     FROM default.coordinate_counts_minutely
     GROUP BY
         target
@@ -149,7 +150,7 @@ export const action: Action = async exec => {
       , toStartOfDay(timestamp) AS timestamp
       , toStartOfDay(expires_at) AS expires_at
       , coordinate
-      , sum(total) as total
+      , CAST(sum(total) AS UInt32) as total
     FROM default.coordinate_counts_hourly
     GROUP BY
         target
