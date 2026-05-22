@@ -113,7 +113,7 @@ export const action: Action = async exec => {
     ;
   `);
   await exec(`
-    CREATE MATERIALIZED VIEW IF NOT EXISTS mv_coordinate_errors_hourly
+    CREATE MATERIALIZED VIEW IF NOT EXISTS default.mv_coordinate_errors_hourly
     TO default.coordinate_errors_hourly
     AS
     SELECT
