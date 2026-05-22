@@ -275,15 +275,7 @@ export class SchemaProposalStorage {
         sp."target_id" = ${args.targetId}
         ${
           cursor
-            ? psql`
-                AND (
-                  (
-                    sp."created_at" = ${cursor.createdAt}
-                    AND sp."id" < ${cursor.id}
-                  )
-                  OR sp."created_at" < ${cursor.createdAt}
-                )
-              `
+            ? psql`AND ("sp"."created_at", "sp"."id") < (${cursor.createdAt}, ${cursor.id})`
             : psql``
         }
         ${
@@ -340,19 +332,7 @@ export class SchemaProposalStorage {
         "schema_proposal_reviews"
       WHERE
         "schema_proposal_id" = ${args.proposalId}
-        ${
-          cursor
-            ? psql`
-                AND (
-                  (
-                    "created_at" = ${cursor.createdAt}
-                    AND "id" < ${cursor.id}
-                  )
-                  OR "created_at" < ${cursor.createdAt}
-                )
-              `
-            : psql``
-        }
+        ${cursor ? psql`AND ("created_at", "id") < (${cursor.createdAt}, ${cursor.id})` : psql``}
       ORDER BY "created_at" DESC, "id"
       LIMIT ${limit + 1}
     `);

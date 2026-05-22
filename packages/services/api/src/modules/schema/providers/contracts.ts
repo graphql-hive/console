@@ -315,17 +315,7 @@ export class Contracts {
         "target_id" = ${args.targetId}
         ${args.onlyActive ? psql`AND "is_disabled" = false` : psql``}
         ${
-          cursor
-            ? psql`
-                AND (
-                  (
-                    c."created_at" = ${cursor.createdAt}
-                    AND c."id" < ${cursor.id}
-                  )
-                  OR c."created_at" < ${cursor.createdAt}
-                )
-              `
-            : psql``
+          cursor ? psql`AND (c."created_at", c."id") < (${cursor.createdAt}, ${cursor.id})` : psql``
         }
       ORDER BY
         "target_id" ASC,

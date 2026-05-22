@@ -777,15 +777,7 @@ export async function createStorage(
           oi.organization_id = ${organizationId}
           ${
             cursor
-              ? psql`
-                  AND (
-                    (
-                      oi.created_at = ${cursor.createdAt}
-                      AND oi.email < ${cursor.hash}
-                    )
-                    OR oi.created_at < ${cursor.createdAt}
-                  )
-                `
+              ? psql`AND (oi.created_at, oi.email) < (${cursor.createdAt}, ${cursor.hash})`
               : psql``
           }
           AND oi.expires_at > NOW()
@@ -2560,15 +2552,7 @@ export async function createStorage(
           "target_id" = ${args.targetId}
           ${
             cursor
-              ? psql`
-                AND (
-                  (
-                    "cdn_access_tokens"."created_at" = ${cursor.createdAt}
-                    AND "id" < ${cursor.id}
-                  )
-                  OR "cdn_access_tokens"."created_at" < ${cursor.createdAt}
-                )
-              `
+              ? psql`AND ("cdn_access_tokens"."created_at", "id") < (${cursor.createdAt}, ${cursor.id})`
               : psql``
           }
         ORDER BY
@@ -2714,19 +2698,7 @@ export async function createStorage(
           "document_collections"
         WHERE
           "target_id" = ${args.targetId}
-          ${
-            cursor
-              ? psql`
-                AND (
-                  (
-                    "created_at" = ${cursor.createdAt}
-                    AND "id" < ${cursor.id}
-                  )
-                  OR "created_at" < ${cursor.createdAt}
-                )
-              `
-              : psql``
-          }
+          ${cursor ? psql`AND ("created_at", "id") < (${cursor.createdAt}, ${cursor.id})` : psql``}
         ORDER BY
           "target_id" ASC
           , "created_at" DESC
@@ -2865,19 +2837,7 @@ export async function createStorage(
           "document_collection_documents"
         WHERE
           "document_collection_id" = ${args.documentCollectionId}
-          ${
-            cursor
-              ? psql`
-                AND (
-                  (
-                    "created_at" = ${cursor.createdAt}
-                    AND "id" < ${cursor.id}
-                  )
-                  OR "created_at" < ${cursor.createdAt}
-                )
-              `
-              : psql``
-          }
+          ${cursor ? psql`AND ("created_at", "id") < (${cursor.createdAt}, ${cursor.id})` : psql``}
         ORDER BY
           "document_collection_id" ASC
           , "created_at" DESC
@@ -3392,15 +3352,7 @@ export async function createStorage(
           c."target_id" = ${args.targetId}
           ${
             cursor
-              ? psql`
-                AND (
-                  (
-                    c."created_at" = ${cursor.createdAt}
-                    AND c."id" < ${cursor.id}
-                  )
-                  OR c."created_at" < ${cursor.createdAt}
-                )
-              `
+              ? psql`AND (c."created_at", c."id") < (${cursor.createdAt}, ${cursor.id})`
               : psql``
           }
           ${
@@ -3491,13 +3443,7 @@ export async function createStorage(
                 cursor
                   ? psql`
                     WHERE "schema_proposal_id" = ${args.proposalId}
-                    AND (
-                      (
-                        "created_at" = ${cursor.createdAt}
-                        AND "id" < ${cursor.id}
-                      )
-                      OR "created_at" < ${cursor.createdAt}
-                    )
+                    AND ("created_at", "id") < (${cursor.createdAt}, ${cursor.id})
                   `
                   : psql``
               }
@@ -3519,15 +3465,7 @@ export async function createStorage(
           c."schema_proposal_id" = ${args.proposalId}
           ${
             cursor
-              ? psql`
-                AND (
-                  (
-                    c."created_at" = ${cursor.createdAt}
-                    AND c."id" < ${cursor.id}
-                  )
-                  OR c."created_at" < ${cursor.createdAt}
-                )
-              `
+              ? psql`AND (c."created_at", c."id") < (${cursor.createdAt}, ${cursor.id})`
               : psql``
           }
         ORDER BY

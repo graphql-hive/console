@@ -313,13 +313,7 @@ export function schemaProvider(providerConfig: SchemaProviderConfig) {
                 cursor
                   ? psql`
                     WHERE "schema_proposal_id" = ${args.proposalId}
-                    AND (
-                      (
-                        "created_at" = ${cursor.createdAt}
-                        AND "id" < ${cursor.id}
-                      )
-                      OR "created_at" < ${cursor.createdAt}
-                    )
+                    AND ("created_at", "id") < (${cursor.createdAt}, ${cursor.id})
                   `
                   : psql``
               }
@@ -333,15 +327,7 @@ export function schemaProvider(providerConfig: SchemaProviderConfig) {
             AND c."schema_proposal_id" = ${args.proposalId}
             ${
               cursor
-                ? psql`
-                  AND (
-                    (
-                      c."created_at" = ${cursor.createdAt}
-                      AND c."id" < ${cursor.id}
-                    )
-                    OR c."created_at" < ${cursor.createdAt}
-                  )
-                `
+                ? psql`AND (c."created_at", c."id") < (${cursor.createdAt}, ${cursor.id})`
                 : psql``
             }
           ORDER BY

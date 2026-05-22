@@ -134,19 +134,7 @@ export class SavedFiltersStorage {
             `
             : psql``
         }
-        ${
-          cursor
-            ? psql`
-              AND (
-                (
-                  "created_at" = ${cursor.createdAt}
-                  AND "id" < ${cursor.id}
-                )
-                OR "created_at" < ${cursor.createdAt}
-              )
-            `
-            : psql``
-        }
+        ${cursor ? psql`AND ("created_at", "id") < (${cursor.createdAt}, ${cursor.id})` : psql``}
       ORDER BY
         "project_id" ASC
         , "created_at" DESC

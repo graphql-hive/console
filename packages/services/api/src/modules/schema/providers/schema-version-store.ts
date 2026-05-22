@@ -800,19 +800,7 @@ export class SchemaVersionStore {
         "schema_versions"
       WHERE
         "target_id" = ${target.id}
-        ${
-          cursor
-            ? psql`
-              AND (
-                (
-                  "created_at" = ${cursor.createdAt}
-                  AND "id" < ${cursor.id}
-                )
-                OR "created_at" < ${cursor.createdAt}
-              )
-            `
-            : psql``
-        }
+        ${cursor ? psql`AND ("created_at", "id") < (${cursor.createdAt}, ${cursor.id})` : psql``}
       ORDER BY
         "created_at" DESC
         , "id" DESC
