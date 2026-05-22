@@ -27,7 +27,7 @@ export const action: Action = async exec => {
       -- the expiration will always exceed this table's TTL. This expires_at is
       -- intended to be for the materialized views that are generated from this table
       , expires_at DateTime('UTC') CODEC(DoubleDelta, ZSTD(1))
-      , errors Array(Tuple(code LowCardinality(String), path String)) CODEC(ZSTD(1))
+      , errors Array(Tuple(code String, path String)) CODEC(ZSTD(1))
     )
     ENGINE = MergeTree
     PARTITION BY toStartOfHour(timestamp)
