@@ -8,21 +8,6 @@ import type { Action } from '../clickhouse';
 
 export const action: Action = async exec => {
   /**
-   * Add a column to hold the real executed field counts. This differs from existing counts, which
-   * are for the number of times the operation was executed and (in the operation_collection table)
-   * whether or not the coordinate is included in an operation's body.
-   */
-  await exec(`
-    ALTER TABLE default.operations
-    -- Counts the coordinates actually called during execution. This is necessary so that
-    -- field availability is not based on operation count, which would skew the availability
-    -- to show a higher error rate (e.g. if an array has one object that errored, then the
-    -- availability) should be (1-N)/N, not 0%
-    ADD COLUMN IF NOT EXISTS coordinate_totals Map(String, UInt32) CODEC(ZSTD(1)) DEFAULT map()
-    ;
-  `);
-
-  /**
    * This is a source table that gets projected to various data points. Therefore this table's
    * TTL does not need to be dictated by the customer data lifespan.
    */
@@ -66,10 +51,11 @@ export const action: Action = async exec => {
       , total_errors UInt32 CODEC(T64, ZSTD(1))
     )
     ENGINE = SummingMergeTree
-    PARTITION BY toYYYYMMDD(timestamp)
+    PARTITION BY toStartOfHour(timestamp)
     PRIMARY KEY (target, coordinate, code, timestamp, hash)
     ORDER BY (target, coordinate, code, timestamp, hash, expires_at)
-    TTL expires_at
+    -- only store for 24hr because after that, the hourly or daily table will be used
+    TTL least(timestamp + toIntervalHour(24), expires_at)
     SETTINGS index_granularity = 8192
     ;
   `);
@@ -118,10 +104,11 @@ export const action: Action = async exec => {
       , total_errors UInt32 CODEC(T64, ZSTD(1))
     )
     ENGINE = SummingMergeTree
-    PARTITION BY toYYYYMM(timestamp)
+    PARTITION BY toYYYYMMDD(timestamp)
     PRIMARY KEY (target, coordinate, code, timestamp, hash)
     ORDER BY (target, coordinate, code, timestamp, hash, expires_at)
-    TTL expires_at
+    -- keep for a maximum of 30 days because after that the relative time range will only use the daily calculations
+    TTL least(timestamp + toIntervalDay(30), expires_at)
     SETTINGS index_granularity = 8192
     ;
   `);
@@ -218,11 +205,12 @@ export const action: Action = async exec => {
       , total_errors UInt32 CODEC(T64, ZSTD(1))
     )
     ENGINE = SummingMergeTree
-    PARTITION BY toYYYYMMDD(timestamp)
+    PARTITION BY toStartOfHour(timestamp)
     -- Hash is placed immediately after target to optimize hash-specific queries
     PRIMARY KEY (target, hash, coordinate, code, timestamp)
     ORDER BY (target, hash, coordinate, code, timestamp, expires_at)
-    TTL expires_at
+    -- only store for 24hr because after that, the hourly or daily table will be used
+    TTL least(timestamp + toIntervalHour(24), expires_at)
     SETTINGS index_granularity = 8192;
   `);
 
