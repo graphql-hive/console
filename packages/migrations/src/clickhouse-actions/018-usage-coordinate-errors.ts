@@ -49,6 +49,15 @@ export const action: Action = async exec => {
       , coordinate String CODEC(ZSTD(1))
       , code LowCardinality(String) CODEC(ZSTD(1))
       , total_errors UInt32 CODEC(T64, ZSTD(1))
+
+      -- To support querying by coordinate (for schema-wide metrics)
+      -- AND by hash (for operation specific metrics), create projection
+      -- that stores this same data in a different order.
+      -- And use explicit selects to make any future migrations easier
+      , PROJECTION hash_order (
+          SELECT target, hash, coordinate, code, timestamp, expires_at, total_errors
+          ORDER BY (target, hash, coordinate, code, timestamp, expires_at)
+      )
     )
     ENGINE = SummingMergeTree
     PARTITION BY toStartOfHour(timestamp)
@@ -71,16 +80,16 @@ export const action: Action = async exec => {
       , toStartOfMinute(expires_at) AS expires_at
       , error.path as coordinate
       , error.code as code
-      , count() as total_errors
+      , CAST(count() AS UInt32) as total_errors
     FROM default.operation_errors
     ARRAY JOIN errors as error
     GROUP BY
         target
       , error.path
-      , timestamp
+      , toStartOfMinute(timestamp)
       , hash
       , error.code
-      , expires_at
+      , toStartOfMinute(expires_at)
     ;
   `);
 
@@ -102,6 +111,11 @@ export const action: Action = async exec => {
       , coordinate String CODEC(ZSTD(1))
       , code LowCardinality(String) CODEC(ZSTD(1))
       , total_errors UInt32 CODEC(T64, ZSTD(1))
+
+      , PROJECTION hash_order (
+          SELECT target, hash, coordinate, code, timestamp, expires_at, total_errors
+          ORDER BY (target, hash, coordinate, code, timestamp, expires_at)
+      )
     )
     ENGINE = SummingMergeTree
     PARTITION BY toYYYYMMDD(timestamp)
@@ -124,18 +138,18 @@ export const action: Action = async exec => {
       , toStartOfHour(expires_at) AS expires_at
       , coordinate
       , code
-      , sum(total_errors) as total_errors
+      , CAST(sum(total_errors) AS UInt32) as total_errors
     FROM default.coordinate_errors_minutely
     GROUP BY
         target
       , coordinate
-      , timestamp
+      , toStartOfHour(timestamp)
       , hash
       , code
       -- Expiration must be a separate group in case the users subscription changes.
       -- When selected, the data will be summed by the ORDER BY. Subscription changes
       -- are rare so any performance implication is minimal.
-      , expires_at
+      , toStartOfHour(expires_at)
     ;
   `);
 
@@ -152,6 +166,11 @@ export const action: Action = async exec => {
       , coordinate String CODEC(ZSTD(1))
       , code LowCardinality(String) CODEC(ZSTD(1))
       , total_errors UInt32 CODEC(T64, ZSTD(1))
+
+      , PROJECTION hash_order (
+          SELECT target, hash, coordinate, code, timestamp, expires_at, total_errors
+          ORDER BY (target, hash, coordinate, code, timestamp, expires_at)
+      )
     )
     ENGINE = SummingMergeTree
     PARTITION BY toYYYYMM(timestamp)
@@ -173,160 +192,15 @@ export const action: Action = async exec => {
       , toStartOfDay(expires_at) AS expires_at
       , coordinate
       , code
-      , sum(total_errors) as total_errors
+      , CAST(sum(total_errors) AS UInt32) as total_errors
     FROM default.coordinate_errors_hourly
     GROUP BY
         target
       , coordinate
-      , timestamp
+      , toStartOfDay(timestamp)
       , hash
       , code
-      , expires_at
-    ;
-  `);
-
-  /**
-   * To support querying by coordinate (for schema-wide metrics) AND by hash (for operation specific metrics),
-   * create another set of tables that store this same data in a different order...
-   */
-
-  /**
-   * Minutely Hash Table
-   */
-  await exec(`
-    CREATE TABLE IF NOT EXISTS default.operation_errors_minutely
-    (
-      target UUID
-      , hash FixedString(16) CODEC(LZ4)
-      , timestamp DateTime('UTC') CODEC(DoubleDelta, ZSTD(1))
-      , expires_at DateTime('UTC') CODEC(DoubleDelta, ZSTD(1))
-      , coordinate String CODEC(ZSTD(1))
-      , code LowCardinality(String) CODEC(ZSTD(1))
-      , total_errors UInt32 CODEC(T64, ZSTD(1))
-    )
-    ENGINE = SummingMergeTree
-    PARTITION BY toStartOfHour(timestamp)
-    -- Hash is placed immediately after target to optimize hash-specific queries
-    PRIMARY KEY (target, hash, coordinate, code, timestamp)
-    ORDER BY (target, hash, coordinate, code, timestamp, expires_at)
-    -- only store for 24hr because after that, the hourly or daily table will be used
-    TTL least(timestamp + toIntervalHour(24), expires_at)
-    SETTINGS index_granularity = 8192;
-  `);
-
-  await exec(`
-    CREATE MATERIALIZED VIEW IF NOT EXISTS default.mv_operation_errors_minutely
-    TO default.operation_errors_minutely
-    AS
-    SELECT
-      target
-      , hash
-      , toStartOfMinute(timestamp) AS timestamp
-      , toStartOfMinute(expires_at) AS expires_at
-      , error.path as coordinate
-      , error.code as code
-      , count() as total_errors
-    FROM default.operation_errors
-    ARRAY JOIN errors as error
-    GROUP BY
-        target
-      , hash
-      , error.path
-      , error.code
-      , timestamp
-      , expires_at
-    ;
-  `);
-
-  /**
-   * Hourly Hash Table
-   */
-  await exec(`
-    CREATE TABLE IF NOT EXISTS default.operation_errors_hourly
-    (
-      target UUID
-      , hash FixedString(16) CODEC(LZ4)
-      , timestamp DateTime('UTC') CODEC(DoubleDelta, ZSTD(1))
-      , expires_at DateTime('UTC') CODEC(DoubleDelta, ZSTD(1))
-      , coordinate String CODEC(ZSTD(1))
-      , code LowCardinality(String) CODEC(ZSTD(1))
-      , total_errors UInt32 CODEC(T64, ZSTD(1))
-    )
-    ENGINE = SummingMergeTree
-    PARTITION BY toYYYYMM(timestamp)
-    PRIMARY KEY (target, hash, coordinate, code, timestamp)
-    ORDER BY (target, hash, coordinate, code, timestamp, expires_at)
-    TTL expires_at
-    SETTINGS index_granularity = 8192
-    ;
-  `);
-
-  await exec(`
-    CREATE MATERIALIZED VIEW IF NOT EXISTS default.mv_operation_errors_hourly
-    TO default.operation_errors_hourly
-    AS
-    SELECT
-      target
-      , hash
-      , toStartOfHour(timestamp) AS timestamp
-      , toStartOfHour(expires_at) AS expires_at
-      , coordinate
-      , code
-      , sum(total_errors) as total_errors
-    FROM default.operation_errors_minutely
-    GROUP BY
-        target
-      , hash
-      , coordinate
-      , code
-      , timestamp
-      , expires_at
-    ;
-  `);
-
-  /**
-   * Daily Hash Table
-   */
-  await exec(`
-    CREATE TABLE IF NOT EXISTS default.operation_errors_daily
-    (
-      target UUID
-      , hash FixedString(16) CODEC(LZ4)
-      , timestamp DateTime('UTC') CODEC(DoubleDelta, ZSTD(1))
-      , expires_at DateTime('UTC') CODEC(DoubleDelta, ZSTD(1))
-      , coordinate String CODEC(ZSTD(1))
-      , code LowCardinality(String) CODEC(ZSTD(1))
-      , total_errors UInt32 CODEC(T64, ZSTD(1))
-    )
-    ENGINE = SummingMergeTree
-    PARTITION BY toYYYYMM(timestamp)
-    PRIMARY KEY (target, hash, coordinate, code, timestamp)
-    ORDER BY (target, hash, coordinate, code, timestamp, expires_at)
-    TTL expires_at
-    SETTINGS index_granularity = 8192
-    ;
-  `);
-
-  await exec(`
-    CREATE MATERIALIZED VIEW IF NOT EXISTS default.mv_operation_errors_daily
-    TO default.operation_errors_daily
-    AS
-    SELECT
-      target
-      , hash
-      , toStartOfDay(timestamp) AS timestamp
-      , toStartOfDay(expires_at) AS expires_at
-      , coordinate
-      , code
-      , sum(total_errors) as total_errors
-    FROM default.operation_errors_hourly
-    GROUP BY
-        target
-      , hash
-      , coordinate
-      , code
-      , timestamp
-      , expires_at
+      , toStartOfDay(expires_at)
     ;
   `);
 };

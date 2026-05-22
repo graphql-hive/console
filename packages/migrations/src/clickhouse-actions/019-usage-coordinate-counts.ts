@@ -69,9 +69,9 @@ export const action: Action = async exec => {
         target
       , coord_total.1
       , hash
-      , timestamp
+      , toStartOfMinute(timestamp)
       -- expires at is important in the group by to avoid overriding metrics early if the plan changes
-      , expires_at
+      , toStartOfMinute(expires_at)
     ;
   `);
 
@@ -113,8 +113,8 @@ export const action: Action = async exec => {
         target
       , coordinate
       , hash
-      , timestamp
-      , expires_at
+      , toStartOfHour(timestamp)
+      , toStartOfHour(expires_at)
     ;
   `);
 
@@ -156,8 +156,10 @@ export const action: Action = async exec => {
         target
       , coordinate
       , hash
-      , timestamp
-      , expires_at
+      -- group by prioritizes the original values over aliases. Call the same time modifiers here to correctly group data
+      -- in order to be performant
+      , toStartOfDay(timestamp)
+      , toStartOfDay(expires_at)
     ;
   `);
 };
