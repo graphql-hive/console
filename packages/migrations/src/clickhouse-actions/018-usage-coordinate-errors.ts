@@ -244,7 +244,7 @@ export const action: Action = async exec => {
   await exec(`
     CREATE TABLE IF NOT EXISTS default.operation_errors_hourly
     (
-      target LowCardinality(UUID)
+      target UUID
       , hash FixedString(16) CODEC(LZ4)
       , timestamp DateTime('UTC') CODEC(DoubleDelta, ZSTD(1))
       , expires_at DateTime('UTC') CODEC(DoubleDelta, ZSTD(1))
@@ -290,7 +290,7 @@ export const action: Action = async exec => {
   await exec(`
     CREATE TABLE IF NOT EXISTS default.operation_errors_daily
     (
-      target LowCardinality(UUID)
+      target UUID
       , hash FixedString(16) CODEC(LZ4)
       , timestamp DateTime('UTC') CODEC(DoubleDelta, ZSTD(1))
       , expires_at DateTime('UTC') CODEC(DoubleDelta, ZSTD(1))
