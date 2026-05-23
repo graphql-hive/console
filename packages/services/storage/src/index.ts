@@ -3201,7 +3201,7 @@ export async function createStorage(
     async findSchemaCheck(args) {
       const result = await pool.maybeOne(psql`/* findSchemaCheck */
         SELECT
-          ${schemaCheckSQLFields}
+          ${schemaCheckSQLFields()}
         FROM
           "schema_checks" as c
         LEFT JOIN "sdl_store" as s_schema            ON s_schema."id" = c."schema_sdl_store_id"
@@ -3336,7 +3336,7 @@ export async function createStorage(
 
       const result = await pool.maybeOne(psql`/* getApprovedSchemaCheck */
         SELECT
-          ${schemaCheckSQLFields}
+          ${schemaCheckSQLFields()}
         FROM
           "schema_checks" as c
         LEFT JOIN "sdl_store" as s_schema            ON s_schema."id" = c."schema_sdl_store_id"
@@ -3382,12 +3382,18 @@ export async function createStorage(
 
       const result = await pool.any(psql`/* getPaginatedSchemaChecksForTarget */
         SELECT
-          ${schemaCheckSQLFields}
+          ${schemaCheckSQLFields(!!args.withSDL)}
         FROM
           "schema_checks" as c
-        LEFT JOIN "sdl_store" as s_schema            ON s_schema."id" = c."schema_sdl_store_id"
-        LEFT JOIN "sdl_store" as s_composite_schema  ON s_composite_schema."id" = c."composite_schema_sdl_store_id"
-        LEFT JOIN "sdl_store" as s_supergraph        ON s_supergraph."id" = c."supergraph_sdl_store_id"
+          ${
+            args.withSDL
+              ? psql`
+          LEFT JOIN "sdl_store" as s_schema            ON s_schema."id" = c."schema_sdl_store_id"
+          LEFT JOIN "sdl_store" as s_composite_schema  ON s_composite_schema."id" = c."composite_schema_sdl_store_id"
+          LEFT JOIN "sdl_store" as s_supergraph        ON s_supergraph."id" = c."supergraph_sdl_store_id"  
+            `
+              : psql``
+          }
         WHERE
           c."target_id" = ${args.targetId}
           ${
@@ -3431,6 +3437,15 @@ export async function createStorage(
       `);
 
       let items = result.map(row => {
+        if (!args.withSDL && typeof row === 'object') {
+          // append the sdl strings to the object just to pass validation
+          row = {
+            ...row,
+            schemaSDL: '',
+            compositeSchemaSDL: '',
+            supergraphSDL: '',
+          };
+        }
         const node = SchemaCheckModel.parse(row);
 
         return {
@@ -3478,7 +3493,7 @@ export async function createStorage(
       // gets the most recently created schema checks per service name
       const result = await pool.any(psql`/* getPaginatedSchemaChecksForSchemaProposal */
         SELECT
-          ${schemaCheckSQLFields}
+          ${schemaCheckSQLFields()}
         FROM
           "schema_checks" as c
         ${
@@ -4144,11 +4159,19 @@ export function toSerializableSchemaChange(change: SchemaChangeType): {
   };
 }
 
-const schemaCheckSQLFields = psql`
+const schemaCheckSQLFields = (withSDL = true) => psql`
     c."id"
   , to_json(c."created_at") as "createdAt"
   , to_json(c."updated_at") as "updatedAt"
+  ${
+    withSDL
+      ? psql`
   , coalesce(c."schema_sdl", s_schema."sdl") as "schemaSDL"
+  , coalesce(c."composite_schema_sdl", s_composite_schema."sdl") as "compositeSchemaSDL"
+  , coalesce(c."supergraph_sdl", s_supergraph."sdl") as "supergraphSDL"
+    `
+      : psql``
+  }
   , c."service_name" as "serviceName"
   , c."service_url" as "serviceUrl"
   , c."meta"
@@ -4160,8 +4183,6 @@ const schemaCheckSQLFields = psql`
   , c."safe_schema_changes" as "safeSchemaChanges"
   , c."schema_policy_warnings" as "schemaPolicyWarnings"
   , c."schema_policy_errors" as "schemaPolicyErrors"
-  , coalesce(c."composite_schema_sdl", s_composite_schema."sdl") as "compositeSchemaSDL"
-  , coalesce(c."supergraph_sdl", s_supergraph."sdl") as "supergraphSDL"
   , c."github_check_run_id" as "githubCheckRunId"
   , c."github_repository" as "githubRepository"
   , c."github_sha" as "githubSha"

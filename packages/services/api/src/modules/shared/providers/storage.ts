@@ -650,6 +650,11 @@ export interface Storage {
      * Optional filters config for filtering failed and/or changed schema checks.
      */
     filters?: SchemaChecksFilter | null;
+    /**
+     * Optionally include the SDLs (composite, service, and supergraph) in the result.
+     * This is separated for performance reasons.
+     */
+    withSDL?: boolean | null;
   }): Promise<
     Readonly<{
       items: ReadonlyArray<{

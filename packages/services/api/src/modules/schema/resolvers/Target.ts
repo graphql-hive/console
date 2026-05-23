@@ -1,5 +1,6 @@
 import { parseDateRangeInput } from '../../../shared/helpers';
 import { OperationsManager } from '../../operations/providers/operations-manager';
+import { isFieldRequestedDeep } from '../lib/is-field-requested';
 import { ContractsManager } from '../providers/contracts-manager';
 import { SchemaManager } from '../providers/schema-manager';
 import { SchemaVersionStore } from '../providers/schema-version-store';
@@ -62,7 +63,16 @@ export const Target: Pick<
       schemaCheck,
     );
   },
-  schemaChecks: async (target, args, { injector }) => {
+  schemaChecks: async (target, args, { injector }, info) => {
+    const operationSelectsSDL = isFieldRequestedDeep(info, [
+      ['SuccessfulSchemaCheck', 'schemaSDL'],
+      ['SuccessfulSchemaCheck', 'compositeSchemaSDL'],
+      ['SuccessfulSchemaCheck', 'supergraphSDL'],
+      ['FailedSchemaCheck', 'compositeSchemaSDL'],
+      ['FailedSchemaCheck', 'supergraphSDL'],
+      ['FailedSchemaCheck', 'schemaSDL'],
+    ]);
+
     const result = await injector.get(SchemaManager).getPaginatedSchemaChecksForTarget(target, {
       first: args.first ?? null,
       cursor: args.after ?? null,
@@ -71,6 +81,7 @@ export const Target: Pick<
         organizationId: target.orgId,
         projectId: target.projectId,
       }),
+      withSDL: operationSelectsSDL,
     });
 
     return {
