@@ -85,11 +85,11 @@ export const action: Action = async exec => {
     ARRAY JOIN errors as error
     GROUP BY
         target
-      , error.path
-      , toStartOfMinute(timestamp)
+      , coordinate
+      , timestamp
       , hash
-      , error.code
-      , toStartOfMinute(expires_at)
+      , code
+      , expires_at
     ;
   `);
 
@@ -143,13 +143,13 @@ export const action: Action = async exec => {
     GROUP BY
         target
       , coordinate
-      , toStartOfHour(timestamp)
+      , timestamp
       , hash
       , code
       -- Expiration must be a separate group in case the users subscription changes.
       -- When selected, the data will be summed by the ORDER BY. Subscription changes
       -- are rare so any performance implication is minimal.
-      , toStartOfHour(expires_at)
+      , expires_at
     ;
   `);
 
@@ -197,10 +197,10 @@ export const action: Action = async exec => {
     GROUP BY
         target
       , coordinate
-      , toStartOfDay(timestamp)
+      , timestamp
       , hash
       , code
-      , toStartOfDay(expires_at)
+      , expires_at
     ;
   `);
 };
