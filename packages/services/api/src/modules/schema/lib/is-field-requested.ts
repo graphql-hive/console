@@ -14,15 +14,17 @@ export function isFieldRequestedDeep(
    * to return an array of match conditions, but for the current use case
    * it really only matters if any of these fields are requested.
    */
-  targetFields: [string, string][],
+  targetFields: ReadonlyArray<readonly [string, string]>,
 ): boolean {
   // Organize targets for O(1) lookups: Map<TypeName, Set<FieldName>>
   const targetMap = new Map<string, Set<string>>();
   for (const [typeName, fieldName] of targetFields) {
-    if (!targetMap.has(typeName)) {
-      targetMap.set(typeName, new Set());
+    let fields = targetMap.get(typeName);
+    if (!fields) {
+      fields = new Set();
+      targetMap.set(typeName, fields);
     }
-    targetMap.get(typeName)!.add(fieldName);
+    fields.add(fieldName);
   }
 
   let found = false;
