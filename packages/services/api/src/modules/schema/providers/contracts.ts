@@ -314,9 +314,7 @@ export class Contracts {
       WHERE
         "target_id" = ${args.targetId}
         ${args.onlyActive ? psql`AND "is_disabled" = false` : psql``}
-        ${
-          cursor ? psql`AND (c."created_at", c."id") < (${cursor.createdAt}, ${cursor.id})` : psql``
-        }
+        ${cursor ? psql`AND ("created_at", "id") < (${cursor.createdAt}, ${cursor.id})` : psql``}
       ORDER BY
         "target_id" ASC,
         "created_at" DESC,

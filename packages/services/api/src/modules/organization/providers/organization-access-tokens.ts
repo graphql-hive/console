@@ -631,9 +631,7 @@ export class OrganizationAccessTokens {
         "organization_access_tokens"
       WHERE
         "organization_id" = ${organization.id}
-        ${
-          cursor ? psql`AND (c."created_at", c."id") < (${cursor.createdAt}, ${cursor.id})` : psql``
-        }
+        ${cursor ? psql`AND ("created_at", "id") < (${cursor.createdAt}, ${cursor.id})` : psql``}
         ${
           args.includeOnlyOrganizationScoped
             ? psql`
@@ -710,9 +708,7 @@ export class OrganizationAccessTokens {
         "organization_access_tokens"
       WHERE
         "project_id" = ${project.id}
-        ${
-          cursor ? psql`AND (c."created_at", c."id") < (${cursor.createdAt}, ${cursor.id})` : psql``
-        }
+        ${cursor ? psql`AND ("created_at", "id") < (${cursor.createdAt}, ${cursor.id})` : psql``}
       ORDER BY
         "project_id" ASC
         , "created_at" DESC
@@ -777,9 +773,7 @@ export class OrganizationAccessTokens {
         "organization_access_tokens"
       WHERE
         "user_id" = ${member.userId}
-        ${
-          cursor ? psql`AND (c."created_at", c."id") < (${cursor.createdAt}, ${cursor.id})` : psql``
-        }
+        ${cursor ? psql`AND ("created_at", "id") < (${cursor.createdAt}, ${cursor.id})` : psql``}
         ${
           args.includeExpired
             ? psql``

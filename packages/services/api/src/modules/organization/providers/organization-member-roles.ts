@@ -116,9 +116,7 @@ export class OrganizationMemberRoles {
         "organization_member_roles"
       WHERE
         "organization_id" = ${organizationId}
-        ${
-          cursor ? psql`AND (c."created_at", c."id") < (${cursor.createdAt}, ${cursor.id})` : psql``
-        }
+        ${cursor ? psql`AND ("created_at", "id") < (${cursor.createdAt}, ${cursor.id})` : psql``}
       ORDER BY
         "created_at" DESC
         , "id" DESC

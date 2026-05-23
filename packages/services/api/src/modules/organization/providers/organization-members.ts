@@ -176,7 +176,7 @@ export class OrganizationMembers {
         "om"."organization_id" = ${organization.id}
         ${
           cursor
-            ? psql`AND ("om"."created_at", "om"."id") < (${cursor.createdAt}, ${cursor.id})`
+            ? psql`AND ("om"."created_at", "om"."user_id") < (${cursor.createdAt}, ${cursor.id})`
             : psql``
         }
         ${searching ? psql`AND "u"."display_name" || ' ' || "u"."email" ILIKE ${'%' + searchTerm + '%'}` : psql``}
