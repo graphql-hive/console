@@ -213,14 +213,14 @@
             }
           ],
           "limit": 100,
-          "query": "{name=~\"SchemaPublisher.check\" && duration>$schemaCheckThreshold}",
+          "query": "{name=~\"SchemaPublisher.internalCheck\" && duration>$schemaCheckThreshold}",
           "queryType": "traceql",
           "refId": "A",
           "spss": 20,
           "tableType": "traces"
         }
       ],
-      "title": "Slow SchemaPublisher.check",
+      "title": "Slow SchemaPublisher.internalCheck",
       "type": "table"
     },
     {
