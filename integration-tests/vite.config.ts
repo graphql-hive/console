@@ -1,4 +1,4 @@
-import { defaultExclude, defineConfig } from 'vitest/config';
+import { defaultExclude, defaultInclude, defineConfig } from 'vitest/config';
 
 const setupFiles = ['../scripts/serializer.ts', './expect.ts'];
 
@@ -7,6 +7,14 @@ if (!process.env.RUN_AGAINST_LOCAL_SERVICES) {
 } else {
   setupFiles.unshift('./local-dev.ts');
 }
+
+const RUN_MEMORY_LEAKS_TESTS = process.env.RUN_MEMORY_LEAKS_TESTS === '1';
+
+const exclude = RUN_MEMORY_LEAKS_TESTS
+  ? defaultExclude
+  : [...defaultExclude, 'tests/api/memory-leaks.spec.ts'];
+
+const include = RUN_MEMORY_LEAKS_TESTS ? ['tests/api/memory-leaks.spec.ts'] : defaultInclude;
 
 export default defineConfig({
   test: {
@@ -37,6 +45,7 @@ export default defineConfig({
     },
     setupFiles,
     testTimeout: 90_000,
-    exclude: defaultExclude,
+    exclude,
+    include,
   },
 });
