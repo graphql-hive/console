@@ -8,6 +8,7 @@ import { createHive } from '@graphql-hive/core';
 import { psql } from '@hive/postgres';
 import { clickHouseInsert } from '../../testkit/clickhouse';
 import { graphql } from '../../testkit/gql';
+import { ResourceAssignmentModeType } from '../../testkit/gql/graphql';
 import { execute } from '../../testkit/graphql';
 
 const CreateAppDeployment = graphql(`
@@ -1742,8 +1743,9 @@ test('retire app deployments fails without feature flag enabled for organization
 });
 
 test('get app deployment documents via GraphQL API', async () => {
-  const { createOrg, ownerToken } = await initSeed().createOwner();
-  const { createProject, setFeatureFlag, organization } = await createOrg();
+  const { createOrg } = await initSeed().createOwner();
+  const { createProject, setFeatureFlag, organization, createOrganizationAccessToken } =
+    await createOrg();
   await setFeatureFlag('appDeployments', true);
   const { createTargetAccessToken, project, target } = await createProject();
   const token = await createTargetAccessToken({});
@@ -1771,12 +1773,23 @@ test('get app deployment documents via GraphQL API', async () => {
     `,
   });
 
+  // Ensure this is possible with the minimal available permissions.
+  const organizationAccessToken = await createOrganizationAccessToken({
+    permissions: ['appDeployment:create'],
+    resources: {
+      mode: ResourceAssignmentModeType.All,
+    },
+  });
+
   const { addDocumentsToAppDeployment } = await execute({
     document: AddDocumentsToAppDeployment,
     variables: {
       input: {
         appName: 'app-name',
         appVersion: 'app-version',
+        target: {
+          byId: target.id,
+        },
         documents: [
           {
             hash: 'aaa',
@@ -1797,7 +1810,7 @@ test('get app deployment documents via GraphQL API', async () => {
         ],
       },
     },
-    authToken: token.secret,
+    authToken: organizationAccessToken.privateAccessKey,
   }).then(res => res.expectNoGraphQLErrors());
   expect(addDocumentsToAppDeployment.error).toBeNull();
 
@@ -1812,7 +1825,7 @@ test('get app deployment documents via GraphQL API', async () => {
       appDeploymentName: 'app-name',
       appDeploymentVersion: 'app-version',
     },
-    authToken: ownerToken,
+    authToken: token.secret,
   }).then(res => res.expectNoGraphQLErrors());
   expect(result.target).toMatchObject({
     appDeployment: {
@@ -2155,6 +2168,137 @@ test('app deployment usage reporting', async () => {
     authToken: ownerToken,
   }).then(res => res.expectNoGraphQLErrors());
   expect(data.target?.appDeployment?.lastUsed).toEqual(expect.any(String));
+});
+
+test('app deployment manifest is written to and accessible via CDN', async () => {
+  const { createOrg } = await initSeed().createOwner();
+  const { createProject, setFeatureFlag } = await createOrg();
+  await setFeatureFlag('appDeployments', true);
+  const { createTargetAccessToken, createCdnAccess } = await createProject();
+  const token = await createTargetAccessToken({});
+
+  const { createAppDeployment } = await execute({
+    document: CreateAppDeployment,
+    variables: {
+      input: {
+        appName: 'app-name',
+        appVersion: 'app-version',
+      },
+    },
+    authToken: token.secret,
+  }).then(res => res.expectNoGraphQLErrors());
+  expect(createAppDeployment.error).toBeNull();
+
+  await token.publishSchema({
+    sdl: /* GraphQL */ `
+      type Query {
+        a: String
+        b: String
+        c: String
+        d: String
+      }
+    `,
+  });
+
+  const { addDocumentsToAppDeployment } = await execute({
+    document: AddDocumentsToAppDeployment,
+    variables: {
+      input: {
+        appName: 'app-name',
+        appVersion: 'app-version',
+        documents: [
+          {
+            hash: 'aaa',
+            body: 'query { a }',
+          },
+          {
+            hash: 'bbb',
+            body: 'query { b }',
+          },
+          {
+            hash: 'ccc',
+            body: 'query { c }',
+          },
+          {
+            hash: 'ddd',
+            body: 'query { d }',
+          },
+        ],
+      },
+    },
+    authToken: token.secret,
+  }).then(res => res.expectNoGraphQLErrors());
+  expect(addDocumentsToAppDeployment.error).toBeNull();
+
+  const cdnAccess = await createCdnAccess();
+  const persistedOperationUrl = `${cdnAccess.cdnUrl}/apps/app-name/app-version`;
+
+  let response = await fetch(persistedOperationUrl, {
+    method: 'GET',
+    headers: {
+      'X-Hive-CDN-Key': cdnAccess.secretAccessToken,
+    },
+  });
+  // before the app deployment is activated it shall not exist.
+  expect(response.status).toEqual(404);
+
+  const { activateAppDeployment } = await execute({
+    document: ActivateAppDeployment,
+    variables: {
+      input: {
+        appName: 'app-name',
+        appVersion: 'app-version',
+      },
+    },
+    authToken: token.secret,
+  }).then(res => res.expectNoGraphQLErrors());
+  expect(activateAppDeployment.error).toBeNull();
+
+  response = await fetch(persistedOperationUrl, {
+    method: 'GET',
+    headers: {
+      'X-Hive-CDN-Key': cdnAccess.secretAccessToken,
+    },
+  });
+  expect(response.status).toEqual(200);
+  let manifest = await response.json();
+  expect(manifest).toMatchObject({
+    appName: 'app-name',
+    appVersion: 'app-version',
+    documentHashes: ['aaa', 'bbb', 'ccc', 'ddd'],
+    id: expect.any(String),
+    isActive: true,
+  });
+
+  // Retire flow.
+
+  const { retireAppDeployment } = await execute({
+    document: RetireAppDeployment,
+    variables: {
+      input: {
+        appName: 'app-name',
+        appVersion: 'app-version',
+      },
+    },
+    authToken: token.secret,
+  }).then(res => res.expectNoGraphQLErrors());
+  expect(retireAppDeployment.error).toBeNull();
+
+  response = await fetch(persistedOperationUrl, {
+    method: 'GET',
+    headers: {
+      'X-Hive-CDN-Key': cdnAccess.secretAccessToken,
+    },
+  });
+  expect(response.status).toEqual(200);
+  manifest = await response.json();
+  expect(manifest).toMatchObject({
+    appName: 'app-name',
+    appVersion: 'app-version',
+    documentHashes: ['aaa', 'bbb', 'ccc', 'ddd'],
+    id: expect.any(String),
+    isActive: false,
+  });
 });
 
 test('activeAppDeployments returns empty list when no active deployments exist', async () => {

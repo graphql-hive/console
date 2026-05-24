@@ -134,11 +134,16 @@ if (context.email.id === 'mock') {
 
 await server.listen({
   port: env.http.port,
-  host: '::',
+  host: env.http.host,
+  ipv6Only: env.http.ipv6Only,
 });
 
 const shutdownMetrics = env.prometheus
-  ? await startMetrics(env.prometheus.labels.instance, env.prometheus.port)
+  ? await startMetrics(env.prometheus.labels.instance, {
+      port: env.prometheus.port,
+      host: env.http.host,
+      ipv6Only: env.http.ipv6Only,
+    })
   : null;
 
 const runner = await run({

@@ -1,5 +1,5 @@
 import zod from 'zod';
-import { OpenTelemetryConfigurationModel } from '@hive/service-common';
+import { OpenTelemetryConfigurationModel, resolveServerListenOptions } from '@hive/service-common';
 
 const isNumberString = (input: unknown) => zod.string().regex(/^\d+$/).safeParse(input).success;
 
@@ -21,6 +21,8 @@ const emptyString = <T extends zod.ZodType>(input: T) => {
 
 const EnvironmentModel = zod.object({
   PORT: emptyString(NumberFromString().optional()),
+  SERVER_HOST: emptyString(zod.string().optional()),
+  SERVER_HOST_IPV6_ONLY: emptyString(zod.union([zod.literal('1'), zod.literal('0')]).optional()),
   BODY_LIMIT: NumberFromString().optional().default(/* 15mb in bytes */ 15e6),
   ENVIRONMENT: emptyString(zod.string().optional()),
   RELEASE: emptyString(zod.string().optional()),
@@ -144,6 +146,10 @@ export const env = {
   encryptionSecret: base.ENCRYPTION_SECRET,
   http: {
     port: base.PORT ?? 6500,
+    ...resolveServerListenOptions({
+      serverHost: base.SERVER_HOST,
+      serverHostIpv6Only: base.SERVER_HOST_IPV6_ONLY,
+    }),
     bodyLimit: base.BODY_LIMIT,
   },
   tracing: {

@@ -1,7 +1,11 @@
 import { differenceInCalendarDays, startOfDay, subDays } from 'date-fns';
 import { Inject, Injectable, Scope } from 'graphql-modules';
 import { z } from 'zod';
-import { buildAppDeploymentIsEnabledKey } from '@hive/cdn-script/artifact-storage-reader';
+import {
+  AppDeploymentManifestModel,
+  buildAppDeploymentIsEnabledKey,
+  buildAppDeploymentManifestKey,
+} from '@hive/cdn-script/artifact-storage-reader';
 import {
   PostgresDatabasePool,
   psql,
@@ -16,8 +20,10 @@ import {
   encodeCreatedAtAndUUIDIdBasedCursor,
   encodeHashBasedCursor,
 } from '@hive/storage';
+import type { Target } from '../../../shared/entities';
 import { ClickHouse, sql as cSql } from '../../operations/providers/clickhouse-client';
 import { SchemaVersionHelper } from '../../schema/providers/schema-version-helper';
+import { SchemaVersionStore } from '../../schema/providers/schema-version-store';
 import { Logger } from '../../shared/providers/logger';
 import { S3_CONFIG, type S3Config } from '../../shared/providers/s3-config';
 import { Storage } from '../../shared/providers/storage';
@@ -55,6 +61,7 @@ export class AppDeployments {
     private storage: Storage,
     private schemaVersionHelper: SchemaVersionHelper,
     private persistedDocumentScheduler: PersistedDocumentScheduler,
+    private schemaVersions: SchemaVersionStore,
     @Inject(APP_DEPLOYMENTS_ENABLED) private appDeploymentsEnabled: boolean,
   ) {
     this.logger = logger.child({ source: 'AppDeployments' });
@@ -249,9 +256,7 @@ export class AppDeployments {
   }
 
   async addDocumentsToAppDeployment(args: {
-    organizationId: string;
-    projectId: string;
-    targetId: string;
+    target: Target;
     appDeployment: {
       name: string;
       version: string;
@@ -263,7 +268,7 @@ export class AppDeployments {
   }) {
     if (this.appDeploymentsEnabled === false) {
       const organization = await this.storage.getOrganization({
-        organizationId: args.organizationId,
+        organizationId: args.target.orgId,
       });
       if (organization.featureFlags.appDeployments === false) {
         this.logger.debug(
@@ -283,7 +288,7 @@ export class AppDeployments {
     // todo: validate input
 
     const appDeployment = await this.findAppDeployment({
-      targetId: args.targetId,
+      targetId: args.target.id,
       name: args.appDeployment.name,
       version: args.appDeployment.version,
     });
@@ -309,9 +314,9 @@ export class AppDeployments {
     }
 
     if (args.operations.length !== 0) {
-      const latestSchemaVersion = await this.storage.getMaybeLatestValidVersion({
-        targetId: args.targetId,
-      });
+      const latestSchemaVersion = await this.schemaVersions.getMaybeLatestValidSchemaVersion(
+        args.target,
+      );
 
       if (latestSchemaVersion === null) {
         return {
@@ -326,9 +331,9 @@ export class AppDeployments {
 
       const compositeSchemaSdl = await this.schemaVersionHelper.getCompositeSchemaSdl({
         ...latestSchemaVersion,
-        organizationId: args.organizationId,
-        projectId: args.projectId,
-        targetId: args.targetId,
+        organizationId: args.target.orgId,
+        projectId: args.target.projectId,
+        targetId: args.target.id,
       });
       if (compositeSchemaSdl === null) {
         // No valid schema found.
@@ -343,7 +348,7 @@ export class AppDeployments {
 
       const result = await this.persistedDocumentScheduler.processBatch({
         schemaSdl: compositeSchemaSdl,
-        targetId: args.targetId,
+        targetId: args.target.id,
         appDeployment: {
           id: appDeployment.id,
           name: args.appDeployment.name,
@@ -364,6 +369,27 @@ export class AppDeployments {
       type: 'success' as const,
       appDeployment,
     };
+  }
+
+  private async _getAllDocumentHashesForAppDeployment(
+    appDeployment: AppDeploymentRecord,
+  ): Promise<Array<string>> {
+    return await this.clickhouse
+      .query({
+        query: cSql`
+          SELECT
+            DISTINCT "document_hash" AS "hash"
+          FROM
+            "app_deployment_documents"
+          WHERE
+            "app_deployment_id" = ${appDeployment.id}
+        `,
+        queryId: 'app-deployment-document-ids',
+        timeout: 10_000,
+      })
+      .then(res =>
+        z.array(z.object({ hash: z.string() }).transform(row => row.hash)).parse(res.data),
+      );
   }
 
   async activateAppDeployment(args: {
@@ -431,8 +457,11 @@ export class AppDeployments {
       };
     }
 
+    const appDeploymentDocumentHashes =
+      await this._getAllDocumentHashesForAppDeployment(appDeployment);
+
     for (const s3 of this.s3) {
-      const result = await s3.client.fetch(
+      let result = await s3.client.fetch(
         [
           s3.endpoint,
           s3.bucket,
@@ -456,6 +485,38 @@ export class AppDeployments {
 
       if (result.statusCode !== 200) {
         throw new Error(`Failed to enable app deployment: ${result.statusMessage}`);
+      }
+
+      result = await s3.client.fetch(
+        [
+          s3.endpoint,
+          s3.bucket,
+          buildAppDeploymentManifestKey(
+            appDeployment.targetId,
+            appDeployment.name,
+            appDeployment.version,
+          ),
+        ].join('/'),
+        {
+          method: 'PUT',
+          body: JSON.stringify({
+            id: appDeployment.id,
+            appName: appDeployment.name,
+            appVersion: appDeployment.version,
+            documentHashes: appDeploymentDocumentHashes.sort(),
+            isActive: true,
+          } satisfies z.TypeOf<typeof AppDeploymentManifestModel>),
+          headers: {
+            'content-type': 'application/json',
+          },
+          aws: {
+            signQuery: true,
+          },
+        },
+      );
+
+      if (result.statusCode !== 200) {
+        throw new Error(`Failed to write app manifest: ${result.statusMessage}`);
       }
     }
 
@@ -690,8 +751,11 @@ export class AppDeployments {
       }
     }
 
+    const appDeploymentDocumentHashes =
+      await this._getAllDocumentHashesForAppDeployment(appDeployment);
+
     for (const s3 of this.s3) {
-      const result = await s3.client.fetch(
+      let result = await s3.client.fetch(
         [
           s3.endpoint,
           s3.bucket,
@@ -721,6 +785,38 @@ export class AppDeployments {
         throw new Error(
           `Failed to disable app deployment. Request failed with status code "${result.statusMessage}".`,
         );
+      }
+
+      result = await s3.client.fetch(
+        [
+          s3.endpoint,
+          s3.bucket,
+          buildAppDeploymentManifestKey(
+            appDeployment.targetId,
+            appDeployment.name,
+            appDeployment.version,
+          ),
+        ].join('/'),
+        {
+          method: 'PUT',
+          body: JSON.stringify({
+            id: appDeployment.id,
+            appName: appDeployment.name,
+            appVersion: appDeployment.version,
+            documentHashes: appDeploymentDocumentHashes.sort(),
+            isActive: false,
+          } satisfies z.TypeOf<typeof AppDeploymentManifestModel>),
+          headers: {
+            'content-type': 'application/json',
+          },
+          aws: {
+            signQuery: true,
+          },
+        },
+      );
+
+      if (result.statusCode !== 200) {
+        throw new Error(`Failed to write app manifest: ${result.statusMessage}`);
       }
     }
 

@@ -5,6 +5,7 @@ import * as GraphQLSchema from '../../../__generated__/types';
 import { Organization, ProjectType } from '../../../shared/entities';
 import { AccessError } from '../../../shared/errors';
 import { Session } from '../../auth/lib/authz';
+import { SchemaVersionStore } from '../../schema/providers/schema-version-store';
 import { Storage } from '../../shared/providers/storage';
 
 /**
@@ -19,6 +20,7 @@ export class ResourceSelector {
   constructor(
     private storage: Storage,
     private session: Session,
+    private schemaVersions: SchemaVersionStore,
   ) {}
 
   private async _assertResourceSelectorAdminPermissions(organizationId: string) {
@@ -163,7 +165,9 @@ export class ResourceSelector {
     if (target.type === GraphQLSchema.ProjectType.SINGLE) {
       return null;
     }
-    const latest = await this.storage.getMaybeLatestValidVersion({ targetId: target.targetId });
+    const latest = await this.schemaVersions.getMaybeLatestSchemaVersionForTargetId(
+      target.targetId,
+    );
     if (latest) {
       return await this.storage.pool
         .anyFirst(

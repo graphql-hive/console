@@ -12,6 +12,7 @@ import { OperationDefinitionNode, parse } from 'graphql';
 import * as monaco from 'monaco-editor';
 import { MonacoGraphQLAPI } from 'monaco-graphql/esm/api.js';
 import { initializeMode } from 'monaco-graphql/initializeMode';
+import { cn } from '@/lib/utils';
 import MonacoEditor, { loader } from '@monaco-editor/react';
 import { useLaboratory } from './context';
 
@@ -84,7 +85,7 @@ const darkTheme: monaco.editor.IStandaloneThemeData = {
   ],
   colors: {
     'editor.foreground': '#f6f8fa',
-    'editor.background': '#0f1214',
+    'editor.background': '#0f121400',
     'editor.selectionBackground': '#2A2F34',
     'editor.inactiveSelectionBackground': '#2A2F34',
     'editor.lineHighlightBackground': '#2A2F34',
@@ -354,10 +355,10 @@ const EditorInner = forwardRef<EditorHandle, EditorProps>((props, ref) => {
   }
 
   return (
-    <div className="size-full overflow-hidden">
+    <div className={cn('size-full overflow-hidden', props.className)}>
       <MonacoEditor
-        className="size-full"
         {...props}
+        className="size-full"
         theme={theme === 'dark' ? 'hive-laboratory-dark' : 'hive-laboratory-light'}
         onMount={handleMount}
         loading={null}

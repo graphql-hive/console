@@ -9,7 +9,7 @@ const SharedOIDCIntegrationDomainFieldsModel = z.object({
   id: z.string().uuid(),
   organizationId: z.string().uuid(),
   oidcIntegrationId: z.string().uuid(),
-  domainName: z.string(),
+  domainName: z.string().transform(name => name.toLowerCase()),
   createdAt: z.string(),
 });
 
@@ -86,7 +86,7 @@ export class OIDCIntegrationStore {
       ) VALUES (
         ${organizationId}
         , ${oidcIntegrationId}
-        , ${domainName}
+        , ${domainName.toLowerCase()}
       )
       ON CONFLICT ("oidc_integration_id", "domain_name")
         DO NOTHING
@@ -131,7 +131,7 @@ export class OIDCIntegrationStore {
       FROM
         "oidc_integration_domains"
       WHERE
-        "domain_name" = ${domainName}
+        "domain_name" = ${domainName.toLowerCase()}
         AND "verified_at" IS NOT NULL
     `;
 
@@ -149,7 +149,7 @@ export class OIDCIntegrationStore {
         "oidc_integration_domains"
       WHERE
         "oidc_integration_id" = ${oidcIntegrationId}
-        AND "domain_name" = ${domainName}
+        AND "domain_name" = ${domainName.toLowerCase()}
         AND "verified_at" IS NOT NULL
     `;
 

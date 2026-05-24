@@ -3,12 +3,7 @@ import { DocumentNode, GraphQLError, parse, print, SourceLocation } from 'graphq
 import { z } from 'zod';
 import type { AvailableRulesResponse, PolicyConfigurationObject } from '@hive/policy';
 import type { CompositionFailureError } from '@hive/schema';
-import type {
-  CompositeDeletedSchemaLog,
-  CompositePushSchemaLog,
-  schema_policy_resource,
-  SinglePushSchemaLog,
-} from '@hive/storage';
+import type { schema_policy_resource } from '@hive/storage';
 import type {
   AlertChannelType,
   AlertType,
@@ -18,6 +13,11 @@ import type {
   TargetAccessScope,
 } from '../__generated__/types';
 import type { ResourceAssignmentGroup } from '../modules/organization/lib/resource-assignment-model';
+import type {
+  CompositeDeletedSchemaLog,
+  CompositePushSchemaLog,
+  SinglePushSchemaLog,
+} from '../modules/schema/providers/schema-version-store';
 import { parseGraphQLSource, sortDocumentNode } from './schema';
 
 export const NameModel = z

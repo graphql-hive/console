@@ -5,6 +5,7 @@ import { ProjectType } from 'testkit/gql/graphql';
 import { initSeed } from 'testkit/seed';
 import { assertNonNull, getServiceHost } from 'testkit/utils';
 import { GetObjectCommand, S3Client } from '@aws-sdk/client-s3';
+import { SchemaVersionStore } from '@hive/api/modules/schema/providers/schema-version-store';
 import { createStorage } from '@hive/storage';
 import { sortSDL } from '@theguild/federation-composition';
 
@@ -132,6 +133,7 @@ test.concurrent(
 
     try {
       storage = await createStorage(connectionString(), 1);
+      const schemaVersions = new SchemaVersionStore(storage.pool);
       const { createOrg } = await initSeed().createOwner();
       const { createProject, organization } = await createOrg();
       const { createTargetAccessToken, project, target } = await createProject(
@@ -171,11 +173,7 @@ test.concurrent(
         .then(r => r.expectNoGraphQLErrors());
       expect(deleteServiceResult.schemaDelete.__typename).toBe('SchemaDeleteSuccess');
 
-      const latestVersion = await storage.getMaybeLatestVersion({
-        targetId: target.id,
-        projectId: project.id,
-        organizationId: organization.id,
-      });
+      const latestVersion = await schemaVersions.getMaybeLatestSchemaVersionForTargetId(target.id);
       assertNonNull(latestVersion);
 
       expect(latestVersion.compositeSchemaSDL).toMatchInlineSnapshot(`
@@ -187,9 +185,7 @@ test.concurrent(
       expect(latestVersion.hasPersistedSchemaChanges).toEqual(true);
       expect(latestVersion.isComposable).toEqual(true);
 
-      const changes = await storage.getSchemaChangesForVersion({
-        versionId: latestVersion.id,
-      });
+      const changes = await schemaVersions.getSchemaSchangesForSchemaVersion(latestVersion);
 
       if (Array.isArray(changes) === false) {
         throw new Error('No changes were persisted in the database.');
@@ -229,6 +225,7 @@ test.concurrent(
 
     try {
       storage = await createStorage(connectionString(), 1);
+      const schemaVersions = new SchemaVersionStore(storage.pool);
       const { createOrg, ownerToken } = await initSeed().createOwner();
       const { createProject, organization } = await createOrg();
       const { createTargetAccessToken, project, target, setNativeFederation } = await createProject(
@@ -311,11 +308,7 @@ test.concurrent(
         .then(r => r.expectNoGraphQLErrors());
       expect(deleteServiceResult.schemaDelete.__typename).toBe('SchemaDeleteSuccess');
 
-      const latestVersion = await storage.getMaybeLatestVersion({
-        targetId: target.id,
-        projectId: project.id,
-        organizationId: organization.id,
-      });
+      const latestVersion = await schemaVersions.getMaybeLatestSchemaVersionForTargetId(target.id);
       assertNonNull(latestVersion);
 
       expect(latestVersion.compositeSchemaSDL).toEqual(null);
