@@ -1,16 +1,36 @@
 import { Injectable, Scope } from 'graphql-modules';
+import { GraphQLError } from 'graphql';
+import {
+  decodeCreatedAtAndUUIDIdBasedCursor,
+  decodeProjectSlugIdBasedCursor,
+  encodeCreatedAtAndUUIDIdBasedCursor,
+  encodeProjectSlugIdBasedCursor,
+} from '@hive/storage';
 import * as GraphQLSchema from 'packages/libraries/core/src/client/__generated__/types';
 import { z } from 'zod';
-import type { ProjectReferenceInput } from '../../../__generated__/types';
+import type { DateRangeInput, ProjectReferenceInput } from '../../../__generated__/types';
+import { parseDateRangeInput } from '../../../shared/helpers';
 import type { Organization, Project, ProjectType, Target } from '../../../shared/entities';
 import { AuditLogRecorder } from '../../audit-logs/providers/audit-log-recorder';
 import { Session } from '../../auth/lib/authz';
+import { OperationsManager } from '../../operations/providers/operations-manager';
 import { IdTranslator } from '../../shared/providers/id-translator';
 import { Logger } from '../../shared/providers/logger';
-import { OrganizationSelector, ProjectSelector, Storage } from '../../shared/providers/storage';
+import {
+  OrganizationSelector,
+  ProjectSelector,
+  ProjectsStorageSort,
+  Storage,
+} from '../../shared/providers/storage';
 import { TargetManager } from '../../target/providers/target-manager';
 import { TokenStorage } from '../../token/providers/token-storage';
 import { ProjectSlugModel } from '../validation';
+
+type ProjectsSortArgs = {
+  field: 'NAME' | 'CREATED_AT' | 'REQUESTS' | 'SCHEMA_VERSIONS';
+  direction: 'ASC' | 'DESC';
+  period?: DateRangeInput | null;
+};
 
 const reservedSlugs = ['view', 'new'];
 
@@ -41,6 +61,7 @@ export class ProjectManager {
     private auditLog: AuditLogRecorder,
     private idTranslator: IdTranslator,
     private targetManager: TargetManager,
+    private operationsManager: OperationsManager,
   ) {
     this.logger = logger.child({ source: 'ProjectManager' });
   }
@@ -265,6 +286,297 @@ export class ProjectManager {
     }
 
     return filteredProjects;
+  }
+
+  async getPaginatedProjectsForOrganization(
+    organization: Organization,
+    args: {
+      first: number | null;
+      after: string | null;
+      search: string | null;
+      sort: ProjectsSortArgs | null;
+    },
+  ) {
+    const sortField = args.sort?.field ?? 'CREATED_AT';
+
+    if (sortField === 'REQUESTS' || sortField === 'SCHEMA_VERSIONS') {
+      return this.getPaginatedProjectsSortedByMetric(organization, args);
+    }
+
+    const storageSort = this.toStorageSort(args.sort);
+    const limit = args.first ? Math.min(args.first, 50) : null;
+
+    if (limit === null) {
+      const projects = await this.storage.getProjects({
+        organizationId: organization.id,
+        search: args.search,
+        sort: storageSort,
+      });
+      const authorized = await this.filterAuthorizedProjects(organization, projects);
+      const nodes = authorized.slice(this.resolveCursorStartIndex(authorized, args.after, storageSort));
+
+      return this.toProjectConnection(nodes, storageSort, {
+        hasNextPage: false,
+        hasPreviousPage: args.after !== null,
+      });
+    }
+
+    const authorized: Project[] = [];
+    let dbCursor = args.after;
+    let dbHasMore = true;
+
+    while (authorized.length <= limit && dbHasMore) {
+      const batch = await this.storage.getPaginatedProjects({
+        organizationId: organization.id,
+        first: limit + 1,
+        after: dbCursor,
+        search: args.search,
+        sort: storageSort,
+      });
+
+      for (const { node: project } of batch.edges) {
+        if (
+          await this.session.canPerformAction({
+            action: 'project:describe',
+            organizationId: organization.id,
+            params: {
+              organizationId: organization.id,
+              projectId: project.id,
+            },
+          })
+        ) {
+          authorized.push(project);
+        }
+
+        if (authorized.length > limit) {
+          break;
+        }
+      }
+
+      dbHasMore = batch.pageInfo.hasNextPage;
+      dbCursor = batch.pageInfo.endCursor;
+
+      if (batch.edges.length === 0) {
+        break;
+      }
+    }
+
+    return this.toProjectConnection(authorized.slice(0, limit), storageSort, {
+      hasNextPage: authorized.length > limit,
+      hasPreviousPage: args.after !== null,
+    });
+  }
+
+  private async getPaginatedProjectsSortedByMetric(
+    organization: Organization,
+    args: {
+      first: number | null;
+      after: string | null;
+      search: string | null;
+      sort: ProjectsSortArgs | null;
+    },
+  ) {
+    if (!args.sort?.period) {
+      throw new GraphQLError('period is required when sorting projects by REQUESTS or SCHEMA_VERSIONS');
+    }
+
+    const period = parseDateRangeInput(args.sort.period);
+    const limit = args.first ? Math.min(args.first, 50) : null;
+    const direction = args.sort.direction ?? 'DESC';
+    const multiplier = direction === 'ASC' ? 1 : -1;
+
+    const projects = await this.storage.getProjects({
+      organizationId: organization.id,
+      search: args.search,
+    });
+    const authorized = await this.filterAuthorizedProjects(organization, projects);
+
+    const withMetrics = await Promise.all(
+      authorized.map(async project => {
+        const value =
+          args.sort!.field === 'REQUESTS'
+            ? await this.operationsManager.countRequestsOfProject({
+                organizationId: organization.id,
+                projectId: project.id,
+                period,
+              })
+            : await this.storage.countSchemaVersionsOfProject({
+                organizationId: organization.id,
+                projectId: project.id,
+                period,
+              });
+
+        return { project, value };
+      }),
+    );
+
+    withMetrics.sort((left, right) => {
+      const diff = (left.value - right.value) * multiplier;
+
+      if (diff !== 0) {
+        return diff;
+      }
+
+      return left.project.slug.localeCompare(right.project.slug);
+    });
+
+    const sorted = withMetrics.map(entry => entry.project);
+    let startIndex = 0;
+
+    if (args.after) {
+      const { id } = decodeCreatedAtAndUUIDIdBasedCursor(args.after);
+      const cursorIndex = sorted.findIndex(project => project.id === id);
+
+      if (cursorIndex !== -1) {
+        startIndex = cursorIndex + 1;
+      }
+    }
+
+    if (limit === null) {
+      return this.toProjectConnection(sorted.slice(startIndex), null, {
+        hasNextPage: false,
+        hasPreviousPage: args.after !== null,
+      });
+    }
+
+    const page = sorted.slice(startIndex, startIndex + limit + 1);
+
+    return this.toProjectConnection(page.slice(0, limit), null, {
+      hasNextPage: page.length > limit,
+      hasPreviousPage: args.after !== null,
+    });
+  }
+
+  private async filterAuthorizedProjects(organization: Organization, projects: Project[]) {
+    const filteredProjects: Project[] = [];
+
+    for (const project of projects) {
+      if (
+        await this.session.canPerformAction({
+          action: 'project:describe',
+          organizationId: organization.id,
+          params: {
+            organizationId: organization.id,
+            projectId: project.id,
+          },
+        })
+      ) {
+        filteredProjects.push(project);
+      }
+    }
+
+    return filteredProjects;
+  }
+
+  private resolveCursorStartIndex(
+    projects: Project[],
+    after: string | null,
+    sort: ProjectsStorageSort | null,
+  ) {
+    if (!after) {
+      return 0;
+    }
+
+    const sortConfig = sort ?? { field: 'CREATED_AT', direction: 'DESC' };
+    const isDesc = sortConfig.direction === 'DESC';
+    const cursorIndex = projects.findIndex(project => {
+      if (sortConfig.field === 'NAME') {
+        try {
+          const cursor = decodeProjectSlugIdBasedCursor(after);
+
+          return project.slug === cursor.slug && project.id === cursor.id;
+        } catch {
+          return false;
+        }
+      }
+
+      try {
+        const cursor = decodeCreatedAtAndUUIDIdBasedCursor(after);
+
+        return project.createdAt === cursor.createdAt && project.id === cursor.id;
+      } catch {
+        return false;
+      }
+    });
+
+    if (cursorIndex !== -1) {
+      return cursorIndex + 1;
+    }
+
+    if (sortConfig.field === 'NAME') {
+      try {
+        const cursor = decodeProjectSlugIdBasedCursor(after);
+        const startIndex = projects.findIndex(project =>
+          isDesc
+            ? project.slug < cursor.slug ||
+              (project.slug === cursor.slug && project.id < cursor.id)
+            : project.slug > cursor.slug ||
+              (project.slug === cursor.slug && project.id > cursor.id),
+        );
+
+        return startIndex === -1 ? projects.length : startIndex;
+      } catch {
+        return 0;
+      }
+    }
+
+    try {
+      const cursor = decodeCreatedAtAndUUIDIdBasedCursor(after);
+      const startIndex = projects.findIndex(project =>
+        isDesc
+          ? project.createdAt < cursor.createdAt ||
+            (project.createdAt === cursor.createdAt && project.id < cursor.id)
+          : project.createdAt > cursor.createdAt ||
+            (project.createdAt === cursor.createdAt && project.id > cursor.id),
+      );
+
+      return startIndex === -1 ? projects.length : startIndex;
+    } catch {
+      return 0;
+    }
+  }
+
+  private toStorageSort(sort: ProjectsSortArgs | null): ProjectsStorageSort | null {
+    if (!sort) {
+      return null;
+    }
+
+    return {
+      field: sort.field === 'NAME' ? 'NAME' : 'CREATED_AT',
+      direction: sort.direction,
+    };
+  }
+
+  private toProjectConnection(
+    nodes: Project[],
+    sort: ProjectsStorageSort | null,
+    pageInfo: { hasNextPage: boolean; hasPreviousPage: boolean },
+  ) {
+    const sortConfig = sort ?? { field: 'CREATED_AT', direction: 'DESC' };
+    const edges = nodes.map(node => ({
+      node,
+      get cursor() {
+        if (sortConfig.field === 'NAME') {
+          return encodeProjectSlugIdBasedCursor({ slug: node.slug, id: node.id });
+        }
+
+        return encodeCreatedAtAndUUIDIdBasedCursor(node);
+      },
+    }));
+
+    return {
+      edges,
+      pageInfo: {
+        hasNextPage: pageInfo.hasNextPage,
+        hasPreviousPage: pageInfo.hasPreviousPage,
+        get endCursor() {
+          return edges.at(-1)?.cursor ?? '';
+        },
+        get startCursor() {
+          return edges.at(0)?.cursor ?? '';
+        },
+      },
+    };
   }
 
   async updateSlug(input: { project: GraphQLSchema.ProjectReferenceInput; slug: string }): Promise<

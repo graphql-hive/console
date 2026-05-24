@@ -1,12 +1,22 @@
 import { ChangeEvent, useCallback, useMemo, useRef } from 'react';
 import { endOfDay, formatISO, startOfDay } from 'date-fns';
-import { ArrowUpRight, MoveDownIcon, MoveUpIcon, SearchIcon } from 'lucide-react';
+import { MoreHorizontal, MoveDownIcon, MoveUpIcon, SearchIcon } from 'lucide-react';
 import { useQuery } from 'urql';
 import { z } from 'zod';
 import { OrganizationLayout, Page } from '@/components/layouts/organization';
-import { TargetCard, TargetCardSkeleton } from '@/components/organization/TargetCard';
+import {
+  TargetCard,
+  TargetCardFragment,
+  TargetCardSkeleton,
+} from '@/components/organization/TargetCard';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { EmptyList } from '@/components/ui/empty-list';
 import { Input } from '@/components/ui/input';
 import { Meta } from '@/components/ui/meta';
@@ -15,8 +25,14 @@ import { QueryError } from '@/components/ui/query-error';
 import { Select, SelectContent, SelectItem, SelectTrigger } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
 import { TooltipProvider } from '@/components/ui/tooltip';
-import { graphql } from '@/gql';
-import { ProjectType } from '@/gql/graphql';
+import { FragmentType, graphql } from '@/gql';
+import {
+  ProjectsSortDirection,
+  ProjectsSortField,
+  ProjectType,
+  TargetsSortDirection,
+  TargetsSortField,
+} from '@/gql/graphql';
 import { subDays } from '@/lib/date-time';
 import { UTCDate } from '@date-fns/utc';
 import { Link, useRouter } from '@tanstack/react-router';
@@ -34,11 +50,14 @@ const OrganizationProjectsPageQuery = graphql(`
     $organizationSlug: String!
     $period: DateRangeInput!
     $chartResolution: Int!
+    $search: String
+    $sort: ProjectsSortInput
+    $targetsSort: TargetsSortInput
   ) {
     organization: organizationBySlug(organizationSlug: $organizationSlug) {
       id
       slug
-      projects {
+      projects(search: $search, sort: $sort) {
         edges {
           node {
             id
@@ -50,13 +69,45 @@ const OrganizationProjectsPageQuery = graphql(`
               value
             }
             schemaVersionsCount(period: $period)
-            targets {
+            targets(sort: $targetsSort) {
               edges {
                 node {
                   id
                   slug
                   totalRequests(period: $period)
                   schemaVersionsCount(period: $period)
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+`);
+
+const OrganizationProjectsPageInitialDataQuery = graphql(`
+  query OrganizationProjectsPageInitialDataQuery(
+    $organizationSlug: String!
+    $period: DateRangeInput!
+    $chartResolution: Int!
+    $search: String
+    $sort: ProjectsSortInput
+    $targetsSort: TargetsSortInput
+  ) {
+    organization: organizationBySlug(organizationSlug: $organizationSlug) {
+      id
+      slug
+      projects(first: 3, search: $search, sort: $sort) {
+        edges {
+          node {
+            id
+            slug
+            targets(sort: $targetsSort) {
+              edges {
+                node {
+                  id
+                  ...TargetCardFragment
                 }
               }
             }
@@ -92,52 +143,71 @@ const ProjectCard = (props: {
   organizationSlug: string;
   projectSlug: string;
   sortKey: string;
-  sortOrder: number;
+  sortOrder: 'asc' | 'desc';
+  initialTargetData?: ReadonlyMap<string, FragmentType<typeof TargetCardFragment>>;
 }) => {
-  const sortedTargets = useMemo(() => {
-    if (!props.targets) {
-      return [];
-    }
-
-    return props.targets.sort((a, b) => {
-      const diffRequests = b.totalRequests - a.totalRequests;
-      const diffVersions = b.schemaVersionsCount - a.schemaVersionsCount;
-
-      if (props.sortKey === 'requests' && diffRequests !== 0) {
-        return diffRequests * props.sortOrder;
-      }
-
-      if (props.sortKey === 'versions' && diffVersions !== 0) {
-        return diffVersions * props.sortOrder;
-      }
-
-      if (props.sortKey === 'name') {
-        return a.slug.localeCompare(b.slug) * props.sortOrder * -1;
-      }
-
-      // falls back to sort by name in ascending order
-      return a.slug.localeCompare(b.slug);
-    });
-  }, [props.targets, props.sortKey, props.sortOrder]);
-
   return (
     <TooltipProvider>
-      <div className="border-neutral-5 dark:border-neutral-4 bg-neutral-1 dark:bg-neutral-3 overflow-hidden rounded-lg border">
+      <div className="border-neutral-5 dark:border-neutral-4 overflow-hidden rounded-lg border">
         <Link
           to="/$organizationSlug/$projectSlug"
           params={{ organizationSlug: props.organizationSlug, projectSlug: props.projectSlug }}
           className="group grid w-full grid-cols-[1fr_auto] items-center gap-8 overflow-hidden p-4"
         >
           <div className="flex gap-x-2">
-            <h4 className="line-clamp-2 text-lg font-medium">{props.slug}</h4>
-            <Badge variant="secondary">{projectTypeFullNames[props.type]}</Badge>
+            <h4 className="line-clamp-2 text-lg font-medium group-hover:underline">{props.slug}</h4>
+            <Badge variant="outline">{projectTypeFullNames[props.type]}</Badge>
           </div>
-          <div className="text-neutral-11 flex items-center gap-1 group-hover:underline">
-            Open <ArrowUpRight className="size-4" />
+          <div className="flex">
+            <Button variant="outline" size="xs" className="rounded-r-none">
+              Open
+            </Button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="xs" className="rounded-l-none border-l-0">
+                  <MoreHorizontal className="size-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent>
+                <Link
+                  to="/$organizationSlug/$projectSlug"
+                  params={{
+                    organizationSlug: props.organizationSlug,
+                    projectSlug: props.projectSlug,
+                  }}
+                >
+                  <DropdownMenuItem>
+                    <span>Targets</span>
+                  </DropdownMenuItem>
+                </Link>
+                <Link
+                  to="/$organizationSlug/$projectSlug/view/alerts"
+                  params={{
+                    organizationSlug: props.organizationSlug,
+                    projectSlug: props.projectSlug,
+                  }}
+                >
+                  <DropdownMenuItem>
+                    <span>Alerts</span>
+                  </DropdownMenuItem>
+                </Link>
+                <Link
+                  to="/$organizationSlug/$projectSlug/view/settings"
+                  params={{
+                    organizationSlug: props.organizationSlug,
+                    projectSlug: props.projectSlug,
+                  }}
+                >
+                  <DropdownMenuItem>
+                    <span>Settings</span>
+                  </DropdownMenuItem>
+                </Link>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </Link>
-        <div className="border-t-neutral-5 dark:border-t-neutral-4 divide-neutral-4 dark:divide-neutral-5 -mb-1 -mr-1 grid grid-cols-[repeat(auto-fit,minmax(calc(var(--spacing)*128),1fr))] divide-x divide-y border-t">
-          {sortedTargets?.map(target => (
+        <div className="grid grid-cols-[repeat(auto-fit,minmax(calc(var(--spacing)*128),1fr))] gap-4 px-4 pb-4">
+          {props.targets?.map(target => (
             <TargetCard
               key={target.id}
               id={target.id}
@@ -146,6 +216,8 @@ const ProjectCard = (props: {
               projectSlug={props.projectSlug}
               highestNumberOfRequests={props.highestNumberOfRequests}
               days={props.days}
+              className="rounded-sm"
+              data={props.initialTargetData?.get(target.id)}
             />
           ))}
         </div>
@@ -156,19 +228,16 @@ const ProjectCard = (props: {
 
 const ProjectCardSkeleton = () => {
   return (
-    <div className="border-neutral-5 dark:border-neutral-4 bg-neutral-1 dark:bg-neutral-3 overflow-hidden rounded-lg border">
+    <div className="border-neutral-5 dark:border-neutral-4 overflow-hidden rounded-lg border">
       <div className="group grid w-full grid-cols-[1fr_auto] items-center gap-8 overflow-hidden p-4">
         <div className="flex gap-x-2">
-          <div className="bg-neutral-2 dark:bg-neutral-5 h-4 w-32 rounded-lg" />
+          <div className="bg-neutral-2 dark:bg-neutral-5 h-7 w-32 rounded-full" />
           <Badge variant="secondary" className="w-16" />
         </div>
-        <div className="text-neutral-11 flex items-center gap-1 group-hover:underline">
-          Open <ArrowUpRight className="size-4" />
-        </div>
       </div>
-      <div className="border-t-neutral-6 dark:border-t-neutral-5 divide-neutral-4 dark:divide-neutral-5 -mb-1 -mr-1 grid grid-cols-[repeat(auto-fit,minmax(calc(var(--spacing)*128),1fr))] divide-x divide-y border-t">
+      <div className="grid grid-cols-[repeat(auto-fit,minmax(calc(var(--spacing)*128),1fr))] gap-4 px-4 pb-4">
         {Array.from({ length: 3 }).map((_, index) => (
-          <TargetCardSkeleton key={index} />
+          <TargetCardSkeleton key={index} className="rounded-sm" />
         ))}
       </div>
     </div>
@@ -189,14 +258,14 @@ function OrganizationPageContent(
   // Sort by requests by default
   const sortKey = props.sortBy ?? 'requests';
 
-  const sortOrder =
+  const sortOrder: 'asc' | 'desc' =
     props.sortOrder === 'asc'
-      ? -1
+      ? 'asc'
       : // if the sort order is not set, sort by name in ascending order by default
         !props.sortOrder && props.sortBy === 'name'
-        ? -1
+        ? 'asc'
         : // if the sort order is not set, sort in descending order by default
-          1;
+          'desc';
 
   if (!period.current) {
     const now = new UTCDate();
@@ -208,12 +277,62 @@ function OrganizationPageContent(
 
   const router = useRouter();
 
+  const sort = useMemo(() => {
+    let field: ProjectsSortField = ProjectsSortField.Name;
+    let direction: ProjectsSortDirection = ProjectsSortDirection.Asc;
+
+    if (sortKey === 'requests') {
+      field = ProjectsSortField.Requests;
+    } else if (sortKey === 'versions') {
+      field = ProjectsSortField.SchemaVersions;
+    }
+
+    if (sortOrder === 'desc') {
+      direction = ProjectsSortDirection.Desc;
+    }
+
+    return { field, direction, period: period.current };
+  }, [sortKey, sortOrder, period.current]);
+
+  const targetsSort = useMemo(() => {
+    let field: TargetsSortField = TargetsSortField.Name;
+    let direction: TargetsSortDirection = TargetsSortDirection.Asc;
+
+    if (sortKey === 'requests') {
+      field = TargetsSortField.Requests;
+    } else if (sortKey === 'versions') {
+      field = TargetsSortField.SchemaVersions;
+    }
+
+    if (sortOrder === 'desc') {
+      direction = TargetsSortDirection.Desc;
+    }
+
+    return { field, direction, period: period.current };
+  }, [sortKey, sortOrder, period.current]);
+
   const [query] = useQuery({
     query: OrganizationProjectsPageQuery,
     variables: {
       organizationSlug: props.organizationSlug,
       chartResolution: days, // 14 days = 14 data points
       period: period.current,
+      search: props.search,
+      sort,
+      targetsSort,
+    },
+    requestPolicy: 'cache-and-network',
+  });
+
+  const [initialDataQuery] = useQuery({
+    query: OrganizationProjectsPageInitialDataQuery,
+    variables: {
+      organizationSlug: props.organizationSlug,
+      chartResolution: days, // 14 days = 14 data points
+      period: period.current,
+      search: props.search,
+      sort,
+      targetsSort,
     },
     requestPolicy: 'cache-and-network',
   });
@@ -237,40 +356,28 @@ function OrganizationPageContent(
     return highest;
   }, [projectsConnection]);
 
-  const projects = useMemo(() => {
-    if (!projectsConnection) {
-      return [];
+  const initialTargetDataByProjectId = useMemo(() => {
+    const map = new Map<string, Map<string, FragmentType<typeof TargetCardFragment>>>();
+    const edges = initialDataQuery.data?.organization?.projects.edges;
+
+    if (!edges) {
+      return map;
     }
 
-    const searchPhrase = props.search;
-    const newProjects = searchPhrase
-      ? projectsConnection.edges.filter(edge =>
-          edge.node.slug.toLowerCase().includes(searchPhrase.toLowerCase()),
-        )
-      : projectsConnection.edges.slice();
+    for (const { node: project } of edges) {
+      const targets = new Map<string, FragmentType<typeof TargetCardFragment>>();
 
-    return newProjects
-      .map(project => project.node)
-      .sort((a, b) => {
-        const diffRequests = b.totalRequests - a.totalRequests;
-        const diffVersions = b.schemaVersionsCount - a.schemaVersionsCount;
+      for (const { node: target } of project.targets.edges) {
+        targets.set(target.id, target);
+      }
 
-        if (sortKey === 'requests' && diffRequests !== 0) {
-          return diffRequests * sortOrder;
-        }
+      map.set(project.id, targets);
+    }
 
-        if (sortKey === 'versions' && diffVersions !== 0) {
-          return diffVersions * sortOrder;
-        }
+    return map;
+  }, [initialDataQuery.data]);
 
-        if (sortKey === 'name') {
-          return a.slug.localeCompare(b.slug) * sortOrder * -1;
-        }
-
-        // falls back to sort by name in ascending order
-        return a.slug.localeCompare(b.slug);
-      });
-  }, [projectsConnection, props.search, sortKey, sortOrder]);
+  const projects = projectsConnection?.edges.map(edge => edge.node);
 
   const onSearchChange = useCallback(
     (event: ChangeEvent<HTMLInputElement>) => {
@@ -379,8 +486,8 @@ function OrganizationPageContent(
               </div>
             </div>
           </div>
-          {currentOrganization && projectsConnection ? (
-            projectsConnection.edges.length === 0 ? (
+          {currentOrganization && projects && !initialDataQuery.fetching ? (
+            projects?.length === 0 ? (
               <EmptyList
                 title="Hive is waiting for your first project"
                 description='You can create a project by clicking the "New Project" button'
@@ -388,7 +495,7 @@ function OrganizationPageContent(
               />
             ) : (
               <div className="flex w-full flex-col gap-y-8">
-                {projects.map(project => (
+                {projects?.map(project => (
                   <ProjectCard
                     key={project.id}
                     id={project.id}
@@ -399,6 +506,7 @@ function OrganizationPageContent(
                     totalRequests={project.totalRequests}
                     schemaVersionsCount={project.schemaVersionsCount}
                     targets={project.targets.edges.map(edge => edge.node)}
+                    initialTargetData={initialTargetDataByProjectId.get(project.id)}
                     organizationSlug={props.organizationSlug}
                     projectSlug={project.slug}
                     sortKey={sortKey}

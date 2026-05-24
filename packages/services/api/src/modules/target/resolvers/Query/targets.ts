@@ -4,30 +4,25 @@ import type { QueryResolvers } from './../../../../__generated__/types';
 
 export const targets: NonNullable<QueryResolvers['targets']> = async (
   _,
-  { selector },
+  args,
   { injector },
 ) => {
   const translator = injector.get(IdTranslator);
-  const [organization, project] = await Promise.all([
-    translator.translateOrganizationId(selector),
-    translator.translateProjectId(selector),
+  const [organizationId, projectId] = await Promise.all([
+    translator.translateOrganizationId(args.selector),
+    translator.translateProjectId(args.selector),
   ]);
 
-  const targets = await injector.get(TargetManager).getTargets({
-    organizationId: organization,
-    projectId: project,
-  });
-
-  return {
-    edges: targets.map(node => ({
-      cursor: '',
-      node,
-    })),
-    pageInfo: {
-      hasNextPage: false,
-      hasPreviousPage: false,
-      endCursor: '',
-      startCursor: '',
+  return injector.get(TargetManager).getPaginatedTargets(
+    {
+      organizationId,
+      projectId,
     },
-  };
+    {
+      first: args.first ?? null,
+      after: args.after ?? null,
+      search: args.search ?? null,
+      sort: args.sort ?? null,
+    },
+  );
 };

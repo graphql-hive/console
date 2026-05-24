@@ -4,7 +4,9 @@ import { PostgresDatabasePool } from '@hive/postgres';
 import type {
   ConditionalBreakingChangeMetadata,
   PaginatedOrganizationInvitationConnection,
+  PaginatedProjectConnection,
   PaginatedSchemaVersionConnection,
+  PaginatedTargetConnection,
   SchemaChangeType,
   SchemaCheck,
   SchemaCheckInput,
@@ -55,6 +57,13 @@ export interface ProjectSelector extends OrganizationSelector {
 export interface TargetSelector extends ProjectSelector {
   targetId: string;
 }
+
+export type ProjectsStorageSort = {
+  field: 'CREATED_AT' | 'NAME';
+  direction: 'ASC' | 'DESC';
+};
+
+export type TargetsStorageSort = ProjectsStorageSort;
 
 type CreateContractVersionInput = {
   contractId: string;
@@ -229,7 +238,21 @@ export interface Storage {
 
   getProjectBySlug(_: { slug: string } & OrganizationSelector): Promise<Project | null>;
 
-  getProjects(_: OrganizationSelector): Promise<Project[] | never>;
+  getProjects(
+    _: OrganizationSelector & {
+      search?: string | null;
+      sort?: ProjectsStorageSort | null;
+    },
+  ): Promise<Project[] | never>;
+
+  getPaginatedProjects(
+    _: OrganizationSelector & {
+      first: number;
+      after: string | null;
+      search?: string | null;
+      sort?: ProjectsStorageSort | null;
+    },
+  ): Promise<PaginatedProjectConnection>;
 
   getProjectById(projectId: string): Promise<Project | null>;
 
@@ -328,7 +351,21 @@ export interface Storage {
 
   getTarget(_: TargetSelector): Promise<Target | never>;
 
-  getTargets(_: ProjectSelector): Promise<readonly Target[]>;
+  getTargets(
+    _: ProjectSelector & {
+      search?: string | null;
+      sort?: TargetsStorageSort | null;
+    },
+  ): Promise<readonly Target[]>;
+
+  getPaginatedTargets(
+    _: ProjectSelector & {
+      first: number;
+      after: string | null;
+      search?: string | null;
+      sort?: TargetsStorageSort | null;
+    },
+  ): Promise<PaginatedTargetConnection>;
 
   findTargetsByIds(args: {
     organizationId: string;

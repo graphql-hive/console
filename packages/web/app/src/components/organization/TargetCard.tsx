@@ -2,9 +2,18 @@ import { ReactElement, useMemo, useRef, useState } from 'react';
 import { differenceInMilliseconds, endOfDay, formatISO, startOfDay } from 'date-fns';
 import * as echarts from 'echarts';
 import ReactECharts from 'echarts-for-react';
-import { ArrowUpRight } from 'lucide-react';
+import { AlertCircleIcon, CircleQuestionMarkIcon, MoreHorizontal } from 'lucide-react';
 import AutoSizer from 'react-virtualized-auto-sizer';
 import { useQuery } from 'urql';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Button } from '@/components/ui/button';
+import { DocsLink } from '@/components/ui/docs-note';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import {
   Select,
   SelectContent,
@@ -12,13 +21,36 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { TooltipProvider } from '@/components/ui/tooltip';
-import { graphql } from '@/gql';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { FragmentType, graphql, useFragment } from '@/gql';
 import { subDays } from '@/lib/date-time';
 import { toDecimal, useFormattedNumber, useFormattedThroughput } from '@/lib/hooks';
 import { useIsInView } from '@/lib/hooks/use-is-in-view';
 import { cn, hexToRgba, useChartStyles } from '@/lib/utils';
 import { Link } from '@tanstack/react-router';
+
+export const TargetCardFragment = graphql(`
+  fragment TargetCardFragment on Target {
+    id
+    schemaVersionsCount(period: $period)
+    operationsStats(period: $period) {
+      failuresOverTime(resolution: $chartResolution) {
+        date
+        value
+      }
+      requestsOverTime(resolution: $chartResolution) {
+        date
+        value
+      }
+      duration {
+        p75
+        p90
+        p95
+        p99
+      }
+    }
+  }
+`);
 
 const TargetCardQuery = graphql(`
   query TargetCardQuery(
@@ -37,28 +69,131 @@ const TargetCardQuery = graphql(`
         }
       }
     ) {
-      id
-      schemaVersionsCount(period: $period)
-      operationsStats(period: $period) {
-        failuresOverTime(resolution: $chartResolution) {
-          date
-          value
-        }
-        requestsOverTime(resolution: $chartResolution) {
-          date
-          value
-        }
-        duration {
-          p75
-          p90
-          p95
-          p99
-        }
-      }
+      ...TargetCardFragment
     }
   }
 `);
-export const TargetCard = (props: {
+
+export const TargetCardTitle = (props: TargetProps) => (
+  <Link
+    to="/$organizationSlug/$projectSlug/$targetSlug"
+    disabled={props.organizationSlug == null || props.projectSlug == null || props.slug == null}
+    params={{
+      organizationSlug: props.organizationSlug ?? 'unknown-yet',
+      projectSlug: props.projectSlug ?? 'unknown-yet',
+      targetSlug: props.slug ?? 'unknown-yet',
+    }}
+    className="group grid w-full grid-cols-[1fr_auto] items-center gap-8 overflow-hidden"
+  >
+    <h4 className="line-clamp-1 text-lg font-medium group-hover:underline">{props.slug}</h4>
+    <div className="flex">
+      <Button variant="outline" size="xs" className="rounded-r-none">
+        Open
+      </Button>
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button variant="outline" size="xs" className="rounded-l-none border-l-0">
+            <MoreHorizontal className="size-4" />
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent>
+          <Link
+            to="/$organizationSlug/$projectSlug/$targetSlug"
+            params={{
+              organizationSlug: props.organizationSlug ?? 'unknown-yet',
+              projectSlug: props.projectSlug ?? 'unknown-yet',
+              targetSlug: props.slug ?? 'unknown-yet',
+            }}
+          >
+            <DropdownMenuItem>Schema</DropdownMenuItem>
+          </Link>
+          <Link
+            to="/$organizationSlug/$projectSlug/$targetSlug/checks"
+            params={{
+              organizationSlug: props.organizationSlug ?? 'unknown-yet',
+              projectSlug: props.projectSlug ?? 'unknown-yet',
+              targetSlug: props.slug ?? 'unknown-yet',
+            }}
+          >
+            <DropdownMenuItem>Checks</DropdownMenuItem>
+          </Link>
+          <Link
+            to="/$organizationSlug/$projectSlug/$targetSlug/explorer"
+            params={{
+              organizationSlug: props.organizationSlug ?? 'unknown-yet',
+              projectSlug: props.projectSlug ?? 'unknown-yet',
+              targetSlug: props.slug ?? 'unknown-yet',
+            }}
+          >
+            <DropdownMenuItem>Explorer</DropdownMenuItem>
+          </Link>
+          <Link
+            to="/$organizationSlug/$projectSlug/$targetSlug/history"
+            params={{
+              organizationSlug: props.organizationSlug ?? 'unknown-yet',
+              projectSlug: props.projectSlug ?? 'unknown-yet',
+              targetSlug: props.slug ?? 'unknown-yet',
+            }}
+          >
+            <DropdownMenuItem>History</DropdownMenuItem>
+          </Link>
+          <Link
+            to="/$organizationSlug/$projectSlug/$targetSlug/insights"
+            params={{
+              organizationSlug: props.organizationSlug ?? 'unknown-yet',
+              projectSlug: props.projectSlug ?? 'unknown-yet',
+              targetSlug: props.slug ?? 'unknown-yet',
+            }}
+          >
+            <DropdownMenuItem>Insights</DropdownMenuItem>
+          </Link>
+          <Link
+            to="/$organizationSlug/$projectSlug/$targetSlug/traces"
+            params={{
+              organizationSlug: props.organizationSlug ?? 'unknown-yet',
+              projectSlug: props.projectSlug ?? 'unknown-yet',
+              targetSlug: props.slug ?? 'unknown-yet',
+            }}
+          >
+            <DropdownMenuItem>Traces</DropdownMenuItem>
+          </Link>
+          <Link
+            to="/$organizationSlug/$projectSlug/$targetSlug/apps"
+            params={{
+              organizationSlug: props.organizationSlug ?? 'unknown-yet',
+              projectSlug: props.projectSlug ?? 'unknown-yet',
+              targetSlug: props.slug ?? 'unknown-yet',
+            }}
+          >
+            <DropdownMenuItem>Apps</DropdownMenuItem>
+          </Link>
+          <Link
+            to="/$organizationSlug/$projectSlug/$targetSlug/laboratory"
+            params={{
+              organizationSlug: props.organizationSlug ?? 'unknown-yet',
+              projectSlug: props.projectSlug ?? 'unknown-yet',
+              targetSlug: props.slug ?? 'unknown-yet',
+            }}
+          >
+            <DropdownMenuItem>Laboratory</DropdownMenuItem>
+          </Link>
+          <Link
+            to="/$organizationSlug/$projectSlug/$targetSlug/settings"
+            params={{
+              organizationSlug: props.organizationSlug ?? 'unknown-yet',
+              projectSlug: props.projectSlug ?? 'unknown-yet',
+              targetSlug: props.slug ?? 'unknown-yet',
+            }}
+          >
+            <DropdownMenuItem>Settings</DropdownMenuItem>
+          </Link>
+        </DropdownMenuContent>
+      </DropdownMenu>
+    </div>
+  </Link>
+);
+
+interface TargetProps {
   id: string;
   slug: string;
   organizationSlug: string;
@@ -66,7 +201,10 @@ export const TargetCard = (props: {
   className?: string;
   highestNumberOfRequests?: number;
   days: number;
-}): ReactElement => {
+  data?: FragmentType<typeof TargetCardFragment>;
+}
+
+export const TargetCard = (props: TargetProps): ReactElement => {
   const ref = useRef<HTMLDivElement>(null);
   const isInView = useIsInView(ref);
 
@@ -88,10 +226,10 @@ export const TargetCard = (props: {
       period,
     },
     requestPolicy: 'network-only',
-    pause: !isInView || !props.slug,
+    pause: !isInView || !props.slug || !!props.data,
   });
 
-  const target = query.data?.target;
+  const target = useFragment(TargetCardFragment, props.data ?? query.data?.target);
 
   const requests = useMemo(() => {
     if (target?.operationsStats?.requestsOverTime?.length) {
@@ -165,29 +303,23 @@ export const TargetCard = (props: {
     'p95',
   );
 
+  if (!totalNumberOfRequests) {
+    return <TargetCardSkeleton {...props} />;
+  }
+
   return (
     <TooltipProvider>
-      <div ref={ref} className={cn('space-y-4 p-4', props.className)}>
-        <Link
-          to="/$organizationSlug/$projectSlug/$targetSlug"
-          disabled={
-            props.organizationSlug == null || props.projectSlug == null || props.slug == null
-          }
-          params={{
-            organizationSlug: props.organizationSlug ?? 'unknown-yet',
-            projectSlug: props.projectSlug ?? 'unknown-yet',
-            targetSlug: props.slug ?? 'unknown-yet',
-          }}
-          className="group grid w-full grid-cols-[1fr_auto] items-center gap-8 overflow-hidden"
-        >
-          <h4 className="line-clamp-1 text-lg font-medium">{props.slug}</h4>
-          <div className="text-neutral-11 flex items-center gap-1 group-hover:underline">
-            Open <ArrowUpRight className="size-4" />
-          </div>
-        </Link>
-        <div className="space-y-4">
+      <div
+        ref={ref}
+        className={cn(
+          'bg-neutral-1 dark:bg-neutral-3 border-neutral-4 dark:border-neutral-5 space-y-4 overflow-hidden rounded-lg border p-4',
+          props.className,
+        )}
+      >
+        <TargetCardTitle {...props} />
+        <div className="space-y-3">
           <div className="grid grid-cols-2 gap-2">
-            <div className="text-neutral-11">Commits</div>
+            <div className="text-neutral-11">Schema Versions</div>
             <div className="text-right font-medium">
               {schemaVersionsInDateRange}{' '}
               <span className="text-neutral-10">in the last {props.days} days</span>
@@ -243,7 +375,7 @@ export const TargetCard = (props: {
               />
             </div>
           </div>
-          <div className="h-24">
+          <div className="-mb-6.25 -mx-4 h-24">
             <AutoSizer>
               {size => (
                 <ReactECharts
@@ -349,15 +481,26 @@ export const TargetCard = (props: {
   );
 };
 
-export const TargetCardSkeleton = (props: { className?: string }): ReactElement => {
+export const TargetCardSkeleton = (props: Partial<TargetProps>): ReactElement => {
+  const isRealTarget = !!props.slug;
+
   return (
-    <div className={cn('space-y-4 p-4', props.className)}>
-      <div className="group grid w-full grid-cols-[1fr_auto] items-center gap-8 overflow-hidden">
-        <div className="bg-neutral-2 dark:bg-neutral-5 h-4 w-32 rounded-lg" />
-      </div>
-      <div className="space-y-4">
+    <div
+      className={cn(
+        'bg-neutral-1 dark:bg-neutral-3 border-neutral-4 dark:border-neutral-5 grid space-y-4 rounded-lg border p-4',
+        props.className,
+      )}
+    >
+      {isRealTarget ? (
+        <TargetCardTitle {...(props as TargetProps)} />
+      ) : (
+        <div className="group grid w-full grid-cols-[1fr_auto] items-center gap-8 overflow-hidden">
+          <div className="bg-neutral-2 dark:bg-neutral-5 h-7 w-32 rounded-full" />
+        </div>
+      )}
+      <div className={cn('space-y-3', isRealTarget && 'opacity-25')}>
         <div className="grid grid-cols-2 gap-2">
-          <div className="text-neutral-11">Commits</div>
+          <div className="text-neutral-11">Schema Versions</div>
           <div className="bg-neutral-2 dark:bg-neutral-5 ml-auto h-4 w-16 rounded-lg" />
         </div>
         <div className="bg-neutral-4 dark:bg-neutral-5 h-px w-full" />
@@ -378,7 +521,31 @@ export const TargetCardSkeleton = (props: { className?: string }): ReactElement 
           </div>
           <div className="bg-neutral-2 relative h-1 w-full overflow-hidden rounded-lg" />
         </div>
-        <div className="h-24" />
+      </div>
+      <div className="-mb-6.25 flex h-24">
+        {isRealTarget && (
+          <Alert className="h-18 w-full">
+            <AlertCircleIcon className="size-4" />
+            <AlertTitle className="grid grid-cols-[1fr_auto] items-center gap-2">
+              No data available.
+              <TooltipProvider>
+                <Tooltip delayDuration={0}>
+                  <TooltipTrigger asChild>
+                    <CircleQuestionMarkIcon className="text-accent size-4" />
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <DocsLink href="/schema-registry/usage-reporting">
+                      Read about usage reporting in the documentation
+                    </DocsLink>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            </AlertTitle>
+            <AlertDescription className="text-neutral-10">
+              There is no data available for this target yet.
+            </AlertDescription>
+          </Alert>
+        )}
       </div>
     </div>
   );

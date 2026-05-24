@@ -1,18 +1,33 @@
 import { Injectable, Scope } from 'graphql-modules';
+import { GraphQLError } from 'graphql';
+import {
+  decodeCreatedAtAndUUIDIdBasedCursor,
+  decodeProjectSlugIdBasedCursor,
+  encodeCreatedAtAndUUIDIdBasedCursor,
+  encodeProjectSlugIdBasedCursor,
+} from '@hive/storage';
 import { TargetReferenceInput } from 'packages/libraries/core/src/client/__generated__/types';
 import * as zod from 'zod';
 import { z } from 'zod';
+import type { DateRangeInput } from '../../../__generated__/types';
 import * as GraphQLSchema from '../../../__generated__/types';
 import type { Project, Target, TargetSettings } from '../../../shared/entities';
-import { share } from '../../../shared/helpers';
+import { parseDateRangeInput, share } from '../../../shared/helpers';
 import { AuditLogRecorder } from '../../audit-logs/providers/audit-log-recorder';
 import { Session } from '../../auth/lib/authz';
+import { OperationsManager } from '../../operations/providers/operations-manager';
 import { IdTranslator } from '../../shared/providers/id-translator';
 import { Logger } from '../../shared/providers/logger';
-import { ProjectSelector, Storage, TargetSelector } from '../../shared/providers/storage';
+import { ProjectSelector, Storage, TargetSelector, TargetsStorageSort } from '../../shared/providers/storage';
 import { TokenStorage } from '../../token/providers/token-storage';
 import { PercentageModel, TargetSlugModel } from '../validation';
 import { TargetsByIdCache } from './targets-by-id-cache';
+
+type TargetsSortArgs = {
+  field: 'NAME' | 'CREATED_AT' | 'REQUESTS' | 'SCHEMA_VERSIONS';
+  direction: 'ASC' | 'DESC';
+  period?: DateRangeInput | null;
+};
 
 const reservedSlugs = ['view', 'new'];
 
@@ -35,6 +50,7 @@ export class TargetManager {
     private idTranslator: IdTranslator,
     private auditLog: AuditLogRecorder,
     private targetsCache: TargetsByIdCache,
+    private operationsManager: OperationsManager,
   ) {
     this.logger = logger.child({ source: 'TargetManager' });
   }
@@ -211,6 +227,266 @@ export class TargetManager {
     });
 
     return this.storage.getTargets(selector);
+  }
+
+  async getPaginatedTargetsForProject(
+    project: Project,
+    args: {
+      first: number | null;
+      after: string | null;
+      search: string | null;
+      sort: TargetsSortArgs | null;
+    },
+  ) {
+    return this.getPaginatedTargets(
+      {
+        organizationId: project.orgId,
+        projectId: project.id,
+      },
+      args,
+    );
+  }
+
+  async getPaginatedTargets(
+    selector: ProjectSelector,
+    args: {
+      first: number | null;
+      after: string | null;
+      search: string | null;
+      sort: TargetsSortArgs | null;
+    },
+  ) {
+    await this.session.assertPerformAction({
+      action: 'project:describe',
+      organizationId: selector.organizationId,
+      params: {
+        organizationId: selector.organizationId,
+        projectId: selector.projectId,
+      },
+    });
+
+    const sortField = args.sort?.field ?? 'CREATED_AT';
+
+    if (sortField === 'REQUESTS' || sortField === 'SCHEMA_VERSIONS') {
+      return this.getPaginatedTargetsSortedByMetric(selector, args);
+    }
+
+    const storageSort = this.toStorageSort(args.sort);
+    const limit = args.first ? Math.min(args.first, 50) : null;
+
+    if (limit === null) {
+      const targets = await this.storage.getTargets({
+        ...selector,
+        search: args.search,
+        sort: storageSort,
+      });
+      const nodes = targets.slice(this.resolveCursorStartIndex(targets, args.after, storageSort));
+
+      return this.toTargetConnection(nodes, storageSort, {
+        hasNextPage: false,
+        hasPreviousPage: args.after !== null,
+      });
+    }
+
+    return this.storage.getPaginatedTargets({
+      ...selector,
+      first: limit,
+      after: args.after,
+      search: args.search,
+      sort: storageSort,
+    });
+  }
+
+  private async getPaginatedTargetsSortedByMetric(
+    selector: ProjectSelector,
+    args: {
+      first: number | null;
+      after: string | null;
+      search: string | null;
+      sort: TargetsSortArgs | null;
+    },
+  ) {
+    if (!args.sort?.period) {
+      throw new GraphQLError('period is required when sorting targets by REQUESTS or SCHEMA_VERSIONS');
+    }
+
+    const period = parseDateRangeInput(args.sort.period);
+    const limit = args.first ? Math.min(args.first, 50) : null;
+    const direction = args.sort.direction ?? 'DESC';
+    const multiplier = direction === 'ASC' ? 1 : -1;
+
+    const targets = await this.storage.getTargets({
+      ...selector,
+      search: args.search,
+    });
+
+    const withMetrics = await Promise.all(
+      targets.map(async target => {
+        const value =
+          args.sort!.field === 'REQUESTS'
+            ? await this.operationsManager.countRequests({
+                organizationId: selector.organizationId,
+                projectId: selector.projectId,
+                targetId: target.id,
+                period,
+              })
+            : await this.storage.countSchemaVersionsOfTarget({
+                organizationId: selector.organizationId,
+                projectId: selector.projectId,
+                targetId: target.id,
+                period,
+              });
+
+        return { target, value };
+      }),
+    );
+
+    withMetrics.sort((left, right) => {
+      const diff = (left.value - right.value) * multiplier;
+
+      if (diff !== 0) {
+        return diff;
+      }
+
+      return left.target.slug.localeCompare(right.target.slug);
+    });
+
+    const sorted = withMetrics.map(entry => entry.target);
+    let startIndex = 0;
+
+    if (args.after) {
+      const { id } = decodeCreatedAtAndUUIDIdBasedCursor(args.after);
+      const cursorIndex = sorted.findIndex(target => target.id === id);
+
+      if (cursorIndex !== -1) {
+        startIndex = cursorIndex + 1;
+      }
+    }
+
+    if (limit === null) {
+      return this.toTargetConnection(sorted.slice(startIndex), null, {
+        hasNextPage: false,
+        hasPreviousPage: args.after !== null,
+      });
+    }
+
+    const page = sorted.slice(startIndex, startIndex + limit + 1);
+
+    return this.toTargetConnection(page.slice(0, limit), null, {
+      hasNextPage: page.length > limit,
+      hasPreviousPage: args.after !== null,
+    });
+  }
+
+  private resolveCursorStartIndex(
+    targets: readonly Target[],
+    after: string | null,
+    sort: TargetsStorageSort | null,
+  ) {
+    if (!after) {
+      return 0;
+    }
+
+    const sortConfig = sort ?? { field: 'CREATED_AT', direction: 'DESC' };
+    const isDesc = sortConfig.direction === 'DESC';
+    const cursorIndex = targets.findIndex(target => {
+      if (sortConfig.field === 'NAME') {
+        try {
+          const cursor = decodeProjectSlugIdBasedCursor(after);
+
+          return target.slug === cursor.slug && target.id === cursor.id;
+        } catch {
+          return false;
+        }
+      }
+
+      try {
+        const cursor = decodeCreatedAtAndUUIDIdBasedCursor(after);
+
+        return target.createdAt === cursor.createdAt && target.id === cursor.id;
+      } catch {
+        return false;
+      }
+    });
+
+    if (cursorIndex !== -1) {
+      return cursorIndex + 1;
+    }
+
+    if (sortConfig.field === 'NAME') {
+      try {
+        const cursor = decodeProjectSlugIdBasedCursor(after);
+        const startIndex = targets.findIndex(target =>
+          isDesc
+            ? target.slug < cursor.slug ||
+              (target.slug === cursor.slug && target.id < cursor.id)
+            : target.slug > cursor.slug ||
+              (target.slug === cursor.slug && target.id > cursor.id),
+        );
+
+        return startIndex === -1 ? targets.length : startIndex;
+      } catch {
+        return 0;
+      }
+    }
+
+    try {
+      const cursor = decodeCreatedAtAndUUIDIdBasedCursor(after);
+      const startIndex = targets.findIndex(target =>
+        isDesc
+          ? target.createdAt < cursor.createdAt ||
+            (target.createdAt === cursor.createdAt && target.id < cursor.id)
+          : target.createdAt > cursor.createdAt ||
+            (target.createdAt === cursor.createdAt && target.id > cursor.id),
+      );
+
+      return startIndex === -1 ? targets.length : startIndex;
+    } catch {
+      return 0;
+    }
+  }
+
+  private toStorageSort(sort: TargetsSortArgs | null): TargetsStorageSort | null {
+    if (!sort) {
+      return null;
+    }
+
+    return {
+      field: sort.field === 'NAME' ? 'NAME' : 'CREATED_AT',
+      direction: sort.direction,
+    };
+  }
+
+  private toTargetConnection(
+    nodes: readonly Target[],
+    sort: TargetsStorageSort | null,
+    pageInfo: { hasNextPage: boolean; hasPreviousPage: boolean },
+  ) {
+    const sortConfig = sort ?? { field: 'CREATED_AT', direction: 'DESC' };
+    const edges = nodes.map(node => ({
+      node,
+      get cursor() {
+        if (sortConfig.field === 'NAME') {
+          return encodeProjectSlugIdBasedCursor({ slug: node.slug, id: node.id });
+        }
+
+        return encodeCreatedAtAndUUIDIdBasedCursor(node);
+      },
+    }));
+
+    return {
+      edges,
+      pageInfo: {
+        hasNextPage: pageInfo.hasNextPage,
+        hasPreviousPage: pageInfo.hasPreviousPage,
+        get endCursor() {
+          return edges.at(-1)?.cursor ?? '';
+        },
+        get startCursor() {
+          return edges.at(0)?.cursor ?? '';
+        },
+      },
+    };
   }
 
   async getTarget(selector: TargetSelector): Promise<Target> {

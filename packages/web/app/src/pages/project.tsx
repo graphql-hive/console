@@ -4,7 +4,11 @@ import { MoveDownIcon, MoveUpIcon, SearchIcon } from 'lucide-react';
 import { useQuery } from 'urql';
 import { z } from 'zod';
 import { Page, ProjectLayout } from '@/components/layouts/project';
-import { TargetCard, TargetCardSkeleton } from '@/components/organization/TargetCard';
+import {
+  TargetCard,
+  TargetCardFragment,
+  TargetCardSkeleton,
+} from '@/components/organization/TargetCard';
 import { Button } from '@/components/ui/button';
 import { EmptyList } from '@/components/ui/empty-list';
 import { Input } from '@/components/ui/input';
@@ -13,7 +17,8 @@ import { Subtitle, Title } from '@/components/ui/page';
 import { QueryError } from '@/components/ui/query-error';
 import { Select, SelectContent, SelectItem, SelectTrigger } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
-import { graphql } from '@/gql';
+import { FragmentType, graphql } from '@/gql';
+import { TargetsSortDirection, TargetsSortField } from '@/gql/graphql';
 import { subDays } from '@/lib/date-time';
 import { cn } from '@/lib/utils';
 import { UTCDate } from '@date-fns/utc';
@@ -47,14 +52,32 @@ const ProjectsPageContent = (
   // Sort by requests by default
   const sortKey = props.sortBy ?? 'requests';
 
-  const sortOrder =
+  const sortOrder: 'asc' | 'desc' =
     props.sortOrder === 'asc'
-      ? -1
+      ? 'asc'
       : // if the sort order is not set, sort by name in ascending order by default
         !props.sortOrder && props.sortBy === 'name'
-        ? -1
+        ? 'asc'
         : // if the sort order is not set, sort in descending order by default
-          1;
+          'desc';
+
+  const sort = useMemo(() => {
+    let field: TargetsSortField = TargetsSortField.Name;
+    let direction: TargetsSortDirection = TargetsSortDirection.Asc;
+
+    if (sortKey === 'requests') {
+      field = TargetsSortField.Requests;
+    } else if (sortKey === 'versions') {
+      field = TargetsSortField.SchemaVersions;
+    }
+
+    if (sortOrder === 'desc') {
+      direction = TargetsSortDirection.Desc;
+    }
+
+    return { field, direction, period: period.current };
+  }, [sortKey, sortOrder, period.current]);
+
   const router = useRouter();
 
   const [query] = useQuery({
@@ -64,59 +87,26 @@ const ProjectsPageContent = (
       projectSlug: props.projectSlug,
       chartResolution: days, // 14 days = 14 data points
       period: period.current,
+      sort,
+      search: props.search,
     },
     requestPolicy: 'cache-and-network',
   });
 
-  const targetConnection = query.data?.targets;
-
-  const targets = useMemo(() => {
-    if (!targetConnection) {
-      return [];
-    }
-
-    const searchPhrase = props.search;
-    const newTargets = searchPhrase
-      ? targetConnection.edges.filter(edge =>
-          edge.node.slug.toLowerCase().includes(searchPhrase.toLowerCase()),
-        )
-      : targetConnection.edges.slice();
-
-    return newTargets
-      .map(edge => edge.node)
-      .sort((a, b) => {
-        const diffRequests = b.totalRequests - a.totalRequests;
-        const diffVersions = b.schemaVersionsCount - a.schemaVersionsCount;
-
-        if (sortKey === 'requests' && diffRequests !== 0) {
-          return diffRequests * sortOrder;
-        }
-
-        if (sortKey === 'versions' && diffVersions !== 0) {
-          return diffVersions * sortOrder;
-        }
-
-        if (sortKey === 'name') {
-          return a.slug.localeCompare(b.slug) * sortOrder * -1;
-        }
-
-        // falls back to sort by name in ascending order
-        return a.slug.localeCompare(b.slug);
-      });
-  }, [targetConnection, props.search, sortKey, sortOrder]);
+  const targets = query.data?.targets.edges.map(edge => edge.node);
 
   const highestNumberOfRequests = useMemo(() => {
-    if (targetConnection?.edges?.length) {
-      return targetConnection.edges.reduce((max, edge) => {
+    if (targets?.length) {
+      return targets.reduce((max, target) => {
         return Math.max(
           max,
-          edge.node.requestsOverTime.reduce((max, { value }) => Math.max(max, value), 0),
+          target.requestsOverTime.reduce((max, { value }) => Math.max(max, value), 0),
         );
       }, 100);
     }
 
     return 100;
-  }, [targetConnection?.edges]);
+  }, [targets]);
 
   const onSearchChange = useCallback(
     (event: ChangeEvent<HTMLInputElement>) => {
@@ -228,13 +218,13 @@ const ProjectsPageContent = (
       <div
         className={cn(
           'grow',
-          targetConnection?.edges.length === 0
+          targets?.length === 0
             ? ''
             : 'grid grid-cols-[repeat(auto-fit,minmax(calc(var(--spacing)*128),1fr))] items-stretch gap-5',
         )}
       >
-        {targetConnection ? (
-          targetConnection?.edges.length === 0 ? (
+        {targets ? (
+          targets?.length === 0 ? (
             <EmptyList
               title="Hive is waiting for your first target"
               description='You can create a target by clicking the "New Target" button'
@@ -250,17 +240,14 @@ const ProjectsPageContent = (
                 projectSlug={props.projectSlug}
                 days={days}
                 highestNumberOfRequests={highestNumberOfRequests}
-                className="bg-neutral-1 dark:bg-neutral-3 border-neutral-4 dark:border-neutral-5 rounded-lg border"
+                data={target as FragmentType<typeof TargetCardFragment>}
               />
             ))
           )
         ) : (
           <>
-            {Array.from({ length: 4 }).map((_, index) => (
-              <TargetCardSkeleton
-                key={index}
-                className="bg-neutral-1 dark:bg-neutral-3 border-neutral-6 dark:border-neutral-5 rounded-lg border"
-              />
+            {Array.from({ length: 3 }).map((_, index) => (
+              <TargetCardSkeleton key={index} />
             ))}
           </>
         )}
@@ -275,18 +262,23 @@ const ProjectOverviewPageQuery = graphql(`
     $projectSlug: String!
     $chartResolution: Int!
     $period: DateRangeInput!
+    $sort: TargetsSortInput!
+    $search: String
   ) {
-    targets(selector: { organizationSlug: $organizationSlug, projectSlug: $projectSlug }) {
+    targets(
+      selector: { organizationSlug: $organizationSlug, projectSlug: $projectSlug }
+      sort: $sort
+      search: $search
+    ) {
       edges {
         node {
           id
           slug
-          totalRequests(period: $period)
-          requestsOverTime(resolution: $chartResolution, period: $period) {
+          requestsOverTime(period: $period, resolution: $chartResolution) {
             date
             value
           }
-          schemaVersionsCount(period: $period)
+          ...TargetCardFragment
         }
       }
     }
