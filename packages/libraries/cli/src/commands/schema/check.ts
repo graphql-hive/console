@@ -291,7 +291,7 @@ export default class SchemaCheck extends Command<typeof SchemaCheck> {
           },
         },
         /** Gateway timeout is 60 seconds. */
-        timeout: 60_000,
+        timeout: 55_000,
       });
 
       if (flags.experimentalJsonFile) {
