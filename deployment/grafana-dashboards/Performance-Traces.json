@@ -213,7 +213,7 @@
             }
           ],
           "limit": 100,
-          "query": "{name=~\"SchemaPublisher.internalCheck\" && duration>$schemaCheckThreshold}",
+          "query": "{name=\"SchemaPublisher.internalCheck\" && duration>$schemaCheckThreshold}",
           "queryType": "traceql",
           "refId": "A",
           "spss": 20,
