@@ -107,13 +107,19 @@ export function deployGraphQL({
         replicas: environment.podsConfig.general.replicas,
         pdb: true,
         readinessProbe: '/_readiness',
-        livenessProbe: '/_health',
+        livenessProbe: {
+          endpoint: '/_health',
+          initialDelaySeconds: 10,
+          timeoutSeconds: 5,
+          periodSeconds: 30,
+          failureThreshold: 10,
+        },
         startupProbe: {
           endpoint: '/_health',
-          initialDelaySeconds: 60,
-          failureThreshold: 10,
+          initialDelaySeconds: 5,
+          failureThreshold: 4,
           periodSeconds: 15,
-          timeoutSeconds: 15,
+          timeoutSeconds: 10,
         },
         availabilityOnEveryNode: true,
         env: {
