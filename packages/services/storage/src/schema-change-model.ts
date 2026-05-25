@@ -1412,7 +1412,10 @@ const FailedSchemaCompositionInputFields = {
 
 const SuccessfulSchemaCompositionOutputFields = {
   schemaCompositionErrors: z.null(),
-  compositeSchemaSDL: z.string(),
+  compositeSchemaSDL: z
+    .string()
+    .nullable()
+    .transform(value => value ?? ''),
   supergraphSDL: z.string().nullable(),
 };
 

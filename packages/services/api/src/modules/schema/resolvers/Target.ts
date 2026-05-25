@@ -73,6 +73,13 @@ export const Target: Pick<
       ['FailedSchemaCheck', 'schemaSDL'],
     ]);
 
+    const isSchemaChangesSelected = isFieldRequestedDeep(info, [
+      ['SuccessfulSchemaCheck', 'safeSchemaChanges'],
+      ['SuccessfulSchemaCheck', 'breakingSchemaChanges'],
+      ['FailedSchemaCheck', 'safeSchemaChanges'],
+      ['FailedSchemaCheck', 'breakingSchemaChanges'],
+    ]);
+
     const result = await injector.get(SchemaManager).getPaginatedSchemaChecksForTarget(target, {
       first: args.first ?? null,
       cursor: args.after ?? null,
@@ -82,6 +89,7 @@ export const Target: Pick<
         projectId: target.projectId,
       }),
       withSDL: operationSelectsSDL,
+      withChanges: isSchemaChangesSelected,
     });
 
     return {
