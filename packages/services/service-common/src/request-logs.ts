@@ -4,11 +4,17 @@ import { z } from 'zod';
 import { cleanRequestId } from './helpers';
 
 const GraphQLPayloadSchema = z.object({
-  operationName: z.string(),
+  operationName: z.string().optional(),
+  documentId: z.string().optional(),
 });
 
 const plugin: FastifyPluginAsync = async server => {
-  function graphqlOperationName(request: FastifyRequest): string | null {
+  function graphqlOperationIdentifier(
+    request: FastifyRequest,
+  ):
+    | { kind: 'raw-query'; operationName: string }
+    | { kind: 'persisted'; persistedDocumentId: string }
+    | null {
     let requestBody;
     if (request.method === 'GET') {
       requestBody = request.query;
@@ -24,23 +30,41 @@ const plugin: FastifyPluginAsync = async server => {
       return null;
     }
 
-    return payload.data.operationName;
+    if (payload.data.operationName) {
+      return { kind: 'raw-query', operationName: payload.data.operationName };
+    }
+
+    if (payload.data.documentId) {
+      return { kind: 'persisted', persistedDocumentId: payload.data.documentId };
+    }
+
+    return null;
   }
 
   server.addHook('onResponse', async (request, reply) => {
-    if (request.url === '/_readiness' || request.url === '/_health') {
+    if (
+      request.url === '/_readiness' ||
+      request.url === '/_health' ||
+      request.url === '/graphql?readiness=true'
+    ) {
       // Don't log health checks
       return;
     }
 
     const requestId = cleanRequestId(request.headers['x-request-id']);
-    const operationName = graphqlOperationName(request);
+    const operationIdentifier = graphqlOperationIdentifier(request);
+    const identifier =
+      operationIdentifier?.kind === 'raw-query'
+        ? operationIdentifier.operationName
+        : operationIdentifier?.kind === 'persisted'
+          ? `${operationIdentifier.persistedDocumentId} (persisted)`
+          : null;
     const message = [
       `[${reply.statusCode}]`,
       `(${request.ip})`,
       request.method,
       request.url,
-      operationName ? `'${operationName}'` : null,
+      identifier,
       requestId ? `(reqId=${requestId})` : null,
     ]
       .filter(s => s)

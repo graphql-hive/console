@@ -125,8 +125,9 @@ export function deployGraphQL({
         env: {
           ...environment.envVars,
           ...apiEnv,
+          LOG_LEVEL: 'info',
           SENTRY: sentry.enabled ? '1' : '0',
-          REQUEST_LOGGING: '1', // disabled
+          REQUEST_LOGGING: '1',
           COMMERCE_ENDPOINT: serviceLocalEndpoint(commerce.service),
           TOKENS_ENDPOINT: serviceLocalEndpoint(tokens.service),
           SCHEMA_ENDPOINT: serviceLocalEndpoint(schema.service),
