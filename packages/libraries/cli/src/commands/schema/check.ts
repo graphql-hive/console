@@ -290,6 +290,8 @@ export default class SchemaCheck extends Command<typeof SchemaCheck> {
             schemaProposalId: flags.schemaProposalId,
           },
         },
+        /** Gateway timeout is 60 seconds. */
+        timeout: 55_000,
       });
 
       if (flags.experimentalJsonFile) {
