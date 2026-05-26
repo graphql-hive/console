@@ -881,14 +881,14 @@ export class SchemaVersionStore {
       FROM
         "schema_versions"
       WHERE
-        "target_id" = ${target.id}
-        AND "action_id" = (
+        "action_id" = (
           SELECT
             "id"
           FROM
             "schema_log"
           WHERE
             "schema_log"."project_id" = ${target.projectId}
+            AND "schema_log"."target_id" = ${target.id}
             AND "schema_log"."commit" = ${commit}
           ORDER BY "schema_log"."created_at" DESC
           LIMIT 1
@@ -899,7 +899,7 @@ export class SchemaVersionStore {
     return SchemaVersionModel.nullable().parse(record);
   }
 
-  getSchemaLogById = batch<string, SchemaLog>(async schemaLogIds => {
+  getSchemLog = batch<{ targetId: string; commit: string }, SchemaLog>(async selectors => {
     const rows = await this.pg.any(
       psql`/* getSchemaLog */
           SELECT
@@ -907,19 +907,26 @@ export class SchemaVersionStore {
             , p.type
           FROM schema_log as sl
           LEFT JOIN projects as p ON (p.id = sl.project_id)
-          WHERE sl.id = ANY(${psql.array(schemaLogIds, 'uuid')})
+          WHERE (sl.id, sl.target_id) IN ((${psql.join(
+            selectors.map(s => psql`${s.commit}, ${s.targetId}`),
+            psql.fragment`), (`,
+          )}))
       `,
     );
     const schemas = z.array(SchemaLogModel).parse(rows);
 
-    return schemaLogIds.map(schemaLogId => {
-      const schema = schemas.find(row => row.id === schemaLogId);
+    return selectors.map(selector => {
+      const schema = schemas.find(
+        row => row.id === selector.commit && row.target === selector.targetId,
+      );
 
       if (schema) {
         return Promise.resolve(schema);
       }
 
-      return Promise.reject(new Error(`Schema log not found (schemaLogId=${schemaLogId})`));
+      return Promise.reject(
+        new Error(`Schema log not found (commit=${selector.commit}, target=${selector.targetId})`),
+      );
     });
   });
 
