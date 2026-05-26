@@ -1190,3 +1190,33 @@ Multi line description:
 """`),
   );
 });
+
+test('schema:check malformed descriptions do not result in changes publish', async () => {
+  const { createOrg } = await initSeed().createOwner();
+  const { inviteAndJoinMember, createProject } = await createOrg();
+  await inviteAndJoinMember();
+  const { createTargetAccessToken } = await createProject(ProjectType.Single);
+  const { secret } = await createTargetAccessToken({});
+
+  await expect(
+    schemaPublish([
+      '--registry.accessToken',
+      secret,
+      '--author',
+      'jdolle',
+      '--commit',
+      'abc123',
+      'fixtures/comments-to-descriptions.graphql',
+    ]),
+  ).resolves.toContain('Published initial schema');
+
+  await expect(
+    schemaCheck([
+      '--registry.accessToken',
+      secret,
+      '--commit',
+      'abc1234',
+      'fixtures/comments-to-descriptions.graphql',
+    ]),
+  ).resolves.toContain('No changes');
+});

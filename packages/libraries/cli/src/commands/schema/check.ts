@@ -1,4 +1,6 @@
 import fs from 'node:fs';
+import { print } from 'graphql';
+import { transformCommentsToDescriptions } from '@graphql-tools/utils';
 import { Args, Errors, Flags } from '@oclif/core';
 import Command from '../../base-command';
 import { graphql } from '../../gql';
@@ -227,7 +229,7 @@ export default class SchemaCheck extends Command<typeof SchemaCheck> {
         throw new MissingRegistryTokenError();
       }
 
-      const sdl = await loadSchema('first-federation-then-graphql-introspection', file, {
+      const rawSdl = await loadSchema('first-federation-then-graphql-introspection', file, {
         logger: this.logger,
       }).catch(e => {
         throw new SchemaFileNotFoundError(file, e);
@@ -239,7 +241,7 @@ export default class SchemaCheck extends Command<typeof SchemaCheck> {
       const commit = flags.commit || git?.commit;
       const author = flags.author || git?.author;
 
-      if (typeof sdl !== 'string' || sdl.length === 0) {
+      if (typeof rawSdl !== 'string' || rawSdl.length === 0) {
         throw new SchemaFileEmptyError(file);
       }
 
@@ -270,6 +272,7 @@ export default class SchemaCheck extends Command<typeof SchemaCheck> {
         };
       }
 
+      const sdl = print(transformCommentsToDescriptions(rawSdl));
       const result = await this.registryApi(endpoint, accessToken).request({
         operation: schemaCheckMutation,
         variables: {
