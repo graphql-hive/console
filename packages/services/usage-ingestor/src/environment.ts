@@ -19,6 +19,10 @@ const emptyString = <T extends zod.ZodType>(input: T) => {
   }, input);
 };
 
+function raiseInvariant(reason: string): never {
+  throw new Error(reason);
+}
+
 const EnvironmentModel = zod.object({
   PORT: emptyString(NumberFromString.optional()),
   SERVER_HOST: emptyString(zod.string().optional()),
@@ -210,7 +214,12 @@ export const env = {
         kafka.KAFKA_AWS_IAM_AUTH_ENABLED === '1'
           ? {
               mechanism: 'aws-iam' as const,
-              region: (kafka.KAFKA_AWS_REGION ?? base.AWS_REGION)!,
+              region:
+                kafka.KAFKA_AWS_REGION ??
+                base.AWS_REGION ??
+                raiseInvariant(
+                  'KAFKA_AWS_REGION or AWS_REGION must be set when KAFKA_AWS_IAM_AUTH_ENABLED is enabled',
+                ),
             }
           : kafka.KAFKA_SASL_MECHANISM != null
             ? {

@@ -24,7 +24,7 @@ test('propagates errors from generateAuthToken', async () => {
   await expect(provider()).rejects.toThrow('credentials not found');
 });
 
-test('throws when generateAuthToken returns undefined token', async () => {
+test('returns undefined token when generateAuthToken returns undefined', async () => {
   mockedGenerateAuthToken.mockResolvedValueOnce({ token: undefined } as any);
   const provider = createMskIamTokenProvider('us-east-1');
   await expect(provider()).resolves.toEqual({ value: undefined });

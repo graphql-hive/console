@@ -1,4 +1,5 @@
 import { generateAuthToken } from 'aws-msk-iam-sasl-signer-js';
+
 /**
  * AWS MSK IAM SASL token provider for KafkaJS
  * Generates OAuth bearer tokens for MSK IAM authentication
