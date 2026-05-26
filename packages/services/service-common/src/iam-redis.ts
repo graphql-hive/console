@@ -100,13 +100,13 @@ export async function refreshIamAuth(
   if (isCluster) {
     const nodes = (redis as any).nodes?.('all') ?? [];
     logger.debug(
-      'Refreshing IAM token (service=elasticache) — re-authenticating %s cluster node(s)',
+      'Refreshing IAM token (service=elasticache) - re-authenticating %s cluster node(s)',
       nodes.length,
     );
     for (const node of nodes) {
+      node.options.password = token;
       try {
         await node.call('AUTH', username, token);
-        node.options.password = token;
       } catch (err) {
         logger.warn('Failed to re-AUTH cluster node (service=elasticache, error=%s)', err);
       }
@@ -117,8 +117,8 @@ export async function refreshIamAuth(
       pool.redisOptions.password = token;
     }
   } else {
-    await (redis as any).call('AUTH', username, token);
     (redis as any).options.password = token;
+    await (redis as any).call('AUTH', username, token);
   }
   logger.debug('IAM token refreshed successfully (service=elasticache)');
 }
@@ -128,7 +128,7 @@ export async function refreshIamAuth(
  *
  * On each tick, generates a fresh SigV4 token via {@link generateIamAuthToken}
  * and re-authenticates with {@link refreshIamAuth}. The refresh interval is
- * `(900 - 180) = 720 s` (~12 minutes) plus 0–30 s jitter.
+ * `(900 - 180) = 720 s` (~12 minutes) plus 0-30 s jitter.
  *
  * Errors are retried up to 3 times with linear backoff. If all retries are
  * exhausted, an error is logged but the timer keeps running for the next cycle.
@@ -137,7 +137,7 @@ export async function refreshIamAuth(
  * @param config - ElastiCache endpoint and IAM user details.
  * @param isCluster - `true` when `redis` is a `Redis.Cluster` instance.
  * @param logger - Logger with `debug`, `warn`, and `error` methods.
- * @returns A `setInterval` handle — call `clearInterval(handle)` during
+ * @returns A `setInterval` handle call `clearInterval(handle)` during
  *   graceful shutdown to stop the refresh loop.
  */
 export function startIamTokenRefresh(
