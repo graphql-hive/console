@@ -51,12 +51,12 @@ test.describe('oidc', () => {
   test('oidc login for organization via link', async ({ page, seed, auth, oidc }) => {
     const { accessToken, refreshToken, slug } = await seed.seedOrg();
     await auth.useSession({ refreshToken, accessToken });
-    await page.goto(`/${slug}`);
+    await page.goto(`/${slug}`, { waitUntil: 'domcontentloaded' });
 
     const { loginUrl } = await oidc.createIntegration();
-    await page.goto('/logout');
+    await page.goto('/logout', { waitUntil: 'commit' });
     await auth.clearSession();
-    await page.goto(loginUrl);
+    await page.goto(loginUrl, { waitUntil: 'domcontentloaded' });
 
     await oidc.loginWithMockUser({ username: 'test-user', email: 'sam.tailor@gmail.com' });
     await expectOrganizationHome(page, slug);
@@ -65,7 +65,7 @@ test.describe('oidc', () => {
   test('oidc login with organization slug input', async ({ page, seed, auth, oidc }) => {
     const { accessToken, refreshToken, slug } = await seed.seedOrg();
     await auth.useSession({ refreshToken, accessToken });
-    await page.goto(`/${slug}`);
+    await page.goto(`/${slug}`, { waitUntil: 'domcontentloaded' });
 
     await oidc.createIntegration();
     await oidc.startSlugLogin(slug);
@@ -77,7 +77,7 @@ test.describe('oidc', () => {
   test('first time oidc login of non-admin user', async ({ page, seed, auth, oidc }) => {
     const { accessToken, refreshToken, slug } = await seed.seedOrg();
     await auth.useSession({ refreshToken, accessToken });
-    await page.goto(`/${slug}`);
+    await page.goto(`/${slug}`, { waitUntil: 'domcontentloaded' });
 
     await oidc.createIntegration();
     await oidc.startSlugLogin(slug);
@@ -89,7 +89,7 @@ test.describe('oidc', () => {
   test('default member role for first time oidc login', async ({ page, seed, auth, oidc }) => {
     const { accessToken, refreshToken, slug } = await seed.seedOrg();
     await auth.useSession({ refreshToken, accessToken });
-    await page.goto(`/${slug}`);
+    await page.goto(`/${slug}`, { waitUntil: 'domcontentloaded' });
 
     await oidc.createIntegration();
     await page.locator('[data-cy="role-selector-trigger"]').click();
@@ -113,10 +113,10 @@ test.describe('oidc', () => {
 
     const { accessToken, refreshToken, slug } = await seed.seedOrg();
     await auth.useSession({ refreshToken, accessToken });
-    await page.goto(`/${slug}`);
+    await page.goto(`/${slug}`, { waitUntil: 'domcontentloaded' });
 
     await oidc.createIntegration();
-    await page.goto('/logout');
+    await page.goto('/logout', { waitUntil: 'commit' });
     await auth.clearSession();
 
     const now = Date.now();
@@ -124,7 +124,7 @@ test.describe('oidc', () => {
       ...getUserData(),
       email,
     };
-    await page.goto('/auth/sign-up');
+    await page.goto('/auth/sign-up', { waitUntil: 'domcontentloaded' });
     await auth.fillSignUpFormAndSubmit(memberData);
     const verifyEmail = page.getByText('Verify your email address');
     const createOrganization = page.getByText('Create an organization');
@@ -132,21 +132,21 @@ test.describe('oidc', () => {
 
     if (await verifyEmail.isVisible()) {
       const confirmationPath = await seed.getEmailConfirmationLink({ email, now });
-      await page.goto(confirmationPath);
+      await page.goto(confirmationPath, { waitUntil: 'domcontentloaded' });
       await expect(page.getByText('Success!')).toBeVisible();
       await page.locator('[data-button-verify-email-continue]').click();
     }
 
-    await page.goto('/logout');
+    await page.goto('/logout', { waitUntil: 'commit' });
     await auth.clearSession();
 
     await oidc.startSlugLogin(slug);
     await oidc.loginWithMockUser({ username: 'test-user-3', email });
     await expectOrganizationHome(page, slug);
 
-    await page.goto('/logout');
+    await page.goto('/logout', { waitUntil: 'commit' });
     await auth.clearSession();
-    await page.goto('/auth/sign-in');
+    await page.goto('/auth/sign-in', { waitUntil: 'domcontentloaded' });
     await auth.fillSignInFormAndSubmit(memberData);
 
     await expectOrganizationHome(page, slug);
@@ -154,7 +154,7 @@ test.describe('oidc', () => {
 
   test('oidc login for invalid url shows correct error message', async ({ page, auth }) => {
     await auth.clearSession();
-    await page.goto('/auth/oidc?id=invalid');
+    await page.goto('/auth/oidc?id=invalid', { waitUntil: 'domcontentloaded' });
     await expect(page.locator('[data-cy="auth-card-header-description"]')).toContainText(
       'Something went wrong. Please try again',
     );
@@ -164,7 +164,7 @@ test.describe('oidc', () => {
     test('oidc user cannot join the org without invitation', async ({ page, seed, auth, oidc }) => {
       const { accessToken, refreshToken, slug } = await seed.seedOrg();
       await auth.useSession({ refreshToken, accessToken });
-      await page.goto(`/${slug}`);
+      await page.goto(`/${slug}`, { waitUntil: 'domcontentloaded' });
 
       await oidc.createIntegration();
       await page.locator('[data-cy="oidc-require-invitation-toggle"]').click();
@@ -182,10 +182,12 @@ test.describe('oidc', () => {
     test('oidc user can join the org with an invitation', async ({ page, seed, auth, oidc }) => {
       const { accessToken, refreshToken, slug } = await seed.seedOrg();
       await auth.useSession({ refreshToken, accessToken });
-      await page.goto(`/${slug}`);
+      await page.goto(`/${slug}`, { waitUntil: 'domcontentloaded' });
 
       await oidc.createIntegration();
-      await page.goto(`/${slug}/view/members?page=invitations`);
+      await page.goto(`/${slug}/view/members?page=invitations`, {
+        waitUntil: 'domcontentloaded',
+      });
       await page.locator('button[data-cy="send-invite-trigger"]').click();
       await page.locator('input[name="email"]').fill('tom.sailor@gmail.com');
       await page.locator('button[data-cy="role-selector-trigger"]').click();
@@ -199,7 +201,7 @@ test.describe('oidc', () => {
       await expectOrganizationHome(page, slug);
       await expect(page.getByText('not invited')).not.toBeVisible();
 
-      await page.goto(`/${slug}/view/members?page=list`);
+      await page.goto(`/${slug}/view/members?page=list`, { waitUntil: 'domcontentloaded' });
       await expect(page.locator('tr').filter({ hasText: 'tom.sailor@gmail.com' })).toContainText(
         'Admin',
       );
@@ -221,7 +223,7 @@ test.describe('oidc domain verification', () => {
   }) => {
     const { accessToken, refreshToken, slug } = await seed.seedOrg();
     await auth.useSession({ refreshToken, accessToken });
-    await page.goto(`/${slug}`);
+    await page.goto(`/${slug}`, { waitUntil: 'domcontentloaded' });
     await expect(page.getByText('Settings')).toBeVisible();
 
     const { loginUrl, organizationSlug } = await oidc.createIntegration();
@@ -236,9 +238,9 @@ test.describe('oidc domain verification', () => {
       .last()
       .click();
 
-    await page.goto('/logout');
+    await page.goto('/logout', { waitUntil: 'commit' });
     await auth.clearSession();
-    await page.goto(loginUrl);
+    await page.goto(loginUrl, { waitUntil: 'domcontentloaded' });
     await oidc.loginWithMockUser({
       username: 'test-user-3',
       verifyEmail: false,

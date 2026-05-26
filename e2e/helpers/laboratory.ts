@@ -22,7 +22,7 @@ export function createLaboratoryHelper(page: Page): LaboratoryHelper {
     },
     async openSeededTarget(slug) {
       await this.setGraphiQLMode();
-      await page.goto(`/${slug}/laboratory`);
+      await page.goto(`/${slug}/laboratory`, { waitUntil: 'domcontentloaded' });
     },
     async updateEditorValue(value) {
       await page
@@ -61,12 +61,47 @@ export function createLaboratoryHelper(page: Page): LaboratoryHelper {
       }
     },
     async setMonacoEditorContents(editorCyName, text) {
-      const textarea = page.locator(`[data-cy="${editorCyName}"] textarea`);
-      await textarea.focus();
+      const didSetValue = await page.evaluate(
+        ({ editorCyName, text }) => {
+          const global = window as unknown as {
+            __HIVE_E2E_MONACO_EDITORS?: Record<
+              string,
+              { setValue(value: string): void; getValue(): string }
+            >;
+          };
+          const editor = global.__HIVE_E2E_MONACO_EDITORS?.[editorCyName];
+
+          if (!editor) {
+            return false;
+          }
+
+          editor.setValue(text);
+          return editor.getValue() === text;
+        },
+        { editorCyName, text },
+      );
+
+      if (didSetValue) {
+        return;
+      }
+
+      const editor = page.locator(`[data-cy="${editorCyName}"]`);
+      const textarea = editor.locator('textarea').first();
+      await textarea.click({ force: true });
       await page.keyboard.press(process.platform === 'darwin' ? 'Meta+A' : 'Control+A');
-      await page.evaluate(nextText => {
-        document.execCommand('insertText', false, nextText);
-      }, text);
+      await page.keyboard.press('Backspace');
+      await page.context().grantPermissions(['clipboard-read', 'clipboard-write']);
+      await page.evaluate(nextText => navigator.clipboard.writeText(nextText), text);
+      await page.keyboard.press(process.platform === 'darwin' ? 'Meta+V' : 'Control+V');
+
+      const firstLine = text
+        .split('\n')
+        .map(line => line.trim())
+        .find(Boolean);
+
+      if (firstLine) {
+        await expect(editor).toContainText(firstLine);
+      }
     },
     async openCollectionsPanel() {
       await page

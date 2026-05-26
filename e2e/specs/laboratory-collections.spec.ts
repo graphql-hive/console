@@ -85,10 +85,13 @@ test.describe('Laboratory > Collections', () => {
     await openCollectionMenu(page, 'collection-1');
     await page.locator('[data-cy="edit-collection"]').click();
     await expect(page.locator('[data-cy="create-collection-modal"]')).toBeVisible();
-    await page
-      .locator('[data-cy="create-collection-modal"] input[name="name"]')
-      .fill('collection-1-updated');
+    const collectionNameInput = page.locator(
+      '[data-cy="create-collection-modal"] input[name="name"]',
+    );
+    await expect(collectionNameInput).toHaveValue('collection-1');
+    await collectionNameInput.fill('collection-1-updated');
     await page.locator('[data-cy="create-collection-modal"] button[data-cy="confirm"]').click();
+    await expect(page.locator('[data-cy="create-collection-modal"]')).not.toBeVisible();
 
     await expect(collectionButton(page, 'collection-1-updated')).toBeVisible();
     await expect(operationButton(page, 'operation-1')).toBeVisible();

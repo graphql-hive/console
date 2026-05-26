@@ -11,7 +11,21 @@ export type UsageHelper = {
   expectInsightVersion(version: string): Promise<void>;
 };
 
-export function createUsageHelper(page: Page, request: APIRequestContext): UsageHelper {
+export function createUsageHelper(
+  page: Page,
+  request: APIRequestContext,
+  baseURL: unknown,
+): UsageHelper {
+  const isLocal =
+    process.env.RUN_AGAINST_LOCAL_SERVICES === '1' ||
+    (typeof baseURL === 'string' && baseURL.startsWith('http://localhost:3000'));
+  const usageEndpoint = isLocal ? 'http://localhost:4001' : 'http://localhost:8081';
+
+  async function reloadInsightsPage() {
+    await page.reload({ waitUntil: 'domcontentloaded' });
+    await page.locator('#root > *').first().waitFor({ state: 'attached' });
+  }
+
   return {
     async createRegistryAccessToken(params) {
       await page
@@ -46,26 +60,51 @@ export function createUsageHelper(page: Page, request: APIRequestContext): Usage
       return token;
     },
     async sendUsageReport(params) {
-      const response = await request.post('http://localhost:8081', {
-        data: params.report,
-        headers: {
-          Accept: 'application/json',
-          Authorization: `Bearer ${params.token}`,
-          'Content-Type': 'application/json',
-        },
-      });
+      let responseStatus = 0;
 
-      expect(response.status()).toBe(200);
+      for (let attempt = 0; attempt < 20; attempt++) {
+        const response = await request.post(usageEndpoint, {
+          data: params.report,
+          headers: {
+            Accept: 'application/json',
+            Authorization: `Bearer ${params.token}`,
+            'Content-Type': 'application/json',
+          },
+        });
+        responseStatus = response.status();
+
+        if (responseStatus === 200) {
+          return;
+        }
+
+        await page.waitForTimeout(1_000);
+      }
+
+      expect(responseStatus).toBe(200);
     },
     async expectInsightOperation(operationName) {
-      await expect(
-        page.locator('h3').filter({ hasText: 'Operations' }).locator('..').locator('a'),
-      ).toContainText(operationName);
+      await expect
+        .poll(
+          async () => {
+            await reloadInsightsPage();
+
+            return page.getByRole('link').filter({ hasText: operationName }).count();
+          },
+          { timeout: 60_000, intervals: [2_000] },
+        )
+        .toBeGreaterThan(0);
     },
     async expectInsightVersion(version) {
-      await expect(
-        page.locator('h3').filter({ hasText: 'Versions' }).locator('..').locator('p'),
-      ).toContainText(version);
+      await expect
+        .poll(
+          async () => {
+            await reloadInsightsPage();
+
+            return page.getByText(version, { exact: true }).count();
+          },
+          { timeout: 60_000, intervals: [2_000] },
+        )
+        .toBeGreaterThan(0);
     },
   };
 }

@@ -125,8 +125,9 @@ export const test = base.extend<Fixtures>({
   laboratory: async ({ page }, use) => {
     await use(createLaboratoryHelper(page));
   },
-  usage: async ({ page, request }, use) => {
-    await use(createUsageHelper(page, request));
+  usage: async ({ page, request }, use, testInfo) => {
+    const baseURL = testInfo.project.use.baseURL;
+    await use(createUsageHelper(page, request, baseURL));
   },
 });
 

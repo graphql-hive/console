@@ -32,7 +32,9 @@ export function createOIDCHelper(page: Page, seed: SeedHelper, auth: AuthHelper)
         throw new Error(`Failed to resolve organization slug from URL: ${page.url()}`);
       }
 
-      await page.goto(`/${organizationSlug}/view/settings?page=sso`);
+      await page.goto(`/${organizationSlug}/view/settings?page=sso`, {
+        waitUntil: 'domcontentloaded',
+      });
       await page.locator('button[data-button-connect-open-id-provider]').click();
       await page.locator('button[data-button-oidc-manual]').click();
 
@@ -103,7 +105,7 @@ export function createOIDCHelper(page: Page, seed: SeedHelper, auth: AuthHelper)
         const confirmationPath = await seed.getEmailConfirmationLink(
           input.since ? { email: input.email, now: input.since } : input.email,
         );
-        await page.goto(confirmationPath);
+        await page.goto(confirmationPath, { waitUntil: 'domcontentloaded' });
         await page.getByText('Success!').waitFor();
         await page.locator('[data-button-verify-email-continue]').click({ noWaitAfter: true });
         await page.waitForURL(url => !url.pathname.startsWith('/auth/verify-email'), {
@@ -112,9 +114,9 @@ export function createOIDCHelper(page: Page, seed: SeedHelper, auth: AuthHelper)
       }
     },
     async startSlugLogin(slug) {
-      await page.goto('/logout');
+      await page.goto('/logout', { waitUntil: 'commit' });
       await auth.clearSession();
-      await page.goto('/auth/sign-in');
+      await page.goto('/auth/sign-in', { waitUntil: 'domcontentloaded' });
       await page.locator('a[href^="/auth/sso"]').click();
       await page.locator('input[name="slug"]').fill(slug);
       await page.locator('button[type="submit"]').click();
