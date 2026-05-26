@@ -55,6 +55,7 @@ const EnvironmentModel = zod.object({
   FEATURE_FLAGS_OTEL_TRACING_ENABLED: emptyString(
     zod.union([zod.literal('1'), zod.literal('0')]).optional(),
   ),
+  AWS_REGION: emptyString(zod.string().optional()),
 });
 
 const CommerceModel = zod.object({
@@ -94,6 +95,10 @@ const PostgresModel = zod.object({
   POSTGRES_DB: zod.string(),
   POSTGRES_USER: zod.string(),
   POSTGRES_PASSWORD: emptyString(zod.string().optional()),
+  POSTGRES_AWS_REGION: emptyString(zod.string().optional()),
+  POSTGRES_AWS_IAM_AUTH_ENABLED: emptyString(
+    zod.union([zod.literal('0'), zod.literal('1')]).optional(),
+  ),
 });
 
 const ClickHouseModel = zod.object({
@@ -327,6 +332,19 @@ for (const config of Object.values(configs)) {
   }
 }
 
+if (configs.postgres.success && configs.postgres.data.POSTGRES_AWS_IAM_AUTH_ENABLED === '1') {
+  const missingRdsIamVars: string[] = [];
+  if (configs.postgres.data.POSTGRES_SSL !== '1')
+    missingRdsIamVars.push('POSTGRES_SSL must be enabled (RDS IAM requires TLS)');
+  if (!configs.postgres.data.POSTGRES_AWS_REGION && !configs.base.data?.AWS_REGION)
+    missingRdsIamVars.push('POSTGRES_AWS_REGION or AWS_REGION');
+  if (missingRdsIamVars.length > 0) {
+    environmentErrors.push(
+      `POSTGRES_AWS_IAM_AUTH_ENABLED is enabled but the following required variables are missing or invalid: ${missingRdsIamVars.join(', ')}`,
+    );
+  }
+}
+
 if (environmentErrors.length) {
   const fullError = environmentErrors.join(`\n`);
   console.error('❌ Invalid environment variables:', fullError);
@@ -438,6 +456,8 @@ export const env = {
     user: postgres.POSTGRES_USER,
     password: postgres.POSTGRES_PASSWORD,
     ssl: postgres.POSTGRES_SSL === '1',
+    awsIamAuthEnabled: postgres.POSTGRES_AWS_IAM_AUTH_ENABLED === '1',
+    awsRegion: postgres.POSTGRES_AWS_REGION ?? process.env.AWS_REGION,
   },
   clickhouse: {
     protocol: clickhouse.CLICKHOUSE_PROTOCOL,

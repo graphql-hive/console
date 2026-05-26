@@ -13,6 +13,9 @@ APIs (usage service and GraphQL API).
 | `POSTGRES_DB`                        | **Yes**  | Name of the postgres database.                                                                           | `registry`                                           |
 | `POSTGRES_USER`                      | **Yes**  | User name for accessing the postgres database.                                                           | `postgres`                                           |
 | `POSTGRES_PASSWORD`                  | No       | Password for accessing the postgres database.                                                            | `postgres`                                           |
+| `AWS_REGION`                         | No       | The global AWS region for the service. Used as the default region for AWS connections.                   | `us-east-1`                                          |
+| `POSTGRES_AWS_IAM_AUTH_ENABLED`      | No       | Enable AWS IAM authentication for Aurora/RDS PostgreSQL (uses SigV4 token instead of password).          | `1` (enabled) or `0` (disabled)                      |
+| `POSTGRES_AWS_REGION`                | No       | AWS region for RDS IAM auth token generation. Required when `POSTGRES_AWS_IAM_AUTH_ENABLED` is `1`.      | `us-east-1`                                          |
 | `POSTGRES_SSL`                       | No       | Whether the postgres connection should be established via SSL.                                           | `1` (enabled) or `0` (disabled)                      |
 | `REDIS_HOST`                         | **Yes**  | The host of your redis instance.                                                                         | `"127.0.0.1"`                                        |
 | `REDIS_PORT`                         | **Yes**  | The port of your redis instance.                                                                         | `6379`                                               |

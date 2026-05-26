@@ -2,7 +2,10 @@ import type { FastifyBaseLogger } from 'fastify';
 import type { Redis } from 'ioredis';
 import { LRUCache } from 'lru-cache';
 import ms from 'ms';
-import { createConnectionString, type PostgresConnectionParamaters } from '@hive/postgres';
+import {
+  createConnectionStringProvider,
+  type PostgresConnectionParamaters,
+} from '@hive/postgres';
 import { createTokenStorage, type Interceptor } from '@hive/storage';
 import { captureException, captureMessage } from '@sentry/node';
 import { atomic, until, useActionTracker } from './helpers';
@@ -49,10 +52,14 @@ export async function createStorage(
   redis: Redis,
   serverLogger: FastifyBaseLogger,
   additionalInterceptors: Interceptor[],
+  tokenGenerator?: () => Promise<string>,
 ): Promise<Storage> {
   const tracker = useActionTracker();
-  const connectionString = createConnectionString(config);
-  const db = await createTokenStorage(connectionString, 5, additionalInterceptors);
+  const db = await createTokenStorage(
+    createConnectionStringProvider(config, tokenGenerator),
+    5,
+    additionalInterceptors,
+  );
   const touch = tokenTouchScheduler(serverLogger, async tokens => {
     try {
       await db.touchTokens({ tokens });

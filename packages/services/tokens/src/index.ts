@@ -7,6 +7,7 @@ import {
   configureTracing,
   createErrorHandler,
   createServer,
+  generateRdsIamAuthToken,
   registerShutdown,
   registerTRPC,
   reportReadiness,
@@ -80,11 +81,25 @@ export async function main() {
     tls: env.redis.tlsEnabled ? {} : undefined,
   });
 
+  const rdsIamTokenGenerator = env.postgres.awsIamAuthEnabled
+    ? () =>
+        generateRdsIamAuthToken(
+          {
+            region: env.postgres.awsRegion!,
+            hostname: env.postgres.host,
+            port: env.postgres.port,
+            username: env.postgres.user,
+          },
+          server.log.child({ source: 'RdsIamAuthTokenGenerator' }),
+        )
+    : undefined;
+
   const storage = await createStorage(
     env.postgres,
     redis,
     server.log,
     tracing ? [tracing.instrumentSlonik()] : [],
+    rdsIamTokenGenerator,
   );
 
   const stopHeartbeats = env.heartbeat
