@@ -34,7 +34,9 @@ import {
   TargetsSortField,
 } from '@/gql/graphql';
 import { subDays } from '@/lib/date-time';
+import { useIsInView } from '@/lib/hooks/use-is-in-view';
 import { UTCDate } from '@date-fns/utc';
+import type { ResultOf } from '@graphql-typed-document-node/core';
 import { Link, useRouter } from '@tanstack/react-router';
 
 export const OrganizationIndexRouteSearch = z.object({
@@ -45,6 +47,10 @@ export const OrganizationIndexRouteSearch = z.object({
 
 type RouteSearchProps = z.infer<typeof OrganizationIndexRouteSearch>;
 
+type InitialTargetData = NonNullable<
+  ResultOf<typeof OrganizationProjectsPageProjectDataQuery>['project']
+>['targets']['edges'][number]['node'];
+
 const OrganizationProjectsPageQuery = graphql(`
   query OrganizationProjectsPageQuery(
     $organizationSlug: String!
@@ -52,7 +58,6 @@ const OrganizationProjectsPageQuery = graphql(`
     $chartResolution: Int!
     $search: String
     $sort: ProjectsSortInput
-    $targetsSort: TargetsSortInput
   ) {
     organization: organizationBySlug(organizationSlug: $organizationSlug) {
       id
@@ -69,16 +74,6 @@ const OrganizationProjectsPageQuery = graphql(`
               value
             }
             schemaVersionsCount(period: $period)
-            targets(sort: $targetsSort) {
-              edges {
-                node {
-                  id
-                  slug
-                  totalRequests(period: $period)
-                  schemaVersionsCount(period: $period)
-                }
-              }
-            }
           }
         }
       }
@@ -107,10 +102,37 @@ const OrganizationProjectsPageInitialDataQuery = graphql(`
               edges {
                 node {
                   id
+                  slug
                   ...TargetCardFragment
                 }
               }
             }
+          }
+        }
+      }
+    }
+  }
+`);
+
+const OrganizationProjectsPageProjectDataQuery = graphql(`
+  query OrganizationProjectsPageProjectDataQuery(
+    $organizationSlug: String!
+    $projectSlug: String!
+    $period: DateRangeInput!
+    $chartResolution: Int!
+    $targetsSort: TargetsSortInput!
+  ) {
+    project(
+      reference: { bySelector: { organizationSlug: $organizationSlug, projectSlug: $projectSlug } }
+    ) {
+      id
+      slug
+      targets(sort: $targetsSort) {
+        edges {
+          node {
+            id
+            slug
+            ...TargetCardFragment
           }
         }
       }
@@ -128,27 +150,63 @@ const ProjectCard = (props: {
   id: string;
   slug: string;
   type: ProjectType;
+  period: {
+    from: string;
+    to: string;
+  };
+  sortKey: string;
+  sortOrder: 'asc' | 'desc';
   highestNumberOfRequests: number;
   totalRequests: number | null;
   schemaVersionsCount: number | null;
   days: number;
-  targets:
-    | {
-        id: string;
-        slug: string;
-        totalRequests: number;
-        schemaVersionsCount: number;
-      }[]
-    | null;
   organizationSlug: string;
   projectSlug: string;
-  sortKey: string;
-  sortOrder: 'asc' | 'desc';
-  initialTargetData?: ReadonlyMap<string, FragmentType<typeof TargetCardFragment>>;
+  initialTargetData?: ReadonlyMap<string, InitialTargetData>;
 }) => {
+  const ref = useRef<HTMLDivElement>(null);
+  const isInView = useIsInView(ref);
+  const targetsSort = useMemo(() => {
+    let field: TargetsSortField = TargetsSortField.Name;
+    let direction: TargetsSortDirection = TargetsSortDirection.Asc;
+
+    if (props.sortKey === 'requests') {
+      field = TargetsSortField.Requests;
+    } else if (props.sortKey === 'versions') {
+      field = TargetsSortField.SchemaVersions;
+    }
+
+    if (props.sortOrder === 'desc') {
+      direction = TargetsSortDirection.Desc;
+    }
+
+    return { field, direction, period: props.period };
+  }, [props.sortKey, props.sortOrder, props.period]);
+
+  const initialTargetData = props.initialTargetData?.values();
+
+  const [query] = useQuery({
+    query: OrganizationProjectsPageProjectDataQuery,
+    variables: {
+      organizationSlug: props.organizationSlug,
+      projectSlug: props.projectSlug,
+      chartResolution: props.days,
+      period: props.period,
+      targetsSort,
+    },
+    pause: !!initialTargetData || !isInView,
+  });
+
+  const targets = [
+    ...(initialTargetData ?? query.data?.project?.targets.edges.map(edge => edge.node) ?? []),
+  ];
+
   return (
     <TooltipProvider>
-      <div className="border-neutral-5 dark:border-neutral-4 overflow-hidden rounded-lg border">
+      <div
+        className="border-neutral-5 dark:border-neutral-4 overflow-hidden rounded-lg border"
+        ref={ref}
+      >
         <Link
           to="/$organizationSlug/$projectSlug"
           params={{ organizationSlug: props.organizationSlug, projectSlug: props.projectSlug }}
@@ -207,19 +265,23 @@ const ProjectCard = (props: {
           </div>
         </Link>
         <div className="grid grid-cols-[repeat(auto-fit,minmax(calc(var(--spacing)*128),1fr))] gap-4 px-4 pb-4">
-          {props.targets?.map(target => (
-            <TargetCard
-              key={target.id}
-              id={target.id}
-              slug={target.slug}
-              organizationSlug={props.organizationSlug}
-              projectSlug={props.projectSlug}
-              highestNumberOfRequests={props.highestNumberOfRequests}
-              days={props.days}
-              className="rounded-sm"
-              data={props.initialTargetData?.get(target.id)}
-            />
-          ))}
+          {targets.length === 0 || query.fetching
+            ? Array.from({ length: 3 }).map((_, index) => (
+                <TargetCardSkeleton key={index} className="rounded-sm" />
+              ))
+            : targets?.map(target => (
+                <TargetCard
+                  key={target.id}
+                  id={target.id}
+                  slug={target.slug}
+                  organizationSlug={props.organizationSlug}
+                  projectSlug={props.projectSlug}
+                  highestNumberOfRequests={props.highestNumberOfRequests}
+                  days={props.days}
+                  className="rounded-sm"
+                  data={target as FragmentType<typeof TargetCardFragment>}
+                />
+              ))}
         </div>
       </div>
     </TooltipProvider>
@@ -250,10 +312,15 @@ function OrganizationPageContent(
   } & RouteSearchProps,
 ) {
   const days = 14;
+  const now = useRef<UTCDate>(new UTCDate());
+
   const period = useRef<{
     from: string;
     to: string;
-  }>();
+  }>({
+    from: formatISO(startOfDay(subDays(now.current, days))),
+    to: formatISO(endOfDay(now.current)),
+  });
 
   // Sort by requests by default
   const sortKey = props.sortBy ?? 'requests';
@@ -266,14 +333,6 @@ function OrganizationPageContent(
         ? 'asc'
         : // if the sort order is not set, sort in descending order by default
           'desc';
-
-  if (!period.current) {
-    const now = new UTCDate();
-    const from = formatISO(startOfDay(subDays(now, days)));
-    const to = formatISO(endOfDay(now));
-
-    period.current = { from, to };
-  }
 
   const router = useRouter();
 
@@ -319,7 +378,6 @@ function OrganizationPageContent(
       period: period.current,
       search: props.search,
       sort,
-      targetsSort,
     },
     requestPolicy: 'cache-and-network',
   });
@@ -357,7 +415,7 @@ function OrganizationPageContent(
   }, [projectsConnection]);
 
   const initialTargetDataByProjectId = useMemo(() => {
-    const map = new Map<string, Map<string, FragmentType<typeof TargetCardFragment>>>();
+    const map = new Map<string, Map<string, InitialTargetData>>();
     const edges = initialDataQuery.data?.organization?.projects.edges;
 
     if (!edges) {
@@ -365,7 +423,7 @@ function OrganizationPageContent(
     }
 
     for (const { node: project } of edges) {
-      const targets = new Map<string, FragmentType<typeof TargetCardFragment>>();
+      const targets = new Map<string, InitialTargetData>();
 
       for (const { node: target } of project.targets.edges) {
         targets.set(target.id, target);
@@ -505,12 +563,13 @@ function OrganizationPageContent(
                     highestNumberOfRequests={highestNumberOfRequests}
                     totalRequests={project.totalRequests}
                     schemaVersionsCount={project.schemaVersionsCount}
-                    targets={project.targets.edges.map(edge => edge.node)}
+                    period={period.current}
+                    sortKey={sortKey}
+                    sortOrder={sortOrder}
+                    // targets={project.targets.edges.map(edge => edge.node)}
                     initialTargetData={initialTargetDataByProjectId.get(project.id)}
                     organizationSlug={props.organizationSlug}
                     projectSlug={project.slug}
-                    sortKey={sortKey}
-                    sortOrder={sortOrder}
                   />
                 ))}
               </div>

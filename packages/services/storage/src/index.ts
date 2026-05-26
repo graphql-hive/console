@@ -1320,6 +1320,28 @@ export async function createStorage(
         },
       };
     },
+    async countSchemaVersionsOfProject({ projectId, period }) {
+      const result = await pool
+        .maybeOne(
+          period
+            ? psql`/* countPeriodSchemaVersionsOfProject */
+                SELECT COUNT(*) as total FROM schema_versions as sv
+                LEFT JOIN targets as t ON (t.id = sv.target_id)
+                WHERE
+                  t.project_id = ${projectId}
+                  AND sv.created_at >= ${period.from.toISOString()}
+                  AND sv.created_at < ${period.to.toISOString()}
+              `
+            : psql`/* countSchemaVersionsOfProject */
+                SELECT COUNT(*) as total FROM schema_versions as sv
+                LEFT JOIN targets as t ON (t.id = sv.target_id)
+                WHERE t.project_id = ${projectId}
+              `,
+        )
+        .then(z.object({ total: z.number() }).nullable().parse);
+
+      return result?.total ?? 0;
+    },
     findProjectsByIds: batch<{ projectIds: Array<string> }, Map<string, Project>>(
       async function FindProjectByIdsBatchHandler(args) {
         const allProjectIds = args.flatMap(args => args.projectIds);
@@ -1718,6 +1740,26 @@ export async function createStorage(
           },
         },
       };
+    },
+    async countSchemaVersionsOfTarget({ targetId, period }) {
+      const result = await pool
+        .maybeOne(
+          period
+            ? psql`/* countPeriodSchemaVersionsOfTarget */
+                SELECT COUNT(*) as total FROM schema_versions
+                WHERE
+                  target_id = ${targetId}
+                  AND created_at >= ${period.from.toISOString()}
+                  AND created_at < ${period.to.toISOString()}
+              `
+            : psql`/* countSchemaVersionsOfTarget */
+                SELECT COUNT(*) as total FROM schema_versions
+                WHERE target_id = ${targetId}
+              `,
+        )
+        .then(z.object({ total: z.number() }).nullable().parse);
+
+      return result?.total ?? 0;
     },
     findTargetsByIds: batchBy<
       {

@@ -1,4 +1,4 @@
-import { ReactElement, useMemo, useRef, useState } from 'react';
+import { forwardRef, ReactElement, useMemo, useRef, useState } from 'react';
 import { differenceInMilliseconds, endOfDay, formatISO, startOfDay } from 'date-fns';
 import * as echarts from 'echarts';
 import ReactECharts from 'echarts-for-react';
@@ -79,9 +79,9 @@ export const TargetCardTitle = (props: TargetProps) => (
     to="/$organizationSlug/$projectSlug/$targetSlug"
     disabled={props.organizationSlug == null || props.projectSlug == null || props.slug == null}
     params={{
-      organizationSlug: props.organizationSlug ?? 'unknown-yet',
-      projectSlug: props.projectSlug ?? 'unknown-yet',
-      targetSlug: props.slug ?? 'unknown-yet',
+      organizationSlug: props.organizationSlug,
+      projectSlug: props.projectSlug,
+      targetSlug: props.slug,
     }}
     className="group grid w-full grid-cols-[1fr_auto] items-center gap-8 overflow-hidden"
   >
@@ -100,9 +100,9 @@ export const TargetCardTitle = (props: TargetProps) => (
           <Link
             to="/$organizationSlug/$projectSlug/$targetSlug"
             params={{
-              organizationSlug: props.organizationSlug ?? 'unknown-yet',
-              projectSlug: props.projectSlug ?? 'unknown-yet',
-              targetSlug: props.slug ?? 'unknown-yet',
+              organizationSlug: props.organizationSlug,
+              projectSlug: props.projectSlug,
+              targetSlug: props.slug,
             }}
           >
             <DropdownMenuItem>Schema</DropdownMenuItem>
@@ -110,9 +110,9 @@ export const TargetCardTitle = (props: TargetProps) => (
           <Link
             to="/$organizationSlug/$projectSlug/$targetSlug/checks"
             params={{
-              organizationSlug: props.organizationSlug ?? 'unknown-yet',
-              projectSlug: props.projectSlug ?? 'unknown-yet',
-              targetSlug: props.slug ?? 'unknown-yet',
+              organizationSlug: props.organizationSlug,
+              projectSlug: props.projectSlug,
+              targetSlug: props.slug,
             }}
           >
             <DropdownMenuItem>Checks</DropdownMenuItem>
@@ -120,9 +120,9 @@ export const TargetCardTitle = (props: TargetProps) => (
           <Link
             to="/$organizationSlug/$projectSlug/$targetSlug/explorer"
             params={{
-              organizationSlug: props.organizationSlug ?? 'unknown-yet',
-              projectSlug: props.projectSlug ?? 'unknown-yet',
-              targetSlug: props.slug ?? 'unknown-yet',
+              organizationSlug: props.organizationSlug,
+              projectSlug: props.projectSlug,
+              targetSlug: props.slug,
             }}
           >
             <DropdownMenuItem>Explorer</DropdownMenuItem>
@@ -130,9 +130,9 @@ export const TargetCardTitle = (props: TargetProps) => (
           <Link
             to="/$organizationSlug/$projectSlug/$targetSlug/history"
             params={{
-              organizationSlug: props.organizationSlug ?? 'unknown-yet',
-              projectSlug: props.projectSlug ?? 'unknown-yet',
-              targetSlug: props.slug ?? 'unknown-yet',
+              organizationSlug: props.organizationSlug,
+              projectSlug: props.projectSlug,
+              targetSlug: props.slug,
             }}
           >
             <DropdownMenuItem>History</DropdownMenuItem>
@@ -140,9 +140,9 @@ export const TargetCardTitle = (props: TargetProps) => (
           <Link
             to="/$organizationSlug/$projectSlug/$targetSlug/insights"
             params={{
-              organizationSlug: props.organizationSlug ?? 'unknown-yet',
-              projectSlug: props.projectSlug ?? 'unknown-yet',
-              targetSlug: props.slug ?? 'unknown-yet',
+              organizationSlug: props.organizationSlug,
+              projectSlug: props.projectSlug,
+              targetSlug: props.slug,
             }}
           >
             <DropdownMenuItem>Insights</DropdownMenuItem>
@@ -150,9 +150,9 @@ export const TargetCardTitle = (props: TargetProps) => (
           <Link
             to="/$organizationSlug/$projectSlug/$targetSlug/traces"
             params={{
-              organizationSlug: props.organizationSlug ?? 'unknown-yet',
-              projectSlug: props.projectSlug ?? 'unknown-yet',
-              targetSlug: props.slug ?? 'unknown-yet',
+              organizationSlug: props.organizationSlug,
+              projectSlug: props.projectSlug,
+              targetSlug: props.slug,
             }}
           >
             <DropdownMenuItem>Traces</DropdownMenuItem>
@@ -160,9 +160,9 @@ export const TargetCardTitle = (props: TargetProps) => (
           <Link
             to="/$organizationSlug/$projectSlug/$targetSlug/apps"
             params={{
-              organizationSlug: props.organizationSlug ?? 'unknown-yet',
-              projectSlug: props.projectSlug ?? 'unknown-yet',
-              targetSlug: props.slug ?? 'unknown-yet',
+              organizationSlug: props.organizationSlug,
+              projectSlug: props.projectSlug,
+              targetSlug: props.slug,
             }}
           >
             <DropdownMenuItem>Apps</DropdownMenuItem>
@@ -170,9 +170,9 @@ export const TargetCardTitle = (props: TargetProps) => (
           <Link
             to="/$organizationSlug/$projectSlug/$targetSlug/laboratory"
             params={{
-              organizationSlug: props.organizationSlug ?? 'unknown-yet',
-              projectSlug: props.projectSlug ?? 'unknown-yet',
-              targetSlug: props.slug ?? 'unknown-yet',
+              organizationSlug: props.organizationSlug,
+              projectSlug: props.projectSlug,
+              targetSlug: props.slug,
             }}
           >
             <DropdownMenuItem>Laboratory</DropdownMenuItem>
@@ -180,9 +180,9 @@ export const TargetCardTitle = (props: TargetProps) => (
           <Link
             to="/$organizationSlug/$projectSlug/$targetSlug/settings"
             params={{
-              organizationSlug: props.organizationSlug ?? 'unknown-yet',
-              projectSlug: props.projectSlug ?? 'unknown-yet',
-              targetSlug: props.slug ?? 'unknown-yet',
+              organizationSlug: props.organizationSlug,
+              projectSlug: props.projectSlug,
+              targetSlug: props.slug,
             }}
           >
             <DropdownMenuItem>Settings</DropdownMenuItem>
@@ -304,7 +304,7 @@ export const TargetCard = (props: TargetProps): ReactElement => {
   );
 
   if (!totalNumberOfRequests) {
-    return <TargetCardSkeleton {...props} />;
+    return <TargetCardSkeleton {...props} ref={ref} />;
   }
 
   return (
@@ -481,11 +481,12 @@ export const TargetCard = (props: TargetProps): ReactElement => {
   );
 };
 
-export const TargetCardSkeleton = (props: Partial<TargetProps>): ReactElement => {
+export const TargetCardSkeleton = forwardRef<HTMLDivElement, Partial<TargetProps>>((props, ref) => {
   const isRealTarget = !!props.slug;
 
   return (
     <div
+      ref={ref}
       className={cn(
         'bg-neutral-1 dark:bg-neutral-3 border-neutral-4 dark:border-neutral-5 grid space-y-4 rounded-lg border p-4',
         props.className,
@@ -549,4 +550,4 @@ export const TargetCardSkeleton = (props: Partial<TargetProps>): ReactElement =>
       </div>
     </div>
   );
-};
+});
