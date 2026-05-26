@@ -1,6 +1,4 @@
 import fs from 'node:fs';
-import { print } from 'graphql';
-import { transformCommentsToDescriptions } from '@graphql-tools/utils';
 import { Args, Errors, Flags } from '@oclif/core';
 import Command from '../../base-command';
 import { graphql } from '../../gql';
@@ -245,6 +243,8 @@ export default class SchemaCheck extends Command<typeof SchemaCheck> {
         throw new SchemaFileEmptyError(file);
       }
 
+      const sdl = minifySchema(rawSdl);
+
       let github: null | {
         commit: string;
         repository: string | null;
@@ -272,13 +272,12 @@ export default class SchemaCheck extends Command<typeof SchemaCheck> {
         };
       }
 
-      const sdl = print(transformCommentsToDescriptions(rawSdl));
       const result = await this.registryApi(endpoint, accessToken).request({
         operation: schemaCheckMutation,
         variables: {
           input: {
             service,
-            sdl: minifySchema(sdl),
+            sdl,
             github,
             meta:
               !!commit && !!author
