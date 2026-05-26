@@ -18,7 +18,12 @@ export const SchemaVersion: SchemaVersionResolvers = {
     return injector.get(SchemaVersionHelper).getHasSchemaChanges(version);
   },
   log: async (version, _, { injector }) => {
-    const log = await injector.get(SchemaManager).getSchemaLogById(version.actionId);
+    const log = await injector.get(SchemaManager).getSchemaLog({
+      commit: version.actionId,
+      organizationId: version.organizationId,
+      projectId: version.projectId,
+      targetId: version.targetId,
+    });
 
     if (log.kind === 'single') {
       return {
