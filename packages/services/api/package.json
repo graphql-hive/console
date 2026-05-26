@@ -9,6 +9,7 @@
   "exports": {
     "./modules/auth/lib/supertokens-at-home/crypto": "./src/modules/auth/lib/supertokens-at-home/crypto.ts",
     "./modules/auth/providers/supertokens-store": "./src/modules/auth/providers/supertokens-store.ts",
+    "./modules/cdn/providers/aws": "./src/modules/cdn/providers/aws.ts",
     "./modules/shared/providers/logger": "./src/modules/shared/providers/logger.ts",
     "./modules/shared/providers/redis": "./src/modules/shared/providers/redis.ts",
     "./modules/schema/providers/schema-version-store": "./src/modules/schema/providers/schema-version-store.ts"
@@ -19,6 +20,7 @@
   },
   "devDependencies": {
     "@aws-sdk/client-s3": "3.1035.0",
+    "@aws-sdk/credential-providers": "3.1035.0",
     "@aws-sdk/s3-request-presigner": "3.1035.0",
     "@bentocache/plugin-prometheus": "0.2.0",
     "@date-fns/utc": "2.1.1",
