@@ -185,5 +185,6 @@ export const runPGMigrations = async (args: { slonik: PostgresDatabasePool; runT
       await import('./actions/2026.02.25T00-00-00.oidc-integration-domains'),
       await import('./actions/2026.03.25T00-00-00.access-token-expiration'),
       await import('./actions/2026.04.09T00-00-00.oidc-federated-credential'),
+      await import('./actions/2026.05.25T00-00-00.drop-sdl-store-unique-id'),
     ],
   });

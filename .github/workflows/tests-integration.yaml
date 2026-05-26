@@ -22,12 +22,19 @@ on:
 jobs:
   integration:
     runs-on: ubuntu-22.04
+    name: integration (${{ matrix.shardIndex }})
     strategy:
       fail-fast: false
       matrix:
-        # Divide integration tests into 3 shards, to run them in parallel.
-        shardIndex: [1, 2, 3]
-
+        include:
+          - shardIndex: 1
+            memoryLeakTest: '0'
+          - shardIndex: 2
+            memoryLeakTest: '0'
+          - shardIndex: 3
+            memoryLeakTest: '0'
+          - shardIndex: 'memory leaks'
+            memoryLeakTest: '1'
     env:
       DOCKER_REGISTRY: ${{ inputs.registry }}/${{ inputs.imageName }}/
       DOCKER_TAG: :${{ inputs.imageTag }}
@@ -80,10 +87,20 @@ jobs:
 
       - name: run integration tests
         timeout-minutes: 30
+        if: ${{ matrix.memoryLeakTest == '0' }}
         run: |
           pnpm test:integration --shard=${{ matrix.shardIndex }}/3
         env:
           VITEST_MAX_THREADS: ${{ steps.cpu-cores.outputs.count }}
+
+      - name: run mem leaks integration tests
+        timeout-minutes: 30
+        if: ${{ matrix.memoryLeakTest == '1' }}
+        run: |
+          pnpm test:integration
+        env:
+          VITEST_MAX_THREADS: 1
+          RUN_MEMORY_LEAKS_TESTS: '1'
 
       - name: log dump
         if: ${{ failure() }}

@@ -712,6 +712,8 @@ export class SchemaManager {
       cursor: string | null;
       transformNode: (check: SchemaCheck) => TransformedSchemaCheck;
       filters: SchemaChecksFilter | null;
+      withSDL: boolean;
+      withChanges: boolean;
     },
   ) {
     const paginatedResult = await this.storage.getPaginatedSchemaChecksForTarget({
@@ -720,6 +722,7 @@ export class SchemaManager {
       cursor: args.cursor,
       transformNode: node => args.transformNode(node),
       filters: args.filters,
+      withChanges: args.withChanges,
     });
 
     return paginatedResult;
