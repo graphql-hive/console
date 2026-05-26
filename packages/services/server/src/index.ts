@@ -642,6 +642,42 @@ export async function main() {
       });
     }
 
+    if (env.exposeMemoryUtils) {
+      logger.debug('exposing memory utils endpoints');
+      server.route({
+        method: ['GET'],
+        url: '/memory-stats',
+        handler(req, reply) {
+          let mem = process.memoryUsage();
+          logger.debug('memory stats requested, raw memory usage', mem);
+
+          void reply.send({
+            heapTotal: mem.heapTotal,
+            heapUsed: mem.heapUsed,
+            external: mem.external,
+            rss: mem.rss,
+          });
+        },
+      });
+
+      server.route({
+        method: ['POST'],
+        url: '/gc',
+        handler(req, reply) {
+          if (global.gc) {
+            logger.debug('gc requested');
+            global.gc();
+            void reply.status(200);
+            void reply.send('gc triggered');
+          } else {
+            logger.debug('gc requested but not available');
+            void reply.status(500);
+            void reply.send('gc not available');
+          }
+        },
+      });
+    }
+
     if (env.prometheus) {
       await startMetrics(env.prometheus.labels.instance, {
         port: env.prometheus.port,
