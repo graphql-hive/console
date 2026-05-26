@@ -22,3 +22,4 @@ minimumReleaseAgeExclude:
   - '@graphql-inspector/*'
   - '@graphql-tools/*'
   - '@theguild/federation-composition'
+  - graphql-modules
