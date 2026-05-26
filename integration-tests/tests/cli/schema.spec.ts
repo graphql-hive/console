@@ -1,12 +1,18 @@
 /* eslint-disable no-process-env */
 import { createHash, randomUUID } from 'node:crypto';
 import { writeFile } from 'node:fs/promises';
+import { AddressInfo } from 'node:net';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import { parse } from 'graphql';
+import { createYoga } from 'graphql-yoga';
 import stripAnsi from 'strip-ansi';
 import { ProjectType, RuleInstanceSeverityLevel } from 'testkit/gql/graphql';
 import * as GraphQLSchema from 'testkit/gql/graphql';
+import { buildSubgraphSchema } from '@apollo/subgraph';
+import { useDisableIntrospection } from '@graphql-yoga/plugin-disable-introspection';
 import type { CompositeSchema } from '@hive/api/__generated__/types';
+import { createServer } from '@hive/service-common';
 import { appCreate, appPublish, createCLI, schemaCheck, schemaPublish } from '../../testkit/cli';
 import { cliOutputSnapshotSerializer } from '../../testkit/cli-snapshot-serializer';
 import { initSeed } from '../../testkit/seed';
@@ -1191,7 +1197,83 @@ Multi line description:
   );
 });
 
-test('schema:check malformed descriptions do not result in changes publish', async () => {
+test.concurrent(
+  'schema:check malformed descriptions do not result in changes publish',
+  async () => {
+    const { createOrg } = await initSeed().createOwner();
+    const { inviteAndJoinMember, createProject } = await createOrg();
+    await inviteAndJoinMember();
+    const { createTargetAccessToken } = await createProject(ProjectType.Single);
+    const { secret } = await createTargetAccessToken({});
+
+    await expect(
+      schemaPublish([
+        '--registry.accessToken',
+        secret,
+        '--author',
+        'jdolle',
+        '--commit',
+        'abc123',
+        'fixtures/comments-to-descriptions.graphql',
+      ]),
+    ).resolves.toContain('Published initial schema');
+
+    await expect(
+      schemaCheck([
+        '--registry.accessToken',
+        secret,
+        '--commit',
+        'abc1234',
+        'fixtures/comments-to-descriptions.graphql',
+      ]),
+    ).resolves.toContain('No changes');
+  },
+);
+
+test.concurrent('schema:check works with federated subgraphs', async () => {
+  const server = await createServer({
+    sentryErrorHandler: false,
+    log: {
+      requests: false,
+      level: 'silent',
+    },
+    name: '',
+  });
+
+  const yogaFederation = createYoga({
+    logging: false,
+    plugins: [useDisableIntrospection()],
+    schema: buildSubgraphSchema({
+      typeDefs: parse(/* GraphQL */ `
+        extend type Query {
+          me: User
+          user(id: ID!): User
+          users: [User]
+        }
+
+        type User @key(fields: "id") {
+          id: ID!
+          name: String
+          username: String
+        }
+      `),
+    }),
+  });
+
+  server.route({
+    // Bind to the Yoga's endpoint to avoid rendering on any path
+    url: yogaFederation.graphqlEndpoint,
+    method: ['GET', 'POST', 'OPTIONS'],
+    handler: (req, reply) => yogaFederation.handleNodeRequestAndResponse(req, reply),
+  });
+
+  await server.listen({
+    port: 0,
+    host: '0.0.0.0',
+  });
+
+  const url = 'http://localhost:' + (server.server.address() as AddressInfo).port;
+
   const { createOrg } = await initSeed().createOwner();
   const { inviteAndJoinMember, createProject } = await createOrg();
   await inviteAndJoinMember();
@@ -1206,7 +1288,7 @@ test('schema:check malformed descriptions do not result in changes publish', asy
       'jdolle',
       '--commit',
       'abc123',
-      'fixtures/comments-to-descriptions.graphql',
+      url + yogaFederation.graphqlEndpoint,
     ]),
   ).resolves.toContain('Published initial schema');
 
@@ -1216,7 +1298,9 @@ test('schema:check malformed descriptions do not result in changes publish', asy
       secret,
       '--commit',
       'abc1234',
-      'fixtures/comments-to-descriptions.graphql',
+      url + yogaFederation.graphqlEndpoint,
     ]),
   ).resolves.toContain('No changes');
+
+  await server.close();
 });
