@@ -224,7 +224,7 @@ export class CompositeModel {
       failDiffOnDangerousChange,
       getAffectedAppDeployments,
     });
-    this.logger.info('Contract checks: %o', contractChecks);
+    this.logger.debug('Contract checks: %o', contractChecks);
 
     const [diffCheck, policyCheck] = await Promise.all([
       this.checks.diff({
@@ -246,8 +246,8 @@ export class CompositeModel {
         modifiedSdl: incoming.sdl,
       }),
     ]);
-    this.logger.info('diff check status: %o', diffCheck);
-    this.logger.info('policy check status: %o', policyCheck);
+    this.logger.debug('diff check status: %o', diffCheck);
+    this.logger.debug('policy check status: %o', policyCheck);
 
     if (
       compositionCheck.status === 'failed' ||
@@ -256,7 +256,7 @@ export class CompositeModel {
       // if any of the contract compositions failed, the schema check failed.
       (contractChecks?.length && contractChecks.some(check => !isContractChecksSuccessful(check)))
     ) {
-      this.logger.debug('Schema check failed');
+      this.logger.info('Schema check failed');
       return {
         conclusion: SchemaCheckConclusion.Failure,
         state: buildSchemaCheckFailureState({
@@ -268,7 +268,7 @@ export class CompositeModel {
       };
     }
 
-    this.logger.debug('Schema check successful');
+    this.logger.info('Schema check successful');
     return {
       conclusion: SchemaCheckConclusion.Success,
       state: {

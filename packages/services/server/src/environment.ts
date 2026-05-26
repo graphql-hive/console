@@ -18,6 +18,10 @@ const emptyString = <T extends zod.ZodType>(input: T) => {
   }, input);
 };
 
+const TestUtilsModel = zod.object({
+  EXPOSE_MEMORY_UTILS: emptyString(zod.union([zod.literal('1'), zod.literal('0')]).optional()),
+});
+
 const EnvironmentModel = zod.object({
   PORT: emptyString(NumberFromString.optional()),
   SERVER_HOST: emptyString(zod.string().optional()),
@@ -292,6 +296,7 @@ const LogModel = zod.object({
 const processEnv = process.env;
 
 const configs = {
+  testUtils: TestUtilsModel.safeParse(processEnv),
   base: EnvironmentModel.safeParse(processEnv),
   commerce: CommerceModel.safeParse(processEnv),
   sentry: SentryModel.safeParse(processEnv),
@@ -361,6 +366,7 @@ const s3AuditLog = extractConfig(configs.s3AuditLog);
 const zendeskSupport = extractConfig(configs.zendeskSupport);
 const tracing = extractConfig(configs.tracing);
 const hivePersistedDocuments = extractConfig(configs.hivePersistedDocuments);
+const testUtils = extractConfig(configs.testUtils);
 
 const hiveUsageConfig =
   hive.HIVE_USAGE === '1'
@@ -384,6 +390,7 @@ export type HivePersistedDocumentsConfig = typeof hivePersistedDocumentsConfig;
 
 export const env = {
   environment: base.ENVIRONMENT,
+  exposeMemoryUtils: testUtils.EXPOSE_MEMORY_UTILS === '1',
   release: base.RELEASE ?? 'local',
   encryptionSecret: base.ENCRYPTION_SECRET,
   tracing: {
