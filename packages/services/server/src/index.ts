@@ -34,7 +34,9 @@ import {
   registerShutdown,
   registerTRPC,
   reportReadiness,
+  resolveRedisCredentials,
   sentryInit,
+  startIamTokenRefresh,
   startMetrics,
   TracingInstance,
 } from '@hive/service-common';
@@ -171,16 +173,47 @@ export async function main() {
   );
   const taskScheduler = new TaskScheduler(storage.pool);
 
-  const redis = createRedisClient('Redis', env.redis, server.log.child({ source: 'Redis' }));
+  const redisIamConfig = env.redis.awsIamAuthEnabled
+    ? {
+        host: env.redis.host,
+        port: env.redis.port,
+        awsRegion: env.redis.awsRegion ?? '',
+        username: env.redis.username ?? 'default',
+        iamAuthCacheName: env.redis.awsIamAuthCacheName,
+      }
+    : undefined;
+
+  const { password: redisPassword, username: redisUsername } = await resolveRedisCredentials(
+    env.redis.password,
+    server.log.child({ source: 'RedisCredentialResolver' }),
+    redisIamConfig,
+  );
+
+  const redisConfig = {
+    ...env.redis,
+    password: redisPassword,
+    username: redisUsername,
+  };
+
+  const redis = createRedisClient('Redis', redisConfig, server.log.child({ source: 'Redis' }));
 
   const pubSub = createHivePubSub({
     publisher: redis,
     subscriber: createRedisClient(
       'subscriber',
-      env.redis,
+      redisConfig,
       server.log.child({ source: 'RedisSubscribe' }),
     ),
   });
+
+  if (redisIamConfig) {
+    startIamTokenRefresh(
+      redis,
+      redisIamConfig,
+      env.redis.clusterModeEnabled,
+      server.log.child({ source: 'RedisIamTokenRefresh' }),
+    );
+  }
 
   registerShutdown({
     logger: server.log,
