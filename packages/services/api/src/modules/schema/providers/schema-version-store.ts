@@ -882,7 +882,7 @@ export class SchemaVersionStore {
         "schema_versions"
       WHERE
         "target_id" = ${target.id}
-        AND "action_id" = (
+        AND "action_id" = ANY(
           SELECT
             "id"
           FROM
@@ -891,7 +891,6 @@ export class SchemaVersionStore {
             "schema_log"."project_id" = ${target.projectId}
             AND "schema_log"."commit" = ${commit}
           ORDER BY "schema_log"."created_at" DESC
-          LIMIT 1
         )
       LIMIT 1
     `);
