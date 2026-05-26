@@ -12,3 +12,16 @@ export { sentryInit } from './sentry';
 export { scrubBasicAuth } from './scrub';
 export { createMskIamTokenProvider } from './iam-msk';
 export { invariant } from './helpers';
+export {
+  generatePresignedToken,
+  startTokenRefreshTimer,
+  type PresignedTokenConfig,
+  type TokenRefreshTimerOptions,
+} from './iam-aws';
+export {
+  generateIamAuthToken,
+  refreshIamAuth,
+  resolveRedisCredentials,
+  startIamTokenRefresh,
+  type IamRedisConfig,
+} from './iam-redis';

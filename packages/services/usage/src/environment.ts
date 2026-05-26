@@ -89,7 +89,16 @@ const RedisModel = zod.object({
   REDIS_HOST: zod.string(),
   REDIS_PORT: NumberFromString,
   REDIS_PASSWORD: emptyString(zod.string().optional()),
+  REDIS_USERNAME: emptyString(zod.string().optional()),
   REDIS_TLS_ENABLED: emptyString(zod.union([zod.literal('1'), zod.literal('0')]).optional()),
+  REDIS_CLUSTER_MODE_ENABLED: emptyString(
+    zod.union([zod.literal('0'), zod.literal('1')]).optional(),
+  ),
+  REDIS_AWS_REGION: emptyString(zod.string().optional()),
+  REDIS_AWS_IAM_AUTH_ENABLED: emptyString(
+    zod.union([zod.literal('0'), zod.literal('1')]).optional(),
+  ),
+  REDIS_AWS_IAM_CACHE_NAME: emptyString(zod.string().optional()),
 });
 
 const PrometheusModel = zod.object({
@@ -145,6 +154,21 @@ if (configs.kafka.success && configs.kafka.data.KAFKA_AWS_IAM_AUTH_ENABLED === '
   if (missingKafkaIamVars.length > 0) {
     environmentErrors.push(
       `KAFKA_AWS_IAM_AUTH_ENABLED is enabled but the following required variables are missing or invalid: ${missingKafkaIamVars.join(', ')}`,
+    );
+  }
+}
+
+if (configs.redis.success && configs.redis.data.REDIS_AWS_IAM_AUTH_ENABLED === '1') {
+  const missingRedisIamVars: string[] = [];
+  if (configs.redis.data.REDIS_TLS_ENABLED !== '1')
+    missingRedisIamVars.push('REDIS_TLS_ENABLED must be enabled (ElastiCache IAM requires TLS)');
+  if (!configs.redis.data.REDIS_AWS_IAM_CACHE_NAME)
+    missingRedisIamVars.push('REDIS_AWS_IAM_CACHE_NAME');
+  if (!configs.redis.data.REDIS_AWS_REGION && !configs.base.data?.AWS_REGION)
+    missingRedisIamVars.push('REDIS_AWS_REGION or AWS_REGION');
+  if (missingRedisIamVars.length > 0) {
+    environmentErrors.push(
+      `REDIS_AWS_IAM_AUTH_ENABLED is enabled but the following required variables are missing or invalid: ${missingRedisIamVars.join(', ')}`,
     );
   }
 }
@@ -249,7 +273,12 @@ export const env = {
     host: redis.REDIS_HOST,
     port: redis.REDIS_PORT,
     password: redis.REDIS_PASSWORD ?? '',
+    username: redis.REDIS_USERNAME,
     tlsEnabled: redis.REDIS_TLS_ENABLED === '1',
+    clusterModeEnabled: redis.REDIS_CLUSTER_MODE_ENABLED === '1',
+    awsIamAuthEnabled: redis.REDIS_AWS_IAM_AUTH_ENABLED === '1',
+    awsRegion: redis.REDIS_AWS_REGION ?? base.AWS_REGION,
+    awsIamAuthCacheName: redis.REDIS_AWS_IAM_CACHE_NAME,
   },
   log: {
     level: log.LOG_LEVEL ?? 'info',

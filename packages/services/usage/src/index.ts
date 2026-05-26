@@ -10,7 +10,9 @@ import {
   createServer,
   registerShutdown,
   reportReadiness,
+  resolveRedisCredentials,
   sentryInit,
+  startIamTokenRefresh,
   startMetrics,
   TracingInstance,
 } from '@hive/service-common';
@@ -52,16 +54,6 @@ async function main() {
     });
   }
 
-  const redis = new Redis({
-    host: env.redis.host,
-    port: env.redis.port,
-    password: env.redis.password,
-    maxRetriesPerRequest: 20,
-    db: 0,
-    enableReadyCheck: false,
-    tls: env.redis.tlsEnabled ? {} : undefined,
-  });
-
   const server = await createServer({
     name: 'usage',
     sentryErrorHandler: true,
@@ -70,6 +62,56 @@ async function main() {
       requests: env.log.requests,
     },
   });
+
+  const redisIamConfig = env.redis.awsIamAuthEnabled
+    ? {
+        host: env.redis.host,
+        port: env.redis.port,
+        awsRegion: env.redis.awsRegion ?? '',
+        username: env.redis.username ?? 'default',
+        iamAuthCacheName: env.redis.awsIamAuthCacheName,
+      }
+    : undefined;
+
+  const { password: redisPassword, username: redisUsername } = await resolveRedisCredentials(
+    env.redis.password,
+    server.log.child({ source: 'RedisCredentialResolver' }),
+    redisIamConfig,
+  );
+
+  let redis: Redis;
+  if (env.redis.clusterModeEnabled) {
+    redis = new Redis.Cluster([{ host: env.redis.host, port: env.redis.port }], {
+      dnsLookup: (address, callback) => callback(null, address),
+      redisOptions: {
+        username: redisUsername,
+        password: redisPassword,
+        maxRetriesPerRequest: 20,
+        enableReadyCheck: false,
+        tls: env.redis.tlsEnabled ? {} : undefined,
+      },
+    }) as unknown as Redis;
+  } else {
+    redis = new Redis({
+      host: env.redis.host,
+      port: env.redis.port,
+      username: redisUsername,
+      password: redisPassword,
+      maxRetriesPerRequest: 20,
+      db: 0,
+      enableReadyCheck: false,
+      tls: env.redis.tlsEnabled ? {} : undefined,
+    });
+  }
+
+  if (redisIamConfig) {
+    startIamTokenRefresh(
+      redis,
+      redisIamConfig,
+      env.redis.clusterModeEnabled,
+      server.log.child({ source: 'RedisIamTokenRefresh' }),
+    );
+  }
 
   const pgPool = await createPostgresDatabasePool({
     connectionParameters: env.postgres,

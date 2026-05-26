@@ -8,7 +8,9 @@ import {
   registerShutdown,
   registerTRPC,
   reportReadiness,
+  resolveRedisCredentials,
   sentryInit,
+  startIamTokenRefresh,
   startMetrics,
   TracingInstance,
 } from '@hive/service-common';
@@ -71,22 +73,66 @@ async function main() {
 
   const errorHandler = createErrorHandler(server);
 
-  const redis = new Redis({
-    host: env.redis.host,
-    port: env.redis.port,
-    password: env.redis.password,
-    retryStrategy(times) {
-      return Math.min(times * 500, 2000);
-    },
-    reconnectOnError(error) {
-      server.log.warn('Redis reconnectOnError (error=%s)', error);
-      return 1;
-    },
-    db: 0,
-    maxRetriesPerRequest: null,
-    enableReadyCheck: false,
-    tls: env.redis.tlsEnabled ? {} : undefined,
-  });
+  const redisIamConfig = env.redis.awsIamAuthEnabled
+    ? {
+        host: env.redis.host,
+        port: env.redis.port,
+        awsRegion: env.redis.awsRegion ?? '',
+        username: env.redis.username ?? 'default',
+        iamAuthCacheName: env.redis.awsIamAuthCacheName,
+      }
+    : undefined;
+
+  const { password: redisPassword, username: redisUsername } = await resolveRedisCredentials(
+    env.redis.password,
+    server.log.child({ source: 'RedisCredentialResolver' }),
+    redisIamConfig,
+  );
+
+  let redis: Redis;
+  if (env.redis.clusterModeEnabled) {
+    redis = new Redis.Cluster([{ host: env.redis.host, port: env.redis.port }], {
+      dnsLookup: (address, callback) => callback(null, address),
+      redisOptions: {
+        username: redisUsername,
+        password: redisPassword,
+        maxRetriesPerRequest: null,
+        enableReadyCheck: false,
+        tls: env.redis.tlsEnabled ? {} : undefined,
+        reconnectOnError(error) {
+          server.log.warn('Redis reconnectOnError (error=%s)', error);
+          return 1;
+        },
+      },
+    }) as unknown as Redis;
+  } else {
+    redis = new Redis({
+      host: env.redis.host,
+      port: env.redis.port,
+      username: redisUsername,
+      password: redisPassword,
+      retryStrategy(times) {
+        return Math.min(times * 500, 2000);
+      },
+      reconnectOnError(error) {
+        server.log.warn('Redis reconnectOnError (error=%s)', error);
+        return 1;
+      },
+      db: 0,
+      maxRetriesPerRequest: null,
+      enableReadyCheck: false,
+      tls: env.redis.tlsEnabled ? {} : undefined,
+    });
+  }
+
+  if (redisIamConfig) {
+    startIamTokenRefresh(
+      redis,
+      redisIamConfig,
+      env.redis.clusterModeEnabled,
+      server.log.child({ source: 'RedisIamTokenRefresh' }),
+    );
+  }
 
   try {
     redis.on('error', err => {
