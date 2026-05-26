@@ -402,12 +402,9 @@ export class SchemaManager {
     return connection;
   }
 
-  async getSchemaLog(selector: { commit: string } & TargetSelector) {
-    this.logger.debug('Fetching schema log (selector=%o)', selector);
-    return this.schemaVersions.getSchemLog({
-      commit: selector.commit,
-      targetId: selector.targetId,
-    });
+  async getSchemaLogById(schemaLogId: string) {
+    this.logger.debug('Fetching schema log by id (schemaLogId=%s)', schemaLogId);
+    return this.schemaVersions.getSchemaLogById(schemaLogId);
   }
 
   @traceFn('SchemaManager.createVersion', {
@@ -712,6 +709,8 @@ export class SchemaManager {
       cursor: string | null;
       transformNode: (check: SchemaCheck) => TransformedSchemaCheck;
       filters: SchemaChecksFilter | null;
+      withSDL: boolean;
+      withChanges: boolean;
     },
   ) {
     const paginatedResult = await this.storage.getPaginatedSchemaChecksForTarget({
@@ -720,6 +719,7 @@ export class SchemaManager {
       cursor: args.cursor,
       transformNode: node => args.transformNode(node),
       filters: args.filters,
+      withChanges: args.withChanges,
     });
 
     return paginatedResult;
@@ -1286,12 +1286,7 @@ export class SchemaManager {
       };
     }
 
-    const log = await this.getSchemaLog({
-      commit: schemaVersion.actionId,
-      organizationId: schemaVersion.organizationId,
-      projectId: schemaVersion.projectId,
-      targetId: schemaVersion.targetId,
-    });
+    const log = await this.getSchemaLogById(schemaVersion.actionId);
 
     if ('commit' in log && log.commit) {
       const project = await this.storage.getProject({
