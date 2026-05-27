@@ -27,6 +27,7 @@ type Row = {
   toState: MetricAlertRuleRow['state'];
   value: number;
   previousValue: number;
+  stateLogCreatedAt: string;
   // rule (subset; the notifier only reads these fields off `event.rule`)
   ruleId: string;
   ruleName: string;
@@ -68,6 +69,12 @@ export const task = implementTask(SendMetricAlertChannelNotificationTask, async 
     },
     async span => {
       let outcome: 'sent' | 'deduped' | 'skipped-deleted' | 'failed' = 'failed';
+      // Hoisted so the finally block can compute breach-to-dispatch lag
+      // regardless of whether the dispatch succeeded, failed, or threw. Stays
+      // null when the SELECT didn't return a row (already-deduped or
+      // skipped-deleted paths), in which case the lag attribute isn't set...
+      // the dashboard filters on its presence.
+      let stateLogCreatedAt: Date | null = null;
       try {
         // Skip if a previous attempt already recorded successful dispatch. This
         // covers the duplicate-job edge case; the per-attempt window where the
@@ -75,7 +82,7 @@ export const task = implementTask(SendMetricAlertChannelNotificationTask, async 
         // destinations without an idempotency-key API (Slack).
         //
         // Perf: this is a PK lookup on `(state_log_id, alert_channel_id)`
-        // (PK defined in the metric-alert-rules migration) — sub-millisecond on
+        // (PK defined in the metric-alert-rules migration)...sub-millisecond on
         // a warm cache. One extra round-trip per dispatch is a cheap price for
         // avoiding duplicate Slack messages to users when graphile-worker
         // retries a job whose external POST already succeeded.
@@ -98,6 +105,7 @@ export const task = implementTask(SendMetricAlertChannelNotificationTask, async 
             , sl."to_state" as "toState"
             , sl."value"
             , sl."previous_value" as "previousValue"
+            , sl."created_at" as "stateLogCreatedAt"
             , r."id" as "ruleId"
             , r."name" as "ruleName"
             , r."type" as "ruleType"
@@ -133,9 +141,11 @@ export const task = implementTask(SendMetricAlertChannelNotificationTask, async 
           return;
         }
 
+        stateLogCreatedAt = new Date(row.stateLogCreatedAt);
         span.setAttributes({
           'rule.id': row.ruleId,
           'channel.type': row.channelType,
+          'state_log.created_at': row.stateLogCreatedAt,
         });
 
         const event: NotificationEvent = {
@@ -229,6 +239,18 @@ export const task = implementTask(SendMetricAlertChannelNotificationTask, async 
         throw err;
       } finally {
         span.setAttribute('notification.outcome', outcome);
+        // End-to-end lag from breach (state-log row creation, i.e. when the
+        // evaluator wrote the FIRING/RECOVERING/etc. transition) to now (this
+        // task's exit). Captures graphile-worker queue + worker pickup + this
+        // task's PG lookups + the outbound external POST. Only set when we
+        // actually loaded the row...for the deduped / skipped-deleted exits,
+        // there's no meaningful "breach → dispatch" measurement.
+        if (stateLogCreatedAt) {
+          span.setAttribute(
+            'breach_to_dispatch_seconds',
+            (Date.now() - stateLogCreatedAt.getTime()) / 1000,
+          );
+        }
         span.end();
       }
     },

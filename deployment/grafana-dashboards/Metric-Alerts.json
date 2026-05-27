@@ -467,6 +467,60 @@
     },
     {
       "datasource": { "type": "tempo", "uid": "TEMPO_DATASOURCE_UID" },
+      "description": "p50/p95/p99 lag from breach (state-log row created) to notification dispatched. Captures the full breach→user-notified path: graphile-worker queue wait + worker pickup + dispatch task's PG lookups + the outbound POST to Slack/Teams/webhook. Sustained values above ~10s usually mean graphile-worker is backed up; values above ~30s mean an external destination is timing out.",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": {
+            "axisCenteredZero": false,
+            "axisPlacement": "auto",
+            "axisSoftMin": 0,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "thresholdsStyle": { "mode": "dashed" }
+          },
+          "mappings": [],
+          "min": 0,
+          "noValue": "0",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 10 },
+              { "color": "orange", "value": 30 },
+              { "color": "red", "value": 60 }
+            ]
+          },
+          "unit": "s"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 9, "w": 24, "x": 0, "y": 35 },
+      "id": 106,
+      "options": {
+        "legend": {
+          "calcs": ["max", "mean"],
+          "displayMode": "table",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": { "mode": "multi", "sort": "desc" }
+      },
+      "targets": [
+        {
+          "datasource": { "type": "tempo", "uid": "TEMPO_DATASOURCE_UID" },
+          "query": "{name=\"send-metric-alert-channel-notification\"} | quantile_over_time(span.breach_to_dispatch_seconds, .5, .95, .99)",
+          "queryType": "traceql",
+          "refId": "A"
+        }
+      ],
+      "title": "Breach → dispatch end-to-end latency (p50/p95/p99)",
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "tempo", "uid": "TEMPO_DATASOURCE_UID" },
       "description": "Notification-dispatch tasks that exited with outcome=failed. Click a row for channel.type, rule.id, error attributes, and the outbound HTTP POST span.",
       "fieldConfig": {
         "defaults": {
@@ -481,7 +535,7 @@
         },
         "overrides": []
       },
-      "gridPos": { "h": 9, "w": 24, "x": 0, "y": 35 },
+      "gridPos": { "h": 9, "w": 24, "x": 0, "y": 44 },
       "id": 103,
       "options": {
         "cellHeight": "sm",
