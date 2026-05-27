@@ -385,23 +385,16 @@ export class SchemaVersionStore {
                 id: newLog.id,
                 serviceName: args.service?.name ?? null,
               })
-              .map(log =>
-                // fooo
-                [
-                  version.id,
-                  log.id,
-                  log.id !== newLog.id
-                    ? 'unchanged'
-                    : args.previousSchemaLogId
-                      ? 'changed'
-                      : 'added',
-                  log.id !== newLog.id ? log.id : args.previousSchemaLogId,
-                  log.id !== newLog.id
-                    ? (JSON.stringify(args.serviceChanges?.map(toSerializableSchemaChange)) ?? null)
-                    : null,
-                  log.serviceName,
-                ],
-              ),
+              .map(log => [
+                version.id,
+                log.id,
+                log.id !== newLog.id ? 'unchanged' : args.previousSchemaLogId ? 'changed' : 'added',
+                log.id !== newLog.id ? log.id : args.previousSchemaLogId,
+                log.id !== newLog.id
+                  ? (JSON.stringify(args.serviceChanges?.map(toSerializableSchemaChange)) ?? null)
+                  : null,
+                log.serviceName,
+              ]),
             ['uuid', 'uuid', 'hive_subgraph_log_type', 'uuid', 'jsonb', 'text'],
           )}
       `);
@@ -1303,7 +1296,7 @@ export class SchemaVersionStore {
     contracts: null | Array<CreateContractVersionInput>;
     conditionalBreakingChangeMetadata: null | ConditionalBreakingChangeMetadata;
   }) {
-    return await this.pg.transaction('promoteSchemaVersionToTarget', async trx => {
+    return await this.pg.transaction('createPromotionSchemaVersion', async trx => {
       let meta: SchemaVersionMeta | null = args.origin.version.meta;
       // when the "origin" is null "meta" is null as well (as those properties were introduced in the same update)
       // in that case we need to retrieve the meta from the action_id
