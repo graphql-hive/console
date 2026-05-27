@@ -238,9 +238,7 @@ export interface Storage {
     },
   ): Promise<PaginatedProjectConnection>;
 
-  countSchemaVersionsOfProject(
-    _: ProjectSelector & { period: DateRange | null },
-  ): Promise<number>;
+  countSchemaVersionsOfProject(_: ProjectSelector & { period: DateRange | null }): Promise<number>;
 
   getProjectById(projectId: string): Promise<Project | null>;
 
@@ -355,9 +353,7 @@ export interface Storage {
     },
   ): Promise<PaginatedTargetConnection>;
 
-  countSchemaVersionsOfTarget(
-    _: TargetSelector & { period: DateRange | null },
-  ): Promise<number>;
+  countSchemaVersionsOfTarget(_: TargetSelector & { period: DateRange | null }): Promise<number>;
 
   findTargetsByIds(args: {
     organizationId: string;

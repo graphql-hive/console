@@ -1,14 +1,14 @@
-import { Injectable, Scope } from 'graphql-modules';
 import { GraphQLError } from 'graphql';
+import { Injectable, Scope } from 'graphql-modules';
+import { TargetReferenceInput } from 'packages/libraries/core/src/client/__generated__/types';
+import * as zod from 'zod';
+import { z } from 'zod';
 import {
   decodeCreatedAtAndUUIDIdBasedCursor,
   decodeProjectSlugIdBasedCursor,
   encodeCreatedAtAndUUIDIdBasedCursor,
   encodeProjectSlugIdBasedCursor,
 } from '@hive/storage';
-import { TargetReferenceInput } from 'packages/libraries/core/src/client/__generated__/types';
-import * as zod from 'zod';
-import { z } from 'zod';
 import type { DateRangeInput } from '../../../__generated__/types';
 import * as GraphQLSchema from '../../../__generated__/types';
 import type { Project, Target, TargetSettings } from '../../../shared/entities';
@@ -18,7 +18,12 @@ import { Session } from '../../auth/lib/authz';
 import { OperationsManager } from '../../operations/providers/operations-manager';
 import { IdTranslator } from '../../shared/providers/id-translator';
 import { Logger } from '../../shared/providers/logger';
-import { ProjectSelector, Storage, TargetSelector, TargetsStorageSort } from '../../shared/providers/storage';
+import {
+  ProjectSelector,
+  Storage,
+  TargetSelector,
+  TargetsStorageSort,
+} from '../../shared/providers/storage';
 import { TokenStorage } from '../../token/providers/token-storage';
 import { PercentageModel, TargetSlugModel } from '../validation';
 import { TargetsByIdCache } from './targets-by-id-cache';
@@ -307,7 +312,9 @@ export class TargetManager {
     },
   ) {
     if (!args.sort?.period) {
-      throw new GraphQLError('period is required when sorting targets by REQUESTS or SCHEMA_VERSIONS');
+      throw new GraphQLError(
+        'period is required when sorting targets by REQUESTS or SCHEMA_VERSIONS',
+      );
     }
 
     const period = parseDateRangeInput(args.sort.period);
@@ -418,10 +425,8 @@ export class TargetManager {
         const cursor = decodeProjectSlugIdBasedCursor(after);
         const startIndex = targets.findIndex(target =>
           isDesc
-            ? target.slug < cursor.slug ||
-              (target.slug === cursor.slug && target.id < cursor.id)
-            : target.slug > cursor.slug ||
-              (target.slug === cursor.slug && target.id > cursor.id),
+            ? target.slug < cursor.slug || (target.slug === cursor.slug && target.id < cursor.id)
+            : target.slug > cursor.slug || (target.slug === cursor.slug && target.id > cursor.id),
         );
 
         return startIndex === -1 ? targets.length : startIndex;

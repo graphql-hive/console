@@ -1,16 +1,16 @@
-import { Injectable, Scope } from 'graphql-modules';
 import { GraphQLError } from 'graphql';
+import { Injectable, Scope } from 'graphql-modules';
+import * as GraphQLSchema from 'packages/libraries/core/src/client/__generated__/types';
+import { z } from 'zod';
 import {
   decodeCreatedAtAndUUIDIdBasedCursor,
   decodeProjectSlugIdBasedCursor,
   encodeCreatedAtAndUUIDIdBasedCursor,
   encodeProjectSlugIdBasedCursor,
 } from '@hive/storage';
-import * as GraphQLSchema from 'packages/libraries/core/src/client/__generated__/types';
-import { z } from 'zod';
 import type { DateRangeInput, ProjectReferenceInput } from '../../../__generated__/types';
-import { parseDateRangeInput } from '../../../shared/helpers';
 import type { Organization, Project, ProjectType, Target } from '../../../shared/entities';
+import { parseDateRangeInput } from '../../../shared/helpers';
 import { AuditLogRecorder } from '../../audit-logs/providers/audit-log-recorder';
 import { Session } from '../../auth/lib/authz';
 import { OperationsManager } from '../../operations/providers/operations-manager';
@@ -313,7 +313,9 @@ export class ProjectManager {
         sort: storageSort,
       });
       const authorized = await this.filterAuthorizedProjects(organization, projects);
-      const nodes = authorized.slice(this.resolveCursorStartIndex(authorized, args.after, storageSort));
+      const nodes = authorized.slice(
+        this.resolveCursorStartIndex(authorized, args.after, storageSort),
+      );
 
       return this.toProjectConnection(nodes, storageSort, {
         hasNextPage: false,
@@ -377,7 +379,9 @@ export class ProjectManager {
     },
   ) {
     if (!args.sort?.period) {
-      throw new GraphQLError('period is required when sorting projects by REQUESTS or SCHEMA_VERSIONS');
+      throw new GraphQLError(
+        'period is required when sorting projects by REQUESTS or SCHEMA_VERSIONS',
+      );
     }
 
     const period = parseDateRangeInput(args.sort.period);
@@ -508,8 +512,7 @@ export class ProjectManager {
         const cursor = decodeProjectSlugIdBasedCursor(after);
         const startIndex = projects.findIndex(project =>
           isDesc
-            ? project.slug < cursor.slug ||
-              (project.slug === cursor.slug && project.id < cursor.id)
+            ? project.slug < cursor.slug || (project.slug === cursor.slug && project.id < cursor.id)
             : project.slug > cursor.slug ||
               (project.slug === cursor.slug && project.id > cursor.id),
         );

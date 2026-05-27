@@ -2,11 +2,7 @@ import { IdTranslator } from '../../../shared/providers/id-translator';
 import { TargetManager } from '../../providers/target-manager';
 import type { QueryResolvers } from './../../../../__generated__/types';
 
-export const targets: NonNullable<QueryResolvers['targets']> = async (
-  _,
-  args,
-  { injector },
-) => {
+export const targets: NonNullable<QueryResolvers['targets']> = async (_, args, { injector }) => {
   const translator = injector.get(IdTranslator);
   const [organizationId, projectId] = await Promise.all([
     translator.translateOrganizationId(args.selector),
