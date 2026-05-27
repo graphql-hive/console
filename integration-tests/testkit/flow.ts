@@ -1017,7 +1017,7 @@ export function getSchemaVersionWithAllDetails(
             }
             subgraphDiffs {
               ... on SubgraphDiffAdded {
-                addedSubgraphVersion {
+                subgraphVersion {
                   id
                   sdl
                   serviceName

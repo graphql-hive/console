@@ -558,7 +558,7 @@ function GraphQLSchemaView(props: {
 const SchemaVersionSubgraphView__SubgraphDiffFragment = graphql(`
   fragment SchemaVersionSubgraphView__SubgraphDiffFragment on SubgraphDiff {
     ... on SubgraphDiffAdded {
-      addedSubgraphVersion {
+      subgraphVersion {
         id
         sdl
         serviceName
@@ -676,7 +676,7 @@ function GraphVersionSubgraphView(props: {
       if (diff.__typename === 'SubgraphDiffAdded') {
         return (
           <SubgraphCard
-            key={diff.__typename + diff.addedSubgraphVersion.id}
+            key={diff.__typename + diff.subgraphVersion.id}
             diff={diff}
             renderChildren={() => (
               <div className="bg-neutral-1 dark:bg-neutral-2 px-5 py-5 text-xs">
@@ -735,11 +735,9 @@ function GraphVersionSubgraphView(props: {
           if (diff.__typename === 'SubgraphDiffAdded') {
             return (
               <SubgraphCard
-                key={diff.__typename + diff.addedSubgraphVersion.id}
+                key={diff.__typename + diff.subgraphVersion.id}
                 diff={diff}
-                renderChildren={() => (
-                  <SDLDiffView before="" after={diff.addedSubgraphVersion.sdl} />
-                )}
+                renderChildren={() => <SDLDiffView before="" after={diff.subgraphVersion.sdl} />}
               />
             );
           }
@@ -787,9 +785,9 @@ function GraphVersionSubgraphView(props: {
           if (diff.__typename === 'SubgraphDiffAdded') {
             return (
               <SubgraphCard
-                key={diff.__typename + diff.addedSubgraphVersion.id}
+                key={diff.__typename + diff.subgraphVersion.id}
                 diff={diff}
-                renderChildren={() => <SDLView sdl={diff.addedSubgraphVersion.sdl} />}
+                renderChildren={() => <SDLView sdl={diff.subgraphVersion.sdl} />}
               />
             );
           }
@@ -1224,7 +1222,7 @@ const SchemaVersionSummary_SchemaVersionFragment = graphql(`
     subgraphDiffs {
       ...SubgraphRow_SubgraphDiffFragment
       ... on SubgraphDiffAdded {
-        addedSubgraphVersion {
+        subgraphVersion {
           serviceName
           id
           url
@@ -1485,7 +1483,7 @@ const kindMeta = {
 const SubgraphRow_SubgraphDiffFragment = graphql(`
   fragment SubgraphRow_SubgraphDiffFragment on SubgraphDiff {
     ... on SubgraphDiffAdded {
-      addedSubgraphVersion {
+      subgraphVersion {
         serviceName
         id
         url
@@ -1554,8 +1552,8 @@ function SubgraphRow(props: {
           )}
           {subgraphDiff.__typename === 'SubgraphDiffAdded' && (
             <code className="py-0.5 text-xs">
-              {subgraphDiff.addedSubgraphVersion.serviceName}@
-              {subgraphDiff.addedSubgraphVersion.id.substring(0, 8)}
+              {subgraphDiff.subgraphVersion.serviceName}@
+              {subgraphDiff.subgraphVersion.id.substring(0, 8)}
             </code>
           )}
           {subgraphDiff.__typename === 'SubgraphDiffChanged' && (
@@ -1582,7 +1580,7 @@ function SubgraphRow(props: {
           <SubgraphLink url={subgraphDiff.subgraphVersion.url} />
         )}
         {subgraphDiff.__typename === 'SubgraphDiffAdded' && (
-          <SubgraphLink url={subgraphDiff.addedSubgraphVersion.url} />
+          <SubgraphLink url={subgraphDiff.subgraphVersion.url} />
         )}
         {subgraphDiff.__typename === 'SubgraphDiffChanged' && (
           <SubgraphLink url={subgraphDiff.subgraphVersion.url} />

@@ -398,7 +398,7 @@ export class SchemaVersionHelper {
       if (edge.type === 'added') {
         return {
           __typename: 'SubgraphDiffAdded',
-          addedSubgraphVersion: {
+          subgraphVersion: {
             id: edge.node.id,
             sdl: edge.node.sdl,
             serviceName: edge.node.service_name,

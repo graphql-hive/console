@@ -1828,25 +1828,46 @@ export default gql`
   }
 
   type SubgraphVersion {
+    """
+    The ID of the subgraph.
+    """
     id: ID!
+    """
+    The service name.
+    """
     serviceName: String!
+    """
+    The subgraph SDL.
+    """
     sdl: String!
+    """
+    The URL of the Subgraph.
+    """
     url: String!
   }
 
+  """
+  Describes the difference from one subgraph version to the next one.
+  """
   union SubgraphDiff =
     | SubgraphDiffChanged
     | SubgraphDiffRemoved
     | SubgraphDiffUnchanged
     | SubgraphDiffAdded
 
+  """
+  The subgraph was newly added and did not exist before in the supergraph.
+  """
   type SubgraphDiffAdded {
     """
     The added subgraph version.
     """
-    addedSubgraphVersion: SubgraphVersion!
+    subgraphVersion: SubgraphVersion!
   }
 
+  """
+  The subgraph was updated to a new version.
+  """
   type SubgraphDiffChanged {
     """
     The current subgraph version.
@@ -1857,11 +1878,14 @@ export default gql`
     """
     previousSubgraphVersion: SubgraphVersion!
     """
-    The changes from one to the next service version.
+    The changes from one to the next subgraph version.
     """
     changes: SchemaChangeConnection
   }
 
+  """
+  The subgraph was removed from the supergraph.
+  """
   type SubgraphDiffRemoved {
     """
     The subgraph version that was removed.
@@ -1869,6 +1893,9 @@ export default gql`
     removedSubgraphVersion: SubgraphVersion!
   }
 
+  """
+  The subgraph is unchanged in this version.
+  """
   type SubgraphDiffUnchanged {
     """
     The current subgraph version.
@@ -1876,6 +1903,9 @@ export default gql`
     subgraphVersion: SubgraphVersion!
   }
 
+  """
+  Describes the action that caused the creation of a new SchemaVersion.
+  """
   union SchemaVersionOrigin =
     | SchemaVersionPublishOrigin
     | SchemaVersionSubgraphRemoveOrigin
