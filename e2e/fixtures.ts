@@ -1,6 +1,7 @@
-import { execFile } from 'node:child_process';
-import { promisify } from 'node:util';
+// eslint-disable-next-line import/no-extraneous-dependencies -- required before loading seed helpers
+import 'reflect-metadata';
 import { test as base, expect, type Page } from '@playwright/test';
+import { initSeed } from '../integration-tests/testkit/seed';
 import { createAppHelper, type AppHelper } from './helpers/app';
 import { createAuthHelper, type AuthHelper } from './helpers/auth';
 import { createLaboratoryHelper, type LaboratoryHelper } from './helpers/laboratory';
@@ -26,43 +27,48 @@ type Fixtures = {
   usage: UsageHelper;
 };
 
-const execFileAsync = promisify(execFile);
-const rootDir = new URL('..', import.meta.url).pathname;
-
 async function loadSeedHelper(): Promise<SeedHelper> {
+  const seed = initSeed();
+
   return {
-    seedOrg() {
-      return runSeedTask('seedOrg');
+    async seedOrg() {
+      const owner = await seed.createOwner();
+      const org = await owner.createOrg();
+
+      return {
+        slug: org.organization.slug,
+        accessToken: owner.ownerToken,
+        refreshToken: owner.ownerRefreshToken,
+        email: owner.ownerEmail,
+      };
     },
-    seedTarget() {
-      return runSeedTask('seedTarget');
+    async seedTarget() {
+      const owner = await seed.createOwner();
+      const org = await owner.createOrg();
+      const project = await org.createProject();
+
+      return {
+        slug: `${org.organization.slug}/${project.project.slug}/${project.target.slug}`,
+        accessToken: owner.ownerToken,
+        refreshToken: owner.ownerRefreshToken,
+        email: owner.ownerEmail,
+      };
     },
-    getEmailConfirmationLink(input) {
-      return runSeedTask('getEmailConfirmationLink', input);
+    async getEmailConfirmationLink(input) {
+      const url = await seed.pollForEmailVerificationLink(input);
+
+      return url.pathname + url.search;
     },
     async purgeOIDCDomains() {
-      await runSeedTask('purgeOIDCDomains');
+      await seed.purgeOIDCDomains();
     },
     async purgeUserByEmail(email) {
-      await runSeedTask('purgeUserByEmail', email);
+      await seed.purgeUserByEmail(email);
     },
     async forgeOIDCDNSChallenge(orgSlug) {
-      await runSeedTask('forgeOIDCDNSChallenge', orgSlug);
+      await seed.forgeOIDCDNSChallenge(orgSlug);
     },
   };
-}
-
-async function runSeedTask<T>(task: string, input?: unknown): Promise<T> {
-  const { stdout } = await execFileAsync(
-    'pnpm',
-    ['exec', 'tsx', 'e2e/seed-task.ts', task, JSON.stringify(input ?? null)],
-    {
-      cwd: rootDir,
-      maxBuffer: 1024 * 1024 * 10,
-    },
-  );
-
-  return JSON.parse(stdout) as T;
 }
 
 async function clearBrowserSession(page: Page) {

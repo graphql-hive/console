@@ -1,6 +1,8 @@
 import { formatISO, subHours } from 'date-fns';
 import { humanId } from 'human-id';
 import z from 'zod';
+import { NoopLogger } from '@hive/api/modules/shared/providers/logger';
+import { createRedisClient } from '@hive/api/modules/shared/providers/redis';
 import { createPostgresDatabasePool, psql } from '@hive/postgres';
 import type { Report } from '../../packages/libraries/core/src/client/usage.js';
 import { authenticate, userEmail } from './auth';
@@ -209,11 +211,28 @@ export function initSeed() {
       `,
         )
         .then(z.string().parse);
-      await pool.query(psql`
-        UPDATE "oidc_integration_domains"
-        SET "verified_at" = NOW()
-        WHERE "id" = ${domainChallengeId}
-      `);
+      const key = `hive:oidcDomainChallenge:${domainChallengeId}`;
+
+      const challenge = {
+        id: domainChallengeId,
+        recordName: `_hive-challenge`,
+        // TXT record value for _hive-challenge.buzzcheck.dev.
+        value: 'a894723a5d52a30d73790752b0169835e6f81dd77d2737dba809bee7fde39092',
+      };
+
+      const redis = createRedisClient(
+        '',
+        {
+          host: ensureEnv('REDIS_HOST'),
+          password: ensureEnv('REDIS_PASSWORD'),
+          port: parseInt(ensureEnv('REDIS_PORT'), 10),
+          tlsEnabled: false,
+        },
+        new NoopLogger(),
+      );
+
+      await redis.set(key, JSON.stringify(challenge));
+      redis.disconnect();
     },
     createDbConnection,
     authenticate: doAuthenticate,

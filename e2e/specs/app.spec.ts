@@ -232,6 +232,8 @@ test.describe('oidc domain verification', () => {
     await page.locator('[data-button-next-verify-domain-ownership]').click();
 
     await seed.forgeOIDCDNSChallenge(organizationSlug);
+    await page.locator('[data-button-next-complete]').click();
+    await expect(page.getByText('successfully verified')).toBeVisible();
     await page
       .getByRole('dialog', { name: /Verify Domain Ownership/ })
       .getByRole('button', { name: 'Close' })
