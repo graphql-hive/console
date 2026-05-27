@@ -24,5 +24,4 @@ jobs:
         run: |
           curl -sSL https://graphql-hive.com/install.sh | sh
           hive schema:publish "schema.graphql" \
-          # --github \
           --service "graphql"
