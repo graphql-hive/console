@@ -18,6 +18,7 @@ processors:
 
 exporters:
   - gomod: go.opentelemetry.io/collector/exporter/debugexporter v0.147.0
+  - gomod: go.opentelemetry.io/collector/exporter/otlpexporter v0.147.0
   - gomod:
       github.com/open-telemetry/opentelemetry-collector-contrib/exporter/clickhouseexporter v0.147.0
 

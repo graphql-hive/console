@@ -21,7 +21,7 @@
   "liveNow": false,
   "panels": [
     {
-      "datasource": { "type": "prometheus", "uid": "grafanacloud-prom" },
+      "datasource": { "type": "prometheus", "uid": "PROM_DATASOURCE_UID" },
       "description": "p50/p95/p99 round-trip duration of ClickHouse queries from the metric alert evaluator. The cron fires every minute; one query per (target, timeWindow, savedFilter) group.",
       "fieldConfig": {
         "defaults": {
@@ -76,7 +76,7 @@
       "pluginVersion": "9.3.6",
       "targets": [
         {
-          "datasource": { "type": "prometheus", "uid": "grafanacloud-prom" },
+          "datasource": { "type": "prometheus", "uid": "PROM_DATASOURCE_UID" },
           "editorMode": "code",
           "expr": "histogram_quantile(0.50, sum by (le) (rate(hive_metric_alert_clickhouse_query_duration_seconds_bucket[$__rate_interval])))",
           "legendFormat": "p50",
@@ -84,7 +84,7 @@
           "refId": "A"
         },
         {
-          "datasource": { "type": "prometheus", "uid": "grafanacloud-prom" },
+          "datasource": { "type": "prometheus", "uid": "PROM_DATASOURCE_UID" },
           "editorMode": "code",
           "expr": "histogram_quantile(0.95, sum by (le) (rate(hive_metric_alert_clickhouse_query_duration_seconds_bucket[$__rate_interval])))",
           "legendFormat": "p95",
@@ -92,7 +92,7 @@
           "refId": "B"
         },
         {
-          "datasource": { "type": "prometheus", "uid": "grafanacloud-prom" },
+          "datasource": { "type": "prometheus", "uid": "PROM_DATASOURCE_UID" },
           "editorMode": "code",
           "expr": "histogram_quantile(0.99, sum by (le) (rate(hive_metric_alert_clickhouse_query_duration_seconds_bucket[$__rate_interval])))",
           "legendFormat": "p99",
@@ -104,7 +104,7 @@
       "type": "timeseries"
     },
     {
-      "datasource": { "type": "prometheus", "uid": "grafanacloud-prom" },
+      "datasource": { "type": "prometheus", "uid": "PROM_DATASOURCE_UID" },
       "description": "ClickHouse queries per second issued by the evaluator, broken down by outcome (success vs error).",
       "fieldConfig": {
         "defaults": {
@@ -156,7 +156,7 @@
       "pluginVersion": "9.3.6",
       "targets": [
         {
-          "datasource": { "type": "prometheus", "uid": "grafanacloud-prom" },
+          "datasource": { "type": "prometheus", "uid": "PROM_DATASOURCE_UID" },
           "editorMode": "code",
           "expr": "sum by (outcome) (rate(hive_metric_alert_clickhouse_query_duration_seconds_count[$__rate_interval]))",
           "legendFormat": "{{outcome}}",
@@ -168,7 +168,7 @@
       "type": "timeseries"
     },
     {
-      "datasource": { "type": "prometheus", "uid": "grafanacloud-prom" },
+      "datasource": { "type": "prometheus", "uid": "PROM_DATASOURCE_UID" },
       "description": "Fraction of evaluator ClickHouse queries that errored. Sustained above ~5% indicates ClickHouse degradation, network issues, or a malformed query for some rule.",
       "fieldConfig": {
         "defaults": {
@@ -202,7 +202,7 @@
       "pluginVersion": "9.3.6",
       "targets": [
         {
-          "datasource": { "type": "prometheus", "uid": "grafanacloud-prom" },
+          "datasource": { "type": "prometheus", "uid": "PROM_DATASOURCE_UID" },
           "editorMode": "code",
           "expr": "sum(rate(hive_metric_alert_clickhouse_query_duration_seconds_count{outcome=\"error\"}[$__rate_interval])) / clamp_min(sum(rate(hive_metric_alert_clickhouse_query_duration_seconds_count[$__rate_interval])), 0.001)",
           "legendFormat": "error ratio",
@@ -214,7 +214,7 @@
       "type": "stat"
     },
     {
-      "datasource": { "type": "prometheus", "uid": "grafanacloud-prom" },
+      "datasource": { "type": "prometheus", "uid": "PROM_DATASOURCE_UID" },
       "description": "p99 duration of the evaluateMetricAlertRules task (full cron tick across all rule groups). Reuses the generic workflow job duration summary.",
       "fieldConfig": {
         "defaults": {
@@ -261,7 +261,7 @@
       "pluginVersion": "9.3.6",
       "targets": [
         {
-          "datasource": { "type": "prometheus", "uid": "grafanacloud-prom" },
+          "datasource": { "type": "prometheus", "uid": "PROM_DATASOURCE_UID" },
           "editorMode": "code",
           "expr": "hive_workflow_job_duration_seconds{task_identifier=\"evaluateMetricAlertRules\",quantile=\"0.99\"}",
           "legendFormat": "p99",
@@ -271,6 +271,128 @@
       ],
       "title": "evaluateMetricAlertRules task duration (p99)",
       "type": "timeseries"
+    },
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 16 },
+      "id": 100,
+      "panels": [],
+      "title": "Traces (drill-downs)",
+      "type": "row"
+    },
+    {
+      "datasource": { "type": "tempo", "uid": "TEMPO_DATASOURCE_UID" },
+      "description": "Alert-evaluator ticks slower than $slowEvalThreshold. Click a row to open the full trace flame chart with per-group and per-PG-query children.",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "fixed" },
+          "custom": {
+            "align": "auto",
+            "cellOptions": { "type": "auto" },
+            "inspect": false
+          },
+          "mappings": [],
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }] }
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 9, "w": 12, "x": 0, "y": 17 },
+      "id": 101,
+      "options": {
+        "cellHeight": "sm",
+        "footer": { "countRows": false, "fields": "", "reducer": ["sum"], "show": false },
+        "showHeader": true
+      },
+      "targets": [
+        {
+          "datasource": { "type": "tempo", "uid": "TEMPO_DATASOURCE_UID" },
+          "filters": [{ "id": "slow-evals-filter", "operator": "=", "scope": "span" }],
+          "limit": 100,
+          "query": "{name=\"evaluate-metric-alert-rules\" && duration>$slowEvalThreshold}",
+          "queryType": "traceql",
+          "refId": "A",
+          "spss": 20,
+          "tableType": "traces"
+        }
+      ],
+      "title": "Recent slow alert evaluations",
+      "type": "table"
+    },
+    {
+      "datasource": { "type": "tempo", "uid": "TEMPO_DATASOURCE_UID" },
+      "description": "Per-target group evaluations slower than $slowGroupThreshold. Inspect target.id, rules.in_group, time_window_minutes on the row; click to see the ClickHouse query and per-rule PG transactions inside the group.",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "fixed" },
+          "custom": {
+            "align": "auto",
+            "cellOptions": { "type": "auto" },
+            "inspect": false
+          },
+          "mappings": [],
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }] }
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 9, "w": 12, "x": 12, "y": 17 },
+      "id": 102,
+      "options": {
+        "cellHeight": "sm",
+        "footer": { "countRows": false, "fields": "", "reducer": ["sum"], "show": false },
+        "showHeader": true
+      },
+      "targets": [
+        {
+          "datasource": { "type": "tempo", "uid": "TEMPO_DATASOURCE_UID" },
+          "filters": [{ "id": "slow-groups-filter", "operator": "=", "scope": "span" }],
+          "limit": 100,
+          "query": "{name=\"evaluate-group\" && duration>$slowGroupThreshold}",
+          "queryType": "traceql",
+          "refId": "A",
+          "spss": 20,
+          "tableType": "traces"
+        }
+      ],
+      "title": "Slow target groups",
+      "type": "table"
+    },
+    {
+      "datasource": { "type": "tempo", "uid": "TEMPO_DATASOURCE_UID" },
+      "description": "Notification-dispatch tasks that exited with outcome=failed. Click a row for channel.type, rule.id, error attributes, and the outbound HTTP POST span.",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "fixed" },
+          "custom": {
+            "align": "auto",
+            "cellOptions": { "type": "auto" },
+            "inspect": false
+          },
+          "mappings": [],
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }] }
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 9, "w": 24, "x": 0, "y": 26 },
+      "id": 103,
+      "options": {
+        "cellHeight": "sm",
+        "footer": { "countRows": false, "fields": "", "reducer": ["sum"], "show": false },
+        "showHeader": true
+      },
+      "targets": [
+        {
+          "datasource": { "type": "tempo", "uid": "TEMPO_DATASOURCE_UID" },
+          "filters": [{ "id": "failed-dispatches-filter", "operator": "=", "scope": "span" }],
+          "limit": 100,
+          "query": "{name=\"send-metric-alert-channel-notification\" && span.notification.outcome=\"failed\"}",
+          "queryType": "traceql",
+          "refId": "A",
+          "spss": 20,
+          "tableType": "traces"
+        }
+      ],
+      "title": "Failed notification dispatches",
+      "type": "table"
     }
   ],
   "refresh": "1m",
@@ -278,7 +400,26 @@
   "schemaVersion": 38,
   "style": "dark",
   "tags": ["alerts", "metric-alerts", "workflows"],
-  "templating": { "list": [] },
+  "templating": {
+    "list": [
+      {
+        "current": { "selected": false, "text": "1s", "value": "1s" },
+        "label": "Slow eval threshold",
+        "name": "slowEvalThreshold",
+        "options": [{ "selected": true, "text": "1s", "value": "1s" }],
+        "query": "1s",
+        "type": "textbox"
+      },
+      {
+        "current": { "selected": false, "text": "500ms", "value": "500ms" },
+        "label": "Slow group threshold",
+        "name": "slowGroupThreshold",
+        "options": [{ "selected": true, "text": "500ms", "value": "500ms" }],
+        "query": "500ms",
+        "type": "textbox"
+      }
+    ]
+  },
   "time": { "from": "now-6h", "to": "now" },
   "timepicker": {},
   "timezone": "",

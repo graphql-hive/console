@@ -204,6 +204,7 @@ services:
         rm -rf /dst/* &&
         cp /src/*.json /dst/ &&
         sed -i 's/PROM_DATASOURCE_UID/local-prom/g' /dst/*.json &&
+        sed -i 's/TEMPO_DATASOURCE_UID/local-tempo/g' /dst/*.json &&
         sed -i 's/TABLE_SUFFIX/dev/g' /dst/*.json
       "
     volumes:
@@ -226,6 +227,25 @@ services:
     volumes:
       - ./configs/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
       - ./.hive-dev/prometheus/data:/prometheus
+    networks:
+      - 'stack'
+
+  tempo:
+    image: grafana/tempo:2.10.5
+    profiles:
+      - observability
+    mem_limit: 500m
+    command: ['-config.file=/etc/tempo.yaml']
+    # OTLP receivers (4317/4318) intentionally NOT published to host — the
+    # otel-collector reaches them via `tempo:4317` over the internal `stack`
+    # network. Only the query API on 3200 is published so Grafana (in the same
+    # network) can read traces. If we published 4317/4318 to host they'd
+    # collide with the otel-collector's own published ports.
+    ports:
+      - '3200:3200'
+    volumes:
+      - ./configs/tempo/tempo.yaml:/etc/tempo.yaml:ro
+      - ./.hive-dev/tempo/data:/var/tempo
     networks:
       - 'stack'
 

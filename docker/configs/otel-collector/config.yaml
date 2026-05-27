@@ -76,6 +76,26 @@ exporters:
       num_consumers: 1
       queue_size: 5000
       storage: file_storage
+  # Forwards traces to local Tempo for Grafana to query. Tempo only runs when
+  # the `observability` docker-compose profile is enabled; outside that, the
+  # endpoint is unreachable and the exporter retries-with-backoff. Short
+  # timeout/intervals keep that failure quiet (small queue, fast give-up) so
+  # logs don't fill with retry noise when devs run without the profile.
+  # ClickHouse export is independent and continues to succeed.
+  otlp/tempo:
+    endpoint: tempo:4317
+    tls:
+      insecure: true
+    timeout: 2s
+    retry_on_failure:
+      enabled: true
+      initial_interval: 1s
+      max_interval: 5s
+      max_elapsed_time: 30s
+    sending_queue:
+      enabled: true
+      num_consumers: 1
+      queue_size: 1000
 service:
   extensions:
     - hiveauth
@@ -107,4 +127,5 @@ service:
         - batch
       exporters:
         - clickhouse
+        - otlp/tempo
         # - debug
