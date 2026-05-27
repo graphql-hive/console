@@ -2,6 +2,8 @@ import type { Page } from '@playwright/test';
 import { expect, test } from '../fixtures';
 import { generateRandomSlug, getUserData } from '../helpers/data';
 
+test.describe.configure({ mode: 'serial' });
+
 async function expectOrganizationHome(page: Page, slug: string) {
   await page.waitForURL(new RegExp(`/${slug}(?:$|[/?#])`));
   await expect(page.getByText(slug).first()).toBeVisible();
@@ -140,8 +142,9 @@ test.describe('oidc', () => {
     await page.goto('/logout', { waitUntil: 'commit' });
     await auth.clearSession();
 
+    const oidcLoginStartedAt = Date.now();
     await oidc.startSlugLogin(slug);
-    await oidc.loginWithMockUser({ username: 'test-user-3', email });
+    await oidc.loginWithMockUser({ username: 'test-user-3', email, since: oidcLoginStartedAt });
     await expectOrganizationHome(page, slug);
 
     await page.goto('/logout', { waitUntil: 'commit' });

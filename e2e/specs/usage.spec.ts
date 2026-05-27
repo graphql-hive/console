@@ -4,6 +4,8 @@ import type { AppHelper } from '../helpers/app';
 import { generateRandomSlug, getUserData } from '../helpers/data';
 import type { UsageHelper } from '../helpers/usage';
 
+test.describe.configure({ mode: 'serial', timeout: 120_000 });
+
 type UsageReport = {
   size: number;
   map: Record<

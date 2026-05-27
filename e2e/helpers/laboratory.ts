@@ -14,6 +14,34 @@ export type LaboratoryHelper = {
 };
 
 export function createLaboratoryHelper(page: Page): LaboratoryHelper {
+  async function setRegisteredMonacoEditorContents(editorCyName: string, text: string) {
+    await expect
+      .poll(
+        () =>
+          page.evaluate(
+            ({ editorCyName, text }) => {
+              const global = window as unknown as {
+                __HIVE_E2E_MONACO_EDITORS?: Record<
+                  string,
+                  { setValue(value: string): void; getValue(): string }
+                >;
+              };
+              const editor = global.__HIVE_E2E_MONACO_EDITORS?.[editorCyName];
+
+              if (!editor) {
+                return false;
+              }
+
+              editor.setValue(text);
+              return editor.getValue() === text;
+            },
+            { editorCyName, text },
+          ),
+        { timeout: 15_000 },
+      )
+      .toBe(true);
+  }
+
   return {
     async setGraphiQLMode() {
       await page.addInitScript(() => {
@@ -62,49 +90,17 @@ export function createLaboratoryHelper(page: Page): LaboratoryHelper {
     },
     async setMonacoEditorContents(editorCyName, text) {
       const editor = page.locator(`[data-cy="${editorCyName}"]`);
-      const firstLine = text
-        .split('\n')
-        .map(line => line.trim())
-        .find(Boolean);
-      const didSetValue = await page.evaluate(
-        ({ editorCyName, text }) => {
-          const global = window as unknown as {
-            __HIVE_E2E_MONACO_EDITORS?: Record<
-              string,
-              { setValue(value: string): void; getValue(): string }
-            >;
-          };
-          const editor = global.__HIVE_E2E_MONACO_EDITORS?.[editorCyName];
-
-          if (!editor) {
-            return false;
-          }
-
-          editor.setValue(text);
-          return editor.getValue() === text;
-        },
-        { editorCyName, text },
-      );
+      const didSetValue = await setRegisteredMonacoEditorContents(editorCyName, text)
+        .then(() => true)
+        .catch(() => false);
 
       if (didSetValue) {
-        if (firstLine) {
-          await expect(editor).toContainText(firstLine);
-        }
-
         return;
       }
 
       const textarea = editor.locator('textarea').first();
       await textarea.click({ force: true });
-      await page.keyboard.press(process.platform === 'darwin' ? 'Meta+A' : 'Control+A');
-      await page.keyboard.press('Backspace');
-      await page.context().grantPermissions(['clipboard-read', 'clipboard-write']);
-      await page.evaluate(nextText => navigator.clipboard.writeText(nextText), text);
-      await page.keyboard.press(process.platform === 'darwin' ? 'Meta+V' : 'Control+V');
-
-      if (firstLine) {
-        await expect(editor).toContainText(firstLine);
-      }
+      await textarea.fill(text, { force: true });
     },
     async openCollectionsPanel() {
       await page

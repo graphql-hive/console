@@ -55,11 +55,7 @@ export function createOIDCHelper(page: Page, seed: SeedHelper, auth: AuthHelper)
         );
       await form
         .locator('input[name="authorization_endpoint"]')
-        .fill(
-          isLocal
-            ? 'http://localhost:7043/connect/authorize'
-            : 'http://oidc-server-mock:80/connect/authorize',
-        );
+        .fill('http://localhost:7043/connect/authorize');
       await form.locator('input[name="clientId"]').fill('implicit-mock-client');
       await form
         .locator('input[name="clientSecret"]')
@@ -98,7 +94,15 @@ export function createOIDCHelper(page: Page, seed: SeedHelper, auth: AuthHelper)
       ]);
 
       if (input.verifyEmail !== false && input.email) {
-        if (!(await verifyEmail.isVisible({ timeout: 5_000 }))) {
+        const isVerifyEmailPage = new URL(page.url()).pathname.startsWith('/auth/verify-email');
+        const shouldVerifyEmail =
+          isVerifyEmailPage ||
+          (await verifyEmail
+            .waitFor({ state: 'visible', timeout: 5_000 })
+            .then(() => true)
+            .catch(() => false));
+
+        if (!shouldVerifyEmail) {
           return;
         }
 
