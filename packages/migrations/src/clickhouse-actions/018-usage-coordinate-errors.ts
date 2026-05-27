@@ -10,6 +10,8 @@ export const action: Action = async exec => {
   /**
    * This is a source table that gets projected to various data points. Therefore this table's
    * TTL does not need to be dictated by the customer data lifespan.
+   *
+   * This table should not be queried directly given any of our known patterns.
    */
   await exec(`
     CREATE TABLE IF NOT EXISTS default.operation_errors
@@ -38,7 +40,86 @@ export const action: Action = async exec => {
     ;
   `);
 
-  /** Minutely metric table */
+  /**
+   * Minutely metric table
+   *
+   * ----------------
+   *
+   * The primary key is ordered such that it supports a "supergraph" view. Which is by coordinate.
+   *
+   * Used to render total errors for a coordinate (e.g. on explorer page). This also supports
+   * grouping by error code, which allows showing coordinate errors by code over time.
+   *
+   * (1) "What is the breakdown of errors for 'User.ssn' over time?"
+   *
+   * SELECT code, sum(total_errors) as total
+   * FROM default.coordinate_errors_minutely
+   * WHERE target = '<uuid>'
+   *   AND coordinate = 'User.ssn'
+   *   AND timestamp >= now() - INTERVAL 2 HOUR
+   * GROUP BY
+   *   coordinate, code
+   *
+   * (2) What are the top errors in the graph
+   * SELECT
+   *   code
+   *   , sum(total_errors) AS total
+   * FROM default.coordinate_errors_minutely
+   * WHERE target = '<uuid>'
+   *   AND timestamp >= now() - INTERVAL 2 HOUR
+   * GROUP BY code
+   * ORDER BY total DESC
+   * LIMIT 10;
+   *
+   * (3) "For a coordinate, what is the availability per operation?"
+   * (This requires fetching the total requested count also from a separate table and doing the division)
+   *
+   * SELECT
+   *   hex(hash) AS hash,  -- Converts the 16-byte binary hash to a readable 32-character hex string
+   *   code,
+   *   sum(total_errors) AS total
+   * FROM default.coordinate_errors_minutely
+   * WHERE target = '<uuid>'
+   *   AND coordinate = 'User.ssn'
+   *   AND timestamp >= now() - INTERVAL 2 HOUR
+   * GROUP BY
+   *   hash,
+   *   code
+   * ORDER BY
+   *   total DESC;
+   *
+   * ---------------
+   *
+   * The projection offers another view into this data, which is focused on the operation.
+   * It's critical to be able to collect all values by hash to give users insight into how
+   * that specific operation is performing and where it's failing. Such as:
+   *
+   * (1) "How many errors an operation (hash) returns over time"
+   *
+   * SELECT sum(total_errors) as total
+   * FROM default.coordinate_errors_minutely
+   * WHERE target= '<uuid>'
+   *   AND hash = unhex('<hash>')
+   *   AND timestamp >= now() - INTERVAL 2 HOUR
+   *
+   *
+   * (2) "top error coordinates for a hash"
+   *
+   * SELECT
+   *   , coordinate
+   *   , sum(total_errors) AS total
+   * FROM default.coordinate_errors_minutely
+   * WHERE target = '<uuid>'
+   *   AND hash = unhex('<optional hash>')
+   *   AND timestamp >= now() - INTERVAL 2 HOUR
+   * GROUP BY coordinate
+   * ORDER BY total DESC
+   * LIMIT 10;
+   *
+   * ------------------
+   *
+   * This could also technically be used to calculate the total number of errors by
+   */
   await exec(`
     CREATE TABLE IF NOT EXISTS default.coordinate_errors_minutely
     (
@@ -50,10 +131,8 @@ export const action: Action = async exec => {
       , code LowCardinality(String) CODEC(ZSTD(1))
       , total_errors UInt32 CODEC(T64, ZSTD(1))
 
-      -- To support querying by coordinate (for schema-wide metrics)
-      -- AND by hash (for operation specific metrics), create projection
-      -- that stores this same data in a different order.
-      -- And use explicit selects to make any future migrations easier
+      -- Create projection that stores this same data in a different order,
+      -- and use explicit selects to make any future migrations easier
       , PROJECTION hash_order (
           SELECT target, hash, coordinate, code, timestamp, expires_at, total_errors
           ORDER BY (target, hash, coordinate, code, timestamp, expires_at)

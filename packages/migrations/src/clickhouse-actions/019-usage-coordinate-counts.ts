@@ -20,6 +20,30 @@ export const action: Action = async exec => {
    * This replaces the counts for display purpose (explorer page) by coordinate. The existing counts
    * represent the number of operations calls that used the coordinate, rather than the number of times
    * the coordinate was executed/resolved.
+   *
+   * The main query for table is to get the total number of calls to a coordinate, which can be used in
+   * conjunction with the coordinate_errors_minutely data to calculate availability.
+   *
+   * (1) Total request count for a coordinate (used to calculate availability)
+   *
+   * SELECT sum(total) as total
+   * FROM default.coordinate_counts_minutely
+   * WHERE target = '<uuid>'
+   *   AND coordinate = 'User.ssn'
+   *   AND timestamp >= now() - INTERVAL 2 HOUR
+   * GROUP BY
+   *   coordinate
+   *
+   * (2) For an operation, how many times was a field requested?
+   *
+   * SELECT hash, coordinate, sum(total) as total
+   * FROM default.coordinate_counts_minutely
+   * WHERE target = '<uuid>'
+   *   AND hash = unhex('<hash>')
+   *   AND timestamp >= now() - INTERVAL 2 HOUR
+   * GROUP BY
+   *   coordinate
+   *
    */
   await exec(`
     CREATE TABLE IF NOT EXISTS default.coordinate_counts_minutely
@@ -39,6 +63,11 @@ export const action: Action = async exec => {
       , expires_at DateTime('UTC') CODEC(DoubleDelta, ZSTD(1))
       , coordinate String CODEC(ZSTD(1))
       , total UInt32 CODEC(T64, ZSTD(1))
+
+      , PROJECTION hash_order (
+          SELECT target, hash, coordinate, timestamp, expires_at, total
+          ORDER BY (target, hash, coordinate, timestamp, expires_at)
+      )
     )
     -- The engine is kept as a merge tree to 
     ENGINE = SummingMergeTree
@@ -87,6 +116,11 @@ export const action: Action = async exec => {
       , expires_at DateTime('UTC') CODEC(DoubleDelta, ZSTD(1))
       , coordinate String CODEC(ZSTD(1))
       , total UInt32 CODEC(T64, ZSTD(1))
+
+      , PROJECTION hash_order (
+          SELECT target, hash, coordinate, timestamp, expires_at, total
+          ORDER BY (target, hash, coordinate, timestamp, expires_at)
+      )
     )
     ENGINE = SummingMergeTree
     PARTITION BY toYYYYMMDD(timestamp)
@@ -130,6 +164,11 @@ export const action: Action = async exec => {
       , expires_at DateTime('UTC') CODEC(DoubleDelta, ZSTD(1))
       , coordinate String CODEC(ZSTD(1))
       , total UInt32 CODEC(T64, ZSTD(1))
+
+      , PROJECTION hash_order (
+          SELECT target, hash, coordinate, timestamp, expires_at, total
+          ORDER BY (target, hash, coordinate, timestamp, expires_at)
+      )
     )
     ENGINE = SummingMergeTree
     PARTITION BY toYYYYMM(timestamp)
