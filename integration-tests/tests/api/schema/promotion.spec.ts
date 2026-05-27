@@ -1,5 +1,6 @@
 import {
   createContract,
+  deleteSchema,
   disableContract,
   getSchemaVersionWithAllDetails,
   publishSchema,
@@ -913,3 +914,89 @@ test.concurrent(
     expect(publishedVersionDetails.contractVersions).toEqual(null);
   },
 );
+
+test.concurrent('promote delete schema version results in correct state', async ({ expect }) => {
+  const { createOrg } = await initSeed().createOwner();
+  const { createProject, createOrganizationAccessToken } = await createOrg();
+  const { target, fetchVersions } = await createProject(ProjectType.Federation);
+  const { privateAccessKey } = await createOrganizationAccessToken({
+    resources: {
+      mode: ResourceAssignmentModeType.All,
+    },
+    permissions: ['schemaVersion:publish', 'schemaVersion:promote', 'schemaVersion:deleteService'],
+  });
+
+  await publishSchema(
+    {
+      author: 'a',
+      commit: 'a',
+      sdl: /* GraphQL */ `
+        type Query {
+          a: String!
+        }
+      `,
+      service: 'a',
+      url: 'http://a',
+      target: {
+        byId: target.id,
+      },
+    },
+    privateAccessKey,
+  ).then(r => r.expectNoGraphQLErrors());
+  await publishSchema(
+    {
+      author: 'b',
+      commit: 'b',
+      sdl: /* GraphQL */ `
+        type Query {
+          b: String!
+        }
+      `,
+      service: 'b',
+      url: 'http://b',
+      target: {
+        byId: target.id,
+      },
+    },
+    privateAccessKey,
+  ).then(r => r.expectNoGraphQLErrors());
+  await deleteSchema(
+    {
+      serviceName: 'a',
+      target: {
+        byId: target.id,
+      },
+    },
+    privateAccessKey,
+  ).then(r => r.expectNoGraphQLErrors());
+
+  const promoteResult = await schemaVersionPromote(
+    {
+      source: {
+        fromTarget: {
+          byId: target.id,
+        },
+      },
+      target: {
+        toTarget: {
+          byId: target.id,
+        },
+      },
+    },
+    privateAccessKey,
+  ).then(r => r.expectNoGraphQLErrors());
+
+  expect(promoteResult.schemaVersionPromote).toMatchObject({
+    ok: {},
+    error: null,
+  });
+
+  const [promotedVersion, serviceDeletedVersion] = await fetchVersions(2);
+  assertNonNull(promotedVersion);
+  assertNonNull(serviceDeletedVersion);
+
+  expect(promotedVersion.previousDiffableSchemaVersion?.id).toEqual(serviceDeletedVersion.id);
+  expect(promotedVersion.valid).toEqual(true);
+  expect(serviceDeletedVersion.valid).toEqual(true);
+  expect(promotedVersion.supergraph).toEqual(serviceDeletedVersion.supergraph);
+});
