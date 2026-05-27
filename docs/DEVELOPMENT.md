@@ -23,8 +23,15 @@ Developing Hive locally requires you to have the following software installed lo
 ENVIRONMENT=local
 ```
 
-- Run `pnpm i` at the root to install all the dependencies and run the hooks
-- Run `pnpm local:setup` to run Docker compose dependencies, create databases and migrate database
+- Run `pnpm i` at the root to install all the dependencies and run the hooks. This also runs
+  `pnpm env:sync` automatically (part of `postinstall`), which copies each package's `.env.template`
+  to `.env` on first install, and on subsequent installs adds any newly-introduced keys to existing
+  `.env` files **without overwriting values you've customized**. So when pulling a branch that adds
+  env vars, `pnpm install` is usually all you need — no manual copying. Run `pnpm env:sync --force`
+  to force-regenerate from templates if you need to (overwrites local customizations).
+- Run `pnpm local:setup` to run Docker compose dependencies, create databases and migrate database.
+  This passes `--build` so any custom-built image (currently just `otel-collector`) is reconciled
+  with its source on every run. BuildKit caching makes it near-instant when nothing changed.
 
 Solving permission problems on this step:
 
@@ -98,8 +105,11 @@ stack first (either way works), then add the observability profile on top.
 If you already started Hive via `pnpm local:setup` or the VSCode `Start Hive` button:
 
 ```bash
-docker compose -f docker/docker-compose.dev.yml --profile observability up -d
+pnpm dev:observability
 ```
+
+(equivalent to `docker compose -f docker/docker-compose.dev.yml --profile observability up -d`). Tear
+it down again with `pnpm dev:observability:down`.
 
 If you're starting from scratch and want both at once:
 
@@ -112,16 +122,20 @@ Either command is idempotent and safe to re-run.
 - Grafana: <http://localhost:3030> (anonymous admin enabled, local only). All dashboards from
   `deployment/grafana-dashboards/` appear under the "Hive Monitoring (local)" folder.
 - Prometheus: <http://localhost:9090>, scrape targets at <http://localhost:9090/targets>.
-- Datasource UID locally: `local-prom` (clearly distinct from the prod UID `grafanacloud-prom` so
-  there's no ambiguity about which environment you're looking at).
+- Tempo: <http://localhost:3200>. Used by the Metric-Alerts dashboard's trace panels for the
+  workflows service's alert-evaluator and notification-dispatch spans. See
+  `scripts/seed-alerts-live/README.md` for a script that drives load through this path.
+- Datasource UIDs locally: `local-prom` and `local-tempo` (clearly distinct from the prod UIDs
+  `grafanacloud-prom` / `grafanacloud-traces` so there's no ambiguity about which environment
+  you're looking at).
 
 ### How dashboards get to local Grafana
 
 A small `grafana-dashboard-init` container copies the JSON files from
 `deployment/grafana-dashboards/` into `docker/.hive-dev/grafana/dashboards/` at startup, performing
 the same parameter substitution Pulumi does (`PROM_DATASOURCE_UID` becomes `local-prom`,
-`TABLE_SUFFIX` becomes `dev`). Grafana picks them up via file-based provisioning. The source JSONs
-stay the single source of truth.
+`TEMPO_DATASOURCE_UID` becomes `local-tempo`, `TABLE_SUFFIX` becomes `dev`). Grafana picks them up
+via file-based provisioning. The source JSONs stay the single source of truth.
 
 ### Scraping host-running services
 

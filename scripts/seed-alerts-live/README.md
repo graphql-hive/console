@@ -95,6 +95,12 @@ pnpm seed:alerts-live
 Stop with Ctrl+C. The org is left in place so you can inspect artifacts (state-log rows, incident
 history, etc.) after the script exits.
 
+To also watch the `Metric Alerts` Grafana dashboard fill in (live metrics — CH query latency / rate
+/ error ratio / task duration — plus the trace tables under "Traces (drill-downs)"), run
+`pnpm dev:observability` in another terminal and open <http://localhost:3030>. See
+[docs/DEVELOPMENT.md](../../docs/DEVELOPMENT.md#local-grafana--prometheus-optional) for details on
+the local observability stack.
+
 ## Expected timing
 
 | When                        | What you should see                                                                                                                                 |
