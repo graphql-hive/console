@@ -954,15 +954,18 @@ export class SchemaVersionStore {
         "schema_versions"
       WHERE
         "target_id" = ${target.id}
-        AND "action_id" = ANY(
-          SELECT
-            "id"
-          FROM
-            "schema_log"
-          WHERE
-            "schema_log"."project_id" = ${target.projectId}
-            AND "schema_log"."commit" = ${commit}
-          ORDER BY "schema_log"."created_at" DESC
+        AND (
+          "meta"->>'commit' = ${commit}
+          OR "action_id" = ANY(
+            SELECT
+              "id"
+            FROM
+              "schema_log"
+            WHERE
+              "schema_log"."project_id" = ${target.projectId}
+              AND "schema_log"."commit" = ${commit}
+            ORDER BY "schema_log"."created_at" DESC
+          )
         )
       ORDER BY
         "target_id"
