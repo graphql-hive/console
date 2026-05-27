@@ -67,7 +67,7 @@ const OrganizationAccessTokenModel = z
     userId: z.string().uuid().nullable(),
     createdAt: z.string(),
     title: z.string(),
-    description: z.string(),
+    description: z.string().nullable(),
     /** Note: permissions is only supposed to be nullable if "userId" is non-null */
     permissions: z.array(PermissionsModel).nullable(),
     assignedResources: ResourceAssignmentModel.nullable().transform(
