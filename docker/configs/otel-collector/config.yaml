@@ -82,7 +82,7 @@ exporters:
   # timeout/intervals keep that failure quiet (small queue, fast give-up) so
   # logs don't fill with retry noise when devs run without the profile.
   # ClickHouse export is independent and continues to succeed.
-  otlp/tempo:
+  otlp_grpc/tempo:
     endpoint: tempo:4317
     tls:
       insecure: true
@@ -127,5 +127,5 @@ service:
         - batch
       exporters:
         - clickhouse
-        - otlp/tempo
+        - otlp_grpc/tempo
         # - debug

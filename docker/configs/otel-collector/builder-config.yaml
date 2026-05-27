@@ -18,6 +18,9 @@ processors:
 
 exporters:
   - gomod: go.opentelemetry.io/collector/exporter/debugexporter v0.147.0
+  # Registers under the type name `otlp_grpc` (NOT `otlp`) in OTel v0.147+ —
+  # the upstream OTLP exporter was split into gRPC-only and HTTP-only variants
+  # at some point. In `config.yaml`, reference this as `otlp_grpc/tempo` etc.
   - gomod: go.opentelemetry.io/collector/exporter/otlpexporter v0.147.0
   - gomod:
       github.com/open-telemetry/opentelemetry-collector-contrib/exporter/clickhouseexporter v0.147.0
