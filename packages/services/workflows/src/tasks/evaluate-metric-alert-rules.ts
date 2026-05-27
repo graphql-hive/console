@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { psql } from '@hive/postgres';
+import { SpanKind, SpanStatusCode, trace } from '@hive/service-common';
 import { env } from '../environment.js';
 import { defineTask, implementTask } from '../kit.js';
 import {
@@ -14,6 +15,8 @@ import {
 // the duration of its transaction. Keep this comfortably below the PG pool size
 // (slonik default 10) so transactions never starve.
 const GROUP_CONCURRENCY = 5;
+
+const tracer = trace.getTracer('metric-alert-evaluator');
 
 export const EvaluateMetricAlertRulesTask = defineTask({
   name: 'evaluateMetricAlertRules',
@@ -63,98 +66,158 @@ export const task = implementTask(EvaluateMetricAlertRulesTask, async args => {
   }> {
     const representative = groupRules[0];
 
-    let windows;
-    try {
-      windows = await queryClickHouseWindows(
-        context.clickhouse!,
-        representative.targetId,
-        representative.timeWindowMinutes,
-        evaluationTime,
-      );
-    } catch (error) {
-      logger.error(
-        { error, targetId: representative.targetId },
-        'Failed to query ClickHouse for alert evaluation',
-      );
-      return { failed: true, evaluatedIds: [] };
-    }
+    // startActiveSpan makes this span the current OTel context for the
+    // duration of the callback, so the slonik PG interceptor and the
+    // fetch instrumentation parent their auto-spans under this one. That's
+    // what makes the flame chart show CH query + per-rule PG transactions
+    // nested under each group span.
+    return tracer.startActiveSpan(
+      'evaluate-group',
+      {
+        kind: SpanKind.INTERNAL,
+        attributes: {
+          'target.id': representative.targetId,
+          'rules.in_group': groupRules.length,
+          'time_window_minutes': representative.timeWindowMinutes,
+        },
+      },
+      async span => {
+        try {
+          let windows;
+          try {
+            windows = await queryClickHouseWindows(
+              context.clickhouse!,
+              representative.targetId,
+              representative.timeWindowMinutes,
+              evaluationTime,
+            );
+          } catch (error) {
+            logger.error(
+              { error, targetId: representative.targetId },
+              'Failed to query ClickHouse for alert evaluation',
+            );
+            span.setStatus({ code: SpanStatusCode.ERROR, message: 'clickhouse query failed' });
+            span.setAttribute('error.type', error instanceof Error ? error.name : 'unknown');
+            return { failed: true, evaluatedIds: [] };
+          }
 
-    // Treat a missing window as a zero-value window. Skipping evaluation
-    // would leave BELOW-threshold alerts (e.g., "fire when traffic drops
-    // below N") unable to fire when traffic drops to zero, and FIRING
-    // rules whose target stops getting traffic stuck in FIRING forever.
-    // With zeros, ABOVE thresholds correctly fall out of breach (so the
-    // rule recovers) and BELOW thresholds correctly stay in breach (zero
-    // is below any positive threshold).
-    const ZERO_WINDOW = {
-      total: '0',
-      total_ok: '0',
-      average: 0,
-      percentiles: [0, 0, 0, 0] as [number, number, number, number],
-    };
-    const current = windows.current ?? { window: 'current' as const, ...ZERO_WINDOW };
-    const previous = windows.previous ?? { window: 'previous' as const, ...ZERO_WINDOW };
+          // Treat a missing window as a zero-value window. Skipping evaluation
+          // would leave BELOW-threshold alerts (e.g., "fire when traffic drops
+          // below N") unable to fire when traffic drops to zero, and FIRING
+          // rules whose target stops getting traffic stuck in FIRING forever.
+          // With zeros, ABOVE thresholds correctly fall out of breach (so the
+          // rule recovers) and BELOW thresholds correctly stay in breach (zero
+          // is below any positive threshold).
+          const ZERO_WINDOW = {
+            total: '0',
+            total_ok: '0',
+            average: 0,
+            percentiles: [0, 0, 0, 0] as [number, number, number, number],
+          };
+          const current = windows.current ?? { window: 'current' as const, ...ZERO_WINDOW };
+          const previous = windows.previous ?? { window: 'previous' as const, ...ZERO_WINDOW };
 
-    if (!windows.current || !windows.previous) {
-      logger.debug(
-        { targetId: representative.targetId },
-        'No traffic in window(s), evaluating against zeros',
-      );
-    }
+          if (!windows.current || !windows.previous) {
+            logger.debug(
+              { targetId: representative.targetId },
+              'No traffic in window(s), evaluating against zeros',
+            );
+            span.setAttribute('windows.synthesized', true);
+          }
 
-    const evaluatedIds: string[] = [];
-    for (const rule of groupRules) {
-      await evaluateRule({
-        rule,
-        current,
-        previous,
-        pg: context.pg,
-        logger,
-        evaluationTime,
-      });
-      evaluatedIds.push(rule.id);
-    }
-    return { failed: false, evaluatedIds };
+          const evaluatedIds: string[] = [];
+          for (const rule of groupRules) {
+            await evaluateRule({
+              rule,
+              current,
+              previous,
+              pg: context.pg,
+              logger,
+              evaluationTime,
+            });
+            evaluatedIds.push(rule.id);
+          }
+          return { failed: false, evaluatedIds };
+        } finally {
+          span.end();
+        }
+      },
+    );
   }
 
-  // Bounded parallelism over groups: each group = 1 CH query + per-rule state
-  // writes. allSettled (not Promise.all) so that one unexpected throw inside
-  // evaluateRule doesn't strand the rest of the batch's successful work; the
-  // throwing group's rules get re-evaluated on the next cron tick (60s) rather
-  // than via graphile-worker retries, which would otherwise re-run work that's
-  // already idempotently committed. With GROUP_CONCURRENCY=5 we cut wall-clock
-  // per tick by up to 5x without exhausting the PG pool.
-  let groupsFailed = 0;
-  const evaluatedRuleIds: string[] = [];
-  for (let i = 0; i < groupList.length; i += GROUP_CONCURRENCY) {
-    const batch = groupList.slice(i, i + GROUP_CONCURRENCY);
-    const results = await Promise.allSettled(batch.map(processGroup));
-    for (const r of results) {
-      if (r.status === 'rejected') {
-        groupsFailed++;
-        logger.error({ error: r.reason }, 'Group evaluation threw unexpectedly');
-      } else if (r.value.failed) {
-        groupsFailed++;
-      } else {
-        evaluatedRuleIds.push(...r.value.evaluatedIds);
+  // Wrap the rest of the tick in a parent span so every evaluate-group, every
+  // per-rule PG transaction, and every outbound CH/HTTP call gets parented
+  // under this single root. The flame chart for the tick then visualizes the
+  // whole evaluator run end-to-end.
+  await tracer.startActiveSpan(
+    'evaluate-metric-alert-rules',
+    {
+      kind: SpanKind.INTERNAL,
+      attributes: {
+        'rules.count': rules.length,
+        'groups.count': groups.size,
+        'evaluation.time': evaluationTime.toISOString(),
+      },
+    },
+    async span => {
+      try {
+        // Bounded parallelism over groups: each group = 1 CH query + per-rule
+        // state writes. allSettled (not Promise.all) so that one unexpected
+        // throw inside evaluateRule doesn't strand the rest of the batch's
+        // successful work; the throwing group's rules get re-evaluated on the
+        // next cron tick (60s) rather than via graphile-worker retries, which
+        // would otherwise re-run work that's already idempotently committed.
+        // With GROUP_CONCURRENCY=5 we cut wall-clock per tick by up to 5x
+        // without exhausting the PG pool.
+        let groupsFailed = 0;
+        const evaluatedRuleIds: string[] = [];
+        for (let i = 0; i < groupList.length; i += GROUP_CONCURRENCY) {
+          const batch = groupList.slice(i, i + GROUP_CONCURRENCY);
+          const results = await Promise.allSettled(batch.map(processGroup));
+          for (const r of results) {
+            if (r.status === 'rejected') {
+              groupsFailed++;
+              logger.error({ error: r.reason }, 'Group evaluation threw unexpectedly');
+            } else if (r.value.failed) {
+              groupsFailed++;
+            } else {
+              evaluatedRuleIds.push(...r.value.evaluatedIds);
+            }
+          }
+        }
+
+        // One batched UPDATE for all successfully-evaluated rules'
+        // last_evaluated_at, replacing what used to be N per-rule UPDATEs
+        // inside evaluateRule. All rules evaluated in this tick share the
+        // same scheduled evaluationTime, which is more correct than NOW()
+        // (which would drift across the tick).
+        if (evaluatedRuleIds.length > 0) {
+          await context.pg.query(psql`
+            UPDATE "metric_alert_rules"
+            SET "last_evaluated_at" = ${evaluationTime.toISOString()}
+            WHERE "id" = ANY(${psql.array(evaluatedRuleIds, 'uuid')})
+          `);
+        }
+
+        span.setAttributes({
+          'groups.failed': groupsFailed,
+          'rules.evaluated': evaluatedRuleIds.length,
+        });
+        if (groupsFailed > 0) {
+          span.setStatus({ code: SpanStatusCode.ERROR, message: `${groupsFailed} group(s) failed` });
+        }
+
+        logger.info(
+          {
+            groupsAttempted: groups.size,
+            groupsFailed,
+            rulesEvaluated: evaluatedRuleIds.length,
+          },
+          'Metric alert evaluation complete',
+        );
+      } finally {
+        span.end();
       }
-    }
-  }
-
-  // One batched UPDATE for all successfully-evaluated rules' last_evaluated_at,
-  // replacing what used to be N per-rule UPDATEs inside evaluateRule. All rules
-  // evaluated in this tick share the same scheduled evaluationTime, which is
-  // more correct than NOW() (which would drift across the tick).
-  if (evaluatedRuleIds.length > 0) {
-    await context.pg.query(psql`
-      UPDATE "metric_alert_rules"
-      SET "last_evaluated_at" = ${evaluationTime.toISOString()}
-      WHERE "id" = ANY(${psql.array(evaluatedRuleIds, 'uuid')})
-    `);
-  }
-
-  logger.info(
-    { groupsAttempted: groups.size, groupsFailed, rulesEvaluated: evaluatedRuleIds.length },
-    'Metric alert evaluation complete',
+    },
   );
 });

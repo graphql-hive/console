@@ -3,12 +3,14 @@ import { Logger } from '@graphql-hive/logger';
 import { createPostgresDatabasePool } from '@hive/postgres';
 import { bridgeGraphileLogger, createHivePubSub } from '@hive/pubsub';
 import {
+  configureTracing,
   createServer,
   registerShutdown,
   reportReadiness,
   sentryInit,
   startHeartbeats,
   startMetrics,
+  type TracingInstance,
 } from '@hive/service-common';
 import { Context } from './context.js';
 import { env } from './environment.js';
@@ -18,6 +20,16 @@ import { schemaProvider } from './lib/schema/provider.js';
 import { bridgeFastifyLogger } from './logger.js';
 import { createRedisClient } from './redis';
 import { createTaskEventEmitter } from './task-events.js';
+
+let tracing: TracingInstance | undefined;
+if (env.tracing.enabled) {
+  tracing = configureTracing({
+    collectorEndpoint: env.tracing.collectorEndpoint,
+    serviceName: 'workflows',
+  });
+  tracing.instrumentNodeFetch();
+  tracing.setup();
+}
 
 if (env.sentry) {
   sentryInit({
@@ -62,6 +74,7 @@ const crontab = `
 
 const pg = await createPostgresDatabasePool({
   connectionParameters: env.postgres.connectionString,
+  additionalInterceptors: tracing ? [tracing.instrumentSlonik()] : [],
 });
 const logger = new Logger({ level: env.log.level });
 
@@ -173,6 +186,10 @@ registerShutdown({
   logger: bridgeFastifyLogger(logger),
   async onShutdown() {
     try {
+      if (tracing) {
+        logger.info('Flushing tracing spans.');
+        await tracing.shutdown();
+      }
       logger.info('Stopping task runner.');
       await runner.stop();
       logger.info('Task runner shutdown successful.');
