@@ -2,15 +2,9 @@ import { type MigrationExecutor } from '../pg-migrator';
 
 export default {
   name: '2026.05.27T00-00-00.access-tokens-description-nullability.ts',
-  /**
-   * Adds an expiration date to tokens. This expiration doesn't need to
-   * be an index since we're always looking up by ID and then can verify
-   * the timestamp via a filter. Since these lookups are always be done
-   * via provider methods and not via a raw table query, this is safe.
-   */
   run: ({ psql }) => psql`
     ALTER TABLE IF EXISTS organization_access_tokens
-    ADD COLUMN IF NOT EXISTS "expires_at" TIMESTAMP WITH TIME ZONE
+      ALTER COLUMN "description" DROP NOT NULL
     ;
   `,
 } satisfies MigrationExecutor;
