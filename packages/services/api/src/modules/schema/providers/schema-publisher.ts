@@ -2449,6 +2449,7 @@ export class SchemaPublisher {
           targetId: args.target.id,
           projectId: args.target.projectId,
         });
+        continue;
       }
 
       if (diff.type === 'added') {

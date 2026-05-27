@@ -389,8 +389,8 @@ export class SchemaVersionStore {
                 version.id,
                 log.id,
                 log.id !== newLog.id ? 'unchanged' : args.previousSchemaLogId ? 'changed' : 'added',
-                log.id !== newLog.id ? log.id : args.previousSchemaLogId,
-                log.id !== newLog.id
+                log.id === newLog.id ? args.previousSchemaLogId : log.id,
+                log.id === newLog.id
                   ? (JSON.stringify(args.serviceChanges?.map(toSerializableSchemaChange)) ?? null)
                   : null,
                 log.serviceName,
@@ -1154,7 +1154,7 @@ export class SchemaVersionStore {
           type: 'unchanged',
           subgraphName: node.service_name,
           schemaChanges: null,
-          previousActionId: null,
+          previousActionId: edge.schemaVersionId,
           actionId: node.id,
           schemaVersionId: edge.schemaVersionId,
           node,
@@ -1710,7 +1710,7 @@ const SchemaLogEdgeUnchangedModel = SchemaLogEdgeModelBaseModel.extend({
   // single schema version can stay the same
   subgraphName: z.string().nullable(),
   schemaChanges: z.null(),
-  previousActionId: z.null(),
+  previousActionId: z.string(),
 });
 
 // type SchemaLogEdgeUnchanged = z.TypeOf<typeof SchemaLogEdgeUnchangedModel>;
@@ -1724,7 +1724,7 @@ const SchemaLogEdgeChangedModel = SchemaLogEdgeModelBaseModel.extend({
 
 // type SchemaLogEdgeChanged = z.TypeOf<typeof SchemaLogEdgeChangedModel>;
 
-const SchemaLogEdgeModel = z.union([
+const SchemaLogEdgeModel = z.discriminatedUnion('type', [
   SchemaLogEdgeAddedModel,
   SchemaLogEdgeRemovedModel,
   SchemaLogEdgeUnchangedModel,
@@ -1733,7 +1733,13 @@ const SchemaLogEdgeModel = z.union([
 
 export type SchemaLogEdge = z.TypeOf<typeof SchemaLogEdgeModel>;
 
-const RawSchemaLogEdgeModel = z.union([SchemaLogEdgeLegacyModel, SchemaLogEdgeModel]);
+const RawSchemaLogEdgeModel = z.discriminatedUnion('type', [
+  SchemaLogEdgeLegacyModel,
+  SchemaLogEdgeAddedModel,
+  SchemaLogEdgeRemovedModel,
+  SchemaLogEdgeUnchangedModel,
+  SchemaLogEdgeChangedModel,
+]);
 
 type RawSchemaLogEdge = z.TypeOf<typeof RawSchemaLogEdgeModel>;
 
