@@ -10,7 +10,7 @@ export default {
    */
   run: ({ psql }) => psql`
     ALTER TABLE IF EXISTS organization_access_tokens
-    ADD COLUMN IF NOT EXISTS "expires_at" TIMESTAMP WITH TIME ZONE
+      ADD COLUMN IF NOT EXISTS "expires_at" TIMESTAMP WITH TIME ZONE
     ;
   `,
 } satisfies MigrationExecutor;

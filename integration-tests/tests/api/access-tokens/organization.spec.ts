@@ -99,6 +99,36 @@ test.concurrent('create: success', async () => {
   });
 });
 
+test.concurrent('create: success with empty description', async ({ expect }) => {
+  const { createOrg, ownerToken } = await initSeed().createOwner();
+  const org = await createOrg();
+
+  const result = await createOrganizationAccessToken(
+    {
+      organization: {
+        byId: org.organization.id,
+      },
+      title: 'an access token',
+      description: null,
+      resources: { mode: GraphQLSchema.ResourceAssignmentModeType.All },
+      permissions: [],
+    },
+    ownerToken,
+  ).then(e => e.expectNoGraphQLErrors());
+
+  expect(result.createOrganizationAccessToken.error).toEqual(null);
+  expect(result.createOrganizationAccessToken.ok).toEqual({
+    privateAccessKey: expect.any(String),
+    createdOrganizationAccessToken: {
+      id: expect.any(String),
+      title: 'an access token',
+      description: null,
+      permissions: [],
+      createdAt: expect.any(String),
+    },
+  });
+});
+
 test.concurrent('create: failure invalid title', async ({ expect }) => {
   const { createOrg, ownerToken } = await initSeed().createOwner();
   const org = await createOrg();
