@@ -1250,12 +1250,75 @@ export async function createStorage(
         )
         .then(ProjectModel.nullable().parse);
     },
-    async getProjects({ organizationId: organization }) {
+    async getProjects({ organizationId: organization, search, sort }) {
+      const sortConfig = resolveProjectsStorageSort(sort);
+      const searchTerm = search?.trim() ?? '';
+
       return pool
         .any(
-          psql`/* getProjects */ SELECT ${projectFields(psql``)} FROM projects WHERE org_id = ${organization} AND type != 'CUSTOM' ORDER BY created_at DESC`,
+          psql`/* getProjects */
+            SELECT
+              ${projectFields(psql``)}
+            FROM
+              projects
+            WHERE
+              org_id = ${organization}
+              AND type != 'CUSTOM'
+              ${searchTerm.length > 0 ? psql`AND clean_id ILIKE ${'%' + searchTerm + '%'}` : psql``}
+            ORDER BY
+              ${projectsOrderBy(sortConfig)}
+          `,
         )
         .then(z.array(ProjectModel).parse);
+    },
+    async getPaginatedProjects({ organizationId: organization, first, after, search, sort }) {
+      const sortConfig = resolveProjectsStorageSort(sort);
+      const searchTerm = search?.trim() ?? '';
+      const limit = first > 0 ? Math.min(first, 50) : 50;
+      const cursor = after ? decodeProjectsStorageCursor(after, sortConfig) : null;
+
+      const result = await pool.any(psql`/* getPaginatedProjects */
+        SELECT
+          ${projectFields(psql``)}
+        FROM
+          projects
+        WHERE
+          org_id = ${organization}
+          AND type != 'CUSTOM'
+          ${searchTerm.length > 0 ? psql`AND clean_id ILIKE ${'%' + searchTerm + '%'}` : psql``}
+          ${projectsCursorCondition(cursor, sortConfig)}
+        ORDER BY
+          ${projectsOrderBy(sortConfig)}
+        LIMIT ${limit + 1}
+      `);
+
+      let edges = result.map(row => {
+        const node = ProjectModel.parse(row);
+
+        return {
+          node,
+          get cursor() {
+            return encodeProjectsStorageCursor(node, sortConfig);
+          },
+        };
+      });
+
+      const hasNextPage = edges.length > limit;
+      edges = edges.slice(0, limit);
+
+      return {
+        edges,
+        pageInfo: {
+          hasNextPage,
+          hasPreviousPage: cursor !== null,
+          get endCursor() {
+            return edges[edges.length - 1]?.cursor ?? '';
+          },
+          get startCursor() {
+            return edges[0]?.cursor ?? '';
+          },
+        },
+      };
     },
     findProjectsByIds: batch<{ projectIds: Array<string> }, Map<string, Project>>(
       async function FindProjectByIdsBatchHandler(args) {
@@ -1580,19 +1643,23 @@ export async function createStorage(
         orgId: organization,
       };
     },
-    async getTargets({ organizationId, projectId }) {
+    async getTargets({ organizationId, projectId, search, sort }) {
+      const sortConfig = resolveProjectsStorageSort(sort);
+      const searchTerm = search?.trim() ?? '';
+
       const results = await pool
         .any(
           psql`/* getTargets */
-        SELECT
-          ${targetSQLFields}
-        FROM
-          targets
-        WHERE
-          project_id = ${projectId}
-        ORDER BY
-          created_at DESC
-      `,
+            SELECT
+              ${targetSQLFields}
+            FROM
+              targets
+            WHERE
+              project_id = ${projectId}
+              ${searchTerm.length > 0 ? psql`AND clean_id ILIKE ${'%' + searchTerm + '%'}` : psql``}
+            ORDER BY
+              ${projectsOrderBy(sortConfig)}
+          `,
         )
         .then(z.array(TargetModel).parse);
 
@@ -1600,6 +1667,57 @@ export async function createStorage(
         ...r,
         orgId: organizationId,
       }));
+    },
+    async getPaginatedTargets({ organizationId, projectId, first, after, search, sort }) {
+      const sortConfig = resolveProjectsStorageSort(sort);
+      const searchTerm = search?.trim() ?? '';
+      const limit = first > 0 ? Math.min(first, 50) : 50;
+      const cursor = after ? decodeProjectsStorageCursor(after, sortConfig) : null;
+
+      const result = await pool.any(psql`/* getPaginatedTargets */
+        SELECT
+          ${targetSQLFields}
+        FROM
+          targets
+        WHERE
+          project_id = ${projectId}
+          ${searchTerm.length > 0 ? psql`AND clean_id ILIKE ${'%' + searchTerm + '%'}` : psql``}
+          ${projectsCursorCondition(cursor, sortConfig)}
+        ORDER BY
+          ${projectsOrderBy(sortConfig)}
+        LIMIT ${limit + 1}
+      `);
+
+      let edges = result.map(row => {
+        const node = {
+          ...TargetModel.parse(row),
+          orgId: organizationId,
+        };
+
+        return {
+          node,
+          get cursor() {
+            return encodeProjectsStorageCursor(node, sortConfig);
+          },
+        };
+      });
+
+      const hasNextPage = edges.length > limit;
+      edges = edges.slice(0, limit);
+
+      return {
+        edges,
+        pageInfo: {
+          hasNextPage,
+          hasPreviousPage: cursor !== null,
+          get endCursor() {
+            return edges[edges.length - 1]?.cursor ?? '';
+          },
+          get startCursor() {
+            return edges[0]?.cursor ?? '';
+          },
+        },
+      };
     },
     findTargetsByIds: batchBy<
       {
@@ -3921,6 +4039,125 @@ export async function createStorage(
   return storage;
 }
 
+type ProjectsStorageSort = {
+  field: 'CREATED_AT' | 'NAME';
+  direction: 'ASC' | 'DESC';
+};
+
+function resolveProjectsStorageSort(
+  sort: ProjectsStorageSort | null | undefined,
+): ProjectsStorageSort {
+  return {
+    field: sort?.field ?? 'CREATED_AT',
+    direction: sort?.direction ?? 'DESC',
+  };
+}
+
+function projectsOrderBy(sort: ProjectsStorageSort) {
+  if (sort.field === 'NAME') {
+    return sort.direction === 'DESC' ? psql`clean_id DESC, id DESC` : psql`clean_id ASC, id ASC`;
+  }
+
+  return sort.direction === 'DESC' ? psql`created_at DESC, id DESC` : psql`created_at ASC, id ASC`;
+}
+
+function projectsCursorCondition(
+  cursor: { createdAt: string; id: string } | { slug: string; id: string } | null,
+  sort: ProjectsStorageSort,
+) {
+  if (!cursor) {
+    return psql``;
+  }
+
+  if (sort.field === 'NAME' && 'slug' in cursor) {
+    if (sort.direction === 'DESC') {
+      return psql`
+        AND (
+          (
+            clean_id = ${cursor.slug}
+            AND id < ${cursor.id}
+          )
+          OR clean_id < ${cursor.slug}
+        )
+      `;
+    }
+
+    return psql`
+      AND (
+        (
+          clean_id = ${cursor.slug}
+          AND id > ${cursor.id}
+        )
+        OR clean_id > ${cursor.slug}
+      )
+    `;
+  }
+
+  const createdAtCursor = cursor as { createdAt: string; id: string };
+
+  if (sort.direction === 'DESC') {
+    return psql`
+      AND (
+        (
+          created_at = ${createdAtCursor.createdAt}
+          AND id < ${createdAtCursor.id}
+        )
+        OR created_at < ${createdAtCursor.createdAt}
+      )
+    `;
+  }
+
+  return psql`
+    AND (
+      (
+        created_at = ${createdAtCursor.createdAt}
+        AND id > ${createdAtCursor.id}
+      )
+      OR created_at > ${createdAtCursor.createdAt}
+    )
+  `;
+}
+
+export function encodeProjectSlugIdBasedCursor(cursor: { slug: string; id: string }) {
+  return Buffer.from(`${cursor.slug}|${cursor.id}`).toString('base64');
+}
+
+export function decodeProjectSlugIdBasedCursor(cursor: string) {
+  const [slug, id] = Buffer.from(cursor, 'base64').toString('utf8').split('|');
+
+  if (
+    !slug ||
+    id === undefined ||
+    !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-5][0-9a-f]{3}-[089ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(id)
+  ) {
+    throw new Error('Invalid cursor');
+  }
+
+  return {
+    slug,
+    id,
+  };
+}
+
+function encodeProjectsStorageCursor(
+  node: { createdAt: string; id: string; slug: string },
+  sort: ProjectsStorageSort,
+) {
+  if (sort.field === 'NAME') {
+    return encodeProjectSlugIdBasedCursor({ slug: node.slug, id: node.id });
+  }
+
+  return encodeCreatedAtAndUUIDIdBasedCursor(node);
+}
+
+function decodeProjectsStorageCursor(cursor: string, sort: ProjectsStorageSort) {
+  if (sort.field === 'NAME') {
+    return decodeProjectSlugIdBasedCursor(cursor);
+  }
+
+  return decodeCreatedAtAndUUIDIdBasedCursor(cursor);
+}
+
 export function encodeCreatedAtAndUUIDIdBasedCursor(cursor: { createdAt: string; id: string }) {
   return Buffer.from(`${cursor.createdAt}|${cursor.id}`).toString('base64');
 }
@@ -4207,6 +4444,7 @@ const targetSQLFields = psql`
   "clean_id" as "slug",
   "name",
   "project_id" as "projectId",
+  to_json("created_at") as "createdAt",
   "graphql_endpoint_url" as "graphqlEndpointUrl",
   "fail_diff_on_dangerous_change" as "failDiffOnDangerousChange"
 `;
@@ -4277,6 +4515,7 @@ const TargetModel = z.object({
   slug: z.string(),
   name: z.string(),
   projectId: z.string(),
+  createdAt: z.string(),
   graphqlEndpointUrl: z.string().nullable(),
   failDiffOnDangerousChange: z.boolean(),
 });
@@ -4295,6 +4534,32 @@ export type PaginatedOrganizationInvitationConnection = Readonly<{
   edges: ReadonlyArray<{
     cursor: string;
     node: OrganizationInvitation;
+  }>;
+  pageInfo: Readonly<{
+    hasNextPage: boolean;
+    hasPreviousPage: boolean;
+    startCursor: string;
+    endCursor: string;
+  }>;
+}>;
+
+export type PaginatedProjectConnection = Readonly<{
+  edges: ReadonlyArray<{
+    cursor: string;
+    node: Project;
+  }>;
+  pageInfo: Readonly<{
+    hasNextPage: boolean;
+    hasPreviousPage: boolean;
+    startCursor: string;
+    endCursor: string;
+  }>;
+}>;
+
+export type PaginatedTargetConnection = Readonly<{
+  edges: ReadonlyArray<{
+    cursor: string;
+    node: Target;
   }>;
   pageInfo: Readonly<{
     hasNextPage: boolean;
