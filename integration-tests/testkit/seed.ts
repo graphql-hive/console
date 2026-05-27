@@ -166,7 +166,7 @@ export function initSeed() {
           WHERE "email" = ${email}
         `,
         )
-        .then(rows => rows.map(row => z.string().parse(row.user_id)));
+        .then(rows => rows.map(row => z.string().parse((row as { user_id: string }).user_id)));
       const internalUserIds = await pool
         .any(
           psql`
@@ -175,7 +175,7 @@ export function initSeed() {
           WHERE "email" = ${email}
         `,
         )
-        .then(rows => rows.map(row => z.string().parse(row.id)));
+        .then(rows => rows.map(row => z.string().parse((row as { id: string }).id)));
 
       if (internalUserIds.length) {
         await pool.query(psql`
