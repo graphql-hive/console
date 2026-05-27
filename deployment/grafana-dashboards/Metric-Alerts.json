@@ -277,7 +277,7 @@
       "gridPos": { "h": 1, "w": 24, "x": 0, "y": 16 },
       "id": 100,
       "panels": [],
-      "title": "Traces (drill-downs)",
+      "title": "Traces",
       "type": "row"
     },
     {
@@ -358,6 +358,115 @@
     },
     {
       "datasource": { "type": "tempo", "uid": "TEMPO_DATASOURCE_UID" },
+      "description": "Rate of notification dispatch outcomes (sent / deduped / skipped-deleted / failed) over time, derived from the `notification.outcome` attribute on `send-metric-alert-channel-notification` spans. Sustained 'failed' above the baseline means external destinations (Slack / Teams / customer webhooks) are returning errors.",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": {
+            "axisCenteredZero": false,
+            "axisPlacement": "auto",
+            "drawStyle": "line",
+            "fillOpacity": 30,
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "stacking": { "group": "A", "mode": "normal" },
+            "thresholdsStyle": { "mode": "off" }
+          },
+          "mappings": [],
+          "min": 0,
+          "noValue": "0",
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }] },
+          "unit": "reqps"
+        },
+        "overrides": [
+          {
+            "matcher": { "id": "byName", "options": "failed" },
+            "properties": [{ "id": "color", "value": { "fixedColor": "red", "mode": "fixed" } }]
+          },
+          {
+            "matcher": { "id": "byName", "options": "sent" },
+            "properties": [{ "id": "color", "value": { "fixedColor": "green", "mode": "fixed" } }]
+          }
+        ]
+      },
+      "gridPos": { "h": 9, "w": 12, "x": 0, "y": 26 },
+      "id": 104,
+      "options": {
+        "legend": {
+          "calcs": ["mean", "max"],
+          "displayMode": "table",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": { "mode": "multi", "sort": "desc" }
+      },
+      "targets": [
+        {
+          "datasource": { "type": "tempo", "uid": "TEMPO_DATASOURCE_UID" },
+          "query": "{name=\"send-metric-alert-channel-notification\"} | rate() by (span.notification.outcome)",
+          "queryType": "traceql",
+          "refId": "A"
+        }
+      ],
+      "title": "Notification delivery outcomes",
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "tempo", "uid": "TEMPO_DATASOURCE_UID" },
+      "description": "Trace-derived p50/p95/p99 of the full `evaluate-metric-alert-rules` tick duration. Includes the cron-task body plus all per-group ClickHouse queries and per-rule PG transactions. More complete than the Prometheus-derived 'evaluateMetricAlertRules task duration' panel above, which only measures the cron-task body.",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": {
+            "axisCenteredZero": false,
+            "axisPlacement": "auto",
+            "axisSoftMin": 0,
+            "drawStyle": "line",
+            "fillOpacity": 0,
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "thresholdsStyle": { "mode": "dashed" }
+          },
+          "mappings": [],
+          "min": 0,
+          "noValue": "0",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 1 },
+              { "color": "orange", "value": 3 },
+              { "color": "red", "value": 5 }
+            ]
+          },
+          "unit": "s"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 9, "w": 12, "x": 12, "y": 26 },
+      "id": 105,
+      "options": {
+        "legend": {
+          "calcs": ["max", "mean"],
+          "displayMode": "table",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": { "mode": "multi", "sort": "desc" }
+      },
+      "targets": [
+        {
+          "datasource": { "type": "tempo", "uid": "TEMPO_DATASOURCE_UID" },
+          "query": "{name=\"evaluate-metric-alert-rules\"} | quantile_over_time(duration, .5, .95, .99)",
+          "queryType": "traceql",
+          "refId": "A"
+        }
+      ],
+      "title": "Alert evaluation duration (trace-derived p50/p95/p99)",
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "tempo", "uid": "TEMPO_DATASOURCE_UID" },
       "description": "Notification-dispatch tasks that exited with outcome=failed. Click a row for channel.type, rule.id, error attributes, and the outbound HTTP POST span.",
       "fieldConfig": {
         "defaults": {
@@ -372,7 +481,7 @@
         },
         "overrides": []
       },
-      "gridPos": { "h": 9, "w": 24, "x": 0, "y": 26 },
+      "gridPos": { "h": 9, "w": 24, "x": 0, "y": 35 },
       "id": 103,
       "options": {
         "cellHeight": "sm",
