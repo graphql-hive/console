@@ -1,7 +1,8 @@
 // eslint-disable-next-line import/no-extraneous-dependencies -- required before loading seed helpers
 import 'reflect-metadata';
+import { spawn, type ChildProcessWithoutNullStreams } from 'node:child_process';
+import { createInterface, type Interface } from 'node:readline';
 import { test as base, expect, type Page } from '@playwright/test';
-import { initSeed } from '../integration-tests/testkit/seed';
 import { createAppHelper, type AppHelper } from './helpers/app';
 import { createAuthHelper, type AuthHelper } from './helpers/auth';
 import { createLaboratoryHelper, type LaboratoryHelper } from './helpers/laboratory';
@@ -27,46 +28,131 @@ type Fixtures = {
   usage: UsageHelper;
 };
 
-async function loadSeedHelper(): Promise<SeedHelper> {
-  const seed = initSeed();
+type SeedTask = keyof SeedHelper;
+
+type SeedResponse =
+  | {
+      id: number;
+      ok: true;
+      value: unknown;
+    }
+  | {
+      id: number;
+      ok: false;
+      error: string;
+    };
+
+class SeedBridge {
+  private nextId = 0;
+  private readonly process: ChildProcessWithoutNullStreams;
+  private readonly output: Interface;
+  private readonly pending = new Map<
+    number,
+    {
+      resolve(value: unknown): void;
+      reject(error: Error): void;
+    }
+  >();
+
+  constructor() {
+    this.process = spawn('pnpm', ['exec', 'tsx', 'e2e/seed-server.ts'], {
+      cwd: process.cwd(),
+      env: process.env,
+      stdio: ['pipe', 'pipe', 'pipe'],
+    });
+    this.output = createInterface({
+      input: this.process.stdout,
+      terminal: false,
+    });
+
+    let stderr = '';
+    this.process.stderr.on('data', chunk => {
+      stderr += String(chunk);
+    });
+    this.output.on('line', line => {
+      let response: SeedResponse;
+
+      try {
+        response = JSON.parse(line) as SeedResponse;
+      } catch {
+        return;
+      }
+
+      const pending = this.pending.get(response.id);
+
+      if (!pending) {
+        return;
+      }
+
+      this.pending.delete(response.id);
+
+      if (response.ok) {
+        pending.resolve(response.value);
+      } else {
+        pending.reject(new Error(response.error));
+      }
+    });
+    this.process.once('close', code => {
+      const error = new Error(
+        `Seed server exited with code ${code}${stderr ? `\n${stderr}` : ''}`,
+      );
+
+      for (const pending of this.pending.values()) {
+        pending.reject(error);
+      }
+
+      this.pending.clear();
+    });
+    process.once('exit', () => {
+      this.process.kill();
+    });
+  }
+
+  run<T>(task: SeedTask, input: unknown = null): Promise<T> {
+    const id = ++this.nextId;
+
+    return new Promise((resolve, reject) => {
+      this.pending.set(id, { resolve: resolve as (value: unknown) => void, reject });
+      this.process.stdin.write(`${JSON.stringify({ id, task, input })}\n`, error => {
+        if (error) {
+          this.pending.delete(id);
+          reject(error);
+        }
+      });
+    });
+  }
+}
+
+let seedBridge: SeedBridge | null = null;
+let seedHelperPromise: Promise<SeedHelper> | null = null;
+
+function loadSeedHelper(): Promise<SeedHelper> {
+  seedHelperPromise ??= createSeedHelper();
+  return seedHelperPromise;
+}
+
+async function createSeedHelper(): Promise<SeedHelper> {
+  seedBridge ??= new SeedBridge();
+  const bridge = seedBridge;
 
   return {
     async seedOrg() {
-      const owner = await seed.createOwner();
-      const org = await owner.createOrg();
-
-      return {
-        slug: org.organization.slug,
-        accessToken: owner.ownerToken,
-        refreshToken: owner.ownerRefreshToken,
-        email: owner.ownerEmail,
-      };
+      return bridge.run('seedOrg');
     },
     async seedTarget() {
-      const owner = await seed.createOwner();
-      const org = await owner.createOrg();
-      const project = await org.createProject();
-
-      return {
-        slug: `${org.organization.slug}/${project.project.slug}/${project.target.slug}`,
-        accessToken: owner.ownerToken,
-        refreshToken: owner.ownerRefreshToken,
-        email: owner.ownerEmail,
-      };
+      return bridge.run('seedTarget');
     },
     async getEmailConfirmationLink(input) {
-      const url = await seed.pollForEmailVerificationLink(input);
-
-      return url.pathname + url.search;
+      return bridge.run('getEmailConfirmationLink', input);
     },
     async purgeOIDCDomains() {
-      await seed.purgeOIDCDomains();
+      await bridge.run('purgeOIDCDomains');
     },
     async purgeUserByEmail(email) {
-      await seed.purgeUserByEmail(email);
+      await bridge.run('purgeUserByEmail', email);
     },
     async forgeOIDCDNSChallenge(orgSlug) {
-      await seed.forgeOIDCDNSChallenge(orgSlug);
+      await bridge.run('forgeOIDCDNSChallenge', orgSlug);
     },
   };
 }

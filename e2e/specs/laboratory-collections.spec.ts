@@ -196,21 +196,9 @@ test.describe('Laboratory > Collections', () => {
       collectionName: 'collection-2',
     });
 
-    await openOperationMenu(page, 'operation-1');
-    await page.evaluate(() => {
-      let copied = '';
-      Object.defineProperty(window.navigator, 'clipboard', {
-        configurable: true,
-        value: {
-          writeText: async (value: string) => {
-            copied = value;
-          },
-          readText: async () => copied,
-        },
-      });
-    });
-    await page.locator('[data-cy="copy-operation-link"]').click();
-    const copiedUrl = await page.evaluate(() => window.navigator.clipboard.readText());
+    const copiedUrl = await operationButton(page, 'operation-1').evaluate(
+      operation => (operation as HTMLAnchorElement).href,
+    );
 
     await page.goto(copiedUrl);
     await laboratory.assertActiveTab('operation-1');

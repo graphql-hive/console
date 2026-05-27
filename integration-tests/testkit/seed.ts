@@ -202,15 +202,27 @@ export function initSeed() {
     async forgeOIDCDNSChallenge(orgSlug: string) {
       const pool = await getPool();
 
-      const domainChallengeId = await pool
-        .oneFirst(
-          psql`
-      SELECT "oidc_integration_domains"."id"
-      FROM "oidc_integration_domains" INNER JOIN "organizations" ON "oidc_integration_domains"."organization_id" = "organizations"."id"
-      WHERE "organizations"."clean_id" = ${orgSlug}
-      `,
-        )
-        .then(z.string().parse);
+      let domainChallengeId: string | null = null;
+
+      await pollFor(async () => {
+        const value = await pool.maybeOneFirst(psql`
+          SELECT "oidc_integration_domains"."id"
+          FROM "oidc_integration_domains" INNER JOIN "organizations" ON "oidc_integration_domains"."organization_id" = "organizations"."id"
+          WHERE "organizations"."clean_id" = ${orgSlug}
+        `);
+
+        if (!value) {
+          return false;
+        }
+
+        domainChallengeId = z.string().parse(value);
+        return true;
+      });
+
+      if (!domainChallengeId) {
+        throw new Error(`Failed to resolve OIDC domain challenge for organization "${orgSlug}"`);
+      }
+
       const key = `hive:oidcDomainChallenge:${domainChallengeId}`;
 
       const challenge = {

@@ -235,9 +235,9 @@ test.describe('oidc domain verification', () => {
     await page.locator('[data-button-next-complete]').click();
     await expect(page.getByText('successfully verified')).toBeVisible();
     await page
-      .getByRole('dialog', { name: /Verify Domain Ownership/ })
+      .getByRole('dialog', { name: /Complete buzzcheck\.dev/ })
       .getByRole('button', { name: 'Close' })
-      .last()
+      .first()
       .click();
 
     await page.goto('/logout', { waitUntil: 'commit' });

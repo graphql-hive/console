@@ -61,6 +61,11 @@ export function createLaboratoryHelper(page: Page): LaboratoryHelper {
       }
     },
     async setMonacoEditorContents(editorCyName, text) {
+      const editor = page.locator(`[data-cy="${editorCyName}"]`);
+      const firstLine = text
+        .split('\n')
+        .map(line => line.trim())
+        .find(Boolean);
       const didSetValue = await page.evaluate(
         ({ editorCyName, text }) => {
           const global = window as unknown as {
@@ -82,10 +87,13 @@ export function createLaboratoryHelper(page: Page): LaboratoryHelper {
       );
 
       if (didSetValue) {
+        if (firstLine) {
+          await expect(editor).toContainText(firstLine);
+        }
+
         return;
       }
 
-      const editor = page.locator(`[data-cy="${editorCyName}"]`);
       const textarea = editor.locator('textarea').first();
       await textarea.click({ force: true });
       await page.keyboard.press(process.platform === 'darwin' ? 'Meta+A' : 'Control+A');
@@ -93,11 +101,6 @@ export function createLaboratoryHelper(page: Page): LaboratoryHelper {
       await page.context().grantPermissions(['clipboard-read', 'clipboard-write']);
       await page.evaluate(nextText => navigator.clipboard.writeText(nextText), text);
       await page.keyboard.press(process.platform === 'darwin' ? 'Meta+V' : 'Control+V');
-
-      const firstLine = text
-        .split('\n')
-        .map(line => line.trim())
-        .find(Boolean);
 
       if (firstLine) {
         await expect(editor).toContainText(firstLine);
