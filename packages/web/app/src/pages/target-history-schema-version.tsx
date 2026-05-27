@@ -31,7 +31,6 @@ import { useQuery } from 'urql';
 import { NotFoundContent } from '@/components/common/not-found-content';
 import {
   ChangesBlock,
-  ChangesBlock_SchemaChangeFragment,
   CompositionErrorsSection_SchemaErrorConnection,
 } from '@/components/target/history/errors-and-changes';
 import { BadgeRounded } from '@/components/ui/badge';
@@ -154,7 +153,7 @@ const SchemaVersionView_SchemaVersionFragment = graphql(`
     supergraphChanges {
       edges {
         node {
-          ...ChangesBlock_SchemaChangeFragment
+          ...FilterableSchemaChangeBlock_ChangesFragment
         }
       }
     }
@@ -162,7 +161,7 @@ const SchemaVersionView_SchemaVersionFragment = graphql(`
     sdlChanges: schemaChanges {
       edges {
         node {
-          ...ChangesBlock_SchemaChangeFragment
+          ...FilterableSchemaChangeBlock_ChangesFragment
           severityLevel
         }
       }
@@ -190,7 +189,7 @@ const SchemaVersionView_SchemaVersionFragment = graphql(`
           sdlChanges: schemaChanges {
             edges {
               node {
-                ...ChangesBlock_SchemaChangeFragment
+                ...FilterableSchemaChangeBlock_ChangesFragment
                 severityLevel
               }
             }
@@ -480,7 +479,7 @@ function SchemaVersionView(props: SchemaVersionViewProps) {
 function GraphQLSchemaView(props: {
   title: string;
   subtitle: string;
-  changes: Array<FragmentType<typeof ChangesBlock_SchemaChangeFragment>> | null;
+  changes: Array<FragmentType<typeof FilterableSchemaChangeBlock_ChangesFragment>> | null;
   currentSdl: string;
   previousSdl: string | null;
   fromName: string | null;
@@ -515,25 +514,11 @@ function GraphQLSchemaView(props: {
         {props.previousSdl && <ViewModeToggle active={viewMode} onChange={setViewMode} />}
       </div>
       {viewMode === 'changes' && (
-        <GenericGraphCard title={titleNode}>
-          <div className="px-5">
-            {props.changes?.length ? (
-              <ChangesBlock
-                changes={props.changes}
-                projectSlug=""
-                organizationSlug=""
-                schemaCheckId=""
-                targetSlug=""
-              />
-            ) : props.previousSdl ? (
-              <div className="py-3">
-                <NoGraphChanges />
-              </div>
-            ) : (
-              <>This is the initial version! No changes available.</>
-            )}
-          </div>
-        </GenericGraphCard>
+        <FilterableSchemaChangeBlock
+          title={titleNode}
+          changes={props.changes}
+          hasPreviousVersion={props.previousSdl !== null}
+        />
       )}
       {viewMode === 'diff' && (
         <GenericGraphCard title={titleNode}>
@@ -552,6 +537,59 @@ function GraphQLSchemaView(props: {
         </GenericGraphCard>
       )}
     </>
+  );
+}
+
+const FilterableSchemaChangeBlock_ChangesFragment = graphql(`
+  fragment FilterableSchemaChangeBlock_ChangesFragment on SchemaChange {
+    severityLevel
+    ...ChangesBlock_SchemaChangeFragment
+  }
+`);
+
+function FilterableSchemaChangeBlock(props: {
+  title: ReactNode;
+  changes: Array<FragmentType<typeof FilterableSchemaChangeBlock_ChangesFragment>> | null;
+  hasPreviousVersion: boolean;
+}) {
+  const [selectedChangeType, setSelectedChangeType] = useState(null as SeverityLevelType | null);
+  const changes = useFragment(FilterableSchemaChangeBlock_ChangesFragment, props.changes);
+
+  const filteredChanges = useMemo(() => {
+    if (selectedChangeType === null) {
+      return changes;
+    }
+
+    return changes?.filter(change => change.severityLevel === selectedChangeType);
+  }, [changes, selectedChangeType]);
+
+  return (
+    <div className="space-y-3">
+      <ChangeTypeToggle selectedChangeType={selectedChangeType} onChange={setSelectedChangeType} />
+      <GenericGraphCard title={props.title}>
+        <div className="px-5">
+          {filteredChanges?.length ? (
+            <div className="mb-8 pt-2">
+              <ChangesBlock
+                changes={filteredChanges}
+                projectSlug=""
+                organizationSlug=""
+                schemaCheckId=""
+                targetSlug=""
+              />
+            </div>
+          ) : selectedChangeType !== null ? (
+            <div className="py-3 text-xs">No changes of this change type.</div>
+          ) : props.hasPreviousVersion ? (
+            <div className="py-3">
+              <NoGraphChanges />
+            </div>
+          ) : (
+            <div className="py-3 text-xs">This is the initial version! No changes available. </div>
+          )}
+        </div>
+      </GenericGraphCard>
+    </div>
   );
 }
 
@@ -578,6 +616,7 @@ const SchemaVersionSubgraphView__SubgraphDiffFragment = graphql(`
       changes {
         edges {
           node {
+            severityLevel
             ...ChangesBlock_SchemaChangeFragment
           }
         }
@@ -607,8 +646,8 @@ function SubgraphCard(props: {
 }) {
   const [isCollapsed, setIsCollapsed] = useState(props.isInitiallyCollapsed ?? false);
   return (
-    <div className="bg-neutral-2 dark:bg-neutral-3 divide-y overflow-hidden rounded-xl border">
-      <SubgraphRow subgraphDiff={props.diff}>
+    <div className="divide-y overflow-hidden rounded-xl border">
+      <SubgraphRow subgraphDiff={props.diff} className="bg-neutral-2 dark:bg-neutral-3">
         <Button
           size="icon-xs"
           variant="ghost"
@@ -634,62 +673,6 @@ function GraphVersionSubgraphView(props: {
   const [viewMode, setViewMode] = useState<'changes' | 'diff' | 'raw'>('changes');
 
   if (viewMode === 'changes') {
-    const nodes = subgraphDiffs.map(diff => {
-      if (diff.__typename === 'SubgraphDiffChanged') {
-        return (
-          <SubgraphCard
-            key={diff.__typename + diff.subgraphVersion.id}
-            diff={diff}
-            renderChildren={() => (
-              <div className="px-5">
-                {diff.changes ? (
-                  <ChangesBlock
-                    changes={diff.changes?.edges.map(edge => edge.node) ?? []}
-                    projectSlug=""
-                    organizationSlug=""
-                    schemaCheckId=""
-                    targetSlug=""
-                  />
-                ) : (
-                  <div className="py-3">No changes available.</div>
-                )}
-              </div>
-            )}
-          />
-        );
-      }
-
-      if (diff.__typename === 'SubgraphDiffRemoved') {
-        return (
-          <SubgraphCard
-            key={diff.__typename + diff.removedSubgraphVersion.id}
-            diff={diff}
-            renderChildren={() => (
-              <div className="bg-neutral-1 dark:bg-neutral-2 px-5 py-5 text-xs">
-                Subgraph removed in this version. Its types are no longer part of the supergraph.
-              </div>
-            )}
-          />
-        );
-      }
-
-      if (diff.__typename === 'SubgraphDiffAdded') {
-        return (
-          <SubgraphCard
-            key={diff.__typename + diff.subgraphVersion.id}
-            diff={diff}
-            renderChildren={() => (
-              <div className="bg-neutral-1 dark:bg-neutral-2 px-5 py-5 text-xs">
-                New subgraph introduced in this version. No prior schema to diff against.
-              </div>
-            )}
-          />
-        );
-      }
-
-      return null;
-    });
-
     return (
       <>
         <div className="mt-2 flex flex-wrap items-end justify-between gap-4">
@@ -699,9 +682,7 @@ function GraphVersionSubgraphView(props: {
           </div>
           <ViewModeToggle active={viewMode} onChange={setViewMode} />
         </div>
-        <div className="space-y-4">
-          {nodes.some(node => node !== null) ? nodes : <>No Changes</>}
-        </div>
+        <GraphVersionSubgraphChangesView subgraphDiffs={props.subgraphDiffs} />
       </>
     );
   }
@@ -819,6 +800,91 @@ function GraphVersionSubgraphView(props: {
   }
 
   return null;
+}
+
+function GraphVersionSubgraphChangesView(props: {
+  subgraphDiffs: Array<FragmentType<typeof SchemaVersionSubgraphView__SubgraphDiffFragment>>;
+}) {
+  const [selectedChangeType, setSelectedChangeType] = useState(null as SeverityLevelType | null);
+  const subgraphDiffs = useFragment(
+    SchemaVersionSubgraphView__SubgraphDiffFragment,
+    props.subgraphDiffs,
+  );
+
+  const nodes = useMemo(
+    () =>
+      subgraphDiffs.map(diff => {
+        if (diff.__typename === 'SubgraphDiffChanged') {
+          const edges =
+            selectedChangeType === null
+              ? diff.changes?.edges
+              : diff.changes?.edges.filter(edge => edge.node.severityLevel === selectedChangeType);
+          return (
+            <SubgraphCard
+              key={diff.__typename + diff.subgraphVersion.id}
+              diff={diff}
+              renderChildren={() => (
+                <div className="px-5">
+                  {edges?.length ? (
+                    <div className="mb-8 pt-2">
+                      <ChangesBlock
+                        changes={edges?.map(edge => edge.node) ?? []}
+                        projectSlug=""
+                        organizationSlug=""
+                        schemaCheckId=""
+                        targetSlug=""
+                      />
+                    </div>
+                  ) : selectedChangeType === null ? (
+                    <div className="py-5 text-xs">No changes available.</div>
+                  ) : (
+                    <div className="py-5 text-xs">No Changes available for this type.</div>
+                  )}
+                </div>
+              )}
+            />
+          );
+        }
+
+        if (diff.__typename === 'SubgraphDiffRemoved') {
+          return (
+            <SubgraphCard
+              key={diff.__typename + diff.removedSubgraphVersion.id}
+              diff={diff}
+              renderChildren={() => (
+                <div className="px-5 py-5 text-xs">
+                  Subgraph removed in this version. Its types are no longer part of the supergraph.
+                </div>
+              )}
+            />
+          );
+        }
+
+        if (diff.__typename === 'SubgraphDiffAdded') {
+          return (
+            <SubgraphCard
+              key={diff.__typename + diff.subgraphVersion.id}
+              diff={diff}
+              renderChildren={() => (
+                <div className="bg-neutral-1 dark:bg-neutral-2 px-5 py-5 text-xs">
+                  New subgraph introduced in this version. No prior schema to diff against.
+                </div>
+              )}
+            />
+          );
+        }
+
+        return null;
+      }),
+    [selectedChangeType, subgraphDiffs],
+  );
+
+  return (
+    <div className="space-y-3">
+      <ChangeTypeToggle selectedChangeType={selectedChangeType} onChange={setSelectedChangeType} />
+      <div className="space-y-4">{nodes.some(node => node !== null) ? nodes : <>No Changes</>}</div>
+    </div>
+  );
 }
 
 function SDLDiffView(props: { before: string; after: string }) {
@@ -1085,19 +1151,16 @@ function SchemaVersionHeader(props: {
 
 type SchemaViewMode = 'changes' | 'diff' | 'raw';
 
-const modes: { id: SchemaViewMode; label: string; Icon: typeof ListTree }[] = [
+const schemaViewModes: { id: SchemaViewMode; label: string; Icon: typeof ListTree }[] = [
   { id: 'changes', label: 'Changes', Icon: ListTree },
   { id: 'diff', label: 'Diff', Icon: GitCompare },
   { id: 'raw', label: 'View', Icon: FileIcon },
 ];
 
-export const ViewModeToggle = (props: {
-  active: SchemaViewMode;
-  onChange: (m: SchemaViewMode) => void;
-}) => {
+function ViewModeToggle(props: { active: SchemaViewMode; onChange: (m: SchemaViewMode) => void }) {
   return (
     <div className="inline-flex items-center gap-1 rounded-lg border p-1">
-      {modes.map(m => {
+      {schemaViewModes.map(m => {
         const isActive = m.id === props.active;
         const Icon = m.Icon;
         return (
@@ -1116,7 +1179,49 @@ export const ViewModeToggle = (props: {
       })}
     </div>
   );
-};
+}
+
+const breakingChangeTypeModes: { id: SeverityLevelType; label: string; dotColor: string }[] = [
+  { id: SeverityLevelType.Breaking, label: 'Breaking', dotColor: 'bg-red-500' },
+  { id: SeverityLevelType.Dangerous, label: 'Dangerous', dotColor: 'bg-orange-500' },
+  { id: SeverityLevelType.Safe, label: 'Safe', dotColor: 'bg-yellow-500' },
+];
+
+function ChangeTypeToggle(props: {
+  selectedChangeType: SeverityLevelType | null;
+  onChange: (selectedChangeType: SeverityLevelType | null) => void;
+}) {
+  return (
+    <div className="inline-flex items-center gap-1 rounded-lg border p-1">
+      <button
+        onClick={() => props.onChange(null)}
+        className={cn(
+          'hover:bg-neutral-5/50 inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-[12.5px] transition-colors',
+          props.selectedChangeType === null ? 'bg-neutral-5/40' : 'hover:',
+        )}
+      >
+        <span className={cn('h-1.5 w-1.5 rounded-full', 'bg-neutral-9')} />
+        All
+      </button>
+      {breakingChangeTypeModes.map(m => {
+        const isActive = m.id === props.selectedChangeType;
+        return (
+          <button
+            key={m.id}
+            onClick={() => props.onChange(m.id)}
+            className={cn(
+              'hover:bg-neutral-5/50 inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-[12.5px] transition-colors',
+              isActive ? 'bg-neutral-5/40' : 'hover:',
+            )}
+          >
+            <span className={cn('h-1.5 w-1.5 rounded-full', m.dotColor)} />
+            {m.label}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
 
 const CompositionErrors = (props: {
   compositionErrors: FragmentType<typeof CompositionErrorsSection_SchemaErrorConnection>;
@@ -1364,7 +1469,7 @@ export const SchemaVersionSummary = (props: {
                 <TooltipProvider>
                   <Tooltip>
                     <TooltipTrigger>
-                      <span className="flex items-center gap-0.5 text-xs text-red-500/80 lg:text-sm">
+                      <span className="ml-2 flex items-center gap-0.5 text-xs text-red-500/80 lg:text-sm">
                         <ShieldAlertIcon className="inline size-2 md:size-3" />
                         {publicChangeStats.notSafeChanges} not safe
                       </span>
@@ -1395,8 +1500,8 @@ export const SchemaVersionSummary = (props: {
         <Stat label="Subgraphs updated" value={subgraphStats.updated} tone="info" />
       </div>
 
-      <div className="bg-neutral-2 dark:bg-neutral-3 overflow-hidden rounded-xl border">
-        <div className="flex items-center justify-between border-b px-5 py-3">
+      <div className="overflow-hidden rounded-xl border">
+        <div className="bg-neutral-2 dark:bg-neutral-3 flex items-center justify-between border-b px-5 py-3">
           <div className="flex items-center gap-2 text-[11px] font-medium uppercase tracking-[0.14em]">
             <span>Subgraph Overview</span>
           </div>
@@ -1457,7 +1562,7 @@ const kindMeta = {
   SubgraphDiffRemoved: {
     label: 'Removed',
     Icon: Minus,
-    text: 'text-red-900',
+    text: 'text-red-600',
     bg: 'bg-red-400',
     ring: 'ring-red-500/25',
     dot: 'bg-red-600',
@@ -1524,6 +1629,7 @@ const SubgraphRow_SubgraphDiffFragment = graphql(`
 function SubgraphRow(props: {
   subgraphDiff: FragmentType<typeof SubgraphRow_SubgraphDiffFragment>;
   children?: ReactNode;
+  className?: string;
 }) {
   const subgraphDiff = useFragment(SubgraphRow_SubgraphDiffFragment, props.subgraphDiff);
 
@@ -1531,7 +1637,7 @@ function SubgraphRow(props: {
   const Icon = meta.Icon;
 
   return (
-    <div className="flex items-center gap-4 px-5 py-3.5">
+    <div className={cn('flex items-center gap-4 px-5 py-3.5', props.className)}>
       <span
         className={cn(
           'flex h-7 w-7 shrink-0 items-center justify-center rounded-md ring-1',
@@ -1621,8 +1727,8 @@ function SubgraphLink(props: { url: string }) {
 
 function GenericGraphCard(props: { title: ReactNode; children?: ReactNode }) {
   return (
-    <div className="bg-neutral-2 dark:bg-neutral-3 divide-y overflow-hidden rounded-xl border">
-      <div className="flex items-center gap-4 px-5 py-3.5">
+    <div className="divide-y overflow-hidden rounded-xl border">
+      <div className="bg-neutral-2 dark:bg-neutral-3 flex items-center gap-4 px-5 py-3.5">
         <span
           className={cn(
             'flex h-7 w-7 shrink-0 items-center justify-center rounded-md ring-1',
