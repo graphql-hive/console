@@ -31,7 +31,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "grafanacloud-prom"
+        "uid": "PROM_DATASOURCE_UID"
       },
       "fieldConfig": {
         "defaults": {
@@ -123,7 +123,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "grafanacloud-prom"
+            "uid": "PROM_DATASOURCE_UID"
           },
           "editorMode": "builder",
           "expr": "histogram_quantile(0.99, avg by(le, query) (rate(api_clickhouse_elapsed_duration_bucket[$__rate_interval])))",
