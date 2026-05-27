@@ -14,6 +14,7 @@ import { parseDateRangeInput } from '../../../shared/helpers';
 import { AuditLogRecorder } from '../../audit-logs/providers/audit-log-recorder';
 import { Session } from '../../auth/lib/authz';
 import { OperationsManager } from '../../operations/providers/operations-manager';
+import { SchemaVersionStore } from '../../schema/providers/schema-version-store';
 import { IdTranslator } from '../../shared/providers/id-translator';
 import { Logger } from '../../shared/providers/logger';
 import {
@@ -62,6 +63,7 @@ export class ProjectManager {
     private idTranslator: IdTranslator,
     private targetManager: TargetManager,
     private operationsManager: OperationsManager,
+    private schemaVersions: SchemaVersionStore,
   ) {
     this.logger = logger.child({ source: 'ProjectManager' });
   }
@@ -404,11 +406,7 @@ export class ProjectManager {
                 projectId: project.id,
                 period,
               })
-            : await this.storage.countSchemaVersionsOfProject({
-                organizationId: organization.id,
-                projectId: project.id,
-                period,
-              });
+            : await this.schemaVersions.countSchemaVersionsOfProject(project, period);
 
         return { project, value };
       }),

@@ -16,6 +16,7 @@ import { parseDateRangeInput, share } from '../../../shared/helpers';
 import { AuditLogRecorder } from '../../audit-logs/providers/audit-log-recorder';
 import { Session } from '../../auth/lib/authz';
 import { OperationsManager } from '../../operations/providers/operations-manager';
+import { SchemaVersionStore } from '../../schema/providers/schema-version-store';
 import { IdTranslator } from '../../shared/providers/id-translator';
 import { Logger } from '../../shared/providers/logger';
 import {
@@ -56,6 +57,7 @@ export class TargetManager {
     private auditLog: AuditLogRecorder,
     private targetsCache: TargetsByIdCache,
     private operationsManager: OperationsManager,
+    private schemaVersions: SchemaVersionStore,
   ) {
     this.logger = logger.child({ source: 'TargetManager' });
   }
@@ -337,12 +339,7 @@ export class TargetManager {
                 targetId: target.id,
                 period,
               })
-            : await this.storage.countSchemaVersionsOfTarget({
-                organizationId: selector.organizationId,
-                projectId: selector.projectId,
-                targetId: target.id,
-                period,
-              });
+            : await this.schemaVersions.countSchemaVersionsOfTarget(target, period);
 
         return { target, value };
       }),

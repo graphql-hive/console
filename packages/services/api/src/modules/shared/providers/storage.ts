@@ -15,7 +15,6 @@ import type {
   Alert,
   AlertChannel,
   CDNAccessToken,
-  DateRange,
   DocumentCollection,
   DocumentCollectionOperation,
   Member,
@@ -238,8 +237,6 @@ export interface Storage {
     },
   ): Promise<PaginatedProjectConnection>;
 
-  countSchemaVersionsOfProject(_: ProjectSelector & { period: DateRange | null }): Promise<number>;
-
   getProjectById(projectId: string): Promise<Project | null>;
 
   findProjectsByIds(args: { projectIds: Array<string> }): Promise<Map<string, Project>>;
@@ -352,8 +349,6 @@ export interface Storage {
       sort?: TargetsStorageSort | null;
     },
   ): Promise<PaginatedTargetConnection>;
-
-  countSchemaVersionsOfTarget(_: TargetSelector & { period: DateRange | null }): Promise<number>;
 
   findTargetsByIds(args: {
     organizationId: string;
