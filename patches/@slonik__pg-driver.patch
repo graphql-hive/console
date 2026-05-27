@@ -1,8 +1,23 @@
 diff --git a/dist/factories/createPgDriverFactory.js b/dist/factories/createPgDriverFactory.js
-index ed4601ac233435cc8ea5e546c722ede4bd8873d7..b57306c66a3e2176a6fda9d749f870a1b1158007 100644
+index ed4601ac233435cc8ea5e546c722ede4bd8873d7..a4f8f7de692fbcebc9f7bfce63dc06b0b9ab3680 100644
 --- a/dist/factories/createPgDriverFactory.js
 +++ b/dist/factories/createPgDriverFactory.js
-@@ -230,7 +230,8 @@ export const createPgDriverFactory = () => {
+@@ -52,7 +52,13 @@ const createClientConfiguration = (clientConfiguration) => {
+         database: connectionOptions.databaseName,
+         host: connectionOptions.host,
+         options: connectionOptions.options,
+-        password: connectionOptions.password,
++        password: clientConfiguration.connectionUriProvider
++            ? async () => {
++                const freshUri = await clientConfiguration.connectionUriProvider();
++                const freshOptions = parseDsn(freshUri);
++                return freshOptions.password ?? '';
++            }
++            : connectionOptions.password,
+         port: connectionOptions.port,
+         // @ts-expect-error - https://github.com/brianc/node-postgres/pull/3214
+         queryMode: "extended",
+@@ -230,7 +236,8 @@ export const createPgDriverFactory = () => {
                              });
                          }
                          if (Array.isArray(result)) {
@@ -13,10 +28,35 @@ index ed4601ac233435cc8ea5e546c722ede4bd8873d7..b57306c66a3e2176a6fda9d749f870a1
                          return {
                              command: result.command,
 diff --git a/src/factories/createPgDriverFactory.ts b/src/factories/createPgDriverFactory.ts
-index 608ed21b07e90fb67dc1d778a836e3554ff50671..c606167619280e58df26601ff1bc7a903dead48d 100644
+index 608ed21b07e90fb67dc1d778a836e3554ff50671..30f67b31e7c42a13d99745089f7b6dc5d1763752 100644
 --- a/src/factories/createPgDriverFactory.ts
 +++ b/src/factories/createPgDriverFactory.ts
-@@ -314,7 +314,8 @@ export const createPgDriverFactory = (): DriverFactory => {
+@@ -101,12 +101,23 @@ const createClientConfiguration = (
+ ): NativePostgresClientConfiguration => {
+   const connectionOptions = parseDsn(clientConfiguration.connectionUri);
+ 
++  // Type cast: connectionUriProvider added via Slonik patch, not in @slonik/driver types
++  const config = clientConfiguration as DriverConfiguration & {
++    connectionUriProvider?: () => Promise<string>;
++  };
++
+   const poolConfiguration: NativePostgresClientConfiguration = {
+     application_name: connectionOptions.applicationName,
+     database: connectionOptions.databaseName,
+     host: connectionOptions.host,
+     options: connectionOptions.options,
+-    password: connectionOptions.password,
++    password: config.connectionUriProvider
++      ? async () => {
++          const freshUri = await config.connectionUriProvider!();
++          const freshOptions = parseDsn(freshUri);
++          return freshOptions.password ?? '';
++        }
++      : connectionOptions.password,
+     port: connectionOptions.port,
+     // @ts-expect-error - https://github.com/brianc/node-postgres/pull/3214
+     queryMode: "extended",
+@@ -314,7 +325,8 @@ export const createPgDriverFactory = (): DriverFactory => {
              }
  
              if (Array.isArray(result)) {

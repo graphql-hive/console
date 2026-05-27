@@ -10,3 +10,4 @@ export { registerShutdown } from './graceful-shutdown';
 export { cleanRequestId, maskToken } from './helpers';
 export { sentryInit } from './sentry';
 export { scrubBasicAuth } from './scrub';
+export { generateRdsIamAuthToken } from './iam-rds';

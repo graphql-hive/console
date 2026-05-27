@@ -16,6 +16,7 @@ import {
   SerializableValue,
   TaggedTemplateLiteralInvocation,
   UniqueIntegrityConstraintViolationError,
+  type ConnectionStringProvider,
 } from '@hive/postgres';
 import { createSDLHash, ProjectType } from '../../api/src/shared/entities';
 import { batch, batchBy } from '../../api/src/shared/helpers';
@@ -49,7 +50,7 @@ const organizationGetStartedMapping: Record<
 };
 
 export async function createStorage(
-  connection: string,
+  connection: string | ConnectionStringProvider,
   maximumPoolSize: number,
   additionalInterceptors?: Array<Interceptor>,
 ): Promise<Storage> {

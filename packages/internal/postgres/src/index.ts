@@ -3,7 +3,12 @@ export {
   createPostgresDatabasePool,
   type CommonQueryMethods,
 } from './postgres-database-pool';
-export { type PostgresConnectionParamaters, createConnectionString } from './connection-string';
+export {
+  type PostgresConnectionParamaters,
+  createConnectionString,
+  type ConnectionStringProvider,
+  createConnectionStringProvider,
+} from './connection-string';
 export { psql, type TaggedTemplateLiteralInvocation } from './psql';
 export {
   UniqueIntegrityConstraintViolationError,

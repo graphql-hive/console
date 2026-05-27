@@ -13,6 +13,7 @@
     "@trpc/server": "10.45.3"
   },
   "devDependencies": {
+    "@aws-sdk/rds-signer": "3.1035.0",
     "@fastify/cors": "11.2.0",
     "@graphql-hive/logger": "1.1.0",
     "@graphql-hive/plugin-opentelemetry": "1.4.26",
