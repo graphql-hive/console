@@ -44,7 +44,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "grafanacloud-prom"
+        "uid": "PROM_DATASOURCE_UID"
       },
       "fieldConfig": {
         "defaults": {
@@ -124,7 +124,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "grafanacloud-prom"
+            "uid": "PROM_DATASOURCE_UID"
           },
           "editorMode": "code",
           "expr": "sum by (conclusion) (rate(registry_publish_count_total[$__rate_interval]))",
@@ -140,7 +140,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "grafanacloud-prom"
+        "uid": "PROM_DATASOURCE_UID"
       },
       "fieldConfig": {
         "defaults": {
@@ -218,7 +218,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "grafanacloud-prom"
+            "uid": "PROM_DATASOURCE_UID"
           },
           "editorMode": "builder",
           "expr": "sum by(model) (rate(registry_publish_count_total[$__rate_interval]))",
@@ -234,7 +234,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "grafanacloud-prom"
+        "uid": "PROM_DATASOURCE_UID"
       },
       "fieldConfig": {
         "defaults": {
@@ -285,7 +285,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "grafanacloud-prom"
+            "uid": "PROM_DATASOURCE_UID"
           },
           "editorMode": "builder",
           "expr": "sum by(model) (rate(registry_publish_count_total[$__rate_interval]))",
@@ -301,7 +301,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "grafanacloud-prom"
+        "uid": "PROM_DATASOURCE_UID"
       },
       "fieldConfig": {
         "defaults": {
@@ -379,7 +379,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "grafanacloud-prom"
+            "uid": "PROM_DATASOURCE_UID"
           },
           "editorMode": "builder",
           "expr": "sum by(model, projectType) (rate(registry_publish_count_total[$__rate_interval]))",
@@ -395,7 +395,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "grafanacloud-prom"
+        "uid": "PROM_DATASOURCE_UID"
       },
       "fieldConfig": {
         "defaults": {
@@ -446,7 +446,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "grafanacloud-prom"
+            "uid": "PROM_DATASOURCE_UID"
           },
           "editorMode": "builder",
           "expr": "sum by(projectType) (rate(registry_publish_count_total[$__rate_interval]))",
@@ -462,7 +462,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "grafanacloud-prom"
+        "uid": "PROM_DATASOURCE_UID"
       },
       "fieldConfig": {
         "defaults": {
@@ -513,7 +513,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "grafanacloud-prom"
+            "uid": "PROM_DATASOURCE_UID"
           },
           "editorMode": "builder",
           "expr": "sum by(model, projectType) (rate(registry_publish_count_total[$__rate_interval]))",
@@ -542,7 +542,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "grafanacloud-prom"
+        "uid": "PROM_DATASOURCE_UID"
       },
       "fieldConfig": {
         "defaults": {
@@ -622,7 +622,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "grafanacloud-prom"
+            "uid": "PROM_DATASOURCE_UID"
           },
           "editorMode": "code",
           "expr": "sum by (conclusion) (rate(registry_check_count_total[$__rate_interval]))",
@@ -638,7 +638,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "grafanacloud-prom"
+        "uid": "PROM_DATASOURCE_UID"
       },
       "fieldConfig": {
         "defaults": {
@@ -716,7 +716,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "grafanacloud-prom"
+            "uid": "PROM_DATASOURCE_UID"
           },
           "editorMode": "builder",
           "expr": "sum by(model) (rate(registry_check_count_total[$__rate_interval]))",
@@ -732,7 +732,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "grafanacloud-prom"
+        "uid": "PROM_DATASOURCE_UID"
       },
       "fieldConfig": {
         "defaults": {
@@ -783,7 +783,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "grafanacloud-prom"
+            "uid": "PROM_DATASOURCE_UID"
           },
           "editorMode": "builder",
           "expr": "sum by(model) (rate(registry_check_count_total[$__rate_interval]))",
@@ -799,7 +799,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "grafanacloud-prom"
+        "uid": "PROM_DATASOURCE_UID"
       },
       "fieldConfig": {
         "defaults": {
@@ -877,7 +877,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "grafanacloud-prom"
+            "uid": "PROM_DATASOURCE_UID"
           },
           "editorMode": "builder",
           "expr": "sum by(model, projectType) (rate(registry_check_count_total[$__rate_interval]))",
@@ -893,7 +893,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "grafanacloud-prom"
+        "uid": "PROM_DATASOURCE_UID"
       },
       "fieldConfig": {
         "defaults": {
@@ -944,7 +944,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "grafanacloud-prom"
+            "uid": "PROM_DATASOURCE_UID"
           },
           "editorMode": "builder",
           "expr": "sum by(projectType) (rate(registry_check_count_total[$__rate_interval]))",
@@ -960,7 +960,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "grafanacloud-prom"
+        "uid": "PROM_DATASOURCE_UID"
       },
       "fieldConfig": {
         "defaults": {
@@ -1011,7 +1011,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "grafanacloud-prom"
+            "uid": "PROM_DATASOURCE_UID"
           },
           "editorMode": "builder",
           "expr": "sum by(model, projectType) (rate(registry_check_count_total[$__rate_interval]))",
@@ -1040,7 +1040,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "grafanacloud-prom"
+        "uid": "PROM_DATASOURCE_UID"
       },
       "fieldConfig": {
         "defaults": {
@@ -1118,7 +1118,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "grafanacloud-prom"
+            "uid": "PROM_DATASOURCE_UID"
           },
           "editorMode": "builder",
           "expr": "sum by(model) (rate(registry_delete_count_total[$__rate_interval]))",
@@ -1134,7 +1134,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "grafanacloud-prom"
+        "uid": "PROM_DATASOURCE_UID"
       },
       "fieldConfig": {
         "defaults": {
@@ -1185,7 +1185,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "grafanacloud-prom"
+            "uid": "PROM_DATASOURCE_UID"
           },
           "editorMode": "builder",
           "expr": "sum by(model) (rate(registry_delete_count_total[$__rate_interval]))",
@@ -1201,7 +1201,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "grafanacloud-prom"
+        "uid": "PROM_DATASOURCE_UID"
       },
       "fieldConfig": {
         "defaults": {
@@ -1276,7 +1276,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "grafanacloud-prom"
+            "uid": "PROM_DATASOURCE_UID"
           },
           "editorMode": "builder",
           "expr": "sum by(model, projectType) (rate(registry_delete_count_total[$__rate_interval]))",
@@ -1292,7 +1292,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "grafanacloud-prom"
+        "uid": "PROM_DATASOURCE_UID"
       },
       "fieldConfig": {
         "defaults": {
@@ -1343,7 +1343,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "grafanacloud-prom"
+            "uid": "PROM_DATASOURCE_UID"
           },
           "editorMode": "builder",
           "expr": "sum by(projectType) (rate(registry_delete_count_total[$__rate_interval]))",
@@ -1359,7 +1359,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "grafanacloud-prom"
+        "uid": "PROM_DATASOURCE_UID"
       },
       "fieldConfig": {
         "defaults": {
@@ -1410,7 +1410,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "grafanacloud-prom"
+            "uid": "PROM_DATASOURCE_UID"
           },
           "editorMode": "builder",
           "expr": "sum by(model, projectType) (rate(registry_delete_count_total[$__rate_interval]))",
