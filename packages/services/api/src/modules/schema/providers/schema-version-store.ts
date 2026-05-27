@@ -389,7 +389,7 @@ export class SchemaVersionStore {
                 version.id,
                 log.id,
                 log.id !== newLog.id ? 'unchanged' : args.previousSchemaLogId ? 'changed' : 'added',
-                log.id === newLog.id ? args.previousSchemaLogId : log.id,
+                log.id === newLog.id ? args.previousSchemaLogId : null,
                 log.id === newLog.id
                   ? (JSON.stringify(args.serviceChanges?.map(toSerializableSchemaChange)) ?? null)
                   : null,
@@ -1157,7 +1157,7 @@ export class SchemaVersionStore {
           type: 'unchanged',
           subgraphName: node.service_name,
           schemaChanges: null,
-          previousActionId: edge.schemaVersionId,
+          previousActionId: null,
           actionId: node.id,
           schemaVersionId: edge.schemaVersionId,
           node,
@@ -1713,7 +1713,7 @@ const SchemaLogEdgeUnchangedModel = SchemaLogEdgeModelBaseModel.extend({
   // single schema version can stay the same
   subgraphName: z.string().nullable(),
   schemaChanges: z.null(),
-  previousActionId: z.string(),
+  previousActionId: z.null(),
 });
 
 // type SchemaLogEdgeUnchanged = z.TypeOf<typeof SchemaLogEdgeUnchangedModel>;
