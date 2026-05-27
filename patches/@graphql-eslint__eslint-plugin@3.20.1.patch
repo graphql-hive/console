@@ -1,3 +1,51 @@
+diff --git a/cjs/rules/no-unreachable-types.js b/cjs/rules/no-unreachable-types.js
+index a3c0ee23c61d97142dca320d85e9cc28fc643677..beee60afe96e6b0bb0866dad663d0ebb1e0a248e 100644
+--- a/cjs/rules/no-unreachable-types.js
++++ b/cjs/rules/no-unreachable-types.js
+@@ -78,8 +78,15 @@ function getReachableTypes(schema) {
+       for (const { astNode } of [...objects, ...interfaces]) {
+         (0, import_graphql.visit)(astNode, visitor);
+       }
+-    } else if (type == null ? void 0 : type.astNode) {
+-      (0, import_graphql.visit)(type.astNode, visitor);
++    } else {
++      if (type == null ? void 0 : type.astNode) {
++        (0, import_graphql.visit)(type.astNode, visitor);
++      }
++      if (type == null ? void 0 : type.extensionASTNodes) {
++        for (const ext of type.extensionASTNodes) {
++          (0, import_graphql.visit)(ext, visitor);
++        }
++      }
+     }
+   };
+   const visitor = {
+diff --git a/cjs/rules/relay-edge-types.js b/cjs/rules/relay-edge-types.js
+index 4f02b7a21bd793e4812528bb8feb324c3f242861..d455c48487a55712518b6811ab41bd74cb08ddaf 100644
+--- a/cjs/rules/relay-edge-types.js
++++ b/cjs/rules/relay-edge-types.js
+@@ -29,11 +29,7 @@ const MESSAGE_MUST_BE_OBJECT_TYPE = "MESSAGE_MUST_BE_OBJECT_TYPE";
+ const MESSAGE_MISSING_EDGE_SUFFIX = "MESSAGE_MISSING_EDGE_SUFFIX";
+ const MESSAGE_LIST_TYPE_ONLY_EDGE_TYPE = "MESSAGE_LIST_TYPE_ONLY_EDGE_TYPE";
+ const MESSAGE_SHOULD_IMPLEMENTS_NODE = "MESSAGE_SHOULD_IMPLEMENTS_NODE";
+-let edgeTypesCache;
+ function getEdgeTypes(schema2) {
+-  if (edgeTypesCache) {
+-    return edgeTypesCache;
+-  }
+   const edgeTypes = /* @__PURE__ */ new Set();
+   const visitor = {
+     ObjectTypeDefinition(node) {
+@@ -55,8 +51,7 @@ function getEdgeTypes(schema2) {
+   };
+   const astNode = (0, import_utils.getDocumentNodeFromSchema)(schema2);
+   (0, import_graphql.visit)(astNode, visitor);
+-  edgeTypesCache = edgeTypes;
+-  return edgeTypesCache;
++  return edgeTypes;
+ }
+ const schema = {
+   type: "array",
 diff --git a/esm/estree-converter/utils.js b/esm/estree-converter/utils.js
 index f57ab7f17cfc19de13cc969ee32bf44d4f6c361f..6db8f13220171ba109b131db6d5ba5bf7249e87a 100644
 --- a/esm/estree-converter/utils.js

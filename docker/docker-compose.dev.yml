@@ -178,9 +178,75 @@ services:
     ports:
       - '4317:4317'
       - '4318:4318'
-      - '10254:10254'
+      # OTEL's /metrics endpoint inside the container is on 10254, but we publish it on
+      # host port 10255. Every Hive service defaults PROMETHEUS_METRICS_PORT to 10254
+      # (see packages/services/*/environment.ts), so leaving the host mapping as 10254
+      # would collide with any service a developer runs natively (via `pnpm dev` or the
+      # VSCode `Start Hive` button). The internal docker-network address
+      # `otel-collector:10254` is unchanged: Prometheus scrapes that directly.
+      - '10255:10254'
       - '1777:1777'
       - '55679:55679'
+    networks:
+      - 'stack'
+
+  # Observability profile: optional local Grafana + Prometheus stack for rendering
+  # the production dashboards and alerts against host-running services. Start with:
+  #   docker compose -f docker/docker-compose.dev.yml --profile observability up
+  # See docs/DEVELOPMENT.md for usage notes.
+
+  grafana-dashboard-init:
+    image: alpine:3.20
+    profiles:
+      - observability
+    command: >
+      sh -c "
+        rm -rf /dst/* &&
+        cp /src/*.json /dst/ &&
+        sed -i 's/PROM_DATASOURCE_UID/local-prom/g' /dst/*.json &&
+        sed -i 's/TABLE_SUFFIX/dev/g' /dst/*.json
+      "
+    volumes:
+      - ../deployment/grafana-dashboards:/src:ro
+      - ./.hive-dev/grafana/dashboards:/dst
+    networks:
+      - 'stack'
+
+  prometheus:
+    image: prom/prometheus:v2.55.1
+    profiles:
+      - observability
+    mem_limit: 500m
+    ports:
+      - '9090:9090'
+    # extra_hosts makes `host.docker.internal` resolve on Linux (it already works on Docker
+    # Desktop for macOS/Windows). Lets Prometheus reach host-running Hive services.
+    extra_hosts:
+      - 'host.docker.internal:host-gateway'
+    volumes:
+      - ./configs/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./.hive-dev/prometheus/data:/prometheus
+    networks:
+      - 'stack'
+
+  grafana:
+    image: grafana/grafana:11.3.0
+    profiles:
+      - observability
+    mem_limit: 500m
+    depends_on:
+      grafana-dashboard-init:
+        condition: service_completed_successfully
+    ports:
+      - '3030:3000'
+    environment:
+      GF_AUTH_ANONYMOUS_ENABLED: 'true'
+      GF_AUTH_ANONYMOUS_ORG_ROLE: 'Admin'
+      GF_AUTH_DISABLE_LOGIN_FORM: 'true'
+    volumes:
+      - ./configs/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./.hive-dev/grafana/dashboards:/etc/grafana/dashboards:ro
+      - ./.hive-dev/grafana/data:/var/lib/grafana
     networks:
       - 'stack'
 

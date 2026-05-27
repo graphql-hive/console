@@ -3,7 +3,6 @@
 # This file also includes services that only exists in Hive's Cloud version, and are not available in the self-hosted version.
 # Please refer to TESTING.md for more information.
 
-version: '3.8'
 name: 'hive-tests'
 
 networks:
@@ -142,6 +141,8 @@ services:
   # Overrides only to `docker-compose.community.yaml` from now on:
   server:
     environment:
+      NODEJS_FLAGS: '--expose-gc'
+      EXPOSE_MEMORY_UTILS: '1'
       CDN_CF: '1'
       CDN_CF_BASE_PATH: http://local_cdn:3004
       CDN_CF_ACCOUNT_ID: 103df45224310d669213971ce28b5b70

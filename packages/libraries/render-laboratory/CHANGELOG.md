@@ -1,5 +1,18 @@
 # @graphql-yoga/render-graphiql
 
+## 0.1.8
+
+### Patch Changes
+
+- [#8024](https://github.com/graphql-hive/console/pull/8024)
+  [`0e3ce40`](https://github.com/graphql-hive/console/commit/0e3ce400706c625925161f8d59cc5691380cef07)
+  Thanks [@mskorokhodov](https://github.com/mskorokhodov)! - Hive laboratory introspection query to
+  include active tab headers
+
+- Updated dependencies
+  [[`0e3ce40`](https://github.com/graphql-hive/console/commit/0e3ce400706c625925161f8d59cc5691380cef07)]:
+  - @graphql-hive/laboratory@0.1.8
+
 ## 0.1.7
 
 ### Patch Changes
