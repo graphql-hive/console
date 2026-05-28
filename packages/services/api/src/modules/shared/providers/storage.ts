@@ -3,8 +3,6 @@ import type { PolicyConfigurationObject } from '@hive/policy';
 import { PostgresDatabasePool } from '@hive/postgres';
 import type {
   PaginatedOrganizationInvitationConnection,
-  PaginatedProjectConnection,
-  PaginatedTargetConnection,
   SchemaChangeType,
   SchemaCheck,
   SchemaCheckInput,
@@ -49,13 +47,6 @@ export interface ProjectSelector extends OrganizationSelector {
 export interface TargetSelector extends ProjectSelector {
   targetId: string;
 }
-
-export type ProjectsStorageSort = {
-  field: 'CREATED_AT' | 'NAME';
-  direction: 'ASC' | 'DESC';
-};
-
-export type TargetsStorageSort = ProjectsStorageSort;
 
 // eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging
 export interface Storage {
@@ -221,21 +212,7 @@ export interface Storage {
 
   getProjectBySlug(_: { slug: string } & OrganizationSelector): Promise<Project | null>;
 
-  getProjects(
-    _: OrganizationSelector & {
-      search?: string | null;
-      sort?: ProjectsStorageSort | null;
-    },
-  ): Promise<Project[] | never>;
-
-  getPaginatedProjects(
-    _: OrganizationSelector & {
-      first: number;
-      after: string | null;
-      search?: string | null;
-      sort?: ProjectsStorageSort | null;
-    },
-  ): Promise<PaginatedProjectConnection>;
+  getProjects(_: OrganizationSelector): Promise<Project[] | never>;
 
   getProjectById(projectId: string): Promise<Project | null>;
 
@@ -334,21 +311,7 @@ export interface Storage {
 
   getTarget(_: TargetSelector): Promise<Target | never>;
 
-  getTargets(
-    _: ProjectSelector & {
-      search?: string | null;
-      sort?: TargetsStorageSort | null;
-    },
-  ): Promise<readonly Target[]>;
-
-  getPaginatedTargets(
-    _: ProjectSelector & {
-      first: number;
-      after: string | null;
-      search?: string | null;
-      sort?: TargetsStorageSort | null;
-    },
-  ): Promise<PaginatedTargetConnection>;
+  getTargets(_: ProjectSelector): Promise<readonly Target[]>;
 
   findTargetsByIds(args: {
     organizationId: string;

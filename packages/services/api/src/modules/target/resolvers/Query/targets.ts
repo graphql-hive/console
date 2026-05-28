@@ -2,23 +2,32 @@ import { IdTranslator } from '../../../shared/providers/id-translator';
 import { TargetManager } from '../../providers/target-manager';
 import type { QueryResolvers } from './../../../../__generated__/types';
 
-export const targets: NonNullable<QueryResolvers['targets']> = async (_, args, { injector }) => {
+export const targets: NonNullable<QueryResolvers['targets']> = async (
+  _,
+  { selector },
+  { injector },
+) => {
   const translator = injector.get(IdTranslator);
-  const [organizationId, projectId] = await Promise.all([
-    translator.translateOrganizationId(args.selector),
-    translator.translateProjectId(args.selector),
+  const [organization, project] = await Promise.all([
+    translator.translateOrganizationId(selector),
+    translator.translateProjectId(selector),
   ]);
 
-  return injector.get(TargetManager).getPaginatedTargets(
-    {
-      organizationId,
-      projectId,
+  const targets = await injector.get(TargetManager).getTargets({
+    organizationId: organization,
+    projectId: project,
+  });
+
+  return {
+    edges: targets.map(node => ({
+      cursor: '',
+      node,
+    })),
+    pageInfo: {
+      hasNextPage: false,
+      hasPreviousPage: false,
+      endCursor: '',
+      startCursor: '',
     },
-    {
-      first: args.first ?? null,
-      after: args.after ?? null,
-      search: args.search ?? null,
-      sort: args.sort ?? null,
-    },
-  );
+  };
 };
