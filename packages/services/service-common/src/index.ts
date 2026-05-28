@@ -11,3 +11,4 @@ export { cleanRequestId, maskToken } from './helpers';
 export { sentryInit } from './sentry';
 export { scrubBasicAuth } from './scrub';
 export { createMskIamTokenProvider } from './iam-msk';
+export { invariant } from './helpers';

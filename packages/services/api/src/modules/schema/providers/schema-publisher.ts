@@ -6,7 +6,7 @@ import lodash from 'lodash';
 import promClient from 'prom-client';
 import { z } from 'zod';
 import { CriticalityLevel } from '@graphql-inspector/core';
-import { trace, traceFn } from '@hive/service-common';
+import { invariant, trace, traceFn } from '@hive/service-common';
 import type {
   ConditionalBreakingChangeMetadata,
   SchemaChangeType,
@@ -2392,9 +2392,7 @@ export class SchemaPublisher {
       let record = diffMap.get(serviceName);
 
       if (!record) {
-        if (originLogEdge.node.service_name == null) {
-          throw new Error('INVARIANT: This can not happen. A service name must exist.');
-        }
+        invariant(originLogEdge.node.service_name !== null, 'A service name must exist.');
 
         diffMap.set(originLogEdge.node.service_name, {
           type: 'added',
@@ -2403,9 +2401,7 @@ export class SchemaPublisher {
         continue;
       }
 
-      if (record.type !== 'removed') {
-        throw new Error('INVARIANT: At this point the type can only be removed.');
-      }
+      invariant(record.type === 'removed', 'At this point the type can only be removed.');
 
       if (record.previousLog.id === originLogEdge.node.id) {
         diffMap.set(serviceName, {
@@ -2437,9 +2433,8 @@ export class SchemaPublisher {
 
     for (const diff of diffMap.values()) {
       if (diff.type === 'removed') {
-        if (diff.previousLog.service_name == null) {
-          throw new Error('INVARIANT: Remove logs require a service name.');
-        }
+        invariant(diff.previousLog.service_name != null, 'Remove logs require a service name.');
+
         // Note: we seed the ID here so we do not need to map some more within the logic within `SchemaVersions.promoteSchemaVersionToTarget`
         const logId = crypto.randomUUID();
         schemaLogs.deleted.push({
@@ -2453,9 +2448,8 @@ export class SchemaPublisher {
       }
 
       if (diff.type === 'added') {
-        if (diff.newLog.service_name == null) {
-          throw new Error('INVARIANT: Added logs require a service name.');
-        }
+        invariant(diff.newLog.service_name != null, 'Added logs require a service name.');
+
         schemaLogs.added.push({
           id: diff.newLog.id,
           serviceName: diff.newLog.service_name,
@@ -2638,9 +2632,7 @@ export class SchemaPublisher {
 
         const contractResult = result?.result?.contracts?.at(index);
 
-        if (!contractResult) {
-          throw new Error('INVARIANT: The contract at the input index must exist.');
-        }
+        invariant(!!contractResult, 'The contract at the input index must exist.');
 
         if (contractResult.reason) {
           contracts.push({
@@ -2933,9 +2925,7 @@ export class SchemaPublisher {
     const actionLog =
       originLogEdges.find(log => log.actionId === originSchemaVersion.actionId)?.node ?? null;
 
-    if (!actionLog) {
-      throw new Error('INVARIANT: Could not find action log that caused the origin version.');
-    }
+    invariant(actionLog !== null, 'Could not find action log that caused the origin version.');
 
     // NOTE: We re-use the values (sdl; errors; etc) from the existing origin values were possible to ensure a promotion results in the !!exact state!!
     // e.g. if we would compose from scratch but the external composition has changed a promotion would be unpredictable

@@ -3,7 +3,7 @@ import { __Type, isTypeSystemExtensionNode, print } from 'graphql';
 import { Injectable, Scope } from 'graphql-modules';
 import { CriticalityLevel } from '@graphql-inspector/core';
 import { mergeTypeDefs } from '@graphql-tools/merge';
-import { traceFn } from '@hive/service-common';
+import { invariant, traceFn } from '@hive/service-common';
 import type { SchemaChangeType } from '@hive/storage';
 import {
   containsSupergraphSpec,
@@ -391,9 +391,8 @@ export class SchemaVersionHelper {
 
     return edges.map(edge => {
       if (edge.type === 'unchanged') {
-        if (edge.node.kind !== 'composite') {
-          throw new Error('INVARIANT: This can not happen.');
-        }
+        invariant(edge.node.kind === 'composite', 'Edge can not have other type than composite.');
+
         return {
           __typename: 'SubgraphDiffUnchanged',
           subgraphVersion: {
@@ -416,15 +415,13 @@ export class SchemaVersionHelper {
         } satisfies ResolversUnionTypes<any>['SubgraphDiff'];
       }
       if (edge.type === 'changed') {
-        if (edge.node.kind !== 'composite') {
-          throw new Error('INVARIANT: This can not happen.');
-        }
+        invariant(edge.node.kind === 'composite', 'Edge can not have other type than composite.');
 
         const previousLog = previousSchemaLogsById.get(edge.previousActionId);
 
-        if (!previousLog || previousLog.action !== 'PUSH' || previousLog.kind !== 'composite') {
-          throw new Error('INVARIANT: This can not happen.');
-        }
+        invariant(previousLog != null, 'Previous log must exist.');
+        invariant(previousLog.kind === 'composite', 'Edge can not have other type than composite.');
+        invariant(previousLog.action === 'PUSH', 'Previous log must have PUSH action.');
 
         return {
           __typename: 'SubgraphDiffChanged',
@@ -446,9 +443,9 @@ export class SchemaVersionHelper {
       if (edge.type === 'removed') {
         const previousLog = previousSchemaLogsById.get(edge.previousActionId);
 
-        if (!previousLog || previousLog.action !== 'PUSH' || previousLog.kind !== 'composite') {
-          throw new Error('INVARIANT: This can not happen.');
-        }
+        invariant(previousLog != null, 'Previous log must exist.');
+        invariant(previousLog.kind === 'composite', 'Edge can not have other type than composite.');
+        invariant(previousLog.action === 'PUSH', 'Previous log must have PUSH action.');
 
         return {
           __typename: 'SubgraphDiffRemoved',
@@ -461,7 +458,8 @@ export class SchemaVersionHelper {
         } satisfies ResolversUnionTypes<any>['SubgraphDiff'];
       }
 
-      throw new Error('Noop');
+      edge satisfies never;
+      invariant(false, 'Unexpected edge.');
     });
   }
   @cache((schemaVersion: SchemaVersion) => schemaVersion.id)
@@ -501,9 +499,7 @@ export class SchemaVersionHelper {
       log = await this.schemaVersions.getSchemaLogById(schemaVersion.actionId);
     }
 
-    if (!log) {
-      throw new Error('INVARIANT: Could not retrieve log');
-    }
+    invariant(log != null, 'Could not find log.');
 
     if (log.kind === 'single') {
       return {
@@ -583,9 +579,7 @@ export class SchemaVersionHelper {
     }
 
     const log = await this.schemaVersions.getSchemaLogNodeByNodeId(schemaVersion.actionId);
-    if (!log.service_name) {
-      throw new Error('INVARIANT: Service name must be defined');
-    }
+    invariant(log.service_name != null, 'Service name must be defined');
 
     if (log.action === 'PUSH') {
       return {
@@ -611,7 +605,7 @@ export class SchemaVersionHelper {
     }
 
     log satisfies never;
-    throw new Error('INVARIANT: SchemaVersion either needs to have actionId or origin property.');
+    invariant(false, 'SchemaVersion either needs to have actionId or origin property.');
   }
   /**
    * There's a possibility that the composite schema SDL contains parts of the supergraph spec.
