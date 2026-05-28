@@ -27,6 +27,7 @@ export interface RawOperation {
     ok: boolean;
     duration: number;
     errorsTotal: number;
+    errors?: { code?: string; path?: string }[];
   };
   metadata?: {
     client?: ClientMetadata;

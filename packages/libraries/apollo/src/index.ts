@@ -220,7 +220,7 @@ export function useHive(clientOrOptions: HiveClient | HivePluginOptions): Apollo
 
       let doc: DocumentNode;
       let didResolveSource = false;
-      const complete = hive.collectUsage();
+      const usageCollection = hive.collectUsage();
       const args = {
         schema: context.schema,
         get document() {
@@ -241,7 +241,7 @@ export function useHive(clientOrOptions: HiveClient | HivePluginOptions): Apollo
           },
           willSendResponse(ctx: any) {
             if (!didResolveSource) {
-              void complete(args, {
+              void usageCollection.finish(args, {
                 action: 'abort',
                 reason: 'Did not resolve source',
                 logging: false,
@@ -249,7 +249,7 @@ export function useHive(clientOrOptions: HiveClient | HivePluginOptions): Apollo
               return;
             }
             doc = ctx.document;
-            void complete(args, ctx.response);
+            void usageCollection.finish(args, ctx.response);
           },
         } as any;
       }
@@ -270,7 +270,7 @@ export function useHive(clientOrOptions: HiveClient | HivePluginOptions): Apollo
           },
           async willSendResponse(ctx) {
             if (didFailValidation) {
-              void complete(args, {
+              void usageCollection.finish(args, {
                 action: 'abort',
                 reason: 'Validation failed',
                 logging: false,
@@ -278,7 +278,7 @@ export function useHive(clientOrOptions: HiveClient | HivePluginOptions): Apollo
               return;
             }
             if (!didResolveSource) {
-              void complete(args, {
+              void usageCollection.finish(args, {
                 action: 'abort',
                 reason: 'Did not resolve source',
                 logging: false,
@@ -288,7 +288,7 @@ export function useHive(clientOrOptions: HiveClient | HivePluginOptions): Apollo
 
             if (!ctx.document) {
               const details = ctx.operationName ? `operationName: ${ctx.operationName}` : '';
-              void complete(args, {
+              void usageCollection.finish(args, {
                 action: 'abort',
                 reason: 'Document is not available' + (details ? ` (${details})` : ''),
                 logging: true,
@@ -297,7 +297,7 @@ export function useHive(clientOrOptions: HiveClient | HivePluginOptions): Apollo
             }
 
             doc = ctx.document!;
-            void complete(args, ctx.response as any);
+            void usageCollection.finish(args, ctx.response as any);
           },
         });
       }
@@ -399,7 +399,7 @@ export function useHive(clientOrOptions: HiveClient | HivePluginOptions): Apollo
           },
           async willSendResponse(ctx) {
             if (didFailValidation) {
-              void complete(
+              void usageCollection.finish(
                 args,
                 {
                   action: 'abort',
@@ -411,7 +411,7 @@ export function useHive(clientOrOptions: HiveClient | HivePluginOptions): Apollo
               return;
             }
             if (!didResolveSource) {
-              void complete(
+              void usageCollection.finish(
                 args,
                 {
                   action: 'abort',
@@ -425,7 +425,7 @@ export function useHive(clientOrOptions: HiveClient | HivePluginOptions): Apollo
 
             if (!ctx.document) {
               const details = ctx.operationName ? `operationName: ${ctx.operationName}` : '';
-              void complete(
+              void usageCollection.finish(
                 args,
                 {
                   action: 'abort',
@@ -439,7 +439,7 @@ export function useHive(clientOrOptions: HiveClient | HivePluginOptions): Apollo
 
             doc = ctx.document;
             if (ctx.response.body.kind === 'incremental') {
-              void complete(
+              void usageCollection.finish(
                 args,
                 {
                   action: 'abort',
@@ -449,7 +449,11 @@ export function useHive(clientOrOptions: HiveClient | HivePluginOptions): Apollo
                 persistedDocumentHash,
               );
             } else {
-              void complete(args, ctx.response.body.singleResult, persistedDocumentHash);
+              void usageCollection.finish(
+                args,
+                ctx.response.body.singleResult,
+                persistedDocumentHash,
+              );
             }
           },
         };

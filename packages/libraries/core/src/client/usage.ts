@@ -15,6 +15,7 @@ import { dynamicSampling, randomSampling } from './sampling.js';
 import type {
   AbortAction,
   ClientInfo,
+  CollectUsage,
   CollectUsageCallback,
   GraphQLErrorsResult,
   HiveInternalPluginOptions,
@@ -30,7 +31,7 @@ import {
 } from './utils.js';
 
 interface UsageCollector {
-  collect(): CollectUsageCallback;
+  collect(): CollectUsage;
   /** collect a short lived GraphQL request (mutation/query operation) */
   collectRequest(args: {
     args: ExecutionArgs;
@@ -38,6 +39,8 @@ interface UsageCollector {
     /** duration in milliseconds */
     duration: number;
     experimental__persistedDocumentHash?: string;
+    /** Optionally send subgraph request information. This provides a deeper level of usage metrics */
+    fetches?: OperationSubgraphRequest[];
   }): void;
   /** collect a long-lived GraphQL request/subscription (subscription operation) */
   collectSubscription(args: {
@@ -53,7 +56,12 @@ function isAbortAction(result: Parameters<CollectUsageCallback>[1]): result is A
 
 const noopUsageCollector: UsageCollector = {
   collect() {
-    return async () => {};
+    return {
+      subrequest() {
+        return () => {};
+      },
+      async finish() {},
+    };
   },
   collectRequest() {},
   async dispose() {},
@@ -123,6 +131,7 @@ export function createUsage(pluginOptions: HiveInternalPluginOptions): UsageColl
                 ok: operation.execution.ok,
                 duration: operation.execution.duration,
                 errorsTotal: operation.execution.errorsTotal,
+                fetches: operation.execution.fetches,
               },
               metadata: {
                 client: operation.client ?? undefined,
@@ -226,7 +235,7 @@ export function createUsage(pluginOptions: HiveInternalPluginOptions): UsageColl
       ) {
         const errors =
           args.result.errors?.map(error => ({
-            message: error.message,
+            code: error.extensions?.code,
             path: error.path?.join('.'),
           })) ?? [];
         const collect = collector({
@@ -250,7 +259,7 @@ export function createUsage(pluginOptions: HiveInternalPluginOptions): UsageColl
                   ok: errors.length === 0,
                   duration: args.duration,
                   errorsTotal: errors.length,
-                  errors,
+                  fetches: args.fetches ?? [],
                 },
                 // TODO: operationHash is ready to accept hashes of persisted operations
                 client: args.experimental__persistedDocumentHash
@@ -275,13 +284,47 @@ export function createUsage(pluginOptions: HiveInternalPluginOptions): UsageColl
 
   return {
     dispose: agent.dispose,
+    /** The raw request collection function */
     collectRequest,
+    /**
+     * A more advanced method of collecting the request that includes calculating durations
+     * automatically and supports subrequest data.
+     */
     collect() {
-      const finish = measureDuration();
+      const sinceStart = measureDuration();
+      const fetches: OperationSubgraphRequest[] = [];
+      const collectSubRequest = (args: OperationSubgraphRequest) => {
+        fetches.push(args);
+      };
 
-      return async function complete(args, result, experimental__persistedDocumentHash) {
-        const duration = finish();
-        return collectRequest({ args, result, duration, experimental__persistedDocumentHash });
+      return {
+        subrequest(args) {
+          const start = sinceStart();
+          const sinceSubStart = measureDuration();
+          return result => {
+            const duration = sinceSubStart();
+            collectSubRequest({
+              start,
+              duration,
+              fields: result.fields,
+              status: result.status,
+              subgraph: args.subgraph,
+              type: args.type,
+              errors: result.errors,
+              paths: args.paths,
+            });
+          };
+        },
+        async finish(args, result, experimental__persistedDocumentHash) {
+          const duration = sinceStart();
+          return collectRequest({
+            args,
+            result,
+            duration,
+            experimental__persistedDocumentHash,
+            fetches,
+          });
+        },
       };
     },
     async collectSubscription({ args, experimental__persistedDocumentHash }) {
@@ -407,6 +450,38 @@ type AgentAction =
       data: CollectedSubscriptionOperation;
     };
 
+type OperationSubgraphRequest = {
+  /** Delta start time from "timestamp" */
+  start: number;
+
+  /** How long the request took */
+  duration: number;
+
+  /** HTTP Status Code */
+  status: number;
+
+  /** Number of times the field has been requested. Regardless of success or failure */
+  fields: { [coordinate: string]: number };
+
+  /** Error code for a coordinate, with a code returned from the graphql extensions */
+  errors?: { coordinate: string; code?: string }[];
+
+  /** Which subgraph resolved this path */
+  subgraph: string;
+
+  /**
+   * If this is an entity request, then this is the coordinate in the original operation that is being resolved.
+   * If undefined, then the path is assumed to be 'Query'.
+   */
+  paths?: string[] | string;
+
+  /**
+   * What type of request this is. Root is if resolving a root query/mutation field. Entity is
+   * if resolving an entity type in federation.
+   * */
+  type: 'ROOT' | 'ENTITY';
+};
+
 interface CollectedOperation {
   key: string;
   timestamp: number;
@@ -417,10 +492,7 @@ interface CollectedOperation {
     ok: boolean;
     duration: number;
     errorsTotal: number;
-    errors?: Array<{
-      message: string;
-      path?: string;
-    }>;
+    fetches: OperationSubgraphRequest[];
   };
   persistedDocumentHash?: string;
   client?: ClientInfo | null;
@@ -443,6 +515,7 @@ interface RequestOperation {
     ok: boolean;
     duration: number;
     errorsTotal: number;
+    fetches: OperationSubgraphRequest[];
   };
   persistedDocumentHash?: string;
   metadata?: {

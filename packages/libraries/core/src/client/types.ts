@@ -1,4 +1,4 @@
-import type { ExecutionArgs } from 'graphql';
+import type { ExecutionArgs, GraphQLErrorExtensions } from 'graphql';
 import type { PromiseOrValue } from 'graphql/jsutils/PromiseOrValue.js';
 import { LogLevel as HiveLoggerLevel, Logger } from '@graphql-hive/logger';
 import { MaybePromise } from '@graphql-tools/utils';
@@ -11,13 +11,46 @@ type HeadersObject = {
   get(name: string): string | null;
 };
 
+export type SubRequestCallback = (args: {
+  /** Which subgraph resolved this path */
+  subgraph: string;
+
+  /**
+   * If this is an entity request, then this is the coordinate in the original operation that is being resolved.
+   * If undefined, then the path is assumed to be 'Query'.
+   */
+  paths?: string[] | string;
+
+  /**
+   * What type of request this is. Root is if resolving a root query/mutation field. Entity is
+   * if resolving an entity type in federation.
+   * */
+  type: 'ROOT' | 'ENTITY';
+}) => FinishSubRequestCallback;
+
+export type FinishSubRequestCallback = (result: {
+  /** HTTP Status Code */
+  status: number;
+
+  /** Number of times the field has been requested. Regardless of success or failure */
+  fields: { [coordinate: string]: number };
+
+  /** Error code for a coordinate, with a code returned from the graphql extensions */
+  errors?: { coordinate: string; code?: string }[];
+}) => void;
+
+export type CollectUsage = {
+  subrequest: SubRequestCallback;
+  finish: CollectUsageCallback;
+};
+
 export interface HiveClient {
   [hiveClientSymbol]: true;
   [autoDisposeSymbol]: boolean | NodeJS.Signals[];
   info(): void | Promise<void>;
   reportSchema: SchemaReporter['report'];
   /** Collect usage for Query and Mutation operations */
-  collectUsage(): CollectUsageCallback;
+  collectUsage(): CollectUsage;
   /** Collect usage for Query and Mutation operations */
   collectRequest(args: {
     args: ExecutionArgs;
@@ -284,6 +317,7 @@ export interface GraphQLErrorsResult {
   errors?: ReadonlyArray<{
     message: string;
     path?: Maybe<ReadonlyArray<string | number>>;
+    extensions?: GraphQLErrorExtensions;
   }>;
 }
 

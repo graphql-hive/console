@@ -1,0 +1,65 @@
+{
+  "name": "@graphql-hive/gateway-usage",
+  "version": "0.1.0",
+  "type": "module",
+  "description": "GraphQL Hive + GraphQL Hive Gateway",
+  "repository": {
+    "type": "git",
+    "url": "graphql-hive/platform",
+    "directory": "packages/libraries/gateway"
+  },
+  "homepage": "https://the-guild.dev/graphql/hive",
+  "author": {
+    "email": "contact@the-guild.dev",
+    "name": "The Guild",
+    "url": "https://the-guild.dev"
+  },
+  "license": "MIT",
+  "engines": {
+    "node": ">=16.0.0"
+  },
+  "main": "dist/cjs/index.js",
+  "module": "dist/esm/index.js",
+  "exports": {
+    ".": {
+      "require": {
+        "types": "./dist/typings/index.d.cts",
+        "default": "./dist/cjs/index.js"
+      },
+      "import": {
+        "types": "./dist/typings/index.d.ts",
+        "default": "./dist/esm/index.js"
+      },
+      "default": {
+        "types": "./dist/typings/index.d.ts",
+        "default": "./dist/esm/index.js"
+      }
+    },
+    "./package.json": "./package.json"
+  },
+  "typings": "dist/typings/index.d.ts",
+  "scripts": {
+    "build": "node ../../../scripts/generate-version.mjs && bob build",
+    "check:build": "bob check"
+  },
+  "peerDependencies": {
+    "@graphql-hive/gateway": "^2.0.0",
+    "graphql": "^0.13.0 || ^14.0.0 || ^15.0.0 || ^16.0.0"
+  },
+  "dependencies": {
+    "@graphql-hive/core": "workspace:*"
+  },
+  "devDependencies": {
+    "@envelop/types": "5.0.0",
+    "@graphql-hive/gateway": "^2.0.0"
+  },
+  "publishConfig": {
+    "registry": "https://registry.npmjs.org",
+    "access": "public",
+    "directory": "dist"
+  },
+  "sideEffects": false,
+  "typescript": {
+    "definition": "dist/typings/index.d.ts"
+  }
+}

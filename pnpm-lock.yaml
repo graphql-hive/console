@@ -648,6 +648,23 @@ importers:
         version: 16.9.0
     publishDirectory: dist
 
+  packages/libraries/gateway-usage:
+    dependencies:
+      '@graphql-hive/core':
+        specifier: workspace:*
+        version: link:../core/dist
+      graphql:
+        specifier: ^0.13.0 || ^14.0.0 || ^15.0.0 || ^16.0.0
+        version: 16.12.0
+    devDependencies:
+      '@envelop/types':
+        specifier: 5.0.0
+        version: 5.0.0
+      '@graphql-hive/gateway':
+        specifier: ^2.0.0
+        version: 2.7.2(@tanstack/react-form@1.28.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(@types/ioredis-mock@8.2.5)(@types/node@24.12.2)(@types/react-dom@18.3.5(@types/react@18.3.18))(@types/react@18.3.18)(date-fns@4.1.0)(graphql@16.12.0)(ioredis@5.10.1)(lucide-react@0.548.0(react@18.3.1))(lz-string@1.5.0)(pino@10.3.0)(prom-client@15.1.3)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(subscriptions-transport-ws@0.11.0(graphql@16.12.0))(zod@4.3.6)
+    publishDirectory: dist
+
   packages/libraries/laboratory:
     dependencies:
       '@base-ui/react':

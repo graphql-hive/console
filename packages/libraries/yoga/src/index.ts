@@ -2,13 +2,13 @@ import { DocumentNode, ExecutionArgs, GraphQLError, GraphQLSchema, Kind, parse }
 import { _createLRUCache, YogaServer, type GraphQLParams, type Plugin } from 'graphql-yoga';
 import {
   autoDisposeSymbol,
-  CollectUsageCallback,
   createHive as createHiveClient,
   HiveClient,
   HivePluginOptions,
   isAsyncIterable,
   isHiveClient,
 } from '@graphql-hive/core';
+import { CollectUsage } from '@graphql-hive/core/typings/client/types.js';
 import { Logger } from '@graphql-hive/logger';
 import { usePersistedOperations } from '@graphql-yoga/plugin-persisted-operations';
 import { version } from './version.js';
@@ -22,7 +22,7 @@ export {
 export type { SupergraphSDLFetcherOptions } from '@graphql-hive/core';
 
 type CacheRecord = {
-  callback: CollectUsageCallback;
+  callback: CollectUsage;
   paramsArgs: GraphQLParams;
   executionArgs?: ExecutionArgs;
   parsedDocument?: DocumentNode;
@@ -101,7 +101,7 @@ export function useHive(clientOrOptions: HiveClient | HivePluginOptions): Plugin
 
           if (!isAsyncIterable(result)) {
             args.contextValue.waitUntil(
-              record.callback(
+              record.callback.finish(
                 {
                   ...record.executionArgs,
                   document: record.parsedDocument ?? record.executionArgs.document,
@@ -124,7 +124,7 @@ export function useHive(clientOrOptions: HiveClient | HivePluginOptions): Plugin
             },
             onEnd() {
               args.contextValue.waitUntil(
-                record.callback(
+                record.callback.finish(
                   args,
                   errors.length ? { errors } : {},
                   record.experimental__documentId,
@@ -168,7 +168,7 @@ export function useHive(clientOrOptions: HiveClient | HivePluginOptions): Plugin
             parsedDocumentCache.set(record.paramsArgs.query, document);
           }
           serverContext.waitUntil(
-            record.callback(
+            record.callback.finish(
               {
                 document,
                 schema: latestSchema,
