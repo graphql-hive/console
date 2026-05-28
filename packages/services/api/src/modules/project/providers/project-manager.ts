@@ -3,6 +3,7 @@ import * as GraphQLSchema from 'packages/libraries/core/src/client/__generated__
 import { z } from 'zod';
 import type { ProjectReferenceInput } from '../../../__generated__/types';
 import type { Organization, Project, ProjectType, Target } from '../../../shared/entities';
+import { cache } from '../../../shared/helpers';
 import { AuditLogRecorder } from '../../audit-logs/providers/audit-log-recorder';
 import { Session } from '../../auth/lib/authz';
 import { IdTranslator } from '../../shared/providers/id-translator';
