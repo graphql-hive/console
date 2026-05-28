@@ -630,40 +630,40 @@ export class CompositeModel {
           conditionalBreakingChangeDiffConfig?.excludedAppDeploymentNames ?? null,
       });
 
-    const diffCheck = await this.checks.diff({
-      conditionalBreakingChangeConfig: conditionalBreakingChangeDiffConfig,
-      includeUrlChanges: {
-        schemasBefore: latestVersion.schemas,
-        schemasAfter: schemas,
-      },
-      filterOutFederationChanges: project.type === ProjectType.FEDERATION,
-      approvedChanges: null,
-      existingSdl: previousVersionSdl,
-      incomingSdl: compositionCheck.result?.fullSchemaSdl ?? null,
-      failDiffOnDangerousChange,
-      filterNestedChanges: true, // filter because deletes are never associated with schema proposals in this way.
-      getAffectedAppDeployments: getAffectedAppDeploymentsForDelete,
-    });
-
-    const contractChecks = await this.getContractChecks({
-      contracts,
-      compositionCheck,
-      conditionalBreakingChangeDiffConfig,
-      failDiffOnDangerousChange,
-      getAffectedAppDeployments: getAffectedAppDeploymentsForDelete,
-    });
-
-    const supergraphDiffCheck = await this.checks.diff({
-      existingSdl: latestComposable?.supergraphSdl ?? null,
-      incomingSdl: compositionCheck.result?.supergraph ?? null,
-      approvedChanges: null,
-      conditionalBreakingChangeConfig: null,
-      includeUrlChanges: false,
-      filterOutFederationChanges: false,
-      failDiffOnDangerousChange: false,
-      filterNestedChanges: true,
-      getAffectedAppDeployments: null,
-    });
+    const [diffCheck, contractChecks, supergraphDiffCheck] = await Promise.all([
+      this.checks.diff({
+        conditionalBreakingChangeConfig: conditionalBreakingChangeDiffConfig,
+        includeUrlChanges: {
+          schemasBefore: latestVersion.schemas,
+          schemasAfter: schemas,
+        },
+        filterOutFederationChanges: project.type === ProjectType.FEDERATION,
+        approvedChanges: null,
+        existingSdl: previousVersionSdl,
+        incomingSdl: compositionCheck.result?.fullSchemaSdl ?? null,
+        failDiffOnDangerousChange,
+        filterNestedChanges: true, // filter because deletes are never associated with schema proposals in this way.
+        getAffectedAppDeployments: getAffectedAppDeploymentsForDelete,
+      }),
+      this.getContractChecks({
+        contracts,
+        compositionCheck,
+        conditionalBreakingChangeDiffConfig,
+        failDiffOnDangerousChange,
+        getAffectedAppDeployments: getAffectedAppDeploymentsForDelete,
+      }),
+      this.checks.diff({
+        existingSdl: latestComposable?.supergraphSdl ?? null,
+        incomingSdl: compositionCheck.result?.supergraph ?? null,
+        approvedChanges: null,
+        conditionalBreakingChangeConfig: null,
+        includeUrlChanges: false,
+        filterOutFederationChanges: false,
+        failDiffOnDangerousChange: false,
+        filterNestedChanges: true,
+        getAffectedAppDeployments: null,
+      }),
+    ]);
 
     const { changes, breakingChanges } =
       diffCheck.status === 'failed'
