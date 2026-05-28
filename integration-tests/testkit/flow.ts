@@ -1016,6 +1016,7 @@ export function getSchemaVersionWithAllDetails(
               commit
             }
             subgraphDiffs {
+              __typename
               ... on SubgraphDiffAdded {
                 subgraphVersion {
                   id

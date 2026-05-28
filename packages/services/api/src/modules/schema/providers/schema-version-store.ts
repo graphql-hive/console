@@ -1192,10 +1192,6 @@ export class SchemaVersionStore {
         continue;
       }
 
-      if (!previousSchemaVersion.actionId) {
-        throw new Error(`Invariant: The previous schema version actionId can not be null.`);
-      }
-
       // if there is no service name, this is always a "changed" event
       // as we only have a "single" subgraph
       if (!node.service_name) {

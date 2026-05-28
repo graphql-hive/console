@@ -362,8 +362,17 @@ export class SchemaVersionHelper {
       schemaVersion.id,
     );
 
-    const edges =
-      await this.schemaVersions.getSchemaLogEdgesWithNodesForSchemaVersion(schemaVersion);
+    const edges = await this.schemaVersions
+      .getSchemaLogEdgesWithNodesForSchemaVersion(schemaVersion)
+      .then(edges =>
+        edges.sort((a, b) => {
+          const aSubgraphName = a.subgraphName ?? '';
+          const bSubgraphName = b.subgraphName ?? '';
+          if (aSubgraphName < bSubgraphName) return -1;
+          if (aSubgraphName > bSubgraphName) return 1;
+          return 0;
+        }),
+      );
 
     const previousSchemaLogPromises: Array<Promise<void>> = [];
     const previousSchemaLogsById = new Map<string, SchemaLog>();
