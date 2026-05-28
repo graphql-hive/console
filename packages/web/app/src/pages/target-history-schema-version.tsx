@@ -1513,7 +1513,7 @@ export const SchemaVersionSummary = (props: {
                   <Tooltip>
                     <TooltipTrigger>
                       <span className="ml-2 flex items-center gap-0.5 text-xs text-red-500/80 lg:text-sm">
-                        <ShieldAlertIcon className="inline size-2 md:size-3" />
+                        <ShieldAlertIcon size="14" className="inline" />
                         {publicChangeStats.notSafeChanges} not safe
                       </span>
                     </TooltipTrigger>
