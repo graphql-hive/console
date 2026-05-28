@@ -1460,12 +1460,11 @@ export const SchemaVersionSummary = (props: {
         <p className="mt-0.5 text-[13px]">Changes introduced by this version.</p>
       </div>
 
-      <div className="bg-neutral-2 dark:bg-neutral-3 grid grid-cols-2 gap-px overflow-hidden rounded-xl border sm:grid-cols-6">
-        <Stat label="Schema changes" value={publicChangeStats.totalChanges} tone="muted" />
+      <div className="bg-neutral-2 dark:bg-neutral-3 grid grid-cols-3 gap-px overflow-hidden rounded-xl border 2xl:grid-cols-6">
+        <Stat label="Schema changes" value={publicChangeStats.totalChanges} />
         <Stat
           label="Breaking changes"
           value={publicChangeStats.breakingChanges}
-          tone="muted"
           additionalValue={
             publicChangeStats.breakingChanges && schemaVersion.isComposable ? (
               publicChangeStats.notSafeChanges ? (
@@ -1497,10 +1496,10 @@ export const SchemaVersionSummary = (props: {
             ) : null
           }
         />
-        <Stat label="Total Subgraphs" value={subgraphStats.total} tone="muted" />
-        <Stat label="Subgraphs added" value={subgraphStats.added} tone="safe" />
-        <Stat label="Subgraphs removed" value={subgraphStats.removed} tone="danger" />
-        <Stat label="Subgraphs updated" value={subgraphStats.updated} tone="info" />
+        <Stat label="Total Subgraphs" value={subgraphStats.total} />
+        <Stat label="Subgraphs added" value={subgraphStats.added} className="hidden 2xl:flex" />
+        <Stat label="Subgraphs removed" value={subgraphStats.removed} className="hidden 2xl:flex" />
+        <Stat label="Subgraphs updated" value={subgraphStats.updated} className="hidden 2xl:flex" />
       </div>
 
       <div className="overflow-hidden rounded-xl border">
@@ -1529,22 +1528,14 @@ export const SchemaVersionSummary = (props: {
 const Stat = (props: {
   label: string;
   value: number;
-  tone: 'safe' | 'danger' | 'info' | 'muted';
   additionalValue?: ReactNode;
+  className?: string;
 }) => {
-  const toneText =
-    props.tone === 'safe'
-      ? 'text-yellow-600'
-      : props.tone === 'danger'
-        ? 'text-red-600'
-        : props.tone === 'info'
-          ? 'text-blue-600'
-          : '';
   return (
-    <div className="flex flex-col gap-1.5 px-5 py-4">
-      <span className="text-[10.5px] font-medium uppercase tracking-[0.14em]">{props.label}</span>
+    <div className={cn('flex flex-col gap-1.5 px-5 py-4', props.className)}>
+      <span className="text-xs font-medium uppercase tracking-[0.1em]">{props.label}</span>
       <span>
-        <span className={cn('text-xl leading-none tracking-tight', props.value !== 0 && toneText)}>
+        <span className="text-xl leading-none tracking-tight">
           {props.value === 0 ? '-' : props.value}
         </span>
         {props.additionalValue && <> {props.additionalValue}</>}
