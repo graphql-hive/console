@@ -176,7 +176,6 @@ module.exports = {
         '@theguild',
         '@theguild/eslint-config/react',
         'plugin:better-tailwindcss/legacy-recommended',
-        'plugin:@next/next/recommended',
       ],
       settings: {
         'import/resolver': {
