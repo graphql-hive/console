@@ -10,6 +10,7 @@ import {
   CircleIcon,
   Clock,
   Copy,
+  DownloadIcon,
   ExternalLink,
   FileCode2,
   FileIcon,
@@ -533,11 +534,49 @@ function GraphQLSchemaView(props: {
         </GenericGraphCard>
       )}
       {viewMode === 'raw' && props.currentSdl && (
-        <GenericGraphCard title={<>{props.toName}</>}>
+        <GenericGraphCard
+          title={<>{props.toName}</>}
+          actions={
+            <>
+              <DownloadButton contents={props.currentSdl} fileName={props.toName + '.graphqls'} />
+            </>
+          }
+        >
           <SDLView sdl={props.currentSdl} />
         </GenericGraphCard>
       )}
     </>
+  );
+}
+
+function DownloadButton(props: { contents: string; fileName: string }) {
+  return (
+    <TooltipProvider>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <Button
+            variant="ghost"
+            size="xs"
+            onClick={() => {
+              const element = document.createElement('a');
+              element.setAttribute(
+                'href',
+                'data:text/plain;charset=utf-8, ' + encodeURIComponent(props.contents),
+              );
+              element.setAttribute('download', props.fileName);
+              document.body.appendChild(element);
+              element.click();
+
+              document.body.removeChild(element);
+            }}
+            className="mr-2 text-xs font-normal"
+          >
+            <DownloadIcon className="mr-2 size-2" /> Download
+          </Button>
+        </TooltipTrigger>
+        <TooltipContent>Download {props.fileName}</TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
   );
 }
 
@@ -596,6 +635,7 @@ function FilterableSchemaChangeBlock(props: {
 
 const SchemaVersionSubgraphView__SubgraphDiffFragment = graphql(`
   fragment SchemaVersionSubgraphView__SubgraphDiffFragment on SubgraphDiff {
+    ...SubgraphRow_SubgraphDiffFragment
     ... on SubgraphDiffAdded {
       subgraphVersion {
         id
@@ -641,7 +681,7 @@ const SchemaVersionSubgraphView__SubgraphDiffFragment = graphql(`
 `);
 
 function SubgraphCard(props: {
-  diff: any;
+  diff: FragmentType<typeof SubgraphRow_SubgraphDiffFragment>;
   renderChildren?: () => ReactNode;
   isInitiallyCollapsed?: boolean;
 }) {
@@ -985,10 +1025,10 @@ function CopyChip(props: { value: string; label?: string }) {
   );
 }
 
-function MetaCell(props: { label: string; children: ReactNode }): ReactElement {
+function MetaCell(props: { label: string; children: ReactNode; className?: string }): ReactElement {
   return (
-    <div className="min-w-0">
-      <div className="text-xs font-bold uppercase tracking-[0.025em]">{props.label}</div>
+    <div className={cn('min-w-0', props.className)}>
+      <div className="text-xs font-bold capitalize">{props.label}</div>
       <div className="mt-1">{props.children}</div>
     </div>
   );
@@ -1044,8 +1084,9 @@ function SchemaVersionHeader(props: {
       <p className="mt-1.5 text-sm">Detailed view of the graph version changes.</p>
       <div
         className={cn(
-          'bg-neutral-2 dark:bg-neutral-3 mt-6 grid grid-cols-2 gap-x-6 gap-y-4 rounded-xl border px-5 py-4 sm:grid-cols-3',
-          (schemaVersion.githubMetadata || schemaVersion.meta?.commit) && 'sm:grid-cols-4',
+          'bg-neutral-2 dark:bg-neutral-3 mt-6 grid grid-cols-3 gap-x-6 gap-y-4 rounded-xl border px-5 py-4',
+          (schemaVersion.githubMetadata || schemaVersion.meta?.commit) &&
+            'grid-cols-3 xl:grid-cols-4',
         )}
       >
         <MetaCell label="Status">
@@ -1138,13 +1179,13 @@ function SchemaVersionHeader(props: {
             </span>
           </MetaCell>
         ) : null}
-        <MetaCell label="created at">
-          <span className="inline-flex items-center gap-1.5 text-sm">
-            <Clock className="h-3.5 w-3.5" />
+        <MetaCell label="created at" className="hidden xl:block">
+          <span className="inline-flex items-center gap-1.5 text-xs">
+            <Clock className="size-2.5" />
             <TimeAgo date={schemaVersion.date} />
           </span>
           {schemaVersion.meta?.author && (
-            <span className="mt-0.5 block text-[12px]">by {schemaVersion.meta.author}</span>
+            <span className="mt-0.5 block truncate text-xs">by {schemaVersion.meta.author}</span>
           )}
         </MetaCell>
       </div>
@@ -1497,9 +1538,17 @@ export const SchemaVersionSummary = (props: {
           }
         />
         <Stat label="Total Subgraphs" value={subgraphStats.total} />
-        <Stat label="Subgraphs added" value={subgraphStats.added} className="hidden 2xl:flex" />
-        <Stat label="Subgraphs removed" value={subgraphStats.removed} className="hidden 2xl:flex" />
-        <Stat label="Subgraphs updated" value={subgraphStats.updated} className="hidden 2xl:flex" />
+        <Stat label="Added subgraphs" value={subgraphStats.added} className="hidden 2xl:flex" />
+        <Stat
+          label="Removed Subgraphs "
+          value={subgraphStats.removed}
+          className="hidden 2xl:flex"
+        />
+        <Stat
+          label="Updated Subgraphs "
+          value={subgraphStats.updated}
+          className="hidden 2xl:flex"
+        />
       </div>
 
       <div className="overflow-hidden rounded-xl border">
@@ -1533,7 +1582,7 @@ const Stat = (props: {
 }) => {
   return (
     <div className={cn('flex flex-col gap-1.5 px-5 py-4', props.className)}>
-      <span className="text-xs font-medium uppercase tracking-[0.1em]">{props.label}</span>
+      <span className="text-xs font-medium capitalize tracking-[0.1em]">{props.label}</span>
       <span>
         <span className="text-xl leading-none tracking-tight">
           {props.value === 0 ? '-' : props.value}
@@ -1719,7 +1768,7 @@ function SubgraphLink(props: { url: string }) {
   );
 }
 
-function GenericGraphCard(props: { title: ReactNode; children?: ReactNode }) {
+function GenericGraphCard(props: { title: ReactNode; children?: ReactNode; actions?: ReactNode }) {
   return (
     <div className="divide-y overflow-hidden rounded-xl border">
       <div className="bg-neutral-2 dark:bg-neutral-3 flex items-center gap-4 px-5 py-3.5">
@@ -1737,6 +1786,7 @@ function GenericGraphCard(props: { title: ReactNode; children?: ReactNode }) {
             <code className="py-0.5 text-xs">{props.title}</code>
           </div>
         </div>
+        {props.actions ? <>{props.actions}</> : null}
       </div>
       {props.children}
     </div>
