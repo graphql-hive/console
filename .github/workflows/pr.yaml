@@ -57,7 +57,7 @@ jobs:
     with:
       imageTag: ${{ github.event.pull_request.head.sha }}
 
-  # e2e tests using Cypress, runs Hive from pre-built Docker images.
+  # e2e tests using Playwright, runs Hive from pre-built Docker images.
   e2e:
     name: test
     needs: build
