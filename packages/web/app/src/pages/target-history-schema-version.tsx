@@ -1077,7 +1077,7 @@ function SchemaVersionHeader(props: {
   const schemaVersion = useFragment(SchemaVersionHeader_SchemaVersionFragment, props.schemaVersion);
   return (
     <header>
-      <div className="mt-3 flex flex-wrap items-baseline gap-x-4 gap-y-2">
+      <div className="flex flex-wrap items-baseline gap-x-4 gap-y-2">
         <h1 className="text-xl font-semibold leading-tight tracking-tight">Graph Version</h1>
         <CopyChip value={schemaVersion.id} label={schemaVersion.id.slice(0, 8)} />
       </div>
