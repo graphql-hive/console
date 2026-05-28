@@ -83,8 +83,34 @@ export default gql`
     SINGLE @tag(name: "public")
   }
 
+  enum ProjectsSortField {
+    NAME @tag(name: "public")
+    CREATED_AT @tag(name: "public")
+    REQUESTS @tag(name: "public")
+    SCHEMA_VERSIONS @tag(name: "public")
+  }
+
+  enum ProjectsSortDirection {
+    ASC @tag(name: "public")
+    DESC @tag(name: "public")
+  }
+
+  input ProjectsSortInput {
+    field: ProjectsSortField! @tag(name: "public")
+    direction: ProjectsSortDirection! @tag(name: "public")
+    """
+    Required when sorting by REQUESTS or SCHEMA_VERSIONS.
+    """
+    period: DateRangeInput @tag(name: "public")
+  }
+
   extend type Organization {
-    projects: ProjectConnection! @tag(name: "public")
+    projects(
+      first: Int @tag(name: "public")
+      after: String @tag(name: "public")
+      search: String @tag(name: "public")
+      sort: ProjectsSortInput @tag(name: "public")
+    ): ProjectConnection! @tag(name: "public")
     viewerCanCreateProject: Boolean!
     projectBySlug(projectSlug: String!): Project
   }
