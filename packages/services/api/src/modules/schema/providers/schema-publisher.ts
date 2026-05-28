@@ -2370,11 +2370,10 @@ export class SchemaPublisher {
 
       // Note: we use fallback value of '' to support single schema workflows.
       const serviceName = targetLogEdge.node.service_name ?? '';
-      if (diffMap.has(serviceName)) {
-        throw new Error(
-          'INVARIANT: Invalid database state. A log for the same service can not appear more than once.',
-        );
-      }
+      invariant(
+        diffMap.has(serviceName) === false,
+        'Invalid database state. A log for the same service can not appear more than once.',
+      );
 
       diffMap.set(serviceName, {
         type: 'removed',
@@ -2493,7 +2492,8 @@ export class SchemaPublisher {
         continue;
       }
 
-      throw new Error(`INVARIANT: Uncovered case.`);
+      diff satisfies never;
+      invariant(false, 'Unexpected diff type.');
     }
 
     this.logger.debug(
@@ -2951,11 +2951,10 @@ export class SchemaPublisher {
     });
 
     if (schemaVersion.schemaCompositionErrors === null) {
-      if (!schemaVersion.compositeSchemaSDL) {
-        throw new Error(
-          'INVARIANT: A newly created schema version should always have a public schema SDL if there is no composition errors.',
-        );
-      }
+      invariant(
+        !!schemaVersion.compositeSchemaSDL,
+        'A newly created schema version should always have a public schema SDL if there is no composition errors.',
+      );
 
       this.logger.debug('update CDN state for target. (targetId=%s)', target.id);
 
