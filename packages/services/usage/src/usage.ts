@@ -8,7 +8,11 @@ import {
   Partitioners,
   RetryOptions,
 } from 'kafkajs';
-import { traceInlineSync, type ServiceLogger } from '@hive/service-common';
+import {
+  createMskIamTokenProvider,
+  traceInlineSync,
+  type ServiceLogger,
+} from '@hive/service-common';
 import type { RawOperationMap, RawReport } from '@hive/usage-common';
 import { compress } from '@hive/usage-common';
 import * as Sentry from '@sentry/node';
@@ -133,7 +137,7 @@ export function createUsage(config: {
 
   const kafka = new Kafka({
     clientId: 'usage',
-    brokers: [config.kafka.connection.broker],
+    brokers: config.kafka.connection.broker.split(',').map(b => b.trim()),
     ssl: config.kafka.connection.ssl,
     sasl:
       config.kafka.connection.sasl?.mechanism === 'plain'
@@ -154,7 +158,14 @@ export function createUsage(config: {
                 username: config.kafka.connection.sasl.username,
                 password: config.kafka.connection.sasl.password,
               }
-            : undefined,
+            : config.kafka.connection.sasl?.mechanism === 'aws-iam'
+              ? {
+                  mechanism: 'oauthbearer',
+                  oauthBearerProvider: createMskIamTokenProvider(
+                    config.kafka.connection.sasl.region,
+                  ),
+                }
+              : undefined,
     logLevel: logLevel.INFO,
     logCreator() {
       return entry => {
