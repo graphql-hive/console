@@ -455,52 +455,51 @@ export class CompositeModel {
           conditionalBreakingChangeDiffConfig?.excludedAppDeploymentNames ?? null,
       });
 
-    const diffCheck = await this.checks.diff({
-      conditionalBreakingChangeConfig: conditionalBreakingChangeDiffConfig,
-      includeUrlChanges: {
-        schemasBefore: latestComposable?.schemas ?? [],
-        schemasAfter: schemas,
-      },
-      filterOutFederationChanges: project.type === ProjectType.FEDERATION,
-      approvedChanges: null,
-      existingSdl: previousVersionSdl,
-      incomingSdl: compositionCheck.result?.fullSchemaSdl ?? null,
-      failDiffOnDangerousChange,
-      filterNestedChanges: true, // filter because publish is never associated to schema proposals in this way.
-      getAffectedAppDeployments: getAffectedAppDeploymentsForPublish,
-    });
-
-    const serviceDiffCheck = await this.checks.diff({
-      existingSdl: previousService?.sdl ?? null,
-      incomingSdl: input.sdl,
-      approvedChanges: null,
-      conditionalBreakingChangeConfig: null,
-      includeUrlChanges: false,
-      filterOutFederationChanges: false,
-      failDiffOnDangerousChange: false,
-      filterNestedChanges: true,
-      getAffectedAppDeployments: null,
-    });
-
-    const supergraphDiffCheck = await this.checks.diff({
-      existingSdl: latestComposable?.supergraphSdl ?? null,
-      incomingSdl: compositionCheck.result?.supergraph ?? null,
-      approvedChanges: null,
-      conditionalBreakingChangeConfig: null,
-      includeUrlChanges: false,
-      filterOutFederationChanges: false,
-      failDiffOnDangerousChange: false,
-      filterNestedChanges: true,
-      getAffectedAppDeployments: null,
-    });
-
-    const contractChecks = await this.getContractChecks({
-      contracts,
-      compositionCheck,
-      conditionalBreakingChangeDiffConfig,
-      failDiffOnDangerousChange,
-      getAffectedAppDeployments: getAffectedAppDeploymentsForPublish,
-    });
+    const [diffCheck, serviceDiffCheck, supergraphDiffCheck, contractChecks] = await Promise.all([
+      this.checks.diff({
+        conditionalBreakingChangeConfig: conditionalBreakingChangeDiffConfig,
+        includeUrlChanges: {
+          schemasBefore: latestComposable?.schemas ?? [],
+          schemasAfter: schemas,
+        },
+        filterOutFederationChanges: project.type === ProjectType.FEDERATION,
+        approvedChanges: null,
+        existingSdl: previousVersionSdl,
+        incomingSdl: compositionCheck.result?.fullSchemaSdl ?? null,
+        failDiffOnDangerousChange,
+        filterNestedChanges: true, // filter because publish is never associated to schema proposals in this way.
+        getAffectedAppDeployments: getAffectedAppDeploymentsForPublish,
+      }),
+      this.checks.diff({
+        existingSdl: previousService?.sdl ?? null,
+        incomingSdl: input.sdl,
+        approvedChanges: null,
+        conditionalBreakingChangeConfig: null,
+        includeUrlChanges: false,
+        filterOutFederationChanges: false,
+        failDiffOnDangerousChange: false,
+        filterNestedChanges: true,
+        getAffectedAppDeployments: null,
+      }),
+      this.checks.diff({
+        existingSdl: latestComposable?.supergraphSdl ?? null,
+        incomingSdl: compositionCheck.result?.supergraph ?? null,
+        approvedChanges: null,
+        conditionalBreakingChangeConfig: null,
+        includeUrlChanges: false,
+        filterOutFederationChanges: false,
+        failDiffOnDangerousChange: false,
+        filterNestedChanges: true,
+        getAffectedAppDeployments: null,
+      }),
+      this.getContractChecks({
+        contracts,
+        compositionCheck,
+        conditionalBreakingChangeDiffConfig,
+        failDiffOnDangerousChange,
+        getAffectedAppDeployments: getAffectedAppDeploymentsForPublish,
+      }),
+    ]);
 
     const messages: string[] = [];
 
