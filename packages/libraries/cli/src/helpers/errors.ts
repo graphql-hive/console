@@ -410,6 +410,26 @@ export class InvalidFederationSubgraphError extends HiveCLIError {
   }
 }
 
+export class InvalidVersionIdError extends HiveCLIError {
+  constructor(flagName = '--version', reason?: string) {
+    super(
+      ExitCode.BAD_INIT,
+      errorCode(ErrorCategory.GENERIC, 21),
+      `Invalid version id provided for "${flagName}".${reason ? `\n${reason}\n` : ''}`,
+    );
+  }
+}
+
+export class ConflictingOptionsError extends HiveCLIError {
+  constructor(flagNames: string[], reason?: string) {
+    super(
+      ExitCode.BAD_INIT,
+      errorCode(ErrorCategory.GENERIC, 21),
+      `The options ${flagNames.map(name => `"${name}"`).join(', ')} conflict. Please only provide one.".${reason ? `\n${reason}\n` : ''}`,
+    );
+  }
+}
+
 export class SchemaNotFoundError extends HiveCLIError {
   constructor(commit?: string) {
     super(

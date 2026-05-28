@@ -2991,6 +2991,22 @@ export class SchemaPublisher {
       schemaVersion.id,
     );
 
+    const linkToWebsite =
+      typeof this.schemaModuleConfig.schemaPublishLink === 'function'
+        ? this.schemaModuleConfig.schemaPublishLink({
+            organization: {
+              slug: organization.slug,
+            },
+            project: {
+              slug: project.slug,
+            },
+            target: {
+              slug: target.slug,
+            },
+            version: schemaVersion,
+          })
+        : null;
+
     return {
       type: 'success' as const,
       schemaVersion: {
@@ -2998,6 +3014,7 @@ export class SchemaPublisher {
         projectId: target.projectId,
         organizationId: target.orgId,
       },
+      linkToWebsite,
     };
   }
 

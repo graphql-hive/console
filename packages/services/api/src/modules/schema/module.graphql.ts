@@ -1969,7 +1969,14 @@ export default gql`
   }
 
   type SchemaVersionPromoteResultOk {
+    """
+    The new schema version that was created via the promotion.
+    """
     newSchemaVersion: SchemaVersion!
+    """
+    The link for viewing the new schema version on the Hive Console dashboard.
+    """
+    linkToWebsite: String
   }
 
   type SchemaVersionPromoteResultError {

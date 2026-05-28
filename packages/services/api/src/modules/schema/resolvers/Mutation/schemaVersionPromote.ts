@@ -18,6 +18,7 @@ export const schemaVersionPromote: NonNullable<MutationResolvers['schemaVersionP
     return {
       ok: {
         newSchemaVersion: result.schemaVersion,
+        linkToWebsite: result.linkToWebsite,
       },
     };
   }

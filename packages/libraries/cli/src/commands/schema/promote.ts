@@ -5,7 +5,10 @@ import { graphql } from '../../gql';
 import * as GraphQLSchema from '../../gql/graphql';
 import { graphqlEndpoint } from '../../helpers/config';
 import {
+  ConflictingOptionsError,
   InvalidTargetError,
+  InvalidVersionIdError,
+  MissingArgumentsError,
   MissingEndpointError,
   MissingRegistryTokenError,
   UnexpectedError,
@@ -19,6 +22,7 @@ const CLI_SchemaVersionPromoteMutation = graphql(/* GraphQL */ `
         newSchemaVersion {
           id
         }
+        linkToWebsite
       }
       error {
         message
@@ -112,7 +116,7 @@ export default class SchemaPromote extends Command<typeof SchemaPromote> {
       }
 
       if (!toTarget) {
-        throw new Error('Could not determine target to which to promote to.');
+        throw new InvalidTargetError('--to');
       }
 
       let fromTarget: GraphQLSchema.TargetReferenceInput | null = null;
@@ -129,26 +133,33 @@ export default class SchemaPromote extends Command<typeof SchemaPromote> {
       if (flags.version) {
         const result = z.string().uuid().safeParse(flags.version);
         if (result.error) {
-          throw new Error('Invalid UUID provided for "--version"');
+          throw new InvalidVersionIdError();
         }
         fromSchemaVersionById = result.data;
       }
 
       if (fromTarget && fromSchemaVersionById) {
-        throw new Error('Either provide "--from" or "--version", not both.');
+        throw new ConflictingOptionsError(['--from', '--version']);
+      }
+
+      let source: GraphQLSchema.SchemaVersionPromoteSourceInput;
+
+      if (fromTarget) {
+        source = { fromTarget };
+      } else if (fromSchemaVersionById) {
+        source = { fromSchemaVersionById };
+      } else {
+        throw new MissingArgumentsError(
+          ['--from', SchemaPromote.flags.from.description ?? ''],
+          ['--version', SchemaPromote.flags.version.description ?? ''],
+        );
       }
 
       const result = await this.registryApi(endpoint, accessToken).request({
         operation: CLI_SchemaVersionPromoteMutation,
         variables: {
           input: {
-            source: fromTarget
-              ? { fromTarget }
-              : fromSchemaVersionById
-                ? { fromSchemaVersionById }
-                : (() => {
-                    throw new Error('Provide either "--from" or "--version".');
-                  })(),
+            source,
             target: {
               toTarget,
             },
@@ -159,7 +170,6 @@ export default class SchemaPromote extends Command<typeof SchemaPromote> {
       if (result.schemaVersionPromote.error) {
         this.logFailure(result.schemaVersionPromote.error.message);
         this.exit(1);
-        return;
       }
 
       if (result.schemaVersionPromote.ok) {
@@ -168,9 +178,9 @@ export default class SchemaPromote extends Command<typeof SchemaPromote> {
         );
         this.logSuccess('Schema Version successfully promoted.');
 
-        // if (result.schemaVersionPromote.ok.linkToWebsite) {
-        //   this.logInfo(`Available at ${result.schemaVersionPromote.linkToWebsite}`);
-        // }
+        if (result.schemaVersionPromote.ok.linkToWebsite) {
+          this.logInfo(`Available at ${result.schemaVersionPromote.ok.linkToWebsite}`);
+        }
       }
     } catch (error) {
       if (error instanceof Errors.CLIError) {
