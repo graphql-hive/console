@@ -33,6 +33,7 @@ import {
   ChangesBlock,
   CompositionErrorsSection_SchemaErrorConnection,
 } from '@/components/target/history/errors-and-changes';
+import { useTheme } from '@/components/theme/theme-provider';
 import { BadgeRounded } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Link } from '@/components/ui/link';
@@ -888,10 +889,11 @@ function GraphVersionSubgraphChangesView(props: {
 }
 
 function SDLDiffView(props: { before: string; after: string }) {
+  const { resolvedTheme } = useTheme();
   return (
     <MultiFileDiff
       options={{
-        theme: { dark: 'pierre-dark', light: 'pierre-light' },
+        theme: resolvedTheme === 'dark' ? 'pierre-dark' : 'pierre-light',
         disableFileHeader: true,
         diffStyle: 'unified',
       }}
@@ -908,6 +910,7 @@ function SDLDiffView(props: { before: string; after: string }) {
 }
 
 function SDLView(props: { sdl: string }) {
+  const { resolvedTheme } = useTheme();
   return (
     <div className="max-w-[inherit]">
       <File
@@ -916,7 +919,7 @@ function SDLView(props: { sdl: string }) {
           contents: props.sdl,
         }}
         options={{
-          theme: { dark: 'pierre-dark', light: 'pierre-light' },
+          theme: resolvedTheme === 'dark' ? 'pierre-dark' : 'pierre-light',
           disableFileHeader: true,
         }}
       />

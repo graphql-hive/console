@@ -35,7 +35,7 @@
     "@ladle/react": "5.1.1",
     "@monaco-editor/react": "4.8.0-rc.2",
     "@n1ru4l/react-time-ago": "1.1.0",
-    "@pierre/diffs": "1.1.22",
+    "@pierre/diffs": "1.2.3",
     "@radix-ui/react-accordion": "1.2.2",
     "@radix-ui/react-alert-dialog": "1.1.4",
     "@radix-ui/react-avatar": "1.1.2",
