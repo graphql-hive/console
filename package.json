@@ -165,7 +165,9 @@
       "glob@10.x.x": "^10.5.0",
       "path-to-regexp@0.x.x": "^0.1.13",
       "fast-uri@2.x.x": "3.x.x",
-      "protobufjs@8.x.x": "^8.0.2"
+      "protobufjs@8.x.x": "^8.0.2",
+      "@opentelemetry/exporter-jaeger": "-",
+      "uuid@<14.x.x": "^14.0.0"
     },
     "patchedDependencies": {
       "mjml-core@4.14.0": "patches/mjml-core@4.14.0.patch",
