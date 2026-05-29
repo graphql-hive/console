@@ -1078,10 +1078,10 @@ function SchemaVersionHeader(props: {
   return (
     <header>
       <div className="flex flex-wrap items-baseline gap-x-4 gap-y-2">
-        <h1 className="text-xl font-semibold leading-tight tracking-tight">Graph Version</h1>
+        <h1 className="text-xl font-semibold leading-tight">Graph Version</h1>
         <CopyChip value={schemaVersion.id} label={schemaVersion.id.slice(0, 8)} />
       </div>
-      <p className="mt-1.5 text-sm">Detailed view of the graph version changes.</p>
+      <p className="text-neutral-10 mt-1.5 text-sm">Detailed view of the graph version changes.</p>
       <div
         className={cn(
           'bg-neutral-2 dark:bg-neutral-3 mt-6 grid grid-cols-3 gap-x-6 gap-y-4 rounded-xl border px-5 py-4',
@@ -1092,9 +1092,7 @@ function SchemaVersionHeader(props: {
         <MetaCell label="Status">
           <span className="inline-flex items-center gap-1.5">
             <BadgeRounded color={schemaVersion.isValid ? 'green' : 'red'} className="mx-0" />
-            <span className="text-sm font-medium">
-              {schemaVersion.isValid ? 'Composable' : 'Failed'}
-            </span>
+            <span className="text-[12px]">{schemaVersion.isValid ? 'Composable' : 'Failed'}</span>
           </span>
         </MetaCell>
         <MetaCell label="Origin">
@@ -1553,7 +1551,7 @@ export const SchemaVersionSummary = (props: {
 
       <div className="overflow-hidden rounded-xl border">
         <div className="bg-neutral-2 dark:bg-neutral-3 flex items-center justify-between border-b px-5 py-3">
-          <div className="flex items-center gap-2 text-[11px] font-medium uppercase tracking-[0.14em]">
+          <div className="flex items-center gap-2 text-xs font-medium capitalize">
             <span>Subgraph Overview</span>
           </div>
         </div>
@@ -1582,7 +1580,7 @@ const Stat = (props: {
 }) => {
   return (
     <div className={cn('flex flex-col gap-1.5 px-5 py-4', props.className)}>
-      <span className="text-xs font-medium capitalize tracking-[0.1em]">{props.label}</span>
+      <span className="text-xs font-bold capitalize">{props.label}</span>
       <span>
         <span className="text-xl leading-none tracking-tight">
           {props.value === 0 ? '-' : props.value}
