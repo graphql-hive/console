@@ -37,6 +37,7 @@ import {
 import { useTheme } from '@/components/theme/theme-provider';
 import { BadgeRounded } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { File, MultiFileDiff } from '@/components/ui/diffs';
 import { Link } from '@/components/ui/link';
 import { QueryError } from '@/components/ui/query-error';
 import { Spinner } from '@/components/ui/spinner';
@@ -47,7 +48,6 @@ import { FragmentType, graphql, useFragment } from '@/gql';
 import { SeverityLevelType } from '@/gql/graphql';
 import { useResetState } from '@/lib/hooks/use-reset-state';
 import { cn } from '@/lib/utils';
-import { File, MultiFileDiff } from '@pierre/diffs/react';
 import {
   CheckCircledIcon,
   CubeIcon,
