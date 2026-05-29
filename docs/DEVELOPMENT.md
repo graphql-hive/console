@@ -108,8 +108,8 @@ If you already started Hive via `pnpm local:setup` or the VSCode `Start Hive` bu
 pnpm dev:observability
 ```
 
-(equivalent to `docker compose -f docker/docker-compose.dev.yml --profile observability up -d`). Tear
-it down again with `pnpm dev:observability:down`.
+(equivalent to `docker compose -f docker/docker-compose.dev.yml --profile observability up -d`).
+Tear it down again with `pnpm dev:observability:down`.
 
 If you're starting from scratch and want both at once:
 
@@ -127,18 +127,20 @@ Either command is idempotent and safe to re-run.
   `scripts/seed-alerts-live/README.md` for a script that drives load through this path.
 
 > **Dual-collector model.** Production splits OTLP ingest across two collectors: one customer-facing
-> with `hiveauth` (deployed via [`deployment/services/otel-collector.ts`](../deployment/services/otel-collector.ts))
-> for customer trace ingest on `:4318`/`:4317`, and a separate auth-free internal collector
-> (deployed via the Helm chart in [`deployment/utils/observability.ts`](../deployment/utils/observability.ts))
-> for Hive services' own spans. Internal services (`server`, `workflows`, `commerce`, etc.) point at
-> the **internal** collector via `OPENTELEMETRY_COLLECTOR_ENDPOINT`. Locally we collapse both roles
-> into the single `otel-collector` container by adding a second auth-free receiver block (`otlp/internal`,
-> ports `:4319` / `:4320`) alongside the customer-facing one. Hive services running on the host point
-> at `http://localhost:4320` (set in each service's `.env.template`); customer-style ingest tests
-> still hit `:4318` and exercise `hiveauth`.
+> with `hiveauth` (deployed via
+> [`deployment/services/otel-collector.ts`](../deployment/services/otel-collector.ts)) for customer
+> trace ingest on `:4318`/`:4317`, and a separate auth-free internal collector (deployed via the
+> Helm chart in [`deployment/utils/observability.ts`](../deployment/utils/observability.ts)) for
+> Hive services' own spans. Internal services (`server`, `workflows`, `commerce`, etc.) point at the
+> **internal** collector via `OPENTELEMETRY_COLLECTOR_ENDPOINT`. Locally we collapse both roles into
+> the single `otel-collector` container by adding a second auth-free receiver block
+> (`otlp/internal`, ports `:4319` / `:4320`) alongside the customer-facing one. Hive services
+> running on the host point at `http://localhost:4320` (set in each service's `.env.template`);
+> customer-style ingest tests still hit `:4318` and exercise `hiveauth`.
+
 - Datasource UIDs locally: `local-prom` and `local-tempo` (clearly distinct from the prod UIDs
-  `grafanacloud-prom` / `grafanacloud-traces` so there's no ambiguity about which environment
-  you're looking at).
+  `grafanacloud-prom` / `grafanacloud-traces` so there's no ambiguity about which environment you're
+  looking at).
 
 ### How dashboards get to local Grafana
 

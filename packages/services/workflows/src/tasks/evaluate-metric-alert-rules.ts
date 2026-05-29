@@ -78,7 +78,7 @@ export const task = implementTask(EvaluateMetricAlertRulesTask, async args => {
         attributes: {
           'target.id': representative.targetId,
           'rules.in_group': groupRules.length,
-          'time_window_minutes': representative.timeWindowMinutes,
+          time_window_minutes: representative.timeWindowMinutes,
         },
       },
       async span => {
@@ -204,7 +204,10 @@ export const task = implementTask(EvaluateMetricAlertRulesTask, async args => {
           'rules.evaluated': evaluatedRuleIds.length,
         });
         if (groupsFailed > 0) {
-          span.setStatus({ code: SpanStatusCode.ERROR, message: `${groupsFailed} group(s) failed` });
+          span.setStatus({
+            code: SpanStatusCode.ERROR,
+            message: `${groupsFailed} group(s) failed`,
+          });
         }
 
         logger.info(
