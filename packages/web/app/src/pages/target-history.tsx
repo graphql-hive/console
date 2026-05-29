@@ -175,7 +175,7 @@ function ListPage(props: {
               <p className="flex content-center text-xs">
                 <FileSymlinkIcon className="mt-0.25 mr-1 inline size-3" />
                 <span className="font-mono">
-                  {version.origin.targetName}@{version.origin.schemaVersionId.substring(0, 8)}
+                  {version.origin.targetSlug}@{version.origin.schemaVersionId.substring(0, 8)}
                 </span>
               </p>
             )}
