@@ -747,12 +747,22 @@ function GraphVersionSubgraphView(props: {
               <SubgraphCard
                 key={diff.__typename + diff.subgraphVersion.id}
                 diff={diff}
-                renderChildren={() => (
-                  <SDLDiffView
-                    before={diff.previousSubgraphVersion.sdl}
-                    after={diff.subgraphVersion.sdl}
-                  />
-                )}
+                renderChildren={
+                  diff.previousSubgraphVersion.sdl === diff.subgraphVersion.sdl
+                    ? () => (
+                        <p className="max-w-[600px] p-5 text-xs">
+                          The SDL did not change. This can happen if only the service url has
+                          changed or the subgraph was manually published or force published to
+                          multiple targets instead of being promoted.
+                        </p>
+                      )
+                    : () => (
+                        <SDLDiffView
+                          before={diff.previousSubgraphVersion.sdl}
+                          after={diff.subgraphVersion.sdl}
+                        />
+                      )
+                }
               />
             );
           }
