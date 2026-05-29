@@ -19,6 +19,7 @@ __snapshots__/
 # test fixtures
 integration-tests/fixtures/init-invalid-schema.graphql
 integration-tests/fixtures/whitespace-oddity.graphql
+integration-tests/fixtures/comments-to-descriptions.graphql
 /target
 tmp
 
