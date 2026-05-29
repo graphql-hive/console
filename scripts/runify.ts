@@ -1,14 +1,14 @@
 // It was ported from `bob runify --single` command.
 // The idea here is to compile a node service to a single file (not in case of next) and make it executable.
+import fs from 'node:fs/promises';
 import { join, normalize, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { parseArgs } from 'node:util';
-import fs from 'fs-extra';
 import { build as tsup } from 'tsup';
 
 const __dirname = fileURLToPath(new URL('.', import.meta.url));
 
-const requireShim = fs.readFileSync(normalize(join(__dirname, './banner.js')), 'utf-8');
+const requireShim = await fs.readFile(normalize(join(__dirname, './banner.js')), 'utf-8');
 
 const entryPoints = parseArgs({
   allowPositionals: true,
