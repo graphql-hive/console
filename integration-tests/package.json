@@ -10,9 +10,9 @@
     "typecheck": "tsc --noEmit"
   },
   "devDependencies": {
-    "@apollo/gateway": "2.13.2",
-    "@apollo/server": "5.5.0",
-    "@apollo/subgraph": "2.13.2",
+    "@apollo/gateway": "2.14.0",
+    "@apollo/server": "5.5.1",
+    "@apollo/subgraph": "2.14.0",
     "@aws-sdk/client-s3": "3.1035.0",
     "@esm2cjs/execa": "6.1.1-cjs.1",
     "@graphql-hive/apollo": "workspace:*",
@@ -34,7 +34,7 @@
     "bcryptjs": "2.4.3",
     "csv-parse": "5.6.0",
     "date-fns": "4.1.0",
-    "dockerode": "4.0.8",
+    "dockerode": "5.0.0",
     "dotenv": "16.4.7",
     "graphql": "16.9.0",
     "graphql-sse": "2.6.0",
