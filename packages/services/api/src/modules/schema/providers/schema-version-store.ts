@@ -1508,6 +1508,8 @@ export type CreateContractVersionInput = {
 const SchemaLogBase = z.object({
   id: z.string(),
   date: z.number(),
+  author: z.string(),
+  commit: z.string(),
 });
 
 const SchemaPushLogBase = SchemaLogBase.extend({
