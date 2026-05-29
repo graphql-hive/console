@@ -2786,7 +2786,7 @@ export class SchemaPublisher {
       );
 
       originSchemaVersionLookup = {
-        target,
+        target: sourceTarget,
         schemaVersion,
       };
     } else {

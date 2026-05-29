@@ -1521,6 +1521,8 @@ export function fetchVersions(selector: TargetSelectorInput, first: number, toke
                   __typename
                   ... on SchemaVersionPromoteOrigin {
                     schemaVersionId
+                    targetSlug
+                    targetId
                   }
                   ... on SchemaVersionPublishOrigin {
                     publishedSubgraphs {

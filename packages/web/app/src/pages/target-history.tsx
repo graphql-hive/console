@@ -47,7 +47,7 @@ const HistoryPage_VersionsPageQuery = graphql(`
               ... on SchemaVersionPromoteOrigin {
                 schemaVersionId
                 targetId
-                targetName
+                targetSlug
               }
               ... on SchemaVersionPublishOrigin {
                 publishedSubgraphs {

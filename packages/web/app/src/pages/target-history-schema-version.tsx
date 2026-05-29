@@ -134,6 +134,7 @@ export function TargetHistorySchemaVersionPage(props: {
       schemaVersion={schemaVersion}
       organizationSlug={props.organizationSlug}
       projectSlug={props.projectSlug}
+      targetSlug={props.targetSlug}
     />
   );
 }
@@ -212,6 +213,7 @@ const SchemaVersionView_SchemaVersionFragment = graphql(`
 type SchemaVersionViewProps = {
   organizationSlug: string;
   projectSlug: string;
+  targetSlug: string;
   schemaVersion: FragmentType<typeof SchemaVersionView_SchemaVersionFragment>;
 };
 
@@ -302,6 +304,7 @@ function SchemaVersionView(props: SchemaVersionViewProps) {
           schemaVersion={schemaVersion}
           organizationSlug={props.organizationSlug}
           projectSlug={props.projectSlug}
+          targetSlug={props.targetSlug}
         />
         {schemaVersion.contractVersions?.edges && (
           <Tabs
@@ -1073,9 +1076,7 @@ const SchemaVersionHeader_SchemaVersionFragment = graphql(`
         }
       }
       ... on SchemaVersionPromoteOrigin {
-        schemaVersionId
-        targetId
-        targetName
+        ...SchemaVersionPromotionOriginContents_SchemaVersionPromoteOriginFragment
       }
       ... on SchemaVersionSubgraphRemoveOrigin {
         removedSubgraphs {
@@ -1096,8 +1097,61 @@ const SchemaVersionHeader_SchemaVersionFragment = graphql(`
   }
 `);
 
+const SchemaVersionPromotionOriginContents_SchemaVersionPromoteOriginFragment = graphql(`
+  fragment SchemaVersionPromotionOriginContents_SchemaVersionPromoteOriginFragment on SchemaVersionPromoteOrigin {
+    schemaVersionId
+    targetId
+    targetSlug
+  }
+`);
+
+function SchemaVersionPromotionOriginContents(props: {
+  projectSlug: string;
+  organizationSlug: string;
+  targetSlug: string;
+  origin: FragmentType<
+    typeof SchemaVersionPromotionOriginContents_SchemaVersionPromoteOriginFragment
+  >;
+}) {
+  const origin = useFragment(
+    SchemaVersionPromotionOriginContents_SchemaVersionPromoteOriginFragment,
+    props.origin,
+  );
+  const displayName = (
+    <>
+      {origin.targetSlug}@{origin.schemaVersionId.substring(0, 8)}
+    </>
+  );
+
+  return (
+    <>
+      <span className="mt-1 inline-flex items-center gap-1.5 text-sm">
+        <GitCommit className="h-3.5 w-3.5" />
+        {origin.targetSlug === props.targetSlug ? (
+          <Link
+            className="font-mono text-xs"
+            to="/$organizationSlug/$projectSlug/$targetSlug/history/$versionId"
+            params={{
+              organizationSlug: props.organizationSlug,
+              projectSlug: props.projectSlug,
+              targetSlug: origin.targetSlug,
+              versionId: origin.schemaVersionId,
+            }}
+          >
+            {origin.targetSlug}@{origin.schemaVersionId.substring(0, 8)}
+          </Link>
+        ) : (
+          <span className="text-xs">{displayName}</span>
+        )}
+      </span>
+      <div className="text-[12px]">via Graph Version Promotion</div>
+    </>
+  );
+}
+
 function SchemaVersionHeader(props: {
   organizationSlug: string;
+  targetSlug: string;
   projectSlug: string;
   schemaVersion: FragmentType<typeof SchemaVersionHeader_SchemaVersionFragment>;
 }) {
@@ -1124,25 +1178,12 @@ function SchemaVersionHeader(props: {
         </MetaCell>
         <MetaCell label="Origin">
           {schemaVersion.origin.__typename === 'SchemaVersionPromoteOrigin' && (
-            <>
-              <span className="mt-1 inline-flex items-center gap-1.5 text-sm">
-                <GitCommit className="h-3.5 w-3.5" />
-                <Link
-                  className="text-xs"
-                  to="/$organizationSlug/$projectSlug/$targetSlug/history/$versionId"
-                  params={{
-                    organizationSlug: props.organizationSlug,
-                    projectSlug: props.projectSlug,
-                    targetSlug: schemaVersion.origin.targetName,
-                    versionId: schemaVersion.origin.schemaVersionId,
-                  }}
-                >
-                  {schemaVersion.origin.targetName}@
-                  {schemaVersion.origin.schemaVersionId.substring(0, 8)}
-                </Link>
-              </span>
-              <div className="text-[12px]">via Graph Version Promotion</div>
-            </>
+            <SchemaVersionPromotionOriginContents
+              organizationSlug={props.organizationSlug}
+              projectSlug={props.projectSlug}
+              targetSlug={props.targetSlug}
+              origin={schemaVersion.origin}
+            />
           )}
           {schemaVersion.origin.__typename === 'SchemaVersionPublishOrigin' && (
             <>

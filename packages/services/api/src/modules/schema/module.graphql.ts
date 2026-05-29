@@ -1912,8 +1912,17 @@ export default gql`
     | SchemaVersionPromoteOrigin
 
   type SchemaVersionPromoteOrigin {
+    """
+    The ID of the target from which the promotion originated.
+    """
     targetId: ID!
-    targetName: String!
+    """
+    The slug of the target from which the promotion originated.
+    """
+    targetSlug: String!
+    """
+    The exact ID of the schema version that was promoted from within the target.
+    """
     schemaVersionId: ID!
   }
 

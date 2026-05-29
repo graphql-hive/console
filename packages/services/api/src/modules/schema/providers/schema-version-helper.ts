@@ -564,7 +564,7 @@ export class SchemaVersionHelper {
           __typename: 'SchemaVersionPromoteOrigin',
           schemaVersionId: schemaVersion.origin.source.schemaVersion.id,
           targetId: schemaVersion.origin.source.target.id,
-          targetName: schemaVersion.origin.source.target.name,
+          targetSlug: schemaVersion.origin.source.target.name,
         } satisfies ResolversUnionTypes<any>['SchemaVersionOrigin'];
       }
 

@@ -104,6 +104,12 @@ test.concurrent(
     expect(promotedVersion.valid).toEqual(true);
     expect(publishedVersion.valid).toEqual(true);
     expect(promotedVersion.supergraph).toEqual(publishedVersion.supergraph);
+    expect(promotedVersion.origin).toMatchObject({
+      __typename: 'SchemaVersionPromoteOrigin',
+      schemaVersionId: publishedVersion.id,
+      targetId: target.id,
+      targetSlug: target.name,
+    });
   },
 );
 
@@ -173,6 +179,12 @@ test.concurrent(
     expect(promotedVersion.valid).toEqual(true);
     expect(publishedVersion.valid).toEqual(true);
     expect(promotedVersion.supergraph).toEqual(publishedVersion.supergraph);
+    expect(promotedVersion.origin).toMatchObject({
+      __typename: 'SchemaVersionPromoteOrigin',
+      schemaVersionId: publishedVersion.id,
+      targetId: target.id,
+      targetSlug: target.name,
+    });
   },
 );
 
@@ -249,6 +261,7 @@ test.concurrent(
       error: null,
     });
 
+    const [versionToPromote] = await fetchVersions(1);
     const [promotedVersion, publishedVersion] = await fetchVersions(2, otherTarget);
 
     assertNonNull(promotedVersion);
@@ -259,6 +272,12 @@ test.concurrent(
     expect(promotedVersion.valid).toEqual(true);
     expect(publishedVersion.valid).toEqual(true);
     expect(promotedVersion.supergraph).not.toEqual(publishedVersion.supergraph);
+    expect(promotedVersion.origin).toMatchObject({
+      __typename: 'SchemaVersionPromoteOrigin',
+      schemaVersionId: versionToPromote.id,
+      targetId: target.id,
+      targetSlug: target.name,
+    });
   },
 );
 
@@ -350,9 +369,11 @@ test.concurrent('promote specific schema version within the same target', async 
     error: null,
   });
   const [promotedVersion] = await fetchVersions(1);
-  expect(promotedVersion.origin).toEqual({
+  expect(promotedVersion.origin).toMatchObject({
     __typename: 'SchemaVersionPromoteOrigin',
     schemaVersionId: firstVersion.id,
+    targetId: target.id,
+    targetSlug: target.slug,
   });
   expect(promotedVersion.previousDiffableSchemaVersion?.id).toEqual(previousVersion.id);
 });
