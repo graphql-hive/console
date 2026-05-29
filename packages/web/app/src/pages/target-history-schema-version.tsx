@@ -38,6 +38,7 @@ import { useTheme } from '@/components/theme/theme-provider';
 import { BadgeRounded } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Link } from '@/components/ui/link';
+import { QueryError } from '@/components/ui/query-error';
 import { Spinner } from '@/components/ui/spinner';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
@@ -119,15 +120,13 @@ export function TargetHistorySchemaVersionPage(props: {
 
   if (query.error) {
     return (
-      <div className="m-3 rounded-lg bg-red-500/20 p-8">
-        <div className="mb-3 flex items-center gap-3">
-          <CrossCircledIcon className="h-6 w-auto text-red-500" />
-          <h2 className="text-neutral-12 text-lg font-medium">An unexpected error occured.</h2>
-        </div>
-        <pre className="text-neutral-12 mt-5 whitespace-pre-wrap rounded-lg bg-red-900 p-3 text-xs">
-          {query.error.graphQLErrors?.[0]?.message ?? query.error.networkError?.message}
-        </pre>
-      </div>
+      <QueryError
+        error={query.error}
+        showError
+        organizationSlug={props.organizationSlug}
+        showLogoutButton={false}
+        className="mt-20"
+      />
     );
   }
 
