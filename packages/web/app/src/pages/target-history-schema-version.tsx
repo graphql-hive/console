@@ -225,7 +225,10 @@ function SchemaVersionView(props: SchemaVersionViewProps) {
       null,
     [selectedItem],
   );
-  const [selectedView, setSelectedView] = useState<string>('details');
+  const [selectedView, setSelectedView] = useResetState<string>(
+    () => 'details',
+    [!!schemaVersion.subgraphDiffs],
+  );
 
   const availableViews: Array<{
     value: string;
@@ -381,31 +384,37 @@ function SchemaVersionView(props: SchemaVersionViewProps) {
             </TabsList>
           </Tabs>
         )}
-        <TooltipProvider>
-          <Tabs
-            value={selectedView}
-            onValueChange={value => setSelectedView(value)}
-            className="mt-6"
-          >
-            <TabsList variant="content">
-              {availableViews.map(item => (
-                <Tooltip key={item.value}>
-                  <TooltipTrigger>
-                    <TabsTrigger
-                      value={item.value}
-                      variant="content"
-                      className={cn('items-center-safe mx-3 inline-flex pb-2')}
-                    >
-                      {item.icon}
-                      <span className="ml-2">{item.label}</span>
-                    </TabsTrigger>
-                  </TooltipTrigger>
-                </Tooltip>
-              ))}
-            </TabsList>
-          </Tabs>
-        </TooltipProvider>
-        <div className="mt-4 space-y-8 px-4">
+        {/**
+         * For Monolitic Schemas the tabs do not really make a lot of sense.
+         * Having all the information on a single page here is better.
+         */}
+        {schemaVersion.subgraphDiffs && (
+          <TooltipProvider>
+            <Tabs
+              value={selectedView}
+              onValueChange={value => setSelectedView(value)}
+              className="mt-6"
+            >
+              <TabsList variant="content">
+                {availableViews.map(item => (
+                  <Tooltip key={item.value}>
+                    <TooltipTrigger>
+                      <TabsTrigger
+                        value={item.value}
+                        variant="content"
+                        className={cn('items-center-safe mx-3 inline-flex pb-2')}
+                      >
+                        {item.icon}
+                        <span className="ml-2">{item.label}</span>
+                      </TabsTrigger>
+                    </TooltipTrigger>
+                  </Tooltip>
+                ))}
+              </TabsList>
+            </Tabs>
+          </TooltipProvider>
+        )}
+        <div className={cn('mt-4 space-y-8', schemaVersion.subgraphDiffs && 'px-4')}>
           {selectedView === 'details' && (
             <>
               {contractOrVersion.isFirstComposableVersion ? (
@@ -421,6 +430,21 @@ function SchemaVersionView(props: SchemaVersionViewProps) {
                     schemaVersion={schemaVersion}
                     contractVersion={contractVersionNode}
                   />
+                  {!schemaVersion.subgraphDiffs && (
+                    <GraphQLSchemaView
+                      title="GraphQL Schema"
+                      subtitle="The GraphQL Schema used by GraphQL consumers."
+                      changes={contractOrVersion.sdlChanges?.edges.map(edge => edge.node) ?? null}
+                      currentSdl={contractOrVersion.sdl ?? ''}
+                      previousSdl={contractOrVersion.previousDiffableVersion?.sdl ?? null}
+                      fromName={
+                        contractOrVersion.previousDiffableVersion
+                          ? `schema@${contractOrVersion.previousDiffableVersion.id.substring(0, 8)}`
+                          : null
+                      }
+                      toName={`schema@${contractOrVersion.id.substring(0, 8)}`}
+                    />
+                  )}
                 </>
               )}
             </>
@@ -564,7 +588,7 @@ function DownloadButton(props: { contents: string; fileName: string }) {
 
               document.body.removeChild(element);
             }}
-            className="mr-2 text-xs font-normal"
+            className="text-xs font-normal"
           >
             <DownloadIcon className="mr-1 size-3" /> Download
           </Button>
@@ -1134,7 +1158,13 @@ function SchemaVersionHeader(props: {
                   />
                 </span>
               ))}
-              <div className="text-[12px]">via Subgraph Publish</div>
+              <div className="text-[12px]">
+                {schemaVersion.origin.publishedSubgraphs?.length ? (
+                  <>via Subgraph Publish</>
+                ) : (
+                  <>Schema Publish</>
+                )}
+              </div>
             </>
           )}
           {schemaVersion.origin.__typename === 'SchemaVersionSubgraphRemoveOrigin' && (
@@ -1298,19 +1328,19 @@ const CompositionErrors = (props: {
       </div>
 
       <div className="text-neutral-12 flex items-center gap-2 px-5 pt-4">
-        <span className="text-xs font-medium uppercase">Composition errors</span>
+        <span className="text-sm font-medium">Composition errors</span>
         <TooltipProvider>
           <Tooltip>
             <TooltipTrigger>
               <InfoIcon className="h-3 w-3" />
             </TooltipTrigger>
-            <TooltipContent className="max-w-md p-4 font-normal">
+            <TooltipContent className="max-w-md p-4">
               <p>
                 If composition errors occur it is impossible to generate a supergraph and public API
                 schema.
               </p>
               <p className="mt-1">
-                Composition errors can be caused by changes to the underlying schemas that causes
+                Composition errors can be caused by changes to the underlying subgraphs that causes
                 conflicts with other subgraphs.
               </p>
             </TooltipContent>
@@ -1557,25 +1587,27 @@ export const SchemaVersionSummary = (props: {
         />
       </div>
 
-      <div className="overflow-hidden rounded-xl border">
-        <div className="bg-neutral-2 dark:bg-neutral-3 flex items-center justify-between border-b px-5 py-3">
-          <div className="flex items-center gap-2 text-xs font-bold capitalize">
-            Subgraph Overview
+      {schemaVersion.subgraphDiffs && (
+        <div className="overflow-hidden rounded-xl border">
+          <div className="bg-neutral-2 dark:bg-neutral-3 flex items-center justify-between border-b px-5 py-3">
+            <div className="flex items-center gap-2 text-xs font-bold capitalize">
+              Subgraph Overview
+            </div>
           </div>
+          <ul className="bg-neutral-1 divide-y">
+            {schemaVersion.subgraphDiffs
+              .sort(diff => (diff.__typename === 'SubgraphDiffUnchanged' ? 1 : -1))
+              .map((diff, index) => (
+                <li
+                  className={cn(diff.__typename === 'SubgraphDiffUnchanged' && 'opacity-50')}
+                  key={`${schemaVersion.id}_${index}`}
+                >
+                  <SubgraphRow subgraphDiff={diff} />
+                </li>
+              ))}
+          </ul>
         </div>
-        <ul className="bg-neutral-1 divide-y">
-          {(schemaVersion.subgraphDiffs ?? [])
-            .sort(diff => (diff.__typename === 'SubgraphDiffUnchanged' ? 1 : -1))
-            .map((diff, index) => (
-              <li
-                className={cn(diff.__typename === 'SubgraphDiffUnchanged' && 'opacity-50')}
-                key={`${schemaVersion.id}_${index}`}
-              >
-                <SubgraphRow subgraphDiff={diff} />
-              </li>
-            ))}
-        </ul>
-      </div>
+      )}
     </div>
   );
 };
