@@ -44,6 +44,7 @@ overrides:
   protobufjs@8.x.x: ^8.0.2
   '@opentelemetry/exporter-jaeger': '-'
   uuid@<14.x.x: ^14.0.0
+  tmp@<0.2.6: 0.2.6
 
 patchedDependencies:
   '@apollo/federation@0.38.1':
@@ -15808,10 +15809,6 @@ packages:
     resolution: {integrity: sha512-JjCoypp+jKn1ttEFExxhetCKeJt9zhAgAve5FXHixTvFDW/5aEktX9bufBKLRRMdU7bNtpLfcGu94B3cdEJgjg==}
     engines: {node: '>= 0.8.0'}
 
-  os-tmpdir@1.0.2:
-    resolution: {integrity: sha512-D2FR03Vir7FIu45XBY20mTb+/ZSWB00sjU9jdQXt83gDrI4Ztz5Fs7/yy74g2N5SVQY4xY1qDr4rNddwYRVX0g==}
-    engines: {node: '>=0.10.0'}
-
   outdent@0.5.0:
     resolution: {integrity: sha512-/jHxFIzoMXdqPzTaCpFzAAWhpkSjZPF4Vsn6jAfNpmbH/ymsmd7Qc6VE9BGn0L6YMj6uwpQLxCECpus4ukKS9Q==}
 
@@ -17913,12 +17910,8 @@ packages:
     resolution: {integrity: sha512-8PWx8tvC4jDB39BQw1m4x8y5MH1BcQ5xHeL2n7UVFulMPH/3Q0uiamahFJ3lXA0zO2SUyRXuVVbWSDmstlt9YA==}
     hasBin: true
 
-  tmp@0.0.33:
-    resolution: {integrity: sha512-jRCJlojKnZ3addtTOjdIqoRuPEKBvNXcGYqzO6zWZX8KfKEpnGY5jfggJQ3EjKuu8D4bJRr0y+cYJFmYbImXGw==}
-    engines: {node: '>=0.6.0'}
-
-  tmp@0.2.5:
-    resolution: {integrity: sha512-voyz6MApa1rQGUxT3E+BK7/ROe8itEx7vD8/HEvt4xwXucvQ5G5oeEiHkmHZJuBO21RpOf+YYm9MOivj709jow==}
+  tmp@0.2.6:
+    resolution: {integrity: sha512-5sJPdPjfI5Kx+qbrDesxkglRBxW//g7hCsqspEjwkewGvBMGIKMOTKzLt1hFVJzyadba3lDUN20O9qhvbQUSTA==}
     engines: {node: '>=14.14'}
 
   to-regex-range@5.0.1:
@@ -27302,7 +27295,7 @@ snapshots:
       require-from-string: 2.0.2
       semver: 7.7.2
       source-map-support: 0.5.21
-      tmp: 0.2.5
+      tmp: 0.2.6
       upath: 1.2.0
     optionalDependencies:
       ts-node: 10.9.2(@swc/core@1.13.5)(@types/node@24.12.2)(typescript@5.7.3)
@@ -34153,7 +34146,7 @@ snapshots:
     dependencies:
       readline-sync: 1.4.10
       sprintf-js: 1.1.2
-      tmp: 0.0.33
+      tmp: 0.2.6
 
   fetch-blob@3.2.0:
     dependencies:
@@ -37857,8 +37850,6 @@ snapshots:
       prelude-ls: 1.2.1
       type-check: 0.4.0
 
-  os-tmpdir@1.0.2: {}
-
   outdent@0.5.0: {}
 
   outvariant@1.4.3: {}
@@ -40158,11 +40149,7 @@ snapshots:
     dependencies:
       tldts-core: 7.0.19
 
-  tmp@0.0.33:
-    dependencies:
-      os-tmpdir: 1.0.2
-
-  tmp@0.2.5: {}
+  tmp@0.2.6: {}
 
   to-regex-range@5.0.1:
     dependencies:
