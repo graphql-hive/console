@@ -2,13 +2,13 @@ import { DocumentNode, ExecutionArgs, GraphQLError, GraphQLSchema, Kind, parse }
 import { _createLRUCache, YogaServer, type GraphQLParams, type Plugin } from 'graphql-yoga';
 import {
   autoDisposeSymbol,
+  CollectUsage,
   createHive as createHiveClient,
   HiveClient,
   HivePluginOptions,
   isAsyncIterable,
   isHiveClient,
 } from '@graphql-hive/core';
-import { CollectUsage } from '@graphql-hive/core/typings/client/types.js';
 import { Logger } from '@graphql-hive/logger';
 import { usePersistedOperations } from '@graphql-yoga/plugin-persisted-operations';
 import { version } from './version.js';

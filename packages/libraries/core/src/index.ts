@@ -4,6 +4,7 @@ export type {
   HivePluginOptions,
   HiveClient,
   CollectUsageCallback,
+  CollectUsage,
   LegacyLogger as Logger,
   PersistedDocumentsCache,
   Layer2CacheConfiguration,
