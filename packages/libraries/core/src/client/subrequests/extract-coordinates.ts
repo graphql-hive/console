@@ -13,7 +13,7 @@ import {
 /**
  * Extracts true schema coordinates and counts their execution volume.
  */
-export function extractSchemaCoordinates(
+export function extractCoordinates(
   schema: GraphQLSchema,
   document: DocumentNode,
   resultData: any,

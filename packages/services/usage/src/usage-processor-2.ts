@@ -278,7 +278,7 @@ const SubgraphRequestSchema = tb.Object(
 
     /** HTTP Status Code */
     status: tb.Integer({
-      minimum: 100,
+      minimum: 0,
       maximum: 599,
     }),
 

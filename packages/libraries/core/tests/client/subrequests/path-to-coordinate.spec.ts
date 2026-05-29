@@ -1,5 +1,5 @@
 import { buildSchema } from 'graphql';
-import { pathToCoordinate } from '../src/path-to-coordinate.js';
+import { pathToCoordinate } from '../../../src/client/subrequests/path-to-coordinate.js';
 
 const schema = buildSchema(`
   type Query {

@@ -12,12 +12,14 @@ import { version } from '../version.js';
 import { createAgent } from './agent.js';
 import { collectSchemaCoordinates } from './collect-schema-coordinates.js';
 import { dynamicSampling, randomSampling } from './sampling.js';
+import { extractCoordinates } from './subrequests/extract-coordinates.js';
+import { pathToCoordinate } from './subrequests/path-to-coordinate.js';
 import type {
   AbortAction,
   ClientInfo,
   CollectUsage,
   CollectUsageCallback,
-  GraphQLErrorsResult,
+  GraphQLResult,
   HiveInternalPluginOptions,
   HiveUsagePluginOptions,
 } from './types.js';
@@ -35,12 +37,12 @@ interface UsageCollector {
   /** collect a short lived GraphQL request (mutation/query operation) */
   collectRequest(args: {
     args: ExecutionArgs;
-    result: GraphQLErrorsResult | AbortAction;
+    result: GraphQLResult | AbortAction;
     /** duration in milliseconds */
     duration: number;
     experimental__persistedDocumentHash?: string;
     /** Optionally send subgraph request information. This provides a deeper level of usage metrics */
-    fetches?: OperationSubgraphRequest[] | null;
+    fetches?: CollectedOperationSubgraphRequest[] | null;
   }): void;
   /** collect a long-lived GraphQL request/subscription (subscription operation) */
   collectSubscription(args: {
@@ -124,6 +126,39 @@ export function createUsage(pluginOptions: HiveInternalPluginOptions): UsageColl
         set(action) {
           if (action.type === 'request') {
             const operation = action.data;
+            const fetches = operation.execution.fetches?.map((f): OperationSubgraphRequest => {
+              const documentRoot = f.document.definitions.find(
+                (def): def is OperationDefinitionNode => def.kind === 'OperationDefinition',
+              )?.operation satisfies 'subscription' | 'mutation' | 'query' | undefined;
+              const subgraphFields = extractCoordinates(
+                f.subgraphSchema,
+                f.document,
+                f.result?.data,
+              );
+              const errors: { coordinate: string; code?: string }[] = [];
+              for (const error of f.result?.errors ?? []) {
+                const coordinate =
+                  error.path && pathToCoordinate(f.subgraphSchema, error.path, documentRoot);
+                if (coordinate) {
+                  errors.push({
+                    coordinate,
+                    code: error.extensions?.code as string | undefined,
+                  });
+                }
+              }
+
+              return {
+                duration: f.duration,
+                start: f.start,
+                status: f.status,
+                type: f.type,
+                paths: f.paths,
+                subgraph: f.subgraph,
+                errors,
+                fields: subgraphFields,
+              };
+            });
+
             reportOperations.push({
               operationMapKey: operation.key,
               timestamp: operation.timestamp,
@@ -131,7 +166,7 @@ export function createUsage(pluginOptions: HiveInternalPluginOptions): UsageColl
                 ok: operation.execution.ok,
                 duration: operation.execution.duration,
                 errorsTotal: operation.execution.errorsTotal,
-                fetches: operation.execution.fetches,
+                fetches,
               },
               metadata: {
                 client: operation.client ?? undefined,
@@ -205,9 +240,10 @@ export function createUsage(pluginOptions: HiveInternalPluginOptions): UsageColl
   const collectRequest: UsageCollector['collectRequest'] = args => {
     let providedOperationName: string | undefined = undefined;
     try {
-      if (isAbortAction(args.result)) {
-        if (args.result.logging) {
-          logger.info(args.result.reason);
+      const result = args.result;
+      if (isAbortAction(result)) {
+        if (result.logging) {
+          logger.info(result.reason);
         }
         return;
       }
@@ -233,17 +269,35 @@ export function createUsage(pluginOptions: HiveInternalPluginOptions): UsageColl
           contextValue: args.args.contextValue,
         })
       ) {
-        const errors =
-          args.result.errors?.map(error => ({
-            code: error.extensions?.code,
-            path: error.path?.join('.'),
-          })) ?? [];
         const collect = collector({
           schema: args.args.schema,
           max: options.max ?? 1000,
           ttl: options.ttl,
           processVariables: options.processVariables ?? false,
         });
+
+        let fetches = args.fetches;
+        if (!fetches?.length) {
+          /**
+           * No subgraph requests, so this must be a monolith.
+           * We still want to track the field metrics, so create an artificial
+           * fetch that represents the local lookup.
+           */
+
+          fetches = [
+            {
+              document: args.args.document,
+              duration: args.duration,
+              start: 0,
+              status: 200,
+              subgraph: '',
+              subgraphSchema: args.args.schema,
+              type: 'ROOT',
+              paths: rootOperation.operation,
+              result: result,
+            },
+          ];
+        }
 
         agent.capture(
           collect(document, args.args.variableValues ?? null).then(({ key, value: info }) => {
@@ -256,9 +310,9 @@ export function createUsage(pluginOptions: HiveInternalPluginOptions): UsageColl
                 operation: info.document,
                 fields: info.fields,
                 execution: {
-                  ok: errors.length === 0,
+                  ok: !result.errors?.length,
                   duration: args.duration,
-                  errorsTotal: errors.length,
+                  errorsTotal: result.errors?.length ?? 0,
                   fetches: args.fetches,
                 },
                 // TODO: operationHash is ready to accept hashes of persisted operations
@@ -292,26 +346,23 @@ export function createUsage(pluginOptions: HiveInternalPluginOptions): UsageColl
      */
     collect() {
       const sinceStart = measureDuration();
-      const fetches: OperationSubgraphRequest[] = [];
-      const collectSubRequest = (args: OperationSubgraphRequest) => {
-        fetches.push(args);
-      };
-
+      const subRequests: CollectedOperationSubgraphRequest[] = [];
       return {
-        subrequest(args) {
+        subrequest({ subgraph, type, paths }) {
           const start = sinceStart();
           const sinceSubStart = measureDuration();
-          return result => {
+          return args => {
             const duration = sinceSubStart();
-            collectSubRequest({
+            subRequests.push({
               start,
               duration,
-              fields: result.fields,
-              status: result.status,
-              subgraph: args.subgraph,
-              type: args.type,
-              errors: result.errors,
-              paths: args.paths,
+              status: args.status,
+              subgraph,
+              type,
+              result: args.result,
+              document: args.document,
+              subgraphSchema: args.subgraphSchema,
+              paths,
             });
           };
         },
@@ -322,7 +373,7 @@ export function createUsage(pluginOptions: HiveInternalPluginOptions): UsageColl
             result,
             duration,
             experimental__persistedDocumentHash,
-            fetches: fetches.length > 0 ? fetches : null,
+            fetches: subRequests.length > 0 ? subRequests : null,
           });
         },
       };
@@ -482,6 +533,41 @@ type OperationSubgraphRequest = {
   type: 'ROOT' | 'ENTITY';
 };
 
+type CollectedOperationSubgraphRequest = {
+  /** Delta start time from "timestamp" */
+  start: number;
+
+  /** How long the request took */
+  duration: number;
+
+  /** HTTP Status Code */
+  status: number;
+
+  /** The graphql execution result. Used to calculate error code for a coordinate, with a code returned from the graphql extensions */
+  result?: GraphQLResult;
+
+  /** The GraphQL schema being accessed. Used to calculate coordinate from error path and the coordinate for field counts */
+  subgraphSchema: GraphQLSchema;
+
+  /** GraphQL operation document. Used to calculate field counts. */
+  document: DocumentNode;
+
+  /** Which subgraph resolved this path */
+  subgraph: string;
+
+  /**
+   * If this is an entity request, then this is the coordinate in the original operation that is being resolved.
+   * If undefined, then the path is assumed to be 'Query'.
+   */
+  paths?: string[] | string;
+
+  /**
+   * What type of request this is. Root is if resolving a root query/mutation field. Entity is
+   * if resolving an entity type in federation.
+   * */
+  type: 'ROOT' | 'ENTITY';
+};
+
 interface CollectedOperation {
   key: string;
   timestamp: number;
@@ -492,7 +578,7 @@ interface CollectedOperation {
     ok: boolean;
     duration: number;
     errorsTotal: number;
-    fetches?: OperationSubgraphRequest[] | null;
+    fetches?: CollectedOperationSubgraphRequest[] | null;
   };
   persistedDocumentHash?: string;
   client?: ClientInfo | null;

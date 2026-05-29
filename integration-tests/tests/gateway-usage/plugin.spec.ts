@@ -7,7 +7,7 @@ import { getServiceHost } from 'testkit/utils';
 import { describe, expect, test } from 'vitest';
 import { buildSubgraphSchema } from '@apollo/subgraph';
 import { createGatewayRuntime } from '@graphql-hive/gateway-runtime';
-import { createHive, useHive } from '@graphql-hive/gateway-usage';
+import { useHive } from '@graphql-hive/gateway-usage';
 import { createServer } from '@hive/service-common';
 
 async function createSubgraphService() {
@@ -70,7 +70,7 @@ describe('GraphQL Hive Plugin', () => {
     );
     const token = await createTargetAccessToken({});
     const usageAddress = await getServiceHost('usage', 8081);
-    const client = createHive({
+    const plugin = useHive({
       enabled: true,
       token: token.secret,
       reporting: false,
@@ -84,8 +84,8 @@ describe('GraphQL Hive Plugin', () => {
         graphqlEndpoint: 'http://noop/',
         applicationUrl: 'http://noop/',
       },
+      fieldLevelMetricsEnabled: true,
     });
-    const plugin = useHive(client);
     const subgraph = await createSubgraphService();
     const gateway = createGatewayRuntime({
       supergraph: `

@@ -8,9 +8,7 @@ import {
   type HivePluginOptions,
 } from '@graphql-hive/core';
 import { GatewayPlugin } from '@graphql-hive/gateway-runtime';
-import { extractSchemaCoordinates } from './extract-coordinates.js';
 import { isEntityRequest } from './is-entity-request.js';
-import { pathToCoordinate } from './path-to-coordinate.js';
 import { version } from './version.js';
 
 export function createHive(clientOrOptions: HivePluginOptions) {
@@ -24,9 +22,14 @@ export function createHive(clientOrOptions: HivePluginOptions) {
   });
 }
 
+export type GatewayPluginOptions = HivePluginOptions & {
+  /** Opt in to sending subgraph metrics. This feature is  */
+  fieldLevelMetricsEnabled?: boolean;
+};
+
 export function useHive(clientOrOptions: HiveClient): GatewayPlugin;
-export function useHive(clientOrOptions: HivePluginOptions): GatewayPlugin;
-export function useHive(clientOrOptions: HiveClient | HivePluginOptions): GatewayPlugin {
+export function useHive(clientOrOptions: GatewayPluginOptions): GatewayPlugin;
+export function useHive(clientOrOptions: HiveClient | GatewayPluginOptions): GatewayPlugin {
   const hive = isHiveClient(clientOrOptions)
     ? clientOrOptions
     : createHive({
@@ -55,8 +58,16 @@ export function useHive(clientOrOptions: HiveClient | HivePluginOptions): Gatewa
     }
   }
 
+  const fieldLevelMetricsEnabled = isHiveClient(clientOrOptions)
+    ? false
+    : (clientOrOptions.fieldLevelMetricsEnabled ?? false);
   return {
     onSubgraphExecute({ executionRequest, subgraphName, subgraph: subgraphSchema }) {
+      if (!fieldLevelMetricsEnabled) {
+        // short circuit the entire hook to avoid processing this data.
+        return;
+      }
+
       const collection = executionRequest.context?.__hiveUsageCollection as
         | ReturnType<HiveClient['collectUsage']>
         | undefined;
@@ -77,30 +88,11 @@ export function useHive(clientOrOptions: HiveClient | HivePluginOptions): Gatewa
 
       return function onSubgraphExecuteDone({ result }) {
         if (!isAsyncIterable(result)) {
-          let errors: { coordinate: string; code?: string }[] | undefined = undefined;
-          if (result.errors) {
-            errors = [];
-            for (const err of result.errors) {
-              const coordinate = err.path && pathToCoordinate(subgraphSchema, err.path);
-              if (coordinate) {
-                errors.push({
-                  coordinate,
-                  code: err.extensions?.code as string | undefined,
-                });
-              }
-            }
-          }
-
-          const fields = extractSchemaCoordinates(
-            subgraphSchema,
-            executionRequest.document,
-            result.data,
-          );
-
           finishSubRequest({
             status: 200 /** @TODO figure out how to capture HTTP status codes */,
-            fields,
-            errors,
+            subgraphSchema,
+            result,
+            document: executionRequest.document,
           });
         }
       };
