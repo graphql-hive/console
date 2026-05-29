@@ -721,7 +721,9 @@ function SubgraphCard(props: {
           {!isCollapsed && <ChevronDownIcon />}
         </Button>
       </SubgraphRow>
-      {props.renderChildren && !isCollapsed && props.renderChildren()}
+      {props.renderChildren && !isCollapsed && (
+        <div className="bg-neutral-1">{props.renderChildren()}</div>
+      )}
     </div>
   );
 }
@@ -939,7 +941,7 @@ function GraphVersionSubgraphChangesView(props: {
               key={diff.__typename + diff.subgraphVersion.id}
               diff={diff}
               renderChildren={() => (
-                <div className="bg-neutral-1 dark:bg-neutral-2 px-5 py-5 text-xs">
+                <div className="px-5 py-5 text-xs">
                   New subgraph introduced in this version. No prior schema to diff against.
                 </div>
               )}
@@ -1300,7 +1302,7 @@ function ViewModeToggle(props: { active: SchemaViewMode; onChange: (m: SchemaVie
 const breakingChangeTypeModes: { id: SeverityLevelType; label: string; dotColor: string }[] = [
   { id: SeverityLevelType.Breaking, label: 'Breaking', dotColor: 'bg-red-500' },
   { id: SeverityLevelType.Dangerous, label: 'Dangerous', dotColor: 'bg-orange-500' },
-  { id: SeverityLevelType.Safe, label: 'Safe', dotColor: 'bg-yellow-500' },
+  { id: SeverityLevelType.Safe, label: 'Safe', dotColor: 'bg-blue-400' },
 ];
 
 function ChangeTypeToggle(props: {
@@ -1312,11 +1314,11 @@ function ChangeTypeToggle(props: {
       <button
         onClick={() => props.onChange(null)}
         className={cn(
-          'hover:bg-neutral-5/50 inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-[12.5px] transition-colors',
+          'hover:bg-neutral-5/50 inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-xs',
           props.selectedChangeType === null ? 'bg-neutral-5/40' : 'hover:',
         )}
       >
-        <span className={cn('h-1.5 w-1.5 rounded-full', 'bg-neutral-9')} />
+        <span className={cn('h-1.5 w-1.5 translate-y-[-1px] rounded-full', 'bg-neutral-9')} />
         All
       </button>
       {breakingChangeTypeModes.map(m => {
@@ -1326,11 +1328,11 @@ function ChangeTypeToggle(props: {
             key={m.id}
             onClick={() => props.onChange(m.id)}
             className={cn(
-              'hover:bg-neutral-5/50 inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-[12.5px] transition-colors',
+              'hover:bg-neutral-5/50 inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-xs',
               isActive ? 'bg-neutral-5/40' : 'hover:',
             )}
           >
-            <span className={cn('h-1.5 w-1.5 rounded-full', m.dotColor)} />
+            <span className={cn('h-1.5 w-1.5 translate-y-[-1px] rounded-full', m.dotColor)} />
             {m.label}
           </button>
         );
