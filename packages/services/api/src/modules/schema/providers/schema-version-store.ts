@@ -301,7 +301,6 @@ export class SchemaVersionStore {
         commit: args.commit,
         metadata: args.metadata,
         projectId: args.projectId,
-        targetId: args.targetId,
         schema: args.schema,
         service,
         url,
