@@ -443,7 +443,6 @@ export class SchemaVersionStore {
             id
             , to_json("created_at") AS "createdAt"
             , "service_name" AS "serviceName"
-            , "target_id" AS "targetId"
         `,
         )
         .then(
@@ -451,7 +450,6 @@ export class SchemaVersionStore {
             id: z.string(),
             createdAt: z.string(),
             serviceName: z.string(),
-            targetId: z.string(),
           }).parse,
         );
 
