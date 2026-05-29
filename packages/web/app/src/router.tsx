@@ -34,6 +34,7 @@ import { useLocalStorage } from '@/lib/hooks';
 import { zodValidator } from '@tanstack/zod-adapter';
 import { authenticated } from './components/authenticated-container';
 import { InsightsFilterSearch } from './components/target/insights/search-schemas';
+import { DiffsWorkerPoolProvider } from './components/theme/diffs-worker-pool-provider';
 import { SchemaProposalStage } from './gql/graphql';
 import { AuthPage } from './pages/auth';
 import { AuthCallbackPage } from './pages/auth-callback';
@@ -916,12 +917,14 @@ const targetHistoryVersionRoute = createRoute({
     const { organizationSlug, projectSlug, targetSlug, versionId } =
       targetHistoryVersionRoute.useParams();
     return (
-      <TargetHistorySchemaVersionPage
-        organizationSlug={organizationSlug}
-        projectSlug={projectSlug}
-        targetSlug={targetSlug}
-        schemaVersionId={versionId}
-      />
+      <DiffsWorkerPoolProvider>
+        <TargetHistorySchemaVersionPage
+          organizationSlug={organizationSlug}
+          projectSlug={projectSlug}
+          targetSlug={targetSlug}
+          schemaVersionId={versionId}
+        />
+      </DiffsWorkerPoolProvider>
     );
   },
 });

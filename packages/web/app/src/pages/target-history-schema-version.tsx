@@ -926,11 +926,9 @@ function GraphVersionSubgraphChangesView(props: {
 }
 
 function SDLDiffView(props: { before: string; after: string }) {
-  const { resolvedTheme } = useTheme();
   return (
     <MultiFileDiff
       options={{
-        theme: resolvedTheme === 'dark' ? 'pierre-dark' : 'pierre-light',
         disableFileHeader: true,
         diffStyle: 'unified',
       }}
