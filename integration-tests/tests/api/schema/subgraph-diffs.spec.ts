@@ -1,11 +1,15 @@
 import 'reflect-metadata';
-import { graphql } from 'testkit/gql';
 /* eslint-disable no-process-env */
-import { ProjectType } from 'testkit/gql/graphql';
+import { ProjectType, ResourceAssignmentModeType } from 'testkit/gql/graphql';
 import { assertNonNullish } from 'testkit/utils';
 import { PostgresDatabasePool, psql } from '@hive/postgres';
 // eslint-disable-next-line import/no-extraneous-dependencies
-import { getSchemaVersionWithAllDetails, schemaVersionPromote } from '../../../testkit/flow';
+import {
+  deleteTarget,
+  getSchemaVersionWithAllDetails,
+  publishSchema,
+  schemaVersionPromote,
+} from '../../../testkit/flow';
 import { initSeed } from '../../../testkit/seed';
 
 /**
@@ -720,3 +724,97 @@ describe('legacy schema version yields correct subgraph diff', () => {
     expect(nonLegacyVersion.subgraphDiffs).toEqual(legacyVersion.subgraphDiffs);
   });
 });
+
+test.concurrent(
+  'deleting a target does not lead to a inconsistent promoted version state',
+  async ({ expect }) => {
+    const { createOrg, ownerToken } = await initSeed().createOwner();
+    const { createProject, createOrganizationAccessToken } = await createOrg();
+    const { target, fetchVersions, createTarget } = await createProject(ProjectType.Federation);
+    const createTargetResult = await createTarget().then(r => r.expectNoGraphQLErrors());
+    const otherTarget = createTargetResult.createTarget.ok?.createdTarget;
+    assertNonNullish(otherTarget);
+    const { privateAccessKey } = await createOrganizationAccessToken({
+      resources: {
+        mode: ResourceAssignmentModeType.All,
+      },
+      permissions: ['schemaVersion:publish', 'schemaVersion:promote'],
+    });
+
+    await publishSchema(
+      {
+        author: 'a',
+        commit: 'a',
+        sdl: /* GraphQL */ `
+          type Query {
+            a: String!
+          }
+        `,
+        service: 'a',
+        url: 'http://a',
+        target: {
+          byId: target.id,
+        },
+      },
+      privateAccessKey,
+    ).then(r => r.expectNoGraphQLErrors());
+
+    const promoteResult = await schemaVersionPromote(
+      {
+        source: {
+          fromTarget: {
+            byId: target.id,
+          },
+        },
+        target: {
+          toTarget: {
+            byId: otherTarget.id,
+          },
+        },
+      },
+      privateAccessKey,
+    ).then(r => r.expectNoGraphQLErrors());
+
+    expect(promoteResult.schemaVersionPromote).toMatchObject({
+      ok: {},
+      error: null,
+    });
+
+    const deleteTargetResult = await deleteTarget(
+      {
+        target: {
+          byId: target.id,
+        },
+      },
+      ownerToken,
+    ).then(r => r.expectNoGraphQLErrors());
+
+    expect(deleteTargetResult.deleteTarget).toMatchObject({
+      ok: {},
+      error: null,
+    });
+
+    const [promotedVersion] = await fetchVersions(1, otherTarget);
+
+    // make sure that the version was not cascade deleted...
+    assertNonNullish(promotedVersion);
+
+    const promotedVersionWithDetails = await getSchemaVersionWithAllDetails(
+      otherTarget.id,
+      promotedVersion.id,
+      ownerToken,
+    );
+
+    // make sure that the action was not cascade deleted
+    expect(promotedVersionWithDetails?.subgraphDiffs).toMatchObject([
+      {
+        __typename: 'SubgraphDiffAdded',
+        subgraphVersion: {
+          id: expect.any(String),
+          sdl: expect.stringMatching('a: String!'),
+          serviceName: 'a',
+        },
+      },
+    ]);
+  },
+);

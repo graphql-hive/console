@@ -12,6 +12,7 @@ import type {
   CreateTargetInput,
   CreateTokenInput,
   DeleteMemberRoleInput,
+  DeleteTargetInput,
   DeleteTokensInput,
   DisableContractInput,
   Experimental__UpdateTargetSchemaCompositionInput,
@@ -1835,6 +1836,27 @@ export function createOrganizationAccessToken(
               title
               description
             }
+          }
+        }
+      }
+    `),
+    authToken,
+    variables: {
+      input,
+    },
+  });
+}
+
+export function deleteTarget(input: DeleteTargetInput, authToken: string) {
+  return execute({
+    document: graphql(`
+      mutation DeleteToken_Testkit($input: DeleteTargetInput!) {
+        deleteTarget(input: $input) {
+          ok {
+            deletedTargetId
+          }
+          error {
+            message
           }
         }
       }
