@@ -358,7 +358,7 @@ export interface schema_log {
   sdl: string | null;
   service_name: string | null;
   service_url: string | null;
-  target_id: string;
+  target_id: string | null;
 }
 
 export interface schema_policy_config {
