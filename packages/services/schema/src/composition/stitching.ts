@@ -5,12 +5,12 @@ import {
   GraphQLSchema,
   Kind,
   parse,
-  printSchema,
   validateSchema,
 } from 'graphql';
 import { validateSDL } from 'graphql/validation/validate.js';
 import { stitchSchemas } from '@graphql-tools/stitch';
 import { stitchingDirectives } from '@graphql-tools/stitching-directives';
+import { printSchemaWithDirectives } from '@graphql-tools/utils';
 import { errorWithSource, toValidationError } from '../lib/errors';
 import { trimDescriptions } from '../lib/trim-descriptions';
 import type { ComposeAndValidateInput } from '../types';
@@ -86,7 +86,7 @@ export async function composeStitching(args: ComposeStitchingArgs) {
           }),
         ),
       });
-      sdl = printSchema(stitchedSchema);
+      sdl = printSchemaWithDirectives(stitchedSchema, { assumeValid: true });
     } catch (error) {
       errors.push(toValidationError(error, 'composition'));
     }
