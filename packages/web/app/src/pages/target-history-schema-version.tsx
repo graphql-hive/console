@@ -568,7 +568,7 @@ function DownloadButton(props: { contents: string; fileName: string }) {
             }}
             className="mr-2 text-xs font-normal"
           >
-            <DownloadIcon className="mr-2 size-2" /> Download
+            <DownloadIcon className="mr-1 size-3" /> Download
           </Button>
         </TooltipTrigger>
         <TooltipContent>Download {props.fileName}</TooltipContent>
@@ -687,9 +687,10 @@ function SubgraphCard(props: {
     <div className="divide-y overflow-hidden rounded-xl border">
       <SubgraphRow subgraphDiff={props.diff} className="bg-neutral-2 dark:bg-neutral-3">
         <Button
-          size="icon-xs"
+          size="icon-sm"
           variant="ghost"
           onClick={() => setIsCollapsed(isCollapsed => !isCollapsed)}
+          className="ml-2"
         >
           {isCollapsed && <ChevronUpIcon />}
           {!isCollapsed && <ChevronDownIcon />}
@@ -1552,7 +1553,7 @@ export const SchemaVersionSummary = (props: {
 
       <div className="overflow-hidden rounded-xl border">
         <div className="bg-neutral-2 dark:bg-neutral-3 flex items-center justify-between border-b px-5 py-3">
-          <div className="flex items-center gap-2 text-xs font-medium capitalize">
+          <div className="flex items-center gap-2 text-xs font-bold capitalize">
             Subgraph Overview
           </div>
         </div>
@@ -1690,35 +1691,35 @@ function SubgraphRow(props: {
         <Icon className={cn('h-3.5 w-3.5', meta.text)} />
       </span>
 
-      <div className="flex min-w-0 flex-1 flex-col gap-0.5">
-        <div className="flex flex-wrap items-center gap-x-1 gap-y-1">
+      <div className="flex min-w-0 flex-1 flex-col">
+        <div className="flex flex-wrap items-center gap-x-1">
           {subgraphDiff.__typename === 'SubgraphDiffUnchanged' && (
-            <code className="py-0.5 text-xs">
+            <code className="py-0.5 text-sm">
               {subgraphDiff.subgraphVersion.serviceName}@
               {subgraphDiff.subgraphVersion.id.substring(0, 8)}
             </code>
           )}
           {subgraphDiff.__typename === 'SubgraphDiffAdded' && (
-            <code className="py-0.5 text-xs">
+            <code className="py-0.5 text-sm">
               {subgraphDiff.subgraphVersion.serviceName}@
               {subgraphDiff.subgraphVersion.id.substring(0, 8)}
             </code>
           )}
           {subgraphDiff.__typename === 'SubgraphDiffChanged' && (
             <>
-              <code className="py-0.5 text-xs">
+              <code className="py-0.5 text-sm">
                 {subgraphDiff.subgraphVersion.serviceName}@
                 {subgraphDiff.previousSubgraphVersion.id.substring(0, 8)}
               </code>
               <ArrowRight className="h-3 w-3" />
-              <code className="py-0.5 text-xs">
+              <code className="py-0.5 text-sm">
                 {subgraphDiff.subgraphVersion.serviceName}@
                 {subgraphDiff.subgraphVersion.id.substring(0, 8)}
               </code>
             </>
           )}
           {subgraphDiff.__typename === 'SubgraphDiffRemoved' && (
-            <code className="py-0.5 text-xs">
+            <code className="py-0.5 text-sm">
               {subgraphDiff.removedSubgraphVersion.serviceName}@
               {subgraphDiff.removedSubgraphVersion.id.substring(0, 8)}
             </code>
@@ -1738,7 +1739,7 @@ function SubgraphRow(props: {
         )}
       </div>
 
-      <span className={cn('inline-flex items-center gap-1.5 text-[12px]', meta.text)}>
+      <span className={cn('inline-flex items-center gap-1.5 text-xs', meta.text)}>
         {subgraphDiff.__typename === 'SubgraphDiffChanged' && subgraphDiff.changes && (
           <span className="mr-2">
             {subgraphDiff.changes.edges.length} change
@@ -1759,7 +1760,7 @@ function SubgraphLink(props: { url: string }) {
       href={props.url}
       target="_blank"
       rel="noreferrer"
-      className="text-neutral-11 inline-flex w-fit items-center gap-1 text-[11.5px]"
+      className="text-neutral-11 inline-flex w-fit items-center gap-1 text-xs"
     >
       {props.url}
       <ExternalLink className="h-2.5 w-2.5" />
@@ -1782,7 +1783,7 @@ function GenericGraphCard(props: { title: ReactNode; children?: ReactNode; actio
         </span>
         <div className="flex min-w-0 flex-1 flex-col gap-0.5">
           <div className="flex flex-wrap items-center gap-x-1 gap-y-1">
-            <code className="py-0.5 text-xs">{props.title}</code>
+            <code className="py-0.5 text-sm">{props.title}</code>
           </div>
         </div>
         {props.actions ? <>{props.actions}</> : null}
