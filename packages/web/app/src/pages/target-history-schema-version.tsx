@@ -509,10 +509,7 @@ function GraphQLSchemaView(props: {
   return (
     <>
       <div className="mt-2 flex flex-wrap items-end justify-between gap-4">
-        <div>
-          <h2 className="text-base font-semibold">{props.title}</h2>
-          <p className="text-sm">{props.subtitle}</p>
-        </div>
+        <SectionHeader title={props.title} subtitle={props.subtitle} />
         {props.previousSdl && <ViewModeToggle active={viewMode} onChange={setViewMode} />}
       </div>
       {viewMode === 'changes' && (
@@ -713,31 +710,36 @@ function GraphVersionSubgraphView(props: {
 
   const [viewMode, setViewMode] = useState<'changes' | 'diff' | 'raw'>('changes');
 
+  const Component = useMemo(
+    () =>
+      function Component(props: { children: ReactNode }) {
+        return (
+          <>
+            <div className="mt-2 flex flex-wrap items-end justify-between gap-4">
+              <SectionHeader
+                title="Subgraphs"
+                subtitle="Per-subgraph state and changes introduced by this version."
+              />
+              <ViewModeToggle active={viewMode} onChange={setViewMode} />
+            </div>
+            {props.children}
+          </>
+        );
+      },
+    [viewMode],
+  );
+
   if (viewMode === 'changes') {
     return (
-      <>
-        <div className="mt-2 flex flex-wrap items-end justify-between gap-4">
-          <div>
-            <h2 className="text-base font-semibold">Subgraphs</h2>
-            <p className="text-sm">Per-subgraph state and changes introduced by this version.</p>
-          </div>
-          <ViewModeToggle active={viewMode} onChange={setViewMode} />
-        </div>
+      <Component>
         <GraphVersionSubgraphChangesView subgraphDiffs={props.subgraphDiffs} />
-      </>
+      </Component>
     );
   }
 
   if (viewMode === 'diff') {
     return (
-      <>
-        <div className="mt-2 flex flex-wrap items-end justify-between gap-4">
-          <div>
-            <h2 className="text-base font-semibold">Subgraphs</h2>
-            <p className="text-sm">Per-subgraph state and changes introduced by this version.</p>
-          </div>
-          <ViewModeToggle active={viewMode} onChange={setViewMode} />
-        </div>
+      <Component>
         {subgraphDiffs.map(diff => {
           if (diff.__typename === 'SubgraphDiffChanged') {
             return (
@@ -789,20 +791,13 @@ function GraphVersionSubgraphView(props: {
 
           return null;
         })}
-      </>
+      </Component>
     );
   }
 
   if (viewMode === 'raw') {
     return (
-      <>
-        <div className="mt-2 flex flex-wrap items-end justify-between gap-4">
-          <div>
-            <h2 className="text-base font-semibold">Subgraphs</h2>
-            <p className="text-sm">Per-subgraph state and changes introduced by this version.</p>
-          </div>
-          <ViewModeToggle active={viewMode} onChange={setViewMode} />
-        </div>
+      <Component>
         {subgraphDiffs.map(diff => {
           if (diff.__typename === 'SubgraphDiffAdded') {
             return (
@@ -836,10 +831,11 @@ function GraphVersionSubgraphView(props: {
 
           return null;
         })}
-      </>
+      </Component>
     );
   }
 
+  viewMode satisfies never;
   return null;
 }
 
@@ -1430,6 +1426,15 @@ const SchemaVersionSummary_ContractVersionFragment = graphql(`
   }
 `);
 
+function SectionHeader(props: { title: string; subtitle: string }) {
+  return (
+    <div>
+      <h2 className="text-neutral-12 text-base font-semibold">{props.title}</h2>
+      <p className="text-neutral-10 mt-0.5 text-sm">{props.subtitle}</p>
+    </div>
+  );
+}
+
 export const SchemaVersionSummary = (props: {
   schemaVersion: FragmentType<typeof SchemaVersionSummary_SchemaVersionFragment>;
   contractVersion: null | FragmentType<typeof SchemaVersionSummary_ContractVersionFragment>;
@@ -1494,11 +1499,7 @@ export const SchemaVersionSummary = (props: {
 
   return (
     <div className="flex flex-col gap-6">
-      <div>
-        <h2 className="text-base font-semibold">Summary</h2>
-        <p className="mt-0.5 text-[13px]">Changes introduced by this version.</p>
-      </div>
-
+      <SectionHeader title="Summary" subtitle="Changes introduced by this version." />
       <div className="bg-neutral-2 dark:bg-neutral-3 grid grid-cols-3 gap-px overflow-hidden rounded-xl border 2xl:grid-cols-6">
         <Stat label="Schema changes" value={publicChangeStats.totalChanges} />
         <Stat
