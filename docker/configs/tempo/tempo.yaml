@@ -30,3 +30,28 @@ storage:
       path: /var/tempo/blocks
     wal:
       path: /var/tempo/wal
+
+# Required for TraceQL metrics queries (`| rate()`, `| quantile_over_time()`)
+# used by the Metric-Alerts dashboard's trace timeseries panels. Without the
+# `local-blocks` processor enabled in overrides below, Tempo's query frontend
+# returns "error finding generators: empty ring" because no metrics-generator
+# subprocess is registered. Production (Grafana Cloud Tempo) has this enabled
+# tenant-wide by default; locally we have to spell it out.
+metrics_generator:
+  processor:
+    local_blocks:
+      flush_to_storage: true
+  storage:
+    path: /var/tempo/generator/wal
+
+overrides:
+  defaults:
+    metrics_generator:
+      processors: [local-blocks]
+
+# Bump the metrics query window from Tempo's default 3h so the dashboard's
+# longer time-picker selections (Last 6h, Last 24h) don't error with "query
+# time range exceeds maximum allowed duration of 3h0m0s".
+query_frontend:
+  metrics:
+    max_duration: 24h

@@ -178,6 +178,12 @@ services:
     ports:
       - '4317:4317'
       - '4318:4318'
+      # Auth-free internal OTLP receiver (no hiveauth). Used by Hive services
+      # running natively on the host (`pnpm dev:hive`) to emit their own spans
+      # without customer-style auth headers. The 4317/4318 receivers above keep
+      # hiveauth for customer-facing OTLP ingest. Mirrors prod's dual-collector
+      # split; see DEVELOPMENT.md and config.yaml's `otlp/internal` block.
+      - '4320:4320'
       # OTEL's /metrics endpoint inside the container is on 10254, but we publish it on
       # host port 10255. Every Hive service defaults PROMETHEUS_METRICS_PORT to 10254
       # (see packages/services/*/environment.ts), so leaving the host mapping as 10254

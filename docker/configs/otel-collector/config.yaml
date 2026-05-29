@@ -35,6 +35,19 @@ receivers:
         endpoint: '0.0.0.0:4318'
         auth:
           authenticator: hiveauth
+  # Auth-free OTLP receiver for internal Hive services (workflows, server, etc.)
+  # to emit spans without customer-style auth (`Authorization` + `X-Hive-Target-Ref`
+  # headers). Mirrors the separate auth-free collector that production deploys via
+  # the Helm chart in `deployment/utils/observability.ts`...locally we collapse
+  # both surfaces (customer-facing on 4317/4318 + internal on 4319/4320) into one
+  # container by exposing additional ports. Only 4320 (HTTP) is published to host;
+  # internal containers reach 4319 (gRPC) via the `stack` Docker network.
+  otlp/internal:
+    protocols:
+      grpc:
+        endpoint: '0.0.0.0:4319'
+      http:
+        endpoint: '0.0.0.0:4320'
 processors:
   attributes:
     actions:
@@ -120,7 +133,7 @@ service:
                 port: 10254
   pipelines:
     traces:
-      receivers: [otlp]
+      receivers: [otlp, otlp/internal]
       processors:
         - memory_limiter
         - attributes
