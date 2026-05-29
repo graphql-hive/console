@@ -521,6 +521,49 @@ export class OperationsReader {
     };
   }
 
+  async countRequestsByTarget({
+    targets,
+    period,
+  }: {
+    targets: readonly string[];
+    period: DateRange;
+  }): Promise<Map<string, number>> {
+    if (targets.length === 0) {
+      return new Map();
+    }
+
+    const query = this.pickAggregationByPeriod({
+      timeout: {
+        minutely: 10_000,
+        hourly: 15_000,
+        daily: 30_000,
+      },
+      queryId: aggregation => `count_operations_by_target_${aggregation}`,
+      query: aggregationTableName => sql`
+        SELECT
+          target,
+          sum(total) as total
+        FROM ${aggregationTableName('operations')}
+        ${this.createFilter({ target: targets, period })}
+        GROUP BY target
+      `,
+      period,
+    });
+
+    const result = await this.clickHouse.query<{
+      target: string;
+      total: number;
+    }>(query);
+
+    const counts = new Map<string, number>();
+
+    for (const row of result.data) {
+      counts.set(row.target, ensureNumber(row.total));
+    }
+
+    return counts;
+  }
+
   async countFailures({
     target,
     period,

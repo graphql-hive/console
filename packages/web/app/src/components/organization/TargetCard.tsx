@@ -264,6 +264,11 @@ export const TargetCard = (props: TargetProps): ReactElement => {
     [requests],
   );
 
+  const highestNumberOfRequests = useMemo(
+    () => Math.max(props.highestNumberOfRequests ?? 0, ...requests.map(([, value]) => value)),
+    [props.highestNumberOfRequests, requests],
+  );
+
   const totalNumberOfFailures = useMemo(
     () => failures.reduce((acc, [_, value]) => acc + value, 0),
     [failures],
@@ -411,7 +416,7 @@ export const TargetCard = (props: TargetProps): ReactElement => {
                         show: false,
                         type: 'value',
                         min: 0,
-                        max: props.highestNumberOfRequests,
+                        max: highestNumberOfRequests,
                       },
                     ],
                     series: [

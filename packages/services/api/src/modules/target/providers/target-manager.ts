@@ -329,21 +329,28 @@ export class TargetManager {
       search: args.search,
     });
 
-    const withMetrics = await Promise.all(
-      targets.map(async target => {
-        const value =
-          args.sort!.field === 'REQUESTS'
-            ? await this.operationsManager.countRequests({
-                organizationId: selector.organizationId,
-                projectId: selector.projectId,
-                targetId: target.id,
-                period,
-              })
-            : await this.schemaVersions.countSchemaVersionsOfTarget(target, period);
+    const withMetrics =
+      args.sort.field === 'REQUESTS'
+        ? await this.operationsManager
+            .countRequestsByTargetIds({
+              organizationId: selector.organizationId,
+              projectId: selector.projectId,
+              targetIds: targets.map(target => target.id),
+              period,
+            })
+            .then(counts =>
+              targets.map(target => ({
+                target,
+                value: counts.get(target.id) ?? 0,
+              })),
+            )
+        : await Promise.all(
+            targets.map(async target => {
+              const value = await this.schemaVersions.countSchemaVersionsOfTarget(target, period);
 
-        return { target, value };
-      }),
-    );
+              return { target, value };
+            }),
+          );
 
     withMetrics.sort((left, right) => {
       const diff = (left.value - right.value) * multiplier;

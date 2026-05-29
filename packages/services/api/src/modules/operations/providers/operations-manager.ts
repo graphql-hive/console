@@ -311,6 +311,66 @@ export class OperationsManager {
     });
   }
 
+  async countRequestsByTargetIds({
+    organizationId: organization,
+    projectId: project,
+    targetIds,
+    period,
+  }: {
+    targetIds: readonly string[];
+    period: DateRange;
+  } & ProjectSelector): Promise<Map<string, number>> {
+    this.logger.info(
+      'Counting requests by target (period=%o, project=%s, targets=%s)',
+      period,
+      project,
+      targetIds.join(';'),
+    );
+
+    await this.session.assertPerformAction({
+      action: 'project:describe',
+      organizationId: organization,
+      params: {
+        organizationId: organization,
+        projectId: project,
+      },
+    });
+
+    return this.reader.countRequestsByTarget({
+      targets: targetIds,
+      period,
+    });
+  }
+
+  async countRequestsByTargetIdsOfOrganization({
+    organizationId: organization,
+    targetIds,
+    period,
+  }: {
+    targetIds: readonly string[];
+    period: DateRange;
+  } & OrganizationSelector): Promise<Map<string, number>> {
+    this.logger.info(
+      'Counting requests by target for organization (period=%o, organization=%s, targets=%s)',
+      period,
+      organization,
+      targetIds.join(';'),
+    );
+
+    await this.session.assertPerformAction({
+      action: 'organization:describe',
+      organizationId: organization,
+      params: {
+        organizationId: organization,
+      },
+    });
+
+    return this.reader.countRequestsByTarget({
+      targets: targetIds,
+      period,
+    });
+  }
+
   async countRequestsOfProject({
     organizationId: organization,
     projectId: project,

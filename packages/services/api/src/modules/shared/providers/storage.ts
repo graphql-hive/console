@@ -356,6 +356,11 @@ export interface Storage {
   }): Promise<Map<string, Target>>;
 
   getTargetIdsOfOrganization(_: OrganizationSelector): Promise<readonly string[]>;
+  getTargetIdsByProjectIds(
+    _: OrganizationSelector & {
+      projectIds: readonly string[];
+    },
+  ): Promise<Map<string, readonly string[]>>;
   getTargetIdsOfProject(_: ProjectSelector): Promise<readonly string[]>;
   getTargetSettings(_: TargetSelector): Promise<TargetSettings | never>;
 

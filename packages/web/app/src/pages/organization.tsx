@@ -1,4 +1,4 @@
-import { ChangeEvent, useCallback, useMemo, useRef } from 'react';
+import { ChangeEvent, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { endOfDay, formatISO, startOfDay } from 'date-fns';
 import { MoreHorizontal, MoveDownIcon, MoveUpIcon, SearchIcon } from 'lucide-react';
 import { useQuery } from 'urql';
@@ -25,7 +25,7 @@ import { QueryError } from '@/components/ui/query-error';
 import { Select, SelectContent, SelectItem, SelectTrigger } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
 import { TooltipProvider } from '@/components/ui/tooltip';
-import { FragmentType, graphql } from '@/gql';
+import { FragmentType, graphql, useFragment } from '@/gql';
 import {
   ProjectsSortDirection,
   ProjectsSortField,
@@ -36,7 +36,6 @@ import {
 import { subDays } from '@/lib/date-time';
 import { useIsInView } from '@/lib/hooks/use-is-in-view';
 import { UTCDate } from '@date-fns/utc';
-import type { ResultOf } from '@graphql-typed-document-node/core';
 import { Link, useRouter } from '@tanstack/react-router';
 
 export const OrganizationIndexRouteSearch = z.object({
@@ -47,15 +46,9 @@ export const OrganizationIndexRouteSearch = z.object({
 
 type RouteSearchProps = z.infer<typeof OrganizationIndexRouteSearch>;
 
-type InitialTargetData = NonNullable<
-  ResultOf<typeof OrganizationProjectsPageProjectDataQuery>['project']
->['targets']['edges'][number]['node'];
-
 const OrganizationProjectsPageQuery = graphql(`
   query OrganizationProjectsPageQuery(
     $organizationSlug: String!
-    $period: DateRangeInput!
-    $chartResolution: Int!
     $search: String
     $sort: ProjectsSortInput
   ) {
@@ -68,45 +61,6 @@ const OrganizationProjectsPageQuery = graphql(`
             id
             slug
             type
-            totalRequests(period: $period)
-            requestsOverTime(resolution: $chartResolution, period: $period) {
-              date
-              value
-            }
-            schemaVersionsCount(period: $period)
-          }
-        }
-      }
-    }
-  }
-`);
-
-const OrganizationProjectsPageInitialDataQuery = graphql(`
-  query OrganizationProjectsPageInitialDataQuery(
-    $organizationSlug: String!
-    $period: DateRangeInput!
-    $chartResolution: Int!
-    $search: String
-    $sort: ProjectsSortInput
-    $targetsSort: TargetsSortInput
-  ) {
-    organization: organizationBySlug(organizationSlug: $organizationSlug) {
-      id
-      slug
-      projects(first: 3, search: $search, sort: $sort) {
-        edges {
-          node {
-            id
-            slug
-            targets(sort: $targetsSort) {
-              edges {
-                node {
-                  id
-                  slug
-                  ...TargetCardFragment
-                }
-              }
-            }
           }
         }
       }
@@ -157,12 +111,10 @@ const ProjectCard = (props: {
   sortKey: string;
   sortOrder: 'asc' | 'desc';
   highestNumberOfRequests: number;
-  totalRequests: number | null;
-  schemaVersionsCount: number | null;
   days: number;
   organizationSlug: string;
   projectSlug: string;
-  initialTargetData?: ReadonlyMap<string, InitialTargetData>;
+  onRequestsMaxChange: (projectId: string, value: number | null) => void;
 }) => {
   const ref = useRef<HTMLDivElement>(null);
   const isInView = useIsInView(ref);
@@ -183,8 +135,6 @@ const ProjectCard = (props: {
     return { field, direction, period: props.period };
   }, [props.sortKey, props.sortOrder, props.period]);
 
-  const initialTargetData = props.initialTargetData?.values();
-
   const [query] = useQuery({
     query: OrganizationProjectsPageProjectDataQuery,
     variables: {
@@ -194,12 +144,45 @@ const ProjectCard = (props: {
       period: props.period,
       targetsSort,
     },
-    pause: !!initialTargetData || !isInView,
+    pause: !isInView,
   });
 
-  const targets = [
-    ...(initialTargetData ?? query.data?.project?.targets.edges.map(edge => edge.node) ?? []),
-  ];
+  const targets = query.data?.project?.targets.edges.map(edge => edge.node) ?? [];
+  const targetCardData = useFragment(TargetCardFragment, targets);
+
+  const projectHighestNumberOfRequests = useMemo(() => {
+    let highest = 0;
+
+    for (const target of targetCardData) {
+      for (const dataPoint of target.operationsStats?.requestsOverTime ?? []) {
+        if (dataPoint.value > highest) {
+          highest = dataPoint.value;
+        }
+      }
+    }
+
+    return highest;
+  }, [targetCardData]);
+
+  useEffect(() => {
+    if (query.fetching || targets.length === 0) {
+      return;
+    }
+
+    props.onRequestsMaxChange(props.id, projectHighestNumberOfRequests);
+  }, [
+    props.id,
+    props.onRequestsMaxChange,
+    projectHighestNumberOfRequests,
+    query.fetching,
+    targets.length,
+  ]);
+
+  useEffect(() => {
+    return () => {
+      props.onRequestsMaxChange(props.id, null);
+    };
+  }, [props.id, props.onRequestsMaxChange]);
 
   return (
     <TooltipProvider>
@@ -353,44 +336,12 @@ function OrganizationPageContent(
     return { field, direction, period: period.current };
   }, [sortKey, sortOrder, period.current]);
 
-  const targetsSort = useMemo(() => {
-    let field: TargetsSortField = TargetsSortField.Name;
-    let direction: TargetsSortDirection = TargetsSortDirection.Asc;
-
-    if (sortKey === 'requests') {
-      field = TargetsSortField.Requests;
-    } else if (sortKey === 'versions') {
-      field = TargetsSortField.SchemaVersions;
-    }
-
-    if (sortOrder === 'desc') {
-      direction = TargetsSortDirection.Desc;
-    }
-
-    return { field, direction, period: period.current };
-  }, [sortKey, sortOrder, period.current]);
-
   const [query] = useQuery({
     query: OrganizationProjectsPageQuery,
     variables: {
       organizationSlug: props.organizationSlug,
-      chartResolution: days, // 14 days = 14 data points
-      period: period.current,
       search: props.search,
       sort,
-    },
-    requestPolicy: 'cache-and-network',
-  });
-
-  const [initialDataQuery] = useQuery({
-    query: OrganizationProjectsPageInitialDataQuery,
-    variables: {
-      organizationSlug: props.organizationSlug,
-      chartResolution: days, // 14 days = 14 data points
-      period: period.current,
-      search: props.search,
-      sort,
-      targetsSort,
     },
     requestPolicy: 'cache-and-network',
   });
@@ -398,44 +349,34 @@ function OrganizationPageContent(
   const currentOrganization = query.data?.organization;
   const projectsConnection = currentOrganization?.projects;
 
-  const highestNumberOfRequests = useMemo(() => {
-    let highest = 10;
-
-    if (projectsConnection?.edges.length) {
-      for (const edge of projectsConnection.edges) {
-        for (const dataPoint of edge.node.requestsOverTime) {
-          if (dataPoint.value > highest) {
-            highest = dataPoint.value;
-          }
-        }
-      }
-    }
-
-    return highest;
-  }, [projectsConnection]);
-
-  const initialTargetDataByProjectId = useMemo(() => {
-    const map = new Map<string, Map<string, InitialTargetData>>();
-    const edges = initialDataQuery.data?.organization?.projects.edges;
-
-    if (!edges) {
-      return map;
-    }
-
-    for (const { node: project } of edges) {
-      const targets = new Map<string, InitialTargetData>();
-
-      for (const { node: target } of project.targets.edges) {
-        targets.set(target.id, target);
-      }
-
-      map.set(project.id, targets);
-    }
-
-    return map;
-  }, [initialDataQuery.data]);
-
   const projects = projectsConnection?.edges.map(edge => edge.node);
+
+  const [projectRequestsMaxById, setProjectRequestsMaxById] = useState(
+    () => new Map<string, number>(),
+  );
+
+  useEffect(() => {
+    setProjectRequestsMaxById(new Map());
+  }, [props.organizationSlug, props.search, sortKey, sortOrder]);
+
+  const onProjectRequestsMaxChange = useCallback((projectId: string, value: number | null) => {
+    setProjectRequestsMaxById(current => {
+      const next = new Map(current);
+
+      if (value === null) {
+        next.delete(projectId);
+      } else {
+        next.set(projectId, value);
+      }
+
+      return next;
+    });
+  }, []);
+
+  const highestNumberOfRequests = useMemo(
+    () => Math.max(10, ...projectRequestsMaxById.values()),
+    [projectRequestsMaxById],
+  );
 
   const onSearchChange = useCallback(
     (event: ChangeEvent<HTMLInputElement>) => {
@@ -544,7 +485,7 @@ function OrganizationPageContent(
               </div>
             </div>
           </div>
-          {currentOrganization && projects && !initialDataQuery.fetching ? (
+          {currentOrganization && projects ? (
             projects?.length === 0 ? (
               <EmptyList
                 title="Hive is waiting for your first project"
@@ -561,15 +502,12 @@ function OrganizationPageContent(
                     type={project.type}
                     days={days}
                     highestNumberOfRequests={highestNumberOfRequests}
-                    totalRequests={project.totalRequests}
-                    schemaVersionsCount={project.schemaVersionsCount}
                     period={period.current}
                     sortKey={sortKey}
                     sortOrder={sortOrder}
-                    // targets={project.targets.edges.map(edge => edge.node)}
-                    initialTargetData={initialTargetDataByProjectId.get(project.id)}
                     organizationSlug={props.organizationSlug}
                     projectSlug={project.slug}
+                    onRequestsMaxChange={onProjectRequestsMaxChange}
                   />
                 ))}
               </div>

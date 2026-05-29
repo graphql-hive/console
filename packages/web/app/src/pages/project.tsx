@@ -17,7 +17,7 @@ import { Subtitle, Title } from '@/components/ui/page';
 import { QueryError } from '@/components/ui/query-error';
 import { Select, SelectContent, SelectItem, SelectTrigger } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
-import { FragmentType, graphql } from '@/gql';
+import { FragmentType, graphql, useFragment } from '@/gql';
 import { TargetsSortDirection, TargetsSortField } from '@/gql/graphql';
 import { subDays } from '@/lib/date-time';
 import { cn } from '@/lib/utils';
@@ -94,13 +94,17 @@ const ProjectsPageContent = (
   });
 
   const targets = query.data?.targets.edges.map(edge => edge.node);
+  const targetCardData = useFragment(TargetCardFragment, targets);
 
   const highestNumberOfRequests = useMemo(() => {
-    if (targets?.length) {
-      return targets.reduce((max, target) => {
+    if (targetCardData?.length) {
+      return targetCardData.reduce((max, target) => {
         return Math.max(
           max,
-          target.requestsOverTime.reduce((max, { value }) => Math.max(max, value), 0),
+          target.operationsStats?.requestsOverTime?.reduce(
+            (max, { value }) => Math.max(max, value),
+            0,
+          ) ?? 0,
         );
       }, 100);
     }
@@ -274,10 +278,6 @@ const ProjectOverviewPageQuery = graphql(`
         node {
           id
           slug
-          requestsOverTime(period: $period, resolution: $chartResolution) {
-            date
-            value
-          }
           ...TargetCardFragment
         }
       }

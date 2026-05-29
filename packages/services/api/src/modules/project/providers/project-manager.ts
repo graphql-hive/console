@@ -397,20 +397,36 @@ export class ProjectManager {
     });
     const authorized = await this.filterAuthorizedProjects(organization, projects);
 
-    const withMetrics = await Promise.all(
-      authorized.map(async project => {
-        const value =
-          args.sort!.field === 'REQUESTS'
-            ? await this.operationsManager.countRequestsOfProject({
-                organizationId: organization.id,
-                projectId: project.id,
-                period,
-              })
-            : await this.schemaVersions.countSchemaVersionsOfProject(project, period);
+    const withMetrics =
+      args.sort.field === 'REQUESTS'
+        ? await this.storage
+            .getTargetIdsByProjectIds({
+              organizationId: organization.id,
+              projectIds: authorized.map(project => project.id),
+            })
+            .then(async targetIdsByProjectId => {
+              const countsByTargetId =
+                await this.operationsManager.countRequestsByTargetIdsOfOrganization({
+                  organizationId: organization.id,
+                  targetIds: Array.from(targetIdsByProjectId.values()).flat(),
+                  period,
+                });
 
-        return { project, value };
-      }),
-    );
+              return authorized.map(project => ({
+                project,
+                value: (targetIdsByProjectId.get(project.id) ?? []).reduce(
+                  (total, targetId) => total + (countsByTargetId.get(targetId) ?? 0),
+                  0,
+                ),
+              }));
+            })
+        : await Promise.all(
+            authorized.map(async project => {
+              const value = await this.schemaVersions.countSchemaVersionsOfProject(project, period);
+
+              return { project, value };
+            }),
+          );
 
     withMetrics.sort((left, right) => {
       const diff = (left.value - right.value) * multiplier;
