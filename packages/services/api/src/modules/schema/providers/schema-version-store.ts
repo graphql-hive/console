@@ -143,7 +143,6 @@ export class SchemaVersionStore {
       commit: string;
       schema: string;
       projectId: string;
-      targetId: string;
       metadata: string | null;
     },
   ) {
@@ -156,7 +155,6 @@ export class SchemaVersionStore {
           "commit",
           "sdl",
           "project_id",
-          "target_id",
           "metadata",
           "action"
         )
@@ -168,7 +166,6 @@ export class SchemaVersionStore {
         ${args.commit}::text,
         ${args.schema}::text,
         ${args.projectId},
-        ${args.targetId},
         ${args.metadata},
         'PUSH'
       )
@@ -432,7 +429,6 @@ export class SchemaVersionStore {
               "commit",
               "service_name",
               "project_id",
-              "target_id",
               "action"
             )
           VALUES
@@ -441,7 +437,6 @@ export class SchemaVersionStore {
               ${'system'}::text,
               lower(${args.serviceName}::text),
               ${target.projectId},
-              ${target.id},
               'DELETE'
             )
           RETURNING
@@ -527,7 +522,6 @@ export class SchemaVersionStore {
         id: deleteActionResult.id,
         date: deleteActionResult.createdAt as any,
         service_name: deleteActionResult.serviceName,
-        target: deleteActionResult.targetId,
         action: 'DELETE',
         versionId: newVersion.id,
       } satisfies CompositeDeletedSchemaLog & {
@@ -983,7 +977,6 @@ const schemaLogFields = (prefix = psql``) => psql`
   , ${prefix}"commit"
   , ${prefix}"sdl"
   , ${prefix}"created_at" AS "date"
-  , ${prefix}"target_id" AS "target"
   , ${prefix}"metadata"
   , lower(${prefix}"service_name") AS "service_name"
   , ${prefix}"service_url"
@@ -1002,7 +995,6 @@ type CreateContractVersionInput = {
 const SchemaLogBase = z.object({
   id: z.string(),
   date: z.number(),
-  target: z.string().uuid(),
 });
 
 const SchemaPushLogBase = SchemaLogBase.extend({
