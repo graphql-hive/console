@@ -67,7 +67,4 @@ export default {
       },
     },
   },
-  worker: {
-    format: 'es',
-  },
 } satisfies UserConfig;
