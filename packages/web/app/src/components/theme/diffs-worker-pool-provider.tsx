@@ -34,7 +34,7 @@ function ThemeSwitcher() {
   const { resolvedTheme } = useTheme();
 
   useLayoutEffect(() => {
-    workerPool?.setRenderOptions({
+    void workerPool?.setRenderOptions({
       theme: resolvedTheme === 'dark' ? 'pierre-dark' : 'pierre-light',
     });
   }, [resolvedTheme]);

@@ -50,7 +50,6 @@ import { cn } from '@/lib/utils';
 import { File, MultiFileDiff } from '@pierre/diffs/react';
 import {
   CheckCircledIcon,
-  CrossCircledIcon,
   CubeIcon,
   ExclamationTriangleIcon,
   ListBulletIcon,
