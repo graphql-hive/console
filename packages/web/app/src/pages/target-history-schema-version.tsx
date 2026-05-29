@@ -407,7 +407,7 @@ function SchemaVersionView(props: SchemaVersionViewProps) {
             </TabsList>
           </Tabs>
         </TooltipProvider>
-        <div className="mt-8 space-y-8 px-4">
+        <div className="mt-4 space-y-8 px-4">
           {selectedView === 'details' && (
             <>
               {contractOrVersion.isFirstComposableVersion ? (
@@ -609,7 +609,7 @@ function FilterableSchemaChangeBlock(props: {
       <GenericGraphCard title={props.title}>
         <div className="px-5">
           {filteredChanges?.length ? (
-            <div className="mb-8 pt-2">
+            <div className="pb-8 pt-2">
               <ChangesBlock
                 changes={filteredChanges}
                 projectSlug=""
@@ -1078,7 +1078,7 @@ function SchemaVersionHeader(props: {
   return (
     <header>
       <div className="flex flex-wrap items-baseline gap-x-4 gap-y-2">
-        <h1 className="text-xl font-semibold leading-tight">Graph Version</h1>
+        <h1 className="text-neutral-12 text-xl font-semibold leading-tight">Graph Version</h1>
         <CopyChip value={schemaVersion.id} label={schemaVersion.id.slice(0, 8)} />
       </div>
       <p className="text-neutral-10 mt-1.5 text-sm">Detailed view of the graph version changes.</p>
@@ -1552,10 +1552,10 @@ export const SchemaVersionSummary = (props: {
       <div className="overflow-hidden rounded-xl border">
         <div className="bg-neutral-2 dark:bg-neutral-3 flex items-center justify-between border-b px-5 py-3">
           <div className="flex items-center gap-2 text-xs font-medium capitalize">
-            <span>Subgraph Overview</span>
+            Subgraph Overview
           </div>
         </div>
-        <ul className="divide-y">
+        <ul className="bg-neutral-1 divide-y">
           {(schemaVersion.subgraphDiffs ?? [])
             .sort(diff => (diff.__typename === 'SubgraphDiffUnchanged' ? 1 : -1))
             .map((diff, index) => (
@@ -1786,7 +1786,7 @@ function GenericGraphCard(props: { title: ReactNode; children?: ReactNode; actio
         </div>
         {props.actions ? <>{props.actions}</> : null}
       </div>
-      {props.children}
+      {props.children && <div className="bg-neutral-1">{props.children}</div>}
     </div>
   );
 }
