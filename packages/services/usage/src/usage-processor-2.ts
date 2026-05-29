@@ -262,6 +262,55 @@ const OperationMapRecordSchema = tb.Object(
 
 type OperationMapRecord = tb.Static<typeof OperationMapRecordSchema>;
 
+const SubgraphRequestSchema = tb.Object(
+  {
+    /** Delta start time from "timestamp" */
+    start: tb.Integer({
+      minimum: 0,
+      maximum: Math.pow(2, 63),
+    }),
+
+    /** How long the request took */
+    duration: tb.Integer({
+      minimum: 0,
+      maximum: Math.pow(2, 63),
+    }),
+
+    /** HTTP Status Code */
+    status: tb.Integer({
+      minimum: 100,
+      maximum: 599,
+    }),
+
+    /** Number of times the field has been requested. Regardless of success or failure */
+    fields: tb.Record(tb.String(), tb.Number()),
+
+    /** Error code for a coordinate, with a code returned from the graphql extensions */
+    errors: tb.Optional(
+      tb.Array(tb.Object({ coordinate: tb.String(), code: tb.Optional(tb.String()) })),
+    ),
+
+    /** Which subgraph resolved this path */
+    subgraph: tb.String(),
+
+    /**
+     * If this is an entity request, then this is the coordinate in the original operation that is being resolved.
+     * If undefined, then the path is assumed to be 'Query'.
+     */
+    paths: tb.Union([tb.String(), tb.Array(tb.String(), { minItems: 1 })]),
+
+    /**
+     * What type of request this is. Root is if resolving a root query/mutation field. Entity is
+     * if resolving an entity type in federation.
+     * */
+    type: tb.Union([tb.Literal('ROOT'), tb.Literal('ENTITY')]),
+  },
+  {
+    title: 'SubgraphRequest',
+    additionalProperties: false,
+  },
+);
+
 const ExecutionSchema = tb.Type.Object(
   {
     ok: tb.Type.Boolean(),
@@ -277,6 +326,7 @@ const ExecutionSchema = tb.Type.Object(
       minimum: 0,
       maximum: Math.pow(2, 16) - 1,
     }),
+    fetches: OptionalAndNullable(tb.Array(SubgraphRequestSchema)),
   },
   {
     title: 'Execution',

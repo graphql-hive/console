@@ -76,7 +76,9 @@ export const action: Action = async exec => {
     ORDER BY (target, coordinate, hash, timestamp, expires_at)
     -- only store for 24hr because after that, the hourly or daily table will be used
     TTL least(timestamp + toIntervalHour(24), expires_at)
-    SETTINGS index_granularity = 8192
+    SETTINGS
+      index_granularity = 8192
+      , deduplicate_merge_projection_mode = 'rebuild'
     ;
   `);
 
@@ -127,7 +129,9 @@ export const action: Action = async exec => {
     PRIMARY KEY (target, coordinate, hash, timestamp)
     ORDER BY (target, coordinate, hash, timestamp, expires_at)
     TTL least(timestamp + toIntervalDay(30), expires_at)
-    SETTINGS index_granularity = 8192
+    SETTINGS
+      index_granularity = 8192
+      , deduplicate_merge_projection_mode = 'rebuild'
     ;
   `);
 
@@ -175,7 +179,9 @@ export const action: Action = async exec => {
     PRIMARY KEY (target, coordinate, hash, timestamp)
     ORDER BY (target, coordinate, hash, timestamp, expires_at)
     TTL expires_at
-    SETTINGS index_granularity = 8192
+    SETTINGS
+      index_granularity = 8192
+      , deduplicate_merge_projection_mode = 'rebuild'
     ;
   `);
 

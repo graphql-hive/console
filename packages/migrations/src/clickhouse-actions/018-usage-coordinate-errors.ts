@@ -144,7 +144,9 @@ export const action: Action = async exec => {
     ORDER BY (target, coordinate, code, timestamp, hash, expires_at)
     -- only store for 24hr because after that, the hourly or daily table will be used
     TTL least(timestamp + toIntervalHour(24), expires_at)
-    SETTINGS index_granularity = 8192, deduplicate_merge_projection_mode = 'rebuild'
+    SETTINGS
+      index_granularity = 8192
+      , deduplicate_merge_projection_mode = 'rebuild'
     ;
   `);
 
@@ -202,7 +204,9 @@ export const action: Action = async exec => {
     ORDER BY (target, coordinate, code, timestamp, hash, expires_at)
     -- keep for a maximum of 30 days because after that the relative time range will only use the daily calculations
     TTL least(timestamp + toIntervalDay(30), expires_at)
-    SETTINGS index_granularity = 8192, deduplicate_merge_projection_mode = 'rebuild'
+    SETTINGS
+      index_granularity = 8192
+      , deduplicate_merge_projection_mode = 'rebuild'
     ;
   `);
   await exec(`
@@ -256,7 +260,9 @@ export const action: Action = async exec => {
     PRIMARY KEY (target, coordinate, code, timestamp, hash)
     ORDER BY (target, coordinate, code, timestamp, hash, expires_at)
     TTL expires_at
-    SETTINGS index_granularity = 8192, deduplicate_merge_projection_mode = 'rebuild'
+    SETTINGS
+      index_granularity = 8192
+      , deduplicate_merge_projection_mode = 'rebuild'
     ;
   `);
 

@@ -43,15 +43,15 @@
     "check:build": "bob check"
   },
   "peerDependencies": {
-    "@graphql-hive/gateway": "^2.0.0",
+    "@envelop/types": "^5.0.0",
+    "@graphql-hive/gateway-runtime": "^1.0.0 || ^2.0.0",
     "graphql": "^0.13.0 || ^14.0.0 || ^15.0.0 || ^16.0.0"
   },
   "dependencies": {
     "@graphql-hive/core": "workspace:*"
   },
   "devDependencies": {
-    "@envelop/types": "5.0.0",
-    "@graphql-hive/gateway": "^2.0.0"
+    "@envelop/types": "^5.0.0"
   },
   "publishConfig": {
     "registry": "https://registry.npmjs.org",

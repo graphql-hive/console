@@ -183,7 +183,7 @@ test('app:retire --force bypasses protection', async () => {
     },
   });
 
-  await client.collectUsage()(
+  await client.collectUsage().finish(
     {
       document: parse(`query { hello }`),
       schema: buildASTSchema(parse(sdl)),

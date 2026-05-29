@@ -2,13 +2,12 @@ import { responsePathAsArray, type GraphQLError } from 'graphql';
 import {
   autoDisposeSymbol,
   createHive as createHiveClient,
-  HiveClient,
-  HivePluginOptions,
   isAsyncIterable,
   isHiveClient,
+  type HiveClient,
+  type HivePluginOptions,
 } from '@graphql-hive/core';
-import type { CollectUsage } from '@graphql-hive/core/src/client/types.js';
-import type { GatewayPlugin } from '@graphql-hive/gateway';
+import { GatewayPlugin } from '@graphql-hive/gateway-runtime';
 import { extractSchemaCoordinates } from './extract-coordinates.js';
 import { isEntityRequest } from './is-entity-request.js';
 import { pathToCoordinate } from './path-to-coordinate.js';
@@ -59,7 +58,7 @@ export function useHive(clientOrOptions: HiveClient | HivePluginOptions): Gatewa
   return {
     onSubgraphExecute({ executionRequest, subgraphName, subgraph: subgraphSchema }) {
       const collection = executionRequest.context?.__hiveUsageCollection as
-        | CollectUsage
+        | ReturnType<HiveClient['collectUsage']>
         | undefined;
 
       if (!collection) {

@@ -40,7 +40,7 @@ interface UsageCollector {
     duration: number;
     experimental__persistedDocumentHash?: string;
     /** Optionally send subgraph request information. This provides a deeper level of usage metrics */
-    fetches?: OperationSubgraphRequest[];
+    fetches?: OperationSubgraphRequest[] | null;
   }): void;
   /** collect a long-lived GraphQL request/subscription (subscription operation) */
   collectSubscription(args: {
@@ -259,7 +259,7 @@ export function createUsage(pluginOptions: HiveInternalPluginOptions): UsageColl
                   ok: errors.length === 0,
                   duration: args.duration,
                   errorsTotal: errors.length,
-                  fetches: args.fetches ?? [],
+                  fetches: args.fetches,
                 },
                 // TODO: operationHash is ready to accept hashes of persisted operations
                 client: args.experimental__persistedDocumentHash
@@ -322,7 +322,7 @@ export function createUsage(pluginOptions: HiveInternalPluginOptions): UsageColl
             result,
             duration,
             experimental__persistedDocumentHash,
-            fetches,
+            fetches: fetches.length > 0 ? fetches : null,
           });
         },
       };
@@ -492,7 +492,7 @@ interface CollectedOperation {
     ok: boolean;
     duration: number;
     errorsTotal: number;
-    fetches: OperationSubgraphRequest[];
+    fetches?: OperationSubgraphRequest[] | null;
   };
   persistedDocumentHash?: string;
   client?: ClientInfo | null;
@@ -515,7 +515,7 @@ interface RequestOperation {
     ok: boolean;
     duration: number;
     errorsTotal: number;
-    fetches: OperationSubgraphRequest[];
+    fetches?: OperationSubgraphRequest[] | null;
   };
   persistedDocumentHash?: string;
   metadata?: {

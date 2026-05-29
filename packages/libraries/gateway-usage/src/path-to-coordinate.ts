@@ -1,9 +1,9 @@
 import {
   getNamedType,
-  GraphQLFieldMap,
-  GraphQLSchema,
   isInterfaceType,
   isObjectType,
+  type GraphQLFieldMap,
+  type GraphQLSchema,
 } from 'graphql';
 
 export function pathToCoordinate(

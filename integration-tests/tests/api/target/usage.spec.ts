@@ -2248,7 +2248,7 @@ test.concurrent(
     `);
 
     function collectA() {
-      client.collectUsage()(
+      client.collectUsage().finish(
         {
           document: queryA,
           schema,
@@ -2261,7 +2261,7 @@ test.concurrent(
     }
 
     function collectB() {
-      client.collectUsage()(
+      client.collectUsage().finish(
         {
           document: queryB,
           schema,
@@ -2467,7 +2467,7 @@ test.concurrent(
     `);
 
     function collectA() {
-      client.collectUsage()(
+      client.collectUsage().finish(
         {
           document: queryA,
           schema,
@@ -2639,7 +2639,7 @@ test.concurrent(
     `);
 
     function collectA() {
-      client.collectUsage()(
+      client.collectUsage().finish(
         {
           document: queryA,
           schema,
@@ -2651,7 +2651,7 @@ test.concurrent(
       );
     }
     function collectB() {
-      client.collectUsage()(
+      client.collectUsage().finish(
         {
           document: queryB,
           schema,
@@ -2921,7 +2921,7 @@ test.concurrent(
 
     // Now let's make subscription insignificant by making 3 queries
 
-    client.collectUsage()(
+    client.collectUsage().finish(
       {
         document: parse('{ a }'),
         schema,
@@ -2931,7 +2931,7 @@ test.concurrent(
       },
       {},
     );
-    client.collectUsage()(
+    client.collectUsage().finish(
       {
         document: parse('{ a }'),
         schema,
@@ -2941,7 +2941,7 @@ test.concurrent(
       },
       {},
     );
-    client.collectUsage()(
+    client.collectUsage().finish(
       {
         document: parse('{ a }'),
         schema,

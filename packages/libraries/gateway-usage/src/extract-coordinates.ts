@@ -1,14 +1,13 @@
 import {
-  DocumentNode,
   getNamedType,
-  GraphQLSchema,
-  GraphQLType,
   isInterfaceType,
   isObjectType,
   isUnionType,
-  Kind,
-  OperationDefinitionNode,
-  SelectionNode,
+  type DocumentNode,
+  type GraphQLSchema,
+  type GraphQLType,
+  type OperationDefinitionNode,
+  type SelectionNode,
 } from 'graphql';
 
 /**
@@ -23,7 +22,7 @@ export function extractSchemaCoordinates(
 
   // 1. Find the root operation (Query, Mutation, Subscription)
   const operation = document.definitions.find(
-    (def): def is OperationDefinitionNode => def.kind === Kind.OPERATION_DEFINITION,
+    (def): def is OperationDefinitionNode => def.kind === 'OperationDefinition',
   );
   if (!operation) return counts;
 
@@ -68,7 +67,7 @@ function walkZip(
   const fields = 'getFields' in namedType ? namedType.getFields() : {};
 
   for (const selection of selections) {
-    if (selection.kind === Kind.FIELD) {
+    if (selection.kind === 'Field') {
       const realFieldName = selection.name.value;
       const responseKey = selection.alias ? selection.alias.value : realFieldName;
 
@@ -91,10 +90,7 @@ function walkZip(
           );
         }
       }
-    }
-
-    // --- INLINE FRAGMENT LOGIC ---
-    else if (selection.kind === Kind.INLINE_FRAGMENT) {
+    } else if (selection.kind === 'InlineFragment') {
       const typeConditionName = selection.typeCondition?.name.value;
 
       let matchesType = true;
