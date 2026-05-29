@@ -44,6 +44,9 @@ const agentConfig: Agent.HttpOptions = {
 
 const httpAgent = new Agent(agentConfig);
 const httpsAgent = new Agent.HttpsAgent(agentConfig);
+const clickHouseDefaultSearchParams = {
+  output_format_json_quote_64bit_integers: '0',
+} as const;
 
 @Injectable()
 export class ClickHouse {
@@ -103,6 +106,7 @@ export class ClickHouse {
           },
           searchParams: {
             default_format: 'JSON',
+            ...clickHouseDefaultSearchParams,
             // Max execution time in seconds
             max_execution_time: (this.config.requestTimeout ?? timeout) / 1000,
             query_id: executionId,
@@ -280,6 +284,7 @@ export class ClickHouse {
           },
           searchParams: {
             default_format: 'JSON',
+            ...clickHouseDefaultSearchParams,
             // Max execution time in seconds
             max_execution_time: (this.config.requestTimeout ?? args.timeout) / 1000,
             query_id: executionId,
