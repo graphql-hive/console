@@ -1,6 +1,7 @@
 import { AddressInfo } from 'node:net';
 import { parse } from 'graphql';
 import { createLogger, createYoga } from 'graphql-yoga';
+import { readOperationsStats } from 'testkit/flow';
 import { ProjectType } from 'testkit/gql/graphql';
 import { initSeed } from 'testkit/seed';
 import { getServiceHost } from 'testkit/utils';
@@ -65,7 +66,7 @@ describe('GraphQL Hive Plugin', () => {
   test('usage data includes subgraph request data', async () => {
     const { createOrg } = await initSeed().createOwner();
     const { createProject } = await createOrg();
-    const { createTargetAccessToken, waitForRequestsCollected } = await createProject(
+    const { createTargetAccessToken, waitForRequestsCollected, target } = await createProject(
       ProjectType.Single,
     );
     const token = await createTargetAccessToken({});
@@ -142,5 +143,19 @@ describe('GraphQL Hive Plugin', () => {
       }
     `);
     await usageCollected;
+
+    const yesterday = new Date();
+    yesterday.setDate(yesterday.getDate() - 1);
+    // await expect(
+    //   readOperationsStats(
+    //     { byId: target.id },
+    //     {
+    //       from: yesterday.toISOString(),
+    //       to: new Date().toISOString(),
+    //     },
+    //     {},
+    //     token.secret,
+    //   ),
+    // ).resolves
   });
 });

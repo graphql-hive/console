@@ -2,6 +2,7 @@ import { lru } from 'tiny-lru';
 import {
   castValue,
   ProcessedAppDeploymentUsageRecord,
+  ProcessedErrorRecord,
   type ProcessedOperation,
   type ProcessedRegistryRecord,
   type ProcessedSubscriptionOperation,
@@ -44,6 +45,7 @@ export const operationsOrder = [
   'duration',
   'client_name',
   'client_version',
+  'coordinate_totals',
 ] as const;
 
 export const subscriptionOperationsOrder = [
@@ -75,6 +77,8 @@ export const appDeploymentUsageOrder = [
   'last_request',
 ] as const;
 
+export const errorsOrder = ['target', 'hash', 'timestamp', 'expires_at', 'errors'] as const;
+
 export function joinIntoSingleMessage(items: string[]): string {
   return items.join(delimiter);
 }
@@ -94,6 +98,7 @@ export function stringifyQueryOrMutationOperation(operation: ProcessedOperation)
     duration: castValue(operation.execution.duration),
     client_name: castValue(operation.metadata?.client?.name),
     client_version: castValue(operation.metadata?.client?.version),
+    coordinate_totals: castValue(operation.execution.coordinateTotals),
   };
   return Object.values(mapper).join(',');
 }
@@ -136,6 +141,18 @@ export function stringifyAppDeploymentUsageRecord(
     app_name: castValue(record.appName),
     app_version: castValue(record.appVersion),
     last_request: castDate(record.lastRequestTimestamp),
+  };
+
+  return Object.values(mapper).join(',');
+}
+
+export function stringifyErrors(record: ProcessedErrorRecord): string {
+  const mapper: Record<KeysOfArray<typeof errorsOrder>, any> = {
+    target: castValue(record.target),
+    hash: castValue(record.hash),
+    timestamp: castDate(record.timestamp),
+    expires_at: castDate(record.expires_at),
+    errors: castValue(record.errors),
   };
 
   return Object.values(mapper).join(',');

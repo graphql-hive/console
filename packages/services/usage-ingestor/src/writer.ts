@@ -125,6 +125,23 @@ export function createWriter({
         3,
       );
     },
+    async writeOperationErrors(records: string[]) {
+      if (records.length === 0) {
+        return;
+      }
+
+      const csv = joinIntoSingleMessage(records);
+      const compressed = await compress(csv);
+
+      await writeCsv(
+        clickhouse,
+        agents,
+        `INSERT INTO operation_errors (${operationsFields}) FORMAT CSV`,
+        compressed,
+        logger,
+        3,
+      );
+    },
     destroy() {
       httpAgent.destroy();
       httpsAgent.destroy();

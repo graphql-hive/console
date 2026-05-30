@@ -5,6 +5,7 @@ export function castValue(value: number): number;
 export function castValue(value: any[]): string;
 export function castValue(value?: any): string;
 export function castValue(value: undefined): string;
+export function castValue(value: object): string;
 export function castValue(value?: any) {
   if (typeof value === 'boolean') {
     return castValue(value ? 1 : 0);
@@ -26,6 +27,16 @@ export function castValue(value?: any) {
     return `"[${value.map(val => `'${val}'`).join(',')}]"`;
   }
 
-  return '\\N'; // NULL is \N
-  // Yes, it's ᴺᵁᴸᴸ not NULL :) This is what JSONStringsEachRow does for NULLs
+  if (value === undefined || value === null) {
+    return '\\N'; // NULL is \N
+    // Yes, it's ᴺᵁᴸᴸ not NULL :) This is what JSONStringsEachRow does for NULLs
+  }
+
+  if (typeof value === 'object') {
+    const jsonStr = JSON.stringify(value);
+    return `"${jsonStr.replace(/"/g, '""')}"`;
+  }
+
+  // consider throwing due to unhandled type.
+  return '\\N';
 }
