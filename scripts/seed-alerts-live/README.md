@@ -40,8 +40,8 @@ service is dispatching.
 5. Enables the per-org `metricAlertRules` feature flag (direct PG `UPDATE`, since the cluster env
    var is usually off in local dev).
 6. Publishes a tiny schema (so the usage service will accept operations against the target).
-7. Creates 7 short-window alert rules (each `timeWindowMinutes: 1`) and one webhook channel pointing
-   at port 9999.
+7. Creates one webhook channel pointing at port 9999, and (unless started with `--no-rules`) 7
+   short-window alert rules each `timeWindowMinutes: 1`.
 8. Pre-seeds ~60s of backdated breach-shaped data so the first evaluator tick after rule creation
    already sees a fully-formed breach window in `operations_minutely`. Cuts time-to-first-FIRING
    from ~2-3 min to ~2 min.
@@ -101,6 +101,29 @@ To also watch the `Metric Alerts` Grafana dashboard fill in (live metrics — CH
 [docs/DEVELOPMENT.md](../../docs/DEVELOPMENT.md#local-grafana--prometheus-optional) for details on
 the local observability stack.
 
+### Data-driver-only mode (`--no-rules`)
+
+```sh
+pnpm seed:alerts-live --no-rules
+```
+
+Skips the 7 pre-created rules. The script still provisions the org / project / target / webhook
+channel and runs the BREACH/NORMAL traffic loop, so the workflows evaluator has data to chew on as
+soon as a rule exists. Use this when you want to create rules manually via the UI from a clean state
+(e.g. for video walkthroughs).
+
+The summary block prints a URL pointing at `/alerts/create` instead of `/alerts/rules`. Create a
+rule whose thresholds match the traffic the loop generates so a fire is guaranteed:
+
+| Field          | Value                                                            |
+| -------------- | ---------------------------------------------------------------- |
+| BREACH traffic | 240 req/min · 50% errors · p95 ≈ 2000ms · avg ≈ 1000ms           |
+| NORMAL traffic | 0 req/min (silence)                                              |
+
+For example, mirroring the seeded rule 3: LATENCY P95 ABOVE FIXED_VALUE 1500ms, 1-min confirmation,
+CRITICAL — fires within ~2 minutes after creation, recovers within ~2 minutes after the script
+switches to its NORMAL phase.
+
 ## Expected timing
 
 | When                        | What you should see                                                                                                                                 |
@@ -152,8 +175,9 @@ First, sanity-check the workflows service's `workflows:dev` terminal. There are 
    resolves to `null`, which makes the cron exit at the very first line every minute.
 
 2. _`Evaluating metric alert rules count=0` every minute._ The evaluator is alive but doesn't see
-   any enabled rules for the demo org. Most likely the per-org `metricAlertRules` feature flag
-   didn't take effect — query
+   any enabled rules for the demo org. If you ran with `--no-rules` and haven't created a rule yet
+   via the UI, this is expected — create one and the next cron tick will pick it up. Otherwise the
+   per-org `metricAlertRules` feature flag probably didn't take effect — query
    `select feature_flags from organizations where slug like 'live-alerts-demo-%' order by created_at desc limit 1`
    to confirm.
 

@@ -128,18 +128,24 @@ type Ctx = {
   targetSlug: string;
   targetId: string;
   writeSecret: string;
-  ruleIds: {
-    traffic: string;
-    errorRate: string;
-    latency: string;
-    trafficBelow: string;
-    errorRateFixed: string;
-    avgLatency: string;
-    trafficHigh: string;
-  };
+  // Undefined when started with `--no-rules` (data-driver-only mode); the
+  // operator creates rules manually via the UI in that case. The field is
+  // unused downstream regardless, but reflecting the mode in the type makes
+  // printSummary's branching explicit.
+  ruleIds:
+    | {
+        traffic: string;
+        errorRate: string;
+        latency: string;
+        trafficBelow: string;
+        errorRateFixed: string;
+        avgLatency: string;
+        trafficHigh: string;
+      }
+    | undefined;
 };
 
-async function setup(ownerEmail: string): Promise<Ctx> {
+async function setup(ownerEmail: string, options: { noRules: boolean }): Promise<Ctx> {
   const timestamp = Date.now();
   console.log(`\n🚀 Provisioning demo org for ${ownerEmail}…`);
 
@@ -227,133 +233,152 @@ async function setup(ownerEmail: string): Promise<Ctx> {
   const channelId = channelResult.addAlertChannel.ok!.addedAlertChannel.id;
   console.log('   ✓ Webhook channel created');
 
-  // Four short-window rules, deliberately varied along every other axis so
-  // the demo covers the feature surface.
-  const baseRuleInput = {
-    organizationSlug: organization.slug,
-    projectSlug: project.slug,
-    targetSlug: target.slug,
-    timeWindowMinutes: 1,
-    channelIds: [channelId],
-  };
+  // Rule creation is skipped under `--no-rules` so the operator can create
+  // their own rule from a clean UI (e.g. during a video walkthrough). The
+  // pre-seed below still runs, so a rule created within ~1 minute will see
+  // breach data on the very first cron tick.
+  let ruleIds: Ctx['ruleIds'] = undefined;
+  if (options.noRules) {
+    console.log('   ⏩ Skipping rule creation (--no-rules)');
+  } else {
+    // Four short-window rules, deliberately varied along every other axis so
+    // the demo covers the feature surface.
+    const baseRuleInput = {
+      organizationSlug: organization.slug,
+      projectSlug: project.slug,
+      targetSlug: target.slug,
+      timeWindowMinutes: 1,
+      channelIds: [channelId],
+    };
 
-  const ruleTraffic = (
-    await addMetricAlertRule(
-      {
-        ...baseRuleInput,
-        name: 'Traffic spike (> 50 req/min)',
-        type: MetricAlertRuleType.Traffic,
-        direction: MetricAlertRuleDirection.Above,
-        thresholdType: MetricAlertRuleThresholdType.FixedValue,
-        thresholdValue: 50,
-        severity: MetricAlertRuleSeverity.Info,
-        confirmationMinutes: 0,
-      },
-      ownerToken,
-    ).then(r => r.expectNoGraphQLErrors())
-  ).addMetricAlertRule.ok!.addedMetricAlertRule.id;
+    const ruleTraffic = (
+      await addMetricAlertRule(
+        {
+          ...baseRuleInput,
+          name: 'Traffic spike (> 50 req/min)',
+          type: MetricAlertRuleType.Traffic,
+          direction: MetricAlertRuleDirection.Above,
+          thresholdType: MetricAlertRuleThresholdType.FixedValue,
+          thresholdValue: 50,
+          severity: MetricAlertRuleSeverity.Info,
+          confirmationMinutes: 0,
+        },
+        ownerToken,
+      ).then(r => r.expectNoGraphQLErrors())
+    ).addMetricAlertRule.ok!.addedMetricAlertRule.id;
 
-  const ruleErrorRate = (
-    await addMetricAlertRule(
-      {
-        ...baseRuleInput,
-        name: 'Error-rate change (+200% vs prior window)',
-        type: MetricAlertRuleType.ErrorRate,
-        direction: MetricAlertRuleDirection.Above,
-        thresholdType: MetricAlertRuleThresholdType.PercentageChange,
-        thresholdValue: 200,
-        severity: MetricAlertRuleSeverity.Warning,
-        confirmationMinutes: 0,
-      },
-      ownerToken,
-    ).then(r => r.expectNoGraphQLErrors())
-  ).addMetricAlertRule.ok!.addedMetricAlertRule.id;
+    const ruleErrorRate = (
+      await addMetricAlertRule(
+        {
+          ...baseRuleInput,
+          name: 'Error-rate change (+200% vs prior window)',
+          type: MetricAlertRuleType.ErrorRate,
+          direction: MetricAlertRuleDirection.Above,
+          thresholdType: MetricAlertRuleThresholdType.PercentageChange,
+          thresholdValue: 200,
+          severity: MetricAlertRuleSeverity.Warning,
+          confirmationMinutes: 0,
+        },
+        ownerToken,
+      ).then(r => r.expectNoGraphQLErrors())
+    ).addMetricAlertRule.ok!.addedMetricAlertRule.id;
 
-  const ruleLatency = (
-    await addMetricAlertRule(
-      {
-        ...baseRuleInput,
-        name: 'P95 latency > 1500ms (with 1-min confirmation)',
-        type: MetricAlertRuleType.Latency,
-        metric: MetricAlertRuleMetric.P95,
-        direction: MetricAlertRuleDirection.Above,
-        thresholdType: MetricAlertRuleThresholdType.FixedValue,
-        thresholdValue: 1500,
-        severity: MetricAlertRuleSeverity.Critical,
-        confirmationMinutes: 1,
-      },
-      ownerToken,
-    ).then(r => r.expectNoGraphQLErrors())
-  ).addMetricAlertRule.ok!.addedMetricAlertRule.id;
+    const ruleLatency = (
+      await addMetricAlertRule(
+        {
+          ...baseRuleInput,
+          name: 'P95 latency > 1500ms (with 1-min confirmation)',
+          type: MetricAlertRuleType.Latency,
+          metric: MetricAlertRuleMetric.P95,
+          direction: MetricAlertRuleDirection.Above,
+          thresholdType: MetricAlertRuleThresholdType.FixedValue,
+          thresholdValue: 1500,
+          severity: MetricAlertRuleSeverity.Critical,
+          confirmationMinutes: 1,
+        },
+        ownerToken,
+      ).then(r => r.expectNoGraphQLErrors())
+    ).addMetricAlertRule.ok!.addedMetricAlertRule.id;
 
-  const ruleTrafficBelow = (
-    await addMetricAlertRule(
-      {
-        ...baseRuleInput,
-        name: 'Traffic drop (< 10 req/min)',
-        type: MetricAlertRuleType.Traffic,
-        direction: MetricAlertRuleDirection.Below,
-        thresholdType: MetricAlertRuleThresholdType.FixedValue,
-        thresholdValue: 10,
-        severity: MetricAlertRuleSeverity.Warning,
-        confirmationMinutes: 0,
-      },
-      ownerToken,
-    ).then(r => r.expectNoGraphQLErrors())
-  ).addMetricAlertRule.ok!.addedMetricAlertRule.id;
+    const ruleTrafficBelow = (
+      await addMetricAlertRule(
+        {
+          ...baseRuleInput,
+          name: 'Traffic drop (< 10 req/min)',
+          type: MetricAlertRuleType.Traffic,
+          direction: MetricAlertRuleDirection.Below,
+          thresholdType: MetricAlertRuleThresholdType.FixedValue,
+          thresholdValue: 10,
+          severity: MetricAlertRuleSeverity.Warning,
+          confirmationMinutes: 0,
+        },
+        ownerToken,
+      ).then(r => r.expectNoGraphQLErrors())
+    ).addMetricAlertRule.ok!.addedMetricAlertRule.id;
 
-  // Three additional FIXED_VALUE rules so that BREACH phases produce more
-  // simultaneous FIRINGs. These fire whenever metrics exceed their absolute
-  // thresholds, unlike rule 2 which is a one-shot PERCENTAGE_CHANGE.
-  const ruleErrorRateFixed = (
-    await addMetricAlertRule(
-      {
-        ...baseRuleInput,
-        name: 'High error rate (>= 25%)',
-        type: MetricAlertRuleType.ErrorRate,
-        direction: MetricAlertRuleDirection.Above,
-        thresholdType: MetricAlertRuleThresholdType.FixedValue,
-        thresholdValue: 25,
-        severity: MetricAlertRuleSeverity.Critical,
-        confirmationMinutes: 0,
-      },
-      ownerToken,
-    ).then(r => r.expectNoGraphQLErrors())
-  ).addMetricAlertRule.ok!.addedMetricAlertRule.id;
+    // Three additional FIXED_VALUE rules so that BREACH phases produce more
+    // simultaneous FIRINGs. These fire whenever metrics exceed their absolute
+    // thresholds, unlike rule 2 which is a one-shot PERCENTAGE_CHANGE.
+    const ruleErrorRateFixed = (
+      await addMetricAlertRule(
+        {
+          ...baseRuleInput,
+          name: 'High error rate (>= 25%)',
+          type: MetricAlertRuleType.ErrorRate,
+          direction: MetricAlertRuleDirection.Above,
+          thresholdType: MetricAlertRuleThresholdType.FixedValue,
+          thresholdValue: 25,
+          severity: MetricAlertRuleSeverity.Critical,
+          confirmationMinutes: 0,
+        },
+        ownerToken,
+      ).then(r => r.expectNoGraphQLErrors())
+    ).addMetricAlertRule.ok!.addedMetricAlertRule.id;
 
-  const ruleAvgLatency = (
-    await addMetricAlertRule(
-      {
-        ...baseRuleInput,
-        name: 'Avg latency > 800ms',
-        type: MetricAlertRuleType.Latency,
-        metric: MetricAlertRuleMetric.Avg,
-        direction: MetricAlertRuleDirection.Above,
-        thresholdType: MetricAlertRuleThresholdType.FixedValue,
-        thresholdValue: 800,
-        severity: MetricAlertRuleSeverity.Warning,
-        confirmationMinutes: 0,
-      },
-      ownerToken,
-    ).then(r => r.expectNoGraphQLErrors())
-  ).addMetricAlertRule.ok!.addedMetricAlertRule.id;
+    const ruleAvgLatency = (
+      await addMetricAlertRule(
+        {
+          ...baseRuleInput,
+          name: 'Avg latency > 800ms',
+          type: MetricAlertRuleType.Latency,
+          metric: MetricAlertRuleMetric.Avg,
+          direction: MetricAlertRuleDirection.Above,
+          thresholdType: MetricAlertRuleThresholdType.FixedValue,
+          thresholdValue: 800,
+          severity: MetricAlertRuleSeverity.Warning,
+          confirmationMinutes: 0,
+        },
+        ownerToken,
+      ).then(r => r.expectNoGraphQLErrors())
+    ).addMetricAlertRule.ok!.addedMetricAlertRule.id;
 
-  const ruleTrafficHigh = (
-    await addMetricAlertRule(
-      {
-        ...baseRuleInput,
-        name: 'Traffic spike (> 100 req/min)',
-        type: MetricAlertRuleType.Traffic,
-        direction: MetricAlertRuleDirection.Above,
-        thresholdType: MetricAlertRuleThresholdType.FixedValue,
-        thresholdValue: 100,
-        severity: MetricAlertRuleSeverity.Warning,
-        confirmationMinutes: 0,
-      },
-      ownerToken,
-    ).then(r => r.expectNoGraphQLErrors())
-  ).addMetricAlertRule.ok!.addedMetricAlertRule.id;
-  console.log('   ✓ 7 rules created');
+    const ruleTrafficHigh = (
+      await addMetricAlertRule(
+        {
+          ...baseRuleInput,
+          name: 'Traffic spike (> 100 req/min)',
+          type: MetricAlertRuleType.Traffic,
+          direction: MetricAlertRuleDirection.Above,
+          thresholdType: MetricAlertRuleThresholdType.FixedValue,
+          thresholdValue: 100,
+          severity: MetricAlertRuleSeverity.Warning,
+          confirmationMinutes: 0,
+        },
+        ownerToken,
+      ).then(r => r.expectNoGraphQLErrors())
+    ).addMetricAlertRule.ok!.addedMetricAlertRule.id;
+
+    ruleIds = {
+      traffic: ruleTraffic,
+      errorRate: ruleErrorRate,
+      latency: ruleLatency,
+      trafficBelow: ruleTrafficBelow,
+      errorRateFixed: ruleErrorRateFixed,
+      avgLatency: ruleAvgLatency,
+      trafficHigh: ruleTrafficHigh,
+    };
+    console.log('   ✓ 7 rules created');
+  }
 
   // Pre-seed ~60s of backdated breach data so the very first cron tick after
   // rule creation already sees a fully-formed breach window in
@@ -384,32 +409,38 @@ async function setup(ownerEmail: string): Promise<Ctx> {
     targetSlug: target.slug,
     targetId: target.id,
     writeSecret,
-    ruleIds: {
-      traffic: ruleTraffic,
-      errorRate: ruleErrorRate,
-      latency: ruleLatency,
-      trafficBelow: ruleTrafficBelow,
-      errorRateFixed: ruleErrorRateFixed,
-      avgLatency: ruleAvgLatency,
-      trafficHigh: ruleTrafficHigh,
-    },
+    ruleIds,
   };
 }
 
 function printSummary(ctx: Ctx) {
-  const path = `/${ctx.orgSlug}/${ctx.projectSlug}/${ctx.targetSlug}/alerts/rules`;
+  const targetPath = `/${ctx.orgSlug}/${ctx.projectSlug}/${ctx.targetSlug}`;
   console.log('\n┌─ Demo ready ───────────────────────────────────────');
   console.log(`│ Email:      ${ctx.ownerEmail}`);
   console.log(
     `│ Password:   ${ctx.isExistingUser ? '(use existing password)' : DEV_USER_PASSWORD}`,
   );
-  console.log(`│ Open in UI: ${DASHBOARD_URL}${path}`);
-  console.log('│');
-  console.log('│ The alerts pages auto-poll every 15s. The cron evaluator');
-  console.log('│ runs every minute. Expect the first NORMAL → PENDING →');
-  console.log('│ FIRING transition within ~2 minutes (rules 1, 5, 6, 7),');
-  console.log('│ a transient PENDING for rule 2 (PERCENTAGE_CHANGE), and');
-  console.log('│ rule 3 (with confirmationMinutes=1) within ~2 minutes.');
+  if (ctx.ruleIds) {
+    console.log(`│ Open in UI: ${DASHBOARD_URL}${targetPath}/alerts/rules`);
+    console.log('│');
+    console.log('│ The alerts pages auto-poll every 15s. The cron evaluator');
+    console.log('│ runs every minute. Expect the first NORMAL → PENDING →');
+    console.log('│ FIRING transition within ~2 minutes (rules 1, 5, 6, 7),');
+    console.log('│ a transient PENDING for rule 2 (PERCENTAGE_CHANGE), and');
+    console.log('│ rule 3 (with confirmationMinutes=1) within ~2 minutes.');
+  } else {
+    console.log(`│ Open in UI: ${DASHBOARD_URL}${targetPath}/alerts/create`);
+    console.log('│');
+    console.log('│ Started in --no-rules mode: org, target, and webhook');
+    console.log('│ channel exist, but no rules were created. Create a rule');
+    console.log('│ via the form above; the workflows evaluator will pick it');
+    console.log('│ up on its next cron tick (≤60s).');
+    console.log('│');
+    console.log('│ BREACH/NORMAL traffic alternates every 3 minutes:');
+    console.log('│  · BREACH: 240 req/min, 50% errors, p95 ≈ 2000ms');
+    console.log('│  · NORMAL: 0 req/min (silence)');
+    console.log('│ Mirror these in your rule\'s thresholds to guarantee a fire.');
+  }
   console.log('└────────────────────────────────────────────────────\n');
 }
 
@@ -552,6 +583,11 @@ async function runMainLoop(ctx: Ctx, abortSignal: AbortSignal) {
 }
 
 async function main() {
+  // Single boolean flag — keep it cheap. `--no-rules` skips the seven seeded
+  // rules so the operator can create one via the UI from a clean slate (e.g.
+  // for video walkthroughs). Org / target / channel / data loop still run.
+  const noRules = process.argv.includes('--no-rules');
+
   await preflight();
 
   // Accept an existing dev's email so they can keep using their already-
@@ -560,7 +596,7 @@ async function main() {
   const ownerEmail = inputEmail || `live-alerts-demo-${Date.now()}@localhost.localhost`;
 
   const webhookServer = startWebhookReceiver();
-  const ctx = await setup(ownerEmail);
+  const ctx = await setup(ownerEmail, { noRules });
   printSummary(ctx);
 
   const abortController = new AbortController();
