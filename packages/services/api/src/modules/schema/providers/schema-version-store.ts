@@ -512,6 +512,8 @@ export class SchemaVersionStore {
         .then(
           z.object({
             id: z.string(),
+            author: z.string(),
+            commit: z.string(),
             createdAt: z.string(),
             serviceName: z.string(),
           }).parse,
