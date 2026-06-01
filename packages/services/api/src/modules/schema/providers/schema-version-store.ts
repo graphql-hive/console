@@ -505,6 +505,8 @@ export class SchemaVersionStore {
             )
           RETURNING
             id
+            , "author"
+            , "commit"
             , to_json("created_at") AS "createdAt"
             , "service_name" AS "serviceName"
         `,
