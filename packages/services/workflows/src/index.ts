@@ -61,17 +61,6 @@ const modules = await Promise.all([
   import('./tasks/purge-expired-alert-state-log.js'),
 ]);
 
-const crontab = `
-  # Purge expired schema checks every Sunday at 10:00AM
-  0 10 * * 0 purgeExpiredSchemaChecks
-  # Every day at 3:00 AM
-  0 3 * * * purgeExpiredDedupeKeys
-  # Evaluate metric alert rules every minute
-  * * * * * evaluateMetricAlertRules
-  # Purge expired alert state log entries daily at 4:00 AM
-  0 4 * * * purgeExpiredAlertStateLog
-`;
-
 const pg = await createPostgresDatabasePool({
   connectionParameters: env.postgres.connectionString,
   additionalInterceptors: tracing ? [tracing.instrumentSlonik()] : [],
@@ -79,6 +68,33 @@ const pg = await createPostgresDatabasePool({
 const logger = new Logger({ level: env.log.level });
 
 logger.info({ pid: process.pid }, 'starting workflow service ' + process.pid);
+
+// Build the crontab. The metric-alerts evaluator queries ClickHouse for
+// metric windows, so its line is only included when ClickHouse is
+// configured. Otherwise the task would silently bail every minute. The
+// state-log purge task only touches Postgres so it stays unconditional.
+const crontabLines: string[] = [
+  '# Purge expired schema checks every Sunday at 10:00AM',
+  '0 10 * * 0 purgeExpiredSchemaChecks',
+  '# Every day at 3:00 AM',
+  '0 3 * * * purgeExpiredDedupeKeys',
+];
+if (env.clickhouse) {
+  crontabLines.push(
+    '# Evaluate metric alert rules every minute',
+    '* * * * * evaluateMetricAlertRules',
+  );
+} else {
+  logger.warn(
+    'ClickHouse not configured — metric alert rules will not be evaluated. ' +
+      'Set CLICKHOUSE=1 and the CLICKHOUSE_* env vars to enable.',
+  );
+}
+crontabLines.push(
+  '# Purge expired alert state log entries daily at 4:00 AM',
+  '0 4 * * * purgeExpiredAlertStateLog',
+);
+const crontab = crontabLines.join('\n');
 
 const stopHttpHeartbeat = env.httpHeartbeat
   ? startHeartbeats({

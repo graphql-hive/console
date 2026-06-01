@@ -26,10 +26,18 @@ export const EvaluateMetricAlertRulesTask = defineTask({
 export const task = implementTask(EvaluateMetricAlertRulesTask, async args => {
   const { context, logger, helpers } = args;
 
+  // Defensive — the cron line for this task is only registered when
+  // ClickHouse is configured (see workflows index.ts crontab construction),
+  // so this branch should be unreachable in normal operation. The throw
+  // exists to surface the misconfiguration loudly if someone manually
+  // queues the task without ClickHouse, instead of silently returning.
   if (!context.clickhouse) {
-    logger.debug('ClickHouse not configured, skipping metric alert evaluation');
-    return;
+    throw new Error(
+      'evaluateMetricAlertRules was invoked but ClickHouse is not configured. ' +
+        'Set CLICKHOUSE=1 and the CLICKHOUSE_* env vars to enable.',
+    );
   }
+  const clickhouse = context.clickhouse;
 
   // Anchor every evaluation in this run to the cron's scheduled time. If the
   // worker is backed up, wall-clock would shift queried windows past the
@@ -86,7 +94,7 @@ export const task = implementTask(EvaluateMetricAlertRulesTask, async args => {
           let windows;
           try {
             windows = await queryClickHouseWindows(
-              context.clickhouse!,
+              clickhouse,
               representative.targetId,
               representative.timeWindowMinutes,
               evaluationTime,
