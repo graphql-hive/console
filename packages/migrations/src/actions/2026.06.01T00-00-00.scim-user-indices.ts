@@ -7,7 +7,7 @@ export default {
     {
       name: 'provisioned_by_organization_id index',
       query: psql`
-        CREATE INDEX CONCURRENTLY IF NOT EXISTS "idx_users_provisioned_by_organization_id_external_id"
+        CREATE UNIQUE INDEX CONCURRENTLY IF NOT EXISTS "idx_users_provisioned_by_organization_id_external_id"
         ON "users" ("provisioned_by_organization_id", "external_id")
         WHERE
           "provisioned_by_organization_id" IS NOT NULL
