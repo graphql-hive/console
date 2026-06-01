@@ -199,13 +199,6 @@ export default gql`
     name: String!
     type: MetricAlertRuleType!
     """
-    The target this rule is scoped to. Nullable to tolerate the brief race
-    between fetching a rule and resolving its target when the target has
-    been deleted (which cascade-deletes the rule itself). Frontend list
-    views filter rules with null targets at render time.
-    """
-    target: Target
-    """
     Destinations that receive notifications when this rule fires or resolves.
     """
     channels: [AlertChannel!]!
