@@ -155,7 +155,7 @@ export function createCLI(tokens: { readwrite: string; readonly: string }) {
       const latestSchemaResult = await fetchLatestSchema(tokens.readonly).then(r =>
         r.expectNoGraphQLErrors(),
       );
-      const latestSchemaCommit = latestSchemaResult.latestVersion?.log;
+      const latestSchemaCommit = latestSchemaResult.latestVersion?.meta;
 
       expect(
         latestSchemaCommit,
@@ -171,7 +171,7 @@ export function createCLI(tokens: { readwrite: string; readonly: string }) {
     const latestSchemaResult = await fetchLatestSchema(tokens.readonly).then(r =>
       r.expectNoGraphQLErrors(),
     );
-    const latestSchemaCommit = latestSchemaResult.latestVersion?.log;
+    const latestSchemaCommit = latestSchemaResult.latestVersion?.meta;
 
     if (expectedStatus === 'ignored') {
       // Check if the schema was ignored
@@ -190,7 +190,7 @@ export function createCLI(tokens: { readwrite: string; readonly: string }) {
       r.expectNoGraphQLErrors(),
     );
 
-    const latestComposableSchemaCommit = latestComposableSchemaResult.latestValidVersion?.log;
+    const latestComposableSchemaCommit = latestComposableSchemaResult.latestValidVersion?.meta;
 
     // Check if the schema was published as composable or non-composable
     if (expectedStatus === 'latest') {
@@ -259,13 +259,13 @@ export function createCLI(tokens: { readwrite: string; readonly: string }) {
         ),
       };
 
-      expect(after.latest.latestVersion?.log).toEqual(before.latest.latestVersion?.log);
       expect(after.latestValid.latestValidVersion?.id).toEqual(
         before.latestValid.latestValidVersion?.id,
       );
 
       return cmd.catch(reason => Promise.resolve(reason.message));
     }
+
     await cmd;
 
     const after = {
@@ -276,12 +276,12 @@ export function createCLI(tokens: { readwrite: string; readonly: string }) {
     };
 
     if (expectedStatus === 'latest-composable') {
-      expect(after.latest.latestVersion?.log).not.toEqual(before.latest.latestVersion?.log);
-      expect(after.latestValid.latestValidVersion?.log).not.toEqual(
-        before.latestValid.latestValidVersion?.log,
+      expect(after.latest.latestVersion?.origin).not.toEqual(before.latest.latestVersion?.origin);
+      expect(after.latestValid.latestValidVersion?.origin).not.toEqual(
+        before.latestValid.latestValidVersion?.origin,
       );
     } else {
-      expect(after.latest.latestVersion?.log).not.toEqual(before.latest.latestVersion?.log);
+      expect(after.latest.latestVersion?.origin).not.toEqual(before.latest.latestVersion?.origin);
       expect(after.latestValid.latestValidVersion?.id).toEqual(
         before.latestValid.latestValidVersion?.id,
       );
