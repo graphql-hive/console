@@ -146,16 +146,16 @@ describe('GraphQL Hive Plugin', () => {
 
     const yesterday = new Date();
     yesterday.setDate(yesterday.getDate() - 1);
-    // await expect(
-    //   readOperationsStats(
-    //     { byId: target.id },
-    //     {
-    //       from: yesterday.toISOString(),
-    //       to: new Date().toISOString(),
-    //     },
-    //     {},
-    //     token.secret,
-    //   ),
-    // ).resolves
+    const operationsStatsResult = await readOperationsStats(
+      { byId: target.id },
+      {
+        from: yesterday.toISOString(),
+        to: new Date().toISOString(),
+      },
+      {},
+      token.secret,
+    ).then(r => r.expectNoGraphQLErrors());
+    // @TODO after modifying the API, check the additional data (error metrics etc)
+    expect(operationsStatsResult.target?.operationsStats.operations.edges[0].node.count).toBe(1);
   });
 });

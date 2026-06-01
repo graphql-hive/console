@@ -41,7 +41,7 @@ export function useHive(clientOrOptions: HiveClient | GatewayPluginOptions): Gat
       });
 
   void hive.info();
-
+  const statusMap = new WeakMap<object, number>();
   if (hive[autoDisposeSymbol]) {
     if (global.process) {
       const signals = Array.isArray(hive[autoDisposeSymbol])
@@ -62,6 +62,17 @@ export function useHive(clientOrOptions: HiveClient | GatewayPluginOptions): Gat
     ? false
     : (clientOrOptions.fieldLevelMetricsEnabled ?? false);
   return {
+    onFetch({ executionRequest }) {
+      /** Only if the execution request is set, then this is a subgraph execution. */
+      if (!executionRequest) {
+        return;
+      }
+
+      return function onFetchDone({ response }) {
+        statusMap.set(executionRequest, response.status);
+      };
+    },
+
     onSubgraphExecute({ executionRequest, subgraphName, subgraph: subgraphSchema }) {
       if (!fieldLevelMetricsEnabled) {
         // short circuit the entire hook to avoid processing this data.
@@ -89,7 +100,7 @@ export function useHive(clientOrOptions: HiveClient | GatewayPluginOptions): Gat
       return function onSubgraphExecuteDone({ result }) {
         if (!isAsyncIterable(result)) {
           finishSubRequest({
-            status: 200 /** @TODO figure out how to capture HTTP status codes */,
+            status: statusMap.get(executionRequest) ?? 200,
             subgraphSchema,
             result,
             document: executionRequest.document,
