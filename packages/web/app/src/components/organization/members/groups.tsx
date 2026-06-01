@@ -8,8 +8,18 @@ import {
   Trash2Icon,
   UsersIcon,
 } from 'lucide-react';
-import { useClient, useQuery } from 'urql';
+import { useClient, useMutation, useQuery } from 'urql';
 import { useDebouncedCallback } from 'use-debounce';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -156,6 +166,25 @@ const GroupRowQuery = graphql(`
   }
 `);
 
+const GroupRow_RemoveGroupMappingMutation = graphql(`
+  mutation GroupRow_RemoveGroupMappingMutation($input: RemoveGroupMappingInput!) {
+    removeGroupMapping(input: $input) {
+      error {
+        message
+      }
+      ok {
+        group {
+          id
+          ...GroupRow_GroupFragment
+          roleMappings {
+            id
+          }
+        }
+      }
+    }
+  }
+`);
+
 const GroupRow_OrganizationFragment = graphql(`
   fragment GroupRow_OrganizationFragment on Organization {
     id
@@ -187,6 +216,9 @@ function GroupRow(props: GroupRowProps): ReactNode {
     requestPolicy: 'network-only',
     pause: isExpanded === false,
   });
+  const [deleteRoleAssignmentState, deleteRoleAssignment] = useMutation(
+    GroupRow_RemoveGroupMappingMutation,
+  );
 
   const groupDetailed = query.data?.organization?.group ?? null;
 
@@ -267,7 +299,7 @@ function GroupRow(props: GroupRowProps): ReactNode {
           {groupDetailed ? (
             <div className="border-border bg-secondary/10 border-t">
               <div className="px-4 py-2 pl-16">
-                <div className="mb-2 text-xs font-medium">Role Assignments</div>
+                <div className="mb-2 text-xs font-medium">Role Mappings</div>
                 <div className="space-y-2">
                   {groupDetailed.roleMappings.map(groupRoleMapping => (
                     <GroupRoleMappingRow
@@ -284,7 +316,41 @@ function GroupRow(props: GroupRowProps): ReactNode {
                         );
                       }}
                       onClickDelete={() => {
-                        alert('BOBOBOBO');
+                        setSheetNode(
+                          <AlertDialog open onOpenChange={() => setSheetNode(null)}>
+                            <AlertDialogContent>
+                              <AlertDialogHeader>
+                                <AlertDialogTitle>
+                                  Are you sure you want to delete this mapping?
+                                </AlertDialogTitle>
+                                <AlertDialogDescription>
+                                  This action can not be undone.
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel onClick={() => setSheetNode(null)}>
+                                  Cancel
+                                </AlertDialogCancel>
+                                <AlertDialogAction asChild>
+                                  <Button
+                                    variant="destructive"
+                                    onClick={e => {
+                                      e.stopPropagation();
+                                      deleteRoleAssignment({
+                                        input: {
+                                          groupId: group.id,
+                                          groupMappingId: groupRoleMapping.id,
+                                        },
+                                      });
+                                    }}
+                                  >
+                                    Delete
+                                  </Button>
+                                </AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>,
+                        );
                       }}
                     />
                   ))}
