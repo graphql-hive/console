@@ -1,5 +1,21 @@
 # @graphql-hive/cli
 
+## 0.60.0
+
+### Minor Changes
+
+- [#8031](https://github.com/graphql-hive/console/pull/8031)
+  [`51345a9`](https://github.com/graphql-hive/console/commit/51345a9c7487a7949a10b07d178836b02c7de197)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Add support for promoting schema versions via the
+  new `hive schema:promote` command.
+
+### Patch Changes
+
+- [#8064](https://github.com/graphql-hive/console/pull/8064)
+  [`2b2339d`](https://github.com/graphql-hive/console/commit/2b2339d45f4ad5ffc111fd711a2904fcfb4bd64d)
+  Thanks [@jdolle](https://github.com/jdolle)! - Extend Hive CLI timeout for schema:check from 20s
+  to 55s to better align with the server's timeout
+
 ## 0.59.2
 
 ### Patch Changes

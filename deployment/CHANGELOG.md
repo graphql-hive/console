@@ -1,5 +1,67 @@
 # hive
 
+## 11.2.0
+
+### Minor Changes
+
+- [#8031](https://github.com/graphql-hive/console/pull/8031)
+  [`51345a9`](https://github.com/graphql-hive/console/commit/51345a9c7487a7949a10b07d178836b02c7de197)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Add support for promoting schema versions. This
+  enables rollback and multi-environment promotions.
+
+- [#8049](https://github.com/graphql-hive/console/pull/8049)
+  [`548a597`](https://github.com/graphql-hive/console/commit/548a597e151d39e1222312f1f1a8ffcaa7721bf6)
+  Thanks [@mish-elle](https://github.com/mish-elle)! - Add opt-in AWS IAM authentication for MSK
+  (Kafka) connections. When enabled, services authenticate to Kafka using AWS IAM (SigV4) via the
+  OAUTHBEARER SASL mechanism.
+
+  ### New environment variables
+
+  | Variable                     | Services              | Description                                                               |
+  | ---------------------------- | --------------------- | ------------------------------------------------------------------------- |
+  | `AWS_REGION`                 | usage, usage-ingestor | Default AWS region for the service for all AWS connections.               |
+  | `KAFKA_AWS_IAM_AUTH_ENABLED` | usage, usage-ingestor | Set to `1` to enable IAM authentication.                                  |
+  | `KAFKA_AWS_REGION`           | usage, usage-ingestor | Optional override for the Kafka broker region (defaults to `AWS_REGION`). |
+
+  ### To enable
+
+  - `KAFKA_AWS_IAM_AUTH_ENABLED=1`
+  - `KAFKA_SSL=1` must be set (IAM authentication requires TLS).
+  - `KAFKA_AWS_REGION` or `AWS_REGION` must be set.
+  - The pod/instance must have AWS credentials available (e.g. IRSA, EKS Pod Identity, instance
+    profile) with the appropriate MSK IAM permissions.
+
+  ### Other changes
+
+  - `KAFKA_BROKER` now accepts a comma-separated list of broker addresses (e.g.
+    `broker1:9092,broker2:9092,broker3:9092`).
+
+### Patch Changes
+
+- [#8063](https://github.com/graphql-hive/console/pull/8063)
+  [`19d3822`](https://github.com/graphql-hive/console/commit/19d38229730ea73dbd88a2ee7ac27fe35d92746a)
+  Thanks [@saihaj](https://github.com/saihaj)! - add eviction policy to redis
+
+- [#8067](https://github.com/graphql-hive/console/pull/8067)
+  [`63da3d1`](https://github.com/graphql-hive/console/commit/63da3d1053a4c88c0dbda60eb0fcc0c5c97675fa)
+  Thanks [@jdolle](https://github.com/jdolle)! - Only fetch SDL from the paginated schema checks
+  query when one is requested
+
+- [#8076](https://github.com/graphql-hive/console/pull/8076)
+  [`f7334ff`](https://github.com/graphql-hive/console/commit/f7334ff7bdbcffcbe305c463831bf4b55dd46a3e)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Address vulnerability
+  [GHSA-q8mj-m7cp-5q26](https://github.com/advisories/GHSA-q8mj-m7cp-5q26)
+
+- [#8074](https://github.com/graphql-hive/console/pull/8074)
+  [`f66cf28`](https://github.com/graphql-hive/console/commit/f66cf28b9246b32e92e6d5b5dd1e3691d599744a)
+  Thanks [@copilot-swe-agent](https://github.com/apps/copilot-swe-agent)! - drop redundant
+  `sdl_store_unique_id` index via migration
+
+- [#8057](https://github.com/graphql-hive/console/pull/8057)
+  [`5c76de1`](https://github.com/graphql-hive/console/commit/5c76de1fb87ee003d65a110b4656a2519abc038f)
+  Thanks [@dotansimha](https://github.com/dotansimha)! - Fix exception for access token without
+  description.
+
 ## 11.1.1
 
 ### Patch Changes
