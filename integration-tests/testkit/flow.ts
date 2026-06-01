@@ -4,6 +4,7 @@ import type {
   AddAlertInput,
   AnswerOrganizationTransferRequestInput,
   AssignMemberRoleInput,
+  CreateContractInput,
   CreateMemberRoleInput,
   CreateOrganizationAccessTokenInput,
   CreateOrganizationInput,
@@ -11,7 +12,9 @@ import type {
   CreateTargetInput,
   CreateTokenInput,
   DeleteMemberRoleInput,
+  DeleteTargetInput,
   DeleteTokensInput,
+  DisableContractInput,
   Experimental__UpdateTargetSchemaCompositionInput,
   InviteToOrganizationByEmailInput,
   OrganizationSelectorInput,
@@ -21,6 +24,7 @@ import type {
   SchemaCheckInput,
   SchemaDeleteInput,
   SchemaPublishInput,
+  SchemaVersionPromoteInput,
   TargetSelectorInput,
   UpdateBaseSchemaInput,
   UpdateMemberRoleInput,
@@ -896,6 +900,197 @@ export function publishSchema(
   });
 }
 
+export function schemaVersionPromote(input: SchemaVersionPromoteInput, accessToken: string) {
+  return execute({
+    document: graphql(`
+      mutation TestKit_PromoteSchema($input: SchemaVersionPromoteInput!) {
+        schemaVersionPromote(input: $input) {
+          ok {
+            newSchemaVersion {
+              id
+            }
+          }
+          error {
+            message
+          }
+        }
+      }
+    `),
+    token: accessToken,
+    variables: {
+      input,
+    },
+  });
+}
+
+export function createContract(input: CreateContractInput, accessToken: string) {
+  return execute({
+    document: graphql(`
+      mutation TestKit_CreateContract($input: CreateContractInput!) {
+        createContract(input: $input) {
+          ok {
+            createdContract {
+              id
+              target {
+                id
+              }
+              includeTags
+              excludeTags
+              createdAt
+            }
+          }
+          error {
+            message
+            details {
+              target
+              contractName
+              includeTags
+              excludeTags
+            }
+          }
+        }
+      }
+    `),
+    variables: {
+      input,
+    },
+    token: accessToken,
+  });
+}
+
+export function disableContract(input: DisableContractInput, accessToken: string) {
+  return execute({
+    document: graphql(`
+      mutation TestKit_DisableContract($input: DisableContractInput!) {
+        disableContract(input: $input) {
+          ok {
+            disabledContract {
+              id
+              isDisabled
+            }
+          }
+          error {
+            message
+          }
+        }
+      }
+    `),
+    variables: {
+      input,
+    },
+    token: accessToken,
+  });
+}
+
+export function getSchemaVersionWithAllDetails(
+  targetId: string,
+  schemaVersionId: string,
+  accessToken: string,
+) {
+  return execute({
+    document: graphql(`
+      query TestKit_SchemaVersion($targetReference: TargetReferenceInput!, $schemaVersionId: ID!) {
+        target(reference: $targetReference) {
+          schemaVersion(id: $schemaVersionId) {
+            id
+            isValid
+            origin {
+              __typename
+              ... on SchemaVersionPromoteOrigin {
+                schemaVersionId
+              }
+              ... on SchemaVersionPublishOrigin {
+                publishedSubgraphs {
+                  name
+                }
+              }
+              ... on SchemaVersionSubgraphRemoveOrigin {
+                removedSubgraphs {
+                  name
+                }
+              }
+            }
+            supergraph
+            sdl
+            meta {
+              author
+              commit
+            }
+            subgraphDiffs {
+              __typename
+              ... on SubgraphDiffAdded {
+                subgraphVersion {
+                  id
+                  sdl
+                  serviceName
+                }
+              }
+              ... on SubgraphDiffChanged {
+                subgraphVersion {
+                  id
+                  sdl
+                  serviceName
+                }
+                previousSubgraphVersion {
+                  id
+                  sdl
+                  serviceName
+                }
+                changes {
+                  edges {
+                    node {
+                      message
+                    }
+                  }
+                }
+              }
+              ... on SubgraphDiffRemoved {
+                removedSubgraphVersion {
+                  id
+                  sdl
+                  serviceName
+                }
+              }
+              ... on SubgraphDiffUnchanged {
+                subgraphVersion {
+                  id
+                  sdl
+                  serviceName
+                }
+              }
+            }
+            previousDiffableSchemaVersion {
+              id
+            }
+            contractVersions {
+              edges {
+                node {
+                  id
+                  contractName
+                  supergraphSDL
+                  compositeSchemaSDL
+                  previousContractVersion {
+                    id
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    `),
+    variables: {
+      targetReference: {
+        byId: targetId,
+      },
+      schemaVersionId,
+    },
+    authToken: accessToken,
+  })
+    .then(r => r.expectNoGraphQLErrors())
+    .then(r => r.target?.schemaVersion ?? null);
+}
+
 export function checkSchema(input: SchemaCheckInput, token: string) {
   return execute({
     document: graphql(`
@@ -1195,16 +1390,28 @@ export function fetchLatestSchema(token: string) {
     document: graphql(`
       query latestVersion {
         latestVersion {
+          id
           baseSchema
-          log {
-            ... on PushedSchemaLog {
-              __typename
-              commit
-              service
+          meta {
+            author
+            commit
+          }
+          origin {
+            __typename
+            ... on SchemaVersionPromoteOrigin {
+              schemaVersionId
             }
-            ... on DeletedSchemaLog {
-              __typename
-              deletedService
+            ... on SchemaVersionPublishOrigin {
+              publishedSubgraphs {
+                name
+                versionId
+              }
+            }
+            ... on SchemaVersionSubgraphRemoveOrigin {
+              removedSubgraphs {
+                name
+                versionId
+              }
             }
           }
           isValid
@@ -1244,15 +1451,24 @@ export function fetchLatestValidSchema(token: string) {
         latestValidVersion {
           id
           baseSchema
-          log {
-            ... on PushedSchemaLog {
-              __typename
-              commit
-              service
+          meta {
+            author
+            commit
+          }
+          origin {
+            __typename
+            ... on SchemaVersionPromoteOrigin {
+              schemaVersionId
             }
-            ... on DeletedSchemaLog {
-              __typename
-              deletedService
+            ... on SchemaVersionPublishOrigin {
+              publishedSubgraphs {
+                name
+              }
+            }
+            ... on SchemaVersionSubgraphRemoveOrigin {
+              removedSubgraphs {
+                name
+              }
             }
           }
           tags
@@ -1289,17 +1505,35 @@ export function fetchVersions(selector: TargetSelectorInput, first: number, toke
             edges {
               node {
                 id
-                valid
-                date
-                log {
-                  ... on PushedSchemaLog {
-                    __typename
-                    commit
-                    service
+                origin {
+                  __typename
+                  ... on SchemaVersionPromoteOrigin {
+                    schemaVersionId
                   }
-                  ... on DeletedSchemaLog {
-                    __typename
-                    deletedService
+                }
+                valid
+                supergraph
+                sdl
+                previousDiffableSchemaVersion {
+                  id
+                }
+                date
+                origin {
+                  __typename
+                  ... on SchemaVersionPromoteOrigin {
+                    schemaVersionId
+                    targetSlug
+                    targetId
+                  }
+                  ... on SchemaVersionPublishOrigin {
+                    publishedSubgraphs {
+                      name
+                    }
+                  }
+                  ... on SchemaVersionSubgraphRemoveOrigin {
+                    removedSubgraphs {
+                      name
+                    }
                   }
                 }
                 baseSchema
@@ -1363,19 +1597,20 @@ export function compareToPreviousVersion(
             id
             sdl
             supergraph
-            log {
-              ... on PushedSchemaLog {
-                id
-                author
-                service
-                commit
-                serviceSdl
-                previousServiceSdl
+            origin {
+              __typename
+              ... on SchemaVersionPromoteOrigin {
+                schemaVersionId
               }
-              ... on DeletedSchemaLog {
-                id
-                deletedService
-                previousServiceSdl
+              ... on SchemaVersionPublishOrigin {
+                publishedSubgraphs {
+                  name
+                }
+              }
+              ... on SchemaVersionSubgraphRemoveOrigin {
+                removedSubgraphs {
+                  name
+                }
               }
             }
             schemaCompositionErrors {
@@ -1601,6 +1836,27 @@ export function createOrganizationAccessToken(
               title
               description
             }
+          }
+        }
+      }
+    `),
+    authToken,
+    variables: {
+      input,
+    },
+  });
+}
+
+export function deleteTarget(input: DeleteTargetInput, authToken: string) {
+  return execute({
+    document: graphql(`
+      mutation DeleteToken_Testkit($input: DeleteTargetInput!) {
+        deleteTarget(input: $input) {
+          ok {
+            deletedTargetId
+          }
+          error {
+            message
           }
         }
       }

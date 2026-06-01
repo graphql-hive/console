@@ -3,6 +3,7 @@ import * as GraphQLSchema from 'packages/libraries/core/src/client/__generated__
 import { z } from 'zod';
 import type { ProjectReferenceInput } from '../../../__generated__/types';
 import type { Organization, Project, ProjectType, Target } from '../../../shared/entities';
+import { cache } from '../../../shared/helpers';
 import { AuditLogRecorder } from '../../audit-logs/providers/audit-log-recorder';
 import { Session } from '../../auth/lib/authz';
 import { IdTranslator } from '../../shared/providers/id-translator';
@@ -200,6 +201,16 @@ export class ProjectManager {
     });
 
     return this.storage.getProject(selector);
+  }
+
+  @cache((projectId: string) => projectId)
+  async getProjectById(projectId: string): Promise<Project> {
+    this.logger.debug('Fetching project by id (projectId=%s)', projectId);
+    const project = await this.storage.getProjectById(projectId);
+    if (!project) {
+      throw new Error('Could not find project.');
+    }
+    return project;
   }
 
   async getProjectByRereference(reference: ProjectReferenceInput): Promise<Project | null> {
