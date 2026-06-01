@@ -6,6 +6,11 @@ export default gql`
     schemaCheck(input: SchemaCheckInput!): SchemaCheckPayload!
     schemaDelete(input: SchemaDeleteInput!): SchemaDeleteResult!
     schemaCompose(input: SchemaComposeInput!): SchemaComposePayload!
+    """
+    Promote a schema version within a project to a graph.
+    e.g. for rollbacks within a target or multi-stage environment deployments cross targets.
+    """
+    schemaVersionPromote(input: SchemaVersionPromoteInput!): SchemaVersionPromoteResult!
 
     updateBaseSchema(input: UpdateBaseSchemaInput!): UpdateBaseSchemaResult!
     """
@@ -266,7 +271,7 @@ export default gql`
     node: Schema! @tag(name: "public")
   }
 
-  union RegistryLog @tag(name: "public") = PushedSchemaLog | DeletedSchemaLog
+  union RegistryLog @tag(name: "public") = PushedSchemaLog | DeletedSchemaLog | PromotionSchemaLog
 
   type PushedSchemaLog {
     id: ID!
@@ -298,6 +303,13 @@ export default gql`
     The previous SDL of the full schema or subgraph.
     """
     previousServiceSdl: String @tag(name: "public")
+  }
+
+  type PromotionSchemaLog {
+    """
+    The origin of this schema log promotion.
+    """
+    _: Boolean @tag(name: "public")
   }
 
   union Schema @tag(name: "public") = SingleSchema | CompositeSchema
@@ -950,7 +962,9 @@ export default gql`
     The log that initiated this schema version.
     For a federation schema this is the published or removed subgraph/service.
     """
-    log: RegistryLog! @tag(name: "public")
+    log: RegistryLog!
+      @tag(name: "public")
+      @deprecated(reason: "Please use 'SchemaVersion.origin' instead.")
     baseSchema: String
     """
     The schemas that are composed within this schema version.
@@ -1004,6 +1018,10 @@ export default gql`
     Schema changes that were introduced in this schema version (compared to the previous version).
     """
     schemaChanges: SchemaChangeConnection @tag(name: "public")
+    """
+    A list of the supergraph changes.
+    """
+    supergraphChanges: SchemaChangeConnection
 
     breakingSchemaChanges: SchemaChangeConnection
     safeSchemaChanges: SchemaChangeConnection
@@ -1024,6 +1042,28 @@ export default gql`
     Contract versions of this schema version.
     """
     contractVersions: ContractVersionConnection @tag(name: "public")
+
+    """
+    The diffs of the individual services compared to the latest version.
+    This is only available for non monolithic projects.
+    """
+    subgraphDiffs: [SubgraphDiff!]
+    origin: SchemaVersionOrigin!
+    """
+    Additional metadata associated with the schema version that help identifying it.
+    """
+    meta: SchemaVersionMeta
+  }
+
+  type SchemaVersionMeta {
+    """
+    The author of the schema version
+    """
+    author: String
+    """
+    A user associated string that helps identifying the schema version.
+    """
+    commit: String
   }
 
   type SchemaVersionGithubMetadata {
@@ -1785,5 +1825,175 @@ export default gql`
     createdAt: DateTime! @tag(name: "public")
     isDisabled: Boolean! @tag(name: "public")
     viewerCanDisableContract: Boolean!
+  }
+
+  type SubgraphVersion {
+    """
+    The ID of the subgraph.
+    """
+    id: ID!
+    """
+    The service name.
+    """
+    serviceName: String!
+    """
+    The subgraph SDL.
+    """
+    sdl: String!
+    """
+    The URL of the Subgraph.
+    """
+    url: String!
+  }
+
+  """
+  Describes the difference from one subgraph version to the next one.
+  """
+  union SubgraphDiff =
+    | SubgraphDiffChanged
+    | SubgraphDiffRemoved
+    | SubgraphDiffUnchanged
+    | SubgraphDiffAdded
+
+  """
+  The subgraph was newly added and did not exist before in the supergraph.
+  """
+  type SubgraphDiffAdded {
+    """
+    The added subgraph version.
+    """
+    subgraphVersion: SubgraphVersion!
+  }
+
+  """
+  The subgraph was updated to a new version.
+  """
+  type SubgraphDiffChanged {
+    """
+    The current subgraph version.
+    """
+    subgraphVersion: SubgraphVersion!
+    """
+    The previous subgraph version.
+    """
+    previousSubgraphVersion: SubgraphVersion!
+    """
+    The changes from one to the next subgraph version.
+    """
+    changes: SchemaChangeConnection
+  }
+
+  """
+  The subgraph was removed from the supergraph.
+  """
+  type SubgraphDiffRemoved {
+    """
+    The subgraph version that was removed.
+    """
+    removedSubgraphVersion: SubgraphVersion!
+  }
+
+  """
+  The subgraph is unchanged in this version.
+  """
+  type SubgraphDiffUnchanged {
+    """
+    The current subgraph version.
+    """
+    subgraphVersion: SubgraphVersion!
+  }
+
+  """
+  Describes the action that caused the creation of a new SchemaVersion.
+  """
+  union SchemaVersionOrigin =
+    | SchemaVersionPublishOrigin
+    | SchemaVersionSubgraphRemoveOrigin
+    | SchemaVersionPromoteOrigin
+
+  type SchemaVersionPromoteOrigin {
+    """
+    The ID of the target from which the promotion originated.
+    """
+    targetId: ID!
+    """
+    The slug of the target from which the promotion originated.
+    """
+    targetSlug: String!
+    """
+    The exact ID of the schema version that was promoted from within the target.
+    """
+    schemaVersionId: ID!
+  }
+
+  type SubgraphOriginSubgraphReference {
+    name: String!
+    versionId: ID!
+  }
+
+  type SchemaVersionSubgraphRemoveOrigin {
+    """
+    The subgraphs that were removed in this version.
+    """
+    removedSubgraphs: [SubgraphOriginSubgraphReference!]!
+  }
+
+  type SchemaVersionPublishOrigin {
+    """
+    The subgraphs published as part of this version.
+    This value is 'null' for non-federation projects.
+    """
+    publishedSubgraphs: [SubgraphOriginSubgraphReference!]
+  }
+
+  input SchemaVersionPromoteTargetInput @oneOf {
+    toTarget: TargetReferenceInput
+  }
+
+  input SchemaVersionPromoteSourceInput @oneOf {
+    """
+    The latest version within the target should be promoted.
+    """
+    fromTarget: TargetReferenceInput
+    """
+    A specific version should be promoted.
+    """
+    fromSchemaVersionById: ID
+  }
+
+  """
+  Input for a schema version promotion.
+  Both the source and target must be within the same project.
+  """
+  input SchemaVersionPromoteInput {
+    """
+    The source of the schema promotion.
+    This can either be a target or a specific schema version.
+    """
+    source: SchemaVersionPromoteSourceInput!
+    """
+    Where the schema version should be promoted to.
+    """
+    target: SchemaVersionPromoteTargetInput!
+  }
+
+  type SchemaVersionPromoteResultOk {
+    """
+    The new schema version that was created via the promotion.
+    """
+    newSchemaVersion: SchemaVersion!
+    """
+    The link for viewing the new schema version on the Hive Console dashboard.
+    """
+    linkToWebsite: String
+  }
+
+  type SchemaVersionPromoteResultError {
+    message: String!
+  }
+
+  type SchemaVersionPromoteResult {
+    ok: SchemaVersionPromoteResultOk
+    error: SchemaVersionPromoteResultError
   }
 `;

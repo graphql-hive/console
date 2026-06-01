@@ -421,6 +421,7 @@ const permissionsByLevel = {
     z.literal('traces:report'),
     z.literal('schemaProposal:describe'),
     z.literal('schemaProposal:modify'),
+    z.literal('schemaVersion:promote'),
   ],
   service: [
     z.literal('schemaCheck:create'),

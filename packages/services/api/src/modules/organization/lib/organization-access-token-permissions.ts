@@ -142,6 +142,11 @@ export const permissionGroups: Array<PermissionGroup> = [
         description: 'Grant access to publish services/schemas.',
       },
       {
+        id: 'schemaVersion:promote',
+        title: 'Promote a schema version.',
+        description: 'Promote a schema version within the same project.',
+      },
+      {
         id: 'schemaVersion:deleteService',
         title: 'Delete service',
         description: 'Deletes a service from the schema registry.',

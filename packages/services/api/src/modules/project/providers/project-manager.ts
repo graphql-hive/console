@@ -10,7 +10,7 @@ import {
 } from '@hive/storage';
 import type { DateRangeInput, ProjectReferenceInput } from '../../../__generated__/types';
 import type { Organization, Project, ProjectType, Target } from '../../../shared/entities';
-import { parseDateRangeInput } from '../../../shared/helpers';
+import { cache, parseDateRangeInput } from '../../../shared/helpers';
 import { AuditLogRecorder } from '../../audit-logs/providers/audit-log-recorder';
 import { Session } from '../../auth/lib/authz';
 import { OperationsManager } from '../../operations/providers/operations-manager';
@@ -223,6 +223,16 @@ export class ProjectManager {
     });
 
     return this.storage.getProject(selector);
+  }
+
+  @cache((projectId: string) => projectId)
+  async getProjectById(projectId: string): Promise<Project> {
+    this.logger.debug('Fetching project by id (projectId=%s)', projectId);
+    const project = await this.storage.getProjectById(projectId);
+    if (!project) {
+      throw new Error('Could not find project.');
+    }
+    return project;
   }
 
   async getProjectByRereference(reference: ProjectReferenceInput): Promise<Project | null> {

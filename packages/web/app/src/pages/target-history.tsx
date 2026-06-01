@@ -1,16 +1,17 @@
 import { ReactElement, useEffect, useState } from 'react';
+import { FileSymlinkIcon, GitCommitVerticalIcon } from 'lucide-react';
 import { useQuery } from 'urql';
 import { Page, TargetLayout } from '@/components/layouts/target';
 import { BadgeRounded } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { NoSchemaVersion } from '@/components/ui/empty-list';
+import { PackageIcon } from '@/components/ui/icon';
 import { Meta } from '@/components/ui/meta';
 import { Subtitle, Title } from '@/components/ui/page';
 import { QueryError } from '@/components/ui/query-error';
 import { TimeAgo } from '@/components/ui/time-ago';
 import { graphql } from '@/gql';
 import { cn } from '@/lib/utils';
-import { ExternalLinkIcon } from '@radix-ui/react-icons';
 import { Link, Outlet, useParams, useRouter } from '@tanstack/react-router';
 
 const HistoryPage_VersionsPageQuery = graphql(`
@@ -37,16 +38,28 @@ const HistoryPage_VersionsPageQuery = graphql(`
             id
             date
             isValid
-            log {
-              ... on PushedSchemaLog {
-                id
-                author
-                service
-                commit
+            meta {
+              author
+              commit
+            }
+            origin {
+              __typename
+              ... on SchemaVersionPromoteOrigin {
+                schemaVersionId
+                targetId
+                targetSlug
               }
-              ... on DeletedSchemaLog {
-                id
-                deletedService
+              ... on SchemaVersionPublishOrigin {
+                publishedSubgraphs {
+                  name
+                  versionId
+                }
+              }
+              ... on SchemaVersionSubgraphRemoveOrigin {
+                removedSubgraphs {
+                  name
+                  versionId
+                }
               }
             }
             githubMetadata {
@@ -93,62 +106,95 @@ function ListPage(props: {
   return (
     <>
       {edges?.map(({ node: version }) => (
-        <div
+        <Link
           key={version.id}
           className={cn(
-            'hover:bg-neutral-5/40 flex flex-col rounded-md p-2.5',
+            'flex items-stretch gap-3 rounded-lg py-3 pl-2 pr-3',
+            'hover:bg-neutral-5/40',
             versionId === version.id && 'bg-neutral-5/40',
           )}
+          to="/$organizationSlug/$projectSlug/$targetSlug/history/$versionId"
+          params={{
+            organizationSlug: props.organizationSlug,
+            projectSlug: props.projectSlug,
+            targetSlug: props.targetSlug,
+            versionId: version.id,
+          }}
         >
-          <Link
-            key={version.id}
-            to="/$organizationSlug/$projectSlug/$targetSlug/history/$versionId"
-            params={{
-              organizationSlug: props.organizationSlug,
-              projectSlug: props.projectSlug,
-              targetSlug: props.targetSlug,
-              versionId: version.id,
-            }}
-          >
-            <h3 className="truncate text-sm font-semibold">
-              {'commit' in version.log
-                ? version.log.commit
-                : `Deleted ${version.log.deletedService}`}
-            </h3>
-            {'author' in version.log ? (
-              <div className="text-neutral-10 truncate text-xs font-medium">
-                <span className="overflow-hidden truncate">{version.log.author}</span>
+          <div>
+            <BadgeRounded color={version.isValid ? 'green' : 'red'} className="mt-0.5 block" />
+          </div>
+          <div className="min-w-0 flex-1">
+            <div className="mb-1 flex flex-wrap items-center gap-3">
+              <div className="mr-1 truncate font-mono text-xs font-semibold">
+                {version.id.substring(0, 8)}
               </div>
-            ) : null}
-            <div className="text-neutral-10 mb-1.5 mt-2.5 flex align-middle text-xs font-medium">
-              <div
-                className={cn(
-                  !version.isValid && 'text-red-500',
-                  'flex flex-row items-center gap-1',
-                )}
-              >
-                <BadgeRounded color={version.isValid ? 'green' : 'red'} /> Published
-                <TimeAgo date={version.date} />
-              </div>
-
-              {'service' in version.log && version.log.service ? (
-                <div className="ml-auto mr-0 w-1/2 truncate text-right font-bold">
-                  {version.log.service}
-                </div>
-              ) : null}
+              {version.origin.__typename === 'SchemaVersionPublishOrigin' && (
+                <span className="font-mono text-[10px] text-xs uppercase tracking-wide text-emerald-400">
+                  Published
+                </span>
+              )}
+              {version.origin.__typename === 'SchemaVersionSubgraphRemoveOrigin' && (
+                <span className="font-mono text-[10px] text-xs uppercase tracking-wide text-red-500">
+                  Removed
+                </span>
+              )}
+              {version.origin.__typename === 'SchemaVersionPromoteOrigin' && (
+                <span className="font-mono text-[10px] text-xs uppercase tracking-wide text-blue-500">
+                  Promoted
+                </span>
+              )}
             </div>
-          </Link>
-          {version.githubMetadata ? (
-            <a
-              className="text-neutral-10 hover:text-neutral-10 -ml-px text-xs font-medium"
-              target="_blank"
-              rel="noreferrer"
-              href={`https://github.com/${version.githubMetadata.repository}/commit/${version.githubMetadata.commit}`}
-            >
-              <ExternalLinkIcon className="inline" /> associated with Git commit
-            </a>
-          ) : null}
-        </div>
+
+            {version.origin.__typename === 'SchemaVersionPublishOrigin' &&
+              version.origin.publishedSubgraphs && (
+                <div className="mb-1 flex flex-wrap gap-1">
+                  {version.origin.publishedSubgraphs.map((service, idx) => (
+                    <span key={idx} className="text-xs">
+                      <PackageIcon className="mt-0.25 mr-1 inline size-3" />
+                      <span className="font-mono">
+                        {service.name}@{service.versionId.substring(0, 8)}
+                      </span>
+                    </span>
+                  ))}
+                </div>
+              )}
+            {version.origin.__typename === 'SchemaVersionSubgraphRemoveOrigin' && (
+              <div className="mb-1 flex flex-wrap gap-1">
+                {version.origin.removedSubgraphs.map((service, idx) => (
+                  <span key={idx} className="text-xs">
+                    <PackageIcon className="mt-0.25 mr-1 inline size-3" />
+                    <span className="font-mono">
+                      {service.name}@{service.versionId.substring(0, 8)}
+                    </span>
+                  </span>
+                ))}
+              </div>
+            )}
+            {version.origin.__typename === 'SchemaVersionPromoteOrigin' && (
+              <p className="flex content-center text-xs">
+                <FileSymlinkIcon className="mt-0.25 mr-1 inline size-3" />
+                <span className="font-mono">
+                  {version.origin.targetSlug}@{version.origin.schemaVersionId.substring(0, 8)}
+                </span>
+              </p>
+            )}
+          </div>
+
+          <div className="flex shrink-0 flex-col">
+            <div className="flex gap-3">
+              {version.meta?.commit && (
+                <code className="hidden items-center font-mono text-xs md:flex">
+                  <GitCommitVerticalIcon size="14" className="inline" />
+                  {version.meta.commit.slice(0, 7)}
+                </code>
+              )}
+            </div>
+            <div className="mb-0 mt-auto hidden text-right text-xs sm:block">
+              <TimeAgo date={version.date} />
+            </div>
+          </div>
+        </Link>
       ))}
       {isLastPage && hasMore && (
         <Button
@@ -246,7 +292,7 @@ function HistoryPageContent(props: {
         <div>
           <div className="py-6">
             <Title>Versions</Title>
-            <Subtitle>Recently published schemas.</Subtitle>
+            <Subtitle>Recently published versions.</Subtitle>
           </div>
           <div className="flex flex-col gap-5">
             <div className="border-neutral-5/50 bg-neutral-2/50 flex min-w-[420px] grow flex-col gap-2.5 overflow-y-auto rounded-md border p-2.5">
@@ -276,7 +322,7 @@ function HistoryPageContent(props: {
     <div className="w-full">
       <div className="py-6">
         <Title>Versions</Title>
-        <Subtitle>Recently published schemas.</Subtitle>
+        <Subtitle>Recently published versions.</Subtitle>
       </div>
       {query.fetching ? null : (
         <NoSchemaVersion
