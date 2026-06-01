@@ -3193,20 +3193,24 @@ const SchemaCompareToPreviousVersionQuery = graphql(`
         id
         sdl
         supergraph
-        log {
-          ... on PushedSchemaLog {
-            id
-            author
-            service
-            commit
-            serviceSdl
-            previousServiceSdl
+        origin {
+          ... on SchemaVersionPublishOrigin {
+            publishedSubgraphs {
+              name
+            }
           }
-          ... on DeletedSchemaLog {
-            id
-            deletedService
-            previousServiceSdl
+          ... on SchemaVersionSubgraphRemoveOrigin {
+            removedSubgraphs {
+              name
+            }
           }
+          ... on SchemaVersionPromoteOrigin {
+            schemaVersionId
+          }
+        }
+        meta {
+          author
+          commit
         }
         schemaCompositionErrors {
           nodes {
@@ -4532,7 +4536,7 @@ test.concurrent(
     const conn = connectionString();
     const storage = await createStorage(conn, 2);
     const schemaVersions = new SchemaVersionStore(storage.pool);
-    await schemaVersions.createSchemaVersion({
+    await schemaVersions.createPublishSchemaVersion({
       schema: brokenSdl,
       author: 'Jochen',
       async actionFn() {},
@@ -4545,9 +4549,8 @@ test.concurrent(
       diffSchemaVersionId: null,
       github: null,
       metadata: null,
-      logIds: [],
+      existingSchemaLogs: [],
       projectId: project.id,
-      service: null,
       organizationId: organization.id,
       previousSchemaVersion: null,
       valid: true,
@@ -4555,9 +4558,12 @@ test.concurrent(
       supergraphSDL: null,
       tags: null,
       targetId: target.id,
-      url: null,
+      service: null,
       schemaMetadata: null,
       metadataAttributes: null,
+      previousSchemaLogId: null,
+      serviceChanges: null,
+      supergraphChanges: null,
     });
     await storage.destroy();
 

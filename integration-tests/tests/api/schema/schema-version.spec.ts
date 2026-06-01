@@ -10,11 +10,9 @@ const SchemaByCommitQuery = graphql(/* GraphQL */ `
     schemaVersionByCommit(commit: $commit, target: $targetRef) {
       id
       sdl
-      log {
-        ... on PushedSchemaLog {
-          id
-          commit
-        }
+      meta {
+        author
+        commit
       }
     }
   }

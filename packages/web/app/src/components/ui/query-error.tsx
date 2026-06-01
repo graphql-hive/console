@@ -5,6 +5,7 @@ import { CombinedError } from 'urql';
 import { commonErrorStrings } from '@/components/error';
 import { Button } from '@/components/ui/button';
 import { LAST_VISITED_ORG_KEY } from '@/constants';
+import { cn } from '@/lib/utils';
 import { Link, useRouter } from '@tanstack/react-router';
 
 export function QueryError({
@@ -12,11 +13,13 @@ export function QueryError({
   showError,
   organizationSlug,
   showLogoutButton = true,
+  className,
 }: {
   error: CombinedError;
   showError?: boolean;
   organizationSlug: string | null;
   showLogoutButton?: boolean;
+  className?: string;
 }): ReactElement {
   const router = useRouter();
   const requestId =
@@ -32,7 +35,7 @@ export function QueryError({
   const shouldShowError = typeof showError === 'boolean' ? showError : isExpectedError;
 
   return (
-    <div className="flex size-full items-center justify-center">
+    <div className={cn('flex size-full items-center justify-center', className)}>
       {showLogoutButton && (
         <Button
           variant="outline"
