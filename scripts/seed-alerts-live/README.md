@@ -115,10 +115,10 @@ soon as a rule exists. Use this when you want to create rules manually via the U
 The summary block prints a URL pointing at `/alerts/create` instead of `/alerts/rules`. Create a
 rule whose thresholds match the traffic the loop generates so a fire is guaranteed:
 
-| Field          | Value                                                            |
-| -------------- | ---------------------------------------------------------------- |
-| BREACH traffic | 240 req/min · 50% errors · p95 ≈ 2000ms · avg ≈ 1000ms           |
-| NORMAL traffic | 0 req/min (silence)                                              |
+| Field          | Value                                                  |
+| -------------- | ------------------------------------------------------ |
+| BREACH traffic | 240 req/min · 50% errors · p95 ≈ 2000ms · avg ≈ 1000ms |
+| NORMAL traffic | 0 req/min (silence)                                    |
 
 For example, mirroring the seeded rule 3: LATENCY P95 ABOVE FIXED_VALUE 1500ms, 1-min confirmation,
 CRITICAL — fires within ~2 minutes after creation, recovers within ~2 minutes after the script

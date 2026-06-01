@@ -439,7 +439,7 @@ function printSummary(ctx: Ctx) {
     console.log('│ BREACH/NORMAL traffic alternates every 3 minutes:');
     console.log('│  · BREACH: 240 req/min, 50% errors, p95 ≈ 2000ms');
     console.log('│  · NORMAL: 0 req/min (silence)');
-    console.log('│ Mirror these in your rule\'s thresholds to guarantee a fire.');
+    console.log("│ Mirror these in your rule's thresholds to guarantee a fire.");
   }
   console.log('└────────────────────────────────────────────────────\n');
 }
