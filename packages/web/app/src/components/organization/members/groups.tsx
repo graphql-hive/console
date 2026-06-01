@@ -8,7 +8,7 @@ import {
   Trash2Icon,
   UsersIcon,
 } from 'lucide-react';
-import { useQuery } from 'urql';
+import { useClient, useQuery } from 'urql';
 import { useDebouncedCallback } from 'use-debounce';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -16,8 +16,11 @@ import { Input } from '@/components/ui/input';
 import { SubPageLayout, SubPageLayoutHeader } from '@/components/ui/page-content-layout';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { graphql, useFragment, type FragmentType } from '@/gql';
+import * as GraphQLSchema from '@/gql/graphql';
 import { useSearchParamsFilter } from '@/lib/hooks/use-search-params-filters';
 import { cn } from '@/lib/utils';
+import { ReactNode } from '@tanstack/react-router';
+import { ManageGroupMappingSheet } from './groups/manage-group-mapping-sheet';
 
 const Groups_OrganizationFragment = graphql(`
   fragment Groups_OrganizationFragment on Organization {
@@ -39,8 +42,10 @@ const Groups_OrganizationGroupQuery = graphql(`
         pageInfo {
           hasNextPage
           hasPreviousPage
+          endCursor
         }
       }
+      ...GroupRow_OrganizationFragment
     }
   }
 `);
@@ -48,18 +53,21 @@ const Groups_OrganizationGroupQuery = graphql(`
 export function Groups(props: {
   organization: FragmentType<typeof Groups_OrganizationFragment>;
 }): React.ReactElement | null {
-  const organization = useFragment(Groups_OrganizationFragment, props.organization);
+  const oorganization = useFragment(Groups_OrganizationFragment, props.organization);
+  const client = useClient();
   const [query] = useQuery({
     query: Groups_OrganizationGroupQuery,
     requestPolicy: 'network-only',
     variables: {
-      organizationId: organization.id,
+      organizationId: oorganization.id,
     },
   });
   const [searchValue, setSearchValue] = useSearchParamsFilter<string>('search', '');
   const handleSearchChange = useDebouncedCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchValue(e.target.value);
   }, 300);
+
+  const organization = query.data?.organization ?? null;
 
   return (
     <SubPageLayout>
@@ -83,25 +91,30 @@ export function Groups(props: {
           <div className="w-10"></div>
         </div>
         <div className="divide-border divide-y">
-          {query.data?.organization?.groups?.edges.length === 0 ? (
+          {!organization ? (
+            <>Loading...</>
+          ) : organization.groups.edges.length === 0 ? (
             <div>No data</div>
           ) : (
-            query.data?.organization?.groups?.edges.map(edge => (
-              <GroupRow
-                key={edge.node.id}
-                group={edge.node}
-                organizationId={query.data.organization.id}
-              />
+            organization.groups.edges.map(edge => (
+              <GroupRow key={edge.node.id} group={edge.node} organization={organization} />
             ))
           )}
         </div>
       </div>
 
-      <div className="border-border bg-secondary/10 border-t px-4 py-3">
+      <div className="border-border bg-secondary/10 px-4 py-3">
         <Button
           variant="ghost"
           className="text-muted-foreground hover:text-foreground w-full"
-          onClick={() => alert('brrrrt')}
+          onClick={() =>
+            !!organization?.groups.pageInfo.hasNextPage &&
+            void client.query(Groups_OrganizationGroupQuery, {
+              organizationId: organization.id,
+              after: organization.groups.pageInfo.endCursor,
+            })
+          }
+          disabled={!organization?.groups.pageInfo.hasNextPage}
         >
           Load more
         </Button>
@@ -122,6 +135,7 @@ const GroupRow_GroupFragment = graphql(`
     disabledAt
     memberCount
     roleMappingCount
+    ...ManageGroupMapping_GroupFragment
   }
 `);
 
@@ -131,20 +145,10 @@ const GroupRowQuery = graphql(`
       id
       group(id: $groupId) {
         id
-
         roleMappings {
-          role {
-            id
-            name
-          }
-          resourceAssignment {
-            mode
-            projects {
-              project {
-                id
-              }
-            }
-          }
+          id
+          ...GroupRoleMappingRow_GroupRoleMappingFragment
+          ...ManageGroupMappingSheet_ExistingGroupRoleMappingFragment
         }
         ...GroupRow_GroupFragment
       }
@@ -152,13 +156,21 @@ const GroupRowQuery = graphql(`
   }
 `);
 
+const GroupRow_OrganizationFragment = graphql(`
+  fragment GroupRow_OrganizationFragment on Organization {
+    id
+    ...ManageGroupMapping_OrganizationFragment
+  }
+`);
+
 type GroupRowProps = {
-  organizationId: string;
+  organization: FragmentType<typeof GroupRow_OrganizationFragment>;
   group: FragmentType<typeof GroupRow_GroupFragment>;
 };
 
-function GroupRow(props: GroupRowProps) {
+function GroupRow(props: GroupRowProps): ReactNode {
   const group = useFragment(GroupRow_GroupFragment, props.group);
+  const organization = useFragment(GroupRow_OrganizationFragment, props.organization);
   const isDisabled = !!group.disabledAt;
   const [isExpanded, setIsExpanded] = useState(false);
 
@@ -169,7 +181,7 @@ function GroupRow(props: GroupRowProps) {
   const [query] = useQuery({
     query: GroupRowQuery,
     variables: {
-      organizationId: props.organizationId,
+      organizationId: organization.id,
       groupId: group.id,
     },
     requestPolicy: 'network-only',
@@ -177,6 +189,8 @@ function GroupRow(props: GroupRowProps) {
   });
 
   const groupDetailed = query.data?.organization?.group ?? null;
+
+  const [sheetNode, setSheetNode] = useState(null as ReactNode | null);
 
   return (
     <div className={cn('bg-background', isDisabled && 'opacity-75')}>
@@ -253,63 +267,114 @@ function GroupRow(props: GroupRowProps) {
           {groupDetailed ? (
             <div className="border-border bg-secondary/10 border-t">
               <div className="px-4 py-2 pl-16">
-                <div className="mb-2 text-xs font-medium uppercase tracking-wider">
-                  Role Assignments
-                </div>
+                <div className="mb-2 text-xs font-medium">Role Assignments</div>
                 <div className="space-y-2">
-                  {/*{groupDetailed.roleMappings.map(assignment => (
-                    <RoleAssignmentRow key={assignment.id} assignment={assignment} />
-                  ))}*/}
-                  <button className="flex items-center gap-1.5 py-1 text-xs text-amber-500 transition-colors hover:text-amber-400">
+                  {groupDetailed.roleMappings.map(groupRoleMapping => (
+                    <GroupRoleMappingRow
+                      key={groupRoleMapping.id}
+                      groupRoleMapping={groupRoleMapping}
+                      onClickEdit={() => {
+                        setSheetNode(
+                          <ManageGroupMappingSheet
+                            group={group}
+                            organization={organization}
+                            existingGroupRoleMapping={groupRoleMapping}
+                            close={() => setSheetNode(null)}
+                          />,
+                        );
+                      }}
+                      onClickDelete={() => {
+                        alert('BOBOBOBO');
+                      }}
+                    />
+                  ))}
+                  <button
+                    className="flex items-center gap-1.5 py-1 text-xs text-amber-500 transition-colors hover:text-amber-400"
+                    onClick={() =>
+                      setSheetNode(
+                        <ManageGroupMappingSheet
+                          group={group}
+                          organization={organization}
+                          existingGroupRoleMapping={null}
+                          close={() => setSheetNode(null)}
+                        />,
+                      )
+                    }
+                  >
                     <PlusIcon className="h-3 w-3" />
                     Add role mapping
                   </button>
                 </div>
               </div>
             </div>
-          ) : (
-            <>Nooop</>
-          )}
+          ) : null}
         </>
       )}
+      {sheetNode}
     </div>
   );
 }
 
-function RoleAssignmentRow({ assignment }: { assignment: RoleAssignment }) {
-  const resourceTypeLabel = {
-    all: null,
-    project: 'Project',
-    target: 'Target',
-  };
+const GroupRoleMappingRow_GroupRoleMappingFragment = graphql(`
+  fragment GroupRoleMappingRow_GroupRoleMappingFragment on GroupRoleMapping {
+    id
+    role {
+      id
+      name
+    }
+    resourceAssignment {
+      mode
+      projects {
+        projectId
+      }
+    }
+  }
+`);
+
+function GroupRoleMappingRow(props: {
+  groupRoleMapping: FragmentType<typeof GroupRoleMappingRow_GroupRoleMappingFragment>;
+  onClickEdit: () => void;
+  onClickDelete: () => void;
+}) {
+  const groupRoleMapping = useFragment(
+    GroupRoleMappingRow_GroupRoleMappingFragment,
+    props.groupRoleMapping,
+  );
 
   return (
     <div className="bg-neutral-3 group flex items-center justify-between rounded-md px-3 py-1.5">
       <div className="flex items-center gap-3">
         <div className="flex items-center gap-2">
           <Badge
-            variant={assignment.role === 'Admin' ? 'default' : 'secondary'}
+            variant={
+              groupRoleMapping.resourceAssignment.mode ===
+              GraphQLSchema.ResourceAssignmentModeType.All
+                ? 'default'
+                : 'secondary'
+            }
             className={cn(
               'text-xs font-medium',
-              assignment.role === 'Admin' && 'bg-amber-500/20 text-amber-500 hover:bg-amber-500/30',
+              'bg-amber-500/20 text-amber-500 hover:bg-amber-500/30',
             )}
           >
-            {assignment.role}
+            {groupRoleMapping.role.name}
           </Badge>
           <span className="text-muted-foreground text-xs">on</span>
-          <span className="text-foreground text-sm">{assignment.resource}</span>
-          {resourceTypeLabel[assignment.resourceType] && (
-            <span className="text-muted-foreground text-xs">
-              ({resourceTypeLabel[assignment.resourceType]})
-            </span>
-          )}
+          <span className="text-foreground text-sm">
+            {groupRoleMapping.resourceAssignment.mode ===
+            GraphQLSchema.ResourceAssignmentModeType.All ? (
+              'all resources'
+            ) : (
+              <>{groupRoleMapping.resourceAssignment.projects?.length} projects</>
+            )}
+          </span>
         </div>
       </div>
       <div className="flex items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100">
         <TooltipProvider>
           <Tooltip>
             <TooltipTrigger asChild>
-              <Button variant="ghost" size="icon" className="h-6 w-6">
+              <Button variant="ghost" size="icon" className="h-6 w-6" onClick={props.onClickEdit}>
                 <PencilIcon className="text-muted-foreground h-3 w-3" />
               </Button>
             </TooltipTrigger>
@@ -317,7 +382,12 @@ function RoleAssignmentRow({ assignment }: { assignment: RoleAssignment }) {
           </Tooltip>
           <Tooltip>
             <TooltipTrigger asChild>
-              <Button variant="ghost" size="icon" className="hover:text-destructive h-6 w-6">
+              <Button
+                variant="ghost"
+                size="icon"
+                className="hover:text-destructive h-6 w-6"
+                onClick={props.onClickDelete}
+              >
                 <Trash2Icon className="text-muted-foreground h-3 w-3" />
               </Button>
             </TooltipTrigger>
@@ -328,81 +398,3 @@ function RoleAssignmentRow({ assignment }: { assignment: RoleAssignment }) {
     </div>
   );
 }
-
-export interface RoleAssignment {
-  id: string;
-  role: string;
-  resource: string;
-  resourceType: 'all' | 'project' | 'target';
-}
-
-export interface Group {
-  id: string;
-  name: string;
-  memberCount: number;
-  roleAssignments: RoleAssignment[];
-  createdAt: string;
-  disabled?: boolean;
-}
-
-const groups: Group[] = [
-  {
-    id: 'g1',
-    name: 'Engineering',
-    memberCount: 12,
-    roleAssignments: [
-      { id: 'ra1', role: 'Contributor', resource: 'All resources', resourceType: 'all' },
-      { id: 'ra2', role: 'Viewer', resource: 'Production', resourceType: 'target' },
-    ],
-    createdAt: '2024-01-15',
-  },
-  {
-    id: 'g2',
-    name: 'Platform Team',
-    memberCount: 5,
-    roleAssignments: [{ id: 'ra3', role: 'Admin', resource: 'All resources', resourceType: 'all' }],
-    createdAt: '2024-02-01',
-  },
-  {
-    id: 'g3',
-    name: 'Design',
-    memberCount: 4,
-    roleAssignments: [
-      { id: 'ra4', role: 'Viewer', resource: 'All resources', resourceType: 'all' },
-      { id: 'ra5', role: 'Contributor', resource: 'Design System', resourceType: 'project' },
-    ],
-    createdAt: '2024-01-20',
-  },
-  {
-    id: 'g4',
-    name: 'Security',
-    memberCount: 3,
-    roleAssignments: [
-      { id: 'ra6', role: 'Admin', resource: 'All resources', resourceType: 'all' },
-      { id: 'ra7', role: 'Admin', resource: 'Audit Logs', resourceType: 'project' },
-    ],
-    createdAt: '2024-02-10',
-  },
-  {
-    id: 'g5',
-    name: 'DevOps',
-    memberCount: 6,
-    roleAssignments: [
-      { id: 'ra8', role: 'Contributor', resource: 'All resources', resourceType: 'all' },
-      { id: 'ra9', role: 'Admin', resource: 'Infrastructure', resourceType: 'project' },
-      { id: 'ra10', role: 'Admin', resource: 'Production', resourceType: 'target' },
-    ],
-    createdAt: '2024-01-25',
-  },
-  {
-    id: 'g6',
-    name: 'QA Team',
-    memberCount: 0,
-    roleAssignments: [
-      { id: 'ra11', role: 'Viewer', resource: 'All resources', resourceType: 'all' },
-      { id: 'ra12', role: 'Contributor', resource: 'Staging', resourceType: 'target' },
-    ],
-    createdAt: '2024-01-10',
-    disabled: true,
-  },
-];
