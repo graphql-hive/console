@@ -57,7 +57,7 @@ export default {
       ON group_members ("group_id");
 
     ALTER TABLE "users"
-      ADD COLUMN "provisioned_by_organization_id" UUID NULL
+      ADD COLUMN IF NOT EXISTS "provisioned_by_organization_id" UUID NULL
         REFERENCES "organizations"("id") ON DELETE CASCADE
       , ADD COLUMN IF NOT EXISTS "external_id" TEXT NULL
       , ADD COLUMN IF NOT EXISTS "deactivated_at" TIMESTAMPTZ NULL
