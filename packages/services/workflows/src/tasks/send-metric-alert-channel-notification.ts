@@ -153,26 +153,14 @@ export const task = implementTask(SendMetricAlertChannelNotificationTask, async 
         const event: NotificationEvent = {
           state: row.toState === 'FIRING' ? 'firing' : 'resolved',
           rule: {
-            id: row.ruleId,
             organizationId: row.organizationId,
-            // Only fields the notifier reads. Other MetricAlertRuleRow fields
-            // aren't needed for message formatting and are omitted to keep the
-            // payload narrow.
-            projectId: '',
-            targetId: '',
             name: row.ruleName,
             type: row.ruleType,
-            timeWindowMinutes: 0,
             metric: row.ruleMetric,
+            severity: row.ruleSeverity,
             thresholdType: row.ruleThresholdType,
             thresholdValue: Number(row.ruleThresholdValue),
             direction: row.ruleDirection,
-            severity: row.ruleSeverity,
-            state: row.toState,
-            stateChangedAt: null,
-            confirmationMinutes: 0,
-            savedFilterId: null,
-            organizationPlanName: null,
           },
           currentValue: Number(row.value),
           previousValue: Number(row.previousValue),

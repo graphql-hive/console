@@ -15,7 +15,17 @@ export type AlertChannelRow = {
 
 export type NotificationEvent = {
   state: 'firing' | 'resolved';
-  rule: MetricAlertRuleRow;
+  rule: Pick<
+    MetricAlertRuleRow,
+    | 'organizationId'
+    | 'name'
+    | 'type'
+    | 'metric'
+    | 'severity'
+    | 'thresholdType'
+    | 'thresholdValue'
+    | 'direction'
+  >;
   currentValue: number;
   previousValue: number;
   organizationSlug: string;
