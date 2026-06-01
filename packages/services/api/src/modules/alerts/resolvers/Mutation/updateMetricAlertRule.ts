@@ -1,4 +1,8 @@
 import { Session } from '../../../auth/lib/authz';
+import {
+  METRIC_ALERT_RULE_TIME_WINDOW_MAX_MINUTES,
+  METRIC_ALERT_RULE_TIME_WINDOW_MIN_MINUTES,
+} from '../../../commerce/constants';
 import { OrganizationManager } from '../../../organization/providers/organization-manager';
 import { IdTranslator } from '../../../shared/providers/id-translator';
 import { METRIC_ALERT_RULES_ENABLED } from '../../providers/metric-alert-rules-flag-token';
@@ -57,6 +61,22 @@ export const updateMetricAlertRule: NonNullable<
   if (effectiveType !== 'LATENCY' && effectiveMetric) {
     return {
       error: { message: 'Metric should only be set for LATENCY alert type.' },
+    };
+  }
+
+  // Same bounds guard as on the add resolver. Only validates when the field
+  // is being changed — partial updates leave it null/undefined to keep the
+  // existing value (already validated when it was first inserted).
+  if (
+    input.timeWindowMinutes != null &&
+    (!Number.isInteger(input.timeWindowMinutes) ||
+      input.timeWindowMinutes < METRIC_ALERT_RULE_TIME_WINDOW_MIN_MINUTES ||
+      input.timeWindowMinutes > METRIC_ALERT_RULE_TIME_WINDOW_MAX_MINUTES)
+  ) {
+    return {
+      error: {
+        message: `Time window must be a whole number of minutes between ${METRIC_ALERT_RULE_TIME_WINDOW_MIN_MINUTES} and ${METRIC_ALERT_RULE_TIME_WINDOW_MAX_MINUTES} (30 days).`,
+      },
     };
   }
 

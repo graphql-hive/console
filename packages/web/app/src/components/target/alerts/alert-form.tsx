@@ -183,6 +183,9 @@ const METRIC_OPTIONS = [
 ] as const;
 
 const RANGE_OPTIONS = [
+  { value: '1', label: '1m' },
+  { value: '2', label: '2m' },
+  { value: '3', label: '3m' },
   { value: '5', label: '5m' },
   { value: '15', label: '15m' },
   { value: '30', label: '30m' },
@@ -191,6 +194,7 @@ const RANGE_OPTIONS = [
   { value: '1440', label: '1d' },
   { value: '10080', label: '7d' },
   { value: '20160', label: '14d' },
+  { value: '43200', label: '30d' },
 ] as const;
 
 const CONDITION_OPTIONS = [
