@@ -16,7 +16,6 @@ import { parseDateRangeInput, share } from '../../../shared/helpers';
 import { AuditLogRecorder } from '../../audit-logs/providers/audit-log-recorder';
 import { Session } from '../../auth/lib/authz';
 import { OperationsManager } from '../../operations/providers/operations-manager';
-import { SchemaVersionStore } from '../../schema/providers/schema-version-store';
 import { IdTranslator } from '../../shared/providers/id-translator';
 import { Logger } from '../../shared/providers/logger';
 import {
@@ -27,6 +26,7 @@ import {
 } from '../../shared/providers/storage';
 import { TokenStorage } from '../../token/providers/token-storage';
 import { PercentageModel, TargetSlugModel } from '../validation';
+import { TargetStats } from './target-stats';
 import { TargetsByIdCache } from './targets-by-id-cache';
 
 type TargetsSortArgs = {
@@ -57,7 +57,7 @@ export class TargetManager {
     private auditLog: AuditLogRecorder,
     private targetsCache: TargetsByIdCache,
     private operationsManager: OperationsManager,
-    private schemaVersions: SchemaVersionStore,
+    private targetStats: TargetStats,
   ) {
     this.logger = logger.child({ source: 'TargetManager' });
   }
@@ -344,13 +344,19 @@ export class TargetManager {
                 value: counts.get(target.id) ?? 0,
               })),
             )
-        : await Promise.all(
-            targets.map(async target => {
-              const value = await this.schemaVersions.countSchemaVersionsOfTarget(target, period);
-
-              return { target, value };
-            }),
-          );
+        : await this.targetStats
+            .countSchemaVersionsByTargetIds({
+              organizationId: selector.organizationId,
+              projectId: selector.projectId,
+              targetIds: targets.map(target => target.id),
+              period,
+            })
+            .then(counts =>
+              targets.map(target => ({
+                target,
+                value: counts.get(target.id) ?? 0,
+              })),
+            );
 
     withMetrics.sort((left, right) => {
       const diff = (left.value - right.value) * multiplier;

@@ -8,6 +8,7 @@ export const useIsInView = (ref: React.RefObject<HTMLDivElement>) => {
       const observer = new IntersectionObserver(([entry]) => {
         if (entry.isIntersecting) {
           setIsInView(entry.isIntersecting);
+          observer.disconnect();
         }
       });
 

@@ -1781,49 +1781,6 @@ export async function createStorage(
 
       return results.map(r => r.id);
     },
-    async getTargetIdsByProjectIds({ organizationId: organization, projectIds }) {
-      const result = new Map<string, string[]>();
-
-      for (const projectId of projectIds) {
-        result.set(projectId, []);
-      }
-
-      if (projectIds.length === 0) {
-        return result;
-      }
-
-      const rows = await pool
-        .any(
-          psql`/* getTargetIdsByProjectIds */
-          SELECT
-            t.id as id,
-            t.project_id as project_id
-          FROM targets as t
-          LEFT JOIN projects as p ON (p.id = t.project_id)
-          WHERE
-            p.org_id = ${organization}
-            AND t.project_id = ANY(${psql.array(projectIds, 'uuid')})
-        `,
-        )
-        .then(
-          z.array(
-            z.object({
-              id: z.string(),
-              project_id: z.string(),
-            }),
-          ).parse,
-        );
-
-      for (const row of rows) {
-        const targetIds = result.get(row.project_id);
-
-        if (targetIds) {
-          targetIds.push(row.id);
-        }
-      }
-
-      return result;
-    },
     async getTargetIdsOfProject({ projectId: project }) {
       const results = await pool
         .any(

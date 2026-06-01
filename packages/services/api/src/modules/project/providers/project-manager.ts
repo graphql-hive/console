@@ -14,7 +14,6 @@ import { parseDateRangeInput } from '../../../shared/helpers';
 import { AuditLogRecorder } from '../../audit-logs/providers/audit-log-recorder';
 import { Session } from '../../auth/lib/authz';
 import { OperationsManager } from '../../operations/providers/operations-manager';
-import { SchemaVersionStore } from '../../schema/providers/schema-version-store';
 import { IdTranslator } from '../../shared/providers/id-translator';
 import { Logger } from '../../shared/providers/logger';
 import {
@@ -26,6 +25,7 @@ import {
 import { TargetManager } from '../../target/providers/target-manager';
 import { TokenStorage } from '../../token/providers/token-storage';
 import { ProjectSlugModel } from '../validation';
+import { ProjectStats } from './project-stats';
 
 type ProjectsSortArgs = {
   field: 'NAME' | 'CREATED_AT' | 'REQUESTS' | 'SCHEMA_VERSIONS';
@@ -63,7 +63,7 @@ export class ProjectManager {
     private idTranslator: IdTranslator,
     private targetManager: TargetManager,
     private operationsManager: OperationsManager,
-    private schemaVersions: SchemaVersionStore,
+    private projectStats: ProjectStats,
   ) {
     this.logger = logger.child({ source: 'ProjectManager' });
   }
@@ -399,7 +399,7 @@ export class ProjectManager {
 
     const withMetrics =
       args.sort.field === 'REQUESTS'
-        ? await this.storage
+        ? await this.projectStats
             .getTargetIdsByProjectIds({
               organizationId: organization.id,
               projectIds: authorized.map(project => project.id),
@@ -420,13 +420,18 @@ export class ProjectManager {
                 ),
               }));
             })
-        : await Promise.all(
-            authorized.map(async project => {
-              const value = await this.schemaVersions.countSchemaVersionsOfProject(project, period);
-
-              return { project, value };
-            }),
-          );
+        : await this.projectStats
+            .countSchemaVersionsByProjectIds({
+              organizationId: organization.id,
+              projectIds: authorized.map(project => project.id),
+              period,
+            })
+            .then(counts =>
+              authorized.map(project => ({
+                project,
+                value: counts.get(project.id) ?? 0,
+              })),
+            );
 
     withMetrics.sort((left, right) => {
       const diff = (left.value - right.value) * multiplier;
