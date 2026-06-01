@@ -65,11 +65,13 @@ export function createWriter({
       const csv = joinIntoSingleMessage(operations);
       const compressed = await compress(csv);
 
+      // Note that `SETTINGS input_format_with_names_use_header = 1` is enabled by default.
+      // If migrating this table in the future, be sure to double check this via
+      // SELECT name, value, changed, description FROM system.settings WHERE name = 'input_format_with_names_use_header';
       await writeCsv(
         clickhouse,
         agents,
         `INSERT INTO operations (${operationsFields})
-        SETTINGS input_format_with_names_use_header = 1
         FORMAT CSV`,
         compressed,
         logger,
