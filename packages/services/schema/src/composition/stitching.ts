@@ -86,7 +86,7 @@ export async function composeStitching(args: ComposeStitchingArgs) {
           }),
         ),
       });
-      sdl = printSchemaWithDirectives(stitchedSchema, { assumeValid: true });
+      sdl = printSchemaWithDirectives(stitchedSchema);
     } catch (error) {
       errors.push(toValidationError(error, 'composition'));
     }
