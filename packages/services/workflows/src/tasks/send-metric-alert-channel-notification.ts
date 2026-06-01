@@ -2,7 +2,6 @@ import { z } from 'zod';
 import { psql } from '@hive/postgres';
 import { SpanKind, SpanStatusCode, trace } from '@hive/service-common';
 import { defineTask, implementTask } from '../kit.js';
-import type { MetricAlertRuleRow } from '../lib/metric-alert-evaluator.js';
 import {
   sendSlackNotification,
   sendTeamsNotification,
@@ -21,34 +20,36 @@ export const SendMetricAlertChannelNotificationTask = defineTask({
   }),
 });
 
-type Row = {
+const HydrationRowSchema = z.object({
   // state log
-  fromState: MetricAlertRuleRow['state'];
-  toState: MetricAlertRuleRow['state'];
-  value: number;
-  previousValue: number;
-  stateLogCreatedAt: string;
+  fromState: z.enum(['NORMAL', 'PENDING', 'FIRING', 'RECOVERING']),
+  toState: z.enum(['NORMAL', 'PENDING', 'FIRING', 'RECOVERING']),
+  value: z.number(),
+  previousValue: z.number(),
+  stateLogCreatedAt: z.string(),
   // rule (subset; the notifier only reads these fields off `event.rule`)
-  ruleId: string;
-  ruleName: string;
-  ruleType: MetricAlertRuleRow['type'];
-  ruleMetric: MetricAlertRuleRow['metric'];
-  ruleThresholdType: MetricAlertRuleRow['thresholdType'];
-  ruleThresholdValue: number;
-  ruleDirection: MetricAlertRuleRow['direction'];
-  ruleSeverity: MetricAlertRuleRow['severity'];
-  organizationId: string;
+  ruleId: z.string(),
+  ruleName: z.string(),
+  ruleType: z.enum(['LATENCY', 'ERROR_RATE', 'TRAFFIC']),
+  ruleMetric: z.enum(['AVG', 'P75', 'P90', 'P95', 'P99']).nullable(),
+  ruleThresholdType: z.enum(['FIXED_VALUE', 'PERCENTAGE_CHANGE']),
+  ruleThresholdValue: z.number(),
+  ruleDirection: z.enum(['ABOVE', 'BELOW']),
+  ruleSeverity: z.enum(['INFO', 'WARNING', 'CRITICAL']),
+  organizationId: z.string(),
   // channel
-  channelId: string;
-  channelType: AlertChannelRow['type'];
-  channelName: string;
-  slackChannel: string | null;
-  webhookEndpoint: string | null;
+  channelId: z.string(),
+  channelType: z.enum(['SLACK', 'WEBHOOK', 'MSTEAMS_WEBHOOK']),
+  channelName: z.string(),
+  slackChannel: z.string().nullable(),
+  webhookEndpoint: z.string().nullable(),
   // slugs
-  organizationSlug: string;
-  projectSlug: string;
-  targetSlug: string;
-};
+  organizationSlug: z.string(),
+  projectSlug: z.string(),
+  targetSlug: z.string(),
+});
+
+type Row = z.infer<typeof HydrationRowSchema>;
 
 export const task = implementTask(SendMetricAlertChannelNotificationTask, async args => {
   const { input, context, logger, helpers } = args;
@@ -99,13 +100,13 @@ export const task = implementTask(SendMetricAlertChannelNotificationTask, async 
 
         // Single round-trip pulls everything dispatch needs. Returns null if the
         // state-log row, channel, or rule was deleted between enqueue and dispatch.
-        const row = (await context.pg.maybeOne(psql`
+        const rawRow = await context.pg.maybeOne(psql`
           SELECT
             sl."from_state" as "fromState"
             , sl."to_state" as "toState"
             , sl."value"
             , sl."previous_value" as "previousValue"
-            , sl."created_at" as "stateLogCreatedAt"
+            , to_json(sl."created_at") as "stateLogCreatedAt"
             , r."id" as "ruleId"
             , r."name" as "ruleName"
             , r."type" as "ruleType"
@@ -130,7 +131,8 @@ export const task = implementTask(SendMetricAlertChannelNotificationTask, async 
           INNER JOIN "projects" p ON p."id" = t."project_id"
           INNER JOIN "organizations" o ON o."id" = p."org_id"
           WHERE sl."id" = ${stateLogId}
-        `)) as Row | null;
+        `);
+        const row: Row | null = rawRow === null ? null : HydrationRowSchema.parse(rawRow);
 
         if (!row) {
           logger.debug(

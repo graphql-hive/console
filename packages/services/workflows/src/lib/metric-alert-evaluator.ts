@@ -5,34 +5,47 @@ import { psql } from '@hive/postgres';
 import { metricAlertClickHouseQueryDuration } from '../metrics.js';
 import type { ClickHouseClient } from './clickhouse-client.js';
 
-export type MetricAlertRuleRow = {
-  id: string;
-  organizationId: string;
-  projectId: string;
-  targetId: string;
-  name: string;
-  type: 'LATENCY' | 'ERROR_RATE' | 'TRAFFIC';
-  timeWindowMinutes: number;
-  metric: 'AVG' | 'P75' | 'P90' | 'P95' | 'P99' | null;
-  thresholdType: 'FIXED_VALUE' | 'PERCENTAGE_CHANGE';
-  thresholdValue: number;
-  direction: 'ABOVE' | 'BELOW';
-  severity: 'INFO' | 'WARNING' | 'CRITICAL';
-  state: 'NORMAL' | 'PENDING' | 'FIRING' | 'RECOVERING';
-  stateChangedAt: string | null;
-  confirmationMinutes: number;
-  savedFilterId: string | null;
+// Schema is the single source of truth for the row shape we read from
+// Postgres in `fetchEnabledRules` below. The exported `MetricAlertRuleRow`
+// type is inferred from it so the compile-time shape and the runtime
+// validation can't drift apart. The matching SELECT in `fetchEnabledRules`
+// must keep its column aliases aligned with the keys here.
+const MetricAlertRuleRowSchema = z.object({
+  id: z.string(),
+  organizationId: z.string(),
+  projectId: z.string(),
+  targetId: z.string(),
+  name: z.string(),
+  type: z.enum(['LATENCY', 'ERROR_RATE', 'TRAFFIC']),
+  timeWindowMinutes: z.number(),
+  metric: z.enum(['AVG', 'P75', 'P90', 'P95', 'P99']).nullable(),
+  thresholdType: z.enum(['FIXED_VALUE', 'PERCENTAGE_CHANGE']),
+  thresholdValue: z.number(),
+  direction: z.enum(['ABOVE', 'BELOW']),
+  severity: z.enum(['INFO', 'WARNING', 'CRITICAL']),
+  state: z.enum(['NORMAL', 'PENDING', 'FIRING', 'RECOVERING']),
+  stateChangedAt: z.string().nullable(),
+  confirmationMinutes: z.number(),
+  savedFilterId: z.string().nullable(),
   /** Plan name of the rule's organization. Drives state-log retention. */
-  organizationPlanName: string | null;
-};
+  organizationPlanName: z.string().nullable(),
+});
 
-type ClickHouseWindowRow = {
-  window: 'current' | 'previous';
-  total: string;
-  total_ok: string;
-  average: number;
-  percentiles: [number, number, number, number];
-};
+export type MetricAlertRuleRow = z.infer<typeof MetricAlertRuleRowSchema>;
+
+// Schema for ClickHouse window rows. `total` and `total_ok` come back as
+// strings because ClickHouse encodes UInt64 as a string in its JSON output
+// (the value can exceed JS Number.MAX_SAFE_INTEGER). `percentiles` is a
+// fixed 4-tuple matching the SELECT in `buildClickHouseWindowSQL`.
+const ClickHouseWindowRowSchema = z.object({
+  window: z.enum(['current', 'previous']),
+  total: z.string(),
+  total_ok: z.string(),
+  average: z.number(),
+  percentiles: z.tuple([z.number(), z.number(), z.number(), z.number()]),
+});
+
+type ClickHouseWindowRow = z.infer<typeof ClickHouseWindowRowSchema>;
 
 type GroupKey = string;
 
@@ -159,7 +172,7 @@ export async function fetchEnabledRules(
       }
   `);
 
-  return result as unknown as MetricAlertRuleRow[];
+  return z.array(MetricAlertRuleRowSchema).parse(result);
 }
 
 export function groupRulesByQuery(
@@ -227,7 +240,8 @@ export async function queryClickHouseWindows(
   const startMs = Date.now();
   let rows: ClickHouseWindowRow[];
   try {
-    rows = await clickhouse.query<ClickHouseWindowRow>(sql);
+    const raw = await clickhouse.query(sql);
+    rows = z.array(ClickHouseWindowRowSchema).parse(raw);
   } catch (error) {
     metricAlertClickHouseQueryDuration.observe({ outcome: 'error' }, (Date.now() - startMs) / 1000);
     throw error;
