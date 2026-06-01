@@ -1,8 +1,8 @@
-import { Session } from '../../../auth/lib/authz';
-import { OrganizationManager } from '../../../organization/providers/organization-manager';
 import { IdTranslator } from '../../../shared/providers/id-translator';
-import { METRIC_ALERT_RULES_ENABLED } from '../../providers/metric-alert-rules-flag-token';
-import { MetricAlertRulesStorage } from '../../providers/metric-alert-rules-storage';
+import {
+  MetricAlertRulesDisabledError,
+  MetricAlertRulesManager,
+} from '../../providers/metric-alert-rules-manager';
 import type { MutationResolvers } from './../../../../__generated__/types';
 
 export const deleteMetricAlertRules: NonNullable<
@@ -14,33 +14,17 @@ export const deleteMetricAlertRules: NonNullable<
     translator.translateProjectId(input),
   ]);
 
-  // Feature gate: cluster env-var OR per-org flag enables. Mirrors the
-  // schemaProposals pattern at schema-proposal-storage.ts:66-70.
-  if (injector.get<boolean>(METRIC_ALERT_RULES_ENABLED) === false) {
-    const organization = await injector
-      .get(OrganizationManager)
-      .getOrganization({ organizationId });
-    if (organization.featureFlags.metricAlertRules === false) {
-      return {
-        error: { message: 'Metric alert rules are not enabled for this instance.' },
-      };
+  try {
+    const deletedMetricAlertRuleIds = await injector.get(MetricAlertRulesManager).deleteRules({
+      organizationId,
+      projectId,
+      ruleIds: input.ruleIds,
+    });
+    return { ok: { deletedMetricAlertRuleIds } };
+  } catch (error) {
+    if (error instanceof MetricAlertRulesDisabledError) {
+      return { error: { message: error.message } };
     }
+    throw error;
   }
-
-  await injector.get(Session).assertPerformAction({
-    action: 'alert:modify',
-    organizationId,
-    params: { organizationId, projectId },
-  });
-
-  const deleted = await injector.get(MetricAlertRulesStorage).deleteMetricAlertRules({
-    projectId,
-    ruleIds: [...input.ruleIds],
-  });
-
-  return {
-    ok: {
-      deletedMetricAlertRuleIds: deleted.map(r => r.id),
-    },
-  };
 };

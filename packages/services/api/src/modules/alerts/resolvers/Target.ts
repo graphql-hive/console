@@ -3,22 +3,9 @@ import {
   METRIC_ALERT_RULES_PER_TARGET_LIMIT,
 } from '../../commerce/constants';
 import { OrganizationManager } from '../../organization/providers/organization-manager';
-import { METRIC_ALERT_RULES_ENABLED } from '../providers/metric-alert-rules-flag-token';
+import { MetricAlertRulesManager } from '../providers/metric-alert-rules-manager';
 import { MetricAlertRulesStorage } from '../providers/metric-alert-rules-storage';
 import type { TargetResolvers } from './../../../__generated__/types';
-
-// OR-style feature gate: cluster env-var OR per-org flag enables the feature.
-// Mirrors the schemaProposals pattern at collection/resolvers/Target.ts:33-45.
-async function isMetricAlertRulesEnabled(
-  injector: GraphQLModules.ModuleContext['injector'],
-  organizationId: string,
-): Promise<boolean> {
-  if (injector.get<boolean>(METRIC_ALERT_RULES_ENABLED) === true) {
-    return true;
-  }
-  const organization = await injector.get(OrganizationManager).getOrganization({ organizationId });
-  return organization.featureFlags.metricAlertRules;
-}
 
 export const Target: Pick<
   TargetResolvers,
@@ -30,7 +17,7 @@ export const Target: Pick<
   | 'viewerCanUseMetricAlertRules'
 > = {
   metricAlertRules: async (target, _, { injector }) => {
-    if (!(await isMetricAlertRulesEnabled(injector, target.orgId))) {
+    if (!(await injector.get(MetricAlertRulesManager).isEnabled(target.orgId))) {
       return [];
     }
     return injector.get(MetricAlertRulesStorage).getMetricAlertRulesByTarget({
@@ -38,7 +25,7 @@ export const Target: Pick<
     });
   },
   metricAlertRule: async (target, { id }, { injector }) => {
-    if (!(await isMetricAlertRulesEnabled(injector, target.orgId))) {
+    if (!(await injector.get(MetricAlertRulesManager).isEnabled(target.orgId))) {
       return null;
     }
     const rule = await injector.get(MetricAlertRulesStorage).getMetricAlertRule({ id });
@@ -48,7 +35,7 @@ export const Target: Pick<
     return rule;
   },
   metricAlertRuleStateLog: async (target, { from, to }, { injector }) => {
-    if (!(await isMetricAlertRulesEnabled(injector, target.orgId))) {
+    if (!(await injector.get(MetricAlertRulesManager).isEnabled(target.orgId))) {
       return [];
     }
     return injector.get(MetricAlertRulesStorage).getStateLogByTarget({
@@ -58,7 +45,7 @@ export const Target: Pick<
     });
   },
   viewerCanUseMetricAlertRules: (target, _args, { injector }) => {
-    return isMetricAlertRulesEnabled(injector, target.orgId);
+    return injector.get(MetricAlertRulesManager).isEnabled(target.orgId);
   },
   metricAlertStateLogRetentionDays: async (target, _args, { injector }) => {
     const organization = await injector

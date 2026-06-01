@@ -1,7 +1,6 @@
 import { SavedFiltersStorage } from '../../saved-filters/providers/saved-filters-storage';
 import { Storage } from '../../shared/providers/storage';
 import { TargetManager } from '../../target/providers/target-manager';
-import { AlertsManager } from '../providers/alerts-manager';
 import { MetricAlertRulesStorage } from '../providers/metric-alert-rules-storage';
 import type { MetricAlertRuleResolvers } from './../../../__generated__/types';
 
@@ -37,14 +36,9 @@ export const MetricAlertRule: MetricAlertRuleResolvers = {
     }
   },
   channels: async (rule, _, { injector }) => {
-    const channelIds = await injector.get(MetricAlertRulesStorage).getRuleChannelIds({
-      ruleId: rule.id,
-    });
-    const allChannels = await injector.get(AlertsManager).getChannels({
-      organizationId: rule.organizationId,
-      projectId: rule.projectId,
-    });
-    return allChannels.filter(c => channelIds.includes(c.id));
+    const storage = injector.get(MetricAlertRulesStorage);
+    const channelIds = await storage.getRuleChannelIds({ ruleId: rule.id });
+    return storage.getAlertChannelsByIds(channelIds);
   },
   savedFilter: (rule, _, { injector }) => {
     if (!rule.savedFilterId) {

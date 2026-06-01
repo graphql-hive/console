@@ -3,6 +3,7 @@ import { Injectable, Scope } from 'graphql-modules';
 import * as zod from 'zod';
 import { PostgresDatabasePool, psql } from '@hive/postgres';
 import type {
+  AlertChannel,
   MetricAlertIncident,
   MetricAlertRule,
   MetricAlertRuleState,
@@ -134,6 +135,20 @@ const METRIC_ALERT_INCIDENT_SELECT = psql`
   , "threshold_value" as "thresholdValue"
 `;
 
+// Row shape for the `channelByIdLoader` SELECT. Matches the `AlertChannel`
+// entity exactly so the loader can return rows as `AlertChannel`. Kept local
+// rather than reusing the legacy storage's `AlertChannelModel` to avoid
+// pulling that into this provider's dependency surface.
+const AlertChannelRowSchema = zod.object({
+  id: zod.string(),
+  projectId: zod.string(),
+  type: zod.enum(['SLACK', 'WEBHOOK', 'MSTEAMS_WEBHOOK']),
+  name: zod.string(),
+  createdAt: zod.string(),
+  slackChannel: zod.string().nullable(),
+  webhookEndpoint: zod.string().nullable(),
+});
+
 const METRIC_ALERT_STATE_LOG_SELECT = psql`
   "id"
   , "metric_alert_rule_id" as "metricAlertRuleId"
@@ -174,6 +189,38 @@ export class MetricAlertRulesStorage {
         }
       }
       return ruleIds.map(id => byRule.get(id) ?? []);
+    },
+    { cache: true },
+  );
+
+  // Per-request batcher for hydrating channel rows by id. The
+  // `MetricAlertRule.channels` field resolver fetches the rule's channel IDs
+  // (via `channelIdsByRuleLoader`) and then needs the full `AlertChannel`
+  // rows. Without this, that path went via `AlertsManager.getChannels(...)`
+  // which fetches the project-wide list AND runs an `alert:modify` authz
+  // check (wrong shape for a read field). Going through a per-id loader
+  // hits a `WHERE id = ANY(...)` SELECT once per request regardless of how
+  // many rules' channels are being resolved, and skips the modify check.
+  private channelByIdLoader = new DataLoader<string, AlertChannel | null>(
+    async channelIds => {
+      const rows = await this.pool.any(psql`/* batchedAlertChannelsByIds */
+        SELECT
+          "id" AS "id",
+          "name" AS "name",
+          "type" AS "type",
+          "project_id" AS "projectId",
+          to_json("created_at") AS "createdAt",
+          "slack_channel" AS "slackChannel",
+          "webhook_endpoint" AS "webhookEndpoint"
+        FROM "alert_channels"
+        WHERE "id" = ANY(${psql.array([...channelIds], 'uuid')})
+      `);
+      const byId = new Map<string, AlertChannel>();
+      for (const raw of rows) {
+        const row = AlertChannelRowSchema.parse(raw);
+        byId.set(row.id, row);
+      }
+      return channelIds.map(id => byId.get(id) ?? null);
     },
     { cache: true },
   );
@@ -443,6 +490,21 @@ export class MetricAlertRulesStorage {
 
   async getRuleChannelIds(args: { ruleId: string }): Promise<string[]> {
     return this.channelIdsByRuleLoader.load(args.ruleId);
+  }
+
+  /**
+   * Hydrates AlertChannel rows by id. Used by the `MetricAlertRule.channels`
+   * field resolver after `getRuleChannelIds`. Per-id DataLoader so resolving
+   * channels across many rules in one request collapses into a single
+   * `WHERE id = ANY(...)` SELECT. Channels that no longer exist (deleted
+   * mid-request) are silently dropped from the result.
+   */
+  async getAlertChannelsByIds(ids: readonly string[]): Promise<AlertChannel[]> {
+    if (ids.length === 0) {
+      return [];
+    }
+    const results = await Promise.all(ids.map(id => this.channelByIdLoader.load(id)));
+    return results.filter((c): c is AlertChannel => c !== null);
   }
 
   /**
