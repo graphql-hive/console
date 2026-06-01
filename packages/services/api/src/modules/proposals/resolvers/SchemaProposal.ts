@@ -51,7 +51,6 @@ export const SchemaProposal: SchemaProposalResolvers = {
             sdl: node.schemaSDL ?? '', // @todo patch schema changes onto latest
             id: node.id,
             service_name: node.serviceName ?? '',
-            target: node.targetId ?? schema?.target,
             service_url:
               node.serviceUrl ?? (schema?.kind === 'composite' ? schema.service_url : '') ?? '',
             author: node.meta?.author ?? '',

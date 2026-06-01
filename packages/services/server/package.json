@@ -47,7 +47,7 @@
     "got": "14.4.7",
     "graphql": "16.9.0",
     "graphql-yoga": "5.13.3",
-    "hyperid": "3.3.0",
+    "hyperid": "4.0.0",
     "ioredis": "5.8.2",
     "openid-client": "6.8.2",
     "pino-pretty": "11.3.0",

@@ -30,8 +30,8 @@ jobs:
           codegen: true
           actor: test-e2e
 
-      - name: Install Cypress binary
-        run: pnpm cypress install
+      - name: install playwright browsers
+        run: pnpm exec playwright install chromium --with-deps
 
       - name: patch compose file volumes
         uses: mikefarah/yq@4839dbbf80445070a31c7a9c1055da527db2d5ee # v4.44.6
@@ -47,16 +47,11 @@ jobs:
             -f docker/docker-compose.end2end.yml \
             up -d --wait
 
-      - name: cypress
+      - name: playwright
         timeout-minutes: 12
-        uses: cypress-io/github-action@v6
+        run: pnpm test:e2e
         env:
           CI: true
-        with:
-          command: pnpm test:e2e
-          install: false
-          browser: chrome
-          headed: true
 
       - name: troubleshoot containers
         if: ${{ failure() }}
@@ -72,7 +67,7 @@ jobs:
       - uses: actions/upload-artifact@4cec3d8aa04e39d1a68397de0c4cd6fb9dce8ec1 # v4.6.1
         if: ${{ failure() }}
         with:
-          name: cypress
+          name: playwright
           path: |
-            ./cypress/videos/**/*
-            ./cypress/screenshots/**/*
+            ./playwright-report/**/*
+            ./test-results/**/*

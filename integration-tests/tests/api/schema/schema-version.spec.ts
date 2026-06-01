@@ -1,4 +1,6 @@
-import { ProjectType } from 'testkit/gql/graphql';
+import { createOrganizationAccessToken } from 'testkit/flow';
+import { ProjectType, ResourceAssignmentModeType } from 'testkit/gql/graphql';
+import { assertNonNullish } from 'testkit/utils';
 import { graphql } from '../../../testkit/gql';
 import { execute } from '../../../testkit/graphql';
 import { initSeed } from '../../../testkit/seed';
@@ -8,11 +10,9 @@ const SchemaByCommitQuery = graphql(/* GraphQL */ `
     schemaVersionByCommit(commit: $commit, target: $targetRef) {
       id
       sdl
-      log {
-        ... on PushedSchemaLog {
-          id
-          commit
-        }
+      meta {
+        author
+        commit
       }
     }
   }
@@ -65,6 +65,73 @@ test.concurrent(
     }).then(r => r.expectNoGraphQLErrors());
 
     expect(result.schemaVersionByCommit?.sdl).toIncludeSubstringWithoutWhitespace(latestSchema);
+  },
+);
+
+test.concurrent(
+  'correct schema version is returned for commit being used multiple times in the same project in different targets',
+  async ({ expect }) => {
+    const { createOrg } = await initSeed().createOwner();
+    const { createProject } = await createOrg();
+    const { createTargetAccessToken, target, createTarget } = await createProject(
+      ProjectType.Single,
+    );
+    const commit = 'shared-commit-hash';
+    const targetToken = await createTargetAccessToken({});
+    await targetToken
+      .publishSchema({
+        sdl: /* GraphQL */ `
+          type Query {
+            a: String!
+          }
+        `,
+        commit,
+      })
+      .then(r => r.expectNoGraphQLErrors());
+    const createOtherTargetResult = await createTarget().then(r => r.expectNoGraphQLErrors());
+    const otherTarget = createOtherTargetResult.createTarget.ok?.createdTarget;
+    assertNonNullish(otherTarget, 'Target should be created');
+    const otherTargetToken = await createTargetAccessToken({
+      target: otherTarget,
+    });
+    await otherTargetToken
+      .publishSchema({
+        sdl: /* GraphQL */ `
+          type Query {
+            b: String!
+          }
+        `,
+        commit,
+      })
+      .then(r => r.expectNoGraphQLErrors());
+
+    const targetResult = await execute({
+      document: SchemaByCommitQuery,
+      token: targetToken.secret,
+      variables: {
+        commit,
+        targetRef: { byId: target.id },
+      },
+    }).then(r => r.expectNoGraphQLErrors());
+    expect(targetResult.schemaVersionByCommit?.sdl).toMatchInlineSnapshot(`
+      type Query {
+        a: String!
+      }
+    `);
+
+    const otherTargetResult = await execute({
+      document: SchemaByCommitQuery,
+      token: otherTargetToken.secret,
+      variables: {
+        commit,
+        targetRef: { byId: otherTarget.id },
+      },
+    }).then(r => r.expectNoGraphQLErrors());
+    expect(otherTargetResult.schemaVersionByCommit?.sdl).toMatchInlineSnapshot(`
+      type Query {
+        b: String!
+      }
+    `);
   },
 );
 

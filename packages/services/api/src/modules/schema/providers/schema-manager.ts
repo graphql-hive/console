@@ -298,6 +298,65 @@ export class SchemaManager {
     };
   }
 
+  async getSchemaVersionWithTargetBySchemaVersionIdForProject(
+    project: Project,
+    schemaVersionId: string,
+  ): Promise<null | {
+    target: Target;
+    schemaVersion: SchemaVersion & {
+      projectId: string;
+      targetId: string;
+      organizationId: string;
+    };
+  }> {
+    this.logger.debug(
+      'Lookup up schema version by id for project (projectId=%s, schemaVersionId=%s)',
+      project.id,
+      schemaVersionId,
+    );
+    const schemaVersion = await this.schemaVersions.getSchemaVersionById(schemaVersionId);
+
+    if (!schemaVersion) {
+      this.logger.debug('The schema version was not found. (schemaVersionId=%s)', schemaVersionId);
+      return null;
+    }
+
+    const target = await this.storage.getTargetById(schemaVersion.targetId);
+
+    if (!target) {
+      this.logger.debug(
+        'The target of the schema version was not found. (targetId=%s)',
+        schemaVersion.targetId,
+      );
+      return null;
+    }
+
+    if (target.projectId !== project.id) {
+      this.logger.debug(
+        'The found schema version does not belong to the specified target. (expectedProjectId=%s, actualProjectId=%s)',
+        project.id,
+        target.projectId,
+      );
+      return null;
+    }
+
+    this.logger.debug(
+      'The schema version and its target were found.. (targetId=%s, schemaVersionId=%s)',
+      schemaVersion.targetId,
+      schemaVersion.id,
+    );
+
+    return {
+      target,
+      schemaVersion: {
+        ...schemaVersion,
+        projectId: target.projectId,
+        targetId: target.id,
+        organizationId: target.orgId,
+      },
+    };
+  }
+
   async getLatestValidVersion(selector: TargetSelector) {
     this.logger.debug('Fetching latest valid version (selector=%o)', selector);
     return this.latestSchemaVersionLoader.load(selector);
@@ -402,12 +461,9 @@ export class SchemaManager {
     return connection;
   }
 
-  async getSchemaLog(selector: { commit: string } & TargetSelector) {
-    this.logger.debug('Fetching schema log (selector=%o)', selector);
-    return this.schemaVersions.getSchemLog({
-      commit: selector.commit,
-      targetId: selector.targetId,
-    });
+  async getSchemaLogById(schemaLogId: string) {
+    this.logger.debug('Fetching schema log by id (schemaLogId=%s)', schemaLogId);
+    return this.schemaVersions.getSchemaLogById(schemaLogId);
   }
 
   @traceFn('SchemaManager.createVersion', {
@@ -417,18 +473,22 @@ export class SchemaManager {
       'hive.project.id': input.projectId,
       'hive.version.commit': input.commit,
       'hive.version.valid': input.valid,
-      'hive.version.service': input.service || '',
+      'hive.version.service': input.service?.name || '',
     }),
   })
-  async createVersion(
+  async createPublishVersion(
     input: ({
+      service: {
+        name: string;
+        url: string;
+      } | null;
+      serviceChanges: Array<SchemaChangeType> | null;
+      previousSchemaLogId: string | null;
       commit: string;
       schema: string;
       author: string;
       valid: boolean;
-      service?: string | null;
-      logIds: string[];
-      url?: string | null;
+      existingSchemaLogs: Array<{ id: string; serviceName: string | null }>;
       base_schema: string | null;
       metadata: string | null;
       actionFn(versionId: string): Promise<void>;
@@ -453,6 +513,7 @@ export class SchemaManager {
         | {
             compositeSchemaSDL: null;
             supergraphSDL: null;
+            supergraphChanges: null;
             schemaCompositionErrors: Array<SchemaCompositionError>;
             tags: null;
             schemaMetadata: null;
@@ -461,6 +522,7 @@ export class SchemaManager {
         | {
             compositeSchemaSDL: string;
             supergraphSDL: string | null;
+            supergraphChanges: Array<SchemaChangeType> | null;
             schemaCompositionErrors: null;
             tags: Array<string> | null;
             schemaMetadata: null | Record<
@@ -487,9 +549,9 @@ export class SchemaManager {
       ]),
     );
 
-    return this.schemaVersions.createSchemaVersion({
+    return this.schemaVersions.createPublishSchemaVersion({
       ...input,
-      logIds: input.logIds,
+      existingSchemaLogs: input.existingSchemaLogs,
     });
   }
 
@@ -1289,18 +1351,10 @@ export class SchemaManager {
       };
     }
 
-    const log = await this.getSchemaLog({
-      commit: schemaVersion.actionId,
-      organizationId: schemaVersion.organizationId,
-      projectId: schemaVersion.projectId,
-      targetId: schemaVersion.targetId,
-    });
+    const log = await this.getSchemaLogById(schemaVersion.actionId);
 
     if ('commit' in log && log.commit) {
-      const project = await this.storage.getProject({
-        organizationId: schemaVersion.organizationId,
-        projectId: schemaVersion.projectId,
-      });
+      const project = await this.projectManager.getProjectById(schemaVersion.projectId);
 
       if (project.gitRepository) {
         return {
