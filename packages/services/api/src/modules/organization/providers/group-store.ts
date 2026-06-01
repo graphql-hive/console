@@ -141,7 +141,7 @@ export class GroupStore {
       args.organizationId,
       args.externalGroupId,
     );
-    const query = psql`/* createGroup /*
+    const query = psql`/* createGroup */
       INSERT INTO "groups" (
         "organization_id"
         , "display_name"
