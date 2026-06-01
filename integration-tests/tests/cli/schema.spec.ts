@@ -552,7 +552,7 @@ describe.each([ProjectType.Stitching, ProjectType.Federation, ProjectType.Single
             'abc123',
             ...serviceNameArgs,
             ...serviceUrlArgs,
-            'fixtures/schema-width-directives.graphql',
+            'fixtures/schema-with-directives.graphql',
           ]);
 
           const schema = await latestSchema();
