@@ -350,6 +350,9 @@ export class SingleModel {
           diffCheck.reason?.coordinatesDiff ??
           diffCheck.data?.coordinatesDiff ??
           null,
+        supergraphChanges: null,
+        previousSchemas: null,
+        serviceChanges: null,
         compositionErrors: compositionCheck.reason?.errors ?? null,
         schema: incoming,
         schemas,

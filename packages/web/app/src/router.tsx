@@ -34,6 +34,7 @@ import { useLocalStorage } from '@/lib/hooks';
 import { zodValidator } from '@tanstack/zod-adapter';
 import { authenticated } from './components/authenticated-container';
 import { InsightsFilterSearch } from './components/target/insights/search-schemas';
+import { DiffsWorkerPoolProvider } from './components/theme/diffs-worker-pool-provider';
 import { SchemaProposalStage } from './gql/graphql';
 import { AuthPage } from './pages/auth';
 import { AuthCallbackPage } from './pages/auth-callback';
@@ -76,7 +77,7 @@ import { TargetExplorerDeprecatedPage } from './pages/target-explorer-deprecated
 import { TargetExplorerTypePage } from './pages/target-explorer-type';
 import { TargetExplorerUnusedPage } from './pages/target-explorer-unused';
 import { TargetHistoryPage } from './pages/target-history';
-import { TargetHistoryVersionPage } from './pages/target-history-version';
+import { TargetHistorySchemaVersionPage } from './pages/target-history-schema-version';
 import { TargetInsightsPage } from './pages/target-insights';
 import { TargetInsightsClientPage } from './pages/target-insights-client';
 import { TargetInsightsCoordinatePage } from './pages/target-insights-coordinate';
@@ -916,12 +917,14 @@ const targetHistoryVersionRoute = createRoute({
     const { organizationSlug, projectSlug, targetSlug, versionId } =
       targetHistoryVersionRoute.useParams();
     return (
-      <TargetHistoryVersionPage
-        organizationSlug={organizationSlug}
-        projectSlug={projectSlug}
-        targetSlug={targetSlug}
-        versionId={versionId}
-      />
+      <DiffsWorkerPoolProvider>
+        <TargetHistorySchemaVersionPage
+          organizationSlug={organizationSlug}
+          projectSlug={projectSlug}
+          targetSlug={targetSlug}
+          schemaVersionId={versionId}
+        />
+      </DiffsWorkerPoolProvider>
     );
   },
 });
