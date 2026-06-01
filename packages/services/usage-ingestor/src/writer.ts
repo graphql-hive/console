@@ -68,7 +68,9 @@ export function createWriter({
       await writeCsv(
         clickhouse,
         agents,
-        `INSERT INTO operations (${operationsFields}) FORMAT CSV`,
+        `INSERT INTO operations (${operationsFields})
+        SETTINGS input_format_with_names_use_header = 1
+        FORMAT CSV`,
         compressed,
         logger,
         3,

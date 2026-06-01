@@ -12,7 +12,7 @@ export const action: Action = async exec => {
     -- field availability is not based on operation count, which would skew the availability
     -- to show a higher error rate (e.g. if an array has one object that errored, then the
     -- availability) should be (1-N)/N, not 0%
-    ADD COLUMN IF NOT EXISTS coordinate_totals Map(String, UInt32) CODEC(ZSTD(1))
+    ADD COLUMN IF NOT EXISTS coordinate_totals Map(String, UInt32) DEFAULT map() CODEC(ZSTD(1))
     ;
   `);
 
