@@ -308,10 +308,6 @@ export const TargetCard = (props: TargetProps): ReactElement => {
     'p95',
   );
 
-  if (!totalNumberOfRequests) {
-    return <TargetCardSkeleton {...props} ref={ref} />;
-  }
-
   return (
     <TooltipProvider>
       <div
@@ -321,182 +317,184 @@ export const TargetCard = (props: TargetProps): ReactElement => {
           props.className,
         )}
       >
-        <TargetCardTitle {...props} />
-        <div className="space-y-3">
-          <div className="grid grid-cols-2 gap-2">
-            <div className="text-neutral-11">Schema Versions</div>
-            <div className="text-right font-medium">
-              {schemaVersionsInDateRange}{' '}
-              <span className="text-neutral-10">in the last {props.days} days</span>
-            </div>
-          </div>
-          <div className="bg-neutral-4 dark:bg-neutral-5 h-px w-full" />
-          <div className="grid grid-cols-2 gap-2">
-            <div className="text-neutral-11 -my-2 flex items-center gap-2">
-              Latency
-              <Select
-                value={selectedLatencyKind}
-                onValueChange={value => setSelectedLatencyKind(value as typeof selectedLatencyKind)}
-              >
-                <SelectTrigger className="w-16! h-6! px-2!">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="p75">p75</SelectItem>
-                  <SelectItem value="p90">p90</SelectItem>
-                  <SelectItem value="p95">p95</SelectItem>
-                  <SelectItem value="p99">p99</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="text-right font-medium">
-              {target?.operationsStats?.duration?.[selectedLatencyKind]}ms
-            </div>
-          </div>
-          <div className="bg-neutral-4 dark:bg-neutral-5 h-px w-full" />
-          <div className="grid grid-cols-2 gap-2">
-            <div className="text-neutral-11">Requests</div>
-            <div className="text-right font-medium">
-              {requestsInDateRange} ({rpm} RPM)
-            </div>
-          </div>
-          <div className="bg-neutral-4 dark:bg-neutral-5 h-px w-full" />
-          <div className="space-y-2">
-            <div className="grid grid-cols-2 gap-2">
-              <div className="text-neutral-11">Success rate</div>
-              <div className="text-right font-medium">{successRate}</div>
-            </div>
-            <div className="bg-neutral-2 relative h-1 w-full overflow-hidden rounded-lg">
-              <div
-                className="absolute bottom-0 right-0 top-0 h-full bg-red-900"
-                style={{
-                  width: failureRate,
-                  left: successRate,
-                }}
-              />
-              <div
-                className="absolute bottom-0 left-0 top-0 h-full bg-green-500"
-                style={{ width: successRate }}
-              />
-            </div>
-          </div>
-          <div className="-mb-6.25 -mx-4 h-24">
-            <AutoSizer>
-              {size => (
-                <ReactECharts
-                  style={{ width: size.width, height: size.height }}
-                  option={{
-                    animation: !!target,
-                    color: ['#f4b740'],
-                    grid: {
-                      left: 0,
-                      top: 10,
-                      right: 0,
-                      bottom: 10,
-                    },
-                    tooltip: {
-                      trigger: 'axis',
-                      axisPointer: {
-                        label: {
-                          formatter({ value }: { value: number }) {
-                            return new Date(value).toDateString();
+        {!totalNumberOfRequests ? (
+          <TargetCardSkeletonContent {...props} />
+        ) : (
+          <>
+            <TargetCardTitle {...props} />
+            <div className="space-y-3">
+              <div className="grid grid-cols-2 gap-2">
+                <div className="text-neutral-11">Schema Versions</div>
+                <div className="text-right font-medium">
+                  {schemaVersionsInDateRange}{' '}
+                  <span className="text-neutral-10">in the last {props.days} days</span>
+                </div>
+              </div>
+              <div className="bg-neutral-4 dark:bg-neutral-5 h-px w-full" />
+              <div className="grid grid-cols-2 gap-2">
+                <div className="text-neutral-11 -my-2 flex items-center gap-2">
+                  Latency
+                  <Select
+                    value={selectedLatencyKind}
+                    onValueChange={value =>
+                      setSelectedLatencyKind(value as typeof selectedLatencyKind)
+                    }
+                  >
+                    <SelectTrigger className="w-16! h-6! px-2!">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="p75">p75</SelectItem>
+                      <SelectItem value="p90">p90</SelectItem>
+                      <SelectItem value="p95">p95</SelectItem>
+                      <SelectItem value="p99">p99</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="text-right font-medium">
+                  {target?.operationsStats?.duration?.[selectedLatencyKind]}ms
+                </div>
+              </div>
+              <div className="bg-neutral-4 dark:bg-neutral-5 h-px w-full" />
+              <div className="grid grid-cols-2 gap-2">
+                <div className="text-neutral-11">Requests</div>
+                <div className="text-right font-medium">
+                  {requestsInDateRange} ({rpm} RPM)
+                </div>
+              </div>
+              <div className="bg-neutral-4 dark:bg-neutral-5 h-px w-full" />
+              <div className="space-y-2">
+                <div className="grid grid-cols-2 gap-2">
+                  <div className="text-neutral-11">Success rate</div>
+                  <div className="text-right font-medium">{successRate}</div>
+                </div>
+                <div className="bg-neutral-2 relative h-1 w-full overflow-hidden rounded-lg">
+                  <div
+                    className="absolute bottom-0 right-0 top-0 h-full bg-red-900"
+                    style={{
+                      width: failureRate,
+                      left: successRate,
+                    }}
+                  />
+                  <div
+                    className="absolute bottom-0 left-0 top-0 h-full bg-green-500"
+                    style={{ width: successRate }}
+                  />
+                </div>
+              </div>
+              <div className="-mb-6.25 -mx-4 h-24">
+                <AutoSizer>
+                  {size => (
+                    <ReactECharts
+                      style={{ width: size.width, height: size.height }}
+                      option={{
+                        animation: !!target,
+                        color: ['#f4b740'],
+                        grid: {
+                          left: 0,
+                          top: 10,
+                          right: 0,
+                          bottom: 10,
+                        },
+                        tooltip: {
+                          trigger: 'axis',
+                          axisPointer: {
+                            label: {
+                              formatter({ value }: { value: number }) {
+                                return new Date(value).toDateString();
+                              },
+                            },
                           },
                         },
-                      },
-                    },
-                    xAxis: [
-                      {
-                        show: false,
-                        type: 'time',
-                        boundaryGap: false,
-                      },
-                    ],
-                    yAxis: [
-                      {
-                        show: false,
-                        type: 'value',
-                        min: 0,
-                        max: highestNumberOfRequests,
-                      },
-                    ],
-                    series: [
-                      {
-                        name: 'Failures',
-                        type: 'line',
-                        smooth: false,
-                        lineStyle: {
-                          width: 2,
-                        },
-                        showSymbol: false,
-                        color: colors.error,
-                        areaStyle: {
-                          opacity: 0.8,
-                          color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
-                            {
-                              offset: 0,
-                              color: colors.error,
+                        xAxis: [
+                          {
+                            show: false,
+                            type: 'time',
+                            boundaryGap: false,
+                          },
+                        ],
+                        yAxis: [
+                          {
+                            show: false,
+                            type: 'value',
+                            min: 0,
+                            max: highestNumberOfRequests,
+                          },
+                        ],
+                        series: [
+                          {
+                            name: 'Failures',
+                            type: 'line',
+                            smooth: false,
+                            lineStyle: {
+                              width: 2,
                             },
-                            {
-                              offset: 1,
-                              color: hexToRgba(colors.error, 0),
+                            showSymbol: false,
+                            color: colors.error,
+                            areaStyle: {
+                              opacity: 0.8,
+                              color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+                                {
+                                  offset: 0,
+                                  color: colors.error,
+                                },
+                                {
+                                  offset: 1,
+                                  color: hexToRgba(colors.error, 0),
+                                },
+                              ]),
                             },
-                          ]),
-                        },
-                        emphasis: {
-                          focus: 'series',
-                        },
-                        data: failures,
-                      },
-                      {
-                        name: 'Requests',
-                        type: 'line',
-                        smooth: false,
-                        lineStyle: {
-                          width: 2,
-                        },
-                        showSymbol: false,
-                        color: colors.primary,
-                        areaStyle: {
-                          opacity: 0.8,
-                          color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
-                            {
-                              offset: 0,
-                              color: colors.primary,
+                            emphasis: {
+                              focus: 'series',
                             },
-                            {
-                              offset: 1,
-                              color: hexToRgba(colors.primary, 0),
+                            data: failures,
+                          },
+                          {
+                            name: 'Requests',
+                            type: 'line',
+                            smooth: false,
+                            lineStyle: {
+                              width: 2,
                             },
-                          ]),
-                        },
-                        emphasis: {
-                          focus: 'series',
-                        },
-                        data: requests,
-                      },
-                    ],
-                  }}
-                />
-              )}
-            </AutoSizer>
-          </div>
-        </div>
+                            showSymbol: false,
+                            color: colors.primary,
+                            areaStyle: {
+                              opacity: 0.8,
+                              color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+                                {
+                                  offset: 0,
+                                  color: colors.primary,
+                                },
+                                {
+                                  offset: 1,
+                                  color: hexToRgba(colors.primary, 0),
+                                },
+                              ]),
+                            },
+                            emphasis: {
+                              focus: 'series',
+                            },
+                            data: requests,
+                          },
+                        ],
+                      }}
+                    />
+                  )}
+                </AutoSizer>
+              </div>
+            </div>
+          </>
+        )}
       </div>
     </TooltipProvider>
   );
 };
 
-export const TargetCardSkeleton = forwardRef<HTMLDivElement, Partial<TargetProps>>((props, ref) => {
+const TargetCardSkeletonContent = (props: Partial<TargetProps>) => {
   const isRealTarget = !!props.slug;
 
   return (
-    <div
-      ref={ref}
-      className={cn(
-        'bg-neutral-1 dark:bg-neutral-3 border-neutral-4 dark:border-neutral-5 grid space-y-4 rounded-lg border p-4',
-        props.className,
-      )}
-    >
+    <>
       {isRealTarget ? (
         <TargetCardTitle {...(props as TargetProps)} />
       ) : (
@@ -534,18 +532,16 @@ export const TargetCardSkeleton = forwardRef<HTMLDivElement, Partial<TargetProps
             <AlertCircleIcon className="size-4" />
             <AlertTitle className="grid grid-cols-[1fr_auto] items-center gap-2">
               No data available.
-              <TooltipProvider>
-                <Tooltip delayDuration={0}>
-                  <TooltipTrigger asChild>
-                    <CircleQuestionMarkIcon className="text-accent size-4" />
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <DocsLink href="/schema-registry/usage-reporting">
-                      Read about usage reporting in the documentation
-                    </DocsLink>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
+              <Tooltip delayDuration={0}>
+                <TooltipTrigger asChild>
+                  <CircleQuestionMarkIcon className="text-accent size-4" />
+                </TooltipTrigger>
+                <TooltipContent>
+                  <DocsLink href="/schema-registry/usage-reporting">
+                    Read about usage reporting in the documentation
+                  </DocsLink>
+                </TooltipContent>
+              </Tooltip>
             </AlertTitle>
             <AlertDescription className="text-neutral-10">
               There is no data available for this target yet.
@@ -553,6 +549,22 @@ export const TargetCardSkeleton = forwardRef<HTMLDivElement, Partial<TargetProps
           </Alert>
         )}
       </div>
+    </>
+  );
+};
+
+export const TargetCardSkeleton = forwardRef<HTMLDivElement, Partial<TargetProps>>((props, ref) => {
+  return (
+    <div
+      ref={ref}
+      className={cn(
+        'bg-neutral-1 dark:bg-neutral-3 border-neutral-4 dark:border-neutral-5 grid space-y-4 rounded-lg border p-4',
+        props.className,
+      )}
+    >
+      <TooltipProvider>
+        <TargetCardSkeletonContent {...props} />
+      </TooltipProvider>
     </div>
   );
 });
