@@ -19,6 +19,12 @@ CREATE TABLE "metric_alert_rules" (
   "updated_by_user_id" uuid REFERENCES "users"("id") ON DELETE SET NULL,
   "type" "metric_alert_type" NOT NULL,
   "time_window_minutes" integer NOT NULL,
+  -- The type/metric pairing rule ("metric" must be set when "type" = 'LATENCY'
+  -- and must be NULL otherwise) is enforced at the resolver layer rather than
+  -- via a CHECK constraint here. See addMetricAlertRule.ts:49-60 and
+  -- updateMetricAlertRule.ts:55-67. This keeps the rule extensible as new
+  -- alert types get added without requiring a schema migration each time. All
+  -- writes to this table go through one of those resolvers.
   "metric" "metric_alert_metric",
   "threshold_type" "metric_alert_threshold_type" NOT NULL,
   "threshold_value" double precision NOT NULL,
@@ -34,10 +40,7 @@ CREATE TABLE "metric_alert_rules" (
   "state_changed_at" timestamptz,
   "confirmation_minutes" integer NOT NULL,
   "saved_filter_id" uuid REFERENCES "saved_filters"("id") ON DELETE SET NULL,
-  PRIMARY KEY ("id"),
-  CONSTRAINT "metric_alert_rules_metric_required" CHECK (
-    ("type" = 'LATENCY' AND "metric" IS NOT NULL) OR ("type" != 'LATENCY' AND "metric" IS NULL)
-  )
+  PRIMARY KEY ("id")
 );
 
 -- Evaluator hot path. The cron's fetchEnabledRules query scans this and the
