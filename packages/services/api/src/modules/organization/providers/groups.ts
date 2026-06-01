@@ -183,18 +183,28 @@ export class Groups {
   }
 
   async removeGroupMapping(args: { groupMappingId: string }) {
+    this.logger.debug('remove group mapping (groupMappingId=%s)', args.groupMappingId);
+
     if (!isUUID(args.groupMappingId)) {
+      this.logger.debug('invalid uuid provided (groupMappingId=%s)', args.groupMappingId);
       this.session.raise('member:modify');
     }
+
+    this.logger.debug('lookup group mapping (groupMappingId=%s)', args.groupMappingId);
 
     const groupMapping = await this.groupAssignmentStore.getGroupMappingById(args.groupMappingId);
     if (!groupMapping) {
+      this.logger.debug('group mapping not found (groupMappingId=%s)', args.groupMappingId);
       this.session.raise('member:modify');
     }
 
-    const group = await this.groupStore.getGroupById(groupMapping.id);
+    this.logger.debug('group mapping found (groupMappingId=%s)', args.groupMappingId);
+    this.logger.debug('lookup group (groupMappingId=%s)', args.groupMappingId);
+
+    const group = await this.groupStore.getGroupById(groupMapping.groupId);
 
     if (!group) {
+      this.logger.debug('group not found (groupMappingId=%s)', args.groupMappingId);
       this.session.raise('member:modify');
     }
 
@@ -206,7 +216,19 @@ export class Groups {
       },
     });
 
+    this.logger.debug(
+      'delete group mapping record (groupMappingId=%s, groupId=%s)',
+      args.groupMappingId,
+      group.id,
+    );
+
     await this.groupAssignmentStore.deleteGroupMapping(groupMapping.id);
+
+    this.logger.debug(
+      'group mapping deleted successfully (groupMappingId=%s, groupId=%s)',
+      args.groupMappingId,
+      group.id,
+    );
 
     return {
       type: 'success' as const,
