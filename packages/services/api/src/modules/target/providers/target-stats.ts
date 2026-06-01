@@ -2,6 +2,7 @@ import { Injectable, Scope } from 'graphql-modules';
 import { z } from 'zod';
 import { PostgresDatabasePool, psql } from '@hive/postgres';
 import type { DateRange } from '../../../shared/entities';
+import { batchBy } from '../../../shared/helpers';
 
 @Injectable({
   scope: Scope.Operation,
@@ -14,7 +15,7 @@ export class TargetStats {
     organizationId: string;
     projectId: string;
     targetIds: readonly string[];
-    period: DateRange;
+    period: DateRange | null;
   }): Promise<Map<string, number>> {
     const result = new Map<string, number>();
 
@@ -39,8 +40,14 @@ export class TargetStats {
             p.org_id = ${args.organizationId}
             AND t.project_id = ${args.projectId}
             AND sv.target_id = ANY(${psql.array(args.targetIds, 'uuid')})
-            AND sv.created_at >= ${args.period.from.toISOString()}
-            AND sv.created_at < ${args.period.to.toISOString()}
+            ${
+              args.period
+                ? psql`
+                  AND sv.created_at >= ${args.period.from.toISOString()}
+                  AND sv.created_at < ${args.period.to.toISOString()}
+                `
+                : psql``
+            }
           GROUP BY sv.target_id
         `,
       )
@@ -59,4 +66,32 @@ export class TargetStats {
 
     return result;
   }
+
+  countSchemaVersionsOfTarget = batchBy<
+    {
+      organizationId: string;
+      projectId: string;
+      targetId: string;
+      period: DateRange | null;
+    },
+    number
+  >(
+    item =>
+      [
+        item.organizationId,
+        item.projectId,
+        item.period?.from.toISOString() ?? 'all',
+        item.period?.to.toISOString() ?? 'all',
+      ].join(':'),
+    async items => {
+      const counts = await this.countSchemaVersionsByTargetIds({
+        organizationId: items[0].organizationId,
+        projectId: items[0].projectId,
+        targetIds: items.map(item => item.targetId),
+        period: items[0].period,
+      });
+
+      return items.map(item => Promise.resolve(counts.get(item.targetId) ?? 0));
+    },
+  );
 }

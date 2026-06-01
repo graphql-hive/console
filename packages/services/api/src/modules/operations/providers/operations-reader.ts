@@ -1824,7 +1824,7 @@ export class OperationsReader {
     excludeClientVersionFilters?: boolean;
     schemaCoordinate?: string;
   }) {
-    const results = await this.getDurationAndCountOverTime({
+    const results = await this.durationAndCountOverTime({
       target,
       period,
       resolution,
@@ -1861,7 +1861,7 @@ export class OperationsReader {
     excludeOperations?: boolean;
     excludeClientVersionFilters?: boolean;
   }) {
-    const result = await this.getDurationAndCountOverTime({
+    const result = await this.durationAndCountOverTime({
       target,
       period,
       resolution,
@@ -1902,7 +1902,7 @@ export class OperationsReader {
       duration: DurationMetrics;
     }>
   > {
-    return this.getDurationAndCountOverTime({
+    return this.durationAndCountOverTime({
       target,
       period,
       resolution,
@@ -1950,6 +1950,57 @@ export class OperationsReader {
     );
 
     return toDurationMetrics(result.data[0].percentiles, result.data[0].average);
+  }
+
+  async generalDurationPercentilesOfTargets({
+    targets,
+    period,
+    operations,
+    clients,
+    clientVersionFilters,
+    excludeOperations,
+    excludeClientVersionFilters,
+  }: {
+    targets: readonly string[];
+    period: DateRange;
+    operations?: readonly string[];
+    clients?: readonly string[];
+    clientVersionFilters?: readonly { clientName: string; versions: readonly string[] | null }[];
+    excludeOperations?: boolean;
+    excludeClientVersionFilters?: boolean;
+  }): Promise<Map<string, DurationMetrics>> {
+    if (targets.length === 0) {
+      return new Map();
+    }
+
+    const result = await this.clickHouse.query<{
+      target: string;
+      percentiles: [number, number, number, number];
+      average: number;
+    }>(
+      this.pickAggregationByPeriod({
+        query: aggregationTableName => sql`
+          SELECT
+            target,
+            avgMerge(duration_avg) as average,
+            quantilesMerge(0.75, 0.90, 0.95, 0.99)(duration_quantiles) as percentiles
+          FROM ${aggregationTableName('operations')}
+            ${this.createFilter({ target: targets, period, operations, clients, clientVersionFilters, excludeOperations, excludeClientVersionFilters })}
+          GROUP BY target
+        `,
+        queryId: aggregation => `general_duration_percentiles_by_target_${aggregation}`,
+        timeout: 15_000,
+        period,
+      }),
+    );
+
+    const collection = new Map<string, DurationMetrics>();
+
+    for (const row of result.data) {
+      collection.set(row.target, toDurationMetrics(row.percentiles, row.average));
+    }
+
+    return collection;
   }
 
   async durationMetrics({
@@ -2046,7 +2097,7 @@ export class OperationsReader {
     return result.data.map(row => row.client_name);
   }
 
-  private async getDurationAndCountOverTime({
+  async durationAndCountOverTime({
     target,
     period,
     resolution,
@@ -2150,6 +2201,127 @@ export class OperationsReader {
         duration: toDurationMetrics(row.percentiles, row.average),
       };
     });
+  }
+
+  async durationAndCountOverTimeOfTargets({
+    targets,
+    period,
+    resolution,
+    operations,
+    clients,
+    clientVersionFilters,
+    excludeOperations,
+    excludeClientVersionFilters,
+  }: {
+    targets: readonly string[];
+    period: DateRange;
+    resolution: number;
+    operations?: readonly string[];
+    clients?: readonly string[];
+    clientVersionFilters?: readonly { clientName: string; versions: readonly string[] | null }[];
+    excludeOperations?: boolean;
+    excludeClientVersionFilters?: boolean;
+  }) {
+    if (targets.length === 0) {
+      return new Map<
+        string,
+        Array<{
+          date: any;
+          total: number;
+          totalOk: number;
+          duration: DurationMetrics;
+        }>
+      >();
+    }
+
+    const interval = calculateTimeWindow({ period, resolution });
+    const intervalRaw = this.clickHouse.translateWindow(interval);
+    const roundedPeriod = {
+      from: toStartOfInterval(period.from, interval.value, interval.unit),
+      to: toEndOfInterval(period.to, interval.value, interval.unit),
+    };
+    const startDateTimeFormatted = formatDate(roundedPeriod.from);
+    const endDateTimeFormatted = formatDate(roundedPeriod.to);
+
+    const query = this.pickAggregationByPeriod({
+      timeout: 15_000,
+      period,
+      resolution,
+      queryId: aggregation => `duration_and_count_over_time_by_target_${aggregation}`,
+      query: aggregationTableName => sql`
+        SELECT
+          date,
+          average,
+          percentiles,
+          total,
+          totalOk,
+          target
+        FROM (
+          SELECT
+            toDateTime(
+              intDiv(
+                toUnixTimestamp(timestamp),
+                toUInt32(${String(interval.seconds)})
+              ) * toUInt32(${String(interval.seconds)})
+            ) as date,
+            avgMerge(duration_avg) as average,
+            quantilesMerge(0.75, 0.90, 0.95, 0.99)(duration_quantiles) as percentiles,
+            sum(total) as total,
+            sum(total_ok) as totalOk,
+            target
+          FROM ${aggregationTableName('operations')}
+          ${this.createFilter({
+            target: targets,
+            period: roundedPeriod,
+            operations,
+            clients,
+            clientVersionFilters,
+            excludeOperations,
+            excludeClientVersionFilters,
+          })}
+          GROUP BY target, date
+          ORDER BY target, date
+          WITH FILL
+            FROM toDateTime(${startDateTimeFormatted}, 'UTC')
+            TO toDateTime(${endDateTimeFormatted}, 'UTC')
+            STEP INTERVAL ${intervalRaw}
+        )
+      `,
+    });
+
+    const result = await this.clickHouse.query<{
+      date: string;
+      target: string;
+      total: number;
+      totalOk: number;
+      average: number;
+      percentiles: [number, number, number, number];
+    }>(query);
+
+    const collection = new Map<
+      string,
+      Array<{
+        date: any;
+        total: number;
+        totalOk: number;
+        duration: DurationMetrics;
+      }>
+    >();
+
+    for (const row of result.data) {
+      const targetRows = collection.get(row.target) ?? [];
+
+      targetRows.push({
+        date: toUnixTimestamp(row.date),
+        total: ensureNumber(row.total),
+        totalOk: ensureNumber(row.totalOk),
+        duration: toDurationMetrics(row.percentiles, row.average),
+      });
+
+      collection.set(row.target, targetRows);
+    }
+
+    return collection;
   }
 
   // Every call to this method is part of the batching logic.
