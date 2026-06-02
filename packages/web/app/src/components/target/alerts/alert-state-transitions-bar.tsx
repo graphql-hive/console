@@ -5,7 +5,7 @@ export const ALERT_STATE_COLOR: Record<MetricAlertRuleState, string> = {
   [MetricAlertRuleState.Normal]: 'bg-success',
   [MetricAlertRuleState.Pending]: 'bg-warning',
   [MetricAlertRuleState.Firing]: 'bg-critical',
-  [MetricAlertRuleState.Recovering]: 'bg-orange-500',
+  [MetricAlertRuleState.Recovering]: 'bg-info',
 };
 
 export const ALERT_STATE_LABEL: Record<MetricAlertRuleState, string> = {
