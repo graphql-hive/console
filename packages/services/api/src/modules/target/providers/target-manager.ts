@@ -22,7 +22,7 @@ import {
   ProjectSelector,
   Storage,
   TargetSelector,
-  TargetsStorageSort, 
+  TargetsStorageSort,
 } from '../../shared/providers/storage';
 import { TokenStorage } from '../../token/providers/token-storage';
 import { PercentageModel, TargetSlugModel } from '../validation';
