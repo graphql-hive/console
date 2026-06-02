@@ -129,8 +129,8 @@ function smtp(config: SMTPEmailProviderConfig, emailFrom: string) {
         subject: email.subject,
         html: {
           content: email.body,
-          encoding: 'base64',
         },
+        encoding: 'base64',
       });
     },
     history: [],
@@ -153,8 +153,8 @@ function sendmail(_config: SendmailEmailProviderConfig, emailFrom: string) {
         subject: email.subject,
         html: {
           content: email.body,
-          encoding: 'base64',
         },
+        encoding: 'base64',
       });
     },
     history: [],
