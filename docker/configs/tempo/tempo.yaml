@@ -43,6 +43,13 @@ metrics_generator:
       flush_to_storage: true
   storage:
     path: /var/tempo/generator/wal
+  # The local-blocks processor buffers the raw spans it ingests in its own
+  # WAL (separate from the prometheus-style samples WAL above). Without this
+  # path set, the generator fails to start with "local blocks processor
+  # requires traces wal" and the dashboard's trace-derived panels return 0
+  # series even though raw traces are queryable from the main block store.
+  traces_storage:
+    path: /var/tempo/generator/traces
 
 overrides:
   defaults:
