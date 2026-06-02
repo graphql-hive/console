@@ -6,6 +6,7 @@ import { AlertCircleIcon, CircleQuestionMarkIcon, MoreHorizontal } from 'lucide-
 import AutoSizer from 'react-virtualized-auto-sizer';
 import { useQuery } from 'urql';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { DocsLink } from '@/components/ui/docs-note';
 import {
@@ -317,7 +318,7 @@ export const TargetCard = (props: TargetProps): ReactElement => {
           props.className,
         )}
       >
-        {!totalNumberOfRequests ? (
+        {!totalNumberOfRequests && !schemaVersionsInDateRange ? (
           <TargetCardSkeletonContent {...props} />
         ) : (
           <>
@@ -358,8 +359,9 @@ export const TargetCard = (props: TargetProps): ReactElement => {
               <div className="bg-neutral-4 dark:bg-neutral-5 h-px w-full" />
               <div className="grid grid-cols-2 gap-2">
                 <div className="text-neutral-11">Requests</div>
-                <div className="text-right font-medium">
-                  {requestsInDateRange} ({rpm} RPM)
+                <div className="flex items-center justify-end gap-2 text-right font-medium">
+                  {requestsInDateRange}
+                  <Badge variant="outline">{rpm} RPM</Badge>
                 </div>
               </div>
               <div className="bg-neutral-4 dark:bg-neutral-5 h-px w-full" />
