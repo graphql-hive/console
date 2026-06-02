@@ -2235,13 +2235,17 @@ export class OperationsReader {
     }
 
     const interval = calculateTimeWindow({ period, resolution });
-    const intervalRaw = this.clickHouse.translateWindow(interval);
     const roundedPeriod = {
       from: toStartOfInterval(period.from, interval.value, interval.unit),
       to: toEndOfInterval(period.to, interval.value, interval.unit),
     };
     const startDateTimeFormatted = formatDate(roundedPeriod.from);
-    const endDateTimeFormatted = formatDate(roundedPeriod.to);
+    const bucketCount = Math.max(
+      1,
+      Math.ceil(
+        (roundedPeriod.to.getTime() - roundedPeriod.from.getTime()) / (interval.seconds * 1000),
+      ),
+    );
 
     const query = this.pickAggregationByPeriod({
       timeout: 15_000,
@@ -2249,14 +2253,27 @@ export class OperationsReader {
       resolution,
       queryId: aggregation => `duration_and_count_over_time_by_target_${aggregation}`,
       query: aggregationTableName => sql`
+        WITH
+          ${sql.array(targets, 'String')} as targetIds,
+          toDateTime(${startDateTimeFormatted}, 'UTC') as startDate,
+          toUInt32(${String(interval.seconds)}) as intervalSeconds
         SELECT
-          date,
-          average,
-          percentiles,
-          total,
-          totalOk,
-          target
+          grid.date as date,
+          ifNull(aggregated.average, 0) as average,
+          if(empty(aggregated.percentiles), [0, 0, 0, 0], aggregated.percentiles) as percentiles,
+          ifNull(aggregated.total, 0) as total,
+          ifNull(aggregated.totalOk, 0) as totalOk,
+          grid.target as target
         FROM (
+          SELECT
+            targets.target,
+            startDate + toIntervalSecond(buckets.number * intervalSeconds) as date
+          FROM (
+            SELECT arrayJoin(targetIds) as target
+          ) as targets
+          CROSS JOIN numbers(toUInt64(${String(bucketCount)})) as buckets
+        ) as grid
+        LEFT JOIN (
           SELECT
             toDateTime(
               intDiv(
@@ -2280,12 +2297,9 @@ export class OperationsReader {
             excludeClientVersionFilters,
           })}
           GROUP BY target, date
-          ORDER BY target, date
-          WITH FILL
-            FROM toDateTime(${startDateTimeFormatted}, 'UTC')
-            TO toDateTime(${endDateTimeFormatted}, 'UTC')
-            STEP INTERVAL ${intervalRaw}
-        )
+        ) as aggregated
+        ON aggregated.target = grid.target AND aggregated.date = grid.date
+        ORDER BY grid.target, grid.date
       `,
     });
 
