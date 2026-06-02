@@ -259,7 +259,9 @@ services:
     image: grafana/grafana:13.0.2
     profiles:
       - observability
-    mem_limit: 500m
+    # Bumped from 500m: Grafana 13 + four Drilldown app plugins (each a
+    # separate frontend bundle) consistently OOM-killed at the old limit.
+    mem_limit: 1024m
     depends_on:
       grafana-dashboard-init:
         condition: service_completed_successfully
