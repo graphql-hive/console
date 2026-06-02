@@ -21,5 +21,6 @@ minimumReleaseAgeExclude:
   - 'graphql-hive/*'
   - '@graphql-inspector/*'
   - '@graphql-tools/*'
+  - '@whatwg-node/*'
   - '@theguild/federation-composition'
   - graphql-modules

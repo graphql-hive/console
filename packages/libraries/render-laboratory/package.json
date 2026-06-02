@@ -57,9 +57,14 @@
     "build": "node scripts/yoga-bundle-string.mjs && bob build",
     "check": "tsc --pretty --noEmit"
   },
+  "peerDependencies": {
+    "graphql-yoga": "^5"
+  },
   "dependencies": {
-    "@graphql-hive/laboratory": "workspace:*",
-    "graphql-yoga": "5.13.3"
+    "@graphql-hive/laboratory": "workspace:*"
+  },
+  "devDependencies": {
+    "graphql-yoga": "5.21.1"
   },
   "publishConfig": {
     "directory": "dist",
