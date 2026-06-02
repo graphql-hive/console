@@ -10,6 +10,7 @@
 export type alert_channel_type = 'MSTEAMS_WEBHOOK' | 'SLACK' | 'WEBHOOK';
 export type alert_type = 'SCHEMA_CHANGE_NOTIFICATIONS';
 export type breaking_change_formula = 'PERCENTAGE' | 'REQUEST_COUNT';
+export type hive_subgraph_log_type = 'added' | 'changed' | 'removed' | 'unchanged';
 export type saved_filter_visibility = 'private' | 'shared';
 export type schema_policy_resource = 'ORGANIZATION' | 'PROJECT';
 export type schema_proposal_stage = 'APPROVED' | 'CLOSED' | 'DRAFT' | 'IMPLEMENTED' | 'OPEN';
@@ -190,7 +191,7 @@ export interface oidc_integrations {
 export interface organization_access_tokens {
   assigned_resources: any | null;
   created_at: Date;
-  description: string;
+  description: string | null;
   expires_at: Date | null;
   first_characters: string;
   hash: string;
@@ -358,7 +359,7 @@ export interface schema_log {
   sdl: string | null;
   service_name: string | null;
   service_url: string | null;
-  target_id: string;
+  target_id: string | null;
 }
 
 export interface schema_policy_config {
@@ -416,6 +417,10 @@ export interface schema_version_changes {
 
 export interface schema_version_to_log {
   action_id: string;
+  previous_action_id: string | null;
+  schema_changes: any | null;
+  subgraph_name: string | null;
+  type: hive_subgraph_log_type | null;
   version_id: string;
 }
 
@@ -432,11 +437,14 @@ export interface schema_versions {
   has_persisted_schema_changes: boolean | null;
   id: string;
   is_composable: boolean;
+  meta: any | null;
   metadata_attributes: any | null;
+  origin: any | null;
   previous_schema_version_id: string | null;
   record_version: string | null;
   schema_composition_errors: any | null;
   schema_metadata: any | null;
+  supergraph_changes: any | null;
   supergraph_sdl: string | null;
   tags: Array<string> | null;
   target_id: string;

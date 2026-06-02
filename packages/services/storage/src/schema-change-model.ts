@@ -1142,7 +1142,7 @@ export const RegistryServiceUrlChangeModel =
 
 // TODO: figure out a way to make sure that all the changes are included in the union
 // Similar to implement().with() but for unions
-export const SchemaChangeModel = z.union([
+export const SchemaChangeModel = z.discriminatedUnion('type', [
   FieldArgumentDescriptionChangedModel,
   FieldArgumentDefaultChangedModel,
   FieldArgumentTypeChangedModel,
@@ -1188,7 +1188,6 @@ export const SchemaChangeModel = z.union([
   EnumValueAddedModel,
   EnumValueDescriptionChangedModel,
   EnumValueDeprecationReasonChangedModel,
-  DirectiveArgumentTypeChangedModel,
   EnumValueDeprecationReasonAddedModel,
   EnumValueDeprecationReasonRemovedModel,
   FieldRemovedModel,
@@ -1412,7 +1411,10 @@ const FailedSchemaCompositionInputFields = {
 
 const SuccessfulSchemaCompositionOutputFields = {
   schemaCompositionErrors: z.null(),
-  compositeSchemaSDL: z.string(),
+  compositeSchemaSDL: z
+    .string()
+    .nullable()
+    .transform(value => value ?? ''),
   supergraphSDL: z.string().nullable(),
 };
 

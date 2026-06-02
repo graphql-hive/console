@@ -91,7 +91,13 @@ module.exports = {
       parserOptions: { ecmaVersion: 2020 },
     },
     {
-      files: ['packages/**/*.ts', 'packages/**/*.tsx', 'cypress/**/*.ts', 'cypress/**/*.tsx'],
+      files: [
+        'packages/**/*.ts',
+        'packages/**/*.tsx',
+        'e2e/**/*.ts',
+        'e2e/**/*.tsx',
+        'playwright.config.ts',
+      ],
       reportUnusedDisableDirectives: true,
       parserOptions: {
         ecmaVersion: 2020,
@@ -115,8 +121,10 @@ module.exports = {
               'packages/migrations/**',
               // We bundle it all anyway, so there are no node_modules
               'packages/web/app/**',
+              'e2e/**/*.ts',
               // We bundle it all anyway, so there are no node_modules
               'packages/libraries/laboratory/**',
+              'playwright.config.ts',
               '**/*.spec.ts',
               '**/*.test.ts',
               '**/*.e2e.ts',
@@ -168,7 +176,6 @@ module.exports = {
         '@theguild',
         '@theguild/eslint-config/react',
         'plugin:better-tailwindcss/legacy-recommended',
-        'plugin:@next/next/recommended',
       ],
       settings: {
         'import/resolver': {
@@ -310,20 +317,14 @@ module.exports = {
       },
     },
     {
-      files: 'cypress/**',
-      extends: 'plugin:cypress/recommended',
-      rules: {
-        'cypress/no-unnecessary-waiting': 'off',
-        'cypress/unsafe-to-chain-command': 'off',
-      },
-    },
-    {
       files: [
         // environment should be parsed to avoid global dependencies and sacred .env files
         'packages/**/environment.ts',
         // - environment is inlined and must be "registered" in next.config.js
         // - `import.meta.env` is not supported in Next.js yet
         'packages/web/docs/**',
+        'e2e/**/*.ts',
+        'playwright.config.ts',
       ],
       rules: {
         'no-process-env': 'off',

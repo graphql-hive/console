@@ -25,7 +25,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "grafanacloud-prom"
+        "uid": "PROM_DATASOURCE_UID"
       },
       "description": "",
       "fieldConfig": {
@@ -105,7 +105,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "grafanacloud-prom"
+            "uid": "PROM_DATASOURCE_UID"
           },
           "editorMode": "code",
           "expr": "sum by(type) (rate(schema_compose_and_validate_total[$__rate_interval]))",
@@ -121,7 +121,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "grafanacloud-prom"
+        "uid": "PROM_DATASOURCE_UID"
       },
       "description": "",
       "fieldConfig": {
@@ -170,7 +170,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "grafanacloud-prom"
+            "uid": "PROM_DATASOURCE_UID"
           },
           "editorMode": "code",
           "expr": "sum by(type) (rate(schema_compose_and_validate_total[$__rate_interval]))",
@@ -186,7 +186,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "grafanacloud-prom"
+        "uid": "PROM_DATASOURCE_UID"
       },
       "description": "",
       "fieldConfig": {
@@ -266,7 +266,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "grafanacloud-prom"
+            "uid": "PROM_DATASOURCE_UID"
           },
           "editorMode": "code",
           "expr": "sum by(cache) (rate(schema_composition_total{type=\"success\"}[$__rate_interval]))",
@@ -282,7 +282,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "grafanacloud-prom"
+        "uid": "PROM_DATASOURCE_UID"
       },
       "description": "Events where Hive managed to get a composition result",
       "fieldConfig": {
@@ -331,7 +331,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "grafanacloud-prom"
+            "uid": "PROM_DATASOURCE_UID"
           },
           "editorMode": "code",
           "expr": "sum by(cache) (rate(schema_composition_total{type=\"success\"}[$__rate_interval]))",
@@ -347,7 +347,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "grafanacloud-prom"
+        "uid": "PROM_DATASOURCE_UID"
       },
       "description": "",
       "fieldConfig": {
@@ -423,7 +423,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "grafanacloud-prom"
+            "uid": "PROM_DATASOURCE_UID"
           },
           "editorMode": "code",
           "expr": "sum by(cache) (rate(schema_composition_total{type=\"failure\"}[$__rate_interval]))",
@@ -439,7 +439,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "grafanacloud-prom"
+        "uid": "PROM_DATASOURCE_UID"
       },
       "description": "Failed to get a composition result due to an exception or network issue.",
       "fieldConfig": {
@@ -488,7 +488,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "grafanacloud-prom"
+            "uid": "PROM_DATASOURCE_UID"
           },
           "editorMode": "code",
           "expr": "sum by(cache) (rate(schema_composition_total{type=\"failure\"}[$__rate_interval]))",
@@ -504,7 +504,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "grafanacloud-prom"
+        "uid": "PROM_DATASOURCE_UID"
       },
       "description": "",
       "fieldConfig": {
@@ -584,7 +584,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "grafanacloud-prom"
+            "uid": "PROM_DATASOURCE_UID"
           },
           "editorMode": "code",
           "expr": "sum by(cache) (rate(schema_composition_total{type=\"timeout\"}[$__rate_interval]))",
@@ -600,7 +600,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "grafanacloud-prom"
+        "uid": "PROM_DATASOURCE_UID"
       },
       "description": "",
       "fieldConfig": {
@@ -649,7 +649,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "grafanacloud-prom"
+            "uid": "PROM_DATASOURCE_UID"
           },
           "editorMode": "code",
           "expr": "sum by(cache) (rate(schema_composition_total{type=\"timeout\"}[$__rate_interval]))",

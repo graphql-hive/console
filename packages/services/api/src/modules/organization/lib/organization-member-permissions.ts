@@ -310,6 +310,12 @@ export const permissionGroups: Array<PermissionGroup> = [
         dependsOn: 'personalAccessToken:modify',
       },
       {
+        id: 'schemaVersion:promote',
+        title: 'Promote a schema version.',
+        description: 'Promote a schema version within the same project.',
+        dependsOn: 'personalAccessToken:modify',
+      },
+      {
         id: 'appDeployment:create',
         title: 'Create app deployment',
         description: 'Grant access to creating app deployments.',

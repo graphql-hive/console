@@ -156,11 +156,16 @@ export class SingleModel {
       }),
     ]);
 
+    this.logger.debug('diff check status: %o', diffCheck);
+    this.logger.debug('policy check status: %o', policyCheck);
+
     if (
       compositionCheck.status === 'failed' ||
       diffCheck.status === 'failed' ||
       policyCheck.status === 'failed'
     ) {
+      this.logger.info('Schema check failed');
+
       return {
         conclusion: SchemaCheckConclusion.Failure,
         state: buildSchemaCheckFailureState({
@@ -171,6 +176,8 @@ export class SingleModel {
         }),
       };
     }
+
+    this.logger.info('Schema check successful');
 
     return {
       conclusion: SchemaCheckConclusion.Success,
@@ -343,6 +350,9 @@ export class SingleModel {
           diffCheck.reason?.coordinatesDiff ??
           diffCheck.data?.coordinatesDiff ??
           null,
+        supergraphChanges: null,
+        previousSchemas: null,
+        serviceChanges: null,
         compositionErrors: compositionCheck.reason?.errors ?? null,
         schema: incoming,
         schemas,

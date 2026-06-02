@@ -1,6 +1,6 @@
 import stringify from 'fast-json-stable-stringify';
 import { z } from 'zod';
-import { FastifyReply, FastifyRequest } from '@hive/service-common';
+import type { FastifyReply, FastifyRequest } from '@hive/service-common';
 import type { User } from '../../../shared/entities';
 import { AccessError } from '../../../shared/errors';
 import { objectEntries, objectFromEntries } from '../../../shared/helpers';
@@ -421,6 +421,7 @@ const permissionsByLevel = {
     z.literal('traces:report'),
     z.literal('schemaProposal:describe'),
     z.literal('schemaProposal:modify'),
+    z.literal('schemaVersion:promote'),
   ],
   service: [
     z.literal('schemaCheck:create'),

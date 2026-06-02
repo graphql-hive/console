@@ -2105,7 +2105,7 @@ test.concurrent(
     const conn = connectionString();
     const storage = await createStorage(conn, 2);
     const schemaVersions = new SchemaVersionStore(storage.pool);
-    await schemaVersions.createSchemaVersion({
+    await schemaVersions.createPublishSchemaVersion({
       schema: brokenSdl,
       author: 'Jochen',
       async actionFn() {},
@@ -2118,9 +2118,8 @@ test.concurrent(
       diffSchemaVersionId: null,
       github: null,
       metadata: null,
-      logIds: [],
+      existingSchemaLogs: [],
       projectId: project.id,
-      service: null,
       organizationId: organization.id,
       previousSchemaVersion: null,
       valid: true,
@@ -2128,7 +2127,10 @@ test.concurrent(
       supergraphSDL: null,
       tags: null,
       targetId: target.id,
-      url: null,
+      serviceChanges: null,
+      service: null,
+      previousSchemaLogId: null,
+      supergraphChanges: null,
       schemaMetadata: null,
       metadataAttributes: null,
     });

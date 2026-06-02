@@ -41,5 +41,4 @@ jobs:
         run: |
           curl -sSL https://graphql-hive.com/install.sh | sh
           hive schema:check "schema.graphql" ${{steps.pr-label-check.outputs.safeFlag }} \
-            --github \
             --service "graphql"

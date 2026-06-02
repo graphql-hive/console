@@ -108,6 +108,19 @@ const monacoProps = {
   },
 } satisfies Record<'script' | 'env', ComponentPropsWithoutRef<typeof MonacoEditor>>;
 
+function exposeMonacoEditorForE2E(name: string, editor: editor.IStandaloneCodeEditor) {
+  if (!import.meta.env.DEV) {
+    return;
+  }
+
+  const global = window as unknown as {
+    __HIVE_E2E_MONACO_EDITORS?: Record<string, editor.IStandaloneCodeEditor>;
+  };
+
+  global.__HIVE_E2E_MONACO_EDITORS ??= {};
+  global.__HIVE_E2E_MONACO_EDITORS[name] = editor;
+}
+
 const UpdatePreflightScriptMutation = graphql(`
   mutation UpdatePreflightScript($input: UpdatePreflightScriptInput!) {
     updatePreflightScript(input: $input) {
@@ -612,6 +625,7 @@ function PreflightContent() {
         height={128}
         value={preflight.environmentVariables}
         onChange={value => preflight.setEnvironmentVariables(value ?? '')}
+        onMount={editor => exposeMonacoEditorForE2E('env-editor-mini', editor)}
         {...monacoProps.env}
         className={classes.monacoMini}
         wrapperProps={{
@@ -653,10 +667,12 @@ function PreflightModal({
 
   const handleScriptEditorDidMount: OnMount = useCallback(editor => {
     scriptEditorRef.current = editor;
+    exposeMonacoEditorForE2E('preflight-editor', editor);
   }, []);
 
   const handleEnvEditorDidMount: OnMount = useCallback(editor => {
     envEditorRef.current = editor;
+    exposeMonacoEditorForE2E('env-editor', editor);
   }, []);
 
   const handleMonacoEditorBeforeMount = useCallback(async (monaco: Monaco) => {

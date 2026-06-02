@@ -120,6 +120,12 @@ export class Redis {
           args: [
             '/opt/bitnami/scripts/redis/run.sh',
             `--maxmemory ${memoryInMegabytes}mb`,
+            // Once Redis reaches maxmemory (90% of the container limit, see above),
+            // evict the least-recently-used keys instead of failing writes with OOM
+            // errors (the default `noeviction` behaviour). Everything Hive stores in
+            // this Redis is a cache / lock / rate-limit entry with a TTL, so evicting
+            // cold keys is safe and LRU keeps hot keys (locks, fresh counters) around.
+            '--maxmemory-policy allkeys-lru',
             // This disables snapshotting to save cpu and reduce latency spikes
             '--save ""',
           ],
