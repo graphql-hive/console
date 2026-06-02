@@ -52,6 +52,7 @@ export function email(input: { title: string | MJMLValue; body: MJMLValue }) {
   `.content;
 
   const rendered = mjml2html(body, {
+    beautify: false,
     minify: false,
     minifyOptions: undefined,
   });
