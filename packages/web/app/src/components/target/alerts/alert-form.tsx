@@ -99,13 +99,16 @@ const AlertForm_SavedFiltersQuery = graphql(`
   }
 `);
 
-const AlertForm_AddMetricAlertRuleMutation = graphql(`
+export const AlertForm_AddMetricAlertRuleMutation = graphql(`
   mutation AlertForm_AddMetricAlertRule($input: AddMetricAlertRuleInput!) {
     addMetricAlertRule(input: $input) {
       ok {
         addedMetricAlertRule {
           id
           name
+        }
+        updatedTarget {
+          id
         }
       }
       error {

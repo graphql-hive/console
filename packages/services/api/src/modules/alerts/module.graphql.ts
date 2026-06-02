@@ -383,6 +383,12 @@ export default gql`
 
   type AddMetricAlertRuleOk {
     addedMetricAlertRule: MetricAlertRule!
+    """
+    The target that owns the new rule. Returned so urql's cache can invalidate
+    Target.metricAlertRules after a successful create, mirroring how
+    addAlert/addAlertChannel return updatedProject for the same reason.
+    """
+    updatedTarget: Target!
   }
 
   type AddMetricAlertRuleError implements Error {

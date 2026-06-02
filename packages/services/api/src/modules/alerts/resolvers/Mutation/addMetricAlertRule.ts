@@ -1,4 +1,5 @@
 import { IdTranslator } from '../../../shared/providers/id-translator';
+import { TargetManager } from '../../../target/providers/target-manager';
 import {
   MetricAlertRuleCrossScopeError,
   MetricAlertRulesDisabledError,
@@ -37,7 +38,8 @@ export const addMetricAlertRule: NonNullable<MutationResolvers['addMetricAlertRu
       savedFilterId: input.savedFilterId,
       channelIds: input.channelIds,
     });
-    return { ok: { addedMetricAlertRule: rule } };
+    const updatedTarget = await injector.get(TargetManager).getTargetById({ targetId });
+    return { ok: { addedMetricAlertRule: rule, updatedTarget } };
   } catch (error) {
     if (
       error instanceof MetricAlertRulesDisabledError ||

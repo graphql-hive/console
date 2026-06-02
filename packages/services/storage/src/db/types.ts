@@ -10,13 +10,13 @@
 export type alert_channel_type = 'MSTEAMS_WEBHOOK' | 'SLACK' | 'WEBHOOK';
 export type alert_type = 'SCHEMA_CHANGE_NOTIFICATIONS';
 export type breaking_change_formula = 'PERCENTAGE' | 'REQUEST_COUNT';
+export type hive_subgraph_log_type = 'added' | 'changed' | 'removed' | 'unchanged';
 export type metric_alert_direction = 'ABOVE' | 'BELOW';
 export type metric_alert_metric = 'AVG' | 'P75' | 'P90' | 'P95' | 'P99';
 export type metric_alert_severity = 'CRITICAL' | 'INFO' | 'WARNING';
 export type metric_alert_state = 'FIRING' | 'NORMAL' | 'PENDING' | 'RECOVERING';
 export type metric_alert_threshold_type = 'FIXED_VALUE' | 'PERCENTAGE_CHANGE';
 export type metric_alert_type = 'ERROR_RATE' | 'LATENCY' | 'TRAFFIC';
-export type hive_subgraph_log_type = 'added' | 'changed' | 'removed' | 'unchanged';
 export type saved_filter_visibility = 'private' | 'shared';
 export type schema_policy_resource = 'ORGANIZATION' | 'PROJECT';
 export type schema_proposal_stage = 'APPROVED' | 'CLOSED' | 'DRAFT' | 'IMPLEMENTED' | 'OPEN';
