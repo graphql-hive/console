@@ -1,5 +1,4 @@
 import nodemailer from 'nodemailer';
-import sm from 'sendmail';
 
 interface Email {
   to: string;
@@ -128,7 +127,10 @@ function smtp(config: SMTPEmailProviderConfig, emailFrom: string) {
         from: emailFrom,
         to: email.to,
         subject: email.subject,
-        html: email.body,
+        html: {
+          content: email.body,
+        },
+        encoding: 'base64',
       });
     },
     history: [],
@@ -136,27 +138,23 @@ function smtp(config: SMTPEmailProviderConfig, emailFrom: string) {
 }
 
 function sendmail(_config: SendmailEmailProviderConfig, emailFrom: string) {
-  const client = sm({});
+  const transporter = nodemailer.createTransport({
+    direct: true,
+    ignoreTLS: false,
+    requireTLS: false,
+  } as any);
 
   return {
     id: 'sendmail' as const,
     async send(email: Email) {
-      await new Promise((resolve, reject) => {
-        client(
-          {
-            from: emailFrom,
-            to: email.to,
-            subject: email.subject,
-            html: email.body,
-          },
-          (err, reply) => {
-            if (err) {
-              reject(err);
-            } else {
-              resolve(reply);
-            }
-          },
-        );
+      await transporter.sendMail({
+        from: emailFrom,
+        to: email.to,
+        subject: email.subject,
+        html: {
+          content: email.body,
+        },
+        encoding: 'base64',
       });
     },
     history: [],
