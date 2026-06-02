@@ -256,7 +256,7 @@ services:
       - 'stack'
 
   grafana:
-    image: grafana/grafana:11.6.0
+    image: grafana/grafana:13.0.2
     profiles:
       - observability
     mem_limit: 500m
