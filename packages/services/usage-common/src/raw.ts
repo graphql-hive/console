@@ -7,7 +7,7 @@ export interface RawReport {
   operations: RawOperation[];
   subscriptionOperations?: RawSubscriptionOperation[];
   appDeploymentUsageTimestamps?: RawAppDeploymentUsageTimestampMap;
-  errors?: RawErrors[];
+  errors?: RawOperationErrors[];
 }
 
 export interface RawAppDeploymentUsageTimestampMap {
@@ -36,7 +36,7 @@ export interface RawOperation {
   };
 }
 
-export interface RawErrors {
+export interface RawOperationErrors {
   operationMapKey: string;
   timestamp: number;
   expiresAt?: number;

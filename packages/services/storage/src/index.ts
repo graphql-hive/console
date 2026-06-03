@@ -4079,6 +4079,7 @@ const FeatureFlagsModel = z
     /** whether otel tracing is enabled for the given organization */
     otelTracing: z.boolean().default(false),
     schemaProposals: z.boolean().default(false),
+    subgraphVisibility: z.boolean().default(false),
   })
   .optional()
   .nullable()
@@ -4090,6 +4091,7 @@ const FeatureFlagsModel = z
         appDeployments: false,
         otelTracing: false,
         schemaProposals: false,
+        subgraphVisibility: false,
       },
   );
 

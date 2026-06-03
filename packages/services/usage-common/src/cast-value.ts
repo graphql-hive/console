@@ -24,6 +24,7 @@ export function castValue(value?: any) {
   }
 
   if (Array.isArray(value)) {
+    // This does not handle an array of anything but strings
     return `"[${value.map(val => `'${val}'`).join(',')}]"`;
   }
 
@@ -34,9 +35,32 @@ export function castValue(value?: any) {
 
   if (typeof value === 'object') {
     const jsonStr = JSON.stringify(value);
-    return `"${jsonStr.replace(/"/g, '""')}"`;
+    return `"${jsonStr.replace(/'/g, "''").replace(/"/g, "'")}"`;
   }
 
   // consider throwing due to unhandled type.
   return '\\N';
 }
+
+export function castTuple(value: any[]): string {
+  const contents = value.map(formatClickHouseValue).join(',');
+  return `(${contents})`;
+}
+
+const formatClickHouseValue = (val: unknown): string => {
+  if (typeof val === 'string') {
+    const escaped = val.replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+    return `'${escaped}'`;
+  }
+  if (val === null || val === undefined) {
+    return '\\N';
+  }
+  if (val instanceof Date) {
+    return `'${val.toISOString().slice(0, 19).replace('T', ' ')}'`;
+  }
+  // If your tuples contain nested arrays, recurse through them
+  if (Array.isArray(val)) {
+    return `[${val.map(formatClickHouseValue).join(',')}]`;
+  }
+  return String(val);
+};

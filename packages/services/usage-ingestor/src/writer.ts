@@ -7,6 +7,7 @@ import { writeDuration } from './metrics';
 import {
   appDeploymentUsageOrder,
   joinIntoSingleMessage,
+  operationErrorsOrder,
   operationsOrder,
   registryOrder,
   subscriptionOperationsOrder,
@@ -26,6 +27,7 @@ const operationsFields = operationsOrder.join(', ');
 const subscriptionOperationsFields = subscriptionOperationsOrder.join(', ');
 const registryFields = registryOrder.join(', ');
 const appDeploymentUsageFields = appDeploymentUsageOrder.join(', ');
+const operationErrorsFields = operationErrorsOrder.join(', ');
 
 const agentConfig: Agent.HttpOptions = {
   // Keep sockets around in a pool to be used by other requests in the future
@@ -136,11 +138,12 @@ export function createWriter({
 
       const csv = joinIntoSingleMessage(records);
       const compressed = await compress(csv);
+      // create input structure schema
 
       await writeCsv(
         clickhouse,
         agents,
-        `INSERT INTO operation_errors (${operationsFields}) FORMAT CSV`,
+        `INSERT INTO operation_errors (${operationErrorsFields}) FORMAT CSV`,
         compressed,
         logger,
         3,

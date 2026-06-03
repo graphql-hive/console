@@ -40,7 +40,7 @@ export interface ProcessedAppDeploymentUsageRecord {
   lastRequestTimestamp: number;
 }
 
-export interface ProcessedErrorRecord {
+export interface ProcessedOperationErrorRecord {
   target: string;
   hash: string;
   timestamp: number;

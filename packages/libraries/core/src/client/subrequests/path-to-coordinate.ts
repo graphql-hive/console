@@ -32,9 +32,10 @@ export function pathToCoordinate(
       const field = fields[segment];
 
       if (!field) {
-        throw new Error(
-          `Field '${segment}' not found on type '${currentType.name}'. Was this aliased?`,
+        console.warn(
+          `Hive Usage Client: Field '${segment}' not found on type '${currentType.name}'. Was this aliased? Error ignored.`,
         );
+        return;
       }
 
       // Update the coordinate to the current Type.field

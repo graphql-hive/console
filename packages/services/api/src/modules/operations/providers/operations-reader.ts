@@ -89,7 +89,9 @@ export class OperationsReader {
         }
       | number;
     query(
-      aggregationTableName: (tableName: 'operations' | 'clients' | 'coordinates') => RawValue,
+      aggregationTableName: (
+        tableName: 'operations' | 'clients' | 'coordinates' | 'coordinate_counts',
+      ) => RawValue,
     ): SqlValue;
     queryId(aggregation: 'daily' | 'hourly' | 'minutely'): `${string}_${typeof aggregation}`;
   }) {
@@ -2119,6 +2121,7 @@ export class OperationsReader {
         target: string;
         period: DateRange;
         typename: string;
+        aggregateSource?: 'coordinate_counts' | 'coordinates';
       }>,
     ) => {
       const aggregationMap = new Map<
@@ -2127,6 +2130,7 @@ export class OperationsReader {
           target: string;
           period: DateRange;
           typenames: string[];
+          aggregateSource?: 'coordinate_counts' | 'coordinates';
         }
       >();
 
@@ -2147,6 +2151,7 @@ export class OperationsReader {
             target: selector.target,
             period: selector.period,
             typenames: [selector.typename],
+            aggregateSource: selector.aggregateSource,
           });
         } else {
           value.typenames.push(selector.typename);
@@ -2173,6 +2178,7 @@ export class OperationsReader {
             target: selector.target,
             period: selector.period,
             typenames: selector.typenames,
+            aggregateSource: selector.aggregateSource,
           }),
         );
       }
@@ -2196,10 +2202,12 @@ export class OperationsReader {
     target,
     period,
     typenames,
+    aggregateSource = 'coordinates',
   }: {
     target: string;
     period: DateRange;
     typenames: string[];
+    aggregateSource?: 'coordinate_counts' | 'coordinates';
   }) {
     const typesConditions = typenames.map(
       t => sql`coordinate = ${t} OR coordinate LIKE ${t + '.%'}`,
@@ -2210,7 +2218,7 @@ export class OperationsReader {
     }>(
       this.pickAggregationByPeriod({
         query: aggregationTableName => sql`
-        SELECT coordinate, sum(total) as total FROM ${aggregationTableName('coordinates')}
+        SELECT coordinate, sum(total) as total FROM ${aggregationTableName(aggregateSource)}
         ${this.createFilter({
           target,
           period,

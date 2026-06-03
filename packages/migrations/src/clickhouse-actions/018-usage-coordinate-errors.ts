@@ -21,7 +21,8 @@ export const action: Action = async exec => {
       -- hash stores a md5 of the body, coordinate, and operation name
       -- stores as raw binary which requires hex() on returned md5 and unhex() on input
       -- this saves space by allowing a FixedString(16) compared to FixedString(32)
-      , hash FixedString(16) CODEC(ZSTD(1))
+      , hash FixedString(16) DEFAULT unhex(hash_raw) CODEC(ZSTD(1))
+      , hash_raw String EPHEMERAL              -- Captured from CSV but not stored
 
       , timestamp DateTime('UTC') CODEC(DoubleDelta, ZSTD(1))
 

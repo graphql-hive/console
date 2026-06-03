@@ -3,8 +3,8 @@ import { lru } from 'tiny-lru';
 import { preprocessOperation } from '@graphql-hive/core';
 import type { ServiceLogger } from '@hive/service-common';
 import type {
-  ProcessedErrorRecord,
   ProcessedOperation,
+  ProcessedOperationErrorRecord,
   RawAppDeploymentUsageTimestampMap,
   RawOperation,
   RawOperationMap,
@@ -22,7 +22,7 @@ import {
 } from './metrics';
 import {
   stringifyAppDeploymentUsageRecord,
-  stringifyErrors,
+  stringifyOperationErrors,
   stringifyQueryOrMutationOperation,
   stringifyRegistryRecord,
   stringifySubscriptionOperation,
@@ -142,14 +142,14 @@ export function createProcessor(config: { logger: ServiceLogger }) {
         }
 
         for (const raw of rawReport.errors ?? []) {
-          const err: ProcessedErrorRecord = {
+          const err: ProcessedOperationErrorRecord = {
             errors: raw.errors.map(e => [e.code ?? '', e.coordinate]),
             expires_at: raw.expiresAt || raw.timestamp + RETENTION_FALLBACK * DAY_IN_MS,
             hash: raw.operationMapKey,
             target: rawReport.target,
             timestamp: raw.timestamp,
           };
-          serializedErrorRecords.push(stringifyErrors(err));
+          serializedErrorRecords.push(stringifyOperationErrors(err));
         }
 
         if (rawReport.subscriptionOperations) {

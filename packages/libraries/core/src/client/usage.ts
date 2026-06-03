@@ -152,7 +152,7 @@ export function createUsage(pluginOptions: HiveInternalPluginOptions): UsageColl
                 start: f.start,
                 status: f.status,
                 type: f.type,
-                paths: f.paths,
+                paths: f.paths ?? 'Query',
                 subgraph: f.subgraph,
                 errors,
                 fields: subgraphFields,
@@ -294,7 +294,7 @@ export function createUsage(pluginOptions: HiveInternalPluginOptions): UsageColl
               subgraphSchema: args.args.schema,
               type: 'ROOT',
               paths: rootOperation.operation,
-              result: result,
+              result,
             },
           ];
         }
@@ -524,7 +524,7 @@ type OperationSubgraphRequest = {
    * If this is an entity request, then this is the coordinate in the original operation that is being resolved.
    * If undefined, then the path is assumed to be 'Query'.
    */
-  paths?: string[] | string;
+  paths: string[] | string;
 
   /**
    * What type of request this is. Root is if resolving a root query/mutation field. Entity is

@@ -156,6 +156,7 @@ export interface Organization {
     appDeployments: boolean;
     otelTracing: boolean;
     schemaProposals: boolean;
+    subgraphVisibility: boolean;
   };
   zendeskId: string | null;
   /** ID of the user that owns the organization */

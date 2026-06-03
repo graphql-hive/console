@@ -29,6 +29,7 @@ test('stringify operation in correct format and order', () => {
           ok: true,
           errorsTotal: 0,
           duration: 230,
+          coordinateTotals: { foo: 3 },
         },
         document: `{ foo }`,
         operationType: 'query' as any,
@@ -50,6 +51,7 @@ test('stringify operation in correct format and order', () => {
           ok: false,
           errorsTotal: 1,
           duration: 250,
+          coordinateTotals: { foo: 1 },
         },
         document: `{ foo }`,
         operationType: 'query' as any,
@@ -70,6 +72,7 @@ test('stringify operation in correct format and order', () => {
         /* duration */ 230,
         /* client_name */ `"clientName"`,
         /* client_version */ `"clientVersion"`,
+        /* coordinates_total */ `"{""foo"":3}"`,
       ].join(','),
       [
         /* organization */ `"my-organization"`,
@@ -82,6 +85,7 @@ test('stringify operation in correct format and order', () => {
         /* duration */ 250,
         /* client_name */ `\\N`,
         /* client_version */ `\\N`,
+        /* coordinates_total */ `"{""foo"":1}"`,
       ].join(','),
     ].join('\n'),
   );

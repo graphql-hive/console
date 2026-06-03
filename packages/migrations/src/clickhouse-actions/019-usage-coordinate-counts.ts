@@ -5,14 +5,17 @@ export const action: Action = async exec => {
    * Add a column to hold the real executed field counts. This differs from existing counts, which
    * are for the number of times the operation was executed and (in the operation_collection table)
    * whether or not the coordinate is included in an operation's body.
+   *
+   * "coordinate_totals" Counts the coordinates actually called during execution. This is necessary so that
+   * field availability is not based on operation count, which would skew the availability
+   * to show a higher error rate (e.g. if an array has one object that errored, then the
+   * availability) should be (1-N)/N, not 0%
    */
   await exec(`
     ALTER TABLE default.operations
-    -- Counts the coordinates actually called during execution. This is necessary so that
-    -- field availability is not based on operation count, which would skew the availability
-    -- to show a higher error rate (e.g. if an array has one object that errored, then the
-    -- availability) should be (1-N)/N, not 0%
-    ADD COLUMN IF NOT EXISTS coordinate_totals Map(String, UInt32) DEFAULT map() CODEC(ZSTD(1))
+    ADD COLUMN IF NOT EXISTS coordinate_totals Map(String, UInt32)
+    DEFAULT map()
+    CODEC(ZSTD(1))
     ;
   `);
 
@@ -88,7 +91,7 @@ export const action: Action = async exec => {
     AS
     SELECT
       target
-      , hash
+      , unhex(hash) AS hash
       , toStartOfMinute(timestamp) AS timestamp
       , toStartOfMinute(expires_at) AS expires_at
       , coord_total.1 as coordinate

@@ -1,11 +1,11 @@
 import { createHash, randomUUID } from 'node:crypto';
 import { ServiceLogger as Logger, traceInlineSync } from '@hive/service-common';
-import {
-  RawErrors,
-  type ClientMetadata,
-  type RawOperation,
-  type RawReport,
-  type RawSubscriptionOperation,
+import type {
+  ClientMetadata,
+  RawOperation,
+  RawOperationErrors,
+  RawReport,
+  RawSubscriptionOperation,
 } from '@hive/usage-common';
 import * as tb from '@sinclair/typebox';
 import * as tc from '@sinclair/typebox/compiler';
@@ -69,7 +69,7 @@ export const usageProcessorV2 = traceInlineSync(
     rawOperationsSize.observe(size);
 
     const rawOperations: RawOperation[] = [];
-    const rawErrors: RawErrors[] = [];
+    const rawErrors: RawOperationErrors[] = [];
     const rawSubscriptionOperations: RawSubscriptionOperation[] = [];
 
     const lastAppDeploymentUsage = new Map<`${string}/${string}`, number>();
@@ -171,23 +171,6 @@ export const usageProcessorV2 = traceInlineSync(
         upsertClientUsageTimestamp(name, version, operation.timestamp);
       } else {
         client = operation.metadata?.client ?? undefined;
-      }
-
-      function sumMap(records: { [key: string]: number }[]): { [key: string]: number } | undefined {
-        if (records.length <= 1) {
-          return records[0];
-        }
-
-        const out = {
-          ...records[0],
-        };
-        const [_, ...remainingRecords] = records;
-        for (const record of remainingRecords) {
-          for (const key of Object.keys(record)) {
-            out[key] = (out[key] ?? 0) + record[key];
-          }
-        }
-        return out;
       }
 
       report.size += 1;
@@ -493,6 +476,23 @@ function getTypeBoxErrors(errors: tc.ValueErrorIterator): Array<ValueError> {
       errors: errors.length ? errors : undefined,
     };
   });
+}
+
+function sumMap(records: { [key: string]: number }[]): { [key: string]: number } | undefined {
+  if (records.length <= 1) {
+    return records[0];
+  }
+
+  const out = {
+    ...records[0],
+  };
+  const [_, ...remainingRecords] = records;
+  for (const record of remainingRecords) {
+    for (const key of Object.keys(record)) {
+      out[key] = (out[key] ?? 0) + record[key];
+    }
+  }
+  return out;
 }
 
 const DAY_IN_MS = 86_400_000;

@@ -1159,10 +1159,15 @@ export class OperationsManager {
       },
     });
 
+    const org = await this.storage.getOrganization({
+      organizationId: organization,
+    });
+
     const rows = await this.reader.countCoordinatesOfType({
       target,
       period,
       typename,
+      aggregateSource: org.featureFlags.subgraphVisibility ? 'coordinate_counts' : 'coordinates',
     });
 
     const records: {
