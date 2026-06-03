@@ -18,7 +18,7 @@ import { QueryError } from '@/components/ui/query-error';
 import { Select, SelectContent, SelectItem, SelectTrigger } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
 import { FragmentType, graphql, useFragment } from '@/gql';
-import { TargetsSortDirection, TargetsSortField } from '@/gql/graphql';
+import { TargetsSortDirectionType, TargetsSortFieldType } from '@/gql/graphql';
 import { subDays } from '@/lib/date-time';
 import { cn } from '@/lib/utils';
 import { UTCDate } from '@date-fns/utc';
@@ -62,17 +62,17 @@ const ProjectsPageContent = (
           'desc';
 
   const sort = useMemo(() => {
-    let field: TargetsSortField = TargetsSortField.Name;
-    let direction: TargetsSortDirection = TargetsSortDirection.Asc;
+    let field: TargetsSortFieldType = TargetsSortFieldType.Name;
+    let direction: TargetsSortDirectionType = TargetsSortDirectionType.Asc;
 
     if (sortKey === 'requests') {
-      field = TargetsSortField.Requests;
+      field = TargetsSortFieldType.Requests;
     } else if (sortKey === 'versions') {
-      field = TargetsSortField.SchemaVersions;
+      field = TargetsSortFieldType.SchemaVersions;
     }
 
     if (sortOrder === 'desc') {
-      direction = TargetsSortDirection.Desc;
+      direction = TargetsSortDirectionType.Desc;
     }
 
     return { field, direction, period: period.current };

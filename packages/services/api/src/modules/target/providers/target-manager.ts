@@ -1,4 +1,3 @@
-import { GraphQLError } from 'graphql';
 import { Injectable, Scope } from 'graphql-modules';
 import { TargetReferenceInput } from 'packages/libraries/core/src/client/__generated__/types';
 import * as zod from 'zod';
@@ -12,6 +11,7 @@ import {
 import type { DateRangeInput } from '../../../__generated__/types';
 import * as GraphQLSchema from '../../../__generated__/types';
 import type { Project, Target, TargetSettings } from '../../../shared/entities';
+import { HiveError } from '../../../shared/errors';
 import { cache, parseDateRangeInput, share } from '../../../shared/helpers';
 import { AuditLogRecorder } from '../../audit-logs/providers/audit-log-recorder';
 import { Session } from '../../auth/lib/authz';
@@ -314,9 +314,7 @@ export class TargetManager {
     },
   ) {
     if (!args.sort?.period) {
-      throw new GraphQLError(
-        'period is required when sorting targets by REQUESTS or SCHEMA_VERSIONS',
-      );
+      throw new HiveError('period is required when sorting targets by REQUESTS or SCHEMA_VERSIONS');
     }
 
     const period = parseDateRangeInput(args.sort.period);
@@ -413,7 +411,7 @@ export class TargetManager {
 
           return target.slug === cursor.slug && target.id === cursor.id;
         } catch {
-          return false;
+          throw new HiveError('Invalid cursor');
         }
       }
 
@@ -422,7 +420,7 @@ export class TargetManager {
 
         return target.createdAt === cursor.createdAt && target.id === cursor.id;
       } catch {
-        return false;
+        throw new HiveError('Invalid cursor');
       }
     });
 
@@ -441,7 +439,7 @@ export class TargetManager {
 
         return startIndex === -1 ? targets.length : startIndex;
       } catch {
-        return 0;
+        throw new HiveError('Invalid cursor');
       }
     }
 
@@ -457,7 +455,7 @@ export class TargetManager {
 
       return startIndex === -1 ? targets.length : startIndex;
     } catch {
-      return 0;
+      throw new HiveError('Invalid cursor');
     }
   }
 

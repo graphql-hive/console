@@ -263,34 +263,30 @@ export default gql`
   }
 
   extend type Project {
-    targets(
-      first: Int @tag(name: "public")
-      after: String @tag(name: "public")
-      search: String @tag(name: "public")
-      sort: TargetsSortInput @tag(name: "public")
-    ): TargetConnection! @tag(name: "public")
+    targets(first: Int, after: String, search: String, sort: TargetsSortInput): TargetConnection!
+      @tag(name: "public")
     targetBySlug(targetSlug: String!): Target
   }
 
-  enum TargetsSortField {
-    NAME @tag(name: "public")
-    CREATED_AT @tag(name: "public")
-    REQUESTS @tag(name: "public")
-    SCHEMA_VERSIONS @tag(name: "public")
+  enum TargetsSortFieldType {
+    NAME
+    CREATED_AT
+    REQUESTS
+    SCHEMA_VERSIONS
   }
 
-  enum TargetsSortDirection {
-    ASC @tag(name: "public")
-    DESC @tag(name: "public")
+  enum TargetsSortDirectionType {
+    ASC
+    DESC
   }
 
   input TargetsSortInput {
-    field: TargetsSortField! @tag(name: "public")
-    direction: TargetsSortDirection! @tag(name: "public")
+    field: TargetsSortFieldType!
+    direction: TargetsSortDirectionType!
     """
     Required when sorting by REQUESTS or SCHEMA_VERSIONS.
     """
-    period: DateRangeInput @tag(name: "public")
+    period: DateRangeInput
   }
 
   type TargetEdge {

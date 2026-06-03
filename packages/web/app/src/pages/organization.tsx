@@ -27,11 +27,11 @@ import { Separator } from '@/components/ui/separator';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import {
-  ProjectsSortDirection,
-  ProjectsSortField,
+  ProjectsSortDirectionType,
+  ProjectsSortFieldType,
   ProjectType,
-  TargetsSortDirection,
-  TargetsSortField,
+  TargetsSortDirectionType,
+  TargetsSortFieldType,
 } from '@/gql/graphql';
 import { subDays } from '@/lib/date-time';
 import { useIsInView } from '@/lib/hooks/use-is-in-view';
@@ -119,17 +119,17 @@ const ProjectCard = (props: {
   const ref = useRef<HTMLDivElement>(null);
   const isInView = useIsInView(ref);
   const targetsSort = useMemo(() => {
-    let field: TargetsSortField = TargetsSortField.Name;
-    let direction: TargetsSortDirection = TargetsSortDirection.Asc;
+    let field: TargetsSortFieldType = TargetsSortFieldType.Name;
+    let direction: TargetsSortDirectionType = TargetsSortDirectionType.Asc;
 
     if (props.sortKey === 'requests') {
-      field = TargetsSortField.Requests;
+      field = TargetsSortFieldType.Requests;
     } else if (props.sortKey === 'versions') {
-      field = TargetsSortField.SchemaVersions;
+      field = TargetsSortFieldType.SchemaVersions;
     }
 
     if (props.sortOrder === 'desc') {
-      direction = TargetsSortDirection.Desc;
+      direction = TargetsSortDirectionType.Desc;
     }
 
     return { field, direction, period: props.period };
@@ -320,17 +320,17 @@ function OrganizationPageContent(
   const router = useRouter();
 
   const sort = useMemo(() => {
-    let field: ProjectsSortField = ProjectsSortField.Name;
-    let direction: ProjectsSortDirection = ProjectsSortDirection.Asc;
+    let field: ProjectsSortFieldType = ProjectsSortFieldType.Name;
+    let direction: ProjectsSortDirectionType = ProjectsSortDirectionType.Asc;
 
     if (sortKey === 'requests') {
-      field = ProjectsSortField.Requests;
+      field = ProjectsSortFieldType.Requests;
     } else if (sortKey === 'versions') {
-      field = ProjectsSortField.SchemaVersions;
+      field = ProjectsSortFieldType.SchemaVersions;
     }
 
     if (sortOrder === 'desc') {
-      direction = ProjectsSortDirection.Desc;
+      direction = ProjectsSortDirectionType.Desc;
     }
 
     return { field, direction, period: period.current };

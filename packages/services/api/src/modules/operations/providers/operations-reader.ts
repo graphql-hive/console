@@ -23,7 +23,7 @@ export function formatDate(date: Date): string {
   return format(addMinutes(date, date.getTimezoneOffset()), 'yyyy-MM-dd HH:mm:ss');
 }
 
-function toUnixTimestamp(utcDate: string): any {
+function toUnixTimestamp(utcDate: string): number {
   // 2024-04-26 11:00:00
   const [date, time] = utcDate.split(' ');
   const [year, month, day] = date.split('-');
@@ -542,7 +542,7 @@ export class OperationsReader {
       query: aggregationTableName => sql`
         SELECT
           target,
-          sum(total) as total
+          sum(total)::int as total
         FROM ${aggregationTableName('operations')}
         ${this.createFilter({ target: targets, period })}
         GROUP BY target
@@ -550,10 +550,21 @@ export class OperationsReader {
       period,
     });
 
-    const result = await this.clickHouse.query<{
-      target: string;
-      total: number;
-    }>(query);
+    const result = await this.clickHouse
+      .query<{
+        target: string;
+        total: number;
+      }>(query)
+      .then(
+        z.object({
+          data: z.array(
+            z.object({
+              target: z.string(),
+              total: z.number(),
+            }),
+          ),
+        }).parse,
+      );
 
     const counts = new Map<string, number>();
 
@@ -1973,13 +1984,14 @@ export class OperationsReader {
       return new Map();
     }
 
-    const result = await this.clickHouse.query<{
-      target: string;
-      percentiles: [number, number, number, number];
-      average: number;
-    }>(
-      this.pickAggregationByPeriod({
-        query: aggregationTableName => sql`
+    const result = await this.clickHouse
+      .query<{
+        target: string;
+        percentiles: [number, number, number, number];
+        average: number;
+      }>(
+        this.pickAggregationByPeriod({
+          query: aggregationTableName => sql`
           SELECT
             target,
             avgMerge(duration_avg) as average,
@@ -1988,11 +2000,22 @@ export class OperationsReader {
             ${this.createFilter({ target: targets, period, operations, clients, clientVersionFilters, excludeOperations, excludeClientVersionFilters })}
           GROUP BY target
         `,
-        queryId: aggregation => `general_duration_percentiles_by_target_${aggregation}`,
-        timeout: 15_000,
-        period,
-      }),
-    );
+          queryId: aggregation => `general_duration_percentiles_by_target_${aggregation}`,
+          timeout: 15_000,
+          period,
+        }),
+      )
+      .then(
+        z.object({
+          data: z.array(
+            z.object({
+              target: z.string(),
+              percentiles: z.tuple([z.number(), z.number(), z.number(), z.number()]),
+              average: z.number(),
+            }),
+          ),
+        }).parse,
+      );
 
     const collection = new Map<string, DurationMetrics>();
 
@@ -2226,7 +2249,7 @@ export class OperationsReader {
       return new Map<
         string,
         Array<{
-          date: any;
+          date: number;
           total: number;
           totalOk: number;
           duration: DurationMetrics;
@@ -2261,8 +2284,8 @@ export class OperationsReader {
           grid.date as date,
           ifNull(aggregated.average, 0) as average,
           if(empty(aggregated.percentiles), [0, 0, 0, 0], aggregated.percentiles) as percentiles,
-          ifNull(aggregated.total, 0) as total,
-          ifNull(aggregated.totalOk, 0) as totalOk,
+          ifNull(aggregated.total, 0)::int as total,
+          ifNull(aggregated.totalOk, 0)::int as totalOk,
           grid.target as target
         FROM (
           SELECT
@@ -2303,19 +2326,34 @@ export class OperationsReader {
       `,
     });
 
-    const result = await this.clickHouse.query<{
-      date: string;
-      target: string;
-      total: number;
-      totalOk: number;
-      average: number;
-      percentiles: [number, number, number, number];
-    }>(query);
+    const result = await this.clickHouse
+      .query<{
+        date: string;
+        target: string;
+        total: number;
+        totalOk: number;
+        average: number;
+        percentiles: [number, number, number, number];
+      }>(query)
+      .then(
+        z.object({
+          data: z.array(
+            z.object({
+              date: z.string(),
+              target: z.string(),
+              total: z.number(),
+              totalOk: z.number(),
+              average: z.number(),
+              percentiles: z.tuple([z.number(), z.number(), z.number(), z.number()]),
+            }),
+          ),
+        }).parse,
+      );
 
     const collection = new Map<
       string,
       Array<{
-        date: any;
+        date: number;
         total: number;
         totalOk: number;
         duration: DurationMetrics;
@@ -2323,7 +2361,12 @@ export class OperationsReader {
     >();
 
     for (const row of result.data) {
-      const targetRows = collection.get(row.target) ?? [];
+      let targetRows = collection.get(row.target);
+
+      if (!targetRows) {
+        targetRows = [];
+        collection.set(row.target, targetRows);
+      }
 
       targetRows.push({
         date: toUnixTimestamp(row.date),

@@ -53,7 +53,7 @@ interface ReadFieldStatsOutput {
 }
 
 export type DurationAndCountOverTime = Array<{
-  date: any;
+  date: number;
   total: number;
   totalOk: number;
   duration: {
@@ -758,12 +758,6 @@ export class OperationsManager {
       const selector = selectors[0];
       const targetIds = Array.from(new Set(selectors.map(selector => selector.targetId)));
 
-      this.logger.info(
-        'Reading duration and count over time (period=%o, resolution=%s, targets=%s)',
-        selector.period,
-        selector.resolution,
-        targetIds.join(';'),
-      );
       await this.session.assertPerformAction({
         action: 'project:describe',
         organizationId: selector.organizationId,
