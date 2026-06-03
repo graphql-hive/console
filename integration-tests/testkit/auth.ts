@@ -61,7 +61,12 @@ const createSessionAtHome = async (
   };
 };
 
-const password = 'ilikebigturtlesandicannotlie47';
+/**
+ * The password set on every user created by `authenticate`. Exported so
+ * seed scripts can print it to operators alongside the email they should
+ * sign in with.
+ */
+export const password = 'ilikebigturtlesandicannotlie47';
 const hashedPassword = await hashPassword(password);
 
 export function userEmail(userId: string) {

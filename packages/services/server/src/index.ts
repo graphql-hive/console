@@ -347,6 +347,7 @@ export async function main() {
       appDeploymentsEnabled: env.featureFlags.appDeploymentsEnabled,
       schemaProposalsEnabled: env.featureFlags.schemaProposalsEnabled,
       otelTracingEnabled: env.featureFlags.otelTracingEnabled,
+      metricAlertRulesEnabled: env.featureFlags.metricAlertRulesEnabled,
       prometheus: env.prometheus,
       taskScheduler,
     });

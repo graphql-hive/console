@@ -1,21 +1,20 @@
 import { ReactElement, useCallback, useEffect, useMemo } from 'react';
 import { ChevronDown, RefreshCw } from 'lucide-react';
 import { useMutation, useQuery } from 'urql';
-import { FilterDropdown } from '@/components/base/filter-dropdown/filter-dropdown';
-import type { FilterItem, FilterSelection } from '@/components/base/filter-dropdown/types';
-import type { SavedFilterView } from '@/components/base/insights-filters';
-import { InsightsFilters } from '@/components/base/insights-filters';
-import { TriggerButton } from '@/components/base/trigger-button';
+import { Button } from '@/components/base/button/button';
+import { Filters } from '@/components/base/floating/filter-menu/filters';
+import type { FilterItem } from '@/components/base/floating/filter-menu/types';
 import { Page, TargetLayout } from '@/components/layouts/target';
 import { OperationsList } from '@/components/target/insights/list';
 import { SaveFilterButton } from '@/components/target/insights/save-filter-button';
-import {
-  savedFilterToSearchParams,
-  selectionsToClients,
-  selectionsToOperations,
-} from '@/components/target/insights/search-params';
+import { savedFilterToSearchParams } from '@/components/target/insights/search-params';
 import { InsightsFilterState } from '@/components/target/insights/search-schemas';
 import { OperationsStats } from '@/components/target/insights/stats';
+import { useInsightsFilterDimensions } from '@/components/target/insights/use-insights-filter-dimensions';
+import {
+  useInsightsFilterExtraSections,
+  type SavedFilterView,
+} from '@/components/target/insights/use-insights-filter-extra-sections';
 import { DateRangePicker, presetLast7Days } from '@/components/ui/date-range-picker';
 import { EmptyList } from '@/components/ui/empty-list';
 import { Meta } from '@/components/ui/meta';
@@ -244,24 +243,42 @@ function OperationsView({
     }
   }, [search.viewId]);
 
-  const operationFilterSelections: FilterSelection[] = useMemo(
-    () =>
-      (search.operations ?? []).map(hash => ({
-        id: hash,
-        name: hashToNameMap.get(hash) ?? hash,
-        values: null,
-      })),
-    [search.operations, hashToNameMap],
-  );
+  const dimensions = useInsightsFilterDimensions({
+    search,
+    navigate,
+    operationFilterItems,
+    clientFilterItems,
+    hashToNameMap,
+  });
 
-  const clientFilterSelections: FilterSelection[] = useMemo(
-    () =>
-      (search.clients ?? []).map(c => ({
-        name: c.name,
-        values: c.versions,
-      })),
-    [search.clients],
-  );
+  const handleClearActiveView = useCallback(() => {
+    void navigate({
+      search: prev => ({
+        ...prev,
+        viewId: undefined,
+        operations: undefined,
+        clients: undefined,
+        excludeOperations: undefined,
+        excludeClients: undefined,
+        from: presetLast7Days.range.from,
+        to: presetLast7Days.range.to,
+      }),
+    });
+  }, [navigate]);
+
+  const handleManageSavedFilters = useCallback(() => {
+    void navigate({
+      to: '/$organizationSlug/$projectSlug/$targetSlug/insights/manage-filters',
+      params: { organizationSlug, projectSlug, targetSlug },
+    });
+  }, [navigate, organizationSlug, projectSlug, targetSlug]);
+
+  const extraSections = useInsightsFilterExtraSections({
+    privateSavedFilterViews,
+    sharedSavedFilterViews,
+    onApplySavedFilter: handleApplySavedFilter,
+    onManageSavedFilters: handleManageSavedFilters,
+  });
 
   const hasActiveFilters = useMemo(
     () =>
@@ -282,158 +299,64 @@ function OperationsView({
           <Subtitle>Observe GraphQL requests and see how the API is consumed.</Subtitle>
         </div>
         <div className="mt-4 flex items-center justify-between">
-          <div className="flex items-center gap-x-2">
-            <InsightsFilters
-              operationFilterItems={operationFilterItems}
-              operationFilterSelections={operationFilterSelections}
-              clientFilterItems={clientFilterItems}
-              clientFilterSelections={clientFilterSelections}
-              privateSavedFilterViews={privateSavedFilterViews}
-              sharedSavedFilterViews={sharedSavedFilterViews}
-              onApplySavedFilters={handleApplySavedFilter}
-              activeViewId={search.viewId}
-              onClearActiveView={() => {
-                void navigate({
-                  search: prev => ({
-                    ...prev,
-                    viewId: undefined,
-                    operations: undefined,
-                    clients: undefined,
-                    excludeOperations: undefined,
-                    excludeClients: undefined,
-                    from: presetLast7Days.range.from,
-                    to: presetLast7Days.range.to,
-                  }),
-                });
-              }}
-              onManageSavedFilters={() => {
-                void navigate({
-                  to: '/$organizationSlug/$projectSlug/$targetSlug/insights/manage-filters',
-                  params: { organizationSlug, projectSlug, targetSlug },
-                });
-              }}
-              setOperationSelections={selections => {
-                void navigate({
-                  search: prev => ({ ...prev, operations: selectionsToOperations(selections) }),
-                });
-              }}
-              setClientSelections={selections => {
-                void navigate({
-                  search: prev => ({ ...prev, clients: selectionsToClients(selections) }),
-                });
-              }}
-            />
-            <DateRangePicker
-              trigger={
-                <TriggerButton
-                  label={dateRangeController.selectedPreset.label}
-                  variant="default"
-                  rightIcon={{ icon: ChevronDown, withSeparator: true }}
+          <Filters
+            dimensions={dimensions}
+            extraSections={extraSections}
+            activeLabel={activeView?.name}
+            onClearActive={activeView ? handleClearActiveView : undefined}
+            pinnedControls={
+              <DateRangePicker
+                trigger={
+                  <Button
+                    label={dateRangeController.selectedPreset.label}
+                    variant="default"
+                    rightIcon={{ icon: ChevronDown, withSeparator: true }}
+                  />
+                }
+                selectedRange={dateRangeController.selectedPreset.range}
+                onUpdate={args => dateRangeController.setSelectedPreset(args.preset)}
+                startDate={dateRangeController.startDate}
+                validUnits={['y', 'M', 'w', 'd', 'h']}
+                align="start"
+              />
+            }
+            afterChips={
+              hasActiveFilters ? (
+                <SaveFilterButton
+                  activeView={activeView}
+                  viewerCanCreate={viewerCanCreate}
+                  viewerCanShare={viewerCanShare}
+                  currentFilters={{
+                    operations: search.operations ?? [],
+                    clients: (search.clients ?? []).map(c => ({
+                      name: c.name,
+                      versions: c.versions,
+                    })),
+                    dateRange: {
+                      from: search.from ?? dateRangeController.selectedPreset.range.from,
+                      to: search.to ?? dateRangeController.selectedPreset.range.to,
+                    },
+                    excludeOperations: search.excludeOperations ?? false,
+                    excludeClientFilters: search.excludeClients ?? false,
+                  }}
+                  organizationSlug={organizationSlug}
+                  projectSlug={projectSlug}
+                  targetSlug={targetSlug}
+                  onSaved={viewId => {
+                    void navigate({
+                      search: prev => ({ ...prev, viewId }),
+                    });
+                    reexecutePickerQuery({ requestPolicy: 'network-only' });
+                  }}
+                  onUpdated={() => {
+                    reexecutePickerQuery({ requestPolicy: 'network-only' });
+                  }}
                 />
-              }
-              selectedRange={dateRangeController.selectedPreset.range}
-              onUpdate={args => dateRangeController.setSelectedPreset(args.preset)}
-              startDate={dateRangeController.startDate}
-              validUnits={['y', 'M', 'w', 'd', 'h']}
-              align="start"
-            />
-            {operationFilterSelections.length > 0 && (
-              <FilterDropdown
-                label="Operation"
-                items={operationFilterItems}
-                selectedItems={operationFilterSelections}
-                onChange={selections => {
-                  void navigate({
-                    search: prev => ({ ...prev, operations: selectionsToOperations(selections) }),
-                  });
-                }}
-                onRemove={() => {
-                  void navigate({
-                    search: prev => ({
-                      ...prev,
-                      operations: undefined,
-                      excludeOperations: undefined,
-                    }),
-                  });
-                }}
-                excludeMode={search.excludeOperations ?? false}
-                onExcludeModeChange={exclude => {
-                  void navigate({
-                    search: prev => ({
-                      ...prev,
-                      excludeOperations: exclude || undefined,
-                    }),
-                  });
-                }}
-              />
-            )}
-            {clientFilterSelections.length > 0 && (
-              <FilterDropdown
-                label="Client"
-                items={clientFilterItems}
-                selectedItems={clientFilterSelections}
-                valuesLabel="versions"
-                onChange={selections => {
-                  void navigate({
-                    search: prev => ({ ...prev, clients: selectionsToClients(selections) }),
-                  });
-                }}
-                onRemove={() => {
-                  void navigate({
-                    search: prev => ({
-                      ...prev,
-                      clients: undefined,
-                      excludeClients: undefined,
-                    }),
-                  });
-                }}
-                excludeMode={search.excludeClients ?? false}
-                onExcludeModeChange={exclude => {
-                  void navigate({
-                    search: prev => ({
-                      ...prev,
-                      excludeClients: exclude || undefined,
-                    }),
-                  });
-                }}
-              />
-            )}
-            {hasActiveFilters && (
-              <SaveFilterButton
-                activeView={activeView}
-                viewerCanCreate={viewerCanCreate}
-                viewerCanShare={viewerCanShare}
-                currentFilters={{
-                  operations: search.operations ?? [],
-                  clients: (search.clients ?? []).map(c => ({
-                    name: c.name,
-                    versions: c.versions,
-                  })),
-                  dateRange: {
-                    from: search.from ?? dateRangeController.selectedPreset.range.from,
-                    to: search.to ?? dateRangeController.selectedPreset.range.to,
-                  },
-                  excludeOperations: search.excludeOperations ?? false,
-                  excludeClientFilters: search.excludeClients ?? false,
-                }}
-                organizationSlug={organizationSlug}
-                projectSlug={projectSlug}
-                targetSlug={targetSlug}
-                onSaved={viewId => {
-                  void navigate({
-                    search: prev => ({ ...prev, viewId }),
-                  });
-                  reexecutePickerQuery({ requestPolicy: 'network-only' });
-                }}
-                onUpdated={() => {
-                  // Refetch to get updated saved filter data
-                  reexecutePickerQuery({ requestPolicy: 'network-only' });
-                }}
-              />
-            )}
-          </div>
+              ) : null
+            }
+          />
           <div className="flex items-center gap-x-2">
-            <TriggerButton
+            <Button
               layout="iconOnly"
               icon={RefreshCw}
               aria-label="Refresh"
