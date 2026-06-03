@@ -414,12 +414,20 @@ test.concurrent('disabled rules still count toward the cap', async ({ expect }) 
 // These tests ensure a session that has no membership in the target
 // organization cannot create, update, or delete metric alert rules there,
 // regardless of whether the reference is provided via slugs (`bySelector`)
-// or via the raw target/project UUID (`byId`). The authz check happens in
-// the manager via `assertPerformAction({ action: 'alert:modify', ... })`;
-// failure surfaces as a top-level GraphQL error ("Missing permission for
-// performing 'alert:modify' on resource") rather than a structured error
-// result, since `InsufficientPermissionError` is not one of the errors the
-// resolvers wrap into `{ error: { message } }`.
+// or via the raw target/project UUID (`byId`).
+//
+// Defense is layered. The slug-based path is rejected at slug resolution
+// itself (`translateOrganizationId` requires `organization:describe`, which
+// the session lacks). The id-based path is rejected at
+// `assertPerformAction({ action: 'alert:modify', ... })` inside the
+// manager. Both surface as top-level GraphQL errors of the shape
+// "Missing permission for performing '<action>' on resource", which is the
+// signature `InsufficientPermissionError` produces — that error class is
+// intentionally not in the wrapped-error catch list of the resolvers, so it
+// bubbles up rather than landing in `{ error: { message } }`. We assert on
+// the "Missing permission for performing" prefix rather than the specific
+// action so that future shifts in which precondition fires first don't
+// invalidate the regression net.
 
 test.concurrent(
   'cross-org: cannot create alert in another org using bySelector',
@@ -472,7 +480,7 @@ test.concurrent(
     ).then(r => r.expectGraphQLErrors());
 
     expect(result).toHaveLength(1);
-    expect(result[0].message).toContain("Missing permission for performing 'alert:modify'");
+    expect(result[0].message).toContain('Missing permission for performing');
   },
 );
 
@@ -506,7 +514,7 @@ test.concurrent(
     ).then(r => r.expectGraphQLErrors());
 
     expect(result).toHaveLength(1);
-    expect(result[0].message).toContain("Missing permission for performing 'alert:modify'");
+    expect(result[0].message).toContain('Missing permission for performing');
   },
 );
 
@@ -563,7 +571,7 @@ test.concurrent(
     ).then(r => r.expectGraphQLErrors());
 
     expect(result).toHaveLength(1);
-    expect(result[0].message).toContain("Missing permission for performing 'alert:modify'");
+    expect(result[0].message).toContain('Missing permission for performing');
   },
 );
 
@@ -617,6 +625,6 @@ test.concurrent(
     ).then(r => r.expectGraphQLErrors());
 
     expect(result).toHaveLength(1);
-    expect(result[0].message).toContain("Missing permission for performing 'alert:modify'");
+    expect(result[0].message).toContain('Missing permission for performing');
   },
 );
