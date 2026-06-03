@@ -1,5 +1,14 @@
 # hive
 
+## 11.2.1
+
+### Patch Changes
+
+- [#8094](https://github.com/graphql-hive/console/pull/8094)
+  [`a98583d`](https://github.com/graphql-hive/console/commit/a98583dbb6e5c95a01718add659f1f0049c10efc)
+  Thanks [@jdolle](https://github.com/jdolle)! - Include directives in output SDL for schema
+  stitching projects
+
 ## 11.2.0
 
 ### Minor Changes
