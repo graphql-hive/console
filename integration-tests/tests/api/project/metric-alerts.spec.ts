@@ -1,5 +1,10 @@
 import 'reflect-metadata';
 import {
+  addMetricAlertRule as rawAddMetricAlertRule,
+  deleteMetricAlertRules as rawDeleteMetricAlertRules,
+  updateMetricAlertRule as rawUpdateMetricAlertRule,
+} from 'testkit/flow';
+import {
   AlertChannelType,
   MetricAlertRuleDirection,
   MetricAlertRuleMetric,
@@ -169,7 +174,13 @@ test.concurrent('allows creating a rule with zero channels', async ({ expect }) 
   const { project, target, addMetricAlertRule } = await createProject(ProjectType.Single);
 
   const result = await addMetricAlertRule({
-    target: { bySelector: { organizationSlug: organization.slug, projectSlug: project.slug, targetSlug: target.slug } },
+    target: {
+      bySelector: {
+        organizationSlug: organization.slug,
+        projectSlug: project.slug,
+        targetSlug: target.slug,
+      },
+    },
     name: 'No Channels Alert',
     type: MetricAlertRuleType.Traffic,
     timeWindowMinutes: 5,
@@ -237,7 +248,13 @@ test.concurrent('enforces the per-target cap of 10 metric alert rules', async ({
   // distinct names) so the cap is the only variable.
   for (let i = 0; i < 10; i++) {
     const result = await addMetricAlertRule({
-      target: { bySelector: { organizationSlug: organization.slug, projectSlug: project.slug, targetSlug: target.slug } },
+      target: {
+        bySelector: {
+          organizationSlug: organization.slug,
+          projectSlug: project.slug,
+          targetSlug: target.slug,
+        },
+      },
       name: `Rule ${i + 1}`,
       type: MetricAlertRuleType.Traffic,
       timeWindowMinutes: 5,
@@ -252,7 +269,13 @@ test.concurrent('enforces the per-target cap of 10 metric alert rules', async ({
 
   // 11th creation must return the structured limit error.
   const overflow = await addMetricAlertRule({
-    target: { bySelector: { organizationSlug: organization.slug, projectSlug: project.slug, targetSlug: target.slug } },
+    target: {
+      bySelector: {
+        organizationSlug: organization.slug,
+        projectSlug: project.slug,
+        targetSlug: target.slug,
+      },
+    },
     name: 'Rule 11',
     type: MetricAlertRuleType.Traffic,
     timeWindowMinutes: 5,
@@ -278,7 +301,13 @@ test.concurrent('deleting a rule frees a slot inside the cap', async ({ expect }
   const ruleIds: string[] = [];
   for (let i = 0; i < 10; i++) {
     const result = await addMetricAlertRule({
-      target: { bySelector: { organizationSlug: organization.slug, projectSlug: project.slug, targetSlug: target.slug } },
+      target: {
+        bySelector: {
+          organizationSlug: organization.slug,
+          projectSlug: project.slug,
+          targetSlug: target.slug,
+        },
+      },
       name: `Rule ${i + 1}`,
       type: MetricAlertRuleType.Traffic,
       timeWindowMinutes: 5,
@@ -299,7 +328,13 @@ test.concurrent('deleting a rule frees a slot inside the cap', async ({ expect }
   expect(deleteResult.ok).toBeTruthy();
 
   const recreate = await addMetricAlertRule({
-    target: { bySelector: { organizationSlug: organization.slug, projectSlug: project.slug, targetSlug: target.slug } },
+    target: {
+      bySelector: {
+        organizationSlug: organization.slug,
+        projectSlug: project.slug,
+        targetSlug: target.slug,
+      },
+    },
     name: 'Replacement rule',
     type: MetricAlertRuleType.Traffic,
     timeWindowMinutes: 5,
@@ -324,7 +359,13 @@ test.concurrent('disabled rules still count toward the cap', async ({ expect }) 
   const ruleIds: string[] = [];
   for (let i = 0; i < 10; i++) {
     const result = await addMetricAlertRule({
-      target: { bySelector: { organizationSlug: organization.slug, projectSlug: project.slug, targetSlug: target.slug } },
+      target: {
+        bySelector: {
+          organizationSlug: organization.slug,
+          projectSlug: project.slug,
+          targetSlug: target.slug,
+        },
+      },
       name: `Rule ${i + 1}`,
       type: MetricAlertRuleType.Traffic,
       timeWindowMinutes: 5,
@@ -349,7 +390,13 @@ test.concurrent('disabled rules still count toward the cap', async ({ expect }) 
   }
 
   const overflow = await addMetricAlertRule({
-    target: { bySelector: { organizationSlug: organization.slug, projectSlug: project.slug, targetSlug: target.slug } },
+    target: {
+      bySelector: {
+        organizationSlug: organization.slug,
+        projectSlug: project.slug,
+        targetSlug: target.slug,
+      },
+    },
     name: 'Rule 11',
     type: MetricAlertRuleType.Traffic,
     timeWindowMinutes: 5,
@@ -362,3 +409,214 @@ test.concurrent('disabled rules still count toward the cap', async ({ expect }) 
   expect(overflow.error).toBeTruthy();
   expect(overflow.error!.message).toContain('Limit of 10');
 });
+
+// Regression net for cross-organization authz on metric-alert mutations.
+// These tests ensure a session that has no membership in the target
+// organization cannot create, update, or delete metric alert rules there,
+// regardless of whether the reference is provided via slugs (`bySelector`)
+// or via the raw target/project UUID (`byId`). The authz check happens in
+// the manager via `assertPerformAction({ action: 'alert:modify', ... })`;
+// failure surfaces as a top-level GraphQL error ("Missing permission for
+// performing 'alert:modify' on resource") rather than a structured error
+// result, since `InsufficientPermissionError` is not one of the errors the
+// resolvers wrap into `{ error: { message } }`.
+
+test.concurrent(
+  'cross-org: cannot create alert in another org using bySelector',
+  async ({ expect }) => {
+    const seed = initSeed();
+
+    // Owner A's setup: org + project + target + channel (the victim).
+    const { createOrg: createOrgA } = await seed.createOwner();
+    const {
+      createProject: createProjectA,
+      organization: orgA,
+      setFeatureFlag: setFeatureFlagA,
+    } = await createOrgA();
+    await setFeatureFlagA('metricAlertRules', true);
+    const {
+      project: projectA,
+      target: targetA,
+      addAlertChannel: addAlertChannelA,
+    } = await createProjectA(ProjectType.Single);
+    const channelA = await addAlertChannelA({
+      name: 'channel-a',
+      organizationSlug: orgA.slug,
+      projectSlug: projectA.slug,
+      type: AlertChannelType.Webhook,
+      webhook: { endpoint: 'http://localhost:9876/webhook-a' },
+    });
+
+    // Owner B: separate owner, no membership in orgA (the attacker).
+    const { ownerToken: ownerTokenB } = await seed.createOwner();
+
+    const result = await rawAddMetricAlertRule(
+      {
+        target: {
+          bySelector: {
+            organizationSlug: orgA.slug,
+            projectSlug: projectA.slug,
+            targetSlug: targetA.slug,
+          },
+        },
+        name: 'Attacker rule',
+        type: MetricAlertRuleType.Traffic,
+        timeWindowMinutes: 5,
+        thresholdType: MetricAlertRuleThresholdType.FixedValue,
+        thresholdValue: 100,
+        direction: MetricAlertRuleDirection.Above,
+        severity: MetricAlertRuleSeverity.Info,
+        channelIds: [channelA.ok!.addedAlertChannel.id],
+      },
+      ownerTokenB,
+    ).then(r => r.expectGraphQLErrors());
+
+    expect(result).toHaveLength(1);
+    expect(result[0].message).toContain("Missing permission for performing 'alert:modify'");
+  },
+);
+
+test.concurrent(
+  'cross-org: cannot create alert in another org using byId (knowing the UUID is not enough)',
+  async ({ expect }) => {
+    const seed = initSeed();
+
+    const { createOrg: createOrgA } = await seed.createOwner();
+    const { createProject: createProjectA, setFeatureFlag: setFeatureFlagA } = await createOrgA();
+    await setFeatureFlagA('metricAlertRules', true);
+    const { target: targetA } = await createProjectA(ProjectType.Single);
+
+    const { ownerToken: ownerTokenB } = await seed.createOwner();
+
+    // Owner B has the raw target UUID (simulating leaked/discovered ID) but
+    // no membership — authz must still reject.
+    const result = await rawAddMetricAlertRule(
+      {
+        target: { byId: targetA.id },
+        name: 'Attacker rule via byId',
+        type: MetricAlertRuleType.Traffic,
+        timeWindowMinutes: 5,
+        thresholdType: MetricAlertRuleThresholdType.FixedValue,
+        thresholdValue: 100,
+        direction: MetricAlertRuleDirection.Above,
+        severity: MetricAlertRuleSeverity.Info,
+        channelIds: [],
+      },
+      ownerTokenB,
+    ).then(r => r.expectGraphQLErrors());
+
+    expect(result).toHaveLength(1);
+    expect(result[0].message).toContain("Missing permission for performing 'alert:modify'");
+  },
+);
+
+test.concurrent(
+  'cross-org: cannot update an alert that belongs to another org',
+  async ({ expect }) => {
+    const seed = initSeed();
+
+    const { createOrg: createOrgA } = await seed.createOwner();
+    const {
+      createProject: createProjectA,
+      organization: orgA,
+      setFeatureFlag: setFeatureFlagA,
+    } = await createOrgA();
+    await setFeatureFlagA('metricAlertRules', true);
+    const {
+      project: projectA,
+      target: targetA,
+      addMetricAlertRule: addMetricAlertRuleA,
+    } = await createProjectA(ProjectType.Single);
+
+    // Owner A creates the rule.
+    const created = await addMetricAlertRuleA({
+      target: {
+        bySelector: {
+          organizationSlug: orgA.slug,
+          projectSlug: projectA.slug,
+          targetSlug: targetA.slug,
+        },
+      },
+      name: 'Owner A rule',
+      type: MetricAlertRuleType.Traffic,
+      timeWindowMinutes: 5,
+      thresholdType: MetricAlertRuleThresholdType.FixedValue,
+      thresholdValue: 100,
+      direction: MetricAlertRuleDirection.Above,
+      severity: MetricAlertRuleSeverity.Info,
+      channelIds: [],
+    });
+    const ruleId = created.ok!.addedMetricAlertRule.id;
+
+    // Owner B (no membership in orgA) attempts to update it.
+    const { ownerToken: ownerTokenB } = await seed.createOwner();
+
+    const result = await rawUpdateMetricAlertRule(
+      {
+        project: {
+          bySelector: { organizationSlug: orgA.slug, projectSlug: projectA.slug },
+        },
+        ruleId,
+        name: 'Attacker rename',
+      },
+      ownerTokenB,
+    ).then(r => r.expectGraphQLErrors());
+
+    expect(result).toHaveLength(1);
+    expect(result[0].message).toContain("Missing permission for performing 'alert:modify'");
+  },
+);
+
+test.concurrent(
+  'cross-org: cannot delete an alert that belongs to another org',
+  async ({ expect }) => {
+    const seed = initSeed();
+
+    const { createOrg: createOrgA } = await seed.createOwner();
+    const {
+      createProject: createProjectA,
+      organization: orgA,
+      setFeatureFlag: setFeatureFlagA,
+    } = await createOrgA();
+    await setFeatureFlagA('metricAlertRules', true);
+    const {
+      project: projectA,
+      target: targetA,
+      addMetricAlertRule: addMetricAlertRuleA,
+    } = await createProjectA(ProjectType.Single);
+
+    const created = await addMetricAlertRuleA({
+      target: {
+        bySelector: {
+          organizationSlug: orgA.slug,
+          projectSlug: projectA.slug,
+          targetSlug: targetA.slug,
+        },
+      },
+      name: 'Owner A rule',
+      type: MetricAlertRuleType.Traffic,
+      timeWindowMinutes: 5,
+      thresholdType: MetricAlertRuleThresholdType.FixedValue,
+      thresholdValue: 100,
+      direction: MetricAlertRuleDirection.Above,
+      severity: MetricAlertRuleSeverity.Info,
+      channelIds: [],
+    });
+    const ruleId = created.ok!.addedMetricAlertRule.id;
+
+    const { ownerToken: ownerTokenB } = await seed.createOwner();
+
+    const result = await rawDeleteMetricAlertRules(
+      {
+        project: {
+          bySelector: { organizationSlug: orgA.slug, projectSlug: projectA.slug },
+        },
+        ruleIds: [ruleId],
+      },
+      ownerTokenB,
+    ).then(r => r.expectGraphQLErrors());
+
+    expect(result).toHaveLength(1);
+    expect(result[0].message).toContain("Missing permission for performing 'alert:modify'");
+  },
+);
