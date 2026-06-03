@@ -51,8 +51,12 @@ export function DeleteRuleConfirmationDialog(props: DeleteRuleConfirmationDialog
             onClick={() =>
               mutate({
                 input: {
-                  organizationSlug: props.organizationSlug,
-                  projectSlug: props.projectSlug,
+                  project: {
+                    bySelector: {
+                      organizationSlug: props.organizationSlug,
+                      projectSlug: props.projectSlug,
+                    },
+                  },
                   ruleIds: [props.ruleId],
                 },
               }).then(result => {

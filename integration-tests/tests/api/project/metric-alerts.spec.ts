@@ -40,9 +40,7 @@ test.concurrent('can create, read, update, and delete a metric alert rule', asyn
 
   // Create a metric alert rule
   const addResult = await addMetricAlertRule({
-    organizationSlug,
-    projectSlug,
-    targetSlug,
+    target: { bySelector: { organizationSlug, projectSlug, targetSlug } },
     name: 'P99 Latency Spike',
     type: MetricAlertRuleType.Latency,
     metric: MetricAlertRuleMetric.P99,
@@ -73,8 +71,7 @@ test.concurrent('can create, read, update, and delete a metric alert rule', asyn
 
   // Update the rule
   const updateResult = await updateMetricAlertRule({
-    organizationSlug,
-    projectSlug,
+    project: { bySelector: { organizationSlug, projectSlug } },
     ruleId: rule.id,
     name: 'Updated Latency Alert',
     thresholdValue: 300,
@@ -93,8 +90,7 @@ test.concurrent('can create, read, update, and delete a metric alert rule', asyn
 
   // Delete the rule
   const deleteResult = await deleteMetricAlertRules({
-    organizationSlug,
-    projectSlug,
+    project: { bySelector: { organizationSlug, projectSlug } },
     ruleIds: [rule.id],
   });
   expect(deleteResult.ok).toBeTruthy();
@@ -126,9 +122,7 @@ test.concurrent(
 
     // LATENCY without metric should fail
     const noMetricResult = await addMetricAlertRule({
-      organizationSlug,
-      projectSlug,
-      targetSlug,
+      target: { bySelector: { organizationSlug, projectSlug, targetSlug } },
       name: 'Bad Latency Alert',
       type: MetricAlertRuleType.Latency,
       timeWindowMinutes: 30,
@@ -144,9 +138,7 @@ test.concurrent(
 
     // ERROR_RATE with metric should fail
     const withMetricResult = await addMetricAlertRule({
-      organizationSlug,
-      projectSlug,
-      targetSlug,
+      target: { bySelector: { organizationSlug, projectSlug, targetSlug } },
       name: 'Bad Error Rate Alert',
       type: MetricAlertRuleType.ErrorRate,
       metric: MetricAlertRuleMetric.P99,
@@ -177,9 +169,7 @@ test.concurrent('allows creating a rule with zero channels', async ({ expect }) 
   const { project, target, addMetricAlertRule } = await createProject(ProjectType.Single);
 
   const result = await addMetricAlertRule({
-    organizationSlug: organization.slug,
-    projectSlug: project.slug,
-    targetSlug: target.slug,
+    target: { bySelector: { organizationSlug: organization.slug, projectSlug: project.slug, targetSlug: target.slug } },
     name: 'No Channels Alert',
     type: MetricAlertRuleType.Traffic,
     timeWindowMinutes: 5,
@@ -222,9 +212,7 @@ test.concurrent('supports multiple channels on a single rule', async ({ expect }
   });
 
   const result = await addMetricAlertRule({
-    organizationSlug,
-    projectSlug,
-    targetSlug: target.slug,
+    target: { bySelector: { organizationSlug, projectSlug, targetSlug: target.slug } },
     name: 'Multi-Channel Alert',
     type: MetricAlertRuleType.Traffic,
     timeWindowMinutes: 5,
@@ -249,9 +237,7 @@ test.concurrent('enforces the per-target cap of 10 metric alert rules', async ({
   // distinct names) so the cap is the only variable.
   for (let i = 0; i < 10; i++) {
     const result = await addMetricAlertRule({
-      organizationSlug: organization.slug,
-      projectSlug: project.slug,
-      targetSlug: target.slug,
+      target: { bySelector: { organizationSlug: organization.slug, projectSlug: project.slug, targetSlug: target.slug } },
       name: `Rule ${i + 1}`,
       type: MetricAlertRuleType.Traffic,
       timeWindowMinutes: 5,
@@ -266,9 +252,7 @@ test.concurrent('enforces the per-target cap of 10 metric alert rules', async ({
 
   // 11th creation must return the structured limit error.
   const overflow = await addMetricAlertRule({
-    organizationSlug: organization.slug,
-    projectSlug: project.slug,
-    targetSlug: target.slug,
+    target: { bySelector: { organizationSlug: organization.slug, projectSlug: project.slug, targetSlug: target.slug } },
     name: 'Rule 11',
     type: MetricAlertRuleType.Traffic,
     timeWindowMinutes: 5,
@@ -294,9 +278,7 @@ test.concurrent('deleting a rule frees a slot inside the cap', async ({ expect }
   const ruleIds: string[] = [];
   for (let i = 0; i < 10; i++) {
     const result = await addMetricAlertRule({
-      organizationSlug: organization.slug,
-      projectSlug: project.slug,
-      targetSlug: target.slug,
+      target: { bySelector: { organizationSlug: organization.slug, projectSlug: project.slug, targetSlug: target.slug } },
       name: `Rule ${i + 1}`,
       type: MetricAlertRuleType.Traffic,
       timeWindowMinutes: 5,
@@ -311,16 +293,13 @@ test.concurrent('deleting a rule frees a slot inside the cap', async ({ expect }
 
   // Delete one rule, then a fresh insert must succeed.
   const deleteResult = await deleteMetricAlertRules({
-    organizationSlug: organization.slug,
-    projectSlug: project.slug,
+    project: { bySelector: { organizationSlug: organization.slug, projectSlug: project.slug } },
     ruleIds: [ruleIds[0]],
   });
   expect(deleteResult.ok).toBeTruthy();
 
   const recreate = await addMetricAlertRule({
-    organizationSlug: organization.slug,
-    projectSlug: project.slug,
-    targetSlug: target.slug,
+    target: { bySelector: { organizationSlug: organization.slug, projectSlug: project.slug, targetSlug: target.slug } },
     name: 'Replacement rule',
     type: MetricAlertRuleType.Traffic,
     timeWindowMinutes: 5,
@@ -345,9 +324,7 @@ test.concurrent('disabled rules still count toward the cap', async ({ expect }) 
   const ruleIds: string[] = [];
   for (let i = 0; i < 10; i++) {
     const result = await addMetricAlertRule({
-      organizationSlug: organization.slug,
-      projectSlug: project.slug,
-      targetSlug: target.slug,
+      target: { bySelector: { organizationSlug: organization.slug, projectSlug: project.slug, targetSlug: target.slug } },
       name: `Rule ${i + 1}`,
       type: MetricAlertRuleType.Traffic,
       timeWindowMinutes: 5,
@@ -364,8 +341,7 @@ test.concurrent('disabled rules still count toward the cap', async ({ expect }) 
   // enabled state — disabling rules should NOT free slots.
   for (let i = 0; i < 5; i++) {
     const disableResult = await updateMetricAlertRule({
-      organizationSlug: organization.slug,
-      projectSlug: project.slug,
+      project: { bySelector: { organizationSlug: organization.slug, projectSlug: project.slug } },
       ruleId: ruleIds[i],
       enabled: false,
     });
@@ -373,9 +349,7 @@ test.concurrent('disabled rules still count toward the cap', async ({ expect }) 
   }
 
   const overflow = await addMetricAlertRule({
-    organizationSlug: organization.slug,
-    projectSlug: project.slug,
-    targetSlug: target.slug,
+    target: { bySelector: { organizationSlug: organization.slug, projectSlug: project.slug, targetSlug: target.slug } },
     name: 'Rule 11',
     type: MetricAlertRuleType.Traffic,
     timeWindowMinutes: 5,

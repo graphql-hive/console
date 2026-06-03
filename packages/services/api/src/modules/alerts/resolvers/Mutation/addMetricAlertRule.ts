@@ -15,11 +15,11 @@ export const addMetricAlertRule: NonNullable<MutationResolvers['addMetricAlertRu
   { injector },
 ) => {
   const translator = injector.get(IdTranslator);
-  const [organizationId, projectId, targetId] = await Promise.all([
-    translator.translateOrganizationId(input),
-    translator.translateProjectId(input),
-    translator.translateTargetId(input),
-  ]);
+  const resolved = await translator.resolveTargetReference({ reference: input.target });
+  if (resolved === null) {
+    return { error: { message: 'Target not found' } };
+  }
+  const { organizationId, projectId, targetId } = resolved;
 
   try {
     const rule = await injector.get(MetricAlertRulesManager).createRule({

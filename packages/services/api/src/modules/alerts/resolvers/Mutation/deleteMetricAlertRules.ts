@@ -9,10 +9,11 @@ export const deleteMetricAlertRules: NonNullable<
   MutationResolvers['deleteMetricAlertRules']
 > = async (_, { input }, { injector }) => {
   const translator = injector.get(IdTranslator);
-  const [organizationId, projectId] = await Promise.all([
-    translator.translateOrganizationId(input),
-    translator.translateProjectId(input),
-  ]);
+  const resolved = await translator.resolveProjectReference({ reference: input.project });
+  if (resolved === null) {
+    return { error: { message: 'Project not found' } };
+  }
+  const { organizationId, projectId } = resolved;
 
   try {
     const deletedMetricAlertRuleIds = await injector.get(MetricAlertRulesManager).deleteRules({

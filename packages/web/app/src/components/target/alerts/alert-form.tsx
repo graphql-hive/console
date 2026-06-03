@@ -395,9 +395,7 @@ export function AlertForm(props: AlertFormProps) {
         if (mode === 'create') {
           const result = await addMetricAlertRule({
             input: {
-              organizationSlug,
-              projectSlug,
-              targetSlug,
+              target: { bySelector: { organizationSlug, projectSlug, targetSlug } },
               name: values.name,
               type,
               metric: metric ?? null,
@@ -428,8 +426,7 @@ export function AlertForm(props: AlertFormProps) {
 
         const result = await updateMetricAlertRule({
           input: {
-            organizationSlug,
-            projectSlug,
+            project: { bySelector: { organizationSlug, projectSlug } },
             ruleId: props.ruleId,
             name: values.name,
             type,

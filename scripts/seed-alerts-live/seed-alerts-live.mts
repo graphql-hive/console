@@ -244,9 +244,13 @@ async function setup(ownerEmail: string, options: { noRules: boolean }): Promise
     // Four short-window rules, deliberately varied along every other axis so
     // the demo covers the feature surface.
     const baseRuleInput = {
-      organizationSlug: organization.slug,
-      projectSlug: project.slug,
-      targetSlug: target.slug,
+      target: {
+        bySelector: {
+          organizationSlug: organization.slug,
+          projectSlug: project.slug,
+          targetSlug: target.slug,
+        },
+      },
       timeWindowMinutes: 1,
       channelIds: [channelId],
     };

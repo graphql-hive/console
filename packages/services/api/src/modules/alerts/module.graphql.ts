@@ -336,9 +336,7 @@ export default gql`
   }
 
   input AddMetricAlertRuleInput {
-    organizationSlug: String!
-    projectSlug: String!
-    targetSlug: String!
+    target: TargetReferenceInput!
     name: String!
     type: MetricAlertRuleType!
     timeWindowMinutes: Int!
@@ -353,8 +351,7 @@ export default gql`
   }
 
   input UpdateMetricAlertRuleInput {
-    organizationSlug: String!
-    projectSlug: String!
+    project: ProjectReferenceInput!
     ruleId: ID!
     name: String
     type: MetricAlertRuleType
@@ -371,8 +368,7 @@ export default gql`
   }
 
   input DeleteMetricAlertRulesInput {
-    organizationSlug: String!
-    projectSlug: String!
+    project: ProjectReferenceInput!
     ruleIds: [ID!]!
   }
 
