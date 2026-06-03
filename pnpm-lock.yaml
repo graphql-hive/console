@@ -1500,6 +1500,9 @@ importers:
       '@graphql-tools/stitching-directives':
         specifier: 3.1.38
         version: 3.1.38(graphql@16.9.0)
+      '@graphql-tools/utils':
+        specifier: 11.1.0
+        version: 11.1.0(graphql@16.9.0)
       '@hive/service-common':
         specifier: workspace:*
         version: link:../service-common
