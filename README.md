@@ -91,6 +91,7 @@ See you in Hive! 🐝
 
 ## Docs
 
+- [Contributing](./docs/CONTRIBUTING.md)
 - [Development](./docs/DEVELOPMENT.md)
 - [Deployment](./docs/DEPLOYMENT.md)
 - [Testing](./docs/TESTING.md)
