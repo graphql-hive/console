@@ -1,6 +1,15 @@
 import got from 'got';
+import { z } from 'zod';
 import type { Logger } from '@graphql-hive/logger';
 import { SpanKind, SpanStatusCode, trace } from '@hive/service-common';
+
+// Validate the response envelope only. Row-level shape is the caller's concern
+// (e.g. queryClickHouseWindows parses `data` with its own Zod schema), so the
+// generic `query<T>` just guarantees `data` is an array before handing it back.
+const ClickHouseResponseSchema = z.object({
+  data: z.array(z.unknown()),
+  rows: z.number().optional(),
+});
 
 export type ClickHouseConfig = {
   host: string;
@@ -61,9 +70,9 @@ export class ClickHouseClient {
         },
       });
 
-      const result = JSON.parse(response.body) as { data: T[]; rows?: number };
+      const result = ClickHouseResponseSchema.parse(JSON.parse(response.body));
       span.setAttribute('db.response.rows', result.rows ?? result.data.length);
-      return result.data;
+      return result.data as T[];
     } catch (error) {
       span.setStatus({ code: SpanStatusCode.ERROR, message: 'clickhouse query failed' });
       span.setAttribute('error.type', error instanceof Error ? error.name : 'unknown');
