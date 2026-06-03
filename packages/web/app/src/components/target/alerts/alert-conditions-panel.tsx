@@ -39,7 +39,7 @@ const METRIC_LABEL_BY_TYPE: Record<MetricAlertRuleType, string> = {
 
 const THRESHOLD_TYPE_LABEL: Record<MetricAlertRuleThresholdType, string> = {
   [MetricAlertRuleThresholdType.FixedValue]: 'Fixed value',
-  [MetricAlertRuleThresholdType.PercentageChange]: 'Relative (%)',
+  [MetricAlertRuleThresholdType.PercentageChange]: '% change vs. previous',
 };
 
 const SEVERITY_DOT_COLOR: Record<MetricAlertRuleSeverity, 'critical' | 'warning' | 'info'> = {

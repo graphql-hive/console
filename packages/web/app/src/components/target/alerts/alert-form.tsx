@@ -207,7 +207,11 @@ const CONDITION_OPTIONS = [
 
 const THRESHOLD_TYPE_OPTIONS = [
   { value: 'FIXED_VALUE', label: 'Fixed value' },
-  { value: 'PERCENTAGE_CHANGE', label: 'Relative (%)' },
+  // "% change vs. previous" names the behavior (window-over-window comparison)
+  // rather than the unit. The old "Relative (%)" label leaned on "(%)" to set
+  // itself apart, but for the error-rate metric a Fixed value is also a percent,
+  // so the unit didn't actually distinguish the two options.
+  { value: 'PERCENTAGE_CHANGE', label: '% change vs. previous' },
 ] as const;
 
 const SEVERITIES = [
@@ -480,6 +484,9 @@ export function AlertForm(props: AlertFormProps) {
 
   const watchedValues = form.watch();
   const metricOption = METRIC_OPTIONS.find(o => o.value === watchedValues.metricSelection);
+  // Human-readable window label (e.g. "15m") for the threshold-type helper text.
+  const thresholdRangeLabel =
+    RANGE_OPTIONS.find(o => o.value === watchedValues.timeWindowMinutes)?.label ?? 'selected';
 
   // Parse once at the form boundary so downstream components don't need to
   // re-decode the colon-encoded Select value.
@@ -720,6 +727,12 @@ export function AlertForm(props: AlertFormProps) {
                     )}
                   />
                 </div>
+
+                <p className="text-neutral-10 text-[13px]">
+                  {watchedValues.thresholdType === 'PERCENTAGE_CHANGE'
+                    ? `"% change vs. previous" compares this ${thresholdRangeLabel} window to the one before it. Your value is the percent change between them, e.g. 75 fires on a +75% change rather than an absolute level.`
+                    : `"Fixed value" compares the metric over the ${thresholdRangeLabel} window directly against your value, in the metric's own unit (% for error rate, ms for latency, requests for total requests).`}
+                </p>
 
                 <AlertMetricChart
                   organizationSlug={organizationSlug}
