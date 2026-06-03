@@ -1,5 +1,0 @@
-directive @public on SCHEMA | OBJECT
-
-type Query @public {
-  isAnExample: Boolean
-}
