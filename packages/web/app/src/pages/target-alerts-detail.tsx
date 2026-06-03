@@ -193,6 +193,18 @@ export function TargetAlertsDetailPage(props: {
 
   const rule = result.data?.target?.metricAlertRule;
 
+  // Only surface the error when there's nothing cached to fall back on; if a
+  // cache-and-network refetch errors but we still hold data, we keep showing it.
+  if (result.error && !result.data) {
+    return (
+      <div className="flex h-fit flex-1 items-center justify-center py-28">
+        <div className="text-sm text-red-500">
+          Failed to load alert rule: {result.error.message}
+        </div>
+      </div>
+    );
+  }
+
   if (result.fetching || result.stale || !result.data) {
     return (
       <div className="flex h-fit flex-1 items-center justify-center py-28">
@@ -309,30 +321,48 @@ function RuleStateLogSection(props: {
   });
 
   // urql retains the previous `data` across the variable change each poll, so
-  // these sections keep showing the last state-log while the next one loads
+  // these sections keep showing the last state-log while the next one loads.
+  // We only fall back to loading/error UI when there's nothing cached to show
+  // (initial load), a transient error on a later poll keeps the last good
+  // data on screen rather than blanking it.
   const stateLog = result.data?.target?.metricAlertRule?.stateLog ?? [];
+  const hasNoData = !result.data;
+  const stateLogStatus =
+    result.error && hasNoData ? (
+      <div className="py-4 text-sm text-red-500">
+        Failed to load status transitions: {result.error.message}
+      </div>
+    ) : result.fetching && hasNoData ? (
+      <div className="flex justify-center py-6">
+        <Spinner />
+      </div>
+    ) : null;
 
   return (
     <>
       <section className="space-y-2">
         <h2 className="text-neutral-12 m-0 mb-2 text-sm font-medium">Status transitions</h2>
-        <AlertStateTransitionsBar
-          stateLog={stateLog}
-          from={from}
-          to={to}
-          ruleCreatedAt={rule.createdAt}
-        />
+        {stateLogStatus ?? (
+          <AlertStateTransitionsBar
+            stateLog={stateLog}
+            from={from}
+            to={to}
+            ruleCreatedAt={rule.createdAt}
+          />
+        )}
       </section>
 
       {chart}
 
-      <AlertEventsTable
-        stateLog={stateLog}
-        rule={rule}
-        organizationSlug={organizationSlug}
-        projectSlug={projectSlug}
-        targetSlug={targetSlug}
-      />
+      {stateLogStatus ? null : (
+        <AlertEventsTable
+          stateLog={stateLog}
+          rule={rule}
+          organizationSlug={organizationSlug}
+          projectSlug={projectSlug}
+          targetSlug={targetSlug}
+        />
+      )}
     </>
   );
 }
