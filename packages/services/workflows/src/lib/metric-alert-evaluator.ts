@@ -240,7 +240,7 @@ export async function queryClickHouseWindows(
   const startMs = Date.now();
   let rows: ClickHouseWindowRow[];
   try {
-    const raw = await clickhouse.query(sql);
+    const raw = await clickhouse.query(sql, 'metric-alert-windows');
     rows = z.array(ClickHouseWindowRowSchema).parse(raw);
   } catch (error) {
     metricAlertClickHouseQueryDuration.observe({ outcome: 'error' }, (Date.now() - startMs) / 1000);
