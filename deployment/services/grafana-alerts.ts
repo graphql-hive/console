@@ -27,7 +27,7 @@ export function deployGrafanaAlerts(envName: string) {
   // the provider's configured org when omitted, but RuleGroup validates the
   // property at construct time and throws if missing.
   const ruleGroup = new RuleGroup('metric-alerts-evaluator', {
-    orgId: 1,
+    orgId: '1',
     folderUid: folder.uid,
     name: 'metric-alerts-evaluator',
     intervalSeconds: 60,
