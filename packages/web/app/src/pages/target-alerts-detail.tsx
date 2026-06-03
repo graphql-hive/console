@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { ReactNode, useMemo, useState } from 'react';
 import { subMinutes } from 'date-fns';
 import { useQuery } from 'urql';
 import { Select } from '@/components/base/floating/select/select';
@@ -6,7 +6,10 @@ import { PageLead } from '@/components/base/page-lead';
 import { BackLink } from '@/components/navigation/back-link';
 import { ResourceNotFoundComponent } from '@/components/resource-not-found';
 import { AlertConditionsPanel } from '@/components/target/alerts/alert-conditions-panel';
-import { AlertEventsTable } from '@/components/target/alerts/alert-events-table';
+import {
+  AlertEventsTable,
+  type AlertEventsTableRule,
+} from '@/components/target/alerts/alert-events-table';
 import { AlertMetricChart } from '@/components/target/alerts/alert-metric-chart';
 import { AlertStateTransitionsBar } from '@/components/target/alerts/alert-state-transitions-bar';
 import { Spinner } from '@/components/ui/spinner';
@@ -19,14 +22,16 @@ import {
 import { useTickCounter } from '@/lib/hooks/use-tick-counter';
 import { useNavigate } from '@tanstack/react-router';
 
-const TargetAlertsDetailPage_Query = graphql(`
-  query TargetAlertsDetailPage_Query(
+// Static rule configuration. Fetched once with no polling — the Modify-alert
+// sheet (and everything else in the page chrome) lives under this query, so it
+// is never torn down by a background refetch. The live, time-windowed
+// `stateLog` is fetched separately by `RuleStateLogSection` below.
+const TargetAlertsDetailPage_RuleConfigQuery = graphql(`
+  query TargetAlertsDetailPage_RuleConfigQuery(
     $organizationSlug: String!
     $projectSlug: String!
     $targetSlug: String!
     $ruleId: ID!
-    $from: DateTime!
-    $to: DateTime!
   ) {
     target(
       reference: {
@@ -83,6 +88,32 @@ const TargetAlertsDetailPage_Query = graphql(`
           id
           displayName
         }
+      }
+    }
+  }
+`);
+
+const TargetAlertsDetailPage_StateLogQuery = graphql(`
+  query TargetAlertsDetailPage_StateLogQuery(
+    $organizationSlug: String!
+    $projectSlug: String!
+    $targetSlug: String!
+    $ruleId: ID!
+    $from: DateTime!
+    $to: DateTime!
+  ) {
+    target(
+      reference: {
+        bySelector: {
+          organizationSlug: $organizationSlug
+          projectSlug: $projectSlug
+          targetSlug: $targetSlug
+        }
+      }
+    ) {
+      id
+      metricAlertRule(id: $ruleId) {
+        id
         stateLog(from: $from, to: $to) {
           id
           fromState
@@ -154,32 +185,14 @@ export function TargetAlertsDetailPage(props: {
 
   const [viewRangeMinutes, setViewRangeMinutes] = useState('60');
 
-  // Advance the rolling window every 15s so the state-transitions bar,
-  // events table, and metric snapshots reflect transitions the workflows
-  // evaluator drives on its 60s cron cadence. Including `tick` in the
-  // useMemo deps recomputes `now`, which changes the variables, which
-  // urql treats as a new query and refires automatically.
-  const tick = useTickCounter(15_000);
-  const { from, to } = useMemo(() => {
-    const now = new Date();
-    const minutes = parseInt(viewRangeMinutes, 10) || 60;
-    return {
-      from: subMinutes(now, minutes).toISOString(),
-      to: now.toISOString(),
-    };
-  }, [viewRangeMinutes, tick]);
-
   const [result] = useQuery({
-    query: TargetAlertsDetailPage_Query,
-    variables: { organizationSlug, projectSlug, targetSlug, ruleId, from, to },
+    query: TargetAlertsDetailPage_RuleConfigQuery,
+    variables: { organizationSlug, projectSlug, targetSlug, ruleId },
     requestPolicy: 'cache-and-network',
   });
 
   const rule = result.data?.target?.metricAlertRule;
 
-  // Spinner while loading (initial fetch, or revalidation after navigation
-  // where urql briefly serves stale `metricAlertRule: null`). Only render
-  // not-found once the network has confirmed it.
   if (result.fetching || result.stale || !result.data) {
     return (
       <div className="flex h-fit flex-1 items-center justify-center py-28">
@@ -217,43 +230,35 @@ export function TargetAlertsDetailPage(props: {
           />
         </div>
 
-        <section className="space-y-2">
-          <h2 className="text-neutral-12 m-0 mb-2 text-sm font-medium">Status transitions</h2>
-          <AlertStateTransitionsBar
-            stateLog={rule.stateLog}
-            from={from}
-            to={to}
-            ruleCreatedAt={rule.createdAt}
-          />
-        </section>
-
-        <section className="space-y-2">
-          <h2 className="text-neutral-12 m-0 text-sm font-medium">
-            {rule.type === MetricAlertRuleType.ErrorRate
-              ? 'Error rate over time'
-              : rule.type === MetricAlertRuleType.Latency
-                ? 'Latency over time'
-                : 'Traffic over time'}
-          </h2>
-          <AlertMetricChart
-            organizationSlug={organizationSlug}
-            projectSlug={projectSlug}
-            targetSlug={targetSlug}
-            type={rule.type}
-            metric={rule.metric}
-            timeWindowMinutes={parseInt(viewRangeMinutes, 10) || 60}
-            thresholdValue={rule.thresholdValue}
-            direction={rule.direction}
-            thresholdType={rule.thresholdType}
-          />
-        </section>
-
-        <AlertEventsTable
-          stateLog={rule.stateLog}
-          rule={rule}
+        <RuleStateLogSection
           organizationSlug={organizationSlug}
           projectSlug={projectSlug}
           targetSlug={targetSlug}
+          ruleId={rule.id}
+          viewRangeMinutes={viewRangeMinutes}
+          rule={rule}
+          chart={
+            <section className="space-y-2">
+              <h2 className="text-neutral-12 m-0 text-sm font-medium">
+                {rule.type === MetricAlertRuleType.ErrorRate
+                  ? 'Error rate over time'
+                  : rule.type === MetricAlertRuleType.Latency
+                    ? 'Latency over time'
+                    : 'Traffic over time'}
+              </h2>
+              <AlertMetricChart
+                organizationSlug={organizationSlug}
+                projectSlug={projectSlug}
+                targetSlug={targetSlug}
+                type={rule.type}
+                metric={rule.metric}
+                timeWindowMinutes={parseInt(viewRangeMinutes, 10) || 60}
+                thresholdValue={rule.thresholdValue}
+                direction={rule.direction}
+                thresholdType={rule.thresholdType}
+              />
+            </section>
+          }
         />
       </div>
 
@@ -272,5 +277,62 @@ export function TargetAlertsDetailPage(props: {
         />
       </aside>
     </div>
+  );
+}
+
+function RuleStateLogSection(props: {
+  organizationSlug: string;
+  projectSlug: string;
+  targetSlug: string;
+  ruleId: string;
+  viewRangeMinutes: string;
+  rule: AlertEventsTableRule & { createdAt: string };
+  chart: ReactNode;
+}) {
+  const { organizationSlug, projectSlug, targetSlug, ruleId, viewRangeMinutes, rule, chart } =
+    props;
+
+  const tick = useTickCounter(15_000);
+  const { from, to } = useMemo(() => {
+    const now = new Date();
+    const minutes = parseInt(viewRangeMinutes, 10) || 60;
+    return {
+      from: subMinutes(now, minutes).toISOString(),
+      to: now.toISOString(),
+    };
+  }, [viewRangeMinutes, tick]);
+
+  const [result] = useQuery({
+    query: TargetAlertsDetailPage_StateLogQuery,
+    variables: { organizationSlug, projectSlug, targetSlug, ruleId, from, to },
+    requestPolicy: 'cache-and-network',
+  });
+
+  // urql retains the previous `data` across the variable change each poll, so
+  // these sections keep showing the last state-log while the next one loads
+  const stateLog = result.data?.target?.metricAlertRule?.stateLog ?? [];
+
+  return (
+    <>
+      <section className="space-y-2">
+        <h2 className="text-neutral-12 m-0 mb-2 text-sm font-medium">Status transitions</h2>
+        <AlertStateTransitionsBar
+          stateLog={stateLog}
+          from={from}
+          to={to}
+          ruleCreatedAt={rule.createdAt}
+        />
+      </section>
+
+      {chart}
+
+      <AlertEventsTable
+        stateLog={stateLog}
+        rule={rule}
+        organizationSlug={organizationSlug}
+        projectSlug={projectSlug}
+        targetSlug={targetSlug}
+      />
+    </>
   );
 }

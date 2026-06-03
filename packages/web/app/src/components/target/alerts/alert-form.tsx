@@ -310,7 +310,11 @@ export type AlertFormRuleSeed = {
 export function ruleToFormDefaults(rule: AlertFormRuleSeed): AlertFormValues {
   let metricSelection: string;
   if (rule.type === MetricAlertRuleType.Latency && rule.metric) {
-    metricSelection = `LATENCY:${rule.metric.toLowerCase()}`;
+    // METRIC_OPTIONS encodes the percentile uppercase (e.g. `LATENCY:P95`),
+    // matching the `MetricAlertRuleMetric` enum values. Lowercasing here would
+    // produce `LATENCY:p95`, which matches no option (Select shows "Select…")
+    // and fails `parseMetricSelection`'s `METRIC_MAP` lookup on submit.
+    metricSelection = `LATENCY:${rule.metric.toUpperCase()}`;
   } else if (rule.type === MetricAlertRuleType.ErrorRate) {
     metricSelection = 'ERROR_RATE';
   } else {
@@ -327,10 +331,7 @@ export function ruleToFormDefaults(rule: AlertFormRuleSeed): AlertFormValues {
     thresholdValue: String(rule.thresholdValue),
     savedFilterId: rule.savedFilter?.id ?? '',
     confirmationMinutes: String(rule.confirmationMinutes),
-    channels:
-      rule.channels.length > 0
-        ? rule.channels.map(c => ({ channelId: c.id }))
-        : [{ channelId: '' }],
+    channels: rule.channels.map(c => ({ channelId: c.id })),
   };
 }
 
