@@ -119,6 +119,11 @@ export const SchemaCoordinateStats: Pick<
     { resolution },
     { injector },
   ) => {
+    // Failures are tracked to fields and not types. Don't bother doing a lookup for types.
+    if (!schemaCoordinate.includes('.')) {
+      return null;
+    }
+
     return injector.get(OperationsManager).readCoordinateFailuresOverTime({
       targetId: target,
       projectId: project,
