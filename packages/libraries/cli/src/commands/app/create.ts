@@ -90,7 +90,7 @@ export default class AppCreate extends Command<typeof AppCreate> {
       target = result.data;
     }
 
-    const version = flags.version ?? Math.random().toString(36).slice(2, 9);
+    const version = flags.version ?? Math.random().toString(36).padEnd(9, '0').slice(2, 9);
     if (!flags.version) {
       this.log(`No version provided, using generated version: ${version}`);
     }
