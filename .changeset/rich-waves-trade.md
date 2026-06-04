@@ -15,7 +15,7 @@ const hive = createHive({
   // ...
 });
 
-const manifest = await hive.persistedDocuments?.manifest({
+const manifest = await hive.persistedDocuments!.manifest({
   appName: 'my-app',
   appVersion: '1.0.0',
 });
