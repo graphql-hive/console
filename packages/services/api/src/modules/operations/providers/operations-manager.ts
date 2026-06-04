@@ -265,6 +265,14 @@ export class OperationsManager {
       },
     });
 
+    const org = await this.storage.getOrganization({
+      organizationId,
+    });
+
+    if (!org.featureFlags.subgraphVisibility) {
+      return null;
+    }
+
     return this.reader
       .countCoordinateFailure({
         targetIds: Array.isArray(targetId) ? targetId : [targetId],

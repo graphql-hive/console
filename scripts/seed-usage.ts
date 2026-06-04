@@ -7,7 +7,7 @@ import { buildSchema, DocumentNode, graphql, GraphQLSchema, parse, print } from 
 import { createHive, HiveClient } from '@graphql-hive/core';
 import { GraphQLFileLoader } from '@graphql-tools/graphql-file-loader';
 import { loadDocuments, loadSchema, loadTypedefs } from '@graphql-tools/load';
-import { addMocksToSchema } from '@graphql-tools/mock';
+import { addMocksToSchema, MockList } from '@graphql-tools/mock';
 import {
   composeServices,
   ServiceDefinition,
@@ -205,7 +205,14 @@ if (isFederation === false) {
   });
 
   const schema = buildSchema(apiSchema);
-  const schemaWithMocks = addMocksToSchema({ schema });
+  const schemaWithMocks = addMocksToSchema({
+    schema,
+    mocks: {
+      Query: {
+        allProducts: () => new MockList(5),
+      },
+    },
+  });
   start({ instance, schema: schemaWithMocks, queries });
 }
 

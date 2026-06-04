@@ -368,26 +368,29 @@ export class OperationsReader {
       `);
     }
 
+    const query = this.pickAggregationByPeriod({
+      period,
+      query: aggregationTableName => sql`
+        SELECT
+          coordinate,
+          sum(total_errors) as total
+        FROM ${aggregationTableName('coordinate_errors')}
+        ${this.createFilter({
+          target: targetIds,
+          period,
+          operations,
+          extra: conditions,
+        })}
+        GROUP BY coordinate
+      `,
+      queryId: aggregation => `count_failure_fields_v1_${aggregation}`,
+      timeout: 30_000,
+    });
+
     const res = await this.clickHouse.query<{
       total: string;
       coordinate: string;
-    }>({
-      query: sql`
-            SELECT
-              coordinate,
-              sum(total_errors) as total
-            FROM coordinate_errors_daily
-            ${this.createFilter({
-              target: targetIds,
-              period,
-              operations,
-              extra: conditions,
-            })}
-            GROUP BY coordinate
-          `,
-      queryId: 'count_failure_fields_v1',
-      timeout: 30_000,
-    });
+    }>(query);
 
     const stats: Record<string, number> = {};
     for (const row of res.data) {
