@@ -25,3 +25,15 @@ export {
 } from './iam-redis';
 export { createMskIamTokenProvider } from './iam-msk';
 export { invariant } from './helpers';
+export {
+  parseRedisConfigFromEnvironment,
+  type RedisEnvironment,
+  type ParseRedisConfigFromEnvironmentResult,
+  type RedisConfig,
+} from './redis-config-validation';
+export {
+  createRedisClient,
+  type Redis,
+  type RedisConnectionConfig,
+  type RedisClientOptions,
+} from './redis-client';

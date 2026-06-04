@@ -1,20 +1,18 @@
 #!/usr/bin/env node
-import Redis from 'ioredis';
 import ms from 'ms';
 import 'reflect-metadata';
 import { lru } from 'tiny-lru';
 import {
   configureTracing,
   createErrorHandler,
+  createRedisClient,
   createServer,
   registerShutdown,
   registerTRPC,
   reportReadiness,
-  resolveRedisCredentials,
   SamplingDecision,
   sentryInit,
   startHeartbeats,
-  startIamTokenRefresh,
   startMetrics,
   TracingInstance,
 } from '@hive/service-common';
@@ -72,55 +70,11 @@ export async function main() {
 
   const errorHandler = createErrorHandler(server);
 
-  const redisIamConfig = env.redis.awsIamAuthEnabled
-    ? {
-        host: env.redis.host,
-        port: env.redis.port,
-        awsRegion: env.redis.awsRegion ?? '',
-        username: env.redis.username ?? 'default',
-        iamAuthCacheName: env.redis.awsIamAuthCacheName,
-      }
-    : undefined;
-
-  const { password: redisPassword, username: redisUsername } = await resolveRedisCredentials(
-    env.redis.password,
-    server.log.child({ source: 'RedisCredentialResolver' }),
-    redisIamConfig,
-  );
-
-  let redis: Redis;
-  if (env.redis.clusterModeEnabled) {
-    redis = new Redis.Cluster([{ host: env.redis.host, port: env.redis.port }], {
-      dnsLookup: (address, callback) => callback(null, address),
-      redisOptions: {
-        username: redisUsername,
-        password: redisPassword,
-        maxRetriesPerRequest: 20,
-        enableReadyCheck: false,
-        tls: env.redis.tlsEnabled ? {} : undefined,
-      },
-    }) as unknown as Redis;
-  } else {
-    redis = new Redis({
-      host: env.redis.host,
-      port: env.redis.port,
-      username: redisUsername,
-      password: redisPassword,
-      maxRetriesPerRequest: 20,
-      db: 0,
-      enableReadyCheck: false,
-      tls: env.redis.tlsEnabled ? {} : undefined,
-    });
-  }
-
-  if (redisIamConfig) {
-    startIamTokenRefresh(
-      redis,
-      redisIamConfig,
-      env.redis.clusterModeEnabled,
-      server.log.child({ source: 'RedisIamTokenRefresh' }),
-    );
-  }
+  const redis = await createRedisClient(env.redis, {
+    logger: server.log.child({ source: 'Redis' }),
+    iamTokenRefreshLogger: server.log.child({ source: 'RedisIamTokenRefresh' }),
+    maxRetriesPerRequest: 20,
+  });
 
   const storage = await createStorage(
     env.postgres,
@@ -146,26 +100,6 @@ export async function main() {
   }
 
   try {
-    redis.on('error', err => {
-      server.log.error(err, 'Redis connection error');
-    });
-
-    redis.on('connect', () => {
-      server.log.info('Redis connection established');
-    });
-
-    redis.on('ready', () => {
-      server.log.info('Redis connection ready... ');
-    });
-
-    redis.on('close', () => {
-      server.log.info('Redis connection closed');
-    });
-
-    redis.on('reconnecting', (timeToReconnect?: number) => {
-      server.log.info('Redis reconnecting in %s', timeToReconnect);
-    });
-
     redis.on('end', async () => {
       server.log.info('Redis ended - no more reconnections will be made');
       await shutdown();

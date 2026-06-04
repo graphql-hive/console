@@ -1,6 +1,10 @@
 import * as fs from 'fs';
 import zod from 'zod';
-import { OpenTelemetryConfigurationModel, resolveServerListenOptions } from '@hive/service-common';
+import {
+  OpenTelemetryConfigurationModel,
+  parseRedisConfigFromEnvironment,
+  resolveServerListenOptions,
+} from '@hive/service-common';
 
 const isNumberString = (input: unknown) => zod.string().regex(/^\d+$/).safeParse(input).success;
 
@@ -145,21 +149,6 @@ for (const config of Object.values(configs)) {
   }
 }
 
-if (configs.redis.success && configs.redis.data.REDIS_AWS_IAM_AUTH_ENABLED === '1') {
-  const missingRedisIamVars: string[] = [];
-  if (configs.redis.data.REDIS_TLS_ENABLED !== '1')
-    missingRedisIamVars.push('REDIS_TLS_ENABLED must be enabled (ElastiCache IAM requires TLS)');
-  if (!configs.redis.data.REDIS_AWS_IAM_CACHE_NAME)
-    missingRedisIamVars.push('REDIS_AWS_IAM_CACHE_NAME');
-  if (!configs.redis.data.REDIS_AWS_REGION && !configs.base.data?.AWS_REGION)
-    missingRedisIamVars.push('REDIS_AWS_REGION or AWS_REGION');
-  if (missingRedisIamVars.length > 0) {
-    environmentErrors.push(
-      `REDIS_AWS_IAM_AUTH_ENABLED is enabled but the following required variables are missing or invalid: ${missingRedisIamVars.join(', ')}`,
-    );
-  }
-}
-
 if (configs.kafka.success && configs.kafka.data.KAFKA_AWS_IAM_AUTH_ENABLED === '1') {
   const missingKafkaIamVars: string[] = [];
   if (configs.kafka.data.KAFKA_SSL !== '1')
@@ -170,6 +159,19 @@ if (configs.kafka.success && configs.kafka.data.KAFKA_AWS_IAM_AUTH_ENABLED === '
     environmentErrors.push(
       `KAFKA_AWS_IAM_AUTH_ENABLED is enabled but the following required variables are missing or invalid: ${missingKafkaIamVars.join(', ')}`,
     );
+  }
+}
+
+let redisConfigResult = null;
+
+if (configs.redis.success) {
+  redisConfigResult = parseRedisConfigFromEnvironment({
+    redis: configs.redis.data,
+    awsRegion: configs.base.success ? configs.base.data.AWS_REGION : undefined,
+  });
+
+  if (redisConfigResult.type === 'error') {
+    environmentErrors.push(...redisConfigResult.errors);
   }
 }
 
@@ -190,7 +192,6 @@ const base = extractConfig(configs.base);
 const sentry = extractConfig(configs.sentry);
 const kafka = extractConfig(configs.kafka);
 const postgres = extractConfig(configs.postgres);
-const redis = extractConfig(configs.redis);
 const prometheus = extractConfig(configs.prometheus);
 const log = extractConfig(configs.log);
 const tracing = extractConfig(configs.tracing);
@@ -269,17 +270,10 @@ export const env = {
     password: postgres.POSTGRES_PASSWORD,
     ssl: postgres.POSTGRES_SSL === '1',
   },
-  redis: {
-    host: redis.REDIS_HOST,
-    port: redis.REDIS_PORT,
-    password: redis.REDIS_PASSWORD ?? '',
-    username: redis.REDIS_USERNAME,
-    tlsEnabled: redis.REDIS_TLS_ENABLED === '1',
-    clusterModeEnabled: redis.REDIS_CLUSTER_MODE_ENABLED === '1',
-    awsIamAuthEnabled: redis.REDIS_AWS_IAM_AUTH_ENABLED === '1',
-    awsRegion: redis.REDIS_AWS_REGION ?? base.AWS_REGION,
-    awsIamAuthCacheName: redis.REDIS_AWS_IAM_CACHE_NAME,
-  },
+  redis:
+    redisConfigResult?.type === 'ok'
+      ? redisConfigResult.config
+      : raiseInvariant('Unreachable: redis config errors are caught above via process.exit(1)'),
   log: {
     level: log.LOG_LEVEL ?? 'info',
     requests: log.REQUEST_LOGGING === '1',

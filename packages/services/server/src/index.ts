@@ -17,7 +17,6 @@ import { AccessTokenKeyContainer } from '@hive/api/modules/auth/lib/supertokens-
 import { EmailVerification } from '@hive/api/modules/auth/providers/email-verification';
 import { OAuthCache } from '@hive/api/modules/auth/providers/oauth-cache';
 import { OIDCIntegrationStore } from '@hive/api/modules/oidc-integrations/providers/oidc-integration.store';
-import { createRedisClient } from '@hive/api/modules/shared/providers/redis';
 import { RedisRateLimiter } from '@hive/api/modules/shared/providers/redis-rate-limiter';
 import { TargetsByIdCache } from '@hive/api/modules/target/providers/targets-by-id-cache';
 import { TargetsBySlugCache } from '@hive/api/modules/target/providers/targets-by-slug-cache';
@@ -30,13 +29,12 @@ import { createConnectionString } from '@hive/postgres';
 import { createHivePubSub } from '@hive/pubsub';
 import {
   configureTracing,
+  createRedisClient,
   createServer,
   registerShutdown,
   registerTRPC,
   reportReadiness,
-  resolveRedisCredentials,
   sentryInit,
-  startIamTokenRefresh,
   startMetrics,
   TracingInstance,
 } from '@hive/service-common';
@@ -173,56 +171,20 @@ export async function main() {
   );
   const taskScheduler = new TaskScheduler(storage.pool);
 
-  const redisIamConfig = env.redis.awsIamAuthEnabled
-    ? {
-        host: env.redis.host,
-        port: env.redis.port,
-        awsRegion: env.redis.awsRegion ?? '',
-        username: env.redis.username ?? 'default',
-        iamAuthCacheName: env.redis.awsIamAuthCacheName,
-      }
-    : undefined;
+  const redis = await createRedisClient(env.redis, {
+    logger: server.log.child({ source: 'Redis' }),
+    iamTokenRefreshLogger: server.log.child({ source: 'RedisIamTokenRefresh' }),
+  });
 
-  const { password: redisPassword, username: redisUsername } = await resolveRedisCredentials(
-    env.redis.password,
-    server.log.child({ source: 'RedisCredentialResolver' }),
-    redisIamConfig,
-  );
-
-  const redisConfig = {
-    ...env.redis,
-    password: redisPassword,
-    username: redisUsername,
-  };
-
-  const redis = createRedisClient('Redis', redisConfig, server.log.child({ source: 'Redis' }));
-
-  const redisSubscriber = createRedisClient(
-    'subscriber',
-    redisConfig,
-    server.log.child({ source: 'RedisSubscribe' }),
-  );
+  const redisSubscriber = await createRedisClient(env.redis, {
+    logger: server.log.child({ source: 'RedisSubscribe' }),
+    iamTokenRefreshLogger: server.log.child({ source: 'RedisSubscribeIamTokenRefresh' }),
+  });
 
   const pubSub = createHivePubSub({
     publisher: redis as any,
     subscriber: redisSubscriber as any,
   });
-
-  if (redisIamConfig) {
-    startIamTokenRefresh(
-      redis,
-      redisIamConfig,
-      env.redis.clusterModeEnabled,
-      server.log.child({ source: 'RedisIamTokenRefresh' }),
-    );
-
-    startIamTokenRefresh(
-      redisSubscriber,
-      redisIamConfig,
-      env.redis.clusterModeEnabled,
-      server.log.child({ source: 'RedisSubscribeIamTokenRefresh' }),
-    );
-  }
 
   registerShutdown({
     logger: server.log,
