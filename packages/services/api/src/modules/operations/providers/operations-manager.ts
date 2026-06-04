@@ -246,6 +246,34 @@ export class OperationsManager {
       .then(r => r.total);
   }
 
+  async countFailuresWithSchemaCoordinate({
+    organizationId,
+    projectId,
+    targetId,
+    period,
+    schemaCoordinate,
+  }: {
+    period: DateRange;
+    schemaCoordinate: string;
+  } & Listify<TargetSelector, 'targetId'>) {
+    await this.session.assertPerformAction({
+      action: 'project:describe',
+      organizationId,
+      params: {
+        organizationId,
+        projectId,
+      },
+    });
+
+    return this.reader
+      .countCoordinateFailure({
+        targetIds: Array.isArray(targetId) ? targetId : [targetId],
+        period,
+        schemaCoordinate,
+      })
+      .then(value => value[schemaCoordinate]);
+  }
+
   async countRequestsAndFailures({
     organizationId: organization,
     projectId: project,
@@ -743,6 +771,33 @@ export class OperationsManager {
     });
   }
 
+  async readCoordinateFailuresOverTime({
+    targetId,
+    organizationId,
+    period,
+    resolution,
+    schemaCoordinate,
+  }: {
+    period: DateRange;
+    resolution: number;
+    schemaCoordinate: string;
+  } & TargetSelector) {
+    const org = await this.storage.getOrganization({
+      organizationId,
+    });
+
+    if (org.featureFlags.subgraphVisibility !== true) {
+      return [];
+    }
+
+    return this.reader.getCoordinateFailuresOverTime({
+      period,
+      resolution,
+      schemaCoordinate,
+      targetId,
+    });
+  }
+
   async readGeneralDurationPercentiles({
     period,
     organizationId: organization,
@@ -1163,17 +1218,27 @@ export class OperationsManager {
       organizationId: organization,
     });
 
-    const rows = await this.reader.countCoordinatesOfType({
-      target,
-      period,
-      typename,
-      aggregateSource: org.featureFlags.subgraphVisibility ? 'coordinate_counts' : 'coordinates',
-    });
+    const [rows, errorRows] = await Promise.all([
+      this.reader.countCoordinatesOfType({
+        target,
+        period,
+        typename,
+        aggregateSource: org.featureFlags.subgraphVisibility ? 'coordinate_counts' : 'coordinates',
+      }),
+      org.featureFlags.subgraphVisibility
+        ? this.reader.countErrorCoordinatesOfType({
+            target,
+            period,
+            typename,
+          })
+        : Promise.resolve(),
+    ]);
 
     const records: {
       [coordinate: string]: {
         total: number;
         isUsed: boolean;
+        errorTotal?: number;
       };
     } = {};
 
@@ -1182,6 +1247,14 @@ export class OperationsManager {
         total: row.total,
         isUsed: row.total > 0,
       };
+    }
+
+    if (org.featureFlags.subgraphVisibility && errorRows) {
+      for (const row of errorRows) {
+        if (records[row.coordinate]) {
+          records[row.coordinate].errorTotal ??= row.total;
+        }
+      }
     }
 
     return records;

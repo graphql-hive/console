@@ -90,7 +90,12 @@ export class OperationsReader {
       | number;
     query(
       aggregationTableName: (
-        tableName: 'operations' | 'clients' | 'coordinates' | 'coordinate_counts',
+        tableName:
+          | 'operations'
+          | 'clients'
+          | 'coordinates'
+          | 'coordinate_counts'
+          | 'coordinate_errors',
       ) => RawValue,
     ): SqlValue;
     queryId(aggregation: 'daily' | 'hourly' | 'minutely'): `${string}_${typeof aggregation}`;
@@ -279,6 +284,108 @@ export class OperationsReader {
             GROUP BY coordinate
           `,
       queryId: 'count_fields_v2',
+      timeout: 30_000,
+    });
+
+    const stats: Record<string, number> = {};
+    for (const row of res.data) {
+      stats[row.coordinate] = ensureNumber(row.total);
+    }
+
+    for (const coordinate of schemaCoordinates) {
+      if (typeof stats[coordinate] !== 'number') {
+        stats[coordinate] = 0;
+      }
+    }
+
+    return stats;
+  }
+
+  countCoordinateFailure = batchBy<
+    {
+      schemaCoordinate: string;
+      targetIds: readonly string[];
+      period: DateRange;
+      operations?: readonly string[];
+      excludedClients?: readonly string[] | null;
+    },
+    Record<string, number>
+  >(
+    item =>
+      `${item.targetIds.join(',')}-${item.excludedClients?.join(',') ?? ''}-${item.operations?.join(',') ?? ''}-${item.period.from.toISOString()}-${item.period.to.toISOString()}`,
+    async items => {
+      const schemaCoordinates = items.map(item => item.schemaCoordinate);
+      return await this.countCoordinateFailures({
+        targetIds: items[0].targetIds,
+        excludedClients: items[0].excludedClients,
+        period: items[0].period,
+        operations: items[0].operations,
+        schemaCoordinates,
+      }).then(result =>
+        items.map(item =>
+          Promise.resolve({ [item.schemaCoordinate]: result[item.schemaCoordinate] }),
+        ),
+      );
+    },
+  );
+
+  public async countCoordinateFailures({
+    schemaCoordinates,
+    targetIds,
+    period,
+    operations,
+    excludedClients,
+  }: {
+    schemaCoordinates: readonly string[];
+    targetIds: string | readonly string[];
+    period: DateRange;
+    operations?: readonly string[];
+    excludedClients?: readonly string[] | null;
+  }) {
+    const conditions = [sql`(coordinate IN (${sql.array(schemaCoordinates, 'String')}))`];
+
+    if (Array.isArray(excludedClients) && excludedClients.length > 0) {
+      // Eliminate coordinates fetched by excluded clients.
+      // We can connect a coordinate to a client by using the hash column.
+      // The hash column is basically a unique identifier of a GraphQL operation.
+      // In the following query we fetch all hashes that were used only by the excluded clients.
+      conditions.push(sql`
+        hash NOT IN (
+          SELECT hash FROM (
+            SELECT
+              hash,
+              countIf(client_name NOT IN (${sql.array(
+                excludedClients,
+                'String',
+              )})) as non_excluded_clients_total
+            FROM clients_daily ${this.createFilter({
+              target: targetIds,
+              period,
+            })}
+            GROUP BY hash
+          ) WHERE non_excluded_clients_total = 0
+        )
+      `);
+    }
+
+    const res = await this.clickHouse.query<{
+      total: string;
+      coordinate: string;
+    }>({
+      query: sql`
+            SELECT
+              coordinate,
+              sum(total_errors) as total
+            FROM coordinate_errors_daily
+            ${this.createFilter({
+              target: targetIds,
+              period,
+              operations,
+              extra: conditions,
+            })}
+            GROUP BY coordinate
+          `,
+      queryId: 'count_failure_fields_v1',
       timeout: 30_000,
     });
 
@@ -2005,6 +2112,76 @@ export class OperationsReader {
     return result.data.map(row => row.client_name);
   }
 
+  async getCoordinateFailuresOverTime({
+    targetId,
+    period,
+    resolution,
+    schemaCoordinate,
+  }: {
+    targetId: string;
+    period: DateRange;
+    resolution: number;
+    schemaCoordinate: string;
+  }) {
+    const interval = calculateTimeWindow({ period, resolution });
+    const intervalRaw = this.clickHouse.translateWindow(interval);
+    const roundedPeriod = {
+      from: toStartOfInterval(period.from, interval.value, interval.unit),
+      to: toEndOfInterval(period.to, interval.value, interval.unit),
+    };
+    const startDateTimeFormatted = formatDate(roundedPeriod.from);
+    const endDateTimeFormatted = formatDate(roundedPeriod.to);
+
+    const query = this.pickAggregationByPeriod({
+      timeout: 15_000,
+      period,
+      resolution,
+      queryId: aggregation => `coord_failures_over_time_${aggregation}`,
+      query: aggregationTableName => {
+        return sql`
+        SELECT
+          date,
+          total,
+        FROM (
+          SELECT
+            toDateTime(
+              intDiv(
+                toUnixTimestamp(timestamp),
+                toUInt32(${String(interval.seconds)})
+              ) * toUInt32(${String(interval.seconds)})
+            ) as date,
+            sum(total_errors) as total
+          FROM ${aggregationTableName('coordinate_errors')}
+          ${this.createFilter({
+            target: targetId,
+            period: roundedPeriod,
+            extra: [sql`coordinate = ${schemaCoordinate}`],
+          })}
+          GROUP BY date
+          ORDER BY date
+          WITH FILL
+            FROM toDateTime(${startDateTimeFormatted}, 'UTC')
+            TO toDateTime(${endDateTimeFormatted}, 'UTC')
+            STEP INTERVAL ${intervalRaw}
+        )
+      `;
+      },
+    });
+
+    // multiply by 1000 to convert to milliseconds
+    const result = await this.clickHouse.query<{
+      date: string;
+      total: number;
+    }>(query);
+
+    return result.data.map(row => {
+      return {
+        date: toUnixTimestamp(row.date),
+        value: ensureNumber(row.total),
+      };
+    });
+  }
+
   private async getDurationAndCountOverTime({
     target,
     period,
@@ -2219,6 +2396,127 @@ export class OperationsReader {
       this.pickAggregationByPeriod({
         query: aggregationTableName => sql`
         SELECT coordinate, sum(total) as total FROM ${aggregationTableName(aggregateSource)}
+        ${this.createFilter({
+          target,
+          period,
+          extra: [sql`(${sql.join(typesConditions, ' OR ')})`],
+        })}
+        GROUP BY coordinate`,
+        queryId: aggregation => `coordinates_per_types_${aggregation}`,
+        timeout: 15_000,
+        period,
+      }),
+    );
+
+    return result.data.map(row => ({
+      coordinate: row.coordinate,
+      total: ensureNumber(row.total),
+    }));
+  }
+
+  // Identical to count coordinates, but for field errors
+  /**
+   * Counts the number of errors for a specific coordinate. This is the total resolved count.
+   * Note that in a single request, one coordinate can have multiple errors.
+   */
+  countErrorCoordinatesOfType = batch(
+    async (
+      selectors: Array<{
+        target: string;
+        period: DateRange;
+        typename: string;
+      }>,
+    ) => {
+      const aggregationMap = new Map<
+        string,
+        {
+          target: string;
+          period: DateRange;
+          typenames: string[];
+        }
+      >();
+
+      const makeKey = (selector: { target: string; period: DateRange }) =>
+        `${
+          selector.target
+        }-${selector.period.from.toISOString()}-${selector.period.to.toISOString()}`;
+
+      // Groups the type names by their target and period
+      // The idea here is to make the least possible number of queries to ClickHouse
+      // by fetching all selected type names of the same target and period.
+      for (const selector of selectors) {
+        const key = makeKey(selector);
+        const value = aggregationMap.get(key);
+
+        if (!value) {
+          aggregationMap.set(key, {
+            target: selector.target,
+            period: selector.period,
+            typenames: [selector.typename],
+          });
+        } else {
+          value.typenames.push(selector.typename);
+        }
+      }
+
+      const resultMap = new Map<
+        string,
+        Promise<
+          {
+            coordinate: string;
+            total: number;
+          }[]
+        >
+      >();
+
+      // Do the actual call to ClickHouse to get the coordinates and counts of selected type names.
+      for (const selector of aggregationMap.values()) {
+        const key = makeKey(selector);
+
+        resultMap.set(
+          key,
+          this.countErrorCoordinatesOfTypes({
+            target: selector.target,
+            period: selector.period,
+            typenames: selector.typenames,
+          }),
+        );
+      }
+
+      // Because the `batch` function is used (it's a similar concept to DataLoader),
+      // it has tu return a map of promises matching provided selectors in exact same order.
+      return selectors.map(selector => {
+        const key = makeKey(selector);
+        const value = resultMap.get(key);
+
+        if (!value) {
+          throw new Error(`Could not find data for ${key} selector`);
+        }
+
+        return value;
+      });
+    },
+  );
+
+  private async countErrorCoordinatesOfTypes({
+    target,
+    period,
+    typenames,
+  }: {
+    target: string;
+    period: DateRange;
+    typenames: string[];
+  }) {
+    const typesConditions = typenames.map(
+      t => sql`coordinate = ${t} OR coordinate LIKE ${t + '.%'}`,
+    );
+    const result = await this.clickHouse.query<{
+      coordinate: string;
+      total: number;
+    }>(
+      this.pickAggregationByPeriod({
+        query: aggregationTableName => sql`
+        SELECT coordinate, sum(total_errors) as total FROM ${aggregationTableName('coordinate_errors')}
         ${this.createFilter({
           target,
           period,

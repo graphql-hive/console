@@ -39,6 +39,7 @@ const SchemaCoordinateView_SchemaCoordinateStatsQuery = graphql(`
     target(reference: { bySelector: $targetSelector }) {
       id
       hasCollectedSubscriptionOperations
+      hasFieldLevelMetrics
       schemaCoordinateStats(period: $period, schemaCoordinate: $schemaCoordinate) {
         supergraphMetadata {
           ...SupergraphMetadataList_SupergraphMetadataFragment
@@ -48,6 +49,11 @@ const SchemaCoordinateView_SchemaCoordinateStatsQuery = graphql(`
           value
         }
         totalRequests
+        failuresOverTime(resolution: $resolution) {
+          date
+          value
+        }
+        totalFailures
         operations {
           edges {
             node {
@@ -124,13 +130,24 @@ function SchemaCoordinateView(props: {
 
     return points.map(node => [node.date, node.value]);
   }, [points]);
+
+  const errorPoints = query.data?.target?.schemaCoordinateStats?.failuresOverTime;
+  const errorsOverTime = useMemo(() => {
+    if (!errorPoints) {
+      return [];
+    }
+
+    return errorPoints.map(node => [node.date, node.value]);
+  }, [errorPoints]);
   const totalRequests = query.data?.target?.schemaCoordinateStats?.totalRequests ?? 0;
+  const totalFailures = query.data?.target?.schemaCoordinateStats.totalFailures ?? null;
   const totalOperations = query.data?.target?.schemaCoordinateStats?.operations.edges.length ?? 0;
   const totalClients = query.data?.target?.schemaCoordinateStats?.clients.edges.length ?? 0;
 
   const supergraphMetadata = query.data?.target?.schemaCoordinateStats?.supergraphMetadata;
   const kind = query.data?.target?.latestValidSchemaVersion?.explorer?.type?.__typename;
   const title = kind === 'GraphQLEnumType' ? `${typeName} (${props.coordinate})` : props.coordinate;
+  const hasFieldLevelMetrics = query.data?.target?.hasFieldLevelMetrics;
 
   if (query.error) {
     return <QueryError organizationSlug={props.organizationSlug} error={query.error} />;
@@ -193,15 +210,23 @@ function SchemaCoordinateView(props: {
             <div className="grid gap-4 md:grid-cols-4 lg:grid-cols-2">
               <Card className="bg-neutral-2/50">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Total calls</CardTitle>
+                  <CardTitle className="text-sm font-medium">
+                    {hasFieldLevelMetrics ? 'Total resolutions' : 'Total calls'}
+                  </CardTitle>
                   <GlobeIcon className="text-neutral-10 size-4" />
                 </CardHeader>
                 <CardContent>
                   <div className="text-2xl font-bold">
                     {isLoading ? '-' : formatNumber(totalRequests)}
+                    {totalFailures ? (
+                      <span className="ml-2 text-sm font-normal text-red-500">
+                        ({formatNumber(totalFailures)} errors)
+                      </span>
+                    ) : null}
                   </div>
                   <p className="text-neutral-10 text-xs">
-                    Requests in {dateRangeController.selectedPreset.label.toLowerCase()}
+                    {hasFieldLevelMetrics ? 'Resolved' : 'Requests'} in{' '}
+                    {dateRangeController.selectedPreset.label.toLowerCase()}
                   </p>
                 </CardContent>
               </Card>
@@ -258,7 +283,9 @@ function SchemaCoordinateView(props: {
               <CardHeader>
                 <CardTitle>Activity</CardTitle>
                 <CardDescription>
-                  GraphQL requests with {props.coordinate} over time
+                  {hasFieldLevelMetrics
+                    ? `Number of times the coordinate ${props.coordinate} has resolved over time`
+                    : `GraphQL requests with ${props.coordinate} over time`}
                 </CardDescription>
               </CardHeader>
               <CardContent className="min-h-[150px] grow basis-0">
@@ -316,6 +343,21 @@ function SchemaCoordinateView(props: {
                             large: true,
                             data: requestsOverTime,
                           },
+                          errorsOverTime?.length
+                            ? {
+                                type: 'line',
+                                name: 'Errors',
+                                showSymbol: false,
+                                smooth: false,
+                                color: colors.error,
+                                areaStyle: {},
+                                emphasis: {
+                                  focus: 'series',
+                                },
+                                large: true,
+                                data: errorsOverTime,
+                              }
+                            : undefined,
                         ],
                       }}
                     />

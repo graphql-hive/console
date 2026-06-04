@@ -4,10 +4,24 @@ import type { SchemaCoordinateStatsResolvers } from './../../../__generated__/ty
 
 export const SchemaCoordinateStats: Pick<
   SchemaCoordinateStatsResolvers,
-  'clients' | 'operations' | 'requestsOverTime' | 'totalRequests'
+  | 'clients'
+  | 'failuresOverTime'
+  | 'operations'
+  | 'requestsOverTime'
+  | 'totalFailures'
+  | 'totalRequests'
 > = {
   totalRequests: ({ organization, project, target, period, schemaCoordinate }, _, { injector }) => {
     return injector.get(OperationsManager).countRequestsWithSchemaCoordinate({
+      organizationId: organization,
+      projectId: project,
+      targetId: target,
+      period,
+      schemaCoordinate,
+    });
+  },
+  totalFailures: ({ organization, project, target, period, schemaCoordinate }, _, { injector }) => {
+    return injector.get(OperationsManager).countFailuresWithSchemaCoordinate({
       organizationId: organization,
       projectId: project,
       targetId: target,
@@ -95,5 +109,19 @@ export const SchemaCoordinateStats: Pick<
         startCursor: '',
       },
     };
+  },
+  failuresOverTime: (
+    { organization, project, target, period, schemaCoordinate },
+    { resolution },
+    { injector },
+  ) => {
+    return injector.get(OperationsManager).readCoordinateFailuresOverTime({
+      targetId: target,
+      projectId: project,
+      organizationId: organization,
+      period,
+      resolution,
+      schemaCoordinate,
+    });
   },
 };

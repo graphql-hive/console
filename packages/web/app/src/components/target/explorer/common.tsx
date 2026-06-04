@@ -30,6 +30,7 @@ export function Description(props: { description: string }) {
 const SchemaExplorerUsageStats_UsageFragment = graphql(`
   fragment SchemaExplorerUsageStats_UsageFragment on SchemaCoordinateUsage {
     total
+    errorTotal
     isUsed
     usedByClients
     topOperations(limit: 5) {
@@ -50,6 +51,7 @@ export function SchemaExplorerUsageStats(props: {
 }) {
   const usage = useFragment(SchemaExplorerUsageStats_UsageFragment, props.usage);
   const percentage = props.totalRequests ? (usage.total / props.totalRequests) * 100 : 0;
+  const availability = usage.errorTotal ? (1.0 - usage.errorTotal / usage.total) * 100.0 : null;
 
   const kindLabel = useMemo(() => props.kindLabel ?? 'field', [props.kindLabel]);
 
@@ -59,6 +61,9 @@ export function SchemaExplorerUsageStats(props: {
         <div className="grow">
           <div className="text-center" title={`${usage.total} requests`}>
             {formatNumber(usage.total)}
+            {availability ? (
+              <span className="text-neutral-8 ml-1">({availability.toFixed(2)}%)</span>
+            ) : null}
           </div>
           <div
             title={`${toDecimal(percentage)}% of all requests`}

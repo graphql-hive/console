@@ -370,6 +370,7 @@ export function usage(
       return {
         // TODO: This is a hack to mark the field as used but without passing exact number as we don't need the exact number in "Unused schema view".
         total: 1,
+        errorTotal: null,
         isUsed: true,
         usedByClients: () => [],
         period: usage.period,
@@ -382,6 +383,7 @@ export function usage(
 
     return {
       total: 0,
+      errorTotal: null,
       isUsed: false,
       usedByClients: () => [],
     };
@@ -393,6 +395,7 @@ export function usage(
     return coordinateUsage && coordinateUsage.total > 0
       ? {
           total: coordinateUsage.total,
+          errorTotal: coordinateUsage.errorTotal,
           isUsed: true,
           usedByClients: coordinateUsage.usedByClients,
           period: coordinateUsage.period,
@@ -403,6 +406,7 @@ export function usage(
         }
       : {
           total: 0,
+          errorTotal: null,
           isUsed: false,
           usedByClients: () => [],
         };

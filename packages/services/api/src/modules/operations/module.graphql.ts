@@ -159,7 +159,14 @@ export default gql`
 
   type SchemaCoordinateStats {
     requestsOverTime(resolution: Int!): [RequestsOverTime!]!
+
+    """
+    How many times this coordinate has reported an error. This is available only if subgraph
+    visibility is enabled for your organization and the gateway is sending field level metrics.
+    """
+    failuresOverTime(resolution: Int!): [FailuresOverTime!]
     totalRequests: SafeInt! @tag(name: "public")
+    totalFailures: SafeInt
     operations: OperationStatsValuesConnection! @tag(name: "public")
     clients: ClientStatsValuesConnection! @tag(name: "public")
   }

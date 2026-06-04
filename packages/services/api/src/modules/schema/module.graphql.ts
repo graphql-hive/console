@@ -252,6 +252,8 @@ export default gql`
     Whether any subscription operations were reported for this target.
     """
     hasCollectedSubscriptionOperations: Boolean!
+
+    hasFieldLevelMetrics: Boolean!
   }
 
   input SchemaChecksFilter {
@@ -1138,6 +1140,11 @@ export default gql`
     The total amount of usages of the schema coordinate within the contextual period.
     """
     total: Float!
+
+    """
+    The total amount of errors of the schema coordinate within the contextual period.
+    """
+    errorTotal: Float
     """
     Whether the schema coordinate is used within the contextual period.
     """
