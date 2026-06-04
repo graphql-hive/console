@@ -206,11 +206,12 @@ export class OperationsReader {
       period: DateRange;
       operations?: readonly string[];
       excludedClients?: readonly string[] | null;
+      aggregateSource?: 'coordinate_counts' | 'coordinates';
     },
     Record<string, number>
   >(
     item =>
-      `${item.targetIds.join(',')}-${item.excludedClients?.join(',') ?? ''}-${item.operations?.join(',') ?? ''}-${item.period.from.toISOString()}-${item.period.to.toISOString()}`,
+      `${item.targetIds.join(',')}-${item.excludedClients?.join(',') ?? ''}-${item.operations?.join(',') ?? ''}-${item.period.from.toISOString()}-${item.period.to.toISOString()}-${item.aggregateSource}`,
     async items => {
       const schemaCoordinates = items.map(item => item.schemaCoordinate);
       return await this.countCoordinates({
@@ -219,6 +220,7 @@ export class OperationsReader {
         period: items[0].period,
         operations: items[0].operations,
         schemaCoordinates,
+        aggregateSource: items[0].aggregateSource,
       }).then(result =>
         items.map(item =>
           Promise.resolve({ [item.schemaCoordinate]: result[item.schemaCoordinate] }),
@@ -227,18 +229,25 @@ export class OperationsReader {
     },
   );
 
+  /**
+   * Can count the number of requests hitting a coordinate or the number of resolutions depending on the aggregateSource.
+   * By default, this will return the number of requests. Pass the aggregate source "coordinate_counts" to get the total
+   * count of resolutions for a coordinate.
+   */
   public async countCoordinates({
     schemaCoordinates,
     targetIds,
     period,
     operations,
     excludedClients,
+    aggregateSource = 'coordinates',
   }: {
     schemaCoordinates: readonly string[];
     targetIds: string | readonly string[];
     period: DateRange;
     operations?: readonly string[];
     excludedClients?: readonly string[] | null;
+    aggregateSource?: 'coordinate_counts' | 'coordinates';
   }) {
     const conditions = [sql`(coordinate IN (${sql.array(schemaCoordinates, 'String')}))`];
 
@@ -266,15 +275,13 @@ export class OperationsReader {
       `);
     }
 
-    const res = await this.clickHouse.query<{
-      total: string;
-      coordinate: string;
-    }>({
-      query: sql`
+    const query = this.pickAggregationByPeriod({
+      period,
+      query: aggregationTableName => sql`
             SELECT
               coordinate,
               sum(total) as total
-            FROM coordinates_daily
+            FROM ${aggregationTableName(aggregateSource)} 
             ${this.createFilter({
               target: targetIds,
               period,
@@ -283,9 +290,14 @@ export class OperationsReader {
             })}
             GROUP BY coordinate
           `,
-      queryId: 'count_fields_v2',
+      queryId: aggregation => `count_fields_v2_${aggregation}`,
       timeout: 30_000,
     });
+
+    const res = await this.clickHouse.query<{
+      total: string;
+      coordinate: string;
+    }>(query);
 
     const stats: Record<string, number> = {};
     for (const row of res.data) {
@@ -2113,6 +2125,76 @@ export class OperationsReader {
     );
 
     return result.data.map(row => row.client_name);
+  }
+
+  async getCoordinatesOverTime({
+    targetId,
+    period,
+    resolution,
+    schemaCoordinate,
+  }: {
+    targetId: string;
+    period: DateRange;
+    resolution: number;
+    schemaCoordinate: string;
+  }) {
+    const interval = calculateTimeWindow({ period, resolution });
+    const intervalRaw = this.clickHouse.translateWindow(interval);
+    const roundedPeriod = {
+      from: toStartOfInterval(period.from, interval.value, interval.unit),
+      to: toEndOfInterval(period.to, interval.value, interval.unit),
+    };
+    const startDateTimeFormatted = formatDate(roundedPeriod.from);
+    const endDateTimeFormatted = formatDate(roundedPeriod.to);
+
+    const query = this.pickAggregationByPeriod({
+      timeout: 15_000,
+      period,
+      resolution,
+      queryId: aggregation => `coord_count_over_time_${aggregation}`,
+      query: aggregationTableName => {
+        return sql`
+        SELECT
+          date,
+          total,
+        FROM (
+          SELECT
+            toDateTime(
+              intDiv(
+                toUnixTimestamp(timestamp),
+                toUInt32(${String(interval.seconds)})
+              ) * toUInt32(${String(interval.seconds)})
+            ) as date,
+            sum(total) as total
+          FROM ${aggregationTableName('coordinate_counts')}
+          ${this.createFilter({
+            target: targetId,
+            period: roundedPeriod,
+            extra: [sql`coordinate = ${schemaCoordinate}`],
+          })}
+          GROUP BY date
+          ORDER BY date
+          WITH FILL
+            FROM toDateTime(${startDateTimeFormatted}, 'UTC')
+            TO toDateTime(${endDateTimeFormatted}, 'UTC')
+            STEP INTERVAL ${intervalRaw}
+        )
+      `;
+      },
+    });
+
+    // multiply by 1000 to convert to milliseconds
+    const result = await this.clickHouse.query<{
+      date: string;
+      total: number;
+    }>(query);
+
+    return result.data.map(row => {
+      return {
+        date: toUnixTimestamp(row.date),
+        value: ensureNumber(row.total),
+      };
+    });
   }
 
   async getCoordinateFailuresOverTime({

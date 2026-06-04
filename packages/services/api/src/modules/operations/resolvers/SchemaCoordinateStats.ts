@@ -34,7 +34,7 @@ export const SchemaCoordinateStats: Pick<
     { resolution },
     { injector },
   ) => {
-    return injector.get(OperationsManager).readRequestsOverTime({
+    return injector.get(OperationsManager).readCoordinatesOverTime({
       targetId: target,
       projectId: project,
       organizationId: organization,

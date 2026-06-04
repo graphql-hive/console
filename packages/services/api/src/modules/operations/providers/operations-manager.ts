@@ -237,13 +237,18 @@ export class OperationsManager {
       },
     });
 
+    const org = await this.storage.getOrganization({
+      organizationId,
+    });
+
     return this.reader
-      .countRequests({
-        target: targetId,
+      .countCoordinate({
+        targetIds: Array.isArray(targetId) ? targetId : [targetId],
         period,
         schemaCoordinate,
+        aggregateSource: org.featureFlags.subgraphVisibility ? 'coordinate_counts' : 'coordinates',
       })
-      .then(r => r.total);
+      .then(r => r[schemaCoordinate]);
   }
 
   async countFailuresWithSchemaCoordinate({
@@ -776,6 +781,33 @@ export class OperationsManager {
       clientVersionFilters,
       excludeOperations,
       excludeClientVersionFilters,
+    });
+  }
+
+  async readCoordinatesOverTime({
+    targetId,
+    organizationId,
+    period,
+    resolution,
+    schemaCoordinate,
+  }: {
+    period: DateRange;
+    resolution: number;
+    schemaCoordinate: string;
+  } & TargetSelector) {
+    const org = await this.storage.getOrganization({
+      organizationId,
+    });
+
+    if (org.featureFlags.subgraphVisibility !== true) {
+      return [];
+    }
+
+    return this.reader.getCoordinatesOverTime({
+      period,
+      resolution,
+      schemaCoordinate,
+      targetId,
     });
   }
 

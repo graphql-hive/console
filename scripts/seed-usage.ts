@@ -2,6 +2,7 @@
  * Example:
  * `TARGET=<target_id> FEDERATION=1 STAGE=local TOKEN=<access_token> pnpm seed:usage`
  */
+import { randomUUID } from 'crypto';
 import { parse as parsePath } from 'path';
 import { buildSchema, DocumentNode, graphql, GraphQLSchema, parse, print } from 'graphql';
 import { createHive, HiveClient } from '@graphql-hive/core';
@@ -211,6 +212,11 @@ if (isFederation === false) {
       Query: {
         allProducts: () => new MockList(5),
       },
+      Product: {
+        variations: () => new MockList(2),
+        upc: generateUpc,
+      },
+      ID: () => randomUUID(),
     },
   });
   start({ instance, schema: schemaWithMocks, queries });
@@ -226,4 +232,28 @@ function getDocumentRoot(documentNode: DocumentNode): string[] | null {
   return operationDefinition.selectionSet.selections
     .filter(selection => selection.kind === 'Field')
     .map(selection => selection.name.value);
+}
+
+function generateUpc() {
+  let upc = '';
+  for (let i = 0; i < 11; i++) {
+    upc += Math.floor(Math.random() * 10);
+  }
+  let oddSum = 0;
+  let evenSum = 0;
+
+  for (let i = 0; i < 11; i++) {
+    const digit = parseInt(upc[i], 10);
+    if (i % 2 === 0) {
+      oddSum += digit; // Odd positions (0, 2, 4, 6, 8, 10) are 1-based odd
+    } else {
+      evenSum += digit; // Even positions (1, 3, 5, 7, 9) are 1-based even
+    }
+  }
+
+  const total = oddSum * 3 + evenSum;
+  const remainder = total % 10;
+  const checksum = remainder === 0 ? 0 : 10 - remainder;
+
+  return upc + checksum;
 }

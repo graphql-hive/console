@@ -313,7 +313,7 @@ export function createUsage(pluginOptions: HiveInternalPluginOptions): UsageColl
                   ok: !result.errors?.length,
                   duration: args.duration,
                   errorsTotal: result.errors?.length ?? 0,
-                  fetches: args.fetches,
+                  fetches,
                 },
                 // TODO: operationHash is ready to accept hashes of persisted operations
                 client: args.experimental__persistedDocumentHash
