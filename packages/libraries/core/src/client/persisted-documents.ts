@@ -164,7 +164,7 @@ export function createPersistedDocuments(
 
   /** if there is already a in-flight request for a document or manifest, we re-use it. */
   const cdnCache = lru<string | null>(config.cache ?? 10_000);
-  const cdnFetchCache = new Map<string, Promise<string | null>>();
+  const fetchCache = new Map<string, Promise<string | null>>();
 
   const endpoints = Array.isArray(config.cdn.endpoint)
     ? config.cdn.endpoint
@@ -204,47 +204,64 @@ export function createPersistedDocuments(
   });
 
   function fetchFromCDN(
-    pathname: string,
+    documentIdOrPathname: string,
     context?: { waitUntil?: (promise: Promise<void> | void) => void },
   ): Promise<string | null> {
-    const cached = cdnCache.get(pathname);
+    const cached = cdnCache.get(documentIdOrPathname);
     if (cached !== undefined) {
       return Promise.resolve(cached);
     }
 
-    let promise = cdnFetchCache.get(pathname);
+    let promise = fetchCache.get(documentIdOrPathname);
     if (promise) {
       return promise;
     }
 
-    promise = (async (): Promise<string | null> => {
-      const l2Result = await getFromLayer2Cache(pathname);
-      if (l2Result.hit) {
-        cdnCache.set(pathname, l2Result.value);
-        return l2Result.value;
-      }
-
-      let lastError: unknown = null;
-      for (const breaker of circuitBreakers) {
-        try {
-          const result = await breaker.fire(pathname);
-          cdnCache.set(pathname, result);
-          setInLayer2Cache(pathname, result, context?.waitUntil);
-          return result;
-        } catch (error: unknown) {
-          config.logger.debug({ error });
-          lastError = error;
+    promise = Promise.resolve()
+      .then(async (): Promise<{ value: string | null; fromL2: boolean }> => {
+        // L2 cache check
+        const l2Result = await getFromLayer2Cache(documentIdOrPathname);
+        if (l2Result.hit) {
+          // L2 cache hit, store in L1 for faster subsequent access
+          cdnCache.set(documentIdOrPathname, l2Result.value);
+          return { value: l2Result.value, fromL2: true };
         }
-      }
-      if (lastError) {
-        config.logger.error({ error: lastError });
-      }
-      throw new Error(`Failed to fetch '${pathname}' from CDN.`);
-    })().finally(() => {
-      cdnFetchCache.delete(pathname);
-    });
 
-    cdnFetchCache.set(pathname, promise);
+        // CDN fetch
+        const pathname = documentIdOrPathname.replaceAll('~', '/');
+
+        let lastError: unknown = null;
+
+        for (const breaker of circuitBreakers) {
+          try {
+            const result = await breaker.fire(pathname);
+            return { value: result, fromL2: false };
+          } catch (error: unknown) {
+            config.logger.debug({ error });
+            lastError = error;
+          }
+        }
+        if (lastError) {
+          config.logger.error({ error: lastError });
+        }
+        throw new Error(`Failed to fetch "${pathname}" from CDN.`);
+      })
+      .then(({ value, fromL2 }) => {
+        // Store in L1 cache (in-memory), only if not already stored from L2 hit
+        if (!fromL2) {
+          cdnCache.set(documentIdOrPathname, value);
+          // Store in L2 cache (async, non-blocking), only for CDN fetched data
+          setInLayer2Cache(documentIdOrPathname, value, context?.waitUntil);
+        }
+
+        return value;
+      })
+      .finally(() => {
+        fetchCache.delete(documentIdOrPathname);
+      });
+
+    fetchCache.set(documentIdOrPathname, promise);
+
     return promise;
   }
 
@@ -337,16 +354,19 @@ export function createPersistedDocuments(
     if (validationError) {
       return Promise.reject(createValidationError(documentId, validationError.error));
     }
-    return fetchFromCDN(documentId.replaceAll('~', '/'), context);
+    return fetchFromCDN(documentId, context);
   }
 
   function loadManifest(
     deployment: { appName: string; appVersion: string },
     context?: { waitUntil?: (promise: Promise<void> | void) => void },
   ): Promise<PersistedDocumentsManifest | null> {
-    return fetchFromCDN(`${deployment.appName}/${deployment.appVersion}`, context).then(result =>
-      result ? (JSON.parse(result) as PersistedDocumentsManifest) : null,
-    );
+    return fetchFromCDN(`${deployment.appName}/${deployment.appVersion}`, context)
+      .then(result => (result ? (JSON.parse(result) as PersistedDocumentsManifest) : null))
+      .catch(err => {
+        config.logger.error({ err, deployment }, 'Failed to load persisted documents manifest');
+        throw err;
+      });
   }
 
   return {
@@ -356,7 +376,7 @@ export function createPersistedDocuments(
     dispose() {
       circuitBreakers.map(breaker => breaker.shutdown());
       cdnCache.clear();
-      cdnFetchCache.clear();
+      fetchCache.clear();
     },
   };
 }
