@@ -62,6 +62,10 @@ function makeGroupKey(rule: MetricAlertRuleRow): GroupKey {
   return `${rule.targetId}:${rule.timeWindowMinutes}:${rule.savedFilterId ?? ''}`;
 }
 
+// Nanoseconds per millisecond. ClickHouse stores operation durations in
+// nanoseconds; latency rule thresholds and all display surfaces use ms.
+const NS_TO_MS = 1e6;
+
 function extractMetricValue(row: ClickHouseWindowRow, rule: MetricAlertRuleRow): number {
   const total = Number(row.total);
   const totalOk = Number(row.total_ok);
@@ -79,7 +83,13 @@ function extractMetricValue(row: ClickHouseWindowRow, rule: MetricAlertRuleRow):
         P95: row.percentiles[2],
         P99: row.percentiles[3],
       };
-      return metricMap[rule.metric!] ?? 0;
+      // ClickHouse stores `duration` in nanoseconds, but rule thresholds (the
+      // form input) and every display surface are in
+      // milliseconds. Convert here so the threshold comparison and the persisted
+      // value are in milliseconds and consistent with all of them. Without this,
+      // a ns value (~1.2e9) is compared against a ms threshold (e.g. 4000),
+      // so any non-trivial latency trips the rule.
+      return (metricMap[rule.metric!] ?? 0) / NS_TO_MS;
     }
   }
 }

@@ -21,6 +21,7 @@ import {
   MetricAlertRuleThresholdType,
   MetricAlertRuleType,
 } from '@/gql/graphql';
+import { formatDuration } from '@/lib/hooks/use-formatted-duration';
 import { Link } from '@tanstack/react-router';
 import { AlertForm, ruleToFormDefaults } from './alert-form';
 import { DeleteRuleConfirmationDialog } from './delete-rule-confirmation-dialog';
@@ -169,10 +170,17 @@ export function AlertConditionsPanel({
       ? `${rule.metric.toLowerCase()} latency`
       : METRIC_LABEL_BY_TYPE[rule.type];
 
+  // A PERCENTAGE_CHANGE threshold is always a percent. A fixed value carries the
+  // metric's own unit: ms for latency (rendered via formatDuration, e.g.
+  // "4.00s"), percent for error rate, and a bare count for traffic.
   const thresholdDisplay =
     rule.thresholdType === MetricAlertRuleThresholdType.PercentageChange
       ? `${rule.thresholdValue}%`
-      : String(rule.thresholdValue);
+      : rule.type === MetricAlertRuleType.Latency
+        ? formatDuration(rule.thresholdValue, true)
+        : rule.type === MetricAlertRuleType.ErrorRate
+          ? `${rule.thresholdValue}%`
+          : String(rule.thresholdValue);
 
   const destination = destinationLabel(rule.channels);
 

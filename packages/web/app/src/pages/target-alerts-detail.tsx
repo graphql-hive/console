@@ -19,6 +19,7 @@ import {
   MetricAlertRuleThresholdType,
   MetricAlertRuleType,
 } from '@/gql/graphql';
+import { formatDuration } from '@/lib/hooks/use-formatted-duration';
 import { useTickCounter } from '@/lib/hooks/use-tick-counter';
 import { useNavigate } from '@tanstack/react-router';
 
@@ -168,8 +169,16 @@ function buildDescription(rule: {
       : METRIC_LABEL_BY_TYPE[rule.type];
   const dir = rule.direction === MetricAlertRuleDirection.Above ? 'above' : 'below';
   const isRelative = rule.thresholdType === MetricAlertRuleThresholdType.PercentageChange;
-  const valueDisplay = isRelative ? `${rule.thresholdValue}% (relative)` : `${rule.thresholdValue}`;
-  return `Fires when ${metricLabel} is ${dir} ${valueDisplay} over the ${formatWindowHuman(
+  // Fixed-value thresholds carry the metric's unit: ms for latency (rendered as
+  // "4.00s" via formatDuration), percent for error rate, bare count for traffic.
+  const valueDisplay = isRelative
+    ? `${rule.thresholdValue}% (relative)`
+    : rule.type === MetricAlertRuleType.Latency
+      ? formatDuration(rule.thresholdValue, true)
+      : rule.type === MetricAlertRuleType.ErrorRate
+        ? `${rule.thresholdValue}%`
+        : `${rule.thresholdValue}`;
+  return `Fires when ${metricLabel} is ${dir} ${valueDisplay} over the last ${formatWindowHuman(
     rule.timeWindowMinutes,
   )}.`;
 }
