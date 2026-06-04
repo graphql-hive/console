@@ -8,6 +8,7 @@ import { UrlLoader } from '@graphql-tools/url-loader';
 import type { BaseLoaderOptions, Loader, Source } from '@graphql-tools/utils';
 import type { TypedDocumentNode } from '@graphql-typed-document-node/core';
 import { FragmentType, graphql, useFragment as unmaskFragment, useFragment } from '../gql';
+import { getCwd } from './cwd';
 import { SchemaWarningConnection, SeverityLevelType } from '../gql/graphql';
 import { APIError, IntrospectionError, InvalidFederationSubgraphError } from './errors';
 import { graphqlRequest } from './graphql-request';
@@ -187,7 +188,7 @@ export async function loadSchema(
 
   const sources = await loadTypedefs(file, {
     ...options,
-    cwd: process.cwd(),
+    cwd: getCwd(),
     loaders,
   });
 

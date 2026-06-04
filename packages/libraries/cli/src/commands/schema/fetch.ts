@@ -2,6 +2,7 @@ import { writeFile } from 'node:fs/promises';
 import { extname, resolve } from 'node:path';
 import { Args, Flags } from '@oclif/core';
 import Command from '../../base-command';
+import { getCwd } from '../../helpers/cwd';
 import { graphql } from '../../gql';
 import * as GraphQLSchema from '../../gql/graphql';
 import { graphqlEndpoint } from '../../helpers/config';
@@ -233,7 +234,7 @@ export default class SchemaFetch extends Command<typeof SchemaFetch> {
       const printed = `${Texture.table(tableData)}\n\r${stats}`;
 
       if (flags.write) {
-        const filepath = resolve(process.cwd(), flags.write);
+        const filepath = resolve(getCwd(), flags.write);
         await writeFile(filepath, printed, 'utf8');
       }
       this.log(printed);
@@ -245,7 +246,7 @@ export default class SchemaFetch extends Command<typeof SchemaFetch> {
       }
 
       if (flags.write) {
-        const filepath = resolve(process.cwd(), flags.write);
+        const filepath = resolve(getCwd(), flags.write);
         switch (extname(flags.write.toLowerCase())) {
           case '.graphql':
           case '.gql':

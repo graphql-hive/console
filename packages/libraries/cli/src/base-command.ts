@@ -1,5 +1,6 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { env } from 'node:process';
+import { getCwd } from './helpers/cwd';
 import { Logger } from '@graphql-hive/core';
 import { Command, Flags, Interfaces } from '@oclif/core';
 import { Config, GetConfigurationValueType, ValidConfigurationKeys } from './helpers/config';
@@ -44,7 +45,7 @@ export default abstract class BaseCommand<T extends typeof Command> extends Comm
     this._userConfig = new Config({
       // eslint-disable-next-line no-process-env
       filepath: process.env.HIVE_CONFIG,
-      rootDir: process.cwd(),
+      rootDir: getCwd(),
     });
 
     const { args, flags } = await this.parse({
@@ -195,7 +196,7 @@ export default abstract class BaseCommand<T extends typeof Command> extends Comm
   >(flags: TFlags) {
     if (flags.require && flags.require.length > 0) {
       await Promise.all(
-        flags.require.map(mod => import(require.resolve(mod, { paths: [process.cwd()] }))),
+        flags.require.map(mod => import(require.resolve(mod, { paths: [getCwd()] }))),
       );
     }
   }

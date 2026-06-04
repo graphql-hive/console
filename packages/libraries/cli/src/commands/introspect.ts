@@ -3,6 +3,7 @@ import { extname, resolve } from 'node:path';
 import { buildSchema, introspectionFromSchema } from 'graphql';
 import { Args, Flags } from '@oclif/core';
 import Command from '../base-command';
+import { getCwd } from '../helpers/cwd';
 import {
   IntrospectionError,
   UnexpectedError,
@@ -79,7 +80,7 @@ export default class Introspect extends Command<typeof Introspect> {
     }
 
     if (flags.write) {
-      const filepath = resolve(process.cwd(), flags.write);
+      const filepath = resolve(getCwd(), flags.write);
 
       switch (extname(flags.write.toLowerCase())) {
         case '.graphql':

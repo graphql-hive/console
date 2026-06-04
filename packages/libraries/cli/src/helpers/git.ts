@@ -1,4 +1,5 @@
 import { exec } from 'child_process';
+import { getCwd } from './cwd';
 import { readFileSync } from 'fs';
 import ci from 'env-ci';
 
@@ -24,7 +25,7 @@ function getLatestCommitFromGit() {
     hash: string;
     author: string;
   } | null>(resolve => {
-    exec(latestCommitCommand, { cwd: process.cwd() }, (_, stdout) => {
+    exec(latestCommitCommand, { cwd: getCwd() }, (_, stdout) => {
       if (stdout.includes(splitBy)) {
         const [hash, authorName, authorEmail] = stdout.split(splitBy);
         if (hash && authorName) {

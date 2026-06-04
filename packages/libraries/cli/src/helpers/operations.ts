@@ -5,6 +5,7 @@ import { normalizeOperation } from '@graphql-hive/core';
 import { CodeFileLoader } from '@graphql-tools/code-file-loader';
 import { GraphQLFileLoader } from '@graphql-tools/graphql-file-loader';
 import { loadDocuments } from '@graphql-tools/load';
+import { getCwd } from './cwd';
 
 export async function loadOperations(
   file: string,
@@ -55,7 +56,7 @@ export async function loadOperations(
     return operations;
   }
 
-  const cwd = process.cwd();
+  const cwd = getCwd();
   const sources = await loadDocuments(file, {
     cwd,
     loaders: [

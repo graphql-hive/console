@@ -8,6 +8,7 @@ import {
   CompositionResult,
 } from '@theguild/federation-composition';
 import Command from '../base-command';
+import { getCwd } from '../helpers/cwd';
 import { graphql } from '../gql';
 import * as GraphQLSchema from '../gql/graphql';
 import { graphqlEndpoint } from '../helpers/config';
@@ -345,7 +346,7 @@ export default class Dev extends Command<typeof Dev> {
 
     this.logSuccess('Composition successful');
     this.log(`Saving supergraph schema to ${input.write}`);
-    await writeFile(resolve(process.cwd(), input.write), compositionResult.supergraphSdl, 'utf-8');
+    await writeFile(resolve(getCwd(), input.write), compositionResult.supergraphSdl, 'utf-8');
   }
 
   private async compose(input: {
@@ -403,7 +404,7 @@ export default class Dev extends Command<typeof Dev> {
     this.log(`Saving supergraph schema to ${input.write}`);
     try {
       await writeFile(
-        resolve(process.cwd(), input.write),
+        resolve(getCwd(), input.write),
         compositionResult.supergraphSdl,
         'utf-8',
       );
