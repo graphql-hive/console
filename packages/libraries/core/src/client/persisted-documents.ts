@@ -244,7 +244,13 @@ export function createPersistedDocuments(
         if (lastError) {
           config.logger.error({ error: lastError });
         }
-        throw new Error(`Failed to fetch "${pathname}" from CDN.`);
+        if (pathname === documentIdOrPathname) {
+          // manifest
+          throw new Error('Failed to look up persisted operations manifest.');
+        } else {
+          // persisted documents (because ~ was replaced)
+          throw new Error('Failed to look up persisted operation.');
+        }
       })
       .then(({ value, fromL2 }) => {
         // Store in L1 cache (in-memory), only if not already stored from L2 hit
