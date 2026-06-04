@@ -89,7 +89,7 @@ function extractMetricValue(row: ClickHouseWindowRow, rule: MetricAlertRuleRow):
       // value are in milliseconds and consistent with all of them. Without this,
       // a ns value (~1.2e9) is compared against a ms threshold (e.g. 4000),
       // so any non-trivial latency trips the rule.
-      return (metricMap[rule.metric!] ?? 0) / NS_TO_MS;
+      return (rule.metric ? metricMap[rule.metric] : 0) / NS_TO_MS;
     }
   }
 }
