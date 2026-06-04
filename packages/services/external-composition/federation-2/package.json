@@ -8,8 +8,8 @@
     "dev": "tsup-node --config ../../../configs/tsup/dev.config.node.ts src/dev.ts"
   },
   "devDependencies": {
-    "@apollo/composition": "2.13.2",
-    "@apollo/federation-internals": "2.13.2",
+    "@apollo/composition": "2.14.0",
+    "@apollo/federation-internals": "2.14.0",
     "@graphql-hive/external-composition": "workspace:*",
     "@hive/service-common": "workspace:*",
     "@whatwg-node/server": "0.10.17",

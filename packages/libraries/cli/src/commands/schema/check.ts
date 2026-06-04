@@ -227,7 +227,7 @@ export default class SchemaCheck extends Command<typeof SchemaCheck> {
         throw new MissingRegistryTokenError();
       }
 
-      const sdl = await loadSchema('first-federation-then-graphql-introspection', file, {
+      const rawSdl = await loadSchema('first-federation-then-graphql-introspection', file, {
         logger: this.logger,
       }).catch(e => {
         throw new SchemaFileNotFoundError(file, e);
@@ -239,9 +239,11 @@ export default class SchemaCheck extends Command<typeof SchemaCheck> {
       const commit = flags.commit || git?.commit;
       const author = flags.author || git?.author;
 
-      if (typeof sdl !== 'string' || sdl.length === 0) {
+      if (typeof rawSdl !== 'string' || rawSdl.length === 0) {
         throw new SchemaFileEmptyError(file);
       }
+
+      const sdl = minifySchema(rawSdl);
 
       let github: null | {
         commit: string;
@@ -275,7 +277,7 @@ export default class SchemaCheck extends Command<typeof SchemaCheck> {
         variables: {
           input: {
             service,
-            sdl: minifySchema(sdl),
+            sdl,
             github,
             meta:
               !!commit && !!author

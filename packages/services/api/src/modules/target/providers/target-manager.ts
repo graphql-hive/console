@@ -4,7 +4,7 @@ import * as zod from 'zod';
 import { z } from 'zod';
 import * as GraphQLSchema from '../../../__generated__/types';
 import type { Project, Target, TargetSettings } from '../../../shared/entities';
-import { share } from '../../../shared/helpers';
+import { cache, share } from '../../../shared/helpers';
 import { AuditLogRecorder } from '../../audit-logs/providers/audit-log-recorder';
 import { Session } from '../../auth/lib/authz';
 import { IdTranslator } from '../../shared/providers/id-translator';
@@ -539,25 +539,14 @@ export class TargetManager {
     } as const;
   }
 
+  @cache((args: { targetId: string }) => args.targetId)
   async getTargetById(args: { targetId: string }): Promise<Target> {
-    const breadcrumb = await this.storage.getTargetBreadcrumbForTargetId({
-      targetId: args.targetId,
-    });
-
-    if (!breadcrumb) {
+    const target = await this.storage.getTargetById(args.targetId);
+    if (!target) {
       throw new Error(`Target not found (targetId=${args.targetId})`);
     }
 
-    const [organizationId, projectId] = await Promise.all([
-      this.idTranslator.translateOrganizationId(breadcrumb),
-      this.idTranslator.translateProjectId(breadcrumb),
-    ]);
-
-    return this.storage.getTarget({
-      organizationId: organizationId,
-      projectId: projectId,
-      targetId: args.targetId,
-    });
+    return target;
   }
 
   /**

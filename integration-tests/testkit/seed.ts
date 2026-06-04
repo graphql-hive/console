@@ -19,6 +19,7 @@ import { ensureEnv } from './env';
 import {
   addAlert,
   addAlertChannel,
+  addMetricAlertRule,
   assignMemberRole,
   checkSchema,
   compareToPreviousVersion,
@@ -30,6 +31,7 @@ import {
   createTarget,
   createToken,
   deleteMemberRole,
+  deleteMetricAlertRules,
   deleteSchema,
   deleteTokens,
   fetchLatestSchema,
@@ -51,6 +53,7 @@ import {
   readTokenInfo,
   updateBaseSchema,
   updateMemberRole,
+  updateMetricAlertRule,
   updateTargetValidationSettings,
 } from './flow';
 import * as GraphQLSchema from './gql/graphql';
@@ -152,24 +155,83 @@ export function initSeed() {
         TRUNCATE "oidc_integration_domains"
       `);
     },
+    async purgeUserByEmail(email: string) {
+      const pool = await getPool();
+      const supertokensUserIds = await pool
+        .any(
+          psql`
+          SELECT "user_id"::text
+          FROM "supertokens_emailpassword_users"
+          WHERE "email" = ${email}
+          UNION
+          SELECT "user_id"::text
+          FROM "supertokens_thirdparty_users"
+          WHERE "email" = ${email}
+        `,
+        )
+        .then(rows => rows.map(row => z.string().parse((row as { user_id: string }).user_id)));
+      const internalUserIds = await pool
+        .any(
+          psql`
+          SELECT "id"::text
+          FROM "users"
+          WHERE "email" = ${email}
+        `,
+        )
+        .then(rows => rows.map(row => z.string().parse((row as { id: string }).id)));
+
+      if (internalUserIds.length) {
+        await pool.query(psql`
+          DELETE FROM "organizations"
+          WHERE "user_id" = ANY(${psql.array(internalUserIds, 'uuid')})
+        `);
+        await pool.query(psql`
+          DELETE FROM "users"
+          WHERE "id" = ANY(${psql.array(internalUserIds, 'uuid')})
+        `);
+      }
+
+      if (supertokensUserIds.length) {
+        await pool.query(psql`
+          DELETE FROM "email_verifications"
+          WHERE "user_identity_id" = ANY(${psql.array(supertokensUserIds, 'uuid')})
+        `);
+        await pool.query(psql`
+          DELETE FROM "supertokens_app_id_to_user_id"
+          WHERE "user_id"::text = ANY(${psql.array(supertokensUserIds, 'text')})
+        `);
+      }
+    },
     async forgeOIDCDNSChallenge(orgSlug: string) {
       const pool = await getPool();
 
-      const domainChallengeId = await pool
-        .oneFirst(
-          psql`
-      SELECT "oidc_integration_domains"."id"
-      FROM "oidc_integration_domains" INNER JOIN "organizations" ON "oidc_integration_domains"."organization_id" = "organizations"."id"
-      WHERE "organizations"."clean_id" = ${orgSlug}
-      `,
-        )
-        .then(z.string().parse);
+      let domainChallengeId: string | null = null;
+
+      await pollFor(async () => {
+        const value = await pool.maybeOneFirst(psql`
+          SELECT "oidc_integration_domains"."id"
+          FROM "oidc_integration_domains" INNER JOIN "organizations" ON "oidc_integration_domains"."organization_id" = "organizations"."id"
+          WHERE "organizations"."clean_id" = ${orgSlug}
+        `);
+
+        if (!value) {
+          return false;
+        }
+
+        domainChallengeId = z.string().parse(value);
+        return true;
+      });
+
+      if (!domainChallengeId) {
+        throw new Error(`Failed to resolve OIDC domain challenge for organization "${orgSlug}"`);
+      }
+
       const key = `hive:oidcDomainChallenge:${domainChallengeId}`;
 
       const challenge = {
         id: domainChallengeId,
         recordName: `_hive-challenge`,
-        // hardcoded value
+        // TXT record value for _hive-challenge.buzzcheck.dev.
         value: 'a894723a5d52a30d73790752b0169835e6f81dd77d2737dba809bee7fde39092',
       };
 
@@ -185,7 +247,7 @@ export function initSeed() {
       );
 
       await redis.set(key, JSON.stringify(challenge));
-      await redis.disconnect();
+      redis.disconnect();
     },
     createDbConnection,
     authenticate: doAuthenticate,
@@ -813,6 +875,31 @@ export function initSeed() {
                     r.expectNoGraphQLErrors(),
                   );
                   return result.addAlertChannel;
+                },
+                async addMetricAlertRule(
+                  input: { token?: string } & Parameters<typeof addMetricAlertRule>[0],
+                ) {
+                  const result = await addMetricAlertRule(input, input.token || ownerToken).then(
+                    r => r.expectNoGraphQLErrors(),
+                  );
+                  return result.addMetricAlertRule;
+                },
+                async updateMetricAlertRule(
+                  input: { token?: string } & Parameters<typeof updateMetricAlertRule>[0],
+                ) {
+                  const result = await updateMetricAlertRule(input, input.token || ownerToken).then(
+                    r => r.expectNoGraphQLErrors(),
+                  );
+                  return result.updateMetricAlertRule;
+                },
+                async deleteMetricAlertRules(
+                  input: { token?: string } & Parameters<typeof deleteMetricAlertRules>[0],
+                ) {
+                  const result = await deleteMetricAlertRules(
+                    input,
+                    input.token || ownerToken,
+                  ).then(r => r.expectNoGraphQLErrors());
+                  return result.deleteMetricAlertRules;
                 },
                 /**
                  * Create an access token for a given target.

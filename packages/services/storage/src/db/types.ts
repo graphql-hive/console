@@ -10,6 +10,13 @@
 export type alert_channel_type = 'MSTEAMS_WEBHOOK' | 'SLACK' | 'WEBHOOK';
 export type alert_type = 'SCHEMA_CHANGE_NOTIFICATIONS';
 export type breaking_change_formula = 'PERCENTAGE' | 'REQUEST_COUNT';
+export type hive_subgraph_log_type = 'added' | 'changed' | 'removed' | 'unchanged';
+export type metric_alert_direction = 'ABOVE' | 'BELOW';
+export type metric_alert_metric = 'AVG' | 'P75' | 'P90' | 'P95' | 'P99';
+export type metric_alert_severity = 'CRITICAL' | 'INFO' | 'WARNING';
+export type metric_alert_state = 'FIRING' | 'NORMAL' | 'PENDING' | 'RECOVERING';
+export type metric_alert_threshold_type = 'FIXED_VALUE' | 'PERCENTAGE_CHANGE';
+export type metric_alert_type = 'ERROR_RATE' | 'LATENCY' | 'TRAFFIC';
 export type saved_filter_visibility = 'private' | 'shared';
 export type schema_policy_resource = 'ORGANIZATION' | 'PROJECT';
 export type schema_proposal_stage = 'APPROVED' | 'CLOSED' | 'DRAFT' | 'IMPLEMENTED' | 'OPEN';
@@ -153,6 +160,67 @@ export interface graphile_worker_deduplication {
   task_name: string;
 }
 
+export interface metric_alert_incidents {
+  current_value: number;
+  id: string;
+  metric_alert_rule_id: string;
+  previous_value: number | null;
+  resolved_at: Date | null;
+  started_at: Date;
+  threshold_value: number;
+}
+
+export interface metric_alert_notifications_sent {
+  alert_channel_id: string;
+  sent_at: Date;
+  state_log_id: string;
+}
+
+export interface metric_alert_rule_channels {
+  alert_channel_id: string;
+  metric_alert_rule_id: string;
+}
+
+export interface metric_alert_rules {
+  confirmation_minutes: number;
+  created_at: Date;
+  created_by_user_id: string | null;
+  direction: metric_alert_direction;
+  enabled: boolean;
+  id: string;
+  last_evaluated_at: Date | null;
+  last_triggered_at: Date | null;
+  metric: metric_alert_metric | null;
+  name: string;
+  organization_id: string;
+  project_id: string;
+  saved_filter_id: string | null;
+  severity: metric_alert_severity;
+  state: metric_alert_state;
+  state_changed_at: Date | null;
+  target_id: string;
+  threshold_type: metric_alert_threshold_type;
+  threshold_value: number;
+  time_window_minutes: number;
+  type: metric_alert_type;
+  updated_at: Date;
+  updated_by_user_id: string | null;
+}
+
+export interface metric_alert_state_log {
+  created_at: Date;
+  expires_at: Date;
+  from_state: metric_alert_state;
+  id: string;
+  incident_id: string | null;
+  metric_alert_rule_id: string;
+  previous_value: number | null;
+  target_id: string;
+  threshold_value: number | null;
+  to_state: metric_alert_state;
+  value: number | null;
+}
+
 export interface migration {
   date: Date;
   hash: string;
@@ -190,7 +258,7 @@ export interface oidc_integrations {
 export interface organization_access_tokens {
   assigned_resources: any | null;
   created_at: Date;
-  description: string;
+  description: string | null;
   expires_at: Date | null;
   first_characters: string;
   hash: string;
@@ -358,7 +426,7 @@ export interface schema_log {
   sdl: string | null;
   service_name: string | null;
   service_url: string | null;
-  target_id: string;
+  target_id: string | null;
 }
 
 export interface schema_policy_config {
@@ -416,6 +484,10 @@ export interface schema_version_changes {
 
 export interface schema_version_to_log {
   action_id: string;
+  previous_action_id: string | null;
+  schema_changes: any | null;
+  subgraph_name: string | null;
+  type: hive_subgraph_log_type | null;
   version_id: string;
 }
 
@@ -432,11 +504,14 @@ export interface schema_versions {
   has_persisted_schema_changes: boolean | null;
   id: string;
   is_composable: boolean;
+  meta: any | null;
   metadata_attributes: any | null;
+  origin: any | null;
   previous_schema_version_id: string | null;
   record_version: string | null;
   schema_composition_errors: any | null;
   schema_metadata: any | null;
+  supergraph_changes: any | null;
   supergraph_sdl: string | null;
   tags: Array<string> | null;
   target_id: string;
@@ -539,6 +614,11 @@ export interface DBTables {
   document_preflight_scripts: document_preflight_scripts;
   email_verifications: email_verifications;
   graphile_worker_deduplication: graphile_worker_deduplication;
+  metric_alert_incidents: metric_alert_incidents;
+  metric_alert_notifications_sent: metric_alert_notifications_sent;
+  metric_alert_rule_channels: metric_alert_rule_channels;
+  metric_alert_rules: metric_alert_rules;
+  metric_alert_state_log: metric_alert_state_log;
   migration: migration;
   oidc_integration_domains: oidc_integration_domains;
   oidc_integrations: oidc_integrations;

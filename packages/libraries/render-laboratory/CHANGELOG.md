@@ -1,5 +1,16 @@
 # @graphql-yoga/render-graphiql
 
+## 0.1.9
+
+### Patch Changes
+
+- [#8104](https://github.com/graphql-hive/console/pull/8104)
+  [`95bae6e`](https://github.com/graphql-hive/console/commit/95bae6e984945969915cc8adfc448f2d29b3d9e5)
+  Thanks [@enisdenjo](https://github.com/enisdenjo)! - GraphQL Yoga is a peer dependency to the
+  Laboratory renderer
+
+  Not a dependency.
+
 ## 0.1.8
 
 ### Patch Changes

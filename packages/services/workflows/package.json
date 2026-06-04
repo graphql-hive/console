@@ -18,6 +18,7 @@
     "@hive/service-common": "workspace:*",
     "@hive/storage": "workspace:*",
     "@sentry/node": "7.120.2",
+    "@slack/web-api": "7.10.0",
     "@trpc/client": "10.45.3",
     "@types/mjml": "4.7.1",
     "@types/nodemailer": "7.0.4",

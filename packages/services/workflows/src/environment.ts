@@ -102,6 +102,20 @@ const RedisModel = zod.object({
   REDIS_AWS_IAM_CACHE_NAME: emptyString(zod.string().optional()),
 });
 
+const ClickHouseModel = zod.union([
+  zod.object({
+    CLICKHOUSE: emptyString(zod.literal('0').optional()),
+  }),
+  zod.object({
+    CLICKHOUSE: zod.literal('1'),
+    CLICKHOUSE_HOST: zod.string(),
+    CLICKHOUSE_PORT: NumberFromString,
+    CLICKHOUSE_USERNAME: zod.string(),
+    CLICKHOUSE_PASSWORD: emptyString(zod.string().optional()),
+    CLICKHOUSE_PROTOCOL: emptyString(zod.string().optional()),
+  }),
+]);
+
 const RequestBrokerModel = zod.union([
   zod.object({
     REQUEST_BROKER: emptyString(zod.literal('0').optional()),
@@ -119,6 +133,12 @@ const PrometheusModel = zod.object({
   ).default('0'),
   PROMETHEUS_METRICS_LABEL_INSTANCE: emptyString(zod.string().optional()).default('workflows'),
   PROMETHEUS_METRICS_PORT: emptyString(NumberFromString.optional()).default(10254),
+});
+
+const FeatureFlagsModel = zod.object({
+  FEATURE_FLAGS_METRIC_ALERT_RULES_ENABLED: emptyString(
+    zod.union([zod.literal('1'), zod.literal('0')]).optional(),
+  ),
 });
 
 const LogModel = zod.object({
@@ -146,8 +166,10 @@ const configs = {
   prometheus: PrometheusModel.safeParse(process.env),
   log: LogModel.safeParse(process.env),
   tracing: OpenTelemetryConfigurationModel.safeParse(process.env),
+  clickhouse: ClickHouseModel.safeParse(process.env),
   requestBroker: RequestBrokerModel.safeParse(process.env),
   redis: RedisModel.safeParse(process.env),
+  featureFlags: FeatureFlagsModel.safeParse(process.env),
 };
 
 const environmentErrors: Array<string> = [];
@@ -193,8 +215,10 @@ const sentry = extractConfig(configs.sentry);
 const prometheus = extractConfig(configs.prometheus);
 const log = extractConfig(configs.log);
 const tracing = extractConfig(configs.tracing);
+const clickhouse = extractConfig(configs.clickhouse);
 const requestBroker = extractConfig(configs.requestBroker);
 const redis = extractConfig(configs.redis);
+const featureFlags = extractConfig(configs.featureFlags);
 
 const emailProviderConfig =
   email.EMAIL_PROVIDER === 'postmark'
@@ -271,6 +295,16 @@ export const env = {
       user: postgres.POSTGRES_USER,
     } satisfies PostgresConnectionParamaters,
   },
+  clickhouse:
+    clickhouse.CLICKHOUSE === '1'
+      ? {
+          host: clickhouse.CLICKHOUSE_HOST,
+          port: clickhouse.CLICKHOUSE_PORT,
+          username: clickhouse.CLICKHOUSE_USERNAME,
+          password: clickhouse.CLICKHOUSE_PASSWORD ?? '',
+          protocol: clickhouse.CLICKHOUSE_PROTOCOL,
+        }
+      : null,
   requestBroker:
     requestBroker.REQUEST_BROKER === '1'
       ? ({
@@ -289,5 +323,8 @@ export const env = {
     awsIamAuthEnabled: redis.REDIS_AWS_IAM_AUTH_ENABLED === '1',
     awsRegion: redis.REDIS_AWS_REGION ?? base.AWS_REGION,
     awsIamAuthCacheName: redis.REDIS_AWS_IAM_CACHE_NAME,
+  },
+  featureFlags: {
+    metricAlertRulesEnabled: featureFlags.FEATURE_FLAGS_METRIC_ALERT_RULES_ENABLED === '1',
   },
 } as const;

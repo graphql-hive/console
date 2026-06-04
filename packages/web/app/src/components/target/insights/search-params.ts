@@ -1,4 +1,4 @@
-import type { FilterSelection } from '@/components/base/filter-dropdown/types';
+import type { FilterSelection } from '@/components/base/floating/filter-dropdown/types';
 import { stripNullValues } from '@/lib/route-utils';
 
 /** Convert operation filter selections to URL search param format. */

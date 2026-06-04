@@ -178,6 +178,12 @@ services:
     ports:
       - '4317:4317'
       - '4318:4318'
+      # Auth-free internal OTLP receiver (no hiveauth). Used by Hive services
+      # running natively on the host (`pnpm dev:hive`) to emit their own spans
+      # without customer-style auth headers. The 4317/4318 receivers above keep
+      # hiveauth for customer-facing OTLP ingest. Mirrors prod's dual-collector
+      # split; see DEVELOPMENT.md and config.yaml's `otlp/internal` block.
+      - '4320:4320'
       # OTEL's /metrics endpoint inside the container is on 10254, but we publish it on
       # host port 10255. Every Hive service defaults PROMETHEUS_METRICS_PORT to 10254
       # (see packages/services/*/environment.ts), so leaving the host mapping as 10254
@@ -204,6 +210,7 @@ services:
         rm -rf /dst/* &&
         cp /src/*.json /dst/ &&
         sed -i 's/PROM_DATASOURCE_UID/local-prom/g' /dst/*.json &&
+        sed -i 's/TEMPO_DATASOURCE_UID/local-tempo/g' /dst/*.json &&
         sed -i 's/TABLE_SUFFIX/dev/g' /dst/*.json
       "
     volumes:
@@ -229,11 +236,32 @@ services:
     networks:
       - 'stack'
 
-  grafana:
-    image: grafana/grafana:11.3.0
+  tempo:
+    image: grafana/tempo:2.10.5
     profiles:
       - observability
     mem_limit: 500m
+    command: ['-config.file=/etc/tempo.yaml']
+    # OTLP receivers (4317/4318) intentionally NOT published to host — the
+    # otel-collector reaches them via `tempo:4317` over the internal `stack`
+    # network. Only the query API on 3200 is published so Grafana (in the same
+    # network) can read traces. If we published 4317/4318 to host they'd
+    # collide with the otel-collector's own published ports.
+    ports:
+      - '3200:3200'
+    volumes:
+      - ./configs/tempo/tempo.yaml:/etc/tempo.yaml:ro
+      - ./.hive-dev/tempo/data:/var/tempo
+    networks:
+      - 'stack'
+
+  grafana:
+    image: grafana/grafana:13.0.2
+    profiles:
+      - observability
+    # Bumped from 500m: Grafana 13 + four Drilldown app plugins (each a
+    # separate frontend bundle) consistently OOM-killed at the old limit.
+    mem_limit: 1024m
     depends_on:
       grafana-dashboard-init:
         condition: service_completed_successfully
@@ -243,6 +271,7 @@ services:
       GF_AUTH_ANONYMOUS_ENABLED: 'true'
       GF_AUTH_ANONYMOUS_ORG_ROLE: 'Admin'
       GF_AUTH_DISABLE_LOGIN_FORM: 'true'
+      GF_INSTALL_PLUGINS: 'grafana-exploretraces-app,grafana-metricsdrilldown-app,grafana-lokiexplore-app,grafana-pyroscope-app'
     volumes:
       - ./configs/grafana/provisioning:/etc/grafana/provisioning:ro
       - ./.hive-dev/grafana/dashboards:/etc/grafana/dashboards:ro

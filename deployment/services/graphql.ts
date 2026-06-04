@@ -72,6 +72,7 @@ export function deployGraphQL({
 }) {
   const apiConfig = new pulumi.Config('api');
   const supertokensConfig = new pulumi.Config('supertokens');
+  const featureFlagsConfig = new pulumi.Config('featureFlags');
   const apiEnv = apiConfig.requireObject<Record<string, string>>('env');
 
   const hiveConfig = new pulumi.Config('hive');
@@ -127,6 +128,8 @@ export function deployGraphQL({
           ...apiEnv,
           LOG_LEVEL: 'info',
           SENTRY: sentry.enabled ? '1' : '0',
+          FEATURE_FLAGS_METRIC_ALERT_RULES_ENABLED:
+            featureFlagsConfig.get('metricAlertRulesEnabled') ?? '0',
           REQUEST_LOGGING: '1',
           COMMERCE_ENDPOINT: serviceLocalEndpoint(commerce.service),
           TOKENS_ENDPOINT: serviceLocalEndpoint(tokens.service),

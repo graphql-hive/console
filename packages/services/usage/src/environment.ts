@@ -19,6 +19,10 @@ const emptyString = <T extends zod.ZodType>(input: T) => {
   }, input);
 };
 
+function raiseInvariant(reason: string): never {
+  throw new Error(reason);
+}
+
 const EnvironmentModel = zod.object({
   PORT: emptyString(NumberFromString.optional()),
   SERVER_HOST: emptyString(zod.string().optional()),
@@ -51,6 +55,10 @@ const KafkaBaseModel = zod.object({
   KAFKA_BUFFER_SIZE: NumberFromString,
   KAFKA_BUFFER_INTERVAL: NumberFromString,
   KAFKA_BUFFER_DYNAMIC: zod.union([zod.literal('1'), zod.literal('0')]),
+  KAFKA_AWS_REGION: emptyString(zod.string().optional()),
+  KAFKA_AWS_IAM_AUTH_ENABLED: emptyString(
+    zod.union([zod.literal('0'), zod.literal('1')]).optional(),
+  ),
 });
 
 const KafkaModel = zod.union([
@@ -152,6 +160,19 @@ if (configs.redis.success && configs.redis.data.REDIS_AWS_IAM_AUTH_ENABLED === '
   }
 }
 
+if (configs.kafka.success && configs.kafka.data.KAFKA_AWS_IAM_AUTH_ENABLED === '1') {
+  const missingKafkaIamVars: string[] = [];
+  if (configs.kafka.data.KAFKA_SSL !== '1')
+    missingKafkaIamVars.push('KAFKA_SSL must be enabled (MSK IAM requires TLS)');
+  if (!configs.kafka.data.KAFKA_AWS_REGION && !configs.base.data?.AWS_REGION)
+    missingKafkaIamVars.push('KAFKA_AWS_REGION or AWS_REGION');
+  if (missingKafkaIamVars.length > 0) {
+    environmentErrors.push(
+      `KAFKA_AWS_IAM_AUTH_ENABLED is enabled but the following required variables are missing or invalid: ${missingKafkaIamVars.join(', ')}`,
+    );
+  }
+}
+
 if (environmentErrors.length) {
   const fullError = environmentErrors.join(`\n`);
   console.error('❌ Invalid environment variables:', fullError);
@@ -216,13 +237,23 @@ export const env = {
             : true
           : false,
       sasl:
-        kafka.KAFKA_SASL_MECHANISM != null
+        kafka.KAFKA_AWS_IAM_AUTH_ENABLED === '1'
           ? {
-              mechanism: kafka.KAFKA_SASL_MECHANISM,
-              username: kafka.KAFKA_SASL_USERNAME,
-              password: kafka.KAFKA_SASL_PASSWORD,
+              mechanism: 'aws-iam' as const,
+              region:
+                kafka.KAFKA_AWS_REGION ??
+                base.AWS_REGION ??
+                raiseInvariant(
+                  'KAFKA_AWS_REGION or AWS_REGION must be set when KAFKA_AWS_IAM_AUTH_ENABLED is enabled',
+                ),
             }
-          : null,
+          : kafka.KAFKA_SASL_MECHANISM != null
+            ? {
+                mechanism: kafka.KAFKA_SASL_MECHANISM,
+                username: kafka.KAFKA_SASL_USERNAME,
+                password: kafka.KAFKA_SASL_PASSWORD,
+              }
+            : null,
     },
     buffer: {
       size: kafka.KAFKA_BUFFER_SIZE,

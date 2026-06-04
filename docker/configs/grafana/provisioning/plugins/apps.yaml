@@ -1,0 +1,15 @@
+apiVersion: 1
+
+apps:
+  - type: grafana-exploretraces-app
+    org_id: 1
+    disabled: false
+  - type: grafana-metricsdrilldown-app
+    org_id: 1
+    disabled: false
+  - type: grafana-lokiexplore-app
+    org_id: 1
+    disabled: false
+  - type: grafana-pyroscope-app
+    org_id: 1
+    disabled: false

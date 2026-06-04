@@ -1,15 +1,22 @@
-import { execSync } from 'child_process';
-import { readFile, writeFile } from 'fs/promises';
+import { execSync } from 'node:child_process';
+import { mkdtemp, readFile, writeFile } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { compile } from 'json-schema-to-typescript';
-import { fileSync } from 'tmp';
 import { OTLP_COLLECTOR_CHART, VECTOR_HELM_CHART } from './utils/observability';
 import { CONTOUR_CHART } from './utils/reverse-proxy';
 
-async function generateJsonSchemaFromHelmValues(input: string) {
-  const jsonSchemaTempFile = fileSync();
-  execSync(`helm schema -input ${input} -output ${jsonSchemaTempFile.name}`);
+async function createTmpFile() {
+  const dir = await mkdtemp(join(tmpdir(), 'hive-deployment'));
+  const filePath = join(dir, `${crypto.randomUUID()}.tmp`);
+  return filePath;
+}
 
-  return await readFile(jsonSchemaTempFile.name, 'utf-8').then(r => JSON.parse(r));
+async function generateJsonSchemaFromHelmValues(input: string) {
+  const jsonSchemaTempFile = await createTmpFile();
+  execSync(`helm schema -input ${input} -output ${jsonSchemaTempFile}`);
+
+  return await readFile(jsonSchemaTempFile, 'utf-8').then(r => JSON.parse(r));
 }
 
 async function generateOpenTelemetryCollectorTypes() {
@@ -24,9 +31,9 @@ async function generateOpenTelemetryCollectorTypes() {
 async function generateVectorDevTypes() {
   const helmValuesFileUrl = `https://raw.githubusercontent.com/vectordotdev/helm-charts/vector-${VECTOR_HELM_CHART.version}/charts/vector/values.yaml`;
   const valuesFile = await fetch(helmValuesFileUrl).then(res => res.text());
-  const valuesTempFile = fileSync();
-  await writeFile(valuesTempFile.name, valuesFile);
-  const jsonSchema = await generateJsonSchemaFromHelmValues(valuesTempFile.name);
+  const valuesTempFile = await createTmpFile();
+  await writeFile(valuesTempFile, valuesFile);
+  const jsonSchema = await generateJsonSchemaFromHelmValues(valuesTempFile);
   const output = await compile(jsonSchema, 'VectorValues', { additionalProperties: false });
   await writeFile('./utils/vector.types.ts', output);
 }
@@ -35,9 +42,9 @@ async function generateContourTypes() {
   const helmValuesFileUrl = `https://raw.githubusercontent.com/projectcontour/helm-charts/refs/tags/contour-${CONTOUR_CHART.version}/charts/contour/values.yaml`;
   const valuesFile = await fetch(helmValuesFileUrl).then(r => r.text());
 
-  const valuesTempFile = fileSync();
-  await writeFile(valuesTempFile.name, valuesFile);
-  const jsonSchema = await generateJsonSchemaFromHelmValues(valuesTempFile.name);
+  const valuesTempFile = await createTmpFile();
+  await writeFile(valuesTempFile, valuesFile);
+  const jsonSchema = await generateJsonSchemaFromHelmValues(valuesTempFile);
   const output = await compile(jsonSchema, 'ContourValues');
   await writeFile('./utils/contour.types.ts', output);
 }

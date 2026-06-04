@@ -1,8 +1,8 @@
 import { useCallback, useState } from 'react';
 import { useMutation } from 'urql';
-import type { SavedFilterView } from '@/components/base/insights-filters';
-import { Popover } from '@/components/base/popover/popover';
-import { TriggerButton } from '@/components/base/trigger-button';
+import { Button as BaseButton } from '@/components/base/button/button';
+import { Popover } from '@/components/base/floating/popover/popover';
+import type { SavedFilterView } from '@/components/target/insights/use-insights-filter-extra-sections';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -191,7 +191,7 @@ function CreateFilterButton({
       onOpenChange={setOpen}
       align="start"
       title="Save to filter collections"
-      trigger={<TriggerButton label="Save this filter view" variant="action" />}
+      trigger={<BaseButton label="Save this filter view" variant="action" />}
       content={
         <div className="space-y-3">
           <div>

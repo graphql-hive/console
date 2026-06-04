@@ -23,3 +23,5 @@ export {
   startIamTokenRefresh,
   type IamRedisConfig,
 } from './iam-redis';
+export { createMskIamTokenProvider } from './iam-msk';
+export { invariant } from './helpers';
