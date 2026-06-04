@@ -90,11 +90,20 @@ function createValidationError(
   return new PersistedDocumentValidationError(documentId, error);
 }
 
+/**
+ * The app deployment manifest as registered in Hive, containing metadata
+ * and the full list of persisted document hashes for a specific app version.
+ */
 export interface PersistedDocumentsManifest {
+  /** Unique identifier of the manifest. */
   id: string;
+  /** Name of the app this manifest belongs to. */
   appName: string;
+  /** Version of the app this manifest belongs to. */
   appVersion: string;
+  /** Whether this app version is published/active in Hive. */
   isActive: boolean;
+  /** All persisted document hashes registered for this app version. */
   documentHashes: string[];
 }
 
