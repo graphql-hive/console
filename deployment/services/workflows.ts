@@ -2,6 +2,7 @@ import * as pulumi from '@pulumi/pulumi';
 import { serviceLocalEndpoint } from '../utils/local-endpoint';
 import { ServiceSecret } from '../utils/secrets';
 import { ServiceDeployment } from '../utils/service-deployment';
+import { Clickhouse } from './clickhouse';
 import { Docker } from './docker';
 import { Environment } from './environment';
 import { Observability } from './observability';
@@ -27,6 +28,7 @@ export function deployWorkflows({
   postmarkSecret,
   schema,
   redis,
+  clickhouse,
 }: {
   postgres: Postgres;
   observability: Observability;
@@ -38,7 +40,9 @@ export function deployWorkflows({
   postmarkSecret: PostmarkSecret;
   schema: Schema;
   redis: Redis;
+  clickhouse: Clickhouse;
 }) {
+  const featureFlagsConfig = new pulumi.Config('featureFlags');
   return (
     new ServiceDeployment(
       'workflow-service',
@@ -55,6 +59,14 @@ export function deployWorkflows({
               : '',
           LOG_JSON: '1',
           SCHEMA_ENDPOINT: serviceLocalEndpoint(schema.service),
+          FEATURE_FLAGS_METRIC_ALERT_RULES_ENABLED:
+            featureFlagsConfig.get('metricAlertRulesEnabled') ?? '0',
+          // Activate the ClickHouse client; without this toggle the workflows
+          // env model picks the CLICKHOUSE-disabled union variant and
+          // `env.clickhouse` resolves to null, which makes the
+          // `evaluateMetricAlertRules` cron silently bail every minute even
+          // when the secret values below are wired in correctly.
+          CLICKHOUSE: '1',
         },
         readinessProbe: '/_readiness',
         livenessProbe: '/_health',
@@ -80,6 +92,12 @@ export function deployWorkflows({
       .withSecret('REDIS_HOST', redis.secret, 'host')
       .withSecret('REDIS_PORT', redis.secret, 'port')
       .withSecret('REDIS_PASSWORD', redis.secret, 'password')
+      // ClickHouse — required by `evaluateMetricAlertRules` task
+      .withSecret('CLICKHOUSE_HOST', clickhouse.secret, 'host')
+      .withSecret('CLICKHOUSE_PORT', clickhouse.secret, 'port')
+      .withSecret('CLICKHOUSE_USERNAME', clickhouse.secret, 'username')
+      .withSecret('CLICKHOUSE_PASSWORD', clickhouse.secret, 'password')
+      .withSecret('CLICKHOUSE_PROTOCOL', clickhouse.secret, 'protocol')
       .deploy()
   );
 }

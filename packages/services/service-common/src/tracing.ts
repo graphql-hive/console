@@ -125,7 +125,12 @@ export class TracingInstance {
           query.sql === 'SELECT EXISTS(SELECT 1)' ||
           query.sql === 'SELECT 1' ||
           query.sql === '/* Heartbeat */ SELECT 1' ||
-          query.sql === 'SELECT EXISTS( SELECT 1)'
+          query.sql === 'SELECT EXISTS( SELECT 1)' ||
+          // graphile-worker's polling loop hits its own schema every ~2s per
+          // worker (default `pollInterval`). These are infrastructure noise,
+          // not application work...every query touches `graphile_worker.*`
+          // so a substring check is precise and zero false-positive risk.
+          query.sql.includes('graphile_worker.')
         );
       },
       ...options,

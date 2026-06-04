@@ -7,6 +7,7 @@ import type { CreateAlertModal_AddAlertMutation } from '@/components/project/ale
 import type { CreateChannel_AddAlertChannelMutation } from '@/components/project/alerts/create-channel';
 import type { DeleteAlertsButton_DeleteAlertsMutation } from '@/components/project/alerts/delete-alerts-button';
 import type { DeleteChannelsButton_DeleteChannelsMutation } from '@/components/project/alerts/delete-channels-button';
+import type { AlertForm_AddMetricAlertRuleMutation } from '@/components/target/alerts/alert-form';
 import type { CreateOperationMutationType } from '@/components/target/laboratory/create-operation-modal';
 import type { DeleteCollectionMutationType } from '@/components/target/laboratory/delete-collection-modal';
 import type { DeleteOperationMutationType } from '@/components/target/laboratory/delete-operation-modal';
@@ -387,6 +388,22 @@ const deleteSavedFilter: TypedDocumentNodeUpdateResolver<
   );
 };
 
+const addMetricAlertRule: TypedDocumentNodeUpdateResolver<
+  typeof AlertForm_AddMetricAlertRuleMutation
+> = ({ addMetricAlertRule }, _args, cache) => {
+  if (!addMetricAlertRule.ok) return;
+  cache.invalidate({
+    __typename: 'Target',
+    id: addMetricAlertRule.ok.updatedTarget.id,
+  });
+};
+
+const updateMetricAlertRule: UpdateResolver = (_result, args, cache) => {
+  const ruleId = (args as { input?: { ruleId?: string } } | null)?.input?.ruleId;
+  if (!ruleId) return;
+  cache.invalidate({ __typename: 'MetricAlertRule', id: ruleId });
+};
+
 // UpdateResolver
 export const Mutation = {
   createOrganization,
@@ -405,4 +422,6 @@ export const Mutation = {
   deleteOperationInDocumentCollection,
   createOperationInDocumentCollection,
   deleteSavedFilter,
+  addMetricAlertRule,
+  updateMetricAlertRule,
 };

@@ -4,6 +4,7 @@ import { PostgresDatabasePool } from '@hive/postgres';
 import { TaskScheduler } from '@hive/workflows/kit';
 import { adminModule } from './modules/admin';
 import { alertsModule } from './modules/alerts';
+import { METRIC_ALERT_RULES_ENABLED } from './modules/alerts/providers/metric-alert-rules-flag-token';
 import { appDeploymentsModule } from './modules/app-deployments';
 import { APP_DEPLOYMENTS_ENABLED } from './modules/app-deployments/providers/app-deployments-enabled-token';
 import { auditLogsModule } from './modules/audit-logs';
@@ -120,6 +121,7 @@ export function createRegistry({
   appDeploymentsEnabled,
   schemaProposalsEnabled,
   otelTracingEnabled,
+  metricAlertRulesEnabled,
   prometheus,
   taskScheduler,
 }: {
@@ -169,6 +171,7 @@ export function createRegistry({
   appDeploymentsEnabled: boolean;
   schemaProposalsEnabled: boolean;
   otelTracingEnabled: boolean;
+  metricAlertRulesEnabled: boolean;
   prometheus: null | Record<string, unknown>;
   taskScheduler: TaskScheduler;
 }) {
@@ -299,6 +302,11 @@ export function createRegistry({
     {
       provide: OTEL_TRACING_ENABLED,
       useValue: otelTracingEnabled,
+      scope: Scope.Singleton,
+    },
+    {
+      provide: METRIC_ALERT_RULES_ENABLED,
+      useValue: metricAlertRulesEnabled,
       scope: Scope.Singleton,
     },
     {

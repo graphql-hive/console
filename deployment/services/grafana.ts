@@ -23,6 +23,7 @@ export function deployGrafana(envName: string, tableSuffix: string) {
   );
   params['TABLE_SUFFIX'] = tableSuffix;
   params['PROM_DATASOURCE_UID'] = params['PROM_DATASOURCE_UID'] ?? 'grafanacloud-prom';
+  params['TEMPO_DATASOURCE_UID'] = params['TEMPO_DATASOURCE_UID'] ?? 'grafanacloud-traces';
 
   const dashboards = availableFiles.map(filePath => {
     const fullPath = join(dashboardDirectory, filePath);

@@ -13,5 +13,11 @@ scrape_configs:
     # /metrics on host port 10255 instead of 10254 so this port stays free for
     # host-running Hive services. If you run multiple Hive services at once, set
     # PROMETHEUS_METRICS_PORT to a different value for the extras and add them here.
+    #
+    # Workflows is pinned to 10256 via packages/services/workflows/.env.template so
+    # its metrics (used by the Metric-Alerts dashboard) surface deterministically
+    # regardless of which other service wins the default 10254 bind race.
     static_configs:
-      - targets: ['host.docker.internal:10254']
+      - targets:
+          - 'host.docker.internal:10254'
+          - 'host.docker.internal:10256'
