@@ -1,5 +1,7 @@
 import {
   getNamedType,
+  GraphQLNamedType,
+  GraphQLObjectType,
   isInterfaceType,
   isObjectType,
   isUnionType,
@@ -11,112 +13,141 @@ import {
 } from 'graphql';
 
 /**
- * Extracts true schema coordinates and counts their execution volume.
+ * Extracts true schema coordinates and counts their execution volume,
+ * including resolved types.
  */
 export function extractCoordinates(
   schema: GraphQLSchema,
   document: DocumentNode,
   resultData: any,
 ): Record<string, number> {
-  const counts: Record<string, number> = {};
+  // Optimization 1: Use a prototype-less object for faster dictionary I/O
+  const counts: Record<string, number> = Object.create(null);
 
-  // 1. Find the root operation (Query, Mutation, Subscription)
   const operation = document.definitions.find(
     (def): def is OperationDefinitionNode => def.kind === 'OperationDefinition',
   );
   if (!operation) return counts;
 
-  // 2. Determine the root schema type
-  let rootType;
+  let rootType: GraphQLObjectType | undefined | null;
   if (operation.operation === 'query') rootType = schema.getQueryType();
   else if (operation.operation === 'mutation') rootType = schema.getMutationType();
   else if (operation.operation === 'subscription') rootType = schema.getSubscriptionType();
 
   if (!rootType || !resultData) return counts;
 
-  // 3. Start the synchronized walk
-  walkZip(resultData, operation.selectionSet.selections, rootType, schema, counts);
+  // Optimization 2: Cache schema lookups to avoid Map lookups on repeated fragments
+  const typeCache: Record<string, GraphQLType> = Object.create(null);
+  const getType = (name: string): GraphQLType | undefined => {
+    if (!typeCache[name]) {
+      const type = schema.getType(name);
+      if (type) typeCache[name] = type;
+    }
+    return typeCache[name];
+  };
+
+  // Start the synchronized walk
+  walkNode(resultData, operation.selectionSet.selections, rootType, counts, getType);
 
   return counts;
 }
 
-function walkZip(
+/**
+ * walkNode: Responsible for handling nulls, unwrapping types, and array iteration.
+ */
+function walkNode(
   data: any,
   selections: readonly SelectionNode[],
   parentType: GraphQLType,
-  schema: GraphQLSchema,
   counts: Record<string, number>,
+  getType: (name: string) => GraphQLType | undefined,
 ) {
-  if (Array.isArray(data)) {
-    for (const item of data) {
-      walkZip(item, selections, parentType, schema, counts);
-    }
-    return;
-  }
+  if (data === null || typeof data !== 'object') return;
 
-  if (data === null || typeof data !== 'object') {
-    return;
-  }
-
+  // Optimization 3: Un-wrap the type ONCE before dealing with arrays
   const namedType = getNamedType(parentType);
   if (!isObjectType(namedType) && !isInterfaceType(namedType) && !isUnionType(namedType)) {
     return;
   }
 
-  // Get fields, but safely handle Union types which don't have direct fields
-  const fields = 'getFields' in namedType ? namedType.getFields() : {};
+  if (Array.isArray(data)) {
+    // Optimization 4: Loop the array and send it directly to the object walker.
+    // This bypasses `getNamedType` and array-checking for every single element.
+    for (let i = 0; i < data.length; i++) {
+      const item = data[i];
+      if (item !== null && typeof item === 'object') {
+        walkObject(item, selections, namedType, counts, getType, false);
+      }
+    }
+    return;
+  }
 
-  for (const selection of selections) {
+  walkObject(data, selections, namedType, counts, getType, false);
+}
+
+/**
+ * walkObject: Highly optimized hot-loop for standard objects and selections.
+ */
+function walkObject(
+  data: any,
+  selections: readonly SelectionNode[],
+  namedType: GraphQLNamedType,
+  counts: Record<string, number>,
+  getType: (name: string) => GraphQLType | undefined,
+  isFragmentRecurse: boolean,
+) {
+  const namedTypeName = namedType.name;
+  const runtimeTypeName = data.__typename || namedTypeName;
+
+  if (!isFragmentRecurse) {
+    counts[runtimeTypeName] = (counts[runtimeTypeName] || 0) + 1;
+  }
+
+  let fields: any = null;
+
+  for (let i = 0; i < selections.length; i++) {
+    const selection = selections[i];
+
     if (selection.kind === 'Field') {
       const realFieldName = selection.name.value;
+      if (realFieldName === '__typename') continue;
+
       const responseKey = selection.alias ? selection.alias.value : realFieldName;
+      const val = data[responseKey];
 
-      // Special case for __typename which isn't in the schema fields map
-      if (realFieldName === '__typename') {
-        continue;
-      }
-
-      if (responseKey in data) {
-        const coordinate = `${namedType.name}.${realFieldName}`;
+      if (val !== undefined) {
+        // Optimization 5: String concatenation over template literals
+        const coordinate = namedTypeName + '.' + realFieldName;
         counts[coordinate] = (counts[coordinate] || 0) + 1;
 
-        if (selection.selectionSet && fields[realFieldName]) {
-          walkZip(
-            data[responseKey],
-            selection.selectionSet.selections,
-            fields[realFieldName].type,
-            schema,
-            counts,
-          );
+        if (selection.selectionSet && val !== null) {
+          if (!fields) {
+            fields = 'getFields' in namedType ? (namedType as any).getFields() : {};
+          }
+
+          const fieldDef = fields[realFieldName];
+          if (fieldDef) {
+            // We drop back down to walkNode because `val` might be an array or null
+            walkNode(val, selection.selectionSet.selections, fieldDef.type, counts, getType);
+          }
         }
       }
     } else if (selection.kind === 'InlineFragment') {
       const typeConditionName = selection.typeCondition?.name.value;
-
       let matchesType = true;
       let nextType: GraphQLType = namedType;
 
       if (typeConditionName) {
-        // In federated execution, abstract types (Interfaces/Unions) generally
-        // return __typename in the payload. We use that to verify the fragment match.
-        const runtimeTypeName = data.__typename || namedType.name;
         matchesType = typeConditionName === runtimeTypeName;
-
         if (matchesType) {
-          nextType = schema.getType(typeConditionName) || namedType;
+          nextType = getType(typeConditionName) || namedType;
         }
       }
 
-      // If the runtime data matches the fragment's type condition,
-      // recurse using the SAME data node, but the fragment's selection set.
       if (matchesType && selection.selectionSet) {
-        walkZip(
-          data, // <-- Pass the exact same data object
-          selection.selectionSet.selections,
-          nextType, // <-- Pass the narrowed type
-          schema,
-          counts,
-        );
+        // Optimization 6: Because fragments resolve on the SAME object,
+        // we skip walkNode entirely and recurse directly into walkObject.
+        walkObject(data, selection.selectionSet.selections, nextType, counts, getType, true);
       }
     }
   }
