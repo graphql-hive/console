@@ -188,10 +188,11 @@ const PrometheusModel = zod.object({
 
 const S3Model = zod.object({
   S3_ENDPOINT: zod.string().url(),
-  S3_ACCESS_KEY_ID: zod.string(),
-  S3_SECRET_ACCESS_KEY: zod.string(),
+  S3_ACCESS_KEY_ID: emptyString(zod.string().optional()),
+  S3_SECRET_ACCESS_KEY: emptyString(zod.string().optional()),
   S3_SESSION_TOKEN: emptyString(zod.string().optional()),
   S3_BUCKET_NAME: zod.string(),
+  S3_AWS_IAM_AUTH_ENABLED: emptyString(zod.union([zod.literal('0'), zod.literal('1')]).optional()),
 });
 
 const S3MirrorModel = zod.union([
@@ -201,11 +202,14 @@ const S3MirrorModel = zod.union([
   zod.object({
     S3_MIRROR: zod.literal('1'),
     S3_MIRROR_ENDPOINT: zod.string().url(),
-    S3_MIRROR_ACCESS_KEY_ID: zod.string(),
-    S3_MIRROR_SECRET_ACCESS_KEY: zod.string(),
+    S3_MIRROR_ACCESS_KEY_ID: emptyString(zod.string().optional()),
+    S3_MIRROR_SECRET_ACCESS_KEY: emptyString(zod.string().optional()),
     S3_MIRROR_SESSION_TOKEN: emptyString(zod.string().optional()),
     S3_MIRROR_BUCKET_NAME: zod.string(),
     S3_MIRROR_PUBLIC_URL: emptyString(zod.string().url().optional()),
+    S3_MIRROR_AWS_IAM_AUTH_ENABLED: emptyString(
+      zod.union([zod.literal('0'), zod.literal('1')]).optional(),
+    ),
   }),
 ]);
 
@@ -216,11 +220,14 @@ const S3AuditLogModel = zod.union([
   zod.object({
     S3_AUDIT_LOG: zod.literal('1'),
     S3_AUDIT_LOG_ENDPOINT: zod.string().url(),
-    S3_AUDIT_LOG_ACCESS_KEY_ID: zod.string(),
-    S3_AUDIT_LOG_SECRET_ACCESS_KEY: zod.string(),
+    S3_AUDIT_LOG_ACCESS_KEY_ID: emptyString(zod.string().optional()),
+    S3_AUDIT_LOG_SECRET_ACCESS_KEY: emptyString(zod.string().optional()),
     S3_AUDIT_LOG_SESSION_TOKEN: emptyString(zod.string().optional()),
     S3_AUDIT_LOG_BUCKET_NAME: zod.string(),
     S3_AUDIT_LOG_PUBLIC_URL: emptyString(zod.string().url().optional()),
+    S3_AUDIT_LOG_AWS_IAM_AUTH_ENABLED: emptyString(
+      zod.union([zod.literal('0'), zod.literal('1')]).optional(),
+    ),
   }),
 ]);
 
@@ -327,6 +334,51 @@ const environmentErrors: Array<string> = [];
 for (const config of Object.values(configs)) {
   if (config.success === false) {
     environmentErrors.push(JSON.stringify(config.error.format(), null, 4));
+  }
+}
+
+if (configs.s3.success && configs.s3.data.S3_AWS_IAM_AUTH_ENABLED !== '1') {
+  const missingS3Vars: string[] = [];
+  if (!configs.s3.data.S3_ACCESS_KEY_ID) missingS3Vars.push('S3_ACCESS_KEY_ID');
+  if (!configs.s3.data.S3_SECRET_ACCESS_KEY) missingS3Vars.push('S3_SECRET_ACCESS_KEY');
+  if (missingS3Vars.length > 0) {
+    environmentErrors.push(
+      `S3_AWS_IAM_AUTH_ENABLED is not enabled so static credentials are required: ${missingS3Vars.join(', ')}`,
+    );
+  }
+}
+
+if (
+  configs.s3Mirror.success &&
+  configs.s3Mirror.data.S3_MIRROR === '1' &&
+  configs.s3Mirror.data.S3_MIRROR_AWS_IAM_AUTH_ENABLED !== '1'
+) {
+  const missingS3MirrorVars: string[] = [];
+  if (!configs.s3Mirror.data.S3_MIRROR_ACCESS_KEY_ID)
+    missingS3MirrorVars.push('S3_MIRROR_ACCESS_KEY_ID');
+  if (!configs.s3Mirror.data.S3_MIRROR_SECRET_ACCESS_KEY)
+    missingS3MirrorVars.push('S3_MIRROR_SECRET_ACCESS_KEY');
+  if (missingS3MirrorVars.length > 0) {
+    environmentErrors.push(
+      `S3_MIRROR_AWS_IAM_AUTH_ENABLED is not enabled so static credentials are required: ${missingS3MirrorVars.join(', ')}`,
+    );
+  }
+}
+
+if (
+  configs.s3AuditLog.success &&
+  configs.s3AuditLog.data.S3_AUDIT_LOG === '1' &&
+  configs.s3AuditLog.data.S3_AUDIT_LOG_AWS_IAM_AUTH_ENABLED !== '1'
+) {
+  const missingS3AuditVars: string[] = [];
+  if (!configs.s3AuditLog.data.S3_AUDIT_LOG_ACCESS_KEY_ID)
+    missingS3AuditVars.push('S3_AUDIT_LOG_ACCESS_KEY_ID');
+  if (!configs.s3AuditLog.data.S3_AUDIT_LOG_SECRET_ACCESS_KEY)
+    missingS3AuditVars.push('S3_AUDIT_LOG_SECRET_ACCESS_KEY');
+  if (missingS3AuditVars.length > 0) {
+    environmentErrors.push(
+      `S3_AUDIT_LOG_AWS_IAM_AUTH_ENABLED is not enabled so static credentials are required: ${missingS3AuditVars.join(', ')}`,
+    );
   }
 }
 
@@ -524,6 +576,7 @@ export const env = {
   s3: {
     bucketName: s3.S3_BUCKET_NAME,
     endpoint: s3.S3_ENDPOINT,
+    awsIamAuthEnabled: s3.S3_AWS_IAM_AUTH_ENABLED === '1',
     credentials: {
       accessKeyId: s3.S3_ACCESS_KEY_ID,
       secretAccessKey: s3.S3_SECRET_ACCESS_KEY,
@@ -536,6 +589,7 @@ export const env = {
           bucketName: s3Mirror.S3_MIRROR_BUCKET_NAME,
           endpoint: s3Mirror.S3_MIRROR_ENDPOINT,
           publicUrl: s3Mirror.S3_MIRROR_PUBLIC_URL ?? null,
+          awsIamAuthEnabled: s3Mirror.S3_MIRROR_AWS_IAM_AUTH_ENABLED === '1',
           credentials: {
             accessKeyId: s3Mirror.S3_MIRROR_ACCESS_KEY_ID,
             secretAccessKey: s3Mirror.S3_MIRROR_SECRET_ACCESS_KEY,
@@ -549,6 +603,7 @@ export const env = {
           bucketName: s3AuditLog.S3_AUDIT_LOG_BUCKET_NAME,
           endpoint: s3AuditLog.S3_AUDIT_LOG_ENDPOINT,
           publicUrl: s3AuditLog.S3_AUDIT_LOG_PUBLIC_URL ?? null,
+          awsIamAuthEnabled: s3AuditLog.S3_AUDIT_LOG_AWS_IAM_AUTH_ENABLED === '1',
           credentials: {
             accessKeyId: s3AuditLog.S3_AUDIT_LOG_ACCESS_KEY_ID,
             secretAccessKey: s3AuditLog.S3_AUDIT_LOG_SECRET_ACCESS_KEY,
