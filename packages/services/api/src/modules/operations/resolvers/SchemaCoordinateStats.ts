@@ -21,6 +21,10 @@ export const SchemaCoordinateStats: Pick<
     });
   },
   totalFailures: ({ organization, project, target, period, schemaCoordinate }, _, { injector }) => {
+    // Failures are tracked to fields and not types. Don't bother doing a lookup for types.
+    if (!schemaCoordinate.includes('.')) {
+      return null;
+    }
     return injector.get(OperationsManager).countFailuresWithSchemaCoordinate({
       organizationId: organization,
       projectId: project,

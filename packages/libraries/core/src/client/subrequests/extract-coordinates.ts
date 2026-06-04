@@ -37,8 +37,8 @@ export function extractCoordinates(
   if (!rootType || !resultData) return counts;
 
   // Optimization 2: Cache schema lookups to avoid Map lookups on repeated fragments
-  const typeCache: Record<string, GraphQLType> = Object.create(null);
-  const getType = (name: string): GraphQLType | undefined => {
+  const typeCache: Record<string, GraphQLNamedType> = Object.create(null);
+  const getType = (name: string): GraphQLNamedType | undefined => {
     if (!typeCache[name]) {
       const type = schema.getType(name);
       if (type) typeCache[name] = type;
@@ -60,7 +60,7 @@ function walkNode(
   selections: readonly SelectionNode[],
   parentType: GraphQLType,
   counts: Record<string, number>,
-  getType: (name: string) => GraphQLType | undefined,
+  getType: (name: string) => GraphQLNamedType | undefined,
 ) {
   if (data === null || typeof data !== 'object') return;
 
@@ -93,7 +93,7 @@ function walkObject(
   selections: readonly SelectionNode[],
   namedType: GraphQLNamedType,
   counts: Record<string, number>,
-  getType: (name: string) => GraphQLType | undefined,
+  getType: (name: string) => GraphQLNamedType | undefined,
   isFragmentRecurse: boolean,
 ) {
   const namedTypeName = namedType.name;
@@ -135,7 +135,7 @@ function walkObject(
     } else if (selection.kind === 'InlineFragment') {
       const typeConditionName = selection.typeCondition?.name.value;
       let matchesType = true;
-      let nextType: GraphQLType = namedType;
+      let nextType: GraphQLNamedType = namedType;
 
       if (typeConditionName) {
         matchesType = typeConditionName === runtimeTypeName;
