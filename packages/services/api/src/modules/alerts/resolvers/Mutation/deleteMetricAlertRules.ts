@@ -2,6 +2,7 @@ import { IdTranslator } from '../../../shared/providers/id-translator';
 import {
   MetricAlertRulesDisabledError,
   MetricAlertRulesManager,
+  MetricAlertRuleValidationError,
 } from '../../providers/metric-alert-rules-manager';
 import type { MutationResolvers } from './../../../../__generated__/types';
 
@@ -23,7 +24,10 @@ export const deleteMetricAlertRules: NonNullable<
     });
     return { ok: { deletedMetricAlertRuleIds } };
   } catch (error) {
-    if (error instanceof MetricAlertRulesDisabledError) {
+    if (
+      error instanceof MetricAlertRulesDisabledError ||
+      error instanceof MetricAlertRuleValidationError
+    ) {
       return { error: { message: error.message } };
     }
     throw error;

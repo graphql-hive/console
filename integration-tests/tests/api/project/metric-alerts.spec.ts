@@ -2,6 +2,7 @@ import 'reflect-metadata';
 import {
   addMetricAlertRule as rawAddMetricAlertRule,
   deleteMetricAlertRules as rawDeleteMetricAlertRules,
+  readMetricAlertRule,
   updateMetricAlertRule as rawUpdateMetricAlertRule,
 } from 'testkit/flow';
 import {
@@ -100,6 +101,60 @@ test.concurrent('can create, read, update, and delete a metric alert rule', asyn
   });
   expect(deleteResult.ok).toBeTruthy();
   expect(deleteResult.ok!.deletedMetricAlertRuleIds).toContain(rule.id);
+});
+
+test.concurrent('rejects malformed metric alert UUID inputs before hitting Postgres', async ({
+  expect,
+}) => {
+  const { createOrg, ownerToken } = await initSeed().createOwner();
+  const { createProject, organization, setFeatureFlag } = await createOrg();
+  await setFeatureFlag('metricAlertRules', true);
+  const { project, target, addMetricAlertRule, updateMetricAlertRule, deleteMetricAlertRules } =
+    await createProject(ProjectType.Single);
+
+  const targetReference = {
+    bySelector: {
+      organizationSlug: organization.slug,
+      projectSlug: project.slug,
+      targetSlug: target.slug,
+    },
+  };
+
+  const addResult = await addMetricAlertRule({
+    target: targetReference,
+    name: 'Invalid channel id',
+    type: MetricAlertRuleType.Traffic,
+    timeWindowMinutes: 5,
+    thresholdType: MetricAlertRuleThresholdType.FixedValue,
+    thresholdValue: 100,
+    direction: MetricAlertRuleDirection.Above,
+    severity: MetricAlertRuleSeverity.Info,
+    channelIds: ['i-do-not-exist'],
+  });
+  expect(addResult.ok).toBeNull();
+  expect(addResult.error?.message).toBe('Notification channel ID must be a valid UUID.');
+
+  const updateResult = await updateMetricAlertRule({
+    project: { bySelector: { organizationSlug: organization.slug, projectSlug: project.slug } },
+    ruleId: 'xxxx-xxxx-xxxx-xxxx',
+    name: 'Invalid rule id',
+  });
+  expect(updateResult.ok).toBeNull();
+  expect(updateResult.error?.message).toBe('Metric alert rule ID must be a valid UUID.');
+
+  const deleteResult = await deleteMetricAlertRules({
+    project: { bySelector: { organizationSlug: organization.slug, projectSlug: project.slug } },
+    ruleIds: ['i-do-not-exist'],
+  });
+  expect(deleteResult.ok).toBeNull();
+  expect(deleteResult.error?.message).toBe('Metric alert rule ID must be a valid UUID.');
+
+  const readResult = await readMetricAlertRule(
+    targetReference,
+    'i-do-not-exist',
+    ownerToken,
+  ).then(r => r.expectNoGraphQLErrors());
+  expect(readResult.target?.metricAlertRule).toBeNull();
 });
 
 test.concurrent(

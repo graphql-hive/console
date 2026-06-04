@@ -9,6 +9,7 @@ import type {
   MetricAlertRuleState,
   MetricAlertStateLogEntry,
 } from '../../../shared/entities';
+import { isUUID } from '../../shared/is-uuid';
 import { METRIC_ALERT_RULES_PER_TARGET_LIMIT } from '../../commerce/constants';
 
 /**
@@ -230,6 +231,10 @@ export class MetricAlertRulesStorage {
   // --- Alert Rule CRUD ---
 
   async getMetricAlertRule(args: { id: string }): Promise<MetricAlertRule | null> {
+    if (!isUUID(args.id)) {
+      return null;
+    }
+
     const result = await this.pool.maybeOne(psql`/* getMetricAlertRule */
       SELECT ${METRIC_ALERT_RULE_SELECT}
       FROM "metric_alert_rules"
