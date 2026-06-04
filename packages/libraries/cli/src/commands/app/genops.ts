@@ -47,11 +47,31 @@ export default class AppGenOps extends Command<typeof AppGenOps> {
         .replace(/\s+/g, ' ')
         // trim ends
         .trim();
+      if (!operation) {
+        this.warn(`Skipping empty operation in file "${file}".`);
+        continue;
+      }
       const hash = createHash('sha256').update(operation).digest('hex');
+      if (hash in manifest) {
+        this.warn(
+          `Hash collision detected for file "${file}". The operation is identical to another operation already in the manifest. Skipping.`,
+        );
+        continue;
+      }
       manifest[hash] = operation;
     }
 
-    writeFileSync(flags.out, JSON.stringify(manifest, null, 2), 'utf-8');
+    if (Object.keys(manifest).length === 0) {
+      this.error(`No valid GraphQL operations found in "${dir}".`);
+    }
+
+    writeFileSync(
+      flags.out,
+      JSON.stringify(manifest, null, 2) +
+        // add a trailing new line just out of convention
+        '\n',
+      'utf-8',
+    );
 
     this.logSuccess(
       `Generated persisted operations manifest with ${Object.keys(manifest).length} operation(s) to "${flags.out}".`,
