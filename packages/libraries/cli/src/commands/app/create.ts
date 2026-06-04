@@ -13,6 +13,7 @@ import {
   PersistedOperationsMalformedError,
 } from '../../helpers/errors';
 import * as TargetInput from '../../helpers/target-input';
+import { ActivateAppDeploymentMutation } from './publish';
 
 export default class AppCreate extends Command<typeof AppCreate> {
   static description = 'create an app deployment';
@@ -36,6 +37,10 @@ export default class AppCreate extends Command<typeof AppCreate> {
         'The target in which the app deployment will be created.' +
         ' This can either be a slug following the format "$organizationSlug/$projectSlug/$targetSlug" (e.g "the-guild/graphql-hive/staging")' +
         ' or an UUID (e.g. "a0f4c605-6541-4350-8cfe-b31f21a4bf80").',
+    }),
+    publish: Flags.boolean({
+      description: 'Publish the app deployment after creation.',
+      default: false,
     }),
   };
 
@@ -187,8 +192,37 @@ export default class AppCreate extends Command<typeof AppCreate> {
     await flush(true);
 
     this.log(
-      `\nApp deployment "${flags['name']}@${flags['version']}" (${counter} operations) created.\nActive it with the "hive app:publish" command.`,
+      `\nApp deployment "${flags['name']}@${flags['version']}" (${counter} operations) created.`,
     );
+    if (!flags.publish) {
+      this.log(`Active it with the "hive app:publish" command.`);
+      return;
+    }
+
+    this.log('Publishing app deployment...');
+    const publishResult = await this.registryApi(endpoint, accessToken).request({
+      operation: ActivateAppDeploymentMutation,
+      variables: {
+        input: {
+          target,
+          appName: flags['name'],
+          appVersion: flags['version'],
+        },
+      },
+    });
+
+    if (publishResult.activateAppDeployment.error) {
+      throw new APIError(publishResult.activateAppDeployment.error.message);
+    }
+
+    if (publishResult.activateAppDeployment.ok) {
+      const deploymentName = `${publishResult.activateAppDeployment.ok.activatedAppDeployment.name}@${publishResult.activateAppDeployment.ok.activatedAppDeployment.version}`;
+      if (publishResult.activateAppDeployment.ok.isSkipped) {
+        this.warn(`\nApp deployment "${deploymentName}" is already published. Skipping...`);
+      } else {
+        this.log('\nApp deployment published successfully.');
+      }
+    }
   }
 }
 
