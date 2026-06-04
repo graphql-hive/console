@@ -1,7 +1,7 @@
 import { createHash } from 'node:crypto';
 import { readFileSync, writeFileSync } from 'node:fs';
 import { readdir } from 'node:fs/promises';
-import { extname, join, resolve } from 'node:path';
+import { extname, join, relative, resolve } from 'node:path';
 import { Args, Flags } from '@oclif/core';
 import Command from '../../base-command';
 
@@ -33,7 +33,7 @@ export default class AppGenOps extends Command<typeof AppGenOps> {
     const files = await findGraphQLFiles(dir);
 
     if (files.length === 0) {
-      this.error(`No .graphql files found in "${dir}".`);
+      this.error(`No .graphql files found in "${relative(process.cwd(), dir)}".`);
     }
 
     const manifest: Record<string, string> = {};
@@ -48,13 +48,13 @@ export default class AppGenOps extends Command<typeof AppGenOps> {
         // trim ends
         .trim();
       if (!operation) {
-        this.warn(`Skipping empty operation in file "${file}".`);
+        this.warn(`Skipping empty operation in file "${relative(process.cwd(), file)}".`);
         continue;
       }
       const hash = createHash('sha256').update(operation).digest('hex');
       if (hash in manifest) {
         this.warn(
-          `Hash collision detected for file "${file}". The operation is identical to another operation already in the manifest. Skipping.`,
+          `Hash collision detected for file "${relative(process.cwd(), file)}". The operation is identical to another operation already in the manifest. Skipping.`,
         );
         continue;
       }
@@ -62,7 +62,7 @@ export default class AppGenOps extends Command<typeof AppGenOps> {
     }
 
     if (Object.keys(manifest).length === 0) {
-      this.error(`No valid GraphQL operations found in "${dir}".`);
+      this.error(`No valid GraphQL operations found in "${relative(process.cwd(), dir)}".`);
     }
 
     writeFileSync(
@@ -74,7 +74,7 @@ export default class AppGenOps extends Command<typeof AppGenOps> {
     );
 
     this.logSuccess(
-      `Generated persisted operations manifest with ${Object.keys(manifest).length} operation(s) to "${flags.out}".`,
+      `Generated persisted operations manifest with ${Object.keys(manifest).length} operation(s) to "${relative(process.cwd(), flags.out)}".`,
     );
   }
 }
