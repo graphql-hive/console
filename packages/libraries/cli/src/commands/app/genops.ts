@@ -49,7 +49,14 @@ export default class AppGenOps extends Command<typeof AppGenOps> {
       const raw = readFileSync(file, 'utf-8');
       let operation: string;
       try {
-        operation = print(parse(raw));
+        // print+parse will remove comments
+        operation = print(parse(raw))
+          // remove new lines
+          .replace('\n', ' ')
+          // remove extra spaces
+          .replace(/\s+/g, ' ')
+          // trim leading and trailing spaces
+          .trim();
       } catch (e) {
         this.warn(
           `Skipping invalid GraphQL file "${relative(process.cwd(), file)}": ${e instanceof Error ? e.message : String(e)}`,
