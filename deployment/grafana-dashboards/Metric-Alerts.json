@@ -346,11 +346,11 @@
           "datasource": { "type": "tempo", "uid": "TEMPO_DATASOURCE_UID" },
           "filters": [{ "id": "slow-groups-filter", "operator": "=", "scope": "span" }],
           "limit": 100,
-          "query": "{name=\"evaluate-group\" && duration>$slowGroupThreshold}",
+          "query": "{name=\"evaluate-group\" && duration>$slowGroupThreshold} | select(.target.id, .rules.in_group, .time_window_minutes)",
           "queryType": "traceql",
           "refId": "A",
           "spss": 20,
-          "tableType": "traces"
+          "tableType": "spans"
         }
       ],
       "title": "Slow target groups",
