@@ -10,7 +10,7 @@ The command recursively scans a directory for `*.graphql` files, normalizes each
 hive app:genops ./src/operations --out persisted-operations.json
 ```
 
-The output file is a JSON object where each key is the SHA-256 hash of the operation and the value is the normalized operation string:
+The output file is a JSON object where each key is the SHA-256 hash of the operation and the value is the normalized operation string (hashes in the example below are truncated for brevity):
 
 ```json
 {

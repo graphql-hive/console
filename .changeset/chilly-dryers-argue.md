@@ -4,7 +4,7 @@
 
 Add `--publish` flag to `app:create` command to publish the app deployment immediately after creation
 
-Now `app:create` can immediately publish the created app deploymentWwithout needing to run `app:publish` separately.
+Now `app:create` can immediately publish the created app deployment without needing to run `app:publish` separately.
 
 For example:
 

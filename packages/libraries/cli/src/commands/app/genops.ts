@@ -96,7 +96,9 @@ export default class AppGenOps extends Command<typeof AppGenOps> {
 }
 
 async function findGraphQLFiles(dir: string): Promise<string[]> {
-  const entries = await readdir(dir, { withFileTypes: true });
+  const entries = (await readdir(dir, { withFileTypes: true }))
+    // sort to make the output deterministic (not relying on the file system order which can be different)
+    .sort((a, b) => a.name.localeCompare(b.name));
   const files = await Promise.all(
     entries.map(entry => {
       const fullPath = join(dir, entry.name);

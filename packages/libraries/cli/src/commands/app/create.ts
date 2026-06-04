@@ -197,7 +197,7 @@ export default class AppCreate extends Command<typeof AppCreate> {
 
     this.log(`\nApp deployment "${flags['name']}@${version}" (${counter} operations) created.`);
     if (!flags.publish) {
-      this.log(`Active it with the "hive app:publish" command.`);
+      this.log(`Activate it with the "hive app:publish" command.`);
       return;
     }
 
