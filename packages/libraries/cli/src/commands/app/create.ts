@@ -30,7 +30,6 @@ export default class AppCreate extends Command<typeof AppCreate> {
     }),
     version: Flags.string({
       description: 'app version',
-      required: true,
     }),
     target: Flags.string({
       description:
@@ -91,6 +90,11 @@ export default class AppCreate extends Command<typeof AppCreate> {
       target = result.data;
     }
 
+    const version = flags.version ?? Math.random().toString(36).slice(2, 9);
+    if (!flags.version) {
+      this.log(`No version provided, using generated version: ${version}`);
+    }
+
     const file: string = args.file;
     const contents = this.readJSON(file);
     const operations: unknown = JSON.parse(contents);
@@ -105,7 +109,7 @@ export default class AppCreate extends Command<typeof AppCreate> {
       variables: {
         input: {
           appName: flags['name'],
-          appVersion: flags['version'],
+          appVersion: version,
           target,
         },
       },
@@ -121,7 +125,7 @@ export default class AppCreate extends Command<typeof AppCreate> {
 
     if (result.createAppDeployment.ok.createdAppDeployment.status !== AppDeploymentStatus.Pending) {
       this.log(
-        `App deployment "${flags['name']}@${flags['version']}" is "${result.createAppDeployment.ok.createdAppDeployment.status}". Skip uploading documents...`,
+        `App deployment "${flags['name']}@${version}" is "${result.createAppDeployment.ok.createdAppDeployment.status}". Skip uploading documents...`,
       );
       return;
     }
@@ -129,7 +133,7 @@ export default class AppCreate extends Command<typeof AppCreate> {
     const totalDocuments = Object.keys(validationResult.data).length;
 
     this.log(
-      `App deployment "${flags['name']}@${flags['version']}" is created pending document upload. Uploading documents...`,
+      `App deployment "${flags['name']}@${version}" is created pending document upload. Uploading documents...`,
     );
 
     let buffer: Array<{ hash: string; body: string }> = [];
@@ -144,7 +148,7 @@ export default class AppCreate extends Command<typeof AppCreate> {
             input: {
               target,
               appName: flags['name'],
-              appVersion: flags['version'],
+              appVersion: version,
               documents: buffer,
             },
           },
@@ -191,9 +195,7 @@ export default class AppCreate extends Command<typeof AppCreate> {
 
     await flush(true);
 
-    this.log(
-      `\nApp deployment "${flags['name']}@${flags['version']}" (${counter} operations) created.`,
-    );
+    this.log(`\nApp deployment "${flags['name']}@${version}" (${counter} operations) created.`);
     if (!flags.publish) {
       this.log(`Active it with the "hive app:publish" command.`);
       return;
@@ -206,7 +208,7 @@ export default class AppCreate extends Command<typeof AppCreate> {
         input: {
           target,
           appName: flags['name'],
-          appVersion: flags['version'],
+          appVersion: version,
         },
       },
     });
