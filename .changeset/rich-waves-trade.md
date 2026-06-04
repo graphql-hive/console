@@ -8,8 +8,8 @@ Add `manifest` method to `createHive(...).persistedDocuments` for fetching a per
 const hive = createHive({
   persistedDocuments: {
     cdn: {
-      endpoint: 'https://cdn.graphql-hive.com',
-      accessToken: 'your-cdn-access-token',
+      endpoint: 'https://cdn.graphql-hive.com/artifacts/v1/<target_id>',
+      accessToken: '<cdn_access_token>',
     },
   },
   // ...
