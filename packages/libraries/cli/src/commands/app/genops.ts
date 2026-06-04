@@ -2,6 +2,7 @@ import { createHash } from 'node:crypto';
 import { readFileSync, writeFileSync } from 'node:fs';
 import { readdir } from 'node:fs/promises';
 import { extname, join, relative, resolve } from 'node:path';
+import { parse, print } from 'graphql';
 import { Args, Flags } from '@oclif/core';
 import Command from '../../base-command';
 
@@ -46,13 +47,15 @@ export default class AppGenOps extends Command<typeof AppGenOps> {
 
     for (const file of files) {
       const raw = readFileSync(file, 'utf-8');
-      const operation = raw
-        // remove new lines
-        .replace(/\n/g, ' ')
-        // remove extra whitespace
-        .replace(/\s+/g, ' ')
-        // trim ends
-        .trim();
+      let operation: string;
+      try {
+        operation = print(parse(raw));
+      } catch (e) {
+        this.warn(
+          `Skipping invalid GraphQL file "${relative(process.cwd(), file)}": ${e instanceof Error ? e.message : String(e)}`,
+        );
+        continue;
+      }
       if (!operation) {
         this.warn(`Skipping empty operation in file "${relative(process.cwd(), file)}".`);
         continue;
