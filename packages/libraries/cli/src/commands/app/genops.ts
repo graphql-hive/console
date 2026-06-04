@@ -30,7 +30,13 @@ export default class AppGenOps extends Command<typeof AppGenOps> {
     const { args, flags } = await this.parse(AppGenOps);
 
     const dir = resolve(args.dir);
-    const files = await findGraphQLFiles(dir);
+
+    let files;
+    try {
+      files = await findGraphQLFiles(dir);
+    } catch (err) {
+      this.error(`Failed to read directory "${relative(process.cwd(), dir)}": ${String(err)}`);
+    }
 
     if (files.length === 0) {
       this.error(`No .graphql files found in "${relative(process.cwd(), dir)}".`);
