@@ -63,16 +63,18 @@ function labelForSegment(state: SegmentState): string {
 const TICK_COUNT = 7;
 
 function formatTick(date: Date, rangeMs: number): string {
+  // 12-hour clock to match the Latency/metric chart's axis (which renders
+  // "6:25 PM"); the two sit next to each other on the rule-detail page.
   const options: Intl.DateTimeFormatOptions =
     rangeMs < 24 * 60 * 60 * 1000
-      ? { hour: '2-digit', minute: '2-digit', hour12: false }
+      ? { hour: 'numeric', minute: '2-digit' }
       : { month: 'short', day: 'numeric' };
   return new Intl.DateTimeFormat('en-US', options).format(date);
 }
 
 function formatTimestamp(iso: string): string {
   return new Date(iso).toLocaleString('en-US', {
-    hour12: false,
+    hour12: true,
   });
 }
 

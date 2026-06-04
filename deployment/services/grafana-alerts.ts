@@ -35,7 +35,7 @@ export function deployGrafanaAlerts(envName: string) {
       {
         name: 'MetricAlertEvaluatorClickHouseSlow',
         for: '5m',
-        condition: 'B',
+        condition: 'C',
         noDataState: 'OK',
         execErrState: 'Alerting',
         annotations: {
@@ -63,20 +63,39 @@ export function deployGrafanaAlerts(envName: string) {
             }),
           },
           {
+            // Reduce the range-query time series (A) to a single value (its
+            // last point) so the threshold below receives "reduced" data.
+            // Without this, the `threshold` expression rejects the series with
+            // "looks like time series data, only reduced data can be alerted
+            // on", and because execErrState is Alerting the rule then fires on
+            // the eval error itself rather than on real slowness.
             refId: 'B',
             queryType: '',
             relativeTimeRange: { from: 0, to: 0 },
             datasourceUid: '__expr__',
             model: JSON.stringify({
               refId: 'B',
-              type: 'threshold',
+              type: 'reduce',
+              reducer: 'last',
               expression: 'A',
+              datasource: { type: '__expr__', uid: '__expr__' },
+            }),
+          },
+          {
+            refId: 'C',
+            queryType: '',
+            relativeTimeRange: { from: 0, to: 0 },
+            datasourceUid: '__expr__',
+            model: JSON.stringify({
+              refId: 'C',
+              type: 'threshold',
+              expression: 'B',
               conditions: [
                 {
                   type: 'query',
                   evaluator: { type: 'gt', params: [5] },
                   operator: { type: 'and' },
-                  query: { params: ['A'] },
+                  query: { params: ['B'] },
                   reducer: { type: 'last', params: [] },
                 },
               ],
@@ -88,7 +107,7 @@ export function deployGrafanaAlerts(envName: string) {
       {
         name: 'MetricAlertEvaluatorClickHouseErrors',
         for: '5m',
-        condition: 'B',
+        condition: 'C',
         noDataState: 'OK',
         execErrState: 'Alerting',
         annotations: {
@@ -118,20 +137,39 @@ export function deployGrafanaAlerts(envName: string) {
             }),
           },
           {
+            // Reduce the range-query time series (A) to a single value (its
+            // last point) so the threshold below receives "reduced" data.
+            // Without this, the `threshold` expression rejects the series with
+            // "looks like time series data, only reduced data can be alerted
+            // on", and because execErrState is Alerting the rule then fires on
+            // the eval error itself rather than on a real error-rate spike.
             refId: 'B',
             queryType: '',
             relativeTimeRange: { from: 0, to: 0 },
             datasourceUid: '__expr__',
             model: JSON.stringify({
               refId: 'B',
-              type: 'threshold',
+              type: 'reduce',
+              reducer: 'last',
               expression: 'A',
+              datasource: { type: '__expr__', uid: '__expr__' },
+            }),
+          },
+          {
+            refId: 'C',
+            queryType: '',
+            relativeTimeRange: { from: 0, to: 0 },
+            datasourceUid: '__expr__',
+            model: JSON.stringify({
+              refId: 'C',
+              type: 'threshold',
+              expression: 'B',
               conditions: [
                 {
                   type: 'query',
                   evaluator: { type: 'gt', params: [0.05] },
                   operator: { type: 'and' },
-                  query: { params: ['A'] },
+                  query: { params: ['B'] },
                   reducer: { type: 'last', params: [] },
                 },
               ],
