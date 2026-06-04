@@ -2,8 +2,8 @@ import { formatISO, subHours } from 'date-fns';
 import { humanId } from 'human-id';
 import z from 'zod';
 import { NoopLogger } from '@hive/api/modules/shared/providers/logger';
-import { createRedisClient } from '@hive/api/modules/shared/providers/redis';
 import { createPostgresDatabasePool, psql } from '@hive/postgres';
+import { createRedisClient } from '@hive/service-common';
 import type { Report } from '../../packages/libraries/core/src/client/usage.js';
 import { authenticate, userEmail } from './auth';
 import {

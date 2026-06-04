@@ -4,13 +4,12 @@ import { createPostgresDatabasePool } from '@hive/postgres';
 import { bridgeGraphileLogger, createHivePubSub } from '@hive/pubsub';
 import {
   configureTracing,
+  createRedisClient,
   createServer,
   registerShutdown,
   reportReadiness,
-  resolveRedisCredentials,
   sentryInit,
   startHeartbeats,
-  startIamTokenRefresh,
   startMetrics,
   type TracingInstance,
 } from '@hive/service-common';
@@ -20,7 +19,6 @@ import { ClickHouseClient } from './lib/clickhouse-client.js';
 import { createEmailProvider } from './lib/emails/providers.js';
 import { schemaProvider } from './lib/schema/provider.js';
 import { bridgeFastifyLogger } from './logger.js';
-import { createRedisClient } from './redis';
 import { createTaskEventEmitter } from './task-events.js';
 
 let tracing: TracingInstance | undefined;
@@ -114,51 +112,24 @@ const server = await createServer({
   log: logger,
 });
 
-const redisIamConfig = env.redis.awsIamAuthEnabled
-  ? {
-      host: env.redis.host,
-      port: env.redis.port,
-      awsRegion: env.redis.awsRegion ?? '',
-      username: env.redis.username ?? 'default',
-      iamAuthCacheName: env.redis.awsIamAuthCacheName,
-    }
-  : undefined;
+const redis = await createRedisClient(env.redis, {
+  logger: server.log.child({ source: 'Redis' }),
+  iamTokenRefreshLogger: server.log.child({ source: 'RedisIamTokenRefresh' }),
+});
 
-const { password: redisPassword, username: redisUsername } = await resolveRedisCredentials(
-  env.redis.password,
-  server.log.child({ source: 'RedisCredentialResolver' }),
-  redisIamConfig,
-);
-
-const redisConfig = {
-  ...env.redis,
-  password: redisPassword,
-  username: redisUsername,
-};
-
-const redis = createRedisClient('Redis', redisConfig, server.log.child({ source: 'Redis' }));
+const redisSubscriber = await createRedisClient(env.redis, {
+  logger: server.log.child({ source: 'RedisSubscribe' }),
+  iamTokenRefreshLogger: server.log.child({ source: 'RedisSubscribeIamTokenRefresh' }),
+});
 
 const pubSub = createHivePubSub({
   publisher: redis,
-  subscriber: createRedisClient(
-    'subscriber',
-    redisConfig,
-    server.log.child({ source: 'RedisSubscribe' }),
-  ),
+  subscriber: redisSubscriber,
 });
 
 const clickhouse = env.clickhouse
   ? new ClickHouseClient(env.clickhouse, logger.child({ source: 'ClickHouse' }))
   : null;
-
-if (redisIamConfig) {
-  startIamTokenRefresh(
-    redis,
-    redisIamConfig,
-    env.redis.clusterModeEnabled,
-    server.log.child({ source: 'RedisIamTokenRefresh' }),
-  );
-}
 
 const context: Context = {
   logger,

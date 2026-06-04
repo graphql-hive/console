@@ -1,5 +1,4 @@
 import { CONTEXT, createApplication, Provider, Scope } from 'graphql-modules';
-import { Redis } from 'ioredis';
 import { PostgresDatabasePool } from '@hive/postgres';
 import { TaskScheduler } from '@hive/workflows/kit';
 import { adminModule } from './modules/admin';
@@ -62,7 +61,7 @@ import { Logger } from './modules/shared/providers/logger';
 import { Mutex } from './modules/shared/providers/mutex';
 import { PrometheusConfig } from './modules/shared/providers/prometheus-config';
 import { HivePubSub, PUB_SUB_CONFIG } from './modules/shared/providers/pub-sub';
-import { REDIS_INSTANCE } from './modules/shared/providers/redis';
+import { REDIS_INSTANCE, type Redis } from './modules/shared/providers/redis';
 import { RedisRateLimiter } from './modules/shared/providers/redis-rate-limiter';
 import { S3_CONFIG, type S3Config } from './modules/shared/providers/s3-config';
 import { Storage } from './modules/shared/providers/storage';

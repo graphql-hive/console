@@ -1,5 +1,9 @@
 import zod from 'zod';
-import { OpenTelemetryConfigurationModel, resolveServerListenOptions } from '@hive/service-common';
+import {
+  OpenTelemetryConfigurationModel,
+  parseRedisConfigFromEnvironment,
+  resolveServerListenOptions,
+} from '@hive/service-common';
 
 const isNumberString = (input: unknown) => zod.string().regex(/^\d+$/).safeParse(input).success;
 
@@ -17,6 +21,10 @@ const emptyString = <T extends zod.ZodType>(input: T) => {
     return value;
   }, input);
 };
+
+function raiseInvariant(reason: string): never {
+  throw new Error(reason);
+}
 
 const TestUtilsModel = zod.object({
   EXPOSE_MEMORY_UTILS: emptyString(zod.union([zod.literal('1'), zod.literal('0')]).optional()),
@@ -340,18 +348,16 @@ for (const config of Object.values(configs)) {
   }
 }
 
-if (configs.redis.success && configs.redis.data.REDIS_AWS_IAM_AUTH_ENABLED === '1') {
-  const missingRedisIamVars: string[] = [];
-  if (configs.redis.data.REDIS_TLS_ENABLED !== '1')
-    missingRedisIamVars.push('REDIS_TLS_ENABLED must be enabled (ElastiCache IAM requires TLS)');
-  if (!configs.redis.data.REDIS_AWS_IAM_CACHE_NAME)
-    missingRedisIamVars.push('REDIS_AWS_IAM_CACHE_NAME');
-  if (!configs.redis.data.REDIS_AWS_REGION && !configs.base.data?.AWS_REGION)
-    missingRedisIamVars.push('REDIS_AWS_REGION or AWS_REGION');
-  if (missingRedisIamVars.length > 0) {
-    environmentErrors.push(
-      `REDIS_AWS_IAM_AUTH_ENABLED is enabled but the following required variables are missing or invalid: ${missingRedisIamVars.join(', ')}`,
-    );
+let redisConfigResult = null;
+
+if (configs.redis.success) {
+  redisConfigResult = parseRedisConfigFromEnvironment({
+    redis: configs.redis.data,
+    awsRegion: configs.base.success ? configs.base.data.AWS_REGION : undefined,
+  });
+
+  if (redisConfigResult.type === 'error') {
+    environmentErrors.push(...redisConfigResult.errors);
   }
 }
 
@@ -373,7 +379,6 @@ const commerce = extractConfig(configs.commerce);
 const postgres = extractConfig(configs.postgres);
 const sentry = extractConfig(configs.sentry);
 const clickhouse = extractConfig(configs.clickhouse);
-const redis = extractConfig(configs.redis);
 const supertokens = extractConfig(configs.supertokens);
 const authGithub = extractConfig(configs.authGithub);
 const authGoogle = extractConfig(configs.authGoogle);
@@ -475,17 +480,10 @@ export const env = {
     password: clickhouse.CLICKHOUSE_PASSWORD,
     requestTimeout: clickhouse.CLICKHOUSE_REQUEST_TIMEOUT,
   },
-  redis: {
-    host: redis.REDIS_HOST,
-    port: redis.REDIS_PORT,
-    password: redis.REDIS_PASSWORD ?? '',
-    username: redis.REDIS_USERNAME,
-    tlsEnabled: redis.REDIS_TLS_ENABLED === '1',
-    clusterModeEnabled: redis.REDIS_CLUSTER_MODE_ENABLED === '1',
-    awsIamAuthEnabled: redis.REDIS_AWS_IAM_AUTH_ENABLED === '1',
-    awsRegion: redis.REDIS_AWS_REGION ?? base.AWS_REGION,
-    awsIamAuthCacheName: redis.REDIS_AWS_IAM_CACHE_NAME,
-  },
+  redis:
+    redisConfigResult?.type === 'ok'
+      ? redisConfigResult.config
+      : raiseInvariant('Unreachable: redis config errors are caught above via process.exit(1)'),
   supertokens: {
     secrets: {
       refreshTokenKey: supertokens.SUPERTOKENS_REFRESH_TOKEN_KEY,

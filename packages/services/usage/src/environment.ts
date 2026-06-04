@@ -1,6 +1,10 @@
 import * as fs from 'fs';
 import zod from 'zod';
-import { OpenTelemetryConfigurationModel, resolveServerListenOptions } from '@hive/service-common';
+import {
+  OpenTelemetryConfigurationModel,
+  parseRedisConfigFromEnvironment,
+  resolveServerListenOptions,
+} from '@hive/service-common';
 
 const isNumberString = (input: unknown) => zod.string().regex(/^\d+$/).safeParse(input).success;
 
@@ -83,19 +87,16 @@ const PostgresModel = zod.object({
   POSTGRES_DB: zod.string(),
   POSTGRES_USER: zod.string(),
   POSTGRES_PASSWORD: emptyString(zod.string().optional()),
-});
+    let redisConfigResult = null;
 
-const RedisModel = zod.object({
-  REDIS_HOST: zod.string(),
-  REDIS_PORT: NumberFromString,
-  REDIS_PASSWORD: emptyString(zod.string().optional()),
-  REDIS_USERNAME: emptyString(zod.string().optional()),
-  REDIS_TLS_ENABLED: emptyString(zod.union([zod.literal('1'), zod.literal('0')]).optional()),
-  REDIS_CLUSTER_MODE_ENABLED: emptyString(
-    zod.union([zod.literal('0'), zod.literal('1')]).optional(),
-  ),
-  REDIS_AWS_REGION: emptyString(zod.string().optional()),
-  REDIS_AWS_IAM_AUTH_ENABLED: emptyString(
+    if (configs.redis.success) {
+      redisConfigResult = parseRedisConfigFromEnvironment({
+        redis: configs.redis.data,
+        awsRegion: configs.base.success ? configs.base.data.AWS_REGION : undefined,
+      });
+
+      if (redisConfigResult.type === 'error') {
+        environmentErrors.push(...redisConfigResult.errors);
     zod.union([zod.literal('0'), zod.literal('1')]).optional(),
   ),
   REDIS_AWS_IAM_CACHE_NAME: emptyString(zod.string().optional()),
@@ -158,6 +159,7 @@ if (configs.kafka.success && configs.kafka.data.KAFKA_AWS_IAM_AUTH_ENABLED === '
   }
 }
 
+<<<<<<< HEAD
 if (configs.redis.success && configs.redis.data.REDIS_AWS_IAM_AUTH_ENABLED === '1') {
   const missingRedisIamVars: string[] = [];
   if (configs.redis.data.REDIS_TLS_ENABLED !== '1')
@@ -170,6 +172,18 @@ if (configs.redis.success && configs.redis.data.REDIS_AWS_IAM_AUTH_ENABLED === '
     environmentErrors.push(
       `REDIS_AWS_IAM_AUTH_ENABLED is enabled but the following required variables are missing or invalid: ${missingRedisIamVars.join(', ')}`,
     );
+=======
+let redisConfigResult = null;
+
+if (configs.redis.success) {
+  redisConfigResult = parseRedisConfigFromEnvironment({
+    redis: configs.redis.data,
+    awsRegion: configs.base.success ? configs.base.data.AWS_REGION : undefined,
+  });
+
+  if (redisConfigResult.type === 'error') {
+    environmentErrors.push(...redisConfigResult.errors);
+>>>>>>> 580adcc64 (feat: centralize Redis IAM auth and client creation into service-common)
   }
 }
 
@@ -190,7 +204,6 @@ const base = extractConfig(configs.base);
 const sentry = extractConfig(configs.sentry);
 const kafka = extractConfig(configs.kafka);
 const postgres = extractConfig(configs.postgres);
-const redis = extractConfig(configs.redis);
 const prometheus = extractConfig(configs.prometheus);
 const log = extractConfig(configs.log);
 const tracing = extractConfig(configs.tracing);
@@ -269,17 +282,10 @@ export const env = {
     password: postgres.POSTGRES_PASSWORD,
     ssl: postgres.POSTGRES_SSL === '1',
   },
-  redis: {
-    host: redis.REDIS_HOST,
-    port: redis.REDIS_PORT,
-    password: redis.REDIS_PASSWORD ?? '',
-    username: redis.REDIS_USERNAME,
-    tlsEnabled: redis.REDIS_TLS_ENABLED === '1',
-    clusterModeEnabled: redis.REDIS_CLUSTER_MODE_ENABLED === '1',
-    awsIamAuthEnabled: redis.REDIS_AWS_IAM_AUTH_ENABLED === '1',
-    awsRegion: redis.REDIS_AWS_REGION ?? base.AWS_REGION,
-    awsIamAuthCacheName: redis.REDIS_AWS_IAM_CACHE_NAME,
-  },
+  redis:
+    redisConfigResult?.type === 'ok'
+      ? redisConfigResult.config
+      : raiseInvariant('Unreachable: redis config errors are caught above via process.exit(1)'),
   log: {
     level: log.LOG_LEVEL ?? 'info',
     requests: log.REQUEST_LOGGING === '1',

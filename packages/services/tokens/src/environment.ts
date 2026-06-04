@@ -1,5 +1,9 @@
 import zod from 'zod';
-import { OpenTelemetryConfigurationModel, resolveServerListenOptions } from '@hive/service-common';
+import {
+  OpenTelemetryConfigurationModel,
+  parseRedisConfigFromEnvironment,
+  resolveServerListenOptions,
+} from '@hive/service-common';
 
 const isNumberString = (input: unknown) => zod.string().regex(/^\d+$/).safeParse(input).success;
 
@@ -17,6 +21,10 @@ const emptyString = <T extends zod.ZodType>(input: T) => {
     return value;
   }, input);
 };
+
+function raiseInvariant(reason: string): never {
+  throw new Error(reason);
+}
 
 const EnvironmentModel = zod.object({
   PORT: emptyString(NumberFromString.optional()),
@@ -117,18 +125,16 @@ for (const config of Object.values(configs)) {
   }
 }
 
-if (configs.redis.success && configs.redis.data.REDIS_AWS_IAM_AUTH_ENABLED === '1') {
-  const missingRedisIamVars: string[] = [];
-  if (configs.redis.data.REDIS_TLS_ENABLED !== '1')
-    missingRedisIamVars.push('REDIS_TLS_ENABLED must be enabled (ElastiCache IAM requires TLS)');
-  if (!configs.redis.data.REDIS_AWS_IAM_CACHE_NAME)
-    missingRedisIamVars.push('REDIS_AWS_IAM_CACHE_NAME');
-  if (!configs.redis.data.REDIS_AWS_REGION && !configs.base.data?.AWS_REGION)
-    missingRedisIamVars.push('REDIS_AWS_REGION or AWS_REGION');
-  if (missingRedisIamVars.length > 0) {
-    environmentErrors.push(
-      `REDIS_AWS_IAM_AUTH_ENABLED is enabled but the following required variables are missing or invalid: ${missingRedisIamVars.join(', ')}`,
-    );
+let redisConfigResult = null;
+
+if (configs.redis.success) {
+  redisConfigResult = parseRedisConfigFromEnvironment({
+    redis: configs.redis.data,
+    awsRegion: configs.base.success ? configs.base.data.AWS_REGION : undefined,
+  });
+
+  if (redisConfigResult.type === 'error') {
+    environmentErrors.push(...redisConfigResult.errors);
   }
 }
 
@@ -147,7 +153,6 @@ function extractConfig<Input, Output>(config: zod.SafeParseReturnType<Input, Out
 
 const base = extractConfig(configs.base);
 const postgres = extractConfig(configs.postgres);
-const redis = extractConfig(configs.redis);
 const sentry = extractConfig(configs.sentry);
 const prometheus = extractConfig(configs.prometheus);
 const log = extractConfig(configs.log);
@@ -176,17 +181,10 @@ export const env = {
     password: postgres.POSTGRES_PASSWORD,
     ssl: postgres.POSTGRES_SSL === '1',
   },
-  redis: {
-    host: redis.REDIS_HOST,
-    port: redis.REDIS_PORT,
-    password: redis.REDIS_PASSWORD ?? '',
-    username: redis.REDIS_USERNAME,
-    tlsEnabled: redis.REDIS_TLS_ENABLED === '1',
-    clusterModeEnabled: redis.REDIS_CLUSTER_MODE_ENABLED === '1',
-    awsIamAuthEnabled: redis.REDIS_AWS_IAM_AUTH_ENABLED === '1',
-    awsRegion: redis.REDIS_AWS_REGION ?? base.AWS_REGION,
-    awsIamAuthCacheName: redis.REDIS_AWS_IAM_CACHE_NAME,
-  },
+  redis:
+    redisConfigResult?.type === 'ok'
+      ? redisConfigResult.config
+      : raiseInvariant('Unreachable: redis config errors are caught above via process.exit(1)'),
   heartbeat: base.HEARTBEAT_ENDPOINT ? { endpoint: base.HEARTBEAT_ENDPOINT } : null,
   sentry: sentry.SENTRY === '1' ? { dsn: sentry.SENTRY_DSN } : null,
   log: {
