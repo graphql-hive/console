@@ -100,7 +100,7 @@ export class GroupRoleAssignmentStore {
         records.push(record);
       }
 
-      return groupIds.map(async groupId => groupRoleAssignmentsByGroupId.get(groupId) ?? []);
+      return groupIds.map(groupId => groupRoleAssignmentsByGroupId.get(groupId) ?? []);
     },
   );
 
