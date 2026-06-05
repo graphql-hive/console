@@ -160,7 +160,7 @@ export async function registerSupertokensAtHome(
       const password =
         parsedBody.data.formFields.find(field => field.id === 'password')?.value ?? '';
 
-      const emailResult = z.string().email().safeParse(rawEmail);
+      const emailResult = z.string().email().toLowerCase().safeParse(rawEmail);
 
       // Verify email
       if (!emailResult.success) {
