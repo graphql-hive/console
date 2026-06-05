@@ -294,7 +294,7 @@ export function createUsage(pluginOptions: HiveInternalPluginOptions): UsageColl
               subgraphSchema: args.args.schema,
               type: 'ROOT',
               paths: rootOperation.operation,
-              result,
+              result, // make sure this isnt taking too much memory to store. Can this be stripped out?
             },
           ];
         }

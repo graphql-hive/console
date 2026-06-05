@@ -8,6 +8,7 @@ import {
   type HivePluginOptions,
 } from '@graphql-hive/core';
 import { GatewayPlugin } from '@graphql-hive/gateway-runtime';
+import { addTypenames } from './add-typenames.js';
 import { isEntityRequest } from './is-entity-request.js';
 import { version } from './version.js';
 
@@ -87,6 +88,11 @@ export function useHive(clientOrOptions: HiveClient | GatewayPluginOptions): Gat
         // This is set onExecute so this should exist... but just to be safe
         return;
       }
+
+      // We need __typename on every object in the subgraph result so we can
+      // resolve abstract types (unions/interfaces) to concrete type coordinates
+      // when recording field-level metrics downstream.
+      executionRequest.document = addTypenames(executionRequest.document, subgraphSchema);
 
       const finishSubRequest = collection.subrequest({
         subgraph: subgraphName,
