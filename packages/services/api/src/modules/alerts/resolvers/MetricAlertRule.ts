@@ -1,3 +1,4 @@
+import { Session } from '../../auth/lib/authz';
 import { SavedFiltersStorage } from '../../saved-filters/providers/saved-filters-storage';
 import { Storage } from '../../shared/providers/storage';
 import { MetricAlertRulesStorage } from '../providers/metric-alert-rules-storage';
@@ -21,11 +22,28 @@ export const MetricAlertRule: MetricAlertRuleResolvers = {
     const channelIds = await storage.getRuleChannelIds({ ruleId: rule.id });
     return storage.getAlertChannelsByIds(channelIds);
   },
-  savedFilter: (rule, _, { injector }) => {
+  savedFilter: async (rule, _, { injector }) => {
     if (!rule.savedFilterId) {
       return null;
     }
-    return injector.get(SavedFiltersStorage).getSavedFilter({ id: rule.savedFilterId });
+    const filter = await injector
+      .get(SavedFiltersStorage)
+      .getSavedFilter({ id: rule.savedFilterId });
+    if (!filter) {
+      return null;
+    }
+    // A private saved filter is only visible to its creator. With shared-only
+    // enforcement on attach this is belt-and-suspenders, but it stops a
+    // grandfathered private filter's conditions from leaking to other viewers
+    // of this (shared) alert. (`SavedFiltersStorage.getSavedFilter` is
+    // visibility-agnostic, unlike the provider...hence the guard here.)
+    if (filter.visibility === 'private') {
+      const viewer = await injector.get(Session).getViewer();
+      if (filter.createdByUserId !== viewer.id) {
+        return null;
+      }
+    }
+    return filter;
   },
   eventCount: (rule, { from, to }, { injector }) => {
     return injector.get(MetricAlertRulesStorage).getEventCount({

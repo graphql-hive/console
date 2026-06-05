@@ -528,13 +528,20 @@ export class MetricAlertRulesStorage {
    * Returns the `project_id` of the saved filter, or null if not found.
    * Used by mutation resolvers to validate cross-scope.
    */
-  async getSavedFilterProjectId(savedFilterId: string): Promise<string | null> {
-    const result = await this.pool.maybeOneFirst(psql`/* getSavedFilterProjectId */
-      SELECT "project_id"
+  async getSavedFilterScope(
+    savedFilterId: string,
+  ): Promise<{ projectId: string; visibility: 'private' | 'shared' } | null> {
+    const result = await this.pool.maybeOne(psql`/* getSavedFilterScope */
+      SELECT "project_id" as "projectId", "visibility"
       FROM "saved_filters"
       WHERE "id" = ${savedFilterId}
     `);
-    return result === null ? null : zod.string().parse(result);
+    if (result === null) {
+      return null;
+    }
+    return zod
+      .object({ projectId: zod.string(), visibility: zod.enum(['private', 'shared']) })
+      .parse(result);
   }
 
   // --- Incidents ---

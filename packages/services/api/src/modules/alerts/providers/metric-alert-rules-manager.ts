@@ -52,6 +52,19 @@ export class MetricAlertRulesDisabledError extends Error {
   }
 }
 
+/**
+ * Thrown when an alert tries to attach a *private* saved filter. Alerts are
+ * shared, headless-evaluated resources, so they may only reference `shared`
+ * filters (visible to everyone who can see the alert). The resolver catches
+ * this and translates it into the structured `{ error: { message } }` result.
+ */
+export class MetricAlertRuleFilterNotShareableError extends Error {
+  constructor() {
+    super('Only shared filters can be attached to alerts.');
+    this.name = 'MetricAlertRuleFilterNotShareableError';
+  }
+}
+
 @Injectable({
   scope: Scope.Operation,
   global: true,
@@ -322,11 +335,16 @@ export class MetricAlertRulesManager {
     savedFilterId: string,
     projectId: string,
   ): Promise<void> {
-    const filterProjectId = await this.storage.getSavedFilterProjectId(savedFilterId);
-    if (filterProjectId !== projectId) {
+    const scope = await this.storage.getSavedFilterScope(savedFilterId);
+    if (scope === null || scope.projectId !== projectId) {
       throw new MetricAlertRuleCrossScopeError(
         'Saved filter must belong to the same project as the target.',
       );
+    }
+    // Alerts are shared resources; a private filter would be invisible to other
+    // members who manage the alert. Only `shared` filters may be attached.
+    if (scope.visibility !== 'shared') {
+      throw new MetricAlertRuleFilterNotShareableError();
     }
   }
 }
