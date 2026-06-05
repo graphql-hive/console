@@ -182,6 +182,10 @@ const statements = [
   `,
 ];
 
-const action: Action = exec => Promise.all(statements.map(q => exec(q))).then(() => {});
+const action: Action = async exec => {
+  for (const query of statements) {
+    await exec(query);
+  }
+};
 
 export { action };
