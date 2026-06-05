@@ -51,7 +51,9 @@ export function SchemaExplorerUsageStats(props: {
 }) {
   const usage = useFragment(SchemaExplorerUsageStats_UsageFragment, props.usage);
   const percentage = props.totalRequests ? (usage.total / props.totalRequests) * 100 : 0;
-  const availability = usage.errorTotal ? (1.0 - usage.errorTotal / usage.total) * 100.0 : null;
+  const availability = usage.errorTotal
+    ? ((1.0 - usage.errorTotal / usage.total) * 100.0).toFixed(2)
+    : null;
 
   const kindLabel = useMemo(() => props.kindLabel ?? 'field', [props.kindLabel]);
 
@@ -59,11 +61,12 @@ export function SchemaExplorerUsageStats(props: {
     <TooltipProvider delayDuration={0}>
       <div className="ml-3 flex flex-row items-center gap-2 text-xs">
         <div className="grow">
-          <div className="text-center" title={`${usage.total} requests`}>
+          <div
+            className="text-center"
+            title={`${usage.total} requests${!!usage.errorTotal ? `, ${usage.errorTotal} errors, ${availability}% availability` : ''}`}
+          >
             {formatNumber(usage.total)}
-            {availability ? (
-              <span className="text-neutral-8 ml-1">({availability.toFixed(2)}%)</span>
-            ) : null}
+            {availability ? <span className="text-neutral-8 ml-1">({availability}%)</span> : null}
           </div>
           <div
             title={`${toDecimal(percentage)}% of all requests`}
