@@ -4367,7 +4367,7 @@ export const userFields = (user: TaggedTemplateLiteralInvocation) => psql`
   , ${user}"zendesk_user_id" AS "zendeskId"
   , ${user}"provisioned_by_organization_id" AS "provisionedByOrganizationId"
   , ${user}"external_id" AS "externalId"
-  , to_json(${user}"deactivated_at" AS "deactivatedAt")
+  , to_json(${user}"deactivated_at") AS "deactivatedAt"
   , (
       SELECT ARRAY_AGG(DISTINCT "sub_stu"."third_party_id")
       FROM (
