@@ -2,9 +2,32 @@
 'hive': patch
 ---
 
-Fix issue where the organization invite email did not match the signed up user-accounts email.
+Fix issue where the user emails were not inserted in lower-case for OIDC providers returning non-lowercase emails.
 
-To cleanup your database, run the following command to identify duplicate records and then manually fix them/clean them up.
+If you are affected, you can manually fix you database state by running the following commands, to make account-linking from different login methods work smoothly.
+
+```sql
+UPDATE "users"
+SET
+  "email" = lower("email")
+WHERE
+  "email" <> lower("email")
+;
+```
+
+
+```sql
+UPDATE "supertokens_thirdparty_users"
+SET
+  "email" = lower("email")
+WHERE
+  "email" <> lower("email")
+;
+```
+
+
+Fix issue where user emails were not inserted into the database in lowercase for invites, resulting in a mismatch of user account email and invite email that could not be accespted.
+To cleanup your database of invites, run the following command to identify duplicate records and then manually fix them/clean them up.
 
 ```sql
 SELECT
