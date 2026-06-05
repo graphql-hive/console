@@ -63,7 +63,7 @@ export function SchemaExplorerUsageStats(props: {
         <div className="grow">
           <div
             className="text-center"
-            title={`${usage.total} requests${!!usage.errorTotal ? `, ${usage.errorTotal} errors, ${availability}% availability` : ''}`}
+            title={`${usage.total} requests${usage.errorTotal ? `, ${usage.errorTotal} errors, ${availability}% availability` : ''}`}
           >
             {formatNumber(usage.total)}
             {availability ? <span className="text-neutral-8 ml-1">({availability}%)</span> : null}

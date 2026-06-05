@@ -209,7 +209,12 @@ function SchemaCoordinateView(props: {
           <div className="col-span-4">
             <div className="grid gap-4 md:grid-cols-4 lg:grid-cols-2">
               <Card className="bg-neutral-2/50">
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardHeader
+                  className="flex flex-row items-center justify-between space-y-0 pb-2"
+                  title="Resolution Count is the total number of times this specific field (schema coordinate) was executed and returned.
+
+This differs from Request Count because a single request can resolve a field multiple times (e.g., inside an array) or skip it entirely (due to errors or conditional directives)."
+                >
                   <CardTitle className="text-sm font-medium">
                     {hasFieldLevelMetrics ? 'Total resolutions' : 'Total calls'}
                   </CardTitle>
