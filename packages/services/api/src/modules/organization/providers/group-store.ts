@@ -66,6 +66,73 @@ export class GroupStore {
     return await Promise.all(groupIds.map(id => this.getGroupById(id)));
   }
 
+  async getGroupByOrganizationIdAndDisplayName(organizationId: string, displayName: string) {
+    const query = psql` /* getGroupById (batch) */
+      SELECT
+        ${groupFields}
+      FROM
+        "groups"
+      WHERE
+        "organization_id" = ${organizationId}
+        AND "display_name" = ${displayName}
+        AND "disabled_at" = NULL
+    `;
+
+    return await this.pool.maybeOne(query).then(GroupModel.nullable().parse);
+  }
+
+  async getGroupByOrganizationIdAndGroupId(organizationId: string, groupId: string) {
+    // TODO: uuid validation
+    const group = await this.getGroupById(groupId);
+
+    if (!group) {
+      return null;
+    }
+
+    if (group.organizationId !== organizationId) {
+      return null;
+    }
+
+    if (group.disabledAt) {
+      return null;
+    }
+
+    return group;
+  }
+
+  async getGroupByOrganizationIdAndExternalGroupId(
+    organizationId: string,
+    externaGrouplId: string,
+  ) {
+    const query = psql` /* getGroupById (batch) */
+      SELECT
+        ${groupFields}
+      FROM
+        "groups"
+      WHERE
+        "organization_id" = ${organizationId}
+        AND "external_group_id" = ${externaGrouplId}
+        AND "disabled_at" = NULL
+    `;
+
+    return await this.pool.maybeOne(query).then(GroupModel.nullable().parse);
+  }
+
+  async getAllGroupsForOrganizationId(organizationId: string) {
+    const query = psql` /* getGroupById (batch) */
+      SELECT
+        ${groupFields}
+      FROM
+        "groups"
+      WHERE
+        "organization_id" = ${organizationId}
+        AND "disabled_at" = NULL
+      ORDER BY "id" DESC
+    `;
+
+    return await this.pool.maybeOne(query).then(z.array(GroupModel).parse);
+  }
+
   async getPaginatedGroupsForOrganizationId(
     organizationId: string,
     args: {
