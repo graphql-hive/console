@@ -1,4 +1,12 @@
 import { z } from 'zod';
+import type {
+  Member,
+  Organization,
+  OrganizationInvitation,
+  Project,
+  Storage,
+  Target,
+} from '@hive/api';
 import {
   CommonQueryMethods,
   createPostgresDatabasePool,
@@ -10,15 +18,7 @@ import {
   UniqueIntegrityConstraintViolationError,
 } from '@hive/postgres';
 import { createSDLHash, ProjectType } from '../../api/src/shared/entities';
-import {
-  HiveError,
-  type Member,
-  type Organization,
-  type OrganizationInvitation,
-  type Project,
-  type Storage,
-  type Target,
-} from '../../api/src/shared/errors';
+import { HiveError } from '../../api/src/shared/errors';
 import { batch, batchBy } from '../../api/src/shared/helpers';
 import { type organizations } from './db';
 import {
