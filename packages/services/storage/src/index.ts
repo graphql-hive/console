@@ -282,10 +282,10 @@ export async function createStorage(
     },
     async ensureUserExists({
       superTokensUserId,
-      email,
       oidcIntegration,
       firstName,
       lastName,
+      ...args
     }: {
       superTokensUserId: string;
       firstName: string | null;
@@ -295,6 +295,7 @@ export async function createStorage(
         id: string;
       };
     }) {
+      const email = args.email.toLowerCase();
       class EnsureUserExistsError extends Error {}
 
       try {
@@ -358,7 +359,7 @@ export async function createStorage(
                     DELETE FROM "organization_invitations" AS "oi"
                     WHERE
                       "oi"."organization_id" = ${oidcConfig.linkedOrganizationId}
-                      AND "oi"."email" = lower(${email})
+                      AND lower("oi"."email") = lower(${email})
                       AND "oi"."expires_at" > now()
                     RETURNING
                       "oi"."organization_id" "organizationId"
