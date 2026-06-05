@@ -1,12 +1,12 @@
 import { createHash } from 'node:crypto';
 import Agent from 'agentkeepalive';
 import { Inject, Injectable } from 'graphql-modules';
+import { printWithValues, sql, SqlStatement, toQueryParams } from '@hive/clickhouse';
 import { SpanKind, trace } from '@hive/service-common';
 import { castValue, compress } from '@hive/usage-common';
 import { atomic } from '../../../shared/helpers';
 import { HttpClient } from '../../shared/providers/http-client';
 import { Logger } from '../../shared/providers/logger';
-import { printWithValues, sql, SqlStatement, toQueryParams } from '@hive/clickhouse';
 import type { ClickHouseConfig } from './tokens';
 import { CLICKHOUSE_CONFIG } from './tokens';
 

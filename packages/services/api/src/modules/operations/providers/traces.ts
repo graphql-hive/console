@@ -3,6 +3,7 @@ import stableJSONStringify from 'fast-json-stable-stringify';
 import { Inject, Injectable, InjectionToken } from 'graphql-modules';
 import { z } from 'zod';
 import { subDays } from '@/lib/date-time';
+import { SqlValue } from '@hive/clickhouse';
 import * as GraphQLSchema from '../../../__generated__/types';
 import { HiveError } from '../../../shared/errors';
 import { batch, parseDateRangeInput } from '../../../shared/helpers';
@@ -10,7 +11,6 @@ import { Logger } from '../../shared/providers/logger';
 import { Storage } from '../../shared/providers/storage';
 import { ClickHouse, sql } from './clickhouse-client';
 import { formatDate } from './operations-reader';
-import { SqlValue } from '@hive/clickhouse';
 
 export const OTEL_TRACING_ENABLED = new InjectionToken<boolean>('OTEL_TRACING_ENABLED');
 
