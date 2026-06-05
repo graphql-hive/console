@@ -750,6 +750,30 @@ export class MetricAlertRulesStorage {
     return result.map(row => MetricAlertStateLogModel.parse(row) as MetricAlertStateLogEntry);
   }
 
+  /**
+   * State the rule was in at `timestamp` — the `toState` of the most recent
+   * transition strictly before it, or NORMAL if there were none. Seeds the
+   * leading edge of the state timeline so a window containing no transitions
+   * still reflects the state the rule carried into it.
+   */
+  async getStateAt(args: { ruleId: string; timestamp: Date }): Promise<MetricAlertRuleState> {
+    const result = await this.pool.maybeOneFirst(psql`/* getStateAt */
+      SELECT "to_state"
+      FROM "metric_alert_state_log"
+      WHERE
+        "metric_alert_rule_id" = ${args.ruleId}
+        AND "created_at" < ${args.timestamp.toISOString()}
+      ORDER BY "created_at" DESC
+      LIMIT 1
+    `);
+
+    if (result == null) {
+      return 'NORMAL';
+    }
+
+    return zod.enum(['NORMAL', 'PENDING', 'FIRING', 'RECOVERING']).parse(result);
+  }
+
   async getStateLogByIncident(args: { incidentId: string }): Promise<MetricAlertStateLogEntry[]> {
     const result = await this.pool.any(psql`/* getStateLogByIncident */
       SELECT ${METRIC_ALERT_STATE_LOG_SELECT}

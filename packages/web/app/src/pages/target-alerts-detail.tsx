@@ -115,6 +115,7 @@ const TargetAlertsDetailPage_StateLogQuery = graphql(`
       id
       metricAlertRule(id: $ruleId) {
         id
+        stateAt(timestamp: $from)
         stateLog(from: $from, to: $to) {
           id
           fromState
@@ -335,6 +336,7 @@ function RuleStateLogSection(props: {
   // (initial load), a transient error on a later poll keeps the last good
   // data on screen rather than blanking it.
   const stateLog = result.data?.target?.metricAlertRule?.stateLog ?? [];
+  const stateAtWindowStart = result.data?.target?.metricAlertRule?.stateAt;
   const hasNoData = !result.data;
   const stateLogStatus =
     result.error && hasNoData ? (
@@ -356,6 +358,7 @@ function RuleStateLogSection(props: {
             stateLog={stateLog}
             from={from}
             to={to}
+            initialState={stateAtWindowStart ?? undefined}
             ruleCreatedAt={rule.createdAt}
           />
         )}

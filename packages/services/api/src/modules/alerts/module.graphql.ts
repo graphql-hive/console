@@ -248,6 +248,13 @@ export default gql`
     State change history for this rule (powers the state timeline).
     """
     stateLog(from: DateTime!, to: DateTime!): [MetricAlertRuleStateChange!]!
+    """
+    State the rule was in at the given timestamp — the result of the most
+    recent transition before it (NORMAL if none). Seeds the leading edge of
+    the state timeline so a window with no transitions in it still reflects
+    the state the rule carried into the window.
+    """
+    stateAt(timestamp: DateTime!): MetricAlertRuleState!
   }
 
   type MetricAlertRuleIncident {

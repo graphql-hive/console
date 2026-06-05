@@ -69,4 +69,10 @@ export const MetricAlertRule: MetricAlertRuleResolvers = {
       to: new Date(to),
     });
   },
+  stateAt: (rule, { timestamp }, { injector }) => {
+    return injector.get(MetricAlertRulesStorage).getStateAt({
+      ruleId: rule.id,
+      timestamp: new Date(timestamp),
+    });
+  },
 };
