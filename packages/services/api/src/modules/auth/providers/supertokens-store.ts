@@ -329,7 +329,7 @@ export class SuperTokensStore {
       UPDATE
         "supertokens_thirdparty_users"
       SET
-        "email" = ${args.newEmail}
+        "email" = lower(${args.newEmail})
       WHERE
         "app_id" = 'public'
         AND "user_id" = ${args.userId}
@@ -387,7 +387,7 @@ export class SuperTokensStore {
         , ${args.thirdPartyId}
         , ${args.thirdPartyUserId}
         , ${userId}
-        , ${args.email}
+        , lower(${args.email})
         , ${now}
       )
       RETURNING
@@ -560,7 +560,7 @@ export class SuperTokensStore {
        'public'
        , ${args.user.userId}
        , ${args.token}
-       , ${args.user.email}
+       , lower(${args.user.email})
        , ${args.expiresAt}
       )
       RETURNING
