@@ -10,7 +10,7 @@ import { toEndOfInterval, toStartOfInterval } from '../lib/date-time-helpers';
 import { pickTableByPeriod } from '../lib/pick-table-by-provider';
 import { ClickHouse, RowOf, sql } from './clickhouse-client';
 import { calculateTimeWindow } from './helpers';
-import { RawValue, SqlValue } from './sql';
+import { RawValue, SqlValue } from '@hive/clickhouse';
 
 const CoordinateClientNamesGroupModel = z.array(
   z.object({

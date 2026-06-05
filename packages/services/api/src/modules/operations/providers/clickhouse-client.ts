@@ -6,11 +6,11 @@ import { castValue, compress } from '@hive/usage-common';
 import { atomic } from '../../../shared/helpers';
 import { HttpClient } from '../../shared/providers/http-client';
 import { Logger } from '../../shared/providers/logger';
-import { printWithValues, sql, SqlStatement, toQueryParams } from './sql';
+import { printWithValues, sql, SqlStatement, toQueryParams } from '@hive/clickhouse';
 import type { ClickHouseConfig } from './tokens';
 import { CLICKHOUSE_CONFIG } from './tokens';
 
-export { sql } from './sql';
+export { sql } from '@hive/clickhouse';
 
 function hashQuery(query: SqlStatement): string {
   return createHash('sha256').update(query.sql).update(JSON.stringify(query.values)).digest('hex');

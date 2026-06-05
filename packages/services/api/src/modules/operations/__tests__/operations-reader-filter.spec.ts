@@ -1,5 +1,5 @@
 import { OperationsReader } from '../providers/operations-reader';
-import { printWithValues, sql, type SqlValue } from '../providers/sql';
+import { printWithValues, sql, type SqlValue } from '@hive/clickhouse';
 
 const reader = new OperationsReader(null as any, null as any);
 

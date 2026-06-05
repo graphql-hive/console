@@ -1,4 +1,4 @@
-import { printWithValues, sql, toQueryParams } from '../providers/sql';
+import { printWithValues, sql, toQueryParams } from './sql';
 
 test('printWithValues', () => {
   expect(

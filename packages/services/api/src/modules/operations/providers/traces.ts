@@ -10,7 +10,7 @@ import { Logger } from '../../shared/providers/logger';
 import { Storage } from '../../shared/providers/storage';
 import { ClickHouse, sql } from './clickhouse-client';
 import { formatDate } from './operations-reader';
-import { SqlValue } from './sql';
+import { SqlValue } from '@hive/clickhouse';
 
 export const OTEL_TRACING_ENABLED = new InjectionToken<boolean>('OTEL_TRACING_ENABLED');
 
