@@ -1,6 +1,6 @@
 import { Injectable, Scope } from 'graphql-modules';
 import { z } from 'zod';
-import { PostgresDatabasePool, psql } from '@hive/postgres';
+import { PostgresDatabasePool, psql, type CommonQueryMethods } from '@hive/postgres';
 import { batch } from '../../../shared/helpers';
 import { Logger } from '../../shared/providers/logger';
 import {
@@ -59,14 +59,11 @@ export class GroupRoleAssignmentStore {
     return await this.getTotalGroupRoleAssignmentCountForGroupIdBatched(groupId);
   }
 
-  private getGroupRoleAssignmentsForGroupIdBatched = batch<string, Array<GroupRoleAssignment>>(
-    async groupIds => {
-      this.logger.debug(
-        'lookup group role assignments for group ids batch (groupIds=%o)',
-        groupIds,
-      );
-
-      const query = psql` /* getGroupRoleAssignmentsForGroupIdBatched */
+  static async getGroupRoleAssignmentsForGroupIds(
+    pool: CommonQueryMethods,
+    groupIds: Array<string>,
+  ) {
+    const query = psql` /* getGroupRoleAssignmentsForGroupIdBatched */
       SELECT
         ${groupRoleAssignmentsFields}
       FROM
@@ -78,10 +75,23 @@ export class GroupRoleAssignmentStore {
         , "id"
     `;
 
-      const result = await this.pool.any(query);
+    const result = await pool.any(query);
+    return z.array(GroupRoleAssignmentModel).parse(result);
+  }
+
+  private getGroupRoleAssignmentsForGroupIdBatched = batch<string, Array<GroupRoleAssignment>>(
+    async groupIds => {
+      this.logger.debug(
+        'lookup group role assignments for group ids batch (groupIds=%o)',
+        groupIds,
+      );
+
+      const records = await GroupRoleAssignmentStore.getGroupRoleAssignmentsForGroupIds(
+        this.pool,
+        groupIds,
+      );
       const groupRoleAssignmentsByGroupId = new Map<string, Array<GroupRoleAssignment>>();
-      for (const row of result) {
-        const record = GroupRoleAssignmentModel.parse(row);
+      for (const record of records) {
         let records = groupRoleAssignmentsByGroupId.get(record.groupId);
         if (records === undefined) {
           records = [];

@@ -1,12 +1,19 @@
 import { Injectable, Scope } from 'graphql-modules';
 import { isUUID } from '@hive/api/shared/is-uuid';
+import { PostgresDatabasePool, type CommonQueryMethods } from '@hive/postgres';
 import * as GraphQLSchema from '../../../__generated__/types';
-import { Session } from '../../auth/lib/authz';
+import { AuthorizationPolicyStatement, Session } from '../../auth/lib/authz';
 import { Logger } from '../../shared/providers/logger';
+import { GroupMemberStore } from './group-member-store';
 import { GroupRoleAssignmentStore } from './group-role-assignment-store';
 import { GroupStore, type Group } from './group-store';
 import { OrganizationMemberRoles } from './organization-member-roles';
-import { ResourceAssignments } from './resource-assignments';
+import type { OrganizationMembership } from './organization-members';
+import {
+  resolveResourceAssignment,
+  ResourceAssignments,
+  translateResolvedResourcesToAuthorizationPolicyStatements,
+} from './resource-assignments';
 
 @Injectable({
   scope: Scope.Operation,
@@ -15,6 +22,7 @@ export class Groups {
   private logger: Logger;
   constructor(
     logger: Logger,
+    private pool: PostgresDatabasePool,
     private session: Session,
     private groupStore: GroupStore,
     private memberRoles: OrganizationMemberRoles,
@@ -235,4 +243,105 @@ export class Groups {
       group,
     };
   }
+
+  static async getGroupsForOrganizationMembership(
+    pool: CommonQueryMethods,
+    membership: OrganizationMembership,
+  ): Promise<Array<Group>> {
+    const groupMembers = await GroupMemberStore.getGroupMemberForOrganizationIdAndUserId(
+      pool,
+      membership.organizationId,
+      membership.userId,
+    );
+    const groups = await GroupStore.getGroupsByIds(
+      pool,
+      groupMembers.map(groupMember => groupMember.groupId),
+    );
+
+    return groups.filter(isNonNull);
+  }
+
+  public getGroupsForOrganizationMembership(membership: OrganizationMembership) {
+    return Groups.getGroupsForOrganizationMembership(this.pool, membership);
+  }
+
+  /**
+   * Returns null if the user is not a member of any group.
+   * If the user is a member of groups within the origanization this returns a
+   * computed list of the policy statements based on all the group memberships role assignments.
+   */
+  static async getAllAuthorizationPolicyStatementFromGroupMembershipsPolicyStatementsForOrganizationMembership(
+    logger: Logger,
+    pool: CommonQueryMethods,
+    membership: OrganizationMembership,
+  ): Promise<null | Array<AuthorizationPolicyStatement>> {
+    logger.debug(
+      'resolve group policy statements for organization membership (organizationId=%s, userId=%s)',
+      membership.organizationId,
+      membership.userId,
+    );
+
+    const groupMemberships = await Groups.getGroupsForOrganizationMembership(pool, membership);
+    if (groupMemberships.length === null) {
+      logger.debug(
+        'no memberships found (organizationId=%s, userId=%s)',
+        membership.organizationId,
+        membership.userId,
+      );
+      return null;
+    }
+    logger.debug(
+      'memberships found. resolve groups. (organizationId=%s, userId=%s)',
+      membership.organizationId,
+      membership.userId,
+    );
+    const groupMappings = await GroupRoleAssignmentStore.getGroupRoleAssignmentsForGroupIds(
+      pool,
+      groupMemberships.map(membership => membership.id),
+    );
+
+    logger.debug(
+      'groups found. resolve roles. (organizationId=%s, userId=%s)',
+      membership.organizationId,
+      membership.userId,
+    );
+
+    const roles = await OrganizationMemberRoles.findMemberRolesByIds(
+      pool,
+      groupMappings.map(m => m.roleId),
+    );
+
+    logger.debug(
+      'compute policy statements. (organizationId=%s, userId=%s)',
+      membership.organizationId,
+      membership.userId,
+    );
+
+    const policyStatements: Array<AuthorizationPolicyStatement> = [];
+    for (const groupMapping of groupMappings) {
+      const role = roles.get(groupMapping.roleId);
+      if (!role) {
+        // if the role no longer exists for whatever reason we just skip the group
+        continue;
+      }
+
+      const resolvedResources = resolveResourceAssignment({
+        organizationId: membership.organizationId,
+        projects: groupMapping.assignedResources,
+      });
+
+      const statements = translateResolvedResourcesToAuthorizationPolicyStatements(
+        membership.organizationId,
+        role.permissions,
+        resolvedResources,
+      );
+      policyStatements.push(...statements);
+    }
+
+    return policyStatements;
+  }
+}
+
+function isNonNull<T>(value: T | null | undefined): value is T {
+  return value != null;
 }

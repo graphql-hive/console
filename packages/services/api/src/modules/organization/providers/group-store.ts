@@ -1,6 +1,6 @@
 import { Injectable, Scope } from 'graphql-modules';
 import { z } from 'zod';
-import { PostgresDatabasePool, psql } from '@hive/postgres';
+import { PostgresDatabasePool, psql, type CommonQueryMethods } from '@hive/postgres';
 import {
   decodeCreatedAtAndUUIDIdBasedCursor,
   encodeCreatedAtAndUUIDIdBasedCursor,
@@ -24,9 +24,7 @@ export class GroupStore {
     });
   }
 
-  private _getGroupByIdBatched = batch<string, Group | null>(async groupIds => {
-    this.logger.debug('lookup group batch (groupIds=%o', groupIds);
-
+  static async getGroupsByIds(pool: CommonQueryMethods, groupIds: Array<string>) {
     const query = psql` /* getGroupById (batch) */
       SELECT
         ${groupFields}
@@ -36,15 +34,20 @@ export class GroupStore {
         "id" = ANY(${psql.array(groupIds, 'uuid')})
     `;
 
-    const result = await this.pool.any(query);
+    const result = await pool.any(query);
+    return z.array(GroupModel).parse(result);
+  }
+
+  private _getGroupByIdBatched = batch<string, Group | null>(async groupIds => {
+    this.logger.debug('lookup group batch (groupIds=%o', groupIds);
+    const result = await GroupStore.getGroupsByIds(this.pool, groupIds);
     const groupsById = new Map<string, Group>();
 
-    for (const row of result) {
-      const group = GroupModel.parse(row);
+    for (const group of result) {
       groupsById.set(group.id, group);
     }
 
-    return groupIds.map(async groupId => groupsById.get(groupId) ?? null);
+    return groupIds.map(groupId => groupsById.get(groupId) ?? null);
   });
 
   @cache((groupId: string) => groupId)
@@ -57,6 +60,10 @@ export class GroupStore {
     }
 
     return await this._getGroupByIdBatched(groupId);
+  }
+
+  async getGroupsByIds(groupIds: Array<string>): Promise<Array<Group | null>> {
+    return await Promise.all(groupIds.map(id => this.getGroupById(id)));
   }
 
   async getPaginatedGroupsForOrganizationId(
