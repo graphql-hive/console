@@ -406,22 +406,14 @@ export class TargetManager {
     const isDesc = sortConfig.direction === 'DESC';
     const cursorIndex = targets.findIndex(target => {
       if (sortConfig.field === 'NAME') {
-        try {
-          const cursor = decodeProjectSlugIdBasedCursor(after);
+        const cursor = decodeProjectSlugIdBasedCursor(after);
 
-          return target.slug === cursor.slug && target.id === cursor.id;
-        } catch {
-          throw new HiveError('Invalid cursor');
-        }
+        return target.slug === cursor.slug && target.id === cursor.id;
       }
 
-      try {
-        const cursor = decodeCreatedAtAndUUIDIdBasedCursor(after);
+      const cursor = decodeCreatedAtAndUUIDIdBasedCursor(after);
 
-        return target.createdAt === cursor.createdAt && target.id === cursor.id;
-      } catch {
-        throw new HiveError('Invalid cursor');
-      }
+      return target.createdAt === cursor.createdAt && target.id === cursor.id;
     });
 
     if (cursorIndex !== -1) {
@@ -429,34 +421,26 @@ export class TargetManager {
     }
 
     if (sortConfig.field === 'NAME') {
-      try {
-        const cursor = decodeProjectSlugIdBasedCursor(after);
-        const startIndex = targets.findIndex(target =>
-          isDesc
-            ? target.slug < cursor.slug || (target.slug === cursor.slug && target.id < cursor.id)
-            : target.slug > cursor.slug || (target.slug === cursor.slug && target.id > cursor.id),
-        );
-
-        return startIndex === -1 ? targets.length : startIndex;
-      } catch {
-        throw new HiveError('Invalid cursor');
-      }
-    }
-
-    try {
-      const cursor = decodeCreatedAtAndUUIDIdBasedCursor(after);
+      const cursor = decodeProjectSlugIdBasedCursor(after);
       const startIndex = targets.findIndex(target =>
         isDesc
-          ? target.createdAt < cursor.createdAt ||
-            (target.createdAt === cursor.createdAt && target.id < cursor.id)
-          : target.createdAt > cursor.createdAt ||
-            (target.createdAt === cursor.createdAt && target.id > cursor.id),
+          ? target.slug < cursor.slug || (target.slug === cursor.slug && target.id < cursor.id)
+          : target.slug > cursor.slug || (target.slug === cursor.slug && target.id > cursor.id),
       );
 
       return startIndex === -1 ? targets.length : startIndex;
-    } catch {
-      throw new HiveError('Invalid cursor');
     }
+
+    const cursor = decodeCreatedAtAndUUIDIdBasedCursor(after);
+    const startIndex = targets.findIndex(target =>
+      isDesc
+        ? target.createdAt < cursor.createdAt ||
+          (target.createdAt === cursor.createdAt && target.id < cursor.id)
+        : target.createdAt > cursor.createdAt ||
+          (target.createdAt === cursor.createdAt && target.id > cursor.id),
+    );
+
+    return startIndex === -1 ? targets.length : startIndex;
   }
 
   private toStorageSort(sort: TargetsSortArgs | null): TargetsStorageSort | null {

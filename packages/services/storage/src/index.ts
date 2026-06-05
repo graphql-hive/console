@@ -1,12 +1,4 @@
 import { z } from 'zod';
-import type {
-  Member,
-  Organization,
-  OrganizationInvitation,
-  Project,
-  Storage,
-  Target,
-} from '@hive/api';
 import {
   CommonQueryMethods,
   createPostgresDatabasePool,
@@ -18,6 +10,15 @@ import {
   UniqueIntegrityConstraintViolationError,
 } from '@hive/postgres';
 import { createSDLHash, ProjectType } from '../../api/src/shared/entities';
+import {
+  HiveError,
+  type Member,
+  type Organization,
+  type OrganizationInvitation,
+  type Project,
+  type Storage,
+  type Target,
+} from '../../api/src/shared/errors';
 import { batch, batchBy } from '../../api/src/shared/helpers';
 import { type organizations } from './db';
 import {
@@ -4130,7 +4131,7 @@ export function decodeProjectSlugIdBasedCursor(cursor: string) {
     id === undefined ||
     !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-5][0-9a-f]{3}-[089ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(id)
   ) {
-    throw new Error('Invalid cursor');
+    throw new HiveError('Invalid cursor');
   }
 
   return {
@@ -4169,7 +4170,7 @@ export function decodeCreatedAtAndUUIDIdBasedCursor(cursor: string) {
     id === undefined ||
     !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-5][0-9a-f]{3}-[089ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(id)
   ) {
-    throw new Error('Invalid cursor');
+    throw new HiveError('Invalid cursor');
   }
 
   return {
