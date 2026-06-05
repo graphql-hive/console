@@ -427,10 +427,10 @@ export async function createStorage(
           if (internalUser.email !== email) {
             await t.query(psql`
               UPDATE "users"
-              SET "email" = ${email}
+              SET "email" = lower(${email})
               WHERE "id" = ${internalUser.id}
             `);
-            internalUser.email = email;
+            internalUser.email = email.toLowerCase();
           }
 
           if (oidcIntegration !== null) {
