@@ -1,8 +1,9 @@
 import { createHash } from 'node:crypto';
-import { readFileSync, writeFileSync } from 'node:fs';
-import { readdir } from 'node:fs/promises';
-import { extname, join, relative, resolve } from 'node:path';
-import { parse, print } from 'graphql';
+import { writeFileSync } from 'node:fs';
+import { relative, resolve } from 'node:path';
+import { print } from 'graphql';
+import { GraphQLFileLoader } from '@graphql-tools/graphql-file-loader';
+import { loadDocuments } from '@graphql-tools/load';
 import { Args, Flags } from '@oclif/core';
 import Command from '../../base-command';
 
@@ -32,37 +33,34 @@ export default class AppGenOps extends Command<typeof AppGenOps> {
 
     const dir = resolve(args.dir);
 
-    let files;
+    let sources;
     try {
-      files = await findGraphQLFiles(dir);
+      sources = await loadDocuments(`${dir}/**/*.graphql`, {
+        loaders: [new GraphQLFileLoader()],
+      });
     } catch (err) {
-      this.error(`Failed to read directory "${relative(process.cwd(), dir)}": ${String(err)}`);
+      this.error(
+        `Failed to load GraphQL files from "${relative(process.cwd(), dir)}": ${String(err)}`,
+      );
     }
 
-    if (files.length === 0) {
+    if (sources.length === 0) {
       this.error(`No .graphql files found in "${relative(process.cwd(), dir)}".`);
     }
 
+    // sort by location to make the output deterministic
+    sources.sort((a, b) => (a.location ?? '').localeCompare(b.location ?? ''));
+
     const manifest: Record<string, string> = {};
 
-    for (const file of files) {
-      const raw = readFileSync(file, 'utf-8');
-      let operation: string;
-      try {
-        // print+parse will remove comments
-        operation = print(parse(raw))
-          // remove new lines
-          .replace('\n', ' ')
-          // remove extra spaces
-          .replace(/\s+/g, ' ')
-          // trim leading and trailing spaces
-          .trim();
-      } catch (e) {
-        this.warn(
-          `Skipping invalid GraphQL file "${relative(process.cwd(), file)}": ${e instanceof Error ? e.message : String(e)}`,
-        );
+    for (const source of sources) {
+      const file = source.location ?? '<unknown>';
+      if (!source.document) {
+        this.warn(`Skipping empty operation in file "${relative(process.cwd(), file)}".`);
         continue;
       }
+      // print to normalize the document (removes comments), then collapse whitespace
+      const operation = print(source.document).replace('\n', ' ').replace(/\s+/g, ' ').trim();
       if (!operation) {
         this.warn(`Skipping empty operation in file "${relative(process.cwd(), file)}".`);
         continue;
@@ -93,21 +91,4 @@ export default class AppGenOps extends Command<typeof AppGenOps> {
       `Generated persisted operations manifest with ${Object.keys(manifest).length} operation(s) to "${relative(process.cwd(), flags.out)}".`,
     );
   }
-}
-
-async function findGraphQLFiles(dir: string): Promise<string[]> {
-  const entries = (await readdir(dir, { withFileTypes: true }))
-    // sort to make the output deterministic (not relying on the file system order which can be different)
-    .sort((a, b) => a.name.localeCompare(b.name));
-  const files = await Promise.all(
-    entries.map(entry => {
-      const fullPath = join(dir, entry.name);
-      return entry.isDirectory()
-        ? findGraphQLFiles(fullPath)
-        : extname(entry.name) === '.graphql'
-          ? fullPath
-          : [];
-    }),
-  );
-  return files.flat();
 }
