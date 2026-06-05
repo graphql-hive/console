@@ -1687,4 +1687,23 @@ export default gql`
   type UpdateGroupMappingResultError {
     message: String!
   }
+
+  type MemberProvisionInformation {
+    isDisabled: Boolean!
+  }
+
+  extend type Member {
+    """
+    The groups the member is part of.
+    """
+    groups: [Group!]!
+  }
+
+  extend type User {
+    """
+    Information about the user if provisioned.
+    The fields value is null if the user is not a provisioned user.
+    """
+    provisionInfo: MemberProvisionInformation
+  }
 `;

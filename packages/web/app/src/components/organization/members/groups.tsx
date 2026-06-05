@@ -271,7 +271,7 @@ function GroupRow(props: GroupRowProps): ReactNode {
               </span>
               {isDisabled && (
                 <Badge variant="destructive" className="text-xs font-normal">
-                  Deleted
+                  Disabled
                 </Badge>
               )}
               <Badge variant="outline" className="text-xs font-normal">

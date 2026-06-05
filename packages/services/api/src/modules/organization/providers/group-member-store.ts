@@ -1,7 +1,8 @@
 import { Injectable, Scope } from 'graphql-modules';
 import { z } from 'zod';
-import { PostgresDatabasePool, psql } from '@hive/postgres';
-import { batch } from '../../../shared/helpers';
+import { PostgresDatabasePool, psql, type CommonQueryMethods } from '@hive/postgres';
+import { invariant } from '@hive/service-common';
+import { batch, batchBy } from '../../../shared/helpers';
 import { Logger } from '../../shared/providers/logger';
 
 @Injectable({
@@ -52,4 +53,72 @@ export class GroupMemberStore {
     );
     return await this.getTotalMemberCountForGroupIdBatched(groupId);
   }
+
+  private _getGroupMemberForOrganizationIdAndUserBatchedByOrganizationId = batchBy(
+    (args: { organizationId: string; userId: string }) => args.organizationId,
+    async args => {
+      const userIds = args.map(arg => arg.userId);
+
+      const result = await this.pool.any(psql`
+        SELECT ${groupMemberFields}
+        FROM "group_members"
+        WHERE
+          "organization_id" = ${args[0].organizationId}
+          AND "user_id" = ANY(${psql.array(userIds, 'uuid')})
+      `);
+
+      const groupMemberByUserId = new Map<string, Array<GroupMember>>();
+
+      for (const row of result) {
+        const member = GroupMemberModel.parse(row);
+        invariant(member.organizationId === args[0].organizationId, 'Batching failed.');
+        let memberGroups = groupMemberByUserId.get(member.userId);
+        if (memberGroups == null) {
+          memberGroups = [];
+          groupMemberByUserId.set(member.userId, memberGroups);
+        }
+        memberGroups.push(member);
+      }
+
+      return userIds.map(userId => groupMemberByUserId.get(userId) ?? []);
+    },
+  );
+
+  async getGroupMemberForOrganizationIdAndUserId(organizationId: string, userId: string) {
+    return await this._getGroupMemberForOrganizationIdAndUserBatchedByOrganizationId({
+      organizationId,
+      userId,
+    });
+  }
+
+  static async getGroupMemberForOrganizationIdAndUserId(
+    pool: CommonQueryMethods,
+    organizationId: string,
+    userId: string,
+  ) {
+    const result = await pool.any(psql`
+      SELECT ${groupMemberFields}
+      FROM "group_members"
+      WHERE
+        "organization_id" = ${organizationId}
+        AND "user_id" = ${userId}
+    `);
+    return z.array(GroupMemberModel).parse(result);
+  }
 }
+
+const GroupMemberModel = z.object({
+  id: z.string(),
+  organizationId: z.string(),
+  userId: z.string(),
+  groupId: z.string(),
+});
+
+type GroupMember = z.TypeOf<typeof GroupMemberModel>;
+
+const groupMemberFields = psql`
+ "id"
+ , "organization_id" AS "organizationId"
+ , "user_id" AS "userId"
+ , "group_id" AS "groupId"
+`;

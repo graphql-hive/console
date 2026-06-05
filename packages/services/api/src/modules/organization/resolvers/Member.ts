@@ -1,4 +1,5 @@
 import { Storage } from '../../shared/providers/storage';
+import { Groups } from '../providers/groups';
 import { OrganizationAccessTokens } from '../providers/organization-access-tokens';
 import { OrganizationManager } from '../providers/organization-manager';
 import { ResourceAssignments } from '../providers/resource-assignments';
@@ -76,5 +77,8 @@ export const Member: MemberResolvers = {
       after: args.after ?? null,
       includeExpired: args.includeExpired,
     });
+  },
+  async groups(membership, _, { injector }) {
+    return injector.get(Groups).getGroupsForOrganizationMembership(membership);
   },
 };
