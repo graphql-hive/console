@@ -2002,6 +2002,9 @@ importers:
       '@graphql-yoga/redis-event-target':
         specifier: 3.0.3
         version: 3.0.3(ioredis@5.8.2)
+      '@hive/clickhouse':
+        specifier: workspace:*
+        version: link:../../internal/clickhouse
       '@hive/postgres':
         specifier: workspace:*
         version: link:../../internal/postgres

@@ -1,5 +1,11 @@
 import { z } from 'zod';
 import type { Logger } from '@graphql-hive/logger';
+import {
+  buildOperationsFilterSQLConditions,
+  sql,
+  toQueryParams,
+  type SqlValue,
+} from '@hive/clickhouse';
 import type { CommonQueryMethods, PostgresDatabasePool } from '@hive/postgres';
 import { psql } from '@hive/postgres';
 import { metricAlertClickHouseQueryDuration } from '../metrics.js';
@@ -27,6 +33,10 @@ const MetricAlertRuleRowSchema = z.object({
   stateChangedAt: z.string().nullable(),
   confirmationMinutes: z.number(),
   savedFilterId: z.string().nullable(),
+  // The attached saved filter's `filters` jsonb (or null). Kept as `unknown` so a
+  // malformed/legacy blob can't fail the bulk parse and halt evaluation of EVERY
+  // rule...its shape is validated defensively per-group in `buildSavedFilterConditions`.
+  savedFilterFilters: z.unknown().nullable(),
   /** Plan name of the rule's organization. Drives state-log retention. */
   organizationPlanName: z.string().nullable(),
 });
@@ -171,9 +181,11 @@ export async function fetchEnabledRules(
       , to_json(r."state_changed_at") as "stateChangedAt"
       , r."confirmation_minutes" as "confirmationMinutes"
       , r."saved_filter_id" as "savedFilterId"
+      , sf."filters" as "savedFilterFilters"
       , o."plan_name" as "organizationPlanName"
     FROM "metric_alert_rules" r
     INNER JOIN "organizations" o ON o."id" = r."organization_id"
+    LEFT JOIN "saved_filters" sf ON sf."id" = r."saved_filter_id"
     WHERE r."enabled" = true
       ${
         clusterFlagEnabled
@@ -201,10 +213,62 @@ export function groupRulesByQuery(
   return groups;
 }
 
+// Validated shape of the saved-filter `filters` jsonb that the evaluator applies.
+// `dateRange` is deliberately NOT read (an alert defines its own rolling window,
+// so the filter's saved date range is meaningless here). `.passthrough()` tolerates
+// extra fields (e.g. `dateRange`) without failing.
+const SavedFilterConditionsSchema = z
+  .object({
+    operationHashes: z.array(z.string()).optional(),
+    clientFilters: z
+      .array(
+        z.object({
+          name: z.string(),
+          versions: z.array(z.string()).nullable().optional(),
+        }),
+      )
+      .optional(),
+    excludeOperations: z.boolean().optional(),
+    excludeClientFilters: z.boolean().optional(),
+  })
+  .passthrough();
+
+/**
+ * Turns a saved filter's raw `filters` jsonb into ClickHouse conditions for the
+ * window query, via the same shared builder the analytics API uses (so an alert
+ * filters identically to what users see on Insights).
+ *
+ * Never throws: a null/malformed blob yields NO conditions (the alert evaluates
+ * unfiltered) and is logged, so one bad filter can't break the whole batch.
+ */
+export function buildSavedFilterConditions(rawFilters: unknown, logger: Logger): SqlValue[] {
+  if (rawFilters == null) {
+    return [];
+  }
+  const parsed = SavedFilterConditionsSchema.safeParse(rawFilters);
+  if (!parsed.success) {
+    logger.warn(
+      { error: parsed.error },
+      'Saved filter on a metric alert rule has an unexpected shape; evaluating unfiltered',
+    );
+    return [];
+  }
+  return buildOperationsFilterSQLConditions({
+    operations: parsed.data.operationHashes,
+    clientVersionFilters: parsed.data.clientFilters?.map(client => ({
+      clientName: client.name,
+      versions: client.versions ?? null,
+    })),
+    excludeOperations: parsed.data.excludeOperations,
+    excludeClientVersionFilters: parsed.data.excludeClientFilters,
+  });
+}
+
 export async function queryClickHouseWindows(
   clickhouse: ClickHouseClient,
   targetId: string,
   timeWindowMinutes: number,
+  filterConditions: SqlValue[],
   // Anchor windows to the cron's scheduled run time (graphile-worker's
   // job.run_at), not wall-clock now. If the worker is backed up and picks
   // this job up late, using wall-clock would shift the queried window
@@ -221,24 +285,30 @@ export async function queryClickHouseWindows(
 
   const tableName = timeWindowMinutes <= 360 ? 'operations_minutely' : 'operations_hourly';
 
+  // `target` is a validated UUID and the window timestamps are computed numbers, so
+  // they're inlined safely via sql.raw. The saved-filter conditions carry arbitrary
+  // client/operation strings, so they (and the target, for good measure) are bound
+  // as ClickHouse `param_*` values via the `sql` tag + toQueryParams below.
   const safeTargetId = assertUUID(targetId);
 
-  // ClickHouse parameterized query syntax is not supported via the HTTP interface
-  // in the same way as PostgreSQL. We validate the UUID format above to prevent injection.
-  const sql = `
+  const filterClause =
+    filterConditions.length > 0 ? sql` AND ${sql.join(filterConditions, ' AND ')}` : sql``;
+
+  const statement = sql`
     SELECT
       CASE
-        WHEN timestamp >= fromUnixTimestamp64Milli(${currentWindowStart.getTime()}) THEN 'current'
+        WHEN timestamp >= fromUnixTimestamp64Milli(${sql.raw(String(currentWindowStart.getTime()))}) THEN 'current'
         ELSE 'previous'
       END as window,
       sum(total) as total,
       sum(total_ok) as total_ok,
       avgMerge(duration_avg) as average,
       quantilesMerge(0.75, 0.90, 0.95, 0.99)(duration_quantiles) as percentiles
-    FROM ${tableName}
-    WHERE target = '${safeTargetId}'
-      AND timestamp >= fromUnixTimestamp64Milli(${previousWindowStart.getTime()})
-      AND timestamp < fromUnixTimestamp64Milli(${currentWindowEnd.getTime()})
+    FROM ${sql.raw(tableName)}
+    WHERE target = ${safeTargetId}
+      AND timestamp >= fromUnixTimestamp64Milli(${sql.raw(String(previousWindowStart.getTime()))})
+      AND timestamp < fromUnixTimestamp64Milli(${sql.raw(String(currentWindowEnd.getTime()))})
+      ${filterClause}
     GROUP BY window
     ORDER BY window
   `;
@@ -250,7 +320,11 @@ export async function queryClickHouseWindows(
   const startMs = Date.now();
   let rows: ClickHouseWindowRow[];
   try {
-    const raw = await clickhouse.query(sql, 'metric-alert-windows');
+    const raw = await clickhouse.query(
+      statement.sql,
+      'metric-alert-windows',
+      toQueryParams(statement),
+    );
     rows = z.array(ClickHouseWindowRowSchema).parse(raw);
   } catch (error) {
     metricAlertClickHouseQueryDuration.observe({ outcome: 'error' }, (Date.now() - startMs) / 1000);
