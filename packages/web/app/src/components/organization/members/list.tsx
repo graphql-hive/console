@@ -1,5 +1,5 @@
 import { memo, useEffect, useState } from 'react';
-import { ChevronLeftIcon, ChevronRightIcon, MoreHorizontalIcon } from 'lucide-react';
+import { ChevronLeftIcon, ChevronRightIcon, MoreHorizontalIcon, UsersIcon } from 'lucide-react';
 import { FaGithub, FaGoogle, FaOpenid, FaUser, FaUserLock } from 'react-icons/fa';
 import { IconType } from 'react-icons/lib';
 import { useMutation, type UseQueryExecute } from 'urql';
@@ -14,6 +14,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -33,6 +34,76 @@ import { cn } from '@/lib/utils';
 import { organizationMembersRoute } from '../../../router';
 import { MemberInvitationButton } from './invitations';
 import { MemberRolePicker } from './member-role-picker';
+
+const MemberGroups_GroupFragment = graphql(`
+  fragment MemberGroups_GroupFragment on Group {
+    id
+    name
+  }
+`);
+
+function MemberGroups(props: { groups: Array<FragmentType<typeof MemberGroups_GroupFragment>> }) {
+  const groups = useFragment(MemberGroups_GroupFragment, props.groups);
+  // Show first 2 groups, then +N more
+  const visibleGroups = groups.slice(0, 2);
+  const remainingCount = groups.length - 2;
+
+  return (
+    <TooltipProvider>
+      <div className="flex items-center gap-2">
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <div className="flex items-center gap-1.5">
+              <UsersIcon className="text-muted-foreground h-3.5 w-3.5" />
+              <span className="text-muted-foreground text-xs">Groups:</span>
+            </div>
+          </TooltipTrigger>
+          <TooltipContent side="top" className="max-w-xs">
+            <p className="mb-1 font-medium">Group memberships</p>
+            <ul className="space-y-1">
+              {groups.map(group => (
+                <li key={group.id} className="flex items-center justify-between gap-4">
+                  <span>{group.name}</span>
+                </li>
+              ))}
+            </ul>
+          </TooltipContent>
+        </Tooltip>
+
+        <div className="flex flex-wrap items-center gap-1.5">
+          {visibleGroups.map(group => (
+            <Tooltip key={group.id}>
+              <TooltipTrigger asChild>
+                <Badge className="cursor-default text-xs">{group.name}</Badge>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>
+                  <span className="font-medium">{group.name}</span>
+                </p>
+              </TooltipContent>
+            </Tooltip>
+          ))}
+          {remainingCount > 0 && (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Badge variant="outline" className="cursor-default text-xs font-normal">
+                  +{remainingCount} more
+                </Badge>
+              </TooltipTrigger>
+              <TooltipContent side="top">
+                <ul className="space-y-1">
+                  {groups.slice(2).map(group => (
+                    <li key={group.id}>{group.name}</li>
+                  ))}
+                </ul>
+              </TooltipContent>
+            </Tooltip>
+          )}
+        </div>
+      </div>
+    </TooltipProvider>
+  );
+}
 
 export const authProviderToIconAndTextMap: Record<
   GraphQLSchema.AuthProviderType,
@@ -76,6 +147,9 @@ const OrganizationMemberRow_MemberFragment = graphql(`
       id
       displayName
       email
+      provisionInfo {
+        isDisabled
+      }
     }
     authProviders {
       type
@@ -83,6 +157,10 @@ const OrganizationMemberRow_MemberFragment = graphql(`
     }
     role {
       id
+    }
+    groups {
+      id
+      ...MemberGroups_GroupFragment
     }
     isOwner
     viewerCanRemove
@@ -191,7 +269,7 @@ const OrganizationMemberRow = memo(function OrganizationMemberRow(props: {
           </div>
           <h4 className="text-neutral-10 text-xs">{member.user.email}</h4>
         </td>
-        <td className="relative py-3 text-center text-sm">
+        <td className="relative py-3 text-center text-right text-sm">
           {member.isOwner ? (
             <TooltipProvider>
               <Tooltip>
@@ -204,6 +282,8 @@ const OrganizationMemberRow = memo(function OrganizationMemberRow(props: {
                 </TooltipContent>
               </Tooltip>
             </TooltipProvider>
+          ) : member.groups?.length ? (
+            <MemberGroups groups={member.groups} />
           ) : (
             <MemberRole member={member} organization={organization} />
           )}
