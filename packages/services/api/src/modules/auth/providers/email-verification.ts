@@ -84,7 +84,7 @@ export class EmailVerification {
           FROM "email_verifications" "ev"
           WHERE
             "ev"."user_identity_id" = ${input.userIdentityId}
-            AND "ev"."email" = ${input.email}
+            AND "ev"."email" = lower(${input.email})
         `,
       )
       .then(v => EmailVerificationModel.nullable().parse(v));
@@ -143,7 +143,7 @@ export class EmailVerification {
           FROM "email_verifications" "ev"
           WHERE
             "ev"."user_identity_id" = ${input.userIdentityId}
-            AND "ev"."email" = ${superTokensUser.email}
+            AND "ev"."email" = lower(${superTokensUser.email})
         `,
       )
       .then(v => EmailVerificationModel.nullable().parse(v));
@@ -216,7 +216,7 @@ export class EmailVerification {
           FROM "email_verifications" "ev"
           WHERE
             "user_identity_id" = ${input.userIdentityId}
-            AND "email" = ${input.email}
+            AND "email" = lower(${input.email})
             AND "expires_at" IS NOT NULL
             AND "verified_at" IS NULL
         `,
