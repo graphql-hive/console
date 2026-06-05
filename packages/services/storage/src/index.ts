@@ -4345,6 +4345,9 @@ export const userFields = (user: TaggedTemplateLiteralInvocation) => psql`
   , ${user}"is_admin" AS "isAdmin"
   , ${user}"oidc_integration_id" AS "oidcIntegrationId"
   , ${user}"zendesk_user_id" AS "zendeskId"
+  , ${user}"provisioned_by_organization_id" AS "provisionedByOrganizationId"
+  , ${user}"external_id" AS "externalId"
+  , to_json(${user}"deactivated_at" AS "deactivatedAt")
   , (
       SELECT ARRAY_AGG(DISTINCT "sub_stu"."third_party_id")
       FROM (
@@ -4759,6 +4762,9 @@ export const UserModel = z.object({
         return 'USERNAME_PASSWORD' as const;
       }),
   ),
+  provisionedByOrganizationId: z.string().uuid().nullable(),
+  externalId: z.string().nullable(),
+  deactivatedAt: z.string().nullable(),
 });
 
 type UserType = z.TypeOf<typeof UserModel>;

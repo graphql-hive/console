@@ -354,6 +354,8 @@ export interface User {
   superTokensUserId: string | null;
   isAdmin: boolean;
   zendeskId: string | null;
+  provisionedByOrganizationId: string | null;
+  deactivatedAt: string | null;
 }
 
 export interface Member {
