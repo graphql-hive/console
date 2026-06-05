@@ -225,7 +225,33 @@ export class MetricAlertRulesStorage {
     { cache: true },
   );
 
+  // Per-request batcher: the manage-filters list resolves `usedByAlertRulesCount`
+  // for each saved filter; this collapses N counts into one grouped query.
+  private rulesCountBySavedFilterLoader = new DataLoader<string, number>(
+    async savedFilterIds => {
+      const rows = await this.pool.any(psql`/* batchedRulesCountBySavedFilter */
+        SELECT "saved_filter_id" as "savedFilterId", count(*)::int as "count"
+        FROM "metric_alert_rules"
+        WHERE "saved_filter_id" = ANY(${psql.array([...savedFilterIds], 'uuid')})
+        GROUP BY "saved_filter_id"
+      `);
+      const rowSchema = zod.object({ savedFilterId: zod.string(), count: zod.number() });
+      const byFilter = new Map<string, number>();
+      for (const raw of rows) {
+        const row = rowSchema.parse(raw);
+        byFilter.set(row.savedFilterId, row.count);
+      }
+      return savedFilterIds.map(id => byFilter.get(id) ?? 0);
+    },
+    { cache: true },
+  );
+
   constructor(private pool: PostgresDatabasePool) {}
+
+  /** How many alert rules reference a given saved filter (per-request batched). */
+  countRulesUsingSavedFilter(savedFilterId: string): Promise<number> {
+    return this.rulesCountBySavedFilterLoader.load(savedFilterId);
+  }
 
   // --- Alert Rule CRUD ---
 

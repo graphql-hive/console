@@ -13,6 +13,14 @@ export default gql`
     alerts: [Alert!]
   }
 
+  extend type SavedFilter {
+    """
+    Number of metric alert rules that reference this filter. When greater than 0
+    the filter cannot be deleted — it must first be detached from those alerts.
+    """
+    usedByAlertRulesCount: Int!
+  }
+
   enum AlertChannelType {
     SLACK
     WEBHOOK
