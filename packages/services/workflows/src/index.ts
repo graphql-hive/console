@@ -3,20 +3,33 @@ import { Logger } from '@graphql-hive/logger';
 import { createPostgresDatabasePool } from '@hive/postgres';
 import { bridgeGraphileLogger, createHivePubSub } from '@hive/pubsub';
 import {
+  configureTracing,
   createServer,
   registerShutdown,
   reportReadiness,
   sentryInit,
   startHeartbeats,
   startMetrics,
+  type TracingInstance,
 } from '@hive/service-common';
 import { Context } from './context.js';
 import { env } from './environment.js';
+import { ClickHouseClient } from './lib/clickhouse-client.js';
 import { createEmailProvider } from './lib/emails/providers.js';
 import { schemaProvider } from './lib/schema/provider.js';
 import { bridgeFastifyLogger } from './logger.js';
 import { createRedisClient } from './redis';
 import { createTaskEventEmitter } from './task-events.js';
+
+let tracing: TracingInstance | undefined;
+if (env.tracing.enabled) {
+  tracing = configureTracing({
+    collectorEndpoint: env.tracing.collectorEndpoint,
+    serviceName: 'workflows',
+  });
+  tracing.instrumentNodeFetch();
+  tracing.setup();
+}
 
 if (env.sentry) {
   sentryInit({
@@ -43,21 +56,45 @@ const modules = await Promise.all([
   import('./tasks/usage-rate-limit-exceeded.js'),
   import('./tasks/usage-rate-limit-warning.js'),
   import('./tasks/schema-proposal-composition.js'),
+  import('./tasks/evaluate-metric-alert-rules.js'),
+  import('./tasks/send-metric-alert-channel-notification.js'),
+  import('./tasks/purge-expired-alert-state-log.js'),
 ]);
-
-const crontab = `
-  # Purge expired schema checks every Sunday at 10:00AM
-  0 10 * * 0 purgeExpiredSchemaChecks
-  # Every day at 3:00 AM
-  0 3 * * * purgeExpiredDedupeKeys
-`;
 
 const pg = await createPostgresDatabasePool({
   connectionParameters: env.postgres.connectionString,
+  additionalInterceptors: tracing ? [tracing.instrumentSlonik()] : [],
 });
 const logger = new Logger({ level: env.log.level });
 
 logger.info({ pid: process.pid }, 'starting workflow service ' + process.pid);
+
+// Build the crontab. The metric-alerts evaluator queries ClickHouse for
+// metric windows, so its line is only included when ClickHouse is
+// configured. Otherwise the task would silently bail every minute. The
+// state-log purge task only touches Postgres so it stays unconditional.
+const crontabLines: string[] = [
+  '# Purge expired schema checks every Sunday at 10:00AM',
+  '0 10 * * 0 purgeExpiredSchemaChecks',
+  '# Every day at 3:00 AM',
+  '0 3 * * * purgeExpiredDedupeKeys',
+];
+if (env.clickhouse) {
+  crontabLines.push(
+    '# Evaluate metric alert rules every minute',
+    '* * * * * evaluateMetricAlertRules',
+  );
+} else {
+  logger.warn(
+    'ClickHouse not configured — metric alert rules will not be evaluated. ' +
+      'Set CLICKHOUSE=1 and the CLICKHOUSE_* env vars to enable.',
+  );
+}
+crontabLines.push(
+  '# Purge expired alert state log entries daily at 4:00 AM',
+  '0 4 * * * purgeExpiredAlertStateLog',
+);
+const crontab = crontabLines.join('\n');
 
 const stopHttpHeartbeat = env.httpHeartbeat
   ? startHeartbeats({
@@ -86,10 +123,15 @@ const pubSub = createHivePubSub({
   ),
 });
 
+const clickhouse = env.clickhouse
+  ? new ClickHouseClient(env.clickhouse, logger.child({ source: 'ClickHouse' }))
+  : null;
+
 const context: Context = {
   logger,
   email: createEmailProvider(env.email.provider, env.email.emailFrom),
   pg,
+  clickhouse,
   requestBroker: env.requestBroker,
   schema: schemaProvider({
     logger,
@@ -160,6 +202,10 @@ registerShutdown({
   logger: bridgeFastifyLogger(logger),
   async onShutdown() {
     try {
+      if (tracing) {
+        logger.info('Flushing tracing spans.');
+        await tracing.shutdown();
+      }
       logger.info('Stopping task runner.');
       await runner.stop();
       logger.info('Task runner shutdown successful.');

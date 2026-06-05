@@ -19,6 +19,7 @@ import { ensureEnv } from './env';
 import {
   addAlert,
   addAlertChannel,
+  addMetricAlertRule,
   assignMemberRole,
   checkSchema,
   compareToPreviousVersion,
@@ -30,6 +31,7 @@ import {
   createTarget,
   createToken,
   deleteMemberRole,
+  deleteMetricAlertRules,
   deleteSchema,
   deleteTokens,
   fetchLatestSchema,
@@ -51,6 +53,7 @@ import {
   readTokenInfo,
   updateBaseSchema,
   updateMemberRole,
+  updateMetricAlertRule,
   updateTargetValidationSettings,
 } from './flow';
 import * as GraphQLSchema from './gql/graphql';
@@ -872,6 +875,31 @@ export function initSeed() {
                     r.expectNoGraphQLErrors(),
                   );
                   return result.addAlertChannel;
+                },
+                async addMetricAlertRule(
+                  input: { token?: string } & Parameters<typeof addMetricAlertRule>[0],
+                ) {
+                  const result = await addMetricAlertRule(input, input.token || ownerToken).then(
+                    r => r.expectNoGraphQLErrors(),
+                  );
+                  return result.addMetricAlertRule;
+                },
+                async updateMetricAlertRule(
+                  input: { token?: string } & Parameters<typeof updateMetricAlertRule>[0],
+                ) {
+                  const result = await updateMetricAlertRule(input, input.token || ownerToken).then(
+                    r => r.expectNoGraphQLErrors(),
+                  );
+                  return result.updateMetricAlertRule;
+                },
+                async deleteMetricAlertRules(
+                  input: { token?: string } & Parameters<typeof deleteMetricAlertRules>[0],
+                ) {
+                  const result = await deleteMetricAlertRules(
+                    input,
+                    input.token || ownerToken,
+                  ).then(r => r.expectNoGraphQLErrors());
+                  return result.deleteMetricAlertRules;
                 },
                 /**
                  * Create an access token for a given target.
