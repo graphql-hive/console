@@ -43,7 +43,7 @@ export class GroupMemberStore {
       totalCountByGroupId.set(record.groupId, record.totalCount);
     }
 
-    return groupIds.map(async groupId => totalCountByGroupId.get(groupId) ?? 0);
+    return groupIds.map(groupId => totalCountByGroupId.get(groupId) ?? 0);
   });
 
   async getTotalMemberCountByGroupId(groupId: string): Promise<number> {
