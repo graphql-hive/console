@@ -958,7 +958,7 @@ export async function createStorage(
             )
             VALUES (
               ${args.organizationId}
-              , ${args.email}
+              , lower(${args.email})
               , ${args.roleId}
               , ${args.resourceAssignments === null ? null : psql.jsonb(args.resourceAssignments)}
             )
@@ -983,7 +983,9 @@ export async function createStorage(
           .maybeOne(
             psql`/* deleteOrganizationInvitationByEmail */
                 DELETE FROM organization_invitations
-                WHERE organization_id = ${organization} AND email = ${email}
+                WHERE
+                  organization_id = ${organization}
+                  AND email = lower(${email})
                 RETURNING
                   "organization_id" AS "organizationId"
                   , "code"
@@ -1210,7 +1212,7 @@ export async function createStorage(
           LEFT JOIN organization_invitations as i ON (i.organization_id = o.id)
           WHERE
             i.code = ${inviteCode}
-            AND i.email = ${email}
+            AND i.email = lower(${email})
             AND i.expires_at > NOW()
           GROUP BY o.id
           LIMIT 1
