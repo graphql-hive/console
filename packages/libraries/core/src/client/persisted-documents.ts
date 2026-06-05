@@ -90,7 +90,28 @@ function createValidationError(
   return new PersistedDocumentValidationError(documentId, error);
 }
 
-type PersistedDocuments = {
+/**
+ * The app deployment manifest as registered in Hive, containing metadata
+ * and the full list of persisted document hashes for a specific app version.
+ */
+export interface PersistedDocumentsManifest {
+  /** Unique identifier of the manifest. */
+  id: string;
+  /** Name of the app this manifest belongs to. */
+  appName: string;
+  /** Version of the app this manifest belongs to. */
+  appVersion: string;
+  /** Whether this app version is published/active in Hive. */
+  isActive: boolean;
+  /** All persisted document hashes registered for this app version. */
+  documentHashes: string[];
+}
+
+export type PersistedDocuments = {
+  manifest(
+    deployment: { appName: string; appVersion: string },
+    context?: { waitUntil?: (promise: Promise<void> | void) => void },
+  ): PromiseOrValue<PersistedDocumentsManifest | null>;
   resolve(
     documentId: string,
     context?: { waitUntil?: (promise: Promise<void> | void) => void },
@@ -107,9 +128,6 @@ export function createPersistedDocuments(
     timeout?: HttpCallConfig['retry'];
   },
 ): PersistedDocuments {
-  // L1
-  const persistedDocumentsCache = lru<string | null>(config.cache ?? 10_000);
-
   // L2
   const layer2Cache: PersistedDocumentsCache | undefined = config.layer2Cache?.cache;
   let layer2TtlSeconds = config.layer2Cache?.ttlSeconds;
@@ -144,7 +162,8 @@ export function createPersistedDocuments(
     allowArbitraryDocuments = () => false;
   }
 
-  /** if there is already a in-flight request for a document, we re-use it. */
+  /** if there is already a in-flight request for a document or manifest, we re-use it. */
+  const cdnCache = lru<string | null>(config.cache ?? 10_000);
   const fetchCache = new Map<string, Promise<string | null>>();
 
   const endpoints = Array.isArray(config.cdn.endpoint)
@@ -153,11 +172,11 @@ export function createPersistedDocuments(
 
   const circuitBreakers = endpoints.map(endpoint => {
     const circuitBreaker = new CircuitBreaker(
-      async function doFetch(cdnDocumentId: string) {
+      async function doFetch(pathname: string) {
         const signal = circuitBreaker.getSignal();
 
         return await http
-          .get(endpoint + '/apps/' + cdnDocumentId, {
+          .get(endpoint + '/apps/' + pathname, {
             headers: {
               'X-Hive-CDN-Key': config.cdn.accessToken,
             },
@@ -171,8 +190,7 @@ export function createPersistedDocuments(
             if (response.status !== 200) {
               return null;
             }
-            const text = await response.text();
-            return text;
+            return response.text();
           });
       },
       {
@@ -184,6 +202,74 @@ export function createPersistedDocuments(
 
     return circuitBreaker;
   });
+
+  function fetchFromCDN(
+    documentIdOrPathname: string,
+    context?: { waitUntil?: (promise: Promise<void> | void) => void },
+  ): Promise<string | null> {
+    const cached = cdnCache.get(documentIdOrPathname);
+    if (cached !== undefined) {
+      return Promise.resolve(cached);
+    }
+
+    let promise = fetchCache.get(documentIdOrPathname);
+    if (promise) {
+      return promise;
+    }
+
+    promise = Promise.resolve()
+      .then(async (): Promise<{ value: string | null; fromL2: boolean }> => {
+        // L2 cache check
+        const l2Result = await getFromLayer2Cache(documentIdOrPathname);
+        if (l2Result.hit) {
+          // L2 cache hit, store in L1 for faster subsequent access
+          cdnCache.set(documentIdOrPathname, l2Result.value);
+          return { value: l2Result.value, fromL2: true };
+        }
+
+        // CDN fetch
+        const pathname = documentIdOrPathname.replaceAll('~', '/');
+
+        let lastError: unknown = null;
+
+        for (const breaker of circuitBreakers) {
+          try {
+            const result = await breaker.fire(pathname);
+            return { value: result, fromL2: false };
+          } catch (error: unknown) {
+            config.logger.debug({ error });
+            lastError = error;
+          }
+        }
+        if (lastError) {
+          config.logger.error({ error: lastError });
+        }
+        if (pathname === documentIdOrPathname) {
+          // manifest
+          throw new Error('Failed to look up persisted operations manifest.');
+        } else {
+          // persisted documents (because ~ was replaced)
+          throw new Error('Failed to look up persisted operation.');
+        }
+      })
+      .then(({ value, fromL2 }) => {
+        // Store in L1 cache (in-memory), only if not already stored from L2 hit
+        if (!fromL2) {
+          cdnCache.set(documentIdOrPathname, value);
+          // Store in L2 cache (async, non-blocking), only for CDN fetched data
+          setInLayer2Cache(documentIdOrPathname, value, context?.waitUntil);
+        }
+
+        return value;
+      })
+      .finally(() => {
+        fetchCache.delete(documentIdOrPathname);
+      });
+
+    fetchCache.set(documentIdOrPathname, promise);
+
+    return promise;
+  }
 
   // Attempt to get document from L2 cache, returns: { hit: true, value: string | null } or { hit: false }
   async function getFromLayer2Cache(
@@ -270,81 +356,32 @@ export function createPersistedDocuments(
     documentId: string,
     context?: { waitUntil?: (promise: Promise<void> | void) => void },
   ) {
-    // Validate document ID format first
     const validationError = validateDocumentId(documentId);
     if (validationError) {
-      // Return a promise that will be rejected with a proper error
       return Promise.reject(createValidationError(documentId, validationError.error));
     }
+    return fetchFromCDN(documentId, context);
+  }
 
-    // L1 cache check (in-memory)
-    // Note: We need to distinguish between "not in cache" (undefined) and "cached as not found" (null)
-    const cachedDocument = persistedDocumentsCache.get(documentId);
-    if (cachedDocument !== undefined) {
-      // Cache hit, return the value
-      return cachedDocument;
-    }
-
-    // Check in-flight requests
-    let promise = fetchCache.get(documentId);
-    if (promise) {
-      return promise;
-    }
-
-    promise = Promise.resolve()
-      .then(async (): Promise<{ value: string | null; fromL2: boolean }> => {
-        // L2 cache check
-        const l2Result = await getFromLayer2Cache(documentId);
-        if (l2Result.hit) {
-          // L2 cache hit, store in L1 for faster subsequent access
-          persistedDocumentsCache.set(documentId, l2Result.value);
-          return { value: l2Result.value, fromL2: true };
-        }
-
-        // CDN fetch
-        const cdnDocumentId = documentId.replaceAll('~', '/');
-
-        let lastError: unknown = null;
-
-        for (const breaker of circuitBreakers) {
-          try {
-            const result = await breaker.fire(cdnDocumentId);
-            return { value: result, fromL2: false };
-          } catch (error: unknown) {
-            config.logger.debug({ error });
-            lastError = error;
-          }
-        }
-        if (lastError) {
-          config.logger.error({ error: lastError });
-        }
-        throw new Error('Failed to look up persisted operation.');
-      })
-      .then(({ value, fromL2 }) => {
-        // Store in L1 cache (in-memory), only if not already stored from L2 hit
-        if (!fromL2) {
-          persistedDocumentsCache.set(documentId, value);
-          // Store in L2 cache (async, non-blocking), only for CDN fetched data
-          setInLayer2Cache(documentId, value, context?.waitUntil);
-        }
-
-        return value;
-      })
-      .finally(() => {
-        fetchCache.delete(documentId);
+  function loadManifest(
+    deployment: { appName: string; appVersion: string },
+    context?: { waitUntil?: (promise: Promise<void> | void) => void },
+  ): Promise<PersistedDocumentsManifest | null> {
+    return fetchFromCDN(`${deployment.appName}/${deployment.appVersion}`, context)
+      .then(result => (result ? (JSON.parse(result) as PersistedDocumentsManifest) : null))
+      .catch(err => {
+        config.logger.error({ err, deployment }, 'Failed to load persisted documents manifest');
+        throw err;
       });
-
-    fetchCache.set(documentId, promise);
-
-    return promise;
   }
 
   return {
     allowArbitraryDocuments,
     resolve: loadPersistedDocument,
+    manifest: loadManifest,
     dispose() {
       circuitBreakers.map(breaker => breaker.shutdown());
-      persistedDocumentsCache.clear();
+      cdnCache.clear();
       fetchCache.clear();
     },
   };
