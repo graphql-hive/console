@@ -375,8 +375,6 @@ export function AlertForm(props: AlertFormProps) {
     variables: { organizationSlug, projectSlug, targetSlug },
   });
 
-  console.log('sdsds', { savedFiltersQuery });
-
   const [, addMetricAlertRule] = useMutation(AlertForm_AddMetricAlertRuleMutation);
   const [, updateMetricAlertRule] = useMutation(AlertForm_UpdateMetricAlertRuleMutation);
 
