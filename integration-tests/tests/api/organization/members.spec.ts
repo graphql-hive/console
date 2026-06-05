@@ -220,6 +220,31 @@ test.concurrent(
   },
 );
 
+test.concurrent(
+  'can join organization even if the input email is not lowercase',
+  async ({ expect }) => {
+    const seed = initSeed();
+    const { createOrg } = await seed.createOwner();
+    const { inviteMember, joinMemberUsingCode } = await createOrg();
+
+    // Invite
+    const extra = 'UPPERCASE-PREFIX-' + seed.generateEmail();
+    const invitationResult = await inviteMember(extra);
+    const inviteCode = invitationResult.ok!.createdOrganizationInvitation.code;
+    expect(inviteCode).toBeDefined();
+    const { access_token: member_access_token } = await seed.authenticate(extra);
+    const joinResult = await (
+      await joinMemberUsingCode(inviteCode, member_access_token)
+    ).expectNoGraphQLErrors();
+
+    expect(joinResult.joinOrganization.__typename).toBe('OrganizationPayload');
+
+    if (joinResult.joinOrganization.__typename !== 'OrganizationPayload') {
+      throw new Error('Join failed');
+    }
+  },
+);
+
 const OrganizationInvitationsQuery = graphql(`
   query OrganizationInvitationsQuery($organizationSlug: String!) {
     organization: organizationBySlug(organizationSlug: $organizationSlug) {
