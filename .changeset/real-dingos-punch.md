@@ -4,7 +4,7 @@
 
 Fix issue where the organization invite email did not match the signed up user-accounts email.
 
-To cleanup your database ron the following command, to identify duplicate records and then manually fix them/clean them up.
+To cleanup your database, run the following command to identify duplicate records and then manually fix them/clean them up.
 
 ```sql
 SELECT
