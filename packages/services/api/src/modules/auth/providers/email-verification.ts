@@ -216,7 +216,7 @@ export class EmailVerification {
           FROM "email_verifications" "ev"
           WHERE
             "user_identity_id" = ${input.userIdentityId}
-            AND "email" = lower(${input.email})
+            AND lower("email") = lower(${input.email})
             AND "expires_at" IS NOT NULL
             AND "verified_at" IS NULL
         `,
