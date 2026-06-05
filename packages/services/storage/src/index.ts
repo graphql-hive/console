@@ -326,7 +326,7 @@ export async function createStorage(
                 psql`/* ensureUserExists */
                   SELECT ${userFields(psql`"users".`)}
                   FROM "users"
-                  WHERE "users"."email" = ${email}
+                  WHERE "users"."email" = lower(${email})
                   ORDER BY "users"."created_at";
                 `,
               )
@@ -358,7 +358,7 @@ export async function createStorage(
                     DELETE FROM "organization_invitations" AS "oi"
                     WHERE
                       "oi"."organization_id" = ${oidcConfig.linkedOrganizationId}
-                      AND "oi"."email" = ${email}
+                      AND "oi"."email" = lower(${email})
                       AND "oi"."expires_at" > now()
                     RETURNING
                       "oi"."organization_id" "organizationId"
