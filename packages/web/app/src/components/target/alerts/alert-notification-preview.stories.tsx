@@ -199,7 +199,7 @@ export const Interactive: Story = () => {
             onChange={e => setThresholdType(e.target.value)}
           >
             <option value="FIXED_VALUE">Fixed value</option>
-            <option value="PERCENTAGE_CHANGE">Relative (%)</option>
+            <option value="PERCENTAGE_CHANGE">% change vs. previous</option>
           </select>
         </div>
       </div>

@@ -226,6 +226,10 @@ export function AlertMetricChart({
               backgroundColor: colors.overlayBg,
               borderColor: colors.overlayBorder,
               textStyle: { color: colors.overlayText, fontSize: 12 },
+              // Reuse the y-axis formatter so the hovered value carries its unit
+              // (e.g. "1.86s" for latency, "2%" for error rate) instead of a
+              // bare number like "1,862".
+              valueFormatter: (value: number) => yAxisFormatter(value),
             },
             xAxis: [
               {

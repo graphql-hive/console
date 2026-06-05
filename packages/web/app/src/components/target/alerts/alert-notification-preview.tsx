@@ -83,19 +83,52 @@ const SEVERITY_COLORS = {
   INFO: { bar: 'bg-blue-400', text: 'text-blue-400' },
 } as const;
 
-function formatThreshold(direction: string, thresholdValue: string, thresholdType: string) {
+function formatThreshold(
+  alertType: string,
+  direction: string,
+  thresholdValue: string,
+  thresholdType: string,
+) {
   const val = thresholdValue || '-';
   const dir = direction === 'ABOVE' ? 'above' : 'below';
-  const suffix = thresholdType === 'PERCENTAGE_CHANGE' ? '%' : '';
+  // Mirror the unit logic in formatChangeText() in
+  // packages/services/workflows/src/lib/metric-alert-notifier.ts so the preview
+  // matches the real notification. A PERCENTAGE_CHANGE threshold is always a
+  // percent, regardless of the underlying metric.
+  const unit =
+    thresholdType === 'PERCENTAGE_CHANGE'
+      ? '%'
+      : alertType === 'LATENCY'
+        ? 'ms'
+        : alertType === 'ERROR_RATE'
+          ? '%'
+          : ' requests';
   return thresholdType === 'PERCENTAGE_CHANGE'
-    ? `${direction === 'ABOVE' ? 'increased' : 'decreased'} by ${val}%`
-    : `${dir} ${val}${suffix}`;
+    ? `${direction === 'ABOVE' ? 'increased' : 'decreased'} by ${val}${unit}`
+    : `${dir} ${val}${unit}`;
+}
+
+/**
+ * The notification message labels a TRAFFIC alert as "Traffic" (see
+ * formatChangeText in packages/services/workflows/src/lib/metric-alert-notifier.ts),
+ * while the form's metric dropdown calls it "Total requests". Use the
+ * notification's wording in the preview so it matches the real message and so
+ * it doesn't read redundantly as "Total requests ... 150 requests". Error-rate
+ * and latency labels already match the notifier, so they pass through unchanged.
+ */
+function notificationMetricLabel(alertType: string, metricLabel: string) {
+  return alertType === 'TRAFFIC' ? 'Traffic' : metricLabel;
 }
 
 function SlackPreview(props: PreviewProps) {
   const colors =
     SEVERITY_COLORS[props.severity as keyof typeof SEVERITY_COLORS] ?? SEVERITY_COLORS.WARNING;
-  const threshold = formatThreshold(props.direction, props.thresholdValue, props.thresholdType);
+  const threshold = formatThreshold(
+    props.alertType,
+    props.direction,
+    props.thresholdValue,
+    props.thresholdType,
+  );
 
   return (
     <div className="space-y-1">
@@ -118,7 +151,7 @@ function SlackPreview(props: PreviewProps) {
               🚨 {props.alertName || 'Untitled alert'}
             </div>
             <div className="text-neutral-10 mt-1">
-              {props.metricLabel} {threshold}
+              {notificationMetricLabel(props.alertType, props.metricLabel)} {threshold}
             </div>
             <div className="text-neutral-10 mt-1">
               Target:{' '}
@@ -136,7 +169,6 @@ function SlackPreview(props: PreviewProps) {
  * Builds a representative webhook payload for the preview.
  * The shape must match `buildWebhookPayload` in
  * packages/services/workflows/src/lib/metric-alert-notifier.ts
- * — see alert-notification-preview.spec.ts for the sync test.
  */
 export function buildPreviewWebhookPayload(props: PreviewProps) {
   return {
@@ -192,7 +224,12 @@ function WebhookPreview(props: PreviewProps) {
 function TeamsPreview(props: PreviewProps) {
   const colors =
     SEVERITY_COLORS[props.severity as keyof typeof SEVERITY_COLORS] ?? SEVERITY_COLORS.WARNING;
-  const threshold = formatThreshold(props.direction, props.thresholdValue, props.thresholdType);
+  const threshold = formatThreshold(
+    props.alertType,
+    props.direction,
+    props.thresholdValue,
+    props.thresholdType,
+  );
 
   return (
     <div className="space-y-1">
@@ -206,7 +243,7 @@ function TeamsPreview(props: PreviewProps) {
             <div className="flex">
               <span className="text-neutral-10 w-20">Condition</span>
               <span className="text-neutral-11">
-                {props.metricLabel} {threshold}
+                {notificationMetricLabel(props.alertType, props.metricLabel)} {threshold}
               </span>
             </div>
             <div className="flex">
