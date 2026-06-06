@@ -59,15 +59,6 @@ type ClickHouseWindowRow = z.infer<typeof ClickHouseWindowRowSchema>;
 
 type GroupKey = string;
 
-const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-
-function assertUUID(value: string): string {
-  if (!UUID_RE.test(value)) {
-    throw new Error(`Invalid UUID: ${value}`);
-  }
-  return value;
-}
-
 function makeGroupKey(rule: MetricAlertRuleRow): GroupKey {
   return `${rule.targetId}:${rule.timeWindowMinutes}:${rule.savedFilterId ?? ''}`;
 }
@@ -285,12 +276,10 @@ export async function queryClickHouseWindows(
 
   const tableName = timeWindowMinutes <= 360 ? 'operations_minutely' : 'operations_hourly';
 
-  // `target` is a validated UUID and the window timestamps are computed numbers, so
-  // they're inlined safely via sql.raw. The saved-filter conditions carry arbitrary
-  // client/operation strings, so they (and the target, for good measure) are bound
-  // as ClickHouse `param_*` values via the `sql` tag + toQueryParams below.
-  const safeTargetId = assertUUID(targetId);
-
+  // The window timestamps are computed numbers, inlined safely via sql.raw. Every
+  // string value (`target` and the saved-filter conditions' arbitrary client/
+  // operation strings) is bound as a ClickHouse `param_*` value via the `sql` tag
+  // + toQueryParams below, never interpolated (so no manual UUID guarding needed).
   const filterClause =
     filterConditions.length > 0 ? sql` AND ${sql.join(filterConditions, ' AND ')}` : sql``;
 
@@ -305,7 +294,7 @@ export async function queryClickHouseWindows(
       avgMerge(duration_avg) as average,
       quantilesMerge(0.75, 0.90, 0.95, 0.99)(duration_quantiles) as percentiles
     FROM ${sql.raw(tableName)}
-    WHERE target = ${safeTargetId}
+    WHERE target = ${targetId}
       AND timestamp >= fromUnixTimestamp64Milli(${sql.raw(String(previousWindowStart.getTime()))})
       AND timestamp < fromUnixTimestamp64Milli(${sql.raw(String(currentWindowEnd.getTime()))})
       ${filterClause}
