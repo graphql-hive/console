@@ -45,10 +45,9 @@ export default {
       , "organization_id" UUID REFERENCES "organizations"("id") ON DELETE CASCADE
       , "user_id" UUID REFERENCES "users"("id") ON DELETE CASCADE
       , "group_id" UUID REFERENCES "groups"("id") ON DELETE CASCADE
+      , CONSTRAINT "group_members_org_user_group_unique"
+        UNIQUE ("organization_id", "user_id", "group_id")
     );
-
-    CREATE INDEX IF NOT EXISTS "idx_group_members_org_id"
-      ON "group_members" ("organization_id");
 
     CREATE INDEX IF NOT EXISTS "idx_group_members_user_id"
       ON "group_members" ("user_id");
