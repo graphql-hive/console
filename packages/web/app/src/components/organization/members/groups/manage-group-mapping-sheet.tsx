@@ -155,18 +155,18 @@ export function ManageGroupMappingSheet(props: ManageGroupMappingSheetProps): Re
                     if (result.error) {
                       toast({
                         variant: 'destructive',
-                        title: `Failed to update group mapping.`,
+                        title: 'Failed to update group mapping.',
                         description: result.error.message,
                       });
                     } else if (result.data?.updateGroupMapping.error) {
                       toast({
                         variant: 'destructive',
-                        title: `Failed to update group mapping.`,
+                        title: 'Failed to update group mapping.',
                         description: result.data?.updateGroupMapping.error.message,
                       });
                     } else if (result.data?.updateGroupMapping.ok) {
                       toast({
-                        title: `Updated group mapping.`,
+                        title: 'Updated group mapping.',
                       });
                       props.close();
                     }
@@ -174,7 +174,7 @@ export function ManageGroupMappingSheet(props: ManageGroupMappingSheetProps): Re
                     console.error(error);
                     toast({
                       variant: 'destructive',
-                      title: `Failed to update group mapping.`,
+                      title: 'Failed to update group mapping.',
                       description: 'message' in error ? error.message : String(error),
                     });
                   }
@@ -206,18 +206,18 @@ export function ManageGroupMappingSheet(props: ManageGroupMappingSheetProps): Re
                     if (result.error) {
                       toast({
                         variant: 'destructive',
-                        title: `Failed to create mapping.`,
+                        title: 'Failed to create mapping.',
                         description: result.error.message,
                       });
                     } else if (result.data?.addGroupMappingToGroup.error) {
                       toast({
                         variant: 'destructive',
-                        title: `Failed to create mapping.`,
+                        title: 'Failed to create mapping.',
                         description: result.data?.addGroupMappingToGroup.error.message,
                       });
                     } else if (result.data?.addGroupMappingToGroup.ok) {
                       toast({
-                        title: `Created new mapping.`,
+                        title: 'Created new mapping.',
                       });
                       props.close();
                     }
@@ -225,7 +225,7 @@ export function ManageGroupMappingSheet(props: ManageGroupMappingSheetProps): Re
                     console.error(error);
                     toast({
                       variant: 'destructive',
-                      title: `Failed to create mapping.`,
+                      title: 'Failed to create mapping.',
                       description: 'message' in error ? error.message : String(error),
                     });
                   }

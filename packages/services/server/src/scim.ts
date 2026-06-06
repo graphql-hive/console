@@ -1,6 +1,7 @@
 import type { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
 import { z } from 'zod';
 import { Storage } from '@hive/api';
+import { AuthN, UnauthenticatedSession } from '@hive/api/modules/auth/lib/authz';
 import { SuperTokensStore } from '@hive/api/modules/auth/providers/supertokens-store';
 import {
   GroupMemberStore,
@@ -9,7 +10,6 @@ import {
 import { GroupStore, type Group } from '@hive/api/modules/organization/providers/group-store';
 import { UsersStore, type User } from '@hive/api/modules/organization/providers/users-store';
 import { PostgresDatabasePool } from '@hive/postgres';
-import { AuthN, UnauthenticatedSession } from '../../api/src/modules/auth/lib/authz';
 
 const NameSchemaModel = z
   .object({
@@ -497,6 +497,10 @@ export const createSCIMRouter =
             result.organizationId,
             valueStr,
           );
+
+          if (user) {
+            users.push(createSCIMUserObjectFromUser(user));
+          }
         } else {
           req.log.info('unsupported filter property "%s"', property);
           return reply.status(403).send(
