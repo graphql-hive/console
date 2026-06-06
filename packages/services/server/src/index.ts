@@ -55,6 +55,7 @@ import { graphqlHandler } from './graphql-handler';
 import { clickHouseElapsedDuration, clickHouseReadDuration } from './metrics';
 import { createOtelAuthEndpoint } from './otel-auth-endpoint';
 import { createPublicGraphQLHandler } from './public-graphql-handler';
+import { createSCIMPlugin } from './scim';
 import { registerSupertokensAtHome } from './supertokens-at-home';
 
 class CorsError extends Error {
@@ -608,6 +609,12 @@ export async function main() {
           void reply.send(textResponse);
         },
       });
+    }
+
+    if (env.organizationSCIM) {
+      logger.debug('register scim routes');
+      const scimPlugin = createSCIMPlugin(authN, storage.pool, storage);
+      server.register(scimPlugin, { prefix: '/scim/v2' });
     }
 
     if (env.exposeMemoryUtils) {
