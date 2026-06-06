@@ -1,4 +1,4 @@
-import type { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
+import type { FastifyPluginAsync, FastifyReply, FastifyRequest } from 'fastify';
 import { z } from 'zod';
 import { Storage } from '@hive/api';
 import { AuthN, UnauthenticatedSession } from '@hive/api/modules/auth/lib/authz';
@@ -151,8 +151,9 @@ const PatchGroupsRequestBodySchema = z.object({
   Operations: z.array(GroupPatchOperationSchema).min(1),
 });
 
-export const createSCIMRouter =
-  (authn: AuthN) => (server: FastifyInstance, pool: PostgresDatabasePool, storage: Storage) => {
+export const createSCIMPlugin =
+  (authn: AuthN, pool: PostgresDatabasePool, storage: Storage): FastifyPluginAsync =>
+  async server => {
     async function authenticateAuthorizeAndResolveOrganizationFromRequest(
       req: FastifyRequest,
       reply: FastifyReply,
@@ -166,7 +167,7 @@ export const createSCIMRouter =
         return {
           type: 'error' as const,
           error: createSCIMError({
-            status: 400,
+            status: 401,
             detail: 'Missing access token.',
           }),
         };
@@ -178,7 +179,7 @@ export const createSCIMRouter =
         return {
           type: 'error' as const,
           error: createSCIMError({
-            status: 400,
+            status: 401,
             detail: 'Invalid permissions for performing scim operations.',
           }),
         };
@@ -199,7 +200,7 @@ export const createSCIMRouter =
         return {
           type: 'error' as const,
           error: createSCIMError({
-            status: 400,
+            status: 401,
             detail: 'Invalid permissions for performing scim operations.',
           }),
         };
@@ -213,7 +214,7 @@ export const createSCIMRouter =
         return {
           type: 'error' as const,
           error: createSCIMError({
-            status: 400,
+            status: 401,
             detail: 'Invalid organization configuration. No OIDC provider is connected.',
           }),
         };
