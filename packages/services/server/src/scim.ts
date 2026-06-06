@@ -185,6 +185,8 @@ export const createSCIMRouter =
       }
 
       const canPerformAction = await session.canPerformAction({
+        // TODO: there should probably a dedicated permission for this
+        // member:provision or member:scim or scim:provision etc.
         action: 'member:modify',
         organizationId: actor.organizationAccessToken.organizationId,
         params: {
