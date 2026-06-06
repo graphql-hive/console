@@ -184,29 +184,45 @@ export const createSCIMRouter =
         };
       }
 
-      if (
-        await session.canPerformAction({
-          action: 'member:modify',
+      const canPerformAction = await session.canPerformAction({
+        action: 'member:modify',
+        organizationId: actor.organizationAccessToken.organizationId,
+        params: {
           organizationId: actor.organizationAccessToken.organizationId,
-          params: {
-            organizationId: actor.organizationAccessToken.organizationId,
-          },
-        })
-      ) {
-        req.log.debug('sufficient permissions for calling scim endpoint.');
-        // TODO: this should also resolve the OIDC integration!
+        },
+      });
+
+      if (!canPerformAction) {
+        req.log.debug('invalid permissions for calling scim endpoint.');
         return {
-          type: 'success' as const,
-          organizationId: actor.organizationAccessToken.organizationId,
+          type: 'error' as const,
+          error: createSCIMError({
+            status: 400,
+            detail: 'Invalid permissions for performing scim operations.',
+          }),
         };
       }
-      req.log.debug('invalid permissions for calling scim endpoint.');
+
+      const oidcIntegration = await storage.getOIDCIntegrationForOrganization({
+        organizationId: actor.organizationAccessToken.organizationId,
+      });
+
+      if (!oidcIntegration) {
+        return {
+          type: 'error' as const,
+          error: createSCIMError({
+            status: 400,
+            detail: 'Invalid organization configuration. No OIDC provider is connected.',
+          }),
+        };
+      }
+
+      req.log.debug('sufficient permissions for calling scim endpoint.');
+
       return {
-        type: 'error' as const,
-        error: createSCIMError({
-          status: 400,
-          detail: 'Invalid permissions for performing scim operations.',
-        }),
+        type: 'success' as const,
+        organizationId: actor.organizationAccessToken.organizationId,
+        oidcIntegration,
       };
     }
 
@@ -267,29 +283,20 @@ export const createSCIMRouter =
         );
       }
 
-      const oidcIntegration = await storage.getOIDCIntegrationForOrganization({
-        organizationId: result.organizationId,
-      });
-
-      if (!oidcIntegration) {
-        return reply.status(403).send(
-          createSCIMError({
-            status: 403,
-            detail: 'Organization does not support provisioning users.',
-          }),
-        );
-      }
-
       const usersStore = new UsersStore(pool);
       const supertokensStore = new SuperTokensStore(pool, req.log);
       // TODO: these two should probably happen together in a transaction
 
-      // TODO: OIDC Integration must exist !!!
       const supertokensUser = await supertokensStore.createOIDCUser({
-        // TODO: double check if that is true
+        // TODO:
+        // For okta the external id is the sub of the OIDC provider
+        // For entra this is not the case, here the sub is not stable and
+        // we need to instead map the OIDC oid claim to the external id
+        // because of that additional configuration is needed within the OIDC / SCIM
+        // configuration for mapping which claim should be used to match the user
         sub: bodyParse.data.externalId,
         email: bodyParse.data.emails?.[0].value.toLowerCase() ?? '',
-        oidcIntegrationId: oidcIntegration.id,
+        oidcIntegrationId: result.oidcIntegration.id,
       });
 
       const user = await usersStore.createUser({
@@ -298,7 +305,7 @@ export const createSCIMRouter =
         fullName:
           (bodyParse.data.name?.givenName ?? '') + ' ' + (bodyParse.data.name?.familyName ?? ''),
         superTokensUserId: supertokensUser.userId,
-        oidcIntegrationId: oidcIntegration.id,
+        oidcIntegrationId: result.oidcIntegration.id,
         provisionedByOrganizationId: result.organizationId,
         externalId: bodyParse.data.externalId,
         isDisabled: (bodyParse.data.active ?? true) === false,
@@ -681,6 +688,10 @@ export const createSCIMRouter =
       const groupStore = new GroupStore(req.log, pool);
 
       // TODO: case when group already exists but is "disabled"
+      // In this case we should probably just raise an error and the admin
+      // has to first delete the group on Console side
+      // Otherwise we might risk that the group users instantly get some permissions
+      // that they might not be intended to get
       const group = await groupStore.createGroup({
         organizationId: result.organizationId,
         displayName: body.data.displayName,
