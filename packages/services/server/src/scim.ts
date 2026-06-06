@@ -2,10 +2,14 @@ import type { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
 import { z } from 'zod';
 import { Storage } from '@hive/api';
 import { SuperTokensStore } from '@hive/api/modules/auth/providers/supertokens-store';
+import {
+  GroupMemberStore,
+  type GroupMember,
+} from '@hive/api/modules/organization/providers/group-member-store';
 import { GroupStore, type Group } from '@hive/api/modules/organization/providers/group-store';
+import { UsersStore, type User } from '@hive/api/modules/organization/providers/users-store';
 import { PostgresDatabasePool } from '@hive/postgres';
 import { AuthN, UnauthenticatedSession } from '../../api/src/modules/auth/lib/authz';
-import { Users, type User } from '../../api/src/modules/organization/providers/users';
 
 const NameSchemaModel = z
   .object({
@@ -23,14 +27,6 @@ const EmailSchemaModel = z
   })
   .strict();
 
-const GroupRefSchemaModel = z
-  .object({
-    value: z.string(), // group id
-    $ref: z.string().url().optional(),
-    display: z.string().optional(),
-  })
-  .strict();
-
 const PatchOperationModel = z
   .object({
     op: z.enum(['add', 'replace', 'remove']),
@@ -39,28 +35,12 @@ const PatchOperationModel = z
   })
   .strict();
 
-const PostUserBodyModel = z.object({
-  userName: z.string().min(1),
-  name: NameSchemaModel,
-  displayName: z.string().optional(),
-  title: z.string().optional(),
-  userType: z.string().optional(),
-  preferredLanguage: z.string().optional(),
-  locale: z.string().optional(),
-  timezone: z.string().optional(),
-  active: z.boolean().optional(),
-  emails: z.array(EmailSchemaModel).optional(),
-  groups: z.array(GroupRefSchemaModel).optional(),
-  externalId: z.string().optional(),
-});
-
 const PostUsersBodyModel = z.object({
   userName: z.string().min(1),
   name: NameSchemaModel,
   displayName: z.string().optional(),
   active: z.boolean().optional(),
   emails: z.array(EmailSchemaModel),
-  groups: z.array(GroupRefSchemaModel).optional(),
   externalId: z.string(),
 });
 
@@ -83,9 +63,8 @@ const PutUsersBodyModel = z.object({
     .optional(),
 });
 
-const PatchUserSchemaModel = z
+const PatchUserRequestBodyModel = z
   .object({
-    schemas: z.literal('urn:ietf:params:scim:api:messages:2.0:PatchOp'),
     Operations: z.array(PatchOperationModel).min(1),
   })
   .strict();
@@ -104,7 +83,72 @@ const QuerySchemaModel = z.object({
 });
 
 const SharedUserRouteParams = z.object({
-  userId: z.string(),
+  userId: z.string().uuid(),
+});
+
+const SharedGroupRouteParams = z.object({
+  groupId: z.string(),
+});
+
+const PostGroupsBodyModel = z.object({
+  displayName: z.string(),
+  externalId: z.string().optional(),
+});
+
+const GroupMemberSchema = z.object({
+  value: z.string().uuid(),
+});
+
+const AddOperationSchema = z.object({
+  op: z.literal('add'),
+  path: z.literal('members'),
+  value: z.array(GroupMemberSchema),
+});
+
+const RemoveOperationSchema = z
+  .object({
+    op: z.literal('remove'),
+    // e.g. members[value eq "user-123"]
+    path: z
+      .string()
+      .regex(/^members\[value eq "([^"]+)"\]$/, 'Unsupported SCIM member removal path')
+      .transform(path => {
+        const [, userId] = path.match(/^members\[value eq "([^"]+)"\]$/)!;
+        return userId;
+      })
+      .pipe(z.string().uuid()),
+  })
+  .transform(value => ({
+    op: value.op,
+    userId: value.path,
+  }));
+
+const ReplaceOperationSchema = z.union([
+  z.object({
+    op: z.literal('replace'),
+    path: z.literal('displayName'),
+    value: z.string(),
+  }),
+  z.object({
+    op: z.literal('replace'),
+    path: z.literal('members'),
+    value: z.array(GroupMemberSchema),
+  }),
+  z.object({
+    op: z.literal('replace'),
+    path: z.literal('externalId'),
+    value: z.string(),
+  }),
+]);
+
+const GroupPatchOperationSchema = z.union([
+  AddOperationSchema,
+  RemoveOperationSchema,
+  ReplaceOperationSchema,
+]);
+
+const PatchGroupsRequestBodySchema = z.object({
+  Operations: z.array(GroupPatchOperationSchema).min(1),
 });
 
 export const createSCIMRouter =
@@ -150,6 +194,7 @@ export const createSCIMRouter =
         })
       ) {
         req.log.debug('sufficient permissions for calling scim endpoint.');
+        // TODO: this should also resolve the OIDC integration!
         return {
           type: 'success' as const,
           organizationId: actor.organizationAccessToken.organizationId,
@@ -165,26 +210,28 @@ export const createSCIMRouter =
       };
     }
 
+    /**
+     * General notes
+     * - the route parameter (:userId; :groupId) is always the id column within our database
+     * - external id is the ID on the providers id for a resource
+     *   - Both Okta and Entra uses external id for users
+     *   - Only Entra uses external id for groups
+     *   - Okta uses the groups display name for matching
+     */
+
     server.post('/', (_, reply) => reply.status(200).send('Hive Console SCIM'));
 
+    /**
+     * This route is used for looking up a specific user
+     */
     server.get('/Users/:userId', async (req, reply) => {
       const params = SharedUserRouteParams.parse(req.params);
       const auth = await authenticateAuthorizeAndResolveOrganizationFromRequest(req, reply);
       if (auth.type === 'error') {
         return reply.status(auth.error.status).send(auth.error);
       }
-
-      const bodyParse = PostUserBodyModel.safeParse(req.body);
-      if (bodyParse.error) {
-        return reply.status(403).send(
-          createSCIMError({
-            status: 403,
-            detail: 'Invalid request body provided.',
-          }),
-        );
-      }
-
-      const user = await new Users(pool).findUserProvisionedByOrganizationIdAndId(
+      const usersStore = new UsersStore(pool);
+      const user = await usersStore.findUserProvisionedByOrganizationIdAndId(
         auth.organizationId,
         params.userId,
       );
@@ -201,6 +248,9 @@ export const createSCIMRouter =
       return reply.code(200).send(createSCIMUserObjectFromUser(user));
     });
 
+    /**
+     * This route is used for provisioning new users on Hive Console
+     */
     server.post('/Users', async (req, reply) => {
       const result = await authenticateAuthorizeAndResolveOrganizationFromRequest(req, reply);
       if (result.type === 'error') {
@@ -230,17 +280,19 @@ export const createSCIMRouter =
         );
       }
 
+      const usersStore = new UsersStore(pool);
+      const supertokensStore = new SuperTokensStore(pool, req.log);
       // TODO: these two should probably happen together in a transaction
 
       // TODO: OIDC Integration must exist !!!
-      const supertokensUser = await new SuperTokensStore(pool, req.log).createOIDCUser({
+      const supertokensUser = await supertokensStore.createOIDCUser({
         // TODO: double check if that is true
         sub: bodyParse.data.externalId,
         email: bodyParse.data.emails?.[0].value.toLowerCase() ?? '',
         oidcIntegrationId: oidcIntegration.id,
       });
 
-      const user = await new Users(pool).createUser({
+      const user = await usersStore.createUser({
         email: supertokensUser.email,
         displayName: supertokensUser.email,
         fullName:
@@ -255,6 +307,11 @@ export const createSCIMRouter =
       return reply.code(201).send(createSCIMUserObjectFromUser(user));
     });
 
+    /**
+     * This route is used for updating user properties
+     * - active (disabled state)
+     * - ??? (TBD)
+     */
     server.put('/Users/:userId', async (req, reply) => {
       const params = SharedUserRouteParams.parse(req.params);
       const result = await authenticateAuthorizeAndResolveOrganizationFromRequest(req, reply);
@@ -271,8 +328,8 @@ export const createSCIMRouter =
           }),
         );
       }
-
-      let user = await new Users(pool).findUserProvisionedByOrganizationIdAndId(
+      const usersStore = new UsersStore(pool);
+      let user = await usersStore.findUserProvisionedByOrganizationIdAndId(
         result.organizationId,
         params.userId,
       );
@@ -290,15 +347,21 @@ export const createSCIMRouter =
 
       if (body.data.active !== undefined) {
         if (user.deactivatedAt === null && !body.data.active) {
-          user = await new Users(pool).disableUser(user.id);
+          user = await usersStore.disableUser(user.id);
         } else if (user.deactivatedAt !== null && body.data.active) {
-          user = await new Users(pool).enabledUser(user.id);
+          user = await usersStore.enabledUser(user.id);
         }
       }
 
       return reply.code(200).send(createSCIMUserObjectFromUser(user));
     });
 
+    /**
+     * This route is used for updating user properties
+     * - email
+     * - active (disabled state)
+     * - ??? (TBD)
+     */
     server.patch('/Users/:userId', async (req, reply) => {
       const params = SharedUserRouteParams.parse(req.params);
       const result = await authenticateAuthorizeAndResolveOrganizationFromRequest(req, reply);
@@ -306,7 +369,7 @@ export const createSCIMRouter =
         return reply.status(result.error.status).send(result.error);
       }
 
-      const body = PatchUserSchemaModel.safeParse(req.body);
+      const body = PatchUserRequestBodyModel.safeParse(req.body);
       if (body.error) {
         return reply.status(403).send(
           createSCIMError({
@@ -316,7 +379,8 @@ export const createSCIMRouter =
         );
       }
 
-      let user = await new Users(pool).findUserProvisionedByOrganizationIdAndId(
+      const usersStore = new UsersStore(pool);
+      let user = await usersStore.findUserProvisionedByOrganizationIdAndId(
         result.organizationId,
         params.userId,
       );
@@ -343,9 +407,9 @@ export const createSCIMRouter =
 
         if (operation.path === 'active') {
           if (operation.value === true) {
-            user = await new Users(pool).enabledUser(user.id);
+            user = await usersStore.enabledUser(user.id);
           } else if (operation.value === false) {
-            user = await new Users(pool).disableUser(user.id);
+            user = await usersStore.disableUser(user.id);
           } else {
             req.log.debug('invalid value provided %s', operation.value);
           }
@@ -374,6 +438,11 @@ export const createSCIMRouter =
       return reply.code(200).send(createSCIMUserObjectFromUser(user));
     });
 
+    /**
+     * This route is used for:
+     * - retrieve a list of all available users
+     * - lookup if a user already exists (via email, external id, or display name)
+     */
     server.get('/Users', async (req, reply) => {
       const result = await authenticateAuthorizeAndResolveOrganizationFromRequest(req, reply);
       if (result.type === 'error') {
@@ -393,6 +462,7 @@ export const createSCIMRouter =
       const startIndex = queryParse.data.startIndex ?? 1;
       const count = queryParse.data.count ?? 100;
 
+      const usersStore = new UsersStore(pool);
       const users: Array<SCIMUserObject> = [];
 
       if (queryParse.data.filter) {
@@ -407,7 +477,7 @@ export const createSCIMRouter =
         }
         const valueStr = rawValue.replaceAll('"', '');
         if (property === 'email') {
-          const user = await new Users(pool).findUserProvisionedByOrganizationIdAndEmail(
+          const user = await usersStore.findUserProvisionedByOrganizationIdAndEmail(
             result.organizationId,
             valueStr,
           );
@@ -415,14 +485,18 @@ export const createSCIMRouter =
             users.push(createSCIMUserObjectFromUser(user));
           }
         } else if (property === 'externalId') {
-          // TODO: offset based pagination ond DB level instead of application level
-          const user = await new Users(pool).findUserProvisionedByOrganizationIdAndExternalId(
+          const user = await usersStore.findUserProvisionedByOrganizationIdAndExternalId(
             result.organizationId,
             valueStr,
           );
           if (user) {
             users.push(createSCIMUserObjectFromUser(user));
           }
+        } else if (property === 'id') {
+          const user = await usersStore.findUserProvisionedByOrganizationIdAndExternalId(
+            result.organizationId,
+            valueStr,
+          );
         } else {
           req.log.info('unsupported filter property "%s"', property);
           return reply.status(403).send(
@@ -434,8 +508,8 @@ export const createSCIMRouter =
         }
       } else {
         const offset = Math.max(0, startIndex - 1);
-
-        const allUsers = await new Users(pool).getAllUsers(result.organizationId);
+        // TODO: offset based pagination ond DB level instead of application level
+        const allUsers = await usersStore.getAllUsers(result.organizationId);
         const pagedUsers = allUsers.slice(offset, offset + count);
         for (const user of pagedUsers) {
           users.push(createSCIMUserObjectFromUser(user));
@@ -451,9 +525,12 @@ export const createSCIMRouter =
       });
     });
 
+    /**
+     * This route is used for:
+     * - retrieve a list of all available groups
+     * - lookup if a specific group already exists (via external id, id, or display name)
+     */
     server.get('/Groups', async (req, reply) => {
-      const groupStore = new GroupStore(req.log, pool);
-
       const result = await authenticateAuthorizeAndResolveOrganizationFromRequest(req, reply);
       if (result.type === 'error') {
         return reply.status(result.error.status).send(result.error);
@@ -468,6 +545,8 @@ export const createSCIMRouter =
           }),
         );
       }
+
+      const groupStore = new GroupStore(req.log, pool);
 
       const startIndex = queryParse.data.startIndex ?? 1;
       const count = queryParse.data.count ?? 100;
@@ -539,13 +618,317 @@ export const createSCIMRouter =
       });
     });
 
-    // server.post('/Groups', async (req, reply) => {});
+    /**
+     * This route is used for listing a group with all its members
+     */
+    server.get('/Groups/:groupId', async (req, reply) => {
+      const params = SharedGroupRouteParams.parse(req.params);
+      const result = await authenticateAuthorizeAndResolveOrganizationFromRequest(req, reply);
+      if (result.type === 'error') {
+        return reply.status(result.error.status).send(result.error);
+      }
 
-    // server.put('/Groups/:groupId', async (req, reply) => {});
+      const groupStore = new GroupStore(req.log, pool);
 
-    // server.patch('/Groups/:groupId', async (req, reply) => {});
+      const group = await groupStore.getGroupByOrganizationIdAndGroupId(
+        result.organizationId,
+        params.groupId,
+      );
 
-    // server.delete('/Groups/:groupId', async (req, reply) => {});
+      if (!group) {
+        return reply.code(404).send(
+          createSCIMError({
+            detail: 'Group does not exist.',
+            status: 404,
+          }),
+        );
+      }
+
+      const groupMemberStore = new GroupMemberStore(req.log, pool);
+
+      const groupMembers = await groupMemberStore.getGroupMembersForOrganizationIdAndGroupId(
+        result.organizationId,
+        params.groupId,
+      );
+
+      return reply.status(200).send(createSCIMGroupObjectFromGroup(group, groupMembers));
+    });
+
+    /**
+     * This route is used for creating new groups
+     */
+    server.post('/Groups', async (req, reply) => {
+      const result = await authenticateAuthorizeAndResolveOrganizationFromRequest(req, reply);
+      if (result.type === 'error') {
+        return reply.status(result.error.status).send(result.error);
+      }
+
+      const body = PostGroupsBodyModel.safeParse(req.body);
+      if (body.error) {
+        return reply.status(403).send(
+          createSCIMError({
+            status: 403,
+            detail: 'Invalid request body provided.',
+          }),
+        );
+      }
+
+      const groupStore = new GroupStore(req.log, pool);
+
+      // TODO: case when group already exists but is "disabled"
+      const group = await groupStore.createGroup({
+        organizationId: result.organizationId,
+        displayName: body.data.displayName,
+        externalGroupId: body.data.externalId ?? null,
+      });
+
+      return reply.status(201).send(createSCIMGroupObjectFromGroup(group));
+    });
+
+    /**
+     * This route is not implemented as it is not needed.
+     */
+    server.put('/Groups/:groupId', async (req, reply) => {
+      const result = await authenticateAuthorizeAndResolveOrganizationFromRequest(req, reply);
+      if (result.type === 'error') {
+        return reply.status(result.error.status).send(result.error);
+      }
+
+      return reply.status(501).send(
+        createSCIMError({
+          status: 501,
+          detail: 'PUT on Group resources is not supported.',
+        }),
+      );
+    });
+
+    /**
+     * This route is used for doing the following things:
+     * - group memberships (add/remove users)
+     * - properties of group (display name and external id)
+     */
+    server.patch('/Groups/:groupId', async (req, reply) => {
+      const params = SharedGroupRouteParams.parse(req.params);
+      const result = await authenticateAuthorizeAndResolveOrganizationFromRequest(req, reply);
+
+      if (result.type === 'error') {
+        return reply.status(result.error.status).send(result.error);
+      }
+
+      const groupStore = new GroupStore(req.log, pool);
+
+      let group = await groupStore.getGroupByOrganizationIdAndGroupId(
+        result.organizationId,
+        params.groupId,
+      );
+
+      if (!group) {
+        return reply.code(404).send(
+          createSCIMError({
+            detail: 'Group does not exist.',
+            status: 404,
+          }),
+        );
+      }
+
+      const body = PatchGroupsRequestBodySchema.safeParse(req.body);
+      if (body.error) {
+        return reply.status(403).send(
+          createSCIMError({
+            status: 403,
+            detail: 'Invalid request body provided.',
+          }),
+        );
+      }
+
+      /**
+       * We gather all the operations for removing and adding users here
+       * and then execute them in a batch afterwards.
+       *
+       * We do not allow mixing a full group user replacement with removing and adding
+       * individual users. In reality this does never happen.
+       */
+      const usersToRemove = new Set<string>();
+      const usersToAdd = new Set<string>();
+      let fullReplaceUserIds: null | Set<string> = null;
+
+      let newDisplayName: string | null = null;
+      let newExternalId: string | null = null;
+
+      let error: SCIMError | null = null;
+
+      for (const operation of body.data.Operations) {
+        if (operation.op === 'add') {
+          if (fullReplaceUserIds !== null) {
+            error = createSCIMError({
+              status: 400,
+              detail:
+                'Mixing adding members and replacing the full member list in the same request is not supported.',
+            });
+            break;
+          }
+
+          for (const record of operation.value) {
+            usersToAdd.add(record.value);
+          }
+          continue;
+        }
+
+        if (operation.op === 'remove') {
+          if (fullReplaceUserIds !== null) {
+            error = createSCIMError({
+              status: 400,
+              detail:
+                'Mixing adding members and replacing the full member list in the same request is not supported.',
+            });
+            break;
+          }
+
+          usersToRemove.add(operation.userId);
+          continue;
+        }
+
+        if (operation.op === 'replace') {
+          if (operation.path === 'displayName') {
+            // TODO: validate value ???
+            newDisplayName = operation.value;
+          }
+
+          if (operation.path === 'externalId') {
+            // TODO: validate value ???
+            newExternalId = operation.value;
+            continue;
+          }
+
+          if (operation.path === 'members') {
+            if (usersToAdd.size) {
+              error = createSCIMError({
+                status: 400,
+                detail:
+                  'Mixing adding members and replacing the full member list in the same request is not supported.',
+              });
+              break;
+            }
+
+            if (usersToRemove.size) {
+              error = createSCIMError({
+                status: 400,
+                detail:
+                  'Mixing removing members and replacing the full member list in the same request is not supported.',
+              });
+              break;
+            }
+
+            if (fullReplaceUserIds !== null) {
+              error = createSCIMError({
+                status: 400,
+                detail: 'Replace members multiple times in same request is not supported.',
+              });
+              break;
+            }
+
+            fullReplaceUserIds = new Set(operation.value.map(record => record.value));
+          }
+
+          continue;
+        }
+        operation satisfies never;
+      }
+
+      if (error) {
+        return reply.status(error.status).send(error);
+      }
+
+      if (newDisplayName || newExternalId) {
+        group = await groupStore.updateGroupPropertiesByOrganizationIdAndGroupId(
+          result.organizationId,
+          params.groupId,
+          {
+            displayName: newDisplayName,
+            externalId: newExternalId,
+          },
+        );
+
+        if (!group) {
+          return reply.code(404).send(
+            createSCIMError({
+              detail: 'Group does not exist.',
+              status: 404,
+            }),
+          );
+        }
+      }
+
+      const groupMemberStore = new GroupMemberStore(reply.log, pool);
+
+      if (usersToRemove.size) {
+        await groupMemberStore.removeGroupMembersFromGroupByOrganizationIdAndGroupId(
+          result.organizationId,
+          params.groupId,
+          Array.from(usersToRemove),
+        );
+      }
+
+      if (usersToAdd.size) {
+        await groupMemberStore.addGroupMembersToGroupByOrganizationIdAndGroupId(
+          result.organizationId,
+          params.groupId,
+          Array.from(usersToAdd),
+        );
+      }
+
+      if (fullReplaceUserIds !== null) {
+        await groupMemberStore.removeAllGroupMembersFromGroupByOrganizationIdAndGroupId(
+          result.organizationId,
+          params.groupId,
+        );
+        if (fullReplaceUserIds.size) {
+          await groupMemberStore.addGroupMembersToGroupByOrganizationIdAndGroupId(
+            result.organizationId,
+            params.groupId,
+            Array.from(fullReplaceUserIds),
+          );
+        }
+      }
+
+      const groupMembers = await groupMemberStore.getGroupMembersForOrganizationIdAndGroupId(
+        result.organizationId,
+        params.groupId,
+      );
+
+      return reply.status(200).send(createSCIMGroupObjectFromGroup(group, groupMembers));
+    });
+
+    /**
+     * This route is used for deleting a group
+     */
+    server.delete('/Groups/:groupId', async (req, reply) => {
+      const params = SharedGroupRouteParams.parse(req.params);
+      const result = await authenticateAuthorizeAndResolveOrganizationFromRequest(req, reply);
+      if (result.type === 'error') {
+        return reply.status(result.error.status).send(result.error);
+      }
+
+      const body = PostGroupsBodyModel.safeParse(req.body);
+      if (body.error) {
+        return reply.status(403).send(
+          createSCIMError({
+            status: 403,
+            detail: 'Invalid request body provided.',
+          }),
+        );
+      }
+
+      const groupStore = new GroupStore(req.log, pool);
+
+      // We only soft-delete for now...
+      await groupStore.disableGroup({
+        organizationId: result.organizationId,
+        groupId: params.groupId,
+      });
+
+      return reply.status(204).send();
+    });
   };
 
 function createSCIMError(args: { detail: string; status: number }) {
@@ -555,6 +938,11 @@ function createSCIMError(args: { detail: string; status: number }) {
   };
 }
 
+type SCIMError = ReturnType<typeof createSCIMError>;
+
+/**
+ * Minimal Representation of a SCIM User object to support Okta and Entra.
+ */
 type SCIMUserObject = {
   schemas: ['urn:ietf:params:scim:schemas:core:2.0:User'];
   id: string;
@@ -573,6 +961,23 @@ type SCIMUserObject = {
   ];
   meta: {
     resourceType: 'User';
+  };
+};
+
+/**
+ * Minimal Representation of a SCIM group object to support Okta and Entra.
+ */
+type SCIMGroupObject = {
+  schemas: ['urn:ietf:params:scim:schemas:core:2.0:Group'];
+  id: string;
+  externalId?: string;
+  displayName: string;
+  members?: {
+    value: string;
+    $ref: string;
+  }[];
+  meta: {
+    resourceType: 'Group';
   };
 };
 
@@ -601,26 +1006,26 @@ function createSCIMUserObjectFromUser(user: User): SCIMUserObject {
   };
 }
 
-type SCIMGroupObject = {
-  schemas: ['urn:ietf:params:scim:schemas:core:2.0:Group'];
-  id: string;
-  externalId?: string;
-  displayName: string;
-  members?: {
-    value: string;
-    display: string;
-  }[];
-  meta: {
-    resourceType: 'Group';
-  };
-};
-
-function createSCIMGroupObjectFromGroup(group: Group): SCIMGroupObject {
+function createSCIMGroupObjectFromGroup(
+  group: Group,
+  /**
+   * The members are optional as they do not need to be included within actions such as
+   * "list all groups".
+   *
+   * Only when a specific group object is requested or updated we include the list of members
+   * so the SCIM provider can see if a user is or is not a member of an organization.
+   */
+  members?: Array<GroupMember>,
+): SCIMGroupObject {
   return {
     schemas: ['urn:ietf:params:scim:schemas:core:2.0:Group'],
     id: group.id,
     externalId: group.externalGroupId ?? undefined,
     displayName: group.displayName,
+    members: members?.map(member => ({
+      value: member.userId,
+      $ref: `/Users/${member.userId}`,
+    })),
     meta: {
       resourceType: 'Group',
     },
