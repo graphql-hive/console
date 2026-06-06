@@ -1,7 +1,7 @@
 import { Injectable, Scope } from 'graphql-modules';
-import { isUUID } from '@hive/api/shared/is-uuid';
 import { PostgresDatabasePool, type CommonQueryMethods } from '@hive/postgres';
 import * as GraphQLSchema from '../../../__generated__/types';
+import { isUUID } from '../../../shared/is-uuid';
 import { AuthorizationPolicyStatement, Session } from '../../auth/lib/authz';
 import { Logger } from '../../shared/providers/logger';
 import { GroupMemberStore } from './group-member-store';
@@ -216,7 +216,7 @@ export class Groups {
       this.session.raise('member:modify');
     }
 
-    this.session.assertPerformAction({
+    await this.session.assertPerformAction({
       action: 'member:modify',
       organizationId: groupMapping.organizationId,
       params: {
