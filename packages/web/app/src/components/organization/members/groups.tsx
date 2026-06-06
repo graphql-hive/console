@@ -25,6 +25,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { SubPageLayout, SubPageLayoutHeader } from '@/components/ui/page-content-layout';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { useToast } from '@/components/ui/use-toast';
 import { graphql, useFragment, type FragmentType } from '@/gql';
 import * as GraphQLSchema from '@/gql/graphql';
 import { useSearchParamsFilter } from '@/lib/hooks/use-search-params-filters';
@@ -94,13 +95,13 @@ export function Groups(props: {
           />
         </div>
       </SubPageLayoutHeader>
-      <div className="border-border mt-4 overflow-hidden rounded-lg border">
-        <div className="bg-neutral-3 border-border text-muted-foreground grid grid-cols-[1fr_auto_auto] gap-4 border-b px-4 py-3 text-sm font-medium">
+      <div className="mt-4 overflow-hidden rounded-lg border">
+        <div className="bg-neutral-3 grid grid-cols-[1fr_auto_auto] gap-4 border-b px-4 py-3 text-sm font-medium">
           <div>Group</div>
           <div className="w-24 text-center">Members</div>
           <div className="w-10" />
         </div>
-        <div className="divide-border divide-y">
+        <div className="divide-y">
           {!organization ? (
             <>Loading...</>
           ) : organization.groups.edges.length === 0 ? (
@@ -113,10 +114,10 @@ export function Groups(props: {
         </div>
       </div>
 
-      <div className="border-border bg-secondary/10 px-4 py-3">
+      <div className="px-4 py-3">
         <Button
           variant="ghost"
-          className="text-muted-foreground hover:text-foreground w-full"
+          className="w-full"
           onClick={() =>
             !!organization?.groups.pageInfo.hasNextPage &&
             void client.query(Groups_OrganizationGroupQuery, {
@@ -130,7 +131,7 @@ export function Groups(props: {
         </Button>
       </div>
 
-      <p className="text-muted-foreground mt-4 text-xs">
+      <p className="mt-4 text-xs">
         Groups are synced from your identity provider via SCIM. Role assignments configured here
         determine what permissions group members receive.
       </p>
@@ -202,6 +203,7 @@ function GroupRow(props: GroupRowProps): ReactNode {
   const organization = useFragment(GroupRow_OrganizationFragment, props.organization);
   const isDisabled = !!group.disabledAt;
   const [isExpanded, setIsExpanded] = useState(false);
+  const { toast } = useToast();
 
   function onToggleExpand() {
     setIsExpanded(value => !value);
@@ -216,35 +218,32 @@ function GroupRow(props: GroupRowProps): ReactNode {
     requestPolicy: 'network-only',
     pause: isExpanded === false,
   });
-  const [deleteRoleAssignmentState, deleteRoleAssignment] = useMutation(
-    GroupRow_RemoveGroupMappingMutation,
-  );
+  const [, deleteRoleAssignment] = useMutation(GroupRow_RemoveGroupMappingMutation);
 
   const groupDetailed = query.data?.organization?.group ?? null;
 
   const [sheetNode, setSheetNode] = useState(null as ReactNode | null);
 
   return (
-    <div className={cn('bg-background', isDisabled && 'opacity-75')}>
+    <div className={cn(isDisabled && 'opacity-75')}>
       <div
         className={cn(
           'grid cursor-pointer grid-cols-[1fr_auto_auto] items-center gap-4 px-4 py-3 transition-colors',
-          isDisabled ? 'bg-destructive/5 hover:bg-destructive/10' : 'hover:bg-secondary/20',
         )}
         onClick={onToggleExpand}
       >
         <div className="flex items-center gap-3">
           <button
-            className="hover:bg-secondary rounded-sm p-0.5 transition-colors"
+            className="rounded-sm p-0.5 transition-colors"
             onClick={e => {
               e.stopPropagation();
               onToggleExpand();
             }}
           >
             {isExpanded ? (
-              <ChevronDownIcon className="text-muted-foreground h-4 w-4" />
+              <ChevronDownIcon className="h-4 w-4" />
             ) : (
-              <ChevronRightIcon className="text-muted-foreground h-4 w-4" />
+              <ChevronRightIcon className="h-4 w-4" />
             )}
           </button>
           <div
@@ -254,9 +253,9 @@ function GroupRow(props: GroupRowProps): ReactNode {
             )}
           >
             {isDisabled ? (
-              <AlertTriangleIcon className="text-destructive h-4 w-4" />
+              <AlertTriangleIcon className="h-4 w-4" />
             ) : (
-              <UsersIcon className="text-muted-foreground h-4 w-4" />
+              <UsersIcon className="h-4 w-4" />
             )}
           </div>
           <div className="min-w-0 flex-1">
@@ -264,7 +263,7 @@ function GroupRow(props: GroupRowProps): ReactNode {
               <span
                 className={cn(
                   'text-sm font-medium',
-                  isDisabled ? 'text-muted-foreground line-through' : 'text-foreground',
+                  isDisabled ? 'line-through' : 'text-foreground',
                 )}
               >
                 {group.name}
@@ -297,7 +296,7 @@ function GroupRow(props: GroupRowProps): ReactNode {
       {isExpanded && (
         <>
           {groupDetailed ? (
-            <div className="border-border bg-secondary/10 border-t">
+            <div className="border-t">
               <div className="px-4 py-2 pl-16">
                 <div className="mb-2 text-xs font-medium">Role Mappings</div>
                 <div className="space-y-2">
@@ -334,14 +333,40 @@ function GroupRow(props: GroupRowProps): ReactNode {
                                 <AlertDialogAction asChild>
                                   <Button
                                     variant="destructive"
-                                    onClick={e => {
+                                    onClick={async e => {
                                       e.stopPropagation();
-                                      deleteRoleAssignment({
-                                        input: {
-                                          groupId: group.id,
-                                          groupMappingId: groupRoleMapping.id,
-                                        },
-                                      });
+                                      try {
+                                        const result = await deleteRoleAssignment({
+                                          input: {
+                                            groupId: group.id,
+                                            groupMappingId: groupRoleMapping.id,
+                                          },
+                                        });
+                                        if (result.error) {
+                                          toast({
+                                            variant: 'destructive',
+                                            title: 'Failed to remove role assignment',
+                                            description: result.error.message,
+                                          });
+                                        } else if (result.data?.removeGroupMapping.ok) {
+                                          toast({
+                                            title: 'Role assignment removed',
+                                            description: `User ${result.data?.removeGroupMapping.ok} is no longer a member of the organization`,
+                                          });
+                                        } else if (result.data?.removeGroupMapping.error) {
+                                          toast({
+                                            title: 'Failed to remove role assignment',
+                                            description:
+                                              result.data.removeGroupMapping.error.message,
+                                          });
+                                        }
+                                      } catch (error) {
+                                        toast({
+                                          variant: 'destructive',
+                                          title: 'Failed to delete a member',
+                                          description: String(error),
+                                        });
+                                      }
                                     }}
                                   >
                                     Delete
@@ -425,8 +450,8 @@ function GroupRoleMappingRow(props: {
           >
             {groupRoleMapping.role.name}
           </Badge>
-          <span className="text-muted-foreground text-xs">on</span>
-          <span className="text-foreground text-sm">
+          <span className="text-xs">on</span>
+          <span className="text-sm">
             {groupRoleMapping.resourceAssignment.mode ===
             GraphQLSchema.ResourceAssignmentModeType.All ? (
               'all resources'
@@ -441,20 +466,15 @@ function GroupRoleMappingRow(props: {
           <Tooltip>
             <TooltipTrigger asChild>
               <Button variant="ghost" size="icon" className="h-6 w-6" onClick={props.onClickEdit}>
-                <PencilIcon className="text-muted-foreground h-3 w-3" />
+                <PencilIcon className="h-3 w-3" />
               </Button>
             </TooltipTrigger>
             <TooltipContent>Edit mapping</TooltipContent>
           </Tooltip>
           <Tooltip>
             <TooltipTrigger asChild>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="hover:text-destructive h-6 w-6"
-                onClick={props.onClickDelete}
-              >
-                <Trash2Icon className="text-muted-foreground h-3 w-3" />
+              <Button variant="ghost" size="icon" className="h-6 w-6" onClick={props.onClickDelete}>
+                <Trash2Icon className="h-3 w-3" />
               </Button>
             </TooltipTrigger>
             <TooltipContent>Remove mapping</TooltipContent>

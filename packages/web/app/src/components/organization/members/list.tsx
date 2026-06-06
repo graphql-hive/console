@@ -54,8 +54,8 @@ function MemberGroups(props: { groups: Array<FragmentType<typeof MemberGroups_Gr
         <Tooltip>
           <TooltipTrigger asChild>
             <div className="flex items-center gap-1.5">
-              <UsersIcon className="text-muted-foreground h-3.5 w-3.5" />
-              <span className="text-muted-foreground text-xs">Groups:</span>
+              <UsersIcon className="h-3.5 w-3.5" />
+              <span className="text-xs">Groups:</span>
             </div>
           </TooltipTrigger>
           <TooltipContent side="top" className="max-w-xs">
@@ -269,7 +269,7 @@ const OrganizationMemberRow = memo(function OrganizationMemberRow(props: {
           </div>
           <h4 className="text-neutral-10 text-xs">{member.user.email}</h4>
         </td>
-        <td className="relative py-3 text-center text-right text-sm">
+        <td className="relative py-3 text-right text-sm">
           {member.isOwner ? (
             <TooltipProvider>
               <Tooltip>
