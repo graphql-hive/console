@@ -85,7 +85,7 @@ export class EmailVerification {
           WHERE
             "ev"."user_identity_id" = ${input.userIdentityId}
             AND lower("ev"."email") = lower(${input.email})
-            AND "verified_at" IS NOT NULL
+            AND "ev"."verified_at" IS NOT NULL
           LIMIT 1
         `,
       )
