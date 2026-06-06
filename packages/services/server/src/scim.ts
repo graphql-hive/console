@@ -466,6 +466,7 @@ export const createSCIMRouter =
       const users: Array<SCIMUserObject> = [];
 
       if (queryParse.data.filter) {
+        /** A filter looks like the following: 'value eq "user-123"'  */
         const [property, eqStr, rawValue] = queryParse.data.filter.split(' ');
         if (!property || eqStr !== 'eq' || !rawValue) {
           return reply.status(403).send(
@@ -526,7 +527,7 @@ export const createSCIMRouter =
         startIndex,
         itemsPerPage: users.length,
         Resources: users,
-      });
+      } satisfies SCIMListResponseObject);
     });
 
     /**
@@ -619,7 +620,7 @@ export const createSCIMRouter =
         startIndex,
         itemsPerPage: groups.length,
         Resources: groups,
-      });
+      } satisfies SCIMListResponseObject);
     });
 
     /**
@@ -983,6 +984,14 @@ type SCIMGroupObject = {
   meta: {
     resourceType: 'Group';
   };
+};
+
+type SCIMListResponseObject = {
+  schemas: ['urn:ietf:params:scim:api:messages:2.0:ListResponse'];
+  totalResults: number;
+  startIndex: number;
+  itemsPerPage: number;
+  Resources: SCIMGroupObject[] | SCIMUserObject[];
 };
 
 function createSCIMUserObjectFromUser(user: User): SCIMUserObject {
