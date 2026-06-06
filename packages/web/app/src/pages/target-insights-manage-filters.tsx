@@ -324,18 +324,22 @@ function ActionsCell({
             >
               View in Insights
             </MenuItem>,
-            <MenuItem
-              key="create-alert"
-              render={
-                <Link
-                  to="/$organizationSlug/$projectSlug/$targetSlug/alerts/create"
-                  params={{ organizationSlug, projectSlug, targetSlug }}
-                  search={{ savedFilterId: filter.id }}
-                />
-              }
-            >
-              Create alert
-            </MenuItem>,
+            // Only shared filters can be attached to an alert, so don't offer
+            // "Create alert" from a private one (the alert form would reject it).
+            filter.visibility === SavedFilterVisibilityType.Shared && (
+              <MenuItem
+                key="create-alert"
+                render={
+                  <Link
+                    to="/$organizationSlug/$projectSlug/$targetSlug/alerts/create"
+                    params={{ organizationSlug, projectSlug, targetSlug }}
+                    search={{ savedFilterId: filter.id }}
+                  />
+                }
+              >
+                Create alert
+              </MenuItem>
+            ),
             filter.viewerCanUpdate && (
               <MenuItem key="rename" onClick={onRename}>
                 Rename
