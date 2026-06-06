@@ -98,7 +98,7 @@ export function Groups(props: {
         <div className="bg-neutral-3 border-border text-muted-foreground grid grid-cols-[1fr_auto_auto] gap-4 border-b px-4 py-3 text-sm font-medium">
           <div>Group</div>
           <div className="w-24 text-center">Members</div>
-          <div className="w-10"></div>
+          <div className="w-10" />
         </div>
         <div className="divide-border divide-y">
           {!organization ? (
@@ -235,7 +235,7 @@ function GroupRow(props: GroupRowProps): ReactNode {
       >
         <div className="flex items-center gap-3">
           <button
-            className="hover:bg-secondary rounded p-0.5 transition-colors"
+            className="hover:bg-secondary rounded-sm p-0.5 transition-colors"
             onClick={e => {
               e.stopPropagation();
               onToggleExpand();
