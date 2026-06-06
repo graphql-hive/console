@@ -40,6 +40,7 @@ export function RoleMappingPickerSheet(props: {
   resourceAssignment: ResourceSelection;
 }) {
   const organization = useFragment(RoleMappingPickerSheet_OrganizationFragment, props.organization);
+  /* eslint-disable-next-line react/hook-use-state */
   const [initialSelectedRoleId] = useState(props.selectedRoleId);
 
   const selectedRole =
