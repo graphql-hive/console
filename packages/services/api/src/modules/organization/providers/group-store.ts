@@ -208,7 +208,7 @@ export class GroupStore {
   async createGroup(args: {
     organizationId: string;
     displayName: string;
-    externalGroupId: string;
+    externalGroupId: string | null;
   }) {
     this.logger.debug(
       'create new group (organizationId=%s, externalGroupId=%s)',
@@ -233,14 +233,39 @@ export class GroupStore {
     return await this.pool.one(query).then(GroupModel.parse);
   }
 
-  async disableGroup(args: { externalGroupId: string }) {
+  async disableGroup(args: { organizationId: string; groupId: string }) {
     const query = psql`/* disableGroup /*
       UPDATE
         "groups"
       SET
         "disabled_at" = NOW()
       WHERE
-        "external_group_id" = ${args.externalGroupId}
+        "organization_id" = ${args.organizationId}
+        AND "id" = ${args.groupId}
+      RETURNING
+        ${groupFields}
+    `;
+
+    return await this.pool.one(query).then(GroupModel.parse);
+  }
+
+  async updateGroupPropertiesByOrganizationIdAndGroupId(
+    organizationId: string,
+    groupId: string,
+    args: {
+      displayName: string | null;
+      externalId: string | null;
+    },
+  ) {
+    const query = psql`/* disableGroup /*
+      UPDATE
+        "groups"
+      SET
+        "display_name" = COALESCE(${args.displayName}, "display_name")
+        , "group_external_id" = COALESCE(${args.externalId}, "group_external_id")
+      WHERE
+        "organization_id" = ${organizationId}
+        AND "id" = ${groupId}
       RETURNING
         ${groupFields}
     `;

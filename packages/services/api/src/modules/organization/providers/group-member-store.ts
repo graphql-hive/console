@@ -91,6 +91,129 @@ export class GroupMemberStore {
     });
   }
 
+  async getGroupMembersForOrganizationIdAndGroupId(organizationId: string, groupId: string) {
+    const result = await this.pool.any(psql`
+      SELECT ${groupMemberFields}
+      FROM "group_members"
+      WHERE
+        "organization_id" = ${organizationId}
+        AND "group_id" = ${groupId}
+    `);
+    return z.array(GroupMemberModel).parse(result);
+  }
+
+  async addGroupMembersToGroupByOrganizationIdAndGroupId(
+    organizationId: string,
+    groupId: string,
+    userIds: Array<string>,
+  ) {
+    const logger = this.logger.child({
+      organizationId,
+      groupId,
+    });
+
+    logger.debug(
+      'adding %d group members (organizationId=%s, groupId=%s)',
+      userIds.length,
+      organizationId,
+      groupId,
+    );
+
+    const query = psql`
+      INSERT INTO "group_members" (
+        "organization_id"
+        , "user_id"
+        , "group_id"
+      ) VALUES (
+        SELECT
+          "provisioned_by_organization_id"
+          , "user_id"
+          , ${groupId}
+        FROM
+          "users"
+        WHERE
+          "user_id" = ANY(${psql.array(userIds, 'uuuid')})
+          AND "provisioned_by_organization_id" = ${organizationId}
+      )
+      ON CONFLICT (
+        "organization_id"
+        , "user_id"
+        , "group_id"
+      ) DO NOTHING
+      RETURNING
+        ${groupMemberFields}
+    `;
+
+    const rows = await this.pool.any(query).then(z.array(GroupMemberModel).parse);
+    logger.debug(
+      'added %d members (organizationId=%s, groupId=%s)',
+      rows.length,
+      organizationId,
+      groupId,
+    );
+
+    return rows;
+  }
+
+  async removeGroupMembersFromGroupByOrganizationIdAndGroupId(
+    organizationId: string,
+    groupId: string,
+    userIds: Array<string>,
+  ) {
+    const logger = this.logger.child({
+      organizationId,
+      groupId,
+    });
+
+    logger.debug('removing %d group members', userIds.length, organizationId, groupId);
+
+    const query = psql`
+      DELETE
+      FROM
+        "group_members"
+      WHERE
+        "organization_id" = ${organizationId}
+        AND "group_id" = ${groupId}
+        AND "user_id" = ANY(${psql.array(userIds, 'uuuid')})
+      RETURNING
+        ${groupMemberFields}
+    `;
+
+    const rows = await this.pool.any(query).then(z.array(GroupMemberModel).parse);
+
+    logger.debug('removed %d members', rows.length);
+
+    return rows;
+  }
+
+  async removeAllGroupMembersFromGroupByOrganizationIdAndGroupId(
+    organizationId: string,
+    groupId: string,
+  ) {
+    const logger = this.logger.child({
+      organizationId,
+      groupId,
+    });
+
+    logger.debug('removing all group members', organizationId, groupId);
+
+    const query = psql`
+      DELETE
+      FROM
+        "group_members"
+      WHERE
+        "organization_id" = ${organizationId}
+        AND "group_id" = ${groupId}
+      RETURNING
+        ${groupMemberFields}
+    `;
+
+    const rows = await this.pool.any(query).then(z.array(GroupMemberModel).parse);
+    logger.debug('removed %d members', rows.length);
+
+    return rows;
+  }
+
   static async getGroupMemberForOrganizationIdAndUserId(
     pool: CommonQueryMethods,
     organizationId: string,
@@ -114,7 +237,7 @@ const GroupMemberModel = z.object({
   groupId: z.string(),
 });
 
-type GroupMember = z.TypeOf<typeof GroupMemberModel>;
+export type GroupMember = z.TypeOf<typeof GroupMemberModel>;
 
 const groupMemberFields = psql`
  "id"
