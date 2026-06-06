@@ -282,10 +282,10 @@ export async function createStorage(
     },
     async ensureUserExists({
       superTokensUserId,
-      email,
       oidcIntegration,
       firstName,
       lastName,
+      ...args
     }: {
       superTokensUserId: string;
       firstName: string | null;
@@ -295,6 +295,7 @@ export async function createStorage(
         id: string;
       };
     }) {
+      const email = args.email.toLowerCase();
       class EnsureUserExistsError extends Error {}
 
       try {
@@ -326,7 +327,7 @@ export async function createStorage(
                 psql`/* ensureUserExists */
                   SELECT ${userFields(psql`"users".`)}
                   FROM "users"
-                  WHERE "users"."email" = ${email}
+                  WHERE "users"."email" = lower(${email})
                   ORDER BY "users"."created_at";
                 `,
               )
@@ -358,7 +359,7 @@ export async function createStorage(
                     DELETE FROM "organization_invitations" AS "oi"
                     WHERE
                       "oi"."organization_id" = ${oidcConfig.linkedOrganizationId}
-                      AND "oi"."email" = ${email}
+                      AND lower("oi"."email") = lower(${email})
                       AND "oi"."expires_at" > now()
                     RETURNING
                       "oi"."organization_id" "organizationId"
@@ -427,10 +428,10 @@ export async function createStorage(
           if (internalUser.email !== email) {
             await t.query(psql`
               UPDATE "users"
-              SET "email" = ${email}
+              SET "email" = lower(${email})
               WHERE "id" = ${internalUser.id}
             `);
-            internalUser.email = email;
+            internalUser.email = email.toLowerCase();
           }
 
           if (oidcIntegration !== null) {
@@ -958,7 +959,7 @@ export async function createStorage(
             )
             VALUES (
               ${args.organizationId}
-              , ${args.email}
+              , lower(${args.email})
               , ${args.roleId}
               , ${args.resourceAssignments === null ? null : psql.jsonb(args.resourceAssignments)}
             )
@@ -983,7 +984,9 @@ export async function createStorage(
           .maybeOne(
             psql`/* deleteOrganizationInvitationByEmail */
                 DELETE FROM organization_invitations
-                WHERE organization_id = ${organization} AND email = ${email}
+                WHERE
+                  organization_id = ${organization}
+                  AND email = lower(${email})
                 RETURNING
                   "organization_id" AS "organizationId"
                   , "code"
@@ -1210,7 +1213,7 @@ export async function createStorage(
           LEFT JOIN organization_invitations as i ON (i.organization_id = o.id)
           WHERE
             i.code = ${inviteCode}
-            AND i.email = ${email}
+            AND i.email = lower(${email})
             AND i.expires_at > NOW()
           GROUP BY o.id
           LIMIT 1

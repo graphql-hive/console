@@ -1439,7 +1439,13 @@ export async function registerSupertokensAtHome(
         const userInfoBody = z
           .object({
             sub: z.string(),
-            email: z.string().optional().nullable(),
+            email: z
+              .string()
+              // make sure the email is transformed to lower-case
+              // sometimes the OIDC provider love giving us custom formatted ones
+              .transform(email => email.toLowerCase())
+              .optional()
+              .nullable(),
           })
           .safeParse(userInfoBodyJSON.data);
 
