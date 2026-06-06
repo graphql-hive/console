@@ -4637,6 +4637,8 @@ const MemberModel = z
           return null;
         }),
     ),
+    deactivatedAt: z.string().nullable(),
+    provisionedByOrganizationId: z.string().nullable(),
   })
   .transform(row => ({
     id: row.id,
@@ -4650,6 +4652,8 @@ const MemberModel = z
       superTokensUserId: row.superTokensUserId,
       isAdmin: row.isAdmin,
       zendeskId: row.zendeskId,
+      deactivatedAt: row.deactivatedAt,
+      provisionedByOrganizationId: row.provisionedByOrganizationId,
     },
     scopes: (row.scopes as Member['scopes']) || [],
     organization: row.organizationId,
