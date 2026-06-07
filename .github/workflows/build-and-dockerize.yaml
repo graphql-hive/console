@@ -76,6 +76,14 @@ jobs:
         if: ${{ inputs.build }}
         run: pnpm turbo check:build
 
+      # Must run before the docker bake below: the bake copies the host dist/
+      # into the image, so debug ids have to be in those files for Sentry to
+      # match deployed bundles to the maps uploaded later. (inject is offline; no
+      # auth needed.)
+      - name: inject sentry debug ids into service bundles
+        if: ${{ inputs.publishSourceMaps }}
+        run: pnpm sourcemaps:inject
+
       - uses: vimtor/action-zip@5f1c4aa587ea41db1110df6a99981dbe19cee310 # v1
         name: archive javascript artifacts
         if: ${{ inputs.uploadJavaScriptArtifacts }}
@@ -198,7 +206,7 @@ jobs:
           SENTRY_DSN: ${{ secrets.SENTRY_DSN }}
           SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
           SENTRY_RELEASE: ${{ inputs.imageTag }}
-        run: pnpm upload-sourcemaps
+        run: pnpm sourcemaps:upload
 
   publish_docker_manifest:
     needs: build-and-dockerize
