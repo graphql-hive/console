@@ -810,6 +810,30 @@ export function readTargetInfo(
   });
 }
 
+export function readMetricAlertRule(
+  target: GraphQLSchema.TargetReferenceInput,
+  ruleId: string,
+  authToken: string,
+) {
+  return execute({
+    document: graphql(`
+      query IntegrationTests_ReadMetricAlertRule($target: TargetReferenceInput!, $ruleId: ID!) {
+        target(reference: $target) {
+          metricAlertRule(id: $ruleId) {
+            id
+            name
+          }
+        }
+      }
+    `),
+    authToken,
+    variables: {
+      target,
+      ruleId,
+    },
+  });
+}
+
 export function createMemberRole(input: CreateMemberRoleInput, authToken: string) {
   return execute({
     document: graphql(`

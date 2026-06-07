@@ -7,6 +7,7 @@ import {
   METRIC_ALERT_RULES_PER_TARGET_LIMIT,
 } from '../../commerce/constants';
 import { OrganizationManager } from '../../organization/providers/organization-manager';
+import { isUUID } from '../../shared/is-uuid';
 import { Logger } from '../../shared/providers/logger';
 import { METRIC_ALERT_RULES_ENABLED } from './metric-alert-rules-flag-token';
 import {
@@ -49,6 +50,18 @@ export class MetricAlertRulesDisabledError extends Error {
   constructor() {
     super('Metric alert rules are not enabled for this instance.');
     this.name = 'MetricAlertRulesDisabledError';
+  }
+}
+
+function assertUUID(value: string, label: string): void {
+  if (!isUUID(value)) {
+    throw new MetricAlertRuleValidationError(`${label} must be a valid UUID.`);
+  }
+}
+
+function assertUUIDs(values: readonly string[], label: string): void {
+  for (const value of values) {
+    assertUUID(value, label);
   }
 }
 
@@ -120,6 +133,10 @@ export class MetricAlertRulesManager {
 
     this.assertTypeMetricPairing(input.type, input.metric);
     this.assertTimeWindowInRange(input.timeWindowMinutes);
+    assertUUIDs(input.channelIds, 'Notification channel ID');
+    if (input.savedFilterId) {
+      assertUUID(input.savedFilterId, 'Saved filter ID');
+    }
 
     // Channels and the saved filter must belong to the same project as the
     // target. The DB foreign keys allow cross-project references on their
@@ -195,6 +212,8 @@ export class MetricAlertRulesManager {
       params: { organizationId: input.organizationId, projectId: input.projectId },
     });
 
+    assertUUID(input.ruleId, 'Metric alert rule ID');
+
     const existing = await this.storage.getMetricAlertRule({ id: input.ruleId });
     if (!existing || existing.projectId !== input.projectId) {
       throw new MetricAlertRuleValidationError('Metric alert rule not found.');
@@ -211,10 +230,12 @@ export class MetricAlertRulesManager {
     }
 
     if (input.channelIds) {
+      assertUUIDs(input.channelIds, 'Notification channel ID');
       await this.assertChannelsBelongToProject(input.channelIds, input.projectId);
     }
 
     if (input.savedFilterId) {
+      assertUUID(input.savedFilterId, 'Saved filter ID');
       await this.assertSavedFilterBelongsToProject(input.savedFilterId, input.projectId);
     }
 
@@ -262,6 +283,8 @@ export class MetricAlertRulesManager {
       organizationId: input.organizationId,
       params: { organizationId: input.organizationId, projectId: input.projectId },
     });
+
+    assertUUIDs(input.ruleIds, 'Metric alert rule ID');
 
     this.logger.debug(
       'Deleting metric alert rules (organization=%s, project=%s, count=%s)',
