@@ -52,6 +52,8 @@
     "seed:org": "tsx scripts/seed-organization.mts",
     "seed:schemas": "tsx scripts/seed-schemas.ts",
     "seed:usage": "tsx scripts/seed-usage.ts",
+    "sourcemaps:inject": "./scripts/sourcemaps-inject.sh",
+    "sourcemaps:upload": "./scripts/sourcemaps-upload.sh",
     "start": "pnpm run local:setup",
     "test": "vitest",
     "test:e2e": "playwright test",
@@ -59,7 +61,6 @@
     "test:e2e:open": "playwright test --ui",
     "test:integration": "cd integration-tests && pnpm test:integration",
     "typecheck": "pnpm run -r --filter '!hive' typecheck",
-    "upload-sourcemaps": "./scripts/upload-sourcemaps.sh",
     "workspace": "pnpm run --filter $1 $2"
   },
   "devDependencies": {
