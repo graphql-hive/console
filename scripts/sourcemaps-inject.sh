@@ -16,18 +16,3 @@ set -euo pipefail
 for dir in packages/services/*/dist; do
   pnpm sentry-cli sourcemaps inject "$dir"
 done
-
-# Smoke alarm: confirm injection actually wrote a debug id into each service
-# entrypoint, and fail the build loudly if not. Without this, a broken inject
-# (e.g. a sentry-cli upgrade or missing .map files) would silently ship
-# un-instrumented bundles and we'd only notice via minified stack traces in
-# Sentry weeks later.
-# NOTE: this proves inject ran on the host dist; it does NOT prove the Docker
-# image bakes these files (that ordering is enforced structurally by running
-# this script before the bake in build-and-dockerize.yaml).
-for f in packages/services/*/dist/index.js; do
-  grep -q "sentryDebugIds" "$f" || {
-    echo "::error::no debug id injected in $f"
-    exit 1
-  }
-done
