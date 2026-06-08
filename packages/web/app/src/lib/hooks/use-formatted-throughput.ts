@@ -3,6 +3,10 @@ import { toDecimal } from './use-decimal';
 import { formatNumber } from './use-formatted-number';
 
 export function formatRpm(rpm: number) {
+  if (rpm === 0) {
+    return '0';
+  }
+
   if (rpm >= 1000) {
     return formatNumber(rpm);
   }

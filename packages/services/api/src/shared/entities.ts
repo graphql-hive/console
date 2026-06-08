@@ -329,6 +329,7 @@ export interface Target {
   projectId: string;
   orgId: string;
   name: string;
+  createdAt: string;
   graphqlEndpointUrl: string | null;
   failDiffOnDangerousChange: boolean;
 }
