@@ -85,6 +85,8 @@ export class EmailVerification {
           WHERE
             "ev"."user_identity_id" = ${input.userIdentityId}
             AND lower("ev"."email") = lower(${input.email})
+            AND "ev"."verified_at" IS NOT NULL
+          LIMIT 1
         `,
       )
       .then(v => EmailVerificationModel.nullable().parse(v));
