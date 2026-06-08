@@ -275,6 +275,11 @@ export const createSCIMPlugin =
      *   - Both Okta and Entra uses external id for users
      *   - Only Entra uses external id for groups
      *   - Okta uses the groups display name for matching
+     * - Okta distinguishes between OIN (Okta Integration network) and custom integrations. Currently Hive Console users can only do custom integrations (we did not apply for the OIN process).
+     *   - Okta OIN and custom integrations use different ways for updating groups and members
+     *   - Okta OIN uses PATCH wherever possible
+     *   - Okta custom integrations uses exclusively uses PUT (which is more expensive on our end for updating user lists...)
+     *   - More info here: https://developer.okta.com/docs/api/openapi/okta-scim/guides/scim-20
      */
 
     server.post('/', (_, reply) => reply.status(200).send('Hive Console SCIM'));
