@@ -130,7 +130,7 @@ export class GroupStore {
       ORDER BY "id" DESC
     `;
 
-    return await this.pool.maybeOne(query).then(z.array(GroupModel).parse);
+    return await this.pool.any(query).then(z.array(GroupModel).parse);
   }
 
   async getPaginatedGroupsForOrganizationId(
@@ -257,12 +257,12 @@ export class GroupStore {
       externalId: string | null;
     },
   ) {
-    const query = psql`/* disableGroup /*
+    const query = psql`/* updateGroupPropertiesByOrganizationIdAndGroupId */
       UPDATE
         "groups"
       SET
         "display_name" = COALESCE(${args.displayName}, "display_name")
-        , "group_external_id" = COALESCE(${args.externalId}, "group_external_id")
+        , "external_group_id" = COALESCE(${args.externalId}, "external_group_id")
       WHERE
         "organization_id" = ${organizationId}
         AND "id" = ${groupId}
