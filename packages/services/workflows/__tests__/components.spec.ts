@@ -2,7 +2,7 @@ import { button, email, mjml } from '../src/lib/emails/components.js';
 
 
 describe('email', () => {
-  it('preserves button URLs without modification', () => {
+  it('preserves button to click url', () => {
     const url =
       'https://graphql-hive-dataservicelayer-dev01.vvvvvv.wwwwwww.xx.yyyyyy.zzzz/auth/reset-password?rid=thirdpartyemailpassword&tenantId=public&token=xxxxxxxxxxxxxxxxxxxxxxxxxxx';
 
@@ -14,7 +14,7 @@ describe('email', () => {
     expect(html).toContain(url);
   });
 
-  it('preserves button URLs with special characters', () => {
+  it('preserves the input url itself', () => {
     const url =
       'https://graphql-hive-dataservicelayer-dev01.vvvvvv.wwwwwww.xx.yyyyyy.zzzz/auth/reset-password?rid=thirdpartyemailpassword&tenantId=public&token=xxxxxxxxxxxxxxxxxxxxxxxxxxx';
 
