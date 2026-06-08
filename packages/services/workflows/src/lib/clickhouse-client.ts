@@ -37,7 +37,14 @@ export class ClickHouseClient {
   // gap. Because callers run inside an active span (e.g. `evaluate-group`),
   // startSpan parents this CLIENT span under it automatically...giving the
   // trace the per-query ClickHouse detail the API-side client already emits.
-  async query<T extends Record<string, unknown>>(sql: string, queryId = 'query'): Promise<T[]> {
+  async query<T extends Record<string, unknown>>(
+    sql: string,
+    queryId = 'query',
+    // ClickHouse server-side bound parameters (`param_<name>`), referenced in the
+    // SQL as `{name:Type}`. Use `toQueryParams()` from `@hive/clickhouse` to build
+    // these from a `sql` statement so arbitrary string values are never interpolated.
+    params?: Record<string, string>,
+  ): Promise<T[]> {
     const span = tracer.startSpan(`ClickHouse: ${queryId}`, {
       kind: SpanKind.CLIENT,
       attributes: {
@@ -53,6 +60,7 @@ export class ClickHouseClient {
         searchParams: {
           database: 'default',
           default_format: 'JSON',
+          ...params,
         },
         headers: {
           'Content-Type': 'text/plain',

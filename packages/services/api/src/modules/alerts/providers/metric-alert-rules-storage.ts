@@ -225,7 +225,33 @@ export class MetricAlertRulesStorage {
     { cache: true },
   );
 
+  // Per-request batcher: the manage-filters list resolves `usedByAlertRulesCount`
+  // for each saved filter; this collapses N counts into one grouped query.
+  private rulesCountBySavedFilterLoader = new DataLoader<string, number>(
+    async savedFilterIds => {
+      const rows = await this.pool.any(psql`/* batchedRulesCountBySavedFilter */
+        SELECT "saved_filter_id" as "savedFilterId", count(*)::int as "count"
+        FROM "metric_alert_rules"
+        WHERE "saved_filter_id" = ANY(${psql.array([...savedFilterIds], 'uuid')})
+        GROUP BY "saved_filter_id"
+      `);
+      const rowSchema = zod.object({ savedFilterId: zod.string(), count: zod.number() });
+      const byFilter = new Map<string, number>();
+      for (const raw of rows) {
+        const row = rowSchema.parse(raw);
+        byFilter.set(row.savedFilterId, row.count);
+      }
+      return savedFilterIds.map(id => byFilter.get(id) ?? 0);
+    },
+    { cache: true },
+  );
+
   constructor(private pool: PostgresDatabasePool) {}
+
+  /** How many alert rules reference a given saved filter (per-request batched). */
+  countRulesUsingSavedFilter(savedFilterId: string): Promise<number> {
+    return this.rulesCountBySavedFilterLoader.load(savedFilterId);
+  }
 
   // --- Alert Rule CRUD ---
 
@@ -528,13 +554,20 @@ export class MetricAlertRulesStorage {
    * Returns the `project_id` of the saved filter, or null if not found.
    * Used by mutation resolvers to validate cross-scope.
    */
-  async getSavedFilterProjectId(savedFilterId: string): Promise<string | null> {
-    const result = await this.pool.maybeOneFirst(psql`/* getSavedFilterProjectId */
-      SELECT "project_id"
+  async getSavedFilterScope(
+    savedFilterId: string,
+  ): Promise<{ projectId: string; visibility: 'private' | 'shared' } | null> {
+    const result = await this.pool.maybeOne(psql`/* getSavedFilterScope */
+      SELECT "project_id" as "projectId", "visibility"
       FROM "saved_filters"
       WHERE "id" = ${savedFilterId}
     `);
-    return result === null ? null : zod.string().parse(result);
+    if (result === null) {
+      return null;
+    }
+    return zod
+      .object({ projectId: zod.string(), visibility: zod.enum(['private', 'shared']) })
+      .parse(result);
   }
 
   // --- Incidents ---
@@ -715,6 +748,30 @@ export class MetricAlertRulesStorage {
     `);
 
     return result.map(row => MetricAlertStateLogModel.parse(row) as MetricAlertStateLogEntry);
+  }
+
+  /**
+   * State the rule was in at `timestamp` — the `toState` of the most recent
+   * transition strictly before it, or NORMAL if there were none. Seeds the
+   * leading edge of the state timeline so a window containing no transitions
+   * still reflects the state the rule carried into it.
+   */
+  async getStateAt(args: { ruleId: string; timestamp: Date }): Promise<MetricAlertRuleState> {
+    const result = await this.pool.maybeOneFirst(psql`/* getStateAt */
+      SELECT "to_state"
+      FROM "metric_alert_state_log"
+      WHERE
+        "metric_alert_rule_id" = ${args.ruleId}
+        AND "created_at" < ${args.timestamp.toISOString()}
+      ORDER BY "created_at" DESC
+      LIMIT 1
+    `);
+
+    if (result == null) {
+      return 'NORMAL';
+    }
+
+    return zod.enum(['NORMAL', 'PENDING', 'FIRING', 'RECOVERING']).parse(result);
   }
 
   async getStateLogByIncident(args: { incidentId: string }): Promise<MetricAlertStateLogEntry[]> {

@@ -4,6 +4,7 @@ import { SpanKind, SpanStatusCode, trace } from '@hive/service-common';
 import { env } from '../environment.js';
 import { defineTask, implementTask } from '../kit.js';
 import {
+  buildSavedFilterConditions,
   evaluateRule,
   fetchEnabledRules,
   groupRulesByQuery,
@@ -74,6 +75,12 @@ export const task = implementTask(EvaluateMetricAlertRulesTask, async args => {
   }> {
     const representative = groupRules[0];
 
+    // All rules in a group share the same saved filter (it's part of the group key),
+    // so build the ClickHouse conditions once from the representative.
+    // A malformed filter yields no conditions (evaluates unfiltered) and is logged,
+    // isolating the failure to this group.
+    const filterConditions = buildSavedFilterConditions(representative.savedFilterFilters, logger);
+
     // startActiveSpan makes this span the current OTel context for the
     // duration of the callback, so the slonik PG interceptor and the
     // fetch instrumentation parent their auto-spans under this one. That's
@@ -97,6 +104,7 @@ export const task = implementTask(EvaluateMetricAlertRulesTask, async args => {
               clickhouse,
               representative.targetId,
               representative.timeWindowMinutes,
+              filterConditions,
               evaluationTime,
             );
           } catch (error) {
