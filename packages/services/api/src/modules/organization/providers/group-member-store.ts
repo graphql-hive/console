@@ -124,17 +124,16 @@ export class GroupMemberStore {
         "organization_id"
         , "user_id"
         , "group_id"
-      ) VALUES (
-        SELECT
-          "provisioned_by_organization_id"
-          , "user_id"
-          , ${groupId}
-        FROM
-          "users"
-        WHERE
-          "user_id" = ANY(${psql.array(userIds, 'uuuid')})
-          AND "provisioned_by_organization_id" = ${organizationId}
       )
+      SELECT
+        "users"."provisioned_by_organization_id"
+        , "users"."id"
+        , ${groupId}
+      FROM
+        "users"
+      WHERE
+        "users"."id" = ANY(${psql.array(userIds, 'uuid')})
+        AND "users"."provisioned_by_organization_id" = ${organizationId}
       ON CONFLICT (
         "organization_id"
         , "user_id"

@@ -56,7 +56,7 @@ const PutUsersBodyModel = z.object({
   emails: z
     .array(
       z.object({
-        value: z.string().email(),
+        value: z.string().toLowerCase().email(),
         primary: z.boolean().optional(),
       }),
     )
@@ -151,9 +151,23 @@ const PatchGroupsRequestBodySchema = z.object({
   Operations: z.array(GroupPatchOperationSchema).min(1),
 });
 
+const GroupPutBodySchema = z.object({
+  members: z.array(GroupMemberSchema).optional(),
+  displayName: z.string().optional(),
+});
+
 export const createSCIMPlugin =
   (authn: AuthN, pool: PostgresDatabasePool, storage: Storage): FastifyPluginAsync =>
   async server => {
+    server.addContentTypeParser(
+      'application/scim+json',
+      { parseAs: 'string' },
+      (req, body, done) => {
+        console.log('RAW BODY:', body);
+        done(null, body ? JSON.parse(body) : undefined);
+      },
+    );
+
     async function authenticateAuthorizeAndResolveOrganizationFromRequest(
       req: FastifyRequest,
       reply: FastifyReply,
@@ -220,7 +234,12 @@ export const createSCIMPlugin =
         };
       }
 
-      req.log.debug('sufficient permissions for calling scim endpoint.');
+      req.log.debug(
+        'sufficient permissions for calling scim endpoint. ' +
+          req.routeOptions.method +
+          '' +
+          req.routeOptions.url,
+      );
 
       return {
         type: 'success' as const,
@@ -360,7 +379,6 @@ export const createSCIMPlugin =
      * This route is used for updating user properties
      * - active (disabled state)
      * - email
-     * - external id
      * - ??? (TBD)
      */
     server.put('/Users/:userId', async (req, reply) => {
@@ -380,6 +398,8 @@ export const createSCIMPlugin =
         );
       }
       const usersStore = new UsersStore(pool);
+      const supertokensStore = new SuperTokensStore(pool, req.log);
+
       let user = await usersStore.findUserProvisionedByOrganizationIdAndId(
         result.organizationId,
         params.userId,
@@ -405,6 +425,21 @@ export const createSCIMPlugin =
       }
 
       if (body.data.emails !== undefined) {
+        const primaryEmail = body.data.emails.find(e => e.primary)?.value ?? null;
+
+        if (primaryEmail) {
+          if (primaryEmail !== user.email) {
+            await supertokensStore.updateOIDCUserEmail({
+              userId: user.supertokenUserId,
+              newEmail: primaryEmail,
+            });
+            await usersStore.updateUserEmail(result.organizationId, user.id, primaryEmail);
+            // invalidate session as email changed
+            await supertokensStore.invalidateAllSessionsForUser(user.supertokenUserId);
+          }
+        } else {
+          req.log.debug('invalid email');
+        }
       }
 
       return reply.code(200).send(createSCIMUserObjectFromUser(user));
@@ -559,7 +594,11 @@ export const createSCIMPlugin =
           );
         }
         const valueStr = rawValue.replaceAll('"', '');
-        if (property === 'email') {
+        if (
+          property === 'email' ||
+          // okta uses username for some reason?
+          property === 'userName'
+        ) {
           const user = await usersStore.findUserProvisionedByOrganizationIdAndEmail(
             result.organizationId,
             // to lower-case just in case it is sent in non :)
@@ -781,17 +820,70 @@ export const createSCIMPlugin =
      * This route is not implemented as it is not needed.
      */
     server.put('/Groups/:groupId', async (req, reply) => {
+      const params = SharedGroupRouteParams.parse(req.params);
       const result = await authenticateAuthorizeAndResolveOrganizationFromRequest(req, reply);
       if (result.type === 'error') {
         return reply.status(result.error.status).send(result.error);
       }
 
-      return reply.status(501).send(
-        createSCIMError({
-          status: 501,
-          detail: 'PUT on Group resources is not supported.',
-        }),
+      const body = GroupPutBodySchema.safeParse(req.body);
+      if (body.error) {
+        return reply.status(403).send(
+          createSCIMError({
+            status: 403,
+            detail: 'Invalid request body provided.',
+          }),
+        );
+      }
+      const groupStore = new GroupStore(reply.log, pool);
+      let group = await groupStore.getGroupByOrganizationIdAndGroupId(
+        result.organizationId,
+        params.groupId,
       );
+
+      if (!group) {
+        return reply.status(404).send(
+          createSCIMError({
+            status: 404,
+            detail: 'Group does not exist.',
+          }),
+        );
+      }
+
+      const groupMemberStore = new GroupMemberStore(reply.log, pool);
+      const memberIds = body.data.members?.map(member => member.value);
+
+      let groupMembers;
+
+      if (Array.isArray(memberIds)) {
+        await groupMemberStore.removeAllGroupMembersFromGroupByOrganizationIdAndGroupId(
+          result.organizationId,
+          params.groupId,
+        );
+        groupMembers = [];
+
+        if (memberIds.length) {
+          groupMembers = await groupMemberStore.addGroupMembersToGroupByOrganizationIdAndGroupId(
+            result.organizationId,
+            group.id,
+            memberIds,
+          );
+        }
+      }
+
+      if (body.data.displayName && body.data.displayName !== group.displayName) {
+        group = await groupStore.updateGroupPropertiesByOrganizationIdAndGroupId(
+          result.organizationId,
+          group.id,
+          {
+            displayName: body.data.displayName,
+            // TODO: figure out if we need to provide this
+            externalId: null,
+          },
+        );
+      }
+
+      return reply.code(200).send(createSCIMGroupObjectFromGroup(group, groupMembers));
     });
 
     /**
