@@ -1,4 +1,5 @@
-import { responsePathAsArray, type GraphQLError } from 'graphql';
+import { DocumentNode, print, responsePathAsArray, type GraphQLError } from 'graphql';
+import { lru } from 'tiny-lru';
 import {
   autoDisposeSymbol,
   createHive as createHiveClient,
@@ -26,6 +27,11 @@ export function createHive(clientOrOptions: HivePluginOptions) {
 export type GatewayPluginOptions = HivePluginOptions & {
   /** Opt in to sending subgraph metrics. This feature is  */
   fieldLevelMetricsEnabled?: boolean;
+  /**
+   * Size of document cache. This is used to store a transformed version of the operation
+   * because abstract types must include a __typename. Default: 10_000
+   */
+  cache?: number;
 };
 
 export function useHive(clientOrOptions: HiveClient): GatewayPlugin;
@@ -42,7 +48,12 @@ export function useHive(clientOrOptions: HiveClient | GatewayPluginOptions): Gat
       });
 
   void hive.info();
+  /** stores the resulting status from fetches */
   const statusMap = new WeakMap<object, number>();
+  /** stores the original query SDL to avoid having to print */
+  const operationCache = lru<DocumentNode | true>(
+    isHiveClient(clientOrOptions) ? 10_000 : (clientOrOptions.cache ?? 10_000),
+  );
   if (hive[autoDisposeSymbol]) {
     if (global.process) {
       const signals = Array.isArray(hive[autoDisposeSymbol])
@@ -89,10 +100,11 @@ export function useHive(clientOrOptions: HiveClient | GatewayPluginOptions): Gat
         return;
       }
 
-      // We need __typename on every object in the subgraph result so we can
-      // resolve abstract types (unions/interfaces) to concrete type coordinates
-      // when recording field-level metrics downstream.
-      executionRequest.document = addTypenames(executionRequest.document, subgraphSchema);
+      /**
+       * Note that we need __typename on every abstract type in the subgraph call.
+       * This is added in the "onExecute" hook to the entire document. So subgraph
+       * calls should also include this field.
+       */
 
       const finishSubRequest = collection.subrequest({
         subgraph: subgraphName,
@@ -124,6 +136,23 @@ export function useHive(clientOrOptions: HiveClient | GatewayPluginOptions): Gat
       // so it can be accessed downstream by subgraph executions.
       if (args.contextValue) {
         (args.contextValue as any).__hiveUsageCollection = collection;
+      }
+
+      // We need __typename on every object in the subgraph result so we can
+      // resolve abstract types (unions/interfaces) to concrete type coordinates
+      // when recording field-level metrics downstream.
+      // This is done here for more performant caching of the result.
+      const query = args.contextValue.params.query ?? print(args.document);
+      const cachedDocument = operationCache.get(query);
+      if (cachedDocument) {
+        // If "true" is cached, then this operation doesn't need stored because it's identical to the original.
+        // Else, the document hash been modified and cached
+        if (cachedDocument !== true) {
+          args.document = cachedDocument;
+        }
+      } else {
+        const modifiedDocument = addTypenames(args.document, args.schema);
+        operationCache.set(query, args.document === modifiedDocument || args.document);
       }
 
       return {

@@ -34,37 +34,60 @@ export function addTypenames(document: DocumentNode, schema: GraphQLSchema): Doc
   const mutationType = schema.getMutationType();
   const subscriptionType = schema.getSubscriptionType();
 
+  let definitionsChanged = false;
+
+  const augmentedDefinitions = document.definitions.map(def => {
+    if (def.kind === Kind.OPERATION_DEFINITION) {
+      const rootType =
+        def.operation === 'query'
+          ? queryType
+          : def.operation === 'mutation'
+            ? mutationType
+            : subscriptionType;
+
+      if (!rootType) return def;
+
+      const newSelectionSet = walkSelectionSet(def.selectionSet, rootType, false, schema);
+      if (newSelectionSet !== def.selectionSet) {
+        definitionsChanged = true;
+        return {
+          ...def,
+          selectionSet: newSelectionSet,
+        };
+      }
+      return def;
+    }
+
+    if (def.kind === Kind.FRAGMENT_DEFINITION) {
+      const onType = schema.getType(def.typeCondition.name.value);
+      if (!onType || !isCompositeType(onType)) return def;
+
+      const newSelectionSet = walkSelectionSet(
+        def.selectionSet,
+        onType,
+        isAbstractType(onType),
+        schema,
+      );
+      if (newSelectionSet !== def.selectionSet) {
+        definitionsChanged = true;
+        return {
+          ...def,
+          selectionSet: newSelectionSet,
+        };
+      }
+      return def;
+    }
+
+    return def;
+  });
+
+  if (!definitionsChanged) {
+    return document;
+  }
+
   return {
     ...document,
-    definitions: document.definitions.map(def => {
-      if (def.kind === Kind.OPERATION_DEFINITION) {
-        const rootType =
-          def.operation === 'query'
-            ? queryType
-            : def.operation === 'mutation'
-              ? mutationType
-              : subscriptionType;
-
-        if (!rootType) return def;
-
-        return {
-          ...def,
-          selectionSet: walkSelectionSet(def.selectionSet, rootType, false, schema),
-        };
-      }
-
-      if (def.kind === Kind.FRAGMENT_DEFINITION) {
-        const onType = schema.getType(def.typeCondition.name.value);
-        if (!onType || !isCompositeType(onType)) return def;
-
-        return {
-          ...def,
-          selectionSet: walkSelectionSet(def.selectionSet, onType, isAbstractType(onType), schema),
-        };
-      }
-
-      return def;
-    }),
+    definitions: augmentedDefinitions,
   };
 }
 
@@ -74,8 +97,8 @@ export function addTypenames(document: DocumentNode, schema: GraphQLSchema): Doc
 
 /**
  * @param parentIsAbstract - true when the immediately enclosing field (or
- *   fragment condition) resolved to an abstract type. This is propagated into
- *   concrete inline-fragment branches so they also receive __typename.
+ * fragment condition) resolved to an abstract type. This is propagated into
+ * concrete inline-fragment branches so they also receive __typename.
  */
 function walkSelectionSet(
   selectionSet: SelectionSetNode,
@@ -94,6 +117,8 @@ function walkSelectionSet(
     (thisTypeIsAbstract || (parentIsAbstract && isObjectType(parentType))) &&
     !selectionSet.selections.some(s => s.kind === Kind.FIELD && s.name.value === '__typename');
 
+  let selectionsChanged = false;
+
   const augmentedSelections = selectionSet.selections.map(selection => {
     if (selection.kind === Kind.FIELD) {
       if (!selection.selectionSet) {
@@ -106,15 +131,22 @@ function walkSelectionSet(
       const fieldType = getNamedType(fieldDef.type);
       if (!fieldType || !isCompositeType(fieldType)) return selection;
 
-      return {
-        ...selection,
-        selectionSet: walkSelectionSet(
-          selection.selectionSet,
-          fieldType,
-          isAbstractType(fieldType),
-          schema,
-        ),
-      } satisfies FieldNode;
+      const newSelectionSet = walkSelectionSet(
+        selection.selectionSet,
+        fieldType,
+        isAbstractType(fieldType),
+        schema,
+      );
+
+      if (newSelectionSet !== selection.selectionSet) {
+        selectionsChanged = true;
+        return {
+          ...selection,
+          selectionSet: newSelectionSet,
+        } satisfies FieldNode;
+      }
+
+      return selection;
     }
 
     if (selection.kind === Kind.INLINE_FRAGMENT) {
@@ -126,24 +158,35 @@ function walkSelectionSet(
 
       if (!branchType || !isCompositeType(branchType)) return selection;
 
-      return {
-        ...selection,
-        selectionSet: walkSelectionSet(
-          selection.selectionSet,
-          branchType,
-          // Pass through whether the enclosing field was abstract, so that
-          // concrete branches (... on User inside a Node field) still get
-          // __typename injected into their own selection set.
-          thisTypeIsAbstract || parentIsAbstract,
-          schema,
-        ),
-      } satisfies InlineFragmentNode;
+      const newSelectionSet = walkSelectionSet(
+        selection.selectionSet,
+        branchType,
+        // Pass through whether the enclosing field was abstract, so that
+        // concrete branches (... on User inside a Node field) still get
+        // __typename injected into their own selection set.
+        thisTypeIsAbstract || parentIsAbstract,
+        schema,
+      );
+
+      if (newSelectionSet !== selection.selectionSet) {
+        selectionsChanged = true;
+        return {
+          ...selection,
+          selectionSet: newSelectionSet,
+        } satisfies InlineFragmentNode;
+      }
+
+      return selection;
     }
 
     // FRAGMENT_SPREAD — the definition is handled at the top-level definitions
     // pass; the spread node itself carries no selectionSet.
     return selection;
   });
+
+  if (!needsTypename && !selectionsChanged) {
+    return selectionSet;
+  }
 
   return {
     ...selectionSet,
