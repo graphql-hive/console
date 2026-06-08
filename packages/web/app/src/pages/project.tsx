@@ -1,14 +1,12 @@
 import { ChangeEvent, ReactElement, useCallback, useMemo, useRef } from 'react';
 import { endOfDay, formatISO, startOfDay } from 'date-fns';
-import { MoveDownIcon, MoveUpIcon, SearchIcon } from 'lucide-react';
+import * as echarts from 'echarts';
+import ReactECharts from 'echarts-for-react';
+import { Globe, History, MoveDownIcon, MoveUpIcon, SearchIcon } from 'lucide-react';
+import AutoSizer from 'react-virtualized-auto-sizer';
 import { useQuery } from 'urql';
 import { z } from 'zod';
 import { Page, ProjectLayout } from '@/components/layouts/project';
-import {
-  TargetCard,
-  TargetCardFragment,
-  TargetCardSkeleton,
-} from '@/components/organization/TargetCard';
 import { Button } from '@/components/ui/button';
 import { EmptyList } from '@/components/ui/empty-list';
 import { Input } from '@/components/ui/input';
@@ -17,12 +15,198 @@ import { Subtitle, Title } from '@/components/ui/page';
 import { QueryError } from '@/components/ui/query-error';
 import { Select, SelectContent, SelectItem, SelectTrigger } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Card } from '@/components/v2/card';
 import { FragmentType, graphql, useFragment } from '@/gql';
-import { TargetsSortDirectionType, TargetsSortFieldType } from '@/gql/graphql';
 import { subDays } from '@/lib/date-time';
-import { cn } from '@/lib/utils';
+import { useFormattedNumber } from '@/lib/hooks';
+import { cn, pluralize } from '@/lib/utils';
 import { UTCDate } from '@date-fns/utc';
-import { useRouter } from '@tanstack/react-router';
+import { Link, useRouter } from '@tanstack/react-router';
+
+const TargetCard_TargetFragment = graphql(`
+  fragment TargetCard_TargetFragment on Target {
+    id
+    slug
+  }
+`);
+
+const TargetCard = (props: {
+  target: FragmentType<typeof TargetCard_TargetFragment> | null;
+  highestNumberOfRequests: number;
+  requestsOverTime: { date: string; value: number }[] | null;
+  schemaVersionsCount: number | null;
+  days: number;
+  organizationSlug: string;
+  projectSlug: string;
+}): ReactElement => {
+  const target = useFragment(TargetCard_TargetFragment, props.target);
+  const { highestNumberOfRequests } = props;
+  const requests = useMemo(() => {
+    if (props.requestsOverTime?.length) {
+      return props.requestsOverTime.map<[string, number]>(node => [node.date, node.value]);
+    }
+
+    return [
+      [new Date(subDays(new Date(), props.days)).toISOString(), 0],
+      [new Date().toISOString(), 0],
+    ] as [string, number][];
+  }, [props.requestsOverTime]);
+
+  const totalNumberOfRequests = useMemo(
+    () => requests.reduce((acc, [_, value]) => acc + value, 0),
+    [requests],
+  );
+  const totalNumberOfVersions = props.schemaVersionsCount ?? 0;
+  const requestsInDateRange = useFormattedNumber(totalNumberOfRequests);
+  const schemaVersionsInDateRange = useFormattedNumber(totalNumberOfVersions);
+
+  return (
+    <Card
+      asChild
+      className="hover:bg-neutral-5/40 hover:shadow-neutral-5/50 bg-neutral-2/50 h-full self-start px-0 pt-4 hover:shadow-md"
+    >
+      <Link
+        to="/$organizationSlug/$projectSlug/$targetSlug"
+        disabled={
+          props.organizationSlug == null || props.projectSlug == null || target?.slug == null
+        }
+        params={{
+          organizationSlug: props.organizationSlug ?? 'unknown-yet',
+          projectSlug: props.projectSlug ?? 'unknown-yet',
+          targetSlug: target?.slug ?? 'unknown-yet',
+        }}
+      >
+        <TooltipProvider>
+          <div className="flex items-start gap-x-2">
+            <div className="grow">
+              <div>
+                <AutoSizer disableHeight>
+                  {size => (
+                    <ReactECharts
+                      style={{ width: size.width, height: 90 }}
+                      option={{
+                        animation: !!target,
+                        color: ['#f4b740'],
+                        grid: {
+                          left: 0,
+                          top: 10,
+                          right: 0,
+                          bottom: 10,
+                        },
+                        tooltip: {
+                          trigger: 'axis',
+                          axisPointer: {
+                            label: {
+                              formatter({ value }: { value: number }) {
+                                return new Date(value).toDateString();
+                              },
+                            },
+                          },
+                        },
+                        xAxis: [
+                          {
+                            show: false,
+                            type: 'time',
+                            boundaryGap: false,
+                          },
+                        ],
+                        yAxis: [
+                          {
+                            show: false,
+                            type: 'value',
+                            min: 0,
+                            max: highestNumberOfRequests,
+                          },
+                        ],
+                        series: [
+                          {
+                            name: 'Requests',
+                            type: 'line',
+                            smooth: false,
+                            lineStyle: {
+                              width: 2,
+                            },
+                            showSymbol: false,
+                            areaStyle: {
+                              opacity: 0.8,
+                              color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+                                {
+                                  offset: 0,
+                                  color: 'rgba(244, 184, 64, 0.20)',
+                                },
+                                {
+                                  offset: 1,
+                                  color: 'rgba(244, 184, 64, 0)',
+                                },
+                              ]),
+                            },
+                            emphasis: {
+                              focus: 'series',
+                            },
+                            data: requests,
+                          },
+                        ],
+                      }}
+                    />
+                  )}
+                </AutoSizer>
+              </div>
+              <div className="flex flex-row items-center justify-between gap-y-3 px-4 pt-4">
+                <div>
+                  {target ? (
+                    <h4 className="line-clamp-2 text-lg font-bold">{target.slug}</h4>
+                  ) : (
+                    <div className="bg-neutral-5 h-4 w-48 animate-pulse rounded-full py-2" />
+                  )}
+                </div>
+                <div className="flex flex-col gap-y-2 py-1">
+                  {target ? (
+                    <>
+                      <Tooltip>
+                        <TooltipTrigger>
+                          <div className="flex flex-row items-center gap-x-2">
+                            <Globe className="text-neutral-10 size-4" />
+                            <div className="text-xs">
+                              {requestsInDateRange}{' '}
+                              {pluralize(totalNumberOfRequests, 'request', 'requests')}
+                            </div>
+                          </div>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          Number of GraphQL requests in the last {props.days} days.
+                        </TooltipContent>
+                      </Tooltip>
+                      <Tooltip>
+                        <TooltipTrigger>
+                          <div className="flex flex-row items-center gap-x-2">
+                            <History className="text-neutral-10 size-4" />
+                            <div className="text-xs">
+                              {schemaVersionsInDateRange}{' '}
+                              {pluralize(totalNumberOfVersions, 'commit', 'commits')}
+                            </div>
+                          </div>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          Number of schemas pushed to this project in the last {props.days} days.
+                        </TooltipContent>
+                      </Tooltip>
+                    </>
+                  ) : (
+                    <>
+                      <div className="bg-neutral-5 my-1 h-2 w-16 animate-pulse rounded-full" />
+                      <div className="bg-neutral-5 my-1 h-2 w-16 animate-pulse rounded-full" />
+                    </>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        </TooltipProvider>
+      </Link>
+    </Card>
+  );
+};
 
 export const ProjectIndexRouteSearch = z.object({
   search: z.string().optional(),
@@ -52,32 +236,14 @@ const ProjectsPageContent = (
   // Sort by requests by default
   const sortKey = props.sortBy ?? 'requests';
 
-  const sortOrder: 'asc' | 'desc' =
+  const sortOrder =
     props.sortOrder === 'asc'
-      ? 'asc'
+      ? -1
       : // if the sort order is not set, sort by name in ascending order by default
         !props.sortOrder && props.sortBy === 'name'
-        ? 'asc'
+        ? -1
         : // if the sort order is not set, sort in descending order by default
-          'desc';
-
-  const sort = useMemo(() => {
-    let field: TargetsSortFieldType = TargetsSortFieldType.Name;
-    let direction: TargetsSortDirectionType = TargetsSortDirectionType.Asc;
-
-    if (sortKey === 'requests') {
-      field = TargetsSortFieldType.Requests;
-    } else if (sortKey === 'versions') {
-      field = TargetsSortFieldType.SchemaVersions;
-    }
-
-    if (sortOrder === 'desc') {
-      direction = TargetsSortDirectionType.Desc;
-    }
-
-    return { field, direction, period: period.current };
-  }, [sortKey, sortOrder, period.current]);
-
+          1;
   const router = useRouter();
 
   const [query] = useQuery({
@@ -87,30 +253,59 @@ const ProjectsPageContent = (
       projectSlug: props.projectSlug,
       chartResolution: days, // 14 days = 14 data points
       period: period.current,
-      sort,
-      search: props.search,
     },
     requestPolicy: 'cache-and-network',
   });
 
-  const targets = query.data?.targets.edges.map(edge => edge.node);
-  const targetCardData = useFragment(TargetCardFragment, targets);
+  const targetConnection = query.data?.targets;
+
+  const targets = useMemo(() => {
+    if (!targetConnection) {
+      return [];
+    }
+
+    const searchPhrase = props.search;
+    const newTargets = searchPhrase
+      ? targetConnection.edges.filter(edge =>
+          edge.node.slug.toLowerCase().includes(searchPhrase.toLowerCase()),
+        )
+      : targetConnection.edges.slice();
+
+    return newTargets
+      .map(edge => edge.node)
+      .sort((a, b) => {
+        const diffRequests = b.totalRequests - a.totalRequests;
+        const diffVersions = b.schemaVersionsCount - a.schemaVersionsCount;
+
+        if (sortKey === 'requests' && diffRequests !== 0) {
+          return diffRequests * sortOrder;
+        }
+
+        if (sortKey === 'versions' && diffVersions !== 0) {
+          return diffVersions * sortOrder;
+        }
+
+        if (sortKey === 'name') {
+          return a.slug.localeCompare(b.slug) * sortOrder * -1;
+        }
+
+        // falls back to sort by name in ascending order
+        return a.slug.localeCompare(b.slug);
+      });
+  }, [targetConnection, props.search, sortKey, sortOrder]);
 
   const highestNumberOfRequests = useMemo(() => {
-    if (targetCardData?.length) {
-      return targetCardData.reduce((max, target) => {
+    if (targetConnection?.edges?.length) {
+      return targetConnection.edges.reduce((max, edge) => {
         return Math.max(
           max,
-          target.operationsStats?.requestsOverTime?.reduce(
-            (max, { value }) => Math.max(max, value),
-            0,
-          ) ?? 0,
+          edge.node.requestsOverTime.reduce((max, { value }) => Math.max(max, value), 0),
         );
       }, 100);
     }
 
     return 100;
-  }, [targets]);
+  }, [targetConnection?.edges]);
 
   const onSearchChange = useCallback(
     (event: ChangeEvent<HTMLInputElement>) => {
@@ -222,13 +417,13 @@ const ProjectsPageContent = (
       <div
         className={cn(
           'grow',
-          targets?.length === 0
+          targetConnection?.edges.length === 0
             ? ''
-            : 'grid grid-cols-[repeat(auto-fit,minmax(calc(var(--spacing)*128),1fr))] items-stretch gap-5',
+            : 'grid grid-cols-2 items-stretch gap-5 xl:grid-cols-3',
         )}
       >
-        {targets ? (
-          targets?.length === 0 ? (
+        {targetConnection ? (
+          targetConnection?.edges.length === 0 ? (
             <EmptyList
               title="Hive is waiting for your first target"
               description='You can create a target by clicking the "New Target" button'
@@ -238,20 +433,29 @@ const ProjectsPageContent = (
             targets.map(target => (
               <TargetCard
                 key={target.id}
-                id={target.id}
-                slug={target.slug}
-                organizationSlug={props.organizationSlug}
-                projectSlug={props.projectSlug}
+                target={target}
                 days={days}
                 highestNumberOfRequests={highestNumberOfRequests}
-                data={target as FragmentType<typeof TargetCardFragment>}
+                requestsOverTime={target.requestsOverTime}
+                schemaVersionsCount={target.schemaVersionsCount}
+                organizationSlug={props.organizationSlug}
+                projectSlug={props.projectSlug}
               />
             ))
           )
         ) : (
           <>
-            {Array.from({ length: 3 }).map((_, index) => (
-              <TargetCardSkeleton key={index} />
+            {Array.from({ length: 4 }).map((_, index) => (
+              <TargetCard
+                key={index}
+                target={null}
+                days={days}
+                highestNumberOfRequests={highestNumberOfRequests}
+                requestsOverTime={null}
+                schemaVersionsCount={null}
+                organizationSlug={props.organizationSlug}
+                projectSlug={props.projectSlug}
+              />
             ))}
           </>
         )}
@@ -266,19 +470,19 @@ const ProjectOverviewPageQuery = graphql(`
     $projectSlug: String!
     $chartResolution: Int!
     $period: DateRangeInput!
-    $sort: TargetsSortInput!
-    $search: String
   ) {
-    targets(
-      selector: { organizationSlug: $organizationSlug, projectSlug: $projectSlug }
-      sort: $sort
-      search: $search
-    ) {
+    targets(selector: { organizationSlug: $organizationSlug, projectSlug: $projectSlug }) {
       edges {
         node {
           id
           slug
-          ...TargetCardFragment
+          ...TargetCard_TargetFragment
+          totalRequests(period: $period)
+          requestsOverTime(resolution: $chartResolution, period: $period) {
+            date
+            value
+          }
+          schemaVersionsCount(period: $period)
         }
       }
     }
