@@ -27,13 +27,13 @@ const EmailSchemaModel = z
   })
   .strict();
 
-const PatchOperationModel = z
-  .object({
-    op: z.enum(['add', 'replace', 'remove']),
-    path: z.string().optional(),
-    value: z.unknown().optional(),
-  })
-  .strict();
+// const PatchOperationModel = z
+//   .object({
+//     op: z.enum(['replace']),
+//     path: z.string().optional(),
+//     value: z.unknown().optional(),
+//   })
+//   .strict();
 
 const PostUsersBodyModel = z.object({
   userName: z.string().min(1),
@@ -63,11 +63,11 @@ const PutUsersBodyModel = z.object({
     .optional(),
 });
 
-const PatchUserRequestBodyModel = z
-  .object({
-    Operations: z.array(PatchOperationModel).min(1),
-  })
-  .strict();
+// const PatchUserRequestBodyModel = z
+//   .object({
+//     Operations: z.array(PatchOperationModel).min(1),
+//   })
+//   .strict();
 
 const QuerySchemaModel = z.object({
   filter: z.string().optional(),
@@ -147,9 +147,9 @@ const GroupPatchOperationSchema = z.union([
   ReplaceOperationSchema,
 ]);
 
-const PatchGroupsRequestBodySchema = z.object({
-  Operations: z.array(GroupPatchOperationSchema).min(1),
-});
+// const PatchGroupsRequestBodySchema = z.object({
+//   Operations: z.array(GroupPatchOperationSchema).min(1),
+// });
 
 const GroupPutBodySchema = z.object({
   members: z.array(GroupMemberSchema).optional(),
@@ -159,14 +159,34 @@ const GroupPutBodySchema = z.object({
 export const createSCIMPlugin =
   (authn: AuthN, pool: PostgresDatabasePool, storage: Storage): FastifyPluginAsync =>
   async server => {
+    server.addHook('preParsing', (request, _reply, _payload, done) => {
+      // Okta Custom App Integrations send 'Content-Type: application/scim+json' with no body which causes fastify to raise an error.
+      // In order to still support deletes, we have this code that will unset the content-type in this case :)
+      if (
+        request.method === 'DELETE' &&
+        request.headers['content-type'] === 'application/scim+json' &&
+        (request.headers['content-length'] === '0' || !request.headers['content-length'])
+      ) {
+        request.headers['content-type'] = undefined;
+      }
+      done();
+    });
+
     server.addContentTypeParser(
       'application/scim+json',
       { parseAs: 'string' },
-      (req, body, done) => {
-        console.log('RAW BODY:', body);
-        done(null, body ? JSON.parse(body) : undefined);
-      },
+      server.getDefaultJsonParser('ignore', 'ignore'),
     );
+
+    server.setErrorHandler(async (error, request, reply) => {
+      request.log.error(error);
+      return reply.status(500).send(
+        createSCIMError({
+          status: 500,
+          detail: 'An unexpected error occured.',
+        }),
+      );
+    });
 
     async function authenticateAuthorizeAndResolveOrganizationFromRequest(
       req: FastifyRequest,
@@ -283,7 +303,7 @@ export const createSCIMPlugin =
         );
       }
 
-      return reply.code(200).send(createSCIMUserObjectFromUser(user));
+      return reply.status(200).send(createSCIMUserObjectFromUser(user));
     });
 
     /**
@@ -307,6 +327,20 @@ export const createSCIMPlugin =
 
       const usersStore = new UsersStore(pool);
       const supertokensStore = new SuperTokensStore(pool, req.log);
+
+      const existingUser = await usersStore.findUserProvisionedByOrganizationIdAndExternalId(
+        result.organizationId,
+        bodyParse.data.externalId,
+      );
+
+      if (existingUser) {
+        return reply.status(409).send(
+          createSCIMError({
+            status: 409,
+            detail: 'A user with the same external id already exists.',
+          }),
+        );
+      }
 
       const email = bodyParse.data.emails
         ?.find(email => email.primary === true && email)
@@ -372,7 +406,7 @@ export const createSCIMPlugin =
         )
       `);
 
-      return reply.code(201).send(createSCIMUserObjectFromUser(user));
+      return reply.status(201).send(createSCIMUserObjectFromUser(user));
     });
 
     /**
@@ -406,7 +440,7 @@ export const createSCIMPlugin =
       );
 
       if (!user) {
-        return reply.code(404).send(
+        return reply.status(404).send(
           createSCIMError({
             detail: 'User does not exist.',
             status: 404,
@@ -426,14 +460,13 @@ export const createSCIMPlugin =
 
       if (body.data.emails !== undefined) {
         const primaryEmail = body.data.emails.find(e => e.primary)?.value ?? null;
-
         if (primaryEmail) {
           if (primaryEmail !== user.email) {
             await supertokensStore.updateOIDCUserEmail({
               userId: user.supertokenUserId,
               newEmail: primaryEmail,
             });
-            await usersStore.updateUserEmail(result.organizationId, user.id, primaryEmail);
+            user = await usersStore.updateUserEmail(result.organizationId, user.id, primaryEmail);
             // invalidate session as email changed
             await supertokensStore.invalidateAllSessionsForUser(user.supertokenUserId);
           }
@@ -442,7 +475,7 @@ export const createSCIMPlugin =
         }
       }
 
-      return reply.code(200).send(createSCIMUserObjectFromUser(user));
+      return reply.status(200).send(createSCIMUserObjectFromUser(user));
     });
 
     /**
@@ -452,108 +485,108 @@ export const createSCIMPlugin =
      * - external id
      * - ??? (TBD)
      */
-    server.patch('/Users/:userId', async (req, reply) => {
-      const params = SharedUserRouteParams.parse(req.params);
-      const result = await authenticateAuthorizeAndResolveOrganizationFromRequest(req, reply);
-      if (result.type === 'error') {
-        return reply.status(result.error.status).send(result.error);
-      }
+    // server.patch('/Users/:userId', async (req, reply) => {
+    //   const params = SharedUserRouteParams.parse(req.params);
+    //   const result = await authenticateAuthorizeAndResolveOrganizationFromRequest(req, reply);
+    //   if (result.type === 'error') {
+    //     return reply.status(result.error.status).send(result.error);
+    //   }
 
-      const body = PatchUserRequestBodyModel.safeParse(req.body);
-      if (body.error) {
-        return reply.status(403).send(
-          createSCIMError({
-            status: 403,
-            detail: 'Invalid request body provided.',
-          }),
-        );
-      }
+    //   const body = PatchUserRequestBodyModel.safeParse(req.body);
+    //   if (body.error) {
+    //     return reply.status(403).send(
+    //       createSCIMError({
+    //         status: 403,
+    //         detail: 'Invalid request body provided.',
+    //       }),
+    //     );
+    //   }
 
-      const usersStore = new UsersStore(pool);
-      const supertokensStore = new SuperTokensStore(pool, req.log);
-      let user = await usersStore.findUserProvisionedByOrganizationIdAndId(
-        result.organizationId,
-        params.userId,
-      );
+    //   const usersStore = new UsersStore(pool);
+    //   const supertokensStore = new SuperTokensStore(pool, req.log);
+    //   let user = await usersStore.findUserProvisionedByOrganizationIdAndId(
+    //     result.organizationId,
+    //     params.userId,
+    //   );
 
-      if (!user) {
-        return reply.code(404).send(
-          createSCIMError({
-            detail: 'User does not exist.',
-            status: 404,
-          }),
-        );
-      }
+    //   if (!user) {
+    //     return reply.status(404).send(
+    //       createSCIMError({
+    //         detail: 'User does not exist.',
+    //         status: 404,
+    //       }),
+    //     );
+    //   }
 
-      for (const operation of body.data.Operations) {
-        if (operation.op !== 'replace') {
-          req.log.debug('unsupported operation received %s', operation.op);
-          return reply.code(404).send(
-            createSCIMError({
-              detail: 'User does not exist.',
-              status: 404,
-            }),
-          );
-        }
+    //   for (const operation of body.data.Operations) {
+    //     if (operation.op !== 'replace') {
+    //       req.log.debug('unsupported operation received %s', operation.op);
+    //       return reply.status(404).send(
+    //         createSCIMError({
+    //           detail: 'User does not exist.',
+    //           status: 404,
+    //         }),
+    //       );
+    //     }
 
-        if (operation.path === 'active') {
-          if (operation.value === true) {
-            user = await usersStore.enabledUser(user.id);
-            await supertokensStore.invalidateAllSessionsForUser(user.supertokenUserId);
-          } else if (operation.value === false) {
-            user = await usersStore.disableUser(user.id);
-            await supertokensStore.invalidateAllSessionsForUser(user.supertokenUserId);
-          } else {
-            req.log.debug('invalid value provided %s', operation.value);
-          }
-        } else if (operation.path === 'email') {
-          // Note: this implementation is 99.99% wrong as the emails is an array property lol
+    //     if (operation.path === 'active') {
+    //       if (operation.value === true) {
+    //         user = await usersStore.enabledUser(user.id);
+    //         await supertokensStore.invalidateAllSessionsForUser(user.supertokenUserId);
+    //       } else if (operation.value === false) {
+    //         user = await usersStore.disableUser(user.id);
+    //         await supertokensStore.invalidateAllSessionsForUser(user.supertokenUserId);
+    //       } else {
+    //         req.log.debug('invalid value provided %s', operation.value);
+    //       }
+    //     } else if (operation.path === 'email') {
+    //       // Note: this implementation is 99.99% wrong as the emails is an array property lol
 
-          // In case we update the email we update both the supertokens record
-          // and the user record as both contain that information...
-          const emailResult = z.string().email().toLowerCase().safeParse(operation.value);
-          if (emailResult.error) {
-            return reply.code(400).send(
-              createSCIMError({
-                detail: 'Invalid email provided.',
-                status: 400,
-              }),
-            );
-          }
+    //       // In case we update the email we update both the supertokens record
+    //       // and the user record as both contain that information...
+    //       const emailResult = z.string().email().toLowerCase().safeParse(operation.value);
+    //       if (emailResult.error) {
+    //         return reply.status(400).send(
+    //           createSCIMError({
+    //             detail: 'Invalid email provided.',
+    //             status: 400,
+    //           }),
+    //         );
+    //       }
 
-          await supertokensStore.updateOIDCUserEmail({
-            userId: user.supertokenUserId,
-            newEmail: emailResult.data,
-          });
-          await usersStore.updateUserEmail(result.organizationId, user.id, emailResult.data);
-          // invalidate session as email changed
-          await supertokensStore.invalidateAllSessionsForUser(user.supertokenUserId);
-        } else if (operation.path === 'externalId') {
-          // In case we update the external ID we for now update both the supertokens record
-          // and the user record as both contain that information...
+    //       await supertokensStore.updateOIDCUserEmail({
+    //         userId: user.supertokenUserId,
+    //         newEmail: emailResult.data,
+    //       });
+    //       await usersStore.updateUserEmail(result.organizationId, user.id, emailResult.data);
+    //       // invalidate session as email changed
+    //       await supertokensStore.invalidateAllSessionsForUser(user.supertokenUserId);
+    //     } else if (operation.path === 'externalId') {
+    //       // In case we update the external ID we for now update both the supertokens record
+    //       // and the user record as both contain that information...
 
-          const externalId = String(operation.value);
-          await supertokensStore.updateOIDCUserSub({
-            userId: user.supertokenUserId,
-            sub: externalId,
-            oidcIntegrationId: result.oidcIntegration.id,
-          });
-          await usersStore.updateUserExternalId(result.organizationId, user.id, externalId);
-          // invalidate session as external id
-          await supertokensStore.invalidateAllSessionsForUser(user.supertokenUserId);
-        } else {
-          req.log.debug('unsupported path %s', operation.path);
-          return reply.code(404).send(
-            createSCIMError({
-              detail: 'User does not exist.',
-              status: 404,
-            }),
-          );
-        }
-      }
+    //       const externalId = String(operation.value);
+    //       await supertokensStore.updateOIDCUserSub({
+    //         userId: user.supertokenUserId,
+    //         sub: externalId,
+    //         oidcIntegrationId: result.oidcIntegration.id,
+    //       });
+    //       await usersStore.updateUserExternalId(result.organizationId, user.id, externalId);
+    //       // invalidate session as external id
+    //       await supertokensStore.invalidateAllSessionsForUser(user.supertokenUserId);
+    //     } else {
+    //       req.log.debug('unsupported path %s', operation.path);
+    //       return reply.status(404).send(
+    //         createSCIMError({
+    //           detail: 'User does not exist.',
+    //           status: 404,
+    //         }),
+    //       );
+    //     }
+    //   }
 
-      return reply.code(200).send(createSCIMUserObjectFromUser(user));
-    });
+    //   return reply.status(200).send(createSCIMUserObjectFromUser(user));
+    // });
 
     /**
      * This route is used for:
@@ -643,7 +676,7 @@ export const createSCIMPlugin =
         }
       }
 
-      return reply.code(200).send({
+      return reply.status(200).send({
         schemas: ['urn:ietf:params:scim:api:messages:2.0:ListResponse'],
         totalResults: users.length,
         startIndex,
@@ -763,7 +796,7 @@ export const createSCIMPlugin =
       );
 
       if (!group) {
-        return reply.code(404).send(
+        return reply.status(404).send(
           createSCIMError({
             detail: 'Group does not exist.',
             status: 404,
@@ -850,6 +883,18 @@ export const createSCIMPlugin =
         );
       }
 
+      if (body.data.displayName && body.data.displayName !== group.displayName) {
+        group = await groupStore.updateGroupPropertiesByOrganizationIdAndGroupId(
+          result.organizationId,
+          group.id,
+          {
+            displayName: body.data.displayName,
+            // TODO: figure out if we need to provide this
+            externalId: null,
+          },
+        );
+      }
+
       const groupMemberStore = new GroupMemberStore(reply.log, pool);
       const memberIds = body.data.members?.map(member => member.value);
 
@@ -871,19 +916,7 @@ export const createSCIMPlugin =
         }
       }
 
-      if (body.data.displayName && body.data.displayName !== group.displayName) {
-        group = await groupStore.updateGroupPropertiesByOrganizationIdAndGroupId(
-          result.organizationId,
-          group.id,
-          {
-            displayName: body.data.displayName,
-            // TODO: figure out if we need to provide this
-            externalId: null,
-          },
-        );
-      }
-
-      return reply.code(200).send(createSCIMGroupObjectFromGroup(group, groupMembers));
+      return reply.status(200).send(createSCIMGroupObjectFromGroup(group, groupMembers));
     });
 
     /**
@@ -891,197 +924,197 @@ export const createSCIMPlugin =
      * - group memberships (add/remove users)
      * - properties of group (display name and external id)
      */
-    server.patch('/Groups/:groupId', async (req, reply) => {
-      const params = SharedGroupRouteParams.parse(req.params);
-      const result = await authenticateAuthorizeAndResolveOrganizationFromRequest(req, reply);
+    // server.patch('/Groups/:groupId', async (req, reply) => {
+    //   const params = SharedGroupRouteParams.parse(req.params);
+    //   const result = await authenticateAuthorizeAndResolveOrganizationFromRequest(req, reply);
 
-      if (result.type === 'error') {
-        return reply.status(result.error.status).send(result.error);
-      }
+    //   if (result.type === 'error') {
+    //     return reply.status(result.error.status).send(result.error);
+    //   }
 
-      const groupStore = new GroupStore(req.log, pool);
+    //   const groupStore = new GroupStore(req.log, pool);
 
-      let group = await groupStore.getGroupByOrganizationIdAndGroupId(
-        result.organizationId,
-        params.groupId,
-      );
+    //   let group = await groupStore.getGroupByOrganizationIdAndGroupId(
+    //     result.organizationId,
+    //     params.groupId,
+    //   );
 
-      if (!group) {
-        return reply.code(404).send(
-          createSCIMError({
-            detail: 'Group does not exist.',
-            status: 404,
-          }),
-        );
-      }
+    //   if (!group) {
+    //     return reply.status(404).send(
+    //       createSCIMError({
+    //         detail: 'Group does not exist.',
+    //         status: 404,
+    //       }),
+    //     );
+    //   }
 
-      const body = PatchGroupsRequestBodySchema.safeParse(req.body);
-      if (body.error) {
-        return reply.status(403).send(
-          createSCIMError({
-            status: 403,
-            detail: 'Invalid request body provided.',
-          }),
-        );
-      }
+    //   const body = PatchGroupsRequestBodySchema.safeParse(req.body);
+    //   if (body.error) {
+    //     return reply.status(403).send(
+    //       createSCIMError({
+    //         status: 403,
+    //         detail: 'Invalid request body provided.',
+    //       }),
+    //     );
+    //   }
 
-      /**
-       * We gather all the operations for removing and adding users here
-       * and then execute them in a batch afterwards.
-       *
-       * We do not allow mixing a full group user replacement with removing and adding
-       * individual users. In reality this does never happen.
-       */
-      const usersToRemove = new Set<string>();
-      const usersToAdd = new Set<string>();
-      let fullReplaceUserIds: null | Set<string> = null;
+    //   /**
+    //    * We gather all the operations for removing and adding users here
+    //    * and then execute them in a batch afterwards.
+    //    *
+    //    * We do not allow mixing a full group user replacement with removing and adding
+    //    * individual users. In reality this does never happen.
+    //    */
+    //   const usersToRemove = new Set<string>();
+    //   const usersToAdd = new Set<string>();
+    //   let fullReplaceUserIds: null | Set<string> = null;
 
-      let newDisplayName: string | null = null;
-      let newExternalId: string | null = null;
+    //   let newDisplayName: string | null = null;
+    //   let newExternalId: string | null = null;
 
-      let error: SCIMError | null = null;
+    //   let error: SCIMError | null = null;
 
-      for (const operation of body.data.Operations) {
-        if (operation.op === 'add') {
-          if (fullReplaceUserIds !== null) {
-            error = createSCIMError({
-              status: 400,
-              detail:
-                'Mixing adding members and replacing the full member list in the same request is not supported.',
-            });
-            break;
-          }
+    //   for (const operation of body.data.Operations) {
+    //     if (operation.op === 'add') {
+    //       if (fullReplaceUserIds !== null) {
+    //         error = createSCIMError({
+    //           status: 400,
+    //           detail:
+    //             'Mixing adding members and replacing the full member list in the same request is not supported.',
+    //         });
+    //         break;
+    //       }
 
-          for (const record of operation.value) {
-            usersToAdd.add(record.value);
-          }
-          continue;
-        }
+    //       for (const record of operation.value) {
+    //         usersToAdd.add(record.value);
+    //       }
+    //       continue;
+    //     }
 
-        if (operation.op === 'remove') {
-          if (fullReplaceUserIds !== null) {
-            error = createSCIMError({
-              status: 400,
-              detail:
-                'Mixing adding members and replacing the full member list in the same request is not supported.',
-            });
-            break;
-          }
+    //     if (operation.op === 'remove') {
+    //       if (fullReplaceUserIds !== null) {
+    //         error = createSCIMError({
+    //           status: 400,
+    //           detail:
+    //             'Mixing adding members and replacing the full member list in the same request is not supported.',
+    //         });
+    //         break;
+    //       }
 
-          usersToRemove.add(operation.userId);
-          continue;
-        }
+    //       usersToRemove.add(operation.userId);
+    //       continue;
+    //     }
 
-        if (operation.op === 'replace') {
-          if (operation.path === 'displayName') {
-            // TODO: validate value ???
-            newDisplayName = operation.value;
-          }
+    //     if (operation.op === 'replace') {
+    //       if (operation.path === 'displayName') {
+    //         // TODO: validate value ???
+    //         newDisplayName = operation.value;
+    //       }
 
-          if (operation.path === 'externalId') {
-            // TODO: validate value ???
-            newExternalId = operation.value;
-            continue;
-          }
+    //       if (operation.path === 'externalId') {
+    //         // TODO: validate value ???
+    //         newExternalId = operation.value;
+    //         continue;
+    //       }
 
-          if (operation.path === 'members') {
-            if (usersToAdd.size) {
-              error = createSCIMError({
-                status: 400,
-                detail:
-                  'Mixing adding members and replacing the full member list in the same request is not supported.',
-              });
-              break;
-            }
+    //       if (operation.path === 'members') {
+    //         if (usersToAdd.size) {
+    //           error = createSCIMError({
+    //             status: 400,
+    //             detail:
+    //               'Mixing adding members and replacing the full member list in the same request is not supported.',
+    //           });
+    //           break;
+    //         }
 
-            if (usersToRemove.size) {
-              error = createSCIMError({
-                status: 400,
-                detail:
-                  'Mixing removing members and replacing the full member list in the same request is not supported.',
-              });
-              break;
-            }
+    //         if (usersToRemove.size) {
+    //           error = createSCIMError({
+    //             status: 400,
+    //             detail:
+    //               'Mixing removing members and replacing the full member list in the same request is not supported.',
+    //           });
+    //           break;
+    //         }
 
-            if (fullReplaceUserIds !== null) {
-              error = createSCIMError({
-                status: 400,
-                detail: 'Replace members multiple times in same request is not supported.',
-              });
-              break;
-            }
+    //         if (fullReplaceUserIds !== null) {
+    //           error = createSCIMError({
+    //             status: 400,
+    //             detail: 'Replace members multiple times in same request is not supported.',
+    //           });
+    //           break;
+    //         }
 
-            fullReplaceUserIds = new Set(operation.value.map(record => record.value));
-          }
+    //         fullReplaceUserIds = new Set(operation.value.map(record => record.value));
+    //       }
 
-          continue;
-        }
-        operation satisfies never;
-      }
+    //       continue;
+    //     }
+    //     operation satisfies never;
+    //   }
 
-      if (error) {
-        return reply.status(error.status).send(error);
-      }
+    //   if (error) {
+    //     return reply.status(error.status).send(error);
+    //   }
 
-      if (newDisplayName || newExternalId) {
-        group = await groupStore.updateGroupPropertiesByOrganizationIdAndGroupId(
-          result.organizationId,
-          params.groupId,
-          {
-            displayName: newDisplayName,
-            externalId: newExternalId,
-          },
-        );
+    //   if (newDisplayName || newExternalId) {
+    //     group = await groupStore.updateGroupPropertiesByOrganizationIdAndGroupId(
+    //       result.organizationId,
+    //       params.groupId,
+    //       {
+    //         displayName: newDisplayName,
+    //         externalId: newExternalId,
+    //       },
+    //     );
 
-        if (!group) {
-          return reply.code(404).send(
-            createSCIMError({
-              detail: 'Group does not exist.',
-              status: 404,
-            }),
-          );
-        }
-      }
+    //     if (!group) {
+    //       return reply.status(404).send(
+    //         createSCIMError({
+    //           detail: 'Group does not exist.',
+    //           status: 404,
+    //         }),
+    //       );
+    //     }
+    //   }
 
-      const groupMemberStore = new GroupMemberStore(reply.log, pool);
+    //   const groupMemberStore = new GroupMemberStore(reply.log, pool);
 
-      if (usersToRemove.size) {
-        await groupMemberStore.removeGroupMembersFromGroupByOrganizationIdAndGroupId(
-          result.organizationId,
-          params.groupId,
-          Array.from(usersToRemove),
-        );
-      }
+    //   if (usersToRemove.size) {
+    //     await groupMemberStore.removeGroupMembersFromGroupByOrganizationIdAndGroupId(
+    //       result.organizationId,
+    //       params.groupId,
+    //       Array.from(usersToRemove),
+    //     );
+    //   }
 
-      if (usersToAdd.size) {
-        await groupMemberStore.addGroupMembersToGroupByOrganizationIdAndGroupId(
-          result.organizationId,
-          params.groupId,
-          Array.from(usersToAdd),
-        );
-      }
+    //   if (usersToAdd.size) {
+    //     await groupMemberStore.addGroupMembersToGroupByOrganizationIdAndGroupId(
+    //       result.organizationId,
+    //       params.groupId,
+    //       Array.from(usersToAdd),
+    //     );
+    //   }
 
-      if (fullReplaceUserIds !== null) {
-        await groupMemberStore.removeAllGroupMembersFromGroupByOrganizationIdAndGroupId(
-          result.organizationId,
-          params.groupId,
-        );
-        if (fullReplaceUserIds.size) {
-          await groupMemberStore.addGroupMembersToGroupByOrganizationIdAndGroupId(
-            result.organizationId,
-            params.groupId,
-            Array.from(fullReplaceUserIds),
-          );
-        }
-      }
+    //   if (fullReplaceUserIds !== null) {
+    //     await groupMemberStore.removeAllGroupMembersFromGroupByOrganizationIdAndGroupId(
+    //       result.organizationId,
+    //       params.groupId,
+    //     );
+    //     if (fullReplaceUserIds.size) {
+    //       await groupMemberStore.addGroupMembersToGroupByOrganizationIdAndGroupId(
+    //         result.organizationId,
+    //         params.groupId,
+    //         Array.from(fullReplaceUserIds),
+    //       );
+    //     }
+    //   }
 
-      const groupMembers = await groupMemberStore.getGroupMembersForOrganizationIdAndGroupId(
-        result.organizationId,
-        params.groupId,
-      );
+    //   const groupMembers = await groupMemberStore.getGroupMembersForOrganizationIdAndGroupId(
+    //     result.organizationId,
+    //     params.groupId,
+    //   );
 
-      return reply.status(200).send(createSCIMGroupObjectFromGroup(group, groupMembers));
-    });
+    //   return reply.status(200).send(createSCIMGroupObjectFromGroup(group, groupMembers));
+    // });
 
     /**
      * This route is used for deleting a group
@@ -1093,17 +1126,21 @@ export const createSCIMPlugin =
         return reply.status(result.error.status).send(result.error);
       }
 
-      const body = PostGroupsBodyModel.safeParse(req.body);
-      if (body.error) {
-        return reply.status(403).send(
+      const groupStore = new GroupStore(req.log, pool);
+
+      const group = await groupStore.getGroupByOrganizationIdAndGroupId(
+        result.organizationId,
+        params.groupId,
+      );
+
+      if (!group) {
+        return reply.status(404).send(
           createSCIMError({
-            status: 403,
-            detail: 'Invalid request body provided.',
+            detail: 'Group does not exist.',
+            status: 404,
           }),
         );
       }
-
-      const groupStore = new GroupStore(req.log, pool);
 
       // We only soft-delete for now...
       await groupStore.disableGroup({
@@ -1144,6 +1181,7 @@ type SCIMUserObject = {
       primary: true;
     },
   ];
+  active: boolean;
   meta: {
     resourceType: 'User';
   };
@@ -1175,8 +1213,6 @@ type SCIMListResponseObject = {
 };
 
 function createSCIMUserObjectFromUser(user: User): SCIMUserObject {
-  // const [givenName = '', familyName = ''] = user.fullName.split(' ');
-
   return {
     schemas: ['urn:ietf:params:scim:schemas:core:2.0:User'],
     id: user.id,
@@ -1189,10 +1225,7 @@ function createSCIMUserObjectFromUser(user: User): SCIMUserObject {
         value: user.email,
       },
     ],
-    // name: {
-    //   familyName,
-    //   givenName,
-    // },
+    active: user.deactivatedAt === null,
     meta: {
       resourceType: 'User',
     },
