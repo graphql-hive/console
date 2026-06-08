@@ -96,13 +96,25 @@ export class MetricAlertRulesManager {
   }
 
   /**
-   * Mutation-side counterpart to `isEnabled`. Throws if the feature is
-   * disabled so the resolver can return the structured error response. The
-   * existing `isEnabled` check inside the resolver gate path is reused so
-   * both paths share one source of truth for the gate semantics.
+   * Viewer-aware counterpart to `isEnabled`: the org has the feature, OR the
+   * current viewer is a Hive admin.
+   */
+  async canViewerUseMetricAlertRules(organizationId: string): Promise<boolean> {
+    if (await this.isEnabled(organizationId)) {
+      return true;
+    }
+    const actor = await this.session.getActor();
+    return actor.type === 'user' && actor.user.isAdmin === true;
+  }
+
+  /**
+   * Mutation-side counterpart to `canViewerUseMetricAlertRules`. Throws if the
+   * feature is unavailable to the viewer so the resolver can return the
+   * structured error response. Sharing `canViewerUseMetricAlertRules` keeps the
+   * read and write paths on one source of truth for the gate semantics.
    */
   async assertEnabled(organizationId: string): Promise<void> {
-    if (!(await this.isEnabled(organizationId))) {
+    if (!(await this.canViewerUseMetricAlertRules(organizationId))) {
       throw new MetricAlertRulesDisabledError();
     }
   }

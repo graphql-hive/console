@@ -146,14 +146,11 @@ function hasElapsed(stateChangedAt: string | null, minutes: number, evaluationTi
   return evaluationTime.getTime() - changedAt >= minutes * 60_000;
 }
 
-export async function fetchEnabledRules(
-  pg: PostgresDatabasePool,
-  clusterFlagEnabled: boolean,
-): Promise<MetricAlertRuleRow[]> {
-  // OR-style feature gate: when the cluster env-var is on, evaluate every
-  // enabled rule. When it's off, only evaluate rules whose organization has
-  // opted in via the per-org JSONB feature flag. Mirrors the resolver-side
-  // OR gate at alerts/resolvers/Target.ts.
+export async function fetchEnabledRules(pg: PostgresDatabasePool): Promise<MetricAlertRuleRow[]> {
+  // Evaluate every enabled rule. The org-level `metricAlertRules` feature flag
+  // is a rollout enabler for *creating/seeing* rules in the API, not a gate on
+  // evaluation — a rule only exists if someone was authorized to create it.
+  // The real per-rule off-switches are the `enabled` column and deleting the rule.
   const result = await pg.any(psql`
     SELECT
       r."id"
@@ -178,11 +175,6 @@ export async function fetchEnabledRules(
     INNER JOIN "organizations" o ON o."id" = r."organization_id"
     LEFT JOIN "saved_filters" sf ON sf."id" = r."saved_filter_id"
     WHERE r."enabled" = true
-      ${
-        clusterFlagEnabled
-          ? psql``
-          : psql`AND COALESCE((o."feature_flags"->>'metricAlertRules')::boolean, false) IS TRUE`
-      }
   `);
 
   return z.array(MetricAlertRuleRowSchema).parse(result);
