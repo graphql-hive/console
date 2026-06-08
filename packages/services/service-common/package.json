@@ -38,7 +38,7 @@
     "@smithy/signature-v4": "5.4.3",
     "fastify": "5.8.5",
     "fastify-plugin": "5.1.0",
-    "ioredis": "5.8.2",
+    "ioredis": "5.10.1",
     "opentelemetry-instrumentation-fetch-node": "1.2.3",
     "p-retry": "6.2.1",
     "prom-client": "15.1.3",

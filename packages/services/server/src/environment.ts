@@ -117,22 +117,6 @@ const ClickHouseModel = zod.object({
   CLICKHOUSE_REQUEST_TIMEOUT: emptyString(NumberFromString.optional()),
 });
 
-const RedisModel = zod.object({
-  REDIS_HOST: zod.string(),
-  REDIS_PORT: NumberFromString,
-  REDIS_PASSWORD: emptyString(zod.string().optional()),
-  REDIS_USERNAME: emptyString(zod.string().optional()),
-  REDIS_TLS_ENABLED: emptyString(zod.union([zod.literal('1'), zod.literal('0')]).optional()),
-  REDIS_CLUSTER_MODE_ENABLED: emptyString(
-    zod.union([zod.literal('0'), zod.literal('1')]).optional(),
-  ),
-  REDIS_AWS_REGION: emptyString(zod.string().optional()),
-  REDIS_AWS_IAM_AUTH_ENABLED: emptyString(
-    zod.union([zod.literal('0'), zod.literal('1')]).optional(),
-  ),
-  REDIS_AWS_IAM_CACHE_NAME: emptyString(zod.string().optional()),
-});
-
 const SuperTokensModel = zod.object({
   SUPERTOKENS_REFRESH_TOKEN_KEY: zod.string(),
   SUPERTOKENS_ACCESS_TOKEN_KEY: zod.string(),
@@ -320,7 +304,6 @@ const configs = {
   sentry: SentryModel.safeParse(processEnv),
   postgres: PostgresModel.safeParse(processEnv),
   clickhouse: ClickHouseModel.safeParse(processEnv),
-  redis: RedisModel.safeParse(processEnv),
   supertokens: SuperTokensModel.safeParse(processEnv),
   authGithub: AuthGitHubConfigSchema.safeParse(processEnv),
   authGoogle: AuthGoogleConfigSchema.safeParse(processEnv),
@@ -348,17 +331,13 @@ for (const config of Object.values(configs)) {
   }
 }
 
-let redisConfigResult = null;
+const redisConfigResult = parseRedisConfigFromEnvironment(
+  processEnv,
+  configs.base.success ? configs.base.data.AWS_REGION : undefined,
+);
 
-if (configs.redis.success) {
-  redisConfigResult = parseRedisConfigFromEnvironment({
-    redis: configs.redis.data,
-    awsRegion: configs.base.success ? configs.base.data.AWS_REGION : undefined,
-  });
-
-  if (redisConfigResult.type === 'error') {
-    environmentErrors.push(...redisConfigResult.errors);
-  }
+if (redisConfigResult.type === 'error') {
+  environmentErrors.push(...redisConfigResult.errors);
 }
 
 if (environmentErrors.length) {

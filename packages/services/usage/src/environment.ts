@@ -5,33 +5,6 @@ import {
   parseRedisConfigFromEnvironment,
   resolveServerListenOptions,
 } from '@hive/service-common';
-
-const isNumberString = (input: unknown) => zod.string().regex(/^\d+$/).safeParse(input).success;
-
-const numberFromNumberOrNumberString = (input: unknown): number | undefined => {
-  if (typeof input == 'number') return input;
-  if (isNumberString(input)) return Number(input);
-};
-
-const NumberFromString = zod.preprocess(numberFromNumberOrNumberString, zod.number().min(1));
-
-// treat an empty string (`''`) as undefined
-const emptyString = <T extends zod.ZodType>(input: T) => {
-  return zod.preprocess((value: unknown) => {
-    if (value === '') return undefined;
-    return value;
-  }, input);
-};
-
-function raiseInvariant(reason: string): never {
-  throw new Error(reason);
-}
-
-const EnvironmentModel = zod.object({
-  PORT: emptyString(NumberFromString.optional()),
-  SERVER_HOST: emptyString(zod.string().optional()),
-  SERVER_HOST_IPV6_ONLY: emptyString(zod.union([zod.literal('1'), zod.literal('0')]).optional()),
-  TOKENS_ENDPOINT: zod.string().url(),
   COMMERCE_ENDPOINT: emptyString(zod.string().url().optional()),
   RATE_LIMIT_TTL: emptyString(NumberFromString.optional()).default(30_000),
   ENVIRONMENT: emptyString(zod.string().optional()),
@@ -39,7 +12,6 @@ const EnvironmentModel = zod.object({
   AWS_REGION: emptyString(zod.string().optional()),
 });
 
-const SentryModel = zod.union([
   zod.object({
     SENTRY: emptyString(zod.literal('0').optional()),
   }),
@@ -89,6 +61,7 @@ const PostgresModel = zod.object({
   POSTGRES_PASSWORD: emptyString(zod.string().optional()),
     let redisConfigResult = null;
 
+<<<<<<< HEAD
     if (configs.redis.success) {
       redisConfigResult = parseRedisConfigFromEnvironment({
         redis: configs.redis.data,
@@ -102,6 +75,8 @@ const PostgresModel = zod.object({
   REDIS_AWS_IAM_CACHE_NAME: emptyString(zod.string().optional()),
 });
 
+=======
+>>>>>>> 6a59c87d5 (- Consolidate Redis configuration to service-common module)
 const PrometheusModel = zod.object({
   PROMETHEUS_METRICS: emptyString(zod.union([zod.literal('0'), zod.literal('1')]).optional()),
   PROMETHEUS_METRICS_LABEL_INSTANCE: emptyString(zod.string().optional()),
@@ -132,7 +107,6 @@ const configs = {
   sentry: SentryModel.safeParse(process.env),
   kafka: KafkaModel.safeParse(process.env),
   postgres: PostgresModel.safeParse(process.env),
-  redis: RedisModel.safeParse(process.env),
   prometheus: PrometheusModel.safeParse(process.env),
   log: LogModel.safeParse(process.env),
   tracing: OpenTelemetryConfigurationModel.safeParse(process.env),
@@ -160,6 +134,7 @@ if (configs.kafka.success && configs.kafka.data.KAFKA_AWS_IAM_AUTH_ENABLED === '
 }
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 if (configs.redis.success && configs.redis.data.REDIS_AWS_IAM_AUTH_ENABLED === '1') {
   const missingRedisIamVars: string[] = [];
   if (configs.redis.data.REDIS_TLS_ENABLED !== '1')
@@ -185,6 +160,15 @@ if (configs.redis.success) {
     environmentErrors.push(...redisConfigResult.errors);
 >>>>>>> 580adcc64 (feat: centralize Redis IAM auth and client creation into service-common)
   }
+=======
+const redisConfigResult = parseRedisConfigFromEnvironment(
+  process.env,
+  configs.base.success ? configs.base.data.AWS_REGION : undefined,
+);
+
+if (redisConfigResult.type === 'error') {
+  environmentErrors.push(...redisConfigResult.errors);
+>>>>>>> 6a59c87d5 (- Consolidate Redis configuration to service-common module)
 }
 
 if (environmentErrors.length) {

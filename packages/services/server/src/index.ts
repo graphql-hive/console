@@ -173,12 +173,10 @@ export async function main() {
 
   const redis = await createRedisClient(env.redis, {
     logger: server.log.child({ source: 'Redis' }),
-    iamTokenRefreshLogger: server.log.child({ source: 'RedisIamTokenRefresh' }),
   });
 
   const redisSubscriber = await createRedisClient(env.redis, {
     logger: server.log.child({ source: 'RedisSubscribe' }),
-    iamTokenRefreshLogger: server.log.child({ source: 'RedisSubscribeIamTokenRefresh' }),
   });
 
   const pubSub = createHivePubSub({
