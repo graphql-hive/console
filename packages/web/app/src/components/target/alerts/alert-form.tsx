@@ -74,7 +74,7 @@ const AlertForm_SavedFiltersQuery = graphql(`
       }
     ) {
       id
-      savedFilters(first: 50) {
+      savedFilters(first: 50, visibility: SHARED) {
         edges {
           node {
             id
@@ -678,61 +678,62 @@ export function AlertForm(props: AlertFormProps) {
             </CardHeader>
             <CardContent>
               <div className="space-y-6">
-                <div className="flex items-start gap-6">
-                  <FormField
-                    control={form.control}
-                    name="direction"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel label="Condition" />
-                        <FormControl>
-                          <Select
-                            options={CONDITION_OPTIONS}
-                            value={field.value}
-                            onValueChange={field.onChange}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="thresholdType"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel label="Threshold type" />
-                        <FormControl>
-                          <Select
-                            options={THRESHOLD_TYPE_OPTIONS}
-                            value={field.value}
-                            onValueChange={field.onChange}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="thresholdValue"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel label="Value" />
-                        <FormControl>
-                          <Input type="number" placeholder="Enter a value" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+                <div className="flex flex-col items-start gap-2">
+                  <div className="flex gap-6">
+                    <FormField
+                      control={form.control}
+                      name="direction"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel label="Condition" />
+                          <FormControl>
+                            <Select
+                              options={CONDITION_OPTIONS}
+                              value={field.value}
+                              onValueChange={field.onChange}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="thresholdType"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel label="Threshold type" />
+                          <FormControl>
+                            <Select
+                              options={THRESHOLD_TYPE_OPTIONS}
+                              value={field.value}
+                              onValueChange={field.onChange}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="thresholdValue"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel label="Value" />
+                          <FormControl>
+                            <Input type="number" placeholder="Enter a value" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                  <p className="text-neutral-10 text-[13px]">
+                    {watchedValues.thresholdType === 'PERCENTAGE_CHANGE'
+                      ? `"% change vs. previous" compares this ${thresholdRangeLabel} window to the one before it. Your value is the percent change between them, e.g. 75 fires on a +75% change rather than an absolute level.`
+                      : `"Fixed value" compares the metric over the ${thresholdRangeLabel} window directly against your value, in the metric's own unit (% for error rate, ms for latency, requests for total requests).`}
+                  </p>
                 </div>
-
-                <p className="text-neutral-10 text-[13px]">
-                  {watchedValues.thresholdType === 'PERCENTAGE_CHANGE'
-                    ? `"% change vs. previous" compares this ${thresholdRangeLabel} window to the one before it. Your value is the percent change between them, e.g. 75 fires on a +75% change rather than an absolute level.`
-                    : `"Fixed value" compares the metric over the ${thresholdRangeLabel} window directly against your value, in the metric's own unit (% for error rate, ms for latency, requests for total requests).`}
-                </p>
 
                 <AlertMetricChart
                   organizationSlug={organizationSlug}
@@ -793,6 +794,7 @@ export function AlertForm(props: AlertFormProps) {
                                     searchable={savedFilterOptions.length > 10}
                                   />
                                 </FormControl>
+                                <FormDescription description="Only shared filters can be attached to alerts." />
                               </FormItem>
                             );
                           }}

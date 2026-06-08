@@ -2,6 +2,7 @@ import { IdTranslator } from '../../../shared/providers/id-translator';
 import { TargetManager } from '../../../target/providers/target-manager';
 import {
   MetricAlertRuleCrossScopeError,
+  MetricAlertRuleFilterNotShareableError,
   MetricAlertRulesDisabledError,
   MetricAlertRulesManager,
   MetricAlertRuleValidationError,
@@ -45,6 +46,7 @@ export const addMetricAlertRule: NonNullable<MutationResolvers['addMetricAlertRu
       error instanceof MetricAlertRulesDisabledError ||
       error instanceof MetricAlertRuleValidationError ||
       error instanceof MetricAlertRuleCrossScopeError ||
+      error instanceof MetricAlertRuleFilterNotShareableError ||
       error instanceof MetricAlertRuleLimitExceededError
     ) {
       return { error: { message: error.message } };

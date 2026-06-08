@@ -5,6 +5,7 @@ import { MaybePromise } from '@graphql-tools/utils';
 import type { AgentOptions } from './agent.js';
 import { CircuitBreakerConfiguration } from './circuit-breaker.js';
 import type { autoDisposeSymbol, hiveClientSymbol } from './client.js';
+import type { PersistedDocumentsManifest } from './persisted-documents.js';
 import type { SchemaReporter } from './reporting.js';
 
 type HeadersObject = {
@@ -42,6 +43,10 @@ export interface HiveClient {
   createInstrumentedSubscribe(executeImpl: any): any;
   dispose(): Promise<void>;
   persistedDocuments: null | {
+    manifest(
+      deployment: { appName: string; appVersion: string },
+      context?: { waitUntil?: (promise: Promise<void> | void) => void },
+    ): PromiseOrValue<PersistedDocumentsManifest | null>;
     resolve(
       documentId: string,
       context?: { waitUntil?: (promise: Promise<void> | void) => void },
@@ -49,6 +54,8 @@ export interface HiveClient {
     allowArbitraryDocuments(context: { headers?: HeadersObject }): PromiseOrValue<boolean>;
   };
 }
+
+export type { PersistedDocumentsManifest };
 
 export type AsyncIterableIteratorOrValue<T> = AsyncIterableIterator<T> | T;
 export type AsyncIterableOrValue<T> = AsyncIterable<T> | T;

@@ -1,0 +1,9 @@
+{
+  "name": "@hive/clickhouse",
+  "type": "module",
+  "license": "MIT",
+  "private": true,
+  "exports": {
+    ".": "./src/index.ts"
+  }
+}
