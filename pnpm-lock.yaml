@@ -411,6 +411,8 @@ importers:
         specifier: 1.2.0
         version: 1.2.0
 
+  packages/internal/clickhouse: {}
+
   packages/internal/postgres:
     dependencies:
       '@standard-schema/spec':
@@ -1095,6 +1097,9 @@ importers:
       '@hive/cdn-script':
         specifier: workspace:*
         version: link:../cdn-worker
+      '@hive/clickhouse':
+        specifier: workspace:*
+        version: link:../../internal/clickhouse
       '@hive/postgres':
         specifier: workspace:*
         version: link:../../internal/postgres
@@ -1997,6 +2002,9 @@ importers:
       '@graphql-yoga/redis-event-target':
         specifier: 3.0.3
         version: 3.0.3(ioredis@5.8.2)
+      '@hive/clickhouse':
+        specifier: workspace:*
+        version: link:../../internal/clickhouse
       '@hive/postgres':
         specifier: workspace:*
         version: link:../../internal/postgres
