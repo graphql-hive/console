@@ -70,7 +70,6 @@ async function main() {
 
   const redis = await createRedisClient(env.redis, {
     logger: server.log.child({ source: 'Redis' }),
-    iamTokenRefreshLogger: server.log.child({ source: 'RedisIamTokenRefresh' }),
   });
 
   // Capture Redis errors in Sentry in addition to the logging done by createRedisClient

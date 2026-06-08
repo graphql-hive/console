@@ -165,7 +165,6 @@
       "glob@10.x.x": "^10.5.0",
       "path-to-regexp@0.x.x": "^0.1.13",
       "fast-uri@2.x.x": "3.x.x",
-      "ioredis": "5.10.1",
       "protobufjs@8.x.x": "^8.0.2",
       "@opentelemetry/exporter-jaeger": "-",
       "uuid@<14.x.x": "^14.0.0",

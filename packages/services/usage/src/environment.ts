@@ -89,22 +89,6 @@ const PostgresModel = zod.object({
   POSTGRES_PASSWORD: emptyString(zod.string().optional()),
 });
 
-const RedisModel = zod.object({
-  REDIS_HOST: zod.string(),
-  REDIS_PORT: NumberFromString,
-  REDIS_PASSWORD: emptyString(zod.string().optional()),
-  REDIS_USERNAME: emptyString(zod.string().optional()),
-  REDIS_TLS_ENABLED: emptyString(zod.union([zod.literal('1'), zod.literal('0')]).optional()),
-  REDIS_CLUSTER_MODE_ENABLED: emptyString(
-    zod.union([zod.literal('0'), zod.literal('1')]).optional(),
-  ),
-  REDIS_AWS_REGION: emptyString(zod.string().optional()),
-  REDIS_AWS_IAM_AUTH_ENABLED: emptyString(
-    zod.union([zod.literal('0'), zod.literal('1')]).optional(),
-  ),
-  REDIS_AWS_IAM_CACHE_NAME: emptyString(zod.string().optional()),
-});
-
 const PrometheusModel = zod.object({
   PROMETHEUS_METRICS: emptyString(zod.union([zod.literal('0'), zod.literal('1')]).optional()),
   PROMETHEUS_METRICS_LABEL_INSTANCE: emptyString(zod.string().optional()),
@@ -135,7 +119,6 @@ const configs = {
   sentry: SentryModel.safeParse(process.env),
   kafka: KafkaModel.safeParse(process.env),
   postgres: PostgresModel.safeParse(process.env),
-  redis: RedisModel.safeParse(process.env),
   prometheus: PrometheusModel.safeParse(process.env),
   log: LogModel.safeParse(process.env),
   tracing: OpenTelemetryConfigurationModel.safeParse(process.env),
@@ -162,17 +145,13 @@ if (configs.kafka.success && configs.kafka.data.KAFKA_AWS_IAM_AUTH_ENABLED === '
   }
 }
 
-let redisConfigResult = null;
+const redisConfigResult = parseRedisConfigFromEnvironment(
+  process.env,
+  configs.base.success ? configs.base.data.AWS_REGION : undefined,
+);
 
-if (configs.redis.success) {
-  redisConfigResult = parseRedisConfigFromEnvironment({
-    redis: configs.redis.data,
-    awsRegion: configs.base.success ? configs.base.data.AWS_REGION : undefined,
-  });
-
-  if (redisConfigResult.type === 'error') {
-    environmentErrors.push(...redisConfigResult.errors);
-  }
+if (redisConfigResult.type === 'error') {
+  environmentErrors.push(...redisConfigResult.errors);
 }
 
 if (environmentErrors.length) {

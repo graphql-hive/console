@@ -2,16 +2,16 @@
 import IORedis from 'ioredis';
 import type { FastifyBaseLogger as ServiceLogger } from './fastify';
 import { resolveRedisCredentials, startIamTokenRefresh, type IamRedisConfig } from './iam-redis';
-import type { RedisConfig } from './redis-config-validation';
+import type { RedisConfig } from './redis-config';
 
 type RedisInstance = IORedis;
 
 /*
- * Re-exported ioredis `Redis` type for consumers that need to type a Redis client instance. 
-*/
+ * Re-exported ioredis `Redis` type for consumers that need to type a Redis client instance.
+ */
 export type Redis = IORedis;
 
-/** 
+/**
  * Connection configuration for creating a Redis client.
  */
 export type RedisConnectionConfig = Required<Pick<RedisOptions, 'host' | 'port' | 'password'>> & {
@@ -40,11 +40,6 @@ export type RedisClientOptions = {
    * Defaults to `null` (unlimited retries) when omitted.
    */
   maxRetriesPerRequest?: number | null;
-  /**
-   * Optional logger for IAM token refresh events.
-   * If not provided, defaults to the main `logger`.
-   */
-  iamTokenRefreshLogger?: ServiceLogger;
 };
 
 /**
@@ -57,7 +52,7 @@ export type RedisClientOptions = {
  * - IAM token refresh (if enabled) is started per client with its own lifecycle
  *
  * @param config - Redis environment configuration (host, port, credentials, TLS, IAM settings).
- * @param options - Configuration options including logger and optional IAM token refresh logger.
+ * @param options - Configuration options including logger and retry configuration.
  * @returns A Promise that resolves to a configured, ready-to-use Redis client instance.
  */
 export async function createRedisClient(
@@ -99,8 +94,7 @@ export async function createRedisClient(
   // Start IAM token refresh if enabled
   // Each client gets its own independent token lifecycle
   if (redisIamConfig) {
-    const iamLogger = options.iamTokenRefreshLogger ?? options.logger;
-    startIamTokenRefresh(redis, redisIamConfig, config.clusterModeEnabled ?? false, iamLogger);
+    startIamTokenRefresh(redis, redisIamConfig, options.logger);
   }
 
   return redis;

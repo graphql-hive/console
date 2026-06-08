@@ -1,5 +1,9 @@
-import type { Redis as RedisInstance } from 'ioredis';
+import { Cluster as RedisCluster } from 'ioredis';
+import type { Redis as RedisStandalone } from 'ioredis';
+import type { FastifyBaseLogger as ServiceLogger } from './fastify';
 import { generatePresignedToken, startTokenRefreshTimer } from './iam-aws';
+
+type RedisInstance = RedisStandalone | RedisCluster;
 
 /**
  * ElastiCache Redis IAM authentication.
@@ -49,7 +53,7 @@ export interface IamRedisConfig {
  */
 export async function generateIamAuthToken(
   config: IamRedisConfig,
-  logger: { debug(...args: unknown[]): void },
+  logger: ServiceLogger,
 ): Promise<string> {
   const cacheName = config.iamAuthCacheName || 'i-cannot-be-empty';
 
@@ -76,31 +80,32 @@ export async function generateIamAuthToken(
 /**
  * Re-authenticate active Redis connections with a fresh IAM token.
  *
- * In **cluster mode**, iterates over every known node, issues `AUTH`, and
- * updates both the per-node password and the cluster `connectionPool` so
- * newly created connections also use the new token. Individual node failures
- * are logged as warnings but do not abort the loop.
+ * In **cluster mode**, it iterates over every node returned by
+ * `nodes('all')`, issues `AUTH` for each, and updates each
+ * node's password only after successful authentication. Individual node
+ * failures are logged as warnings but do not abort the loop.
  *
- * In **standalone mode**, issues a single `AUTH` command and updates the
- * connection's stored password.
+ * It also updates `options.redisOptions.password` when present so new
+ * cluster connections use the refreshed token.
+ *
+ * In **standalone mode**, it issues a single `AUTH` command, then updates
+ * the client's stored password when the options object is available.
  *
  * @param redis - The active ioredis client (standalone or cluster).
  * @param token - The fresh SigV4 IAM auth token.
  * @param username - The ElastiCache IAM username.
- * @param isCluster - `true` when `redis` is a `Redis.Cluster` instance.
  * @param logger - Logger with `debug` and `warn` methods.
  */
 export async function refreshIamAuth(
   redis: RedisInstance,
   token: string,
   username: string,
-  isCluster: boolean,
-  logger: { debug(...args: unknown[]): void; warn(...args: unknown[]): void },
+  logger: ServiceLogger,
 ): Promise<void> {
-  if (isCluster) {
-    const nodes = (redis as any).nodes?.('all') ?? [];
+  if (redis instanceof RedisCluster) {
+    const nodes = redis.nodes('all');
     logger.debug(
-      'Refreshing IAM token (service=elasticache) - re-authenticating %s cluster node(s)',
+      'Refreshing IAM token (service=elasticache) — re-authenticating %s cluster node(s)',
       nodes.length,
     );
     for (const node of nodes) {
@@ -112,13 +117,12 @@ export async function refreshIamAuth(
       }
     }
     // Update cluster-level redisOptions for new node connections.
-    const pool = (redis as any).connectionPool;
-    if (pool?.redisOptions) {
-      pool.redisOptions.password = token;
+    if (redis.options?.redisOptions) {
+      redis.options.redisOptions.password = token;
     }
   } else {
-    (redis as any).options.password = token;
-    await (redis as any).call('AUTH', username, token);
+    redis.options.password = token;
+    await redis.call('AUTH', username, token);
   }
   logger.debug('IAM token refreshed successfully (service=elasticache)');
 }
@@ -135,28 +139,22 @@ export async function refreshIamAuth(
  *
  * @param redis - The active ioredis client to re-authenticate.
  * @param config - ElastiCache endpoint and IAM user details.
- * @param isCluster - `true` when `redis` is a `Redis.Cluster` instance.
  * @param logger - Logger with `debug`, `warn`, and `error` methods.
- * @returns A `setInterval` handle call `clearInterval(handle)` during
- *   graceful shutdown to stop the refresh loop.
+ * @returns A cleanup function - call it during graceful shutdown to stop the
+ *   refresh loop and prevent in-flight callbacks from executing on closed connections.
  */
 export function startIamTokenRefresh(
   redis: RedisInstance,
   config: IamRedisConfig,
-  isCluster: boolean,
-  logger: {
-    debug(...args: unknown[]): void;
-    warn(...args: unknown[]): void;
-    error(...args: unknown[]): void;
-  },
-): ReturnType<typeof setInterval> {
+  logger: ServiceLogger,
+): () => void {
   logger.debug('Starting ElastiCache IAM token refresh timer (region=%s)', config.awsRegion);
 
   return startTokenRefreshTimer(
     async (attempt, maxRetries) => {
       try {
         const token = await generateIamAuthToken(config, logger);
-        await refreshIamAuth(redis, token, config.username, isCluster, logger);
+        await refreshIamAuth(redis, token, config.username, logger);
       } catch (error) {
         logger.error(
           'ElastiCache IAM token refresh failed (attempt=%s/%s, error=%s)',
@@ -190,7 +188,7 @@ export function startIamTokenRefresh(
  */
 export async function resolveRedisCredentials(
   staticPassword: string,
-  logger: { debug(...args: unknown[]): void },
+  logger: ServiceLogger,
   iamConfig?: IamRedisConfig,
 ): Promise<{ password: string; username?: string }> {
   if (!iamConfig) {

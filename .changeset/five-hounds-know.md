@@ -25,3 +25,6 @@ tokens instead of static passwords, with automatic token refresh before expiry.
 - `REDIS_AWS_IAM_CACHE_NAME` set to the name of the cache instance in AWS. This will be used as the hostname for the signer.
 - The pod/instance must have AWS credentials available (e.g. IRSA, EKS Pod Identity, instance
   profile) with the appropriate ElastiCache IAM permissions.
+
+### Other changes
+- Bumping ioredis to `5.10.1`.

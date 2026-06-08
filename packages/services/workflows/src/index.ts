@@ -114,17 +114,15 @@ const server = await createServer({
 
 const redis = await createRedisClient(env.redis, {
   logger: server.log.child({ source: 'Redis' }),
-  iamTokenRefreshLogger: server.log.child({ source: 'RedisIamTokenRefresh' }),
 });
 
 const redisSubscriber = await createRedisClient(env.redis, {
   logger: server.log.child({ source: 'RedisSubscribe' }),
-  iamTokenRefreshLogger: server.log.child({ source: 'RedisSubscribeIamTokenRefresh' }),
 });
 
 const pubSub = createHivePubSub({
-  publisher: redis as any,
-  subscriber: redisSubscriber as any,
+  publisher: redis,
+  subscriber: redisSubscriber,
 });
 
 const clickhouse = env.clickhouse

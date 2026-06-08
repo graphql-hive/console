@@ -1,5 +1,5 @@
 ﻿import { beforeEach, describe, expect, it, vi } from 'vitest';
-import type { RedisConfig } from './redis-config-validation';
+import type { RedisConfig } from './redis-config';
 
 /** Mock logger matching ServiceLogger interface */
 type MockServiceLogger = {
@@ -387,28 +387,7 @@ describe('createRedisClient', () => {
           username: 'default',
           iamAuthCacheName: 'test-cache',
         },
-        false,
         expect.any(Object),
-      );
-    });
-
-    it('passes iamTokenRefreshLogger from options to startIamTokenRefresh', async () => {
-      const logger = createMockLogger();
-      const iamRefreshLogger = createMockLogger();
-      const config = {
-        ...baseEnvConfig,
-        awsIamAuthEnabled: true,
-      };
-      const redis = await createRedisClient(config, {
-        logger,
-        iamTokenRefreshLogger: iamRefreshLogger,
-      });
-
-      expect(startIamTokenRefreshMock).toHaveBeenCalledWith(
-        redis,
-        expect.any(Object),
-        false,
-        iamRefreshLogger,
       );
     });
 
@@ -435,7 +414,6 @@ describe('createRedisClient', () => {
       expect(startIamTokenRefreshMock).toHaveBeenCalledWith(
         redis,
         expect.any(Object),
-        true,
         expect.any(Object),
       );
     });
@@ -446,7 +424,6 @@ describe('createRedisClient', () => {
       const logger = createMockLogger();
       const mainLogger = logger.child({ label: 'main' });
       const subscriberLogger = logger.child({ label: 'subscriber' });
-      const iamLogger = createMockLogger();
 
       const config = {
         ...baseEnvConfig,
@@ -455,12 +432,10 @@ describe('createRedisClient', () => {
 
       const mainRedis = await createRedisClient(config, {
         logger: mainLogger,
-        iamTokenRefreshLogger: iamLogger,
       });
 
       const subscriberRedis = await createRedisClient(config, {
         logger: subscriberLogger,
-        iamTokenRefreshLogger: iamLogger,
       });
 
       // Both clients should be distinct instances
@@ -527,27 +502,7 @@ describe('createRedisClient', () => {
       expect(redis.options.maxRetriesPerRequest).toBe(25);
     });
 
-    it('accepts optional iamTokenRefreshLogger', async () => {
-      const logger = createMockLogger();
-      const iamRefreshLogger = createMockLogger();
-      const config = {
-        ...baseEnvConfig,
-        awsIamAuthEnabled: true,
-      };
-      const redis = await createRedisClient(config, {
-        logger,
-        iamTokenRefreshLogger: iamRefreshLogger,
-      });
-
-      expect(startIamTokenRefreshMock).toHaveBeenCalledWith(
-        redis,
-        expect.any(Object),
-        false,
-        iamRefreshLogger,
-      );
-    });
-
-    it('uses main logger as default iamTokenRefreshLogger if not provided', async () => {
+    it('uses main logger for IAM refresh logs', async () => {
       const logger = createMockLogger();
       const config = {
         ...baseEnvConfig,
@@ -557,12 +512,7 @@ describe('createRedisClient', () => {
         logger,
       });
 
-      expect(startIamTokenRefreshMock).toHaveBeenCalledWith(
-        redis,
-        expect.any(Object),
-        false,
-        logger,
-      );
+      expect(startIamTokenRefreshMock).toHaveBeenCalledWith(redis, expect.any(Object), logger);
     });
 
     it('supports creating a client without a label argument', async () => {
