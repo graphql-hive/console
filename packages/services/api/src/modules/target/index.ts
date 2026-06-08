@@ -1,6 +1,5 @@
 import { createModule } from 'graphql-modules';
 import { TargetManager } from './providers/target-manager';
-import { TargetStats } from './providers/target-stats';
 import { TargetsByIdCache } from './providers/targets-by-id-cache';
 import { TargetsBySlugCache } from './providers/targets-by-slug-cache';
 import { resolvers } from './resolvers.generated';
@@ -11,5 +10,5 @@ export const targetModule = createModule({
   dirname: __dirname,
   typeDefs,
   resolvers,
-  providers: [TargetManager, TargetStats, TargetsByIdCache, TargetsBySlugCache],
+  providers: [TargetManager, TargetsByIdCache, TargetsBySlugCache],
 });

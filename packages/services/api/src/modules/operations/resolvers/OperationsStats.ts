@@ -165,26 +165,18 @@ export const OperationsStats: OperationsStatsResolvers = {
     { resolution },
     { injector },
   ) => {
-    return injector
-      .get(OperationsManager)
-      .readDurationAndCountOverTime({
-        targetId: target,
-        projectId: project,
-        organizationId: organization,
-        period,
-        resolution,
-        operations: operationsFilter,
-        clients,
-        clientVersionFilters,
-        excludeOperations,
-        excludeClientVersionFilters,
-      })
-      .then(result =>
-        result.map(row => ({
-          date: row.date,
-          value: row.total,
-        })),
-      );
+    return injector.get(OperationsManager).readRequestsOverTime({
+      targetId: target,
+      projectId: project,
+      organizationId: organization,
+      period,
+      resolution,
+      operations: operationsFilter,
+      clients,
+      clientVersionFilters,
+      excludeOperations,
+      excludeClientVersionFilters,
+    });
   },
   failuresOverTime: (
     {
@@ -201,26 +193,18 @@ export const OperationsStats: OperationsStatsResolvers = {
     { resolution },
     { injector },
   ) => {
-    return injector
-      .get(OperationsManager)
-      .readDurationAndCountOverTime({
-        targetId: target,
-        projectId: project,
-        organizationId: organization,
-        period,
-        resolution,
-        operations: operationsFilter,
-        clients,
-        clientVersionFilters,
-        excludeOperations,
-        excludeClientVersionFilters,
-      })
-      .then(result =>
-        result.map(row => ({
-          date: row.date,
-          value: row.total - row.totalOk,
-        })),
-      );
+    return injector.get(OperationsManager).readFailuresOverTime({
+      targetId: target,
+      projectId: project,
+      organizationId: organization,
+      period,
+      resolution,
+      operations: operationsFilter,
+      clients,
+      clientVersionFilters,
+      excludeOperations,
+      excludeClientVersionFilters,
+    });
   },
   durationOverTime: (
     {
@@ -237,26 +221,18 @@ export const OperationsStats: OperationsStatsResolvers = {
     { resolution },
     { injector },
   ) => {
-    return injector
-      .get(OperationsManager)
-      .readDurationAndCountOverTime({
-        targetId: target,
-        projectId: project,
-        organizationId: organization,
-        period,
-        resolution,
-        operations: operationsFilter,
-        clients,
-        clientVersionFilters,
-        excludeOperations,
-        excludeClientVersionFilters,
-      })
-      .then(result =>
-        result.map(row => ({
-          date: row.date,
-          duration: row.duration,
-        })),
-      );
+    return injector.get(OperationsManager).readDurationOverTime({
+      targetId: target,
+      projectId: project,
+      organizationId: organization,
+      period,
+      resolution,
+      operations: operationsFilter,
+      clients,
+      clientVersionFilters,
+      excludeOperations,
+      excludeClientVersionFilters,
+    });
   },
   clients: async (
     {
