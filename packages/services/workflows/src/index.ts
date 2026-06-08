@@ -86,7 +86,7 @@ if (env.clickhouse) {
   );
 } else {
   logger.warn(
-    'ClickHouse not configured \u2014 metric alert rules will not be evaluated. ' +
+    'ClickHouse not configured — metric alert rules will not be evaluated. ' +
       'Set CLICKHOUSE=1 and the CLICKHOUSE_* env vars to enable.',
   );
 }
