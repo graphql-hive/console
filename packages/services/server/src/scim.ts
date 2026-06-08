@@ -9,15 +9,15 @@ import {
 } from '@hive/api/modules/organization/providers/group-member-store';
 import { GroupStore, type Group } from '@hive/api/modules/organization/providers/group-store';
 import { UsersStore, type User } from '@hive/api/modules/organization/providers/users-store';
-import { PostgresDatabasePool } from '@hive/postgres';
+import { PostgresDatabasePool, psql } from '@hive/postgres';
 
-const NameSchemaModel = z
-  .object({
-    familyName: z.string().optional(),
-    givenName: z.string().optional(),
-  })
-  .strict()
-  .optional();
+// const NameSchemaModel = z
+//   .object({
+//     familyName: z.string().optional(),
+//     givenName: z.string().optional(),
+//   })
+//   .strict()
+//   .optional();
 
 const EmailSchemaModel = z
   .object({
@@ -37,7 +37,7 @@ const PatchOperationModel = z
 
 const PostUsersBodyModel = z.object({
   userName: z.string().min(1),
-  name: NameSchemaModel,
+  // name: NameSchemaModel,
   displayName: z.string().optional(),
   active: z.boolean().optional(),
   emails: z.array(EmailSchemaModel),
@@ -47,12 +47,12 @@ const PostUsersBodyModel = z.object({
 const PutUsersBodyModel = z.object({
   userName: z.string().optional(),
   active: z.boolean().optional(),
-  name: z
-    .object({
-      givenName: z.string().optional(),
-      familyName: z.string().optional(),
-    })
-    .optional(),
+  // name: z
+  //   .object({
+  //     givenName: z.string().optional(),
+  //     familyName: z.string().optional(),
+  //   })
+  //   .optional(),
   emails: z
     .array(
       z.object({
@@ -288,17 +288,30 @@ export const createSCIMPlugin =
 
       const usersStore = new UsersStore(pool);
       const supertokensStore = new SuperTokensStore(pool, req.log);
+
+      const email = bodyParse.data.emails
+        ?.find(email => email.primary === true && email)
+        ?.value.toLowerCase();
+
+      if (!email) {
+        return reply.status(403).send(
+          createSCIMError({
+            status: 403,
+            detail: 'user is missing primary email address.',
+          }),
+        );
+      }
+
       // TODO: these two should probably happen together in a transaction
 
+      // We have another problem here, because of historic reasons and
+      // how we implemented OIDC login support on top of supertokens
+      // we store the third_party_user_id as `${oidc_id}-${externalId}`
+      // since the external id can update...
+      // we need to be prepared to also update this
       const supertokensUser = await supertokensStore.createOIDCUser({
-        // TODO:
-        // For okta the external id is the sub of the OIDC provider
-        // For entra this is not the case, here the sub is not stable and
-        // we need to instead map the OIDC oid claim to the external id
-        // because of that additional configuration is needed within the OIDC / SCIM
-        // configuration for mapping which claim should be used to match the user
         sub: bodyParse.data.externalId,
-        email: bodyParse.data.emails?.[0].value.toLowerCase() ?? '',
+        email,
         oidcIntegrationId: result.oidcIntegration.id,
       });
 
@@ -314,12 +327,40 @@ export const createSCIMPlugin =
         isDisabled: (bodyParse.data.active ?? true) === false,
       });
 
+      await pool.query(psql`
+        INSERT INTO "organization_member" (
+          "organization_id"
+          , "user_id"
+          , "role_id"
+          , "assigned_resources"
+          , "created_at"
+        )
+        VALUES (
+          ${result.organizationId}
+          , ${user.id}
+          , (
+            SELECT "id"
+            FROM "organization_member_roles"
+            WHERE
+              "organization_id" = ${result.organizationId}
+              AND name = 'Viewer'
+          )
+          , ${
+            /** adding the minimal thing so user cannot access anything */
+            psql.jsonb({ mode: '*', projects: [] })
+          }
+          , NOW()
+        )
+      `);
+
       return reply.code(201).send(createSCIMUserObjectFromUser(user));
     });
 
     /**
      * This route is used for updating user properties
      * - active (disabled state)
+     * - email
+     * - external id
      * - ??? (TBD)
      */
     server.put('/Users/:userId', async (req, reply) => {
@@ -363,6 +404,9 @@ export const createSCIMPlugin =
         }
       }
 
+      if (body.data.emails !== undefined) {
+      }
+
       return reply.code(200).send(createSCIMUserObjectFromUser(user));
     });
 
@@ -370,6 +414,7 @@ export const createSCIMPlugin =
      * This route is used for updating user properties
      * - email
      * - active (disabled state)
+     * - external id
      * - ??? (TBD)
      */
     server.patch('/Users/:userId', async (req, reply) => {
@@ -390,6 +435,7 @@ export const createSCIMPlugin =
       }
 
       const usersStore = new UsersStore(pool);
+      const supertokensStore = new SuperTokensStore(pool, req.log);
       let user = await usersStore.findUserProvisionedByOrganizationIdAndId(
         result.organizationId,
         params.userId,
@@ -418,12 +464,18 @@ export const createSCIMPlugin =
         if (operation.path === 'active') {
           if (operation.value === true) {
             user = await usersStore.enabledUser(user.id);
+            await supertokensStore.invalidateAllSessionsForUser(user.supertokenUserId);
           } else if (operation.value === false) {
             user = await usersStore.disableUser(user.id);
+            await supertokensStore.invalidateAllSessionsForUser(user.supertokenUserId);
           } else {
             req.log.debug('invalid value provided %s', operation.value);
           }
         } else if (operation.path === 'email') {
+          // Note: this implementation is 99.99% wrong as the emails is an array property lol
+
+          // In case we update the email we update both the supertokens record
+          // and the user record as both contain that information...
           const emailResult = z.string().email().toLowerCase().safeParse(operation.value);
           if (emailResult.error) {
             return reply.code(400).send(
@@ -433,7 +485,27 @@ export const createSCIMPlugin =
               }),
             );
           }
-          // TODO: update the supertokens email and users email
+
+          await supertokensStore.updateOIDCUserEmail({
+            userId: user.supertokenUserId,
+            newEmail: emailResult.data,
+          });
+          await usersStore.updateUserEmail(result.organizationId, user.id, emailResult.data);
+          // invalidate session as email changed
+          await supertokensStore.invalidateAllSessionsForUser(user.supertokenUserId);
+        } else if (operation.path === 'externalId') {
+          // In case we update the external ID we for now update both the supertokens record
+          // and the user record as both contain that information...
+
+          const externalId = String(operation.value);
+          await supertokensStore.updateOIDCUserSub({
+            userId: user.supertokenUserId,
+            sub: externalId,
+            oidcIntegrationId: result.oidcIntegration.id,
+          });
+          await usersStore.updateUserExternalId(result.organizationId, user.id, externalId);
+          // invalidate session as external id
+          await supertokensStore.invalidateAllSessionsForUser(user.supertokenUserId);
         } else {
           req.log.debug('unsupported path %s', operation.path);
           return reply.code(404).send(
@@ -490,7 +562,8 @@ export const createSCIMPlugin =
         if (property === 'email') {
           const user = await usersStore.findUserProvisionedByOrganizationIdAndEmail(
             result.organizationId,
-            valueStr,
+            // to lower-case just in case it is sent in non :)
+            valueStr.toLocaleLowerCase(),
           );
           if (user) {
             users.push(createSCIMUserObjectFromUser(user));
@@ -967,10 +1040,11 @@ type SCIMUserObject = {
   id: string;
   externalId: string;
   userName: string;
-  name: {
-    givenName: string;
-    familyName: string;
-  };
+  // Lets not mess with the name for now
+  // name: {
+  //   givenName: string;
+  //   familyName: string;
+  // };
   emails: [
     {
       value: string;
@@ -1009,7 +1083,7 @@ type SCIMListResponseObject = {
 };
 
 function createSCIMUserObjectFromUser(user: User): SCIMUserObject {
-  const [givenName = '', familyName = ''] = user.fullName.split(' ');
+  // const [givenName = '', familyName = ''] = user.fullName.split(' ');
 
   return {
     schemas: ['urn:ietf:params:scim:schemas:core:2.0:User'],
@@ -1023,10 +1097,10 @@ function createSCIMUserObjectFromUser(user: User): SCIMUserObject {
         value: user.email,
       },
     ],
-    name: {
-      familyName,
-      givenName,
-    },
+    // name: {
+    //   familyName,
+    //   givenName,
+    // },
     meta: {
       resourceType: 'User',
     },

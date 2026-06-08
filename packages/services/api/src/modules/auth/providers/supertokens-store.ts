@@ -103,6 +103,22 @@ export class SuperTokensStore {
     await this.pool.query(query);
   }
 
+  // TODO: there should be an index for user_id
+  async invalidateAllSessionsForUser(userId: string) {
+    this.logger.debug('Invalidate session for user. (userId=%s)', userId);
+
+    const query = psql`
+      DELETE
+      FROM "supertokens_session_info"
+      WHERE
+        "app_id" = 'public'
+        AND "tenant_id" = 'public'
+        AND "user_id" = ${userId}
+    `;
+
+    await this.pool.query(query);
+  }
+
   async findEmailPasswordUserByEmail(email: string) {
     const query = psql`
       SELECT
@@ -332,6 +348,7 @@ export class SuperTokensStore {
         "email" = lower(${args.newEmail})
       WHERE
         "app_id" = 'public'
+        AND "third_party_id" = 'oidc'
         AND "user_id" = ${args.userId}
       RETURNING
         "user_id" AS "userId"
@@ -447,6 +464,22 @@ export class SuperTokensStore {
       thirdPartyId: 'oidc',
       thirdPartyUserId: args.oidcIntegrationId + '-' + args.sub,
     });
+  }
+
+  async updateOIDCUserSub(args: { userId: string; oidcIntegrationId: string; sub: string }) {
+    const user = await this.lookupThirdPartyUserByUserId(args.userId);
+    if (!user) {
+      return null;
+    }
+    await this.pool.query(psql`
+      UPDATE "supertokens_thirdparty_users"
+      SET
+        "third_party_user_id" = ${`${args.oidcIntegrationId}-${args.sub}`}
+      WHERE
+        "app_id" = 'public'
+        AND "third_party_id" = 'oidc'
+        AND "user_id" = ${args.userId}
+    `);
   }
 
   async createEmailPasswordUser(args: { email: string; passwordHash: string }) {
