@@ -234,7 +234,7 @@ export class GroupStore {
   }
 
   async disableGroup(args: { organizationId: string; groupId: string }) {
-    const query = psql`/* disableGroup /*
+    const query = psql`/* disableGroup */
       UPDATE
         "groups"
       SET
@@ -246,7 +246,7 @@ export class GroupStore {
         ${groupFields}
     `;
 
-    return await this.pool.one(query).then(GroupModel.parse);
+    return await this.pool.maybeOne(query).then(GroupModel.parse);
   }
 
   async updateGroupPropertiesByOrganizationIdAndGroupId(
