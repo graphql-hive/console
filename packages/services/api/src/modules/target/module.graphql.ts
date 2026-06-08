@@ -3,7 +3,13 @@ import { gql } from 'graphql-modules';
 export default gql`
   extend type Query {
     target(reference: TargetReferenceInput! @tag(name: "public")): Target @tag(name: "public")
-    targets(selector: ProjectSelectorInput!): TargetConnection!
+    targets(
+      selector: ProjectSelectorInput!
+      first: Int
+      after: String
+      search: String
+      sort: TargetsSortInput
+    ): TargetConnection!
   }
 
   extend type Mutation {
@@ -257,8 +263,30 @@ export default gql`
   }
 
   extend type Project {
-    targets: TargetConnection! @tag(name: "public")
+    targets(first: Int, after: String, search: String, sort: TargetsSortInput): TargetConnection!
+      @tag(name: "public")
     targetBySlug(targetSlug: String!): Target
+  }
+
+  enum TargetsSortFieldType {
+    NAME
+    CREATED_AT
+    REQUESTS
+    SCHEMA_VERSIONS
+  }
+
+  enum TargetsSortDirectionType {
+    ASC
+    DESC
+  }
+
+  input TargetsSortInput {
+    field: TargetsSortFieldType!
+    direction: TargetsSortDirectionType!
+    """
+    Required when sorting by REQUESTS or SCHEMA_VERSIONS.
+    """
+    period: DateRangeInput
   }
 
   type TargetEdge {
