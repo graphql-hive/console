@@ -359,7 +359,7 @@ describe('createRedisClient', () => {
         awsIamAuthEnabled: true,
         username: undefined,
       };
-      const redis = await createRedisClient(config, { logger });
+      await createRedisClient(config, { logger });
 
       expect(resolveRedisCredentialsMock).toHaveBeenCalledWith(
         'test-password',
@@ -397,7 +397,7 @@ describe('createRedisClient', () => {
         ...baseEnvConfig,
         awsIamAuthEnabled: false,
       };
-      const redis = await createRedisClient(config, { logger });
+      await createRedisClient(config, { logger });
 
       expect(startIamTokenRefreshMock).not.toHaveBeenCalled();
     });
