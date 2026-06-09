@@ -18,7 +18,7 @@ import type { Action } from '../clickhouse';
 // / `...Hourly` in 004-version-2 (same aggregate-state functions) minus the
 // hash/client dimensions, so `avgMerge` / `quantilesMerge` at read time stay
 // correct.
-const createByTargetSelect = (bucket: 'toStartOfMinute' | 'toStartOfHour', where: string) => `
+const createByTargetSelect = (bucket: 'toStartOfMinute' | 'toStartOfHour') => `
   SELECT
     target,
     ${bucket}(timestamp) AS timestamp,
@@ -27,27 +27,14 @@ const createByTargetSelect = (bucket: 'toStartOfMinute' | 'toStartOfHour', where
     avgState(duration) AS duration_avg,
     quantilesState(0.75, 0.9, 0.95, 0.99)(duration) AS duration_quantiles
   FROM default.operations
-  ${where}
   GROUP BY
     target,
     timestamp
 `;
 
-export const action: Action = async (exec, _query, hiveCloudEnvironment) => {
+export const action: Action = async exec => {
   // No historical backfill (start-fresh): the views capture inserts going
-  // forward. In prod, begin aggregating from the next UTC day boundary so the
-  // view starts on a clean partition rather than mid-minute during deploy
-  // ...same convention as 007-james-bond-aggregates-hourly-and-minutely.
-  let where = '';
-
-  if (hiveCloudEnvironment === 'prod') {
-    const tomorrow = new Date();
-    tomorrow.setUTCDate(tomorrow.getUTCDate() + 1);
-    const startOfTomorrow = tomorrow.toISOString().split('T')[0];
-
-    where = `WHERE toDate(timestamp) >= toDate('${startOfTomorrow}')`;
-  }
-
+  // forward, starting the moment they're created.
   await Promise.all([
     exec(`
       CREATE MATERIALIZED VIEW IF NOT EXISTS default.operations_minutely_by_target
@@ -65,7 +52,7 @@ export const action: Action = async (exec, _query, hiveCloudEnvironment) => {
       ORDER BY (target, timestamp)
       TTL timestamp + INTERVAL 24 HOUR
       SETTINGS index_granularity = 8192 AS
-      ${createByTargetSelect('toStartOfMinute', where)}
+      ${createByTargetSelect('toStartOfMinute')}
     `),
     exec(`
       CREATE MATERIALIZED VIEW IF NOT EXISTS default.operations_hourly_by_target
@@ -83,7 +70,7 @@ export const action: Action = async (exec, _query, hiveCloudEnvironment) => {
       ORDER BY (target, timestamp)
       TTL timestamp + INTERVAL 30 DAY
       SETTINGS index_granularity = 8192 AS
-      ${createByTargetSelect('toStartOfHour', where)}
+      ${createByTargetSelect('toStartOfHour')}
     `),
   ]);
 };
