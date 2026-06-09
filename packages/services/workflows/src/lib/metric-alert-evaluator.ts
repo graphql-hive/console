@@ -257,12 +257,6 @@ export async function queryClickHouseWindows(
   // this job up late, using wall-clock would shift the queried window
   // forward and could miss the spike that should have fired the alert.
   evaluationTime: Date,
-  // When true, read the target-keyed rollups (operations_*_by_target) instead
-  // of the full per-hash/client tables. The caller only sets this for unfiltered
-  // rules (no `filterConditions`), since those rollups have dropped the
-  // hash/client dimensions a filter would predicate on. Defaults to false so
-  // existing callers/tests keep hitting the legacy tables.
-  useTargetRollup = false,
 ): Promise<{ current: ClickHouseWindowRow | null; previous: ClickHouseWindowRow | null }> {
   const anchorMs = evaluationTime.getTime();
   const offsetMs = 60_000;
@@ -272,11 +266,16 @@ export async function queryClickHouseWindows(
   const currentWindowStart = new Date(anchorMs - offsetMs - windowMs);
   const previousWindowStart = new Date(anchorMs - offsetMs - 2 * windowMs);
 
-  // Pick the resolution table by window size, then optionally its target-keyed
-  // rollup variant. Both rollups carry the same total/total_ok/duration_*
-  // aggregate columns the SELECT below reads, so only the table name changes...
-  // and `_by_target` is day-partitioned and ordered (target, timestamp), so this
-  // window query prunes by time instead of scanning the target's whole slice.
+  // Unfiltered queries read the target-keyed rollups (operations_*_by_target):
+  // they sum across all hashes/clients, exactly what those rollups pre-aggregate,
+  // so the query prunes by time instead of scanning the target's whole slice.
+  // Filtered queries MUST stay on the legacy tables...the rollups dropped the
+  // hash/client dimensions a filter predicates on, so routing one there would
+  // reference columns that don't exist. Deriving this from `filterConditions`
+  // (rather than a separate flag/param) makes the filtered-query-on-rollup
+  // combination unrepresentable. Both rollups carry the same total/total_ok/
+  // duration_* columns the SELECT below reads, so only the table name changes.
+  const useTargetRollup = filterConditions.length === 0;
   const baseTable = timeWindowMinutes <= 360 ? 'operations_minutely' : 'operations_hourly';
   const tableName = useTargetRollup ? `${baseTable}_by_target` : baseTable;
 
