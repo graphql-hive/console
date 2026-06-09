@@ -148,6 +148,7 @@ export const action: Action = async exec => {
     SETTINGS
       index_granularity = 8192
       , deduplicate_merge_projection_mode = 'rebuild'
+      , ttl_only_drop_parts = 1
     ;
   `);
 
@@ -208,6 +209,7 @@ export const action: Action = async exec => {
     SETTINGS
       index_granularity = 8192
       , deduplicate_merge_projection_mode = 'rebuild'
+      , ttl_only_drop_parts = 1
     ;
   `);
   await exec(`
@@ -264,6 +266,7 @@ export const action: Action = async exec => {
     SETTINGS
       index_granularity = 8192
       , deduplicate_merge_projection_mode = 'rebuild'
+      , ttl_only_drop_parts = 1
     ;
   `);
 
