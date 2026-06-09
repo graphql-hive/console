@@ -9,6 +9,7 @@ import { FragmentType, graphql, useFragment } from '@/gql';
 import { formatNumber, toDecimal } from '@/lib/hooks';
 import { capitalize, cn } from '@/lib/utils';
 import { Link as NextLink, useRouter } from '@tanstack/react-router';
+import AvailabilityBar from './availability-bar';
 import { useDescriptionsVisibleToggle } from './provider';
 import { SupergraphMetadataList } from './super-graph-metadata';
 import { useExplorerFieldFiltering } from './utils';
@@ -52,13 +53,10 @@ export function SchemaExplorerUsageStats(props: {
 }) {
   const usage = useFragment(SchemaExplorerUsageStats_UsageFragment, props.usage);
   const percentage = props.totalRequests ? (usage.total / props.totalRequests) * 100 : 0;
-  const availability =
-    usage.errorTotal || usage.totalResolutions
-      ? (
-          (1.0 - (usage.errorTotal ?? 0) / Math.max(usage.totalResolutions ?? 1, 1)) *
-          100.0
-        ).toFixed(2)
-      : null;
+  const hasFieldLevelMetrics = !!(usage.errorTotal != null || usage.totalResolutions);
+  const availability = hasFieldLevelMetrics
+    ? (1.0 - (usage.errorTotal ?? 0) / Math.max(usage.totalResolutions ?? 1, 1)) * 100.0
+    : null;
 
   const kindLabel = useMemo(() => props.kindLabel ?? 'field', [props.kindLabel]);
 
@@ -66,12 +64,57 @@ export function SchemaExplorerUsageStats(props: {
     <TooltipProvider delayDuration={0}>
       <div className="ml-3 flex flex-row items-center gap-2 text-xs">
         <div className="grow">
-          <div
-            className="text-center"
-            title={`${usage.total} requests${usage.totalResolutions ? `, ${usage.totalResolutions} resolutions` : null}${usage.errorTotal ? `, ${usage.errorTotal} errors, ${availability}% availability` : ''}`}
-          >
+          <div className="text-center">
             {formatNumber(usage.total)}
-            {availability ? <span className="text-neutral-8 ml-1">({availability}%)</span> : null}
+            {availability ? (
+              <Tooltip>
+                <TooltipTrigger className="block w-full cursor-help">
+                  <AvailabilityBar availability={availability} />
+                </TooltipTrigger>
+                <TooltipContent align="end">
+                  <div className="z-10 text-left">
+                    <div className="mb-1 text-lg font-bold">{capitalize(kindLabel)} Stats</div>
+                    {hasFieldLevelMetrics ? (
+                      <div className="max-w-60">
+                        <span className="font-bold">Requests</span> counts how many client requests
+                        asked for a field, whereas <span className="font-bold">Resolutions</span>{' '}
+                        counts the actual number of times your backend executed code to fetch that
+                        field's data (which can multiply within lists or drop to zero if a parent
+                        returned null).
+                      </div>
+                    ) : null}
+                    <table className="mt-4 table-auto">
+                      <thead>
+                        <tr>
+                          <th className="px-2 pl-0 text-left font-normal">
+                            <span className="font-bold">{usage.total} Requests</span>{' '}
+                            {hasFieldLevelMetrics ? 'with' : null}
+                          </th>
+                        </tr>
+                        {usage.totalResolutions ? (
+                          <tr>
+                            <th className="pl-0 text-left">{usage.totalResolutions} Resolutions</th>
+                          </tr>
+                        ) : null}
+                        {usage.errorTotal ? (
+                          <tr>
+                            <th className="pl-0 text-left">{usage.errorTotal} Errors</th>
+                          </tr>
+                        ) : null}
+                        <tr>
+                          <td className="pl-0 text-left">
+                            for{' '}
+                            <span className="text-orange-800 dark:text-orange-500">
+                              {availability.toFixed(2)}% Availability
+                            </span>
+                          </td>
+                        </tr>
+                      </thead>
+                    </table>
+                  </div>
+                </TooltipContent>
+              </Tooltip>
+            ) : null}
           </div>
           <div
             title={`${toDecimal(percentage)}% of all requests`}
@@ -82,7 +125,7 @@ export function SchemaExplorerUsageStats(props: {
           </div>
         </div>
         <Tooltip>
-          <TooltipContent>
+          <TooltipContent align="end">
             <div className="z-10">
               <div className="mb-1 text-lg font-bold">{capitalize(kindLabel)} Usage</div>
               {usage.isUsed === false ? (
@@ -148,7 +191,7 @@ export function SchemaExplorerUsageStats(props: {
         </Tooltip>
 
         <Tooltip>
-          <TooltipContent>
+          <TooltipContent align="end">
             <>
               <div className="mb-1 text-lg font-bold">Client Usage</div>
 
