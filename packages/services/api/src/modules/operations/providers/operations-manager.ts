@@ -212,6 +212,48 @@ export class OperationsManager {
     });
   }
 
+  async countResolutionsAtSchemaCoordinate({
+    organizationId,
+    projectId,
+    targetId,
+    period,
+    schemaCoordinate,
+  }: {
+    period: DateRange;
+    schemaCoordinate: string;
+  } & Listify<TargetSelector, 'targetId'>) {
+    this.logger.info(
+      'Counting resolutions with schema coordinate (period=%o, target=%s, coordinate=%s)',
+      period,
+      targetId,
+      schemaCoordinate,
+    );
+    await this.session.assertPerformAction({
+      action: 'project:describe',
+      organizationId,
+      params: {
+        organizationId,
+        projectId,
+      },
+    });
+
+    const org = await this.storage.getOrganization({
+      organizationId,
+    });
+
+    if (org.featureFlags.subgraphVisibility !== true) {
+      return null;
+    }
+
+    return this.reader
+      .countCoordinateResolutions({
+        targetIds: Array.isArray(targetId) ? targetId : [targetId],
+        period,
+        schemaCoordinate,
+      })
+      .then(r => r[schemaCoordinate]);
+  }
+
   async countRequestsWithSchemaCoordinate({
     organizationId,
     projectId,
@@ -237,16 +279,11 @@ export class OperationsManager {
       },
     });
 
-    const org = await this.storage.getOrganization({
-      organizationId,
-    });
-
     return this.reader
       .countCoordinate({
         targetIds: Array.isArray(targetId) ? targetId : [targetId],
         period,
         schemaCoordinate,
-        aggregateSource: org.featureFlags.subgraphVisibility ? 'coordinate_counts' : 'coordinates',
       })
       .then(r => r[schemaCoordinate]);
   }
@@ -1263,7 +1300,6 @@ export class OperationsManager {
         target,
         period,
         typename,
-        aggregateSource: org.featureFlags.subgraphVisibility ? 'coordinate_counts' : 'coordinates',
       }),
       org.featureFlags.subgraphVisibility
         ? this.reader.countErrorCoordinatesOfType({
@@ -1278,6 +1314,7 @@ export class OperationsManager {
       [coordinate: string]: {
         total: number;
         isUsed: boolean;
+        totalResolutions?: number | null;
         errorTotal?: number;
       };
     } = {};
@@ -1285,6 +1322,7 @@ export class OperationsManager {
     for (const row of rows) {
       records[row.coordinate] = {
         total: row.total,
+        totalResolutions: row.totalResolutions,
         isUsed: row.total > 0,
       };
     }

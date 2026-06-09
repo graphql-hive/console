@@ -105,6 +105,7 @@ export type WithSchemaCoordinatesUsage<T> = T & {
     | PromiseOrValue<{
         [coordinate: string]: {
           total: number;
+          totalResolutions?: number | null;
           errorTotal?: number | null;
           usedByClients: () => PromiseOrValue<Array<string>>;
           period: DateRange;
@@ -253,6 +254,7 @@ export type SchemaCoordinateUsageMapper =
   | {
       isUsed: true;
       total: number;
+      totalResolutions?: number | null;
       errorTotal?: number | null;
       usedByClients: () => PromiseOrValue<Array<string>>;
       period: DateRange;
@@ -264,6 +266,7 @@ export type SchemaCoordinateUsageMapper =
   | {
       isUsed: false;
       total: number;
+      totalResolutions?: number | null;
       errorTotal?: number | null;
       usedByClients: () => Array<string>;
     };

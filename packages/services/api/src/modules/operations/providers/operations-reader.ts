@@ -199,28 +199,26 @@ export class OperationsReader {
     }).then(r => r[this.makeId({ type, field, argument })]);
   }
 
-  countCoordinate = batchBy<
+  countCoordinateResolutions = batchBy<
     {
       schemaCoordinate: string;
       targetIds: readonly string[];
       period: DateRange;
       operations?: readonly string[];
       excludedClients?: readonly string[] | null;
-      aggregateSource?: 'coordinate_counts' | 'coordinates';
     },
     Record<string, number>
   >(
     item =>
-      `${item.targetIds.join(',')}-${item.excludedClients?.join(',') ?? ''}-${item.operations?.join(',') ?? ''}-${item.period.from.toISOString()}-${item.period.to.toISOString()}-${item.aggregateSource}`,
+      `${item.targetIds.join(',')}-${item.excludedClients?.join(',') ?? ''}-${item.operations?.join(',') ?? ''}-${item.period.from.toISOString()}-${item.period.to.toISOString()}`,
     async items => {
       const schemaCoordinates = items.map(item => item.schemaCoordinate);
-      return await this.countCoordinates({
+      return await this.countCoordinateResolution({
         targetIds: items[0].targetIds,
         excludedClients: items[0].excludedClients,
         period: items[0].period,
         operations: items[0].operations,
         schemaCoordinates,
-        aggregateSource: items[0].aggregateSource,
       }).then(result =>
         items.map(item =>
           Promise.resolve({ [item.schemaCoordinate]: result[item.schemaCoordinate] }),
@@ -230,24 +228,20 @@ export class OperationsReader {
   );
 
   /**
-   * Can count the number of requests hitting a coordinate or the number of resolutions depending on the aggregateSource.
-   * By default, this will return the number of requests. Pass the aggregate source "coordinate_counts" to get the total
-   * count of resolutions for a coordinate.
+   * Count the number of resolutions for a coordinate.
    */
-  public async countCoordinates({
+  public async countCoordinateResolution({
     schemaCoordinates,
     targetIds,
     period,
     operations,
     excludedClients,
-    aggregateSource = 'coordinates',
   }: {
     schemaCoordinates: readonly string[];
     targetIds: string | readonly string[];
     period: DateRange;
     operations?: readonly string[];
     excludedClients?: readonly string[] | null;
-    aggregateSource?: 'coordinate_counts' | 'coordinates';
   }) {
     const conditions = [sql`(coordinate IN (${sql.array(schemaCoordinates, 'String')}))`];
 
@@ -281,7 +275,115 @@ export class OperationsReader {
             SELECT
               coordinate,
               sum(total) as total
-            FROM ${aggregationTableName(aggregateSource)} 
+            FROM ${aggregationTableName('coordinate_counts')} 
+            ${this.createFilter({
+              target: targetIds,
+              period,
+              operations,
+              extra: conditions,
+            })}
+            GROUP BY coordinate
+          `,
+      queryId: aggregation => `count_fields_v2_${aggregation}`,
+      timeout: 30_000,
+    });
+
+    const res = await this.clickHouse.query<{
+      total: string;
+      coordinate: string;
+    }>(query);
+
+    const stats: Record<string, number> = {};
+    for (const row of res.data) {
+      stats[row.coordinate] = ensureNumber(row.total);
+    }
+
+    for (const coordinate of schemaCoordinates) {
+      if (typeof stats[coordinate] !== 'number') {
+        stats[coordinate] = 0;
+      }
+    }
+
+    return stats;
+  }
+
+  countCoordinate = batchBy<
+    {
+      schemaCoordinate: string;
+      targetIds: readonly string[];
+      period: DateRange;
+      operations?: readonly string[];
+      excludedClients?: readonly string[] | null;
+    },
+    Record<string, number>
+  >(
+    item =>
+      `${item.targetIds.join(',')}-${item.excludedClients?.join(',') ?? ''}-${item.operations?.join(',') ?? ''}-${item.period.from.toISOString()}-${item.period.to.toISOString()}`,
+    async items => {
+      const schemaCoordinates = items.map(item => item.schemaCoordinate);
+      return await this.countCoordinates({
+        targetIds: items[0].targetIds,
+        excludedClients: items[0].excludedClients,
+        period: items[0].period,
+        operations: items[0].operations,
+        schemaCoordinates,
+      }).then(result =>
+        items.map(item =>
+          Promise.resolve({ [item.schemaCoordinate]: result[item.schemaCoordinate] }),
+        ),
+      );
+    },
+  );
+
+  /**
+   * Can count the number of requests hitting a coordinate.
+   */
+  public async countCoordinates({
+    schemaCoordinates,
+    targetIds,
+    period,
+    operations,
+    excludedClients,
+  }: {
+    schemaCoordinates: readonly string[];
+    targetIds: string | readonly string[];
+    period: DateRange;
+    operations?: readonly string[];
+    excludedClients?: readonly string[] | null;
+  }) {
+    const conditions = [sql`(coordinate IN (${sql.array(schemaCoordinates, 'String')}))`];
+
+    if (Array.isArray(excludedClients) && excludedClients.length > 0) {
+      // Eliminate coordinates fetched by excluded clients.
+      // We can connect a coordinate to a client by using the hash column.
+      // The hash column is basically a unique identifier of a GraphQL operation.
+      // In the following query we fetch all hashes that were used only by the excluded clients.
+      conditions.push(sql`
+        hash NOT IN (
+          SELECT hash FROM (
+            SELECT
+              hash,
+              countIf(client_name NOT IN (${sql.array(
+                excludedClients,
+                'String',
+              )})) as non_excluded_clients_total
+            FROM clients_daily ${this.createFilter({
+              target: targetIds,
+              period,
+            })}
+            GROUP BY hash
+          ) WHERE non_excluded_clients_total = 0
+        )
+      `);
+    }
+
+    const query = this.pickAggregationByPeriod({
+      period,
+      query: aggregationTableName => sql`
+            SELECT
+              coordinate,
+              sum(total) as total
+            FROM ${aggregationTableName('coordinates')} 
             ${this.createFilter({
               target: targetIds,
               period,
@@ -2383,7 +2485,6 @@ export class OperationsReader {
         target: string;
         period: DateRange;
         typename: string;
-        aggregateSource?: 'coordinate_counts' | 'coordinates';
       }>,
     ) => {
       const aggregationMap = new Map<
@@ -2392,7 +2493,6 @@ export class OperationsReader {
           target: string;
           period: DateRange;
           typenames: string[];
-          aggregateSource?: 'coordinate_counts' | 'coordinates';
         }
       >();
 
@@ -2413,7 +2513,6 @@ export class OperationsReader {
             target: selector.target,
             period: selector.period,
             typenames: [selector.typename],
-            aggregateSource: selector.aggregateSource,
           });
         } else {
           value.typenames.push(selector.typename);
@@ -2426,6 +2525,7 @@ export class OperationsReader {
           {
             coordinate: string;
             total: number;
+            totalResolutions: number | null;
           }[]
         >
       >();
@@ -2440,7 +2540,6 @@ export class OperationsReader {
             target: selector.target,
             period: selector.period,
             typenames: selector.typenames,
-            aggregateSource: selector.aggregateSource,
           }),
         );
       }
@@ -2464,38 +2563,60 @@ export class OperationsReader {
     target,
     period,
     typenames,
-    aggregateSource = 'coordinates',
   }: {
     target: string;
     period: DateRange;
     typenames: string[];
-    aggregateSource?: 'coordinate_counts' | 'coordinates';
   }) {
     const typesConditions = typenames.map(
       t => sql`coordinate = ${t} OR coordinate LIKE ${t + '.%'}`,
     );
-    const result = await this.clickHouse.query<{
-      coordinate: string;
-      total: number;
-    }>(
-      this.pickAggregationByPeriod({
-        query: aggregationTableName => sql`
-        SELECT coordinate, sum(total) as total FROM ${aggregationTableName(aggregateSource)}
+
+    const query = this.pickAggregationByPeriod({
+      query: aggregationTableName => sql`
+      SELECT 
+        coalesce(c.coordinate, r.coordinate) AS coordinate, 
+        c.total AS total, 
+        r.totalResolutions AS totalResolutions
+      FROM
+      (
+        SELECT coordinate, sum(total) as total
+        FROM ${aggregationTableName('coordinates')}
         ${this.createFilter({
           target,
           period,
           extra: [sql`(${sql.join(typesConditions, ' OR ')})`],
         })}
-        GROUP BY coordinate`,
-        queryId: aggregation => `coordinates_per_types_${aggregation}`,
-        timeout: 15_000,
-        period,
-      }),
-    );
+        GROUP BY coordinate
+      ) AS c
+      LEFT OUTER JOIN
+      (
+        SELECT coordinate, sum(total) as totalResolutions
+        FROM ${aggregationTableName('coordinate_counts')}
+        ${this.createFilter({
+          target,
+          period,
+          extra: [sql`(${sql.join(typesConditions, ' OR ')})`],
+        })}
+        GROUP BY coordinate
+      ) AS r
+      ON c.coordinate = r.coordinate
+      ;`,
+      queryId: aggregation => `coordinates_per_types_${aggregation}`,
+      timeout: 15_000,
+      period,
+    });
+
+    const result = await this.clickHouse.query<{
+      coordinate: string;
+      total: number;
+      totalResolutions?: number | null;
+    }>(query);
 
     return result.data.map(row => ({
       coordinate: row.coordinate,
       total: ensureNumber(row.total),
+      totalResolutions: row.totalResolutions ? ensureNumber(row.totalResolutions) : null,
     }));
   }
 

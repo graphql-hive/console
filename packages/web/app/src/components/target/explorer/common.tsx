@@ -30,6 +30,7 @@ export function Description(props: { description: string }) {
 const SchemaExplorerUsageStats_UsageFragment = graphql(`
   fragment SchemaExplorerUsageStats_UsageFragment on SchemaCoordinateUsage {
     total
+    totalResolutions
     errorTotal
     isUsed
     usedByClients
@@ -51,9 +52,13 @@ export function SchemaExplorerUsageStats(props: {
 }) {
   const usage = useFragment(SchemaExplorerUsageStats_UsageFragment, props.usage);
   const percentage = props.totalRequests ? (usage.total / props.totalRequests) * 100 : 0;
-  const availability = usage.errorTotal
-    ? ((1.0 - usage.errorTotal / usage.total) * 100.0).toFixed(2)
-    : null;
+  const availability =
+    usage.errorTotal || usage.totalResolutions
+      ? (
+          (1.0 - (usage.errorTotal ?? 0) / Math.max(usage.totalResolutions ?? 1, 1)) *
+          100.0
+        ).toFixed(2)
+      : null;
 
   const kindLabel = useMemo(() => props.kindLabel ?? 'field', [props.kindLabel]);
 
@@ -63,7 +68,7 @@ export function SchemaExplorerUsageStats(props: {
         <div className="grow">
           <div
             className="text-center"
-            title={`${usage.total} requests${usage.errorTotal ? `, ${usage.errorTotal} errors, ${availability}% availability` : ''}`}
+            title={`${usage.total} requests${usage.totalResolutions ? `, ${usage.totalResolutions} resolutions` : null}${usage.errorTotal ? `, ${usage.errorTotal} errors, ${availability}% availability` : ''}`}
           >
             {formatNumber(usage.total)}
             {availability ? <span className="text-neutral-8 ml-1">({availability}%)</span> : null}

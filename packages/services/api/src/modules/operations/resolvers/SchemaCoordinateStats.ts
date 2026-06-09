@@ -8,8 +8,10 @@ export const SchemaCoordinateStats: Pick<
   | 'failuresOverTime'
   | 'operations'
   | 'requestsOverTime'
+  | 'resolutionsOverTime'
   | 'totalFailures'
   | 'totalRequests'
+  | 'totalResolutions'
 > = {
   totalRequests: ({ organization, project, target, period, schemaCoordinate }, _, { injector }) => {
     return injector.get(OperationsManager).countRequestsWithSchemaCoordinate({
@@ -33,12 +35,26 @@ export const SchemaCoordinateStats: Pick<
       schemaCoordinate,
     });
   },
-  requestsOverTime: (
+  resolutionsOverTime: (
     { organization, project, target, period, schemaCoordinate },
     { resolution },
     { injector },
   ) => {
     return injector.get(OperationsManager).readCoordinatesOverTime({
+      targetId: target,
+      projectId: project,
+      organizationId: organization,
+      period,
+      resolution,
+      schemaCoordinate,
+    });
+  },
+  requestsOverTime: (
+    { organization, project, target, period, schemaCoordinate },
+    { resolution },
+    { injector },
+  ) => {
+    return injector.get(OperationsManager).readRequestsOverTime({
       targetId: target,
       projectId: project,
       organizationId: organization,
@@ -130,6 +146,19 @@ export const SchemaCoordinateStats: Pick<
       organizationId: organization,
       period,
       resolution,
+      schemaCoordinate,
+    });
+  },
+  totalResolutions: (
+    { organization, project, target, period, schemaCoordinate },
+    _,
+    { injector },
+  ) => {
+    return injector.get(OperationsManager).countResolutionsAtSchemaCoordinate({
+      organizationId: organization,
+      projectId: project,
+      targetId: target,
+      period,
       schemaCoordinate,
     });
   },

@@ -25,7 +25,7 @@ import { QueryError } from '@/components/ui/query-error';
 import { graphql } from '@/gql';
 import { formatNumber, formatThroughput, toDecimal } from '@/lib/hooks';
 import { useDateRangeController } from '@/lib/hooks/use-date-range-controller';
-import { useChartStyles } from '@/lib/utils';
+import { cn, useChartStyles } from '@/lib/utils';
 import { Link } from '@tanstack/react-router';
 
 const SchemaCoordinateView_SchemaCoordinateStatsQuery = graphql(`
@@ -48,7 +48,12 @@ const SchemaCoordinateView_SchemaCoordinateStatsQuery = graphql(`
           date
           value
         }
+        resolutionsOverTime(resolution: $resolution) {
+          date
+          value
+        }
         totalRequests
+        totalResolutions
         failuresOverTime(resolution: $resolution) {
           date
           value
@@ -131,6 +136,15 @@ function SchemaCoordinateView(props: {
     return points.map(node => [node.date, node.value]);
   }, [points]);
 
+  const resolutionPoints = query.data?.target?.schemaCoordinateStats?.resolutionsOverTime;
+  const resolutionsOverTime = useMemo(() => {
+    if (!resolutionPoints) {
+      return [];
+    }
+
+    return resolutionPoints.map(node => [node.date, node.value]);
+  }, [resolutionPoints]);
+
   const errorPoints = query.data?.target?.schemaCoordinateStats?.failuresOverTime;
   const errorsOverTime = useMemo(() => {
     if (!errorPoints) {
@@ -140,6 +154,7 @@ function SchemaCoordinateView(props: {
     return errorPoints.map(node => [node.date, node.value]);
   }, [errorPoints]);
   const totalRequests = query.data?.target?.schemaCoordinateStats?.totalRequests ?? 0;
+  const totalResolutions = query.data?.target?.schemaCoordinateStats?.totalResolutions ?? 0;
   const totalFailures = query.data?.target?.schemaCoordinateStats.totalFailures ?? null;
   const totalOperations = query.data?.target?.schemaCoordinateStats?.operations.edges.length ?? 0;
   const totalClients = query.data?.target?.schemaCoordinateStats?.clients.edges.length ?? 0;
@@ -209,32 +224,45 @@ function SchemaCoordinateView(props: {
           <div className="col-span-4">
             <div className="grid gap-4 md:grid-cols-4 lg:grid-cols-2">
               <Card className="bg-neutral-2/50">
-                <CardHeader
-                  className="flex flex-row items-center justify-between space-y-0 pb-2"
-                  title="Resolution Count is the total number of times this specific field (schema coordinate) was executed and returned.
-
-This differs from Request Count because a single request can resolve a field multiple times (e.g., inside an array) or skip it entirely (due to errors or conditional directives)."
-                >
-                  <CardTitle className="text-sm font-medium">
-                    {hasFieldLevelMetrics ? 'Total resolutions' : 'Total calls'}
-                  </CardTitle>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">Total calls</CardTitle>
                   <GlobeIcon className="text-neutral-10 size-4" />
                 </CardHeader>
                 <CardContent>
                   <div className="text-2xl font-bold">
                     {isLoading ? '-' : formatNumber(totalRequests)}
-                    {totalFailures ? (
-                      <span className="ml-2 text-sm font-normal text-red-500">
-                        ({formatNumber(totalFailures)} errors)
-                      </span>
-                    ) : null}
                   </div>
                   <p className="text-neutral-10 text-xs">
-                    {hasFieldLevelMetrics ? 'Resolved' : 'Requests'} in{' '}
-                    {dateRangeController.selectedPreset.label.toLowerCase()}
+                    Requests in {dateRangeController.selectedPreset.label.toLowerCase()}
                   </p>
                 </CardContent>
               </Card>
+              {hasFieldLevelMetrics ? (
+                <Card className="bg-neutral-2/50">
+                  <CardHeader
+                    className="flex flex-row items-center justify-between space-y-0 pb-2"
+                    title="Resolution Count is the total number of times this specific field (schema coordinate) was executed and returned.
+
+This differs from Request Count because a single request can resolve a field multiple times (e.g., inside an array) or skip it entirely (due to errors or conditional directives)."
+                  >
+                    <CardTitle className="text-sm font-medium">Total resolutions</CardTitle>
+                    <GlobeIcon className="text-neutral-10 size-4" />
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold">
+                      {isLoading ? '-' : formatNumber(totalResolutions)}
+                      {totalFailures ? (
+                        <span className="ml-2 text-sm font-normal text-red-500">
+                          ({formatNumber(totalFailures)} errors)
+                        </span>
+                      ) : null}
+                    </div>
+                    <p className="text-neutral-10 text-xs">
+                      Resolved in {dateRangeController.selectedPreset.label.toLowerCase()}
+                    </p>
+                  </CardContent>
+                </Card>
+              ) : null}
               <Card className="bg-neutral-2/50">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                   <CardTitle className="text-sm font-medium">Requests per minute</CardTitle>
@@ -288,9 +316,7 @@ This differs from Request Count because a single request can resolve a field mul
               <CardHeader>
                 <CardTitle>Activity</CardTitle>
                 <CardDescription>
-                  {hasFieldLevelMetrics
-                    ? `Number of times the coordinate ${props.coordinate} has resolved over time`
-                    : `GraphQL requests with ${props.coordinate} over time`}
+                  GraphQL requests with {props.coordinate} over time
                 </CardDescription>
               </CardHeader>
               <CardContent className="min-h-[150px] grow basis-0">
@@ -348,6 +374,79 @@ This differs from Request Count because a single request can resolve a field mul
                             large: true,
                             data: requestsOverTime,
                           },
+                        ],
+                      }}
+                    />
+                  )}
+                </AutoSizer>
+              </CardContent>
+              <CardHeader className="pt-0">
+                <CardDescription>
+                  Number of times the coordinate {props.coordinate} has resolved over time
+                </CardDescription>
+              </CardHeader>
+              <CardContent
+                className={cn(
+                  'min-h-[150px] grow basis-0',
+                  resolutionsOverTime.length || errorsOverTime.length ? 'show' : 'hidden',
+                )}
+              >
+                <AutoSizer>
+                  {size => (
+                    <ReactECharts
+                      style={{ width: size.width, height: size.height }}
+                      option={{
+                        ...styles,
+                        grid: {
+                          left: 20,
+                          top: 5,
+                          right: 5,
+                          bottom: 5,
+                          containLabel: true,
+                        },
+                        tooltip: {
+                          trigger: 'axis',
+                        },
+                        legend: {
+                          show: false,
+                        },
+                        xAxis: [
+                          {
+                            type: 'time',
+                            boundaryGap: false,
+                          },
+                        ],
+                        yAxis: [
+                          {
+                            type: 'value',
+                            min: 0,
+                            splitLine: {
+                              lineStyle: {
+                                color: colors.grid,
+                                type: 'dashed',
+                              },
+                            },
+                            axisLabel: {
+                              formatter: (value: number) => formatNumber(value),
+                            },
+                          },
+                        ],
+                        series: [
+                          resolutionsOverTime?.length
+                            ? {
+                                type: 'line',
+                                name: 'Resolutions',
+                                showSymbol: false,
+                                smooth: false,
+                                color: colors.primary,
+                                areaStyle: {},
+                                emphasis: {
+                                  focus: 'series',
+                                },
+                                large: true,
+                                data: resolutionsOverTime,
+                              }
+                            : undefined,
                           errorsOverTime?.length
                             ? {
                                 type: 'line',

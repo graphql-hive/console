@@ -1142,6 +1142,11 @@ export default gql`
     total: Float!
 
     """
+    The total amount of resolutions of the schema coordinate within the contextual period.
+    """
+    totalResolutions: Float
+
+    """
     The total amount of errors of the schema coordinate within the contextual period.
     """
     errorTotal: Float
