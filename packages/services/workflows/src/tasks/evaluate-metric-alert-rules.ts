@@ -79,6 +79,12 @@ export const task = implementTask(EvaluateMetricAlertRulesTask, async args => {
     // isolating the failure to this group.
     const filterConditions = buildSavedFilterConditions(representative.savedFilterFilters, logger);
 
+    // Only unfiltered groups can use the target-keyed rollups — they've dropped
+    // the hash/client dimensions, so a saved filter would have nothing to
+    // predicate on. Filtered groups keep their fast index-prefix path on the
+    // legacy tables.
+    const useTargetRollup = filterConditions.length === 0;
+
     // startActiveSpan makes this span the current OTel context for the
     // duration of the callback, so the slonik PG interceptor and the
     // fetch instrumentation parent their auto-spans under this one. That's
@@ -104,6 +110,7 @@ export const task = implementTask(EvaluateMetricAlertRulesTask, async args => {
               representative.timeWindowMinutes,
               filterConditions,
               evaluationTime,
+              useTargetRollup,
             );
           } catch (error) {
             logger.error(

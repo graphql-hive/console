@@ -257,6 +257,12 @@ export async function queryClickHouseWindows(
   // this job up late, using wall-clock would shift the queried window
   // forward and could miss the spike that should have fired the alert.
   evaluationTime: Date,
+  // When true, read the target-keyed rollups (operations_*_by_target) instead
+  // of the full per-hash/client tables. The caller only sets this for unfiltered
+  // rules (no `filterConditions`), since those rollups have dropped the
+  // hash/client dimensions a filter would predicate on. Defaults to false so
+  // existing callers/tests keep hitting the legacy tables.
+  useTargetRollup = false,
 ): Promise<{ current: ClickHouseWindowRow | null; previous: ClickHouseWindowRow | null }> {
   const anchorMs = evaluationTime.getTime();
   const offsetMs = 60_000;
@@ -266,7 +272,13 @@ export async function queryClickHouseWindows(
   const currentWindowStart = new Date(anchorMs - offsetMs - windowMs);
   const previousWindowStart = new Date(anchorMs - offsetMs - 2 * windowMs);
 
-  const tableName = timeWindowMinutes <= 360 ? 'operations_minutely' : 'operations_hourly';
+  // Pick the resolution table by window size, then optionally its target-keyed
+  // rollup variant. Both rollups carry the same total/total_ok/duration_*
+  // aggregate columns the SELECT below reads, so only the table name changes...
+  // and `_by_target` is day-partitioned and ordered (target, timestamp), so this
+  // window query prunes by time instead of scanning the target's whole slice.
+  const baseTable = timeWindowMinutes <= 360 ? 'operations_minutely' : 'operations_hourly';
+  const tableName = useTargetRollup ? `${baseTable}_by_target` : baseTable;
 
   // The window timestamps are computed numbers, inlined safely via sql.raw. Every
   // string value (`target` and the saved-filter conditions' arbitrary client/

@@ -170,4 +170,15 @@ describe('queryClickHouseWindows', () => {
     await queryClickHouseWindows(clickhouse, target, 720, [], evalTime);
     expect(calls[0].sql).toContain('FROM operations_hourly');
   });
+
+  test('useTargetRollup -> reads the target-keyed rollup with no hash/client predicate', async () => {
+    const { clickhouse, calls } = captureClient();
+    await queryClickHouseWindows(clickhouse, target, 60, [], evalTime, true);
+    const { sql } = calls[0];
+    expect(sql).toContain('FROM operations_minutely_by_target');
+    // The rollup dropped the hash/client dimensions, so the rollup path must
+    // never emit a hash/client predicate.
+    expect(sql).not.toContain('client_name');
+    expect(sql).not.toContain('hash');
+  });
 });

@@ -10,9 +10,9 @@ import type { Action } from '../clickhouse';
 //
 // These two views re-aggregate the same source (`default.operations`) keyed on
 // `(target, timestamp)` only, day-partitioned, so the same window query reads
-// just the window's granules. The alert evaluator routes unfiltered rules here
-// behind a feature flag; filtered rules keep using the existing tables (where
-// the hash/client predicate already exploits the sort-key prefix).
+// just the window's granules. The alert evaluator routes unfiltered rules here;
+// filtered rules keep using the existing tables (where the hash/client predicate
+// already exploits the sort-key prefix).
 //
 // The SELECTs intentionally mirror `createSelectStatementForOperationsMinutely`
 // / `...Hourly` in 004-version-2 (same aggregate-state functions) minus the
