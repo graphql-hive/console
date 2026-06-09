@@ -77,6 +77,10 @@ export async function main() {
     maxRetriesPerRequest: 20,
     db: 0,
     enableReadyCheck: false,
+    // Reject any command that doesn't get a reply within this window. Without it, a
+    // command sent on a half-open "ready" socket (e.g. after Redis becomes unavailable) can
+    // hang forever.
+    commandTimeout: 5_000,
     tls: env.redis.tlsEnabled ? {} : undefined,
   });
 
