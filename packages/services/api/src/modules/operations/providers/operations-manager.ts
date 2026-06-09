@@ -1446,4 +1446,23 @@ export class OperationsManager {
       schemaCoordinate,
     });
   }
+
+  async shouldDisplayFieldLevelMetrics({
+    organizationId,
+    targetId,
+  }: {
+    organizationId: string;
+    targetId: string;
+  }) {
+    const org = await this.storage.getOrganization({
+      organizationId,
+    });
+
+    if (org.featureFlags.subgraphVisibility !== true) {
+      return false;
+    }
+    return await this.reader.hasCoordinatesIngestedCheck({
+      targetId,
+    });
+  }
 }

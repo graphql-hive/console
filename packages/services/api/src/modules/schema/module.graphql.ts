@@ -253,6 +253,11 @@ export default gql`
     """
     hasCollectedSubscriptionOperations: Boolean!
 
+    """
+    Whether this feature has been enabled for the organization and the target
+    has sent usage data matching the required format. If either of these cases
+    are false, then this returns false.
+    """
     hasFieldLevelMetrics: Boolean!
   }
 

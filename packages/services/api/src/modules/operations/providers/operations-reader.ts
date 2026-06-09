@@ -2229,6 +2229,29 @@ export class OperationsReader {
     return result.data.map(row => row.client_name);
   }
 
+  /**
+   * Use the coordinate_counts_daily table to check if any field usage data
+   * has been ingested for the target. This can be used in conjunction with
+   * the feature flag to appropriately display frontend components or opt
+   * to hide them instead.
+   */
+  async hasCoordinatesIngestedCheck({ targetId }: { targetId: string }): Promise<boolean> {
+    const result = await this.clickHouse.query<{
+      hash: string;
+    }>({
+      query: sql`
+        SELECT hash FROM coordinate_counts_daily
+        WHERE target = ${targetId}
+        LIMIT 1
+      `,
+      queryId: 'has_coordinates_ingested_check',
+      // set a quick timeout to avoid inconvenience
+      timeout: 3_000,
+    });
+
+    return result.rows === 1;
+  }
+
   async getCoordinatesOverTime({
     targetId,
     period,

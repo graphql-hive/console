@@ -1,6 +1,5 @@
 import { parseDateRangeInput } from '../../../shared/helpers';
 import { OperationsManager } from '../../operations/providers/operations-manager';
-import { Storage } from '../../shared/providers/storage';
 import { isFieldRequestedDeep } from '../lib/is-field-requested';
 import { ContractsManager } from '../providers/contracts-manager';
 import { SchemaManager } from '../providers/schema-manager';
@@ -126,8 +125,9 @@ export const Target: Pick<
     });
   },
   hasFieldLevelMetrics: async (target, _, { injector }) => {
-    const org = await injector.get(Storage).getOrganization({ organizationId: target.orgId });
-    // @TODO also check if any metrics have been sent with the new format.
-    return org.featureFlags.subgraphVisibility;
+    return injector.get(OperationsManager).shouldDisplayFieldLevelMetrics({
+      organizationId: target.orgId,
+      targetId: target.id,
+    });
   },
 };

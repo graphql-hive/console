@@ -66,8 +66,8 @@ export function SchemaExplorerUsageStats(props: {
         <div className="grow">
           <div className="min-w-[25px] text-center">{formatNumber(usage.total)}</div>
         </div>
-        <div className="min-w-[25px]">
-          {availability ? (
+        {availability ? (
+          <div className="min-w-[25px]">
             <Tooltip>
               <TooltipContent align="end">
                 <div className="z-10 text-left">
@@ -115,8 +115,8 @@ export function SchemaExplorerUsageStats(props: {
                 <AvailabilityBar availability={availability} />
               </TooltipTrigger>
             </Tooltip>
-          ) : null}
-        </div>
+          </div>
+        ) : null}
         <Tooltip>
           <TooltipContent align="end">
             <div className="z-10">
