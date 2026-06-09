@@ -1,5 +1,6 @@
 import { Inject, Injectable, Scope } from 'graphql-modules';
 import type { MetricAlertRule } from '../../../shared/entities';
+import { AccessError } from '../../../shared/errors';
 import { Session } from '../../auth/lib/authz';
 import {
   METRIC_ALERT_RULE_TIME_WINDOW_MAX_MINUTES,
@@ -103,8 +104,19 @@ export class MetricAlertRulesManager {
     if (await this.isEnabled(organizationId)) {
       return true;
     }
-    const actor = await this.session.getActor();
-    return actor.type === 'user' && actor.user.isAdmin === true;
+    // `getActor` throws an `AccessError` for an unauthenticated/invalid session.
+    // Since this runs on read-path resolvers, treat that as "not an admin" and
+    // return false rather than failing the whole query. Other (unexpected)
+    // errors still propagate. Mirrors `Session.canPerformAction`.
+    try {
+      const actor = await this.session.getActor();
+      return actor.type === 'user' && actor.user.isAdmin === true;
+    } catch (error) {
+      if (error instanceof AccessError) {
+        return false;
+      }
+      throw error;
+    }
   }
 
   /**
