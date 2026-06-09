@@ -564,7 +564,9 @@ describe.each([ProjectType.Stitching, ProjectType.Federation, ProjectType.Single
             'type Query @public',
           );
           await expect(fetchCmd).resolves.toIncludeSubstringWithoutWhitespace('type Query @public');
-          await expect(fetchCmd).resolves.toIncludeSubstringWithoutWhitespace('directive @public on SCHEMA | OBJECT');
+          await expect(fetchCmd).resolves.toIncludeSubstringWithoutWhitespace(
+            'directive @public on SCHEMA | OBJECT',
+          );
         },
       );
 
