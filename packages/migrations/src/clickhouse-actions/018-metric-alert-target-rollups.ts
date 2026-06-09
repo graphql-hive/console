@@ -9,7 +9,7 @@ import type { Action } from '../clickhouse';
 // target's whole 24h slice.
 //
 // These rollups re-aggregate the same source (`default.operations`) keyed on
-// `(target, timestamp)` only, day-partitioned, so the same window query reads
+// `(target, timestamp)` only and time-partitioned, so the same window query reads
 // just the window's granules. The alert evaluator routes unfiltered rules here;
 // filtered rules keep using the existing tables (where the hash/client predicate
 // already exploits the sort-key prefix).
@@ -57,6 +57,7 @@ const createRollup = async (
   exec: (query: string) => Promise<void>,
   table: string,
   bucket: 'toStartOfMinute' | 'toStartOfHour',
+  partitionBy: string,
   ttlInterval: string,
 ) => {
   await exec(`
@@ -65,11 +66,11 @@ const createRollup = async (
       ${tableColumns}
     )
     ENGINE = SummingMergeTree
-    PARTITION BY toYYYYMMDD(timestamp)
+    PARTITION BY ${partitionBy}
     PRIMARY KEY (target, timestamp)
     ORDER BY (target, timestamp)
     TTL timestamp + INTERVAL ${ttlInterval}
-    SETTINGS index_granularity = 8192
+    SETTINGS index_granularity = 8192, ttl_only_drop_parts = 1
   `);
 
   await exec(`
@@ -86,6 +87,24 @@ const createRollup = async (
 export const action: Action = async exec => {
   // No historical backfill (start-fresh): the views capture inserts going
   // forward, starting the moment they're created.
-  await createRollup(exec, 'operations_minutely_by_target', 'toStartOfMinute', '24 HOUR');
-  await createRollup(exec, 'operations_hourly_by_target', 'toStartOfHour', '30 DAY');
+  //
+  // Partition granularity is matched to each TTL, and `ttl_only_drop_parts = 1`
+  // (set in createRollup) makes cleanup drop whole expired partitions instead of
+  // rewriting parts to strip rows: the 24h minutely rollup partitions by hour
+  // (~25 partitions, one ages out each hour), the 30-day hourly rollup by day
+  // (~31 partitions, one ages out each day, same as operations_hourly).
+  await createRollup(
+    exec,
+    'operations_minutely_by_target',
+    'toStartOfMinute',
+    'toStartOfHour(timestamp)',
+    '24 HOUR',
+  );
+  await createRollup(
+    exec,
+    'operations_hourly_by_target',
+    'toStartOfHour',
+    'toYYYYMMDD(timestamp)',
+    '30 DAY',
+  );
 };
