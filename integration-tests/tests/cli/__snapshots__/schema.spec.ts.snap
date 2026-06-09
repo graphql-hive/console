@@ -669,6 +669,10 @@ http://__URL__
 `;
 
 exports[`STITCHING > schema:fetch can fetch a latest schema with target:registry:read access > latest sdl 1`] = `
+schema {
+   query: Query
+}
+
 type Query {
   users: [User!]
 }
