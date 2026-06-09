@@ -7,8 +7,8 @@ import { initSeed } from 'testkit/seed';
 import { getServiceHost } from 'testkit/utils';
 import { describe, expect, test } from 'vitest';
 import { buildSubgraphSchema } from '@apollo/subgraph';
+import { useHive } from '@graphql-hive/gateway-plugin-console-sdk';
 import { createGatewayRuntime } from '@graphql-hive/gateway-runtime';
-import { useHive } from '@graphql-hive/gateway-usage';
 import { createServer } from '@hive/service-common';
 
 async function createSubgraphService() {

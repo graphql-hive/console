@@ -317,12 +317,12 @@ importers:
       '@graphql-hive/core':
         specifier: workspace:*
         version: link:../packages/libraries/core/dist
+      '@graphql-hive/gateway-plugin-console-sdk':
+        specifier: workspace:*
+        version: link:../packages/libraries/gateway-plugin-console-sdk/dist
       '@graphql-hive/gateway-runtime':
         specifier: ^1.0.0 || ^2.0.0
         version: 2.9.3(graphql@16.9.0)(ioredis@5.8.2)(pino@10.3.0)(ws@8.18.0)
-      '@graphql-hive/gateway-usage':
-        specifier: workspace:*
-        version: link:../packages/libraries/gateway-usage/dist
       '@graphql-typed-document-node/core':
         specifier: 3.2.0
         version: 3.2.0(graphql@16.9.0)
@@ -654,7 +654,7 @@ importers:
         version: 16.9.0
     publishDirectory: dist
 
-  packages/libraries/gateway-usage:
+  packages/libraries/gateway-plugin-console-sdk:
     dependencies:
       '@graphql-hive/core':
         specifier: workspace:*
@@ -665,6 +665,9 @@ importers:
       graphql:
         specifier: ^0.13.0 || ^14.0.0 || ^15.0.0 || ^16.0.0
         version: 16.9.0
+      tiny-lru:
+        specifier: 11.4.7
+        version: 11.4.7
     devDependencies:
       '@envelop/types':
         specifier: ^5.0.0
