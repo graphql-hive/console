@@ -493,7 +493,7 @@ function OrganizationPageContent(
                 docsUrl="/schema-registry/management/projects#create-a-new-project"
               />
             ) : (
-              <div className="flex w-full flex-col gap-y-8">
+              <div className="flex w-full flex-col gap-y-8" key={sort.field + sort.direction}>
                 {projects?.map(project => (
                   <ProjectCard
                     key={project.id}
