@@ -7,3 +7,8 @@ datasources:
     url: http://prometheus:9090
     access: proxy
     isDefault: true
+  - name: Local Tempo
+    type: tempo
+    uid: local-tempo
+    url: http://tempo:3200
+    access: proxy

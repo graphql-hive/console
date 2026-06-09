@@ -6,6 +6,7 @@ export type {
   CollectUsageCallback,
   CollectUsage,
   LegacyLogger as Logger,
+  PersistedDocumentsManifest,
   PersistedDocumentsCache,
   Layer2CacheConfiguration,
 } from './client/types.js';

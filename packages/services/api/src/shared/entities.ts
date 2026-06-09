@@ -157,6 +157,7 @@ export interface Organization {
     otelTracing: boolean;
     schemaProposals: boolean;
     subgraphVisibility: boolean;
+    metricAlertRules: boolean;
   };
   zendeskId: string | null;
   /** ID of the user that owns the organization */
@@ -435,6 +436,62 @@ export interface Alert {
   projectId: string;
   targetId: string;
   createdAt: string;
+}
+
+export type MetricAlertRuleType = 'LATENCY' | 'ERROR_RATE' | 'TRAFFIC';
+export type MetricAlertRuleMetric = 'AVG' | 'P75' | 'P90' | 'P95' | 'P99';
+export type MetricAlertRuleThresholdType = 'FIXED_VALUE' | 'PERCENTAGE_CHANGE';
+export type MetricAlertRuleDirection = 'ABOVE' | 'BELOW';
+export type MetricAlertRuleSeverity = 'INFO' | 'WARNING' | 'CRITICAL';
+export type MetricAlertRuleState = 'NORMAL' | 'PENDING' | 'FIRING' | 'RECOVERING';
+
+export interface MetricAlertRule {
+  id: string;
+  organizationId: string;
+  projectId: string;
+  targetId: string;
+  createdByUserId: string | null;
+  updatedByUserId: string | null;
+  type: MetricAlertRuleType;
+  timeWindowMinutes: number;
+  metric: MetricAlertRuleMetric | null;
+  thresholdType: MetricAlertRuleThresholdType;
+  thresholdValue: number;
+  direction: MetricAlertRuleDirection;
+  severity: MetricAlertRuleSeverity;
+  name: string;
+  createdAt: string;
+  updatedAt: string;
+  enabled: boolean;
+  lastEvaluatedAt: string | null;
+  lastTriggeredAt: string | null;
+  state: MetricAlertRuleState;
+  stateChangedAt: string | null;
+  confirmationMinutes: number;
+  savedFilterId: string | null;
+}
+
+export interface MetricAlertIncident {
+  id: string;
+  metricAlertRuleId: string;
+  startedAt: string;
+  resolvedAt: string | null;
+  currentValue: number;
+  previousValue: number | null;
+  thresholdValue: number;
+}
+
+export interface MetricAlertStateLogEntry {
+  id: string;
+  metricAlertRuleId: string;
+  targetId: string;
+  fromState: MetricAlertRuleState;
+  toState: MetricAlertRuleState;
+  value: number | null;
+  previousValue: number | null;
+  thresholdValue: number | null;
+  createdAt: string;
+  expiresAt: string;
 }
 
 export interface AdminOrganizationStats {
