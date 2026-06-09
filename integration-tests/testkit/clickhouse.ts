@@ -19,6 +19,7 @@ export async function clickHouseQuery<T>(query: string): Promise<{
       Accept: 'application/json',
       'Accept-Encoding': 'gzip',
       Authorization: `Basic ${credentials}`,
+      output_format_json_quote_64bit_integers: '1',
     },
   });
 
