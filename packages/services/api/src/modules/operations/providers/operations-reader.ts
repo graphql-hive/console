@@ -2866,6 +2866,46 @@ export class OperationsReader {
     }));
   }
 
+  async errorCodesAtSchemaCoordinate({
+    period,
+    target,
+    schemaCoordinate,
+  }: {
+    period: {
+      from: Date;
+      to: Date;
+    };
+    target: string;
+    schemaCoordinate: string;
+  }) {
+    const result = await this.clickHouse.query<{
+      count: number;
+      code: string;
+    }>(
+      this.pickAggregationByPeriod({
+        query: aggregationTableName => sql`
+        SELECT
+          sum(total_errors) as count,
+          code
+        FROM ${aggregationTableName('coordinate_errors')}
+        PREWHERE
+          timestamp >= toDateTime(${formatDate(period.from)}, 'UTC')
+          AND
+          timestamp <= toDateTime(${formatDate(period.to)}, 'UTC')
+          AND
+          target = ${target}
+          AND
+          coordinate = ${schemaCoordinate}
+        GROUP BY code`,
+        queryId: aggregation => `error_codes_at_schema_coordinate_${aggregation}`,
+        timeout: 15_000,
+        period,
+      }),
+    );
+    // @TODO safe parse
+    return result.data;
+  }
+
   public createFilter({
     target,
     period,

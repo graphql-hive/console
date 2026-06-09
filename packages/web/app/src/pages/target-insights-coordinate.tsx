@@ -77,6 +77,14 @@ const SchemaCoordinateView_SchemaCoordinateStatsQuery = graphql(`
             }
           }
         }
+        errors {
+          edges {
+            node {
+              code
+              count
+            }
+          }
+        }
       }
       latestValidSchemaVersion {
         id
@@ -550,6 +558,35 @@ This differs from Request Count because a single request can resolve a field mul
                             <div>{formatNumber(client.count)}</div>
                             <div className="min-w-[70px] text-right">
                               {toDecimal((client.count * 100) / totalRequests)}%
+                            </div>
+                          </div>
+                        </div>
+                      ),
+                    )}
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-neutral-2/50 col-span-3 flex h-full flex-col">
+            <CardHeader>
+              <CardTitle>Errors</CardTitle>
+              <CardDescription>
+                {props.coordinate} resulted in a GraphQL error {isLoading ? '-' : totalFailures}{' '}
+                times in {dateRangeController.selectedPreset.label.toLowerCase()}.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="min-h-[170px] grow basis-0 overflow-y-auto">
+              <div className="space-y-2">
+                {isLoading
+                  ? null
+                  : query.data?.target?.schemaCoordinateStats.errors.edges.map(
+                      ({ node: error }) => (
+                        <div key={error.code} className="flex items-center">
+                          <p className="truncate text-sm font-medium">{error.code}</p>
+                          <div className="ml-auto flex min-w-[150px] flex-row items-center justify-end text-sm font-light">
+                            <div>{formatNumber(error.count)}</div>
+                            <div className="min-w-[70px] text-right">
+                              {toDecimal((error.count * 100) / totalRequests)}%
                             </div>
                           </div>
                         </div>

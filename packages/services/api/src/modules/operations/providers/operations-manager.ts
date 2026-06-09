@@ -1408,4 +1408,42 @@ export class OperationsManager {
 
     return records;
   }
+
+  @cache<
+    {
+      period: DateRange;
+    } & TargetSelector
+  >(selector => JSON.stringify(selector))
+  @traceFn('OperationManager.errorCodesAtSchemaCoordinate', {
+    initAttributes: input => ({
+      'hive.organization.id': input.organizationId,
+      'hive.project.id': input.projectId,
+      'hive.target.id': input.targetId,
+    }),
+  })
+  async errorCodesAtSchemaCoordinate({
+    period,
+    targetId: target,
+    projectId: project,
+    organizationId: organization,
+    schemaCoordinate,
+  }: {
+    period: DateRange;
+    schemaCoordinate: string;
+  } & TargetSelector) {
+    await this.session.assertPerformAction({
+      action: 'project:describe',
+      organizationId: organization,
+      params: {
+        organizationId: organization,
+        projectId: project,
+      },
+    });
+
+    return this.reader.errorCodesAtSchemaCoordinate({
+      period,
+      target,
+      schemaCoordinate,
+    });
+  }
 }

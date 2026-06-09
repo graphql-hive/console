@@ -5,6 +5,7 @@ import type { SchemaCoordinateStatsResolvers } from './../../../__generated__/ty
 export const SchemaCoordinateStats: Pick<
   SchemaCoordinateStatsResolvers,
   | 'clients'
+  | 'errors'
   | 'failuresOverTime'
   | 'operations'
   | 'requestsOverTime'
@@ -161,5 +162,23 @@ export const SchemaCoordinateStats: Pick<
       period,
       schemaCoordinate,
     });
+  },
+  errors: async ({ organization, project, target, period, schemaCoordinate }, _, { injector }) => {
+    const nodes = await injector.get(OperationsManager).errorCodesAtSchemaCoordinate({
+      organizationId: organization,
+      projectId: project,
+      targetId: target,
+      period,
+      schemaCoordinate,
+    });
+    return {
+      edges: nodes.map(node => ({ node, cursor: '' })),
+      pageInfo: {
+        hasNextPage: false,
+        hasPreviousPage: false,
+        endCursor: '',
+        startCursor: '',
+      },
+    };
   },
 };

@@ -200,6 +200,7 @@ export default gql`
 
     operations: OperationStatsValuesConnection! @tag(name: "public")
     clients: ClientStatsValuesConnection! @tag(name: "public")
+    errors: ErrorStatsValuesConnection
   }
 
   type OperationsStats {
@@ -232,6 +233,28 @@ export default gql`
   type ClientStatsValuesConnection {
     edges: [ClientStatsValuesEdge!]! @tag(name: "public")
     pageInfo: PageInfo! @tag(name: "public")
+  }
+
+  type ErrorStatsValues {
+    """
+    An error identification code returned at 'extensions.code' in a graphql errors object.
+    """
+    code: String!
+
+    """
+    Total number of errors returned with this code.
+    """
+    count: SafeInt!
+  }
+
+  type ErrorStatsValuesEdge {
+    node: ErrorStatsValues!
+    cursor: String!
+  }
+
+  type ErrorStatsValuesConnection {
+    edges: [ErrorStatsValuesEdge!]!
+    pageInfo: PageInfo!
   }
 
   type MonthlyUsage {
