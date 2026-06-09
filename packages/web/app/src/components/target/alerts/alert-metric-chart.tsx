@@ -11,6 +11,7 @@ import { formatDuration } from '@/lib/hooks/use-formatted-duration';
 import { formatNumber } from '@/lib/hooks/use-formatted-number';
 import { useTickCounter } from '@/lib/hooks/use-tick-counter';
 import { useChartStyles } from '@/lib/utils';
+import { ALERT_CHART_INSET_LEFT, ALERT_CHART_INSET_RIGHT } from './alert-chart-layout';
 
 const AlertMetricChart_Query = graphql(`
   query AlertMetricChart(
@@ -214,12 +215,14 @@ export function AlertMetricChart({
           style={{ width: size.width, height: 200 }}
           option={{
             backgroundColor: 'transparent',
+            // Fixed insets (not `containLabel`) so the status-transitions bar can
+            // mirror the exact plot region.
             grid: {
-              left: 10,
+              left: ALERT_CHART_INSET_LEFT,
               top: 16,
-              right: 10,
-              bottom: 4,
-              containLabel: true,
+              right: ALERT_CHART_INSET_RIGHT,
+              bottom: 24,
+              containLabel: false,
             },
             tooltip: {
               trigger: 'axis',
