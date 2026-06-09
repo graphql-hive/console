@@ -1,4 +1,3 @@
-import { TriangleAlertIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 export default function AvailabilityBar({
@@ -13,14 +12,14 @@ export default function AvailabilityBar({
   const safePercent = Math.min(Math.max(availability, 0), 100);
   // Scale the width: 50% availability -> 0% visual width, 100% availability -> 100% visual width
   const scaledPercent = Math.max((safePercent - 50) * 2, 0);
+  const isLessThan100 = scaledPercent < 100;
   // If it's less than 100%, cap the width so at least 1px of red is always visible
-  const fillWidth = scaledPercent < 100 ? `calc(min(${scaledPercent}%, 100% - 1px))` : '100%';
-  const showWarning = safePercent < 50;
+  const fillWidth = isLessThan100 ? `calc(min(${scaledPercent}%, 100% - 1px))` : '100%';
 
   return (
     <div
       className={cn(
-        'relative flex h-4 w-full items-center overflow-hidden rounded-full bg-red-500',
+        'relative flex h-2 w-full items-center overflow-hidden rounded-sm bg-red-500',
         className,
       )}
       role="progressbar"
@@ -29,15 +28,12 @@ export default function AvailabilityBar({
       aria-valuemax={100}
     >
       <div
-        className="h-full bg-green-500 transition-all duration-300 ease-in-out"
-        style={{ width: fillWidth }}
-      >
-        {showWarning && (
-          <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
-            <TriangleAlertIcon className="h-4 w-4 drop-shadow-sm" />
-          </div>
+        className={cn(
+          'h-full bg-green-500 transition-all duration-300 ease-in-out',
+          isLessThan100 && 'border-hive-laboratory-background border-r',
         )}
-      </div>
+        style={{ width: fillWidth }}
+      />
     </div>
   );
 }

@@ -64,65 +64,58 @@ export function SchemaExplorerUsageStats(props: {
     <TooltipProvider delayDuration={0}>
       <div className="ml-3 flex flex-row items-center gap-2 text-xs">
         <div className="grow">
-          <div className="text-center">
-            {formatNumber(usage.total)}
-            {availability ? (
-              <Tooltip>
-                <TooltipTrigger className="block w-full cursor-help">
-                  <AvailabilityBar availability={availability} />
-                </TooltipTrigger>
-                <TooltipContent align="end">
-                  <div className="z-10 text-left">
-                    <div className="mb-1 text-lg font-bold">{capitalize(kindLabel)} Stats</div>
-                    {hasFieldLevelMetrics ? (
-                      <div className="max-w-60">
-                        <span className="font-bold">Requests</span> counts how many client requests
-                        asked for a field, whereas <span className="font-bold">Resolutions</span>{' '}
-                        counts the actual number of times your backend executed code to fetch that
-                        field's data (which can multiply within lists or drop to zero if a parent
-                        returned null).
-                      </div>
-                    ) : null}
-                    <table className="mt-4 table-auto">
-                      <thead>
+          <div className="min-w-[25px] text-center">{formatNumber(usage.total)}</div>
+        </div>
+        <div className="min-w-[25px]">
+          {availability ? (
+            <Tooltip>
+              <TooltipContent align="end">
+                <div className="z-10 text-left">
+                  <div className="mb-1 text-lg font-bold">{capitalize(kindLabel)} Stats</div>
+                  {hasFieldLevelMetrics ? (
+                    <div className="max-w-60">
+                      <span className="font-bold">Requests</span> counts how many client requests
+                      asked for a field, whereas <span className="font-bold">Resolutions</span>{' '}
+                      counts the actual number of times your backend executed code to fetch that
+                      field's data (which can multiply within lists or drop to zero if a parent
+                      returned null).
+                    </div>
+                  ) : null}
+                  <table className="mt-4 table-auto">
+                    <thead>
+                      <tr>
+                        <th className="px-2 pl-0 text-left font-normal">
+                          <span className="font-bold">{usage.total} Requests</span>{' '}
+                          {hasFieldLevelMetrics ? 'with' : null}
+                        </th>
+                      </tr>
+                      {usage.totalResolutions ? (
                         <tr>
-                          <th className="px-2 pl-0 text-left font-normal">
-                            <span className="font-bold">{usage.total} Requests</span>{' '}
-                            {hasFieldLevelMetrics ? 'with' : null}
-                          </th>
+                          <th className="pl-0 text-left">{usage.totalResolutions} Resolutions</th>
                         </tr>
-                        {usage.totalResolutions ? (
-                          <tr>
-                            <th className="pl-0 text-left">{usage.totalResolutions} Resolutions</th>
-                          </tr>
-                        ) : null}
-                        {usage.errorTotal ? (
-                          <tr>
-                            <th className="pl-0 text-left">{usage.errorTotal} Errors</th>
-                          </tr>
-                        ) : null}
+                      ) : null}
+                      {usage.errorTotal ? (
                         <tr>
-                          <td className="pl-0 text-left">
-                            for{' '}
-                            <span className="text-orange-800 dark:text-orange-500">
-                              {availability.toFixed(2)}% Availability
-                            </span>
-                          </td>
+                          <th className="pl-0 text-left">{usage.errorTotal} Errors</th>
                         </tr>
-                      </thead>
-                    </table>
-                  </div>
-                </TooltipContent>
-              </Tooltip>
-            ) : null}
-          </div>
-          <div
-            title={`${toDecimal(percentage)}% of all requests`}
-            className="bg-neutral-2/20 relative z-0 mt-1 w-full min-w-[25px] overflow-hidden rounded-sm"
-            style={{ width: 50, height: 5 }}
-          >
-            <div className="bg-neutral-2 z-0 h-full" style={{ width: `${percentage}%` }} />
-          </div>
+                      ) : null}
+                      <tr>
+                        <td className="pl-0 text-left">
+                          for{' '}
+                          <span className="text-orange-800 dark:text-orange-500">
+                            {availability.toFixed(2)}% Availability
+                          </span>
+                        </td>
+                      </tr>
+                    </thead>
+                  </table>
+                </div>
+              </TooltipContent>
+              <TooltipTrigger className="block w-full cursor-help">
+                <AvailabilityBar availability={availability} />
+              </TooltipTrigger>
+            </Tooltip>
+          ) : null}
         </div>
         <Tooltip>
           <TooltipContent align="end">
