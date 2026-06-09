@@ -17,7 +17,7 @@ export const Target: Pick<
   | 'viewerCanUseMetricAlertRules'
 > = {
   metricAlertRules: async (target, _, { injector }) => {
-    if (!(await injector.get(MetricAlertRulesManager).isEnabled(target.orgId))) {
+    if (!(await injector.get(MetricAlertRulesManager).canViewerUseMetricAlertRules(target.orgId))) {
       return [];
     }
     return injector.get(MetricAlertRulesStorage).getMetricAlertRulesByTarget({
@@ -25,7 +25,7 @@ export const Target: Pick<
     });
   },
   metricAlertRule: async (target, { id }, { injector }) => {
-    if (!(await injector.get(MetricAlertRulesManager).isEnabled(target.orgId))) {
+    if (!(await injector.get(MetricAlertRulesManager).canViewerUseMetricAlertRules(target.orgId))) {
       return null;
     }
     const rule = await injector.get(MetricAlertRulesStorage).getMetricAlertRule({ id });
@@ -35,7 +35,7 @@ export const Target: Pick<
     return rule;
   },
   metricAlertRuleStateLog: async (target, { from, to }, { injector }) => {
-    if (!(await injector.get(MetricAlertRulesManager).isEnabled(target.orgId))) {
+    if (!(await injector.get(MetricAlertRulesManager).canViewerUseMetricAlertRules(target.orgId))) {
       return [];
     }
     return injector.get(MetricAlertRulesStorage).getStateLogByTarget({
@@ -45,7 +45,7 @@ export const Target: Pick<
     });
   },
   viewerCanUseMetricAlertRules: (target, _args, { injector }) => {
-    return injector.get(MetricAlertRulesManager).isEnabled(target.orgId);
+    return injector.get(MetricAlertRulesManager).canViewerUseMetricAlertRules(target.orgId);
   },
   metricAlertStateLogRetentionDays: async (target, _args, { injector }) => {
     const organization = await injector
