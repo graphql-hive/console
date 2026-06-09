@@ -27,7 +27,7 @@ export class TargetStats {
       .any(
         psql`/* TargetStats.countSchemaVersionsByTargetIds */
           SELECT
-            sv.target_id as "targetId",
+            sv.target_id as target_id,
             COUNT(*) as total
           FROM schema_versions as sv
           LEFT JOIN targets as t ON (t.id = sv.target_id)
@@ -51,7 +51,7 @@ export class TargetStats {
         return z
           .array(
             z.object({
-              targetId: z.string(),
+              target_id: z.string(),
               total: z.number(),
             }),
           )
@@ -59,7 +59,7 @@ export class TargetStats {
       });
 
     for (const row of rows) {
-      result.set(row.targetId, row.total);
+      result.set(row.target_id, row.total);
     }
 
     return result;

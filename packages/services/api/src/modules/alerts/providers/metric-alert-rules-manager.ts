@@ -1,5 +1,6 @@
 import { Inject, Injectable, Scope } from 'graphql-modules';
 import type { MetricAlertRule } from '../../../shared/entities';
+import { AccessError } from '../../../shared/errors';
 import { Session } from '../../auth/lib/authz';
 import {
   METRIC_ALERT_RULE_TIME_WINDOW_MAX_MINUTES,
@@ -52,6 +53,19 @@ export class MetricAlertRulesDisabledError extends Error {
   }
 }
 
+/**
+ * Thrown when an alert tries to attach a *private* saved filter. Alerts are
+ * shared, headless-evaluated resources, so they may only reference `shared`
+ * filters (visible to everyone who can see the alert). The resolver catches
+ * this and translates it into the structured `{ error: { message } }` result.
+ */
+export class MetricAlertRuleFilterNotShareableError extends Error {
+  constructor() {
+    super('Only shared filters can be attached to alerts.');
+    this.name = 'MetricAlertRuleFilterNotShareableError';
+  }
+}
+
 @Injectable({
   scope: Scope.Operation,
   global: true,
@@ -83,13 +97,36 @@ export class MetricAlertRulesManager {
   }
 
   /**
-   * Mutation-side counterpart to `isEnabled`. Throws if the feature is
-   * disabled so the resolver can return the structured error response. The
-   * existing `isEnabled` check inside the resolver gate path is reused so
-   * both paths share one source of truth for the gate semantics.
+   * Viewer-aware counterpart to `isEnabled`: the org has the feature, OR the
+   * current viewer is a Hive admin.
+   */
+  async canViewerUseMetricAlertRules(organizationId: string): Promise<boolean> {
+    if (await this.isEnabled(organizationId)) {
+      return true;
+    }
+    // `getActor` throws an `AccessError` for an unauthenticated/invalid session.
+    // Since this runs on read-path resolvers, treat that as "not an admin" and
+    // return false rather than failing the whole query. Other (unexpected)
+    // errors still propagate. Mirrors `Session.canPerformAction`.
+    try {
+      const actor = await this.session.getActor();
+      return actor.type === 'user' && actor.user.isAdmin === true;
+    } catch (error) {
+      if (error instanceof AccessError) {
+        return false;
+      }
+      throw error;
+    }
+  }
+
+  /**
+   * Mutation-side counterpart to `canViewerUseMetricAlertRules`. Throws if the
+   * feature is unavailable to the viewer so the resolver can return the
+   * structured error response. Sharing `canViewerUseMetricAlertRules` keeps the
+   * read and write paths on one source of truth for the gate semantics.
    */
   async assertEnabled(organizationId: string): Promise<void> {
-    if (!(await this.isEnabled(organizationId))) {
+    if (!(await this.canViewerUseMetricAlertRules(organizationId))) {
       throw new MetricAlertRulesDisabledError();
     }
   }
@@ -322,11 +359,16 @@ export class MetricAlertRulesManager {
     savedFilterId: string,
     projectId: string,
   ): Promise<void> {
-    const filterProjectId = await this.storage.getSavedFilterProjectId(savedFilterId);
-    if (filterProjectId !== projectId) {
+    const scope = await this.storage.getSavedFilterScope(savedFilterId);
+    if (scope === null || scope.projectId !== projectId) {
       throw new MetricAlertRuleCrossScopeError(
         'Saved filter must belong to the same project as the target.',
       );
+    }
+    // Alerts are shared resources; a private filter would be invisible to other
+    // members who manage the alert. Only `shared` filters may be attached.
+    if (scope.visibility !== 'shared') {
+      throw new MetricAlertRuleFilterNotShareableError();
     }
   }
 }

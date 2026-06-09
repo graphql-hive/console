@@ -2,8 +2,6 @@ import type { ClientStatsValues, OperationStatsValues, PageInfo } from '../../__
 import type { DateRange } from '../../shared/entities';
 import type { Span, Trace, TraceBreakdownLoader } from './providers/traces';
 
-// import { SqlValue } from './providers/sql';
-
 type Connection<TNode> = {
   pageInfo: PageInfo;
   edges: Array<{ node: TNode; cursor: string }>;

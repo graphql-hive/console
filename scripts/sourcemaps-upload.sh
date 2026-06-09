@@ -2,11 +2,11 @@
 
 pnpm sentry-cli releases new $SENTRY_RELEASE
 
+# Debug ids are injected earlier (scripts/sourcemaps-inject.sh, before the Docker
+# bake) so the deployed bundle carries them. Here we only upload the maps.
 for dir in packages/services/*/dist; do
   name=$(echo $dir | awk -F / '{print $3}')
   echo $name
-
-  pnpm sentry-cli sourcemaps inject $dir
 
   if [[ $name == *-worker ]]; then
     pnpm sentry-cli sourcemaps upload --release=$SENTRY_RELEASE $dir --dist $name

@@ -5,6 +5,7 @@ export type {
   HiveClient,
   CollectUsageCallback,
   LegacyLogger as Logger,
+  PersistedDocumentsManifest,
   PersistedDocumentsCache,
   Layer2CacheConfiguration,
 } from './client/types.js';

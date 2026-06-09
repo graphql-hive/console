@@ -2,6 +2,7 @@ import { addMinutes, format } from 'date-fns';
 import { Injectable } from 'graphql-modules';
 import * as z from 'zod';
 import { UTCDate } from '@date-fns/utc';
+import { buildOperationsFilterSQLConditions, RawValue, SqlValue } from '@hive/clickhouse';
 import { traceFn } from '@hive/service-common';
 import type { DateRange } from '../../../shared/entities';
 import { batch, batchBy } from '../../../shared/helpers';
@@ -10,7 +11,6 @@ import { toEndOfInterval, toStartOfInterval } from '../lib/date-time-helpers';
 import { pickTableByPeriod } from '../lib/pick-table-by-provider';
 import { ClickHouse, RowOf, sql } from './clickhouse-client';
 import { calculateTimeWindow } from './helpers';
-import { RawValue, SqlValue } from './sql';
 
 const CoordinateClientNamesGroupModel = z.array(
   z.object({
@@ -2668,34 +2668,19 @@ export class OperationsReader {
       );
     }
 
-    if (operations?.length) {
-      if (excludeOperations) {
-        where.push(sql`(${columnPrefix}hash) NOT IN (${sql.array(operations, 'String')})`);
-      } else {
-        where.push(sql`(${columnPrefix}hash) IN (${sql.array(operations, 'String')})`);
-      }
-    }
-
-    if (clients?.length) {
-      where.push(sql`${sql.raw(namespace ?? '')}client_name IN (${sql.array(clients, 'String')})`);
-    }
-
-    if (clientVersionFilters?.length) {
-      // Build OR conditions for each client+versions combination
-      const versionConditions = clientVersionFilters.map(filter => {
-        const clientName = filter.clientName === 'unknown' ? '' : filter.clientName;
-        if (!filter.versions?.length) {
-          // null/empty versions = all versions of this client
-          return sql`(${columnPrefix}client_name = ${clientName})`;
-        }
-        return sql`(${columnPrefix}client_name = ${clientName} AND ${columnPrefix}client_version IN (${sql.array(filter.versions, 'String')}))`;
-      });
-      if (excludeClientVersionFilters) {
-        where.push(sql`NOT (${sql.join(versionConditions, ' OR ')})`);
-      } else {
-        where.push(sql`(${sql.join(versionConditions, ' OR ')})`);
-      }
-    }
+    // Operation-hash + client(/version) conditions are built by the shared
+    // `@hive/clickhouse` helper so the API and the metric-alert worker filter
+    // identically. `target`/`period`/`extra`/PREWHERE remain createFilter's concern.
+    where.push(
+      ...buildOperationsFilterSQLConditions({
+        operations,
+        clients,
+        clientVersionFilters,
+        excludeOperations,
+        excludeClientVersionFilters,
+        namespace,
+      }),
+    );
 
     if (extra.length) {
       where.push(...extra);

@@ -1,9 +1,9 @@
 import { z } from 'zod';
 import { psql } from '@hive/postgres';
 import { SpanKind, SpanStatusCode, trace } from '@hive/service-common';
-import { env } from '../environment.js';
 import { defineTask, implementTask } from '../kit.js';
 import {
+  buildSavedFilterConditions,
   evaluateRule,
   fetchEnabledRules,
   groupRulesByQuery,
@@ -53,10 +53,9 @@ export const task = implementTask(EvaluateMetricAlertRulesTask, async args => {
   const evaluationTime =
     rawRunAt instanceof Date ? rawRunAt : rawRunAt ? new Date(rawRunAt) : new Date();
 
-  // OR-style gate: when cluster flag is on, evaluate every rule; when off,
-  // fetchEnabledRules filters to rules belonging to opted-in orgs only.
-  const clusterFlagEnabled = env.featureFlags.metricAlertRulesEnabled;
-  const rules = await fetchEnabledRules(context.pg, clusterFlagEnabled);
+  // Evaluate every enabled rule. The org feature flag gates rule creation in
+  // the API, not evaluation here; the per-rule `enabled` column is the gate.
+  const rules = await fetchEnabledRules(context.pg);
 
   if (rules.length === 0) {
     logger.debug('No enabled metric alert rules found');
@@ -73,6 +72,12 @@ export const task = implementTask(EvaluateMetricAlertRulesTask, async args => {
     evaluatedIds: string[];
   }> {
     const representative = groupRules[0];
+
+    // All rules in a group share the same saved filter (it's part of the group key),
+    // so build the ClickHouse conditions once from the representative.
+    // A malformed filter yields no conditions (evaluates unfiltered) and is logged,
+    // isolating the failure to this group.
+    const filterConditions = buildSavedFilterConditions(representative.savedFilterFilters, logger);
 
     // startActiveSpan makes this span the current OTel context for the
     // duration of the callback, so the slonik PG interceptor and the
@@ -97,6 +102,7 @@ export const task = implementTask(EvaluateMetricAlertRulesTask, async args => {
               clickhouse,
               representative.targetId,
               representative.timeWindowMinutes,
+              filterConditions,
               evaluationTime,
             );
           } catch (error) {
