@@ -151,6 +151,8 @@ describe('queryClickHouseWindows', () => {
     expect(sql).toContain('target = {p1: String}');
     expect(sql).not.toContain('client_name');
     expect(sql).not.toContain('hash');
+    // The rollup stores percentiles as quantilesTDigest states.
+    expect(sql).toContain('quantilesTDigestMerge(');
     expect(params).toEqual({ param_p1: target });
   });
 
@@ -166,6 +168,9 @@ describe('queryClickHouseWindows', () => {
     // hash/client columns to predicate on.
     expect(sql).toContain('FROM operations_minutely');
     expect(sql).not.toContain('_by_target');
+    // The legacy table stores percentiles as the older quantiles states.
+    expect(sql).toContain('quantilesMerge(');
+    expect(sql).not.toContain('TDigest');
     // renumbered after the target param (p1)
     expect(sql).toContain('client_name = {p2: String}');
     expect(sql).not.toContain(`'web'`);

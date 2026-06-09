@@ -273,11 +273,17 @@ export async function queryClickHouseWindows(
   // hash/client dimensions a filter predicates on, so routing one there would
   // reference columns that don't exist. Deriving this from `filterConditions`
   // (rather than a separate flag/param) makes the filtered-query-on-rollup
-  // combination unrepresentable. Both rollups carry the same total/total_ok/
-  // duration_* columns the SELECT below reads, so only the table name changes.
+  // combination unrepresentable.
   const useTargetRollup = filterConditions.length === 0;
   const baseTable = timeWindowMinutes <= 360 ? 'operations_minutely' : 'operations_hourly';
   const tableName = useTargetRollup ? `${baseTable}_by_target` : baseTable;
+
+  // The two table families store the percentile column with different aggregate
+  // functions: the `_by_target` rollups use quantilesTDigest (more accurate in
+  // the tails, merges better), the legacy tables the older quantiles. A merge
+  // function must match the state function it reads, so pick it alongside the
+  // table. `total`/`total_ok`/`duration_avg` are identical across both.
+  const percentilesMerge = useTargetRollup ? 'quantilesTDigestMerge' : 'quantilesMerge';
 
   // The window timestamps are computed numbers, inlined safely via sql.raw. Every
   // string value (`target` and the saved-filter conditions' arbitrary client/
@@ -295,7 +301,7 @@ export async function queryClickHouseWindows(
       sum(total) as total,
       sum(total_ok) as total_ok,
       avgMerge(duration_avg) as average,
-      quantilesMerge(0.75, 0.90, 0.95, 0.99)(duration_quantiles) as percentiles
+      ${sql.raw(percentilesMerge)}(0.75, 0.90, 0.95, 0.99)(duration_quantiles) as percentiles
     FROM ${sql.raw(tableName)}
     WHERE target = ${targetId}
       AND timestamp >= fromUnixTimestamp64Milli(${sql.raw(String(previousWindowStart.getTime()))})

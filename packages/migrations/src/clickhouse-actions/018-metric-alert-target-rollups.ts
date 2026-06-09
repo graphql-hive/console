@@ -19,14 +19,18 @@ import type { Action } from '../clickhouse';
 // the older operations_* tables use. Splitting them lets the view and the table
 // be migrated independently.
 
-// Data table columns, with storage codecs.
+// Data table columns, with storage codecs. Percentiles use `quantilesTDigest`
+// rather than the older `quantiles` the legacy operations_* rollups use:
+// t-digest is deterministic and more accurate in the tails (what P95/P99 latency
+// alerting needs) and merges better across the MV's partial states. The reader
+// must match it with `quantilesTDigestMerge` (see `queryClickHouseWindows`).
 const tableColumns = `
   target LowCardinality(String) CODEC(ZSTD(1)),
   timestamp DateTime('UTC') CODEC(DoubleDelta, LZ4),
   total UInt32 CODEC(T64, ZSTD(1)),
   total_ok UInt32 CODEC(T64, ZSTD(1)),
   duration_avg AggregateFunction(avg, UInt64) CODEC(ZSTD(1)),
-  duration_quantiles AggregateFunction(quantiles(0.75, 0.9, 0.95, 0.99), UInt64) CODEC(ZSTD(1))
+  duration_quantiles AggregateFunction(quantilesTDigest(0.75, 0.9, 0.95, 0.99), UInt64) CODEC(ZSTD(1))
 `;
 
 // Same columns as the data table, types only — the MV's output projection.
@@ -36,7 +40,7 @@ const mvColumns = `
   total UInt32,
   total_ok UInt32,
   duration_avg AggregateFunction(avg, UInt64),
-  duration_quantiles AggregateFunction(quantiles(0.75, 0.9, 0.95, 0.99), UInt64)
+  duration_quantiles AggregateFunction(quantilesTDigest(0.75, 0.9, 0.95, 0.99), UInt64)
 `;
 
 const selectByTarget = (bucket: 'toStartOfMinute' | 'toStartOfHour') => `
@@ -46,7 +50,7 @@ const selectByTarget = (bucket: 'toStartOfMinute' | 'toStartOfHour') => `
     count() AS total,
     sum(ok) AS total_ok,
     avgState(duration) AS duration_avg,
-    quantilesState(0.75, 0.9, 0.95, 0.99)(duration) AS duration_quantiles
+    quantilesTDigestState(0.75, 0.9, 0.95, 0.99)(duration) AS duration_quantiles
   FROM default.operations
   GROUP BY
     target,
