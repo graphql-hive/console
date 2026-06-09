@@ -666,7 +666,7 @@ importers:
         specifier: ^0.13.0 || ^14.0.0 || ^15.0.0 || ^16.0.0
         version: 16.9.0
       tiny-lru:
-        specifier: 11.4.7
+        specifier: '*'
         version: 11.4.7
     devDependencies:
       '@envelop/types':

@@ -49,10 +49,11 @@
   },
   "dependencies": {
     "@graphql-hive/core": "workspace:*",
-    "tiny-lru": "11.4.7"
+    "tiny-lru": "*"
   },
   "devDependencies": {
-    "@envelop/types": "^5.0.0"
+    "@envelop/types": "^5.0.0",
+    "tiny-lru": "^11.0.0 || ^12.0.0 || ^13.0.0"
   },
   "publishConfig": {
     "registry": "https://registry.npmjs.org",
