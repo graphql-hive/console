@@ -11,16 +11,16 @@ export async function clickHouseQuery<T>(query: string): Promise<{
   rows: number;
 }> {
   const clickhouseAddress = await getServiceHost('clickhouse', 8123);
-  const endpoint = `http://${clickhouseAddress}/?default_format=JSON`;
-  const response = await fetch(endpoint, {
+  const url = new URL(`http://${clickhouseAddress}`);
+  url.searchParams.set('default_format', 'JSON');
+  url.searchParams.set('output_format_json_quote_64bit_integers', '1');
+  const response = await fetch(url, {
     method: 'POST',
     body: query,
     headers: {
       Accept: 'application/json',
       'Accept-Encoding': 'gzip',
       Authorization: `Basic ${credentials}`,
-      default_format: 'JSON',
-      output_format_json_quote_64bit_integers: '1',
     },
   });
 
@@ -35,8 +35,10 @@ export async function clickHouseQuery<T>(query: string): Promise<{
 
 export async function clickHouseInsert<T>(query: string): Promise<void> {
   const clickhouseAddress = await getServiceHost('clickhouse', 8123);
-  const endpoint = `http://${clickhouseAddress}/?default_format=JSON`;
-  const response = await fetch(endpoint, {
+  const url = new URL(`http://${clickhouseAddress}`);
+  url.searchParams.set('default_format', 'JSON');
+  url.searchParams.set('output_format_json_quote_64bit_integers', '1');
+  const response = await fetch(url, {
     method: 'POST',
     body: query,
     headers: {
