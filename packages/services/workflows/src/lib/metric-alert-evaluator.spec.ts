@@ -141,17 +141,22 @@ describe('queryClickHouseWindows', () => {
   const evalTime = new Date('2024-06-01T12:00:00.000Z');
   const target = '11111111-1111-1111-1111-111111111111';
 
-  test('no filter -> target + timestamp only, no filter predicate, only target bound', async () => {
+  test('no filter -> target-keyed minutely rollup, no hash/client predicate, only target bound', async () => {
     const { clickhouse, calls } = captureClient();
     await queryClickHouseWindows(clickhouse, target, 60, [], evalTime);
     const { sql, params } = calls[0];
-    expect(sql).toContain('FROM operations_minutely');
+    // Unfiltered -> the target-keyed rollup. It dropped the hash/client
+    // dimensions, so the query must emit no hash/client predicate.
+    expect(sql).toContain('FROM operations_by_target_minutely');
     expect(sql).toContain('target = {p1: String}');
     expect(sql).not.toContain('client_name');
+    expect(sql).not.toContain('hash');
+    // The rollup stores percentiles as quantilesTDigest states.
+    expect(sql).toContain('quantilesTDigestMerge(');
     expect(params).toEqual({ param_p1: target });
   });
 
-  test('with a client filter -> predicate composed and value bound as a param (not interpolated)', async () => {
+  test('with a client filter -> legacy table, predicate composed and bound as a param (not interpolated)', async () => {
     const { clickhouse, calls } = captureClient();
     const conds = buildSavedFilterConditions(
       { clientFilters: [{ name: 'web', versions: null }] },
@@ -159,6 +164,13 @@ describe('queryClickHouseWindows', () => {
     );
     await queryClickHouseWindows(clickhouse, target, 60, conds, evalTime);
     const { sql, params } = calls[0];
+    // A filtered query MUST stay on the legacy table — the rollup has no
+    // hash/client columns to predicate on.
+    expect(sql).toContain('FROM operations_minutely');
+    expect(sql).not.toContain('_by_target');
+    // The legacy table stores percentiles as the older quantiles states.
+    expect(sql).toContain('quantilesMerge(');
+    expect(sql).not.toContain('TDigest');
     // renumbered after the target param (p1)
     expect(sql).toContain('client_name = {p2: String}');
     expect(sql).not.toContain(`'web'`);
@@ -168,6 +180,6 @@ describe('queryClickHouseWindows', () => {
   test('window > 360 minutes reads the hourly rollup', async () => {
     const { clickhouse, calls } = captureClient();
     await queryClickHouseWindows(clickhouse, target, 720, [], evalTime);
-    expect(calls[0].sql).toContain('FROM operations_hourly');
+    expect(calls[0].sql).toContain('FROM operations_by_target_hourly');
   });
 });
