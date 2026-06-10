@@ -1,5 +1,5 @@
 import z from 'zod';
-import { PostgresDatabasePool, psql } from '@hive/postgres';
+import { PostgresDatabasePool, psql, type CommonQueryMethods } from '@hive/postgres';
 import { Logger } from '../../shared/providers/logger';
 
 const SessionInfoModel = z.object({
@@ -104,7 +104,7 @@ export class SuperTokensStore {
   }
 
   // TODO: there should be an index for user_id
-  async invalidateAllSessionsForUser(userId: string) {
+  async invalidateAllSessionsForUser(userId: string, trx: CommonQueryMethods) {
     this.logger.debug('Invalidate session for user. (userId=%s)', userId);
 
     const query = psql`
@@ -116,7 +116,7 @@ export class SuperTokensStore {
         AND "user_id" = ${userId}
     `;
 
-    await this.pool.query(query);
+    await trx.query(query);
   }
 
   async findEmailPasswordUserByEmail(email: string) {
@@ -340,7 +340,7 @@ export class SuperTokensStore {
     });
   }
 
-  async updateOIDCUserEmail(args: { userId: string; newEmail: string }) {
+  async updateOIDCUserEmail(args: { userId: string; newEmail: string }, trx: CommonQueryMethods) {
     const query = psql`
       UPDATE
         "supertokens_thirdparty_users"
@@ -358,14 +358,17 @@ export class SuperTokensStore {
         , "time_joined" AS "timeJoined"
     `;
 
-    return await this.pool.maybeOne(query).then(ThirdpartUserModel.nullable().parse);
+    return await trx.maybeOne(query).then(ThirdpartUserModel.nullable().parse);
   }
 
-  async createThirdPartyUser(args: {
-    email: string;
-    thirdPartyId: string;
-    thirdPartyUserId: string;
-  }) {
+  async createThirdPartyUser(
+    args: {
+      email: string;
+      thirdPartyId: string;
+      thirdPartyUserId: string;
+    },
+    trx?: CommonQueryMethods,
+  ) {
     const userId = crypto.randomUUID();
     const now = Date.now();
 
@@ -447,7 +450,7 @@ export class SuperTokensStore {
       )
     `;
 
-    return await this.pool
+    return await (trx ?? this.pool)
       .transaction('createThirdPartyUser', async t => {
         await t.query(appIdToUserIdQuery);
         const result = await t.one(oidcUserQuery);
@@ -458,20 +461,25 @@ export class SuperTokensStore {
       .then(r => ThirdpartUserModel.parse(r));
   }
 
-  async createOIDCUser(args: { email: string; sub: string; oidcIntegrationId: string }) {
-    return this.createThirdPartyUser({
-      email: args.email,
-      thirdPartyId: 'oidc',
-      thirdPartyUserId: args.oidcIntegrationId + '-' + args.sub,
-    });
+  async createOIDCUser(
+    args: { email: string; sub: string; oidcIntegrationId: string },
+    trx?: CommonQueryMethods,
+  ) {
+    return this.createThirdPartyUser(
+      {
+        email: args.email,
+        thirdPartyId: 'oidc',
+        thirdPartyUserId: args.oidcIntegrationId + '-' + args.sub,
+      },
+      trx,
+    );
   }
 
-  async updateOIDCUserSub(args: { userId: string; oidcIntegrationId: string; sub: string }) {
-    const user = await this.lookupThirdPartyUserByUserId(args.userId);
-    if (!user) {
-      return null;
-    }
-    await this.pool.query(psql`
+  async updateOIDCUserSub(
+    args: { userId: string; oidcIntegrationId: string; sub: string },
+    trx: CommonQueryMethods,
+  ) {
+    await trx.query(psql`
       UPDATE "supertokens_thirdparty_users"
       SET
         "third_party_user_id" = ${`${args.oidcIntegrationId}-${args.sub}`}

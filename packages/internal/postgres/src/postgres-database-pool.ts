@@ -46,6 +46,10 @@ export interface CommonQueryMethods {
     sql: QuerySqlToken<T>,
     values?: PrimitiveValueExpression[],
   ): Promise<null | StandardSchemaV1.InferOutput<T>[keyof StandardSchemaV1.InferOutput<T>]>;
+  transaction<T = void>(
+    name: string,
+    handler: (methods: CommonQueryMethods) => Promise<T>,
+  ): Promise<T>;
 }
 
 export class PostgresDatabasePool implements CommonQueryMethods {
@@ -140,6 +144,31 @@ export class PostgresDatabasePool implements CommonQueryMethods {
             maybeOneFirst: methods.maybeOneFirst,
             anyFirst: methods.anyFirst,
             one: methods.one,
+            transaction<T>(_name: string, handler: (methods: CommonQueryMethods) => Promise<T>) {
+              // We just mark this as a virtual transaction, it still runs as part of the current one.
+              const span = tracer.startSpan(`Virtual PG Transaction: ${name}`, {
+                kind: SpanKind.INTERNAL,
+              });
+
+              try {
+                return context.with(trace.setSpan(context.active(), span), async () => {
+                  return handler(this);
+                });
+              } catch (err) {
+                span.setAttribute('error', 'true');
+
+                if (err instanceof Error) {
+                  span.setAttribute('error.type', err.name);
+                  span.setAttribute('error.message', err.message);
+                  span.setStatus({
+                    code: SpanStatusCode.ERROR,
+                    message: err.message,
+                  });
+                }
+
+                throw err;
+              }
+            },
           });
         } catch (err) {
           span.setAttribute('error', 'true');

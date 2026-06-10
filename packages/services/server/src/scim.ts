@@ -268,28 +268,53 @@ export const createSCIMPlugin =
 
       if (newEmail !== null && newEmail !== user.email) {
         logger.debug('email changed');
-        await supertokensStore.updateOIDCUserEmail({
-          userId: user.supertokenUserId,
-          newEmail: newEmail,
+        user = await pool.transaction('scim email update', async trx => {
+          await supertokensStore.updateOIDCUserEmail(
+            {
+              userId: user.supertokenUserId,
+              newEmail: newEmail,
+            },
+            trx,
+          );
+          const updatedUser = await usersStore.updateUserEmail(
+            organizationId,
+            user.id,
+            newEmail,
+            trx,
+          );
+          // invalidate session as email changed
+          await supertokensStore.invalidateAllSessionsForUser(user.supertokenUserId, trx);
+          return updatedUser;
         });
-        user = await usersStore.updateUserEmail(organizationId, user.id, newEmail);
-        // invalidate session as email changed
-        await supertokensStore.invalidateAllSessionsForUser(user.supertokenUserId);
       }
 
       if (updates.externalId !== undefined && updates.externalId !== user.externalId) {
         logger.debug('external id changed');
-        const updateUserExternalIdResult =
-          await usersStore.updateExternalIdByOrganizationIdAndUserId(
-            organizationId,
-            user.id,
-            updates.externalId,
-          );
-        await supertokensStore.updateOIDCUserSub({
-          oidcIntegrationId,
-          sub: updates.externalId,
-          userId: user.supertokenUserId,
-        });
+        const newExternalId = updates.externalId;
+        const updateUserExternalIdResult = await pool.transaction(
+          'scim external id update',
+          async trx => {
+            await supertokensStore.updateOIDCUserSub(
+              {
+                oidcIntegrationId,
+                sub: newExternalId,
+                userId: user.supertokenUserId,
+              },
+              trx,
+            );
+
+            const result = await usersStore.updateExternalIdByOrganizationIdAndUserId(
+              organizationId,
+              user.id,
+              newExternalId,
+              trx,
+            );
+
+            await supertokensStore.invalidateAllSessionsForUser(user.supertokenUserId, trx);
+
+            return result;
+          },
+        );
 
         if (updateUserExternalIdResult.type === 'error') {
           if (updateUserExternalIdResult.errorCode === 'notFound') {
@@ -547,28 +572,29 @@ export const createSCIMPlugin =
         );
       }
 
-      // TODO: these actions should probably happen together in a transaction
+      const createUserResult = await pool.transaction('scim user creation', async trx => {
+        const supertokensUser = await supertokensStore.createOIDCUser(
+          {
+            sub: bodyParse.data.externalId,
+            email,
+            oidcIntegrationId: result.oidcIntegration.id,
+          },
+          trx,
+        );
 
-      // We have another problem here, because of historic reasons and
-      // how we implemented OIDC login support on top of supertokens
-      // we store the third_party_user_id as `${oidc_id}-${externalId}`
-      // since the external id can update...
-      // we need to be prepared to also update this
-      const supertokensUser = await supertokensStore.createOIDCUser({
-        sub: bodyParse.data.externalId,
-        email,
-        oidcIntegrationId: result.oidcIntegration.id,
-      });
-
-      const createUserResult = await usersStore.createUser({
-        email: supertokensUser.email,
-        displayName: bodyParse.data.userName,
-        fullName: supertokensUser.email,
-        superTokensUserId: supertokensUser.userId,
-        oidcIntegrationId: result.oidcIntegration.id,
-        provisionedByOrganizationId: result.organizationId,
-        externalId: bodyParse.data.externalId,
-        isDisabled: (bodyParse.data.active ?? true) === false,
+        return await usersStore.createUser(
+          {
+            email: supertokensUser.email,
+            displayName: bodyParse.data.userName,
+            fullName: supertokensUser.email,
+            superTokensUserId: supertokensUser.userId,
+            oidcIntegrationId: result.oidcIntegration.id,
+            provisionedByOrganizationId: result.organizationId,
+            externalId: bodyParse.data.externalId,
+            isDisabled: (bodyParse.data.active ?? true) === false,
+          },
+          trx,
+        );
       });
 
       if (createUserResult.type === 'error') {
