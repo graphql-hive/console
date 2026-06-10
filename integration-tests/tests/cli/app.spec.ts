@@ -340,7 +340,8 @@ test('app:create accepts a glob pattern of .graphql files as operations input', 
   const hash1 = createHash('sha256').update(normalize(op1)).digest('hex');
   const hash2 = createHash('sha256').update(normalize(op2)).digest('hex');
 
-  const globPattern = `${opsDir}/**/*.graphql`;
+  // must be quoted to prevent shell expansion
+  const globPattern = `"${opsDir}/**/*.graphql"`;
 
   const output = await appCreate([
     '--registry.accessToken',
