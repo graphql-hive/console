@@ -9,6 +9,33 @@ const oidcEndpointBase = apiHost + '/scim/v2';
 const usersEndpoint = oidcEndpointBase + '/Users';
 const groupsEndpoint = oidcEndpointBase + '/Groups';
 
+const defaultValues = {
+  schemas: ['urn:ietf:params:scim:schemas:core:2.0:User'],
+  userName: 'marty@mcfly.dev',
+  name: { givenName: 'Marty', familyName: 'McFly' },
+  emails: [{ primary: true, value: 'marty@mcfly.dev', type: 'work' }],
+  displayName: 'Marty McFly',
+  locale: 'en-US',
+  externalId: 'userExternalId',
+  password: 'fq77ZD37',
+  active: true,
+};
+
+async function createUser(
+  headers: Record<string, string>,
+  overrides?: Partial<typeof defaultValues>,
+) {
+  return await fetch(usersEndpoint, {
+    method: 'POST',
+    body: JSON.stringify({
+      ...defaultValues,
+      externalId: crypto.randomUUID(),
+      ...overrides,
+    }),
+    headers,
+  });
+}
+
 describe.concurrent('/Users', () => {
   describe.concurrent('POST', () => {
     test.concurrent('create new user', async ({ expect }) => {
@@ -467,6 +494,47 @@ describe.concurrent('/Groups', () => {
         schemas: ['urn:ietf:params:scim:schemas:core:2.0:Group'],
       });
     });
+    test.concurrent('create with external id', async ({ expect }) => {
+      const seed = initSeed();
+      const owner = await seed.createOwner();
+      const org = await owner.createOrg();
+      // currenlty this must exist for the endpoint to be functional
+      await org.createOIDCIntegration();
+      const accessToken = await org.createOrganizationAccessToken({
+        permissions: ['member:describe', 'member:modify'],
+        resources: { mode: ResourceAssignmentModeType.Granular },
+      });
+      const scimAuthHeader = 'Bearer ' + accessToken.privateAccessKey;
+
+      const headers = {
+        'Content-Type': 'application/scim+json',
+        Authorization: scimAuthHeader,
+      };
+
+      // First Okta tries to provision the group
+
+      const postResponse = await fetch(groupsEndpoint, {
+        method: 'POST',
+        body: JSON.stringify({
+          schemas: ['urn:ietf:params:scim:schemas:core:2.0:Group'],
+          displayName: 'foobars',
+          members: [],
+          externalId: 'myExternalId',
+        }),
+        headers,
+      });
+      expect(postResponse.status).toEqual(201);
+      const postResponseBody = await postResponse.json();
+      expect(postResponseBody).toMatchObject({
+        displayName: 'foobars',
+        id: expect.any(String),
+        externalId: 'myExternalId',
+        meta: {
+          resourceType: 'Group',
+        },
+        schemas: ['urn:ietf:params:scim:schemas:core:2.0:Group'],
+      });
+    });
   });
   describe.concurrent('PUT', () => {
     test.concurrent('non-existing', async ({ expect }) => {
@@ -554,6 +622,671 @@ describe.concurrent('/Groups', () => {
       });
     });
     // for more tests see flows
+  });
+  describe.concurrent('PATCH', () => {
+    test.concurrent('non-existing', async ({ expect }) => {
+      const seed = initSeed();
+      const owner = await seed.createOwner();
+      const org = await owner.createOrg();
+      // currenlty this must exist for the endpoint to be functional
+      await org.createOIDCIntegration();
+      const accessToken = await org.createOrganizationAccessToken({
+        permissions: ['member:describe', 'member:modify'],
+        resources: { mode: ResourceAssignmentModeType.Granular },
+      });
+      const scimAuthHeader = 'Bearer ' + accessToken.privateAccessKey;
+      const headers = {
+        'Content-Type': 'application/scim+json',
+        Authorization: scimAuthHeader,
+      };
+
+      const putResponse = await fetch(groupsEndpoint + '/' + crypto.randomUUID(), {
+        method: 'PATCH',
+        body: JSON.stringify({
+          Operations: [
+            {
+              op: 'replace',
+              path: 'displayName',
+              value: 'ay',
+            },
+          ],
+        }),
+        headers,
+      });
+      expect(putResponse.status).toEqual(404);
+      const putResponseBody = await putResponse.json();
+      expect(putResponseBody).toMatchInlineSnapshot(`
+        {
+          detail: Group does not exist.,
+          schemas: [
+            urn:ietf:params:scim:api:messages:2.0:Error,
+          ],
+          status: 404,
+        }
+      `);
+    });
+    test.concurrent('update display name (patch with path)', async ({ expect }) => {
+      const seed = initSeed();
+      const owner = await seed.createOwner();
+      const org = await owner.createOrg();
+      // currenlty this must exist for the endpoint to be functional
+      await org.createOIDCIntegration();
+      const accessToken = await org.createOrganizationAccessToken({
+        permissions: ['member:describe', 'member:modify'],
+        resources: { mode: ResourceAssignmentModeType.Granular },
+      });
+      const scimAuthHeader = 'Bearer ' + accessToken.privateAccessKey;
+
+      const headers = {
+        'Content-Type': 'application/scim+json',
+        Authorization: scimAuthHeader,
+      };
+
+      // First Okta tries to provision the group
+
+      const postResponse = await fetch(groupsEndpoint, {
+        method: 'POST',
+        body: JSON.stringify({
+          schemas: ['urn:ietf:params:scim:schemas:core:2.0:Group'],
+          displayName: 'foobars',
+          members: [],
+        }),
+        headers,
+      });
+      expect(postResponse.status).toEqual(201);
+      const postResponseBody = await postResponse.json();
+
+      const putResponse = await fetch(groupsEndpoint + '/' + postResponseBody.id, {
+        method: 'PATCH',
+        body: JSON.stringify({
+          Operations: [
+            {
+              op: 'replace',
+              path: 'displayName',
+              value: 'ay',
+            },
+          ],
+        }),
+        headers,
+      });
+      expect(putResponse.status).toEqual(200);
+      const putResponseBody = await putResponse.json();
+      expect(putResponseBody).toEqual({
+        ...postResponseBody,
+        displayName: 'ay',
+        // put always includes the member list
+        members: [],
+      });
+    });
+    test.concurrent('update display name (patch without path)', async ({ expect }) => {
+      const seed = initSeed();
+      const owner = await seed.createOwner();
+      const org = await owner.createOrg();
+      // currenlty this must exist for the endpoint to be functional
+      await org.createOIDCIntegration();
+      const accessToken = await org.createOrganizationAccessToken({
+        permissions: ['member:describe', 'member:modify'],
+        resources: { mode: ResourceAssignmentModeType.Granular },
+      });
+      const scimAuthHeader = 'Bearer ' + accessToken.privateAccessKey;
+
+      const headers = {
+        'Content-Type': 'application/scim+json',
+        Authorization: scimAuthHeader,
+      };
+
+      // First Okta tries to provision the group
+
+      const postResponse = await fetch(groupsEndpoint, {
+        method: 'POST',
+        body: JSON.stringify({
+          schemas: ['urn:ietf:params:scim:schemas:core:2.0:Group'],
+          displayName: 'foobars',
+          members: [],
+        }),
+        headers,
+      });
+      expect(postResponse.status).toEqual(201);
+      const postResponseBody = await postResponse.json();
+
+      const putResponse = await fetch(groupsEndpoint + '/' + postResponseBody.id, {
+        method: 'PATCH',
+        body: JSON.stringify({
+          Operations: [
+            {
+              op: 'replace',
+              value: {
+                displayName: 'ay',
+              },
+            },
+          ],
+        }),
+        headers,
+      });
+      expect(putResponse.status).toEqual(200);
+      const putResponseBody = await putResponse.json();
+      expect(putResponseBody).toEqual({
+        ...postResponseBody,
+        displayName: 'ay',
+        // put always includes the member list
+        members: [],
+      });
+    });
+    test.concurrent('update external id (patch with path)', async ({ expect }) => {
+      const seed = initSeed();
+      const owner = await seed.createOwner();
+      const org = await owner.createOrg();
+      // currenlty this must exist for the endpoint to be functional
+      await org.createOIDCIntegration();
+      const accessToken = await org.createOrganizationAccessToken({
+        permissions: ['member:describe', 'member:modify'],
+        resources: { mode: ResourceAssignmentModeType.Granular },
+      });
+      const scimAuthHeader = 'Bearer ' + accessToken.privateAccessKey;
+
+      const headers = {
+        'Content-Type': 'application/scim+json',
+        Authorization: scimAuthHeader,
+      };
+
+      // First Okta tries to provision the group
+
+      const postResponse = await fetch(groupsEndpoint, {
+        method: 'POST',
+        body: JSON.stringify({
+          schemas: ['urn:ietf:params:scim:schemas:core:2.0:Group'],
+          displayName: 'foobars',
+          members: [],
+          externalId: 'my-external-id',
+        }),
+        headers,
+      });
+      expect(postResponse.status).toEqual(201);
+      const postResponseBody = await postResponse.json();
+
+      const putResponse = await fetch(groupsEndpoint + '/' + postResponseBody.id, {
+        method: 'PATCH',
+        body: JSON.stringify({
+          Operations: [
+            {
+              op: 'replace',
+              path: 'externalId',
+              value: 'newExternalId',
+            },
+          ],
+        }),
+        headers,
+      });
+      expect(putResponse.status).toEqual(200);
+      const putResponseBody = await putResponse.json();
+      expect(putResponseBody).toEqual({
+        ...postResponseBody,
+        externalId: 'newExternalId',
+        // put always includes the member list
+        members: [],
+      });
+    });
+    test.concurrent('update external id (patch without path)', async ({ expect }) => {
+      const seed = initSeed();
+      const owner = await seed.createOwner();
+      const org = await owner.createOrg();
+      // currenlty this must exist for the endpoint to be functional
+      await org.createOIDCIntegration();
+      const accessToken = await org.createOrganizationAccessToken({
+        permissions: ['member:describe', 'member:modify'],
+        resources: { mode: ResourceAssignmentModeType.Granular },
+      });
+      const scimAuthHeader = 'Bearer ' + accessToken.privateAccessKey;
+
+      const headers = {
+        'Content-Type': 'application/scim+json',
+        Authorization: scimAuthHeader,
+      };
+
+      // First Okta tries to provision the group
+
+      const postResponse = await fetch(groupsEndpoint, {
+        method: 'POST',
+        body: JSON.stringify({
+          schemas: ['urn:ietf:params:scim:schemas:core:2.0:Group'],
+          displayName: 'foobars',
+          members: [],
+          externalId: 'my-external-id',
+        }),
+        headers,
+      });
+      expect(postResponse.status).toEqual(201);
+      const postResponseBody = await postResponse.json();
+
+      const putResponse = await fetch(groupsEndpoint + '/' + postResponseBody.id, {
+        method: 'PATCH',
+        body: JSON.stringify({
+          Operations: [
+            {
+              op: 'replace',
+              value: {
+                externalId: 'newExternalId',
+              },
+            },
+          ],
+        }),
+        headers,
+      });
+      expect(putResponse.status).toEqual(200);
+      const putResponseBody = await putResponse.json();
+      expect(putResponseBody).toEqual({
+        ...postResponseBody,
+        externalId: 'newExternalId',
+        // put always includes the member list
+        members: [],
+      });
+    });
+    test.concurrent('update external id conflict', async ({ expect }) => {
+      const seed = initSeed();
+      const owner = await seed.createOwner();
+      const org = await owner.createOrg();
+      // currenlty this must exist for the endpoint to be functional
+      await org.createOIDCIntegration();
+      const accessToken = await org.createOrganizationAccessToken({
+        permissions: ['member:describe', 'member:modify'],
+        resources: { mode: ResourceAssignmentModeType.Granular },
+      });
+      const scimAuthHeader = 'Bearer ' + accessToken.privateAccessKey;
+
+      const headers = {
+        'Content-Type': 'application/scim+json',
+        Authorization: scimAuthHeader,
+      };
+
+      // First Okta tries to provision the group
+
+      const postResponse = await fetch(groupsEndpoint, {
+        method: 'POST',
+        body: JSON.stringify({
+          schemas: ['urn:ietf:params:scim:schemas:core:2.0:Group'],
+          displayName: 'foobars',
+          members: [],
+          externalId: 'my-external-id',
+        }),
+        headers,
+      });
+      expect(postResponse.status).toEqual(201);
+      const postResponseBody = await postResponse.json();
+
+      const otherPostResponse = await fetch(groupsEndpoint, {
+        method: 'POST',
+        body: JSON.stringify({
+          schemas: ['urn:ietf:params:scim:schemas:core:2.0:Group'],
+          displayName: 'foobars',
+          members: [],
+          externalId: 'newExternalId',
+        }),
+        headers,
+      });
+      expect(postResponse.status).toEqual(201);
+
+      const putResponse = await fetch(groupsEndpoint + '/' + postResponseBody.id, {
+        method: 'PATCH',
+        body: JSON.stringify({
+          Operations: [
+            {
+              op: 'replace',
+              value: {
+                externalId: 'newExternalId',
+              },
+            },
+          ],
+        }),
+        headers,
+      });
+      expect(putResponse.status).toEqual(409);
+      const putResponseBody = await putResponse.json();
+      expect(putResponseBody).toMatchInlineSnapshot(`
+        {
+          detail: Another group with the same external id already exists.,
+          schemas: [
+            urn:ietf:params:scim:api:messages:2.0:Error,
+          ],
+          status: 409,
+        }
+      `);
+    });
+    test.concurrent('add single member', async ({ expect }) => {
+      const seed = initSeed();
+      const owner = await seed.createOwner();
+      const org = await owner.createOrg();
+      // currenlty this must exist for the endpoint to be functional
+      await org.createOIDCIntegration();
+      const accessToken = await org.createOrganizationAccessToken({
+        permissions: ['member:describe', 'member:modify'],
+        resources: { mode: ResourceAssignmentModeType.Granular },
+      });
+      const scimAuthHeader = 'Bearer ' + accessToken.privateAccessKey;
+
+      const headers = {
+        'Content-Type': 'application/scim+json',
+        Authorization: scimAuthHeader,
+      };
+
+      // create group
+
+      const postResponse = await fetch(groupsEndpoint, {
+        method: 'POST',
+        body: JSON.stringify({
+          schemas: ['urn:ietf:params:scim:schemas:core:2.0:Group'],
+          displayName: 'foobars',
+          members: [],
+        }),
+        headers,
+      });
+      expect(postResponse.status).toEqual(201);
+      const postResponseBody = await postResponse.json();
+
+      // create user
+
+      const usersPostResponse = await fetch(usersEndpoint, {
+        method: 'POST',
+        body: JSON.stringify({
+          schemas: ['urn:ietf:params:scim:schemas:core:2.0:User'],
+          userName: 'marty@mcfly.dev',
+          name: { givenName: 'Marty', familyName: 'McFly' },
+          emails: [{ primary: true, value: 'marty@mcfly.dev', type: 'work' }],
+          displayName: 'Marty McFly',
+          locale: 'en-US',
+          externalId: 'userExternalId',
+          groups: [],
+          password: 'fq77ZD37',
+          active: true,
+        }),
+        headers,
+      });
+      expect(usersPostResponse.status).toEqual(201);
+      const usersPostResponseBody = await usersPostResponse.json();
+
+      const putResponse = await fetch(groupsEndpoint + '/' + postResponseBody.id, {
+        method: 'PATCH',
+        body: JSON.stringify({
+          Operations: [
+            {
+              op: 'add',
+              path: 'members',
+              value: [{ value: usersPostResponseBody.id }],
+            },
+          ],
+        }),
+        headers,
+      });
+      expect(putResponse.status).toEqual(200);
+      expect(await putResponse.json()).toEqual({
+        displayName: 'foobars',
+        id: postResponseBody.id,
+        members: [
+          {
+            $ref: '/Users/' + usersPostResponseBody.id,
+            value: usersPostResponseBody.id,
+          },
+        ],
+        meta: {
+          resourceType: 'Group',
+        },
+        schemas: ['urn:ietf:params:scim:schemas:core:2.0:Group'],
+      });
+    });
+    test.concurrent('add multiple members in batch', async ({ expect }) => {
+      const seed = initSeed();
+      const owner = await seed.createOwner();
+      const org = await owner.createOrg();
+      // currenlty this must exist for the endpoint to be functional
+      await org.createOIDCIntegration();
+      const accessToken = await org.createOrganizationAccessToken({
+        permissions: ['member:describe', 'member:modify'],
+        resources: { mode: ResourceAssignmentModeType.Granular },
+      });
+      const scimAuthHeader = 'Bearer ' + accessToken.privateAccessKey;
+
+      const headers = {
+        'Content-Type': 'application/scim+json',
+        Authorization: scimAuthHeader,
+      };
+
+      // create group
+
+      const postResponse = await fetch(groupsEndpoint, {
+        method: 'POST',
+        body: JSON.stringify({
+          schemas: ['urn:ietf:params:scim:schemas:core:2.0:Group'],
+          displayName: 'foobars',
+          members: [],
+        }),
+        headers,
+      });
+      expect(postResponse.status).toEqual(201);
+      const postResponseBody = await postResponse.json();
+
+      // create users
+
+      const firstUsersPostResponse = await createUser(headers);
+      expect(firstUsersPostResponse.status).toEqual(201);
+      const firstUserPostResponseBody = await firstUsersPostResponse.json();
+      const secondUsersPostResponse = await createUser(headers);
+      expect(secondUsersPostResponse.status).toEqual(201);
+      const secondUserPostResponseBody = await secondUsersPostResponse.json();
+
+      const putResponse = await fetch(groupsEndpoint + '/' + postResponseBody.id, {
+        method: 'PATCH',
+        body: JSON.stringify({
+          Operations: [
+            {
+              op: 'add',
+              path: 'members',
+              value: [{ value: firstUserPostResponseBody.id }],
+            },
+            {
+              op: 'add',
+              path: 'members',
+              value: [{ value: secondUserPostResponseBody.id }],
+            },
+          ],
+        }),
+        headers,
+      });
+      expect(putResponse.status).toEqual(200);
+      expect(await putResponse.json()).toEqual({
+        displayName: 'foobars',
+        id: postResponseBody.id,
+        members: [
+          {
+            $ref: '/Users/' + firstUserPostResponseBody.id,
+            value: firstUserPostResponseBody.id,
+          },
+          {
+            $ref: '/Users/' + secondUserPostResponseBody.id,
+            value: secondUserPostResponseBody.id,
+          },
+        ],
+        meta: {
+          resourceType: 'Group',
+        },
+        schemas: ['urn:ietf:params:scim:schemas:core:2.0:Group'],
+      });
+    });
+    test.concurrent('remove single member', async ({ expect }) => {
+      const seed = initSeed();
+      const owner = await seed.createOwner();
+      const org = await owner.createOrg();
+      // currenlty this must exist for the endpoint to be functional
+      await org.createOIDCIntegration();
+      const accessToken = await org.createOrganizationAccessToken({
+        permissions: ['member:describe', 'member:modify'],
+        resources: { mode: ResourceAssignmentModeType.Granular },
+      });
+      const scimAuthHeader = 'Bearer ' + accessToken.privateAccessKey;
+
+      const headers = {
+        'Content-Type': 'application/scim+json',
+        Authorization: scimAuthHeader,
+      };
+
+      // create group
+
+      const postResponse = await fetch(groupsEndpoint, {
+        method: 'POST',
+        body: JSON.stringify({
+          schemas: ['urn:ietf:params:scim:schemas:core:2.0:Group'],
+          displayName: 'foobars',
+          members: [],
+        }),
+        headers,
+      });
+      expect(postResponse.status).toEqual(201);
+      const postResponseBody = await postResponse.json();
+
+      // create users
+
+      const firstUsersPostResponse = await createUser(headers);
+      expect(firstUsersPostResponse.status).toEqual(201);
+      const firstUserPostResponseBody = await firstUsersPostResponse.json();
+      const secondUsersPostResponse = await createUser(headers);
+      expect(secondUsersPostResponse.status).toEqual(201);
+      const secondUserPostResponseBody = await secondUsersPostResponse.json();
+
+      const addMembersPutResponse = await fetch(groupsEndpoint + '/' + postResponseBody.id, {
+        method: 'PATCH',
+        body: JSON.stringify({
+          Operations: [
+            {
+              op: 'add',
+              path: 'members',
+              value: [{ value: firstUserPostResponseBody.id }],
+            },
+            {
+              op: 'add',
+              path: 'members',
+              value: [{ value: secondUserPostResponseBody.id }],
+            },
+          ],
+        }),
+        headers,
+      });
+      expect(addMembersPutResponse.status).toEqual(200);
+
+      const removeMembersPutResponse = await fetch(groupsEndpoint + '/' + postResponseBody.id, {
+        method: 'PATCH',
+        body: JSON.stringify({
+          Operations: [
+            {
+              op: 'remove',
+              path: `members[value eq "${firstUserPostResponseBody.id}"]`,
+            },
+          ],
+        }),
+        headers,
+      });
+
+      expect(removeMembersPutResponse.status).toEqual(200);
+      expect(await removeMembersPutResponse.json()).toEqual({
+        displayName: 'foobars',
+        id: postResponseBody.id,
+        members: [
+          {
+            $ref: '/Users/' + secondUserPostResponseBody.id,
+            value: secondUserPostResponseBody.id,
+          },
+        ],
+        meta: {
+          resourceType: 'Group',
+        },
+        schemas: ['urn:ietf:params:scim:schemas:core:2.0:Group'],
+      });
+    });
+    test.concurrent('remove multiple members', async ({ expect }) => {
+      const seed = initSeed();
+      const owner = await seed.createOwner();
+      const org = await owner.createOrg();
+      // currenlty this must exist for the endpoint to be functional
+      await org.createOIDCIntegration();
+      const accessToken = await org.createOrganizationAccessToken({
+        permissions: ['member:describe', 'member:modify'],
+        resources: { mode: ResourceAssignmentModeType.Granular },
+      });
+      const scimAuthHeader = 'Bearer ' + accessToken.privateAccessKey;
+
+      const headers = {
+        'Content-Type': 'application/scim+json',
+        Authorization: scimAuthHeader,
+      };
+
+      // create group
+
+      const postResponse = await fetch(groupsEndpoint, {
+        method: 'POST',
+        body: JSON.stringify({
+          schemas: ['urn:ietf:params:scim:schemas:core:2.0:Group'],
+          displayName: 'foobars',
+          members: [],
+        }),
+        headers,
+      });
+      expect(postResponse.status).toEqual(201);
+      const postResponseBody = await postResponse.json();
+
+      // create users
+
+      const firstUsersPostResponse = await createUser(headers);
+      expect(firstUsersPostResponse.status).toEqual(201);
+      const firstUserPostResponseBody = await firstUsersPostResponse.json();
+      const secondUsersPostResponse = await createUser(headers);
+      expect(secondUsersPostResponse.status).toEqual(201);
+      const secondUserPostResponseBody = await secondUsersPostResponse.json();
+
+      const addMembersPutResponse = await fetch(groupsEndpoint + '/' + postResponseBody.id, {
+        method: 'PATCH',
+        body: JSON.stringify({
+          Operations: [
+            {
+              op: 'add',
+              path: 'members',
+              value: [{ value: firstUserPostResponseBody.id }],
+            },
+            {
+              op: 'add',
+              path: 'members',
+              value: [{ value: secondUserPostResponseBody.id }],
+            },
+          ],
+        }),
+        headers,
+      });
+      expect(addMembersPutResponse.status).toEqual(200);
+
+      const removeMembersPutResponse = await fetch(groupsEndpoint + '/' + postResponseBody.id, {
+        method: 'PATCH',
+        body: JSON.stringify({
+          Operations: [
+            {
+              op: 'remove',
+              path: `members[value eq "${firstUserPostResponseBody.id}"]`,
+            },
+            {
+              op: 'remove',
+              path: `members[value eq "${secondUserPostResponseBody.id}"]`,
+            },
+          ],
+        }),
+        headers,
+      });
+
+      expect(removeMembersPutResponse.status).toEqual(200);
+      expect(await removeMembersPutResponse.json()).toEqual({
+        displayName: 'foobars',
+        id: postResponseBody.id,
+        members: [],
+        meta: {
+          resourceType: 'Group',
+        },
+        schemas: ['urn:ietf:params:scim:schemas:core:2.0:Group'],
+      });
+    });
   });
   describe.concurrent('DELETE', () => {
     test.concurrent('delete non-existing', async ({ expect }) => {

@@ -139,6 +139,14 @@ const ReplaceOperationSchema = z.union([
     path: z.literal('externalId'),
     value: z.string(),
   }),
+  z.object({
+    op: z.literal('replace'),
+    path: z.undefined().optional(),
+    value: z.object({
+      displayName: z.string().optional(),
+      externalId: z.string().optional(),
+    }),
+  }),
 ]);
 
 const GroupPatchOperationSchema = z.union([
@@ -147,13 +155,14 @@ const GroupPatchOperationSchema = z.union([
   ReplaceOperationSchema,
 ]);
 
-// const PatchGroupsRequestBodySchema = z.object({
-//   Operations: z.array(GroupPatchOperationSchema).min(1),
-// });
+const PatchGroupsRequestBodySchema = z.object({
+  Operations: z.array(GroupPatchOperationSchema).min(1).max(100),
+});
 
 const GroupPutBodySchema = z.object({
   members: z.array(GroupMemberSchema).optional(),
   displayName: z.string().optional(),
+  externalId: z.string().optional(),
 });
 
 export const createSCIMPlugin =
@@ -889,15 +898,47 @@ export const createSCIMPlugin =
       }
 
       if (body.data.displayName && body.data.displayName !== group.displayName) {
-        group = await groupStore.updateGroupPropertiesByOrganizationIdAndGroupId(
+        const updateGroupResult = await groupStore.updateGroupPropertiesByOrganizationIdAndGroupId(
           result.organizationId,
           group.id,
           {
             displayName: body.data.displayName,
             // TODO: figure out if we need to provide this
-            externalId: null,
+            externalId: body.data.externalId ?? null,
           },
         );
+
+        if (updateGroupResult.type === 'error') {
+          if (updateGroupResult.errorCode === 'notFound') {
+            return reply.status(404).send(
+              createSCIMError({
+                detail: 'Group does not exist.',
+                status: 404,
+              }),
+            );
+          }
+          if (updateGroupResult.errorCode === 'conflictOnDisplayName') {
+            return reply.status(409).send(
+              createSCIMError({
+                detail: 'Another group with the same display name already exists.',
+                status: 409,
+              }),
+            );
+          }
+
+          if (updateGroupResult.errorCode === 'conflictOnExternalId') {
+            return reply.status(409).send(
+              createSCIMError({
+                detail: 'Another group with the same external id already exists.',
+                status: 409,
+              }),
+            );
+          }
+
+          updateGroupResult satisfies never;
+        }
+
+        group = updateGroupResult.group;
       }
 
       const groupMemberStore = new GroupMemberStore(reply.log, pool);
@@ -929,197 +970,229 @@ export const createSCIMPlugin =
      * - group memberships (add/remove users)
      * - properties of group (display name and external id)
      */
-    // server.patch('/Groups/:groupId', async (req, reply) => {
-    //   const params = SharedGroupRouteParams.parse(req.params);
-    //   const result = await authenticateAuthorizeAndResolveOrganizationFromRequest(req, reply);
+    server.patch('/Groups/:groupId', async (req, reply) => {
+      const params = SharedGroupRouteParams.parse(req.params);
+      const result = await authenticateAuthorizeAndResolveOrganizationFromRequest(req, reply);
 
-    //   if (result.type === 'error') {
-    //     return reply.status(result.error.status).send(result.error);
-    //   }
+      if (result.type === 'error') {
+        return reply.status(result.error.status).send(result.error);
+      }
 
-    //   const groupStore = new GroupStore(req.log, pool);
+      const body = PatchGroupsRequestBodySchema.safeParse(req.body);
+      if (body.error) {
+        return reply.status(403).send(
+          createSCIMError({
+            status: 403,
+            detail: 'Invalid request body provided.',
+          }),
+        );
+      }
 
-    //   let group = await groupStore.getGroupByOrganizationIdAndGroupId(
-    //     result.organizationId,
-    //     params.groupId,
-    //   );
+      const groupStore = new GroupStore(req.log, pool);
 
-    //   if (!group) {
-    //     return reply.status(404).send(
-    //       createSCIMError({
-    //         detail: 'Group does not exist.',
-    //         status: 404,
-    //       }),
-    //     );
-    //   }
+      let group = await groupStore.getGroupByOrganizationIdAndGroupId(
+        result.organizationId,
+        params.groupId,
+      );
 
-    //   const body = PatchGroupsRequestBodySchema.safeParse(req.body);
-    //   if (body.error) {
-    //     return reply.status(403).send(
-    //       createSCIMError({
-    //         status: 403,
-    //         detail: 'Invalid request body provided.',
-    //       }),
-    //     );
-    //   }
+      if (!group) {
+        return reply.status(404).send(
+          createSCIMError({
+            detail: 'Group does not exist.',
+            status: 404,
+          }),
+        );
+      }
 
-    //   /**
-    //    * We gather all the operations for removing and adding users here
-    //    * and then execute them in a batch afterwards.
-    //    *
-    //    * We do not allow mixing a full group user replacement with removing and adding
-    //    * individual users. In reality this does never happen.
-    //    */
-    //   const usersToRemove = new Set<string>();
-    //   const usersToAdd = new Set<string>();
-    //   let fullReplaceUserIds: null | Set<string> = null;
+      /**
+       * We gather all the operations for removing and adding users here
+       * and then execute them in a batch afterwards.
+       *
+       * We do not allow mixing a full group user replacement with removing and adding
+       * individual users. In reality this does never happen.
+       */
+      const usersToRemove = new Set<string>();
+      const usersToAdd = new Set<string>();
+      let fullReplaceUserIds: null | Set<string> = null;
 
-    //   let newDisplayName: string | null = null;
-    //   let newExternalId: string | null = null;
+      let newDisplayName: string | null = null;
+      let newExternalId: string | null = null;
 
-    //   let error: SCIMError | null = null;
+      let error: SCIMError | null = null;
 
-    //   for (const operation of body.data.Operations) {
-    //     if (operation.op === 'add') {
-    //       if (fullReplaceUserIds !== null) {
-    //         error = createSCIMError({
-    //           status: 400,
-    //           detail:
-    //             'Mixing adding members and replacing the full member list in the same request is not supported.',
-    //         });
-    //         break;
-    //       }
+      for (const operation of body.data.Operations) {
+        if (operation.op === 'add') {
+          if (fullReplaceUserIds !== null) {
+            error = createSCIMError({
+              status: 400,
+              detail:
+                'Mixing adding members and replacing the full member list in the same request is not supported.',
+            });
+            break;
+          }
 
-    //       for (const record of operation.value) {
-    //         usersToAdd.add(record.value);
-    //       }
-    //       continue;
-    //     }
+          for (const record of operation.value) {
+            usersToAdd.add(record.value);
+          }
+          continue;
+        }
 
-    //     if (operation.op === 'remove') {
-    //       if (fullReplaceUserIds !== null) {
-    //         error = createSCIMError({
-    //           status: 400,
-    //           detail:
-    //             'Mixing adding members and replacing the full member list in the same request is not supported.',
-    //         });
-    //         break;
-    //       }
+        if (operation.op === 'remove') {
+          if (fullReplaceUserIds !== null) {
+            error = createSCIMError({
+              status: 400,
+              detail:
+                'Mixing adding members and replacing the full member list in the same request is not supported.',
+            });
+            break;
+          }
 
-    //       usersToRemove.add(operation.userId);
-    //       continue;
-    //     }
+          usersToRemove.add(operation.userId);
+          continue;
+        }
 
-    //     if (operation.op === 'replace') {
-    //       if (operation.path === 'displayName') {
-    //         // TODO: validate value ???
-    //         newDisplayName = operation.value;
-    //       }
+        if (operation.op === 'replace') {
+          if (operation.path) {
+            if (operation.path === 'displayName') {
+              newDisplayName = operation.value;
+            }
 
-    //       if (operation.path === 'externalId') {
-    //         // TODO: validate value ???
-    //         newExternalId = operation.value;
-    //         continue;
-    //       }
+            if (operation.path === 'externalId') {
+              newExternalId = operation.value;
+              continue;
+            }
 
-    //       if (operation.path === 'members') {
-    //         if (usersToAdd.size) {
-    //           error = createSCIMError({
-    //             status: 400,
-    //             detail:
-    //               'Mixing adding members and replacing the full member list in the same request is not supported.',
-    //           });
-    //           break;
-    //         }
+            if (operation.path === 'members') {
+              if (usersToAdd.size) {
+                error = createSCIMError({
+                  status: 400,
+                  detail:
+                    'Mixing adding members and replacing the full member list in the same request is not supported.',
+                });
+                break;
+              }
 
-    //         if (usersToRemove.size) {
-    //           error = createSCIMError({
-    //             status: 400,
-    //             detail:
-    //               'Mixing removing members and replacing the full member list in the same request is not supported.',
-    //           });
-    //           break;
-    //         }
+              if (usersToRemove.size) {
+                error = createSCIMError({
+                  status: 400,
+                  detail:
+                    'Mixing removing members and replacing the full member list in the same request is not supported.',
+                });
+                break;
+              }
 
-    //         if (fullReplaceUserIds !== null) {
-    //           error = createSCIMError({
-    //             status: 400,
-    //             detail: 'Replace members multiple times in same request is not supported.',
-    //           });
-    //           break;
-    //         }
+              if (fullReplaceUserIds !== null) {
+                error = createSCIMError({
+                  status: 400,
+                  detail: 'Replace members multiple times in same request is not supported.',
+                });
+                break;
+              }
 
-    //         fullReplaceUserIds = new Set(operation.value.map(record => record.value));
-    //       }
+              fullReplaceUserIds = new Set(operation.value.map(record => record.value));
+            }
 
-    //       continue;
-    //     }
-    //     operation satisfies never;
-    //   }
+            continue;
+          } else {
+            if (operation.value.displayName) {
+              newDisplayName = operation.value.displayName;
+            }
 
-    //   if (error) {
-    //     return reply.status(error.status).send(error);
-    //   }
+            if (operation.value.externalId) {
+              newExternalId = operation.value.externalId;
+            }
+            continue;
+          }
+        }
+        operation satisfies never;
+      }
 
-    //   if (newDisplayName || newExternalId) {
-    //     group = await groupStore.updateGroupPropertiesByOrganizationIdAndGroupId(
-    //       result.organizationId,
-    //       params.groupId,
-    //       {
-    //         displayName: newDisplayName,
-    //         externalId: newExternalId,
-    //       },
-    //     );
+      if (error) {
+        return reply.status(error.status).send(error);
+      }
 
-    //     if (!group) {
-    //       return reply.status(404).send(
-    //         createSCIMError({
-    //           detail: 'Group does not exist.',
-    //           status: 404,
-    //         }),
-    //       );
-    //     }
-    //   }
+      if (newDisplayName || newExternalId) {
+        const updateGroupResult = await groupStore.updateGroupPropertiesByOrganizationIdAndGroupId(
+          result.organizationId,
+          params.groupId,
+          {
+            displayName: newDisplayName,
+            externalId: newExternalId,
+          },
+        );
 
-    //   const groupMemberStore = new GroupMemberStore(reply.log, pool);
+        if (updateGroupResult.type === 'error') {
+          if (updateGroupResult.errorCode === 'notFound') {
+            return reply.status(404).send(
+              createSCIMError({
+                detail: 'Group does not exist.',
+                status: 404,
+              }),
+            );
+          }
+          if (updateGroupResult.errorCode === 'conflictOnDisplayName') {
+            return reply.status(409).send(
+              createSCIMError({
+                detail: 'Another group with the same display name already exists.',
+                status: 409,
+              }),
+            );
+          }
 
-    //   if (usersToRemove.size) {
-    //     await groupMemberStore.removeGroupMembersFromGroupByOrganizationIdAndGroupId(
-    //       result.organizationId,
-    //       params.groupId,
-    //       Array.from(usersToRemove),
-    //     );
-    //   }
+          if (updateGroupResult.errorCode === 'conflictOnExternalId') {
+            return reply.status(409).send(
+              createSCIMError({
+                detail: 'Another group with the same external id already exists.',
+                status: 409,
+              }),
+            );
+          }
 
-    //   if (usersToAdd.size) {
-    //     await groupMemberStore.addGroupMembersToGroupByOrganizationIdAndGroupId(
-    //       result.organizationId,
-    //       params.groupId,
-    //       Array.from(usersToAdd),
-    //     );
-    //   }
+          updateGroupResult satisfies never;
+        }
 
-    //   if (fullReplaceUserIds !== null) {
-    //     await groupMemberStore.removeAllGroupMembersFromGroupByOrganizationIdAndGroupId(
-    //       result.organizationId,
-    //       params.groupId,
-    //     );
-    //     if (fullReplaceUserIds.size) {
-    //       await groupMemberStore.addGroupMembersToGroupByOrganizationIdAndGroupId(
-    //         result.organizationId,
-    //         params.groupId,
-    //         Array.from(fullReplaceUserIds),
-    //       );
-    //     }
-    //   }
+        group = updateGroupResult.group;
+      }
 
-    //   const groupMembers = await groupMemberStore.getGroupMembersForOrganizationIdAndGroupId(
-    //     result.organizationId,
-    //     params.groupId,
-    //   );
+      const groupMemberStore = new GroupMemberStore(reply.log, pool);
 
-    //   return reply.status(200).send(createSCIMGroupObjectFromGroup(group, groupMembers));
-    // });
+      if (usersToRemove.size) {
+        await groupMemberStore.removeGroupMembersFromGroupByOrganizationIdAndGroupId(
+          result.organizationId,
+          params.groupId,
+          Array.from(usersToRemove),
+        );
+      }
+
+      if (usersToAdd.size) {
+        await groupMemberStore.addGroupMembersToGroupByOrganizationIdAndGroupId(
+          result.organizationId,
+          params.groupId,
+          Array.from(usersToAdd),
+        );
+      }
+
+      if (fullReplaceUserIds !== null) {
+        await groupMemberStore.removeAllGroupMembersFromGroupByOrganizationIdAndGroupId(
+          result.organizationId,
+          params.groupId,
+        );
+        if (fullReplaceUserIds.size) {
+          await groupMemberStore.addGroupMembersToGroupByOrganizationIdAndGroupId(
+            result.organizationId,
+            params.groupId,
+            Array.from(fullReplaceUserIds),
+          );
+        }
+      }
+
+      const groupMembers = await groupMemberStore.getGroupMembersForOrganizationIdAndGroupId(
+        result.organizationId,
+        params.groupId,
+      );
+
+      return reply.status(200).send(createSCIMGroupObjectFromGroup(group, groupMembers));
+    });
 
     /**
      * This route is used for deleting a group

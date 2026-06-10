@@ -173,7 +173,7 @@ export class GroupMemberStore {
       WHERE
         "organization_id" = ${organizationId}
         AND "group_id" = ${groupId}
-        AND "user_id" = ANY(${psql.array(userIds, 'uuuid')})
+        AND "user_id" = ANY(${psql.array(userIds, 'uuid')})
       RETURNING
         ${groupMemberFields}
     `;
