@@ -9,6 +9,7 @@ import {
 } from '@hive/api/modules/organization/providers/group-member-store';
 import { GroupStore, type Group } from '@hive/api/modules/organization/providers/group-store';
 import { UsersStore, type User } from '@hive/api/modules/organization/providers/users-store';
+import { RedisRateLimiter } from '@hive/api/modules/shared/providers/redis-rate-limiter';
 import { PostgresDatabasePool } from '@hive/postgres';
 
 const EmailSchemaModel = z
@@ -159,13 +160,17 @@ const GroupPutBodySchema = z.object({
 });
 
 export const createSCIMPlugin =
-  (authn: AuthN, pool: PostgresDatabasePool, storage: Storage): FastifyPluginAsync =>
+  (
+    authn: AuthN,
+    pool: PostgresDatabasePool,
+    storage: Storage,
+    rateLimiter: RedisRateLimiter,
+  ): FastifyPluginAsync =>
   async server => {
     async function authenticateAuthorizeAndResolveOrganizationFromRequest(
       req: FastifyRequest,
       reply: FastifyReply,
     ) {
-      // TODO: rate limit
       const session = await authn.authenticate({ req, reply });
 
       if (session instanceof UnauthenticatedSession) {
@@ -175,6 +180,16 @@ export const createSCIMPlugin =
           error: createSCIMError({
             status: 401,
             detail: 'Missing access token.',
+          }),
+        };
+      }
+
+      if (await rateLimiter.isFastifyRouteRateLimited(req, 5 * 60, 1_000)) {
+        return {
+          type: 'error' as const,
+          error: createSCIMError({
+            status: 429,
+            detail: 'Rate Limited.',
           }),
         };
       }
@@ -903,7 +918,7 @@ export const createSCIMPlugin =
         }
       } else {
         const offset = Math.max(0, startIndex - 1);
-        // TODO: offset based pagination ond DB level instead of application level
+        // TODO: offset based pagination on DB level instead of application level
         const allUsers = await usersStore.getAllUsers(result.organizationId);
         const pagedUsers = allUsers.slice(offset, offset + count);
         for (const user of pagedUsers) {
@@ -1070,11 +1085,6 @@ export const createSCIMPlugin =
 
       const groupStore = new GroupStore(result.logger, pool);
 
-      // TODO: case when group already exists but is "disabled"
-      // In this case we should probably just raise an error and the admin
-      // has to first delete the group on Console side
-      // Otherwise we might risk that the group users instantly get some permissions
-      // that they might not be intended to get
       const createGroupResult = await groupStore.createGroup({
         organizationId: result.organizationId,
         displayName: body.data.displayName,
