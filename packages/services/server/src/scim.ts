@@ -1234,19 +1234,23 @@ export const createSCIMPlugin =
       let groupMembers;
 
       if (Array.isArray(memberIds)) {
-        await groupMemberStore.removeAllGroupMembersFromGroupByOrganizationIdAndGroupId(
-          result.organizationId,
-          group.id,
-        );
-        groupMembers = [];
-
-        if (memberIds.length) {
-          groupMembers = await groupMemberStore.addGroupMembersToGroupByOrganizationIdAndGroupId(
+        await pool.transaction('scim replace members', async trx => {
+          await groupMemberStore.removeAllGroupMembersFromGroupByOrganizationIdAndGroupId(
             result.organizationId,
             group.id,
-            memberIds,
+            trx,
           );
-        }
+          groupMembers = [];
+
+          if (memberIds.length) {
+            groupMembers = await groupMemberStore.addGroupMembersToGroupByOrganizationIdAndGroupId(
+              result.organizationId,
+              group.id,
+              memberIds,
+              trx,
+            );
+          }
+        });
       }
 
       return reply
@@ -1440,17 +1444,22 @@ export const createSCIMPlugin =
       }
 
       if (fullReplaceUserIds !== null) {
-        await groupMemberStore.removeAllGroupMembersFromGroupByOrganizationIdAndGroupId(
-          result.organizationId,
-          group.id,
-        );
-        if (fullReplaceUserIds.size) {
-          await groupMemberStore.addGroupMembersToGroupByOrganizationIdAndGroupId(
+        await pool.transaction('scim replace members', async trx => {
+          await groupMemberStore.removeAllGroupMembersFromGroupByOrganizationIdAndGroupId(
             result.organizationId,
             group.id,
-            Array.from(fullReplaceUserIds),
+            trx,
           );
-        }
+
+          if (fullReplaceUserIds.size) {
+            await groupMemberStore.addGroupMembersToGroupByOrganizationIdAndGroupId(
+              result.organizationId,
+              group.id,
+              Array.from(fullReplaceUserIds),
+              trx,
+            );
+          }
+        });
       }
 
       const groupMembers = await groupMemberStore.getGroupMembersForOrganizationIdAndGroupId(
