@@ -106,6 +106,7 @@ export class GroupMemberStore {
     organizationId: string,
     groupId: string,
     userIds: Array<string>,
+    trx: CommonQueryMethods = this.pool,
   ) {
     const logger = this.logger.child({
       organizationId,
@@ -143,7 +144,7 @@ export class GroupMemberStore {
         ${groupMemberFields}
     `;
 
-    const rows = await this.pool.any(query).then(z.array(GroupMemberModel).parse);
+    const rows = await trx.any(query).then(z.array(GroupMemberModel).parse);
     logger.debug(
       'added %d members (organizationId=%s, groupId=%s)',
       rows.length,
@@ -188,6 +189,7 @@ export class GroupMemberStore {
   async removeAllGroupMembersFromGroupByOrganizationIdAndGroupId(
     organizationId: string,
     groupId: string,
+    trx: CommonQueryMethods,
   ) {
     const logger = this.logger.child({
       organizationId,
@@ -207,7 +209,7 @@ export class GroupMemberStore {
         ${groupMemberFields}
     `;
 
-    const rows = await this.pool.any(query).then(z.array(GroupMemberModel).parse);
+    const rows = await trx.any(query).then(z.array(GroupMemberModel).parse);
     logger.debug('removed %d members', rows.length);
 
     return rows;
