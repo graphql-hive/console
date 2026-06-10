@@ -361,7 +361,7 @@ export const createSCIMPlugin =
       },
     ) {
       if (
-        group.externalGroupId === properties.externalId &&
+        group.externalId === properties.externalId &&
         group.displayName === properties.displayName
       ) {
         return {
@@ -370,7 +370,7 @@ export const createSCIMPlugin =
         };
       }
 
-      if (!group.externalGroupId && !group.displayName) {
+      if (!group.externalId && !group.displayName) {
         return {
           type: 'success' as const,
           group,
@@ -1049,13 +1049,35 @@ export const createSCIMPlugin =
       // has to first delete the group on Console side
       // Otherwise we might risk that the group users instantly get some permissions
       // that they might not be intended to get
-      const group = await groupStore.createGroup({
+      const createGroupResult = await groupStore.createGroup({
         organizationId: result.organizationId,
         displayName: body.data.displayName,
-        externalGroupId: body.data.externalId ?? null,
+        externalId: body.data.externalId ?? null,
       });
 
-      return reply.status(201).send(createSCIMGroupObjectFromGroup(group));
+      if (createGroupResult.type === 'error') {
+        if (createGroupResult.errorCode === 'displayNameConflict') {
+          return reply.status(409).send(
+            createSCIMError({
+              status: 409,
+              detail: 'A SCIM group with the same display name already exists.',
+            }),
+          );
+        }
+
+        if (createGroupResult.errorCode === 'externalIdConflict') {
+          return reply.status(409).send(
+            createSCIMError({
+              status: 409,
+              detail: 'A SCIM group with the same external id already exists.',
+            }),
+          );
+        }
+
+        createGroupResult satisfies never;
+      }
+
+      return reply.status(201).send(createSCIMGroupObjectFromGroup(createGroupResult.group));
     });
 
     /**
@@ -1340,25 +1362,23 @@ export const createSCIMPlugin =
 
       const groupStore = new GroupStore(req.log, pool);
 
-      const group = await groupStore.getGroupByOrganizationIdAndGroupId(
-        result.organizationId,
-        params.groupId,
-      );
-
-      if (!group) {
-        return reply.status(404).send(
-          createSCIMError({
-            detail: 'Group does not exist.',
-            status: 404,
-          }),
-        );
-      }
-
-      // We only soft-delete for now...
-      await groupStore.disableGroup({
+      const deleteGroupResult = await groupStore.deleteGroup({
         organizationId: result.organizationId,
         groupId: params.groupId,
       });
+
+      if (deleteGroupResult.type === 'error') {
+        if (deleteGroupResult.errorCode === 'notFound') {
+          return reply.status(404).send(
+            createSCIMError({
+              detail: 'Group does not exist.',
+              status: 404,
+            }),
+          );
+        }
+
+        deleteGroupResult satisfies never;
+      }
 
       return reply.status(204).send();
     });
@@ -1453,7 +1473,7 @@ function createSCIMGroupObjectFromGroup(
   return {
     schemas: ['urn:ietf:params:scim:schemas:core:2.0:Group'],
     id: group.id,
-    externalId: group.externalGroupId ?? undefined,
+    externalId: group.externalId ?? undefined,
     displayName: group.displayName,
     members: members?.map(member => ({
       value: member.userId,

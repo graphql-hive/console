@@ -224,6 +224,8 @@ export class GroupMemberStore {
       WHERE
         "organization_id" = ${organizationId}
         AND "user_id" = ${userId}
+      ORDER BY
+        "user_id" DESC
     `);
     return z.array(GroupMemberModel).parse(result);
   }
