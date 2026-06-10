@@ -415,6 +415,87 @@ describe.concurrent('/Users', () => {
         active: false,
       });
     });
+    test.concurrent('update external id', async ({ expect }) => {
+      const seed = initSeed();
+      const owner = await seed.createOwner();
+      const org = await owner.createOrg();
+      await org.createOIDCIntegration();
+      const accessToken = await org.createOrganizationAccessToken({
+        permissions: ['member:describe', 'member:modify'],
+        resources: { mode: ResourceAssignmentModeType.Granular },
+      });
+      const scimAuthHeader = 'Bearer ' + accessToken.privateAccessKey;
+      const externalUserId = 'iliketurtles';
+
+      const headers = {
+        'Content-Type': 'application/scim+json',
+        Authorization: scimAuthHeader,
+      };
+      const userPostResponse = await createUser(headers, {
+        externalId: externalUserId,
+      });
+      expect(userPostResponse.status).toEqual(201);
+      const userResponseBody = await userPostResponse.json();
+
+      const newExternalId = 'ilikesnakes';
+
+      const usersPutResponse = await fetch(usersEndpoint + '/' + userResponseBody.id, {
+        method: 'PUT',
+        body: JSON.stringify({
+          externalId: newExternalId,
+        }),
+        headers,
+      });
+
+      expect(usersPutResponse.status).toEqual(200);
+      expect(await usersPutResponse.json()).toEqual({
+        ...userResponseBody,
+        externalId: newExternalId,
+      });
+    });
+    test.concurrent('update external id (conflict with other user)', async ({ expect }) => {
+      const seed = initSeed();
+      const owner = await seed.createOwner();
+      const org = await owner.createOrg();
+      await org.createOIDCIntegration();
+      const accessToken = await org.createOrganizationAccessToken({
+        permissions: ['member:describe', 'member:modify'],
+        resources: { mode: ResourceAssignmentModeType.Granular },
+      });
+      const scimAuthHeader = 'Bearer ' + accessToken.privateAccessKey;
+      const externalUserId = 'iliketurtles';
+
+      const headers = {
+        'Content-Type': 'application/scim+json',
+        Authorization: scimAuthHeader,
+      };
+      const firstUserPostResponse = await createUser(headers);
+      expect(firstUserPostResponse.status).toEqual(201);
+      const firstUserPostResponseBody = await firstUserPostResponse.json();
+      const secondUserPostResponse = await createUser(headers, {
+        externalId: externalUserId,
+      });
+      expect(secondUserPostResponse.status).toEqual(201);
+
+      const usersPutResponse = await fetch(usersEndpoint + '/' + firstUserPostResponseBody.id, {
+        method: 'PUT',
+        body: JSON.stringify({
+          externalId: externalUserId,
+        }),
+        headers,
+      });
+
+      expect(usersPutResponse.status).toEqual(409);
+      expect(await usersPutResponse.json()).toMatchInlineSnapshot(`
+        {
+          detail: Another user with the same external id already exists.,
+          schemas: [
+            urn:ietf:params:scim:api:messages:2.0:Error,
+          ],
+          status: 409,
+        }
+      `);
+    });
   });
   // describe.concurrent('PATCH', () => {
   //   test.concurrent('non-existing user', async ({ expect }) => {
