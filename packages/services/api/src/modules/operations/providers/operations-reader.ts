@@ -23,7 +23,7 @@ export function formatDate(date: Date): string {
   return format(addMinutes(date, date.getTimezoneOffset()), 'yyyy-MM-dd HH:mm:ss');
 }
 
-function toUnixTimestamp(utcDate: string): any {
+function toUnixTimestamp(utcDate: string): number {
   // 2024-04-26 11:00:00
   const [date, time] = utcDate.split(' ');
   const [year, month, day] = date.split('-');
@@ -48,6 +48,26 @@ const ReadOperationModel = z.object({
   name: z.string(),
   type: z.union([z.literal('QUERY'), z.literal('MUTATION'), z.literal('SUBSCRIPTION')]),
 });
+
+export enum FieldMetricsState {
+  /**
+   * If the field metric usage data is in sync with other usage data, then the visualization can be shown as intended
+   * with all the data and no explanation needed.
+   */
+  IN_SYNC,
+
+  /**
+   * If the field metric usage data and operation metric data did not start at the same time, then this requires an
+   * explanation for why the data does not align. Display a warning on the UI.
+   */
+  HISTORY_MISSING,
+
+  /**
+   * If the field metric usage data is not available, because the gateway has never installed the necessary plugin,
+   * then we can safely hide this feature on the frontend.
+   */
+  NO_DATA,
+}
 
 type Operation = z.TypeOf<typeof ReadOperationModel>;
 
@@ -2235,21 +2255,62 @@ export class OperationsReader {
    * the feature flag to appropriately display frontend components or opt
    * to hide them instead.
    */
-  async hasCoordinatesIngestedCheck({ targetId }: { targetId: string }): Promise<boolean> {
-    const result = await this.clickHouse.query<{
-      hash: string;
-    }>({
-      query: sql`
-        SELECT hash FROM coordinate_counts_daily
-        WHERE target = ${targetId}
-        LIMIT 1
-      `,
-      queryId: 'has_coordinates_ingested_check',
-      // set a quick timeout to avoid inconvenience
-      timeout: 3_000,
-    });
+  async coordinatesDataSyncedCheck({ targetId }: { targetId: string }): Promise<FieldMetricsState> {
+    // assume expiration applies equally across the metric tables and so there's no need
+    // to limit the timestamps
 
-    return result.rows === 1;
+    const startedSendingFieldUsageAt = await this.clickHouse
+      .query<{
+        timestamp: string;
+      }>({
+        query: sql`
+        SELECT MIN(timestamp) as timestamp
+        FROM default.target_field_level_metrics_onboard_timestamp
+        PREWHERE target = ${targetId}
+      `,
+        queryId: 'coordinate_data_synced_coords',
+        // set a quick timeout to avoid inconvenience
+        timeout: 3_000,
+      })
+      .then(r => {
+        const maybeRow = r.data[0];
+        return maybeRow ? toUnixTimestamp(maybeRow.timestamp) : null;
+      });
+
+    if (!startedSendingFieldUsageAt) {
+      return FieldMetricsState.NO_DATA;
+    }
+
+    const operationsStart = await this.clickHouse
+      .query<{
+        startTime: string;
+      }>({
+        query: sql`
+        SELECT MIN(timestamp) as startTime
+        FROM operations_by_target_hourly
+        PREWHERE
+          target = ${targetId}
+          AND timestamp < fromUnixTimestamp64Milli(${sql.raw(String(startedSendingFieldUsageAt))})
+        LIMIT 1;
+      `,
+        queryId: 'coordinate_data_synced_operations',
+        // set a quick timeout to avoid inconvenience
+        timeout: 3_000,
+      })
+      .then(r => {
+        const maybeRow = r.data[0];
+        return maybeRow ? toUnixTimestamp(maybeRow.startTime) : null;
+      });
+
+    // check if any operations sent before the adjusted coordinate timestamp
+    if (operationsStart === null) {
+      // if no operation is found before this timestamp, then those operation records
+      // must have been deleted via TTL. In this case, the field level metrics
+      // and operation metrics are both limited by the TTL and are in sync.
+      return FieldMetricsState.IN_SYNC;
+    }
+    // Else we know coordinate data and operation usage data mismatch.
+    return FieldMetricsState.HISTORY_MISSING;
   }
 
   async getCoordinatesOverTime({

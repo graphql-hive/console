@@ -208,4 +208,41 @@ export const action: Action = async exec => {
       , expires_at
     ;
   `);
+
+  /**
+   * Store the timestamp of the oldest record in a table for quickly querying
+   * This will not take into account if the target enables and then disabled
+   * the feature. Once field data is sent, this will forever be considered
+   * the start time for that target.
+   */
+  await exec(`
+    CREATE TABLE IF NOT EXISTS default.target_field_level_metrics_onboard_timestamp
+    (
+      target UUID
+      , timestamp SimpleAggregateFunction(min, DateTime('UTC')) CODEC(DoubleDelta, ZSTD(1))
+    )
+    ENGINE = AggregatingMergeTree
+    ORDER BY target
+    SETTINGS
+      index_granularity = 8192
+    ;
+  `);
+
+  /**
+   * Materialized View that updates the oldest timestamp table.
+   * It hooks directly into the root default.operations table to catch
+   * timestamps the moment they enter the system.
+   */
+  await exec(`
+    CREATE MATERIALIZED VIEW IF NOT EXISTS default.mv_target_field_level_metrics_onboard_timestamp
+    TO default.target_field_level_metrics_onboard_timestamp
+    AS
+    SELECT
+      target
+      , min(timestamp) AS timestamp
+    FROM default.operations
+    WHERE notEmpty(coordinate_totals)
+    GROUP BY target
+    ;
+  `);
 };

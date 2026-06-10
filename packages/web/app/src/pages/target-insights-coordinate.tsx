@@ -23,6 +23,7 @@ import { Meta } from '@/components/ui/meta';
 import { Subtitle, Title } from '@/components/ui/page';
 import { QueryError } from '@/components/ui/query-error';
 import { graphql } from '@/gql';
+import { FieldLevelMetricsDisplayState } from '@/gql/graphql';
 import { formatNumber, formatThroughput, toDecimal } from '@/lib/hooks';
 import { useDateRangeController } from '@/lib/hooks/use-date-range-controller';
 import { cn, useChartStyles } from '@/lib/utils';
@@ -39,7 +40,7 @@ const SchemaCoordinateView_SchemaCoordinateStatsQuery = graphql(`
     target(reference: { bySelector: $targetSelector }) {
       id
       hasCollectedSubscriptionOperations
-      hasFieldLevelMetrics
+      fieldLevelMetricsDisplayState
       schemaCoordinateStats(period: $period, schemaCoordinate: $schemaCoordinate) {
         supergraphMetadata {
           ...SupergraphMetadataList_SupergraphMetadataFragment
@@ -170,7 +171,10 @@ function SchemaCoordinateView(props: {
   const supergraphMetadata = query.data?.target?.schemaCoordinateStats?.supergraphMetadata;
   const kind = query.data?.target?.latestValidSchemaVersion?.explorer?.type?.__typename;
   const title = kind === 'GraphQLEnumType' ? `${typeName} (${props.coordinate})` : props.coordinate;
-  const hasFieldLevelMetrics = query.data?.target?.hasFieldLevelMetrics;
+  const fieldLevelMetricsDisplayState = query.data?.target?.fieldLevelMetricsDisplayState;
+  const showFieldLevelMetrics =
+    fieldLevelMetricsDisplayState === FieldLevelMetricsDisplayState.On ||
+    fieldLevelMetricsDisplayState === FieldLevelMetricsDisplayState.OnWithWarning;
 
   if (query.error) {
     return <QueryError organizationSlug={props.organizationSlug} error={query.error} />;
@@ -227,6 +231,19 @@ function SchemaCoordinateView(props: {
           </Alert>
         </div>
       )}
+      {fieldLevelMetricsDisplayState === FieldLevelMetricsDisplayState.OnWithWarning ? (
+        <div className="pb-8">
+          <Alert>
+            <AlertCircleIcon className="size-4" />
+            <AlertTitle>Coordinate resolutions were recently added.</AlertTitle>
+            <AlertDescription>
+              Your gateway was recently upgraded to add usage tracking for actual coordinate
+              resolutions and errors. Please disregard the missing historic resolution data, as this
+              data cannot be backfilled.
+            </AlertDescription>
+          </Alert>
+        </div>
+      ) : null}
       <div className="space-y-4 pb-8">
         <div className="grid gap-4 md:grid-cols-1 lg:grid-cols-8">
           <div className="col-span-4">
@@ -245,7 +262,7 @@ function SchemaCoordinateView(props: {
                   </p>
                 </CardContent>
               </Card>
-              {hasFieldLevelMetrics ? (
+              {showFieldLevelMetrics ? (
                 <Card className="bg-neutral-2/50">
                   <CardHeader
                     className="flex flex-row items-center justify-between space-y-0 pb-2"
@@ -396,7 +413,7 @@ This differs from Request Count because a single request can resolve a field mul
               <CardContent
                 className={cn(
                   'min-h-[150px] grow basis-0',
-                  resolutionsOverTime.length || errorsOverTime.length ? 'show' : 'hidden',
+                  showFieldLevelMetrics ? 'show' : 'hidden',
                 )}
               >
                 <AutoSizer>
@@ -567,34 +584,36 @@ This differs from Request Count because a single request can resolve a field mul
             </CardContent>
           </Card>
 
-          <Card className="bg-neutral-2/50 col-span-3 flex h-full flex-col">
-            <CardHeader>
-              <CardTitle>Errors</CardTitle>
-              <CardDescription>
-                {props.coordinate} resulted in a GraphQL error {isLoading ? '-' : totalFailures}{' '}
-                times in {dateRangeController.selectedPreset.label.toLowerCase()}.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="min-h-[170px] grow basis-0 overflow-y-auto">
-              <div className="space-y-2">
-                {isLoading
-                  ? null
-                  : query.data?.target?.schemaCoordinateStats.errors?.edges.map(
-                      ({ node: error }) => (
-                        <div key={error.code} className="flex items-center">
-                          <p className="truncate text-sm font-medium">{error.code}</p>
-                          <div className="ml-auto flex min-w-[150px] flex-row items-center justify-end text-sm font-light">
-                            <div>{formatNumber(error.count)}</div>
-                            <div className="min-w-[70px] text-right">
-                              {toDecimal((error.count * 100) / totalRequests)}%
+          {showFieldLevelMetrics ? (
+            <Card className="bg-neutral-2/50 col-span-3 flex h-full flex-col">
+              <CardHeader>
+                <CardTitle>Errors</CardTitle>
+                <CardDescription>
+                  {props.coordinate} resulted in a GraphQL error {isLoading ? '-' : totalFailures}{' '}
+                  times in {dateRangeController.selectedPreset.label.toLowerCase()}.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="min-h-[170px] grow basis-0 overflow-y-auto">
+                <div className="space-y-2">
+                  {isLoading
+                    ? null
+                    : query.data?.target?.schemaCoordinateStats.errors?.edges.map(
+                        ({ node: error }) => (
+                          <div key={error.code} className="flex items-center">
+                            <p className="truncate text-sm font-medium">{error.code}</p>
+                            <div className="ml-auto flex min-w-[150px] flex-row items-center justify-end text-sm font-light">
+                              <div>{formatNumber(error.count)}</div>
+                              <div className="min-w-[70px] text-right">
+                                {toDecimal((error.count * 100) / totalRequests)}%
+                              </div>
                             </div>
                           </div>
-                        </div>
-                      ),
-                    )}
-              </div>
-            </CardContent>
-          </Card>
+                        ),
+                      )}
+                </div>
+              </CardContent>
+            </Card>
+          ) : null}
         </div>
       </div>
     </>

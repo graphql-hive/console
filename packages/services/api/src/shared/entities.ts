@@ -156,7 +156,6 @@ export interface Organization {
     appDeployments: boolean;
     otelTracing: boolean;
     schemaProposals: boolean;
-    subgraphVisibility: boolean;
     metricAlertRules: boolean;
   };
   zendeskId: string | null;

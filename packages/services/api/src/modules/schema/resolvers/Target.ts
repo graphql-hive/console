@@ -12,8 +12,8 @@ export const Target: Pick<
   | 'activeContracts'
   | 'baseSchema'
   | 'contracts'
+  | 'fieldLevelMetricsDisplayState'
   | 'hasCollectedSubscriptionOperations'
-  | 'hasFieldLevelMetrics'
   | 'hasSchema'
   | 'latestSchemaVersion'
   | 'latestValidSchemaVersion'
@@ -124,8 +124,8 @@ export const Target: Pick<
       organizationId: target.orgId,
     });
   },
-  hasFieldLevelMetrics: async (target, _, { injector }) => {
-    return injector.get(OperationsManager).shouldDisplayFieldLevelMetrics({
+  fieldLevelMetricsDisplayState: async (target, _, { injector }) => {
+    return injector.get(OperationsManager).fieldLevelMetricsDisplayState({
       organizationId: target.orgId,
       targetId: target.id,
     });

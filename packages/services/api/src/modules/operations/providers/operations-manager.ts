@@ -13,7 +13,7 @@ import type {
   TargetSelector,
 } from '../../shared/providers/storage';
 import { Storage } from '../../shared/providers/storage';
-import { OperationsReader } from './operations-reader';
+import { FieldMetricsState, OperationsReader } from './operations-reader';
 
 const DAY_IN_MS = 86_400_000;
 const lru = new LRU<string, boolean>({
@@ -236,15 +236,6 @@ export class OperationsManager {
         projectId,
       },
     });
-
-    const org = await this.storage.getOrganization({
-      organizationId,
-    });
-
-    if (org.featureFlags.subgraphVisibility !== true) {
-      return null;
-    }
-
     return this.reader
       .countCoordinateResolutions({
         targetIds: Array.isArray(targetId) ? targetId : [targetId],
@@ -306,15 +297,6 @@ export class OperationsManager {
         projectId,
       },
     });
-
-    const org = await this.storage.getOrganization({
-      organizationId,
-    });
-
-    if (!org.featureFlags.subgraphVisibility) {
-      return null;
-    }
-
     return this.reader
       .countCoordinateFailure({
         targetIds: Array.isArray(targetId) ? targetId : [targetId],
@@ -823,6 +805,7 @@ export class OperationsManager {
 
   async readCoordinatesOverTime({
     targetId,
+    projectId,
     organizationId,
     period,
     resolution,
@@ -832,13 +815,14 @@ export class OperationsManager {
     resolution: number;
     schemaCoordinate: string;
   } & TargetSelector) {
-    const org = await this.storage.getOrganization({
+    await this.session.assertPerformAction({
+      action: 'project:describe',
       organizationId,
+      params: {
+        organizationId,
+        projectId,
+      },
     });
-
-    if (org.featureFlags.subgraphVisibility !== true) {
-      return [];
-    }
 
     return this.reader.getCoordinatesOverTime({
       period,
@@ -851,6 +835,7 @@ export class OperationsManager {
   async readCoordinateFailuresOverTime({
     targetId,
     organizationId,
+    projectId,
     period,
     resolution,
     schemaCoordinate,
@@ -859,13 +844,14 @@ export class OperationsManager {
     resolution: number;
     schemaCoordinate: string;
   } & TargetSelector) {
-    const org = await this.storage.getOrganization({
+    await this.session.assertPerformAction({
+      action: 'project:describe',
       organizationId,
+      params: {
+        organizationId,
+        projectId,
+      },
     });
-
-    if (org.featureFlags.subgraphVisibility !== true) {
-      return [];
-    }
 
     return this.reader.getCoordinateFailuresOverTime({
       period,
@@ -1290,24 +1276,17 @@ export class OperationsManager {
         projectId: project,
       },
     });
-
-    const org = await this.storage.getOrganization({
-      organizationId: organization,
-    });
-
     const [rows, errorRows] = await Promise.all([
       this.reader.countCoordinatesOfType({
         target,
         period,
         typename,
       }),
-      org.featureFlags.subgraphVisibility
-        ? this.reader.countErrorCoordinatesOfType({
-            target,
-            period,
-            typename,
-          })
-        : Promise.resolve(),
+      this.reader.countErrorCoordinatesOfType({
+        target,
+        period,
+        typename,
+      }),
     ]);
 
     const records: {
@@ -1327,7 +1306,7 @@ export class OperationsManager {
       };
     }
 
-    if (org.featureFlags.subgraphVisibility && errorRows) {
+    if (errorRows) {
       for (const row of errorRows) {
         if (records[row.coordinate]) {
           records[row.coordinate].errorTotal ??= row.total;
@@ -1447,22 +1426,29 @@ export class OperationsManager {
     });
   }
 
-  async shouldDisplayFieldLevelMetrics({
-    organizationId,
-    targetId,
-  }: {
-    organizationId: string;
+  @cache<{
     targetId: string;
-  }) {
-    const org = await this.storage.getOrganization({
-      organizationId,
-    });
-
-    if (org.featureFlags.subgraphVisibility !== true) {
-      return false;
-    }
-    return await this.reader.hasCoordinatesIngestedCheck({
+  }>(({ targetId }) => targetId)
+  @traceFn('OperationManager.fieldLevelMetricsDisplayState', {
+    initAttributes: input => ({
+      'hive.target.id': input.targetId,
+    }),
+  })
+  async fieldLevelMetricsDisplayState({ targetId }: { organizationId: string; targetId: string }) {
+    const state = await this.reader.coordinatesDataSyncedCheck({
       targetId,
     });
+    const mappings = {
+      [FieldMetricsState.HISTORY_MISSING]: 'ON_WITH_WARNING' as const,
+      [FieldMetricsState.IN_SYNC]: 'ON' as const,
+      [FieldMetricsState.NO_DATA]: 'OFF' as const,
+    };
+    return mappings[state];
   }
+}
+
+export enum FieldLevelMetricsDisplayState {
+  ON,
+  OFF,
+  ON_WITH_WARNING,
 }

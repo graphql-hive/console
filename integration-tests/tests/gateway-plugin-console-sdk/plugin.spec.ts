@@ -54,8 +54,7 @@ async function setup(subgraphs: {
   };
 }) {
   const { createOrg } = await initSeed().createOwner();
-  const { createProject, setFeatureFlag } = await createOrg();
-  await setFeatureFlag('subgraphVisibility', true);
+  const { createProject } = await createOrg();
   const { createTargetAccessToken, waitForRequestsCollected, readSchemaCoordinateStats, target } =
     await createProject(ProjectType.Single);
   const token = await createTargetAccessToken({});

@@ -258,7 +258,13 @@ export default gql`
     has sent usage data matching the required format. If either of these cases
     are false, then this returns false.
     """
-    hasFieldLevelMetrics: Boolean!
+    fieldLevelMetricsDisplayState: FieldLevelMetricsDisplayState!
+  }
+
+  enum FieldLevelMetricsDisplayState {
+    ON
+    OFF
+    ON_WITH_WARNING
   }
 
   input SchemaChecksFilter {
