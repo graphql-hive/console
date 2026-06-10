@@ -36,6 +36,64 @@ async function createUser(
   });
 }
 
+const defaultGroupValues = {
+  schemas: ['urn:ietf:params:scim:schemas:core:2.0:Group'],
+  displayName: 'foobars',
+  members: [],
+  externalId: undefined as string | undefined,
+};
+
+async function createGroup(
+  headers: Record<string, string>,
+  overrides?: Partial<typeof defaultGroupValues>,
+) {
+  return await fetch(groupsEndpoint, {
+    method: 'POST',
+    body: JSON.stringify({
+      ...defaultGroupValues,
+      displayName: crypto.randomUUID(),
+      ...overrides,
+    }),
+    headers,
+  });
+}
+
+async function getGroups(
+  headers: Record<string, string>,
+  query?: {
+    count?: string;
+    startIndex?: string;
+    filter?: string;
+  },
+) {
+  const url = new URL(groupsEndpoint);
+  for (const [key, value] of Object.entries(query ?? {})) {
+    if (!value) continue;
+    url.searchParams.set(key, value);
+  }
+  return await fetch(url, {
+    headers,
+  });
+}
+
+async function getUsers(
+  headers: Record<string, string>,
+  query?: {
+    count?: string;
+    startIndex?: string;
+    filter?: string;
+  },
+) {
+  const url = new URL(usersEndpoint);
+  for (const [key, value] of Object.entries(query ?? {})) {
+    if (!value) continue;
+    url.searchParams.set(key, value);
+  }
+  return await fetch(url, {
+    headers,
+  });
+}
+
 describe.concurrent('/Users', () => {
   describe.concurrent('POST', () => {
     test.concurrent('create new user succeeds', async ({ expect }) => {
@@ -816,10 +874,397 @@ describe.concurrent('/Users', () => {
     });
   });
   describe.concurrent('GET', () => {
-    test.concurrent('get and paginate groups');
-    test.concurrent('find by display name');
-    test.concurrent('find by external id');
-    test.concurrent('find by id');
+    test.concurrent('get and paginate users', async () => {
+      const seed = initSeed();
+      const owner = await seed.createOwner();
+      const org = await owner.createOrg();
+      // currenlty this must exist for the endpoint to be functional
+      await org.createOIDCIntegration();
+      const accessToken = await org.createOrganizationAccessToken({
+        permissions: ['member:describe', 'member:modify'],
+        resources: { mode: ResourceAssignmentModeType.Granular },
+      });
+      const scimAuthHeader = 'Bearer ' + accessToken.privateAccessKey;
+
+      const headers = {
+        'Content-Type': 'application/scim+json',
+        Authorization: scimAuthHeader,
+      };
+      await createUser(headers, {
+        externalId: 'userA',
+        userName: 'User A',
+      });
+      await createUser(headers, {
+        externalId: 'userB',
+        userName: 'User B',
+      });
+      await createUser(headers, {
+        externalId: 'userC',
+        userName: 'User C',
+      });
+
+      let users = await getUsers(headers);
+      expect(users.status).toEqual(200);
+      let initialBody = await users.json();
+      expect(initialBody).toEqual({
+        Resources: expect.any(Array),
+        itemsPerPage: 3,
+        schemas: ['urn:ietf:params:scim:api:messages:2.0:ListResponse'],
+        startIndex: 1,
+        totalResults: 3,
+      });
+      expect(initialBody.Resources).toHaveLength(3);
+      expect(initialBody.Resources).toContainEqual(
+        expect.objectContaining({
+          externalId: 'userA',
+          userName: 'User A',
+        }),
+      );
+      expect(initialBody.Resources).toContainEqual(
+        expect.objectContaining({
+          externalId: 'userB',
+          userName: 'User B',
+        }),
+      );
+      expect(initialBody.Resources).toContainEqual(
+        expect.objectContaining({
+          externalId: 'userC',
+          userName: 'User C',
+        }),
+      );
+
+      users = await getUsers(headers, {
+        count: '1',
+      });
+      expect(users.status).toEqual(200);
+      let body = await users.json();
+
+      expect(body).toEqual({
+        Resources: expect.any(Array),
+        itemsPerPage: 1,
+        schemas: ['urn:ietf:params:scim:api:messages:2.0:ListResponse'],
+        startIndex: 1,
+        totalResults: 1,
+      });
+      expect(body.Resources[0]).toEqual(initialBody.Resources[0]);
+
+      users = await getUsers(headers, {
+        count: '2',
+      });
+      expect(users.status).toEqual(200);
+      body = await users.json();
+      expect(body).toEqual({
+        Resources: expect.any(Array),
+        itemsPerPage: 2,
+        schemas: ['urn:ietf:params:scim:api:messages:2.0:ListResponse'],
+        startIndex: 1,
+        totalResults: 2,
+      });
+      expect(initialBody.Resources).toContainEqual(
+        expect.objectContaining({
+          externalId: 'userA',
+          userName: 'User A',
+        }),
+      );
+      expect(initialBody.Resources).toContainEqual(
+        expect.objectContaining({
+          externalId: 'userB',
+          userName: 'User B',
+        }),
+      );
+
+      users = await getUsers(headers, {
+        startIndex: '2',
+      });
+      expect(users.status).toEqual(200);
+      body = await users.json();
+      expect(body).toEqual({
+        schemas: ['urn:ietf:params:scim:api:messages:2.0:ListResponse'],
+        Resources: expect.any(Array),
+        itemsPerPage: 2,
+        startIndex: 2,
+        totalResults: 2,
+      });
+      expect(initialBody.Resources).toContainEqual(
+        expect.objectContaining({
+          externalId: 'userB',
+          userName: 'User B',
+        }),
+      );
+
+      users = await getUsers(headers, {
+        startIndex: '3',
+      });
+      expect(users.status).toEqual(200);
+      body = await users.json();
+      expect(body).toEqual({
+        schemas: ['urn:ietf:params:scim:api:messages:2.0:ListResponse'],
+        Resources: expect.any(Array),
+        itemsPerPage: 1,
+        startIndex: 3,
+        totalResults: 1,
+      });
+      expect(initialBody.Resources).toContainEqual(
+        expect.objectContaining({
+          externalId: 'userC',
+          userName: 'User C',
+        }),
+      );
+    });
+    test.concurrent('find by user name', async () => {
+      const seed = initSeed();
+      const owner = await seed.createOwner();
+      const org = await owner.createOrg();
+      // currenlty this must exist for the endpoint to be functional
+      await org.createOIDCIntegration();
+      const accessToken = await org.createOrganizationAccessToken({
+        permissions: ['member:describe', 'member:modify'],
+        resources: { mode: ResourceAssignmentModeType.Granular },
+      });
+      const scimAuthHeader = 'Bearer ' + accessToken.privateAccessKey;
+
+      const headers = {
+        'Content-Type': 'application/scim+json',
+        Authorization: scimAuthHeader,
+      };
+      await createUser(headers, {
+        externalId: 'userA',
+        userName: 'User A',
+      });
+      await createUser(headers, {
+        externalId: 'userB',
+        userName: 'User B',
+      });
+
+      let response = await getUsers(headers, {
+        filter: 'userName eq "User A"',
+      });
+      expect(response.status).toEqual(200);
+      let body = await response.json();
+      expect(body).toEqual({
+        Resources: expect.any(Array),
+        itemsPerPage: 1,
+        schemas: ['urn:ietf:params:scim:api:messages:2.0:ListResponse'],
+        startIndex: 1,
+        totalResults: 1,
+      });
+      expect(body.Resources).toHaveLength(1);
+      expect(body.Resources[0]).toMatchObject({
+        externalId: 'userA',
+        userName: 'User A',
+      });
+
+      response = await getUsers(headers, {
+        filter: 'userName eq "User B"',
+      });
+      expect(response.status).toEqual(200);
+      body = await response.json();
+      expect(body).toEqual({
+        Resources: expect.any(Array),
+        itemsPerPage: 1,
+        schemas: ['urn:ietf:params:scim:api:messages:2.0:ListResponse'],
+        startIndex: 1,
+        totalResults: 1,
+      });
+      expect(body.Resources).toHaveLength(1);
+      expect(body.Resources[0]).toMatchObject({
+        externalId: 'userB',
+        userName: 'User B',
+      });
+
+      response = await getUsers(headers, {
+        filter: 'userName eq "User C"',
+      });
+      expect(response.status).toEqual(200);
+      body = await response.json();
+      expect(body).toEqual({
+        Resources: expect.any(Array),
+        itemsPerPage: 0,
+        schemas: ['urn:ietf:params:scim:api:messages:2.0:ListResponse'],
+        startIndex: 1,
+        totalResults: 0,
+      });
+      expect(body.Resources).toHaveLength(0);
+    });
+    test.concurrent('find by external id', async () => {
+      const seed = initSeed();
+      const owner = await seed.createOwner();
+      const org = await owner.createOrg();
+      // currenlty this must exist for the endpoint to be functional
+      await org.createOIDCIntegration();
+      const accessToken = await org.createOrganizationAccessToken({
+        permissions: ['member:describe', 'member:modify'],
+        resources: { mode: ResourceAssignmentModeType.Granular },
+      });
+      const scimAuthHeader = 'Bearer ' + accessToken.privateAccessKey;
+
+      const headers = {
+        'Content-Type': 'application/scim+json',
+        Authorization: scimAuthHeader,
+      };
+      await createUser(headers, {
+        externalId: 'userA',
+        userName: 'User A',
+      });
+      await createUser(headers, {
+        externalId: 'userB',
+        userName: 'User B',
+      });
+
+      let response = await getUsers(headers, {
+        filter: 'externalId eq "userA"',
+      });
+      expect(response.status).toEqual(200);
+      let body = await response.json();
+      expect(body).toEqual({
+        Resources: expect.any(Array),
+        itemsPerPage: 1,
+        schemas: ['urn:ietf:params:scim:api:messages:2.0:ListResponse'],
+        startIndex: 1,
+        totalResults: 1,
+      });
+      expect(body.Resources).toHaveLength(1);
+      expect(body.Resources[0]).toMatchObject({
+        externalId: 'userA',
+        userName: 'User A',
+      });
+
+      response = await getUsers(headers, {
+        filter: 'externalId eq "userB"',
+      });
+      expect(response.status).toEqual(200);
+      body = await response.json();
+      expect(body).toEqual({
+        Resources: expect.any(Array),
+        itemsPerPage: 1,
+        schemas: ['urn:ietf:params:scim:api:messages:2.0:ListResponse'],
+        startIndex: 1,
+        totalResults: 1,
+      });
+      expect(body.Resources).toHaveLength(1);
+      expect(body.Resources[0]).toMatchObject({
+        externalId: 'userB',
+        userName: 'User B',
+      });
+
+      response = await getUsers(headers, {
+        filter: 'externalId eq "userC"',
+      });
+      expect(response.status).toEqual(200);
+      body = await response.json();
+      expect(body).toEqual({
+        Resources: expect.any(Array),
+        itemsPerPage: 0,
+        schemas: ['urn:ietf:params:scim:api:messages:2.0:ListResponse'],
+        startIndex: 1,
+        totalResults: 0,
+      });
+      expect(body.Resources).toHaveLength(0);
+    });
+    test.concurrent('find by id', async () => {
+      const seed = initSeed();
+      const owner = await seed.createOwner();
+      const org = await owner.createOrg();
+      // currenlty this must exist for the endpoint to be functional
+      await org.createOIDCIntegration();
+      const accessToken = await org.createOrganizationAccessToken({
+        permissions: ['member:describe', 'member:modify'],
+        resources: { mode: ResourceAssignmentModeType.Granular },
+      });
+      const scimAuthHeader = 'Bearer ' + accessToken.privateAccessKey;
+
+      const headers = {
+        'Content-Type': 'application/scim+json',
+        Authorization: scimAuthHeader,
+      };
+      const userA = await createUser(headers, {
+        externalId: 'userA',
+        userName: 'User A',
+      }).then(r => r.json());
+      const userB = await createUser(headers, {
+        externalId: 'userB',
+        userName: 'User B',
+      }).then(r => r.json());
+      let response = await getUsers(headers, {
+        filter: `id eq "${userA.id}"`,
+      });
+      expect(response.status).toEqual(200);
+      let body = await response.json();
+      expect(body).toEqual({
+        Resources: expect.any(Array),
+        itemsPerPage: 1,
+        schemas: ['urn:ietf:params:scim:api:messages:2.0:ListResponse'],
+        startIndex: 1,
+        totalResults: 1,
+      });
+      expect(body.Resources).toHaveLength(1);
+      expect(body.Resources[0]).toMatchObject({
+        externalId: 'userA',
+        userName: 'User A',
+      });
+
+      response = await getUsers(headers, {
+        filter: `id eq "${userB.id}"`,
+      });
+      expect(response.status).toEqual(200);
+      body = await response.json();
+      expect(body).toEqual({
+        Resources: expect.any(Array),
+        itemsPerPage: 1,
+        schemas: ['urn:ietf:params:scim:api:messages:2.0:ListResponse'],
+        startIndex: 1,
+        totalResults: 1,
+      });
+      expect(body.Resources).toHaveLength(1);
+      expect(body.Resources[0]).toMatchObject({
+        externalId: 'userB',
+        userName: 'User B',
+      });
+
+      response = await getGroups(headers, {
+        filter: `id eq "${crypto.randomUUID()}"`,
+      });
+      expect(response.status).toEqual(200);
+      body = await response.json();
+      expect(body).toEqual({
+        Resources: expect.any(Array),
+        itemsPerPage: 0,
+        schemas: ['urn:ietf:params:scim:api:messages:2.0:ListResponse'],
+        startIndex: 1,
+        totalResults: 0,
+      });
+      expect(body.Resources).toHaveLength(0);
+    });
+    test.concurrent('find by id insert non-uuid', async () => {
+      const seed = initSeed();
+      const owner = await seed.createOwner();
+      const org = await owner.createOrg();
+      // currenlty this must exist for the endpoint to be functional
+      await org.createOIDCIntegration();
+      const accessToken = await org.createOrganizationAccessToken({
+        permissions: ['member:describe', 'member:modify'],
+        resources: { mode: ResourceAssignmentModeType.Granular },
+      });
+      const scimAuthHeader = 'Bearer ' + accessToken.privateAccessKey;
+
+      const headers = {
+        'Content-Type': 'application/scim+json',
+        Authorization: scimAuthHeader,
+      };
+      let response = await getUsers(headers, {
+        filter: 'id eq "asdasd "',
+      });
+      let body = await response.json();
+      expect(response.status).toEqual(200);
+      expect(body).toEqual({
+        Resources: expect.any(Array),
+        itemsPerPage: 0,
+        schemas: ['urn:ietf:params:scim:api:messages:2.0:ListResponse'],
+        startIndex: 1,
+        totalResults: 0,
+      });
+      expect(body.Resources).toHaveLength(0);
+    });
   });
 });
 
@@ -1896,10 +2341,398 @@ describe.concurrent('/Groups', () => {
     });
   });
   describe.concurrent('GET', () => {
-    test.concurrent('get and paginate groups');
-    test.concurrent('find by display name');
-    test.concurrent('find by external id');
-    test.concurrent('find by id');
+    test.concurrent('get and paginate groups', async () => {
+      const seed = initSeed();
+      const owner = await seed.createOwner();
+      const org = await owner.createOrg();
+      // currenlty this must exist for the endpoint to be functional
+      await org.createOIDCIntegration();
+      const accessToken = await org.createOrganizationAccessToken({
+        permissions: ['member:describe', 'member:modify'],
+        resources: { mode: ResourceAssignmentModeType.Granular },
+      });
+      const scimAuthHeader = 'Bearer ' + accessToken.privateAccessKey;
+
+      const headers = {
+        'Content-Type': 'application/scim+json',
+        Authorization: scimAuthHeader,
+      };
+      await createGroup(headers, {
+        externalId: 'groupA',
+        displayName: 'Group A',
+      });
+      await createGroup(headers, {
+        externalId: 'groupB',
+        displayName: 'Group B',
+      });
+      await createGroup(headers, {
+        externalId: 'groupC',
+        displayName: 'Group C',
+      });
+
+      let groups = await getGroups(headers);
+      expect(groups.status).toEqual(200);
+      let initialBody = await groups.json();
+      expect(initialBody).toEqual({
+        Resources: expect.any(Array),
+        itemsPerPage: 3,
+        schemas: ['urn:ietf:params:scim:api:messages:2.0:ListResponse'],
+        startIndex: 1,
+        totalResults: 3,
+      });
+      expect(initialBody.Resources).toHaveLength(3);
+      expect(initialBody.Resources).toContainEqual(
+        expect.objectContaining({
+          externalId: 'groupA',
+          displayName: 'Group A',
+        }),
+      );
+      expect(initialBody.Resources).toContainEqual(
+        expect.objectContaining({
+          externalId: 'groupB',
+          displayName: 'Group B',
+        }),
+      );
+      expect(initialBody.Resources).toContainEqual(
+        expect.objectContaining({
+          externalId: 'groupC',
+          displayName: 'Group C',
+        }),
+      );
+
+      groups = await getGroups(headers, {
+        count: '1',
+      });
+      expect(groups.status).toEqual(200);
+      let body = await groups.json();
+
+      expect(body).toEqual({
+        Resources: expect.any(Array),
+        itemsPerPage: 1,
+        schemas: ['urn:ietf:params:scim:api:messages:2.0:ListResponse'],
+        startIndex: 1,
+        totalResults: 1,
+      });
+      expect(body.Resources[0]).toEqual(initialBody.Resources[0]);
+
+      groups = await getGroups(headers, {
+        count: '2',
+      });
+      expect(groups.status).toEqual(200);
+      body = await groups.json();
+      expect(body).toEqual({
+        Resources: expect.any(Array),
+        itemsPerPage: 2,
+        schemas: ['urn:ietf:params:scim:api:messages:2.0:ListResponse'],
+        startIndex: 1,
+        totalResults: 2,
+      });
+      expect(initialBody.Resources).toContainEqual(
+        expect.objectContaining({
+          externalId: 'groupA',
+          displayName: 'Group A',
+        }),
+      );
+      expect(initialBody.Resources).toContainEqual(
+        expect.objectContaining({
+          externalId: 'groupB',
+          displayName: 'Group B',
+        }),
+      );
+
+      groups = await getGroups(headers, {
+        startIndex: '2',
+      });
+      expect(groups.status).toEqual(200);
+      body = await groups.json();
+      expect(body).toEqual({
+        schemas: ['urn:ietf:params:scim:api:messages:2.0:ListResponse'],
+        Resources: expect.any(Array),
+        itemsPerPage: 2,
+        startIndex: 2,
+        totalResults: 2,
+      });
+      expect(initialBody.Resources).toContainEqual(
+        expect.objectContaining({
+          externalId: 'groupB',
+          displayName: 'Group B',
+        }),
+      );
+
+      groups = await getGroups(headers, {
+        startIndex: '3',
+      });
+      expect(groups.status).toEqual(200);
+      body = await groups.json();
+      expect(body).toEqual({
+        schemas: ['urn:ietf:params:scim:api:messages:2.0:ListResponse'],
+        Resources: expect.any(Array),
+        itemsPerPage: 1,
+        startIndex: 3,
+        totalResults: 1,
+      });
+      expect(initialBody.Resources).toContainEqual(
+        expect.objectContaining({
+          externalId: 'groupC',
+          displayName: 'Group C',
+        }),
+      );
+    });
+    test.concurrent('find by display name', async () => {
+      const seed = initSeed();
+      const owner = await seed.createOwner();
+      const org = await owner.createOrg();
+      // currenlty this must exist for the endpoint to be functional
+      await org.createOIDCIntegration();
+      const accessToken = await org.createOrganizationAccessToken({
+        permissions: ['member:describe', 'member:modify'],
+        resources: { mode: ResourceAssignmentModeType.Granular },
+      });
+      const scimAuthHeader = 'Bearer ' + accessToken.privateAccessKey;
+
+      const headers = {
+        'Content-Type': 'application/scim+json',
+        Authorization: scimAuthHeader,
+      };
+      await createGroup(headers, {
+        externalId: 'groupA',
+        displayName: 'Group A',
+      });
+      await createGroup(headers, {
+        externalId: 'groupB',
+        displayName: 'Group B',
+      });
+
+      let response = await getGroups(headers, {
+        filter: 'displayName eq "Group A"',
+      });
+      expect(response.status).toEqual(200);
+      let body = await response.json();
+      expect(body).toEqual({
+        Resources: expect.any(Array),
+        itemsPerPage: 1,
+        schemas: ['urn:ietf:params:scim:api:messages:2.0:ListResponse'],
+        startIndex: 1,
+        totalResults: 1,
+      });
+      expect(body.Resources).toHaveLength(1);
+      expect(body.Resources[0]).toMatchObject({
+        externalId: 'groupA',
+        displayName: 'Group A',
+      });
+
+      response = await getGroups(headers, {
+        filter: 'displayName eq "Group B"',
+      });
+      expect(response.status).toEqual(200);
+      body = await response.json();
+      expect(body).toEqual({
+        Resources: expect.any(Array),
+        itemsPerPage: 1,
+        schemas: ['urn:ietf:params:scim:api:messages:2.0:ListResponse'],
+        startIndex: 1,
+        totalResults: 1,
+      });
+      expect(body.Resources).toHaveLength(1);
+      expect(body.Resources[0]).toMatchObject({
+        externalId: 'groupB',
+        displayName: 'Group B',
+      });
+
+      response = await getGroups(headers, {
+        filter: 'displayName eq "Group C"',
+      });
+      expect(response.status).toEqual(200);
+      body = await response.json();
+      expect(body).toEqual({
+        Resources: expect.any(Array),
+        itemsPerPage: 0,
+        schemas: ['urn:ietf:params:scim:api:messages:2.0:ListResponse'],
+        startIndex: 1,
+        totalResults: 0,
+      });
+      expect(body.Resources).toHaveLength(0);
+    });
+    test.concurrent('find by external id', async () => {
+      const seed = initSeed();
+      const owner = await seed.createOwner();
+      const org = await owner.createOrg();
+      // currenlty this must exist for the endpoint to be functional
+      await org.createOIDCIntegration();
+      const accessToken = await org.createOrganizationAccessToken({
+        permissions: ['member:describe', 'member:modify'],
+        resources: { mode: ResourceAssignmentModeType.Granular },
+      });
+      const scimAuthHeader = 'Bearer ' + accessToken.privateAccessKey;
+
+      const headers = {
+        'Content-Type': 'application/scim+json',
+        Authorization: scimAuthHeader,
+      };
+      await createGroup(headers, {
+        externalId: 'groupA',
+        displayName: 'Group A',
+      });
+      await createGroup(headers, {
+        externalId: 'groupB',
+        displayName: 'Group B',
+      });
+
+      let response = await getGroups(headers, {
+        filter: 'externalId eq "groupA"',
+      });
+      expect(response.status).toEqual(200);
+      let body = await response.json();
+      expect(body).toEqual({
+        Resources: expect.any(Array),
+        itemsPerPage: 1,
+        schemas: ['urn:ietf:params:scim:api:messages:2.0:ListResponse'],
+        startIndex: 1,
+        totalResults: 1,
+      });
+      expect(body.Resources).toHaveLength(1);
+      expect(body.Resources[0]).toMatchObject({
+        externalId: 'groupA',
+        displayName: 'Group A',
+      });
+
+      response = await getGroups(headers, {
+        filter: 'externalId eq "groupB"',
+      });
+      expect(response.status).toEqual(200);
+      body = await response.json();
+      expect(body).toEqual({
+        Resources: expect.any(Array),
+        itemsPerPage: 1,
+        schemas: ['urn:ietf:params:scim:api:messages:2.0:ListResponse'],
+        startIndex: 1,
+        totalResults: 1,
+      });
+      expect(body.Resources).toHaveLength(1);
+      expect(body.Resources[0]).toMatchObject({
+        externalId: 'groupB',
+        displayName: 'Group B',
+      });
+
+      response = await getGroups(headers, {
+        filter: 'externalId eq "groupC"',
+      });
+      expect(response.status).toEqual(200);
+      body = await response.json();
+      expect(body).toEqual({
+        Resources: expect.any(Array),
+        itemsPerPage: 0,
+        schemas: ['urn:ietf:params:scim:api:messages:2.0:ListResponse'],
+        startIndex: 1,
+        totalResults: 0,
+      });
+      expect(body.Resources).toHaveLength(0);
+    });
+    test.concurrent('find by id', async () => {
+      const seed = initSeed();
+      const owner = await seed.createOwner();
+      const org = await owner.createOrg();
+      // currenlty this must exist for the endpoint to be functional
+      await org.createOIDCIntegration();
+      const accessToken = await org.createOrganizationAccessToken({
+        permissions: ['member:describe', 'member:modify'],
+        resources: { mode: ResourceAssignmentModeType.Granular },
+      });
+      const scimAuthHeader = 'Bearer ' + accessToken.privateAccessKey;
+
+      const headers = {
+        'Content-Type': 'application/scim+json',
+        Authorization: scimAuthHeader,
+      };
+      const groupA = await createGroup(headers, {
+        externalId: 'groupA',
+        displayName: 'Group A',
+      }).then(r => r.json());
+      const groupB = await createGroup(headers, {
+        externalId: 'groupB',
+        displayName: 'Group B',
+      }).then(r => r.json());
+
+      let response = await getGroups(headers, {
+        filter: `id eq "${groupA.id}"`,
+      });
+      expect(response.status).toEqual(200);
+      let body = await response.json();
+      expect(body).toEqual({
+        Resources: expect.any(Array),
+        itemsPerPage: 1,
+        schemas: ['urn:ietf:params:scim:api:messages:2.0:ListResponse'],
+        startIndex: 1,
+        totalResults: 1,
+      });
+      expect(body.Resources).toHaveLength(1);
+      expect(body.Resources[0]).toMatchObject({
+        externalId: 'groupA',
+        displayName: 'Group A',
+      });
+
+      response = await getGroups(headers, {
+        filter: `id eq "${groupB.id}"`,
+      });
+      expect(response.status).toEqual(200);
+      body = await response.json();
+      expect(body).toEqual({
+        Resources: expect.any(Array),
+        itemsPerPage: 1,
+        schemas: ['urn:ietf:params:scim:api:messages:2.0:ListResponse'],
+        startIndex: 1,
+        totalResults: 1,
+      });
+      expect(body.Resources).toHaveLength(1);
+      expect(body.Resources[0]).toMatchObject({
+        externalId: 'groupB',
+        displayName: 'Group B',
+      });
+
+      response = await getGroups(headers, {
+        filter: `externalId eq "${crypto.randomUUID()}"`,
+      });
+      expect(response.status).toEqual(200);
+      body = await response.json();
+      expect(body).toEqual({
+        Resources: expect.any(Array),
+        itemsPerPage: 0,
+        schemas: ['urn:ietf:params:scim:api:messages:2.0:ListResponse'],
+        startIndex: 1,
+        totalResults: 0,
+      });
+      expect(body.Resources).toHaveLength(0);
+    });
+    test.concurrent('find by id insert non-uuid', async () => {
+      const seed = initSeed();
+      const owner = await seed.createOwner();
+      const org = await owner.createOrg();
+      // currenlty this must exist for the endpoint to be functional
+      await org.createOIDCIntegration();
+      const accessToken = await org.createOrganizationAccessToken({
+        permissions: ['member:describe', 'member:modify'],
+        resources: { mode: ResourceAssignmentModeType.Granular },
+      });
+      const scimAuthHeader = 'Bearer ' + accessToken.privateAccessKey;
+
+      const headers = {
+        'Content-Type': 'application/scim+json',
+        Authorization: scimAuthHeader,
+      };
+      let response = await getGroups(headers, {
+        filter: 'id eq "asdasd "',
+      });
+      let body = await response.json();
+      expect(response.status).toEqual(200);
+      expect(body).toEqual({
+        Resources: expect.any(Array),
+        itemsPerPage: 0,
+        schemas: ['urn:ietf:params:scim:api:messages:2.0:ListResponse'],
+        startIndex: 1,
+        totalResults: 0,
+      });
+      expect(body.Resources).toHaveLength(0);
+    });
   });
 });
 
