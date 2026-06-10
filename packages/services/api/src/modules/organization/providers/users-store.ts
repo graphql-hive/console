@@ -64,7 +64,7 @@ export class UsersStore {
     return await this.pool.maybeOne(query).then(UserModel.nullable().parse);
   }
 
-  private async _createUser(
+  async createUser(
     args: {
       email: string;
       displayName: string;
@@ -77,90 +77,73 @@ export class UsersStore {
     },
     trx: CommonQueryMethods,
   ) {
-    const query = psql` /* Create Hive User */
-      INSERT INTO "users" (
-        "email"
-        , "display_name"
-        , "full_name"
-        , "supertoken_user_id"
-        , "oidc_integration_id"
-        , "provisioned_by_organization_id"
-        , "external_id"
-        , "deactivated_at"
-      ) VALUES (
-        lower(${args.email})
-        , ${args.displayName}
-        , ${args.fullName}
-        , ${args.superTokensUserId}
-        , ${args.oidcIntegrationId}
-        , ${args.provisionedByOrganizationId}
-        , ${args.externalId}
-        , ${args.isDisabled ? psql`NOW()` : null}
-      )
-      RETURNING
-        ${userFields}
-    `;
+    return trx
+      .transaction('createUser', async trx => {
+        const query = psql` /* Create Hive User */
+          INSERT INTO "users" (
+            "email"
+            , "display_name"
+            , "full_name"
+            , "supertoken_user_id"
+            , "oidc_integration_id"
+            , "provisioned_by_organization_id"
+            , "external_id"
+            , "deactivated_at"
+          ) VALUES (
+            lower(${args.email})
+            , ${args.displayName}
+            , ${args.fullName}
+            , ${args.superTokensUserId}
+            , ${args.oidcIntegrationId}
+            , ${args.provisionedByOrganizationId}
+            , ${args.externalId}
+            , ${args.isDisabled ? psql`NOW()` : null}
+          )
+          RETURNING
+            ${userFields}
+        `;
 
-    const user = await trx.one(query).then(UserModel.parse);
+        const user = await trx.one(query).then(UserModel.parse);
 
-    await trx.query(psql` /* Link User Identity */
-      INSERT INTO "users_linked_identities" (
-        "user_id"
-        , "identity_id"
-      )
-      VALUES (
-        ${user.id}
-        , ${args.superTokensUserId}
-      )
-    `);
+        await trx.query(psql` /* Link User Identity */
+          INSERT INTO "users_linked_identities" (
+            "user_id"
+            , "identity_id"
+          )
+          VALUES (
+            ${user.id}
+            , ${args.superTokensUserId}
+          )
+        `);
 
-    await trx.query(psql` /* Add member to org */
-      INSERT INTO "organization_member" (
-        "organization_id"
-        , "user_id"
-        , "role_id"
-        , "assigned_resources"
-        , "created_at"
-      )
-      VALUES (
-        ${args.provisionedByOrganizationId}
-        , ${user.id}
-        , (
-          SELECT "id"
-          FROM "organization_member_roles"
-          WHERE
-            "organization_id" = ${args.provisionedByOrganizationId}
-            AND name = 'Viewer'
-        )
-        , ${
-          /** adding the minimal thing so user cannot access anything */
-          psql.jsonb({ mode: '*', projects: [] })
-        }
-        , NOW()
-      )
-    `);
+        await trx.query(psql` /* Add member to org */
+          INSERT INTO "organization_member" (
+            "organization_id"
+            , "user_id"
+            , "role_id"
+            , "assigned_resources"
+            , "created_at"
+          )
+          VALUES (
+            ${args.provisionedByOrganizationId}
+            , ${user.id}
+            , (
+              SELECT "id"
+              FROM "organization_member_roles"
+              WHERE
+                "organization_id" = ${args.provisionedByOrganizationId}
+                AND name = 'Viewer'
+            )
+            , ${
+              /** adding the minimal thing so user cannot access anything */
+              psql.jsonb({ mode: '*', projects: [] })
+            }
+            , NOW()
+          )
+        `);
 
-    return user;
-  }
-
-  async createUser(
-    args: {
-      email: string;
-      displayName: string;
-      fullName: string;
-      superTokensUserId: string;
-      oidcIntegrationId: string;
-      provisionedByOrganizationId: string;
-      externalId: string;
-      isDisabled: boolean;
-    },
-    trx?: CommonQueryMethods,
-  ) {
-    const p = trx
-      ? this._createUser(args, trx)
-      : this.pool.transaction('createUser', trx => this._createUser(args, trx));
-
-    return p
+        return user;
+      })
       .then(user => ({
         type: 'success' as const,
         user,
@@ -226,7 +209,12 @@ export class UsersStore {
     return await this.pool.maybeOne(query).then(UserModel.parse);
   }
 
-  async updateUserEmail(organizationId: string, userId: string, email: string) {
+  async updateUserEmail(
+    organizationId: string,
+    userId: string,
+    email: string,
+    trx: CommonQueryMethods,
+  ) {
     const query = psql`
       UPDATE "users"
       SET
@@ -238,7 +226,7 @@ export class UsersStore {
         ${userFields}
     `;
 
-    return await this.pool.maybeOne(query).then(UserModel.parse);
+    return await trx.maybeOne(query).then(UserModel.parse);
   }
 
   async updateUserDisplayNameByOrganizationIdAndUserId(
@@ -283,6 +271,7 @@ export class UsersStore {
     organizationId: string,
     userId: string,
     newExternalId: string,
+    trx: CommonQueryMethods,
   ) {
     const query = psql`
       UPDATE
@@ -296,7 +285,7 @@ export class UsersStore {
         ${userFields}
     `;
 
-    return await this.pool
+    return await trx
       .maybeOne(query)
       .then(UserModel.nullable().parse)
       .then(user =>
