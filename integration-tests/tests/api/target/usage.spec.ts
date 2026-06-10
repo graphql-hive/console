@@ -1262,14 +1262,12 @@ test.concurrent('number of produced and collected operations should match', asyn
 
   await waitForRequestsCollected(totalAmount);
 
-  const result = await clickHouseQuery<{
-    target: string;
-    client_name: string | null;
-    hash: string;
-    total: number;
-  }>(`
+  const result = await clickHouseQuery(`
     SELECT
-      target, client_name, hash, sum(total) as total
+      target
+      , client_name
+      , hash
+      , sum(total) as total
     FROM clients_daily
     WHERE
       timestamp >= subtractDays(now(), 30)
@@ -3106,14 +3104,10 @@ test.concurrent('ensure percentage precision up to 2 decimal places', async ({ e
 
   await waitForRequestsCollected(9801 + 199);
 
-  const result = await clickHouseQuery<{
-    target: string;
-    client_name: string | null;
-    hash: string;
-    total: number;
-  }>(`
+  const result = await clickHouseQuery(`
     SELECT
-      target, sum(total) as total
+      target
+      , sum(total) as total
     FROM clients_daily
     WHERE
       timestamp >= subtractDays(now(), 30)

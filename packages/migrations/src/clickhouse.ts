@@ -60,6 +60,7 @@ export async function migrateClickHouse(
     searchParams: {
       query: 'SELECT 1',
       default_format: 'JSON',
+      output_format_json_quote_64bit_integers: '1',
       wait_end_of_query: '1',
     },
     timeout: {
@@ -94,6 +95,7 @@ export async function migrateClickHouse(
         searchParams: {
           default_format: 'JSON',
           wait_end_of_query: '1',
+          output_format_json_quote_64bit_integers: '1',
           ...settings,
         },
         headers: {
@@ -118,6 +120,7 @@ export async function migrateClickHouse(
         body: queryString,
         searchParams: {
           default_format: 'JSON',
+          output_format_json_quote_64bit_integers: '1',
           wait_end_of_query: '1',
         },
         headers: {
@@ -178,6 +181,7 @@ export async function migrateClickHouse(
     import('./clickhouse-actions/015-otel-trace'),
     import('./clickhouse-actions/016-subgraph-otel-traces-cleanup'),
     import('./clickhouse-actions/017-affected-app-deployments-performance'),
+    import('./clickhouse-actions/018-metric-alert-target-rollups'),
     import('./clickhouse-actions/018-usage-coordinate-errors'),
     import('./clickhouse-actions/019-usage-coordinate-counts'),
   ]);
