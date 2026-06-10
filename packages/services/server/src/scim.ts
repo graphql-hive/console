@@ -1,6 +1,6 @@
 import type { FastifyPluginAsync, FastifyReply, FastifyRequest } from 'fastify';
 import { z } from 'zod';
-import { Storage } from '@hive/api';
+import { Logger, Storage } from '@hive/api';
 import { AuthN, UnauthenticatedSession } from '@hive/api/modules/auth/lib/authz';
 import { SuperTokensStore } from '@hive/api/modules/auth/providers/supertokens-store';
 import {
@@ -11,14 +11,6 @@ import { GroupStore, type Group } from '@hive/api/modules/organization/providers
 import { UsersStore, type User } from '@hive/api/modules/organization/providers/users-store';
 import { PostgresDatabasePool, psql } from '@hive/postgres';
 
-// const NameSchemaModel = z
-//   .object({
-//     familyName: z.string().optional(),
-//     givenName: z.string().optional(),
-//   })
-//   .strict()
-//   .optional();
-
 const EmailSchemaModel = z
   .object({
     value: z.string().email(),
@@ -27,26 +19,16 @@ const EmailSchemaModel = z
   })
   .strict();
 
-// const PatchOperationModel = z
-//   .object({
-//     op: z.enum(['replace']),
-//     path: z.string().optional(),
-//     value: z.unknown().optional(),
-//   })
-//   .strict();
-
 const PostUsersBodyModel = z.object({
   userName: z.string().min(1),
-  // name: NameSchemaModel,
-  displayName: z.string().optional(),
   active: z.boolean().optional(),
   emails: z.array(EmailSchemaModel),
   externalId: z.string(),
 });
 
 const PutUsersBodyModel = z.object({
-  userName: z.string().optional(),
   active: z.boolean().optional(),
+  userName: z.string().min(1).optional(),
   externalId: z.string().min(1).optional(),
   emails: z
     .array(
@@ -58,11 +40,27 @@ const PutUsersBodyModel = z.object({
     .optional(),
 });
 
-// const PatchUserRequestBodyModel = z
-//   .object({
-//     Operations: z.array(PatchOperationModel).min(1),
-//   })
-//   .strict();
+/**
+ * - Entra sends capitalized...
+ * - Okta sends lowercase...
+ **/
+const CaseInsensitiveRemoveOperationModel = z.string().toLowerCase().pipe(z.literal('remove'));
+const CaseInsensitiveAddOperationModel = z.string().toLowerCase().pipe(z.literal('add'));
+const CaseInsensitiveReplaceModel = z.string().toLowerCase().pipe(z.literal('replace'));
+
+const PatchOperationModel = z
+  .object({
+    op: CaseInsensitiveReplaceModel,
+    path: z.string().optional(),
+    value: z.unknown().optional(),
+  })
+  .strict();
+
+const PatchUserRequestBodyModel = z
+  .object({
+    Operations: z.array(PatchOperationModel).min(1),
+  })
+  .strict();
 
 const QuerySchemaModel = z.object({
   filter: z.string().optional(),
@@ -95,14 +93,14 @@ const GroupMemberSchema = z.object({
 });
 
 const AddOperationSchema = z.object({
-  op: z.literal('add'),
+  op: CaseInsensitiveAddOperationModel,
   path: z.literal('members'),
   value: z.array(GroupMemberSchema),
 });
 
 const RemoveOperationSchema = z
   .object({
-    op: z.literal('remove'),
+    op: CaseInsensitiveRemoveOperationModel,
     // e.g. members[value eq "user-123"]
     path: z
       .string()
@@ -135,7 +133,7 @@ const ReplaceOperationSchema = z.union([
     value: z.string(),
   }),
   z.object({
-    op: z.literal('replace'),
+    op: CaseInsensitiveReplaceModel,
     path: z.undefined().optional(),
     value: z.object({
       displayName: z.string().optional(),
@@ -163,35 +161,6 @@ const GroupPutBodySchema = z.object({
 export const createSCIMPlugin =
   (authn: AuthN, pool: PostgresDatabasePool, storage: Storage): FastifyPluginAsync =>
   async server => {
-    server.addHook('preParsing', (request, _reply, _payload, done) => {
-      // Okta Custom App Integrations send 'Content-Type: application/scim+json' with no body which causes fastify to raise an error.
-      // In order to still support deletes, we have this code that will unset the content-type in this case :)
-      if (
-        request.method === 'DELETE' &&
-        request.headers['content-type'] === 'application/scim+json' &&
-        (request.headers['content-length'] === '0' || !request.headers['content-length'])
-      ) {
-        request.headers['content-type'] = undefined;
-      }
-      done();
-    });
-
-    server.addContentTypeParser(
-      'application/scim+json',
-      { parseAs: 'string' },
-      server.getDefaultJsonParser('ignore', 'ignore'),
-    );
-
-    server.setErrorHandler(async (error, request, reply) => {
-      request.log.error(error);
-      return reply.status(500).send(
-        createSCIMError({
-          status: 500,
-          detail: 'An unexpected error occured.',
-        }),
-      );
-    });
-
     async function authenticateAuthorizeAndResolveOrganizationFromRequest(
       req: FastifyRequest,
       reply: FastifyReply,
@@ -276,6 +245,214 @@ export const createSCIMPlugin =
         logger,
       };
     }
+
+    async function handleUserPropertyUpdates(
+      logger: Logger,
+      usersStore: UsersStore,
+      supertokensStore: SuperTokensStore,
+      organizationId: string,
+      oidcIntegrationId: string,
+      user: User,
+      updates: z.TypeOf<typeof PutUsersBodyModel>,
+    ) {
+      if (updates.active !== undefined) {
+        logger.debug('active changed');
+        if (user.deactivatedAt === null && !updates.active) {
+          user = await usersStore.disableUser(user.id);
+        } else if (user.deactivatedAt !== null && updates.active) {
+          user = await usersStore.enabledUser(user.id);
+        }
+      }
+
+      const newEmail = updates.emails?.find(e => e.primary)?.value ?? null;
+
+      if (newEmail !== null && newEmail !== user.email) {
+        logger.debug('email changed');
+        await supertokensStore.updateOIDCUserEmail({
+          userId: user.supertokenUserId,
+          newEmail: newEmail,
+        });
+        user = await usersStore.updateUserEmail(organizationId, user.id, newEmail);
+        // invalidate session as email changed
+        await supertokensStore.invalidateAllSessionsForUser(user.supertokenUserId);
+      }
+
+      if (updates.externalId !== undefined && updates.externalId !== user.externalId) {
+        logger.debug('external id changed');
+        const updateUserExternalIdResult =
+          await usersStore.updateExternalIdByOrganizationIdAndUserId(
+            organizationId,
+            user.id,
+            updates.externalId,
+          );
+        await supertokensStore.updateOIDCUserSub({
+          oidcIntegrationId,
+          sub: updates.externalId,
+          userId: user.supertokenUserId,
+        });
+
+        if (updateUserExternalIdResult.type === 'error') {
+          if (updateUserExternalIdResult.errorCode === 'notFound') {
+            return {
+              type: 'error' as const,
+              error: createSCIMError({
+                detail: 'User does not exist.',
+                status: 404,
+              }),
+            };
+          }
+          if (updateUserExternalIdResult.errorCode === 'conflictOnExternalId') {
+            return {
+              type: 'error' as const,
+              error: createSCIMError({
+                detail: 'Another user with the same external id already exists.',
+                status: 409,
+              }),
+            };
+          }
+          updateUserExternalIdResult satisfies never;
+        }
+
+        user = updateUserExternalIdResult.user;
+      }
+
+      if (updates.userName !== undefined && updates.userName !== user.displayName) {
+        const result = await usersStore.updateUserDisplayNameByOrganizationIdAndUserId(
+          organizationId,
+          user.id,
+          updates.userName,
+        );
+        if (result.type === 'error') {
+          if (result.errorCode === 'notFound') {
+            return {
+              type: 'error' as const,
+              error: createSCIMError({
+                detail: 'User does not exist.',
+                status: 404,
+              }),
+            };
+          }
+          if (result.errorCode === 'displayNameConflict') {
+            return {
+              type: 'error' as const,
+              error: createSCIMError({
+                detail: 'Another user with the same userName already exists.',
+                status: 409,
+              }),
+            };
+          }
+          result satisfies never;
+        }
+        user = result.user;
+      }
+
+      return {
+        type: 'success' as const,
+        user,
+      };
+    }
+
+    async function handleGroupPropertyUpdates(
+      groupStore: GroupStore,
+      group: Group,
+      properties: {
+        externalId?: string | null;
+        displayName?: string | null;
+      },
+    ) {
+      if (
+        group.externalGroupId === properties.externalId &&
+        group.displayName === properties.displayName
+      ) {
+        return {
+          type: 'success' as const,
+          group,
+        };
+      }
+
+      if (!group.externalGroupId && !group.displayName) {
+        return {
+          type: 'success' as const,
+          group,
+        };
+      }
+
+      const result = await groupStore.updateGroupPropertiesByOrganizationIdAndGroupId(
+        group.organizationId,
+        group.id,
+        {
+          displayName: properties.displayName ?? null,
+          externalId: properties.externalId ?? null,
+        },
+      );
+
+      if (result.type === 'error') {
+        if (result.errorCode === 'notFound') {
+          return {
+            type: 'error' as const,
+            error: createSCIMError({
+              detail: 'Group does not exist.',
+              status: 404,
+            }),
+          };
+        }
+        if (result.errorCode === 'conflictOnDisplayName') {
+          return {
+            type: 'error' as const,
+            error: createSCIMError({
+              detail: 'Another group with the same display name already exists.',
+              status: 409,
+            }),
+          };
+        }
+
+        if (result.errorCode === 'conflictOnExternalId') {
+          return {
+            type: 'error' as const,
+            error: createSCIMError({
+              detail: 'Another group with the same external id already exists.',
+              status: 409,
+            }),
+          };
+        }
+
+        result satisfies never;
+      }
+
+      return {
+        type: 'success' as const,
+        group: result.group,
+      };
+    }
+
+    server.addHook('preParsing', (request, _reply, _payload, done) => {
+      // Okta Custom App Integrations send 'Content-Type: application/scim+json' with no body which causes fastify to raise an error.
+      // In order to still support deletes, we have this code that will unset the content-type in this case :)
+      if (
+        request.method === 'DELETE' &&
+        request.headers['content-type'] === 'application/scim+json' &&
+        (request.headers['content-length'] === '0' || !request.headers['content-length'])
+      ) {
+        request.headers['content-type'] = undefined;
+      }
+      done();
+    });
+
+    server.addContentTypeParser(
+      'application/scim+json',
+      { parseAs: 'string' },
+      server.getDefaultJsonParser('ignore', 'ignore'),
+    );
+
+    server.setErrorHandler(async (error, request, reply) => {
+      request.log.error(error);
+      return reply.status(500).send(
+        createSCIMError({
+          status: 500,
+          detail: 'An unexpected error occured.',
+        }),
+      );
+    });
 
     /**
      * General notes
@@ -382,9 +559,9 @@ export const createSCIMPlugin =
         oidcIntegrationId: result.oidcIntegration.id,
       });
 
-      const user = await usersStore.createUser({
+      const createUserResult = await usersStore.createUser({
         email: supertokensUser.email,
-        displayName: supertokensUser.email,
+        displayName: bodyParse.data.userName,
         fullName: supertokensUser.email,
         superTokensUserId: supertokensUser.userId,
         oidcIntegrationId: result.oidcIntegration.id,
@@ -393,33 +570,20 @@ export const createSCIMPlugin =
         isDisabled: (bodyParse.data.active ?? true) === false,
       });
 
-      await pool.query(psql`
-        INSERT INTO "organization_member" (
-          "organization_id"
-          , "user_id"
-          , "role_id"
-          , "assigned_resources"
-          , "created_at"
-        )
-        VALUES (
-          ${result.organizationId}
-          , ${user.id}
-          , (
-            SELECT "id"
-            FROM "organization_member_roles"
-            WHERE
-              "organization_id" = ${result.organizationId}
-              AND name = 'Viewer'
-          )
-          , ${
-            /** adding the minimal thing so user cannot access anything */
-            psql.jsonb({ mode: '*', projects: [] })
-          }
-          , NOW()
-        )
-      `);
+      if (createUserResult.type === 'error') {
+        if (createUserResult.errorCode === 'displayNameConflict') {
+          return reply.status(409).send(
+            createSCIMError({
+              detail: 'Another user with the same userName already exists.',
+              status: 409,
+            }),
+          );
+        }
 
-      return reply.status(201).send(createSCIMUserObjectFromUser(user));
+        createUserResult satisfies never;
+      }
+
+      return reply.status(201).send(createSCIMUserObjectFromUser(createUserResult.user));
     });
 
     /**
@@ -464,69 +628,25 @@ export const createSCIMPlugin =
       }
 
       const logger = result.logger.child({ externalId: params.userId, userId: user.id });
-
       logger.debug({ externalId: params.userId, userId: user.id }, 'user found');
 
-      if (body.data.active !== undefined) {
-        logger.debug('active changed');
-        if (user.deactivatedAt === null && !body.data.active) {
-          user = await usersStore.disableUser(user.id);
-        } else if (user.deactivatedAt !== null && body.data.active) {
-          user = await usersStore.enabledUser(user.id);
-        }
+      const updateUserPropertyResult = await handleUserPropertyUpdates(
+        logger,
+        usersStore,
+        supertokensStore,
+        result.organizationId,
+        result.oidcIntegration.id,
+        user,
+        body.data,
+      );
+
+      if (updateUserPropertyResult.type === 'error') {
+        return reply
+          .status(updateUserPropertyResult.error.status)
+          .send(updateUserPropertyResult.error);
       }
 
-      const newEmail = body.data.emails?.find(e => e.primary)?.value ?? null;
-
-      if (newEmail !== null && newEmail !== user.email) {
-        logger.debug('email changed');
-        await supertokensStore.updateOIDCUserEmail({
-          userId: user.supertokenUserId,
-          newEmail: newEmail,
-        });
-        user = await usersStore.updateUserEmail(result.organizationId, user.id, newEmail);
-        // invalidate session as email changed
-        await supertokensStore.invalidateAllSessionsForUser(user.supertokenUserId);
-      }
-
-      if (body.data.externalId !== undefined && body.data.externalId !== user.externalId) {
-        logger.debug('external id changed');
-        const updateUserExternalIdResult =
-          await usersStore.updateExternalIdByOrganizationIdAndUserId(
-            result.organizationId,
-            params.userId,
-            body.data.externalId,
-          );
-        await supertokensStore.updateOIDCUserSub({
-          oidcIntegrationId: result.oidcIntegration.id,
-          sub: body.data.externalId,
-          userId: user.supertokenUserId,
-        });
-
-        if (updateUserExternalIdResult.type === 'error') {
-          if (updateUserExternalIdResult.errorCode === 'notFound') {
-            return reply.status(404).send(
-              createSCIMError({
-                detail: 'User does not exist.',
-                status: 404,
-              }),
-            );
-          }
-          if (updateUserExternalIdResult.errorCode === 'conflictOnExternalId') {
-            return reply.status(409).send(
-              createSCIMError({
-                detail: 'Another user with the same external id already exists.',
-                status: 409,
-              }),
-            );
-          }
-          updateUserExternalIdResult satisfies never;
-        }
-
-        user = updateUserExternalIdResult.user;
-      }
-
-      return reply.status(200).send(createSCIMUserObjectFromUser(user));
+      return reply.status(200).send(createSCIMUserObjectFromUser(updateUserPropertyResult.user));
     });
 
     /**
@@ -536,108 +656,149 @@ export const createSCIMPlugin =
      * - external id
      * - ??? (TBD)
      */
-    // server.patch('/Users/:userId', async (req, reply) => {
-    //   const params = SharedUserRouteParams.parse(req.params);
-    //   const result = await authenticateAuthorizeAndResolveOrganizationFromRequest(req, reply);
-    //   if (result.type === 'error') {
-    //     return reply.status(result.error.status).send(result.error);
-    //   }
+    server.patch('/Users/:userId', async (req, reply) => {
+      const params = SharedUserRouteParams.parse(req.params);
+      const result = await authenticateAuthorizeAndResolveOrganizationFromRequest(req, reply);
+      if (result.type === 'error') {
+        return reply.status(result.error.status).send(result.error);
+      }
 
-    //   const body = PatchUserRequestBodyModel.safeParse(req.body);
-    //   if (body.error) {
-    //     return reply.status(403).send(
-    //       createSCIMError({
-    //         status: 403,
-    //         detail: 'Invalid request body provided.',
-    //       }),
-    //     );
-    //   }
+      const body = PatchUserRequestBodyModel.safeParse(req.body);
+      if (body.error) {
+        return reply.status(403).send(
+          createSCIMError({
+            status: 403,
+            detail: 'Invalid request body provided.',
+          }),
+        );
+      }
 
-    //   const usersStore = new UsersStore(pool);
-    //   const supertokensStore = new SuperTokensStore(pool, req.log);
-    //   let user = await usersStore.findUserProvisionedByOrganizationIdAndId(
-    //     result.organizationId,
-    //     params.userId,
-    //   );
+      const usersStore = new UsersStore(pool);
+      const supertokensStore = new SuperTokensStore(pool, result.logger);
+      let user = await usersStore.findUserProvisionedByOrganizationIdAndId(
+        result.organizationId,
+        params.userId,
+      );
 
-    //   if (!user) {
-    //     return reply.status(404).send(
-    //       createSCIMError({
-    //         detail: 'User does not exist.',
-    //         status: 404,
-    //       }),
-    //     );
-    //   }
+      if (!user) {
+        return reply.status(404).send(
+          createSCIMError({
+            detail: 'User does not exist.',
+            status: 404,
+          }),
+        );
+      }
 
-    //   for (const operation of body.data.Operations) {
-    //     if (operation.op !== 'replace') {
-    //       req.log.debug('unsupported operation received %s', operation.op);
-    //       return reply.status(404).send(
-    //         createSCIMError({
-    //           detail: 'User does not exist.',
-    //           status: 404,
-    //         }),
-    //       );
-    //     }
+      let changes: z.TypeOf<typeof PutUsersBodyModel> = {};
+      let hasParseError = false;
 
-    //     if (operation.path === 'active') {
-    //       if (operation.value === true) {
-    //         user = await usersStore.enabledUser(user.id);
-    //         await supertokensStore.invalidateAllSessionsForUser(user.supertokenUserId);
-    //       } else if (operation.value === false) {
-    //         user = await usersStore.disableUser(user.id);
-    //         await supertokensStore.invalidateAllSessionsForUser(user.supertokenUserId);
-    //       } else {
-    //         req.log.debug('invalid value provided %s', operation.value);
-    //       }
-    //     } else if (operation.path === 'email') {
-    //       // Note: this implementation is 99.99% wrong as the emails is an array property lol
+      for (const operation of body.data.Operations) {
+        if (operation.op !== 'replace') {
+          result.logger.debug(
+            'unsupported operation received. we aonly support replace for patch for now',
+            operation.op,
+          );
+          continue;
+        }
 
-    //       // In case we update the email we update both the supertokens record
-    //       // and the user record as both contain that information...
-    //       const emailResult = z.string().email().toLowerCase().safeParse(operation.value);
-    //       if (emailResult.error) {
-    //         return reply.status(400).send(
-    //           createSCIMError({
-    //             detail: 'Invalid email provided.',
-    //             status: 400,
-    //           }),
-    //         );
-    //       }
+        // if no path is provided the value should contain the whole or partial user object,
+        // which is identical to the body of the PUT request
+        if (operation.path === undefined) {
+          const body = PutUsersBodyModel.safeParse(operation.value);
+          if (body.error) {
+            hasParseError = true;
+            break;
+          }
 
-    //       await supertokensStore.updateOIDCUserEmail({
-    //         userId: user.supertokenUserId,
-    //         newEmail: emailResult.data,
-    //       });
-    //       await usersStore.updateUserEmail(result.organizationId, user.id, emailResult.data);
-    //       // invalidate session as email changed
-    //       await supertokensStore.invalidateAllSessionsForUser(user.supertokenUserId);
-    //     } else if (operation.path === 'externalId') {
-    //       // In case we update the external ID we for now update both the supertokens record
-    //       // and the user record as both contain that information...
+          changes = body.data;
+          continue;
+        }
 
-    //       const externalId = String(operation.value);
-    //       await supertokensStore.updateOIDCUserSub({
-    //         userId: user.supertokenUserId,
-    //         sub: externalId,
-    //         oidcIntegrationId: result.oidcIntegration.id,
-    //       });
-    //       await usersStore.updateUserExternalId(result.organizationId, user.id, externalId);
-    //       // invalidate session as external id
-    //       await supertokensStore.invalidateAllSessionsForUser(user.supertokenUserId);
-    //     } else {
-    //       req.log.debug('unsupported path %s', operation.path);
-    //       return reply.status(404).send(
-    //         createSCIMError({
-    //           detail: 'User does not exist.',
-    //           status: 404,
-    //         }),
-    //       );
-    //     }
-    //   }
+        if (operation.path === 'active') {
+          const active = z.boolean().safeParse(operation.value);
+          if (!active.success) {
+            hasParseError = true;
+            break;
+          }
+          changes.active = active.data;
+          continue;
+        }
 
-    //   return reply.status(200).send(createSCIMUserObjectFromUser(user));
-    // });
+        if (operation.path === 'externalId') {
+          const externalId = z.string().safeParse(operation.value);
+          if (!externalId.success) {
+            hasParseError = true;
+            break;
+          }
+          changes.externalId = externalId.data;
+          continue;
+        }
+
+        if (operation.path === 'emails') {
+          const email = z.array(EmailSchemaModel).safeParse(operation.value);
+          if (!email.success) {
+            hasParseError = true;
+            break;
+          }
+          changes.emails = email.data;
+          continue;
+        }
+
+        if (operation.path === 'emails[type eq \"work\"].value') {
+          const email = z.string().email().safeParse(operation.value);
+          if (!email.success) {
+            hasParseError = true;
+            break;
+          }
+          changes.emails = [
+            {
+              value: email.data,
+              primary: true,
+            },
+          ];
+          continue;
+        }
+
+        if (operation.path === 'userName') {
+          const userName = z.string().safeParse(operation.value);
+          if (!userName.success) {
+            hasParseError = true;
+            break;
+          }
+          changes.userName = userName.data;
+          continue;
+        }
+
+        req.log.debug('unsupported path %s', operation.path);
+      }
+
+      if (hasParseError) {
+        return reply.status(404).send(
+          createSCIMError({
+            detail: 'User does not exist.',
+            status: 404,
+          }),
+        );
+      }
+
+      const updateUserPropertyResult = await handleUserPropertyUpdates(
+        req.log,
+        usersStore,
+        supertokensStore,
+        result.organizationId,
+        result.oidcIntegration.id,
+        user,
+        changes,
+      );
+
+      if (updateUserPropertyResult.type === 'error') {
+        return reply
+          .status(updateUserPropertyResult.error.status)
+          .send(updateUserPropertyResult.error);
+      }
+
+      return reply.status(200).send(createSCIMUserObjectFromUser(updateUserPropertyResult.user));
+    });
 
     /**
      * This route is used for:
@@ -678,12 +839,8 @@ export const createSCIMPlugin =
           );
         }
         const valueStr = rawValue.replaceAll('"', '');
-        if (
-          property === 'email' ||
-          // okta uses username for some reason?
-          property === 'userName'
-        ) {
-          const user = await usersStore.findUserProvisionedByOrganizationIdAndEmail(
+        if (property === 'userName') {
+          const user = await usersStore.findUserProvisionedByOrganizationIdAndDisplayName(
             result.organizationId,
             // to lower-case just in case it is sent in non :)
             valueStr.toLocaleLowerCase(),
@@ -934,48 +1091,15 @@ export const createSCIMPlugin =
         );
       }
 
-      if (body.data.displayName && body.data.displayName !== group.displayName) {
-        const updateGroupResult = await groupStore.updateGroupPropertiesByOrganizationIdAndGroupId(
-          result.organizationId,
-          group.id,
-          {
-            displayName: body.data.displayName,
-            // TODO: figure out if we need to provide this
-            externalId: body.data.externalId ?? null,
-          },
-        );
+      const updateGroupPropertiesResult = await handleGroupPropertyUpdates(groupStore, group, {
+        externalId: body.data.externalId,
+        displayName: body.data.displayName,
+      });
 
-        if (updateGroupResult.type === 'error') {
-          if (updateGroupResult.errorCode === 'notFound') {
-            return reply.status(404).send(
-              createSCIMError({
-                detail: 'Group does not exist.',
-                status: 404,
-              }),
-            );
-          }
-          if (updateGroupResult.errorCode === 'conflictOnDisplayName') {
-            return reply.status(409).send(
-              createSCIMError({
-                detail: 'Another group with the same display name already exists.',
-                status: 409,
-              }),
-            );
-          }
-
-          if (updateGroupResult.errorCode === 'conflictOnExternalId') {
-            return reply.status(409).send(
-              createSCIMError({
-                detail: 'Another group with the same external id already exists.',
-                status: 409,
-              }),
-            );
-          }
-
-          updateGroupResult satisfies never;
-        }
-
-        group = updateGroupResult.group;
+      if (updateGroupPropertiesResult.type === 'error') {
+        return reply
+          .status(updateGroupPropertiesResult.error.status)
+          .send(updateGroupPropertiesResult.error);
       }
 
       const groupMemberStore = new GroupMemberStore(reply.log, pool);
@@ -999,7 +1123,9 @@ export const createSCIMPlugin =
         }
       }
 
-      return reply.status(200).send(createSCIMGroupObjectFromGroup(group, groupMembers));
+      return reply
+        .status(200)
+        .send(createSCIMGroupObjectFromGroup(updateGroupPropertiesResult.group, groupMembers));
     });
 
     /**
@@ -1148,47 +1274,15 @@ export const createSCIMPlugin =
         return reply.status(error.status).send(error);
       }
 
-      if (newDisplayName || newExternalId) {
-        const updateGroupResult = await groupStore.updateGroupPropertiesByOrganizationIdAndGroupId(
-          result.organizationId,
-          params.groupId,
-          {
-            displayName: newDisplayName,
-            externalId: newExternalId,
-          },
-        );
+      const updateGroupPropertiesResult = await handleGroupPropertyUpdates(groupStore, group, {
+        externalId: newExternalId,
+        displayName: newDisplayName,
+      });
 
-        if (updateGroupResult.type === 'error') {
-          if (updateGroupResult.errorCode === 'notFound') {
-            return reply.status(404).send(
-              createSCIMError({
-                detail: 'Group does not exist.',
-                status: 404,
-              }),
-            );
-          }
-          if (updateGroupResult.errorCode === 'conflictOnDisplayName') {
-            return reply.status(409).send(
-              createSCIMError({
-                detail: 'Another group with the same display name already exists.',
-                status: 409,
-              }),
-            );
-          }
-
-          if (updateGroupResult.errorCode === 'conflictOnExternalId') {
-            return reply.status(409).send(
-              createSCIMError({
-                detail: 'Another group with the same external id already exists.',
-                status: 409,
-              }),
-            );
-          }
-
-          updateGroupResult satisfies never;
-        }
-
-        group = updateGroupResult.group;
+      if (updateGroupPropertiesResult.type === 'error') {
+        return reply
+          .status(updateGroupPropertiesResult.error.status)
+          .send(updateGroupPropertiesResult.error);
       }
 
       const groupMemberStore = new GroupMemberStore(reply.log, pool);
@@ -1228,7 +1322,9 @@ export const createSCIMPlugin =
         params.groupId,
       );
 
-      return reply.status(200).send(createSCIMGroupObjectFromGroup(group, groupMembers));
+      return reply
+        .status(200)
+        .send(createSCIMGroupObjectFromGroup(updateGroupPropertiesResult.group, groupMembers));
     });
 
     /**
@@ -1327,7 +1423,7 @@ function createSCIMUserObjectFromUser(user: User): SCIMUserObject {
     schemas: ['urn:ietf:params:scim:schemas:core:2.0:User'],
     id: user.id,
     externalId: user.externalId,
-    userName: user.email,
+    userName: user.displayName,
     emails: [
       {
         primary: true,

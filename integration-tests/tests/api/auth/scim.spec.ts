@@ -14,7 +14,6 @@ const defaultValues = {
   userName: 'marty@mcfly.dev',
   name: { givenName: 'Marty', familyName: 'McFly' },
   emails: [{ primary: true, value: 'marty@mcfly.dev', type: 'work' }],
-  displayName: 'Marty McFly',
   locale: 'en-US',
   externalId: 'userExternalId',
   password: 'fq77ZD37',
@@ -29,6 +28,7 @@ async function createUser(
     method: 'POST',
     body: JSON.stringify({
       ...defaultValues,
+      userName: `marty+${crypto.randomUUID()}@mcfly.dev`,
       externalId: crypto.randomUUID(),
       ...overrides,
     }),
@@ -415,6 +415,69 @@ describe.concurrent('/Users', () => {
         active: false,
       });
     });
+    test.concurrent('update userName', async ({ expect }) => {
+      const seed = initSeed();
+      const owner = await seed.createOwner();
+      const org = await owner.createOrg();
+      await org.createOIDCIntegration();
+      const accessToken = await org.createOrganizationAccessToken({
+        permissions: ['member:describe', 'member:modify'],
+        resources: { mode: ResourceAssignmentModeType.Granular },
+      });
+      const scimAuthHeader = 'Bearer ' + accessToken.privateAccessKey;
+      const headers = {
+        'Content-Type': 'application/scim+json',
+        Authorization: scimAuthHeader,
+      };
+      const usersPostResponse = await createUser(headers);
+      const userPostBody = await usersPostResponse.json();
+
+      const usersPutResponse = await fetch(usersEndpoint + '/' + userPostBody.id, {
+        method: 'PUT',
+        body: JSON.stringify({
+          userName: 'marty@mcfly.com',
+        }),
+        headers,
+      });
+      expect(usersPutResponse.status).toEqual(200);
+      expect(await usersPutResponse.json()).toEqual({
+        ...userPostBody,
+        userName: 'marty@mcfly.com',
+      });
+    });
+    test.concurrent('update userName (conflict)', async ({ expect }) => {
+      const seed = initSeed();
+      const owner = await seed.createOwner();
+      const org = await owner.createOrg();
+      await org.createOIDCIntegration();
+      const accessToken = await org.createOrganizationAccessToken({
+        permissions: ['member:describe', 'member:modify'],
+        resources: { mode: ResourceAssignmentModeType.Granular },
+      });
+      const scimAuthHeader = 'Bearer ' + accessToken.privateAccessKey;
+      const headers = {
+        'Content-Type': 'application/scim+json',
+        Authorization: scimAuthHeader,
+      };
+      const usersPostResponse = await createUser(headers, {
+        userName: 'issame',
+      });
+      const userPostBody = await usersPostResponse.json();
+      const secondUser = await createUser(headers);
+
+      const usersPutResponse = await fetch(usersEndpoint + '/' + userPostBody.id, {
+        method: 'PUT',
+        body: JSON.stringify({
+          userName: 'marty@mcfly.com',
+        }),
+        headers,
+      });
+      expect(usersPutResponse.status).toEqual(200);
+      expect(await usersPutResponse.json()).toEqual({
+        ...userPostBody,
+        userName: 'marty@mcfly.com',
+      });
+    });
     test.concurrent('update external id', async ({ expect }) => {
       const seed = initSeed();
       const owner = await seed.createOwner();
@@ -497,41 +560,246 @@ describe.concurrent('/Users', () => {
       `);
     });
   });
-  // describe.concurrent('PATCH', () => {
-  //   test.concurrent('non-existing user', async ({ expect }) => {
-  //     const seed = initSeed();
-  //     const owner = await seed.createOwner();
-  //     const org = await owner.createOrg();
-  //     await org.createOIDCIntegration();
-  //     const accessToken = await org.createOrganizationAccessToken({
-  //       permissions: ['member:describe', 'member:modify'],
-  //       resources: { mode: ResourceAssignmentModeType.Granular },
-  //     });
-  //     const scimAuthHeader = 'Bearer ' + accessToken.privateAccessKey;
-  //     const externalUserId = '00u13w8ptpbdysgOl698';
-  //     const headers = {
-  //       'Content-Type': 'application/scim+json',
-  //       Authorization: scimAuthHeader,
-  //     };
-  //     const usersPostResponse = await fetch(usersEndpoint + '/' + crypto.randomUUID(), {
-  //       method: 'PATCH',
-  //       body: JSON.stringify({
-  //         Operations: [{ op}]
-  //       }),
-  //       headers,
-  //     });
-  //     expect(usersPostResponse.status).toEqual(404);
-  //     expect(await usersPostResponse.json()).toMatchInlineSnapshot(`
-  //       {
-  //         detail: User does not exist.,
-  //         schemas: [
-  //           urn:ietf:params:scim:api:messages:2.0:Error,
-  //         ],
-  //         status: 404,
-  //       }
-  //     `);
-  //   });
-  // })
+  describe.concurrent('PATCH', () => {
+    test.concurrent('non-existing user', async ({ expect }) => {
+      const seed = initSeed();
+      const owner = await seed.createOwner();
+      const org = await owner.createOrg();
+      await org.createOIDCIntegration();
+      const accessToken = await org.createOrganizationAccessToken({
+        permissions: ['member:describe', 'member:modify'],
+        resources: { mode: ResourceAssignmentModeType.Granular },
+      });
+      const scimAuthHeader = 'Bearer ' + accessToken.privateAccessKey;
+      const headers = {
+        'Content-Type': 'application/scim+json',
+        Authorization: scimAuthHeader,
+      };
+      const usersPatchResponse = await fetch(usersEndpoint + '/' + crypto.randomUUID(), {
+        method: 'PATCH',
+        body: JSON.stringify({
+          Operations: [{ op: 'replace', path: 'active', value: false }],
+        }),
+        headers,
+      });
+      expect(usersPatchResponse.status).toEqual(404);
+      expect(await usersPatchResponse.json()).toMatchInlineSnapshot(`
+        {
+          detail: User does not exist.,
+          schemas: [
+            urn:ietf:params:scim:api:messages:2.0:Error,
+          ],
+          status: 404,
+        }
+      `);
+    });
+    test.concurrent('update active', async ({ expect }) => {
+      const seed = initSeed();
+      const owner = await seed.createOwner();
+      const org = await owner.createOrg();
+      await org.createOIDCIntegration();
+      const accessToken = await org.createOrganizationAccessToken({
+        permissions: ['member:describe', 'member:modify'],
+        resources: { mode: ResourceAssignmentModeType.Granular },
+      });
+      const scimAuthHeader = 'Bearer ' + accessToken.privateAccessKey;
+      const headers = {
+        'Content-Type': 'application/scim+json',
+        Authorization: scimAuthHeader,
+      };
+      const usersPostResponse = await createUser(headers);
+      const userPostBody = await usersPostResponse.json();
+      let usersPatchResponse = await fetch(usersEndpoint + '/' + userPostBody.id, {
+        method: 'PATCH',
+        body: JSON.stringify({
+          Operations: [{ op: 'replace', path: 'active', value: false }],
+        }),
+        headers,
+      });
+      expect(usersPatchResponse.status).toEqual(200);
+      expect(await usersPatchResponse.json()).toEqual({
+        ...userPostBody,
+        active: false,
+      });
+
+      usersPatchResponse = await fetch(usersEndpoint + '/' + userPostBody.id, {
+        method: 'PATCH',
+        body: JSON.stringify({
+          Operations: [{ op: 'replace', path: 'active', value: true }],
+        }),
+        headers,
+      });
+      expect(usersPatchResponse.status).toEqual(200);
+      expect(await usersPatchResponse.json()).toEqual({
+        ...userPostBody,
+        active: true,
+      });
+    });
+    test.concurrent('update email (full object replacement)', async ({ expect }) => {
+      const seed = initSeed();
+      const owner = await seed.createOwner();
+      const org = await owner.createOrg();
+      await org.createOIDCIntegration();
+      const accessToken = await org.createOrganizationAccessToken({
+        permissions: ['member:describe', 'member:modify'],
+        resources: { mode: ResourceAssignmentModeType.Granular },
+      });
+      const scimAuthHeader = 'Bearer ' + accessToken.privateAccessKey;
+      const headers = {
+        'Content-Type': 'application/scim+json',
+        Authorization: scimAuthHeader,
+      };
+      const usersPostResponse = await createUser(headers);
+      const userPostBody = await usersPostResponse.json();
+
+      const usersPatchResponse = await fetch(usersEndpoint + '/' + userPostBody.id, {
+        method: 'PATCH',
+        body: JSON.stringify({
+          Operations: [
+            {
+              op: 'replace',
+              path: 'emails',
+              value: [{ value: 'marty@mcfly.com', primary: true, type: 'work' }],
+            },
+          ],
+        }),
+        headers,
+      });
+      expect(usersPatchResponse.status).toEqual(200);
+      expect(await usersPatchResponse.json()).toEqual({
+        ...userPostBody,
+        emails: [
+          {
+            primary: true,
+            type: 'work',
+            value: 'marty@mcfly.com',
+          },
+        ],
+      });
+    });
+    test.concurrent('update email (via emails[type eq "work"].value)', async ({ expect }) => {
+      const seed = initSeed();
+      const owner = await seed.createOwner();
+      const org = await owner.createOrg();
+      await org.createOIDCIntegration();
+      const accessToken = await org.createOrganizationAccessToken({
+        permissions: ['member:describe', 'member:modify'],
+        resources: { mode: ResourceAssignmentModeType.Granular },
+      });
+      const scimAuthHeader = 'Bearer ' + accessToken.privateAccessKey;
+      const headers = {
+        'Content-Type': 'application/scim+json',
+        Authorization: scimAuthHeader,
+      };
+      const usersPostResponse = await createUser(headers);
+      const userPostBody = await usersPostResponse.json();
+
+      const usersPatchResponse = await fetch(usersEndpoint + '/' + userPostBody.id, {
+        method: 'PATCH',
+        body: JSON.stringify({
+          Operations: [
+            {
+              op: 'replace',
+              path: 'emails[type eq "work"].value',
+              value: 'marty@mcfly.com',
+            },
+          ],
+        }),
+        headers,
+      });
+      expect(usersPatchResponse.status).toEqual(200);
+      expect(await usersPatchResponse.json()).toEqual({
+        ...userPostBody,
+        emails: [
+          {
+            primary: true,
+            type: 'work',
+            value: 'marty@mcfly.com',
+          },
+        ],
+      });
+    });
+    test.concurrent('update userName', async ({ expect }) => {
+      const seed = initSeed();
+      const owner = await seed.createOwner();
+      const org = await owner.createOrg();
+      await org.createOIDCIntegration();
+      const accessToken = await org.createOrganizationAccessToken({
+        permissions: ['member:describe', 'member:modify'],
+        resources: { mode: ResourceAssignmentModeType.Granular },
+      });
+      const scimAuthHeader = 'Bearer ' + accessToken.privateAccessKey;
+      const headers = {
+        'Content-Type': 'application/scim+json',
+        Authorization: scimAuthHeader,
+      };
+      const usersPostResponse = await createUser(headers);
+      const userPostBody = await usersPostResponse.json();
+
+      const usersPatchResponse = await fetch(usersEndpoint + '/' + userPostBody.id, {
+        method: 'PATCH',
+        body: JSON.stringify({
+          Operations: [
+            {
+              op: 'replace',
+              path: 'userName',
+              value: 'marty@mcfly.com',
+            },
+          ],
+        }),
+        headers,
+      });
+      expect(usersPatchResponse.status).toEqual(200);
+      expect(await usersPatchResponse.json()).toEqual({
+        ...userPostBody,
+        userName: 'marty@mcfly.com',
+      });
+    });
+    test.concurrent('update external id', async ({ expect }) => {
+      const seed = initSeed();
+      const owner = await seed.createOwner();
+      const org = await owner.createOrg();
+      await org.createOIDCIntegration();
+      const accessToken = await org.createOrganizationAccessToken({
+        permissions: ['member:describe', 'member:modify'],
+        resources: { mode: ResourceAssignmentModeType.Granular },
+      });
+      const scimAuthHeader = 'Bearer ' + accessToken.privateAccessKey;
+      const externalUserId = 'iliketurtles';
+
+      const headers = {
+        'Content-Type': 'application/scim+json',
+        Authorization: scimAuthHeader,
+      };
+      const userPostResponse = await createUser(headers, {
+        externalId: externalUserId,
+      });
+      expect(userPostResponse.status).toEqual(201);
+      const userResponseBody = await userPostResponse.json();
+
+      const newExternalId = 'ilikesnakes';
+
+      const usersPatchResponse = await fetch(usersEndpoint + '/' + userResponseBody.id, {
+        method: 'PATCH',
+        body: JSON.stringify({
+          Operations: [
+            {
+              op: 'replace',
+              path: 'externalId',
+              value: newExternalId,
+            },
+          ],
+        }),
+        headers,
+      });
+
+      expect(usersPatchResponse.status).toEqual(200);
+      expect(await usersPatchResponse.json()).toEqual({
+        ...userResponseBody,
+        externalId: newExternalId,
+      });
+    });
+  });
 });
 
 describe.concurrent('/Groups', () => {
@@ -1549,7 +1817,7 @@ describe.concurrent('provider flows', () => {
         method: 'POST',
         body: JSON.stringify({
           schemas: ['urn:ietf:params:scim:schemas:core:2.0:User'],
-          userName: 'laurin@the-guild.dev',
+          userName: 'marty@the-guild.com',
           name: { givenName: 'Marty', familyName: 'McFly' },
           emails: [{ primary: true, value: 'marty@the-guild.dev', type: 'work' }],
           displayName: 'Marty McFly',
@@ -1577,7 +1845,7 @@ describe.concurrent('provider flows', () => {
           resourceType: 'User',
         },
         schemas: ['urn:ietf:params:scim:schemas:core:2.0:User'],
-        userName: 'marty@the-guild.dev',
+        userName: 'marty@the-guild.com',
         active: true,
       });
 
