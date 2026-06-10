@@ -9,17 +9,17 @@ export default {
       , "display_name" text
       , "created_at" timestamptz DEFAULT NOW()
       , "disabled_at" timestamptz DEFAULT NULL
-      , "external_group_id" text
+      , "external_id" text
     );
 
     CREATE INDEX IF NOT EXISTS "idx_groups_organization_id"
       ON "groups" ("organization_id")
     ;
 
-    CREATE UNIQUE INDEX IF NOT EXISTS "uniq_groups_external_group_id"
-      ON "groups" ("organization_id", "external_group_id")
+    CREATE UNIQUE INDEX IF NOT EXISTS "uniq_groups_external_id"
+      ON "groups" ("organization_id", "external_id")
       WHERE
-        "external_group_id" IS NOT NULL
+        "external_id" IS NOT NULL
     ;
 
     CREATE UNIQUE INDEX IF NOT EXISTS "uniq_groups_display_name"
