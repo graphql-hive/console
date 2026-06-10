@@ -815,6 +815,12 @@ describe.concurrent('/Users', () => {
       });
     });
   });
+  describe.concurrent('GET', () => {
+    test.concurrent('get and paginate groups');
+    test.concurrent('find by display name');
+    test.concurrent('find by external id');
+    test.concurrent('find by id');
+  });
 });
 
 describe.concurrent('/Groups', () => {
@@ -1866,8 +1872,6 @@ describe.concurrent('/Groups', () => {
         Authorization: scimAuthHeader,
       };
 
-      // First Okta tries to provision the group
-
       const postResponse = await fetch(groupsEndpoint, {
         method: 'POST',
         body: JSON.stringify({
@@ -1890,6 +1894,12 @@ describe.concurrent('/Groups', () => {
       });
       expect(getPostResponse.status).toEqual(404);
     });
+  });
+  describe.concurrent('GET', () => {
+    test.concurrent('get and paginate groups');
+    test.concurrent('find by display name');
+    test.concurrent('find by external id');
+    test.concurrent('find by id');
   });
 });
 

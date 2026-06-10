@@ -306,7 +306,13 @@ export class UsersStore {
       });
   }
 
-  async getAllUsers(organizationId: string) {
+  async getOffsetPaginatedUsersForOrganizationId(
+    organizationId: string,
+    args: {
+      offset: number;
+      count: number;
+    },
+  ) {
     const query = psql`
       SELECT
         ${userFields}
@@ -314,7 +320,10 @@ export class UsersStore {
         "users"
       WHERE
         "provisioned_by_organization_id" = ${organizationId}
-      ORDER BY "id"
+      ORDER BY
+        "id"
+      LIMIT ${args.count}
+      OFFSET ${args.count}
     `;
 
     return await this.pool.any(query).then(z.array(UserModel).parse);
