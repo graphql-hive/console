@@ -15,5 +15,15 @@ export default {
         ;
       `,
     },
+    {
+      name: 'provisioned_by_organization_id index',
+      query: psql`
+        CREATE UNIQUE INDEX CONCURRENTLY IF NOT EXISTS "idx_users_provisioned_by_organization_id_display_name"
+        ON "users" ("provisioned_by_organization_id", "display_name")
+        WHERE
+          "provisioned_by_organization_id" IS NOT NULL
+        ;
+      `,
+    },
   ],
 } satisfies MigrationExecutor;
