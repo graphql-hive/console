@@ -323,7 +323,7 @@ export class UsersStore {
       ORDER BY
         "id"
       LIMIT ${args.count}
-      OFFSET ${args.count}
+      OFFSET ${args.offset}
     `;
 
     return await this.pool.any(query).then(z.array(UserModel).parse);
