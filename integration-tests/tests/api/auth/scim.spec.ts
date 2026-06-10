@@ -9,7 +9,7 @@ const oidcEndpointBase = apiHost + '/scim/v2';
 const usersEndpoint = oidcEndpointBase + '/Users';
 const groupsEndpoint = oidcEndpointBase + '/Groups';
 
-const defaultValues = {
+const defaultUserValues = {
   schemas: ['urn:ietf:params:scim:schemas:core:2.0:User'],
   userName: 'marty@mcfly.dev',
   name: { givenName: 'Marty', familyName: 'McFly' },
@@ -22,12 +22,12 @@ const defaultValues = {
 
 async function createUser(
   headers: Record<string, string>,
-  overrides?: Partial<typeof defaultValues>,
+  overrides?: Partial<typeof defaultUserValues>,
 ) {
   return await fetch(usersEndpoint, {
     method: 'POST',
     body: JSON.stringify({
-      ...defaultValues,
+      ...defaultUserValues,
       userName: `marty+${crypto.randomUUID()}@mcfly.dev`,
       externalId: crypto.randomUUID(),
       ...overrides,
