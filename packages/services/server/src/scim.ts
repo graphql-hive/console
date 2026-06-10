@@ -755,7 +755,7 @@ export const createSCIMPlugin =
           continue;
         }
 
-        if (operation.path === 'emails[type eq \"work\"].value') {
+        if (operation.path === 'emails[type eq "work"].value') {
           const email = z.string().email().safeParse(operation.value);
           if (!email.success) {
             hasParseError = true;
