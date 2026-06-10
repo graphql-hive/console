@@ -215,7 +215,7 @@ registerShutdown({
       await pg.end();
       logger.info('Shutdown postgres connection successful.');
       logger.info('Shutdown redis connection.');
-      redis.disconnect(false);
+      await Promise.all([redis.quit(), await redisSubscriber.quit()]);
       if (shutdownMetrics) {
         logger.info('Stopping prometheus endpoint');
         await shutdownMetrics();

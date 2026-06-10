@@ -94,7 +94,8 @@ export async function createRedisClient(
   // Start IAM token refresh if enabled
   // Each client gets its own independent token lifecycle
   if (redisIamConfig) {
-    startIamTokenRefresh(redis, redisIamConfig, options.logger);
+    const stopTokenRefresh = startIamTokenRefresh(redis, redisIamConfig, options.logger);
+    redis.on('end', stopTokenRefresh);
   }
 
   return redis;
