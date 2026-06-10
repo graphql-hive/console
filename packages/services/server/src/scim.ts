@@ -65,15 +65,26 @@ const PatchUserRequestBodyModel = z
 
 const QuerySchemaModel = z.object({
   filter: z.string().optional(),
-  startIndex: z
-    .string()
-    .transform(val => Number(val))
-    .optional(),
-  count: z
-    .string()
-    .transform(val => Number(val))
-    .pipe(z.number().int())
-    .optional(),
+  startIndex: z.coerce
+    .number()
+    .int()
+    .min(1)
+    .max(
+      /** if someone has more users we can adjust. */
+      10_000,
+    )
+    .optional()
+    .default(1),
+  count: z.coerce
+    .number()
+    .int()
+    .min(0)
+    .max(
+      /** Most providers use 100, we are generous here. */
+      1000,
+    )
+    .optional()
+    .default(100),
 });
 
 const SharedUserRouteParams = z.object({
@@ -325,7 +336,9 @@ export const createSCIMPlugin =
               trx,
             );
 
-            await supertokensStore.invalidateAllSessionsForUser(user.supertokenUserId, trx);
+            if (result.type === 'success') {
+              await supertokensStore.invalidateAllSessionsForUser(user.supertokenUserId, trx);
+            }
 
             return result;
           },
@@ -633,7 +646,7 @@ export const createSCIMPlugin =
      * - active (disabled state)
      * - email
      * - externalId
-     * - ??? (TBD)
+     * - user name
      */
     server.put('/Users/:userId', async (req, reply) => {
       const params = SharedUserRouteParams.parse(req.params);
@@ -696,7 +709,7 @@ export const createSCIMPlugin =
      * - email
      * - active (disabled state)
      * - external id
-     * - ??? (TBD)
+     * - user name
      */
     server.patch('/Users/:userId', async (req, reply) => {
       const params = SharedUserRouteParams.parse(req.params);
@@ -918,9 +931,13 @@ export const createSCIMPlugin =
         }
       } else {
         const offset = Math.max(0, startIndex - 1);
-        // TODO: offset based pagination on DB level instead of application level
-        const allUsers = await usersStore.getAllUsers(result.organizationId);
-        const pagedUsers = allUsers.slice(offset, offset + count);
+        const pagedUsers = await usersStore.getOffsetPaginatedUsersForOrganizationId(
+          result.organizationId,
+          {
+            offset,
+            count,
+          },
+        );
         for (const user of pagedUsers) {
           users.push(createSCIMUserObjectFromUser(user));
         }
@@ -1009,11 +1026,14 @@ export const createSCIMPlugin =
           );
         }
       } else {
-        const allGroups = await groupStore.getAllGroupsForOrganizationId(result.organizationId);
+        const pagedGroups = await groupStore.getOffsetPaginatedGroupsForOrganizationId(
+          result.organizationId,
+          {
+            offset: startIndex - 1,
+            count,
+          },
+        );
 
-        const offset = Math.max(0, startIndex - 1);
-
-        const pagedGroups = allGroups.slice(offset, offset + count);
         for (const group of pagedGroups) {
           groups.push(createSCIMGroupObjectFromGroup(group));
         }
