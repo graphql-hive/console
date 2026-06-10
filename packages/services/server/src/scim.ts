@@ -47,12 +47,7 @@ const PostUsersBodyModel = z.object({
 const PutUsersBodyModel = z.object({
   userName: z.string().optional(),
   active: z.boolean().optional(),
-  // name: z
-  //   .object({
-  //     givenName: z.string().optional(),
-  //     familyName: z.string().optional(),
-  //   })
-  //   .optional(),
+  externalId: z.string().min(1).optional(),
   emails: z
     .array(
       z.object({
@@ -202,7 +197,6 @@ export const createSCIMPlugin =
       reply: FastifyReply,
     ) {
       // TODO: rate limit
-
       const session = await authn.authenticate({ req, reply });
 
       if (session instanceof UnauthenticatedSession) {
@@ -270,10 +264,16 @@ export const createSCIMPlugin =
           req.routeOptions.url,
       );
 
+      const logger = req.log.child({
+        organizationId: actor.organizationAccessToken.organizationId,
+        oidcIntegrationId: oidcIntegration.id,
+      });
+
       return {
         type: 'success' as const,
         organizationId: actor.organizationAccessToken.organizationId,
         oidcIntegration,
+        logger,
       };
     }
 
@@ -340,7 +340,7 @@ export const createSCIMPlugin =
       }
 
       const usersStore = new UsersStore(pool);
-      const supertokensStore = new SuperTokensStore(pool, req.log);
+      const supertokensStore = new SuperTokensStore(pool, result.logger);
 
       const existingUser = await usersStore.findUserProvisionedByOrganizationIdAndExternalId(
         result.organizationId,
@@ -369,7 +369,7 @@ export const createSCIMPlugin =
         );
       }
 
-      // TODO: these two should probably happen together in a transaction
+      // TODO: these actions should probably happen together in a transaction
 
       // We have another problem here, because of historic reasons and
       // how we implemented OIDC login support on top of supertokens
@@ -385,8 +385,7 @@ export const createSCIMPlugin =
       const user = await usersStore.createUser({
         email: supertokensUser.email,
         displayName: supertokensUser.email,
-        fullName:
-          (bodyParse.data.name?.givenName ?? '') + ' ' + (bodyParse.data.name?.familyName ?? ''),
+        fullName: supertokensUser.email,
         superTokensUserId: supertokensUser.userId,
         oidcIntegrationId: result.oidcIntegration.id,
         provisionedByOrganizationId: result.organizationId,
@@ -427,6 +426,7 @@ export const createSCIMPlugin =
      * This route is used for updating user properties
      * - active (disabled state)
      * - email
+     * - externalId
      * - ??? (TBD)
      */
     server.put('/Users/:userId', async (req, reply) => {
@@ -446,7 +446,7 @@ export const createSCIMPlugin =
         );
       }
       const usersStore = new UsersStore(pool);
-      const supertokensStore = new SuperTokensStore(pool, req.log);
+      const supertokensStore = new SuperTokensStore(pool, result.logger);
 
       let user = await usersStore.findUserProvisionedByOrganizationIdAndId(
         result.organizationId,
@@ -454,6 +454,7 @@ export const createSCIMPlugin =
       );
 
       if (!user) {
+        result.logger.debug({ externalId: params.userId }, 'user not found');
         return reply.status(404).send(
           createSCIMError({
             detail: 'User does not exist.',
@@ -462,9 +463,12 @@ export const createSCIMPlugin =
         );
       }
 
-      // TODO:  update other properties like email display name etc etc
+      const logger = result.logger.child({ externalId: params.userId, userId: user.id });
+
+      logger.debug({ externalId: params.userId, userId: user.id }, 'user found');
 
       if (body.data.active !== undefined) {
+        logger.debug('active changed');
         if (user.deactivatedAt === null && !body.data.active) {
           user = await usersStore.disableUser(user.id);
         } else if (user.deactivatedAt !== null && body.data.active) {
@@ -472,21 +476,54 @@ export const createSCIMPlugin =
         }
       }
 
-      if (body.data.emails !== undefined) {
-        const primaryEmail = body.data.emails.find(e => e.primary)?.value ?? null;
-        if (primaryEmail) {
-          if (primaryEmail !== user.email) {
-            await supertokensStore.updateOIDCUserEmail({
-              userId: user.supertokenUserId,
-              newEmail: primaryEmail,
-            });
-            user = await usersStore.updateUserEmail(result.organizationId, user.id, primaryEmail);
-            // invalidate session as email changed
-            await supertokensStore.invalidateAllSessionsForUser(user.supertokenUserId);
+      const newEmail = body.data.emails?.find(e => e.primary)?.value ?? null;
+
+      if (newEmail !== null && newEmail !== user.email) {
+        logger.debug('email changed');
+        await supertokensStore.updateOIDCUserEmail({
+          userId: user.supertokenUserId,
+          newEmail: newEmail,
+        });
+        user = await usersStore.updateUserEmail(result.organizationId, user.id, newEmail);
+        // invalidate session as email changed
+        await supertokensStore.invalidateAllSessionsForUser(user.supertokenUserId);
+      }
+
+      if (body.data.externalId !== undefined && body.data.externalId !== user.externalId) {
+        logger.debug('external id changed');
+        const updateUserExternalIdResult =
+          await usersStore.updateExternalIdByOrganizationIdAndUserId(
+            result.organizationId,
+            params.userId,
+            body.data.externalId,
+          );
+        await supertokensStore.updateOIDCUserSub({
+          oidcIntegrationId: result.oidcIntegration.id,
+          sub: body.data.externalId,
+          userId: user.supertokenUserId,
+        });
+
+        if (updateUserExternalIdResult.type === 'error') {
+          if (updateUserExternalIdResult.errorCode === 'notFound') {
+            return reply.status(404).send(
+              createSCIMError({
+                detail: 'User does not exist.',
+                status: 404,
+              }),
+            );
           }
-        } else {
-          req.log.debug('invalid email');
+          if (updateUserExternalIdResult.errorCode === 'conflictOnExternalId') {
+            return reply.status(409).send(
+              createSCIMError({
+                detail: 'Another user with the same external id already exists.',
+                status: 409,
+              }),
+            );
+          }
+          updateUserExternalIdResult satisfies never;
         }
+
+        user = updateUserExternalIdResult.user;
       }
 
       return reply.status(200).send(createSCIMUserObjectFromUser(user));
@@ -672,7 +709,7 @@ export const createSCIMPlugin =
             users.push(createSCIMUserObjectFromUser(user));
           }
         } else {
-          req.log.info('unsupported filter property "%s"', property);
+          result.logger.info('unsupported filter property "%s"', property);
           return reply.status(403).send(
             createSCIMError({
               status: 400,
@@ -720,7 +757,7 @@ export const createSCIMPlugin =
         );
       }
 
-      const groupStore = new GroupStore(req.log, pool);
+      const groupStore = new GroupStore(result.logger, pool);
 
       const startIndex = queryParse.data.startIndex ?? 1;
       const count = queryParse.data.count ?? 100;
@@ -764,7 +801,7 @@ export const createSCIMPlugin =
             groups.push(createSCIMGroupObjectFromGroup(group));
           }
         } else {
-          req.log.info('unsupported filter property "%s"', property);
+          result.logger.info('unsupported filter property "%s"', property);
           return reply.status(400).send(
             createSCIMError({
               status: 400,
@@ -802,7 +839,7 @@ export const createSCIMPlugin =
         return reply.status(result.error.status).send(result.error);
       }
 
-      const groupStore = new GroupStore(req.log, pool);
+      const groupStore = new GroupStore(result.logger, pool);
 
       const group = await groupStore.getGroupByOrganizationIdAndGroupId(
         result.organizationId,
@@ -818,7 +855,7 @@ export const createSCIMPlugin =
         );
       }
 
-      const groupMemberStore = new GroupMemberStore(req.log, pool);
+      const groupMemberStore = new GroupMemberStore(result.logger, pool);
 
       const groupMembers = await groupMemberStore.getGroupMembersForOrganizationIdAndGroupId(
         result.organizationId,
@@ -847,7 +884,7 @@ export const createSCIMPlugin =
         );
       }
 
-      const groupStore = new GroupStore(req.log, pool);
+      const groupStore = new GroupStore(result.logger, pool);
 
       // TODO: case when group already exists but is "disabled"
       // In this case we should probably just raise an error and the admin
@@ -988,7 +1025,7 @@ export const createSCIMPlugin =
         );
       }
 
-      const groupStore = new GroupStore(req.log, pool);
+      const groupStore = new GroupStore(result.logger, pool);
 
       let group = await groupStore.getGroupByOrganizationIdAndGroupId(
         result.organizationId,
@@ -1247,11 +1284,6 @@ type SCIMUserObject = {
   id: string;
   externalId: string;
   userName: string;
-  // Lets not mess with the name for now
-  // name: {
-  //   givenName: string;
-  //   familyName: string;
-  // };
   emails: [
     {
       value: string;
