@@ -147,7 +147,7 @@ describe('queryClickHouseWindows', () => {
     const { sql, params } = calls[0];
     // Unfiltered -> the target-keyed rollup. It dropped the hash/client
     // dimensions, so the query must emit no hash/client predicate.
-    expect(sql).toContain('FROM operations_minutely_by_target');
+    expect(sql).toContain('FROM operations_by_target_minutely');
     expect(sql).toContain('target = {p1: String}');
     expect(sql).not.toContain('client_name');
     expect(sql).not.toContain('hash');
@@ -180,6 +180,6 @@ describe('queryClickHouseWindows', () => {
   test('window > 360 minutes reads the hourly rollup', async () => {
     const { clickhouse, calls } = captureClient();
     await queryClickHouseWindows(clickhouse, target, 720, [], evalTime);
-    expect(calls[0].sql).toContain('FROM operations_hourly_by_target');
+    expect(calls[0].sql).toContain('FROM operations_by_target_hourly');
   });
 });

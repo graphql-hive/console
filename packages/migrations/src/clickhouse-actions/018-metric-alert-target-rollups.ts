@@ -54,14 +54,14 @@ const createRollup = async (
 export const action: Action = async exec => {
   await createRollup(
     exec,
-    'operations_minutely_by_target',
+    'operations_by_target_minutely',
     'toStartOfMinute',
     'toStartOfHour(timestamp)',
     '24 HOUR',
   );
   await createRollup(
     exec,
-    'operations_hourly_by_target',
+    'operations_by_target_hourly',
     'toStartOfHour',
     'toYYYYMMDD(timestamp)',
     '30 DAY',

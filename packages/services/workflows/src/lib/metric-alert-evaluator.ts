@@ -266,7 +266,7 @@ export async function queryClickHouseWindows(
   const currentWindowStart = new Date(anchorMs - offsetMs - windowMs);
   const previousWindowStart = new Date(anchorMs - offsetMs - 2 * windowMs);
 
-  // Unfiltered queries read the target-keyed rollups (operations_*_by_target):
+  // Unfiltered queries read the target-keyed rollups (operations_by_target_*):
   // they sum across all hashes/clients, exactly what those rollups pre-aggregate,
   // so the query prunes by time instead of scanning the target's whole slice.
   // Filtered queries MUST stay on the legacy tables...the rollups dropped the
@@ -275,12 +275,14 @@ export async function queryClickHouseWindows(
   // (rather than a separate flag/param) makes the filtered-query-on-rollup
   // combination unrepresentable.
   const useTargetRollup = filterConditions.length === 0;
-  const baseTable = timeWindowMinutes <= 360 ? 'operations_minutely' : 'operations_hourly';
-  const tableName = useTargetRollup ? `${baseTable}_by_target` : baseTable;
+  const resolution = timeWindowMinutes <= 360 ? 'minutely' : 'hourly';
+  const tableName = useTargetRollup
+    ? `operations_by_target_${resolution}`
+    : `operations_${resolution}`;
 
   // The two table families store the percentile column with different aggregate
-  // functions: the `_by_target` rollups use quantilesTDigest (more accurate in
-  // the tails, merges better), the legacy tables the older quantiles. A merge
+  // functions: the by_target rollups use quantilesTDigest (more accurate in the
+  // tails, merges better), the legacy tables the older quantiles. A merge
   // function must match the state function it reads, so pick it alongside the
   // table. `total`/`total_ok`/`duration_avg` are identical across both.
   const percentilesMerge = useTargetRollup ? 'quantilesTDigestMerge' : 'quantilesMerge';
