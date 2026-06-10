@@ -117,7 +117,13 @@ export class GroupStore {
     return await this.pool.maybeOne(query).then(GroupModel.nullable().parse);
   }
 
-  async getAllGroupsForOrganizationId(organizationId: string) {
+  async getOffsetPaginatedGroupsForOrganizationId(
+    organizationId: string,
+    args: {
+      offset: number;
+      count: number;
+    },
+  ) {
     const query = psql` /* getGroupById (batch) */
       SELECT
         ${groupFields}
@@ -125,7 +131,10 @@ export class GroupStore {
         "groups"
       WHERE
         "organization_id" = ${organizationId}
-      ORDER BY "id" DESC
+      ORDER BY
+        "id" DESC
+      LIMIT ${args.count}
+      OFFSET ${args.count}
     `;
 
     return await this.pool.any(query).then(z.array(GroupModel).parse);
