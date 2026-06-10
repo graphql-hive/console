@@ -22,6 +22,10 @@ export default {
         "external_group_id" IS NOT NULL
     ;
 
+    CREATE UNIQUE INDEX IF NOT EXISTS "uniq_groups_display_name"
+      ON "groups" ("organization_id", "display_name")
+    ;
+
     CREATE TABLE IF NOT EXISTS "group_role_assignments" (
       "id" UUID PRIMARY KEY DEFAULT uuid_generate_v4()
       , "organization_id" UUID REFERENCES "organizations"("id") ON DELETE CASCADE
