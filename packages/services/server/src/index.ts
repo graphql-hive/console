@@ -613,7 +613,12 @@ export async function main() {
 
     if (env.organizationSCIM) {
       logger.debug('register scim routes');
-      const scimPlugin = createSCIMPlugin(authN, storage.pool, storage);
+      const scimPlugin = createSCIMPlugin(
+        authN,
+        storage.pool,
+        storage,
+        registry.injector.get(RedisRateLimiter),
+      );
       server.register(scimPlugin, { prefix: '/scim/v2' });
     }
 
