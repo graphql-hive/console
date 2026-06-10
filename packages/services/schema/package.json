@@ -11,8 +11,9 @@
   "devDependencies": {
     "@apollo/federation": "0.38.1",
     "@graphql-tools/merge": "9.1.1",
-    "@graphql-tools/stitch": "9.4.29",
+    "@graphql-tools/stitch": "10.1.22",
     "@graphql-tools/stitching-directives": "3.1.38",
+    "@graphql-tools/utils": "11.1.0",
     "@hive/service-common": "workspace:*",
     "@sentry/node": "7.120.2",
     "@theguild/federation-composition": "0.22.3",
