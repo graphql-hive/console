@@ -528,15 +528,26 @@ export const createSCIMPlugin =
      * This route is used for looking up a specific user
      */
     server.get('/Users/:userId', async (req, reply) => {
-      const params = SharedUserRouteParams.parse(req.params);
       const auth = await authenticateAuthorizeAndResolveOrganizationFromRequest(req, reply);
       if (auth.type === 'error') {
         return reply.status(auth.error.status).send(auth.error);
       }
+
+      const params = SharedUserRouteParams.safeParse(req.params);
+
+      if (!params.success) {
+        return reply.status(404).send(
+          createSCIMError({
+            detail: 'User does not exist.',
+            status: 404,
+          }),
+        );
+      }
+
       const usersStore = new UsersStore(pool);
       const user = await usersStore.findUserProvisionedByOrganizationIdAndId(
         auth.organizationId,
-        params.userId,
+        params.data.userId,
       );
 
       if (user === null) {
@@ -649,10 +660,20 @@ export const createSCIMPlugin =
      * - user name
      */
     server.put('/Users/:userId', async (req, reply) => {
-      const params = SharedUserRouteParams.parse(req.params);
       const result = await authenticateAuthorizeAndResolveOrganizationFromRequest(req, reply);
       if (result.type === 'error') {
         return reply.status(result.error.status).send(result.error);
+      }
+
+      const params = SharedUserRouteParams.safeParse(req.params);
+
+      if (!params.success) {
+        return reply.status(404).send(
+          createSCIMError({
+            detail: 'User does not exist.',
+            status: 404,
+          }),
+        );
       }
 
       const body = PutUsersBodyModel.safeParse(req.body);
@@ -664,16 +685,17 @@ export const createSCIMPlugin =
           }),
         );
       }
+
       const usersStore = new UsersStore(pool);
       const supertokensStore = new SuperTokensStore(pool, result.logger);
 
       let user = await usersStore.findUserProvisionedByOrganizationIdAndId(
         result.organizationId,
-        params.userId,
+        params.data.userId,
       );
 
       if (!user) {
-        result.logger.debug({ externalId: params.userId }, 'user not found');
+        result.logger.debug({ userId: params.data.userId }, 'user not found');
         return reply.status(404).send(
           createSCIMError({
             detail: 'User does not exist.',
@@ -682,8 +704,8 @@ export const createSCIMPlugin =
         );
       }
 
-      const logger = result.logger.child({ externalId: params.userId, userId: user.id });
-      logger.debug({ externalId: params.userId, userId: user.id }, 'user found');
+      const logger = result.logger.child({ userId: user.id });
+      logger.debug({ userId: user.id }, 'user found');
 
       const updateUserPropertyResult = await handleUserPropertyUpdates(
         logger,
@@ -712,10 +734,20 @@ export const createSCIMPlugin =
      * - user name
      */
     server.patch('/Users/:userId', async (req, reply) => {
-      const params = SharedUserRouteParams.parse(req.params);
       const result = await authenticateAuthorizeAndResolveOrganizationFromRequest(req, reply);
       if (result.type === 'error') {
         return reply.status(result.error.status).send(result.error);
+      }
+
+      const params = SharedUserRouteParams.safeParse(req.params);
+
+      if (!params.success) {
+        return reply.status(404).send(
+          createSCIMError({
+            detail: 'User does not exist.',
+            status: 404,
+          }),
+        );
       }
 
       const body = PatchUserRequestBodyModel.safeParse(req.body);
@@ -732,7 +764,7 @@ export const createSCIMPlugin =
       const supertokensStore = new SuperTokensStore(pool, result.logger);
       let user = await usersStore.findUserProvisionedByOrganizationIdAndId(
         result.organizationId,
-        params.userId,
+        params.data.userId,
       );
 
       if (!user) {
@@ -1047,17 +1079,27 @@ export const createSCIMPlugin =
      * This route is used for listing a group with all its members
      */
     server.get('/Groups/:groupId', async (req, reply) => {
-      const params = SharedGroupRouteParams.parse(req.params);
       const result = await authenticateAuthorizeAndResolveOrganizationFromRequest(req, reply);
       if (result.type === 'error') {
         return reply.status(result.error.status).send(result.error);
+      }
+
+      const params = SharedGroupRouteParams.safeParse(req.params);
+
+      if (!params.success) {
+        return reply.status(404).send(
+          createSCIMError({
+            detail: 'Group does not exist.',
+            status: 404,
+          }),
+        );
       }
 
       const groupStore = new GroupStore(result.logger, pool);
 
       const group = await groupStore.getGroupByOrganizationIdAndGroupId(
         result.organizationId,
-        params.groupId,
+        params.data.groupId,
       );
 
       if (!group) {
@@ -1073,7 +1115,7 @@ export const createSCIMPlugin =
 
       const groupMembers = await groupMemberStore.getGroupMembersForOrganizationIdAndGroupId(
         result.organizationId,
-        params.groupId,
+        group.id,
       );
 
       return reply.status(200).send(createSCIMGroupObjectFromGroup(group, groupMembers));
@@ -1135,10 +1177,20 @@ export const createSCIMPlugin =
      * This route is not implemented as it is not needed.
      */
     server.put('/Groups/:groupId', async (req, reply) => {
-      const params = SharedGroupRouteParams.parse(req.params);
       const result = await authenticateAuthorizeAndResolveOrganizationFromRequest(req, reply);
       if (result.type === 'error') {
         return reply.status(result.error.status).send(result.error);
+      }
+
+      const params = SharedGroupRouteParams.safeParse(req.params);
+
+      if (!params.success) {
+        return reply.status(404).send(
+          createSCIMError({
+            detail: 'Group does not exist.',
+            status: 404,
+          }),
+        );
       }
 
       const body = GroupPutBodySchema.safeParse(req.body);
@@ -1153,7 +1205,7 @@ export const createSCIMPlugin =
       const groupStore = new GroupStore(reply.log, pool);
       let group = await groupStore.getGroupByOrganizationIdAndGroupId(
         result.organizationId,
-        params.groupId,
+        params.data.groupId,
       );
 
       if (!group) {
@@ -1184,7 +1236,7 @@ export const createSCIMPlugin =
       if (Array.isArray(memberIds)) {
         await groupMemberStore.removeAllGroupMembersFromGroupByOrganizationIdAndGroupId(
           result.organizationId,
-          params.groupId,
+          group.id,
         );
         groupMembers = [];
 
@@ -1208,11 +1260,21 @@ export const createSCIMPlugin =
      * - properties of group (display name and external id)
      */
     server.patch('/Groups/:groupId', async (req, reply) => {
-      const params = SharedGroupRouteParams.parse(req.params);
       const result = await authenticateAuthorizeAndResolveOrganizationFromRequest(req, reply);
 
       if (result.type === 'error') {
         return reply.status(result.error.status).send(result.error);
+      }
+
+      const params = SharedGroupRouteParams.safeParse(req.params);
+
+      if (!params.success) {
+        return reply.status(404).send(
+          createSCIMError({
+            detail: 'Group does not exist.',
+            status: 404,
+          }),
+        );
       }
 
       const body = PatchGroupsRequestBodySchema.safeParse(req.body);
@@ -1229,7 +1291,7 @@ export const createSCIMPlugin =
 
       let group = await groupStore.getGroupByOrganizationIdAndGroupId(
         result.organizationId,
-        params.groupId,
+        params.data.groupId,
       );
 
       if (!group) {
@@ -1364,7 +1426,7 @@ export const createSCIMPlugin =
       if (usersToRemove.size) {
         await groupMemberStore.removeGroupMembersFromGroupByOrganizationIdAndGroupId(
           result.organizationId,
-          params.groupId,
+          group.id,
           Array.from(usersToRemove),
         );
       }
@@ -1372,7 +1434,7 @@ export const createSCIMPlugin =
       if (usersToAdd.size) {
         await groupMemberStore.addGroupMembersToGroupByOrganizationIdAndGroupId(
           result.organizationId,
-          params.groupId,
+          group.id,
           Array.from(usersToAdd),
         );
       }
@@ -1380,12 +1442,12 @@ export const createSCIMPlugin =
       if (fullReplaceUserIds !== null) {
         await groupMemberStore.removeAllGroupMembersFromGroupByOrganizationIdAndGroupId(
           result.organizationId,
-          params.groupId,
+          group.id,
         );
         if (fullReplaceUserIds.size) {
           await groupMemberStore.addGroupMembersToGroupByOrganizationIdAndGroupId(
             result.organizationId,
-            params.groupId,
+            group.id,
             Array.from(fullReplaceUserIds),
           );
         }
@@ -1393,7 +1455,7 @@ export const createSCIMPlugin =
 
       const groupMembers = await groupMemberStore.getGroupMembersForOrganizationIdAndGroupId(
         result.organizationId,
-        params.groupId,
+        group.id,
       );
 
       return reply
@@ -1405,17 +1467,27 @@ export const createSCIMPlugin =
      * This route is used for deleting a group
      */
     server.delete('/Groups/:groupId', async (req, reply) => {
-      const params = SharedGroupRouteParams.parse(req.params);
       const result = await authenticateAuthorizeAndResolveOrganizationFromRequest(req, reply);
       if (result.type === 'error') {
         return reply.status(result.error.status).send(result.error);
+      }
+
+      const params = SharedGroupRouteParams.safeParse(req.params);
+
+      if (!params.success) {
+        return reply.status(404).send(
+          createSCIMError({
+            detail: 'Group does not exist.',
+            status: 404,
+          }),
+        );
       }
 
       const groupStore = new GroupStore(req.log, pool);
 
       const deleteGroupResult = await groupStore.deleteGroup({
         organizationId: result.organizationId,
-        groupId: params.groupId,
+        groupId: params.data.groupId,
       });
 
       if (deleteGroupResult.type === 'error') {
