@@ -50,6 +50,7 @@ import {
   readClientStats,
   readOperationBody,
   readOperationsStats,
+  readSchemaCoordinateStats,
   readTokenInfo,
   updateBaseSchema,
   updateMemberRole,
@@ -1141,6 +1142,22 @@ export function initSeed() {
                       ownerToken,
                     )
                   ).expectNoGraphQLErrors();
+                },
+                async readSchemaCoordinateStats(
+                  schemaCoordinate: string,
+                  period: GraphQLSchema.DateRangeInput,
+                  ttarget: TargetOverwrite = target,
+                ) {
+                  return await readSchemaCoordinateStats(
+                    {
+                      organizationSlug: organization.slug,
+                      projectSlug: project.slug,
+                      targetSlug: ttarget.slug,
+                      schemaCoordinate,
+                    },
+                    period,
+                    ownerToken,
+                  ).then(r => r.expectNoGraphQLErrors());
                 },
                 async readOperationBody(hash: string, ttarget: TargetOverwrite = target) {
                   const operationBodyResult = await readOperationBody(

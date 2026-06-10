@@ -1442,6 +1442,46 @@ export function readOperationsStats(
   });
 }
 
+export function readSchemaCoordinateStats(
+  selector: {
+    organizationSlug: string;
+    projectSlug: string;
+    targetSlug: string;
+    schemaCoordinate: string;
+  },
+  period: GraphQLSchema.DateRangeInput,
+  token: string,
+) {
+  return execute({
+    document: graphql(`
+      query readSchemaCoordinateStats(
+        $selector: TargetSelectorInput!
+        $schemaCoordinate: String!
+        $period: DateRangeInput!
+      ) {
+        target(reference: { bySelector: $selector }) {
+          id
+          schemaCoordinateStats(schemaCoordinate: $schemaCoordinate, period: $period) {
+            totalRequests
+            totalResolutions
+            totalFailures
+          }
+        }
+      }
+    `),
+    token,
+    variables: {
+      selector: {
+        organizationSlug: selector.organizationSlug,
+        projectSlug: selector.projectSlug,
+        targetSlug: selector.targetSlug,
+      },
+      schemaCoordinate: selector.schemaCoordinate,
+      period,
+    },
+  });
+}
+
 export function readOperationBody(
   selector: {
     organizationSlug: string;

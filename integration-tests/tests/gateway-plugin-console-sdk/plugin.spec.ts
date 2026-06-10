@@ -1,7 +1,7 @@
 import { AddressInfo } from 'node:net';
-import { parse } from 'graphql';
+import { DocumentNode, parse } from 'graphql';
 import { createLogger, createYoga } from 'graphql-yoga';
-import { readOperationsStats } from 'testkit/flow';
+import { pollFor, readOperationsStats } from 'testkit/flow';
 import { ProjectType } from 'testkit/gql/graphql';
 import { initSeed } from 'testkit/seed';
 import { getServiceHost } from 'testkit/utils';
@@ -10,38 +10,23 @@ import { buildSubgraphSchema } from '@apollo/subgraph';
 import { useHive } from '@graphql-hive/gateway-plugin-console-sdk';
 import { createGatewayRuntime } from '@graphql-hive/gateway-runtime';
 import { createServer } from '@hive/service-common';
+import { composeServices, ServiceDefinition } from '@theguild/federation-composition';
 
-async function createSubgraphService() {
+type ModulesOrSDL = Parameters<typeof buildSubgraphSchema>[0];
+
+async function createSubgraphService(name: string, modulesOrSDL: ModulesOrSDL) {
   const server = await createServer({
     sentryErrorHandler: false,
     log: {
       requests: false,
       level: 'silent',
     },
-    name: 'products',
+    name,
   });
 
   const yoga = createYoga({
     logging: false,
-    schema: buildSubgraphSchema({
-      typeDefs: parse(/* GraphQL */ `
-        extend type Query {
-          product: Product
-        }
-
-        type Product @key(fields: "id") {
-          id: ID!
-          price: Int
-        }
-      `),
-      resolvers: {
-        Query: {
-          product: () => {
-            return { id: 1, price: 20.2 };
-          },
-        },
-      },
-    }),
+    schema: buildSubgraphSchema(modulesOrSDL),
   });
 
   server.route({
@@ -62,55 +47,88 @@ async function createSubgraphService() {
   };
 }
 
+async function setup(subgraphs: {
+  [key: string]: {
+    typeDefs: DocumentNode;
+    resolvers: any;
+  };
+}) {
+  const { createOrg } = await initSeed().createOwner();
+  const { createProject, setFeatureFlag } = await createOrg();
+  await setFeatureFlag('subgraphVisibility', true);
+  const { createTargetAccessToken, waitForRequestsCollected, readSchemaCoordinateStats, target } =
+    await createProject(ProjectType.Single);
+  const token = await createTargetAccessToken({});
+  const usageAddress = await getServiceHost('usage', 8081);
+  const plugin = useHive({
+    enabled: true,
+    token: token.secret,
+    reporting: false,
+    usage: true,
+    agent: {
+      logger: createLogger('debug'),
+      maxSize: 1,
+    },
+    selfHosting: {
+      usageEndpoint: 'http://' + usageAddress,
+      graphqlEndpoint: 'http://noop/',
+      applicationUrl: 'http://noop/',
+    },
+    fieldLevelMetricsEnabled: true,
+  });
+
+  const services = await Promise.all(
+    Object.entries(subgraphs).map(async ([name, def]): Promise<ServiceDefinition> => {
+      const service = await createSubgraphService(name, def);
+      return {
+        name,
+        typeDefs: def.typeDefs,
+        url: service.url,
+      };
+    }),
+  );
+  const supergraph = composeServices(services);
+  expect(supergraph.errors).toBeUndefined();
+  const gateway = createGatewayRuntime({
+    supergraph: supergraph.supergraphSdl!,
+    plugins: () => [plugin],
+  });
+
+  return {
+    target,
+    gateway,
+    waitForRequestsCollected,
+    readSchemaCoordinateStats,
+    token,
+  };
+}
+
 describe('GraphQL Hive Plugin', () => {
   test('usage data includes subgraph request data', async () => {
-    const { createOrg } = await initSeed().createOwner();
-    const { createProject } = await createOrg();
-    const { createTargetAccessToken, waitForRequestsCollected, target } = await createProject(
-      ProjectType.Single,
-    );
-    const token = await createTargetAccessToken({});
-    const usageAddress = await getServiceHost('usage', 8081);
-    const plugin = useHive({
-      enabled: true,
-      token: token.secret,
-      reporting: false,
-      usage: true,
-      agent: {
-        logger: createLogger('debug'),
-        maxSize: 1,
-      },
-      selfHosting: {
-        usageEndpoint: 'http://' + usageAddress,
-        graphqlEndpoint: 'http://noop/',
-        applicationUrl: 'http://noop/',
-      },
-      fieldLevelMetricsEnabled: true,
-    });
-    const subgraph = await createSubgraphService();
-    const gateway = createGatewayRuntime({
-      supergraph: `
-        schema
-          @link(url: "https://specs.apollo.dev/link/v1.0")
-          @link(url: "https://specs.apollo.dev/join/v0.3", for: EXECUTION)
-        {
-          query: Query
-        }
-        directive @join__graph(name: String!, url: String!) on ENUM_VALUE
-        directive @join__type(graph: join__Graph!, key: String) repeatable on OBJECT
-        directive @link(url: String, as: String, for: String) repeatable on SCHEMA
-        enum join__Graph { PRODUCTS @join__graph(name: "products", url: "${subgraph.url}") }
+    const subgraphs = {
+      products: {
+        typeDefs: parse(/* GraphQL */ `
+          extend type Query {
+            product: Product
+          }
 
-        type Query @join__type(graph: PRODUCTS) {
-          product: Product
-        }
-        type Product @join__type(graph: PRODUCTS, key: "id") {
-          id: ID!
-          price: Int
-        }
-      `,
-      plugins: () => [plugin],
-    });
+          type Product @key(fields: "id") {
+            id: ID!
+            price: Int
+          }
+        `),
+        resolvers: {
+          Query: {
+            product: () => {
+              return { id: 1, price: 20.2 };
+            },
+          },
+        },
+      },
+    };
+
+    const { readSchemaCoordinateStats, target, gateway, token, waitForRequestsCollected } =
+      await setup(subgraphs);
 
     const request = new Request('http://localhost:4000/graphql', {
       method: 'POST',
@@ -146,16 +164,284 @@ describe('GraphQL Hive Plugin', () => {
 
     const yesterday = new Date();
     yesterday.setDate(yesterday.getDate() - 1);
-    const operationsStatsResult = await readOperationsStats(
-      { byId: target.id },
-      {
-        from: yesterday.toISOString(),
-        to: new Date().toISOString(),
+    const period = {
+      from: yesterday.toISOString(),
+      to: new Date().toISOString(),
+    };
+
+    await pollFor(async () => {
+      const operationsStatsResult = await readOperationsStats(
+        { byId: target.id },
+        period,
+        {},
+        token.secret,
+      ).then(r => r.expectNoGraphQLErrors());
+      const stats = await readSchemaCoordinateStats('Query.product', period);
+
+      return (
+        stats.target?.schemaCoordinateStats.totalResolutions === 1 &&
+        stats.target?.schemaCoordinateStats.totalRequests === 1 &&
+        stats.target?.schemaCoordinateStats.totalFailures === 0 &&
+        operationsStatsResult.target?.operationsStats.operations.edges[0].node.count === 1
+      );
+    });
+  });
+
+  test('usage data includes subgraph request data, and supports multiple subgraphs', async () => {
+    const subgraphs = {
+      products: {
+        typeDefs: parse(/* GraphQL */ `
+          extend type Query {
+            product: Product
+          }
+
+          type Product @key(fields: "id") {
+            id: ID!
+            price: Int
+          }
+        `),
+        resolvers: {
+          Query: {
+            product: () => {
+              return { id: 1, price: 20.2 };
+            },
+          },
+        },
       },
-      {},
-      token.secret,
-    ).then(r => r.expectNoGraphQLErrors());
-    // @TODO after modifying the API, check the additional data (error metrics etc)
-    expect(operationsStatsResult.target?.operationsStats.operations.edges[0].node.count).toBe(1);
+      users: {
+        typeDefs: parse(/* GraphQL */ `
+          extend type Query {
+            users: [User]
+          }
+          type User {
+            id: ID!
+            name: String
+          }
+        `),
+        resolvers: {
+          Query: {
+            users: () => [{ id: 2 }],
+          },
+          User: {
+            name: () => 'test',
+          },
+        },
+      },
+    };
+
+    const { readSchemaCoordinateStats, target, gateway, token, waitForRequestsCollected } =
+      await setup(subgraphs);
+
+    const request = new Request('http://localhost:4000/graphql', {
+      method: 'POST',
+      headers: {
+        'x-graphql-client-name': 'app-name',
+        'x-graphql-client-version': 'app-version',
+        'content-type': 'application/json',
+        accept: 'application/json',
+      },
+      body: JSON.stringify({
+        query: `
+          {
+            product {
+              id
+            }
+            users {
+              id
+              name
+            }
+          }
+        `,
+      }),
+    });
+
+    const usageCollected = waitForRequestsCollected(1);
+    const result = await gateway.handle(request);
+    await expect(result.json()).resolves.toMatchInlineSnapshot(`
+      {
+        data: {
+          product: {
+            id: 1,
+          },
+          users: [
+            {
+              id: 2,
+              name: test,
+            },
+          ],
+        },
+      }
+    `);
+    await usageCollected;
+
+    const yesterday = new Date();
+    yesterday.setDate(yesterday.getDate() - 1);
+    const period = {
+      from: yesterday.toISOString(),
+      to: new Date().toISOString(),
+    };
+
+    await pollFor(async () => {
+      const operationsStatsResult = await readOperationsStats(
+        { byId: target.id },
+        period,
+        {},
+        token.secret,
+      ).then(r => r.expectNoGraphQLErrors());
+      const stats = await readSchemaCoordinateStats('Query.product', period);
+
+      return (
+        stats.target?.schemaCoordinateStats.totalResolutions === 1 &&
+        stats.target?.schemaCoordinateStats.totalRequests === 1 &&
+        stats.target?.schemaCoordinateStats.totalFailures === 0 &&
+        operationsStatsResult.target?.operationsStats.operations.edges[0].node.count === 1
+      );
+    });
+  });
+
+  test('errors are tracked', async () => {
+    const subgraphs = {
+      products: {
+        typeDefs: parse(/* GraphQL */ `
+          extend type Query {
+            product: Product
+          }
+
+          type Product @key(fields: "id") {
+            id: ID!
+            price: Int
+          }
+        `),
+        resolvers: {
+          Query: {
+            product: () => {
+              return { id: 1, price: 20.2 };
+            },
+          },
+        },
+      },
+      users: {
+        typeDefs: parse(/* GraphQL */ `
+          extend type Query {
+            users: [User]
+          }
+          type User {
+            id: ID!
+            name: String
+          }
+        `),
+        resolvers: {
+          Query: {
+            users: () => [{ id: 2 }],
+          },
+          User: {
+            name: () => {
+              const err = new Error('Something went wrong');
+              Object.assign(err, { code: 'OOPSIE' });
+              throw err;
+            },
+          },
+        },
+      },
+    };
+
+    const { readSchemaCoordinateStats, target, gateway, token, waitForRequestsCollected } =
+      await setup(subgraphs);
+
+    const request = new Request('http://localhost:4000/graphql', {
+      method: 'POST',
+      headers: {
+        'x-graphql-client-name': 'app-name',
+        'x-graphql-client-version': 'app-version',
+        'content-type': 'application/json',
+        accept: 'application/json',
+      },
+      body: JSON.stringify({
+        query: `
+          {
+            product {
+              id
+            }
+            users {
+              id
+              name
+            }
+          }
+        `,
+      }),
+    });
+
+    const usageCollected = waitForRequestsCollected(1);
+    const result = await gateway.handle(request);
+    await expect(result.json()).resolves.toMatchInlineSnapshot(`
+      {
+        data: {
+          product: {
+            id: 1,
+          },
+          users: [
+            {
+              id: 2,
+              name: null,
+            },
+          ],
+        },
+        errors: [
+          {
+            extensions: {
+              code: INTERNAL_SERVER_ERROR,
+            },
+            message: Unexpected error.,
+            path: [
+              users,
+              0,
+              name,
+            ],
+          },
+        ],
+      }
+    `);
+    await usageCollected;
+
+    const yesterday = new Date();
+    yesterday.setDate(yesterday.getDate() - 1);
+    const period = {
+      from: yesterday.toISOString(),
+      to: new Date().toISOString(),
+    };
+
+    await pollFor(async () => {
+      const operationsStatsResult = await readOperationsStats(
+        { byId: target.id },
+        period,
+        {},
+        token.secret,
+      ).then(r => r.expectNoGraphQLErrors());
+      const stats = await readSchemaCoordinateStats('Query.product', period);
+
+      return (
+        stats.target?.schemaCoordinateStats.totalResolutions === 1 &&
+        stats.target?.schemaCoordinateStats.totalRequests === 1 &&
+        stats.target?.schemaCoordinateStats.totalFailures === 0 &&
+        operationsStatsResult.target?.operationsStats.operations.edges[0].node.count === 1
+      );
+    });
+
+    await pollFor(async () => {
+      const operationsStatsResult = await readOperationsStats(
+        { byId: target.id },
+        period,
+        {},
+        token.secret,
+      ).then(r => r.expectNoGraphQLErrors());
+      const stats = await readSchemaCoordinateStats('User.name', period);
+
+      return (
+        stats.target?.schemaCoordinateStats.totalResolutions === 1 &&
+        stats.target?.schemaCoordinateStats.totalRequests === 1 &&
+        stats.target?.schemaCoordinateStats.totalFailures === 1 &&
+        operationsStatsResult.target?.operationsStats.operations.edges[0].node.count === 1
+      );
+    });
   });
 });
