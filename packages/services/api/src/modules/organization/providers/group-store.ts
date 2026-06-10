@@ -80,7 +80,6 @@ export class GroupStore {
       WHERE
         "organization_id" = ${organizationId}
         AND "display_name" = ${displayName}
-        AND "disabled_at" = NULL
     `;
 
     return await this.pool.maybeOne(query).then(GroupModel.nullable().parse);
@@ -98,10 +97,6 @@ export class GroupStore {
       return null;
     }
 
-    if (group.disabledAt) {
-      return null;
-    }
-
     return group;
   }
 
@@ -116,8 +111,7 @@ export class GroupStore {
         "groups"
       WHERE
         "organization_id" = ${organizationId}
-        AND "external_group_id" = ${externaGrouplId}
-        AND "disabled_at" = NULL
+        AND "external_id" = ${externaGrouplId}
     `;
 
     return await this.pool.maybeOne(query).then(GroupModel.nullable().parse);
@@ -131,7 +125,6 @@ export class GroupStore {
         "groups"
       WHERE
         "organization_id" = ${organizationId}
-        AND "disabled_at" = NULL
       ORDER BY "id" DESC
     `;
 
@@ -213,37 +206,56 @@ export class GroupStore {
   async createGroup(args: {
     organizationId: string;
     displayName: string;
-    externalGroupId: string | null;
+    externalId: string | null;
   }) {
     this.logger.debug(
       'create new group (organizationId=%s, externalGroupId=%s)',
       args.organizationId,
-      args.externalGroupId,
+      args.externalId,
     );
     const query = psql`/* createGroup */
       INSERT INTO "groups" (
         "organization_id"
         , "display_name"
-        , "external_group_id"
+        , "external_id"
       )
       VALUES (
         ${args.organizationId}
         , ${args.displayName}
-        , ${args.externalGroupId}
+        , ${args.externalId}
       )
       RETURNING
         ${groupFields}
     `;
 
-    return await this.pool.one(query).then(GroupModel.parse);
+    return await this.pool
+      .one(query)
+      .then(GroupModel.parse)
+      .then(group => ({ type: 'success' as const, group }))
+      .catch(err => {
+        if (err instanceof UniqueIntegrityConstraintViolationError) {
+          if (err.constraint === 'uniq_groups_display_name') {
+            return {
+              type: 'error' as const,
+              errorCode: 'displayNameConflict' as const,
+            };
+          }
+          if (err.constraint === 'uniq_groups_external_id') {
+            return {
+              type: 'error' as const,
+              errorCode: 'externalIdConflict' as const,
+            };
+          }
+        }
+        throw err;
+      });
   }
 
-  async disableGroup(args: { organizationId: string; groupId: string }) {
-    const query = psql`/* disableGroup */
-      UPDATE
+  async deleteGroup(args: { organizationId: string; groupId: string }) {
+    const query = psql`/* deleteGroup */
+      DELETE
+      FROM
         "groups"
-      SET
-        "disabled_at" = NOW()
       WHERE
         "organization_id" = ${args.organizationId}
         AND "id" = ${args.groupId}
@@ -251,7 +263,14 @@ export class GroupStore {
         ${groupFields}
     `;
 
-    return await this.pool.maybeOne(query).then(GroupModel.parse);
+    return await this.pool
+      .maybeOne(query)
+      .then(GroupModel.nullable().parse)
+      .then(group =>
+        group
+          ? { type: 'success' as const }
+          : { type: 'error' as const, errorCode: 'notFound' as const },
+      );
   }
 
   async updateGroupPropertiesByOrganizationIdAndGroupId(
@@ -267,7 +286,7 @@ export class GroupStore {
         "groups"
       SET
         "display_name" = COALESCE(${args.displayName}, "display_name")
-        , "external_group_id" = COALESCE(${args.externalId}, "external_group_id")
+        , "external_id" = COALESCE(${args.externalId}, "external_id")
       WHERE
         "organization_id" = ${organizationId}
         AND "id" = ${groupId}
@@ -293,7 +312,7 @@ export class GroupStore {
       })
       .catch(err => {
         if (err instanceof UniqueIntegrityConstraintViolationError) {
-          if (err.constraint === 'uniq_groups_external_group_id') {
+          if (err.constraint === 'uniq_groups_external_id') {
             return {
               type: 'error' as const,
               errorCode: 'conflictOnExternalId' as const,
@@ -316,8 +335,7 @@ const GroupModel = z.object({
   organizationId: z.string().uuid(),
   displayName: z.string(),
   createdAt: z.string(),
-  disabledAt: z.string().nullable(),
-  externalGroupId: z.string().nullable(),
+  externalId: z.string().nullable(),
 });
 
 export type Group = z.TypeOf<typeof GroupModel>;
@@ -327,6 +345,5 @@ const groupFields = psql`
   , "organization_id" AS "organizationId"
   , "display_name" AS "displayName"
   , to_json("created_at") AS "createdAt"
-  , to_json("disabled_at") AS "disabledAt"
-  , "external_group_id" AS "externalGroupId"
+  , "external_id" AS "externalId"
 `;
