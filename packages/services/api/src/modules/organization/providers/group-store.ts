@@ -1,6 +1,11 @@
 import { Injectable, Scope } from 'graphql-modules';
 import { z } from 'zod';
-import { PostgresDatabasePool, psql, type CommonQueryMethods } from '@hive/postgres';
+import {
+  PostgresDatabasePool,
+  psql,
+  UniqueIntegrityConstraintViolationError,
+  type CommonQueryMethods,
+} from '@hive/postgres';
 import {
   decodeCreatedAtAndUUIDIdBasedCursor,
   encodeCreatedAtAndUUIDIdBasedCursor,
@@ -270,7 +275,39 @@ export class GroupStore {
         ${groupFields}
     `;
 
-    return await this.pool.one(query).then(GroupModel.parse);
+    return await this.pool
+      .maybeOne(query)
+      .then(GroupModel.nullable().parse)
+      .then(group => {
+        if (group) {
+          return {
+            type: 'success' as const,
+            group,
+          };
+        }
+
+        return {
+          type: 'error' as const,
+          errorCode: 'notFound' as const,
+        };
+      })
+      .catch(err => {
+        if (err instanceof UniqueIntegrityConstraintViolationError) {
+          if (err.constraint === 'uniq_groups_external_group_id') {
+            return {
+              type: 'error' as const,
+              errorCode: 'conflictOnExternalId' as const,
+            };
+          }
+          if (err.constraint === 'uniq_groups_display_name') {
+            return {
+              type: 'error' as const,
+              errorCode: 'conflictOnDisplayName' as const,
+            };
+          }
+        }
+        throw err;
+      });
   }
 }
 
