@@ -60,6 +60,7 @@ export async function migrateClickHouse(
     searchParams: {
       query: 'SELECT 1',
       default_format: 'JSON',
+      output_format_json_quote_64bit_integers: '1',
       wait_end_of_query: '1',
     },
     timeout: {
@@ -94,6 +95,7 @@ export async function migrateClickHouse(
         searchParams: {
           default_format: 'JSON',
           wait_end_of_query: '1',
+          output_format_json_quote_64bit_integers: '1',
           ...settings,
         },
         headers: {
@@ -118,6 +120,7 @@ export async function migrateClickHouse(
         body: queryString,
         searchParams: {
           default_format: 'JSON',
+          output_format_json_quote_64bit_integers: '1',
           wait_end_of_query: '1',
         },
         headers: {
