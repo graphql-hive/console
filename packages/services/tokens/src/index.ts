@@ -1,11 +1,11 @@
 #!/usr/bin/env node
-import Redis from 'ioredis';
 import ms from 'ms';
 import 'reflect-metadata';
 import { lru } from 'tiny-lru';
 import {
   configureTracing,
   createErrorHandler,
+  createRedisClient,
   createServer,
   registerShutdown,
   registerTRPC,
@@ -70,14 +70,9 @@ export async function main() {
 
   const errorHandler = createErrorHandler(server);
 
-  const redis = new Redis({
-    host: env.redis.host,
-    port: env.redis.port,
-    password: env.redis.password,
+  const redis = await createRedisClient(env.redis, {
+    logger: server.log.child({ source: 'Redis' }),
     maxRetriesPerRequest: 20,
-    db: 0,
-    enableReadyCheck: false,
-    tls: env.redis.tlsEnabled ? {} : undefined,
   });
 
   const storage = await createStorage(
@@ -104,26 +99,6 @@ export async function main() {
   }
 
   try {
-    redis.on('error', err => {
-      server.log.error(err, 'Redis connection error');
-    });
-
-    redis.on('connect', () => {
-      server.log.info('Redis connection established');
-    });
-
-    redis.on('ready', () => {
-      server.log.info('Redis connection ready... ');
-    });
-
-    redis.on('close', () => {
-      server.log.info('Redis connection closed');
-    });
-
-    redis.on('reconnecting', (timeToReconnect?: number) => {
-      server.log.info('Redis reconnecting in %s', timeToReconnect);
-    });
-
     redis.on('end', async () => {
       server.log.info('Redis ended - no more reconnections will be made');
       await shutdown();

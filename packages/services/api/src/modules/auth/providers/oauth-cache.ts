@@ -1,8 +1,7 @@
 import { Inject, Injectable, Scope } from 'graphql-modules';
-import { type Redis } from 'ioredis';
 import z from 'zod';
 import { Logger } from '../../shared/providers/logger';
-import { REDIS_INSTANCE } from '../../shared/providers/redis';
+import { REDIS_INSTANCE, type Redis } from '../../shared/providers/redis';
 import { sha256 } from '../lib/supertokens-at-home/crypto';
 
 @Injectable({
