@@ -9,7 +9,7 @@ import {
 } from '@hive/api/modules/organization/providers/group-member-store';
 import { GroupStore, type Group } from '@hive/api/modules/organization/providers/group-store';
 import { UsersStore, type User } from '@hive/api/modules/organization/providers/users-store';
-import { PostgresDatabasePool, psql } from '@hive/postgres';
+import { PostgresDatabasePool } from '@hive/postgres';
 
 const EmailSchemaModel = z
   .object({
@@ -459,8 +459,9 @@ export const createSCIMPlugin =
      * - the route parameter (:userId; :groupId) is always the id column within our database
      * - external id is the ID on the providers id for a resource
      *   - Both Okta and Entra uses external id for users
-     *   - Only Entra uses external id for groups
-     *   - Okta uses the groups display name for matching
+     *   - Only Entra uses display name for group matching
+     *   - Okta uses the display name for group matching
+     *   - we still support external_id for groups though
      * - Okta distinguishes between OIN (Okta Integration network) and custom integrations. Currently Hive Console users can only do custom integrations (we did not apply for the OIN process).
      *   - Okta OIN and custom integrations use different ways for updating groups and members
      *   - Okta OIN uses PATCH wherever possible
@@ -724,13 +725,13 @@ export const createSCIMPlugin =
           continue;
         }
 
-        if (operation.path === 'externalId') {
-          const externalId = z.string().safeParse(operation.value);
-          if (!externalId.success) {
+        if (operation.path === 'userName') {
+          const userName = z.string().safeParse(operation.value);
+          if (!userName.success) {
             hasParseError = true;
             break;
           }
-          changes.externalId = externalId.data;
+          changes.userName = userName.data;
           continue;
         }
 
@@ -741,6 +742,16 @@ export const createSCIMPlugin =
             break;
           }
           changes.emails = email.data;
+          continue;
+        }
+
+        if (operation.path === 'externalId') {
+          const externalId = z.string().safeParse(operation.value);
+          if (!externalId.success) {
+            hasParseError = true;
+            break;
+          }
+          changes.externalId = externalId.data;
           continue;
         }
 
@@ -756,16 +767,6 @@ export const createSCIMPlugin =
               primary: true,
             },
           ];
-          continue;
-        }
-
-        if (operation.path === 'userName') {
-          const userName = z.string().safeParse(operation.value);
-          if (!userName.success) {
-            hasParseError = true;
-            break;
-          }
-          changes.userName = userName.data;
           continue;
         }
 
