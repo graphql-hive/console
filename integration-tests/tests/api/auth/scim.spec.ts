@@ -38,7 +38,7 @@ async function createUser(
 
 describe.concurrent('/Users', () => {
   describe.concurrent('POST', () => {
-    test.concurrent('create new user', async ({ expect }) => {
+    test.concurrent('create new user succeeds', async ({ expect }) => {
       const seed = initSeed();
       const owner = await seed.createOwner();
       const org = await owner.createOrg();
@@ -89,107 +89,112 @@ describe.concurrent('/Users', () => {
         userName: 'marty@mcfly.dev',
       });
     });
-    test.concurrent('create new user (different email)', async ({ expect }) => {
-      const seed = initSeed();
-      const owner = await seed.createOwner();
-      const org = await owner.createOrg();
-      await org.createOIDCIntegration();
-      const accessToken = await org.createOrganizationAccessToken({
-        permissions: ['member:describe', 'member:modify'],
-        resources: { mode: ResourceAssignmentModeType.Granular },
-      });
-      const scimAuthHeader = 'Bearer ' + accessToken.privateAccessKey;
-      const externalUserId = 'externbal_user_id';
-      const headers = {
-        'Content-Type': 'application/scim+json',
-        Authorization: scimAuthHeader,
-      };
-      const usersPostResponse = await fetch(usersEndpoint, {
-        method: 'POST',
-        body: JSON.stringify({
-          schemas: ['urn:ietf:params:scim:schemas:core:2.0:User'],
-          userName: 'emmett@brown.dev',
-          name: { givenName: 'Emmett', familyName: 'Brown' },
-          emails: [{ primary: true, value: 'emmett@brown.dev', type: 'work' }],
-          displayName: 'Emmett Brown',
-          locale: 'en-US',
+    test.concurrent(
+      'create new multiple users withdifferent emails suceeds',
+      async ({ expect }) => {
+        const seed = initSeed();
+        const owner = await seed.createOwner();
+        const org = await owner.createOrg();
+        await org.createOIDCIntegration();
+        const accessToken = await org.createOrganizationAccessToken({
+          permissions: ['member:describe', 'member:modify'],
+          resources: { mode: ResourceAssignmentModeType.Granular },
+        });
+        const scimAuthHeader = 'Bearer ' + accessToken.privateAccessKey;
+        const externalUserId = 'externbal_user_id';
+        const headers = {
+          'Content-Type': 'application/scim+json',
+          Authorization: scimAuthHeader,
+        };
+        const usersPostResponse = await fetch(usersEndpoint, {
+          method: 'POST',
+          body: JSON.stringify({
+            schemas: ['urn:ietf:params:scim:schemas:core:2.0:User'],
+            userName: 'emmett@brown.dev',
+            name: { givenName: 'Emmett', familyName: 'Brown' },
+            emails: [{ primary: true, value: 'emmett@brown.dev', type: 'work' }],
+            displayName: 'Emmett Brown',
+            locale: 'en-US',
+            externalId: externalUserId,
+            groups: [],
+            password: 'foobars',
+            active: true,
+          }),
+          headers,
+        });
+        expect(usersPostResponse.status).toEqual(201);
+        const body = await usersPostResponse.json();
+        expect(body).toEqual({
+          emails: [
+            {
+              primary: true,
+              type: 'work',
+              value: 'emmett@brown.dev',
+            },
+          ],
           externalId: externalUserId,
-          groups: [],
-          password: 'foobars',
-          active: true,
-        }),
-        headers,
-      });
-      expect(usersPostResponse.status).toEqual(201);
-      const body = await usersPostResponse.json();
-      expect(body).toEqual({
-        emails: [
-          {
-            primary: true,
-            type: 'work',
-            value: 'emmett@brown.dev',
+          id: expect.any(String),
+          meta: {
+            resourceType: 'User',
           },
-        ],
-        externalId: externalUserId,
-        id: expect.any(String),
-        meta: {
-          resourceType: 'User',
-        },
-        active: true,
-        schemas: ['urn:ietf:params:scim:schemas:core:2.0:User'],
-        userName: 'emmett@brown.dev',
-      });
-    });
-    test.concurrent('fail on create user with same external id twice', async ({ expect }) => {
-      const seed = initSeed();
-      const owner = await seed.createOwner();
-      const org = await owner.createOrg();
-      await org.createOIDCIntegration();
-      const accessToken = await org.createOrganizationAccessToken({
-        permissions: ['member:describe', 'member:modify'],
-        resources: { mode: ResourceAssignmentModeType.Granular },
-      });
-      const scimAuthHeader = 'Bearer ' + accessToken.privateAccessKey;
-      const externalUserId = 'externbal_user_id';
-      const headers = {
-        'Content-Type': 'application/scim+json',
-        Authorization: scimAuthHeader,
-      };
-      let usersPostResponse = await fetch(usersEndpoint, {
-        method: 'POST',
-        body: JSON.stringify({
+          active: true,
           schemas: ['urn:ietf:params:scim:schemas:core:2.0:User'],
           userName: 'emmett@brown.dev',
-          name: { givenName: 'Emmett', familyName: 'Brown' },
-          emails: [{ primary: true, value: 'emmett@brown.dev', type: 'work' }],
-          displayName: 'Emmett Brown',
-          locale: 'en-US',
-          externalId: externalUserId,
-          groups: [],
-          password: 'foobars',
-          active: true,
-        }),
-        headers,
-      });
-      expect(usersPostResponse.status).toEqual(201);
-      usersPostResponse = usersPostResponse = await fetch(usersEndpoint, {
-        method: 'POST',
-        body: JSON.stringify({
-          schemas: ['urn:ietf:params:scim:schemas:core:2.0:User'],
-          userName: 'marty@mcfly.dev',
-          name: { givenName: 'Marty', familyName: 'McFly' },
-          emails: [{ primary: true, value: 'marty@mcfly.dev', type: 'work' }],
-          displayName: 'Marty McFly',
-          locale: 'en-US',
-          externalId: externalUserId,
-          groups: [],
-          password: 'fq77ZD37',
-          active: true,
-        }),
-        headers,
-      });
-      expect(usersPostResponse.status).toEqual(409);
-      expect(await usersPostResponse.json()).toMatchInlineSnapshot(`
+        });
+      },
+    );
+    test.concurrent(
+      'create user with external id conflict yields correct error response',
+      async ({ expect }) => {
+        const seed = initSeed();
+        const owner = await seed.createOwner();
+        const org = await owner.createOrg();
+        await org.createOIDCIntegration();
+        const accessToken = await org.createOrganizationAccessToken({
+          permissions: ['member:describe', 'member:modify'],
+          resources: { mode: ResourceAssignmentModeType.Granular },
+        });
+        const scimAuthHeader = 'Bearer ' + accessToken.privateAccessKey;
+        const externalUserId = 'externbal_user_id';
+        const headers = {
+          'Content-Type': 'application/scim+json',
+          Authorization: scimAuthHeader,
+        };
+        let usersPostResponse = await fetch(usersEndpoint, {
+          method: 'POST',
+          body: JSON.stringify({
+            schemas: ['urn:ietf:params:scim:schemas:core:2.0:User'],
+            userName: 'emmett@brown.dev',
+            name: { givenName: 'Emmett', familyName: 'Brown' },
+            emails: [{ primary: true, value: 'emmett@brown.dev', type: 'work' }],
+            displayName: 'Emmett Brown',
+            locale: 'en-US',
+            externalId: externalUserId,
+            groups: [],
+            password: 'foobars',
+            active: true,
+          }),
+          headers,
+        });
+        expect(usersPostResponse.status).toEqual(201);
+        usersPostResponse = usersPostResponse = await fetch(usersEndpoint, {
+          method: 'POST',
+          body: JSON.stringify({
+            schemas: ['urn:ietf:params:scim:schemas:core:2.0:User'],
+            userName: 'marty@mcfly.dev',
+            name: { givenName: 'Marty', familyName: 'McFly' },
+            emails: [{ primary: true, value: 'marty@mcfly.dev', type: 'work' }],
+            displayName: 'Marty McFly',
+            locale: 'en-US',
+            externalId: externalUserId,
+            groups: [],
+            password: 'fq77ZD37',
+            active: true,
+          }),
+          headers,
+        });
+        expect(usersPostResponse.status).toEqual(409);
+        expect(await usersPostResponse.json()).toMatchInlineSnapshot(`
         {
           detail: A user with the same external id already exists.,
           schemas: [
@@ -198,8 +203,9 @@ describe.concurrent('/Users', () => {
           status: 409,
         }
       `);
-    });
-    test.concurrent('create inactive user', async ({ expect }) => {
+      },
+    );
+    test.concurrent('create inactive user can be created', async ({ expect }) => {
       const seed = initSeed();
       const owner = await seed.createOwner();
       const org = await owner.createOrg();
@@ -252,39 +258,41 @@ describe.concurrent('/Users', () => {
     });
   });
   describe.concurrent('PUT', () => {
-    test.concurrent('non-existing user', async ({ expect }) => {
-      const seed = initSeed();
-      const owner = await seed.createOwner();
-      const org = await owner.createOrg();
-      await org.createOIDCIntegration();
-      const accessToken = await org.createOrganizationAccessToken({
-        permissions: ['member:describe', 'member:modify'],
-        resources: { mode: ResourceAssignmentModeType.Granular },
-      });
-      const scimAuthHeader = 'Bearer ' + accessToken.privateAccessKey;
-      const externalUserId = '00u13w8ptpbdysgOl698';
-      const headers = {
-        'Content-Type': 'application/scim+json',
-        Authorization: scimAuthHeader,
-      };
-      const usersPostResponse = await fetch(usersEndpoint + '/' + crypto.randomUUID(), {
-        method: 'PUT',
-        body: JSON.stringify({
-          schemas: ['urn:ietf:params:scim:schemas:core:2.0:User'],
-          userName: 'marty@mcfly.dev',
-          name: { givenName: 'Marty', familyName: 'McFly' },
-          emails: [{ primary: true, value: 'marty@mcfly.dev', type: 'work' }],
-          displayName: 'Marty McFly',
-          locale: 'en-US',
-          externalId: externalUserId,
-          groups: [],
-          password: 'fq77ZD37',
-          active: true,
-        }),
-        headers,
-      });
-      expect(usersPostResponse.status).toEqual(404);
-      expect(await usersPostResponse.json()).toMatchInlineSnapshot(`
+    test.concurrent(
+      'update non-existing user yields correct error response',
+      async ({ expect }) => {
+        const seed = initSeed();
+        const owner = await seed.createOwner();
+        const org = await owner.createOrg();
+        await org.createOIDCIntegration();
+        const accessToken = await org.createOrganizationAccessToken({
+          permissions: ['member:describe', 'member:modify'],
+          resources: { mode: ResourceAssignmentModeType.Granular },
+        });
+        const scimAuthHeader = 'Bearer ' + accessToken.privateAccessKey;
+        const externalUserId = '00u13w8ptpbdysgOl698';
+        const headers = {
+          'Content-Type': 'application/scim+json',
+          Authorization: scimAuthHeader,
+        };
+        const usersPostResponse = await fetch(usersEndpoint + '/' + crypto.randomUUID(), {
+          method: 'PUT',
+          body: JSON.stringify({
+            schemas: ['urn:ietf:params:scim:schemas:core:2.0:User'],
+            userName: 'marty@mcfly.dev',
+            name: { givenName: 'Marty', familyName: 'McFly' },
+            emails: [{ primary: true, value: 'marty@mcfly.dev', type: 'work' }],
+            displayName: 'Marty McFly',
+            locale: 'en-US',
+            externalId: externalUserId,
+            groups: [],
+            password: 'fq77ZD37',
+            active: true,
+          }),
+          headers,
+        });
+        expect(usersPostResponse.status).toEqual(404);
+        expect(await usersPostResponse.json()).toMatchInlineSnapshot(`
         {
           detail: User does not exist.,
           schemas: [
@@ -293,8 +301,9 @@ describe.concurrent('/Users', () => {
           status: 404,
         }
       `);
-    });
-    test.concurrent('update active', async ({ expect }) => {
+      },
+    );
+    test.concurrent('update active succeeds', async ({ expect }) => {
       const seed = initSeed();
       const owner = await seed.createOwner();
       const org = await owner.createOrg();
@@ -357,7 +366,7 @@ describe.concurrent('/Users', () => {
         },
       });
     });
-    test.concurrent('update email', async ({ expect }) => {
+    test.concurrent('update email succeeds', async ({ expect }) => {
       const seed = initSeed();
       const owner = await seed.createOwner();
       const org = await owner.createOrg();
@@ -415,7 +424,7 @@ describe.concurrent('/Users', () => {
         active: false,
       });
     });
-    test.concurrent('update userName', async ({ expect }) => {
+    test.concurrent('update userName succeeds', async ({ expect }) => {
       const seed = initSeed();
       const owner = await seed.createOwner();
       const org = await owner.createOrg();
@@ -445,39 +454,42 @@ describe.concurrent('/Users', () => {
         userName: 'marty@mcfly.com',
       });
     });
-    test.concurrent('update userName (conflict)', async ({ expect }) => {
-      const seed = initSeed();
-      const owner = await seed.createOwner();
-      const org = await owner.createOrg();
-      await org.createOIDCIntegration();
-      const accessToken = await org.createOrganizationAccessToken({
-        permissions: ['member:describe', 'member:modify'],
-        resources: { mode: ResourceAssignmentModeType.Granular },
-      });
-      const scimAuthHeader = 'Bearer ' + accessToken.privateAccessKey;
-      const headers = {
-        'Content-Type': 'application/scim+json',
-        Authorization: scimAuthHeader,
-      };
-      const usersPostResponse = await createUser(headers, {
-        userName: 'issame',
-      });
-      const userPostBody = await usersPostResponse.json();
-      const secondUser = await createUser(headers);
+    test.concurrent(
+      'update userName conflict yields correct error response',
+      async ({ expect }) => {
+        const seed = initSeed();
+        const owner = await seed.createOwner();
+        const org = await owner.createOrg();
+        await org.createOIDCIntegration();
+        const accessToken = await org.createOrganizationAccessToken({
+          permissions: ['member:describe', 'member:modify'],
+          resources: { mode: ResourceAssignmentModeType.Granular },
+        });
+        const scimAuthHeader = 'Bearer ' + accessToken.privateAccessKey;
+        const headers = {
+          'Content-Type': 'application/scim+json',
+          Authorization: scimAuthHeader,
+        };
+        const usersPostResponse = await createUser(headers, {
+          userName: 'issame',
+        });
+        const userPostBody = await usersPostResponse.json();
+        const secondUser = await createUser(headers);
 
-      const usersPutResponse = await fetch(usersEndpoint + '/' + userPostBody.id, {
-        method: 'PUT',
-        body: JSON.stringify({
+        const usersPutResponse = await fetch(usersEndpoint + '/' + userPostBody.id, {
+          method: 'PUT',
+          body: JSON.stringify({
+            userName: 'marty@mcfly.com',
+          }),
+          headers,
+        });
+        expect(usersPutResponse.status).toEqual(200);
+        expect(await usersPutResponse.json()).toEqual({
+          ...userPostBody,
           userName: 'marty@mcfly.com',
-        }),
-        headers,
-      });
-      expect(usersPutResponse.status).toEqual(200);
-      expect(await usersPutResponse.json()).toEqual({
-        ...userPostBody,
-        userName: 'marty@mcfly.com',
-      });
-    });
+        });
+      },
+    );
     test.concurrent('update external id', async ({ expect }) => {
       const seed = initSeed();
       const owner = await seed.createOwner();
@@ -516,40 +528,42 @@ describe.concurrent('/Users', () => {
         externalId: newExternalId,
       });
     });
-    test.concurrent('update external id (conflict with other user)', async ({ expect }) => {
-      const seed = initSeed();
-      const owner = await seed.createOwner();
-      const org = await owner.createOrg();
-      await org.createOIDCIntegration();
-      const accessToken = await org.createOrganizationAccessToken({
-        permissions: ['member:describe', 'member:modify'],
-        resources: { mode: ResourceAssignmentModeType.Granular },
-      });
-      const scimAuthHeader = 'Bearer ' + accessToken.privateAccessKey;
-      const externalUserId = 'iliketurtles';
+    test.concurrent(
+      'update external id conflict yield correct error response',
+      async ({ expect }) => {
+        const seed = initSeed();
+        const owner = await seed.createOwner();
+        const org = await owner.createOrg();
+        await org.createOIDCIntegration();
+        const accessToken = await org.createOrganizationAccessToken({
+          permissions: ['member:describe', 'member:modify'],
+          resources: { mode: ResourceAssignmentModeType.Granular },
+        });
+        const scimAuthHeader = 'Bearer ' + accessToken.privateAccessKey;
+        const externalUserId = 'iliketurtles';
 
-      const headers = {
-        'Content-Type': 'application/scim+json',
-        Authorization: scimAuthHeader,
-      };
-      const firstUserPostResponse = await createUser(headers);
-      expect(firstUserPostResponse.status).toEqual(201);
-      const firstUserPostResponseBody = await firstUserPostResponse.json();
-      const secondUserPostResponse = await createUser(headers, {
-        externalId: externalUserId,
-      });
-      expect(secondUserPostResponse.status).toEqual(201);
-
-      const usersPutResponse = await fetch(usersEndpoint + '/' + firstUserPostResponseBody.id, {
-        method: 'PUT',
-        body: JSON.stringify({
+        const headers = {
+          'Content-Type': 'application/scim+json',
+          Authorization: scimAuthHeader,
+        };
+        const firstUserPostResponse = await createUser(headers);
+        expect(firstUserPostResponse.status).toEqual(201);
+        const firstUserPostResponseBody = await firstUserPostResponse.json();
+        const secondUserPostResponse = await createUser(headers, {
           externalId: externalUserId,
-        }),
-        headers,
-      });
+        });
+        expect(secondUserPostResponse.status).toEqual(201);
 
-      expect(usersPutResponse.status).toEqual(409);
-      expect(await usersPutResponse.json()).toMatchInlineSnapshot(`
+        const usersPutResponse = await fetch(usersEndpoint + '/' + firstUserPostResponseBody.id, {
+          method: 'PUT',
+          body: JSON.stringify({
+            externalId: externalUserId,
+          }),
+          headers,
+        });
+
+        expect(usersPutResponse.status).toEqual(409);
+        expect(await usersPutResponse.json()).toMatchInlineSnapshot(`
         {
           detail: Another user with the same external id already exists.,
           schemas: [
@@ -558,7 +572,8 @@ describe.concurrent('/Users', () => {
           status: 409,
         }
       `);
-    });
+      },
+    );
   });
   describe.concurrent('PATCH', () => {
     test.concurrent('non-existing user', async ({ expect }) => {
@@ -804,7 +819,7 @@ describe.concurrent('/Users', () => {
 
 describe.concurrent('/Groups', () => {
   describe.concurrent('POST', () => {
-    test.concurrent('create', async ({ expect }) => {
+    test.concurrent('create basic group without external id', async ({ expect }) => {
       const seed = initSeed();
       const owner = await seed.createOwner();
       const org = await owner.createOrg();
@@ -834,7 +849,7 @@ describe.concurrent('/Groups', () => {
       });
       expect(postResponse.status).toEqual(201);
       const postResponseBody = await postResponse.json();
-      expect(postResponseBody).toMatchObject({
+      expect(postResponseBody).toEqual({
         displayName: 'foobars',
         id: expect.any(String),
         meta: {
@@ -843,7 +858,49 @@ describe.concurrent('/Groups', () => {
         schemas: ['urn:ietf:params:scim:schemas:core:2.0:Group'],
       });
     });
-    test.concurrent('create with external id', async ({ expect }) => {
+    test.concurrent(
+      'create with external id creates group with external id',
+      async ({ expect }) => {
+        const seed = initSeed();
+        const owner = await seed.createOwner();
+        const org = await owner.createOrg();
+        // currenlty this must exist for the endpoint to be functional
+        await org.createOIDCIntegration();
+        const accessToken = await org.createOrganizationAccessToken({
+          permissions: ['member:describe', 'member:modify'],
+          resources: { mode: ResourceAssignmentModeType.Granular },
+        });
+        const scimAuthHeader = 'Bearer ' + accessToken.privateAccessKey;
+
+        const headers = {
+          'Content-Type': 'application/scim+json',
+          Authorization: scimAuthHeader,
+        };
+
+        const postResponse = await fetch(groupsEndpoint, {
+          method: 'POST',
+          body: JSON.stringify({
+            schemas: ['urn:ietf:params:scim:schemas:core:2.0:Group'],
+            displayName: 'foobars',
+            members: [],
+            externalId: 'myExternalId',
+          }),
+          headers,
+        });
+        expect(postResponse.status).toEqual(201);
+        const postResponseBody = await postResponse.json();
+        expect(postResponseBody).toMatchObject({
+          displayName: 'foobars',
+          id: expect.any(String),
+          externalId: 'myExternalId',
+          meta: {
+            resourceType: 'Group',
+          },
+          schemas: ['urn:ietf:params:scim:schemas:core:2.0:Group'],
+        });
+      },
+    );
+    test.concurrent('display name conflict yields correct error response', async ({ expect }) => {
       const seed = initSeed();
       const owner = await seed.createOwner();
       const org = await owner.createOrg();
@@ -860,9 +917,7 @@ describe.concurrent('/Groups', () => {
         Authorization: scimAuthHeader,
       };
 
-      // First Okta tries to provision the group
-
-      const postResponse = await fetch(groupsEndpoint, {
+      let postResponse = await fetch(groupsEndpoint, {
         method: 'POST',
         body: JSON.stringify({
           schemas: ['urn:ietf:params:scim:schemas:core:2.0:Group'],
@@ -873,16 +928,77 @@ describe.concurrent('/Groups', () => {
         headers,
       });
       expect(postResponse.status).toEqual(201);
-      const postResponseBody = await postResponse.json();
-      expect(postResponseBody).toMatchObject({
-        displayName: 'foobars',
-        id: expect.any(String),
-        externalId: 'myExternalId',
-        meta: {
-          resourceType: 'Group',
-        },
-        schemas: ['urn:ietf:params:scim:schemas:core:2.0:Group'],
+      postResponse = await fetch(groupsEndpoint, {
+        method: 'POST',
+        body: JSON.stringify({
+          schemas: ['urn:ietf:params:scim:schemas:core:2.0:Group'],
+          displayName: 'foobars',
+          members: [],
+          externalId: 'foobars',
+        }),
+        headers,
       });
+      expect(postResponse.status).toEqual(409);
+      const postResponseBody = await postResponse.json();
+      expect(postResponseBody).toMatchInlineSnapshot(`
+          {
+            detail: A SCIM group with the same display name already exists.,
+            schemas: [
+              urn:ietf:params:scim:api:messages:2.0:Error,
+            ],
+            status: 409,
+          }
+        `);
+    });
+    test.concurrent('external id conflict yields correct error response', async ({ expect }) => {
+      const seed = initSeed();
+      const owner = await seed.createOwner();
+      const org = await owner.createOrg();
+      // currenlty this must exist for the endpoint to be functional
+      await org.createOIDCIntegration();
+      const accessToken = await org.createOrganizationAccessToken({
+        permissions: ['member:describe', 'member:modify'],
+        resources: { mode: ResourceAssignmentModeType.Granular },
+      });
+      const scimAuthHeader = 'Bearer ' + accessToken.privateAccessKey;
+
+      const headers = {
+        'Content-Type': 'application/scim+json',
+        Authorization: scimAuthHeader,
+      };
+
+      let postResponse = await fetch(groupsEndpoint, {
+        method: 'POST',
+        body: JSON.stringify({
+          schemas: ['urn:ietf:params:scim:schemas:core:2.0:Group'],
+          displayName: 'foobars',
+          members: [],
+          externalId: 'myExternalId',
+        }),
+        headers,
+      });
+      expect(postResponse.status).toEqual(201);
+      postResponse = await fetch(groupsEndpoint, {
+        method: 'POST',
+        body: JSON.stringify({
+          schemas: ['urn:ietf:params:scim:schemas:core:2.0:Group'],
+          displayName: 'foobars1',
+          members: [],
+          externalId: 'myExternalId',
+        }),
+        headers,
+      });
+      expect(postResponse.status).toEqual(409);
+      const postResponseBody = await postResponse.json();
+      expect(postResponseBody).toMatchInlineSnapshot(`
+          {
+            detail: A SCIM group with the same external id already exists.,
+            schemas: [
+              urn:ietf:params:scim:api:messages:2.0:Error,
+            ],
+            status: 409,
+          }
+        `);
     });
   });
   describe.concurrent('PUT', () => {
@@ -1708,29 +1824,32 @@ describe.concurrent('/Groups', () => {
     });
   });
   describe.concurrent('DELETE', () => {
-    test.concurrent('delete non-existing', async ({ expect }) => {
-      const seed = initSeed();
-      const owner = await seed.createOwner();
-      const org = await owner.createOrg();
-      // currenlty this must exist for the endpoint to be functional
-      await org.createOIDCIntegration();
-      const accessToken = await org.createOrganizationAccessToken({
-        permissions: ['member:describe', 'member:modify'],
-        resources: { mode: ResourceAssignmentModeType.Granular },
-      });
-      const scimAuthHeader = 'Bearer ' + accessToken.privateAccessKey;
-      const headers = {
-        'Content-Type': 'application/scim+json',
-        Authorization: scimAuthHeader,
-      };
+    test.concurrent(
+      'delete non-existing group yields correct error response',
+      async ({ expect }) => {
+        const seed = initSeed();
+        const owner = await seed.createOwner();
+        const org = await owner.createOrg();
+        // currenlty this must exist for the endpoint to be functional
+        await org.createOIDCIntegration();
+        const accessToken = await org.createOrganizationAccessToken({
+          permissions: ['member:describe', 'member:modify'],
+          resources: { mode: ResourceAssignmentModeType.Granular },
+        });
+        const scimAuthHeader = 'Bearer ' + accessToken.privateAccessKey;
+        const headers = {
+          'Content-Type': 'application/scim+json',
+          Authorization: scimAuthHeader,
+        };
 
-      const putResponse = await fetch(groupsEndpoint + '/' + crypto.randomUUID(), {
-        method: 'DELETE',
-        headers,
-      });
-      expect(putResponse.status).toEqual(404);
-    });
-    test.concurrent('delete existing', async ({ expect }) => {
+        const putResponse = await fetch(groupsEndpoint + '/' + crypto.randomUUID(), {
+          method: 'DELETE',
+          headers,
+        });
+        expect(putResponse.status).toEqual(404);
+      },
+    );
+    test.concurrent('delete group succeeds', async ({ expect }) => {
       const seed = initSeed();
       const owner = await seed.createOwner();
       const org = await owner.createOrg();
@@ -1765,6 +1884,11 @@ describe.concurrent('/Groups', () => {
         headers,
       });
       expect(putResponse.status).toEqual(204);
+
+      const getPostResponse = await fetch(groupsEndpoint + '/' + postResponseBody.id, {
+        headers,
+      });
+      expect(getPostResponse.status).toEqual(404);
     });
   });
 });
