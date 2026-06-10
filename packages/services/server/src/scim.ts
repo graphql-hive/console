@@ -883,51 +883,47 @@ export const createSCIMPlugin =
       const users: Array<SCIMUserObject> = [];
 
       if (queryParse.data.filter) {
-        /** A filter looks like the following: 'value eq "user-123"'  */
-        const [property, eqStr, rawValue] = queryParse.data.filter.split(' ');
-        if (!property || eqStr !== 'eq' || !rawValue) {
-          return reply.status(403).send(
-            createSCIMError({
-              status: 400,
-              detail: 'Invalid filter provided.',
-            }),
-          );
+        const filterParseResult = parseSCIMFilterExpression(queryParse.data.filter, [
+          'userName',
+          'externalId',
+          'id',
+        ]);
+        if (filterParseResult.type === 'error') {
+          return reply.status(400).send(result.error);
         }
-        const valueStr = rawValue.replaceAll('"', '');
-        if (property === 'userName') {
-          const user = await usersStore.findUserProvisionedByOrganizationIdAndDisplayName(
-            result.organizationId,
-            // to lower-case just in case it is sent in non :)
-            valueStr.toLocaleLowerCase(),
-          );
-          if (user) {
-            users.push(createSCIMUserObjectFromUser(user));
-          }
-        } else if (property === 'externalId') {
-          const user = await usersStore.findUserProvisionedByOrganizationIdAndExternalId(
-            result.organizationId,
-            valueStr,
-          );
-          if (user) {
-            users.push(createSCIMUserObjectFromUser(user));
-          }
-        } else if (property === 'id') {
-          const user = await usersStore.findUserProvisionedByOrganizationIdAndExternalId(
-            result.organizationId,
-            valueStr,
-          );
 
-          if (user) {
-            users.push(createSCIMUserObjectFromUser(user));
+        const { property, value } = filterParseResult;
+        let user: User | null = null;
+
+        switch (property) {
+          case 'userName': {
+            user = await usersStore.findUserProvisionedByOrganizationIdAndDisplayName(
+              result.organizationId,
+              value,
+            );
+            break;
           }
-        } else {
-          result.logger.info('unsupported filter property "%s"', property);
-          return reply.status(403).send(
-            createSCIMError({
-              status: 400,
-              detail: 'Unsupported filter provided.',
-            }),
-          );
+          case 'externalId': {
+            user = await usersStore.findUserProvisionedByOrganizationIdAndExternalId(
+              result.organizationId,
+              value,
+            );
+            break;
+          }
+          case 'id': {
+            if (!z.string().uuid().safeParse(value).success) {
+              break;
+            }
+            user = await usersStore.findUserProvisionedByOrganizationIdAndId(
+              result.organizationId,
+              value,
+            );
+            break;
+          }
+        }
+
+        if (user) {
+          users.push(createSCIMUserObjectFromUser(user));
         }
       } else {
         const offset = Math.max(0, startIndex - 1);
@@ -981,49 +977,48 @@ export const createSCIMPlugin =
       const groups: Array<SCIMGroupObject> = [];
 
       if (queryParse.data.filter) {
-        const [property, eqStr, rawValue] = queryParse.data.filter.split(' ');
-        if (!property || eqStr !== 'eq' || !rawValue) {
-          return reply.status(403).send(
-            createSCIMError({
-              status: 400,
-              detail: 'Invalid filter provided.',
-            }),
-          );
-        }
-        const valueStr = rawValue.replaceAll('"', '');
+        const filterParseResult = parseSCIMFilterExpression(queryParse.data.filter, [
+          'displayName',
+          'id',
+          'externalId',
+        ]);
 
-        if (property === 'displayName') {
-          const group = await groupStore.getGroupByOrganizationIdAndDisplayName(
-            result.organizationId,
-            valueStr,
-          );
-          if (group) {
-            groups.push(createSCIMGroupObjectFromGroup(group));
+        if (filterParseResult.type === 'error') {
+          return reply.status(400).send(result.error);
+        }
+
+        const { property, value } = filterParseResult;
+        let group: Group | null = null;
+
+        switch (property) {
+          case 'displayName': {
+            group = await groupStore.getGroupByOrganizationIdAndDisplayName(
+              result.organizationId,
+              value,
+            );
+            break;
           }
-        } else if (property === 'id') {
-          const group = await groupStore.getGroupByOrganizationIdAndGroupId(
-            result.organizationId,
-            valueStr,
-          );
-          if (group) {
-            groups.push(createSCIMGroupObjectFromGroup(group));
+          case 'id': {
+            if (!z.string().uuid().safeParse(value).success) {
+              break;
+            }
+            group = await groupStore.getGroupByOrganizationIdAndGroupId(
+              result.organizationId,
+              value,
+            );
+            break;
           }
-        } else if (property === 'externalId') {
-          const group = await groupStore.getGroupByOrganizationIdAndExternalGroupId(
-            result.organizationId,
-            valueStr,
-          );
-          if (group) {
-            groups.push(createSCIMGroupObjectFromGroup(group));
+          case 'externalId': {
+            group = await groupStore.getGroupByOrganizationIdAndExternalGroupId(
+              result.organizationId,
+              value,
+            );
+            break;
           }
-        } else {
-          result.logger.info('unsupported filter property "%s"', property);
-          return reply.status(400).send(
-            createSCIMError({
-              status: 400,
-              detail: 'Unsupported filter provided.',
-            }),
-          );
+        }
+
+        if (group) {
+          groups.push(createSCIMGroupObjectFromGroup(group));
         }
       } else {
         const pagedGroups = await groupStore.getOffsetPaginatedGroupsForOrganizationId(
@@ -1538,5 +1533,54 @@ function createSCIMGroupObjectFromGroup(
     meta: {
       resourceType: 'Group',
     },
+  };
+}
+
+type ArrayWithAtLeastOneItem = [string, ...string[]];
+
+function enumerateList(items: ArrayWithAtLeastOneItem): string {
+  if (items.length === 1) return `"${items[0]}"`;
+  if (items.length === 2) return `"${items[0]}" and "${items[1]}"`;
+  return (
+    items
+      .slice(0, -1)
+      .map(item => `"${item}"`)
+      .join(', ') + ` and "${items[items.length - 1]}"`
+  );
+}
+
+function parseSCIMFilterExpression(filter: string, supportedProperties: ArrayWithAtLeastOneItem) {
+  /** A filter looks like the following: 'value eq "user-123"'  */
+  const [property, eqStr, ...rawValueParts] = filter.trim().split(' ');
+  if (!property || !supportedProperties.includes(property) || eqStr !== 'eq') {
+    return {
+      type: 'error' as const,
+      error: createSCIMError({
+        status: 400,
+        detail:
+          'The filter expression is not supported.' +
+          ` Only a single "eq" expression for properties ${enumerateList(supportedProperties)} is supported.`,
+      }),
+    };
+  }
+
+  const remainingStr = rawValueParts.join(' ');
+
+  if (remainingStr[0] !== '"' || remainingStr[remainingStr.length - 1] !== '"') {
+    return {
+      type: 'error' as const,
+      error: createSCIMError({
+        status: 400,
+        detail:
+          'The filter expression is not supported.' +
+          ` Only a single "eq" expression for properties ${enumerateList(supportedProperties)} is supported.`,
+      }),
+    };
+  }
+  const value = remainingStr.substring(1, remainingStr.length - 1);
+  return {
+    type: 'success' as const,
+    property,
+    value,
   };
 }
