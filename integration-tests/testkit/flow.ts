@@ -1339,6 +1339,30 @@ export function updateBaseSchema(input: UpdateBaseSchemaInput, token: string) {
   });
 }
 
+export function readTotalRequests(
+  reference: GraphQLSchema.TargetReferenceInput,
+  period: GraphQLSchema.DateRangeInput,
+  token: string,
+) {
+  return execute({
+    document: graphql(`
+      query IntegrationTests_ReadTotalRequests(
+        $reference: TargetReferenceInput!
+        $period: DateRangeInput!
+      ) {
+        target(reference: $reference) {
+          totalRequests(period: $period)
+        }
+      }
+    `),
+    token,
+    variables: {
+      reference,
+      period,
+    },
+  });
+}
+
 export function readClientStats(
   reference: GraphQLSchema.TargetReferenceInput,
   period: GraphQLSchema.DateRangeInput,

@@ -579,7 +579,7 @@ This differs from Request Count because a single request can resolve a field mul
               <div className="space-y-2">
                 {isLoading
                   ? null
-                  : query.data?.target?.schemaCoordinateStats.errors.edges.map(
+                  : query.data?.target?.schemaCoordinateStats.errors?.edges.map(
                       ({ node: error }) => (
                         <div key={error.code} className="flex items-center">
                           <p className="truncate text-sm font-medium">{error.code}</p>

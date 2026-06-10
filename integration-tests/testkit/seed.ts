@@ -52,6 +52,7 @@ import {
   readOperationsStats,
   readSchemaCoordinateStats,
   readTokenInfo,
+  readTotalRequests,
   updateBaseSchema,
   updateMemberRole,
   updateMetricAlertRule,
@@ -1212,7 +1213,7 @@ export function initSeed() {
                   const from = formatISO(opts?.from ?? subHours(Date.now(), 1));
                   const to = formatISO(opts?.to ?? Date.now());
                   const check = async () => {
-                    const statsResult = await readOperationsStats(
+                    const statsResult = await readTotalRequests(
                       {
                         bySelector: {
                           organizationSlug: organization.slug,
@@ -1224,15 +1225,9 @@ export function initSeed() {
                         from,
                         to,
                       },
-                      {},
                       ownerToken,
                     ).then(r => r.expectNoGraphQLErrors());
-                    const totalRequests =
-                      statsResult.target?.operationsStats.operations.edges.reduce(
-                        (total, edge) => total + edge.node.count,
-                        0,
-                      );
-                    return totalRequests == n;
+                    return statsResult.target?.totalRequests == n;
                   };
 
                   return pollFor(check);
