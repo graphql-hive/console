@@ -2,7 +2,10 @@ import { ResourceAssignmentModeType } from 'testkit/gql/graphql';
 import { initSeed } from 'testkit/seed';
 import { getServiceHost } from 'testkit/utils';
 import z from 'zod';
+import { SuperTokensStore } from '@hive/api/modules/auth/providers/supertokens-store';
+import { NoopLogger } from '@hive/api/modules/shared/providers/logger';
 import { psql } from '@hive/postgres';
+import { createStorage } from '@hive/storage';
 
 const apiHost = await getServiceHost('server', 3001).then(r => `http://${r}`);
 const oidcEndpointBase = apiHost + '/scim/v2';
@@ -3098,3 +3101,129 @@ describe.concurrent('provider flows', () => {
     });
   });
 });
+
+test.concurrent(
+  'externalId (sub) conflict with existing OIDC user takes over the user',
+  async ({ expect }) => {
+    const seed = initSeed();
+    const owner = await seed.createOwner();
+    const org = await owner.createOrg();
+    const { pool } = await seed.createDbConnection();
+    const { oidcIntegration } = await org.createOIDCIntegration();
+    const supertokensStore = new SuperTokensStore(pool, new NoopLogger());
+
+    // We gonna create an existing user that signed up via OIDC before.
+
+    const subOrExternalId = 'iliketurtles';
+    const email = defaultUserValues.emails[0].value;
+
+    const supertokensUser = await supertokensStore.createOIDCUser({
+      email,
+      oidcIntegrationId: oidcIntegration.id,
+      sub: subOrExternalId,
+    });
+    const storage = await createStorage(seed.getPGConnectionString(), 1);
+
+    try {
+      await storage.ensureUserExists({
+        email,
+        firstName: null,
+        lastName: null,
+        oidcIntegration: oidcIntegration,
+        superTokensUserId: supertokensUser.userId,
+      });
+
+      // Now we gonna attempt to provision the user with the same sub/externalId via SCIM
+
+      const accessToken = await org.createOrganizationAccessToken({
+        permissions: ['member:describe', 'member:modify'],
+        resources: { mode: ResourceAssignmentModeType.Granular },
+      });
+      const scimAuthHeader = 'Bearer ' + accessToken.privateAccessKey;
+
+      const headers = {
+        'Content-Type': 'application/scim+json',
+        Authorization: scimAuthHeader,
+      };
+
+      const userResponse = await createUser(headers, {
+        externalId: subOrExternalId,
+      });
+
+      expect(userResponse.status).toEqual(201);
+    } finally {
+      await storage.destroy();
+    }
+  },
+);
+
+test.concurrent(
+  'externalId (sub) conflict for OIDC user combined with userName (psql "users"."display_name") conflict for existing SCIM user yields correct error',
+  async ({ expect }) => {
+    const seed = initSeed();
+    const owner = await seed.createOwner();
+    const org = await owner.createOrg();
+    const { pool } = await seed.createDbConnection();
+    const { oidcIntegration } = await org.createOIDCIntegration();
+    const supertokensStore = new SuperTokensStore(pool, new NoopLogger());
+
+    // We gonna create an existing user that signed up via OIDC before.
+
+    const subOrExternalId = 'iliketurtles';
+    const email = defaultUserValues.emails[0].value;
+
+    const supertokensUser = await supertokensStore.createOIDCUser({
+      email,
+      oidcIntegrationId: oidcIntegration.id,
+      sub: subOrExternalId,
+    });
+    const storage = await createStorage(seed.getPGConnectionString(), 1);
+    try {
+      await storage.ensureUserExists({
+        email,
+        firstName: null,
+        lastName: null,
+        oidcIntegration: oidcIntegration,
+        superTokensUserId: supertokensUser.userId,
+      });
+
+      // Now we gonna create some random unrelated scim user
+
+      const accessToken = await org.createOrganizationAccessToken({
+        permissions: ['member:describe', 'member:modify'],
+        resources: { mode: ResourceAssignmentModeType.Granular },
+      });
+      const scimAuthHeader = 'Bearer ' + accessToken.privateAccessKey;
+
+      const headers = {
+        'Content-Type': 'application/scim+json',
+        Authorization: scimAuthHeader,
+      };
+
+      const userResponse = await createUser(headers, {
+        userName: 'userA',
+      });
+      expect(userResponse.status).toEqual(201);
+
+      // Now we gonna attempt to provision and take over the OIDC user
+      // The important thing is that the userName is shared!
+
+      const conflictUserResponse = await createUser(headers, {
+        userName: 'userA',
+        externalId: subOrExternalId,
+      });
+      expect(conflictUserResponse.status).toEqual(409);
+      expect(await conflictUserResponse.json()).toMatchInlineSnapshot(`
+      {
+        detail: Another user with the same userName already exists.,
+        schemas: [
+          urn:ietf:params:scim:api:messages:2.0:Error,
+        ],
+        status: 409,
+      }
+    `);
+    } finally {
+      await storage.destroy();
+    }
+  },
+);

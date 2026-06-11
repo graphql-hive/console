@@ -612,7 +612,7 @@ export const createSCIMPlugin =
       }
 
       const createUserResult = await pool.transaction('scim user creation', async trx => {
-        const supertokensUser = await supertokensStore.createOIDCUser(
+        const supertokensUser = await supertokensStore.createOIDCUserIfNotExists(
           {
             sub: bodyParse.data.externalId,
             email,

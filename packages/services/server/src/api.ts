@@ -9,13 +9,6 @@ export type Context = {
   crypto: CryptoProvider;
 };
 
-const oidcDefaultScopes = [
-  OrganizationAccessScope.READ,
-  ProjectAccessScope.READ,
-  TargetAccessScope.READ,
-  TargetAccessScope.REGISTRY_READ,
-];
-
 const t = initTRPC.context<Context>().create();
 
 export const internalApiRouter = t.router({
@@ -37,7 +30,6 @@ export const internalApiRouter = t.router({
         oidcIntegration: input.oidcIntegrationId
           ? {
               id: input.oidcIntegrationId,
-              defaultScopes: oidcDefaultScopes,
             }
           : null,
       });

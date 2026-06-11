@@ -58,7 +58,6 @@ export interface Storage {
     email: string;
     oidcIntegration: null | {
       id: string;
-      defaultScopes: Array<OrganizationAccessScope | ProjectAccessScope | TargetAccessScope>;
     };
     firstName: string | null;
     lastName: string | null;
