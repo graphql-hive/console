@@ -2394,6 +2394,7 @@ export async function createStorage(
           }
           , "additional_scopes" = ${args.additionalScopes ? psql.array(args.additionalScopes, 'text') : psql`"additional_scopes"`}
           , "oauth_api_url" = NULL
+          , "user_id_claim" = ${args.userIdClaim ?? psql`"user_id_claim"`}
         WHERE
           "id" = ${args.oidcIntegrationId}
         RETURNING
@@ -4021,6 +4022,7 @@ const OIDCIntegrationBaseModel = z.object({
   defaultRoleId: z.string().nullable(),
   defaultAssignedResources: z.any().nullable(),
   requireInvitation: z.boolean(),
+  userIdClaim: z.string().nullable(),
 });
 
 const OIDCIntegrationLegacyModel = OIDCIntegrationBaseModel.extend({
@@ -4039,6 +4041,7 @@ const OIDCIntegrationLegacyModel = OIDCIntegrationBaseModel.extend({
   requireInvitation: record.requireInvitation,
   defaultMemberRoleId: record.defaultRoleId,
   defaultResourceAssignment: record.defaultAssignedResources,
+  userIdClaim: record.userIdClaim ?? 'sub',
 }));
 
 const LatestOIDCIntegrationModel = OIDCIntegrationBaseModel.extend({
@@ -4060,6 +4063,7 @@ const LatestOIDCIntegrationModel = OIDCIntegrationBaseModel.extend({
   requireInvitation: record.requireInvitation,
   defaultMemberRoleId: record.defaultRoleId,
   defaultResourceAssignment: record.defaultAssignedResources,
+  userIdClaim: record.userIdClaim ?? 'sub',
 }));
 
 const OIDCIntegrationModel = z.union([OIDCIntegrationLegacyModel, LatestOIDCIntegrationModel]);
@@ -4468,6 +4472,7 @@ const oidcIntegrationFields = (prefix: TaggedTemplateLiteralInvocation = psql``)
   , ${prefix}"default_role_id" AS "defaultRoleId"
   , ${prefix}"default_assigned_resources" AS "defaultAssignedResources"
   , ${prefix}"require_invitation" AS "requireInvitation"
+  , ${prefix}"user_id_claim" AS "userIdClaim"
 `;
 
 const OrganizationModel = z

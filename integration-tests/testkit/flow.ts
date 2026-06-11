@@ -31,6 +31,7 @@ import type {
   UpdateBaseSchemaInput,
   UpdateMemberRoleInput,
   UpdateMetricAlertRuleInput,
+  UpdateOidcIntegrationInput,
   UpdateOrganizationSlugInput,
   UpdateProjectSlugInput,
   UpdateSchemaCompositionInput,
@@ -1946,6 +1947,45 @@ export function deleteTarget(input: DeleteTargetInput, authToken: string) {
           }
           error {
             message
+          }
+        }
+      }
+    `),
+    authToken,
+    variables: {
+      input,
+    },
+  });
+}
+
+export function updateOIDCIntegration(input: UpdateOidcIntegrationInput, authToken: string) {
+  return execute({
+    document: graphql(`
+      mutation TestKit_OIDCIntegration_UpdateOIDCIntegrationMutation(
+        $input: UpdateOIDCIntegrationInput!
+      ) {
+        updateOIDCIntegration(input: $input) {
+          ok {
+            updatedOIDCIntegration {
+              id
+              tokenEndpoint
+              userinfoEndpoint
+              authorizationEndpoint
+              clientId
+              clientSecretPreview
+              additionalScopes
+            }
+          }
+          error {
+            message
+            details {
+              clientId
+              clientSecret
+              tokenEndpoint
+              userinfoEndpoint
+              authorizationEndpoint
+              additionalScopes
+            }
           }
         }
       }

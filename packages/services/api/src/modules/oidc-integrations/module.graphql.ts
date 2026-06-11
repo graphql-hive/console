@@ -27,6 +27,11 @@ export default gql`
     List of domains registered with this OIDC integration.
     """
     registeredDomains: [OIDCIntegrationDomain!]!
+    """
+    The claim that should be used for identifying a user.
+    By default the "sub" claim is used.
+    """
+    userIdClaim: String
   }
 
   extend type Mutation {
@@ -227,6 +232,13 @@ export default gql`
     userinfoEndpoint: String
     authorizationEndpoint: String
     additionalScopes: [String!]
+    """
+    The claim that should be used to uniquely identify a user.
+    When using a SCIM provider, the claim should map to the "externalId" shared with the SCIM provider.
+
+    Defaults to the "sub" claim.
+    """
+    userIdClaim: String
   }
 
   type UpdateOIDCIntegrationResult {

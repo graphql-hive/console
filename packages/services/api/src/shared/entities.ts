@@ -194,6 +194,7 @@ export interface OIDCIntegration {
   requireInvitation: boolean;
   defaultMemberRoleId: string | null;
   defaultResourceAssignment: ResourceAssignmentGroup | null;
+  userIdClaim: string;
 }
 
 export interface CDNAccessToken {

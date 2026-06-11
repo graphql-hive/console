@@ -478,6 +478,7 @@ export interface Storage {
     userinfoEndpoint: string | null;
     authorizationEndpoint: string | null;
     additionalScopes: readonly string[] | null;
+    userIdClaim: string | null;
   }): Promise<OIDCIntegration>;
 
   deleteOIDCIntegration(_: { oidcIntegrationId: string }): Promise<void>;
