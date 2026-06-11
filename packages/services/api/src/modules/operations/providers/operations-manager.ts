@@ -756,6 +756,61 @@ export class OperationsManager {
     });
   }
 
+  @cache<
+    {
+      period: DateRange;
+    } & TargetSelector
+  >(selector => JSON.stringify(selector))
+  @traceFn('OperationManager.readErrorCodesOverTimeAtSchemaCoordinate', {
+    initAttributes: input => ({
+      'hive.organization.id': input.organizationId,
+      'hive.project.id': input.projectId,
+      'hive.target.id': input.targetId,
+    }),
+  })
+  async readErrorCodesOverTimeAtSchemaCoordinate({
+    period,
+    resolution,
+    organizationId: organization,
+    projectId: project,
+    targetId: target,
+    schemaCoordinate,
+  }: {
+    period: DateRange;
+    resolution: number;
+    operations?: readonly string[];
+    schemaCoordinate: string;
+  } & TargetSelector): Promise<
+    {
+      code: string;
+      date: number;
+      count: number;
+    }[]
+  > {
+    this.logger.info(
+      'Reading error codes over time (period=%o, resolution=%s, target=%s, schemaCoordinate=%s)',
+      period,
+      resolution,
+      target,
+      schemaCoordinate,
+    );
+    await this.session.assertPerformAction({
+      action: 'project:describe',
+      organizationId: organization,
+      params: {
+        organizationId: organization,
+        projectId: project,
+      },
+    });
+
+    return this.reader.errorCodesOverTimeAtSchemaCoordinate({
+      target,
+      period,
+      resolution,
+      schemaCoordinate,
+    });
+  }
+
   async readDurationOverTime({
     period,
     resolution,

@@ -5,7 +5,8 @@ import type { SchemaCoordinateStatsResolvers } from './../../../__generated__/ty
 export const SchemaCoordinateStats: Pick<
   SchemaCoordinateStatsResolvers,
   | 'clients'
-  | 'errors'
+  | 'errorCodes'
+  | 'errorCodesOverTime'
   | 'failuresOverTime'
   | 'operations'
   | 'requestsOverTime'
@@ -163,7 +164,11 @@ export const SchemaCoordinateStats: Pick<
       schemaCoordinate,
     });
   },
-  errors: async ({ organization, project, target, period, schemaCoordinate }, _, { injector }) => {
+  errorCodes: async (
+    { organization, project, target, period, schemaCoordinate },
+    _,
+    { injector },
+  ) => {
     const nodes = await injector.get(OperationsManager).errorCodesAtSchemaCoordinate({
       organizationId: organization,
       projectId: project,
@@ -180,5 +185,24 @@ export const SchemaCoordinateStats: Pick<
         startCursor: '',
       },
     };
+  },
+  errorCodesOverTime: async (
+    { organization, project, target, period, schemaCoordinate },
+    { resolution },
+    { injector },
+  ) => {
+    // Failures are tracked to fields and not types. Don't bother doing a lookup for types.
+    if (!schemaCoordinate.includes('.')) {
+      return null;
+    }
+
+    return injector.get(OperationsManager).readErrorCodesOverTimeAtSchemaCoordinate({
+      targetId: target,
+      projectId: project,
+      organizationId: organization,
+      period,
+      resolution,
+      schemaCoordinate,
+    });
   },
 };

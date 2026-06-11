@@ -200,7 +200,14 @@ export default gql`
 
     operations: OperationStatsValuesConnection! @tag(name: "public")
     clients: ClientStatsValuesConnection! @tag(name: "public")
-    errors: ErrorStatsValuesConnection
+    errorCodes: ErrorStatsValuesConnection
+    errorCodesOverTime: [ErrorCodesOverTime!]
+  }
+
+  type ErrorCodesOverTime {
+    code: String!
+    date: DateTime!
+    count: SafeInt!
   }
 
   type OperationsStats {

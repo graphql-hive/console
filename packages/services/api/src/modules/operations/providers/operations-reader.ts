@@ -2986,8 +2986,76 @@ export class OperationsReader {
         period,
       }),
     );
-    // @TODO safe parse
-    return result.data;
+    return result.data.map(d => ({
+      count: ensureNumber(d.count),
+      code: d.code,
+    }));
+  }
+
+  async errorCodesOverTimeAtSchemaCoordinate({
+    schemaCoordinate,
+    target,
+    period,
+    resolution,
+  }: {
+    schemaCoordinate: string;
+    target: string;
+    period: {
+      from: Date;
+      to: Date;
+    };
+    resolution: number;
+  }) {
+    const interval = calculateTimeWindow({ period, resolution });
+    const intervalRaw = this.clickHouse.translateWindow(interval);
+    const roundedPeriod = {
+      from: toStartOfInterval(period.from, interval.value, interval.unit),
+      to: toEndOfInterval(period.to, interval.value, interval.unit),
+    };
+    const startDateTimeFormatted = formatDate(roundedPeriod.from);
+    const endDateTimeFormatted = formatDate(roundedPeriod.to);
+
+    const result = await this.clickHouse.query<{
+      date: string;
+      code: string;
+      count: string;
+    }>(
+      this.pickAggregationByPeriod({
+        query: aggregationTableName => sql`
+        SELECT
+          toDateTime(
+            intDiv(
+              toUnixTimestamp(timestamp),
+              toUInt32(${String(interval.seconds)})
+            ) * toUInt32(${String(interval.seconds)})
+          ) as date,
+          code,
+          sum(total_errors) as count
+        FROM ${aggregationTableName('coordinate_errors')}
+        ${this.createFilter({
+          period: roundedPeriod,
+          target,
+          extra: [sql`coordinate=${schemaCoordinate}`],
+        })}
+        GROUP BY code, timestamp
+        ORDER BY date
+          WITH FILL
+            FROM toDateTime(${startDateTimeFormatted}, 'UTC')
+            TO toDateTime(${endDateTimeFormatted}, 'UTC')
+            STEP INTERVAL ${intervalRaw}
+      `,
+        queryId: aggregation => `error_codes_over_time_at_${aggregation}`,
+        timeout: 15_000,
+        period,
+        resolution,
+      }),
+    );
+
+    return result.data.map(row => ({
+      code: row.code,
+      date: toUnixTimestamp(row.date),
+      count: ensureNumber(row.count),
+    }));
   }
 
   public createFilter({
