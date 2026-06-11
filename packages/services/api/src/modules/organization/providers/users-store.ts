@@ -99,6 +99,16 @@ export class UsersStore {
             , ${args.externalId}
             , ${args.isDisabled ? psql`NOW()` : null}
           )
+          ON CONFLICT ("supertoken_user_id")
+            DO UPDATE
+              SET
+                "email" = lower(EXCLUDED."email")
+                , "display_name" = EXCLUDED."display_name"
+                , "full_name" = EXCLUDED."full_name"
+                , "oidc_integration_id" = EXCLUDED."oidc_integration_id"
+                , "provisioned_by_organization_id" = EXCLUDED."provisioned_by_organization_id"
+                , "external_id" = EXCLUDED."external_id"
+                , "deactivated_at" = EXCLUDED."deactivated_at"
           RETURNING
             ${userFields}
         `;
@@ -114,6 +124,8 @@ export class UsersStore {
             ${user.id}
             , ${args.superTokensUserId}
           )
+          ON CONFLICT
+            DO NOTHING
         `);
 
         await trx.query(psql` /* Add member to org */
@@ -140,6 +152,8 @@ export class UsersStore {
             }
             , NOW()
           )
+          ON CONFLICT
+            DO NOTHING
         `);
 
         return user;

@@ -1524,7 +1524,6 @@ export async function registerSupertokensAtHome(
           lastName: null,
           oidcIntegration: {
             id: oidcIntegration.id,
-            defaultScopes: [],
           },
         });
 
