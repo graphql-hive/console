@@ -1,5 +1,13 @@
 # @graphql-hive/yoga
 
+## 0.48.1
+
+### Patch Changes
+
+- Updated dependencies
+  [[`63a9126`](https://github.com/graphql-hive/console/commit/63a912691f0c7e5afdd2cc864de53df289592b54)]:
+  - @graphql-hive/core@0.21.1
+
 ## 0.48.0
 
 ### Minor Changes
