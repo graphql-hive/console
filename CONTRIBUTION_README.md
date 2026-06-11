@@ -1,191 +1,154 @@
+# Contribution 1: Operation Filter List on Insights Page Is Cut Off at the Bottom
+
+**Contribution Number:** 1
+**Student:** Qimin Wu
+**Issue:** https://github.com/graphql-hive/console/issues/3816
+**Status:** Phase I Complete
+
+---
+
+## Why I Chose This Issue
+
+I chose this issue because it is a beginner-friendly bug with a clear problem and expected result. The issue affects the user interface, which matches my interest in JavaScript, HTML, and CSS. I also wanted to gain experience contributing to an open-source project and learn how to investigate and fix a real bug in a production application.
+
+Another reason I chose this issue is that the scope appears manageable for a first contribution. The issue description clearly explains the problem, and the project maintainers labeled it as a good first issue. I hope to learn more about debugging frontend issues, understanding a larger codebase, and working through the open-source contribution process.
+
+---
+
+## Understanding the Issue
+
+### Problem Description
+
+On the Insights page, the operation filter dropdown list is cut off at the bottom. Because of this, users cannot see all available items in the filter list.
+
+### Expected Behavior
+
+The operation filter dropdown should display all available items. If the list is longer than the available space, users should be able to scroll and access every option.
+
+### Current Behavior
+
+Part of the dropdown list is hidden because of an overflow or layout issue. Some items cannot be seen or selected.
+
+### Affected Components
+
+Based on the issue description, the affected components are likely the Insights page UI, the operation filter dropdown component, and the related CSS styling that controls layout, height, and overflow behavior.
+
+---
+
 ## Reproduction Process
 
 ### Environment Setup
 
-I cloned the GraphQL Hive repository locally and set up the development environment on macOS.
+I cloned the GraphQL Hive repository and set up the development environment on my MacBook.
 
-Commands and setup steps completed:
+Steps completed:
 
-```bash
-git clone https://github.com/Qimin5/console.git
-cd console
-```
+1. Cloned the repository:
 
-Installed Node.js using nvm:
+   ```bash
+   git clone https://github.com/Qimin5/console.git
+   cd console
+   ```
 
-```bash
-nvm install 24
-nvm use 24
-node -v
-```
+2. Installed Node.js v24.16.0 using nvm.
 
-Node version used:
+3. Installed pnpm v10.33.2 using Corepack.
 
-```bash
-v24.16.0
-```
+4. Installed Docker Desktop and verified Docker was running.
 
-Installed pnpm using Corepack:
+5. Created a local environment file:
 
-```bash
-corepack enable
-corepack prepare pnpm@latest --activate
-pnpm -v
-```
+   ```bash
+   echo "ENVIRONMENT=local" > .env
+   ```
 
-pnpm version used:
+6. Installed project dependencies:
 
-```bash
-10.33.2
-```
+   ```bash
+   pnpm i
+   ```
 
-Installed Docker Desktop and verified Docker:
+7. Started local services and databases:
 
-```bash
-docker --version
-```
+   ```bash
+   pnpm local:setup
+   ```
 
-Docker version used:
+8. Generated required files:
 
-```bash
-Docker version 29.5.3
-```
+   ```bash
+   pnpm generate
+   ```
 
-Created the required local `.env` file:
+9. Built the project:
 
-```bash
-echo "ENVIRONMENT=local" > .env
-```
+   ```bash
+   pnpm build
+   ```
 
-Installed dependencies:
+10. Started the application:
 
-```bash
-pnpm i
-```
+    ```bash
+    pnpm dev:hive
+    ```
 
-Started local Docker dependencies and ran database migrations:
+11. Opened the application at:
 
-```bash
-pnpm local:setup
-```
+    ```text
+    http://localhost:3000
+    ```
 
-Generated required GraphQL and database types:
-
-```bash
-pnpm generate
-```
-
-Built the project:
-
-```bash
-pnpm build
-```
-
-Started the local Hive development environment:
-
-```bash
-pnpm dev:hive
-```
-
-Opened the local app at:
-
-```text
-http://localhost:3000
-```
-
-I created a local user account, organization, project, and target. I was able to reach the target
-Insights page locally.
-
-### Branch Link
-
-```text
-https://github.com/Qimin5/console/tree/fix-issue-3816
-```
-
-### Issue
-
-GitHub issue:
-
-```text
-#3816 - operation filter list on insights page is cut off at the bottom
-```
+12. Created a local account, organization, project, and target to access the Insights page.
 
 ### Steps to Reproduce
 
-1. Start the local Hive development environment:
+1. Start the Hive application locally:
 
-```bash
-pnpm dev:hive
-```
+   ```bash
+   pnpm dev:hive
+   ```
 
-2. Open the local Hive app:
+2. Open the application in a browser:
 
-```text
-http://localhost:3000
-```
+   ```text
+   http://localhost:3000
+   ```
 
-3. Sign in or create a local account.
+3. Sign in and open a project target.
 
-4. Create or open an organization.
+4. Navigate to the **Insights** page.
 
-5. Create or open a project.
+5. Open the **Operation Filter** dropdown.
 
-6. Select a target, such as:
+6. When many operations are available, observe the operation list.
 
-```text
-production
-```
+### Reproduction Evidence
 
-7. Open the **Insights** page.
+**Working Branch:**
+https://github.com/Qimin5/console/tree/fix-issue-3816
 
-8. Ensure the target has many operations available. The issue screenshot shows the operation filter
-   modal with many operation names.
+**Screenshots:**
 
-9. Click the **Operations** filter.
+1. Local Hive application successfully running on localhost and displaying the Insights page.
 
-10. Open the **Filter by operation** list/modal.
+    <img width="1379" height="832" alt="Screenshot 2026-06-11 at 2 21 54 PM" src="https://github.com/user-attachments/assets/ecde9905-8c06-477d-b593-88b0a2bed9d2" />
 
-11. Observe the operation list.
+2. Screenshot from GitHub issue #3816 demonstrating the operation filter overflow problem.
 
-### Expected Behavior
+ <img width="845" height="1332" alt="297354689-1b7188a6-72b7-45dc-8b85-adb7e9c36f3e" src="https://github.com/user-attachments/assets/b642a55b-59aa-4545-9f65-cc172f91e24e" />
 
-The operation list should be fully scrollable. A user should be able to access all operation items,
-including the items at the bottom of the list.
 
-### Actual Behavior
+**My Findings:**
 
-When many operations are shown, the operation filter list overflows and gets cut off at the bottom.
-Some operations are not visible or accessible.
-
----
+The operation filter dropdown appears to overflow its container when a large number of operations are present. As a result, some items near the bottom of the list become hidden and inaccessible. The issue appears to be related to the frontend layout, height constraints, or scrolling behavior of the filter component.
 
 ## Solution Approach
 
-### Understand
+### Analysis
 
-The bug is a UI overflow issue on the Insights page. The **Filter by operation** modal/list can
-contain many operations. When the list is long, the modal does not constrain the list height
-correctly, so the bottom of the list is cut off.
+Based on the issue description and investigation of the codebase, this appears to be a frontend layout and overflow issue. The operation filter list is likely missing proper height constraints or scroll behavior. The issue is probably located in the Insights page filter UI rather than the backend API.
 
-### Match
-
-I will compare this modal with other Hive UI components that display scrollable lists, filters,
-dialogs, or modals. I will look for existing patterns using fixed height, max height, overflow
-behavior, or scrollable containers.
-
-### Plan
-
-1. Locate the frontend component responsible for the Insights operation filter.
-2. Inspect the modal/list layout.
-3. Check whether the operation list container has correct height or max-height styling.
-4. Check whether the scroll behavior is applied to the correct container.
-5. Add or adjust styling so the operation list is constrained and vertically scrollable.
-6. Verify that all operation items can be reached when many operations are present.
-7. Test the modal on different browser/window heights.
-
-### Files to Investigate
-
-Initial files found during investigation:
+During investigation, I identified several files related to the Insights filtering system:
 
 ```text
 packages/web/app/src/pages/target-insights.tsx
@@ -195,30 +158,26 @@ packages/web/app/src/components/target/insights/list.tsx
 packages/web/app/src/pages/target-insights-manage-filters.tsx
 ```
 
-The likely fix is in the frontend Insights filter UI, not in the backend resolver or GraphQL tests.
+### Proposed Solution
 
-### Implement
+Update the operation filter dropdown so that it properly handles large lists. The dropdown should have a constrained height and allow vertical scrolling when the number of operations exceeds the available space.
 
-Implementation will happen in Phase III on my working branch:
+### Implementation Plan
 
-```text
-fix-issue-3816
-```
+Using UMPIRE framework (adapted):
 
-### Review
+**Understand:**
+The operation filter dropdown does not properly display long lists of operations. Users cannot access items near the bottom of the list.
 
-I will review the project’s contributing and development documentation before opening a pull
-request. I will make sure the fix follows the existing React, TypeScript, and styling patterns used
-in the Hive dashboard.
+**Match:**
+Review similar dropdowns, dialogs, and filter components in the Hive application to identify existing scrolling and overflow patterns.
 
-### Evaluate
+**Plan:**
 
-To verify the fix:
-
-1. Start Hive locally.
-2. Open a target with many operations.
-3. Go to the Insights page.
-4. Open the operation filter modal.
-5. Confirm the operation list scrolls correctly.
-6. Confirm no items are cut off at the bottom.
-7. Run relevant checks or tests if available.
+1. Locate the component responsible for rendering the operation filter.
+2. Inspect the layout and styling for height and overflow behavior.
+3. Identify the container causing the content to be clipped.
+4. Add or adjust scrolling behavior and maximum height constraints.
+5. Verify that all operation entries remain accessible.
+6. Test the fix on different screen sizes and browser window heights.
+7. Run any relevant tests before creating a pull request.
