@@ -143,7 +143,6 @@ const GroupRow_GroupFragment = graphql(`
   fragment GroupRow_GroupFragment on Group {
     id
     name
-    disabledAt
     memberCount
     roleMappingCount
     ...ManageGroupMapping_GroupFragment
@@ -201,7 +200,6 @@ type GroupRowProps = {
 function GroupRow(props: GroupRowProps): ReactNode {
   const group = useFragment(GroupRow_GroupFragment, props.group);
   const organization = useFragment(GroupRow_OrganizationFragment, props.organization);
-  const isDisabled = !!group.disabledAt;
   const [isExpanded, setIsExpanded] = useState(false);
   const { toast } = useToast();
 
@@ -225,7 +223,7 @@ function GroupRow(props: GroupRowProps): ReactNode {
   const [sheetNode, setSheetNode] = useState(null as ReactNode | null);
 
   return (
-    <div className={cn(isDisabled && 'opacity-75')}>
+    <div>
       <div
         className={cn(
           'grid cursor-pointer grid-cols-[1fr_auto_auto] items-center gap-4 px-4 py-3 transition-colors',
@@ -246,33 +244,12 @@ function GroupRow(props: GroupRowProps): ReactNode {
               <ChevronRightIcon className="h-4 w-4" />
             )}
           </button>
-          <div
-            className={cn(
-              'flex h-9 w-9 items-center justify-center rounded-full',
-              isDisabled ? 'bg-red-900' : 'bg-neutral-4',
-            )}
-          >
-            {isDisabled ? (
-              <AlertTriangleIcon className="h-4 w-4" />
-            ) : (
-              <UsersIcon className="h-4 w-4" />
-            )}
+          <div className={cn('flex h-9 w-9 items-center justify-center rounded-full')}>
+            <UsersIcon className="h-4 w-4" />
           </div>
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2">
-              <span
-                className={cn(
-                  'text-sm font-medium',
-                  isDisabled ? 'line-through' : 'text-foreground',
-                )}
-              >
-                {group.name}
-              </span>
-              {isDisabled && (
-                <Badge variant="destructive" className="text-xs font-normal">
-                  Disabled
-                </Badge>
-              )}
+              <span className={cn('text-foreground text-sm font-medium')}>{group.name}</span>
               <Badge variant="outline" className="text-xs font-normal">
                 {group.roleMappingCount === 0 ? (
                   <>No mappings configured</>

@@ -1581,10 +1581,6 @@ export default gql`
     """
     createdAt: DateTime!
     """
-    When the group was last disabled.
-    """
-    disabledAt: DateTime
-    """
     List of role assignments for the group that determine the authorizion scope
     of the group.
     """
