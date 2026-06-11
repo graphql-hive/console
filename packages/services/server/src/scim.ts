@@ -320,10 +320,10 @@ export const createSCIMPlugin =
         const updateUserExternalIdResult = await pool.transaction(
           'scim external id update',
           async trx => {
-            await supertokensStore.updateOIDCUserSub(
+            await supertokensStore.updateOIDCUserExternalId(
               {
                 oidcIntegrationId,
-                sub: newExternalId,
+                externalId: newExternalId,
                 userId: user.supertokenUserId,
               },
               trx,
@@ -614,7 +614,7 @@ export const createSCIMPlugin =
       const createUserResult = await pool.transaction('scim user creation', async trx => {
         const supertokensUser = await supertokensStore.createOIDCUserIfNotExists(
           {
-            sub: bodyParse.data.externalId,
+            externalId: bodyParse.data.externalId,
             email,
             oidcIntegrationId: result.oidcIntegration.id,
           },

@@ -336,14 +336,14 @@ export class SuperTokensStore {
     return await trx.maybeOne(query).then(ThirdpartUserModel.nullable().parse);
   }
 
-  async findOIDCUserBySubAndOIDCIntegrationId(
-    args: { sub: string; oidcIntegrationId: string },
+  async findOIDCUserByExternalIdAndOIDCIntegrationId(
+    args: { externalId: string; oidcIntegrationId: string },
     trx: CommonQueryMethods = this.pool,
   ) {
     return this.findThirdPartyUser(
       {
         thirdPartyId: 'oidc',
-        thirdPartyUserId: `${args.oidcIntegrationId}-${args.sub}`,
+        thirdPartyUserId: `${args.oidcIntegrationId}-${args.externalId}`,
       },
       trx,
     );
@@ -474,24 +474,24 @@ export class SuperTokensStore {
   }
 
   async createOIDCUser(
-    args: { email: string; sub: string; oidcIntegrationId: string },
+    args: { email: string; externalId: string; oidcIntegrationId: string },
     trx: CommonQueryMethods = this.pool,
   ) {
     return this.createThirdPartyUser(
       {
         email: args.email,
         thirdPartyId: 'oidc',
-        thirdPartyUserId: args.oidcIntegrationId + '-' + args.sub,
+        thirdPartyUserId: args.oidcIntegrationId + '-' + args.externalId,
       },
       trx,
     );
   }
 
   async createOIDCUserIfNotExists(
-    args: { email: string; sub: string; oidcIntegrationId: string },
+    args: { email: string; externalId: string; oidcIntegrationId: string },
     trx: CommonQueryMethods = this.pool,
   ) {
-    const existingUser = await this.findOIDCUserBySubAndOIDCIntegrationId(args, trx);
+    const existingUser = await this.findOIDCUserByExternalIdAndOIDCIntegrationId(args, trx);
     if (existingUser) {
       this.logger.debug('supertokens user already exists.');
       return existingUser;
@@ -500,14 +500,14 @@ export class SuperTokensStore {
     return await this.createOIDCUser(args, trx);
   }
 
-  async updateOIDCUserSub(
-    args: { userId: string; oidcIntegrationId: string; sub: string },
+  async updateOIDCUserExternalId(
+    args: { userId: string; oidcIntegrationId: string; externalId: string },
     trx: CommonQueryMethods,
   ) {
     await trx.query(psql`
       UPDATE "supertokens_thirdparty_users"
       SET
-        "third_party_user_id" = ${`${args.oidcIntegrationId}-${args.sub}`}
+        "third_party_user_id" = ${`${args.oidcIntegrationId}-${args.externalId}`}
       WHERE
         "app_id" = 'public'
         AND "third_party_id" = 'oidc'

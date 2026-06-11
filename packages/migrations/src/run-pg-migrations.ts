@@ -192,5 +192,6 @@ export const runPGMigrations = async (args: { slonik: PostgresDatabasePool; runT
       await import('./actions/2026.06.05T00-00-00.metric-alert-filter-shared-only'),
       await import('./actions/2026.06.01T00-00-00.scim-user-group-provisioning'),
       await import('./actions/2026.06.01T00-00-00.scim-user-indices'),
+      await import('./actions/2026.06.11T00-00-00.oidc-integration-user-id-claim'),
     ],
   });

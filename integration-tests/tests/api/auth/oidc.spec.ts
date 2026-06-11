@@ -25,7 +25,7 @@ test.concurrent(
     const auth = await oidc.runGetAuthorizationUrl();
 
     oidc.setUser({
-      sub: 'test-user',
+      userIdClaim: 'test-user',
       email,
     });
 
@@ -74,7 +74,7 @@ test.concurrent(
     let auth = await oidc.runGetAuthorizationUrl();
 
     oidc.setUser({
-      sub: 'test-user',
+      userIdClaim: 'test-user',
       email: oldEmail,
     });
 
@@ -98,7 +98,7 @@ test.concurrent(
     auth = await oidc.runGetAuthorizationUrl();
 
     oidc.setUser({
-      sub: 'test-user',
+      userIdClaim: 'test-user',
       email: newEmail,
     });
 
@@ -136,7 +136,7 @@ test.concurrent(
     let auth = await oidc.runGetAuthorizationUrl();
 
     oidc.setUser({
-      sub: 'test-user',
+      userIdClaim: 'test-user',
       email,
     });
 
@@ -153,5 +153,77 @@ test.concurrent(
         id: expect.any(String),
       },
     });
+  },
+);
+
+test.concurrent(
+  'Custom user id claim is used instead of default sub claim if configured',
+  async ({ expect }) => {
+    const seed = initSeed();
+    const { createOrg } = await seed.createOwner();
+    const { createOIDCIntegration } = await createOrg();
+
+    const { createMockServerAndUpdateIntegrationEndpoints, registerFakeDomain: registerDomain } =
+      await createOIDCIntegration();
+    const domain = await registerDomain();
+    const oidc = await createMockServerAndUpdateIntegrationEndpoints({
+      userIdClaim: 'custom_user_id_claim',
+    });
+
+    const email = 'foo@' + domain;
+
+    let auth = await oidc.runGetAuthorizationUrl();
+
+    oidc.setUser({
+      userIdScope: 'custom_user_id_claim',
+      userIdClaim: 'test-user',
+      email,
+    });
+
+    const result = await oidc.runSignInUp({
+      state: auth.state,
+    });
+    const meResult = await execute({
+      document: TestMeQuery,
+      authToken: result.accessToken,
+    }).then(r => r.expectNoGraphQLErrors());
+    expect(meResult).toMatchObject({
+      me: {
+        email,
+        id: expect.any(String),
+      },
+    });
+  },
+);
+
+test.concurrent(
+  'Custom user id claim missing raises correct error response',
+  async ({ expect }) => {
+    const seed = initSeed();
+    const { createOrg } = await seed.createOwner();
+    const { createOIDCIntegration } = await createOrg();
+
+    const { createMockServerAndUpdateIntegrationEndpoints, registerFakeDomain: registerDomain } =
+      await createOIDCIntegration();
+    const domain = await registerDomain();
+    const oidc = await createMockServerAndUpdateIntegrationEndpoints({
+      userIdClaim: 'custom_user_id_claim',
+    });
+
+    const email = 'foo@' + domain;
+
+    let auth = await oidc.runGetAuthorizationUrl();
+
+    oidc.setUser({
+      userIdScope: 'super_custom_user_id_claim',
+      userIdClaim: 'test-user',
+      email,
+    });
+
+    await expect(
+      oidc.runSignInUp({
+        state: auth.state,
+      }),
+    ).rejects.toThrowErrorMatchingInlineSnapshot(`[Error: SignInUp failed]`);
   },
 );
