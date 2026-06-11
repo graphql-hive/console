@@ -790,7 +790,10 @@ export async function registerSupertokensAtHome(
           });
         }
 
-        const scopes = ['openid', 'email', ...oidcIntegration.additionalScopes];
+        const scopes = new Set(['openid', 'email', ...oidcIntegration.additionalScopes]);
+        if (oidcIntegration.userIdClaim) {
+          scopes.add(oidcIntegration.userIdClaim);
+        }
 
         const oidClientConfig = new oidClient.Configuration(
           {
@@ -814,7 +817,7 @@ export async function registerSupertokensAtHome(
 
         let parameters: Record<string, string> = {
           redirect_uri: redirect_uri.toString(),
-          scope: scopes.join(' '),
+          scope: Array.from(scopes).join(' '),
           code_challenge: codeChallenge,
           code_challenge_method: 'S256',
         };
@@ -1408,24 +1411,15 @@ export async function registerSupertokensAtHome(
           });
         }
 
-        const userInfoBody = z
-          .object({
-            sub: z.string(),
-            email: z
-              .string()
-              // make sure the email is transformed to lower-case
-              // sometimes the OIDC provider love giving us custom formatted ones
-              .transform(email => email.toLowerCase())
-              .optional()
-              .nullable(),
-          })
-          .safeParse(userInfoBodyJSON.data);
+        const userInfoBody = z.record(z.unknown()).safeParse(userInfoBodyJSON.data);
 
         if (!userInfoBody.success) {
           req.log.debug('received invalid JSON body from user info endpoint');
           broadcastLog(
             oidcIntegration.id,
-            `unexpected body received from the user info endpoint '${oidcIntegration.userinfoEndpoint}'. Expected 'sub' and 'email' grant. HTTP Status: ${grantResponse.status}. HTTP Body: '${userInfoBodyRaw}'`,
+            `unexpected body received from the user info endpoint '${oidcIntegration.userinfoEndpoint}'.` +
+              ` Expected '${oidcIntegration.userIdClaim}' and 'email' grant.` +
+              ` HTTP Status: ${grantResponse.status}. HTTP Body: '${userInfoBodyRaw}'`,
           );
 
           return rep.status(200).send({
@@ -1434,7 +1428,14 @@ export async function registerSupertokensAtHome(
           });
         }
 
-        if (!userInfoBody.data.email) {
+        const email = z
+          .string()
+          // make sure the email is transformed to lower-case
+          // sometimes the OIDC provider love giving us custom formatted ones
+          .transform(email => email.toLowerCase())
+          .safeParse(userInfoBody.data.email);
+
+        if (!email.data) {
           req.log.debug('user info endpoint response did not contain the email grant');
           broadcastLog(
             oidcIntegration.id,
@@ -1449,9 +1450,48 @@ export async function registerSupertokensAtHome(
 
         req.log.debug('lookup existing user for sub and oidc integration');
 
-        let user = await supertokensStore.findOIDCUserBySubAndOIDCIntegrationId({
+        const rawExternalIdClaim = (userInfoBody.data as Record<string, unknown>)[
+          oidcIntegration.userIdClaim
+        ];
+
+        if (rawExternalIdClaim == null) {
+          req.log.debug("user id claim '%s' is missing in user info.", oidcIntegration.userIdClaim);
+          broadcastLog(
+            oidcIntegration.id,
+            `unexpected body received from the user info endpoint '${oidcIntegration.userinfoEndpoint}'.` +
+              ` Expected '${oidcIntegration.userIdClaim}'claim.` +
+              ` HTTP Status: ${grantResponse.status}. HTTP Body: '${userInfoBodyRaw}'`,
+          );
+
+          return rep.status(200).send({
+            status: 'SIGN_IN_UP_NOT_ALLOWED',
+            reason: 'Sign in failed. Please contact your organization administrator.',
+          });
+        }
+
+        const externalUserId = z.string().safeParse(rawExternalIdClaim).data ?? null;
+
+        if (!externalUserId) {
+          req.log.debug(
+            "user id claim is not a string '%s' is missing in user info.",
+            oidcIntegration.userIdClaim,
+          );
+          broadcastLog(
+            oidcIntegration.id,
+            `unexpected body received from the user info endpoint '${oidcIntegration.userinfoEndpoint}'.` +
+              ` Expected '${oidcIntegration.userIdClaim}' claim to be a string.` +
+              ` HTTP Status: ${grantResponse.status}. HTTP Body: '${userInfoBodyRaw}'`,
+          );
+
+          return rep.status(200).send({
+            status: 'SIGN_IN_UP_NOT_ALLOWED',
+            reason: 'Sign in failed. Please contact your organization administrator.',
+          });
+        }
+
+        let user = await supertokensStore.findOIDCUserByExternalIdAndOIDCIntegrationId({
           oidcIntegrationId: oidcIntegration.id,
-          sub: userInfoBody.data.sub,
+          externalId: externalUserId,
         });
 
         if (!user) {
@@ -1459,7 +1499,7 @@ export async function registerSupertokensAtHome(
           user = await supertokensStore.createOIDCUser({
             email: userInfoBody.data.email,
             oidcIntegrationId: oidcIntegration.id,
-            sub: userInfoBody.data.sub,
+            externalId: externalUserId,
           });
         } else if (user.email !== userInfoBody.data.email) {
           req.log.debug('providers email has changed. Update record.');

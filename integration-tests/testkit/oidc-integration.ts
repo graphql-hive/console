@@ -5,6 +5,7 @@ import z from 'zod';
 import formDataPlugin from '@fastify/formbody';
 import { psql, type PostgresDatabasePool } from '@hive/postgres';
 import { createServer, type FastifyReply, type FastifyRequest } from '@hive/service-common';
+import { updateOIDCIntegration } from './flow';
 import { graphql } from './gql';
 import { execute } from './graphql';
 import { getServiceHost, pollForEmailVerificationLink } from './utils';
@@ -77,37 +78,6 @@ const CreateOIDCIntegrationMutation = graphql(`
           additionalScopes
           oidcUserJoinOnly
           oidcUserAccessOnly
-        }
-      }
-      error {
-        message
-        details {
-          clientId
-          clientSecret
-          tokenEndpoint
-          userinfoEndpoint
-          authorizationEndpoint
-          additionalScopes
-        }
-      }
-    }
-  }
-`);
-
-const UpdateOIDCIntegrationMutation = graphql(`
-  mutation TestKit_OIDCIntegration_UpdateOIDCIntegrationMutation(
-    $input: UpdateOIDCIntegrationInput!
-  ) {
-    updateOIDCIntegration(input: $input) {
-      ok {
-        updatedOIDCIntegration {
-          id
-          tokenEndpoint
-          userinfoEndpoint
-          authorizationEndpoint
-          clientId
-          clientSecretPreview
-          additionalScopes
         }
       }
       error {
@@ -213,24 +183,23 @@ export async function createOIDCIntegration(args: {
       additionalScopes?: Array<string>;
       clientId?: string;
       clientSecret?: string;
+      userIdClaim?: string;
     }) {
       const server = await createMockOIDCServer();
 
-      const result = await execute({
-        document: UpdateOIDCIntegrationMutation,
-        variables: {
-          input: {
-            oidcIntegrationId: oidcIntegration.id,
-            authorizationEndpoint: server.url + '/authorize',
-            tokenEndpoint: server.url + '/token',
-            userinfoEndpoint: server.url + '/userinfo',
-            additionalScopes: args?.additionalScopes,
-            clientId: args?.clientId,
-            clientSecret: args?.clientSecret,
-          },
+      const result = await updateOIDCIntegration(
+        {
+          oidcIntegrationId: oidcIntegration.id,
+          authorizationEndpoint: server.url + '/authorize',
+          tokenEndpoint: server.url + '/token',
+          userinfoEndpoint: server.url + '/userinfo',
+          additionalScopes: args?.additionalScopes,
+          clientId: args?.clientId,
+          clientSecret: args?.clientSecret,
+          userIdClaim: args?.userIdClaim,
         },
         authToken,
-      }).then(r => r.expectNoGraphQLErrors());
+      ).then(r => r.expectNoGraphQLErrors());
 
       if (!result.updateOIDCIntegration.ok) {
         throw new Error(result.updateOIDCIntegration.error?.message ?? 'Unexpected error.');
@@ -238,7 +207,7 @@ export async function createOIDCIntegration(args: {
 
       return {
         setHandler: server.setHandler,
-        setUser(args: { email: string; sub: string }) {
+        setUser(args: { email: string; userIdClaim: string; userIdScope?: string }) {
           server.setHandler(async (req, res) => {
             if (req.routeOptions.url === '/token') {
               return res.status(200).send({
@@ -248,7 +217,7 @@ export async function createOIDCIntegration(args: {
 
             if (req.routeOptions.url === '/userinfo') {
               return res.status(200).send({
-                sub: args.sub,
+                [args.userIdScope ?? 'sub']: args.userIdClaim,
                 email: args.email,
               });
             }
@@ -311,14 +280,19 @@ export async function createOIDCIntegration(args: {
                 ),
               }),
             })
-            .parse(rawBody);
+            .safeParse(rawBody);
+
+          if (!body.data) {
+            throw new Error('SignInUp failed');
+          }
+
           const cookies = setCookie.parse(result.headers.getSetCookie());
           return {
             accessToken: cookies.find(c => c.name === 'sAccessToken')?.value ?? '',
             user: {
-              id: body.user.id,
-              email: body.user.emails[0],
-              userIdentityId: body.user.loginMethods[0]?.recipeUserId,
+              id: body.data.user.id,
+              email: body.data.user.emails[0],
+              userIdentityId: body.data.user.loginMethods[0]?.recipeUserId,
             },
           };
         },
