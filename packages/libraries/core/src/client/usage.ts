@@ -42,7 +42,7 @@ interface UsageCollector {
     duration: number;
     experimental__persistedDocumentHash?: string;
     /** Optionally send subgraph request information. This provides a deeper level of usage metrics */
-    fetches?: CollectedOperationSubgraphRequest[] | null;
+    fetches?: CollectedOperationSubRequest[] | null;
   }): void;
   /** collect a long-lived GraphQL request/subscription (subscription operation) */
   collectSubscription(args: {
@@ -126,7 +126,7 @@ export function createUsage(pluginOptions: HiveInternalPluginOptions): UsageColl
         set(action) {
           if (action.type === 'request') {
             const operation = action.data;
-            const fetches = operation.execution.fetches?.map((f): OperationSubgraphRequest => {
+            const fetches = operation.execution.fetches?.map((f): OperationSubRequest => {
               const documentRoot = f.document.definitions.find(
                 (def): def is OperationDefinitionNode => def.kind === 'OperationDefinition',
               )?.operation satisfies 'subscription' | 'mutation' | 'query' | undefined;
@@ -346,7 +346,7 @@ export function createUsage(pluginOptions: HiveInternalPluginOptions): UsageColl
      */
     collect() {
       const sinceStart = measureDuration();
-      const subRequests: CollectedOperationSubgraphRequest[] = [];
+      const subRequests: CollectedOperationSubRequest[] = [];
       return {
         subrequest({ subgraph, type, paths }) {
           const start = sinceStart();
@@ -484,13 +484,6 @@ export function createCollector({
   );
 }
 
-export interface Report {
-  size: number;
-  map: OperationMap;
-  operations?: RequestOperation[];
-  subscriptionOperations?: SubscriptionOperation[];
-}
-
 type AgentAction =
   | {
       type: 'request';
@@ -501,7 +494,14 @@ type AgentAction =
       data: CollectedSubscriptionOperation;
     };
 
-type OperationSubgraphRequest = {
+export interface Report {
+  size: number;
+  map: OperationMap;
+  operations?: RequestOperation[];
+  subscriptionOperations?: SubscriptionOperation[];
+}
+
+type OperationSubRequest = {
   /** Delta start time from "timestamp" */
   start: number;
 
@@ -533,7 +533,7 @@ type OperationSubgraphRequest = {
   type: 'ROOT' | 'ENTITY';
 };
 
-type CollectedOperationSubgraphRequest = {
+type CollectedOperationSubRequest = {
   /** Delta start time from "timestamp" */
   start: number;
 
@@ -578,7 +578,7 @@ interface CollectedOperation {
     ok: boolean;
     duration: number;
     errorsTotal: number;
-    fetches?: CollectedOperationSubgraphRequest[] | null;
+    fetches?: CollectedOperationSubRequest[] | null;
   };
   persistedDocumentHash?: string;
   client?: ClientInfo | null;
@@ -601,14 +601,11 @@ interface RequestOperation {
     ok: boolean;
     duration: number;
     errorsTotal: number;
-    fetches?: OperationSubgraphRequest[] | null;
+    fetches?: OperationSubRequest[] | null;
   };
   persistedDocumentHash?: string;
   metadata?: {
-    client?: {
-      name: string;
-      version: string;
-    };
+    client?: ClientInfo;
   };
 }
 
@@ -617,10 +614,7 @@ interface SubscriptionOperation {
   timestamp: number;
   persistedDocumentHash?: string;
   metadata?: {
-    client?: {
-      name: string;
-      version: string;
-    };
+    client?: ClientInfo;
   };
 }
 

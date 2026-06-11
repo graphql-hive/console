@@ -175,7 +175,7 @@ describe('extractCoordinates', () => {
   });
 
   describe('Null Handling', () => {
-    it('Gracefully skips unresolvable or null fields', () => {
+    it('Includes null values in fields but not the returnType of that field', () => {
       const schema = buildSchema(`
         type Query { user: User }
         type User { id: ID, name: String }
