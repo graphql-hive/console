@@ -1497,7 +1497,7 @@ export async function registerSupertokensAtHome(
         if (!user) {
           req.log.debug('no existing user found. create new one.');
           user = await supertokensStore.createOIDCUser({
-            email: userInfoBody.data.email,
+            email: email.data,
             oidcIntegrationId: oidcIntegration.id,
             externalId: externalUserId,
           });
@@ -1505,7 +1505,7 @@ export async function registerSupertokensAtHome(
           req.log.debug('providers email has changed. Update record.');
           user = await supertokensStore.updateOIDCUserEmail({
             userId: user.userId,
-            newEmail: userInfoBody.data.email,
+            newEmail: email.data,
           });
 
           if (!user) {
@@ -1520,7 +1520,7 @@ export async function registerSupertokensAtHome(
 
         const ensureUserExists = await storage.ensureUserExists({
           superTokensUserId: user.userId,
-          email: userInfoBody.data.email,
+          email: email.data,
           firstName: null,
           lastName: null,
           oidcIntegration: {
