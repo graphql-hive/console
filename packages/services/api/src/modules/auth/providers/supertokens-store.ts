@@ -314,7 +314,10 @@ export class SuperTokensStore {
     return await this.pool.maybeOne(query).then(SessionInfoModel.nullable().parse);
   }
 
-  async findThirdPartyUser(args: { thirdPartyId: string; thirdPartyUserId: string }) {
+  async findThirdPartyUser(
+    args: { thirdPartyId: string; thirdPartyUserId: string },
+    trx: CommonQueryMethods = this.pool,
+  ) {
     const query = psql`
       SELECT
         "user_id" AS "userId"
@@ -330,17 +333,26 @@ export class SuperTokensStore {
         AND "third_party_user_id" = ${args.thirdPartyUserId}
     `;
 
-    return await this.pool.maybeOne(query).then(ThirdpartUserModel.nullable().parse);
+    return await trx.maybeOne(query).then(ThirdpartUserModel.nullable().parse);
   }
 
-  async findOIDCUserBySubAndOIDCIntegrationId(args: { sub: string; oidcIntegrationId: string }) {
-    return this.findThirdPartyUser({
-      thirdPartyId: 'oidc',
-      thirdPartyUserId: `${args.oidcIntegrationId}-${args.sub}`,
-    });
+  async findOIDCUserBySubAndOIDCIntegrationId(
+    args: { sub: string; oidcIntegrationId: string },
+    trx: CommonQueryMethods = this.pool,
+  ) {
+    return this.findThirdPartyUser(
+      {
+        thirdPartyId: 'oidc',
+        thirdPartyUserId: `${args.oidcIntegrationId}-${args.sub}`,
+      },
+      trx,
+    );
   }
 
-  async updateOIDCUserEmail(args: { userId: string; newEmail: string }, trx: CommonQueryMethods) {
+  async updateOIDCUserEmail(
+    args: { userId: string; newEmail: string },
+    trx: CommonQueryMethods = this.pool,
+  ) {
     const query = psql`
       UPDATE
         "supertokens_thirdparty_users"
@@ -367,7 +379,7 @@ export class SuperTokensStore {
       thirdPartyId: string;
       thirdPartyUserId: string;
     },
-    trx?: CommonQueryMethods,
+    trx: CommonQueryMethods = this.pool,
   ) {
     const userId = crypto.randomUUID();
     const now = Date.now();
@@ -463,7 +475,7 @@ export class SuperTokensStore {
 
   async createOIDCUser(
     args: { email: string; sub: string; oidcIntegrationId: string },
-    trx?: CommonQueryMethods,
+    trx: CommonQueryMethods = this.pool,
   ) {
     return this.createThirdPartyUser(
       {
@@ -473,6 +485,19 @@ export class SuperTokensStore {
       },
       trx,
     );
+  }
+
+  async createOIDCUserIfNotExists(
+    args: { email: string; sub: string; oidcIntegrationId: string },
+    trx: CommonQueryMethods = this.pool,
+  ) {
+    const existingUser = await this.findOIDCUserBySubAndOIDCIntegrationId(args, trx);
+    if (existingUser) {
+      this.logger.debug('supertokens user already exists.');
+      return existingUser;
+    }
+    this.logger.debug('supertokens does not yet exist. Create it.');
+    return await this.createOIDCUser(args, trx);
   }
 
   async updateOIDCUserSub(
