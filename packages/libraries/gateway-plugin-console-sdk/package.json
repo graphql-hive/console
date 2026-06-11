@@ -6,7 +6,7 @@
   "repository": {
     "type": "git",
     "url": "graphql-hive/platform",
-    "directory": "packages/libraries/gateway"
+    "directory": "packages/libraries/gateway-plugin-console-sdk"
   },
   "homepage": "https://the-guild.dev/graphql/hive",
   "author": {

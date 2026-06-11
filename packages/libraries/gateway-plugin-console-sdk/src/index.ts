@@ -17,7 +17,7 @@ export function createHive(clientOrOptions: HivePluginOptions) {
   return createHiveClient({
     ...clientOrOptions,
     agent: {
-      name: 'hive-client-yoga',
+      name: 'hive-client-gateway-sdk',
       version,
       ...clientOrOptions.agent,
     },
@@ -42,7 +42,7 @@ export function useHive(clientOrOptions: HiveClient | GatewayPluginOptions): Gat
     : createHive({
         ...clientOrOptions,
         agent: {
-          name: 'hive-client-envelop',
+          name: 'hive-client-gateway-sdk',
           ...clientOrOptions.agent,
         },
       });
