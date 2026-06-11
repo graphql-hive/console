@@ -233,7 +233,7 @@ function SchemaCoordinateView(props: {
       )}
       {fieldLevelMetricsDisplayState === FieldLevelMetricsDisplayState.OnWithWarning ? (
         <div className="pb-8">
-          <Alert>
+          <Alert className="border-info_10 bg-info_08 text-info">
             <AlertCircleIcon className="size-4" />
             <AlertTitle>Coordinate resolutions were recently added.</AlertTitle>
             <AlertDescription>
