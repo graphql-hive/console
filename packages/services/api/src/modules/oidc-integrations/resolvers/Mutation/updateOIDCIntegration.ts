@@ -13,6 +13,7 @@ export const updateOIDCIntegration: NonNullable<
     userinfoEndpoint: input.userinfoEndpoint ?? null,
     authorizationEndpoint: input.authorizationEndpoint ?? null,
     additionalScopes: input.additionalScopes ?? null,
+    userIdClaim: input.userIdClaim ?? null,
   });
 
   if (result.type === 'ok') {
