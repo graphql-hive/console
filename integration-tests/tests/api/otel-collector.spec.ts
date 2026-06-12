@@ -1,3 +1,4 @@
+import { pollFor } from 'testkit/flow';
 import { clickHouseQuery } from '../../testkit/clickhouse';
 import { graphql } from '../../testkit/gql';
 import { GraphQlOperationType, ResourceAssignmentModeType } from '../../testkit/gql/graphql';
@@ -501,89 +502,114 @@ test('traces can be filtered via GraphQL API', async () => {
   await waitForTraceInNormalized(trace2Id);
   await waitForTraceInNormalized(trace3Id);
 
+  // Use this function to give our backend (clickhouse) time to insert into the materialized views' tables
+  const waitForExpectations = (expectation: () => Promise<void>) => {
+    return pollFor(async () => {
+      try {
+        await expectation();
+        return true;
+      } catch (e) {
+        console.error(e);
+        return false;
+      }
+    });
+  };
+
   // Test 1: Filter by operation name
-  const resultByOpName = await execute({
-    document: TargetTracesWithFiltersQuery,
-    variables: {
-      targetId: target.id,
-      operationNames: ['GetUsers'],
-    },
-    authToken: ownerToken,
+  await waitForExpectations(async () => {
+    const resultByOpName = await execute({
+      document: TargetTracesWithFiltersQuery,
+      variables: {
+        targetId: target.id,
+        operationNames: ['GetUsers'],
+      },
+      authToken: ownerToken,
+    });
+    const dataByOpName = await resultByOpName.expectNoGraphQLErrors();
+    expect(dataByOpName.target?.traces.edges.length).toBe(1);
+    expect(dataByOpName.target?.traces.edges[0].node.operationName).toBe('GetUsers');
   });
-  const dataByOpName = await resultByOpName.expectNoGraphQLErrors();
-  expect(dataByOpName.target?.traces.edges.length).toBe(1);
-  expect(dataByOpName.target?.traces.edges[0].node.operationName).toBe('GetUsers');
 
   // Test 2: Filter by operation type (query only)
-  const resultByOpType = await execute({
-    document: TargetTracesWithFiltersQuery,
-    variables: {
-      targetId: target.id,
-      operationTypes: [GraphQlOperationType.Query],
-    },
-    authToken: ownerToken,
+  await waitForExpectations(async () => {
+    const resultByOpType = await execute({
+      document: TargetTracesWithFiltersQuery,
+      variables: {
+        targetId: target.id,
+        operationTypes: [GraphQlOperationType.Query],
+      },
+      authToken: ownerToken,
+    });
+    const dataByOpType = await resultByOpType.expectNoGraphQLErrors();
+    expect(dataByOpType.target?.traces.edges.length).toBe(2);
+    const opNames = dataByOpType.target?.traces.edges.map(e => e.node.operationName);
+    expect(opNames).toContain('GetUsers');
+    expect(opNames).toContain('GetProducts');
   });
-  const dataByOpType = await resultByOpType.expectNoGraphQLErrors();
-  expect(dataByOpType.target?.traces.edges.length).toBe(2);
-  const opNames = dataByOpType.target?.traces.edges.map(e => e.node.operationName);
-  expect(opNames).toContain('GetUsers');
-  expect(opNames).toContain('GetProducts');
 
   // Test 3: Filter by success status
-  const resultBySuccess = await execute({
-    document: TargetTracesWithFiltersQuery,
-    variables: {
-      targetId: target.id,
-      success: [false],
-    },
-    authToken: ownerToken,
+  await waitForExpectations(async () => {
+    const resultBySuccess = await execute({
+      document: TargetTracesWithFiltersQuery,
+      variables: {
+        targetId: target.id,
+        success: [false],
+      },
+      authToken: ownerToken,
+    });
+    const dataBySuccess = await resultBySuccess.expectNoGraphQLErrors();
+    expect(dataBySuccess.target?.traces.edges.length).toBe(1);
+    expect(dataBySuccess.target?.traces.edges[0].node.httpStatusCode).toBe('500');
   });
-  const dataBySuccess = await resultBySuccess.expectNoGraphQLErrors();
-  expect(dataBySuccess.target?.traces.edges.length).toBe(1);
-  expect(dataBySuccess.target?.traces.edges[0].node.httpStatusCode).toBe('500');
 
   // Test 4: Filter by HTTP status code
-  const resultByStatus = await execute({
-    document: TargetTracesWithFiltersQuery,
-    variables: {
-      targetId: target.id,
-      httpStatusCodes: ['200'],
-    },
-    authToken: ownerToken,
+  await waitForExpectations(async () => {
+    const resultByStatus = await execute({
+      document: TargetTracesWithFiltersQuery,
+      variables: {
+        targetId: target.id,
+        httpStatusCodes: ['200'],
+      },
+      authToken: ownerToken,
+    });
+    const dataByStatus = await resultByStatus.expectNoGraphQLErrors();
+    expect(dataByStatus.target?.traces.edges.length).toBe(2);
+    expect(dataByStatus.target?.traces.edges.every(e => e.node.httpStatusCode === '200')).toBe(
+      true,
+    );
   });
-  const dataByStatus = await resultByStatus.expectNoGraphQLErrors();
-  expect(dataByStatus.target?.traces.edges.length).toBe(2);
-  expect(dataByStatus.target?.traces.edges.every(e => e.node.httpStatusCode === '200')).toBe(true);
 
   // Test 5: Verify filter options are populated
-  const resultFilterOptions = await execute({
-    document: TargetTracesWithFiltersQuery,
-    variables: {
-      targetId: target.id,
-    },
-    authToken: ownerToken,
+  await waitForExpectations(async () => {
+    const resultFilterOptions = await execute({
+      document: TargetTracesWithFiltersQuery,
+      variables: {
+        targetId: target.id,
+      },
+      authToken: ownerToken,
+    });
+    const dataFilterOptions = await resultFilterOptions.expectNoGraphQLErrors();
+    const filterOptions = dataFilterOptions.target?.tracesFilterOptions;
+
+    // Check operation names are available
+    expect(filterOptions?.operationName.length).toBeGreaterThanOrEqual(3);
+    const opNameValues = filterOptions?.operationName.map(o => o.value);
+    expect(opNameValues).toContain('GetUsers');
+    expect(opNameValues).toContain('CreateUser');
+    expect(opNameValues).toContain('GetProducts');
+
+    // Check operation types are available
+    expect(filterOptions?.operationType.length).toBeGreaterThanOrEqual(2);
+    const opTypeValues = filterOptions?.operationType.map(o => o.value);
+    expect(opTypeValues).toContain('query');
+    expect(opTypeValues).toContain('mutation');
+
+    // Check HTTP status codes are available
+    expect(filterOptions?.httpStatusCode.length).toBeGreaterThanOrEqual(2);
+    const statusValues = filterOptions?.httpStatusCode.map(o => o.value);
+    expect(statusValues).toContain('200');
+    expect(statusValues).toContain('500');
   });
-  const dataFilterOptions = await resultFilterOptions.expectNoGraphQLErrors();
-  const filterOptions = dataFilterOptions.target?.tracesFilterOptions;
-
-  // Check operation names are available
-  expect(filterOptions?.operationName.length).toBeGreaterThanOrEqual(3);
-  const opNameValues = filterOptions?.operationName.map(o => o.value);
-  expect(opNameValues).toContain('GetUsers');
-  expect(opNameValues).toContain('CreateUser');
-  expect(opNameValues).toContain('GetProducts');
-
-  // Check operation types are available
-  expect(filterOptions?.operationType.length).toBeGreaterThanOrEqual(2);
-  const opTypeValues = filterOptions?.operationType.map(o => o.value);
-  expect(opTypeValues).toContain('query');
-  expect(opTypeValues).toContain('mutation');
-
-  // Check HTTP status codes are available
-  expect(filterOptions?.httpStatusCode.length).toBeGreaterThanOrEqual(2);
-  const statusValues = filterOptions?.httpStatusCode.map(o => o.value);
-  expect(statusValues).toContain('200');
-  expect(statusValues).toContain('500');
 });
 
 test('otel-collector populates otel_traces_normalized for GraphQL spans', async () => {
