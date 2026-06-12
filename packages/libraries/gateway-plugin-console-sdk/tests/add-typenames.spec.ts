@@ -1,4 +1,4 @@
-import { buildSchema, parse, print } from 'graphql';
+import { buildSchema, parse as gql, print } from 'graphql';
 import { addTypenames } from '../src/add-typenames.js';
 
 // ---------------------------------------------------------------------------
@@ -75,22 +75,9 @@ const schema = buildSchema(`
   }
 `);
 
-// ---------------------------------------------------------------------------
-// Helpers
-// ---------------------------------------------------------------------------
-
-function gql(src: string) {
-  return parse(src);
-}
-
 function typenameCount(doc: ReturnType<typeof addTypenames>): number {
   return (print(doc).match(/__typename/g) ?? []).length;
 }
-
-// ---------------------------------------------------------------------------
-// Concrete object types with no abstract ancestry in the query
-// — __typename should NOT be added
-// ---------------------------------------------------------------------------
 
 describe('concrete object types (not inside an abstract field)', () => {
   it('does not add __typename when the root field returns a concrete type', () => {
@@ -106,7 +93,6 @@ describe('concrete object types (not inside an abstract field)', () => {
   });
 
   it('does not add __typename for nested concrete object fields', () => {
-    // User → Address: both concrete with no abstract involvement.
     const doc = gql(`
       query {
         user(id: "1") {
@@ -121,10 +107,6 @@ describe('concrete object types (not inside an abstract field)', () => {
   });
 });
 
-// ---------------------------------------------------------------------------
-// Interface types — __typename SHOULD be added on the abstract field itself
-// ---------------------------------------------------------------------------
-
 describe('interface types', () => {
   it('adds __typename when a field returns an interface', () => {
     const doc = gql(`
@@ -134,7 +116,16 @@ describe('interface types', () => {
         }
       }
     `);
-    expect(typenameCount(addTypenames(doc, schema))).toBe(1);
+    const result = addTypenames(doc, schema);
+    expect(print(result)).toMatchInlineSnapshot(`
+      {
+        node(id: "1") {
+          id
+          __typename
+        }
+      }
+    `);
+    expect(typenameCount(result)).toBe(1);
   });
 
   it('adds __typename for a list field returning an interface', () => {
@@ -145,11 +136,19 @@ describe('interface types', () => {
         }
       }
     `);
-    expect(typenameCount(addTypenames(doc, schema))).toBe(1);
+    const result = addTypenames(doc, schema);
+    expect(print(result)).toMatchInlineSnapshot(`
+      {
+        animals {
+          name
+          __typename
+        }
+      }
+    `);
+    expect(typenameCount(result)).toBe(1);
   });
 
   it('adds __typename on a nested interface field inside a concrete type', () => {
-    // user → User (concrete, no __typename); friends → [Node] (interface, add __typename)
     const doc = gql(`
       query {
         user(id: "1") {
@@ -159,11 +158,21 @@ describe('interface types', () => {
         }
       }
     `);
-    expect(typenameCount(addTypenames(doc, schema))).toBe(1);
+    const result = addTypenames(doc, schema);
+    expect(print(result)).toMatchInlineSnapshot(`
+      {
+        user(id: "1") {
+          friends {
+            id
+            __typename
+          }
+        }
+      }
+    `);
+    expect(typenameCount(result)).toBe(1);
   });
 
   it('adds __typename on a self-referencing interface field', () => {
-    // animals → Animal (interface); offspring → Animal (interface)
     const doc = gql(`
       query {
         animals {
@@ -174,8 +183,20 @@ describe('interface types', () => {
         }
       }
     `);
-    // 2: one per abstract selection set
-    expect(typenameCount(addTypenames(doc, schema))).toBe(2);
+    const result = addTypenames(doc, schema);
+    expect(print(result)).toMatchInlineSnapshot(`
+      {
+        animals {
+          name
+          offspring {
+            name
+            __typename
+          }
+          __typename
+        }
+      }
+    `);
+    expect(typenameCount(result)).toBe(2);
   });
 
   it('does not duplicate __typename when already present on an interface field', () => {
@@ -187,13 +208,18 @@ describe('interface types', () => {
         }
       }
     `);
-    expect(typenameCount(addTypenames(doc, schema))).toBe(1);
+    const result = addTypenames(doc, schema);
+    expect(print(result)).toMatchInlineSnapshot(`
+      {
+        node(id: "1") {
+          __typename
+          id
+        }
+      }
+    `);
+    expect(typenameCount(result)).toBe(1);
   });
 });
-
-// ---------------------------------------------------------------------------
-// Union types — __typename SHOULD be added on the abstract field itself
-// ---------------------------------------------------------------------------
 
 describe('union types', () => {
   it('adds __typename on the union field selection set', () => {
@@ -210,20 +236,25 @@ describe('union types', () => {
       }
     `);
     const result = addTypenames(doc, schema);
-    const printed = print(result);
-    // search (union) → __typename on the outer set
-    expect(printed).toContain('__typename');
+    expect(print(result)).toMatchInlineSnapshot(`
+      {
+        search(term: "foo") {
+          ... on User {
+            name
+          }
+          ... on Post {
+            title
+          }
+          __typename
+        }
+      }
+    `);
+    expect(typenameCount(result)).toBe(1);
   });
 });
 
-// ---------------------------------------------------------------------------
-// Concrete inline-fragment branches of abstract types
-// — __typename SHOULD be added inside the branch
-// ---------------------------------------------------------------------------
-
 describe('concrete inline-fragment branches of abstract fields', () => {
-  it('adds __typename inside a concrete inline fragment on an interface field', () => {
-    // node → Node (interface): outer set + ... on User branch both get __typename
+  it('adds __typename on the abstract type implementing an inline fragment', () => {
     const doc = gql(`
       query {
         node(id: "1") {
@@ -234,8 +265,17 @@ describe('concrete inline-fragment branches of abstract fields', () => {
       }
     `);
     const result = addTypenames(doc, schema);
-    // 2: one on the node (Node interface) set, one inside the ... on User branch
-    expect(typenameCount(result)).toBe(2);
+    expect(print(result)).toMatchInlineSnapshot(`
+      {
+        node(id: "1") {
+          ... on User {
+            name
+          }
+          __typename
+        }
+      }
+    `);
+    expect(typenameCount(result)).toBe(1);
   });
 
   it('adds __typename inside each concrete branch of a union', () => {
@@ -252,8 +292,20 @@ describe('concrete inline-fragment branches of abstract fields', () => {
       }
     `);
     const result = addTypenames(doc, schema);
-    // search (union) + ... on User + ... on Post = 3
-    expect(typenameCount(result)).toBe(3);
+    expect(print(result)).toMatchInlineSnapshot(`
+      {
+        search(term: "foo") {
+          ... on User {
+            name
+          }
+          ... on Post {
+            title
+          }
+          __typename
+        }
+      }
+    `);
+    expect(typenameCount(result)).toBe(1);
   });
 
   it('does not duplicate __typename in a concrete branch that already has it', () => {
@@ -268,13 +320,21 @@ describe('concrete inline-fragment branches of abstract fields', () => {
       }
     `);
     const result = addTypenames(doc, schema);
-    // node set + User branch (not duplicated) = 2
+    expect(print(result)).toMatchInlineSnapshot(`
+      {
+        node(id: "1") {
+          ... on User {
+            __typename
+            name
+          }
+          __typename
+        }
+      }
+    `);
     expect(typenameCount(result)).toBe(2);
   });
 
   it('adds __typename in a concrete branch and recurses into its abstract sub-fields', () => {
-    // pets → [Animal] (interface); ... on Dog (concrete branch) gets __typename;
-    // Dog.offspring → [Animal] (interface) also gets __typename.
     const doc = gql(`
       query {
         user(id: "1") {
@@ -290,12 +350,26 @@ describe('concrete inline-fragment branches of abstract fields', () => {
       }
     `);
     const result = addTypenames(doc, schema);
-    // pets (Animal interface) + ... on Dog branch + offspring (Animal interface) = 3
-    expect(typenameCount(result)).toBe(3);
+    expect(print(result)).toMatchInlineSnapshot(`
+      {
+        user(id: "1") {
+          pets {
+            ... on Dog {
+              breed
+              offspring {
+                name
+                __typename
+              }
+            }
+            __typename
+          }
+        }
+      }
+    `);
+    expect(typenameCount(result)).toBe(2);
   });
 
   it('adds __typename in an untyped inline fragment inside an abstract field', () => {
-    // An anonymous `... { }` inherits the parent abstract type.
     const doc = gql(`
       query {
         node(id: "1") {
@@ -306,7 +380,17 @@ describe('concrete inline-fragment branches of abstract fields', () => {
       }
     `);
     const result = addTypenames(doc, schema);
-    // node (Node interface) → __typename; anonymous fragment inherits Node → also abstract → __typename
+    expect(print(result)).toMatchInlineSnapshot(`
+      {
+        node(id: "1") {
+          ... {
+            id
+            __typename
+          }
+          __typename
+        }
+      }
+    `);
     expect(typenameCount(result)).toBe(2);
   });
 });
@@ -331,8 +415,19 @@ describe('mixed fields', () => {
       }
     `);
     const result = addTypenames(doc, schema);
-    // address is concrete with no abstract parent → no __typename
-    // pets is abstract → __typename
+    expect(print(result)).toMatchInlineSnapshot(`
+      {
+        user(id: "1") {
+          address {
+            city
+          }
+          pets {
+            name
+            __typename
+          }
+        }
+      }
+    `);
     expect(typenameCount(result)).toBe(1);
   });
 });
@@ -355,7 +450,19 @@ describe('named fragments', () => {
       }
     `);
     const result = addTypenames(doc, schema);
-    // node field (Node) + NodeFields fragment body (also on Node) = 2
+    expect(print(result)).toMatchInlineSnapshot(`
+      {
+        node(id: "1") {
+          ...NodeFields
+          __typename
+        }
+      }
+
+      fragment NodeFields on Node {
+        id
+        __typename
+      }
+    `);
     expect(typenameCount(result)).toBe(2);
   });
 
@@ -372,11 +479,17 @@ describe('named fragments', () => {
         name
       }
     `);
-    // user is concrete, UserFields is on User (concrete) → no __typename anywhere
     expect(typenameCount(addTypenames(doc, schema))).toBe(0);
   });
 
-  it('does not add __typename to the fragment spread node itself', () => {
+  /**
+   * @NOTE This may be unnecessary, but it's not harmful. The typename is requested on an abstract
+   * field always, regardless of the selection set inside. This simplifies the logic.
+   * The __typename on the fragment could be avoided, but it helps ensure that if
+   * federation splits the request due to entity types, that that fragment still
+   * will receive the typename.
+   */
+  it('adds __typename to the fragment spread node and the parent field', () => {
     const doc = gql(`
       query {
         node(id: "1") {
@@ -388,13 +501,23 @@ describe('named fragments', () => {
         id
       }
     `);
-    expect(print(addTypenames(doc, schema))).toContain('...NodeFields');
+    const result = addTypenames(doc, schema);
+    expect(print(result)).toMatchInlineSnapshot(`
+      {
+        node(id: "1") {
+          ...NodeFields
+          __typename
+        }
+      }
+
+      fragment NodeFields on Node {
+        id
+        __typename
+      }
+    `);
+    expect(typenameCount(result)).toBe(2);
   });
 });
-
-// ---------------------------------------------------------------------------
-// Introspection fields
-// ---------------------------------------------------------------------------
 
 describe('introspection fields', () => {
   it('does not add __typename inside __schema', () => {
