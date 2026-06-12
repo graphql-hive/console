@@ -19,10 +19,10 @@ export default defineConfig({
   expect: {
     timeout: 15_000,
   },
-  fullyParallel: true,
+  fullyParallel: !isCI,
   forbidOnly: isCI,
   retries: 0,
-  workers: isCI ? 4 : undefined,
+  workers: isCI ? 2 : undefined,
   reporter: isCI
     ? [['list'], ['github'], ['html', { open: 'never' }]]
     : [['list'], ['html', { open: 'never' }]],
