@@ -218,7 +218,7 @@ export function TargetAlertsDetailPage(props: {
     );
   }
 
-  if (!result.data) {
+  if (!rule && (result.fetching || result.stale)) {
     return (
       <div className="flex h-fit flex-1 items-center justify-center py-28">
         <Spinner />
