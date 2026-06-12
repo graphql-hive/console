@@ -1,6 +1,8 @@
+import { ProcessedOperationErrorRecord } from '@hive/usage-common';
 import {
   formatDate,
   joinIntoSingleMessage,
+  stringifyOperationErrors,
   stringifyQueryOrMutationOperation,
   stringifyRegistryRecord,
 } from '../src/serializer';
@@ -29,6 +31,7 @@ test('stringify operation in correct format and order', () => {
           ok: true,
           errorsTotal: 0,
           duration: 230,
+          coordinateTotals: { foo: 3 },
         },
         document: `{ foo }`,
         operationType: 'query' as any,
@@ -50,6 +53,7 @@ test('stringify operation in correct format and order', () => {
           ok: false,
           errorsTotal: 1,
           duration: 250,
+          coordinateTotals: { foo: 1 },
         },
         document: `{ foo }`,
         operationType: 'query' as any,
@@ -70,6 +74,7 @@ test('stringify operation in correct format and order', () => {
         /* duration */ 230,
         /* client_name */ `"clientName"`,
         /* client_version */ `"clientVersion"`,
+        /* coordinates_total */ `"{'foo':3}"`,
       ].join(','),
       [
         /* organization */ `"my-organization"`,
@@ -82,6 +87,7 @@ test('stringify operation in correct format and order', () => {
         /* duration */ 250,
         /* client_name */ `\\N`,
         /* client_version */ `\\N`,
+        /* coordinates_total */ `"{'foo':1}"`,
       ].join(','),
     ].join('\n'),
   );
@@ -139,6 +145,46 @@ test('stringify registry records in correct format and order', () => {
         /* expires_at */ expiresAt.asString,
       ].join(','),
     ].join('\n'),
+  );
+});
+
+test('stringify operation_errors in correct format and order', () => {
+  const messages: ProcessedOperationErrorRecord[] = [
+    {
+      target: 'my-target',
+      hash: 'my-hash-1',
+      timestamp: timestamp.asNumber,
+      expires_at: expiresAt.asNumber,
+      errors: [['UNEXPECTED_ERROR', 'Query.foo'] as [code: string, coord: string]],
+    },
+    {
+      target: 'my-target',
+      hash: 'my-hash-2',
+      timestamp: timestamp.asNumber,
+      expires_at: expiresAt.asNumber,
+      errors: [['UNEXPECTED_ERROR', 'Query.user'] as [code: string, coord: string]],
+    },
+  ];
+  const serialized = joinIntoSingleMessage(messages.map(stringifyOperationErrors));
+  expect(serialized).toBe(
+    [
+      [
+        `"my-target"`,
+        `"my-hash-1"`,
+        timestamp.asString,
+        expiresAt.asString,
+        `"[('UNEXPECTED_ERROR','Query.foo')]"`,
+      ],
+      [
+        `"my-target"`,
+        `"my-hash-2"`,
+        timestamp.asString,
+        expiresAt.asString,
+        `"[('UNEXPECTED_ERROR','Query.user')]"`,
+      ],
+    ]
+      .map(r => r.join(','))
+      .join('\n'),
   );
 });
 

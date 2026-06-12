@@ -158,10 +158,56 @@ export default gql`
   }
 
   type SchemaCoordinateStats {
-    requestsOverTime(resolution: Int!): [RequestsOverTime!]!
+    requestsOverTime(
+      """
+      How fine of granularity to show
+      """
+      resolution: Int!
+    ): [RequestsOverTime!]!
+
+    """
+    The number of times a coordinate has been resolved over time. Resolutions
+    differ from requests by taking the actual execution of an operation into account.
+    """
+    resolutionsOverTime(
+      """
+      How fine of granularity to show
+      """
+      resolution: Int!
+    ): [RequestsOverTime!]!
+
+    """
+    How many times this coordinate has reported an error. This is available only if subgraph
+    visibility is enabled for your organization and the gateway is sending field level metrics.
+    """
+    failuresOverTime(resolution: Int!): [FailuresOverTime!]
+
+    """
+    How many requests included this coordinate. If a coordinate is used by an operation,
+    it counts as one, regardless of how many times the coordinate is used.
+    """
     totalRequests: SafeInt! @tag(name: "public")
+
+    """
+    How many times a coordinate has been executed.
+    """
+    totalResolutions: SafeInt
+
+    """
+    How many errors have been returned for a coordinate.
+    """
+    totalFailures: SafeInt
+
     operations: OperationStatsValuesConnection! @tag(name: "public")
     clients: ClientStatsValuesConnection! @tag(name: "public")
+    errorCodes: ErrorStatsValuesConnection
+    errorCodesOverTime(resolution: Int!): [ErrorCodesOverTime!]
+  }
+
+  type ErrorCodesOverTime {
+    code: String!
+    date: DateTime!
+    count: SafeInt!
   }
 
   type OperationsStats {
@@ -194,6 +240,28 @@ export default gql`
   type ClientStatsValuesConnection {
     edges: [ClientStatsValuesEdge!]! @tag(name: "public")
     pageInfo: PageInfo! @tag(name: "public")
+  }
+
+  type ErrorStatsValues {
+    """
+    An error identification code returned at 'extensions.code' in a graphql errors object.
+    """
+    code: String!
+
+    """
+    Total number of errors returned with this code.
+    """
+    count: SafeInt!
+  }
+
+  type ErrorStatsValuesEdge {
+    node: ErrorStatsValues!
+    cursor: String!
+  }
+
+  type ErrorStatsValuesConnection {
+    edges: [ErrorStatsValuesEdge!]!
+    pageInfo: PageInfo!
   }
 
   type MonthlyUsage {

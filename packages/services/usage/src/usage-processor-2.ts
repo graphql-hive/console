@@ -1,10 +1,11 @@
 import { createHash, randomUUID } from 'node:crypto';
 import { ServiceLogger as Logger, traceInlineSync } from '@hive/service-common';
-import {
-  type ClientMetadata,
-  type RawOperation,
-  type RawReport,
-  type RawSubscriptionOperation,
+import type {
+  ClientMetadata,
+  RawOperation,
+  RawOperationErrors,
+  RawReport,
+  RawSubscriptionOperation,
 } from '@hive/usage-common';
 import * as tb from '@sinclair/typebox';
 import * as tc from '@sinclair/typebox/compiler';
@@ -68,6 +69,7 @@ export const usageProcessorV2 = traceInlineSync(
     rawOperationsSize.observe(size);
 
     const rawOperations: RawOperation[] = [];
+    const rawErrors: RawOperationErrors[] = [];
     const rawSubscriptionOperations: RawSubscriptionOperation[] = [];
 
     const lastAppDeploymentUsage = new Map<`${string}/${string}`, number>();
@@ -182,11 +184,27 @@ export const usageProcessorV2 = traceInlineSync(
           ok: operation.execution.ok,
           duration: operation.execution.duration,
           errorsTotal: operation.execution.errorsTotal,
+          coordinateTotals: sumMap(operation.execution.fetches?.map(f => f.fields) ?? []),
         },
         metadata: {
           client,
         },
       });
+
+      const errors = operation.execution.fetches
+        ?.flatMap(f => f.errors)
+        .filter(e => e !== undefined);
+      if (errors?.length) {
+        rawErrors.push({
+          operationMapKey,
+          timestamp: operation.timestamp,
+          expiresAt: targetRetentionInDays
+            ? operation.timestamp + targetRetentionInDays * DAY_IN_MS
+            : undefined,
+          errors,
+        });
+        report.errors ??= rawErrors;
+      }
     }
 
     for (const operation of incomingSubscriptionOperations) {
@@ -262,6 +280,55 @@ const OperationMapRecordSchema = tb.Object(
 
 type OperationMapRecord = tb.Static<typeof OperationMapRecordSchema>;
 
+const SubgraphRequestSchema = tb.Object(
+  {
+    /** Delta start time from "timestamp" */
+    start: tb.Integer({
+      minimum: 0,
+      maximum: Math.pow(2, 63),
+    }),
+
+    /** How long the request took */
+    duration: tb.Integer({
+      minimum: 0,
+      maximum: Math.pow(2, 63),
+    }),
+
+    /** HTTP Status Code */
+    status: tb.Integer({
+      minimum: 0,
+      maximum: 599,
+    }),
+
+    /** Number of times the field has been requested. Regardless of success or failure */
+    fields: tb.Record(tb.String(), tb.Number()),
+
+    /** Error code for a coordinate, with a code returned from the graphql extensions */
+    errors: tb.Optional(
+      tb.Array(tb.Object({ coordinate: tb.String(), code: tb.Optional(tb.String()) })),
+    ),
+
+    /** Which subgraph resolved this path */
+    subgraph: tb.String(),
+
+    /**
+     * If this is an entity request, then this is the coordinate in the original operation that is being resolved.
+     * If undefined, then the path is assumed to be 'Query'.
+     */
+    paths: tb.Union([tb.String(), tb.Array(tb.String(), { minItems: 1 })]),
+
+    /**
+     * What type of request this is. Root is if resolving a root query/mutation field. Entity is
+     * if resolving an entity type in federation.
+     * */
+    type: tb.Union([tb.Literal('ROOT'), tb.Literal('ENTITY')]),
+  },
+  {
+    title: 'SubgraphRequest',
+    additionalProperties: false,
+  },
+);
+
 const ExecutionSchema = tb.Type.Object(
   {
     ok: tb.Type.Boolean(),
@@ -277,6 +344,7 @@ const ExecutionSchema = tb.Type.Object(
       minimum: 0,
       maximum: Math.pow(2, 16) - 1,
     }),
+    fetches: OptionalAndNullable(tb.Array(SubgraphRequestSchema)),
   },
   {
     title: 'Execution',
@@ -408,6 +476,23 @@ function getTypeBoxErrors(errors: tc.ValueErrorIterator): Array<ValueError> {
       errors: errors.length ? errors : undefined,
     };
   });
+}
+
+function sumMap(records: { [key: string]: number }[]): { [key: string]: number } | undefined {
+  if (records.length <= 1) {
+    return records[0];
+  }
+
+  const out = {
+    ...records[0],
+  };
+  const [_, ...remainingRecords] = records;
+  for (const record of remainingRecords) {
+    for (const key of Object.keys(record)) {
+      out[key] = (out[key] ?? 0) + record[key];
+    }
+  }
+  return out;
 }
 
 const DAY_IN_MS = 86_400_000;

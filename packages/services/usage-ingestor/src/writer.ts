@@ -7,6 +7,7 @@ import { writeDuration } from './metrics';
 import {
   appDeploymentUsageOrder,
   joinIntoSingleMessage,
+  operationErrorsOrder,
   operationsOrder,
   registryOrder,
   subscriptionOperationsOrder,
@@ -26,6 +27,7 @@ const operationsFields = operationsOrder.join(', ');
 const subscriptionOperationsFields = subscriptionOperationsOrder.join(', ');
 const registryFields = registryOrder.join(', ');
 const appDeploymentUsageFields = appDeploymentUsageOrder.join(', ');
+const operationErrorsFields = operationErrorsOrder.join(', ');
 
 const agentConfig: Agent.HttpOptions = {
   // Keep sockets around in a pool to be used by other requests in the future
@@ -65,10 +67,14 @@ export function createWriter({
       const csv = joinIntoSingleMessage(operations);
       const compressed = await compress(csv);
 
+      // Note that `SETTINGS input_format_with_names_use_header = 1` is enabled by default.
+      // If migrating this table in the future, be sure to double check this via
+      // SELECT name, value, changed, description FROM system.settings WHERE name = 'input_format_with_names_use_header';
       await writeCsv(
         clickhouse,
         agents,
-        `INSERT INTO operations (${operationsFields}) FORMAT CSV`,
+        `INSERT INTO operations (${operationsFields})
+        FORMAT CSV`,
         compressed,
         logger,
         3,
@@ -120,6 +126,24 @@ export function createWriter({
         clickhouse,
         agents,
         `INSERT INTO "app_deployment_usage" (${appDeploymentUsageFields}) FORMAT CSV`,
+        compressed,
+        logger,
+        3,
+      );
+    },
+    async writeOperationErrors(records: string[]) {
+      if (records.length === 0) {
+        return;
+      }
+
+      const csv = joinIntoSingleMessage(records);
+      const compressed = await compress(csv);
+      // create input structure schema
+
+      await writeCsv(
+        clickhouse,
+        agents,
+        `INSERT INTO operation_errors (${operationErrorsFields}) FORMAT CSV`,
         compressed,
         logger,
         3,

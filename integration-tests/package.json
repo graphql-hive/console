@@ -19,6 +19,8 @@
     "@esm2cjs/execa": "6.1.1-cjs.1",
     "@graphql-hive/apollo": "workspace:*",
     "@graphql-hive/core": "workspace:*",
+    "@graphql-hive/gateway-plugin-console-sdk": "workspace:*",
+    "@graphql-hive/gateway-runtime": "^1.0.0 || ^2.0.0",
     "@graphql-typed-document-node/core": "3.2.0",
     "@hive/commerce": "workspace:*",
     "@hive/postgres": "workspace:*",

@@ -1,0 +1,183 @@
+import { DocumentNode, print, responsePathAsArray, type GraphQLError } from 'graphql';
+import { lru } from 'tiny-lru';
+import {
+  autoDisposeSymbol,
+  createHive as createHiveClient,
+  isAsyncIterable,
+  isHiveClient,
+  type HiveClient,
+  type HivePluginOptions,
+} from '@graphql-hive/core';
+import { GatewayPlugin } from '@graphql-hive/gateway-runtime';
+import { addTypenames } from './add-typenames.js';
+import { isEntityRequest } from './is-entity-request.js';
+import { version } from './version.js';
+
+export function createHive(clientOrOptions: HivePluginOptions) {
+  return createHiveClient({
+    ...clientOrOptions,
+    agent: {
+      name: 'hive-client-gateway-sdk',
+      version,
+      ...clientOrOptions.agent,
+    },
+  });
+}
+
+export type GatewayPluginOptions = HivePluginOptions & {
+  /** Opt in to sending subgraph metrics. This feature is  */
+  fieldLevelMetricsEnabled?: boolean;
+  /**
+   * Size of document cache. This is used to store a transformed version of the operation
+   * because abstract types must include a __typename. Default: 10_000
+   */
+  cache?: number;
+};
+
+export function useHive(clientOrOptions: HiveClient): GatewayPlugin;
+export function useHive(clientOrOptions: GatewayPluginOptions): GatewayPlugin;
+export function useHive(clientOrOptions: HiveClient | GatewayPluginOptions): GatewayPlugin {
+  const hive = isHiveClient(clientOrOptions)
+    ? clientOrOptions
+    : createHive({
+        ...clientOrOptions,
+        agent: {
+          name: 'hive-client-gateway-sdk',
+          ...clientOrOptions.agent,
+        },
+      });
+
+  void hive.info();
+  /** stores the resulting status from fetches */
+  const statusMap = new WeakMap<object, number>();
+  /** stores the original query SDL to avoid having to print */
+  const operationCache = lru<DocumentNode | true>(
+    isHiveClient(clientOrOptions) ? 10_000 : (clientOrOptions.cache ?? 10_000),
+  );
+  if (hive[autoDisposeSymbol]) {
+    if (global.process) {
+      const signals = Array.isArray(hive[autoDisposeSymbol])
+        ? hive[autoDisposeSymbol]
+        : ['SIGINT', 'SIGTERM'];
+      for (const signal of signals) {
+        process.once(signal, () => hive.dispose());
+      }
+    } else {
+      console.error(
+        'It seems that GraphQL Hive is not being executed in Node.js. ' +
+          'Please attempt manual client disposal and use autoDispose: false option.',
+      );
+    }
+  }
+
+  const fieldLevelMetricsEnabled = isHiveClient(clientOrOptions)
+    ? false
+    : (clientOrOptions.fieldLevelMetricsEnabled ?? false);
+  return {
+    onFetch({ executionRequest }) {
+      /** Only if the execution request is set, then this is a subgraph execution. */
+      if (!executionRequest) {
+        return;
+      }
+
+      return function onFetchDone({ response }) {
+        statusMap.set(executionRequest, response.status);
+      };
+    },
+
+    onSubgraphExecute({ executionRequest, subgraphName, subgraph: subgraphSchema }) {
+      if (!fieldLevelMetricsEnabled) {
+        // short circuit the entire hook to avoid processing this data.
+        return;
+      }
+
+      const collection = executionRequest.context?.__hiveUsageCollection as
+        | ReturnType<HiveClient['collectUsage']>
+        | undefined;
+
+      if (!collection) {
+        // This is set onExecute so this should exist... but just to be safe
+        return;
+      }
+
+      /**
+       * Note that we need __typename on every abstract type in the subgraph call.
+       * This is added in the "onExecute" hook to the entire document. So subgraph
+       * calls should also include this field.
+       */
+
+      const finishSubRequest = collection.subrequest({
+        subgraph: subgraphName,
+        type: isEntityRequest(executionRequest.document) ? 'ENTITY' : 'ROOT',
+        /** @NOTE this field's format supports batched requests, but onSubgraphExecute does not. */
+        paths: executionRequest.info?.path
+          ? [responsePathAsArray(executionRequest.info.path).join('.')]
+          : [],
+      });
+
+      return function onSubgraphExecuteDone({ result }) {
+        if (!isAsyncIterable(result)) {
+          finishSubRequest({
+            status: statusMap.get(executionRequest) ?? 200,
+            subgraphSchema,
+            result,
+            document: executionRequest.document,
+          });
+        }
+      };
+    },
+    onSchemaChange({ schema }) {
+      hive.reportSchema({ schema });
+    },
+    onExecute({ args }) {
+      const collection = hive.collectUsage();
+
+      // Inject the collection object into the GraphQL context
+      // so it can be accessed downstream by subgraph executions.
+      if (args.contextValue) {
+        (args.contextValue as any).__hiveUsageCollection = collection;
+      }
+
+      // We need __typename on every object in the subgraph result so we can
+      // resolve abstract types (unions/interfaces) to concrete type coordinates
+      // when recording field-level metrics downstream.
+      // This is done here for more performant caching of the result.
+      const query = args.contextValue.params.query ?? print(args.document);
+      const cachedDocument = operationCache.get(query);
+      if (cachedDocument) {
+        // If "true" is cached, then this operation doesn't need stored because it's identical to the original.
+        // Else, the document hash been modified and cached
+        if (cachedDocument !== true) {
+          args.document = cachedDocument;
+        }
+      } else {
+        const modifiedDocument = addTypenames(args.document, args.schema);
+        operationCache.set(query, args.document === modifiedDocument || args.document);
+      }
+
+      return {
+        onExecuteDone({ result }) {
+          if (!isAsyncIterable(result)) {
+            void collection.finish(args, result);
+            return;
+          }
+
+          const errors: GraphQLError[] = [];
+          return {
+            onNext(ctx) {
+              if (ctx.result.errors) {
+                errors.push(...ctx.result.errors);
+              }
+            },
+            onEnd() {
+              void collection.finish(args, errors.length ? { errors } : {});
+            },
+          };
+        },
+      };
+    },
+    onSubscribe({ args }) {
+      hive.collectSubscriptionUsage({ args });
+    },
+  };
+}

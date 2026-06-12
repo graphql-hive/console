@@ -23,9 +23,10 @@ import { Meta } from '@/components/ui/meta';
 import { Subtitle, Title } from '@/components/ui/page';
 import { QueryError } from '@/components/ui/query-error';
 import { graphql } from '@/gql';
+import { FieldLevelMetricsDisplayState } from '@/gql/graphql';
 import { formatNumber, formatThroughput, toDecimal } from '@/lib/hooks';
 import { useDateRangeController } from '@/lib/hooks/use-date-range-controller';
-import { useChartStyles } from '@/lib/utils';
+import { cn, stringToHiveColor, useChartStyles } from '@/lib/utils';
 import { Link } from '@tanstack/react-router';
 
 const SchemaCoordinateView_SchemaCoordinateStatsQuery = graphql(`
@@ -39,6 +40,7 @@ const SchemaCoordinateView_SchemaCoordinateStatsQuery = graphql(`
     target(reference: { bySelector: $targetSelector }) {
       id
       hasCollectedSubscriptionOperations
+      fieldLevelMetricsDisplayState
       schemaCoordinateStats(period: $period, schemaCoordinate: $schemaCoordinate) {
         supergraphMetadata {
           ...SupergraphMetadataList_SupergraphMetadataFragment
@@ -47,7 +49,17 @@ const SchemaCoordinateView_SchemaCoordinateStatsQuery = graphql(`
           date
           value
         }
+        resolutionsOverTime(resolution: $resolution) {
+          date
+          value
+        }
         totalRequests
+        totalResolutions
+        failuresOverTime(resolution: $resolution) {
+          date
+          value
+        }
+        totalFailures
         operations {
           edges {
             node {
@@ -65,6 +77,19 @@ const SchemaCoordinateView_SchemaCoordinateStatsQuery = graphql(`
               count
             }
           }
+        }
+        errorCodes {
+          edges {
+            node {
+              code
+              count
+            }
+          }
+        }
+        errorCodesOverTime(resolution: $resolution) {
+          code
+          count
+          date
         }
       }
       latestValidSchemaVersion {
@@ -87,6 +112,7 @@ function SchemaCoordinateView(props: {
   targetSlug: string;
 }) {
   const { styles, colors } = useChartStyles();
+  const errorColors = [colors.error, colors.p99, colors.p95, colors.p90, colors.p75];
   const dateRangeController = useDateRangeController({
     dataRetentionInDays: props.dataRetentionInDays,
     defaultPreset: presetLast7Days,
@@ -124,13 +150,50 @@ function SchemaCoordinateView(props: {
 
     return points.map(node => [node.date, node.value]);
   }, [points]);
+
+  const resolutionPoints = query.data?.target?.schemaCoordinateStats?.resolutionsOverTime;
+  const resolutionsOverTime = useMemo(() => {
+    if (!resolutionPoints) {
+      return [];
+    }
+
+    return resolutionPoints.map(node => [node.date, node.value]);
+  }, [resolutionPoints]);
+
+  const errorPoints = query.data?.target?.schemaCoordinateStats?.failuresOverTime;
+  const errorsOverTime = useMemo(() => {
+    if (!errorPoints) {
+      return [];
+    }
+
+    return errorPoints.map(node => [node.date, node.value]);
+  }, [errorPoints]);
+
+  const errorCodesOverTime = useMemo(() => {
+    const items = query.data?.target?.schemaCoordinateStats.errorCodesOverTime ?? [];
+    return items.reduce(
+      (grouped, item) => {
+        grouped[item.code] ??= [];
+        grouped[item.code].push([item.date, item.count]);
+
+        return grouped;
+      },
+      {} as Record<string, [string, number][]>,
+    );
+  }, [query.data?.target?.schemaCoordinateStats.errorCodesOverTime]);
   const totalRequests = query.data?.target?.schemaCoordinateStats?.totalRequests ?? 0;
+  const totalResolutions = query.data?.target?.schemaCoordinateStats?.totalResolutions ?? 0;
+  const totalFailures = query.data?.target?.schemaCoordinateStats.totalFailures ?? null;
   const totalOperations = query.data?.target?.schemaCoordinateStats?.operations.edges.length ?? 0;
   const totalClients = query.data?.target?.schemaCoordinateStats?.clients.edges.length ?? 0;
 
   const supergraphMetadata = query.data?.target?.schemaCoordinateStats?.supergraphMetadata;
   const kind = query.data?.target?.latestValidSchemaVersion?.explorer?.type?.__typename;
   const title = kind === 'GraphQLEnumType' ? `${typeName} (${props.coordinate})` : props.coordinate;
+  const fieldLevelMetricsDisplayState = query.data?.target?.fieldLevelMetricsDisplayState;
+  const showFieldLevelMetrics =
+    fieldLevelMetricsDisplayState === FieldLevelMetricsDisplayState.On ||
+    fieldLevelMetricsDisplayState === FieldLevelMetricsDisplayState.OnWithWarning;
 
   if (query.error) {
     return <QueryError organizationSlug={props.organizationSlug} error={query.error} />;
@@ -187,6 +250,19 @@ function SchemaCoordinateView(props: {
           </Alert>
         </div>
       )}
+      {fieldLevelMetricsDisplayState === FieldLevelMetricsDisplayState.OnWithWarning ? (
+        <div className="pb-8">
+          <Alert className="border-info_10 bg-info_08 text-info">
+            <AlertCircleIcon className="size-4" />
+            <AlertTitle>Coordinate resolutions were recently added.</AlertTitle>
+            <AlertDescription>
+              Your gateway was recently upgraded to add usage tracking for actual coordinate
+              resolutions and errors. Please disregard the missing historic resolution data, as this
+              data cannot be backfilled.
+            </AlertDescription>
+          </Alert>
+        </div>
+      ) : null}
       <div className="space-y-4 pb-8">
         <div className="grid gap-4 md:grid-cols-1 lg:grid-cols-8">
           <div className="col-span-4">
@@ -205,6 +281,32 @@ function SchemaCoordinateView(props: {
                   </p>
                 </CardContent>
               </Card>
+              {showFieldLevelMetrics ? (
+                <Card className="bg-neutral-2/50">
+                  <CardHeader
+                    className="flex flex-row items-center justify-between space-y-0 pb-2"
+                    title="Resolution Count is the total number of times this specific field (schema coordinate) was executed and returned.
+
+This differs from Request Count because a single request can resolve a field multiple times (e.g., inside an array) or skip it entirely (due to errors or conditional directives)."
+                  >
+                    <CardTitle className="text-sm font-medium">Total resolutions</CardTitle>
+                    <GlobeIcon className="text-neutral-10 size-4" />
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold">
+                      {isLoading ? '-' : formatNumber(totalResolutions)}
+                      {totalFailures ? (
+                        <span className="ml-2 text-sm font-normal text-red-500">
+                          ({formatNumber(totalFailures)} errors)
+                        </span>
+                      ) : null}
+                    </div>
+                    <p className="text-neutral-10 text-xs">
+                      Resolved in {dateRangeController.selectedPreset.label.toLowerCase()}
+                    </p>
+                  </CardContent>
+                </Card>
+              ) : null}
               <Card className="bg-neutral-2/50">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                   <CardTitle className="text-sm font-medium">Requests per minute</CardTitle>
@@ -322,6 +424,94 @@ function SchemaCoordinateView(props: {
                   )}
                 </AutoSizer>
               </CardContent>
+              <CardHeader className="pt-0">
+                <CardDescription>
+                  Number of times the coordinate {props.coordinate} has resolved over time
+                </CardDescription>
+              </CardHeader>
+              <CardContent
+                className={cn(
+                  'min-h-[150px] grow basis-0',
+                  showFieldLevelMetrics ? 'show' : 'hidden',
+                )}
+              >
+                <AutoSizer>
+                  {size => (
+                    <ReactECharts
+                      style={{ width: size.width, height: size.height }}
+                      option={{
+                        ...styles,
+                        grid: {
+                          left: 20,
+                          top: 5,
+                          right: 5,
+                          bottom: 5,
+                          containLabel: true,
+                        },
+                        tooltip: {
+                          trigger: 'axis',
+                        },
+                        legend: {
+                          show: false,
+                        },
+                        xAxis: [
+                          {
+                            type: 'time',
+                            boundaryGap: false,
+                          },
+                        ],
+                        yAxis: [
+                          {
+                            type: 'value',
+                            min: 0,
+                            splitLine: {
+                              lineStyle: {
+                                color: colors.grid,
+                                type: 'dashed',
+                              },
+                            },
+                            axisLabel: {
+                              formatter: (value: number) => formatNumber(value),
+                            },
+                          },
+                        ],
+                        series: [
+                          resolutionsOverTime?.length
+                            ? {
+                                type: 'line',
+                                name: 'Resolutions',
+                                showSymbol: false,
+                                smooth: false,
+                                color: colors.primary,
+                                areaStyle: {},
+                                emphasis: {
+                                  focus: 'series',
+                                },
+                                large: true,
+                                data: resolutionsOverTime,
+                              }
+                            : undefined,
+                          errorsOverTime?.length
+                            ? {
+                                type: 'line',
+                                name: 'Errors',
+                                showSymbol: false,
+                                smooth: false,
+                                color: colors.error,
+                                areaStyle: {},
+                                emphasis: {
+                                  focus: 'series',
+                                },
+                                large: true,
+                                data: errorsOverTime,
+                              }
+                            : undefined,
+                        ],
+                      }}
+                    />
+                  )}
+                </AutoSizer>
+              </CardContent>
             </Card>
           </div>
         </div>
@@ -412,6 +602,106 @@ function SchemaCoordinateView(props: {
               </div>
             </CardContent>
           </Card>
+
+          {showFieldLevelMetrics ? (
+            <>
+              <Card className="bg-neutral-2/50 col-span-3 flex h-full flex-col">
+                <CardHeader>
+                  <CardTitle>Errors</CardTitle>
+                  <CardDescription>
+                    {props.coordinate} resulted in a GraphQL error {isLoading ? '-' : totalFailures}{' '}
+                    times in {dateRangeController.selectedPreset.label.toLowerCase()}.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="min-h-[170px] grow basis-0 overflow-y-auto">
+                  <div className="space-y-2">
+                    {isLoading
+                      ? null
+                      : query.data?.target?.schemaCoordinateStats.errorCodes?.edges.map(
+                          ({ node: error }) => (
+                            <div key={error.code} className="flex items-center">
+                              <p className="truncate text-sm font-medium">{error.code}</p>
+                              <div className="ml-auto flex min-w-[150px] flex-row items-center justify-end text-sm font-light">
+                                <div>{formatNumber(error.count)}</div>
+                                <div className="min-w-[70px] text-right">
+                                  {toDecimal((error.count * 100) / totalRequests)}%
+                                </div>
+                              </div>
+                            </div>
+                          ),
+                        )}
+                  </div>
+                </CardContent>
+              </Card>
+              <Card className="bg-neutral-2/50 col-span-4 flex h-full flex-col">
+                <CardHeader>
+                  <CardTitle>Error Activity</CardTitle>
+                  <CardDescription>
+                    Error codes returned by {props.coordinate} over time
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="min-h-[170px] grow basis-0 overflow-y-auto">
+                  <AutoSizer>
+                    {size => (
+                      <ReactECharts
+                        style={{ width: size.width, height: size.height }}
+                        option={{
+                          ...styles,
+                          grid: {
+                            left: 20,
+                            top: 5,
+                            right: 5,
+                            bottom: 5,
+                            containLabel: true,
+                          },
+                          tooltip: {
+                            trigger: 'axis',
+                          },
+                          legend: {
+                            show: false,
+                          },
+                          xAxis: [
+                            {
+                              type: 'time',
+                              boundaryGap: false,
+                            },
+                          ],
+                          yAxis: [
+                            {
+                              type: 'value',
+                              min: 0,
+                              splitLine: {
+                                lineStyle: {
+                                  color: colors.grid,
+                                  type: 'dashed',
+                                },
+                              },
+                              axisLabel: {
+                                formatter: (value: number) => formatNumber(value),
+                              },
+                            },
+                          ],
+                          series: Object.keys(errorCodesOverTime).map((errorCode, i) => ({
+                            type: 'bar',
+                            name: errorCode ?? 'undefined',
+                            showSymbol: false,
+                            smooth: false,
+                            color: i < 5 ? errorColors[i] : stringToHiveColor(errorCode),
+                            areaStyle: {},
+                            emphasis: {
+                              focus: 'series',
+                            },
+                            large: true,
+                            data: errorCodesOverTime[errorCode],
+                          })),
+                        }}
+                      />
+                    )}
+                  </AutoSizer>
+                </CardContent>
+              </Card>
+            </>
+          ) : null}
         </div>
       </div>
     </>

@@ -1,7 +1,7 @@
 import * as Sentry from '@sentry/node';
 import { httpRequestHandlerDuration, parseReportDuration } from './metrics';
 
-export function measureParsing<T>(fn: () => T, version: 'v1' | 'v2'): T {
+export function measureParsing<T>(fn: () => T, version: 'v1' | 'v2' | 'v3'): T {
   const stop = parseReportDuration.startTimer({ version });
   try {
     const result = fn();
