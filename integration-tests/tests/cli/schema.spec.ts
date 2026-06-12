@@ -526,6 +526,50 @@ describe.each([ProjectType.Stitching, ProjectType.Federation, ProjectType.Single
       },
     );
 
+    test
+      /** federation relies on composeDirective which we don't test here */
+      .skipIf(projectType === ProjectType.Federation)
+      .concurrent(
+        'schema:fetch sdl includes directives on the schema definition',
+        async ({ expect }) => {
+          const { createOrg } = await initSeed().createOwner();
+          const { inviteAndJoinMember, createProject } = await createOrg();
+          await inviteAndJoinMember();
+          const { createTargetAccessToken } = await createProject(projectType);
+          const { secret, latestSchema } = await createTargetAccessToken({});
+
+          const cli = createCLI({
+            readonly: secret,
+            readwrite: secret,
+          });
+
+          await schemaPublish([
+            '--registry.accessToken',
+            secret,
+            '--author',
+            'Kamil',
+            '--commit',
+            'abc123',
+            ...serviceNameArgs,
+            ...serviceUrlArgs,
+            'fixtures/schema-with-directives.graphql',
+          ]);
+
+          const schema = await latestSchema();
+          const fetchCmd = cli.fetch({
+            type: 'sdl',
+            commit: 'abc123',
+          });
+          expect(schema.latestVersion?.sdl).toIncludeSubstringWithoutWhitespace(
+            'type Query @public',
+          );
+          await expect(fetchCmd).resolves.toIncludeSubstringWithoutWhitespace('type Query @public');
+          await expect(fetchCmd).resolves.toIncludeSubstringWithoutWhitespace(
+            'directive @public on SCHEMA | OBJECT',
+          );
+        },
+      );
+
     test.concurrent(
       'schema:fetch can fetch a latest schema with target:registry:read access',
       async ({ expect }) => {

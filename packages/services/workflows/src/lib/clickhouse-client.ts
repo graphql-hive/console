@@ -60,6 +60,7 @@ export class ClickHouseClient {
         searchParams: {
           database: 'default',
           default_format: 'JSON',
+          output_format_json_quote_64bit_integers: '1',
           ...params,
         },
         headers: {
