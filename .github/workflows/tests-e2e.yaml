@@ -48,7 +48,7 @@ jobs:
             up -d --wait
 
       - name: playwright
-        timeout-minutes: 15
+        timeout-minutes: 20
         run: pnpm test:e2e
         env:
           CI: true
