@@ -9,8 +9,11 @@ export function useRollingNow(intervalMs: number): Date {
   const [nowMs, setNowMs] = useState(() => Math.floor(Date.now() / intervalMs) * intervalMs);
   useEffect(() => {
     const id = setInterval(
-      () => setNowMs(Math.floor(Date.now() / intervalMs) * intervalMs),
-      intervalMs,
+      () => {
+        const next = Math.floor(Date.now() / intervalMs) * intervalMs;
+        setNowMs(prev => (prev === next ? prev : next));
+      },
+      Math.min(1000, intervalMs),
     );
     return () => clearInterval(id);
   }, [intervalMs]);
