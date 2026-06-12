@@ -1,10 +1,9 @@
 import { useMemo } from 'react';
-import { formatDistanceToNow, subDays } from 'date-fns';
+import { formatDistanceToNow } from 'date-fns';
 import { ArrowDown } from 'lucide-react';
 import { useQuery } from 'urql';
 import { DataTable } from '@/components/base/data-table/data-table';
 import { PageLead } from '@/components/base/page-lead';
-import { ALERTS_POLL_INTERVAL_MS } from '@/components/target/alerts/alert-polling';
 import { BadgeRounded } from '@/components/ui/badge';
 import { Avatar } from '@/components/v2/avatar';
 import { graphql } from '@/gql';
@@ -15,7 +14,6 @@ import {
   MetricAlertRuleType,
 } from '@/gql/graphql';
 import { useKeepPreviousData } from '@/lib/hooks/use-keep-previous-data';
-import { useRollingNow } from '@/lib/hooks/use-rolling-now';
 import { useNavigate } from '@tanstack/react-router';
 import { createColumnHelper, type Column, type ColumnDef } from '@tanstack/react-table';
 
@@ -24,8 +22,6 @@ const TargetAlertsRulesPage_Query = graphql(`
     $organizationSlug: String!
     $projectSlug: String!
     $targetSlug: String!
-    $from: DateTime!
-    $to: DateTime!
   ) {
     target(
       reference: {
@@ -47,7 +43,7 @@ const TargetAlertsRulesPage_Query = graphql(`
         enabled
         lastTriggeredAt
         updatedAt
-        eventCount(from: $from, to: $to)
+        incidentCount
         channels {
           id
           type
@@ -70,7 +66,7 @@ type RuleRow = {
   enabled: boolean;
   lastTriggeredAt?: string | null;
   updatedAt: string;
-  eventCount: number;
+  incidentCount: number;
   channels: ReadonlyArray<{ id: string; type: string }>;
   createdBy?: { id: string; displayName: string } | null;
 };
@@ -170,8 +166,8 @@ const RULE_COLUMNS: ColumnDef<RuleRow, any>[] = [
       );
     },
   }),
-  columnHelper.accessor('eventCount', {
-    header: ({ column }) => <SortableHeader column={column} label="Events" />,
+  columnHelper.accessor('incidentCount', {
+    header: ({ column }) => <SortableHeader column={column} label="Incidents" />,
     cell: info => <span className="text-neutral-12 font-mono">{info.getValue()}</span>,
   }),
   columnHelper.accessor('lastTriggeredAt', {
@@ -247,15 +243,10 @@ export function TargetAlertsRulesPage(props: {
   const { organizationSlug, projectSlug, targetSlug } = props;
   const navigate = useNavigate();
 
-  const now = useRollingNow(ALERTS_POLL_INTERVAL_MS);
-  const { from, to } = useMemo(
-    () => ({ from: subDays(now, 90).toISOString(), to: now.toISOString() }),
-    [now],
-  );
-
   const [result] = useQuery({
     query: TargetAlertsRulesPage_Query,
-    variables: { organizationSlug, projectSlug, targetSlug, from, to },
+    variables: { organizationSlug, projectSlug, targetSlug },
+    requestPolicy: 'cache-and-network',
   });
 
   const data = useKeepPreviousData(result.data, result.fetching || result.stale);
@@ -270,7 +261,7 @@ export function TargetAlertsRulesPage(props: {
         enabled: r.enabled,
         lastTriggeredAt: r.lastTriggeredAt,
         updatedAt: r.updatedAt,
-        eventCount: r.eventCount,
+        incidentCount: r.incidentCount,
         channels: r.channels.map(c => ({ id: c.id, type: c.type })),
         createdBy: r.createdBy
           ? { id: r.createdBy.id, displayName: r.createdBy.displayName }
