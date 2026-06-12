@@ -1554,7 +1554,7 @@ describe('request batching usage reporting', () => {
           },
           agent: {
             maxSize: 2,
-            sendInterval: 20,
+            sendInterval: 1000,
             logger: createLogger('silent'),
             async fetch(_req, init) {
               d.resolve(init!);
