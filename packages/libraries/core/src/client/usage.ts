@@ -85,7 +85,7 @@ export function createUsage(pluginOptions: HiveInternalPluginOptions): UsageColl
   const selfHostingOptions = pluginOptions.selfHosting;
   const logger = pluginOptions.logger.child({ module: 'hive-usage' });
   const collector = memo(createCollector, arg => arg.schema);
-  const excludeSet = new Set(options.exclude ?? []);
+  const exclusions = options.exclude ?? [];
 
   /** Access tokens using the `hvo1/` require a target. */
   if (!options.target && !isLegacyAccessToken(pluginOptions.token)) {
@@ -254,8 +254,8 @@ export function createUsage(pluginOptions: HiveInternalPluginOptions): UsageColl
       ) as OperationDefinitionNode;
       providedOperationName = args.args.operationName || rootOperation.name?.value;
       const operationName = providedOperationName || 'anonymous';
-      // Check if operationName is a match with any string or regex in excludeSet
-      const isMatch = Array.from(excludeSet).some(excludingValue =>
+      // Check if operationName is a match with any string or regex in exclusions
+      const isMatch = exclusions.some(excludingValue =>
         excludingValue instanceof RegExp
           ? excludingValue.test(operationName)
           : operationName === excludingValue,
@@ -385,8 +385,8 @@ export function createUsage(pluginOptions: HiveInternalPluginOptions): UsageColl
       ) as OperationDefinitionNode;
       const providedOperationName = args.operationName || rootOperation.name?.value;
       const operationName = providedOperationName || 'anonymous';
-      // Check if operationName is a match with any string or regex in excludeSet
-      const isMatch = Array.from(excludeSet).some(excludingValue =>
+      // Check if operationName is a match with any string or regex in exclusions
+      const isMatch = exclusions.some(excludingValue =>
         excludingValue instanceof RegExp
           ? excludingValue.test(operationName)
           : operationName === excludingValue,
