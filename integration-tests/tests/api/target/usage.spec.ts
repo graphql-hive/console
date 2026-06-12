@@ -2873,49 +2873,57 @@ test.concurrent(
       throw new Error('Expected schemaCheckId to be defined');
     }
 
-    const firstSchemaCheck = await execute({
-      document: SubscriptionSchemaCheckQuery,
-      variables: {
-        id: firstSchemaCheckId,
-        selector: {
-          organizationSlug: organization.slug,
-          projectSlug: project.slug,
-          targetSlug: target.slug,
-        },
-      },
-      authToken: ownerToken,
-    }).then(r => r.expectNoGraphQLErrors());
+    await pollFor(async () => {
+      try {
+        const firstSchemaCheck = await execute({
+          document: SubscriptionSchemaCheckQuery,
+          variables: {
+            id: firstSchemaCheckId!,
+            selector: {
+              organizationSlug: organization.slug,
+              projectSlug: project.slug,
+              targetSlug: target.slug,
+            },
+          },
+          authToken: ownerToken,
+        }).then(r => r.expectNoGraphQLErrors());
 
-    const node = firstSchemaCheck.target?.schemaCheck?.breakingSchemaChanges?.nodes[0];
+        const node = firstSchemaCheck.target?.schemaCheck?.breakingSchemaChanges?.nodes[0];
 
-    if (!node) {
-      throw new Error('Expected node to be defined');
-    }
+        if (!node) {
+          throw new Error('Expected node to be defined');
+        }
 
-    expect(node.isSafeBasedOnUsage).toEqual(false);
-    expect(node.usageStatistics?.topAffectedOperations).toEqual([
-      {
-        countFormatted: '1',
-        hash: 'c1bbc8385a4a6f4e4988be7394800adc',
-        name: 'anonymous',
-        percentage: 100,
-        percentageFormatted: '100.00%',
-        operation: {
-          body: 'subscription{a}',
-          hash: 'c1bbc8385a4a6f4e4988be7394800adc',
-          name: 'anonymous',
-          type: 'SUBSCRIPTION',
-        },
-      },
-    ]);
-    expect(node.usageStatistics?.topAffectedClients).toEqual([
-      {
-        countFormatted: '1',
-        name: 'integration-tests',
-        percentage: 100,
-        percentageFormatted: '100.00%',
-      },
-    ]);
+        expect(node.isSafeBasedOnUsage).toEqual(false);
+        expect(node.usageStatistics?.topAffectedOperations).toEqual([
+          {
+            countFormatted: '1',
+            hash: 'c1bbc8385a4a6f4e4988be7394800adc',
+            name: 'anonymous',
+            percentage: 100,
+            percentageFormatted: '100.00%',
+            operation: {
+              body: 'subscription{a}',
+              hash: 'c1bbc8385a4a6f4e4988be7394800adc',
+              name: 'anonymous',
+              type: 'SUBSCRIPTION',
+            },
+          },
+        ]);
+        expect(node.usageStatistics?.topAffectedClients).toEqual([
+          {
+            countFormatted: '1',
+            name: 'integration-tests',
+            percentage: 100,
+            percentageFormatted: '100.00%',
+          },
+        ]);
+        return true;
+      } catch (e) {
+        console.error(e);
+        return false;
+      }
+    });
 
     // Now let's make subscription insignificant by making 3 queries
 
