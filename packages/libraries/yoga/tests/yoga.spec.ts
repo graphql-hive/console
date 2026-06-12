@@ -1553,8 +1553,8 @@ describe('request batching usage reporting', () => {
             endpoint: 'http://localhost/usage',
           },
           agent: {
-            maxSize: 1,
-            sendInterval: 10,
+            maxSize: 2,
+            sendInterval: 1000,
             logger: createLogger('silent'),
             async fetch(_req, init) {
               d.resolve(init!);
