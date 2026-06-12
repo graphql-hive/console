@@ -747,13 +747,13 @@ function PreflightModal({
                 size="icon-sm"
                 className="size-auto gap-1"
                 onClick={e => {
+                  e.stopPropagation();
                   if (state === PreflightWorkerState.running) {
                     abortExecution();
                     return;
                   }
 
                   execute(scriptEditorRef.current?.getValue() ?? '');
-                  e.stopPropagation();
                 }}
                 data-cy="run-preflight"
               >
