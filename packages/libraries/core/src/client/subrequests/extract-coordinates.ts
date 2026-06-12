@@ -17,6 +17,20 @@ import {
 } from 'graphql';
 
 /**
+ * Consolidates static request-scoped variables to reduce
+ * memory allocation overhead on deep stack frames.
+ */
+type TraversalContext = {
+  counts: Map<string, number>;
+  getType: (name: string) => GraphQLNamedType | undefined;
+  doesTypeMatch: (runtime: string, condition: string) => boolean;
+  fragments: Map<string, FragmentDefinitionNode>;
+  fieldMetaCache: Map<string, { type: GraphQLType; leafTypeName?: string }>;
+  contextValue?: any;
+  infoValue?: GraphQLResolveInfo;
+};
+
+/**
  * Extracts true schema coordinates and counts their execution volume,
  * including resolved types, aliases, unions, interfaces, and scalars.
  */
@@ -28,44 +42,51 @@ export function extractCoordinates(
   contextValue?: any,
   infoValue?: GraphQLResolveInfo,
 ): Record<string, number> {
-  const counts: Record<string, number> = Object.create(null);
+  // Using Maps internally for optimized high-frequency writes
+  const counts = new Map<string, number>();
+  const fragments = new Map<string, FragmentDefinitionNode>();
 
   let operation: OperationDefinitionNode | undefined;
-  const fragments: Record<string, FragmentDefinitionNode> = Object.create(null);
 
   for (let i = 0; i < document.definitions.length; i++) {
     const def = document.definitions[i];
     if (def.kind === 'OperationDefinition' && !operation) {
       operation = def;
     } else if (def.kind === 'FragmentDefinition') {
-      fragments[def.name.value] = def;
+      fragments.set(def.name.value, def);
     }
   }
 
-  if (!operation || !resultData) return counts;
+  // Convert empty Map to Record to maintain return signature
+  if (!operation || !resultData) return {};
 
   let rootType: GraphQLObjectType | undefined | null;
   if (operation.operation === 'query') rootType = schema.getQueryType();
   else if (operation.operation === 'mutation') rootType = schema.getMutationType();
   else if (operation.operation === 'subscription') rootType = schema.getSubscriptionType();
 
-  if (!rootType) return counts;
+  if (!rootType) return {};
 
-  const typeCache: Record<string, GraphQLNamedType> = Object.create(null);
+  const typeCache = new Map<string, GraphQLNamedType>();
   const getType = (name: string): GraphQLNamedType | undefined => {
-    if (!typeCache[name]) {
-      const type = schema.getType(name);
-      if (type) typeCache[name] = type;
+    let type = typeCache.get(name);
+    if (!type) {
+      const schemaType = schema.getType(name);
+      if (schemaType) {
+        typeCache.set(name, schemaType);
+        type = schemaType;
+      }
     }
-    return typeCache[name];
+    return type;
   };
 
-  const matchCache: Record<string, boolean> = Object.create(null);
+  const matchCache = new Map<string, boolean>();
   const doesTypeMatch = (runtimeTypeName: string, typeConditionName: string): boolean => {
     if (runtimeTypeName === typeConditionName) return true;
 
     const cacheKey = runtimeTypeName + '|' + typeConditionName;
-    if (matchCache[cacheKey] !== undefined) return matchCache[cacheKey];
+    const cached = matchCache.get(cacheKey);
+    if (cached !== undefined) return cached;
 
     const runtimeType = getType(runtimeTypeName);
     const conditionType = getType(typeConditionName);
@@ -79,35 +100,36 @@ export function extractCoordinates(
       }
     }
 
-    matchCache[cacheKey] = isMatch;
+    matchCache.set(cacheKey, isMatch);
     return isMatch;
   };
 
-  walkNode(
-    resultData,
-    operation.selectionSet.selections,
-    rootType,
+  const ctx: TraversalContext = {
     counts,
     getType,
     doesTypeMatch,
     fragments,
+    fieldMetaCache: new Map(),
     contextValue,
     infoValue,
-  );
+  };
 
-  return counts;
+  walkNode(resultData, operation.selectionSet.selections, rootType, ctx);
+
+  // Convert internal Map to a plain object for the public API boundary
+  const resultRecord: Record<string, number> = Object.create(null);
+  for (const [key, value] of counts.entries()) {
+    resultRecord[key] = value;
+  }
+
+  return resultRecord;
 }
 
 function walkNode(
   data: any,
   selections: readonly SelectionNode[],
   parentType: GraphQLType,
-  counts: Record<string, number>,
-  getType: (name: string) => GraphQLNamedType | undefined,
-  doesTypeMatch: (runtime: string, condition: string) => boolean,
-  fragments: Record<string, FragmentDefinitionNode>,
-  contextValue?: any,
-  infoValue?: GraphQLResolveInfo,
+  ctx: TraversalContext,
 ) {
   if (data === null || typeof data !== 'object') return;
 
@@ -120,48 +142,21 @@ function walkNode(
     for (let i = 0; i < data.length; i++) {
       const item = data[i];
       if (item !== null && typeof item === 'object') {
-        walkObject(
-          item,
-          selections,
-          namedType,
-          counts,
-          getType,
-          doesTypeMatch,
-          fragments,
-          false,
-          contextValue,
-          infoValue,
-        );
+        walkObject(item, selections, namedType, false, ctx);
       }
     }
     return;
   }
 
-  walkObject(
-    data,
-    selections,
-    namedType,
-    counts,
-    getType,
-    doesTypeMatch,
-    fragments,
-    false,
-    contextValue,
-    infoValue,
-  );
+  walkObject(data, selections, namedType, false, ctx);
 }
 
 function walkObject(
   data: any,
   selections: readonly SelectionNode[],
   namedType: GraphQLNamedType,
-  counts: Record<string, number>,
-  getType: (name: string) => GraphQLNamedType | undefined,
-  doesTypeMatch: (runtime: string, condition: string) => boolean,
-  fragments: Record<string, FragmentDefinitionNode>,
   isFragmentRecurse: boolean,
-  contextValue?: any,
-  infoValue?: GraphQLResolveInfo,
+  ctx: TraversalContext,
 ) {
   const namedTypeName = namedType.name;
   let runtimeTypeName = data.__typename;
@@ -169,13 +164,9 @@ function walkObject(
 
   // Use resolveType for abstract types if __typename is missing from the payload
   if (!runtimeTypeName && isAbstractType) {
-    /**
-     * Note that this should be a fallback for an extreme edge case. Because it's very unreliable.
-     * Abstract types cannot be determined in the gateway to be of a specific other type because the resolveType function
-     * won't have been implemented. However, this may solve the case in a monorepo.
-     */
     runtimeTypeName =
-      (infoValue && namedType.resolveType?.(data, contextValue, infoValue, namedType)) ??
+      (ctx.infoValue &&
+        namedType.resolveType?.(data, ctx.contextValue, ctx.infoValue, namedType)) ??
       namedTypeName;
   }
 
@@ -183,12 +174,12 @@ function walkObject(
 
   /** Track the abstract type as having been used */
   if (runtimeTypeName !== namedTypeName && isAbstractType) {
-    counts[namedTypeName] = (counts[namedTypeName] || 0) + 1;
+    ctx.counts.set(namedTypeName, (ctx.counts.get(namedTypeName) || 0) + 1);
   }
 
   if (!isFragmentRecurse) {
     // This accurately registers the resolved implementation to the counts map
-    counts[runtimeTypeName] = (counts[runtimeTypeName] || 0) + 1;
+    ctx.counts.set(runtimeTypeName, (ctx.counts.get(runtimeTypeName) || 0) + 1);
   }
 
   let fields: GraphQLFieldMap<any, any> | GraphQLInputFieldMap | null = null;
@@ -205,41 +196,44 @@ function walkObject(
 
       if (val !== undefined) {
         const coordinate = namedTypeName + '.' + realFieldName;
-        counts[coordinate] = (counts[coordinate] || 0) + 1;
+        ctx.counts.set(coordinate, (ctx.counts.get(coordinate) || 0) + 1);
 
         if (val !== null) {
-          if (!fields) {
-            fields = 'getFields' in namedType ? namedType.getFields() : {};
+          // Attempt to pull the resolved schema definitions from our short-lived cache
+          let meta = ctx.fieldMetaCache.get(coordinate);
+
+          if (!meta) {
+            if (!fields) {
+              fields = 'getFields' in namedType ? namedType.getFields() : {};
+            }
+            const fieldDef = fields[realFieldName];
+            if (fieldDef) {
+              meta = {
+                type: fieldDef.type,
+                leafTypeName: selection.selectionSet
+                  ? undefined
+                  : getNamedType(fieldDef.type)?.name,
+              };
+              ctx.fieldMetaCache.set(coordinate, meta);
+            }
           }
 
-          const fieldDef = fields[realFieldName];
-          if (fieldDef) {
+          if (meta) {
             if (selection.selectionSet) {
-              walkNode(
-                val,
-                selection.selectionSet.selections,
-                fieldDef.type,
-                counts,
-                getType,
-                doesTypeMatch,
-                fragments,
-                contextValue,
-                infoValue,
-              );
-            } else {
-              // Feature: Extract and count Leaf Types (Scalars / Enums)
-              const leafTypeName = getNamedType(fieldDef.type)?.name;
-
+              walkNode(val, selection.selectionSet.selections, meta.type, ctx);
+            } else if (meta.leafTypeName) {
+              // Fast path for arrays of Leaf Types (Scalars / Enums)
+              const leafType = meta.leafTypeName;
               if (Array.isArray(val)) {
                 let leafCount = 0;
                 for (let j = 0; j < val.length; j++) {
                   if (val[j] !== null) leafCount++;
                 }
                 if (leafCount > 0) {
-                  counts[leafTypeName] = (counts[leafTypeName] || 0) + leafCount;
+                  ctx.counts.set(leafType, (ctx.counts.get(leafType) || 0) + leafCount);
                 }
               } else {
-                counts[leafTypeName] = (counts[leafTypeName] || 0) + 1;
+                ctx.counts.set(leafType, (ctx.counts.get(leafType) || 0) + 1);
               }
             }
           }
@@ -251,29 +245,18 @@ function walkObject(
       let nextType: GraphQLNamedType = namedType;
 
       if (typeConditionName) {
-        matchesType = doesTypeMatch(runtimeTypeName, typeConditionName);
+        matchesType = ctx.doesTypeMatch(runtimeTypeName, typeConditionName);
         if (matchesType) {
-          nextType = getType(typeConditionName) || namedType;
+          nextType = ctx.getType(typeConditionName) || namedType;
         }
       }
 
       if (matchesType && selection.selectionSet) {
-        walkObject(
-          data,
-          selection.selectionSet.selections,
-          nextType,
-          counts,
-          getType,
-          doesTypeMatch,
-          fragments,
-          true,
-          contextValue,
-          infoValue,
-        );
+        walkObject(data, selection.selectionSet.selections, nextType, true, ctx);
       }
     } else if (selection.kind === 'FragmentSpread') {
       const fragmentName = selection.name.value;
-      const fragmentDef = fragments[fragmentName];
+      const fragmentDef = ctx.fragments.get(fragmentName);
 
       if (fragmentDef) {
         const typeConditionName = fragmentDef.typeCondition.name.value;
@@ -281,25 +264,14 @@ function walkObject(
         let nextType: GraphQLNamedType = namedType;
 
         if (typeConditionName) {
-          matchesType = doesTypeMatch(runtimeTypeName, typeConditionName);
+          matchesType = ctx.doesTypeMatch(runtimeTypeName, typeConditionName);
           if (matchesType) {
-            nextType = getType(typeConditionName) || namedType;
+            nextType = ctx.getType(typeConditionName) || namedType;
           }
         }
 
         if (matchesType && fragmentDef.selectionSet) {
-          walkObject(
-            data,
-            fragmentDef.selectionSet.selections,
-            nextType,
-            counts,
-            getType,
-            doesTypeMatch,
-            fragments,
-            true,
-            contextValue,
-            infoValue,
-          );
+          walkObject(data, fragmentDef.selectionSet.selections, nextType, true, ctx);
         }
       }
     }
