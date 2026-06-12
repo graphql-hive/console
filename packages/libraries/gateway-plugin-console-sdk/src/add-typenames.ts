@@ -1,8 +1,10 @@
 import {
+  DefinitionNode,
   getNamedType,
   isAbstractType,
   isCompositeType,
   isObjectType,
+  SelectionNode,
   type DocumentNode,
   type FieldNode,
   type GraphQLCompositeType,
@@ -28,8 +30,12 @@ const TYPENAME_FIELD: FieldNode = {
  */
 export function addTypenames(document: DocumentNode, schema: GraphQLSchema): DocumentNode {
   let definitionsChanged = false;
+  let newDefinitions: DefinitionNode[] | null = null;
 
-  const augmentedDefinitions = document.definitions.map(def => {
+  for (let i = 0; i < document.definitions.length; i++) {
+    const def = document.definitions[i];
+    let newDef = def;
+
     if (def.kind === 'OperationDefinition') {
       const rootType =
         def.operation === 'query'
@@ -38,39 +44,39 @@ export function addTypenames(document: DocumentNode, schema: GraphQLSchema): Doc
             ? schema.getMutationType()
             : schema.getSubscriptionType();
 
-      if (!rootType) return def;
-
-      const newSelectionSet = walkSelectionSet(def.selectionSet, rootType, false, schema);
-      if (newSelectionSet !== def.selectionSet) {
-        definitionsChanged = true;
-        return {
-          ...def,
-          selectionSet: newSelectionSet,
-        };
+      if (rootType) {
+        const newSelectionSet = walkSelectionSet(def.selectionSet, rootType, false, schema);
+        if (newSelectionSet !== def.selectionSet) {
+          newDef = { ...def, selectionSet: newSelectionSet };
+        }
       }
-      return def;
-    }
-
-    if (def.kind === 'FragmentDefinition') {
+    } else if (def.kind === 'FragmentDefinition') {
       const onType = schema.getType(def.typeCondition.name.value);
-      const typeIsAbstract = isAbstractType(onType);
-      // This check is equivalent to graphqljs' "isCompositeType", but it means we dont need
-      // to recheck for if the type is abstract. This is a minor efficiency thing.
-      if (!typeIsAbstract && !isObjectType(onType)) return def;
 
-      const newSelectionSet = walkSelectionSet(def.selectionSet, onType, typeIsAbstract, schema);
-      if (newSelectionSet !== def.selectionSet) {
-        definitionsChanged = true;
-        return {
-          ...def,
-          selectionSet: newSelectionSet,
-        };
+      if (isCompositeType(onType)) {
+        const newSelectionSet = walkSelectionSet(
+          def.selectionSet,
+          onType,
+          isAbstractType(onType),
+          schema,
+        );
+        if (newSelectionSet !== def.selectionSet) {
+          newDef = { ...def, selectionSet: newSelectionSet };
+        }
       }
-      return def;
     }
 
-    return def;
-  });
+    if (newDef !== def) {
+      if (!definitionsChanged) {
+        definitionsChanged = true;
+        newDefinitions = document.definitions.slice(0, i);
+      }
+    }
+
+    if (definitionsChanged && newDefinitions) {
+      newDefinitions.push(newDef);
+    }
+  }
 
   if (!definitionsChanged) {
     return document;
@@ -78,19 +84,10 @@ export function addTypenames(document: DocumentNode, schema: GraphQLSchema): Doc
 
   return {
     ...document,
-    definitions: augmentedDefinitions,
+    definitions: newDefinitions!,
   };
 }
 
-// ---------------------------------------------------------------------------
-// Internal helpers
-// ---------------------------------------------------------------------------
-
-/**
- * @param parentIsAbstract - true when the immediately enclosing field (or
- * fragment condition) resolved to an abstract type. This is propagated into
- * concrete inline-fragment branches so they also receive __typename.
- */
 function walkSelectionSet(
   selectionSet: SelectionSetNode,
   parentType: GraphQLCompositeType,
@@ -98,89 +95,98 @@ function walkSelectionSet(
   schema: GraphQLSchema,
 ): SelectionSetNode {
   const thisTypeIsAbstract = isAbstractType(parentType);
-  const needsTypename =
-    (thisTypeIsAbstract ||
-      (parentIsAbstract && isObjectType(parentType) && parentType.getInterfaces().length > 0)) &&
-    !selectionSet.selections.some(s => s.kind === 'Field' && s.name.value === '__typename');
+  const checkTypename =
+    thisTypeIsAbstract ||
+    (parentIsAbstract && isObjectType(parentType) && parentType.getInterfaces().length > 0);
 
   let selectionsChanged = false;
+  let newSelections: SelectionNode[] | null = null;
+  let hasTypename = false;
 
-  const augmentedSelections = selectionSet.selections.map(selection => {
+  const selections = selectionSet.selections;
+
+  for (let i = 0; i < selections.length; i++) {
+    const selection = selections[i];
+    let newSelection = selection;
+
     if (selection.kind === 'Field') {
-      if (!selection.selectionSet) {
-        return selection; // Scalar or enum leaf.
+      if (checkTypename && selection.name.value === '__typename') {
+        hasTypename = true;
       }
 
-      const fieldDef = getFieldDef(parentType, selection);
-      if (!fieldDef) return selection;
+      if (selection.selectionSet) {
+        const fieldDef = getFieldDef(parentType, selection);
+        if (fieldDef) {
+          const fieldType = getNamedType(fieldDef.type);
+          if (isCompositeType(fieldType)) {
+            const newSelectionSet = walkSelectionSet(
+              selection.selectionSet,
+              fieldType,
+              isAbstractType(fieldType),
+              schema,
+            );
 
-      const fieldType = getNamedType(fieldDef.type);
-      if (!isCompositeType(fieldType)) return selection;
-
-      const newSelectionSet = walkSelectionSet(
-        selection.selectionSet,
-        fieldType,
-        isAbstractType(fieldType),
-        schema,
-      );
-
-      if (newSelectionSet !== selection.selectionSet) {
-        selectionsChanged = true;
-        return {
-          ...selection,
-          selectionSet: newSelectionSet,
-        } satisfies FieldNode;
+            if (newSelectionSet !== selection.selectionSet) {
+              newSelection = {
+                ...selection,
+                selectionSet: newSelectionSet,
+              } satisfies FieldNode;
+            }
+          }
+        }
       }
-
-      return selection;
-    }
-
-    if (selection.kind === 'InlineFragment') {
-      // A typed fragment (`... on Foo`) narrows the parent type.
-      // An untyped fragment inherits the parent type.
+    } else if (selection.kind === 'InlineFragment') {
       const branchType = selection.typeCondition
         ? schema.getType(selection.typeCondition.name.value)
         : parentType;
 
-      if (!isCompositeType(branchType)) return selection;
+      if (isCompositeType(branchType)) {
+        const newSelectionSet = walkSelectionSet(
+          selection.selectionSet,
+          branchType,
+          isAbstractType(branchType),
+          schema,
+        );
 
-      const newSelectionSet = walkSelectionSet(
-        selection.selectionSet,
-        branchType,
-        isAbstractType(branchType),
-        schema,
-      );
-
-      if (newSelectionSet !== selection.selectionSet) {
-        selectionsChanged = true;
-        return {
-          ...selection,
-          selectionSet: newSelectionSet,
-        } satisfies InlineFragmentNode;
+        if (newSelectionSet !== selection.selectionSet) {
+          newSelection = {
+            ...selection,
+            selectionSet: newSelectionSet,
+          } satisfies InlineFragmentNode;
+        }
       }
-
-      return selection;
     }
 
-    // FRAGMENT_SPREAD — the definition is handled at the top-level definitions
-    // pass; the spread node itself carries no selectionSet.
-    return selection;
-  });
+    if (newSelection !== selection) {
+      if (!selectionsChanged) {
+        selectionsChanged = true;
+        // This logic avoids copying the selection list before it's absolutely necessary.
+        // Therefore, no additional memory will be wasted copying when iterating over
+        // concrete, non-implementing object types.
+        newSelections = selections.slice(0, i);
+      }
+    }
 
+    if (selectionsChanged && newSelections) {
+      newSelections.push(newSelection);
+    }
+  }
+
+  const needsTypename = checkTypename && !hasTypename;
   if (!needsTypename && !selectionsChanged) {
     return selectionSet;
+  }
+  const finalSelections = selectionsChanged && newSelections ? newSelections : [...selections];
+  if (needsTypename) {
+    finalSelections.push(TYPENAME_FIELD);
   }
 
   return {
     ...selectionSet,
-    selections: needsTypename ? [...augmentedSelections, TYPENAME_FIELD] : augmentedSelections,
+    selections: finalSelections,
   };
 }
 
-/**
- * Resolves the field definition for a given field node on a parent type,
- * including the meta-fields __schema, __type, and __typename.
- */
 function getFieldDef(parentType: GraphQLCompositeType, field: FieldNode) {
   const name = field.name.value;
   // ignore internal fields like __schema, __type, and __typename
