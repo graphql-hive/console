@@ -201,7 +201,7 @@ export default gql`
     operations: OperationStatsValuesConnection! @tag(name: "public")
     clients: ClientStatsValuesConnection! @tag(name: "public")
     errorCodes: ErrorStatsValuesConnection
-    errorCodesOverTime: [ErrorCodesOverTime!]
+    errorCodesOverTime(resolution: Int!): [ErrorCodesOverTime!]
   }
 
   type ErrorCodesOverTime {

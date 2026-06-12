@@ -26,7 +26,7 @@ import { graphql } from '@/gql';
 import { FieldLevelMetricsDisplayState } from '@/gql/graphql';
 import { formatNumber, formatThroughput, toDecimal } from '@/lib/hooks';
 import { useDateRangeController } from '@/lib/hooks/use-date-range-controller';
-import { cn, useChartStyles } from '@/lib/utils';
+import { cn, stringToHiveColor, useChartStyles } from '@/lib/utils';
 import { Link } from '@tanstack/react-router';
 
 const SchemaCoordinateView_SchemaCoordinateStatsQuery = graphql(`
@@ -86,6 +86,11 @@ const SchemaCoordinateView_SchemaCoordinateStatsQuery = graphql(`
             }
           }
         }
+        errorCodesOverTime(resolution: $resolution) {
+          code
+          count
+          date
+        }
       }
       latestValidSchemaVersion {
         id
@@ -107,6 +112,7 @@ function SchemaCoordinateView(props: {
   targetSlug: string;
 }) {
   const { styles, colors } = useChartStyles();
+  const errorColors = [colors.error, colors.p99, colors.p95, colors.p90, colors.p75];
   const dateRangeController = useDateRangeController({
     dataRetentionInDays: props.dataRetentionInDays,
     defaultPreset: presetLast7Days,
@@ -162,6 +168,19 @@ function SchemaCoordinateView(props: {
 
     return errorPoints.map(node => [node.date, node.value]);
   }, [errorPoints]);
+
+  const errorCodesOverTime = useMemo(() => {
+    const items = query.data?.target?.schemaCoordinateStats.errorCodesOverTime ?? [];
+    return items.reduce(
+      (grouped, item) => {
+        grouped[item.code] ??= [];
+        grouped[item.code].push([item.date, item.count]);
+
+        return grouped;
+      },
+      {} as Record<string, [string, number][]>,
+    );
+  }, [query.data?.target?.schemaCoordinateStats.errorCodesOverTime]);
   const totalRequests = query.data?.target?.schemaCoordinateStats?.totalRequests ?? 0;
   const totalResolutions = query.data?.target?.schemaCoordinateStats?.totalResolutions ?? 0;
   const totalFailures = query.data?.target?.schemaCoordinateStats.totalFailures ?? null;
@@ -585,34 +604,103 @@ This differs from Request Count because a single request can resolve a field mul
           </Card>
 
           {showFieldLevelMetrics ? (
-            <Card className="bg-neutral-2/50 col-span-3 flex h-full flex-col">
-              <CardHeader>
-                <CardTitle>Errors</CardTitle>
-                <CardDescription>
-                  {props.coordinate} resulted in a GraphQL error {isLoading ? '-' : totalFailures}{' '}
-                  times in {dateRangeController.selectedPreset.label.toLowerCase()}.
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="min-h-[170px] grow basis-0 overflow-y-auto">
-                <div className="space-y-2">
-                  {isLoading
-                    ? null
-                    : query.data?.target?.schemaCoordinateStats.errorCodes?.edges.map(
-                        ({ node: error }) => (
-                          <div key={error.code} className="flex items-center">
-                            <p className="truncate text-sm font-medium">{error.code}</p>
-                            <div className="ml-auto flex min-w-[150px] flex-row items-center justify-end text-sm font-light">
-                              <div>{formatNumber(error.count)}</div>
-                              <div className="min-w-[70px] text-right">
-                                {toDecimal((error.count * 100) / totalRequests)}%
+            <>
+              <Card className="bg-neutral-2/50 col-span-3 flex h-full flex-col">
+                <CardHeader>
+                  <CardTitle>Errors</CardTitle>
+                  <CardDescription>
+                    {props.coordinate} resulted in a GraphQL error {isLoading ? '-' : totalFailures}{' '}
+                    times in {dateRangeController.selectedPreset.label.toLowerCase()}.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="min-h-[170px] grow basis-0 overflow-y-auto">
+                  <div className="space-y-2">
+                    {isLoading
+                      ? null
+                      : query.data?.target?.schemaCoordinateStats.errorCodes?.edges.map(
+                          ({ node: error }) => (
+                            <div key={error.code} className="flex items-center">
+                              <p className="truncate text-sm font-medium">{error.code}</p>
+                              <div className="ml-auto flex min-w-[150px] flex-row items-center justify-end text-sm font-light">
+                                <div>{formatNumber(error.count)}</div>
+                                <div className="min-w-[70px] text-right">
+                                  {toDecimal((error.count * 100) / totalRequests)}%
+                                </div>
                               </div>
                             </div>
-                          </div>
-                        ),
-                      )}
-                </div>
-              </CardContent>
-            </Card>
+                          ),
+                        )}
+                  </div>
+                </CardContent>
+              </Card>
+              <Card className="bg-neutral-2/50 col-span-4 flex h-full flex-col">
+                <CardHeader>
+                  <CardTitle>Error Activity</CardTitle>
+                  <CardDescription>
+                    Error codes returned by {props.coordinate} over time
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="min-h-[170px] grow basis-0 overflow-y-auto">
+                  <AutoSizer>
+                    {size => (
+                      <ReactECharts
+                        style={{ width: size.width, height: size.height }}
+                        option={{
+                          ...styles,
+                          grid: {
+                            left: 20,
+                            top: 5,
+                            right: 5,
+                            bottom: 5,
+                            containLabel: true,
+                          },
+                          tooltip: {
+                            trigger: 'axis',
+                          },
+                          legend: {
+                            show: false,
+                          },
+                          xAxis: [
+                            {
+                              type: 'time',
+                              boundaryGap: false,
+                            },
+                          ],
+                          yAxis: [
+                            {
+                              type: 'value',
+                              min: 0,
+                              splitLine: {
+                                lineStyle: {
+                                  color: colors.grid,
+                                  type: 'dashed',
+                                },
+                              },
+                              axisLabel: {
+                                formatter: (value: number) => formatNumber(value),
+                              },
+                            },
+                          ],
+                          series: Object.keys(errorCodesOverTime).map((errorCode, i) => ({
+                            type: 'bar',
+                            name: errorCode ?? 'undefined',
+                            showSymbol: false,
+                            smooth: false,
+                            color: i < 5 ? errorColors[i] : stringToHiveColor(errorCode),
+                            areaStyle: {},
+                            emphasis: {
+                              focus: 'series',
+                            },
+                            large: true,
+                            data: errorCodesOverTime[errorCode],
+                          })),
+                        }}
+                      />
+                    )}
+                  </AutoSizer>
+                </CardContent>
+              </Card>
+            </>
           ) : null}
         </div>
       </div>

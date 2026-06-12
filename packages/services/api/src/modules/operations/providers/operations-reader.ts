@@ -3037,8 +3037,8 @@ export class OperationsReader {
           target,
           extra: [sql`coordinate=${schemaCoordinate}`],
         })}
-        GROUP BY code, timestamp
-        ORDER BY date
+        GROUP BY code, date
+        ORDER BY code, date
           WITH FILL
             FROM toDateTime(${startDateTimeFormatted}, 'UTC')
             TO toDateTime(${endDateTimeFormatted}, 'UTC')
