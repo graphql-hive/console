@@ -746,13 +746,14 @@ function PreflightModal({
                 variant="orangeLink"
                 size="icon-sm"
                 className="size-auto gap-1"
-                onClick={() => {
+                onClick={e => {
                   if (state === PreflightWorkerState.running) {
                     abortExecution();
                     return;
                   }
 
                   execute(scriptEditorRef.current?.getValue() ?? '');
+                  e.stopPropagation();
                 }}
                 data-cy="run-preflight"
               >
