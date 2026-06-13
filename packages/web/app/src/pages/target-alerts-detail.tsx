@@ -1,4 +1,4 @@
-import { ReactNode, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { subMinutes } from 'date-fns';
 import { useQuery } from 'urql';
 import { Select } from '@/components/base/floating/select/select';
@@ -17,6 +17,7 @@ import { Spinner } from '@/components/ui/spinner';
 import { graphql } from '@/gql';
 import {
   MetricAlertRuleDirection,
+  MetricAlertRuleMetric,
   MetricAlertRuleThresholdType,
   MetricAlertRuleType,
 } from '@/gql/graphql';
@@ -105,6 +106,7 @@ const TargetAlertsDetailPage_StateLogQuery = graphql(`
     $ruleId: ID!
     $from: DateTime!
     $to: DateTime!
+    $resolution: Int!
   ) {
     target(
       reference: {
@@ -128,6 +130,9 @@ const TargetAlertsDetailPage_StateLogQuery = graphql(`
           thresholdValue
           createdAt
         }
+      }
+      operationsStats(period: { from: $from, to: $to }) {
+        ...AlertMetricChart_OperationsStatsFragment
       }
     }
   }
@@ -262,28 +267,6 @@ export function TargetAlertsDetailPage(props: {
           ruleId={rule.id}
           viewRangeMinutes={viewRangeMinutes}
           rule={rule}
-          chart={
-            <section className="space-y-2">
-              <h2 className="text-neutral-12 m-0 text-sm font-medium">
-                {rule.type === MetricAlertRuleType.ErrorRate
-                  ? 'Error rate over time'
-                  : rule.type === MetricAlertRuleType.Latency
-                    ? 'Latency over time'
-                    : 'Traffic over time'}
-              </h2>
-              <AlertMetricChart
-                organizationSlug={organizationSlug}
-                projectSlug={projectSlug}
-                targetSlug={targetSlug}
-                type={rule.type}
-                metric={rule.metric}
-                timeWindowMinutes={parseInt(viewRangeMinutes, 10) || 60}
-                thresholdValue={rule.thresholdValue}
-                direction={rule.direction}
-                thresholdType={rule.thresholdType}
-              />
-            </section>
-          }
         />
       </div>
 
@@ -311,32 +294,31 @@ function RuleStateLogSection(props: {
   targetSlug: string;
   ruleId: string;
   viewRangeMinutes: string;
-  rule: AlertEventsTableRule & { createdAt: string };
-  chart: ReactNode;
+  rule: AlertEventsTableRule & { createdAt: string; metric?: MetricAlertRuleMetric | null };
 }) {
-  const { organizationSlug, projectSlug, targetSlug, ruleId, viewRangeMinutes, rule, chart } =
-    props;
+  const { organizationSlug, projectSlug, targetSlug, ruleId, viewRangeMinutes, rule } = props;
 
   const now = useRollingNow(ALERTS_POLL_INTERVAL_MS);
-  const { from, to } = useMemo(() => {
+  const { from, to, resolution } = useMemo(() => {
     const minutes = parseInt(viewRangeMinutes, 10) || 60;
-    // Round the window to the same buckets the metric chart uses
     const resolved = resolveRangeAndResolution({ from: subMinutes(now, minutes), to: now });
     return {
       from: resolved.range.from.toISOString(),
       to: resolved.range.to.toISOString(),
+      resolution: resolved.resolution,
     };
   }, [now, viewRangeMinutes]);
 
   const [result] = useQuery({
     query: TargetAlertsDetailPage_StateLogQuery,
-    variables: { organizationSlug, projectSlug, targetSlug, ruleId, from, to },
+    variables: { organizationSlug, projectSlug, targetSlug, ruleId, from, to, resolution },
     requestPolicy: 'cache-and-network',
   });
 
   const data = useKeepPreviousData(result.data, result.fetching || result.stale);
   const stateLog = data?.target?.metricAlertRule?.stateLog ?? [];
   const stateAtWindowStart = data?.target?.metricAlertRule?.stateAt;
+  const operationsStats = data?.target?.operationsStats ?? null;
   const hasNoData = !data;
   const stateLogStatus =
     result.error && hasNoData ? (
@@ -364,7 +346,24 @@ function RuleStateLogSection(props: {
         )}
       </section>
 
-      {chart}
+      <section className="space-y-2">
+        <h2 className="text-neutral-12 m-0 text-sm font-medium">
+          {rule.type === MetricAlertRuleType.ErrorRate
+            ? 'Error rate over time'
+            : rule.type === MetricAlertRuleType.Latency
+              ? 'Latency over time'
+              : 'Traffic over time'}
+        </h2>
+        <AlertMetricChart
+          stats={operationsStats}
+          loading={result.fetching && hasNoData}
+          type={rule.type}
+          metric={rule.metric}
+          thresholdValue={rule.thresholdValue}
+          direction={rule.direction}
+          thresholdType={rule.thresholdType}
+        />
+      </section>
 
       {stateLogStatus ? null : (
         <AlertEventsTable

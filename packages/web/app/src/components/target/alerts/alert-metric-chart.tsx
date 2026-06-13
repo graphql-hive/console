@@ -1,61 +1,45 @@
 import { useMemo } from 'react';
-import { subMinutes } from 'date-fns';
 import * as echarts from 'echarts';
 import ReactECharts from 'echarts-for-react';
 import AutoSizer from 'react-virtualized-auto-sizer';
-import { useQuery } from 'urql';
-import { graphql } from '@/gql';
+import { FragmentType, graphql, useFragment } from '@/gql';
 import { MetricAlertRuleMetric, MetricAlertRuleType } from '@/gql/graphql';
-import { resolveRangeAndResolution } from '@/lib/hooks/use-date-range-controller';
 import { formatDuration } from '@/lib/hooks/use-formatted-duration';
 import { formatNumber } from '@/lib/hooks/use-formatted-number';
-import { useKeepPreviousData } from '@/lib/hooks/use-keep-previous-data';
-import { useRollingNow } from '@/lib/hooks/use-rolling-now';
 import { useChartStyles } from '@/lib/utils';
 import { ALERT_CHART_INSET_LEFT, ALERT_CHART_INSET_RIGHT } from './alert-chart-layout';
-import { ALERTS_POLL_INTERVAL_MS } from './alert-polling';
 
-const AlertMetricChart_Query = graphql(`
-  query AlertMetricChart(
-    $targetSelector: TargetSelectorInput!
-    $period: DateRangeInput!
-    $resolution: Int!
-  ) {
-    target(reference: { bySelector: $targetSelector }) {
-      id
-      operationsStats(period: $period) {
-        requestsOverTime(resolution: $resolution) {
-          date
-          value
-        }
-        failuresOverTime(resolution: $resolution) {
-          date
-          value
-        }
-        durationOverTime(resolution: $resolution) {
-          date
-          duration {
-            avg
-            p75
-            p90
-            p95
-            p99
-          }
-        }
+export const AlertMetricChart_OperationsStatsFragment = graphql(`
+  fragment AlertMetricChart_OperationsStatsFragment on OperationsStats {
+    requestsOverTime(resolution: $resolution) {
+      date
+      value
+    }
+    failuresOverTime(resolution: $resolution) {
+      date
+      value
+    }
+    durationOverTime(resolution: $resolution) {
+      date
+      duration {
+        avg
+        p75
+        p90
+        p95
+        p99
       }
     }
   }
 `);
 
 type AlertMetricChartProps = {
-  organizationSlug: string;
-  projectSlug: string;
-  targetSlug: string;
+  /** Masked operationsStats from the owner; null/undefined while it has no data yet. */
+  stats: FragmentType<typeof AlertMetricChart_OperationsStatsFragment> | null | undefined;
+  /** Whether the owner has a fetch in flight (distinguishes "Loading" from "No data"). */
+  loading: boolean;
   type: MetricAlertRuleType;
   /** Sub-metric for LATENCY rules (P75/P90/...); null for ERROR_RATE / TRAFFIC */
   metric?: MetricAlertRuleMetric | null;
-  /** Time window in minutes */
-  timeWindowMinutes: number;
   /** Threshold value to show as a horizontal marker line (only drawn for FIXED_VALUE rules) */
   thresholdValue: number | null;
   /** 'ABOVE' or 'BELOW' */
@@ -79,67 +63,39 @@ const PERCENTILE_FIELD_BY_METRIC: Record<
 };
 
 export function AlertMetricChart({
-  organizationSlug,
-  projectSlug,
-  targetSlug,
+  stats,
+  loading,
   type,
   metric,
-  timeWindowMinutes,
   thresholdValue,
   direction,
   thresholdType,
 }: AlertMetricChartProps) {
   const { colors } = useChartStyles();
 
-  const now = useRollingNow(ALERTS_POLL_INTERVAL_MS);
-  const { resolution, period } = useMemo(() => {
-    const from = subMinutes(now, timeWindowMinutes);
-    const resolved = resolveRangeAndResolution({ from, to: now });
-    return {
-      resolution: resolved.resolution,
-      period: {
-        from: resolved.range.from.toISOString(),
-        to: resolved.range.to.toISOString(),
-      },
-    };
-  }, [now, timeWindowMinutes]);
-
-  const [result] = useQuery({
-    query: AlertMetricChart_Query,
-    variables: {
-      targetSelector: { organizationSlug, projectSlug, targetSlug },
-      period,
-      resolution,
-    },
-  });
-
-  const queryData = useKeepPreviousData(result.data, result.fetching || result.stale);
-  const stats = queryData?.target?.operationsStats;
+  const {
+    requestsOverTime = [],
+    failuresOverTime = [],
+    durationOverTime = [],
+  } = useFragment(AlertMetricChart_OperationsStatsFragment, stats ?? null) ?? {};
   const isLatency = type === MetricAlertRuleType.Latency;
   const isErrorRate = type === MetricAlertRuleType.ErrorRate;
   const latencyPercentile = isLatency && metric ? PERCENTILE_FIELD_BY_METRIC[metric] : null;
 
   const { data, yAxisFormatter, seriesName } = useMemo(() => {
-    if (!stats) return { data: [], yAxisFormatter: formatNumber, seriesName: '' };
-
     if (isLatency && latencyPercentile) {
       const key = latencyPercentile;
       return {
-        data: (stats.durationOverTime ?? []).map<[string, number]>(node => [
-          node.date,
-          node.duration[key],
-        ]),
+        data: durationOverTime.map<[string, number]>(node => [node.date, node.duration[key]]),
         yAxisFormatter: (value: number) => formatDuration(value, true),
         seriesName: key === 'avg' ? 'Avg latency' : `${key} latency`,
       };
     }
 
     if (isErrorRate) {
-      const requests = stats.requestsOverTime ?? [];
-      const failures = stats.failuresOverTime ?? [];
       return {
-        data: requests.map<[string, number]>((node, i) => {
-          const failCount = failures[i]?.value ?? 0;
+        data: requestsOverTime.map<[string, number]>((node, i) => {
+          const failCount = failuresOverTime[i]?.value ?? 0;
           const rate = node.value > 0 ? (failCount / node.value) * 100 : 0;
           return [node.date, parseFloat(rate.toFixed(2))];
         }),
@@ -150,24 +106,25 @@ export function AlertMetricChart({
 
     // TRAFFIC
     return {
-      data: (stats.requestsOverTime ?? []).map<[string, number]>(node => [node.date, node.value]),
+      data: requestsOverTime.map<[string, number]>(node => [node.date, node.value]),
       yAxisFormatter: formatNumber,
       seriesName: 'Total requests',
     };
-  }, [stats, isLatency, latencyPercentile, isErrorRate]);
-
-  if (!queryData && result.fetching) {
-    return (
-      <div className="bg-neutral-2 dark:bg-neutral-3 border-neutral-5 flex h-[200px] items-center justify-center rounded-md border">
-        <span className="text-neutral-8 text-sm">Loading chart data...</span>
-      </div>
-    );
-  }
+  }, [
+    requestsOverTime,
+    failuresOverTime,
+    durationOverTime,
+    isLatency,
+    latencyPercentile,
+    isErrorRate,
+  ]);
 
   if (data.length === 0) {
     return (
       <div className="bg-neutral-2 dark:bg-neutral-3 border-neutral-5 flex h-[200px] items-center justify-center rounded-md border">
-        <span className="text-neutral-8 text-sm italic">No data available for this range.</span>
+        <span className={loading ? 'text-neutral-8 text-sm' : 'text-neutral-8 text-sm italic'}>
+          {loading ? 'Loading chart data...' : 'No data available for this range.'}
+        </span>
       </div>
     );
   }
