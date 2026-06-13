@@ -41,7 +41,7 @@ const OIDCIntegrationDomainListModel = z.array(OIDCIntegrationDomainModel);
 
 @Injectable({
   global: true,
-  scope: Scope.Operation,
+  scope: Scope.Singleton,
 })
 export class OIDCIntegrationStore {
   private logger: Logger;
@@ -135,7 +135,7 @@ export class OIDCIntegrationStore {
         AND "verified_at" IS NOT NULL
     `;
 
-    return this.pool.maybeOne(query).then(OIDCIntegrationDomainModel.nullable().parse);
+    return this.pool.maybeOne(query).then(ValidatedOIDCIntegrationDomainModel.nullable().parse);
   }
 
   async findVerifiedDomainByOIDCIntegrationIdAndDomainName(

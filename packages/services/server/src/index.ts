@@ -536,6 +536,7 @@ export async function main() {
     await registerSupertokensAtHome(
       server,
       storage,
+      registry.injector.get(OIDCIntegrationStore),
       registry.injector.get(TaskScheduler),
       registry.injector.get(CryptoProvider),
       registry.injector.get(RedisRateLimiter),
@@ -637,6 +638,7 @@ export async function main() {
         authN,
         storage.pool,
         storage,
+        registry.injector.get(OIDCIntegrationStore),
         registry.injector.get(RedisRateLimiter),
       );
       server.register(scimPlugin, { prefix: '/scim/v2' });
