@@ -4039,6 +4039,10 @@ const OIDCIntegrationBaseModel = z.object({
   defaultAssignedResources: z.any().nullable(),
   requireInvitation: z.boolean(),
   userIdClaim: z.string().nullable(),
+  /** Whether a user needs to be provisioned before login. */
+  userProvisioningRequired: z.boolean(),
+  /** Whether a user with a verified domain needs to log in through the OIDC flow. */
+  oidcForVerifiedDomainsRequired: z.boolean(),
 });
 
 const OIDCIntegrationLegacyModel = OIDCIntegrationBaseModel.extend({
@@ -4058,6 +4062,8 @@ const OIDCIntegrationLegacyModel = OIDCIntegrationBaseModel.extend({
   defaultMemberRoleId: record.defaultRoleId,
   defaultResourceAssignment: record.defaultAssignedResources,
   userIdClaim: record.userIdClaim ?? 'sub',
+  userProvisioningRequired: record.userProvisioningRequired,
+  oidcForVerifiedDomainsRequired: record.oidcForVerifiedDomainsRequired,
 }));
 
 const LatestOIDCIntegrationModel = OIDCIntegrationBaseModel.extend({
@@ -4080,6 +4086,8 @@ const LatestOIDCIntegrationModel = OIDCIntegrationBaseModel.extend({
   defaultMemberRoleId: record.defaultRoleId,
   defaultResourceAssignment: record.defaultAssignedResources,
   userIdClaim: record.userIdClaim ?? 'sub',
+  userProvisioningRequired: record.userProvisioningRequired,
+  oidcForVerifiedDomainsRequired: record.oidcForVerifiedDomainsRequired,
 }));
 
 const OIDCIntegrationModel = z.union([OIDCIntegrationLegacyModel, LatestOIDCIntegrationModel]);
@@ -4495,6 +4503,8 @@ const oidcIntegrationFields = (prefix: TaggedTemplateLiteralInvocation = psql``)
   , ${prefix}"default_assigned_resources" AS "defaultAssignedResources"
   , ${prefix}"require_invitation" AS "requireInvitation"
   , ${prefix}"user_id_claim" AS "userIdClaim"
+  , ${prefix}"user_provisioning_required" AS "userProvisioningRequired"
+  , ${prefix}"oidc_for_verified_domains_required" AS "oidcForVerifiedDomainsRequired"
 `;
 
 const OrganizationModel = z
