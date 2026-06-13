@@ -103,7 +103,9 @@ describe.concurrent('/Users', () => {
       const seed = initSeed();
       const owner = await seed.createOwner();
       const org = await owner.createOrg();
-      await org.createOIDCIntegration();
+      const { registerFakeDomain } = await org.createOIDCIntegration();
+      const domain = await registerFakeDomain();
+      const userEmail = 'marty@' + domain;
       const accessToken = await org.createOrganizationAccessToken({
         permissions: ['member:describe', 'member:modify'],
         resources: { mode: ResourceAssignmentModeType.Granular },
@@ -118,9 +120,9 @@ describe.concurrent('/Users', () => {
         method: 'POST',
         body: JSON.stringify({
           schemas: ['urn:ietf:params:scim:schemas:core:2.0:User'],
-          userName: 'marty@mcfly.dev',
+          userName: userEmail,
           name: { givenName: 'Marty', familyName: 'McFly' },
-          emails: [{ primary: true, value: 'marty@mcfly.dev', type: 'work' }],
+          emails: [{ primary: true, value: userEmail, type: 'work' }],
           displayName: 'Marty McFly',
           locale: 'en-US',
           externalId: externalUserId,
@@ -130,14 +132,14 @@ describe.concurrent('/Users', () => {
         }),
         headers,
       });
-      expect(usersPostResponse.status).toEqual(201);
       const body = await usersPostResponse.json();
+      expect(usersPostResponse.status).toEqual(201);
       expect(body).toEqual({
         emails: [
           {
             primary: true,
             type: 'work',
-            value: 'marty@mcfly.dev',
+            value: userEmail,
           },
         ],
         externalId: externalUserId,
@@ -147,16 +149,17 @@ describe.concurrent('/Users', () => {
         },
         active: true,
         schemas: ['urn:ietf:params:scim:schemas:core:2.0:User'],
-        userName: 'marty@mcfly.dev',
+        userName: userEmail,
       });
     });
     test.concurrent(
-      'create new multiple users withdifferent emails suceeds',
+      'create new multiple users withdifferent emails succeeds',
       async ({ expect }) => {
         const seed = initSeed();
         const owner = await seed.createOwner();
         const org = await owner.createOrg();
-        await org.createOIDCIntegration();
+        const { registerFakeDomain } = await org.createOIDCIntegration();
+        const domain = await registerFakeDomain();
         const accessToken = await org.createOrganizationAccessToken({
           permissions: ['member:describe', 'member:modify'],
           resources: { mode: ResourceAssignmentModeType.Granular },
@@ -171,9 +174,9 @@ describe.concurrent('/Users', () => {
           method: 'POST',
           body: JSON.stringify({
             schemas: ['urn:ietf:params:scim:schemas:core:2.0:User'],
-            userName: 'emmett@brown.dev',
+            userName: 'emmett.brown@' + domain,
             name: { givenName: 'Emmett', familyName: 'Brown' },
-            emails: [{ primary: true, value: 'emmett@brown.dev', type: 'work' }],
+            emails: [{ primary: true, value: 'emmett.brown@' + domain, type: 'work' }],
             displayName: 'Emmett Brown',
             locale: 'en-US',
             externalId: externalUserId,
@@ -190,7 +193,7 @@ describe.concurrent('/Users', () => {
             {
               primary: true,
               type: 'work',
-              value: 'emmett@brown.dev',
+              value: 'emmett.brown@' + domain,
             },
           ],
           externalId: externalUserId,
@@ -200,73 +203,11 @@ describe.concurrent('/Users', () => {
           },
           active: true,
           schemas: ['urn:ietf:params:scim:schemas:core:2.0:User'],
-          userName: 'emmett@brown.dev',
+          userName: 'emmett.brown@' + domain,
         });
       },
     );
-    test.concurrent(
-      'create user with external id conflict yields correct error response',
-      async ({ expect }) => {
-        const seed = initSeed();
-        const owner = await seed.createOwner();
-        const org = await owner.createOrg();
-        await org.createOIDCIntegration();
-        const accessToken = await org.createOrganizationAccessToken({
-          permissions: ['member:describe', 'member:modify'],
-          resources: { mode: ResourceAssignmentModeType.Granular },
-        });
-        const scimAuthHeader = 'Bearer ' + accessToken.privateAccessKey;
-        const externalUserId = 'externbal_user_id';
-        const headers = {
-          'Content-Type': 'application/scim+json',
-          Authorization: scimAuthHeader,
-        };
-        let usersPostResponse = await fetch(usersEndpoint, {
-          method: 'POST',
-          body: JSON.stringify({
-            schemas: ['urn:ietf:params:scim:schemas:core:2.0:User'],
-            userName: 'emmett@brown.dev',
-            name: { givenName: 'Emmett', familyName: 'Brown' },
-            emails: [{ primary: true, value: 'emmett@brown.dev', type: 'work' }],
-            displayName: 'Emmett Brown',
-            locale: 'en-US',
-            externalId: externalUserId,
-            groups: [],
-            password: 'foobars',
-            active: true,
-          }),
-          headers,
-        });
-        expect(usersPostResponse.status).toEqual(201);
-        usersPostResponse = usersPostResponse = await fetch(usersEndpoint, {
-          method: 'POST',
-          body: JSON.stringify({
-            schemas: ['urn:ietf:params:scim:schemas:core:2.0:User'],
-            userName: 'marty@mcfly.dev',
-            name: { givenName: 'Marty', familyName: 'McFly' },
-            emails: [{ primary: true, value: 'marty@mcfly.dev', type: 'work' }],
-            displayName: 'Marty McFly',
-            locale: 'en-US',
-            externalId: externalUserId,
-            groups: [],
-            password: 'fq77ZD37',
-            active: true,
-          }),
-          headers,
-        });
-        expect(usersPostResponse.status).toEqual(409);
-        expect(await usersPostResponse.json()).toMatchInlineSnapshot(`
-        {
-          detail: A user with the same external id already exists.,
-          schemas: [
-            urn:ietf:params:scim:api:messages:2.0:Error,
-          ],
-          status: 409,
-        }
-      `);
-      },
-    );
-    test.concurrent('create inactive user can be created', async ({ expect }) => {
+    test.concurrent('create new user with non-verified domain fails', async ({ expect }) => {
       const seed = initSeed();
       const owner = await seed.createOwner();
       const org = await owner.createOrg();
@@ -293,6 +234,113 @@ describe.concurrent('/Users', () => {
           externalId: externalUserId,
           groups: [],
           password: 'fq77ZD37',
+          active: true,
+        }),
+        headers,
+      });
+      expect(usersPostResponse.status).toEqual(400);
+      const usersPostResponseBody = await usersPostResponse.json();
+      expect(usersPostResponseBody).toMatchInlineSnapshot(`
+        {
+          detail: Primary email address domain ownership is not verified for this organization.,
+          schemas: [
+            urn:ietf:params:scim:api:messages:2.0:Error,
+          ],
+          status: 400,
+        }
+      `);
+    });
+    test.concurrent(
+      'create user with external id conflict yields correct error response',
+      async ({ expect }) => {
+        const seed = initSeed();
+        const owner = await seed.createOwner();
+        const org = await owner.createOrg();
+        const { registerFakeDomain } = await org.createOIDCIntegration();
+        const domain = await registerFakeDomain();
+        const accessToken = await org.createOrganizationAccessToken({
+          permissions: ['member:describe', 'member:modify'],
+          resources: { mode: ResourceAssignmentModeType.Granular },
+        });
+        const scimAuthHeader = 'Bearer ' + accessToken.privateAccessKey;
+        const externalUserId = 'externbal_user_id';
+        const headers = {
+          'Content-Type': 'application/scim+json',
+          Authorization: scimAuthHeader,
+        };
+        let usersPostResponse = await fetch(usersEndpoint, {
+          method: 'POST',
+          body: JSON.stringify({
+            schemas: ['urn:ietf:params:scim:schemas:core:2.0:User'],
+            userName: 'emmett.brown@' + domain,
+            name: { givenName: 'Emmett', familyName: 'Brown' },
+            emails: [{ primary: true, value: 'emmett.brown@' + domain, type: 'work' }],
+            displayName: 'Emmett Brown',
+            locale: 'en-US',
+            externalId: externalUserId,
+            groups: [],
+            password: 'foobars',
+            active: true,
+          }),
+          headers,
+        });
+        expect(usersPostResponse.status).toEqual(201);
+        usersPostResponse = usersPostResponse = await fetch(usersEndpoint, {
+          method: 'POST',
+          body: JSON.stringify({
+            schemas: ['urn:ietf:params:scim:schemas:core:2.0:User'],
+            userName: 'marty.mcfly@' + domain,
+            name: { givenName: 'Marty', familyName: 'McFly' },
+            emails: [{ primary: true, value: 'marty.mcfly@' + domain, type: 'work' }],
+            displayName: 'Marty McFly',
+            locale: 'en-US',
+            externalId: externalUserId,
+            groups: [],
+            password: 'fq77ZD37',
+            active: true,
+          }),
+          headers,
+        });
+        expect(usersPostResponse.status).toEqual(409);
+        expect(await usersPostResponse.json()).toMatchInlineSnapshot(`
+        {
+          detail: A user with the same external id already exists.,
+          schemas: [
+            urn:ietf:params:scim:api:messages:2.0:Error,
+          ],
+          status: 409,
+        }
+      `);
+      },
+    );
+    test.concurrent('create inactive user succeeds', async ({ expect }) => {
+      const seed = initSeed();
+      const owner = await seed.createOwner();
+      const org = await owner.createOrg();
+      const { registerFakeDomain } = await org.createOIDCIntegration();
+      const domain = await registerFakeDomain();
+      const accessToken = await org.createOrganizationAccessToken({
+        permissions: ['member:describe', 'member:modify'],
+        resources: { mode: ResourceAssignmentModeType.Granular },
+      });
+      const scimAuthHeader = 'Bearer ' + accessToken.privateAccessKey;
+      const externalUserId = '00u13w8ptpbdysgOl698';
+      const headers = {
+        'Content-Type': 'application/scim+json',
+        Authorization: scimAuthHeader,
+      };
+      const usersPostResponse = await fetch(usersEndpoint, {
+        method: 'POST',
+        body: JSON.stringify({
+          schemas: ['urn:ietf:params:scim:schemas:core:2.0:User'],
+          userName: 'marty.mcfly@' + domain,
+          name: { givenName: 'Marty', familyName: 'McFly' },
+          emails: [{ primary: true, value: 'marty.mcfly@' + domain, type: 'work' }],
+          displayName: 'Marty McFly',
+          locale: 'en-US',
+          externalId: externalUserId,
+          groups: [],
+          password: 'fq77ZD37',
           active: false,
         }),
         headers,
@@ -304,7 +352,7 @@ describe.concurrent('/Users', () => {
           {
             primary: true,
             type: 'work',
-            value: 'marty@mcfly.dev',
+            value: 'marty.mcfly@' + domain,
           },
         ],
         externalId: externalUserId,
@@ -314,7 +362,7 @@ describe.concurrent('/Users', () => {
         },
         active: false,
         schemas: ['urn:ietf:params:scim:schemas:core:2.0:User'],
-        userName: 'marty@mcfly.dev',
+        userName: 'marty.mcfly@' + domain,
       });
     });
   });
@@ -325,7 +373,8 @@ describe.concurrent('/Users', () => {
         const seed = initSeed();
         const owner = await seed.createOwner();
         const org = await owner.createOrg();
-        await org.createOIDCIntegration();
+        const { registerFakeDomain } = await org.createOIDCIntegration();
+        const domain = await registerFakeDomain();
         const accessToken = await org.createOrganizationAccessToken({
           permissions: ['member:describe', 'member:modify'],
           resources: { mode: ResourceAssignmentModeType.Granular },
@@ -368,7 +417,8 @@ describe.concurrent('/Users', () => {
       const seed = initSeed();
       const owner = await seed.createOwner();
       const org = await owner.createOrg();
-      await org.createOIDCIntegration();
+      const { registerFakeDomain } = await org.createOIDCIntegration();
+      const domain = await registerFakeDomain();
       const accessToken = await org.createOrganizationAccessToken({
         permissions: ['member:describe', 'member:modify'],
         resources: { mode: ResourceAssignmentModeType.Granular },
@@ -383,9 +433,9 @@ describe.concurrent('/Users', () => {
         method: 'POST',
         body: JSON.stringify({
           schemas: ['urn:ietf:params:scim:schemas:core:2.0:User'],
-          userName: 'marty@mcfly.dev',
+          userName: 'marty.mcfly@' + domain,
           name: { givenName: 'Marty', familyName: 'McFly' },
-          emails: [{ primary: true, value: 'marty@mcfly.dev', type: 'work' }],
+          emails: [{ primary: true, value: 'marty.mcfly@' + domain, type: 'work' }],
           displayName: 'Marty McFly',
           locale: 'en-US',
           externalId: externalUserId,
@@ -402,9 +452,9 @@ describe.concurrent('/Users', () => {
         method: 'PUT',
         body: JSON.stringify({
           schemas: ['urn:ietf:params:scim:schemas:core:2.0:User'],
-          userName: 'marty@mcfly.dev',
+          userName: 'marty.mcfly@' + domain,
           name: { givenName: 'Marty', familyName: 'McFly' },
-          emails: [{ primary: true, value: 'marty@mcfly.dev', type: 'work' }],
+          emails: [{ primary: true, value: 'marty.mcfly@' + domain, type: 'work' }],
           displayName: 'Marty McFly',
           locale: 'en-US',
           externalId: externalUserId,
@@ -418,8 +468,8 @@ describe.concurrent('/Users', () => {
       expect(await usersPutResponse.json()).toEqual({
         schemas: ['urn:ietf:params:scim:schemas:core:2.0:User'],
         id: usersPostResponseBody.id,
-        userName: 'marty@mcfly.dev',
-        emails: [{ primary: true, value: 'marty@mcfly.dev', type: 'work' }],
+        userName: 'marty.mcfly@' + domain,
+        emails: [{ primary: true, value: 'marty.mcfly@' + domain, type: 'work' }],
         externalId: externalUserId,
         active: false,
         meta: {
@@ -431,7 +481,8 @@ describe.concurrent('/Users', () => {
       const seed = initSeed();
       const owner = await seed.createOwner();
       const org = await owner.createOrg();
-      await org.createOIDCIntegration();
+      const { registerFakeDomain } = await org.createOIDCIntegration();
+      const domain = await registerFakeDomain();
       const accessToken = await org.createOrganizationAccessToken({
         permissions: ['member:describe', 'member:modify'],
         resources: { mode: ResourceAssignmentModeType.Granular },
@@ -446,9 +497,9 @@ describe.concurrent('/Users', () => {
         method: 'POST',
         body: JSON.stringify({
           schemas: ['urn:ietf:params:scim:schemas:core:2.0:User'],
-          userName: 'marty@mcfly.dev',
+          userName: 'marty.mcfly@' + domain,
           name: { givenName: 'Marty', familyName: 'McFly' },
-          emails: [{ primary: true, value: 'marty@mcfly.dev', type: 'work' }],
+          emails: [{ primary: true, value: 'marty.mcfly@' + domain, type: 'work' }],
           displayName: 'Marty McFly',
           locale: 'en-US',
           externalId: externalUserId,
@@ -465,9 +516,9 @@ describe.concurrent('/Users', () => {
         method: 'PUT',
         body: JSON.stringify({
           schemas: ['urn:ietf:params:scim:schemas:core:2.0:User'],
-          userName: 'marty.fly@mcfly.dev',
+          userName: 'marty.mcfly2@' + domain,
           name: { givenName: 'Marty', familyName: 'McFly' },
-          emails: [{ primary: true, value: 'marty.fly@mcfly.dev', type: 'work' }],
+          emails: [{ primary: true, value: 'marty.mcfly2@' + domain, type: 'work' }],
           displayName: 'Marty McFly',
           locale: 'en-US',
           externalId: externalUserId,
@@ -480,16 +531,71 @@ describe.concurrent('/Users', () => {
       expect(usersPutResponse.status).toEqual(200);
       expect(await usersPutResponse.json()).toMatchObject({
         schemas: ['urn:ietf:params:scim:schemas:core:2.0:User'],
-        userName: 'marty.fly@mcfly.dev',
-        emails: [{ primary: true, value: 'marty.fly@mcfly.dev', type: 'work' }],
+        userName: 'marty.mcfly2@' + domain,
+        emails: [{ primary: true, value: 'marty.mcfly2@' + domain, type: 'work' }],
         active: false,
       });
+    });
+    test.concurrent('update email to non-verified domain fails', async ({ expect }) => {
+      const seed = initSeed();
+      const owner = await seed.createOwner();
+      const org = await owner.createOrg();
+      const { registerFakeDomain } = await org.createOIDCIntegration();
+      const domain = await registerFakeDomain();
+      const accessToken = await org.createOrganizationAccessToken({
+        permissions: ['member:describe', 'member:modify'],
+        resources: { mode: ResourceAssignmentModeType.Granular },
+      });
+      const scimAuthHeader = 'Bearer ' + accessToken.privateAccessKey;
+      const externalUserId = '00u13w8ptpbdysgOl698';
+      const headers = {
+        'Content-Type': 'application/scim+json',
+        Authorization: scimAuthHeader,
+      };
+      const usersPostResponse = await fetch(usersEndpoint, {
+        method: 'POST',
+        body: JSON.stringify({
+          schemas: ['urn:ietf:params:scim:schemas:core:2.0:User'],
+          userName: 'marty.mcfly@' + domain,
+          name: { givenName: 'Marty', familyName: 'McFly' },
+          emails: [{ primary: true, value: 'marty.mcfly@' + domain, type: 'work' }],
+          displayName: 'Marty McFly',
+          locale: 'en-US',
+          externalId: externalUserId,
+          groups: [],
+          password: 'fq77ZD37',
+          active: true,
+        }),
+        headers,
+      });
+      expect(usersPostResponse.status).toEqual(201);
+      const usersPostResponseBody = await usersPostResponse.json();
+
+      const usersPutResponse = await fetch(usersEndpoint + '/' + usersPostResponseBody.id, {
+        method: 'PUT',
+        body: JSON.stringify({
+          schemas: ['urn:ietf:params:scim:schemas:core:2.0:User'],
+          emails: [{ primary: true, value: 'marty@mcfly.dev', type: 'work' }],
+        }),
+        headers,
+      });
+      expect(usersPutResponse.status).toEqual(400);
+      expect(await usersPutResponse.json()).toMatchInlineSnapshot(`
+        {
+          detail: Primary email address domain ownership is not verified for this organization.,
+          schemas: [
+            urn:ietf:params:scim:api:messages:2.0:Error,
+          ],
+          status: 400,
+        }
+      `);
     });
     test.concurrent('update userName succeeds', async ({ expect }) => {
       const seed = initSeed();
       const owner = await seed.createOwner();
       const org = await owner.createOrg();
-      await org.createOIDCIntegration();
+      const { registerFakeDomain } = await org.createOIDCIntegration();
+      const domain = await registerFakeDomain();
       const accessToken = await org.createOrganizationAccessToken({
         permissions: ['member:describe', 'member:modify'],
         resources: { mode: ResourceAssignmentModeType.Granular },
@@ -499,7 +605,9 @@ describe.concurrent('/Users', () => {
         'Content-Type': 'application/scim+json',
         Authorization: scimAuthHeader,
       };
-      const usersPostResponse = await createUser(headers);
+      const usersPostResponse = await createUser(headers, {
+        emails: [{ primary: true, value: 'marty.mcfly@' + domain, type: 'work' }],
+      });
       const userPostBody = await usersPostResponse.json();
 
       const usersPutResponse = await fetch(usersEndpoint + '/' + userPostBody.id, {
@@ -521,7 +629,8 @@ describe.concurrent('/Users', () => {
         const seed = initSeed();
         const owner = await seed.createOwner();
         const org = await owner.createOrg();
-        await org.createOIDCIntegration();
+        const { registerFakeDomain } = await org.createOIDCIntegration();
+        const domain = await registerFakeDomain();
         const accessToken = await org.createOrganizationAccessToken({
           permissions: ['member:describe', 'member:modify'],
           resources: { mode: ResourceAssignmentModeType.Granular },
@@ -532,30 +641,40 @@ describe.concurrent('/Users', () => {
           Authorization: scimAuthHeader,
         };
         const usersPostResponse = await createUser(headers, {
-          userName: 'issame',
+          userName: 'userName1',
+          emails: [{ primary: true, value: 'marty.mcfly@' + domain, type: 'work' }],
         });
         const userPostBody = await usersPostResponse.json();
-        const secondUser = await createUser(headers);
+        await createUser(headers, {
+          userName: 'userName',
+          emails: [{ primary: true, value: 'emmett.brown@' + domain, type: 'work' }],
+        });
 
         const usersPutResponse = await fetch(usersEndpoint + '/' + userPostBody.id, {
           method: 'PUT',
           body: JSON.stringify({
-            userName: 'marty@mcfly.com',
+            userName: 'userName',
           }),
           headers,
         });
-        expect(usersPutResponse.status).toEqual(200);
-        expect(await usersPutResponse.json()).toEqual({
-          ...userPostBody,
-          userName: 'marty@mcfly.com',
-        });
+        expect(usersPutResponse.status).toEqual(409);
+        expect(await usersPutResponse.json()).toMatchInlineSnapshot(`
+          {
+            detail: Another user with the same userName already exists.,
+            schemas: [
+              urn:ietf:params:scim:api:messages:2.0:Error,
+            ],
+            status: 409,
+          }
+        `);
       },
     );
     test.concurrent('update external id', async ({ expect }) => {
       const seed = initSeed();
       const owner = await seed.createOwner();
       const org = await owner.createOrg();
-      await org.createOIDCIntegration();
+      const { registerFakeDomain } = await org.createOIDCIntegration();
+      const domain = await registerFakeDomain();
       const accessToken = await org.createOrganizationAccessToken({
         permissions: ['member:describe', 'member:modify'],
         resources: { mode: ResourceAssignmentModeType.Granular },
@@ -569,6 +688,7 @@ describe.concurrent('/Users', () => {
       };
       const userPostResponse = await createUser(headers, {
         externalId: externalUserId,
+        emails: [{ primary: true, type: 'work', value: 'marty.mcfly@' + domain }],
       });
       expect(userPostResponse.status).toEqual(201);
       const userResponseBody = await userPostResponse.json();
@@ -595,7 +715,8 @@ describe.concurrent('/Users', () => {
         const seed = initSeed();
         const owner = await seed.createOwner();
         const org = await owner.createOrg();
-        await org.createOIDCIntegration();
+        const { registerFakeDomain } = await org.createOIDCIntegration();
+        const domain = await registerFakeDomain();
         const accessToken = await org.createOrganizationAccessToken({
           permissions: ['member:describe', 'member:modify'],
           resources: { mode: ResourceAssignmentModeType.Granular },
@@ -607,11 +728,14 @@ describe.concurrent('/Users', () => {
           'Content-Type': 'application/scim+json',
           Authorization: scimAuthHeader,
         };
-        const firstUserPostResponse = await createUser(headers);
+        const firstUserPostResponse = await createUser(headers, {
+          emails: [{ primary: true, type: 'work', value: 'marty.mcfly@' + domain }],
+        });
         expect(firstUserPostResponse.status).toEqual(201);
         const firstUserPostResponseBody = await firstUserPostResponse.json();
         const secondUserPostResponse = await createUser(headers, {
           externalId: externalUserId,
+          emails: [{ primary: true, type: 'work', value: 'emmet.brown@' + domain }],
         });
         expect(secondUserPostResponse.status).toEqual(201);
 
@@ -673,7 +797,8 @@ describe.concurrent('/Users', () => {
       const seed = initSeed();
       const owner = await seed.createOwner();
       const org = await owner.createOrg();
-      await org.createOIDCIntegration();
+      const oidc = await org.createOIDCIntegration();
+      const domain = await oidc.registerFakeDomain();
       const accessToken = await org.createOrganizationAccessToken({
         permissions: ['member:describe', 'member:modify'],
         resources: { mode: ResourceAssignmentModeType.Granular },
@@ -683,7 +808,9 @@ describe.concurrent('/Users', () => {
         'Content-Type': 'application/scim+json',
         Authorization: scimAuthHeader,
       };
-      const usersPostResponse = await createUser(headers);
+      const usersPostResponse = await createUser(headers, {
+        emails: [{ primary: true, type: 'work', value: 'marty.mcfly@' + domain }],
+      });
       const userPostBody = await usersPostResponse.json();
       let usersPatchResponse = await fetch(usersEndpoint + '/' + userPostBody.id, {
         method: 'PATCH',
@@ -715,7 +842,8 @@ describe.concurrent('/Users', () => {
       const seed = initSeed();
       const owner = await seed.createOwner();
       const org = await owner.createOrg();
-      await org.createOIDCIntegration();
+      const oidc = await org.createOIDCIntegration();
+      const domain = await oidc.registerFakeDomain();
       const accessToken = await org.createOrganizationAccessToken({
         permissions: ['member:describe', 'member:modify'],
         resources: { mode: ResourceAssignmentModeType.Granular },
@@ -725,7 +853,9 @@ describe.concurrent('/Users', () => {
         'Content-Type': 'application/scim+json',
         Authorization: scimAuthHeader,
       };
-      const usersPostResponse = await createUser(headers);
+      const usersPostResponse = await createUser(headers, {
+        emails: [{ primary: true, type: 'work', value: 'marty.mcfly@' + domain }],
+      });
       const userPostBody = await usersPostResponse.json();
 
       const usersPatchResponse = await fetch(usersEndpoint + '/' + userPostBody.id, {
@@ -735,7 +865,7 @@ describe.concurrent('/Users', () => {
             {
               op: 'replace',
               path: 'emails',
-              value: [{ value: 'marty@mcfly.com', primary: true, type: 'work' }],
+              value: [{ value: 'marty.mcfly.2@' + domain, primary: true, type: 'work' }],
             },
           ],
         }),
@@ -748,7 +878,7 @@ describe.concurrent('/Users', () => {
           {
             primary: true,
             type: 'work',
-            value: 'marty@mcfly.com',
+            value: 'marty.mcfly.2@' + domain,
           },
         ],
       });
@@ -757,7 +887,8 @@ describe.concurrent('/Users', () => {
       const seed = initSeed();
       const owner = await seed.createOwner();
       const org = await owner.createOrg();
-      await org.createOIDCIntegration();
+      const oidc = await org.createOIDCIntegration();
+      const domain = await oidc.registerFakeDomain();
       const accessToken = await org.createOrganizationAccessToken({
         permissions: ['member:describe', 'member:modify'],
         resources: { mode: ResourceAssignmentModeType.Granular },
@@ -767,7 +898,9 @@ describe.concurrent('/Users', () => {
         'Content-Type': 'application/scim+json',
         Authorization: scimAuthHeader,
       };
-      const usersPostResponse = await createUser(headers);
+      const usersPostResponse = await createUser(headers, {
+        emails: [{ primary: true, type: 'work', value: 'marty.mcfly@' + domain }],
+      });
       const userPostBody = await usersPostResponse.json();
 
       const usersPatchResponse = await fetch(usersEndpoint + '/' + userPostBody.id, {
@@ -777,7 +910,7 @@ describe.concurrent('/Users', () => {
             {
               op: 'replace',
               path: 'emails[type eq "work"].value',
-              value: 'marty@mcfly.com',
+              value: 'marty.mcfly2@' + domain,
             },
           ],
         }),
@@ -790,16 +923,76 @@ describe.concurrent('/Users', () => {
           {
             primary: true,
             type: 'work',
-            value: 'marty@mcfly.com',
+            value: 'marty.mcfly2@' + domain,
           },
         ],
       });
+    });
+    test.concurrent('update email to non-verified domain fails', async ({ expect }) => {
+      const seed = initSeed();
+      const owner = await seed.createOwner();
+      const org = await owner.createOrg();
+      const { registerFakeDomain } = await org.createOIDCIntegration();
+      const domain = await registerFakeDomain();
+      const accessToken = await org.createOrganizationAccessToken({
+        permissions: ['member:describe', 'member:modify'],
+        resources: { mode: ResourceAssignmentModeType.Granular },
+      });
+      const scimAuthHeader = 'Bearer ' + accessToken.privateAccessKey;
+      const externalUserId = '00u13w8ptpbdysgOl698';
+      const headers = {
+        'Content-Type': 'application/scim+json',
+        Authorization: scimAuthHeader,
+      };
+      const usersPostResponse = await fetch(usersEndpoint, {
+        method: 'POST',
+        body: JSON.stringify({
+          schemas: ['urn:ietf:params:scim:schemas:core:2.0:User'],
+          userName: 'marty.mcfly@' + domain,
+          name: { givenName: 'Marty', familyName: 'McFly' },
+          emails: [{ primary: true, value: 'marty.mcfly@' + domain, type: 'work' }],
+          displayName: 'Marty McFly',
+          locale: 'en-US',
+          externalId: externalUserId,
+          groups: [],
+          password: 'fq77ZD37',
+          active: true,
+        }),
+        headers,
+      });
+      expect(usersPostResponse.status).toEqual(201);
+      const usersPostResponseBody = await usersPostResponse.json();
+
+      const usersPatchResponse = await fetch(usersEndpoint + '/' + usersPostResponseBody.id, {
+        method: 'PATCH',
+        body: JSON.stringify({
+          Operations: [
+            {
+              op: 'replace',
+              path: 'emails',
+              value: [{ value: 'marty@mcfly.dev', primary: true, type: 'work' }],
+            },
+          ],
+        }),
+        headers,
+      });
+      expect(usersPatchResponse.status).toEqual(400);
+      expect(await usersPatchResponse.json()).toMatchInlineSnapshot(`
+        {
+          detail: Primary email address domain ownership is not verified for this organization.,
+          schemas: [
+            urn:ietf:params:scim:api:messages:2.0:Error,
+          ],
+          status: 400,
+        }
+      `);
     });
     test.concurrent('update userName', async ({ expect }) => {
       const seed = initSeed();
       const owner = await seed.createOwner();
       const org = await owner.createOrg();
-      await org.createOIDCIntegration();
+      const oidc = await org.createOIDCIntegration();
+      const domain = await oidc.registerFakeDomain();
       const accessToken = await org.createOrganizationAccessToken({
         permissions: ['member:describe', 'member:modify'],
         resources: { mode: ResourceAssignmentModeType.Granular },
@@ -809,7 +1002,9 @@ describe.concurrent('/Users', () => {
         'Content-Type': 'application/scim+json',
         Authorization: scimAuthHeader,
       };
-      const usersPostResponse = await createUser(headers);
+      const usersPostResponse = await createUser(headers, {
+        emails: [{ primary: true, type: 'work', value: 'marty.mcfly@' + domain }],
+      });
       const userPostBody = await usersPostResponse.json();
 
       const usersPatchResponse = await fetch(usersEndpoint + '/' + userPostBody.id, {
@@ -819,7 +1014,7 @@ describe.concurrent('/Users', () => {
             {
               op: 'replace',
               path: 'userName',
-              value: 'marty@mcfly.com',
+              value: 'marty.mcfly.69@' + domain,
             },
           ],
         }),
@@ -828,14 +1023,15 @@ describe.concurrent('/Users', () => {
       expect(usersPatchResponse.status).toEqual(200);
       expect(await usersPatchResponse.json()).toEqual({
         ...userPostBody,
-        userName: 'marty@mcfly.com',
+        userName: 'marty.mcfly.69@' + domain,
       });
     });
     test.concurrent('update external id', async ({ expect }) => {
       const seed = initSeed();
       const owner = await seed.createOwner();
       const org = await owner.createOrg();
-      await org.createOIDCIntegration();
+      const oidc = await org.createOIDCIntegration();
+      const domain = await oidc.registerFakeDomain();
       const accessToken = await org.createOrganizationAccessToken({
         permissions: ['member:describe', 'member:modify'],
         resources: { mode: ResourceAssignmentModeType.Granular },
@@ -849,6 +1045,7 @@ describe.concurrent('/Users', () => {
       };
       const userPostResponse = await createUser(headers, {
         externalId: externalUserId,
+        emails: [{ primary: true, type: 'work', value: 'marty.mcfly@' + domain }],
       });
       expect(userPostResponse.status).toEqual(201);
       const userResponseBody = await userPostResponse.json();
@@ -881,8 +1078,8 @@ describe.concurrent('/Users', () => {
       const seed = initSeed();
       const owner = await seed.createOwner();
       const org = await owner.createOrg();
-      // currenlty this must exist for the endpoint to be functional
-      await org.createOIDCIntegration();
+      const oidc = await org.createOIDCIntegration();
+      const domain = await oidc.registerFakeDomain();
       const accessToken = await org.createOrganizationAccessToken({
         permissions: ['member:describe', 'member:modify'],
         resources: { mode: ResourceAssignmentModeType.Granular },
@@ -896,14 +1093,17 @@ describe.concurrent('/Users', () => {
       await createUser(headers, {
         externalId: 'userA',
         userName: 'User A',
+        emails: [{ primary: true, type: 'work', value: 'user-a@' + domain }],
       });
       await createUser(headers, {
         externalId: 'userB',
         userName: 'User B',
+        emails: [{ primary: true, type: 'work', value: 'user-b@' + domain }],
       });
       await createUser(headers, {
         externalId: 'userC',
         userName: 'User C',
+        emails: [{ primary: true, type: 'work', value: 'user-c@' + domain }],
       });
 
       let users = await getUsers(headers);
@@ -1018,8 +1218,8 @@ describe.concurrent('/Users', () => {
       const seed = initSeed();
       const owner = await seed.createOwner();
       const org = await owner.createOrg();
-      // currenlty this must exist for the endpoint to be functional
-      await org.createOIDCIntegration();
+      const oidc = await org.createOIDCIntegration();
+      const domain = await oidc.registerFakeDomain();
       const accessToken = await org.createOrganizationAccessToken({
         permissions: ['member:describe', 'member:modify'],
         resources: { mode: ResourceAssignmentModeType.Granular },
@@ -1033,10 +1233,12 @@ describe.concurrent('/Users', () => {
       await createUser(headers, {
         externalId: 'userA',
         userName: 'User A',
+        emails: [{ primary: true, type: 'work', value: 'user-a@' + domain }],
       });
       await createUser(headers, {
         externalId: 'userB',
         userName: 'User B',
+        emails: [{ primary: true, type: 'work', value: 'user-b@' + domain }],
       });
 
       let response = await getUsers(headers, {
@@ -1094,7 +1296,8 @@ describe.concurrent('/Users', () => {
       const owner = await seed.createOwner();
       const org = await owner.createOrg();
       // currenlty this must exist for the endpoint to be functional
-      await org.createOIDCIntegration();
+      const oidc = await org.createOIDCIntegration();
+      const domain = await oidc.registerFakeDomain();
       const accessToken = await org.createOrganizationAccessToken({
         permissions: ['member:describe', 'member:modify'],
         resources: { mode: ResourceAssignmentModeType.Granular },
@@ -1108,10 +1311,12 @@ describe.concurrent('/Users', () => {
       await createUser(headers, {
         externalId: 'userA',
         userName: 'User A',
+        emails: [{ primary: true, type: 'work', value: 'user-a@' + domain }],
       });
       await createUser(headers, {
         externalId: 'userB',
         userName: 'User B',
+        emails: [{ primary: true, type: 'work', value: 'user-b@' + domain }],
       });
 
       let response = await getUsers(headers, {
@@ -1169,7 +1374,8 @@ describe.concurrent('/Users', () => {
       const owner = await seed.createOwner();
       const org = await owner.createOrg();
       // currenlty this must exist for the endpoint to be functional
-      await org.createOIDCIntegration();
+      const oidc = await org.createOIDCIntegration();
+      const domain = await oidc.registerFakeDomain();
       const accessToken = await org.createOrganizationAccessToken({
         permissions: ['member:describe', 'member:modify'],
         resources: { mode: ResourceAssignmentModeType.Granular },
@@ -1183,10 +1389,12 @@ describe.concurrent('/Users', () => {
       const userA = await createUser(headers, {
         externalId: 'userA',
         userName: 'User A',
+        emails: [{ primary: true, type: 'work', value: 'user-a@' + domain }],
       }).then(r => r.json());
       const userB = await createUser(headers, {
         externalId: 'userB',
         userName: 'User B',
+        emails: [{ primary: true, type: 'work', value: 'user-b@' + domain }],
       }).then(r => r.json());
       let response = await getUsers(headers, {
         filter: `id eq "${userA.id}"`,
@@ -1242,7 +1450,6 @@ describe.concurrent('/Users', () => {
       const seed = initSeed();
       const owner = await seed.createOwner();
       const org = await owner.createOrg();
-      // currenlty this must exist for the endpoint to be functional
       await org.createOIDCIntegration();
       const accessToken = await org.createOrganizationAccessToken({
         permissions: ['member:describe', 'member:modify'],
@@ -1945,7 +2152,8 @@ describe.concurrent('/Groups', () => {
       const owner = await seed.createOwner();
       const org = await owner.createOrg();
       // currenlty this must exist for the endpoint to be functional
-      await org.createOIDCIntegration();
+      const oidc = await org.createOIDCIntegration();
+      const domain = await oidc.registerFakeDomain();
       const accessToken = await org.createOrganizationAccessToken({
         permissions: ['member:describe', 'member:modify'],
         resources: { mode: ResourceAssignmentModeType.Granular },
@@ -1977,9 +2185,9 @@ describe.concurrent('/Groups', () => {
         method: 'POST',
         body: JSON.stringify({
           schemas: ['urn:ietf:params:scim:schemas:core:2.0:User'],
-          userName: 'marty@mcfly.dev',
+          userName: 'marty.mcfly@' + domain,
           name: { givenName: 'Marty', familyName: 'McFly' },
-          emails: [{ primary: true, value: 'marty@mcfly.dev', type: 'work' }],
+          emails: [{ primary: true, value: 'marty.mcfly@' + domain, type: 'work' }],
           displayName: 'Marty McFly',
           locale: 'en-US',
           externalId: 'userExternalId',
@@ -2026,7 +2234,8 @@ describe.concurrent('/Groups', () => {
       const owner = await seed.createOwner();
       const org = await owner.createOrg();
       // currenlty this must exist for the endpoint to be functional
-      await org.createOIDCIntegration();
+      const oidc = await org.createOIDCIntegration();
+      const domain = await oidc.registerFakeDomain();
       const accessToken = await org.createOrganizationAccessToken({
         permissions: ['member:describe', 'member:modify'],
         resources: { mode: ResourceAssignmentModeType.Granular },
@@ -2054,10 +2263,14 @@ describe.concurrent('/Groups', () => {
 
       // create users
 
-      const firstUsersPostResponse = await createUser(headers);
+      const firstUsersPostResponse = await createUser(headers, {
+        emails: [{ primary: true, type: 'work', value: 'user-a@' + domain }],
+      });
       expect(firstUsersPostResponse.status).toEqual(201);
       const firstUserPostResponseBody = await firstUsersPostResponse.json();
-      const secondUsersPostResponse = await createUser(headers);
+      const secondUsersPostResponse = await createUser(headers, {
+        emails: [{ primary: true, type: 'work', value: 'user-b@' + domain }],
+      });
       expect(secondUsersPostResponse.status).toEqual(201);
       const secondUserPostResponseBody = await secondUsersPostResponse.json();
 
@@ -2104,7 +2317,8 @@ describe.concurrent('/Groups', () => {
       const owner = await seed.createOwner();
       const org = await owner.createOrg();
       // currenlty this must exist for the endpoint to be functional
-      await org.createOIDCIntegration();
+      const oidc = await org.createOIDCIntegration();
+      const domain = await oidc.registerFakeDomain();
       const accessToken = await org.createOrganizationAccessToken({
         permissions: ['member:describe', 'member:modify'],
         resources: { mode: ResourceAssignmentModeType.Granular },
@@ -2132,10 +2346,14 @@ describe.concurrent('/Groups', () => {
 
       // create users
 
-      const firstUsersPostResponse = await createUser(headers);
+      const firstUsersPostResponse = await createUser(headers, {
+        emails: [{ primary: true, type: 'work', value: 'user-a@' + domain }],
+      });
       expect(firstUsersPostResponse.status).toEqual(201);
       const firstUserPostResponseBody = await firstUsersPostResponse.json();
-      const secondUsersPostResponse = await createUser(headers);
+      const secondUsersPostResponse = await createUser(headers, {
+        emails: [{ primary: true, type: 'work', value: 'user-b@' + domain }],
+      });
       expect(secondUsersPostResponse.status).toEqual(201);
       const secondUserPostResponseBody = await secondUsersPostResponse.json();
 
@@ -2192,8 +2410,8 @@ describe.concurrent('/Groups', () => {
       const seed = initSeed();
       const owner = await seed.createOwner();
       const org = await owner.createOrg();
-      // currenlty this must exist for the endpoint to be functional
-      await org.createOIDCIntegration();
+      const oidc = await org.createOIDCIntegration();
+      const domain = await oidc.registerFakeDomain();
       const accessToken = await org.createOrganizationAccessToken({
         permissions: ['member:describe', 'member:modify'],
         resources: { mode: ResourceAssignmentModeType.Granular },
@@ -2221,10 +2439,14 @@ describe.concurrent('/Groups', () => {
 
       // create users
 
-      const firstUsersPostResponse = await createUser(headers);
+      const firstUsersPostResponse = await createUser(headers, {
+        emails: [{ primary: true, type: 'work', value: 'user-a@' + domain }],
+      });
       expect(firstUsersPostResponse.status).toEqual(201);
       const firstUserPostResponseBody = await firstUsersPostResponse.json();
-      const secondUsersPostResponse = await createUser(headers);
+      const secondUsersPostResponse = await createUser(headers, {
+        emails: [{ primary: true, type: 'work', value: 'user-a@' + domain }],
+      });
       expect(secondUsersPostResponse.status).toEqual(201);
       const secondUserPostResponseBody = await secondUsersPostResponse.json();
 
@@ -2823,7 +3045,8 @@ describe.concurrent('provider flows', () => {
       const owner = await seed.createOwner();
       const org = await owner.createOrg();
       // currenlty this must exist for the endpoint to be functional
-      await org.createOIDCIntegration();
+      const oidc = await org.createOIDCIntegration();
+      const domain = await oidc.registerFakeDomain();
       const accessToken = await org.createOrganizationAccessToken({
         permissions: ['member:describe', 'member:modify'],
         resources: { mode: ResourceAssignmentModeType.Granular },
@@ -2857,9 +3080,9 @@ describe.concurrent('provider flows', () => {
         method: 'POST',
         body: JSON.stringify({
           schemas: ['urn:ietf:params:scim:schemas:core:2.0:User'],
-          userName: 'marty@the-guild.com',
+          userName: 'marty.mcfly@' + domain,
           name: { givenName: 'Marty', familyName: 'McFly' },
-          emails: [{ primary: true, value: 'marty@the-guild.dev', type: 'work' }],
+          emails: [{ primary: true, value: 'marty.mcfly@' + domain, type: 'work' }],
           displayName: 'Marty McFly',
           locale: 'en-US',
           externalId: externalUserId,
@@ -2876,7 +3099,7 @@ describe.concurrent('provider flows', () => {
           {
             primary: true,
             type: 'work',
-            value: 'marty@the-guild.dev',
+            value: 'marty.mcfly@' + domain,
           },
         ],
         externalId: externalUserId,
@@ -2885,7 +3108,7 @@ describe.concurrent('provider flows', () => {
           resourceType: 'User',
         },
         schemas: ['urn:ietf:params:scim:schemas:core:2.0:User'],
-        userName: 'marty@the-guild.com',
+        userName: 'marty.mcfly@' + domain,
         active: true,
       });
 
@@ -2919,7 +3142,8 @@ describe.concurrent('provider flows', () => {
         const owner = await seed.createOwner();
         const org = await owner.createOrg();
         // currenlty this must exist for the endpoint to be functional
-        await org.createOIDCIntegration();
+        const oidc = await org.createOIDCIntegration();
+        const domain = await oidc.registerFakeDomain();
         const accessToken = await org.createOrganizationAccessToken({
           permissions: ['member:describe', 'member:modify'],
           resources: { mode: ResourceAssignmentModeType.Granular },
@@ -2953,9 +3177,9 @@ describe.concurrent('provider flows', () => {
           method: 'POST',
           body: JSON.stringify({
             schemas: ['urn:ietf:params:scim:schemas:core:2.0:User'],
-            userName: 'marty@the-guild.dev',
+            userName: 'marty.mcfly@' + domain,
             name: { givenName: 'Marty', familyName: 'McFly' },
-            emails: [{ primary: true, value: 'marty@the-guild.dev', type: 'work' }],
+            emails: [{ primary: true, value: 'marty.mcfly@' + domain, type: 'work' }],
             displayName: 'Marty McFly',
             locale: 'en-US',
             externalId: externalUserId,
@@ -2991,8 +3215,8 @@ describe.concurrent('provider flows', () => {
             schemas: ['urn:ietf:params:scim:schemas:core:2.0:User'],
             id: usersResponseBody.id,
             externalId: externalUserId,
-            userName: 'marty@the-guild.dev',
-            emails: [{ primary: true, type: 'work', value: 'marty@the-guild.dev' }],
+            userName: 'marty.mcfly@' + domain,
+            emails: [{ primary: true, type: 'work', value: 'marty.mcfly@' + domain }],
             meta: { resourceType: 'User' },
             active: false,
           }),
@@ -3006,7 +3230,7 @@ describe.concurrent('provider flows', () => {
             {
               primary: true,
               type: 'work',
-              value: 'marty@the-guild.dev',
+              value: 'marty.mcfly@' + domain,
             },
           ],
           externalId: externalUserId,
@@ -3015,7 +3239,7 @@ describe.concurrent('provider flows', () => {
             resourceType: 'User',
           },
           schemas: ['urn:ietf:params:scim:schemas:core:2.0:User'],
-          userName: 'marty@the-guild.dev',
+          userName: 'marty.mcfly@' + domain,
           active: false,
         });
 
@@ -3109,18 +3333,19 @@ test.concurrent(
     const owner = await seed.createOwner();
     const org = await owner.createOrg();
     const { pool } = await seed.createDbConnection();
-    const { oidcIntegration } = await org.createOIDCIntegration();
+    const { oidcIntegration, registerFakeDomain } = await org.createOIDCIntegration();
+    const domain = await registerFakeDomain();
     const supertokensStore = new SuperTokensStore(pool, new NoopLogger());
 
     // We gonna create an existing user that signed up via OIDC before.
 
     const subOrExternalId = 'iliketurtles';
-    const email = defaultUserValues.emails[0].value;
+    const email = 'marty.mcfly@' + domain;
 
     const supertokensUser = await supertokensStore.createOIDCUser({
       email,
       oidcIntegrationId: oidcIntegration.id,
-      sub: subOrExternalId,
+      externalId: subOrExternalId,
     });
     const storage = await createStorage(seed.getPGConnectionString(), 1);
 
@@ -3148,6 +3373,7 @@ test.concurrent(
 
       const userResponse = await createUser(headers, {
         externalId: subOrExternalId,
+        emails: [{ primary: true, type: 'work', value: email }],
       });
 
       expect(userResponse.status).toEqual(201);
@@ -3164,18 +3390,19 @@ test.concurrent(
     const owner = await seed.createOwner();
     const org = await owner.createOrg();
     const { pool } = await seed.createDbConnection();
-    const { oidcIntegration } = await org.createOIDCIntegration();
+    const { oidcIntegration, registerFakeDomain } = await org.createOIDCIntegration();
+    const domain = await registerFakeDomain();
     const supertokensStore = new SuperTokensStore(pool, new NoopLogger());
 
     // We gonna create an existing user that signed up via OIDC before.
 
-    const subOrExternalId = 'iliketurtles';
-    const email = defaultUserValues.emails[0].value;
+    const externalId = 'iliketurtles';
+    const email = 'marty.mcfly@' + domain;
 
     const supertokensUser = await supertokensStore.createOIDCUser({
       email,
       oidcIntegrationId: oidcIntegration.id,
-      sub: subOrExternalId,
+      externalId,
     });
     const storage = await createStorage(seed.getPGConnectionString(), 1);
     try {
@@ -3202,6 +3429,7 @@ test.concurrent(
 
       const userResponse = await createUser(headers, {
         userName: 'userA',
+        emails: [{ primary: true, type: 'work', value: 'emmett.brown@' + domain }],
       });
       expect(userResponse.status).toEqual(201);
 
@@ -3210,7 +3438,8 @@ test.concurrent(
 
       const conflictUserResponse = await createUser(headers, {
         userName: 'userA',
-        externalId: subOrExternalId,
+        externalId,
+        emails: [{ primary: true, type: 'work', value: email }],
       });
       expect(conflictUserResponse.status).toEqual(409);
       expect(await conflictUserResponse.json()).toMatchInlineSnapshot(`

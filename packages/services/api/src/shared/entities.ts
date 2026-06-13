@@ -195,6 +195,8 @@ export interface OIDCIntegration {
   defaultMemberRoleId: string | null;
   defaultResourceAssignment: ResourceAssignmentGroup | null;
   userIdClaim: string;
+  userProvisioningRequired: boolean;
+  oidcForVerifiedDomainsRequired: boolean;
 }
 
 export interface CDNAccessToken {

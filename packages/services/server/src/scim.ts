@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { Logger, Storage } from '@hive/api';
 import { AuthN, UnauthenticatedSession } from '@hive/api/modules/auth/lib/authz';
 import { SuperTokensStore } from '@hive/api/modules/auth/providers/supertokens-store';
+import { OIDCIntegrationStore } from '@hive/api/modules/oidc-integrations/providers/oidc-integration.store';
 import {
   GroupMemberStore,
   type GroupMember,
@@ -175,6 +176,7 @@ export const createSCIMPlugin =
     authn: AuthN,
     pool: PostgresDatabasePool,
     storage: Storage,
+    oidcIntegrations: OIDCIntegrationStore,
     rateLimiter: RedisRateLimiter,
   ): FastifyPluginAsync =>
   async server => {
@@ -272,6 +274,31 @@ export const createSCIMPlugin =
       };
     }
 
+    async function handleEmailValidation(oidcIntegrationId: string, email: string) {
+      const [, emailDomainName] = email.split('@');
+
+      const verifiedDomain =
+        await oidcIntegrations.findVerifiedDomainByOIDCIntegrationIdAndDomainName(
+          oidcIntegrationId,
+          emailDomainName,
+        );
+
+      if (!verifiedDomain) {
+        return {
+          type: 'error' as const,
+          error: createSCIMError({
+            status: 400,
+            detail: 'Primary email address domain ownership is not verified for this organization.',
+          }),
+        };
+      }
+
+      return {
+        type: 'success' as const,
+        email,
+      };
+    }
+
     async function handleUserPropertyUpdates(
       logger: Logger,
       usersStore: UsersStore,
@@ -294,18 +321,25 @@ export const createSCIMPlugin =
 
       if (newEmail !== null && newEmail !== user.email) {
         logger.debug('email changed');
+
+        const emailValidationResult = await handleEmailValidation(oidcIntegrationId, newEmail);
+
+        if (emailValidationResult.error) {
+          return emailValidationResult;
+        }
+
         user = await pool.transaction('scim email update', async trx => {
           await supertokensStore.updateOIDCUserEmail(
             {
               userId: user.supertokenUserId,
-              newEmail: newEmail,
+              newEmail: emailValidationResult.email,
             },
             trx,
           );
           const updatedUser = await usersStore.updateUserEmail(
             organizationId,
             user.id,
-            newEmail,
+            emailValidationResult.email,
             trx,
           );
           // invalidate session as email changed
@@ -598,24 +632,36 @@ export const createSCIMPlugin =
         );
       }
 
-      const email = bodyParse.data.emails
-        ?.find(email => email.primary === true && email)
-        ?.value.toLowerCase();
+      const rawEmail =
+        bodyParse.data.emails
+          ?.find(email => email.primary === true && email)
+          ?.value.toLowerCase() ?? null;
 
-      if (!email) {
+      if (!rawEmail) {
         return reply.status(403).send(
           createSCIMError({
             status: 403,
-            detail: 'user is missing primary email address.',
+            detail: 'User is missing primary email address.',
           }),
         );
+      }
+
+      const emailValidationResult = await handleEmailValidation(
+        result.oidcIntegration.id,
+        rawEmail,
+      );
+
+      if (emailValidationResult.error) {
+        return reply
+          .status(emailValidationResult.error.status)
+          .send(createSCIMError(emailValidationResult.error));
       }
 
       const createUserResult = await pool.transaction('scim user creation', async trx => {
         const supertokensUser = await supertokensStore.createOIDCUserIfNotExists(
           {
             externalId: bodyParse.data.externalId,
-            email,
+            email: emailValidationResult.email,
             oidcIntegrationId: result.oidcIntegration.id,
           },
           trx,

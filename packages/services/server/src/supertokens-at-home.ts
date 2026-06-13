@@ -19,6 +19,7 @@ import {
   EmailPasswordOrThirdPartyUser,
   SuperTokensStore,
 } from '@hive/api/modules/auth/providers/supertokens-store';
+import { OIDCIntegrationStore } from '@hive/api/modules/oidc-integrations/providers/oidc-integration.store';
 import { RedisRateLimiter } from '@hive/api/modules/shared/providers/redis-rate-limiter';
 import type { OIDCIntegration } from '@hive/api/shared/entities';
 import { TaskScheduler } from '@hive/workflows/kit';
@@ -34,6 +35,7 @@ type BroadcastOIDCIntegrationLog = (oidcOrganizationId: string, message: string)
 export async function registerSupertokensAtHome(
   server: FastifyInstance,
   storage: Storage,
+  oidcIntegrations: OIDCIntegrationStore,
   taskScheduler: TaskScheduler,
   crypto: CryptoProvider,
   rateLimiter: RedisRateLimiter,
@@ -69,6 +71,29 @@ export async function registerSupertokensAtHome(
         sameSite: 'lax',
         expires: new Date(0),
       });
+  }
+
+  /** Verify whether the domain is allowed to do non-oidc login. */
+  async function isNonOIDCSignInUpAllowedForEmailAddress(email: string) {
+    const [, emailDomain] = email.split('@');
+
+    const verifiedDomain = await oidcIntegrations.findVerifiedDomainByName(emailDomain);
+
+    if (verifiedDomain) {
+      const oidcIntegration = await storage.getOIDCIntegrationById({
+        oidcIntegrationId: verifiedDomain.oidcIntegrationId,
+      });
+
+      if (oidcIntegration?.oidcForVerifiedDomainsRequired) {
+        return {
+          type: 'error' as const,
+        };
+      }
+    }
+
+    return {
+      type: 'success' as const,
+    };
   }
 
   const OIDCIdLookupSchema = z.object({
@@ -167,6 +192,15 @@ export async function registerSupertokensAtHome(
         return rep.send({
           status: 'GENERAL_ERROR',
           message: 'Invalid email provided.',
+        });
+      }
+
+      const result = await isNonOIDCSignInUpAllowedForEmailAddress(emailResult.data);
+
+      if (result.type === 'error') {
+        return rep.send({
+          status: 'SIGN_UP_NOT_ALLOWED',
+          reason: 'Please sign in through your organizations identity provider.',
         });
       }
 
@@ -299,7 +333,18 @@ export async function registerSupertokensAtHome(
         return rep.send(401);
       }
 
-      const email = parsedBody.data.formFields.find(field => field.id === 'email')?.value ?? '';
+      const email =
+        parsedBody.data.formFields.find(field => field.id === 'email')?.value.toLowerCase() ?? '';
+
+      const emailResult = await isNonOIDCSignInUpAllowedForEmailAddress(email);
+
+      if (emailResult.type === 'error') {
+        return rep.send({
+          status: 'SIGN_IN_NOT_ALLOWED',
+          reason: 'Please sign in through your organizations identity provider.',
+        });
+      }
+
       const password =
         parsedBody.data.formFields.find(field => field.id === 'password')?.value ?? '';
 
@@ -411,7 +456,17 @@ export async function registerSupertokensAtHome(
         return rep.send(401);
       }
 
-      const email = parsedBody.data.formFields.find(field => field.id === 'email')?.value ?? '';
+      const email =
+        parsedBody.data.formFields.find(field => field.id === 'email')?.value.toLowerCase() ?? '';
+
+      const emailResult = await isNonOIDCSignInUpAllowedForEmailAddress(email);
+
+      if (emailResult.type === 'error') {
+        return rep.send({
+          status: 'GENERAL_ERROR',
+          reason: 'Please sign in through your organizations identity provider.',
+        });
+      }
 
       const user = await supertokensStore.findEmailPasswordUserByEmail(email);
 
@@ -997,6 +1052,15 @@ export async function registerSupertokensAtHome(
             });
           }
 
+          const emailResult = await isNonOIDCSignInUpAllowedForEmailAddress(email.email);
+
+          if (emailResult.type === 'error') {
+            return rep.send({
+              status: 'SIGN_IN_UP_NOT_ALLOWED',
+              reason: 'Please sign in through your organizations identity provider.',
+            });
+          }
+
           user = await supertokensStore.createThirdPartyUser({
             email: email?.email,
             thirdPartyId: 'github',
@@ -1100,6 +1164,15 @@ export async function registerSupertokensAtHome(
         }
 
         const userInfo = await userInfoResponse.json().then(UserInfoBodyModel.parse);
+
+        const emailResult = await isNonOIDCSignInUpAllowedForEmailAddress(userInfo.email);
+
+        if (emailResult.type === 'error') {
+          return rep.send({
+            status: 'SIGN_IN_UP_NOT_ALLOWED',
+            reason: 'Please sign in through your organizations identity provider.',
+          });
+        }
 
         let user = await supertokensStore.findThirdPartyUser({
           thirdPartyId: 'google',
@@ -1230,6 +1303,15 @@ export async function registerSupertokensAtHome(
 
         const json = await response.json();
         const profile = OktaProfileModel.parse(json);
+
+        const emailResult = await isNonOIDCSignInUpAllowedForEmailAddress(profile.profile.email);
+
+        if (emailResult.type === 'error') {
+          return rep.send({
+            status: 'SIGN_IN_UP_NOT_ALLOWED',
+            reason: 'Please sign in through your organizations identity provider.',
+          });
+        }
 
         let user = await supertokensStore.findThirdPartyUser({
           thirdPartyId: 'okta',
@@ -1489,26 +1571,36 @@ export async function registerSupertokensAtHome(
           });
         }
 
-        let user = await supertokensStore.findOIDCUserByExternalIdAndOIDCIntegrationId({
+        let supertokenUser = await supertokensStore.findOIDCUserByExternalIdAndOIDCIntegrationId({
           oidcIntegrationId: oidcIntegration.id,
           externalId: externalUserId,
         });
 
-        if (!user) {
-          req.log.debug('no existing user found. create new one.');
-          user = await supertokensStore.createOIDCUser({
+        if (!supertokenUser) {
+          req.log.debug('no existing user found.');
+
+          if (oidcIntegration.userProvisioningRequired) {
+            req.log.debug('oidc integration settings requires user being provisioned.');
+            return rep.status(200).send({
+              status: 'SIGN_IN_UP_NOT_ALLOWED',
+              reason: 'Sign in failed. Please contact your organization administrator.',
+            });
+          }
+
+          req.log.debug('create new user.');
+          supertokenUser = await supertokensStore.createOIDCUser({
             email: email.data,
             oidcIntegrationId: oidcIntegration.id,
             externalId: externalUserId,
           });
-        } else if (user.email !== userInfoBody.data.email) {
+        } else if (supertokenUser.email !== userInfoBody.data.email) {
           req.log.debug('providers email has changed. Update record.');
-          user = await supertokensStore.updateOIDCUserEmail({
-            userId: user.userId,
+          supertokenUser = await supertokensStore.updateOIDCUserEmail({
+            userId: supertokenUser.userId,
             newEmail: email.data,
           });
 
-          if (!user) {
+          if (!supertokenUser) {
             return rep.status(200).send({
               status: 'SIGN_IN_UP_NOT_ALLOWED',
               reason: 'Sign in failed. Please contact your organization administrator.',
@@ -1516,27 +1608,43 @@ export async function registerSupertokensAtHome(
           }
         }
 
-        req.log.debug('supertokens user provisioned. ensure hive user exists');
-
-        const ensureUserExists = await storage.ensureUserExists({
-          superTokensUserId: user.userId,
-          email: email.data,
-          firstName: null,
-          lastName: null,
-          oidcIntegration: {
-            id: oidcIntegration.id,
-          },
+        const maybeHiveUser = await storage.getUserBySuperTokenId({
+          superTokensUserId: supertokenUser.userId,
         });
 
-        if (!ensureUserExists.ok) {
-          req.log.debug('creating hive user is not allowed. Reason: %s', ensureUserExists.reason);
+        if (maybeHiveUser?.deactivatedAt) {
+          req.log.debug('user is deactivated.');
           return rep.status(200).send({
             status: 'SIGN_IN_UP_NOT_ALLOWED',
-            reason: 'Sign in not allowed.',
+            reason: 'Sign in failed. Please contact your organization administrator.',
           });
         }
-        supertokensUser = user;
-        hiveUser = ensureUserExists.user;
+
+        req.log.debug('supertokens user provisioned. ensure hive user exists');
+
+        if (!maybeHiveUser) {
+          const ensureUserExists = await storage.ensureUserExists({
+            superTokensUserId: supertokenUser.userId,
+            email: email.data,
+            firstName: null,
+            lastName: null,
+            oidcIntegration: {
+              id: oidcIntegration.id,
+            },
+          });
+
+          if (!ensureUserExists.ok) {
+            req.log.debug('creating hive user is not allowed. Reason: %s', ensureUserExists.reason);
+            return rep.status(200).send({
+              status: 'SIGN_IN_UP_NOT_ALLOWED',
+              reason: 'Sign in not allowed.',
+            });
+          }
+          hiveUser = ensureUserExists.user;
+        } else {
+          hiveUser = maybeHiveUser;
+        }
+        supertokensUser = supertokenUser;
       } else {
         return rep.status(200).send({
           status: 'SIGN_IN_UP_NOT_ALLOWED',
