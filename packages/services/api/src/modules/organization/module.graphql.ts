@@ -1644,7 +1644,6 @@ export default gql`
   }
 
   input RemoveGroupMappingInput {
-    groupId: ID!
     groupMappingId: ID!
   }
 

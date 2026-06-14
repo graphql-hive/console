@@ -10,6 +10,14 @@ export const removeGroupMapping: NonNullable<MutationResolvers['removeGroupMappi
     groupMappingId: args.input.groupMappingId,
   });
 
+  if (result.type === 'error') {
+    return {
+      error: {
+        message: result.message,
+      },
+    };
+  }
+
   return {
     ok: {
       group: result.group,

@@ -3,6 +3,8 @@ import {
   createMemberRole,
   getGroupForOrganization,
   getPaginatedGroupsForOrganization,
+  removeGroupMapping,
+  updateGroupMapping,
 } from 'testkit/flow';
 import { initSeed } from 'testkit/seed';
 import { GroupStore } from '@hive/api/modules/organization/providers/group-store';
@@ -383,7 +385,7 @@ test.describe('Mutation.addGroupMappingToGroup', () => {
       'Expected creating member role to succeed',
     );
 
-    const result = await addGroupMappingToGroup(
+    let result = await addGroupMappingToGroup(
       {
         groupId: createGroupResult.group.id,
         roleId: createRoleResult.createMemberRole.ok.createdMemberRole.id,
@@ -407,6 +409,554 @@ test.describe('Mutation.addGroupMappingToGroup', () => {
         },
       },
       error: null,
+    });
+
+    // add another one
+
+    const createOtherRoleResult = await createMemberRole(
+      {
+        name: 'Bars',
+        description: 'Foo',
+        organization: { byId: org.organization.id },
+        selectedPermissions: [],
+      },
+      owner.ownerToken,
+    ).then(r => r.expectNoGraphQLErrors());
+
+    invariant(
+      !!createOtherRoleResult.createMemberRole.ok?.createdMemberRole.id,
+      'Expected creating member role to succeed',
+    );
+
+    result = await addGroupMappingToGroup(
+      {
+        groupId: createGroupResult.group.id,
+        roleId: createOtherRoleResult.createMemberRole.ok.createdMemberRole.id,
+        assignedResources: null,
+      },
+      owner.ownerToken,
+    ).then(r => r.expectNoGraphQLErrors());
+    expect(result.addGroupMappingToGroup).toMatchObject({
+      ok: {
+        group: {
+          id: createGroupResult.group.id,
+          roleMappings: [
+            {
+              id: expect.any(String),
+              role: {
+                id: createRoleResult.createMemberRole.ok.createdMemberRole.id,
+                name: 'Foo',
+              },
+            },
+            {
+              id: expect.any(String),
+              role: {
+                id: createOtherRoleResult.createMemberRole.ok.createdMemberRole.id,
+                name: 'Bars',
+              },
+            },
+          ],
+        },
+      },
+      error: null,
+    });
+  });
+});
+
+test.describe('Mutation.updateGroupMapping', () => {
+  test.concurrent('update non-existing group mapping yields correct error', async ({ expect }) => {
+    const seed = initSeed();
+    const owner = await seed.createOwner();
+    const result = await updateGroupMapping(
+      {
+        groupMappingId: crypto.randomUUID(),
+        assignedResources: null,
+      },
+      owner.ownerToken,
+    ).then(r => r.expectNoGraphQLErrors());
+    expect(result).toEqual({
+      updateGroupMapping: {
+        error: {
+          message: 'Could not find group mapping.',
+        },
+        ok: null,
+      },
+    });
+  });
+  test.concurrent(
+    'update non existing group mapping (non-uuid) yields correct error',
+    async ({ expect }) => {
+      const seed = initSeed();
+      const owner = await seed.createOwner();
+      const result = await updateGroupMapping(
+        {
+          groupMappingId: 'toyota',
+          assignedResources: null,
+        },
+        owner.ownerToken,
+      ).then(r => r.expectNoGraphQLErrors());
+      expect(result).toEqual({
+        updateGroupMapping: {
+          error: {
+            message: 'Could not find group mapping.',
+          },
+          ok: null,
+        },
+      });
+    },
+  );
+  test.concurrent(
+    'update group mapping from different org without access yields correct error',
+    async ({ expect }) => {
+      const seed = initSeed();
+      const foreignOwner = await seed.createOwner();
+
+      const owner = await seed.createOwner();
+      const org = await owner.createOrg();
+      const { pool } = await seed.createDbConnection();
+      const groupStore = new GroupStore(new NoopLogger(), pool);
+      const createGroupResult = await groupStore.createGroup({
+        organizationId: org.organization.id,
+        displayName: 'Test Group',
+        externalId: null,
+      });
+      invariant(createGroupResult.type === 'success', 'Expected creating group to succeed');
+
+      const createRoleResult = await createMemberRole(
+        {
+          name: 'Foo',
+          description: 'Bars',
+          organization: { byId: org.organization.id },
+          selectedPermissions: [],
+        },
+        owner.ownerToken,
+      ).then(r => r.expectNoGraphQLErrors());
+
+      invariant(
+        !!createRoleResult.createMemberRole.ok?.createdMemberRole.id,
+        'Expected creating member role to succeed',
+      );
+
+      const createGroupMappingResult = await addGroupMappingToGroup(
+        {
+          groupId: createGroupResult.group.id,
+          roleId: createRoleResult.createMemberRole.ok.createdMemberRole.id,
+          assignedResources: null,
+        },
+        owner.ownerToken,
+      ).then(r => r.expectNoGraphQLErrors());
+
+      invariant(
+        !!createGroupMappingResult.addGroupMappingToGroup.ok,
+        'expected group mapping creation to succeed',
+      );
+
+      const groupMappingId =
+        createGroupMappingResult.addGroupMappingToGroup.ok.group.roleMappings[0].id;
+
+      const result = await updateGroupMapping(
+        {
+          groupMappingId: groupMappingId,
+          assignedResources: null,
+        },
+        foreignOwner.ownerToken,
+      ).then(r => r.expectNoGraphQLErrors());
+      expect(result).toEqual({
+        updateGroupMapping: {
+          error: {
+            message: 'Could not find group mapping.',
+          },
+          ok: null,
+        },
+      });
+    },
+  );
+  test.concurrent(
+    'update group mapping to non-existing role yields correct error',
+    async ({ expect }) => {
+      const seed = initSeed();
+      const owner = await seed.createOwner();
+      const org = await owner.createOrg();
+      const { pool } = await seed.createDbConnection();
+      const groupStore = new GroupStore(new NoopLogger(), pool);
+      const createGroupResult = await groupStore.createGroup({
+        organizationId: org.organization.id,
+        displayName: 'Test Group',
+        externalId: null,
+      });
+      invariant(createGroupResult.type === 'success', 'Expected creating group to succeed');
+
+      const createRoleResult = await createMemberRole(
+        {
+          name: 'Foo',
+          description: 'Bars',
+          organization: { byId: org.organization.id },
+          selectedPermissions: [],
+        },
+        owner.ownerToken,
+      ).then(r => r.expectNoGraphQLErrors());
+
+      invariant(
+        !!createRoleResult.createMemberRole.ok?.createdMemberRole.id,
+        'Expected creating member role to succeed',
+      );
+
+      const createGroupMappingResult = await addGroupMappingToGroup(
+        {
+          groupId: createGroupResult.group.id,
+          roleId: createRoleResult.createMemberRole.ok.createdMemberRole.id,
+          assignedResources: null,
+        },
+        owner.ownerToken,
+      ).then(r => r.expectNoGraphQLErrors());
+
+      invariant(
+        !!createGroupMappingResult.addGroupMappingToGroup.ok,
+        'expected group mapping creation to succeed',
+      );
+
+      const groupMappingId =
+        createGroupMappingResult.addGroupMappingToGroup.ok.group.roleMappings[0].id;
+
+      const result = await updateGroupMapping(
+        {
+          groupMappingId: groupMappingId,
+          assignedResources: null,
+          roleId: crypto.randomUUID(),
+        },
+        owner.ownerToken,
+      ).then(r => r.expectNoGraphQLErrors());
+      expect(result).toEqual({
+        updateGroupMapping: {
+          error: {
+            message: 'Could not find role.',
+          },
+          ok: null,
+        },
+      });
+    },
+  );
+  test.concurrent(
+    'update group mapping to non-existing role (non-uuid) yields correct error',
+    async ({ expect }) => {
+      const seed = initSeed();
+      const owner = await seed.createOwner();
+      const org = await owner.createOrg();
+      const { pool } = await seed.createDbConnection();
+      const groupStore = new GroupStore(new NoopLogger(), pool);
+      const createGroupResult = await groupStore.createGroup({
+        organizationId: org.organization.id,
+        displayName: 'Test Group',
+        externalId: null,
+      });
+      invariant(createGroupResult.type === 'success', 'Expected creating group to succeed');
+
+      const createRoleResult = await createMemberRole(
+        {
+          name: 'Foo',
+          description: 'Bars',
+          organization: { byId: org.organization.id },
+          selectedPermissions: [],
+        },
+        owner.ownerToken,
+      ).then(r => r.expectNoGraphQLErrors());
+
+      invariant(
+        !!createRoleResult.createMemberRole.ok?.createdMemberRole.id,
+        'Expected creating member role to succeed',
+      );
+
+      const createGroupMappingResult = await addGroupMappingToGroup(
+        {
+          groupId: createGroupResult.group.id,
+          roleId: createRoleResult.createMemberRole.ok.createdMemberRole.id,
+          assignedResources: null,
+        },
+        owner.ownerToken,
+      ).then(r => r.expectNoGraphQLErrors());
+
+      invariant(
+        !!createGroupMappingResult.addGroupMappingToGroup.ok,
+        'expected group mapping creation to succeed',
+      );
+
+      const groupMappingId =
+        createGroupMappingResult.addGroupMappingToGroup.ok.group.roleMappings[0].id;
+
+      const result = await updateGroupMapping(
+        {
+          groupMappingId: groupMappingId,
+          assignedResources: null,
+          roleId: 'toyota',
+        },
+        owner.ownerToken,
+      ).then(r => r.expectNoGraphQLErrors());
+      expect(result).toEqual({
+        updateGroupMapping: {
+          error: {
+            message: 'Could not find role.',
+          },
+          ok: null,
+        },
+      });
+    },
+  );
+  test.concurrent('update group mapping in same org succeeds', async ({ expect }) => {
+    const seed = initSeed();
+    const owner = await seed.createOwner();
+    const org = await owner.createOrg();
+    const { pool } = await seed.createDbConnection();
+    const groupStore = new GroupStore(new NoopLogger(), pool);
+    const createGroupResult = await groupStore.createGroup({
+      organizationId: org.organization.id,
+      displayName: 'Test Group',
+      externalId: null,
+    });
+    invariant(createGroupResult.type === 'success', 'Expected creating group to succeed');
+
+    const createInitialRoleResult = await createMemberRole(
+      {
+        name: 'Foo',
+        description: 'Bars',
+        organization: { byId: org.organization.id },
+        selectedPermissions: [],
+      },
+      owner.ownerToken,
+    ).then(r => r.expectNoGraphQLErrors());
+
+    invariant(
+      !!createInitialRoleResult.createMemberRole.ok?.createdMemberRole.id,
+      'Expected creating member role to succeed',
+    );
+
+    const createGroupMappingResult = await addGroupMappingToGroup(
+      {
+        groupId: createGroupResult.group.id,
+        roleId: createInitialRoleResult.createMemberRole.ok.createdMemberRole.id,
+        assignedResources: null,
+      },
+      owner.ownerToken,
+    ).then(r => r.expectNoGraphQLErrors());
+
+    invariant(
+      !!createGroupMappingResult.addGroupMappingToGroup.ok,
+      'expected group mapping creation to succeed',
+    );
+
+    const createNewRoleResult = await createMemberRole(
+      {
+        name: 'Bars',
+        description: 'Foo',
+        organization: { byId: org.organization.id },
+        selectedPermissions: [],
+      },
+      owner.ownerToken,
+    ).then(r => r.expectNoGraphQLErrors());
+
+    invariant(
+      !!createNewRoleResult.createMemberRole.ok?.createdMemberRole.id,
+      'Expected creating member role to succeed',
+    );
+
+    const groupMappingId =
+      createGroupMappingResult.addGroupMappingToGroup.ok.group.roleMappings[0].id;
+
+    const result = await updateGroupMapping(
+      {
+        groupMappingId: groupMappingId,
+        assignedResources: null,
+        roleId: createNewRoleResult.createMemberRole.ok.createdMemberRole.id,
+      },
+      owner.ownerToken,
+    ).then(r => r.expectNoGraphQLErrors());
+    expect(result).toEqual({
+      updateGroupMapping: {
+        error: null,
+        ok: {
+          group: {
+            id: createGroupResult.group.id,
+            roleMappings: [
+              {
+                id: groupMappingId,
+                role: {
+                  id: createNewRoleResult.createMemberRole.ok.createdMemberRole.id,
+                  name: 'Bars',
+                },
+              },
+            ],
+          },
+        },
+      },
+    });
+  });
+});
+
+test.describe('Mutation.removeGroupMapping', () => {
+  test.concurrent('remove non-existing group mapping yields correct error', async ({ expect }) => {
+    const seed = initSeed();
+    const owner = await seed.createOwner();
+    const result = await removeGroupMapping(
+      {
+        groupMappingId: crypto.randomUUID(),
+      },
+      owner.ownerToken,
+    ).then(r => r.expectNoGraphQLErrors());
+    expect(result).toEqual({
+      removeGroupMapping: {
+        error: {
+          message: 'Group mapping not found.',
+        },
+        ok: null,
+      },
+    });
+  });
+  test.concurrent(
+    'remove non-existing group mapping (non-uuid) yields correct error',
+    async ({ expect }) => {
+      const seed = initSeed();
+      const owner = await seed.createOwner();
+      const result = await removeGroupMapping(
+        {
+          groupMappingId: 'toyota',
+        },
+        owner.ownerToken,
+      ).then(r => r.expectNoGraphQLErrors());
+      expect(result).toEqual({
+        removeGroupMapping: {
+          error: {
+            message: 'Group mapping not found.',
+          },
+          ok: null,
+        },
+      });
+    },
+  );
+  test.concurrent(
+    'remove group mapping from organization without access yields correct error',
+    async ({ expect }) => {
+      const seed = initSeed();
+      const foreignOwner = await seed.createOwner();
+
+      const owner = await seed.createOwner();
+      const org = await owner.createOrg();
+      const { pool } = await seed.createDbConnection();
+      const groupStore = new GroupStore(new NoopLogger(), pool);
+      const createGroupResult = await groupStore.createGroup({
+        organizationId: org.organization.id,
+        displayName: 'Test Group',
+        externalId: null,
+      });
+      invariant(createGroupResult.type === 'success', 'Expected creating group to succeed');
+
+      const createRoleResult = await createMemberRole(
+        {
+          name: 'Foo',
+          description: 'Bars',
+          organization: { byId: org.organization.id },
+          selectedPermissions: [],
+        },
+        owner.ownerToken,
+      ).then(r => r.expectNoGraphQLErrors());
+
+      invariant(
+        !!createRoleResult.createMemberRole.ok?.createdMemberRole.id,
+        'Expected creating member role to succeed',
+      );
+
+      const createGroupMappingResult = await addGroupMappingToGroup(
+        {
+          groupId: createGroupResult.group.id,
+          roleId: createRoleResult.createMemberRole.ok.createdMemberRole.id,
+          assignedResources: null,
+        },
+        owner.ownerToken,
+      ).then(r => r.expectNoGraphQLErrors());
+
+      invariant(
+        !!createGroupMappingResult.addGroupMappingToGroup.ok,
+        'expected group mapping creation to succeed',
+      );
+
+      const groupMappingId =
+        createGroupMappingResult.addGroupMappingToGroup.ok.group.roleMappings[0].id;
+
+      const result = await removeGroupMapping(
+        {
+          groupMappingId: groupMappingId,
+        },
+        foreignOwner.ownerToken,
+      ).then(r => r.expectNoGraphQLErrors());
+      expect(result).toEqual({
+        removeGroupMapping: {
+          error: {
+            message: 'Group mapping not found.',
+          },
+          ok: null,
+        },
+      });
+    },
+  );
+  test.concurrent('remove group mapping from same organization succeeds', async ({ expect }) => {
+    const seed = initSeed();
+    const owner = await seed.createOwner();
+    const org = await owner.createOrg();
+    const { pool } = await seed.createDbConnection();
+    const groupStore = new GroupStore(new NoopLogger(), pool);
+    const createGroupResult = await groupStore.createGroup({
+      organizationId: org.organization.id,
+      displayName: 'Test Group',
+      externalId: null,
+    });
+    invariant(createGroupResult.type === 'success', 'Expected creating group to succeed');
+
+    const createRoleResult = await createMemberRole(
+      {
+        name: 'Foo',
+        description: 'Bars',
+        organization: { byId: org.organization.id },
+        selectedPermissions: [],
+      },
+      owner.ownerToken,
+    ).then(r => r.expectNoGraphQLErrors());
+
+    invariant(
+      !!createRoleResult.createMemberRole.ok?.createdMemberRole.id,
+      'Expected creating member role to succeed',
+    );
+
+    const createGroupMappingResult = await addGroupMappingToGroup(
+      {
+        groupId: createGroupResult.group.id,
+        roleId: createRoleResult.createMemberRole.ok.createdMemberRole.id,
+        assignedResources: null,
+      },
+      owner.ownerToken,
+    ).then(r => r.expectNoGraphQLErrors());
+
+    invariant(
+      !!createGroupMappingResult.addGroupMappingToGroup.ok,
+      'expected group mapping creation to succeed',
+    );
+
+    const groupMappingId =
+      createGroupMappingResult.addGroupMappingToGroup.ok.group.roleMappings[0].id;
+
+    const result = await removeGroupMapping(
+      {
+        groupMappingId: groupMappingId,
+      },
+      owner.ownerToken,
+    ).then(r => r.expectNoGraphQLErrors());
+    expect(result).toEqual({
+      removeGroupMapping: {
+        error: null,
+        ok: {
+          group: {
+            id: createGroupResult.group.id,
+            roleMappings: [],
+          },
+        },
+      },
     });
   });
 });
