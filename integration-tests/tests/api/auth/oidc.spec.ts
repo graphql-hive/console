@@ -33,7 +33,6 @@ test.concurrent(
     const result = await oidc.runSignInUp({
       state: auth.state,
     });
-    console.log(result);
     invariant(result.type === 'success', 'Expected sign in up to succeed.');
 
     const [error] = await execute({
@@ -66,12 +65,16 @@ test.concurrent(
   'If the OIDC provider users email changes, the users email is updated upon login',
   async ({ expect }) => {
     const seed = initSeed();
-    const oldEmail = seed.generateEmail();
-    const newEmail = seed.generateEmail();
+
     const { createOrg } = await seed.createOwner();
     const { createOIDCIntegration } = await createOrg();
 
-    const { createMockServerAndUpdateIntegrationEndpoints } = await createOIDCIntegration();
+    const { createMockServerAndUpdateIntegrationEndpoints, registerFakeDomain } =
+      await createOIDCIntegration();
+    const domain = await registerFakeDomain();
+    const oldEmail = 'a@' + domain;
+    const newEmail = 'b@' + domain;
+
     const oidc = await createMockServerAndUpdateIntegrationEndpoints();
 
     let auth = await oidc.runGetAuthorizationUrl();
@@ -85,7 +88,6 @@ test.concurrent(
       state: auth.state,
     });
     invariant(result.type === 'success', 'Expected sign in/up to succeed.');
-    await oidc.confirmEmail(result.user);
 
     let meResult = await execute({
       document: TestMeQuery,
@@ -109,7 +111,6 @@ test.concurrent(
       state: auth.state,
     });
     invariant(result.type === 'success', 'Expected sign in/up to succeed.');
-    await oidc.confirmEmail(result.user);
 
     meResult = await execute({
       document: TestMeQuery,
