@@ -13,7 +13,8 @@
     "./modules/shared/providers/logger": "./src/modules/shared/providers/logger.ts",
     "./modules/shared/providers/redis": "./src/modules/shared/providers/redis.ts",
     "./modules/schema/providers/schema-version-store": "./src/modules/schema/providers/schema-version-store.ts",
-    "./modules/token/providers/target-token-storage": "./src/modules/token/providers/target-token-storage.ts"
+    "./modules/token/providers/target-token-storage": "./src/modules/token/providers/target-token-storage.ts",
+    "./modules/organization/providers/group-store": "./src/modules/organization/providers/group-store.ts"
   },
   "peerDependencies": {
     "graphql": "^16.0.0",
