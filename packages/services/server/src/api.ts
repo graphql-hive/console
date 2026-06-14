@@ -1,7 +1,6 @@
 import { CryptoProvider } from 'packages/services/api/src/modules/shared/providers/crypto';
 import { z } from 'zod';
 import type { Storage } from '@hive/api';
-import { OrganizationAccessScope, ProjectAccessScope, TargetAccessScope } from '@hive/api';
 import { initTRPC } from '@trpc/server';
 
 export type Context = {
