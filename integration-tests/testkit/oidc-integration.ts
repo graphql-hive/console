@@ -154,13 +154,12 @@ export async function createOIDCIntegration(args: {
 
   return {
     oidcIntegration,
-    async registerFakeDomain() {
-      const randomDomain =
-        humanId({
-          separator: '',
-          capitalize: false,
-        }) + '.local';
-
+    async registerFakeDomain(
+      randomDomain = humanId({
+        separator: '',
+        capitalize: false,
+      }) + '.local',
+    ) {
       const pool = await getPool();
       const query = psql`
         INSERT INTO "oidc_integration_domains" (

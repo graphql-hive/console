@@ -1,3 +1,4 @@
+import humanId from 'human-id';
 import { ResourceAssignmentModeType } from 'testkit/gql/graphql';
 import { initSeed } from 'testkit/seed';
 import { getServiceHost } from 'testkit/utils';
@@ -3511,3 +3512,48 @@ test.concurrent('user cannot login via OIDC if SCIM user provisioning is require
   });
   invariant(signInUpResult.type === 'success', 'Expected sign in/up to succeed.');
 });
+
+test.concurrent(
+  'organization admin can still sign in via non-oidc method even if login through the identity provider is enforced',
+  async () => {
+    const seed = initSeed();
+
+    const domain =
+      humanId({
+        separator: '',
+        capitalize: false,
+      }) + '.local';
+
+    const ownerEmail = 'admin@' + domain;
+
+    const owner = await seed.createOwner(true, ownerEmail);
+    const org = await owner.createOrg();
+    const oidcIntegration = await org.createOIDCIntegration();
+    await oidcIntegration.registerFakeDomain(domain);
+    await oidcIntegration.createMockServerAndUpdateIntegrationEndpoints({
+      oidcForVerifiedDomainsRequired: true,
+    });
+
+    const response = await fetch('http://localhost:3001/auth-api/signin', {
+      method: 'POST',
+      body: JSON.stringify({
+        formFields: [
+          { id: 'email', value: ownerEmail },
+          { id: 'password', value: 'ilikebigturtlesandicannotlie47' },
+        ],
+      }),
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+
+    expect(response.status).toEqual(200);
+    const body = await response.json();
+    expect(body).toMatchObject({
+      status: 'OK',
+      user: {
+        emails: [ownerEmail],
+      },
+    });
+  },
+);
