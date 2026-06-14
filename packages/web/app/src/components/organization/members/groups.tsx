@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import {
-  AlertTriangleIcon,
   ChevronDownIcon,
   ChevronRightIcon,
   PencilIcon,
@@ -249,7 +248,7 @@ function GroupRow(props: GroupRowProps): ReactNode {
           </div>
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2">
-              <span className={cn('text-foreground text-sm font-medium')}>{group.name}</span>
+              <span className={cn('text-sm font-medium')}>{group.name}</span>
               <Badge variant="outline" className="text-xs font-normal">
                 {group.roleMappingCount === 0 ? (
                   <>No mappings configured</>
