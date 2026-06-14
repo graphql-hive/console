@@ -239,6 +239,17 @@ export default gql`
     Defaults to the "sub" claim.
     """
     userIdClaim: String
+    """
+    Whether an user account can be created JIT upon attempting a login with the OIDC provider.
+    If set to 'true', a successful login via OIDC will fail if the account was not provisioned before.
+    If set to 'false', as successful via OIDC will create a new user account.
+    """
+    userProvisioningRequired: Boolean
+    """
+    Prohibit email/password or social sign in/up for any email address that contains a verified domain.
+    This allows the organization admin to enforce all login to be performed through the organizations OIDC provider.
+    """
+    oidcForVerifiedDomainsRequired: Boolean
   }
 
   type UpdateOIDCIntegrationResult {

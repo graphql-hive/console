@@ -5,6 +5,7 @@ import z from 'zod';
 import { SuperTokensStore } from '@hive/api/modules/auth/providers/supertokens-store';
 import { NoopLogger } from '@hive/api/modules/shared/providers/logger';
 import { psql } from '@hive/postgres';
+import { invariant } from '@hive/service-common';
 import { createStorage } from '@hive/storage';
 
 const apiHost = await getServiceHost('server', 3001).then(r => `http://${r}`);
@@ -3456,3 +3457,57 @@ test.concurrent(
     }
   },
 );
+
+test.concurrent('user cannot login via OIDC if SCIM user provisioning is required', async () => {
+  const seed = initSeed();
+  const owner = await seed.createOwner();
+  const org = await owner.createOrg();
+  const oidc = await org.createOIDCIntegration();
+  const domain = await oidc.registerFakeDomain();
+  const email = 'marty.mcfly@' + domain;
+
+  const oidcAuth = await oidc.createMockServerAndUpdateIntegrationEndpoints({
+    userProvisioningRequired: true,
+  });
+  oidcAuth.setUser({
+    email,
+    userIdClaim: email,
+  });
+
+  let authPayload = await oidcAuth.runGetAuthorizationUrl();
+  let signInUpResult = await oidcAuth.runSignInUp({
+    state: authPayload.state,
+  });
+  invariant(signInUpResult.type === 'error', 'Expected sign in up to fail.');
+
+  const accessToken = await org.createOrganizationAccessToken({
+    permissions: ['member:describe', 'member:modify'],
+    resources: { mode: ResourceAssignmentModeType.Granular },
+  });
+  const scimAuthHeader = 'Bearer ' + accessToken.privateAccessKey;
+  const headers = {
+    'Content-Type': 'application/scim+json',
+    Authorization: scimAuthHeader,
+  };
+  const usersPostResponse = await fetch(usersEndpoint, {
+    method: 'POST',
+    body: JSON.stringify({
+      schemas: ['urn:ietf:params:scim:schemas:core:2.0:User'],
+      userName: email,
+      name: { givenName: 'Marty', familyName: 'McFly' },
+      emails: [{ primary: true, value: email, type: 'work' }],
+      locale: 'en-US',
+      externalId: email,
+      active: true,
+    }),
+    headers,
+  });
+
+  expect(usersPostResponse.status).toEqual(201);
+
+  authPayload = await oidcAuth.runGetAuthorizationUrl();
+  signInUpResult = await oidcAuth.runSignInUp({
+    state: authPayload.state,
+  });
+  invariant(signInUpResult.type === 'success', 'Expected sign in/up to succeed.');
+});

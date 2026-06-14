@@ -217,6 +217,8 @@ export class OIDCIntegrationsProvider {
     authorizationEndpoint: string | null;
     additionalScopes: readonly string[] | null;
     userIdClaim: string | null;
+    userProvisioningRequired: boolean | null;
+    oidcForVerifiedDomainsRequired: boolean | null;
   }) {
     if (this.isEnabled() === false) {
       return {
@@ -281,6 +283,8 @@ export class OIDCIntegrationsProvider {
         authorizationEndpoint: authorizationEndpointResult.data,
         additionalScopes: additionalScopesResult.data,
         userIdClaim: userIdClaimResult.data,
+        userProvisioningRequired: args.userProvisioningRequired,
+        oidcForVerifiedDomainsRequired: args.oidcForVerifiedDomainsRequired,
       });
 
       const redactedClientSecret = maskToken(oidcIntegration.clientId);

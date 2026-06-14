@@ -14,6 +14,8 @@ export const updateOIDCIntegration: NonNullable<
     authorizationEndpoint: input.authorizationEndpoint ?? null,
     additionalScopes: input.additionalScopes ?? null,
     userIdClaim: input.userIdClaim ?? null,
+    userProvisioningRequired: input.userProvisioningRequired ?? null,
+    oidcForVerifiedDomainsRequired: input.oidcForVerifiedDomainsRequired ?? null,
   });
 
   if (result.type === 'ok') {
