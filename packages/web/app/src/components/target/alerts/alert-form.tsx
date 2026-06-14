@@ -313,7 +313,7 @@ function parseMetricSelection(selection: string): {
 
 export const DEFAULT_ALERT_FORM_VALUES: AlertFormValues = {
   metricSelection: 'TRAFFIC',
-  timeWindowMinutes: '10080',
+  timeWindowMinutes: '60',
   name: '',
   severity: 'WARNING',
   direction: 'ABOVE',
