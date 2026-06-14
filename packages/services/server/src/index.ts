@@ -621,7 +621,7 @@ export async function main() {
         registry.injector.get(OIDCIntegrationStore),
         registry.injector.get(RedisRateLimiter),
       );
-      server.register(scimPlugin, { prefix: '/scim/v2' });
+      await server.register(scimPlugin, { prefix: '/scim/v2' });
     }
 
     if (env.exposeMemoryUtils) {
