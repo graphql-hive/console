@@ -76,7 +76,10 @@ export class UsersStore {
       isDisabled: boolean;
     },
     trx: CommonQueryMethods,
-  ) {
+  ): Promise<
+    | { type: 'success'; user: User; errorCode?: never }
+    | { type: 'error'; errorCode: 'displayNameConflict'; user?: never }
+  > {
     return trx
       .transaction('createUser', async trx => {
         const query = psql` /* Create Hive User */
