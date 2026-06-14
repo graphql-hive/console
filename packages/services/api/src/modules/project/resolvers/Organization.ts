@@ -6,23 +6,13 @@ export const Organization: Pick<
   OrganizationResolvers,
   'projectBySlug' | 'projects' | 'viewerCanCreateProject'
 > = {
-  projects: async (organization, _, { injector }) => {
-    const projects = await injector
-      .get(ProjectManager)
-      .getProjects({ organizationId: organization.id });
-
-    return {
-      edges: projects.map(node => ({
-        cursor: '',
-        node,
-      })),
-      pageInfo: {
-        hasNextPage: false,
-        hasPreviousPage: false,
-        endCursor: '',
-        startCursor: '',
-      },
-    };
+  projects: (organization, args, { injector }) => {
+    return injector.get(ProjectManager).getPaginatedProjectsForOrganization(organization, {
+      first: args.first ?? null,
+      after: args.after ?? null,
+      search: args.search ?? null,
+      sort: args.sort ?? null,
+    });
   },
   viewerCanCreateProject: async (organization, _arg, { injector }) => {
     return injector.get(Session).canPerformAction({
