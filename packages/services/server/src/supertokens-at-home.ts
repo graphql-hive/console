@@ -20,6 +20,7 @@ import {
   SuperTokensStore,
 } from '@hive/api/modules/auth/providers/supertokens-store';
 import { OIDCIntegrationStore } from '@hive/api/modules/oidc-integrations/providers/oidc-integration.store';
+import { UsersStore } from '@hive/api/modules/organization/providers/users-store';
 import { RedisRateLimiter } from '@hive/api/modules/shared/providers/redis-rate-limiter';
 import type { OIDCIntegration } from '@hive/api/shared/entities';
 import { TaskScheduler } from '@hive/workflows/kit';
@@ -73,30 +74,49 @@ export async function registerSupertokensAtHome(
       });
   }
 
-  /** Verify whether the domain is allowed to do non-oidc login. */
-  async function isNonOIDCSignInUpAllowedForEmailAddress(email: string) {
-    // TODO: We also need to check whether the user is admin of the org
-    // and in that case create an exception, as we would otherwise lock out the admin of the org
-    // in case of a "oidc credentials" expired scenario.
-
+  /** Verify whether the domain is allowed to do non-oidc sign in */
+  async function isNonOIDCSignUpAllowedForEmailAddress(
+    email: string,
+    user: EmailPasswordOrThirdPartyUser | null,
+  ) {
     const [, emailDomain] = email.split('@');
-
     const verifiedDomain = await oidcIntegrations.findVerifiedDomainByName(emailDomain);
 
-    if (verifiedDomain) {
-      const oidcIntegration = await storage.getOIDCIntegrationById({
-        oidcIntegrationId: verifiedDomain.oidcIntegrationId,
-      });
+    if (!verifiedDomain) {
+      return {
+        type: 'success' as const,
+      };
+    }
 
-      if (oidcIntegration?.oidcForVerifiedDomainsRequired) {
-        return {
-          type: 'error' as const,
-        };
+    const oidcIntegration = await storage.getOIDCIntegrationById({
+      oidcIntegrationId: verifiedDomain.oidcIntegrationId,
+    });
+
+    if (!oidcIntegration?.oidcForVerifiedDomainsRequired) {
+      return {
+        type: 'success' as const,
+      };
+    }
+
+    if (user) {
+      const hiveUser = await storage.getUserBySuperTokenId({ superTokensUserId: user.userId });
+
+      if (hiveUser) {
+        const usersStore = new UsersStore(storage.pool);
+        const isUserAdminOfAnyOrganization = await usersStore.isUserWithIdAdminOfAnyOrganization(
+          hiveUser.id,
+        );
+
+        if (isUserAdminOfAnyOrganization) {
+          return {
+            type: 'success' as const,
+          };
+        }
       }
     }
 
     return {
-      type: 'success' as const,
+      type: 'error' as const,
     };
   }
 
@@ -199,15 +219,6 @@ export async function registerSupertokensAtHome(
         });
       }
 
-      const result = await isNonOIDCSignInUpAllowedForEmailAddress(emailResult.data);
-
-      if (result.type === 'error') {
-        return rep.send({
-          status: 'SIGN_UP_NOT_ALLOWED',
-          reason: 'Please sign in through your organizations identity provider.',
-        });
-      }
-
       // Lookup user
       let user = await supertokensStore.lookupEmailUserByEmail(rawEmail);
 
@@ -220,6 +231,15 @@ export async function registerSupertokensAtHome(
               error: 'This email already exists. Please sign in instead.',
             },
           ],
+        });
+      }
+
+      const result = await isNonOIDCSignUpAllowedForEmailAddress(emailResult.data, user);
+
+      if (result.type === 'error') {
+        return rep.send({
+          status: 'SIGN_UP_NOT_ALLOWED',
+          reason: 'Please sign in through your organizations identity provider.',
         });
       }
 
@@ -339,16 +359,6 @@ export async function registerSupertokensAtHome(
 
       const email =
         parsedBody.data.formFields.find(field => field.id === 'email')?.value.toLowerCase() ?? '';
-
-      const emailResult = await isNonOIDCSignInUpAllowedForEmailAddress(email);
-
-      if (emailResult.type === 'error') {
-        return rep.send({
-          status: 'SIGN_IN_NOT_ALLOWED',
-          reason: 'Please sign in through your organizations identity provider.',
-        });
-      }
-
       const password =
         parsedBody.data.formFields.find(field => field.id === 'password')?.value ?? '';
 
@@ -357,6 +367,15 @@ export async function registerSupertokensAtHome(
       if (!user) {
         return rep.send({
           status: 'WRONG_CREDENTIALS_ERROR',
+        });
+      }
+
+      const emailResult = await isNonOIDCSignUpAllowedForEmailAddress(email, user);
+
+      if (emailResult.type === 'error') {
+        return rep.send({
+          status: 'SIGN_IN_NOT_ALLOWED',
+          reason: 'Please sign in through your organizations identity provider.',
         });
       }
 
@@ -462,15 +481,6 @@ export async function registerSupertokensAtHome(
 
       const email =
         parsedBody.data.formFields.find(field => field.id === 'email')?.value.toLowerCase() ?? '';
-
-      const emailResult = await isNonOIDCSignInUpAllowedForEmailAddress(email);
-
-      if (emailResult.type === 'error') {
-        return rep.send({
-          status: 'GENERAL_ERROR',
-          reason: 'Please sign in through your organizations identity provider.',
-        });
-      }
 
       const user = await supertokensStore.findEmailPasswordUserByEmail(email);
 
@@ -1013,58 +1023,58 @@ export async function registerSupertokensAtHome(
           .json()
           .then(res => UserInfoResponseModel.parse(res));
 
+        const EmailsBodyModel = z.array(
+          z.object({
+            email: z.string(),
+            verified: z.boolean(),
+            primary: z.boolean(),
+          }),
+        );
+
         let user = await supertokensStore.findThirdPartyUser({
           thirdPartyId: 'github',
           thirdPartyUserId: String(userInfoBody.id),
         });
 
-        if (!user) {
-          const EmailsBodyModel = z.array(
-            z.object({
-              email: z.string(),
-              verified: z.boolean(),
-              primary: z.boolean(),
-            }),
-          );
+        const emailsResponse = await fetch('https://api.github.com/user/emails', {
+          method: 'GET',
+          headers: {
+            accept: 'application/vnd.github+json',
+            'x-gitHub-api-version': '2022-11-28',
+            authorization: `Bearer ${accessTokenBody.access_token}`,
+          },
+        });
 
-          const emailsResponse = await fetch('https://api.github.com/user/emails', {
-            method: 'GET',
-            headers: {
-              accept: 'application/vnd.github+json',
-              'x-gitHub-api-version': '2022-11-28',
-              authorization: `Bearer ${accessTokenBody.access_token}`,
-            },
+        if (emailsResponse.status !== 200) {
+          req.log.debug('Received invalid response status from github email lookup.');
+          return rep.status(200).send({
+            status: 'SIGN_IN_UP_NOT_ALLOWED',
+            reason: 'Something went wrong.',
           });
+        }
 
-          if (emailsResponse.status !== 200) {
-            req.log.debug('Received invalid response status from github email lookup.');
-            return rep.status(200).send({
-              status: 'SIGN_IN_UP_NOT_ALLOWED',
-              reason: 'Something went wrong.',
-            });
-          }
+        const emailsBody = await emailsResponse.json().then(res => EmailsBodyModel.parse(res));
 
-          const emailsBody = await emailsResponse.json().then(res => EmailsBodyModel.parse(res));
+        const email = emailsBody.find(email => email.primary) ?? null;
 
-          const email = emailsBody.find(email => email.primary) ?? null;
+        if (!email) {
+          req.log.debug('Failed to find primary email address from GitHub API.');
+          return rep.status(200).send({
+            status: 'SIGN_IN_UP_NOT_ALLOWED',
+            reason: 'Something went wrong.',
+          });
+        }
 
-          if (!email) {
-            req.log.debug('Failed to find primary email address from GitHub API.');
-            return rep.status(200).send({
-              status: 'SIGN_IN_UP_NOT_ALLOWED',
-              reason: 'Something went wrong.',
-            });
-          }
+        const emailResult = await isNonOIDCSignUpAllowedForEmailAddress(email.email, user);
 
-          const emailResult = await isNonOIDCSignInUpAllowedForEmailAddress(email.email);
+        if (emailResult.type === 'error') {
+          return rep.send({
+            status: 'SIGN_IN_UP_NOT_ALLOWED',
+            reason: 'Please sign in through your organizations identity provider.',
+          });
+        }
 
-          if (emailResult.type === 'error') {
-            return rep.send({
-              status: 'SIGN_IN_UP_NOT_ALLOWED',
-              reason: 'Please sign in through your organizations identity provider.',
-            });
-          }
-
+        if (!user) {
           user = await supertokensStore.createThirdPartyUser({
             email: email?.email,
             thirdPartyId: 'github',
@@ -1169,7 +1179,12 @@ export async function registerSupertokensAtHome(
 
         const userInfo = await userInfoResponse.json().then(UserInfoBodyModel.parse);
 
-        const emailResult = await isNonOIDCSignInUpAllowedForEmailAddress(userInfo.email);
+        let user = await supertokensStore.findThirdPartyUser({
+          thirdPartyId: 'google',
+          thirdPartyUserId: String(userInfo.sub),
+        });
+
+        const emailResult = await isNonOIDCSignUpAllowedForEmailAddress(userInfo.email, user);
 
         if (emailResult.type === 'error') {
           return rep.send({
@@ -1177,11 +1192,6 @@ export async function registerSupertokensAtHome(
             reason: 'Please sign in through your organizations identity provider.',
           });
         }
-
-        let user = await supertokensStore.findThirdPartyUser({
-          thirdPartyId: 'google',
-          thirdPartyUserId: String(userInfo.sub),
-        });
 
         if (!user) {
           user = await supertokensStore.createThirdPartyUser({
@@ -1308,7 +1318,15 @@ export async function registerSupertokensAtHome(
         const json = await response.json();
         const profile = OktaProfileModel.parse(json);
 
-        const emailResult = await isNonOIDCSignInUpAllowedForEmailAddress(profile.profile.email);
+        let user = await supertokensStore.findThirdPartyUser({
+          thirdPartyId: 'okta',
+          thirdPartyUserId: profile.id,
+        });
+
+        const emailResult = await isNonOIDCSignUpAllowedForEmailAddress(
+          profile.profile.email,
+          user,
+        );
 
         if (emailResult.type === 'error') {
           return rep.send({
@@ -1316,11 +1334,6 @@ export async function registerSupertokensAtHome(
             reason: 'Please sign in through your organizations identity provider.',
           });
         }
-
-        let user = await supertokensStore.findThirdPartyUser({
-          thirdPartyId: 'okta',
-          thirdPartyUserId: profile.id,
-        });
 
         if (!user) {
           user = await supertokensStore.createThirdPartyUser({
