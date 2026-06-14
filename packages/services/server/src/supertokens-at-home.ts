@@ -1530,6 +1530,27 @@ export async function registerSupertokensAtHome(
           });
         }
 
+        // Check whether the email is allowed to sign-up via this idetity provider
+        const [, emailDomain] = email.data.split('@');
+        const verifiedDomain = await oidcIntegrations.findVerifiedDomainByName(emailDomain);
+        if (verifiedDomain && verifiedDomain.oidcIntegrationId !== oidcIntegration.id) {
+          const oidcIntegration = await storage.getOIDCIntegrationById({
+            oidcIntegrationId: verifiedDomain.oidcIntegrationId,
+          });
+
+          if (oidcIntegration?.oidcForVerifiedDomainsRequired) {
+            req.log.debug(
+              'the resolved domain of this user is verified with another organization that enforces login through its identity provider. (domain=%s, oidcIntegrationId=%s)',
+              emailDomain,
+              oidcIntegration.id,
+            );
+            return rep.status(200).send({
+              status: 'SIGN_IN_UP_NOT_ALLOWED',
+              reason: 'Sign in failed. Please contact your organization administrator.',
+            });
+          }
+        }
+
         req.log.debug('lookup existing user for sub and oidc integration');
 
         const rawExternalIdClaim = (userInfoBody.data as Record<string, unknown>)[
