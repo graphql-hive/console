@@ -1608,25 +1608,12 @@ export async function registerSupertokensAtHome(
             });
           }
 
-          req.log.debug('create new user.');
+          req.log.debug('create new supertokens user.');
           supertokenUser = await supertokensStore.createOIDCUser({
             email: email.data,
             oidcIntegrationId: oidcIntegration.id,
             externalId: externalUserId,
           });
-        } else if (supertokenUser.email !== userInfoBody.data.email) {
-          req.log.debug('providers email has changed. Update record.');
-          supertokenUser = await supertokensStore.updateOIDCUserEmail({
-            userId: supertokenUser.userId,
-            newEmail: email.data,
-          });
-
-          if (!supertokenUser) {
-            return rep.status(200).send({
-              status: 'SIGN_IN_UP_NOT_ALLOWED',
-              reason: 'Sign in failed. Please contact your organization administrator.',
-            });
-          }
         }
 
         const maybeHiveUser = await storage.getUserBySuperTokenId({
@@ -1639,6 +1626,25 @@ export async function registerSupertokensAtHome(
             status: 'SIGN_IN_UP_NOT_ALLOWED',
             reason: 'Sign in failed. Please contact your organization administrator.',
           });
+        }
+
+        // only perform these updates if the user is not provisioned
+        // if the user is provisioned the SCIM provider is the source of truth for all attributes
+        if (!maybeHiveUser?.provisionedByOrganizationId) {
+          if (supertokenUser.email !== userInfoBody.data.email) {
+            req.log.debug('providers email has changed. Update record.');
+            supertokenUser = await supertokensStore.updateOIDCUserEmail({
+              userId: supertokenUser.userId,
+              newEmail: email.data,
+            });
+
+            if (!supertokenUser) {
+              return rep.status(200).send({
+                status: 'SIGN_IN_UP_NOT_ALLOWED',
+                reason: 'Sign in failed. Please contact your organization administrator.',
+              });
+            }
+          }
         }
 
         req.log.debug('supertokens user provisioned. ensure hive user exists');
