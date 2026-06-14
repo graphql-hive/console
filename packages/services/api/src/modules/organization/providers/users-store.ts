@@ -342,6 +342,20 @@ export class UsersStore {
 
     return await this.pool.any(query).then(z.array(UserModel).parse);
   }
+
+  async isUserWithIdAdminOfAnyOrganization(userId: string) {
+    const query = psql`
+      SELECT TRUE as "exists"
+      FROM "organizations"
+      WHERE "user_id" = ${userId}
+      LIMIT 1
+    `;
+
+    return this.pool
+      .maybeOneFirst(query)
+      .then(z.literal(true).nullable().parse)
+      .then(value => value ?? false);
+  }
 }
 
 const UserModel = z.object({

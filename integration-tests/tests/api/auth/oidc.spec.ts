@@ -236,7 +236,7 @@ test.concurrent(
 );
 
 test.concurrent(
-  'User cannot sign up with email that is verified with anoth organization and enforces login through that organizations OIDC provider',
+  'User cannot sign up with email that is verified with another organization and enforces login through that organizations OIDC provider',
   async () => {
     const seed = initSeed();
 
