@@ -9,11 +9,12 @@ export const createOIDCIntegration: NonNullable<
   const result = await oktaIntegrationsProvider.createOIDCIntegrationForOrganization({
     organizationId: input.organizationId,
     clientId: input.clientId,
-    clientSecret: input.clientSecret,
+    clientSecret: input.clientSecret ?? null,
     tokenEndpoint: input.tokenEndpoint,
     userinfoEndpoint: input.userinfoEndpoint,
     authorizationEndpoint: input.authorizationEndpoint,
     additionalScopes: input.additionalScopes,
+    useFederatedCredential: input.useFederatedCredential ?? false,
   });
 
   if (result.type === 'ok') {

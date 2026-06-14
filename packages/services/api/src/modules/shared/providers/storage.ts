@@ -464,11 +464,12 @@ export interface Storage {
   createOIDCIntegrationForOrganization(_: {
     organizationId: string;
     clientId: string;
-    encryptedClientSecret: string;
+    encryptedClientSecret: string | null;
     tokenEndpoint: string;
     userinfoEndpoint: string;
     authorizationEndpoint: string;
     additionalScopes: readonly string[];
+    useFederatedCredential: boolean;
   }): Promise<{ type: 'ok'; oidcIntegration: OIDCIntegration } | { type: 'error'; reason: string }>;
 
   updateOIDCIntegration(_: {
@@ -479,6 +480,7 @@ export interface Storage {
     userinfoEndpoint: string | null;
     authorizationEndpoint: string | null;
     additionalScopes: readonly string[] | null;
+    useFederatedCredential: boolean | null;
   }): Promise<OIDCIntegration>;
 
   deleteOIDCIntegration(_: { oidcIntegrationId: string }): Promise<void>;
