@@ -227,6 +227,14 @@ function ActivityView(props: {
     });
   }, [allEvents, search.severities, search.types, search.createdByIds]);
 
+  const tableResetKey = JSON.stringify([
+    search.severities ?? [],
+    search.types ?? [],
+    search.createdByIds ?? [],
+    search.from ?? null,
+    search.to ?? null,
+  ]);
+
   return (
     <>
       <PageLead
@@ -266,6 +274,7 @@ function ActivityView(props: {
 
       <div className="mt-6">
         <AlertActivityTable
+          key={tableResetKey}
           events={visibleEvents}
           organizationSlug={organizationSlug}
           projectSlug={projectSlug}
