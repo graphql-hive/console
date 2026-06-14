@@ -21,7 +21,7 @@
     "@fastify/static": "9.1.1",
     "@fastify/vite": "8.4.1",
     "@graphiql/plugin-explorer": "4.0.0-alpha.2",
-    "@graphiql/react": "1.0.0-alpha.4",
+    "@graphiql/react": "1.0.0-next.2",
     "@graphiql/toolkit": "0.9.1",
     "@graphql-codegen/client-preset-swc-plugin": "0.2.0",
     "@graphql-hive/laboratory": "workspace:*",
