@@ -1648,7 +1648,7 @@ export async function registerSupertokensAtHome(
         // only perform these updates if the user is not provisioned
         // if the user is provisioned the SCIM provider is the source of truth for all attributes
         if (!maybeHiveUser?.provisionedByOrganizationId) {
-          if (supertokenUser.email !== userInfoBody.data.email) {
+          if (supertokenUser.email !== email.data) {
             req.log.debug('providers email has changed. Update record.');
             supertokenUser = await supertokensStore.updateOIDCUserEmail({
               userId: supertokenUser.userId,
@@ -1666,28 +1666,28 @@ export async function registerSupertokensAtHome(
 
         req.log.debug('supertokens user provisioned. ensure hive user exists');
 
-        if (!maybeHiveUser) {
-          const ensureUserExists = await storage.ensureUserExists({
-            superTokensUserId: supertokenUser.userId,
-            email: email.data,
-            firstName: null,
-            lastName: null,
-            oidcIntegration: {
-              id: oidcIntegration.id,
-            },
-          });
+        const ensureUserExists = await storage.ensureUserExists({
+          superTokensUserId: supertokenUser.userId,
+          // make sure we are not updating the email when the user was provisioned
+          email: maybeHiveUser?.provisionedByOrganizationId ? maybeHiveUser.email : email.data,
+          firstName: null,
+          lastName: null,
+          // make sure that if the user was provisioned we do not apply the constraint for "require oidc integration"
+          oidcIntegration: maybeHiveUser?.provisionedByOrganizationId
+            ? null
+            : {
+                id: oidcIntegration.id,
+              },
+        });
 
-          if (!ensureUserExists.ok) {
-            req.log.debug('creating hive user is not allowed. Reason: %s', ensureUserExists.reason);
-            return rep.status(200).send({
-              status: 'SIGN_IN_UP_NOT_ALLOWED',
-              reason: 'Sign in not allowed.',
-            });
-          }
-          hiveUser = ensureUserExists.user;
-        } else {
-          hiveUser = maybeHiveUser;
+        if (!ensureUserExists.ok) {
+          req.log.debug('creating hive user is not allowed. Reason: %s', ensureUserExists.reason);
+          return rep.status(200).send({
+            status: 'SIGN_IN_UP_NOT_ALLOWED',
+            reason: 'Sign in not allowed.',
+          });
         }
+        hiveUser = ensureUserExists.user;
         supertokensUser = supertokenUser;
       } else {
         return rep.status(200).send({
