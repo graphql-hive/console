@@ -1,5 +1,6 @@
 import { Injectable, Scope } from 'graphql-modules';
 import { z } from 'zod';
+import { isUUID } from '@hive/api/shared/is-uuid';
 import { CommonQueryMethods, PostgresDatabasePool, psql } from '@hive/postgres';
 import {
   decodeCreatedAtAndUUIDIdBasedCursor,
@@ -173,10 +174,20 @@ export class OrganizationMemberRoles {
     return OrganizationMemberRoles.findMemberRolesByIds(this.pool, roleIds);
   }
 
-  findMemberRoleById = batch<string, OrganizationMemberRole | null>(async roleIds => {
-    const roles = await this.findMemberRolesByIds(roleIds);
-    return roleIds.map(async roleId => roles.get(roleId) ?? null);
-  });
+  private findMemberRoleByIdBatched = batch<string, OrganizationMemberRole | null>(
+    async roleIds => {
+      const roles = await this.findMemberRolesByIds(roleIds);
+      return roleIds.map(async roleId => roles.get(roleId) ?? null);
+    },
+  );
+
+  findMemberRoleById(roleId: string) {
+    if (!isUUID(roleId)) {
+      return null;
+    }
+
+    return this.findMemberRoleByIdBatched(roleId);
+  }
 
   async findRoleByOrganizationIdAndName(
     organizationId: string,
