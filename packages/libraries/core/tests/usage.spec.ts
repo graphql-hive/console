@@ -702,6 +702,84 @@ test('should not send excluded operation name data to Hive', async () => {
   expect(operation.execution.ok).toBe(true);
 });
 
+test('should apply operation-level sample rates with global fallback', async () => {
+  const logger = createHiveTestingLogger();
+
+  // Deterministic random draw of 0.5:
+  //  - high-volume ops (rate 0.1): 0.5 <= 0.1 === false -> dropped
+  //  - everything else (fallback rate 1.0): 0.5 <= 1.0 === true -> kept
+  vi.spyOn(Math, 'random').mockReturnValue(0.5);
+
+  const token = 'Token';
+
+  let report: Report = {
+    size: 0,
+    map: {},
+    operations: [],
+  };
+  const http = nock('http://localhost')
+    .post('/200')
+    .once()
+    .reply((_, _body) => {
+      report = _body as any;
+      return [200];
+    });
+
+  const hive = createHive({
+    enabled: true,
+    debug: true,
+    agent: {
+      timeout: 500,
+      maxRetries: 0,
+      sendInterval: 10,
+      logger,
+    },
+    token,
+    selfHosting: {
+      graphqlEndpoint: 'http://localhost/graphql',
+      applicationUrl: 'http://localhost/',
+      usageEndpoint: 'http://localhost/200',
+    },
+    usage: {
+      // global fallback stays at 100%
+      sampleRate: 1,
+      sampleRates: [
+        // exact-name rule
+        { name: 'deleteProject', sampleRate: 0.1 },
+        // regex rule
+        { regex: /^HighVolume/, sampleRate: 0.1 },
+      ],
+    },
+  });
+
+  const collect = hive.collectUsage();
+  await waitFor(20);
+  await Promise.all([
+    // matched by exact name rule (0.1) -> dropped
+    collect({ schema, document: op, operationName: 'deleteProject' }, {}),
+    // matched by regex rule (0.1) -> dropped
+    collect({ schema, document: op2, operationName: 'HighVolumeProject' }, {}),
+    // no rule matches -> fallback 1.0 -> kept
+    collect({ schema, document: op2, operationName: 'getProject' }, {}),
+  ]);
+  await hive.dispose();
+  await waitFor(50);
+  http.done();
+
+  // Only the low-volume operation (getProject) survives sampling.
+  expect(report.size).toEqual(1);
+  expect(Object.keys(report.map)).toHaveLength(1);
+
+  const key = Object.keys(report.map)[0];
+  const record = report.map[key];
+  expect(record.operation).toMatch('query getProject');
+  expect(record.operationName).toMatch('getProject');
+
+  const operations = report.operations;
+  expect(operations).toHaveLength(1);
+  expect(operations?.[0].operationMapKey).toEqual(key);
+});
+
 test('retry on non-200', async () => {
   const logger = createHiveTestingLogger();
 
