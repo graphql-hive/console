@@ -1,10 +1,17 @@
 import { useMemo } from 'react';
 import { formatDistanceToNow } from 'date-fns';
-import { ArrowDown } from 'lucide-react';
+import { ArrowDown, Info } from 'lucide-react';
 import { useQuery } from 'urql';
 import { DataTable } from '@/components/base/data-table/data-table';
 import { PageLead } from '@/components/base/page-lead';
 import { BadgeRounded } from '@/components/ui/badge';
+import { Spinner } from '@/components/ui/spinner';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 import { Avatar } from '@/components/v2/avatar';
 import { graphql } from '@/gql';
 import {
@@ -47,6 +54,16 @@ const TargetAlertsRulesPage_Query = graphql(`
         channels {
           id
           type
+          name
+          ... on AlertSlackChannel {
+            channel
+          }
+          ... on AlertWebhookChannel {
+            endpoint
+          }
+          ... on TeamsWebhookChannel {
+            endpoint
+          }
         }
         createdBy {
           id
@@ -67,7 +84,7 @@ type RuleRow = {
   lastTriggeredAt?: string | null;
   updatedAt: string;
   incidentCount: number;
-  channels: ReadonlyArray<{ id: string; type: string }>;
+  channels: ReadonlyArray<{ id: string; type: string; name: string; detail: string | null }>;
   createdBy?: { id: string; displayName: string } | null;
 };
 
@@ -192,9 +209,38 @@ const RULE_COLUMNS: ColumnDef<RuleRow, any>[] = [
   columnHelper.display({
     id: 'destination',
     header: 'Destination',
-    cell: ctx => (
-      <span className="text-neutral-12">{destinationLabel(ctx.row.original.channels)}</span>
-    ),
+    cell: ctx => {
+      const channels = ctx.row.original.channels;
+      if (channels.length === 0) {
+        return <span className="text-neutral-10">—</span>;
+      }
+      return (
+        <span className="text-neutral-12 inline-flex items-center gap-1.5">
+          {destinationLabel(channels)}
+          <TooltipProvider delayDuration={100}>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <span className="text-neutral-9 hover:text-neutral-11 inline-flex cursor-help">
+                  <Info className="size-3.5" />
+                </span>
+              </TooltipTrigger>
+              <TooltipContent>
+                <div className="space-y-1 text-xs">
+                  {channels.map(c => (
+                    <div key={c.id} className="flex items-center gap-2">
+                      <span className="text-neutral-10">
+                        {CHANNEL_TYPE_LABEL[c.type] ?? c.type}
+                      </span>
+                      <span className="text-neutral-12 font-mono">{c.detail ?? c.name}</span>
+                    </div>
+                  ))}
+                </div>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        </span>
+      );
+    },
   }),
   columnHelper.display({
     id: 'createdBy',
@@ -262,7 +308,17 @@ export function TargetAlertsRulesPage(props: {
         lastTriggeredAt: r.lastTriggeredAt,
         updatedAt: r.updatedAt,
         incidentCount: r.incidentCount,
-        channels: r.channels.map(c => ({ id: c.id, type: c.type })),
+        channels: r.channels.map(c => ({
+          id: c.id,
+          type: c.type,
+          name: c.name,
+          detail:
+            c.__typename === 'AlertSlackChannel'
+              ? c.channel
+              : c.__typename === 'AlertWebhookChannel' || c.__typename === 'TeamsWebhookChannel'
+                ? c.endpoint
+                : null,
+        })),
         createdBy: r.createdBy
           ? { id: r.createdBy.id, displayName: r.createdBy.displayName }
           : null,
@@ -282,7 +338,9 @@ export function TargetAlertsRulesPage(props: {
       />
 
       {result.fetching && !data ? (
-        <p className="text-neutral-10 text-sm">Loading…</p>
+        <div className="flex justify-center py-12">
+          <Spinner />
+        </div>
       ) : (
         <DataTable
           data={rules}
