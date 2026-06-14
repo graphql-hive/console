@@ -1,5 +1,6 @@
 import { Injectable, Scope } from 'graphql-modules';
 import { z } from 'zod';
+import { isUUID } from '@hive/api/shared/is-uuid';
 import { PostgresDatabasePool, psql, type CommonQueryMethods } from '@hive/postgres';
 import { batch } from '../../../shared/helpers';
 import { Logger } from '../../shared/providers/logger';
@@ -111,6 +112,12 @@ export class GroupRoleAssignmentStore {
 
   async getGroupMappingById(groupMappingId: string) {
     this.logger.debug('get group mapping by id (groupMappingId=%s)', groupMappingId);
+
+    if (!isUUID(groupMappingId)) {
+      this.logger.debug('group mapping is not a uuid (groupMappingId=%s)', groupMappingId);
+      return null;
+    }
+
     const query = psql`/* getGroupMappingById */
       SELECT
         ${groupRoleAssignmentsFields}
