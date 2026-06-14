@@ -59,11 +59,6 @@ const COLUMNS = [
       </div>
     ),
   }),
-  columnHelper.display({
-    id: 'events',
-    header: 'Events',
-    cell: () => <span className="text-neutral-11">1</span>,
-  }),
 ];
 
 export function AlertEventsTable({
