@@ -58,7 +58,6 @@ export interface Storage {
     email: string;
     oidcIntegration: null | {
       id: string;
-      defaultScopes: Array<OrganizationAccessScope | ProjectAccessScope | TargetAccessScope>;
     };
     firstName: string | null;
     lastName: string | null;
@@ -479,6 +478,9 @@ export interface Storage {
     userinfoEndpoint: string | null;
     authorizationEndpoint: string | null;
     additionalScopes: readonly string[] | null;
+    userIdClaim: string | null;
+    userProvisioningRequired: boolean | null;
+    oidcForVerifiedDomainsRequired: boolean | null;
   }): Promise<OIDCIntegration>;
 
   deleteOIDCIntegration(_: { oidcIntegrationId: string }): Promise<void>;

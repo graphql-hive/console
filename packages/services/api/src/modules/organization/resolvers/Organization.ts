@@ -1,4 +1,6 @@
 import { Session } from '../../auth/lib/authz';
+import { GroupStore } from '../providers/group-store';
+import { Groups } from '../providers/groups';
 import { OrganizationAccessTokens } from '../providers/organization-access-tokens';
 import { OrganizationManager } from '../providers/organization-manager';
 import { OrganizationMemberRoles } from '../providers/organization-member-roles';
@@ -16,6 +18,8 @@ export const Organization: Pick<
   | 'availableOrganizationAccessTokenPermissionGroups'
   | 'cleanId'
   | 'getStarted'
+  | 'group'
+  | 'groups'
   | 'id'
   | 'invitations'
   | 'me'
@@ -260,5 +264,14 @@ export const Organization: Pick<
     return await injector
       .get(ResourceSelector)
       .getProjectsFromOrganizationForResourceSelector(organization, args.intent);
+  },
+  async groups(organization, args, { injector }) {
+    return injector.get(GroupStore).getPaginatedGroupsForOrganizationId(organization.id, {
+      first: args.first,
+      after: args.after,
+    });
+  },
+  async group(organization, args, { injector }) {
+    return injector.get(Groups).getGroupByIdForOrganizationId(organization.id, args.id);
   },
 };

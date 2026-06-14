@@ -1,3 +1,8 @@
+import {
+  AddGroupMappingToGroupInput,
+  RemoveGroupMappingInput,
+  UpdateGroupMappingInput,
+} from 'packages/libraries/core/src/client/__generated__/types';
 import { graphql } from './gql';
 import type {
   AddAlertChannelInput,
@@ -31,6 +36,7 @@ import type {
   UpdateBaseSchemaInput,
   UpdateMemberRoleInput,
   UpdateMetricAlertRuleInput,
+  UpdateOidcIntegrationInput,
   UpdateOrganizationSlugInput,
   UpdateProjectSlugInput,
   UpdateSchemaCompositionInput,
@@ -816,6 +822,9 @@ export function createMemberRole(input: CreateMemberRoleInput, authToken: string
       mutation createMemberRole($input: CreateMemberRoleInput!) {
         createMemberRole(input: $input) {
           ok {
+            createdMemberRole {
+              id
+            }
             updatedOrganization {
               id
               slug
@@ -1954,5 +1963,203 @@ export function deleteTarget(input: DeleteTargetInput, authToken: string) {
     variables: {
       input,
     },
+  });
+}
+
+export function updateOIDCIntegration(input: UpdateOidcIntegrationInput, authToken: string) {
+  return execute({
+    document: graphql(`
+      mutation TestKit_OIDCIntegration_UpdateOIDCIntegrationMutation(
+        $input: UpdateOIDCIntegrationInput!
+      ) {
+        updateOIDCIntegration(input: $input) {
+          ok {
+            updatedOIDCIntegration {
+              id
+              tokenEndpoint
+              userinfoEndpoint
+              authorizationEndpoint
+              clientId
+              clientSecretPreview
+              additionalScopes
+            }
+          }
+          error {
+            message
+            details {
+              clientId
+              clientSecret
+              tokenEndpoint
+              userinfoEndpoint
+              authorizationEndpoint
+              additionalScopes
+            }
+          }
+        }
+      }
+    `),
+    authToken,
+    variables: {
+      input,
+    },
+  });
+}
+
+export function getGroupForOrganization(
+  organizationId: string,
+  groupId: string,
+  authToken: string,
+) {
+  return execute({
+    authToken,
+    variables: {
+      organizationId,
+      groupId,
+    },
+    document: graphql(`
+      query TestKit_GroupForOrganization($organizationId: ID!, $groupId: ID!) {
+        organization(reference: { byId: $organizationId }) {
+          id
+          group(id: $groupId) {
+            id
+            name
+            roleMappingCount
+            roleMappings {
+              id
+              role {
+                id
+                name
+              }
+            }
+            memberCount
+          }
+        }
+      }
+    `),
+  });
+}
+
+export function getPaginatedGroupsForOrganization(
+  authToken: string,
+  organizationId: string,
+  first: number,
+  after: string | null,
+) {
+  return execute({
+    authToken,
+    variables: {
+      organizationId,
+      first,
+      after,
+    },
+    document: graphql(`
+      query TestKit_PaginatedGroupsForOrganization(
+        $organizationId: ID!
+        $first: Int!
+        $after: String
+      ) {
+        organization(reference: { byId: $organizationId }) {
+          id
+          groups(first: $first, after: $after) {
+            edges {
+              node {
+                id
+                name
+              }
+            }
+            pageInfo {
+              hasNextPage
+              endCursor
+            }
+          }
+        }
+      }
+    `),
+  });
+}
+
+export function addGroupMappingToGroup(input: AddGroupMappingToGroupInput, authToken: string) {
+  return execute({
+    authToken,
+    variables: {
+      input,
+    },
+    document: graphql(`
+      mutation TestKit_CreateGroupRoleMapping($input: AddGroupMappingToGroupInput!) {
+        addGroupMappingToGroup(input: $input) {
+          ok {
+            group {
+              id
+              roleMappings {
+                id
+                role {
+                  id
+                  name
+                }
+              }
+            }
+          }
+          error {
+            message
+          }
+        }
+      }
+    `),
+  });
+}
+
+export function updateGroupMapping(input: UpdateGroupMappingInput, authToken: string) {
+  return execute({
+    authToken,
+    variables: {
+      input,
+    },
+    document: graphql(`
+      mutation TestKit_UpdateGroupMapping($input: UpdateGroupMappingInput!) {
+        updateGroupMapping(input: $input) {
+          ok {
+            group {
+              id
+              roleMappings {
+                id
+                role {
+                  id
+                  name
+                }
+              }
+            }
+          }
+          error {
+            message
+          }
+        }
+      }
+    `),
+  });
+}
+
+export function removeGroupMapping(input: RemoveGroupMappingInput, authToken: string) {
+  return execute({
+    authToken,
+    variables: {
+      input,
+    },
+    document: graphql(`
+      mutation TestKit_RemoveGroupMapping($input: RemoveGroupMappingInput!) {
+        removeGroupMapping(input: $input) {
+          error {
+            message
+          }
+          ok {
+            group {
+              id
+              roleMappings {
+                id
+              }
+            }
+          }
+        }
+      }
+    `),
   });
 }

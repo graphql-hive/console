@@ -253,8 +253,7 @@ export function initSeed() {
     authenticate: doAuthenticate,
     generateEmail: () => userEmail(generateUnique()),
     purgeOrganizationAccessTokenById,
-    async createOwner(verifyEmail: boolean = true) {
-      const ownerEmail = userEmail(generateUnique());
+    async createOwner(verifyEmail: boolean = true, ownerEmail = userEmail(generateUnique())) {
       const auth = await doAuthenticate(ownerEmail, {
         verifyEmail,
       });

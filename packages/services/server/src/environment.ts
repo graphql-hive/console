@@ -40,6 +40,7 @@ const EnvironmentModel = zod.object({
   TOKENS_ENDPOINT: zod.string().url(),
   SCHEMA_ENDPOINT: zod.string().url(),
   AUTH_ORGANIZATION_OIDC: emptyString(zod.union([zod.literal('1'), zod.literal('0')]).optional()),
+  AUTH_ORGANIZATION_SCIM: emptyString(zod.union([zod.literal('1'), zod.literal('0')]).optional()),
   AUTH_REQUIRE_EMAIL_VERIFICATION: emptyString(
     zod.union([zod.literal('1'), zod.literal('0')]).optional(),
   ),
@@ -557,6 +558,7 @@ export const env = {
         }
       : null,
   organizationOIDC: base.AUTH_ORGANIZATION_OIDC === '1',
+  organizationSCIM: base.AUTH_ORGANIZATION_SCIM === '1',
   sentry: sentry.SENTRY === '1' ? { dsn: sentry.SENTRY_DSN } : null,
   log: {
     level: log.LOG_LEVEL ?? 'info',

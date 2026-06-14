@@ -1,5 +1,6 @@
 import { Injectable, Scope } from 'graphql-modules';
 import { z } from 'zod';
+import { isUUID } from '@hive/api/shared/is-uuid';
 import { CommonQueryMethods, PostgresDatabasePool, psql } from '@hive/postgres';
 import {
   decodeCreatedAtAndUUIDIdBasedCursor,
@@ -170,31 +171,23 @@ export class OrganizationMemberRoles {
   async findMemberRolesByIds(roleIds: Array<string>): Promise<Map<string, OrganizationMemberRole>> {
     this.logger.debug('Find organization membership roles. (roleIds=%o)', roleIds);
 
-    const query = psql`
-      SELECT
-        ${organizationMemberRoleFields}
-      FROM
-        "organization_member_roles"
-      WHERE
-        "id" = ANY(${psql.array(roleIds, 'uuid')})
-    `;
-
-    const result = await this.pool.any(query);
-
-    const rowsById = new Map<string, OrganizationMemberRole>();
-
-    for (const row of result) {
-      const record = MemberRoleModel.parse(row);
-
-      rowsById.set(record.id, record);
-    }
-    return rowsById;
+    return OrganizationMemberRoles.findMemberRolesByIds(this.pool, roleIds);
   }
 
-  findMemberRoleById = batch<string, OrganizationMemberRole | null>(async roleIds => {
-    const roles = await this.findMemberRolesByIds(roleIds);
-    return roleIds.map(async roleId => roles.get(roleId) ?? null);
-  });
+  private findMemberRoleByIdBatched = batch<string, OrganizationMemberRole | null>(
+    async roleIds => {
+      const roles = await this.findMemberRolesByIds(roleIds);
+      return roleIds.map(async roleId => roles.get(roleId) ?? null);
+    },
+  );
+
+  findMemberRoleById(roleId: string) {
+    if (!isUUID(roleId)) {
+      return null;
+    }
+
+    return this.findMemberRoleByIdBatched(roleId);
+  }
 
   async findRoleByOrganizationIdAndName(
     organizationId: string,
@@ -285,6 +278,28 @@ export class OrganizationMemberRoles {
     );
 
     return MemberRoleModel.parse(role);
+  }
+
+  static async findMemberRolesByIds(pool: CommonQueryMethods, roleIds: Array<string>) {
+    const query = psql`
+      SELECT
+        ${organizationMemberRoleFields}
+      FROM
+        "organization_member_roles"
+      WHERE
+        "id" = ANY(${psql.array(roleIds, 'uuid')})
+    `;
+
+    const result = await pool.any(query);
+
+    const rowsById = new Map<string, OrganizationMemberRole>();
+
+    for (const row of result) {
+      const record = MemberRoleModel.parse(row);
+
+      rowsById.set(record.id, record);
+    }
+    return rowsById;
   }
 
   static findMemberRoleById(deps: { logger: Logger; pool: CommonQueryMethods }) {
