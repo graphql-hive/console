@@ -314,7 +314,6 @@ function GroupRow(props: GroupRowProps): ReactNode {
                                       try {
                                         const result = await deleteRoleAssignment({
                                           input: {
-                                            groupId: group.id,
                                             groupMappingId: groupRoleMapping.id,
                                           },
                                         });
