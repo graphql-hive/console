@@ -184,6 +184,8 @@ export async function createOIDCIntegration(args: {
       clientId?: string;
       clientSecret?: string;
       userIdClaim?: string;
+      userProvisioningRequired?: boolean;
+      oidcForVerifiedDomainsRequired?: boolean;
     }) {
       const server = await createMockOIDCServer();
 
@@ -197,6 +199,8 @@ export async function createOIDCIntegration(args: {
           clientId: args?.clientId,
           clientSecret: args?.clientSecret,
           userIdClaim: args?.userIdClaim,
+          userProvisioningRequired: args?.userProvisioningRequired,
+          oidcForVerifiedDomainsRequired: args?.oidcForVerifiedDomainsRequired,
         },
         authToken,
       ).then(r => r.expectNoGraphQLErrors());
@@ -283,11 +287,15 @@ export async function createOIDCIntegration(args: {
             .safeParse(rawBody);
 
           if (!body.data) {
-            throw new Error('SignInUp failed');
+            return {
+              type: 'error' as const,
+              body: rawBody,
+            };
           }
 
           const cookies = setCookie.parse(result.headers.getSetCookie());
           return {
+            type: 'success' as const,
             accessToken: cookies.find(c => c.name === 'sAccessToken')?.value ?? '',
             user: {
               id: body.data.user.id,

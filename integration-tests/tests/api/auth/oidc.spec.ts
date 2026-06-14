@@ -1,6 +1,7 @@
 import { graphql } from 'testkit/gql';
 import { execute } from 'testkit/graphql';
 import { initSeed } from 'testkit/seed';
+import { invariant } from '@hive/service-common';
 
 const TestMeQuery = graphql(`
   query OIDC_TestMeQuery {
@@ -32,6 +33,8 @@ test.concurrent(
     const result = await oidc.runSignInUp({
       state: auth.state,
     });
+    console.log(result);
+    invariant(result.type === 'success', 'Expected sign in up to succeed.');
 
     const [error] = await execute({
       document: TestMeQuery,
@@ -81,7 +84,7 @@ test.concurrent(
     let result = await oidc.runSignInUp({
       state: auth.state,
     });
-
+    invariant(result.type === 'success', 'Expected sign in/up to succeed.');
     await oidc.confirmEmail(result.user);
 
     let meResult = await execute({
@@ -105,7 +108,9 @@ test.concurrent(
     result = await oidc.runSignInUp({
       state: auth.state,
     });
+    invariant(result.type === 'success', 'Expected sign in/up to succeed.');
     await oidc.confirmEmail(result.user);
+
     meResult = await execute({
       document: TestMeQuery,
       authToken: result.accessToken,
@@ -126,9 +131,9 @@ test.concurrent(
     const { createOrg } = await seed.createOwner();
     const { createOIDCIntegration } = await createOrg();
 
-    const { createMockServerAndUpdateIntegrationEndpoints, registerFakeDomain: registerDomain } =
+    const { createMockServerAndUpdateIntegrationEndpoints, registerFakeDomain } =
       await createOIDCIntegration();
-    const domain = await registerDomain();
+    const domain = await registerFakeDomain();
     const oidc = await createMockServerAndUpdateIntegrationEndpoints();
 
     const email = 'foo@' + domain;
@@ -163,9 +168,9 @@ test.concurrent(
     const { createOrg } = await seed.createOwner();
     const { createOIDCIntegration } = await createOrg();
 
-    const { createMockServerAndUpdateIntegrationEndpoints, registerFakeDomain: registerDomain } =
+    const { createMockServerAndUpdateIntegrationEndpoints, registerFakeDomain } =
       await createOIDCIntegration();
-    const domain = await registerDomain();
+    const domain = await registerFakeDomain();
     const oidc = await createMockServerAndUpdateIntegrationEndpoints({
       userIdClaim: 'custom_user_id_claim',
     });
@@ -203,27 +208,71 @@ test.concurrent(
     const { createOrg } = await seed.createOwner();
     const { createOIDCIntegration } = await createOrg();
 
-    const { createMockServerAndUpdateIntegrationEndpoints, registerFakeDomain: registerDomain } =
+    const { createMockServerAndUpdateIntegrationEndpoints, registerFakeDomain } =
       await createOIDCIntegration();
-    const domain = await registerDomain();
+    const domain = await registerFakeDomain();
     const oidc = await createMockServerAndUpdateIntegrationEndpoints({
       userIdClaim: 'custom_user_id_claim',
     });
 
     const email = 'foo@' + domain;
-
-    let auth = await oidc.runGetAuthorizationUrl();
-
     oidc.setUser({
       userIdScope: 'super_custom_user_id_claim',
       userIdClaim: 'test-user',
       email,
     });
 
-    await expect(
-      oidc.runSignInUp({
-        state: auth.state,
-      }),
-    ).rejects.toThrowErrorMatchingInlineSnapshot(`[Error: SignInUp failed]`);
+    let auth = await oidc.runGetAuthorizationUrl();
+    const result = await oidc.runSignInUp({
+      state: auth.state,
+    });
+
+    invariant(result.type === 'error', 'Expected sign in/up to fail.');
+    expect(result.body).toEqual({
+      reason: 'Sign in failed. Please contact your organization administrator.',
+      status: 'SIGN_IN_UP_NOT_ALLOWED',
+    });
+  },
+);
+
+test.concurrent(
+  'User cannot sign up with email that is verified with anoth organization and enforces login through that organizations OIDC provider',
+  async () => {
+    const seed = initSeed();
+
+    // Create first organization that owns the domain
+    const { createOrg } = await seed.createOwner();
+    const firstOrg = await createOrg();
+    const oidc = await firstOrg.createOIDCIntegration();
+    const domain = await oidc.registerFakeDomain();
+    await oidc.createMockServerAndUpdateIntegrationEndpoints({
+      oidcForVerifiedDomainsRequired: true,
+    });
+
+    // Create a second organization that tries to sign up an user with that domain
+    const secondOrg = await createOrg();
+    const oidcSecondOrg = await secondOrg.createOIDCIntegration();
+    const email = 'marty.mcfly@' + domain;
+    const oidcAuth = await oidcSecondOrg.createMockServerAndUpdateIntegrationEndpoints();
+    oidcAuth.setUser({
+      email,
+      userIdClaim: email,
+    });
+
+    let auth = await oidcAuth.runGetAuthorizationUrl();
+    let result = await oidcAuth.runSignInUp({
+      state: auth.state,
+    });
+    invariant(result.type === 'error', 'Expected sign in/up to fail.');
+
+    await oidc.createMockServerAndUpdateIntegrationEndpoints({
+      oidcForVerifiedDomainsRequired: false,
+    });
+
+    auth = await oidcAuth.runGetAuthorizationUrl();
+    result = await oidcAuth.runSignInUp({
+      state: auth.state,
+    });
+    invariant(result.type === 'success', 'Expected sign in/up to succeed.');
   },
 );
