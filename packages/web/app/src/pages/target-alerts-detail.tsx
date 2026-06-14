@@ -11,6 +11,7 @@ import {
   type AlertEventsTableRule,
 } from '@/components/target/alerts/alert-events-table';
 import { AlertMetricChart } from '@/components/target/alerts/alert-metric-chart';
+import { ALERTS_POLL_INTERVAL_MS } from '@/components/target/alerts/alert-polling';
 import { AlertStateTransitionsBar } from '@/components/target/alerts/alert-state-transitions-bar';
 import { Spinner } from '@/components/ui/spinner';
 import { graphql } from '@/gql';
@@ -19,8 +20,10 @@ import {
   MetricAlertRuleThresholdType,
   MetricAlertRuleType,
 } from '@/gql/graphql';
+import { resolveRangeAndResolution } from '@/lib/hooks/use-date-range-controller';
 import { formatDuration } from '@/lib/hooks/use-formatted-duration';
-import { useTickCounter } from '@/lib/hooks/use-tick-counter';
+import { useKeepPreviousData } from '@/lib/hooks/use-keep-previous-data';
+import { useRollingNow } from '@/lib/hooks/use-rolling-now';
 import { useNavigate } from '@tanstack/react-router';
 
 // Static rule configuration. Fetched once with no polling — the Modify-alert
@@ -314,15 +317,16 @@ function RuleStateLogSection(props: {
   const { organizationSlug, projectSlug, targetSlug, ruleId, viewRangeMinutes, rule, chart } =
     props;
 
-  const tick = useTickCounter(15_000);
+  const now = useRollingNow(ALERTS_POLL_INTERVAL_MS);
   const { from, to } = useMemo(() => {
-    const now = new Date();
     const minutes = parseInt(viewRangeMinutes, 10) || 60;
+    // Round the window to the same buckets the metric chart uses
+    const resolved = resolveRangeAndResolution({ from: subMinutes(now, minutes), to: now });
     return {
-      from: subMinutes(now, minutes).toISOString(),
-      to: now.toISOString(),
+      from: resolved.range.from.toISOString(),
+      to: resolved.range.to.toISOString(),
     };
-  }, [viewRangeMinutes, tick]);
+  }, [now, viewRangeMinutes]);
 
   const [result] = useQuery({
     query: TargetAlertsDetailPage_StateLogQuery,
@@ -330,14 +334,10 @@ function RuleStateLogSection(props: {
     requestPolicy: 'cache-and-network',
   });
 
-  // urql retains the previous `data` across the variable change each poll, so
-  // these sections keep showing the last state-log while the next one loads.
-  // We only fall back to loading/error UI when there's nothing cached to show
-  // (initial load), a transient error on a later poll keeps the last good
-  // data on screen rather than blanking it.
-  const stateLog = result.data?.target?.metricAlertRule?.stateLog ?? [];
-  const stateAtWindowStart = result.data?.target?.metricAlertRule?.stateAt;
-  const hasNoData = !result.data;
+  const data = useKeepPreviousData(result.data, result.fetching || result.stale);
+  const stateLog = data?.target?.metricAlertRule?.stateLog ?? [];
+  const stateAtWindowStart = data?.target?.metricAlertRule?.stateAt;
+  const hasNoData = !data;
   const stateLogStatus =
     result.error && hasNoData ? (
       <div className="py-4 text-sm text-red-500">

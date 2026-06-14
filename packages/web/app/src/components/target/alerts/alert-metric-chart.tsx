@@ -9,8 +9,11 @@ import { MetricAlertRuleMetric, MetricAlertRuleType } from '@/gql/graphql';
 import { resolveRangeAndResolution } from '@/lib/hooks/use-date-range-controller';
 import { formatDuration } from '@/lib/hooks/use-formatted-duration';
 import { formatNumber } from '@/lib/hooks/use-formatted-number';
-import { useTickCounter } from '@/lib/hooks/use-tick-counter';
+import { useKeepPreviousData } from '@/lib/hooks/use-keep-previous-data';
+import { useRollingNow } from '@/lib/hooks/use-rolling-now';
 import { useChartStyles } from '@/lib/utils';
+import { ALERT_CHART_INSET_LEFT, ALERT_CHART_INSET_RIGHT } from './alert-chart-layout';
+import { ALERTS_POLL_INTERVAL_MS } from './alert-polling';
 
 const AlertMetricChart_Query = graphql(`
   query AlertMetricChart(
@@ -88,13 +91,8 @@ export function AlertMetricChart({
 }: AlertMetricChartProps) {
   const { colors } = useChartStyles();
 
-  // Advance the rolling window every 15s so the metric line chart picks
-  // up new ClickHouse data as the workflows evaluator drives transitions.
-  // Including `tick` in the useMemo deps recomputes `period` with a fresh
-  // `now`, which changes the variables, which causes urql to refire.
-  const tick = useTickCounter(15_000);
+  const now = useRollingNow(ALERTS_POLL_INTERVAL_MS);
   const { resolution, period } = useMemo(() => {
-    const now = new Date();
     const from = subMinutes(now, timeWindowMinutes);
     const resolved = resolveRangeAndResolution({ from, to: now });
     return {
@@ -104,7 +102,7 @@ export function AlertMetricChart({
         to: resolved.range.to.toISOString(),
       },
     };
-  }, [timeWindowMinutes, tick]);
+  }, [now, timeWindowMinutes]);
 
   const [result] = useQuery({
     query: AlertMetricChart_Query,
@@ -115,7 +113,8 @@ export function AlertMetricChart({
     },
   });
 
-  const stats = result.data?.target?.operationsStats;
+  const queryData = useKeepPreviousData(result.data, result.fetching || result.stale);
+  const stats = queryData?.target?.operationsStats;
   const isLatency = type === MetricAlertRuleType.Latency;
   const isErrorRate = type === MetricAlertRuleType.ErrorRate;
   const latencyPercentile = isLatency && metric ? PERCENTILE_FIELD_BY_METRIC[metric] : null;
@@ -157,7 +156,7 @@ export function AlertMetricChart({
     };
   }, [stats, isLatency, latencyPercentile, isErrorRate]);
 
-  if (result.fetching && data.length === 0) {
+  if (!queryData && result.fetching) {
     return (
       <div className="bg-neutral-2 dark:bg-neutral-3 border-neutral-5 flex h-[200px] items-center justify-center rounded-md border">
         <span className="text-neutral-8 text-sm">Loading chart data...</span>
@@ -214,12 +213,14 @@ export function AlertMetricChart({
           style={{ width: size.width, height: 200 }}
           option={{
             backgroundColor: 'transparent',
+            // Fixed insets (not `containLabel`) so the status-transitions bar can
+            // mirror the exact plot region.
             grid: {
-              left: 10,
+              left: ALERT_CHART_INSET_LEFT,
               top: 16,
-              right: 10,
-              bottom: 4,
-              containLabel: true,
+              right: ALERT_CHART_INSET_RIGHT,
+              bottom: 24,
+              containLabel: false,
             },
             tooltip: {
               trigger: 'axis',

@@ -4,6 +4,7 @@ import { ArrowDown } from 'lucide-react';
 import { useQuery } from 'urql';
 import { DataTable } from '@/components/base/data-table/data-table';
 import { PageLead } from '@/components/base/page-lead';
+import { ALERTS_POLL_INTERVAL_MS } from '@/components/target/alerts/alert-polling';
 import { BadgeRounded } from '@/components/ui/badge';
 import { Avatar } from '@/components/v2/avatar';
 import { graphql } from '@/gql';
@@ -13,7 +14,8 @@ import {
   MetricAlertRuleState,
   MetricAlertRuleType,
 } from '@/gql/graphql';
-import { useTickCounter } from '@/lib/hooks/use-tick-counter';
+import { useKeepPreviousData } from '@/lib/hooks/use-keep-previous-data';
+import { useRollingNow } from '@/lib/hooks/use-rolling-now';
 import { useNavigate } from '@tanstack/react-router';
 import { createColumnHelper, type Column, type ColumnDef } from '@tanstack/react-table';
 
@@ -245,24 +247,21 @@ export function TargetAlertsRulesPage(props: {
   const { organizationSlug, projectSlug, targetSlug } = props;
   const navigate = useNavigate();
 
-  // Advance the rolling time window every 15s so the eventCount(from, to)
-  // sub-fields and other "since N" data reflect transitions the workflows
-  // evaluator makes on its 60s cron cadence without the user having to F5.
-  // urql refires automatically when the variables change.
-  const tick = useTickCounter(15_000);
-  const { from, to } = useMemo(() => {
-    const now = new Date();
-    return { from: subDays(now, 90).toISOString(), to: now.toISOString() };
-  }, [tick]);
+  const now = useRollingNow(ALERTS_POLL_INTERVAL_MS);
+  const { from, to } = useMemo(
+    () => ({ from: subDays(now, 90).toISOString(), to: now.toISOString() }),
+    [now],
+  );
 
   const [result] = useQuery({
     query: TargetAlertsRulesPage_Query,
     variables: { organizationSlug, projectSlug, targetSlug, from, to },
   });
 
+  const data = useKeepPreviousData(result.data, result.fetching || result.stale);
   const rules: RuleRow[] = useMemo(
     () =>
-      (result.data?.target?.metricAlertRules ?? []).map(r => ({
+      (data?.target?.metricAlertRules ?? []).map(r => ({
         id: r.id,
         name: r.name,
         type: r.type,
@@ -277,10 +276,9 @@ export function TargetAlertsRulesPage(props: {
           ? { id: r.createdBy.id, displayName: r.createdBy.displayName }
           : null,
       })),
-    [result.data?.target?.metricAlertRules],
+    [data?.target?.metricAlertRules],
   );
-
-  const limit = result.data?.target?.metricAlertRulesLimit;
+  const limit = data?.target?.metricAlertRulesLimit;
 
   return (
     <>
@@ -292,7 +290,7 @@ export function TargetAlertsRulesPage(props: {
         }
       />
 
-      {result.fetching && rules.length === 0 ? (
+      {result.fetching && !data ? (
         <p className="text-neutral-10 text-sm">Loading…</p>
       ) : (
         <DataTable
