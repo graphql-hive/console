@@ -2395,6 +2395,8 @@ export async function createStorage(
           , "additional_scopes" = ${args.additionalScopes ? psql.array(args.additionalScopes, 'text') : psql`"additional_scopes"`}
           , "oauth_api_url" = NULL
           , "user_id_claim" = ${args.userIdClaim ?? psql`"user_id_claim"`}
+          , "user_provisioning_required" = ${args.userProvisioningRequired ?? psql`"user_provisioning_required"`}
+          , "oidc_for_verified_domains_required" = ${args.oidcForVerifiedDomainsRequired ?? psql`oidc_for_verified_domains_required`}
         WHERE
           "id" = ${args.oidcIntegrationId}
         RETURNING
