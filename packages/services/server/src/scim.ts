@@ -691,7 +691,6 @@ export const createSCIMPlugin =
             }),
           );
         }
-
         createUserResult satisfies never;
       }
 
