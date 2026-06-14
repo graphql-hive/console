@@ -3534,7 +3534,7 @@ test.concurrent(
       oidcForVerifiedDomainsRequired: true,
     });
 
-    const response = await fetch('http://localhost:3001/auth-api/signin', {
+    const response = await fetch(apiHost + '/auth-api/signin', {
       method: 'POST',
       body: JSON.stringify({
         formFields: [
