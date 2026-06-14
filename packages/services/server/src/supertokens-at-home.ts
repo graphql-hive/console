@@ -75,6 +75,10 @@ export async function registerSupertokensAtHome(
 
   /** Verify whether the domain is allowed to do non-oidc login. */
   async function isNonOIDCSignInUpAllowedForEmailAddress(email: string) {
+    // TODO: We also need to check whether the user is admin of the org
+    // and in that case create an exception, as we would otherwise lock out the admin of the org
+    // in case of a "oidc credentials" expired scenario.
+
     const [, emailDomain] = email.split('@');
 
     const verifiedDomain = await oidcIntegrations.findVerifiedDomainByName(emailDomain);
