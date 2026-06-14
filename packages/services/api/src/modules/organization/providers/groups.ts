@@ -154,13 +154,32 @@ export class Groups {
     const groupMapping = await this.groupAssignmentStore.getGroupMappingById(args.groupMappingId);
 
     if (!groupMapping) {
-      this.session.raise('member:modify');
+      return {
+        type: 'error' as const,
+        message: 'Could not find group mapping.',
+      };
+    }
+
+    if (
+      !(await this.session.canPerformAction({
+        action: 'member:modify',
+        organizationId: groupMapping.organizationId,
+        params: { organizationId: groupMapping.organizationId },
+      }))
+    ) {
+      return {
+        type: 'error' as const,
+        message: 'Could not find group mapping.',
+      };
     }
 
     const group = await this.groupStore.getGroupById(groupMapping.groupId);
 
     if (!group) {
-      this.session.raise('member:modify');
+      return {
+        type: 'error' as const,
+        message: 'Could not find group.',
+      };
     }
 
     if (args.newRoleId) {
@@ -195,7 +214,10 @@ export class Groups {
 
     if (!isUUID(args.groupMappingId)) {
       this.logger.debug('invalid uuid provided (groupMappingId=%s)', args.groupMappingId);
-      this.session.raise('member:modify');
+      return {
+        type: 'error' as const,
+        message: 'Group mapping not found.',
+      };
     }
 
     this.logger.debug('lookup group mapping (groupMappingId=%s)', args.groupMappingId);
@@ -203,26 +225,40 @@ export class Groups {
     const groupMapping = await this.groupAssignmentStore.getGroupMappingById(args.groupMappingId);
     if (!groupMapping) {
       this.logger.debug('group mapping not found (groupMappingId=%s)', args.groupMappingId);
-      this.session.raise('member:modify');
+      return {
+        type: 'error' as const,
+        message: 'Group mapping not found.',
+      };
     }
 
     this.logger.debug('group mapping found (groupMappingId=%s)', args.groupMappingId);
+
+    if (
+      !(await this.session.canPerformAction({
+        action: 'member:modify',
+        organizationId: groupMapping.organizationId,
+        params: {
+          organizationId: groupMapping.organizationId,
+        },
+      }))
+    ) {
+      return {
+        type: 'error' as const,
+        message: 'Group mapping not found.',
+      };
+    }
+
     this.logger.debug('lookup group (groupMappingId=%s)', args.groupMappingId);
 
     const group = await this.groupStore.getGroupById(groupMapping.groupId);
 
     if (!group) {
       this.logger.debug('group not found (groupMappingId=%s)', args.groupMappingId);
-      this.session.raise('member:modify');
+      return {
+        type: 'error' as const,
+        message: 'Group mapping not found.',
+      };
     }
-
-    await this.session.assertPerformAction({
-      action: 'member:modify',
-      organizationId: groupMapping.organizationId,
-      params: {
-        organizationId: groupMapping.organizationId,
-      },
-    });
 
     this.logger.debug(
       'delete group mapping record (groupMappingId=%s, groupId=%s)',
