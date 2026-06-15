@@ -1,9 +1,13 @@
 import humanId from 'human-id';
+import { addGroupMappingToGroup, createMemberRole } from 'testkit/flow';
 import { ResourceAssignmentModeType } from 'testkit/gql/graphql';
 import { initSeed } from 'testkit/seed';
 import { getServiceHost } from 'testkit/utils';
 import z from 'zod';
 import { SuperTokensStore } from '@hive/api/modules/auth/providers/supertokens-store';
+import { GroupMemberStore } from '@hive/api/modules/organization/providers/group-member-store';
+import { GroupStore } from '@hive/api/modules/organization/providers/group-store';
+import { UsersStore } from '@hive/api/modules/organization/providers/users-store';
 import { NoopLogger } from '@hive/api/modules/shared/providers/logger';
 import { psql } from '@hive/postgres';
 import { invariant } from '@hive/service-common';
@@ -3557,3 +3561,283 @@ test.concurrent(
     });
   },
 );
+
+test.concurrent(
+  'provisioned user leverages groups for deriving the users authorization',
+  async ({ expect }) => {
+    const seed = initSeed();
+    const owner = await seed.createOwner();
+    const org = await owner.createOrg();
+    const oidc = await org.createOIDCIntegration();
+    const { pool } = await seed.createDbConnection();
+    const oidcMock = await oidc.createMockServerAndUpdateIntegrationEndpoints();
+    const domain = await oidc.registerFakeDomain();
+
+    // create our user (TODO: do this via SCIM endpoints instead)
+    const email = 'demo@' + domain;
+    const externalId = 'my-external-id';
+
+    const supertokensStore = new SuperTokensStore(pool, new NoopLogger());
+    const usersStore = new UsersStore(pool);
+    const supertokensUser = await supertokensStore.createOIDCUser({
+      email,
+      oidcIntegrationId: oidc.oidcIntegration.id,
+      externalId,
+    });
+    const createHiveUserResult = await usersStore.createUser({
+      displayName: 'My User',
+      email,
+      externalId,
+      fullName: 'Peter Pan',
+      isDisabled: false,
+      oidcIntegrationId: oidc.oidcIntegration.id,
+      provisionedByOrganizationId: org.organization.id,
+      superTokensUserId: supertokensUser.userId,
+    });
+    invariant(createHiveUserResult.type === 'success', 'expected create hive user to succeed');
+    const { user } = createHiveUserResult;
+
+    // create our group (TODO: do this via SCIM endpoints instead)
+    const groupStore = new GroupStore(new NoopLogger(), pool);
+    const createGroupResult = await groupStore.createGroup({
+      organizationId: org.organization.id,
+      displayName: 'Test Group',
+      externalId: null,
+    });
+    invariant(createGroupResult.type === 'success', 'Expected creating group to succeed');
+
+    // assign user to group (TODO: do this via SCIM endpoints instead)
+    const groupMemberStore = new GroupMemberStore(new NoopLogger(), pool);
+    await groupMemberStore.addGroupMembersToGroupByOrganizationIdAndGroupId(
+      org.organization.id,
+      createGroupResult.group.id,
+      [user.id],
+    );
+
+    // create three projects so we can check whether the permissions apply
+    const projects = [
+      await org.createProject(),
+      await org.createProject(),
+      await org.createProject(),
+    ] as const;
+
+    // create a new role that only has access to the first project
+
+    const createRoleResult = await createMemberRole(
+      {
+        name: 'Test Role',
+        description: 'Bars',
+        organization: { byId: org.organization.id },
+        selectedPermissions: ['project:describe'],
+      },
+      owner.ownerToken,
+    ).then(r => r.expectNoGraphQLErrors());
+    invariant(!!createRoleResult.createMemberRole.ok, 'create member role should have succeeded');
+
+    // add the new role as a group mapping
+
+    const addGroupMappingResult = await addGroupMappingToGroup(
+      {
+        groupId: createGroupResult.group.id,
+        assignedResources: {
+          mode: ResourceAssignmentModeType.Granular,
+          projects: [
+            {
+              projectId: projects[0].project.id,
+              targets: {
+                mode: ResourceAssignmentModeType.All,
+              },
+            },
+          ],
+        },
+        roleId: createRoleResult.createMemberRole.ok.createdMemberRole.id,
+      },
+      owner.ownerToken,
+    ).then(r => r.expectNoGraphQLErrors());
+    invariant(
+      !!addGroupMappingResult.addGroupMappingToGroup.ok,
+      'add group mapping should have succeeded',
+    );
+
+    oidcMock.setUser({
+      email,
+      userIdClaim: externalId,
+    });
+
+    let auth = await oidcMock.runGetAuthorizationUrl();
+    const result = await oidcMock.runSignInUp({
+      state: auth.state,
+    });
+    invariant(result.type === 'success', 'expected sign in to succeed');
+
+    // fetch all the projects the user has access to
+    let projectsResult = await org.projects(result.accessToken);
+    expect(projectsResult.length).toEqual(1);
+
+    // grant the group access to more resources
+    const addGroupMappingToGroupResult2 = await addGroupMappingToGroup(
+      {
+        groupId: createGroupResult.group.id,
+        roleId: createRoleResult.createMemberRole.ok.createdMemberRole.id,
+        assignedResources: {
+          mode: ResourceAssignmentModeType.Granular,
+          projects: [
+            {
+              projectId: projects[1].project.id,
+              targets: {
+                mode: ResourceAssignmentModeType.All,
+              },
+            },
+          ],
+        },
+      },
+      owner.ownerToken,
+    ).then(r => r.expectNoGraphQLErrors());
+    invariant(
+      !!addGroupMappingToGroupResult2.addGroupMappingToGroup.ok,
+      'expected group mapping update to succeed',
+    );
+
+    // fetch all the projects the user has access to
+    projectsResult = await org.projects(result.accessToken);
+    expect(projectsResult.length).toEqual(2);
+
+    const addGroupMappingToGroupResult3 = await addGroupMappingToGroup(
+      {
+        groupId: createGroupResult.group.id,
+        roleId: createRoleResult.createMemberRole.ok.createdMemberRole.id,
+        assignedResources: {
+          mode: ResourceAssignmentModeType.All,
+        },
+      },
+      owner.ownerToken,
+    ).then(r => r.expectNoGraphQLErrors());
+    invariant(
+      !!addGroupMappingToGroupResult3.addGroupMappingToGroup.ok,
+      'expected group mapping update to succeed',
+    );
+
+    // fetch all the projects the user has access to
+    projectsResult = await org.projects(result.accessToken);
+    expect(projectsResult.length).toEqual(3);
+  },
+);
+
+test.concurrent('disabled user is revoked access', async ({ expect }) => {
+  const seed = initSeed();
+  const owner = await seed.createOwner();
+  const org = await owner.createOrg();
+  const oidc = await org.createOIDCIntegration();
+  const { pool } = await seed.createDbConnection();
+  const oidcMock = await oidc.createMockServerAndUpdateIntegrationEndpoints();
+  const domain = await oidc.registerFakeDomain();
+
+  // create our user (TODO: do this via SCIM endpoints instead)
+  const email = 'demo@' + domain;
+  const externalId = 'my-external-id';
+
+  const supertokensStore = new SuperTokensStore(pool, new NoopLogger());
+  const usersStore = new UsersStore(pool);
+  const supertokensUser = await supertokensStore.createOIDCUser({
+    email,
+    oidcIntegrationId: oidc.oidcIntegration.id,
+    externalId,
+  });
+  const createHiveUserResult = await usersStore.createUser({
+    displayName: 'My User',
+    email,
+    externalId,
+    fullName: 'Peter Pan',
+    isDisabled: false,
+    oidcIntegrationId: oidc.oidcIntegration.id,
+    provisionedByOrganizationId: org.organization.id,
+    superTokensUserId: supertokensUser.userId,
+  });
+  invariant(createHiveUserResult.type === 'success', 'expected create hive user to succeed');
+  const { user } = createHiveUserResult;
+
+  // create our group (TODO: do this via SCIM endpoints instead)
+  const groupStore = new GroupStore(new NoopLogger(), pool);
+  const createGroupResult = await groupStore.createGroup({
+    organizationId: org.organization.id,
+    displayName: 'Test Group',
+    externalId: null,
+  });
+  invariant(createGroupResult.type === 'success', 'Expected creating group to succeed');
+
+  // assign user to group (TODO: do this via SCIM endpoints instead)
+  const groupMemberStore = new GroupMemberStore(new NoopLogger(), pool);
+  await groupMemberStore.addGroupMembersToGroupByOrganizationIdAndGroupId(
+    org.organization.id,
+    createGroupResult.group.id,
+    [user.id],
+  );
+
+  const createRoleResult = await createMemberRole(
+    {
+      name: 'Test Role',
+      description: 'Bars',
+      organization: { byId: org.organization.id },
+      selectedPermissions: ['project:describe'],
+    },
+    owner.ownerToken,
+  ).then(r => r.expectNoGraphQLErrors());
+  invariant(!!createRoleResult.createMemberRole.ok, 'create member role should have succeeded');
+
+  // add the new role as a group mapping
+
+  const addGroupMappingResult = await addGroupMappingToGroup(
+    {
+      groupId: createGroupResult.group.id,
+      assignedResources: {
+        mode: ResourceAssignmentModeType.All,
+      },
+      roleId: createRoleResult.createMemberRole.ok.createdMemberRole.id,
+    },
+    owner.ownerToken,
+  ).then(r => r.expectNoGraphQLErrors());
+  invariant(
+    !!addGroupMappingResult.addGroupMappingToGroup.ok,
+    'add group mapping should have succeeded',
+  );
+
+  oidcMock.setUser({
+    email,
+    userIdClaim: externalId,
+  });
+
+  let auth = await oidcMock.runGetAuthorizationUrl();
+  let result = await oidcMock.runSignInUp({
+    state: auth.state,
+  });
+  invariant(result.type === 'success', 'expected sign in to succeed');
+
+  // fetch all the projects the user has access to
+  const projectsResult = await org.projects(result.accessToken);
+  expect(projectsResult).toEqual([]);
+
+  // TODO: do this via SCIM endpoint instead
+  await usersStore.disableUser(user.id);
+  await supertokensStore.invalidateAllSessionsForUser(supertokensUser.userId);
+
+  // existing session is invalidated
+  await expect(org.projects(result.accessToken)).rejects.toThrow(
+    `No access (reason: \\"Missing permission for performing 'organization:describe' on resource\\")`,
+  );
+
+  auth = await oidcMock.runGetAuthorizationUrl();
+  result = await oidcMock.runSignInUp({
+    state: auth.state,
+  });
+  invariant(result.type === 'error', 'expected sign in to fail as the user was disabled');
+
+  // TODO: do this via SCIM endpoint instead
+  await usersStore.enabledUser(user.id);
+  await supertokensStore.invalidateAllSessionsForUser(supertokensUser.userId);
+
+  auth = await oidcMock.runGetAuthorizationUrl();
+  result = await oidcMock.runSignInUp({
+    state: auth.state,
+  });
+  invariant(result.type === 'success', 'expected sign in to fail as the user was disabled');
+});
