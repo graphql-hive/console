@@ -32,6 +32,7 @@ export default {
       , "group_id" UUID REFERENCES "groups"("id") ON DELETE CASCADE
       , "role_id" UUID REFERENCES "organization_member_roles" ("id") ON DELETE CASCADE
       , "assigned_resources" JSONB
+      , "created_at" timestamptz DEFAULT NOW()
     );
 
     CREATE INDEX IF NOT EXISTS "idx_group_role_assignments_org_id"
@@ -49,6 +50,7 @@ export default {
       , "organization_id" UUID REFERENCES "organizations"("id") ON DELETE CASCADE
       , "user_id" UUID REFERENCES "users"("id") ON DELETE CASCADE
       , "group_id" UUID REFERENCES "groups"("id") ON DELETE CASCADE
+      , "created_at" timestamptz DEFAULT NOW()
       , CONSTRAINT "group_members_org_user_group_unique"
         UNIQUE ("organization_id", "user_id", "group_id")
     );
