@@ -829,6 +829,7 @@ export function AlertForm(props: AlertFormProps) {
                               min={0}
                               max={valueMax}
                               placeholder={valuePlaceholder}
+                              style={{ minWidth: '7rem' }}
                               {...field}
                             />
                           </FormControl>
@@ -861,6 +862,7 @@ export function AlertForm(props: AlertFormProps) {
                   }
                   direction={watchedValues.direction}
                   thresholdType={watchedValues.thresholdType}
+                  timeWindowMinutes={parseInt(watchedValues.timeWindowMinutes, 10) || 0}
                 />
 
                 <Accordion defaultValue={expandAdvanced ? [0] : undefined}>

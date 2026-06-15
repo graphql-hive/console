@@ -44,3 +44,55 @@ export function applyThresholdSign(
 ): number {
   return thresholdType === 'PERCENTAGE_CHANGE' && direction === 'BELOW' ? -magnitude : magnitude;
 }
+
+function mean(values: number[]): number {
+  return values.length ? values.reduce((sum, v) => sum + v, 0) / values.length : 0;
+}
+
+type OverTime = ReadonlyArray<{ date: string; value: number }>;
+type DurationOverTime = ReadonlyArray<{
+  date: string;
+  duration: { avg: number; p75: number; p90: number; p95: number; p99: number };
+}>;
+
+/**
+ * Reduces each window to the single aggregate the evaluator compares...summed
+ * requests for TRAFFIC, ratio-of-sums for ERROR_RATE. LATENCY percentiles can't
+ * be re-merged from per-bucket percentiles without the t-digest states, so this
+ * approximates with the mean of the window's bucket percentiles (the chart
+ * flags it as approximate).
+ *
+ * A bucket belongs to the current window when its timestamp is at/after
+ * `boundaryMs`, mirroring the evaluator's window split.
+ */
+export function windowAggregates(
+  metricType: string,
+  latencyKey: 'avg' | 'p75' | 'p90' | 'p95' | 'p99' | null,
+  requests: OverTime,
+  failures: OverTime,
+  durations: DurationOverTime,
+  boundaryMs: number,
+): { current: number; previous: number } {
+  const reduce = (isCurrent: boolean): number => {
+    if (metricType === 'LATENCY' && latencyKey) {
+      return mean(
+        durations
+          .filter(n => new Date(n.date).getTime() >= boundaryMs === isCurrent)
+          .map(n => n.duration[latencyKey]),
+      );
+    }
+    let req = 0;
+    let fail = 0;
+    for (const [i, n] of requests.entries()) {
+      if ((new Date(n.date).getTime() >= boundaryMs) === isCurrent) {
+        req += n.value;
+        fail += failures[i]?.value ?? 0;
+      }
+    }
+    if (metricType === 'ERROR_RATE') {
+      return req > 0 ? (fail / req) * 100 : 0;
+    }
+    return req; // TRAFFIC
+  };
+  return { current: reduce(true), previous: reduce(false) };
+}
