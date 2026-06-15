@@ -1,58 +1,47 @@
 import { useMemo } from 'react';
-import { subMinutes } from 'date-fns';
 import * as echarts from 'echarts';
 import ReactECharts from 'echarts-for-react';
 import AutoSizer from 'react-virtualized-auto-sizer';
-import { useQuery } from 'urql';
-import { graphql } from '@/gql';
+import { FragmentType, graphql, useFragment } from '@/gql';
 import { MetricAlertRuleMetric, MetricAlertRuleType } from '@/gql/graphql';
-import { resolveRangeAndResolution } from '@/lib/hooks/use-date-range-controller';
 import { formatDuration } from '@/lib/hooks/use-formatted-duration';
 import { formatNumber } from '@/lib/hooks/use-formatted-number';
-import { useTickCounter } from '@/lib/hooks/use-tick-counter';
 import { useChartStyles } from '@/lib/utils';
+import { ALERT_CHART_INSET_LEFT, ALERT_CHART_INSET_RIGHT } from './alert-chart-layout';
 
-const AlertMetricChart_Query = graphql(`
-  query AlertMetricChart(
-    $targetSelector: TargetSelectorInput!
-    $period: DateRangeInput!
-    $resolution: Int!
-  ) {
-    target(reference: { bySelector: $targetSelector }) {
-      id
-      operationsStats(period: $period) {
-        requestsOverTime(resolution: $resolution) {
-          date
-          value
-        }
-        failuresOverTime(resolution: $resolution) {
-          date
-          value
-        }
-        durationOverTime(resolution: $resolution) {
-          date
-          duration {
-            avg
-            p75
-            p90
-            p95
-            p99
-          }
-        }
+export const AlertMetricChart_OperationsStatsFragment = graphql(`
+  fragment AlertMetricChart_OperationsStatsFragment on OperationsStats {
+    requestsOverTime(resolution: $resolution) {
+      date
+      value
+    }
+    failuresOverTime(resolution: $resolution) {
+      date
+      value
+    }
+    durationOverTime(resolution: $resolution) {
+      date
+      duration {
+        avg
+        p75
+        p90
+        p95
+        p99
       }
     }
   }
 `);
 
 type AlertMetricChartProps = {
-  organizationSlug: string;
-  projectSlug: string;
-  targetSlug: string;
+  /** Masked operationsStats from the owner; null/undefined while it has no data yet. */
+  stats: FragmentType<typeof AlertMetricChart_OperationsStatsFragment> | null | undefined;
+  /** Whether the owner has a fetch in flight (distinguishes "Loading" from "No data"). */
+  loading: boolean;
   type: MetricAlertRuleType;
   /** Sub-metric for LATENCY rules (P75/P90/...); null for ERROR_RATE / TRAFFIC */
   metric?: MetricAlertRuleMetric | null;
-  /** Time window in minutes */
-  timeWindowMinutes: number;
+  /** Rule severity...tints the threshold marker line to match the severity badge. */
+  severity?: string | null;
   /** Threshold value to show as a horizontal marker line (only drawn for FIXED_VALUE rules) */
   thresholdValue: number | null;
   /** 'ABOVE' or 'BELOW' */
@@ -75,72 +64,47 @@ const PERCENTILE_FIELD_BY_METRIC: Record<
   [MetricAlertRuleMetric.P99]: 'p99',
 };
 
+const SEVERITY_COLOR_KEY: Record<string, 'critical' | 'warning' | 'info'> = {
+  CRITICAL: 'critical',
+  WARNING: 'warning',
+  INFO: 'info',
+};
+
 export function AlertMetricChart({
-  organizationSlug,
-  projectSlug,
-  targetSlug,
+  stats,
+  loading,
   type,
   metric,
-  timeWindowMinutes,
+  severity,
   thresholdValue,
   direction,
   thresholdType,
 }: AlertMetricChartProps) {
   const { colors } = useChartStyles();
 
-  // Advance the rolling window every 15s so the metric line chart picks
-  // up new ClickHouse data as the workflows evaluator drives transitions.
-  // Including `tick` in the useMemo deps recomputes `period` with a fresh
-  // `now`, which changes the variables, which causes urql to refire.
-  const tick = useTickCounter(15_000);
-  const { resolution, period } = useMemo(() => {
-    const now = new Date();
-    const from = subMinutes(now, timeWindowMinutes);
-    const resolved = resolveRangeAndResolution({ from, to: now });
-    return {
-      resolution: resolved.resolution,
-      period: {
-        from: resolved.range.from.toISOString(),
-        to: resolved.range.to.toISOString(),
-      },
-    };
-  }, [timeWindowMinutes, tick]);
-
-  const [result] = useQuery({
-    query: AlertMetricChart_Query,
-    variables: {
-      targetSelector: { organizationSlug, projectSlug, targetSlug },
-      period,
-      resolution,
-    },
-  });
-
-  const stats = result.data?.target?.operationsStats;
+  const {
+    requestsOverTime = [],
+    failuresOverTime = [],
+    durationOverTime = [],
+  } = useFragment(AlertMetricChart_OperationsStatsFragment, stats ?? null) ?? {};
   const isLatency = type === MetricAlertRuleType.Latency;
   const isErrorRate = type === MetricAlertRuleType.ErrorRate;
   const latencyPercentile = isLatency && metric ? PERCENTILE_FIELD_BY_METRIC[metric] : null;
 
   const { data, yAxisFormatter, seriesName } = useMemo(() => {
-    if (!stats) return { data: [], yAxisFormatter: formatNumber, seriesName: '' };
-
     if (isLatency && latencyPercentile) {
       const key = latencyPercentile;
       return {
-        data: (stats.durationOverTime ?? []).map<[string, number]>(node => [
-          node.date,
-          node.duration[key],
-        ]),
+        data: durationOverTime.map<[string, number]>(node => [node.date, node.duration[key]]),
         yAxisFormatter: (value: number) => formatDuration(value, true),
         seriesName: key === 'avg' ? 'Avg latency' : `${key} latency`,
       };
     }
 
     if (isErrorRate) {
-      const requests = stats.requestsOverTime ?? [];
-      const failures = stats.failuresOverTime ?? [];
       return {
-        data: requests.map<[string, number]>((node, i) => {
-          const failCount = failures[i]?.value ?? 0;
+        data: requestsOverTime.map<[string, number]>((node, i) => {
+          const failCount = failuresOverTime[i]?.value ?? 0;
           const rate = node.value > 0 ? (failCount / node.value) * 100 : 0;
           return [node.date, parseFloat(rate.toFixed(2))];
         }),
@@ -151,27 +115,31 @@ export function AlertMetricChart({
 
     // TRAFFIC
     return {
-      data: (stats.requestsOverTime ?? []).map<[string, number]>(node => [node.date, node.value]),
+      data: requestsOverTime.map<[string, number]>(node => [node.date, node.value]),
       yAxisFormatter: formatNumber,
       seriesName: 'Total requests',
     };
-  }, [stats, isLatency, latencyPercentile, isErrorRate]);
-
-  if (result.fetching && data.length === 0) {
-    return (
-      <div className="bg-neutral-2 dark:bg-neutral-3 border-neutral-5 flex h-[200px] items-center justify-center rounded-md border">
-        <span className="text-neutral-8 text-sm">Loading chart data...</span>
-      </div>
-    );
-  }
+  }, [
+    requestsOverTime,
+    failuresOverTime,
+    durationOverTime,
+    isLatency,
+    latencyPercentile,
+    isErrorRate,
+  ]);
 
   if (data.length === 0) {
     return (
       <div className="bg-neutral-2 dark:bg-neutral-3 border-neutral-5 flex h-[200px] items-center justify-center rounded-md border">
-        <span className="text-neutral-8 text-sm italic">No data available for this range.</span>
+        <span className={loading ? 'text-neutral-8 text-sm' : 'text-neutral-8 text-sm italic'}>
+          {loading ? 'Loading chart data...' : 'No data available for this range.'}
+        </span>
       </div>
     );
   }
+
+  const severityColorKey = severity ? SEVERITY_COLOR_KEY[severity] : undefined;
+  const markColor = severityColorKey ? colors[severityColorKey] : colors.primary;
 
   const markLine =
     thresholdValue != null && thresholdType === 'FIXED_VALUE'
@@ -184,13 +152,13 @@ export function AlertMetricChart({
               label: {
                 formatter: `${direction === 'ABOVE' ? '>' : '<'} ${yAxisFormatter(thresholdValue)}`,
                 position: 'insideEndTop' as const,
-                color: colors.primary,
+                color: markColor,
                 fontSize: 11,
               },
             },
           ],
           lineStyle: {
-            color: colors.primary,
+            color: markColor,
             type: 'dashed' as const,
             width: 1,
           },
@@ -214,12 +182,14 @@ export function AlertMetricChart({
           style={{ width: size.width, height: 200 }}
           option={{
             backgroundColor: 'transparent',
+            // Fixed insets (not `containLabel`) so the status-transitions bar can
+            // mirror the exact plot region.
             grid: {
-              left: 10,
+              left: ALERT_CHART_INSET_LEFT,
               top: 16,
-              right: 10,
-              bottom: 4,
-              containLabel: true,
+              right: ALERT_CHART_INSET_RIGHT,
+              bottom: 24,
+              containLabel: false,
             },
             tooltip: {
               trigger: 'axis',

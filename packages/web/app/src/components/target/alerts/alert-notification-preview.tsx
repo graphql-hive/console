@@ -76,11 +76,9 @@ type PreviewProps = {
 };
 
 const SEVERITY_COLORS = {
-  // Tailwind needs to see full class strings to include them in the build.
-  // Do NOT construct these dynamically.
-  CRITICAL: { bar: 'bg-red-500', text: 'text-red-400' },
-  WARNING: { bar: 'bg-yellow-500', text: 'text-yellow-400' },
-  INFO: { bar: 'bg-blue-400', text: 'text-blue-400' },
+  CRITICAL: { bar: 'bg-critical', text: 'text-critical' },
+  WARNING: { bar: 'bg-warning', text: 'text-warning' },
+  INFO: { bar: 'bg-info', text: 'text-info' },
 } as const;
 
 function formatThreshold(

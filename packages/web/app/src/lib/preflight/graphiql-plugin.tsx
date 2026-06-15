@@ -746,7 +746,8 @@ function PreflightModal({
                 variant="orangeLink"
                 size="icon-sm"
                 className="size-auto gap-1"
-                onClick={() => {
+                onClick={e => {
+                  e.stopPropagation();
                   if (state === PreflightWorkerState.running) {
                     abortExecution();
                     return;

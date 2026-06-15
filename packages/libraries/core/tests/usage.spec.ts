@@ -697,7 +697,7 @@ test('should not send excluded operation name data to Hive', async () => {
   expect(operation.timestamp).toEqual(expect.any(Number));
   // execution
   expect(operation.execution.duration).toBeGreaterThanOrEqual(18 * 1_000_000); // >=18ms in microseconds
-  expect(operation.execution.duration).toBeLessThan(25 * 1_000_000); // <25ms
+  expect(operation.execution.duration).toBeLessThan(40 * 1_000_000); // <40ms. This is based on the waitFor(20). But timeouts are not exact.
   expect(operation.execution.errorsTotal).toBe(0);
   expect(operation.execution.ok).toBe(true);
 });

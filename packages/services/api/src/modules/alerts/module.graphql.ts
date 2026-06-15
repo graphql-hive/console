@@ -245,6 +245,10 @@ export default gql`
     """
     incidents(first: Int, after: String): MetricAlertRuleIncidentConnection!
     """
+    Total incidents recorded for this rule (lifetime).
+    """
+    incidentCount: Int!
+    """
     State change history for this rule (powers the state timeline).
     """
     stateLog(from: DateTime!, to: DateTime!): [MetricAlertRuleStateChange!]!
