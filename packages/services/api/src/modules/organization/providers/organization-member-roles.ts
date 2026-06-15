@@ -1,12 +1,12 @@
 import { Injectable, Scope } from 'graphql-modules';
 import { z } from 'zod';
-import { isUUID } from '@hive/api/shared/is-uuid';
 import { CommonQueryMethods, PostgresDatabasePool, psql } from '@hive/postgres';
 import {
   decodeCreatedAtAndUUIDIdBasedCursor,
   encodeCreatedAtAndUUIDIdBasedCursor,
 } from '@hive/storage';
 import { batch } from '../../../shared/helpers';
+import { isUUID } from '../../../shared/is-uuid';
 import {
   Permission,
   PermissionsModel,
