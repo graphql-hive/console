@@ -107,7 +107,9 @@ export class GroupRoleAssignmentStore {
 
   async getGroupRoleAssignmentsForGroupId(groupId: string): Promise<Array<GroupRoleAssignment>> {
     this.logger.debug('batch lookup group role assignments by group id (groupId=%s)', groupId);
-    return await this.getGroupRoleAssignmentsForGroupIdBatched(groupId);
+    return await this.getGroupRoleAssignmentsForGroupIdBatched(groupId).then(roleAssignments =>
+      roleAssignments.sort((a, b) => a.createdAt.localeCompare(b.createdAt)),
+    );
   }
 
   async getGroupMappingById(groupMappingId: string) {
@@ -192,6 +194,7 @@ const groupRoleAssignmentsFields = psql`
   , "group_id" AS "groupId"
   , "role_id" AS "roleId"
   , "assigned_resources" AS "assignedResources"
+  , to_json("created_at") AS "createdAt"
 `;
 
 const GroupRoleAssignmentModel = z.object({
@@ -202,6 +205,7 @@ const GroupRoleAssignmentModel = z.object({
   assignedResources: ResourceAssignmentModel.transform(
     value => value ?? { mode: '*' as const, projects: [] },
   ),
+  createdAt: z.string(),
 });
 
 export type GroupRoleAssignment = z.TypeOf<typeof GroupRoleAssignmentModel>;
