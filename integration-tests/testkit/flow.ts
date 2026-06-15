@@ -1,12 +1,8 @@
-import {
-  AddGroupMappingToGroupInput,
-  RemoveGroupMappingInput,
-  UpdateGroupMappingInput,
-} from 'packages/libraries/core/src/client/__generated__/types';
 import { graphql } from './gql';
 import type {
   AddAlertChannelInput,
   AddAlertInput,
+  AddGroupMappingToGroupInput,
   AddMetricAlertRuleInput,
   AnswerOrganizationTransferRequestInput,
   AssignMemberRoleInput,
@@ -27,6 +23,7 @@ import type {
   OrganizationSelectorInput,
   OrganizationTransferRequestSelector,
   RateLimitInput,
+  RemoveGroupMappingInput,
   RequestOrganizationTransferInput,
   SchemaCheckInput,
   SchemaDeleteInput,
@@ -34,6 +31,7 @@ import type {
   SchemaVersionPromoteInput,
   TargetSelectorInput,
   UpdateBaseSchemaInput,
+  UpdateGroupMappingInput,
   UpdateMemberRoleInput,
   UpdateMetricAlertRuleInput,
   UpdateOidcIntegrationInput,
