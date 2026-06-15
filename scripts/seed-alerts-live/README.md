@@ -40,8 +40,8 @@ service is dispatching.
 5. Enables the per-org `metricAlertRules` feature flag (direct PG `UPDATE`, since the cluster env
    var is usually off in local dev).
 6. Publishes a tiny schema (so the usage service will accept operations against the target).
-7. Creates a webhook channel pointing at port 9999 (plus a preview-only `SLACK` channel — see "Slack"
-   below), and (unless started with `--no-rules`) 7 short-window alert rules each
+7. Creates a webhook channel pointing at port 9999 (plus a preview-only `SLACK` channel — see
+   "Slack" below), and (unless started with `--no-rules`) 7 short-window alert rules each
    `timeWindowMinutes: 1`.
 8. Pre-seeds ~60s of backdated breach-shaped data so the first evaluator tick after rule creation
    already sees a fully-formed breach window in `operations_minutely`. Cuts time-to-first-FIRING
@@ -120,9 +120,9 @@ pnpm seed:alerts-live --no-rules
 ```
 
 Skips the 7 pre-created rules. The script still provisions the org / project / target / notification
-channel(s) and runs the BREACH/NORMAL traffic loop, so the workflows evaluator has data to chew on as
-soon as a rule exists. Use this when you want to create rules manually via the UI from a clean state
-(e.g. for video walkthroughs).
+channel(s) and runs the BREACH/NORMAL traffic loop, so the workflows evaluator has data to chew on
+as soon as a rule exists. Use this when you want to create rules manually via the UI from a clean
+state (e.g. for video walkthroughs).
 
 The summary block prints a URL pointing at `/alerts/create` instead of `/alerts/rules`. Create a
 rule whose thresholds match the traffic the loop generates so a fire is guaranteed:
