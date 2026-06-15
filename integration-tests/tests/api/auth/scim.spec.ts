@@ -5,9 +5,6 @@ import { initSeed } from 'testkit/seed';
 import { getServiceHost } from 'testkit/utils';
 import z from 'zod';
 import { SuperTokensStore } from '@hive/api/modules/auth/providers/supertokens-store';
-import { GroupMemberStore } from '@hive/api/modules/organization/providers/group-member-store';
-import { GroupStore } from '@hive/api/modules/organization/providers/group-store';
-import { UsersStore } from '@hive/api/modules/organization/providers/users-store';
 import { NoopLogger } from '@hive/api/modules/shared/providers/logger';
 import { psql } from '@hive/postgres';
 import { invariant } from '@hive/service-common';
@@ -3569,50 +3566,59 @@ test.concurrent(
     const owner = await seed.createOwner();
     const org = await owner.createOrg();
     const oidc = await org.createOIDCIntegration();
-    const { pool } = await seed.createDbConnection();
     const oidcMock = await oidc.createMockServerAndUpdateIntegrationEndpoints();
     const domain = await oidc.registerFakeDomain();
+    const accessToken = await org.createOrganizationAccessToken({
+      permissions: ['member:describe', 'member:modify'],
+      resources: { mode: ResourceAssignmentModeType.Granular },
+    });
+    const scimAuthHeader = 'Bearer ' + accessToken.privateAccessKey;
 
-    // create our user (TODO: do this via SCIM endpoints instead)
+    const scimRequestHeaders = {
+      'Content-Type': 'application/scim+json',
+      Authorization: scimAuthHeader,
+    };
+
+    // create our user
     const email = 'demo@' + domain;
     const externalId = 'my-external-id';
 
-    const supertokensStore = new SuperTokensStore(pool, new NoopLogger());
-    const usersStore = new UsersStore(pool);
-    const supertokensUser = await supertokensStore.createOIDCUser({
-      email,
-      oidcIntegrationId: oidc.oidcIntegration.id,
-      externalId,
+    const createUserResponse = await fetch(usersEndpoint, {
+      method: 'POST',
+      headers: scimRequestHeaders,
+      body: JSON.stringify({
+        externalId,
+        emails: [
+          {
+            primary: true,
+            type: 'work',
+            value: email,
+          },
+        ],
+        userName: email,
+      }),
     });
-    const createHiveUserResult = await usersStore.createUser({
-      displayName: 'My User',
-      email,
-      externalId,
-      fullName: 'Peter Pan',
-      isDisabled: false,
-      oidcIntegrationId: oidc.oidcIntegration.id,
-      provisionedByOrganizationId: org.organization.id,
-      superTokensUserId: supertokensUser.userId,
-    });
-    invariant(createHiveUserResult.type === 'success', 'expected create hive user to succeed');
-    const { user } = createHiveUserResult;
+    expect(createUserResponse.status).toEqual(201);
+    const hiveUserId = await createUserResponse.json().then(response => response.id);
+    invariant(typeof hiveUserId === 'string', 'expected id property to exist');
 
-    // create our group (TODO: do this via SCIM endpoints instead)
-    const groupStore = new GroupStore(new NoopLogger(), pool);
-    const createGroupResult = await groupStore.createGroup({
-      organizationId: org.organization.id,
+    // create our group
+    const createGroupResponse = await createGroup(scimRequestHeaders, {
       displayName: 'Test Group',
-      externalId: null,
     });
-    invariant(createGroupResult.type === 'success', 'Expected creating group to succeed');
+    expect(createGroupResponse.status).toEqual(201);
+    const groupId = await createGroupResponse.json().then(r => r.id);
+    invariant(typeof groupId === 'string', 'expected id property to exist');
 
-    // assign user to group (TODO: do this via SCIM endpoints instead)
-    const groupMemberStore = new GroupMemberStore(new NoopLogger(), pool);
-    await groupMemberStore.addGroupMembersToGroupByOrganizationIdAndGroupId(
-      org.organization.id,
-      createGroupResult.group.id,
-      [user.id],
-    );
+    // assign user to group
+    const updateGroupResponse = await fetch(groupsEndpoint + '/' + groupId, {
+      method: 'PUT',
+      headers: scimRequestHeaders,
+      body: JSON.stringify({
+        members: [{ value: hiveUserId }],
+      }),
+    });
+    expect(updateGroupResponse.status).toEqual(200);
 
     // create three projects so we can check whether the permissions apply
     const projects = [
@@ -3638,7 +3644,7 @@ test.concurrent(
 
     const addGroupMappingResult = await addGroupMappingToGroup(
       {
-        groupId: createGroupResult.group.id,
+        groupId,
         assignedResources: {
           mode: ResourceAssignmentModeType.Granular,
           projects: [
@@ -3677,7 +3683,7 @@ test.concurrent(
     // grant the group access to more resources
     const addGroupMappingToGroupResult2 = await addGroupMappingToGroup(
       {
-        groupId: createGroupResult.group.id,
+        groupId,
         roleId: createRoleResult.createMemberRole.ok.createdMemberRole.id,
         assignedResources: {
           mode: ResourceAssignmentModeType.Granular,
@@ -3704,7 +3710,7 @@ test.concurrent(
 
     const addGroupMappingToGroupResult3 = await addGroupMappingToGroup(
       {
-        groupId: createGroupResult.group.id,
+        groupId,
         roleId: createRoleResult.createMemberRole.ok.createdMemberRole.id,
         assignedResources: {
           mode: ResourceAssignmentModeType.All,
@@ -3728,50 +3734,59 @@ test.concurrent('disabled user is revoked access', async ({ expect }) => {
   const owner = await seed.createOwner();
   const org = await owner.createOrg();
   const oidc = await org.createOIDCIntegration();
-  const { pool } = await seed.createDbConnection();
   const oidcMock = await oidc.createMockServerAndUpdateIntegrationEndpoints();
   const domain = await oidc.registerFakeDomain();
+  const accessToken = await org.createOrganizationAccessToken({
+    permissions: ['member:describe', 'member:modify'],
+    resources: { mode: ResourceAssignmentModeType.Granular },
+  });
+  const scimAuthHeader = 'Bearer ' + accessToken.privateAccessKey;
 
-  // create our user (TODO: do this via SCIM endpoints instead)
+  const scimRequestHeaders = {
+    'Content-Type': 'application/scim+json',
+    Authorization: scimAuthHeader,
+  };
+
+  // create our user
   const email = 'demo@' + domain;
   const externalId = 'my-external-id';
 
-  const supertokensStore = new SuperTokensStore(pool, new NoopLogger());
-  const usersStore = new UsersStore(pool);
-  const supertokensUser = await supertokensStore.createOIDCUser({
-    email,
-    oidcIntegrationId: oidc.oidcIntegration.id,
-    externalId,
+  const createUserResponse = await fetch(usersEndpoint, {
+    method: 'POST',
+    headers: scimRequestHeaders,
+    body: JSON.stringify({
+      externalId,
+      emails: [
+        {
+          primary: true,
+          type: 'work',
+          value: email,
+        },
+      ],
+      userName: email,
+    }),
   });
-  const createHiveUserResult = await usersStore.createUser({
-    displayName: 'My User',
-    email,
-    externalId,
-    fullName: 'Peter Pan',
-    isDisabled: false,
-    oidcIntegrationId: oidc.oidcIntegration.id,
-    provisionedByOrganizationId: org.organization.id,
-    superTokensUserId: supertokensUser.userId,
-  });
-  invariant(createHiveUserResult.type === 'success', 'expected create hive user to succeed');
-  const { user } = createHiveUserResult;
+  expect(createUserResponse.status).toEqual(201);
+  const hiveUserId = await createUserResponse.json().then(response => response.id);
+  invariant(typeof hiveUserId === 'string', 'expected id property to exist');
 
-  // create our group (TODO: do this via SCIM endpoints instead)
-  const groupStore = new GroupStore(new NoopLogger(), pool);
-  const createGroupResult = await groupStore.createGroup({
-    organizationId: org.organization.id,
+  // create our group
+  const createGroupResponse = await createGroup(scimRequestHeaders, {
     displayName: 'Test Group',
-    externalId: null,
   });
-  invariant(createGroupResult.type === 'success', 'Expected creating group to succeed');
+  expect(createGroupResponse.status).toEqual(201);
+  const groupId = await createGroupResponse.json().then(r => r.id);
+  invariant(typeof groupId === 'string', 'expected id property to exist');
 
-  // assign user to group (TODO: do this via SCIM endpoints instead)
-  const groupMemberStore = new GroupMemberStore(new NoopLogger(), pool);
-  await groupMemberStore.addGroupMembersToGroupByOrganizationIdAndGroupId(
-    org.organization.id,
-    createGroupResult.group.id,
-    [user.id],
-  );
+  // assign user to group
+  const updateGroupResponse = await fetch(groupsEndpoint + '/' + groupId, {
+    method: 'PUT',
+    headers: scimRequestHeaders,
+    body: JSON.stringify({
+      members: [{ value: hiveUserId }],
+    }),
+  });
+  expect(updateGroupResponse.status).toEqual(200);
 
   const createRoleResult = await createMemberRole(
     {
@@ -3785,10 +3800,9 @@ test.concurrent('disabled user is revoked access', async ({ expect }) => {
   invariant(!!createRoleResult.createMemberRole.ok, 'create member role should have succeeded');
 
   // add the new role as a group mapping
-
   const addGroupMappingResult = await addGroupMappingToGroup(
     {
-      groupId: createGroupResult.group.id,
+      groupId,
       assignedResources: {
         mode: ResourceAssignmentModeType.All,
       },
@@ -3816,9 +3830,15 @@ test.concurrent('disabled user is revoked access', async ({ expect }) => {
   const projectsResult = await org.projects(result.accessToken);
   expect(projectsResult).toEqual([]);
 
-  // TODO: do this via SCIM endpoint instead
-  await usersStore.disableUser(user.id);
-  await supertokensStore.invalidateAllSessionsForUser(supertokensUser.userId);
+  // disable the user
+  const disableUserResponse = await fetch(usersEndpoint + '/' + hiveUserId, {
+    method: 'PUT',
+    headers: scimRequestHeaders,
+    body: JSON.stringify({
+      active: false,
+    }),
+  });
+  expect(disableUserResponse.status).toEqual(200);
 
   // existing session is invalidated
   await expect(org.projects(result.accessToken)).rejects.toThrow(
@@ -3831,9 +3851,15 @@ test.concurrent('disabled user is revoked access', async ({ expect }) => {
   });
   invariant(result.type === 'error', 'expected sign in to fail as the user was disabled');
 
-  // TODO: do this via SCIM endpoint instead
-  await usersStore.enabledUser(user.id);
-  await supertokensStore.invalidateAllSessionsForUser(supertokensUser.userId);
+  // reenable the user
+  const enableUserResponse = await fetch(usersEndpoint + '/' + hiveUserId, {
+    method: 'PUT',
+    headers: scimRequestHeaders,
+    body: JSON.stringify({
+      active: true,
+    }),
+  });
+  expect(enableUserResponse.status).toEqual(200);
 
   auth = await oidcMock.runGetAuthorizationUrl();
   result = await oidcMock.runSignInUp({
