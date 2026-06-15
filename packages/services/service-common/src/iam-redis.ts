@@ -80,21 +80,25 @@ export async function generateIamAuthToken(
 /**
  * Re-authenticate active Redis connections with a fresh IAM token.
  *
- * In **cluster mode**, it iterates over every node returned by
- * `nodes('all')`, issues `AUTH` for each, and updates each
- * node's password only after successful authentication. Individual node
- * failures are logged as warnings but do not abort the loop.
+ * **Password is always updated before `AUTH`** so that ioredis uses the fresh
+ * token on subsequent reconnects — even when `AUTH` fails (e.g. on subscriber
+ * connections that are in pub/sub mode and cannot accept `AUTH` commands).
  *
- * It also updates `options.redisOptions.password` when present so new
- * cluster connections use the refreshed token.
+ * In **cluster mode**, the cluster-level `options.redisOptions.password` is
+ * updated first, then each node returned by `nodes('all')` gets its per-node
+ * password set and an `AUTH` issued. Individual node `AUTH` failures are
+ * collected and logged as warnings but do not abort the loop, all remaining
+ * nodes are still attempted. If any nodes failed, the function throws an
+ * aggregate error summarising how many nodes failed.
  *
- * In **standalone mode**, it issues a single `AUTH` command, then updates
- * the client's stored password when the options object is available.
+ * In **standalone mode**, `options.password` is updated first, then a single
+ * `AUTH` command is issued.
  *
  * @param redis - The active ioredis client (standalone or cluster).
  * @param token - The fresh SigV4 IAM auth token.
  * @param username - The ElastiCache IAM username.
  * @param logger - Logger with `debug` and `warn` methods.
+ * @throws When one or more cluster nodes fail `AUTH`, or when standalone `AUTH` fails.
  */
 export async function refreshIamAuth(
   redis: RedisInstance,
@@ -108,17 +112,23 @@ export async function refreshIamAuth(
       'Refreshing IAM token (service=elasticache) — re-authenticating %s cluster node(s)',
       nodes.length,
     );
+
+    const errors: Array<{ node: string; error: unknown }> = [];
     for (const node of nodes) {
       node.options.password = token;
       try {
         await node.call('AUTH', username, token);
       } catch (err) {
+        errors.push({ node: node.options.host ?? 'unknown', error: err });
         logger.warn('Failed to re-AUTH cluster node (service=elasticache, error=%s)', err);
       }
     }
     // Update cluster-level redisOptions for new node connections.
     if (redis.options?.redisOptions) {
       redis.options.redisOptions.password = token;
+    }
+    if (errors.length > 0) {
+      throw new Error(`Failed to re-AUTH ${errors.length}/${nodes.length} cluster node(s)`);
     }
   } else {
     redis.options.password = token;

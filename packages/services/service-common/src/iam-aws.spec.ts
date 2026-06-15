@@ -178,8 +178,20 @@ describe('generatePresignedToken', () => {
 describe('startTokenRefreshTimer', () => {
   beforeEach(() => {
     vi.useFakeTimers();
+    vi.resetModules();
     // Deterministic jitter: Math.random() → 0
     vi.spyOn(Math, 'random').mockReturnValue(0);
+    // Mock node:timers/promises so sleep uses the faked global setTimeout
+    vi.doMock('node:timers/promises', () => ({
+      setTimeout: (ms: number, _value?: unknown, options?: { signal?: AbortSignal }) =>
+        new Promise<void>((resolve, reject) => {
+          const id = globalThis.setTimeout(resolve, ms);
+          options?.signal?.addEventListener('abort', () => {
+            globalThis.clearTimeout(id);
+            reject(new DOMException('The operation was aborted', 'AbortError'));
+          });
+        }),
+    }));
   });
 
   afterEach(() => {
@@ -188,27 +200,18 @@ describe('startTokenRefreshTimer', () => {
   });
 
   describe('scheduling', () => {
-    it('calls unref on each setTimeout handle when supported', async () => {
+    it('does not call unref — abort controller handles shutdown instead', async () => {
       const { startTokenRefreshTimer } = await import('./iam-aws');
       const refreshFn = vi.fn().mockResolvedValue(undefined);
-
-      const unref = vi.fn();
-      const fakeTimer = { unref } as unknown as ReturnType<typeof setTimeout>;
-      const setTimeoutSpy = vi
-        .spyOn(globalThis, 'setTimeout')
-        .mockImplementation((() => fakeTimer) as any);
 
       const cleanup = startTokenRefreshTimer(refreshFn, {
         backoffRefreshSeconds: 60,
         jitterMs: 0,
       });
 
-      expect(setTimeoutSpy).toHaveBeenCalled();
-      expect(unref).toHaveBeenCalled();
       expect(typeof cleanup).toBe('function');
 
       cleanup();
-      setTimeoutSpy.mockRestore();
     });
 
     it('refreshes after (TOKEN_TTL - backoff) seconds, then schedules next', async () => {
@@ -322,13 +325,39 @@ describe('startTokenRefreshTimer', () => {
 
       // Trigger the interval
       await vi.advanceTimersByTimeAsync(840_000);
-      // Allow retry backoff timers to fire
-      await vi.advanceTimersByTimeAsync(1000);
+      // Allow retry backoff timers to fire (attempt 1: 100ms, attempt 2: 200ms)
+      await vi.advanceTimersByTimeAsync(100);
+      await vi.advanceTimersByTimeAsync(200);
 
       expect(refreshFn).toHaveBeenCalledTimes(3);
       expect(refreshFn).toHaveBeenCalledWith(1, 3);
       expect(refreshFn).toHaveBeenCalledWith(2, 3);
       expect(refreshFn).toHaveBeenCalledWith(3, 3);
+
+      cleanup();
+    });
+
+    it('schedules the next cycle after all retries are exhausted', async () => {
+      const { startTokenRefreshTimer } = await import('./iam-aws');
+      const refreshFn = vi.fn().mockRejectedValue(new Error('always fails'));
+
+      const cleanup = startTokenRefreshTimer(refreshFn, {
+        backoffRefreshSeconds: 60,
+        jitterMs: 0,
+        maxRetries: 2,
+        retryBackoffMs: 100,
+      });
+
+      // First cycle: trigger + exhaust retries
+      await vi.advanceTimersByTimeAsync(840_000);
+      await vi.advanceTimersByTimeAsync(100); // retry backoff for attempt 1
+      expect(refreshFn).toHaveBeenCalledTimes(2);
+
+      // Second cycle: timer should fire again after intervalMs
+      refreshFn.mockClear();
+      await vi.advanceTimersByTimeAsync(840_000);
+      await vi.advanceTimersByTimeAsync(100);
+      expect(refreshFn).toHaveBeenCalledTimes(2);
 
       cleanup();
     });
@@ -366,7 +395,8 @@ describe('startTokenRefreshTimer', () => {
       });
 
       await vi.advanceTimersByTimeAsync(840_000);
-      await vi.advanceTimersByTimeAsync(1000);
+      // Allow first retry backoff (attempt 1: 100ms)
+      await vi.advanceTimersByTimeAsync(100);
 
       expect(refreshFn).toHaveBeenCalledTimes(2);
       expect(refreshFn).toHaveBeenCalledWith(1, 3);

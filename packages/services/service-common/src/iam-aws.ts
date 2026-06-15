@@ -1,3 +1,4 @@
+import { setTimeout as sleep } from 'node:timers/promises';
 import { Sha256 } from '@aws-crypto/sha256-js';
 import { fromNodeProviderChain } from '@aws-sdk/credential-providers';
 import { formatUrl } from '@aws-sdk/util-format-url';
@@ -114,45 +115,53 @@ export function startTokenRefreshTimer(
   const retryBackoffMs = options?.retryBackoffMs ?? 5_000;
 
   // Track shutdown state to prevent in-flight callbacks and retries during graceful shutdown
-  let isShuttingDown = false;
+  const abortController = new AbortController();
   let currentTimer: ReturnType<typeof setTimeout> | undefined;
 
   function scheduleNext() {
-    if (isShuttingDown) return;
-
+    if (abortController.signal.aborted) return;
     const jitterMs = Math.floor(Math.random() * maxJitterMs);
+
     currentTimer = setTimeout(() => {
-      if (isShuttingDown) return;
+      if (abortController.signal.aborted) return;
 
       void (async () => {
         for (let attempt = 1; attempt <= maxRetries; attempt++) {
-          if (isShuttingDown) return;
+          if (abortController.signal.aborted) return;
 
           try {
             await refreshFn(attempt, maxRetries);
             break;
           } catch {
-            if (attempt < maxRetries) {
-              await new Promise(r => setTimeout(r, attempt * retryBackoffMs));
+            if (attempt >= maxRetries) {
+              // Out of retries, but we will retry next cycle as long as the timer is running
+              scheduleNext();
+              return;
             }
+          }
+
+          try {
+            await sleep(attempt * retryBackoffMs, undefined, {
+              signal: abortController.signal,
+            });
+          } catch (err) {
+            if (abortController.signal.aborted) {
+              return;
+            }
+            throw err;
           }
         }
         // Schedule next cycle only after current refresh (including retries) completes
         scheduleNext();
       })();
     }, intervalMs + jitterMs);
-
-    // Allow clean process shutdown even if the refresh timer is still active.
-    if (typeof currentTimer.unref === 'function') {
-      currentTimer.unref();
-    }
   }
 
   scheduleNext();
 
   // Return a cleanup function that sets shutdown flag and clears the pending timer
   return () => {
-    isShuttingDown = true;
+    abortController.abort();
     if (currentTimer !== undefined) {
       clearTimeout(currentTimer);
     }

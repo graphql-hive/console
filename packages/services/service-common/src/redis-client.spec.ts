@@ -68,7 +68,7 @@ vi.mock('ioredis', async () => {
 });
 
 const resolveRedisCredentialsMock = vi.fn();
-const startIamTokenRefreshMock = vi.fn();
+const startIamTokenRefreshMock = vi.fn().mockReturnValue(() => {});
 
 vi.mock('./iam-redis', () => {
   return {

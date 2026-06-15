@@ -19,6 +19,18 @@ function createMockLogger() {
 
 const mockGeneratePresignedToken = vi.fn();
 
+// Mock node:timers/promises so sleep uses the faked global setTimeout
+vi.mock('node:timers/promises', () => ({
+  setTimeout: (ms: number, _value?: unknown, options?: { signal?: AbortSignal }) =>
+    new Promise<void>((resolve, reject) => {
+      const id = globalThis.setTimeout(resolve, ms);
+      options?.signal?.addEventListener('abort', () => {
+        globalThis.clearTimeout(id);
+        reject(new DOMException('The operation was aborted', 'AbortError'));
+      });
+    }),
+}));
+
 vi.mock('./iam-aws', async importOriginal => {
   const actual = await importOriginal<typeof import('./iam-aws')>();
   return {
@@ -162,8 +174,36 @@ describe('refreshIamAuth', () => {
         'WRONGPASS',
       );
 
-      // Password is updated before AUTH is called (same as cluster mode).
+      // Password IS updated before AUTH so ioredis uses the fresh token on reconnect
       expect(mockRedis.options.password).toBe('bad-token');
+    });
+
+    it('updates password before AUTH so reconnects use fresh token', async () => {
+      const { refreshIamAuth } = await import('./iam-redis');
+      const logger = createMockLogger();
+
+      const callOrder: string[] = [];
+      const mockRedis = {
+        call: vi.fn().mockImplementation(() => {
+          callOrder.push('AUTH');
+          return Promise.resolve('OK');
+        }),
+        options: {
+          set password(val: string) {
+            callOrder.push('password');
+            this._password = val;
+          },
+          get password() {
+            return this._password;
+          },
+          _password: 'old-token',
+        },
+      } as any;
+
+      await refreshIamAuth(mockRedis, 'new-token', 'default', logger);
+
+      expect(callOrder).toEqual(['password', 'AUTH']);
+      expect(mockRedis.options.password).toBe('new-token');
     });
   });
 
@@ -204,14 +244,17 @@ describe('refreshIamAuth', () => {
       expect(mockCluster.options.redisOptions.password).toBe('refreshed-token');
     });
 
-    it('continues re-AUTHing remaining nodes when one node fails', async () => {
+    it('continues re-AUTHing remaining nodes when one node fails, then throws', async () => {
       const { refreshIamAuth } = await import('./iam-redis');
       const logger = createMockLogger();
 
-      const healthyNode = { call: vi.fn().mockResolvedValue('OK'), options: { password: 'old' } };
+      const healthyNode = {
+        call: vi.fn().mockResolvedValue('OK'),
+        options: { host: 'node-1', password: 'old' },
+      };
       const failingNode = {
         call: vi.fn().mockRejectedValue(new Error('NOAUTH')),
-        options: { password: 'old' },
+        options: { host: 'node-2', password: 'old' },
       };
 
       const mockCluster = Object.assign(Object.create(RedisCluster.prototype), {
@@ -219,20 +262,83 @@ describe('refreshIamAuth', () => {
         options: { redisOptions: { password: 'old' } },
       });
 
-      // Should not throw — individual node failures are caught
-      await refreshIamAuth(mockCluster, 'token', 'default', logger);
+      // Should throw after attempting all nodes
+      await expect(refreshIamAuth(mockCluster, 'token', 'default', logger)).rejects.toThrow(
+        'Failed to re-AUTH 1/2 cluster node(s)',
+      );
 
+      // Both nodes get password updated before AUTH (so reconnects use fresh token)
       expect(healthyNode.options.password).toBe('token');
-      // Password is set before AUTH, so even failing nodes get the updated password
       expect(failingNode.options.password).toBe('token');
       expect(logger.warn).toHaveBeenCalledWith(
         expect.stringContaining('Failed to re-AUTH cluster node'),
         expect.any(Error),
       );
-      // Still reports overall success
-      expect(logger.debug).toHaveBeenCalledWith(
-        expect.stringContaining('IAM token refreshed successfully'),
+    });
+
+    it('updates node passwords before AUTH so reconnects use fresh token', async () => {
+      const { refreshIamAuth } = await import('./iam-redis');
+      const logger = createMockLogger();
+
+      const callOrder: string[] = [];
+      const createNode = (name: string) => ({
+        call: vi.fn().mockImplementation(() => {
+          callOrder.push(`${name}:AUTH`);
+          return Promise.resolve('OK');
+        }),
+        options: {
+          set password(val: string) {
+            callOrder.push(`${name}:password`);
+            this._password = val;
+          },
+          get password() {
+            return this._password;
+          },
+          _password: 'old',
+        },
+      });
+
+      const node1 = createNode('node1');
+      const node2 = createNode('node2');
+
+      const mockCluster = Object.assign(Object.create(RedisCluster.prototype), {
+        nodes: vi.fn().mockReturnValue([node1, node2]),
+        options: { redisOptions: { password: 'old' } },
+      });
+
+      await refreshIamAuth(mockCluster, 'new-token', 'user', logger);
+
+      // Each node's password is set before its AUTH call
+      expect(callOrder).toEqual(['node1:password', 'node1:AUTH', 'node2:password', 'node2:AUTH']);
+      expect(node1.options.password).toBe('new-token');
+      expect(node2.options.password).toBe('new-token');
+    });
+
+    it('throws when all cluster nodes fail', async () => {
+      const { refreshIamAuth } = await import('./iam-redis');
+      const logger = createMockLogger();
+
+      const node1 = {
+        call: vi.fn().mockRejectedValue(new Error('NOAUTH')),
+        options: { host: 'node-1', password: 'old' },
+      };
+      const node2 = {
+        call: vi.fn().mockRejectedValue(new Error('NOAUTH')),
+        options: { host: 'node-2', password: 'old' },
+      };
+
+      const mockCluster = Object.assign(Object.create(RedisCluster.prototype), {
+        nodes: vi.fn().mockReturnValue([node1, node2]),
+        options: { redisOptions: { password: 'old' } },
+      });
+
+      await expect(refreshIamAuth(mockCluster, 'token', 'default', logger)).rejects.toThrow(
+        'Failed to re-AUTH 2/2 cluster node(s)',
       );
+
+      // Both nodes get password updated before AUTH (so reconnects use fresh token)
+      expect(node1.options.password).toBe('token');
+      expect(node2.options.password).toBe('token');
     });
 
     it('handles missing options.redisOptions gracefully', async () => {
@@ -346,8 +452,9 @@ describe('startIamTokenRefresh', () => {
       );
 
       await vi.advanceTimersByTimeAsync(720_000);
-      // Allow retries to fire
-      await vi.advanceTimersByTimeAsync(60_000);
+      // Allow retries to fire (attempt 1: 5s, attempt 2: 10s)
+      await vi.advanceTimersByTimeAsync(5_000);
+      await vi.advanceTimersByTimeAsync(10_000);
 
       expect(logger.error).toHaveBeenCalledWith(
         expect.stringContaining('ElastiCache IAM token refresh failed'),
@@ -379,7 +486,9 @@ describe('startIamTokenRefresh', () => {
       );
 
       await vi.advanceTimersByTimeAsync(720_000);
-      await vi.advanceTimersByTimeAsync(60_000);
+      // Advance retry backoff timers individually (attempt 1: 5s, attempt 2: 10s)
+      await vi.advanceTimersByTimeAsync(5_000);
+      await vi.advanceTimersByTimeAsync(10_000);
 
       expect(logger.error).toHaveBeenCalledWith(expect.stringContaining('exhausted all retries'));
 
