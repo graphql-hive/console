@@ -1,8 +1,8 @@
 import { Injectable, Scope } from 'graphql-modules';
 import { z } from 'zod';
-import { isUUID } from '@hive/api/shared/is-uuid';
 import { PostgresDatabasePool, psql, type CommonQueryMethods } from '@hive/postgres';
 import { batch } from '../../../shared/helpers';
+import { isUUID } from '../../../shared/is-uuid';
 import { Logger } from '../../shared/providers/logger';
 import {
   ResourceAssignmentModel,
