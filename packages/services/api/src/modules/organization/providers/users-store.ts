@@ -75,7 +75,7 @@ export class UsersStore {
       externalId: string;
       isDisabled: boolean;
     },
-    trx: CommonQueryMethods,
+    trx: CommonQueryMethods = this.pool,
   ): Promise<
     | { type: 'success'; user: User; errorCode?: never }
     | { type: 'error'; errorCode: 'displayNameConflict'; user?: never }
