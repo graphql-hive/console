@@ -1,5 +1,6 @@
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { MetricAlertRuleState } from '@/gql/graphql';
+import { ALERT_CHART_INSET_LEFT, ALERT_CHART_INSET_RIGHT } from './alert-chart-layout';
 
 export const ALERT_STATE_COLOR: Record<MetricAlertRuleState, string> = {
   [MetricAlertRuleState.Normal]: 'bg-success',
@@ -141,7 +142,12 @@ export function AlertStateTransitionsBar({
   });
 
   return (
-    <div className="space-y-2">
+    // Pad to the metric chart's fixed plot insets so the bar's segments and
+    // tick labels line up time-wise with the chart below it.
+    <div
+      className="space-y-2"
+      style={{ paddingLeft: ALERT_CHART_INSET_LEFT, paddingRight: ALERT_CHART_INSET_RIGHT }}
+    >
       <TooltipProvider delayDuration={100}>
         <div className="border-neutral-5 flex h-4 w-full overflow-hidden rounded-sm border">
           {segments.map((seg, i) => {
