@@ -149,6 +149,7 @@ test.concurrent(
     const result = await oidc.runSignInUp({
       state: auth.state,
     });
+    invariant(result.type === 'success', 'Expected sign up to succeed');
     const meResult = await execute({
       document: TestMeQuery,
       authToken: result.accessToken,
