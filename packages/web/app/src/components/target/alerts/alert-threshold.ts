@@ -84,7 +84,7 @@ export function windowAggregates(
     let req = 0;
     let fail = 0;
     for (const [i, n] of requests.entries()) {
-      if ((new Date(n.date).getTime() >= boundaryMs) === isCurrent) {
+      if (new Date(n.date).getTime() >= boundaryMs === isCurrent) {
         req += n.value;
         fail += failures[i]?.value ?? 0;
       }
