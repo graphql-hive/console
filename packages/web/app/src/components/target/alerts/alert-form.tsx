@@ -44,6 +44,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { Link } from '@tanstack/react-router';
 import { AlertMetricChart } from './alert-metric-chart';
 import { AlertPreview } from './alert-notification-preview';
+import { applyThresholdSign, thresholdUnit } from './alert-threshold';
 
 const AlertForm_ChannelsQuery = graphql(`
   query AlertForm_ChannelsQuery($organizationSlug: String!, $projectSlug: String!) {
@@ -227,9 +228,19 @@ const RANGE_OPTIONS = [
   { value: '43200', label: '30d' },
 ] as const;
 
-const CONDITION_OPTIONS = [
+// Condition labels depend on threshold type. For a fixed value the metric is
+// compared against an absolute level ("Above"/"Below"). For a window-over-window
+// % change the rule fires on a rise or a fall, so "Increase"/"Decrease" reads
+// naturally and lets the user enter a positive magnitude (the sign is applied
+// for them in `applyThresholdSign`). The underlying values stay ABOVE/BELOW.
+const CONDITION_OPTIONS_FIXED = [
   { value: 'ABOVE', label: 'Above' },
   { value: 'BELOW', label: 'Below' },
+] as const;
+
+const CONDITION_OPTIONS_CHANGE = [
+  { value: 'ABOVE', label: 'Increase' },
+  { value: 'BELOW', label: 'Decrease' },
 ] as const;
 
 const THRESHOLD_TYPE_OPTIONS = [
@@ -247,26 +258,51 @@ const SEVERITIES = [
   { value: 'CRITICAL' as const, label: 'Critical', dotClass: 'bg-red-400' },
 ];
 
-export const AlertFormSchema = z.object({
-  metricSelection: z.string().min(1, 'Metric is required'),
-  timeWindowMinutes: z.string().min(1, 'Range is required'),
-  name: z.string().min(1, 'Name is required'),
-  severity: z.enum(['INFO', 'WARNING', 'CRITICAL']),
-  direction: z.string().min(1),
-  thresholdType: z.string().min(1),
-  thresholdValue: z.string().min(1, 'Value is required'),
-  savedFilterId: z.string().optional(),
-  confirmationMinutes: z.string().default('0'),
-  // Zero channels is intentionally allowed here so users can create a rule
-  // and observe its state transitions in the UI without firing notifications
-  // ("test mode"), then attach destinations once the rule's behavior is
-  // trusted.
-  channels: z.array(
-    z.object({
-      channelId: z.string().min(1, 'Select a channel'),
-    }),
-  ),
-});
+export const AlertFormSchema = z
+  .object({
+    metricSelection: z.string().min(1, 'Metric is required'),
+    timeWindowMinutes: z.string().min(1, 'Range is required'),
+    name: z.string().min(1, 'Name is required'),
+    severity: z.enum(['INFO', 'WARNING', 'CRITICAL']),
+    direction: z.string().min(1),
+    thresholdType: z.string().min(1),
+    thresholdValue: z.string().min(1, 'Value is required'),
+    savedFilterId: z.string().optional(),
+    confirmationMinutes: z.string().default('0'),
+    // Zero channels is intentionally allowed here so users can create a rule
+    // and observe its state transitions in the UI without firing notifications
+    // ("test mode"), then attach destinations once the rule's behavior is
+    // trusted.
+    channels: z.array(
+      z.object({
+        channelId: z.string().min(1, 'Select a channel'),
+      }),
+    ),
+  })
+  .superRefine((data, ctx) => {
+    const value = parseFloat(data.thresholdValue);
+    if (Number.isNaN(value)) {
+      return; // empty is already caught by `.min(1)`; non-numeric by the input
+    }
+    if (value < 0) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['thresholdValue'],
+        message: 'Value must be 0 or greater',
+      });
+    }
+    const { type } = parseMetricSelection(data.metricSelection);
+    const capAt100 =
+      (data.thresholdType === 'FIXED_VALUE' && type === MetricAlertRuleType.ErrorRate) ||
+      (data.thresholdType === 'PERCENTAGE_CHANGE' && data.direction === 'BELOW');
+    if (capAt100 && value > 100) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['thresholdValue'],
+        message: 'Value cannot exceed 100%',
+      });
+    }
+  });
 
 export type AlertFormValues = z.infer<typeof AlertFormSchema>;
 
@@ -359,7 +395,7 @@ export function ruleToFormDefaults(rule: AlertFormRuleSeed): AlertFormValues {
     severity: severityKey,
     direction: String(rule.direction).toUpperCase(),
     thresholdType: String(rule.thresholdType).toUpperCase(),
-    thresholdValue: String(rule.thresholdValue),
+    thresholdValue: String(Math.abs(rule.thresholdValue)),
     savedFilterId: rule.savedFilter?.id ?? '',
     confirmationMinutes: String(rule.confirmationMinutes),
     channels: rule.channels.map(c => ({ channelId: c.id })),
@@ -433,7 +469,11 @@ export function AlertForm(props: AlertFormProps) {
               metric: metric ?? null,
               timeWindowMinutes: parseInt(values.timeWindowMinutes, 10),
               thresholdType: THRESHOLD_TYPE_MAP[values.thresholdType],
-              thresholdValue: parseFloat(values.thresholdValue),
+              thresholdValue: applyThresholdSign(
+                parseFloat(values.thresholdValue),
+                values.thresholdType,
+                values.direction,
+              ),
               direction: DIRECTION_MAP[values.direction],
               severity: SEVERITY_MAP[values.severity],
               confirmationMinutes: parseInt(values.confirmationMinutes || '0', 10),
@@ -520,6 +560,22 @@ export function AlertForm(props: AlertFormProps) {
   const parsedMetric = watchedValues.metricSelection
     ? parseMetricSelection(watchedValues.metricSelection)
     : { type: MetricAlertRuleType.Traffic };
+
+  const isPercentageChange = watchedValues.thresholdType === 'PERCENTAGE_CHANGE';
+  const valueUnit = thresholdUnit(parsedMetric.type, watchedValues.thresholdType);
+  const conditionOptions = isPercentageChange ? CONDITION_OPTIONS_CHANGE : CONDITION_OPTIONS_FIXED;
+  const valueMax =
+    (!isPercentageChange && parsedMetric.type === MetricAlertRuleType.ErrorRate) ||
+    (isPercentageChange && watchedValues.direction === 'BELOW')
+      ? 100
+      : undefined;
+  const valuePlaceholder = isPercentageChange
+    ? 'e.g. 25'
+    : parsedMetric.type === MetricAlertRuleType.Latency
+      ? 'e.g. 500'
+      : parsedMetric.type === MetricAlertRuleType.ErrorRate
+        ? 'e.g. 5'
+        : 'e.g. 1000';
 
   const previewWindowMinutes = Math.min(
     (parseInt(watchedValues.timeWindowMinutes, 10) || 10_080) * 2,
@@ -735,7 +791,7 @@ export function AlertForm(props: AlertFormProps) {
                           <FormLabel label="Condition" />
                           <FormControl>
                             <Select
-                              options={CONDITION_OPTIONS}
+                              options={conditionOptions}
                               value={field.value}
                               onValueChange={field.onChange}
                             />
@@ -766,9 +822,15 @@ export function AlertForm(props: AlertFormProps) {
                       name="thresholdValue"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel label="Value" />
+                          <FormLabel label={`Value (${valueUnit})`} />
                           <FormControl>
-                            <Input type="number" placeholder="Enter a value" {...field} />
+                            <Input
+                              type="number"
+                              min={0}
+                              max={valueMax}
+                              placeholder={valuePlaceholder}
+                              {...field}
+                            />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -776,8 +838,14 @@ export function AlertForm(props: AlertFormProps) {
                     />
                   </div>
                   <p className="text-neutral-10 text-[13px]">
-                    {watchedValues.thresholdType === 'PERCENTAGE_CHANGE'
-                      ? `"% change vs. previous" compares this ${thresholdRangeLabel} window to the one before it. Your value is the percent change between them, e.g. 75 fires on a +75% change rather than an absolute level.`
+                    {isPercentageChange
+                      ? `"% change vs. previous" compares this ${thresholdRangeLabel} window to the one before it. With "${
+                          watchedValues.direction === 'BELOW' ? 'Decrease' : 'Increase'
+                        }" it fires when the metric ${
+                          watchedValues.direction === 'BELOW' ? 'drops' : 'rises'
+                        } by more than your value, e.g. 75 fires on a ${
+                          watchedValues.direction === 'BELOW' ? '−75%' : '+75%'
+                        } change rather than an absolute level.`
                       : `"Fixed value" compares the metric over the ${thresholdRangeLabel} window directly against your value, in the metric's own unit (% for error rate, ms for latency, requests for total requests).`}
                   </p>
                 </div>
