@@ -505,7 +505,11 @@ export function AlertForm(props: AlertFormProps) {
             metric: metric ?? null,
             timeWindowMinutes: parseInt(values.timeWindowMinutes, 10),
             thresholdType: THRESHOLD_TYPE_MAP[values.thresholdType],
-            thresholdValue: parseFloat(values.thresholdValue),
+            thresholdValue: applyThresholdSign(
+              parseFloat(values.thresholdValue),
+              values.thresholdType,
+              values.direction,
+            ),
             direction: DIRECTION_MAP[values.direction],
             severity: SEVERITY_MAP[values.severity],
             confirmationMinutes: parseInt(values.confirmationMinutes || '0', 10),
