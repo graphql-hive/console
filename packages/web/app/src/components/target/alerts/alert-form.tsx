@@ -787,6 +787,7 @@ export function AlertForm(props: AlertFormProps) {
                   loading={previewQuery.fetching}
                   type={parsedMetric.type}
                   metric={parsedMetric.metric}
+                  severity={watchedValues.severity}
                   thresholdValue={
                     watchedValues.thresholdValue ? parseFloat(watchedValues.thresholdValue) : null
                   }

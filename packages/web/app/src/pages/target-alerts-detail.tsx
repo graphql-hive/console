@@ -18,6 +18,7 @@ import { graphql } from '@/gql';
 import {
   MetricAlertRuleDirection,
   MetricAlertRuleMetric,
+  MetricAlertRuleSeverity,
   MetricAlertRuleThresholdType,
   MetricAlertRuleType,
 } from '@/gql/graphql';
@@ -294,7 +295,11 @@ function RuleStateLogSection(props: {
   targetSlug: string;
   ruleId: string;
   viewRangeMinutes: string;
-  rule: AlertEventsTableRule & { createdAt: string; metric?: MetricAlertRuleMetric | null };
+  rule: AlertEventsTableRule & {
+    createdAt: string;
+    metric?: MetricAlertRuleMetric | null;
+    severity: MetricAlertRuleSeverity;
+  };
 }) {
   const { organizationSlug, projectSlug, targetSlug, ruleId, viewRangeMinutes, rule } = props;
 
@@ -359,6 +364,7 @@ function RuleStateLogSection(props: {
           loading={result.fetching && hasNoData}
           type={rule.type}
           metric={rule.metric}
+          severity={rule.severity}
           thresholdValue={rule.thresholdValue}
           direction={rule.direction}
           thresholdType={rule.thresholdType}

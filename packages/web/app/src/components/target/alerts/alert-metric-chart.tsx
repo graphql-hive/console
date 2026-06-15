@@ -40,6 +40,8 @@ type AlertMetricChartProps = {
   type: MetricAlertRuleType;
   /** Sub-metric for LATENCY rules (P75/P90/...); null for ERROR_RATE / TRAFFIC */
   metric?: MetricAlertRuleMetric | null;
+  /** Rule severity...tints the threshold marker line to match the severity badge. */
+  severity?: string | null;
   /** Threshold value to show as a horizontal marker line (only drawn for FIXED_VALUE rules) */
   thresholdValue: number | null;
   /** 'ABOVE' or 'BELOW' */
@@ -62,11 +64,18 @@ const PERCENTILE_FIELD_BY_METRIC: Record<
   [MetricAlertRuleMetric.P99]: 'p99',
 };
 
+const SEVERITY_COLOR_KEY: Record<string, 'critical' | 'warning' | 'info'> = {
+  CRITICAL: 'critical',
+  WARNING: 'warning',
+  INFO: 'info',
+};
+
 export function AlertMetricChart({
   stats,
   loading,
   type,
   metric,
+  severity,
   thresholdValue,
   direction,
   thresholdType,
@@ -129,6 +138,9 @@ export function AlertMetricChart({
     );
   }
 
+  const severityColorKey = severity ? SEVERITY_COLOR_KEY[severity] : undefined;
+  const markColor = severityColorKey ? colors[severityColorKey] : colors.primary;
+
   const markLine =
     thresholdValue != null && thresholdType === 'FIXED_VALUE'
       ? {
@@ -140,13 +152,13 @@ export function AlertMetricChart({
               label: {
                 formatter: `${direction === 'ABOVE' ? '>' : '<'} ${yAxisFormatter(thresholdValue)}`,
                 position: 'insideEndTop' as const,
-                color: colors.primary,
+                color: markColor,
                 fontSize: 11,
               },
             },
           ],
           lineStyle: {
-            color: colors.primary,
+            color: markColor,
             type: 'dashed' as const,
             width: 1,
           },
