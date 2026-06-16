@@ -816,6 +816,16 @@ export class MetricAlertRulesStorage {
     return zod.number().parse(result);
   }
 
+  async getIncidentCount(args: { ruleId: string }): Promise<number> {
+    const result = await this.pool.oneFirst(psql`/* getIncidentCount */
+      SELECT count(*)::int
+      FROM "metric_alert_incidents"
+      WHERE "metric_alert_rule_id" = ${args.ruleId}
+    `);
+
+    return zod.number().parse(result);
+  }
+
   async purgeExpiredStateLog(): Promise<number> {
     const result = await this.pool.oneFirst(psql`/* purgeExpiredStateLog */
       WITH deleted AS (

@@ -129,7 +129,7 @@
     "overrides.path-to-regexp@0.x.x": "address https://github.com/graphql-hive/console/security/dependabot/619",
     "overrides.fast-uri@2.x.x": "address https://github.com/graphql-hive/console/security/dependabot/683",
     "overrides": {
-      "esbuild": "0.25.9",
+      "esbuild": "0.28.1",
       "csstype": "3.1.2",
       "mjml-core@4.14.0>html-minifier": "-",
       "mjml-cli@4.14.0>html-minifier": "-",
