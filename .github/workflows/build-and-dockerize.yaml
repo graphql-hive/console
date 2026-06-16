@@ -160,7 +160,14 @@ jobs:
 
       - name: docker image short sha
         id: git_hash
-        run: echo "sha_short=${GITHUB_SHA::7}" >> $GITHUB_OUTPUT
+        run: |
+          # if in a PR, use the PR SHA; otherwise, use the commit SHA
+          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+              FULL_PR_SHA=${{ github.event.pull_request.head.sha }}
+              echo "sha_short=${FULL_PR_SHA:0:7}" >> $GITHUB_OUTPUT
+          else
+              echo "sha_short=${GITHUB_SHA:0:7}" >> $GITHUB_OUTPUT
+          fi
 
       - name: build docker images (${{ matrix.platform }})
         timeout-minutes: 60
@@ -256,7 +263,14 @@ jobs:
 
       - name: docker image short sha
         id: git_hash
-        run: echo "sha_short=${GITHUB_SHA::7}" >> $GITHUB_OUTPUT
+        run: |
+          # if in a PR, use the PR SHA; otherwise, use the commit SHA
+          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+              FULL_PR_SHA=${{ github.event.pull_request.head.sha }}
+              echo "sha_short=${FULL_PR_SHA:0:7}" >> $GITHUB_OUTPUT
+          else
+              echo "sha_short=${GITHUB_SHA:0:7}" >> $GITHUB_OUTPUT
+          fi
 
       - name: 'publish docker multiarch manifest (tag: ${{ steps.git_hash.outputs.sha_short }})'
         env:
