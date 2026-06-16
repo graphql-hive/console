@@ -58,7 +58,9 @@ export function GetStartedWizard({
           />
           {'invitingMembers' in tasks && typeof tasks.invitingMembers === 'boolean' ? (
             <Task
-              link={docsUrl('/schema-registry/management/members-roles-permissions#inviting-new-members')}
+              link={docsUrl(
+                '/schema-registry/management/members-roles-permissions#inviting-new-members',
+              )}
               completed={tasks.invitingMembers}
               title="Invite members"
               description="Invite your team members to collaborate on your projects"
