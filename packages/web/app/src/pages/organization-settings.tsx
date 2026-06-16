@@ -284,7 +284,7 @@ const OrganizationSettingsContent = (props: {
                     <CardDescription>
                       <DocsLink
                         className="text-neutral-10 text-sm"
-                        href="/management/organizations#change-slug-of-organization"
+                        href="/schema-registry/management/organizations#change-slug-of-organization"
                       >
                         You can read more about it in the documentation
                       </DocsLink>
@@ -329,7 +329,7 @@ const OrganizationSettingsContent = (props: {
                 <CardDescription>
                   <DocsLink
                     className="text-neutral-10 text-sm"
-                    href="/management/organizations#slack"
+                    href="/schema-registry/management/organizations#slack"
                   >
                     Learn more.
                   </DocsLink>
@@ -351,7 +351,7 @@ const OrganizationSettingsContent = (props: {
                 <CardDescription>
                   <DocsLink
                     className="text-neutral-10 text-sm"
-                    href="/management/organizations#github"
+                    href="/schema-registry/management/organizations#github"
                   >
                     Learn more.
                   </DocsLink>
@@ -376,7 +376,7 @@ const OrganizationSettingsContent = (props: {
                 <CardDescription>
                   <DocsLink
                     className="text-neutral-10 text-sm"
-                    href="/management/organizations#transfer-ownership"
+                    href="/schema-registry/management/organizations#transfer-ownership"
                   >
                     Learn more about the process
                   </DocsLink>
@@ -408,7 +408,7 @@ const OrganizationSettingsContent = (props: {
                 <CardDescription>
                   <DocsLink
                     className="text-neutral-10 text-sm"
-                    href="/management/organizations#delete-an-organization"
+                    href="/schema-registry/management/organizations#delete-an-organization"
                   >
                     <span>
                       <strong>This action is not reversible!</strong> You can find more information
