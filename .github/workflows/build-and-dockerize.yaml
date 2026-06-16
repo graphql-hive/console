@@ -158,9 +158,9 @@ jobs:
           string: ${{ github.ref }}-${{ inputs.targets }}-${{ matrix.platform }}
           replace-with: '_'
 
-      - name: docker image short hash
+      - name: docker image short sha
         id: git_hash
-        run: echo "sha_short=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
+        run: echo "sha_short=${GITHUB_SHA::7}" >> $GITHUB_OUTPUT
 
       - name: build docker images (${{ matrix.platform }})
         timeout-minutes: 60
@@ -241,6 +241,29 @@ jobs:
           REGISTRY: ${{ inputs.registry }}
           IMAGE_NAME: ${{ inputs.imageName }}
           IMAGE_TAG: ${{ inputs.imageTag }}
+        run: |
+          targets=$(docker buildx bake -f docker/docker.hcl --print "$TARGETS" | jq -r '.group."'"$TARGETS"'".targets[]')
+
+          for target in $targets
+          do
+              echo "publishing multi-arch manifest for $target"
+              image_name="$REGISTRY/$IMAGE_NAME/$target:$IMAGE_TAG"
+              echo "image name: $image_name"
+
+              docker manifest create $image_name --amend "$image_name-arm64" --amend "$image_name-amd64"
+              docker manifest push $image_name
+          done
+
+      - name: docker image short sha
+        id: git_hash
+        run: echo "sha_short=${GITHUB_SHA::7}" >> $GITHUB_OUTPUT
+
+      - name: 'publish docker multiarch manifest (tag: ${{ steps.git_hash.outputs.sha_short }})'
+        env:
+          TARGETS: ${{ inputs.targets }}
+          REGISTRY: ${{ inputs.registry }}
+          IMAGE_NAME: ${{ inputs.imageName }}
+          IMAGE_TAG: ${{ steps.git_hash.outputs.sha_short }}
         run: |
           targets=$(docker buildx bake -f docker/docker.hcl --print "$TARGETS" | jq -r '.group."'"$TARGETS"'".targets[]')
 
