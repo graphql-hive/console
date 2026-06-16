@@ -158,6 +158,10 @@ jobs:
           string: ${{ github.ref }}-${{ inputs.targets }}-${{ matrix.platform }}
           replace-with: '_'
 
+      - name: docker image short hash
+        id: git_hash
+        run: echo "sha_short=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
+
       - name: build docker images (${{ matrix.platform }})
         timeout-minutes: 60
         id: docker-bake
@@ -166,6 +170,7 @@ jobs:
         env:
           DOCKER_REGISTRY: ${{ inputs.registry }}/${{ inputs.imageName }}/
           COMMIT_SHA: ${{ inputs.imageTag }}
+          COMMIT_SHORT_SHA: ${{ steps.git_hash.outputs.sha_short }}
           RELEASE: ${{ inputs.imageTag }}
           BRANCH_NAME: ${{ steps.branch_name_fix.outputs.replaced }}
           BUILD_TYPE: 'publish'
@@ -198,7 +203,7 @@ jobs:
 
             **Platforms**: `${{ matrix.platform }}`
 
-            **Image Tag**: `${{ inputs.imageTag }}`
+            **Image Tag**: `${{ inputs.imageTag }}` / `${{ steps.git_hash.outputs.sha_short }}`
 
       - name: upload sourcemaps to Sentry
         if: ${{ inputs.publishSourceMaps }}
