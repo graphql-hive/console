@@ -545,6 +545,9 @@ importers:
       '@types/env-ci':
         specifier: 3.1.4
         version: 3.1.4
+      ajv:
+        specifier: ^8.18.0
+        version: 8.18.0
       oclif:
         specifier: 4.22.65
         version: 4.22.65(patch_hash=14bfe62909a48d0f0115f257cc517dbaa3caac858fc059ddeaa614af424b626b)(@types/node@25.5.0)
