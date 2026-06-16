@@ -14,3 +14,8 @@ export type AlertMapper = Alert;
 export type MetricAlertRuleMapper = MetricAlertRule;
 export type MetricAlertRuleIncidentMapper = MetricAlertIncident;
 export type MetricAlertRuleStateChangeMapper = MetricAlertStateLogEntry;
+export type MetricAlertChannelDeliveryMapper = {
+  channel: AlertChannel;
+  degradedAt: string;
+  lastError: string | null;
+};

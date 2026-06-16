@@ -210,6 +210,11 @@ export default gql`
     Destinations that receive notifications when this rule fires or resolves.
     """
     channels: [AlertChannel!]!
+    """
+    Channels whose most recent notification for this rule failed every delivery
+    attempt within the last 24h (the alert was dropped).
+    """
+    degradedChannels: [MetricAlertChannelDelivery!]!
     timeWindowMinutes: Int!
     metric: MetricAlertRuleMetric
     thresholdType: MetricAlertRuleThresholdType!
@@ -259,6 +264,18 @@ export default gql`
     the state the rule carried into the window.
     """
     stateAt(timestamp: DateTime!): MetricAlertRuleState!
+  }
+
+  type MetricAlertChannelDelivery {
+    channel: AlertChannel!
+    """
+    When this channel's delivery for the rule was last marked degraded.
+    """
+    degradedAt: DateTime!
+    """
+    Last delivery error recorded, if captured.
+    """
+    lastError: String
   }
 
   type MetricAlertRuleIncident {
