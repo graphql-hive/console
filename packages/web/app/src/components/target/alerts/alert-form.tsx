@@ -845,7 +845,7 @@ export function AlertForm(props: AlertFormProps) {
                   <p className="text-neutral-10 text-[13px]">
                     {isPercentageChange
                       ? `"% change vs. previous" compares this ${thresholdRangeLabel} window to the one before it. With "${
-                          watchedValues.direction === 'BELOW' ? 'Decrease' : 'Increase'
+                          watchedValues.direction === 'BELOW' ? 'a Decrease' : 'an Increase'
                         }" it fires when the metric ${
                           watchedValues.direction === 'BELOW' ? 'drops' : 'rises'
                         } by more than your value, e.g. 75 fires on a ${
