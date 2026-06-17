@@ -369,6 +369,150 @@ describe('refreshIamAuth', () => {
         0,
       );
     });
+
+    describe('ClusterSubscriber password update', () => {
+      it('updates ClusterSubscriber internal Redis password alongside pool nodes', async () => {
+        const { refreshIamAuth } = await import('./iam-redis');
+        const logger = createMockLogger();
+
+        const node1 = { call: vi.fn().mockResolvedValue('OK'), options: { password: 'old' } };
+        const subscriberRedis = { options: { password: 'stale-startup-token' } };
+
+        const mockCluster = Object.assign(Object.create(RedisCluster.prototype), {
+          nodes: vi.fn().mockReturnValue([node1]),
+          options: { redisOptions: { password: 'old' } },
+          subscriber: {
+            getInstance: vi.fn().mockReturnValue(subscriberRedis),
+          },
+        });
+
+        await refreshIamAuth(mockCluster, 'fresh-token', 'myuser', logger);
+
+        // Pool node password and AUTH updated
+        expect(node1.options.password).toBe('fresh-token');
+        expect(node1.call).toHaveBeenCalledWith('AUTH', 'myuser', 'fresh-token');
+
+        // Internal subscriber password also updated
+        expect(subscriberRedis.options.password).toBe('fresh-token');
+        expect(logger.debug).toHaveBeenCalledWith(expect.stringContaining('ClusterSubscriber'));
+      });
+
+      it('updates ClusterSubscriber password even when pool node AUTH fails', async () => {
+        const { refreshIamAuth } = await import('./iam-redis');
+        const logger = createMockLogger();
+
+        const failingNode = {
+          call: vi.fn().mockRejectedValue(new Error('NOAUTH')),
+          options: { host: 'node-1', password: 'old' },
+        };
+        const subscriberRedis = { options: { password: 'stale-token' } };
+
+        const mockCluster = Object.assign(Object.create(RedisCluster.prototype), {
+          nodes: vi.fn().mockReturnValue([failingNode]),
+          options: { redisOptions: { password: 'old' } },
+          subscriber: {
+            getInstance: vi.fn().mockReturnValue(subscriberRedis),
+          },
+        });
+
+        await expect(refreshIamAuth(mockCluster, 'new-token', 'user', logger)).rejects.toThrow(
+          'Failed to re-AUTH',
+        );
+
+        // Subscriber password still updated despite pool node failure
+        expect(subscriberRedis.options.password).toBe('new-token');
+      });
+
+      it('handles missing ClusterSubscriber gracefully', async () => {
+        const { refreshIamAuth } = await import('./iam-redis');
+        const logger = createMockLogger();
+
+        const mockCluster = Object.assign(Object.create(RedisCluster.prototype), {
+          nodes: vi.fn().mockReturnValue([]),
+          options: { redisOptions: { password: 'old' } },
+          // No subscriber property
+        });
+
+        await expect(refreshIamAuth(mockCluster, 'token', 'user', logger)).resolves.toBeUndefined();
+      });
+
+      it('handles ClusterSubscriber getInstance returning null', async () => {
+        const { refreshIamAuth } = await import('./iam-redis');
+        const logger = createMockLogger();
+
+        const mockCluster = Object.assign(Object.create(RedisCluster.prototype), {
+          nodes: vi.fn().mockReturnValue([]),
+          options: { redisOptions: { password: 'old' } },
+          subscriber: {
+            getInstance: vi.fn().mockReturnValue(null),
+          },
+        });
+
+        await expect(refreshIamAuth(mockCluster, 'token', 'user', logger)).resolves.toBeUndefined();
+      });
+
+      it('does not log subscriber update when no subscriber is found', async () => {
+        const { refreshIamAuth } = await import('./iam-redis');
+        const logger = createMockLogger();
+
+        const mockCluster = Object.assign(Object.create(RedisCluster.prototype), {
+          nodes: vi.fn().mockReturnValue([]),
+          options: { redisOptions: { password: 'old' } },
+        });
+
+        await refreshIamAuth(mockCluster, 'token', 'user', logger);
+
+        const subscriberLogs = logger.debug.mock.calls.filter((call: string[]) =>
+          call[0]?.includes?.('ClusterSubscriber'),
+        );
+        expect(subscriberLogs).toHaveLength(0);
+      });
+    });
+  });
+});
+
+describe('getClusterSubscriberInstance', () => {
+  it('returns the subscriber Redis instance when present', async () => {
+    const { getClusterSubscriberInstance } = await import('./iam-redis');
+
+    const subscriberRedis = { options: { password: 'old-token' } };
+    const mockCluster = Object.assign(Object.create(RedisCluster.prototype), {
+      subscriber: {
+        getInstance: vi.fn().mockReturnValue(subscriberRedis),
+      },
+    });
+
+    expect(getClusterSubscriberInstance(mockCluster)).toBe(subscriberRedis);
+  });
+
+  it('returns null when subscriber property is missing', async () => {
+    const { getClusterSubscriberInstance } = await import('./iam-redis');
+
+    const mockCluster = Object.assign(Object.create(RedisCluster.prototype), {});
+
+    expect(getClusterSubscriberInstance(mockCluster)).toBeNull();
+  });
+
+  it('returns null when getInstance returns null', async () => {
+    const { getClusterSubscriberInstance } = await import('./iam-redis');
+
+    const mockCluster = Object.assign(Object.create(RedisCluster.prototype), {
+      subscriber: {
+        getInstance: vi.fn().mockReturnValue(null),
+      },
+    });
+
+    expect(getClusterSubscriberInstance(mockCluster)).toBeNull();
+  });
+
+  it('returns null when subscriber has no getInstance method', async () => {
+    const { getClusterSubscriberInstance } = await import('./iam-redis');
+
+    const mockCluster = Object.assign(Object.create(RedisCluster.prototype), {
+      subscriber: { someOtherProp: true },
+    });
+
+    expect(getClusterSubscriberInstance(mockCluster)).toBeNull();
   });
 });
 
