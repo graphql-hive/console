@@ -40,7 +40,7 @@ export const Default: Story = () => {
               <FormItem>
                 <FormLabel label="Alert name" />
                 <FormControl>
-                  <Input placeholder="Some cool alert name" {...field} />
+                  <Input placeholder="Enter alert name" {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -84,7 +84,7 @@ export const WithErrors: Story = () => {
               <FormItem>
                 <FormLabel label="Alert name" />
                 <FormControl>
-                  <Input placeholder="Some cool alert name" {...field} />
+                  <Input placeholder="Enter alert name" {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>

@@ -745,7 +745,7 @@ export function AlertForm(props: AlertFormProps) {
                     <FormItem>
                       <FormLabel label="Alert name" />
                       <FormControl>
-                        <Input placeholder="Some cool alert name" {...field} />
+                        <Input placeholder="Enter alert name" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
