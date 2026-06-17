@@ -6,6 +6,7 @@ import { PageLead } from '@/components/base/page-lead';
 import { BackLink } from '@/components/navigation/back-link';
 import { ResourceNotFoundComponent } from '@/components/resource-not-found';
 import { AlertConditionsPanel } from '@/components/target/alerts/alert-conditions-panel';
+import { DegradedChannelsBanner } from '@/components/target/alerts/degraded-channels';
 import {
   AlertEventsTable,
   type AlertEventsTableRule,
@@ -66,6 +67,15 @@ const TargetAlertsDetailPage_RuleConfigQuery = graphql(`
           id
           name
           type
+        }
+        degradedChannels {
+          channel {
+            id
+            name
+            type
+          }
+          degradedAt
+          lastError
         }
         savedFilter {
           id
@@ -252,6 +262,8 @@ export function TargetAlertsDetailPage(props: {
         />
 
         <PageLead description={buildDescription(rule)} title={rule.name} />
+
+        <DegradedChannelsBanner channels={rule.degradedChannels} />
 
         <div className="flex">
           <Select

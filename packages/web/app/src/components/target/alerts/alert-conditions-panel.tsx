@@ -24,6 +24,10 @@ import {
 import { formatDuration } from '@/lib/hooks/use-formatted-duration';
 import { Link } from '@tanstack/react-router';
 import { AlertForm, ruleToFormDefaults } from './alert-form';
+import {
+  DegradedChannelsIndicator,
+  type DegradedChannelEntry,
+} from './degraded-channels';
 import { DeleteRuleConfirmationDialog } from './delete-rule-confirmation-dialog';
 
 const TYPE_CATEGORY: Record<MetricAlertRuleType, string> = {
@@ -113,6 +117,7 @@ export type AlertConditionsPanelProps = {
     timeWindowMinutes: number;
     confirmationMinutes: number;
     channels: ReadonlyArray<Channel>;
+    degradedChannels: ReadonlyArray<DegradedChannelEntry>;
     savedFilter?: SavedFilter | null;
     createdAt: string;
     createdBy?: User;
@@ -257,7 +262,17 @@ export function AlertConditionsPanel({
             items: [{ term: 'On filter', description: onFilterValue }],
           },
           {
-            items: [{ term: 'Destination', description: destination }],
+            items: [
+              {
+                term: 'Destination',
+                description: (
+                  <span className="inline-flex items-center gap-1.5">
+                    {destination}
+                    <DegradedChannelsIndicator channels={rule.degradedChannels} />
+                  </span>
+                ),
+              },
+            ],
           },
           {
             items: [

@@ -4,4 +4,6 @@ import tailwindcss from '@tailwindcss/vite';
 
 export default defineConfig({
   plugins: [tsconfigPaths(), tailwindcss()],
+  optimizeDeps: { esbuildOptions: { target: 'esnext' } },
+  esbuild: { target: 'esnext' },
 });

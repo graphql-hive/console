@@ -6,6 +6,10 @@ import { DataTable } from '@/components/base/data-table/data-table';
 import { PageLead } from '@/components/base/page-lead';
 import { BadgeRounded } from '@/components/ui/badge';
 import { Spinner } from '@/components/ui/spinner';
+import {
+  DegradedChannelsIndicator,
+  type DegradedChannelEntry,
+} from '@/components/target/alerts/degraded-channels';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Avatar } from '@/components/v2/avatar';
 import { graphql } from '@/gql';
@@ -60,6 +64,15 @@ const TargetAlertsRulesPage_Query = graphql(`
             endpoint
           }
         }
+        degradedChannels {
+          channel {
+            id
+            name
+            type
+          }
+          degradedAt
+          lastError
+        }
         createdBy {
           id
           displayName
@@ -80,6 +93,7 @@ type RuleRow = {
   updatedAt: string;
   incidentCount: number;
   channels: ReadonlyArray<{ id: string; type: string; name: string; detail: string | null }>;
+  degradedChannels: ReadonlyArray<DegradedChannelEntry>;
   createdBy?: { id: string; displayName: string } | null;
 };
 
@@ -233,6 +247,7 @@ const RULE_COLUMNS: ColumnDef<RuleRow, any>[] = [
               </TooltipContent>
             </Tooltip>
           </TooltipProvider>
+          <DegradedChannelsIndicator channels={ctx.row.original.degradedChannels} />
         </span>
       );
     },
@@ -303,6 +318,7 @@ export function TargetAlertsRulesPage(props: {
         lastTriggeredAt: r.lastTriggeredAt,
         updatedAt: r.updatedAt,
         incidentCount: r.incidentCount,
+        degradedChannels: r.degradedChannels,
         channels: r.channels.map(c => ({
           id: c.id,
           type: c.type,
