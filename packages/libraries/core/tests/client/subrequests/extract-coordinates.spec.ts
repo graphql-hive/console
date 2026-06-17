@@ -1,7 +1,7 @@
 import { buildSchema, parse } from 'graphql';
-import { extractCoordinates } from '../../../src/client/subrequests/extract-coordinates.js';
+import { extractCoordinatesFast } from '../../../src/client/subrequests/extract-coordinates.js';
 
-describe('extractCoordinates', () => {
+describe('extractCoordinatesFast', () => {
   describe('Types, Fields, and Scalars', () => {
     it('Counts standard object resolution and scalar fields', () => {
       const schema = buildSchema(`
@@ -17,7 +17,7 @@ describe('extractCoordinates', () => {
         user: { id: '1', name: 'Alice', age: 30 },
       };
 
-      const counts = extractCoordinates(schema, document, resultData);
+      const counts = extractCoordinatesFast({ schema, document, resultData });
 
       expect(counts).toEqual({
         ID: 1,
@@ -51,7 +51,7 @@ describe('extractCoordinates', () => {
         firstUser: { userId: '1', userName: 'Alice' },
       };
 
-      const counts = extractCoordinates(schema, document, resultData);
+      const counts = extractCoordinatesFast({ schema, document, resultData });
 
       expect(counts).toEqual({
         ID: 1,
@@ -84,7 +84,7 @@ describe('extractCoordinates', () => {
         node: { __typename: 'User', id: '1', name: 'Alice' },
       };
 
-      const counts = extractCoordinates(schema, document, resultData);
+      const counts = extractCoordinatesFast({ schema, document, resultData });
 
       expect(counts).toEqual({
         ID: 1,
@@ -119,7 +119,7 @@ describe('extractCoordinates', () => {
         search: [{ name: 'Alice' }, { __typename: 'Post', title: 'GraphQL Guide' }],
       };
 
-      const counts = extractCoordinates(schema, document, resultData);
+      const counts = extractCoordinatesFast({ schema, document, resultData });
 
       expect(counts).toEqual({
         Query: 1,
@@ -160,7 +160,7 @@ describe('extractCoordinates', () => {
         user: { id: '1', email: 'test@example.com' },
       };
 
-      const counts = extractCoordinates(schema, document, resultData);
+      const counts = extractCoordinatesFast({ schema, document, resultData });
 
       expect(counts).toEqual({
         ID: 1,
@@ -187,7 +187,7 @@ describe('extractCoordinates', () => {
         user: null,
       };
 
-      const counts = extractCoordinates(schema, document, resultData);
+      const counts = extractCoordinatesFast({ schema, document, resultData });
 
       expect(counts).toEqual({
         Query: 1,

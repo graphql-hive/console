@@ -12,7 +12,7 @@ import { version } from '../version.js';
 import { createAgent } from './agent.js';
 import { collectSchemaCoordinates } from './collect-schema-coordinates.js';
 import { dynamicSampling, randomSampling } from './sampling.js';
-import { extractCoordinates } from './subrequests/extract-coordinates.js';
+import { extractCoordinatesFast } from './subrequests/extract-coordinates.js';
 import { pathToCoordinate } from './subrequests/path-to-coordinate.js';
 import type {
   AbortAction,
@@ -130,11 +130,11 @@ export function createUsage(pluginOptions: HiveInternalPluginOptions): UsageColl
               const documentRoot = f.document.definitions.find(
                 (def): def is OperationDefinitionNode => def.kind === 'OperationDefinition',
               )?.operation satisfies 'subscription' | 'mutation' | 'query' | undefined;
-              const subgraphFields = extractCoordinates(
-                f.subgraphSchema,
-                f.document,
-                f.result?.data,
-              );
+              const subgraphFields = extractCoordinatesFast({
+                schema: f.subgraphSchema,
+                document: f.document,
+                resultData: f.result?.data,
+              });
               const errors: { coordinate: string; code?: string }[] = [];
               for (const error of f.result?.errors ?? []) {
                 const coordinate =
