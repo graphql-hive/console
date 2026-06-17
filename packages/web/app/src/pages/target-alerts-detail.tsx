@@ -6,7 +6,6 @@ import { PageLead } from '@/components/base/page-lead';
 import { BackLink } from '@/components/navigation/back-link';
 import { ResourceNotFoundComponent } from '@/components/resource-not-found';
 import { AlertConditionsPanel } from '@/components/target/alerts/alert-conditions-panel';
-import { DegradedChannelsBanner } from '@/components/target/alerts/degraded-channels';
 import {
   AlertEventsTable,
   type AlertEventsTableRule,
@@ -14,6 +13,7 @@ import {
 import { AlertMetricChart } from '@/components/target/alerts/alert-metric-chart';
 import { ALERTS_POLL_INTERVAL_MS } from '@/components/target/alerts/alert-polling';
 import { AlertStateTransitionsBar } from '@/components/target/alerts/alert-state-transitions-bar';
+import { DegradedChannelsBanner } from '@/components/target/alerts/degraded-channels';
 import { Spinner } from '@/components/ui/spinner';
 import { graphql } from '@/gql';
 import {

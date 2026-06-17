@@ -24,10 +24,7 @@ import {
 import { formatDuration } from '@/lib/hooks/use-formatted-duration';
 import { Link } from '@tanstack/react-router';
 import { AlertForm, ruleToFormDefaults } from './alert-form';
-import {
-  DegradedChannelsIndicator,
-  type DegradedChannelEntry,
-} from './degraded-channels';
+import { DegradedChannelsIndicator, type DegradedChannelEntry } from './degraded-channels';
 import { DeleteRuleConfirmationDialog } from './delete-rule-confirmation-dialog';
 
 const TYPE_CATEGORY: Record<MetricAlertRuleType, string> = {

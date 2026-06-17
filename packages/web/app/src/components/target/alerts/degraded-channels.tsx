@@ -31,8 +31,8 @@ export function DegradedChannelsBanner({
   return (
     <Callout type="warning">
       <span className="font-semibold">Notification delivery degraded.</span> We couldn't deliver a
-      recent alert to {names} after multiple attempts. New alerts will still be attempted — check the
-      channel configuration.
+      recent alert to {names} after multiple attempts. New alerts will still be attempted — check
+      the channel configuration.
     </Callout>
   );
 }
