@@ -210,7 +210,7 @@ jobs:
 
             **Platforms**: `${{ matrix.platform }}`
 
-            **Image Tag**: `${{ inputs.imageTag }}` / `${{ steps.git_hash.outputs.sha_short }}`
+            **Image Tags**: `${{ inputs.imageTag }}`, `${{ steps.git_hash.outputs.sha_short }}`
 
       - name: upload sourcemaps to Sentry
         if: ${{ inputs.publishSourceMaps }}
