@@ -181,3 +181,154 @@ Review similar dropdowns, dialogs, and filter components in the Hive application
 5. Verify that all operation entries remain accessible.
 6. Test the fix on different screen sizes and browser window heights.
 7. Run any relevant tests before creating a pull request.
+## Testing Strategy
+
+### Build Verification
+
+After making the code changes, I ran:
+
+```bash
+pnpm build
+```
+
+The build completed successfully. All packages built successfully and no build failures were reported.
+
+### Manual Testing
+
+* Started Hive locally using the development environment.
+* Logged into the local Hive application.
+* Navigated to the Insights page.
+* Investigated the operation filter dropdown implementation.
+* Verified that the modified component builds successfully and renders without errors.
+
+### Regression Checks
+
+* Confirmed that the project still compiles successfully after the change.
+* Verified that no new TypeScript or build errors were introduced.
+
+---
+
+## Implementation Notes
+
+### Week 3 Progress (Phase III)
+
+#### What I Built
+
+I investigated Issue #3816, "Operation Filter List on Insights Page Is Cut Off at the Bottom."
+
+Using the codebase search tools and project structure, I traced the operation filter implementation through the following components:
+
+* `use-insights-filter-dimensions.ts`
+* `filter-menu.tsx`
+* `filter-content.tsx`
+
+After reviewing the filter rendering logic, I identified a height restriction that may contribute to the dropdown list being cut off when many operation items are displayed.
+
+#### Code Changes
+
+Modified:
+
+```text
+packages/web/app/src/components/base/floating/filter-dropdown/filter-content.tsx
+```
+
+Changes made:
+
+1. Increased the maximum dropdown list height:
+
+```ts
+const MAX_LIST_HEIGHT = 256;
+```
+
+to:
+
+```ts
+const MAX_LIST_HEIGHT = 384;
+```
+
+2. Added viewport-aware maximum height handling:
+
+```ts
+maxHeight: 'min(384px, calc(100vh - 220px))'
+```
+
+3. Updated scrolling behavior to use vertical scrolling:
+
+```ts
+overflowY: 'auto'
+```
+
+These changes are intended to allow longer operation lists to remain visible while preventing the dropdown from extending beyond the browser viewport.
+
+#### Challenges Faced
+
+The biggest challenge was understanding the Hive codebase structure and locating the component responsible for rendering the operation filter.
+
+Initially, I examined the Insights page filter configuration files and discovered they only defined filter metadata rather than the actual dropdown UI. I then traced the component hierarchy through several shared UI components until locating the dropdown implementation in:
+
+```text
+packages/web/app/src/components/base/floating/filter-dropdown/filter-content.tsx
+```
+
+Another challenge was setting up the local development environment because this was my first time working with a large open-source project using Node.js, pnpm, Docker, and Turborepo.
+
+#### Tools Used
+
+* GitHub Issues
+* VS Code
+* Git
+* Node.js
+* pnpm
+* Docker Desktop
+* Hive local development environment
+
+---
+
+## Code Changes
+
+### Files Modified
+
+```text
+packages/web/app/src/components/base/floating/filter-dropdown/filter-content.tsx
+```
+
+### Key Commit
+
+```text
+da22dc656
+```
+
+Commit message:
+
+```text
+fix: improve filter dropdown list height
+```
+
+### Working Branch
+
+```text
+https://github.com/Qimin5/console/tree/fix-issue-3816
+```
+
+---
+
+## Learnings & Reflections
+
+### Technical Skills Gained
+
+* Learned how to clone and set up a large open-source project locally.
+* Learned how to use Git branches, commits, and pushes.
+* Learned how to navigate a React and TypeScript codebase.
+* Learned how shared UI components are structured in a large application.
+* Learned how to investigate frontend layout and overflow issues.
+
+### Challenges Overcome
+
+* Setting up Node.js, pnpm, and Docker correctly.
+* Understanding the project structure.
+* Tracing the operation filter through multiple component layers.
+* Successfully building the project and pushing code changes to GitHub.
+
+### Current Status
+
+Phase III implementation completed. Code changes have been committed, pushed to the feature branch, and successfully built locally.
