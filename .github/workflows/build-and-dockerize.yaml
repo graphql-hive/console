@@ -158,6 +158,17 @@ jobs:
           string: ${{ github.ref }}-${{ inputs.targets }}-${{ matrix.platform }}
           replace-with: '_'
 
+      - name: docker image short sha
+        id: git_hash
+        run: |
+          # if in a PR, use the PR SHA; otherwise, use the commit SHA
+          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+              FULL_PR_SHA=${{ github.event.pull_request.head.sha }}
+              echo "sha_short=${FULL_PR_SHA:0:7}" >> $GITHUB_OUTPUT
+          else
+              echo "sha_short=${GITHUB_SHA:0:7}" >> $GITHUB_OUTPUT
+          fi
+
       - name: build docker images (${{ matrix.platform }})
         timeout-minutes: 60
         id: docker-bake
@@ -166,6 +177,7 @@ jobs:
         env:
           DOCKER_REGISTRY: ${{ inputs.registry }}/${{ inputs.imageName }}/
           COMMIT_SHA: ${{ inputs.imageTag }}
+          COMMIT_SHORT_SHA: ${{ steps.git_hash.outputs.sha_short }}
           RELEASE: ${{ inputs.imageTag }}
           BRANCH_NAME: ${{ steps.branch_name_fix.outputs.replaced }}
           BUILD_TYPE: 'publish'
@@ -192,13 +204,13 @@ jobs:
         with:
           header: ${{ github.workflow }}
           message: |
-            🐋 This PR was built and pushed to the following [Docker images](https://github.com/graphql-hive?ecosystem=container&tab=packages&visibility=public):
+            🐋 This PR was built and pushed to the following [Docker images](https://github.com/orgs/graphql-hive/packages?ecosystem=container&repo_name=console):
 
             **Targets**: `${{ inputs.targets }}`
 
             **Platforms**: `${{ matrix.platform }}`
 
-            **Image Tag**: `${{ inputs.imageTag }}`
+            **Image Tags**: `${{ inputs.imageTag }}`, `${{ steps.git_hash.outputs.sha_short }}`
 
       - name: upload sourcemaps to Sentry
         if: ${{ inputs.publishSourceMaps }}
@@ -236,6 +248,36 @@ jobs:
           REGISTRY: ${{ inputs.registry }}
           IMAGE_NAME: ${{ inputs.imageName }}
           IMAGE_TAG: ${{ inputs.imageTag }}
+        run: |
+          targets=$(docker buildx bake -f docker/docker.hcl --print "$TARGETS" | jq -r '.group."'"$TARGETS"'".targets[]')
+
+          for target in $targets
+          do
+              echo "publishing multi-arch manifest for $target"
+              image_name="$REGISTRY/$IMAGE_NAME/$target:$IMAGE_TAG"
+              echo "image name: $image_name"
+
+              docker manifest create $image_name --amend "$image_name-arm64" --amend "$image_name-amd64"
+              docker manifest push $image_name
+          done
+
+      - name: docker image short sha
+        id: git_hash
+        run: |
+          # if in a PR, use the PR SHA; otherwise, use the commit SHA
+          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+              FULL_PR_SHA=${{ github.event.pull_request.head.sha }}
+              echo "sha_short=${FULL_PR_SHA:0:7}" >> $GITHUB_OUTPUT
+          else
+              echo "sha_short=${GITHUB_SHA:0:7}" >> $GITHUB_OUTPUT
+          fi
+
+      - name: 'publish docker multiarch manifest (tag: ${{ steps.git_hash.outputs.sha_short }})'
+        env:
+          TARGETS: ${{ inputs.targets }}
+          REGISTRY: ${{ inputs.registry }}
+          IMAGE_NAME: ${{ inputs.imageName }}
+          IMAGE_TAG: ${{ steps.git_hash.outputs.sha_short }}
         run: |
           targets=$(docker buildx bake -f docker/docker.hcl --print "$TARGETS" | jq -r '.group."'"$TARGETS"'".targets[]')
 
