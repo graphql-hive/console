@@ -204,7 +204,7 @@ jobs:
         with:
           header: ${{ github.workflow }}
           message: |
-            🐋 This PR was built and pushed to the following [Docker images](https://github.com/orgs/graphql-hive/packages?ecosystem=container):
+            🐋 This PR was built and pushed to the following [Docker images](https://github.com/orgs/graphql-hive/packages?ecosystem=container&repo_name=console):
 
             **Targets**: `${{ inputs.targets }}`
 
