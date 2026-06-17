@@ -143,7 +143,7 @@ function RegistryAccessTokens(props: {
             </CardDescription>
             <CardDescription>
               <DocsLink
-                href="/management/targets#registry-access-tokens"
+                href="/schema-registry/management/targets#registry-access-tokens"
                 className="text-neutral-10 hover:text-neutral-11"
               >
                 Learn more about Registry Access Tokens
@@ -252,7 +252,7 @@ const ExtendBaseSchema = (props: {
             </CardDescription>
             <CardDescription>
               <DocsLink
-                href="/management/targets#schema-extensions"
+                href="/schema-registry/management/targets#schema-extensions"
                 className="text-neutral-10 hover:text-neutral-11"
               >
                 You can find more details and examples in the documentation
@@ -803,7 +803,7 @@ const BreakingChanges = (props: {
                 </CardDescription>
                 <CardDescription>
                   <DocsLink
-                    href="/management/targets#conditional-breaking-changes"
+                    href="/schema-registry/management/targets#conditional-breaking-changes"
                     className="text-neutral-10 hover:text-neutral-11"
                   >
                     Learn more
@@ -1220,7 +1220,7 @@ const AppDeploymentProtection = (props: {
               </CardDescription>
               <CardDescription>
                 <DocsLink
-                  href="/schema-registry/app-deployments#protection"
+                  href="/schema-registry/app-deployments#retire-an-app-deployment"
                   className="text-neutral-8 hover:text-neutral-10"
                 >
                   Learn more
@@ -1482,7 +1482,7 @@ function TargetSlug(props: { organizationSlug: string; projectSlug: string; targ
                 <br />
                 <DocsLink
                   className="text-neutral-10 text-sm"
-                  href="/management/targets#change-slug-of-a-target"
+                  href="/schema-registry/management/targets#change-slug-of-a-target"
                 >
                   You can read more about it in the documentation
                 </DocsLink>
@@ -1682,7 +1682,7 @@ function TargetDelete(props: {
             </CardDescription>
             <CardDescription>
               <DocsLink
-                href="/management/targets#delete-a-target"
+                href="/schema-registry/management/targets#delete-a-target"
                 className="text-neutral-10 hover:text-neutral-11"
               >
                 <strong>This action is not reversible!</strong> You can find more information about
