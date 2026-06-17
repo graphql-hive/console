@@ -10,11 +10,13 @@ import {
   AlertActivityTable,
   type ActivityEventRow,
 } from '@/components/target/alerts/alert-activity-table';
+import { ALERTS_POLL_INTERVAL_MS } from '@/components/target/alerts/alert-polling';
 import { DateRangePicker, type Preset } from '@/components/ui/date-range-picker';
 import { graphql } from '@/gql';
 import { MetricAlertRuleSeverity, MetricAlertRuleType } from '@/gql/graphql';
 import { useDateRangeController } from '@/lib/hooks/use-date-range-controller';
-import { useTickCounter } from '@/lib/hooks/use-tick-counter';
+import { useKeepPreviousData } from '@/lib/hooks/use-keep-previous-data';
+import { useRollingNow } from '@/lib/hooks/use-rolling-now';
 import { useNavigate, useSearch } from '@tanstack/react-router';
 
 const TargetAlertsActivityPage_RetentionQuery = graphql(`
@@ -169,13 +171,10 @@ function ActivityView(props: {
     defaultPreset: presetLast1Hour,
   });
 
-  // Advance the picker's resolved range every 15s so the queried window's
-  // `to` moves forward with wall-clock time and new state-log entries land
-  // in the response. urql sees the changed variables and refires.
-  const tick = useTickCounter(15_000);
+  const rollingNow = useRollingNow(ALERTS_POLL_INTERVAL_MS);
   useEffect(() => {
     dateRangeController.refreshResolvedRange();
-  }, [tick]);
+  }, [rollingNow]);
 
   const [result] = useQuery({
     query: TargetAlertsActivityPage_Query,
@@ -188,17 +187,14 @@ function ActivityView(props: {
     },
   });
 
-  // Drop entries whose rule was deleted between fetching the state-log and
-  // resolving each entry's rule field. Rare in practice (the cascade on
-  // metric_alert_state_log normally removes the entry alongside the rule)
-  // but a concurrent delete can leave the response holding a state-log
-  // row whose rule resolved to null. Next refresh re-queries cleanly.
+  const data = useKeepPreviousData(result.data, result.fetching || result.stale);
+
   const allEvents: ActivityEventRow[] = useMemo(
     () =>
-      (result.data?.target?.metricAlertRuleStateLog ?? [])
+      (data?.target?.metricAlertRuleStateLog ?? [])
         .filter((e): e is typeof e & { rule: NonNullable<typeof e.rule> } => e.rule !== null)
         .map(e => ({ ...e, rule: { ...e.rule } })),
-    [result.data?.target?.metricAlertRuleStateLog],
+    [data?.target?.metricAlertRuleStateLog],
   );
 
   const createdByUsers = useMemo(() => {
@@ -230,6 +226,14 @@ function ActivityView(props: {
       return true;
     });
   }, [allEvents, search.severities, search.types, search.createdByIds]);
+
+  const tableResetKey = JSON.stringify([
+    search.severities ?? [],
+    search.types ?? [],
+    search.createdByIds ?? [],
+    search.from ?? null,
+    search.to ?? null,
+  ]);
 
   return (
     <>
@@ -270,6 +274,7 @@ function ActivityView(props: {
 
       <div className="mt-6">
         <AlertActivityTable
+          key={tableResetKey}
           events={visibleEvents}
           organizationSlug={organizationSlug}
           projectSlug={projectSlug}

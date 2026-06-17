@@ -1,4 +1,4 @@
-import { Fragment, type ReactNode } from 'react';
+import { Fragment, useEffect, type ReactNode } from 'react';
 import { ChevronDown, ChevronRight } from 'lucide-react';
 import {
   flexRender,
@@ -57,7 +57,17 @@ export function DataTable<TData>({
     getPaginationRowModel: getPaginationRowModel(),
     getExpandedRowModel: renderSubComponent ? getExpandedRowModel() : undefined,
     initialState: { pagination: { pageIndex: 0, pageSize } },
+    // Don't snap back to page 1 when data changes
+    autoResetPageIndex: false,
   });
+
+  const pageCount = table.getPageCount();
+  const { pageIndex } = table.getState().pagination;
+  useEffect(() => {
+    if (pageCount > 0 && pageIndex > pageCount - 1) {
+      table.setPageIndex(pageCount - 1);
+    }
+  }, [pageCount, pageIndex, table]);
 
   const rows = table.getRowModel().rows;
   const totalColumnCount = columns.length + (hasTrailingColumn ? 1 : 0);

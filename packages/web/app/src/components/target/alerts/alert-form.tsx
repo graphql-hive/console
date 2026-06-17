@@ -1,4 +1,5 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
+import { subMinutes } from 'date-fns';
 import { Plus, X } from 'lucide-react';
 import { useFieldArray, useForm } from 'react-hook-form';
 import { useMutation, useQuery } from 'urql';
@@ -38,6 +39,7 @@ import {
   MetricAlertRuleThresholdType,
   MetricAlertRuleType,
 } from '@/gql/graphql';
+import { resolveRangeAndResolution } from '@/lib/hooks/use-date-range-controller';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Link } from '@tanstack/react-router';
 import { AlertMetricChart } from './alert-metric-chart';
@@ -94,6 +96,31 @@ const AlertForm_SavedFiltersQuery = graphql(`
             }
           }
         }
+      }
+    }
+  }
+`);
+
+const AlertForm_PreviewQuery = graphql(`
+  query AlertForm_PreviewQuery(
+    $organizationSlug: String!
+    $projectSlug: String!
+    $targetSlug: String!
+    $period: DateRangeInput!
+    $resolution: Int!
+  ) {
+    target(
+      reference: {
+        bySelector: {
+          organizationSlug: $organizationSlug
+          projectSlug: $projectSlug
+          targetSlug: $targetSlug
+        }
+      }
+    ) {
+      id
+      operationsStats(period: $period) {
+        ...AlertMetricChart_OperationsStatsFragment
       }
     }
   }
@@ -286,7 +313,7 @@ function parseMetricSelection(selection: string): {
 
 export const DEFAULT_ALERT_FORM_VALUES: AlertFormValues = {
   metricSelection: 'TRAFFIC',
-  timeWindowMinutes: '10080',
+  timeWindowMinutes: '60',
   name: '',
   severity: 'WARNING',
   direction: 'ABOVE',
@@ -493,6 +520,26 @@ export function AlertForm(props: AlertFormProps) {
   const parsedMetric = watchedValues.metricSelection
     ? parseMetricSelection(watchedValues.metricSelection)
     : { type: MetricAlertRuleType.Traffic };
+
+  const previewWindowMinutes = Math.min(
+    (parseInt(watchedValues.timeWindowMinutes, 10) || 10_080) * 2,
+    43_200,
+  );
+  const { period, resolution } = useMemo(() => {
+    const now = new Date();
+    const resolved = resolveRangeAndResolution({
+      from: subMinutes(now, previewWindowMinutes),
+      to: now,
+    });
+    return {
+      period: { from: resolved.range.from.toISOString(), to: resolved.range.to.toISOString() },
+      resolution: resolved.resolution,
+    };
+  }, [previewWindowMinutes]);
+  const [previewQuery] = useQuery({
+    query: AlertForm_PreviewQuery,
+    variables: { organizationSlug, projectSlug, targetSlug, period, resolution },
+  });
 
   const firstChannelId = watchedValues.channels?.[0]?.channelId;
   const firstChannel = firstChannelId
@@ -736,20 +783,11 @@ export function AlertForm(props: AlertFormProps) {
                 </div>
 
                 <AlertMetricChart
-                  organizationSlug={organizationSlug}
-                  projectSlug={projectSlug}
-                  targetSlug={targetSlug}
+                  stats={previewQuery.data?.target?.operationsStats ?? null}
+                  loading={previewQuery.fetching}
                   type={parsedMetric.type}
                   metric={parsedMetric.metric}
-                  // Render ~2× the rule's evaluation window so a breach is
-                  // visible alongside its surrounding context — picking a
-                  // threshold from a chart that only shows the rule window
-                  // hides what "normal" looks like just outside it. Capped
-                  // at 30d to stay within sensible chart resolutions.
-                  timeWindowMinutes={Math.min(
-                    (parseInt(watchedValues.timeWindowMinutes, 10) || 10_080) * 2,
-                    43_200,
-                  )}
+                  severity={watchedValues.severity}
                   thresholdValue={
                     watchedValues.thresholdValue ? parseFloat(watchedValues.thresholdValue) : null
                   }
