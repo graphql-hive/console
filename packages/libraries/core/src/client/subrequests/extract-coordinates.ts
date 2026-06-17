@@ -1,272 +1,20 @@
 import {
   getNamedType,
   GraphQLFieldMap,
-  GraphQLInputFieldMap,
-  GraphQLResolveInfo,
   isInterfaceType,
   isObjectType,
   isUnionType,
   type DocumentNode,
   type FragmentDefinitionNode,
-  type GraphQLNamedType,
-  type GraphQLObjectType,
   type GraphQLSchema,
   type GraphQLType,
   type OperationDefinitionNode,
   type SelectionNode,
 } from 'graphql';
-
-type TraversalContext = {
-  schema: GraphQLSchema;
-  counts: Record<string, number>;
-  doesTypeMatch: (runtime: string, condition: string) => boolean;
-  fragments: Map<string, FragmentDefinitionNode>;
-  fieldMetaCache: Map<string, { type: GraphQLType; leafTypeName?: string }>;
-  contextValue?: any;
-  infoValue?: GraphQLResolveInfo;
-};
-
-/** Runtime evaluation */
-export function extractCoordinates({
-  schema,
-  document,
-  resultData,
-  contextValue,
-  infoValue,
-}: {
-  schema: GraphQLSchema;
-  document: DocumentNode;
-  resultData: any;
-  contextValue?: any;
-  infoValue?: GraphQLResolveInfo;
-}): Record<string, number> {
-  // Early exit with consistent hidden class
-  if (!resultData) return Object.create(null);
-
-  let operation: OperationDefinitionNode | undefined;
-  const fragments = new Map<string, FragmentDefinitionNode>();
-
-  for (let i = 0; i < document.definitions.length; i++) {
-    const def = document.definitions[i];
-    if (def.kind === 'OperationDefinition' && !operation) {
-      operation = def;
-    } else if (def.kind === 'FragmentDefinition') {
-      fragments.set(def.name.value, def);
-    }
-  }
-
-  if (!operation) return Object.create(null);
-
-  let rootType: GraphQLObjectType | undefined | null;
-  if (operation.operation === 'query') rootType = schema.getQueryType();
-  else if (operation.operation === 'mutation') rootType = schema.getMutationType();
-  else if (operation.operation === 'subscription') rootType = schema.getSubscriptionType();
-
-  if (!rootType) return Object.create(null);
-
-  const matchCache = new Map<string, Map<string, boolean>>();
-
-  const doesTypeMatch = (runtimeTypeName: string, typeConditionName: string): boolean => {
-    if (runtimeTypeName === typeConditionName) return true;
-
-    let conditionMap = matchCache.get(runtimeTypeName);
-    if (!conditionMap) {
-      conditionMap = new Map();
-      matchCache.set(runtimeTypeName, conditionMap);
-    }
-
-    const cached = conditionMap.get(typeConditionName);
-    if (cached !== undefined) return cached;
-
-    const runtimeType = schema.getType(runtimeTypeName);
-    const conditionType = schema.getType(typeConditionName);
-
-    let isMatch = false;
-    if (runtimeType && conditionType) {
-      if (isInterfaceType(conditionType) && isObjectType(runtimeType)) {
-        isMatch = runtimeType.getInterfaces().some(i => i.name === conditionType.name);
-      } else if (isUnionType(conditionType) && isObjectType(runtimeType)) {
-        isMatch = conditionType.getTypes().some(t => t.name === runtimeType.name);
-      }
-    }
-
-    conditionMap.set(typeConditionName, isMatch);
-    return isMatch;
-  };
-
-  const counts: Record<string, number> = {};
-
-  const ctx: TraversalContext = {
-    schema,
-    counts,
-    doesTypeMatch,
-    fragments,
-    fieldMetaCache: new Map(),
-    contextValue,
-    infoValue,
-  };
-
-  walkNode(resultData, operation.selectionSet.selections, rootType, ctx);
-
-  return counts;
-}
-
-function walkNode(
-  data: any,
-  selections: readonly SelectionNode[],
-  parentType: GraphQLType,
-  ctx: TraversalContext,
-) {
-  if (data === null || typeof data !== 'object') return;
-
-  const namedType = getNamedType(parentType);
-  if (!isObjectType(namedType) && !isInterfaceType(namedType) && !isUnionType(namedType)) {
-    return;
-  }
-
-  if (Array.isArray(data)) {
-    for (let i = 0; i < data.length; i++) {
-      const item = data[i];
-      if (item !== null && typeof item === 'object') {
-        walkObject(item, selections, namedType, false, ctx);
-      }
-    }
-    return;
-  }
-
-  walkObject(data, selections, namedType, false, ctx);
-}
-
-function walkObject(
-  data: any,
-  selections: readonly SelectionNode[],
-  namedType: GraphQLNamedType,
-  isFragmentRecurse: boolean,
-  ctx: TraversalContext,
-) {
-  const namedTypeName = namedType.name;
-  let runtimeTypeName = data.__typename;
-  const isAbstractType = isInterfaceType(namedType) || isUnionType(namedType);
-
-  if (!runtimeTypeName && isAbstractType) {
-    runtimeTypeName =
-      (ctx.infoValue &&
-        namedType.resolveType?.(data, ctx.contextValue, ctx.infoValue, namedType)) ??
-      namedTypeName;
-  }
-
-  runtimeTypeName = runtimeTypeName || namedTypeName;
-
-  if (runtimeTypeName !== namedTypeName && isAbstractType) {
-    const current = ctx.counts[namedTypeName];
-    ctx.counts[namedTypeName] = current === undefined ? 1 : current + 1;
-  }
-
-  if (!isFragmentRecurse) {
-    const current = ctx.counts[runtimeTypeName];
-    ctx.counts[runtimeTypeName] = current === undefined ? 1 : current + 1;
-  }
-
-  let fields: GraphQLFieldMap<any, any> | GraphQLInputFieldMap | null = null;
-
-  for (let i = 0; i < selections.length; i++) {
-    const selection = selections[i];
-
-    if (selection.kind === 'Field') {
-      const realFieldName = selection.name.value;
-      if (realFieldName === '__typename') continue;
-
-      const responseKey = selection.alias ? selection.alias.value : realFieldName;
-      const val = data[responseKey];
-
-      if (val !== undefined) {
-        const coordinate = namedTypeName + '.' + realFieldName;
-        const currentCoordCount = ctx.counts[coordinate];
-        ctx.counts[coordinate] = currentCoordCount === undefined ? 1 : currentCoordCount + 1;
-
-        if (val !== null) {
-          let meta = ctx.fieldMetaCache.get(coordinate);
-
-          if (!meta) {
-            if (!fields) {
-              fields = 'getFields' in namedType ? namedType.getFields() : {};
-            }
-            const fieldDef = fields[realFieldName];
-            if (fieldDef) {
-              meta = {
-                type: fieldDef.type,
-                leafTypeName: selection.selectionSet
-                  ? undefined
-                  : getNamedType(fieldDef.type)?.name,
-              };
-              ctx.fieldMetaCache.set(coordinate, meta);
-            }
-          }
-
-          if (meta) {
-            if (selection.selectionSet) {
-              walkNode(val, selection.selectionSet.selections, meta.type, ctx);
-            } else if (meta.leafTypeName) {
-              const leafType = meta.leafTypeName;
-              if (Array.isArray(val)) {
-                let leafCount = 0;
-                for (let j = 0; j < val.length; j++) {
-                  if (val[j] !== null) leafCount++;
-                }
-                if (leafCount > 0) {
-                  const currentLeafCount = ctx.counts[leafType];
-                  ctx.counts[leafType] =
-                    currentLeafCount === undefined ? leafCount : currentLeafCount + leafCount;
-                }
-              } else {
-                const currentLeafCount = ctx.counts[leafType];
-                ctx.counts[leafType] = currentLeafCount === undefined ? 1 : currentLeafCount + 1;
-              }
-            }
-          }
-        }
-      }
-    } else if (selection.kind === 'InlineFragment') {
-      const typeConditionName = selection.typeCondition?.name.value;
-      let matchesType = true;
-      let nextType: GraphQLNamedType = namedType;
-
-      if (typeConditionName) {
-        matchesType = ctx.doesTypeMatch(runtimeTypeName, typeConditionName);
-        if (matchesType) {
-          nextType = ctx.schema.getType(typeConditionName) || namedType;
-        }
-      }
-
-      if (matchesType && selection.selectionSet) {
-        walkObject(data, selection.selectionSet.selections, nextType, true, ctx);
-      }
-    } else if (selection.kind === 'FragmentSpread') {
-      const fragmentName = selection.name.value;
-      const fragmentDef = ctx.fragments.get(fragmentName);
-
-      if (fragmentDef) {
-        const typeConditionName = fragmentDef.typeCondition.name.value;
-        let matchesType = true;
-        let nextType: GraphQLNamedType = namedType;
-
-        if (typeConditionName) {
-          matchesType = ctx.doesTypeMatch(runtimeTypeName, typeConditionName);
-          if (matchesType) {
-            nextType = ctx.schema.getType(typeConditionName) || namedType;
-          }
-        }
-
-        if (matchesType && fragmentDef.selectionSet) {
-          walkObject(data, fragmentDef.selectionSet.selections, nextType, true, ctx);
-        }
-      }
-    }
-  }
-}
+import MemoryCache from '../../circuit-breaker/cache.js';
 
 interface CompiledField {
-  coordinate: string;
+  fieldName: string;
   childTypeName?: string;
   leafTypeName?: string;
 }
@@ -275,8 +23,47 @@ type TypePlan = Map<string, CompiledField>;
 
 type ExecutionPlan = Map<string, TypePlan>;
 
+const RETENTION_CACHE_TTL_IN_SECONDS = 120;
+
 const documentPlanCache = new WeakMap<DocumentNode, ExecutionPlan>();
-const hashPlanCache = new Map<string, ExecutionPlan>();
+const hashPlanCache = new MemoryCache({
+  max: 1_000,
+  ttl: RETENTION_CACHE_TTL_IN_SECONDS * 1000,
+}) as unknown as Map<string, ExecutionPlan>;
+
+const schemaCoordinateExpansionCache = new WeakMap<GraphQLSchema, Map<string, string[]>>();
+
+function getExpandedCoordinates(
+  schema: GraphQLSchema,
+  actualTypeName: string,
+  fieldName: string,
+): string[] {
+  let cache = schemaCoordinateExpansionCache.get(schema);
+  if (!cache) {
+    cache = new Map();
+    schemaCoordinateExpansionCache.set(schema, cache);
+  }
+
+  const cacheKey = actualTypeName + '.' + fieldName;
+  let expanded = cache.get(cacheKey);
+  if (expanded) return expanded;
+
+  expanded = [cacheKey];
+  const actualType = schema.getType(actualTypeName);
+
+  if (actualType && (isObjectType(actualType) || isInterfaceType(actualType))) {
+    const interfaces = actualType.getInterfaces();
+    for (let i = 0; i < interfaces.length; i++) {
+      const iface = interfaces[i];
+      if (iface.getFields()[fieldName]) {
+        expanded.push(iface.name + '.' + fieldName);
+      }
+    }
+  }
+
+  cache.set(cacheKey, expanded);
+  return expanded;
+}
 
 export interface ExtractCoordinatesArgs {
   schema: GraphQLSchema;
@@ -318,12 +105,13 @@ export function extractCoordinatesFast({
   }
 
   const targetData = resultData.data !== undefined ? resultData.data : resultData;
-  trackCompiledData(targetData, rootTypeName, plan, counts);
+  trackCompiledData(schema, targetData, rootTypeName, plan, counts);
 
   return counts;
 }
 
 function trackCompiledData(
+  schema: GraphQLSchema,
   data: any,
   expectedTypeName: string,
   plan: ExecutionPlan,
@@ -333,7 +121,7 @@ function trackCompiledData(
 
   if (Array.isArray(data)) {
     for (let i = 0; i < data.length; i++) {
-      trackCompiledData(data[i], expectedTypeName, plan, counts);
+      trackCompiledData(schema, data[i], expectedTypeName, plan, counts);
     }
     return;
   }
@@ -346,31 +134,47 @@ function trackCompiledData(
     increment(counts, expectedTypeName, 1);
   }
 
-  executeTypePlan(data, expectedTypeName, plan, counts);
+  executeTypePlan(schema, data, expectedTypeName, actualTypeName, plan, counts);
 
   if (actualTypeName !== expectedTypeName) {
-    executeTypePlan(data, actualTypeName, plan, counts);
+    executeTypePlan(
+      schema,
+      data,
+      actualTypeName,
+      actualTypeName,
+      plan,
+      counts,
+      plan.get(expectedTypeName),
+    );
   }
 }
 
 function executeTypePlan(
+  schema: GraphQLSchema,
   data: any,
-  typeName: string,
+  planTypeName: string,
+  actualTypeName: string,
   plan: ExecutionPlan,
   counts: Record<string, number>,
+  skipPlan?: TypePlan,
 ) {
-  const typePlan = plan.get(typeName);
+  const typePlan = plan.get(planTypeName);
   if (!typePlan) return;
 
   for (const [responseKey, instruction] of typePlan.entries()) {
+    if (skipPlan && skipPlan.has(responseKey)) continue;
+
     const val = data[responseKey];
 
     if (val !== undefined) {
-      increment(counts, instruction.coordinate, 1);
+      const expandedCoords = getExpandedCoordinates(schema, actualTypeName, instruction.fieldName);
+      for (let i = 0; i < expandedCoords.length; i++) {
+        increment(counts, expandedCoords[i], 1);
+      }
 
       if (val !== null) {
         if (instruction.childTypeName) {
-          trackCompiledData(val, instruction.childTypeName, plan, counts);
+          trackCompiledData(schema, val, instruction.childTypeName, plan, counts);
         } else if (instruction.leafTypeName) {
           trackLeaf(val, instruction.leafTypeName, counts);
         }
@@ -445,7 +249,7 @@ function compileExecutionPlan(
 
           if (!typePlan.has(responseKey)) {
             typePlan.set(responseKey, {
-              coordinate: typeName + '.' + realFieldName,
+              fieldName: realFieldName,
               childTypeName: !isLeaf ? fieldType.name : undefined,
               leafTypeName: isLeaf ? fieldType.name : undefined,
             });

@@ -94,6 +94,7 @@ describe('extractCoordinatesFast', () => {
         String: 1,
         User: 1,
         'Node.id': 1,
+        'User.id': 1,
         'User.name': 1,
       });
     });
