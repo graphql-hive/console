@@ -1,7 +1,7 @@
 import { buildSchema, parse } from 'graphql';
-import { extractCoordinatesFast } from '../../../src/client/subrequests/extract-coordinates.js';
+import { extractCoordinates } from '../../../src/client/subrequests/extract-coordinates.js';
 
-describe('extractCoordinatesFast', () => {
+describe('extractCoordinates', () => {
   describe('Types, Fields, and Scalars', () => {
     it('Counts standard object resolution and scalar fields', () => {
       const schema = buildSchema(`
@@ -17,7 +17,7 @@ describe('extractCoordinatesFast', () => {
         user: { id: '1', name: 'Alice', age: 30 },
       };
 
-      const counts = extractCoordinatesFast({ schema, document, resultData });
+      const counts = extractCoordinates({ schema, document, resultData });
 
       expect(counts).toEqual({
         ID: 1,
@@ -51,7 +51,7 @@ describe('extractCoordinatesFast', () => {
         firstUser: { userId: '1', userName: 'Alice' },
       };
 
-      const counts = extractCoordinatesFast({ schema, document, resultData });
+      const counts = extractCoordinates({ schema, document, resultData });
 
       expect(counts).toEqual({
         ID: 1,
@@ -84,7 +84,7 @@ describe('extractCoordinatesFast', () => {
         node: { __typename: 'User', id: '1', name: 'Alice' },
       };
 
-      const counts = extractCoordinatesFast({ schema, document, resultData });
+      const counts = extractCoordinates({ schema, document, resultData });
 
       expect(counts).toEqual({
         ID: 1,
@@ -117,7 +117,7 @@ describe('extractCoordinatesFast', () => {
         user: { __typename: 'User', id: '1', name: 'Alice' },
       };
 
-      const counts = extractCoordinatesFast({ schema, document, resultData });
+      const counts = extractCoordinates({ schema, document, resultData });
 
       expect(counts).toEqual({
         ID: 1,
@@ -134,7 +134,38 @@ describe('extractCoordinatesFast', () => {
   });
 
   describe('Unions & Arrays', () => {
-    it('Handles list execution and union type conditions', () => {
+    it('Extracts from a union type', () => {
+      const schema = buildSchema(`
+        union SearchResult = User | Post
+        type User { name: String }
+        type Post { title: String }
+        type Query { search: SearchResult }
+      `);
+      const document = parse(`
+        query { 
+          search { 
+            ... on User { name } 
+            ... on Post { __typename, title } 
+          } 
+        }
+      `);
+      const resultData = {
+        search: { __typename: 'Post', title: 'GraphQL Guide' },
+      };
+
+      const counts = extractCoordinates({ schema, document, resultData });
+
+      expect(counts).toEqual({
+        Query: 1,
+        'Query.search': 1,
+        String: 1,
+        Post: 1,
+        'Post.title': 1,
+        SearchResult: 1,
+      });
+    });
+
+    it('Extracts types from a list of union types without __typename in the response', () => {
       const schema = buildSchema(`
         union SearchResult = User | Post
         type User { name: String }
@@ -153,7 +184,7 @@ describe('extractCoordinatesFast', () => {
         search: [{ name: 'Alice' }, { __typename: 'Post', title: 'GraphQL Guide' }],
       };
 
-      const counts = extractCoordinatesFast({ schema, document, resultData });
+      const counts = extractCoordinates({ schema, document, resultData });
 
       expect(counts).toEqual({
         Query: 1,
@@ -171,6 +202,42 @@ describe('extractCoordinatesFast', () => {
          * This is a hard limit of this approach. It's overcome by including the __typename
          * on every abstract type in an operation, which needs implemented by the plugin.
          */
+      });
+    });
+
+    it('Extracts types from a list of union types', () => {
+      const schema = buildSchema(`
+        union SearchResult = User | Post
+        type User { name: String }
+        type Post { title: String }
+        type Query { search: [SearchResult] }
+      `);
+      const document = parse(`
+        query { 
+          search { 
+            ... on User { name } 
+            ... on Post { __typename, title } 
+          } 
+        }
+      `);
+      const resultData = {
+        search: [
+          { __typename: 'User', name: 'Alice' },
+          { __typename: 'Post', title: 'GraphQL Guide' },
+        ],
+      };
+
+      const counts = extractCoordinates({ schema, document, resultData });
+
+      expect(counts).toEqual({
+        Query: 1,
+        'Query.search': 1,
+        String: 2,
+        Post: 1,
+        User: 1,
+        'User.name': 1,
+        'Post.title': 1,
+        SearchResult: 2,
       });
     });
   });
@@ -194,7 +261,7 @@ describe('extractCoordinatesFast', () => {
         user: { id: '1', email: 'test@example.com' },
       };
 
-      const counts = extractCoordinatesFast({ schema, document, resultData });
+      const counts = extractCoordinates({ schema, document, resultData });
 
       expect(counts).toEqual({
         ID: 1,
@@ -226,7 +293,7 @@ describe('extractCoordinatesFast', () => {
         user: { id: '1', email: 'test@example.com' },
       };
 
-      const counts = extractCoordinatesFast({ schema, document, resultData });
+      const counts = extractCoordinates({ schema, document, resultData });
 
       expect(counts).toEqual({
         ID: 1,
@@ -253,7 +320,7 @@ describe('extractCoordinatesFast', () => {
         user: null,
       };
 
-      const counts = extractCoordinatesFast({ schema, document, resultData });
+      const counts = extractCoordinates({ schema, document, resultData });
 
       expect(counts).toEqual({
         Query: 1,

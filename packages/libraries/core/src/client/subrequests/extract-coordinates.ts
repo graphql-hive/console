@@ -40,7 +40,7 @@ export interface ExtractCoordinatesArgs {
   queryHash?: string;
 }
 
-export function extractCoordinatesFast({
+export function extractCoordinates({
   schema,
   document,
   resultData,
