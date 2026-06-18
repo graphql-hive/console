@@ -368,6 +368,7 @@ function RuleStateLogSection(props: {
           thresholdValue={rule.thresholdValue}
           direction={rule.direction}
           thresholdType={rule.thresholdType}
+          timeWindowMinutes={rule.timeWindowMinutes}
         />
       </section>
 
