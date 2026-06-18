@@ -3109,15 +3109,12 @@ export class SchemaPublisher {
       let shortSummaryFallback: string;
 
       if (conclusion === SchemaCheckConclusion.Success) {
-        if (!changes || changes.length === 0) {
-          title = 'No changes';
-          summary = 'No changes detected';
-          shortSummaryFallback = summary;
-        } else {
-          title = 'No breaking changes';
-          summary = this.changesToMarkdown(changes);
-          shortSummaryFallback = this.changesToMarkdown(changes, false);
-        }
+        ({ title, summary, shortSummaryFallback } = buildSchemaCheckSuccessGithubOutput({
+          changes,
+          contractChanges: args.contractChanges,
+          renderChanges: (changesToRender, printListOfChanges) =>
+            this.changesToMarkdown(changesToRender, printListOfChanges),
+        }));
       } else {
         const total =
           (compositionErrors?.length ?? 0) + (breakingChanges?.length ?? 0) + (errors?.length ?? 0);
@@ -3498,6 +3495,54 @@ function writeChanges(
       ),
     );
   }
+}
+
+/**
+ * Builds the title and summary for a *successful* GitHub schema-check run.
+ *
+ * A successful check can still contain changes - either to the core schema or
+ * to one or more contracts. "No changes" must only be reported when there are
+ * no core changes AND no contract changes; otherwise the summary lists the core
+ * changes followed by a per-contract section, so a contract-only change is no
+ * longer misreported as "No changes" (#6954).
+ *
+ * Pure function (the markdown renderer is injected) so it can be unit-tested
+ * without constructing the full SchemaPublisher dependency graph.
+ */
+export function buildSchemaCheckSuccessGithubOutput(input: {
+  changes: Array<SchemaChangeType> | null;
+  contractChanges: Array<{ contractName: string; changes: Array<SchemaChangeType> }> | null;
+  renderChanges: (
+    changes: ReadonlyArray<SchemaChangeType>,
+    printListOfChanges?: boolean,
+  ) => string;
+}): { title: string; summary: string; shortSummaryFallback: string } {
+  const coreChanges = input.changes ?? [];
+  const contractChanges = input.contractChanges?.filter(contract => contract.changes.length) ?? [];
+
+  if (coreChanges.length === 0 && contractChanges.length === 0) {
+    const summary = 'No changes detected';
+    return { title: 'No changes', summary, shortSummaryFallback: summary };
+  }
+
+  const buildSummary = (printListOfChanges: boolean) =>
+    [
+      coreChanges.length ? input.renderChanges(coreChanges, printListOfChanges) : null,
+      ...contractChanges.map(contract =>
+        [
+          `## Contract "${contract.contractName}"`,
+          input.renderChanges(contract.changes, printListOfChanges),
+        ].join('\n'),
+      ),
+    ]
+      .filter(Boolean)
+      .join('\n\n');
+
+  return {
+    title: 'No breaking changes',
+    summary: buildSummary(true),
+    shortSummaryFallback: buildSummary(false),
+  };
 }
 
 function buildGitHubActionCheckName(input: {
