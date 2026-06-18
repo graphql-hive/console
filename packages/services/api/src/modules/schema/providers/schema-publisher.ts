@@ -952,7 +952,13 @@ export class SchemaPublisher {
           organization,
           conclusion: checkResult.conclusion,
           changes: checkResult.state?.schemaChanges?.all ?? null,
-          contractChanges: null,
+          contractChanges:
+            checkResult.state.contracts
+              ?.map(contract => ({
+                contractName: contract.contractName,
+                changes: contract.schemaChanges?.all ?? [],
+              }))
+              .filter(contract => contract.changes.length > 0) ?? null,
           breakingChanges: checkResult.state?.schemaChanges?.breaking ?? null,
           warnings: checkResult.state?.schemaPolicyWarnings ?? null,
           compositionErrors: null,
