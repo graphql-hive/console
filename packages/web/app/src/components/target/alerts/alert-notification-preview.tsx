@@ -7,6 +7,7 @@
 import { Copy } from 'lucide-react';
 import { Button } from '@/components/base/button/button';
 import { useClipboard } from '@/lib/hooks/use-clipboard';
+import { applyThresholdSign, thresholdUnit } from './alert-threshold';
 
 const WEBHOOK_JSON_SCHEMA = {
   $schema: 'http://json-schema.org/draft-07/schema#',
@@ -91,16 +92,11 @@ function formatThreshold(
   const dir = direction === 'ABOVE' ? 'above' : 'below';
   // Mirror the unit logic in formatChangeText() in
   // packages/services/workflows/src/lib/metric-alert-notifier.ts so the preview
-  // matches the real notification. A PERCENTAGE_CHANGE threshold is always a
-  // percent, regardless of the underlying metric.
-  const unit =
-    thresholdType === 'PERCENTAGE_CHANGE'
-      ? '%'
-      : alertType === 'LATENCY'
-        ? 'ms'
-        : alertType === 'ERROR_RATE'
-          ? '%'
-          : ' requests';
+  // matches the real notification. The shared `thresholdUnit` keeps this in
+  // sync with the form's Value label; "requests" carries a leading space so it
+  // reads "150 requests" rather than "150requests".
+  const unitToken = thresholdUnit(alertType, thresholdType);
+  const unit = unitToken === 'requests' ? ' requests' : unitToken;
   return thresholdType === 'PERCENTAGE_CHANGE'
     ? `${direction === 'ABOVE' ? 'increased' : 'decreased'} by ${val}${unit}`
     : `${dir} ${val}${unit}`;
@@ -183,7 +179,11 @@ export function buildPreviewWebhookPayload(props: PreviewProps) {
     changePercent: null,
     threshold: {
       type: props.thresholdType || 'FIXED_VALUE',
-      value: props.thresholdValue ? parseFloat(props.thresholdValue) : 0,
+      // The form edits a non-negative magnitude; the stored/real payload value
+      // is signed (a % drop is negative), so sign it here to match the notifier.
+      value: props.thresholdValue
+        ? applyThresholdSign(parseFloat(props.thresholdValue), props.thresholdType, props.direction)
+        : 0,
       direction: props.direction || 'ABOVE',
     },
     target: { slug: props.targetSlug },
