@@ -33,38 +33,6 @@ const hashPlanCache = new MemoryCache({
 
 const schemaCoordinateExpansionCache = new WeakMap<GraphQLSchema, Map<string, string[]>>();
 
-function getExpandedCoordinates(
-  schema: GraphQLSchema,
-  actualTypeName: string,
-  fieldName: string,
-): string[] {
-  let cache = schemaCoordinateExpansionCache.get(schema);
-  if (!cache) {
-    cache = new Map();
-    schemaCoordinateExpansionCache.set(schema, cache);
-  }
-
-  const cacheKey = actualTypeName + '.' + fieldName;
-  let expanded = cache.get(cacheKey);
-  if (expanded) return expanded;
-
-  expanded = [cacheKey];
-  const actualType = schema.getType(actualTypeName);
-
-  if (actualType && (isObjectType(actualType) || isInterfaceType(actualType))) {
-    const interfaces = actualType.getInterfaces();
-    for (let i = 0; i < interfaces.length; i++) {
-      const iface = interfaces[i];
-      if (iface.getFields()[fieldName]) {
-        expanded.push(iface.name + '.' + fieldName);
-      }
-    }
-  }
-
-  cache.set(cacheKey, expanded);
-  return expanded;
-}
-
 export interface ExtractCoordinatesArgs {
   schema: GraphQLSchema;
   document: DocumentNode;
@@ -126,57 +94,106 @@ function trackCompiledData(
     return;
   }
 
-  const actualTypeName = data.__typename || expectedTypeName;
+  const actualTypeName = data.__typename ?? expectedTypeName;
 
-  increment(counts, actualTypeName, 1);
-
-  if (actualTypeName !== expectedTypeName) {
-    increment(counts, expectedTypeName, 1);
-  }
-
-  executeTypePlan(schema, data, expectedTypeName, actualTypeName, plan, counts);
-
-  if (actualTypeName !== expectedTypeName) {
-    executeTypePlan(
-      schema,
-      data,
-      actualTypeName,
-      actualTypeName,
-      plan,
-      counts,
-      plan.get(expectedTypeName),
-    );
-  }
+  executeTypePlan(schema, data, actualTypeName, expectedTypeName, plan, counts);
 }
 
 function executeTypePlan(
   schema: GraphQLSchema,
   data: any,
-  planTypeName: string,
-  actualTypeName: string,
+  typeName: string,
+  expectedTypeName: string,
   plan: ExecutionPlan,
   counts: Record<string, number>,
-  skipPlan?: TypePlan,
 ) {
-  const typePlan = plan.get(planTypeName);
-  if (!typePlan) return;
+  const actualType = schema.getType(typeName);
 
-  for (const [responseKey, instruction] of typePlan.entries()) {
-    if (skipPlan && skipPlan.has(responseKey)) continue;
+  if (actualType) {
+    increment(counts, actualType.name, 1);
 
-    const val = data[responseKey];
-
-    if (val !== undefined) {
-      const expandedCoords = getExpandedCoordinates(schema, actualTypeName, instruction.fieldName);
-      for (let i = 0; i < expandedCoords.length; i++) {
-        increment(counts, expandedCoords[i], 1);
+    if (isObjectType(actualType) || isInterfaceType(actualType)) {
+      const interfaces = actualType.getInterfaces();
+      for (let i = 0; i < interfaces.length; i++) {
+        increment(counts, interfaces[i].name, 1);
       }
+    }
+  }
 
-      if (val !== null) {
-        if (instruction.childTypeName) {
-          trackCompiledData(schema, val, instruction.childTypeName, plan, counts);
-        } else if (instruction.leafTypeName) {
-          trackLeaf(val, instruction.leafTypeName, counts);
+  if (expectedTypeName !== typeName) {
+    const expectedType = schema.getType(expectedTypeName);
+    if (expectedType && isUnionType(expectedType)) {
+      increment(counts, expectedType.name, 1);
+    }
+  }
+
+  const applicablePlans = new Set<TypePlan>();
+
+  const typePlan = plan.get(typeName);
+  if (typePlan) applicablePlans.add(typePlan);
+
+  const expectedPlan = plan.get(expectedTypeName);
+  if (expectedPlan) applicablePlans.add(expectedPlan);
+
+  if (actualType && (isObjectType(actualType) || isInterfaceType(actualType))) {
+    const interfaces = actualType.getInterfaces();
+    for (let i = 0; i < interfaces.length; i++) {
+      const ifacePlan = plan.get(interfaces[i].name);
+      if (ifacePlan) applicablePlans.add(ifacePlan);
+    }
+  }
+
+  if (applicablePlans.size === 0) return;
+
+  const processedKeys = new Set<string>();
+
+  for (const currentPlan of applicablePlans) {
+    for (const [responseKey, instruction] of currentPlan.entries()) {
+      if (processedKeys.has(responseKey)) continue;
+      processedKeys.add(responseKey);
+
+      const val = data[responseKey];
+
+      if (val !== undefined) {
+        if (actualType) {
+          const fieldName = instruction.fieldName;
+          let cache = schemaCoordinateExpansionCache.get(schema);
+          if (!cache) {
+            cache = new Map();
+            schemaCoordinateExpansionCache.set(schema, cache);
+          }
+
+          const cacheKey = actualType.name + '.' + fieldName;
+          let expanded = cache.get(cacheKey);
+
+          if (!expanded) {
+            expanded = [cacheKey];
+
+            if (isObjectType(actualType) || isInterfaceType(actualType)) {
+              const interfaces = actualType.getInterfaces();
+              for (let i = 0; i < interfaces.length; i++) {
+                const iface = interfaces[i];
+                if (iface.getFields()[fieldName]) {
+                  expanded.push(iface.name + '.' + fieldName);
+                }
+              }
+            }
+
+            cache.set(cacheKey, expanded);
+          }
+
+          const expandedCoords = expanded;
+          for (let i = 0; i < expandedCoords.length; i++) {
+            increment(counts, expandedCoords[i], 1);
+          }
+        }
+
+        if (val !== null) {
+          if (instruction.childTypeName) {
+            trackCompiledData(schema, val, instruction.childTypeName, plan, counts);
+          } else if (instruction.leafTypeName) {
+            trackLeaf(val, instruction.leafTypeName, counts);
+          }
         }
       }
     }

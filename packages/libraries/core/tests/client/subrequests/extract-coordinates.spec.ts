@@ -65,8 +65,8 @@ describe('extractCoordinatesFast', () => {
     });
   });
 
-  describe('Interfaces & Inline Fragments', () => {
-    it('Structurally verifies interface inheritance', () => {
+  describe('Interfaces', () => {
+    it('Extracts the returned type usage for an interface', () => {
       const schema = buildSchema(`
         interface Node { id: ID! }
         type User implements Node { id: ID!, name: String }
@@ -91,6 +91,39 @@ describe('extractCoordinatesFast', () => {
         Query: 1,
         Node: 1,
         'Query.node': 1,
+        String: 1,
+        User: 1,
+        'Node.id': 1,
+        'User.id': 1,
+        'User.name': 1,
+      });
+    });
+
+    it('Extracts the interface usage for an implementing type', () => {
+      const schema = buildSchema(`
+        interface Node { id: ID! }
+        type User implements Node { id: ID!, name: String }
+        type Query { user: User }
+      `);
+      const document = parse(`
+        query { 
+          user { 
+            id 
+            name
+          } 
+        }
+      `);
+      const resultData = {
+        user: { __typename: 'User', id: '1', name: 'Alice' },
+      };
+
+      const counts = extractCoordinatesFast({ schema, document, resultData });
+
+      expect(counts).toEqual({
+        ID: 1,
+        Query: 1,
+        Node: 1,
+        'Query.user': 1,
         String: 1,
         User: 1,
         'Node.id': 1,
@@ -143,7 +176,7 @@ describe('extractCoordinatesFast', () => {
   });
 
   describe('Fragment Spreads', () => {
-    it('Follows named fragment definitions', () => {
+    it('Extracts from named fragment definitions', () => {
       const schema = buildSchema(`
         type Query { user: User }
         type User { id: ID, email: String }
@@ -155,6 +188,38 @@ describe('extractCoordinatesFast', () => {
         fragment UserFields on User { 
           id 
           email 
+        }
+      `);
+      const resultData = {
+        user: { id: '1', email: 'test@example.com' },
+      };
+
+      const counts = extractCoordinatesFast({ schema, document, resultData });
+
+      expect(counts).toEqual({
+        ID: 1,
+        Query: 1,
+        'Query.user': 1,
+        String: 1,
+        User: 1,
+        'User.id': 1,
+        'User.email': 1,
+      });
+    });
+
+    it('Extracts from inline fragments', () => {
+      const schema = buildSchema(`
+        type Query { user: User }
+        type User { id: ID, email: String }
+      `);
+      const document = parse(`
+        query { 
+          user {
+            ...on User {
+              id 
+              email
+            }
+          } 
         }
       `);
       const resultData = {
