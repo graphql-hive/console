@@ -952,6 +952,7 @@ export class SchemaPublisher {
           organization,
           conclusion: checkResult.conclusion,
           changes: checkResult.state?.schemaChanges?.all ?? null,
+          contractChanges: null,
           breakingChanges: checkResult.state?.schemaChanges?.breaking ?? null,
           warnings: checkResult.state?.schemaPolicyWarnings ?? null,
           compositionErrors: null,
@@ -976,6 +977,7 @@ export class SchemaPublisher {
             ...(checkResult.state.schemaChanges?.breaking ?? []),
             ...(checkResult.state.schemaChanges?.safe ?? []),
           ],
+          contractChanges: null,
           breakingChanges: checkResult.state.schemaChanges?.breaking ?? [],
           compositionErrors: checkResult.state.composition.errors ?? [],
           warnings: checkResult.state.schemaPolicy?.warnings ?? [],
@@ -1006,6 +1008,7 @@ export class SchemaPublisher {
           organization,
           conclusion: SchemaCheckConclusion.Success,
           changes: null,
+          contractChanges: null,
           breakingChanges: null,
           warnings: null,
           compositionErrors: null,
@@ -1023,6 +1026,7 @@ export class SchemaPublisher {
         organization,
         conclusion: SchemaCheckConclusion.Failure,
         changes: null,
+        contractChanges: null,
         breakingChanges: null,
         compositionErrors: latestVersion.version.schemaCompositionErrors,
         warnings: null,
@@ -3082,6 +3086,7 @@ export class SchemaPublisher {
     conclusion: SchemaCheckConclusion;
     warnings: SchemaCheckWarning[] | null;
     changes: Array<SchemaChangeType> | null;
+    contractChanges: Array<{ contractName: string; changes: Array<SchemaChangeType> }> | null;
     breakingChanges: Array<SchemaChangeType> | null;
     compositionErrors: Array<{
       message: string;
