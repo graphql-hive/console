@@ -1,7 +1,6 @@
 import { DocumentNode, print, responsePathAsArray, type GraphQLError } from 'graphql';
 import { lru } from 'tiny-lru';
 import {
-  autoDisposeSymbol,
   createHive as createHiveClient,
   isAsyncIterable,
   isHiveClient,
