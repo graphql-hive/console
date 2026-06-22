@@ -157,6 +157,13 @@ export default gql`
     endpoint: String!
   }
 
+  type DiscordWebhookChannel implements AlertChannel {
+    id: ID!
+    name: String!
+    type: AlertChannelType!
+    endpoint: String!
+  }
+
   type Alert {
     id: ID!
     type: AlertType!
