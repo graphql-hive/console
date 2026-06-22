@@ -277,7 +277,7 @@ export function createUsage(pluginOptions: HiveInternalPluginOptions): UsageColl
         });
 
         let fetches = args.fetches;
-        if (!fetches?.length) {
+        if (!fetches?.length && options.fieldLevelMetricsEnabled) {
           /**
            * No subgraph requests, so this must be a monolith.
            * We still want to track the field metrics, so create an artificial

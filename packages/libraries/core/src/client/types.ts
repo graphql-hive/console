@@ -186,6 +186,15 @@ export interface HiveUsagePluginOptions {
    * Default: false
    */
   processVariables?: boolean;
+
+  /**
+   * Report usage data for resolved coordinates. This counts the number of times a coordinate is resolved and reports
+   * graphql errors and their codes to Hive. Before enabling this, be aware that this is CPU intensive since it must
+   * iterate over the entire response payload.
+   *
+   * Default: false
+   */
+  fieldLevelMetricsEnabled?: boolean;
 }
 
 export interface SamplingContext

@@ -24,8 +24,6 @@ export function createHive(clientOrOptions: HivePluginOptions) {
 }
 
 export type GatewayPluginOptions = HivePluginOptions & {
-  /** Opt in to sending subgraph metrics. This feature is  */
-  fieldLevelMetricsEnabled?: boolean;
   /**
    * Size of document cache. This is used to store a transformed version of the operation
    * because abstract types must include a __typename. Default: 10_000
@@ -56,7 +54,9 @@ export function useHive(clientOrOptions: HiveClient | GatewayPluginOptions): Gat
 
   const fieldLevelMetricsEnabled = isHiveClient(clientOrOptions)
     ? false
-    : (clientOrOptions.fieldLevelMetricsEnabled ?? false);
+    : (typeof clientOrOptions.usage === 'object' &&
+        clientOrOptions.usage?.fieldLevelMetricsEnabled) ||
+      false;
   return {
     onFetch({ executionRequest }) {
       /** Only if the execution request is set, then this is a subgraph execution. */
