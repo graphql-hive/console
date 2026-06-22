@@ -31,7 +31,7 @@
     "docker:override-up": "docker compose -f ./docker/docker-compose.override.yml up -d --remove-orphans",
     "env:sync": "tsx scripts/sync-env-files.ts",
     "generate": "pnpm --filter @hive/storage db:generate && pnpm graphql:generate",
-    "graphql:generate": "VERBOSE=1 graphql-codegen --config codegen.mts",
+    "graphql:generate": "graphql-codegen --config codegen.mts",
     "graphql:generate:watch": "pnpm graphql:generate --watch",
     "integration:prepare": "cd integration-tests && ./local.sh",
     "lint": "NODE_OPTIONS=\"--max-old-space-size=8192\" eslint --cache --ignore-path .gitignore \"{packages,e2e}/**/*.{ts,tsx,graphql}\"",
@@ -40,7 +40,7 @@
     "lint:prettier": "prettier --cache --check .",
     "local:setup": "docker compose -f ./docker/docker-compose.dev.yml up -d --build --remove-orphans && pnpm --filter @hive/migrations db:init",
     "postinstall": "node ./scripts/patch-manifests.js && pnpm env:sync && node ./scripts/turborepo-cleanup.js && pnpm cargo:fix",
-    "prebuild": "rimraf deploy-tmp && rimraf packages/**/deploy-tmp",
+    "prebuild": "echo skip",
     "prerelease": "pnpm build:libraries",
     "prettier": "prettier --cache --write --list-different --ignore-unknown \"**/*\"",
     "release": "pnpm build:libraries && changeset publish",
@@ -191,6 +191,24 @@
     },
     "onlyBuiltDependencies": [
       "msw"
+    ],
+    "ignoredBuiltDependencies": [
+      "@apollo/protobufjs",
+      "@lbrlabs/pulumi-grafana",
+      "@parcel/watcher",
+      "@pulumi/cloudflare",
+      "@pulumi/command",
+      "@pulumi/kubernetes",
+      "@sentry/cli",
+      "@swc/core",
+      "browser-tabs-lock",
+      "cpu-features",
+      "esbuild",
+      "protobufjs",
+      "sharp",
+      "ssh2",
+      "unrs-resolver",
+      "workerd"
     ]
   }
 }
