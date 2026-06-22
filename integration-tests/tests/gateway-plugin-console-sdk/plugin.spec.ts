@@ -63,7 +63,9 @@ async function setup(subgraphs: {
     enabled: true,
     token: token.secret,
     reporting: false,
-    usage: true,
+    usage: {
+      fieldLevelMetricsEnabled: true,
+    },
     agent: {
       logger: createLogger('debug'),
       maxSize: 1,
@@ -73,7 +75,6 @@ async function setup(subgraphs: {
       graphqlEndpoint: 'http://noop/',
       applicationUrl: 'http://noop/',
     },
-    fieldLevelMetricsEnabled: true,
   });
 
   const services = await Promise.all(
