@@ -162,10 +162,16 @@ export default class SchemaDelete extends Command<typeof SchemaDelete> {
         this.log('');
 
         if (result.schemaDelete.valid) {
-          this.logSuccess(`${service} ${flags.dryRun ? 'can be' : ''}deleted`);
+          this.logSuccess(
+            flags.dryRun
+              ? `Deleting "${service}" will produce a composable graph. But be sure to review changes to ensure this is safe.`
+              : `Deleted "${service}" from target`,
+          );
         } else {
           this.logWarning(
-            `${service} deletion ${flags.dryRun ? 'will result in' : 'created'} an uncomposable graph.`,
+            flags.dryRun
+              ? `Your graph will NOT be composable if "${service}" is deleted.`
+              : `Deleting "${service}" produced an uncomposable graph.`,
           );
         }
 
