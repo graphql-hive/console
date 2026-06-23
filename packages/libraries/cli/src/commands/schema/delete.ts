@@ -1,6 +1,6 @@
 import { Args, Errors, Flags, ux } from '@oclif/core';
 import Command from '../../base-command';
-import { graphql } from '../../gql';
+import { graphql, useFragment } from '../../gql';
 import * as GraphQLSchema from '../../gql/graphql';
 import { graphqlEndpoint } from '../../helpers/config';
 import {
@@ -10,7 +10,12 @@ import {
   MissingRegistryTokenError,
   UnexpectedError,
 } from '../../helpers/errors';
-import { renderChanges, renderErrors } from '../../helpers/schema';
+import {
+  renderChanges,
+  RenderChanges_SchemaChanges,
+  renderErrors,
+  RenderErrors_SchemaErrorConnectionFragment,
+} from '../../helpers/schema';
 import * as TargetInput from '../../helpers/target-input';
 
 const schemaDeleteMutation = graphql(/* GraphQL */ `
@@ -153,11 +158,20 @@ export default class SchemaDelete extends Command<typeof SchemaDelete> {
 
       if (result.schemaDelete.__typename === 'SchemaDeleteSuccess') {
         const { errors, changes } = result.schemaDelete;
-        this.log(renderErrors(errors));
+
+        if (errors) {
+          const unmaskedErrors = useFragment(RenderErrors_SchemaErrorConnectionFragment, errors);
+          if (unmaskedErrors.edges.length > 0) {
+            this.log(renderErrors(errors));
+          }
+        }
 
         if (changes) {
-          this.log('');
-          this.log(renderChanges(changes));
+          const unmaskedChanges = useFragment(RenderChanges_SchemaChanges, changes);
+          if (unmaskedChanges.edges.length > 0) {
+            this.log('');
+            this.log(renderChanges(changes));
+          }
         }
         this.log('');
 
@@ -179,7 +193,7 @@ export default class SchemaDelete extends Command<typeof SchemaDelete> {
         return;
       }
 
-      this.logFailure(`Failed to delete ${service}`);
+      this.logFailure(`Failed to delete "${service}"`);
       const errors = result.schemaDelete.errors;
 
       if (errors) {

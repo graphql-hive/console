@@ -42,7 +42,7 @@ export const renderErrors = (
   return t.state.value;
 };
 
-const RenderChanges_SchemaChanges = graphql(`
+export const RenderChanges_SchemaChanges = graphql(`
   fragment RenderChanges_schemaChanges on SchemaChangeConnection {
     edges {
       node {
