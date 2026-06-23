@@ -168,7 +168,8 @@
       "protobufjs@8.x.x": "8.6.4",
       "@opentelemetry/exporter-jaeger": "-",
       "uuid@<14.x.x": "^14.0.0",
-      "tmp@<0.2.7": "0.2.7"
+      "tmp@<0.2.7": "0.2.7",
+      "@babel/core": "7.29.7"
     },
     "patchedDependencies": {
       "mjml-core@4.14.0": "patches/mjml-core@4.14.0.patch",
