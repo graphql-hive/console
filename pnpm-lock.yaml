@@ -2033,8 +2033,8 @@ importers:
         specifier: 4.7.1
         version: 4.7.1
       '@types/nodemailer':
-        specifier: 7.0.4
-        version: 7.0.4
+        specifier: 8.0.1
+        version: 8.0.1
       '@types/sendmail':
         specifier: 1.4.7
         version: 1.4.7
@@ -2060,8 +2060,8 @@ importers:
         specifier: 4.14.0
         version: 4.14.0(encoding@0.1.13)
       nodemailer:
-        specifier: 8.0.5
-        version: 8.0.5
+        specifier: 9.0.1
+        version: 9.0.1
       sendmail:
         specifier: 1.6.1
         version: 1.6.1
@@ -10351,8 +10351,8 @@ packages:
   '@types/node@25.5.0':
     resolution: {integrity: sha512-jp2P3tQMSxWugkCUKLRPVUpGaL5MVFwF8RDuSRztfwgN1wmqJeMSbKlnEtQqU8UrhTmzEmZdu2I6v2dpp7XIxw==}
 
-  '@types/nodemailer@7.0.4':
-    resolution: {integrity: sha512-ee8fxWqOchH+Hv6MDDNNy028kwvVnLplrStm4Zf/3uHWw5zzo8FoYYeffpJtGs2wWysEumMH0ZIdMGMY1eMAow==}
+  '@types/nodemailer@8.0.1':
+    resolution: {integrity: sha512-PxpaInm8V1JQDd4j0ds5HfvWQk8JupS1C0Picb96QJsrrRDjBH+DlK7L4ZdNSqNULhiZRQHc40nLVShaGxXAMw==}
 
   '@types/normalize-package-data@2.4.4':
     resolution: {integrity: sha512-37i+OaWTh9qeK4LSHPsyRC7NahnGotNuZvjLSgcPzblpHB3rrCJxAOgI5gCdKm7coonsaX1Of0ILiTcnZjbfxA==}
@@ -15679,8 +15679,8 @@ packages:
   nodemailer-shared@1.1.0:
     resolution: {integrity: sha512-68xW5LSyPWv8R0GLm6veAvm7E+XFXkVgvE3FW0FGxNMMZqMkPFeGDVALfR1DPdSfcoO36PnW7q5AAOgFImEZGg==}
 
-  nodemailer@8.0.5:
-    resolution: {integrity: sha512-0PF8Yb1yZuQfQbq+5/pZJrtF6WQcjTd5/S4JOHs9PGFxuTqoB/icwuB44pOdURHJbRKX1PPoJZtY7R4VUoCC8w==}
+  nodemailer@9.0.1:
+    resolution: {integrity: sha512-Gwv8SQewT616ZM/URn0H54b8PWo/Wum7md3EW2aWy1lO27+WZCX+Xyak3J+NlmHUjDh5ME+uesJUDRbR3Ye8Bw==}
     engines: {node: '>=6.0.0'}
 
   noms@0.0.0:
@@ -31151,7 +31151,7 @@ snapshots:
     dependencies:
       undici-types: 7.18.2
 
-  '@types/nodemailer@7.0.4':
+  '@types/nodemailer@8.0.1':
     dependencies:
       '@types/node': 24.12.2
 
@@ -37808,7 +37808,7 @@ snapshots:
     dependencies:
       nodemailer-fetch: 1.6.0
 
-  nodemailer@8.0.5: {}
+  nodemailer@9.0.1: {}
 
   noms@0.0.0:
     dependencies:
