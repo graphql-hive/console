@@ -526,37 +526,32 @@ This differs from Request Count because a single request can resolve a field mul
               </CardDescription>
             </CardHeader>
             <CardContent className="min-h-[120px] grow basis-0 overflow-y-auto">
-              <div className="space-y-2">
-                {isLoading
-                  ? null
-                  : query.data?.target?.schemaCoordinateStats.operations.edges.map(
-                      ({ node: operation }) => (
-                        <div key={operation.id} className="flex items-center">
-                          <p className="truncate text-sm font-medium">
-                            <Link
-                              className="text-neutral-11 hover:text-neutral-11 hover:underline hover:underline-offset-2"
-                              to="/$organizationSlug/$projectSlug/$targetSlug/insights/$operationName/$operationHash"
-                              params={{
-                                organizationSlug: props.organizationSlug,
-                                projectSlug: props.projectSlug,
-                                targetSlug: props.targetSlug,
-                                operationName: operation.name,
-                                operationHash: operation.operationHash ?? '_',
-                              }}
-                            >
-                              {operation.name}
-                            </Link>
-                          </p>
-                          <div className="ml-auto flex min-w-[150px] flex-row items-center justify-end text-sm font-light">
-                            <div>{formatNumber(operation.count)}</div>{' '}
-                            <div className="min-w-[70px] text-right">
-                              {toDecimal((operation.count * 100) / totalRequests)}%
-                            </div>
+              {isLoading
+                ? null
+                : query.data?.target?.schemaCoordinateStats.operations.edges.map(
+                    ({ node: operation }) => (
+                      <Link
+                        key={operation.id}
+                        className="text-neutral-11 hover:text-neutral-11 hover:bg-neutral-4 -mx-2 flex items-center rounded-md px-2 py-1 hover:underline hover:underline-offset-2"
+                        to="/$organizationSlug/$projectSlug/$targetSlug/insights/$operationName/$operationHash"
+                        params={{
+                          organizationSlug: props.organizationSlug,
+                          projectSlug: props.projectSlug,
+                          targetSlug: props.targetSlug,
+                          operationName: operation.name,
+                          operationHash: operation.operationHash ?? '_',
+                        }}
+                      >
+                        <p className="truncate text-sm font-medium">{operation.name}</p>
+                        <div className="ml-auto flex min-w-[150px] flex-row items-center justify-end text-sm font-light">
+                          <div>{formatNumber(operation.count)}</div>{' '}
+                          <div className="min-w-[70px] text-right">
+                            {toDecimal((operation.count * 100) / totalRequests)}%
                           </div>
                         </div>
-                      ),
-                    )}
-              </div>
+                      </Link>
+                    ),
+                  )}
             </CardContent>
           </Card>
 
@@ -570,36 +565,31 @@ This differs from Request Count because a single request can resolve a field mul
               </CardDescription>
             </CardHeader>
             <CardContent className="min-h-[170px] grow basis-0 overflow-y-auto">
-              <div className="space-y-2">
-                {isLoading
-                  ? null
-                  : query.data?.target?.schemaCoordinateStats.clients.edges.map(
-                      ({ node: client }) => (
-                        <div key={client.name} className="flex items-center">
-                          <p className="truncate text-sm font-medium">
-                            <Link
-                              className="text-neutral-11 hover:text-neutral-11 hover:underline hover:underline-offset-2"
-                              to="/$organizationSlug/$projectSlug/$targetSlug/insights/client/$name"
-                              params={{
-                                organizationSlug: props.organizationSlug,
-                                projectSlug: props.projectSlug,
-                                targetSlug: props.targetSlug,
-                                name: client.name,
-                              }}
-                            >
-                              {client.name}
-                            </Link>
-                          </p>
-                          <div className="ml-auto flex min-w-[150px] flex-row items-center justify-end text-sm font-light">
-                            <div>{formatNumber(client.count)}</div>
-                            <div className="min-w-[70px] text-right">
-                              {toDecimal((client.count * 100) / totalRequests)}%
-                            </div>
+              {isLoading
+                ? null
+                : query.data?.target?.schemaCoordinateStats.clients.edges.map(
+                    ({ node: client }) => (
+                      <Link
+                        key={client.name}
+                        className="text-neutral-11 hover:text-neutral-11 hover:bg-neutral-4 -mx-2 flex items-center rounded-md px-2 py-1 hover:underline hover:underline-offset-2"
+                        to="/$organizationSlug/$projectSlug/$targetSlug/insights/client/$name"
+                        params={{
+                          organizationSlug: props.organizationSlug,
+                          projectSlug: props.projectSlug,
+                          targetSlug: props.targetSlug,
+                          name: client.name,
+                        }}
+                      >
+                        <p className="truncate text-sm font-medium">{client.name}</p>
+                        <div className="ml-auto flex min-w-[150px] flex-row items-center justify-end text-sm font-light">
+                          <div>{formatNumber(client.count)}</div>
+                          <div className="min-w-[70px] text-right">
+                            {toDecimal((client.count * 100) / totalRequests)}%
                           </div>
                         </div>
-                      ),
-                    )}
-              </div>
+                      </Link>
+                    ),
+                  )}
             </CardContent>
           </Card>
 
