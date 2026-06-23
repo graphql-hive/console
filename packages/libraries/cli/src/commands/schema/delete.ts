@@ -10,7 +10,7 @@ import {
   MissingRegistryTokenError,
   UnexpectedError,
 } from '../../helpers/errors';
-import { renderErrors } from '../../helpers/schema';
+import { renderChanges, renderErrors } from '../../helpers/schema';
 import * as TargetInput from '../../helpers/target-input';
 
 const schemaDeleteMutation = graphql(/* GraphQL */ `
@@ -19,6 +19,9 @@ const schemaDeleteMutation = graphql(/* GraphQL */ `
       __typename
       ... on SchemaDeleteSuccess {
         valid
+        changes {
+          ...RenderChanges_schemaChanges
+        }
         errors {
           ...RenderErrors_SchemaErrorConnectionFragment
         }
@@ -59,7 +62,8 @@ export default class SchemaDelete extends Command<typeof SchemaDelete> {
       },
     }),
     dryRun: Flags.boolean({
-      description: 'Does not delete the service, only reports what it would have done.',
+      description:
+        'Does not delete the service, only reports what it would have done. Skips confirmation prompt.',
       default: false,
     }),
     confirm: Flags.boolean({
@@ -89,7 +93,7 @@ export default class SchemaDelete extends Command<typeof SchemaDelete> {
 
       const service: string = args.service;
 
-      if (!flags.confirm) {
+      if (!flags.confirm && !flags.dryRun) {
         const confirmed = await ux.confirm(
           `Are you sure you want to delete "${service}" from the registry? (y/n)`,
         );
@@ -148,7 +152,23 @@ export default class SchemaDelete extends Command<typeof SchemaDelete> {
       });
 
       if (result.schemaDelete.__typename === 'SchemaDeleteSuccess') {
-        this.logSuccess(`${service} deleted`);
+        const { errors, changes } = result.schemaDelete;
+        this.log(renderErrors(errors));
+
+        if (changes) {
+          this.log('');
+          this.log(renderChanges(changes));
+        }
+        this.log('');
+
+        if (result.schemaDelete.valid) {
+          this.logSuccess(`${service} ${flags.dryRun ? 'can be' : ''}deleted`);
+        } else {
+          this.logWarning(
+            `${service} deletion ${flags.dryRun ? 'will result in' : 'created'} an uncomposable graph.`,
+          );
+        }
+
         this.exit(0);
         return;
       }
