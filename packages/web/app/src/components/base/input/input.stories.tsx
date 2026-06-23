@@ -7,7 +7,7 @@ export default {
 
 export const Default: Story = () => (
   <div className="max-w-sm p-8">
-    <Input placeholder="Some cool alert name" />
+    <Input placeholder="Enter alert name" />
   </div>
 );
 
