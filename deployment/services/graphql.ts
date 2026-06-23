@@ -141,6 +141,7 @@ export function deployGraphQL({
           HIVE_USAGE: '1',
           HIVE_TARGET: hiveConfig.require('target'),
           HIVE_USAGE_ENDPOINT: serviceLocalEndpoint(usage.service),
+          HIVE_FIELD_USAGE_ENABLED: '0',
           HIVE_TRACING: '1',
           HIVE_TRACING_ENDPOINT: environment.isProduction
             ? 'https://api.graphql-hive.com/otel/v1/traces'
