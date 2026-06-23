@@ -84,9 +84,9 @@ test.describe('Preflight Script Modal', () => {
   test('logs show console/error information', async ({ page, laboratory }) => {
     await laboratory.setMonacoEditorContents('preflight-editor', script);
     await page.locator('[data-cy="run-preflight"]').click();
-    await expect(page.locator('[data-cy="console-output"]')).toContainText(
-      'log: Hello_world (1:1)',
-    );
+    await expect
+      .poll(() => page.locator('[data-cy="console-output"]').textContent())
+      .toContain('log: Hello_world (1:1)');
 
     await laboratory.setMonacoEditorContents(
       'preflight-editor',
@@ -94,9 +94,9 @@ test.describe('Preflight Script Modal', () => {
     );
 
     await page.locator('[data-cy="run-preflight"]').click();
-    await expect(page.locator('[data-cy="console-output"]')).toContainText(
-      'log: Hello_world (1:1)',
-    );
+    await expect
+      .poll(() => page.locator('[data-cy="console-output"]').textContent())
+      .toContain('log: Hello_world (1:1)');
     await expect(page.locator('[data-cy="console-output"]')).toContainText('info: 1');
     await expect(page.locator('[data-cy="console-output"]')).toContainText('warn: true');
     await expect(page.locator('[data-cy="console-output"]')).toContainText('error: Fatal');
@@ -107,9 +107,9 @@ test.describe('Preflight Script Modal', () => {
     await laboratory.setMonacoEditorContents('preflight-editor', script);
 
     await page.locator('[data-cy="run-preflight"]').click();
-    await expect(page.locator('[data-cy="console-output"]')).toContainText(
-      'log: Hello_world (1:1)',
-    );
+    await expect
+      .poll(() => page.locator('[data-cy="console-output"]').textContent())
+      .toContain('log: Hello_world (1:1)');
 
     await laboratory.setMonacoEditorContents(
       'preflight-editor',
@@ -122,9 +122,9 @@ test.describe('Preflight Script Modal', () => {
       (form as HTMLFormElement).requestSubmit();
     });
 
-    await expect(page.locator('[data-cy="console-output"]')).toContainText(
-      'log: Hello_world (1:1)',
-    );
+    await expect
+      .poll(() => page.locator('[data-cy="console-output"]').textContent())
+      .toContain('log: Hello_world (1:1)');
     await expect(page.locator('[data-cy="console-output"]')).toContainText('info: test-username');
   });
 
@@ -132,9 +132,9 @@ test.describe('Preflight Script Modal', () => {
     await laboratory.setMonacoEditorContents('preflight-editor', script);
 
     await page.locator('[data-cy="run-preflight"]').click();
-    await expect(page.locator('[data-cy="console-output"]')).toContainText(
-      'log: Hello_world (1:1)',
-    );
+    await expect
+      .poll(() => page.locator('[data-cy="console-output"]').textContent())
+      .toContain('log: Hello_world (1:1)');
 
     await laboratory.setMonacoEditorContents(
       'preflight-editor',
@@ -145,9 +145,9 @@ test.describe('Preflight Script Modal', () => {
     await page.locator('[data-cy="prompt"] input').fill('test-username');
     await page.locator('[data-cy="prompt-cancel"]').click();
 
-    await expect(page.locator('[data-cy="console-output"]')).toContainText(
-      'log: Hello_world (1:1)',
-    );
+    await expect
+      .poll(() => page.locator('[data-cy="console-output"]').textContent())
+      .toContain('log: Hello_world (1:1)');
     await expect(page.locator('[data-cy="console-output"]')).toContainText('info: null');
   });
 
@@ -167,9 +167,9 @@ test.describe('Preflight Script Modal', () => {
       'console.log(lab.CryptoJS.SHA256("test"))',
     );
     await page.locator('[data-cy="run-preflight"]').click();
-    await expect(page.locator('[data-cy="console-output"]')).toContainText(
-      'info: Using crypto-js version:',
-    );
+    await expect
+      .poll(() => page.locator('[data-cy="console-output"]').textContent())
+      .toContain('info: Using crypto-js version:');
     await expect(page.locator('[data-cy="console-output"]')).toContainText(
       'log: 9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08',
     );
