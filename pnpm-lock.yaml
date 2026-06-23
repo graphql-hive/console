@@ -41,7 +41,7 @@ overrides:
   glob@10.x.x: ^10.5.0
   path-to-regexp@0.x.x: ^0.1.13
   fast-uri@2.x.x: 3.x.x
-  protobufjs@8.x.x: ^8.0.2
+  protobufjs@8.x.x: 8.6.4
   '@opentelemetry/exporter-jaeger': '-'
   uuid@<14.x.x: ^14.0.0
   tmp@<0.2.7: 0.2.7
@@ -14915,6 +14915,9 @@ packages:
   long@5.2.3:
     resolution: {integrity: sha512-lcHwpNoggQTObv5apGNCTdJrO69eHOZMi4BNC+rTLER8iHAqGrUVeLh/irVIM7zTw2bOXA8T6uNPeujwOLg/2Q==}
 
+  long@5.3.2:
+    resolution: {integrity: sha512-mNAgZ1GmyNhD7AuqnTG3/VQ26o760+ZYBPKjPvugO8+nLbYfX6TVpJPseBvopbdY+qpZ/lKUnmEc1LeZYS3QAA==}
+
   longest-streak@3.0.1:
     resolution: {integrity: sha512-cHlYSUpL2s7Fb3394mYxwTYj8niTaNHUCLr0qdiCXQfSjfuA7CKofpX2uSwEfFDQ0EB7JcnMnm+GjbqqoinYYg==}
 
@@ -16587,8 +16590,8 @@ packages:
     resolution: {integrity: sha512-dvpCIeLPbXZS/Ete7yLaO7RenOdken2NHKykBXbsaGxZT0UTltcarBciw+A78SRQs9iMAAVpsYA+l8b1hTePIA==}
     engines: {node: '>=12.0.0'}
 
-  protobufjs@8.2.0:
-    resolution: {integrity: sha512-oI+GC9iPxrQEr6wragljFKH46/r3rNsm6eg7F2fp6kBUMnf6/mesDRdBuF4gK+OyaKJ8N4C1B9s9cCeYdqFikg==}
+  protobufjs@8.6.4:
+    resolution: {integrity: sha512-/+XMv9JalknuncEJSwsyEVlwcxVLKx2iaoSUXFZA86MJkdqyOdfrlB1sB7S6aKyUk9tl20YY+SgQe5J2sJHTcg==}
     engines: {node: '>=12.0.0'}
 
   proxy-addr@2.0.7:
@@ -26950,7 +26953,7 @@ snapshots:
       '@opentelemetry/sdk-logs': 0.217.0(@opentelemetry/api@1.9.1)
       '@opentelemetry/sdk-metrics': 2.7.1(@opentelemetry/api@1.9.1)
       '@opentelemetry/sdk-trace-base': 2.7.1(@opentelemetry/api@1.9.1)
-      protobufjs: 8.2.0
+      protobufjs: 8.6.4
 
   '@opentelemetry/otlp-transformer@0.57.2(@opentelemetry/api@1.9.1)':
     dependencies:
@@ -36561,6 +36564,8 @@ snapshots:
 
   long@5.2.3: {}
 
+  long@5.3.2: {}
+
   longest-streak@3.0.1: {}
 
   loose-envify@1.4.0:
@@ -38704,10 +38709,9 @@ snapshots:
       '@types/node': 24.12.2
       long: 5.2.3
 
-  protobufjs@8.2.0:
+  protobufjs@8.6.4:
     dependencies:
-      '@types/node': 24.12.2
-      long: 5.2.3
+      long: 5.3.2
 
   proxy-addr@2.0.7:
     dependencies:
