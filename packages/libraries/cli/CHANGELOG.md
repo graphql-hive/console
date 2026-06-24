@@ -1,5 +1,14 @@
 # @graphql-hive/cli
 
+## 0.60.2
+
+### Patch Changes
+
+- [#8171](https://github.com/graphql-hive/console/pull/8171)
+  [`277ce5c`](https://github.com/graphql-hive/console/commit/277ce5ced5c9c17769b43755ec12d27eb8550435)
+  Thanks [@jdolle](https://github.com/jdolle)! - Print schema delete changes and errors. Do not
+  require confirm on dry run deletes.
+
 ## 0.60.1
 
 ### Patch Changes
