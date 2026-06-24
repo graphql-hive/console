@@ -218,7 +218,9 @@ const RULE_COLUMNS: ColumnDef<RuleRow, any>[] = [
     sortingFn: (a, b) =>
       new Date(a.original.updatedAt).getTime() - new Date(b.original.updatedAt).getTime(),
     cell: info => (
-      <span className="text-neutral-11 font-mono text-xs">{relativeTime(info.getValue())}</span>
+      <span className="text-neutral-11 inline-block min-w-[180px] whitespace-nowrap font-mono text-xs">
+        {relativeTime(info.getValue())}
+      </span>
     ),
   }),
   columnHelper.display({
@@ -310,7 +312,8 @@ export function TargetAlertsRulesPage(props: {
     requestPolicy: 'cache-and-network',
   });
 
-  const data = useKeepPreviousData(result.data, result.fetching || result.stale);
+  const previousData = useKeepPreviousData(result.data, result.fetching || result.stale);
+  const data = result.data ?? previousData;
   const rules: RuleRow[] = useMemo(
     () =>
       (data?.target?.metricAlertRules ?? []).map(r => ({
@@ -354,7 +357,7 @@ export function TargetAlertsRulesPage(props: {
         }
       />
 
-      {result.fetching && !data ? (
+      {!data ? (
         <div className="flex justify-center py-12">
           <Spinner />
         </div>
