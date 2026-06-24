@@ -1,5 +1,70 @@
 # @graphql-hive/cli
 
+## 0.60.2
+
+### Patch Changes
+
+- [#8171](https://github.com/graphql-hive/console/pull/8171)
+  [`277ce5c`](https://github.com/graphql-hive/console/commit/277ce5ced5c9c17769b43755ec12d27eb8550435)
+  Thanks [@jdolle](https://github.com/jdolle)! - Print schema delete changes and errors. Do not
+  require confirm on dry run deletes.
+
+## 0.60.1
+
+### Patch Changes
+
+- [#8117](https://github.com/graphql-hive/console/pull/8117)
+  [`e71896b`](https://github.com/graphql-hive/console/commit/e71896b13c744fd32a872cb74b9a95ff113cebbc)
+  Thanks [@enisdenjo](https://github.com/enisdenjo)! - Add `--publish` flag to `app:create` command
+  to publish the app deployment immediately after creation
+
+  Now `app:create` can immediately publish the created app deployment without needing to run
+  `app:publish` separately.
+
+  For example:
+
+  ```bash
+  hive app:create --name my-app --version 1.0.0 --publish ./operations.json
+  ```
+
+- [#8117](https://github.com/graphql-hive/console/pull/8117)
+  [`e71896b`](https://github.com/graphql-hive/console/commit/e71896b13c744fd32a872cb74b9a95ff113cebbc)
+  Thanks [@enisdenjo](https://github.com/enisdenjo)! - Make `--version` flag optional in
+  `app:create` command
+
+  When `--version` is not provided, a random 7-character alphanumeric version is generated and used
+  for creating the app deployment.
+
+  For example:
+
+  ```bash
+  hive app:create --name my-app ./operations.json
+  ```
+
+- [#8117](https://github.com/graphql-hive/console/pull/8117)
+  [`e71896b`](https://github.com/graphql-hive/console/commit/e71896b13c744fd32a872cb74b9a95ff113cebbc)
+  Thanks [@enisdenjo](https://github.com/enisdenjo)! - The `app:create` command now accepts a
+  directory or a glob pattern in addition to a persisted operations JSON manifest
+
+  When a directory or glob is provided, `app:create` scans for `*.graphql` files, normalizes each
+  operation by collapsing whitespace, computes a SHA-256 hash per operation, and uses the resulting
+  manifest directly without writing an intermediate file.
+
+  ```bash
+  # from a directory
+  hive app:create --name my-app --version 1.0.0 ./src/operations
+  
+  # from a glob pattern
+  hive app:create --name my-app --version 1.0.0 "./src/**/*.graphql"
+  
+  # from an existing manifest (unchanged behavior)
+  hive app:create --name my-app --version 1.0.0 persisted-operations.json
+  ```
+
+- Updated dependencies
+  [[`63a9126`](https://github.com/graphql-hive/console/commit/63a912691f0c7e5afdd2cc864de53df289592b54)]:
+  - @graphql-hive/core@0.21.1
+
 ## 0.60.0
 
 ### Minor Changes

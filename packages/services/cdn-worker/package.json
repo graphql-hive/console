@@ -23,13 +23,13 @@
     "@whatwg-node/server": "0.10.17",
     "bcryptjs": "2.4.3",
     "dotenv": "16.4.7",
-    "esbuild": "0.25.9",
+    "esbuild": "0.28.1",
     "fastify": "5.8.5",
     "graphql": "16.9.0",
     "itty-router": "4.2.2",
     "itty-router-extras": "0.4.6",
     "toucan-js": "4.1.0",
-    "undici": "7.24.0",
+    "undici": "7.28.0",
     "zod": "3.25.76"
   }
 }

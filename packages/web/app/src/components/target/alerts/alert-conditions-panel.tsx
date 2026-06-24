@@ -170,17 +170,21 @@ export function AlertConditionsPanel({
       ? `${rule.metric.toLowerCase()} latency`
       : METRIC_LABEL_BY_TYPE[rule.type];
 
-  // A PERCENTAGE_CHANGE threshold is always a percent. A fixed value carries the
-  // metric's own unit: ms for latency (rendered via formatDuration, e.g.
-  // "4.00s"), percent for error rate, and a bare count for traffic.
   const thresholdDisplay =
     rule.thresholdType === MetricAlertRuleThresholdType.PercentageChange
-      ? `${rule.thresholdValue}%`
+      ? `${Math.abs(rule.thresholdValue)}%`
       : rule.type === MetricAlertRuleType.Latency
         ? formatDuration(rule.thresholdValue, true)
         : rule.type === MetricAlertRuleType.ErrorRate
           ? `${rule.thresholdValue}%`
           : String(rule.thresholdValue);
+
+  const conditionLabel =
+    rule.thresholdType === MetricAlertRuleThresholdType.PercentageChange
+      ? rule.direction.toUpperCase() === 'BELOW'
+        ? 'decrease'
+        : 'increase'
+      : rule.direction.toLowerCase();
 
   const destination = destinationLabel(rule.channels);
 
@@ -239,7 +243,7 @@ export function AlertConditionsPanel({
             items: [
               {
                 term: 'Condition',
-                description: <span className="capitalize">{rule.direction.toLowerCase()}</span>,
+                description: <span className="capitalize">{conditionLabel}</span>,
               },
               {
                 term: 'Threshold type',

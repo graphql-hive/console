@@ -39,7 +39,7 @@ export function GetStartedWizard({
         </SheetHeader>
         <div className="space-y-3 py-4">
           <Task
-            link={docsUrl('/management/projects#create-a-new-project')}
+            link={docsUrl('/schema-registry/management/projects#create-a-new-project')}
             completed={tasks.creatingProject}
             title="Create a project"
             description="A project represents a GraphQL API"
@@ -58,7 +58,9 @@ export function GetStartedWizard({
           />
           {'invitingMembers' in tasks && typeof tasks.invitingMembers === 'boolean' ? (
             <Task
-              link={docsUrl('/management/organizations#members')}
+              link={docsUrl(
+                '/schema-registry/management/members-roles-permissions#inviting-new-members',
+              )}
               completed={tasks.invitingMembers}
               title="Invite members"
               description="Invite your team members to collaborate on your projects"
@@ -72,7 +74,7 @@ export function GetStartedWizard({
             description="Collect and analyze your GraphQL API usage"
           />
           <Task
-            link={docsUrl('/management/targets#conditional-breaking-changes')}
+            link={docsUrl('/schema-registry/management/targets#conditional-breaking-changes')}
             completed={tasks.enablingUsageBasedBreakingChanges}
             title="Enable usage-based schema checking"
             description="Detect breaking changes based on real usage data"

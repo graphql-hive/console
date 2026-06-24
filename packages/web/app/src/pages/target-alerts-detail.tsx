@@ -1,4 +1,4 @@
-import { ReactNode, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { subMinutes } from 'date-fns';
 import { useQuery } from 'urql';
 import { Select } from '@/components/base/floating/select/select';
@@ -11,16 +11,21 @@ import {
   type AlertEventsTableRule,
 } from '@/components/target/alerts/alert-events-table';
 import { AlertMetricChart } from '@/components/target/alerts/alert-metric-chart';
+import { ALERTS_POLL_INTERVAL_MS } from '@/components/target/alerts/alert-polling';
 import { AlertStateTransitionsBar } from '@/components/target/alerts/alert-state-transitions-bar';
 import { Spinner } from '@/components/ui/spinner';
 import { graphql } from '@/gql';
 import {
   MetricAlertRuleDirection,
+  MetricAlertRuleMetric,
+  MetricAlertRuleSeverity,
   MetricAlertRuleThresholdType,
   MetricAlertRuleType,
 } from '@/gql/graphql';
+import { resolveRangeAndResolution } from '@/lib/hooks/use-date-range-controller';
 import { formatDuration } from '@/lib/hooks/use-formatted-duration';
-import { useTickCounter } from '@/lib/hooks/use-tick-counter';
+import { useKeepPreviousData } from '@/lib/hooks/use-keep-previous-data';
+import { useRollingNow } from '@/lib/hooks/use-rolling-now';
 import { useNavigate } from '@tanstack/react-router';
 
 // Static rule configuration. Fetched once with no polling — the Modify-alert
@@ -102,6 +107,7 @@ const TargetAlertsDetailPage_StateLogQuery = graphql(`
     $ruleId: ID!
     $from: DateTime!
     $to: DateTime!
+    $resolution: Int!
   ) {
     target(
       reference: {
@@ -125,6 +131,9 @@ const TargetAlertsDetailPage_StateLogQuery = graphql(`
           thresholdValue
           createdAt
         }
+      }
+      operationsStats(period: { from: $from, to: $to }) {
+        ...AlertMetricChart_OperationsStatsFragment
       }
     }
   }
@@ -215,7 +224,7 @@ export function TargetAlertsDetailPage(props: {
     );
   }
 
-  if (!result.data) {
+  if (!rule && (result.fetching || result.stale)) {
     return (
       <div className="flex h-fit flex-1 items-center justify-center py-28">
         <Spinner />
@@ -259,28 +268,6 @@ export function TargetAlertsDetailPage(props: {
           ruleId={rule.id}
           viewRangeMinutes={viewRangeMinutes}
           rule={rule}
-          chart={
-            <section className="space-y-2">
-              <h2 className="text-neutral-12 m-0 text-sm font-medium">
-                {rule.type === MetricAlertRuleType.ErrorRate
-                  ? 'Error rate over time'
-                  : rule.type === MetricAlertRuleType.Latency
-                    ? 'Latency over time'
-                    : 'Traffic over time'}
-              </h2>
-              <AlertMetricChart
-                organizationSlug={organizationSlug}
-                projectSlug={projectSlug}
-                targetSlug={targetSlug}
-                type={rule.type}
-                metric={rule.metric}
-                timeWindowMinutes={parseInt(viewRangeMinutes, 10) || 60}
-                thresholdValue={rule.thresholdValue}
-                direction={rule.direction}
-                thresholdType={rule.thresholdType}
-              />
-            </section>
-          }
         />
       </div>
 
@@ -308,36 +295,36 @@ function RuleStateLogSection(props: {
   targetSlug: string;
   ruleId: string;
   viewRangeMinutes: string;
-  rule: AlertEventsTableRule & { createdAt: string };
-  chart: ReactNode;
+  rule: AlertEventsTableRule & {
+    createdAt: string;
+    metric?: MetricAlertRuleMetric | null;
+    severity: MetricAlertRuleSeverity;
+  };
 }) {
-  const { organizationSlug, projectSlug, targetSlug, ruleId, viewRangeMinutes, rule, chart } =
-    props;
+  const { organizationSlug, projectSlug, targetSlug, ruleId, viewRangeMinutes, rule } = props;
 
-  const tick = useTickCounter(15_000);
-  const { from, to } = useMemo(() => {
-    const now = new Date();
+  const now = useRollingNow(ALERTS_POLL_INTERVAL_MS);
+  const { from, to, resolution } = useMemo(() => {
     const minutes = parseInt(viewRangeMinutes, 10) || 60;
+    const resolved = resolveRangeAndResolution({ from: subMinutes(now, minutes), to: now });
     return {
-      from: subMinutes(now, minutes).toISOString(),
-      to: now.toISOString(),
+      from: resolved.range.from.toISOString(),
+      to: resolved.range.to.toISOString(),
+      resolution: resolved.resolution,
     };
-  }, [viewRangeMinutes, tick]);
+  }, [now, viewRangeMinutes]);
 
   const [result] = useQuery({
     query: TargetAlertsDetailPage_StateLogQuery,
-    variables: { organizationSlug, projectSlug, targetSlug, ruleId, from, to },
+    variables: { organizationSlug, projectSlug, targetSlug, ruleId, from, to, resolution },
     requestPolicy: 'cache-and-network',
   });
 
-  // urql retains the previous `data` across the variable change each poll, so
-  // these sections keep showing the last state-log while the next one loads.
-  // We only fall back to loading/error UI when there's nothing cached to show
-  // (initial load), a transient error on a later poll keeps the last good
-  // data on screen rather than blanking it.
-  const stateLog = result.data?.target?.metricAlertRule?.stateLog ?? [];
-  const stateAtWindowStart = result.data?.target?.metricAlertRule?.stateAt;
-  const hasNoData = !result.data;
+  const data = useKeepPreviousData(result.data, result.fetching || result.stale);
+  const stateLog = data?.target?.metricAlertRule?.stateLog ?? [];
+  const stateAtWindowStart = data?.target?.metricAlertRule?.stateAt;
+  const operationsStats = data?.target?.operationsStats ?? null;
+  const hasNoData = !data;
   const stateLogStatus =
     result.error && hasNoData ? (
       <div className="py-4 text-sm text-red-500">
@@ -364,7 +351,26 @@ function RuleStateLogSection(props: {
         )}
       </section>
 
-      {chart}
+      <section className="space-y-2">
+        <h2 className="text-neutral-12 m-0 text-sm font-medium">
+          {rule.type === MetricAlertRuleType.ErrorRate
+            ? 'Error rate over time'
+            : rule.type === MetricAlertRuleType.Latency
+              ? 'Latency over time'
+              : 'Traffic over time'}
+        </h2>
+        <AlertMetricChart
+          stats={operationsStats}
+          loading={result.fetching && hasNoData}
+          type={rule.type}
+          metric={rule.metric}
+          severity={rule.severity}
+          thresholdValue={rule.thresholdValue}
+          direction={rule.direction}
+          thresholdType={rule.thresholdType}
+          timeWindowMinutes={rule.timeWindowMinutes}
+        />
+      </section>
 
       {stateLogStatus ? null : (
         <AlertEventsTable

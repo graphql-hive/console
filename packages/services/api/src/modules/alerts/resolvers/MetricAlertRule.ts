@@ -62,6 +62,9 @@ export const MetricAlertRule: MetricAlertRuleResolvers = {
       after,
     });
   },
+  incidentCount: (rule, _, { injector }) => {
+    return injector.get(MetricAlertRulesStorage).getIncidentCount({ ruleId: rule.id });
+  },
   stateLog: (rule, { from, to }, { injector }) => {
     return injector.get(MetricAlertRulesStorage).getStateLog({
       ruleId: rule.id,

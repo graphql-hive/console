@@ -38,7 +38,7 @@ curl -sSL https://graphql-hive.com/install.sh | sh
 
 <!-- commands -->
 
-- [`hive app:create FILE`](#hive-appcreate-file)
+- [`hive app:create OPERATIONS`](#hive-appcreate-operations)
 - [`hive app:publish`](#hive-apppublish)
 - [`hive app:retire`](#hive-appretire)
 - [`hive artifact:fetch`](#hive-artifactfetch)
@@ -54,35 +54,37 @@ curl -sSL https://graphql-hive.com/install.sh | sh
 - [`hive update [CHANNEL]`](#hive-update-channel)
 - [`hive whoami`](#hive-whoami)
 
-## `hive app:create FILE`
+## `hive app:create OPERATIONS`
 
 create an app deployment
 
 ```
 USAGE
-  $ hive app:create FILE --name <value> --version <value> [--debug] [--registry.endpoint <value>]
-    [--registry.accessToken <value>] [--target <value>]
+  $ hive app:create OPERATIONS --name <value> [--debug] [--registry.endpoint <value>] [--registry.accessToken
+    <value>] [--version <value>] [--target <value>] [--publish]
 
 ARGUMENTS
-  FILE  Path to the persisted operations mapping.
+  OPERATIONS  Path to the persisted operations manifest (JSON file), a directory containing .graphql files, or a glob
+              pattern matching .graphql files.
 
 FLAGS
   --debug                         Whether debug output for HTTP calls and similar should be enabled.
   --name=<value>                  (required) app name
+  --publish                       Publish the app deployment after creation.
   --registry.accessToken=<value>  registry access token
   --registry.endpoint=<value>     registry endpoint
   --target=<value>                The target in which the app deployment will be created. This can either be a slug
                                   following the format "$organizationSlug/$projectSlug/$targetSlug" (e.g
                                   "the-guild/graphql-hive/staging") or an UUID (e.g.
                                   "a0f4c605-6541-4350-8cfe-b31f21a4bf80").
-  --version=<value>               (required) app version
+  --version=<value>               app version
 
 DESCRIPTION
   create an app deployment
 ```
 
 _See code:
-[src/commands/app/create.ts](https://github.com/graphql-hive/platform/blob/v0.60.0/src/commands/app/create.ts)_
+[src/commands/app/create.ts](https://github.com/graphql-hive/platform/blob/v0.60.2/src/commands/app/create.ts)_
 
 ## `hive app:publish`
 
@@ -109,7 +111,7 @@ DESCRIPTION
 ```
 
 _See code:
-[src/commands/app/publish.ts](https://github.com/graphql-hive/platform/blob/v0.60.0/src/commands/app/publish.ts)_
+[src/commands/app/publish.ts](https://github.com/graphql-hive/platform/blob/v0.60.2/src/commands/app/publish.ts)_
 
 ## `hive app:retire`
 
@@ -137,7 +139,7 @@ DESCRIPTION
 ```
 
 _See code:
-[src/commands/app/retire.ts](https://github.com/graphql-hive/platform/blob/v0.60.0/src/commands/app/retire.ts)_
+[src/commands/app/retire.ts](https://github.com/graphql-hive/platform/blob/v0.60.2/src/commands/app/retire.ts)_
 
 ## `hive artifact:fetch`
 
@@ -161,7 +163,7 @@ DESCRIPTION
 ```
 
 _See code:
-[src/commands/artifact/fetch.ts](https://github.com/graphql-hive/platform/blob/v0.60.0/src/commands/artifact/fetch.ts)_
+[src/commands/artifact/fetch.ts](https://github.com/graphql-hive/platform/blob/v0.60.2/src/commands/artifact/fetch.ts)_
 
 ## `hive dev`
 
@@ -204,7 +206,7 @@ DESCRIPTION
 ```
 
 _See code:
-[src/commands/dev.ts](https://github.com/graphql-hive/platform/blob/v0.60.0/src/commands/dev.ts)_
+[src/commands/dev.ts](https://github.com/graphql-hive/platform/blob/v0.60.2/src/commands/dev.ts)_
 
 ## `hive help [COMMAND]`
 
@@ -250,7 +252,7 @@ DESCRIPTION
 ```
 
 _See code:
-[src/commands/introspect.ts](https://github.com/graphql-hive/platform/blob/v0.60.0/src/commands/introspect.ts)_
+[src/commands/introspect.ts](https://github.com/graphql-hive/platform/blob/v0.60.2/src/commands/introspect.ts)_
 
 ## `hive operations:check FILE`
 
@@ -309,7 +311,7 @@ DESCRIPTION
 ```
 
 _See code:
-[src/commands/operations/check.ts](https://github.com/graphql-hive/platform/blob/v0.60.0/src/commands/operations/check.ts)_
+[src/commands/operations/check.ts](https://github.com/graphql-hive/platform/blob/v0.60.2/src/commands/operations/check.ts)_
 
 ## `hive schema:check FILE`
 
@@ -354,7 +356,7 @@ DESCRIPTION
 ```
 
 _See code:
-[src/commands/schema/check.ts](https://github.com/graphql-hive/platform/blob/v0.60.0/src/commands/schema/check.ts)_
+[src/commands/schema/check.ts](https://github.com/graphql-hive/platform/blob/v0.60.2/src/commands/schema/check.ts)_
 
 ## `hive schema:delete SERVICE`
 
@@ -371,7 +373,8 @@ ARGUMENTS
 FLAGS
   --confirm                       Confirm deletion of the service
   --debug                         Whether debug output for HTTP calls and similar should be enabled.
-  --dryRun                        Does not delete the service, only reports what it would have done.
+  --dryRun                        Does not delete the service, only reports what it would have done. Skips confirmation
+                                  prompt.
   --registry=<value>              registry address
   --registry.accessToken=<value>  registry access token
   --registry.endpoint=<value>     registry endpoint
@@ -386,7 +389,7 @@ DESCRIPTION
 ```
 
 _See code:
-[src/commands/schema/delete.ts](https://github.com/graphql-hive/platform/blob/v0.60.0/src/commands/schema/delete.ts)_
+[src/commands/schema/delete.ts](https://github.com/graphql-hive/platform/blob/v0.60.2/src/commands/schema/delete.ts)_
 
 ## `hive schema:fetch [COMMIT]`
 
@@ -419,7 +422,7 @@ DESCRIPTION
 ```
 
 _See code:
-[src/commands/schema/fetch.ts](https://github.com/graphql-hive/platform/blob/v0.60.0/src/commands/schema/fetch.ts)_
+[src/commands/schema/fetch.ts](https://github.com/graphql-hive/platform/blob/v0.60.2/src/commands/schema/fetch.ts)_
 
 ## `hive schema:promote`
 
@@ -452,7 +455,7 @@ DESCRIPTION
 ```
 
 _See code:
-[src/commands/schema/promote.ts](https://github.com/graphql-hive/platform/blob/v0.60.0/src/commands/schema/promote.ts)_
+[src/commands/schema/promote.ts](https://github.com/graphql-hive/platform/blob/v0.60.2/src/commands/schema/promote.ts)_
 
 ## `hive schema:publish FILE`
 
@@ -496,7 +499,7 @@ DESCRIPTION
 ```
 
 _See code:
-[src/commands/schema/publish.ts](https://github.com/graphql-hive/platform/blob/v0.60.0/src/commands/schema/publish.ts)_
+[src/commands/schema/publish.ts](https://github.com/graphql-hive/platform/blob/v0.60.2/src/commands/schema/publish.ts)_
 
 ## `hive update [CHANNEL]`
 
@@ -559,7 +562,7 @@ DESCRIPTION
 ```
 
 _See code:
-[src/commands/whoami.ts](https://github.com/graphql-hive/platform/blob/v0.60.0/src/commands/whoami.ts)_
+[src/commands/whoami.ts](https://github.com/graphql-hive/platform/blob/v0.60.2/src/commands/whoami.ts)_
 
 <!-- commandsstop -->
 

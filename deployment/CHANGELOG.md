@@ -1,5 +1,82 @@
 # hive
 
+## 11.3.0
+
+### Minor Changes
+
+- [#8120](https://github.com/graphql-hive/console/pull/8120)
+  [`065e087`](https://github.com/graphql-hive/console/commit/065e087a195320fab7cac8534129ee29fd578630)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Bump recommended clickhouse version for
+  self-hosting to `26.3.12.3`.
+
+  Pass `output_format_json_quote_64bit_integers=1` search parameter to clickhouse database queries
+  expecting `JSON` responses to ensure consistent response output for different cloud providers.
+
+  **Note:** Please ensure you are properly backing up your database and follow the Clickhouse
+  changelog before using a newer ClickHouse version. We use `clickhouse/clickhouse-server` only for
+  local development and integration testing. For production workloads, we recommend using a managed
+  cloud service or having dedicated staff responsible for operating ClickHouse and planning
+  upgrades.
+
+### Patch Changes
+
+- [#8110](https://github.com/graphql-hive/console/pull/8110)
+  [`599c829`](https://github.com/graphql-hive/console/commit/599c8298dcbba58de21c5cb930e1a8289ddc3666)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Fix schema SDL not including directives when
+  composing with schema stitching (impacting Federation projects). Bumped `@graphql-tools/stitch` to
+  v10.1.22, [which contains a necessary bugfix](https://github.com/graphql-hive/gateway/pull/2401),
+  and switched from `printSchema` to `printSchemaWithDirectives` when printing the stitched schema
+  SDL.
+
+- [#8121](https://github.com/graphql-hive/console/pull/8121)
+  [`84d1f5c`](https://github.com/graphql-hive/console/commit/84d1f5c64f9654e2159ff84b2590dd79c9d51f33)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Fix issue where the user emails were not inserted
+  in lower-case for OIDC providers returning non-lowercase emails.
+
+  If you are affected, you can manually fix you database state by running the following commands, to
+  make account-linking from different login methods work smoothly.
+
+  ```sql
+  UPDATE "users"
+  SET
+    "email" = lower("email")
+  WHERE
+    "email" <> lower("email");
+  ```
+
+  ```sql
+  UPDATE "supertokens_thirdparty_users"
+  SET
+    "email" = lower("email")
+  WHERE
+    "email" <> lower("email");
+  ```
+
+  Fix issue where user emails were not inserted into the database in lowercase for invites,
+  resulting in a mismatch of user account email and invite email that could not be accespted. To
+  cleanup your database of invites, run the following command to identify duplicate records and then
+  manually fix them/clean them up.
+
+  ```sql
+  SELECT
+    "organization_id",
+    lower(email) AS KEY,
+    array_agg(
+      json_object(
+        ARRAY['email', 'code', 'expires_at'],
+        ARRAY["email", "code", to_json("expires_at")::TEXT]
+      )
+    ) AS records,
+    COUNT(*)
+  FROM
+    "organization_invitations"
+  GROUP BY
+    "organization_id",
+    lower("email")
+  HAVING
+    COUNT(*) > 1;
+  ```
+
 ## 11.2.1
 
 ### Patch Changes
