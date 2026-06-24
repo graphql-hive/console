@@ -44,7 +44,7 @@ describe('delete', () => {
         expect: 'latest-composable',
       });
 
-      expect(message).toMatch('reviews deleted');
+      expect(message).toContain('Deleted "reviews" from target');
     });
 
     test.concurrent('rejected: unknown service', async () => {
