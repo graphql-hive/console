@@ -4,6 +4,7 @@ import { ArrowDown, Info } from 'lucide-react';
 import { useQuery } from 'urql';
 import { DataTable } from '@/components/base/data-table/data-table';
 import { PageLead } from '@/components/base/page-lead';
+import { AlertRuleEnabledToggle } from '@/components/target/alerts/alert-rule-enabled-toggle';
 import { BadgeRounded } from '@/components/ui/badge';
 import { Spinner } from '@/components/ui/spinner';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
@@ -81,6 +82,10 @@ type RuleRow = {
   incidentCount: number;
   channels: ReadonlyArray<{ id: string; type: string; name: string; detail: string | null }>;
   createdBy?: { id: string; displayName: string } | null;
+  // Page-level route context, stamped onto each row so the enable/disable toggle
+  // cell can build its mutation input without the column closing over props.
+  organizationSlug: string;
+  projectSlug: string;
 };
 
 const TYPE_LABEL: Record<MetricAlertRuleType, string> = {
@@ -154,6 +159,21 @@ function SortableHeader({ column, label }: { column: Column<RuleRow, unknown>; l
 const columnHelper = createColumnHelper<RuleRow>();
 
 const RULE_COLUMNS: ColumnDef<RuleRow, any>[] = [
+  columnHelper.display({
+    id: 'enabled',
+    header: 'Enabled',
+    enableSorting: false,
+    cell: ctx => (
+      <span onClick={e => e.stopPropagation()}>
+        <AlertRuleEnabledToggle
+          ruleId={ctx.row.original.id}
+          enabled={ctx.row.original.enabled}
+          organizationSlug={ctx.row.original.organizationSlug}
+          projectSlug={ctx.row.original.projectSlug}
+        />
+      </span>
+    ),
+  }),
   columnHelper.accessor('name', {
     header: ({ column }) => <SortableHeader column={column} label="Name" />,
     cell: info => <span className="text-neutral-12 font-medium">{info.getValue()}</span>,
@@ -317,8 +337,10 @@ export function TargetAlertsRulesPage(props: {
         createdBy: r.createdBy
           ? { id: r.createdBy.id, displayName: r.createdBy.displayName }
           : null,
+        organizationSlug,
+        projectSlug,
       })),
-    [data?.target?.metricAlertRules],
+    [data?.target?.metricAlertRules, organizationSlug, projectSlug],
   );
   const limit = data?.target?.metricAlertRulesLimit;
 

@@ -24,6 +24,7 @@ import {
 import { formatDuration } from '@/lib/hooks/use-formatted-duration';
 import { Link } from '@tanstack/react-router';
 import { AlertForm, ruleToFormDefaults } from './alert-form';
+import { AlertRuleEnabledToggle } from './alert-rule-enabled-toggle';
 import { DeleteRuleConfirmationDialog } from './delete-rule-confirmation-dialog';
 
 const TYPE_CATEGORY: Record<MetricAlertRuleType, string> = {
@@ -107,6 +108,7 @@ export type AlertConditionsPanelProps = {
     type: MetricAlertRuleType;
     metric?: string | null;
     severity: MetricAlertRuleSeverity;
+    enabled: boolean;
     direction: string;
     thresholdType: MetricAlertRuleThresholdType;
     thresholdValue: number;
@@ -132,7 +134,7 @@ export type AlertConditionsPanelProps = {
 
 function RelativeTimestamp({ iso }: { iso: string }) {
   return (
-    <span className="text-neutral-12 inline-flex items-center gap-1 font-mono text-[11px]">
+    <span className="text-neutral-12 inline-flex items-center gap-1 font-mono text-[10px]">
       {formatDistanceToNow(new Date(iso), { addSuffix: true })}
       <TooltipProvider delayDuration={100}>
         <Tooltip>
@@ -215,7 +217,7 @@ export function AlertConditionsPanel({
 
   return (
     <div className="border-neutral-5 bg-neutral-2 space-y-6 border-l px-5 py-3">
-      <h2 className="text-neutral-12 text-sm font-semibold">Alert conditions</h2>
+      <span className="text-neutral-12 mb-2 block text-sm font-semibold">Alert conditions</span>
 
       <DescriptionList
         rows={[
@@ -277,6 +279,21 @@ export function AlertConditionsPanel({
           },
         ]}
       />
+
+      <label className="border-neutral-5 flex cursor-pointer items-center justify-between border-y py-4">
+        <span className="flex flex-col gap-0.5">
+          <span className="text-neutral-12 text-sm font-medium">Alert status</span>
+          <span className="text-neutral-10 text-xs">
+            {rule.enabled ? 'Notifications are active' : 'Notifications are paused'}
+          </span>
+        </span>
+        <AlertRuleEnabledToggle
+          ruleId={rule.id}
+          enabled={rule.enabled}
+          organizationSlug={organizationSlug}
+          projectSlug={projectSlug}
+        />
+      </label>
 
       <div className="flex items-center gap-2">
         <ModifyAlertSheet
