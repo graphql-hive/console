@@ -217,7 +217,7 @@ export function AlertConditionsPanel({
 
   return (
     <div className="border-neutral-5 bg-neutral-2 space-y-6 border-l px-5 py-3">
-      <span className="text-neutral-12 mb-2 block text-sm font-semibold">Alert conditions</span>
+      <h2 className="text-neutral-12 mb-2 block text-sm font-semibold">Alert conditions</h2>
 
       <DescriptionList
         rows={[
