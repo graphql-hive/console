@@ -2474,7 +2474,7 @@ enum SaveStatus {
 
 export const useSaveStatus = () => {
   const [saveStatus, setSaveStatus] = useState<SaveStatus | null>();
-  const timerRef = useRef<NodeJS.Timeout | null>(null);
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const triggerSaveMessage = () => {
     if (timerRef.current) {
