@@ -4316,7 +4316,7 @@ const TargetModel = z.object({
   graphqlEndpointUrl: z.string().nullable(),
   failDiffOnDangerousChange: z.boolean(),
   failAllDangerousChanges: z.boolean(),
-  failDangerousChangeTypes: z.array(z.any()), // DangerousChangeType
+  failDangerousChangeTypes: z.array(z.string()), // DangerousChangeType
 });
 
 const TargetWithOrgIdModel = TargetModel.extend({

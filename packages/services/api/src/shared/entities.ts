@@ -333,7 +333,7 @@ export interface Target {
   graphqlEndpointUrl: string | null;
   failDiffOnDangerousChange: boolean;
   failAllDangerousChanges: boolean;
-  failDangerousChangeTypes: DangerousChangeType[];
+  failDangerousChangeTypes: string[];
 }
 
 export interface Token {
