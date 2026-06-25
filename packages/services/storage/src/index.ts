@@ -1733,23 +1733,11 @@ export async function createStorage(
     }) {
       await pool.transaction('updateTargetDangerousChangeClassification', async trx => {
         return trx.maybeOne(psql`/* updateTargetValidationSettings */
-            UPDATE targets as t
+            UPDATE targets
             SET
               fail_all_dangerous_changes = ${all},
               fail_dangerous_change_types = ${psql.array(failingTypes, 'text')}
-            FROM (
-              SELECT
-                it.id,
-                array_agg(DISTINCT tv.destination_target_id)
-                FILTER (WHERE tv.destination_target_id IS NOT NULL)
-                  AS "targets"
-              FROM targets AS it
-              LEFT JOIN target_validation AS tv ON (tv.target_id = it.id)
-              WHERE it.id = ${target} AND it.project_id = ${project}
-              GROUP BY it.id
-              LIMIT 1
-            ) ret
-            WHERE t.id = ret.id
+            WHERE id = ${target} AND project_id = ${project}
           `);
       });
     },
