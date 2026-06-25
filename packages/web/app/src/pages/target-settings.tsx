@@ -33,6 +33,7 @@ import {
 } from '@/components/ui/dialog';
 import { DocsLink } from '@/components/ui/docs-note';
 import { Form, FormControl, FormField, FormItem, FormMessage } from '@/components/ui/form';
+import { XIcon } from '@/components/ui/icon';
 import { Input } from '@/components/ui/input';
 import { Meta } from '@/components/ui/meta';
 import {
@@ -63,9 +64,7 @@ import {
 import { useRedirect } from '@/lib/access/common';
 import { subDays } from '@/lib/date-time';
 import { useToggle } from '@/lib/hooks';
-import { useTimed } from '@/lib/hooks/use-timed';
 import { cn } from '@/lib/utils';
-import type { TypeOfChangeType } from '@graphql-inspector/core';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { CheckIcon } from '@radix-ui/react-icons';
 import { RadioGroupIndicator } from '@radix-ui/react-radio-group';
@@ -2205,11 +2204,21 @@ function DangerousChangeTypeForm({
   projectSlug: string;
   targetSlug: string;
 }) {
-  const [mutation, mutate] = useMutation(TargetSettingsPage_UpdateFailingDangerousChangeSettings);
+  const [_, mutate] = useMutation(TargetSettingsPage_UpdateFailingDangerousChangeSettings);
   const { saveStatus, triggerSaveMessage } = useSaveStatus();
 
   const formik = useFormik({
     enableReinitialize: true,
+    initialStatus: {
+      error: undefined,
+    } as {
+      error:
+        | undefined
+        | {
+            title: string;
+            description: string | undefined;
+          };
+    },
     initialValues: {
       failingChangeTypes: initialFailingChangeTypes,
       failAllDangerousChanges: initialFailAllDangerousChanges,
@@ -2224,7 +2233,7 @@ function DangerousChangeTypeForm({
         })
         .label('Failing types'),
     }),
-    onSubmit: ({ failingChangeTypes, failAllDangerousChanges }, { setSubmitting }) =>
+    onSubmit: ({ failingChangeTypes, failAllDangerousChanges }, { setSubmitting, setStatus }) =>
       mutate({
         selector: {
           organizationSlug,
@@ -2235,14 +2244,36 @@ function DangerousChangeTypeForm({
           ? failingChangeTypes
           : [failingChangeTypes],
         failAllDangerousChanges,
-      }).then(() => {
-        setSubmitting(false);
-        triggerSaveMessage();
-      }),
+      })
+        .then(result => {
+          setSubmitting(false);
+          if (result.data?.updateTargetFailingDangerousChanges.error?.message || result.error) {
+            setStatus({
+              error: {
+                title: 'Dangerous change types were not updated.',
+                description:
+                  result.data?.updateTargetFailingDangerousChanges.error?.message ||
+                  result.error?.message,
+              },
+            });
+          } else {
+            setStatus({ error: undefined });
+            triggerSaveMessage();
+          }
+        })
+        .catch(e => {
+          setSubmitting(false);
+          setStatus({
+            error: {
+              title: 'Dangerous change types were not updated.',
+              description: e instanceof Error ? e.message : String(e),
+            },
+          });
+        }),
   });
 
   const setFailAllDangerousChanges = (val: boolean) => {
-    formik.setFieldValue('failAllDangerousChanges', val);
+    return formik.setFieldValue('failAllDangerousChanges', val);
   };
 
   /** Allows adding or removing multiple change types from the list of failing change types */
@@ -2257,7 +2288,7 @@ function DangerousChangeTypeForm({
         set.delete(type);
       }
     }
-    formik.setFieldValue('failingChangeTypes', Array.from(set));
+    return formik.setFieldValue('failingChangeTypes', Array.from(set));
   };
 
   return (
@@ -2272,16 +2303,16 @@ function DangerousChangeTypeForm({
         <div className="text-neutral-12 mb-3 mt-1 font-semibold">
           Select Failing Dangerous Change Types
         </div>
-        <div className="align-center flex gap-1 whitespace-nowrap border-b">
+        <div className="flex gap-1 whitespace-nowrap border-b">
           <Checkbox
             disabled={!considerDangerousAsBreaking}
             checked={formik.values.failAllDangerousChanges}
             onCheckedChange={setFailAllDangerousChanges}
           />
           <span
-            onClick={() => {
+            onClick={async () => {
               if (considerDangerousAsBreaking) {
-                setFailAllDangerousChanges(!formik.values.failAllDangerousChanges);
+                await setFailAllDangerousChanges(!formik.values.failAllDangerousChanges);
               }
             }}
             className={cn(
@@ -2308,7 +2339,7 @@ function DangerousChangeTypeForm({
           <span className="text-red-400">{formik.errors.failAllDangerousChanges}</span>
         </div>
         <div className="my-3">or fail only:</div>
-        <div className="grid grid-cols-1 gap-1 gap-2 lg:grid-cols-2">
+        <div className="grid grid-cols-1 gap-2 lg:grid-cols-2">
           {dangerousChangeList.map(
             ({
               /**
@@ -2338,7 +2369,7 @@ function DangerousChangeTypeForm({
               const disabled =
                 !considerDangerousAsBreaking || formik.values.failAllDangerousChanges;
               return (
-                <div className="align-center flex gap-x-1" key={label}>
+                <div className="flex gap-x-1" key={label}>
                   <Checkbox
                     onCheckedChange={state => setFailingChangeTypes(types, state)}
                     checked={checked}
@@ -2366,7 +2397,10 @@ function DangerousChangeTypeForm({
         </div>
       </div>
       <div className="flex flex-row items-center gap-5">
-        <Button type="submit" disabled={formik.isSubmitting || !considerDangerousAsBreaking}>
+        <Button
+          type="submit"
+          disabled={formik.isSubmitting || !considerDangerousAsBreaking || !formik.dirty}
+        >
           Save selections
         </Button>
         {formik.dirty && <UnsavedChangesLabel />}
@@ -2383,6 +2417,13 @@ function DangerousChangeTypeForm({
             : formik.errors.failingChangeTypes}
         </span>
       </div>
+      {formik.status?.error ? (
+        <div className="flex flex-row items-center gap-1 p-2 text-red-600 dark:text-red-400">
+          <XIcon className="size-4" />
+          <span className="font-semibold">{formik.status.error.title}</span>
+          <span>{formik.status.error.description}</span>
+        </div>
+      ) : null}
     </form>
   );
 }
