@@ -4,7 +4,12 @@ import type { MessagePort } from 'node:worker_threads';
 import type { FastifyBaseLogger } from 'fastify';
 import type { Logger } from '@hive/api';
 import { CompositionResponse } from './api';
-import { createComposeFederation, type ComposeFederationArgs } from './composition/federation';
+import {
+  createComposeFederation,
+  createComposeFederationContracts,
+  type ComposeFederationArgs,
+  type ComposeFederationContractsArgs,
+} from './composition/federation';
 import { composeSingle, type ComposeSingleArgs } from './composition/single';
 import { composeStitching, type ComposeStitchingArgs } from './composition/stitching';
 import type { env } from './environment';
@@ -66,6 +71,31 @@ export function createCompositionWorker(args: {
                 metadataAttributes: composed.result.metadataAttributes ?? null,
                 includesException: composed.result.includesException === true,
               },
+            },
+          } satisfies CompositionResultEvent);
+          return;
+        }
+
+        if (message.data.type === 'federation-contracts') {
+          const composeFederationContracts = createComposeFederationContracts({
+            decrypt,
+            logger: baseLogger.child({ reqId: message.data.args.requestId }) as FastifyBaseLogger,
+            requestTimeoutMs: args.env.timings.schemaExternalCompositionTimeout,
+          });
+
+          const composed = await composeFederationContracts(message.data.args);
+
+          args.port.postMessage({
+            event: 'compositionResult',
+            id: message.id,
+            data: {
+              type: message.data.type,
+              result: composed.map(contract => ({
+                id: contract.id,
+                errors: 'errors' in contract.result.result ? contract.result.result.errors : [],
+                sdl: contract.result.result.sdl ?? null,
+                supergraph: contract.result.result.supergraph ?? null,
+              })),
             },
           } satisfies CompositionResultEvent);
           return;
@@ -136,18 +166,27 @@ export type CompositionEvent = {
     | {
         type: 'stitching';
         args: ComposeStitchingArgs;
+      }
+    | {
+        type: 'federation-contracts';
+        args: ComposeFederationContractsArgs;
       };
 };
 
 export type CompositionResultEvent = {
   id: string;
   event: 'compositionResult';
-  data: {
-    type: 'federation' | 'single' | 'stitching';
-    result: CompositionResponse & {
-      includesException?: boolean;
-    };
-  };
+  data:
+    | {
+        type: 'federation' | 'single' | 'stitching';
+        result: CompositionResponse & {
+          includesException?: boolean;
+        };
+      }
+    | {
+        type: 'federation-contracts';
+        result: Exclude<CompositionResponse['contracts'], null>;
+      };
 };
 
 function decryptFactory(encryptionSecret: string) {

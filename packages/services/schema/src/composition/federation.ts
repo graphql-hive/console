@@ -3,6 +3,7 @@ import {
   parse,
   visit,
   type ConstDirectiveNode,
+  type DocumentNode,
   type FieldDefinitionNode,
   type NameNode,
 } from 'graphql';
@@ -41,125 +42,139 @@ export type ComposeFederationDeps = {
   requestTimeoutMs: number;
 };
 
-export type ComposeFederationArgs = {
+type SharedComposeFederationArgs = {
   schemas: ComposeAndValidateInput;
   external: ExternalComposition;
   native: boolean;
-  contracts: ContractsInputType | undefined;
   requestId: string;
 };
 
-export const createComposeFederation = (deps: ComposeFederationDeps) =>
-  async function composeFederation(args: ComposeFederationArgs): Promise<CompositionResult> {
-    const subgraphs = args.schemas
-      .map(schema => {
-        deps.logger?.debug(`Parsing subgraph schema SDL (name=%s)`, schema.source);
-        return {
-          typeDefs: trimDescriptions(parse(schema.raw)),
-          name: schema.source,
-          url: 'url' in schema && typeof schema.url === 'string' ? schema.url : undefined,
-        };
-      })
-      .map(subgraph => {
+export type ComposeFederationArgs = SharedComposeFederationArgs & {
+  contracts: ContractsInputType | undefined;
+};
+
+type PreparedSubgraph = {
+  typeDefs: DocumentNode;
+  name: string;
+  url: string | undefined;
+};
+
+function prepareSchemas(
+  deps: { logger?: ServiceLogger },
+  schemas: ComposeAndValidateInput,
+): Array<PreparedSubgraph> {
+  return schemas
+    .map(schema => {
+      deps.logger?.debug(`Parsing subgraph schema SDL (name=%s)`, schema.source);
+      return {
+        typeDefs: trimDescriptions(parse(schema.raw)),
+        name: schema.source,
+        url: 'url' in schema && typeof schema.url === 'string' ? schema.url : undefined,
+      };
+    })
+    .map(subgraph => {
+      deps.logger?.debug(`Extracting link implementations from subgraph (name=%s)`, subgraph.name);
+      const { matchesImplementation, resolveImportName } = extractLinkImplementations(
+        subgraph.typeDefs,
+      );
+      if (matchesImplementation('https://specs.graphql-hive.com/hive', 'v1.0')) {
         deps.logger?.debug(
-          `Extracting link implementations from subgraph (name=%s)`,
+          `Found hive link in subgraph. Applying link logic. (name=%s)`,
           subgraph.name,
         );
-        const { matchesImplementation, resolveImportName } = extractLinkImplementations(
-          subgraph.typeDefs,
+        // if this subgraph implements the metadata spec
+        // then copy metadata from the schema to all fields.
+        // @note this is similar to how federation's compose copies join__ directives to fields based on the
+        // subgraph that the field is a part of.
+        const metaDirectiveName = resolveImportName('https://specs.graphql-hive.com/hive', '@meta');
+        const applyMetaToField = (
+          fieldNode: FieldDefinitionNode,
+          metaDirectives: ConstDirectiveNode[],
+        ) => {
+          return {
+            ...fieldNode,
+            directives: [
+              ...(fieldNode.directives ?? []),
+              ...metaDirectives.map(d => ({ ...d, loc: undefined })),
+            ],
+          };
+        };
+
+        const schemaNodes = subgraph.typeDefs.definitions.filter(
+          d => d.kind === Kind.SCHEMA_DEFINITION || d.kind === Kind.SCHEMA_EXTENSION,
         );
-        if (matchesImplementation('https://specs.graphql-hive.com/hive', 'v1.0')) {
-          deps.logger?.debug(
-            `Found hive link in subgraph. Applying link logic. (name=%s)`,
-            subgraph.name,
-          );
-          // if this subgraph implements the metadata spec
-          // then copy metadata from the schema to all fields.
-          // @note this is similar to how federation's compose copies join__ directives to fields based on the
-          // subgraph that the field is a part of.
-          const metaDirectiveName = resolveImportName(
-            'https://specs.graphql-hive.com/hive',
-            '@meta',
-          );
-          const applyMetaToField = (
-            fieldNode: FieldDefinitionNode,
-            metaDirectives: ConstDirectiveNode[],
-          ) => {
-            return {
-              ...fieldNode,
-              directives: [
-                ...(fieldNode.directives ?? []),
-                ...metaDirectives.map(d => ({ ...d, loc: undefined })),
-              ],
-            };
-          };
-
-          const schemaNodes = subgraph.typeDefs.definitions.filter(
-            d => d.kind === Kind.SCHEMA_DEFINITION || d.kind === Kind.SCHEMA_EXTENSION,
-          );
-          const schemaMetaDirectives = schemaNodes
-            .flatMap(node => node.directives?.filter(d => d.name.value === metaDirectiveName))
+        const schemaMetaDirectives = schemaNodes
+          .flatMap(node => node.directives?.filter(d => d.name.value === metaDirectiveName))
+          .filter(d => d !== undefined);
+        const interfaceAndObjectHandler = (node: {
+          readonly fields?: ReadonlyArray<FieldDefinitionNode> | undefined;
+          readonly directives?: ReadonlyArray<ConstDirectiveNode> | undefined;
+          readonly name: NameNode;
+        }) => {
+          // apply type/interface metadata to fields
+          const objectMetaDirectives = node.directives
+            ?.filter(d => d.name.value === metaDirectiveName)
             .filter(d => d !== undefined);
-          const interfaceAndObjectHandler = (node: {
-            readonly fields?: ReadonlyArray<FieldDefinitionNode> | undefined;
-            readonly directives?: ReadonlyArray<ConstDirectiveNode> | undefined;
-            readonly name: NameNode;
-          }) => {
-            // apply type/interface metadata to fields
-            const objectMetaDirectives = node.directives
-              ?.filter(d => d.name.value === metaDirectiveName)
-              .filter(d => d !== undefined);
-            if (objectMetaDirectives?.length) {
-              return {
-                ...node,
-                fields: node.fields?.map(f => applyMetaToField(f, objectMetaDirectives)),
-              };
-            }
-            return node;
-          };
-          subgraph.typeDefs = visit(subgraph.typeDefs, {
-            FieldDefinition: field => {
-              return applyMetaToField(field, schemaMetaDirectives);
-            },
-            ObjectTypeDefinition: interfaceAndObjectHandler,
-            InterfaceTypeDefinition: interfaceAndObjectHandler,
-          });
-        }
-        return subgraph;
-      });
-
-    /** Determine the correct compose method... */
-    let compose: (subgraphs: Array<SubgraphInput>) => Promise<
-      ComposerMethodResult & {
-        includesException?: boolean;
-      }
-    >;
-
-    // Federation v2
-    if (args.native) {
-      deps.logger?.debug(
-        'Using built-in Federation v2 composition service (schemas=%s)',
-        args.schemas.length,
-      );
-      compose = subgraphs => Promise.resolve(composeFederationV2(subgraphs, deps.logger));
-    } else if (args.external) {
-      const { external } = args;
-      compose = subgraphs =>
-        composeExternalFederation({
-          decrypt: deps.decrypt,
-          external,
-          logger: deps.logger,
-          requestId: args.requestId,
-          subgraphs,
-          requestTimeoutMs: deps.requestTimeoutMs,
+          if (objectMetaDirectives?.length) {
+            return {
+              ...node,
+              fields: node.fields?.map(f => applyMetaToField(f, objectMetaDirectives)),
+            };
+          }
+          return node;
+        };
+        subgraph.typeDefs = visit(subgraph.typeDefs, {
+          FieldDefinition: field => {
+            return applyMetaToField(field, schemaMetaDirectives);
+          },
+          ObjectTypeDefinition: interfaceAndObjectHandler,
+          InterfaceTypeDefinition: interfaceAndObjectHandler,
         });
-    } else {
-      deps.logger?.debug(
-        'Using built-in Federation v1 composition service (schemas=%s)',
-        args.schemas.length,
-      );
-      compose = subgraphs => Promise.resolve(composeFederationV1(subgraphs));
-    }
+      }
+      return subgraph;
+    });
+}
+
+type CompositionFunctionImpl = (subgraphs: Array<SubgraphInput>) => Promise<
+  ComposerMethodResult & {
+    includesException?: boolean;
+  }
+>;
+
+function pickCompositionMethod(
+  deps: ComposeFederationDeps,
+  args: SharedComposeFederationArgs,
+): CompositionFunctionImpl {
+  // Federation v2
+  if (args.native) {
+    deps.logger?.debug(
+      'Using built-in Federation v2 composition service (schemas=%s)',
+      args.schemas.length,
+    );
+    return subgraphs => Promise.resolve(composeFederationV2(subgraphs, deps.logger));
+  } else if (args.external) {
+    const { external } = args;
+    return subgraphs =>
+      composeExternalFederation({
+        decrypt: deps.decrypt,
+        external,
+        logger: deps.logger,
+        requestId: args.requestId,
+        subgraphs,
+        requestTimeoutMs: deps.requestTimeoutMs,
+      });
+  }
+  deps.logger?.debug(
+    'Using built-in Federation v1 composition service (schemas=%s)',
+    args.schemas.length,
+  );
+  return subgraphs => Promise.resolve(composeFederationV1(subgraphs));
+}
+
+export const createComposeFederation = (deps: ComposeFederationDeps) =>
+  async function composeFederation(args: ComposeFederationArgs): Promise<CompositionResult> {
+    const subgraphs = prepareSchemas(deps, args.schemas);
+    const compose = pickCompositionMethod(deps, args);
     let result: CompositionResult;
 
     {
@@ -244,69 +259,11 @@ export const createComposeFederation = (deps: ComposeFederationDeps) =>
     }
 
     // if there are contracts, then create
-    const contractResults: Array<ContractResultType> = await Promise.all(
-      args.contracts.map(async contract => {
-        // apply contracts to replace tags with inaccessible directives
-        const filteredSubgraphs = applyTagFilterOnSubgraphs(subgraphs, {
-          include: new Set(contract.filter.include),
-          exclude: new Set(contract.filter.exclude),
-        });
-
-        // attempt to compose the contract filtered subgraph
-        const compositionResult = await compose(filteredSubgraphs);
-
-        // Remove unreachable types from public API schema
-        if (
-          contract.filter.removeUnreachableTypesFromPublicApiSchema === true &&
-          compositionResult.type === 'success'
-        ) {
-          let supergraphSDL = parse(compositionResult.result.supergraph);
-          const { resolveImportName } = extractLinkImplementations(supergraphSDL);
-          const result = addInaccessibleToUnreachableTypes(resolveImportName, {
-            supergraphSdl: compositionResult.result.supergraph,
-            publicSdl: compositionResult.result.sdl,
-          });
-
-          return {
-            id: contract.id,
-            result: {
-              type: 'success',
-              result: {
-                supergraph: result.supergraphSdl,
-                sdl: result.publicSdl,
-              },
-            },
-          } satisfies ContractResultSuccess;
-        }
-
-        if (compositionResult.type === 'success') {
-          return {
-            id: contract.id,
-            result: {
-              type: 'success',
-              result: {
-                supergraph: compositionResult.result.supergraph,
-                sdl: compositionResult.result.sdl,
-              },
-            },
-          } satisfies ContractResultSuccess;
-        }
-
-        return {
-          id: contract.id,
-          result: {
-            type: 'failure',
-            result: {
-              supergraph: null,
-              sdl: null,
-              errors: compositionResult.result.errors,
-              includesNetworkError: compositionResult.includesNetworkError,
-              includesException: compositionResult.includesException ?? false,
-            },
-          },
-        } satisfies ContractResultFailure;
-      }),
-    );
+    const contractResults: Array<ContractResultType> = await composeFederationContractsImpl({
+      compose,
+      contracts: args.contracts,
+      subgraphs,
+    });
 
     const networkErrorContract = contractResults.find(
       (contract): contract is ContractResultFailure =>
@@ -338,4 +295,93 @@ export const createComposeFederation = (deps: ComposeFederationDeps) =>
         contracts: contractResults,
       },
     };
+  };
+
+type ComposeFederationContractsImplArgs = {
+  subgraphs: Array<PreparedSubgraph>;
+  contracts: ContractsInputType;
+  compose: CompositionFunctionImpl;
+};
+
+async function composeFederationContractsImpl(args: ComposeFederationContractsImplArgs) {
+  return await Promise.all(
+    args.contracts.map(async contract => {
+      // apply contracts to replace tags with inaccessible directives
+      const filteredSubgraphs = applyTagFilterOnSubgraphs(args.subgraphs, {
+        include: new Set(contract.filter.include),
+        exclude: new Set(contract.filter.exclude),
+      });
+
+      // attempt to compose the contract filtered subgraph
+      const compositionResult = await args.compose(filteredSubgraphs);
+
+      // Remove unreachable types from public API schema
+      if (
+        contract.filter.removeUnreachableTypesFromPublicApiSchema === true &&
+        compositionResult.type === 'success'
+      ) {
+        let supergraphSDL = parse(compositionResult.result.supergraph);
+        const { resolveImportName } = extractLinkImplementations(supergraphSDL);
+        const result = addInaccessibleToUnreachableTypes(resolveImportName, {
+          supergraphSdl: compositionResult.result.supergraph,
+          publicSdl: compositionResult.result.sdl,
+        });
+
+        return {
+          id: contract.id,
+          result: {
+            type: 'success',
+            result: {
+              supergraph: result.supergraphSdl,
+              sdl: result.publicSdl,
+            },
+          },
+        } satisfies ContractResultSuccess;
+      }
+
+      if (compositionResult.type === 'success') {
+        return {
+          id: contract.id,
+          result: {
+            type: 'success',
+            result: {
+              supergraph: compositionResult.result.supergraph,
+              sdl: compositionResult.result.sdl,
+            },
+          },
+        } satisfies ContractResultSuccess;
+      }
+
+      return {
+        id: contract.id,
+        result: {
+          type: 'failure',
+          result: {
+            supergraph: null,
+            sdl: null,
+            errors: compositionResult.result.errors,
+            includesNetworkError: compositionResult.includesNetworkError,
+            includesException: compositionResult.includesException ?? false,
+          },
+        },
+      } satisfies ContractResultFailure;
+    }),
+  );
+}
+
+export type ComposeFederationContractsArgs = SharedComposeFederationArgs & {
+  contracts: ContractsInputType;
+};
+
+export const createComposeFederationContracts = (deps: ComposeFederationDeps) =>
+  async function composeFederation(
+    args: ComposeFederationContractsArgs,
+  ): Promise<Array<ContractResultType>> {
+    const subgraphs = prepareSchemas(deps, args.schemas);
+    const compose = pickCompositionMethod(deps, args);
+    return await composeFederationContractsImpl({
+      compose,
+      subgraphs,
+      contracts: args.contracts,
+    });
   };
