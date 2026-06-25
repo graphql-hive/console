@@ -2225,7 +2225,7 @@ function DangerousChangeTypeForm({
     } as { failingChangeTypes: DangerousChangeType[]; failAllDangerousChanges: boolean },
     validationSchema: Yup.object().shape({
       failAllDangerousChanges: Yup.bool().label('Fail all'),
-      failingChangeTypes: Yup.array(Yup.string())
+      failingChangeTypes: Yup.array().of(Yup.string())
         .when('failAllDangerousChanges', {
           is: true,
           then: schema => schema.notRequired(),
