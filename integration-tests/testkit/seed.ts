@@ -54,6 +54,8 @@ import {
   updateBaseSchema,
   updateMemberRole,
   updateMetricAlertRule,
+  updateTargetDangerousChangeClassification,
+  updateTargetFailingDangerousChanges,
   updateTargetValidationSettings,
 } from './flow';
 import * as GraphQLSchema from './gql/graphql';
@@ -1128,6 +1130,54 @@ export function initSeed() {
                   ).then(r => r.expectNoGraphQLErrors());
 
                   return result.updateTargetConditionalBreakingChangeConfiguration;
+                },
+                async updateTargetDangerousChangeClassification({
+                  failDiffOnDangerousChange,
+                  target: ttarget = target,
+                }: Omit<GraphQLSchema.UpdateTargetDangerousChangeClassificationInput, 'target'> & {
+                  target?: TargetOverwrite;
+                }) {
+                  const result = await updateTargetDangerousChangeClassification(
+                    {
+                      failDiffOnDangerousChange: failDiffOnDangerousChange,
+                      target: {
+                        bySelector: {
+                          organizationSlug: organization.slug,
+                          projectSlug: project.slug,
+                          targetSlug: ttarget.slug,
+                        },
+                      },
+                    },
+                    {
+                      token: ownerToken,
+                    },
+                  ).then(r => r.expectNoGraphQLErrors());
+                  return result.updateTargetDangerousChangeClassification;
+                },
+                async updateTargetFailingDangerousChanges({
+                  target: ttarget = target,
+                  all,
+                  failingTypes,
+                }: Omit<GraphQLSchema.UpdateTargetFailingDangerousChangesInput, 'target'> & {
+                  target?: TargetOverwrite;
+                }) {
+                  const result = await updateTargetFailingDangerousChanges(
+                    {
+                      all,
+                      failingTypes,
+                      target: {
+                        bySelector: {
+                          organizationSlug: organization.slug,
+                          projectSlug: project.slug,
+                          targetSlug: ttarget.slug,
+                        },
+                      },
+                    },
+                    {
+                      token: ownerToken,
+                    },
+                  ).then(r => r.expectNoGraphQLErrors());
+                  return result.updateTargetFailingDangerousChanges;
                 },
                 async compareToPreviousVersion(version: string, ttarget: TargetOverwrite = target) {
                   return (

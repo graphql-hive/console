@@ -390,6 +390,8 @@ export interface TargetSettings {
     excludedAppDeployments: string[];
   };
   failDiffOnDangerousChange: boolean;
+  failAllDangerousChanges: boolean;
+  failDangerousChangeTypes: DangerousChangeType[];
   appDeploymentProtection: {
     isEnabled: boolean;
     minDaysInactive: number;

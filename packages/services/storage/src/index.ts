@@ -4464,6 +4464,8 @@ const targetSettingsFields = (prefix: TaggedTemplateLiteralInvocation) => psql`
   , ${prefix}"validation_request_count" AS "validationRequestCount"
   , ${prefix}"validation_breaking_change_formula" AS "validationBreakingChangeFormula"
   , ${prefix}"fail_diff_on_dangerous_change" AS "failDiffOnDangerousChange"
+  , ${prefix}"fail_all_dangerous_changes" as "failAllDangerousChanges"
+  , ${prefix}"fail_dangerous_change_types" as "failDangerousChangeTypes"
   , ${prefix}"app_deployment_protection_enabled" AS "appDeploymentProtectionEnabled"
   , ${prefix}"app_deployment_protection_min_days_inactive" AS "appDeploymentProtectionMinDaysInactive"
   , ${prefix}"app_deployment_protection_min_days_since_creation" AS "appDeploymentProtectionMinDaysSinceCreation"
@@ -4711,6 +4713,8 @@ const TargetSettingsModel = z
     validationRequestCount: z.number().nullable(),
     validationBreakingChangeFormula: z.string().nullable(),
     failDiffOnDangerousChange: z.boolean(),
+    failAllDangerousChanges: z.boolean(),
+    failDangerousChangeTypes: z.array(z.any()),
     targets: z.array(z.string()).nullable(),
     appDeploymentProtectionEnabled: z.boolean(),
     appDeploymentProtectionMinDaysInactive: z.number(),
@@ -4721,6 +4725,8 @@ const TargetSettingsModel = z
   })
   .transform(row => ({
     failDiffOnDangerousChange: row.failDiffOnDangerousChange,
+    failAllDangerousChanges: row.failAllDangerousChanges,
+    failDangerousChangeTypes: row.failDangerousChangeTypes,
     validation: {
       isEnabled: row.validationEnabled,
       percentage: row.validationPercentage,
