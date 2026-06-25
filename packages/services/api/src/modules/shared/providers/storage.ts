@@ -8,7 +8,7 @@ import type {
   SchemaCheckInput,
   TargetBreadcrumb,
 } from '@hive/storage';
-import type { SchemaChecksFilter } from '../../../__generated__/types';
+import type { DangerousChangeType, SchemaChecksFilter } from '../../../__generated__/types';
 import type {
   Alert,
   AlertChannel,
@@ -329,6 +329,13 @@ export interface Storage {
   updateTargetDangerousChangeClassification(
     _: TargetSelector & Pick<TargetSettings, 'failDiffOnDangerousChange'>,
   ): Promise<TargetSettings | never>; // @todo decide if something should be returned.
+
+  updateTargetFailingDangerousChanges(
+    _: TargetSelector & {
+      all: boolean;
+      failingTypes: readonly DangerousChangeType[];
+    },
+  ): Promise<void>;
 
   updateTargetAppDeploymentProtectionSettings(
     _: Pick<TargetSelector, 'targetId' | 'projectId'> &

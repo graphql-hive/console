@@ -1725,6 +1725,34 @@ export async function createStorage(
         })
         .then(TargetSettingsModel.parse);
     },
+    async updateTargetFailingDangerousChanges({
+      targetId: target,
+      projectId: project,
+      all,
+      failingTypes,
+    }) {
+      await pool.transaction('updateTargetDangerousChangeClassification', async trx => {
+        return trx.maybeOne(psql`/* updateTargetValidationSettings */
+            UPDATE targets as t
+            SET
+              fail_all_dangerous_changes = ${all},
+              fail_dangerous_change_types = ${psql.array(failingTypes, 'text')}
+            FROM (
+              SELECT
+                it.id,
+                array_agg(DISTINCT tv.destination_target_id)
+                FILTER (WHERE tv.destination_target_id IS NOT NULL)
+                  AS "targets"
+              FROM targets AS it
+              LEFT JOIN target_validation AS tv ON (tv.target_id = it.id)
+              WHERE it.id = ${target} AND it.project_id = ${project}
+              GROUP BY it.id
+              LIMIT 1
+            ) ret
+            WHERE t.id = ret.id
+          `);
+      });
+    },
     async updateTargetValidationSettings({
       targetId: target,
       projectId: project,
@@ -4214,7 +4242,9 @@ const targetSQLFields = psql`
   "name",
   "project_id" as "projectId",
   "graphql_endpoint_url" as "graphqlEndpointUrl",
-  "fail_diff_on_dangerous_change" as "failDiffOnDangerousChange"
+  "fail_diff_on_dangerous_change" as "failDiffOnDangerousChange",
+  "fail_all_dangerous_changes" as "failAllDangerousChanges",
+  "fail_dangerous_change_types" as "failDangerousChangeTypes"
 `;
 
 export function findTargetById(deps: { pool: PostgresDatabasePool }) {
@@ -4285,6 +4315,8 @@ const TargetModel = z.object({
   projectId: z.string(),
   graphqlEndpointUrl: z.string().nullable(),
   failDiffOnDangerousChange: z.boolean(),
+  failAllDangerousChanges: z.boolean(),
+  failDangerousChangeTypes: z.array(z.any()), // DangerousChangeType
 });
 
 const TargetWithOrgIdModel = TargetModel.extend({

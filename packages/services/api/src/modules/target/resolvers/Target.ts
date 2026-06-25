@@ -9,6 +9,8 @@ export const Target: Pick<
   | 'cleanId'
   | 'conditionalBreakingChangeConfiguration'
   | 'experimental_forcedLegacySchemaComposition'
+  | 'failAllDangerousChanges'
+  | 'failDangerousChangeTypes'
   | 'failDiffOnDangerousChange'
   | 'graphqlEndpointUrl'
   | 'id'
