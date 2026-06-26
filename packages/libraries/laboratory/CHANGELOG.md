@@ -1,5 +1,17 @@
 # @graphql-hive/laboratory
 
+## 0.1.9
+
+### Patch Changes
+
+- [#8167](https://github.com/graphql-hive/console/pull/8167)
+  [`6e9a210`](https://github.com/graphql-hive/console/commit/6e9a21009ca2754b8237da4afac1115d339be8d2)
+  Thanks [@mskorokhodov](https://github.com/mskorokhodov)! - Bump bundled `graphql` from `^16.12.0`
+  to `^16.14.0` to fix "Unexpected invariant triggered" error in the schema explorer when
+  introspecting servers running graphql-js 16.14+. graphql-js 16.14.0 added `DIRECTIVE_DEFINITION`
+  to the `@deprecated` directive's introspection locations; the previously bundled 16.12.0 did not
+  recognise this enum value, making the Laboratory unusable against any such server.
+
 ## 0.1.8
 
 ### Patch Changes
