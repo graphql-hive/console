@@ -1,21 +1,30 @@
 import {
   getNamedType,
+  GraphQLType,
   isInterfaceType,
   isObjectType,
   type GraphQLFieldMap,
   type GraphQLSchema,
 } from 'graphql';
 
+function resolveRootType(
+  schema: GraphQLSchema,
+  operationType: 'mutation' | 'subscription' | 'query',
+): GraphQLType | undefined | null {
+  if (operationType === 'mutation') {
+    return schema.getMutationType();
+  } else if (operationType === 'subscription') {
+    return schema.getSubscriptionType();
+  }
+  return schema.getQueryType();
+}
+
 export function pathToCoordinate(
   schema: GraphQLSchema,
   errorPath: readonly (string | number)[],
   operationType: 'mutation' | 'subscription' | 'query' = 'query',
 ): string | undefined {
-  let currentType;
-  if (operationType === 'mutation') currentType = schema.getMutationType();
-  else if (operationType === 'subscription') currentType = schema.getSubscriptionType();
-  else currentType = schema.getQueryType();
-
+  let currentType = resolveRootType(schema, operationType);
   let coordinate = null;
 
   for (const segment of errorPath) {
