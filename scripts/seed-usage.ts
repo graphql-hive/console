@@ -1,6 +1,8 @@
 /**
  * Example:
  * `TARGET=<target_id> FEDERATION=1 STAGE=local TOKEN=<access_token> pnpm seed:usage`
+ *
+ * Must be an org access token.
  */
 import { randomUUID } from 'crypto';
 import { parse as parsePath } from 'path';

@@ -33,6 +33,43 @@ describe('extractCoordinates', () => {
     });
   });
 
+  describe('Enums', () => {
+    it('Resolves the enum value and enum type', () => {
+      const schema = buildSchema(`
+        type Query { user: User }
+        type User { id: ID, status: UserStatus }
+        enum UserStatus {
+          ACTIVE
+          SUSPENDED
+        }
+      `);
+      const document = parse(`
+        query { 
+          user { 
+            id
+            status
+          } 
+        }
+      `);
+      const resultData = {
+        user: { id: '1', status: 'ACTIVE' },
+      };
+
+      const counts = extractCoordinates({ schema, document, resultData });
+
+      expect(counts).toEqual({
+        ID: 1,
+        Query: 1,
+        'Query.user': 1,
+        User: 1,
+        'User.id': 1,
+        'User.status': 1,
+        UserStatus: 1,
+        'UserStatus.ACTIVE': 1,
+      });
+    });
+  });
+
   describe('Aliases', () => {
     it('Resolves the response key back to the true schema coordinate', () => {
       const schema = buildSchema(`
@@ -133,7 +170,7 @@ describe('extractCoordinates', () => {
     });
   });
 
-  describe('Unions & Arrays', () => {
+  describe('Unions', () => {
     it('Extracts from a union type', () => {
       const schema = buildSchema(`
         union SearchResult = User | Post
@@ -325,6 +362,45 @@ describe('extractCoordinates', () => {
       expect(counts).toEqual({
         Query: 1,
         'Query.user': 1,
+      });
+    });
+  });
+
+  describe('Arrays', () => {
+    it('Does not assume every element in the array has the same values', () => {
+      const schema = buildSchema(`
+        type Query { users: [User] }
+        type User { id: ID, name: String, friends: [User] }
+      `);
+      const document = parse(`
+        query { users { id name friends { id } } }
+      `);
+      const resultData = {
+        users: [
+          {
+            id: 1,
+            name: null,
+            friends: [{ id: 2 }],
+          },
+          {
+            id: 2,
+            name: 'OK',
+            friends: null,
+          },
+        ],
+      };
+
+      const counts = extractCoordinates({ schema, document, resultData });
+
+      expect(counts).toEqual({
+        Query: 1,
+        'Query.users': 1,
+        User: 3,
+        'User.id': 3,
+        ID: 3,
+        'User.name': 2,
+        String: 1,
+        'User.friends': 2,
       });
     });
   });

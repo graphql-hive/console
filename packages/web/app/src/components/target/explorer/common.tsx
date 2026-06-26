@@ -85,18 +85,22 @@ export function SchemaExplorerUsageStats(props: {
                     <thead>
                       <tr>
                         <th className="px-2 pl-0 text-left font-normal">
-                          <span className="font-bold">{usage.total} Requests</span>{' '}
+                          <span className="font-bold">{formatNumber(usage.total)} Requests</span>{' '}
                           {hasFieldLevelMetrics ? 'with' : null}
                         </th>
                       </tr>
                       {usage.totalResolutions ? (
                         <tr>
-                          <th className="pl-0 text-left">{usage.totalResolutions} Resolutions</th>
+                          <th className="pl-0 text-left">
+                            {formatNumber(usage.totalResolutions)} Resolutions
+                          </th>
                         </tr>
                       ) : null}
                       {usage.errorTotal ? (
                         <tr>
-                          <th className="pl-0 text-left">{usage.errorTotal} Errors</th>
+                          <th className="pl-0 text-left">
+                            {formatNumber(usage.errorTotal)} Errors
+                          </th>
                         </tr>
                       ) : null}
                       <tr>
