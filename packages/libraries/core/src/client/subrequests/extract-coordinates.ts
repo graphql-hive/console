@@ -4,44 +4,40 @@ import {
   getNamedType,
   GraphQLNamedType,
   GraphQLSchema,
-  GraphQLType,
+  isAbstractType,
   isEnumType,
   isInterfaceType,
   isObjectType,
-  isUnionType,
   Kind,
   OperationDefinitionNode,
   SelectionSetNode,
 } from 'graphql';
 
 export type CoordinateMap = Record<string, number>;
+interface FieldPlan {
+  fieldCoords: string[];
+  childPlan: PlanNode | null;
+  expectedTypeName: string;
+}
+
+interface TypePlan {
+  typeCoords: string[];
+  fields: Record<string, FieldPlan>;
+  isEnum: boolean;
+  enumName: string | null;
+}
+
+type PlanNode = Map<string, TypePlan>;
 
 const docCache = new WeakMap<
   DocumentNode,
   { operation: OperationDefinitionNode | null; fragments: Record<string, FragmentDefinitionNode> }
 >();
 
-const planCache = new WeakMap<
-  SelectionSetNode,
-  Record<string, Record<string, { fieldName: string; selectionSets: SelectionSetNode[] }>>
->();
-
-// Schema-level caches — keyed by schema instance so they survive across calls
-const schemaFieldCoordCache = new WeakMap<GraphQLSchema, Map<string, string[]>>();
-const schemaTypeMatchCache = new WeakMap<GraphQLSchema, Map<string, boolean>>();
-const schemaTypeLookupCache = new WeakMap<
+const schemaOperationPlanCache = new WeakMap<
   GraphQLSchema,
-  Map<string, GraphQLNamedType | undefined>
+  WeakMap<OperationDefinitionNode, PlanNode>
 >();
-
-function getOrCreate<K extends object, V>(map: WeakMap<K, V>, key: K, factory: () => V): V {
-  let v = map.get(key);
-  if (!v) {
-    v = factory();
-    map.set(key, v);
-  }
-  return v;
-}
 
 export function extractCoordinates({
   schema,
@@ -82,256 +78,135 @@ export function extractCoordinates({
 
   if (!rootType) return stats;
 
-  const fieldCoordCache = getOrCreate(
-    schemaFieldCoordCache,
-    schema,
-    () => new Map<string, string[]>(),
-  );
-  const typeMatchCache = getOrCreate(
-    schemaTypeMatchCache,
-    schema,
-    () => new Map<string, boolean>(),
-  );
-  const typeLookupCache = getOrCreate(
-    schemaTypeLookupCache,
-    schema,
-    () => new Map<string, GraphQLNamedType | undefined>(),
-  );
+  let operationCache = schemaOperationPlanCache.get(schema);
+  if (!operationCache) {
+    operationCache = new WeakMap();
+    schemaOperationPlanCache.set(schema, operationCache);
+  }
 
-  traverse(
-    resultData,
-    rootType,
-    [operation.selectionSet],
-    schema,
-    fragments,
-    stats,
-    fieldCoordCache,
-    typeMatchCache,
-    typeLookupCache,
-  );
+  let rootPlan = operationCache.get(operation);
+  if (!rootPlan) {
+    rootPlan = buildPlanNode(schema, [operation.selectionSet], rootType, fragments);
+    operationCache.set(operation, rootPlan);
+  }
+
+  traverseData(resultData, rootPlan, rootType.name, stats);
 
   return stats;
 }
 
-function traverse(
-  data: any,
-  type: GraphQLType,
-  selectionSets: SelectionSetNode[],
+function buildPlanNode(
   schema: GraphQLSchema,
+  selectionSets: SelectionSetNode[],
+  parentType: GraphQLNamedType,
   fragments: Record<string, FragmentDefinitionNode>,
-  stats: CoordinateMap,
-  fieldCoordCache: Map<string, string[]>,
-  typeMatchCache: Map<string, boolean>,
-  typeLookupCache: Map<string, GraphQLNamedType | undefined>,
-): void {
-  if (Array.isArray(data)) {
-    for (const item of data) {
-      traverse(
-        item,
-        type,
-        selectionSets,
-        schema,
-        fragments,
-        stats,
-        fieldCoordCache,
-        typeMatchCache,
-        typeLookupCache,
-      );
-    }
-    return;
+): PlanNode {
+  const planNode: PlanNode = new Map();
+  const namedType = getNamedType(parentType);
+
+  let possibleTypes: readonly GraphQLNamedType[];
+  if (isAbstractType(namedType)) {
+    possibleTypes = schema.getPossibleTypes(namedType);
+  } else {
+    possibleTypes = [namedType];
   }
 
-  if (data === null || data === undefined) return;
+  for (const concreteType of possibleTypes) {
+    const typePlan: TypePlan = {
+      typeCoords: [concreteType.name],
+      fields: {},
+      isEnum: isEnumType(concreteType),
+      enumName: isEnumType(concreteType) ? concreteType.name : null,
+    };
 
-  const namedType = getNamedType(type);
-  const concreteTypeName: string | undefined = data.__typename;
-
-  let concreteType: GraphQLNamedType = namedType;
-
-  if (concreteTypeName && concreteTypeName !== namedType.name) {
-    let resolved = typeLookupCache.get(concreteTypeName);
-    if (!resolved) {
-      // Store the namedType fallback on miss so the cache is always populated with a
-      // truthy value — avoids re-hitting schema.getType() for unknown __typename values.
-      resolved = schema.getType(concreteTypeName) ?? namedType;
-      typeLookupCache.set(concreteTypeName, resolved);
-    }
-    concreteType = resolved;
-  }
-
-  stats[namedType.name] = (stats[namedType.name] || 0) + 1;
-
-  if (concreteType !== namedType) {
-    stats[concreteType.name] = (stats[concreteType.name] || 0) + 1;
-  }
-
-  if (isObjectType(concreteType)) {
-    for (const iface of concreteType.getInterfaces()) {
-      // Only count the interface if we haven't already counted it above as namedType.
-      // (e.g. Query { node: Node } — namedType=Node, concreteType=User implements Node)
-      if (iface.name !== namedType.name) {
-        stats[iface.name] = (stats[iface.name] || 0) + 1;
+    if (isObjectType(concreteType)) {
+      for (const iface of concreteType.getInterfaces()) {
+        if (iface.name !== namedType.name && iface.name !== concreteType.name) {
+          typePlan.typeCoords.push(iface.name);
+        }
       }
-    }
-  }
-
-  // Track exact enum value
-  if (isEnumType(concreteType) && typeof data === 'string') {
-    const enumCoord = `${concreteType.name}.${data}`;
-    stats[enumCoord] = (stats[enumCoord] || 0) + 1;
-  }
-
-  if (typeof data !== 'object' || selectionSets.length === 0) return;
-
-  const fields =
-    selectionSets.length === 1
-      ? getFieldsForType(selectionSets[0], concreteType, fragments, schema, typeMatchCache)
-      : mergeSelectionSets(selectionSets, concreteType, fragments, schema, typeMatchCache);
-
-  // Traverse response keys
-  for (const responseKey of Object.keys(data)) {
-    if (responseKey === '__typename') continue;
-
-    const fieldInfo = fields[responseKey];
-    if (!fieldInfo) continue;
-
-    const { fieldName, selectionSets: fieldSelSets } = fieldInfo;
-    let fieldDef: any = null;
-
-    if (isObjectType(concreteType) || isInterfaceType(concreteType)) {
-      fieldDef = concreteType.getFields()[fieldName];
+      if (namedType.name !== concreteType.name && !typePlan.typeCoords.includes(namedType.name)) {
+        typePlan.typeCoords.push(namedType.name);
+      }
+    } else if (namedType.name !== concreteType.name) {
+      typePlan.typeCoords.push(namedType.name);
     }
 
-    if (fieldDef) {
-      const cacheKey = `${concreteType.name}.${fieldName}`;
-      let coordsToIncrement = fieldCoordCache.get(cacheKey);
+    typePlan.typeCoords = Array.from(new Set(typePlan.typeCoords));
 
-      if (!coordsToIncrement) {
-        coordsToIncrement = [`${concreteType.name}.${fieldName}`];
-        if (isObjectType(concreteType)) {
-          for (const iface of concreteType.getInterfaces()) {
-            if (iface.getFields()[fieldName]) {
-              coordsToIncrement.push(`${iface.name}.${fieldName}`);
-            }
+    if (selectionSets.length > 0 && isObjectType(concreteType)) {
+      const mergedFields = collectFieldsForType(selectionSets, concreteType, schema, fragments);
+
+      for (const responseKey in mergedFields) {
+        const { fieldName, selectionSets: fieldSelSets } = mergedFields[responseKey];
+        const fieldDef = concreteType.getFields()[fieldName];
+
+        if (!fieldDef) continue;
+
+        const fieldCoords = [`${concreteType.name}.${fieldName}`];
+        for (const iface of concreteType.getInterfaces()) {
+          if (iface.getFields()[fieldName]) {
+            fieldCoords.push(`${iface.name}.${fieldName}`);
           }
         }
-        fieldCoordCache.set(cacheKey, coordsToIncrement);
-      }
 
-      for (const coord of coordsToIncrement) {
-        stats[coord] = (stats[coord] || 0) + 1;
-      }
+        const fieldNamedType = getNamedType(fieldDef.type);
+        const childPlan = buildPlanNode(schema, fieldSelSets, fieldNamedType, fragments);
 
-      traverse(
-        data[responseKey],
-        fieldDef.type,
-        fieldSelSets,
-        schema,
-        fragments,
-        stats,
-        fieldCoordCache,
-        typeMatchCache,
-        typeLookupCache,
-      );
+        typePlan.fields[responseKey] = {
+          fieldCoords,
+          childPlan,
+          expectedTypeName: fieldNamedType.name,
+        };
+      }
     }
+
+    planNode.set(concreteType.name, typePlan);
   }
+
+  return planNode;
 }
 
-function mergeSelectionSets(
+function collectFieldsForType(
   selectionSets: SelectionSetNode[],
   concreteType: GraphQLNamedType,
-  fragments: Record<string, FragmentDefinitionNode>,
   schema: GraphQLSchema,
-  typeMatchCache: Map<string, boolean>,
+  fragments: Record<string, FragmentDefinitionNode>,
 ): Record<string, { fieldName: string; selectionSets: SelectionSetNode[] }> {
-  const merged: Record<string, { fieldName: string; selectionSets: SelectionSetNode[] }> = {};
+  const fields: Record<string, { fieldName: string; selectionSets: SelectionSetNode[] }> = {};
+
+  function visit(selectionSet: SelectionSetNode) {
+    for (const selection of selectionSet.selections) {
+      if (selection.kind === Kind.FIELD) {
+        const responseKey = selection.alias ? selection.alias.value : selection.name.value;
+        const fieldName = selection.name.value;
+
+        if (fieldName === '__typename') continue;
+
+        if (!fields[responseKey]) {
+          fields[responseKey] = { fieldName, selectionSets: [] };
+        }
+        if (selection.selectionSet) {
+          fields[responseKey].selectionSets.push(selection.selectionSet);
+        }
+      } else if (selection.kind === Kind.FRAGMENT_SPREAD) {
+        const frag = fragments[selection.name.value];
+        if (frag && doesTypeMatch(frag.typeCondition.name.value, concreteType, schema)) {
+          visit(frag.selectionSet);
+        }
+      } else if (selection.kind === Kind.INLINE_FRAGMENT) {
+        const typeCondition = selection.typeCondition?.name.value;
+        if (!typeCondition || doesTypeMatch(typeCondition, concreteType, schema)) {
+          visit(selection.selectionSet);
+        }
+      }
+    }
+  }
 
   for (const selSet of selectionSets) {
-    const fields = getFieldsForType(selSet, concreteType, fragments, schema, typeMatchCache);
-    for (const resKey in fields) {
-      const info = fields[resKey];
-      if (!merged[resKey]) {
-        merged[resKey] = { fieldName: info.fieldName, selectionSets: [] };
-      }
-      // PERF: push.apply avoids the implicit arguments spread that `push(...array)` creates
-      // when the inner array has many elements.
-      Array.prototype.push.apply(merged[resKey].selectionSets, info.selectionSets);
-    }
+    visit(selSet);
   }
 
-  return merged;
-}
-
-function getFieldsForType(
-  selectionSet: SelectionSetNode,
-  concreteType: GraphQLNamedType,
-  fragments: Record<string, FragmentDefinitionNode>,
-  schema: GraphQLSchema,
-  typeMatchCache: Map<string, boolean>,
-): Record<string, { fieldName: string; selectionSets: SelectionSetNode[] }> {
-  let typeMap = planCache.get(selectionSet);
-  if (!typeMap) {
-    typeMap = {};
-    planCache.set(selectionSet, typeMap);
-  }
-
-  if (!typeMap[concreteType.name]) {
-    typeMap[concreteType.name] = collectFields(
-      selectionSet,
-      concreteType,
-      fragments,
-      schema,
-      typeMatchCache,
-    );
-  }
-
-  return typeMap[concreteType.name];
-}
-
-function collectFields(
-  selectionSet: SelectionSetNode,
-  concreteType: GraphQLNamedType,
-  fragments: Record<string, FragmentDefinitionNode>,
-  schema: GraphQLSchema,
-  typeMatchCache: Map<string, boolean>,
-  fields: Record<string, { fieldName: string; selectionSets: SelectionSetNode[] }> = {},
-): Record<string, { fieldName: string; selectionSets: SelectionSetNode[] }> {
-  for (const selection of selectionSet.selections) {
-    if (selection.kind === Kind.FIELD) {
-      const responseKey = selection.alias ? selection.alias.value : selection.name.value;
-      const fieldName = selection.name.value;
-
-      if (fieldName === '__typename') continue;
-
-      if (!fields[responseKey]) {
-        fields[responseKey] = { fieldName, selectionSets: [] };
-      }
-
-      if (selection.selectionSet) {
-        fields[responseKey].selectionSets.push(selection.selectionSet);
-      }
-    } else if (selection.kind === Kind.FRAGMENT_SPREAD) {
-      const frag = fragments[selection.name.value];
-      if (
-        frag &&
-        doesTypeMatch(frag.typeCondition.name.value, concreteType, schema, typeMatchCache)
-      ) {
-        collectFields(frag.selectionSet, concreteType, fragments, schema, typeMatchCache, fields);
-      }
-    } else if (selection.kind === Kind.INLINE_FRAGMENT) {
-      const typeCondition = selection.typeCondition?.name.value;
-      if (!typeCondition || doesTypeMatch(typeCondition, concreteType, schema, typeMatchCache)) {
-        collectFields(
-          selection.selectionSet,
-          concreteType,
-          fragments,
-          schema,
-          typeMatchCache,
-          fields,
-        );
-      }
-    }
-  }
   return fields;
 }
 
@@ -339,25 +214,69 @@ function doesTypeMatch(
   typeCondition: string,
   concreteType: GraphQLNamedType,
   schema: GraphQLSchema,
-  typeMatchCache: Map<string, boolean>,
 ): boolean {
   if (typeCondition === concreteType.name) return true;
-
-  const cacheKey = `${typeCondition}:${concreteType.name}`;
-  const cached = typeMatchCache.get(cacheKey);
-  if (cached !== undefined) return cached;
-
-  let isMatch = false;
   const conditionType = schema.getType(typeCondition);
+  if (!conditionType) return false;
 
-  if (conditionType) {
-    if (isInterfaceType(conditionType) && isObjectType(concreteType)) {
-      isMatch = concreteType.getInterfaces().some(i => i.name === typeCondition);
-    } else if (isUnionType(conditionType)) {
-      isMatch = conditionType.getTypes().some(t => t.name === concreteType.name);
+  if (isInterfaceType(conditionType) && isObjectType(concreteType)) {
+    return concreteType.getInterfaces().some(i => i.name === typeCondition);
+  }
+  if (isAbstractType(conditionType)) {
+    return schema.getPossibleTypes(conditionType).some(t => t.name === concreteType.name);
+  }
+  return false;
+}
+
+function traverseData(
+  data: any,
+  planNode: PlanNode | null,
+  fallbackTypeName: string,
+  stats: CoordinateMap,
+): void {
+  if (data === null || data === undefined || !planNode) return;
+
+  if (Array.isArray(data)) {
+    for (let i = 0; i < data.length; i++) {
+      traverseData(data[i], planNode, fallbackTypeName, stats);
     }
+    return;
   }
 
-  typeMatchCache.set(cacheKey, isMatch);
-  return isMatch;
+  const typeName = data.__typename || fallbackTypeName;
+  const typePlan = planNode.get(typeName) || planNode.get(fallbackTypeName);
+
+  if (!typePlan) {
+    stats[fallbackTypeName] = (stats[fallbackTypeName] || 0) + 1;
+    return;
+  }
+
+  for (let i = 0; i < typePlan.typeCoords.length; i++) {
+    const coord = typePlan.typeCoords[i];
+    stats[coord] = (stats[coord] || 0) + 1;
+  }
+
+  if (typePlan.isEnum && typeof data === 'string' && typePlan.enumName) {
+    const enumCoord = `${typePlan.enumName}.${data}`;
+    stats[enumCoord] = (stats[enumCoord] || 0) + 1;
+    return;
+  }
+
+  if (typeof data !== 'object') return;
+
+  for (const responseKey in data) {
+    if (responseKey === '__typename') continue;
+
+    const fieldPlan = typePlan.fields[responseKey];
+    if (!fieldPlan) continue;
+
+    for (let i = 0; i < fieldPlan.fieldCoords.length; i++) {
+      const coord = fieldPlan.fieldCoords[i];
+      stats[coord] = (stats[coord] || 0) + 1;
+    }
+
+    if (fieldPlan.childPlan) {
+      traverseData(data[responseKey], fieldPlan.childPlan, fieldPlan.expectedTypeName, stats);
+    }
+  }
 }
