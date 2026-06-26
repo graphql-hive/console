@@ -13,7 +13,8 @@ function resolveRootType(
 ): GraphQLType | undefined | null {
   if (operationType === 'mutation') {
     return schema.getMutationType();
-  } else if (operationType === 'subscription') {
+  }
+  if (operationType === 'subscription') {
     return schema.getSubscriptionType();
   }
   return schema.getQueryType();
