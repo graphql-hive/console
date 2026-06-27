@@ -3,7 +3,7 @@
 **Contribution Number:** 1
 **Student:** Qimin Wu
 **Issue:** https://github.com/graphql-hive/console/issues/3816
-**Status:** Phase I Complete
+**Status:** Phase IV Complete (Pull Request Submitted)
 
 ---
 
@@ -210,7 +210,7 @@ The build completed successfully. All packages built successfully and no build f
 
 ## Implementation Notes
 
-### Week 3 Progress (Phase III)
+### Phase III Implementation
 
 #### What I Built
 
@@ -255,7 +255,7 @@ maxHeight: 'min(384px, calc(100vh - 220px))'
 3. Updated scrolling behavior to use vertical scrolling:
 
 ```ts
-overflowY: 'auto'
+overflow: 'auto'
 ```
 
 These changes are intended to allow longer operation lists to remain visible while preventing the dropdown from extending beyond the browser viewport.
@@ -292,6 +292,21 @@ Another challenge was setting up the local development environment because this 
 packages/web/app/src/components/base/floating/filter-dropdown/filter-content.tsx
 ```
 
+### Changes Made
+
+* Increased the maximum dropdown list height from **256px** to **384px**.
+* Added a responsive maximum height:
+
+```ts
+maxHeight: 'min(384px, calc(100vh - 220px))'
+```
+
+* Kept the existing scrolling behavior using:
+
+```ts
+overflow: 'auto'
+```
+
 ### Key Commit
 
 ```text
@@ -306,9 +321,52 @@ fix: improve filter dropdown list height
 
 ### Working Branch
 
-```text
 https://github.com/Qimin5/console/tree/fix-issue-3816
+
+---
+
+## Pull Request
+
+### PR Link
+
+https://github.com/graphql-hive/console/pull/8176
+
+### PR Title
+
+fix: improve filter dropdown list height
+
+### PR Summary
+
+This pull request addresses Issue #3816 by improving the operation filter dropdown height and scrolling behavior.
+
+The implementation:
+
+* Increased the maximum dropdown height.
+* Added a viewport-aware maximum height.
+* Preserved the existing scrolling behavior.
+
+The goal is to prevent long operation lists from being cut off while keeping the dropdown usable on different screen sizes.
+
+### Testing Performed
+
+* Successfully ran:
+
+```bash
+pnpm build
 ```
+
+* Started Hive locally.
+* Logged into the application.
+* Verified the application loaded correctly.
+* Confirmed the project builds successfully after my code changes.
+
+### Status
+
+Awaiting maintainer review.
+
+### Maintainer Feedback
+
+No maintainer feedback received yet.
 
 ---
 
@@ -317,10 +375,11 @@ https://github.com/Qimin5/console/tree/fix-issue-3816
 ### Technical Skills Gained
 
 * Learned how to clone and set up a large open-source project locally.
-* Learned how to use Git branches, commits, and pushes.
+* Learned how to use Git branches, commits, pushes, and pull requests.
 * Learned how to navigate a React and TypeScript codebase.
 * Learned how shared UI components are structured in a large application.
 * Learned how to investigate frontend layout and overflow issues.
+* Learned how to submit my first open-source pull request on GitHub.
 
 ### Challenges Overcome
 
@@ -328,7 +387,14 @@ https://github.com/Qimin5/console/tree/fix-issue-3816
 * Understanding the project structure.
 * Tracing the operation filter through multiple component layers.
 * Successfully building the project and pushing code changes to GitHub.
+* Learning how the GitHub pull request workflow works for an open-source project.
 
-### Current Status
+## Current Status
 
-Phase III implementation completed. Code changes have been committed, pushed to the feature branch, and successfully built locally.
+Phase IV completed.
+
+The code changes were committed, pushed to my feature branch, and submitted as Pull Request #8176 for review by the Hive maintainers.
+
+**Pull Request:** https://github.com/graphql-hive/console/pull/8176
+
+I am currently waiting for feedback from the project maintainers and will update the pull request if changes are requested.
