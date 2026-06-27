@@ -342,6 +342,197 @@ describe('extractCoordinates', () => {
         'User.email': 1,
       });
     });
+
+    it('Handles deeply nested fragments', () => {
+      const schema = buildSchema(`
+        type Product implements ProductItf & SkuItf {
+          upc: String!
+          name: String
+          reviews: [Review]
+        }
+
+        type User {
+          id: ID!
+          name: String
+          reviews: [Review]
+        }
+
+        type Review {
+          id: ID!
+          body: String
+          author: User
+          product: Product
+        }
+
+        type Query {
+          topProducts(first: Int = 5): [ProductItf!]!
+          users(limit: Int! = 30): [User]
+        }
+
+        interface ProductItf implements SkuItf {
+          upc: String!
+          name: String
+        }
+
+        interface SkuItf {
+          sku: String
+        }
+      `);
+      const document = parse(`
+        fragment User on User {
+          id
+          username
+          name
+        }
+
+        fragment Review on Review {
+          id
+          body
+        }
+
+        fragment Product on Product {
+          inStock
+          name
+          price
+          shippingEstimate
+          upc
+          weight
+        }
+
+        query TestQuery {
+          users {
+            ...User
+            reviews {
+              ...Review
+              product {
+                ...Product
+                reviews {
+                  ...Review
+                  author {
+                    ...User
+                    reviews {
+                      ...Review
+                      product {
+                        ...Product
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+          topProducts {
+            ...Product
+            reviews {
+              ...Review
+              author {
+                ...User
+                reviews {
+                  ...Review
+                  product {
+                    ...Product
+                  }
+                }
+              }
+            }
+          }
+        }
+      `);
+
+      const resultData = {
+        users: [
+          {
+            id: 'user-1',
+            name: 'Alice Smith',
+            reviews: [
+              {
+                id: 'review-101',
+                body: 'Absolutely love this laptop! Highly recommend.',
+                product: {
+                  upc: '9876543210',
+                  name: 'QuantumBook Pro 15',
+                  reviews: [
+                    {
+                      id: 'review-101',
+                      body: 'Absolutely love this laptop! Highly recommend.',
+                      author: {
+                        id: 'user-1',
+                        name: 'Alice Smith',
+                        reviews: [
+                          {
+                            id: 'review-101',
+                            body: 'Absolutely love this laptop! Highly recommend.',
+                            product: {
+                              upc: '9876543210',
+                              name: 'QuantumBook Pro 15',
+                            },
+                          },
+                        ],
+                      },
+                    },
+                  ],
+                },
+              },
+            ],
+          },
+        ],
+        topProducts: [
+          {
+            upc: '1234567890',
+            name: 'ErgoDesk Premium',
+            reviews: [
+              {
+                id: 'review-202',
+                body: 'Great desk, but assembly took forever.',
+                author: {
+                  id: 'user-2',
+                  name: 'Bob Jones',
+                  reviews: [
+                    {
+                      id: 'review-202',
+                      body: 'Great desk, but assembly took forever.',
+                      product: {
+                        upc: '1234567890',
+                        name: 'ErgoDesk Premium',
+                      },
+                    },
+                  ],
+                },
+              },
+            ],
+          },
+        ],
+      };
+
+      const counts = extractCoordinates({ schema, document, resultData });
+
+      expect(counts).toMatchInlineSnapshot(`
+        {
+          ID: 5,
+          Product: 2,
+          Product.name: 2,
+          Product.reviews: 1,
+          Product.upc: 2,
+          ProductItf: 3,
+          ProductItf.name: 2,
+          ProductItf.upc: 2,
+          Query: 1,
+          Query.topProducts: 1,
+          Query.users: 1,
+          Review: 3,
+          Review.author: 1,
+          Review.body: 3,
+          Review.id: 3,
+          Review.product: 2,
+          SkuItf: 2,
+          String: 9,
+          User: 2,
+          User.id: 2,
+          User.name: 2,
+          User.reviews: 2,
+        }
+      `);
+    });
   });
 
   describe('Null Handling', () => {
