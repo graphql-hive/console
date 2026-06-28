@@ -25,6 +25,7 @@ import { TaskScheduler } from '@hive/workflows/kit';
 import { PasswordResetTask } from '@hive/workflows/tasks/password-reset';
 import { env } from './environment';
 import { createNewSession, validatePassword } from './supertokens-at-home/shared';
+import type { WorkloadIdentityFederationProvider } from './workload-identity-federation';
 
 type BroadcastOIDCIntegrationLog = (oidcOrganizationId: string, message: string) => void;
 
@@ -43,6 +44,7 @@ export async function registerSupertokensAtHome(
     refreshTokenKey: string;
     accessTokenKey: string;
   },
+  workloadIdentityFederation: WorkloadIdentityFederationProvider | null,
 ) {
   const supertokensStore = new SuperTokensStore(storage.pool, server.log);
 
@@ -800,9 +802,11 @@ export async function registerSupertokensAtHome(
             token_endpoint: oidcIntegration.tokenEndpoint,
           },
           oidcIntegration.clientId,
-          {
-            client_secret: crypto.decrypt(oidcIntegration.encryptedClientSecret),
-          },
+          oidcIntegration.useFederatedCredential || !oidcIntegration.encryptedClientSecret
+            ? undefined
+            : {
+                client_secret: crypto.decrypt(oidcIntegration.encryptedClientSecret),
+              },
         );
         oidClient.allowInsecureRequests(oidClientConfig);
 
@@ -1304,20 +1308,44 @@ export async function registerSupertokensAtHome(
           access_token: z.string(),
         });
 
+        const grantParams: Record<string, string> = {
+          grant_type: 'authorization_code',
+          code_verifier: cacheRecord.pkceVerifier,
+          code: parsedBody.data.redirectURIInfo.redirectURIQueryParams.code ?? '',
+          redirect_uri: current_url.toString(),
+          client_id: oidcIntegration.clientId,
+        };
+
+        if (
+          oidcIntegration.useFederatedCredential ||
+          !oidcIntegration.encryptedClientSecret
+        ) {
+          // Workload Identity Federation: use client_assertion with the cached federated token
+          const federatedToken = workloadIdentityFederation?.getToken() ?? null;
+          if (!federatedToken) {
+            req.log.error(
+              'Workload identity federation is not configured or the token is not yet available',
+            );
+            return rep.status(200).send({
+              status: 'SIGN_IN_UP_NOT_ALLOWED',
+              reason: 'Sign in failed. Please contact your organization administrator.',
+            });
+          }
+
+          grantParams['client_assertion_type'] =
+            'urn:ietf:params:oauth:client-assertion-type:jwt-bearer';
+          grantParams['client_assertion'] = federatedToken;
+        } else {
+          grantParams['client_secret'] = crypto.decrypt(oidcIntegration.encryptedClientSecret);
+        }
+
         const grantResponse = await fetch(oidcIntegration.tokenEndpoint, {
           method: 'POST',
           headers: {
             'content-type': 'application/x-www-form-urlencoded',
             accept: 'application/json',
           },
-          body: new URLSearchParams({
-            grant_type: 'authorization_code',
-            code_verifier: cacheRecord.pkceVerifier,
-            code: parsedBody.data.redirectURIInfo.redirectURIQueryParams.code ?? '',
-            redirect_uri: current_url.toString(),
-            client_id: oidcIntegration.clientId,
-            client_secret: crypto.decrypt(oidcIntegration.encryptedClientSecret),
-          }),
+          body: new URLSearchParams(grantParams),
         });
 
         if (grantResponse.status != 200) {

@@ -25,7 +25,7 @@ type ConnectSingleSignOnProviderSheetProps = {
     tokenEndpoint: string;
     userinfoEndpoint: string;
     clientId: string;
-    clientSecretPreview: string;
+    clientSecretPreview: string | null;
     additionalScopes: string;
   };
   onSave: (args: {
@@ -210,8 +210,8 @@ export function ConnectSingleSignOnProviderSheet(
                 <FormControl>
                   <Input
                     placeholder={
-                      props.initialValues
-                        ? `Value ending with ${props.initialValues?.clientSecretPreview}`
+                      props.initialValues?.clientSecretPreview
+                        ? `Value ending with ${props.initialValues.clientSecretPreview}`
                         : 'Client Secret'
                     }
                     autoComplete="off"

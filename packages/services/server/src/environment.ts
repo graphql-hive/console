@@ -1,3 +1,4 @@
+import { readFileSync } from 'node:fs';
 import zod from 'zod';
 import {
   OpenTelemetryConfigurationModel,
@@ -295,6 +296,32 @@ const LogModel = zod.object({
   ),
 });
 
+const OidcWorkloadFederationModel = zod.union([
+  zod.object({
+    OIDC_WORKLOAD_FEDERATION_IDENTITY_PROVIDER: zod.union([
+      zod.void(),
+      zod.literal(''),
+      zod.literal('0'),
+    ]),
+  }),
+  zod
+    .object({
+      OIDC_WORKLOAD_FEDERATION_IDENTITY_PROVIDER: zod.literal('azure'),
+      AZURE_FEDERATED_TOKEN_FILE: zod.string().min(1),
+    })
+    .superRefine((data, ctx) => {
+      try {
+        readFileSync(data.AZURE_FEDERATED_TOKEN_FILE, 'utf-8');
+      } catch {
+        ctx.addIssue({
+          code: zod.ZodIssueCode.custom,
+          path: ['AZURE_FEDERATED_TOKEN_FILE'],
+          message: `Cannot read federated token file at path '${data.AZURE_FEDERATED_TOKEN_FILE}'. Ensure the file exists and is readable.`,
+        });
+      }
+    }),
+]);
+
 const processEnv = process.env;
 
 const configs = {
@@ -321,6 +348,7 @@ const configs = {
   zendeskSupport: ZendeskSupportModel.safeParse(processEnv),
   tracing: OpenTelemetryConfigurationModel.safeParse(processEnv),
   hivePersistedDocuments: HivePersistedDocumentsSchema.safeParse(processEnv),
+  oidcWorkloadFederation: OidcWorkloadFederationModel.safeParse(processEnv),
 };
 
 const environmentErrors: Array<string> = [];
@@ -375,6 +403,7 @@ const s3AuditLog = extractConfig(configs.s3AuditLog);
 const zendeskSupport = extractConfig(configs.zendeskSupport);
 const tracing = extractConfig(configs.tracing);
 const hivePersistedDocuments = extractConfig(configs.hivePersistedDocuments);
+const oidcWorkloadFederation = extractConfig(configs.oidcWorkloadFederation);
 const testUtils = extractConfig(configs.testUtils);
 
 const hiveUsageConfig =
@@ -601,4 +630,11 @@ export const env = {
     /** Whether metric alert rules should be enabled cluster-wide. */
     metricAlertRulesEnabled: base.FEATURE_FLAGS_METRIC_ALERT_RULES_ENABLED === '1',
   },
+  oidcWorkloadFederation:
+    oidcWorkloadFederation.OIDC_WORKLOAD_FEDERATION_IDENTITY_PROVIDER === 'azure'
+      ? {
+          provider: 'azure' as const,
+          tokenFilePath: oidcWorkloadFederation.AZURE_FEDERATED_TOKEN_FILE,
+        }
+      : null,
 } as const;

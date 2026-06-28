@@ -56,6 +56,7 @@ import { clickHouseElapsedDuration, clickHouseReadDuration } from './metrics';
 import { createOtelAuthEndpoint } from './otel-auth-endpoint';
 import { createPublicGraphQLHandler } from './public-graphql-handler';
 import { registerSupertokensAtHome } from './supertokens-at-home';
+import { WorkloadIdentityFederationProvider } from './workload-identity-federation';
 
 class CorsError extends Error {
   constructor() {
@@ -171,6 +172,17 @@ export async function main() {
   );
   const taskScheduler = new TaskScheduler(storage.pool);
 
+  const workloadIdentityFederation = env.oidcWorkloadFederation
+    ? new WorkloadIdentityFederationProvider(
+        env.oidcWorkloadFederation.tokenFilePath,
+        server.log.child({ source: 'WorkloadIdentityFederation' }),
+      )
+    : null;
+
+  if (workloadIdentityFederation) {
+    await workloadIdentityFederation.start();
+  }
+
   const redis = await createRedisClient(env.redis, {
     logger: server.log.child({ source: 'Redis' }),
   });
@@ -193,6 +205,7 @@ export async function main() {
       await server.close();
       server.log.info('Stopping Storage handler...');
       await storage.destroy();
+      workloadIdentityFederation?.stop();
       server.log.info('Shutdown complete.');
     },
   });
@@ -531,6 +544,7 @@ export async function main() {
       registry.injector.get(OAuthCache),
       broadcastLog,
       env.supertokens.secrets,
+      workloadIdentityFederation,
     );
 
     if (env.cdn.providers.api !== null) {
