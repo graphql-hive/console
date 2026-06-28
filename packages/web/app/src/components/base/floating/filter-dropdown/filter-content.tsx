@@ -6,7 +6,7 @@ import { ItemRow } from './item-row';
 import type { FilterItem, FilterSelection } from './types';
 
 const ITEM_HEIGHT = 28; // h-7
-const MAX_LIST_HEIGHT = 256; // max-h-64
+const MAX_LIST_HEIGHT = 384; // max-h-96
 /** Hide the search input when the list is short enough to scan at a glance. */
 const SEARCH_VISIBILITY_THRESHOLD = 15;
 
@@ -136,7 +136,8 @@ export function FilterContent({
           className="[&>div>div>div>*]:mt-0!"
           style={{
             height: listHeight,
-            overflow: 'auto',
+            maxHeight: 'min(384px, calc(100vh - 220px))',
+            overflowY: 'auto',
             scrollbarColor: 'var(--color-neutral-7) transparent',
             scrollbarWidth: 'thin',
           }}
