@@ -1,4 +1,5 @@
 {
+  "$schema": "https://raw.githubusercontent.com/graphql-hive/console/main/packages/libraries/cli/hive-config.schema.json",
   "registry": {
     "endpoint": "http://localhost:3001/graphql",
     "accessToken": "905818792799ac1194c1d69d64c94a1a"

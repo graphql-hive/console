@@ -585,6 +585,7 @@ This is how the structure of the config file should look like:
 
 ```json
 {
+  "$schema": "https://raw.githubusercontent.com/graphql-hive/console/main/packages/libraries/cli/hive-config.schema.json",
   "registry": {
     "endpoint": "<yourRegistryURL>",
     "accessToken": "<yourtoken>"
@@ -595,3 +596,6 @@ This is how the structure of the config file should look like:
   }
 }
 ```
+
+The optional `$schema` property enables autocompletion, inline documentation, and validation for
+`hive.json` in editors that support JSON Schema (such as VS Code).

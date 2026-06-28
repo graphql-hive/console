@@ -1,0 +1,94 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://raw.githubusercontent.com/graphql-hive/console/main/packages/libraries/cli/hive-config.schema.json",
+  "title": "GraphQL Hive CLI configuration (hive.json)",
+  "description": "Configuration file for the GraphQL Hive CLI (`hive`). Configuration is resolved with the priority: CLI arguments > environment variables > hive.json. See https://the-guild.dev/graphql/hive/docs/api-reference/cli for details.",
+  "$comment": "Keep this schema in sync with ConfigModel and LegacyConfigModel in packages/libraries/cli/src/helpers/config.ts.",
+  "anyOf": [
+    { "$ref": "#/definitions/modernConfig" },
+    { "$ref": "#/definitions/legacyConfig" },
+    { "$ref": "#/definitions/namespacedConfig" }
+  ],
+  "definitions": {
+    "registry": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Schema registry connection settings.",
+      "properties": {
+        "endpoint": {
+          "type": "string",
+          "format": "uri",
+          "description": "GraphQL endpoint of the Hive schema registry. Defaults to https://app.graphql-hive.com/graphql. Set this when self-hosting Hive. Can also be provided via the HIVE_REGISTRY environment variable or the --registry.endpoint argument."
+        },
+        "accessToken": {
+          "type": "string",
+          "description": "Registry access token used to authenticate registry commands such as schema:publish and schema:check. Can also be provided via the HIVE_TOKEN environment variable or the --registry.accessToken argument."
+        }
+      }
+    },
+    "cdn": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "High-availability CDN settings used by artifact:fetch.",
+      "properties": {
+        "endpoint": {
+          "type": "string",
+          "format": "uri",
+          "description": "High-availability CDN endpoint for fetching artifacts. Can also be provided via the HIVE_CDN_ENDPOINT environment variable or the --cdn.endpoint argument."
+        },
+        "accessToken": {
+          "type": "string",
+          "description": "CDN access token used by artifact:fetch. Can also be provided via the --cdn.accessToken argument."
+        }
+      }
+    },
+    "modernConfig": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Hive CLI configuration.",
+      "properties": {
+        "$schema": {
+          "type": "string",
+          "description": "URL of the JSON Schema used to validate this file."
+        },
+        "registry": { "$ref": "#/definitions/registry" },
+        "cdn": { "$ref": "#/definitions/cdn" }
+      }
+    },
+    "legacyConfig": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Deprecated flat configuration format. Use the `registry` object (modernConfig) instead.",
+      "properties": {
+        "$schema": {
+          "type": "string",
+          "description": "URL of the JSON Schema used to validate this file."
+        },
+        "registry": {
+          "type": "string",
+          "description": "Deprecated. Registry endpoint URL. Use `registry.endpoint` instead."
+        },
+        "token": {
+          "type": "string",
+          "description": "Deprecated. Registry access token. Use `registry.accessToken` instead."
+        }
+      }
+    },
+    "namespacedConfig": {
+      "type": "object",
+      "description": "Multiple named configurations ('spaces'). The active space is selected with the HIVE_SPACE environment variable, falling back to the `default` space. Each value is a Hive CLI configuration.",
+      "properties": {
+        "$schema": {
+          "type": "string",
+          "description": "URL of the JSON Schema used to validate this file."
+        }
+      },
+      "additionalProperties": {
+        "anyOf": [
+          { "$ref": "#/definitions/modernConfig" },
+          { "$ref": "#/definitions/legacyConfig" }
+        ]
+      }
+    }
+  }
+}
