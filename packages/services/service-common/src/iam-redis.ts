@@ -22,7 +22,7 @@ interface ClusterWithInternalSubscriber {
  * Handles ElastiCache token generation and in-place AUTH for standalone and
  * cluster connections.
  */
- 
+
 /**
  * Extract the internal ClusterSubscriber's Redis instance from a Cluster.
  *
@@ -126,7 +126,7 @@ export async function generateIamAuthToken(
  * password set and an `AUTH` issued. Individual node `AUTH` failures are
  * collected and logged as warnings but do not abort the loop, all remaining
  * nodes are still attempted. If any nodes failed, the function throws an
- * aggregate error summarising how many nodes failed. Also refreshes the ClusterSubscriber 
+ * aggregate error summarising how many nodes failed. Also refreshes the ClusterSubscriber
  * password as it isn't reachable with `nodes('all')` and must be updated separately.
  *
  * In **standalone mode**, `options.password` is updated first, then a single
