@@ -1,5 +1,6 @@
 import { parseDateRangeInput } from '../../../shared/helpers';
 import { OperationsManager } from '../../operations/providers/operations-manager';
+import { TargetStats } from '../../target/providers/target-stats';
 import { isFieldRequestedDeep } from '../lib/is-field-requested';
 import { ContractsManager } from '../providers/contracts-manager';
 import { SchemaManager } from '../providers/schema-manager';
@@ -98,9 +99,12 @@ export const Target: Pick<
     };
   },
   schemaVersionsCount: (target, { period }, { injector }) => {
-    return injector
-      .get(SchemaManager)
-      .countSchemaVersionsOfTarget(target, period ? parseDateRangeInput(period) : null);
+    return injector.get(TargetStats).countSchemaVersionsOfTarget({
+      organizationId: target.orgId,
+      projectId: target.projectId,
+      targetId: target.id,
+      period: period ? parseDateRangeInput(period) : null,
+    });
   },
   contracts: async (target, args, { injector }) => {
     return await injector.get(ContractsManager).getPaginatedContractsForTarget({
