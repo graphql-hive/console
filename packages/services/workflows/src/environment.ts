@@ -1,6 +1,10 @@
 import zod from 'zod';
 import { PostgresConnectionParamaters } from '@hive/postgres';
-import { OpenTelemetryConfigurationModel, resolveServerListenOptions } from '@hive/service-common';
+import {
+  OpenTelemetryConfigurationModel,
+  parseRedisConfigFromEnvironment,
+  resolveServerListenOptions,
+} from '@hive/service-common';
 import { RequestBroker } from './lib/webhooks/send-webhook.js';
 
 const isNumberString = (input: unknown) => zod.string().regex(/^\d+$/).safeParse(input).success;
@@ -20,6 +24,10 @@ const emptyString = <T extends zod.ZodType>(input: T) => {
   }, input);
 };
 
+function raiseInvariant(reason: string): never {
+  throw new Error(reason);
+}
+
 const EnvironmentModel = zod.object({
   PORT: emptyString(NumberFromString.optional()).default(3014),
   SERVER_HOST: emptyString(zod.string().optional()),
@@ -29,6 +37,7 @@ const EnvironmentModel = zod.object({
   HEARTBEAT_ENDPOINT: emptyString(zod.string().url().optional()),
   EMAIL_FROM: zod.string().email(),
   SCHEMA_ENDPOINT: zod.string().url(),
+  AWS_REGION: emptyString(zod.string().optional()),
 });
 
 const SentryModel = zod.union([
@@ -84,13 +93,6 @@ const EmailProviderModel = zod.union([
   SMTPEmailModel,
   SendmailEmailModel,
 ]);
-
-const RedisModel = zod.object({
-  REDIS_HOST: zod.string(),
-  REDIS_PORT: NumberFromString,
-  REDIS_PASSWORD: emptyString(zod.string().optional()),
-  REDIS_TLS_ENABLED: emptyString(zod.union([zod.literal('1'), zod.literal('0')]).optional()),
-});
 
 const ClickHouseModel = zod.union([
   zod.object({
@@ -158,7 +160,6 @@ const configs = {
   tracing: OpenTelemetryConfigurationModel.safeParse(process.env),
   clickhouse: ClickHouseModel.safeParse(process.env),
   requestBroker: RequestBrokerModel.safeParse(process.env),
-  redis: RedisModel.safeParse(process.env),
   featureFlags: FeatureFlagsModel.safeParse(process.env),
 };
 
@@ -168,6 +169,15 @@ for (const config of Object.values(configs)) {
   if (config.success === false) {
     environmentErrors.push(JSON.stringify(config.error.format(), null, 4));
   }
+}
+
+const redisConfigResult = parseRedisConfigFromEnvironment(
+  process.env,
+  configs.base.success ? configs.base.data.AWS_REGION : undefined,
+);
+
+if (redisConfigResult.type === 'error') {
+  environmentErrors.push(...redisConfigResult.errors);
 }
 
 if (environmentErrors.length) {
@@ -192,7 +202,6 @@ const log = extractConfig(configs.log);
 const tracing = extractConfig(configs.tracing);
 const clickhouse = extractConfig(configs.clickhouse);
 const requestBroker = extractConfig(configs.requestBroker);
-const redis = extractConfig(configs.redis);
 const featureFlags = extractConfig(configs.featureFlags);
 
 const emailProviderConfig =
@@ -288,12 +297,10 @@ export const env = {
         } satisfies RequestBroker)
       : null,
   httpHeartbeat: base.HEARTBEAT_ENDPOINT ? { endpoint: base.HEARTBEAT_ENDPOINT } : null,
-  redis: {
-    host: redis.REDIS_HOST,
-    port: redis.REDIS_PORT,
-    password: redis.REDIS_PASSWORD ?? '',
-    tlsEnabled: redis.REDIS_TLS_ENABLED === '1',
-  },
+  redis:
+    redisConfigResult?.type === 'ok'
+      ? redisConfigResult.config
+      : raiseInvariant('Unreachable: redis config errors are caught above via process.exit(1)'),
   featureFlags: {
     metricAlertRulesEnabled: featureFlags.FEATURE_FLAGS_METRIC_ALERT_RULES_ENABLED === '1',
   },

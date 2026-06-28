@@ -1,4 +1,3 @@
-import type Redis from 'ioredis';
 import { AuthN } from '@hive/api/modules/auth/lib/authz';
 import { OrganizationAccessTokenStrategy } from '@hive/api/modules/auth/lib/organization-access-token-strategy';
 import { OrganizationAccessTokenValidationCache } from '@hive/api/modules/auth/providers/organization-access-token-validation-cache';
@@ -6,6 +5,7 @@ import { OrganizationAccessTokensCache } from '@hive/api/modules/organization/pr
 import { Logger } from '@hive/api/modules/shared/providers/logger';
 import { PrometheusConfig } from '@hive/api/modules/shared/providers/prometheus-config';
 import type { PostgresDatabasePool } from '@hive/postgres';
+import type { Redis } from '@hive/service-common';
 
 /**
  * Creates an authentication provider for organization access tokens.
