@@ -149,6 +149,18 @@ const AlertChannelRowSchema = zod.object({
   webhookEndpoint: zod.string().nullable(),
 });
 
+export type DegradedChannel = {
+  channel: AlertChannel;
+  degradedAt: string;
+  lastError: string | null;
+};
+
+const DegradedChannelRowSchema = AlertChannelRowSchema.extend({
+  ruleId: zod.string(),
+  degradedAt: zod.string(),
+  lastError: zod.string().nullable(),
+});
+
 const METRIC_ALERT_STATE_LOG_SELECT = psql`
   "id"
   , "metric_alert_rule_id" as "metricAlertRuleId"
@@ -221,6 +233,47 @@ export class MetricAlertRulesStorage {
         byId.set(row.id, row);
       }
       return channelIds.map(id => byId.get(id) ?? null);
+    },
+    { cache: true },
+  );
+
+  // Joins through metric_alert_rule_channels so a health row for a channel
+  // since detached from the rule doesn't surface (detach doesn't delete it).
+  private degradedChannelsByRuleLoader = new DataLoader<string, DegradedChannel[]>(
+    async ruleIds => {
+      const rows = await this.pool.any(psql`/* batchedDegradedChannelsByRule */
+        SELECT
+          h."metric_alert_rule_id" as "ruleId"
+          , to_json(h."degraded_at") as "degradedAt"
+          , h."last_error" as "lastError"
+          , ac."id" as "id"
+          , ac."project_id" as "projectId"
+          , ac."type" as "type"
+          , ac."name" as "name"
+          , to_json(ac."created_at") as "createdAt"
+          , ac."slack_channel" as "slackChannel"
+          , ac."webhook_endpoint" as "webhookEndpoint"
+        FROM "metric_alert_channel_health" h
+        INNER JOIN "metric_alert_rule_channels" rc
+          ON rc."metric_alert_rule_id" = h."metric_alert_rule_id"
+          AND rc."alert_channel_id" = h."alert_channel_id"
+        INNER JOIN "alert_channels" ac ON ac."id" = h."alert_channel_id"
+        WHERE h."metric_alert_rule_id" = ANY(${psql.array([...ruleIds], 'uuid')})
+          AND h."degraded_at" > now() - interval '24 hours'
+        ORDER BY h."degraded_at" DESC
+      `);
+      const byRule = new Map<string, DegradedChannel[]>();
+      for (const raw of rows) {
+        const { ruleId, degradedAt, lastError, ...channel } = DegradedChannelRowSchema.parse(raw);
+        const entry: DegradedChannel = { channel, degradedAt, lastError };
+        const list = byRule.get(ruleId);
+        if (list) {
+          list.push(entry);
+        } else {
+          byRule.set(ruleId, [entry]);
+        }
+      }
+      return ruleIds.map(id => byRule.get(id) ?? []);
     },
     { cache: true },
   );
@@ -531,6 +584,10 @@ export class MetricAlertRulesStorage {
     }
     const results = await Promise.all(ids.map(id => this.channelByIdLoader.load(id)));
     return results.filter((c): c is AlertChannel => c !== null);
+  }
+
+  getDegradedChannels(args: { ruleId: string }): Promise<DegradedChannel[]> {
+    return this.degradedChannelsByRuleLoader.load(args.ruleId);
   }
 
   /**

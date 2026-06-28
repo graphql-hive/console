@@ -13,6 +13,7 @@ import {
 import { AlertMetricChart } from '@/components/target/alerts/alert-metric-chart';
 import { ALERTS_POLL_INTERVAL_MS } from '@/components/target/alerts/alert-polling';
 import { AlertStateTransitionsBar } from '@/components/target/alerts/alert-state-transitions-bar';
+import { DegradedChannelsBanner } from '@/components/target/alerts/degraded-channels';
 import { Spinner } from '@/components/ui/spinner';
 import { graphql } from '@/gql';
 import {
@@ -66,6 +67,15 @@ const TargetAlertsDetailPage_RuleConfigQuery = graphql(`
           id
           name
           type
+        }
+        degradedChannels {
+          channel {
+            id
+            name
+            type
+          }
+          degradedAt
+          lastError
         }
         savedFilter {
           id
@@ -252,6 +262,8 @@ export function TargetAlertsDetailPage(props: {
         />
 
         <PageLead description={buildDescription(rule)} title={rule.name} />
+
+        <DegradedChannelsBanner channels={rule.degradedChannels} />
 
         <div className="flex">
           <Select

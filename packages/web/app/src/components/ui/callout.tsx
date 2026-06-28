@@ -21,9 +21,9 @@ const calloutVariants = cva('mt-6 flex items-center gap-4 rounded-lg border px-4
   variants: {
     type: {
       default: 'border-orange-300 bg-orange-200 text-orange-900',
-      error: 'border-red-300 bg-red-200 text-red-900',
-      info: 'border-blue-300 bg-blue-200 text-blue-900',
-      warning: 'border-yellow-300 bg-yellow-200 text-yellow-900',
+      error: 'border-critical_10 bg-critical_08 text-critical',
+      info: 'border-info_10 bg-info_08 text-info',
+      warning: 'border-warning_10 bg-warning_08 text-warning',
     },
   },
   defaultVariants: {
@@ -52,7 +52,7 @@ const Callout = React.forwardRef<
       >
         {emoji}
       </div>
-      <div className="w-full min-w-0 leading-7">{children}</div>
+      <div className="w-full min-w-0 text-sm leading-6">{children}</div>
     </div>
   );
 });

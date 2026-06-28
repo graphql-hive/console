@@ -613,7 +613,10 @@ async function enqueueChannelNotifications(
           'stateLogId', ${stateLogId}::text,
           'channelId', marc."alert_channel_id"::text
         )
-      )
+      ),
+      -- graphile-worker defaults to 25; after 5 attempts the send task records
+      -- the channel as degraded rather than retrying a dead channel for days.
+      max_attempts => 5
     )
     FROM "metric_alert_rule_channels" marc
     WHERE marc."metric_alert_rule_id" = ${ruleId}
