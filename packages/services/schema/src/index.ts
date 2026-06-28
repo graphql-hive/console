@@ -1,9 +1,8 @@
 #!/usr/bin/env node
 import 'reflect-metadata';
-import Redis from 'ioredis';
 import {
   configureTracing,
-  createErrorHandler,
+  createRedisClient,
   createServer,
   registerShutdown,
   registerTRPC,
@@ -69,46 +68,16 @@ async function main() {
     },
   });
 
-  const errorHandler = createErrorHandler(server);
+  const redis = await createRedisClient(env.redis, {
+    logger: server.log.child({ source: 'Redis' }),
+  });
 
-  const redis = new Redis({
-    host: env.redis.host,
-    port: env.redis.port,
-    password: env.redis.password,
-    retryStrategy(times) {
-      return Math.min(times * 500, 2000);
-    },
-    reconnectOnError(error) {
-      server.log.warn('Redis reconnectOnError (error=%s)', error);
-      return 1;
-    },
-    db: 0,
-    maxRetriesPerRequest: null,
-    enableReadyCheck: false,
-    tls: env.redis.tlsEnabled ? {} : undefined,
+  // Capture Redis errors in Sentry in addition to the logging done by createRedisClient
+  redis.on('error', err => {
+    Sentry.captureException(err);
   });
 
   try {
-    redis.on('error', err => {
-      errorHandler('Redis error', err);
-    });
-
-    redis.on('connect', () => {
-      server.log.debug('Redis connection established');
-    });
-
-    redis.on('ready', () => {
-      server.log.info('Redis connection ready');
-    });
-
-    redis.on('close', () => {
-      server.log.info('Redis connection closed');
-    });
-
-    redis.on('reconnecting', (timeToReconnect?: number) => {
-      server.log.info('Redis reconnecting in %s', timeToReconnect);
-    });
-
     await registerTRPC(server, {
       router: schemaBuilderApiRouter,
       createContext({ req }): Context {
