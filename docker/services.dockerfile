@@ -1,6 +1,6 @@
 FROM node:24.14.1-slim
 
-RUN apt-get update && apt-get install -y wget ca-certificates && rm -rf /var/lib/apt/lists/*
+RUN apt-get update && apt-get upgrade -y --no-install-recommends && apt-get install -y --no-install-recommends wget ca-certificates && rm -rf /var/lib/apt/lists/*
 
 ARG SERVICE_DIR_NAME
 WORKDIR /usr/src/app/$SERVICE_DIR_NAME
