@@ -1,4 +1,4 @@
-# Hive Client for Hive Gateway
+# EXPERIMENTAL: Hive Client for Hive Gateway
 
 [Hive](https://the-guild.dev/graphql/hive) is a fully open-source schema registry, analytics,
 metrics and gateway for [GraphQL federation](https://the-guild.dev/graphql/hive/federation) and
@@ -40,16 +40,45 @@ picture of your API.
 Parsing large response payloads is computationally expensive. Enabling this feature will impact your
 gateway's CPU usage. It's recommended to increase the number of gateway instances you have when
 enabling this feature, and then to evaluate CPU. Each API is different, and therefore we can't
-provide an exact percent increase by, but to be safe we recommend doubling the processing power.
+provide an exact percent increase by, but to be safe we recommend increasing instance size by 50%.
 
 ## Usage
+
+To create the plugin:
 
 ```
 import { useHive } from '@graphql-hive/gateway-plugin-console-sdk';
 const plugin = useHive({
-    token: TOKEN,
-    usage: {
-      fieldLevelMetricsEnabled: true,
-    },
-  });
+  token: TOKEN,
+  usage: {
+    fieldLevelMetricsEnabled: true,
+  },
+});
+```
+
+Or use with the gateway config:
+
+```
+import { defineConfig } from "@graphql-hive/gateway";
+import { useHive } from '@graphql-hive/gateway-plugin-console-sdk';
+
+export const gatewayConfig = defineConfig({
+  // Disable default reporter and usage provider, "@graphql-hive/yoga"
+  reporting: {
+    enabled: false,
+    type: "hive",
+    usage: false,
+  },
+  plugins: (ctx) => [
+    // Enable gateway plugin as the hive reporter and usage tracker
+    useHive({
+      token: process.env.HIVE_USAGE_ACCESS_TOKEN,
+      usage: {
+        fieldLevelMetricsEnabled: true,
+      },
+      enabled: true,
+    }),
+  ],
+});
+
 ```
