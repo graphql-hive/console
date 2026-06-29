@@ -30,8 +30,9 @@ export function operationSampling(config: {
   }
 
   const rules = config.rates.map(rate => {
-    const hasName = typeof rate.name === 'string';
-    const hasRegex = rate.regex instanceof RegExp;
+    const { name, regex, sampleRate } = rate;
+    const hasName = typeof name === 'string';
+    const hasRegex = regex instanceof RegExp;
 
     if (hasName === hasRegex) {
       throw new Error(
@@ -39,17 +40,18 @@ export function operationSampling(config: {
       );
     }
 
-    if (rate.sampleRate > 1 || rate.sampleRate < 0) {
+    if (sampleRate > 1 || sampleRate < 0) {
       throw new Error(
-        `Expected usage.sampleRates sampleRate to be 0 <= x <= 1, received ${rate.sampleRate}`,
+        `Expected usage.sampleRates sampleRate to be 0 <= x <= 1, received ${sampleRate}`,
       );
     }
 
-    const matches = hasRegex
-      ? (operationName: string) => rate.regex!.test(operationName)
-      : (operationName: string) => operationName === rate.name;
+    const matches =
+      regex instanceof RegExp
+        ? (operationName: string) => regex.test(operationName)
+        : (operationName: string) => operationName === name;
 
-    return { matches, sampleRate: rate.sampleRate };
+    return { matches, sampleRate };
   });
 
   return function shouldInclude(context: SamplingContext): boolean {
