@@ -2,12 +2,11 @@ import { BentoCache, bentostore } from 'bentocache';
 import { memoryDriver } from 'bentocache/build/src/drivers/memory';
 import { redisDriver } from 'bentocache/build/src/drivers/redis';
 import { Inject, Injectable, Scope } from 'graphql-modules';
-import type Redis from 'ioredis';
 import { prometheusPlugin } from '@bentocache/plugin-prometheus';
 import { PostgresDatabasePool } from '@hive/postgres';
 import { findTargetBySlug } from '@hive/storage';
 import { PrometheusConfig } from '../../shared/providers/prometheus-config';
-import { REDIS_INSTANCE } from '../../shared/providers/redis';
+import { REDIS_INSTANCE, type Redis } from '../../shared/providers/redis';
 
 /**
  * Cache for performant Target lookups.

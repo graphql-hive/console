@@ -1,9 +1,8 @@
 import { formatISO, subHours } from 'date-fns';
 import { humanId } from 'human-id';
 import z from 'zod';
-import { NoopLogger } from '@hive/api/modules/shared/providers/logger';
-import { createRedisClient } from '@hive/api/modules/shared/providers/redis';
 import { createPostgresDatabasePool, psql } from '@hive/postgres';
+import { createRedisClient, type ServiceLogger } from '@hive/service-common';
 import type { Report } from '../../packages/libraries/core/src/client/usage.js';
 import { authenticate, userEmail } from './auth';
 import {
@@ -237,15 +236,28 @@ export function initSeed() {
         value: 'a894723a5d52a30d73790752b0169835e6f81dd77d2737dba809bee7fde39092',
       };
 
-      const redis = createRedisClient(
-        '',
+      const noop = () => {};
+      const noopLogger = {
+        info: noop,
+        warn: noop,
+        error: noop,
+        debug: noop,
+        child: () => noopLogger,
+      } as unknown as ServiceLogger;
+
+      const redis = await createRedisClient(
         {
           host: ensureEnv('REDIS_HOST'),
           password: ensureEnv('REDIS_PASSWORD'),
           port: parseInt(ensureEnv('REDIS_PORT'), 10),
+          username: undefined,
           tlsEnabled: false,
+          clusterModeEnabled: false,
+          awsIamAuthEnabled: false,
+          awsRegion: undefined,
+          awsIamAuthCacheName: undefined,
         },
-        new NoopLogger(),
+        { logger: noopLogger },
       );
 
       await redis.set(key, JSON.stringify(challenge));

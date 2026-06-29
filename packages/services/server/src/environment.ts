@@ -1,5 +1,9 @@
 import zod from 'zod';
-import { OpenTelemetryConfigurationModel, resolveServerListenOptions } from '@hive/service-common';
+import {
+  OpenTelemetryConfigurationModel,
+  parseRedisConfigFromEnvironment,
+  resolveServerListenOptions,
+} from '@hive/service-common';
 
 const isNumberString = (input: unknown) => zod.string().regex(/^\d+$/).safeParse(input).success;
 
@@ -17,6 +21,10 @@ const emptyString = <T extends zod.ZodType>(input: T) => {
     return value;
   }, input);
 };
+
+function raiseInvariant(reason: string): never {
+  throw new Error(reason);
+}
 
 const TestUtilsModel = zod.object({
   EXPOSE_MEMORY_UTILS: emptyString(zod.union([zod.literal('1'), zod.literal('0')]).optional()),
@@ -58,6 +66,7 @@ const EnvironmentModel = zod.object({
   FEATURE_FLAGS_METRIC_ALERT_RULES_ENABLED: emptyString(
     zod.union([zod.literal('1'), zod.literal('0')]).optional(),
   ),
+  AWS_REGION: emptyString(zod.string().optional()),
 });
 
 const CommerceModel = zod.object({
@@ -106,13 +115,6 @@ const ClickHouseModel = zod.object({
   CLICKHOUSE_USERNAME: zod.string(),
   CLICKHOUSE_PASSWORD: zod.string(),
   CLICKHOUSE_REQUEST_TIMEOUT: emptyString(NumberFromString.optional()),
-});
-
-const RedisModel = zod.object({
-  REDIS_HOST: zod.string(),
-  REDIS_PORT: NumberFromString,
-  REDIS_PASSWORD: emptyString(zod.string().optional()),
-  REDIS_TLS_ENABLED: emptyString(zod.union([zod.literal('1'), zod.literal('0')]).optional()),
 });
 
 const SuperTokensModel = zod.object({
@@ -303,7 +305,6 @@ const configs = {
   sentry: SentryModel.safeParse(processEnv),
   postgres: PostgresModel.safeParse(processEnv),
   clickhouse: ClickHouseModel.safeParse(processEnv),
-  redis: RedisModel.safeParse(processEnv),
   supertokens: SuperTokensModel.safeParse(processEnv),
   authGithub: AuthGitHubConfigSchema.safeParse(processEnv),
   authGoogle: AuthGoogleConfigSchema.safeParse(processEnv),
@@ -331,6 +332,15 @@ for (const config of Object.values(configs)) {
   }
 }
 
+const redisConfigResult = parseRedisConfigFromEnvironment(
+  processEnv,
+  configs.base.success ? configs.base.data.AWS_REGION : undefined,
+);
+
+if (redisConfigResult.type === 'error') {
+  environmentErrors.push(...redisConfigResult.errors);
+}
+
 if (environmentErrors.length) {
   const fullError = environmentErrors.join(`\n`);
   console.error('❌ Invalid environment variables:', fullError);
@@ -349,7 +359,6 @@ const commerce = extractConfig(configs.commerce);
 const postgres = extractConfig(configs.postgres);
 const sentry = extractConfig(configs.sentry);
 const clickhouse = extractConfig(configs.clickhouse);
-const redis = extractConfig(configs.redis);
 const supertokens = extractConfig(configs.supertokens);
 const authGithub = extractConfig(configs.authGithub);
 const authGoogle = extractConfig(configs.authGoogle);
@@ -452,12 +461,10 @@ export const env = {
     password: clickhouse.CLICKHOUSE_PASSWORD,
     requestTimeout: clickhouse.CLICKHOUSE_REQUEST_TIMEOUT,
   },
-  redis: {
-    host: redis.REDIS_HOST,
-    port: redis.REDIS_PORT,
-    password: redis.REDIS_PASSWORD ?? '',
-    tlsEnabled: redis.REDIS_TLS_ENABLED === '1',
-  },
+  redis:
+    redisConfigResult?.type === 'ok'
+      ? redisConfigResult.config
+      : raiseInvariant('Unreachable: redis config errors are caught above via process.exit(1)'),
   supertokens: {
     secrets: {
       refreshTokenKey: supertokens.SUPERTOKENS_REFRESH_TOKEN_KEY,
