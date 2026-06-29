@@ -8,7 +8,7 @@ import {
   Accordion,
   AccordionContent,
   AccordionHeader,
-  AccordionItem,
+  AccordionItem,2
   AccordionTrigger,
 } from '@/components/ui/accordion';
 import { Button } from '@/components/ui/button';
@@ -249,10 +249,10 @@ function ChangeItem(
                 {change.isSafeBasedOnUsage && change.criticalityReason && (
                   <span className="text-xs text-muted-foreground ml-1">
                     ({change.criticalityReason})
-                    </span>
+                  </span>
                 )}
-            
-                  
+                
+                
 
 
                 
