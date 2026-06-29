@@ -85,7 +85,7 @@ services:
       retries: 3
     volumes:
       - ./.hive-dev/clickhouse/logs:/var/log/clickhouse-server
-      - ./.hive-dev/clickhouse/db:/var/lib/clickhouse
+      - clickhouse_data:/var/lib/clickhouse
       - ./configs/clickhouse:/etc/clickhouse-server/conf.d
     ports:
       - '8123:8123'
@@ -281,3 +281,6 @@ services:
 
 networks:
   stack: {}
+
+volumes:
+  clickhouse_data:
