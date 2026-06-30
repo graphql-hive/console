@@ -5,6 +5,6 @@ export const DiscordWebhookChannel: DiscordWebhookChannelResolvers = {
     return channel.type === 'DISCORD_WEBHOOK';
   },
   endpoint: async channel => {
-    return channel.webhookEndpoint!;
+    return channel.webhookEndpoint ?? '';
   },
 };
