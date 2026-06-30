@@ -191,7 +191,7 @@ export class DiscordCommunicationAdapter implements CommunicationAdapter {
   }
 
   private pluralize(word: string, num: number): string {
-    return word + (num > 1 ? 's' : '');
+    return word + (num !== 1 ? 's' : '');
   }
 
   async sendDiscordMessage(webhookUrl: string, payload: DiscordWebhookPayload) {
