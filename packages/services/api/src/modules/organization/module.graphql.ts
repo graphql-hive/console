@@ -1550,4 +1550,155 @@ export default gql`
     """
     whoAmI: WhoAmI
   }
+
+  """
+  A role mapping grants the permissions of the role
+  for a set of specified resources.
+  """
+  type GroupRoleMapping {
+    id: ID!
+    """
+    The assigned role.
+    """
+    role: MemberRole!
+    """
+    The assigned resources.
+    """
+    resourceAssignment: ResourceAssignment!
+  }
+
+  type Group {
+    """
+    The ID of the group.
+    """
+    id: ID!
+    """
+    The name of the group.
+    """
+    name: String!
+    """
+    When the group was first created.
+    """
+    createdAt: DateTime!
+    """
+    List of role assignments for the group that determine the authorizion scope
+    of the group.
+    """
+    roleMappings: [GroupRoleMapping!]!
+    """
+    Amount of members that have this group assigned.
+    """
+    memberCount: Int!
+    """
+    Retrieve the total amount of existing role mappings configured for this group.
+    """
+    roleMappingCount: Int!
+  }
+
+  type GroupEdge {
+    cursor: String!
+    node: Group!
+  }
+
+  type GroupConnection {
+    edges: [GroupEdge!]!
+    pageInfo: PageInfo!
+  }
+
+  extend type Organization {
+    """
+    A paginated list of groups within the organization.
+    """
+    groups(first: Int = 10, after: String = null): GroupConnection!
+    """
+    Lookup a specific group within the organization.
+    """
+    group(id: ID!): Group
+  }
+
+  extend type Mutation {
+    addGroupMappingToGroup(input: AddGroupMappingToGroupInput!): AddGroupMappingToGroupResult!
+  }
+
+  input AddGroupMappingToGroupInput {
+    groupId: ID!
+    roleId: ID!
+    assignedResources: ResourceAssignmentInput
+  }
+
+  type AddGroupMappingToGroupResultOk {
+    group: Group!
+  }
+
+  type AddGroupMappingToGroupResultError {
+    message: String
+  }
+
+  type AddGroupMappingToGroupResult {
+    ok: AddGroupMappingToGroupResultOk
+    error: AddGroupMappingToGroupResultError
+  }
+
+  extend type Mutation {
+    removeGroupMapping(input: RemoveGroupMappingInput!): RemoveGroupMappingResult!
+  }
+
+  input RemoveGroupMappingInput {
+    groupMappingId: ID!
+  }
+
+  type RemoveGroupMappingResult {
+    ok: RemoveGroupMappingResultOk
+    error: RemoveGroupMappingResultError
+  }
+
+  type RemoveGroupMappingResultOk {
+    group: Group!
+  }
+
+  type RemoveGroupMappingResultError {
+    message: String!
+  }
+
+  extend type Mutation {
+    updateGroupMapping(input: UpdateGroupMappingInput!): UpdateGroupMappingResult!
+  }
+
+  input UpdateGroupMappingInput {
+    groupMappingId: ID!
+    roleId: ID
+    assignedResources: ResourceAssignmentInput
+  }
+
+  type UpdateGroupMappingResult {
+    ok: UpdateGroupMappingResultOk
+    error: UpdateGroupMappingResultError
+  }
+
+  type UpdateGroupMappingResultOk {
+    group: Group!
+  }
+
+  type UpdateGroupMappingResultError {
+    message: String!
+  }
+
+  type MemberProvisionInformation {
+    isDisabled: Boolean!
+  }
+
+  extend type Member {
+    """
+    The groups the member is part of.
+    """
+    groups: [Group!]!
+  }
+
+  extend type User {
+    """
+    Information about the user if provisioned.
+    The fields value is null if the user is not a provisioned user.
+    """
+    provisionInfo: MemberProvisionInformation
+  }
 `;

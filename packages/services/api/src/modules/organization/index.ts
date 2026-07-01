@@ -1,4 +1,8 @@
 import { createModule } from 'graphql-modules';
+import { GroupMemberStore } from './providers/group-member-store';
+import { GroupRoleAssignmentStore } from './providers/group-role-assignment-store';
+import { GroupStore } from './providers/group-store';
+import { Groups } from './providers/groups';
 import { OrganizationAccessTokens } from './providers/organization-access-tokens';
 import { OrganizationAccessTokensCache } from './providers/organization-access-tokens-cache';
 import { OrganizationManager } from './providers/organization-manager';
@@ -22,5 +26,9 @@ export const organizationModule = createModule({
     ResourceAssignments,
     OrganizationAccessTokensCache,
     ResourceSelector,
+    GroupStore,
+    GroupMemberStore,
+    GroupRoleAssignmentStore,
+    Groups,
   ],
 });

@@ -5,6 +5,7 @@ import z from 'zod';
 import formDataPlugin from '@fastify/formbody';
 import { psql, type PostgresDatabasePool } from '@hive/postgres';
 import { createServer, type FastifyReply, type FastifyRequest } from '@hive/service-common';
+import { updateOIDCIntegration } from './flow';
 import { graphql } from './gql';
 import { execute } from './graphql';
 import { getServiceHost, pollForEmailVerificationLink } from './utils';
@@ -94,37 +95,6 @@ const CreateOIDCIntegrationMutation = graphql(`
   }
 `);
 
-const UpdateOIDCIntegrationMutation = graphql(`
-  mutation TestKit_OIDCIntegration_UpdateOIDCIntegrationMutation(
-    $input: UpdateOIDCIntegrationInput!
-  ) {
-    updateOIDCIntegration(input: $input) {
-      ok {
-        updatedOIDCIntegration {
-          id
-          tokenEndpoint
-          userinfoEndpoint
-          authorizationEndpoint
-          clientId
-          clientSecretPreview
-          additionalScopes
-        }
-      }
-      error {
-        message
-        details {
-          clientId
-          clientSecret
-          tokenEndpoint
-          userinfoEndpoint
-          authorizationEndpoint
-          additionalScopes
-        }
-      }
-    }
-  }
-`);
-
 const SendVerificationEmailMutation = graphql(`
   mutation TestKit_OIDCIntegration_SendVerificationEmailMutation(
     $input: SendVerificationEmailInput!
@@ -184,13 +154,12 @@ export async function createOIDCIntegration(args: {
 
   return {
     oidcIntegration,
-    async registerFakeDomain() {
-      const randomDomain =
-        humanId({
-          separator: '',
-          capitalize: false,
-        }) + '.local';
-
+    async registerFakeDomain(
+      randomDomain = humanId({
+        separator: '',
+        capitalize: false,
+      }) + '.local',
+    ) {
       const pool = await getPool();
       const query = psql`
         INSERT INTO "oidc_integration_domains" (
@@ -213,24 +182,27 @@ export async function createOIDCIntegration(args: {
       additionalScopes?: Array<string>;
       clientId?: string;
       clientSecret?: string;
+      userIdClaim?: string;
+      userProvisioningRequired?: boolean;
+      oidcForVerifiedDomainsRequired?: boolean;
     }) {
       const server = await createMockOIDCServer();
 
-      const result = await execute({
-        document: UpdateOIDCIntegrationMutation,
-        variables: {
-          input: {
-            oidcIntegrationId: oidcIntegration.id,
-            authorizationEndpoint: server.url + '/authorize',
-            tokenEndpoint: server.url + '/token',
-            userinfoEndpoint: server.url + '/userinfo',
-            additionalScopes: args?.additionalScopes,
-            clientId: args?.clientId,
-            clientSecret: args?.clientSecret,
-          },
+      const result = await updateOIDCIntegration(
+        {
+          oidcIntegrationId: oidcIntegration.id,
+          authorizationEndpoint: server.url + '/authorize',
+          tokenEndpoint: server.url + '/token',
+          userinfoEndpoint: server.url + '/userinfo',
+          additionalScopes: args?.additionalScopes,
+          clientId: args?.clientId,
+          clientSecret: args?.clientSecret,
+          userIdClaim: args?.userIdClaim,
+          userProvisioningRequired: args?.userProvisioningRequired,
+          oidcForVerifiedDomainsRequired: args?.oidcForVerifiedDomainsRequired,
         },
         authToken,
-      }).then(r => r.expectNoGraphQLErrors());
+      ).then(r => r.expectNoGraphQLErrors());
 
       if (!result.updateOIDCIntegration.ok) {
         throw new Error(result.updateOIDCIntegration.error?.message ?? 'Unexpected error.');
@@ -238,7 +210,7 @@ export async function createOIDCIntegration(args: {
 
       return {
         setHandler: server.setHandler,
-        setUser(args: { email: string; sub: string }) {
+        setUser(args: { email: string; userIdClaim: string; userIdScope?: string }) {
           server.setHandler(async (req, res) => {
             if (req.routeOptions.url === '/token') {
               return res.status(200).send({
@@ -248,7 +220,7 @@ export async function createOIDCIntegration(args: {
 
             if (req.routeOptions.url === '/userinfo') {
               return res.status(200).send({
-                sub: args.sub,
+                [args.userIdScope ?? 'sub']: args.userIdClaim,
                 email: args.email,
               });
             }
@@ -311,14 +283,23 @@ export async function createOIDCIntegration(args: {
                 ),
               }),
             })
-            .parse(rawBody);
+            .safeParse(rawBody);
+
+          if (!body.data) {
+            return {
+              type: 'error' as const,
+              body: rawBody,
+            };
+          }
+
           const cookies = setCookie.parse(result.headers.getSetCookie());
           return {
+            type: 'success' as const,
             accessToken: cookies.find(c => c.name === 'sAccessToken')?.value ?? '',
             user: {
-              id: body.user.id,
-              email: body.user.emails[0],
-              userIdentityId: body.user.loginMethods[0]?.recipeUserId,
+              id: body.data.user.id,
+              email: body.data.user.emails[0],
+              userIdentityId: body.data.user.loginMethods[0]?.recipeUserId,
             },
           };
         },
