@@ -4,11 +4,12 @@ import { cn } from '@/lib/utils';
 import { Slot } from '@radix-ui/react-slot';
 
 const buttonVariants = cva(
-  'inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none ring-offset-neutral-2',
+  'inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none disabled:cursor-not-allowed ring-offset-neutral-2',
   {
     variants: {
       variant: {
-        default: 'bg-neutral-4 text-neutral-11 hover:text-neutral-12 hover:bg-neutral-5',
+        default:
+          'bg-neutral-4 text-neutral-11 hover:text-neutral-12 hover:bg-neutral-5 disabled:ring-1 disabled:ring-neutral-5 ring-inset disabled:!bg-neutral-4/0',
         primary: 'bg-accent text-neutral-2 hover:brightness-110 active:bg-accent',
         destructive: 'bg-red-500 text-neutral-1 dark:text-neutral-12 hover:bg-red-700',
         outline:
