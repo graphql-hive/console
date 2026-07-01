@@ -1,6 +1,7 @@
 import { Inject, Injectable } from 'graphql-modules';
 import { CriticalityLevel } from '@graphql-inspector/core';
 import { SchemaChangeType } from '@hive/storage';
+import { HttpClient } from '../../../shared/providers/http-client';
 import { Logger } from '../../../shared/providers/logger';
 import { WEB_APP_URL } from '../../../shared/providers/tokens';
 import {
@@ -51,6 +52,7 @@ export class DiscordCommunicationAdapter implements CommunicationAdapter {
 
   constructor(
     logger: Logger,
+    private httpClient: HttpClient,
     @Inject(WEB_APP_URL) private appBaseUrl: string,
   ) {
     this.logger = logger.child({ service: 'DiscordCommunicationAdapter' });
@@ -135,13 +137,7 @@ export class DiscordCommunicationAdapter implements CommunicationAdapter {
         ],
       });
     } catch (error) {
-      const errorText =
-        error instanceof Error
-          ? error.toString()
-          : typeof error === 'string'
-            ? error
-            : JSON.stringify(error);
-      this.logger.error(`Failed to send Discord notification (error=%s)`, errorText);
+      this.logger.error('Failed to send Discord notification (error=%o)', error);
     }
   }
 
@@ -180,13 +176,7 @@ export class DiscordCommunicationAdapter implements CommunicationAdapter {
         ],
       });
     } catch (error) {
-      const errorText =
-        error instanceof Error
-          ? error.toString()
-          : typeof error === 'string'
-            ? error
-            : JSON.stringify(error);
-      this.logger.error(`Failed to send Discord notification`, errorText);
+      this.logger.error('Failed to send Discord notification (error=%o)', error);
     }
   }
 
@@ -202,17 +192,15 @@ export class DiscordCommunicationAdapter implements CommunicationAdapter {
       embeds: payload.embeds?.slice(0, DISCORD_MAX_EMBEDS).map(limitEmbed),
     };
 
-    const response = await fetch(webhookUrl, {
-      method: 'POST',
+    await this.httpClient.post(webhookUrl, {
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify(normalizedPayload),
+      json: normalizedPayload,
+      context: {
+        logger: this.logger,
+      },
     });
-
-    if (!response.ok) {
-      throw new Error(`Failed to send Discord message: ${response.statusText}`);
-    }
   }
 }
 

@@ -14,6 +14,15 @@ const logger = {
 const appBaseUrl = 'app-base-url';
 const webhookUrl = 'webhook-url';
 
+function createAdapter() {
+  const httpClient = {
+    post: vi.fn().mockResolvedValue(undefined),
+  };
+  const adapter = new DiscordCommunicationAdapter(logger as any, httpClient as any, appBaseUrl);
+
+  return { adapter, httpClient };
+}
+
 describe('DiscordCommunicationAdapter', () => {
   beforeEach(() => {
     vi.restoreAllMocks();
@@ -111,7 +120,7 @@ describe('DiscordCommunicationAdapter', () => {
         } as AlertChannel,
       } as SchemaChangeNotificationInput;
 
-      const adapter = new DiscordCommunicationAdapter(logger as any, appBaseUrl);
+      const { adapter } = createAdapter();
       const sendDiscordMessageSpy = vi.spyOn(adapter, 'sendDiscordMessage');
 
       await adapter.sendSchemaChangeNotification(input);
@@ -148,7 +157,7 @@ describe('DiscordCommunicationAdapter', () => {
         },
         channel: {},
       } as SchemaChangeNotificationInput;
-      const adapter = new DiscordCommunicationAdapter(logger as any, appBaseUrl);
+      const { adapter } = createAdapter();
       const sendDiscordMessageSpy = vi.spyOn(adapter, 'sendDiscordMessage');
 
       await adapter.sendSchemaChangeNotification(input);
@@ -178,7 +187,7 @@ describe('DiscordCommunicationAdapter', () => {
           webhookEndpoint: webhookUrl,
         },
       } as ChannelConfirmationInput;
-      const adapter = new DiscordCommunicationAdapter(logger as any, appBaseUrl);
+      const { adapter } = createAdapter();
       const sendDiscordMessageSpy = vi.spyOn(adapter, 'sendDiscordMessage');
 
       await adapter.sendChannelConfirmation(input);
@@ -211,19 +220,9 @@ describe('DiscordCommunicationAdapter', () => {
   });
 
   describe('sendDiscordMessage', () => {
-    const adapter = new DiscordCommunicationAdapter(logger as any, appBaseUrl);
-
-    beforeEach(() => {
-      // @ts-expect-error mocking fetch
-      global.fetch = vi.fn(() =>
-        Promise.resolve({
-          ok: true,
-          statusText: 'OK',
-        }),
-      );
-    });
-
     it('sends a Discord webhook payload with embeds', async () => {
+      const { adapter, httpClient } = createAdapter();
+
       await adapter.sendDiscordMessage('http://example.com/webhook', {
         embeds: [
           {
@@ -234,14 +233,13 @@ describe('DiscordCommunicationAdapter', () => {
         ],
       });
 
-      expect(fetch).toHaveBeenCalledWith(
+      expect(httpClient.post).toHaveBeenCalledWith(
         'http://example.com/webhook',
         expect.objectContaining({
-          method: 'POST',
           headers: {
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify({
+          json: {
             username: 'GraphQL Hive',
             embeds: [
               {
@@ -251,12 +249,17 @@ describe('DiscordCommunicationAdapter', () => {
               },
             ],
             allowed_mentions: { parse: [] },
-          }),
+          },
+          context: {
+            logger: expect.any(Object),
+          },
         }),
       );
     });
 
     it('truncates embed fields to Discord limits', async () => {
+      const { adapter, httpClient } = createAdapter();
+
       await adapter.sendDiscordMessage('http://example.com/webhook', {
         embeds: [
           {
@@ -272,9 +275,7 @@ describe('DiscordCommunicationAdapter', () => {
         ],
       });
 
-      const body = JSON.parse(
-        (fetch as unknown as ReturnType<typeof vi.fn>).mock.calls[0][1].body as string,
-      );
+      const body = httpClient.post.mock.calls[0][1].json;
 
       expect(body.embeds[0].title).toHaveLength(256);
       expect(body.embeds[0].description).toHaveLength(4096);
@@ -283,8 +284,8 @@ describe('DiscordCommunicationAdapter', () => {
     });
 
     it('handles failed send operation', async () => {
-      // @ts-expect-error types obviously don't account for the fact this is mocked
-      fetch.mockImplementationOnce(() => Promise.resolve({ ok: false, statusText: 'Bad Request' }));
+      const { adapter, httpClient } = createAdapter();
+      httpClient.post.mockRejectedValueOnce(new Error('Failed to send Discord message: Bad Request'));
 
       await expect(
         adapter.sendDiscordMessage('http://example.com/webhook', {
