@@ -167,6 +167,7 @@
       "fast-uri@2.x.x": "3.x.x",
       "ioredis": "5.10.1",
       "protobufjs@8.x.x": "8.6.4",
+      "protobufjs@7.x.x": "7.6.1",
       "@opentelemetry/exporter-jaeger": "-",
       "uuid@<14.x.x": "^14.0.0",
       "tmp@<0.2.7": "0.2.7",
