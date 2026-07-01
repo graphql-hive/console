@@ -89,9 +89,10 @@ export function useHive(clientOrOptions: HiveClient | HivePluginOptions): Plugin
         }
       };
     },
-    onExecute() {
+    onExecute(context) {
+      const args = stabilizeArgs(context);
       return {
-        onExecuteDone({ args, result }) {
+        onExecuteDone({ result }) {
           const record = contextualCache.get(args.contextValue);
           if (!record) {
             return;
@@ -137,12 +138,12 @@ export function useHive(clientOrOptions: HiveClient | HivePluginOptions): Plugin
     },
     onSubscribe(context) {
       const record = contextualCache.get(context.args.contextValue);
-
+      const args = stabilizeArgs(context);
       return {
         onSubscribeResult() {
           const experimental__persistedDocumentHash = record?.experimental__documentId;
           hive.collectSubscriptionUsage({
-            args: context.args,
+            args,
             experimental__persistedDocumentHash,
           });
         },
@@ -302,4 +303,15 @@ export function useHive(clientOrOptions: HiveClient | HivePluginOptions): Plugin
       }
     },
   };
+}
+
+// some envelop plugins (like extended-validation) mutate documents in place and
+// can therefore cause the document to be different AFTER execution than the one that
+// was used FOR execution. to avoid this rugpull, we create a new document object for
+// usage reporting.
+// TODO: this depends on the extended-validation running AFTER this plugin
+function stabilizeArgs<A extends { document: DocumentNode }>(ctx: { args: A }) {
+  const args = { ...ctx.args };
+  if (args.document) args.document = { ...ctx.args.document };
+  return args;
 }
