@@ -17,6 +17,9 @@ export const ChannelsTable_AlertChannelFragment = graphql(`
     ... on TeamsWebhookChannel {
       endpoint
     }
+    ... on DiscordWebhookChannel {
+      endpoint
+    }
   }
 `);
 
@@ -24,6 +27,7 @@ const colorMap = {
   [AlertChannelType.Slack]: 'green' as const,
   [AlertChannelType.Webhook]: 'yellow' as const,
   [AlertChannelType.MsteamsWebhook]: 'orange' as const,
+  [AlertChannelType.DiscordWebhook]: 'blue' as const,
 };
 
 export function ChannelsTable(props: {
@@ -39,7 +43,8 @@ export function ChannelsTable(props: {
     }
     if (
       channel.__typename === 'AlertWebhookChannel' ||
-      channel.__typename === 'TeamsWebhookChannel'
+      channel.__typename === 'TeamsWebhookChannel' ||
+      channel.__typename === 'DiscordWebhookChannel'
     ) {
       return channel.endpoint;
     }

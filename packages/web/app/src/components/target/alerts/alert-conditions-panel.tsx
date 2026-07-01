@@ -53,6 +53,7 @@ const CHANNEL_TYPE_LABEL: Record<string, string> = {
   [AlertChannelType.Slack]: 'Slack',
   [AlertChannelType.Webhook]: 'Webhook',
   [AlertChannelType.MsteamsWebhook]: 'MS Teams',
+  [AlertChannelType.DiscordWebhook]: 'Discord',
 };
 
 function destinationLabel(channels: ReadonlyArray<{ type: string }>): string {

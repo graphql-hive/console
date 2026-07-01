@@ -7,7 +7,7 @@ import { sendWebhook, type RequestBroker } from './webhooks/send-webhook.js';
 
 export type AlertChannelRow = {
   id: string;
-  type: 'SLACK' | 'WEBHOOK' | 'MSTEAMS_WEBHOOK';
+  type: 'SLACK' | 'WEBHOOK' | 'MSTEAMS_WEBHOOK' | 'DISCORD_WEBHOOK';
   name: string;
   slackChannel: string | null;
   webhookEndpoint: string | null;
@@ -198,6 +198,61 @@ function severityColor(severity: NotificationEvent['rule']['severity']): string 
   return SEVERITY_COLORS[severity] ?? SEVERITY_COLORS.WARNING;
 }
 
+export async function sendDiscordNotification(args: {
+  channel: AlertChannelRow;
+  event: NotificationEvent;
+  requestBroker: RequestBroker | null;
+  logger: Logger;
+  idempotencyKey: string;
+  attempt: number;
+  maxAttempts: number;
+}) {
+  const { channel, event, logger } = args;
+
+  if (!channel.webhookEndpoint) {
+    logger.warn({ channelId: channel.id }, 'Discord webhook endpoint not configured');
+    return;
+  }
+
+  const isFiring = event.state === 'firing';
+  const emoji = isFiring ? '🔴' : '✅';
+  const action = isFiring ? 'triggered' : 'resolved';
+  const color = Number.parseInt(isFiring ? severityColor(event.rule.severity) : RESOLVED_COLOR, 16);
+
+  const changeText = formatChangeText(event);
+
+  const payload = {
+    username: 'GraphQL Hive',
+    allowed_mentions: { parse: [] },
+    embeds: [
+      {
+        title: truncate(`${emoji} ${event.rule.name} — ${action}`, 256),
+        color,
+        description: truncate(changeText, 4096),
+        fields: [
+          { name: 'Type', value: event.rule.type, inline: true },
+          { name: 'Severity', value: event.rule.severity, inline: true },
+          {
+            name: 'Target',
+            value: truncate(`${event.targetSlug} in ${event.projectSlug}`, 1024),
+            inline: false,
+          },
+        ],
+      },
+    ],
+  };
+
+  await sendWebhook(logger, args.requestBroker, {
+    attempt: args.attempt,
+    maxAttempts: args.maxAttempts,
+    endpoint: channel.webhookEndpoint,
+    data: payload,
+    headers: { 'Idempotency-Key': args.idempotencyKey },
+  });
+
+  logger.debug({ channelId: channel.id }, 'Discord notification sent');
+}
+
 function formatChangeText(event: NotificationEvent): string {
   const { rule, currentValue, previousValue } = event;
   const unit = rule.type === 'LATENCY' ? 'ms' : rule.type === 'ERROR_RATE' ? '%' : ' requests';
@@ -245,4 +300,12 @@ function buildWebhookPayload(event: NotificationEvent) {
     project: { slug: event.projectSlug },
     organization: { slug: event.organizationSlug },
   };
+}
+
+function truncate(value: string, maxLength: number): string {
+  if (value.length <= maxLength) {
+    return value;
+  }
+
+  return value.slice(0, maxLength - 3) + '...';
 }

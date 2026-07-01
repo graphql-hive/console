@@ -87,9 +87,35 @@ export const CreateChannelModal = ({
         }
       },
     });
-  const isWebhookLike = [AlertChannelType.Webhook, AlertChannelType.MsteamsWebhook].includes(
-    values.type,
-  );
+  const isWebhookLike = [
+    AlertChannelType.Webhook,
+    AlertChannelType.MsteamsWebhook,
+    AlertChannelType.DiscordWebhook,
+  ].includes(values.type);
+
+  const endpointHelp = (() => {
+    if (values.endpoint) {
+      return <p className="text-neutral-10 text-sm">Hive will send alerts to your endpoint.</p>;
+    }
+
+    if (values.type === AlertChannelType.MsteamsWebhook) {
+      return (
+        <a href="https://learn.microsoft.com/en-us/microsoftteams/platform/webhooks-and-connectors/how-to/add-incoming-webhook?tabs=newteams%2Cdotnet">
+          Follow this guide to set up an incoming webhook connector in MS Teams
+        </a>
+      );
+    }
+
+    if (values.type === AlertChannelType.DiscordWebhook) {
+      return (
+        <a href="https://support.discord.com/hc/en-us/articles/228383668-Intro-to-Webhooks">
+          Follow this guide to set up a Discord webhook
+        </a>
+      );
+    }
+
+    return <p className="text-neutral-10 text-sm">Hive will send alerts to your endpoint.</p>;
+  })();
 
   return (
     <Modal open={isOpen} onOpenChange={toggleModalOpen}>
@@ -135,6 +161,7 @@ export const CreateChannelModal = ({
               { value: AlertChannelType.Slack, name: 'Slack' },
               { value: AlertChannelType.Webhook, name: 'Webhook' },
               { value: AlertChannelType.MsteamsWebhook, name: 'MS Teams Webhook' },
+              { value: AlertChannelType.DiscordWebhook, name: 'Discord Webhook' },
             ]}
           />
           {touched.type && errors.type && <div className="text-sm text-red-500">{errors.type}</div>}
@@ -163,13 +190,7 @@ export const CreateChannelModal = ({
                 {mutation.data.addAlertChannel.error.inputErrors.webhookEndpoint}
               </div>
             )}
-            {values.endpoint ? (
-              <p className="text-neutral-10 text-sm">Hive will send alerts to your endpoint.</p>
-            ) : (
-              <a href="https://learn.microsoft.com/en-us/microsoftteams/platform/webhooks-and-connectors/how-to/add-incoming-webhook?tabs=newteams%2Cdotnet">
-                Follow this guide to set up an incoming webhook connector in MS Teams
-              </a>
-            )}
+            {endpointHelp}
           </div>
         )}
 

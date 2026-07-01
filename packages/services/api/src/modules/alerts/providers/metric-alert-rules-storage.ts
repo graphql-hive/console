@@ -142,7 +142,7 @@ const METRIC_ALERT_INCIDENT_SELECT = psql`
 const AlertChannelRowSchema = zod.object({
   id: zod.string(),
   projectId: zod.string(),
-  type: zod.enum(['SLACK', 'WEBHOOK', 'MSTEAMS_WEBHOOK']),
+  type: zod.enum(['SLACK', 'WEBHOOK', 'MSTEAMS_WEBHOOK', 'DISCORD_WEBHOOK']),
   name: zod.string(),
   createdAt: zod.string(),
   slackChannel: zod.string().nullable(),
