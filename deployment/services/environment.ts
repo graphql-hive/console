@@ -48,6 +48,9 @@ export function prepareEnvironment(input: {
       general: {
         replicas: isProduction || isStaging ? 3 : 1,
       },
+      graphqlApi: {
+        replicas: isProduction || isStaging ? 6 : 1,
+      },
       envoy: {
         replicas: isProduction || isStaging ? 3 : 1,
         cpuLimit: isProduction ? '1500m' : isStaging ? '300m' : '120m',
@@ -58,6 +61,7 @@ export function prepareEnvironment(input: {
       },
       schemaService: {
         memoryLimit: isProduction || isStaging ? '3584Mi' : '1Gi',
+        replicas: isProduction || isStaging ? 6 : 1,
       },
       usageService: {
         replicas: isProduction || isStaging ? 6 : 1,
