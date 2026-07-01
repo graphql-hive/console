@@ -13,7 +13,7 @@ import type {
   TargetSelector,
 } from '../../shared/providers/storage';
 import { Storage } from '../../shared/providers/storage';
-import { OperationsReader } from './operations-reader';
+import { FieldMetricsState, OperationsReader } from './operations-reader';
 
 const DAY_IN_MS = 86_400_000;
 const lru = new LRU<string, boolean>({
@@ -212,6 +212,39 @@ export class OperationsManager {
     });
   }
 
+  async countResolutionsAtSchemaCoordinate({
+    organizationId,
+    projectId,
+    targetId,
+    period,
+    schemaCoordinate,
+  }: {
+    period: DateRange;
+    schemaCoordinate: string;
+  } & Listify<TargetSelector, 'targetId'>) {
+    this.logger.info(
+      'Counting resolutions with schema coordinate (period=%o, target=%s, coordinate=%s)',
+      period,
+      targetId,
+      schemaCoordinate,
+    );
+    await this.session.assertPerformAction({
+      action: 'project:describe',
+      organizationId,
+      params: {
+        organizationId,
+        projectId,
+      },
+    });
+    return this.reader
+      .countCoordinateResolutions({
+        targetIds: Array.isArray(targetId) ? targetId : [targetId],
+        period,
+        schemaCoordinate,
+      })
+      .then(r => r[schemaCoordinate]);
+  }
+
   async countRequestsWithSchemaCoordinate({
     organizationId,
     projectId,
@@ -238,12 +271,39 @@ export class OperationsManager {
     });
 
     return this.reader
-      .countRequests({
-        target: targetId,
+      .countCoordinate({
+        targetIds: Array.isArray(targetId) ? targetId : [targetId],
         period,
         schemaCoordinate,
       })
-      .then(r => r.total);
+      .then(r => r[schemaCoordinate]);
+  }
+
+  async countFailuresWithSchemaCoordinate({
+    organizationId,
+    projectId,
+    targetId,
+    period,
+    schemaCoordinate,
+  }: {
+    period: DateRange;
+    schemaCoordinate: string;
+  } & Listify<TargetSelector, 'targetId'>) {
+    await this.session.assertPerformAction({
+      action: 'project:describe',
+      organizationId,
+      params: {
+        organizationId,
+        projectId,
+      },
+    });
+    return this.reader
+      .countCoordinateFailure({
+        targetIds: Array.isArray(targetId) ? targetId : [targetId],
+        period,
+        schemaCoordinate,
+      })
+      .then(value => value[schemaCoordinate]);
   }
 
   async countRequestsAndFailures({
@@ -696,6 +756,61 @@ export class OperationsManager {
     });
   }
 
+  @cache<
+    {
+      period: DateRange;
+    } & TargetSelector
+  >(selector => JSON.stringify(selector))
+  @traceFn('OperationManager.readErrorCodesOverTimeAtSchemaCoordinate', {
+    initAttributes: input => ({
+      'hive.organization.id': input.organizationId,
+      'hive.project.id': input.projectId,
+      'hive.target.id': input.targetId,
+    }),
+  })
+  async readErrorCodesOverTimeAtSchemaCoordinate({
+    period,
+    resolution,
+    organizationId: organization,
+    projectId: project,
+    targetId: target,
+    schemaCoordinate,
+  }: {
+    period: DateRange;
+    resolution: number;
+    operations?: readonly string[];
+    schemaCoordinate: string;
+  } & TargetSelector): Promise<
+    {
+      code: string;
+      date: number;
+      count: number;
+    }[]
+  > {
+    this.logger.info(
+      'Reading error codes over time (period=%o, resolution=%s, target=%s, schemaCoordinate=%s)',
+      period,
+      resolution,
+      target,
+      schemaCoordinate,
+    );
+    await this.session.assertPerformAction({
+      action: 'project:describe',
+      organizationId: organization,
+      params: {
+        organizationId: organization,
+        projectId: project,
+      },
+    });
+
+    return this.reader.errorCodesOverTimeAtSchemaCoordinate({
+      target,
+      period,
+      resolution,
+      schemaCoordinate,
+    });
+  }
+
   async readDurationOverTime({
     period,
     resolution,
@@ -740,6 +855,64 @@ export class OperationsManager {
       clientVersionFilters,
       excludeOperations,
       excludeClientVersionFilters,
+    });
+  }
+
+  async readCoordinatesOverTime({
+    targetId,
+    projectId,
+    organizationId,
+    period,
+    resolution,
+    schemaCoordinate,
+  }: {
+    period: DateRange;
+    resolution: number;
+    schemaCoordinate: string;
+  } & TargetSelector) {
+    await this.session.assertPerformAction({
+      action: 'project:describe',
+      organizationId,
+      params: {
+        organizationId,
+        projectId,
+      },
+    });
+
+    return this.reader.getCoordinatesOverTime({
+      period,
+      resolution,
+      schemaCoordinate,
+      targetId,
+    });
+  }
+
+  async readCoordinateFailuresOverTime({
+    targetId,
+    organizationId,
+    projectId,
+    period,
+    resolution,
+    schemaCoordinate,
+  }: {
+    period: DateRange;
+    resolution: number;
+    schemaCoordinate: string;
+  } & TargetSelector) {
+    await this.session.assertPerformAction({
+      action: 'project:describe',
+      organizationId,
+      params: {
+        organizationId,
+        projectId,
+      },
+    });
+
+    return this.reader.getCoordinateFailuresOverTime({
+      period,
+      resolution,
+      schemaCoordinate,
+      targetId,
     });
   }
 
@@ -1158,25 +1331,42 @@ export class OperationsManager {
         projectId: project,
       },
     });
-
-    const rows = await this.reader.countCoordinatesOfType({
-      target,
-      period,
-      typename,
-    });
+    const [rows, errorRows] = await Promise.all([
+      this.reader.countCoordinatesOfType({
+        target,
+        period,
+        typename,
+      }),
+      this.reader.countErrorCoordinatesOfType({
+        target,
+        period,
+        typename,
+      }),
+    ]);
 
     const records: {
       [coordinate: string]: {
         total: number;
         isUsed: boolean;
+        totalResolutions?: number | null;
+        errorTotal?: number;
       };
     } = {};
 
     for (const row of rows) {
       records[row.coordinate] = {
         total: row.total,
+        totalResolutions: row.totalResolutions,
         isUsed: row.total > 0,
       };
+    }
+
+    if (errorRows) {
+      for (const row of errorRows) {
+        if (records[row.coordinate]) {
+          records[row.coordinate].errorTotal ??= row.total;
+        }
+      }
     }
 
     return records;
@@ -1252,4 +1442,68 @@ export class OperationsManager {
 
     return records;
   }
+
+  @cache<
+    {
+      period: DateRange;
+    } & TargetSelector
+  >(selector => JSON.stringify(selector))
+  @traceFn('OperationManager.errorCodesAtSchemaCoordinate', {
+    initAttributes: input => ({
+      'hive.organization.id': input.organizationId,
+      'hive.project.id': input.projectId,
+      'hive.target.id': input.targetId,
+    }),
+  })
+  async errorCodesAtSchemaCoordinate({
+    period,
+    targetId: target,
+    projectId: project,
+    organizationId: organization,
+    schemaCoordinate,
+  }: {
+    period: DateRange;
+    schemaCoordinate: string;
+  } & TargetSelector) {
+    await this.session.assertPerformAction({
+      action: 'project:describe',
+      organizationId: organization,
+      params: {
+        organizationId: organization,
+        projectId: project,
+      },
+    });
+
+    return this.reader.errorCodesAtSchemaCoordinate({
+      period,
+      target,
+      schemaCoordinate,
+    });
+  }
+
+  @cache<{
+    targetId: string;
+  }>(({ targetId }) => targetId)
+  @traceFn('OperationManager.fieldLevelMetricsDisplayState', {
+    initAttributes: input => ({
+      'hive.target.id': input.targetId,
+    }),
+  })
+  async fieldLevelMetricsDisplayState({ targetId }: { organizationId: string; targetId: string }) {
+    const state = await this.reader.coordinatesDataSyncedCheck({
+      targetId,
+    });
+    const mappings = {
+      [FieldMetricsState.HISTORY_MISSING]: 'ON_WITH_WARNING' as const,
+      [FieldMetricsState.IN_SYNC]: 'ON' as const,
+      [FieldMetricsState.NO_DATA]: 'OFF' as const,
+    };
+    return mappings[state];
+  }
+}
+
+export enum FieldLevelMetricsDisplayState {
+  ON,
+  OFF,
+  ON_WITH_WARNING,
 }

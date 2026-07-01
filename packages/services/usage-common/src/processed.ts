@@ -39,3 +39,12 @@ export interface ProcessedAppDeploymentUsageRecord {
   appVersion: string;
   lastRequestTimestamp: number;
 }
+
+export interface ProcessedOperationErrorRecord {
+  target: string;
+  hash: string;
+  timestamp: number;
+  expires_at: number;
+  /** All errors associated with this operation call. If the code isn't defined, use an empty string. */
+  errors: [code: string, path: string][];
+}

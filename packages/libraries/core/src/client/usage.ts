@@ -12,11 +12,14 @@ import { version } from '../version.js';
 import { createAgent } from './agent.js';
 import { collectSchemaCoordinates } from './collect-schema-coordinates.js';
 import { dynamicSampling, randomSampling } from './sampling.js';
+import { extractCoordinates } from './subrequests/extract-coordinates.js';
+import { pathToCoordinate } from './subrequests/path-to-coordinate.js';
 import type {
   AbortAction,
   ClientInfo,
+  CollectUsage,
   CollectUsageCallback,
-  GraphQLErrorsResult,
+  GraphQLResult,
   HiveInternalPluginOptions,
   HiveUsagePluginOptions,
 } from './types.js';
@@ -30,14 +33,16 @@ import {
 } from './utils.js';
 
 interface UsageCollector {
-  collect(): CollectUsageCallback;
+  collect(): CollectUsage;
   /** collect a short lived GraphQL request (mutation/query operation) */
   collectRequest(args: {
     args: ExecutionArgs;
-    result: GraphQLErrorsResult | AbortAction;
+    result: GraphQLResult | AbortAction;
     /** duration in milliseconds */
     duration: number;
     experimental__persistedDocumentHash?: string;
+    /** Optionally send subgraph request information. This provides a deeper level of usage metrics */
+    fetches?: CollectedOperationSubRequest[] | null;
   }): void;
   /** collect a long-lived GraphQL request/subscription (subscription operation) */
   collectSubscription(args: {
@@ -53,7 +58,12 @@ function isAbortAction(result: Parameters<CollectUsageCallback>[1]): result is A
 
 const noopUsageCollector: UsageCollector = {
   collect() {
-    return async () => {};
+    return {
+      subrequest() {
+        return () => {};
+      },
+      async finish() {},
+    };
   },
   collectRequest() {},
   async dispose() {},
@@ -75,7 +85,7 @@ export function createUsage(pluginOptions: HiveInternalPluginOptions): UsageColl
   const selfHostingOptions = pluginOptions.selfHosting;
   const logger = pluginOptions.logger.child({ module: 'hive-usage' });
   const collector = memo(createCollector, arg => arg.schema);
-  const excludeSet = new Set(options.exclude ?? []);
+  const exclusions = options.exclude ?? [];
 
   /** Access tokens using the `hvo1/` require a target. */
   if (!options.target && !isLegacyAccessToken(pluginOptions.token)) {
@@ -116,6 +126,39 @@ export function createUsage(pluginOptions: HiveInternalPluginOptions): UsageColl
         set(action) {
           if (action.type === 'request') {
             const operation = action.data;
+            const fetches = operation.execution.fetches?.map((f): OperationSubRequest => {
+              const documentRoot = f.document.definitions.find(
+                (def): def is OperationDefinitionNode => def.kind === 'OperationDefinition',
+              )?.operation satisfies 'subscription' | 'mutation' | 'query' | undefined;
+              const subgraphFields = extractCoordinates({
+                schema: f.subgraphSchema,
+                document: f.document,
+                resultData: f.result?.data,
+              });
+              const errors: { coordinate: string; code?: string }[] = [];
+              for (const error of f.result?.errors ?? []) {
+                const coordinate =
+                  error.path && pathToCoordinate(f.subgraphSchema, error.path, documentRoot);
+                if (coordinate) {
+                  errors.push({
+                    coordinate,
+                    code: error.extensions?.code as string | undefined,
+                  });
+                }
+              }
+
+              return {
+                duration: f.duration,
+                start: f.start,
+                status: f.status,
+                type: f.type,
+                paths: f.paths ?? 'Query',
+                subgraph: f.subgraph,
+                errors,
+                fields: subgraphFields,
+              };
+            });
+
             reportOperations.push({
               operationMapKey: operation.key,
               timestamp: operation.timestamp,
@@ -123,6 +166,7 @@ export function createUsage(pluginOptions: HiveInternalPluginOptions): UsageColl
                 ok: operation.execution.ok,
                 duration: operation.execution.duration,
                 errorsTotal: operation.execution.errorsTotal,
+                fetches,
               },
               metadata: {
                 client: operation.client ?? undefined,
@@ -196,9 +240,10 @@ export function createUsage(pluginOptions: HiveInternalPluginOptions): UsageColl
   const collectRequest: UsageCollector['collectRequest'] = args => {
     let providedOperationName: string | undefined = undefined;
     try {
-      if (isAbortAction(args.result)) {
-        if (args.result.logging) {
-          logger.info(args.result.reason);
+      const result = args.result;
+      if (isAbortAction(result)) {
+        if (result.logging) {
+          logger.info(result.reason);
         }
         return;
       }
@@ -209,8 +254,8 @@ export function createUsage(pluginOptions: HiveInternalPluginOptions): UsageColl
       ) as OperationDefinitionNode;
       providedOperationName = args.args.operationName || rootOperation.name?.value;
       const operationName = providedOperationName || 'anonymous';
-      // Check if operationName is a match with any string or regex in excludeSet
-      const isMatch = Array.from(excludeSet).some(excludingValue =>
+      // Check if operationName is a match with any string or regex in exclusions
+      const isMatch = exclusions.some(excludingValue =>
         excludingValue instanceof RegExp
           ? excludingValue.test(operationName)
           : operationName === excludingValue,
@@ -224,17 +269,35 @@ export function createUsage(pluginOptions: HiveInternalPluginOptions): UsageColl
           contextValue: args.args.contextValue,
         })
       ) {
-        const errors =
-          args.result.errors?.map(error => ({
-            message: error.message,
-            path: error.path?.join('.'),
-          })) ?? [];
         const collect = collector({
           schema: args.args.schema,
           max: options.max ?? 1000,
           ttl: options.ttl,
           processVariables: options.processVariables ?? false,
         });
+
+        let fetches = args.fetches;
+        if (!fetches?.length && options.fieldLevelMetricsEnabled) {
+          /**
+           * No subgraph requests, so this must be a monolith.
+           * We still want to track the field metrics, so create an artificial
+           * fetch that represents the local lookup.
+           */
+
+          fetches = [
+            {
+              document: args.args.document,
+              duration: args.duration,
+              start: 0,
+              status: 200,
+              subgraph: '',
+              subgraphSchema: args.args.schema,
+              type: 'ROOT',
+              paths: rootOperation.operation,
+              result, // make sure this isnt taking too much memory to store. Can this be stripped out?
+            },
+          ];
+        }
 
         agent.capture(
           collect(document, args.args.variableValues ?? null).then(({ key, value: info }) => {
@@ -247,10 +310,10 @@ export function createUsage(pluginOptions: HiveInternalPluginOptions): UsageColl
                 operation: info.document,
                 fields: info.fields,
                 execution: {
-                  ok: errors.length === 0,
+                  ok: !result.errors?.length,
                   duration: args.duration,
-                  errorsTotal: errors.length,
-                  errors,
+                  errorsTotal: result.errors?.length ?? 0,
+                  fetches,
                 },
                 // TODO: operationHash is ready to accept hashes of persisted operations
                 client: args.experimental__persistedDocumentHash
@@ -275,13 +338,44 @@ export function createUsage(pluginOptions: HiveInternalPluginOptions): UsageColl
 
   return {
     dispose: agent.dispose,
+    /** The raw request collection function */
     collectRequest,
+    /**
+     * A more advanced method of collecting the request that includes calculating durations
+     * automatically and supports subrequest data.
+     */
     collect() {
-      const finish = measureDuration();
-
-      return async function complete(args, result, experimental__persistedDocumentHash) {
-        const duration = finish();
-        return collectRequest({ args, result, duration, experimental__persistedDocumentHash });
+      const sinceStart = measureDuration();
+      const subRequests: CollectedOperationSubRequest[] = [];
+      return {
+        subrequest({ subgraph, type, paths }) {
+          const start = sinceStart();
+          const sinceSubStart = measureDuration();
+          return args => {
+            const duration = sinceSubStart();
+            subRequests.push({
+              start,
+              duration,
+              status: args.status,
+              subgraph,
+              type,
+              result: args.result,
+              document: args.document,
+              subgraphSchema: args.subgraphSchema,
+              paths,
+            });
+          };
+        },
+        async finish(args, result, experimental__persistedDocumentHash) {
+          const duration = sinceStart();
+          return collectRequest({
+            args,
+            result,
+            duration,
+            experimental__persistedDocumentHash,
+            fetches: subRequests.length > 0 ? subRequests : null,
+          });
+        },
       };
     },
     async collectSubscription({ args, experimental__persistedDocumentHash }) {
@@ -291,8 +385,8 @@ export function createUsage(pluginOptions: HiveInternalPluginOptions): UsageColl
       ) as OperationDefinitionNode;
       const providedOperationName = args.operationName || rootOperation.name?.value;
       const operationName = providedOperationName || 'anonymous';
-      // Check if operationName is a match with any string or regex in excludeSet
-      const isMatch = Array.from(excludeSet).some(excludingValue =>
+      // Check if operationName is a match with any string or regex in exclusions
+      const isMatch = exclusions.some(excludingValue =>
         excludingValue instanceof RegExp
           ? excludingValue.test(operationName)
           : operationName === excludingValue,
@@ -390,13 +484,6 @@ export function createCollector({
   );
 }
 
-export interface Report {
-  size: number;
-  map: OperationMap;
-  operations?: RequestOperation[];
-  subscriptionOperations?: SubscriptionOperation[];
-}
-
 type AgentAction =
   | {
       type: 'request';
@@ -406,6 +493,80 @@ type AgentAction =
       type: 'subscription';
       data: CollectedSubscriptionOperation;
     };
+
+export interface Report {
+  size: number;
+  map: OperationMap;
+  operations?: RequestOperation[];
+  subscriptionOperations?: SubscriptionOperation[];
+}
+
+type OperationSubRequest = {
+  /** Delta start time from "timestamp" */
+  start: number;
+
+  /** How long the request took */
+  duration: number;
+
+  /** HTTP Status Code */
+  status: number;
+
+  /** Number of times the field has been requested. Regardless of success or failure */
+  fields: { [coordinate: string]: number };
+
+  /** Error code for a coordinate, with a code returned from the graphql extensions */
+  errors?: { coordinate: string; code?: string }[];
+
+  /** Which subgraph resolved this path */
+  subgraph: string;
+
+  /**
+   * If this is an entity request, then this is the coordinate in the original operation that is being resolved.
+   * If undefined, then the path is assumed to be 'Query'.
+   */
+  paths: string[] | string;
+
+  /**
+   * What type of request this is. Root is if resolving a root query/mutation field. Entity is
+   * if resolving an entity type in federation.
+   * */
+  type: 'ROOT' | 'ENTITY';
+};
+
+type CollectedOperationSubRequest = {
+  /** Delta start time from "timestamp" */
+  start: number;
+
+  /** How long the request took */
+  duration: number;
+
+  /** HTTP Status Code */
+  status: number;
+
+  /** The graphql execution result. Used to calculate error code for a coordinate, with a code returned from the graphql extensions */
+  result?: GraphQLResult;
+
+  /** The GraphQL schema being accessed. Used to calculate coordinate from error path and the coordinate for field counts */
+  subgraphSchema: GraphQLSchema;
+
+  /** GraphQL operation document. Used to calculate field counts. */
+  document: DocumentNode;
+
+  /** Which subgraph resolved this path */
+  subgraph: string;
+
+  /**
+   * If this is an entity request, then this is the coordinate in the original operation that is being resolved.
+   * If undefined, then the path is assumed to be 'Query'.
+   */
+  paths?: string[] | string;
+
+  /**
+   * What type of request this is. Root is if resolving a root query/mutation field. Entity is
+   * if resolving an entity type in federation.
+   * */
+  type: 'ROOT' | 'ENTITY';
+};
 
 interface CollectedOperation {
   key: string;
@@ -417,10 +578,7 @@ interface CollectedOperation {
     ok: boolean;
     duration: number;
     errorsTotal: number;
-    errors?: Array<{
-      message: string;
-      path?: string;
-    }>;
+    fetches?: CollectedOperationSubRequest[] | null;
   };
   persistedDocumentHash?: string;
   client?: ClientInfo | null;
@@ -443,13 +601,11 @@ interface RequestOperation {
     ok: boolean;
     duration: number;
     errorsTotal: number;
+    fetches?: OperationSubRequest[] | null;
   };
   persistedDocumentHash?: string;
   metadata?: {
-    client?: {
-      name: string;
-      version: string;
-    };
+    client?: ClientInfo;
   };
 }
 
@@ -458,10 +614,7 @@ interface SubscriptionOperation {
   timestamp: number;
   persistedDocumentHash?: string;
   metadata?: {
-    client?: {
-      name: string;
-      version: string;
-    };
+    client?: ClientInfo;
   };
 }
 

@@ -6,6 +6,8 @@ import { decompress } from '@hive/usage-common';
 import type { KafkaEnvironment } from './environment';
 import {
   errors,
+  ingestedOperationErrorsFailures,
+  ingestedOperationErrorsWrites,
   ingestedOperationRegistryFailures,
   ingestedOperationRegistryWrites,
   ingestedOperationsFailures,
@@ -226,7 +228,7 @@ async function processMessage({
   // Decompress and parse the message to get a list of reports
   const rawReports: RawReport[] = JSON.parse((await decompress(message.value!)).toString());
 
-  const { registryRecords, operations, subscriptionOperations, appDeploymentUsageRecords } =
+  const { registryRecords, operations, subscriptionOperations, appDeploymentUsageRecords, errors } =
     await processor.processReports(rawReports);
 
   try {
@@ -273,6 +275,17 @@ async function processMessage({
           return Promise.reject(error);
         }),
       writer.writeAppDeploymentUsage(appDeploymentUsageRecords),
+      writer
+        .writeOperationErrors(errors)
+        .then(value => {
+          ingestedOperationErrorsWrites.inc(errors.length);
+          return Promise.resolve(value);
+        })
+        .catch(error => {
+          ingestedOperationErrorsFailures.inc(errors.length);
+          // error[retryOnFailureSymbol] = true;
+          return Promise.reject(error);
+        }),
     ]);
   } catch (error) {
     logger.error(error);

@@ -1,4 +1,4 @@
-import type { ExecutionArgs } from 'graphql';
+import type { DocumentNode, ExecutionArgs, GraphQLErrorExtensions, GraphQLSchema } from 'graphql';
 import type { PromiseOrValue } from 'graphql/jsutils/PromiseOrValue.js';
 import { LogLevel as HiveLoggerLevel, Logger } from '@graphql-hive/logger';
 import { MaybePromise } from '@graphql-tools/utils';
@@ -12,17 +12,53 @@ type HeadersObject = {
   get(name: string): string | null;
 };
 
+export type SubRequestCallback = (args: {
+  /** Which subgraph resolved this path */
+  subgraph: string;
+
+  /**
+   * If this is an entity request, then this is the coordinate in the original operation that is being resolved.
+   * If undefined, then the path is assumed to be 'Query'.
+   */
+  paths?: string[] | string;
+
+  /**
+   * What type of request this is. Root is if resolving a root query/mutation field. Entity is
+   * if resolving an entity type in federation.
+   * */
+  type: 'ROOT' | 'ENTITY';
+}) => FinishSubRequestCallback;
+
+export type FinishSubRequestCallback = (args: {
+  /** HTTP Status Code */
+  status: number;
+
+  /** Used to calculate error code for a coordinate, with a code returned from the graphql extensions */
+  result?: GraphQLResult;
+
+  /** The GraphQL schema being accessed. Used to calculate coordinate from error path and the coordinate for field counts */
+  subgraphSchema: GraphQLSchema;
+
+  /** GraphQL operation document. Used to calculate field counts. */
+  document: DocumentNode;
+}) => void;
+
+export type CollectUsage = {
+  subrequest: SubRequestCallback;
+  finish: CollectUsageCallback;
+};
+
 export interface HiveClient {
   [hiveClientSymbol]: true;
   [autoDisposeSymbol]: boolean | NodeJS.Signals[];
   info(): void | Promise<void>;
   reportSchema: SchemaReporter['report'];
   /** Collect usage for Query and Mutation operations */
-  collectUsage(): CollectUsageCallback;
+  collectUsage(): CollectUsage;
   /** Collect usage for Query and Mutation operations */
   collectRequest(args: {
     args: ExecutionArgs;
-    result: GraphQLErrorsResult | AbortAction;
+    result: GraphQLResult | AbortAction;
     duration: number;
     /**
      * Persisted document if request is using a persisted document.
@@ -67,7 +103,7 @@ export type AbortAction = {
 
 export type CollectUsageCallback = (
   args: ExecutionArgs,
-  result: GraphQLErrorsResult | AbortAction,
+  result: GraphQLResult | AbortAction,
   /**
    * Persisted document if subscription is a persisted document.
    * It needs to be provided in order to collect app deployment specific information.
@@ -150,6 +186,15 @@ export interface HiveUsagePluginOptions {
    * Default: false
    */
   processVariables?: boolean;
+
+  /**
+   * Report usage data for resolved coordinates. This counts the number of times a coordinate is resolved and reports
+   * graphql errors and their codes to Hive. Before enabling this, be aware that this is CPU intensive since it must
+   * iterate over the entire response payload.
+   *
+   * Default: false
+   */
+  fieldLevelMetricsEnabled?: boolean;
 }
 
 export interface SamplingContext
@@ -287,10 +332,15 @@ export type HiveInternalPluginOptions = HivePluginOptions & {
 
 export type Maybe<T> = null | undefined | T;
 
+export type GraphQLResult<TData = Record<string, unknown>> = {
+  data?: TData | null;
+} & GraphQLErrorsResult;
+
 export interface GraphQLErrorsResult {
   errors?: ReadonlyArray<{
     message: string;
     path?: Maybe<ReadonlyArray<string | number>>;
+    extensions?: GraphQLErrorExtensions;
   }>;
 }
 

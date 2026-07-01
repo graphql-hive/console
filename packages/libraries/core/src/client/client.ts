@@ -214,9 +214,9 @@ export function createHive(options: HivePluginOptions): HiveClient {
       const collect = usage.collect();
       const result = executeImpl(args);
       if ('then' in result) {
-        void result.then(result => collect(args, result));
+        void result.then(result => collect.finish(args, result));
       } else {
-        void collect(args, result);
+        void collect.finish(args, result);
       }
 
       return result;

@@ -4,7 +4,16 @@ import type { SchemaCoordinateStatsResolvers } from './../../../__generated__/ty
 
 export const SchemaCoordinateStats: Pick<
   SchemaCoordinateStatsResolvers,
-  'clients' | 'operations' | 'requestsOverTime' | 'totalRequests'
+  | 'clients'
+  | 'errorCodes'
+  | 'errorCodesOverTime'
+  | 'failuresOverTime'
+  | 'operations'
+  | 'requestsOverTime'
+  | 'resolutionsOverTime'
+  | 'totalFailures'
+  | 'totalRequests'
+  | 'totalResolutions'
 > = {
   totalRequests: ({ organization, project, target, period, schemaCoordinate }, _, { injector }) => {
     return injector.get(OperationsManager).countRequestsWithSchemaCoordinate({
@@ -12,6 +21,33 @@ export const SchemaCoordinateStats: Pick<
       projectId: project,
       targetId: target,
       period,
+      schemaCoordinate,
+    });
+  },
+  totalFailures: ({ organization, project, target, period, schemaCoordinate }, _, { injector }) => {
+    // Failures are tracked to fields and not types. Don't bother doing a lookup for types.
+    if (!schemaCoordinate.includes('.')) {
+      return null;
+    }
+    return injector.get(OperationsManager).countFailuresWithSchemaCoordinate({
+      organizationId: organization,
+      projectId: project,
+      targetId: target,
+      period,
+      schemaCoordinate,
+    });
+  },
+  resolutionsOverTime: (
+    { organization, project, target, period, schemaCoordinate },
+    { resolution },
+    { injector },
+  ) => {
+    return injector.get(OperationsManager).readCoordinatesOverTime({
+      targetId: target,
+      projectId: project,
+      organizationId: organization,
+      period,
+      resolution,
       schemaCoordinate,
     });
   },
@@ -95,5 +131,78 @@ export const SchemaCoordinateStats: Pick<
         startCursor: '',
       },
     };
+  },
+  failuresOverTime: (
+    { organization, project, target, period, schemaCoordinate },
+    { resolution },
+    { injector },
+  ) => {
+    // Failures are tracked to fields and not types. Don't bother doing a lookup for types.
+    if (!schemaCoordinate.includes('.')) {
+      return null;
+    }
+
+    return injector.get(OperationsManager).readCoordinateFailuresOverTime({
+      targetId: target,
+      projectId: project,
+      organizationId: organization,
+      period,
+      resolution,
+      schemaCoordinate,
+    });
+  },
+  totalResolutions: (
+    { organization, project, target, period, schemaCoordinate },
+    _,
+    { injector },
+  ) => {
+    return injector.get(OperationsManager).countResolutionsAtSchemaCoordinate({
+      organizationId: organization,
+      projectId: project,
+      targetId: target,
+      period,
+      schemaCoordinate,
+    });
+  },
+  errorCodes: async (
+    { organization, project, target, period, schemaCoordinate },
+    _,
+    { injector },
+  ) => {
+    const nodes = await injector.get(OperationsManager).errorCodesAtSchemaCoordinate({
+      organizationId: organization,
+      projectId: project,
+      targetId: target,
+      period,
+      schemaCoordinate,
+    });
+    return {
+      edges: nodes.map(node => ({ node, cursor: '' })),
+      pageInfo: {
+        hasNextPage: false,
+        hasPreviousPage: false,
+        endCursor: '',
+        startCursor: '',
+      },
+    };
+  },
+  errorCodesOverTime: async (
+    { organization, project, target, period, schemaCoordinate },
+    { resolution },
+    { injector },
+  ) => {
+    // Failures are tracked to fields and not types. Don't bother doing a lookup for types.
+    if (!schemaCoordinate.includes('.')) {
+      return null;
+    }
+
+    return injector.get(OperationsManager).readErrorCodesOverTimeAtSchemaCoordinate({
+      targetId: target,
+      projectId: project,
+      organizationId: organization,
+      period,
+      resolution,
+      schemaCoordinate,
+    });
   },
 };

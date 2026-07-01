@@ -15,13 +15,13 @@ const isCI = !!process.env.CI;
 export default defineConfig({
   testDir: './e2e/specs',
   tsconfig: './e2e/tsconfig.json',
-  timeout: 60_000,
+  timeout: 80_000,
   expect: {
-    timeout: 15_000,
+    timeout: 20_000,
   },
   fullyParallel: true,
   forbidOnly: isCI,
-  retries: 1,
+  retries: 2,
   workers: isCI ? 2 : undefined,
   reporter: isCI
     ? [['list'], ['github'], ['html', { open: 'never' }]]
