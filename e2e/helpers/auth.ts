@@ -51,11 +51,13 @@ export function createAuthHelper(
     let lastError: unknown;
     for (let attempt = 0; attempt < 3; attempt++) {
       try {
-        await page.goto(path, { waitUntil: 'domcontentloaded' });
+        await page.goto(path);
         return;
       } catch (error) {
         lastError = error;
-        await page.waitForTimeout(1_000);
+        if (attempt < 2) {
+          await page.waitForTimeout(1_000);
+        }
       }
     }
     throw lastError;
