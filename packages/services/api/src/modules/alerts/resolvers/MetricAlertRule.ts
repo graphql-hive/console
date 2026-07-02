@@ -22,6 +22,9 @@ export const MetricAlertRule: MetricAlertRuleResolvers = {
     const channelIds = await storage.getRuleChannelIds({ ruleId: rule.id });
     return storage.getAlertChannelsByIds(channelIds);
   },
+  degradedChannels: (rule, _, { injector }) => {
+    return injector.get(MetricAlertRulesStorage).getDegradedChannels({ ruleId: rule.id });
+  },
   savedFilter: async (rule, _, { injector }) => {
     if (!rule.savedFilterId) {
       return null;

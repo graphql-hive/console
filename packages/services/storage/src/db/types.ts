@@ -160,6 +160,13 @@ export interface graphile_worker_deduplication {
   task_name: string;
 }
 
+export interface metric_alert_channel_health {
+  alert_channel_id: string;
+  degraded_at: Date;
+  last_error: string | null;
+  metric_alert_rule_id: string;
+}
+
 export interface metric_alert_incidents {
   current_value: number;
   id: string;
@@ -614,6 +621,7 @@ export interface DBTables {
   document_preflight_scripts: document_preflight_scripts;
   email_verifications: email_verifications;
   graphile_worker_deduplication: graphile_worker_deduplication;
+  metric_alert_channel_health: metric_alert_channel_health;
   metric_alert_incidents: metric_alert_incidents;
   metric_alert_notifications_sent: metric_alert_notifications_sent;
   metric_alert_rule_channels: metric_alert_rule_channels;

@@ -5,3 +5,4 @@ import './2024.01.26T00.00.01.schema-check-purging.test';
 import './2024.07.23T09.36.00.schema-cleanup-tracker.test';
 import './2025.01.09T00-00-00.legacy-member-scopes.test';
 import './2026.06.05T00-00-00.metric-alert-filter-shared-only.test';
+import './2026.06.16T00-00-00.metric-alert-channel-health.test';

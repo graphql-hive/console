@@ -69,7 +69,7 @@ export const task = implementTask(SendMetricAlertChannelNotificationTask, async 
       },
     },
     async span => {
-      let outcome: 'sent' | 'deduped' | 'skipped-deleted' | 'failed' = 'failed';
+      let outcome: 'sent' | 'deduped' | 'skipped-deleted' | 'degraded' | 'failed' = 'failed';
       // Hoisted so the finally block can compute breach-to-dispatch lag
       // regardless of whether the dispatch succeeded, failed, or threw. Stays
       // null when the SELECT didn't return a row (already-deduped or
@@ -216,6 +216,12 @@ export const task = implementTask(SendMetricAlertChannelNotificationTask, async 
           ON CONFLICT ("state_log_id", "alert_channel_id") DO NOTHING
         `);
 
+        // A successful delivery clears any prior degraded marker for this pair.
+        await context.pg.query(psql`
+          DELETE FROM "metric_alert_channel_health"
+          WHERE "metric_alert_rule_id" = ${row.ruleId} AND "alert_channel_id" = ${channelId}
+        `);
+
         outcome = 'sent';
       } catch (err) {
         // outcome already initialized to 'failed'; record on the span for the
@@ -226,6 +232,31 @@ export const task = implementTask(SendMetricAlertChannelNotificationTask, async 
           message: err instanceof Error ? err.message : String(err),
         });
         span.setAttribute('error.type', err instanceof Error ? err.name : 'unknown');
+
+        // Final attempt failed → the delivery is dropped. Record the (rule,
+        // channel) pair as degraded so the rule UI can warn. Best-effort: a
+        // failure here must never mask the original send error.
+        if (helpers.job.attempts >= helpers.job.max_attempts) {
+          outcome = 'degraded';
+          try {
+            const lastError = (err instanceof Error ? err.message : String(err)).slice(0, 500);
+            await context.pg.query(psql`
+              INSERT INTO "metric_alert_channel_health"
+                ("metric_alert_rule_id", "alert_channel_id", "degraded_at", "last_error")
+              SELECT sl."metric_alert_rule_id", ${channelId}, now(), ${lastError}
+              FROM "metric_alert_state_log" sl
+              WHERE sl."id" = ${stateLogId}
+              ON CONFLICT ("metric_alert_rule_id", "alert_channel_id")
+              DO UPDATE SET "degraded_at" = now(), "last_error" = EXCLUDED."last_error"
+            `);
+          } catch (healthErr) {
+            logger.error(
+              { error: healthErr, stateLogId, channelId },
+              'Failed to record metric alert channel health',
+            );
+          }
+        }
+
         throw err;
       } finally {
         span.setAttribute('notification.outcome', outcome);
