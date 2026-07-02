@@ -45,6 +45,24 @@ export function createAuthHelper(
 ): AuthHelper {
   const cookieUrl = typeof baseURL === 'string' && baseURL ? baseURL : 'http://localhost:3000';
 
+  // The first navigation of a spec can race the app/stack becoming ready and abort
+  // (net::ERR_ABORTED). Retry a few times instead of failing the whole test on a transient.
+  async function gotoWithRetry(path: string) {
+    let lastError: unknown;
+    for (let attempt = 0; attempt < 3; attempt++) {
+      try {
+        await page.goto(path);
+        return;
+      } catch (error) {
+        lastError = error;
+        if (attempt < 2) {
+          await page.waitForTimeout(1_000);
+        }
+      }
+    }
+    throw lastError;
+  }
+
   return {
     async fillSignInFormAndSubmit(user) {
       const form = page.locator('form').first();
@@ -65,7 +83,7 @@ export function createAuthHelper(
       });
     },
     async signup(user) {
-      await page.goto('/');
+      await gotoWithRetry('/');
       await page.locator('a[data-auth-link="sign-up"]').click();
       await this.fillSignUpFormAndSubmit(user);
       const verifyEmail = page.getByText('Verify your email address');
@@ -83,7 +101,7 @@ export function createAuthHelper(
       await expect(createOrganization).toBeVisible();
     },
     async login(user) {
-      await page.goto('/');
+      await gotoWithRetry('/');
       await this.fillSignInFormAndSubmit(user);
       await expect(page.getByText('Create Organization')).toBeVisible();
     },

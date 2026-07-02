@@ -1,12 +1,12 @@
 #!/usr/bin/env node
 import 'reflect-metadata';
-import Redis from 'ioredis';
 import { PrometheusConfig } from '@hive/api/modules/shared/providers/prometheus-config';
 import { TargetsByIdCache } from '@hive/api/modules/target/providers/targets-by-id-cache';
 import { TargetsBySlugCache } from '@hive/api/modules/target/providers/targets-by-slug-cache';
 import { createPostgresDatabasePool } from '@hive/postgres';
 import {
   configureTracing,
+  createRedisClient,
   createServer,
   registerShutdown,
   reportReadiness,
@@ -52,16 +52,6 @@ async function main() {
     });
   }
 
-  const redis = new Redis({
-    host: env.redis.host,
-    port: env.redis.port,
-    password: env.redis.password,
-    maxRetriesPerRequest: 20,
-    db: 0,
-    enableReadyCheck: false,
-    tls: env.redis.tlsEnabled ? {} : undefined,
-  });
-
   const server = await createServer({
     name: 'usage',
     sentryErrorHandler: true,
@@ -69,6 +59,11 @@ async function main() {
       level: env.log.level,
       requests: env.log.requests,
     },
+  });
+
+  const redis = await createRedisClient(env.redis, {
+    logger: server.log.child({ source: 'Redis' }),
+    maxRetriesPerRequest: 20,
   });
 
   const pgPool = await createPostgresDatabasePool({
@@ -92,26 +87,6 @@ async function main() {
   }
 
   try {
-    redis.on('error', err => {
-      server.log.error(err, 'Redis connection error');
-    });
-
-    redis.on('connect', () => {
-      server.log.info('Redis connection established');
-    });
-
-    redis.on('ready', () => {
-      server.log.info('Redis connection ready... ');
-    });
-
-    redis.on('close', () => {
-      server.log.info('Redis connection closed');
-    });
-
-    redis.on('reconnecting', (timeToReconnect?: number) => {
-      server.log.info('Redis reconnecting in %s', timeToReconnect);
-    });
-
     redis.on('end', async () => {
       server.log.info('Redis ended - no more reconnections will be made');
       await shutdown();

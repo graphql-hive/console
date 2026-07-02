@@ -17,7 +17,6 @@ import { AccessTokenKeyContainer } from '@hive/api/modules/auth/lib/supertokens-
 import { EmailVerification } from '@hive/api/modules/auth/providers/email-verification';
 import { OAuthCache } from '@hive/api/modules/auth/providers/oauth-cache';
 import { OIDCIntegrationStore } from '@hive/api/modules/oidc-integrations/providers/oidc-integration.store';
-import { createRedisClient } from '@hive/api/modules/shared/providers/redis';
 import { RedisRateLimiter } from '@hive/api/modules/shared/providers/redis-rate-limiter';
 import { TargetsByIdCache } from '@hive/api/modules/target/providers/targets-by-id-cache';
 import { TargetsBySlugCache } from '@hive/api/modules/target/providers/targets-by-slug-cache';
@@ -30,6 +29,7 @@ import { createConnectionString } from '@hive/postgres';
 import { createHivePubSub } from '@hive/pubsub';
 import {
   configureTracing,
+  createRedisClient,
   createServer,
   registerShutdown,
   registerTRPC,
@@ -171,15 +171,17 @@ export async function main() {
   );
   const taskScheduler = new TaskScheduler(storage.pool);
 
-  const redis = createRedisClient('Redis', env.redis, server.log.child({ source: 'Redis' }));
+  const redis = await createRedisClient(env.redis, {
+    logger: server.log.child({ source: 'Redis' }),
+  });
+
+  const redisSubscriber = await createRedisClient(env.redis, {
+    logger: server.log.child({ source: 'RedisSubscribe' }),
+  });
 
   const pubSub = createHivePubSub({
     publisher: redis,
-    subscriber: createRedisClient(
-      'subscriber',
-      env.redis,
-      server.log.child({ source: 'RedisSubscribe' }),
-    ),
+    subscriber: redisSubscriber,
   });
 
   registerShutdown({
