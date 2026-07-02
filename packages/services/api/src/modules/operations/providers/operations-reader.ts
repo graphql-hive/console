@@ -1020,6 +1020,46 @@ export class OperationsReader {
      * much more data, by creating another materialized view ordered by
      * target, timestamp, then client_name.
      */
+    if (args.excludedClients) {
+      return await this.clickHouse
+        .query<unknown>({
+          queryId: 'getTotalCountForSchemaCoordinatesExcludingClients',
+          query: sql`
+            SELECT
+              SUM("result"."total") AS "amountOfRequests"
+            FROM (
+              SELECT
+                SUM("clients_daily"."total") AS "total"
+              FROM
+                "clients_daily"
+              PREWHERE
+                "clients_daily"."target" IN (${sql.array(args.targetIds, 'String')})
+                AND "clients_daily"."timestamp" >= toDateTime(${formatDate(args.period.from)}, 'UTC')
+                AND "clients_daily"."timestamp" <= toDateTime(${formatDate(args.period.to)}, 'UTC')
+                AND "clients_daily"."client_name" NOT IN (${sql.array(args.excludedClients, 'String')})
+
+              UNION ALL
+
+              SELECT
+                SUM("subscription_operations_daily"."total") AS "total"
+              FROM
+                "subscription_operations_daily"
+              PREWHERE
+                "subscription_operations_daily"."target" IN (${sql.array(args.targetIds, 'String')})
+                AND "subscription_operations_daily"."timestamp" >= toDateTime(${formatDate(args.period.from)}, 'UTC')
+                AND "subscription_operations_daily"."timestamp" <= toDateTime(${formatDate(args.period.to)}, 'UTC')
+                AND "subscription_operations_daily"."client_name" NOT IN (${sql.array(args.excludedClients, 'String')})
+            ) AS "result"
+            `,
+          timeout: 10_000,
+        })
+        .then(result => TotalCountModel.parse(result.data));
+    }
+
+    /**
+     * This uses the "operations_by_target_hourly" table because there is no daily
+     * and even with 24 hours in a day, the table's order by will more than compensate.
+     */
     return await this.clickHouse
       .query<unknown>({
         queryId: 'getTotalCountForSchemaCoordinates',
@@ -1028,14 +1068,13 @@ export class OperationsReader {
             SUM("result"."total") AS "amountOfRequests"
           FROM (
             SELECT
-              SUM("clients_daily"."total") AS "total"
+              SUM("operations_by_target_hourly"."total") AS "total"
             FROM
-              "clients_daily"
+              "operations_by_target_hourly"
             PREWHERE
-              "clients_daily"."target" IN (${sql.array(args.targetIds, 'String')})
-              AND "clients_daily"."timestamp" >= toDateTime(${formatDate(args.period.from)}, 'UTC')
-              AND "clients_daily"."timestamp" <= toDateTime(${formatDate(args.period.to)}, 'UTC')
-              ${args.excludedClients ? sql`AND "clients_daily"."client_name" NOT IN (${sql.array(args.excludedClients, 'String')})` : sql``}
+              "operations_by_target_hourly"."target" IN (${sql.array(args.targetIds, 'String')})
+              AND "operations_by_target_hourly"."timestamp" >= toDateTime(${formatDate(args.period.from)}, 'UTC')
+              AND "operations_by_target_hourly"."timestamp" <= toDateTime(${formatDate(args.period.to)}, 'UTC')
 
             UNION ALL
 
@@ -1047,7 +1086,6 @@ export class OperationsReader {
               "subscription_operations_daily"."target" IN (${sql.array(args.targetIds, 'String')})
               AND "subscription_operations_daily"."timestamp" >= toDateTime(${formatDate(args.period.from)}, 'UTC')
               AND "subscription_operations_daily"."timestamp" <= toDateTime(${formatDate(args.period.to)}, 'UTC')
-              ${args.excludedClients ? sql`AND "subscription_operations_daily"."client_name" NOT IN (${sql.array(args.excludedClients, 'String')})` : sql``}
           ) AS "result"
           `,
         timeout: 10_000,
