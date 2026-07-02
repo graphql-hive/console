@@ -1013,6 +1013,13 @@ export class OperationsReader {
       .tuple([z.object({ amountOfRequests: z.string() })])
       .transform(data => ensureNumber(data[0].amountOfRequests));
 
+    /**
+     * This is using clients_daily instead of operations_daily because the
+     * order by is more favorable in clients_daily since the client_name is
+     * right after target. However, this could be better without storing
+     * much more data, by creating another materialized view ordered by
+     * target, timestamp, then client_name.
+     */
     return await this.clickHouse
       .query<unknown>({
         queryId: 'getTotalCountForSchemaCoordinates',
@@ -1021,14 +1028,14 @@ export class OperationsReader {
             SUM("result"."total") AS "amountOfRequests"
           FROM (
             SELECT
-              SUM("operations_daily"."total") AS "total"
+              SUM("clients_daily"."total") AS "total"
             FROM
-              "operations_daily"
+              "clients_daily"
             PREWHERE
-              "operations_daily"."target" IN (${sql.array(args.targetIds, 'String')})
-              AND "operations_daily"."timestamp" >= toDateTime(${formatDate(args.period.from)}, 'UTC')
-              AND "operations_daily"."timestamp" <= toDateTime(${formatDate(args.period.to)}, 'UTC')
-              ${args.excludedClients ? sql`AND "operations_daily"."client_name" NOT IN (${sql.array(args.excludedClients, 'String')})` : sql``}
+              "clients_daily"."target" IN (${sql.array(args.targetIds, 'String')})
+              AND "clients_daily"."timestamp" >= toDateTime(${formatDate(args.period.from)}, 'UTC')
+              AND "clients_daily"."timestamp" <= toDateTime(${formatDate(args.period.to)}, 'UTC')
+              ${args.excludedClients ? sql`AND "clients_daily"."client_name" NOT IN (${sql.array(args.excludedClients, 'String')})` : sql``}
 
             UNION ALL
 
