@@ -1020,7 +1020,7 @@ export class OperationsReader {
      * much more data, by creating another materialized view ordered by
      * target, timestamp, then client_name.
      */
-    if (args.excludedClients) {
+    if (args.excludedClients && args.excludedClients.length > 0) {
       return await this.clickHouse
         .query<unknown>({
           queryId: 'getTotalCountForSchemaCoordinatesExcludingClients',
