@@ -42,8 +42,7 @@ export function deploySchema({
         SCHEMA_CACHE_POLL_INTERVAL_MS: '150',
         SCHEMA_CACHE_TTL_MS: '65000' /* 65s */,
         SCHEMA_CACHE_SUCCESS_TTL_MS: String(hourInMS * 2),
-        COMPOSITION_WORKER_MAX_OLD_GENERATION_SIZE_MB:
-          environment.isProduction || environment.isStaging ? '832' : '512',
+        COMPOSITION_WORKER_MAX_OLD_GENERATION_SIZE_MB: environment.isProduction ? '832' : '512',
         OPENTELEMETRY_COLLECTOR_ENDPOINT:
           observability.enabled && observability.tracingEndpoint
             ? observability.tracingEndpoint
