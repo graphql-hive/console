@@ -205,6 +205,8 @@ export class SchemaPublisher {
   }): Promise<{
     conditionalBreakingChangeConfiguration: ConditionalBreakingChangeConfiguration | null;
     failDiffOnDangerousChange: boolean;
+    failAllDangerousChanges: boolean;
+    failDangerousChangeTypes: Types.DangerousChangeType[];
   }> {
     try {
       const settings = await this.storage.getTargetSettings(selector);
@@ -215,6 +217,8 @@ export class SchemaPublisher {
         return {
           failDiffOnDangerousChange: settings.failDiffOnDangerousChange,
           conditionalBreakingChangeConfiguration: null,
+          failAllDangerousChanges: settings.failAllDangerousChanges,
+          failDangerousChangeTypes: settings.failDangerousChangeTypes,
         };
       }
 
@@ -224,6 +228,8 @@ export class SchemaPublisher {
         return {
           failDiffOnDangerousChange: settings.failDiffOnDangerousChange,
           conditionalBreakingChangeConfiguration: null,
+          failAllDangerousChanges: settings.failAllDangerousChanges,
+          failDangerousChangeTypes: settings.failDangerousChangeTypes,
         };
       }
 
@@ -262,6 +268,8 @@ export class SchemaPublisher {
           totalRequestCount,
         },
         failDiffOnDangerousChange: settings.failDiffOnDangerousChange,
+        failAllDangerousChanges: settings.failAllDangerousChanges,
+        failDangerousChangeTypes: settings.failDangerousChangeTypes,
       };
     } catch (error: unknown) {
       const errorText =
@@ -609,10 +617,14 @@ export class SchemaPublisher {
       );
     });
 
-    const { conditionalBreakingChangeConfiguration, failDiffOnDangerousChange } =
-      await this.getBreakingChangeConfiguration({
-        selector,
-      });
+    const {
+      conditionalBreakingChangeConfiguration,
+      failDiffOnDangerousChange,
+      failAllDangerousChanges,
+      failDangerousChangeTypes,
+    } = await this.getBreakingChangeConfiguration({
+      selector,
+    });
 
     const latestSchemaVersionContracts = latestVersion
       ? await this.contracts.getContractVersionsForSchemaVersion({
@@ -665,6 +677,8 @@ export class SchemaPublisher {
           conditionalBreakingChangeDiffConfig:
             conditionalBreakingChangeConfiguration?.conditionalBreakingChangeDiffConfig ?? null,
           failDiffOnDangerousChange,
+          failAllDangerousChanges,
+          failDangerousChangeTypes,
           filterNestedChanges: true,
         });
         break;
@@ -732,6 +746,8 @@ export class SchemaPublisher {
           conditionalBreakingChangeDiffConfig:
             conditionalBreakingChangeConfiguration?.conditionalBreakingChangeDiffConfig ?? null,
           failDiffOnDangerousChange,
+          failAllDangerousChanges,
+          failDangerousChangeTypes,
           filterNestedChanges: !input.schemaProposalId,
         });
         break;
@@ -1459,14 +1475,18 @@ export class SchemaPublisher {
           } as const;
         }
 
-        const { conditionalBreakingChangeConfiguration, failDiffOnDangerousChange } =
-          await this.getBreakingChangeConfiguration({
-            selector: {
-              targetId: selector.targetId,
-              projectId: selector.projectId,
-              organizationId: selector.organizationId,
-            },
-          });
+        const {
+          conditionalBreakingChangeConfiguration,
+          failDiffOnDangerousChange,
+          failAllDangerousChanges,
+          failDangerousChangeTypes,
+        } = await this.getBreakingChangeConfiguration({
+          selector: {
+            targetId: selector.targetId,
+            projectId: selector.projectId,
+            organizationId: selector.organizationId,
+          },
+        });
 
         const contracts =
           project.type === ProjectType.FEDERATION
@@ -1506,6 +1526,8 @@ export class SchemaPublisher {
             conditionalBreakingChangeConfiguration?.conditionalBreakingChangeDiffConfig ?? null,
           contracts,
           failDiffOnDangerousChange,
+          failAllDangerousChanges,
+          failDangerousChangeTypes,
         });
 
         if (deleteResult.conclusion === SchemaDeleteConclusion.Accept) {
@@ -1776,14 +1798,18 @@ export class SchemaPublisher {
 
     this.logger.debug(`Found ${latestVersion?.schemas.length ?? 0} most recent schemas`);
 
-    const { conditionalBreakingChangeConfiguration, failDiffOnDangerousChange } =
-      await this.getBreakingChangeConfiguration({
-        selector: {
-          organizationId: organization.id,
-          projectId: project.id,
-          targetId: target.id,
-        },
-      });
+    const {
+      conditionalBreakingChangeConfiguration,
+      failDiffOnDangerousChange,
+      failAllDangerousChanges,
+      failDangerousChangeTypes,
+    } = await this.getBreakingChangeConfiguration({
+      selector: {
+        organizationId: organization.id,
+        projectId: project.id,
+        targetId: target.id,
+      },
+    });
 
     const contracts =
       project.type === ProjectType.FEDERATION
@@ -1832,6 +1858,8 @@ export class SchemaPublisher {
           conditionalBreakingChangeDiffConfig:
             conditionalBreakingChangeConfiguration?.conditionalBreakingChangeDiffConfig ?? null,
           failDiffOnDangerousChange,
+          failAllDangerousChanges,
+          failDangerousChangeTypes,
         });
         break;
       case ProjectType.FEDERATION:
@@ -1880,6 +1908,8 @@ export class SchemaPublisher {
           conditionalBreakingChangeDiffConfig:
             conditionalBreakingChangeConfiguration?.conditionalBreakingChangeDiffConfig ?? null,
           failDiffOnDangerousChange,
+          failAllDangerousChanges,
+          failDangerousChangeTypes,
         });
         break;
       default: {
@@ -2477,6 +2507,8 @@ export class SchemaPublisher {
               includeUrlChanges: false,
               filterOutFederationChanges: false,
               failDiffOnDangerousChange: false,
+              failAllDangerousChanges: false,
+              failDangerousChangeTypes: [],
               filterNestedChanges: true,
               getAffectedAppDeployments: null,
             })
@@ -2565,6 +2597,8 @@ export class SchemaPublisher {
           filterOutFederationChanges: false,
           approvedChanges: null,
           failDiffOnDangerousChange: false,
+          failAllDangerousChanges: false,
+          failDangerousChangeTypes: [],
           getAffectedAppDeployments: null,
           filterNestedChanges: true,
         })
@@ -2657,6 +2691,8 @@ export class SchemaPublisher {
             filterOutFederationChanges: false,
             approvedChanges: null,
             failDiffOnDangerousChange: false,
+            failAllDangerousChanges: false,
+            failDangerousChangeTypes: [],
             getAffectedAppDeployments: null,
             filterNestedChanges: true,
           })
@@ -2880,6 +2916,8 @@ export class SchemaPublisher {
           filterOutFederationChanges: true,
           approvedChanges: null,
           failDiffOnDangerousChange: false,
+          failAllDangerousChanges: false,
+          failDangerousChangeTypes: [],
           getAffectedAppDeployments: schemaCoordinates =>
             this.appDeployments.getAffectedAppDeploymentsBySchemaCoordinates({
               targetId: target.id,
@@ -2900,6 +2938,8 @@ export class SchemaPublisher {
           filterOutFederationChanges: false,
           approvedChanges: null,
           failDiffOnDangerousChange: false,
+          failAllDangerousChanges: false,
+          failDangerousChangeTypes: [],
           getAffectedAppDeployments: null,
           filterNestedChanges: true,
         })
