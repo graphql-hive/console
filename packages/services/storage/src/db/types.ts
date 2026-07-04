@@ -537,6 +537,8 @@ export interface targets {
   base_schema: string | null;
   clean_id: string;
   created_at: Date;
+  fail_all_dangerous_changes: boolean;
+  fail_dangerous_change_types: Array<string>;
   fail_diff_on_dangerous_change: boolean;
   graphql_endpoint_url: string | null;
   id: string;

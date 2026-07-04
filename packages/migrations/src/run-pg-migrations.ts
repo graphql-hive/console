@@ -191,5 +191,6 @@ export const runPGMigrations = async (args: { slonik: PostgresDatabasePool; runT
       await import('./actions/2026.05.07T00-00-00.schema-version-promotion'),
       await import('./actions/2026.06.05T00-00-00.metric-alert-filter-shared-only'),
       await import('./actions/2026.06.22T20-10-00.discord-webhook'),
+      await import('./actions/2026.06.25T00-00-00.failing-dangerous-change-types'),
     ],
   });

@@ -1725,6 +1725,22 @@ export async function createStorage(
         })
         .then(TargetSettingsModel.parse);
     },
+    async updateTargetFailingDangerousChanges({
+      targetId: target,
+      projectId: project,
+      all,
+      failingTypes,
+    }) {
+      await pool.transaction('updateTargetDangerousChangeClassification', async trx => {
+        return trx.maybeOne(psql`/* updateTargetValidationSettings */
+            UPDATE targets
+            SET
+              fail_all_dangerous_changes = ${all},
+              fail_dangerous_change_types = ${psql.array(failingTypes, 'text')}
+            WHERE id = ${target} AND project_id = ${project}
+          `);
+      });
+    },
     async updateTargetValidationSettings({
       targetId: target,
       projectId: project,
@@ -4214,7 +4230,9 @@ const targetSQLFields = psql`
   "name",
   "project_id" as "projectId",
   "graphql_endpoint_url" as "graphqlEndpointUrl",
-  "fail_diff_on_dangerous_change" as "failDiffOnDangerousChange"
+  "fail_diff_on_dangerous_change" as "failDiffOnDangerousChange",
+  "fail_all_dangerous_changes" as "failAllDangerousChanges",
+  "fail_dangerous_change_types" as "failDangerousChangeTypes"
 `;
 
 export function findTargetById(deps: { pool: PostgresDatabasePool }) {
@@ -4285,6 +4303,8 @@ const TargetModel = z.object({
   projectId: z.string(),
   graphqlEndpointUrl: z.string().nullable(),
   failDiffOnDangerousChange: z.boolean(),
+  failAllDangerousChanges: z.boolean(),
+  failDangerousChangeTypes: z.array(z.string()), // DangerousChangeType
 });
 
 const TargetWithOrgIdModel = TargetModel.extend({
@@ -4432,6 +4452,8 @@ const targetSettingsFields = (prefix: TaggedTemplateLiteralInvocation) => psql`
   , ${prefix}"validation_request_count" AS "validationRequestCount"
   , ${prefix}"validation_breaking_change_formula" AS "validationBreakingChangeFormula"
   , ${prefix}"fail_diff_on_dangerous_change" AS "failDiffOnDangerousChange"
+  , ${prefix}"fail_all_dangerous_changes" as "failAllDangerousChanges"
+  , ${prefix}"fail_dangerous_change_types" as "failDangerousChangeTypes"
   , ${prefix}"app_deployment_protection_enabled" AS "appDeploymentProtectionEnabled"
   , ${prefix}"app_deployment_protection_min_days_inactive" AS "appDeploymentProtectionMinDaysInactive"
   , ${prefix}"app_deployment_protection_min_days_since_creation" AS "appDeploymentProtectionMinDaysSinceCreation"
@@ -4679,6 +4701,8 @@ const TargetSettingsModel = z
     validationRequestCount: z.number().nullable(),
     validationBreakingChangeFormula: z.string().nullable(),
     failDiffOnDangerousChange: z.boolean(),
+    failAllDangerousChanges: z.boolean(),
+    failDangerousChangeTypes: z.array(z.any()),
     targets: z.array(z.string()).nullable(),
     appDeploymentProtectionEnabled: z.boolean(),
     appDeploymentProtectionMinDaysInactive: z.number(),
@@ -4689,6 +4713,8 @@ const TargetSettingsModel = z
   })
   .transform(row => ({
     failDiffOnDangerousChange: row.failDiffOnDangerousChange,
+    failAllDangerousChanges: row.failAllDangerousChanges,
+    failDangerousChangeTypes: row.failDangerousChangeTypes,
     validation: {
       isEnabled: row.validationEnabled,
       percentage: row.validationPercentage,
