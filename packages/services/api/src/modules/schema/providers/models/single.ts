@@ -1,4 +1,5 @@
 import { Injectable, Scope } from 'graphql-modules';
+import type { DangerousChangeType } from '@hive/api/__generated__/types';
 import { traceFn } from '@hive/service-common';
 import { SchemaChangeType } from '@hive/storage';
 import { AppDeployments } from '../../../app-deployments/providers/app-deployments';
@@ -57,6 +58,8 @@ export class SingleModel {
     approvedChanges,
     conditionalBreakingChangeDiffConfig,
     failDiffOnDangerousChange,
+    failAllDangerousChanges,
+    failDangerousChangeTypes,
     filterNestedChanges,
   }: {
     input: Pick<SingleSchemaInput, 'sdl'>;
@@ -81,6 +84,8 @@ export class SingleModel {
     approvedChanges: Map<string, SchemaChangeType>;
     conditionalBreakingChangeDiffConfig: null | ConditionalBreakingChangeDiffConfig;
     failDiffOnDangerousChange: boolean;
+    failAllDangerousChanges: boolean;
+    failDangerousChangeTypes: DangerousChangeType[];
     filterNestedChanges: boolean;
   }): Promise<SchemaCheckResult> {
     const incoming: SingleSchemaInput = {
@@ -146,6 +151,8 @@ export class SingleModel {
         existingSdl: previousVersionSdl,
         incomingSdl: compositionCheck.result?.fullSchemaSdl ?? null,
         failDiffOnDangerousChange,
+        failAllDangerousChanges,
+        failDangerousChangeTypes,
         filterNestedChanges,
         getAffectedAppDeployments,
       }),
@@ -203,6 +210,8 @@ export class SingleModel {
     baseSchema,
     conditionalBreakingChangeDiffConfig,
     failDiffOnDangerousChange,
+    failAllDangerousChanges,
+    failDangerousChangeTypes,
   }: {
     input: {
       sdl: string;
@@ -224,6 +233,8 @@ export class SingleModel {
     baseSchema: string | null;
     conditionalBreakingChangeDiffConfig: null | ConditionalBreakingChangeDiffConfig;
     failDiffOnDangerousChange: boolean;
+    failAllDangerousChanges: boolean;
+    failDangerousChangeTypes: DangerousChangeType[];
   }): Promise<SchemaPublishResult> {
     const incoming: SingleSchemaInput = {
       id: temp,
@@ -312,6 +323,8 @@ export class SingleModel {
         existingSdl: previousVersionSdl,
         incomingSdl: compositionCheck.result?.fullSchemaSdl ?? null,
         failDiffOnDangerousChange,
+        failAllDangerousChanges,
+        failDangerousChangeTypes,
         filterNestedChanges: true, // publish is never associated with schema proposals in this way. So always show the minimal changeset.
         getAffectedAppDeployments: getAffectedAppDeploymentsForPublish,
       }),

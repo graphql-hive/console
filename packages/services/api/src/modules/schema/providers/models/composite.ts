@@ -1,4 +1,5 @@
 import { Injectable, Scope } from 'graphql-modules';
+import type { DangerousChangeType } from '@hive/api/__generated__/types';
 import { traceFn } from '@hive/service-common';
 import { SchemaChangeType } from '@hive/storage';
 import { AppDeployments } from '../../../app-deployments/providers/app-deployments';
@@ -46,6 +47,8 @@ export class CompositeModel {
     compositionCheck: Awaited<ReturnType<RegistryChecks['composition']>>;
     conditionalBreakingChangeDiffConfig: null | ConditionalBreakingChangeDiffConfig;
     failDiffOnDangerousChange: null | boolean;
+    failAllDangerousChanges: null | boolean;
+    failDangerousChangeTypes: null | DangerousChangeType[];
     getAffectedAppDeployments: GetAffectedAppDeployments | null;
   }): Promise<Array<ContractCheckInput> | null> {
     const contractResults = (args.compositionCheck.result ?? args.compositionCheck.reason)
@@ -74,7 +77,9 @@ export class CompositeModel {
             approvedChanges: contract.approvedChanges ?? null,
             existingSdl: contract.latestValidVersion?.compositeSchemaSdl ?? null,
             incomingSdl: contractCompositionResult?.result?.fullSchemaSdl ?? null,
-            failDiffOnDangerousChange: args.failDiffOnDangerousChange,
+            failDiffOnDangerousChange: args.failDiffOnDangerousChange ?? false,
+            failAllDangerousChanges: args.failAllDangerousChanges ?? true,
+            failDangerousChangeTypes: args.failDangerousChangeTypes ?? [],
             filterNestedChanges: true,
             getAffectedAppDeployments: args.getAffectedAppDeployments,
           }),
@@ -114,6 +119,8 @@ export class CompositeModel {
     conditionalBreakingChangeDiffConfig,
     contracts,
     failDiffOnDangerousChange,
+    failAllDangerousChanges,
+    failDangerousChangeTypes,
     filterNestedChanges,
   }: {
     input: Pick<CompositeSchemaInput, 'sdl' | 'serviceName'> & {
@@ -142,6 +149,8 @@ export class CompositeModel {
     approvedChanges: Map<string, SchemaChangeType>;
     conditionalBreakingChangeDiffConfig: null | ConditionalBreakingChangeDiffConfig;
     failDiffOnDangerousChange: null | boolean;
+    failAllDangerousChanges: null | boolean;
+    failDangerousChangeTypes: null | DangerousChangeType[];
     contracts: Array<
       ContractInput & {
         approvedChanges: Map<string, SchemaChangeType> | null;
@@ -222,6 +231,8 @@ export class CompositeModel {
       compositionCheck,
       conditionalBreakingChangeDiffConfig,
       failDiffOnDangerousChange,
+      failAllDangerousChanges,
+      failDangerousChangeTypes,
       getAffectedAppDeployments,
     });
     this.logger.debug('Contract checks: %o', contractChecks);
@@ -235,7 +246,9 @@ export class CompositeModel {
         incomingSdl:
           compositionCheck.result?.fullSchemaSdl ?? compositionCheck.reason?.fullSchemaSdl ?? null,
         conditionalBreakingChangeConfig: conditionalBreakingChangeDiffConfig,
-        failDiffOnDangerousChange,
+        failDiffOnDangerousChange: failDiffOnDangerousChange ?? false,
+        failAllDangerousChanges: failAllDangerousChanges ?? true,
+        failDangerousChangeTypes: failDangerousChangeTypes ?? [],
         filterNestedChanges,
         getAffectedAppDeployments,
       }),
@@ -310,6 +323,8 @@ export class CompositeModel {
     contracts,
     conditionalBreakingChangeDiffConfig,
     failDiffOnDangerousChange,
+    failAllDangerousChanges,
+    failDangerousChangeTypes,
   }: {
     input: {
       sdl: string;
@@ -336,6 +351,8 @@ export class CompositeModel {
     contracts: Array<ContractInput> | null;
     conditionalBreakingChangeDiffConfig: null | ConditionalBreakingChangeDiffConfig;
     failDiffOnDangerousChange: null | boolean;
+    failAllDangerousChanges: null | boolean;
+    failDangerousChangeTypes: null | DangerousChangeType[];
   }): Promise<SchemaPublishResult> {
     const latestSchemaVersion = latest;
     const latestServiceVersion = latest?.schemas?.find(
@@ -466,7 +483,9 @@ export class CompositeModel {
         approvedChanges: null,
         existingSdl: previousVersionSdl,
         incomingSdl: compositionCheck.result?.fullSchemaSdl ?? null,
-        failDiffOnDangerousChange,
+        failDiffOnDangerousChange: failDiffOnDangerousChange ?? false,
+        failAllDangerousChanges: failAllDangerousChanges ?? true,
+        failDangerousChangeTypes: failDangerousChangeTypes ?? [],
         filterNestedChanges: true, // filter because publish is never associated to schema proposals in this way.
         getAffectedAppDeployments: getAffectedAppDeploymentsForPublish,
       }),
@@ -480,6 +499,8 @@ export class CompositeModel {
         failDiffOnDangerousChange: false,
         filterNestedChanges: true,
         getAffectedAppDeployments: null,
+        failAllDangerousChanges: false,
+        failDangerousChangeTypes: [],
       }),
       this.checks.diff({
         existingSdl: latestComposable?.supergraphSdl ?? null,
@@ -491,12 +512,16 @@ export class CompositeModel {
         failDiffOnDangerousChange: false,
         filterNestedChanges: true,
         getAffectedAppDeployments: null,
+        failAllDangerousChanges: false,
+        failDangerousChangeTypes: [],
       }),
       this.getContractChecks({
         contracts,
         compositionCheck,
         conditionalBreakingChangeDiffConfig,
         failDiffOnDangerousChange,
+        failAllDangerousChanges: false,
+        failDangerousChangeTypes: [],
         getAffectedAppDeployments: getAffectedAppDeploymentsForPublish,
       }),
     ]);
@@ -565,6 +590,8 @@ export class CompositeModel {
     conditionalBreakingChangeDiffConfig,
     contracts,
     failDiffOnDangerousChange,
+    failAllDangerousChanges,
+    failDangerousChangeTypes,
   }: {
     input: {
       serviceName: string;
@@ -591,6 +618,8 @@ export class CompositeModel {
     contracts: Array<ContractInput> | null;
     conditionalBreakingChangeDiffConfig: null | ConditionalBreakingChangeDiffConfig;
     failDiffOnDangerousChange: null | boolean;
+    failAllDangerousChanges: null | boolean;
+    failDangerousChangeTypes: null | DangerousChangeType[];
   }): Promise<SchemaDeleteResult> {
     const latestVersion = latest;
 
@@ -641,7 +670,9 @@ export class CompositeModel {
         approvedChanges: null,
         existingSdl: previousVersionSdl,
         incomingSdl: compositionCheck.result?.fullSchemaSdl ?? null,
-        failDiffOnDangerousChange,
+        failDiffOnDangerousChange: failDiffOnDangerousChange ?? false,
+        failAllDangerousChanges: failAllDangerousChanges ?? true,
+        failDangerousChangeTypes: failDangerousChangeTypes ?? [],
         filterNestedChanges: true, // filter because deletes are never associated with schema proposals in this way.
         getAffectedAppDeployments: getAffectedAppDeploymentsForDelete,
       }),
@@ -650,6 +681,8 @@ export class CompositeModel {
         compositionCheck,
         conditionalBreakingChangeDiffConfig,
         failDiffOnDangerousChange,
+        failAllDangerousChanges: failAllDangerousChanges ?? true,
+        failDangerousChangeTypes: failDangerousChangeTypes ?? [],
         getAffectedAppDeployments: getAffectedAppDeploymentsForDelete,
       }),
       this.checks.diff({
@@ -662,6 +695,8 @@ export class CompositeModel {
         failDiffOnDangerousChange: false,
         filterNestedChanges: true,
         getAffectedAppDeployments: null,
+        failAllDangerousChanges: failAllDangerousChanges ?? true,
+        failDangerousChangeTypes: failDangerousChangeTypes ?? [],
       }),
     ]);
 
