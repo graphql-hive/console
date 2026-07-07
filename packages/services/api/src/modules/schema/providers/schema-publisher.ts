@@ -3254,7 +3254,7 @@ export class SchemaPublisher {
 
     const publishCompositeSchema = async () => {
       await Promise.all([
-        await this.artifactStorageWriter.writeArtifact({
+        this.artifactStorageWriter.writeArtifact({
           targetId: target.id,
           artifactType: 'services',
           artifact: schemas.map(s => ({
