@@ -355,7 +355,11 @@ export function TargetAlertsRulesPage(props: {
         }
       />
 
-      {!data ? (
+      {result.error && !data ? (
+        <div className="flex justify-center py-12 text-sm text-red-500">
+          Failed to load alert rules: {result.error.message}
+        </div>
+      ) : result.fetching && !data ? (
         <div className="flex justify-center py-12">
           <Spinner />
         </div>
