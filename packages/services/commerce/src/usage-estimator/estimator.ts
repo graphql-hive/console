@@ -50,6 +50,12 @@ export function createEstimator(config: {
         },
       });
 
+      const byTargetTableCreationDate = new Date('2027-06-11T00:00:00');
+      const tableName =
+        input.startTime > byTargetTableCreationDate
+          ? 'operations_by_target_hourly'
+          : 'operations_hourly';
+
       const result = await clickhouse.query<{
         total: string;
         target: string;
@@ -58,7 +64,7 @@ export function createEstimator(config: {
           SELECT
             target,
             sum(total) as total
-          FROM operations_hourly
+          FROM ${tableName}
           ${filter}
           GROUP BY target
         `,
