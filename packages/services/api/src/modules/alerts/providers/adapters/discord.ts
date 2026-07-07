@@ -129,7 +129,7 @@ export class DiscordCommunicationAdapter implements CommunicationAdapter {
               },
               {
                 name: 'Commit',
-                value: input.event.schema.commit,
+                value: input.event.schema.commit || '—',
                 inline: true,
               },
             ],
