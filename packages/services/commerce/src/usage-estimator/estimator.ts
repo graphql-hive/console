@@ -1,5 +1,6 @@
 import { ClickHouse, HttpClient, OperationsReader, sql } from '@hive/api';
 import type { ServiceLogger } from '@hive/service-common';
+import { env } from '../environment';
 import { clickHouseElapsedDuration, clickHouseReadDuration } from './metrics';
 
 export type UsageEstimator = ReturnType<typeof createEstimator>;
@@ -50,11 +51,10 @@ export function createEstimator(config: {
         },
       });
 
-      const byTargetTableCreationDate = new Date('2027-06-11T00:00:00');
       const tableName =
-        input.startTime > byTargetTableCreationDate
-          ? 'operations_by_target_hourly'
-          : 'operations_hourly';
+        input.startTime > env.hiveServices.operationsByTargetTableCreatedAt
+          ? sql`operations_by_target_hourly`
+          : sql`operations_hourly`;
 
       const result = await clickhouse.query<{
         total: string;

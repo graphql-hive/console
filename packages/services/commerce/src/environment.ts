@@ -82,6 +82,7 @@ const PostgresModel = zod.object({
 
 const HiveServicesModel = zod.object({
   WEB_APP_URL: emptyString(zod.string().url().optional()),
+  OPERATIONS_BY_TARGET_TABLE_CREATED_AT: zod.coerce.date().optional().default(new Date()),
 });
 
 const RateLimitModel = zod.object({
@@ -183,6 +184,7 @@ export const env = {
       : null,
   hiveServices: {
     webAppUrl: hiveServices.WEB_APP_URL,
+    operationsByTargetTableCreatedAt: hiveServices.OPERATIONS_BY_TARGET_TABLE_CREATED_AT,
   },
   rateLimit: {
     limitCacheUpdateIntervalMs: rateLimit.LIMIT_CACHE_UPDATE_INTERVAL_MS ?? 60_000,
