@@ -284,7 +284,9 @@ export function AlertConditionsPanel({
         <span className="flex flex-col gap-0.5">
           <span className="text-neutral-12 text-sm font-medium">Alert status</span>
           <span className="text-neutral-10 text-xs">
-            {rule.enabled ? 'Notifications are active' : 'Notifications are paused'}
+            {rule.enabled
+              ? 'Evaluating conditions and sending notifications'
+              : "Paused — conditions aren't evaluated"}
           </span>
         </span>
         <AlertRuleEnabledToggle
