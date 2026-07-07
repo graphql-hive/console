@@ -164,14 +164,12 @@ const RULE_COLUMNS: ColumnDef<RuleRow, any>[] = [
     header: 'Enabled',
     enableSorting: false,
     cell: ctx => (
-      <span onClick={e => e.stopPropagation()}>
-        <AlertRuleEnabledToggle
-          ruleId={ctx.row.original.id}
-          enabled={ctx.row.original.enabled}
-          organizationSlug={ctx.row.original.organizationSlug}
-          projectSlug={ctx.row.original.projectSlug}
-        />
-      </span>
+      <AlertRuleEnabledToggle
+        ruleId={ctx.row.original.id}
+        enabled={ctx.row.original.enabled}
+        organizationSlug={ctx.row.original.organizationSlug}
+        projectSlug={ctx.row.original.projectSlug}
+      />
     ),
   }),
   columnHelper.accessor('name', {
