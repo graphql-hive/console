@@ -286,7 +286,7 @@ export function AlertConditionsPanel({
           <span className="text-neutral-10 text-xs">
             {rule.enabled
               ? 'Evaluating conditions and sending notifications'
-              : "Paused — conditions aren't evaluated"}
+              : "Paused (conditions aren't evaluated)"}
           </span>
         </span>
         <AlertRuleEnabledToggle
