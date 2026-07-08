@@ -271,7 +271,7 @@ export function TargetAlertsDetailPage(props: {
         />
       </div>
 
-      <aside className="w-87 sticky top-6 shrink-0 self-start">
+      <aside className="w-94 sticky top-6 shrink-0 self-start">
         <AlertConditionsPanel
           rule={rule}
           organizationSlug={organizationSlug}
