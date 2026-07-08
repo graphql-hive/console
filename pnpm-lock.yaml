@@ -51,7 +51,7 @@ overrides:
   sha.js@<=2.4.11: '>=2.4.12'
   brace-expansion@>=5.0.0 <5.0.6: '>=5.0.6'
   '@sigstore/core@<=3.2.0': '>=3.2.1'
-  js-yaml@<3.15.0: '>=3.15.0'
+  js-yaml@<3.15.0: 3.15.0
   echarts@<6.1.0: '>=6.1.0'
   sigstore@<=4.1.0: '>=4.1.1'
   ws@>=8.0.0 <8.21.0: '>=8.21.0'
@@ -14490,6 +14490,10 @@ packages:
   js-tokens@4.0.0:
     resolution: {integrity: sha512-RdJUflcE3cUzKiMqQgsCu06FPu9UdIJO0beYbPhHN4k6apgJtifcoCtT9bcxOpYBtpD2kCM6Sbzg4CausW/PKQ==}
 
+  js-yaml@3.15.0:
+    resolution: {integrity: sha512-ttBQIIQPDeLjpPOohtUdXuXUVoA2uIB6fEH9HyJ7234s5mBJ5wTx20njxplLZQgLaOfpmPQA7X2t5AX6tIPbog==}
+    hasBin: true
+
   js-yaml@4.2.0:
     resolution: {integrity: sha512-ePWsvanv0DWuDRsW8dnt+R4jQ31SCRCQ7hhNcPXZPsoBZiemuZNYGf7adZdqX2D86j6rvKp3RpCxVTSb8WQlOw==}
     hasBin: true
@@ -21144,7 +21148,7 @@ snapshots:
   '@changesets/parse@0.4.1':
     dependencies:
       '@changesets/types': 6.1.0
-      js-yaml: 4.2.0
+      js-yaml: 3.15.0
 
   '@changesets/pre@2.0.2':
     dependencies:
@@ -25898,7 +25902,7 @@ snapshots:
       hyperlinker: 1.0.0
       indent-string: 4.0.0
       is-wsl: 2.2.0
-      js-yaml: 4.2.0
+      js-yaml: 3.15.0
       minimatch: 9.0.8
       natural-orderby: 2.0.3
       object-treeify: 1.1.33
@@ -27285,7 +27289,7 @@ snapshots:
       google-protobuf: 3.21.4
       got: 11.8.6
       ini: 2.0.0
-      js-yaml: 4.2.0
+      js-yaml: 3.15.0
       minimist: 1.2.8
       normalize-package-data: 6.0.0
       package-directory: 8.1.0
@@ -35960,6 +35964,11 @@ snapshots:
 
   js-tokens@4.0.0: {}
 
+  js-yaml@3.15.0:
+    dependencies:
+      argparse: 1.0.10
+      esprima: 4.0.1
+
   js-yaml@4.2.0:
     dependencies:
       argparse: 2.0.1
@@ -38981,7 +38990,7 @@ snapshots:
   read-yaml-file@1.1.0:
     dependencies:
       graceful-fs: 4.2.11
-      js-yaml: 4.2.0
+      js-yaml: 3.15.0
       pify: 4.0.1
       strip-bom: 3.0.0
 
