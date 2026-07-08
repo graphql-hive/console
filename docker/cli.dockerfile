@@ -1,4 +1,4 @@
-FROM node:24.15.0-slim
+FROM node:24.17.0-slim
 
 RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates git && rm -rf /var/lib/apt/lists/*
 
