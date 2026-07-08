@@ -167,11 +167,18 @@
       "fast-uri@2.x.x": "3.x.x",
       "ioredis": "5.10.1",
       "protobufjs@8.x.x": "8.6.4",
-      "protobufjs@7.x.x": "7.6.1",
+      "protobufjs@7.x.x": "7.6.3",
       "@opentelemetry/exporter-jaeger": "-",
       "uuid@<14.x.x": "^14.0.0",
       "tmp@<0.2.7": "0.2.7",
-      "@babel/core": "7.29.7"
+      "@babel/core": "7.29.7",
+      "sha.js@<=2.4.11": ">=2.4.12",
+      "brace-expansion@>=5.0.0 <5.0.6": ">=5.0.6",
+      "@sigstore/core@<=3.2.0": ">=3.2.1",
+      "js-yaml@<3.15.0": ">=3.15.0",
+      "echarts@<6.1.0": ">=6.1.0",
+      "sigstore@<=4.1.0": ">=4.1.1",
+      "ws@>=8.0.0 <8.21.0": ">=8.21.0"
     },
     "patchedDependencies": {
       "mjml-core@4.14.0": "patches/mjml-core@4.14.0.patch",
