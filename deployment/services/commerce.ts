@@ -50,7 +50,7 @@ export function deployCommerce({
       livenessProbe: '/_health',
       startupProbe: '/_health',
       env: {
-        OPERATIONS_BY_TARGET_TABLE_CREATED_AT: '2027-06-11T00:00:00Z',
+        OPERATIONS_BY_TARGET_TABLE_CREATED_AT: '2026-06-11T00:00:00Z',
         ...environment.envVars,
         SENTRY: sentry.enabled ? '1' : '0',
         WEB_APP_URL: `https://${environment.appDns}/`,
