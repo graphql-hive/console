@@ -81,23 +81,55 @@ type AwsRequestInit = RequestInit & {
   isResponseOk?: (response: Response) => boolean;
 };
 
-export type AWSClientConfig = {
+/**
+ * AWS credentials resolved by a credential provider.
+ *
+ * NOTE: This interface (and {@link AwsCredentialProvider}) are also defined in
+ * `@hive/api/modules/cdn/providers/aws`. The duplication exists because
+ * cdn-worker targets Cloudflare Workers and cannot import from hive/api (which pulls in
+ * Node.js-only dependencies). TypeScript structural typing keeps them compatible.
+ * If a shared lightweight package is introduced in the future, both definitions could be
+ * consolidated there.
+ */
+export interface AwsCredentials {
   accessKeyId: string;
   secretAccessKey: string;
   sessionToken?: string;
-  service?: string;
-  region?: string;
-  cache?: Map<string, ArrayBuffer>;
-  retries?: number;
-  initRetryMs?: number;
-  /* fetch implementation */
-  fetch?: typeof fetch;
-};
+}
+
+/**
+ * A provider that returns AWS credentials, potentially fetching them
+ * from an external source (IAM role, ECS task role, EKS Pod Identity, etc.).
+ * For Node.js servers, use createDefaultCredentialProvider from @hive/api.
+ */
+export interface AwsCredentialProvider {
+  getCredentials(): Promise<AwsCredentials>;
+}
+
+export type AWSClientConfig =
+  | {
+      accessKeyId: string;
+      secretAccessKey: string;
+      sessionToken?: string;
+      service?: string;
+      region?: string;
+      cache?: Map<string, ArrayBuffer>;
+      retries?: number;
+      initRetryMs?: number;
+      fetch?: typeof fetch;
+    }
+  | {
+      credentialProvider: AwsCredentialProvider;
+      service?: string;
+      region?: string;
+      cache?: Map<string, ArrayBuffer>;
+      retries?: number;
+      initRetryMs?: number;
+      fetch?: typeof fetch;
+    };
 
 export class AwsClient {
-  private secretAccessKey: string;
-  private accessKeyId: string;
-  private sessionToken?: string;
+  private credentialProvider: AwsCredentialProvider;
   private service?: string;
   private region?: string;
   private cache: Map<string, ArrayBuffer>;
@@ -106,9 +138,16 @@ export class AwsClient {
   private _fetch: typeof fetch;
 
   constructor(args: AWSClientConfig) {
-    this.accessKeyId = args.accessKeyId;
-    this.secretAccessKey = args.secretAccessKey;
-    this.sessionToken = args.sessionToken;
+    if ('credentialProvider' in args) {
+      this.credentialProvider = args.credentialProvider;
+    } else {
+      const credentials: AwsCredentials = {
+        accessKeyId: args.accessKeyId,
+        secretAccessKey: args.secretAccessKey,
+        sessionToken: args.sessionToken,
+      };
+      this.credentialProvider = { getCredentials: async () => credentials };
+    }
     this.service = args.service;
     this.region = args.region;
     this.cache = args.cache || new Map();
@@ -136,8 +175,17 @@ export class AwsClient {
       }
       input = url;
     }
-    const signer = new AwsV4Signer(Object.assign({ url: input }, init, this, init && init.aws));
-
+    const signer = new AwsV4Signer(
+      Object.assign(
+        { url: input },
+        init,
+        // Resolve credentials dynamically (static credentials or EKS Pod Identity if cdn is run on server)
+        await this.credentialProvider.getCredentials(),
+        { service: this.service, region: this.region, cache: this.cache },
+        init && init.aws,
+      ),
+    );
+    
     const signals: AbortSignal[] = [];
 
     if (init?.timeout) {

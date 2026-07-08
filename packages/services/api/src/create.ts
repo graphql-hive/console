@@ -13,6 +13,7 @@ import { authModule } from './modules/auth';
 import { Session } from './modules/auth/lib/authz';
 import { cdnModule } from './modules/cdn';
 import { AwsClient } from './modules/cdn/providers/aws';
+import type { AwsCredentialProvider } from './modules/cdn/providers/aws';
 import { CDN_CONFIG, CDNConfig } from './modules/cdn/providers/tokens';
 import { collectionModule } from './modules/collection';
 import { commerceModule } from './modules/commerce';
@@ -137,23 +138,17 @@ export function createRegistry({
   s3: {
     bucketName: string;
     endpoint: string;
-    accessKeyId: string;
-    secretAccessKeyId: string;
-    sessionToken?: string;
+    credentialProvider: AwsCredentialProvider;
   };
   s3Mirror: {
     bucketName: string;
     endpoint: string;
-    accessKeyId: string;
-    secretAccessKeyId: string;
-    sessionToken?: string;
+    credentialProvider: AwsCredentialProvider;
   } | null;
   s3AuditLogs: {
     bucketName: string;
     endpoint: string;
-    accessKeyId: string;
-    secretAccessKeyId: string;
-    sessionToken?: string;
+    credentialProvider: AwsCredentialProvider;
   } | null;
   encryptionSecret: string;
   app: {
@@ -177,9 +172,7 @@ export function createRegistry({
   const s3Config: S3Config = [
     {
       client: new AwsClient({
-        accessKeyId: s3.accessKeyId,
-        secretAccessKey: s3.secretAccessKeyId,
-        sessionToken: s3.sessionToken,
+        credentialProvider: s3.credentialProvider,
         service: 's3',
       }),
       bucket: s3.bucketName,
@@ -190,9 +183,7 @@ export function createRegistry({
   if (s3Mirror) {
     s3Config.push({
       client: new AwsClient({
-        accessKeyId: s3Mirror.accessKeyId,
-        secretAccessKey: s3Mirror.secretAccessKeyId,
-        sessionToken: s3Mirror.sessionToken,
+        credentialProvider: s3Mirror.credentialProvider,
         service: 's3',
       }),
       bucket: s3Mirror.bucketName,
@@ -205,13 +196,11 @@ export function createRegistry({
   const auditLogS3Config = s3AuditLogs
     ? new AuditLogS3Config(
         new AwsClient({
-          accessKeyId: s3AuditLogs.accessKeyId,
-          secretAccessKey: s3AuditLogs.secretAccessKeyId,
-          sessionToken: s3AuditLogs.sessionToken,
+          credentialProvider: s3AuditLogs.credentialProvider,
           service: 's3',
         }),
-        s3.endpoint,
-        s3.bucketName,
+        s3AuditLogs.endpoint,
+        s3AuditLogs.bucketName,
       )
     : new AuditLogS3Config(s3Config[0].client, s3Config[0].endpoint, s3Config[0].bucket);
 

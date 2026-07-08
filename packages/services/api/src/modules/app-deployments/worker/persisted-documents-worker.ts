@@ -1,5 +1,6 @@
 import { type MessagePort } from 'node:worker_threads';
 import { AwsClient } from '../../cdn/providers/aws';
+import type { AwsCredentialProvider } from '../../cdn/providers/aws';
 import { ClickHouse } from '../../operations/providers/clickhouse-client';
 import { HttpClient } from '../../shared/providers/http-client';
 import { Logger } from '../../shared/providers/logger';
@@ -21,20 +22,12 @@ export function createWorker(
     s3: {
       readonly bucketName: string;
       readonly endpoint: string;
-      readonly credentials: {
-        readonly accessKeyId: string;
-        readonly secretAccessKey: string;
-        readonly sessionToken: string | undefined;
-      };
+      readonly credentialProvider: AwsCredentialProvider;
     };
     s3Mirror: {
       readonly bucketName: string;
       readonly endpoint: string;
-      readonly credentials: {
-        readonly accessKeyId: string;
-        readonly secretAccessKey: string;
-        readonly sessionToken: string | undefined;
-      };
+      readonly credentialProvider: AwsCredentialProvider;
     } | null;
     clickhouse: {
       readonly host: string;
@@ -48,9 +41,7 @@ export function createWorker(
   const s3Config: S3Config = [
     {
       client: new AwsClient({
-        accessKeyId: env.s3.credentials.accessKeyId,
-        secretAccessKey: env.s3.credentials.secretAccessKey,
-        sessionToken: env.s3.credentials.sessionToken,
+        credentialProvider: env.s3.credentialProvider,
         service: 's3',
       }),
       bucket: env.s3.bucketName,
@@ -61,9 +52,7 @@ export function createWorker(
   if (env.s3Mirror) {
     s3Config.push({
       client: new AwsClient({
-        accessKeyId: env.s3Mirror.credentials.accessKeyId,
-        secretAccessKey: env.s3Mirror.credentials.secretAccessKey,
-        sessionToken: env.s3Mirror.credentials.sessionToken,
+        credentialProvider: env.s3Mirror.credentialProvider,
         service: 's3',
       }),
       bucket: env.s3Mirror.bucketName,
