@@ -7,7 +7,7 @@ import { fromNodeProviderChain } from '@aws-sdk/credential-providers';
  * Uses @aws-sdk/credential-providers for all credential resolution (static,
  * container metadata, EKS Pod Identity, IMDS, env vars, etc.) so that upstream
  * changes are handled by the SDK automatically.
- * The SDK is only used for credential resolution — request signing uses the
+ * The SDK is only used for credential resolution - request signing uses the
  * custom AwsV4Signer below.
  */
 
@@ -31,7 +31,7 @@ export interface AwsCredentials {
  * NOTE: This interface is also defined (structurally) in the cdn-worker package,
  * which targets Cloudflare Workers and cannot import from the AWS SDK.
  */
-export interface AwsCredentialProvider {
+export interface S3CredentialProvider {
   getCredentials(): Promise<AwsCredentials>;
 }
 
@@ -39,18 +39,18 @@ export interface AwsCredentialProvider {
  * Options for creating a credential provider via the default chain.
  */
 export interface DefaultCredentialChainOptions {
-  /** Static credentials as fallback when IAM auth is unavailable or disabled. */
+  /**
+   * Default static S3 credentials for manual key/secret configuration.
+   * Provide both `S3_ACCESS_KEY_ID` and `S3_SECRET_ACCESS_KEY`
+   */
   staticCredentials?: {
     accessKeyId: string | undefined;
     secretAccessKey: string | undefined;
     sessionToken?: string | undefined;
   };
   /**
-   * Whether IAM auth is enabled. Derived from `AWS_REGION` being set and the
-    * per-service `*_AWS_IAM_AUTH_ENABLED` flag being `'1'`.
-   *
-   * When `true`, the SDK credential chain is used (IAM wins over static creds).
-   * When `false`, only static credentials are accepted — throws if missing.
+   * When `true`, the SDK credential chain is used and static credentials are ignored.
+   * When `false`, static credentials are required and must include both `S3_ACCESS_KEY_ID` and `S3_SECRET_ACCESS_KEY`.
    */
   awsIamAuthEnabled?: boolean;
   /** Optional label to prefix log messages, e.g. 's3', 's3mirror', 's3audit'. */
@@ -63,15 +63,16 @@ export interface DefaultCredentialChainOptions {
  * Creates an AWS credential provider.
  *
  * Priority order:
- * 1. If IAM auth is enabled → use SDK credential chain (Pod Identity, IRSA, etc.)
- * 2. If IAM auth is disabled or unavailable → use static credentials
- * 3. If neither → throw
+ * 1. If IAM auth is enabled, use SDK credential chain (Pod Identity, IRSA, etc.)
+ *    and ignore static credentials.
+ * 2. If IAM auth is disabled (default), use static credentials.
+ * 3. If neither, throw.
  *
  * The SDK handles credential caching and automatic refresh before expiry.
  */
 export function createDefaultCredentialProvider(
   options?: DefaultCredentialChainOptions,
-): AwsCredentialProvider {
+): S3CredentialProvider {
   const logger = options?.logger;
   const prefix = options?.label ? `[${options.label}] ` : '';
   const awsIamAuthEnabled = options?.awsIamAuthEnabled ?? false;
@@ -81,6 +82,7 @@ export function createDefaultCredentialProvider(
     accessKeyId: string;
     secretAccessKey: string;
     sessionToken?: string;
+    expiration?: Date;
   }>;
 
   if (awsIamAuthEnabled) {
@@ -95,8 +97,8 @@ export function createDefaultCredentialProvider(
     });
   } else {
     throw new Error(
-      'No AWS credentials available. Either deploy on AWS with IAM auth enabled, ' +
-        'or provide static credentials (e.g. S3_ACCESS_KEY_ID and S3_SECRET_ACCESS_KEY).',
+      'No S3 credentials available. Either enable S3 IAM auth, or ' +
+        'provide S3 static credentials S3_ACCESS_KEY_ID and S3_SECRET_ACCESS_KEY.',
     );
   }
 
@@ -121,7 +123,6 @@ export function createDefaultCredentialProvider(
 // ---------------------------------------------------------------------------
 // Custom SigV4 signer (ported from aws4fetch)
 // ---------------------------------------------------------------------------
-
 
 /**
  * This is a copy of https://github.com/mhart/aws4fetch which is licensed MIT
@@ -177,13 +178,13 @@ type AwsRequestInit = {
   };
 
 export class AwsClient {
-  private credentialProvider: AwsCredentialProvider;
+  private credentialProvider: S3CredentialProvider;
   private service?: string;
   private region?: string;
   private cache: Map<string, ArrayBuffer>;
 
   constructor(options: {
-    credentialProvider: AwsCredentialProvider;
+    credentialProvider: S3CredentialProvider;
     service?: string;
     region?: string;
     cache?: Map<string, ArrayBuffer>;

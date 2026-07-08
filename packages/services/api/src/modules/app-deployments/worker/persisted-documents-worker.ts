@@ -1,6 +1,6 @@
 import { type MessagePort } from 'node:worker_threads';
 import { AwsClient } from '../../cdn/providers/aws';
-import type { AwsCredentialProvider } from '../../cdn/providers/aws';
+import type { S3CredentialProvider } from '../../cdn/providers/aws';
 import { ClickHouse } from '../../operations/providers/clickhouse-client';
 import { HttpClient } from '../../shared/providers/http-client';
 import { Logger } from '../../shared/providers/logger';
@@ -22,12 +22,12 @@ export function createWorker(
     s3: {
       readonly bucketName: string;
       readonly endpoint: string;
-      readonly credentialProvider: AwsCredentialProvider;
+      readonly credentialProvider: S3CredentialProvider;
     };
     s3Mirror: {
       readonly bucketName: string;
       readonly endpoint: string;
-      readonly credentialProvider: AwsCredentialProvider;
+      readonly credentialProvider: S3CredentialProvider;
     } | null;
     clickhouse: {
       readonly host: string;

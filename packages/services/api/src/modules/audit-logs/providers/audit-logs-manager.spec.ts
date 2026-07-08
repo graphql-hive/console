@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { AwsClient, type AwsCredentialProvider } from '../../cdn/providers/aws';
+import { AwsClient, type S3CredentialProvider } from '../../cdn/providers/aws';
 import { AuditLogManager, AuditLogS3Config } from './audit-logs-manager';
 
 vi.mock('@hive/workflows/kit', () => ({ TaskScheduler: class {} }));
@@ -16,7 +16,7 @@ vi.mock('./audit-logs-types', () => ({
   AuditLogClickhouseArrayModel: { parse: (v: any) => v },
 }));
 
-function fakeCredentialProvider(keyId: string): AwsCredentialProvider {
+function fakeCredentialProvider(keyId: string): S3CredentialProvider {
   return {
     getCredentials: async () => ({ accessKeyId: keyId, secretAccessKey: `${keyId}-secret` }),
   };
@@ -71,7 +71,7 @@ function createAuditLogManager(fetchImpl: (...args: any[]) => any) {
 /**
  * Guards against regression where the S3 PUT upload was missing
  * `aws: { signQuery: true }`, causing the `got` library to receive
- * auth headers it can't handle — resulting in silent upload failures.
+ * auth headers it can't handle - resulting in silent upload failures.
  */
 describe('AuditLogManager S3 upload uses signQuery', () => {
   it('PUT upload includes aws.signQuery: true', async () => {

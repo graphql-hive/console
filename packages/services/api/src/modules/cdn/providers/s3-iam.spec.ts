@@ -1,6 +1,6 @@
 // eslint-disable-next-line import/no-extraneous-dependencies
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { AwsClient, createDefaultCredentialProvider, type AwsCredentialProvider } from './aws';
+import { AwsClient, createDefaultCredentialProvider, type S3CredentialProvider } from './aws';
 
 const { mockFromNodeProviderChain } = vi.hoisted(() => ({
   mockFromNodeProviderChain: vi.fn(),
@@ -248,7 +248,7 @@ describe('createDefaultCredentialProvider', () => {
 describe('AwsClient signing', () => {
   describe('happy path', () => {
     it('resolves credentials from the provider and signs the request', async () => {
-      const mockProvider: AwsCredentialProvider = {
+      const mockProvider: S3CredentialProvider = {
         getCredentials: vi.fn().mockResolvedValue({
           accessKeyId: 'TEST_AKID',
           secretAccessKey: 'TEST_SECRET',
@@ -274,7 +274,7 @@ describe('AwsClient signing', () => {
 
     it('fetches fresh credentials on each sign() call', async () => {
       let callCount = 0;
-      const mockProvider: AwsCredentialProvider = {
+      const mockProvider: S3CredentialProvider = {
         getCredentials: vi.fn().mockImplementation(async () => {
           callCount++;
           return {
@@ -305,7 +305,7 @@ describe('AwsClient signing', () => {
     });
 
     it('includes x-amz-security-token for temporary credentials', async () => {
-      const mockProvider: AwsCredentialProvider = {
+      const mockProvider: S3CredentialProvider = {
         getCredentials: vi.fn().mockResolvedValue({
           accessKeyId: 'AKID',
           secretAccessKey: 'SECRET',
@@ -328,7 +328,7 @@ describe('AwsClient signing', () => {
     });
 
     it('sets x-amz-content-sha256 to UNSIGNED-PAYLOAD', async () => {
-      const mockProvider: AwsCredentialProvider = {
+      const mockProvider: S3CredentialProvider = {
         getCredentials: vi.fn().mockResolvedValue({
           accessKeyId: 'AKID',
           secretAccessKey: 'SECRET',
@@ -351,7 +351,7 @@ describe('AwsClient signing', () => {
     });
 
     it('produces correct credential scope with the configured region', async () => {
-      const mockProvider: AwsCredentialProvider = {
+      const mockProvider: S3CredentialProvider = {
         getCredentials: vi.fn().mockResolvedValue({
           accessKeyId: 'AKID',
           secretAccessKey: 'SECRET',
@@ -375,7 +375,7 @@ describe('AwsClient signing', () => {
 
   describe('error handling', () => {
     it('throws when provider returns null accessKeyId', async () => {
-      const mockProvider: AwsCredentialProvider = {
+      const mockProvider: S3CredentialProvider = {
         getCredentials: vi.fn().mockResolvedValue({
           accessKeyId: null,
           secretAccessKey: 'SECRET',
@@ -397,7 +397,7 @@ describe('AwsClient signing', () => {
     });
 
     it('throws when provider returns null secretAccessKey', async () => {
-      const mockProvider: AwsCredentialProvider = {
+      const mockProvider: S3CredentialProvider = {
         getCredentials: vi.fn().mockResolvedValue({
           accessKeyId: 'AKID',
           secretAccessKey: null,
@@ -419,7 +419,7 @@ describe('AwsClient signing', () => {
     });
 
     it('propagates credential provider rejection', async () => {
-      const mockProvider: AwsCredentialProvider = {
+      const mockProvider: S3CredentialProvider = {
         getCredentials: vi.fn().mockRejectedValue(new Error('Pod Identity unavailable')),
       };
 

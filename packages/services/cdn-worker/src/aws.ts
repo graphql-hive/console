@@ -84,12 +84,10 @@ type AwsRequestInit = RequestInit & {
 /**
  * AWS credentials resolved by a credential provider.
  *
- * NOTE: This interface (and {@link AwsCredentialProvider}) are also defined in
+ * NOTE: This interface (and {@link S3CredentialProvider}) are also defined in
  * `@hive/api/modules/cdn/providers/aws`. The duplication exists because
  * cdn-worker targets Cloudflare Workers and cannot import from hive/api (which pulls in
  * Node.js-only dependencies). TypeScript structural typing keeps them compatible.
- * If a shared lightweight package is introduced in the future, both definitions could be
- * consolidated there.
  */
 export interface AwsCredentials {
   accessKeyId: string;
@@ -102,7 +100,7 @@ export interface AwsCredentials {
  * from an external source (IAM role, ECS task role, EKS Pod Identity, etc.).
  * For Node.js servers, use createDefaultCredentialProvider from @hive/api.
  */
-export interface AwsCredentialProvider {
+export interface S3CredentialProvider {
   getCredentials(): Promise<AwsCredentials>;
 }
 
@@ -119,7 +117,7 @@ export type AWSClientConfig =
       fetch?: typeof fetch;
     }
   | {
-      credentialProvider: AwsCredentialProvider;
+      credentialProvider: S3CredentialProvider;
       service?: string;
       region?: string;
       cache?: Map<string, ArrayBuffer>;
@@ -129,7 +127,7 @@ export type AWSClientConfig =
     };
 
 export class AwsClient {
-  private credentialProvider: AwsCredentialProvider;
+  private credentialProvider: S3CredentialProvider;
   private service?: string;
   private region?: string;
   private cache: Map<string, ArrayBuffer>;
@@ -185,7 +183,7 @@ export class AwsClient {
         init && init.aws,
       ),
     );
-    
+
     const signals: AbortSignal[] = [];
 
     if (init?.timeout) {

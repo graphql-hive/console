@@ -13,7 +13,7 @@ import { authModule } from './modules/auth';
 import { Session } from './modules/auth/lib/authz';
 import { cdnModule } from './modules/cdn';
 import { AwsClient } from './modules/cdn/providers/aws';
-import type { AwsCredentialProvider } from './modules/cdn/providers/aws';
+import type { S3CredentialProvider } from './modules/cdn/providers/aws';
 import { CDN_CONFIG, CDNConfig } from './modules/cdn/providers/tokens';
 import { collectionModule } from './modules/collection';
 import { commerceModule } from './modules/commerce';
@@ -138,17 +138,17 @@ export function createRegistry({
   s3: {
     bucketName: string;
     endpoint: string;
-    credentialProvider: AwsCredentialProvider;
+    credentialProvider: S3CredentialProvider;
   };
   s3Mirror: {
     bucketName: string;
     endpoint: string;
-    credentialProvider: AwsCredentialProvider;
+    credentialProvider: S3CredentialProvider;
   } | null;
   s3AuditLogs: {
     bucketName: string;
     endpoint: string;
-    credentialProvider: AwsCredentialProvider;
+    credentialProvider: S3CredentialProvider;
   } | null;
   encryptionSecret: string;
   app: {

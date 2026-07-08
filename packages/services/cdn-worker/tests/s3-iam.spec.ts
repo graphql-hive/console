@@ -1,6 +1,6 @@
 // eslint-disable-next-line import/no-extraneous-dependencies
 import { describe, expect, test, vi } from 'vitest';
-import { AwsClient, type AwsCredentialProvider } from '../src/aws';
+import { AwsClient, type S3CredentialProvider } from '../src/aws';
 
 describe('S3 IAM AwsClient (cdn-worker)', () => {
   describe('constructor', () => {
@@ -13,7 +13,7 @@ describe('S3 IAM AwsClient (cdn-worker)', () => {
         region: 'us-east-1',
       });
 
-      const provider = (client as any).credentialProvider as AwsCredentialProvider;
+      const provider = (client as any).credentialProvider as S3CredentialProvider;
       const creds = await provider.getCredentials();
 
       expect(creds).toEqual({
@@ -24,7 +24,7 @@ describe('S3 IAM AwsClient (cdn-worker)', () => {
     });
 
     test('uses credentialProvider directly when provided', async () => {
-      const mockProvider: AwsCredentialProvider = {
+      const mockProvider: S3CredentialProvider = {
         getCredentials: vi.fn().mockResolvedValue({
           accessKeyId: 'IAM_AKID',
           secretAccessKey: 'IAM_SECRET',
@@ -38,7 +38,7 @@ describe('S3 IAM AwsClient (cdn-worker)', () => {
         region: 'us-east-1',
       });
 
-      const provider = (client as any).credentialProvider as AwsCredentialProvider;
+      const provider = (client as any).credentialProvider as S3CredentialProvider;
       expect(provider).toBe(mockProvider);
 
       const creds = await provider.getCredentials();
@@ -53,7 +53,7 @@ describe('S3 IAM AwsClient (cdn-worker)', () => {
         region: 'us-east-1',
       });
 
-      const provider = (client as any).credentialProvider as AwsCredentialProvider;
+      const provider = (client as any).credentialProvider as S3CredentialProvider;
       const creds = await provider.getCredentials();
 
       expect(creds.accessKeyId).toBe('AKID');
@@ -64,7 +64,7 @@ describe('S3 IAM AwsClient (cdn-worker)', () => {
 
   describe('sign()', () => {
     test('resolves credentials from provider before signing S3 requests', async () => {
-      const mockProvider: AwsCredentialProvider = {
+      const mockProvider: S3CredentialProvider = {
         getCredentials: vi.fn().mockResolvedValue({
           accessKeyId: 'SIGN_AKID',
           secretAccessKey: 'SIGN_SECRET',
@@ -90,7 +90,7 @@ describe('S3 IAM AwsClient (cdn-worker)', () => {
 
     test('uses refreshed credentials on successive S3 calls', async () => {
       let callCount = 0;
-      const mockProvider: AwsCredentialProvider = {
+      const mockProvider: S3CredentialProvider = {
         getCredentials: vi.fn().mockImplementation(async () => {
           callCount++;
           return {
@@ -121,7 +121,7 @@ describe('S3 IAM AwsClient (cdn-worker)', () => {
     });
 
     test('includes x-amz-security-token for IAM temporary credentials', async () => {
-      const mockProvider: AwsCredentialProvider = {
+      const mockProvider: S3CredentialProvider = {
         getCredentials: vi.fn().mockResolvedValue({
           accessKeyId: 'AKID',
           secretAccessKey: 'SECRET',
@@ -144,7 +144,7 @@ describe('S3 IAM AwsClient (cdn-worker)', () => {
     });
 
     test('throws when provider returns credentials missing accessKeyId', async () => {
-      const mockProvider: AwsCredentialProvider = {
+      const mockProvider: S3CredentialProvider = {
         getCredentials: vi.fn().mockResolvedValue({
           accessKeyId: null,
           secretAccessKey: 'SECRET',
@@ -163,7 +163,7 @@ describe('S3 IAM AwsClient (cdn-worker)', () => {
     });
 
     test('throws when provider returns credentials missing secretAccessKey', async () => {
-      const mockProvider: AwsCredentialProvider = {
+      const mockProvider: S3CredentialProvider = {
         getCredentials: vi.fn().mockResolvedValue({
           accessKeyId: 'AKID',
           secretAccessKey: null,
@@ -182,7 +182,7 @@ describe('S3 IAM AwsClient (cdn-worker)', () => {
     });
 
     test('rejects when credential provider throws', async () => {
-      const mockProvider: AwsCredentialProvider = {
+      const mockProvider: S3CredentialProvider = {
         getCredentials: vi.fn().mockRejectedValue(new Error('Pod Identity unavailable')),
       };
 
