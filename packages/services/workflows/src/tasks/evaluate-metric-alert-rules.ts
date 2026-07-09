@@ -61,13 +61,16 @@ export const task = implementTask(EvaluateMetricAlertRulesTask, async args => {
   const rules = await fetchEnabledRules(context.pg);
   const groups = groupRulesByQuery(rules);
 
-  // Population gauges, refreshed every tick from the full enabled inventory so
-  // Grafana can watch the more expensive with-filter rules. Both label values
-  // are set (including 0) so neither retains a stale reading.
+  // Population gauges, refreshed every tick so Grafana can watch the expensive
+  // with-filter rules. "Filtered" means the saved filter actually yields query
+  // conditions (the heavier legacy-table path), not merely that a saved_filter_id
+  // is set; a dangling or empty filter yields no conditions and evaluates
+  // unfiltered. Both label values are set each tick (including 0) so neither
+  // retains a stale reading.
   let filteredGroups = 0;
   let filteredRules = 0;
   for (const group of groups.values()) {
-    if (group[0].savedFilterId != null) {
+    if (buildSavedFilterConditions(group[0].savedFilterFilters, logger).length > 0) {
       filteredGroups += 1;
       filteredRules += group.length;
     }
