@@ -3,6 +3,7 @@ import { serviceLocalEndpoint } from '../utils/local-endpoint';
 import { ServiceSecret } from '../utils/secrets';
 import { ServiceDeployment } from '../utils/service-deployment';
 import { Clickhouse } from './clickhouse';
+import { DbMigrations } from './db-migrations';
 import { Docker } from './docker';
 import { Environment } from './environment';
 import { Observability } from './observability';
@@ -29,6 +30,7 @@ export function deployWorkflows({
   schema,
   redis,
   clickhouse,
+  dbMigrations,
 }: {
   postgres: Postgres;
   observability: Observability;
@@ -41,6 +43,7 @@ export function deployWorkflows({
   schema: Schema;
   redis: Redis;
   clickhouse: Clickhouse;
+  dbMigrations: DbMigrations;
 }) {
   const featureFlagsConfig = new pulumi.Config('featureFlags');
   return (
@@ -75,7 +78,10 @@ export function deployWorkflows({
         image,
         replicas: environment.podsConfig.general.replicas,
       },
-      [redis.deployment, redis.service],
+      // Depend on dbMigrations so the ClickHouse migration (which creates
+      // operations_by_target_daily) runs before this service starts routing
+      // long-window queries to it. Mirrors deployGraphQL.
+      [dbMigrations, redis.deployment, redis.service],
     )
       // PG
       .withSecret('POSTGRES_HOST', postgres.pgBouncerSecret, 'host')
