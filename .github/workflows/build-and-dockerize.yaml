@@ -292,15 +292,15 @@ jobs:
           done
 
       - name:
-          'publish docker multiarch manifest (tag: ${{ inputs.imageTag }}-${{ inputs.publishLatest
-          && "" || "alpha-" }}${{ steps.git_hash.outputs.sha_short }})'
+          publish docker multiarch manifest (tag ${{ inputs.imageTag }}-${{ inputs.publishLatest ==
+          false && 'alpha-' || '' }}${{ steps.git_hash.outputs.sha_short }})
         env:
           TARGETS: ${{ inputs.targets }}
           REGISTRY: ${{ inputs.registry }}
           IMAGE_NAME: ${{ inputs.imageName }}
           IMAGE_TAG: ${{ inputs.imageTag }}
           SHA_SHORT: ${{ steps.git_hash.outputs.sha_short }}
-          RELEASE_STAGE: ${{ inputs.publishLatest && '' || 'alpha-' }}
+          RELEASE_STAGE: ${{ inputs.publishLatest == false && 'alpha-' || '' }}
         run: |
           targets=$(docker buildx bake -f docker/docker.hcl --print "$TARGETS" | jq -r '.group."'"$TARGETS"'".targets[]')
 
