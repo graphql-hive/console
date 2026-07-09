@@ -299,6 +299,86 @@ describe('GraphQL Hive Plugin', () => {
     });
   });
 
+  test('supports abstract type', async () => {
+    const subgraphs = {
+      products: {
+        typeDefs: parse(/* GraphQL */ `
+          extend type Query {
+            product: Product
+          }
+
+          interface Product {
+            id: ID!
+            price: Int
+          }
+
+          type GoodieBag implements Product @key(fields: "id") {
+            id: ID!
+            price: Int
+          }
+        `),
+        resolvers: {
+          Query: {
+            product: () => {
+              return { __typename: 'GoodieBag', id: 1, price: 20.2 };
+            },
+          },
+        },
+      },
+    };
+
+    const { readSchemaCoordinateStats, gateway, waitForRequestsCollected } = await setup(subgraphs);
+
+    const request = new Request('http://localhost:4000/graphql', {
+      method: 'POST',
+      headers: {
+        'x-graphql-client-name': 'app-name',
+        'x-graphql-client-version': 'app-version',
+        'content-type': 'application/json',
+        accept: 'application/json',
+      },
+      body: JSON.stringify({
+        query: `
+          {
+            product {
+              id
+            }
+          }
+        `,
+      }),
+    });
+
+    const usageCollected = waitForRequestsCollected(1);
+    const result = await gateway.handle(request);
+    await expect(result.json()).resolves.toMatchInlineSnapshot(`
+      {
+        data: {
+          product: {
+            id: 1,
+          },
+        },
+      }
+    `);
+    await usageCollected;
+
+    const yesterday = new Date();
+    yesterday.setDate(yesterday.getDate() - 1);
+    const period = {
+      from: yesterday.toISOString(),
+      to: new Date().toISOString(),
+    };
+
+    await pollFor(async () => {
+      const productStats = await readSchemaCoordinateStats('Product', period);
+      const goodieStats = await readSchemaCoordinateStats('GoodieBag', period);
+
+      return (
+        productStats.target?.schemaCoordinateStats.totalResolutions === 1 &&
+        goodieStats.target?.schemaCoordinateStats.totalResolutions === 1
+      );
+    });
+  });
+
   test('errors are tracked', async () => {
     const subgraphs = {
       products: {

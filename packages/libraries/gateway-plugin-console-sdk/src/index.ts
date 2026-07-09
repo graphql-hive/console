@@ -1,6 +1,7 @@
-import { DocumentNode, print, responsePathAsArray, type GraphQLError } from 'graphql';
+import { DocumentNode, GraphQLSchema, Kind, responsePathAsArray, type GraphQLError } from 'graphql';
 import { lru } from 'tiny-lru';
 import {
+  addTypenames,
   createHive as createHiveClient,
   isAsyncIterable,
   isHiveClient,
@@ -8,7 +9,6 @@ import {
   type HivePluginOptions,
 } from '@graphql-hive/core';
 import { GatewayPlugin } from '@graphql-hive/gateway-runtime';
-import { addTypenames } from './add-typenames.js';
 import { isEntityRequest } from './is-entity-request.js';
 import { version } from './version.js';
 
@@ -47,16 +47,20 @@ export function useHive(clientOrOptions: HiveClient | GatewayPluginOptions): Gat
   void hive.info();
   /** stores the resulting status from fetches */
   const statusMap = new WeakMap<object, number>();
-  /** stores the original query SDL to avoid having to print */
-  const operationCache = lru<DocumentNode | true>(
-    isHiveClient(clientOrOptions) ? 10_000 : (clientOrOptions.cache ?? 10_000),
-  );
-
   const fieldLevelMetricsEnabled = isHiveClient(clientOrOptions)
     ? false
     : (typeof clientOrOptions.usage === 'object' &&
         clientOrOptions.usage?.fieldLevelMetricsEnabled) ||
       false;
+  /** stores the original query SDL to avoid having to print */
+  const operationCache = fieldLevelMetricsEnabled
+    ? lru<DocumentNode | true>(
+        isHiveClient(clientOrOptions) ? 10_000 : (clientOrOptions.cache ?? 10_000),
+      )
+    : null;
+
+  let latestSchema: GraphQLSchema | null = null;
+
   return {
     onFetch({ executionRequest }) {
       /** Only if the execution request is set, then this is a subgraph execution. */
@@ -112,6 +116,32 @@ export function useHive(clientOrOptions: HiveClient | GatewayPluginOptions): Gat
     },
     onSchemaChange({ schema }) {
       hive.reportSchema({ schema });
+      latestSchema = schema;
+    },
+    onParse(parseCtx) {
+      return ctx => {
+        if (ctx.result.kind === Kind.DOCUMENT && fieldLevelMetricsEnabled && operationCache) {
+          // We need __typename on every object in the subgraph result so we can
+          // resolve abstract types (unions/interfaces) to concrete type coordinates
+          // when recording field-level metrics downstream.
+          // This is done here for more performant caching of the result.
+          const query = parseCtx.params.source;
+          const cachedDocument = operationCache.get(query);
+          if (cachedDocument) {
+            // If "true" is cached, then this operation doesn't need stored because it's identical to the original.
+            // Else, the document hash been modified and cached
+            if (cachedDocument !== true) {
+              parseCtx.setParsedDocument(cachedDocument);
+            }
+          } else if (latestSchema) {
+            const modifiedDocument = addTypenames(ctx.result, latestSchema);
+            operationCache.set(query, ctx.result === modifiedDocument || modifiedDocument);
+            if (ctx.result !== modifiedDocument) {
+              parseCtx.setParsedDocument(modifiedDocument);
+            }
+          }
+        }
+      };
     },
     onExecute({ args }) {
       const collection = hive.collectUsage();
@@ -120,23 +150,6 @@ export function useHive(clientOrOptions: HiveClient | GatewayPluginOptions): Gat
       // so it can be accessed downstream by subgraph executions.
       if (args.contextValue) {
         (args.contextValue as any).__hiveUsageCollection = collection;
-      }
-
-      // We need __typename on every object in the subgraph result so we can
-      // resolve abstract types (unions/interfaces) to concrete type coordinates
-      // when recording field-level metrics downstream.
-      // This is done here for more performant caching of the result.
-      const query = args.contextValue.params.query ?? print(args.document);
-      const cachedDocument = operationCache.get(query);
-      if (cachedDocument) {
-        // If "true" is cached, then this operation doesn't need stored because it's identical to the original.
-        // Else, the document hash been modified and cached
-        if (cachedDocument !== true) {
-          args.document = cachedDocument;
-        }
-      } else {
-        const modifiedDocument = addTypenames(args.document, args.schema);
-        operationCache.set(query, args.document === modifiedDocument || args.document);
       }
 
       return {

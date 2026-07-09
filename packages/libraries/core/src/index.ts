@@ -22,3 +22,4 @@ export {
   type CDNArtifactFetcher,
 } from './client/cdn-artifact-fetcher.js';
 export type { CircuitBreakerConfiguration } from './client/circuit-breaker.js';
+export { addTypenames } from './client/add-typenames.js';

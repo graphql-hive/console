@@ -1,7 +1,8 @@
 ---
-'@graphql-hive/gateway-plugin-console-sdk': minor
 '@graphql-hive/core': minor
+'@graphql-hive/yoga': minor
 'hive': minor
 ---
 
-Support coordinate level resolution and error reporting
+Add a new experimental config option that allows sending additional metrics (errors and resolution counts) to
+Hive.

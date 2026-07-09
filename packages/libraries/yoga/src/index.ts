@@ -1,6 +1,8 @@
 import { DocumentNode, ExecutionArgs, GraphQLError, GraphQLSchema, Kind, parse } from 'graphql';
 import { _createLRUCache, YogaServer, type GraphQLParams, type Plugin } from 'graphql-yoga';
+import { lru } from 'tiny-lru';
 import {
+  addTypenames,
   autoDisposeSymbol,
   CollectUsage,
   createHive as createHiveClient,
@@ -30,7 +32,15 @@ type CacheRecord = {
   experimental__documentId?: string;
 };
 
-export function createHive(clientOrOptions: HivePluginOptions) {
+export type YogaPluginOptions = HivePluginOptions & {
+  /**
+   * Size of document cache. This is used to store a transformed version of the operation
+   * because abstract types must include a __typename. Default: 10_000
+   */
+  cache?: number;
+};
+
+export function createHive(clientOrOptions: YogaPluginOptions) {
   return createHiveClient({
     ...clientOrOptions,
     agent: {
@@ -42,8 +52,8 @@ export function createHive(clientOrOptions: HivePluginOptions) {
 }
 
 export function useHive(clientOrOptions: HiveClient): Plugin;
-export function useHive(clientOrOptions: HivePluginOptions): Plugin;
-export function useHive(clientOrOptions: HiveClient | HivePluginOptions): Plugin {
+export function useHive(clientOrOptions: YogaPluginOptions): Plugin;
+export function useHive(clientOrOptions: HiveClient | YogaPluginOptions): Plugin {
   const parsedDocumentCache = _createLRUCache<DocumentNode>();
   let latestSchema: GraphQLSchema | null = null;
   const contextualCache = new WeakMap<object, CacheRecord>();
@@ -58,6 +68,16 @@ export function useHive(clientOrOptions: HiveClient | HivePluginOptions): Plugin
         onYogaInitDefered = null;
       }),
   );
+  const fieldLevelMetricsEnabled = isHiveClient(clientOrOptions)
+    ? false
+    : (typeof clientOrOptions.usage === 'object' &&
+        clientOrOptions.usage?.fieldLevelMetricsEnabled) ||
+      false;
+  const operationCache = fieldLevelMetricsEnabled
+    ? lru<DocumentNode | true>(
+        isHiveClient(clientOrOptions) ? 10_000 : (clientOrOptions.cache ?? 10_000),
+      )
+    : null;
 
   return {
     onYogaInit(payload) {
@@ -85,6 +105,28 @@ export function useHive(clientOrOptions: HiveClient | HivePluginOptions): Plugin
           if (record) {
             record.parsedDocument = ctx.result;
             parsedDocumentCache.set(parseCtx.params.source, ctx.result);
+          }
+
+          if (fieldLevelMetricsEnabled && operationCache) {
+            // We need __typename on every object in the result so we can
+            // resolve abstract types (unions/interfaces) to concrete type coordinates
+            // when recording field-level metrics downstream.
+            // This is done here for more performant caching of the result.
+            const query = parseCtx.params.source;
+            const cachedDocument = operationCache.get(query);
+            if (cachedDocument) {
+              // If "true" is cached, then this operation doesn't need stored because it's identical to the original.
+              // Else, the document hash been modified and cached
+              if (cachedDocument !== true) {
+                parseCtx.setParsedDocument(cachedDocument);
+              }
+            } else if (latestSchema) {
+              const modifiedDocument = addTypenames(ctx.result, latestSchema);
+              operationCache.set(query, ctx.result === modifiedDocument || modifiedDocument);
+              if (ctx.result !== modifiedDocument) {
+                parseCtx.setParsedDocument(modifiedDocument);
+              }
+            }
           }
         }
       };

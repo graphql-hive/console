@@ -1,5 +1,5 @@
 import { buildSchema, parse as gql, print } from 'graphql';
-import { addTypenames } from '../src/add-typenames.js';
+import { addTypenames } from '../../src/client/add-typenames.js';
 
 // ---------------------------------------------------------------------------
 // Shared test schema
