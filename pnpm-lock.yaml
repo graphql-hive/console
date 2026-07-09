@@ -2065,6 +2065,9 @@ importers:
       nodemailer:
         specifier: 9.0.1
         version: 9.0.1
+      p-limit:
+        specifier: 6.2.0
+        version: 6.2.0
       sendmail:
         specifier: 1.6.1
         version: 1.6.1

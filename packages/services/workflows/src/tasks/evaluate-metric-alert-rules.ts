@@ -1,3 +1,4 @@
+import pLimit from 'p-limit';
 import { z } from 'zod';
 import { psql } from '@hive/postgres';
 import { SpanKind, SpanStatusCode, trace } from '@hive/service-common';
@@ -210,28 +211,25 @@ export const task = implementTask(EvaluateMetricAlertRulesTask, async args => {
     },
     async span => {
       try {
-        // Bounded parallelism over groups: each group = 1 CH query + per-rule
-        // state writes. allSettled (not Promise.all) so that one unexpected
-        // throw inside evaluateRule doesn't strand the rest of the batch's
-        // successful work; the throwing group's rules get re-evaluated on the
-        // next cron tick (60s) rather than via graphile-worker retries, which
-        // would otherwise re-run work that's already idempotently committed.
-        // With GROUP_CONCURRENCY=5 we cut wall-clock per tick by up to 5x
-        // without exhausting the PG pool.
+        // Fixed-capacity pool: keep GROUP_CONCURRENCY groups in flight at once so
+        // a slow group can't idle the other slots (a batch barrier would wait for
+        // the whole batch before starting the next). allSettled so one thrown
+        // group doesn't strand the rest; it re-evaluates on the next 60s tick,
+        // not via graphile-worker retries that would re-run already-committed work.
+        const limit = pLimit(GROUP_CONCURRENCY);
         let groupsFailed = 0;
         const evaluatedRuleIds: string[] = [];
-        for (let i = 0; i < dueGroupList.length; i += GROUP_CONCURRENCY) {
-          const batch = dueGroupList.slice(i, i + GROUP_CONCURRENCY);
-          const results = await Promise.allSettled(batch.map(processGroup));
-          for (const r of results) {
-            if (r.status === 'rejected') {
-              groupsFailed++;
-              logger.error({ error: r.reason }, 'Group evaluation threw unexpectedly');
-            } else if (r.value.failed) {
-              groupsFailed++;
-            } else {
-              evaluatedRuleIds.push(...r.value.evaluatedIds);
-            }
+        const results = await Promise.allSettled(
+          dueGroupList.map(group => limit(() => processGroup(group))),
+        );
+        for (const r of results) {
+          if (r.status === 'rejected') {
+            groupsFailed++;
+            logger.error({ error: r.reason }, 'Group evaluation threw unexpectedly');
+          } else if (r.value.failed) {
+            groupsFailed++;
+          } else {
+            evaluatedRuleIds.push(...r.value.evaluatedIds);
           }
         }
 
