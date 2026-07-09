@@ -93,6 +93,12 @@ export const task = implementTask(EvaluateMetricAlertRulesTask, async args => {
     // isolating the failure to this group.
     const filterConditions = buildSavedFilterConditions(representative.savedFilterFilters, logger);
 
+    // Only PERCENTAGE_CHANGE rules compare against the prior window. If no rule
+    // in the group is one, skip fetching it (half the scan) and persist a null
+    // previousValue. Any percentage-change rule flips the whole group back to
+    // fetching both windows.
+    const needsPreviousWindow = groupRules.some(r => r.thresholdType === 'PERCENTAGE_CHANGE');
+
     // startActiveSpan makes this span the current OTel context for the
     // duration of the callback, so the slonik PG interceptor and the
     // fetch instrumentation parent their auto-spans under this one. That's
@@ -118,6 +124,7 @@ export const task = implementTask(EvaluateMetricAlertRulesTask, async args => {
               representative.timeWindowMinutes,
               filterConditions,
               evaluationTime,
+              needsPreviousWindow,
             );
           } catch (error) {
             logger.error(
@@ -143,9 +150,13 @@ export const task = implementTask(EvaluateMetricAlertRulesTask, async args => {
             percentiles: [0, 0, 0, 0] as [number, number, number, number],
           };
           const current = windows.current ?? { window: 'current' as const, ...ZERO_WINDOW };
-          const previous = windows.previous ?? { window: 'previous' as const, ...ZERO_WINDOW };
+          // A skipped previous window stays null (not synthesized to zeros): the
+          // group is absolute-only, so evaluateRule persists previousValue null.
+          const previous = needsPreviousWindow
+            ? (windows.previous ?? { window: 'previous' as const, ...ZERO_WINDOW })
+            : null;
 
-          if (!windows.current || !windows.previous) {
+          if (!windows.current || (needsPreviousWindow && !windows.previous)) {
             logger.debug(
               { targetId: representative.targetId },
               'No traffic in window(s), evaluating against zeros',

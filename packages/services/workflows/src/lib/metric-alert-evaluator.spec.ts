@@ -286,4 +286,31 @@ describe('queryClickHouseWindows', () => {
     expect(sql).not.toContain('TDigest');
     expect(sql).toContain('client_name = {p2: String}');
   });
+
+  test('absolute-only groups skip the previous window (1x scan, constant label)', async () => {
+    const { clickhouse, calls } = captureClient();
+    const result = await queryClickHouseWindows(clickhouse, target, 60, [], evalTime, false);
+    const { sql } = calls[0];
+    // Single-window query: constant 'current' label, no previous branch.
+    expect(sql).toContain("'current' as window");
+    expect(sql).not.toContain("'previous'");
+    // Scans from the current window start, not the previous window start.
+    const anchor = evalTime.getTime();
+    const currentStart = anchor - 60_000 - 60 * 60_000;
+    const previousStart = anchor - 60_000 - 2 * 60 * 60_000;
+    expect(sql).toContain(String(currentStart));
+    expect(sql).not.toContain(String(previousStart));
+    // Previous reported null so the caller persists previousValue = null.
+    expect(result.previous).toBeNull();
+  });
+
+  test('groups needing the previous window fetch both (default)', async () => {
+    const { clickhouse, calls } = captureClient();
+    await queryClickHouseWindows(clickhouse, target, 60, [], evalTime, true);
+    const { sql } = calls[0];
+    expect(sql).toContain("ELSE 'previous'");
+    const anchor = evalTime.getTime();
+    const previousStart = anchor - 60_000 - 2 * 60 * 60_000;
+    expect(sql).toContain(String(previousStart));
+  });
 });

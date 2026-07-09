@@ -292,6 +292,10 @@ export async function queryClickHouseWindows(
   // this job up late, using wall-clock would shift the queried window
   // forward and could miss the spike that should have fired the alert.
   evaluationTime: Date,
+  // Absolute-threshold groups never compare against the prior window, so skip
+  // fetching it: scan 1x the window and return previous = null. Defaults true so
+  // percentage-change callers are unaffected.
+  needsPreviousWindow: boolean = true,
 ): Promise<{ current: ClickHouseWindowRow | null; previous: ClickHouseWindowRow | null }> {
   const anchorMs = evaluationTime.getTime();
   const offsetMs = 60_000;
@@ -334,19 +338,24 @@ export async function queryClickHouseWindows(
   const filterClause =
     filterConditions.length > 0 ? sql` AND ${sql.join(filterConditions, ' AND ')}` : sql``;
 
+  // Skip the previous window when no rule in the group needs it: scan from the
+  // current window start (1x window) and label every row 'current'. Otherwise
+  // scan both windows and tag each row current/previous.
+  const scanStart = needsPreviousWindow ? previousWindowStart : currentWindowStart;
+  const windowSelector = needsPreviousWindow
+    ? sql`CASE WHEN timestamp >= fromUnixTimestamp64Milli(${sql.raw(String(currentWindowStart.getTime()))}) THEN 'current' ELSE 'previous' END`
+    : sql`'current'`;
+
   const statement = sql`
     SELECT
-      CASE
-        WHEN timestamp >= fromUnixTimestamp64Milli(${sql.raw(String(currentWindowStart.getTime()))}) THEN 'current'
-        ELSE 'previous'
-      END as window,
+      ${windowSelector} as window,
       sum(total) as total,
       sum(total_ok) as total_ok,
       avgMerge(duration_avg) as average,
       ${sql.raw(percentilesMerge)}(0.75, 0.90, 0.95, 0.99)(duration_quantiles) as percentiles
     FROM ${sql.raw(tableName)}
     WHERE target = ${targetId}
-      AND timestamp >= fromUnixTimestamp64Milli(${sql.raw(String(previousWindowStart.getTime()))})
+      AND timestamp >= fromUnixTimestamp64Milli(${sql.raw(String(scanStart.getTime()))})
       AND timestamp < fromUnixTimestamp64Milli(${sql.raw(String(currentWindowEnd.getTime()))})
       ${filterClause}
     GROUP BY window
@@ -374,14 +383,14 @@ export async function queryClickHouseWindows(
 
   return {
     current: rows.find(r => r.window === 'current') ?? null,
-    previous: rows.find(r => r.window === 'previous') ?? null,
+    previous: needsPreviousWindow ? (rows.find(r => r.window === 'previous') ?? null) : null,
   };
 }
 
 export async function evaluateRule(args: {
   rule: MetricAlertRuleRow;
   current: ClickHouseWindowRow;
-  previous: ClickHouseWindowRow;
+  previous: ClickHouseWindowRow | null;
   pg: PostgresDatabasePool;
   logger: Logger;
   // Anchor for state_changed_at, last_triggered_at, expires_at, and
@@ -394,8 +403,11 @@ export async function evaluateRule(args: {
   const now = evaluationTime;
 
   const currentValue = extractMetricValue(current, rule);
-  const previousValue = extractMetricValue(previous, rule);
-  const breached = isThresholdBreached(currentValue, previousValue, rule);
+  // A skipped previous window (absolute-only group) yields a null previousValue,
+  // persisted as-is. FIXED_VALUE never reads it; pass 0 to the breach check just
+  // for typing (percentage-change groups always fetch the previous window).
+  const previousValue = previous ? extractMetricValue(previous, rule) : null;
+  const breached = isThresholdBreached(currentValue, previousValue ?? 0, rule);
 
   // State-log retention is derived from the rule's organization plan, which
   // is included on the row by `fetchEnabledRules` (single JOIN) — no extra
@@ -600,7 +612,7 @@ async function logTransition(
   fromState: string,
   toState: string,
   value: number,
-  previousValue: number,
+  previousValue: number | null,
   retentionDays: number,
   evaluationTime: Date,
   incidentId: string | null = null,
