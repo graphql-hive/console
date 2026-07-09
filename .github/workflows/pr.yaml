@@ -31,6 +31,7 @@ jobs:
   build:
     name: build
     uses: ./.github/workflows/build-and-dockerize.yaml
+    needs: changeset-version
     with:
       dockerize: ${{ !github.event.pull_request.head.repo.fork }}
       imageTag: ${{ github.event.pull_request.head.sha }}
