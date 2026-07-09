@@ -9,6 +9,7 @@ import {
   extractMetricValue,
   groupRulesByQuery,
   isRuleDue,
+  previousValueForRule,
   queryClickHouseWindows,
   resolutionFor,
   type GroupNeeds,
@@ -296,6 +297,38 @@ describe('extractMetricValue', () => {
     expect(() =>
       extractMetricValue(row({ percentiles: null }), makeRule({ type: 'LATENCY', metric: 'P95' })),
     ).toThrow(/duration_quantiles/);
+  });
+});
+
+describe('previousValueForRule', () => {
+  const prev = {
+    window: 'previous' as const,
+    total: '500',
+    total_ok: '450',
+    average: null,
+    percentiles: null,
+  };
+
+  test('FIXED_VALUE persists null even when the previous window was fetched', () => {
+    // The window may have been fetched for a PERCENTAGE_CHANGE group-mate; a
+    // FIXED_VALUE rule still persists null so its history is grouping-independent.
+    expect(
+      previousValueForRule(makeRule({ thresholdType: 'FIXED_VALUE', type: 'TRAFFIC' }), prev),
+    ).toBeNull();
+  });
+
+  test('FIXED_VALUE with no previous window is also null', () => {
+    expect(previousValueForRule(makeRule({ thresholdType: 'FIXED_VALUE' }), null)).toBeNull();
+  });
+
+  test('PERCENTAGE_CHANGE persists the real previous value', () => {
+    expect(
+      previousValueForRule(makeRule({ thresholdType: 'PERCENTAGE_CHANGE', type: 'TRAFFIC' }), prev),
+    ).toBe(500);
+  });
+
+  test('PERCENTAGE_CHANGE with no previous window falls back to null', () => {
+    expect(previousValueForRule(makeRule({ thresholdType: 'PERCENTAGE_CHANGE' }), null)).toBeNull();
   });
 });
 

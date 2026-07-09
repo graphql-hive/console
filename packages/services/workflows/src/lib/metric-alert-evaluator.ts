@@ -151,6 +151,20 @@ export function extractMetricValue(row: ClickHouseWindowRow, rule: MetricAlertRu
   }
 }
 
+// The previousValue a rule persists to its incident/state log. Only PERCENTAGE_CHANGE
+// rules compare against the previous window, so a FIXED_VALUE rule persists null even
+// when the window happens to have been fetched for a PERCENTAGE_CHANGE group-mate. That
+// keeps a rule's persisted value (and its "was X" history display) independent of who
+// shares its group. The breach check ignores it for FIXED_VALUE either way.
+export function previousValueForRule(
+  rule: MetricAlertRuleRow,
+  previous: ClickHouseWindowRow | null,
+): number | null {
+  return rule.thresholdType === 'PERCENTAGE_CHANGE' && previous
+    ? extractMetricValue(previous, rule)
+    : null;
+}
+
 function isThresholdBreached(
   currentValue: number,
   previousValue: number,
@@ -488,10 +502,10 @@ export async function evaluateRule(args: {
   const now = evaluationTime;
 
   const currentValue = extractMetricValue(current, rule);
-  // A skipped previous window (absolute-only group) yields a null previousValue,
-  // persisted as-is. FIXED_VALUE never reads it; pass 0 to the breach check just
-  // for typing (percentage-change groups always fetch the previous window).
-  const previousValue = previous ? extractMetricValue(previous, rule) : null;
+  // See previousValueForRule: null for FIXED_VALUE (even when fetched), real value
+  // for PERCENTAGE_CHANGE. The `?? 0` feeds the breach check for typing only; a
+  // FIXED_VALUE rule ignores it, a PERCENTAGE_CHANGE rule always has a real value.
+  const previousValue = previousValueForRule(rule, previous);
   const breached = isThresholdBreached(currentValue, previousValue ?? 0, rule);
 
   // State-log retention is derived from the rule's organization plan, which
