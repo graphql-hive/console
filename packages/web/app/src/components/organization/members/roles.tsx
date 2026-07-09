@@ -560,11 +560,7 @@ function OrganizationMemberRoleCreator(props: {
                 <Button
                   type="submit"
                   onClick={form.handleSubmit(onSubmit)}
-                  disabled={
-                    !form.formState.isValid ||
-                    form.formState.isSubmitting ||
-                    form.formState.disabled
-                  }
+                  disabled={form.formState.isSubmitting || form.formState.disabled}
                 >
                   {form.formState.isSubmitting
                     ? 'Creating...'
