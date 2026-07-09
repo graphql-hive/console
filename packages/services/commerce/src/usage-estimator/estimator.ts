@@ -50,9 +50,11 @@ export function createEstimator(config: {
           to: input.endTime,
         },
       });
-
+      /** This table is truncated at 30 days worth of data. Make sure not to request beyond that. */
+      const thirtyDaysInMs = 30 * 24 * 60 * 60 * 1_000;
       const tableName =
-        input.startTime > env.hiveServices.operationsByTargetTableCreatedAt
+        input.startTime > env.hiveServices.operationsByTargetTableCreatedAt &&
+        input.startTime.getTime() > Date.now() - thirtyDaysInMs
           ? sql`operations_by_target_hourly`
           : sql`operations_hourly`;
 
