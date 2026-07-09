@@ -1,6 +1,5 @@
 import { ClickHouse, HttpClient, OperationsReader, sql } from '@hive/api';
 import type { ServiceLogger } from '@hive/service-common';
-import { env } from '../environment';
 import { clickHouseElapsedDuration, clickHouseReadDuration } from './metrics';
 
 export type UsageEstimator = ReturnType<typeof createEstimator>;
@@ -50,13 +49,6 @@ export function createEstimator(config: {
           to: input.endTime,
         },
       });
-      /** This table is truncated at 30 days worth of data. Make sure not to request beyond that. */
-      const thirtyDaysInMs = 30 * 24 * 60 * 60 * 1_000;
-      const tableName =
-        input.startTime > env.hiveServices.operationsByTargetTableCreatedAt &&
-        input.startTime.getTime() > Date.now() - thirtyDaysInMs
-          ? sql`operations_by_target_hourly`
-          : sql`operations_hourly`;
 
       const result = await clickhouse.query<{
         total: string;
@@ -66,7 +58,7 @@ export function createEstimator(config: {
           SELECT
             target,
             sum(total) as total
-          FROM ${tableName}
+          FROM operations_hourly
           ${filter}
           GROUP BY target
         `,
@@ -95,6 +87,25 @@ export function createEstimator(config: {
         queryId: 'usage_estimator_count_operations',
         timeout: 15_000,
       });
+    },
+    async estimateCollectedOperationsForAllOrganizations(input: { month: number; year: number }) {
+      const startOfMonth = `${input.year}-${String(input.month).padStart(2, '0')}-01`;
+      const result = await clickhouse.query<{
+        total: string;
+        organization: string;
+      }>({
+        query: sql`
+          SELECT
+            sum(total) as total,
+            organization
+          FROM monthly_overview
+          PREWHERE date=${startOfMonth}
+          GROUP BY organization
+        `,
+        queryId: 'usage_estimator_count_operations',
+        timeout: 15_000,
+      });
+      return Object.fromEntries(result.data.map(item => [item.organization, parseInt(item.total)]));
     },
   };
 }

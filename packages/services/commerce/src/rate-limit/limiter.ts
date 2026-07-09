@@ -77,7 +77,10 @@ export function createRateLimiter(config: {
 
     const [records, operations] = await Promise.all([
       storage.getGetOrganizationsAndTargetsWithLimitInfo(),
-      usageEstimator.estimateOperationsForAllTargets(timeWindow),
+      usageEstimator.estimateCollectedOperationsForAllOrganizations({
+        month: now.getUTCMonth() + 1,
+        year: now.getUTCFullYear(),
+      }),
     ]);
 
     const totalTargets = records.reduce((acc, record) => acc + record.targets.length, 0);
@@ -113,10 +116,7 @@ export function createRateLimiter(config: {
       }
 
       const orgRecord = newCachedResult.get(record.organization)!;
-
-      for (const target of record.targets) {
-        orgRecord.operations.current += operations[target] || 0;
-      }
+      orgRecord.operations.current = operations[record.organization];
     }
 
     newCachedResult.forEach((orgRecord, orgId) => {
