@@ -38,7 +38,7 @@ jobs:
       publishLatest: false
       targets: 'build'
       uploadJavaScriptArtifacts: true
-      latestVersion: ${{ needs.changeset-version.outputs.number }}
+      latestVersion: ${{ needs.changeset-version.outputs.version }}
     secrets: inherit
 
   # Run db migrations tests

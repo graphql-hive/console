@@ -36,7 +36,7 @@ jobs:
       uploadJavaScriptArtifacts: true
       latestVersion:
         ${{ needs.package.outputs.hivePublish == 'true' && needs.package.outputs.hiveVersion ||
-        needs.changeset-version.outputs.number }}
+        needs.changeset-version.outputs.version }}
     secrets: inherit
 
   # Dockerize the CLI in case a CLI version was released
