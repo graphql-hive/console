@@ -235,7 +235,6 @@ function OrganizationMemberRoleEditor(props: {
                         placeholder="Enter a description"
                         autoComplete="off"
                         {...field}
-                        required
                       />
                     </FormControl>
                     <FormMessage />
