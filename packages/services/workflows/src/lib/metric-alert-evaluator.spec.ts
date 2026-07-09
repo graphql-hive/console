@@ -313,4 +313,31 @@ describe('queryClickHouseWindows', () => {
     const previousStart = anchor - 60_000 - 2 * 60 * 60_000;
     expect(sql).toContain(String(previousStart));
   });
+
+  test('groups needing neither duration column select NULL placeholders', async () => {
+    const { clickhouse, calls } = captureClient();
+    await queryClickHouseWindows(clickhouse, target, 60, [], evalTime, true, false, false);
+    const { sql } = calls[0];
+    expect(sql).toContain('NULL as average');
+    expect(sql).toContain('NULL as percentiles');
+    expect(sql).not.toContain('avgMerge(duration_avg)');
+    expect(sql).not.toContain('duration_quantiles');
+  });
+
+  test('percentile groups select the quantiles column; avg still skipped', async () => {
+    const { clickhouse, calls } = captureClient();
+    await queryClickHouseWindows(clickhouse, target, 60, [], evalTime, true, false, true);
+    const { sql } = calls[0];
+    expect(sql).toContain('duration_quantiles');
+    expect(sql).toContain('NULL as average');
+  });
+
+  test('avg groups select avgMerge; percentiles skipped', async () => {
+    const { clickhouse, calls } = captureClient();
+    await queryClickHouseWindows(clickhouse, target, 60, [], evalTime, true, true, false);
+    const { sql } = calls[0];
+    expect(sql).toContain('avgMerge(duration_avg) as average');
+    expect(sql).toContain('NULL as percentiles');
+    expect(sql).not.toContain('duration_quantiles');
+  });
 });

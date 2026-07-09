@@ -52,8 +52,10 @@ const ClickHouseWindowRowSchema = z.object({
   window: z.enum(['current', 'previous']),
   total: z.string(),
   total_ok: z.string(),
-  average: z.number(),
-  percentiles: z.tuple([z.number(), z.number(), z.number(), z.number()]),
+  // Null when a group's rules don't need them (no LATENCY rule of that metric),
+  // in which case the query selects `NULL as ...` and doesn't read the column.
+  average: z.number().nullable(),
+  percentiles: z.tuple([z.number(), z.number(), z.number(), z.number()]).nullable(),
 });
 
 type ClickHouseWindowRow = z.infer<typeof ClickHouseWindowRowSchema>;
@@ -85,12 +87,14 @@ function extractMetricValue(row: ClickHouseWindowRow, rule: MetricAlertRuleRow):
     case 'ERROR_RATE':
       return total > 0 ? ((total - totalOk) / total) * 100 : 0;
     case 'LATENCY': {
+      // A LATENCY rule forces its column to be selected, so these are non-null
+      // when actually read; the `?? 0` is just for the nullable type.
       const metricMap: Record<string, number> = {
-        AVG: row.average,
-        P75: row.percentiles[0],
-        P90: row.percentiles[1],
-        P95: row.percentiles[2],
-        P99: row.percentiles[3],
+        AVG: row.average ?? 0,
+        P75: row.percentiles?.[0] ?? 0,
+        P90: row.percentiles?.[1] ?? 0,
+        P95: row.percentiles?.[2] ?? 0,
+        P99: row.percentiles?.[3] ?? 0,
       };
       // ClickHouse stores `duration` in nanoseconds, but rule thresholds (the
       // form input) and every display surface are in
@@ -215,9 +219,8 @@ export function evaluationIntervalMinutes(timeWindowMinutes: number): number {
   return 30; // > 24h (7d, 30d): every 30 min
 }
 
-// Whether a rule is due on the tick at evaluationTime. PENDING/RECOVERING rules
-// stay at 1-min resolution so the confirmationMinutes dwell is sampled every
-// tick; a never-evaluated rule is always due.
+// PENDING/RECOVERING rules stay at 1-min resolution so the confirmationMinutes
+// dwell is sampled every tick. A never-evaluated rule is always due.
 export function isRuleDue(
   rule: Pick<MetricAlertRuleRow, 'timeWindowMinutes' | 'lastEvaluatedAt' | 'state'>,
   evaluationTime: Date,
@@ -292,10 +295,12 @@ export async function queryClickHouseWindows(
   // this job up late, using wall-clock would shift the queried window
   // forward and could miss the spike that should have fired the alert.
   evaluationTime: Date,
-  // Absolute-threshold groups never compare against the prior window, so skip
-  // fetching it: scan 1x the window and return previous = null. Defaults true so
-  // percentage-change callers are unaffected.
+  // False = scan only the current window, return previous = null. Default true.
   needsPreviousWindow: boolean = true,
+  // False = select `NULL as <col>` so ClickHouse doesn't read that duration
+  // column. Default true. The caller decides all three per group (processGroup).
+  needsAverage: boolean = true,
+  needsPercentiles: boolean = true,
 ): Promise<{ current: ClickHouseWindowRow | null; previous: ClickHouseWindowRow | null }> {
   const anchorMs = evaluationTime.getTime();
   const offsetMs = 60_000;
@@ -338,21 +343,25 @@ export async function queryClickHouseWindows(
   const filterClause =
     filterConditions.length > 0 ? sql` AND ${sql.join(filterConditions, ' AND ')}` : sql``;
 
-  // Skip the previous window when no rule in the group needs it: scan from the
-  // current window start (1x window) and label every row 'current'. Otherwise
-  // scan both windows and tag each row current/previous.
   const scanStart = needsPreviousWindow ? previousWindowStart : currentWindowStart;
   const windowSelector = needsPreviousWindow
     ? sql`CASE WHEN timestamp >= fromUnixTimestamp64Milli(${sql.raw(String(currentWindowStart.getTime()))}) THEN 'current' ELSE 'previous' END`
     : sql`'current'`;
+
+  // A literal NULL isn't a column reference, so the (large) duration column isn't
+  // read when the group doesn't need it, while the row keeps a stable shape.
+  const averageCol = needsAverage ? sql`avgMerge(duration_avg) as average` : sql`NULL as average`;
+  const percentilesCol = needsPercentiles
+    ? sql`${sql.raw(percentilesMerge)}(0.75, 0.90, 0.95, 0.99)(duration_quantiles) as percentiles`
+    : sql`NULL as percentiles`;
 
   const statement = sql`
     SELECT
       ${windowSelector} as window,
       sum(total) as total,
       sum(total_ok) as total_ok,
-      avgMerge(duration_avg) as average,
-      ${sql.raw(percentilesMerge)}(0.75, 0.90, 0.95, 0.99)(duration_quantiles) as percentiles
+      ${averageCol},
+      ${percentilesCol}
     FROM ${sql.raw(tableName)}
     WHERE target = ${targetId}
       AND timestamp >= fromUnixTimestamp64Milli(${sql.raw(String(scanStart.getTime()))})
