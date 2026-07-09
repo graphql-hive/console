@@ -141,6 +141,10 @@ function OrganizationMemberRoleEditor(props: {
   }, []);
 
   async function onSubmit(data: RoleFormValues) {
+    if (!form.formState.isValid) {
+      await form.trigger();
+      return;
+    }
     try {
       const result = await updateMemberRole({
         input: {
@@ -209,7 +213,13 @@ function OrganizationMemberRoleEditor(props: {
                   <FormItem>
                     <FormLabel>Name</FormLabel>
                     <FormControl>
-                      <Input placeholder="Enter a name" type="text" autoComplete="off" {...field} />
+                      <Input
+                        placeholder="Enter a name"
+                        type="text"
+                        autoComplete="off"
+                        {...field}
+                        required
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -222,7 +232,12 @@ function OrganizationMemberRoleEditor(props: {
                   <FormItem>
                     <FormLabel>Description</FormLabel>
                     <FormControl>
-                      <Textarea placeholder="Enter a description" autoComplete="off" {...field} />
+                      <Textarea
+                        placeholder="Enter a description"
+                        autoComplete="off"
+                        {...field}
+                        required
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -249,9 +264,7 @@ function OrganizationMemberRoleEditor(props: {
             <Button
               type="submit"
               onClick={form.handleSubmit(onSubmit)}
-              disabled={
-                !form.formState.isValid || form.formState.isSubmitting || form.formState.disabled
-              }
+              disabled={form.formState.isSubmitting || form.formState.disabled}
             >
               {form.formState.isSubmitting ? 'Creating...' : 'Confirm selection'}
             </Button>
@@ -525,12 +538,14 @@ function OrganizationMemberRoleCreator(props: {
                 </Button>
                 <Button
                   type="submit"
-                  onClick={() => setState('confirm')}
-                  disabled={
-                    !form.formState.isValid ||
-                    form.formState.isSubmitting ||
-                    form.formState.disabled
-                  }
+                  onClick={async () => {
+                    if (!form.formState.isValid) {
+                      await form.trigger();
+                      return;
+                    }
+                    setState('confirm');
+                  }}
+                  disabled={form.formState.isSubmitting || form.formState.disabled}
                 >
                   Confirm selection
                 </Button>
