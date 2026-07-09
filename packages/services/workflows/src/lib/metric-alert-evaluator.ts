@@ -70,12 +70,17 @@ function makeGroupKey(rule: MetricAlertRuleRow): GroupKey {
 // nanoseconds; latency rule thresholds and all display surfaces use ms.
 const NS_TO_MS = 1e6;
 
+const MINUTES_PER_DAY = 24 * 60; // 1440
+
 // Windows >= 7 days read the daily rollups (operations_by_target_daily /
 // operations_daily) instead of hourly, so a 30-day query scans ~60 daily buckets
 // instead of ~1,440 hourly. Below 7d stays on hourly/minutely for exact sub-day
 // precision. The API keeps windows at/above this a whole number of days (see
 // assertTimeWindowInRange) so daily buckets don't silently round the window.
-const DAILY_THRESHOLD_MINUTES = 7 * 24 * 60; // 10080
+// Exported so the routing tests pin their boundary to it. Must equal the API's
+// METRIC_ALERT_RULE_DAILY_ROLLUP_THRESHOLD_MINUTES (separate package, can't
+// import); keep the two in sync.
+export const DAILY_THRESHOLD_MINUTES = 7 * MINUTES_PER_DAY; // 10080
 
 function extractMetricValue(row: ClickHouseWindowRow, rule: MetricAlertRuleRow): number {
   const total = Number(row.total);

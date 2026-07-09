@@ -3,6 +3,7 @@ import { printWithValues, type SqlValue } from '@hive/clickhouse';
 import type { ClickHouseClient } from './clickhouse-client.js';
 import {
   buildSavedFilterConditions,
+  DAILY_THRESHOLD_MINUTES,
   deriveGroupNeeds,
   evaluationIntervalMinutes,
   groupRulesByQuery,
@@ -89,6 +90,18 @@ describe('evaluationIntervalMinutes', () => {
     for (const window of [1, 60, 61, 360, 361, 1440, 1441, 10080, 43200]) {
       expect(evaluationIntervalMinutes(window)).toBeLessThanOrEqual(window);
     }
+  });
+});
+
+describe('DAILY_THRESHOLD_MINUTES', () => {
+  test('is exactly 7 whole days, matching the API validation cutoff', () => {
+    // Pins the routing cutoff. It must equal
+    // METRIC_ALERT_RULE_DAILY_ROLLUP_THRESHOLD_MINUTES in the api commerce
+    // constants — the two live in separate packages (workflows can't import
+    // api), so a change here without the API side would let a non-whole-day
+    // window route to the daily rollup and silently round.
+    expect(DAILY_THRESHOLD_MINUTES).toBe(7 * 24 * 60);
+    expect(DAILY_THRESHOLD_MINUTES).toBe(10080);
   });
 });
 
@@ -333,10 +346,16 @@ describe('queryClickHouseWindows', () => {
 
   test('windows below 7 days stay on the hourly rollup', async () => {
     const { clickhouse, calls } = captureClient();
-    // 1 day, 3 days, and one minute under the 7-day cutoff all read hourly.
+    // 1 day, 3 days, and one minute under the cutoff all read hourly.
     await queryClickHouseWindows(clickhouse, target, 1440, evalTime, needs());
     await queryClickHouseWindows(clickhouse, target, 4320, evalTime, needs());
-    await queryClickHouseWindows(clickhouse, target, 10079, evalTime, needs());
+    await queryClickHouseWindows(
+      clickhouse,
+      target,
+      DAILY_THRESHOLD_MINUTES - 1,
+      evalTime,
+      needs(),
+    );
     for (const call of calls) {
       expect(call.sql).toContain('FROM operations_by_target_hourly');
     }
@@ -344,7 +363,7 @@ describe('queryClickHouseWindows', () => {
 
   test('windows >= 7 days read the daily rollup (unfiltered -> by_target)', async () => {
     const { clickhouse, calls } = captureClient();
-    await queryClickHouseWindows(clickhouse, target, 10080, evalTime, needs());
+    await queryClickHouseWindows(clickhouse, target, DAILY_THRESHOLD_MINUTES, evalTime, needs());
     const { sql } = calls[0];
     expect(sql).toContain('FROM operations_by_target_daily');
     expect(sql).toContain('quantilesTDigestMerge(');
