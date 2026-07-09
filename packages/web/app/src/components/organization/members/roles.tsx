@@ -218,7 +218,6 @@ function OrganizationMemberRoleEditor(props: {
                         type="text"
                         autoComplete="off"
                         {...field}
-                        required
                       />
                     </FormControl>
                     <FormMessage />
