@@ -10,6 +10,7 @@ import {
   groupRulesByQuery,
   isRuleDue,
   queryClickHouseWindows,
+  resolutionFor,
   type GroupNeeds,
   type MetricAlertRuleRow,
 } from './metric-alert-evaluator.js';
@@ -72,6 +73,44 @@ describe('groupRulesByQuery', () => {
       makeRule({ id: 'b', savedFilterId: 'f1', timeWindowMinutes: 720 }),
     ]);
     expect(groups.size).toBe(2);
+  });
+
+  test('at >= 7d a TRAFFIC rule and a latency rule split into hourly + daily groups', () => {
+    const groups = groupRulesByQuery([
+      makeRule({ id: 'a', type: 'TRAFFIC', timeWindowMinutes: 43200 }),
+      makeRule({ id: 'b', type: 'LATENCY', metric: 'P95', timeWindowMinutes: 43200 }),
+    ]);
+    expect(groups.size).toBe(2);
+    // Not just that they split, but onto the two intended tiers: TRAFFIC -> hourly
+    // (exact counts), latency -> daily (cheap).
+    const tiers = [...groups.values()]
+      .map(g => resolutionFor(g[0].timeWindowMinutes, g[0].type !== 'TRAFFIC'))
+      .sort();
+    expect(tiers).toEqual(['daily', 'hourly']);
+  });
+
+  test('below 7d a TRAFFIC rule and a latency rule share a group (same tier)', () => {
+    const groups = groupRulesByQuery([
+      makeRule({ id: 'a', type: 'TRAFFIC', timeWindowMinutes: 720 }),
+      makeRule({ id: 'b', type: 'LATENCY', metric: 'P95', timeWindowMinutes: 720 }),
+    ]);
+    expect(groups.size).toBe(1);
+  });
+});
+
+describe('resolutionFor', () => {
+  test('tiers by window, with TRAFFIC pinned off the daily rollup', () => {
+    expect(resolutionFor(60, true)).toBe('minutely');
+    expect(resolutionFor(360, true)).toBe('minutely');
+    expect(resolutionFor(720, true)).toBe('hourly');
+    expect(resolutionFor(DAILY_THRESHOLD_MINUTES - 1, true)).toBe('hourly');
+    expect(resolutionFor(DAILY_THRESHOLD_MINUTES, true)).toBe('daily');
+    // allowDailyRollup=false (a TRAFFIC group) never reaches daily.
+    expect(resolutionFor(DAILY_THRESHOLD_MINUTES, false)).toBe('hourly');
+    expect(resolutionFor(43200, false)).toBe('hourly');
+    // Below the daily tier the flag is irrelevant.
+    expect(resolutionFor(720, false)).toBe('hourly');
+    expect(resolutionFor(60, false)).toBe('minutely');
   });
 });
 
@@ -307,6 +346,23 @@ describe('deriveGroupNeeds', () => {
     ).toMatchObject({ needsAverage: true, needsPercentiles: true });
   });
 
+  test('any TRAFFIC rule blocks the daily rollup; latency/error-rate allow it', () => {
+    expect(deriveGroupNeeds([makeRule({ type: 'TRAFFIC' })], logger).allowDailyRollup).toBe(false);
+    // A TRAFFIC rule sharing a group with a latency rule still blocks it (union).
+    expect(
+      deriveGroupNeeds(
+        [makeRule({ type: 'LATENCY', metric: 'P95' }), makeRule({ type: 'TRAFFIC' })],
+        logger,
+      ).allowDailyRollup,
+    ).toBe(false);
+    expect(
+      deriveGroupNeeds(
+        [makeRule({ type: 'LATENCY', metric: 'AVG' }), makeRule({ type: 'ERROR_RATE' })],
+        logger,
+      ).allowDailyRollup,
+    ).toBe(true);
+  });
+
   test('builds filter conditions from the representative saved filter', () => {
     const filters = { clientFilters: [{ name: 'web', versions: null }] };
     const filtered = deriveGroupNeeds([makeRule({ savedFilterFilters: filters })], logger);
@@ -339,6 +395,7 @@ describe('queryClickHouseWindows', () => {
     needsPreviousWindow: true,
     needsAverage: true,
     needsPercentiles: true,
+    allowDailyRollup: true,
     ...overrides,
   });
 
@@ -413,6 +470,19 @@ describe('queryClickHouseWindows', () => {
     const { sql } = calls[0];
     expect(sql).toContain('FROM operations_by_target_daily');
     expect(sql).toContain('quantilesTDigestMerge(');
+  });
+
+  test('a group with a TRAFFIC rule stays on hourly at >= 7 days (exact counts, no daily rounding)', async () => {
+    const { clickhouse, calls } = captureClient();
+    await queryClickHouseWindows(
+      clickhouse,
+      target,
+      DAILY_THRESHOLD_MINUTES,
+      evalTime,
+      needs({ allowDailyRollup: false }),
+    );
+    expect(calls[0].sql).toContain('FROM operations_by_target_hourly');
+    expect(calls[0].sql).not.toContain('_daily');
   });
 
   test('windows >= 7 days read the daily rollup (filtered -> legacy operations_daily)', async () => {

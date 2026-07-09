@@ -63,7 +63,13 @@ type ClickHouseWindowRow = z.infer<typeof ClickHouseWindowRowSchema>;
 type GroupKey = string;
 
 function makeGroupKey(rule: MetricAlertRuleRow): GroupKey {
-  return `${rule.targetId}:${rule.timeWindowMinutes}:${rule.savedFilterId ?? ''}`;
+  // Include the resolved rollup tier so rules that must read different tables
+  // never share one query: a >= 7d TRAFFIC rule (hourly, for exact counts) and a
+  // >= 7d latency rule (daily, cheap) on the same target/window/filter split into
+  // separate groups, instead of the latency rule being dragged onto the slow
+  // hourly scan. Tiers only differ at >= 7d, so shorter windows still share.
+  const resolution = resolutionFor(rule.timeWindowMinutes, rule.type !== 'TRAFFIC');
+  return `${rule.targetId}:${rule.timeWindowMinutes}:${rule.savedFilterId ?? ''}:${resolution}`;
 }
 
 // Nanoseconds per millisecond. ClickHouse stores operation durations in
@@ -81,6 +87,18 @@ const MINUTES_PER_DAY = 24 * 60; // 1440
 // METRIC_ALERT_RULE_DAILY_ROLLUP_THRESHOLD_MINUTES (separate package, can't
 // import); keep the two in sync.
 export const DAILY_THRESHOLD_MINUTES = 7 * MINUTES_PER_DAY; // 10080
+
+export type Resolution = 'minutely' | 'hourly' | 'daily';
+
+// The ClickHouse rollup tier a window reads. Single source of truth for both the
+// group key and the query, so they can't disagree about which table a rule hits.
+// Windows <= 6h use minutely; >= 7d use daily unless a TRAFFIC count needs exact
+// bucket boundaries (allowDailyRollup false pins it to hourly); the rest use hourly.
+export function resolutionFor(timeWindowMinutes: number, allowDailyRollup: boolean): Resolution {
+  if (timeWindowMinutes <= 360) return 'minutely';
+  if (allowDailyRollup && timeWindowMinutes >= DAILY_THRESHOLD_MINUTES) return 'daily';
+  return 'hourly';
+}
 
 // A LATENCY rule forces its duration column into the SELECT (see deriveGroupNeeds),
 // so a null column here means the query shape and the rule disagree: a routing or
@@ -325,6 +343,11 @@ export type GroupNeeds = {
   // so ClickHouse never touches the heavy duration_quantiles blob.
   needsAverage: boolean;
   needsPercentiles: boolean;
+  // Whether a >= 7d window may read the daily rollup. TRAFFIC compares absolute
+  // counts, which daily buckets would skew by up to a full edge day (buckets snap
+  // to day boundaries, the rolling window doesn't), so a group with any TRAFFIC
+  // rule stays on hourly. Latency/error-rate tolerate the rounding.
+  allowDailyRollup: boolean;
 };
 
 // All rules in a group share a saved filter (it's part of the group key), so the
@@ -336,6 +359,7 @@ export function deriveGroupNeeds(groupRules: MetricAlertRuleRow[], logger: Logge
     needsPreviousWindow: groupRules.some(r => r.thresholdType === 'PERCENTAGE_CHANGE'),
     needsAverage: groupRules.some(r => r.type === 'LATENCY' && r.metric === 'AVG'),
     needsPercentiles: groupRules.some(r => r.type === 'LATENCY' && r.metric !== 'AVG'),
+    allowDailyRollup: !groupRules.some(r => r.type === 'TRAFFIC'),
   };
 }
 
@@ -352,7 +376,13 @@ export async function queryClickHouseWindows(
   // windows/columns. Derived once per group by deriveGroupNeeds.
   needs: GroupNeeds,
 ): Promise<{ current: ClickHouseWindowRow | null; previous: ClickHouseWindowRow | null }> {
-  const { filterConditions, needsPreviousWindow, needsAverage, needsPercentiles } = needs;
+  const {
+    filterConditions,
+    needsPreviousWindow,
+    needsAverage,
+    needsPercentiles,
+    allowDailyRollup,
+  } = needs;
   const anchorMs = evaluationTime.getTime();
   const offsetMs = 60_000;
   const windowMs = timeWindowMinutes * 60_000;
@@ -370,12 +400,7 @@ export async function queryClickHouseWindows(
   // (rather than a separate flag/param) makes the filtered-query-on-rollup
   // combination unrepresentable.
   const useTargetRollup = filterConditions.length === 0;
-  const resolution =
-    timeWindowMinutes <= 360
-      ? 'minutely'
-      : timeWindowMinutes >= DAILY_THRESHOLD_MINUTES
-        ? 'daily'
-        : 'hourly';
+  const resolution = resolutionFor(timeWindowMinutes, allowDailyRollup);
   const tableName = useTargetRollup
     ? `operations_by_target_${resolution}`
     : `operations_${resolution}`;
