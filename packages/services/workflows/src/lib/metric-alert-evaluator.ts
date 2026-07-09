@@ -31,6 +31,7 @@ const MetricAlertRuleRowSchema = z.object({
   severity: z.enum(['INFO', 'WARNING', 'CRITICAL']),
   state: z.enum(['NORMAL', 'PENDING', 'FIRING', 'RECOVERING']),
   stateChangedAt: z.string().nullable(),
+  lastEvaluatedAt: z.string().nullable(),
   confirmationMinutes: z.number(),
   savedFilterId: z.string().nullable(),
   // The attached saved filter's `filters` jsonb (or null). Kept as `unknown` so a
@@ -167,6 +168,7 @@ export async function fetchEnabledRules(pg: PostgresDatabasePool): Promise<Metri
       , r."severity"
       , r."state"
       , to_json(r."state_changed_at") as "stateChangedAt"
+      , to_json(r."last_evaluated_at") as "lastEvaluatedAt"
       , r."confirmation_minutes" as "confirmationMinutes"
       , r."saved_filter_id" as "savedFilterId"
       , sf."filters" as "savedFilterFilters"
@@ -194,6 +196,32 @@ export function groupRulesByQuery(
     }
   }
   return groups;
+}
+
+// Minimum minutes between evaluations, derived from the window. Long windows
+// barely move per minute, so they run less often; the interval stays well below
+// the window so confirmationMinutes semantics still hold.
+export function evaluationIntervalMinutes(timeWindowMinutes: number): number {
+  if (timeWindowMinutes <= 60) return 1; // ≤ 1h window: every tick (unchanged)
+  if (timeWindowMinutes <= 360) return 5; // ≤ 6h window: every 5 min
+  if (timeWindowMinutes <= 1440) return 15; // ≤ 24h window: every 15 min
+  return 30; // > 24h (7d, 30d): every 30 min
+}
+
+// Whether a rule is due on the tick at evaluationTime. PENDING/RECOVERING rules
+// stay at 1-min resolution so the confirmationMinutes dwell is sampled every
+// tick; a never-evaluated rule is always due.
+export function isRuleDue(
+  rule: Pick<MetricAlertRuleRow, 'timeWindowMinutes' | 'lastEvaluatedAt' | 'state'>,
+  evaluationTime: Date,
+): boolean {
+  if (rule.state === 'PENDING' || rule.state === 'RECOVERING') return true;
+  if (!rule.lastEvaluatedAt) return true;
+  const intervalMs = evaluationIntervalMinutes(rule.timeWindowMinutes) * 60_000;
+  const lastMs = new Date(rule.lastEvaluatedAt).getTime();
+  // Small tolerance so an exactly-interval-old rule isn't skipped on sub-second
+  // jitter. Fires up to ~1 tick early, never late.
+  return evaluationTime.getTime() - lastMs >= intervalMs - 1_000;
 }
 
 // Validated shape of the saved-filter `filters` jsonb that the evaluator applies.
