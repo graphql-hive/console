@@ -3,10 +3,12 @@ import { printWithValues, type SqlValue } from '@hive/clickhouse';
 import type { ClickHouseClient } from './clickhouse-client.js';
 import {
   buildSavedFilterConditions,
+  deriveGroupNeeds,
   evaluationIntervalMinutes,
   groupRulesByQuery,
   isRuleDue,
   queryClickHouseWindows,
+  type GroupNeeds,
   type MetricAlertRuleRow,
 } from './metric-alert-evaluator.js';
 
@@ -199,6 +201,63 @@ describe('buildSavedFilterConditions', () => {
   });
 });
 
+describe('deriveGroupNeeds', () => {
+  const { logger } = makeLogger();
+
+  test('error/traffic-only group needs neither duration column nor previous window', () => {
+    const n = deriveGroupNeeds(
+      [makeRule({ type: 'ERROR_RATE' }), makeRule({ type: 'TRAFFIC' })],
+      logger,
+    );
+    expect(n).toMatchObject({
+      needsPreviousWindow: false,
+      needsAverage: false,
+      needsPercentiles: false,
+    });
+  });
+
+  test('a single PERCENTAGE_CHANGE rule flips the whole group to fetch the previous window', () => {
+    const n = deriveGroupNeeds(
+      [
+        makeRule({ thresholdType: 'FIXED_VALUE' }),
+        makeRule({ thresholdType: 'PERCENTAGE_CHANGE' }),
+      ],
+      logger,
+    );
+    expect(n.needsPreviousWindow).toBe(true);
+  });
+
+  test('LATENCY metrics select their columns; AVG and percentiles are independent', () => {
+    expect(deriveGroupNeeds([makeRule({ type: 'LATENCY', metric: 'AVG' })], logger)).toMatchObject({
+      needsAverage: true,
+      needsPercentiles: false,
+    });
+    expect(deriveGroupNeeds([makeRule({ type: 'LATENCY', metric: 'P95' })], logger)).toMatchObject({
+      needsAverage: false,
+      needsPercentiles: true,
+    });
+    // A mixed AVG + percentile latency group needs both.
+    expect(
+      deriveGroupNeeds(
+        [
+          makeRule({ type: 'LATENCY', metric: 'AVG' }),
+          makeRule({ type: 'LATENCY', metric: 'P99' }),
+        ],
+        logger,
+      ),
+    ).toMatchObject({ needsAverage: true, needsPercentiles: true });
+  });
+
+  test('builds filter conditions from the representative saved filter', () => {
+    const filters = { clientFilters: [{ name: 'web', versions: null }] };
+    const filtered = deriveGroupNeeds([makeRule({ savedFilterFilters: filters })], logger);
+    expect(filtered.filterConditions.length).toBeGreaterThan(0);
+    expect(
+      deriveGroupNeeds([makeRule({ savedFilterFilters: null })], logger).filterConditions,
+    ).toEqual([]);
+  });
+});
+
 describe('queryClickHouseWindows', () => {
   function captureClient() {
     const calls: Array<{ sql: string; queryId: string; params?: Record<string, string> }> = [];
@@ -214,9 +273,19 @@ describe('queryClickHouseWindows', () => {
   const evalTime = new Date('2024-06-01T12:00:00.000Z');
   const target = '11111111-1111-1111-1111-111111111111';
 
+  // Full query shape by default (both windows, both duration columns, no filter);
+  // override just the field a test exercises.
+  const needs = (overrides: Partial<GroupNeeds> = {}): GroupNeeds => ({
+    filterConditions: [],
+    needsPreviousWindow: true,
+    needsAverage: true,
+    needsPercentiles: true,
+    ...overrides,
+  });
+
   test('no filter -> target-keyed minutely rollup, no hash/client predicate, only target bound', async () => {
     const { clickhouse, calls } = captureClient();
-    await queryClickHouseWindows(clickhouse, target, 60, [], evalTime);
+    await queryClickHouseWindows(clickhouse, target, 60, evalTime, needs());
     const { sql, params } = calls[0];
     // Unfiltered -> the target-keyed rollup. It dropped the hash/client
     // dimensions, so the query must emit no hash/client predicate.
@@ -235,7 +304,13 @@ describe('queryClickHouseWindows', () => {
       { clientFilters: [{ name: 'web', versions: null }] },
       makeLogger().logger,
     );
-    await queryClickHouseWindows(clickhouse, target, 60, conds, evalTime);
+    await queryClickHouseWindows(
+      clickhouse,
+      target,
+      60,
+      evalTime,
+      needs({ filterConditions: conds }),
+    );
     const { sql, params } = calls[0];
     // A filtered query MUST stay on the legacy table — the rollup has no
     // hash/client columns to predicate on.
@@ -252,16 +327,16 @@ describe('queryClickHouseWindows', () => {
 
   test('window > 360 minutes reads the hourly rollup', async () => {
     const { clickhouse, calls } = captureClient();
-    await queryClickHouseWindows(clickhouse, target, 720, [], evalTime);
+    await queryClickHouseWindows(clickhouse, target, 720, evalTime, needs());
     expect(calls[0].sql).toContain('FROM operations_by_target_hourly');
   });
 
   test('windows below 7 days stay on the hourly rollup', async () => {
     const { clickhouse, calls } = captureClient();
     // 1 day, 3 days, and one minute under the 7-day cutoff all read hourly.
-    await queryClickHouseWindows(clickhouse, target, 1440, [], evalTime);
-    await queryClickHouseWindows(clickhouse, target, 4320, [], evalTime);
-    await queryClickHouseWindows(clickhouse, target, 10079, [], evalTime);
+    await queryClickHouseWindows(clickhouse, target, 1440, evalTime, needs());
+    await queryClickHouseWindows(clickhouse, target, 4320, evalTime, needs());
+    await queryClickHouseWindows(clickhouse, target, 10079, evalTime, needs());
     for (const call of calls) {
       expect(call.sql).toContain('FROM operations_by_target_hourly');
     }
@@ -269,7 +344,7 @@ describe('queryClickHouseWindows', () => {
 
   test('windows >= 7 days read the daily rollup (unfiltered -> by_target)', async () => {
     const { clickhouse, calls } = captureClient();
-    await queryClickHouseWindows(clickhouse, target, 10080, [], evalTime);
+    await queryClickHouseWindows(clickhouse, target, 10080, evalTime, needs());
     const { sql } = calls[0];
     expect(sql).toContain('FROM operations_by_target_daily');
     expect(sql).toContain('quantilesTDigestMerge(');
@@ -281,7 +356,13 @@ describe('queryClickHouseWindows', () => {
       { clientFilters: [{ name: 'web', versions: null }] },
       makeLogger().logger,
     );
-    await queryClickHouseWindows(clickhouse, target, 43200, conds, evalTime);
+    await queryClickHouseWindows(
+      clickhouse,
+      target,
+      43200,
+      evalTime,
+      needs({ filterConditions: conds }),
+    );
     const { sql } = calls[0];
     expect(sql).toContain('FROM operations_daily');
     expect(sql).not.toContain('_by_target');
@@ -292,7 +373,13 @@ describe('queryClickHouseWindows', () => {
 
   test('absolute-only groups skip the previous window (1x scan, constant label)', async () => {
     const { clickhouse, calls } = captureClient();
-    const result = await queryClickHouseWindows(clickhouse, target, 60, [], evalTime, false);
+    const result = await queryClickHouseWindows(
+      clickhouse,
+      target,
+      60,
+      evalTime,
+      needs({ needsPreviousWindow: false }),
+    );
     const { sql } = calls[0];
     // Single-window query: constant 'current' label, no previous branch.
     expect(sql).toContain("'current' as window");
@@ -309,7 +396,13 @@ describe('queryClickHouseWindows', () => {
 
   test('groups needing the previous window fetch both (default)', async () => {
     const { clickhouse, calls } = captureClient();
-    await queryClickHouseWindows(clickhouse, target, 60, [], evalTime, true);
+    await queryClickHouseWindows(
+      clickhouse,
+      target,
+      60,
+      evalTime,
+      needs({ needsPreviousWindow: true }),
+    );
     const { sql } = calls[0];
     expect(sql).toContain("ELSE 'previous'");
     const anchor = evalTime.getTime();
@@ -319,7 +412,13 @@ describe('queryClickHouseWindows', () => {
 
   test('groups needing neither duration column select NULL placeholders', async () => {
     const { clickhouse, calls } = captureClient();
-    await queryClickHouseWindows(clickhouse, target, 60, [], evalTime, true, false, false);
+    await queryClickHouseWindows(
+      clickhouse,
+      target,
+      60,
+      evalTime,
+      needs({ needsAverage: false, needsPercentiles: false }),
+    );
     const { sql } = calls[0];
     expect(sql).toContain('NULL as average');
     expect(sql).toContain('NULL as percentiles');
@@ -329,7 +428,13 @@ describe('queryClickHouseWindows', () => {
 
   test('percentile groups select the quantiles column; avg still skipped', async () => {
     const { clickhouse, calls } = captureClient();
-    await queryClickHouseWindows(clickhouse, target, 60, [], evalTime, true, false, true);
+    await queryClickHouseWindows(
+      clickhouse,
+      target,
+      60,
+      evalTime,
+      needs({ needsAverage: false, needsPercentiles: true }),
+    );
     const { sql } = calls[0];
     expect(sql).toContain('duration_quantiles');
     expect(sql).toContain('NULL as average');
@@ -337,7 +442,13 @@ describe('queryClickHouseWindows', () => {
 
   test('avg groups select avgMerge; percentiles skipped', async () => {
     const { clickhouse, calls } = captureClient();
-    await queryClickHouseWindows(clickhouse, target, 60, [], evalTime, true, true, false);
+    await queryClickHouseWindows(
+      clickhouse,
+      target,
+      60,
+      evalTime,
+      needs({ needsAverage: true, needsPercentiles: false }),
+    );
     const { sql } = calls[0];
     expect(sql).toContain('avgMerge(duration_avg) as average');
     expect(sql).toContain('NULL as percentiles');

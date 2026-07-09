@@ -4,7 +4,7 @@ import { psql } from '@hive/postgres';
 import { SpanKind, SpanStatusCode, trace } from '@hive/service-common';
 import { defineTask, implementTask } from '../kit.js';
 import {
-  buildSavedFilterConditions,
+  deriveGroupNeeds,
   evaluateRule,
   fetchEnabledRules,
   groupRulesByQuery,
@@ -70,7 +70,7 @@ export const task = implementTask(EvaluateMetricAlertRulesTask, async args => {
   let filteredGroups = 0;
   let filteredRules = 0;
   for (const group of groups.values()) {
-    if (buildSavedFilterConditions(group[0].savedFilterFilters, logger).length > 0) {
+    if (deriveGroupNeeds(group, logger).filterConditions.length > 0) {
       filteredGroups += 1;
       filteredRules += group.length;
     }
@@ -108,23 +108,11 @@ export const task = implementTask(EvaluateMetricAlertRulesTask, async args => {
   }> {
     const representative = groupRules[0];
 
-    // All rules in a group share the same saved filter (it's part of the group key),
-    // so build the ClickHouse conditions once from the representative.
-    // A malformed filter yields no conditions (evaluates unfiltered) and is logged,
-    // isolating the failure to this group.
-    const filterConditions = buildSavedFilterConditions(representative.savedFilterFilters, logger);
-
-    // Only PERCENTAGE_CHANGE rules compare against the prior window. If no rule
-    // in the group is one, skip fetching it (half the scan) and persist a null
-    // previousValue. Any percentage-change rule flips the whole group back to
-    // fetching both windows.
-    const needsPreviousWindow = groupRules.some(r => r.thresholdType === 'PERCENTAGE_CHANGE');
-
-    // Only LATENCY rules read the duration columns; skip the heavy percentile
-    // column unless a percentile-metric LATENCY rule is present, and avgMerge
-    // unless an AVG-metric one is. Pure error/traffic groups fetch neither.
-    const needsPercentiles = groupRules.some(r => r.type === 'LATENCY' && r.metric !== 'AVG');
-    const needsAverage = groupRules.some(r => r.type === 'LATENCY' && r.metric === 'AVG');
+    // Derive the query shape once: the saved filter, whether to fetch the prior
+    // window, and which duration columns to read. Shared with the gauge loop
+    // above so "what a group needs" lives in one place.
+    const needs = deriveGroupNeeds(groupRules, logger);
+    const { needsPreviousWindow, needsPercentiles } = needs;
 
     // startActiveSpan makes this span the current OTel context for the
     // duration of the callback, so the slonik PG interceptor and the
@@ -156,11 +144,8 @@ export const task = implementTask(EvaluateMetricAlertRulesTask, async args => {
               clickhouse,
               representative.targetId,
               representative.timeWindowMinutes,
-              filterConditions,
               evaluationTime,
-              needsPreviousWindow,
-              needsAverage,
-              needsPercentiles,
+              needs,
             );
           } catch (error) {
             logger.error(

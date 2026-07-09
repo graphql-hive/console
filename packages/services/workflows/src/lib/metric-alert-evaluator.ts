@@ -285,23 +285,48 @@ export function buildSavedFilterConditions(rawFilters: unknown, logger: Logger):
   });
 }
 
+// The window query's shape, derived once from a group's rules. Metric and
+// threshold type aren't part of the group key, so a group can mix them; each
+// flag is the union across the group (fetch/compute if ANY rule needs it).
+export type GroupNeeds = {
+  // Saved-filter predicates. Empty = unfiltered (reads the cheaper by_target
+  // rollups); non-empty forces the legacy tables that keep hash/client dims.
+  filterConditions: SqlValue[];
+  // Any PERCENTAGE_CHANGE rule needs the prior window to compare against;
+  // absolute-only groups skip it (half the scan) and persist previousValue null.
+  needsPreviousWindow: boolean;
+  // Which duration columns a LATENCY rule reads. A group with none skips both,
+  // so ClickHouse never touches the heavy duration_quantiles blob.
+  needsAverage: boolean;
+  needsPercentiles: boolean;
+};
+
+// All rules in a group share a saved filter (it's part of the group key), so the
+// filter is built once from the representative. A malformed filter yields no
+// conditions (evaluates unfiltered) and is logged, isolating the failure here.
+export function deriveGroupNeeds(groupRules: MetricAlertRuleRow[], logger: Logger): GroupNeeds {
+  return {
+    filterConditions: buildSavedFilterConditions(groupRules[0].savedFilterFilters, logger),
+    needsPreviousWindow: groupRules.some(r => r.thresholdType === 'PERCENTAGE_CHANGE'),
+    needsAverage: groupRules.some(r => r.type === 'LATENCY' && r.metric === 'AVG'),
+    needsPercentiles: groupRules.some(r => r.type === 'LATENCY' && r.metric !== 'AVG'),
+  };
+}
+
 export async function queryClickHouseWindows(
   clickhouse: ClickHouseClient,
   targetId: string,
   timeWindowMinutes: number,
-  filterConditions: SqlValue[],
   // Anchor windows to the cron's scheduled run time (graphile-worker's
   // job.run_at), not wall-clock now. If the worker is backed up and picks
   // this job up late, using wall-clock would shift the queried window
   // forward and could miss the spike that should have fired the alert.
   evaluationTime: Date,
-  // False = scan only the current window, return previous = null. Default true.
-  needsPreviousWindow: boolean = true,
-  // False = select `NULL as <col>` so ClickHouse doesn't read that duration
-  // column. Default true. The caller decides all three per group (processGroup).
-  needsAverage: boolean = true,
-  needsPercentiles: boolean = true,
+  // What the group's rules actually read, so the query scans the fewest
+  // windows/columns. Derived once per group by deriveGroupNeeds.
+  needs: GroupNeeds,
 ): Promise<{ current: ClickHouseWindowRow | null; previous: ClickHouseWindowRow | null }> {
+  const { filterConditions, needsPreviousWindow, needsAverage, needsPercentiles } = needs;
   const anchorMs = evaluationTime.getTime();
   const offsetMs = 60_000;
   const windowMs = timeWindowMinutes * 60_000;
