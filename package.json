@@ -14,7 +14,7 @@
   "private": true,
   "packageManager": "pnpm@10.33.2+sha512.a90faf6feeab71ad6c6e57f94e0fe1a12f5dcc22cd754db40ae9593eb6a3e0b6b12e3540218bb37ae083404b1f2ce6db2a4121e979829b4aff94b99f49da1cf8",
   "engines": {
-    "node": ">=24.14.1",
+    "node": ">=24.17.0",
     "pnpm": ">=10.33.2"
   },
   "scripts": {
@@ -82,7 +82,7 @@
     "@graphql-tools/load": "8.1.2",
     "@manypkg/get-packages": "2.2.2",
     "@parcel/watcher": "2.5.1",
-    "@playwright/test": "1.59.1",
+    "@playwright/test": "1.60.0",
     "@sentry/cli": "2.40.0",
     "@swc/core": "1.13.5",
     "@theguild/eslint-config": "0.12.1",
@@ -134,8 +134,8 @@
       "mjml-core@4.14.0>html-minifier": "-",
       "mjml-cli@4.14.0>html-minifier": "-",
       "@fastify/vite@6>vite": "-",
-      "ws@^8.0.0": "^8.18.0",
-      "ws@*": ">=8.18.0 || >=7.5.10 || >=6.2.3 || >=5.2.4",
+      "ws@^8.0.0": "^8.21.0",
+      "ws@*": ">=8.21.0 || >=7.5.10 || >=6.2.3 || >=5.2.4",
       "cookie@<0.7.0": "0.7.2",
       "tar-fs": "2.1.4",
       "ip": "npm:neoip@2.1.0",
@@ -167,11 +167,17 @@
       "fast-uri@2.x.x": "3.x.x",
       "ioredis": "5.10.1",
       "protobufjs@8.x.x": "8.6.4",
-      "protobufjs@7.x.x": "7.6.1",
+      "protobufjs@7.x.x": "7.6.3",
       "@opentelemetry/exporter-jaeger": "-",
       "uuid@<14.x.x": "^14.0.0",
       "tmp@<0.2.7": "0.2.7",
-      "@babel/core": "7.29.7"
+      "@babel/core": "7.29.7",
+      "sha.js@<=2.4.11": ">=2.4.12",
+      "brace-expansion@>=5.0.0 <5.0.6": ">=5.0.6",
+      "@sigstore/core@<=3.2.0": ">=3.2.1",
+      "js-yaml@<3.15.0": "3.15.0",
+      "echarts@<6.1.0": ">=6.1.0",
+      "sigstore@<=4.1.0": ">=4.1.1"
     },
     "patchedDependencies": {
       "mjml-core@4.14.0": "patches/mjml-core@4.14.0.patch",

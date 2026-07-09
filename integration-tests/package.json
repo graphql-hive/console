@@ -12,7 +12,7 @@
     "typecheck": "tsc --noEmit"
   },
   "devDependencies": {
-    "@apollo/gateway": "2.14.0",
+    "@apollo/gateway": "2.14.2",
     "@apollo/server": "5.5.1",
     "@apollo/subgraph": "2.14.0",
     "@aws-sdk/client-s3": "3.1035.0",
