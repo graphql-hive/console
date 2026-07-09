@@ -97,9 +97,9 @@ describe('isRuleDue', () => {
   const ago = (minutes: number) => new Date(evalTime.getTime() - minutes * 60_000).toISOString();
 
   test('a never-evaluated rule is always due', () => {
-    expect(
-      isRuleDue(makeRule({ lastEvaluatedAt: null, timeWindowMinutes: 43200 }), evalTime),
-    ).toBe(true);
+    expect(isRuleDue(makeRule({ lastEvaluatedAt: null, timeWindowMinutes: 43200 }), evalTime)).toBe(
+      true,
+    );
   });
 
   test('30-day rule: due once its 30-min interval has elapsed', () => {
@@ -113,7 +113,10 @@ describe('isRuleDue', () => {
   test('sub-second tolerance only: 5s short of the interval is still not due', () => {
     const almost = new Date(evalTime.getTime() - (30 * 60_000 - 5_000)).toISOString();
     expect(
-      isRuleDue(makeRule({ timeWindowMinutes: 43200, state: 'NORMAL', lastEvaluatedAt: almost }), evalTime),
+      isRuleDue(
+        makeRule({ timeWindowMinutes: 43200, state: 'NORMAL', lastEvaluatedAt: almost }),
+        evalTime,
+      ),
     ).toBe(false);
   });
 
