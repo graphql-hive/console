@@ -3,6 +3,7 @@ import type { MetricAlertRule } from '../../../shared/entities';
 import { AccessError } from '../../../shared/errors';
 import { Session } from '../../auth/lib/authz';
 import {
+  METRIC_ALERT_RULE_DAILY_ROLLUP_THRESHOLD_MINUTES,
   METRIC_ALERT_RULE_TIME_WINDOW_MAX_MINUTES,
   METRIC_ALERT_RULE_TIME_WINDOW_MIN_MINUTES,
   METRIC_ALERT_RULES_PER_TARGET_LIMIT,
@@ -336,6 +337,17 @@ export class MetricAlertRulesManager {
     ) {
       throw new MetricAlertRuleValidationError(
         `Time window must be a whole number of minutes between ${METRIC_ALERT_RULE_TIME_WINDOW_MIN_MINUTES} and ${METRIC_ALERT_RULE_TIME_WINDOW_MAX_MINUTES} (30 days).`,
+      );
+    }
+    // Windows at/above the daily-rollup threshold read whole-day ClickHouse
+    // buckets, so they must be a whole number of days or the window is silently
+    // rounded. The UI presets already satisfy this; this guards direct API callers.
+    if (
+      timeWindowMinutes >= METRIC_ALERT_RULE_DAILY_ROLLUP_THRESHOLD_MINUTES &&
+      timeWindowMinutes % (24 * 60) !== 0
+    ) {
+      throw new MetricAlertRuleValidationError(
+        'Time windows of 7 days or more must be a whole number of days.',
       );
     }
   }

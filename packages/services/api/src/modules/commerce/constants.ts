@@ -53,3 +53,9 @@ export const METRIC_ALERT_RULES_PER_TARGET_LIMIT = 10;
  */
 export const METRIC_ALERT_RULE_TIME_WINDOW_MIN_MINUTES = 1;
 export const METRIC_ALERT_RULE_TIME_WINDOW_MAX_MINUTES = 30 * 24 * 60; // 43200
+
+// Windows at or above this read the daily ClickHouse rollup, whose buckets are
+// whole days. A window this size must therefore be a whole number of days
+// (multiple of 1440 min) or the daily aggregate would silently round it. Mirrors
+// DAILY_THRESHOLD_MINUTES in the workflows evaluator; keep the two in sync.
+export const METRIC_ALERT_RULE_DAILY_ROLLUP_THRESHOLD_MINUTES = 7 * 24 * 60; // 10080
