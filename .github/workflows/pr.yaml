@@ -24,6 +24,9 @@ jobs:
     secrets:
       hiveToken: ${{ secrets.HIVE_TOKEN }}
 
+  changeset-version:
+    uses: ./.github/workflows/changeset-version.yaml
+
   # Build all packages and applications, and creates Docker images
   build:
     name: build
@@ -34,6 +37,7 @@ jobs:
       publishLatest: false
       targets: 'build'
       uploadJavaScriptArtifacts: true
+      latestVersion: ${{ needs.changeset-version.outputs.number }}
     secrets: inherit
 
   # Run db migrations tests

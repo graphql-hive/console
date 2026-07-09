@@ -1,0 +1,27 @@
+on:
+  workflow_call:
+
+jobs:
+  changeset-version:
+    runs-on: ubuntu-22.04
+
+    outputs:
+      number: ${{ steps.package-version.outputs.version }}
+
+    steps:
+      - name: checkout
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
+
+      - name: setup environment
+        uses: ./.github/actions/setup
+        with:
+          actor: changeset-version
+
+      - name: Apply changeset version
+        run: pnpm changeset version
+
+      - name: Get Version from package.json
+        id: package-version
+        run: |
+          VERSION=$(jq -r '.version' package.json)
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
