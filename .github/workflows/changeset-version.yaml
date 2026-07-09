@@ -4,7 +4,6 @@ on:
 jobs:
   changeset-version:
     runs-on: ubuntu-22.04
-
     outputs:
       number: ${{ steps.package-version.outputs.version }}
 
@@ -19,6 +18,8 @@ jobs:
 
       - name: Apply changeset version
         run: pnpm changeset version
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Get Version from package.json
         id: package-version
