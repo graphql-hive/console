@@ -1,11 +1,15 @@
 on:
   workflow_call:
+    outputs:
+      version:
+        description: 'The Hive package version'
+        value: ${{ jobs.changeset-version.outputs.version }}
 
 jobs:
   changeset-version:
     runs-on: ubuntu-22.04
     outputs:
-      number: ${{ steps.package-version.outputs.version }}
+      version: ${{ steps.package-version.outputs.version }}
 
     steps:
       - name: checkout
@@ -24,5 +28,5 @@ jobs:
       - name: Get Version from package.json
         id: package-version
         run: |
-          VERSION=$(jq -r '.version' package.json)
+          VERSION=$(jq -r '.version' deployment/package.json)
           echo "version=$VERSION" >> $GITHUB_OUTPUT
