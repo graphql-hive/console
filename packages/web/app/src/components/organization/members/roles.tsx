@@ -538,8 +538,8 @@ function OrganizationMemberRoleCreator(props: {
                 <Button
                   type="submit"
                   onClick={async () => {
-                    if (!form.formState.isValid) {
-                      await form.trigger();
+                    const isValid = await form.trigger();
+                    if (!isValid) {
                       return;
                     }
                     setState('confirm');
