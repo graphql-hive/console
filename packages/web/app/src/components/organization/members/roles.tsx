@@ -141,8 +141,8 @@ function OrganizationMemberRoleEditor(props: {
   }, []);
 
   async function onSubmit(data: RoleFormValues) {
-    if (!form.formState.isValid) {
-      await form.trigger();
+    const isValid = await form.trigger();
+    if (!isValid) {
       return;
     }
     try {
@@ -213,12 +213,7 @@ function OrganizationMemberRoleEditor(props: {
                   <FormItem>
                     <FormLabel>Name</FormLabel>
                     <FormControl>
-                      <Input
-                        placeholder="Enter a name"
-                        type="text"
-                        autoComplete="off"
-                        {...field}
-                      />
+                      <Input placeholder="Enter a name" type="text" autoComplete="off" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -231,11 +226,7 @@ function OrganizationMemberRoleEditor(props: {
                   <FormItem>
                     <FormLabel>Description</FormLabel>
                     <FormControl>
-                      <Textarea
-                        placeholder="Enter a description"
-                        autoComplete="off"
-                        {...field}
-                      />
+                      <Textarea placeholder="Enter a description" autoComplete="off" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
