@@ -82,7 +82,7 @@
     "@graphql-tools/load": "8.1.2",
     "@manypkg/get-packages": "2.2.2",
     "@parcel/watcher": "2.5.1",
-    "@playwright/test": "1.59.1",
+    "@playwright/test": "1.60.0",
     "@sentry/cli": "2.40.0",
     "@swc/core": "1.13.5",
     "@theguild/eslint-config": "0.12.1",
