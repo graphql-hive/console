@@ -11,6 +11,7 @@ import {
   isRuleDue,
   queryClickHouseWindows,
 } from '../lib/metric-alert-evaluator.js';
+import { metricAlertEnabledRules, metricAlertRuleGroups } from '../metrics.js';
 
 // How many groups to evaluate in parallel. Each group = 1 ClickHouse round-trip
 // plus a per-rule state-machine evaluation that holds a Postgres connection for
@@ -58,6 +59,23 @@ export const task = implementTask(EvaluateMetricAlertRulesTask, async args => {
   // Evaluate every enabled rule. The org feature flag gates rule creation in
   // the API, not evaluation here; the per-rule `enabled` column is the gate.
   const rules = await fetchEnabledRules(context.pg);
+  const groups = groupRulesByQuery(rules);
+
+  // Population gauges, refreshed every tick from the full enabled inventory so
+  // Grafana can watch the more expensive with-filter rules. Both label values
+  // are set (including 0) so neither retains a stale reading.
+  let filteredGroups = 0;
+  let filteredRules = 0;
+  for (const group of groups.values()) {
+    if (group[0].savedFilterId != null) {
+      filteredGroups += 1;
+      filteredRules += group.length;
+    }
+  }
+  metricAlertRuleGroups.set({ filtered: 'true' }, filteredGroups);
+  metricAlertRuleGroups.set({ filtered: 'false' }, groups.size - filteredGroups);
+  metricAlertEnabledRules.set({ filtered: 'true' }, filteredRules);
+  metricAlertEnabledRules.set({ filtered: 'false' }, rules.length - filteredRules);
 
   if (rules.length === 0) {
     logger.debug('No enabled metric alert rules found');
@@ -69,7 +87,6 @@ export const task = implementTask(EvaluateMetricAlertRulesTask, async args => {
   // Evaluate only groups with at least one due member. Members of a group share
   // a window (so one cadence), and the batched UPDATE below keeps their
   // last_evaluated_at aligned, so a group is due as a unit.
-  const groups = groupRulesByQuery(rules);
   const dueGroupList = [...groups.values()].filter(group =>
     group.some(rule => isRuleDue(rule, evaluationTime)),
   );
