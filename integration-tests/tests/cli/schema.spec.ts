@@ -1348,3 +1348,249 @@ test.concurrent('schema:check works with federated subgraphs', async () => {
 
   await server.close();
 });
+
+test.concurrent(
+  'schema:check errors for dangerous changes when upgraded to breaking changes (fail all)',
+  async ({ expect }) => {
+    const { createOrg } = await initSeed().createOwner();
+    const { inviteAndJoinMember, createProject } = await createOrg();
+    await inviteAndJoinMember();
+    const {
+      createTargetAccessToken,
+      updateTargetFailingDangerousChanges,
+      updateTargetDangerousChangeClassification,
+      target,
+    } = await createProject(ProjectType.Single);
+    const { secret } = await createTargetAccessToken({});
+    const cli = createCLI({
+      readonly: secret,
+      readwrite: secret,
+    });
+
+    // enable: dangerous change -> breaking
+    await updateTargetDangerousChangeClassification({
+      failDiffOnDangerousChange: true,
+      target,
+    });
+    /** Explicitly specify failing dangerous type condition */
+    await updateTargetFailingDangerousChanges({
+      all: true,
+      failingTypes: [],
+      target,
+    });
+
+    const sdl = /* GraphQL */ `
+      type Query {
+        users: [User!]
+      }
+
+      type User {
+        id: ID!
+        name: String!
+        email: String!
+      }
+
+      enum UserType {
+        CUSTOMER
+      }
+    `;
+
+    await expect(
+      cli.publish({
+        sdl,
+        commit: 'push1',
+        expect: 'latest-composable',
+      }),
+    ).resolves.toMatchSnapshot('schemaPublish (initial)');
+
+    // add an enum value
+    const sdl2 = /* GraphQL */ `
+      type Query {
+        users: [User!]
+      }
+
+      type User {
+        id: ID!
+        name: String!
+        email: String!
+      }
+
+      enum UserType {
+        CUSTOMER
+        ADMIN
+      }
+    `;
+
+    const output = await cli.check({
+      sdl: sdl2,
+      expect: 'rejected',
+    });
+    /** remove colors */
+    const cleanOutput = output.replace(/\x1b\[[0-9;]*m/g, '');
+    expect(cleanOutput).toMatch(/Enum value ADMIN was added to enum UserType/);
+  },
+);
+
+test.concurrent(
+  'schema:check errors for dangerous changes when upgraded to breaking changes (fail specific change type)',
+  async ({ expect }) => {
+    const { createOrg } = await initSeed().createOwner();
+    const { inviteAndJoinMember, createProject } = await createOrg();
+    await inviteAndJoinMember();
+    const {
+      createTargetAccessToken,
+      updateTargetFailingDangerousChanges,
+      updateTargetDangerousChangeClassification,
+      target,
+    } = await createProject(ProjectType.Single);
+    const { secret } = await createTargetAccessToken({});
+    const cli = createCLI({
+      readonly: secret,
+      readwrite: secret,
+    });
+
+    // enable: dangerous change -> breaking
+    await updateTargetDangerousChangeClassification({
+      failDiffOnDangerousChange: true,
+      target,
+    });
+    /** Explicitly specify failing dangerous type condition */
+    await updateTargetFailingDangerousChanges({
+      all: false,
+      failingTypes: [GraphQLSchema.DangerousChangeType.EnumValueAdded],
+      target,
+    });
+
+    const sdl = /* GraphQL */ `
+      type Query {
+        users: [User!]
+      }
+
+      type User {
+        id: ID!
+        name: String!
+        email: String!
+      }
+
+      enum UserType {
+        CUSTOMER
+      }
+    `;
+
+    await expect(
+      cli.publish({
+        sdl,
+        commit: 'push1',
+        expect: 'latest-composable',
+      }),
+    ).resolves.toMatchSnapshot('schemaPublish (initial)');
+
+    // add an enum value
+    const sdl2 = /* GraphQL */ `
+      type Query {
+        users: [User!]
+      }
+
+      type User {
+        id: ID!
+        name: String!
+        email: String!
+      }
+
+      enum UserType {
+        CUSTOMER
+        ADMIN
+      }
+    `;
+
+    const output = await cli.check({
+      sdl: sdl2,
+      expect: 'rejected',
+    });
+    /** remove colors */
+    const cleanOutput = output.replace(/\x1b\[[0-9;]*m/g, '');
+    expect(cleanOutput).toMatch(/Enum value ADMIN was added to enum UserType/);
+  },
+);
+
+test.concurrent(
+  'schema:check passes for dangerous changes when upgraded to breaking changes, if type is not in the failing list',
+  async ({ expect }) => {
+    const { createOrg } = await initSeed().createOwner();
+    const { inviteAndJoinMember, createProject } = await createOrg();
+    await inviteAndJoinMember();
+    const {
+      createTargetAccessToken,
+      updateTargetFailingDangerousChanges,
+      updateTargetDangerousChangeClassification,
+      target,
+    } = await createProject(ProjectType.Single);
+    const { secret } = await createTargetAccessToken({});
+    const cli = createCLI({
+      readonly: secret,
+      readwrite: secret,
+    });
+
+    // enable: dangerous change -> breaking
+    await updateTargetDangerousChangeClassification({
+      failDiffOnDangerousChange: true,
+      target,
+    });
+    /** Explicitly specify failing dangerous type condition */
+    await updateTargetFailingDangerousChanges({
+      all: false,
+      failingTypes: [GraphQLSchema.DangerousChangeType.DirectiveArgumentDefaultValueChanged],
+      target,
+    });
+
+    const sdl = /* GraphQL */ `
+      type Query {
+        users: [User!]
+      }
+
+      type User {
+        id: ID!
+        name: String!
+        email: String!
+      }
+
+      enum UserType {
+        CUSTOMER
+      }
+    `;
+
+    await expect(
+      cli.publish({
+        sdl,
+        commit: 'push1',
+        expect: 'latest-composable',
+      }),
+    ).resolves.toMatchSnapshot('schemaPublish (initial)');
+
+    // add an enum value
+    const sdl2 = /* GraphQL */ `
+      type Query {
+        users: [User!]
+      }
+
+      type User {
+        id: ID!
+        name: String!
+        email: String!
+      }
+
+      enum UserType {
+        CUSTOMER
+        ADMIN
+      }
+    `;
+
+    const output = await cli.check({
+      sdl: sdl2,
+      expect: 'approved',
+    });
+    /** remove colors */
+    const cleanOutput = output.replace(/\x1b\[[0-9;]*m/g, '');
+    expect(cleanOutput).toMatch(/Enum value ADMIN was added to enum UserType/);
+  },
+);
