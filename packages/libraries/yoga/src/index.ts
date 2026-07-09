@@ -1,6 +1,5 @@
 import { DocumentNode, ExecutionArgs, GraphQLError, GraphQLSchema, Kind, parse } from 'graphql';
 import { _createLRUCache, YogaServer, type GraphQLParams, type Plugin } from 'graphql-yoga';
-import { lru } from 'tiny-lru';
 import {
   addTypenames,
   autoDisposeSymbol,
@@ -74,9 +73,9 @@ export function useHive(clientOrOptions: HiveClient | YogaPluginOptions): Plugin
         clientOrOptions.usage?.fieldLevelMetricsEnabled) ||
       false;
   const operationCache = fieldLevelMetricsEnabled
-    ? lru<DocumentNode | true>(
-        isHiveClient(clientOrOptions) ? 10_000 : (clientOrOptions.cache ?? 10_000),
-      )
+    ? _createLRUCache<DocumentNode | true>({
+        max: isHiveClient(clientOrOptions) ? 10_000 : (clientOrOptions.cache ?? 10_000),
+      })
     : null;
 
   return {
