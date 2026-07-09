@@ -119,6 +119,13 @@ export const task = implementTask(EvaluateMetricAlertRulesTask, async args => {
           'target.id': representative.targetId,
           'rules.in_group': groupRules.length,
           time_window_minutes: representative.timeWindowMinutes,
+          // Rule intent, so a slow trace is identifiable in TraceQL without
+          // reading db.query. `filter.applied` is the one we most needed.
+          'metric.types': [...new Set(groupRules.map(r => r.type))],
+          'threshold.types': [...new Set(groupRules.map(r => r.thresholdType))],
+          'filter.applied': representative.savedFilterId != null,
+          'window.needs_previous': needsPreviousWindow,
+          'metric.needs_percentiles': needsPercentiles,
         },
       },
       async span => {
