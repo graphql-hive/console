@@ -6,6 +6,7 @@ import {
   DAILY_THRESHOLD_MINUTES,
   deriveGroupNeeds,
   evaluationIntervalMinutes,
+  extractMetricValue,
   groupRulesByQuery,
   isRuleDue,
   queryClickHouseWindows,
@@ -211,6 +212,51 @@ describe('buildSavedFilterConditions', () => {
     const conds = buildSavedFilterConditions({ clientFilters: 'oops' }, logger);
     expect(conds).toEqual([]);
     expect(warnings.length).toBe(1);
+  });
+});
+
+describe('extractMetricValue', () => {
+  const row = (over: Partial<Parameters<typeof extractMetricValue>[0]> = {}) => ({
+    window: 'current' as const,
+    total: '1000',
+    total_ok: '900',
+    average: null,
+    percentiles: null,
+    ...over,
+  });
+
+  test('TRAFFIC returns the total count', () => {
+    expect(extractMetricValue(row(), makeRule({ type: 'TRAFFIC' }))).toBe(1000);
+  });
+
+  test('ERROR_RATE returns the error percentage (0 when no traffic)', () => {
+    expect(extractMetricValue(row(), makeRule({ type: 'ERROR_RATE' }))).toBeCloseTo(10);
+    expect(
+      extractMetricValue(row({ total: '0', total_ok: '0' }), makeRule({ type: 'ERROR_RATE' })),
+    ).toBe(0);
+  });
+
+  test('LATENCY converts the selected column from nanoseconds to ms', () => {
+    const avg = extractMetricValue(
+      row({ average: 1.2e9 }),
+      makeRule({ type: 'LATENCY', metric: 'AVG' }),
+    );
+    expect(avg).toBe(1200);
+    // percentiles tuple is [P75, P90, P95, P99]; P95 is index 2.
+    const p95 = extractMetricValue(
+      row({ percentiles: [1e9, 2e9, 3e9, 4e9] }),
+      makeRule({ type: 'LATENCY', metric: 'P95' }),
+    );
+    expect(p95).toBe(3000);
+  });
+
+  test('a LATENCY rule whose duration column was not selected throws (no silent 0)', () => {
+    expect(() =>
+      extractMetricValue(row({ average: null }), makeRule({ type: 'LATENCY', metric: 'AVG' })),
+    ).toThrow(/duration_avg/);
+    expect(() =>
+      extractMetricValue(row({ percentiles: null }), makeRule({ type: 'LATENCY', metric: 'P95' })),
+    ).toThrow(/duration_quantiles/);
   });
 });
 

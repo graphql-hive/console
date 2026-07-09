@@ -82,7 +82,30 @@ const MINUTES_PER_DAY = 24 * 60; // 1440
 // import); keep the two in sync.
 export const DAILY_THRESHOLD_MINUTES = 7 * MINUTES_PER_DAY; // 10080
 
-function extractMetricValue(row: ClickHouseWindowRow, rule: MetricAlertRuleRow): number {
+// A LATENCY rule forces its duration column into the SELECT (see deriveGroupNeeds),
+// so a null column here means the query shape and the rule disagree: a routing or
+// column-selection bug, never real data (an empty window synthesizes zeros, not
+// null). Throw so it's caught per-group, logged, and retried next tick, instead of
+// reading 0, which renders as 0ms and would silently keep a latency alert from firing.
+function requireColumn<T>(value: T | null, column: string, rule: MetricAlertRuleRow): T {
+  if (value === null) {
+    throw new Error(
+      `Metric alert rule ${rule.id} needs column "${column}" but its window query did not select it`,
+    );
+  }
+  return value;
+}
+
+const PERCENTILE_INDEX = { P75: 0, P90: 1, P95: 2, P99: 3 } as const;
+
+function percentileIndex(metric: MetricAlertRuleRow['metric']): number {
+  if (metric && metric in PERCENTILE_INDEX) {
+    return PERCENTILE_INDEX[metric as keyof typeof PERCENTILE_INDEX];
+  }
+  throw new Error(`Expected a percentile metric (P75-P99), got ${metric}`);
+}
+
+export function extractMetricValue(row: ClickHouseWindowRow, rule: MetricAlertRuleRow): number {
   const total = Number(row.total);
   const totalOk = Number(row.total_ok);
 
@@ -92,22 +115,20 @@ function extractMetricValue(row: ClickHouseWindowRow, rule: MetricAlertRuleRow):
     case 'ERROR_RATE':
       return total > 0 ? ((total - totalOk) / total) * 100 : 0;
     case 'LATENCY': {
-      // A LATENCY rule forces its column to be selected, so these are non-null
-      // when actually read; the `?? 0` is just for the nullable type.
-      const metricMap: Record<string, number> = {
-        AVG: row.average ?? 0,
-        P75: row.percentiles?.[0] ?? 0,
-        P90: row.percentiles?.[1] ?? 0,
-        P95: row.percentiles?.[2] ?? 0,
-        P99: row.percentiles?.[3] ?? 0,
-      };
-      // ClickHouse stores `duration` in nanoseconds, but rule thresholds (the
-      // form input) and every display surface are in
-      // milliseconds. Convert here so the threshold comparison and the persisted
-      // value are in milliseconds and consistent with all of them. Without this,
-      // a ns value (~1.2e9) is compared against a ms threshold (e.g. 4000),
-      // so any non-trivial latency trips the rule.
-      return (rule.metric ? metricMap[rule.metric] : 0) / NS_TO_MS;
+      // Read only the column this metric needs (the other may be a NULL placeholder),
+      // and require it to be present (see requireColumn).
+      const ns =
+        rule.metric === 'AVG'
+          ? requireColumn(row.average, 'duration_avg', rule)
+          : requireColumn(row.percentiles, 'duration_quantiles', rule)[
+              percentileIndex(rule.metric)
+            ];
+      // ClickHouse stores `duration` in nanoseconds, but rule thresholds (the form
+      // input) and every display surface are in milliseconds. Convert here so the
+      // threshold comparison and the persisted value are in ms. Without this, a ns
+      // value (~1.2e9) is compared against a ms threshold (e.g. 4000), so any
+      // non-trivial latency trips the rule.
+      return ns / NS_TO_MS;
     }
   }
 }
