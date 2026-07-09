@@ -354,6 +354,7 @@ describe('GraphQL Hive Plugin', () => {
       {
         data: {
           product: {
+            __typename: GoodieBag,
             id: 1,
           },
         },
