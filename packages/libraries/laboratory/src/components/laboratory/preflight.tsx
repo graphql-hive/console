@@ -272,7 +272,7 @@ export const Preflight = () => {
                             href={tok.value}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="text-blue-400 underline underline-offset-2 break-all hover:opacity-80"
+                            className="break-all text-blue-400 underline underline-offset-2 hover:opacity-80"
                           >
                             {tok.value}
                           </a>
