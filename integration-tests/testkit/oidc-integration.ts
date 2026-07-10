@@ -299,7 +299,7 @@ export async function createOIDCIntegration(args: {
 
           const rawBody = await result.json();
 
-          const body = z
+          const parsed = z
             .object({
               user: z.object({
                 id: z.string(),
@@ -311,7 +311,16 @@ export async function createOIDCIntegration(args: {
                 ),
               }),
             })
-            .parse(rawBody);
+            .safeParse(rawBody);
+
+          if (!parsed.success) {
+            // SuperTokens answers 200 with a non-OK status (e.g. SIGN_IN_UP_NOT_ALLOWED) and no
+            // `user`. Surface the actual body so a flaky sign-in is diagnosable instead of a bare
+            // ZodError that hides why it failed.
+            throw new Error('Unexpected signinup response: ' + JSON.stringify(rawBody));
+          }
+
+          const body = parsed.data;
           const cookies = setCookie.parse(result.headers.getSetCookie());
           return {
             accessToken: cookies.find(c => c.name === 'sAccessToken')?.value ?? '',
