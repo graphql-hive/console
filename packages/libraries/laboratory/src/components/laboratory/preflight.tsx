@@ -1,7 +1,7 @@
 import { useCallback } from 'react';
 import { HistoryIcon, PlayIcon } from 'lucide-react';
 import { runIsolatedLabScript } from '../../lib/preflight';
-import { cn } from '../../lib/utils';
+import { cn, tokenizeUrls } from '../../lib/utils';
 import { Button } from '../ui/button';
 import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from '../ui/empty';
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '../ui/resizable';
@@ -264,7 +264,23 @@ export const Preflight = () => {
                     >
                       {log.level.toUpperCase()}
                     </span>{' '}
-                    <span className="text-xs">{log.message.join(' ')}</span>
+                    <span className="text-xs">
+                      {tokenizeUrls(log.message.join(' ')).map((tok, i) =>
+                        tok.type === 'url' ? (
+                          <a
+                            key={i}
+                            href={tok.value}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-blue-400 underline underline-offset-2 break-all hover:opacity-80"
+                          >
+                            {tok.value}
+                          </a>
+                        ) : (
+                          tok.value
+                        ),
+                      )}
+                    </span>
                   </div>
                 ))}
               </div>
