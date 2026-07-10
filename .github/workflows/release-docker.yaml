@@ -36,4 +36,5 @@ jobs:
       publishSourceMaps: true
       targets: build
       uploadJavaScriptArtifacts: true
+      latestVersion: ${{ needs.version.outputs.number }}
     secrets: inherit
