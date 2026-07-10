@@ -1,0 +1,32 @@
+on:
+  workflow_call:
+    outputs:
+      version:
+        description: 'The Hive package version'
+        value: ${{ jobs.changeset-version.outputs.version }}
+
+jobs:
+  changeset-version:
+    runs-on: ubuntu-22.04
+    outputs:
+      version: ${{ steps.package-version.outputs.version }}
+
+    steps:
+      - name: checkout
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
+
+      - name: setup environment
+        uses: ./.github/actions/setup
+        with:
+          actor: changeset-version
+
+      - name: Apply changeset version
+        run: pnpm changeset version
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Get Version from package.json
+        id: package-version
+        run: |
+          VERSION=$(jq -r '.version' deployment/package.json)
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
