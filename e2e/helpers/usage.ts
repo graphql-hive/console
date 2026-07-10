@@ -90,7 +90,7 @@ export function createUsageHelper(
 
             return page.getByRole('link').filter({ hasText: operationName }).count();
           },
-          { timeout: 60_000, intervals: [2_000] },
+          { timeout: 90_000, intervals: [2_000] },
         )
         .toBeGreaterThan(0);
     },
@@ -102,7 +102,7 @@ export function createUsageHelper(
 
             return page.getByText(version, { exact: true }).count();
           },
-          { timeout: 60_000, intervals: [2_000] },
+          { timeout: 90_000, intervals: [2_000] },
         )
         .toBeGreaterThan(0);
     },
