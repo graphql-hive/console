@@ -7,7 +7,7 @@ import type { UsageHelper } from '../helpers/usage';
 // Each test waits on ClickHouse ingestion through several stacked polls (see helpers/usage.ts).
 // Keep the timeout above the sum of those poll budgets so a slow-but-succeeding poll isn't cut
 // off mid-wait by the per-test deadline.
-test.describe.configure({ mode: 'serial', timeout: 300_000 });
+test.describe.configure({ mode: 'serial', timeout: 120_000 });
 
 type UsageReport = {
   size: number;
