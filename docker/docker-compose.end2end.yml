@@ -47,6 +47,12 @@ services:
     ports:
       - '6379:6379'
 
+  usage-ingestor:
+    environment:
+      # Flush ClickHouse async inserts fast so a report is visible in Insights within the
+      # e2e poll window (prod keeps the default 30s batching).
+      CLICKHOUSE_ASYNC_INSERT_BUSY_TIMEOUT_MS: '1000'
+
   server:
     environment:
       SUPERTOKENS_RATE_LIMIT: '0'
