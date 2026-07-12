@@ -112,8 +112,8 @@ more.
 - APIs: Fastify, GraphQL-Yoga, GraphQL-Codegen, GraphQL-Modules
 - App: React, Vite, Fastify, Tailwind
 - CLI: Oclif
-- Deployment: Docker Compose, Pulumi, Kubernetes, Contour (Envoy), Cloudflare Workers, AWS Lambda
-  and R2
+- Deployment: Docker Compose, Pulumi, Kubernetes, Contour (Envoy), Cloudflare Workers and/or AWS
+  Lambda, R2 and/or any other S3 compatible storage
 - Monitoring: OpenTelemetry, Prometheus, Grafana, Tempo, Sentry
 - Data and messaging: PostgreSQL, Redis, ClickHouse, Kafka/Redpanda, S3-compatible storage
 
