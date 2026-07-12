@@ -220,28 +220,6 @@ target "commerce" {
   ]
 }
 
-target "tokens" {
-  inherits = ["service-base", get_target()]
-  contexts = {
-    dist = "${PWD}/packages/services/tokens/dist"
-    shared = "${PWD}/docker/shared"
-  }
-  args = {
-    SERVICE_DIR_NAME = "@hive/tokens"
-    IMAGE_TITLE = "graphql-hive/tokens"
-    IMAGE_DESCRIPTION = "The tokens service of the GraphQL Hive project."
-    PORT = "3003"
-    HEALTHCHECK_CMD = "wget --spider -q http://127.0.0.1:$${PORT}/_readiness"
-  }
-  tags = [
-    local_image_tag("tokens"),
-    stable_image_tag("tokens"),
-    image_tag("tokens", COMMIT_SHA),
-    image_tag("tokens", COMMIT_SHORT_SHA),
-    image_tag("tokens", BRANCH_NAME)
-  ]
-}
-
 target "usage-ingestor" {
   inherits = ["service-base", get_target()]
   contexts = {
@@ -391,7 +369,6 @@ group "build" {
     "schema",
     "policy",
     "storage",
-    "tokens",
     "usage-ingestor",
     "usage",
     "server",
@@ -409,7 +386,6 @@ group "integration-tests" {
     "schema",
     "policy",
     "storage",
-    "tokens",
     "usage-ingestor",
     "usage",
     "server",

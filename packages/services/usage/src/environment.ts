@@ -31,7 +31,6 @@ const EnvironmentModel = zod.object({
   PORT: emptyString(NumberFromString.optional()),
   SERVER_HOST: emptyString(zod.string().optional()),
   SERVER_HOST_IPV6_ONLY: emptyString(zod.union([zod.literal('1'), zod.literal('0')]).optional()),
-  TOKENS_ENDPOINT: zod.string().url(),
   COMMERCE_ENDPOINT: emptyString(zod.string().url().optional()),
   RATE_LIMIT_TTL: emptyString(NumberFromString.optional()).default(30_000),
   ENVIRONMENT: emptyString(zod.string().optional()),
@@ -190,9 +189,6 @@ export const env = {
     collectorEndpoint: tracing.OPENTELEMETRY_COLLECTOR_ENDPOINT,
   },
   hive: {
-    tokens: {
-      endpoint: base.TOKENS_ENDPOINT,
-    },
     commerce: base.COMMERCE_ENDPOINT
       ? {
           endpoint: base.COMMERCE_ENDPOINT,

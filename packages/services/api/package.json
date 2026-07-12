@@ -11,7 +11,8 @@
     "./modules/auth/providers/supertokens-store": "./src/modules/auth/providers/supertokens-store.ts",
     "./modules/shared/providers/logger": "./src/modules/shared/providers/logger.ts",
     "./modules/shared/providers/redis": "./src/modules/shared/providers/redis.ts",
-    "./modules/schema/providers/schema-version-store": "./src/modules/schema/providers/schema-version-store.ts"
+    "./modules/schema/providers/schema-version-store": "./src/modules/schema/providers/schema-version-store.ts",
+    "./modules/token/providers/target-token-storage": "./src/modules/token/providers/target-token-storage.ts"
   },
   "peerDependencies": {
     "graphql": "^16.0.0",
@@ -33,7 +34,6 @@
     "@hive/schema": "workspace:*",
     "@hive/service-common": "workspace:*",
     "@hive/storage": "workspace:*",
-    "@hive/tokens": "workspace:*",
     "@hive/usage-common": "workspace:*",
     "@hive/usage-ingestor": "workspace:*",
     "@hive/workflows": "workspace:*",
