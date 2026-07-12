@@ -29,14 +29,15 @@ export function createUsageHelper(
   const clickhouseEndpoint = 'http://localhost:8123';
   const clickhouseUser = process.env.CLICKHOUSE_USER ?? 'clickhouse';
   const clickhousePassword = process.env.CLICKHOUSE_PASSWORD ?? 'wowverysecuremuchsecret';
+  const clickhouseAuth = Buffer.from(`${clickhouseUser}:${clickhousePassword}`).toString('base64');
 
   async function flushAsyncInserts() {
+    // Send the SQL in the request body with Basic auth, mirroring
+    // integration-tests/testkit/clickhouse.ts. Passing the query as a URL param POSTs to the
+    // server root, which just returns "Ok." without running anything.
     const response = await request.post(clickhouseEndpoint, {
-      params: { query: 'SYSTEM FLUSH ASYNC INSERT QUEUE' },
-      headers: {
-        'X-ClickHouse-User': clickhouseUser,
-        'X-ClickHouse-Key': clickhousePassword,
-      },
+      data: 'SYSTEM FLUSH ASYNC INSERT QUEUE',
+      headers: { Authorization: `Basic ${clickhouseAuth}` },
     });
     if (!response.ok()) {
       throw new Error(
