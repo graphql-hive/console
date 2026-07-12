@@ -47,11 +47,12 @@ services:
     ports:
       - '6379:6379'
 
-  usage-ingestor:
-    environment:
-      # Flush ClickHouse async inserts fast so a report is visible in Insights within the
-      # e2e poll window (prod keeps the default 30s batching).
-      CLICKHOUSE_ASYNC_INSERT_BUSY_TIMEOUT_MS: '100'
+  clickhouse:
+    # Expose the HTTP interface so the usage e2e helper can force a synchronous flush of the
+    # async insert queue (SYSTEM FLUSH ASYNC INSERT QUEUE), making ingested reports queryable
+    # immediately instead of racing the non-deterministic async-insert flush timer.
+    ports:
+      - '8123:8123'
 
   server:
     environment:
