@@ -4,7 +4,6 @@ export type LaboratorySettings = {
   fetch: {
     credentials: 'include' | 'omit' | 'same-origin';
     timeout?: number;
-    retry?: number;
     useGETForQueries?: boolean;
   };
   subscriptions: {
@@ -22,7 +21,6 @@ export const defaultLaboratorySettings: LaboratorySettings = {
   fetch: {
     credentials: 'same-origin',
     timeout: 10000,
-    retry: 3,
     useGETForQueries: false,
   },
   subscriptions: {
@@ -42,7 +40,6 @@ export const normalizeLaboratorySettings = (
   fetch: {
     credentials: settings?.fetch?.credentials ?? defaultLaboratorySettings.fetch.credentials,
     timeout: settings?.fetch?.timeout ?? defaultLaboratorySettings.fetch.timeout,
-    retry: settings?.fetch?.retry ?? defaultLaboratorySettings.fetch.retry,
     useGETForQueries:
       settings?.fetch?.useGETForQueries ?? defaultLaboratorySettings.fetch.useGETForQueries,
   },

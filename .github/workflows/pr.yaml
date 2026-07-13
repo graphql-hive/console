@@ -24,16 +24,21 @@ jobs:
     secrets:
       hiveToken: ${{ secrets.HIVE_TOKEN }}
 
+  changeset-version:
+    uses: ./.github/workflows/changeset-version.yaml
+
   # Build all packages and applications, and creates Docker images
   build:
     name: build
     uses: ./.github/workflows/build-and-dockerize.yaml
+    needs: changeset-version
     with:
       dockerize: ${{ !github.event.pull_request.head.repo.fork }}
       imageTag: ${{ github.event.pull_request.head.sha }}
       publishLatest: false
       targets: 'build'
       uploadJavaScriptArtifacts: true
+      latestVersion: ${{ needs.changeset-version.outputs.version }}
     secrets: inherit
 
   # Run db migrations tests
@@ -93,7 +98,7 @@ jobs:
       restoreDeletedChangesets: true
       buildScript: build:libraries
       packageManager: pnpm
-      nodeVersion: '24.14'
+      nodeVersion: '24.17'
     secrets:
       githubToken: ${{ secrets.GITHUB_TOKEN }}
       npmToken: ${{ secrets.NPM_TOKEN }}

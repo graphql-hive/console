@@ -141,6 +141,10 @@ function OrganizationMemberRoleEditor(props: {
   }, []);
 
   async function onSubmit(data: RoleFormValues) {
+    const isValid = await form.trigger();
+    if (!isValid) {
+      return;
+    }
     try {
       const result = await updateMemberRole({
         input: {
@@ -249,9 +253,7 @@ function OrganizationMemberRoleEditor(props: {
             <Button
               type="submit"
               onClick={form.handleSubmit(onSubmit)}
-              disabled={
-                !form.formState.isValid || form.formState.isSubmitting || form.formState.disabled
-              }
+              disabled={form.formState.isSubmitting || form.formState.disabled}
             >
               {form.formState.isSubmitting ? 'Creating...' : 'Confirm selection'}
             </Button>
@@ -525,12 +527,14 @@ function OrganizationMemberRoleCreator(props: {
                 </Button>
                 <Button
                   type="submit"
-                  onClick={() => setState('confirm')}
-                  disabled={
-                    !form.formState.isValid ||
-                    form.formState.isSubmitting ||
-                    form.formState.disabled
-                  }
+                  onClick={async () => {
+                    const isValid = await form.trigger();
+                    if (!isValid) {
+                      return;
+                    }
+                    setState('confirm');
+                  }}
+                  disabled={form.formState.isSubmitting || form.formState.disabled}
                 >
                   Confirm selection
                 </Button>
@@ -556,11 +560,7 @@ function OrganizationMemberRoleCreator(props: {
                 <Button
                   type="submit"
                   onClick={form.handleSubmit(onSubmit)}
-                  disabled={
-                    !form.formState.isValid ||
-                    form.formState.isSubmitting ||
-                    form.formState.disabled
-                  }
+                  disabled={form.formState.isSubmitting || form.formState.disabled}
                 >
                   {form.formState.isSubmitting
                     ? 'Creating...'

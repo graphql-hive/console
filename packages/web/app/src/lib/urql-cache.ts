@@ -27,7 +27,12 @@ import {
   type DeleteTokensDocument,
 } from '@/pages/target-settings';
 import { ResultOf, VariablesOf } from '@graphql-typed-document-node/core';
-import { Cache, QueryInput, UpdateResolver } from '@urql/exchange-graphcache';
+import {
+  Cache,
+  OptimisticMutationResolver,
+  QueryInput,
+  UpdateResolver,
+} from '@urql/exchange-graphcache';
 
 const TargetsDocument = graphql(`
   query targets($selector: ProjectSelectorInput!) {
@@ -399,8 +404,15 @@ const addMetricAlertRule: TypedDocumentNodeUpdateResolver<
 };
 
 const updateMetricAlertRule: UpdateResolver = (_result, args, cache) => {
-  const ruleId = (args as { input?: { ruleId?: string } } | null)?.input?.ruleId;
-  if (!ruleId) return;
+  const input = (args as { input?: Record<string, unknown> } | null)?.input;
+  const ruleId = input?.ruleId as string | undefined;
+  if (!input || !ruleId) return;
+  // Skip for a pure enable/disable toggle: the mutation returns the new `enabled`
+  // so graphcache merges it in place; invalidating would evict the entity and flash a refetch.
+  const isEnabledOnlyToggle = Object.keys(input).every(
+    key => key === 'project' || key === 'ruleId' || key === 'enabled',
+  );
+  if (isEnabledOnlyToggle) return;
   cache.invalidate({ __typename: 'MetricAlertRule', id: ruleId });
 };
 
@@ -424,4 +436,32 @@ export const Mutation = {
   deleteSavedFilter,
   addMetricAlertRule,
   updateMetricAlertRule,
+};
+
+const updateMetricAlertRuleOptimistic: OptimisticMutationResolver = args => {
+  const input = (args as { input?: Record<string, unknown> }).input;
+  const ruleId = input?.ruleId as string | undefined;
+  if (!input || !ruleId) return null;
+  // Only the dedicated enable/disable toggle is safe to flip optimistically
+  const isEnabledOnlyToggle = Object.keys(input).every(
+    key => key === 'project' || key === 'ruleId' || key === 'enabled',
+  );
+  if (!isEnabledOnlyToggle) return null;
+  return {
+    __typename: 'UpdateMetricAlertRuleResult',
+    error: null,
+    ok: {
+      __typename: 'UpdateMetricAlertRuleOk',
+      updatedMetricAlertRule: {
+        __typename: 'MetricAlertRule',
+        id: ruleId,
+        enabled: input.enabled as boolean,
+        updatedAt: new Date().toISOString(),
+      },
+    },
+  };
+};
+
+export const Optimistic = {
+  updateMetricAlertRule: updateMetricAlertRuleOptimistic,
 };

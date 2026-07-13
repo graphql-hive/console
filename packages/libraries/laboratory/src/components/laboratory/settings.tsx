@@ -13,7 +13,6 @@ const settingsFormSchema = z.object({
   fetch: z.object({
     credentials: z.enum(['include', 'omit', 'same-origin']),
     timeout: z.number().optional(),
-    retry: z.number().optional(),
     useGETForQueries: z.boolean().optional(),
   }),
   subscriptions: z.object({
@@ -85,25 +84,6 @@ export const Settings = () => {
                   return (
                     <Field>
                       <FieldLabel htmlFor={field.name}>Timeout</FieldLabel>
-                      <Input
-                        type="number"
-                        name={field.name}
-                        value={field.state.value ?? ''}
-                        onChange={e =>
-                          field.handleChange(
-                            e.target.value === '' ? undefined : Number(e.target.value),
-                          )
-                        }
-                      />
-                    </Field>
-                  );
-                }}
-              </form.Field>
-              <form.Field name="fetch.retry">
-                {field => {
-                  return (
-                    <Field>
-                      <FieldLabel htmlFor={field.name}>Retry</FieldLabel>
                       <Input
                         type="number"
                         name={field.name}

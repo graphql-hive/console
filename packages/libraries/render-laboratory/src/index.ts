@@ -20,7 +20,6 @@ const mapGraphiQLOptionsToLaboratoryProps = (opts?: GraphiQLOptions): Laboratory
       fetch: {
         credentials: opts.credentials ?? 'same-origin',
         timeout: opts.timeout,
-        retry: opts.retry,
         useGETForQueries: opts.useGETForQueries,
       },
       subscriptions: {
