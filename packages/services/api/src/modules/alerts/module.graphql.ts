@@ -25,7 +25,7 @@ export default gql`
     SLACK
     WEBHOOK
     MSTEAMS_WEBHOOK
-    DISCORD_WEBHOOK
+    DISCORD
   }
 
   enum AlertType {

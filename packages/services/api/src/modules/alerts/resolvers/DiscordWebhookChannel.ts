@@ -2,7 +2,7 @@ import type { DiscordWebhookChannelResolvers } from './../../../__generated__/ty
 
 export const DiscordWebhookChannel: DiscordWebhookChannelResolvers = {
   __isTypeOf: channel => {
-    return channel.type === 'DISCORD_WEBHOOK';
+    return channel.type === 'DISCORD';
   },
   endpoint: async channel => {
     return channel.webhookEndpoint ?? '';

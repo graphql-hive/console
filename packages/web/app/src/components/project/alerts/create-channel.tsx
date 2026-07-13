@@ -90,7 +90,7 @@ export const CreateChannelModal = ({
   const isWebhookLike = [
     AlertChannelType.Webhook,
     AlertChannelType.MsteamsWebhook,
-    AlertChannelType.DiscordWebhook,
+    AlertChannelType.Discord,
   ].includes(values.type);
 
   const endpointHelp = (() => {
@@ -106,7 +106,7 @@ export const CreateChannelModal = ({
       );
     }
 
-    if (values.type === AlertChannelType.DiscordWebhook) {
+    if (values.type === AlertChannelType.Discord) {
       return (
         <a href="https://support.discord.com/hc/en-us/articles/228383668-Intro-to-Webhooks">
           Follow this guide to set up a Discord webhook
@@ -161,7 +161,7 @@ export const CreateChannelModal = ({
               { value: AlertChannelType.Slack, name: 'Slack' },
               { value: AlertChannelType.Webhook, name: 'Webhook' },
               { value: AlertChannelType.MsteamsWebhook, name: 'MS Teams Webhook' },
-              { value: AlertChannelType.DiscordWebhook, name: 'Discord Webhook' },
+              { value: AlertChannelType.Discord, name: 'Discord Webhook' },
             ]}
           />
           {touched.type && errors.type && <div className="text-sm text-red-500">{errors.type}</div>}

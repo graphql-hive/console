@@ -71,7 +71,7 @@ type PreviewProps = {
   direction: string;
   thresholdType: string;
   thresholdValue: string;
-  channelType: 'SLACK' | 'WEBHOOK' | 'MSTEAMS_WEBHOOK' | 'DISCORD_WEBHOOK' | null;
+  channelType: 'SLACK' | 'WEBHOOK' | 'MSTEAMS_WEBHOOK' | 'DISCORD' | null;
   targetSlug: string;
   projectSlug: string;
 };
@@ -326,7 +326,7 @@ export function AlertPreview(props: PreviewProps) {
     case 'MSTEAMS_WEBHOOK':
       preview = <TeamsPreview {...props} />;
       break;
-    case 'DISCORD_WEBHOOK':
+    case 'DISCORD':
       preview = <DiscordPreview {...props} />;
       break;
     default:

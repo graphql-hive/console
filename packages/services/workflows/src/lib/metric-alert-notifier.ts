@@ -7,7 +7,7 @@ import { sendWebhook, type RequestBroker } from './webhooks/send-webhook.js';
 
 export type AlertChannelRow = {
   id: string;
-  type: 'SLACK' | 'WEBHOOK' | 'MSTEAMS_WEBHOOK' | 'DISCORD_WEBHOOK';
+  type: 'SLACK' | 'WEBHOOK' | 'MSTEAMS_WEBHOOK' | 'DISCORD';
   name: string;
   slackChannel: string | null;
   webhookEndpoint: string | null;

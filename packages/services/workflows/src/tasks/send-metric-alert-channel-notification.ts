@@ -40,7 +40,7 @@ const HydrationRowSchema = z.object({
   organizationId: z.string(),
   // channel
   channelId: z.string(),
-  channelType: z.enum(['SLACK', 'WEBHOOK', 'MSTEAMS_WEBHOOK', 'DISCORD_WEBHOOK']),
+  channelType: z.enum(['SLACK', 'WEBHOOK', 'MSTEAMS_WEBHOOK', 'DISCORD']),
   channelName: z.string(),
   slackChannel: z.string().nullable(),
   webhookEndpoint: z.string().nullable(),
@@ -206,7 +206,7 @@ export const task = implementTask(SendMetricAlertChannelNotificationTask, async 
               maxAttempts: helpers.job.max_attempts,
             });
             break;
-          case 'DISCORD_WEBHOOK':
+          case 'DISCORD':
             await sendDiscordNotification({
               channel,
               event,

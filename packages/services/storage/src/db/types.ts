@@ -7,7 +7,7 @@
  *
  */
 
-export type alert_channel_type = 'DISCORD_WEBHOOK' | 'MSTEAMS_WEBHOOK' | 'SLACK' | 'WEBHOOK';
+export type alert_channel_type = 'DISCORD' | 'MSTEAMS_WEBHOOK' | 'SLACK' | 'WEBHOOK';
 export type alert_type = 'SCHEMA_CHANGE_NOTIFICATIONS';
 export type breaking_change_formula = 'PERCENTAGE' | 'REQUEST_COUNT';
 export type hive_subgraph_log_type = 'added' | 'changed' | 'removed' | 'unchanged';

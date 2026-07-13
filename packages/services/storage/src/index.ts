@@ -4575,7 +4575,7 @@ const OrganizationBillingModel = z.object({
 const AlertChannelModel = z.object({
   id: z.string(),
   name: z.string(),
-  type: z.enum(['DISCORD_WEBHOOK', 'MSTEAMS_WEBHOOK', 'SLACK', 'WEBHOOK']),
+  type: z.enum(['DISCORD', 'MSTEAMS_WEBHOOK', 'SLACK', 'WEBHOOK']),
   projectId: z.string(),
   createdAt: z.string(),
   slackChannel: z.string().nullable(),

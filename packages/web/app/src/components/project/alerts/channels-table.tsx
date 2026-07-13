@@ -27,7 +27,7 @@ const colorMap = {
   [AlertChannelType.Slack]: 'green' as const,
   [AlertChannelType.Webhook]: 'yellow' as const,
   [AlertChannelType.MsteamsWebhook]: 'orange' as const,
-  [AlertChannelType.DiscordWebhook]: 'blue' as const,
+  [AlertChannelType.Discord]: 'blue' as const,
 };
 
 export function ChannelsTable(props: {

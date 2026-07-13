@@ -313,7 +313,7 @@ export class AlertsManager {
             integrations,
           });
         }
-        if (channel.type === 'DISCORD_WEBHOOK') {
+        if (channel.type === 'DISCORD') {
           return this.discordWebhook.sendSchemaChangeNotification({
             event: safeEvent,
             alert,
@@ -387,7 +387,7 @@ export class AlertsManager {
       await this.slack.sendChannelConfirmation(channelConfirmationContext);
     } else if (channel.type === 'MSTEAMS_WEBHOOK') {
       await this.teamsWebhook.sendChannelConfirmation(channelConfirmationContext);
-    } else if (channel.type === 'DISCORD_WEBHOOK') {
+    } else if (channel.type === 'DISCORD') {
       await this.discordWebhook.sendChannelConfirmation(channelConfirmationContext);
     } else {
       await this.webhook.sendChannelConfirmation();
