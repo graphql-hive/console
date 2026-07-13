@@ -81,6 +81,11 @@ const ClickHouseModel = zod.object({
   CLICKHOUSE_PASSWORD: zod.string(),
   CLICKHOUSE_ASYNC_INSERT_BUSY_TIMEOUT_MS: emptyString(NumberFromString.optional()),
   CLICKHOUSE_ASYNC_INSERT_MAX_DATA_SIZE: emptyString(NumberFromString.optional()),
+  // Whether ClickHouse waits for the async insert to flush before acking. Defaults to 0
+  // (fire-and-forget) for throughput; e2e sets it to 1 so reports are queryable immediately.
+  CLICKHOUSE_WAIT_FOR_ASYNC_INSERT: emptyString(
+    zod.union([zod.literal('0'), zod.literal('1')]).optional(),
+  ),
 });
 
 const PrometheusModel = zod.object({
@@ -238,6 +243,7 @@ export const env = {
     password: clickhouse.CLICKHOUSE_PASSWORD,
     async_insert_busy_timeout_ms: clickhouse.CLICKHOUSE_ASYNC_INSERT_BUSY_TIMEOUT_MS ?? 30_000,
     async_insert_max_data_size: clickhouse.CLICKHOUSE_ASYNC_INSERT_MAX_DATA_SIZE ?? 200_000_000,
+    wait_for_async_insert: clickhouse.CLICKHOUSE_WAIT_FOR_ASYNC_INSERT === '1' ? 1 : 0,
   },
   heartbeat: base.HEARTBEAT_ENDPOINT ? { endpoint: base.HEARTBEAT_ENDPOINT } : null,
   sentry: sentry.SENTRY === '1' ? { dsn: sentry.SENTRY_DSN } : null,

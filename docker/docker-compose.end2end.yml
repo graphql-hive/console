@@ -47,12 +47,12 @@ services:
     ports:
       - '6379:6379'
 
-  clickhouse:
-    # Expose the HTTP interface so the usage e2e helper can force a synchronous flush of the
-    # async insert queue (SYSTEM FLUSH ASYNC INSERT QUEUE), making ingested reports queryable
-    # immediately instead of racing the non-deterministic async-insert flush timer.
-    ports:
-      - '8123:8123'
+  usage-ingestor:
+    environment:
+      # Wait for the async insert to flush before acking, so a reported operation is queryable in
+      # Insights immediately instead of racing ClickHouse's non-deterministic async-insert timer
+      # (the source of usage e2e flakiness). Prod keeps the default fire-and-forget behavior.
+      CLICKHOUSE_WAIT_FOR_ASYNC_INSERT: '1'
 
   server:
     environment:

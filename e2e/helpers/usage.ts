@@ -21,31 +21,6 @@ export function createUsageHelper(
     (typeof baseURL === 'string' && baseURL.startsWith('http://localhost:3000'));
   const usageEndpoint = isLocal ? 'http://localhost:4001' : 'http://localhost:8081';
 
-  // The usage-ingestor writes to ClickHouse with async_insert + wait_for_async_insert=0, so a
-  // report isn't queryable until the async buffer flushes, and that flush timing is
-  // non-deterministic under CI load. Force a synchronous flush before each read so the polls
-  // below are deterministic instead of racing the flush timer. This is the approach ClickHouse
-  // itself uses for async-insert read-after-write in tests.
-  const clickhouseEndpoint = 'http://localhost:8123';
-  const clickhouseUser = process.env.CLICKHOUSE_USER ?? 'clickhouse';
-  const clickhousePassword = process.env.CLICKHOUSE_PASSWORD ?? 'wowverysecuremuchsecret';
-  const clickhouseAuth = Buffer.from(`${clickhouseUser}:${clickhousePassword}`).toString('base64');
-
-  async function flushAsyncInserts() {
-    // Send the SQL in the request body with Basic auth, mirroring
-    // integration-tests/testkit/clickhouse.ts. Passing the query as a URL param POSTs to the
-    // server root, which just returns "Ok." without running anything.
-    const response = await request.post(clickhouseEndpoint, {
-      data: 'SYSTEM FLUSH ASYNC INSERT QUEUE',
-      headers: { Authorization: `Basic ${clickhouseAuth}` },
-    });
-    if (!response.ok()) {
-      throw new Error(
-        `ClickHouse async insert flush failed (${response.status()}): ${await response.text()}`,
-      );
-    }
-  }
-
   async function reloadInsightsPage() {
     await page.reload({ waitUntil: 'domcontentloaded' });
     await page.locator('#root > *').first().waitFor({ state: 'attached' });
@@ -111,7 +86,6 @@ export function createUsageHelper(
       await expect
         .poll(
           async () => {
-            await flushAsyncInserts();
             await reloadInsightsPage();
 
             return page.getByRole('link').filter({ hasText: operationName }).count();
@@ -124,7 +98,6 @@ export function createUsageHelper(
       await expect
         .poll(
           async () => {
-            await flushAsyncInserts();
             await reloadInsightsPage();
 
             return page.getByText(version, { exact: true }).count();
