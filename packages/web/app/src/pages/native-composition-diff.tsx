@@ -117,7 +117,7 @@ export function NativeCompositionDiff(props: NativeCompositionDiffProps): ReactN
         </MetaCell>
         <MetaCell label="Services" className="flex w-64 flex-col items-center justify-center">
           <div className="flex items-center">
-            {report?.schemaVersion?.schemas.edges.length ?? 0}
+            {report?.schemaVersion?.schemas?.edges?.length ?? 0}
           </div>
         </MetaCell>
         <MetaCell label="Composition Errors" className="flex flex-col items-center justify-center">
