@@ -21,6 +21,10 @@ jobs:
           actor: changeset-version
 
       - name: Apply changeset version
+        # @changesets/changelog-github hits the GitHub API per changeset; a GitHub
+        # API incident makes this hang indefinitely (nominal run is ~1 min), so fail
+        # fast instead of holding the runner for the whole workflow timeout.
+        timeout-minutes: 5
         run: pnpm changeset version
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
