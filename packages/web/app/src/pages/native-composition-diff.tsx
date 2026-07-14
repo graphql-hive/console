@@ -157,11 +157,11 @@ export function NativeCompositionDiff(props: NativeCompositionDiffProps): ReactN
             </>
           ) : null}
 
-          <div className="flex flex-row gap-4">
-            <div className="flex grow flex-col items-start">
+          <div className="flex flex-col gap-4 lg:flex-row">
+            <div className="flex w-full grow flex-col items-start">
               <div className="py-3 text-lg font-bold">Schema Comparison</div>
               {report?.currentSupergraphSdl === report?.nativeCompositionResult?.supergraphSdl ? (
-                <div>
+                <div className="w-full">
                   {report?.schemaVersion?.schemas.edges.length ? (
                     <>
                       The generated supergraph SDL from your existing composition setup and our{' '}
@@ -189,22 +189,20 @@ export function NativeCompositionDiff(props: NativeCompositionDiffProps): ReactN
                   </Button>
                 </div>
               ) : (
-                <>
-                  <div className="p-4">
-                    <span className="font-semibold">
-                      There are differences in the generated supergraph SDL
-                    </span>{' '}
-                    between your existing composition setup and native composition. Review these
-                    changes carefully to determine how they could impact your gateway.
-                  </div>
-                  <div className="h-full">
+                <div className="w-full">
+                  <span className="font-semibold">
+                    There are differences in the generated supergraph SDL
+                  </span>{' '}
+                  between your existing composition setup and native composition. Review these
+                  changes carefully to determine how they could impact your gateway.
+                  <div className="mt-4 min-h-full w-full">
                     <DiffEditor
                       before={report?.currentSupergraphSdl ?? ''}
-                      lineNumbers
+                      downloadFileName={`latest_composable_supergraph_${report.target?.id ?? 'target'}.graphql`}
                       after={report?.nativeCompositionResult?.supergraphSdl ?? null}
                     />
                   </div>
-                </>
+                </div>
               )}
             </div>
             <div className="flex min-w-fit flex-col gap-4">
@@ -214,9 +212,9 @@ export function NativeCompositionDiff(props: NativeCompositionDiffProps): ReactN
                   open={!report?.schemaVersion?.schemas.edges.length && isTooltipOpen}
                   onOpenChange={setIsTooltipOpen}
                 >
-                  <TooltipTrigger>
+                  <TooltipTrigger className="text-right">
                     <Button
-                      className="p-4"
+                      className="w-full max-w-64 truncate p-4"
                       variant="outline"
                       disabled={!report?.schemaVersion?.schemas.edges.length}
                       onClick={async () => {
