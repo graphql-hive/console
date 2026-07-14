@@ -49,10 +49,13 @@ services:
 
   usage-ingestor:
     environment:
-      # Wait for the async insert to flush before acking, so a reported operation is queryable in
-      # Insights immediately instead of racing ClickHouse's non-deterministic async-insert timer
-      # (the source of usage e2e flakiness). Prod keeps the default fire-and-forget behavior.
+      # Make reported operations queryable in Insights synchronously, so the usage e2e tests
+      # don't race ClickHouse's async-insert timer. Both settings are required: wait-for-flush
+      # makes the insert block until the data is queryable, and the low busy-timeout makes that
+      # flush happen in ~100ms instead of waiting up to the default 30s. Prod keeps its
+      # fire-and-forget defaults.
       CLICKHOUSE_WAIT_FOR_ASYNC_INSERT: '1'
+      CLICKHOUSE_ASYNC_INSERT_BUSY_TIMEOUT_MS: '100'
 
   server:
     environment:
