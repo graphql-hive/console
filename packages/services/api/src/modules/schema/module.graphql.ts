@@ -157,18 +157,19 @@ export default gql`
   }
 
   type NativeCompositionVersionStatus {
+    target: Target!
     """
     The schema version we check against.
     """
-    schemaVersion: SchemaVersion!
+    schemaVersion: SchemaVersion
     """
     The native composition result. The supergraphSdl is sorted and normalized.
     """
-    nativeCompositionResult: SchemaCompositionResult!
+    nativeCompositionResult: SchemaCompositionResult
     """
     The supergraph of the latest valid schema version (sorted and normalized).
     """
-    currentSupergraphSdl: String!
+    currentSupergraphSdl: String
   }
 
   type NativeCompositionCompatibility {

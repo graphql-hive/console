@@ -1249,7 +1249,15 @@ export class SchemaManager {
         const schemaVersion = await this.getMaybeLatestValidVersion(target);
 
         if (schemaVersion === null) {
-          return null;
+          return {
+            target,
+            schemaVersion,
+            currentSupergraphSdl: null,
+            nativeCompositionResult: {
+              supergraphSdl: null,
+              errors: null,
+            },
+          };
         }
 
         const currentSupergraphSdl = print(
@@ -1271,7 +1279,15 @@ export class SchemaManager {
         });
 
         if (schemas.length === 0) {
-          return null;
+          return {
+            target,
+            schemaVersion,
+            currentSupergraphSdl,
+            nativeCompositionResult: {
+              supergraphSdl: null,
+              errors: null,
+            },
+          };
         }
 
         const compositionResult = await this.compositionOrchestrator.composeAndValidate(

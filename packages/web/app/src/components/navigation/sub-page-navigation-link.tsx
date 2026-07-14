@@ -1,3 +1,4 @@
+import { ReactElement } from 'react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 
@@ -5,7 +6,7 @@ type SubPageNavigationLinkProps = {
   dataCy?: string;
   isActive: boolean;
   onClick: () => void;
-  title: string;
+  title: ReactElement;
 };
 
 export function SubPageNavigationLink({
