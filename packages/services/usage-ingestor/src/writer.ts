@@ -57,6 +57,16 @@ export function createWriter({
     https: httpsAgent,
   };
 
+  // TEMP DEBUG (revert after diagnosis): confirm the async-insert settings actually resolved
+  // at runtime, and time each operations INSERT (wait_for_async_insert=1 should block ~seconds;
+  // fire-and-forget returns in ms).
+  logger.info(
+    'DEBUG clickhouse writer config: wait_for_async_insert=%s async_insert_busy_timeout_ms=%s async_insert_max_data_size=%s',
+    clickhouse.wait_for_async_insert,
+    clickhouse.async_insert_busy_timeout_ms,
+    clickhouse.async_insert_max_data_size,
+  );
+
   return {
     async writeOperations(operations: string[]) {
       if (operations.length === 0) {
@@ -66,6 +76,7 @@ export function createWriter({
       const csv = joinIntoSingleMessage(operations);
       const compressed = await compress(csv);
 
+      const start = Date.now();
       await writeCsv(
         clickhouse,
         agents,
@@ -73,6 +84,11 @@ export function createWriter({
         compressed,
         logger,
         3,
+      );
+      logger.info(
+        'DEBUG writeOperations INSERT took %sms (wait_for_async_insert=%s)',
+        Date.now() - start,
+        clickhouse.wait_for_async_insert,
       );
     },
     async writeSubscriptionOperations(operations: string[]) {
