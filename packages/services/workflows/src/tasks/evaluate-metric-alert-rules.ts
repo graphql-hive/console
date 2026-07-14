@@ -80,6 +80,11 @@ export const task = implementTask(EvaluateMetricAlertRulesTask, async args => {
     // isolating the failure to this group.
     const filterConditions = buildSavedFilterConditions(representative.savedFilterFilters, logger);
 
+    // Fetch a duration column only if a LATENCY rule needs it: percentiles for a
+    // percentile metric, avg for AVG. Error/traffic groups fetch neither.
+    const needsPercentiles = groupRules.some(r => r.type === 'LATENCY' && r.metric !== 'AVG');
+    const needsAverage = groupRules.some(r => r.type === 'LATENCY' && r.metric === 'AVG');
+
     // startActiveSpan makes this span the current OTel context for the
     // duration of the callback, so the slonik PG interceptor and the
     // fetch instrumentation parent their auto-spans under this one. That's
@@ -105,6 +110,8 @@ export const task = implementTask(EvaluateMetricAlertRulesTask, async args => {
               representative.timeWindowMinutes,
               filterConditions,
               evaluationTime,
+              needsAverage,
+              needsPercentiles,
             );
           } catch (error) {
             logger.error(

@@ -3,6 +3,7 @@ import { printWithValues, type SqlValue } from '@hive/clickhouse';
 import type { ClickHouseClient } from './clickhouse-client.js';
 import {
   buildSavedFilterConditions,
+  extractMetricValue,
   groupRulesByQuery,
   queryClickHouseWindows,
   type MetricAlertRuleRow,
@@ -181,5 +182,76 @@ describe('queryClickHouseWindows', () => {
     const { clickhouse, calls } = captureClient();
     await queryClickHouseWindows(clickhouse, target, 720, [], evalTime);
     expect(calls[0].sql).toContain('FROM operations_by_target_hourly');
+  });
+
+  test('groups needing neither duration column select NULL placeholders', async () => {
+    const { clickhouse, calls } = captureClient();
+    await queryClickHouseWindows(clickhouse, target, 60, [], evalTime, false, false);
+    const { sql } = calls[0];
+    expect(sql).toContain('NULL as average');
+    expect(sql).toContain('NULL as percentiles');
+    expect(sql).not.toContain('avgMerge(duration_avg)');
+    expect(sql).not.toContain('duration_quantiles');
+  });
+
+  test('percentile groups select the quantiles column; avg still skipped', async () => {
+    const { clickhouse, calls } = captureClient();
+    await queryClickHouseWindows(clickhouse, target, 60, [], evalTime, false, true);
+    const { sql } = calls[0];
+    expect(sql).toContain('duration_quantiles');
+    expect(sql).toContain('NULL as average');
+  });
+
+  test('avg groups select avgMerge; percentiles skipped', async () => {
+    const { clickhouse, calls } = captureClient();
+    await queryClickHouseWindows(clickhouse, target, 60, [], evalTime, true, false);
+    const { sql } = calls[0];
+    expect(sql).toContain('avgMerge(duration_avg) as average');
+    expect(sql).toContain('NULL as percentiles');
+    expect(sql).not.toContain('duration_quantiles');
+  });
+});
+
+describe('extractMetricValue', () => {
+  const row = (over: Partial<Parameters<typeof extractMetricValue>[0]> = {}) => ({
+    window: 'current' as const,
+    total: '1000',
+    total_ok: '900',
+    average: null,
+    percentiles: null,
+    ...over,
+  });
+
+  test('TRAFFIC returns the total count', () => {
+    expect(extractMetricValue(row(), makeRule({ type: 'TRAFFIC' }))).toBe(1000);
+  });
+
+  test('ERROR_RATE returns the error percentage (0 when no traffic)', () => {
+    expect(extractMetricValue(row(), makeRule({ type: 'ERROR_RATE' }))).toBeCloseTo(10);
+    expect(
+      extractMetricValue(row({ total: '0', total_ok: '0' }), makeRule({ type: 'ERROR_RATE' })),
+    ).toBe(0);
+  });
+
+  test('LATENCY converts the selected column from nanoseconds to ms', () => {
+    expect(
+      extractMetricValue(row({ average: 1.2e9 }), makeRule({ type: 'LATENCY', metric: 'AVG' })),
+    ).toBe(1200);
+    // percentiles tuple is [P75, P90, P95, P99]; P95 is index 2.
+    expect(
+      extractMetricValue(
+        row({ percentiles: [1e9, 2e9, 3e9, 4e9] }),
+        makeRule({ type: 'LATENCY', metric: 'P95' }),
+      ),
+    ).toBe(3000);
+  });
+
+  test('a LATENCY rule whose duration column was not selected throws (no silent 0)', () => {
+    expect(() =>
+      extractMetricValue(row({ average: null }), makeRule({ type: 'LATENCY', metric: 'AVG' })),
+    ).toThrow(/duration_avg/);
+    expect(() =>
+      extractMetricValue(row({ percentiles: null }), makeRule({ type: 'LATENCY', metric: 'P95' })),
+    ).toThrow(/duration_quantiles/);
   });
 });
