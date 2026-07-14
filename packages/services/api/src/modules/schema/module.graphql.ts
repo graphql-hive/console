@@ -411,6 +411,10 @@ export default gql`
   @oneOf
   """
   type SchemaCompositionResult {
+    """
+    How long the composition took in milliseconds
+    """
+    duration: Int!
     supergraphSdl: String
     errors: SchemaErrorConnection
   }

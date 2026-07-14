@@ -35,6 +35,7 @@ const NativeCompositionDiff_NativeCompositionDiffQuery = graphql(/* GraphQL */ `
           }
           currentSupergraphSdl
           nativeCompositionResult {
+            duration
             supergraphSdl
             errors {
               edges {
@@ -251,12 +252,20 @@ export function NativeCompositionDiff(props: NativeCompositionDiffProps): ReactN
                 <TableBody>
                   <TableRow>
                     <TableCell className="font-semibold">Services</TableCell>
-                    <TableCell>{report?.schemaVersion?.schemas?.edges?.length ?? 0}</TableCell>
+                    <TableCell className="text-right">
+                      {report?.schemaVersion?.schemas?.edges?.length ?? 0}
+                    </TableCell>
                   </TableRow>
                   <TableRow>
                     <TableCell className="font-semibold">Composition Errors</TableCell>
-                    <TableCell>
+                    <TableCell className="text-right">
                       {report?.nativeCompositionResult?.errors?.edges.length ?? 0}
+                    </TableCell>
+                  </TableRow>
+                  <TableRow>
+                    <TableCell className="font-semibold">Composition Duration</TableCell>
+                    <TableCell className="text-right">
+                      {report?.nativeCompositionResult?.duration}ms
                     </TableCell>
                   </TableRow>
                 </TableBody>

@@ -1220,6 +1220,7 @@ export class SchemaManager {
       schemaVersion: SchemaVersion | null;
       target: Target;
       nativeCompositionResult: {
+        duration: number;
         supergraphSdl: string | null;
         errors: Array<{ message: string }> | null;
       };
@@ -1254,6 +1255,7 @@ export class SchemaManager {
             schemaVersion,
             currentSupergraphSdl: null,
             nativeCompositionResult: {
+              duration: 0,
               supergraphSdl: null,
               errors: null,
             },
@@ -1284,12 +1286,14 @@ export class SchemaManager {
             schemaVersion,
             currentSupergraphSdl,
             nativeCompositionResult: {
+              duration: 0,
               supergraphSdl: null,
               errors: null,
             },
           };
         }
 
+        const start = Date.now();
         const compositionResult = await this.compositionOrchestrator.composeAndValidate(
           'federation',
           ensureCompositeSchemas(schemas).map(s =>
@@ -1326,6 +1330,7 @@ export class SchemaManager {
           schemaVersion,
           currentSupergraphSdl,
           nativeCompositionResult: {
+            duration: Date.now() - start,
             supergraphSdl,
             errors: compositionResult.errors,
           },
