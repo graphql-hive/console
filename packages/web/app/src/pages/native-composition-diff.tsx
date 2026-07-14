@@ -170,7 +170,7 @@ export function NativeCompositionDiff(props: NativeCompositionDiffProps): ReactN
           ))}
         </NavLayout>
         <PageLayoutContent>
-          {report.nativeCompositionResult?.errors?.edges.length ? (
+          {report?.nativeCompositionResult?.errors?.edges?.length ? (
             <>
               <div className="py-3 text-lg font-bold">Composition Errors</div>
               <ul className="divide-neutral-4 divide-y px-1 pb-2">
