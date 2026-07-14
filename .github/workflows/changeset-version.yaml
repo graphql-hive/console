@@ -28,6 +28,24 @@ jobs:
         run: pnpm changeset version
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # TEMP DEBUG (revert once we catch a hang): this step intermittently hangs with zero
+          # output. Capture which layer stalls: the @changesets/git shallow-deepen `git fetch`
+          # (git-* traces go to files so they survive the 5-min timeout kill) vs the
+          # changelog-github GitHub API call (NODE_DEBUG http/net streams to this step's log).
+          GIT_TRACE: /home/runner/git-trace.log
+          GIT_TRACE_CURL: /home/runner/git-curl.log
+          GIT_TRACE_PERFORMANCE: /home/runner/git-perf.log
+          NODE_DEBUG: http,net
+
+      - name: DEBUG dump git traces
+        if: always()
+        run: |
+          echo "shallow repo? $(git rev-parse --is-shallow-repository 2>/dev/null)"
+          echo "local commit depth: $(git rev-list --count HEAD 2>/dev/null || echo '?')"
+          for f in git-trace git-curl git-perf; do
+            echo "===== /home/runner/$f.log (last 200 lines) ====="
+            tail -n 200 "/home/runner/$f.log" 2>/dev/null || echo "(file not created; step may not have reached a git fetch)"
+          done
 
       - name: Get Version from package.json
         id: package-version
