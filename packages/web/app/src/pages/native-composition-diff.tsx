@@ -5,8 +5,11 @@ import { SubPageNavigationLink } from '@/components/navigation/sub-page-navigati
 import { BadgeRounded } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Heading } from '@/components/ui/heading';
+import { CheckIcon, XIcon } from '@/components/ui/icon';
 import { NavLayout, PageLayout, PageLayoutContent } from '@/components/ui/page-content-layout';
-import { DiffEditor } from '@/components/v2';
+import { TableBody, TableCell, TableRow } from '@/components/ui/table';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { DiffEditor, Table } from '@/components/v2';
 import { graphql } from '@/gql';
 import { NativeFederationCompatibilityStatusType } from '@/gql/graphql';
 import { useClipboard } from '@/lib/hooks';
@@ -72,6 +75,7 @@ export function NativeCompositionDiff(props: NativeCompositionDiffProps): ReactN
 
   const clipboard = useClipboard();
   const [copied, setCopied] = useTimed(5000);
+  const [isTooltipOpen, setIsTooltipOpen] = useState(false);
 
   const project = result.data?.project;
   const nativeFederationCompatibility = project?.nativeFederationCompatibility;
@@ -104,53 +108,16 @@ export function NativeCompositionDiff(props: NativeCompositionDiffProps): ReactN
     <div className="p-8">
       <Heading className="mb-4">Native Composition Report</Heading>
 
-      <div className="border-neutral-5 dark:bg-neutral-3 flex flex-row items-center rounded-sm border px-8 py-4 text-[12px]">
-        <MetaCell label="Project" className="w-32 flex-1">
+      <div className="border-neutral-5 dark:bg-neutral-3 flex items-center gap-4 rounded-sm border px-8 py-4 text-[12px]">
+        <MetaCell label="Project" className="flex-1 truncate text-left">
           {project.slug}
         </MetaCell>
-        <MetaCell label="Status" className="flex-1">
-          <div className="flex items-center">
-            <BadgeRounded color={statusColor} className="mx-0" />
+        <MetaCell label="Status" className="flex-1 items-center truncate text-left">
+          <BadgeRounded color={statusColor} className="mx-0" />
 
-            <span className="ml-1">{nativeFederationCompatibility.status}</span>
-          </div>
+          <span className="ml-1 truncate">{nativeFederationCompatibility.status}</span>
         </MetaCell>
-        <MetaCell label="Services" className="flex w-64 flex-col items-center justify-center">
-          <div className="flex items-center">
-            {report?.schemaVersion?.schemas?.edges?.length ?? 0}
-          </div>
-        </MetaCell>
-        <MetaCell label="Composition Errors" className="flex flex-col items-center justify-center">
-          <div className="flex items-center">
-            {report?.nativeCompositionResult?.errors?.edges.length ?? 0}
-          </div>
-        </MetaCell>
-        <div className="flex-none pl-8 text-right">
-          <Button
-            className="w-52 p-4"
-            variant="outline"
-            disabled={!report?.schemaVersion?.schemas.edges.length}
-            onClick={async () => {
-              const services = report?.schemaVersion?.schemas?.edges?.map(edge => ({
-                sdl: (edge.node as any).source,
-                name: (edge.node as any).service,
-              }));
-
-              if (services) {
-                await clipboard(JSON.stringify(services, null, 2));
-                setCopied();
-              }
-            }}
-          >
-            {copied ? (
-              <>Copied!</>
-            ) : (
-              <>
-                <CopyIcon className="text-neutral-8 mr-2 size-4" /> Copy services JSON
-              </>
-            )}
-          </Button>
-        </div>
+        <div className="col-span-2 flex-none text-right" />
       </div>
       <PageLayout>
         <NavLayout>
@@ -188,53 +155,114 @@ export function NativeCompositionDiff(props: NativeCompositionDiffProps): ReactN
               </ul>
             </>
           ) : null}
-          <div className="py-3 text-lg font-bold">Schema Comparison</div>
-          {report?.currentSupergraphSdl === report?.nativeCompositionResult?.supergraphSdl ? (
-            <div>
-              {report?.schemaVersion?.schemas.edges.length ? (
-                <>
-                  The generated supergraph SDL from your existing composition setup and our{' '}
-                  <a
-                    className="text-neutral-10 font-semibold underline-offset-4 hover:underline"
-                    href="https://github.com/the-guild-org/federation"
-                  >
-                    Open Source composition library
-                  </a>{' '}
-                  matches for this target.
-                </>
-              ) : (
-                <>This target has no services published.</>
-              )}
-              {nativeFederationCompatibility.status ===
-              NativeFederationCompatibilityStatusType.Compatible ? (
-                <div className="pt-2">
-                  Review other targets to identify the cause of incompatibility
+
+          <div className="flex flex-row gap-4">
+            <div className="flex grow flex-col items-start">
+              <div className="py-3 text-lg font-bold">Schema Comparison</div>
+              {report?.currentSupergraphSdl === report?.nativeCompositionResult?.supergraphSdl ? (
+                <div>
+                  {report?.schemaVersion?.schemas.edges.length ? (
+                    <>
+                      The generated supergraph SDL from your existing composition setup and our{' '}
+                      <a
+                        className="text-neutral-10 font-semibold underline-offset-4 hover:underline"
+                        href="https://github.com/the-guild-org/federation"
+                      >
+                        Open Source composition library
+                      </a>{' '}
+                      matches for this target.
+                    </>
+                  ) : (
+                    <>This target has no services published.</>
+                  )}
+                  {nativeFederationCompatibility.status ===
+                  NativeFederationCompatibilityStatusType.Compatible ? (
+                    <div className="pt-2">
+                      Review other targets to identify the cause of incompatibility
+                    </div>
+                  ) : null}
+                  <Button variant="link" className="my-4 block p-0" asChild>
+                    <a href="https://github.com/the-guild-org/federation?tab=readme-ov-file#compatibility">
+                      Learn more about risks and compatibility with other composition libraries
+                    </a>
+                  </Button>
                 </div>
-              ) : null}
-              <Button variant="link" className="p-0" asChild>
-                <a href="https://github.com/the-guild-org/federation?tab=readme-ov-file#compatibility">
-                  Learn more about risks and compatibility with other composition libraries
-                </a>
-              </Button>
+              ) : (
+                <>
+                  <div className="p-4">
+                    <span className="font-semibold">
+                      There are differences in the generated supergraph SDL
+                    </span>{' '}
+                    between your existing composition setup and native composition. Review these
+                    changes carefully to determine how they could impact your gateway.
+                  </div>
+                  <div className="h-full">
+                    <DiffEditor
+                      before={report?.currentSupergraphSdl ?? ''}
+                      lineNumbers
+                      after={report?.nativeCompositionResult?.supergraphSdl ?? null}
+                    />
+                  </div>
+                </>
+              )}
             </div>
-          ) : (
-            <>
-              <div className="p-4">
-                <span className="font-semibold">
-                  There are differences in the generated supergraph SDL
-                </span>{' '}
-                between your existing composition setup and native composition. Review these changes
-                carefully to determine how they could impact your gateway.
-              </div>
-              <div className="h-full">
-                <DiffEditor
-                  before={report?.currentSupergraphSdl ?? ''}
-                  lineNumbers
-                  after={report?.nativeCompositionResult?.supergraphSdl ?? null}
-                />
-              </div>
-            </>
-          )}
+            <div className="flex min-w-fit flex-col gap-4">
+              <TooltipProvider>
+                <Tooltip
+                  // show only for disabled buttons
+                  open={!report?.schemaVersion?.schemas.edges.length && isTooltipOpen}
+                  onOpenChange={setIsTooltipOpen}
+                >
+                  <TooltipTrigger>
+                    <Button
+                      className="p-4"
+                      variant="outline"
+                      disabled={!report?.schemaVersion?.schemas.edges.length}
+                      onClick={async () => {
+                        const services = report?.schemaVersion?.schemas?.edges?.map(edge => ({
+                          sdl: (edge.node as any).source,
+                          name: (edge.node as any).service,
+                        }));
+
+                        if (services) {
+                          await clipboard(JSON.stringify(services, null, 2));
+                          setCopied();
+                        }
+                      }}
+                    >
+                      {copied ? (
+                        <CheckIcon className="text-neutral-8 mr-2 size-4" />
+                      ) : (
+                        <CopyIcon className="text-neutral-8 mr-2 size-4" />
+                      )}{' '}
+                      Copy services JSON
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent className="flex max-w-[90vw] items-center text-pretty">
+                    <XIcon className="mr-1 size-4 text-red-500" />{' '}
+                    <span>
+                      Cannot copy services JSON because there are no services published for this
+                      target.
+                    </span>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+              <Table className="text-sm">
+                <TableBody>
+                  <TableRow>
+                    <TableCell className="font-semibold">Services</TableCell>
+                    <TableCell>{report?.schemaVersion?.schemas?.edges?.length ?? 0}</TableCell>
+                  </TableRow>
+                  <TableRow>
+                    <TableCell className="font-semibold">Composition Errors</TableCell>
+                    <TableCell>
+                      {report?.nativeCompositionResult?.errors?.edges.length ?? 0}
+                    </TableCell>
+                  </TableRow>
+                </TableBody>
+              </Table>
+            </div>
+          </div>
         </PageLayoutContent>
       </PageLayout>
     </div>

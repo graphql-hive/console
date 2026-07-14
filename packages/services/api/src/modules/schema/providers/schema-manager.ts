@@ -1217,13 +1217,13 @@ export class SchemaManager {
   async getNativeFederationCompatibilityStatus(project: Project): Promise<{
     status: NativeFederationCompatibilityStatusType;
     results: Array<null | {
-      schemaVersion: SchemaVersion;
+      schemaVersion: SchemaVersion | null;
       target: Target;
       nativeCompositionResult: {
         supergraphSdl: string | null;
         errors: Array<{ message: string }> | null;
       };
-      currentSupergraphSdl: string;
+      currentSupergraphSdl: string | null;
     }>;
   }> {
     this.logger.debug(
