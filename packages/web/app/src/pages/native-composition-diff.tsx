@@ -131,7 +131,7 @@ export function NativeCompositionDiff(props: NativeCompositionDiffProps): ReactN
             variant="outline"
             disabled={!report?.schemaVersion?.schemas.edges.length}
             onClick={async () => {
-              const services = report?.schemaVersion?.schemas.edges.map(edge => ({
+              const services = report?.schemaVersion?.schemas?.edges?.map(edge => ({
                 sdl: (edge.node as any).source,
                 name: (edge.node as any).service,
               }));
