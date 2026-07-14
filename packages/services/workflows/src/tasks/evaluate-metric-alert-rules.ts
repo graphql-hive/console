@@ -133,8 +133,12 @@ export const task = implementTask(EvaluateMetricAlertRulesTask, async args => {
           const ZERO_WINDOW = {
             total: '0',
             total_ok: '0',
-            average: 0,
-            percentiles: [0, 0, 0, 0] as [number, number, number, number],
+            // Mirror the query's column selection (null when skipped) so requireColumn
+            // still catches a select/read desync when there's no traffic.
+            average: needsAverage ? 0 : null,
+            percentiles: needsPercentiles
+              ? ([0, 0, 0, 0] as [number, number, number, number])
+              : null,
           };
           const current = windows.current ?? { window: 'current' as const, ...ZERO_WINDOW };
           const previous = windows.previous ?? { window: 'previous' as const, ...ZERO_WINDOW };
