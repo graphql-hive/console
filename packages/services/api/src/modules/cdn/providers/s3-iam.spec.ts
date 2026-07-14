@@ -128,11 +128,11 @@ describe('createDefaultCredentialProvider', () => {
         createDefaultCredentialProvider({
           awsIamAuthEnabled: false,
         }),
-      ).toThrow('No AWS credentials available');
+      ).toThrow('No S3 credentials available');
     });
 
     it('throws when called with no options', () => {
-      expect(() => createDefaultCredentialProvider()).toThrow('No AWS credentials available');
+      expect(() => createDefaultCredentialProvider()).toThrow('No S3 credentials available');
     });
 
     it('throws when accessKeyId is an empty string', () => {
@@ -144,7 +144,7 @@ describe('createDefaultCredentialProvider', () => {
             secretAccessKey: 'SECRET',
           },
         }),
-      ).toThrow('No AWS credentials available');
+      ).toThrow('No S3 credentials available');
     });
 
     it('throws when accessKeyId is undefined', () => {
@@ -156,7 +156,7 @@ describe('createDefaultCredentialProvider', () => {
             secretAccessKey: 'SECRET',
           },
         }),
-      ).toThrow('No AWS credentials available');
+      ).toThrow('No S3 credentials available');
     });
 
     it('throws when secretAccessKey is an empty string', () => {
@@ -168,7 +168,7 @@ describe('createDefaultCredentialProvider', () => {
             secretAccessKey: '',
           },
         }),
-      ).toThrow('No AWS credentials available');
+      ).toThrow('No S3 credentials available');
     });
   });
 
