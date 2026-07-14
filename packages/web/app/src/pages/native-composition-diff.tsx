@@ -174,7 +174,7 @@ export function NativeCompositionDiff(props: NativeCompositionDiffProps): ReactN
             <>
               <div className="py-3 text-lg font-bold">Composition Errors</div>
               <ul className="divide-neutral-4 divide-y px-1 pb-2">
-                {report.nativeCompositionResult?.errors.edges.map((err, idx) => (
+                {report?.nativeCompositionResult?.errors?.edges?.map((err, idx) => (
                   <li key={idx} className="flex gap-3 px-4 py-3">
                     <span className="text-neutral-8 mt-0.5 w-6 shrink-0 select-none font-mono text-xs">
                       {String(idx + 1).padStart(2, '0')}
