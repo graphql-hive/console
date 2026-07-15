@@ -31,6 +31,7 @@ const MetricAlertRuleRowSchema = z.object({
   severity: z.enum(['INFO', 'WARNING', 'CRITICAL']),
   state: z.enum(['NORMAL', 'PENDING', 'FIRING', 'RECOVERING']),
   stateChangedAt: z.string().nullable(),
+  lastEvaluatedAt: z.string().nullable(),
   confirmationMinutes: z.number(),
   savedFilterId: z.string().nullable(),
   // The attached saved filter's `filters` jsonb (or null). Kept as `unknown` so a
@@ -51,8 +52,9 @@ const ClickHouseWindowRowSchema = z.object({
   window: z.enum(['current', 'previous']),
   total: z.string(),
   total_ok: z.string(),
-  average: z.number(),
-  percentiles: z.tuple([z.number(), z.number(), z.number(), z.number()]),
+  // Null when the group skips the column (query selects `NULL as ...`).
+  average: z.number().nullable(),
+  percentiles: z.tuple([z.number(), z.number(), z.number(), z.number()]).nullable(),
 });
 
 type ClickHouseWindowRow = z.infer<typeof ClickHouseWindowRowSchema>;
@@ -67,7 +69,27 @@ function makeGroupKey(rule: MetricAlertRuleRow): GroupKey {
 // nanoseconds; latency rule thresholds and all display surfaces use ms.
 const NS_TO_MS = 1e6;
 
-function extractMetricValue(row: ClickHouseWindowRow, rule: MetricAlertRuleRow): number {
+// A null column means it wasn't selected (a bug), not missing data (empty windows
+// give zeros). Throw rather than read a phantom 0 that would silently never fire.
+function requireColumn<T>(value: T | null, column: string, rule: MetricAlertRuleRow): T {
+  if (value === null) {
+    throw new Error(
+      `Metric alert rule ${rule.id} needs column "${column}" but its window query did not select it`,
+    );
+  }
+  return value;
+}
+
+const PERCENTILE_INDEX = { P75: 0, P90: 1, P95: 2, P99: 3 } as const;
+
+function percentileIndex(metric: MetricAlertRuleRow['metric']): number {
+  if (metric && metric in PERCENTILE_INDEX) {
+    return PERCENTILE_INDEX[metric as keyof typeof PERCENTILE_INDEX];
+  }
+  throw new Error(`Expected a percentile metric (P75-P99), got ${metric}`);
+}
+
+export function extractMetricValue(row: ClickHouseWindowRow, rule: MetricAlertRuleRow): number {
   const total = Number(row.total);
   const totalOk = Number(row.total_ok);
 
@@ -77,20 +99,14 @@ function extractMetricValue(row: ClickHouseWindowRow, rule: MetricAlertRuleRow):
     case 'ERROR_RATE':
       return total > 0 ? ((total - totalOk) / total) * 100 : 0;
     case 'LATENCY': {
-      const metricMap: Record<string, number> = {
-        AVG: row.average,
-        P75: row.percentiles[0],
-        P90: row.percentiles[1],
-        P95: row.percentiles[2],
-        P99: row.percentiles[3],
-      };
-      // ClickHouse stores `duration` in nanoseconds, but rule thresholds (the
-      // form input) and every display surface are in
-      // milliseconds. Convert here so the threshold comparison and the persisted
-      // value are in milliseconds and consistent with all of them. Without this,
-      // a ns value (~1.2e9) is compared against a ms threshold (e.g. 4000),
-      // so any non-trivial latency trips the rule.
-      return (rule.metric ? metricMap[rule.metric] : 0) / NS_TO_MS;
+      const ns =
+        rule.metric === 'AVG'
+          ? requireColumn(row.average, 'duration_avg', rule)
+          : requireColumn(row.percentiles, 'duration_quantiles', rule)[
+              percentileIndex(rule.metric)
+            ];
+      // duration is in ns; thresholds and displays are ms (a raw ns value trips any ms threshold).
+      return ns / NS_TO_MS;
     }
   }
 }
@@ -178,6 +194,7 @@ export async function fetchEnabledRules(pg: PostgresDatabasePool): Promise<Metri
       , r."severity"
       , r."state"
       , to_json(r."state_changed_at") as "stateChangedAt"
+      , to_json(r."last_evaluated_at") as "lastEvaluatedAt"
       , r."confirmation_minutes" as "confirmationMinutes"
       , r."saved_filter_id" as "savedFilterId"
       , sf."filters" as "savedFilterFilters"
@@ -205,6 +222,31 @@ export function groupRulesByQuery(
     }
   }
   return groups;
+}
+
+// Minimum minutes between evaluations, derived from the window. Long windows
+// barely move per minute, so they run less often; the interval stays well below
+// the window so confirmationMinutes semantics still hold.
+export function evaluationIntervalMinutes(timeWindowMinutes: number): number {
+  if (timeWindowMinutes <= 60) return 1; // ≤ 1h window: every tick (unchanged)
+  if (timeWindowMinutes <= 360) return 5; // ≤ 6h window: every 5 min
+  if (timeWindowMinutes <= 1440) return 15; // ≤ 24h window: every 15 min
+  return 30; // > 24h (7d, 30d): every 30 min
+}
+
+// PENDING/RECOVERING rules stay at 1-min resolution so the confirmationMinutes
+// dwell is sampled every tick. A never-evaluated rule is always due.
+export function isRuleDue(
+  rule: Pick<MetricAlertRuleRow, 'timeWindowMinutes' | 'lastEvaluatedAt' | 'state'>,
+  evaluationTime: Date,
+): boolean {
+  if (rule.state === 'PENDING' || rule.state === 'RECOVERING') return true;
+  if (!rule.lastEvaluatedAt) return true;
+  const intervalMs = evaluationIntervalMinutes(rule.timeWindowMinutes) * 60_000;
+  const lastMs = new Date(rule.lastEvaluatedAt).getTime();
+  // Small tolerance so an exactly-interval-old rule isn't skipped on sub-second
+  // jitter. Fires up to ~1 tick early, never late.
+  return evaluationTime.getTime() - lastMs >= intervalMs - 1_000;
 }
 
 // Validated shape of the saved-filter `filters` jsonb that the evaluator applies.
@@ -270,6 +312,9 @@ export async function queryClickHouseWindows(
   evaluationTime: Date,
   // False skips the prior window (1x scan, previous = null). Default true.
   needsPreviousWindow: boolean = true,
+  // False selects `NULL as <col>` so ClickHouse skips reading that duration column.
+  needsAverage: boolean = true,
+  needsPercentiles: boolean = true,
 ): Promise<{ current: ClickHouseWindowRow | null; previous: ClickHouseWindowRow | null }> {
   const anchorMs = evaluationTime.getTime();
   const offsetMs = 60_000;
@@ -313,13 +358,19 @@ export async function queryClickHouseWindows(
     ? sql`CASE WHEN timestamp >= fromUnixTimestamp64Milli(${sql.raw(String(currentWindowStart.getTime()))}) THEN 'current' ELSE 'previous' END`
     : sql`'current'`;
 
+  // A literal NULL skips reading the (large) duration column but keeps the row shape.
+  const averageCol = needsAverage ? sql`avgMerge(duration_avg) as average` : sql`NULL as average`;
+  const percentilesCol = needsPercentiles
+    ? sql`${sql.raw(percentilesMerge)}(0.75, 0.90, 0.95, 0.99)(duration_quantiles) as percentiles`
+    : sql`NULL as percentiles`;
+
   const statement = sql`
     SELECT
       ${windowSelector} as window,
       sum(total) as total,
       sum(total_ok) as total_ok,
-      avgMerge(duration_avg) as average,
-      ${sql.raw(percentilesMerge)}(0.75, 0.90, 0.95, 0.99)(duration_quantiles) as percentiles
+      ${averageCol},
+      ${percentilesCol}
     FROM ${sql.raw(tableName)}
     WHERE target = ${targetId}
       AND timestamp >= fromUnixTimestamp64Milli(${sql.raw(String(scanStart.getTime()))})

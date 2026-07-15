@@ -8,6 +8,7 @@ import {
   evaluateRule,
   fetchEnabledRules,
   groupRulesByQuery,
+  isRuleDue,
   queryClickHouseWindows,
 } from '../lib/metric-alert-evaluator.js';
 
@@ -65,8 +66,21 @@ export const task = implementTask(EvaluateMetricAlertRulesTask, async args => {
 
   logger.info({ count: rules.length }, 'Evaluating metric alert rules');
 
+  // Evaluate only groups with at least one due member. Members of a group share
+  // a window (so one cadence), and the batched UPDATE below keeps their
+  // last_evaluated_at aligned, so a group is due as a unit.
   const groups = groupRulesByQuery(rules);
-  const groupList = [...groups.values()];
+  const dueGroupList = [...groups.values()].filter(group =>
+    group.some(rule => isRuleDue(rule, evaluationTime)),
+  );
+
+  if (dueGroupList.length === 0) {
+    logger.debug(
+      { evaluationTime: evaluationTime.toISOString(), groups: groups.size, rules: rules.length },
+      'No metric alert rule groups are due this tick',
+    );
+    return;
+  }
 
   async function processGroup(groupRules: (typeof rules)[number][]): Promise<{
     failed: boolean;
@@ -83,6 +97,11 @@ export const task = implementTask(EvaluateMetricAlertRulesTask, async args => {
     // Only PERCENTAGE_CHANGE rules need the prior window; if none in the group do,
     // skip it (half the scan) and persist a null previousValue.
     const needsPreviousWindow = groupRules.some(r => r.thresholdType === 'PERCENTAGE_CHANGE');
+
+    // Fetch a duration column only if a LATENCY rule needs it: percentiles for a
+    // percentile metric, avg for AVG. Error/traffic groups fetch neither.
+    const needsPercentiles = groupRules.some(r => r.type === 'LATENCY' && r.metric !== 'AVG');
+    const needsAverage = groupRules.some(r => r.type === 'LATENCY' && r.metric === 'AVG');
 
     // startActiveSpan makes this span the current OTel context for the
     // duration of the callback, so the slonik PG interceptor and the
@@ -110,6 +129,8 @@ export const task = implementTask(EvaluateMetricAlertRulesTask, async args => {
               filterConditions,
               evaluationTime,
               needsPreviousWindow,
+              needsAverage,
+              needsPercentiles,
             );
           } catch (error) {
             logger.error(
@@ -131,8 +152,12 @@ export const task = implementTask(EvaluateMetricAlertRulesTask, async args => {
           const ZERO_WINDOW = {
             total: '0',
             total_ok: '0',
-            average: 0,
-            percentiles: [0, 0, 0, 0] as [number, number, number, number],
+            // Mirror the query's column selection (null when skipped) so requireColumn
+            // still catches a select/read desync when there's no traffic.
+            average: needsAverage ? 0 : null,
+            percentiles: needsPercentiles
+              ? ([0, 0, 0, 0] as [number, number, number, number])
+              : null,
           };
           const current = windows.current ?? { window: 'current' as const, ...ZERO_WINDOW };
           // A skipped previous window stays null (not synthesized to zeros).
@@ -179,6 +204,8 @@ export const task = implementTask(EvaluateMetricAlertRulesTask, async args => {
       attributes: {
         'rules.count': rules.length,
         'groups.count': groups.size,
+        'groups.due': dueGroupList.length,
+        'rules.due': dueGroupList.reduce((total, group) => total + group.length, 0),
         'evaluation.time': evaluationTime.toISOString(),
       },
     },
@@ -193,7 +220,7 @@ export const task = implementTask(EvaluateMetricAlertRulesTask, async args => {
         let groupsFailed = 0;
         const evaluatedRuleIds: string[] = [];
         const results = await Promise.allSettled(
-          groupList.map(group => limit(() => processGroup(group))),
+          dueGroupList.map(group => limit(() => processGroup(group))),
         );
         for (const r of results) {
           if (r.status === 'rejected') {
@@ -232,7 +259,7 @@ export const task = implementTask(EvaluateMetricAlertRulesTask, async args => {
 
         logger.info(
           {
-            groupsAttempted: groups.size,
+            groupsAttempted: dueGroupList.length,
             groupsFailed,
             rulesEvaluated: evaluatedRuleIds.length,
           },
