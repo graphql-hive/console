@@ -1217,13 +1217,14 @@ export class SchemaManager {
   async getNativeFederationCompatibilityStatus(project: Project): Promise<{
     status: NativeFederationCompatibilityStatusType;
     results: Array<null | {
-      schemaVersion: SchemaVersion;
+      schemaVersion: SchemaVersion | null;
       target: Target;
       nativeCompositionResult: {
+        duration: number;
         supergraphSdl: string | null;
         errors: Array<{ message: string }> | null;
       };
-      currentSupergraphSdl: string;
+      currentSupergraphSdl: string | null;
     }>;
   }> {
     this.logger.debug(
@@ -1249,7 +1250,16 @@ export class SchemaManager {
         const schemaVersion = await this.getMaybeLatestValidVersion(target);
 
         if (schemaVersion === null) {
-          return null;
+          return {
+            target,
+            schemaVersion,
+            currentSupergraphSdl: null,
+            nativeCompositionResult: {
+              duration: 0,
+              supergraphSdl: null,
+              errors: null,
+            },
+          };
         }
 
         const currentSupergraphSdl = print(
@@ -1271,9 +1281,19 @@ export class SchemaManager {
         });
 
         if (schemas.length === 0) {
-          return null;
+          return {
+            target,
+            schemaVersion,
+            currentSupergraphSdl,
+            nativeCompositionResult: {
+              duration: 0,
+              supergraphSdl: null,
+              errors: null,
+            },
+          };
         }
 
+        const start = Date.now();
         const compositionResult = await this.compositionOrchestrator.composeAndValidate(
           'federation',
           ensureCompositeSchemas(schemas).map(s =>
@@ -1310,6 +1330,7 @@ export class SchemaManager {
           schemaVersion,
           currentSupergraphSdl,
           nativeCompositionResult: {
+            duration: Date.now() - start,
             supergraphSdl,
             errors: compositionResult.errors,
           },
