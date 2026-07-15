@@ -17,7 +17,6 @@ const WEBHOOK_JSON_SCHEMA = {
     'state',
     'alert',
     'currentValue',
-    'previousValue',
     'threshold',
     'target',
     'project',
@@ -37,7 +36,7 @@ const WEBHOOK_JSON_SCHEMA = {
       },
     },
     currentValue: { type: 'number' },
-    previousValue: { type: 'number' },
+    previousValue: { type: ['number', 'null'] },
     changePercent: { type: ['number', 'null'] },
     threshold: {
       type: 'object',
