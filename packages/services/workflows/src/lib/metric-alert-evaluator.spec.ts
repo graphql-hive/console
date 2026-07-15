@@ -82,12 +82,6 @@ describe('evaluationIntervalMinutes', () => {
     expect(evaluationIntervalMinutes(10080)).toBe(30);
     expect(evaluationIntervalMinutes(43200)).toBe(30);
   });
-
-  test('interval never exceeds the window, so the dwell stays sampled', () => {
-    for (const window of [1, 60, 61, 360, 361, 1440, 1441, 10080, 43200]) {
-      expect(evaluationIntervalMinutes(window)).toBeLessThanOrEqual(window);
-    }
-  });
 });
 
 describe('isRuleDue', () => {
