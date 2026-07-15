@@ -73,7 +73,7 @@ export function createWriter({
       const csv = joinIntoSingleMessage(operations);
       const compressed = await compress(csv);
 
-      const startedAt = Date.now();
+      const startedAt = performance.now();
       await writeCsv(
         clickhouse,
         agents,
@@ -86,7 +86,7 @@ export function createWriter({
       // fire-and-forget returns in a few ms. Logged at debug so it stays out of prod (info).
       logger.debug(
         'operations INSERT completed in %sms (operations=%s)',
-        Date.now() - startedAt,
+        Math.round(performance.now() - startedAt),
         operations.length,
       );
     },
