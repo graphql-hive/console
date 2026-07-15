@@ -94,6 +94,11 @@ export const task = implementTask(EvaluateMetricAlertRulesTask, async args => {
     // isolating the failure to this group.
     const filterConditions = buildSavedFilterConditions(representative.savedFilterFilters, logger);
 
+    // Fetch a duration column only if a LATENCY rule needs it: percentiles for a
+    // percentile metric, avg for AVG. Error/traffic groups fetch neither.
+    const needsPercentiles = groupRules.some(r => r.type === 'LATENCY' && r.metric !== 'AVG');
+    const needsAverage = groupRules.some(r => r.type === 'LATENCY' && r.metric === 'AVG');
+
     // startActiveSpan makes this span the current OTel context for the
     // duration of the callback, so the slonik PG interceptor and the
     // fetch instrumentation parent their auto-spans under this one. That's
@@ -119,6 +124,8 @@ export const task = implementTask(EvaluateMetricAlertRulesTask, async args => {
               representative.timeWindowMinutes,
               filterConditions,
               evaluationTime,
+              needsAverage,
+              needsPercentiles,
             );
           } catch (error) {
             logger.error(
@@ -140,8 +147,12 @@ export const task = implementTask(EvaluateMetricAlertRulesTask, async args => {
           const ZERO_WINDOW = {
             total: '0',
             total_ok: '0',
-            average: 0,
-            percentiles: [0, 0, 0, 0] as [number, number, number, number],
+            // Mirror the query's column selection (null when skipped) so requireColumn
+            // still catches a select/read desync when there's no traffic.
+            average: needsAverage ? 0 : null,
+            percentiles: needsPercentiles
+              ? ([0, 0, 0, 0] as [number, number, number, number])
+              : null,
           };
           const current = windows.current ?? { window: 'current' as const, ...ZERO_WINDOW };
           const previous = windows.previous ?? { window: 'previous' as const, ...ZERO_WINDOW };
