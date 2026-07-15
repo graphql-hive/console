@@ -1,5 +1,39 @@
 # hive
 
+## 11.5.0
+
+### Minor Changes
+
+- [#8215](https://github.com/graphql-hive/console/pull/8215)
+  [`608d931`](https://github.com/graphql-hive/console/commit/608d931663bfbee506511be376d6e3f3502f3e8b)
+  Thanks [@jdolle](https://github.com/jdolle)! - Improve styling and visibility of composition
+  report. This can be accessed through the project settings: composition tab when composition is
+  flagged as incompatible
+
+- [#8203](https://github.com/graphql-hive/console/pull/8203)
+  [`45d99a6`](https://github.com/graphql-hive/console/commit/45d99a6e965e2736c542294f098a729bce1e4aa7)
+  Thanks [@jdolle](https://github.com/jdolle)! - Role create and edit trigger validation on submit
+  instead of disabling the submit button
+
+### Patch Changes
+
+- [#8213](https://github.com/graphql-hive/console/pull/8213)
+  [`d6e9ebb`](https://github.com/graphql-hive/console/commit/d6e9ebb13b1f11dbdf0f79cc6a72f654e508668b)
+  Thanks [@jonathanawesome](https://github.com/jonathanawesome)! - Runs metric alerts cron with a
+  concurrency pool
+
+- [#8200](https://github.com/graphql-hive/console/pull/8200)
+  [`fcfecb4`](https://github.com/graphql-hive/console/commit/fcfecb4cf26741accf14226201ba3476e5ccaedc)
+  Thanks [@jdolle](https://github.com/jdolle)! - Security upgrades for dependencies (including ws,
+  protobufjs, js-yaml, and others) to address security vulnerabilities. Upgrade nodejs from 24.14.1
+  to 24.17.0
+
+- [#8196](https://github.com/graphql-hive/console/pull/8196)
+  [`27a58e5`](https://github.com/graphql-hive/console/commit/27a58e53c2c37998c2351c697288858a56f73287)
+  Thanks [@jdolle](https://github.com/jdolle)! - Write s3 schema artifacts in parallel on schema
+  publish. Previously, the subgraph SDLs would be written first and then the composite schema SDL
+  would be written.
+
 ## 11.4.0
 
 ### Minor Changes
