@@ -8,6 +8,7 @@ import {
   evaluateRule,
   fetchEnabledRules,
   groupRulesByQuery,
+  isRuleDue,
   queryClickHouseWindows,
 } from '../lib/metric-alert-evaluator.js';
 
@@ -65,8 +66,21 @@ export const task = implementTask(EvaluateMetricAlertRulesTask, async args => {
 
   logger.info({ count: rules.length }, 'Evaluating metric alert rules');
 
+  // Evaluate only groups with at least one due member. Members of a group share
+  // a window (so one cadence), and the batched UPDATE below keeps their
+  // last_evaluated_at aligned, so a group is due as a unit.
   const groups = groupRulesByQuery(rules);
-  const groupList = [...groups.values()];
+  const dueGroupList = [...groups.values()].filter(group =>
+    group.some(rule => isRuleDue(rule, evaluationTime)),
+  );
+
+  if (dueGroupList.length === 0) {
+    logger.debug(
+      { evaluationTime: evaluationTime.toISOString(), groups: groups.size, rules: rules.length },
+      'No metric alert rule groups are due this tick',
+    );
+    return;
+  }
 
   async function processGroup(groupRules: (typeof rules)[number][]): Promise<{
     failed: boolean;
@@ -171,6 +185,8 @@ export const task = implementTask(EvaluateMetricAlertRulesTask, async args => {
       attributes: {
         'rules.count': rules.length,
         'groups.count': groups.size,
+        'groups.due': dueGroupList.length,
+        'rules.due': dueGroupList.reduce((total, group) => total + group.length, 0),
         'evaluation.time': evaluationTime.toISOString(),
       },
     },
@@ -185,7 +201,7 @@ export const task = implementTask(EvaluateMetricAlertRulesTask, async args => {
         let groupsFailed = 0;
         const evaluatedRuleIds: string[] = [];
         const results = await Promise.allSettled(
-          groupList.map(group => limit(() => processGroup(group))),
+          dueGroupList.map(group => limit(() => processGroup(group))),
         );
         for (const r of results) {
           if (r.status === 'rejected') {
@@ -224,7 +240,7 @@ export const task = implementTask(EvaluateMetricAlertRulesTask, async args => {
 
         logger.info(
           {
-            groupsAttempted: groups.size,
+            groupsAttempted: dueGroupList.length,
             groupsFailed,
             rulesEvaluated: evaluatedRuleIds.length,
           },
