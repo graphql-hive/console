@@ -17,6 +17,7 @@ const WEBHOOK_JSON_SCHEMA = {
     'state',
     'alert',
     'currentValue',
+    'previousValue',
     'threshold',
     'target',
     'project',
