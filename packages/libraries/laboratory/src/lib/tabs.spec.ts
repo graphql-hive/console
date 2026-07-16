@@ -77,4 +77,20 @@ describe('useTabs', () => {
     expect(result.current.tabs).toHaveLength(0);
     expect(onTabsChange).toHaveBeenCalledWith([]);
   });
+
+  it('updateTab replaces the tab data and fires onTabsChange', () => {
+    const onTabsChange = vi.fn();
+    const { result } = renderHook(() =>
+      useTabs({ defaultTabs: [operationTab('t1')], onTabsChange }),
+    );
+
+    act(() => {
+      result.current.updateTab('t1', { id: 'op-t1', name: 'Updated' });
+    });
+
+    expect((result.current.tabs[0].data as { name: string }).name).toBe('Updated');
+    expect(onTabsChange).toHaveBeenCalledWith([
+      expect.objectContaining({ id: 't1', data: expect.objectContaining({ name: 'Updated' }) }),
+    ]);
+  });
 });
