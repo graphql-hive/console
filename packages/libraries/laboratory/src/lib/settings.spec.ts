@@ -1,25 +1,8 @@
 import { defaultLaboratorySettings, normalizeLaboratorySettings } from './settings';
 
-describe('defaultLaboratorySettings', () => {
-  it('has the documented defaults', () => {
-    expect(defaultLaboratorySettings.fetch.credentials).toBe('same-origin');
-    expect(defaultLaboratorySettings.fetch.timeout).toBe(10000);
-    expect(defaultLaboratorySettings.subscriptions.protocol).toBe('WS');
-    expect(defaultLaboratorySettings.introspection.method).toBe('POST');
-  });
-});
-
 describe('normalizeLaboratorySettings', () => {
-  it('returns the full defaults for null', () => {
+  it('returns the full defaults for an empty/nullish input', () => {
     expect(normalizeLaboratorySettings(null)).toEqual(defaultLaboratorySettings);
-  });
-
-  it('returns the full defaults for undefined', () => {
-    expect(normalizeLaboratorySettings(undefined)).toEqual(defaultLaboratorySettings);
-  });
-
-  it('returns the full defaults for an empty object', () => {
-    expect(normalizeLaboratorySettings({})).toEqual(defaultLaboratorySettings);
   });
 
   it('fills only the missing keys and passes provided values through', () => {

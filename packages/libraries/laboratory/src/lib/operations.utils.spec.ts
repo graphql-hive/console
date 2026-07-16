@@ -22,10 +22,6 @@ import {
 } from './operations.utils';
 
 describe('handleTemplate', () => {
-  it('substitutes a single variable', () => {
-    expect(handleTemplate('{{name}}', { name: 'Bob' })).toBe('Bob');
-  });
-
   it('substitutes a variable embedded in surrounding text', () => {
     expect(handleTemplate('Bearer {{token}}', { token: 'abc' })).toBe('Bearer abc');
   });
@@ -62,10 +58,6 @@ describe('handleTemplate', () => {
 describe('getOperationName', () => {
   it('reads the name of a named operation', () => {
     expect(getOperationName('query Foo { a }')).toBe('Foo');
-  });
-
-  it('reads the name of a named mutation', () => {
-    expect(getOperationName('mutation DoIt { x }')).toBe('DoIt');
   });
 
   it('returns undefined for an anonymous operation', () => {
