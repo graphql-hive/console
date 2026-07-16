@@ -1,5 +1,48 @@
 # hive
 
+## 11.6.0
+
+### Minor Changes
+
+- [#8198](https://github.com/graphql-hive/console/pull/8198)
+  [`156acee`](https://github.com/graphql-hive/console/commit/156aceead7e73ebbd5b201c7920d5d1c1d0e3f10)
+  Thanks [@jdolle](https://github.com/jdolle)! - Use the monthly table in the usage estimator
+
+  This table has dramatically better performance than operations_hourly.
+
+### Patch Changes
+
+- [#8218](https://github.com/graphql-hive/console/pull/8218)
+  [`0564435`](https://github.com/graphql-hive/console/commit/05644359a4099b3344d19741c7b8248fde3e2a68)
+  Thanks [@jonathanawesome](https://github.com/jonathanawesome)! - Metric alerts optimization:
+  Optimize evaluation cadence for long-windowed rule groups.
+
+- [#8224](https://github.com/graphql-hive/console/pull/8224)
+  [`60c14c0`](https://github.com/graphql-hive/console/commit/60c14c08e3b8a58c714d19a438032e1dd606152b)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Address vulnerability
+  [CVE-2026-25680](https://github.com/advisories/GHSA-5cv4-jp36-h3mw).
+
+- [#8221](https://github.com/graphql-hive/console/pull/8221)
+  [`5258d8e`](https://github.com/graphql-hive/console/commit/5258d8e0a4864a3ad57df60ee59444eef458fc4e)
+  Thanks [@jonathanawesome](https://github.com/jonathanawesome)! - Metric alerts optimization: Skip
+  fetching the previous comparison window for groups that only contain absolute (fixed value) rules.
+
+- [#8217](https://github.com/graphql-hive/console/pull/8217)
+  [`e9bbbe6`](https://github.com/graphql-hive/console/commit/e9bbbe6a78f6fcd6dc9ebd99a43a7250786a84ef)
+  Thanks [@jonathanawesome](https://github.com/jonathanawesome)! - Metric alerts optimization:
+  Require duration column selection only for rules of latency type.
+
+- [#8224](https://github.com/graphql-hive/console/pull/8224)
+  [`60c14c0`](https://github.com/graphql-hive/console/commit/60c14c08e3b8a58c714d19a438032e1dd606152b)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Address vulnerability
+  [CVE-2026-54285](https://github.com/advisories/GHSA-8988-4f7v-96qf).
+
+- [#8228](https://github.com/graphql-hive/console/pull/8228)
+  [`058c082`](https://github.com/graphql-hive/console/commit/058c08273c6aa24b0b0f3e7d4ff3d366869655e9)
+  Thanks [@jdolle](https://github.com/jdolle)! - Upgrade composition library to support oneOf
+  directive without requiring composeDirective, and to fix an edge case where an external field is
+  not flagged as external in the supergraph if another graph uses that field in the key
+
 ## 11.5.0
 
 ### Minor Changes
