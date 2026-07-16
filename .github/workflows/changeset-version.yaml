@@ -24,7 +24,7 @@ jobs:
         # @changesets/changelog-github hits the GitHub API per changeset; a GitHub
         # API incident makes this hang indefinitely (nominal run is ~1 min), so fail
         # fast instead of holding the runner for the whole workflow timeout.
-        timeout-minutes: 5
+        timeout-minutes: 10
         run: pnpm changeset version
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
