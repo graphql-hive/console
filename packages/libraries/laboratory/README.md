@@ -18,8 +18,9 @@ Hive Console and can be embedded into any page that talks to a GraphQL endpoint.
 - Collections (saved operations) and request history
 - Preflight scripts: run JavaScript before a request in a sandboxed Web Worker
 - Environment variables with `{{variable}}` interpolation
-- Renders a [Hive Router](https://the-guild.dev/graphql/hive/docs/router) query plan when present in
-  the response extensions
+- Renders a federation query plan when a server includes one in the response `extensions`
+  (`extensions.queryPlan`), e.g. [Hive Router](https://the-guild.dev/graphql/hive/docs/router) or
+  Hive Gateway
 - Plugin system for adding tabs, command-palette entries and preflight APIs
 
 ## Consumers
