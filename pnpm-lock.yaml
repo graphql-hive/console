@@ -52,7 +52,6 @@ overrides:
   brace-expansion@>=5.0.0 <5.0.6: '>=5.0.6'
   '@sigstore/core@<=3.2.0': '>=3.2.1'
   js-yaml@<3.15.0: 3.15.0
-  echarts@<6.1.0: '>=6.1.0'
   sigstore@<=4.1.0: '>=4.1.1'
 
 patchedDependencies:
@@ -2351,11 +2350,11 @@ importers:
         specifier: 16.4.7
         version: 16.4.7
       echarts:
-        specifier: '>=6.1.0'
+        specifier: 6.1.0
         version: 6.1.0
       echarts-for-react:
-        specifier: 3.0.2
-        version: 3.0.2(echarts@6.1.0)(react@18.3.1)
+        specifier: 3.0.6
+        version: 3.0.6(echarts@6.1.0)(react@18.3.1)
       fastify:
         specifier: 5.8.5
         version: 5.8.5
@@ -12956,10 +12955,10 @@ packages:
   ecdsa-sig-formatter@1.0.11:
     resolution: {integrity: sha512-nagl3RYrbNv6kQkeJIpt6NJZy8twLB/2vtz6yN9Z4vRKHN4/QZJIEbqohALSgwKdnksuY3k5Addp5lg8sVoVcQ==}
 
-  echarts-for-react@3.0.2:
-    resolution: {integrity: sha512-DRwIiTzx8JfwPOVgGttDytBqdp5VzCSyMRIxubgU/g2n9y3VLUmF2FK7Icmg/sNVkv4+rktmrLN9w22U2yy3fA==}
+  echarts-for-react@3.0.6:
+    resolution: {integrity: sha512-4zqLgTGWS3JvkQDXjzkR1k1CHRdpd6by0988TWMJgnvDytegWLbeP/VNZmMa+0VJx2eD7Y632bi2JquXDgiGJg==}
     peerDependencies:
-      echarts: '>=6.1.0'
+      echarts: ^3.0.0 || ^4.0.0 || ^5.0.0 || ^6.0.0
       react: ^15.0.0 || >=16.0.0
 
   echarts@6.1.0:
@@ -34460,7 +34459,7 @@ snapshots:
     dependencies:
       safe-buffer: 5.2.1
 
-  echarts-for-react@3.0.2(echarts@6.1.0)(react@18.3.1):
+  echarts-for-react@3.0.6(echarts@6.1.0)(react@18.3.1):
     dependencies:
       echarts: 6.1.0
       fast-deep-equal: 3.1.3
