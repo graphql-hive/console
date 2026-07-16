@@ -596,7 +596,20 @@ export const createSCIMPlugin =
         );
       }
 
-      return reply.status(200).send(createSCIMUserObjectFromUser(baseUri, user));
+      const groupMemberStore = new GroupMemberStore(req.log, pool);
+
+      const groupMemberships = await groupMemberStore.getGroupMemberForOrganizationIdAndUserId(
+        auth.organizationId,
+        user.id,
+      );
+
+      return reply.status(200).send(
+        createSCIMUserObjectFromUser(
+          baseUri,
+          user,
+          groupMemberships.map(membership => membership.groupId),
+        ),
+      );
     });
 
     /**
@@ -697,7 +710,9 @@ export const createSCIMPlugin =
         createUserResult satisfies never;
       }
 
-      return reply.status(201).send(createSCIMUserObjectFromUser(baseUri, createUserResult.user));
+      return reply
+        .status(201)
+        .send(createSCIMUserObjectFromUser(baseUri, createUserResult.user, []));
     });
 
     /**
@@ -708,9 +723,9 @@ export const createSCIMPlugin =
      * - user name
      */
     server.put('/Users/:userId', async (req, reply) => {
-      const result = await authenticateAuthorizeAndResolveOrganizationFromRequest(req, reply);
-      if (result.type === 'error') {
-        return reply.status(result.error.status).send(result.error);
+      const auth = await authenticateAuthorizeAndResolveOrganizationFromRequest(req, reply);
+      if (auth.type === 'error') {
+        return reply.status(auth.error.status).send(auth.error);
       }
 
       const params = SharedUserRouteParams.safeParse(req.params);
@@ -735,15 +750,15 @@ export const createSCIMPlugin =
       }
 
       const usersStore = new UsersStore(pool);
-      const supertokensStore = new SuperTokensStore(pool, result.logger);
+      const supertokensStore = new SuperTokensStore(pool, auth.logger);
 
       let user = await usersStore.findUserProvisionedByOrganizationIdAndId(
-        result.organizationId,
+        auth.organizationId,
         params.data.userId,
       );
 
       if (!user) {
-        result.logger.debug({ userId: params.data.userId }, 'user not found');
+        auth.logger.debug({ userId: params.data.userId }, 'user not found');
         return reply.status(404).send(
           createSCIMError({
             detail: 'User does not exist.',
@@ -752,15 +767,15 @@ export const createSCIMPlugin =
         );
       }
 
-      const logger = result.logger.child({ userId: user.id });
+      const logger = auth.logger.child({ userId: user.id });
       logger.debug({ userId: user.id }, 'user found');
 
       const updateUserPropertyResult = await handleUserPropertyUpdates(
         logger,
         usersStore,
         supertokensStore,
-        result.organizationId,
-        result.oidcIntegration.id,
+        auth.organizationId,
+        auth.oidcIntegration.id,
         user,
         body.data,
       );
@@ -771,9 +786,19 @@ export const createSCIMPlugin =
           .send(updateUserPropertyResult.error);
       }
 
-      return reply
-        .status(200)
-        .send(createSCIMUserObjectFromUser(baseUri, updateUserPropertyResult.user));
+      const groupMemberStore = new GroupMemberStore(req.log, pool);
+      const groupMemberships = await groupMemberStore.getGroupMemberForOrganizationIdAndUserId(
+        auth.organizationId,
+        user.id,
+      );
+
+      return reply.status(200).send(
+        createSCIMUserObjectFromUser(
+          baseUri,
+          updateUserPropertyResult.user,
+          groupMemberships.map(membership => membership.groupId),
+        ),
+      );
     });
 
     /**
@@ -784,9 +809,9 @@ export const createSCIMPlugin =
      * - user name
      */
     server.patch('/Users/:userId', async (req, reply) => {
-      const result = await authenticateAuthorizeAndResolveOrganizationFromRequest(req, reply);
-      if (result.type === 'error') {
-        return reply.status(result.error.status).send(result.error);
+      const auth = await authenticateAuthorizeAndResolveOrganizationFromRequest(req, reply);
+      if (auth.type === 'error') {
+        return reply.status(auth.error.status).send(auth.error);
       }
 
       const params = SharedUserRouteParams.safeParse(req.params);
@@ -811,9 +836,9 @@ export const createSCIMPlugin =
       }
 
       const usersStore = new UsersStore(pool);
-      const supertokensStore = new SuperTokensStore(pool, result.logger);
+      const supertokensStore = new SuperTokensStore(pool, auth.logger);
       let user = await usersStore.findUserProvisionedByOrganizationIdAndId(
-        result.organizationId,
+        auth.organizationId,
         params.data.userId,
       );
 
@@ -831,7 +856,7 @@ export const createSCIMPlugin =
 
       for (const operation of body.data.Operations) {
         if (operation.op !== 'replace') {
-          result.logger.debug(
+          auth.logger.debug(
             'unsupported operation received. we aonly support replace for patch for now',
             operation.op,
           );
@@ -922,8 +947,8 @@ export const createSCIMPlugin =
         req.log,
         usersStore,
         supertokensStore,
-        result.organizationId,
-        result.oidcIntegration.id,
+        auth.organizationId,
+        auth.oidcIntegration.id,
         user,
         changes,
       );
@@ -934,9 +959,19 @@ export const createSCIMPlugin =
           .send(updateUserPropertyResult.error);
       }
 
-      return reply
-        .status(200)
-        .send(createSCIMUserObjectFromUser(baseUri, updateUserPropertyResult.user));
+      const groupMemberStore = new GroupMemberStore(req.log, pool);
+      const groupMemberships = await groupMemberStore.getGroupMemberForOrganizationIdAndUserId(
+        auth.organizationId,
+        user.id,
+      );
+
+      return reply.status(200).send(
+        createSCIMUserObjectFromUser(
+          baseUri,
+          updateUserPropertyResult.user,
+          groupMemberships.map(membership => membership.groupId),
+        ),
+      );
     });
 
     /**
@@ -945,9 +980,9 @@ export const createSCIMPlugin =
      * - lookup if a user already exists (via email, external id, or display name)
      */
     server.get('/Users', async (req, reply) => {
-      const result = await authenticateAuthorizeAndResolveOrganizationFromRequest(req, reply);
-      if (result.type === 'error') {
-        return reply.status(result.error.status).send(result.error);
+      const auth = await authenticateAuthorizeAndResolveOrganizationFromRequest(req, reply);
+      if (auth.type === 'error') {
+        return reply.status(auth.error.status).send(auth.error);
       }
 
       const queryParse = QuerySchemaModel.safeParse(req.query);
@@ -964,7 +999,7 @@ export const createSCIMPlugin =
       const count = queryParse.data.count ?? 100;
 
       const usersStore = new UsersStore(pool);
-      const users: Array<SCIMUserObject> = [];
+      const groupMemberStore = new GroupMemberStore(req.log, pool);
 
       if (queryParse.data.filter) {
         const filterParseResult = parseSCIMFilterExpression(queryParse.data.filter, [
@@ -973,7 +1008,7 @@ export const createSCIMPlugin =
           'id',
         ]);
         if (filterParseResult.type === 'error') {
-          return reply.status(400).send(result.error);
+          return reply.status(400).send(auth.error);
         }
 
         const { property, value } = filterParseResult;
@@ -982,14 +1017,14 @@ export const createSCIMPlugin =
         switch (property) {
           case 'userName': {
             user = await usersStore.findUserProvisionedByOrganizationIdAndDisplayName(
-              result.organizationId,
+              auth.organizationId,
               value,
             );
             break;
           }
           case 'externalId': {
             user = await usersStore.findUserProvisionedByOrganizationIdAndExternalId(
-              result.organizationId,
+              auth.organizationId,
               value,
             );
             break;
@@ -999,38 +1034,68 @@ export const createSCIMPlugin =
               break;
             }
             user = await usersStore.findUserProvisionedByOrganizationIdAndId(
-              result.organizationId,
+              auth.organizationId,
               value,
             );
             break;
           }
         }
 
+        if (!user) {
+          return reply.status(200).send({
+            schemas: ['urn:ietf:params:scim:api:messages:2.0:ListResponse'],
+            totalResults: 0,
+            startIndex,
+            itemsPerPage: 0,
+            Resources: [],
+          } satisfies SCIMListResponseObject);
+        }
+
+        const groupMemberships = await groupMemberStore.getGroupMemberForOrganizationIdAndUserId(
+          auth.organizationId,
+          user.id,
+        );
+
         return reply.status(200).send({
           schemas: ['urn:ietf:params:scim:api:messages:2.0:ListResponse'],
-          totalResults: user ? 1 : 0,
+          totalResults: 1,
           startIndex,
-          itemsPerPage: user ? 1 : 0,
-          Resources: user ? [createSCIMUserObjectFromUser(baseUri, user)] : [],
+          itemsPerPage: 1,
+          Resources: [
+            createSCIMUserObjectFromUser(
+              baseUri,
+              user,
+              groupMemberships.map(membership => membership.groupId),
+            ),
+          ],
         } satisfies SCIMListResponseObject);
       }
 
       const offset = Math.max(0, startIndex - 1);
       const pagedUsers = await usersStore.getOffsetPaginatedUsersForOrganizationId(
-        result.organizationId,
+        auth.organizationId,
         {
           offset,
           count,
         },
       );
-      for (const user of pagedUsers) {
-        users.push(createSCIMUserObjectFromUser(baseUri, user));
-      }
+
+      const users = await Promise.all(
+        pagedUsers.map(async user =>
+          createSCIMUserObjectFromUser(
+            baseUri,
+            user,
+            await groupMemberStore
+              .getGroupMemberForOrganizationIdAndUserId(auth.organizationId, user.id)
+              .then(memberships => memberships.map(membership => membership.groupId)),
+          ),
+        ),
+      );
 
       return reply.status(200).send({
         schemas: ['urn:ietf:params:scim:api:messages:2.0:ListResponse'],
         totalResults: await usersStore.getTotalProvisionedUserCountForOrganizationId(
-          result.organizationId,
+          auth.organizationId,
         ),
         startIndex,
         itemsPerPage: users.length,
@@ -1620,6 +1685,10 @@ type SCIMUserObject = {
     },
   ];
   active: boolean;
+  groups: Array<{
+    value: string;
+    $ref: string;
+  }>;
   meta: {
     resourceType: 'User';
     created: string;
@@ -1656,7 +1725,11 @@ type SCIMListResponseObject = {
   Resources: SCIMGroupObject[] | SCIMUserObject[];
 };
 
-function createSCIMUserObjectFromUser(baseUri: string, user: User): SCIMUserObject {
+function createSCIMUserObjectFromUser(
+  baseUri: string,
+  user: User,
+  groupIds: Array<string>,
+): SCIMUserObject {
   return {
     schemas: ['urn:ietf:params:scim:schemas:core:2.0:User'],
     id: user.id,
@@ -1670,6 +1743,10 @@ function createSCIMUserObjectFromUser(baseUri: string, user: User): SCIMUserObje
       },
     ],
     active: user.deactivatedAt === null,
+    groups: groupIds.map(groupId => ({
+      value: groupId,
+      $ref: baseUri + '/Groups/' + groupId,
+    })),
     meta: {
       resourceType: 'User',
       created: user.createdAt,
@@ -1698,7 +1775,7 @@ function createSCIMGroupObjectFromGroup(
     displayName: group.displayName,
     members: members?.map(member => ({
       value: member.userId,
-      $ref: `/Users/${member.userId}`,
+      $ref: baseUri + `/Users/${member.userId}`,
     })),
     meta: {
       resourceType: 'Group',

@@ -64,6 +64,26 @@ async function createGroup(
   });
 }
 
+async function addUserToGroupViaPatch(
+  headers: Record<string, string>,
+  groupId: string,
+  userId: string,
+) {
+  return await fetch(groupsEndpoint + '/' + groupId, {
+    method: 'PATCH',
+    body: JSON.stringify({
+      Operations: [
+        {
+          op: 'add',
+          path: 'members',
+          value: [{ value: userId }],
+        },
+      ],
+    }),
+    headers,
+  });
+}
+
 async function getGroups(
   headers: Record<string, string>,
   query?: {
@@ -147,15 +167,16 @@ describe.concurrent('/Users', () => {
         ],
         externalId: externalUserId,
         id: expect.any(String),
+        active: true,
+        schemas: ['urn:ietf:params:scim:schemas:core:2.0:User'],
+        userName: userEmail,
+        groups: [],
         meta: {
           resourceType: 'User',
           created: expect.any(String),
           lastModified: expect.any(String),
           location: usersEndpoint + '/' + body.id,
         },
-        active: true,
-        schemas: ['urn:ietf:params:scim:schemas:core:2.0:User'],
-        userName: userEmail,
       });
     });
     test.concurrent(
@@ -204,15 +225,16 @@ describe.concurrent('/Users', () => {
           ],
           externalId: externalUserId,
           id: expect.any(String),
+          active: true,
+          schemas: ['urn:ietf:params:scim:schemas:core:2.0:User'],
+          userName: 'emmett.brown@' + domain,
+          groups: [],
           meta: {
             resourceType: 'User',
             created: expect.any(String),
             lastModified: expect.any(String),
             location: usersEndpoint + '/' + body.id,
           },
-          active: true,
-          schemas: ['urn:ietf:params:scim:schemas:core:2.0:User'],
-          userName: 'emmett.brown@' + domain,
         });
       },
     );
@@ -366,15 +388,16 @@ describe.concurrent('/Users', () => {
         ],
         externalId: externalUserId,
         id: expect.any(String),
+        groups: [],
+        active: false,
+        schemas: ['urn:ietf:params:scim:schemas:core:2.0:User'],
+        userName: 'marty.mcfly@' + domain,
         meta: {
           resourceType: 'User',
           created: expect.any(String),
           lastModified: expect.any(String),
           location: usersEndpoint + '/' + body.id,
         },
-        active: false,
-        schemas: ['urn:ietf:params:scim:schemas:core:2.0:User'],
-        userName: 'marty.mcfly@' + domain,
       });
     });
   });
@@ -484,6 +507,7 @@ describe.concurrent('/Users', () => {
         emails: [{ primary: true, value: 'marty.mcfly@' + domain, type: 'work' }],
         externalId: externalUserId,
         active: false,
+        groups: [],
         meta: {
           resourceType: 'User',
           created: expect.any(String),
@@ -1120,7 +1144,166 @@ describe.concurrent('/Users', () => {
       });
     });
   });
+  test.concurrent('includes groups in user update responses', async ({ expect }) => {
+    const seed = initSeed();
+    const owner = await seed.createOwner();
+    const org = await owner.createOrg();
+    const oidc = await org.createOIDCIntegration();
+    const domain = await oidc.registerFakeDomain();
+    const accessToken = await org.createOrganizationAccessToken({
+      permissions: ['member:describe', 'member:modify'],
+      resources: { mode: ResourceAssignmentModeType.Granular },
+    });
+    const headers = {
+      'Content-Type': 'application/scim+json',
+      Authorization: 'Bearer ' + accessToken.privateAccessKey,
+    };
+
+    const user = await createUser(headers, {
+      emails: [{ primary: true, type: 'work', value: 'grouped-user@' + domain }],
+    }).then(response => response.json());
+    const firstGroup = await createGroup(headers).then(response => response.json());
+    const secondGroup = await createGroup(headers).then(response => response.json());
+    expect((await addUserToGroupViaPatch(headers, firstGroup.id, user.id)).status).toEqual(200);
+    expect((await addUserToGroupViaPatch(headers, secondGroup.id, user.id)).status).toEqual(200);
+
+    const expectedGroups = [firstGroup, secondGroup].map(group => ({
+      value: group.id,
+      $ref: groupsEndpoint + '/' + group.id,
+    }));
+
+    const putResponse = await fetch(usersEndpoint + '/' + user.id, {
+      method: 'PUT',
+      body: JSON.stringify({ userName: 'Updated with PUT' }),
+      headers,
+    });
+    expect(putResponse.status).toEqual(200);
+    const putResponseBody = await putResponse.json();
+    expect(putResponseBody).toMatchObject({
+      id: user.id,
+      userName: 'Updated with PUT',
+      groups: expect.arrayContaining(expectedGroups),
+    });
+    expect(putResponseBody.groups).toHaveLength(2);
+
+    const patchResponse = await fetch(usersEndpoint + '/' + user.id, {
+      method: 'PATCH',
+      body: JSON.stringify({
+        Operations: [{ op: 'replace', path: 'userName', value: 'Updated with PATCH' }],
+      }),
+      headers,
+    });
+    expect(patchResponse.status).toEqual(200);
+    const patchResponseBody = await patchResponse.json();
+    expect(patchResponseBody).toMatchObject({
+      id: user.id,
+      userName: 'Updated with PATCH',
+      groups: expect.arrayContaining(expectedGroups),
+    });
+    expect(patchResponseBody.groups).toHaveLength(2);
+  });
+
   describe.concurrent('GET', () => {
+    test.concurrent('includes groups in list and individual user responses', async ({ expect }) => {
+      const seed = initSeed();
+      const owner = await seed.createOwner();
+      const org = await owner.createOrg();
+      const oidc = await org.createOIDCIntegration();
+      const domain = await oidc.registerFakeDomain();
+      const accessToken = await org.createOrganizationAccessToken({
+        permissions: ['member:describe', 'member:modify'],
+        resources: { mode: ResourceAssignmentModeType.Granular },
+      });
+      const headers = {
+        'Content-Type': 'application/scim+json',
+        Authorization: 'Bearer ' + accessToken.privateAccessKey,
+      };
+
+      const firstUser = await createUser(headers, {
+        externalId: 'first-grouped-user',
+        emails: [{ primary: true, type: 'work', value: 'first-grouped-user@' + domain }],
+      }).then(response => response.json());
+      const secondUser = await createUser(headers, {
+        externalId: 'second-grouped-user',
+        emails: [{ primary: true, type: 'work', value: 'second-grouped-user@' + domain }],
+      }).then(response => response.json());
+      const firstGroup = await createGroup(headers).then(response => response.json());
+      const secondGroup = await createGroup(headers).then(response => response.json());
+      const sharedGroup = await createGroup(headers).then(response => response.json());
+
+      expect((await addUserToGroupViaPatch(headers, firstGroup.id, firstUser.id)).status).toEqual(
+        200,
+      );
+      expect((await addUserToGroupViaPatch(headers, sharedGroup.id, firstUser.id)).status).toEqual(
+        200,
+      );
+      expect((await addUserToGroupViaPatch(headers, secondGroup.id, secondUser.id)).status).toEqual(
+        200,
+      );
+      expect((await addUserToGroupViaPatch(headers, sharedGroup.id, secondUser.id)).status).toEqual(
+        200,
+      );
+
+      const toGroupReferences = (groups: Array<{ id: string }>) =>
+        groups.map(group => ({
+          value: group.id,
+          $ref: groupsEndpoint + '/' + group.id,
+        }));
+      const firstUserGroups = toGroupReferences([firstGroup, sharedGroup]);
+      const secondUserGroups = toGroupReferences([secondGroup, sharedGroup]);
+      const expectUserGroups = (
+        resource: { id: string; groups: Array<{ value: string; $ref: string }> },
+        userId: string,
+        groups: Array<{ value: string; $ref: string }>,
+      ) => {
+        expect(resource.id).toEqual(userId);
+        expect(resource.groups).toHaveLength(groups.length);
+        expect(resource.groups).toEqual(expect.arrayContaining(groups));
+      };
+
+      const firstUserResponse = await fetch(usersEndpoint + '/' + firstUser.id, { headers });
+      expect(firstUserResponse.status).toEqual(200);
+      expectUserGroups(await firstUserResponse.json(), firstUser.id, firstUserGroups);
+
+      const secondUserResponse = await fetch(usersEndpoint + '/' + secondUser.id, { headers });
+      expect(secondUserResponse.status).toEqual(200);
+      expectUserGroups(await secondUserResponse.json(), secondUser.id, secondUserGroups);
+
+      const usersResponse = await getUsers(headers);
+      expect(usersResponse.status).toEqual(200);
+      const usersResponseBody = await usersResponse.json();
+      expectUserGroups(
+        usersResponseBody.Resources.find(
+          (resource: { id: string }) => resource.id === firstUser.id,
+        ),
+        firstUser.id,
+        firstUserGroups,
+      );
+      expectUserGroups(
+        usersResponseBody.Resources.find(
+          (resource: { id: string }) => resource.id === secondUser.id,
+        ),
+        secondUser.id,
+        secondUserGroups,
+      );
+
+      const firstFilteredUsersResponse = await getUsers(headers, {
+        filter: 'externalId eq "first-grouped-user"',
+      });
+      expect(firstFilteredUsersResponse.status).toEqual(200);
+      const firstFilteredUsersBody = await firstFilteredUsersResponse.json();
+      expect(firstFilteredUsersBody.Resources).toHaveLength(1);
+      expectUserGroups(firstFilteredUsersBody.Resources[0], firstUser.id, firstUserGroups);
+
+      const secondFilteredUsersResponse = await getUsers(headers, {
+        filter: 'externalId eq "second-grouped-user"',
+      });
+      expect(secondFilteredUsersResponse.status).toEqual(200);
+      const secondFilteredUsersBody = await secondFilteredUsersResponse.json();
+      expect(secondFilteredUsersBody.Resources).toHaveLength(1);
+      expectUserGroups(secondFilteredUsersBody.Resources[0], secondUser.id, secondUserGroups);
+    });
+
     test.concurrent('get and paginate users', async () => {
       const seed = initSeed();
       const owner = await seed.createOwner();
@@ -2285,7 +2468,7 @@ describe.concurrent('/Groups', () => {
         id: postResponseBody.id,
         members: [
           {
-            $ref: '/Users/' + usersPostResponseBody.id,
+            $ref: usersEndpoint + '/' + usersPostResponseBody.id,
             value: usersPostResponseBody.id,
           },
         ],
@@ -2365,11 +2548,11 @@ describe.concurrent('/Groups', () => {
         id: postResponseBody.id,
         members: expect.arrayContaining([
           {
-            $ref: '/Users/' + firstUserPostResponseBody.id,
+            $ref: usersEndpoint + '/' + firstUserPostResponseBody.id,
             value: firstUserPostResponseBody.id,
           },
           {
-            $ref: '/Users/' + secondUserPostResponseBody.id,
+            $ref: usersEndpoint + '/' + secondUserPostResponseBody.id,
             value: secondUserPostResponseBody.id,
           },
         ]),
@@ -2464,7 +2647,7 @@ describe.concurrent('/Groups', () => {
         id: postResponseBody.id,
         members: [
           {
-            $ref: '/Users/' + secondUserPostResponseBody.id,
+            $ref: usersEndpoint + '/' + secondUserPostResponseBody.id,
             value: secondUserPostResponseBody.id,
           },
         ],
@@ -3182,15 +3365,16 @@ describe.concurrent('provider flows', () => {
         ],
         externalId: externalUserId,
         id: expect.any(String),
+        schemas: ['urn:ietf:params:scim:schemas:core:2.0:User'],
+        userName: 'marty.mcfly@' + domain,
+        active: true,
+        groups: [],
         meta: {
           resourceType: 'User',
           created: expect.any(String),
           lastModified: expect.any(String),
           location: expect.stringContaining(usersEndpoint + '/'),
         },
-        schemas: ['urn:ietf:params:scim:schemas:core:2.0:User'],
-        userName: 'marty.mcfly@' + domain,
-        active: true,
       });
 
       const putResponse = await fetch(groupResourceEndpoint, {
@@ -3213,7 +3397,7 @@ describe.concurrent('provider flows', () => {
         // Should be identical; but also has the empty members property
         members: [
           {
-            $ref: '/Users/' + usersResponseBody.id,
+            $ref: usersEndpoint + '/' + usersResponseBody.id,
             value: usersResponseBody.id,
           },
         ],
@@ -3320,15 +3504,16 @@ describe.concurrent('provider flows', () => {
           ],
           externalId: externalUserId,
           id: usersResponseBody.id,
+          schemas: ['urn:ietf:params:scim:schemas:core:2.0:User'],
+          userName: 'marty.mcfly@' + domain,
+          active: false,
+          groups: [],
           meta: {
             resourceType: 'User',
             created: expect.any(String),
             lastModified: expect.any(String),
             location: usersEndpoint + '/' + usersResponseBody.id,
           },
-          schemas: ['urn:ietf:params:scim:schemas:core:2.0:User'],
-          userName: 'marty.mcfly@' + domain,
-          active: false,
         });
 
         const { pool } = await seed.createDbConnection();
