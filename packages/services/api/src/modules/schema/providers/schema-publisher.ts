@@ -3144,8 +3144,8 @@ export class SchemaPublisher {
           shortSummaryFallback = summary;
         } else {
           title = 'No blocking changes';
-          summary = this.changesToMarkdown(changes);
-          shortSummaryFallback = this.changesToMarkdown(changes, false);
+          summary = changesToMarkdown(changes);
+          shortSummaryFallback = changesToMarkdown(changes, false);
         }
       } else {
         const total =
@@ -3160,7 +3160,7 @@ export class SchemaPublisher {
           warnings ? this.warningsToMarkdown(warnings) : null,
           compositionErrors ? this.errorsToMarkdown(compositionErrors) : null,
           breakingChanges ? this.errorsToMarkdown(breakingChanges) : null,
-          changes ? this.changesToMarkdown(changes) : null,
+          changes ? changesToMarkdown(changes) : null,
         ]
           .filter(Boolean)
           .join('\n\n');
@@ -3395,14 +3395,14 @@ export class SchemaPublisher {
           shortSummaryFallback = summary;
         } else {
           title = 'No breaking changes';
-          summary = this.changesToMarkdown(changes);
-          shortSummaryFallback = this.changesToMarkdown(changes, false);
+          summary = changesToMarkdown(changes);
+          shortSummaryFallback = changesToMarkdown(changes, false);
         }
       } else {
         title = `Detected ${errors.length} error${errors.length === 1 ? '' : 's'}`;
         summary = [
           errors ? this.errorsToMarkdown(errors) : null,
-          changes ? this.changesToMarkdown(changes) : null,
+          changes ? changesToMarkdown(changes) : null,
         ]
           .filter(Boolean)
           .join('\n\n');
@@ -3473,51 +3473,53 @@ export class SchemaPublisher {
       }),
     ].join('\n');
   }
+}
 
-  private changesToMarkdown(
-    changes: ReadonlyArray<SchemaChangeType>,
-    printListOfChanges: boolean = true,
-  ): string {
-    const breakingChanges = changes.filter(
-      change => change.criticality === CriticalityLevel.Breaking,
-    );
-    const dangerousChanges = changes.filter(
-      change => change.criticality === CriticalityLevel.Dangerous,
-    );
-    const safeChanges = changes.filter(
-      change => change.criticality === CriticalityLevel.NonBreaking,
-    );
+export type MarkdownSchemaChange = {
+  criticality: CriticalityLevel;
+  message: string;
+  isSafeBasedOnUsage?: boolean;
+  approvalMetadata?: unknown;
+};
 
-    const lines: string[] = [
-      `## Found ${changes.length} change${changes.length > 1 ? 's' : ''}`,
-      '',
-    ];
+export function changesToMarkdown(
+  changes: ReadonlyArray<MarkdownSchemaChange>,
+  printListOfChanges: boolean = true,
+): string {
+  const breakingChanges = changes.filter(
+    change => change.criticality === CriticalityLevel.Breaking,
+  );
+  const dangerousChanges = changes.filter(
+    change => change.criticality === CriticalityLevel.Dangerous,
+  );
+  const safeChanges = changes.filter(change => change.criticality === CriticalityLevel.NonBreaking);
 
-    if (breakingChanges.length) {
-      lines.push(`Breaking: ${breakingChanges.length}`);
-    }
+  const lines: string[] = [`## Found ${changes.length} change${changes.length > 1 ? 's' : ''}`, ''];
 
-    if (dangerousChanges.length) {
-      lines.push(`Dangerous: ${dangerousChanges.length}`);
-    }
-
-    if (safeChanges.length) {
-      lines.push(`Safe: ${safeChanges.length}`);
-    }
-
-    if (printListOfChanges) {
-      writeChanges('Breaking', breakingChanges, lines);
-      writeChanges('Dangrous', dangerousChanges, lines);
-      writeChanges('Safe', safeChanges, lines);
-    }
-
-    return lines.join('\n');
+  if (breakingChanges.length) {
+    lines.push(`Breaking: ${breakingChanges.length}`);
   }
+
+  if (dangerousChanges.length) {
+    lines.push(`Dangerous: ${dangerousChanges.length}`);
+  }
+
+  if (safeChanges.length) {
+    lines.push(`Safe: ${safeChanges.length}`);
+  }
+
+  if (printListOfChanges) {
+    writeChanges('Breaking', breakingChanges, lines);
+    writeChanges('Dangrous', dangerousChanges, lines);
+    writeChanges('Safe', safeChanges, lines);
+  }
+
+  return lines.join('\n');
 }
 
 function writeChanges(
   type: string,
-  changes: ReadonlyArray<SchemaChangeType>,
+  changes: ReadonlyArray<MarkdownSchemaChange>,
   lines: string[],
 ): void {
   if (changes.length > 0) {
