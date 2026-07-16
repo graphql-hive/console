@@ -289,7 +289,7 @@ export class GroupStore {
       displayName: string | null;
       externalId: string | null;
     },
-    trx: CommonQueryMethods = this.pool
+    trx: CommonQueryMethods = this.pool,
   ) {
     const query = psql`/* updateGroupPropertiesByOrganizationIdAndGroupId */
       UPDATE
@@ -346,6 +346,7 @@ const GroupModel = z.object({
   displayName: z.string(),
   createdAt: z.string(),
   externalId: z.string().nullable(),
+  lastUpdatedAt: z.string().nullable(),
 });
 
 export type Group = z.TypeOf<typeof GroupModel>;
@@ -354,6 +355,7 @@ const groupFields = psql`
   "id"
   , "organization_id" AS "organizationId"
   , "display_name" AS "displayName"
-  , to_json("created_at") AS "createdAt"
   , "external_id" AS "externalId"
+  , to_json("created_at") AS "createdAt"
+  , to_json("last_updated_at") AS "lastUpdatedAt"
 `;

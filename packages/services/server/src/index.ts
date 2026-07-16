@@ -640,6 +640,7 @@ export async function main() {
         storage,
         registry.injector.get(OIDCIntegrationStore),
         registry.injector.get(RedisRateLimiter),
+        env.graphql.origin + '/scim/v2',
       );
       await server.register(scimPlugin, { prefix: '/scim/v2' });
     }

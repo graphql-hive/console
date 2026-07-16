@@ -3,14 +3,28 @@ import { type MigrationExecutor } from '../pg-migrator';
 export default {
   name: '2026.05.18T00-00-00.scim-group-provisioning.ts',
   run: ({ psql }) => psql`
+    CREATE OR REPLACE FUNCTION update_last_updated_at_column()
+    RETURNS TRIGGER AS $$
+    BEGIN
+        NEW."last_updated_at" = NOW();
+        RETURN NEW;
+    END;
+    $$ LANGUAGE plpgsql;
+
     CREATE TABLE IF NOT EXISTS "groups" (
       "id" UUID PRIMARY KEY DEFAULT uuid_generate_v4()
       , "organization_id" UUID REFERENCES "organizations"("id") ON DELETE CASCADE
       , "display_name" text
       , "created_at" timestamptz DEFAULT NOW()
+      , "last_updated_at" timestamptz DEFAULT NULL
       , "disabled_at" timestamptz DEFAULT NULL
       , "external_id" text
     );
+
+    CREATE TRIGGER "groups_last_updated_at"
+    BEFORE UPDATE ON "groups"
+    FOR EACH ROW
+    EXECUTE PROCEDURE update_last_updated_at_column();
 
     CREATE INDEX IF NOT EXISTS "idx_groups_organization_id"
       ON "groups" ("organization_id")
@@ -66,6 +80,12 @@ export default {
         REFERENCES "organizations"("id") ON DELETE CASCADE
       , ADD COLUMN IF NOT EXISTS "external_id" TEXT NULL
       , ADD COLUMN IF NOT EXISTS "deactivated_at" TIMESTAMPTZ NULL
+      , ADD COLUMN IF NOT EXISTS "last_updated_at" TIMESTAMPTZ NULL
     ;
+
+    CREATE TRIGGER "users_last_updated_at"
+    BEFORE UPDATE ON "users"
+    FOR EACH ROW
+    EXECUTE PROCEDURE update_last_updated_at_column();
   `,
 } satisfies MigrationExecutor;

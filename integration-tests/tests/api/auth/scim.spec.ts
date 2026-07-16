@@ -149,6 +149,9 @@ describe.concurrent('/Users', () => {
         id: expect.any(String),
         meta: {
           resourceType: 'User',
+          created: expect.any(String),
+          lastModified: expect.any(String),
+          location: usersEndpoint + '/' + body.id,
         },
         active: true,
         schemas: ['urn:ietf:params:scim:schemas:core:2.0:User'],
@@ -203,6 +206,9 @@ describe.concurrent('/Users', () => {
           id: expect.any(String),
           meta: {
             resourceType: 'User',
+            created: expect.any(String),
+            lastModified: expect.any(String),
+            location: usersEndpoint + '/' + body.id,
           },
           active: true,
           schemas: ['urn:ietf:params:scim:schemas:core:2.0:User'],
@@ -362,6 +368,9 @@ describe.concurrent('/Users', () => {
         id: expect.any(String),
         meta: {
           resourceType: 'User',
+          created: expect.any(String),
+          lastModified: expect.any(String),
+          location: usersEndpoint + '/' + body.id,
         },
         active: false,
         schemas: ['urn:ietf:params:scim:schemas:core:2.0:User'],
@@ -477,6 +486,9 @@ describe.concurrent('/Users', () => {
         active: false,
         meta: {
           resourceType: 'User',
+          created: expect.any(String),
+          lastModified: expect.any(String),
+          location: usersEndpoint + '/' + usersPostResponseBody.id,
         },
       });
     });
@@ -624,6 +636,10 @@ describe.concurrent('/Users', () => {
       expect(await usersPutResponse.json()).toEqual({
         ...userPostBody,
         userName: 'marty@mcfly.com',
+        meta: {
+          ...userPostBody.meta,
+          lastModified: expect.any(String),
+        },
       });
     });
     test.concurrent(
@@ -710,6 +726,10 @@ describe.concurrent('/Users', () => {
       expect(await usersPutResponse.json()).toEqual({
         ...userResponseBody,
         externalId: newExternalId,
+        meta: {
+          ...userResponseBody.meta,
+          lastModified: expect.any(String),
+        },
       });
     });
     test.concurrent(
@@ -826,6 +846,10 @@ describe.concurrent('/Users', () => {
       expect(await usersPatchResponse.json()).toEqual({
         ...userPostBody,
         active: false,
+        meta: {
+          ...userPostBody.meta,
+          lastModified: expect.any(String),
+        },
       });
 
       usersPatchResponse = await fetch(usersEndpoint + '/' + userPostBody.id, {
@@ -839,6 +863,10 @@ describe.concurrent('/Users', () => {
       expect(await usersPatchResponse.json()).toEqual({
         ...userPostBody,
         active: true,
+        meta: {
+          ...userPostBody.meta,
+          lastModified: expect.any(String),
+        },
       });
     });
     test.concurrent('update email (full object replacement)', async ({ expect }) => {
@@ -884,6 +912,10 @@ describe.concurrent('/Users', () => {
             value: 'marty.mcfly.2@' + domain,
           },
         ],
+        meta: {
+          ...userPostBody.meta,
+          lastModified: expect.any(String),
+        },
       });
     });
     test.concurrent('update email (via emails[type eq "work"].value)', async ({ expect }) => {
@@ -929,6 +961,10 @@ describe.concurrent('/Users', () => {
             value: 'marty.mcfly2@' + domain,
           },
         ],
+        meta: {
+          ...userPostBody.meta,
+          lastModified: expect.any(String),
+        },
       });
     });
     test.concurrent('update email to non-verified domain fails', async ({ expect }) => {
@@ -1027,6 +1063,10 @@ describe.concurrent('/Users', () => {
       expect(await usersPatchResponse.json()).toEqual({
         ...userPostBody,
         userName: 'marty.mcfly.69@' + domain,
+        meta: {
+          ...userPostBody.meta,
+          lastModified: expect.any(String),
+        },
       });
     });
     test.concurrent('update external id', async ({ expect }) => {
@@ -1073,6 +1113,10 @@ describe.concurrent('/Users', () => {
       expect(await usersPatchResponse.json()).toEqual({
         ...userResponseBody,
         externalId: newExternalId,
+        meta: {
+          ...userResponseBody.meta,
+          lastModified: expect.any(String),
+        },
       });
     });
   });
@@ -1518,6 +1562,9 @@ describe.concurrent('/Groups', () => {
         id: expect.any(String),
         meta: {
           resourceType: 'Group',
+          created: expect.any(String),
+          lastModified: expect.any(String),
+          location: groupsEndpoint + '/' + postResponseBody.id,
         },
         schemas: ['urn:ietf:params:scim:schemas:core:2.0:Group'],
       });
@@ -1843,6 +1890,10 @@ describe.concurrent('/Groups', () => {
       expect(putResponseBody).toEqual({
         ...postResponseBody,
         displayName: 'ay',
+        meta: {
+          ...postResponseBody.meta,
+          lastModified: expect.any(String),
+        },
         // put always includes the member list
         members: [],
       });
@@ -1897,6 +1948,10 @@ describe.concurrent('/Groups', () => {
       expect(putResponseBody).toEqual({
         ...postResponseBody,
         displayName: 'ay',
+        meta: {
+          ...postResponseBody.meta,
+          lastModified: expect.any(String),
+        },
         // put always includes the member list
         members: [],
       });
@@ -2021,6 +2076,10 @@ describe.concurrent('/Groups', () => {
       expect(putResponseBody).toEqual({
         ...postResponseBody,
         externalId: 'newExternalId',
+        meta: {
+          ...postResponseBody.meta,
+          lastModified: expect.any(String),
+        },
         // put always includes the member list
         members: [],
       });
@@ -2076,6 +2135,10 @@ describe.concurrent('/Groups', () => {
       expect(putResponseBody).toEqual({
         ...postResponseBody,
         externalId: 'newExternalId',
+        meta: {
+          ...postResponseBody.meta,
+          lastModified: expect.any(String),
+        },
         // put always includes the member list
         members: [],
       });
@@ -2227,7 +2290,8 @@ describe.concurrent('/Groups', () => {
           },
         ],
         meta: {
-          resourceType: 'Group',
+          ...postResponseBody.meta,
+          lastModified: expect.any(String),
         },
         schemas: ['urn:ietf:params:scim:schemas:core:2.0:Group'],
       });
@@ -2310,7 +2374,8 @@ describe.concurrent('/Groups', () => {
           },
         ]),
         meta: {
-          resourceType: 'Group',
+          ...postResponseBody.meta,
+          lastModified: expect.any(String),
         },
         schemas: ['urn:ietf:params:scim:schemas:core:2.0:Group'],
       });
@@ -2405,6 +2470,9 @@ describe.concurrent('/Groups', () => {
         ],
         meta: {
           resourceType: 'Group',
+          created: expect.any(String),
+          lastModified: expect.any(String),
+          location: groupsEndpoint + '/' + postResponseBody.id,
         },
         schemas: ['urn:ietf:params:scim:schemas:core:2.0:Group'],
       });
@@ -2497,6 +2565,9 @@ describe.concurrent('/Groups', () => {
         members: [],
         meta: {
           resourceType: 'Group',
+          created: expect.any(String),
+          lastModified: expect.any(String),
+          location: groupsEndpoint + '/' + postResponseBody.id,
         },
         schemas: ['urn:ietf:params:scim:schemas:core:2.0:Group'],
       });
@@ -3039,6 +3110,10 @@ describe.concurrent('provider flows', () => {
       const putResponseBody = await putResponse.json();
       expect(putResponseBody).toMatchObject({
         ...postResponseBody,
+        meta: {
+          ...postResponseBody.meta,
+          lastModified: expect.any(String),
+        },
         // Should be identical; but also has the empty members property
         members: [],
       });
@@ -3109,6 +3184,9 @@ describe.concurrent('provider flows', () => {
         id: expect.any(String),
         meta: {
           resourceType: 'User',
+          created: expect.any(String),
+          lastModified: expect.any(String),
+          location: expect.stringContaining(usersEndpoint + '/'),
         },
         schemas: ['urn:ietf:params:scim:schemas:core:2.0:User'],
         userName: 'marty.mcfly@' + domain,
@@ -3128,6 +3206,10 @@ describe.concurrent('provider flows', () => {
       const putResponseBody = await putResponse.json();
       expect(putResponseBody).toMatchObject({
         ...postResponseBody,
+        meta: {
+          ...postResponseBody.meta,
+          lastModified: expect.any(String),
+        },
         // Should be identical; but also has the empty members property
         members: [
           {
@@ -3240,6 +3322,9 @@ describe.concurrent('provider flows', () => {
           id: usersResponseBody.id,
           meta: {
             resourceType: 'User',
+            created: expect.any(String),
+            lastModified: expect.any(String),
+            location: usersEndpoint + '/' + usersResponseBody.id,
           },
           schemas: ['urn:ietf:params:scim:schemas:core:2.0:User'],
           userName: 'marty.mcfly@' + domain,
@@ -3324,6 +3409,10 @@ describe.concurrent('provider flows', () => {
         displayName: 'something else',
         // Should be identical; but also has the empty members property
         members: [],
+        meta: {
+          ...postResponseBody.meta,
+          lastModified: expect.any(String),
+        },
       });
     });
   });
