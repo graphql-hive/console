@@ -1,4 +1,5 @@
 // @vitest-environment happy-dom
+import { format } from 'date-fns';
 import { act, renderHook } from '@testing-library/react';
 import {
   useHistory,
@@ -16,12 +17,15 @@ const operation: LaboratoryOperation = {
   extensions: '',
 };
 
-const requestItem = (id: string): LaboratoryHistoryRequest => ({
+const requestItem = (
+  id: string,
+  createdAt = '2026-01-01T12:00:00.000Z',
+): LaboratoryHistoryRequest => ({
   id,
   response: '{}',
   headers: '{}',
   operation,
-  createdAt: '2026-01-01T00:00:00.000Z',
+  createdAt,
 });
 
 const subscriptionItem = (id: string): LaboratoryHistorySubscription => ({
@@ -119,5 +123,25 @@ describe('useHistory', () => {
     expect(result.current.history).toHaveLength(0);
     expect(onHistoryChange).toHaveBeenCalledWith([]);
     expect(onHistoryDelete).toHaveBeenCalledTimes(2);
+  });
+
+  it('deleteHistoryByDay removes only items on the given day and fires callbacks for each', () => {
+    const onHistoryDelete = vi.fn();
+    const onHistoryChange = vi.fn();
+    const jan = requestItem('h1', '2026-01-01T12:00:00.000Z');
+    const feb = requestItem('h2', '2026-02-01T12:00:00.000Z');
+    const { result } = renderHook(() =>
+      useHistory({ defaultHistory: [jan, feb], onHistoryDelete, onHistoryChange }),
+    );
+
+    act(() => {
+      result.current.deleteHistoryByDay(format(new Date(jan.createdAt), 'dd MMM yyyy'));
+    });
+
+    expect(result.current.history).toHaveLength(1);
+    expect(result.current.history[0].id).toBe('h2');
+    expect(onHistoryChange).toHaveBeenCalledWith([expect.objectContaining({ id: 'h2' })]);
+    expect(onHistoryDelete).toHaveBeenCalledTimes(1);
+    expect(onHistoryDelete).toHaveBeenCalledWith(expect.objectContaining({ id: 'h1' }));
   });
 });
