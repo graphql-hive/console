@@ -140,6 +140,19 @@ export class GroupStore {
     return await this.pool.any(query).then(z.array(GroupModel).parse);
   }
 
+  async getTotalGroupCountForOrganizationId(organizationId: string) {
+    const query = psql` /* getTotalGroupCountForOrganizationId */
+      SELECT
+        COUNT(*)
+      FROM
+        "groups"
+      WHERE
+        "organization_id" = ${organizationId}
+    `;
+
+    return await this.pool.oneFirst(query).then(z.number().parse);
+  }
+
   async getPaginatedGroupsForOrganizationId(
     organizationId: string,
     args: {

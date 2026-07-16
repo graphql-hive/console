@@ -1006,26 +1006,32 @@ export const createSCIMPlugin =
           }
         }
 
-        if (user) {
-          users.push(createSCIMUserObjectFromUser(baseUri, user));
-        }
-      } else {
-        const offset = Math.max(0, startIndex - 1);
-        const pagedUsers = await usersStore.getOffsetPaginatedUsersForOrganizationId(
-          result.organizationId,
-          {
-            offset,
-            count,
-          },
-        );
-        for (const user of pagedUsers) {
-          users.push(createSCIMUserObjectFromUser(baseUri, user));
-        }
+        return reply.status(200).send({
+          schemas: ['urn:ietf:params:scim:api:messages:2.0:ListResponse'],
+          totalResults: user ? 1 : 0,
+          startIndex,
+          itemsPerPage: user ? 1 : 0,
+          Resources: user ? [createSCIMUserObjectFromUser(baseUri, user)] : [],
+        } satisfies SCIMListResponseObject);
+      }
+
+      const offset = Math.max(0, startIndex - 1);
+      const pagedUsers = await usersStore.getOffsetPaginatedUsersForOrganizationId(
+        result.organizationId,
+        {
+          offset,
+          count,
+        },
+      );
+      for (const user of pagedUsers) {
+        users.push(createSCIMUserObjectFromUser(baseUri, user));
       }
 
       return reply.status(200).send({
         schemas: ['urn:ietf:params:scim:api:messages:2.0:ListResponse'],
-        totalResults: users.length,
+        totalResults: await usersStore.getTotalProvisionedUserCountForOrganizationId(
+          result.organizationId,
+        ),
         startIndex,
         itemsPerPage: users.length,
         Resources: users,
@@ -1101,26 +1107,30 @@ export const createSCIMPlugin =
           }
         }
 
-        if (group) {
-          groups.push(createSCIMGroupObjectFromGroup(baseUri, group));
-        }
-      } else {
-        const pagedGroups = await groupStore.getOffsetPaginatedGroupsForOrganizationId(
-          result.organizationId,
-          {
-            offset: startIndex - 1,
-            count,
-          },
-        );
+        return reply.status(200).send({
+          schemas: ['urn:ietf:params:scim:api:messages:2.0:ListResponse'],
+          totalResults: group ? 1 : 0,
+          startIndex,
+          itemsPerPage: group ? 1 : 0,
+          Resources: group ? [createSCIMGroupObjectFromGroup(baseUri, group)] : [],
+        } satisfies SCIMListResponseObject);
+      }
 
-        for (const group of pagedGroups) {
-          groups.push(createSCIMGroupObjectFromGroup(baseUri, group));
-        }
+      const pagedGroups = await groupStore.getOffsetPaginatedGroupsForOrganizationId(
+        result.organizationId,
+        {
+          offset: startIndex - 1,
+          count,
+        },
+      );
+
+      for (const group of pagedGroups) {
+        groups.push(createSCIMGroupObjectFromGroup(baseUri, group));
       }
 
       return reply.status(200).send({
         schemas: ['urn:ietf:params:scim:api:messages:2.0:ListResponse'],
-        totalResults: groups.length,
+        totalResults: await groupStore.getTotalGroupCountForOrganizationId(result.organizationId),
         startIndex,
         itemsPerPage: groups.length,
         Resources: groups,

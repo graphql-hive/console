@@ -346,6 +346,19 @@ export class UsersStore {
     return await this.pool.any(query).then(z.array(UserModel).parse);
   }
 
+  async getTotalProvisionedUserCountForOrganizationId(organizationId: string) {
+    const query = psql` /* getTotalProvisionedUserCountForOrganizationId */
+      SELECT
+        COUNT(*)
+      FROM
+        "users"
+      WHERE
+        "provisioned_by_organization_id" = ${organizationId}
+    `;
+
+    return await this.pool.oneFirst(query).then(z.number().parse);
+  }
+
   async isUserWithIdAdminOfAnyOrganization(userId: string) {
     const query = psql`
       SELECT TRUE as "exists"
