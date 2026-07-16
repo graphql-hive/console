@@ -194,8 +194,7 @@
       "bentocache": "patches/bentocache.patch",
       "@graphql-codegen/schema-ast": "patches/@graphql-codegen__schema-ast.patch",
       "@fastify/vite": "patches/@fastify__vite.patch",
-      "@slonik/pg-driver": "patches/@slonik__pg-driver.patch",
-      "slonik": "patches/slonik.patch"
+      "@slonik/pg-driver": "patches/@slonik__pg-driver.patch"
     },
     "onlyBuiltDependencies": [
       "msw"

@@ -16,6 +16,11 @@ import { PgPoolBridge } from './pg-pool-bridge';
 
 const tracer = trace.getTracer('storage');
 
+type InferColumnValue<T extends StandardSchemaV1> =
+  StandardSchemaV1.InferOutput<T> extends Record<string, unknown>
+    ? StandardSchemaV1.InferOutput<T>[keyof StandardSchemaV1.InferOutput<T>]
+    : unknown;
+
 export interface CommonQueryMethods {
   exists<T extends StandardSchemaV1>(
     sql: QuerySqlToken<T>,
@@ -33,7 +38,7 @@ export interface CommonQueryMethods {
   oneFirst<T extends StandardSchemaV1>(
     sql: QuerySqlToken<T>,
     values?: PrimitiveValueExpression[],
-  ): Promise<StandardSchemaV1.InferOutput<T>[keyof StandardSchemaV1.InferOutput<T>]>;
+  ): Promise<InferColumnValue<T>>;
   one<T extends StandardSchemaV1>(
     sql: QuerySqlToken<T>,
     values?: PrimitiveValueExpression[],
@@ -41,11 +46,11 @@ export interface CommonQueryMethods {
   anyFirst<T extends StandardSchemaV1>(
     sql: QuerySqlToken<T>,
     values?: PrimitiveValueExpression[],
-  ): Promise<ReadonlyArray<StandardSchemaV1.InferOutput<T>[keyof StandardSchemaV1.InferOutput<T>]>>;
+  ): Promise<ReadonlyArray<InferColumnValue<T>>>;
   maybeOneFirst<T extends StandardSchemaV1>(
     sql: QuerySqlToken<T>,
     values?: PrimitiveValueExpression[],
-  ): Promise<null | StandardSchemaV1.InferOutput<T>[keyof StandardSchemaV1.InferOutput<T>]>;
+  ): Promise<null | InferColumnValue<T>>;
 }
 
 export class PostgresDatabasePool implements CommonQueryMethods {
@@ -88,14 +93,14 @@ export class PostgresDatabasePool implements CommonQueryMethods {
   async oneFirst<T extends StandardSchemaV1>(
     sql: QuerySqlToken<T>,
     values?: PrimitiveValueExpression[],
-  ): Promise<StandardSchemaV1.InferOutput<T>[keyof StandardSchemaV1.InferOutput<T>]> {
+  ): Promise<InferColumnValue<T>> {
     return await this.pool.oneFirst(sql, values);
   }
 
   async maybeOneFirst<T extends StandardSchemaV1>(
     sql: QuerySqlToken<T>,
     values?: PrimitiveValueExpression[],
-  ): Promise<null | StandardSchemaV1.InferOutput<T>[keyof StandardSchemaV1.InferOutput<T>]> {
+  ): Promise<null | InferColumnValue<T>> {
     return await this.pool.maybeOneFirst(sql, values);
   }
 
@@ -109,9 +114,7 @@ export class PostgresDatabasePool implements CommonQueryMethods {
   async anyFirst<T extends StandardSchemaV1>(
     sql: QuerySqlToken<T>,
     values?: PrimitiveValueExpression[],
-  ): Promise<
-    ReadonlyArray<StandardSchemaV1.InferOutput<T>[keyof StandardSchemaV1.InferOutput<T>]>
-  > {
+  ): Promise<ReadonlyArray<InferColumnValue<T>>> {
     return await this.pool.anyFirst(sql, values);
   }
 
@@ -190,9 +193,11 @@ export async function createPostgresDatabasePool(args: {
     interceptors: dbInterceptors.concat(args.additionalInterceptors ?? []),
     typeParsers,
     captureStackTrace: false,
-    maximumPoolSize: args.maximumPoolSize,
+    maxPoolSize: args.maximumPoolSize,
     idleTimeout: 30000,
     statementTimeout: args.statementTimeout,
+    // we have our own tracing setup that is less verbose
+    tracing: false,
   });
 
   function interceptError<K extends Exclude<keyof SlonikCommonQueryMethods, 'transaction'>>(
