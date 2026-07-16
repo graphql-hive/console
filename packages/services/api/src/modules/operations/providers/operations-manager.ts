@@ -4,7 +4,7 @@ import LRU from 'lru-cache';
 import { traceFn } from '@hive/service-common';
 import type { DateRange } from '../../../shared/entities';
 import type { Listify, Optional } from '../../../shared/helpers';
-import { cache } from '../../../shared/helpers';
+import { batchBy, cache } from '../../../shared/helpers';
 import { Session } from '../../auth/lib/authz';
 import { Logger } from '../../shared/providers/logger';
 import type {
@@ -51,6 +51,27 @@ interface ReadFieldStatsOutput {
   count: number;
   percentage: number;
 }
+
+export type DurationAndCountOverTime = Array<{
+  date: number;
+  total: number;
+  totalOk: number;
+  duration: {
+    avg: number;
+    p75: number;
+    p90: number;
+    p95: number;
+    p99: number;
+  };
+}>;
+
+const emptyDurationMetrics = {
+  avg: 0,
+  p75: 0,
+  p90: 0,
+  p95: 0,
+  p99: 0,
+};
 
 /**
  * Responsible for auth checks.
@@ -307,6 +328,66 @@ export class OperationsManager {
 
     return this.reader.countOperationsWithoutDetails({
       target,
+      period,
+    });
+  }
+
+  async countRequestsByTargetIds({
+    organizationId: organization,
+    projectId: project,
+    targetIds,
+    period,
+  }: {
+    targetIds: readonly string[];
+    period: DateRange;
+  } & ProjectSelector): Promise<Map<string, number>> {
+    this.logger.info(
+      'Counting requests by target (period=%o, project=%s, targets=%s)',
+      period,
+      project,
+      targetIds.join(';'),
+    );
+
+    await this.session.assertPerformAction({
+      action: 'project:describe',
+      organizationId: organization,
+      params: {
+        organizationId: organization,
+        projectId: project,
+      },
+    });
+
+    return this.reader.countRequestsByTarget({
+      targets: targetIds,
+      period,
+    });
+  }
+
+  async countRequestsByTargetIdsOfOrganization({
+    organizationId: organization,
+    targetIds,
+    period,
+  }: {
+    targetIds: readonly string[];
+    period: DateRange;
+  } & OrganizationSelector): Promise<Map<string, number>> {
+    this.logger.info(
+      'Counting requests by target for organization (period=%o, organization=%s, targets=%s)',
+      period,
+      organization,
+      targetIds.join(';'),
+    );
+
+    await this.session.assertPerformAction({
+      action: 'organization:describe',
+      organizationId: organization,
+      params: {
+        organizationId: organization,
+      },
+    });
+
+    return this.reader.countRequestsByTarget({
+      targets: targetIds,
       period,
     });
   }
@@ -649,6 +730,58 @@ export class OperationsManager {
     });
   }
 
+  readDurationAndCountOverTime = batchBy<
+    {
+      period: DateRange;
+      resolution: number;
+      operations?: readonly string[];
+      clients?: readonly string[];
+      clientVersionFilters?: readonly { clientName: string; versions: readonly string[] | null }[];
+      excludeOperations?: boolean;
+      excludeClientVersionFilters?: boolean;
+    } & TargetSelector,
+    DurationAndCountOverTime
+  >(
+    selector =>
+      JSON.stringify({
+        organizationId: selector.organizationId,
+        projectId: selector.projectId,
+        period: selector.period,
+        resolution: selector.resolution,
+        operations: selector.operations,
+        clients: selector.clients,
+        clientVersionFilters: selector.clientVersionFilters,
+        excludeOperations: selector.excludeOperations,
+        excludeClientVersionFilters: selector.excludeClientVersionFilters,
+      }),
+    async selectors => {
+      const selector = selectors[0];
+      const targetIds = Array.from(new Set(selectors.map(selector => selector.targetId)));
+
+      await this.session.assertPerformAction({
+        action: 'project:describe',
+        organizationId: selector.organizationId,
+        params: {
+          organizationId: selector.organizationId,
+          projectId: selector.projectId,
+        },
+      });
+
+      const results = await this.reader.durationAndCountOverTimeOfTargets({
+        targets: targetIds,
+        period: selector.period,
+        resolution: selector.resolution,
+        operations: selector.operations,
+        clients: selector.clients,
+        clientVersionFilters: selector.clientVersionFilters,
+        excludeOperations: selector.excludeOperations,
+        excludeClientVersionFilters: selector.excludeClientVersionFilters,
+      });
+
+      return selectors.map(selector => Promise.resolve(results.get(selector.targetId) ?? []));
+    },
+  );
+
   async readFailuresOverTime({
     period,
     resolution,
@@ -743,44 +876,60 @@ export class OperationsManager {
     });
   }
 
-  async readGeneralDurationPercentiles({
-    period,
-    organizationId: organization,
-    projectId: project,
-    targetId: target,
-    operations,
-    clients,
-    clientVersionFilters,
-    excludeOperations,
-    excludeClientVersionFilters,
-  }: {
-    period: DateRange;
-    operations?: readonly string[];
-    clients?: readonly string[];
-    clientVersionFilters?: readonly { clientName: string; versions: readonly string[] | null }[];
-    excludeOperations?: boolean;
-    excludeClientVersionFilters?: boolean;
-  } & TargetSelector) {
-    this.logger.info('Reading overall duration percentiles (period=%o, target=%s)', period, target);
-    await this.session.assertPerformAction({
-      action: 'project:describe',
-      organizationId: organization,
-      params: {
-        organizationId: organization,
-        projectId: project,
-      },
-    });
+  readGeneralDurationPercentiles = batchBy<
+    {
+      period: DateRange;
+      operations?: readonly string[];
+      clients?: readonly string[];
+      clientVersionFilters?: readonly { clientName: string; versions: readonly string[] | null }[];
+      excludeOperations?: boolean;
+      excludeClientVersionFilters?: boolean;
+    } & TargetSelector,
+    typeof emptyDurationMetrics
+  >(
+    selector =>
+      JSON.stringify({
+        organizationId: selector.organizationId,
+        projectId: selector.projectId,
+        period: selector.period,
+        operations: selector.operations,
+        clients: selector.clients,
+        clientVersionFilters: selector.clientVersionFilters,
+        excludeOperations: selector.excludeOperations,
+        excludeClientVersionFilters: selector.excludeClientVersionFilters,
+      }),
+    async selectors => {
+      const selector = selectors[0];
 
-    return this.reader.generalDurationPercentiles({
-      target,
-      period,
-      operations,
-      clients,
-      clientVersionFilters,
-      excludeOperations,
-      excludeClientVersionFilters,
-    });
-  }
+      this.logger.info(
+        'Reading overall duration percentiles (period=%o, targets=%s)',
+        selector.period,
+        selectors.map(selector => selector.targetId).join(';'),
+      );
+      await this.session.assertPerformAction({
+        action: 'project:describe',
+        organizationId: selector.organizationId,
+        params: {
+          organizationId: selector.organizationId,
+          projectId: selector.projectId,
+        },
+      });
+
+      const durations = await this.reader.generalDurationPercentilesOfTargets({
+        targets: selectors.map(selector => selector.targetId),
+        period: selector.period,
+        operations: selector.operations,
+        clients: selector.clients,
+        clientVersionFilters: selector.clientVersionFilters,
+        excludeOperations: selector.excludeOperations,
+        excludeClientVersionFilters: selector.excludeClientVersionFilters,
+      });
+
+      return selectors.map(selector =>
+        Promise.resolve(durations.get(selector.targetId) ?? emptyDurationMetrics),
+      );
+    },
+  );
 
   @cache<{ period: DateRange } & TargetSelector>(selector => JSON.stringify(selector))
   async readDetailedDurationMetrics({
