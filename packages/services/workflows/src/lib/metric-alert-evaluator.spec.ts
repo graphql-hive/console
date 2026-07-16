@@ -3,7 +3,10 @@ import { printWithValues, type SqlValue } from '@hive/clickhouse';
 import type { ClickHouseClient } from './clickhouse-client.js';
 import {
   buildSavedFilterConditions,
+  evaluationIntervalMinutes,
+  extractMetricValue,
   groupRulesByQuery,
+  isRuleDue,
   queryClickHouseWindows,
   type MetricAlertRuleRow,
 } from './metric-alert-evaluator.js';
@@ -39,6 +42,7 @@ function makeRule(overrides: Partial<MetricAlertRuleRow>): MetricAlertRuleRow {
     severity: 'WARNING',
     state: 'NORMAL',
     stateChangedAt: null,
+    lastEvaluatedAt: null,
     confirmationMinutes: 0,
     savedFilterId: null,
     savedFilterFilters: null,
@@ -65,6 +69,70 @@ describe('groupRulesByQuery', () => {
       makeRule({ id: 'b', savedFilterId: 'f1', timeWindowMinutes: 720 }),
     ]);
     expect(groups.size).toBe(2);
+  });
+});
+
+describe('evaluationIntervalMinutes', () => {
+  test('tiers by window size', () => {
+    expect(evaluationIntervalMinutes(60)).toBe(1);
+    expect(evaluationIntervalMinutes(61)).toBe(5);
+    expect(evaluationIntervalMinutes(360)).toBe(5);
+    expect(evaluationIntervalMinutes(361)).toBe(15);
+    expect(evaluationIntervalMinutes(1440)).toBe(15);
+    expect(evaluationIntervalMinutes(1441)).toBe(30);
+    expect(evaluationIntervalMinutes(10080)).toBe(30);
+    expect(evaluationIntervalMinutes(43200)).toBe(30);
+  });
+});
+
+describe('isRuleDue', () => {
+  const evalTime = new Date('2026-07-08T12:00:00.000Z');
+  // ISO timestamp for a point `minutes` before evalTime (mirrors the `to_json`
+  // timestamp string fetchEnabledRules returns for last_evaluated_at).
+  const ago = (minutes: number) => new Date(evalTime.getTime() - minutes * 60_000).toISOString();
+
+  test('a never-evaluated rule is always due', () => {
+    expect(isRuleDue(makeRule({ lastEvaluatedAt: null, timeWindowMinutes: 43200 }), evalTime)).toBe(
+      true,
+    );
+  });
+
+  test('30-day rule: due once its 30-min interval has elapsed', () => {
+    const base = { timeWindowMinutes: 43200, state: 'NORMAL' as const };
+    expect(isRuleDue(makeRule({ ...base, lastEvaluatedAt: ago(0) }), evalTime)).toBe(false);
+    expect(isRuleDue(makeRule({ ...base, lastEvaluatedAt: ago(29) }), evalTime)).toBe(false);
+    expect(isRuleDue(makeRule({ ...base, lastEvaluatedAt: ago(30) }), evalTime)).toBe(true);
+    expect(isRuleDue(makeRule({ ...base, lastEvaluatedAt: ago(31) }), evalTime)).toBe(true);
+  });
+
+  test('sub-second tolerance only: 5s short of the interval is still not due', () => {
+    const almost = new Date(evalTime.getTime() - (30 * 60_000 - 5_000)).toISOString();
+    expect(
+      isRuleDue(
+        makeRule({ timeWindowMinutes: 43200, state: 'NORMAL', lastEvaluatedAt: almost }),
+        evalTime,
+      ),
+    ).toBe(false);
+  });
+
+  test('a 1h-window rule stays on the every-minute cadence', () => {
+    const base = { timeWindowMinutes: 60, state: 'NORMAL' as const };
+    expect(isRuleDue(makeRule({ ...base, lastEvaluatedAt: ago(0) }), evalTime)).toBe(false);
+    expect(isRuleDue(makeRule({ ...base, lastEvaluatedAt: ago(1) }), evalTime)).toBe(true);
+  });
+
+  test('PENDING/RECOVERING keep full 1-min resolution regardless of window', () => {
+    for (const state of ['PENDING', 'RECOVERING'] as const) {
+      expect(
+        isRuleDue(makeRule({ timeWindowMinutes: 43200, state, lastEvaluatedAt: ago(1) }), evalTime),
+      ).toBe(true);
+    }
+    // The same 30-day rule in a steady state, 1 min after eval, is NOT due.
+    for (const state of ['NORMAL', 'FIRING'] as const) {
+      expect(
+        isRuleDue(makeRule({ timeWindowMinutes: 43200, state, lastEvaluatedAt: ago(1) }), evalTime),
+      ).toBe(false);
+    }
   });
 });
 
@@ -181,5 +249,76 @@ describe('queryClickHouseWindows', () => {
     const { clickhouse, calls } = captureClient();
     await queryClickHouseWindows(clickhouse, target, 720, [], evalTime);
     expect(calls[0].sql).toContain('FROM operations_by_target_hourly');
+  });
+
+  test('groups needing neither duration column select NULL placeholders', async () => {
+    const { clickhouse, calls } = captureClient();
+    await queryClickHouseWindows(clickhouse, target, 60, [], evalTime, false, false);
+    const { sql } = calls[0];
+    expect(sql).toContain('NULL as average');
+    expect(sql).toContain('NULL as percentiles');
+    expect(sql).not.toContain('avgMerge(duration_avg)');
+    expect(sql).not.toContain('duration_quantiles');
+  });
+
+  test('percentile groups select the quantiles column; avg still skipped', async () => {
+    const { clickhouse, calls } = captureClient();
+    await queryClickHouseWindows(clickhouse, target, 60, [], evalTime, false, true);
+    const { sql } = calls[0];
+    expect(sql).toContain('duration_quantiles');
+    expect(sql).toContain('NULL as average');
+  });
+
+  test('avg groups select avgMerge; percentiles skipped', async () => {
+    const { clickhouse, calls } = captureClient();
+    await queryClickHouseWindows(clickhouse, target, 60, [], evalTime, true, false);
+    const { sql } = calls[0];
+    expect(sql).toContain('avgMerge(duration_avg) as average');
+    expect(sql).toContain('NULL as percentiles');
+    expect(sql).not.toContain('duration_quantiles');
+  });
+});
+
+describe('extractMetricValue', () => {
+  const row = (over: Partial<Parameters<typeof extractMetricValue>[0]> = {}) => ({
+    window: 'current' as const,
+    total: '1000',
+    total_ok: '900',
+    average: null,
+    percentiles: null,
+    ...over,
+  });
+
+  test('TRAFFIC returns the total count', () => {
+    expect(extractMetricValue(row(), makeRule({ type: 'TRAFFIC' }))).toBe(1000);
+  });
+
+  test('ERROR_RATE returns the error percentage (0 when no traffic)', () => {
+    expect(extractMetricValue(row(), makeRule({ type: 'ERROR_RATE' }))).toBeCloseTo(10);
+    expect(
+      extractMetricValue(row({ total: '0', total_ok: '0' }), makeRule({ type: 'ERROR_RATE' })),
+    ).toBe(0);
+  });
+
+  test('LATENCY converts the selected column from nanoseconds to ms', () => {
+    expect(
+      extractMetricValue(row({ average: 1.2e9 }), makeRule({ type: 'LATENCY', metric: 'AVG' })),
+    ).toBe(1200);
+    // percentiles tuple is [P75, P90, P95, P99]; P95 is index 2.
+    expect(
+      extractMetricValue(
+        row({ percentiles: [1e9, 2e9, 3e9, 4e9] }),
+        makeRule({ type: 'LATENCY', metric: 'P95' }),
+      ),
+    ).toBe(3000);
+  });
+
+  test('a LATENCY rule whose duration column was not selected throws (no silent 0)', () => {
+    expect(() =>
+      extractMetricValue(row({ average: null }), makeRule({ type: 'LATENCY', metric: 'AVG' })),
+    ).toThrow(/duration_avg/);
+    expect(() =>
+      extractMetricValue(row({ percentiles: null }), makeRule({ type: 'LATENCY', metric: 'P95' })),
+    ).toThrow(/duration_quantiles/);
   });
 });

@@ -14,10 +14,17 @@ jobs:
     uses: ./.github/workflows/release-stable.yaml
     secrets: inherit
 
+  changeset-version:
+    needs:
+      - package
+    if: ${{ needs.package.outputs.hivePublish != 'true' }}
+    uses: ./.github/workflows/changeset-version.yaml
+
   # Build all packages and applications, and creates Docker images.
   build:
     needs:
       - package
+      - changeset-version
     uses: ./.github/workflows/build-and-dockerize.yaml
     with:
       imageTag:
@@ -27,6 +34,9 @@ jobs:
       publishLatest: ${{ needs.package.outputs.hivePublish == 'true' }}
       targets: build
       uploadJavaScriptArtifacts: true
+      latestVersion:
+        ${{ needs.package.outputs.hivePublish == 'true' && needs.package.outputs.hiveVersion ||
+        needs.changeset-version.outputs.version }}
     secrets: inherit
 
   # Dockerize the CLI in case a CLI version was released

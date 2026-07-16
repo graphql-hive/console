@@ -25,6 +25,12 @@ on:
       imageTag:
         required: true
         type: string
+      latestVersion:
+        description:
+          The version of the project being built. Does not include "alpha" or other suffixes. E.g.
+          1.0.1
+        required: true
+        type: string
       publishSourceMaps:
         default: false
         type: boolean
@@ -210,7 +216,7 @@ jobs:
 
             **Platforms**: `${{ matrix.platform }}`
 
-            **Image Tags**: `${{ inputs.imageTag }}`, `${{ steps.git_hash.outputs.sha_short }}`
+            **Image Tags**: `${{ inputs.latestVersion }}-${{ inputs.publishLatest == false && 'alpha-' || '' }}${{ steps.git_hash.outputs.sha_short }}`, `${{ steps.git_hash.outputs.sha_short }}`, `${{ inputs.imageTag }}`
 
       - name: upload sourcemaps to Sentry
         if: ${{ inputs.publishSourceMaps }}
@@ -288,6 +294,31 @@ jobs:
               echo "image name: $image_name"
 
               docker manifest create $image_name --amend "$image_name-arm64" --amend "$image_name-amd64"
+              docker manifest push $image_name
+          done
+
+      - name:
+          publish docker multiarch manifest (tag ${{ inputs.latestVersion }}-${{
+          inputs.publishLatest == false && 'alpha-' || '' }}${{ steps.git_hash.outputs.sha_short }})
+        env:
+          TARGETS: ${{ inputs.targets }}
+          REGISTRY: ${{ inputs.registry }}
+          IMAGE_NAME: ${{ inputs.imageName }}
+          IMAGE_TAG: ${{ inputs.imageTag }}
+          SHA_SHORT: ${{ steps.git_hash.outputs.sha_short }}
+          RELEASE_STAGE: ${{ inputs.publishLatest == false && 'alpha-' || '' }}
+          LATEST_VERSION: ${{ inputs.latestVersion }}
+        run: |
+          targets=$(docker buildx bake -f docker/docker.hcl --print "$TARGETS" | jq -r '.group."'"$TARGETS"'".targets[]')
+
+          for target in $targets
+          do
+              echo "publishing multi-arch manifest for $target"
+              image_name="$REGISTRY/$IMAGE_NAME/$target:${LATEST_VERSION}-${RELEASE_STAGE}${SHA_SHORT}"
+              base_image="$REGISTRY/$IMAGE_NAME/$target:${IMAGE_TAG}"
+              echo "image name: $image_name"
+
+              docker manifest create $image_name --amend "${base_image}-arm64" --amend "${base_image}-amd64"
               docker manifest push $image_name
           done
 
