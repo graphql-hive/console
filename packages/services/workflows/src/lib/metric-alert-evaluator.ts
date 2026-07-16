@@ -111,6 +111,17 @@ export function extractMetricValue(row: ClickHouseWindowRow, rule: MetricAlertRu
   }
 }
 
+// FIXED_VALUE rules don't compare against the prior window, so they persist null even
+// if it was fetched for a PERCENTAGE_CHANGE group-mate (keeps history grouping-independent).
+export function previousValueForRule(
+  rule: MetricAlertRuleRow,
+  previous: ClickHouseWindowRow | null,
+): number | null {
+  return rule.thresholdType === 'PERCENTAGE_CHANGE' && previous
+    ? extractMetricValue(previous, rule)
+    : null;
+}
+
 function isThresholdBreached(
   currentValue: number,
   previousValue: number,
@@ -299,6 +310,8 @@ export async function queryClickHouseWindows(
   // this job up late, using wall-clock would shift the queried window
   // forward and could miss the spike that should have fired the alert.
   evaluationTime: Date,
+  // False skips the prior window (1x scan, previous = null). Default true.
+  needsPreviousWindow: boolean = true,
   // False selects `NULL as <col>` so ClickHouse skips reading that duration column.
   needsAverage: boolean = true,
   needsPercentiles: boolean = true,
@@ -339,6 +352,12 @@ export async function queryClickHouseWindows(
   const filterClause =
     filterConditions.length > 0 ? sql` AND ${sql.join(filterConditions, ' AND ')}` : sql``;
 
+  // Scan one window (all rows 'current') when the prior isn't needed, else both.
+  const scanStart = needsPreviousWindow ? previousWindowStart : currentWindowStart;
+  const windowSelector = needsPreviousWindow
+    ? sql`CASE WHEN timestamp >= fromUnixTimestamp64Milli(${sql.raw(String(currentWindowStart.getTime()))}) THEN 'current' ELSE 'previous' END`
+    : sql`'current'`;
+
   // A literal NULL skips reading the (large) duration column but keeps the row shape.
   const averageCol = needsAverage ? sql`avgMerge(duration_avg) as average` : sql`NULL as average`;
   const percentilesCol = needsPercentiles
@@ -347,17 +366,14 @@ export async function queryClickHouseWindows(
 
   const statement = sql`
     SELECT
-      CASE
-        WHEN timestamp >= fromUnixTimestamp64Milli(${sql.raw(String(currentWindowStart.getTime()))}) THEN 'current'
-        ELSE 'previous'
-      END as window,
+      ${windowSelector} as window,
       sum(total) as total,
       sum(total_ok) as total_ok,
       ${averageCol},
       ${percentilesCol}
     FROM ${sql.raw(tableName)}
     WHERE target = ${targetId}
-      AND timestamp >= fromUnixTimestamp64Milli(${sql.raw(String(previousWindowStart.getTime()))})
+      AND timestamp >= fromUnixTimestamp64Milli(${sql.raw(String(scanStart.getTime()))})
       AND timestamp < fromUnixTimestamp64Milli(${sql.raw(String(currentWindowEnd.getTime()))})
       ${filterClause}
     GROUP BY window
@@ -385,14 +401,14 @@ export async function queryClickHouseWindows(
 
   return {
     current: rows.find(r => r.window === 'current') ?? null,
-    previous: rows.find(r => r.window === 'previous') ?? null,
+    previous: needsPreviousWindow ? (rows.find(r => r.window === 'previous') ?? null) : null,
   };
 }
 
 export async function evaluateRule(args: {
   rule: MetricAlertRuleRow;
   current: ClickHouseWindowRow;
-  previous: ClickHouseWindowRow;
+  previous: ClickHouseWindowRow | null;
   pg: PostgresDatabasePool;
   logger: Logger;
   // Anchor for state_changed_at, last_triggered_at, expires_at, and
@@ -405,8 +421,9 @@ export async function evaluateRule(args: {
   const now = evaluationTime;
 
   const currentValue = extractMetricValue(current, rule);
-  const previousValue = extractMetricValue(previous, rule);
-  const breached = isThresholdBreached(currentValue, previousValue, rule);
+  // null for FIXED_VALUE; the `?? 0` below is only for the breach check's typing.
+  const previousValue = previousValueForRule(rule, previous);
+  const breached = isThresholdBreached(currentValue, previousValue ?? 0, rule);
 
   // State-log retention is derived from the rule's organization plan, which
   // is included on the row by `fetchEnabledRules` (single JOIN) — no extra
@@ -611,7 +628,7 @@ async function logTransition(
   fromState: string,
   toState: string,
   value: number,
-  previousValue: number,
+  previousValue: number | null,
   retentionDays: number,
   evaluationTime: Date,
   incidentId: string | null = null,
