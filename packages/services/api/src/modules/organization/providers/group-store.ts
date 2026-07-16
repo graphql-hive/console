@@ -289,6 +289,7 @@ export class GroupStore {
       displayName: string | null;
       externalId: string | null;
     },
+    trx: CommonQueryMethods = this.pool
   ) {
     const query = psql`/* updateGroupPropertiesByOrganizationIdAndGroupId */
       UPDATE
@@ -303,7 +304,7 @@ export class GroupStore {
         ${groupFields}
     `;
 
-    return await this.pool
+    return await trx
       .maybeOne(query)
       .then(GroupModel.nullable().parse)
       .then(group => {

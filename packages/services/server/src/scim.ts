@@ -11,7 +11,7 @@ import {
 import { GroupStore, type Group } from '@hive/api/modules/organization/providers/group-store';
 import { UsersStore, type User } from '@hive/api/modules/organization/providers/users-store';
 import { RedisRateLimiter } from '@hive/api/modules/shared/providers/redis-rate-limiter';
-import { PostgresDatabasePool } from '@hive/postgres';
+import { CommonQueryMethods, PostgresDatabasePool } from '@hive/postgres';
 
 const EmailSchemaModel = z
   .object({
@@ -446,6 +446,7 @@ export const createSCIMPlugin =
         externalId?: string | null;
         displayName?: string | null;
       },
+      trx?: CommonQueryMethods,
     ) {
       if (
         group.externalId === properties.externalId &&
@@ -471,6 +472,7 @@ export const createSCIMPlugin =
           displayName: properties.displayName ?? null,
           externalId: properties.externalId ?? null,
         },
+        trx,
       );
 
       if (result.type === 'error') {
@@ -1459,52 +1461,65 @@ export const createSCIMPlugin =
         return reply.status(error.status).send(error);
       }
 
-      const updateGroupPropertiesResult = await handleGroupPropertyUpdates(groupStore, group, {
-        externalId: newExternalId,
-        displayName: newDisplayName,
-      });
-
-      if (updateGroupPropertiesResult.type === 'error') {
-        return reply
-          .status(updateGroupPropertiesResult.error.status)
-          .send(updateGroupPropertiesResult.error);
-      }
-
       const groupMemberStore = new GroupMemberStore(reply.log, pool);
 
-      if (usersToRemove.size) {
-        await groupMemberStore.removeGroupMembersFromGroupByOrganizationIdAndGroupId(
-          result.organizationId,
-          group.id,
-          Array.from(usersToRemove),
+      const updateGroupResult = await pool.transaction('update group batch', async trx => {
+        const updateGroupPropertiesResult = await handleGroupPropertyUpdates(
+          groupStore,
+          group,
+          {
+            externalId: newExternalId,
+            displayName: newDisplayName,
+          },
+          trx,
         );
-      }
 
-      if (usersToAdd.size) {
-        await groupMemberStore.addGroupMembersToGroupByOrganizationIdAndGroupId(
-          result.organizationId,
-          group.id,
-          Array.from(usersToAdd),
-        );
-      }
+        if (updateGroupPropertiesResult.type === 'error') {
+          return updateGroupPropertiesResult;
+        }
 
-      if (fullReplaceUserIds !== null) {
-        await pool.transaction('scim replace members', async trx => {
-          await groupMemberStore.removeAllGroupMembersFromGroupByOrganizationIdAndGroupId(
+        if (usersToRemove.size) {
+          await groupMemberStore.removeGroupMembersFromGroupByOrganizationIdAndGroupId(
             result.organizationId,
             group.id,
+            Array.from(usersToRemove),
             trx,
           );
+        }
 
-          if (fullReplaceUserIds.size) {
-            await groupMemberStore.addGroupMembersToGroupByOrganizationIdAndGroupId(
+        if (usersToAdd.size) {
+          await groupMemberStore.addGroupMembersToGroupByOrganizationIdAndGroupId(
+            result.organizationId,
+            group.id,
+            Array.from(usersToAdd),
+            trx,
+          );
+        }
+
+        if (fullReplaceUserIds !== null) {
+          await trx.transaction('scim replace members', async trx => {
+            await groupMemberStore.removeAllGroupMembersFromGroupByOrganizationIdAndGroupId(
               result.organizationId,
               group.id,
-              Array.from(fullReplaceUserIds),
               trx,
             );
-          }
-        });
+
+            if (fullReplaceUserIds.size) {
+              await groupMemberStore.addGroupMembersToGroupByOrganizationIdAndGroupId(
+                result.organizationId,
+                group.id,
+                Array.from(fullReplaceUserIds),
+                trx,
+              );
+            }
+          });
+        }
+
+        return updateGroupPropertiesResult;
+      });
+
+      if (updateGroupResult.error) {
+        return reply.status(updateGroupResult.error.status).send(updateGroupResult.error);
       }
 
       const groupMembers = await groupMemberStore.getGroupMembersForOrganizationIdAndGroupId(
@@ -1514,7 +1529,7 @@ export const createSCIMPlugin =
 
       return reply
         .status(200)
-        .send(createSCIMGroupObjectFromGroup(updateGroupPropertiesResult.group, groupMembers));
+        .send(createSCIMGroupObjectFromGroup(updateGroupResult.group, groupMembers));
     });
 
     /**
