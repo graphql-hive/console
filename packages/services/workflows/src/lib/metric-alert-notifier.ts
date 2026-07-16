@@ -27,7 +27,8 @@ export type NotificationEvent = {
     | 'direction'
   >;
   currentValue: number;
-  previousValue: number;
+  // Null for absolute-only groups that skip the previous window.
+  previousValue: number | null;
   organizationSlug: string;
   projectSlug: string;
   targetSlug: string;
@@ -209,11 +210,16 @@ function formatChangeText(event: NotificationEvent): string {
         : 'Traffic';
 
   if (event.state === 'firing') {
+    const thresholdText = `Threshold: ${rule.direction.toLowerCase()} ${rule.thresholdValue}${rule.thresholdType === 'PERCENTAGE_CHANGE' ? '%' : unit}`;
+    // Absolute-only rules have no previous window to compare against.
+    if (previousValue === null) {
+      return `${metricLabel}: **${currentValue.toFixed(2)}${unit}** — ${thresholdText}`;
+    }
     const changePercent =
       previousValue !== 0
         ? (((currentValue - previousValue) / previousValue) * 100).toFixed(1)
         : 'N/A';
-    return `${metricLabel}: **${currentValue.toFixed(2)}${unit}** (was ${previousValue.toFixed(2)}${unit}, ${changePercent}% change) — Threshold: ${rule.direction.toLowerCase()} ${rule.thresholdValue}${rule.thresholdType === 'PERCENTAGE_CHANGE' ? '%' : unit}`;
+    return `${metricLabel}: **${currentValue.toFixed(2)}${unit}** (was ${previousValue.toFixed(2)}${unit}, ${changePercent}% change) — ${thresholdText}`;
   }
 
   return `${metricLabel}: **${currentValue.toFixed(2)}${unit}** (threshold: ${rule.thresholdValue}${rule.thresholdType === 'PERCENTAGE_CHANGE' ? '%' : unit})`;
@@ -222,7 +228,9 @@ function formatChangeText(event: NotificationEvent): string {
 function buildWebhookPayload(event: NotificationEvent) {
   const { rule, currentValue, previousValue } = event;
   const changePercent =
-    previousValue !== 0 ? ((currentValue - previousValue) / previousValue) * 100 : null;
+    previousValue !== null && previousValue !== 0
+      ? ((currentValue - previousValue) / previousValue) * 100
+      : null;
 
   return {
     type: 'metric_alert',

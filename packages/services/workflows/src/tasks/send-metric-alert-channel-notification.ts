@@ -25,7 +25,8 @@ const HydrationRowSchema = z.object({
   fromState: z.enum(['NORMAL', 'PENDING', 'FIRING', 'RECOVERING']),
   toState: z.enum(['NORMAL', 'PENDING', 'FIRING', 'RECOVERING']),
   value: z.number(),
-  previousValue: z.number(),
+  // Null for absolute-only groups whose evaluation skips the previous window.
+  previousValue: z.number().nullable(),
   stateLogCreatedAt: z.string(),
   // rule (subset; the notifier only reads these fields off `event.rule`)
   ruleId: z.string(),
@@ -163,7 +164,7 @@ export const task = implementTask(SendMetricAlertChannelNotificationTask, async 
             direction: row.ruleDirection,
           },
           currentValue: Number(row.value),
-          previousValue: Number(row.previousValue),
+          previousValue: row.previousValue === null ? null : Number(row.previousValue),
           organizationSlug: row.organizationSlug,
           projectSlug: row.projectSlug,
           targetSlug: row.targetSlug,
