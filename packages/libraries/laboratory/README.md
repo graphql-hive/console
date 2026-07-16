@@ -27,12 +27,15 @@ Hive Console and can be embedded into any page that talks to a GraphQL endpoint.
 This package is storage- and transport-agnostic. It exposes state as props and reports changes via
 callbacks; the host decides where data lives.
 
-- **Hive Console** (`packages/web/app`) embeds `<Laboratory>` directly in
+- **Hive Console** (`packages/web/app`) embeds the `<Laboratory>` React component directly in
   [`target-laboratory-new.tsx`](../../web/app/src/pages/target-laboratory-new.tsx) and wires the
   callbacks to the Hive GraphQL API and `localStorage`.
-- **`@graphql-hive/render-laboratory`** ([`../render-laboratory`](../render-laboratory)) inlines the
-  UMD build plus the Monaco workers into a single self-contained HTML page (used to serve the Lab
-  standalone, e.g. from a gateway).
+- **Hive Gateway** serves the Lab as its GraphiQL replacement via
+  **`@graphql-hive/render-laboratory`** ([`../render-laboratory`](../render-laboratory)), which
+  wraps this package's UMD bundle plus the Monaco workers into a self-contained HTML page for
+  `graphql-yoga` servers.
+- **Hive Router** embeds this package's UMD bundle (`dist/hive-laboratory.umd.js`) directly at build
+  time, generating a static page that calls the `HiveLaboratory.renderLaboratory()` global.
 
 ## Installation
 
