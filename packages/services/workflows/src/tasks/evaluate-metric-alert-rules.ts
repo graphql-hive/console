@@ -94,6 +94,10 @@ export const task = implementTask(EvaluateMetricAlertRulesTask, async args => {
     // isolating the failure to this group.
     const filterConditions = buildSavedFilterConditions(representative.savedFilterFilters, logger);
 
+    // Only PERCENTAGE_CHANGE rules need the prior window; if none in the group do,
+    // skip it (half the scan) and persist a null previousValue.
+    const needsPreviousWindow = groupRules.some(r => r.thresholdType === 'PERCENTAGE_CHANGE');
+
     // Fetch a duration column only if a LATENCY rule needs it: percentiles for a
     // percentile metric, avg for AVG. Error/traffic groups fetch neither.
     const needsPercentiles = groupRules.some(r => r.type === 'LATENCY' && r.metric !== 'AVG');
@@ -124,6 +128,7 @@ export const task = implementTask(EvaluateMetricAlertRulesTask, async args => {
               representative.timeWindowMinutes,
               filterConditions,
               evaluationTime,
+              needsPreviousWindow,
               needsAverage,
               needsPercentiles,
             );
@@ -155,9 +160,12 @@ export const task = implementTask(EvaluateMetricAlertRulesTask, async args => {
               : null,
           };
           const current = windows.current ?? { window: 'current' as const, ...ZERO_WINDOW };
-          const previous = windows.previous ?? { window: 'previous' as const, ...ZERO_WINDOW };
+          // A skipped previous window stays null (not synthesized to zeros).
+          const previous = needsPreviousWindow
+            ? (windows.previous ?? { window: 'previous' as const, ...ZERO_WINDOW })
+            : null;
 
-          if (!windows.current || !windows.previous) {
+          if (!windows.current || (needsPreviousWindow && !windows.previous)) {
             logger.debug(
               { targetId: representative.targetId },
               'No traffic in window(s), evaluating against zeros',

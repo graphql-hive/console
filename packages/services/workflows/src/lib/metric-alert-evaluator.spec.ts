@@ -7,6 +7,7 @@ import {
   extractMetricValue,
   groupRulesByQuery,
   isRuleDue,
+  previousValueForRule,
   queryClickHouseWindows,
   type MetricAlertRuleRow,
 } from './metric-alert-evaluator.js';
@@ -251,9 +252,38 @@ describe('queryClickHouseWindows', () => {
     expect(calls[0].sql).toContain('FROM operations_by_target_hourly');
   });
 
+  test('absolute-only groups skip the previous window (1x scan, constant label)', async () => {
+    const { clickhouse, calls } = captureClient();
+    const result = await queryClickHouseWindows(clickhouse, target, 60, [], evalTime, false);
+    const { sql } = calls[0];
+    // Single-window query: constant 'current' label, no previous branch.
+    expect(sql).toContain("'current' as window");
+    expect(sql).not.toContain("'previous'");
+    // Scans from the current window start, not the previous window start.
+    const anchor = evalTime.getTime();
+    const currentStart = anchor - 60_000 - 60 * 60_000;
+    const previousStart = anchor - 60_000 - 2 * 60 * 60_000;
+    expect(sql).toContain(String(currentStart));
+    expect(sql).not.toContain(String(previousStart));
+    // Previous reported null so the caller persists previousValue = null.
+    expect(result.previous).toBeNull();
+  });
+
+  test('groups needing the previous window fetch both (default)', async () => {
+    const { clickhouse, calls } = captureClient();
+    await queryClickHouseWindows(clickhouse, target, 60, [], evalTime, true);
+    const { sql } = calls[0];
+    expect(sql).toContain("ELSE 'previous'");
+    const anchor = evalTime.getTime();
+    const previousStart = anchor - 60_000 - 2 * 60 * 60_000;
+    expect(sql).toContain(String(previousStart));
+  });
+
+  // Args after evalTime are (needsPreviousWindow, needsAverage, needsPercentiles);
+  // pass needsPreviousWindow=true so these exercise only the column selection.
   test('groups needing neither duration column select NULL placeholders', async () => {
     const { clickhouse, calls } = captureClient();
-    await queryClickHouseWindows(clickhouse, target, 60, [], evalTime, false, false);
+    await queryClickHouseWindows(clickhouse, target, 60, [], evalTime, true, false, false);
     const { sql } = calls[0];
     expect(sql).toContain('NULL as average');
     expect(sql).toContain('NULL as percentiles');
@@ -263,7 +293,7 @@ describe('queryClickHouseWindows', () => {
 
   test('percentile groups select the quantiles column; avg still skipped', async () => {
     const { clickhouse, calls } = captureClient();
-    await queryClickHouseWindows(clickhouse, target, 60, [], evalTime, false, true);
+    await queryClickHouseWindows(clickhouse, target, 60, [], evalTime, true, false, true);
     const { sql } = calls[0];
     expect(sql).toContain('duration_quantiles');
     expect(sql).toContain('NULL as average');
@@ -271,11 +301,39 @@ describe('queryClickHouseWindows', () => {
 
   test('avg groups select avgMerge; percentiles skipped', async () => {
     const { clickhouse, calls } = captureClient();
-    await queryClickHouseWindows(clickhouse, target, 60, [], evalTime, true, false);
+    await queryClickHouseWindows(clickhouse, target, 60, [], evalTime, true, true, false);
     const { sql } = calls[0];
     expect(sql).toContain('avgMerge(duration_avg) as average');
     expect(sql).toContain('NULL as percentiles');
     expect(sql).not.toContain('duration_quantiles');
+  });
+});
+
+describe('previousValueForRule', () => {
+  const prev = {
+    window: 'previous' as const,
+    total: '500',
+    total_ok: '450',
+    average: 0,
+    percentiles: [0, 0, 0, 0] as [number, number, number, number],
+  };
+
+  test('FIXED_VALUE persists null even when the previous window was fetched', () => {
+    // The window may have been fetched for a PERCENTAGE_CHANGE group-mate; a
+    // FIXED_VALUE rule still persists null so its history is grouping-independent.
+    expect(
+      previousValueForRule(makeRule({ thresholdType: 'FIXED_VALUE', type: 'TRAFFIC' }), prev),
+    ).toBeNull();
+  });
+
+  test('PERCENTAGE_CHANGE persists the real previous value', () => {
+    expect(
+      previousValueForRule(makeRule({ thresholdType: 'PERCENTAGE_CHANGE', type: 'TRAFFIC' }), prev),
+    ).toBe(500);
+  });
+
+  test('PERCENTAGE_CHANGE with no previous window falls back to null', () => {
+    expect(previousValueForRule(makeRule({ thresholdType: 'PERCENTAGE_CHANGE' }), null)).toBeNull();
   });
 });
 
