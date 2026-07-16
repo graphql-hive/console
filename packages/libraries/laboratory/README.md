@@ -33,7 +33,6 @@ callbacks; the host decides where data lives.
 - **`@graphql-hive/render-laboratory`** ([`../render-laboratory`](../render-laboratory)) inlines the
   UMD build plus the Monaco workers into a single self-contained HTML page (used to serve the Lab
   standalone, e.g. from a gateway).
-- **Electron** target (work in progress) via the `dev:electron` script.
 
 ## Installation
 
@@ -100,10 +99,9 @@ browser rather than during server-side rendering.
 ## Local development
 
 ```bash
-pnpm dev          # Vite dev server on http://localhost:5173
-pnpm build        # library build (ES + CJS) and UMD build
-pnpm lint         # eslint
-pnpm dev:electron # Vite + Electron (WIP)
+pnpm dev   # Vite dev server on http://localhost:5173
+pnpm build # library build (ES + CJS) and UMD build
+pnpm lint  # eslint
 ```
 
 `pnpm dev` mounts the Lab via [`src/main.tsx`](src/main.tsx) / [`index.html`](index.html), a thin

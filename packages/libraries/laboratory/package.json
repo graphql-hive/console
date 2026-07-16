@@ -22,7 +22,6 @@
   "scripts": {
     "build": "vite build --config vite.lib.config.ts && vite build --config vite.umd.config.ts",
     "dev": "vite",
-    "dev:electron": "VITE_TARGET=electron concurrently \"vite\" \"wait-on http://localhost:5173 && electron .\"",
     "lint": "eslint .",
     "preview": "vite preview"
   },
@@ -92,7 +91,6 @@
     "clsx": "^2.1.1",
     "cmdk": "^1.1.1",
     "color": "^5.0.3",
-    "concurrently": "10.0.3",
     "crypto-js": "^4.2.0",
     "date-fns": "^4.1.0",
     "esbuild": "0.28.1",
@@ -131,7 +129,6 @@
     "vite-plugin-commonjs": "^0.10.4",
     "vite-plugin-dts": "^4.5.4",
     "vite-plugin-monaco-editor": "^1.1.0",
-    "wait-on": "9.0.10",
     "zod": "^4.3.6"
   },
   "publishConfig": {
@@ -140,17 +137,5 @@
   },
   "sideEffects": [
     "**/*.css"
-  ],
-  "build": {
-    "appId": "com.guild.hive.laboratory",
-    "productName": "Hive Laboratory",
-    "artifactName": "HiveLab-${version}-Do_Not_Open_(Seriously_It's_Pre-Release)-${os}-${arch}.${ext}",
-    "files": [
-      "dist/**/*",
-      "electron/**/*"
-    ],
-    "directories": {
-      "buildResources": "assets"
-    }
-  }
+  ]
 }
