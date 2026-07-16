@@ -1,3 +1,4 @@
+import pLimit from 'p-limit';
 import { z } from 'zod';
 import { psql } from '@hive/postgres';
 import { SpanKind, SpanStatusCode, trace } from '@hive/service-common';
@@ -7,6 +8,7 @@ import {
   evaluateRule,
   fetchEnabledRules,
   groupRulesByQuery,
+  isRuleDue,
   queryClickHouseWindows,
 } from '../lib/metric-alert-evaluator.js';
 
@@ -64,8 +66,21 @@ export const task = implementTask(EvaluateMetricAlertRulesTask, async args => {
 
   logger.info({ count: rules.length }, 'Evaluating metric alert rules');
 
+  // Evaluate only groups with at least one due member. Members of a group share
+  // a window (so one cadence), and the batched UPDATE below keeps their
+  // last_evaluated_at aligned, so a group is due as a unit.
   const groups = groupRulesByQuery(rules);
-  const groupList = [...groups.values()];
+  const dueGroupList = [...groups.values()].filter(group =>
+    group.some(rule => isRuleDue(rule, evaluationTime)),
+  );
+
+  if (dueGroupList.length === 0) {
+    logger.debug(
+      { evaluationTime: evaluationTime.toISOString(), groups: groups.size, rules: rules.length },
+      'No metric alert rule groups are due this tick',
+    );
+    return;
+  }
 
   async function processGroup(groupRules: (typeof rules)[number][]): Promise<{
     failed: boolean;
@@ -78,6 +93,11 @@ export const task = implementTask(EvaluateMetricAlertRulesTask, async args => {
     // A malformed filter yields no conditions (evaluates unfiltered) and is logged,
     // isolating the failure to this group.
     const filterConditions = buildSavedFilterConditions(representative.savedFilterFilters, logger);
+
+    // Fetch a duration column only if a LATENCY rule needs it: percentiles for a
+    // percentile metric, avg for AVG. Error/traffic groups fetch neither.
+    const needsPercentiles = groupRules.some(r => r.type === 'LATENCY' && r.metric !== 'AVG');
+    const needsAverage = groupRules.some(r => r.type === 'LATENCY' && r.metric === 'AVG');
 
     // startActiveSpan makes this span the current OTel context for the
     // duration of the callback, so the slonik PG interceptor and the
@@ -104,6 +124,8 @@ export const task = implementTask(EvaluateMetricAlertRulesTask, async args => {
               representative.timeWindowMinutes,
               filterConditions,
               evaluationTime,
+              needsAverage,
+              needsPercentiles,
             );
           } catch (error) {
             logger.error(
@@ -125,8 +147,12 @@ export const task = implementTask(EvaluateMetricAlertRulesTask, async args => {
           const ZERO_WINDOW = {
             total: '0',
             total_ok: '0',
-            average: 0,
-            percentiles: [0, 0, 0, 0] as [number, number, number, number],
+            // Mirror the query's column selection (null when skipped) so requireColumn
+            // still catches a select/read desync when there's no traffic.
+            average: needsAverage ? 0 : null,
+            percentiles: needsPercentiles
+              ? ([0, 0, 0, 0] as [number, number, number, number])
+              : null,
           };
           const current = windows.current ?? { window: 'current' as const, ...ZERO_WINDOW };
           const previous = windows.previous ?? { window: 'previous' as const, ...ZERO_WINDOW };
@@ -170,33 +196,32 @@ export const task = implementTask(EvaluateMetricAlertRulesTask, async args => {
       attributes: {
         'rules.count': rules.length,
         'groups.count': groups.size,
+        'groups.due': dueGroupList.length,
+        'rules.due': dueGroupList.reduce((total, group) => total + group.length, 0),
         'evaluation.time': evaluationTime.toISOString(),
       },
     },
     async span => {
       try {
-        // Bounded parallelism over groups: each group = 1 CH query + per-rule
-        // state writes. allSettled (not Promise.all) so that one unexpected
-        // throw inside evaluateRule doesn't strand the rest of the batch's
-        // successful work; the throwing group's rules get re-evaluated on the
-        // next cron tick (60s) rather than via graphile-worker retries, which
-        // would otherwise re-run work that's already idempotently committed.
-        // With GROUP_CONCURRENCY=5 we cut wall-clock per tick by up to 5x
-        // without exhausting the PG pool.
+        // Fixed-capacity pool: keep GROUP_CONCURRENCY groups in flight at once so
+        // a slow group can't idle the other slots (a batch barrier would wait for
+        // the whole batch before starting the next). allSettled so one thrown
+        // group doesn't strand the rest; it re-evaluates on the next 60s tick,
+        // not via graphile-worker retries that would re-run already-committed work.
+        const limit = pLimit(GROUP_CONCURRENCY);
         let groupsFailed = 0;
         const evaluatedRuleIds: string[] = [];
-        for (let i = 0; i < groupList.length; i += GROUP_CONCURRENCY) {
-          const batch = groupList.slice(i, i + GROUP_CONCURRENCY);
-          const results = await Promise.allSettled(batch.map(processGroup));
-          for (const r of results) {
-            if (r.status === 'rejected') {
-              groupsFailed++;
-              logger.error({ error: r.reason }, 'Group evaluation threw unexpectedly');
-            } else if (r.value.failed) {
-              groupsFailed++;
-            } else {
-              evaluatedRuleIds.push(...r.value.evaluatedIds);
-            }
+        const results = await Promise.allSettled(
+          dueGroupList.map(group => limit(() => processGroup(group))),
+        );
+        for (const r of results) {
+          if (r.status === 'rejected') {
+            groupsFailed++;
+            logger.error({ error: r.reason }, 'Group evaluation threw unexpectedly');
+          } else if (r.value.failed) {
+            groupsFailed++;
+          } else {
+            evaluatedRuleIds.push(...r.value.evaluatedIds);
           }
         }
 
@@ -226,7 +251,7 @@ export const task = implementTask(EvaluateMetricAlertRulesTask, async args => {
 
         logger.info(
           {
-            groupsAttempted: groups.size,
+            groupsAttempted: dueGroupList.length,
             groupsFailed,
             rulesEvaluated: evaluatedRuleIds.length,
           },
