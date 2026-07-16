@@ -3143,7 +3143,7 @@ export class SchemaPublisher {
           summary = 'No changes detected';
           shortSummaryFallback = summary;
         } else {
-          title = 'No breaking changes';
+          title = 'No blocking changes';
           summary = this.changesToMarkdown(changes);
           shortSummaryFallback = this.changesToMarkdown(changes, false);
         }
@@ -3517,13 +3517,21 @@ export class SchemaPublisher {
 
 function writeChanges(
   type: string,
-  changes: ReadonlyArray<{ message: string }>,
+  changes: ReadonlyArray<SchemaChangeType>,
   lines: string[],
 ): void {
   if (changes.length > 0) {
     lines.push(
       ...['', `### ${type} changes`].concat(
-        changes.map(change => ` - ${bolderize(change.message)}`),
+        changes.map(change => {
+          const status = change.isSafeBasedOnUsage
+            ? ' (safe based on usage)'
+            : change.approvalMetadata
+              ? ' (approved)'
+              : '';
+
+          return ` - ${bolderize(change.message)}${status}`;
+        }),
       ),
     );
   }
