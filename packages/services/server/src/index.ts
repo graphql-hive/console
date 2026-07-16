@@ -48,6 +48,7 @@ import { SuperTokensUserAuthNStrategy } from '../../api/src/modules/auth/lib/sup
 import { TargetAccessTokenStrategy } from '../../api/src/modules/auth/lib/target-access-token-strategy';
 import { OrganizationAccessTokenValidationCache } from '../../api/src/modules/auth/providers/organization-access-token-validation-cache';
 import { OrganizationAccessTokensCache } from '../../api/src/modules/organization/providers/organization-access-tokens-cache';
+import { TargetTokenCache } from '../../api/src/modules/token/providers/target-token-cache';
 import { internalApiRouter } from './api';
 import { asyncStorage } from './async-storage';
 import { env } from './environment';
@@ -268,9 +269,6 @@ export async function main() {
             rateLimit: env.supertokens.rateLimit,
           }
         : null,
-      tokens: {
-        endpoint: env.hiveServices.tokens.endpoint,
-      },
       commerce: {
         endpoint: env.hiveServices.commerce ? env.hiveServices.commerce.endpoint : null,
         billingEnabled: env.hiveServices.commerce ? env.hiveServices.commerce.billing : false,
@@ -397,9 +395,8 @@ export async function main() {
           (logger: Logger) =>
             new TargetAccessTokenStrategy({
               logger,
-              tokensConfig: {
-                endpoint: env.hiveServices.tokens.endpoint,
-              },
+              pool: storage.pool,
+              cache: registry.injector.get(TargetTokenCache),
             }),
         ],
       }),

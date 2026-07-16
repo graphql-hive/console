@@ -1121,9 +1121,6 @@ importers:
       '@hive/storage':
         specifier: workspace:*
         version: link:../storage
-      '@hive/tokens':
-        specifier: workspace:*
-        version: link:../tokens
       '@hive/usage-common':
         specifier: workspace:*
         version: link:../usage-common
@@ -1838,57 +1835,6 @@ importers:
         specifier: 3.25.76
         version: 3.25.76
 
-  packages/services/tokens:
-    devDependencies:
-      '@hive/postgres':
-        specifier: workspace:*
-        version: link:../../internal/postgres
-      '@hive/service-common':
-        specifier: workspace:*
-        version: link:../service-common
-      '@hive/storage':
-        specifier: workspace:*
-        version: link:../storage
-      '@sentry/node':
-        specifier: 7.120.2
-        version: 7.120.2
-      '@trpc/server':
-        specifier: 10.45.3
-        version: 10.45.3
-      '@types/ms':
-        specifier: 0.7.34
-        version: 0.7.34
-      dotenv:
-        specifier: 16.4.7
-        version: 16.4.7
-      fastify:
-        specifier: 5.8.5
-        version: 5.8.5
-      lru-cache:
-        specifier: 11.0.2
-        version: 11.0.2
-      ms:
-        specifier: 2.1.3
-        version: 2.1.3
-      p-timeout:
-        specifier: 6.1.4
-        version: 6.1.4
-      pino-pretty:
-        specifier: 11.3.0
-        version: 11.3.0
-      reflect-metadata:
-        specifier: 0.2.2
-        version: 0.2.2
-      tiny-lru:
-        specifier: 11.4.7
-        version: 11.4.7
-      tslib:
-        specifier: 2.8.1
-        version: 2.8.1
-      zod:
-        specifier: 3.25.76
-        version: 3.25.76
-
   packages/services/usage:
     devDependencies:
       '@hive/api':
@@ -1903,9 +1849,6 @@ importers:
       '@hive/storage':
         specifier: workspace:*
         version: link:../storage
-      '@hive/tokens':
-        specifier: workspace:*
-        version: link:../tokens
       '@hive/usage-common':
         specifier: workspace:*
         version: link:../usage-common
@@ -1918,9 +1861,6 @@ importers:
       '@trpc/client':
         specifier: 10.45.3
         version: 10.45.3(@trpc/server@10.45.3)
-      '@trpc/server':
-        specifier: 10.45.3
-        version: 10.45.3
       ajv:
         specifier: ^8.18.0
         version: 8.18.0

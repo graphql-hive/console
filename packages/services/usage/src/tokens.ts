@@ -1,7 +1,5 @@
-import { LRUCache } from 'lru-cache';
+import { TargetTokenCache } from '@hive/api/modules/token/providers/target-token-cache';
 import { ServiceLogger } from '@hive/service-common';
-import type { TokensApi } from '@hive/tokens';
-import { createTRPCProxyClient, httpLink } from '@trpc/client';
 import { tokenRequests } from './metrics';
 
 export enum TokenStatus {
@@ -18,56 +16,34 @@ export type TokensResponse = {
 
 type Token = TokensResponse | TokenStatus;
 
-export function createTokens(config: { endpoint: string; logger: ServiceLogger }) {
-  const endpoint = config.endpoint.replace(/\/$/, '');
-  const tokensApi = createTRPCProxyClient<TokensApi>({
-    links: [
-      httpLink({
-        url: `${endpoint}/trpc`,
-        fetch,
-        headers: {
-          'x-requesting-service': 'usage',
-        },
-      }),
-    ],
-  });
-  const tokens = new LRUCache<string, Token>({
-    max: 1000,
-    ttl: 30_000,
-    allowStale: false,
-    // If a cache entry is stale or missing, this method is called
-    // to fill the cache with fresh data.
-    // This method is called only once per cache key,
-    // even if multiple requests are waiting for it.
-    async fetchMethod(token) {
-      tokenRequests.inc();
-      try {
-        const info = await tokensApi.getToken.query({
-          token,
-        });
+export function createTokens(config: { cache: TargetTokenCache; logger: ServiceLogger }) {
+  async function fetch(token: string): Promise<Token> {
+    tokenRequests.inc();
 
-        if (info) {
-          const result = info.scopes.includes('target:registry:write')
-            ? {
-                target: info.target,
-                project: info.project,
-                organization: info.organization,
-                scopes: info.scopes,
-              }
-            : TokenStatus.NoAccess;
-          return result;
-        }
-        return TokenStatus.NotFound;
-      } catch (error) {
-        config.logger.error('Failed to fetch fresh token (error=%s)', error);
+    try {
+      const info = await config.cache.get(token);
+
+      if (!info) {
         return TokenStatus.NotFound;
       }
-    },
-  });
+
+      return info.scopes.includes('target:registry:write')
+        ? {
+            target: info.target,
+            project: info.project,
+            organization: info.organization,
+            scopes: info.scopes,
+          }
+        : TokenStatus.NoAccess;
+    } catch (error) {
+      config.logger.error('Failed to fetch target token (error=%s)', error);
+      return TokenStatus.NotFound;
+    }
+  }
 
   return {
     async fetch(token: string) {
-      return (await tokens.fetch(token)) ?? TokenStatus.NotFound;
+      return await fetch(token);
     },
     isNotFound(token: Token): token is TokenStatus.NotFound {
       return token === TokenStatus.NotFound;

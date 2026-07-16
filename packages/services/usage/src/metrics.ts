@@ -2,12 +2,12 @@ import { metrics } from '@hive/service-common';
 
 export const tokenRequests = new metrics.Counter({
   name: 'usage_tokens_requests',
-  help: 'Number of requests to Tokens service',
+  help: 'Number of target token validations',
 });
 
 export const tokensDuration = new metrics.Histogram({
   name: 'usage_tokens_duration_seconds',
-  help: 'Duration of an HTTP Request to Tokens service in seconds',
+  help: 'Duration of target token validation in seconds',
   labelNames: ['status'],
   buckets: [0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1, 2, 3, 4, 5, 7, 10],
 });

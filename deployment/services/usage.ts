@@ -9,13 +9,11 @@ import { Observability } from './observability';
 import { Postgres } from './postgres';
 import { Redis } from './redis';
 import { Sentry } from './sentry';
-import { Tokens } from './tokens';
 
 export type Usage = ReturnType<typeof deployUsage>;
 
 export function deployUsage({
   environment,
-  tokens,
   postgres,
   redis,
   kafka,
@@ -29,7 +27,6 @@ export function deployUsage({
   observability: Observability;
   image: string;
   environment: Environment;
-  tokens: Tokens;
   postgres: Postgres;
   redis: Redis;
   kafka: Kafka;
@@ -69,7 +66,6 @@ export function deployUsage({
           KAFKA_BUFFER_INTERVAL: kafka.config.bufferInterval,
           KAFKA_BUFFER_DYNAMIC: kafkaBufferDynamic,
           KAFKA_TOPIC: kafka.config.topic,
-          TOKENS_ENDPOINT: serviceLocalEndpoint(tokens.service),
           COMMERCE_ENDPOINT: serviceLocalEndpoint(commerce.service),
           OPENTELEMETRY_COLLECTOR_ENDPOINT:
             observability.enabled &&
@@ -90,13 +86,7 @@ export function deployUsage({
           maxReplicas: environment.podsConfig.usageService.maxReplicas,
         },
       },
-      [
-        dbMigrations,
-        tokens.deployment,
-        tokens.service,
-        commerce.deployment,
-        commerce.service,
-      ].filter(Boolean),
+      [dbMigrations, commerce.deployment, commerce.service].filter(Boolean),
     )
       // Redis
       .withSecret('REDIS_HOST', redis.secret, 'host')

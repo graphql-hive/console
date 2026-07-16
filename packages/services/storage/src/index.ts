@@ -33,7 +33,6 @@ import {
 
 export type { Interceptor };
 
-export { createTokenStorage } from './tokens';
 export type { tokens, schema_policy_resource } from './db/types';
 
 const organizationGetStartedMapping: Record<

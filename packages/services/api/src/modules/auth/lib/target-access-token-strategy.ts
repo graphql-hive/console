@@ -1,8 +1,8 @@
+import { PostgresDatabasePool } from '@hive/postgres';
 import { maskToken, type FastifyReply, type FastifyRequest } from '@hive/service-common';
-import { AccessError } from '../../../shared/errors';
+import { AccessError, HiveError } from '../../../shared/errors';
 import { Logger } from '../../shared/providers/logger';
-import { TokenStorage } from '../../token/providers/token-storage';
-import { TokensConfig } from '../../token/providers/tokens';
+import { TargetTokenCache } from '../../token/providers/target-token-cache';
 import {
   OrganizationAccessScope,
   ProjectAccessScope,
@@ -69,12 +69,14 @@ export class TargetAccessTokenSession extends Session {
 
 export class TargetAccessTokenStrategy extends AuthNStrategy<TargetAccessTokenSession> {
   private logger: Logger;
-  private tokensConfig: TokensConfig;
+  private pool: PostgresDatabasePool;
+  private cache: TargetTokenCache;
 
-  constructor(deps: { logger: Logger; tokensConfig: TokensConfig }) {
+  constructor(deps: { logger: Logger; pool: PostgresDatabasePool; cache: TargetTokenCache }) {
     super();
     this.logger = deps.logger.child({ module: 'TargetAccessTokenStrategy' });
-    this.tokensConfig = deps.tokensConfig;
+    this.pool = deps.pool;
+    this.cache = deps.cache;
   }
 
   async parse(args: {
@@ -124,11 +126,15 @@ export class TargetAccessTokenStrategy extends AuthNStrategy<TargetAccessTokenSe
       return null;
     }
 
-    const tokens = new TokenStorage(this.logger, this.tokensConfig, {
-      requestId: args.req.headers['x-request-id'] as string,
-    } as any);
+    if (accessToken.length !== 32) {
+      throw new HiveError('Invalid token provided');
+    }
 
-    const result = await tokens.getToken({ token: accessToken });
+    const result = await this.cache.get(accessToken);
+
+    if (!result) {
+      throw new HiveError('Invalid token provided');
+    }
 
     this.logger.debug('TargetAccessToken session resolved successfully');
 

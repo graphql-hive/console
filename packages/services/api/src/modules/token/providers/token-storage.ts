@@ -1,7 +1,6 @@
-import { CONTEXT, Inject, Injectable, Scope } from 'graphql-modules';
+import { createHash, randomBytes } from 'node:crypto';
+import { Injectable, Scope } from 'graphql-modules';
 import { maskToken } from '@hive/service-common';
-import type { TokensApi } from '@hive/tokens';
-import { createTRPCProxyClient, httpLink } from '@trpc/client';
 import type { Token } from '../../../shared/entities';
 import { HiveError } from '../../../shared/errors';
 import { atomic } from '../../../shared/helpers';
@@ -12,8 +11,8 @@ import type {
 } from '../../auth/providers/scopes';
 import { Logger } from '../../shared/providers/logger';
 import type { TargetSelector } from '../../shared/providers/storage';
-import type { TokensConfig } from './tokens';
-import { TOKENS_CONFIG } from './tokens';
+import { TargetTokenCache } from './target-token-cache';
+import { TargetTokenStorage } from './target-token-storage';
 
 export interface TokenSelector {
   token: string;
@@ -34,31 +33,22 @@ export interface CreateTokenResult extends Token {
 })
 export class TokenStorage {
   private logger: Logger;
-  private tokensService;
 
   constructor(
     logger: Logger,
-    @Inject(TOKENS_CONFIG) tokensConfig: TokensConfig,
-    @Inject(CONTEXT) context: GraphQLModules.ModuleContext,
+    private targetTokenStorage: TargetTokenStorage,
+    private targetTokenCache: TargetTokenCache,
   ) {
     this.logger = logger.child({ source: 'TokenStorage' });
-    this.tokensService = createTRPCProxyClient<TokensApi>({
-      links: [
-        httpLink({
-          url: `${tokensConfig.endpoint}/trpc`,
-          fetch,
-          headers: {
-            'x-request-id': context.requestId,
-          },
-        }),
-      ],
-    });
   }
 
   async createToken(input: CreateTokenInput) {
     this.logger.debug('Creating new token (input=%o)', input);
 
-    const response = await this.tokensService.createToken.mutate({
+    const secret = randomBytes(16).toString('hex');
+    const token = await this.targetTokenStorage.createToken({
+      token: createTokenHash(secret),
+      tokenAlias: maskToken(secret),
       name: input.name,
       target: input.targetId,
       project: input.projectId,
@@ -66,7 +56,9 @@ export class TokenStorage {
       scopes: input.scopes,
     });
 
-    return response;
+    await this.targetTokenCache.add(token);
+
+    return { ...token, secret };
   }
 
   async deleteTokens(input: {
@@ -75,59 +67,37 @@ export class TokenStorage {
   }): Promise<readonly string[]> {
     this.logger.debug('Deleting tokens (input=%o)', input);
 
-    const deletedIds: Array<string> = [];
+    const deletedTokens = await this.targetTokenStorage.deleteTokens({
+      targetId: input.targetId,
+      tokens: input.tokenIds,
+    });
+    await this.targetTokenCache.purge(deletedTokens);
 
-    await Promise.all(
-      input.tokenIds.map(token =>
-        this.tokensService.deleteToken
-          .mutate({
-            targetId: input.targetId,
-            token,
-          })
-          .then(didDelete => {
-            if (!didDelete) {
-              return;
-            }
-            deletedIds.push(token);
-          }),
-      ),
-    );
-
-    return deletedIds;
+    return deletedTokens;
   }
 
   async invalidateTokens(tokens: string[]) {
     this.logger.debug('Invalidating tokens (size=%s)', tokens.length);
 
-    await this.tokensService.invalidateTokens
-      .mutate({
-        tokens,
-      })
-      .catch(error => {
-        this.logger.error(error);
-      });
+    await this.targetTokenCache.purge(tokens);
   }
 
   async getTokens(selector: TargetSelector) {
     this.logger.debug('Fetching tokens (selector=%o)', selector);
 
-    const response = await this.tokensService.targetTokens.query({
-      targetId: selector.targetId,
-    });
-
-    return response || [];
+    return await this.targetTokenStorage.getTokens({ targetId: selector.targetId });
   }
 
   @atomic<TokenSelector>(({ token }) => token)
   async getToken({ token }: TokenSelector) {
     try {
-      // Tokens are MD5 hashes, so they are always 32 characters long
+      // Target-token secrets are 16 random bytes encoded as hexadecimal.
       if (token.length !== 32) {
         throw new HiveError(`Incorrect length: received ${token.length}, expected 32`);
       }
 
       this.logger.debug('Fetching token (token=%s)', maskToken(token));
-      const tokenInfo = await this.tokensService.getToken.query({ token });
+      const tokenInfo = await this.targetTokenCache.get(token);
 
       if (!tokenInfo) {
         throw new HiveError('Not found');
@@ -148,4 +118,8 @@ export class TokenStorage {
       });
     }
   }
+}
+
+function createTokenHash(token: string) {
+  return createHash('sha256').update(token).digest('hex');
 }

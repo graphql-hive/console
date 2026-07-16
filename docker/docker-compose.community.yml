@@ -174,8 +174,6 @@ services:
         condition: service_completed_successfully
       s3_provision_buckets:
         condition: service_completed_successfully
-      tokens:
-        condition: service_healthy
       schema:
         condition: service_healthy
       policy:
@@ -197,7 +195,6 @@ services:
       REDIS_HOST: redis
       REDIS_PORT: 6379
       REDIS_PASSWORD: '${REDIS_PASSWORD}'
-      TOKENS_ENDPOINT: http://tokens:3003
       SCHEMA_ENDPOINT: http://schema:3002
       SCHEMA_POLICY_ENDPOINT: http://policy:3012
       ENCRYPTION_SECRET: '${HIVE_ENCRYPTION_SECRET}'
@@ -266,32 +263,6 @@ services:
       PROMETHEUS_METRICS: '${PROMETHEUS_METRICS:-}'
       LOG_LEVEL: '${LOG_LEVEL:-debug}'
 
-  tokens:
-    image: '${DOCKER_REGISTRY}tokens${DOCKER_TAG}'
-    networks:
-      - 'stack'
-    depends_on:
-      migrations:
-        condition: service_completed_successfully
-    environment:
-      NODE_ENV: production
-      POSTGRES_HOST: db
-      POSTGRES_USER: '${POSTGRES_USER}'
-      POSTGRES_PASSWORD: '${POSTGRES_PASSWORD}'
-      POSTGRES_PORT: 5432
-      POSTGRES_DB: '${POSTGRES_DB}'
-      REDIS_HOST: redis
-      REDIS_PORT: 6379
-      REDIS_PASSWORD: '${REDIS_PASSWORD}'
-      PORT: 3003
-      SERVER_HOST: '${SERVER_HOST:-::}'
-      SERVER_HOST_IPV6_ONLY: '${SERVER_HOST_IPV6_ONLY:-0}'
-      LOG_LEVEL: '${LOG_LEVEL:-debug}'
-      OPENTELEMETRY_COLLECTOR_ENDPOINT: '${OPENTELEMETRY_COLLECTOR_ENDPOINT:-}'
-      SENTRY: '${SENTRY:-0}'
-      SENTRY_DSN: '${SENTRY_DSN:-}'
-      PROMETHEUS_METRICS: '${PROMETHEUS_METRICS:-}'
-
   workflows:
     image: '${DOCKER_REGISTRY}workflows${DOCKER_TAG}'
     networks:
@@ -328,13 +299,10 @@ services:
     depends_on:
       broker:
         condition: service_healthy
-      tokens:
-        condition: service_healthy
     ports:
       - 8081:3006
     environment:
       NODE_ENV: production
-      TOKENS_ENDPOINT: http://tokens:3003
       KAFKA_CONNECTION_MODE: 'docker'
       KAFKA_TOPIC: 'usage_reports_v2'
       KAFKA_BROKER: broker:29092

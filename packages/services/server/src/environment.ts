@@ -45,7 +45,6 @@ const EnvironmentModel = zod.object({
     })
     .url(),
   SCHEMA_POLICY_ENDPOINT: emptyString(zod.string().url().optional()),
-  TOKENS_ENDPOINT: zod.string().url(),
   SCHEMA_ENDPOINT: zod.string().url(),
   AUTH_ORGANIZATION_OIDC: emptyString(zod.union([zod.literal('1'), zod.literal('0')]).optional()),
   AUTH_REQUIRE_EMAIL_VERIFICATION: emptyString(
@@ -418,9 +417,6 @@ export const env = {
   hiveServices: {
     webApp: {
       url: base.WEB_APP_URL,
-    },
-    tokens: {
-      endpoint: base.TOKENS_ENDPOINT,
     },
     commerce: commerce.COMMERCE_ENDPOINT
       ? {
