@@ -86,7 +86,7 @@ export function createWriter({
       // fire-and-forget returns in a few ms. Logged at debug so it stays out of prod (info).
       logger.debug(
         'operations INSERT completed in %sms (operations=%s)',
-        Math.round(performance.now() - startedAt),
+        performance.now() - startedAt,
         operations.length,
       );
     },
