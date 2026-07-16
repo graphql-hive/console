@@ -9,115 +9,29 @@ import { NoopLogger } from '@hive/api/modules/shared/providers/logger';
 import { psql } from '@hive/postgres';
 import { invariant } from '@hive/service-common';
 import { createStorage } from '@hive/storage';
+import { createScimTestkit } from '../../../testkit/scim';
 
-const apiHost = await getServiceHost('server', 3001).then(r => `http://${r}`);
-const oidcEndpointBase = apiHost + '/scim/v2';
-const usersEndpoint = oidcEndpointBase + '/Users';
-const groupsEndpoint = oidcEndpointBase + '/Groups';
+const baseUrl = await getServiceHost('server', 3001).then(r => `http://${r}`);
 
-const defaultUserValues = {
-  schemas: ['urn:ietf:params:scim:schemas:core:2.0:User'],
-  userName: 'marty@mcfly.dev',
-  name: { givenName: 'Marty', familyName: 'McFly' },
-  emails: [{ primary: true, value: 'marty@mcfly.dev', type: 'work' }],
-  locale: 'en-US',
-  externalId: 'userExternalId',
-  password: 'fq77ZD37',
-  active: true,
-};
-
-async function createUser(
-  headers: Record<string, string>,
-  overrides?: Partial<typeof defaultUserValues>,
-) {
-  return await fetch(usersEndpoint, {
-    method: 'POST',
-    body: JSON.stringify({
-      ...defaultUserValues,
-      userName: `marty+${crypto.randomUUID()}@mcfly.dev`,
-      externalId: crypto.randomUUID(),
-      ...overrides,
-    }),
-    headers,
-  });
+function newUserValues() {
+  return {
+    schemas: ['urn:ietf:params:scim:schemas:core:2.0:User'],
+    userName: `marty+${crypto.randomUUID()}@mcfly.dev`,
+    name: { givenName: 'Marty', familyName: 'McFly' },
+    emails: [{ primary: true, value: 'marty@mcfly.dev', type: 'work' }],
+    locale: 'en-US',
+    externalId: crypto.randomUUID(),
+    password: 'fq77ZD37',
+    active: true,
+  };
 }
 
-const defaultGroupValues = {
-  schemas: ['urn:ietf:params:scim:schemas:core:2.0:Group'],
-  displayName: 'foobars',
-  members: [],
-  externalId: undefined as string | undefined,
-};
-
-async function createGroup(
-  headers: Record<string, string>,
-  overrides?: Partial<typeof defaultGroupValues>,
-) {
-  return await fetch(groupsEndpoint, {
-    method: 'POST',
-    body: JSON.stringify({
-      ...defaultGroupValues,
-      displayName: crypto.randomUUID(),
-      ...overrides,
-    }),
-    headers,
-  });
-}
-
-async function addUserToGroupViaPatch(
-  headers: Record<string, string>,
-  groupId: string,
-  userId: string,
-) {
-  return await fetch(groupsEndpoint + '/' + groupId, {
-    method: 'PATCH',
-    body: JSON.stringify({
-      Operations: [
-        {
-          op: 'add',
-          path: 'members',
-          value: [{ value: userId }],
-        },
-      ],
-    }),
-    headers,
-  });
-}
-
-async function getGroups(
-  headers: Record<string, string>,
-  query?: {
-    count?: string;
-    startIndex?: string;
-    filter?: string;
-  },
-) {
-  const url = new URL(groupsEndpoint);
-  for (const [key, value] of Object.entries(query ?? {})) {
-    if (!value) continue;
-    url.searchParams.set(key, value);
-  }
-  return await fetch(url, {
-    headers,
-  });
-}
-
-async function getUsers(
-  headers: Record<string, string>,
-  query?: {
-    count?: string;
-    startIndex?: string;
-    filter?: string;
-  },
-) {
-  const url = new URL(usersEndpoint);
-  for (const [key, value] of Object.entries(query ?? {})) {
-    if (!value) continue;
-    url.searchParams.set(key, value);
-  }
-  return await fetch(url, {
-    headers,
-  });
+function newGroupValues() {
+  return {
+    schemas: ['urn:ietf:params:scim:schemas:core:2.0:Group'],
+    displayName: crypto.randomUUID(),
+    members: [],
+  };
 }
 
 describe.concurrent('/Users', () => {
@@ -139,25 +53,20 @@ describe.concurrent('/Users', () => {
         'Content-Type': 'application/scim+json',
         Authorization: scimAuthHeader,
       };
-      const usersPostResponse = await fetch(usersEndpoint, {
-        method: 'POST',
-        body: JSON.stringify({
-          schemas: ['urn:ietf:params:scim:schemas:core:2.0:User'],
-          userName: userEmail,
-          name: { givenName: 'Marty', familyName: 'McFly' },
-          emails: [{ primary: true, value: userEmail, type: 'work' }],
-          displayName: 'Marty McFly',
-          locale: 'en-US',
-          externalId: externalUserId,
-          groups: [],
-          password: 'fq77ZD37',
-          active: true,
-        }),
-        headers,
+      const scim = createScimTestkit({ baseUrl, headers });
+      const usersPostResponse = await scim.createUser({
+        schemas: ['urn:ietf:params:scim:schemas:core:2.0:User'],
+        userName: userEmail,
+        name: { givenName: 'Marty', familyName: 'McFly' },
+        emails: [{ primary: true, value: userEmail, type: 'work' }],
+        displayName: 'Marty McFly',
+        locale: 'en-US',
+        externalId: externalUserId,
+        groups: [],
+        password: 'fq77ZD37',
+        active: true,
       });
-      const body = await usersPostResponse.json();
-      expect(usersPostResponse.status).toEqual(201);
-      expect(body).toEqual({
+      expect(usersPostResponse.body).toEqual({
         emails: [
           {
             primary: true,
@@ -175,7 +84,7 @@ describe.concurrent('/Users', () => {
           resourceType: 'User',
           created: expect.any(String),
           lastModified: expect.any(String),
-          location: usersEndpoint + '/' + body.id,
+          location: baseUrl + '/scim/v2/Users/' + usersPostResponse.body.id,
         },
       });
     });
@@ -197,25 +106,21 @@ describe.concurrent('/Users', () => {
           'Content-Type': 'application/scim+json',
           Authorization: scimAuthHeader,
         };
-        const usersPostResponse = await fetch(usersEndpoint, {
-          method: 'POST',
-          body: JSON.stringify({
-            schemas: ['urn:ietf:params:scim:schemas:core:2.0:User'],
-            userName: 'emmett.brown@' + domain,
-            name: { givenName: 'Emmett', familyName: 'Brown' },
-            emails: [{ primary: true, value: 'emmett.brown@' + domain, type: 'work' }],
-            displayName: 'Emmett Brown',
-            locale: 'en-US',
-            externalId: externalUserId,
-            groups: [],
-            password: 'foobars',
-            active: true,
-          }),
-          headers,
+        const scim = createScimTestkit({ baseUrl, headers });
+        const usersPostResponse = await scim.createUser({
+          schemas: ['urn:ietf:params:scim:schemas:core:2.0:User'],
+          userName: 'emmett.brown@' + domain,
+          name: { givenName: 'Emmett', familyName: 'Brown' },
+          emails: [{ primary: true, value: 'emmett.brown@' + domain, type: 'work' }],
+          displayName: 'Emmett Brown',
+          locale: 'en-US',
+          externalId: externalUserId,
+          groups: [],
+          password: 'foobars',
+          active: true,
         });
-        expect(usersPostResponse.status).toEqual(201);
-        const body = await usersPostResponse.json();
-        expect(body).toEqual({
+
+        expect(usersPostResponse.body).toEqual({
           emails: [
             {
               primary: true,
@@ -233,7 +138,7 @@ describe.concurrent('/Users', () => {
             resourceType: 'User',
             created: expect.any(String),
             lastModified: expect.any(String),
-            location: usersEndpoint + '/' + body.id,
+            location: baseUrl + '/scim/v2/Users/' + usersPostResponse.body.id,
           },
         });
       },
@@ -253,9 +158,9 @@ describe.concurrent('/Users', () => {
         'Content-Type': 'application/scim+json',
         Authorization: scimAuthHeader,
       };
-      const usersPostResponse = await fetch(usersEndpoint, {
-        method: 'POST',
-        body: JSON.stringify({
+      const scim = createScimTestkit({ baseUrl, headers });
+      const usersPostResponse = await scim.createUser(
+        {
           schemas: ['urn:ietf:params:scim:schemas:core:2.0:User'],
           userName: 'marty@mcfly.dev',
           name: { givenName: 'Marty', familyName: 'McFly' },
@@ -266,12 +171,10 @@ describe.concurrent('/Users', () => {
           groups: [],
           password: 'fq77ZD37',
           active: true,
-        }),
-        headers,
-      });
-      expect(usersPostResponse.status).toEqual(400);
-      const usersPostResponseBody = await usersPostResponse.json();
-      expect(usersPostResponseBody).toMatchInlineSnapshot(`
+        },
+        { expectedStatus: 400 },
+      );
+      expect(usersPostResponse.body).toMatchInlineSnapshot(`
         {
           detail: Primary email address domain ownership is not verified for this organization.,
           schemas: [
@@ -299,26 +202,21 @@ describe.concurrent('/Users', () => {
           'Content-Type': 'application/scim+json',
           Authorization: scimAuthHeader,
         };
-        let usersPostResponse = await fetch(usersEndpoint, {
-          method: 'POST',
-          body: JSON.stringify({
-            schemas: ['urn:ietf:params:scim:schemas:core:2.0:User'],
-            userName: 'emmett.brown@' + domain,
-            name: { givenName: 'Emmett', familyName: 'Brown' },
-            emails: [{ primary: true, value: 'emmett.brown@' + domain, type: 'work' }],
-            displayName: 'Emmett Brown',
-            locale: 'en-US',
-            externalId: externalUserId,
-            groups: [],
-            password: 'foobars',
-            active: true,
-          }),
-          headers,
+        const scim = createScimTestkit({ baseUrl, headers });
+        const usersPostResponse = await scim.createUser({
+          schemas: ['urn:ietf:params:scim:schemas:core:2.0:User'],
+          userName: 'emmett.brown@' + domain,
+          name: { givenName: 'Emmett', familyName: 'Brown' },
+          emails: [{ primary: true, value: 'emmett.brown@' + domain, type: 'work' }],
+          displayName: 'Emmett Brown',
+          locale: 'en-US',
+          externalId: externalUserId,
+          groups: [],
+          password: 'foobars',
+          active: true,
         });
-        expect(usersPostResponse.status).toEqual(201);
-        usersPostResponse = usersPostResponse = await fetch(usersEndpoint, {
-          method: 'POST',
-          body: JSON.stringify({
+        const conflictUsersPostResponse = await scim.createUser(
+          {
             schemas: ['urn:ietf:params:scim:schemas:core:2.0:User'],
             userName: 'marty.mcfly@' + domain,
             name: { givenName: 'Marty', familyName: 'McFly' },
@@ -329,11 +227,10 @@ describe.concurrent('/Users', () => {
             groups: [],
             password: 'fq77ZD37',
             active: true,
-          }),
-          headers,
-        });
-        expect(usersPostResponse.status).toEqual(409);
-        expect(await usersPostResponse.json()).toMatchInlineSnapshot(`
+          },
+          { expectedStatus: 409 },
+        );
+        expect(conflictUsersPostResponse.body).toMatchInlineSnapshot(`
         {
           detail: A user with the same external id already exists.,
           schemas: [
@@ -360,25 +257,21 @@ describe.concurrent('/Users', () => {
         'Content-Type': 'application/scim+json',
         Authorization: scimAuthHeader,
       };
-      const usersPostResponse = await fetch(usersEndpoint, {
-        method: 'POST',
-        body: JSON.stringify({
-          schemas: ['urn:ietf:params:scim:schemas:core:2.0:User'],
-          userName: 'marty.mcfly@' + domain,
-          name: { givenName: 'Marty', familyName: 'McFly' },
-          emails: [{ primary: true, value: 'marty.mcfly@' + domain, type: 'work' }],
-          displayName: 'Marty McFly',
-          locale: 'en-US',
-          externalId: externalUserId,
-          groups: [],
-          password: 'fq77ZD37',
-          active: false,
-        }),
-        headers,
+      const scim = createScimTestkit({ baseUrl, headers });
+      const usersPostResponse = await scim.createUser({
+        schemas: ['urn:ietf:params:scim:schemas:core:2.0:User'],
+        userName: 'marty.mcfly@' + domain,
+        name: { givenName: 'Marty', familyName: 'McFly' },
+        emails: [{ primary: true, value: 'marty.mcfly@' + domain, type: 'work' }],
+        displayName: 'Marty McFly',
+        locale: 'en-US',
+        externalId: externalUserId,
+        groups: [],
+        password: 'fq77ZD37',
+        active: false,
       });
-      expect(usersPostResponse.status).toEqual(201);
-      const body = await usersPostResponse.json();
-      expect(body).toEqual({
+
+      expect(usersPostResponse.body).toEqual({
         emails: [
           {
             primary: true,
@@ -396,7 +289,7 @@ describe.concurrent('/Users', () => {
           resourceType: 'User',
           created: expect.any(String),
           lastModified: expect.any(String),
-          location: usersEndpoint + '/' + body.id,
+          location: baseUrl + '/scim/v2/Users/' + usersPostResponse.body.id,
         },
       });
     });
@@ -420,9 +313,10 @@ describe.concurrent('/Users', () => {
           'Content-Type': 'application/scim+json',
           Authorization: scimAuthHeader,
         };
-        const usersPostResponse = await fetch(usersEndpoint + '/' + crypto.randomUUID(), {
-          method: 'PUT',
-          body: JSON.stringify({
+        const scim = createScimTestkit({ baseUrl, headers });
+        const usersPostResponse = await scim.updateUser(
+          crypto.randomUUID(),
+          {
             schemas: ['urn:ietf:params:scim:schemas:core:2.0:User'],
             userName: 'marty@mcfly.dev',
             name: { givenName: 'Marty', familyName: 'McFly' },
@@ -433,11 +327,10 @@ describe.concurrent('/Users', () => {
             groups: [],
             password: 'fq77ZD37',
             active: true,
-          }),
-          headers,
-        });
-        expect(usersPostResponse.status).toEqual(404);
-        expect(await usersPostResponse.json()).toMatchInlineSnapshot(`
+          },
+          { expectedStatus: 404 },
+        );
+        expect(usersPostResponse.body).toMatchInlineSnapshot(`
         {
           detail: User does not exist.,
           schemas: [
@@ -464,45 +357,35 @@ describe.concurrent('/Users', () => {
         'Content-Type': 'application/scim+json',
         Authorization: scimAuthHeader,
       };
-      const usersPostResponse = await fetch(usersEndpoint, {
-        method: 'POST',
-        body: JSON.stringify({
-          schemas: ['urn:ietf:params:scim:schemas:core:2.0:User'],
-          userName: 'marty.mcfly@' + domain,
-          name: { givenName: 'Marty', familyName: 'McFly' },
-          emails: [{ primary: true, value: 'marty.mcfly@' + domain, type: 'work' }],
-          displayName: 'Marty McFly',
-          locale: 'en-US',
-          externalId: externalUserId,
-          groups: [],
-          password: 'fq77ZD37',
-          active: true,
-        }),
-        headers,
-      });
-      expect(usersPostResponse.status).toEqual(201);
-      const usersPostResponseBody = await usersPostResponse.json();
-
-      const usersPutResponse = await fetch(usersEndpoint + '/' + usersPostResponseBody.id, {
-        method: 'PUT',
-        body: JSON.stringify({
-          schemas: ['urn:ietf:params:scim:schemas:core:2.0:User'],
-          userName: 'marty.mcfly@' + domain,
-          name: { givenName: 'Marty', familyName: 'McFly' },
-          emails: [{ primary: true, value: 'marty.mcfly@' + domain, type: 'work' }],
-          displayName: 'Marty McFly',
-          locale: 'en-US',
-          externalId: externalUserId,
-          groups: [],
-          password: 'fq77ZD37',
-          active: false,
-        }),
-        headers,
-      });
-      expect(usersPutResponse.status).toEqual(200);
-      expect(await usersPutResponse.json()).toEqual({
+      const scim = createScimTestkit({ baseUrl, headers });
+      const usersPostResponse = await scim.createUser({
         schemas: ['urn:ietf:params:scim:schemas:core:2.0:User'],
-        id: usersPostResponseBody.id,
+        userName: 'marty.mcfly@' + domain,
+        name: { givenName: 'Marty', familyName: 'McFly' },
+        emails: [{ primary: true, value: 'marty.mcfly@' + domain, type: 'work' }],
+        displayName: 'Marty McFly',
+        locale: 'en-US',
+        externalId: externalUserId,
+        groups: [],
+        password: 'fq77ZD37',
+        active: true,
+      });
+
+      const usersPutResponse = await scim.updateUser(usersPostResponse.body.id, {
+        schemas: ['urn:ietf:params:scim:schemas:core:2.0:User'],
+        userName: 'marty.mcfly@' + domain,
+        name: { givenName: 'Marty', familyName: 'McFly' },
+        emails: [{ primary: true, value: 'marty.mcfly@' + domain, type: 'work' }],
+        displayName: 'Marty McFly',
+        locale: 'en-US',
+        externalId: externalUserId,
+        groups: [],
+        password: 'fq77ZD37',
+        active: false,
+      });
+      expect(usersPutResponse.body).toEqual({
+        schemas: ['urn:ietf:params:scim:schemas:core:2.0:User'],
+        id: usersPostResponse.body.id,
         userName: 'marty.mcfly@' + domain,
         emails: [{ primary: true, value: 'marty.mcfly@' + domain, type: 'work' }],
         externalId: externalUserId,
@@ -512,7 +395,7 @@ describe.concurrent('/Users', () => {
           resourceType: 'User',
           created: expect.any(String),
           lastModified: expect.any(String),
-          location: usersEndpoint + '/' + usersPostResponseBody.id,
+          location: baseUrl + '/scim/v2/Users/' + usersPostResponse.body.id,
         },
       });
     });
@@ -532,43 +415,33 @@ describe.concurrent('/Users', () => {
         'Content-Type': 'application/scim+json',
         Authorization: scimAuthHeader,
       };
-      const usersPostResponse = await fetch(usersEndpoint, {
-        method: 'POST',
-        body: JSON.stringify({
-          schemas: ['urn:ietf:params:scim:schemas:core:2.0:User'],
-          userName: 'marty.mcfly@' + domain,
-          name: { givenName: 'Marty', familyName: 'McFly' },
-          emails: [{ primary: true, value: 'marty.mcfly@' + domain, type: 'work' }],
-          displayName: 'Marty McFly',
-          locale: 'en-US',
-          externalId: externalUserId,
-          groups: [],
-          password: 'fq77ZD37',
-          active: true,
-        }),
-        headers,
+      const scim = createScimTestkit({ baseUrl, headers });
+      const usersPostResponse = await scim.createUser({
+        schemas: ['urn:ietf:params:scim:schemas:core:2.0:User'],
+        userName: 'marty.mcfly@' + domain,
+        name: { givenName: 'Marty', familyName: 'McFly' },
+        emails: [{ primary: true, value: 'marty.mcfly@' + domain, type: 'work' }],
+        displayName: 'Marty McFly',
+        locale: 'en-US',
+        externalId: externalUserId,
+        groups: [],
+        password: 'fq77ZD37',
+        active: true,
       });
-      expect(usersPostResponse.status).toEqual(201);
-      const usersPostResponseBody = await usersPostResponse.json();
 
-      const usersPutResponse = await fetch(usersEndpoint + '/' + usersPostResponseBody.id, {
-        method: 'PUT',
-        body: JSON.stringify({
-          schemas: ['urn:ietf:params:scim:schemas:core:2.0:User'],
-          userName: 'marty.mcfly2@' + domain,
-          name: { givenName: 'Marty', familyName: 'McFly' },
-          emails: [{ primary: true, value: 'marty.mcfly2@' + domain, type: 'work' }],
-          displayName: 'Marty McFly',
-          locale: 'en-US',
-          externalId: externalUserId,
-          groups: [],
-          password: 'fq77ZD37',
-          active: false,
-        }),
-        headers,
+      const usersPutResponse = await scim.updateUser(usersPostResponse.body.id, {
+        schemas: ['urn:ietf:params:scim:schemas:core:2.0:User'],
+        userName: 'marty.mcfly2@' + domain,
+        name: { givenName: 'Marty', familyName: 'McFly' },
+        emails: [{ primary: true, value: 'marty.mcfly2@' + domain, type: 'work' }],
+        displayName: 'Marty McFly',
+        locale: 'en-US',
+        externalId: externalUserId,
+        groups: [],
+        password: 'fq77ZD37',
+        active: false,
       });
-      expect(usersPutResponse.status).toEqual(200);
-      expect(await usersPutResponse.json()).toMatchObject({
+      expect(usersPutResponse.body).toMatchObject({
         schemas: ['urn:ietf:params:scim:schemas:core:2.0:User'],
         userName: 'marty.mcfly2@' + domain,
         emails: [{ primary: true, value: 'marty.mcfly2@' + domain, type: 'work' }],
@@ -591,35 +464,29 @@ describe.concurrent('/Users', () => {
         'Content-Type': 'application/scim+json',
         Authorization: scimAuthHeader,
       };
-      const usersPostResponse = await fetch(usersEndpoint, {
-        method: 'POST',
-        body: JSON.stringify({
-          schemas: ['urn:ietf:params:scim:schemas:core:2.0:User'],
-          userName: 'marty.mcfly@' + domain,
-          name: { givenName: 'Marty', familyName: 'McFly' },
-          emails: [{ primary: true, value: 'marty.mcfly@' + domain, type: 'work' }],
-          displayName: 'Marty McFly',
-          locale: 'en-US',
-          externalId: externalUserId,
-          groups: [],
-          password: 'fq77ZD37',
-          active: true,
-        }),
-        headers,
+      const scim = createScimTestkit({ baseUrl, headers });
+      const usersPostResponse = await scim.createUser({
+        schemas: ['urn:ietf:params:scim:schemas:core:2.0:User'],
+        userName: 'marty.mcfly@' + domain,
+        name: { givenName: 'Marty', familyName: 'McFly' },
+        emails: [{ primary: true, value: 'marty.mcfly@' + domain, type: 'work' }],
+        displayName: 'Marty McFly',
+        locale: 'en-US',
+        externalId: externalUserId,
+        groups: [],
+        password: 'fq77ZD37',
+        active: true,
       });
-      expect(usersPostResponse.status).toEqual(201);
-      const usersPostResponseBody = await usersPostResponse.json();
 
-      const usersPutResponse = await fetch(usersEndpoint + '/' + usersPostResponseBody.id, {
-        method: 'PUT',
-        body: JSON.stringify({
+      const usersPutResponse = await scim.updateUser(
+        usersPostResponse.body.id,
+        {
           schemas: ['urn:ietf:params:scim:schemas:core:2.0:User'],
           emails: [{ primary: true, value: 'marty@mcfly.dev', type: 'work' }],
-        }),
-        headers,
-      });
-      expect(usersPutResponse.status).toEqual(400);
-      expect(await usersPutResponse.json()).toMatchInlineSnapshot(`
+        },
+        { expectedStatus: 400 },
+      );
+      expect(usersPutResponse.body).toMatchInlineSnapshot(`
         {
           detail: Primary email address domain ownership is not verified for this organization.,
           schemas: [
@@ -644,24 +511,20 @@ describe.concurrent('/Users', () => {
         'Content-Type': 'application/scim+json',
         Authorization: scimAuthHeader,
       };
-      const usersPostResponse = await createUser(headers, {
+      const scim = createScimTestkit({ baseUrl, headers });
+      const usersPostResponse = await scim.createUser({
+        ...newUserValues(),
         emails: [{ primary: true, value: 'marty.mcfly@' + domain, type: 'work' }],
       });
-      const userPostBody = await usersPostResponse.json();
 
-      const usersPutResponse = await fetch(usersEndpoint + '/' + userPostBody.id, {
-        method: 'PUT',
-        body: JSON.stringify({
-          userName: 'marty@mcfly.com',
-        }),
-        headers,
+      const usersPutResponse = await scim.updateUser(usersPostResponse.body.id, {
+        userName: 'marty@mcfly.com',
       });
-      expect(usersPutResponse.status).toEqual(200);
-      expect(await usersPutResponse.json()).toEqual({
-        ...userPostBody,
+      expect(usersPutResponse.body).toEqual({
+        ...usersPostResponse.body,
         userName: 'marty@mcfly.com',
         meta: {
-          ...userPostBody.meta,
+          ...usersPostResponse.body.meta,
           lastModified: expect.any(String),
         },
       });
@@ -683,25 +546,27 @@ describe.concurrent('/Users', () => {
           'Content-Type': 'application/scim+json',
           Authorization: scimAuthHeader,
         };
-        const usersPostResponse = await createUser(headers, {
+        const scim = createScimTestkit({ baseUrl, headers });
+        const usersPostResponse = await scim.createUser({
+          ...newUserValues(),
           userName: 'userName1',
           emails: [{ primary: true, value: 'marty.mcfly@' + domain, type: 'work' }],
         });
-        const userPostBody = await usersPostResponse.json();
-        await createUser(headers, {
+        const userPostBody = usersPostResponse.body;
+        await scim.createUser({
+          ...newUserValues(),
           userName: 'userName',
           emails: [{ primary: true, value: 'emmett.brown@' + domain, type: 'work' }],
         });
 
-        const usersPutResponse = await fetch(usersEndpoint + '/' + userPostBody.id, {
-          method: 'PUT',
-          body: JSON.stringify({
+        const usersPutResponse = await scim.updateUser(
+          userPostBody.id,
+          {
             userName: 'userName',
-          }),
-          headers,
-        });
-        expect(usersPutResponse.status).toEqual(409);
-        expect(await usersPutResponse.json()).toMatchInlineSnapshot(`
+          },
+          { expectedStatus: 409 },
+        );
+        expect(usersPutResponse.body).toMatchInlineSnapshot(`
           {
             detail: Another user with the same userName already exists.,
             schemas: [
@@ -729,29 +594,23 @@ describe.concurrent('/Users', () => {
         'Content-Type': 'application/scim+json',
         Authorization: scimAuthHeader,
       };
-      const userPostResponse = await createUser(headers, {
+      const scim = createScimTestkit({ baseUrl, headers });
+      const userPostResponse = await scim.createUser({
+        ...newUserValues(),
         externalId: externalUserId,
         emails: [{ primary: true, type: 'work', value: 'marty.mcfly@' + domain }],
       });
-      expect(userPostResponse.status).toEqual(201);
-      const userResponseBody = await userPostResponse.json();
-
       const newExternalId = 'ilikesnakes';
 
-      const usersPutResponse = await fetch(usersEndpoint + '/' + userResponseBody.id, {
-        method: 'PUT',
-        body: JSON.stringify({
-          externalId: newExternalId,
-        }),
-        headers,
+      const usersPutResponse = await scim.updateUser(userPostResponse.body.id, {
+        externalId: newExternalId,
       });
 
-      expect(usersPutResponse.status).toEqual(200);
-      expect(await usersPutResponse.json()).toEqual({
-        ...userResponseBody,
+      expect(usersPutResponse.body).toEqual({
+        ...userPostResponse.body,
         externalId: newExternalId,
         meta: {
-          ...userResponseBody.meta,
+          ...userPostResponse.body.meta,
           lastModified: expect.any(String),
         },
       });
@@ -775,27 +634,26 @@ describe.concurrent('/Users', () => {
           'Content-Type': 'application/scim+json',
           Authorization: scimAuthHeader,
         };
-        const firstUserPostResponse = await createUser(headers, {
+        const scim = createScimTestkit({ baseUrl, headers });
+        const firstUserPostResponse = await scim.createUser({
+          ...newUserValues(),
           emails: [{ primary: true, type: 'work', value: 'marty.mcfly@' + domain }],
         });
-        expect(firstUserPostResponse.status).toEqual(201);
-        const firstUserPostResponseBody = await firstUserPostResponse.json();
-        const secondUserPostResponse = await createUser(headers, {
+        await scim.createUser({
+          ...newUserValues(),
           externalId: externalUserId,
           emails: [{ primary: true, type: 'work', value: 'emmet.brown@' + domain }],
         });
-        expect(secondUserPostResponse.status).toEqual(201);
 
-        const usersPutResponse = await fetch(usersEndpoint + '/' + firstUserPostResponseBody.id, {
-          method: 'PUT',
-          body: JSON.stringify({
+        const usersPutResponse = await scim.updateUser(
+          firstUserPostResponse.body.id,
+          {
             externalId: externalUserId,
-          }),
-          headers,
-        });
+          },
+          { expectedStatus: 409 },
+        );
 
-        expect(usersPutResponse.status).toEqual(409);
-        expect(await usersPutResponse.json()).toMatchInlineSnapshot(`
+        expect(usersPutResponse.body).toMatchInlineSnapshot(`
         {
           detail: Another user with the same external id already exists.,
           schemas: [
@@ -822,15 +680,15 @@ describe.concurrent('/Users', () => {
         'Content-Type': 'application/scim+json',
         Authorization: scimAuthHeader,
       };
-      const usersPatchResponse = await fetch(usersEndpoint + '/' + crypto.randomUUID(), {
-        method: 'PATCH',
-        body: JSON.stringify({
+      const scim = createScimTestkit({ baseUrl, headers });
+      const usersPatchResponse = await scim.patchUser(
+        crypto.randomUUID(),
+        {
           Operations: [{ op: 'replace', path: 'active', value: false }],
-        }),
-        headers,
-      });
-      expect(usersPatchResponse.status).toEqual(404);
-      expect(await usersPatchResponse.json()).toMatchInlineSnapshot(`
+        },
+        { expectedStatus: 404 },
+      );
+      expect(usersPatchResponse.body).toMatchInlineSnapshot(`
         {
           detail: User does not exist.,
           schemas: [
@@ -855,19 +713,16 @@ describe.concurrent('/Users', () => {
         'Content-Type': 'application/scim+json',
         Authorization: scimAuthHeader,
       };
-      const usersPostResponse = await createUser(headers, {
+      const scim = createScimTestkit({ baseUrl, headers });
+      const usersPostResponse = await scim.createUser({
+        ...newUserValues(),
         emails: [{ primary: true, type: 'work', value: 'marty.mcfly@' + domain }],
       });
-      const userPostBody = await usersPostResponse.json();
-      let usersPatchResponse = await fetch(usersEndpoint + '/' + userPostBody.id, {
-        method: 'PATCH',
-        body: JSON.stringify({
-          Operations: [{ op: 'replace', path: 'active', value: false }],
-        }),
-        headers,
+      const userPostBody = usersPostResponse.body;
+      let usersPatchResponse = await scim.patchUser(userPostBody.id, {
+        Operations: [{ op: 'replace', path: 'active', value: false }],
       });
-      expect(usersPatchResponse.status).toEqual(200);
-      expect(await usersPatchResponse.json()).toEqual({
+      expect(usersPatchResponse.body).toEqual({
         ...userPostBody,
         active: false,
         meta: {
@@ -876,15 +731,10 @@ describe.concurrent('/Users', () => {
         },
       });
 
-      usersPatchResponse = await fetch(usersEndpoint + '/' + userPostBody.id, {
-        method: 'PATCH',
-        body: JSON.stringify({
-          Operations: [{ op: 'replace', path: 'active', value: true }],
-        }),
-        headers,
+      usersPatchResponse = await scim.patchUser(userPostBody.id, {
+        Operations: [{ op: 'replace', path: 'active', value: true }],
       });
-      expect(usersPatchResponse.status).toEqual(200);
-      expect(await usersPatchResponse.json()).toEqual({
+      expect(usersPatchResponse.body).toEqual({
         ...userPostBody,
         active: true,
         meta: {
@@ -908,26 +758,23 @@ describe.concurrent('/Users', () => {
         'Content-Type': 'application/scim+json',
         Authorization: scimAuthHeader,
       };
-      const usersPostResponse = await createUser(headers, {
+      const scim = createScimTestkit({ baseUrl, headers });
+      const usersPostResponse = await scim.createUser({
+        ...newUserValues(),
         emails: [{ primary: true, type: 'work', value: 'marty.mcfly@' + domain }],
       });
-      const userPostBody = await usersPostResponse.json();
+      const userPostBody = usersPostResponse.body;
 
-      const usersPatchResponse = await fetch(usersEndpoint + '/' + userPostBody.id, {
-        method: 'PATCH',
-        body: JSON.stringify({
-          Operations: [
-            {
-              op: 'replace',
-              path: 'emails',
-              value: [{ value: 'marty.mcfly.2@' + domain, primary: true, type: 'work' }],
-            },
-          ],
-        }),
-        headers,
+      const usersPatchResponse = await scim.patchUser(userPostBody.id, {
+        Operations: [
+          {
+            op: 'replace',
+            path: 'emails',
+            value: [{ value: 'marty.mcfly.2@' + domain, primary: true, type: 'work' }],
+          },
+        ],
       });
-      expect(usersPatchResponse.status).toEqual(200);
-      expect(await usersPatchResponse.json()).toEqual({
+      expect(usersPatchResponse.body).toEqual({
         ...userPostBody,
         emails: [
           {
@@ -957,27 +804,22 @@ describe.concurrent('/Users', () => {
         'Content-Type': 'application/scim+json',
         Authorization: scimAuthHeader,
       };
-      const usersPostResponse = await createUser(headers, {
+      const scim = createScimTestkit({ baseUrl, headers });
+      const usersPostResponse = await scim.createUser({
+        ...newUserValues(),
         emails: [{ primary: true, type: 'work', value: 'marty.mcfly@' + domain }],
       });
-      const userPostBody = await usersPostResponse.json();
-
-      const usersPatchResponse = await fetch(usersEndpoint + '/' + userPostBody.id, {
-        method: 'PATCH',
-        body: JSON.stringify({
-          Operations: [
-            {
-              op: 'replace',
-              path: 'emails[type eq "work"].value',
-              value: 'marty.mcfly2@' + domain,
-            },
-          ],
-        }),
-        headers,
+      const usersPatchResponse = await scim.patchUser(usersPostResponse.body.id, {
+        Operations: [
+          {
+            op: 'replace',
+            path: 'emails[type eq "work"].value',
+            value: 'marty.mcfly2@' + domain,
+          },
+        ],
       });
-      expect(usersPatchResponse.status).toEqual(200);
-      expect(await usersPatchResponse.json()).toEqual({
-        ...userPostBody,
+      expect(usersPatchResponse.body).toEqual({
+        ...usersPostResponse.body,
         emails: [
           {
             primary: true,
@@ -986,7 +828,7 @@ describe.concurrent('/Users', () => {
           },
         ],
         meta: {
-          ...userPostBody.meta,
+          ...usersPostResponse.body.meta,
           lastModified: expect.any(String),
         },
       });
@@ -1007,28 +849,22 @@ describe.concurrent('/Users', () => {
         'Content-Type': 'application/scim+json',
         Authorization: scimAuthHeader,
       };
-      const usersPostResponse = await fetch(usersEndpoint, {
-        method: 'POST',
-        body: JSON.stringify({
-          schemas: ['urn:ietf:params:scim:schemas:core:2.0:User'],
-          userName: 'marty.mcfly@' + domain,
-          name: { givenName: 'Marty', familyName: 'McFly' },
-          emails: [{ primary: true, value: 'marty.mcfly@' + domain, type: 'work' }],
-          displayName: 'Marty McFly',
-          locale: 'en-US',
-          externalId: externalUserId,
-          groups: [],
-          password: 'fq77ZD37',
-          active: true,
-        }),
-        headers,
+      const scim = createScimTestkit({ baseUrl, headers });
+      const usersPostResponse = await scim.createUser({
+        schemas: ['urn:ietf:params:scim:schemas:core:2.0:User'],
+        userName: 'marty.mcfly@' + domain,
+        name: { givenName: 'Marty', familyName: 'McFly' },
+        emails: [{ primary: true, value: 'marty.mcfly@' + domain, type: 'work' }],
+        displayName: 'Marty McFly',
+        locale: 'en-US',
+        externalId: externalUserId,
+        groups: [],
+        password: 'fq77ZD37',
+        active: true,
       });
-      expect(usersPostResponse.status).toEqual(201);
-      const usersPostResponseBody = await usersPostResponse.json();
-
-      const usersPatchResponse = await fetch(usersEndpoint + '/' + usersPostResponseBody.id, {
-        method: 'PATCH',
-        body: JSON.stringify({
+      const usersPatchResponse = await scim.patchUser(
+        usersPostResponse.body.id,
+        {
           Operations: [
             {
               op: 'replace',
@@ -1036,11 +872,10 @@ describe.concurrent('/Users', () => {
               value: [{ value: 'marty@mcfly.dev', primary: true, type: 'work' }],
             },
           ],
-        }),
-        headers,
-      });
-      expect(usersPatchResponse.status).toEqual(400);
-      expect(await usersPatchResponse.json()).toMatchInlineSnapshot(`
+        },
+        { expectedStatus: 400 },
+      );
+      expect(usersPatchResponse.body).toMatchInlineSnapshot(`
         {
           detail: Primary email address domain ownership is not verified for this organization.,
           schemas: [
@@ -1065,30 +900,25 @@ describe.concurrent('/Users', () => {
         'Content-Type': 'application/scim+json',
         Authorization: scimAuthHeader,
       };
-      const usersPostResponse = await createUser(headers, {
+      const scim = createScimTestkit({ baseUrl, headers });
+      const usersPostResponse = await scim.createUser({
+        ...newUserValues(),
         emails: [{ primary: true, type: 'work', value: 'marty.mcfly@' + domain }],
       });
-      const userPostBody = await usersPostResponse.json();
-
-      const usersPatchResponse = await fetch(usersEndpoint + '/' + userPostBody.id, {
-        method: 'PATCH',
-        body: JSON.stringify({
-          Operations: [
-            {
-              op: 'replace',
-              path: 'userName',
-              value: 'marty.mcfly.69@' + domain,
-            },
-          ],
-        }),
-        headers,
+      const usersPatchResponse = await scim.patchUser(usersPostResponse.body.id, {
+        Operations: [
+          {
+            op: 'replace',
+            path: 'userName',
+            value: 'marty.mcfly.69@' + domain,
+          },
+        ],
       });
-      expect(usersPatchResponse.status).toEqual(200);
-      expect(await usersPatchResponse.json()).toEqual({
-        ...userPostBody,
+      expect(usersPatchResponse.body).toEqual({
+        ...usersPostResponse.body,
         userName: 'marty.mcfly.69@' + domain,
         meta: {
-          ...userPostBody.meta,
+          ...usersPostResponse.body.meta,
           lastModified: expect.any(String),
         },
       });
@@ -1110,35 +940,29 @@ describe.concurrent('/Users', () => {
         'Content-Type': 'application/scim+json',
         Authorization: scimAuthHeader,
       };
-      const userPostResponse = await createUser(headers, {
+      const scim = createScimTestkit({ baseUrl, headers });
+      const userPostResponse = await scim.createUser({
+        ...newUserValues(),
         externalId: externalUserId,
         emails: [{ primary: true, type: 'work', value: 'marty.mcfly@' + domain }],
       });
-      expect(userPostResponse.status).toEqual(201);
-      const userResponseBody = await userPostResponse.json();
-
       const newExternalId = 'ilikesnakes';
 
-      const usersPatchResponse = await fetch(usersEndpoint + '/' + userResponseBody.id, {
-        method: 'PATCH',
-        body: JSON.stringify({
-          Operations: [
-            {
-              op: 'replace',
-              path: 'externalId',
-              value: newExternalId,
-            },
-          ],
-        }),
-        headers,
+      const usersPatchResponse = await scim.patchUser(userPostResponse.body.id, {
+        Operations: [
+          {
+            op: 'replace',
+            path: 'externalId',
+            value: newExternalId,
+          },
+        ],
       });
 
-      expect(usersPatchResponse.status).toEqual(200);
-      expect(await usersPatchResponse.json()).toEqual({
-        ...userResponseBody,
+      expect(usersPatchResponse.body).toEqual({
+        ...userPostResponse.body,
         externalId: newExternalId,
         meta: {
-          ...userResponseBody.meta,
+          ...userPostResponse.body.meta,
           lastModified: expect.any(String),
         },
       });
@@ -1158,49 +982,45 @@ describe.concurrent('/Users', () => {
       'Content-Type': 'application/scim+json',
       Authorization: 'Bearer ' + accessToken.privateAccessKey,
     };
+    const scim = createScimTestkit({ baseUrl, headers });
 
-    const user = await createUser(headers, {
-      emails: [{ primary: true, type: 'work', value: 'grouped-user@' + domain }],
-    }).then(response => response.json());
-    const firstGroup = await createGroup(headers).then(response => response.json());
-    const secondGroup = await createGroup(headers).then(response => response.json());
-    expect((await addUserToGroupViaPatch(headers, firstGroup.id, user.id)).status).toEqual(200);
-    expect((await addUserToGroupViaPatch(headers, secondGroup.id, user.id)).status).toEqual(200);
+    const user = await scim
+      .createUser({
+        ...newUserValues(),
+        emails: [{ primary: true, type: 'work', value: 'grouped-user@' + domain }],
+      })
+      .then(response => response.body);
+    const firstGroup = await scim.createGroup(newGroupValues()).then(response => response.body);
+    const secondGroup = await scim.createGroup(newGroupValues()).then(response => response.body);
+    await scim.patchGroup(firstGroup.id, {
+      Operations: [{ op: 'add', path: 'members', value: [{ value: user.id }] }],
+    });
+    await scim.patchGroup(secondGroup.id, {
+      Operations: [{ op: 'add', path: 'members', value: [{ value: user.id }] }],
+    });
 
     const expectedGroups = [firstGroup, secondGroup].map(group => ({
       value: group.id,
-      $ref: groupsEndpoint + '/' + group.id,
+      $ref: baseUrl + '/scim/v2/Groups/' + group.id,
     }));
 
-    const putResponse = await fetch(usersEndpoint + '/' + user.id, {
-      method: 'PUT',
-      body: JSON.stringify({ userName: 'Updated with PUT' }),
-      headers,
-    });
-    expect(putResponse.status).toEqual(200);
-    const putResponseBody = await putResponse.json();
-    expect(putResponseBody).toMatchObject({
+    const putResponse = await scim.updateUser(user.id, { userName: 'Updated with PUT' });
+    expect(putResponse.body).toMatchObject({
       id: user.id,
       userName: 'Updated with PUT',
       groups: expect.arrayContaining(expectedGroups),
     });
-    expect(putResponseBody.groups).toHaveLength(2);
+    expect(putResponse.body.groups).toHaveLength(2);
 
-    const patchResponse = await fetch(usersEndpoint + '/' + user.id, {
-      method: 'PATCH',
-      body: JSON.stringify({
-        Operations: [{ op: 'replace', path: 'userName', value: 'Updated with PATCH' }],
-      }),
-      headers,
+    const patchResponse = await scim.patchUser(user.id, {
+      Operations: [{ op: 'replace', path: 'userName', value: 'Updated with PATCH' }],
     });
-    expect(patchResponse.status).toEqual(200);
-    const patchResponseBody = await patchResponse.json();
-    expect(patchResponseBody).toMatchObject({
+    expect(patchResponse.body).toMatchObject({
       id: user.id,
       userName: 'Updated with PATCH',
       groups: expect.arrayContaining(expectedGroups),
     });
-    expect(patchResponseBody.groups).toHaveLength(2);
+    expect(patchResponse.body.groups).toHaveLength(2);
   });
 
   describe.concurrent('GET', () => {
@@ -1218,90 +1038,92 @@ describe.concurrent('/Users', () => {
         'Content-Type': 'application/scim+json',
         Authorization: 'Bearer ' + accessToken.privateAccessKey,
       };
+      const scim = createScimTestkit({ baseUrl, headers });
 
-      const firstUser = await createUser(headers, {
-        externalId: 'first-grouped-user',
-        emails: [{ primary: true, type: 'work', value: 'first-grouped-user@' + domain }],
-      }).then(response => response.json());
-      const secondUser = await createUser(headers, {
-        externalId: 'second-grouped-user',
-        emails: [{ primary: true, type: 'work', value: 'second-grouped-user@' + domain }],
-      }).then(response => response.json());
-      const firstGroup = await createGroup(headers).then(response => response.json());
-      const secondGroup = await createGroup(headers).then(response => response.json());
-      const sharedGroup = await createGroup(headers).then(response => response.json());
+      const firstUser = await scim
+        .createUser({
+          ...newUserValues(),
+          externalId: 'first-grouped-user',
+          emails: [{ primary: true, type: 'work', value: 'first-grouped-user@' + domain }],
+        })
+        .then(response => response.body);
+      const secondUser = await scim
+        .createUser({
+          ...newUserValues(),
+          externalId: 'second-grouped-user',
+          emails: [{ primary: true, type: 'work', value: 'second-grouped-user@' + domain }],
+        })
+        .then(response => response.body);
+      const firstGroup = await scim.createGroup(newGroupValues()).then(response => response.body);
+      const secondGroup = await scim.createGroup(newGroupValues()).then(response => response.body);
+      const sharedGroup = await scim.createGroup(newGroupValues()).then(response => response.body);
 
-      expect((await addUserToGroupViaPatch(headers, firstGroup.id, firstUser.id)).status).toEqual(
-        200,
-      );
-      expect((await addUserToGroupViaPatch(headers, sharedGroup.id, firstUser.id)).status).toEqual(
-        200,
-      );
-      expect((await addUserToGroupViaPatch(headers, secondGroup.id, secondUser.id)).status).toEqual(
-        200,
-      );
-      expect((await addUserToGroupViaPatch(headers, sharedGroup.id, secondUser.id)).status).toEqual(
-        200,
-      );
+      await scim.patchGroup(firstGroup.id, {
+        Operations: [{ op: 'add', path: 'members', value: [{ value: firstUser.id }] }],
+      });
+      await scim.patchGroup(sharedGroup.id, {
+        Operations: [{ op: 'add', path: 'members', value: [{ value: firstUser.id }] }],
+      });
+      await scim.patchGroup(secondGroup.id, {
+        Operations: [{ op: 'add', path: 'members', value: [{ value: secondUser.id }] }],
+      });
+      await scim.patchGroup(sharedGroup.id, {
+        Operations: [{ op: 'add', path: 'members', value: [{ value: secondUser.id }] }],
+      });
 
       const toGroupReferences = (groups: Array<{ id: string }>) =>
         groups.map(group => ({
           value: group.id,
-          $ref: groupsEndpoint + '/' + group.id,
+          $ref: baseUrl + '/scim/v2/Groups/' + group.id,
         }));
       const firstUserGroups = toGroupReferences([firstGroup, sharedGroup]);
       const secondUserGroups = toGroupReferences([secondGroup, sharedGroup]);
       const expectUserGroups = (
-        resource: { id: string; groups: Array<{ value: string; $ref: string }> },
+        resource: { id: string; groups: Array<{ value: string; $ref: string }> } | undefined,
         userId: string,
         groups: Array<{ value: string; $ref: string }>,
       ) => {
+        invariant(resource, `Expected user ${userId} to be present.`);
         expect(resource.id).toEqual(userId);
         expect(resource.groups).toHaveLength(groups.length);
         expect(resource.groups).toEqual(expect.arrayContaining(groups));
       };
 
-      const firstUserResponse = await fetch(usersEndpoint + '/' + firstUser.id, { headers });
-      expect(firstUserResponse.status).toEqual(200);
-      expectUserGroups(await firstUserResponse.json(), firstUser.id, firstUserGroups);
+      const firstUserResponse = await scim.getUser(firstUser.id);
+      expectUserGroups(firstUserResponse.body, firstUser.id, firstUserGroups);
 
-      const secondUserResponse = await fetch(usersEndpoint + '/' + secondUser.id, { headers });
-      expect(secondUserResponse.status).toEqual(200);
-      expectUserGroups(await secondUserResponse.json(), secondUser.id, secondUserGroups);
+      const secondUserResponse = await scim.getUser(secondUser.id);
+      expectUserGroups(secondUserResponse.body, secondUser.id, secondUserGroups);
 
-      const usersResponse = await getUsers(headers);
-      expect(usersResponse.status).toEqual(200);
-      const usersResponseBody = await usersResponse.json();
+      const usersResponse = await scim.listUsers();
+      const usersResponseBody = usersResponse.body;
       expectUserGroups(
-        usersResponseBody.Resources.find(
-          (resource: { id: string }) => resource.id === firstUser.id,
-        ),
+        usersResponseBody.Resources.find(resource => resource.id === firstUser.id),
         firstUser.id,
         firstUserGroups,
       );
       expectUserGroups(
-        usersResponseBody.Resources.find(
-          (resource: { id: string }) => resource.id === secondUser.id,
-        ),
+        usersResponseBody.Resources.find(resource => resource.id === secondUser.id),
         secondUser.id,
         secondUserGroups,
       );
 
-      const firstFilteredUsersResponse = await getUsers(headers, {
+      const firstFilteredUsersResponse = await scim.listUsers({
         filter: 'externalId eq "first-grouped-user"',
       });
-      expect(firstFilteredUsersResponse.status).toEqual(200);
-      const firstFilteredUsersBody = await firstFilteredUsersResponse.json();
-      expect(firstFilteredUsersBody.Resources).toHaveLength(1);
-      expectUserGroups(firstFilteredUsersBody.Resources[0], firstUser.id, firstUserGroups);
 
-      const secondFilteredUsersResponse = await getUsers(headers, {
+      expect(firstFilteredUsersResponse.body.Resources).toHaveLength(1);
+      expectUserGroups(firstFilteredUsersResponse.body.Resources[0], firstUser.id, firstUserGroups);
+
+      const secondFilteredUsersResponse = await scim.listUsers({
         filter: 'externalId eq "second-grouped-user"',
       });
-      expect(secondFilteredUsersResponse.status).toEqual(200);
-      const secondFilteredUsersBody = await secondFilteredUsersResponse.json();
-      expect(secondFilteredUsersBody.Resources).toHaveLength(1);
-      expectUserGroups(secondFilteredUsersBody.Resources[0], secondUser.id, secondUserGroups);
+      expect(secondFilteredUsersResponse.body.Resources).toHaveLength(1);
+      expectUserGroups(
+        secondFilteredUsersResponse.body.Resources[0],
+        secondUser.id,
+        secondUserGroups,
+      );
     });
 
     test.concurrent('get and paginate users', async () => {
@@ -1320,25 +1142,28 @@ describe.concurrent('/Users', () => {
         'Content-Type': 'application/scim+json',
         Authorization: scimAuthHeader,
       };
-      await createUser(headers, {
+      const scim = createScimTestkit({ baseUrl, headers });
+      await scim.createUser({
+        ...newUserValues(),
         externalId: 'userA',
         userName: 'User A',
         emails: [{ primary: true, type: 'work', value: 'user-a@' + domain }],
       });
-      await createUser(headers, {
+      await scim.createUser({
+        ...newUserValues(),
         externalId: 'userB',
         userName: 'User B',
         emails: [{ primary: true, type: 'work', value: 'user-b@' + domain }],
       });
-      await createUser(headers, {
+      await scim.createUser({
+        ...newUserValues(),
         externalId: 'userC',
         userName: 'User C',
         emails: [{ primary: true, type: 'work', value: 'user-c@' + domain }],
       });
 
-      let users = await getUsers(headers);
-      expect(users.status).toEqual(200);
-      let initialBody = await users.json();
+      let users = await scim.listUsers();
+      const initialBody = users.body;
       expect(initialBody).toEqual({
         Resources: expect.any(Array),
         itemsPerPage: 3,
@@ -1366,11 +1191,10 @@ describe.concurrent('/Users', () => {
         }),
       );
 
-      users = await getUsers(headers, {
+      users = await scim.listUsers({
         count: '1',
       });
-      expect(users.status).toEqual(200);
-      let body = await users.json();
+      let body = users.body;
 
       expect(body).toEqual({
         Resources: expect.any(Array),
@@ -1381,11 +1205,10 @@ describe.concurrent('/Users', () => {
       });
       expect(body.Resources[0]).toEqual(initialBody.Resources[0]);
 
-      users = await getUsers(headers, {
+      users = await scim.listUsers({
         count: '2',
       });
-      expect(users.status).toEqual(200);
-      body = await users.json();
+      body = users.body;
       expect(body).toEqual({
         Resources: expect.any(Array),
         itemsPerPage: 2,
@@ -1406,11 +1229,10 @@ describe.concurrent('/Users', () => {
         }),
       );
 
-      users = await getUsers(headers, {
+      users = await scim.listUsers({
         startIndex: '2',
       });
-      expect(users.status).toEqual(200);
-      body = await users.json();
+      body = users.body;
       expect(body).toEqual({
         schemas: ['urn:ietf:params:scim:api:messages:2.0:ListResponse'],
         Resources: expect.any(Array),
@@ -1425,11 +1247,10 @@ describe.concurrent('/Users', () => {
         }),
       );
 
-      users = await getUsers(headers, {
+      users = await scim.listUsers({
         startIndex: '3',
       });
-      expect(users.status).toEqual(200);
-      body = await users.json();
+      body = users.body;
       expect(body).toEqual({
         schemas: ['urn:ietf:params:scim:api:messages:2.0:ListResponse'],
         Resources: expect.any(Array),
@@ -1460,22 +1281,24 @@ describe.concurrent('/Users', () => {
         'Content-Type': 'application/scim+json',
         Authorization: scimAuthHeader,
       };
-      await createUser(headers, {
+      const scim = createScimTestkit({ baseUrl, headers });
+      await scim.createUser({
+        ...newUserValues(),
         externalId: 'userA',
         userName: 'User A',
         emails: [{ primary: true, type: 'work', value: 'user-a@' + domain }],
       });
-      await createUser(headers, {
+      await scim.createUser({
+        ...newUserValues(),
         externalId: 'userB',
         userName: 'User B',
         emails: [{ primary: true, type: 'work', value: 'user-b@' + domain }],
       });
 
-      let response = await getUsers(headers, {
+      let response = await scim.listUsers({
         filter: 'userName eq "User A"',
       });
-      expect(response.status).toEqual(200);
-      let body = await response.json();
+      let body = response.body;
       expect(body).toEqual({
         Resources: expect.any(Array),
         itemsPerPage: 1,
@@ -1489,11 +1312,10 @@ describe.concurrent('/Users', () => {
         userName: 'User A',
       });
 
-      response = await getUsers(headers, {
+      response = await scim.listUsers({
         filter: 'userName eq "User B"',
       });
-      expect(response.status).toEqual(200);
-      body = await response.json();
+      body = response.body;
       expect(body).toEqual({
         Resources: expect.any(Array),
         itemsPerPage: 1,
@@ -1507,11 +1329,10 @@ describe.concurrent('/Users', () => {
         userName: 'User B',
       });
 
-      response = await getUsers(headers, {
+      response = await scim.listUsers({
         filter: 'userName eq "User C"',
       });
-      expect(response.status).toEqual(200);
-      body = await response.json();
+      body = response.body;
       expect(body).toEqual({
         Resources: expect.any(Array),
         itemsPerPage: 0,
@@ -1538,22 +1359,24 @@ describe.concurrent('/Users', () => {
         'Content-Type': 'application/scim+json',
         Authorization: scimAuthHeader,
       };
-      await createUser(headers, {
+      const scim = createScimTestkit({ baseUrl, headers });
+      await scim.createUser({
+        ...newUserValues(),
         externalId: 'userA',
         userName: 'User A',
         emails: [{ primary: true, type: 'work', value: 'user-a@' + domain }],
       });
-      await createUser(headers, {
+      await scim.createUser({
+        ...newUserValues(),
         externalId: 'userB',
         userName: 'User B',
         emails: [{ primary: true, type: 'work', value: 'user-b@' + domain }],
       });
 
-      let response = await getUsers(headers, {
+      let response = await scim.listUsers({
         filter: 'externalId eq "userA"',
       });
-      expect(response.status).toEqual(200);
-      let body = await response.json();
+      let body = response.body;
       expect(body).toEqual({
         Resources: expect.any(Array),
         itemsPerPage: 1,
@@ -1567,11 +1390,10 @@ describe.concurrent('/Users', () => {
         userName: 'User A',
       });
 
-      response = await getUsers(headers, {
+      response = await scim.listUsers({
         filter: 'externalId eq "userB"',
       });
-      expect(response.status).toEqual(200);
-      body = await response.json();
+      body = response.body;
       expect(body).toEqual({
         Resources: expect.any(Array),
         itemsPerPage: 1,
@@ -1585,11 +1407,10 @@ describe.concurrent('/Users', () => {
         userName: 'User B',
       });
 
-      response = await getUsers(headers, {
+      response = await scim.listUsers({
         filter: 'externalId eq "userC"',
       });
-      expect(response.status).toEqual(200);
-      body = await response.json();
+      body = response.body;
       expect(body).toEqual({
         Resources: expect.any(Array),
         itemsPerPage: 0,
@@ -1616,21 +1437,27 @@ describe.concurrent('/Users', () => {
         'Content-Type': 'application/scim+json',
         Authorization: scimAuthHeader,
       };
-      const userA = await createUser(headers, {
-        externalId: 'userA',
-        userName: 'User A',
-        emails: [{ primary: true, type: 'work', value: 'user-a@' + domain }],
-      }).then(r => r.json());
-      const userB = await createUser(headers, {
-        externalId: 'userB',
-        userName: 'User B',
-        emails: [{ primary: true, type: 'work', value: 'user-b@' + domain }],
-      }).then(r => r.json());
-      let response = await getUsers(headers, {
+      const scim = createScimTestkit({ baseUrl, headers });
+      const userA = await scim
+        .createUser({
+          ...newUserValues(),
+          externalId: 'userA',
+          userName: 'User A',
+          emails: [{ primary: true, type: 'work', value: 'user-a@' + domain }],
+        })
+        .then(r => r.body);
+      const userB = await scim
+        .createUser({
+          ...newUserValues(),
+          externalId: 'userB',
+          userName: 'User B',
+          emails: [{ primary: true, type: 'work', value: 'user-b@' + domain }],
+        })
+        .then(r => r.body);
+      let response = await scim.listUsers({
         filter: `id eq "${userA.id}"`,
       });
-      expect(response.status).toEqual(200);
-      let body = await response.json();
+      let body = response.body;
       expect(body).toEqual({
         Resources: expect.any(Array),
         itemsPerPage: 1,
@@ -1644,11 +1471,10 @@ describe.concurrent('/Users', () => {
         userName: 'User A',
       });
 
-      response = await getUsers(headers, {
+      response = await scim.listUsers({
         filter: `id eq "${userB.id}"`,
       });
-      expect(response.status).toEqual(200);
-      body = await response.json();
+      body = response.body;
       expect(body).toEqual({
         Resources: expect.any(Array),
         itemsPerPage: 1,
@@ -1662,19 +1488,18 @@ describe.concurrent('/Users', () => {
         userName: 'User B',
       });
 
-      response = await getGroups(headers, {
+      const groupResponse = await scim.listGroups({
         filter: `id eq "${crypto.randomUUID()}"`,
       });
-      expect(response.status).toEqual(200);
-      body = await response.json();
-      expect(body).toEqual({
+      const groupBody = groupResponse.body;
+      expect(groupBody).toEqual({
         Resources: expect.any(Array),
         itemsPerPage: 0,
         schemas: ['urn:ietf:params:scim:api:messages:2.0:ListResponse'],
         startIndex: 1,
         totalResults: 0,
       });
-      expect(body.Resources).toHaveLength(0);
+      expect(groupBody.Resources).toHaveLength(0);
     });
     test.concurrent('find by id insert non-uuid', async () => {
       const seed = initSeed();
@@ -1691,11 +1516,11 @@ describe.concurrent('/Users', () => {
         'Content-Type': 'application/scim+json',
         Authorization: scimAuthHeader,
       };
-      let response = await getUsers(headers, {
+      const scim = createScimTestkit({ baseUrl, headers });
+      let response = await scim.listUsers({
         filter: 'id eq "asdasd "',
       });
-      let body = await response.json();
-      expect(response.status).toEqual(200);
+      let body = response.body;
       expect(body).toEqual({
         Resources: expect.any(Array),
         itemsPerPage: 0,
@@ -1726,20 +1551,16 @@ describe.concurrent('/Groups', () => {
         'Content-Type': 'application/scim+json',
         Authorization: scimAuthHeader,
       };
+      const scim = createScimTestkit({ baseUrl, headers });
 
       // First Okta tries to provision the group
 
-      const postResponse = await fetch(groupsEndpoint, {
-        method: 'POST',
-        body: JSON.stringify({
-          schemas: ['urn:ietf:params:scim:schemas:core:2.0:Group'],
-          displayName: 'foobars',
-          members: [],
-        }),
-        headers,
+      const postResponse = await scim.createGroup({
+        schemas: ['urn:ietf:params:scim:schemas:core:2.0:Group'],
+        displayName: 'foobars',
+        members: [],
       });
-      expect(postResponse.status).toEqual(201);
-      const postResponseBody = await postResponse.json();
+      const postResponseBody = postResponse.body;
       expect(postResponseBody).toEqual({
         displayName: 'foobars',
         id: expect.any(String),
@@ -1747,7 +1568,7 @@ describe.concurrent('/Groups', () => {
           resourceType: 'Group',
           created: expect.any(String),
           lastModified: expect.any(String),
-          location: groupsEndpoint + '/' + postResponseBody.id,
+          location: baseUrl + '/scim/v2/Groups/' + postResponseBody.id,
         },
         schemas: ['urn:ietf:params:scim:schemas:core:2.0:Group'],
       });
@@ -1770,19 +1591,15 @@ describe.concurrent('/Groups', () => {
           'Content-Type': 'application/scim+json',
           Authorization: scimAuthHeader,
         };
+        const scim = createScimTestkit({ baseUrl, headers });
 
-        const postResponse = await fetch(groupsEndpoint, {
-          method: 'POST',
-          body: JSON.stringify({
-            schemas: ['urn:ietf:params:scim:schemas:core:2.0:Group'],
-            displayName: 'foobars',
-            members: [],
-            externalId: 'myExternalId',
-          }),
-          headers,
+        const postResponse = await scim.createGroup({
+          schemas: ['urn:ietf:params:scim:schemas:core:2.0:Group'],
+          displayName: 'foobars',
+          members: [],
+          externalId: 'myExternalId',
         });
-        expect(postResponse.status).toEqual(201);
-        const postResponseBody = await postResponse.json();
+        const postResponseBody = postResponse.body;
         expect(postResponseBody).toMatchObject({
           displayName: 'foobars',
           id: expect.any(String),
@@ -1810,31 +1627,24 @@ describe.concurrent('/Groups', () => {
         'Content-Type': 'application/scim+json',
         Authorization: scimAuthHeader,
       };
+      const scim = createScimTestkit({ baseUrl, headers });
 
-      let postResponse = await fetch(groupsEndpoint, {
-        method: 'POST',
-        body: JSON.stringify({
-          schemas: ['urn:ietf:params:scim:schemas:core:2.0:Group'],
-          displayName: 'foobars',
-          members: [],
-          externalId: 'myExternalId',
-        }),
-        headers,
+      const postResponse = await scim.createGroup({
+        schemas: ['urn:ietf:params:scim:schemas:core:2.0:Group'],
+        displayName: 'foobars',
+        members: [],
+        externalId: 'myExternalId',
       });
-      expect(postResponse.status).toEqual(201);
-      postResponse = await fetch(groupsEndpoint, {
-        method: 'POST',
-        body: JSON.stringify({
+      const conflictPostResponse = await scim.createGroup(
+        {
           schemas: ['urn:ietf:params:scim:schemas:core:2.0:Group'],
           displayName: 'foobars',
           members: [],
           externalId: 'foobars',
-        }),
-        headers,
-      });
-      expect(postResponse.status).toEqual(409);
-      const postResponseBody = await postResponse.json();
-      expect(postResponseBody).toMatchInlineSnapshot(`
+        },
+        { expectedStatus: 409 },
+      );
+      expect(conflictPostResponse.body).toMatchInlineSnapshot(`
           {
             detail: A SCIM group with the same display name already exists.,
             schemas: [
@@ -1860,31 +1670,24 @@ describe.concurrent('/Groups', () => {
         'Content-Type': 'application/scim+json',
         Authorization: scimAuthHeader,
       };
+      const scim = createScimTestkit({ baseUrl, headers });
 
-      let postResponse = await fetch(groupsEndpoint, {
-        method: 'POST',
-        body: JSON.stringify({
-          schemas: ['urn:ietf:params:scim:schemas:core:2.0:Group'],
-          displayName: 'foobars',
-          members: [],
-          externalId: 'myExternalId',
-        }),
-        headers,
+      const postResponse = await scim.createGroup({
+        schemas: ['urn:ietf:params:scim:schemas:core:2.0:Group'],
+        displayName: 'foobars',
+        members: [],
+        externalId: 'myExternalId',
       });
-      expect(postResponse.status).toEqual(201);
-      postResponse = await fetch(groupsEndpoint, {
-        method: 'POST',
-        body: JSON.stringify({
+      const conflictPostResponse = await scim.createGroup(
+        {
           schemas: ['urn:ietf:params:scim:schemas:core:2.0:Group'],
           displayName: 'foobars1',
           members: [],
           externalId: 'myExternalId',
-        }),
-        headers,
-      });
-      expect(postResponse.status).toEqual(409);
-      const postResponseBody = await postResponse.json();
-      expect(postResponseBody).toMatchInlineSnapshot(`
+        },
+        { expectedStatus: 409 },
+      );
+      expect(conflictPostResponse.body).toMatchInlineSnapshot(`
           {
             detail: A SCIM group with the same external id already exists.,
             schemas: [
@@ -1911,19 +1714,18 @@ describe.concurrent('/Groups', () => {
         'Content-Type': 'application/scim+json',
         Authorization: scimAuthHeader,
       };
+      const scim = createScimTestkit({ baseUrl, headers });
 
-      const putResponse = await fetch(groupsEndpoint + '/' + crypto.randomUUID(), {
-        method: 'PUT',
-        body: JSON.stringify({
+      const putResponse = await scim.updateGroup(
+        crypto.randomUUID(),
+        {
           schemas: ['urn:ietf:params:scim:schemas:core:2.0:Group'],
           displayName: 'foobars',
           members: [],
-        }),
-        headers,
-      });
-      expect(putResponse.status).toEqual(404);
-      const putResponseBody = await putResponse.json();
-      expect(putResponseBody).toMatchInlineSnapshot(`
+        },
+        { expectedStatus: 404 },
+      );
+      expect(putResponse.body).toMatchInlineSnapshot(`
         {
           detail: Group does not exist.,
           schemas: [
@@ -1948,29 +1750,20 @@ describe.concurrent('/Groups', () => {
         'Content-Type': 'application/scim+json',
         Authorization: scimAuthHeader,
       };
+      const scim = createScimTestkit({ baseUrl, headers });
 
-      const postResponse = await fetch(groupsEndpoint, {
-        method: 'POST',
-        body: JSON.stringify({
-          schemas: ['urn:ietf:params:scim:schemas:core:2.0:Group'],
-          displayName: 'foobars',
-          members: [],
-        }),
-        headers,
+      const postResponse = await scim.createGroup({
+        schemas: ['urn:ietf:params:scim:schemas:core:2.0:Group'],
+        displayName: 'foobars',
+        members: [],
       });
-      expect(postResponse.status).toEqual(201);
-      const postResponseBody = await postResponse.json();
-      const putResponse = await fetch(groupsEndpoint + '/' + postResponseBody.id, {
-        method: 'PUT',
-        body: JSON.stringify({
-          schemas: ['urn:ietf:params:scim:schemas:core:2.0:Group'],
-          displayName: 'iliketurtles',
-          members: [],
-        }),
-        headers,
+      const postResponseBody = postResponse.body;
+      const putResponse = await scim.updateGroup(postResponseBody.id, {
+        schemas: ['urn:ietf:params:scim:schemas:core:2.0:Group'],
+        displayName: 'iliketurtles',
+        members: [],
       });
-      expect(putResponse.status).toEqual(200);
-      expect(await putResponse.json()).toMatchObject({
+      expect(putResponse.body).toMatchObject({
         displayName: 'iliketurtles',
         id: postResponseBody.id,
         members: [],
@@ -1998,10 +1791,11 @@ describe.concurrent('/Groups', () => {
         'Content-Type': 'application/scim+json',
         Authorization: scimAuthHeader,
       };
+      const scim = createScimTestkit({ baseUrl, headers });
 
-      const putResponse = await fetch(groupsEndpoint + '/' + crypto.randomUUID(), {
-        method: 'PATCH',
-        body: JSON.stringify({
+      const putResponse = await scim.patchGroup(
+        crypto.randomUUID(),
+        {
           Operations: [
             {
               op: 'replace',
@@ -2009,12 +1803,10 @@ describe.concurrent('/Groups', () => {
               value: 'ay',
             },
           ],
-        }),
-        headers,
-      });
-      expect(putResponse.status).toEqual(404);
-      const putResponseBody = await putResponse.json();
-      expect(putResponseBody).toMatchInlineSnapshot(`
+        },
+        { expectedStatus: 404 },
+      );
+      expect(putResponse.body).toMatchInlineSnapshot(`
         {
           detail: Group does not exist.,
           schemas: [
@@ -2040,36 +1832,27 @@ describe.concurrent('/Groups', () => {
         'Content-Type': 'application/scim+json',
         Authorization: scimAuthHeader,
       };
+      const scim = createScimTestkit({ baseUrl, headers });
 
       // First Okta tries to provision the group
 
-      const postResponse = await fetch(groupsEndpoint, {
-        method: 'POST',
-        body: JSON.stringify({
-          schemas: ['urn:ietf:params:scim:schemas:core:2.0:Group'],
-          displayName: 'foobars',
-          members: [],
-        }),
-        headers,
+      const postResponse = await scim.createGroup({
+        schemas: ['urn:ietf:params:scim:schemas:core:2.0:Group'],
+        displayName: 'foobars',
+        members: [],
       });
-      expect(postResponse.status).toEqual(201);
-      const postResponseBody = await postResponse.json();
+      const postResponseBody = postResponse.body;
 
-      const putResponse = await fetch(groupsEndpoint + '/' + postResponseBody.id, {
-        method: 'PATCH',
-        body: JSON.stringify({
-          Operations: [
-            {
-              op: 'replace',
-              path: 'displayName',
-              value: 'ay',
-            },
-          ],
-        }),
-        headers,
+      const putResponse = await scim.patchGroup(postResponseBody.id, {
+        Operations: [
+          {
+            op: 'replace',
+            path: 'displayName',
+            value: 'ay',
+          },
+        ],
       });
-      expect(putResponse.status).toEqual(200);
-      const putResponseBody = await putResponse.json();
+      const putResponseBody = putResponse.body;
       expect(putResponseBody).toEqual({
         ...postResponseBody,
         displayName: 'ay',
@@ -2097,37 +1880,28 @@ describe.concurrent('/Groups', () => {
         'Content-Type': 'application/scim+json',
         Authorization: scimAuthHeader,
       };
+      const scim = createScimTestkit({ baseUrl, headers });
 
       // First Okta tries to provision the group
 
-      const postResponse = await fetch(groupsEndpoint, {
-        method: 'POST',
-        body: JSON.stringify({
-          schemas: ['urn:ietf:params:scim:schemas:core:2.0:Group'],
-          displayName: 'foobars',
-          members: [],
-        }),
-        headers,
+      const postResponse = await scim.createGroup({
+        schemas: ['urn:ietf:params:scim:schemas:core:2.0:Group'],
+        displayName: 'foobars',
+        members: [],
       });
-      expect(postResponse.status).toEqual(201);
-      const postResponseBody = await postResponse.json();
+      const postResponseBody = postResponse.body;
 
-      const putResponse = await fetch(groupsEndpoint + '/' + postResponseBody.id, {
-        method: 'PATCH',
-        body: JSON.stringify({
-          Operations: [
-            {
-              op: 'replace',
-              value: {
-                displayName: 'ay',
-              },
+      const putResponse = await scim.patchGroup(postResponseBody.id, {
+        Operations: [
+          {
+            op: 'replace',
+            value: {
+              displayName: 'ay',
             },
-          ],
-        }),
-        headers,
+          },
+        ],
       });
-      expect(putResponse.status).toEqual(200);
-      const putResponseBody = await putResponse.json();
+      const putResponseBody = putResponse.body;
       expect(putResponseBody).toEqual({
         ...postResponseBody,
         displayName: 'ay',
@@ -2155,37 +1929,28 @@ describe.concurrent('/Groups', () => {
         'Content-Type': 'application/scim+json',
         Authorization: scimAuthHeader,
       };
+      const scim = createScimTestkit({ baseUrl, headers });
 
       // First Okta tries to provision the group
 
-      const postResponse = await fetch(groupsEndpoint, {
-        method: 'POST',
-        body: JSON.stringify({
-          schemas: ['urn:ietf:params:scim:schemas:core:2.0:Group'],
-          displayName: 'foobars',
-          members: [],
-          externalId: 'my-external-id',
-        }),
-        headers,
+      const postResponse = await scim.createGroup({
+        schemas: ['urn:ietf:params:scim:schemas:core:2.0:Group'],
+        displayName: 'foobars',
+        members: [],
+        externalId: 'my-external-id',
       });
-      expect(postResponse.status).toEqual(201);
-      const postResponseBody = await postResponse.json();
+      const postResponseBody = postResponse.body;
 
-      const otherPostResponse = await fetch(groupsEndpoint, {
-        method: 'POST',
-        body: JSON.stringify({
-          schemas: ['urn:ietf:params:scim:schemas:core:2.0:Group'],
-          displayName: 'foobars1',
-          members: [],
-          externalId: 'newExternalId',
-        }),
-        headers,
+      const otherPostResponse = await scim.createGroup({
+        schemas: ['urn:ietf:params:scim:schemas:core:2.0:Group'],
+        displayName: 'foobars1',
+        members: [],
+        externalId: 'newExternalId',
       });
-      expect(otherPostResponse.status).toEqual(201);
 
-      const putResponse = await fetch(groupsEndpoint + '/' + postResponseBody.id, {
-        method: 'PATCH',
-        body: JSON.stringify({
+      const putResponse = await scim.patchGroup(
+        postResponseBody.id,
+        {
           Operations: [
             {
               op: 'replace',
@@ -2194,12 +1959,10 @@ describe.concurrent('/Groups', () => {
               },
             },
           ],
-        }),
-        headers,
-      });
-      expect(putResponse.status).toEqual(409);
-      const putResponseBody = await putResponse.json();
-      expect(putResponseBody).toMatchInlineSnapshot(`
+        },
+        { expectedStatus: 409 },
+      );
+      expect(putResponse.body).toMatchInlineSnapshot(`
         {
           detail: Another group with the same display name already exists.,
           schemas: [
@@ -2225,38 +1988,28 @@ describe.concurrent('/Groups', () => {
         'Content-Type': 'application/scim+json',
         Authorization: scimAuthHeader,
       };
+      const scim = createScimTestkit({ baseUrl, headers });
 
       // First Okta tries to provision the group
 
-      const postResponse = await fetch(groupsEndpoint, {
-        method: 'POST',
-        body: JSON.stringify({
-          schemas: ['urn:ietf:params:scim:schemas:core:2.0:Group'],
-          displayName: 'foobars',
-          members: [],
-          externalId: 'my-external-id',
-        }),
-        headers,
+      const postResponse = await scim.createGroup({
+        schemas: ['urn:ietf:params:scim:schemas:core:2.0:Group'],
+        displayName: 'foobars',
+        members: [],
+        externalId: 'my-external-id',
       });
-      expect(postResponse.status).toEqual(201);
-      const postResponseBody = await postResponse.json();
+      const postResponseBody = postResponse.body;
 
-      const putResponse = await fetch(groupsEndpoint + '/' + postResponseBody.id, {
-        method: 'PATCH',
-        body: JSON.stringify({
-          Operations: [
-            {
-              op: 'replace',
-              path: 'externalId',
-              value: 'newExternalId',
-            },
-          ],
-        }),
-        headers,
+      const putResponse = await scim.patchGroup(postResponseBody.id, {
+        Operations: [
+          {
+            op: 'replace',
+            path: 'externalId',
+            value: 'newExternalId',
+          },
+        ],
       });
-      expect(putResponse.status).toEqual(200);
-      const putResponseBody = await putResponse.json();
-      expect(putResponseBody).toEqual({
+      expect(putResponse.body).toEqual({
         ...postResponseBody,
         externalId: 'newExternalId',
         meta: {
@@ -2283,43 +2036,32 @@ describe.concurrent('/Groups', () => {
         'Content-Type': 'application/scim+json',
         Authorization: scimAuthHeader,
       };
+      const scim = createScimTestkit({ baseUrl, headers });
 
       // First Okta tries to provision the group
 
-      const postResponse = await fetch(groupsEndpoint, {
-        method: 'POST',
-        body: JSON.stringify({
-          schemas: ['urn:ietf:params:scim:schemas:core:2.0:Group'],
-          displayName: 'foobars',
-          members: [],
-          externalId: 'my-external-id',
-        }),
-        headers,
+      const postResponse = await scim.createGroup({
+        schemas: ['urn:ietf:params:scim:schemas:core:2.0:Group'],
+        displayName: 'foobars',
+        members: [],
+        externalId: 'my-external-id',
       });
-      expect(postResponse.status).toEqual(201);
-      const postResponseBody = await postResponse.json();
-
-      const putResponse = await fetch(groupsEndpoint + '/' + postResponseBody.id, {
-        method: 'PATCH',
-        body: JSON.stringify({
-          Operations: [
-            {
-              op: 'replace',
-              value: {
-                externalId: 'newExternalId',
-              },
+      const putResponse = await scim.patchGroup(postResponse.body.id, {
+        Operations: [
+          {
+            op: 'replace',
+            value: {
+              externalId: 'newExternalId',
             },
-          ],
-        }),
-        headers,
+          },
+        ],
       });
-      expect(putResponse.status).toEqual(200);
-      const putResponseBody = await putResponse.json();
+      const putResponseBody = putResponse.body;
       expect(putResponseBody).toEqual({
-        ...postResponseBody,
+        ...postResponse.body,
         externalId: 'newExternalId',
         meta: {
-          ...postResponseBody.meta,
+          ...postResponse.body.meta,
           lastModified: expect.any(String),
         },
         // put always includes the member list
@@ -2342,37 +2084,28 @@ describe.concurrent('/Groups', () => {
         'Content-Type': 'application/scim+json',
         Authorization: scimAuthHeader,
       };
+      const scim = createScimTestkit({ baseUrl, headers });
 
       // First Okta tries to provision the group
 
-      const postResponse = await fetch(groupsEndpoint, {
-        method: 'POST',
-        body: JSON.stringify({
-          schemas: ['urn:ietf:params:scim:schemas:core:2.0:Group'],
-          displayName: 'foobars',
-          members: [],
-          externalId: 'my-external-id',
-        }),
-        headers,
+      const postResponse = await scim.createGroup({
+        schemas: ['urn:ietf:params:scim:schemas:core:2.0:Group'],
+        displayName: 'foobars',
+        members: [],
+        externalId: 'my-external-id',
       });
-      expect(postResponse.status).toEqual(201);
-      const postResponseBody = await postResponse.json();
+      const postResponseBody = postResponse.body;
 
-      const otherPostResponse = await fetch(groupsEndpoint, {
-        method: 'POST',
-        body: JSON.stringify({
-          schemas: ['urn:ietf:params:scim:schemas:core:2.0:Group'],
-          displayName: 'foobars1',
-          members: [],
-          externalId: 'newExternalId',
-        }),
-        headers,
+      await scim.createGroup({
+        schemas: ['urn:ietf:params:scim:schemas:core:2.0:Group'],
+        displayName: 'foobars1',
+        members: [],
+        externalId: 'newExternalId',
       });
-      expect(otherPostResponse.status).toEqual(201);
 
-      const putResponse = await fetch(groupsEndpoint + '/' + postResponseBody.id, {
-        method: 'PATCH',
-        body: JSON.stringify({
+      const putResponse = await scim.patchGroup(
+        postResponseBody.id,
+        {
           Operations: [
             {
               op: 'replace',
@@ -2381,12 +2114,10 @@ describe.concurrent('/Groups', () => {
               },
             },
           ],
-        }),
-        headers,
-      });
-      expect(putResponse.status).toEqual(409);
-      const putResponseBody = await putResponse.json();
-      expect(putResponseBody).toMatchInlineSnapshot(`
+        },
+        { expectedStatus: 409 },
+      );
+      expect(putResponse.body).toMatchInlineSnapshot(`
         {
           detail: Another group with the same external id already exists.,
           schemas: [
@@ -2413,67 +2144,49 @@ describe.concurrent('/Groups', () => {
         'Content-Type': 'application/scim+json',
         Authorization: scimAuthHeader,
       };
+      const scim = createScimTestkit({ baseUrl, headers });
 
       // create group
 
-      const postResponse = await fetch(groupsEndpoint, {
-        method: 'POST',
-        body: JSON.stringify({
-          schemas: ['urn:ietf:params:scim:schemas:core:2.0:Group'],
-          displayName: 'foobars',
-          members: [],
-        }),
-        headers,
+      const postResponse = await scim.createGroup({
+        schemas: ['urn:ietf:params:scim:schemas:core:2.0:Group'],
+        displayName: 'foobars',
+        members: [],
       });
-      expect(postResponse.status).toEqual(201);
-      const postResponseBody = await postResponse.json();
-
       // create user
 
-      const usersPostResponse = await fetch(usersEndpoint, {
-        method: 'POST',
-        body: JSON.stringify({
-          schemas: ['urn:ietf:params:scim:schemas:core:2.0:User'],
-          userName: 'marty.mcfly@' + domain,
-          name: { givenName: 'Marty', familyName: 'McFly' },
-          emails: [{ primary: true, value: 'marty.mcfly@' + domain, type: 'work' }],
-          displayName: 'Marty McFly',
-          locale: 'en-US',
-          externalId: 'userExternalId',
-          groups: [],
-          password: 'fq77ZD37',
-          active: true,
-        }),
-        headers,
+      const usersPostResponse = await scim.createUser({
+        schemas: ['urn:ietf:params:scim:schemas:core:2.0:User'],
+        userName: 'marty.mcfly@' + domain,
+        name: { givenName: 'Marty', familyName: 'McFly' },
+        emails: [{ primary: true, value: 'marty.mcfly@' + domain, type: 'work' }],
+        displayName: 'Marty McFly',
+        locale: 'en-US',
+        externalId: 'userExternalId',
+        groups: [],
+        password: 'fq77ZD37',
+        active: true,
       });
-      expect(usersPostResponse.status).toEqual(201);
-      const usersPostResponseBody = await usersPostResponse.json();
-
-      const putResponse = await fetch(groupsEndpoint + '/' + postResponseBody.id, {
-        method: 'PATCH',
-        body: JSON.stringify({
-          Operations: [
-            {
-              op: 'add',
-              path: 'members',
-              value: [{ value: usersPostResponseBody.id }],
-            },
-          ],
-        }),
-        headers,
+      const putResponse = await scim.patchGroup(postResponse.body.id, {
+        Operations: [
+          {
+            op: 'add',
+            path: 'members',
+            value: [{ value: usersPostResponse.body.id }],
+          },
+        ],
       });
-      expect(putResponse.status).toEqual(200);
-      expect(await putResponse.json()).toEqual({
+      expect(putResponse.body).toEqual({
         displayName: 'foobars',
-        id: postResponseBody.id,
+        id: postResponse.body.id,
         members: [
           {
-            $ref: usersEndpoint + '/' + usersPostResponseBody.id,
-            value: usersPostResponseBody.id,
+            $ref: baseUrl + '/scim/v2/Users/' + usersPostResponse.body.id,
+            value: usersPostResponse.body.id,
           },
         ],
         meta: {
-          ...postResponseBody.meta,
+          ...postResponse.body.meta,
           lastModified: expect.any(String),
         },
         schemas: ['urn:ietf:params:scim:schemas:core:2.0:Group'],
@@ -2496,68 +2209,55 @@ describe.concurrent('/Groups', () => {
         'Content-Type': 'application/scim+json',
         Authorization: scimAuthHeader,
       };
+      const scim = createScimTestkit({ baseUrl, headers });
 
       // create group
 
-      const postResponse = await fetch(groupsEndpoint, {
-        method: 'POST',
-        body: JSON.stringify({
-          schemas: ['urn:ietf:params:scim:schemas:core:2.0:Group'],
-          displayName: 'foobars',
-          members: [],
-        }),
-        headers,
+      const postResponse = await scim.createGroup({
+        schemas: ['urn:ietf:params:scim:schemas:core:2.0:Group'],
+        displayName: 'foobars',
+        members: [],
       });
-      expect(postResponse.status).toEqual(201);
-      const postResponseBody = await postResponse.json();
-
       // create users
 
-      const firstUsersPostResponse = await createUser(headers, {
+      const firstUsersPostResponse = await scim.createUser({
+        ...newUserValues(),
         emails: [{ primary: true, type: 'work', value: 'user-a@' + domain }],
       });
-      expect(firstUsersPostResponse.status).toEqual(201);
-      const firstUserPostResponseBody = await firstUsersPostResponse.json();
-      const secondUsersPostResponse = await createUser(headers, {
+      const secondUsersPostResponse = await scim.createUser({
+        ...newUserValues(),
         emails: [{ primary: true, type: 'work', value: 'user-b@' + domain }],
       });
-      expect(secondUsersPostResponse.status).toEqual(201);
-      const secondUserPostResponseBody = await secondUsersPostResponse.json();
 
-      const putResponse = await fetch(groupsEndpoint + '/' + postResponseBody.id, {
-        method: 'PATCH',
-        body: JSON.stringify({
-          Operations: [
-            {
-              op: 'add',
-              path: 'members',
-              value: [{ value: firstUserPostResponseBody.id }],
-            },
-            {
-              op: 'add',
-              path: 'members',
-              value: [{ value: secondUserPostResponseBody.id }],
-            },
-          ],
-        }),
-        headers,
-      });
-      expect(putResponse.status).toEqual(200);
-      expect(await putResponse.json()).toEqual({
-        displayName: 'foobars',
-        id: postResponseBody.id,
-        members: expect.arrayContaining([
+      const putResponse = await scim.patchGroup(postResponse.body.id, {
+        Operations: [
           {
-            $ref: usersEndpoint + '/' + firstUserPostResponseBody.id,
-            value: firstUserPostResponseBody.id,
+            op: 'add',
+            path: 'members',
+            value: [{ value: firstUsersPostResponse.body.id }],
           },
           {
-            $ref: usersEndpoint + '/' + secondUserPostResponseBody.id,
-            value: secondUserPostResponseBody.id,
+            op: 'add',
+            path: 'members',
+            value: [{ value: secondUsersPostResponse.body.id }],
+          },
+        ],
+      });
+      expect(putResponse.body).toEqual({
+        displayName: 'foobars',
+        id: postResponse.body.id,
+        members: expect.arrayContaining([
+          {
+            $ref: baseUrl + '/scim/v2/Users/' + firstUsersPostResponse.body.id,
+            value: firstUsersPostResponse.body.id,
+          },
+          {
+            $ref: baseUrl + '/scim/v2/Users/' + secondUsersPostResponse.body.id,
+            value: secondUsersPostResponse.body.id,
           },
         ]),
         meta: {
-          ...postResponseBody.meta,
+          ...postResponse.body.meta,
           lastModified: expect.any(String),
         },
         schemas: ['urn:ietf:params:scim:schemas:core:2.0:Group'],
@@ -2580,82 +2280,64 @@ describe.concurrent('/Groups', () => {
         'Content-Type': 'application/scim+json',
         Authorization: scimAuthHeader,
       };
+      const scim = createScimTestkit({ baseUrl, headers });
 
       // create group
 
-      const postResponse = await fetch(groupsEndpoint, {
-        method: 'POST',
-        body: JSON.stringify({
-          schemas: ['urn:ietf:params:scim:schemas:core:2.0:Group'],
-          displayName: 'foobars',
-          members: [],
-        }),
-        headers,
+      const postResponse = await scim.createGroup({
+        schemas: ['urn:ietf:params:scim:schemas:core:2.0:Group'],
+        displayName: 'foobars',
+        members: [],
       });
-      expect(postResponse.status).toEqual(201);
-      const postResponseBody = await postResponse.json();
-
       // create users
 
-      const firstUsersPostResponse = await createUser(headers, {
+      const firstUsersPostResponse = await scim.createUser({
+        ...newUserValues(),
         emails: [{ primary: true, type: 'work', value: 'user-a@' + domain }],
       });
-      expect(firstUsersPostResponse.status).toEqual(201);
-      const firstUserPostResponseBody = await firstUsersPostResponse.json();
-      const secondUsersPostResponse = await createUser(headers, {
+      const secondUsersPostResponse = await scim.createUser({
+        ...newUserValues(),
         emails: [{ primary: true, type: 'work', value: 'user-b@' + domain }],
       });
-      expect(secondUsersPostResponse.status).toEqual(201);
-      const secondUserPostResponseBody = await secondUsersPostResponse.json();
 
-      const addMembersPutResponse = await fetch(groupsEndpoint + '/' + postResponseBody.id, {
-        method: 'PATCH',
-        body: JSON.stringify({
-          Operations: [
-            {
-              op: 'add',
-              path: 'members',
-              value: [{ value: firstUserPostResponseBody.id }],
-            },
-            {
-              op: 'add',
-              path: 'members',
-              value: [{ value: secondUserPostResponseBody.id }],
-            },
-          ],
-        }),
-        headers,
-      });
-      expect(addMembersPutResponse.status).toEqual(200);
-
-      const removeMembersPutResponse = await fetch(groupsEndpoint + '/' + postResponseBody.id, {
-        method: 'PATCH',
-        body: JSON.stringify({
-          Operations: [
-            {
-              op: 'remove',
-              path: `members[value eq "${firstUserPostResponseBody.id}"]`,
-            },
-          ],
-        }),
-        headers,
+      await scim.patchGroup(postResponse.body.id, {
+        Operations: [
+          {
+            op: 'add',
+            path: 'members',
+            value: [{ value: firstUsersPostResponse.body.id }],
+          },
+          {
+            op: 'add',
+            path: 'members',
+            value: [{ value: secondUsersPostResponse.body.id }],
+          },
+        ],
       });
 
-      expect(removeMembersPutResponse.status).toEqual(200);
-      expect(await removeMembersPutResponse.json()).toEqual({
+      const removeMembersPutResponse = await scim.patchGroup(postResponse.body.id, {
+        Operations: [
+          {
+            op: 'remove',
+            path: `members[value eq "${firstUsersPostResponse.body.id}"]`,
+          },
+        ],
+      });
+
+      expect(removeMembersPutResponse.body).toEqual({
         displayName: 'foobars',
-        id: postResponseBody.id,
+        id: postResponse.body.id,
         members: [
           {
-            $ref: usersEndpoint + '/' + secondUserPostResponseBody.id,
-            value: secondUserPostResponseBody.id,
+            $ref: baseUrl + '/scim/v2/Users/' + secondUsersPostResponse.body.id,
+            value: secondUsersPostResponse.body.id,
           },
         ],
         meta: {
           resourceType: 'Group',
           created: expect.any(String),
           lastModified: expect.any(String),
-          location: groupsEndpoint + '/' + postResponseBody.id,
+          location: baseUrl + '/scim/v2/Groups/' + postResponse.body.id,
         },
         schemas: ['urn:ietf:params:scim:schemas:core:2.0:Group'],
       });
@@ -2676,81 +2358,63 @@ describe.concurrent('/Groups', () => {
         'Content-Type': 'application/scim+json',
         Authorization: scimAuthHeader,
       };
+      const scim = createScimTestkit({ baseUrl, headers });
 
       // create group
 
-      const postResponse = await fetch(groupsEndpoint, {
-        method: 'POST',
-        body: JSON.stringify({
-          schemas: ['urn:ietf:params:scim:schemas:core:2.0:Group'],
-          displayName: 'foobars',
-          members: [],
-        }),
-        headers,
+      const postResponse = await scim.createGroup({
+        schemas: ['urn:ietf:params:scim:schemas:core:2.0:Group'],
+        displayName: 'foobars',
+        members: [],
       });
-      expect(postResponse.status).toEqual(201);
-      const postResponseBody = await postResponse.json();
 
       // create users
 
-      const firstUsersPostResponse = await createUser(headers, {
+      const firstUsersPostResponse = await scim.createUser({
+        ...newUserValues(),
         emails: [{ primary: true, type: 'work', value: 'user-a@' + domain }],
       });
-      expect(firstUsersPostResponse.status).toEqual(201);
-      const firstUserPostResponseBody = await firstUsersPostResponse.json();
-      const secondUsersPostResponse = await createUser(headers, {
+      const secondUsersPostResponse = await scim.createUser({
+        ...newUserValues(),
         emails: [{ primary: true, type: 'work', value: 'user-a@' + domain }],
       });
-      expect(secondUsersPostResponse.status).toEqual(201);
-      const secondUserPostResponseBody = await secondUsersPostResponse.json();
-
-      const addMembersPutResponse = await fetch(groupsEndpoint + '/' + postResponseBody.id, {
-        method: 'PATCH',
-        body: JSON.stringify({
-          Operations: [
-            {
-              op: 'add',
-              path: 'members',
-              value: [{ value: firstUserPostResponseBody.id }],
-            },
-            {
-              op: 'add',
-              path: 'members',
-              value: [{ value: secondUserPostResponseBody.id }],
-            },
-          ],
-        }),
-        headers,
-      });
-      expect(addMembersPutResponse.status).toEqual(200);
-
-      const removeMembersPutResponse = await fetch(groupsEndpoint + '/' + postResponseBody.id, {
-        method: 'PATCH',
-        body: JSON.stringify({
-          Operations: [
-            {
-              op: 'remove',
-              path: `members[value eq "${firstUserPostResponseBody.id}"]`,
-            },
-            {
-              op: 'remove',
-              path: `members[value eq "${secondUserPostResponseBody.id}"]`,
-            },
-          ],
-        }),
-        headers,
+      await scim.patchGroup(postResponse.body.id, {
+        Operations: [
+          {
+            op: 'add',
+            path: 'members',
+            value: [{ value: firstUsersPostResponse.body.id }],
+          },
+          {
+            op: 'add',
+            path: 'members',
+            value: [{ value: secondUsersPostResponse.body.id }],
+          },
+        ],
       });
 
-      expect(removeMembersPutResponse.status).toEqual(200);
-      expect(await removeMembersPutResponse.json()).toEqual({
+      const removeMembersPutResponse = await scim.patchGroup(postResponse.body.id, {
+        Operations: [
+          {
+            op: 'remove',
+            path: `members[value eq "${firstUsersPostResponse.body.id}"]`,
+          },
+          {
+            op: 'remove',
+            path: `members[value eq "${secondUsersPostResponse.body.id}"]`,
+          },
+        ],
+      });
+
+      expect(removeMembersPutResponse.body).toEqual({
         displayName: 'foobars',
-        id: postResponseBody.id,
+        id: postResponse.body.id,
         members: [],
         meta: {
           resourceType: 'Group',
           created: expect.any(String),
           lastModified: expect.any(String),
-          location: groupsEndpoint + '/' + postResponseBody.id,
+          location: baseUrl + '/scim/v2/Groups/' + postResponse.body.id,
         },
         schemas: ['urn:ietf:params:scim:schemas:core:2.0:Group'],
       });
@@ -2774,12 +2438,9 @@ describe.concurrent('/Groups', () => {
           'Content-Type': 'application/scim+json',
           Authorization: scimAuthHeader,
         };
+        const scim = createScimTestkit({ baseUrl, headers });
 
-        const putResponse = await fetch(groupsEndpoint + '/' + crypto.randomUUID(), {
-          method: 'DELETE',
-          headers,
-        });
-        expect(putResponse.status).toEqual(404);
+        await scim.deleteGroup(crypto.randomUUID(), { expectedStatus: 404 });
       },
     );
     test.concurrent('delete group succeeds', async ({ expect }) => {
@@ -2798,28 +2459,15 @@ describe.concurrent('/Groups', () => {
         'Content-Type': 'application/scim+json',
         Authorization: scimAuthHeader,
       };
+      const scim = createScimTestkit({ baseUrl, headers });
 
-      const postResponse = await fetch(groupsEndpoint, {
-        method: 'POST',
-        body: JSON.stringify({
-          schemas: ['urn:ietf:params:scim:schemas:core:2.0:Group'],
-          displayName: 'foobars',
-          members: [],
-        }),
-        headers,
+      const postResponse = await scim.createGroup({
+        schemas: ['urn:ietf:params:scim:schemas:core:2.0:Group'],
+        displayName: 'foobars',
+        members: [],
       });
-      expect(postResponse.status).toEqual(201);
-      const postResponseBody = await postResponse.json();
-      const putResponse = await fetch(groupsEndpoint + '/' + postResponseBody.id, {
-        method: 'DELETE',
-        headers,
-      });
-      expect(putResponse.status).toEqual(204);
-
-      const getPostResponse = await fetch(groupsEndpoint + '/' + postResponseBody.id, {
-        headers,
-      });
-      expect(getPostResponse.status).toEqual(404);
+      await scim.deleteGroup(postResponse.body.id);
+      await scim.getGroup(postResponse.body.id, { expectedStatus: 404 });
     });
   });
   describe.concurrent('GET', () => {
@@ -2839,22 +2487,25 @@ describe.concurrent('/Groups', () => {
         'Content-Type': 'application/scim+json',
         Authorization: scimAuthHeader,
       };
-      await createGroup(headers, {
+      const scim = createScimTestkit({ baseUrl, headers });
+      await scim.createGroup({
+        ...newGroupValues(),
         externalId: 'groupA',
         displayName: 'Group A',
       });
-      await createGroup(headers, {
+      await scim.createGroup({
+        ...newGroupValues(),
         externalId: 'groupB',
         displayName: 'Group B',
       });
-      await createGroup(headers, {
+      await scim.createGroup({
+        ...newGroupValues(),
         externalId: 'groupC',
         displayName: 'Group C',
       });
 
-      let groups = await getGroups(headers);
-      expect(groups.status).toEqual(200);
-      let initialBody = await groups.json();
+      let groups = await scim.listGroups();
+      const initialBody = groups.body;
       expect(initialBody).toEqual({
         Resources: expect.any(Array),
         itemsPerPage: 3,
@@ -2882,11 +2533,10 @@ describe.concurrent('/Groups', () => {
         }),
       );
 
-      groups = await getGroups(headers, {
+      groups = await scim.listGroups({
         count: '1',
       });
-      expect(groups.status).toEqual(200);
-      let body = await groups.json();
+      let body = groups.body;
 
       expect(body).toEqual({
         Resources: expect.any(Array),
@@ -2897,11 +2547,10 @@ describe.concurrent('/Groups', () => {
       });
       expect(body.Resources[0]).toEqual(initialBody.Resources[0]);
 
-      groups = await getGroups(headers, {
+      groups = await scim.listGroups({
         count: '2',
       });
-      expect(groups.status).toEqual(200);
-      body = await groups.json();
+      body = groups.body;
       expect(body).toEqual({
         Resources: expect.any(Array),
         itemsPerPage: 2,
@@ -2922,11 +2571,10 @@ describe.concurrent('/Groups', () => {
         }),
       );
 
-      groups = await getGroups(headers, {
+      groups = await scim.listGroups({
         startIndex: '2',
       });
-      expect(groups.status).toEqual(200);
-      body = await groups.json();
+      body = groups.body;
       expect(body).toEqual({
         schemas: ['urn:ietf:params:scim:api:messages:2.0:ListResponse'],
         Resources: expect.any(Array),
@@ -2941,11 +2589,10 @@ describe.concurrent('/Groups', () => {
         }),
       );
 
-      groups = await getGroups(headers, {
+      groups = await scim.listGroups({
         startIndex: '3',
       });
-      expect(groups.status).toEqual(200);
-      body = await groups.json();
+      body = groups.body;
       expect(body).toEqual({
         schemas: ['urn:ietf:params:scim:api:messages:2.0:ListResponse'],
         Resources: expect.any(Array),
@@ -2976,20 +2623,22 @@ describe.concurrent('/Groups', () => {
         'Content-Type': 'application/scim+json',
         Authorization: scimAuthHeader,
       };
-      await createGroup(headers, {
+      const scim = createScimTestkit({ baseUrl, headers });
+      await scim.createGroup({
+        ...newGroupValues(),
         externalId: 'groupA',
         displayName: 'Group A',
       });
-      await createGroup(headers, {
+      await scim.createGroup({
+        ...newGroupValues(),
         externalId: 'groupB',
         displayName: 'Group B',
       });
 
-      let response = await getGroups(headers, {
+      let response = await scim.listGroups({
         filter: 'displayName eq "Group A"',
       });
-      expect(response.status).toEqual(200);
-      let body = await response.json();
+      let body = response.body;
       expect(body).toEqual({
         Resources: expect.any(Array),
         itemsPerPage: 1,
@@ -3003,11 +2652,10 @@ describe.concurrent('/Groups', () => {
         displayName: 'Group A',
       });
 
-      response = await getGroups(headers, {
+      response = await scim.listGroups({
         filter: 'displayName eq "Group B"',
       });
-      expect(response.status).toEqual(200);
-      body = await response.json();
+      body = response.body;
       expect(body).toEqual({
         Resources: expect.any(Array),
         itemsPerPage: 1,
@@ -3021,11 +2669,10 @@ describe.concurrent('/Groups', () => {
         displayName: 'Group B',
       });
 
-      response = await getGroups(headers, {
+      response = await scim.listGroups({
         filter: 'displayName eq "Group C"',
       });
-      expect(response.status).toEqual(200);
-      body = await response.json();
+      body = response.body;
       expect(body).toEqual({
         Resources: expect.any(Array),
         itemsPerPage: 0,
@@ -3051,20 +2698,22 @@ describe.concurrent('/Groups', () => {
         'Content-Type': 'application/scim+json',
         Authorization: scimAuthHeader,
       };
-      await createGroup(headers, {
+      const scim = createScimTestkit({ baseUrl, headers });
+      await scim.createGroup({
+        ...newGroupValues(),
         externalId: 'groupA',
         displayName: 'Group A',
       });
-      await createGroup(headers, {
+      await scim.createGroup({
+        ...newGroupValues(),
         externalId: 'groupB',
         displayName: 'Group B',
       });
 
-      let response = await getGroups(headers, {
+      let response = await scim.listGroups({
         filter: 'externalId eq "groupA"',
       });
-      expect(response.status).toEqual(200);
-      let body = await response.json();
+      let body = response.body;
       expect(body).toEqual({
         Resources: expect.any(Array),
         itemsPerPage: 1,
@@ -3078,11 +2727,10 @@ describe.concurrent('/Groups', () => {
         displayName: 'Group A',
       });
 
-      response = await getGroups(headers, {
+      response = await scim.listGroups({
         filter: 'externalId eq "groupB"',
       });
-      expect(response.status).toEqual(200);
-      body = await response.json();
+      body = response.body;
       expect(body).toEqual({
         Resources: expect.any(Array),
         itemsPerPage: 1,
@@ -3096,11 +2744,10 @@ describe.concurrent('/Groups', () => {
         displayName: 'Group B',
       });
 
-      response = await getGroups(headers, {
+      response = await scim.listGroups({
         filter: 'externalId eq "groupC"',
       });
-      expect(response.status).toEqual(200);
-      body = await response.json();
+      body = response.body;
       expect(body).toEqual({
         Resources: expect.any(Array),
         itemsPerPage: 0,
@@ -3126,20 +2773,26 @@ describe.concurrent('/Groups', () => {
         'Content-Type': 'application/scim+json',
         Authorization: scimAuthHeader,
       };
-      const groupA = await createGroup(headers, {
-        externalId: 'groupA',
-        displayName: 'Group A',
-      }).then(r => r.json());
-      const groupB = await createGroup(headers, {
-        externalId: 'groupB',
-        displayName: 'Group B',
-      }).then(r => r.json());
+      const scim = createScimTestkit({ baseUrl, headers });
+      const groupA = await scim
+        .createGroup({
+          ...newGroupValues(),
+          externalId: 'groupA',
+          displayName: 'Group A',
+        })
+        .then(r => r.body);
+      const groupB = await scim
+        .createGroup({
+          ...newGroupValues(),
+          externalId: 'groupB',
+          displayName: 'Group B',
+        })
+        .then(r => r.body);
 
-      let response = await getGroups(headers, {
+      let response = await scim.listGroups({
         filter: `id eq "${groupA.id}"`,
       });
-      expect(response.status).toEqual(200);
-      let body = await response.json();
+      let body = response.body;
       expect(body).toEqual({
         Resources: expect.any(Array),
         itemsPerPage: 1,
@@ -3153,11 +2806,10 @@ describe.concurrent('/Groups', () => {
         displayName: 'Group A',
       });
 
-      response = await getGroups(headers, {
+      response = await scim.listGroups({
         filter: `id eq "${groupB.id}"`,
       });
-      expect(response.status).toEqual(200);
-      body = await response.json();
+      body = response.body;
       expect(body).toEqual({
         Resources: expect.any(Array),
         itemsPerPage: 1,
@@ -3171,11 +2823,10 @@ describe.concurrent('/Groups', () => {
         displayName: 'Group B',
       });
 
-      response = await getGroups(headers, {
+      response = await scim.listGroups({
         filter: `externalId eq "${crypto.randomUUID()}"`,
       });
-      expect(response.status).toEqual(200);
-      body = await response.json();
+      body = response.body;
       expect(body).toEqual({
         Resources: expect.any(Array),
         itemsPerPage: 0,
@@ -3201,11 +2852,11 @@ describe.concurrent('/Groups', () => {
         'Content-Type': 'application/scim+json',
         Authorization: scimAuthHeader,
       };
-      let response = await getGroups(headers, {
+      const scim = createScimTestkit({ baseUrl, headers });
+      let response = await scim.listGroups({
         filter: 'id eq "asdasd "',
       });
-      let body = await response.json();
-      expect(response.status).toEqual(200);
+      let body = response.body;
       expect(body).toEqual({
         Resources: expect.any(Array),
         itemsPerPage: 0,
@@ -3240,21 +2891,16 @@ describe.concurrent('provider flows', () => {
         'Content-Type': 'application/scim+json',
         Authorization: scimAuthHeader,
       };
+      const scim = createScimTestkit({ baseUrl, headers });
 
       // First Okta tries to provision the group
 
-      const postResponse = await fetch(groupsEndpoint, {
-        method: 'POST',
-        body: JSON.stringify({
-          schemas: ['urn:ietf:params:scim:schemas:core:2.0:Group'],
-          displayName: 'foobars',
-          members: [],
-        }),
-        headers,
+      const postResponse = await scim.createGroup({
+        schemas: ['urn:ietf:params:scim:schemas:core:2.0:Group'],
+        displayName: 'foobars',
+        members: [],
       });
-      expect(postResponse.status).toEqual(201);
-      const postResponseBody = await postResponse.json();
-      expect(postResponseBody).toMatchObject({
+      expect(postResponse.body).toMatchObject({
         displayName: 'foobars',
         id: expect.any(String),
         meta: {
@@ -3263,38 +2909,26 @@ describe.concurrent('provider flows', () => {
         schemas: ['urn:ietf:params:scim:schemas:core:2.0:Group'],
       });
 
-      const groupResourceEndpoint = groupsEndpoint + '/' + postResponseBody.id;
-
       // after provisioning it seems to verify whether the group exists or not
 
-      const getResponse = await fetch(groupResourceEndpoint, {
-        headers,
-      });
-      expect(getResponse.status).toEqual(200);
-      const getResponseBody = await getResponse.json();
-      expect(getResponseBody).toMatchObject({
-        ...postResponseBody,
+      const getResponse = await scim.getGroup(postResponse.body.id);
+      expect(getResponse.body).toMatchObject({
+        ...postResponse.body,
         // Should be identical; but also has the empty members property
         members: [],
       });
 
       // then after the verification and lookup okta also sends a PUT...
 
-      const putResponse = await fetch(groupResourceEndpoint, {
-        method: 'PUT',
-        body: JSON.stringify({
-          schemas: ['urn:ietf:params:scim:schemas:core:2.0:Group'],
-          displayName: 'foobars',
-          members: [],
-        }),
-        headers,
+      const putResponse = await scim.updateGroup(postResponse.body.id, {
+        schemas: ['urn:ietf:params:scim:schemas:core:2.0:Group'],
+        displayName: 'foobars',
+        members: [],
       });
-      expect(putResponse.status).toEqual(200);
-      const putResponseBody = await putResponse.json();
-      expect(putResponseBody).toMatchObject({
-        ...postResponseBody,
+      expect(putResponse.body).toMatchObject({
+        ...postResponse.body,
         meta: {
-          ...postResponseBody.meta,
+          ...postResponse.body.meta,
           lastModified: expect.any(String),
         },
         // Should be identical; but also has the empty members property
@@ -3318,44 +2952,31 @@ describe.concurrent('provider flows', () => {
         'Content-Type': 'application/scim+json',
         Authorization: scimAuthHeader,
       };
+      const scim = createScimTestkit({ baseUrl, headers });
 
       // First Okta tries to provision the group
 
-      const postResponse = await fetch(groupsEndpoint, {
-        method: 'POST',
-        body: JSON.stringify({
-          schemas: ['urn:ietf:params:scim:schemas:core:2.0:Group'],
-          displayName: 'foobars',
-          members: [],
-        }),
-        headers,
+      const postResponse = await scim.createGroup({
+        schemas: ['urn:ietf:params:scim:schemas:core:2.0:Group'],
+        displayName: 'foobars',
+        members: [],
       });
-      expect(postResponse.status).toEqual(201);
-      const postResponseBody = await postResponse.json();
-
-      const groupResourceEndpoint = groupsEndpoint + '/' + postResponseBody.id;
 
       const externalUserId = '00u13w8ptpbdysgOl698';
 
-      const usersPostResponse = await fetch(usersEndpoint, {
-        method: 'POST',
-        body: JSON.stringify({
-          schemas: ['urn:ietf:params:scim:schemas:core:2.0:User'],
-          userName: 'marty.mcfly@' + domain,
-          name: { givenName: 'Marty', familyName: 'McFly' },
-          emails: [{ primary: true, value: 'marty.mcfly@' + domain, type: 'work' }],
-          displayName: 'Marty McFly',
-          locale: 'en-US',
-          externalId: externalUserId,
-          groups: [],
-          password: 'fq77ZD37',
-          active: true,
-        }),
-        headers,
+      const usersPostResponse = await scim.createUser({
+        schemas: ['urn:ietf:params:scim:schemas:core:2.0:User'],
+        userName: 'marty.mcfly@' + domain,
+        name: { givenName: 'Marty', familyName: 'McFly' },
+        emails: [{ primary: true, value: 'marty.mcfly@' + domain, type: 'work' }],
+        displayName: 'Marty McFly',
+        locale: 'en-US',
+        externalId: externalUserId,
+        groups: [],
+        password: 'fq77ZD37',
+        active: true,
       });
-      expect(usersPostResponse.status).toEqual(201);
-      const usersResponseBody = await usersPostResponse.json();
-      expect(usersResponseBody).toEqual({
+      expect(usersPostResponse.body).toEqual({
         emails: [
           {
             primary: true,
@@ -3373,32 +2994,26 @@ describe.concurrent('provider flows', () => {
           resourceType: 'User',
           created: expect.any(String),
           lastModified: expect.any(String),
-          location: expect.stringContaining(usersEndpoint + '/'),
+          location: expect.stringContaining(baseUrl + '/scim/v2/Users/'),
         },
       });
 
-      const putResponse = await fetch(groupResourceEndpoint, {
-        method: 'PUT',
-        body: JSON.stringify({
-          schemas: ['urn:ietf:params:scim:schemas:core:2.0:Group'],
-          displayName: 'foobars',
-          members: [{ value: usersResponseBody.id, display: null }],
-        }),
-        headers,
+      const putResponse = await scim.updateGroup(postResponse.body.id, {
+        schemas: ['urn:ietf:params:scim:schemas:core:2.0:Group'],
+        displayName: 'foobars',
+        members: [{ value: usersPostResponse.body.id, display: null }],
       });
-      expect(putResponse.status).toEqual(200);
-      const putResponseBody = await putResponse.json();
-      expect(putResponseBody).toMatchObject({
-        ...postResponseBody,
+      expect(putResponse.body).toMatchObject({
+        ...postResponse.body,
         meta: {
-          ...postResponseBody.meta,
+          ...postResponse.body.meta,
           lastModified: expect.any(String),
         },
         // Should be identical; but also has the empty members property
         members: [
           {
-            $ref: usersEndpoint + '/' + usersResponseBody.id,
-            value: usersResponseBody.id,
+            $ref: baseUrl + '/scim/v2/Users/' + usersPostResponse.body.id,
+            value: usersPostResponse.body.id,
           },
         ],
       });
@@ -3423,76 +3038,51 @@ describe.concurrent('provider flows', () => {
           'Content-Type': 'application/scim+json',
           Authorization: scimAuthHeader,
         };
+        const scim = createScimTestkit({ baseUrl, headers });
 
         // create group
 
-        const postResponse = await fetch(groupsEndpoint, {
-          method: 'POST',
-          body: JSON.stringify({
-            schemas: ['urn:ietf:params:scim:schemas:core:2.0:Group'],
-            displayName: 'foobars',
-            members: [],
-          }),
-          headers,
+        const postResponse = await scim.createGroup({
+          schemas: ['urn:ietf:params:scim:schemas:core:2.0:Group'],
+          displayName: 'foobars',
+          members: [],
         });
-        expect(postResponse.status).toEqual(201);
-        const postResponseBody = await postResponse.json();
 
         // create user
 
         const externalUserId = '00u13w8ptpbdysgOl698';
 
-        const usersPostResponse = await fetch(usersEndpoint, {
-          method: 'POST',
-          body: JSON.stringify({
-            schemas: ['urn:ietf:params:scim:schemas:core:2.0:User'],
-            userName: 'marty.mcfly@' + domain,
-            name: { givenName: 'Marty', familyName: 'McFly' },
-            emails: [{ primary: true, value: 'marty.mcfly@' + domain, type: 'work' }],
-            displayName: 'Marty McFly',
-            locale: 'en-US',
-            externalId: externalUserId,
-            groups: [],
-            password: 'fq77ZD37',
-            active: true,
-          }),
-          headers,
+        const usersPostResponse = await scim.createUser({
+          schemas: ['urn:ietf:params:scim:schemas:core:2.0:User'],
+          userName: 'marty.mcfly@' + domain,
+          name: { givenName: 'Marty', familyName: 'McFly' },
+          emails: [{ primary: true, value: 'marty.mcfly@' + domain, type: 'work' }],
+          displayName: 'Marty McFly',
+          locale: 'en-US',
+          externalId: externalUserId,
+          groups: [],
+          password: 'fq77ZD37',
+          active: true,
         });
 
-        expect(usersPostResponse.status).toEqual(201);
-        const usersResponseBody = await usersPostResponse.json();
-
-        const groupResourceEndpoint = groupsEndpoint + '/' + postResponseBody.id;
-
-        const putGroupResponse = await fetch(groupResourceEndpoint, {
-          method: 'PUT',
-          body: JSON.stringify({
-            schemas: ['urn:ietf:params:scim:schemas:core:2.0:Group'],
-            displayName: 'foobars',
-            members: [{ value: usersResponseBody.id, display: null }],
-          }),
-          headers,
+        const putGroupResponse = await scim.updateGroup(postResponse.body.id, {
+          schemas: ['urn:ietf:params:scim:schemas:core:2.0:Group'],
+          displayName: 'foobars',
+          members: [{ value: usersPostResponse.body.id, display: null }],
         });
-        expect(putGroupResponse.status).toEqual(200);
 
         // on okta we now remove the user from the group
-        const userResourceEndpoint = usersEndpoint + '/' + usersResponseBody.id;
 
-        const putUserResponse = await fetch(userResourceEndpoint, {
-          method: 'PUT',
-          body: JSON.stringify({
-            schemas: ['urn:ietf:params:scim:schemas:core:2.0:User'],
-            id: usersResponseBody.id,
-            externalId: externalUserId,
-            userName: 'marty.mcfly@' + domain,
-            emails: [{ primary: true, type: 'work', value: 'marty.mcfly@' + domain }],
-            meta: { resourceType: 'User' },
-            active: false,
-          }),
-          headers,
+        const putUserResponse = await scim.updateUser(usersPostResponse.body.id, {
+          schemas: ['urn:ietf:params:scim:schemas:core:2.0:User'],
+          id: usersPostResponse.body.id,
+          externalId: externalUserId,
+          userName: 'marty.mcfly@' + domain,
+          emails: [{ primary: true, type: 'work', value: 'marty.mcfly@' + domain }],
+          meta: { resourceType: 'User' },
+          active: false,
         });
-        expect(putUserResponse.status).toEqual(200);
-        const putUserResponseBody = await putUserResponse.json();
+        const putUserResponseBody = putUserResponse.body;
 
         expect(putUserResponseBody).toEqual({
           emails: [
@@ -3503,7 +3093,7 @@ describe.concurrent('provider flows', () => {
             },
           ],
           externalId: externalUserId,
-          id: usersResponseBody.id,
+          id: usersPostResponse.body.id,
           schemas: ['urn:ietf:params:scim:schemas:core:2.0:User'],
           userName: 'marty.mcfly@' + domain,
           active: false,
@@ -3512,7 +3102,7 @@ describe.concurrent('provider flows', () => {
             resourceType: 'User',
             created: expect.any(String),
             lastModified: expect.any(String),
-            location: usersEndpoint + '/' + usersResponseBody.id,
+            location: baseUrl + '/scim/v2/Users/' + usersPostResponse.body.id,
           },
         });
 
@@ -3557,45 +3147,32 @@ describe.concurrent('provider flows', () => {
         'Content-Type': 'application/scim+json',
         Authorization: scimAuthHeader,
       };
+      const scim = createScimTestkit({ baseUrl, headers });
 
       // First Okta tries to provision the group
 
-      const postResponse = await fetch(groupsEndpoint, {
-        method: 'POST',
-        body: JSON.stringify({
-          schemas: ['urn:ietf:params:scim:schemas:core:2.0:Group'],
-          displayName: 'foobars',
-          members: [],
-        }),
-        headers,
+      const postResponse = await scim.createGroup({
+        schemas: ['urn:ietf:params:scim:schemas:core:2.0:Group'],
+        displayName: 'foobars',
+        members: [],
       });
-      expect(postResponse.status).toEqual(201);
-      const postResponseBody = await postResponse.json();
-
-      const groupResourceEndpoint = groupsEndpoint + '/' + postResponseBody.id;
 
       // Okta uses a put request to update the display name
       // It also includes the whole "member" array, which is a bit annoying and expensive on our end as we cannot distinguish
       // whether this is a display name only update or whole member list update...
 
-      const putResponse = await fetch(groupResourceEndpoint, {
-        method: 'PUT',
-        body: JSON.stringify({
-          schemas: ['urn:ietf:params:scim:schemas:core:2.0:Group'],
-          displayName: 'something else',
-          members: [],
-        }),
-        headers,
+      const putResponse = await scim.updateGroup(postResponse.body.id, {
+        schemas: ['urn:ietf:params:scim:schemas:core:2.0:Group'],
+        displayName: 'something else',
+        members: [],
       });
-      expect(putResponse.status).toEqual(200);
-      const putResponseBody = await putResponse.json();
-      expect(putResponseBody).toMatchObject({
-        ...postResponseBody,
+      expect(putResponse.body).toMatchObject({
+        ...postResponse.body,
         displayName: 'something else',
         // Should be identical; but also has the empty members property
         members: [],
         meta: {
-          ...postResponseBody.meta,
+          ...postResponse.body.meta,
           lastModified: expect.any(String),
         },
       });
@@ -3647,13 +3224,13 @@ test.concurrent(
         'Content-Type': 'application/scim+json',
         Authorization: scimAuthHeader,
       };
+      const scim = createScimTestkit({ baseUrl, headers });
 
-      const userResponse = await createUser(headers, {
+      const userResponse = await scim.createUser({
+        ...newUserValues(),
         externalId: subOrExternalId,
         emails: [{ primary: true, type: 'work', value: email }],
       });
-
-      expect(userResponse.status).toEqual(201);
     } finally {
       await storage.destroy();
     }
@@ -3703,23 +3280,27 @@ test.concurrent(
         'Content-Type': 'application/scim+json',
         Authorization: scimAuthHeader,
       };
+      const scim = createScimTestkit({ baseUrl, headers });
 
-      const userResponse = await createUser(headers, {
+      const userResponse = await scim.createUser({
+        ...newUserValues(),
         userName: 'userA',
         emails: [{ primary: true, type: 'work', value: 'emmett.brown@' + domain }],
       });
-      expect(userResponse.status).toEqual(201);
 
       // Now we gonna attempt to provision and take over the OIDC user
       // The important thing is that the userName is shared!
 
-      const conflictUserResponse = await createUser(headers, {
-        userName: 'userA',
-        externalId,
-        emails: [{ primary: true, type: 'work', value: email }],
-      });
-      expect(conflictUserResponse.status).toEqual(409);
-      expect(await conflictUserResponse.json()).toMatchInlineSnapshot(`
+      const conflictUserResponse = await scim.createUser(
+        {
+          ...newUserValues(),
+          userName: 'userA',
+          externalId,
+          emails: [{ primary: true, type: 'work', value: email }],
+        },
+        { expectedStatus: 409 },
+      );
+      expect(conflictUserResponse.body).toMatchInlineSnapshot(`
       {
         detail: Another user with the same userName already exists.,
         schemas: [
@@ -3765,21 +3346,16 @@ test.concurrent('user cannot login via OIDC if SCIM user provisioning is require
     'Content-Type': 'application/scim+json',
     Authorization: scimAuthHeader,
   };
-  const usersPostResponse = await fetch(usersEndpoint, {
-    method: 'POST',
-    body: JSON.stringify({
-      schemas: ['urn:ietf:params:scim:schemas:core:2.0:User'],
-      userName: email,
-      name: { givenName: 'Marty', familyName: 'McFly' },
-      emails: [{ primary: true, value: email, type: 'work' }],
-      locale: 'en-US',
-      externalId: email,
-      active: true,
-    }),
-    headers,
+  const scim = createScimTestkit({ baseUrl, headers });
+  await scim.createUser({
+    schemas: ['urn:ietf:params:scim:schemas:core:2.0:User'],
+    userName: email,
+    name: { givenName: 'Marty', familyName: 'McFly' },
+    emails: [{ primary: true, value: email, type: 'work' }],
+    locale: 'en-US',
+    externalId: email,
+    active: true,
   });
-
-  expect(usersPostResponse.status).toEqual(201);
 
   authPayload = await oidcAuth.runGetAuthorizationUrl();
   signInUpResult = await oidcAuth.runSignInUp({
@@ -3809,7 +3385,7 @@ test.concurrent(
       oidcForVerifiedDomainsRequired: true,
     });
 
-    const response = await fetch(apiHost + '/auth-api/signin', {
+    const response = await fetch(baseUrl + '/auth-api/signin', {
       method: 'POST',
       body: JSON.stringify({
         formFields: [
@@ -3823,7 +3399,12 @@ test.concurrent(
     });
 
     expect(response.status).toEqual(200);
-    const body = await response.json();
+    const body = z
+      .object({
+        status: z.string(),
+        user: z.object({ emails: z.array(z.string()) }),
+      })
+      .parse(await response.json());
     expect(body).toMatchObject({
       status: 'OK',
       user: {
@@ -3852,47 +3433,36 @@ test.concurrent(
       'Content-Type': 'application/scim+json',
       Authorization: scimAuthHeader,
     };
+    const scim = createScimTestkit({ baseUrl, headers: scimRequestHeaders });
 
     // create our user
     const email = 'demo@' + domain;
     const externalId = 'my-external-id';
 
-    const createUserResponse = await fetch(usersEndpoint, {
-      method: 'POST',
-      headers: scimRequestHeaders,
-      body: JSON.stringify({
-        externalId,
-        emails: [
-          {
-            primary: true,
-            type: 'work',
-            value: email,
-          },
-        ],
-        userName: email,
-      }),
+    const createUserResponse = await scim.createUser({
+      externalId,
+      emails: [
+        {
+          primary: true,
+          type: 'work',
+          value: email,
+        },
+      ],
+      userName: email,
     });
-    expect(createUserResponse.status).toEqual(201);
-    const hiveUserId = await createUserResponse.json().then(response => response.id);
-    invariant(typeof hiveUserId === 'string', 'expected id property to exist');
+    const hiveUserId = createUserResponse.body.id;
 
     // create our group
-    const createGroupResponse = await createGroup(scimRequestHeaders, {
+    const createGroupResponse = await scim.createGroup({
+      ...newGroupValues(),
       displayName: 'Test Group',
     });
-    expect(createGroupResponse.status).toEqual(201);
-    const groupId = await createGroupResponse.json().then(r => r.id);
-    invariant(typeof groupId === 'string', 'expected id property to exist');
+    const groupId = createGroupResponse.body.id;
 
     // assign user to group
-    const updateGroupResponse = await fetch(groupsEndpoint + '/' + groupId, {
-      method: 'PUT',
-      headers: scimRequestHeaders,
-      body: JSON.stringify({
-        members: [{ value: hiveUserId }],
-      }),
+    const updateGroupResponse = await scim.updateGroup(groupId, {
+      members: [{ value: hiveUserId }],
     });
-    expect(updateGroupResponse.status).toEqual(200);
 
     // create three projects so we can check whether the permissions apply
     const projects = [
@@ -4020,47 +3590,36 @@ test.concurrent('disabled user is revoked access', async ({ expect }) => {
     'Content-Type': 'application/scim+json',
     Authorization: scimAuthHeader,
   };
+  const scim = createScimTestkit({ baseUrl, headers: scimRequestHeaders });
 
   // create our user
   const email = 'demo@' + domain;
   const externalId = 'my-external-id';
 
-  const createUserResponse = await fetch(usersEndpoint, {
-    method: 'POST',
-    headers: scimRequestHeaders,
-    body: JSON.stringify({
-      externalId,
-      emails: [
-        {
-          primary: true,
-          type: 'work',
-          value: email,
-        },
-      ],
-      userName: email,
-    }),
+  const createUserResponse = await scim.createUser({
+    externalId,
+    emails: [
+      {
+        primary: true,
+        type: 'work',
+        value: email,
+      },
+    ],
+    userName: email,
   });
-  expect(createUserResponse.status).toEqual(201);
-  const hiveUserId = await createUserResponse.json().then(response => response.id);
-  invariant(typeof hiveUserId === 'string', 'expected id property to exist');
+  const hiveUserId = createUserResponse.body.id;
 
   // create our group
-  const createGroupResponse = await createGroup(scimRequestHeaders, {
+  const createGroupResponse = await scim.createGroup({
+    ...newGroupValues(),
     displayName: 'Test Group',
   });
-  expect(createGroupResponse.status).toEqual(201);
-  const groupId = await createGroupResponse.json().then(r => r.id);
-  invariant(typeof groupId === 'string', 'expected id property to exist');
+  const groupId = createGroupResponse.body.id;
 
   // assign user to group
-  const updateGroupResponse = await fetch(groupsEndpoint + '/' + groupId, {
-    method: 'PUT',
-    headers: scimRequestHeaders,
-    body: JSON.stringify({
-      members: [{ value: hiveUserId }],
-    }),
+  await scim.updateGroup(groupId, {
+    members: [{ value: hiveUserId }],
   });
-  expect(updateGroupResponse.status).toEqual(200);
 
   const createRoleResult = await createMemberRole(
     {
@@ -4105,14 +3664,9 @@ test.concurrent('disabled user is revoked access', async ({ expect }) => {
   expect(projectsResult).toEqual([]);
 
   // disable the user
-  const disableUserResponse = await fetch(usersEndpoint + '/' + hiveUserId, {
-    method: 'PUT',
-    headers: scimRequestHeaders,
-    body: JSON.stringify({
-      active: false,
-    }),
+  await scim.updateUser(hiveUserId, {
+    active: false,
   });
-  expect(disableUserResponse.status).toEqual(200);
 
   // existing session is invalidated
   await expect(org.projects(result.accessToken)).rejects.toThrow(
@@ -4126,14 +3680,9 @@ test.concurrent('disabled user is revoked access', async ({ expect }) => {
   invariant(result.type === 'error', 'expected sign in to fail as the user was disabled');
 
   // reenable the user
-  const enableUserResponse = await fetch(usersEndpoint + '/' + hiveUserId, {
-    method: 'PUT',
-    headers: scimRequestHeaders,
-    body: JSON.stringify({
-      active: true,
-    }),
+  await scim.updateUser(hiveUserId, {
+    active: true,
   });
-  expect(enableUserResponse.status).toEqual(200);
 
   auth = await oidcMock.runGetAuthorizationUrl();
   result = await oidcMock.runSignInUp({
