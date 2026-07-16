@@ -34,7 +34,9 @@ const collectionsApiWith = (operationId: string) => {
         id: 'c1',
         name: 'C',
         createdAt: '2026-01-01T00:00:00.000Z',
-        operations: [{ ...op(operationId), description: '', createdAt: '2026-01-01T00:00:00.000Z' }],
+        operations: [
+          { ...op(operationId), description: '', createdAt: '2026-01-01T00:00:00.000Z' },
+        ],
       },
     ],
     addCollection: vi.fn(),
