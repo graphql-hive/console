@@ -37,13 +37,6 @@ export function stringToHiveColor(str: string): string {
   return `hsl(${hue}, ${saturation}%, ${lightness}%)`;
 }
 
-// export function foregroundColor(str: string, theme: 'light' | 'dark') {
-//   const h = stringToHue(str);
-//   return theme === 'light'
-//     ? { backgroundColor: `hsl(${h}, 75%, 72%)`, color: '#f2f2f2' }
-//     : { backgroundColor: `hsl(${h}, 60%, 90%)`, color: '#4f4f4f' };
-// }
-
 function readChartStyles() {
   const s = getComputedStyle(document.documentElement);
   const textColor = s.getPropertyValue('--color-neutral-12').trim();

@@ -1160,12 +1160,12 @@ export default gql`
     """
     The total amount of resolutions of the schema coordinate within the contextual period.
     """
-    totalResolutions: Float
+    totalResolutions: SafeInt
 
     """
     The total amount of errors of the schema coordinate within the contextual period.
     """
-    errorTotal: Float
+    errorTotal: SafeInt
     """
     Whether the schema coordinate is used within the contextual period.
     """

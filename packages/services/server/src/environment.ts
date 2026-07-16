@@ -166,7 +166,9 @@ const HiveModel = zod.intersection(
       HIVE_USAGE_ENDPOINT: zod.string().url().optional(),
       HIVE_TARGET: zod.string(),
       HIVE_ACCESS_TOKEN: zod.string(),
-      HIVE_FIELD_USAGE_ENABLED: zod.boolean().optional().default(false),
+      HIVE_FIELD_USAGE_ENABLED: emptyString(
+        zod.union([zod.literal('0'), zod.literal('1')]).optional(),
+      ),
     }),
   ]),
   zod.union([
@@ -384,7 +386,7 @@ const hiveUsageConfig =
         target: hive.HIVE_TARGET,
         token: hive.HIVE_ACCESS_TOKEN,
         endpoint: hive.HIVE_USAGE_ENDPOINT ?? null,
-        fieldLevelMetricsEnabled: hive.HIVE_FIELD_USAGE_ENABLED,
+        fieldLevelMetricsEnabled: hive.HIVE_FIELD_USAGE_ENABLED === '1',
       }
     : null;
 
