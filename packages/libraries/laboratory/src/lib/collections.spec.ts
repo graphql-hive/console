@@ -111,4 +111,34 @@ describe('useCollections', () => {
     );
     expect(onCollectionUpdate).toHaveBeenCalled();
   });
+
+  it('updateOperationInCollection updates the operation and fires onCollectionOperationUpdate and onCollectionUpdate', () => {
+    const onCollectionOperationUpdate = vi.fn();
+    const onCollectionUpdate = vi.fn();
+    const { result } = renderHook(() =>
+      useCollections({ onCollectionOperationUpdate, onCollectionUpdate }),
+    );
+
+    let collectionId: string;
+    act(() => {
+      collectionId = result.current.addCollection({ name: 'C', operations: [operation('op1')] }).id;
+    });
+    act(() => {
+      result.current.updateOperationInCollection(collectionId, 'op1', {
+        name: 'Renamed',
+        description: '',
+        query: 'query { b }',
+        variables: '',
+        headers: '',
+        extensions: '',
+      });
+    });
+
+    expect(result.current.collections[0].operations[0].name).toBe('Renamed');
+    expect(onCollectionOperationUpdate).toHaveBeenCalledWith(
+      expect.objectContaining({ id: collectionId! }),
+      expect.objectContaining({ id: 'op1', name: 'Renamed' }),
+    );
+    expect(onCollectionUpdate).toHaveBeenCalledWith(expect.objectContaining({ id: collectionId! }));
+  });
 });
