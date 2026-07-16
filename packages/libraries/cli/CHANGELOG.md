@@ -1,5 +1,15 @@
 # @graphql-hive/cli
 
+## 0.60.3
+
+### Patch Changes
+
+- [#8228](https://github.com/graphql-hive/console/pull/8228)
+  [`058c082`](https://github.com/graphql-hive/console/commit/058c08273c6aa24b0b0f3e7d4ff3d366869655e9)
+  Thanks [@jdolle](https://github.com/jdolle)! - Upgrade composition library to support oneOf
+  directive without requiring composeDirective, and to fix an edge case where an external field is
+  not flagged as external in the supergraph if another graph uses that field in the key
+
 ## 0.60.2
 
 ### Patch Changes

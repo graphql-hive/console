@@ -1,5 +1,82 @@
 # hive
 
+## 11.6.0
+
+### Minor Changes
+
+- [#8198](https://github.com/graphql-hive/console/pull/8198)
+  [`156acee`](https://github.com/graphql-hive/console/commit/156aceead7e73ebbd5b201c7920d5d1c1d0e3f10)
+  Thanks [@jdolle](https://github.com/jdolle)! - Use the monthly table in the usage estimator
+
+  This table has dramatically better performance than operations_hourly.
+
+### Patch Changes
+
+- [#8218](https://github.com/graphql-hive/console/pull/8218)
+  [`0564435`](https://github.com/graphql-hive/console/commit/05644359a4099b3344d19741c7b8248fde3e2a68)
+  Thanks [@jonathanawesome](https://github.com/jonathanawesome)! - Metric alerts optimization:
+  Optimize evaluation cadence for long-windowed rule groups.
+
+- [#8224](https://github.com/graphql-hive/console/pull/8224)
+  [`60c14c0`](https://github.com/graphql-hive/console/commit/60c14c08e3b8a58c714d19a438032e1dd606152b)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Address vulnerability
+  [CVE-2026-25680](https://github.com/advisories/GHSA-5cv4-jp36-h3mw).
+
+- [#8221](https://github.com/graphql-hive/console/pull/8221)
+  [`5258d8e`](https://github.com/graphql-hive/console/commit/5258d8e0a4864a3ad57df60ee59444eef458fc4e)
+  Thanks [@jonathanawesome](https://github.com/jonathanawesome)! - Metric alerts optimization: Skip
+  fetching the previous comparison window for groups that only contain absolute (fixed value) rules.
+
+- [#8217](https://github.com/graphql-hive/console/pull/8217)
+  [`e9bbbe6`](https://github.com/graphql-hive/console/commit/e9bbbe6a78f6fcd6dc9ebd99a43a7250786a84ef)
+  Thanks [@jonathanawesome](https://github.com/jonathanawesome)! - Metric alerts optimization:
+  Require duration column selection only for rules of latency type.
+
+- [#8224](https://github.com/graphql-hive/console/pull/8224)
+  [`60c14c0`](https://github.com/graphql-hive/console/commit/60c14c08e3b8a58c714d19a438032e1dd606152b)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Address vulnerability
+  [CVE-2026-54285](https://github.com/advisories/GHSA-8988-4f7v-96qf).
+
+- [#8228](https://github.com/graphql-hive/console/pull/8228)
+  [`058c082`](https://github.com/graphql-hive/console/commit/058c08273c6aa24b0b0f3e7d4ff3d366869655e9)
+  Thanks [@jdolle](https://github.com/jdolle)! - Upgrade composition library to support oneOf
+  directive without requiring composeDirective, and to fix an edge case where an external field is
+  not flagged as external in the supergraph if another graph uses that field in the key
+
+## 11.5.0
+
+### Minor Changes
+
+- [#8215](https://github.com/graphql-hive/console/pull/8215)
+  [`608d931`](https://github.com/graphql-hive/console/commit/608d931663bfbee506511be376d6e3f3502f3e8b)
+  Thanks [@jdolle](https://github.com/jdolle)! - Improve styling and visibility of composition
+  report. This can be accessed through the project settings: composition tab when composition is
+  flagged as incompatible
+
+- [#8203](https://github.com/graphql-hive/console/pull/8203)
+  [`45d99a6`](https://github.com/graphql-hive/console/commit/45d99a6e965e2736c542294f098a729bce1e4aa7)
+  Thanks [@jdolle](https://github.com/jdolle)! - Role create and edit trigger validation on submit
+  instead of disabling the submit button
+
+### Patch Changes
+
+- [#8213](https://github.com/graphql-hive/console/pull/8213)
+  [`d6e9ebb`](https://github.com/graphql-hive/console/commit/d6e9ebb13b1f11dbdf0f79cc6a72f654e508668b)
+  Thanks [@jonathanawesome](https://github.com/jonathanawesome)! - Runs metric alerts cron with a
+  concurrency pool
+
+- [#8200](https://github.com/graphql-hive/console/pull/8200)
+  [`fcfecb4`](https://github.com/graphql-hive/console/commit/fcfecb4cf26741accf14226201ba3476e5ccaedc)
+  Thanks [@jdolle](https://github.com/jdolle)! - Security upgrades for dependencies (including ws,
+  protobufjs, js-yaml, and others) to address security vulnerabilities. Upgrade nodejs from 24.14.1
+  to 24.17.0
+
+- [#8196](https://github.com/graphql-hive/console/pull/8196)
+  [`27a58e5`](https://github.com/graphql-hive/console/commit/27a58e53c2c37998c2351c697288858a56f73287)
+  Thanks [@jdolle](https://github.com/jdolle)! - Write s3 schema artifacts in parallel on schema
+  publish. Previously, the subgraph SDLs would be written first and then the composite schema SDL
+  would be written.
+
 ## 11.4.0
 
 ### Minor Changes

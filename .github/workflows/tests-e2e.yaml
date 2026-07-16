@@ -31,6 +31,7 @@ jobs:
           actor: test-e2e
 
       - name: install playwright browsers
+        timeout-minutes: 15
         run: pnpm exec playwright install chromium --with-deps
 
       - name: patch compose file volumes

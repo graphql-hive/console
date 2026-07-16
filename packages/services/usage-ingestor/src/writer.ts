@@ -21,6 +21,7 @@ export interface ClickHouseConfig {
   password: string;
   async_insert_busy_timeout_ms: number;
   async_insert_max_data_size: number;
+  wait_for_async_insert: number;
 }
 
 const operationsFields = operationsOrder.join(', ');
@@ -58,6 +59,13 @@ export function createWriter({
     https: httpsAgent,
   };
 
+  logger.debug(
+    'ClickHouse writer initialized (async_insert=1, wait_for_async_insert=%s, async_insert_busy_timeout_ms=%s, async_insert_max_data_size=%s)',
+    clickhouse.wait_for_async_insert,
+    clickhouse.async_insert_busy_timeout_ms,
+    clickhouse.async_insert_max_data_size,
+  );
+
   return {
     async writeOperations(operations: string[]) {
       if (operations.length === 0) {
@@ -67,9 +75,13 @@ export function createWriter({
       const csv = joinIntoSingleMessage(operations);
       const compressed = await compress(csv);
 
+<<<<<<< HEAD
       // Note that `SETTINGS input_format_with_names_use_header = 1` is enabled by default.
       // If migrating this table in the future, be sure to double check this via
       // SELECT name, value, changed, description FROM system.settings WHERE name = 'input_format_with_names_use_header';
+=======
+      const startedAt = performance.now();
+>>>>>>> origin/main
       await writeCsv(
         clickhouse,
         agents,
@@ -78,6 +90,13 @@ export function createWriter({
         compressed,
         logger,
         3,
+      );
+      // With wait_for_async_insert=1 this blocks until the row is flushed (queryable);
+      // fire-and-forget returns in a few ms. Logged at debug so it stays out of prod (info).
+      logger.debug(
+        'operations INSERT completed in %sms (operations=%s)',
+        performance.now() - startedAt,
+        operations.length,
       );
     },
     async writeSubscriptionOperations(operations: string[]) {
@@ -177,7 +196,7 @@ async function writeCsv(
       searchParams: {
         query,
         async_insert: 1,
-        wait_for_async_insert: 0,
+        wait_for_async_insert: config.wait_for_async_insert,
         async_insert_busy_timeout_ms: config.async_insert_busy_timeout_ms,
         async_insert_max_data_size: config.async_insert_max_data_size,
       },

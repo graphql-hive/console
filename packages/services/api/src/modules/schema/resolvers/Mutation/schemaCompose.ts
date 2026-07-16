@@ -6,6 +6,7 @@ export const schemaCompose: NonNullable<MutationResolvers['schemaCompose']> = as
   { input },
   { injector },
 ) => {
+  const start = Date.now();
   const result = await injector.get(SchemaManager).compose({
     onlyComposable: input.useLatestComposableVersion === true,
     services: input.services,
@@ -23,6 +24,7 @@ export const schemaCompose: NonNullable<MutationResolvers['schemaCompose']> = as
     __typename: 'SchemaComposeSuccess',
     valid: 'supergraphSDL' in result && result.supergraphSDL !== null,
     compositionResult: {
+      duration: Date.now() - start,
       errors: result.errors,
       supergraphSdl: result.supergraphSDL,
     },

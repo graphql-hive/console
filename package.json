@@ -86,7 +86,7 @@
     "@sentry/cli": "2.40.0",
     "@swc/core": "1.13.5",
     "@theguild/eslint-config": "0.12.1",
-    "@theguild/federation-composition": "0.22.3",
+    "@theguild/federation-composition": "0.23.1",
     "@theguild/prettier-config": "2.0.7",
     "@types/node": "24.12.2",
     "bob-the-bundler": "7.0.1",
@@ -176,7 +176,6 @@
       "brace-expansion@>=5.0.0 <5.0.6": ">=5.0.6",
       "@sigstore/core@<=3.2.0": ">=3.2.1",
       "js-yaml@<3.15.0": "3.15.0",
-      "echarts@<6.1.0": ">=6.1.0",
       "sigstore@<=4.1.0": ">=4.1.1"
     },
     "patchedDependencies": {
