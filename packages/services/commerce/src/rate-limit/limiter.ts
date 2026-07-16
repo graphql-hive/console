@@ -116,7 +116,7 @@ export function createRateLimiter(config: {
       }
 
       const orgRecord = newCachedResult.get(record.organization)!;
-      orgRecord.operations.current = operations[record.organization];
+      orgRecord.operations.current = operations[record.organization] ?? 0;
     }
 
     newCachedResult.forEach((orgRecord, orgId) => {
