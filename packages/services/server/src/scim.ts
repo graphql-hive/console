@@ -178,6 +178,7 @@ export const createSCIMPlugin =
     storage: Storage,
     oidcIntegrations: OIDCIntegrationStore,
     rateLimiter: RedisRateLimiter,
+    baseUri: string,
   ): FastifyPluginAsync =>
   async server => {
     async function authenticateAuthorizeAndResolveOrganizationFromRequest(
@@ -595,7 +596,7 @@ export const createSCIMPlugin =
         );
       }
 
-      return reply.status(200).send(createSCIMUserObjectFromUser(user));
+      return reply.status(200).send(createSCIMUserObjectFromUser(baseUri, user));
     });
 
     /**
@@ -696,7 +697,7 @@ export const createSCIMPlugin =
         createUserResult satisfies never;
       }
 
-      return reply.status(201).send(createSCIMUserObjectFromUser(createUserResult.user));
+      return reply.status(201).send(createSCIMUserObjectFromUser(baseUri, createUserResult.user));
     });
 
     /**
@@ -770,7 +771,9 @@ export const createSCIMPlugin =
           .send(updateUserPropertyResult.error);
       }
 
-      return reply.status(200).send(createSCIMUserObjectFromUser(updateUserPropertyResult.user));
+      return reply
+        .status(200)
+        .send(createSCIMUserObjectFromUser(baseUri, updateUserPropertyResult.user));
     });
 
     /**
@@ -931,7 +934,9 @@ export const createSCIMPlugin =
           .send(updateUserPropertyResult.error);
       }
 
-      return reply.status(200).send(createSCIMUserObjectFromUser(updateUserPropertyResult.user));
+      return reply
+        .status(200)
+        .send(createSCIMUserObjectFromUser(baseUri, updateUserPropertyResult.user));
     });
 
     /**
@@ -1002,7 +1007,7 @@ export const createSCIMPlugin =
         }
 
         if (user) {
-          users.push(createSCIMUserObjectFromUser(user));
+          users.push(createSCIMUserObjectFromUser(baseUri, user));
         }
       } else {
         const offset = Math.max(0, startIndex - 1);
@@ -1014,7 +1019,7 @@ export const createSCIMPlugin =
           },
         );
         for (const user of pagedUsers) {
-          users.push(createSCIMUserObjectFromUser(user));
+          users.push(createSCIMUserObjectFromUser(baseUri, user));
         }
       }
 
@@ -1097,7 +1102,7 @@ export const createSCIMPlugin =
         }
 
         if (group) {
-          groups.push(createSCIMGroupObjectFromGroup(group));
+          groups.push(createSCIMGroupObjectFromGroup(baseUri, group));
         }
       } else {
         const pagedGroups = await groupStore.getOffsetPaginatedGroupsForOrganizationId(
@@ -1109,7 +1114,7 @@ export const createSCIMPlugin =
         );
 
         for (const group of pagedGroups) {
-          groups.push(createSCIMGroupObjectFromGroup(group));
+          groups.push(createSCIMGroupObjectFromGroup(baseUri, group));
         }
       }
 
@@ -1165,7 +1170,7 @@ export const createSCIMPlugin =
         group.id,
       );
 
-      return reply.status(200).send(createSCIMGroupObjectFromGroup(group, groupMembers));
+      return reply.status(200).send(createSCIMGroupObjectFromGroup(baseUri, group, groupMembers));
     });
 
     /**
@@ -1217,7 +1222,9 @@ export const createSCIMPlugin =
         createGroupResult satisfies never;
       }
 
-      return reply.status(201).send(createSCIMGroupObjectFromGroup(createGroupResult.group));
+      return reply
+        .status(201)
+        .send(createSCIMGroupObjectFromGroup(baseUri, createGroupResult.group));
     });
 
     /**
@@ -1302,7 +1309,9 @@ export const createSCIMPlugin =
 
       return reply
         .status(200)
-        .send(createSCIMGroupObjectFromGroup(updateGroupPropertiesResult.group, groupMembers));
+        .send(
+          createSCIMGroupObjectFromGroup(baseUri, updateGroupPropertiesResult.group, groupMembers),
+        );
     });
 
     /**
@@ -1529,7 +1538,7 @@ export const createSCIMPlugin =
 
       return reply
         .status(200)
-        .send(createSCIMGroupObjectFromGroup(updateGroupResult.group, groupMembers));
+        .send(createSCIMGroupObjectFromGroup(baseUri, updateGroupResult.group, groupMembers));
     });
 
     /**
@@ -1603,6 +1612,9 @@ type SCIMUserObject = {
   active: boolean;
   meta: {
     resourceType: 'User';
+    created: string;
+    lastModified: string;
+    location: string;
   };
 };
 
@@ -1620,6 +1632,9 @@ type SCIMGroupObject = {
   }[];
   meta: {
     resourceType: 'Group';
+    created: string;
+    lastModified: string;
+    location: string;
   };
 };
 
@@ -1631,7 +1646,7 @@ type SCIMListResponseObject = {
   Resources: SCIMGroupObject[] | SCIMUserObject[];
 };
 
-function createSCIMUserObjectFromUser(user: User): SCIMUserObject {
+function createSCIMUserObjectFromUser(baseUri: string, user: User): SCIMUserObject {
   return {
     schemas: ['urn:ietf:params:scim:schemas:core:2.0:User'],
     id: user.id,
@@ -1647,11 +1662,15 @@ function createSCIMUserObjectFromUser(user: User): SCIMUserObject {
     active: user.deactivatedAt === null,
     meta: {
       resourceType: 'User',
+      created: user.createdAt,
+      lastModified: user.lastUpdatedAt ?? user.createdAt,
+      location: baseUri + '/Users/' + user.id,
     },
   };
 }
 
 function createSCIMGroupObjectFromGroup(
+  baseUri: string,
   group: Group,
   /**
    * The members are optional as they do not need to be included within actions such as
@@ -1673,6 +1692,9 @@ function createSCIMGroupObjectFromGroup(
     })),
     meta: {
       resourceType: 'Group',
+      created: group.createdAt,
+      lastModified: group.lastUpdatedAt ?? group.createdAt,
+      location: baseUri + '/Groups/' + group.id,
     },
   };
 }

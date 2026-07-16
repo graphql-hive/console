@@ -370,6 +370,8 @@ const UserModel = z.object({
   externalId: z.string(),
   deactivatedAt: z.string().nullable(),
   supertokenUserId: z.string(),
+  createdAt: z.string(),
+  lastUpdatedAt: z.string().nullable(),
 });
 
 export type User = z.TypeOf<typeof UserModel>;
@@ -383,4 +385,6 @@ const userFields = psql`
   , "external_id" AS "externalId"
   , to_json("deactivated_at") AS "deactivatedAt"
   , "supertoken_user_id" AS "supertokenUserId"
+  , to_json("created_at") AS "createdAt"
+  , to_json("last_updated_at") AS "lastUpdatedAt"
 `;
