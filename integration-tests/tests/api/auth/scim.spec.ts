@@ -1194,7 +1194,7 @@ describe.concurrent('/Users', () => {
         itemsPerPage: 1,
         schemas: ['urn:ietf:params:scim:api:messages:2.0:ListResponse'],
         startIndex: 1,
-        totalResults: 1,
+        totalResults: 3,
       });
       expect(body.Resources[0]).toEqual(initialBody.Resources[0]);
 
@@ -1208,7 +1208,7 @@ describe.concurrent('/Users', () => {
         itemsPerPage: 2,
         schemas: ['urn:ietf:params:scim:api:messages:2.0:ListResponse'],
         startIndex: 1,
-        totalResults: 2,
+        totalResults: 3,
       });
       expect(initialBody.Resources).toContainEqual(
         expect.objectContaining({
@@ -1233,7 +1233,7 @@ describe.concurrent('/Users', () => {
         Resources: expect.any(Array),
         itemsPerPage: 2,
         startIndex: 2,
-        totalResults: 2,
+        totalResults: 3,
       });
       expect(initialBody.Resources).toContainEqual(
         expect.objectContaining({
@@ -1252,7 +1252,7 @@ describe.concurrent('/Users', () => {
         Resources: expect.any(Array),
         itemsPerPage: 1,
         startIndex: 3,
-        totalResults: 1,
+        totalResults: 3,
       });
       expect(initialBody.Resources).toContainEqual(
         expect.objectContaining({
@@ -2710,7 +2710,7 @@ describe.concurrent('/Groups', () => {
         itemsPerPage: 1,
         schemas: ['urn:ietf:params:scim:api:messages:2.0:ListResponse'],
         startIndex: 1,
-        totalResults: 1,
+        totalResults: 3,
       });
       expect(body.Resources[0]).toEqual(initialBody.Resources[0]);
 
@@ -2724,7 +2724,7 @@ describe.concurrent('/Groups', () => {
         itemsPerPage: 2,
         schemas: ['urn:ietf:params:scim:api:messages:2.0:ListResponse'],
         startIndex: 1,
-        totalResults: 2,
+        totalResults: 3,
       });
       expect(initialBody.Resources).toContainEqual(
         expect.objectContaining({
@@ -2749,7 +2749,7 @@ describe.concurrent('/Groups', () => {
         Resources: expect.any(Array),
         itemsPerPage: 2,
         startIndex: 2,
-        totalResults: 2,
+        totalResults: 3,
       });
       expect(initialBody.Resources).toContainEqual(
         expect.objectContaining({
@@ -2768,7 +2768,7 @@ describe.concurrent('/Groups', () => {
         Resources: expect.any(Array),
         itemsPerPage: 1,
         startIndex: 3,
-        totalResults: 1,
+        totalResults: 3,
       });
       expect(initialBody.Resources).toContainEqual(
         expect.objectContaining({
