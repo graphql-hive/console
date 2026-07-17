@@ -184,6 +184,7 @@ export function useHive(clientOrOptions: HiveClient | YogaPluginOptions): Plugin
                 record.callback.finish(
                   {
                     ...args,
+                    // pass the original parsed document to the callback so the operation name and structure match the original
                     document:
                       record.parsedDocument ?? record.executionArgs?.document ?? args.document,
                   },
