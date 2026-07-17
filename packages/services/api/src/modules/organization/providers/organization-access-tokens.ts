@@ -32,13 +32,20 @@ import { Storage } from '../../shared/providers/storage';
 import * as OrganizationAccessKey from '../lib/organization-access-key';
 import * as OrganizationAccessTokensPermissions from '../lib/organization-access-token-permissions';
 import * as OrganizationMemberPermissions from '../lib/organization-member-permissions';
-import { PermissionGroup, PermissionRecord } from '../lib/permissions';
+import {
+  intersectPermissionsPerResourceLevelAssignment,
+  PermissionGroup,
+  PermissionRecord,
+} from '../lib/permissions';
 import {
   intersectResourceAssignments,
   ResourceAssignmentGroup,
   ResourceAssignmentModel,
 } from '../lib/resource-assignment-model';
+import { GroupRoleAssignment } from './group-role-assignment-store';
+import { Groups } from './groups';
 import { OrganizationAccessTokensCache } from './organization-access-tokens-cache';
+import type { OrganizationMemberRole } from './organization-member-roles';
 import { OrganizationMembers, OrganizationMembership } from './organization-members';
 import {
   resolveResourceAssignment,
@@ -374,46 +381,79 @@ export class OrganizationAccessTokens {
       this.session.raise('personalAccessToken:modify');
     }
 
-    // Handle permission assignment
-    //
-    // Must be intersection with the members permissions
+    let permissions: ReadonlyArray<string> | null = [];
+    let assignedResources: ResourceAssignmentGroup;
 
-    const assignedResources = intersectResourceAssignments(
-      await this.resourceAssignments.transformGraphQLResourceAssignmentInputToResourceAssignmentGroup(
-        organizationId,
-        args.assignedResources ?? { mode: 'ALL' },
-      ),
-      membership.assignedRole.resources,
-    );
+    if (viewer.provisionedByOrganizationId === null) {
+      // Handle permission assignment
+      //
+      // Must be intersection with the members permissions
 
-    // Handle permission assignment
-    //
-    // permissions -> null : The access tokens permissions equal members permission.
-    // permissions  -> non-null: The access tokens permissions equal a subset of the members permissions.
-
-    let permissions = args.permissions;
-
-    if (permissions !== null) {
-      const membershipPermissions = membership.assignedRole.role.allPermissions;
-
-      const membershipHasPermissionFilter = (permission: Permission) =>
-        membershipPermissions.has(permission);
-
-      // Permissions assigned to this access token must be valid organization access token permissions
-      const assignablePermissionFilter = (permission: Permission) =>
-        OrganizationAccessTokensPermissions.assignablePermissions.has(permission);
-
-      // Permissions assigned to this access token must be valid based on the organziations feature flags
-      const featurePermissionFlagFilter = this.createFeatureFlagPermissionFilter(organization);
-
-      const permissionFilter = (permission: Permission) =>
-        featurePermissionFlagFilter(permission) &&
-        assignablePermissionFilter(permission) &&
-        membershipHasPermissionFilter(permission);
-
-      permissions = Array.from(
-        new Set(permissions.filter(permission => permissionFilter(permission as Permission))),
+      assignedResources = intersectResourceAssignments(
+        await this.resourceAssignments.transformGraphQLResourceAssignmentInputToResourceAssignmentGroup(
+          organizationId,
+          args.assignedResources ?? { mode: 'ALL' },
+        ),
+        membership.assignedRole.resources,
       );
+
+      // Handle permission assignment
+      //
+      // permissions -> null : The access tokens permissions equal members permission.
+      // permissions  -> non-null: The access tokens permissions equal a subset of the members permissions.
+
+      permissions = args.permissions;
+
+      if (permissions !== null) {
+        const membershipPermissions = membership.assignedRole.role.allPermissions;
+
+        const membershipHasPermissionFilter = (permission: Permission) =>
+          membershipPermissions.has(permission);
+
+        // Permissions assigned to this access token must be valid organization access token permissions
+        const assignablePermissionFilter = (permission: Permission) =>
+          OrganizationAccessTokensPermissions.assignablePermissions.has(permission);
+
+        // Permissions assigned to this access token must be valid based on the organziations feature flags
+        const featurePermissionFlagFilter = this.createFeatureFlagPermissionFilter(organization);
+
+        const permissionFilter = (permission: Permission) =>
+          featurePermissionFlagFilter(permission) &&
+          assignablePermissionFilter(permission) &&
+          membershipHasPermissionFilter(permission);
+
+        permissions = Array.from(
+          new Set(permissions.filter(permission => permissionFilter(permission as Permission))),
+        );
+      }
+    } else {
+      // We can not really filter down the assigned resources
+      // as each group maps different permissions and resources
+      // the down filtering must happen later on when transforming the access token to authorization statements
+      assignedResources =
+        await this.resourceAssignments.transformGraphQLResourceAssignmentInputToResourceAssignmentGroup(
+          organizationId,
+          args.assignedResources ?? { mode: 'ALL' },
+        );
+
+      const memberGroupMappings =
+        await Groups.getAllGroupMembershipsWithRoleForOrganizationMembership(
+          this.logger,
+          this.pool,
+          membership,
+        );
+
+      // At least we can scope down the permissions to some extend
+      if (args.permissions !== null) {
+        const effectivePermissions = new Set<Permission>();
+        for (const { role } of memberGroupMappings) {
+          for (const permission of role.allPermissions) {
+            effectivePermissions.add(permission);
+          }
+        }
+
+        permissions = Array.from(effectivePermissions.intersection(new Set(args.permissions)));
+      }
     }
 
     return this._create({
@@ -1216,7 +1256,7 @@ export class OrganizationAccessTokens {
         );
     };
 
-  static computeAuthorizationStatements(
+  static computeAuthorizationStatementsForMembership(
     accessToken: OrganizationAccessToken,
     membership: OrganizationMembership,
   ) {
@@ -1255,6 +1295,59 @@ export class OrganizationAccessTokens {
       permissionsPerLevel,
       resolvedResources,
     );
+  }
+
+  static computeAuthorizationStatementsForGroupMemberships(
+    accessToken: OrganizationAccessToken,
+    groupMemberships: Array<{
+      role: OrganizationMemberRole;
+      groupRoleAssignment: GroupRoleAssignment;
+    }>,
+  ) {
+    let hasPersonalAccessTokenModifyPermission = false;
+
+    for (const group of groupMemberships) {
+      if (group.role.allPermissions.has('personalAccessToken:modify')) {
+        hasPersonalAccessTokenModifyPermission = true;
+      }
+    }
+
+    // if the user does not have this, the user cannot have personal access tokens.
+    if (!hasPersonalAccessTokenModifyPermission) {
+      return [];
+    }
+
+    const accessTokenPermissionsPerResourceLevel = accessToken.permissions
+      ? permissionsToPermissionsPerResourceLevelAssignment(accessToken.permissions)
+      : null;
+
+    return groupMemberships.flatMap(({ role, groupRoleAssignment }) => {
+      const permissionsPerLevel = accessTokenPermissionsPerResourceLevel
+        ? // In case some resources are specified on the access token
+          // we need to scope down the group specified resources
+          intersectPermissionsPerResourceLevelAssignment(
+            accessTokenPermissionsPerResourceLevel,
+            role.permissions,
+          )
+        : role.permissions;
+
+      const resolvedResources = resolveResourceAssignment({
+        organizationId: accessToken.organizationId,
+        projects: accessToken.assignedResources
+          ? // In case some resources are specified on the access token
+            // we need to scope down the group specified resources
+            intersectResourceAssignments(
+              groupRoleAssignment.assignedResources,
+              accessToken.assignedResources,
+            )
+          : groupRoleAssignment.assignedResources,
+      });
+      return translateResolvedResourcesToAuthorizationPolicyStatements(
+        accessToken.organizationId,
+        permissionsPerLevel,
+        resolvedResources,
+      );
+    });
   }
 }
 

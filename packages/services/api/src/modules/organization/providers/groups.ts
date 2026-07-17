@@ -5,9 +5,9 @@ import { isUUID } from '../../../shared/is-uuid';
 import { AuthorizationPolicyStatement, Session } from '../../auth/lib/authz';
 import { Logger } from '../../shared/providers/logger';
 import { GroupMemberStore } from './group-member-store';
-import { GroupRoleAssignmentStore } from './group-role-assignment-store';
+import { GroupRoleAssignment, GroupRoleAssignmentStore } from './group-role-assignment-store';
 import { GroupStore, type Group } from './group-store';
-import { OrganizationMemberRoles } from './organization-member-roles';
+import { OrganizationMemberRoles, type OrganizationMemberRole } from './organization-member-roles';
 import type { OrganizationMembership } from './organization-members';
 import {
   resolveResourceAssignment,
@@ -317,6 +317,46 @@ export class Groups {
       membership.userId,
     );
 
+    const mappings = await Groups.getAllGroupMembershipsWithRoleForOrganizationMembership(
+      logger,
+      pool,
+      membership,
+    );
+
+    logger.debug(
+      'compute policy statements. (organizationId=%s, userId=%s)',
+      membership.organizationId,
+      membership.userId,
+    );
+
+    const policyStatements: Array<AuthorizationPolicyStatement> = [];
+    for (const groupMapping of mappings) {
+      const resolvedResources = resolveResourceAssignment({
+        organizationId: membership.organizationId,
+        projects: groupMapping.groupRoleAssignment.assignedResources,
+      });
+
+      const statements = translateResolvedResourcesToAuthorizationPolicyStatements(
+        membership.organizationId,
+        groupMapping.role.permissions,
+        resolvedResources,
+      );
+      policyStatements.push(...statements);
+    }
+
+    return policyStatements;
+  }
+
+  static async getAllGroupMembershipsWithRoleForOrganizationMembership(
+    logger: Logger,
+    pool: CommonQueryMethods,
+    membership: OrganizationMembership,
+  ): Promise<
+    Array<{
+      role: OrganizationMemberRole;
+      groupRoleAssignment: GroupRoleAssignment;
+    }>
+  > {
     const groupMemberships = await Groups.getGroupsForOrganizationMembership(pool, membership);
     if (groupMemberships.length === null) {
       logger.debug(
@@ -324,7 +364,7 @@ export class Groups {
         membership.organizationId,
         membership.userId,
       );
-      return null;
+      return [];
     }
     logger.debug(
       'memberships found. resolve groups. (organizationId=%s, userId=%s)',
@@ -347,34 +387,25 @@ export class Groups {
       groupMappings.map(m => m.roleId),
     );
 
-    logger.debug(
-      'compute policy statements. (organizationId=%s, userId=%s)',
-      membership.organizationId,
-      membership.userId,
-    );
+    const result: Array<{
+      groupRoleAssignment: GroupRoleAssignment;
+      role: OrganizationMemberRole;
+    }> = [];
 
-    const policyStatements: Array<AuthorizationPolicyStatement> = [];
-    for (const groupMapping of groupMappings) {
-      const role = roles.get(groupMapping.roleId);
+    for (const groupRoleAssignment of groupMappings) {
+      const role = roles.get(groupRoleAssignment.roleId);
+
       if (!role) {
-        // if the role no longer exists for whatever reason we just skip the group
         continue;
       }
 
-      const resolvedResources = resolveResourceAssignment({
-        organizationId: membership.organizationId,
-        projects: groupMapping.assignedResources,
+      result.push({
+        groupRoleAssignment,
+        role,
       });
-
-      const statements = translateResolvedResourcesToAuthorizationPolicyStatements(
-        membership.organizationId,
-        role.permissions,
-        resolvedResources,
-      );
-      policyStatements.push(...statements);
     }
 
-    return policyStatements;
+    return result;
   }
 }
 

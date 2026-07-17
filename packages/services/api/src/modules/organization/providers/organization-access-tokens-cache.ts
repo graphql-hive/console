@@ -8,12 +8,14 @@ import { AuthorizationPolicyStatement } from '../../auth/lib/authz';
 import { Logger } from '../../shared/providers/logger';
 import { PrometheusConfig } from '../../shared/providers/prometheus-config';
 import { REDIS_INSTANCE, type Redis } from '../../shared/providers/redis';
+import { Groups } from './groups';
 import {
   findById,
   OrganizationAccessTokens,
   type OrganizationAccessToken,
 } from './organization-access-tokens';
 import { OrganizationMembers } from './organization-members';
+import { UsersStore } from './users-store';
 
 export type CachedAccessToken = {
   id: string;
@@ -78,6 +80,17 @@ export class OrganizationAccessTokensCache {
     if (accessToken.userId) {
       logger.debug('personal access token detected');
 
+      const provisionedUser = await UsersStore.findUserProvisionedByOrganizationIdAndId(
+        this.pool,
+        accessToken.organizationId,
+        accessToken.userId,
+      );
+
+      if (provisionedUser?.deactivatedAt) {
+        logger.debug('user is disabled');
+        return null;
+      }
+
       const membership = await OrganizationMembers.findOrganizationMembership({
         logger,
         pool: this.pool,
@@ -89,10 +102,24 @@ export class OrganizationAccessTokensCache {
         return null;
       }
 
-      authorizationPolicyStatements = OrganizationAccessTokens.computeAuthorizationStatements(
-        accessToken,
-        membership,
-      );
+      if (provisionedUser) {
+        const mappings = await Groups.getAllGroupMembershipsWithRoleForOrganizationMembership(
+          logger,
+          this.pool,
+          membership,
+        );
+        authorizationPolicyStatements =
+          OrganizationAccessTokens.computeAuthorizationStatementsForGroupMemberships(
+            accessToken,
+            mappings,
+          );
+      } else {
+        authorizationPolicyStatements =
+          OrganizationAccessTokens.computeAuthorizationStatementsForMembership(
+            accessToken,
+            membership,
+          );
+      }
     }
 
     return {
