@@ -29,7 +29,12 @@ export class UsersStore {
     return await this.pool.maybeOne(query).then(UserModel.nullable().parse);
   }
 
-  async findUserProvisionedByOrganizationIdAndId(
+  findUserProvisionedByOrganizationIdAndId(organizationId: string, userId: string) {
+    return UsersStore.findUserProvisionedByOrganizationIdAndId(this.pool, organizationId, userId);
+  }
+
+  static async findUserProvisionedByOrganizationIdAndId(
+    pool: CommonQueryMethods,
     organizationId: string,
     userId: string,
   ): Promise<User | null> {
@@ -44,7 +49,7 @@ export class UsersStore {
 
     `;
 
-    return await this.pool.maybeOne(query).then(UserModel.nullable().parse);
+    return await pool.maybeOne(query).then(UserModel.nullable().parse);
   }
 
   async findUserProvisionedByOrganizationIdAndDisplayName(
