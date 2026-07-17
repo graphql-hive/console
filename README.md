@@ -82,7 +82,7 @@ Hive Console is MIT licensed and can run on your own infrastructure. To get star
 This repository is a pnpm/Turborepo monorepo containing the web console, GraphQL services, CLI,
 workers, migrations, and integration tests.
 
-Prerequisites: Node.js 24.17.0 or later, pnpm 10.33.2 or later, and Docker 26.1.1 or later.
+Prerequisites: Node.js 24.18.0 or later, pnpm 10.33.2 or later, and Docker 26.1.1 or later.
 
 ```bash
 pnpm install
