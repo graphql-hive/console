@@ -436,7 +436,7 @@
     },
     {
       "datasource": { "type": "tempo", "uid": "TEMPO_DATASOURCE_UID" },
-      "description": "Per-target group evaluations slower than $slowGroupThreshold. Inspect target.id, rules.in_group, time_window_minutes on the row; click to see the ClickHouse query and per-rule PG transactions inside the group.",
+      "description": "Per-target group evaluations slower than $slowGroupThreshold. The row's filter.applied, window.needs_previous, and metric.needs_percentiles explain the query cost (filtered legacy-table path, 2x window scan, heavy percentile blob); click to see the ClickHouse query and per-rule PG transactions inside the group.",
       "fieldConfig": {
         "defaults": {
           "color": { "mode": "fixed" },
@@ -462,7 +462,7 @@
           "datasource": { "type": "tempo", "uid": "TEMPO_DATASOURCE_UID" },
           "filters": [{ "id": "slow-groups-filter", "operator": "=", "scope": "span" }],
           "limit": 100,
-          "query": "{name=\"evaluate-group\" && duration>$slowGroupThreshold} | select(.target.id, .rules.in_group, .time_window_minutes)",
+          "query": "{name=\"evaluate-group\" && duration>$slowGroupThreshold} | select(.target.id, .rules.in_group, .time_window_minutes, .filter.applied, .metric.types, .window.needs_previous, .metric.needs_percentiles)",
           "queryType": "traceql",
           "refId": "A",
           "spss": 20,
