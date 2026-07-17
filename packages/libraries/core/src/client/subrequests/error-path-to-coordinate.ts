@@ -123,7 +123,7 @@ export function errorPathToCoordinate(
       if (
         concreteType &&
         isObjectType(concreteType) &&
-        schema.getPossibleTypes(currentType).some(t => t === concreteType)
+        schema.getPossibleTypes(currentType).includes(concreteType)
       ) {
         currentType = concreteType;
       }
