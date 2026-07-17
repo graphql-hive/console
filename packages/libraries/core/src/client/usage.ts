@@ -12,8 +12,8 @@ import { version } from '../version.js';
 import { createAgent } from './agent.js';
 import { collectSchemaCoordinates } from './collect-schema-coordinates.js';
 import { dynamicSampling, randomSampling } from './sampling.js';
+import { errorPathToCoordinate } from './subrequests/error-path-to-coordinate.js';
 import { extractCoordinates } from './subrequests/extract-coordinates.js';
-import { pathToCoordinate } from './subrequests/path-to-coordinate.js';
 import type {
   AbortAction,
   ClientInfo,
@@ -127,9 +127,6 @@ export function createUsage(pluginOptions: HiveInternalPluginOptions): UsageColl
           if (action.type === 'request') {
             const operation = action.data;
             const fetches = operation.execution.fetches?.map((f): OperationSubRequest => {
-              const documentRoot = f.document.definitions.find(
-                (def): def is OperationDefinitionNode => def.kind === 'OperationDefinition',
-              )?.operation satisfies 'subscription' | 'mutation' | 'query' | undefined;
               const subgraphFields = extractCoordinates({
                 schema: f.subgraphSchema,
                 document: f.document,
@@ -138,7 +135,8 @@ export function createUsage(pluginOptions: HiveInternalPluginOptions): UsageColl
               const errors: { coordinate: string; code?: string }[] = [];
               for (const error of f.result?.errors ?? []) {
                 const coordinate =
-                  error.path && pathToCoordinate(f.subgraphSchema, error.path, documentRoot);
+                  error.path &&
+                  errorPathToCoordinate(f.subgraphSchema, error.path, f.document, f.result?.data);
                 if (coordinate) {
                   errors.push({
                     coordinate,

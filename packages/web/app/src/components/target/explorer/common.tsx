@@ -66,7 +66,7 @@ export function SchemaExplorerUsageStats(props: {
         <div className="grow">
           <div className="min-w-[25px] text-center">{formatNumber(usage.total)}</div>
         </div>
-        {availability ? (
+        {availability !== null ? (
           <div className="min-w-[25px]">
             <Tooltip>
               <TooltipContent align="end">
