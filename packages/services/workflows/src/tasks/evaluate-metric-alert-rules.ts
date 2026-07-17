@@ -1,5 +1,6 @@
 import pLimit from 'p-limit';
 import { z } from 'zod';
+import type { SqlValue } from '@hive/clickhouse';
 import { psql } from '@hive/postgres';
 import { SpanKind, SpanStatusCode, trace } from '@hive/service-common';
 import { defineTask, implementTask } from '../kit.js';
@@ -61,13 +62,20 @@ export const task = implementTask(EvaluateMetricAlertRulesTask, async args => {
   const rules = await fetchEnabledRules(context.pg);
   const groups = groupRulesByQuery(rules);
 
+  // Parse each group's saved filter once, reused by the gauges below and by
+  // processGroup, so a filtered group isn't re-parsed within the same tick.
+  const groupFilters = [...groups.values()].map(group => ({
+    group,
+    filterConditions: buildSavedFilterConditions(group[0].savedFilterFilters, logger),
+  }));
+
   // Population gauges for the expensive with-filter rules. "Filtered" means the
   // filter yields query conditions (the legacy-table path), not just that a
   // saved_filter_id is set. Both labels set each tick (incl. 0) to avoid staleness.
   let filteredGroups = 0;
   let filteredRules = 0;
-  for (const group of groups.values()) {
-    if (buildSavedFilterConditions(group[0].savedFilterFilters, logger).length > 0) {
+  for (const { group, filterConditions } of groupFilters) {
+    if (filterConditions.length > 0) {
       filteredGroups += 1;
       filteredRules += group.length;
     }
@@ -87,7 +95,7 @@ export const task = implementTask(EvaluateMetricAlertRulesTask, async args => {
   // Evaluate only groups with at least one due member. Members of a group share
   // a window (so one cadence), and the batched UPDATE below keeps their
   // last_evaluated_at aligned, so a group is due as a unit.
-  const dueGroupList = [...groups.values()].filter(group =>
+  const dueGroupList = groupFilters.filter(({ group }) =>
     group.some(rule => isRuleDue(rule, evaluationTime)),
   );
 
@@ -99,17 +107,14 @@ export const task = implementTask(EvaluateMetricAlertRulesTask, async args => {
     return;
   }
 
-  async function processGroup(groupRules: (typeof rules)[number][]): Promise<{
+  async function processGroup(
+    groupRules: (typeof rules)[number][],
+    filterConditions: SqlValue[],
+  ): Promise<{
     failed: boolean;
     evaluatedIds: string[];
   }> {
     const representative = groupRules[0];
-
-    // All rules in a group share the same saved filter (it's part of the group key),
-    // so build the ClickHouse conditions once from the representative.
-    // A malformed filter yields no conditions (evaluates unfiltered) and is logged,
-    // isolating the failure to this group.
-    const filterConditions = buildSavedFilterConditions(representative.savedFilterFilters, logger);
 
     // Only PERCENTAGE_CHANGE rules need the prior window; if none in the group do,
     // skip it (half the scan) and persist a null previousValue.
@@ -230,7 +235,7 @@ export const task = implementTask(EvaluateMetricAlertRulesTask, async args => {
         'rules.count': rules.length,
         'groups.count': groups.size,
         'groups.due': dueGroupList.length,
-        'rules.due': dueGroupList.reduce((total, group) => total + group.length, 0),
+        'rules.due': dueGroupList.reduce((total, { group }) => total + group.length, 0),
         'evaluation.time': evaluationTime.toISOString(),
       },
     },
@@ -245,7 +250,9 @@ export const task = implementTask(EvaluateMetricAlertRulesTask, async args => {
         let groupsFailed = 0;
         const evaluatedRuleIds: string[] = [];
         const results = await Promise.allSettled(
-          dueGroupList.map(group => limit(() => processGroup(group))),
+          dueGroupList.map(({ group, filterConditions }) =>
+            limit(() => processGroup(group, filterConditions)),
+          ),
         );
         for (const r of results) {
           if (r.status === 'rejected') {
