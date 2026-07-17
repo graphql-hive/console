@@ -57,13 +57,6 @@ export function createWriter({
     https: httpsAgent,
   };
 
-  logger.debug(
-    'ClickHouse writer initialized (async_insert=1, wait_for_async_insert=%s, async_insert_busy_timeout_ms=%s, async_insert_max_data_size=%s)',
-    clickhouse.wait_for_async_insert,
-    clickhouse.async_insert_busy_timeout_ms,
-    clickhouse.async_insert_max_data_size,
-  );
-
   return {
     async writeOperations(operations: string[]) {
       if (operations.length === 0) {
@@ -73,7 +66,6 @@ export function createWriter({
       const csv = joinIntoSingleMessage(operations);
       const compressed = await compress(csv);
 
-      const startedAt = performance.now();
       await writeCsv(
         clickhouse,
         agents,
@@ -81,13 +73,6 @@ export function createWriter({
         compressed,
         logger,
         3,
-      );
-      // With wait_for_async_insert=1 this blocks until the row is flushed (queryable);
-      // fire-and-forget returns in a few ms. Logged at debug so it stays out of prod (info).
-      logger.debug(
-        'operations INSERT completed in %sms (operations=%s)',
-        performance.now() - startedAt,
-        operations.length,
       );
     },
     async writeSubscriptionOperations(operations: string[]) {
