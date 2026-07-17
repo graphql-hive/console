@@ -21,7 +21,7 @@ COPY --from=config extension-statsviz/ ./extension-statsviz/
 RUN CGO_ENABLED=0 builder --config=/build/builder-config.yaml
 
 # Stage 2: Final Image
-FROM alpine:3.14
+FROM alpine:3.23
 
 WORKDIR /app
 
