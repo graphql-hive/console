@@ -1,4 +1,12 @@
-import { DocumentNode, ExecutionArgs, GraphQLError, GraphQLSchema, Kind, parse } from 'graphql';
+import {
+  ASTNode,
+  DocumentNode,
+  ExecutionArgs,
+  GraphQLError,
+  GraphQLSchema,
+  Kind,
+  parse,
+} from 'graphql';
 import { _createLRUCache, YogaServer, type GraphQLParams, type Plugin } from 'graphql-yoga';
 import {
   addTypenames,
@@ -26,6 +34,11 @@ type CacheRecord = {
   callback: CollectUsage;
   paramsArgs: GraphQLParams;
   executionArgs?: ExecutionArgs;
+  /**
+   * Unmodified document. This is used in usage tracking to
+   * generate a cache key (and therefore operation key) that is identical
+   * to what exists in prior versions.
+   */
   parsedDocument?: DocumentNode;
   /** persisted document id */
   experimental__documentId?: string;
@@ -99,11 +112,13 @@ export function useHive(clientOrOptions: HiveClient | YogaPluginOptions): Plugin
     // since response-cache modifies the executed GraphQL document, we need to extract it after parsing.
     onParse(parseCtx) {
       return ctx => {
-        if (ctx.result.kind === Kind.DOCUMENT) {
+        const result = ctx.result as ASTNode;
+        if (result.kind === Kind.DOCUMENT) {
           const record = contextualCache.get(ctx.context);
           if (record) {
-            record.parsedDocument = ctx.result;
-            parsedDocumentCache.set(parseCtx.params.source, ctx.result);
+            // set the documents on thee operation context to be used in other callbacks
+            record.parsedDocument = result;
+            parsedDocumentCache.set(parseCtx.params.source, result);
           }
 
           if (fieldLevelMetricsEnabled && operationCache) {
@@ -121,8 +136,8 @@ export function useHive(clientOrOptions: HiveClient | YogaPluginOptions): Plugin
               }
             } else if (latestSchema) {
               const modifiedDocument = addTypenames(ctx.result, latestSchema);
-              operationCache.set(query, ctx.result === modifiedDocument || modifiedDocument);
-              if (ctx.result !== modifiedDocument) {
+              operationCache.set(query, result === modifiedDocument || modifiedDocument);
+              if (result !== modifiedDocument) {
                 parseCtx.setParsedDocument(modifiedDocument);
               }
             }
@@ -145,6 +160,7 @@ export function useHive(clientOrOptions: HiveClient | YogaPluginOptions): Plugin
               record.callback.finish(
                 {
                   ...record.executionArgs,
+                  // pass the original parsed document to the callback so the operation name and structure match the original
                   document: record.parsedDocument ?? record.executionArgs.document,
                 },
                 result,
@@ -166,7 +182,11 @@ export function useHive(clientOrOptions: HiveClient | YogaPluginOptions): Plugin
             onEnd() {
               args.contextValue.waitUntil(
                 record.callback.finish(
-                  args,
+                  {
+                    ...args,
+                    document:
+                      record.parsedDocument ?? record.executionArgs?.document ?? args.document,
+                  },
                   errors.length ? { errors } : {},
                   record.experimental__documentId,
                 ),
