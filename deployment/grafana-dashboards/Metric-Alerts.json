@@ -462,7 +462,7 @@
           "datasource": { "type": "tempo", "uid": "TEMPO_DATASOURCE_UID" },
           "filters": [{ "id": "slow-groups-filter", "operator": "=", "scope": "span" }],
           "limit": 100,
-          "query": "{name=\"evaluate-group\" && duration>$slowGroupThreshold} | select(.target.id, .rules.in_group, .time_window_minutes, .filter.applied, .metric.types, .window.needs_previous, .metric.needs_percentiles)",
+          "query": "{name=\"evaluate-group\" && duration>$slowGroupThreshold} | select(span.target.id, span.rules.in_group, span.time_window_minutes, span.filter.applied, span.window.needs_previous, span.metric.needs_percentiles)",
           "queryType": "traceql",
           "refId": "A",
           "spss": 20,
