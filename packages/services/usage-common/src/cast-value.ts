@@ -49,7 +49,7 @@ export function castTuple(value: any[]): string {
 
 const formatClickHouseValue = (val: unknown): string => {
   if (typeof val === 'string') {
-    const escaped = val.replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+    const escaped = val.replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/"/g, '""');
     return `'${escaped}'`;
   }
   if (val === null || val === undefined) {

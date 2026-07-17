@@ -143,10 +143,7 @@ export function createProcessor(config: { logger: ServiceLogger }) {
 
         for (const raw of rawReport.errors ?? []) {
           const err: ProcessedOperationErrorRecord = {
-            errors: raw.errors.map(e => [
-              e.code ? String(e.code).replace(/"/g, '""') : '',
-              e.coordinate,
-            ]),
+            errors: raw.errors.map(e => [e.code ?? '', e.coordinate]),
             expires_at: raw.expiresAt || raw.timestamp + RETENTION_FALLBACK * DAY_IN_MS,
             hash: raw.operationMapKey,
             target: rawReport.target,
