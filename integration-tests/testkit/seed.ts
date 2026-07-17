@@ -47,6 +47,7 @@ import {
   pollFor,
   publishSchema,
   readClientStats,
+  readErrorCodes,
   readOperationBody,
   readOperationsStats,
   readSchemaCoordinateStats,
@@ -1217,6 +1218,24 @@ export function initSeed() {
                       projectSlug: project.slug,
                       targetSlug: ttarget.slug,
                       schemaCoordinate,
+                    },
+                    period,
+                    ownerToken,
+                  ).then(r => r.expectNoGraphQLErrors());
+                },
+                async readErrorCodes(
+                  schemaCoordinate: string,
+                  period: GraphQLSchema.DateRangeInput,
+                  ttarget: TargetOverwrite = target,
+                ) {
+                  return await readErrorCodes(
+                    schemaCoordinate,
+                    {
+                      bySelector: {
+                        organizationSlug: organization.slug,
+                        projectSlug: project.slug,
+                        targetSlug: ttarget.slug,
+                      },
                     },
                     period,
                     ownerToken,

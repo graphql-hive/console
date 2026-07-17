@@ -1536,6 +1536,41 @@ export function readOperationsStats(
   });
 }
 
+export function readErrorCodes(
+  coordinate: string,
+  target: GraphQLSchema.TargetReferenceInput,
+  period: GraphQLSchema.DateRangeInput,
+  token: string,
+) {
+  return execute({
+    document: graphql(`
+      query readErrorCodes(
+        $coordinate: String!
+        $target: TargetReferenceInput!
+        $period: DateRangeInput!
+      ) {
+        target(reference: $target) {
+          schemaCoordinateStats(schemaCoordinate: $coordinate, period: $period) {
+            errorCodes {
+              edges {
+                node {
+                  code
+                }
+              }
+            }
+          }
+        }
+      }
+    `),
+    token,
+    variables: {
+      target,
+      period,
+      coordinate,
+    },
+  });
+}
+
 export function readSchemaCoordinateStats(
   selector: {
     organizationSlug: string;

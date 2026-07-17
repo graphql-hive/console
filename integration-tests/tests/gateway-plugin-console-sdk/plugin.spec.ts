@@ -1,5 +1,5 @@
 import { AddressInfo } from 'node:net';
-import { DocumentNode, parse } from 'graphql';
+import { DocumentNode, GraphQLError, parse } from 'graphql';
 import { createLogger, createYoga } from 'graphql-yoga';
 import { pollFor, readOperationsStats } from 'testkit/flow';
 import { ProjectType } from 'testkit/gql/graphql';
@@ -55,8 +55,13 @@ async function setup(subgraphs: {
 }) {
   const { createOrg } = await initSeed().createOwner();
   const { createProject } = await createOrg();
-  const { createTargetAccessToken, waitForRequestsCollected, readSchemaCoordinateStats, target } =
-    await createProject(ProjectType.Single);
+  const {
+    createTargetAccessToken,
+    waitForRequestsCollected,
+    readSchemaCoordinateStats,
+    target,
+    readErrorCodes,
+  } = await createProject(ProjectType.Single);
   const token = await createTargetAccessToken({});
   const usageAddress = await getServiceHost('usage', 8081);
   const plugin = useHive({
@@ -99,6 +104,7 @@ async function setup(subgraphs: {
     gateway,
     waitForRequestsCollected,
     readSchemaCoordinateStats,
+    readErrorCodes,
     token,
   };
 }
@@ -381,6 +387,7 @@ describe('GraphQL Hive Plugin', () => {
   });
 
   test('errors are tracked', async () => {
+    const thrownErrorCode = 'OOPSIE';
     const subgraphs = {
       products: {
         typeDefs: parse(/* GraphQL */ `
@@ -417,17 +424,25 @@ describe('GraphQL Hive Plugin', () => {
           },
           User: {
             name: () => {
-              const err = new Error('Something went wrong');
-              Object.assign(err, { code: 'OOPSIE' });
-              throw err;
+              throw new GraphQLError('Something went wrong', {
+                extensions: {
+                  code: thrownErrorCode,
+                },
+              });
             },
           },
         },
       },
     };
 
-    const { readSchemaCoordinateStats, target, gateway, token, waitForRequestsCollected } =
-      await setup(subgraphs);
+    const {
+      readSchemaCoordinateStats,
+      readErrorCodes,
+      target,
+      gateway,
+      token,
+      waitForRequestsCollected,
+    } = await setup(subgraphs);
 
     const request = new Request('http://localhost:4000/graphql', {
       method: 'POST',
@@ -499,8 +514,11 @@ describe('GraphQL Hive Plugin', () => {
         token.secret,
       ).then(r => r.expectNoGraphQLErrors());
       const stats = await readSchemaCoordinateStats('Query.product', period);
+      const errorCodes = await readErrorCodes('User.name', period);
+      const code = errorCodes.target?.schemaCoordinateStats?.errorCodes?.edges?.[0]?.node?.code;
 
       return (
+        code === thrownErrorCode &&
         stats.target?.schemaCoordinateStats.totalResolutions === 1 &&
         stats.target?.schemaCoordinateStats.totalRequests === 1 &&
         stats.target?.schemaCoordinateStats.totalFailures === 0 &&
@@ -523,6 +541,99 @@ describe('GraphQL Hive Plugin', () => {
         stats.target?.schemaCoordinateStats.totalFailures === 1 &&
         operationsStatsResult.target?.operationsStats.operations.edges[0].node.count === 1
       );
+    });
+  });
+
+  test('errors with special characters are tracked', async () => {
+    const thrownErrorCode = 'OOPS\"IE';
+    const subgraphs = {
+      products: {
+        typeDefs: parse(/* GraphQL */ `
+          extend type Query {
+            product: Product
+          }
+
+          type Product @key(fields: "id") {
+            id: ID!
+            price: Int
+          }
+        `),
+        resolvers: {
+          Query: {
+            product: () => {
+              return { id: 1, price: 20.2 };
+            },
+          },
+        },
+      },
+      users: {
+        typeDefs: parse(/* GraphQL */ `
+          extend type Query {
+            users: [User]
+          }
+          type User {
+            id: ID!
+            name: String
+          }
+        `),
+        resolvers: {
+          Query: {
+            users: () => [{ id: 2 }],
+          },
+          User: {
+            name: () => {
+              throw new GraphQLError('Something went wrong', {
+                extensions: {
+                  code: thrownErrorCode,
+                },
+              });
+            },
+          },
+        },
+      },
+    };
+
+    const { readErrorCodes, gateway, waitForRequestsCollected } = await setup(subgraphs);
+
+    const request = new Request('http://localhost:4000/graphql', {
+      method: 'POST',
+      headers: {
+        'x-graphql-client-name': 'app-name',
+        'x-graphql-client-version': 'app-version',
+        'content-type': 'application/json',
+        accept: 'application/json',
+      },
+      body: JSON.stringify({
+        query: `
+          {
+            product {
+              id
+            }
+            users {
+              id
+              name
+            }
+          }
+        `,
+      }),
+    });
+
+    const usageCollected = waitForRequestsCollected(1);
+    await gateway.handle(request);
+    await usageCollected;
+
+    const yesterday = new Date();
+    yesterday.setDate(yesterday.getDate() - 1);
+    const period = {
+      from: yesterday.toISOString(),
+      to: new Date().toISOString(),
+    };
+
+    await pollFor(async () => {
+      const errorCodes = await readErrorCodes('User.name', period);
+      const code = errorCodes.target?.schemaCoordinateStats?.errorCodes?.edges?.[0]?.node?.code;
+
+      return code === thrownErrorCode;
     });
   });
 });
