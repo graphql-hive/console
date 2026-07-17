@@ -273,8 +273,124 @@
       "type": "timeseries"
     },
     {
+      "datasource": { "type": "prometheus", "uid": "PROM_DATASOURCE_UID" },
+      "description": "Enabled query groups (one ClickHouse query each) split by whether a saved filter is attached. Filtered groups read the heavier legacy tables (cost scales with the target's traffic cardinality), so watch this for growth in the more expensive with-filter population.",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": {
+            "axisCenteredZero": false,
+            "axisPlacement": "auto",
+            "axisSoftMin": 0,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "stacking": { "group": "A", "mode": "none" },
+            "thresholdsStyle": { "mode": "off" }
+          },
+          "mappings": [],
+          "min": 0,
+          "noValue": "0",
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }] },
+          "unit": "short"
+        },
+        "overrides": [
+          {
+            "matcher": { "id": "byName", "options": "with filter" },
+            "properties": [{ "id": "color", "value": { "fixedColor": "orange", "mode": "fixed" } }]
+          }
+        ]
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 16 },
+      "id": 5,
+      "options": {
+        "legend": { "calcs": ["last", "max"], "displayMode": "table", "placement": "bottom", "showLegend": true },
+        "tooltip": { "mode": "multi", "sort": "desc" }
+      },
+      "pluginVersion": "9.3.6",
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "PROM_DATASOURCE_UID" },
+          "editorMode": "code",
+          "expr": "hive_metric_alert_rule_groups{filtered=\"true\"}",
+          "legendFormat": "with filter",
+          "range": true,
+          "refId": "A"
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "PROM_DATASOURCE_UID" },
+          "editorMode": "code",
+          "expr": "hive_metric_alert_rule_groups{filtered=\"false\"}",
+          "legendFormat": "no filter",
+          "range": true,
+          "refId": "B"
+        }
+      ],
+      "title": "Alert query groups: filtered vs unfiltered",
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "PROM_DATASOURCE_UID" },
+      "description": "Enabled alert rules split by whether a saved filter is attached. Companion to the query-groups panel (a group can hold several rules that share one query).",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": {
+            "axisCenteredZero": false,
+            "axisPlacement": "auto",
+            "axisSoftMin": 0,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "stacking": { "group": "A", "mode": "none" },
+            "thresholdsStyle": { "mode": "off" }
+          },
+          "mappings": [],
+          "min": 0,
+          "noValue": "0",
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }] },
+          "unit": "short"
+        },
+        "overrides": [
+          {
+            "matcher": { "id": "byName", "options": "with filter" },
+            "properties": [{ "id": "color", "value": { "fixedColor": "orange", "mode": "fixed" } }]
+          }
+        ]
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 16 },
+      "id": 6,
+      "options": {
+        "legend": { "calcs": ["last", "max"], "displayMode": "table", "placement": "bottom", "showLegend": true },
+        "tooltip": { "mode": "multi", "sort": "desc" }
+      },
+      "pluginVersion": "9.3.6",
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "PROM_DATASOURCE_UID" },
+          "editorMode": "code",
+          "expr": "hive_metric_alert_enabled_rules{filtered=\"true\"}",
+          "legendFormat": "with filter",
+          "range": true,
+          "refId": "A"
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "PROM_DATASOURCE_UID" },
+          "editorMode": "code",
+          "expr": "hive_metric_alert_enabled_rules{filtered=\"false\"}",
+          "legendFormat": "no filter",
+          "range": true,
+          "refId": "B"
+        }
+      ],
+      "title": "Enabled rules: filtered vs unfiltered",
+      "type": "timeseries"
+    },
+    {
       "collapsed": false,
-      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 16 },
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 24 },
       "id": 100,
       "panels": [],
       "title": "Traces",
@@ -296,7 +412,7 @@
         },
         "overrides": []
       },
-      "gridPos": { "h": 9, "w": 12, "x": 0, "y": 17 },
+      "gridPos": { "h": 9, "w": 12, "x": 0, "y": 25 },
       "id": 101,
       "options": {
         "cellHeight": "sm",
@@ -334,7 +450,7 @@
         },
         "overrides": []
       },
-      "gridPos": { "h": 9, "w": 12, "x": 12, "y": 17 },
+      "gridPos": { "h": 9, "w": 12, "x": 12, "y": 25 },
       "id": 102,
       "options": {
         "cellHeight": "sm",
@@ -389,7 +505,7 @@
           }
         ]
       },
-      "gridPos": { "h": 9, "w": 12, "x": 0, "y": 26 },
+      "gridPos": { "h": 9, "w": 12, "x": 0, "y": 34 },
       "id": 104,
       "options": {
         "legend": {
@@ -443,7 +559,7 @@
         },
         "overrides": []
       },
-      "gridPos": { "h": 9, "w": 12, "x": 12, "y": 26 },
+      "gridPos": { "h": 9, "w": 12, "x": 12, "y": 34 },
       "id": 105,
       "options": {
         "legend": {
@@ -497,7 +613,7 @@
         },
         "overrides": []
       },
-      "gridPos": { "h": 9, "w": 24, "x": 0, "y": 35 },
+      "gridPos": { "h": 9, "w": 24, "x": 0, "y": 43 },
       "id": 106,
       "options": {
         "legend": {
@@ -541,7 +657,7 @@
         },
         "overrides": []
       },
-      "gridPos": { "h": 9, "w": 24, "x": 0, "y": 44 },
+      "gridPos": { "h": 9, "w": 24, "x": 0, "y": 52 },
       "id": 103,
       "options": {
         "cellHeight": "sm",
