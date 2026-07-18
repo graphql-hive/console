@@ -41,13 +41,9 @@ export const action: Action = async exec => {
         avgState(duration) AS duration_avg,
         quantilesTDigestState(0.75, 0.9, 0.95, 0.99)(duration) AS duration_quantiles
       FROM default.operations
-      -- Group by the bucket expression explicitly, not the timestamp alias, so
-      -- aggregation never depends on ClickHouse's alias-vs-column name resolution
-      -- (the prefer_column_name_to_alias setting). 018 relies on the alias and
-      -- works; this is the same aggregation, hardened for non-default configs.
       GROUP BY
         target,
-        toStartOfDay(timestamp)
+        timestamp
     )
   `);
 };
