@@ -14,6 +14,14 @@ jobs:
     steps:
       - name: checkout
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
+        with:
+          # `changeset version` walks git history to find the commit that added
+          # each changeset. On a shallow clone it deepens via `git fetch --deepen`
+          # in a loop, which intermittently stalls and hangs the job. Full history
+          # skips that path; blob:none keeps the download to the ~14 MiB commit/tree
+          # graph instead of ~394 MiB, since the file blobs are never needed here.
+          fetch-depth: 0
+          filter: blob:none
 
       - name: setup environment
         uses: ./.github/actions/setup
