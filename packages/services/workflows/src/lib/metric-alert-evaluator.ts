@@ -69,6 +69,13 @@ function makeGroupKey(rule: MetricAlertRuleRow): GroupKey {
 // nanoseconds; latency rule thresholds and all display surfaces use ms.
 const NS_TO_MS = 1e6;
 
+const MINUTES_PER_DAY = 24 * 60; // 1440
+
+// Windows >= 7 days read the daily rollups (far fewer buckets than hourly). Must
+// equal the API's METRIC_ALERT_RULE_DAILY_ROLLUP_THRESHOLD_MINUTES (separate
+// package, can't import); keep in sync.
+export const DAILY_THRESHOLD_MINUTES = 7 * MINUTES_PER_DAY; // 10080
+
 // A null column means it wasn't selected (a bug), not missing data (empty windows
 // give zeros). Throw rather than read a phantom 0 that would silently never fire.
 function requireColumn<T>(value: T | null, column: string, rule: MetricAlertRuleRow): T {
@@ -333,7 +340,12 @@ export async function queryClickHouseWindows(
   // (rather than a separate flag/param) makes the filtered-query-on-rollup
   // combination unrepresentable.
   const useTargetRollup = filterConditions.length === 0;
-  const resolution = timeWindowMinutes <= 360 ? 'minutely' : 'hourly';
+  const resolution =
+    timeWindowMinutes <= 360
+      ? 'minutely'
+      : timeWindowMinutes >= DAILY_THRESHOLD_MINUTES
+        ? 'daily'
+        : 'hourly';
   const tableName = useTargetRollup
     ? `operations_by_target_${resolution}`
     : `operations_${resolution}`;

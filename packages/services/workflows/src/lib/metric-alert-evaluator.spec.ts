@@ -3,6 +3,7 @@ import { printWithValues, type SqlValue } from '@hive/clickhouse';
 import type { ClickHouseClient } from './clickhouse-client.js';
 import {
   buildSavedFilterConditions,
+  DAILY_THRESHOLD_MINUTES,
   evaluationIntervalMinutes,
   extractMetricValue,
   groupRulesByQuery,
@@ -83,6 +84,14 @@ describe('evaluationIntervalMinutes', () => {
     expect(evaluationIntervalMinutes(1441)).toBe(30);
     expect(evaluationIntervalMinutes(10080)).toBe(30);
     expect(evaluationIntervalMinutes(43200)).toBe(30);
+  });
+});
+
+describe('DAILY_THRESHOLD_MINUTES', () => {
+  // Must match METRIC_ALERT_RULE_DAILY_ROLLUP_THRESHOLD_MINUTES in the api
+  // package (separate package, can't import); pin the value on both sides.
+  test('is exactly 7 whole days', () => {
+    expect(DAILY_THRESHOLD_MINUTES).toBe(10080);
   });
 });
 
@@ -250,6 +259,39 @@ describe('queryClickHouseWindows', () => {
     const { clickhouse, calls } = captureClient();
     await queryClickHouseWindows(clickhouse, target, 720, [], evalTime);
     expect(calls[0].sql).toContain('FROM operations_by_target_hourly');
+  });
+
+  test('windows below 7 days stay on the hourly rollup', async () => {
+    const { clickhouse, calls } = captureClient();
+    await queryClickHouseWindows(clickhouse, target, 1440, [], evalTime);
+    await queryClickHouseWindows(clickhouse, target, 4320, [], evalTime);
+    await queryClickHouseWindows(clickhouse, target, DAILY_THRESHOLD_MINUTES - 1, [], evalTime);
+    for (const call of calls) {
+      expect(call.sql).toContain('FROM operations_by_target_hourly');
+    }
+  });
+
+  test('windows >= 7 days read the daily rollup (unfiltered -> by_target)', async () => {
+    const { clickhouse, calls } = captureClient();
+    await queryClickHouseWindows(clickhouse, target, DAILY_THRESHOLD_MINUTES, [], evalTime);
+    const { sql } = calls[0];
+    expect(sql).toContain('FROM operations_by_target_daily');
+    expect(sql).toContain('quantilesTDigestMerge(');
+  });
+
+  test('windows >= 7 days read the daily rollup (filtered -> legacy operations_daily)', async () => {
+    const { clickhouse, calls } = captureClient();
+    const conds = buildSavedFilterConditions(
+      { clientFilters: [{ name: 'web', versions: null }] },
+      makeLogger().logger,
+    );
+    await queryClickHouseWindows(clickhouse, target, 43200, conds, evalTime);
+    const { sql } = calls[0];
+    expect(sql).toContain('FROM operations_daily');
+    expect(sql).not.toContain('_by_target');
+    expect(sql).toContain('quantilesMerge(');
+    expect(sql).not.toContain('TDigest');
+    expect(sql).toContain('client_name = {p2: String}');
   });
 
   test('absolute-only groups skip the previous window (1x scan, constant label)', async () => {
