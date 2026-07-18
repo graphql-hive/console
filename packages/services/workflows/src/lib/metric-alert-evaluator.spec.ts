@@ -10,6 +10,7 @@ import {
   isRuleDue,
   previousValueForRule,
   queryClickHouseWindows,
+  resolutionFor,
   type MetricAlertRuleRow,
 } from './metric-alert-evaluator.js';
 
@@ -72,6 +73,26 @@ describe('groupRulesByQuery', () => {
     ]);
     expect(groups.size).toBe(2);
   });
+
+  test('at >= 7d a TRAFFIC rule and a latency rule split into hourly + daily groups', () => {
+    const groups = groupRulesByQuery([
+      makeRule({ id: 'a', type: 'TRAFFIC', timeWindowMinutes: 43200 }),
+      makeRule({ id: 'b', type: 'LATENCY', metric: 'P95', timeWindowMinutes: 43200 }),
+    ]);
+    expect(groups.size).toBe(2);
+    const tiers = [...groups.values()]
+      .map(g => resolutionFor(g[0].timeWindowMinutes, g[0].type !== 'TRAFFIC'))
+      .sort();
+    expect(tiers).toEqual(['daily', 'hourly']);
+  });
+
+  test('below 7d a TRAFFIC rule and a latency rule share a group (same tier)', () => {
+    const groups = groupRulesByQuery([
+      makeRule({ id: 'a', type: 'TRAFFIC', timeWindowMinutes: 720 }),
+      makeRule({ id: 'b', type: 'LATENCY', metric: 'P95', timeWindowMinutes: 720 }),
+    ]);
+    expect(groups.size).toBe(1);
+  });
 });
 
 describe('evaluationIntervalMinutes', () => {
@@ -92,6 +113,19 @@ describe('DAILY_THRESHOLD_MINUTES', () => {
   // package (separate package, can't import); pin the value on both sides.
   test('is exactly 7 whole days', () => {
     expect(DAILY_THRESHOLD_MINUTES).toBe(10080);
+  });
+});
+
+describe('resolutionFor', () => {
+  test('tiers by window, with TRAFFIC pinned off the daily rollup', () => {
+    expect(resolutionFor(60, true)).toBe('minutely');
+    expect(resolutionFor(360, true)).toBe('minutely');
+    expect(resolutionFor(720, true)).toBe('hourly');
+    expect(resolutionFor(DAILY_THRESHOLD_MINUTES - 1, true)).toBe('hourly');
+    expect(resolutionFor(DAILY_THRESHOLD_MINUTES, true)).toBe('daily');
+    // allowDailyRollup=false (a TRAFFIC group) never reaches daily.
+    expect(resolutionFor(DAILY_THRESHOLD_MINUTES, false)).toBe('hourly');
+    expect(resolutionFor(43200, false)).toBe('hourly');
   });
 });
 
@@ -277,6 +311,24 @@ describe('queryClickHouseWindows', () => {
     const { sql } = calls[0];
     expect(sql).toContain('FROM operations_by_target_daily');
     expect(sql).toContain('quantilesTDigestMerge(');
+  });
+
+  test('a TRAFFIC group (allowDailyRollup=false) stays on hourly at >= 7 days', async () => {
+    const { clickhouse, calls } = captureClient();
+    // trailing args: needsPreviousWindow, needsAverage, needsPercentiles, allowDailyRollup
+    await queryClickHouseWindows(
+      clickhouse,
+      target,
+      DAILY_THRESHOLD_MINUTES,
+      [],
+      evalTime,
+      true,
+      true,
+      true,
+      false,
+    );
+    expect(calls[0].sql).toContain('FROM operations_by_target_hourly');
+    expect(calls[0].sql).not.toContain('_daily');
   });
 
   test('windows >= 7 days read the daily rollup (filtered -> legacy operations_daily)', async () => {
