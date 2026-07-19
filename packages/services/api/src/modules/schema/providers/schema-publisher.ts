@@ -3512,10 +3512,7 @@ function writeChanges(
 export function buildSchemaCheckSuccessGithubOutput(input: {
   changes: Array<SchemaChangeType> | null;
   contractChanges: Array<{ contractName: string; changes: Array<SchemaChangeType> }> | null;
-  renderChanges: (
-    changes: ReadonlyArray<SchemaChangeType>,
-    printListOfChanges?: boolean,
-  ) => string;
+  renderChanges: (changes: ReadonlyArray<SchemaChangeType>, printListOfChanges?: boolean) => string;
 }): { title: string; summary: string; shortSummaryFallback: string } {
   const coreChanges = input.changes ?? [];
   const contractChanges = input.contractChanges?.filter(contract => contract.changes.length) ?? [];

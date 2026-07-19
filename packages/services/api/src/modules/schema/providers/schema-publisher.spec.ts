@@ -1,6 +1,6 @@
 import 'reflect-metadata';
-import type { SchemaChangeType } from '@hive/storage';
 import { describe, expect, test } from 'vitest';
+import type { SchemaChangeType } from '@hive/storage';
 import { buildSchemaCheckSuccessGithubOutput } from './schema-publisher';
 
 // The helper only reads `.length`, the contract name and passes change arrays to
