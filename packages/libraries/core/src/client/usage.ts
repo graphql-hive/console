@@ -11,7 +11,7 @@ import { normalizeOperation } from '../normalize/operation.js';
 import { version } from '../version.js';
 import { createAgent } from './agent.js';
 import { collectSchemaCoordinates } from './collect-schema-coordinates.js';
-import { dynamicSampling, randomSampling } from './sampling.js';
+import { dynamicSampling, operationSampling, randomSampling } from './sampling.js';
 import type {
   AbortAction,
   ClientInfo,
@@ -191,7 +191,12 @@ export function createUsage(pluginOptions: HiveInternalPluginOptions): UsageColl
   const shouldInclude =
     options.sampler && typeof options.sampler === 'function'
       ? dynamicSampling(options.sampler)
-      : randomSampling(options.sampleRate ?? 1.0);
+      : options.sampleRates?.length
+        ? operationSampling({
+            rates: options.sampleRates,
+            fallbackSampleRate: options.sampleRate ?? 1.0,
+          })
+        : randomSampling(options.sampleRate ?? 1.0);
 
   const collectRequest: UsageCollector['collectRequest'] = args => {
     let providedOperationName: string | undefined = undefined;

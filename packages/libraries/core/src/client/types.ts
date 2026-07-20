@@ -133,9 +133,30 @@ export interface HiveUsagePluginOptions {
    */
   sampleRate?: number;
   /**
+   * Operation-level sample rates.
+   *
+   * Each rule matches operations by exact `name` or by `regex` (tested against the
+   * operation name) and applies its own `sampleRate`. The first matching rule wins.
+   * Operations that don't match any rule fall back to the global `sampleRate`
+   * (or 1.0 when that is not set).
+   *
+   * This is useful when a system has a mix of high-volume and low-volume operations:
+   * high-volume operations can be sampled aggressively while low-volume operations
+   * are reported at (or close to) 100%.
+   *
+   * Ignored when `sampler` is defined.
+   *
+   * @example
+   * sampleRates: [
+   *   { name: 'SampledQuery', sampleRate: 0.1 },
+   *   { regex: /^Sampled/, sampleRate: 0.1 },
+   * ]
+   */
+  sampleRates?: OperationSampleRate[];
+  /**
    * Compute sample rate dynamically.
    *
-   * If `sampler` is defined, `sampleRate` is ignored.
+   * If `sampler` is defined, `sampleRate` and `sampleRates` are ignored.
    *
    * @returns A sample rate between 0 and 1.
    * 0.0 = 0% chance of being sent
@@ -150,6 +171,30 @@ export interface HiveUsagePluginOptions {
    * Default: false
    */
   processVariables?: boolean;
+}
+
+/**
+ * A sample rate that applies to a subset of operations, matched by name or regular expression.
+ */
+export interface OperationSampleRate {
+  /**
+   * Match operations by their exact operation name.
+   *
+   * Exactly one of `name` or `regex` must be provided.
+   */
+  name?: string;
+  /**
+   * Match operations whose name matches this regular expression.
+   *
+   * Exactly one of `name` or `regex` must be provided.
+   */
+  regex?: RegExp;
+  /**
+   * Sample rate applied to operations matched by this rule.
+   * 0.0 = 0% chance of being sent
+   * 1.0 = 100% chance of being sent.
+   */
+  sampleRate: number;
 }
 
 export interface SamplingContext
