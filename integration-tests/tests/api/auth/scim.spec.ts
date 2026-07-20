@@ -1,5 +1,11 @@
 import humanId from 'human-id';
-import { addGroupMappingToGroup, createMemberRole } from 'testkit/flow';
+import {
+  addGroupMappingToGroup,
+  createMemberRole,
+  createPersonalAccessToken,
+  readProjectInfo,
+  updateMemberRole,
+} from 'testkit/flow';
 import { ResourceAssignmentModeType } from 'testkit/gql/graphql';
 import { initSeed } from 'testkit/seed';
 import { getServiceHost } from 'testkit/utils';
@@ -10,6 +16,7 @@ import { psql } from '@hive/postgres';
 import { invariant } from '@hive/service-common';
 import { createStorage } from '@hive/storage';
 import { createScimTestkit } from '../../../testkit/scim';
+import { fetchPermissions } from '../access-tokens/shared';
 
 const baseUrl = await getServiceHost('server', 3001).then(r => `http://${r}`);
 
@@ -1558,7 +1565,6 @@ describe.concurrent('/Groups', () => {
       const postResponse = await scim.createGroup({
         schemas: ['urn:ietf:params:scim:schemas:core:2.0:Group'],
         displayName: 'foobars',
-        members: [],
       });
       const postResponseBody = postResponse.body;
       expect(postResponseBody).toEqual({
@@ -3182,7 +3188,7 @@ describe.concurrent('provider flows', () => {
 
 test.concurrent(
   'externalId (sub) conflict with existing OIDC user takes over the user',
-  async ({ expect }) => {
+  async () => {
     const seed = initSeed();
     const owner = await seed.createOwner();
     const org = await owner.createOrg();
@@ -3689,4 +3695,385 @@ test.concurrent('disabled user is revoked access', async ({ expect }) => {
     state: auth.state,
   });
   invariant(result.type === 'success', 'expected sign in to fail as the user was disabled');
+});
+
+describe('Personal Access Tokens', () => {
+  test.concurrent(
+    'personal access token authorization scope is down-scoped by the group mapping permissions',
+    async ({ expect }) => {
+      const seed = initSeed();
+      const owner = await seed.createOwner();
+      const org = await owner.createOrg();
+      const project = await org.createProject();
+      const oidc = await org.createOIDCIntegration();
+      const oidcMock = await oidc.createMockServerAndUpdateIntegrationEndpoints();
+      const domain = await oidc.registerFakeDomain();
+      const accessToken = await org.createOrganizationAccessToken({
+        permissions: ['member:describe', 'member:modify'],
+        resources: { mode: ResourceAssignmentModeType.Granular },
+      });
+      const scimAuthHeader = 'Bearer ' + accessToken.privateAccessKey;
+
+      const scimRequestHeaders = {
+        'Content-Type': 'application/scim+json',
+        Authorization: scimAuthHeader,
+      };
+      const scim = createScimTestkit({ baseUrl, headers: scimRequestHeaders });
+
+      const userEmail = 'foo@' + domain;
+      const user = await scim.createUser({
+        ...newUserValues(),
+        emails: [{ primary: true, value: userEmail, type: 'work' }],
+      });
+      const group = await scim.createGroup({
+        ...newGroupValues(),
+        members: [{ value: user.body.id }],
+      });
+
+      // Retrieve access token for the user
+      oidcMock.setUser({
+        email: userEmail,
+        userIdClaim: user.body.externalId,
+      });
+      const auth = await oidcMock.runGetAuthorizationUrl();
+      const authResult = await oidcMock.runSignInUp({
+        state: auth.state,
+      });
+      invariant(authResult.type === 'success', 'expected sign in to succeed');
+
+      // Initially, the user should not be able to create any personal access token as he does not have sufficient permissions
+      // assigned via the Group
+      const createPersonalAccessTokenErrors = await createPersonalAccessToken(
+        {
+          organization: {
+            byId: org.organization.id,
+          },
+          title: 'Foobars',
+          description: 'noop',
+          permissions: ['project:describe'],
+          resources: { mode: ResourceAssignmentModeType.All },
+        },
+        authResult.accessToken,
+      ).then(r => r.expectGraphQLErrors());
+      expect(createPersonalAccessTokenErrors).toHaveLength(1);
+      expect(createPersonalAccessTokenErrors[0].message).toMatchInlineSnapshot(
+        `No access (reason: "Missing permission for performing 'personalAccessToken:modify' on resource")`,
+      );
+
+      // next we grant the user the permissions to create personal access tokens!
+      const createRoleResult = await createMemberRole(
+        {
+          name: 'Test Role',
+          description: 'Bars',
+          organization: { byId: org.organization.id },
+          selectedPermissions: ['personalAccessToken:modify'],
+        },
+        owner.ownerToken,
+      ).then(r => r.expectNoGraphQLErrors());
+      invariant(!!createRoleResult.createMemberRole.ok, 'create member role should have succeeded');
+
+      const addGroupMappingResult = await addGroupMappingToGroup(
+        {
+          groupId: group.body.id,
+          assignedResources: {
+            mode: ResourceAssignmentModeType.All,
+          },
+          roleId: createRoleResult.createMemberRole.ok.createdMemberRole.id,
+        },
+        owner.ownerToken,
+      ).then(r => r.expectNoGraphQLErrors());
+      invariant(
+        !!addGroupMappingResult.addGroupMappingToGroup.ok,
+        'add group mapping should have succeeded',
+      );
+
+      let createPersonalAccessTokenResult = await createPersonalAccessToken(
+        {
+          organization: {
+            byId: org.organization.id,
+          },
+          title: 'Foobars',
+          description: 'noop',
+          permissions: ['project:describe'],
+          resources: { mode: ResourceAssignmentModeType.All },
+        },
+        authResult.accessToken,
+      ).then(r => r.expectNoGraphQLErrors());
+
+      invariant(
+        !!createPersonalAccessTokenResult.createPersonalAccessToken.ok,
+        'creating personal access token should have succeeded',
+      );
+
+      // WhoAmI representation should have no permissions as 'project:describe' is not assigned via a role
+      expect(
+        await fetchPermissions(
+          createPersonalAccessTokenResult.createPersonalAccessToken.ok.privateAccessKey,
+        ),
+      ).toEqual([]);
+
+      const projectResultErrors = await readProjectInfo(
+        {
+          organizationSlug: org.organization.slug,
+          projectSlug: project.project.slug,
+        },
+        createPersonalAccessTokenResult.createPersonalAccessToken.ok.privateAccessKey,
+      ).then(r => r.expectGraphQLErrors());
+      expect(projectResultErrors).toHaveLength(1);
+      expect(projectResultErrors[0].message).toMatchInlineSnapshot(
+        `No access (reason: "Missing permission for performing 'project:describe' on resource")`,
+      );
+
+      // update member role to allow project describe
+      let updateMemberRoleResult = await updateMemberRole(
+        {
+          name: 'Foo',
+          description: 'Bars',
+          memberRole: {
+            byId: createRoleResult.createMemberRole.ok.createdMemberRole.id,
+          },
+          selectedPermissions: ['personalAccessToken:modify', 'project:describe'],
+        },
+        owner.ownerToken,
+      ).then(r => r.expectNoGraphQLErrors());
+      invariant(!!updateMemberRoleResult.updateMemberRole.ok, 'update member role should succeed');
+
+      createPersonalAccessTokenResult = await createPersonalAccessToken(
+        {
+          organization: {
+            byId: org.organization.id,
+          },
+          title: 'Foobars',
+          description: 'noop',
+          permissions: ['personalAccessToken:modify', 'project:describe'],
+          resources: { mode: ResourceAssignmentModeType.All },
+        },
+        authResult.accessToken,
+      ).then(r => r.expectNoGraphQLErrors());
+
+      invariant(
+        !!createPersonalAccessTokenResult.createPersonalAccessToken.ok,
+        'creating personal access token should have succeeded',
+      );
+
+      // WhoAmI representation should have have permissions as 'project:describe' is assigned via the role
+      expect(
+        await fetchPermissions(
+          createPersonalAccessTokenResult.createPersonalAccessToken.ok.privateAccessKey,
+        ),
+      ).toEqual([
+        {
+          level: 'PROJECT',
+          resolvedPermissionGroups: [
+            {
+              permissions: [
+                {
+                  permission: {
+                    id: 'project:describe',
+                  },
+                },
+              ],
+            },
+          ],
+          resolvedResourceIds: [org.organization.slug + '/*'],
+        },
+      ]);
+      // reading the project should succeed
+      let readProjectInfoResult = await readProjectInfo(
+        {
+          organizationSlug: org.organization.slug,
+          projectSlug: project.project.slug,
+        },
+        createPersonalAccessTokenResult.createPersonalAccessToken.ok.privateAccessKey,
+      ).then(r => r.expectNoGraphQLErrors());
+      invariant(!!readProjectInfoResult.project, 'should be able to read the project.');
+
+      // remove project:describe permissions
+      updateMemberRoleResult = await updateMemberRole(
+        {
+          name: 'Foo',
+          description: 'Bars',
+          memberRole: {
+            byId: createRoleResult.createMemberRole.ok.createdMemberRole.id,
+          },
+          selectedPermissions: ['personalAccessToken:modify'],
+        },
+        owner.ownerToken,
+      ).then(r => r.expectNoGraphQLErrors());
+      invariant(!!updateMemberRoleResult.updateMemberRole.ok, 'update member role should succeed');
+
+      await seed.purgeOrganizationAccessTokenById(
+        createPersonalAccessTokenResult.createPersonalAccessToken.ok.createdPersonalAccessToken.id,
+      );
+
+      expect(
+        await fetchPermissions(
+          createPersonalAccessTokenResult.createPersonalAccessToken.ok.privateAccessKey,
+        ),
+      ).toEqual([]);
+      await readProjectInfo(
+        {
+          organizationSlug: org.organization.slug,
+          projectSlug: project.project.slug,
+        },
+        createPersonalAccessTokenResult.createPersonalAccessToken.ok.privateAccessKey,
+      ).then(r => r.expectGraphQLErrors());
+    },
+  );
+  test.concurrent(
+    'personal access token yields authorization scopes from multiple group mappings',
+    async ({ expect }) => {
+      const seed = initSeed();
+      const owner = await seed.createOwner();
+      const org = await owner.createOrg();
+      const oidc = await org.createOIDCIntegration();
+      const oidcMock = await oidc.createMockServerAndUpdateIntegrationEndpoints();
+      const domain = await oidc.registerFakeDomain();
+      const accessToken = await org.createOrganizationAccessToken({
+        permissions: ['member:describe', 'member:modify'],
+        resources: { mode: ResourceAssignmentModeType.Granular },
+      });
+      const scimAuthHeader = 'Bearer ' + accessToken.privateAccessKey;
+
+      const scimRequestHeaders = {
+        'Content-Type': 'application/scim+json',
+        Authorization: scimAuthHeader,
+      };
+      const scim = createScimTestkit({ baseUrl, headers: scimRequestHeaders });
+
+      const userEmail = 'foo@' + domain;
+      const user = await scim.createUser({
+        ...newUserValues(),
+        emails: [{ primary: true, value: userEmail, type: 'work' }],
+      });
+      const group = await scim.createGroup({
+        ...newGroupValues(),
+        members: [{ value: user.body.id }],
+      });
+
+      // Retrieve access token for the user
+      oidcMock.setUser({
+        email: userEmail,
+        userIdClaim: user.body.externalId,
+      });
+      const auth = await oidcMock.runGetAuthorizationUrl();
+      const authResult = await oidcMock.runSignInUp({
+        state: auth.state,
+      });
+      invariant(authResult.type === 'success', 'expected sign in to succeed');
+
+      const project1 = await org.createProject();
+      const project2 = await org.createProject();
+
+      // next we grant the user the permissions to create personal access tokens!
+      const createRoleResult = await createMemberRole(
+        {
+          name: 'Test Role',
+          description: 'Bars',
+          organization: { byId: org.organization.id },
+          selectedPermissions: ['personalAccessToken:modify', 'project:describe'],
+        },
+        owner.ownerToken,
+      ).then(r => r.expectNoGraphQLErrors());
+      invariant(!!createRoleResult.createMemberRole.ok, 'create member role should have succeeded');
+
+      const addGroupMappingResult1 = await addGroupMappingToGroup(
+        {
+          groupId: group.body.id,
+          assignedResources: {
+            mode: ResourceAssignmentModeType.Granular,
+            projects: [
+              {
+                projectId: project1.project.id,
+                targets: {
+                  mode: ResourceAssignmentModeType.All,
+                },
+              },
+            ],
+          },
+          roleId: createRoleResult.createMemberRole.ok.createdMemberRole.id,
+        },
+        owner.ownerToken,
+      ).then(r => r.expectNoGraphQLErrors());
+      invariant(
+        !!addGroupMappingResult1.addGroupMappingToGroup.ok,
+        'add group mapping should have succeeded',
+      );
+      const addGroupMappingResult2 = await addGroupMappingToGroup(
+        {
+          groupId: group.body.id,
+          assignedResources: {
+            mode: ResourceAssignmentModeType.Granular,
+            projects: [
+              {
+                projectId: project2.project.id,
+                targets: {
+                  mode: ResourceAssignmentModeType.All,
+                },
+              },
+            ],
+          },
+          roleId: createRoleResult.createMemberRole.ok.createdMemberRole.id,
+        },
+        owner.ownerToken,
+      ).then(r => r.expectNoGraphQLErrors());
+      invariant(
+        !!addGroupMappingResult2.addGroupMappingToGroup.ok,
+        'add group mapping should have succeeded',
+      );
+
+      const createPersonalAccessTokenResult = await createPersonalAccessToken(
+        {
+          organization: {
+            byId: org.organization.id,
+          },
+          title: 'Foobars',
+          description: 'noop',
+          permissions: ['project:describe'],
+          resources: { mode: ResourceAssignmentModeType.All },
+        },
+        authResult.accessToken,
+      ).then(r => r.expectNoGraphQLErrors());
+
+      invariant(
+        !!createPersonalAccessTokenResult.createPersonalAccessToken.ok,
+        'creating personal access token should have succeeded',
+      );
+
+      const permissionsResult = await fetchPermissions(
+        createPersonalAccessTokenResult.createPersonalAccessToken.ok.privateAccessKey,
+      );
+      expect(permissionsResult).toHaveLength(2);
+      expect(permissionsResult).toContainEqual({
+        level: 'PROJECT',
+        resolvedPermissionGroups: [
+          {
+            permissions: [
+              {
+                permission: {
+                  id: 'project:describe',
+                },
+              },
+            ],
+          },
+        ],
+        resolvedResourceIds: [org.organization.slug + '/' + project1.project.slug],
+      });
+      expect(permissionsResult).toContainEqual({
+        level: 'PROJECT',
+        resolvedPermissionGroups: [
+          {
+            permissions: [
+              {
+                permission: {
+                  id: 'project:describe',
+                },
+              },
+            ],
+          },
+        ],
+        resolvedResourceIds: [org.organization.slug + '/' + project2.project.slug],
+      });
+    },
+  );
 });

@@ -52,6 +52,7 @@ import {
   ResourceAssignments,
   translateResolvedResourcesToAuthorizationPolicyStatements,
 } from './resource-assignments';
+import { UsersStore } from './users-store';
 
 const TitleInputModel = z
   .string()
@@ -187,6 +188,7 @@ export class OrganizationAccessTokens {
     private auditLogs: AuditLogRecorder,
     private storage: Storage,
     private members: OrganizationMembers,
+    private usersStore: UsersStore,
     logger: Logger,
     @Inject(OTEL_TRACING_ENABLED) private otelTracingEnabled: boolean,
     @Inject(APP_DEPLOYMENTS_ENABLED) private appDeploymentsEnabled: boolean,
@@ -554,7 +556,7 @@ export class OrganizationAccessTokens {
       },
     });
 
-    this.logger.debug('Access tokens was created successfully. (accessTokenId=%s)', accessToken.id);
+    this.logger.debug('Access token was created successfully. (accessTokenId=%s)', accessToken.id);
 
     return {
       type: 'success' as const,
@@ -1123,8 +1125,10 @@ export class OrganizationAccessTokens {
       /** Whether to include all or only the granted permissions. */
       includeAll: boolean = false,
     ): Promise<Array<GraphQLResolvedResourcePermissionGroupOutput>> => {
-      let grantedPermissions: Set<Permission>;
-      let grantedResources: ResourceAssignmentGroup;
+      const permissionAndResources: Array<{
+        grantedPermissions: ReadonlySet<Permission>;
+        grantedResources: ResourceAssignmentGroup;
+      }> = [];
 
       if (accessToken.userId) {
         const organization = await this.storage.getOrganization({
@@ -1135,31 +1139,64 @@ export class OrganizationAccessTokens {
           userId: accessToken.userId,
         });
 
-        if (
-          !membership ||
-          !membership.assignedRole.role.permissions.organization.has('personalAccessToken:modify')
-        ) {
+        if (!membership) {
           return [];
         }
 
-        grantedResources = intersectResourceAssignments(
-          accessToken.assignedResources,
-          membership.assignedRole.resources,
+        const provisionedUser = await this.usersStore.findUserProvisionedByOrganizationIdAndId(
+          accessToken.organizationId,
+          accessToken.userId,
         );
-        const membershipPermissions = membership.assignedRole.role.allPermissions;
-        grantedPermissions = new Set(
-          accessToken.permissions?.filter(permission => membershipPermissions.has(permission)) ??
-            [],
-        );
+
+        if (provisionedUser?.deactivatedAt) {
+          return [];
+        }
+
+        if (!provisionedUser) {
+          if (
+            !membership.assignedRole.role.permissions.organization.has('personalAccessToken:modify')
+          ) {
+            return [];
+          }
+
+          const membershipPermissions = membership.assignedRole.role.allPermissions;
+          permissionAndResources.push({
+            grantedPermissions: accessToken.permissions
+              ? new Set(accessToken.permissions).intersection(membershipPermissions)
+              : membershipPermissions,
+            grantedResources: intersectResourceAssignments(
+              accessToken.assignedResources,
+              membership.assignedRole.resources,
+            ),
+          });
+        } else {
+          const memberGroupMappings =
+            await Groups.getAllGroupMembershipsWithRoleForOrganizationMembership(
+              this.logger,
+              this.pool,
+              membership,
+            );
+
+          for (const mapping of memberGroupMappings) {
+            permissionAndResources.push({
+              grantedPermissions: accessToken.permissions
+                ? new Set(accessToken.permissions).intersection(mapping.role.allPermissions)
+                : mapping.role.allPermissions,
+              grantedResources: intersectResourceAssignments(
+                accessToken.assignedResources,
+                mapping.groupRoleAssignment.assignedResources,
+              ),
+            });
+          }
+        }
       } else {
-        grantedPermissions = new Set(accessToken.permissions ?? []);
-        grantedResources = accessToken.assignedResources;
+        permissionAndResources.push({
+          grantedPermissions: new Set(accessToken.permissions ?? []),
+          grantedResources: accessToken.assignedResources,
+        });
       }
 
-      const resourceIds = await this.resourceAssignments.resourceAssignmentToResourceIds(
-        accessToken.organizationId,
-        grantedResources,
-      );
+      const allGroups: Array<GraphQLResolvedResourcePermissionGroupOutput> = [];
 
       type PMap = {
         level: ResourceLevel;
@@ -1176,84 +1213,93 @@ export class OrganizationAccessTokens {
         resourceIds: Array<string>;
       };
 
-      const resourceLevelGroups = new Map<ResourceLevel, PMap>(
-        (
-          [
-            'organization',
-            'project',
-            'target',
-            'service',
-            'appDeployment',
-          ] satisfies Array<ResourceLevel>
-        ).map((value): [ResourceLevel, PMap] => [
-          value,
-          {
-            level: value,
-            permissionGroups: new Map(),
-            resourceIds: resourceIds[value] ?? [],
-          },
-        ]),
-      );
+      for (const { grantedPermissions, grantedResources } of permissionAndResources) {
+        const resourceIds = await this.resourceAssignments.resourceAssignmentToResourceIds(
+          accessToken.organizationId,
+          grantedResources,
+        );
 
-      if (accessToken.projectId) {
-        resourceLevelGroups.delete('organization');
-      }
+        const resourceLevelGroups = new Map<ResourceLevel, PMap>(
+          (
+            [
+              'organization',
+              'project',
+              'target',
+              'service',
+              'appDeployment',
+            ] satisfies Array<ResourceLevel>
+          ).map((value): [ResourceLevel, PMap] => [
+            value,
+            {
+              level: value,
+              permissionGroups: new Map(),
+              resourceIds: resourceIds[value] ?? [],
+            },
+          ]),
+        );
 
-      for (const pgroup of OrganizationAccessTokensPermissions.permissionGroups) {
-        for (const permission of pgroup.permissions) {
-          const resourceLevel = getPermissionGroup(permission.id);
-          const resourceGroup = resourceLevelGroups.get(resourceLevel);
+        if (accessToken.projectId) {
+          resourceLevelGroups.delete('organization');
+        }
 
-          if (resourceGroup === undefined) {
-            continue;
+        for (const pgroup of OrganizationAccessTokensPermissions.permissionGroups) {
+          for (const permission of pgroup.permissions) {
+            const resourceLevel = getPermissionGroup(permission.id);
+            const resourceGroup = resourceLevelGroups.get(resourceLevel);
+
+            if (resourceGroup === undefined) {
+              continue;
+            }
+
+            let group = resourceGroup.permissionGroups.get(pgroup.title);
+
+            if (group === undefined) {
+              group = {
+                title: pgroup.title,
+                permissions: [],
+              };
+              resourceGroup.permissionGroups.set(pgroup.title, group);
+            }
+
+            const isGranted = grantedPermissions.has(permission.id);
+
+            if (includeAll || isGranted) {
+              group.permissions.push({
+                isGranted: grantedPermissions.has(permission.id),
+                permission,
+              });
+            }
           }
+        }
 
-          let group = resourceGroup.permissionGroups.get(pgroup.title);
+        for (const resourceGroup of resourceLevelGroups.values()) {
+          const group: GraphQLResolvedResourcePermissionGroupOutput = {
+            level: resourceLevelToResourceLevelType(resourceGroup.level),
+            title: resourceLevelToHumanReadableName(resourceGroup.level),
+            resolvedPermissionGroups: Array.from(resourceGroup.permissionGroups.values())
+              .map(group => ({
+                title: group.title,
+                permissions: group.permissions.map(permission => ({
+                  isGranted: permission.isGranted,
+                  permission: permission.permission,
+                })),
+              }))
+              .filter(group => (includeAll ? true : group.permissions.length !== 0)),
+            resolvedResourceIds: resourceGroup.resourceIds.length
+              ? resourceGroup.resourceIds
+              : null,
+          };
 
-          if (group === undefined) {
-            group = {
-              title: pgroup.title,
-              permissions: [],
-            };
-            resourceGroup.permissionGroups.set(pgroup.title, group);
-          }
-
-          const isGranted = grantedPermissions.has(permission.id);
-
-          if (includeAll || isGranted) {
-            group.permissions.push({
-              isGranted: grantedPermissions.has(permission.id),
-              permission,
-            });
+          if (
+            includeAll ||
+            (group.resolvedPermissionGroups.length !== 0 && group.resolvedResourceIds?.length)
+          ) {
+            allGroups.push(group);
           }
         }
       }
 
-      return Array.from(resourceLevelGroups.values())
-        .map(
-          resourceGroup =>
-            ({
-              level: resourceLevelToResourceLevelType(resourceGroup.level),
-              title: resourceLevelToHumanReadableName(resourceGroup.level),
-              resolvedPermissionGroups: Array.from(resourceGroup.permissionGroups.values())
-                .map(group => ({
-                  title: group.title,
-                  permissions: group.permissions.map(permission => ({
-                    isGranted: permission.isGranted,
-                    permission: permission.permission,
-                  })),
-                }))
-                .filter(group => (includeAll ? true : group.permissions.length !== 0)),
-              resolvedResourceIds: resourceGroup.resourceIds.length
-                ? resourceGroup.resourceIds
-                : null,
-            }) satisfies GraphQLResolvedResourcePermissionGroupOutput,
-        )
-        .filter(group =>
-          includeAll
-            ? true
-            : group.resolvedPermissionGroups.length !== 0 && group.resolvedResourceIds?.length,
-        );
+      return allGroups;
     };
 
   static computeAuthorizationStatementsForMembership(
