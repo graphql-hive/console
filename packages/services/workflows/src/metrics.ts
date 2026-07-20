@@ -54,3 +54,16 @@ export const metricAlertClickHouseQueryDuration = new metrics.Histogram({
   buckets: [0.05, 0.1, 0.25, 0.5, 1, 2, 5, 10],
   labelNames: ['outcome'],
 });
+
+// Enabled rules/query-groups split by whether they filter (the heavier
+// legacy-table path). Tracks how much of that expensive population exists.
+export const metricAlertEnabledRules = new metrics.Gauge({
+  name: 'hive_metric_alert_enabled_rules',
+  help: 'Enabled metric alert rules, by whether a saved filter is attached',
+  labelNames: ['filtered'],
+});
+export const metricAlertRuleGroups = new metrics.Gauge({
+  name: 'hive_metric_alert_rule_groups',
+  help: 'Metric alert query groups (one ClickHouse query each), by whether a saved filter is attached',
+  labelNames: ['filtered'],
+});
