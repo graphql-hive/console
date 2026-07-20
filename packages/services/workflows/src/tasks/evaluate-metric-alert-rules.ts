@@ -1,5 +1,6 @@
 import pLimit from 'p-limit';
 import { z } from 'zod';
+import type { SqlValue } from '@hive/clickhouse';
 import { psql } from '@hive/postgres';
 import { SpanKind, SpanStatusCode, trace } from '@hive/service-common';
 import { defineTask, implementTask } from '../kit.js';
@@ -11,6 +12,7 @@ import {
   isRuleDue,
   queryClickHouseWindows,
 } from '../lib/metric-alert-evaluator.js';
+import { metricAlertEnabledRules, metricAlertRuleGroups } from '../metrics.js';
 
 // How many groups to evaluate in parallel. Each group = 1 ClickHouse round-trip
 // plus a per-rule state-machine evaluation that holds a Postgres connection for
@@ -58,6 +60,30 @@ export const task = implementTask(EvaluateMetricAlertRulesTask, async args => {
   // Evaluate every enabled rule. The org feature flag gates rule creation in
   // the API, not evaluation here; the per-rule `enabled` column is the gate.
   const rules = await fetchEnabledRules(context.pg);
+  const groups = groupRulesByQuery(rules);
+
+  // Parse each group's saved filter once, reused by the gauges below and by
+  // processGroup, so a filtered group isn't re-parsed within the same tick.
+  const groupFilters = [...groups.values()].map(group => ({
+    group,
+    filterConditions: buildSavedFilterConditions(group[0].savedFilterFilters, logger),
+  }));
+
+  // Population gauges for the expensive with-filter rules. "Filtered" means the
+  // filter yields query conditions (the legacy-table path), not just that a
+  // saved_filter_id is set. Both labels set each tick (incl. 0) to avoid staleness.
+  let filteredGroups = 0;
+  let filteredRules = 0;
+  for (const { group, filterConditions } of groupFilters) {
+    if (filterConditions.length > 0) {
+      filteredGroups += 1;
+      filteredRules += group.length;
+    }
+  }
+  metricAlertRuleGroups.set({ filtered: 'true' }, filteredGroups);
+  metricAlertRuleGroups.set({ filtered: 'false' }, groups.size - filteredGroups);
+  metricAlertEnabledRules.set({ filtered: 'true' }, filteredRules);
+  metricAlertEnabledRules.set({ filtered: 'false' }, rules.length - filteredRules);
 
   if (rules.length === 0) {
     logger.debug('No enabled metric alert rules found');
@@ -69,8 +95,7 @@ export const task = implementTask(EvaluateMetricAlertRulesTask, async args => {
   // Evaluate only groups with at least one due member. Members of a group share
   // a window (so one cadence), and the batched UPDATE below keeps their
   // last_evaluated_at aligned, so a group is due as a unit.
-  const groups = groupRulesByQuery(rules);
-  const dueGroupList = [...groups.values()].filter(group =>
+  const dueGroupList = groupFilters.filter(({ group }) =>
     group.some(rule => isRuleDue(rule, evaluationTime)),
   );
 
@@ -82,17 +107,14 @@ export const task = implementTask(EvaluateMetricAlertRulesTask, async args => {
     return;
   }
 
-  async function processGroup(groupRules: (typeof rules)[number][]): Promise<{
+  async function processGroup(
+    groupRules: (typeof rules)[number][],
+    filterConditions: SqlValue[],
+  ): Promise<{
     failed: boolean;
     evaluatedIds: string[];
   }> {
     const representative = groupRules[0];
-
-    // All rules in a group share the same saved filter (it's part of the group key),
-    // so build the ClickHouse conditions once from the representative.
-    // A malformed filter yields no conditions (evaluates unfiltered) and is logged,
-    // isolating the failure to this group.
-    const filterConditions = buildSavedFilterConditions(representative.savedFilterFilters, logger);
 
     // Only PERCENTAGE_CHANGE rules need the prior window; if none in the group do,
     // skip it (half the scan) and persist a null previousValue.
@@ -119,6 +141,14 @@ export const task = implementTask(EvaluateMetricAlertRulesTask, async args => {
           'target.id': representative.targetId,
           'rules.in_group': groupRules.length,
           time_window_minutes: representative.timeWindowMinutes,
+          // Rule intent, so a slow trace is findable in TraceQL without reading
+          // db.query. filter.applied uses filterConditions (matching the gauge):
+          // true only when the filter yields the heavier legacy-table query.
+          'metric.types': [...new Set(groupRules.map(r => r.type))],
+          'threshold.types': [...new Set(groupRules.map(r => r.thresholdType))],
+          'filter.applied': filterConditions.length > 0,
+          'window.needs_previous': needsPreviousWindow,
+          'metric.needs_percentiles': needsPercentiles,
         },
       },
       async span => {
@@ -209,7 +239,7 @@ export const task = implementTask(EvaluateMetricAlertRulesTask, async args => {
         'rules.count': rules.length,
         'groups.count': groups.size,
         'groups.due': dueGroupList.length,
-        'rules.due': dueGroupList.reduce((total, group) => total + group.length, 0),
+        'rules.due': dueGroupList.reduce((total, { group }) => total + group.length, 0),
         'evaluation.time': evaluationTime.toISOString(),
       },
     },
@@ -224,7 +254,9 @@ export const task = implementTask(EvaluateMetricAlertRulesTask, async args => {
         let groupsFailed = 0;
         const evaluatedRuleIds: string[] = [];
         const results = await Promise.allSettled(
-          dueGroupList.map(group => limit(() => processGroup(group))),
+          dueGroupList.map(({ group, filterConditions }) =>
+            limit(() => processGroup(group, filterConditions)),
+          ),
         );
         for (const r of results) {
           if (r.status === 'rejected') {
