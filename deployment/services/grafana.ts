@@ -38,10 +38,16 @@ export function deployGrafana(envName: string, tableSuffix: string) {
 
     const configJson = JSON.parse(configString);
 
-    if ('uid' in configJson) {
+    // Preserve a pinned uid only for opted-in dashboards, so re-saves keep a stable
+    // URL. Grafana 13's app platform mints a fresh uid on every re-save when none is
+    // set. Don't un-strip globally: re-saving the other working dashboards on Grafana
+    // 13 via this old provider is what churned Metric-Alerts.
+    const preserveUid = new Set(['Metric-Alerts']); // matches `identifier` (filename)
+    if ('uid' in configJson && !preserveUid.has(identifier)) {
       delete configJson.uid;
     }
 
+    // Always strip version to avoid version-mismatch errors on update.
     if ('version' in configJson) {
       delete configJson.version;
     }
