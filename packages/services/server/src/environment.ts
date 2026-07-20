@@ -1,5 +1,6 @@
 import { readFileSync } from 'node:fs';
 import zod from 'zod';
+import { isUUID } from '@hive/api/shared/is-uuid';
 import {
   OpenTelemetryConfigurationModel,
   parseRedisConfigFromEnvironment,
@@ -303,8 +304,6 @@ const LogModel = zod.object({
   ),
 });
 
-const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-
 const OidcWorkloadFederationModel = zod.union([
   zod.object({
     OIDC_WORKLOAD_FEDERATION_IDENTITY_PROVIDER: zod.union([
@@ -338,7 +337,7 @@ const OidcWorkloadFederationModel = zod.union([
       }
 
       const ids = data.OIDC_WORKLOAD_FEDERATION_ORGANIZATION_IDS.split(',').map(s => s.trim());
-      const invalid = ids.filter(id => !UUID_REGEX.test(id));
+      const invalid = ids.filter(id => !isUUID(id));
       if (invalid.length > 0) {
         ctx.addIssue({
           code: zod.ZodIssueCode.custom,
