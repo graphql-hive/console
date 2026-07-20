@@ -2231,3 +2231,37 @@ export function removeGroupMapping(input: RemoveGroupMappingInput, authToken: st
     `),
   });
 }
+
+export function createPersonalAccessToken(
+  input: GraphQLSchema.CreatePersonalAccessTokenInput,
+  authToken: string,
+) {
+  return execute({
+    authToken,
+    variables: {
+      input,
+    },
+    document: graphql(`
+      mutation TestKit_CreatePersonalAccessTokenMutation($input: CreatePersonalAccessTokenInput!) {
+        createPersonalAccessToken(input: $input) {
+          ok {
+            privateAccessKey
+            createdPersonalAccessToken {
+              id
+              title
+              description
+              createdAt
+            }
+          }
+          error {
+            message
+            details {
+              title
+              description
+            }
+          }
+        }
+      }
+    `),
+  });
+}
