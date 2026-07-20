@@ -14,6 +14,7 @@
     ]
   },
   "description": "Health of the metric-alert evaluation cron and its ClickHouse queries.",
+  "uid": "28f149e2-2033-4e29-a8f5-54d4afa8e579",
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 0,
