@@ -96,13 +96,14 @@ const SharedGroupRouteParams = z.object({
   groupId: z.string(),
 });
 
+const GroupMemberSchema = z.object({
+  value: z.string().uuid(),
+});
+
 const PostGroupsBodyModel = z.object({
   displayName: z.string(),
   externalId: z.string().optional(),
-});
-
-const GroupMemberSchema = z.object({
-  value: z.string().uuid(),
+  members: z.array(GroupMemberSchema).optional(),
 });
 
 const AddOperationSchema = z.object({
@@ -1297,9 +1298,19 @@ export const createSCIMPlugin =
         createGroupResult satisfies never;
       }
 
+      const groupMembersStore = new GroupMemberStore(result.logger, pool);
+
+      const members = body.data.members
+        ? await groupMembersStore.addGroupMembersToGroupByOrganizationIdAndGroupId(
+            result.organizationId,
+            createGroupResult.group.id,
+            body.data.members.map(member => member.value),
+          )
+        : undefined;
+
       return reply
         .status(201)
-        .send(createSCIMGroupObjectFromGroup(baseUri, createGroupResult.group));
+        .send(createSCIMGroupObjectFromGroup(baseUri, createGroupResult.group, members));
     });
 
     /**
