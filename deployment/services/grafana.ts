@@ -10,10 +10,16 @@ const dashboardDirectory = join(__dirname, '../grafana-dashboards/');
  * @param tableSuffix suffix for the table names (production, staging, dev)
  */
 export function deployGrafana(envName: string, tableSuffix: string) {
-  const availableFiles = readdirSync(dashboardDirectory)
-    .filter(f => f.endsWith('.json'))
-    // Temp workaround
-    .filter(v => !v.includes('ClickHouse-Latency.json'));
+  // Dashboards excluded from provisioning:
+  const excludedDashboards = [
+    'ClickHouse-Latency.json', // temp workaround
+    // #8114: the outdated provider churns this dashboard's uid/folder on Grafana
+    // 13, so it's managed manually in the UI until the provider upgrade.
+    'Metric-Alerts.json',
+  ];
+  const availableFiles = readdirSync(dashboardDirectory).filter(
+    f => f.endsWith('.json') && !excludedDashboards.includes(f),
+  );
   const folder = new Folder('grafana-hive-folder', {
     title: `Hive Monitoring (${envName})`,
   });
@@ -38,16 +44,10 @@ export function deployGrafana(envName: string, tableSuffix: string) {
 
     const configJson = JSON.parse(configString);
 
-    // Preserve a pinned uid only for opted-in dashboards, so re-saves keep a stable
-    // URL. Grafana 13's app platform mints a fresh uid on every re-save when none is
-    // set. Don't un-strip globally: re-saving the other working dashboards on Grafana
-    // 13 via this old provider is what churned Metric-Alerts.
-    const preserveUid = new Set(['Metric-Alerts']); // matches `identifier` (filename)
-    if ('uid' in configJson && !preserveUid.has(identifier)) {
+    if ('uid' in configJson) {
       delete configJson.uid;
     }
 
-    // Always strip version to avoid version-mismatch errors on update.
     if ('version' in configJson) {
       delete configJson.version;
     }
