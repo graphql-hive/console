@@ -201,6 +201,7 @@ deployWorkflows({
   schema,
   redis,
   clickhouse,
+  dbMigrations,
 });
 
 const zendesk = configureZendesk({ environment });
