@@ -319,7 +319,7 @@
         {
           "datasource": { "type": "prometheus", "uid": "PROM_DATASOURCE_UID" },
           "editorMode": "code",
-          "expr": "hive_metric_alert_rule_groups{filtered=\"true\"}",
+          "expr": "max(hive_metric_alert_rule_groups{filtered=\"true\"})",
           "legendFormat": "with filter",
           "range": true,
           "refId": "A"
@@ -327,7 +327,7 @@
         {
           "datasource": { "type": "prometheus", "uid": "PROM_DATASOURCE_UID" },
           "editorMode": "code",
-          "expr": "hive_metric_alert_rule_groups{filtered=\"false\"}",
+          "expr": "max(hive_metric_alert_rule_groups{filtered=\"false\"})",
           "legendFormat": "no filter",
           "range": true,
           "refId": "B"
@@ -382,7 +382,7 @@
         {
           "datasource": { "type": "prometheus", "uid": "PROM_DATASOURCE_UID" },
           "editorMode": "code",
-          "expr": "hive_metric_alert_enabled_rules{filtered=\"true\"}",
+          "expr": "max(hive_metric_alert_enabled_rules{filtered=\"true\"})",
           "legendFormat": "with filter",
           "range": true,
           "refId": "A"
@@ -390,7 +390,7 @@
         {
           "datasource": { "type": "prometheus", "uid": "PROM_DATASOURCE_UID" },
           "editorMode": "code",
-          "expr": "hive_metric_alert_enabled_rules{filtered=\"false\"}",
+          "expr": "max(hive_metric_alert_enabled_rules{filtered=\"false\"})",
           "legendFormat": "no filter",
           "range": true,
           "refId": "B"
