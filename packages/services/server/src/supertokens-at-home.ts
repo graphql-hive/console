@@ -798,7 +798,8 @@ export async function registerSupertokensAtHome(
           workloadIdentityFederation !== null &&
           (env.oidcWorkloadFederation?.organizationIds.includes(
             oidcIntegration.linkedOrganizationId,
-          ) ?? false);
+          ) ??
+            false);
 
         const oidClientConfig = new oidClient.Configuration(
           {
@@ -1318,7 +1319,8 @@ export async function registerSupertokensAtHome(
           workloadIdentityFederation !== null &&
           (env.oidcWorkloadFederation?.organizationIds.includes(
             oidcIntegration.linkedOrganizationId,
-          ) ?? false);
+          ) ??
+            false);
 
         const grantParams: Record<string, string> = {
           grant_type: 'authorization_code',
