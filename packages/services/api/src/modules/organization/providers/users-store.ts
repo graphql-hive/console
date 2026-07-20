@@ -1,3 +1,4 @@
+import { Injectable, Scope } from 'graphql-modules';
 import { z } from 'zod';
 import {
   CommonQueryMethods,
@@ -9,6 +10,7 @@ import {
 /**
  * Small user module for scim to interact with them users
  */
+@Injectable({ scope: Scope.Operation })
 export class UsersStore {
   constructor(private pool: PostgresDatabasePool) {}
 

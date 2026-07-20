@@ -216,7 +216,7 @@ export class GroupMemberStore {
     return rows;
   }
 
-  static async getGroupMemberForOrganizationIdAndUserId(
+  static async getGroupMembersForOrganizationIdAndUserId(
     pool: CommonQueryMethods,
     organizationId: string,
     userId: string,

@@ -284,7 +284,7 @@ export class Groups {
     pool: CommonQueryMethods,
     membership: OrganizationMembership,
   ): Promise<Array<Group>> {
-    const groupMembers = await GroupMemberStore.getGroupMemberForOrganizationIdAndUserId(
+    const groupMembers = await GroupMemberStore.getGroupMembersForOrganizationIdAndUserId(
       pool,
       membership.organizationId,
       membership.userId,
@@ -357,27 +357,31 @@ export class Groups {
       groupRoleAssignment: GroupRoleAssignment;
     }>
   > {
-    const groupMemberships = await Groups.getGroupsForOrganizationMembership(pool, membership);
-    if (groupMemberships.length === null) {
+    const groups = await Groups.getGroupsForOrganizationMembership(pool, membership);
+    if (groups.length === 0) {
       logger.debug(
-        'no memberships found (organizationId=%s, userId=%s)',
+        'no groups found (organizationId=%s, userId=%s)',
         membership.organizationId,
         membership.userId,
       );
       return [];
     }
+
     logger.debug(
-      'memberships found. resolve groups. (organizationId=%s, userId=%s)',
+      '%d group(s) found. resolve role mappings. (organizationId=%s, userId=%s)',
+      groups.length,
       membership.organizationId,
       membership.userId,
     );
+
     const groupMappings = await GroupRoleAssignmentStore.getGroupRoleAssignmentsForGroupIds(
       pool,
-      groupMemberships.map(membership => membership.id),
+      groups.map(group => group.id),
     );
 
     logger.debug(
-      'groups found. resolve roles. (organizationId=%s, userId=%s)',
+      '%d group role assignment(s) found. resolve roles. (organizationId=%s, userId=%s)',
+      groupMappings.length,
       membership.organizationId,
       membership.userId,
     );
