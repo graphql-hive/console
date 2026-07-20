@@ -794,6 +794,12 @@ export async function registerSupertokensAtHome(
 
         const scopes = ['openid', 'email', ...oidcIntegration.additionalScopes];
 
+        const useFederation =
+          workloadIdentityFederation !== null &&
+          (env.oidcWorkloadFederation?.organizationIds.includes(
+            oidcIntegration.linkedOrganizationId,
+          ) ?? false);
+
         const oidClientConfig = new oidClient.Configuration(
           {
             issuer: 'noop',
@@ -802,7 +808,7 @@ export async function registerSupertokensAtHome(
             token_endpoint: oidcIntegration.tokenEndpoint,
           },
           oidcIntegration.clientId,
-          oidcIntegration.useFederatedCredential || !oidcIntegration.encryptedClientSecret
+          useFederation
             ? undefined
             : {
                 client_secret: crypto.decrypt(oidcIntegration.encryptedClientSecret),
@@ -1308,6 +1314,12 @@ export async function registerSupertokensAtHome(
           access_token: z.string(),
         });
 
+        const useFederationForExchange =
+          workloadIdentityFederation !== null &&
+          (env.oidcWorkloadFederation?.organizationIds.includes(
+            oidcIntegration.linkedOrganizationId,
+          ) ?? false);
+
         const grantParams: Record<string, string> = {
           grant_type: 'authorization_code',
           code_verifier: cacheRecord.pkceVerifier,
@@ -1316,10 +1328,7 @@ export async function registerSupertokensAtHome(
           client_id: oidcIntegration.clientId,
         };
 
-        if (
-          oidcIntegration.useFederatedCredential ||
-          !oidcIntegration.encryptedClientSecret
-        ) {
+        if (useFederationForExchange) {
           // Workload Identity Federation: use client_assertion with the cached federated token
           const federatedToken = workloadIdentityFederation?.getToken() ?? null;
           if (!federatedToken) {

@@ -303,6 +303,8 @@ const LogModel = zod.object({
   ),
 });
 
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 const OidcWorkloadFederationModel = zod.union([
   zod.object({
     OIDC_WORKLOAD_FEDERATION_IDENTITY_PROVIDER: zod.union([
@@ -315,15 +317,33 @@ const OidcWorkloadFederationModel = zod.union([
     .object({
       OIDC_WORKLOAD_FEDERATION_IDENTITY_PROVIDER: zod.literal('azure'),
       AZURE_FEDERATED_TOKEN_FILE: zod.string().min(1),
+      OIDC_WORKLOAD_FEDERATION_ORGANIZATION_IDS: zod.string().min(1),
     })
     .superRefine((data, ctx) => {
       try {
-        readFileSync(data.AZURE_FEDERATED_TOKEN_FILE, 'utf-8');
+        const content = readFileSync(data.AZURE_FEDERATED_TOKEN_FILE, 'utf-8').trim();
+        if (!content) {
+          ctx.addIssue({
+            code: zod.ZodIssueCode.custom,
+            path: ['AZURE_FEDERATED_TOKEN_FILE'],
+            message: `Federated token file at path '${data.AZURE_FEDERATED_TOKEN_FILE}' is empty.`,
+          });
+        }
       } catch {
         ctx.addIssue({
           code: zod.ZodIssueCode.custom,
           path: ['AZURE_FEDERATED_TOKEN_FILE'],
           message: `Cannot read federated token file at path '${data.AZURE_FEDERATED_TOKEN_FILE}'. Ensure the file exists and is readable.`,
+        });
+      }
+
+      const ids = data.OIDC_WORKLOAD_FEDERATION_ORGANIZATION_IDS.split(',').map(s => s.trim());
+      const invalid = ids.filter(id => !UUID_REGEX.test(id));
+      if (invalid.length > 0) {
+        ctx.addIssue({
+          code: zod.ZodIssueCode.custom,
+          path: ['OIDC_WORKLOAD_FEDERATION_ORGANIZATION_IDS'],
+          message: `The following values are not valid UUIDs: ${invalid.join(', ')}`,
         });
       }
     }),
@@ -690,6 +710,9 @@ export const env = {
       ? {
           provider: 'azure' as const,
           tokenFilePath: oidcWorkloadFederation.AZURE_FEDERATED_TOKEN_FILE,
+          organizationIds: oidcWorkloadFederation.OIDC_WORKLOAD_FEDERATION_ORGANIZATION_IDS.split(
+            ',',
+          ).map(s => s.trim()),
         }
       : null,
 } as const;

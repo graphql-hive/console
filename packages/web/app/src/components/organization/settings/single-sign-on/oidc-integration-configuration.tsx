@@ -53,7 +53,6 @@ const UpdateOIDCIntegrationForm_UpdateOIDCIntegrationMutation = graphql(`
           clientId
           clientSecretPreview
           additionalScopes
-          useFederatedCredential
         }
       }
       error {
@@ -83,7 +82,6 @@ const OIDCIntegrationConfiguration_OIDCIntegration = graphql(`
     clientId
     clientSecretPreview
     additionalScopes
-    useFederatedCredential
     defaultMemberRole {
       id
       ...OIDCDefaultRoleSelector_MemberRoleFragment
@@ -301,13 +299,7 @@ export function OIDCIntegrationConfiguration(props: {
             <Table.TableRow>
               <Table.TableCell className="font-medium">Client Secret</Table.TableCell>
               <Table.TableCell className="font-mono">
-                {oidcIntegration.useFederatedCredential ? (
-                  <Tag color="green">Using Federated Credential</Tag>
-                ) : oidcIntegration.clientSecretPreview ? (
-                  <>•••••••{oidcIntegration.clientSecretPreview}</>
-                ) : (
-                  <Tag color="yellow">Not Set</Tag>
-                )}
+                •••••••{oidcIntegration.clientSecretPreview}
               </Table.TableCell>
             </Table.TableRow>
             <Table.TableRow>
@@ -421,7 +413,7 @@ export function OIDCIntegrationConfiguration(props: {
             authorizationEndpoint: oidcIntegration.authorizationEndpoint,
             tokenEndpoint: oidcIntegration.tokenEndpoint,
             userinfoEndpoint: oidcIntegration.userinfoEndpoint,
-            clientSecretPreview: oidcIntegration.clientSecretPreview ?? null,
+            clientSecretPreview: oidcIntegration.clientSecretPreview,
           }}
           onSave={async args => {
             const result = await updateOIDCIntegrationMutate({

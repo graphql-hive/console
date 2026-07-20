@@ -124,7 +124,7 @@ export function SingleSignOnSubpage(props: SingleSignOnSubPageProps): React.Reac
                     input: {
                       organizationId: organization?.id ?? '',
                       clientId: values.clientId,
-                      clientSecret: values.clientSecret || null,
+                      clientSecret: values.clientSecret ?? '',
                       authorizationEndpoint: values.authorizationEndpoint,
                       tokenEndpoint: values.tokenEndpoint,
                       userinfoEndpoint: values.userinfoEndpoint,

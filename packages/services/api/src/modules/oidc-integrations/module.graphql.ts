@@ -13,7 +13,7 @@ export default gql`
   type OIDCIntegration {
     id: ID!
     clientId: ID!
-    clientSecretPreview: String
+    clientSecretPreview: String!
     tokenEndpoint: String!
     userinfoEndpoint: String!
     authorizationEndpoint: String!
@@ -23,11 +23,6 @@ export default gql`
     requireInvitation: Boolean!
     defaultMemberRole: MemberRole!
     defaultResourceAssignment: ResourceAssignment
-    """
-    Whether this OIDC integration uses a federated credential (e.g. Azure Workload Identity)
-    instead of a client secret for authenticating to the identity provider.
-    """
-    useFederatedCredential: Boolean!
     """
     List of domains registered with this OIDC integration.
     """
@@ -193,17 +188,11 @@ export default gql`
   input CreateOIDCIntegrationInput {
     organizationId: ID!
     clientId: ID!
-    clientSecret: String
+    clientSecret: String!
     tokenEndpoint: String!
     userinfoEndpoint: String!
     authorizationEndpoint: String!
     additionalScopes: [String!]!
-    """
-    When true, the OIDC integration will use Azure Workload Identity (federated credential)
-    instead of a client secret for authenticating to the identity provider during token exchange.
-    The pod must have Azure Workload Identity configured with the appropriate federated token file.
-    """
-    useFederatedCredential: Boolean
   }
 
   type CreateOIDCIntegrationResult {
@@ -238,11 +227,6 @@ export default gql`
     userinfoEndpoint: String
     authorizationEndpoint: String
     additionalScopes: [String!]
-    """
-    When true, the OIDC integration will use Azure Workload Identity (federated credential)
-    instead of a client secret for authenticating to the identity provider during token exchange.
-    """
-    useFederatedCredential: Boolean
   }
 
   type UpdateOIDCIntegrationResult {

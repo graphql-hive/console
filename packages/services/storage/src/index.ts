@@ -2350,8 +2350,7 @@ export async function createStorage(
             "token_endpoint",
             "userinfo_endpoint",
             "authorization_endpoint",
-            "additional_scopes",
-            "use_federated_credential"
+            "additional_scopes"
           )
           VALUES (
             ${args.organizationId},
@@ -2360,8 +2359,7 @@ export async function createStorage(
             ${args.tokenEndpoint},
             ${args.userinfoEndpoint},
             ${args.authorizationEndpoint},
-            ${psql.array(args.additionalScopes, 'text')},
-            ${args.useFederatedCredential}
+            ${psql.array(args.additionalScopes, 'text')}
           )
           RETURNING
             ${oidcIntegrationFields()}
@@ -2412,7 +2410,6 @@ export async function createStorage(
           }
           , "additional_scopes" = ${args.additionalScopes ? psql.array(args.additionalScopes, 'text') : psql`"additional_scopes"`}
           , "oauth_api_url" = NULL
-          , "use_federated_credential" = ${args.useFederatedCredential ?? psql`"use_federated_credential"`}
         WHERE
           "id" = ${args.oidcIntegrationId}
         RETURNING
@@ -4030,7 +4027,7 @@ const OIDCIntegrationBaseModel = z.object({
   id: z.string(),
   linkedOrganizationId: z.string(),
   clientId: z.string(),
-  clientSecret: z.string().nullable(),
+  clientSecret: z.string(),
   additionalScopes: z
     .array(z.string())
     .nullable()
@@ -4040,7 +4037,6 @@ const OIDCIntegrationBaseModel = z.object({
   defaultRoleId: z.string().nullable(),
   defaultAssignedResources: z.any().nullable(),
   requireInvitation: z.boolean(),
-  useFederatedCredential: z.boolean(),
 });
 
 const OIDCIntegrationLegacyModel = OIDCIntegrationBaseModel.extend({
@@ -4059,7 +4055,6 @@ const OIDCIntegrationLegacyModel = OIDCIntegrationBaseModel.extend({
   requireInvitation: record.requireInvitation,
   defaultMemberRoleId: record.defaultRoleId,
   defaultResourceAssignment: record.defaultAssignedResources,
-  useFederatedCredential: record.useFederatedCredential,
 }));
 
 const LatestOIDCIntegrationModel = OIDCIntegrationBaseModel.extend({
@@ -4081,7 +4076,6 @@ const LatestOIDCIntegrationModel = OIDCIntegrationBaseModel.extend({
   requireInvitation: record.requireInvitation,
   defaultMemberRoleId: record.defaultRoleId,
   defaultResourceAssignment: record.defaultAssignedResources,
-  useFederatedCredential: record.useFederatedCredential,
 }));
 
 const OIDCIntegrationModel = z.union([OIDCIntegrationLegacyModel, LatestOIDCIntegrationModel]);
@@ -4493,7 +4487,6 @@ const oidcIntegrationFields = (prefix: TaggedTemplateLiteralInvocation = psql``)
   , ${prefix}"default_role_id" AS "defaultRoleId"
   , ${prefix}"default_assigned_resources" AS "defaultAssignedResources"
   , ${prefix}"require_invitation" AS "requireInvitation"
-  , ${prefix}"use_federated_credential" AS "useFederatedCredential"
 `;
 
 const OrganizationModel = z

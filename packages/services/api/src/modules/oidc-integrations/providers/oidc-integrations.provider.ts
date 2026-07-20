@@ -97,9 +97,6 @@ export class OIDCIntegrationsProvider {
   }
 
   async getClientSecretPreview(integration: OIDCIntegration) {
-    if (integration.encryptedClientSecret === null) {
-      return null;
-    }
     const decryptedSecret = this.crypto.decrypt(integration.encryptedClientSecret);
     return decryptedSecret.substring(decryptedSecret.length - 4);
   }
@@ -107,12 +104,11 @@ export class OIDCIntegrationsProvider {
   async createOIDCIntegrationForOrganization(args: {
     organizationId: string;
     clientId: string;
-    clientSecret: string | null;
+    clientSecret: string;
     tokenEndpoint: string;
     userinfoEndpoint: string;
     authorizationEndpoint: string;
     additionalScopes: readonly string[];
-    useFederatedCredential: boolean;
   }) {
     if (this.isEnabled() === false) {
       return {
@@ -137,26 +133,8 @@ export class OIDCIntegrationsProvider {
       throw new Error(`Failed to locate organization ${args.organizationId}`);
     }
 
-    // When using federated credentials, client secret is not required
-    if (!args.useFederatedCredential && !args.clientSecret) {
-      return {
-        type: 'error',
-        reason: null,
-        fieldErrors: {
-          clientId: null,
-          clientSecret: 'Client secret is required when not using federated credentials.',
-          tokenEndpoint: null,
-          userinfoEndpoint: null,
-          authorizationEndpoint: null,
-          additionalScopes: null,
-        },
-      } as const;
-    }
-
     const clientIdResult = OIDCIntegrationClientIdModel.safeParse(args.clientId);
-    const clientSecretResult = args.useFederatedCredential
-      ? { success: true as const, data: null }
-      : OIDCClientSecretModel.safeParse(args.clientSecret);
+    const clientSecretResult = OIDCClientSecretModel.safeParse(args.clientSecret);
     const tokenEndpointResult = OAuthAPIUrlModel.safeParse(args.tokenEndpoint);
     const userinfoEndpointResult = OAuthAPIUrlModel.safeParse(args.userinfoEndpoint);
     const authorizationEndpointResult = OAuthAPIUrlModel.safeParse(args.authorizationEndpoint);
@@ -173,13 +151,11 @@ export class OIDCIntegrationsProvider {
       const creationResult = await this.storage.createOIDCIntegrationForOrganization({
         organizationId: args.organizationId,
         clientId: clientIdResult.data,
-        encryptedClientSecret:
-          clientSecretResult.data !== null ? this.crypto.encrypt(clientSecretResult.data) : null,
+        encryptedClientSecret: this.crypto.encrypt(clientSecretResult.data),
         tokenEndpoint: tokenEndpointResult.data,
         userinfoEndpoint: userinfoEndpointResult.data,
         authorizationEndpoint: authorizationEndpointResult.data,
         additionalScopes: additionalScopesResult.data,
-        useFederatedCredential: args.useFederatedCredential,
       });
 
       if (creationResult.type === 'ok') {
@@ -240,7 +216,6 @@ export class OIDCIntegrationsProvider {
     userinfoEndpoint: string | null;
     authorizationEndpoint: string | null;
     additionalScopes: readonly string[] | null;
-    useFederatedCredential: boolean | null;
   }) {
     if (this.isEnabled() === false) {
       return {
@@ -292,28 +267,6 @@ export class OIDCIntegrationsProvider {
       authorizationEndpointResult.success &&
       additionalScopesResult.success
     ) {
-      const effectiveUseFederatedCredential =
-        args.useFederatedCredential ?? integration.useFederatedCredential;
-      const effectiveHasClientSecret = clientSecretResult.data
-        ? true
-        : integration.encryptedClientSecret !== null;
-
-      if (!effectiveUseFederatedCredential && !effectiveHasClientSecret) {
-        return {
-          type: 'error',
-          message: "Couldn't update integration.",
-          fieldErrors: {
-            clientId: null,
-            clientSecret:
-              'Either a client secret or federated credential must be enabled.',
-            tokenEndpoint: null,
-            userinfoEndpoint: null,
-            authorizationEndpoint: null,
-            additionalScopes: null,
-          },
-        } as const;
-      }
-
       const oidcIntegration = await this.storage.updateOIDCIntegration({
         oidcIntegrationId: args.oidcIntegrationId,
         clientId: clientIdResult.data,
@@ -324,7 +277,6 @@ export class OIDCIntegrationsProvider {
         userinfoEndpoint: userinfoEndpointResult.data,
         authorizationEndpoint: authorizationEndpointResult.data,
         additionalScopes: additionalScopesResult.data,
-        useFederatedCredential: args.useFederatedCredential,
       });
 
       const redactedClientSecret = maskToken(oidcIntegration.clientId);
