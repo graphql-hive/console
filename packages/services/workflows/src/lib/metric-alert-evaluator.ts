@@ -62,12 +62,33 @@ type ClickHouseWindowRow = z.infer<typeof ClickHouseWindowRowSchema>;
 type GroupKey = string;
 
 function makeGroupKey(rule: MetricAlertRuleRow): GroupKey {
-  return `${rule.targetId}:${rule.timeWindowMinutes}:${rule.savedFilterId ?? ''}`;
+  // Include the resolved tier so a >= 7d TRAFFIC rule (hourly) and a >= 7d latency
+  // rule (daily) on the same target/window/filter don't share one query.
+  const resolution = resolutionFor(rule.timeWindowMinutes, rule.type !== 'TRAFFIC');
+  return `${rule.targetId}:${rule.timeWindowMinutes}:${rule.savedFilterId ?? ''}:${resolution}`;
 }
 
 // Nanoseconds per millisecond. ClickHouse stores operation durations in
 // nanoseconds; latency rule thresholds and all display surfaces use ms.
 const NS_TO_MS = 1e6;
+
+const MINUTES_PER_DAY = 24 * 60; // 1440
+
+// Windows >= 7 days read the daily rollups (far fewer buckets than hourly). Must
+// equal the API's METRIC_ALERT_RULE_DAILY_ROLLUP_THRESHOLD_MINUTES (separate
+// package, can't import); keep in sync.
+export const DAILY_THRESHOLD_MINUTES = 7 * MINUTES_PER_DAY; // 10080
+
+export type Resolution = 'minutely' | 'hourly' | 'daily';
+
+// The ClickHouse rollup tier a window reads. Single source of truth for the group
+// key and the query. TRAFFIC (allowDailyRollup false) stays on hourly at >= 7d so
+// its absolute counts aren't skewed by daily buckets snapping to day boundaries.
+export function resolutionFor(timeWindowMinutes: number, allowDailyRollup: boolean): Resolution {
+  if (timeWindowMinutes <= 360) return 'minutely';
+  if (allowDailyRollup && timeWindowMinutes >= DAILY_THRESHOLD_MINUTES) return 'daily';
+  return 'hourly';
+}
 
 // A null column means it wasn't selected (a bug), not missing data (empty windows
 // give zeros). Throw rather than read a phantom 0 that would silently never fire.
@@ -315,6 +336,8 @@ export async function queryClickHouseWindows(
   // False selects `NULL as <col>` so ClickHouse skips reading that duration column.
   needsAverage: boolean = true,
   needsPercentiles: boolean = true,
+  // False keeps a >= 7d window on hourly (TRAFFIC needs exact bucket boundaries).
+  allowDailyRollup: boolean = true,
 ): Promise<{ current: ClickHouseWindowRow | null; previous: ClickHouseWindowRow | null }> {
   const anchorMs = evaluationTime.getTime();
   const offsetMs = 60_000;
@@ -333,7 +356,7 @@ export async function queryClickHouseWindows(
   // (rather than a separate flag/param) makes the filtered-query-on-rollup
   // combination unrepresentable.
   const useTargetRollup = filterConditions.length === 0;
-  const resolution = timeWindowMinutes <= 360 ? 'minutely' : 'hourly';
+  const resolution = resolutionFor(timeWindowMinutes, allowDailyRollup);
   const tableName = useTargetRollup
     ? `operations_by_target_${resolution}`
     : `operations_${resolution}`;

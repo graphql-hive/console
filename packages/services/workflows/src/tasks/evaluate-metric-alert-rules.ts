@@ -125,6 +125,9 @@ export const task = implementTask(EvaluateMetricAlertRulesTask, async args => {
     const needsPercentiles = groupRules.some(r => r.type === 'LATENCY' && r.metric !== 'AVG');
     const needsAverage = groupRules.some(r => r.type === 'LATENCY' && r.metric === 'AVG');
 
+    // Any TRAFFIC rule keeps the group on hourly at >= 7d (exact counts).
+    const allowDailyRollup = !groupRules.some(r => r.type === 'TRAFFIC');
+
     // startActiveSpan makes this span the current OTel context for the
     // duration of the callback, so the slonik PG interceptor and the
     // fetch instrumentation parent their auto-spans under this one. That's
@@ -161,6 +164,7 @@ export const task = implementTask(EvaluateMetricAlertRulesTask, async args => {
               needsPreviousWindow,
               needsAverage,
               needsPercentiles,
+              allowDailyRollup,
             );
           } catch (error) {
             logger.error(

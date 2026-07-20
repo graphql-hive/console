@@ -3,9 +3,11 @@ import type { MetricAlertRule } from '../../../shared/entities';
 import { AccessError } from '../../../shared/errors';
 import { Session } from '../../auth/lib/authz';
 import {
+  METRIC_ALERT_RULE_DAILY_ROLLUP_THRESHOLD_MINUTES,
   METRIC_ALERT_RULE_TIME_WINDOW_MAX_MINUTES,
   METRIC_ALERT_RULE_TIME_WINDOW_MIN_MINUTES,
   METRIC_ALERT_RULES_PER_TARGET_LIMIT,
+  MINUTES_PER_DAY,
 } from '../../commerce/constants';
 import { OrganizationManager } from '../../organization/providers/organization-manager';
 import { Logger } from '../../shared/providers/logger';
@@ -336,6 +338,17 @@ export class MetricAlertRulesManager {
     ) {
       throw new MetricAlertRuleValidationError(
         `Time window must be a whole number of minutes between ${METRIC_ALERT_RULE_TIME_WINDOW_MIN_MINUTES} and ${METRIC_ALERT_RULE_TIME_WINDOW_MAX_MINUTES} (30 days).`,
+      );
+    }
+    // Windows at/above the daily-rollup threshold read whole-day buckets, so they
+    // must be a whole number of days or the window silently rounds. Guards direct
+    // API callers; the UI presets already comply.
+    if (
+      timeWindowMinutes >= METRIC_ALERT_RULE_DAILY_ROLLUP_THRESHOLD_MINUTES &&
+      timeWindowMinutes % MINUTES_PER_DAY !== 0
+    ) {
+      throw new MetricAlertRuleValidationError(
+        'Time windows of 7 days or more must be a whole number of days.',
       );
     }
   }
