@@ -83,28 +83,20 @@ export function createUsageHelper(
       expect(responseStatus).toBe(200);
     },
     async expectInsightOperation(operationName) {
-      await expect
-        .poll(
-          async () => {
-            await reloadInsightsPage();
-
-            return page.getByRole('link').filter({ hasText: operationName }).count();
-          },
-          { timeout: 60_000, intervals: [2_000] },
-        )
-        .toBeGreaterThan(0);
+      const link = page.getByRole('link').filter({ hasText: operationName });
+      await expect(async () => {
+        await reloadInsightsPage();
+        // Reload re-fetches; wait for the row to render before retrying so a slow load
+        // isn't reloaded away mid-flight.
+        await expect(link.first()).toBeVisible({ timeout: 15_000 });
+      }).toPass({ timeout: 90_000, intervals: [1_000] });
     },
     async expectInsightVersion(version) {
-      await expect
-        .poll(
-          async () => {
-            await reloadInsightsPage();
-
-            return page.getByText(version, { exact: true }).count();
-          },
-          { timeout: 60_000, intervals: [2_000] },
-        )
-        .toBeGreaterThan(0);
+      const versionText = page.getByText(version, { exact: true });
+      await expect(async () => {
+        await reloadInsightsPage();
+        await expect(versionText.first()).toBeVisible({ timeout: 15_000 });
+      }).toPass({ timeout: 90_000, intervals: [1_000] });
     },
   };
 }

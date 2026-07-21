@@ -182,6 +182,7 @@ export async function migrateClickHouse(
     import('./clickhouse-actions/016-subgraph-otel-traces-cleanup'),
     import('./clickhouse-actions/017-affected-app-deployments-performance'),
     import('./clickhouse-actions/018-metric-alert-target-rollups'),
+    import('./clickhouse-actions/019-metric-alert-target-daily-rollup'),
   ]);
 
   async function actionRunner(action: Action, index: number) {

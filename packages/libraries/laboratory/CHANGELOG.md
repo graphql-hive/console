@@ -1,5 +1,17 @@
 # @graphql-hive/laboratory
 
+## 0.2.0
+
+### Minor Changes
+
+- [#8206](https://github.com/graphql-hive/console/pull/8206)
+  [`481f356`](https://github.com/graphql-hive/console/commit/481f356e7e0acf509e3e309c992e3c0ba5e9a955)
+  Thanks [@jonathanawesome](https://github.com/jonathanawesome)! - Remove the request `retry`
+  setting from the laboratory. Retries are the wrong primitive for an interactive GraphQL IDE (the
+  user re-runs operations, and schema introspection already polls), and the underlying HTTP executor
+  retried on any GraphQL `errors` response while dropping request headers on the retry, so retries
+  went out unauthenticated. Existing persisted `retry` values are ignored automatically.
+
 ## 0.1.9
 
 ### Patch Changes

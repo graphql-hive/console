@@ -98,7 +98,7 @@ jobs:
       restoreDeletedChangesets: true
       buildScript: build:libraries
       packageManager: pnpm
-      nodeVersion: '24.17'
+      nodeVersion: '24.18'
     secrets:
       githubToken: ${{ secrets.GITHUB_TOKEN }}
       npmToken: ${{ secrets.NPM_TOKEN }}
