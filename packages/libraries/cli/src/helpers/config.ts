@@ -2,25 +2,56 @@ import fs from 'fs';
 import path from 'path';
 import { z } from 'zod';
 
-// NOTE: When changing these models, update the public JSON Schema at
-// packages/libraries/cli/hive-config.schema.json (and the SchemaStore catalog entry) to match.
-const LegacyConfigModel = z.object({
-  registry: z.string().optional(),
-  token: z.string().optional(),
+// These models are the single source of truth for the public JSON Schema at
+// packages/libraries/cli/hive-config.schema.json. After changing them, regenerate the schema with
+// `pnpm --filter @graphql-hive/cli generate:schema` (CI fails if the committed schema is stale).
+export const LegacyConfigModel = z.object({
+  registry: z
+    .string()
+    .describe('Deprecated. Registry endpoint URL. Use `registry.endpoint` instead.')
+    .optional(),
+  token: z
+    .string()
+    .describe('Deprecated. Registry access token. Use `registry.accessToken` instead.')
+    .optional(),
 });
 
-const ConfigModel = z.object({
+export const ConfigModel = z.object({
   registry: z
     .object({
-      endpoint: z.string().url().optional(),
-      accessToken: z.string().optional(),
+      endpoint: z
+        .string()
+        .url()
+        .describe(
+          'GraphQL endpoint of the Hive schema registry. Defaults to https://app.graphql-hive.com/graphql. Set this when self-hosting Hive. Can also be provided via the HIVE_REGISTRY environment variable or the --registry.endpoint argument.',
+        )
+        .optional(),
+      accessToken: z
+        .string()
+        .describe(
+          'Registry access token used to authenticate registry commands such as schema:publish and schema:check. Can also be provided via the HIVE_TOKEN environment variable or the --registry.accessToken argument.',
+        )
+        .optional(),
     })
+    .describe('Schema registry connection settings.')
     .optional(),
   cdn: z
     .object({
-      endpoint: z.string().url().optional(),
-      accessToken: z.string().optional(),
+      endpoint: z
+        .string()
+        .url()
+        .describe(
+          'High-availability CDN endpoint for fetching artifacts. Can also be provided via the HIVE_CDN_ENDPOINT environment variable or the --cdn.endpoint argument.',
+        )
+        .optional(),
+      accessToken: z
+        .string()
+        .describe(
+          'CDN access token used by artifact:fetch. Can also be provided via the --cdn.accessToken argument.',
+        )
+        .optional(),
     })
+    .describe('High-availability CDN settings used by artifact:fetch.')
     .optional(),
 });
 

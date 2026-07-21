@@ -9,6 +9,7 @@ __snapshots__/
 /integration-tests/testkit/gql/
 /packages/libraries/cli/src/sdk.ts
 /packages/libraries/cli/src/gql/
+/packages/libraries/cli/hive-config.schema.json
 /packages/web/app/src/gql/**
 /packages/web/app/src/graphql/index.ts
 /packages/web/app/next.config.mjs

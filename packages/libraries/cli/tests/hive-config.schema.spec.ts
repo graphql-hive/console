@@ -1,13 +1,13 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import Ajv from 'ajv';
+import { serializeConfigSchema } from '../scripts/generate-config-schema';
 
 // Compiles the shipped JSON Schema and asserts it accepts every `hive.json` shape
-// the `Config` class accepts and rejects common typos. Keep the fixtures in sync
-// with ConfigModel / LegacyConfigModel in src/helpers/config.ts.
-const schema = JSON.parse(
-  readFileSync(join(__dirname, '..', 'hive-config.schema.json'), 'utf8'),
-) as Record<string, unknown>;
+// the `Config` class accepts and rejects common typos. The fixtures mirror
+// ConfigModel / LegacyConfigModel in src/helpers/config.ts.
+const schemaFileContents = readFileSync(join(__dirname, '..', 'hive-config.schema.json'), 'utf8');
+const schema = JSON.parse(schemaFileContents) as Record<string, unknown>;
 
 // `strict: false`: the schema uses `format: "uri"`, which bare ajv does not
 // register. This suite tests structure (shapes + typos), not URI formatting.
@@ -57,6 +57,12 @@ const invalidConfigs: Array<[string, unknown]> = [
 ];
 
 describe('hive-config.schema.json', () => {
+  test('is up to date with the config models', () => {
+    // The schema is generated from ConfigModel / LegacyConfigModel. If this fails, run
+    // `pnpm --filter @graphql-hive/cli generate:schema` and commit the result.
+    expect(schemaFileContents).toBe(serializeConfigSchema());
+  });
+
   test('compiles as a valid JSON Schema', () => {
     expect(typeof validate).toBe('function');
   });
