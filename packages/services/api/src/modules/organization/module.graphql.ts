@@ -1605,11 +1605,18 @@ export default gql`
     pageInfo: PageInfo!
   }
 
+  input GroupsFilter {
+    """
+    Part of a group name that is used to filter the list of groups.
+    """
+    searchTerm: String
+  }
+
   extend type Organization {
     """
     A paginated list of groups within the organization.
     """
-    groups(first: Int = 10, after: String = null): GroupConnection!
+    groups(first: Int = 10, after: String = null, filters: GroupsFilter): GroupConnection!
     """
     Lookup a specific group within the organization.
     """

@@ -157,6 +157,50 @@ test.describe('Organization.groups', () => {
       'Test Group A',
     ]);
   });
+
+  test.concurrent('can filter groups by name while paginating', async ({ expect }) => {
+    const seed = initSeed();
+    const owner = await seed.createOwner();
+    const org = await owner.createOrg();
+    const { pool } = await seed.createDbConnection();
+    const groupStore = new GroupStore(new NoopLogger(), pool);
+
+    for (const displayName of ['Backend', 'Frontend Team', 'Frontend Operations']) {
+      const createGroupResult = await groupStore.createGroup({
+        organizationId: org.organization.id,
+        displayName,
+        externalId: null,
+      });
+      invariant(createGroupResult.type === 'success', 'Expected creating group to succeed');
+    }
+
+    let paginationResult = await getPaginatedGroupsForOrganization(
+      owner.ownerToken,
+      org.organization.id,
+      1,
+      null,
+      'FRONT',
+    ).then(r => r.expectNoGraphQLErrors());
+    expect(paginationResult.organization?.groups.edges).toHaveLength(1);
+    expect(paginationResult.organization?.groups.pageInfo.hasNextPage).toEqual(true);
+
+    invariant(!!paginationResult.organization?.groups.pageInfo.endCursor, 'end cursor must exist');
+    const groupNames = paginationResult.organization.groups.edges.map(edge => edge.node.name);
+
+    paginationResult = await getPaginatedGroupsForOrganization(
+      owner.ownerToken,
+      org.organization.id,
+      1,
+      paginationResult.organization.groups.pageInfo.endCursor,
+      'FRONT',
+    ).then(r => r.expectNoGraphQLErrors());
+    expect(paginationResult.organization?.groups.edges).toHaveLength(1);
+    expect(paginationResult.organization?.groups.pageInfo.hasNextPage).toEqual(false);
+
+    invariant(!!paginationResult.organization, 'organization must exist');
+    groupNames.push(...paginationResult.organization.groups.edges.map(edge => edge.node.name));
+    expect(groupNames.sort()).toEqual(['Frontend Team', 'Frontend Operations'].sort());
+  });
 });
 
 test.describe('Mutation.addGroupMappingToGroup', () => {

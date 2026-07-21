@@ -2112,6 +2112,7 @@ export function getPaginatedGroupsForOrganization(
   organizationId: string,
   first: number,
   after: string | null,
+  searchTerm: string | null = null,
 ) {
   return execute({
     authToken,
@@ -2119,16 +2120,18 @@ export function getPaginatedGroupsForOrganization(
       organizationId,
       first,
       after,
+      searchTerm,
     },
     document: graphql(`
       query TestKit_PaginatedGroupsForOrganization(
         $organizationId: ID!
         $first: Int!
         $after: String
+        $searchTerm: String
       ) {
         organization(reference: { byId: $organizationId }) {
           id
-          groups(first: $first, after: $after) {
+          groups(first: $first, after: $after, filters: { searchTerm: $searchTerm }) {
             edges {
               node {
                 id

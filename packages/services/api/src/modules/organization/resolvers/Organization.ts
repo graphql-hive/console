@@ -269,6 +269,7 @@ export const Organization: Pick<
     return injector.get(GroupStore).getPaginatedGroupsForOrganizationId(organization.id, {
       first: args.first,
       after: args.after,
+      searchTerm: args.filters?.searchTerm ?? null,
     });
   },
   async group(organization, args, { injector }) {

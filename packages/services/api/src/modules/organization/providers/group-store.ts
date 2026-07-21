@@ -158,6 +158,7 @@ export class GroupStore {
     args: {
       first: number | null;
       after: string | null;
+      searchTerm: string | null;
     },
   ) {
     this.logger.debug('paginate groups for organization by id (organizationId=%s)', organizationId);
@@ -167,6 +168,7 @@ export class GroupStore {
       cursor = decodeCreatedAtAndUUIDIdBasedCursor(args.after);
     }
     const limit = args.first ? (args.first > 0 ? Math.min(args.first, 20) : 20) : 20;
+    const searchTerm = args.searchTerm?.trim() ?? '';
 
     const query = psql`
       SELECT
@@ -188,6 +190,7 @@ export class GroupStore {
               `
             : psql``
         }
+        ${searchTerm ? psql`AND "display_name" ILIKE ${'%' + searchTerm + '%'}` : psql``}
       ORDER BY
         "created_at" DESC
         , "id" DESC
