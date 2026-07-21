@@ -1,6 +1,6 @@
 import { ReactNode, useState } from 'react';
 import { useMutation } from 'urql';
-import { Badge } from '@/components/ui/badge';
+import { Badge } from '@/components/base/badge/badge';
 import { Button } from '@/components/ui/button';
 import * as Sheet from '@/components/ui/sheet';
 import { useToast } from '@/components/ui/use-toast';
@@ -126,7 +126,7 @@ export function ManageGroupMappingSheet(props: ManageGroupMappingSheetProps): Re
             <>Adjust Group Role Mapping</>
           ) : (
             <>
-              Add new group role mapping to <Badge>{group.name}</Badge>
+              Add new group role mapping to <Badge className="ml-1">{group.name}</Badge>
             </>
           )
         }

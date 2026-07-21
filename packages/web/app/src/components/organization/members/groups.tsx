@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 import { useClient, useMutation, useQuery } from 'urql';
 import { useDebouncedCallback } from 'use-debounce';
+import { Badge } from '@/components/base/badge/badge';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -19,7 +20,6 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { SubPageLayout, SubPageLayoutHeader } from '@/components/ui/page-content-layout';
@@ -446,18 +446,7 @@ function GroupRoleMappingRow(props: {
     <div className="bg-neutral-3 group flex items-center justify-between rounded-md px-3 py-1.5">
       <div className="flex items-center gap-3">
         <div className="flex items-center gap-2">
-          <Badge
-            variant={
-              groupRoleMapping.resourceAssignment.mode ===
-              GraphQLSchema.ResourceAssignmentModeType.All
-                ? 'default'
-                : 'secondary'
-            }
-            className={cn(
-              'text-xs font-medium',
-              'bg-amber-500/20 text-amber-500 hover:bg-amber-500/30',
-            )}
-          >
+          <Badge variant={'default'} className={cn('text-xs font-medium')}>
             {groupRoleMapping.role.name}
           </Badge>
           <span className="text-xs">on</span>
