@@ -286,7 +286,7 @@ const OrganizationMemberRow = memo(function OrganizationMemberRow(props: {
                     <TooltipTrigger>
                       <ShieldCheck className="size-4" />
                     </TooltipTrigger>
-                    <TooltipContent>Provisioned via SCIM</TooltipContent>
+                    <TooltipContent className="text-xs">Provisioned via SCIM</TooltipContent>
                   </Tooltip>
                 </TooltipProvider>
               ) : null}
@@ -302,7 +302,7 @@ const OrganizationMemberRow = memo(function OrganizationMemberRow(props: {
                           />
                         </div>
                       </TooltipTrigger>
-                      <TooltipContent className="text-center">
+                      <TooltipContent className="text-center text-xs">
                         {provider.disabledReason
                           ? `${providerDisplay.text} (Disabled - ${provider.disabledReason})`
                           : providerDisplay.text}
@@ -335,7 +335,7 @@ const OrganizationMemberRow = memo(function OrganizationMemberRow(props: {
                   <TooltipTrigger>
                     <Badge variant="destructive">Inactive</Badge>
                   </TooltipTrigger>
-                  <TooltipContent className="text-sm">This user is disabled.</TooltipContent>
+                  <TooltipContent className="text-xs">This user is disabled.</TooltipContent>
                 </Tooltip>
               </TooltipProvider>
             ) : (
@@ -542,42 +542,42 @@ export function OrganizationMembers(props: {
           )}
         </div>
       </SubPageLayoutHeader>
-      <table className="divide-neutral-10/20 w-full table-auto divide-y">
-        <thead>
-          <tr>
-            <th className="" />
-            <th className="relative select-none py-3 pl-3 text-left text-sm font-semibold">
-              Member
-            </th>
-            <th className="relative w-full select-none py-3 text-center align-middle text-sm font-semibold" />
-            <th className="w-12 py-3 text-right text-sm font-semibold" />
-          </tr>
-        </thead>
-        <tbody className="divide-neutral-10/20 divide-y">
-          {members.length === 0 ? (
+      <div className="mt-4 overflow-hidden rounded-lg border">
+        <table className="divide-neutral-10/20 w-full table-auto divide-y">
+          <thead className="bg-neutral-3 border-b px-4 py-3 text-sm font-medium">
             <tr>
-              <td colSpan={4} className="py-16">
-                <div className="flex flex-col items-center justify-center px-4">
-                  <h3 className="text-neutral-11 mb-2 text-lg font-semibold">No members found</h3>
-
-                  <p className="text-neutral-10 max-w-sm text-center text-sm">
-                    {`No results for "${searchValue}". Try adjusting your search term.`}
-                  </p>
-                </div>
-              </td>
+              <th className="" />
+              <th className="relative select-none py-3 pl-3 text-left text-sm">Member</th>
+              <th className="relative w-full select-none py-3 text-center align-middle text-sm font-semibold" />
+              <th className="w-12 py-3 text-right text-sm font-semibold" />
             </tr>
-          ) : (
-            members.map(node => (
-              <OrganizationMemberRow
-                key={node.id}
-                organization={props.organization}
-                member={node}
-                refetchMembers={props.refetchMembers}
-              />
-            ))
-          )}
-        </tbody>
-      </table>
+          </thead>
+          <tbody className="divide-neutral-10/20 divide-y">
+            {members.length === 0 ? (
+              <tr>
+                <td colSpan={4} className="py-16">
+                  <div className="flex flex-col items-center justify-center px-4">
+                    <h3 className="text-neutral-11 mb-2 text-lg font-semibold">No members found</h3>
+
+                    <p className="text-neutral-10 max-w-sm text-center text-sm">
+                      {`No results for "${searchValue}". Try adjusting your search term.`}
+                    </p>
+                  </div>
+                </td>
+              </tr>
+            ) : (
+              members.map(node => (
+                <OrganizationMemberRow
+                  key={node.id}
+                  organization={props.organization}
+                  member={node}
+                  refetchMembers={props.refetchMembers}
+                />
+              ))
+            )}
+          </tbody>
+        </table>
+      </div>
       {/* Pagination Controls */}
       <div className="mt-4 flex items-center justify-between">
         <div className="text-neutral-10 text-sm">
