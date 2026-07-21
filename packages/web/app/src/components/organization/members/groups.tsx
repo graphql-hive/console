@@ -40,10 +40,15 @@ const Groups_OrganizationFragment = graphql(`
 `);
 
 const Groups_OrganizationGroupQuery = graphql(`
-  query Groups_OrganizationGroupQuery($organizationId: ID!, $first: Int, $after: String) {
+  query Groups_OrganizationGroupQuery(
+    $organizationId: ID!
+    $first: Int
+    $after: String
+    $searchTerm: String
+  ) {
     organization(reference: { byId: $organizationId }) {
       id
-      groups(first: $first, after: $after) {
+      groups(first: $first, after: $after, filters: { searchTerm: $searchTerm }) {
         edges {
           node {
             id
@@ -66,14 +71,15 @@ export function Groups(props: {
 }): React.ReactElement | null {
   const oorganization = useFragment(Groups_OrganizationFragment, props.organization);
   const client = useClient();
+  const [searchValue, setSearchValue] = useSearchParamsFilter<string>('search', '');
   const [query] = useQuery({
     query: Groups_OrganizationGroupQuery,
     requestPolicy: 'network-only',
     variables: {
       organizationId: oorganization.id,
+      searchTerm: searchValue || null,
     },
   });
-  const [searchValue, setSearchValue] = useSearchParamsFilter<string>('search', '');
   const handleSearchChange = useDebouncedCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchValue(e.target.value);
   }, 300);
@@ -149,6 +155,7 @@ export function Groups(props: {
             void client.query(Groups_OrganizationGroupQuery, {
               organizationId: organization.id,
               after: organization.groups.pageInfo.endCursor,
+              searchTerm: searchValue || null,
             })
           }
           disabled={!organization?.groups.pageInfo.hasNextPage}
