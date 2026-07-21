@@ -76,8 +76,8 @@ describe('groupRulesByQuery', () => {
 
   test('at >= 7d a TRAFFIC rule and a latency rule split into hourly + daily groups', () => {
     const groups = groupRulesByQuery([
-      makeRule({ id: 'a', type: 'TRAFFIC', timeWindowMinutes: 43200 }),
-      makeRule({ id: 'b', type: 'LATENCY', metric: 'P95', timeWindowMinutes: 43200 }),
+      makeRule({ id: 'a', type: 'TRAFFIC', timeWindowMinutes: 10080 }),
+      makeRule({ id: 'b', type: 'LATENCY', metric: 'P95', timeWindowMinutes: 10080 }),
     ]);
     expect(groups.size).toBe(2);
     const tiers = [...groups.values()]
@@ -104,7 +104,6 @@ describe('evaluationIntervalMinutes', () => {
     expect(evaluationIntervalMinutes(1440)).toBe(15);
     expect(evaluationIntervalMinutes(1441)).toBe(30);
     expect(evaluationIntervalMinutes(10080)).toBe(30);
-    expect(evaluationIntervalMinutes(43200)).toBe(30);
   });
 });
 
@@ -125,7 +124,6 @@ describe('resolutionFor', () => {
     expect(resolutionFor(DAILY_THRESHOLD_MINUTES, true)).toBe('daily');
     // allowDailyRollup=false (a TRAFFIC group) never reaches daily.
     expect(resolutionFor(DAILY_THRESHOLD_MINUTES, false)).toBe('hourly');
-    expect(resolutionFor(43200, false)).toBe('hourly');
   });
 });
 
@@ -136,13 +134,13 @@ describe('isRuleDue', () => {
   const ago = (minutes: number) => new Date(evalTime.getTime() - minutes * 60_000).toISOString();
 
   test('a never-evaluated rule is always due', () => {
-    expect(isRuleDue(makeRule({ lastEvaluatedAt: null, timeWindowMinutes: 43200 }), evalTime)).toBe(
+    expect(isRuleDue(makeRule({ lastEvaluatedAt: null, timeWindowMinutes: 10080 }), evalTime)).toBe(
       true,
     );
   });
 
-  test('30-day rule: due once its 30-min interval has elapsed', () => {
-    const base = { timeWindowMinutes: 43200, state: 'NORMAL' as const };
+  test('7-day rule: due once its 30-min interval has elapsed', () => {
+    const base = { timeWindowMinutes: 10080, state: 'NORMAL' as const };
     expect(isRuleDue(makeRule({ ...base, lastEvaluatedAt: ago(0) }), evalTime)).toBe(false);
     expect(isRuleDue(makeRule({ ...base, lastEvaluatedAt: ago(29) }), evalTime)).toBe(false);
     expect(isRuleDue(makeRule({ ...base, lastEvaluatedAt: ago(30) }), evalTime)).toBe(true);
@@ -153,7 +151,7 @@ describe('isRuleDue', () => {
     const almost = new Date(evalTime.getTime() - (30 * 60_000 - 5_000)).toISOString();
     expect(
       isRuleDue(
-        makeRule({ timeWindowMinutes: 43200, state: 'NORMAL', lastEvaluatedAt: almost }),
+        makeRule({ timeWindowMinutes: 10080, state: 'NORMAL', lastEvaluatedAt: almost }),
         evalTime,
       ),
     ).toBe(false);
@@ -168,13 +166,13 @@ describe('isRuleDue', () => {
   test('PENDING/RECOVERING keep full 1-min resolution regardless of window', () => {
     for (const state of ['PENDING', 'RECOVERING'] as const) {
       expect(
-        isRuleDue(makeRule({ timeWindowMinutes: 43200, state, lastEvaluatedAt: ago(1) }), evalTime),
+        isRuleDue(makeRule({ timeWindowMinutes: 10080, state, lastEvaluatedAt: ago(1) }), evalTime),
       ).toBe(true);
     }
-    // The same 30-day rule in a steady state, 1 min after eval, is NOT due.
+    // The same 7-day rule in a steady state, 1 min after eval, is NOT due.
     for (const state of ['NORMAL', 'FIRING'] as const) {
       expect(
-        isRuleDue(makeRule({ timeWindowMinutes: 43200, state, lastEvaluatedAt: ago(1) }), evalTime),
+        isRuleDue(makeRule({ timeWindowMinutes: 10080, state, lastEvaluatedAt: ago(1) }), evalTime),
       ).toBe(false);
     }
   });
@@ -337,7 +335,7 @@ describe('queryClickHouseWindows', () => {
       { clientFilters: [{ name: 'web', versions: null }] },
       makeLogger().logger,
     );
-    await queryClickHouseWindows(clickhouse, target, 43200, conds, evalTime);
+    await queryClickHouseWindows(clickhouse, target, DAILY_THRESHOLD_MINUTES, conds, evalTime);
     const { sql } = calls[0];
     expect(sql).toContain('FROM operations_daily');
     expect(sql).not.toContain('_by_target');
