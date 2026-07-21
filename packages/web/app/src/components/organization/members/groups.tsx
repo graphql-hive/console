@@ -23,6 +23,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { SubPageLayout, SubPageLayoutHeader } from '@/components/ui/page-content-layout';
+import { Skeleton } from '@/components/ui/skeleton';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useToast } from '@/components/ui/use-toast';
 import { graphql, useFragment, type FragmentType } from '@/gql';
@@ -102,9 +103,35 @@ export function Groups(props: {
         </div>
         <div className="divide-y">
           {!organization ? (
-            <>Loading...</>
+            <div className="divide-y" aria-label="Loading groups" aria-busy="true">
+              {Array.from({ length: 8 }, (_, index) => (
+                <div
+                  key={index}
+                  className="grid grid-cols-[1fr_auto_auto] items-center gap-4 px-4 py-3"
+                >
+                  <div className="flex items-center gap-3">
+                    <Skeleton className="size-4" />
+                    <Skeleton className="size-9 rounded-full" />
+                    <div className="flex items-center gap-2">
+                      <Skeleton className="h-4 w-32" />
+                      <Skeleton className="h-5 w-28 rounded-full" />
+                    </div>
+                  </div>
+                  <div className="flex w-24 justify-center">
+                    <Skeleton className="h-4 w-6" />
+                  </div>
+                  <div className="w-10" />
+                </div>
+              ))}
+            </div>
           ) : organization.groups.edges.length === 0 ? (
-            <div>No data</div>
+            <div className="flex flex-col items-center justify-center px-6 py-16 text-center">
+              <h3 className="text-base font-semibold">No groups synced yet</h3>
+              <p className="mt-2 max-w-md text-sm leading-6">
+                Groups will appear here after they are provisioned from your identity provider via
+                SCIM. Once synced, you can map them to roles and resources.
+              </p>
+            </div>
           ) : (
             organization.groups.edges.map(edge => (
               <GroupRow key={edge.node.id} group={edge.node} organization={organization} />
