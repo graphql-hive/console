@@ -466,7 +466,10 @@ function GroupRoleMappingRow(props: {
             GraphQLSchema.ResourceAssignmentModeType.All ? (
               'all resources'
             ) : (
-              <>{groupRoleMapping.resourceAssignment.projects?.length} projects</>
+              <>
+                {groupRoleMapping.resourceAssignment.projects?.length ?? 0} project
+                {(groupRoleMapping.resourceAssignment.projects?.length ?? 0) === 1 ? '' : 's'}
+              </>
             )}
           </span>
         </div>
