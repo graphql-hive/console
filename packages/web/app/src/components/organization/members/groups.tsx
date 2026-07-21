@@ -353,7 +353,7 @@ function GroupRow(props: GroupRowProps): ReactNode {
                                         } else if (result.data?.removeGroupMapping.ok) {
                                           toast({
                                             title: 'Role assignment removed',
-                                            description: `User ${result.data?.removeGroupMapping.ok} is no longer a member of the organization`,
+                                            description: `The role assignment was removed from the group`,
                                           });
                                         } else if (result.data?.removeGroupMapping.error) {
                                           toast({
