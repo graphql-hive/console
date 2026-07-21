@@ -2,6 +2,8 @@ import fs from 'fs';
 import path from 'path';
 import { z } from 'zod';
 
+// NOTE: When changing these models, update the public JSON Schema at
+// packages/libraries/cli/hive-config.schema.json (and the SchemaStore catalog entry) to match.
 const LegacyConfigModel = z.object({
   registry: z.string().optional(),
   token: z.string().optional(),
