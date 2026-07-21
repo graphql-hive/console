@@ -14,6 +14,10 @@ variable "COMMIT_SHA" {
   default = ""
 }
 
+variable "COMMIT_SHORT_SHA" {
+  default = ""
+}
+
 variable "BRANCH_NAME" {
   default = ""
 }
@@ -126,6 +130,7 @@ target "schema" {
     local_image_tag("schema"),
     stable_image_tag("schema"),
     image_tag("schema", COMMIT_SHA),
+    image_tag("schema", COMMIT_SHORT_SHA),
     image_tag("schema", BRANCH_NAME)
   ]
 }
@@ -147,6 +152,7 @@ target "policy" {
     local_image_tag("policy"),
     stable_image_tag("policy"),
     image_tag("policy", COMMIT_SHA),
+    image_tag("policy", COMMIT_SHORT_SHA),
     image_tag("policy", BRANCH_NAME)
   ]
 }
@@ -168,6 +174,7 @@ target "server" {
     local_image_tag("server"),
     stable_image_tag("server"),
     image_tag("server", COMMIT_SHA),
+    image_tag("server", COMMIT_SHORT_SHA),
     image_tag("server", BRANCH_NAME)
   ]
 }
@@ -186,6 +193,7 @@ target "storage" {
     local_image_tag("storage"),
     stable_image_tag("storage"),
     image_tag("storage", COMMIT_SHA),
+    image_tag("storage", COMMIT_SHORT_SHA),
     image_tag("storage", BRANCH_NAME)
   ]
 }
@@ -207,6 +215,7 @@ target "commerce" {
     local_image_tag("commerce"),
     stable_image_tag("commerce"),
     image_tag("commerce", COMMIT_SHA),
+    image_tag("commerce", COMMIT_SHORT_SHA),
     image_tag("commerce", BRANCH_NAME)
   ]
 }
@@ -228,6 +237,7 @@ target "tokens" {
     local_image_tag("tokens"),
     stable_image_tag("tokens"),
     image_tag("tokens", COMMIT_SHA),
+    image_tag("tokens", COMMIT_SHORT_SHA),
     image_tag("tokens", BRANCH_NAME)
   ]
 }
@@ -249,6 +259,7 @@ target "usage-ingestor" {
     local_image_tag("usage-ingestor"),
     stable_image_tag("usage-ingestor"),
     image_tag("usage-ingestor", COMMIT_SHA),
+    image_tag("usage-ingestor", COMMIT_SHORT_SHA),
     image_tag("usage-ingestor", BRANCH_NAME)
   ]
 }
@@ -270,6 +281,7 @@ target "usage" {
     local_image_tag("usage"),
     stable_image_tag("usage"),
     image_tag("usage", COMMIT_SHA),
+    image_tag("usage", COMMIT_SHORT_SHA),
     image_tag("usage", BRANCH_NAME)
   ]
 }
@@ -291,6 +303,7 @@ target "workflows" {
     local_image_tag("workflows"),
     stable_image_tag("workflows"),
     image_tag("workflows", COMMIT_SHA),
+    image_tag("workflows", COMMIT_SHORT_SHA),
     image_tag("workflows", BRANCH_NAME)
   ]
 }
@@ -312,6 +325,7 @@ target "composition-federation-2" {
     local_image_tag("composition-federation-2"),
     stable_image_tag("composition-federation-2"),
     image_tag("composition-federation-2", COMMIT_SHA),
+    image_tag("composition-federation-2", COMMIT_SHORT_SHA),
     image_tag("composition-federation-2", BRANCH_NAME)
   ]
 }
@@ -333,6 +347,7 @@ target "app" {
     local_image_tag("app"),
     stable_image_tag("app"),
     image_tag("app", COMMIT_SHA),
+    image_tag("app", COMMIT_SHORT_SHA),
     image_tag("app", BRANCH_NAME)
   ]
 }
@@ -348,6 +363,7 @@ target "otel-collector" {
     local_image_tag("otel-collector"),
     stable_image_tag("otel-collector"),
     image_tag("otel-collector", COMMIT_SHA),
+    image_tag("otel-collector", COMMIT_SHORT_SHA),
     image_tag("otel-collector", BRANCH_NAME)
   ]
 }
@@ -365,6 +381,7 @@ target "cli" {
     local_image_tag("cli"),
     stable_image_tag("cli"),
     image_tag("cli", COMMIT_SHA),
+    image_tag("cli", COMMIT_SHORT_SHA),
     image_tag("cli", BRANCH_NAME)
   ]
 }

@@ -10,10 +10,16 @@ const dashboardDirectory = join(__dirname, '../grafana-dashboards/');
  * @param tableSuffix suffix for the table names (production, staging, dev)
  */
 export function deployGrafana(envName: string, tableSuffix: string) {
-  const availableFiles = readdirSync(dashboardDirectory)
-    .filter(f => f.endsWith('.json'))
-    // Temp workaround
-    .filter(v => !v.includes('ClickHouse-Latency.json'));
+  // Dashboards excluded from provisioning:
+  const excludedDashboards = [
+    'ClickHouse-Latency.json', // temp workaround
+    // #8114: the outdated provider churns this dashboard's uid/folder on Grafana
+    // 13, so it's managed manually in the UI until the provider upgrade.
+    'Metric-Alerts.json',
+  ];
+  const availableFiles = readdirSync(dashboardDirectory).filter(
+    f => f.endsWith('.json') && !excludedDashboards.includes(f),
+  );
   const folder = new Folder('grafana-hive-folder', {
     title: `Hive Monitoring (${envName})`,
   });

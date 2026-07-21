@@ -205,6 +205,8 @@ export class SchemaPublisher {
   }): Promise<{
     conditionalBreakingChangeConfiguration: ConditionalBreakingChangeConfiguration | null;
     failDiffOnDangerousChange: boolean;
+    failAllDangerousChanges: boolean;
+    failDangerousChangeTypes: Types.DangerousChangeType[];
   }> {
     try {
       const settings = await this.storage.getTargetSettings(selector);
@@ -215,6 +217,8 @@ export class SchemaPublisher {
         return {
           failDiffOnDangerousChange: settings.failDiffOnDangerousChange,
           conditionalBreakingChangeConfiguration: null,
+          failAllDangerousChanges: settings.failAllDangerousChanges,
+          failDangerousChangeTypes: settings.failDangerousChangeTypes,
         };
       }
 
@@ -224,6 +228,8 @@ export class SchemaPublisher {
         return {
           failDiffOnDangerousChange: settings.failDiffOnDangerousChange,
           conditionalBreakingChangeConfiguration: null,
+          failAllDangerousChanges: settings.failAllDangerousChanges,
+          failDangerousChangeTypes: settings.failDangerousChangeTypes,
         };
       }
 
@@ -262,6 +268,8 @@ export class SchemaPublisher {
           totalRequestCount,
         },
         failDiffOnDangerousChange: settings.failDiffOnDangerousChange,
+        failAllDangerousChanges: settings.failAllDangerousChanges,
+        failDangerousChangeTypes: settings.failDangerousChangeTypes,
       };
     } catch (error: unknown) {
       const errorText =
@@ -609,10 +617,14 @@ export class SchemaPublisher {
       );
     });
 
-    const { conditionalBreakingChangeConfiguration, failDiffOnDangerousChange } =
-      await this.getBreakingChangeConfiguration({
-        selector,
-      });
+    const {
+      conditionalBreakingChangeConfiguration,
+      failDiffOnDangerousChange,
+      failAllDangerousChanges,
+      failDangerousChangeTypes,
+    } = await this.getBreakingChangeConfiguration({
+      selector,
+    });
 
     const latestSchemaVersionContracts = latestVersion
       ? await this.contracts.getContractVersionsForSchemaVersion({
@@ -665,6 +677,8 @@ export class SchemaPublisher {
           conditionalBreakingChangeDiffConfig:
             conditionalBreakingChangeConfiguration?.conditionalBreakingChangeDiffConfig ?? null,
           failDiffOnDangerousChange,
+          failAllDangerousChanges,
+          failDangerousChangeTypes,
           filterNestedChanges: true,
         });
         break;
@@ -732,6 +746,8 @@ export class SchemaPublisher {
           conditionalBreakingChangeDiffConfig:
             conditionalBreakingChangeConfiguration?.conditionalBreakingChangeDiffConfig ?? null,
           failDiffOnDangerousChange,
+          failAllDangerousChanges,
+          failDangerousChangeTypes,
           filterNestedChanges: !input.schemaProposalId,
         });
         break;
@@ -1469,14 +1485,18 @@ export class SchemaPublisher {
           } as const;
         }
 
-        const { conditionalBreakingChangeConfiguration, failDiffOnDangerousChange } =
-          await this.getBreakingChangeConfiguration({
-            selector: {
-              targetId: selector.targetId,
-              projectId: selector.projectId,
-              organizationId: selector.organizationId,
-            },
-          });
+        const {
+          conditionalBreakingChangeConfiguration,
+          failDiffOnDangerousChange,
+          failAllDangerousChanges,
+          failDangerousChangeTypes,
+        } = await this.getBreakingChangeConfiguration({
+          selector: {
+            targetId: selector.targetId,
+            projectId: selector.projectId,
+            organizationId: selector.organizationId,
+          },
+        });
 
         const contracts =
           project.type === ProjectType.FEDERATION
@@ -1516,6 +1536,8 @@ export class SchemaPublisher {
             conditionalBreakingChangeConfiguration?.conditionalBreakingChangeDiffConfig ?? null,
           contracts,
           failDiffOnDangerousChange,
+          failAllDangerousChanges,
+          failDangerousChangeTypes,
         });
 
         if (deleteResult.conclusion === SchemaDeleteConclusion.Accept) {
@@ -1786,14 +1808,18 @@ export class SchemaPublisher {
 
     this.logger.debug(`Found ${latestVersion?.schemas.length ?? 0} most recent schemas`);
 
-    const { conditionalBreakingChangeConfiguration, failDiffOnDangerousChange } =
-      await this.getBreakingChangeConfiguration({
-        selector: {
-          organizationId: organization.id,
-          projectId: project.id,
-          targetId: target.id,
-        },
-      });
+    const {
+      conditionalBreakingChangeConfiguration,
+      failDiffOnDangerousChange,
+      failAllDangerousChanges,
+      failDangerousChangeTypes,
+    } = await this.getBreakingChangeConfiguration({
+      selector: {
+        organizationId: organization.id,
+        projectId: project.id,
+        targetId: target.id,
+      },
+    });
 
     const contracts =
       project.type === ProjectType.FEDERATION
@@ -1842,6 +1868,8 @@ export class SchemaPublisher {
           conditionalBreakingChangeDiffConfig:
             conditionalBreakingChangeConfiguration?.conditionalBreakingChangeDiffConfig ?? null,
           failDiffOnDangerousChange,
+          failAllDangerousChanges,
+          failDangerousChangeTypes,
         });
         break;
       case ProjectType.FEDERATION:
@@ -1890,6 +1918,8 @@ export class SchemaPublisher {
           conditionalBreakingChangeDiffConfig:
             conditionalBreakingChangeConfiguration?.conditionalBreakingChangeDiffConfig ?? null,
           failDiffOnDangerousChange,
+          failAllDangerousChanges,
+          failDangerousChangeTypes,
         });
         break;
       default: {
@@ -2487,6 +2517,8 @@ export class SchemaPublisher {
               includeUrlChanges: false,
               filterOutFederationChanges: false,
               failDiffOnDangerousChange: false,
+              failAllDangerousChanges: false,
+              failDangerousChangeTypes: [],
               filterNestedChanges: true,
               getAffectedAppDeployments: null,
             })
@@ -2575,6 +2607,8 @@ export class SchemaPublisher {
           filterOutFederationChanges: false,
           approvedChanges: null,
           failDiffOnDangerousChange: false,
+          failAllDangerousChanges: false,
+          failDangerousChangeTypes: [],
           getAffectedAppDeployments: null,
           filterNestedChanges: true,
         })
@@ -2667,6 +2701,8 @@ export class SchemaPublisher {
             filterOutFederationChanges: false,
             approvedChanges: null,
             failDiffOnDangerousChange: false,
+            failAllDangerousChanges: false,
+            failDangerousChangeTypes: [],
             getAffectedAppDeployments: null,
             filterNestedChanges: true,
           })
@@ -2890,6 +2926,8 @@ export class SchemaPublisher {
           filterOutFederationChanges: true,
           approvedChanges: null,
           failDiffOnDangerousChange: false,
+          failAllDangerousChanges: false,
+          failDangerousChangeTypes: [],
           getAffectedAppDeployments: schemaCoordinates =>
             this.appDeployments.getAffectedAppDeploymentsBySchemaCoordinates({
               targetId: target.id,
@@ -2910,6 +2948,8 @@ export class SchemaPublisher {
           filterOutFederationChanges: false,
           approvedChanges: null,
           failDiffOnDangerousChange: false,
+          failAllDangerousChanges: false,
+          failDangerousChangeTypes: [],
           getAffectedAppDeployments: null,
           filterNestedChanges: true,
         })
@@ -3113,7 +3153,7 @@ export class SchemaPublisher {
           changes,
           contractChanges: args.contractChanges,
           renderChanges: (changesToRender, printListOfChanges) =>
-            this.changesToMarkdown(changesToRender, printListOfChanges),
+            changesToMarkdown(changesToRender, printListOfChanges),
         }));
       } else {
         const total =
@@ -3128,7 +3168,7 @@ export class SchemaPublisher {
           warnings ? this.warningsToMarkdown(warnings) : null,
           compositionErrors ? this.errorsToMarkdown(compositionErrors) : null,
           breakingChanges ? this.errorsToMarkdown(breakingChanges) : null,
-          changes ? this.changesToMarkdown(changes) : null,
+          changes ? changesToMarkdown(changes) : null,
         ]
           .filter(Boolean)
           .join('\n\n');
@@ -3222,7 +3262,7 @@ export class SchemaPublisher {
 
     const publishCompositeSchema = async () => {
       await Promise.all([
-        await this.artifactStorageWriter.writeArtifact({
+        this.artifactStorageWriter.writeArtifact({
           targetId: target.id,
           artifactType: 'services',
           artifact: schemas.map(s => ({
@@ -3363,14 +3403,14 @@ export class SchemaPublisher {
           shortSummaryFallback = summary;
         } else {
           title = 'No breaking changes';
-          summary = this.changesToMarkdown(changes);
-          shortSummaryFallback = this.changesToMarkdown(changes, false);
+          summary = changesToMarkdown(changes);
+          shortSummaryFallback = changesToMarkdown(changes, false);
         }
       } else {
         title = `Detected ${errors.length} error${errors.length === 1 ? '' : 's'}`;
         summary = [
           errors ? this.errorsToMarkdown(errors) : null,
-          changes ? this.changesToMarkdown(changes) : null,
+          changes ? changesToMarkdown(changes) : null,
         ]
           .filter(Boolean)
           .join('\n\n');
@@ -3441,57 +3481,67 @@ export class SchemaPublisher {
       }),
     ].join('\n');
   }
+}
 
-  private changesToMarkdown(
-    changes: ReadonlyArray<SchemaChangeType>,
-    printListOfChanges: boolean = true,
-  ): string {
-    const breakingChanges = changes.filter(
-      change => change.criticality === CriticalityLevel.Breaking,
-    );
-    const dangerousChanges = changes.filter(
-      change => change.criticality === CriticalityLevel.Dangerous,
-    );
-    const safeChanges = changes.filter(
-      change => change.criticality === CriticalityLevel.NonBreaking,
-    );
+export type MarkdownSchemaChange = {
+  criticality: CriticalityLevel;
+  message: string;
+  isSafeBasedOnUsage?: boolean;
+  approvalMetadata?: unknown;
+};
 
-    const lines: string[] = [
-      `## Found ${changes.length} change${changes.length > 1 ? 's' : ''}`,
-      '',
-    ];
+export function changesToMarkdown(
+  changes: ReadonlyArray<MarkdownSchemaChange>,
+  printListOfChanges: boolean = true,
+): string {
+  const breakingChanges = changes.filter(
+    change => change.criticality === CriticalityLevel.Breaking,
+  );
+  const dangerousChanges = changes.filter(
+    change => change.criticality === CriticalityLevel.Dangerous,
+  );
+  const safeChanges = changes.filter(change => change.criticality === CriticalityLevel.NonBreaking);
 
-    if (breakingChanges.length) {
-      lines.push(`Breaking: ${breakingChanges.length}`);
-    }
+  const lines: string[] = [`## Found ${changes.length} change${changes.length > 1 ? 's' : ''}`, ''];
 
-    if (dangerousChanges.length) {
-      lines.push(`Dangerous: ${dangerousChanges.length}`);
-    }
-
-    if (safeChanges.length) {
-      lines.push(`Safe: ${safeChanges.length}`);
-    }
-
-    if (printListOfChanges) {
-      writeChanges('Breaking', breakingChanges, lines);
-      writeChanges('Dangrous', dangerousChanges, lines);
-      writeChanges('Safe', safeChanges, lines);
-    }
-
-    return lines.join('\n');
+  if (breakingChanges.length) {
+    lines.push(`Breaking: ${breakingChanges.length}`);
   }
+
+  if (dangerousChanges.length) {
+    lines.push(`Dangerous: ${dangerousChanges.length}`);
+  }
+
+  if (safeChanges.length) {
+    lines.push(`Safe: ${safeChanges.length}`);
+  }
+
+  if (printListOfChanges) {
+    writeChanges('Breaking', breakingChanges, lines);
+    writeChanges('Dangrous', dangerousChanges, lines);
+    writeChanges('Safe', safeChanges, lines);
+  }
+
+  return lines.join('\n');
 }
 
 function writeChanges(
   type: string,
-  changes: ReadonlyArray<{ message: string }>,
+  changes: ReadonlyArray<MarkdownSchemaChange>,
   lines: string[],
 ): void {
   if (changes.length > 0) {
     lines.push(
       ...['', `### ${type} changes`].concat(
-        changes.map(change => ` - ${bolderize(change.message)}`),
+        changes.map(change => {
+          const status = change.isSafeBasedOnUsage
+            ? ' (safe based on usage)'
+            : change.approvalMetadata
+              ? ' (approved)'
+              : '';
+
+          return ` - ${bolderize(change.message)}${status}`;
+        }),
       ),
     );
   }
@@ -3536,7 +3586,7 @@ export function buildSchemaCheckSuccessGithubOutput(input: {
       .join('\n\n');
 
   return {
-    title: 'No breaking changes',
+    title: 'No blocking changes',
     summary: buildSummary(true),
     shortSummaryFallback: buildSummary(false),
   };

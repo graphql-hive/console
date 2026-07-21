@@ -27,6 +27,7 @@ async function main() {
         body: query,
         searchParams: {
           default_format: 'JSON',
+          output_format_json_quote_64bit_integers: '1',
           wait_end_of_query: '1',
         },
         headers: {
@@ -129,7 +130,7 @@ async function main() {
         SELECT
             fromUnixTimestamp(
               if(
-                minMerge(timestamp) > 0, 
+                minMerge(timestamp) > 0,
                 minMerge(timestamp),
                 toUnixTimestamp(now())
               )
@@ -229,7 +230,7 @@ async function main() {
         SELECT
             fromUnixTimestamp(
               if(
-                minMerge(timestamp) > 0, 
+                minMerge(timestamp) > 0,
                 minMerge(timestamp),
                 toUnixTimestamp(now())
               )

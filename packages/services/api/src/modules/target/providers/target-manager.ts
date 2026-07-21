@@ -300,6 +300,37 @@ export class TargetManager {
     return this.getTarget(selector);
   }
 
+  async updateTargetFailingDangerousChanges(args: {
+    target: GraphQLSchema.TargetReferenceInput;
+    all: boolean;
+    failingTypes: readonly GraphQLSchema.DangerousChangeType[];
+  }) {
+    this.logger.debug('Updating target dangerous change classification (target=%o)', args.target);
+    const selector = await this.idTranslator.resolveTargetReference({ reference: args.target });
+
+    if (!selector) {
+      this.session.raise('target:modifySettings');
+    }
+
+    await this.session.assertPerformAction({
+      action: 'target:modifySettings',
+      organizationId: selector.organizationId,
+      params: {
+        organizationId: selector.organizationId,
+        projectId: selector.projectId,
+        targetId: selector.targetId,
+      },
+    });
+
+    await this.storage.updateTargetFailingDangerousChanges({
+      ...selector,
+      all: args.all,
+      failingTypes: args.failingTypes,
+    });
+
+    return this.getTarget(selector);
+  }
+
   async updateTargetConditionalBreakingChangeConfiguration(args: {
     target: GraphQLSchema.TargetReferenceInput;
     configuration: GraphQLSchema.ConditionalBreakingChangeConfigurationInput;

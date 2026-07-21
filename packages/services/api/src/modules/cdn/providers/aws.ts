@@ -1,4 +1,128 @@
 import { got, type Method, type OptionsInit } from 'got';
+import { fromNodeProviderChain } from '@aws-sdk/credential-providers';
+
+/**
+ * AWS credential provider chain + custom SigV4 signer (ported from aws4fetch).
+ *
+ * Uses @aws-sdk/credential-providers for all credential resolution (static,
+ * container metadata, EKS Pod Identity, IMDS, env vars, etc.) so that upstream
+ * changes are handled by the SDK automatically.
+ * The SDK is only used for credential resolution - request signing uses the
+ * custom AwsV4Signer below.
+ */
+
+// ---------------------------------------------------------------------------
+// Credential types & providers
+// ---------------------------------------------------------------------------
+
+/**
+ * AWS credentials resolved by a credential provider.
+ */
+export interface AwsCredentials {
+  accessKeyId: string;
+  secretAccessKey: string;
+  sessionToken?: string;
+}
+
+/**
+ * A provider that returns AWS credentials, potentially fetching them
+ * from an external source (ECS task role, EKS Pod Identity, etc.).
+ *
+ * NOTE: This interface is also defined (structurally) in the cdn-worker package,
+ * which targets Cloudflare Workers and cannot import from the AWS SDK.
+ */
+export interface S3CredentialProvider {
+  getCredentials(): Promise<AwsCredentials>;
+}
+
+/**
+ * Options for creating a credential provider via the default chain.
+ */
+export interface DefaultCredentialChainOptions {
+  /**
+   * Default static S3 credentials for manual key/secret configuration.
+   * Provide both `S3_ACCESS_KEY_ID` and `S3_SECRET_ACCESS_KEY`
+   */
+  staticCredentials?: {
+    accessKeyId: string | undefined;
+    secretAccessKey: string | undefined;
+    sessionToken?: string | undefined;
+  };
+  /**
+   * When `true`, the SDK credential chain is used and static credentials are ignored.
+   * When `false`, static credentials are required and must include both `S3_ACCESS_KEY_ID` and `S3_SECRET_ACCESS_KEY`.
+   */
+  awsIamAuthEnabled?: boolean;
+  /** Optional label to prefix log messages, e.g. 's3', 's3mirror', 's3audit'. */
+  label?: string;
+  /** Logger for diagnostic messages. */
+  logger?: { info(msg: string): void; debug?(msg: string): void; error(msg: string): void };
+}
+
+/**
+ * Creates an AWS credential provider.
+ *
+ * Priority order:
+ * 1. If IAM auth is enabled, use SDK credential chain (Pod Identity, IRSA, etc.)
+ *    and ignore static credentials.
+ * 2. If IAM auth is disabled (default), use static credentials.
+ * 3. If neither, throw.
+ *
+ * The SDK handles credential caching and automatic refresh before expiry.
+ */
+export function createDefaultCredentialProvider(
+  options?: DefaultCredentialChainOptions,
+): S3CredentialProvider {
+  const logger = options?.logger;
+  const prefix = options?.label ? `[${options.label}] ` : '';
+  const awsIamAuthEnabled = options?.awsIamAuthEnabled ?? false;
+  const { accessKeyId, secretAccessKey } = options?.staticCredentials ?? {};
+
+  let sdkProvider: () => Promise<{
+    accessKeyId: string;
+    secretAccessKey: string;
+    sessionToken?: string;
+    expiration?: Date;
+  }>;
+
+  if (awsIamAuthEnabled) {
+    logger?.info(`${prefix}Using AWS SDK default credential chain (IAM auth enabled)`);
+    sdkProvider = fromNodeProviderChain();
+  } else if (accessKeyId && secretAccessKey) {
+    logger?.info(`${prefix}Using static AWS credentials`);
+    sdkProvider = async () => ({
+      accessKeyId,
+      secretAccessKey,
+      sessionToken: options?.staticCredentials?.sessionToken,
+    });
+  } else {
+    throw new Error(
+      'No S3 credentials available. Either enable S3 IAM auth, or ' +
+        'provide S3 static credentials S3_ACCESS_KEY_ID and S3_SECRET_ACCESS_KEY.',
+    );
+  }
+
+  return {
+    getCredentials: async () => {
+      const creds = await sdkProvider();
+      const expiration =
+        'expiration' in creds && creds.expiration instanceof Date ? creds.expiration : undefined;
+      logger?.debug?.(
+        `${prefix}Credentials resolved` +
+          (expiration ? ` (expires at ${expiration.toISOString()})` : ''),
+      );
+      return {
+        accessKeyId: creds.accessKeyId,
+        secretAccessKey: creds.secretAccessKey,
+        sessionToken: creds.sessionToken,
+      };
+    },
+  };
+}
+
+// ---------------------------------------------------------------------------
+// Custom SigV4 signer (ported from aws4fetch)
+// ---------------------------------------------------------------------------
 
 /**
  * This is a copy of https://github.com/mhart/aws4fetch which is licensed MIT
@@ -54,36 +178,21 @@ type AwsRequestInit = {
   };
 
 export class AwsClient {
-  private secretAccessKey: string;
-  private accessKeyId: string;
-  private sessionToken?: string;
+  private credentialProvider: S3CredentialProvider;
   private service?: string;
   private region?: string;
   private cache: Map<string, ArrayBuffer>;
 
-  constructor({
-    accessKeyId,
-    secretAccessKey,
-    sessionToken,
-    service,
-    region,
-    cache,
-  }: {
-    accessKeyId: string;
-    secretAccessKey: string;
-    sessionToken?: string;
+  constructor(options: {
+    credentialProvider: S3CredentialProvider;
     service?: string;
     region?: string;
     cache?: Map<string, ArrayBuffer>;
   }) {
-    if (accessKeyId == null) throw new TypeError('accessKeyId is a required option');
-    if (secretAccessKey == null) throw new TypeError('secretAccessKey is a required option');
-    this.accessKeyId = accessKeyId;
-    this.secretAccessKey = secretAccessKey;
-    this.sessionToken = sessionToken;
-    this.service = service;
-    this.region = region;
-    this.cache = cache || new Map();
+    this.credentialProvider = options.credentialProvider;
+    this.service = options.service;
+    this.region = options.region;
+    this.cache = options.cache || new Map();
   }
 
   async fetch(url: string, init: AwsRequestInit) {
@@ -138,14 +247,17 @@ export class AwsClient {
   }
 
   private async sign(url: string, init?: AwsRequestInit) {
+    // Resolve credentials dynamically (static credentials and EKS Pod Identity)
+    const credentials = await this.credentialProvider.getCredentials();
+
     const signer = new AwsV4Signer({
       method: init?.method,
       url,
       headers: init?.headers,
       body: init?.body,
-      accessKeyId: init?.aws?.accessKeyId || this.accessKeyId,
-      secretAccessKey: init?.aws?.secretAccessKey || this.secretAccessKey,
-      sessionToken: init?.aws?.sessionToken || this.sessionToken,
+      accessKeyId: init?.aws?.accessKeyId || credentials.accessKeyId,
+      secretAccessKey: init?.aws?.secretAccessKey || credentials.secretAccessKey,
+      sessionToken: init?.aws?.sessionToken || credentials.sessionToken,
       service: init?.aws?.service || this.service,
       region: init?.aws?.region || this.region,
       cache: init?.aws?.cache || this.cache,

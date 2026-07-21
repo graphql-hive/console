@@ -1,6 +1,6 @@
 import { ReactElement, useCallback, useEffect, useMemo, useState } from 'react';
 import { formatDate, formatISO, subDays } from 'date-fns';
-import { ChevronDown, Lock, MoreVertical, Users } from 'lucide-react';
+import { BellRing, ChevronDown, Lock, MoreVertical, Users } from 'lucide-react';
 import { useMutation, useQuery } from 'urql';
 import { Button as BaseButton } from '@/components/base/button/button';
 import { DataTable } from '@/components/base/data-table/data-table';
@@ -73,6 +73,7 @@ export const ManageFilters_SavedFiltersQuery = graphql(`
             }
             viewerCanUpdate
             viewerCanDelete
+            usedByAlertRulesCount
           }
         }
         pageInfo {
@@ -262,6 +263,17 @@ function VisibilityCell({ filter }: { filter: SavedFilterNode }) {
           Private
         </>
       )}
+      {filter.usedByAlertRulesCount > 0 && (
+        <span
+          className="text-neutral-10 ml-1.5 inline-flex items-center gap-1 text-[13px]"
+          title={`Used by ${filter.usedByAlertRulesCount} alert rule${
+            filter.usedByAlertRulesCount === 1 ? '' : 's'
+          }. Detach it from those alerts to delete.`}
+        >
+          <BellRing className="size-3.5" />
+          In use
+        </span>
+      )}
     </span>
   );
 }
@@ -312,28 +324,39 @@ function ActionsCell({
             >
               View in Insights
             </MenuItem>,
-            <MenuItem
-              key="create-alert"
-              render={
-                <Link
-                  to="/$organizationSlug/$projectSlug/$targetSlug/alerts/create"
-                  params={{ organizationSlug, projectSlug, targetSlug }}
-                  search={{ savedFilterId: filter.id }}
-                />
-              }
-            >
-              Create alert
-            </MenuItem>,
+            // Only shared filters can be attached to an alert, so don't offer
+            // "Create alert" from a private one (the alert form would reject it).
+            filter.visibility === SavedFilterVisibilityType.Shared && (
+              <MenuItem
+                key="create-alert"
+                render={
+                  <Link
+                    to="/$organizationSlug/$projectSlug/$targetSlug/alerts/create"
+                    params={{ organizationSlug, projectSlug, targetSlug }}
+                    search={{ savedFilterId: filter.id }}
+                  />
+                }
+              >
+                Create alert
+              </MenuItem>
+            ),
             filter.viewerCanUpdate && (
               <MenuItem key="rename" onClick={onRename}>
                 Rename
               </MenuItem>
             ),
-            filter.viewerCanDelete && (
-              <MenuItem key="delete" variant="destructiveAction" onClick={onDelete}>
-                Delete
-              </MenuItem>
-            ),
+            filter.viewerCanDelete &&
+              (filter.usedByAlertRulesCount > 0 ? (
+                // In use by an alert -> deletion is blocked (the server also enforces
+                // this). Disable the item; the row's "In use" indicator explains why.
+                <MenuItem key="delete" variant="destructiveAction" disabled>
+                  Delete
+                </MenuItem>
+              ) : (
+                <MenuItem key="delete" variant="destructiveAction" onClick={onDelete}>
+                  Delete
+                </MenuItem>
+              )),
           ],
         ]}
       />

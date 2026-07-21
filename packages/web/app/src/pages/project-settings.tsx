@@ -316,7 +316,7 @@ function ProjectDelete(props: { organizationSlug: string; projectSlug: string })
             <CardDescription>
               <DocsLink
                 className="text-neutral-10 text-sm"
-                href="/management/projects#delete-a-project"
+                href="/schema-registry/management/projects#delete-a-project"
               >
                 <strong>This action is not reversible!</strong> You can find more information about
                 this process in the documentation

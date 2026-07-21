@@ -1,10 +1,9 @@
 import { timingSafeEqual } from 'node:crypto';
 import { Inject, Injectable, Scope } from 'graphql-modules';
-import { type Redis } from 'ioredis';
 import { type FastifyRequest } from '@hive/service-common';
 import { sha256 } from '../../auth/lib/supertokens-at-home/crypto';
 import { Logger } from './logger';
-import { REDIS_INSTANCE } from './redis';
+import { REDIS_INSTANCE, type Redis } from './redis';
 import { RateLimitConfig } from './tokens';
 
 @Injectable({

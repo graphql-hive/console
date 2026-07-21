@@ -1,6 +1,6 @@
 {
   "name": "@graphql-hive/laboratory",
-  "version": "0.1.8",
+  "version": "0.2.0",
   "type": "module",
   "license": "MIT",
   "main": "./dist/hive-laboratory.cjs.js",
@@ -22,7 +22,6 @@
   "scripts": {
     "build": "vite build --config vite.lib.config.ts && vite build --config vite.umd.config.ts",
     "dev": "vite",
-    "dev:electron": "VITE_TARGET=electron concurrently \"vite\" \"wait-on http://localhost:5173 && electron .\"",
     "lint": "eslint .",
     "preview": "vite preview"
   },
@@ -77,9 +76,11 @@
     "@tanstack/react-router": "^1.154.13",
     "@tanstack/react-router-devtools": "^1.154.13",
     "@tanstack/router-plugin": "^1.154.13",
+    "@testing-library/dom": "^10.4.1",
+    "@testing-library/react": "^16.3.2",
     "@types/crypto-js": "^4.2.2",
     "@types/lodash": "^4.17.23",
-    "@types/node": "24.12.2",
+    "@types/node": "24.13.3",
     "@types/react": "18.3.18",
     "@types/react-dom": "18.3.5",
     "@vitejs/plugin-react": "^5.1.2",
@@ -90,15 +91,15 @@
     "clsx": "^2.1.1",
     "cmdk": "^1.1.1",
     "color": "^5.0.3",
-    "concurrently": "^9.2.1",
     "crypto-js": "^4.2.0",
     "date-fns": "^4.1.0",
-    "esbuild": "^0.25.12",
+    "esbuild": "0.28.1",
     "eslint": "^9.39.2",
     "eslint-plugin-react-hooks": "^5.2.0",
     "eslint-plugin-react-refresh": "^0.4.26",
     "globals": "^16.5.0",
-    "graphql": "^16.12.0",
+    "graphql": "^16.14.0",
+    "happy-dom": "^20.10.6",
     "lodash": "^4.18.1",
     "lucide-react": "^0.548.0",
     "lz-string": "^1.5.0",
@@ -128,7 +129,6 @@
     "vite-plugin-commonjs": "^0.10.4",
     "vite-plugin-dts": "^4.5.4",
     "vite-plugin-monaco-editor": "^1.1.0",
-    "wait-on": "^9.0.3",
     "zod": "^4.3.6"
   },
   "publishConfig": {
@@ -137,17 +137,5 @@
   },
   "sideEffects": [
     "**/*.css"
-  ],
-  "build": {
-    "appId": "com.guild.hive.laboratory",
-    "productName": "Hive Laboratory",
-    "artifactName": "HiveLab-${version}-Do_Not_Open_(Seriously_It's_Pre-Release)-${os}-${arch}.${ext}",
-    "files": [
-      "dist/**/*",
-      "electron/**/*"
-    ],
-    "directories": {
-      "buildResources": "assets"
-    }
-  }
+  ]
 }

@@ -231,7 +231,10 @@ export class SchemaVersionHelper {
       return null;
     }
 
-    const [project, { failDiffOnDangerousChange }] = await Promise.all([
+    const [
+      project,
+      { failDiffOnDangerousChange, failAllDangerousChanges, failDangerousChangeTypes },
+    ] = await Promise.all([
       this.projectManager.getProjectById(schemaVersion.projectId),
       this.storage.getTargetSettings({
         targetId: schemaVersion.targetId,
@@ -251,6 +254,8 @@ export class SchemaVersionHelper {
       filterOutFederationChanges: project.type === ProjectType.FEDERATION,
       conditionalBreakingChangeConfig: null,
       failDiffOnDangerousChange,
+      failAllDangerousChanges,
+      failDangerousChangeTypes: failDangerousChangeTypes ?? [],
       filterNestedChanges: true,
       getAffectedAppDeployments: null,
     });

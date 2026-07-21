@@ -1323,6 +1323,76 @@ export function updateTargetValidationSettings(
   });
 }
 
+export function updateTargetDangerousChangeClassification(
+  input: GraphQLSchema.UpdateTargetDangerousChangeClassificationInput,
+  access:
+    | {
+        token: string;
+      }
+    | {
+        authToken: string;
+      },
+) {
+  return execute({
+    document: graphql(`
+      mutation UpdateTargetDangerousChangeClassification(
+        $input: UpdateTargetDangerousChangeClassificationInput!
+      ) {
+        updateTargetDangerousChangeClassification(input: $input) {
+          ok {
+            target {
+              id
+            }
+          }
+          error {
+            message
+          }
+        }
+      }
+    `),
+    ...access,
+    variables: {
+      input,
+    },
+  });
+}
+
+export function updateTargetFailingDangerousChanges(
+  input: GraphQLSchema.UpdateTargetFailingDangerousChangesInput,
+  access:
+    | {
+        token: string;
+      }
+    | {
+        authToken: string;
+      },
+) {
+  return execute({
+    document: graphql(`
+      mutation UpdateTargetFailingDangerousChanges(
+        $input: UpdateTargetFailingDangerousChangesInput!
+      ) {
+        updateTargetFailingDangerousChanges(input: $input) {
+          ok {
+            target {
+              id
+              failAllDangerousChanges
+              failDangerousChangeTypes
+            }
+          }
+          error {
+            message
+          }
+        }
+      }
+    `),
+    ...access,
+    variables: {
+      input,
+    },
+  });
+}
+
 export function updateBaseSchema(input: UpdateBaseSchemaInput, token: string) {
   return execute({
     document: graphql(`

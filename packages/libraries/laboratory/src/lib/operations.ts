@@ -442,7 +442,6 @@ export const useOperations = (
         specifiedByUrl: true,
         directiveIsRepeatable: true,
         inputValueDeprecation: true,
-        retry: props.settingsApi?.settings.fetch.retry,
         timeout: props.settingsApi?.settings.fetch.timeout,
         useGETForQueries: props.settingsApi?.settings.fetch.useGETForQueries,
         exposeHTTPDetailsInExtensions: true,

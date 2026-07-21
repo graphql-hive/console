@@ -63,8 +63,8 @@ const statements = [
     SETTINGS index_granularity = 8192 AS
     SELECT
       target,
-      toStartOfHour(timestamp) AS timestamp,
-      toStartOfHour(expires_at) AS expires_at,
+      toStartOfHour(timestamp) AS "timestamp",
+      toStartOfHour(expires_at) AS "expires_at",
       hash,
       count() AS total,
       sum(ok) AS total_ok,
@@ -98,8 +98,8 @@ const statements = [
     SETTINGS index_granularity = 8192 AS
     SELECT
       target,
-      toStartOfDay(timestamp) AS timestamp,
-      toStartOfDay(expires_at) AS expires_at,
+      toStartOfDay(timestamp) AS "timestamp",
+      toStartOfDay(expires_at) AS "expires_at",
       hash,
       count() AS total,
       sum(ok) AS total_ok,
@@ -116,7 +116,7 @@ const statements = [
     CREATE MATERIALIZED VIEW IF NOT EXISTS default.coordinates_daily
     (
       target LowCardinality(String) CODEC(ZSTD(1)),
-      hash String CODEC(ZSTD(1)), 
+      hash String CODEC(ZSTD(1)),
       timestamp DateTime('UTC'),
       expires_at DateTime('UTC'),
       total UInt32 CODEC(ZSTD(1)),
@@ -131,8 +131,8 @@ const statements = [
     SELECT
       target,
       hash,
-      toStartOfDay(timestamp) AS timestamp,
-      toStartOfDay(expires_at) AS expires_at,
+      toStartOfDay(timestamp) AS "timestamp",
+      toStartOfDay(expires_at) AS "expires_at",
       sum(total) AS total,
       coordinate
     FROM default.operation_collection
@@ -150,7 +150,7 @@ const statements = [
       target LowCardinality(String) CODEC(ZSTD(1)),
       client_name String CODEC(ZSTD(1)),
       client_version String CODEC(ZSTD(1)),
-      hash String CODEC(ZSTD(1)), 
+      hash String CODEC(ZSTD(1)),
       timestamp DateTime('UTC'),
       expires_at DateTime('UTC'),
       total UInt32 CODEC(ZSTD(1)),
@@ -168,8 +168,8 @@ const statements = [
       client_name,
       client_version,
       hash,
-      toStartOfDay(timestamp) AS timestamp,
-      toStartOfDay(expires_at) AS expires_at,
+      toStartOfDay(timestamp) AS "timestamp",
+      toStartOfDay(expires_at) AS "expires_at",
       count() AS total
     FROM default.operations
     GROUP BY
@@ -182,6 +182,10 @@ const statements = [
   `,
 ];
 
-const action: Action = exec => Promise.all(statements.map(q => exec(q))).then(() => {});
+const action: Action = async exec => {
+  for (const query of statements) {
+    await exec(query);
+  }
+};
 
 export { action };

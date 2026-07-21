@@ -1,6 +1,6 @@
 {
   "name": "@graphql-hive/apollo",
-  "version": "0.48.0",
+  "version": "0.48.1",
   "type": "module",
   "description": "GraphQL Hive + Apollo Server",
   "repository": {
@@ -61,7 +61,7 @@
     "graphql-ws": "5.16.1",
     "nock": "14.0.10",
     "vitest": "4.1.3",
-    "ws": "8.18.0"
+    "ws": "8.21.0"
   },
   "publishConfig": {
     "registry": "https://registry.npmjs.org",

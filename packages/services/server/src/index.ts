@@ -16,8 +16,8 @@ import {
 import { AccessTokenKeyContainer } from '@hive/api/modules/auth/lib/supertokens-at-home/crypto';
 import { EmailVerification } from '@hive/api/modules/auth/providers/email-verification';
 import { OAuthCache } from '@hive/api/modules/auth/providers/oauth-cache';
+import { createDefaultCredentialProvider } from '@hive/api/modules/cdn/providers/aws';
 import { OIDCIntegrationStore } from '@hive/api/modules/oidc-integrations/providers/oidc-integration.store';
-import { createRedisClient } from '@hive/api/modules/shared/providers/redis';
 import { RedisRateLimiter } from '@hive/api/modules/shared/providers/redis-rate-limiter';
 import { TargetsByIdCache } from '@hive/api/modules/target/providers/targets-by-id-cache';
 import { TargetsBySlugCache } from '@hive/api/modules/target/providers/targets-by-slug-cache';
@@ -30,6 +30,7 @@ import { createConnectionString } from '@hive/postgres';
 import { createHivePubSub } from '@hive/pubsub';
 import {
   configureTracing,
+  createRedisClient,
   createServer,
   registerShutdown,
   registerTRPC,
@@ -171,15 +172,17 @@ export async function main() {
   );
   const taskScheduler = new TaskScheduler(storage.pool);
 
-  const redis = createRedisClient('Redis', env.redis, server.log.child({ source: 'Redis' }));
+  const redis = await createRedisClient(env.redis, {
+    logger: server.log.child({ source: 'Redis' }),
+  });
+
+  const redisSubscriber = await createRedisClient(env.redis, {
+    logger: server.log.child({ source: 'RedisSubscribe' }),
+  });
 
   const pubSub = createHivePubSub({
     publisher: redis,
-    subscriber: createRedisClient(
-      'subscriber',
-      env.redis,
-      server.log.child({ source: 'RedisSubscribe' }),
-    ),
+    subscriber: redisSubscriber,
   });
 
   registerShutdown({
@@ -300,26 +303,35 @@ export async function main() {
       },
       cdn: env.cdn,
       s3: {
-        accessKeyId: env.s3.credentials.accessKeyId,
-        secretAccessKeyId: env.s3.credentials.secretAccessKey,
-        sessionToken: env.s3.credentials.sessionToken,
+        credentialProvider: createDefaultCredentialProvider({
+          label: 's3',
+          logger,
+          staticCredentials: env.s3.credentials,
+          awsIamAuthEnabled: env.s3.awsIamAuthEnabled,
+        }),
         bucketName: env.s3.bucketName,
         endpoint: env.s3.endpoint,
       },
       s3Mirror: env.s3Mirror
         ? {
-            accessKeyId: env.s3Mirror.credentials.accessKeyId,
-            secretAccessKeyId: env.s3Mirror.credentials.secretAccessKey,
-            sessionToken: env.s3Mirror.credentials.sessionToken,
+            credentialProvider: createDefaultCredentialProvider({
+              label: 's3mirror',
+              logger,
+              staticCredentials: env.s3Mirror.credentials,
+              awsIamAuthEnabled: env.s3Mirror.awsIamAuthEnabled,
+            }),
             bucketName: env.s3Mirror.bucketName,
             endpoint: env.s3Mirror.endpoint,
           }
         : null,
       s3AuditLogs: env.s3AuditLogs
         ? {
-            accessKeyId: env.s3AuditLogs.credentials.accessKeyId,
-            secretAccessKeyId: env.s3AuditLogs.credentials.secretAccessKey,
-            sessionToken: env.s3AuditLogs.credentials.sessionToken,
+            credentialProvider: createDefaultCredentialProvider({
+              label: 's3audit',
+              logger,
+              staticCredentials: env.s3AuditLogs.credentials,
+              awsIamAuthEnabled: env.s3AuditLogs.awsIamAuthEnabled,
+            }),
             bucketName: env.s3AuditLogs.bucketName,
             endpoint: env.s3AuditLogs.endpoint,
           }
@@ -534,8 +546,12 @@ export async function main() {
     if (env.cdn.providers.api !== null) {
       const s3 = {
         client: new AwsClient({
-          accessKeyId: env.s3.credentials.accessKeyId,
-          secretAccessKey: env.s3.credentials.secretAccessKey,
+          credentialProvider: createDefaultCredentialProvider({
+            label: 'cdn-s3',
+            logger,
+            staticCredentials: env.s3.credentials,
+            awsIamAuthEnabled: env.s3.awsIamAuthEnabled,
+          }),
           service: 's3',
         }),
         endpoint: env.s3.endpoint,
@@ -545,8 +561,12 @@ export async function main() {
       const s3Mirror = env.s3Mirror
         ? {
             client: new AwsClient({
-              accessKeyId: env.s3Mirror.credentials.accessKeyId,
-              secretAccessKey: env.s3Mirror.credentials.secretAccessKey,
+              credentialProvider: createDefaultCredentialProvider({
+                label: 'cdn-s3mirror',
+                logger,
+                staticCredentials: env.s3Mirror.credentials,
+                awsIamAuthEnabled: env.s3Mirror.awsIamAuthEnabled,
+              }),
               service: 's3',
             }),
             endpoint: env.s3Mirror.endpoint,

@@ -1,3 +1,4 @@
+import { formatDistanceToNow } from 'date-fns';
 import { ArrowRight } from 'lucide-react';
 import { DataTable } from '@/components/base/data-table/data-table';
 import { BadgeRounded } from '@/components/ui/badge';
@@ -64,6 +65,15 @@ const COLUMNS = [
     cell: info => (
       <span className="text-neutral-12 font-mono text-[11px] tracking-wide">
         {formatTimestamp(info.getValue())}
+      </span>
+    ),
+  }),
+  columnHelper.display({
+    id: 'age',
+    header: 'Age',
+    cell: ctx => (
+      <span className="text-neutral-12 inline-flex items-center gap-1 font-mono text-[11px]">
+        {formatDistanceToNow(new Date(ctx.row.original.createdAt), { addSuffix: true })}
       </span>
     ),
   }),

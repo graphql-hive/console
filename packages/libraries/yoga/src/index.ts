@@ -142,7 +142,12 @@ export function useHive(clientOrOptions: HiveClient | HivePluginOptions): Plugin
         onSubscribeResult() {
           const experimental__persistedDocumentHash = record?.experimental__documentId;
           hive.collectSubscriptionUsage({
-            args: context.args,
+            args: {
+              ...context.args, // spread the context because the record might not have all the necessary fields
+              ...record?.executionArgs,
+              document:
+                record?.parsedDocument ?? record?.executionArgs?.document ?? context.args.document,
+            },
             experimental__persistedDocumentHash,
           });
         },

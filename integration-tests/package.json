@@ -12,7 +12,7 @@
     "typecheck": "tsc --noEmit"
   },
   "devDependencies": {
-    "@apollo/gateway": "2.14.0",
+    "@apollo/gateway": "2.14.2",
     "@apollo/server": "5.5.1",
     "@apollo/subgraph": "2.14.0",
     "@aws-sdk/client-s3": "3.1035.0",
@@ -26,7 +26,7 @@
     "@hive/server": "workspace:*",
     "@hive/service-common": "workspace:*",
     "@hive/storage": "workspace:*",
-    "@theguild/federation-composition": "0.22.3",
+    "@theguild/federation-composition": "0.23.1",
     "@trpc/client": "10.45.3",
     "@trpc/server": "10.45.3",
     "@types/async-retry": "1.4.8",
@@ -42,7 +42,6 @@
     "graphql-sse": "2.6.0",
     "graphql-yoga": "5.13.3",
     "human-id": "4.1.1",
-    "ioredis": "5.8.2",
     "set-cookie-parser": "2.7.1",
     "strip-ansi": "7.1.2",
     "tslib": "2.8.1",

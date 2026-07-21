@@ -30,6 +30,17 @@
 
 import 'reflect-metadata';
 import * as readline from 'node:readline/promises';
+import {
+  AlertChannelType,
+  MetricAlertRuleDirection,
+  MetricAlertRuleMetric,
+  MetricAlertRuleSeverity,
+  MetricAlertRuleThresholdType,
+  MetricAlertRuleType,
+  ProjectType,
+  SavedFilterVisibilityType,
+  TargetAccessScope,
+} from '../../integration-tests/testkit/gql/graphql';
 import type { CollectedOperation } from '../../integration-tests/testkit/usage';
 
 process.env.RUN_AGAINST_LOCAL_SERVICES = '1';
@@ -40,6 +51,9 @@ const { DEV_USER_PASSWORD, getOrCreateAuth, getSeedPGConnectionString } = await 
   '../utils/get-or-create-auth'
 );
 const { promptForEmail } = await import('../utils/prompt-for-email');
+const { SLACK_PREVIEW_CHANNEL_NAME, insertSlackPreviewChannel } = await import(
+  '../utils/seed-slack-preview-channel'
+);
 const {
   addAlertChannel,
   addMetricAlertRule,
@@ -51,23 +65,9 @@ const {
 const { execute } = await import('../../integration-tests/testkit/graphql');
 const { legacyCollect } = await import('../../integration-tests/testkit/usage');
 const { generateUnique } = await import('../../integration-tests/testkit/utils');
-const {
-  AlertChannelType,
-  MetricAlertRuleDirection,
-  MetricAlertRuleMetric,
-  MetricAlertRuleSeverity,
-  MetricAlertRuleThresholdType,
-  MetricAlertRuleType,
-  ProjectType,
-  SavedFilterVisibilityType,
-  TargetAccessScope,
-} = await import('../../integration-tests/testkit/gql/graphql');
 const { CreateSavedFilterMutation, TrackSavedFilterViewMutation } = await import(
   '../../integration-tests/testkit/saved-filters'
 );
-
-// Auth helper extracted to scripts/utils/auth-via-existing-user.ts so the
-// live-alerts demo script (and any future seeds) can reuse it.
 
 // ---------------------------------------------------------------------------
 // 1. Operations — ~1000 distinct queries/mutations against the Star Wars schema
@@ -1681,18 +1681,15 @@ async function main() {
 
   console.log('\n🚨 Creating metric alert rules...');
 
-  // Use Webhook channels for seeding — Slack channels require a Slack token on the org
-  // which isn't available in local dev.
-  const channel1 = await addAlertChannel(
-    {
-      organizationSlug: organization.slug,
-      projectSlug: project.slug,
-      name: 'Slack #alerts (webhook)',
-      type: AlertChannelType.Webhook,
-      webhook: { endpoint: 'http://localhost:9999/slack-alerts' },
-    },
-    ownerToken,
-  ).then(r => r.expectNoGraphQLErrors());
+  // Slack destination — a preview-only SLACK channel (see insertSlackPreviewChannel).
+  // No bot token required: it renders the alert form's Slack preview but never
+  // delivers. This static seed dispatches nothing, so attaching it to rules is
+  // harmless and lets each rule's edit form show the preview.
+  const slackChannelId = await insertSlackPreviewChannel({
+    connectionString: getSeedPGConnectionString(),
+    projectId: project.id,
+  });
+  console.log(`   Slack: preview-only channel ${SLACK_PREVIEW_CHANNEL_NAME} (${slackChannelId})`);
 
   const channel2 = await addAlertChannel(
     {
@@ -1705,9 +1702,8 @@ async function main() {
     ownerToken,
   ).then(r => r.expectNoGraphQLErrors());
 
-  const slackChannelId = channel1.addAlertChannel.ok!.addedAlertChannel.id;
   const webhookChannelId = channel2.addAlertChannel.ok!.addedAlertChannel.id;
-  console.log(`   Channels: #alerts (${slackChannelId}), PagerDuty (${webhookChannelId})`);
+  console.log(`   Channels: Slack (${slackChannelId}), PagerDuty (${webhookChannelId})`);
 
   type AlertRuleDef = AlertRuleShape & { channelIds: string[] };
 
@@ -1726,9 +1722,13 @@ async function main() {
   for (const def of alertRuleDefs) {
     const result = await addMetricAlertRule(
       {
-        organizationSlug: organization.slug,
-        projectSlug: project.slug,
-        targetSlug: target.slug,
+        target: {
+          bySelector: {
+            organizationSlug: organization.slug,
+            projectSlug: project.slug,
+            targetSlug: target.slug,
+          },
+        },
         name: def.name,
         type: def.type,
         metric: def.metric,

@@ -4,6 +4,7 @@ import { createPostgresDatabasePool } from '@hive/postgres';
 import { bridgeGraphileLogger, createHivePubSub } from '@hive/pubsub';
 import {
   configureTracing,
+  createRedisClient,
   createServer,
   registerShutdown,
   reportReadiness,
@@ -18,7 +19,6 @@ import { ClickHouseClient } from './lib/clickhouse-client.js';
 import { createEmailProvider } from './lib/emails/providers.js';
 import { schemaProvider } from './lib/schema/provider.js';
 import { bridgeFastifyLogger } from './logger.js';
-import { createRedisClient } from './redis';
 import { createTaskEventEmitter } from './task-events.js';
 
 let tracing: TracingInstance | undefined;
@@ -112,15 +112,17 @@ const server = await createServer({
   log: logger,
 });
 
-const redis = createRedisClient('Redis', env.redis, server.log.child({ source: 'Redis' }));
+const redis = await createRedisClient(env.redis, {
+  logger: server.log.child({ source: 'Redis' }),
+});
+
+const redisSubscriber = await createRedisClient(env.redis, {
+  logger: server.log.child({ source: 'RedisSubscribe' }),
+});
 
 const pubSub = createHivePubSub({
   publisher: redis,
-  subscriber: createRedisClient(
-    'subscriber',
-    env.redis,
-    server.log.child({ source: 'RedisSubscribe' }),
-  ),
+  subscriber: redisSubscriber,
 });
 
 const clickhouse = env.clickhouse
@@ -213,7 +215,7 @@ registerShutdown({
       await pg.end();
       logger.info('Shutdown postgres connection successful.');
       logger.info('Shutdown redis connection.');
-      redis.disconnect(false);
+      await Promise.all([redis.quit(), redisSubscriber.quit()]);
       if (shutdownMetrics) {
         logger.info('Stopping prometheus endpoint');
         await shutdownMetrics();

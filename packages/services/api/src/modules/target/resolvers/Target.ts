@@ -9,6 +9,8 @@ export const Target: Pick<
   | 'cleanId'
   | 'conditionalBreakingChangeConfiguration'
   | 'experimental_forcedLegacySchemaComposition'
+  | 'failAllDangerousChanges'
+  | 'failDangerousChangeTypes'
   | 'failDiffOnDangerousChange'
   | 'graphqlEndpointUrl'
   | 'id'
@@ -140,5 +142,8 @@ export const Target: Pick<
     });
 
     return targetSettings.appDeploymentProtection;
+  },
+  failDangerousChangeTypes: ({ failDangerousChangeTypes }, _arg, _ctx) => {
+    return failDangerousChangeTypes as any; // let gql validate the enum
   },
 };

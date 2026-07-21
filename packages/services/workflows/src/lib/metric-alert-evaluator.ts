@@ -1,5 +1,11 @@
 import { z } from 'zod';
 import type { Logger } from '@graphql-hive/logger';
+import {
+  buildOperationsFilterSQLConditions,
+  sql,
+  toQueryParams,
+  type SqlValue,
+} from '@hive/clickhouse';
 import type { CommonQueryMethods, PostgresDatabasePool } from '@hive/postgres';
 import { psql } from '@hive/postgres';
 import { metricAlertClickHouseQueryDuration } from '../metrics.js';
@@ -25,8 +31,13 @@ const MetricAlertRuleRowSchema = z.object({
   severity: z.enum(['INFO', 'WARNING', 'CRITICAL']),
   state: z.enum(['NORMAL', 'PENDING', 'FIRING', 'RECOVERING']),
   stateChangedAt: z.string().nullable(),
+  lastEvaluatedAt: z.string().nullable(),
   confirmationMinutes: z.number(),
   savedFilterId: z.string().nullable(),
+  // The attached saved filter's `filters` jsonb (or null). Kept as `unknown` so a
+  // malformed/legacy blob can't fail the bulk parse and halt evaluation of EVERY
+  // rule...its shape is validated defensively per-group in `buildSavedFilterConditions`.
+  savedFilterFilters: z.unknown().nullable(),
   /** Plan name of the rule's organization. Drives state-log retention. */
   organizationPlanName: z.string().nullable(),
 });
@@ -41,32 +52,65 @@ const ClickHouseWindowRowSchema = z.object({
   window: z.enum(['current', 'previous']),
   total: z.string(),
   total_ok: z.string(),
-  average: z.number(),
-  percentiles: z.tuple([z.number(), z.number(), z.number(), z.number()]),
+  // Null when the group skips the column (query selects `NULL as ...`).
+  average: z.number().nullable(),
+  percentiles: z.tuple([z.number(), z.number(), z.number(), z.number()]).nullable(),
 });
 
 type ClickHouseWindowRow = z.infer<typeof ClickHouseWindowRowSchema>;
 
 type GroupKey = string;
 
-const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-
-function assertUUID(value: string): string {
-  if (!UUID_RE.test(value)) {
-    throw new Error(`Invalid UUID: ${value}`);
-  }
-  return value;
-}
-
 function makeGroupKey(rule: MetricAlertRuleRow): GroupKey {
-  return `${rule.targetId}:${rule.timeWindowMinutes}:${rule.savedFilterId ?? ''}`;
+  // Include the resolved tier so a >= 7d TRAFFIC rule (hourly) and a >= 7d latency
+  // rule (daily) on the same target/window/filter don't share one query.
+  const resolution = resolutionFor(rule.timeWindowMinutes, rule.type !== 'TRAFFIC');
+  return `${rule.targetId}:${rule.timeWindowMinutes}:${rule.savedFilterId ?? ''}:${resolution}`;
 }
 
 // Nanoseconds per millisecond. ClickHouse stores operation durations in
 // nanoseconds; latency rule thresholds and all display surfaces use ms.
 const NS_TO_MS = 1e6;
 
-function extractMetricValue(row: ClickHouseWindowRow, rule: MetricAlertRuleRow): number {
+const MINUTES_PER_DAY = 24 * 60; // 1440
+
+// Windows >= 7 days read the daily rollups (far fewer buckets than hourly). Must
+// equal the API's METRIC_ALERT_RULE_DAILY_ROLLUP_THRESHOLD_MINUTES (separate
+// package, can't import); keep in sync.
+export const DAILY_THRESHOLD_MINUTES = 7 * MINUTES_PER_DAY; // 10080
+
+export type Resolution = 'minutely' | 'hourly' | 'daily';
+
+// The ClickHouse rollup tier a window reads. Single source of truth for the group
+// key and the query. TRAFFIC (allowDailyRollup false) stays on hourly at >= 7d so
+// its absolute counts aren't skewed by daily buckets snapping to day boundaries.
+export function resolutionFor(timeWindowMinutes: number, allowDailyRollup: boolean): Resolution {
+  if (timeWindowMinutes <= 360) return 'minutely';
+  if (allowDailyRollup && timeWindowMinutes >= DAILY_THRESHOLD_MINUTES) return 'daily';
+  return 'hourly';
+}
+
+// A null column means it wasn't selected (a bug), not missing data (empty windows
+// give zeros). Throw rather than read a phantom 0 that would silently never fire.
+function requireColumn<T>(value: T | null, column: string, rule: MetricAlertRuleRow): T {
+  if (value === null) {
+    throw new Error(
+      `Metric alert rule ${rule.id} needs column "${column}" but its window query did not select it`,
+    );
+  }
+  return value;
+}
+
+const PERCENTILE_INDEX = { P75: 0, P90: 1, P95: 2, P99: 3 } as const;
+
+function percentileIndex(metric: MetricAlertRuleRow['metric']): number {
+  if (metric && metric in PERCENTILE_INDEX) {
+    return PERCENTILE_INDEX[metric as keyof typeof PERCENTILE_INDEX];
+  }
+  throw new Error(`Expected a percentile metric (P75-P99), got ${metric}`);
+}
+
+export function extractMetricValue(row: ClickHouseWindowRow, rule: MetricAlertRuleRow): number {
   const total = Number(row.total);
   const totalOk = Number(row.total_ok);
 
@@ -76,22 +120,27 @@ function extractMetricValue(row: ClickHouseWindowRow, rule: MetricAlertRuleRow):
     case 'ERROR_RATE':
       return total > 0 ? ((total - totalOk) / total) * 100 : 0;
     case 'LATENCY': {
-      const metricMap: Record<string, number> = {
-        AVG: row.average,
-        P75: row.percentiles[0],
-        P90: row.percentiles[1],
-        P95: row.percentiles[2],
-        P99: row.percentiles[3],
-      };
-      // ClickHouse stores `duration` in nanoseconds, but rule thresholds (the
-      // form input) and every display surface are in
-      // milliseconds. Convert here so the threshold comparison and the persisted
-      // value are in milliseconds and consistent with all of them. Without this,
-      // a ns value (~1.2e9) is compared against a ms threshold (e.g. 4000),
-      // so any non-trivial latency trips the rule.
-      return (rule.metric ? metricMap[rule.metric] : 0) / NS_TO_MS;
+      const ns =
+        rule.metric === 'AVG'
+          ? requireColumn(row.average, 'duration_avg', rule)
+          : requireColumn(row.percentiles, 'duration_quantiles', rule)[
+              percentileIndex(rule.metric)
+            ];
+      // duration is in ns; thresholds and displays are ms (a raw ns value trips any ms threshold).
+      return ns / NS_TO_MS;
     }
   }
+}
+
+// FIXED_VALUE rules don't compare against the prior window, so they persist null even
+// if it was fetched for a PERCENTAGE_CHANGE group-mate (keeps history grouping-independent).
+export function previousValueForRule(
+  rule: MetricAlertRuleRow,
+  previous: ClickHouseWindowRow | null,
+): number | null {
+  return rule.thresholdType === 'PERCENTAGE_CHANGE' && previous
+    ? extractMetricValue(previous, rule)
+    : null;
 }
 
 function isThresholdBreached(
@@ -145,14 +194,11 @@ function hasElapsed(stateChangedAt: string | null, minutes: number, evaluationTi
   return evaluationTime.getTime() - changedAt >= minutes * 60_000;
 }
 
-export async function fetchEnabledRules(
-  pg: PostgresDatabasePool,
-  clusterFlagEnabled: boolean,
-): Promise<MetricAlertRuleRow[]> {
-  // OR-style feature gate: when the cluster env-var is on, evaluate every
-  // enabled rule. When it's off, only evaluate rules whose organization has
-  // opted in via the per-org JSONB feature flag. Mirrors the resolver-side
-  // OR gate at alerts/resolvers/Target.ts.
+export async function fetchEnabledRules(pg: PostgresDatabasePool): Promise<MetricAlertRuleRow[]> {
+  // Evaluate every enabled rule. The org-level `metricAlertRules` feature flag
+  // is a rollout enabler for *creating/seeing* rules in the API, not a gate on
+  // evaluation — a rule only exists if someone was authorized to create it.
+  // The real per-rule off-switches are the `enabled` column and deleting the rule.
   const result = await pg.any(psql`
     SELECT
       r."id"
@@ -169,17 +215,15 @@ export async function fetchEnabledRules(
       , r."severity"
       , r."state"
       , to_json(r."state_changed_at") as "stateChangedAt"
+      , to_json(r."last_evaluated_at") as "lastEvaluatedAt"
       , r."confirmation_minutes" as "confirmationMinutes"
       , r."saved_filter_id" as "savedFilterId"
+      , sf."filters" as "savedFilterFilters"
       , o."plan_name" as "organizationPlanName"
     FROM "metric_alert_rules" r
     INNER JOIN "organizations" o ON o."id" = r."organization_id"
+    LEFT JOIN "saved_filters" sf ON sf."id" = r."saved_filter_id"
     WHERE r."enabled" = true
-      ${
-        clusterFlagEnabled
-          ? psql``
-          : psql`AND COALESCE((o."feature_flags"->>'metricAlertRules')::boolean, false) IS TRUE`
-      }
   `);
 
   return z.array(MetricAlertRuleRowSchema).parse(result);
@@ -201,15 +245,99 @@ export function groupRulesByQuery(
   return groups;
 }
 
+// Minimum minutes between evaluations, derived from the window. Long windows
+// barely move per minute, so they run less often; the interval stays well below
+// the window so confirmationMinutes semantics still hold.
+export function evaluationIntervalMinutes(timeWindowMinutes: number): number {
+  if (timeWindowMinutes <= 60) return 1; // ≤ 1h window: every tick (unchanged)
+  if (timeWindowMinutes <= 360) return 5; // ≤ 6h window: every 5 min
+  if (timeWindowMinutes <= 1440) return 15; // ≤ 24h window: every 15 min
+  return 30; // > 24h (7d, 30d): every 30 min
+}
+
+// PENDING/RECOVERING rules stay at 1-min resolution so the confirmationMinutes
+// dwell is sampled every tick. A never-evaluated rule is always due.
+export function isRuleDue(
+  rule: Pick<MetricAlertRuleRow, 'timeWindowMinutes' | 'lastEvaluatedAt' | 'state'>,
+  evaluationTime: Date,
+): boolean {
+  if (rule.state === 'PENDING' || rule.state === 'RECOVERING') return true;
+  if (!rule.lastEvaluatedAt) return true;
+  const intervalMs = evaluationIntervalMinutes(rule.timeWindowMinutes) * 60_000;
+  const lastMs = new Date(rule.lastEvaluatedAt).getTime();
+  // Small tolerance so an exactly-interval-old rule isn't skipped on sub-second
+  // jitter. Fires up to ~1 tick early, never late.
+  return evaluationTime.getTime() - lastMs >= intervalMs - 1_000;
+}
+
+// Validated shape of the saved-filter `filters` jsonb that the evaluator applies.
+// `dateRange` is deliberately NOT read (an alert defines its own rolling window,
+// so the filter's saved date range is meaningless here). `.passthrough()` tolerates
+// extra fields (e.g. `dateRange`) without failing.
+const SavedFilterConditionsSchema = z
+  .object({
+    operationHashes: z.array(z.string()).optional(),
+    clientFilters: z
+      .array(
+        z.object({
+          name: z.string(),
+          versions: z.array(z.string()).nullable().optional(),
+        }),
+      )
+      .optional(),
+    excludeOperations: z.boolean().optional(),
+    excludeClientFilters: z.boolean().optional(),
+  })
+  .passthrough();
+
+/**
+ * Turns a saved filter's raw `filters` jsonb into ClickHouse conditions for the
+ * window query, via the same shared builder the analytics API uses (so an alert
+ * filters identically to what users see on Insights).
+ *
+ * Never throws: a null/malformed blob yields NO conditions (the alert evaluates
+ * unfiltered) and is logged, so one bad filter can't break the whole batch.
+ */
+export function buildSavedFilterConditions(rawFilters: unknown, logger: Logger): SqlValue[] {
+  if (rawFilters == null) {
+    return [];
+  }
+  const parsed = SavedFilterConditionsSchema.safeParse(rawFilters);
+  if (!parsed.success) {
+    logger.warn(
+      { error: parsed.error },
+      'Saved filter on a metric alert rule has an unexpected shape; evaluating unfiltered',
+    );
+    return [];
+  }
+  return buildOperationsFilterSQLConditions({
+    operations: parsed.data.operationHashes,
+    clientVersionFilters: parsed.data.clientFilters?.map(client => ({
+      clientName: client.name,
+      versions: client.versions ?? null,
+    })),
+    excludeOperations: parsed.data.excludeOperations,
+    excludeClientVersionFilters: parsed.data.excludeClientFilters,
+  });
+}
+
 export async function queryClickHouseWindows(
   clickhouse: ClickHouseClient,
   targetId: string,
   timeWindowMinutes: number,
+  filterConditions: SqlValue[],
   // Anchor windows to the cron's scheduled run time (graphile-worker's
   // job.run_at), not wall-clock now. If the worker is backed up and picks
   // this job up late, using wall-clock would shift the queried window
   // forward and could miss the spike that should have fired the alert.
   evaluationTime: Date,
+  // False skips the prior window (1x scan, previous = null). Default true.
+  needsPreviousWindow: boolean = true,
+  // False selects `NULL as <col>` so ClickHouse skips reading that duration column.
+  needsAverage: boolean = true,
+  needsPercentiles: boolean = true,
+  // False keeps a >= 7d window on hourly (TRAFFIC needs exact bucket boundaries).
+  allowDailyRollup: boolean = true,
 ): Promise<{ current: ClickHouseWindowRow | null; previous: ClickHouseWindowRow | null }> {
   const anchorMs = evaluationTime.getTime();
   const offsetMs = 60_000;
@@ -219,26 +347,58 @@ export async function queryClickHouseWindows(
   const currentWindowStart = new Date(anchorMs - offsetMs - windowMs);
   const previousWindowStart = new Date(anchorMs - offsetMs - 2 * windowMs);
 
-  const tableName = timeWindowMinutes <= 360 ? 'operations_minutely' : 'operations_hourly';
+  // Unfiltered queries read the target-keyed rollups (operations_by_target_*):
+  // they sum across all hashes/clients, exactly what those rollups pre-aggregate,
+  // so the query prunes by time instead of scanning the target's whole slice.
+  // Filtered queries MUST stay on the legacy tables...the rollups dropped the
+  // hash/client dimensions a filter predicates on, so routing one there would
+  // reference columns that don't exist. Deriving this from `filterConditions`
+  // (rather than a separate flag/param) makes the filtered-query-on-rollup
+  // combination unrepresentable.
+  const useTargetRollup = filterConditions.length === 0;
+  const resolution = resolutionFor(timeWindowMinutes, allowDailyRollup);
+  const tableName = useTargetRollup
+    ? `operations_by_target_${resolution}`
+    : `operations_${resolution}`;
 
-  const safeTargetId = assertUUID(targetId);
+  // The two table families store the percentile column with different aggregate
+  // functions: the by_target rollups use quantilesTDigest (more accurate in the
+  // tails, merges better), the legacy tables the older quantiles. A merge
+  // function must match the state function it reads, so pick it alongside the
+  // table. `total`/`total_ok`/`duration_avg` are identical across both.
+  const percentilesMerge = useTargetRollup ? 'quantilesTDigestMerge' : 'quantilesMerge';
 
-  // ClickHouse parameterized query syntax is not supported via the HTTP interface
-  // in the same way as PostgreSQL. We validate the UUID format above to prevent injection.
-  const sql = `
+  // The window timestamps are computed numbers, inlined safely via sql.raw. Every
+  // string value (`target` and the saved-filter conditions' arbitrary client/
+  // operation strings) is bound as a ClickHouse `param_*` value via the `sql` tag
+  // + toQueryParams below, never interpolated (so no manual UUID guarding needed).
+  const filterClause =
+    filterConditions.length > 0 ? sql` AND ${sql.join(filterConditions, ' AND ')}` : sql``;
+
+  // Scan one window (all rows 'current') when the prior isn't needed, else both.
+  const scanStart = needsPreviousWindow ? previousWindowStart : currentWindowStart;
+  const windowSelector = needsPreviousWindow
+    ? sql`CASE WHEN timestamp >= fromUnixTimestamp64Milli(${sql.raw(String(currentWindowStart.getTime()))}) THEN 'current' ELSE 'previous' END`
+    : sql`'current'`;
+
+  // A literal NULL skips reading the (large) duration column but keeps the row shape.
+  const averageCol = needsAverage ? sql`avgMerge(duration_avg) as average` : sql`NULL as average`;
+  const percentilesCol = needsPercentiles
+    ? sql`${sql.raw(percentilesMerge)}(0.75, 0.90, 0.95, 0.99)(duration_quantiles) as percentiles`
+    : sql`NULL as percentiles`;
+
+  const statement = sql`
     SELECT
-      CASE
-        WHEN timestamp >= fromUnixTimestamp64Milli(${currentWindowStart.getTime()}) THEN 'current'
-        ELSE 'previous'
-      END as window,
+      ${windowSelector} as window,
       sum(total) as total,
       sum(total_ok) as total_ok,
-      avgMerge(duration_avg) as average,
-      quantilesMerge(0.75, 0.90, 0.95, 0.99)(duration_quantiles) as percentiles
-    FROM ${tableName}
-    WHERE target = '${safeTargetId}'
-      AND timestamp >= fromUnixTimestamp64Milli(${previousWindowStart.getTime()})
-      AND timestamp < fromUnixTimestamp64Milli(${currentWindowEnd.getTime()})
+      ${averageCol},
+      ${percentilesCol}
+    FROM ${sql.raw(tableName)}
+    WHERE target = ${targetId}
+      AND timestamp >= fromUnixTimestamp64Milli(${sql.raw(String(scanStart.getTime()))})
+      AND timestamp < fromUnixTimestamp64Milli(${sql.raw(String(currentWindowEnd.getTime()))})
+      ${filterClause}
     GROUP BY window
     ORDER BY window
   `;
@@ -250,7 +410,11 @@ export async function queryClickHouseWindows(
   const startMs = Date.now();
   let rows: ClickHouseWindowRow[];
   try {
-    const raw = await clickhouse.query(sql, 'metric-alert-windows');
+    const raw = await clickhouse.query(
+      statement.sql,
+      'metric-alert-windows',
+      toQueryParams(statement),
+    );
     rows = z.array(ClickHouseWindowRowSchema).parse(raw);
   } catch (error) {
     metricAlertClickHouseQueryDuration.observe({ outcome: 'error' }, (Date.now() - startMs) / 1000);
@@ -260,14 +424,14 @@ export async function queryClickHouseWindows(
 
   return {
     current: rows.find(r => r.window === 'current') ?? null,
-    previous: rows.find(r => r.window === 'previous') ?? null,
+    previous: needsPreviousWindow ? (rows.find(r => r.window === 'previous') ?? null) : null,
   };
 }
 
 export async function evaluateRule(args: {
   rule: MetricAlertRuleRow;
   current: ClickHouseWindowRow;
-  previous: ClickHouseWindowRow;
+  previous: ClickHouseWindowRow | null;
   pg: PostgresDatabasePool;
   logger: Logger;
   // Anchor for state_changed_at, last_triggered_at, expires_at, and
@@ -280,8 +444,9 @@ export async function evaluateRule(args: {
   const now = evaluationTime;
 
   const currentValue = extractMetricValue(current, rule);
-  const previousValue = extractMetricValue(previous, rule);
-  const breached = isThresholdBreached(currentValue, previousValue, rule);
+  // null for FIXED_VALUE; the `?? 0` below is only for the breach check's typing.
+  const previousValue = previousValueForRule(rule, previous);
+  const breached = isThresholdBreached(currentValue, previousValue ?? 0, rule);
 
   // State-log retention is derived from the rule's organization plan, which
   // is included on the row by `fetchEnabledRules` (single JOIN) — no extra
@@ -486,7 +651,7 @@ async function logTransition(
   fromState: string,
   toState: string,
   value: number,
-  previousValue: number,
+  previousValue: number | null,
   retentionDays: number,
   evaluationTime: Date,
   incidentId: string | null = null,

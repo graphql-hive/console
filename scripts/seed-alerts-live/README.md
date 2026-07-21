@@ -40,8 +40,9 @@ service is dispatching.
 5. Enables the per-org `metricAlertRules` feature flag (direct PG `UPDATE`, since the cluster env
    var is usually off in local dev).
 6. Publishes a tiny schema (so the usage service will accept operations against the target).
-7. Creates one webhook channel pointing at port 9999, and (unless started with `--no-rules`) 7
-   short-window alert rules each `timeWindowMinutes: 1`.
+7. Creates a webhook channel pointing at port 9999 (plus a preview-only `SLACK` channel — see
+   "Slack" below), and (unless started with `--no-rules`) 7 short-window alert rules each
+   `timeWindowMinutes: 1`.
 8. Pre-seeds ~60s of backdated breach-shaped data so the first evaluator tick after rule creation
    already sees a fully-formed breach window in `operations_minutely`. Cuts time-to-first-FIRING
    from ~2-3 min to ~2 min.
@@ -95,6 +96,17 @@ pnpm seed:alerts-live
 Stop with Ctrl+C. The org is left in place so you can inspect artifacts (state-log rows, incident
 history, etc.) after the script exits.
 
+### Slack
+
+Notifications always go to the local webhook receiver (port 9999, printed in the terminal). The demo
+also inserts a **preview-only** `SLACK` channel (fixed name `#hive-alerts-testing`) straight into
+Postgres, so you can see the Slack message format and its severity colors with **no bot token
+required**. It's unattached to the rules and never sends anything — its only purpose is to make the
+alert form's Slack preview render.
+
+To see it: open a rule (or the create form), select the `Slack #hive-alerts-testing (preview only)`
+channel, and the live preview shows the Slack-style message with the severity-colored bar.
+
 To also watch the `Metric Alerts` Grafana dashboard fill in (live metrics — CH query latency / rate
 / error ratio / task duration — plus the trace tables under "Traces (drill-downs)"), run
 `pnpm dev:observability` in another terminal and open <http://localhost:3030>. See
@@ -107,10 +119,10 @@ the local observability stack.
 pnpm seed:alerts-live --no-rules
 ```
 
-Skips the 7 pre-created rules. The script still provisions the org / project / target / webhook
-channel and runs the BREACH/NORMAL traffic loop, so the workflows evaluator has data to chew on as
-soon as a rule exists. Use this when you want to create rules manually via the UI from a clean state
-(e.g. for video walkthroughs).
+Skips the 7 pre-created rules. The script still provisions the org / project / target / notification
+channel(s) and runs the BREACH/NORMAL traffic loop, so the workflows evaluator has data to chew on
+as soon as a rule exists. Use this when you want to create rules manually via the UI from a clean
+state (e.g. for video walkthroughs).
 
 The summary block prints a URL pointing at `/alerts/create` instead of `/alerts/rules`. Create a
 rule whose thresholds match the traffic the loop generates so a fire is guaranteed:

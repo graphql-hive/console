@@ -1,8 +1,7 @@
 import { createHash } from 'node:crypto';
 import stringify from 'fast-json-stable-stringify';
-import type { Redis } from 'ioredis';
 import { TimeoutError } from 'p-timeout';
-import type { ServiceLogger } from '@hive/service-common';
+import type { Redis, ServiceLogger } from '@hive/service-common';
 import { compositionCacheValueSizeBytes, schemaCompositionCounter } from './metrics';
 
 function createChecksum<TInput>(input: TInput): string {

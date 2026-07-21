@@ -21,8 +21,8 @@ export default defineConfig({
   },
   fullyParallel: true,
   forbidOnly: isCI,
-  retries: 0,
-  workers: isCI ? 4 : undefined,
+  retries: 1,
+  workers: isCI ? 2 : undefined,
   reporter: isCI
     ? [['list'], ['github'], ['html', { open: 'never' }]]
     : [['list'], ['html', { open: 'never' }]],

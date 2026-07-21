@@ -1,5 +1,43 @@
 # @graphql-hive/core
 
+## 0.21.1
+
+### Patch Changes
+
+- [#8119](https://github.com/graphql-hive/console/pull/8119)
+  [`63a9126`](https://github.com/graphql-hive/console/commit/63a912691f0c7e5afdd2cc864de53df289592b54)
+  Thanks [@enisdenjo](https://github.com/enisdenjo)! - Add `manifest` method to
+  `createHive(...).persistedDocuments` for fetching a persisted documents (app deployment) manifest
+
+  ```ts
+  const hive = createHive({
+    persistedDocuments: {
+      cdn: {
+        endpoint: 'https://cdn.graphql-hive.com/artifacts/v1/<target_id>',
+        accessToken: '<cdn_access_token>'
+      }
+    }
+    // ...
+  })
+
+  const manifest = await hive.persistedDocuments!.manifest({
+    appName: 'my-app',
+    appVersion: '1.0.0'
+  })
+
+  // null if the app version does not exist, otherwise:
+  // {
+  //   id: 'some-uuid',          // unique identifier of the manifest
+  //   appName: 'my-app',        // app name
+  //   appVersion: '1.0.0',      // app version
+  //   isActive: true,           // whether this app version is published/active in Hive
+  //   documentHashes: [         // all persisted document hashes for this app version
+  //     'abc123',
+  //     'def456',
+  //   ],
+  // }
+  ```
+
 ## 0.21.0
 
 ### Minor Changes

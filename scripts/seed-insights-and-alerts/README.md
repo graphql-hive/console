@@ -13,8 +13,10 @@ What gets created:
   incident windows. The chart, status bar, and events table on the alert detail page all derive from
   this one shared timeline (metric-first signal generation).
 - ~10 saved filters with realistic view counts.
-- Three alert channels (Slack/Webhook/MS Teams via webhooks — Slack tokens aren't available in local
-  dev, so all three use webhook endpoints).
+- Alert channels — a preview-only Slack destination plus a PagerDuty webhook. The Slack channel is a
+  real `SLACK`-type row inserted straight into Postgres (no bot token needed, fixed name
+  `#hive-alerts-testing`), so the alert form's Slack preview renders; it never delivers, since this
+  seed dispatches nothing.
 - 7 metric alert rules covering every state in the evaluation state machine (NORMAL, PENDING,
   FIRING, RECOVERING) across the three rule types (latency, reliability, traffic) and both threshold
   modes (fixed value, percentage change). The seed deliberately leaves headroom inside the

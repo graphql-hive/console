@@ -437,6 +437,19 @@ export class SavedFiltersProvider {
       };
     }
 
+    // Block deletion of a filter an alert depends on. The DB FK is ON DELETE
+    // RESTRICT (the hard backstop); this returns a friendly message instead of a
+    // raw foreign-key violation, and tells the user how many alerts to detach.
+    const usedByAlertRules = await this.savedFiltersStorage.countAlertRulesUsingFilter(filterId);
+    if (usedByAlertRules > 0) {
+      return {
+        type: 'error',
+        message: `This filter is used by ${usedByAlertRules} alert rule${
+          usedByAlertRules === 1 ? '' : 's'
+        }. Detach it from those alerts first.`,
+      };
+    }
+
     const deletedId = await this.savedFiltersStorage.deleteSavedFilter({ id: filterId });
 
     if (!deletedId) {

@@ -27,7 +27,8 @@ export type NotificationEvent = {
     | 'direction'
   >;
   currentValue: number;
-  previousValue: number;
+  // Null for absolute-only groups that skip the previous window.
+  previousValue: number | null;
   organizationSlug: string;
   projectSlug: string;
   targetSlug: string;
@@ -66,7 +67,9 @@ export async function sendSlackNotification(args: {
   const isFiring = event.state === 'firing';
   const emoji = isFiring ? ':rotating_light:' : ':white_check_mark:';
   const action = isFiring ? 'triggered' : 'resolved';
-  const color = isFiring ? '#E74C3C' : '#2ECC71';
+  // `good` is Slack's preset for the resolved state — it renders Slack's own
+  // green. Firing uses the severity hex (prefixed with `#`).
+  const color = isFiring ? `#${severityColor(event.rule.severity)}` : 'good';
 
   const changeText = formatChangeText(event);
 
@@ -145,7 +148,7 @@ export async function sendTeamsNotification(args: {
   const isFiring = event.state === 'firing';
   const emoji = isFiring ? '🔴' : '✅';
   const action = isFiring ? 'triggered' : 'resolved';
-  const themeColor = isFiring ? 'E74C3C' : '2ECC71';
+  const themeColor = isFiring ? severityColor(event.rule.severity) : RESOLVED_COLOR;
 
   const changeText = formatChangeText(event);
 
@@ -178,6 +181,24 @@ export async function sendTeamsNotification(args: {
   logger.debug({ channelId: channel.id }, 'Teams notification sent');
 }
 
+/**
+ * Light mode severity ex colors (no leading `#`) for the notification's colored bar.
+ */
+const SEVERITY_COLORS: Record<NotificationEvent['rule']['severity'], string> = {
+  INFO: '0465af',
+  WARNING: 'c5870d',
+  CRITICAL: 'c62424',
+};
+/**
+ * Resolved-state green for MS Teams. Teams' `themeColor` must be a hex, so it
+ * can't use Slack's `good` preset.
+ */
+const RESOLVED_COLOR = '2ECC71';
+
+function severityColor(severity: NotificationEvent['rule']['severity']): string {
+  return SEVERITY_COLORS[severity] ?? SEVERITY_COLORS.WARNING;
+}
+
 function formatChangeText(event: NotificationEvent): string {
   const { rule, currentValue, previousValue } = event;
   const unit = rule.type === 'LATENCY' ? 'ms' : rule.type === 'ERROR_RATE' ? '%' : ' requests';
@@ -189,11 +210,16 @@ function formatChangeText(event: NotificationEvent): string {
         : 'Traffic';
 
   if (event.state === 'firing') {
+    const thresholdText = `Threshold: ${rule.direction.toLowerCase()} ${rule.thresholdValue}${rule.thresholdType === 'PERCENTAGE_CHANGE' ? '%' : unit}`;
+    // Absolute-only rules have no previous window to compare against.
+    if (previousValue === null) {
+      return `${metricLabel}: **${currentValue.toFixed(2)}${unit}** — ${thresholdText}`;
+    }
     const changePercent =
       previousValue !== 0
         ? (((currentValue - previousValue) / previousValue) * 100).toFixed(1)
         : 'N/A';
-    return `${metricLabel}: **${currentValue.toFixed(2)}${unit}** (was ${previousValue.toFixed(2)}${unit}, ${changePercent}% change) — Threshold: ${rule.direction.toLowerCase()} ${rule.thresholdValue}${rule.thresholdType === 'PERCENTAGE_CHANGE' ? '%' : unit}`;
+    return `${metricLabel}: **${currentValue.toFixed(2)}${unit}** (was ${previousValue.toFixed(2)}${unit}, ${changePercent}% change) — ${thresholdText}`;
   }
 
   return `${metricLabel}: **${currentValue.toFixed(2)}${unit}** (threshold: ${rule.thresholdValue}${rule.thresholdType === 'PERCENTAGE_CHANGE' ? '%' : unit})`;
@@ -202,7 +228,9 @@ function formatChangeText(event: NotificationEvent): string {
 function buildWebhookPayload(event: NotificationEvent) {
   const { rule, currentValue, previousValue } = event;
   const changePercent =
-    previousValue !== 0 ? ((currentValue - previousValue) / previousValue) * 100 : null;
+    previousValue !== null && previousValue !== 0
+      ? ((currentValue - previousValue) / previousValue) * 100
+      : null;
 
   return {
     type: 'metric_alert',

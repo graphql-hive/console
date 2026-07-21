@@ -105,6 +105,11 @@ export class SuperTokensCookieBasedSession extends Session {
             effect: 'allow',
             resource: `hrn:${organizationId}:organization/${organizationId}`,
           },
+          {
+            action: 'alert:modify',
+            effect: 'allow',
+            resource: `hrn:${organizationId}:organization/${organizationId}`,
+          },
         ];
       }
 

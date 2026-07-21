@@ -52,7 +52,7 @@ export function deploySchema({
       livenessProbe: '/_health',
       startupProbe: '/_health',
       exposesMetrics: true,
-      replicas: environment.podsConfig.general.replicas,
+      replicas: environment.podsConfig.schemaService.replicas,
       memory: {
         limit: environment.podsConfig.schemaService.memoryLimit,
       },

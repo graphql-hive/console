@@ -19,6 +19,9 @@ const { DEV_USER_PASSWORD, getOrCreateAuth, getSeedPGConnectionString } = await 
   '../utils/get-or-create-auth'
 );
 const { promptForEmail } = await import('../utils/prompt-for-email');
+const { SLACK_PREVIEW_CHANNEL_NAME, insertSlackPreviewChannel } = await import(
+  '../utils/seed-slack-preview-channel'
+);
 const {
   addAlertChannel,
   addMetricAlertRule,
@@ -233,6 +236,18 @@ async function setup(ownerEmail: string, options: { noRules: boolean }): Promise
   const channelId = channelResult.addAlertChannel.ok!.addedAlertChannel.id;
   console.log('   ✓ Webhook channel created');
 
+  // Every rule notifies the webhook receiver. A preview-only SLACK channel is also
+  // inserted (see insertSlackPreviewChannel) so you can see the alert form's Slack
+  // preview and its severity colors — no bot token needed. It's left unattached to
+  // the rules: it never delivers, so attaching it would only log empty-handed
+  // notifier warnings on every fire. Select it on a rule's form to see the preview.
+  const channelIds = [channelId];
+  await insertSlackPreviewChannel({
+    connectionString: getSeedPGConnectionString(),
+    projectId: project.id,
+  });
+  console.log(`   ✓ Preview-only Slack channel inserted (${SLACK_PREVIEW_CHANNEL_NAME})`);
+
   // Rule creation is skipped under `--no-rules` so the operator can create
   // their own rule from a clean UI (e.g. during a video walkthrough). The
   // pre-seed below still runs, so a rule created within ~1 minute will see
@@ -252,7 +267,7 @@ async function setup(ownerEmail: string, options: { noRules: boolean }): Promise
         },
       },
       timeWindowMinutes: 1,
-      channelIds: [channelId],
+      channelIds,
     };
 
     const ruleTraffic = (
@@ -424,6 +439,7 @@ function printSummary(ctx: Ctx) {
   console.log(
     `│ Password:   ${ctx.isExistingUser ? '(use existing password)' : DEV_USER_PASSWORD}`,
   );
+  console.log(`│ Slack:      preview-only channel for ${SLACK_PREVIEW_CHANNEL_NAME}`);
   if (ctx.ruleIds) {
     console.log(`│ Open in UI: ${DASHBOARD_URL}${targetPath}/alerts/rules`);
     console.log('│');
@@ -435,8 +451,8 @@ function printSummary(ctx: Ctx) {
   } else {
     console.log(`│ Open in UI: ${DASHBOARD_URL}${targetPath}/alerts/create`);
     console.log('│');
-    console.log('│ Started in --no-rules mode: org, target, and webhook');
-    console.log('│ channel exist, but no rules were created. Create a rule');
+    console.log('│ Started in --no-rules mode: org, target, and notification');
+    console.log('│ channel(s) exist, but no rules were created. Create a rule');
     console.log('│ via the form above; the workflows evaluator will pick it');
     console.log('│ up on its next cron tick (≤60s).');
     console.log('│');

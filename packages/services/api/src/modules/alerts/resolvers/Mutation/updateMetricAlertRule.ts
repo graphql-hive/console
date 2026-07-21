@@ -1,6 +1,7 @@
 import { IdTranslator } from '../../../shared/providers/id-translator';
 import {
   MetricAlertRuleCrossScopeError,
+  MetricAlertRuleFilterNotShareableError,
   MetricAlertRulesDisabledError,
   MetricAlertRulesManager,
   MetricAlertRuleValidationError,
@@ -40,7 +41,8 @@ export const updateMetricAlertRule: NonNullable<
     if (
       error instanceof MetricAlertRulesDisabledError ||
       error instanceof MetricAlertRuleValidationError ||
-      error instanceof MetricAlertRuleCrossScopeError
+      error instanceof MetricAlertRuleCrossScopeError ||
+      error instanceof MetricAlertRuleFilterNotShareableError
     ) {
       return { error: { message: error.message } };
     }

@@ -47,6 +47,20 @@ const SavedFilterModel = zod.object({
 export class SavedFiltersStorage {
   constructor(private pool: PostgresDatabasePool) {}
 
+  /**
+   * Count alert rules referencing a saved filter. A direct `metric_alert_rules`
+   * table reference (not a cross-module import) so saved-filters never depends on
+   * the alerts module. Used by the delete guard in the provider.
+   */
+  async countAlertRulesUsingFilter(savedFilterId: string): Promise<number> {
+    const count = await this.pool.oneFirst(psql`/* countAlertRulesUsingFilter */
+      SELECT count(*)::int
+      FROM "metric_alert_rules"
+      WHERE "saved_filter_id" = ${savedFilterId}
+    `);
+    return zod.number().parse(count);
+  }
+
   async getSavedFilter(args: { id: string }): Promise<SavedFilter | null> {
     const result = await this.pool.maybeOne(psql`/* getSavedFilter */
       SELECT

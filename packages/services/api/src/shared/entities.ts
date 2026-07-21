@@ -8,6 +8,7 @@ import type {
   AlertChannelType,
   AlertType,
   AuthProviderType,
+  DangerousChangeType,
   OrganizationAccessScope,
   ProjectAccessScope,
   TargetAccessScope,
@@ -331,6 +332,8 @@ export interface Target {
   name: string;
   graphqlEndpointUrl: string | null;
   failDiffOnDangerousChange: boolean;
+  failAllDangerousChanges: boolean;
+  failDangerousChangeTypes: string[];
 }
 
 export interface Token {
@@ -387,6 +390,8 @@ export interface TargetSettings {
     excludedAppDeployments: string[];
   };
   failDiffOnDangerousChange: boolean;
+  failAllDangerousChanges: boolean;
+  failDangerousChangeTypes: DangerousChangeType[];
   appDeploymentProtection: {
     isEnabled: boolean;
     minDaysInactive: number;

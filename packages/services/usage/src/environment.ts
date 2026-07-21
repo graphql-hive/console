@@ -1,6 +1,10 @@
 import * as fs from 'fs';
 import zod from 'zod';
-import { OpenTelemetryConfigurationModel, resolveServerListenOptions } from '@hive/service-common';
+import {
+  OpenTelemetryConfigurationModel,
+  parseRedisConfigFromEnvironment,
+  resolveServerListenOptions,
+} from '@hive/service-common';
 
 const isNumberString = (input: unknown) => zod.string().regex(/^\d+$/).safeParse(input).success;
 
@@ -85,13 +89,6 @@ const PostgresModel = zod.object({
   POSTGRES_PASSWORD: emptyString(zod.string().optional()),
 });
 
-const RedisModel = zod.object({
-  REDIS_HOST: zod.string(),
-  REDIS_PORT: NumberFromString,
-  REDIS_PASSWORD: emptyString(zod.string().optional()),
-  REDIS_TLS_ENABLED: emptyString(zod.union([zod.literal('1'), zod.literal('0')]).optional()),
-});
-
 const PrometheusModel = zod.object({
   PROMETHEUS_METRICS: emptyString(zod.union([zod.literal('0'), zod.literal('1')]).optional()),
   PROMETHEUS_METRICS_LABEL_INSTANCE: emptyString(zod.string().optional()),
@@ -122,7 +119,6 @@ const configs = {
   sentry: SentryModel.safeParse(process.env),
   kafka: KafkaModel.safeParse(process.env),
   postgres: PostgresModel.safeParse(process.env),
-  redis: RedisModel.safeParse(process.env),
   prometheus: PrometheusModel.safeParse(process.env),
   log: LogModel.safeParse(process.env),
   tracing: OpenTelemetryConfigurationModel.safeParse(process.env),
@@ -149,6 +145,15 @@ if (configs.kafka.success && configs.kafka.data.KAFKA_AWS_IAM_AUTH_ENABLED === '
   }
 }
 
+const redisConfigResult = parseRedisConfigFromEnvironment(
+  process.env,
+  configs.base.success ? configs.base.data.AWS_REGION : undefined,
+);
+
+if (redisConfigResult.type === 'error') {
+  environmentErrors.push(...redisConfigResult.errors);
+}
+
 if (environmentErrors.length) {
   const fullError = environmentErrors.join(`\n`);
   console.error('❌ Invalid environment variables:', fullError);
@@ -166,7 +171,6 @@ const base = extractConfig(configs.base);
 const sentry = extractConfig(configs.sentry);
 const kafka = extractConfig(configs.kafka);
 const postgres = extractConfig(configs.postgres);
-const redis = extractConfig(configs.redis);
 const prometheus = extractConfig(configs.prometheus);
 const log = extractConfig(configs.log);
 const tracing = extractConfig(configs.tracing);
@@ -245,12 +249,10 @@ export const env = {
     password: postgres.POSTGRES_PASSWORD,
     ssl: postgres.POSTGRES_SSL === '1',
   },
-  redis: {
-    host: redis.REDIS_HOST,
-    port: redis.REDIS_PORT,
-    password: redis.REDIS_PASSWORD ?? '',
-    tlsEnabled: redis.REDIS_TLS_ENABLED === '1',
-  },
+  redis:
+    redisConfigResult?.type === 'ok'
+      ? redisConfigResult.config
+      : raiseInvariant('Unreachable: redis config errors are caught above via process.exit(1)'),
   log: {
     level: log.LOG_LEVEL ?? 'info',
     requests: log.REQUEST_LOGGING === '1',

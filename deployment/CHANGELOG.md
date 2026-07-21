@@ -1,5 +1,208 @@
 # hive
 
+## 11.6.0
+
+### Minor Changes
+
+- [#8198](https://github.com/graphql-hive/console/pull/8198)
+  [`156acee`](https://github.com/graphql-hive/console/commit/156aceead7e73ebbd5b201c7920d5d1c1d0e3f10)
+  Thanks [@jdolle](https://github.com/jdolle)! - Use the monthly table in the usage estimator
+
+  This table has dramatically better performance than operations_hourly.
+
+### Patch Changes
+
+- [#8218](https://github.com/graphql-hive/console/pull/8218)
+  [`0564435`](https://github.com/graphql-hive/console/commit/05644359a4099b3344d19741c7b8248fde3e2a68)
+  Thanks [@jonathanawesome](https://github.com/jonathanawesome)! - Metric alerts optimization:
+  Optimize evaluation cadence for long-windowed rule groups.
+
+- [#8224](https://github.com/graphql-hive/console/pull/8224)
+  [`60c14c0`](https://github.com/graphql-hive/console/commit/60c14c08e3b8a58c714d19a438032e1dd606152b)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Address vulnerability
+  [CVE-2026-25680](https://github.com/advisories/GHSA-5cv4-jp36-h3mw).
+
+- [#8221](https://github.com/graphql-hive/console/pull/8221)
+  [`5258d8e`](https://github.com/graphql-hive/console/commit/5258d8e0a4864a3ad57df60ee59444eef458fc4e)
+  Thanks [@jonathanawesome](https://github.com/jonathanawesome)! - Metric alerts optimization: Skip
+  fetching the previous comparison window for groups that only contain absolute (fixed value) rules.
+
+- [#8217](https://github.com/graphql-hive/console/pull/8217)
+  [`e9bbbe6`](https://github.com/graphql-hive/console/commit/e9bbbe6a78f6fcd6dc9ebd99a43a7250786a84ef)
+  Thanks [@jonathanawesome](https://github.com/jonathanawesome)! - Metric alerts optimization:
+  Require duration column selection only for rules of latency type.
+
+- [#8224](https://github.com/graphql-hive/console/pull/8224)
+  [`60c14c0`](https://github.com/graphql-hive/console/commit/60c14c08e3b8a58c714d19a438032e1dd606152b)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Address vulnerability
+  [CVE-2026-54285](https://github.com/advisories/GHSA-8988-4f7v-96qf).
+
+- [#8228](https://github.com/graphql-hive/console/pull/8228)
+  [`058c082`](https://github.com/graphql-hive/console/commit/058c08273c6aa24b0b0f3e7d4ff3d366869655e9)
+  Thanks [@jdolle](https://github.com/jdolle)! - Upgrade composition library to support oneOf
+  directive without requiring composeDirective, and to fix an edge case where an external field is
+  not flagged as external in the supergraph if another graph uses that field in the key
+
+## 11.5.0
+
+### Minor Changes
+
+- [#8215](https://github.com/graphql-hive/console/pull/8215)
+  [`608d931`](https://github.com/graphql-hive/console/commit/608d931663bfbee506511be376d6e3f3502f3e8b)
+  Thanks [@jdolle](https://github.com/jdolle)! - Improve styling and visibility of composition
+  report. This can be accessed through the project settings: composition tab when composition is
+  flagged as incompatible
+
+- [#8203](https://github.com/graphql-hive/console/pull/8203)
+  [`45d99a6`](https://github.com/graphql-hive/console/commit/45d99a6e965e2736c542294f098a729bce1e4aa7)
+  Thanks [@jdolle](https://github.com/jdolle)! - Role create and edit trigger validation on submit
+  instead of disabling the submit button
+
+### Patch Changes
+
+- [#8213](https://github.com/graphql-hive/console/pull/8213)
+  [`d6e9ebb`](https://github.com/graphql-hive/console/commit/d6e9ebb13b1f11dbdf0f79cc6a72f654e508668b)
+  Thanks [@jonathanawesome](https://github.com/jonathanawesome)! - Runs metric alerts cron with a
+  concurrency pool
+
+- [#8200](https://github.com/graphql-hive/console/pull/8200)
+  [`fcfecb4`](https://github.com/graphql-hive/console/commit/fcfecb4cf26741accf14226201ba3476e5ccaedc)
+  Thanks [@jdolle](https://github.com/jdolle)! - Security upgrades for dependencies (including ws,
+  protobufjs, js-yaml, and others) to address security vulnerabilities. Upgrade nodejs from 24.14.1
+  to 24.17.0
+
+- [#8196](https://github.com/graphql-hive/console/pull/8196)
+  [`27a58e5`](https://github.com/graphql-hive/console/commit/27a58e53c2c37998c2351c697288858a56f73287)
+  Thanks [@jdolle](https://github.com/jdolle)! - Write s3 schema artifacts in parallel on schema
+  publish. Previously, the subgraph SDLs would be written first and then the composite schema SDL
+  would be written.
+
+## 11.4.0
+
+### Minor Changes
+
+- [#8078](https://github.com/graphql-hive/console/pull/8078)
+  [`bd6cce7`](https://github.com/graphql-hive/console/commit/bd6cce70b253deb676300e5e4ba063a6307e37cb)
+  Thanks [@mish-elle](https://github.com/mish-elle)! - Added opt-in AWS IAM authentication for
+  ElastiCache Redis connections and Redis Cluster mode support. When IAM is enabled, services
+  authenticate to Redis using short-lived SigV4 pre-signed tokens instead of static passwords, with
+  automatic token refresh before expiry.
+
+  ### New environment variables
+
+  | Variable                     | Service                                  | Description                                                                   |
+  | ---------------------------- | ---------------------------------------- | ----------------------------------------------------------------------------- |
+  | `AWS_REGION`                 | schema, server, tokens, usage, workflows | Default AWS region for all AWS connections.                                   |
+  | `REDIS_AWS_IAM_AUTH_ENABLED` | schema, server, tokens, usage, workflows | Set to `1` to enable IAM authentication for Redis.                            |
+  | `REDIS_AWS_IAM_CACHE_NAME`   | schema, server, tokens, usage, workflows | The ElastiCache Redis cache instance name. Used as the host for the signer.   |
+  | `REDIS_AWS_REGION`           | schema, server, tokens, usage, workflows | Optional override for the Redis region (defaults to `AWS_REGION`).            |
+  | `REDIS_CLUSTER_MODE_ENABLED` | schema, server, tokens, usage, workflows | Set to `1` to connect using Redis Cluster mode.                               |
+  | `REDIS_USERNAME`             | schema, server, tokens, usage, workflows | Optional Redis username for ACL-based authentication (defaults to `default`). |
+
+  ### To enable
+
+  - `REDIS_AWS_IAM_AUTH_ENABLED=1`
+  - `REDIS_TLS_ENABLED=1` must be set (IAM authentication requires TLS).
+  - `REDIS_AWS_REGION` or `AWS_REGION` must be set.
+  - `REDIS_AWS_IAM_CACHE_NAME` set to the name of the cache instance in AWS. This will be used as
+    the hostname for the signer.
+  - The pod/instance must have AWS credentials available (e.g. IRSA, EKS Pod Identity, instance
+    profile) with the appropriate ElastiCache IAM permissions.
+
+  ### Other changes
+
+  - Bumping ioredis to `5.10.1`.
+
+- [#8175](https://github.com/graphql-hive/console/pull/8175)
+  [`dc800a8`](https://github.com/graphql-hive/console/commit/dc800a8a3e4c1ad7816ccd961090e2f1d38cd532)
+  Thanks [@jdolle](https://github.com/jdolle)! - Introduce a new configuration option for selecting
+  individual dangerous change types to consider breaking. This is useful because dangerous changes
+  can be situational based on a team's accepted risk and deployment process.
+
+### Patch Changes
+
+- [#8183](https://github.com/graphql-hive/console/pull/8183)
+  [`42c9d81`](https://github.com/graphql-hive/console/commit/42c9d818e8b12287cfc687ce8b2691d39103c164)
+  Thanks [@jdolle](https://github.com/jdolle)! - Maintain scroll position on target explorer page
+  when navigating back from another page
+
+## 11.3.0
+
+### Minor Changes
+
+- [#8120](https://github.com/graphql-hive/console/pull/8120)
+  [`065e087`](https://github.com/graphql-hive/console/commit/065e087a195320fab7cac8534129ee29fd578630)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Bump recommended clickhouse version for
+  self-hosting to `26.3.12.3`.
+
+  Pass `output_format_json_quote_64bit_integers=1` search parameter to clickhouse database queries
+  expecting `JSON` responses to ensure consistent response output for different cloud providers.
+
+  **Note:** Please ensure you are properly backing up your database and follow the Clickhouse
+  changelog before using a newer ClickHouse version. We use `clickhouse/clickhouse-server` only for
+  local development and integration testing. For production workloads, we recommend using a managed
+  cloud service or having dedicated staff responsible for operating ClickHouse and planning
+  upgrades.
+
+### Patch Changes
+
+- [#8110](https://github.com/graphql-hive/console/pull/8110)
+  [`599c829`](https://github.com/graphql-hive/console/commit/599c8298dcbba58de21c5cb930e1a8289ddc3666)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Fix schema SDL not including directives when
+  composing with schema stitching (impacting Federation projects). Bumped `@graphql-tools/stitch` to
+  v10.1.22, [which contains a necessary bugfix](https://github.com/graphql-hive/gateway/pull/2401),
+  and switched from `printSchema` to `printSchemaWithDirectives` when printing the stitched schema
+  SDL.
+
+- [#8121](https://github.com/graphql-hive/console/pull/8121)
+  [`84d1f5c`](https://github.com/graphql-hive/console/commit/84d1f5c64f9654e2159ff84b2590dd79c9d51f33)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Fix issue where the user emails were not inserted
+  in lower-case for OIDC providers returning non-lowercase emails.
+
+  If you are affected, you can manually fix you database state by running the following commands, to
+  make account-linking from different login methods work smoothly.
+
+  ```sql
+  UPDATE "users"
+  SET
+    "email" = lower("email")
+  WHERE
+    "email" <> lower("email");
+  ```
+
+  ```sql
+  UPDATE "supertokens_thirdparty_users"
+  SET
+    "email" = lower("email")
+  WHERE
+    "email" <> lower("email");
+  ```
+
+  Fix issue where user emails were not inserted into the database in lowercase for invites,
+  resulting in a mismatch of user account email and invite email that could not be accespted. To
+  cleanup your database of invites, run the following command to identify duplicate records and then
+  manually fix them/clean them up.
+
+  ```sql
+  SELECT
+    "organization_id",
+    lower(email) AS KEY,
+    array_agg(
+      json_object(
+        ARRAY['email', 'code', 'expires_at'],
+        ARRAY["email", "code", to_json("expires_at")::TEXT]
+      )
+    ) AS records,
+    COUNT(*)
+  FROM
+    "organization_invitations"
+  GROUP BY
+    "organization_id",
+    lower("email")
+  HAVING
+    COUNT(*) > 1;
+  ```
+
 ## 11.2.1
 
 ### Patch Changes

@@ -4,6 +4,8 @@ import type { AppHelper } from '../helpers/app';
 import { generateRandomSlug, getUserData } from '../helpers/data';
 import type { UsageHelper } from '../helpers/usage';
 
+// Generous per-test budget: each test drives the full org/project/target/token setup through
+// the UI before polling Insights.
 test.describe.configure({ mode: 'serial', timeout: 120_000 });
 
 type UsageReport = {

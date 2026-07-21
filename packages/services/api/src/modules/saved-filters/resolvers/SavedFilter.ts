@@ -2,7 +2,21 @@ import { Storage } from '../../shared/providers/storage';
 import { SavedFiltersProvider } from '../providers/saved-filters.provider';
 import type { SavedFilterResolvers } from './../../../__generated__/types';
 
-export const SavedFilter: SavedFilterResolvers = {
+export const SavedFilter: Pick<
+  SavedFilterResolvers,
+  | 'createdAt'
+  | 'createdBy'
+  | 'description'
+  | 'filters'
+  | 'id'
+  | 'name'
+  | 'updatedAt'
+  | 'updatedBy'
+  | 'viewerCanDelete'
+  | 'viewerCanUpdate'
+  | 'viewsCount'
+  | 'visibility'
+> = {
   id: filter => filter.id,
   name: filter => filter.name,
   description: filter => filter.description,

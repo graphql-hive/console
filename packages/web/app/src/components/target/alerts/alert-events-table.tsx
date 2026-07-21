@@ -1,3 +1,4 @@
+import { formatDistanceToNow } from 'date-fns';
 import { ArrowRight } from 'lucide-react';
 import { DataTable } from '@/components/base/data-table/data-table';
 import { type MetricAlertRuleState, type MetricAlertRuleType } from '@/gql/graphql';
@@ -49,6 +50,15 @@ const COLUMNS = [
     ),
   }),
   columnHelper.display({
+    id: 'age',
+    header: 'Age',
+    cell: ctx => (
+      <span className="text-neutral-12 inline-flex items-center gap-1 font-mono text-[11px]">
+        {formatDistanceToNow(new Date(ctx.row.original.createdAt), { addSuffix: true })}
+      </span>
+    ),
+  }),
+  columnHelper.display({
     id: 'status',
     header: 'Status',
     cell: ctx => (
@@ -58,11 +68,6 @@ const COLUMNS = [
         <StateBadge state={ctx.row.original.toState as MetricAlertRuleState} />
       </div>
     ),
-  }),
-  columnHelper.display({
-    id: 'events',
-    header: 'Events',
-    cell: () => <span className="text-neutral-11">1</span>,
   }),
 ];
 

@@ -12,6 +12,7 @@ import {
   MetricAlertRuleThresholdType,
   MetricAlertRuleType,
   ProjectType,
+  SavedFilterVisibilityType,
 } from 'testkit/gql/graphql';
 import { initSeed } from '../../../testkit/seed';
 
@@ -628,3 +629,125 @@ test.concurrent(
     expect(result[0].message).toContain('Missing permission for performing');
   },
 );
+
+// Alerts are shared, headless-evaluated resources, so they may only reference
+// `shared` saved filters (visible to everyone who manages the alert). Attaching a
+// private filter is rejected with a structured error, on both create and update.
+//
+// NOTE: the matching `MetricAlertRule.savedFilter` visibility guard (a private
+// filter resolves to null for a non-creator viewer) is intentionally NOT covered
+// here: with this enforcement in place there is no public-API path to attach a
+// private filter to an alert in the first place, so the guard is defense-in-depth.
+test.concurrent(
+  'rejects attaching a private saved filter to an alert (create and update)',
+  async ({ expect }) => {
+    const { createOrg } = await initSeed().createOwner();
+    const { createProject, organization, setFeatureFlag } = await createOrg();
+    await setFeatureFlag('metricAlertRules', true);
+    const {
+      project,
+      target,
+      addAlertChannel,
+      createSavedFilter,
+      addMetricAlertRule,
+      updateMetricAlertRule,
+    } = await createProject(ProjectType.Single);
+
+    const organizationSlug = organization.slug;
+    const projectSlug = project.slug;
+    const targetSlug = target.slug;
+
+    const channelResult = await addAlertChannel({
+      name: 'wh',
+      organizationSlug,
+      projectSlug,
+      type: AlertChannelType.Webhook,
+      webhook: { endpoint: 'http://localhost:9876/webhook' },
+    });
+    const channelId = channelResult.ok!.addedAlertChannel.id;
+
+    const privateFilter = await createSavedFilter({
+      name: 'private-filter',
+      visibility: SavedFilterVisibilityType.Private,
+      insightsFilter: { operationHashes: ['op1'], clientFilters: [] },
+    });
+    const privateFilterId = privateFilter.ok!.savedFilter.id;
+
+    const baseInput = {
+      target: { bySelector: { organizationSlug, projectSlug, targetSlug } },
+      type: MetricAlertRuleType.Traffic,
+      timeWindowMinutes: 30,
+      thresholdType: MetricAlertRuleThresholdType.FixedValue,
+      thresholdValue: 100,
+      direction: MetricAlertRuleDirection.Above,
+      severity: MetricAlertRuleSeverity.Warning,
+      channelIds: [channelId],
+    };
+
+    // create with a private filter -> rejected with a structured { error } (HTTP 200, not a 500)
+    const createResult = await addMetricAlertRule({
+      ...baseInput,
+      name: 'with-private-filter',
+      savedFilterId: privateFilterId,
+    });
+    expect(createResult.ok).toBeFalsy();
+    expect(createResult.error?.message).toBe('Only shared filters can be attached to alerts.');
+
+    // create without a filter, then update to attach the private filter -> also rejected
+    const baseRule = await addMetricAlertRule({ ...baseInput, name: 'no-filter' });
+    expect(baseRule.ok).toBeTruthy();
+
+    const updateResult = await updateMetricAlertRule({
+      project: { bySelector: { organizationSlug, projectSlug } },
+      ruleId: baseRule.ok!.addedMetricAlertRule.id,
+      savedFilterId: privateFilterId,
+    });
+    expect(updateResult.ok).toBeFalsy();
+    expect(updateResult.error?.message).toBe('Only shared filters can be attached to alerts.');
+  },
+);
+
+test.concurrent('accepts a shared saved filter on an alert', async ({ expect }) => {
+  const { createOrg } = await initSeed().createOwner();
+  const { createProject, organization, setFeatureFlag } = await createOrg();
+  await setFeatureFlag('metricAlertRules', true);
+  const { project, target, addAlertChannel, createSavedFilter, addMetricAlertRule } =
+    await createProject(ProjectType.Single);
+
+  const organizationSlug = organization.slug;
+  const projectSlug = project.slug;
+  const targetSlug = target.slug;
+
+  const channelResult = await addAlertChannel({
+    name: 'wh',
+    organizationSlug,
+    projectSlug,
+    type: AlertChannelType.Webhook,
+    webhook: { endpoint: 'http://localhost:9876/webhook' },
+  });
+  const channelId = channelResult.ok!.addedAlertChannel.id;
+
+  const sharedFilter = await createSavedFilter({
+    name: 'shared-filter',
+    visibility: SavedFilterVisibilityType.Shared,
+    insightsFilter: { operationHashes: ['op1'], clientFilters: [] },
+  });
+  const sharedFilterId = sharedFilter.ok!.savedFilter.id;
+
+  const result = await addMetricAlertRule({
+    target: { bySelector: { organizationSlug, projectSlug, targetSlug } },
+    name: 'with-shared-filter',
+    type: MetricAlertRuleType.Traffic,
+    timeWindowMinutes: 30,
+    thresholdType: MetricAlertRuleThresholdType.FixedValue,
+    thresholdValue: 100,
+    direction: MetricAlertRuleDirection.Above,
+    severity: MetricAlertRuleSeverity.Warning,
+    channelIds: [channelId],
+    savedFilterId: sharedFilterId,
+  });
+
+  expect(result.error).toBeNull();
+  expect(result.ok).toBeTruthy();
+  expect(result.ok!.addedMetricAlertRule.id).toBeDefined();
+});

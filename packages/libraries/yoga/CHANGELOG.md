@@ -1,5 +1,26 @@
 # @graphql-hive/yoga
 
+## 0.48.2
+
+### Patch Changes
+
+- [#8189](https://github.com/graphql-hive/console/pull/8189)
+  [`edda043`](https://github.com/graphql-hive/console/commit/edda043e8aa60f852228cac9a83ea3a746f58917)
+  Thanks [@enisdenjo](https://github.com/enisdenjo)! - Use original operation document when usage
+  reporting
+
+  Some envelop plugins (like extended-validation) mutate documents in place and can therefore cause
+  the document to be different AFTER execution than the one that was used FOR execution. To avoid
+  this rugpull, we create a new stable document operation (object) for usage reporting.
+
+## 0.48.1
+
+### Patch Changes
+
+- Updated dependencies
+  [[`63a9126`](https://github.com/graphql-hive/console/commit/63a912691f0c7e5afdd2cc864de53df289592b54)]:
+  - @graphql-hive/core@0.21.1
+
 ## 0.48.0
 
 ### Minor Changes
