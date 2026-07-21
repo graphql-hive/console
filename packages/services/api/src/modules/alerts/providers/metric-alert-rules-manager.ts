@@ -337,7 +337,7 @@ export class MetricAlertRulesManager {
       timeWindowMinutes > METRIC_ALERT_RULE_TIME_WINDOW_MAX_MINUTES
     ) {
       throw new MetricAlertRuleValidationError(
-        `Time window must be a whole number of minutes between ${METRIC_ALERT_RULE_TIME_WINDOW_MIN_MINUTES} and ${METRIC_ALERT_RULE_TIME_WINDOW_MAX_MINUTES} (30 days).`,
+        `Time window must be a whole number of minutes between ${METRIC_ALERT_RULE_TIME_WINDOW_MIN_MINUTES} and ${METRIC_ALERT_RULE_TIME_WINDOW_MAX_MINUTES} (7 days).`,
       );
     }
     // Windows at/above the daily-rollup threshold read whole-day buckets, so they
