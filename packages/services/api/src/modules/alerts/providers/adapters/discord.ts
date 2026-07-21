@@ -225,7 +225,9 @@ function createDetailsText(
   }
 
   if (messages.length) {
-    sections.push(`### Other changes\n${messages.map(message => slackCoderize(message)).join('\n')}`);
+    sections.push(
+      `### Other changes\n${messages.map(message => slackCoderize(message)).join('\n')}`,
+    );
   }
 
   if (errors.length) {
