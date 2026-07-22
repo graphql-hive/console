@@ -1,5 +1,6 @@
 import { createModule } from 'graphql-modules';
 import { SavedFiltersStorage } from '../saved-filters/providers/saved-filters-storage';
+import { DiscordCommunicationAdapter } from './providers/adapters/discord';
 import { TeamsCommunicationAdapter } from './providers/adapters/msteams';
 import { SlackCommunicationAdapter } from './providers/adapters/slack';
 import { WebhookCommunicationAdapter } from './providers/adapters/webhook';
@@ -22,5 +23,6 @@ export const alertsModule = createModule({
     SlackCommunicationAdapter,
     WebhookCommunicationAdapter,
     TeamsCommunicationAdapter,
+    DiscordCommunicationAdapter,
   ],
 });

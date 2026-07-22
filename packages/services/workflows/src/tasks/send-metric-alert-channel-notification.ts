@@ -3,6 +3,7 @@ import { psql } from '@hive/postgres';
 import { SpanKind, SpanStatusCode, trace } from '@hive/service-common';
 import { defineTask, implementTask } from '../kit.js';
 import {
+  sendDiscordNotification,
   sendSlackNotification,
   sendTeamsNotification,
   sendWebhookNotification,
@@ -40,7 +41,7 @@ const HydrationRowSchema = z.object({
   organizationId: z.string(),
   // channel
   channelId: z.string(),
-  channelType: z.enum(['SLACK', 'WEBHOOK', 'MSTEAMS_WEBHOOK']),
+  channelType: z.enum(['SLACK', 'WEBHOOK', 'MSTEAMS_WEBHOOK', 'DISCORD']),
   channelName: z.string(),
   slackChannel: z.string().nullable(),
   webhookEndpoint: z.string().nullable(),
@@ -197,6 +198,17 @@ export const task = implementTask(SendMetricAlertChannelNotificationTask, async 
             break;
           case 'MSTEAMS_WEBHOOK':
             await sendTeamsNotification({
+              channel,
+              event,
+              requestBroker: context.requestBroker,
+              logger,
+              idempotencyKey,
+              attempt: helpers.job.attempts,
+              maxAttempts: helpers.job.max_attempts,
+            });
+            break;
+          case 'DISCORD':
+            await sendDiscordNotification({
               channel,
               event,
               requestBroker: context.requestBroker,
