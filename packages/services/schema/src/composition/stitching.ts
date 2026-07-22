@@ -70,12 +70,12 @@ export type ComposeStitchingArgs = {
 export async function composeStitching(args: ComposeStitchingArgs) {
   const errors: Array<CompositionErrorType> = [];
   const subschemas: GraphQLSchema[] = [];
-  for (const { raw: rawSdl } of args.schemas) {
+  for (const schema of args.schemas) {
     // parse inside a loop instead of using map to avoid holding on to the parsed schema
     // in memory. This matters for large schemas.
-    const parsed = parse(rawSdl);
+    const parsed = parse(schema.raw);
     const stitchedErrors = validateStitchedSchema(parsed);
-    if (errors.length) {
+    if (stitchedErrors.length) {
       errors.push(...stitchedErrors);
     } else {
       subschemas.push(
