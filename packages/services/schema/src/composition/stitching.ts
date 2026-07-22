@@ -68,10 +68,24 @@ export type ComposeStitchingArgs = {
 };
 
 export async function composeStitching(args: ComposeStitchingArgs) {
-  const parsed = args.schemas.map(s => parse(s.raw));
-  const errors: Array<CompositionErrorType> = parsed
-    .map(schema => validateStitchedSchema(schema))
-    .flat();
+  const errors: Array<CompositionErrorType> = [];
+  const subschemas: GraphQLSchema[] = [];
+  for (const { raw: rawSdl } of args.schemas) {
+    // parse inside a loop instead of using map to avoid holding on to the parsed schema
+    // in memory. This matters for large schemas.
+    const parsed = parse(rawSdl);
+    const stitchedErrors = validateStitchedSchema(parsed);
+    if (errors.length) {
+      errors.push(...stitchedErrors);
+    } else {
+      subschemas.push(
+        buildASTSchema(trimDescriptions(parsed), {
+          assumeValid: true,
+          assumeValidSDL: true,
+        }),
+      );
+    }
+  }
 
   let stitchedSchema: GraphQLSchema | null = null;
   let sdl: string | null = null;
@@ -79,12 +93,7 @@ export async function composeStitching(args: ComposeStitchingArgs) {
   if (errors.length === 0) {
     try {
       stitchedSchema = stitchSchemas({
-        subschemas: args.schemas.map(schema =>
-          buildASTSchema(trimDescriptions(parse(schema.raw)), {
-            assumeValid: true,
-            assumeValidSDL: true,
-          }),
-        ),
+        subschemas,
       });
       sdl = printSchemaWithDirectives(stitchedSchema);
     } catch (error) {

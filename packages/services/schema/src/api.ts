@@ -163,7 +163,7 @@ export const schemaBuilderApiRouter = t.router({
           'code' in error &&
           error.code === 'ERR_WORKER_OUT_OF_MEMORY'
         ) {
-          ctx.req.log.error('Composition memory limit exceeded. (error=%o)');
+          ctx.req.log.error('Composition memory limit exceeded. (error=%o)', error);
 
           return {
             errors: [
