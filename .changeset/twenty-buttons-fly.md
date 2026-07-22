@@ -11,6 +11,7 @@ extend schema
   @composeDirective(name: "@access")
 
 directive @access(scope: Scope! = PUBLIC) on FIELD_DEFINITION
+
 enum Scope {
   PUBLIC
   PRIVATE
