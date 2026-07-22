@@ -1022,7 +1022,7 @@ test.concurrent('promote delete schema version results in correct state', async 
   expect(promotedVersion.supergraph).toEqual(serviceDeletedVersion.supergraph);
 });
 
-test.concurrent('promote monolith schema version', async ({ expect }) => {
+test.concurrent('promote monolith schema version succeeds', async ({ expect }) => {
   const { createOrg } = await initSeed().createOwner();
   const { createProject, createOrganizationAccessToken } = await createOrg();
   const { target, fetchVersions } = await createProject(ProjectType.Single);
