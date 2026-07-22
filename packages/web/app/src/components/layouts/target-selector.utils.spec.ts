@@ -1,4 +1,4 @@
-import { resolveTargetSwitchTo, TARGET_ROUTE_PREFIX as P } from './target-selector.utils';
+import { TARGET_ROUTE_PREFIX as P, resolveTargetSwitchTo } from './target-selector.utils';
 
 // A representative slice of the registered route fullPaths (see router.tsx). `resolveTargetSwitchTo`
 // only cares whether a candidate section path exists here, so non-target routes are irrelevant.
@@ -23,7 +23,8 @@ const ALL_ROUTES = [
 ];
 
 // matched routes are ordered root -> leaf; the pathless authenticated layout has no fullPath.
-const resolve = (...matched: Array<string | undefined>) => resolveTargetSwitchTo(matched, ALL_ROUTES);
+const resolve = (...matched: Array<string | undefined>) =>
+  resolveTargetSwitchTo(matched, ALL_ROUTES);
 
 describe('resolveTargetSwitchTo', () => {
   it('drops a nested detail id and returns the section parent (history)', () => {
