@@ -211,6 +211,7 @@ target "commerce" {
     IMAGE_TITLE = "graphql-hive/commerce"
     IMAGE_DESCRIPTION = "The commerce service of the GraphQL Hive project."
     PORT = "3010"
+    INSTALL_RDS_CA_CERTS = "1"
     HEALTHCHECK_CMD = "wget --spider -q http://127.0.0.1:$${PORT}/_readiness"
   }
   tags = [
@@ -233,6 +234,7 @@ target "tokens" {
     IMAGE_TITLE = "graphql-hive/tokens"
     IMAGE_DESCRIPTION = "The tokens service of the GraphQL Hive project."
     PORT = "3003"
+    INSTALL_RDS_CA_CERTS = "1"
     HEALTHCHECK_CMD = "wget --spider -q http://127.0.0.1:$${PORT}/_readiness"
   }
   tags = [
@@ -277,6 +279,7 @@ target "usage" {
     IMAGE_TITLE = "graphql-hive/usage"
     IMAGE_DESCRIPTION = "The usage ingestor service of the GraphQL Hive project."
     PORT = "3006"
+    INSTALL_RDS_CA_CERTS = "1"
     HEALTHCHECK_CMD = "wget --spider -q http://127.0.0.1:$${PORT}/_readiness"
   }
   tags = [
