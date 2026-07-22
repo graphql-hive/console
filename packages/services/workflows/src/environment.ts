@@ -57,6 +57,10 @@ const PostgresModel = zod.object({
   POSTGRES_DB: zod.string(),
   POSTGRES_USER: zod.string(),
   POSTGRES_PASSWORD: emptyString(zod.string().optional()),
+  POSTGRES_AWS_REGION: emptyString(zod.string().optional()),
+  POSTGRES_AWS_IAM_AUTH_ENABLED: emptyString(
+    zod.union([zod.literal('0'), zod.literal('1')]).optional(),
+  ),
 });
 
 const PostmarkEmailModel = zod.object({
@@ -180,6 +184,19 @@ if (redisConfigResult.type === 'error') {
   environmentErrors.push(...redisConfigResult.errors);
 }
 
+if (configs.postgres.success && configs.postgres.data.POSTGRES_AWS_IAM_AUTH_ENABLED === '1') {
+  const missingRdsIamVars: string[] = [];
+  if (configs.postgres.data.POSTGRES_SSL !== '1')
+    missingRdsIamVars.push('POSTGRES_SSL must be enabled (RDS IAM requires TLS)');
+  if (!configs.postgres.data.POSTGRES_AWS_REGION && !configs.base.data?.AWS_REGION)
+    missingRdsIamVars.push('POSTGRES_AWS_REGION or AWS_REGION');
+  if (missingRdsIamVars.length > 0) {
+    environmentErrors.push(
+      `POSTGRES_AWS_IAM_AUTH_ENABLED is enabled but the following required variables are missing or invalid: ${missingRdsIamVars.join(', ')}`,
+    );
+  }
+}
+
 if (environmentErrors.length) {
   const fullError = environmentErrors.join(`\n`);
   console.error('❌ Invalid environment variables:', fullError);
@@ -270,14 +287,14 @@ export const env = {
         }
       : null,
   postgres: {
-    connectionString: {
-      ssl: postgres.POSTGRES_SSL === '1',
-      host: postgres.POSTGRES_HOST,
-      db: postgres.POSTGRES_DB,
-      password: postgres.POSTGRES_PASSWORD,
-      port: postgres.POSTGRES_PORT,
-      user: postgres.POSTGRES_USER,
-    } satisfies PostgresConnectionParamaters,
+    ssl: postgres.POSTGRES_SSL === '1',
+    awsIamAuthEnabled: postgres.POSTGRES_AWS_IAM_AUTH_ENABLED === '1',
+    awsRegion: postgres.POSTGRES_AWS_REGION ?? process.env.AWS_REGION,
+    host: postgres.POSTGRES_HOST,
+    db: postgres.POSTGRES_DB,
+    password: postgres.POSTGRES_PASSWORD,
+    port: postgres.POSTGRES_PORT,
+    user: postgres.POSTGRES_USER,
   },
   clickhouse:
     clickhouse.CLICKHOUSE === '1'
