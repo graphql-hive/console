@@ -224,8 +224,6 @@ const RANGE_OPTIONS = [
   { value: '360', label: '6h' },
   { value: '1440', label: '1d' },
   { value: '10080', label: '7d' },
-  { value: '20160', label: '14d' },
-  { value: '43200', label: '30d' },
 ] as const;
 
 // Condition labels depend on threshold type. For a fixed value the metric is
@@ -583,7 +581,7 @@ export function AlertForm(props: AlertFormProps) {
 
   const previewWindowMinutes = Math.min(
     (parseInt(watchedValues.timeWindowMinutes, 10) || 10_080) * 2,
-    43_200,
+    20_160,
   );
   const { period, resolution } = useMemo(() => {
     const now = new Date();

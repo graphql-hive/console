@@ -42,10 +42,11 @@ export const METRIC_ALERT_RULES_PER_TARGET_LIMIT = 10;
  * Min = 1: the evaluator cron runs every minute, so a sub-1-minute window
  * never gets a fresh evaluation and the rule's behaviour is undefined.
  *
- * Max = 30 days: rules with longer windows query ClickHouse's
- * `operations_hourly` rollup, which is bounded by the retention policy. 30
- * days is the practical ceiling beyond which queries start scanning data
- * that may already be aged out.
+ * Max = 7 days: the product ceiling for alert windows. At the max the window
+ * equals METRIC_ALERT_RULE_DAILY_ROLLUP_THRESHOLD_MINUTES, so it reads
+ * ClickHouse's whole-day rollup and must be a whole number of days (7d
+ * qualifies). Longer windows added little alerting value and pushed queries
+ * toward the edge of the retention policy.
  *
  * The UI form's `Select` exposes a smaller subset of this range for UX
  * reasons; these constants are the absolute bounds the API enforces against
@@ -53,7 +54,7 @@ export const METRIC_ALERT_RULES_PER_TARGET_LIMIT = 10;
  */
 export const MINUTES_PER_DAY = 24 * 60; // 1440
 export const METRIC_ALERT_RULE_TIME_WINDOW_MIN_MINUTES = 1;
-export const METRIC_ALERT_RULE_TIME_WINDOW_MAX_MINUTES = 30 * MINUTES_PER_DAY; // 43200
+export const METRIC_ALERT_RULE_TIME_WINDOW_MAX_MINUTES = 7 * MINUTES_PER_DAY; // 10080
 
 // Windows >= this read the daily ClickHouse rollup (whole-day buckets), so they
 // must be a whole number of days. Mirrors DAILY_THRESHOLD_MINUTES in the workflows

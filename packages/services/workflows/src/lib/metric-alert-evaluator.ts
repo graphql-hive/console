@@ -252,7 +252,7 @@ export function evaluationIntervalMinutes(timeWindowMinutes: number): number {
   if (timeWindowMinutes <= 60) return 1; // ≤ 1h window: every tick (unchanged)
   if (timeWindowMinutes <= 360) return 5; // ≤ 6h window: every 5 min
   if (timeWindowMinutes <= 1440) return 15; // ≤ 24h window: every 15 min
-  return 30; // > 24h (7d, 30d): every 30 min
+  return 30; // > 24h (up to the 7d max): every 30 min
 }
 
 // PENDING/RECOVERING rules stay at 1-min resolution so the confirmationMinutes

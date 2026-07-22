@@ -2,9 +2,9 @@ import type { Action } from '../clickhouse';
 
 // Daily by-target rollup for the metric-alert evaluator. Mirrors the
 // minutely/hourly rollups in 018 but bucketed per day, so long-window rules
-// (>= 7 days) read ~60 daily buckets for a 30-day query instead of ~1,440
-// hourly ones. The 90-day TTL covers the 60-day (2x window) scan of a 30-day
-// rule.
+// (the 7-day max) read ~14 daily buckets (current + previous window) instead of
+// ~336 hourly ones. The 90-day TTL comfortably covers the 14-day (2x window)
+// scan of a 7-day rule.
 const tableColumns = `
   target LowCardinality(String) CODEC(ZSTD(1)),
   timestamp DateTime('UTC') CODEC(DoubleDelta, LZ4),

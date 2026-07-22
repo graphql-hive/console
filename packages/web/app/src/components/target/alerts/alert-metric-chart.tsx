@@ -81,10 +81,12 @@ const SEVERITY_COLOR_KEY: Record<string, 'critical' | 'warning' | 'info'> = {
   INFO: 'info',
 };
 
-// The preview fetch span is capped at 30 days (see `previewWindowMinutes` in
-// alert-form.tsx), so for windows longer than 15 days the "previous" window
-// falls outside the fetched data and can't be drawn or compared.
-const PREVIEW_SPAN_CAP_MINUTES = 43_200;
+// The preview fetch span is capped at 14 days (see `previewWindowMinutes` in
+// alert-form.tsx), so for windows longer than 7 days the "previous" window
+// falls outside the fetched data and can't be drawn or compared. With the rule
+// window itself capped at 7d, this always holds, but the guard stays as a
+// backstop against a larger `timeWindowMinutes` reaching the chart.
+const PREVIEW_SPAN_CAP_MINUTES = 20_160;
 
 const MS_PER_MINUTE = 60_000;
 
