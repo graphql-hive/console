@@ -285,7 +285,9 @@ describe('DiscordCommunicationAdapter', () => {
 
     it('handles failed send operation', async () => {
       const { adapter, httpClient } = createAdapter();
-      httpClient.post.mockRejectedValueOnce(new Error('Failed to send Discord message: Bad Request'));
+      httpClient.post.mockRejectedValueOnce(
+        new Error('Failed to send Discord message: Bad Request'),
+      );
 
       await expect(
         adapter.sendDiscordMessage('http://example.com/webhook', {
