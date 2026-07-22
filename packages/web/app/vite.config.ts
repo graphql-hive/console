@@ -1,4 +1,5 @@
-import { resolve } from 'node:path';
+import { resolve, sep } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import type { Plugin, UserConfig } from 'vite';
 import monacoEditor from 'vite-plugin-monaco-editor';
 import tsconfigPaths from 'vite-tsconfig-paths';
@@ -7,7 +8,7 @@ import { sentryVitePlugin } from '@sentry/vite-plugin';
 import tailwindcss from '@tailwindcss/vite';
 import react from '@vitejs/plugin-react';
 
-const __dirname = new URL('.', import.meta.url).pathname;
+const __dirname = fileURLToPath(new URL('.', import.meta.url));
 
 // Add react-scan in local development mode
 const reactScanPlugin: Plugin = {
@@ -52,8 +53,8 @@ export default {
     outDir: 'dist',
     rollupOptions: {
       input: {
-        index: resolve(__dirname, 'index.html'),
-        ['preflight-worker-embed']: resolve(__dirname, 'preflight-worker-embed.html'),
+        index: resolve(__dirname, 'index.html').split(sep).join('/'),
+        ['preflight-worker-embed']: resolve(__dirname, 'preflight-worker-embed.html').split(sep).join('/'),
       },
     },
   },

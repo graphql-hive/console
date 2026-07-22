@@ -1,4 +1,5 @@
 import { resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import Fastify from 'fastify';
 import cors from '@fastify/cors';
 import FastifyStatic from '@fastify/static';
@@ -7,7 +8,7 @@ import { connectGithub } from './github';
 import { connectLab } from './lab';
 import { connectSlack } from './slack';
 
-const __dirname = new URL('.', import.meta.url).pathname;
+const __dirname = fileURLToPath(new URL('.', import.meta.url));
 /**
  * Whether the server is running in development mode.
  * See the ./dev.ts file
