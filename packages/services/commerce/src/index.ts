@@ -1,9 +1,10 @@
 #!/usr/bin/env node
 import 'reflect-metadata';
-import { createConnectionString } from '@hive/postgres';
+import { createConnectionStringProvider } from '@hive/postgres';
 import {
   configureTracing,
   createServer,
+  generateRdsIamAuthToken,
   registerShutdown,
   registerTRPC,
   reportReadiness,
@@ -53,8 +54,21 @@ async function main() {
   });
 
   try {
+    const rdsIamTokenGenerator = env.postgres.awsIamAuthEnabled
+      ? () =>
+          generateRdsIamAuthToken(
+            {
+              region: env.postgres.awsRegion!,
+              hostname: env.postgres.host,
+              port: env.postgres.port,
+              username: env.postgres.user,
+            },
+            server.log.child({ source: 'RdsIamAuthTokenGenerator' }),
+          )
+      : undefined;
+
     const storage = await createStorage(
-      createConnectionString(env.postgres),
+      createConnectionStringProvider(env.postgres, rdsIamTokenGenerator),
       5,
       tracing ? [tracing.instrumentSlonik()] : undefined,
     );

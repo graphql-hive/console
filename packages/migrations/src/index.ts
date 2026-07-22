@@ -1,13 +1,27 @@
 #!/usr/bin/env node
-import { createPostgresDatabasePool } from '@hive/postgres';
+import { createConnectionStringProvider, createPostgresDatabasePool } from '@hive/postgres';
+import { generateRdsIamAuthToken } from '@hive/service-common';
 import { schemaCoordinateStatusMigration } from './actions/2024.07.23T09.36.00.schema-cleanup-tracker';
 import { migrateClickHouse } from './clickhouse';
 import { env } from './environment';
 import { runPGMigrations } from './run-pg-migrations';
 import { updateRetention } from './scripts/update-retention';
 
+const rdsIamTokenGenerator = env.postgres.awsIamAuthEnabled
+  ? () =>
+      generateRdsIamAuthToken(
+        {
+          region: env.postgres.awsRegion!,
+          hostname: env.postgres.host,
+          port: env.postgres.port,
+          username: env.postgres.user,
+        },
+        console,
+      )
+  : undefined;
+
 const slonik = await createPostgresDatabasePool({
-  connectionParameters: env.postgres,
+  connectionParameters: createConnectionStringProvider(env.postgres, rdsIamTokenGenerator),
   // 10 minute timeout per statement
   statementTimeout: 10 * 60 * 1000,
 });
