@@ -115,6 +115,11 @@ export class CompositionScheduler {
         extra: {
           requestId: workerState?.args.requestId ?? '',
           compositionType: workerState?.args.data.type,
+          schemaCount: workerState?.args.data.args.schemas.length,
+          schemaTotalSize: workerState?.args.data.args.schemas.reduce(
+            (size, s) => size + s.raw.length,
+            0,
+          ),
         },
       });
       recreate(error);
