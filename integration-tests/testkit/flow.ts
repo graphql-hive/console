@@ -1,3 +1,5 @@
+import { parse } from 'graphql';
+import type { TypedDocumentNode } from '@graphql-typed-document-node/core';
 import { graphql } from './gql';
 import type {
   AddAlertChannelInput,
@@ -43,6 +45,27 @@ import type {
 } from './gql/graphql';
 import * as GraphQLSchema from './gql/graphql';
 import { execute } from './graphql';
+
+const LeaveOrganizationDocument = parse(`
+  mutation LeaveOrganization($input: OrganizationSelectorInput!) {
+    leaveOrganization(input: $input) {
+      ok {
+        organizationId
+      }
+      error {
+        message
+      }
+    }
+  }
+`) as TypedDocumentNode<
+  {
+    leaveOrganization: {
+      ok: { organizationId: string } | null;
+      error: { message: string } | null;
+    };
+  },
+  { input: OrganizationSelectorInput }
+>;
 
 export function waitFor(ms: number) {
   return new Promise(resolve => setTimeout(resolve, ms));
@@ -278,6 +301,14 @@ export function joinOrganization(code: string, authToken: string) {
     variables: {
       code,
     },
+  });
+}
+
+export function leaveOrganization(input: OrganizationSelectorInput, authToken: string) {
+  return execute({
+    document: LeaveOrganizationDocument,
+    authToken,
+    variables: { input },
   });
 }
 
