@@ -180,7 +180,8 @@
       "sigstore@<=4.1.0": ">=4.1.1",
       "tar@<=7.5.18": "7.5.21",
       "fast-uri@2.x.x": "3.1.4",
-      "fast-uri@3.x.x": "3.1.4"
+      "fast-uri@3.x.x": "3.1.4",
+      "@opentelemetry/propagator-jaeger@2.x.x": "2.9.0"
     },
     "patchedDependencies": {
       "mjml-core@4.14.0": "patches/mjml-core@4.14.0.patch",
