@@ -21,6 +21,7 @@ import {
   Navigate,
   Outlet,
   parseSearchWith,
+  redirect,
   stringifySearchWith,
   useNavigate,
   useParams,
@@ -82,7 +83,7 @@ import { TargetExplorerPage } from './pages/target-explorer';
 import { TargetExplorerDeprecatedPage } from './pages/target-explorer-deprecated';
 import { TargetExplorerTypePage } from './pages/target-explorer-type';
 import { TargetExplorerUnusedPage } from './pages/target-explorer-unused';
-import { TargetHistoryPage } from './pages/target-history';
+import { TargetHistoryPage, TargetHistoryPageQuery } from './pages/target-history';
 import { TargetHistorySchemaVersionPage } from './pages/target-history-schema-version';
 import { TargetInsightsPage } from './pages/target-insights';
 import { TargetInsightsClientPage } from './pages/target-insights-client';
@@ -1009,6 +1010,22 @@ const targetInsightsOperationsRoute = createRoute({
 const targetHistoryRoute = createRoute({
   getParentRoute: () => targetRoute,
   path: 'history',
+  // On the bare history route redirect to the target's latest version. Done here rather than in a
+  // render effect so it runs once, deterministically, and can't loop.
+  beforeLoad: async ({ params, location }) => {
+    if (!/\/history\/?$/.test(location.pathname)) {
+      return;
+    }
+    const result = await urqlClient.query(TargetHistoryPageQuery, params).toPromise();
+    const versionId = result.data?.target?.latestSchemaVersion?.id;
+    if (versionId) {
+      throw redirect({
+        to: '/$organizationSlug/$projectSlug/$targetSlug/history/$versionId',
+        params: { ...params, versionId },
+        replace: true,
+      });
+    }
+  },
   component: function TargetHistoryRoute() {
     const { organizationSlug, projectSlug, targetSlug } = targetHistoryRoute.useParams();
     return (
