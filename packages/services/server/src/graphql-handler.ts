@@ -209,6 +209,7 @@ export const graphqlHandler = (options: GraphQLHandlerOptions): RouteHandlerMeth
           ? {
               target: options.hiveUsageConfig.target,
               endpoint: options.hiveUsageConfig.endpoint ?? undefined,
+              fieldLevelMetricsEnabled: options.hiveUsageConfig.fieldLevelMetricsEnabled,
               clientInfo(ctx: { req: FastifyRequest; reply: FastifyReply }) {
                 const name = ctx.req.headers['graphql-client-name'] as string;
                 const version = (ctx.req.headers['graphql-client-version'] as string) ?? 'missing';

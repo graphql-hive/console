@@ -60,6 +60,9 @@
       "@graphql-hive/external-composition": [
         "./packages/libraries/external-composition/src/index.ts"
       ],
+      "@graphql-hive/gateway-plugin-console-sdk": [
+        "./packages/libraries/gateway-plugin-console-sdk/src/index.ts"
+      ],
       "@graphql-hive/core": ["./packages/libraries/core/src/index.ts"],
       "@graphql-hive/core/src/client/collect-schema-coordinates": [
         "./packages/libraries/core/src/client/collect-schema-coordinates.ts"

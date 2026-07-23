@@ -159,7 +159,7 @@ test('should send data to Hive', async () => {
   const collect = hive.collectUsage();
 
   await waitFor(20);
-  await collect(
+  await collect.finish(
     {
       schema,
       document: op,
@@ -269,7 +269,7 @@ test('should send data to Hive (deprecated endpoint)', async () => {
   const collect = hive.collectUsage();
 
   await waitFor(20);
-  await collect(
+  await collect.finish(
     {
       schema,
       document: op,
@@ -360,7 +360,7 @@ test('should not leak the exception', { retry: 3 }, async () => {
     },
   });
 
-  await hive.collectUsage()(
+  await hive.collectUsage().finish(
     {
       schema,
       document: op,
@@ -423,7 +423,7 @@ test('sendImmediately should not stop the schedule', async () => {
 
   const collect = hive.collectUsage();
 
-  await collect(
+  await collect.finish(
     {
       schema,
       document: op,
@@ -443,12 +443,12 @@ test('sendImmediately should not stop the schedule', async () => {
 
   // Now we will hit the maxSize
   // We run collect two times
-  await Promise.all([collect(args, {}), collect(args, {})]);
+  await Promise.all([collect.finish(args, {}), collect.finish(args, {})]);
   await waitUntil(() => logger.getLogs().includes('Sending immediately'));
   expect(logger.getLogs()).toMatch('Sending report (queue 2)');
   logger.clear();
   // Let's check if the scheduled send task is still running
-  await collect(args, {});
+  await collect.finish(args, {});
   await waitFor(60);
   expect(logger.getLogs()).toMatch('Sending report (queue 1)');
 
@@ -510,7 +510,7 @@ test('should send data to Hive at least once when using atLeastOnceSampler', asy
   const collect = hive.collectUsage();
 
   await Promise.all([
-    collect(
+    collect.finish(
       {
         schema,
         document: op,
@@ -519,7 +519,7 @@ test('should send data to Hive at least once when using atLeastOnceSampler', asy
       {},
     ),
     // different query
-    collect(
+    collect.finish(
       {
         schema,
         document: op2,
@@ -528,7 +528,7 @@ test('should send data to Hive at least once when using atLeastOnceSampler', asy
       {},
     ),
     // duplicated call
-    collect(
+    collect.finish(
       {
         schema,
         document: op,
@@ -606,7 +606,7 @@ test('should not send excluded operation name data to Hive', async () => {
   const collect = hive.collectUsage();
   await waitFor(20);
   await Promise.all([
-    (collect(
+    (collect.finish(
       {
         schema,
         document: op,
@@ -614,7 +614,7 @@ test('should not send excluded operation name data to Hive', async () => {
       },
       {},
     ),
-    collect(
+    collect.finish(
       {
         schema,
         document: op,
@@ -622,7 +622,7 @@ test('should not send excluded operation name data to Hive', async () => {
       },
       {},
     ),
-    collect(
+    collect.finish(
       {
         schema,
         document: op,
@@ -630,7 +630,7 @@ test('should not send excluded operation name data to Hive', async () => {
       },
       {},
     ),
-    collect(
+    collect.finish(
       {
         schema,
         document: op2,
@@ -732,7 +732,7 @@ test('retry on non-200', async () => {
 
   const collect = hive.collectUsage();
 
-  await collect(
+  await collect.finish(
     {
       schema,
       document: op,
@@ -784,7 +784,7 @@ test('constructs URL with usage.target (hvo1/)', async ({ expect }) => {
     },
   });
 
-  await hive.collectUsage()(
+  await hive.collectUsage().finish(
     {
       schema,
       document: op,
@@ -830,7 +830,7 @@ test('constructs URL with usage.target (hvp1/)', async ({ expect }) => {
     },
   });
 
-  await hive.collectUsage()(
+  await hive.collectUsage().finish(
     {
       schema,
       document: op,
@@ -876,7 +876,7 @@ test('constructs URL with usage.target (hvu1/)', async ({ expect }) => {
     },
   });
 
-  await hive.collectUsage()(
+  await hive.collectUsage().finish(
     {
       schema,
       document: op,
@@ -919,7 +919,7 @@ test('no debug property -> logger.debug is invoked', async ({ expect }) => {
     },
   });
 
-  await hive.collectUsage()(
+  await hive.collectUsage().finish(
     {
       schema,
       document: op,
@@ -969,7 +969,7 @@ test('debug: false -> logger.debug is not invoked', async ({ expect }) => {
     },
   });
 
-  await hive.collectUsage()(
+  await hive.collectUsage().finish(
     {
       schema,
       document: op,
@@ -1023,7 +1023,7 @@ test('debug: true and missing logger.debug method -> logger.info is invoked (to 
     },
   });
 
-  await hive.collectUsage()(
+  await hive.collectUsage().finish(
     {
       schema,
       document: op,
@@ -1087,7 +1087,7 @@ test('new logger option', async () => {
     },
   });
 
-  await hive.collectUsage()(
+  await hive.collectUsage().finish(
     {
       schema,
       document: op,

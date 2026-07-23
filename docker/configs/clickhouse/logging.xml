@@ -1,5 +1,6 @@
 <clickhouse>
     <logger>
         <console>true</console>
+        <level>information</level>
     </logger>
 </clickhouse>

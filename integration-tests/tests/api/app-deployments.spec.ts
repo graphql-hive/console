@@ -2142,7 +2142,7 @@ test('app deployment usage reporting', async () => {
     },
   });
 
-  await client.collectUsage()(
+  await client.collectUsage().finish(
     {
       document: parse(`query { a }`),
       schema: buildASTSchema(parse(sdl)),
@@ -2720,7 +2720,7 @@ test('activeAppDeployments filters by lastUsedBefore', async () => {
     },
   });
 
-  await client.collectUsage()(
+  await client.collectUsage().finish(
     {
       document: parse(`query { hello }`),
       schema: buildASTSchema(parse(sdl)),
@@ -2882,7 +2882,7 @@ test('activeAppDeployments applies OR logic between lastUsedBefore and neverUsed
     },
   });
 
-  await client.collectUsage()(
+  await client.collectUsage().finish(
     {
       document: parse(`query { hello }`),
       schema: buildASTSchema(parse(sdl)),
@@ -3159,7 +3159,7 @@ test('activeAppDeployments filters by name combined with lastUsedBefore', async 
     },
   });
 
-  await client.collectUsage()(
+  await client.collectUsage().finish(
     {
       document: parse(`query { hello }`),
       schema: buildASTSchema(parse(sdl)),
@@ -5602,7 +5602,7 @@ test('retire app deployment with --force bypasses protection', async () => {
     },
   });
 
-  await client.collectUsage()(
+  await client.collectUsage().finish(
     {
       document: parse(`query { hello }`),
       schema: buildASTSchema(parse(sdl)),

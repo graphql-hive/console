@@ -7,6 +7,7 @@ export interface RawReport {
   operations: RawOperation[];
   subscriptionOperations?: RawSubscriptionOperation[];
   appDeploymentUsageTimestamps?: RawAppDeploymentUsageTimestampMap;
+  errors?: RawOperationErrors[];
 }
 
 export interface RawAppDeploymentUsageTimestampMap {
@@ -27,10 +28,19 @@ export interface RawOperation {
     ok: boolean;
     duration: number;
     errorsTotal: number;
+    /** Count of how many times a coordinate was resolved by this operation */
+    coordinateTotals?: { [coordinate: string]: number };
   };
   metadata?: {
     client?: ClientMetadata;
   };
+}
+
+export interface RawOperationErrors {
+  operationMapKey: string;
+  timestamp: number;
+  expiresAt?: number;
+  errors: { code?: string; coordinate: string }[];
 }
 
 export type RawSubscriptionOperation = {

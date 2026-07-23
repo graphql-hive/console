@@ -4,6 +4,7 @@ import { preprocessOperation } from '@graphql-hive/core';
 import type { ServiceLogger } from '@hive/service-common';
 import type {
   ProcessedOperation,
+  ProcessedOperationErrorRecord,
   RawAppDeploymentUsageTimestampMap,
   RawOperation,
   RawOperationMap,
@@ -21,6 +22,7 @@ import {
 } from './metrics';
 import {
   stringifyAppDeploymentUsageRecord,
+  stringifyOperationErrors,
   stringifyQueryOrMutationOperation,
   stringifyRegistryRecord,
   stringifySubscriptionOperation,
@@ -82,6 +84,7 @@ export function createProcessor(config: { logger: ServiceLogger }) {
       const serializedOperations: string[] = [];
       const serializedSubscriptionOperations: string[] = [];
       const serializedRegistryRecords: string[] = [];
+      const serializedErrorRecords: string[] = [];
 
       const allAppDeploymentTimeStamps = new Map<
         string,
@@ -136,6 +139,17 @@ export function createProcessor(config: { logger: ServiceLogger }) {
           }
 
           serializedOperations.push(stringifyQueryOrMutationOperation(processedOperation));
+        }
+
+        for (const raw of rawReport.errors ?? []) {
+          const err: ProcessedOperationErrorRecord = {
+            errors: raw.errors.map(e => [e.code ?? '', e.coordinate]),
+            expires_at: raw.expiresAt || raw.timestamp + RETENTION_FALLBACK * DAY_IN_MS,
+            hash: raw.operationMapKey,
+            target: rawReport.target,
+            timestamp: raw.timestamp,
+          };
+          serializedErrorRecords.push(stringifyOperationErrors(err));
         }
 
         if (rawReport.subscriptionOperations) {
@@ -242,6 +256,7 @@ export function createProcessor(config: { logger: ServiceLogger }) {
         subscriptionOperations: serializedSubscriptionOperations,
         registryRecords: serializedRegistryRecords,
         appDeploymentUsageRecords: serializedAppDeploymentUsageRecords,
+        errors: serializedErrorRecords,
       };
     },
   };
