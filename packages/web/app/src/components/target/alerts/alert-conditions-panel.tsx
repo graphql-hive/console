@@ -5,7 +5,6 @@ import { DescriptionList } from '@/components/base/description-list/description-
 import { FloatingPortalContainerProvider } from '@/components/base/floating/floating-portal-container';
 import { savedFilterToSearchParams } from '@/components/target/insights/search-params';
 import { BadgeRounded } from '@/components/ui/badge';
-import { TimeAgo } from '@/components/ui/time-ago';
 import {
   Sheet,
   SheetContent,
@@ -13,6 +12,7 @@ import {
   SheetHeader,
   SheetTitle,
 } from '@/components/ui/sheet';
+import { TimeAgo } from '@/components/ui/time-ago';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Avatar } from '@/components/v2/avatar';
 import {
