@@ -1,4 +1,4 @@
-import { ReactElement, useEffect, useState } from 'react';
+import { ReactElement, useState } from 'react';
 import { FileSymlinkIcon, GitCommitVerticalIcon } from 'lucide-react';
 import { useQuery } from 'urql';
 import { Page, TargetLayout } from '@/components/layouts/target';
@@ -12,7 +12,7 @@ import { QueryError } from '@/components/ui/query-error';
 import { TimeAgo } from '@/components/ui/time-ago';
 import { graphql } from '@/gql';
 import { cn } from '@/lib/utils';
-import { Link, Outlet, useParams, useRouter } from '@tanstack/react-router';
+import { Link, Outlet, useParams } from '@tanstack/react-router';
 
 const HistoryPage_VersionsPageQuery = graphql(`
   query HistoryPage_VersionsPageQuery(
@@ -213,7 +213,7 @@ function ListPage(props: {
   );
 }
 
-const TargetHistoryPageQuery = graphql(`
+export const TargetHistoryPageQuery = graphql(`
   query TargetHistoryPageQuery(
     $organizationSlug: String!
     $projectSlug: String!
@@ -245,7 +245,6 @@ function HistoryPageContent(props: {
   projectSlug: string;
   targetSlug: string;
 }) {
-  const router = useRouter();
   const [query] = useQuery({
     query: TargetHistoryPageQuery,
     variables: {
@@ -261,20 +260,6 @@ function HistoryPageContent(props: {
   const { versionId } = useParams({
     strict: false /* allows to read the $versionId param of its child route */,
   }) as { versionId?: string };
-
-  useEffect(() => {
-    if (!versionId && currentTarget?.latestSchemaVersion?.id) {
-      void router.navigate({
-        to: '/$organizationSlug/$projectSlug/$targetSlug/history/$versionId',
-        params: {
-          organizationSlug: props.organizationSlug,
-          projectSlug: props.projectSlug,
-          targetSlug: props.targetSlug,
-          versionId: currentTarget.latestSchemaVersion.id,
-        },
-      });
-    }
-  }, [versionId, currentTarget?.latestSchemaVersion?.id]);
 
   if (query.error) {
     return (

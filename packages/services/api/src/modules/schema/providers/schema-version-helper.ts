@@ -409,6 +409,9 @@ export class SchemaVersionHelper {
         } satisfies ResolversUnionTypes<any>['SubgraphDiff'];
       }
       if (edge.type === 'added') {
+        invariant(!!edge.node.service_name, 'node of edge cannot be null');
+        invariant(!!edge.node.service_url, 'url of edge cannot be null');
+
         return {
           __typename: 'SubgraphDiffAdded',
           subgraphVersion: {

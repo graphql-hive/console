@@ -1021,3 +1021,113 @@ test.concurrent('promote delete schema version results in correct state', async 
   expect(serviceDeletedVersion.valid).toEqual(true);
   expect(promotedVersion.supergraph).toEqual(serviceDeletedVersion.supergraph);
 });
+
+test.concurrent('promote monolith schema version succeeds', async ({ expect }) => {
+  const { createOrg } = await initSeed().createOwner();
+  const { createProject, createOrganizationAccessToken } = await createOrg();
+  const { target, fetchVersions } = await createProject(ProjectType.Single);
+  const { privateAccessKey } = await createOrganizationAccessToken({
+    resources: {
+      mode: ResourceAssignmentModeType.All,
+    },
+    permissions: [
+      'schemaVersion:publish',
+      'target:modifySettings',
+      'project:describe',
+      'schemaVersion:promote',
+    ],
+  });
+
+  await publishSchema(
+    {
+      author: 'a',
+      commit: 'a',
+      sdl: /* GraphQL */ `
+        type Query {
+          a: String!
+        }
+      `,
+      target: {
+        byId: target.id,
+      },
+    },
+    privateAccessKey,
+  ).then(r => r.expectNoGraphQLErrors());
+  await publishSchema(
+    {
+      author: 'b',
+      commit: 'b',
+      sdl: /* GraphQL */ `
+        type Query {
+          b: String!
+        }
+      `,
+      target: {
+        byId: target.id,
+      },
+    },
+    privateAccessKey,
+  ).then(r => r.expectNoGraphQLErrors());
+
+  const [publishedVersion, versionToPromote] = await fetchVersions(2);
+  assertNonNullish(versionToPromote);
+  assertNonNullish(publishedVersion);
+  expect(versionToPromote.sdl).toContain('a: String!');
+
+  let promoteResult = await schemaVersionPromote(
+    {
+      source: {
+        fromSchemaVersionById: versionToPromote.id,
+      },
+      target: {
+        toTarget: {
+          byId: target.id,
+        },
+      },
+    },
+    privateAccessKey,
+  ).then(r => r.expectNoGraphQLErrors());
+
+  expect(promoteResult.schemaVersionPromote.error).toEqual(null);
+  assertNonNullish(promoteResult.schemaVersionPromote.ok);
+  let promotedVersionDetails = await getSchemaVersionWithAllDetails(
+    target.id,
+    promoteResult.schemaVersionPromote.ok.newSchemaVersion.id,
+    privateAccessKey,
+  );
+  assertNonNull(promotedVersionDetails);
+  expect(promotedVersionDetails.origin).toEqual({
+    __typename: 'SchemaVersionPromoteOrigin',
+    schemaVersionId: versionToPromote.id,
+  });
+  expect(promotedVersionDetails.sdl).toContain('a: String!');
+
+  // why not also publish another version just to be sure
+  promoteResult = await schemaVersionPromote(
+    {
+      source: {
+        fromSchemaVersionById: publishedVersion.id,
+      },
+      target: {
+        toTarget: {
+          byId: target.id,
+        },
+      },
+    },
+    privateAccessKey,
+  ).then(r => r.expectNoGraphQLErrors());
+
+  expect(promoteResult.schemaVersionPromote.error).toEqual(null);
+  assertNonNullish(promoteResult.schemaVersionPromote.ok);
+  promotedVersionDetails = await getSchemaVersionWithAllDetails(
+    target.id,
+    promoteResult.schemaVersionPromote.ok.newSchemaVersion.id,
+    privateAccessKey,
+  );
+  assertNonNull(promotedVersionDetails);
+  expect(promotedVersionDetails.origin).toEqual({
+    __typename: 'SchemaVersionPromoteOrigin',
+    schemaVersionId: publishedVersion.id,
+  });
+  expect(promotedVersionDetails.sdl).toContain('b: String!');
+});
