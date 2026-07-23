@@ -53,6 +53,7 @@ overrides:
   '@sigstore/core@<=3.2.0': '>=3.2.1'
   js-yaml@<3.15.0: 3.15.0
   sigstore@<=4.1.0: '>=4.1.1'
+  tar@<=7.5.18: 7.5.21
 
 patchedDependencies:
   '@apollo/federation@0.38.1':
@@ -18414,8 +18415,8 @@ packages:
     resolution: {integrity: sha512-ujeqbceABgwMZxEJnk2HDY2DlnUZ+9oEcb1KzTVfYHio0UE6dG71n60d8D2I4qNvleWrrXpmjpt7vZeF1LnMZQ==}
     engines: {node: '>=6'}
 
-  tar@7.5.16:
-    resolution: {integrity: sha512-56adEpPMouktRlBLXiaYFFzZ/3+JXa8P9n7WbR+ibIjtviN55mEaOkiysCnPnWm+7kkui1Dn8J9l+g6zV8731w==}
+  tar@7.5.21:
+    resolution: {integrity: sha512-XdhtCvlMywwxpCW8YEq3lOXBJpUPTR2OHHcwLPO3HwsJqOHa2Ok/oJ7ruGzp+JrKoRPVCzJwAdEjqLW/vNRPHA==}
     engines: {node: '>=18'}
 
   tdigest@0.1.2:
@@ -33278,7 +33279,7 @@ snapshots:
       minipass-pipeline: 1.2.4
       p-map: 4.0.0
       ssri: 10.0.5
-      tar: 7.5.16
+      tar: 7.5.21
       unique-filename: 3.0.0
 
   cacache@20.0.3:
@@ -38632,7 +38633,7 @@ snapshots:
       nopt: 7.2.0
       proc-log: 3.0.0
       semver: 7.7.3
-      tar: 7.5.16
+      tar: 7.5.21
       which: 4.0.0
     transitivePeerDependencies:
       - supports-color
@@ -39040,7 +39041,7 @@ snapshots:
       read-package-json-fast: 3.0.2
       sigstore: 5.0.0
       ssri: 10.0.5
-      tar: 7.5.16
+      tar: 7.5.21
     transitivePeerDependencies:
       - bluebird
       - kerberos
@@ -41157,7 +41158,7 @@ snapshots:
       inherits: 2.0.4
       readable-stream: 3.6.0
 
-  tar@7.5.16:
+  tar@7.5.21:
     dependencies:
       '@isaacs/fs-minipass': 4.0.1
       chownr: 3.0.0
