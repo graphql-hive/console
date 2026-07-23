@@ -183,7 +183,8 @@
       "fast-uri@2.x.x": "3.1.4",
       "fast-uri@3.x.x": "3.1.4",
       "@opentelemetry/propagator-jaeger@2.x.x": "2.9.0",
-      "sharp@<0.35.0": "0.35.0"
+      "sharp@<0.35.0": "0.35.0",
+      "body-parser@1.x.x": "1.20.6"
     },
     "patchedDependencies": {
       "mjml-core@4.14.0": "patches/mjml-core@4.14.0.patch",
