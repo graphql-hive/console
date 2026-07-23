@@ -1461,7 +1461,7 @@ importers:
     devDependencies:
       '@graphql-eslint/eslint-plugin':
         specifier: 3.20.1
-        version: 3.20.1(patch_hash=92716d09c5dd6166f88ca95d28b39ad4491682d48574a36c391e9875dd5060bb)(@babel/core@7.29.7)(@types/node@25.5.0)(cosmiconfig-toml-loader@1.0.0)(encoding@0.1.13)(graphql@16.9.0)
+        version: 3.20.1(patch_hash=92716d09c5dd6166f88ca95d28b39ad4491682d48574a36c391e9875dd5060bb)(@babel/core@7.29.7)(@types/node@24.13.3)(cosmiconfig-toml-loader@1.0.0)(encoding@0.1.13)(graphql@16.9.0)
       '@hive/service-common':
         specifier: workspace:*
         version: link:../service-common
@@ -2165,9 +2165,6 @@ importers:
       '@monaco-editor/react':
         specifier: 4.8.0-rc.2
         version: 4.8.0-rc.2(monaco-editor@0.52.2)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
-      '@n1ru4l/react-time-ago':
-        specifier: 1.1.0
-        version: 1.1.0(react@18.3.1)
       '@pierre/diffs':
         specifier: 1.2.3
         version: 1.2.3(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
@@ -6031,11 +6028,6 @@ packages:
   '@n1ru4l/push-pull-async-iterable-iterator@3.2.0':
     resolution: {integrity: sha512-3fkKj25kEjsfObL6IlKPAlHYPq/oYwUkkQ03zsTTiDjD7vg/RxjdiLeCydqtxHZP0JgsXL3D/X5oAkMGzuUp/Q==}
     engines: {node: '>=12'}
-
-  '@n1ru4l/react-time-ago@1.1.0':
-    resolution: {integrity: sha512-vvPX/EdDoXH7CaxAQTfCCBWS3UcZ8deCrI/Ay8CIJsDtTs4IDl/P0Vlo+BtjTSjiuJ43tY/0EUz1Z8SWb6O9og==}
-    peerDependencies:
-      react: ^16.0.0
 
   '@napi-rs/wasm-runtime@0.2.12':
     resolution: {integrity: sha512-ZVWUcfwY4E/yPitQJl481FjFo3K22D6qF0DuFH6Y/nbnE11GY5uguDxZMGXPQ8WQ0128MXQD7TnfHyK4oWoIJQ==}
@@ -19549,9 +19541,6 @@ packages:
   yup@1.6.1:
     resolution: {integrity: sha512-JED8pB50qbA4FOkDol0bYF/p60qSEDQqBD0/qeIrUCG1KbPBIQ776fCUNb9ldbPcSTxA69g/47XTo4TqWiuXOA==}
 
-  zen-observable@0.8.15:
-    resolution: {integrity: sha512-PQ2PC7R9rslx84ndNBZB/Dkv8V8fZEpk83RLgXtYd0fwUgEjseMn1Dgajh2x6S8QbZAFa9p2qVCEuYZNgve0dQ==}
-
   zod-validation-error@3.4.0:
     resolution: {integrity: sha512-ZOPR9SVY6Pb2qqO5XHt+MkkTRxGXb4EVtnjc9JpXUOtUB1T9Ru7mZOT361AN3MsetVe7R0a1KZshJDZdgp9miQ==}
     engines: {node: '>=18.0.0'}
@@ -22513,29 +22502,6 @@ snapshots:
       fast-glob: 3.3.3
       graphql: 16.9.0
       graphql-config: 4.5.0(@types/node@24.13.3)(cosmiconfig-toml-loader@1.0.0)(encoding@0.1.13)(graphql@16.9.0)
-      graphql-depth-limit: 1.1.0(graphql@16.9.0)
-      lodash.lowercase: 4.3.0
-      tslib: 2.8.1
-    transitivePeerDependencies:
-      - '@babel/core'
-      - '@types/node'
-      - bufferutil
-      - cosmiconfig-toml-loader
-      - encoding
-      - supports-color
-      - utf-8-validate
-
-  '@graphql-eslint/eslint-plugin@3.20.1(patch_hash=92716d09c5dd6166f88ca95d28b39ad4491682d48574a36c391e9875dd5060bb)(@babel/core@7.29.7)(@types/node@25.5.0)(cosmiconfig-toml-loader@1.0.0)(encoding@0.1.13)(graphql@16.9.0)':
-    dependencies:
-      '@babel/code-frame': 7.29.0
-      '@graphql-tools/code-file-loader': 7.3.23(@babel/core@7.29.7)(graphql@16.9.0)
-      '@graphql-tools/graphql-tag-pluck': 7.5.2(@babel/core@7.29.7)(graphql@16.9.0)
-      '@graphql-tools/utils': 9.2.1(graphql@16.9.0)
-      chalk: 4.1.2
-      debug: 4.4.3(supports-color@8.1.1)
-      fast-glob: 3.3.3
-      graphql: 16.9.0
-      graphql-config: 4.5.0(@types/node@25.5.0)(cosmiconfig-toml-loader@1.0.0)(encoding@0.1.13)(graphql@16.9.0)
       graphql-depth-limit: 1.1.0(graphql@16.9.0)
       lodash.lowercase: 4.3.0
       tslib: 2.8.1
@@ -26043,12 +26009,6 @@ snapshots:
       strict-event-emitter: 0.5.1
 
   '@n1ru4l/push-pull-async-iterable-iterator@3.2.0': {}
-
-  '@n1ru4l/react-time-ago@1.1.0(react@18.3.1)':
-    dependencies:
-      prop-types: 15.8.1
-      react: 18.3.1
-      zen-observable: 0.8.15
 
   '@napi-rs/wasm-runtime@0.2.12':
     dependencies:
@@ -42445,8 +42405,6 @@ snapshots:
       tiny-case: 1.0.3
       toposort: 2.0.2
       type-fest: 2.19.0
-
-  zen-observable@0.8.15: {}
 
   zod-validation-error@3.4.0(zod@3.25.76):
     dependencies:
