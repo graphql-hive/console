@@ -198,6 +198,13 @@ export class OrganizationManager {
     this.logger.debug('Leaving organization (organization=%s)', organizationId);
     const user = await this.session.getViewer();
 
+    if (user.provisionedByOrganizationId !== null) {
+      return {
+        ok: false,
+        message: 'Provisioned users can not leave organizations.',
+      };
+    }
+
     const canLeave = await this.canLeaveOrganization({
       organizationId,
       userId: user.id,
