@@ -2,4 +2,4 @@
 'hive': patch
 ---
 
-Reduce memory usage during stitching composition; upgrade stitching package
+Reduce memory usage during stitching composition
