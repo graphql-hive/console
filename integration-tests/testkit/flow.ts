@@ -22,6 +22,7 @@ import type {
   DisableContractInput,
   Experimental__UpdateTargetSchemaCompositionInput,
   InviteToOrganizationByEmailInput,
+  OrganizationMemberInput,
   OrganizationSelectorInput,
   OrganizationTransferRequestSelector,
   RateLimitInput,
@@ -307,6 +308,22 @@ export function joinOrganization(code: string, authToken: string) {
 export function leaveOrganization(input: OrganizationSelectorInput, authToken: string) {
   return execute({
     document: LeaveOrganizationDocument,
+    authToken,
+    variables: { input },
+  });
+}
+
+export function deleteOrganizationMember(input: OrganizationMemberInput, authToken: string) {
+  return execute({
+    document: graphql(`
+      mutation DeleteOrganizationMember($input: OrganizationMemberInput!) {
+        deleteOrganizationMember(input: $input) {
+          organization {
+            id
+          }
+        }
+      }
+    `),
     authToken,
     variables: { input },
   });

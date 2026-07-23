@@ -4,6 +4,7 @@ import {
   createMemberRole,
   createOrganization,
   createPersonalAccessToken,
+  deleteOrganizationMember,
   leaveOrganization,
   readProjectInfo,
   updateMe,
@@ -4081,7 +4082,7 @@ describe('Personal Access Tokens', () => {
   );
 });
 
-describe('provisioned user jail', () => {
+describe.only('provisioned user jail', () => {
   test.concurrent(
     'provisioned user cannot update their profile via GraphQL',
     async ({ expect }) => {
@@ -4249,4 +4250,73 @@ describe('provisioned user jail', () => {
       }),
     );
   });
+
+  test.concurrent('provisioned user cannot be removed from an organization', async ({ expect }) => {
+    const seed = initSeed();
+    const owner = await seed.createOwner();
+    const org = await owner.createOrg();
+    const oidc = await org.createOIDCIntegration();
+    const domain = await oidc.registerFakeDomain();
+    const accessToken = await org.createOrganizationAccessToken({
+      permissions: ['member:describe', 'member:modify'],
+      resources: { mode: ResourceAssignmentModeType.Granular },
+    });
+    const scim = createScimTestkit({
+      baseUrl,
+      headers: {
+        'Content-Type': 'application/scim+json',
+        Authorization: `Bearer ${accessToken.privateAccessKey}`,
+      },
+    });
+    const email = `remove-member@${domain}`;
+    const scimUser = await scim.createUser({
+      externalId: crypto.randomUUID(),
+      emails: [{ primary: true, type: 'work', value: email }],
+      userName: email,
+    });
+
+    const [error] = await deleteOrganizationMember(
+      {
+        organizationSlug: org.organization.slug,
+        userId: scimUser.body.id,
+      },
+      owner.ownerToken,
+    ).then(response => response.expectGraphQLErrors());
+
+    expect(error.message).toBe('Provisioned users can not be removed from organizations.');
+    await expect(org.members()).resolves.toContainEqual(
+      expect.objectContaining({
+        user: expect.objectContaining({ id: scimUser.body.id }),
+      }),
+    );
+    await expect(scim.getUser(scimUser.body.id)).resolves.toMatchObject({
+      status: 200,
+      body: expect.objectContaining({ id: scimUser.body.id }),
+    });
+  });
+
+  test.concurrent(
+    'non-provisioned user can be removed from an organization',
+    async ({ expect }) => {
+      const seed = initSeed();
+      const owner = await seed.createOwner();
+      const org = await owner.createOrg();
+      const member = await org.inviteAndJoinMember();
+
+      const result = await deleteOrganizationMember(
+        {
+          organizationSlug: org.organization.slug,
+          userId: member.member.user.id,
+        },
+        owner.ownerToken,
+      ).then(response => response.expectNoGraphQLErrors());
+
+      expect(result.deleteOrganizationMember.organization.id).toBe(org.organization.id);
+      await expect(org.members()).resolves.not.toContainEqual(
+        expect.objectContaining({
+          user: expect.objectContaining({ id: member.member.user.id }),
+        }),
+      );
+    },
+  );
 });

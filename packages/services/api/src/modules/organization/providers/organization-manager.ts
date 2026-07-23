@@ -898,6 +898,10 @@ export class OrganizationManager {
       throw new Error(`Logged user is not a member of the organization`);
     }
 
+    if (member.user.provisionedByOrganizationId !== null) {
+      throw new HiveError('Provisioned users can not be removed from organizations.');
+    }
+
     await this.storage.deleteOrganizationMember({
       userId: user,
       organizationId: organization,
