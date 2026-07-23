@@ -1,5 +1,14 @@
 # @graphql-hive/cli
 
+## 0.61.0
+
+### Minor Changes
+
+- [#8230](https://github.com/graphql-hive/console/pull/8230)
+  [`e7e26b6`](https://github.com/graphql-hive/console/commit/e7e26b6e6c2260cd60c09a56435742139ea73a77)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Support retries for deleting a schema in case the
+  registry is busy and locked.
+
 ## 0.60.3
 
 ### Patch Changes
