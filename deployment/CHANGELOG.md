@@ -1,5 +1,119 @@
 # hive
 
+## 11.7.0
+
+### Minor Changes
+
+- [#8079](https://github.com/graphql-hive/console/pull/8079)
+  [`2b6d22f`](https://github.com/graphql-hive/console/commit/2b6d22f5d36c46e9bdc2425451fc96c5d42a0dbb)
+  Thanks [@mish-elle](https://github.com/mish-elle)! - Added opt-in AWS IAM authentication for S3
+  connections. When IAM is enabled, services authenticate to S3 using short-lived SigV4 pre-signed
+  tokens instead of static passwords, since S3 connections are HTTP requests a new token will be
+  generate for each call.
+
+  ### New environment variables
+
+  | Variable                            | Service | Description                                               |
+  | ----------------------------------- | ------- | --------------------------------------------------------- |
+  | `S3_AWS_IAM_AUTH_ENABLED`           | server  | Set to `1` to enable IAM authentication for S3.           |
+  | `S3_MIRROR_AWS_IAM_AUTH_ENABLED`    | server  | Set to `1` to enable IAM authentication for S3 Mirror.    |
+  | `S3_AUDIT_LOG_AWS_IAM_AUTH_ENABLED` | server  | Set to `1` to enable IAM authentication for S3 Audit Log. |
+
+  ### To enable
+
+  - `S3_*_AWS_IAM_AUTH_ENABLED=1`.
+  - `S3_BUCKET_NAME` set to the AWS S3 bucket.
+  - `S3_ENDPOINT` set with the S3 endpoint with the AWS Region (i.e.
+    https://s3.us-east-1.amazonaws.com)
+
+  When `CDN_API=1` is set on the server, the CDN artifact handler also uses IAM-authenticated S3
+  clients. Adds support for S3 Audit Logs exported to AWS S3.
+
+- [#8230](https://github.com/graphql-hive/console/pull/8230)
+  [`e7e26b6`](https://github.com/graphql-hive/console/commit/e7e26b6e6c2260cd60c09a56435742139ea73a77)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Support retries for deleting a schema in case the
+  registry is busy and locked.
+
+### Patch Changes
+
+- [#8226](https://github.com/graphql-hive/console/pull/8226)
+  [`c0873ac`](https://github.com/graphql-hive/console/commit/c0873ac45dfc893e7dd12115902bc7cdb2878419)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Clarify successful GitHub schema checks by
+  annotating breaking changes that are safe based on usage or approved.
+
+- [#8250](https://github.com/graphql-hive/console/pull/8250)
+  [`6974b5e`](https://github.com/graphql-hive/console/commit/6974b5e6f8c8a792750450ad329b78b3f5d9f4a8)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Address vulnerability
+  [GHSA-4c8g-83qw-93j6](https://github.com/advisories/GHSA-4c8g-83qw-93j6) and
+  [GHSA-v2hh-gcrm-f6hx](https://github.com/advisories/GHSA-v2hh-gcrm-f6hx).
+
+- [#8250](https://github.com/graphql-hive/console/pull/8250)
+  [`6974b5e`](https://github.com/graphql-hive/console/commit/6974b5e6f8c8a792750450ad329b78b3f5d9f4a8)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Address vulnerability
+  [GHSA-hrxh-6v49-42gf](https://github.com/advisories/GHSA-hrxh-6v49-42gf).
+
+- [#8232](https://github.com/graphql-hive/console/pull/8232)
+  [`78f4ed4`](https://github.com/graphql-hive/console/commit/78f4ed4d0fcef0dcf9a89b3a80a2ca1cd3d2e1e6)
+  Thanks [@jonathanawesome](https://github.com/jonathanawesome)! - Metric Alerts: enhance Grafana
+  with additional panels for tracking filtered vs unfiltered rule and group population and attaches
+  additional data to evaluate-group span
+
+- [#8235](https://github.com/graphql-hive/console/pull/8235)
+  [`91f971f`](https://github.com/graphql-hive/console/commit/91f971f8f0c51b6960f4b1d484cfbf87e037a8d4)
+  Thanks [@jonathanawesome](https://github.com/jonathanawesome)! - Metric Alerts optimization:
+  Creates a new daily ClickHouse rollup and routes long-windowed rules/groups
+
+- [#8250](https://github.com/graphql-hive/console/pull/8250)
+  [`6974b5e`](https://github.com/graphql-hive/console/commit/6974b5e6f8c8a792750450ad329b78b3f5d9f4a8)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Address vulnerability
+  [GHSA-c2j3-45gr-mqc4](https://github.com/advisories/GHSA-c2j3-45gr-mqc4).
+
+- [#8243](https://github.com/graphql-hive/console/pull/8243)
+  [`883d183`](https://github.com/graphql-hive/console/commit/883d183b68ad3100e3db9b5c5e3bcbbb7c5ee090)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Fix unexpected exception that could be raised when
+  promoting a schema version within a monolithic project.
+
+- [#8237](https://github.com/graphql-hive/console/pull/8237)
+  [`68361c9`](https://github.com/graphql-hive/console/commit/68361c948180cf461aea4d04e1607407a8043344)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Address vulnerabilities
+  [GHSA-gcfj-64vw-6mp9](https://github.com/advisories/GHSA-gcfj-64vw-6mp9),
+  [GHSA-hcpx-6fm6-wx23](https://github.com/advisories/GHSA-hcpx-6fm6-wx23),
+  [GHSA-f4gw-2p7v-4548](https://github.com/advisories/GHSA-f4gw-2p7v-4548),
+  [GHSA-mwf2-3pr3-8698](https://github.com/advisories/GHSA-mwf2-3pr3-8698),
+  [GHSA-xj6q-8x83-jv6g](https://github.com/advisories/GHSA-xj6q-8x83-jv6g), and
+  [GHSA-j3f2-48v5-ccww](https://github.com/advisories/GHSA-j3f2-48v5-ccww).
+
+- [#8250](https://github.com/graphql-hive/console/pull/8250)
+  [`6974b5e`](https://github.com/graphql-hive/console/commit/6974b5e6f8c8a792750450ad329b78b3f5d9f4a8)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Address vulnerability
+  [GHSA-v245-v573-v5vm](https://github.com/advisories/GHSA-v245-v573-v5vm).
+
+- [#8244](https://github.com/graphql-hive/console/pull/8244)
+  [`7a99575`](https://github.com/graphql-hive/console/commit/7a9957504492bc414f363b973763e65a56bc4099)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Support composing directive argument default values
+  within the native composition.
+
+  ```graphql
+  extend schema
+    @link(url: "https://specs.apollo.dev/federation/v2.5", import: ["@key", "@composeDirective"])
+    @link(url: "https://myspecs.dev/access/v1.0", import: ["@access"])
+    @composeDirective(name: "@access")
+
+  directive @access(scope: Scope! = PUBLIC) on FIELD_DEFINITION
+
+  enum Scope {
+    PUBLIC
+    PRIVATE
+  }
+
+  type Query {
+    hello: String @access
+  }
+  ```
+
+  Previously, the `PUBLIC` default value in the above example would not be set in the composed
+  result.
+
 ## 11.6.0
 
 ### Minor Changes
