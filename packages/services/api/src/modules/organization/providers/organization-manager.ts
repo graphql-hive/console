@@ -320,10 +320,18 @@ export class OrganizationManager {
     user: {
       id: string;
       superTokensUserId: string | null;
+      provisionedByOrganizationId: string | null;
     };
   }) {
     const { slug, user } = input;
     this.logger.info('Creating an organization (input=%o)', input);
+
+    if (user.provisionedByOrganizationId !== null) {
+      return {
+        ok: false as const,
+        message: 'Provisioned users can not create organizations.',
+      };
+    }
 
     const result = await this.storage.createOrganization({
       slug,
