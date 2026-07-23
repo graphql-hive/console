@@ -38,3 +38,4 @@ export {
   type RedisConnectionConfig,
   type RedisClientOptions,
 } from './redis-client';
+export { generateRdsIamAuthToken } from './iam-rds';

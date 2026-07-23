@@ -11,7 +11,11 @@ import {
 import { createQueryLoggingInterceptor } from 'slonik-interceptor-query-logging';
 import { context, SpanKind, SpanStatusCode, trace } from '@hive/service-common';
 import type { StandardSchemaV1 } from '@standard-schema/spec';
-import { createConnectionString, type PostgresConnectionParamaters } from './connection-string';
+import {
+  createConnectionString,
+  type ConnectionStringProvider,
+  type PostgresConnectionParamaters,
+} from './connection-string';
 import { PgPoolBridge } from './pg-pool-bridge';
 
 const tracer = trace.getTracer('storage');
@@ -177,16 +181,21 @@ const typeParsers = [
 ];
 
 export async function createPostgresDatabasePool(args: {
-  connectionParameters: PostgresConnectionParamaters | string;
+  /** A static connection string, PostgresConnectionParamaters, or a ConnectionStringProvider that generates a fresh token per connection. */
+  connectionParameters: PostgresConnectionParamaters | string | ConnectionStringProvider;
   maximumPoolSize?: number;
   additionalInterceptors?: Interceptor[];
   statementTimeout?: number;
 }) {
-  const connectionString =
-    typeof args.connectionParameters === 'string'
+  const isProvider = typeof args.connectionParameters === 'function';
+
+  const connectionStringOrProvider: string | (() => Promise<string>) = isProvider
+    ? (args.connectionParameters as ConnectionStringProvider)
+    : typeof args.connectionParameters === 'string'
       ? args.connectionParameters
-      : createConnectionString(args.connectionParameters);
-  const pool = await createPool(connectionString, {
+      : createConnectionString(args.connectionParameters as PostgresConnectionParamaters);
+
+  const pool = await createPool(connectionStringOrProvider as string, {
     interceptors: dbInterceptors.concat(args.additionalInterceptors ?? []),
     typeParsers,
     captureStackTrace: false,
