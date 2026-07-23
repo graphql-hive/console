@@ -56,7 +56,6 @@ export function deploySchema({
       replicas: environment.podsConfig.schemaService.replicas,
       memory: {
         limit: environment.podsConfig.schemaService.memoryLimit,
-        requests: environment.podsConfig.schemaService.memoryRequests,
       },
       pdb: true,
     },
