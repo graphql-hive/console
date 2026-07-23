@@ -1,11 +1,11 @@
 import { useMemo } from 'react';
-import { formatDistanceToNow } from 'date-fns';
 import { ArrowDown, Info } from 'lucide-react';
 import { useQuery } from 'urql';
 import { DataTable } from '@/components/base/data-table/data-table';
 import { PageLead } from '@/components/base/page-lead';
 import { Badge, BadgeRounded } from '@/components/ui/badge';
 import { Spinner } from '@/components/ui/spinner';
+import { TimeAgo } from '@/components/ui/time-ago';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Avatar } from '@/components/v2/avatar';
 import { graphql } from '@/gql';
@@ -130,11 +130,6 @@ function destinationLabel(channels: ReadonlyArray<{ type: string }>): string {
     .join(', ');
 }
 
-function relativeTime(iso?: string | null): string {
-  if (!iso) return '—';
-  return formatDistanceToNow(new Date(iso), { addSuffix: true });
-}
-
 function SortableHeader({ column, label }: { column: Column<RuleRow, unknown>; label: string }) {
   const sort = column.getIsSorted();
   const arrowOpacity = sort ? 'opacity-100' : 'opacity-30';
@@ -195,7 +190,9 @@ const RULE_COLUMNS: ColumnDef<RuleRow, any>[] = [
       return av - bv;
     },
     cell: info => (
-      <span className="text-neutral-11 font-mono text-xs">{relativeTime(info.getValue())}</span>
+      <span className="text-neutral-11 font-mono text-xs">
+        {info.getValue() ? <TimeAgo date={info.getValue()!} /> : '—'}
+      </span>
     ),
   }),
   columnHelper.accessor('updatedAt', {
@@ -204,7 +201,7 @@ const RULE_COLUMNS: ColumnDef<RuleRow, any>[] = [
       new Date(a.original.updatedAt).getTime() - new Date(b.original.updatedAt).getTime(),
     cell: info => (
       <span className="text-neutral-11 inline-block min-w-[180px] whitespace-nowrap font-mono text-xs">
-        {relativeTime(info.getValue())}
+        {info.getValue() ? <TimeAgo date={info.getValue()} /> : '—'}
       </span>
     ),
   }),
