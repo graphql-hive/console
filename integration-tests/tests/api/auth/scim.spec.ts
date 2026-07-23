@@ -2,8 +2,10 @@ import humanId from 'human-id';
 import {
   addGroupMappingToGroup,
   createMemberRole,
+  createOrganization,
   createPersonalAccessToken,
   readProjectInfo,
+  updateMe,
   updateMemberRole,
 } from 'testkit/flow';
 import { ResourceAssignmentModeType } from 'testkit/gql/graphql';
@@ -3368,6 +3370,49 @@ test.concurrent('user cannot login via OIDC if SCIM user provisioning is require
     state: authPayload.state,
   });
   invariant(signInUpResult.type === 'success', 'Expected sign in/up to succeed.');
+});
+
+test.concurrent('provisioned user cannot update their profile via GraphQL', async ({ expect }) => {
+  const seed = initSeed();
+  const owner = await seed.createOwner();
+  const org = await owner.createOrg();
+  const oidc = await org.createOIDCIntegration();
+  const oidcMock = await oidc.createMockServerAndUpdateIntegrationEndpoints();
+  const domain = await oidc.registerFakeDomain();
+  const accessToken = await org.createOrganizationAccessToken({
+    permissions: ['member:describe', 'member:modify'],
+    resources: { mode: ResourceAssignmentModeType.Granular },
+  });
+  const scim = createScimTestkit({
+    baseUrl,
+    headers: {
+      'Content-Type': 'application/scim+json',
+      Authorization: `Bearer ${accessToken.privateAccessKey}`,
+    },
+  });
+  const email = `profile@${domain}`;
+  const externalId = crypto.randomUUID();
+
+  await scim.createUser({
+    externalId,
+    emails: [{ primary: true, type: 'work', value: email }],
+    userName: email,
+  });
+
+  oidcMock.setUser({ email, userIdClaim: externalId });
+  const auth = await oidcMock.runGetAuthorizationUrl();
+  const signInResult = await oidcMock.runSignInUp({ state: auth.state });
+  invariant(signInResult.type === 'success', 'Expected sign in to succeed.');
+
+  const result = await updateMe(
+    {
+      displayName: 'updated-display-name',
+      fullName: 'Updated Full Name',
+    },
+    signInResult.accessToken,
+  ).then(r => r.expectNoGraphQLErrors());
+  expect(result.updateMe.ok).toEqual(null);
+  expect(result.updateMe.error?.message).toEqual('Provisioned users can not be modified.');
 });
 
 test.concurrent(

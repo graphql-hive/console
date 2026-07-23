@@ -2268,3 +2268,26 @@ export function createPersonalAccessToken(
     `),
   });
 }
+
+export function updateMe(input: GraphQLSchema.UpdateMeInput, authToken: string) {
+  return execute({
+    document: graphql(`
+      mutation TestKit_UpdateMeMutation($input: UpdateMeInput!) {
+        updateMe(input: $input) {
+          error {
+            message
+          }
+          ok {
+            updatedUser {
+              id
+              displayName
+              fullName
+            }
+          }
+        }
+      }
+    `),
+    variables: { input },
+    authToken,
+  });
+}
