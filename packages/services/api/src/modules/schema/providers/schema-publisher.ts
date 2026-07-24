@@ -1754,6 +1754,10 @@ export class SchemaPublisher {
       }),
     ]);
 
+    trace.getActiveSpan()?.setAttributes({
+      'hive.latestSchemaVersion.id': latestVersion?.version.id ?? 'no prior version',
+    });
+
     function increaseSchemaPublishCountMetric(conclusion: 'rejected' | 'accepted' | 'ignored') {
       schemaPublishCount.inc({
         model: 'modern',
