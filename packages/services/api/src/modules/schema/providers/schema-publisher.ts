@@ -968,6 +968,13 @@ export class SchemaPublisher {
           organization,
           conclusion: checkResult.conclusion,
           changes: checkResult.state?.schemaChanges?.all ?? null,
+          contractChanges:
+            checkResult.state.contracts
+              ?.map(contract => ({
+                contractName: contract.contractName,
+                changes: contract.schemaChanges?.all ?? [],
+              }))
+              .filter(contract => contract.changes.length > 0) ?? null,
           breakingChanges: checkResult.state?.schemaChanges?.breaking ?? null,
           warnings: checkResult.state?.schemaPolicyWarnings ?? null,
           compositionErrors: null,
@@ -992,6 +999,7 @@ export class SchemaPublisher {
             ...(checkResult.state.schemaChanges?.breaking ?? []),
             ...(checkResult.state.schemaChanges?.safe ?? []),
           ],
+          contractChanges: null,
           breakingChanges: checkResult.state.schemaChanges?.breaking ?? [],
           compositionErrors: checkResult.state.composition.errors ?? [],
           warnings: checkResult.state.schemaPolicy?.warnings ?? [],
@@ -1022,6 +1030,7 @@ export class SchemaPublisher {
           organization,
           conclusion: SchemaCheckConclusion.Success,
           changes: null,
+          contractChanges: null,
           breakingChanges: null,
           warnings: null,
           compositionErrors: null,
@@ -1039,6 +1048,7 @@ export class SchemaPublisher {
         organization,
         conclusion: SchemaCheckConclusion.Failure,
         changes: null,
+        contractChanges: null,
         breakingChanges: null,
         compositionErrors: latestVersion.version.schemaCompositionErrors,
         warnings: null,
@@ -1743,6 +1753,10 @@ export class SchemaPublisher {
         onlyComposable: true,
       }),
     ]);
+
+    trace.getActiveSpan()?.setAttributes({
+      'hive.latestSchemaVersion.id': latestVersion?.version.id ?? 'no prior version',
+    });
 
     function increaseSchemaPublishCountMetric(conclusion: 'rejected' | 'accepted' | 'ignored') {
       schemaPublishCount.inc({
@@ -3146,6 +3160,7 @@ export class SchemaPublisher {
     conclusion: SchemaCheckConclusion;
     warnings: SchemaCheckWarning[] | null;
     changes: Array<SchemaChangeType> | null;
+    contractChanges: Array<{ contractName: string; changes: Array<SchemaChangeType> }> | null;
     breakingChanges: Array<SchemaChangeType> | null;
     compositionErrors: Array<{
       message: string;
@@ -3162,15 +3177,10 @@ export class SchemaPublisher {
       let shortSummaryFallback: string;
 
       if (conclusion === SchemaCheckConclusion.Success) {
-        if (!changes || changes.length === 0) {
-          title = 'No changes';
-          summary = 'No changes detected';
-          shortSummaryFallback = summary;
-        } else {
-          title = 'No blocking changes';
-          summary = changesToMarkdown(changes);
-          shortSummaryFallback = changesToMarkdown(changes, false);
-        }
+        ({ title, summary, shortSummaryFallback } = buildSchemaCheckSuccessGithubOutput({
+          changes,
+          contractChanges: args.contractChanges,
+        }));
       } else {
         const total =
           (compositionErrors?.length ?? 0) + (breakingChanges?.length ?? 0) + (errors?.length ?? 0);
@@ -3561,6 +3571,38 @@ function writeChanges(
       ),
     );
   }
+}
+
+export function buildSchemaCheckSuccessGithubOutput(input: {
+  changes: Array<MarkdownSchemaChange> | null;
+  contractChanges: Array<{ contractName: string; changes: Array<MarkdownSchemaChange> }> | null;
+}): { title: string; summary: string; shortSummaryFallback: string } {
+  const coreChanges = input.changes ?? [];
+  const contractChanges = input.contractChanges?.filter(contract => contract.changes.length) ?? [];
+
+  if (coreChanges.length === 0 && contractChanges.length === 0) {
+    const summary = 'No changes detected';
+    return { title: 'No changes', summary, shortSummaryFallback: summary };
+  }
+
+  const buildSummary = (printListOfChanges: boolean) =>
+    [
+      coreChanges.length ? changesToMarkdown(coreChanges, printListOfChanges) : null,
+      ...contractChanges.map(contract =>
+        [
+          `## Contract "${contract.contractName}"`,
+          changesToMarkdown(contract.changes, printListOfChanges),
+        ].join('\n'),
+      ),
+    ]
+      .filter(Boolean)
+      .join('\n\n');
+
+  return {
+    title: 'No blocking changes',
+    summary: buildSummary(true),
+    shortSummaryFallback: buildSummary(false),
+  };
 }
 
 function buildGitHubActionCheckName(input: {
