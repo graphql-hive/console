@@ -56,6 +56,7 @@ import { graphqlHandler } from './graphql-handler';
 import { clickHouseElapsedDuration, clickHouseReadDuration } from './metrics';
 import { createOtelAuthEndpoint } from './otel-auth-endpoint';
 import { createPublicGraphQLHandler } from './public-graphql-handler';
+import { createSCIMPlugin } from './scim';
 import { registerSupertokensAtHome } from './supertokens-at-home';
 
 class CorsError extends Error {
@@ -535,6 +536,7 @@ export async function main() {
     await registerSupertokensAtHome(
       server,
       storage,
+      registry.injector.get(OIDCIntegrationStore),
       registry.injector.get(TaskScheduler),
       registry.injector.get(CryptoProvider),
       registry.injector.get(RedisRateLimiter),
@@ -628,6 +630,19 @@ export async function main() {
           void reply.send(textResponse);
         },
       });
+    }
+
+    if (env.organizationSCIM) {
+      logger.debug('register scim routes');
+      const scimPlugin = createSCIMPlugin(
+        authN,
+        storage.pool,
+        storage,
+        registry.injector.get(OIDCIntegrationStore),
+        registry.injector.get(RedisRateLimiter),
+        env.graphql.origin + '/scim/v2',
+      );
+      await server.register(scimPlugin, { prefix: '/scim/v2' });
     }
 
     if (env.exposeMemoryUtils) {

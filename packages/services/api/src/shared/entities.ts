@@ -195,6 +195,9 @@ export interface OIDCIntegration {
   requireInvitation: boolean;
   defaultMemberRoleId: string | null;
   defaultResourceAssignment: ResourceAssignmentGroup | null;
+  userIdClaim: string;
+  userProvisioningRequired: boolean;
+  oidcForVerifiedDomainsRequired: boolean;
 }
 
 export interface CDNAccessToken {
@@ -357,6 +360,8 @@ export interface User {
   superTokensUserId: string | null;
   isAdmin: boolean;
   zendeskId: string | null;
+  provisionedByOrganizationId: string | null;
+  deactivatedAt: string | null;
 }
 
 export interface Member {

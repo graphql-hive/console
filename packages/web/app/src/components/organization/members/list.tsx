@@ -1,9 +1,19 @@
 import { memo, useEffect, useState } from 'react';
-import { ChevronLeftIcon, ChevronRightIcon, MoreHorizontalIcon } from 'lucide-react';
-import { FaGithub, FaGoogle, FaOpenid, FaUser, FaUserLock } from 'react-icons/fa';
+import {
+  ChevronLeftIcon,
+  ChevronRightIcon,
+  MoreHorizontalIcon,
+  ShieldCheck,
+  UserLock,
+  UserRound,
+  UserRoundX,
+  UsersIcon,
+} from 'lucide-react';
+import { FaGithub, FaGoogle, FaOpenid, FaUserLock } from 'react-icons/fa';
 import { IconType } from 'react-icons/lib';
 import { useMutation, type UseQueryExecute } from 'urql';
 import { useDebouncedCallback } from 'use-debounce';
+import { Badge } from '@/components/base/badge/badge';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -33,6 +43,82 @@ import { cn } from '@/lib/utils';
 import { organizationMembersRoute } from '../../../router';
 import { MemberInvitationButton } from './invitations';
 import { MemberRolePicker } from './member-role-picker';
+
+const MemberGroups_GroupFragment = graphql(`
+  fragment MemberGroups_GroupFragment on Group {
+    id
+    name
+  }
+`);
+
+function MemberGroups(props: { groups: Array<FragmentType<typeof MemberGroups_GroupFragment>> }) {
+  const groups = useFragment(MemberGroups_GroupFragment, props.groups);
+  // Show first 2 groups, then +N more
+  const visibleGroups = groups.slice(0, 2);
+  const remainingCount = groups.length - 2;
+
+  if (groups.length === 0) {
+    return (
+      <TooltipProvider>
+        <Tooltip>
+          <TooltipTrigger>
+            <div className="flex items-center justify-end gap-1.5">
+              <UsersIcon className="h-3.5 w-3.5" />
+              <span className="text-xs">Groups: none</span>
+            </div>
+          </TooltipTrigger>
+          <TooltipContent className="text-xs">
+            Groups can be assigned via the SCIM provider.
+          </TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
+    );
+  }
+
+  return (
+    <TooltipProvider>
+      <div className="flex items-center justify-end gap-2">
+        <div className="flex items-center gap-1.5">
+          <UsersIcon className="h-3.5 w-3.5" />
+          <span className="text-xs">Groups:</span>
+        </div>
+
+        <div className="flex flex-wrap items-center gap-1.5">
+          {visibleGroups.map(group => (
+            <Tooltip key={group.id}>
+              <TooltipTrigger asChild>
+                <Badge className="cursor-default text-xs">{group.name}</Badge>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>
+                  <span className="font-medium">{group.name}</span>
+                </p>
+              </TooltipContent>
+            </Tooltip>
+          ))}
+          {remainingCount > 0 && (
+            <Tooltip>
+              <TooltipTrigger>
+                <Badge variant="outline" className="cursor-default text-xs font-normal">
+                  +{remainingCount} more
+                </Badge>
+              </TooltipTrigger>
+              <TooltipContent side="top">
+                <ul className="space-y-1 text-left">
+                  {groups.slice(2).map(group => (
+                    <li key={group.id}>
+                      <Badge>{group.name}</Badge>
+                    </li>
+                  ))}
+                </ul>
+              </TooltipContent>
+            </Tooltip>
+          )}
+        </div>
+      </div>
+    </TooltipProvider>
+  );
+}
 
 export const authProviderToIconAndTextMap: Record<
   GraphQLSchema.AuthProviderType,
@@ -76,6 +162,9 @@ const OrganizationMemberRow_MemberFragment = graphql(`
       id
       displayName
       email
+      provisionInfo {
+        isDisabled
+      }
     }
     authProviders {
       type
@@ -83,6 +172,10 @@ const OrganizationMemberRow_MemberFragment = graphql(`
     }
     role {
       id
+    }
+    groups {
+      id
+      ...MemberGroups_GroupFragment
     }
     isOwner
     viewerCanRemove
@@ -158,40 +251,71 @@ const OrganizationMemberRow = memo(function OrganizationMemberRow(props: {
           </AlertDialogContent>
         ) : null}
       </AlertDialog>
-      <tr key={member.id}>
-        <td className="w-12">
+      <tr key={member.id} className={cn(member.user.provisionInfo?.isDisabled && 'bg-red-800/5')}>
+        <td className="w-12 pl-2">
           <div>
-            <FaUser className="mx-auto size-5" />
+            {member.user.provisionInfo?.isDisabled ? (
+              <div className="flex h-9 w-9 items-center justify-center rounded-full bg-red-800/10">
+                <UserRoundX className="mx-auto size-5 text-red-800" />
+              </div>
+            ) : member.user.provisionInfo ? (
+              <div className="bg-neutral-3 flex h-9 w-9 items-center justify-center rounded-full">
+                <UserLock className="mx-auto size-5" />
+              </div>
+            ) : (
+              <div className="bg-neutral-3 flex h-9 w-9 items-center justify-center rounded-full">
+                <UserRound className="mx-auto size-5" />
+              </div>
+            )}
           </div>
         </td>
-        <td className="grow overflow-hidden py-3 text-sm font-medium">
+        <td className="overflow-hidden py-3 pl-3 text-sm font-medium">
           <div className="flex items-center gap-2">
-            <h3 className="line-clamp-1 font-medium">{member.user.displayName}</h3>
-            {member.authProviders.map(provider => {
-              const providerDisplay = authProviderToIconAndTextMap[provider.type];
-              return (
-                <TooltipProvider key={provider.type}>
+            <h3
+              className={cn(
+                'line-clamp-1 font-medium',
+                member.user.provisionInfo?.isDisabled && 'line-through',
+              )}
+            >
+              {member.user.displayName}
+            </h3>
+            <div className="flex items-center gap-1">
+              {member.user.provisionInfo ? (
+                <TooltipProvider>
                   <Tooltip delayDuration={100}>
-                    <TooltipTrigger asChild>
-                      <div className="flex gap-1">
-                        <providerDisplay.Icon
-                          className={cn('size-4', provider.disabledReason && 'text-neutral-7')}
-                        />
-                      </div>
+                    <TooltipTrigger>
+                      <ShieldCheck className="size-4" />
                     </TooltipTrigger>
-                    <TooltipContent className="text-center">
-                      {provider.disabledReason
-                        ? `${providerDisplay.text} (Disabled - ${provider.disabledReason})`
-                        : providerDisplay.text}
-                    </TooltipContent>
+                    <TooltipContent className="text-xs">Provisioned via SCIM</TooltipContent>
                   </Tooltip>
                 </TooltipProvider>
-              );
-            })}
+              ) : null}
+              {member.authProviders.map(provider => {
+                const providerDisplay = authProviderToIconAndTextMap[provider.type];
+                return (
+                  <TooltipProvider key={provider.type}>
+                    <Tooltip delayDuration={100}>
+                      <TooltipTrigger asChild>
+                        <div className="flex gap-1">
+                          <providerDisplay.Icon
+                            className={cn('size-4', provider.disabledReason && 'text-neutral-7')}
+                          />
+                        </div>
+                      </TooltipTrigger>
+                      <TooltipContent className="text-center text-xs">
+                        {provider.disabledReason
+                          ? `${providerDisplay.text} (Disabled - ${provider.disabledReason})`
+                          : providerDisplay.text}
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                );
+              })}
+            </div>
           </div>
           <h4 className="text-neutral-10 text-xs">{member.user.email}</h4>
         </td>
-        <td className="relative py-3 text-center text-sm">
+        <td className="w-full py-3 text-right text-sm">
           {member.isOwner ? (
             <TooltipProvider>
               <Tooltip>
@@ -204,24 +328,52 @@ const OrganizationMemberRow = memo(function OrganizationMemberRow(props: {
                 </TooltipContent>
               </Tooltip>
             </TooltipProvider>
+          ) : member.user.provisionInfo ? (
+            member.user.provisionInfo.isDisabled ? (
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger>
+                    <Badge variant="destructive">Inactive</Badge>
+                  </TooltipTrigger>
+                  <TooltipContent className="text-xs">This user is disabled.</TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            ) : (
+              <MemberGroups groups={member.groups ?? []} />
+            )
           ) : (
             <MemberRole member={member} organization={organization} />
           )}
         </td>
-        <td className="py-3 text-right text-sm">
-          {member.viewerCanRemove && (
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" className="data-[state=open]:bg-neutral-3 flex size-8 p-0">
-                  <MoreHorizontalIcon className="size-4" />
-                  <span className="sr-only">Open menu</span>
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-[160px]">
-                <DropdownMenuItem onSelect={() => setOpen(true)}>Delete</DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          )}
+        <td className="py-3 pr-2 text-right text-sm">
+          {member.viewerCanRemove &&
+            (member.user.provisionInfo ? (
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger>
+                    <ShieldCheck size={16} className="text-neutral-8 ml-2 mt-1.5" />
+                  </TooltipTrigger>
+                  <TooltipContent className="text-xs">
+                    Provisioned users can only be updated via the SCIM endpoints.
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            ) : (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    className="data-[state=open]:bg-neutral-3 flex size-8 p-0"
+                  >
+                    <MoreHorizontalIcon className="size-4" />
+                    <span className="sr-only">Open menu</span>
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-[160px]">
+                  <DropdownMenuItem onSelect={() => setOpen(true)}>Delete</DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            ))}
         </td>
       </tr>
     </>
@@ -390,43 +542,42 @@ export function OrganizationMembers(props: {
           )}
         </div>
       </SubPageLayoutHeader>
-      <table className="divide-neutral-10/20 w-full table-auto divide-y-[1px]">
-        <thead>
-          <tr>
-            <th colSpan={2} className="relative select-none py-3 text-left text-sm font-semibold">
-              Member
-            </th>
-            <th className="relative w-[300px] select-none py-3 text-center align-middle text-sm font-semibold">
-              Assigned Role
-            </th>
-            <th className="w-12 py-3 text-right text-sm font-semibold" />
-          </tr>
-        </thead>
-        <tbody className="divide-neutral-10/20 divide-y-[1px]">
-          {members.length === 0 ? (
+      <div className="mt-4 overflow-hidden rounded-lg border">
+        <table className="divide-neutral-10/20 w-full table-auto divide-y">
+          <thead className="bg-neutral-3 border-b px-4 py-3 text-sm font-medium">
             <tr>
-              <td colSpan={4} className="py-16">
-                <div className="flex flex-col items-center justify-center px-4">
-                  <h3 className="text-neutral-11 mb-2 text-lg font-semibold">No members found</h3>
-
-                  <p className="text-neutral-10 max-w-sm text-center text-sm">
-                    {`No results for "${searchValue}". Try adjusting your search term.`}
-                  </p>
-                </div>
-              </td>
+              <th className="" />
+              <th className="relative select-none py-3 pl-3 text-left text-sm">Member</th>
+              <th className="relative w-full select-none py-3 text-center align-middle text-sm font-semibold" />
+              <th className="w-12 py-3 text-right text-sm font-semibold" />
             </tr>
-          ) : (
-            members.map(node => (
-              <OrganizationMemberRow
-                key={node.id}
-                organization={props.organization}
-                member={node}
-                refetchMembers={props.refetchMembers}
-              />
-            ))
-          )}
-        </tbody>
-      </table>
+          </thead>
+          <tbody className="divide-neutral-10/20 divide-y">
+            {members.length === 0 ? (
+              <tr>
+                <td colSpan={4} className="py-16">
+                  <div className="flex flex-col items-center justify-center px-4">
+                    <h3 className="text-neutral-11 mb-2 text-lg font-semibold">No members found</h3>
+
+                    <p className="text-neutral-10 max-w-sm text-center text-sm">
+                      {`No results for "${searchValue}". Try adjusting your search term.`}
+                    </p>
+                  </div>
+                </td>
+              </tr>
+            ) : (
+              members.map(node => (
+                <OrganizationMemberRow
+                  key={node.id}
+                  organization={props.organization}
+                  member={node}
+                  refetchMembers={props.refetchMembers}
+                />
+              ))
+            )}
+          </tbody>
+        </table>
+      </div>
       {/* Pagination Controls */}
       <div className="mt-4 flex items-center justify-between">
         <div className="text-neutral-10 text-sm">

@@ -198,6 +198,13 @@ export class OrganizationManager {
     this.logger.debug('Leaving organization (organization=%s)', organizationId);
     const user = await this.session.getViewer();
 
+    if (user.provisionedByOrganizationId !== null) {
+      return {
+        ok: false,
+        message: 'Provisioned users can not leave organizations.',
+      };
+    }
+
     const canLeave = await this.canLeaveOrganization({
       organizationId,
       userId: user.id,
@@ -320,10 +327,18 @@ export class OrganizationManager {
     user: {
       id: string;
       superTokensUserId: string | null;
+      provisionedByOrganizationId: string | null;
     };
   }) {
     const { slug, user } = input;
     this.logger.info('Creating an organization (input=%o)', input);
+
+    if (user.provisionedByOrganizationId !== null) {
+      return {
+        ok: false as const,
+        message: 'Provisioned users can not create organizations.',
+      };
+    }
 
     const result = await this.storage.createOrganization({
       slug,
@@ -881,6 +896,10 @@ export class OrganizationManager {
 
     if (!currentUserAsMember) {
       throw new Error(`Logged user is not a member of the organization`);
+    }
+
+    if (member.user.provisionedByOrganizationId !== null) {
+      throw new HiveError('Provisioned users can not be removed from organizations.');
     }
 
     await this.storage.deleteOrganizationMember({

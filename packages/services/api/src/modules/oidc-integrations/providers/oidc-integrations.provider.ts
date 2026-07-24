@@ -216,6 +216,9 @@ export class OIDCIntegrationsProvider {
     userinfoEndpoint: string | null;
     authorizationEndpoint: string | null;
     additionalScopes: readonly string[] | null;
+    userIdClaim: string | null;
+    userProvisioningRequired: boolean | null;
+    oidcForVerifiedDomainsRequired: boolean | null;
   }) {
     if (this.isEnabled() === false) {
       return {
@@ -258,6 +261,7 @@ export class OIDCIntegrationsProvider {
     const additionalScopesResult = maybe(OIDCAdditionalScopesModel).safeParse(
       args.additionalScopes,
     );
+    const userIdClaimResult = maybe(OIDCScopeModel).safeParse(args.userIdClaim);
 
     if (
       clientIdResult.success &&
@@ -265,7 +269,8 @@ export class OIDCIntegrationsProvider {
       tokenEndpointResult.success &&
       userinfoEndpointResult.success &&
       authorizationEndpointResult.success &&
-      additionalScopesResult.success
+      additionalScopesResult.success &&
+      userIdClaimResult.success
     ) {
       const oidcIntegration = await this.storage.updateOIDCIntegration({
         oidcIntegrationId: args.oidcIntegrationId,
@@ -277,6 +282,9 @@ export class OIDCIntegrationsProvider {
         userinfoEndpoint: userinfoEndpointResult.data,
         authorizationEndpoint: authorizationEndpointResult.data,
         additionalScopes: additionalScopesResult.data,
+        userIdClaim: userIdClaimResult.data,
+        userProvisioningRequired: args.userProvisioningRequired,
+        oidcForVerifiedDomainsRequired: args.oidcForVerifiedDomainsRequired,
       });
 
       const redactedClientSecret = maskToken(oidcIntegration.clientId);
@@ -324,6 +332,7 @@ export class OIDCIntegrationsProvider {
         additionalScopes: additionalScopesResult.success
           ? null
           : additionalScopesResult.error.issues[0].message,
+        userIdClaim: userIdClaimResult.error?.issues[0].message ?? null,
       },
     } as const;
   }
@@ -858,15 +867,15 @@ const OIDCClientSecretModel = zod
 
 const OAuthAPIUrlModel = zod.string().url('Must be a valid OAuth API url.');
 
+const OIDCScopeModel = zod
+  .string()
+  .toLowerCase()
+  .nonempty('Must not be empty.')
+  .max(50, 'Can not be longer than 50 characters.')
+  .regex(/^[a-z0-9](?:[a-z0-9.:/_-]*[a-z0-9])?$/, 'Must be a valid scope.');
+
 const OIDCAdditionalScopesModel = zod
-  .array(
-    zod
-      .string()
-      .toLowerCase()
-      .nonempty('Must not be empty.')
-      .max(50, 'Can not be longer than 50 characters.')
-      .regex(/^[a-z0-9](?:[a-z0-9.:/_-]*[a-z0-9])?$/, 'Must be a valid scope.'),
-  )
+  .array(OIDCScopeModel)
   .max(20, 'Can not be more than 20 items.');
 
 const maybe = <TSchema>(schema: zod.ZodSchema<TSchema>) => zod.union([schema, zod.null()]);

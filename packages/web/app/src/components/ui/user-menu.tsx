@@ -79,6 +79,9 @@ const UserMenu_MeFragment = graphql(`
     provider
     isAdmin
     canSwitchOrganization
+    provisionInfo {
+      __typename
+    }
   }
 `);
 
@@ -184,14 +187,16 @@ export function UserMenu(props: {
                 </a>
               </DropdownMenuItem>
 
-              <DropdownMenuItem
-                onClick={() => {
-                  toggleUserSettingsModalOpen();
-                }}
-              >
-                <SettingsIcon className="mr-2 size-4" />
-                Profile settings
-              </DropdownMenuItem>
+              {me?.provisionInfo ? null : (
+                <DropdownMenuItem
+                  onClick={() => {
+                    toggleUserSettingsModalOpen();
+                  }}
+                >
+                  <SettingsIcon className="mr-2 size-4" />
+                  Profile settings
+                </DropdownMenuItem>
+              )}
               <DropdownMenuSeparator />
               <ThemeSwitcher />
               <DropdownMenuSeparator />

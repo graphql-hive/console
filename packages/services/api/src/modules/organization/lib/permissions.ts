@@ -1,4 +1,4 @@
-import type { Permission } from '../../auth/lib/authz';
+import type { Permission, PermissionsPerResourceLevelAssignment } from '../../auth/lib/authz';
 
 export type PermissionRecord = {
   id: Permission;
@@ -41,4 +41,17 @@ export function assertPermissionGroupsIsSubset(
       'The following permissions are missing in the main group.\n- ' + missing.join('\n- '),
     );
   }
+}
+
+export function intersectPermissionsPerResourceLevelAssignment(
+  a: PermissionsPerResourceLevelAssignment,
+  b: PermissionsPerResourceLevelAssignment,
+): PermissionsPerResourceLevelAssignment {
+  return {
+    organization: a.organization.intersection(b.organization),
+    project: a.project.intersection(b.project),
+    target: a.target.intersection(b.target),
+    service: a.service.intersection(b.service),
+    appDeployment: a.appDeployment.intersection(b.appDeployment),
+  };
 }

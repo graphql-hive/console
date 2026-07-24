@@ -5,6 +5,7 @@ import type { FastifyReply, FastifyRequest } from '@hive/service-common';
 import { AccessError, HiveError, OIDCRequiredError } from '../../../shared/errors';
 import { isUUID } from '../../../shared/is-uuid';
 import { OIDCIntegrationStore } from '../../oidc-integrations/providers/oidc-integration.store';
+import { Groups } from '../../organization/providers/groups';
 import { OrganizationMembers } from '../../organization/providers/organization-members';
 import { Logger } from '../../shared/providers/logger';
 import type { Storage } from '../../shared/providers/storage';
@@ -34,7 +35,11 @@ export class SuperTokensCookieBasedSession extends Session {
 
   constructor(
     sessionPayload: SuperTokensSessionPayload,
-    deps: { organizationMembers: OrganizationMembers; storage: Storage; logger: Logger },
+    deps: {
+      organizationMembers: OrganizationMembers;
+      storage: Storage;
+      logger: Logger;
+    },
   ) {
     super({ logger: deps.logger });
     this.superTokensUserId = sessionPayload.superTokensUserId;
@@ -62,6 +67,11 @@ export class SuperTokensCookieBasedSession extends Session {
       user.id,
       organizationId,
     );
+
+    if (user.deactivatedAt !== null) {
+      this.logger.debug('User is deactivated. Resolve no permissions.');
+      return [];
+    }
 
     if (!isUUID(organizationId)) {
       this.logger.debug(
@@ -135,6 +145,19 @@ export class SuperTokensCookieBasedSession extends Session {
 
     if (oidcIntegration?.oidcUserAccessOnly && this.oidcIntegrationId !== oidcIntegration.id) {
       throw new OIDCRequiredError(organization.slug, oidcIntegration.id);
+    }
+
+    // If the user is provisioned we use the assigned groups for permissions instead of permissions
+    // assigned to the user.
+    if (user.provisionedByOrganizationId) {
+      const groupPolicyStatements =
+        await Groups.getAllAuthorizationPolicyStatementFromGroupMembershipsPolicyStatementsForOrganizationMembership(
+          this.logger,
+          this.storage.pool,
+          organizationMembership,
+        );
+
+      return groupPolicyStatements ?? [];
     }
 
     this.logger.debug(
