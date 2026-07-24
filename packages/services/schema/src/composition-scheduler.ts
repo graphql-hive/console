@@ -12,6 +12,7 @@ import {
 
 type WorkerRunArgs = {
   data: CompositionEvent['data'];
+  targetId?: string;
   requestId: string;
   abortSignal: AbortSignal;
 };
@@ -181,6 +182,7 @@ export class CompositionScheduler {
         event: 'composition',
         id: taskId,
         data: args.data,
+        targetId: args.targetId,
         taskId,
         requestId: args.requestId,
       } satisfies CompositionEvent);
