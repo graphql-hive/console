@@ -1,26 +1,22 @@
 import 'reflect-metadata';
 import { describe, expect, test } from 'vitest';
 import { CriticalityLevel } from '@graphql-inspector/core';
-import type { SchemaChangeType } from '@hive/storage';
 import {
   buildSchemaCheckSuccessGithubOutput,
   changesToMarkdown,
   type MarkdownSchemaChange,
 } from './schema-publisher';
 
-// The helper only reads `.length`, the contract name and passes change arrays to
-// the injected renderer, so a minimal fake change + a simple renderer are enough.
-const makeChange = (message: string): SchemaChangeType =>
-  ({ message }) as unknown as SchemaChangeType;
-const renderChanges = (changes: ReadonlyArray<SchemaChangeType>): string =>
-  changes.map(c => (c as unknown as { message: string }).message).join('\n');
-
 describe('buildSchemaCheckSuccessGithubOutput', () => {
   test('reports a contract-only change instead of "No changes" (#6954)', () => {
     const result = buildSchemaCheckSuccessGithubOutput({
       changes: [],
-      contractChanges: [{ contractName: 'public', changes: [makeChange('Field Query.b added')] }],
-      renderChanges,
+      contractChanges: [
+        {
+          contractName: 'public',
+          changes: [{ criticality: CriticalityLevel.NonBreaking, message: 'Field Query.b added' }],
+        },
+      ],
     });
 
     expect(result.title).not.toBe('No changes');
@@ -33,7 +29,6 @@ describe('buildSchemaCheckSuccessGithubOutput', () => {
     const result = buildSchemaCheckSuccessGithubOutput({
       changes: [],
       contractChanges: [],
-      renderChanges,
     });
 
     expect(result.title).toBe('No changes');
@@ -45,7 +40,6 @@ describe('buildSchemaCheckSuccessGithubOutput', () => {
     const result = buildSchemaCheckSuccessGithubOutput({
       changes: null,
       contractChanges: null,
-      renderChanges,
     });
 
     expect(result.title).toBe('No changes');
@@ -55,7 +49,6 @@ describe('buildSchemaCheckSuccessGithubOutput', () => {
     const result = buildSchemaCheckSuccessGithubOutput({
       changes: [],
       contractChanges: [{ contractName: 'public', changes: [] }],
-      renderChanges,
     });
 
     expect(result.title).toBe('No changes');
@@ -63,9 +56,8 @@ describe('buildSchemaCheckSuccessGithubOutput', () => {
 
   test('preserves existing behavior for core schema changes with no contracts', () => {
     const result = buildSchemaCheckSuccessGithubOutput({
-      changes: [makeChange('Field Query.a added')],
+      changes: [{ criticality: CriticalityLevel.NonBreaking, message: 'Field Query.a added' }],
       contractChanges: null,
-      renderChanges,
     });
 
     expect(result.title).toBe('No blocking changes');
@@ -76,9 +68,13 @@ describe('buildSchemaCheckSuccessGithubOutput', () => {
 
   test('lists both core and per-contract changes when both are present', () => {
     const result = buildSchemaCheckSuccessGithubOutput({
-      changes: [makeChange('Field Query.a added')],
-      contractChanges: [{ contractName: 'public', changes: [makeChange('Field Query.b added')] }],
-      renderChanges,
+      changes: [{ criticality: CriticalityLevel.NonBreaking, message: 'Field Query.a added' }],
+      contractChanges: [
+        {
+          contractName: 'public',
+          changes: [{ criticality: CriticalityLevel.NonBreaking, message: 'Field Query.b added' }],
+        },
+      ],
     });
 
     expect(result.title).toBe('No blocking changes');

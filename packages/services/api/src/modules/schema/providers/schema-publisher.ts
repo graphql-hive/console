@@ -3152,8 +3152,6 @@ export class SchemaPublisher {
         ({ title, summary, shortSummaryFallback } = buildSchemaCheckSuccessGithubOutput({
           changes,
           contractChanges: args.contractChanges,
-          renderChanges: (changesToRender, printListOfChanges) =>
-            changesToMarkdown(changesToRender, printListOfChanges),
         }));
       } else {
         const total =
@@ -3547,22 +3545,9 @@ function writeChanges(
   }
 }
 
-/**
- * Builds the title and summary for a *successful* GitHub schema-check run.
- *
- * A successful check can still contain changes - either to the core schema or
- * to one or more contracts. "No changes" must only be reported when there are
- * no core changes AND no contract changes; otherwise the summary lists the core
- * changes followed by a per-contract section, so a contract-only change is no
- * longer misreported as "No changes" (#6954).
- *
- * Pure function (the markdown renderer is injected) so it can be unit-tested
- * without constructing the full SchemaPublisher dependency graph.
- */
 export function buildSchemaCheckSuccessGithubOutput(input: {
-  changes: Array<SchemaChangeType> | null;
-  contractChanges: Array<{ contractName: string; changes: Array<SchemaChangeType> }> | null;
-  renderChanges: (changes: ReadonlyArray<SchemaChangeType>, printListOfChanges?: boolean) => string;
+  changes: Array<MarkdownSchemaChange> | null;
+  contractChanges: Array<{ contractName: string; changes: Array<MarkdownSchemaChange> }> | null;
 }): { title: string; summary: string; shortSummaryFallback: string } {
   const coreChanges = input.changes ?? [];
   const contractChanges = input.contractChanges?.filter(contract => contract.changes.length) ?? [];
@@ -3574,11 +3559,11 @@ export function buildSchemaCheckSuccessGithubOutput(input: {
 
   const buildSummary = (printListOfChanges: boolean) =>
     [
-      coreChanges.length ? input.renderChanges(coreChanges, printListOfChanges) : null,
+      coreChanges.length ? changesToMarkdown(coreChanges, printListOfChanges) : null,
       ...contractChanges.map(contract =>
         [
           `## Contract "${contract.contractName}"`,
-          input.renderChanges(contract.changes, printListOfChanges),
+          changesToMarkdown(contract.changes, printListOfChanges),
         ].join('\n'),
       ),
     ]
