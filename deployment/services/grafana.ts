@@ -22,6 +22,7 @@ export function deployGrafana(envName: string, tableSuffix: string) {
   );
   const folder = new oss.Folder('grafana-hive-folder', {
     title: `Hive Monitoring (${envName})`,
+    uid: 'hive-monitoring',
   });
 
   const params = new pulumi.Config('grafanaDashboards').requireObject<Record<string, string>>(
@@ -44,16 +45,13 @@ export function deployGrafana(envName: string, tableSuffix: string) {
 
     const configJson = JSON.parse(configString);
 
-    if ('uid' in configJson) {
-      delete configJson.uid;
-    }
-
-    if ('version' in configJson) {
-      delete configJson.version;
-    }
+    // Pin a stable uid from the filename so dashboard URLs survive redeploys
+    configJson.uid = `hive-${identifier.toLowerCase().replace(/^hive-/, '')}`;
+    delete configJson.id;
+    delete configJson.version;
 
     return new oss.Dashboard(`dashboard-${identifier.toLowerCase()}`, {
-      folder: folder.id,
+      folder: folder.uid,
       configJson: JSON.stringify(configJson, null, 2),
     });
   });

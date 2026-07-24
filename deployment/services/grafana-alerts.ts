@@ -19,6 +19,7 @@ export function deployGrafanaAlerts(envName: string) {
   // clear what's machine-managed vs. operator-edited.
   const folder = new oss.Folder('grafana-hive-alerts-folder', {
     title: `Hive Alerts (${envName})`,
+    uid: 'hive-alerts',
   });
 
   // Single rule group for the metric-alerts feature; evaluation interval
