@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { formatDistanceToNow } from 'date-fns';
 import { ExternalLink, Info } from 'lucide-react';
 import { Button } from '@/components/base/button/button';
 import { DescriptionList } from '@/components/base/description-list/description-list';
@@ -13,6 +12,7 @@ import {
   SheetHeader,
   SheetTitle,
 } from '@/components/ui/sheet';
+import { TimeAgo } from '@/components/ui/time-ago';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Avatar } from '@/components/v2/avatar';
 import {
@@ -135,7 +135,7 @@ export type AlertConditionsPanelProps = {
 function RelativeTimestamp({ iso }: { iso: string }) {
   return (
     <span className="text-neutral-12 inline-flex items-center gap-1 font-mono text-[10px]">
-      {formatDistanceToNow(new Date(iso), { addSuffix: true })}
+      <TimeAgo date={iso} />
       <TooltipProvider delayDuration={100}>
         <Tooltip>
           <TooltipTrigger asChild>

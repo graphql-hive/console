@@ -1,7 +1,7 @@
-import { formatDistanceToNow } from 'date-fns';
 import { ArrowRight } from 'lucide-react';
 import { DataTable } from '@/components/base/data-table/data-table';
 import { BadgeRounded } from '@/components/ui/badge';
+import { TimeAgo } from '@/components/ui/time-ago';
 import { Avatar } from '@/components/v2/avatar';
 import {
   MetricAlertRuleType,
@@ -72,9 +72,10 @@ const COLUMNS = [
     id: 'age',
     header: 'Age',
     cell: ctx => (
-      <span className="text-neutral-12 inline-flex items-center gap-1 font-mono text-[11px]">
-        {formatDistanceToNow(new Date(ctx.row.original.createdAt), { addSuffix: true })}
-      </span>
+      <TimeAgo
+        date={ctx.row.original.createdAt}
+        className="text-neutral-12 font-mono text-[11px]"
+      />
     ),
   }),
   columnHelper.display({
