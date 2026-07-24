@@ -45,7 +45,7 @@ export function createCompositionWorker(args: {
 
       if (args.env.compositionWorker.trackMemoryUsage) {
         compositionWorkerMemoryUsedBytes.set(
-          { target: message.targetId, type: 'federation' },
+          { target: message.targetId, type: message.data.type },
           process.memoryUsage().heapUsed,
         );
       }
