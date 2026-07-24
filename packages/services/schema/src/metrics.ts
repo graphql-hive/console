@@ -38,3 +38,9 @@ export const compositionCacheValueSizeBytes = new metrics.Histogram({
   help: 'The size of the cache entries.',
   buckets: [200, 500, 1_000, 2_000, 3_000, 4_000, 5_000, 7_000, 10_000, 15_000, 20_000, 30_000],
 });
+
+export const compositionWorkerMemoryUsedBytes = new metrics.Gauge({
+  name: 'composition_worker_memory_used_bytes',
+  help: 'Amount of memory used by the composition worker',
+  labelNames: ['target', 'type'],
+});
