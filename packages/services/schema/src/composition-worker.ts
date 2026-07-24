@@ -8,7 +8,6 @@ import { createComposeFederation, type ComposeFederationArgs } from './compositi
 import { composeSingle, type ComposeSingleArgs } from './composition/single';
 import { composeStitching, type ComposeStitchingArgs } from './composition/stitching';
 import type { env } from './environment';
-import { compositionWorkerMemoryUsedBytes } from './metrics';
 
 export type ErrorResultEvent = {
   event: 'error';
