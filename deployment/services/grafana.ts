@@ -1,7 +1,7 @@
 import { readdirSync, readFileSync } from 'fs';
 import { join, parse } from 'path';
-import { Dashboard, Folder } from '@lbrlabs/pulumi-grafana';
 import * as pulumi from '@pulumi/pulumi';
+import { oss } from '@pulumiverse/grafana';
 
 const dashboardDirectory = join(__dirname, '../grafana-dashboards/');
 
@@ -20,7 +20,7 @@ export function deployGrafana(envName: string, tableSuffix: string) {
   const availableFiles = readdirSync(dashboardDirectory).filter(
     f => f.endsWith('.json') && !excludedDashboards.includes(f),
   );
-  const folder = new Folder('grafana-hive-folder', {
+  const folder = new oss.Folder('grafana-hive-folder', {
     title: `Hive Monitoring (${envName})`,
   });
 
@@ -52,7 +52,7 @@ export function deployGrafana(envName: string, tableSuffix: string) {
       delete configJson.version;
     }
 
-    return new Dashboard(`dashboard-${identifier.toLowerCase()}`, {
+    return new oss.Dashboard(`dashboard-${identifier.toLowerCase()}`, {
       folder: folder.id,
       configJson: JSON.stringify(configJson, null, 2),
     });
