@@ -10,10 +10,17 @@ import { composeStitching, type ComposeStitchingArgs } from './composition/stitc
 import type { env } from './environment';
 import { compositionWorkerMemoryUsedBytes } from './metrics';
 
-type ErrorResultEvent = {
+export type ErrorResultEvent = {
   event: 'error';
   id: string;
   err: unknown;
+};
+
+export type TrackMetricEvent = {
+  event: 'metric';
+} & {
+  type: 'heapUsed';
+  value: number;
 };
 
 export function createCompositionWorker(args: {
@@ -44,10 +51,12 @@ export function createCompositionWorker(args: {
       args.port.postMessage(result);
 
       if (args.env.compositionWorker.trackMemoryUsage) {
-        compositionWorkerMemoryUsedBytes.set(
-          { target: message.targetId, type: message.data.type },
-          process.memoryUsage().heapUsed,
-        );
+        // send metric back to main thread so it can be reported
+        args.port.postMessage({
+          event: 'metric',
+          type: 'heapUsed',
+          value: process.memoryUsage().heapUsed,
+        } satisfies TrackMetricEvent);
       }
     };
 

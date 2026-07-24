@@ -3,11 +3,17 @@ import { Worker } from 'node:worker_threads';
 import fastq from 'fastq';
 import * as Sentry from '@sentry/node';
 import { registerWorkerLogging, type Logger } from '../../api/src/modules/shared/providers/logger';
-import type { CompositionEvent, CompositionResultEvent } from './composition-worker';
+import type {
+  CompositionEvent,
+  CompositionResultEvent,
+  ErrorResultEvent,
+  TrackMetricEvent,
+} from './composition-worker';
 import {
   compositionQueueDurationMS,
   compositionTotalDurationMS,
   compositionWorkerDurationMS,
+  compositionWorkerMemoryUsedBytes,
 } from './metrics';
 
 type WorkerRunArgs = {
@@ -127,18 +133,24 @@ export class CompositionScheduler {
 
     registerWorkerLogging(this.logger, worker, name);
 
-    worker.on(
-      'message',
-      (data: CompositionResultEvent | { event: 'error'; id: string; err: Error }) => {
-        if (data.event === 'error') {
-          workerState?.task.reject(data.err);
-        }
+    worker.on('message', (data: CompositionResultEvent | ErrorResultEvent | TrackMetricEvent) => {
+      if (data.event === 'error') {
+        workerState?.task.reject(data.err);
+      }
 
-        if (data.event === 'compositionResult') {
-          workerState?.task.resolve(data);
+      if (data.event === 'compositionResult') {
+        workerState?.task.resolve(data);
+      }
+
+      if (data.event === 'metric') {
+        if (data.type === 'heapUsed') {
+          compositionWorkerMemoryUsedBytes.set(
+            { target: workerState?.args.targetId, type: workerState?.args.data.type },
+            data.value,
+          );
         }
-      },
-    );
+      }
+    });
 
     const { logger: baseLogger } = this;
 
