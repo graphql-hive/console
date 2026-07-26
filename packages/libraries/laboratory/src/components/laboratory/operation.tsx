@@ -32,7 +32,7 @@ import type {
 } from '../../lib/history';
 import type { LaboratoryOperation } from '../../lib/operations';
 import { QueryPlanTree, renderQueryPlan } from '../../lib/query-plan/utils';
-import { cn } from '../../lib/utils';
+import { cn, formatBytes } from '../../lib/utils';
 import { Badge } from '../ui/badge';
 import { Button } from '../ui/button';
 import {
@@ -420,13 +420,10 @@ export const Response = ({ historyItem }: { historyItem?: LaboratoryHistoryReque
                 </span>
               </Badge>
             )}
-            {historyItem?.size && (
+            {(historyItem as LaboratoryHistoryRequest).size != null && (
               <Badge variant="outline" className="bg-card">
                 <FileTextIcon className="size-3" />
-                <span>
-                  {Math.round((historyItem as LaboratoryHistoryRequest).size! / 1024)}
-                  KB
-                </span>
+                <span>{formatBytes((historyItem as LaboratoryHistoryRequest).size!)}</span>
               </Badge>
             )}
           </div>
@@ -566,7 +563,7 @@ export const Query = (props: {
       const status = extensionsResponse.status;
       const duration = performance.now() - startTime;
       const responseText = JSON.stringify(response, null, 2);
-      const size = responseText.length;
+      const size = new TextEncoder().encode(responseText).length;
 
       const newItemHistory = addHistory({
         status,

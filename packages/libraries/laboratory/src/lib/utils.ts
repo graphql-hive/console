@@ -9,6 +9,21 @@ export function capitalize(str: string) {
   return str.charAt(0).toUpperCase() + str.slice(1);
 }
 
+const BYTE_UNITS = ['B', 'KB', 'MB', 'GB'];
+
+/** Formats a byte count for display, e.g. 0 -> "0 B", 1536 -> "1.5 KB". */
+export function formatBytes(bytes: number): string {
+  if (!Number.isFinite(bytes) || bytes <= 0) {
+    return '0 B';
+  }
+
+  const exponent = Math.min(Math.floor(Math.log(bytes) / Math.log(1024)), BYTE_UNITS.length - 1);
+  const value = bytes / 1024 ** exponent;
+
+  // Bytes are always whole; larger units keep one decimal unless it is a round number.
+  return `${exponent === 0 ? value : Number(value.toFixed(1))} ${BYTE_UNITS[exponent]}`;
+}
+
 export function splitIdentifier(input: string): string[] {
   return input
     .replace(/_/g, ' ')
