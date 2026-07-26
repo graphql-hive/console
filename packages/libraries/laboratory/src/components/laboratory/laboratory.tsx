@@ -1,4 +1,12 @@
-import { ReactNode, useCallback, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import {
+  ReactNode,
+  useCallback,
+  useInsertionEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import { createPortal } from 'react-dom';
 import laboratoryStyles from '../../index.css?inline';
 import { FileIcon, FoldersIcon, HistoryIcon, SettingsIcon } from 'lucide-react';
@@ -6,6 +14,7 @@ import monacoStyles from 'monaco-editor/min/vs/editor/editor.main.css?inline';
 import * as z from 'zod';
 import { useForm } from '@tanstack/react-form';
 import { useCollections } from '../../lib/collections';
+import { ensureDocumentFontFaces } from '../../lib/document-styles';
 import { useEndpoint } from '../../lib/endpoint';
 import { useEnv } from '../../lib/env';
 import { useHistory } from '../../lib/history';
@@ -639,6 +648,10 @@ export const Laboratory = (
 
   const exitFullScreen = useCallback(() => {
     setIsFullScreen(false);
+  }, []);
+
+  useInsertionEffect(() => {
+    ensureDocumentFontFaces(monacoStyles);
   }, []);
 
   return (
