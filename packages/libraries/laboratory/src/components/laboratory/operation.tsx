@@ -15,7 +15,7 @@ import {
   PowerIcon,
   PowerOffIcon,
   SquarePenIcon,
-  TerminalIcon,
+  SquareTerminal,
 } from 'lucide-react';
 import { compressToEncodedURIComponent } from 'lz-string';
 import * as monaco from 'monaco-editor/esm/vs/editor/editor.api';
@@ -808,7 +808,7 @@ export const Query = (props: {
                 className="p-1! size-6 rounded-sm"
                 aria-label="Copy as cURL"
               >
-                <TerminalIcon className="text-muted-foreground size-4" />
+                <SquareTerminal className="text-muted-foreground size-4" />
               </Button>
             </TooltipTrigger>
             <TooltipContent>Copy as cURL</TooltipContent>
