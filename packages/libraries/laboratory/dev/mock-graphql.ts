@@ -8,7 +8,8 @@
  * resolvers, so the builder has a large, deeply nested, described schema to
  * render. Values are deterministic so response sizes stay stable between runs.
  *
- * Send `x-query-plan: 1` with a request to get an extensions.queryPlan back.
+ * Send `x-query-plan: <fixture>` with a request to get an extensions.queryPlan back;
+ * see dev/query-plan-fixtures.ts for the names. Omit the header for the empty state.
  *
  * Note: everything here goes through graphql-yoga's own exports on purpose. The
  * workspace has two copies of `graphql` (16.9.0 hoisted at the root, 16.14.2 for
@@ -18,6 +19,7 @@
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { createSchema, createYoga, type Plugin } from 'graphql-yoga';
+import { resolveQueryPlanFixture } from './query-plan-fixtures';
 
 /** Structural shapes, so this file never needs graphql's own type predicates. */
 type MockType = {
@@ -82,37 +84,12 @@ const mockValue = (type: MockType, fieldName: string): unknown => {
   return {};
 };
 
-// Shape validated against QueryPlanSchema in src/lib/query-plan/schema.ts.
-const queryPlan = {
-  kind: 'QueryPlan',
-  node: {
-    kind: 'Sequence',
-    nodes: [
-      {
-        kind: 'Fetch',
-        serviceName: 'accounts',
-        operationKind: 'query',
-        operation: '{ me { id } }',
-      },
-      {
-        kind: 'Flatten',
-        path: [{ Field: 'me' }],
-        node: {
-          kind: 'Fetch',
-          serviceName: 'organizations',
-          operationKind: 'query',
-          operation: 'query($id: ID!) { organization(id: $id) { name } }',
-        },
-      },
-    ],
-  },
-};
-
 const queryPlanPlugin: Plugin = {
   onExecute({ args }) {
     const request = (args.contextValue as { request?: Request } | undefined)?.request;
+    const queryPlan = resolveQueryPlanFixture(request?.headers.get('x-query-plan') ?? null);
 
-    if (!request?.headers.get('x-query-plan')) {
+    if (!queryPlan) {
       return;
     }
 
