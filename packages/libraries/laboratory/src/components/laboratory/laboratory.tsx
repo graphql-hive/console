@@ -361,7 +361,7 @@ const LaboratoryContent = () => {
         >
           <Tooltip>
             <DropdownMenu>
-              <DropdownMenuTrigger>
+              <DropdownMenuTrigger asChild>
                 <TooltipTrigger asChild>
                   <Button
                     variant="ghost"

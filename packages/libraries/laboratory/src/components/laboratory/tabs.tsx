@@ -425,18 +425,16 @@ export const Tabs = ({ className }: { className?: string }) => {
               <Sortable.Content className="flex w-max items-stretch">
                 {tabs.map(item => {
                   return (
-                    <>
-                      <Tab
-                        key={item.id}
-                        item={item}
-                        activeTab={activeTab}
-                        setActiveTab={setActiveTab}
-                        isOperationLoading={isOperationLoading}
-                        handleDeleteTab={handleDeleteTab}
-                        handleDeleteAllTabs={handleDeleteAllTabs}
-                        handleDeleteOtherTabs={handleDeleteOtherTabs}
-                      />
-                    </>
+                    <Tab
+                      key={item.id}
+                      item={item}
+                      activeTab={activeTab}
+                      setActiveTab={setActiveTab}
+                      isOperationLoading={isOperationLoading}
+                      handleDeleteTab={handleDeleteTab}
+                      handleDeleteAllTabs={handleDeleteAllTabs}
+                      handleDeleteOtherTabs={handleDeleteOtherTabs}
+                    />
                   );
                 })}
               </Sortable.Content>

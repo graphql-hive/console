@@ -331,11 +331,6 @@ export const Response = ({ historyItem }: { historyItem?: LaboratoryHistoryReque
     );
   }, [historyItem]);
 
-  const hasQueryPlan = useMemo(
-    () => parseQueryPlan(historyItem?.response) !== null,
-    [historyItem?.response],
-  );
-
   return (
     <Tabs
       defaultValue="response"
@@ -346,7 +341,7 @@ export const Response = ({ historyItem }: { historyItem?: LaboratoryHistoryReque
       <TabsList className="h-[50px] w-full items-center justify-start rounded-none border-b bg-transparent p-3">
         {isFullScreen ? (
           <Tooltip>
-            <TooltipTrigger>
+            <TooltipTrigger asChild>
               <Button
                 variant="ghost"
                 size="sm"
@@ -360,7 +355,7 @@ export const Response = ({ historyItem }: { historyItem?: LaboratoryHistoryReque
           </Tooltip>
         ) : (
           <Tooltip>
-            <TooltipTrigger>
+            <TooltipTrigger asChild>
               <Button
                 variant="ghost"
                 size="sm"
@@ -384,10 +379,7 @@ export const Response = ({ historyItem }: { historyItem?: LaboratoryHistoryReque
             Preflight
           </TabsTrigger>
         )}
-        <TabsTrigger
-          value="query-plan"
-          className={cn('grow-0 rounded-sm', hasQueryPlan && '!text-green-500')}
-        >
+        <TabsTrigger value="query-plan" className="grow-0 rounded-sm">
           Query Plan
         </TabsTrigger>
         {historyItem ? (

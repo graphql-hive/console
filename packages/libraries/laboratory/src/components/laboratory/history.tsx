@@ -73,9 +73,9 @@ export const HistoryOperationItem = (props: { historyItem: LaboratoryHistoryRequ
       </span>
       <div className="truncate">{props.historyItem.operation.name || 'Untitled'}</div>
       <div className="ml-auto flex items-center gap-2">
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <AlertDialog>
+        <AlertDialog>
+          <Tooltip>
+            <TooltipTrigger asChild>
               <AlertDialogTrigger asChild>
                 <Button
                   variant="link"
@@ -87,32 +87,32 @@ export const HistoryOperationItem = (props: { historyItem: LaboratoryHistoryRequ
                   <TrashIcon />
                 </Button>
               </AlertDialogTrigger>
-              <AlertDialogContent>
-                <AlertDialogHeader>
-                  <AlertDialogTitle>Are you sure you want to delete history?</AlertDialogTitle>
-                  <AlertDialogDescription>
-                    This history operation will be permanently deleted.
-                  </AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter>
-                  <AlertDialogCancel>Cancel</AlertDialogCancel>
-                  <AlertDialogAction asChild>
-                    <Button
-                      variant="destructive"
-                      onClick={e => {
-                        e.stopPropagation();
-                        deleteHistory(props.historyItem.id);
-                      }}
-                    >
-                      Delete
-                    </Button>
-                  </AlertDialogAction>
-                </AlertDialogFooter>
-              </AlertDialogContent>
-            </AlertDialog>
-          </TooltipTrigger>
-          <TooltipContent>Delete history</TooltipContent>
-        </Tooltip>
+            </TooltipTrigger>
+            <TooltipContent>Delete history</TooltipContent>
+          </Tooltip>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Are you sure you want to delete history?</AlertDialogTitle>
+              <AlertDialogDescription>
+                This history operation will be permanently deleted.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction asChild>
+                <Button
+                  variant="destructive"
+                  onClick={e => {
+                    e.stopPropagation();
+                    deleteHistory(props.historyItem.id);
+                  }}
+                >
+                  Delete
+                </Button>
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
     </Button>
   );
@@ -136,9 +136,9 @@ export const HistoryGroup = (props: { group: { date: string; items: LaboratoryHi
             <FolderClockIcon className="text-muted-foreground size-4" />
           )}
           {props.group.date}
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <AlertDialog>
+          <AlertDialog>
+            <Tooltip>
+              <TooltipTrigger asChild>
                 <AlertDialogTrigger asChild>
                   <Button
                     variant="link"
@@ -150,32 +150,32 @@ export const HistoryGroup = (props: { group: { date: string; items: LaboratoryHi
                     <TrashIcon />
                   </Button>
                 </AlertDialogTrigger>
-                <AlertDialogContent>
-                  <AlertDialogHeader>
-                    <AlertDialogTitle>Are you sure you want to delete history?</AlertDialogTitle>
-                    <AlertDialogDescription>
-                      All history for {props.group.date} will be permanently deleted.
-                    </AlertDialogDescription>
-                  </AlertDialogHeader>
-                  <AlertDialogFooter>
-                    <AlertDialogCancel>Cancel</AlertDialogCancel>
-                    <AlertDialogAction asChild>
-                      <Button
-                        variant="destructive"
-                        onClick={e => {
-                          e.stopPropagation();
-                          deleteHistoryByDay(props.group.date);
-                        }}
-                      >
-                        Delete
-                      </Button>
-                    </AlertDialogAction>
-                  </AlertDialogFooter>
-                </AlertDialogContent>
-              </AlertDialog>
-            </TooltipTrigger>
-            <TooltipContent>Delete history</TooltipContent>
-          </Tooltip>
+              </TooltipTrigger>
+              <TooltipContent>Delete history</TooltipContent>
+            </Tooltip>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Are you sure you want to delete history?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  All history for {props.group.date} will be permanently deleted.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction asChild>
+                  <Button
+                    variant="destructive"
+                    onClick={e => {
+                      e.stopPropagation();
+                      deleteHistoryByDay(props.group.date);
+                    }}
+                  >
+                    Delete
+                  </Button>
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
         </Button>
       </CollapsibleTrigger>
       <CollapsibleContent className={cn('border-border ml-4 flex flex-col gap-1 border-l pl-2')}>
@@ -232,9 +232,9 @@ export const History = () => {
       <div className="border-border flex h-12 items-center gap-2 border-b p-3">
         <span className="text-base font-medium">History</span>
         <div className="ml-auto flex items-center">
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <AlertDialog>
+          <AlertDialog>
+            <Tooltip>
+              <TooltipTrigger asChild>
                 <AlertDialogTrigger asChild>
                   <Button
                     variant="ghost"
@@ -245,34 +245,32 @@ export const History = () => {
                     <TrashIcon className="size-4" />
                   </Button>
                 </AlertDialogTrigger>
-                <AlertDialogContent>
-                  <AlertDialogHeader>
-                    <AlertDialogTitle>
-                      Are you sure you want to delete all history?
-                    </AlertDialogTitle>
-                    <AlertDialogDescription>
-                      All history will be permanently deleted.
-                    </AlertDialogDescription>
-                  </AlertDialogHeader>
-                  <AlertDialogFooter>
-                    <AlertDialogCancel>Cancel</AlertDialogCancel>
-                    <AlertDialogAction asChild>
-                      <Button
-                        variant="destructive"
-                        onClick={e => {
-                          e.stopPropagation();
-                          handleDeleteAllHistory();
-                        }}
-                      >
-                        Delete
-                      </Button>
-                    </AlertDialogAction>
-                  </AlertDialogFooter>
-                </AlertDialogContent>
-              </AlertDialog>
-            </TooltipTrigger>
-            <TooltipContent>Delete all</TooltipContent>
-          </Tooltip>
+              </TooltipTrigger>
+              <TooltipContent>Delete all</TooltipContent>
+            </Tooltip>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Are you sure you want to delete all history?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  All history will be permanently deleted.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction asChild>
+                  <Button
+                    variant="destructive"
+                    onClick={e => {
+                      e.stopPropagation();
+                      handleDeleteAllHistory();
+                    }}
+                  >
+                    Delete
+                  </Button>
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
         </div>
       </div>
       <div className="size-full overflow-hidden">

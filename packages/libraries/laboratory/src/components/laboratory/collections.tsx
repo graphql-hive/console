@@ -146,7 +146,7 @@ export const CollectionItem = (props: { collection: LaboratoryCollection }) => {
             <div className="ml-auto flex items-center gap-2">
               {checkPermissions?.('collections:update') && (
                 <Tooltip>
-                  <TooltipTrigger>
+                  <TooltipTrigger asChild>
                     <Button
                       variant="link"
                       className="text-muted-foreground p-1! pr-0! opacity-0 transition-opacity group-hover:opacity-100"
@@ -162,9 +162,9 @@ export const CollectionItem = (props: { collection: LaboratoryCollection }) => {
                 </Tooltip>
               )}
               {checkPermissions?.('collections:delete') && (
-                <Tooltip>
-                  <TooltipTrigger>
-                    <AlertDialog>
+                <AlertDialog>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
                       <AlertDialogTrigger asChild>
                         <Button
                           variant="link"
@@ -176,35 +176,35 @@ export const CollectionItem = (props: { collection: LaboratoryCollection }) => {
                           <TrashIcon />
                         </Button>
                       </AlertDialogTrigger>
-                      <AlertDialogContent>
-                        <AlertDialogHeader>
-                          <AlertDialogTitle>
-                            Are you sure you want to delete collection?
-                          </AlertDialogTitle>
-                          <AlertDialogDescription>
-                            {props.collection.name} will be permanently deleted. All operations in
-                            this collection will be deleted as well.
-                          </AlertDialogDescription>
-                        </AlertDialogHeader>
-                        <AlertDialogFooter>
-                          <AlertDialogCancel>Cancel</AlertDialogCancel>
-                          <AlertDialogAction asChild>
-                            <Button
-                              variant="destructive"
-                              onClick={e => {
-                                e.stopPropagation();
-                                deleteCollection(props.collection.id);
-                              }}
-                            >
-                              Delete
-                            </Button>
-                          </AlertDialogAction>
-                        </AlertDialogFooter>
-                      </AlertDialogContent>
-                    </AlertDialog>
-                  </TooltipTrigger>
-                  <TooltipContent>Delete collection</TooltipContent>
-                </Tooltip>
+                    </TooltipTrigger>
+                    <TooltipContent>Delete collection</TooltipContent>
+                  </Tooltip>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>
+                        Are you sure you want to delete collection?
+                      </AlertDialogTitle>
+                      <AlertDialogDescription>
+                        {props.collection.name} will be permanently deleted. All operations in this
+                        collection will be deleted as well.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Cancel</AlertDialogCancel>
+                      <AlertDialogAction asChild>
+                        <Button
+                          variant="destructive"
+                          onClick={e => {
+                            e.stopPropagation();
+                            deleteCollection(props.collection.id);
+                          }}
+                        >
+                          Delete
+                        </Button>
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
               )}
             </div>
           </Button>
@@ -240,9 +240,9 @@ export const CollectionItem = (props: { collection: LaboratoryCollection }) => {
                 <GraphQLIcon className="size-4 text-pink-500" />
                 {operation.name}
                 {checkPermissions?.('collectionsOperations:delete') && (
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <AlertDialog>
+                  <AlertDialog>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
                         <AlertDialogTrigger asChild>
                           <Button
                             variant="link"
@@ -254,34 +254,34 @@ export const CollectionItem = (props: { collection: LaboratoryCollection }) => {
                             <TrashIcon />
                           </Button>
                         </AlertDialogTrigger>
-                        <AlertDialogContent>
-                          <AlertDialogHeader>
-                            <AlertDialogTitle>
-                              Are you sure you want to delete operation {operation.name}?
-                            </AlertDialogTitle>
-                            <AlertDialogDescription>
-                              {operation.name} will be permanently deleted.
-                            </AlertDialogDescription>
-                          </AlertDialogHeader>
-                          <AlertDialogFooter>
-                            <AlertDialogCancel>Cancel</AlertDialogCancel>
-                            <AlertDialogAction asChild>
-                              <Button
-                                variant="destructive"
-                                onClick={e => {
-                                  e.stopPropagation();
-                                  deleteOperationFromCollection(props.collection.id, operation.id);
-                                }}
-                              >
-                                Delete
-                              </Button>
-                            </AlertDialogAction>
-                          </AlertDialogFooter>
-                        </AlertDialogContent>
-                      </AlertDialog>
-                    </TooltipTrigger>
-                    <TooltipContent>Delete operation</TooltipContent>
-                  </Tooltip>
+                      </TooltipTrigger>
+                      <TooltipContent>Delete operation</TooltipContent>
+                    </Tooltip>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>
+                          Are you sure you want to delete operation {operation.name}?
+                        </AlertDialogTitle>
+                        <AlertDialogDescription>
+                          {operation.name} will be permanently deleted.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction asChild>
+                          <Button
+                            variant="destructive"
+                            onClick={e => {
+                              e.stopPropagation();
+                              deleteOperationFromCollection(props.collection.id, operation.id);
+                            }}
+                          >
+                            Delete
+                          </Button>
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
                 )}
               </Button>
             );
