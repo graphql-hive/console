@@ -495,6 +495,7 @@ export const Laboratory = (
       | 'onPluginsStateChange'
       | 'theme'
       | 'defaultSchemaIntrospection'
+      | 'enableFullScreen'
     >
   >,
 ) => {
@@ -685,6 +686,7 @@ export const Laboratory = (
           goToFullScreen={goToFullScreen}
           exitFullScreen={exitFullScreen}
           isFullScreen={isFullScreen}
+          enableFullScreen={props.enableFullScreen !== false}
           checkPermissions={checkPermissions}
         >
           <Dialog open={isUpdateEndpointDialogOpen} onOpenChange={setIsUpdateEndpointDialogOpen}>
