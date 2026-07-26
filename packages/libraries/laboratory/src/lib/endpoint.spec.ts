@@ -198,7 +198,7 @@ describe('useEndpoint', () => {
       result.current.setEndpoint('');
     });
     act(() => {
-      result.current.fetchSchema();
+      void result.current.fetchSchema();
     });
     await advance(600);
 
