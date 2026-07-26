@@ -654,10 +654,65 @@ export const BuilderField = (props: {
   );
 };
 
-enum BuilderSearchResultMode {
+export enum BuilderSearchResultMode {
   LIST = 'list',
   TREE = 'tree',
 }
+
+export const BuilderSearchModeToggle = (props: {
+  mode: BuilderSearchResultMode;
+  onModeChange: (mode: BuilderSearchResultMode) => void;
+  isSearchActive: boolean;
+}) => {
+  const hint = props.isSearchActive ? null : 'Search fields to switch between tree and list';
+
+  return (
+    <ToggleGroup
+      type="single"
+      variant="outline"
+      value={props.mode}
+      disabled={!props.isSearchActive}
+      onValueChange={value => {
+        // Radix emits '' when the active item is clicked again, which would leave
+        // the group with nothing selected while still rendering tree results.
+        if (value) {
+          props.onModeChange(value as BuilderSearchResultMode);
+        }
+      }}
+    >
+      {/* Wrapper, not asChild: Tooltip would merge its own data-state onto the
+          button and clobber the data-[state=on] selected styling. */}
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <span className="flex">
+            <ToggleGroupItem
+              value={BuilderSearchResultMode.TREE}
+              aria-label="Tree"
+              className="h-6 !rounded-l-sm !rounded-r-none border-r-0 p-2"
+            >
+              <ListTreeIcon className="size-4" />
+            </ToggleGroupItem>
+          </span>
+        </TooltipTrigger>
+        <TooltipContent>{hint ?? 'Tree'}</TooltipContent>
+      </Tooltip>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <span className="flex">
+            <ToggleGroupItem
+              value={BuilderSearchResultMode.LIST}
+              aria-label="List"
+              className="h-6 !rounded-l-none !rounded-r-sm p-2"
+            >
+              <TextAlignStartIcon className="size-4" />
+            </ToggleGroupItem>
+          </span>
+        </TooltipTrigger>
+        <TooltipContent>{hint ?? 'List'}</TooltipContent>
+      </Tooltip>
+    </ToggleGroup>
+  );
+};
 
 export const BuilderSearchResults = (props: {
   type: 'query' | 'mutation' | 'subscription';
@@ -966,37 +1021,11 @@ export const Builder = (props: {
                     <SearchIcon className="text-muted-foreground size-4" />
                   </InputGroupAddon>
                   <InputGroupAddon align="inline-end" className="py-0 pr-1.5">
-                    <ToggleGroup
-                      type="single"
-                      variant="outline"
-                      defaultValue={searchResultMode}
-                      onValueChange={value => setSearchResultMode(value as BuilderSearchResultMode)}
-                    >
-                      <Tooltip>
-                        <TooltipTrigger>
-                          <ToggleGroupItem
-                            value={BuilderSearchResultMode.TREE}
-                            aria-label="Toggle tree"
-                            className="h-6 !rounded-l-sm !rounded-r-none border-r-0 p-2"
-                          >
-                            <ListTreeIcon className="size-4" />
-                          </ToggleGroupItem>
-                        </TooltipTrigger>
-                        <TooltipContent>Tree</TooltipContent>
-                      </Tooltip>
-                      <Tooltip>
-                        <TooltipTrigger>
-                          <ToggleGroupItem
-                            value={BuilderSearchResultMode.LIST}
-                            aria-label="Toggle list"
-                            className="h-6 !rounded-l-none !rounded-r-sm p-2"
-                          >
-                            <TextAlignStartIcon className="size-4" />
-                          </ToggleGroupItem>
-                        </TooltipTrigger>
-                        <TooltipContent>List</TooltipContent>
-                      </Tooltip>
-                    </ToggleGroup>
+                    <BuilderSearchModeToggle
+                      mode={searchResultMode}
+                      onModeChange={setSearchResultMode}
+                      isSearchActive={isSearchActive}
+                    />
                   </InputGroupAddon>
                 </InputGroup>
               </div>
