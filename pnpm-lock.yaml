@@ -845,6 +845,9 @@ importers:
       graphql:
         specifier: ^16.14.0
         version: 16.14.2
+      graphql-yoga:
+        specifier: 5.21.1
+        version: 5.21.1(graphql@16.14.2)
       happy-dom:
         specifier: ^20.10.6
         version: 20.10.6
