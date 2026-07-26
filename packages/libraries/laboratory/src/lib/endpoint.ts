@@ -5,7 +5,7 @@ import {
   introspectionFromSchema,
   type IntrospectionQuery,
 } from 'graphql';
-import { debounce } from 'lodash';
+import { debounce, type DebouncedFunc } from 'lodash';
 import { toast } from 'sonner';
 import { LaboratoryEnv, LaboratoryEnvActions, LaboratoryEnvState } from '@/lib/env';
 import { LaboratoryOperationsActions, LaboratoryOperationsState } from '@/lib/operations';
@@ -22,11 +22,24 @@ export interface LaboratoryEndpointState {
   introspection: IntrospectionQuery | null;
   defaultEndpoint: string | null;
   shouldPollSchema: boolean;
+  isFetchingSchema: boolean;
 }
+
+export type FetchSchemaOptions = {
+  env?: LaboratoryEnv;
+  pluginsState?: Record<string, any>;
+  /** Introspect over the network even when a default introspection is available. */
+  force?: boolean;
+};
+
+export type FetchSchema = DebouncedFunc<
+  (signal?: AbortSignal, options?: FetchSchemaOptions) => Promise<void>
+>;
 
 export interface LaboratoryEndpointActions {
   setEndpoint: (endpoint: string) => void;
-  fetchSchema: () => void;
+  fetchSchema: FetchSchema;
+  reloadSchema: () => void;
   restoreDefaultEndpoint: () => void;
 }
 
@@ -44,7 +57,9 @@ export const useEndpoint = (props: {
 }): LaboratoryEndpointState & LaboratoryEndpointActions => {
   const [endpoint, _setEndpoint] = useState<string | null>(props.defaultEndpoint ?? null);
   const [introspection, setIntrospection] = useState<IntrospectionQuery | null>(null);
+  const [isFetchingSchema, setIsFetchingSchema] = useState(false);
   const introspectionSignatureRef = useRef<string | null>(null);
+  const hasManuallyReloadedRef = useRef(false);
 
   const applyIntrospection = useCallback((next: IntrospectionQuery | null) => {
     const signature = next ? JSON.stringify(next) : null;
@@ -87,16 +102,20 @@ export const useEndpoint = (props: {
 
   const fetchSchema = useMemo(
     () =>
-      debounce(
-        async (
-          signal?: AbortSignal,
-          options?: {
-            env?: LaboratoryEnv;
-            pluginsState?: Record<string, any>;
-          },
-        ) => {
-          if (endpoint === props.defaultEndpoint && props.defaultSchemaIntrospection) {
-            applyIntrospection(props.defaultSchemaIntrospection);
+      debounce(async (signal?: AbortSignal, options?: FetchSchemaOptions) => {
+        setIsFetchingSchema(true);
+
+        try {
+          // Once the user has reloaded by hand, later effect-driven fetches must
+          // not quietly put the supplied introspection back.
+          const canUseDefaultIntrospection =
+            endpoint === props.defaultEndpoint &&
+            props.defaultSchemaIntrospection &&
+            !options?.force &&
+            !hasManuallyReloadedRef.current;
+
+          if (canUseDefaultIntrospection) {
+            applyIntrospection(props.defaultSchemaIntrospection ?? null);
             return;
           }
 
@@ -105,127 +124,128 @@ export const useEndpoint = (props: {
             return;
           }
 
-          try {
-            let env = options?.env?.variables ?? envVariablesRef.current ?? {};
-            let plugins = options?.pluginsState ?? pluginsStateRef.current ?? {};
+          let env = options?.env?.variables ?? envVariablesRef.current ?? {};
+          let plugins = options?.pluginsState ?? pluginsStateRef.current ?? {};
 
-            let sourceHeaders: Record<string, string> = {};
+          let sourceHeaders: Record<string, string> = {};
 
-            if (props.settingsApi?.settings.introspection.headers) {
-              try {
-                sourceHeaders = JSON.parse(props.settingsApi?.settings.introspection.headers);
-              } catch {}
-            }
-
-            if (
-              props.settingsApi?.settings.introspection.includeActiveOperationHeaders &&
-              activeOperationHeadersRef.current
-            ) {
-              try {
-                sourceHeaders = {
-                  ...sourceHeaders,
-                  ...JSON.parse(activeOperationHeadersRef.current),
-                };
-              } catch {}
-            }
-
-            let stringifiedHeaders = JSON.stringify(sourceHeaders);
-
-            if (stringifiedHeaders.includes('{{')) {
-              try {
-                const preflightResult = await props.preflightApi?.runPreflight?.(
-                  props.pluginsApi?.plugins ?? [],
-                  props.pluginsApi?.pluginsState ?? {},
-                );
-
-                props?.envApi?.setEnv(preflightResult?.env ?? { variables: {} });
-                props?.pluginsApi?.setPluginsState(preflightResult?.pluginsState ?? {});
-
-                env = preflightResult?.env?.variables ?? {};
-                plugins = preflightResult?.pluginsState ?? {};
-
-                if (preflightResult?.headers) {
-                  stringifiedHeaders = JSON.stringify({
-                    ...sourceHeaders,
-                    ...preflightResult?.headers,
-                  });
-                }
-              } catch (error: unknown) {
-                toast.error('Failed to run preflight');
-              }
-            }
-
-            let parsedHeaders: Record<string, string> = {};
-
+          if (props.settingsApi?.settings.introspection.headers) {
             try {
-              parsedHeaders = JSON.parse(
-                handleTemplate(stringifiedHeaders, {
-                  ...env,
-                  plugins,
-                }),
-              );
-            } catch (error: unknown) {
-              toast.error('Failed to parse headers');
-              parsedHeaders = {};
-            }
-
-            const result = await loader.load(endpoint, {
-              subscriptionsEndpoint: endpoint,
-              subscriptionsProtocol:
-                (props.settingsApi?.settings.subscriptions.protocol as SubscriptionProtocol) ??
-                SubscriptionProtocol.GRAPHQL_SSE,
-              headers: parsedHeaders,
-              credentials: props.settingsApi?.settings.fetch.credentials,
-              specifiedByUrl: true,
-              directiveIsRepeatable: true,
-              inputValueDeprecation: true,
-              timeout: props.settingsApi?.settings.fetch.timeout,
-              useGETForQueries: props.settingsApi?.settings.fetch.useGETForQueries,
-              exposeHTTPDetailsInExtensions: true,
-              descriptions: props.settingsApi?.settings.introspection.schemaDescription ?? false,
-              method: props.settingsApi?.settings.introspection.method ?? 'POST',
-              fetch: (input: string | URL | Request, init?: RequestInit) =>
-                fetch(input, {
-                  ...init,
-                  signal,
-                }),
-            });
-
-            if (result.length === 0) {
-              throw new Error('Failed to fetch schema');
-            }
-
-            if (!result[0].schema) {
-              throw new Error('Failed to fetch schema');
-            }
-
-            applyIntrospection(introspectionFromSchema(result[0].schema));
-          } catch (error: unknown) {
-            if (
-              error &&
-              typeof error === 'object' &&
-              'message' in error &&
-              typeof error.message === 'string'
-            ) {
-              if (error.message === EXPECTED_ERROR_REASON) {
-                return;
-              }
-
-              toast.error(error.message);
-            } else {
-              toast.error('Failed to fetch schema');
-            }
-
-            applyIntrospection(null);
-
-            throw error;
+              sourceHeaders = JSON.parse(props.settingsApi?.settings.introspection.headers);
+            } catch {}
           }
-        },
-        500,
-      ),
+
+          if (
+            props.settingsApi?.settings.introspection.includeActiveOperationHeaders &&
+            activeOperationHeadersRef.current
+          ) {
+            try {
+              sourceHeaders = {
+                ...sourceHeaders,
+                ...JSON.parse(activeOperationHeadersRef.current),
+              };
+            } catch {}
+          }
+
+          let stringifiedHeaders = JSON.stringify(sourceHeaders);
+
+          if (stringifiedHeaders.includes('{{')) {
+            try {
+              const preflightResult = await props.preflightApi?.runPreflight?.(
+                props.pluginsApi?.plugins ?? [],
+                props.pluginsApi?.pluginsState ?? {},
+              );
+
+              props?.envApi?.setEnv(preflightResult?.env ?? { variables: {} });
+              props?.pluginsApi?.setPluginsState(preflightResult?.pluginsState ?? {});
+
+              env = preflightResult?.env?.variables ?? {};
+              plugins = preflightResult?.pluginsState ?? {};
+
+              if (preflightResult?.headers) {
+                stringifiedHeaders = JSON.stringify({
+                  ...sourceHeaders,
+                  ...preflightResult?.headers,
+                });
+              }
+            } catch (error: unknown) {
+              toast.error('Failed to run preflight');
+            }
+          }
+
+          let parsedHeaders: Record<string, string> = {};
+
+          try {
+            parsedHeaders = JSON.parse(
+              handleTemplate(stringifiedHeaders, {
+                ...env,
+                plugins,
+              }),
+            );
+          } catch (error: unknown) {
+            toast.error('Failed to parse headers');
+            parsedHeaders = {};
+          }
+
+          const result = await loader.load(endpoint, {
+            subscriptionsEndpoint: endpoint,
+            subscriptionsProtocol:
+              (props.settingsApi?.settings.subscriptions.protocol as SubscriptionProtocol) ??
+              SubscriptionProtocol.GRAPHQL_SSE,
+            headers: parsedHeaders,
+            credentials: props.settingsApi?.settings.fetch.credentials,
+            specifiedByUrl: true,
+            directiveIsRepeatable: true,
+            inputValueDeprecation: true,
+            timeout: props.settingsApi?.settings.fetch.timeout,
+            useGETForQueries: props.settingsApi?.settings.fetch.useGETForQueries,
+            exposeHTTPDetailsInExtensions: true,
+            descriptions: props.settingsApi?.settings.introspection.schemaDescription ?? false,
+            method: props.settingsApi?.settings.introspection.method ?? 'POST',
+            fetch: (input: string | URL | Request, init?: RequestInit) =>
+              fetch(input, {
+                ...init,
+                signal,
+              }),
+          });
+
+          if (result.length === 0) {
+            throw new Error('Failed to fetch schema');
+          }
+
+          if (!result[0].schema) {
+            throw new Error('Failed to fetch schema');
+          }
+
+          applyIntrospection(introspectionFromSchema(result[0].schema));
+        } catch (error: unknown) {
+          if (
+            error &&
+            typeof error === 'object' &&
+            'message' in error &&
+            typeof error.message === 'string'
+          ) {
+            if (error.message === EXPECTED_ERROR_REASON) {
+              return;
+            }
+
+            toast.error(error.message);
+          } else {
+            toast.error('Failed to fetch schema');
+          }
+
+          applyIntrospection(null);
+
+          throw error;
+        } finally {
+          setIsFetchingSchema(false);
+        }
+      }, 500),
     [
       applyIntrospection,
       endpoint,
+      props.defaultEndpoint,
+      props.defaultSchemaIntrospection,
       props.settingsApi?.settings.fetch.timeout,
       props.settingsApi?.settings.introspection.method,
       props.settingsApi?.settings.introspection.schemaDescription,
@@ -236,8 +256,22 @@ export const useEndpoint = (props: {
 
   useEffect(() => {
     return () => {
+      // A cancelled call never reaches its finally, so clear the flag here too.
       fetchSchema.cancel();
+      setIsFetchingSchema(false);
     };
+  }, [fetchSchema]);
+
+  useEffect(() => {
+    hasManuallyReloadedRef.current = false;
+  }, [endpoint, props.defaultSchemaIntrospection]);
+
+  const reloadSchema = useCallback(() => {
+    hasManuallyReloadedRef.current = true;
+    // Set before the 500ms debounce so the button reacts to the click, not the fetch.
+    setIsFetchingSchema(true);
+
+    void fetchSchema(undefined, { force: true });
   }, [fetchSchema]);
 
   const shouldPollSchema = useMemo(() => {
@@ -314,8 +348,10 @@ export const useEndpoint = (props: {
     schema,
     introspection,
     fetchSchema,
+    reloadSchema,
     restoreDefaultEndpoint,
     defaultEndpoint: props.defaultEndpoint ?? null,
     shouldPollSchema,
+    isFetchingSchema,
   };
 };

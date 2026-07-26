@@ -1,7 +1,8 @@
 // @vitest-environment happy-dom
-import { buildSchema } from 'graphql';
+import { buildSchema, introspectionFromSchema } from 'graphql';
 import { act, renderHook } from '@testing-library/react';
 import { useEndpoint } from './endpoint';
+import { defaultLaboratorySettings } from './settings';
 
 const load = vi.fn();
 
@@ -20,6 +21,14 @@ vi.mock('sonner', () => ({
 
 const ENDPOINT = 'http://localhost:4000/graphql';
 const SDL = 'type Query { me: String }';
+
+const settingsApiWithHeaders = (headers: string) =>
+  ({
+    settings: {
+      ...defaultLaboratorySettings,
+      introspection: { ...defaultLaboratorySettings.introspection, headers },
+    },
+  }) as unknown as Parameters<typeof useEndpoint>[0]['settingsApi'];
 
 /** The debounce is 500ms and the schema poll interval is 5s. */
 const advance = async (ms: number) => {
@@ -62,6 +71,74 @@ describe('useEndpoint', () => {
     await advance(6000);
     expect(result.current.schema).not.toBe(schema);
     expect(result.current.schema?.getQueryType()?.getFields().id).toBeDefined();
+  });
+
+  describe('reloadSchema', () => {
+    const DEFAULT_INTROSPECTION = introspectionFromSchema(
+      buildSchema('type Query { fromRegistry: String }'),
+    );
+
+    it('introspects over the network even when a default introspection is supplied', async () => {
+      const { result } = renderHook(() =>
+        useEndpoint({
+          defaultEndpoint: ENDPOINT,
+          defaultSchemaIntrospection: DEFAULT_INTROSPECTION,
+        }),
+      );
+
+      await advance(600);
+      expect(load).not.toHaveBeenCalled();
+      expect(result.current.schema?.getQueryType()?.getFields().fromRegistry).toBeDefined();
+
+      act(() => {
+        result.current.reloadSchema();
+      });
+      await advance(600);
+
+      expect(load).toHaveBeenCalledTimes(1);
+      expect(result.current.schema?.getQueryType()?.getFields().me).toBeDefined();
+    });
+
+    it('does not let a later fetch put the supplied introspection back', async () => {
+      const { result, rerender } = renderHook(
+        (headers: string) =>
+          useEndpoint({
+            defaultEndpoint: ENDPOINT,
+            defaultSchemaIntrospection: DEFAULT_INTROSPECTION,
+            settingsApi: settingsApiWithHeaders(headers),
+          }),
+        { initialProps: '' },
+      );
+
+      await advance(600);
+      act(() => {
+        result.current.reloadSchema();
+      });
+      await advance(600);
+      expect(result.current.schema?.getQueryType()?.getFields().me).toBeDefined();
+
+      // Changing an introspection setting rebuilds fetchSchema, which re-runs the
+      // fetch effect without `force`.
+      rerender('{"authorization":"token"}');
+      await advance(600);
+
+      expect(result.current.schema?.getQueryType()?.getFields().me).toBeDefined();
+      expect(result.current.schema?.getQueryType()?.getFields().fromRegistry).toBeUndefined();
+    });
+
+    it('reports in-flight state from the click, not from the debounced fetch', async () => {
+      const { result } = renderHook(() => useEndpoint({ defaultEndpoint: ENDPOINT }));
+
+      await advance(600);
+
+      act(() => {
+        result.current.reloadSchema();
+      });
+      expect(result.current.isFetchingSchema).toBe(true);
+
+      await advance(600);
+      expect(result.current.isFetchingSchema).toBe(false);
+    });
   });
 
   it('clears the schema when fetching without an endpoint', async () => {

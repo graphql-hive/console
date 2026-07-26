@@ -17,12 +17,11 @@ import {
   CuboidIcon,
   FolderIcon,
   ListTreeIcon,
-  RotateCcwIcon,
+  RefreshCwIcon,
   SearchIcon,
   SettingsIcon,
   TextAlignStartIcon,
 } from 'lucide-react';
-import { toast } from 'sonner';
 import type { LaboratoryOperation } from '../../lib/operations';
 import {
   getFieldByPath,
@@ -820,7 +819,8 @@ export const Builder = (props: {
     activeOperation,
     endpoint,
     setEndpoint,
-    defaultEndpoint,
+    reloadSchema,
+    isFetchingSchema,
     tabs,
     addTab,
     setActiveTab,
@@ -902,13 +902,6 @@ export const Builder = (props: {
     throttleSetEndpoint(endpointValue);
   }, [endpointValue, throttleSetEndpoint]);
 
-  const restoreEndpoint = useCallback(() => {
-    setEndpointValue(endpoint ?? '');
-    setEndpoint(defaultEndpoint ?? '');
-
-    toast.success('Endpoint restored to default');
-  }, [defaultEndpoint, setEndpointValue]);
-
   return (
     <div className="bg-card flex size-full flex-col overflow-hidden">
       <div className="flex items-center gap-3 px-3 pt-3">
@@ -962,22 +955,26 @@ export const Builder = (props: {
           <InputGroupAddon>
             <GraphQLIcon />
           </InputGroupAddon>
-          {defaultEndpoint && (
-            <InputGroupAddon align="inline-end">
-              <Tooltip>
-                <TooltipTrigger>
+          <InputGroupAddon align="inline-end">
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <span className="flex">
                   <InputGroupButton
                     className="rounded-full"
                     size="icon-xs"
-                    onClick={restoreEndpoint}
+                    onClick={reloadSchema}
+                    disabled={isFetchingSchema || !endpointValue}
+                    aria-label="Reload schema"
                   >
-                    <RotateCcwIcon className="size-4" />
+                    <RefreshCwIcon className={cn('size-4', isFetchingSchema && 'animate-spin')} />
                   </InputGroupButton>
-                </TooltipTrigger>
-                <TooltipContent>Restore default endpoint</TooltipContent>
-              </Tooltip>
-            </InputGroupAddon>
-          )}
+                </span>
+              </TooltipTrigger>
+              <TooltipContent>
+                {isFetchingSchema ? 'Introspecting…' : 'Reload schema'}
+              </TooltipContent>
+            </Tooltip>
+          </InputGroupAddon>
         </InputGroup>
       </div>
       <div className="flex-1 overflow-hidden">
