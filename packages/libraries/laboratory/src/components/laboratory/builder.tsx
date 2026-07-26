@@ -33,7 +33,7 @@ import {
 import { cn, splitIdentifier } from '../../lib/utils';
 import { GraphQLType } from '../graphql-type';
 import { GraphQLIcon } from '../icons';
-import { Button } from '../ui/button';
+import { Button, buttonVariants } from '../ui/button';
 import { Checkbox } from '../ui/checkbox';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '../ui/collapsible';
 import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from '../ui/empty';
@@ -72,13 +72,17 @@ export const BuilderArgument = (props: {
   }, [operation?.query, path, props.field.name]);
 
   return (
-    <Button
+    // A div, not a Button: the row is a styled container, and a button here would
+    // nest the checkbox's own button inside it.
+    <div
       key={props.field.name}
-      variant="ghost"
-      className={cn('text-muted-foreground p-1! w-full justify-start text-xs', {
-        'text-foreground-primary': isInQuery,
-      })}
-      size="sm"
+      className={cn(
+        buttonVariants({ variant: 'ghost', size: 'sm' }),
+        'text-muted-foreground p-1! w-full justify-start text-xs',
+        {
+          'text-foreground-primary': isInQuery,
+        },
+      )}
     >
       <div className="size-4" />
       <Checkbox
@@ -108,7 +112,7 @@ export const BuilderArgument = (props: {
       />
       <BoxIcon className="size-4 text-rose-400" />
       {props.field.name}: <GraphQLType type={props.field.type} />
-    </Button>
+    </div>
   );
 };
 
@@ -177,9 +181,11 @@ export const BuilderScalarField = (props: {
 
   if (props.disableChildren) {
     return (
-      <Button
-        variant="ghost"
+      // A div, not a Button: the row is a styled container, and a button here would
+      // nest the checkbox's own button inside it.
+      <div
         className={cn(
+          buttonVariants({ variant: 'ghost', size: 'sm' }),
           'text-muted-foreground bg-card p-1! group sticky top-0 z-10 w-full justify-start overflow-hidden text-xs',
           {
             'text-foreground-primary': isInQuery,
@@ -188,7 +194,6 @@ export const BuilderScalarField = (props: {
         style={{
           top: `${(props.path.length - 2) * 32}px`,
         }}
-        size="sm"
       >
         <div className="bg-card absolute left-0 top-0 -z-20 size-full" />
         <div className="group-hover:bg-accent/50 absolute left-0 top-0 -z-10 size-full transition-colors" />
@@ -216,7 +221,7 @@ export const BuilderScalarField = (props: {
           </span>
         )}
         : <GraphQLType type={props.field.type} />
-      </Button>
+      </div>
     );
   }
 
@@ -245,6 +250,7 @@ export const BuilderScalarField = (props: {
               })}
             />
             <Checkbox
+              asSpan
               onClick={e => e.stopPropagation()}
               checked={isInQuery}
               disabled={activeTab?.type !== 'operation' || props.isReadOnly}
@@ -294,7 +300,12 @@ export const BuilderScalarField = (props: {
                           '-rotate-90': !isOpen,
                         })}
                       />
-                      <Checkbox onClick={e => e.stopPropagation()} checked={hasArgs} disabled />
+                      <Checkbox
+                        asSpan
+                        onClick={e => e.stopPropagation()}
+                        checked={hasArgs}
+                        disabled
+                      />
                       <CuboidIcon className="size-4 text-rose-400" />
                       [arguments]
                     </Button>
@@ -320,13 +331,17 @@ export const BuilderScalarField = (props: {
   }
 
   return (
-    <Button
+    // A div, not a Button: the row is a styled container, and a button here would
+    // nest the checkbox's own button inside it.
+    <div
       key={props.field.name}
-      variant="ghost"
-      className={cn('text-muted-foreground p-1! w-full justify-start text-xs', {
-        'text-foreground-primary': isInQuery,
-      })}
-      size="sm"
+      className={cn(
+        buttonVariants({ variant: 'ghost', size: 'sm' }),
+        'text-muted-foreground p-1! w-full justify-start text-xs',
+        {
+          'text-foreground-primary': isInQuery,
+        },
+      )}
     >
       <div className="size-4" />
       <Checkbox
@@ -352,7 +367,7 @@ export const BuilderScalarField = (props: {
         </span>
       )}
       : <GraphQLType type={props.field.type} />
-    </Button>
+    </div>
   );
 };
 
@@ -434,9 +449,11 @@ export const BuilderObjectField = (props: {
 
   if (props.disableChildren) {
     return (
-      <Button
-        variant="ghost"
+      // A div, not a Button: the row is a styled container, and a button here would
+      // nest the checkbox's own button inside it.
+      <div
         className={cn(
+          buttonVariants({ variant: 'ghost', size: 'sm' }),
           'text-muted-foreground bg-card p-1! group sticky top-0 z-10 w-full justify-start overflow-hidden text-xs',
           {
             'text-foreground-primary': isInQuery,
@@ -445,7 +462,6 @@ export const BuilderObjectField = (props: {
         style={{
           top: `${(props.path.length - 2) * 32}px`,
         }}
-        size="sm"
       >
         <div className="bg-card absolute left-0 top-0 -z-20 size-full" />
         <div className="group-hover:bg-accent/50 absolute left-0 top-0 -z-10 size-full transition-colors" />
@@ -473,7 +489,7 @@ export const BuilderObjectField = (props: {
           </span>
         )}
         : <GraphQLType type={props.field.type} />
-      </Button>
+      </div>
     );
   }
 
@@ -501,6 +517,7 @@ export const BuilderObjectField = (props: {
             })}
           />
           <Checkbox
+            asSpan
             onClick={e => e.stopPropagation()}
             checked={isInQuery}
             disabled={activeTab?.type !== 'operation' || props.isReadOnly}
@@ -550,7 +567,12 @@ export const BuilderObjectField = (props: {
                         '-rotate-90': !isOpen,
                       })}
                     />
-                    <Checkbox onClick={e => e.stopPropagation()} checked={hasArgs} disabled />
+                    <Checkbox
+                      asSpan
+                      onClick={e => e.stopPropagation()}
+                      checked={hasArgs}
+                      disabled
+                    />
                     <CuboidIcon className="size-4 text-rose-400" />
                     [arguments]
                   </Button>
