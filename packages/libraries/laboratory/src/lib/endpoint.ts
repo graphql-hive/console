@@ -44,6 +44,20 @@ export const useEndpoint = (props: {
 }): LaboratoryEndpointState & LaboratoryEndpointActions => {
   const [endpoint, _setEndpoint] = useState<string | null>(props.defaultEndpoint ?? null);
   const [introspection, setIntrospection] = useState<IntrospectionQuery | null>(null);
+  const introspectionSignatureRef = useRef<string | null>(null);
+
+  const applyIntrospection = useCallback((next: IntrospectionQuery | null) => {
+    const signature = next ? JSON.stringify(next) : null;
+
+    // A poll returning an unchanged schema must not produce a new GraphQLSchema
+    // reference: the builder resets its expanded paths whenever it sees one.
+    if (signature === introspectionSignatureRef.current) {
+      return;
+    }
+
+    introspectionSignatureRef.current = signature;
+    setIntrospection(next);
+  }, []);
 
   const setEndpoint = useCallback(
     (endpoint: string) => {
@@ -82,12 +96,12 @@ export const useEndpoint = (props: {
           },
         ) => {
           if (endpoint === props.defaultEndpoint && props.defaultSchemaIntrospection) {
-            setIntrospection(props.defaultSchemaIntrospection);
+            applyIntrospection(props.defaultSchemaIntrospection);
             return;
           }
 
           if (!endpoint) {
-            setIntrospection(null);
+            applyIntrospection(null);
             return;
           }
 
@@ -185,7 +199,7 @@ export const useEndpoint = (props: {
               throw new Error('Failed to fetch schema');
             }
 
-            setIntrospection(introspectionFromSchema(result[0].schema));
+            applyIntrospection(introspectionFromSchema(result[0].schema));
           } catch (error: unknown) {
             if (
               error &&
@@ -202,7 +216,7 @@ export const useEndpoint = (props: {
               toast.error('Failed to fetch schema');
             }
 
-            setIntrospection(null);
+            applyIntrospection(null);
 
             throw error;
           }
@@ -210,6 +224,7 @@ export const useEndpoint = (props: {
         500,
       ),
     [
+      applyIntrospection,
       endpoint,
       props.settingsApi?.settings.fetch.timeout,
       props.settingsApi?.settings.introspection.method,
