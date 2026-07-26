@@ -15,6 +15,7 @@ import {
   PowerIcon,
   PowerOffIcon,
   SquarePenIcon,
+  TerminalIcon,
 } from 'lucide-react';
 import { compressToEncodedURIComponent } from 'lz-string';
 import * as monaco from 'monaco-editor/esm/vs/editor/editor.api';
@@ -22,6 +23,7 @@ import { toast } from 'sonner';
 import { z } from 'zod';
 import { Input } from '@/components/ui/input';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { buildCurlCommand } from '@/lib/curl';
 import { parseQueryPlan } from '@/lib/query-plan/parse';
 import { DropdownMenuTrigger } from '@radix-ui/react-dropdown-menu';
 import { useForm } from '@tanstack/react-form';
@@ -465,6 +467,8 @@ export const Query = (props: {
     plugins,
     pluginsState,
     setPluginsState,
+    env,
+    settings,
   } = useLaboratory();
 
   const [operationName, setOperationName] = useState<string | null>(null);
@@ -672,6 +676,30 @@ export const Query = (props: {
     [operation],
   );
 
+  const copyAsCurl = useCallback(() => {
+    if (!operation || !endpoint) {
+      return;
+    }
+
+    // Preflight headers already in state; running preflight from a copy would
+    // fire its side effects.
+    void navigator.clipboard.writeText(
+      buildCurlCommand({
+        endpoint,
+        query: operation.query,
+        variables: operation.variables,
+        headers: operation.headers,
+        extensions: operation.extensions,
+        operationName,
+        env: env?.variables,
+        pluginsState,
+        settings,
+      }),
+    );
+
+    toast.success('cURL command copied to clipboard');
+  }, [operation, endpoint, operationName, env, pluginsState, settings]);
+
   return (
     <div className="grid size-full grid-rows-[auto_1fr] overflow-hidden pb-0">
       <Dialog open={isSaveToCollectionDialogOpen} onOpenChange={setIsSaveToCollectionDialogOpen}>
@@ -771,6 +799,20 @@ export const Query = (props: {
           </Toggle>
         )}
         <div className="ml-auto flex items-center gap-2">
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                onClick={copyAsCurl}
+                variant="ghost"
+                size="icon-sm"
+                className="p-1! size-6 rounded-sm"
+                aria-label="Copy as cURL"
+              >
+                <TerminalIcon className="text-muted-foreground size-4" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>Copy as cURL</TooltipContent>
+          </Tooltip>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="outline" size="sm" className="h-6 rounded-sm">
