@@ -1,3 +1,4 @@
+import { forwardRef } from 'react';
 import { useLaboratory } from '@/components/laboratory/context';
 import * as TooltipPrimitive from '@radix-ui/react-tooltip';
 import { cn } from '../../lib/utils';
@@ -23,9 +24,14 @@ function Tooltip({ ...props }: React.ComponentProps<typeof TooltipPrimitive.Root
   );
 }
 
-function TooltipTrigger({ ...props }: React.ComponentProps<typeof TooltipPrimitive.Trigger>) {
-  return <TooltipPrimitive.Trigger data-slot="tooltip-trigger" {...props} />;
-}
+// forwardRef is required on React 18: this trigger is itself used as the child of
+// other asChild triggers, which need a ref to anchor against.
+const TooltipTrigger = forwardRef<
+  React.ElementRef<typeof TooltipPrimitive.Trigger>,
+  React.ComponentPropsWithoutRef<typeof TooltipPrimitive.Trigger>
+>((props, ref) => <TooltipPrimitive.Trigger ref={ref} data-slot="tooltip-trigger" {...props} />);
+
+TooltipTrigger.displayName = 'TooltipTrigger';
 
 function TooltipContent({
   className,

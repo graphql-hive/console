@@ -772,7 +772,7 @@ export const Query = (props: {
         )}
         <div className="ml-auto flex items-center gap-2">
           <DropdownMenu>
-            <DropdownMenuTrigger>
+            <DropdownMenuTrigger asChild>
               <Button variant="outline" size="sm" className="h-6 rounded-sm">
                 Share
                 <MoreHorizontalIcon className="size-4" />
