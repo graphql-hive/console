@@ -21,5 +21,8 @@
     "noFallthroughCasesInSwitch": true,
     "noUncheckedSideEffectImports": true
   },
-  "include": ["vite.config.ts", "vite.lib.config.ts", "vite.umd.config.ts", "dev/**/*.ts"]
+  "include": ["vite.config.ts", "vite.lib.config.ts", "vite.umd.config.ts", "dev/**/*.ts"],
+  /* Fixtures the browser app imports belong to the app program: they pull in JSX
+     and the @/* alias, neither of which this node config has. */
+  "exclude": ["dev/collections.ts"]
 }
