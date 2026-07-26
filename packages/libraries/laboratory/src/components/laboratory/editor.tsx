@@ -12,6 +12,7 @@ import { OperationDefinitionNode, parse } from 'graphql';
 import * as monaco from 'monaco-editor';
 import { MonacoGraphQLAPI } from 'monaco-graphql/esm/api.js';
 import { initializeMode } from 'monaco-graphql/initializeMode';
+import { buildEditorOptions } from '@/lib/editor-options';
 import { cn } from '@/lib/utils';
 import MonacoEditor, { loader } from '@monaco-editor/react';
 import { useLaboratory } from './context';
@@ -362,23 +363,7 @@ const EditorInner = forwardRef<EditorHandle, EditorProps>((props, ref) => {
         theme={theme === 'dark' ? 'hive-laboratory-dark' : 'hive-laboratory-light'}
         onMount={handleMount}
         loading={null}
-        options={{
-          ...props.options,
-          lineNumbers: 'on',
-          cursorStyle: 'line',
-          cursorBlinking: 'smooth',
-          padding: {
-            top: 16,
-          },
-          fontFamily:
-            'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace',
-          minimap: {
-            enabled: false,
-          },
-          automaticLayout: true,
-          tabSize: 2,
-          formatOnPaste: true,
-        }}
+        options={buildEditorOptions(props.options)}
         defaultPath={props.uri?.toString()}
       />
     </div>
