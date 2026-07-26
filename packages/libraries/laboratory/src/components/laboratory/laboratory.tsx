@@ -18,6 +18,7 @@ import { ensureDocumentFontFaces } from '../../lib/document-styles';
 import { useEndpoint } from '../../lib/endpoint';
 import { useEnv } from '../../lib/env';
 import { useHistory } from '../../lib/history';
+import { keepEditorMouseMovesInShadowRoot } from '../../lib/monaco-shadow-dom';
 import { useOperations } from '../../lib/operations';
 import { LaboratoryPluginTab, usePlugins } from '../../lib/plugins';
 import { usePreflight } from '../../lib/preflight';
@@ -84,6 +85,14 @@ const ShadowRootContainer = (props: { children: ReactNode }) => {
     }
 
     setShadowRoot(hostRef.current.attachShadow({ mode: 'open' }));
+  }, [shadowRoot]);
+
+  useLayoutEffect(() => {
+    if (!shadowRoot) {
+      return;
+    }
+
+    return keepEditorMouseMovesInShadowRoot(shadowRoot);
   }, [shadowRoot]);
 
   useLayoutEffect(() => {
