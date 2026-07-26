@@ -141,6 +141,52 @@ describe('useEndpoint', () => {
     });
   });
 
+  describe('schema polling', () => {
+    const settingsApiWithPolling = (pollSchema: boolean) =>
+      ({
+        settings: {
+          ...defaultLaboratorySettings,
+          introspection: { ...defaultLaboratorySettings.introspection, pollSchema },
+        },
+      }) as unknown as Parameters<typeof useEndpoint>[0]['settingsApi'];
+
+    it('keeps re-introspecting while polling is on', async () => {
+      renderHook(() =>
+        useEndpoint({ defaultEndpoint: ENDPOINT, settingsApi: settingsApiWithPolling(true) }),
+      );
+
+      await advance(600);
+      expect(load).toHaveBeenCalledTimes(1);
+
+      await advance(6000);
+      expect(load).toHaveBeenCalledTimes(2);
+    });
+
+    it('introspects once and then stops when polling is off', async () => {
+      const { result } = renderHook(() =>
+        useEndpoint({ defaultEndpoint: ENDPOINT, settingsApi: settingsApiWithPolling(false) }),
+      );
+
+      await advance(600);
+      expect(load).toHaveBeenCalledTimes(1);
+      expect(result.current.schema).not.toBeNull();
+
+      await advance(20_000);
+      expect(load).toHaveBeenCalledTimes(1);
+    });
+
+    it('still reports that introspection is possible so its settings stay reachable', async () => {
+      const { result } = renderHook(() =>
+        useEndpoint({ defaultEndpoint: ENDPOINT, settingsApi: settingsApiWithPolling(false) }),
+      );
+
+      await advance(600);
+
+      expect(result.current.shouldPollSchema).toBe(false);
+      expect(result.current.canIntrospect).toBe(true);
+    });
+  });
+
   it('clears the schema when fetching without an endpoint', async () => {
     const { result } = renderHook(() => useEndpoint({ defaultEndpoint: ENDPOINT }));
 

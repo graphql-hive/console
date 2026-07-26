@@ -824,7 +824,7 @@ export const Builder = (props: {
     tabs,
     addTab,
     setActiveTab,
-    shouldPollSchema,
+    canIntrospect,
   } = useLaboratory();
 
   const [endpointValue, setEndpointValue] = useState<string>(endpoint ?? '');
@@ -907,7 +907,7 @@ export const Builder = (props: {
       <div className="flex items-center gap-3 px-3 pt-3">
         <span className="text-base font-medium">Builder</span>
         <div className="ml-auto flex items-center gap-3">
-          {shouldPollSchema && (
+          {canIntrospect && (
             <Button
               onClick={() => {
                 const tab =

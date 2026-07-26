@@ -1,5 +1,17 @@
 import { defaultLaboratorySettings, normalizeLaboratorySettings } from './settings';
 
+describe('introspection.pollSchema', () => {
+  it('polls by default', () => {
+    expect(normalizeLaboratorySettings(null).introspection.pollSchema).toBe(true);
+  });
+
+  it('keeps an explicit opt-out rather than falling back to the default', () => {
+    const settings = normalizeLaboratorySettings({ introspection: { pollSchema: false } });
+
+    expect(settings.introspection.pollSchema).toBe(false);
+  });
+});
+
 describe('normalizeLaboratorySettings', () => {
   it('returns the full defaults for an empty/nullish input', () => {
     expect(normalizeLaboratorySettings(null)).toEqual(defaultLaboratorySettings);

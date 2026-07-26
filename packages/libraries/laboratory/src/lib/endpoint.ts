@@ -21,6 +21,7 @@ export interface LaboratoryEndpointState {
   schema: GraphQLSchema | null;
   introspection: IntrospectionQuery | null;
   defaultEndpoint: string | null;
+  canIntrospect: boolean;
   shouldPollSchema: boolean;
   isFetchingSchema: boolean;
 }
@@ -274,9 +275,15 @@ export const useEndpoint = (props: {
     void fetchSchema(undefined, { force: true });
   }, [fetchSchema]);
 
-  const shouldPollSchema = useMemo(() => {
+  // Whether introspection reaches the network at all: with the default endpoint and
+  // a supplied introspection there is nothing to fetch.
+  const canIntrospect = useMemo(() => {
     return endpoint !== props.defaultEndpoint || !props.defaultSchemaIntrospection;
   }, [endpoint, props.defaultEndpoint, props.defaultSchemaIntrospection]);
+
+  const shouldPollSchema = useMemo(() => {
+    return canIntrospect && props.settingsApi?.settings.introspection.pollSchema !== false;
+  }, [canIntrospect, props.settingsApi?.settings.introspection.pollSchema]);
 
   useEffect(() => {
     if (!shouldPollSchema || !endpoint) {
@@ -351,6 +358,7 @@ export const useEndpoint = (props: {
     reloadSchema,
     restoreDefaultEndpoint,
     defaultEndpoint: props.defaultEndpoint ?? null,
+    canIntrospect,
     shouldPollSchema,
     isFetchingSchema,
   };
