@@ -22,7 +22,7 @@ import { toast } from 'sonner';
 import { z } from 'zod';
 import { Input } from '@/components/ui/input';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
-import { QueryPlanSchema } from '@/lib/query-plan/schema';
+import { parseQueryPlan } from '@/lib/query-plan/parse';
 import { DropdownMenuTrigger } from '@radix-ui/react-dropdown-menu';
 import { useForm } from '@tanstack/react-form';
 import type {
@@ -192,24 +192,27 @@ export const ResponsePreflight = ({ historyItem }: { historyItem?: LaboratoryHis
 export const ResponseQueryPlan = ({ historyItem }: { historyItem?: LaboratoryHistory | null }) => {
   const [mode, setMode] = useState<'text' | 'visual'>('text');
 
-  const queryPlan = useMemo(() => {
-    try {
-      const queryPlan =
-        JSON.parse((historyItem as LaboratoryHistoryRequest)?.response ?? '{}').extensions
-          ?.queryPlan ?? {};
-
-      if (!queryPlan) {
-        return null;
-      }
-
-      return QueryPlanSchema.safeParse(queryPlan).success ? queryPlan : null;
-    } catch {
-      return null;
-    }
-  }, [historyItem]);
+  const queryPlan = useMemo(
+    () => parseQueryPlan((historyItem as LaboratoryHistoryRequest)?.response),
+    [historyItem],
+  );
 
   if (!queryPlan) {
-    return null;
+    return (
+      <Empty className="size-full">
+        <EmptyHeader>
+          <EmptyMedia variant="icon">
+            <NetworkIcon className="text-muted-foreground size-6" />
+          </EmptyMedia>
+          <EmptyTitle>{historyItem ? 'No query plan' : 'No query plan yet'}</EmptyTitle>
+          <EmptyDescription>
+            {historyItem
+              ? 'This response did not include one. Query plans show up here when your gateway returns extensions.queryPlan.'
+              : 'Run this operation against a gateway that returns extensions.queryPlan to see how it resolves across subgraphs.'}
+          </EmptyDescription>
+        </EmptyHeader>
+      </Empty>
+    );
   }
 
   return (
@@ -328,19 +331,10 @@ export const Response = ({ historyItem }: { historyItem?: LaboratoryHistoryReque
     );
   }, [historyItem]);
 
-  const hasValidQueryPlan = useMemo(() => {
-    if (!historyItem) {
-      return false;
-    }
-
-    const queryPlan = JSON.parse(historyItem.response).extensions?.queryPlan;
-
-    if (!queryPlan) {
-      return false;
-    }
-
-    return QueryPlanSchema.safeParse(queryPlan).success;
-  }, [historyItem?.response]);
+  const hasQueryPlan = useMemo(
+    () => parseQueryPlan(historyItem?.response) !== null,
+    [historyItem?.response],
+  );
 
   return (
     <Tabs
@@ -382,11 +376,6 @@ export const Response = ({ historyItem }: { historyItem?: LaboratoryHistoryReque
         <TabsTrigger value="response" className="grow-0 rounded-sm">
           Response
         </TabsTrigger>
-        {hasValidQueryPlan && (
-          <TabsTrigger value="query-plan" className="grow-0 rounded-sm">
-            Query Plan
-          </TabsTrigger>
-        )}
         <TabsTrigger value="headers" className="grow-0 rounded-sm">
           Headers
         </TabsTrigger>
@@ -395,6 +384,12 @@ export const Response = ({ historyItem }: { historyItem?: LaboratoryHistoryReque
             Preflight
           </TabsTrigger>
         )}
+        <TabsTrigger
+          value="query-plan"
+          className={cn('grow-0 rounded-sm', hasQueryPlan && '!text-green-500')}
+        >
+          Query Plan
+        </TabsTrigger>
         {historyItem ? (
           <div className="ml-auto flex items-center gap-2">
             {!!historyItem?.status && (
