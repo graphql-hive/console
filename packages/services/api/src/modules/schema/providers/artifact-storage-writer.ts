@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto';
 import { Inject } from 'graphql-modules';
 import { buildArtifactStorageKey } from '@hive/cdn-script/artifact-storage-reader';
 import { traceFn } from '@hive/service-common';
@@ -181,5 +182,36 @@ export class ArtifactStorageWriter {
       args.artifactType,
       args.contractName,
     );
+  }
+
+  async writeSDLForDebugPurposes(subgraphs: Array<{ sdl: string; name?: string }>) {
+    const hashBuilder = createHash('sha256');
+    for (const subgraph of subgraphs) {
+      hashBuilder.update(subgraph.sdl);
+      if (subgraph.name) {
+        hashBuilder.update(subgraph.name);
+      }
+    }
+
+    const hash = hashBuilder.digest('hex');
+
+    const firstMirror = this.s3Mirrors[0];
+    const url = [firstMirror.endpoint, firstMirror.bucket, 'debug-artifacts', hash + '.json'].join(
+      '/',
+    );
+
+    await firstMirror.client.fetch(url, {
+      method: 'PUT',
+      headers: {
+        'content-type': 'application/json',
+      },
+      body: JSON.stringify(subgraphs),
+      aws: {
+        // This boolean makes Google Cloud Storage & AWS happy.
+        signQuery: true,
+      },
+    });
+
+    return { id: hash.substring(0, 10), url };
   }
 }
