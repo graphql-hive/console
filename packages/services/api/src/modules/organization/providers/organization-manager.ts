@@ -1100,6 +1100,23 @@ export class OrganizationManager {
       throw new Error(`Member is not part of the organization`);
     }
 
+    const user = await this.storage.getUserById({ id: previousMembership.userId });
+
+    if (!user) {
+      return {
+        error: {
+          message: 'The user does not exist.',
+        },
+      };
+    }
+    if (user.provisionedByOrganizationId !== null) {
+      return {
+        error: {
+          message: 'Provisioned users can not be modified.',
+        },
+      };
+    }
+
     const newRole = await this.organizationMemberRoles.findMemberRoleById(args.memberRoleId);
 
     if (!newRole) {
@@ -1141,12 +1158,6 @@ export class OrganizationManager {
       updatedMember: updatedMembership,
       previousMemberRole,
     };
-
-    const user = await this.storage.getUserById({ id: previousMembership.userId });
-
-    if (!user) {
-      throw new Error('User not found.');
-    }
 
     if (result) {
       await this.auditLog.record({

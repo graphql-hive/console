@@ -1,6 +1,7 @@
 import humanId from 'human-id';
 import {
   addGroupMappingToGroup,
+  assignMemberRole,
   createMemberRole,
   createOrganization,
   createPersonalAccessToken,
@@ -4317,6 +4318,94 @@ describe('provisioned user jail', () => {
           user: expect.objectContaining({ id: member.member.user.id }),
         }),
       );
+    },
+  );
+
+  test.concurrent(
+    'provisioned user cannot be assigned a direct role or resources',
+    async ({ expect }) => {
+      const seed = initSeed();
+      const owner = await seed.createOwner();
+      const org = await owner.createOrg();
+      const oidc = await org.createOIDCIntegration();
+      const domain = await oidc.registerFakeDomain();
+      const accessToken = await org.createOrganizationAccessToken({
+        permissions: ['member:describe', 'member:modify'],
+        resources: { mode: ResourceAssignmentModeType.Granular },
+      });
+      const scim = createScimTestkit({
+        baseUrl,
+        headers: {
+          'Content-Type': 'application/scim+json',
+          Authorization: `Bearer ${accessToken.privateAccessKey}`,
+        },
+      });
+      const email = `assign-member-role@${domain}`;
+      const scimUser = await scim.createUser({
+        externalId: crypto.randomUUID(),
+        emails: [{ primary: true, type: 'work', value: email }],
+        userName: email,
+      });
+      const { project } = await org.createProject();
+      const role = org.organization.owner.role;
+      const result = await assignMemberRole(
+        {
+          organization: { bySelector: { organizationSlug: org.organization.slug } },
+          member: { byId: scimUser.body.id },
+          memberRole: { byId: role.id },
+          resources: {
+            mode: ResourceAssignmentModeType.Granular,
+            projects: [
+              {
+                projectId: project.id,
+                targets: { mode: ResourceAssignmentModeType.Granular, targets: [] },
+              },
+            ],
+          },
+        },
+        owner.ownerToken,
+      ).then(response => response.expectNoGraphQLErrors());
+
+      expect(result.assignMemberRole).toEqual({
+        ok: null,
+        error: { message: 'Provisioned users can not be modified.' },
+      });
+    },
+  );
+
+  test.concurrent(
+    'non-provisioned user can be assigned a direct role and resources',
+    async ({ expect }) => {
+      const seed = initSeed();
+      const owner = await seed.createOwner();
+      const org = await owner.createOrg();
+      const member = await org.inviteAndJoinMember();
+      const { project } = await org.createProject();
+      const role = org.organization.owner.role;
+      const resources = {
+        mode: ResourceAssignmentModeType.Granular,
+        projects: [
+          {
+            projectId: project.id,
+            targets: { mode: ResourceAssignmentModeType.Granular, targets: [] },
+          },
+        ],
+      };
+
+      const result = await assignMemberRole(
+        {
+          organization: { bySelector: { organizationSlug: org.organization.slug } },
+          member: { byId: member.member.user.id },
+          memberRole: { byId: role.id },
+          resources,
+        },
+        owner.ownerToken,
+      ).then(response => response.expectNoGraphQLErrors());
+
+      expect(result.assignMemberRole).toEqual({
+        ok: { updatedMember: { id: member.member.id } },
+        error: null,
+      });
     },
   );
 });
