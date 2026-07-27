@@ -691,6 +691,12 @@ export class OrganizationManager {
       throw new Error('Only users can join organizations');
     }
 
+    if (actor.user.provisionedByOrganizationId !== null) {
+      return {
+        message: 'Provisioned users can not join any other organization.',
+      };
+    }
+
     const organization = await this.getOrganizationByInviteCode({
       code,
       user: actor.user,

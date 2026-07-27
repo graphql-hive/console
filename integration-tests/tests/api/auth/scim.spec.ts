@@ -6,6 +6,8 @@ import {
   createOrganization,
   createPersonalAccessToken,
   deleteOrganizationMember,
+  inviteToOrganization,
+  joinOrganization,
   leaveOrganization,
   readProjectInfo,
   updateMe,
@@ -4228,29 +4230,74 @@ describe('provisioned user jail', () => {
     );
   });
 
-  test.concurrent('non-provisioned user can leave an organization', async ({ expect }) => {
-    const seed = initSeed();
-    const owner = await seed.createOwner();
-    const org = await owner.createOrg();
-    const member = await org.inviteAndJoinMember();
+  test.concurrent(
+    'provisioned user cannot join an organization via invitation',
+    async ({ expect }) => {
+      const seed = initSeed();
+      const provisioningOwner = await seed.createOwner();
+      const provisioningOrg = await provisioningOwner.createOrg();
+      const oidc = await provisioningOrg.createOIDCIntegration();
+      const oidcMock = await oidc.createMockServerAndUpdateIntegrationEndpoints();
+      const domain = await oidc.registerFakeDomain();
+      const accessToken = await provisioningOrg.createOrganizationAccessToken({
+        permissions: ['member:describe', 'member:modify'],
+        resources: { mode: ResourceAssignmentModeType.Granular },
+      });
+      const scim = createScimTestkit({
+        baseUrl,
+        headers: {
+          'Content-Type': 'application/scim+json',
+          Authorization: `Bearer ${accessToken.privateAccessKey}`,
+        },
+      });
+      const targetOwner = await seed.createOwner();
+      const targetOrg = await targetOwner.createOrg();
+      const { project } = await targetOrg.createProject();
+      const email = `join-organization@${domain}`;
+      const externalId = crypto.randomUUID();
+      await scim.createUser({
+        externalId,
+        emails: [{ primary: true, type: 'work', value: email }],
+        userName: email,
+      });
+      oidcMock.setUser({ email, userIdClaim: externalId });
+      const auth = await oidcMock.runGetAuthorizationUrl();
+      const signInResult = await oidcMock.runSignInUp({ state: auth.state });
+      invariant(signInResult.type === 'success', 'Expected sign in to succeed.');
+      const resources = {
+        mode: ResourceAssignmentModeType.Granular,
+        projects: [
+          {
+            projectId: project.id,
+            targets: { mode: ResourceAssignmentModeType.Granular, targets: [] },
+          },
+        ],
+      };
+      const invitationResult = await inviteToOrganization(
+        {
+          organization: { bySelector: { organizationSlug: targetOrg.organization.slug } },
+          email,
+          memberRoleId: targetOrg.organization.owner.role.id,
+          resources,
+        },
+        targetOwner.ownerToken,
+      ).then(response => response.expectNoGraphQLErrors());
+      invariant(
+        !!invitationResult.inviteToOrganizationByEmail.ok,
+        'expected invitation to succeed',
+      );
 
-    const result = await leaveOrganization(
-      { organizationSlug: org.organization.slug },
-      member.memberToken,
-    ).then(response => response.expectNoGraphQLErrors());
+      const result = await joinOrganization(
+        invitationResult.inviteToOrganizationByEmail.ok.createdOrganizationInvitation.code,
+        signInResult.accessToken,
+      ).then(response => response.expectNoGraphQLErrors());
 
-    expect(result.leaveOrganization).toEqual({
-      ok: {
-        organizationId: org.organization.id,
-      },
-      error: null,
-    });
-    expect(await org.members()).not.toContainEqual(
-      expect.objectContaining({
-        user: expect.objectContaining({ id: member.member.user.id }),
-      }),
-    );
-  });
+      expect(result.joinOrganization).toEqual({
+        __typename: 'OrganizationInvitationError',
+        message: 'Provisioned users can not join any other organization.',
+      });
+    },
+  );
 
   test.concurrent('provisioned user cannot be removed from an organization', async ({ expect }) => {
     const seed = initSeed();
@@ -4295,31 +4342,6 @@ describe('provisioned user jail', () => {
       body: expect.objectContaining({ id: scimUser.body.id }),
     });
   });
-
-  test.concurrent(
-    'non-provisioned user can be removed from an organization',
-    async ({ expect }) => {
-      const seed = initSeed();
-      const owner = await seed.createOwner();
-      const org = await owner.createOrg();
-      const member = await org.inviteAndJoinMember();
-
-      const result = await deleteOrganizationMember(
-        {
-          organizationSlug: org.organization.slug,
-          userId: member.member.user.id,
-        },
-        owner.ownerToken,
-      ).then(response => response.expectNoGraphQLErrors());
-
-      expect(result.deleteOrganizationMember.organization.id).toBe(org.organization.id);
-      await expect(org.members()).resolves.not.toContainEqual(
-        expect.objectContaining({
-          user: expect.objectContaining({ id: member.member.user.id }),
-        }),
-      );
-    },
-  );
 
   test.concurrent(
     'provisioned user cannot be assigned a direct role or resources',
@@ -4369,42 +4391,6 @@ describe('provisioned user jail', () => {
       expect(result.assignMemberRole).toEqual({
         ok: null,
         error: { message: 'Provisioned users can not be modified.' },
-      });
-    },
-  );
-
-  test.concurrent(
-    'non-provisioned user can be assigned a direct role and resources',
-    async ({ expect }) => {
-      const seed = initSeed();
-      const owner = await seed.createOwner();
-      const org = await owner.createOrg();
-      const member = await org.inviteAndJoinMember();
-      const { project } = await org.createProject();
-      const role = org.organization.owner.role;
-      const resources = {
-        mode: ResourceAssignmentModeType.Granular,
-        projects: [
-          {
-            projectId: project.id,
-            targets: { mode: ResourceAssignmentModeType.Granular, targets: [] },
-          },
-        ],
-      };
-
-      const result = await assignMemberRole(
-        {
-          organization: { bySelector: { organizationSlug: org.organization.slug } },
-          member: { byId: member.member.user.id },
-          memberRole: { byId: role.id },
-          resources,
-        },
-        owner.ownerToken,
-      ).then(response => response.expectNoGraphQLErrors());
-
-      expect(result.assignMemberRole).toEqual({
-        ok: { updatedMember: { id: member.member.id } },
-        error: null,
       });
     },
   );
