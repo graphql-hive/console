@@ -745,7 +745,7 @@
             "uid": "PROM_DATASOURCE_UID"
           },
           "editorMode": "code",
-          "expr": "sum(composition_worker_memory_used_bytes) by (target, type)",
+          "expr": "max(composition_worker_memory_used_bytes) by (target, type)",
           "instant": false,
           "legendFormat": "{{target}} - {{type}}",
           "range": true,
