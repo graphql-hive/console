@@ -320,6 +320,14 @@ export async function createStorage(
             )
             .then(UserModel.nullable().parse);
 
+          if (internalUser && internalUser.provisionedByOrganizationId !== null) {
+            return {
+              ok: true,
+              user: internalUser,
+              action: 'no_action',
+            };
+          }
+
           if (!internalUser) {
             // try automatic account linking
             const sameEmailUsers = await t
@@ -327,7 +335,9 @@ export async function createStorage(
                 psql`/* ensureUserExists */
                   SELECT ${userFields(psql`"users".`)}
                   FROM "users"
-                  WHERE "users"."email" = lower(${email})
+                  WHERE
+                    "users"."email" = lower(${email})
+                    AND "users"."provisioned_by_organization_id" IS NULL
                   ORDER BY "users"."created_at";
                 `,
               )

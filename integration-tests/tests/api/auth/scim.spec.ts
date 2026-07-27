@@ -4088,6 +4088,135 @@ describe('Personal Access Tokens', () => {
 
 describe('provisioned user jail', () => {
   test.concurrent(
+    'alternate identity with the same email does not take over a provisioned user or add organization membership',
+    async ({ expect }) => {
+      const seed = initSeed();
+      const owner = await seed.createOwner();
+      const provisioningOrg = await owner.createOrg();
+      const provisioningOIDC = await provisioningOrg.createOIDCIntegration();
+      const domain = await provisioningOIDC.registerFakeDomain();
+      const accessToken = await provisioningOrg.createOrganizationAccessToken({
+        permissions: ['member:describe', 'member:modify'],
+        resources: { mode: ResourceAssignmentModeType.Granular },
+      });
+      const scim = createScimTestkit({
+        baseUrl,
+        headers: {
+          'Content-Type': 'application/scim+json',
+          Authorization: `Bearer ${accessToken.privateAccessKey}`,
+        },
+      });
+      const email = `alternate-identity@${domain}`;
+      const scimUser = await scim.createUser({
+        externalId: crypto.randomUUID(),
+        emails: [{ primary: true, type: 'work', value: email }],
+        userName: email,
+      });
+      const targetOwner = await seed.createOwner();
+      const targetOrg = await targetOwner.createOrg();
+      const { oidcIntegration: targetOIDC } = await targetOrg.createOIDCIntegration();
+      const { pool } = await seed.createDbConnection();
+      const supertokensStore = new SuperTokensStore(pool, new NoopLogger());
+      const alternateIdentity = await supertokensStore.createOIDCUser({
+        email,
+        oidcIntegrationId: targetOIDC.id,
+        externalId: crypto.randomUUID(),
+      });
+      const storage = await createStorage(seed.getPGConnectionString(), 1);
+
+      try {
+        const result = await storage.ensureUserExists({
+          email,
+          firstName: null,
+          lastName: null,
+          oidcIntegration: targetOIDC,
+          superTokensUserId: alternateIdentity.userId,
+        });
+        invariant(result.ok, 'Expected alternate identity sign-in to succeed.');
+
+        expect(result.user.id).not.toBe(scimUser.body.id);
+        expect(result.user.provisionedByOrganizationId).toBeNull();
+        await expect(
+          pool.oneFirst(psql`
+            SELECT COUNT(*)
+            FROM "users_linked_identities"
+            WHERE "user_id" = ${scimUser.body.id}
+              AND "identity_id" = ${alternateIdentity.userId}
+          `),
+        ).resolves.toBe(0);
+        await expect(
+          pool.oneFirst(psql`
+            SELECT COUNT(*)
+            FROM "organization_member"
+            WHERE "organization_id" = ${targetOrg.organization.id}
+              AND "user_id" = ${scimUser.body.id}
+          `),
+        ).resolves.toBe(0);
+        await expect(
+          pool.oneFirst(psql`
+            SELECT COUNT(*)
+            FROM "organization_member"
+            WHERE "organization_id" = ${targetOrg.organization.id}
+              AND "user_id" = ${result.user.id}
+          `),
+        ).resolves.toBe(1);
+      } finally {
+        await storage.destroy();
+      }
+    },
+  );
+
+  test.concurrent(
+    'authentication provider does not synchronize email for a provisioned user',
+    async ({ expect }) => {
+      const seed = initSeed();
+      const owner = await seed.createOwner();
+      const org = await owner.createOrg();
+      const { oidcIntegration, registerFakeDomain } = await org.createOIDCIntegration();
+      const domain = await registerFakeDomain();
+      const accessToken = await org.createOrganizationAccessToken({
+        permissions: ['member:describe', 'member:modify'],
+        resources: { mode: ResourceAssignmentModeType.Granular },
+      });
+      const scim = createScimTestkit({
+        baseUrl,
+        headers: {
+          'Content-Type': 'application/scim+json',
+          Authorization: `Bearer ${accessToken.privateAccessKey}`,
+        },
+      });
+      const email = `email-sync@${domain}`;
+      const scimUser = await scim.createUser({
+        externalId: crypto.randomUUID(),
+        emails: [{ primary: true, type: 'work', value: email }],
+        userName: email,
+      });
+      const storage = await createStorage(seed.getPGConnectionString(), 1);
+
+      try {
+        const provisionedUser = await storage.getUserById({ id: scimUser.body.id });
+        invariant(provisionedUser?.superTokensUserId, 'Expected provisioned user identity.');
+
+        const result = await storage.ensureUserExists({
+          email: `changed-email@${domain}`,
+          firstName: null,
+          lastName: null,
+          oidcIntegration,
+          superTokensUserId: provisionedUser.superTokensUserId,
+        });
+        invariant(result.ok, 'Expected existing identity sign-in to succeed.');
+
+        expect(result.user.email).toBe(email);
+        await expect(storage.getUserById({ id: scimUser.body.id })).resolves.toMatchObject({
+          email,
+        });
+      } finally {
+        await storage.destroy();
+      }
+    },
+  );
+
+  test.concurrent(
     'provisioned user cannot update their profile via GraphQL',
     async ({ expect }) => {
       const seed = initSeed();
@@ -4336,7 +4465,7 @@ describe('provisioned user jail', () => {
 
       expect(result.requestOrganizationTransfer).toEqual({
         ok: null,
-        error: { message: 'Provisioned users can not be modified.' },
+        error: { message: 'Can not transfer ownership to a provisioned user.' },
       });
     },
   );
