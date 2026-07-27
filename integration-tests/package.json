@@ -38,7 +38,7 @@
     "date-fns": "4.1.0",
     "dockerode": "5.0.0",
     "dotenv": "16.4.7",
-    "graphql": "16.9.0",
+    "graphql": "16.14.2",
     "graphql-sse": "2.6.0",
     "graphql-yoga": "5.13.3",
     "human-id": "4.1.1",
