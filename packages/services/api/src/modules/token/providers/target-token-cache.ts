@@ -4,6 +4,8 @@ import { redisDriver } from 'bentocache/build/src/drivers/redis';
 import { Inject, Injectable, Scope } from 'graphql-modules';
 import { prometheusPlugin } from '@bentocache/plugin-prometheus';
 import { PostgresDatabasePool } from '@hive/postgres';
+import { TaskScheduler } from '@hive/workflows/kit';
+import { PurgeTargetTokensTask } from '@hive/workflows/tasks/purge-target-tokens';
 import type { Token } from '../../../shared/entities';
 import { Logger } from '../../shared/providers/logger';
 import { PrometheusConfig } from '../../shared/providers/prometheus-config';
@@ -21,6 +23,7 @@ export class TargetTokenCache {
     @Inject(REDIS_INSTANCE) redis: Redis,
     private pool: PostgresDatabasePool,
     prometheusConfig: PrometheusConfig,
+    private taskScheduler: TaskScheduler,
   ) {
     this.cache = new BentoCache({
       default: 'targetTokens',
@@ -73,6 +76,10 @@ export class TargetTokenCache {
   }
 
   async purge(tokens: string[]) {
-    await this.cache.deleteMany({ keys: tokens });
+    if (tokens.length === 0) {
+      return;
+    }
+
+    await this.taskScheduler.scheduleTask(PurgeTargetTokensTask, { tokens });
   }
 }

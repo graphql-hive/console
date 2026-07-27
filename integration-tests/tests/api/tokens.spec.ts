@@ -1,8 +1,13 @@
 import { createHash, randomBytes } from 'node:crypto';
 import { pollFor, readTokenInfo } from 'testkit/flow';
 import { ProjectType } from 'testkit/gql/graphql';
+import { NoopLogger } from '@hive/api/modules/shared/providers/logger';
 import { TargetTokenStorage } from '@hive/api/modules/token/providers/target-token-storage';
+import { createRedisClient, type ServiceLogger } from '@hive/service-common';
+import { ensureEnv } from '../../testkit/env';
 import { initSeed } from '../../testkit/seed';
+
+const targetTokenCachePrefix = 'bentocache:target-tokens';
 
 test.concurrent('deleting a token should clear the cache', async () => {
   const { createOrg } = await initSeed().createOwner();
@@ -65,6 +70,45 @@ test.concurrent('deleting a token should clear the cache', async () => {
     { maxWait: 5_500 },
   );
   await expect(fetchTokenInfo()).rejects.toThrow();
+});
+
+test.concurrent('deleting tokens purges their L2 cache entries in one workflow', async () => {
+  const { createOrg } = await initSeed().createOwner();
+  const { createProject } = await createOrg();
+  const { createTargetAccessToken, removeTokens } = await createProject(ProjectType.Single);
+  const tokens = await Promise.all([
+    createTargetAccessToken({ mode: 'noAccess' }),
+    createTargetAccessToken({ mode: 'noAccess' }),
+  ]);
+  const cacheKeys = tokens.map(({ secret }) => {
+    const tokenHash = createHash('sha256').update(secret).digest('hex');
+    return `${targetTokenCachePrefix}:${tokenHash}`;
+  });
+  const redis = await createRedisClient(
+    {
+      host: ensureEnv('REDIS_HOST'),
+      password: ensureEnv('REDIS_PASSWORD'),
+      port: ensureEnv('REDIS_PORT', 'number'),
+      username: undefined,
+      tlsEnabled: false,
+      clusterModeEnabled: false,
+      awsIamAuthEnabled: false,
+      awsRegion: undefined,
+      awsIamAuthCacheName: undefined,
+    },
+    { logger: new NoopLogger() as any },
+  );
+
+  try {
+    expect(await redis.mget(cacheKeys)).toEqual([expect.any(String), expect.any(String)]);
+
+    await removeTokens(tokens.map(({ token }) => token.id));
+
+    await pollFor(async () => (await redis.mget(cacheKeys)).every(value => value === null));
+    expect(await redis.mget(cacheKeys)).toEqual([null, null]);
+  } finally {
+    redis.disconnect();
+  }
 });
 
 test.concurrent('invalid token yields correct error message', async () => {

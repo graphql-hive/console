@@ -59,6 +59,7 @@ const modules = await Promise.all([
   import('./tasks/evaluate-metric-alert-rules.js'),
   import('./tasks/send-metric-alert-channel-notification.js'),
   import('./tasks/purge-expired-alert-state-log.js'),
+  import('./tasks/purge-target-tokens.js'),
 ]);
 
 const pg = await createPostgresDatabasePool({
@@ -135,6 +136,7 @@ const context: Context = {
   pg,
   clickhouse,
   requestBroker: env.requestBroker,
+  redis,
   schema: schemaProvider({
     logger,
     schemaServiceUrl: env.schema.serviceUrl,
