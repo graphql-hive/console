@@ -127,7 +127,7 @@ export class TargetAccessTokenStrategy extends AuthNStrategy<TargetAccessTokenSe
       throw new HiveError('Invalid token provided');
     }
 
-    const result = await this.cache.get(accessToken);
+    const result = await this.cache.get(accessToken, this.logger);
 
     if (!result) {
       throw new HiveError('Invalid token provided');

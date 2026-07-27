@@ -97,7 +97,7 @@ export class TokenStorage {
       }
 
       this.logger.debug('Fetching token (token=%s)', maskToken(token));
-      const tokenInfo = await this.targetTokenCache.get(token);
+      const tokenInfo = await this.targetTokenCache.get(token, this.logger);
 
       if (!tokenInfo) {
         throw new HiveError('Not found');

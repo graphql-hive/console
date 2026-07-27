@@ -5,6 +5,7 @@ import { Inject, Injectable, Scope } from 'graphql-modules';
 import { prometheusPlugin } from '@bentocache/plugin-prometheus';
 import { PostgresDatabasePool } from '@hive/postgres';
 import type { Token } from '../../../shared/entities';
+import { Logger } from '../../shared/providers/logger';
 import { PrometheusConfig } from '../../shared/providers/prometheus-config';
 import { REDIS_INSTANCE, type Redis } from '../../shared/providers/redis';
 import { hashTargetToken, TargetTokenStorage } from './target-token-storage';
@@ -31,19 +32,18 @@ export class TargetTokenCache {
           ]
         : undefined,
       stores: {
-        targetTokens: bentostore()
+        targetTokens: bentostore({ prefix: 'bentocache:target-tokens' })
           .useL1Layer(
             memoryDriver({
               maxItems: 10_000,
-              prefix: 'bentocache:target-tokens',
             }),
           )
-          .useL2Layer(redisDriver({ connection: redis, prefix: 'bentocache:target-tokens' })),
+          .useL2Layer(redisDriver({ connection: redis })),
       },
     });
   }
 
-  async get(token: string) {
+  async get(token: string, logger: Logger) {
     const hashedToken = hashTargetToken(token);
 
     return await this.cache
@@ -55,8 +55,8 @@ export class TargetTokenCache {
       })
       .then(result => {
         if (result) {
-          void TargetTokenStorage.touchTokenByHash({ pool: this.pool })(hashedToken).catch(
-            () => {},
+          void TargetTokenStorage.touchTokenByHash({ pool: this.pool })(hashedToken).catch(err =>
+            logger.error('Failed to touch token. %s', err),
           );
         }
         return result;
@@ -72,7 +72,7 @@ export class TargetTokenCache {
     });
   }
 
-  async purge(tokens: readonly string[]) {
-    await Promise.all(tokens.map(token => this.cache.delete({ key: token })));
+  async purge(tokens: string[]) {
+    await this.cache.deleteMany({ keys: tokens });
   }
 }
