@@ -1,5 +1,18 @@
 # hive
 
+## 11.7.1
+
+### Patch Changes
+
+- [#8253](https://github.com/graphql-hive/console/pull/8253)
+  [`25d9ef3`](https://github.com/graphql-hive/console/commit/25d9ef3e0ebf547309129d3c9cf6aba6070b3559)
+  Thanks [@jdolle](https://github.com/jdolle)! - Upgrade `@graphql-tools/merge` and
+  `@graphql-tools/stitch` packages.
+
+- [#8242](https://github.com/graphql-hive/console/pull/8242)
+  [`6ecfc46`](https://github.com/graphql-hive/console/commit/6ecfc46f357166a72a83740a3d710dc053cf1012)
+  Thanks [@jdolle](https://github.com/jdolle)! - Reduce memory usage during stitching composition
+
 ## 11.7.0
 
 ### Minor Changes

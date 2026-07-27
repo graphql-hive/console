@@ -1,7 +1,7 @@
 import { CONTEXT, Inject, Injectable, Scope } from 'graphql-modules';
 import { abortSignalAny } from '@graphql-hive/signal';
 import type { ContractsInputType, SchemaBuilderApi } from '@hive/schema';
-import { traceFn } from '@hive/service-common';
+import { trace, traceFn } from '@hive/service-common';
 import { createTRPCProxyClient, httpLink } from '@trpc/client';
 import {
   ComposeAndValidateResult,
@@ -10,6 +10,7 @@ import {
   SchemaObject,
 } from '../../../../shared/entities';
 import { Logger } from '../../../shared/providers/logger';
+import { ArtifactStorageWriter } from '../artifact-storage-writer';
 import type { SchemaServiceConfig } from './tokens';
 import { SCHEMA_SERVICE_CONFIG } from './tokens';
 
@@ -44,6 +45,7 @@ export class CompositionOrchestrator {
 
   constructor(
     logger: Logger,
+    private artifactStorageWriter: ArtifactStorageWriter,
     @Inject(SCHEMA_SERVICE_CONFIG) serviceConfig: SchemaServiceConfig,
     @Inject(CONTEXT) context: GraphQLModules.ModuleContext,
   ) {
@@ -159,6 +161,21 @@ export class CompositionOrchestrator {
           signal: abortSignalAny([this.incomingRequestAbortSignal, timeoutAbortSignal]),
         },
       );
+
+      // If a composition error happens due to OOM we write the subgraphs to S3
+      // This makes it easier to reproduce and debug the issue
+      if (result.errors.some(error => error.code === 'ERR_WORKER_OUT_OF_MEMORY')) {
+        const span = trace.getActiveSpan();
+        if (span) {
+          const result = await this.artifactStorageWriter.writeSDLForDebugPurposes(
+            schemas.map(s => ({ sdl: s.raw, name: s.source })),
+          );
+          trace
+            .getActiveSpan()
+            ?.setAttribute(`hive.composition.subgraphs.${result.id}`, result.url);
+        }
+      }
+
       return result;
     } catch (err) {
       // In case of a timeout error we return something the user can process

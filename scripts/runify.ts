@@ -31,7 +31,6 @@ async function runify(packagePath: string) {
     cwd,
     entryPoints?.length ? entryPoints : 'src/index.ts',
     buildOptions,
-    Object.keys(pkg.dependencies ?? {}).concat(Object.keys(pkg.devDependencies ?? {})),
     pkg.type === 'module',
   );
   await rewritePackageJson(pkg, cwd);
@@ -77,13 +76,14 @@ async function rewritePackageJson(
 const globalExternals: string[] = [
   // TODO: dependency of hive gateway. why does it get built by all packages, mystery
   'ansi-color',
+  // it is bundled into docker images even though it is only used in dev mode.
+  '@fastify/vite',
 ];
 
 async function compile(
   cwd: string,
   entryPoint: string | string[],
   buildOptions: BuildOptions,
-  dependencies: string[],
   useEsm = false,
 ) {
   const out = normalize(join(cwd, 'dist'));
@@ -100,7 +100,6 @@ async function compile(
     clean: true,
     shims: true,
     skipNodeModulesBundle: false,
-    // noExternal: dependencies,
     external: [...globalExternals, ...(buildOptions.external || [])],
     banner: {
       js: requireShim,
