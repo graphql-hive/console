@@ -28,7 +28,7 @@ overrides:
   diff@<8.0.3: ^8.0.3
   lodash-es@4.x.x: ^4.17.23
   lodash@4.x.x: ^4.17.23
-  seroval@<1.4.1: ^1.4.1
+  seroval@<1.5.3: 1.5.3
   fast-xml-parser@<5.7.0: ^5.7.2
   minimatch@10.x.x: ^10.2.2
   amqplib: ^0.8.0
@@ -1460,7 +1460,7 @@ importers:
     devDependencies:
       '@graphql-eslint/eslint-plugin':
         specifier: 3.20.1
-        version: 3.20.1(patch_hash=92716d09c5dd6166f88ca95d28b39ad4491682d48574a36c391e9875dd5060bb)(@babel/core@7.29.7)(@types/node@24.13.3)(cosmiconfig-toml-loader@1.0.0)(encoding@0.1.13)(graphql@16.9.0)
+        version: 3.20.1(patch_hash=92716d09c5dd6166f88ca95d28b39ad4491682d48574a36c391e9875dd5060bb)(@babel/core@7.29.7)(@types/node@25.5.0)(cosmiconfig-toml-loader@1.0.0)(encoding@0.1.13)(graphql@16.9.0)
       '@hive/service-common':
         specifier: workspace:*
         version: link:../service-common
@@ -17854,16 +17854,16 @@ packages:
     resolution: {integrity: sha512-16OL3NnUBw8JG1jBLUoZJsLnQq0n5Ua6aHalhJK4fMQkz1lqR7Osz1sA30trBtd9VUDc2NgkuRCn8+/pBwqZ+w==}
     engines: {node: '>=10'}
     peerDependencies:
-      seroval: ^1.4.1
+      seroval: 1.5.3
 
   seroval-plugins@1.5.0:
     resolution: {integrity: sha512-EAHqADIQondwRZIdeW2I636zgsODzoBDwb3PT/+7TLDWyw1Dy/Xv7iGUIEXXav7usHDE9HVhOU61irI3EnyyHA==}
     engines: {node: '>=10'}
     peerDependencies:
-      seroval: ^1.4.1
+      seroval: 1.5.3
 
-  seroval@1.5.0:
-    resolution: {integrity: sha512-OE4cvmJ1uSPrKorFIH9/w/Qwuvi/IMcGbv5RKgcJ/zjA/IohDLU6SVaxFN9FwajbP7nsX0dQqMDes1whk3y+yw==}
+  seroval@1.5.3:
+    resolution: {integrity: sha512-BXe0x4buEeYiIKaRUnth1WqCILQ3k4O67KP/B4pC3pVz0Mv2c96ngA9QDREUYxWY1sb2RZVRqwI9RcpVMyHCVw==}
     engines: {node: '>=10'}
 
   serve-static@1.16.2:
@@ -22486,7 +22486,7 @@ snapshots:
 
   '@graphql-eslint/eslint-plugin@3.20.1(patch_hash=92716d09c5dd6166f88ca95d28b39ad4491682d48574a36c391e9875dd5060bb)(@babel/core@7.29.7)(@types/node@24.13.3)(cosmiconfig-toml-loader@1.0.0)(encoding@0.1.13)(graphql@16.9.0)':
     dependencies:
-      '@babel/code-frame': 7.29.0
+      '@babel/code-frame': 7.29.7
       '@graphql-tools/code-file-loader': 7.3.23(@babel/core@7.29.7)(graphql@16.9.0)
       '@graphql-tools/graphql-tag-pluck': 7.5.2(@babel/core@7.29.7)(graphql@16.9.0)
       '@graphql-tools/utils': 9.2.1(graphql@16.9.0)
@@ -22495,6 +22495,29 @@ snapshots:
       fast-glob: 3.3.3
       graphql: 16.9.0
       graphql-config: 4.5.0(@types/node@24.13.3)(cosmiconfig-toml-loader@1.0.0)(encoding@0.1.13)(graphql@16.9.0)
+      graphql-depth-limit: 1.1.0(graphql@16.9.0)
+      lodash.lowercase: 4.3.0
+      tslib: 2.8.1
+    transitivePeerDependencies:
+      - '@babel/core'
+      - '@types/node'
+      - bufferutil
+      - cosmiconfig-toml-loader
+      - encoding
+      - supports-color
+      - utf-8-validate
+
+  '@graphql-eslint/eslint-plugin@3.20.1(patch_hash=92716d09c5dd6166f88ca95d28b39ad4491682d48574a36c391e9875dd5060bb)(@babel/core@7.29.7)(@types/node@25.5.0)(cosmiconfig-toml-loader@1.0.0)(encoding@0.1.13)(graphql@16.9.0)':
+    dependencies:
+      '@babel/code-frame': 7.29.7
+      '@graphql-tools/code-file-loader': 7.3.23(@babel/core@7.29.7)(graphql@16.9.0)
+      '@graphql-tools/graphql-tag-pluck': 7.5.2(@babel/core@7.29.7)(graphql@16.9.0)
+      '@graphql-tools/utils': 9.2.1(graphql@16.9.0)
+      chalk: 4.1.2
+      debug: 4.4.3(supports-color@8.1.1)
+      fast-glob: 3.3.3
+      graphql: 16.9.0
+      graphql-config: 4.5.0(@types/node@25.5.0)(cosmiconfig-toml-loader@1.0.0)(encoding@0.1.13)(graphql@16.9.0)
       graphql-depth-limit: 1.1.0(graphql@16.9.0)
       lodash.lowercase: 4.3.0
       tslib: 2.8.1
@@ -23944,7 +23967,7 @@ snapshots:
     dependencies:
       '@graphql-tools/utils': 9.2.1(graphql@16.9.0)
       '@repeaterjs/repeater': 3.0.4
-      '@types/ws': 8.5.3
+      '@types/ws': 8.18.1
       graphql: 16.9.0
       graphql-ws: 5.12.1(graphql@16.9.0)
       isomorphic-ws: 5.0.0(ws@8.21.0)
@@ -24136,7 +24159,7 @@ snapshots:
   '@graphql-tools/executor-legacy-ws@0.0.11(graphql@16.9.0)':
     dependencies:
       '@graphql-tools/utils': 9.2.1(graphql@16.9.0)
-      '@types/ws': 8.5.3
+      '@types/ws': 8.18.1
       graphql: 16.9.0
       isomorphic-ws: 5.0.0(ws@8.21.0)
       tslib: 2.8.1
@@ -24378,10 +24401,10 @@ snapshots:
 
   '@graphql-tools/graphql-tag-pluck@7.5.2(@babel/core@7.29.7)(graphql@16.9.0)':
     dependencies:
-      '@babel/parser': 7.29.0
+      '@babel/parser': 7.29.7
       '@babel/plugin-syntax-import-assertions': 7.27.1(@babel/core@7.29.7)
-      '@babel/traverse': 7.29.0
-      '@babel/types': 7.29.0
+      '@babel/traverse': 7.29.7
+      '@babel/types': 7.29.7
       '@graphql-tools/utils': 9.2.1(graphql@16.9.0)
       graphql: 16.9.0
       tslib: 2.8.1
@@ -24709,7 +24732,7 @@ snapshots:
       '@graphql-tools/executor-legacy-ws': 0.0.11(graphql@16.9.0)
       '@graphql-tools/utils': 9.2.1(graphql@16.9.0)
       '@graphql-tools/wrap': 9.4.2(graphql@16.9.0)
-      '@types/ws': 8.5.3
+      '@types/ws': 8.18.1
       '@whatwg-node/fetch': 0.8.8
       graphql: 16.9.0
       isomorphic-ws: 5.0.0(ws@8.21.0)
@@ -24731,7 +24754,7 @@ snapshots:
       '@graphql-tools/executor-legacy-ws': 0.0.11(graphql@16.9.0)
       '@graphql-tools/utils': 9.2.1(graphql@16.9.0)
       '@graphql-tools/wrap': 9.4.2(graphql@16.9.0)
-      '@types/ws': 8.5.3
+      '@types/ws': 8.18.1
       '@whatwg-node/fetch': 0.8.8
       graphql: 16.9.0
       isomorphic-ws: 5.0.0(ws@8.21.0)
@@ -31432,8 +31455,8 @@ snapshots:
       '@tanstack/history': 1.154.14
       '@tanstack/store': 0.8.1
       cookie-es: 2.0.0
-      seroval: 1.5.0
-      seroval-plugins: 1.5.0(seroval@1.5.0)
+      seroval: 1.5.3
+      seroval-plugins: 1.5.0(seroval@1.5.3)
       tiny-invariant: 1.3.3
       tiny-warning: 1.0.3
 
@@ -40488,15 +40511,15 @@ snapshots:
     dependencies:
       type-fest: 4.41.0
 
-  seroval-plugins@1.3.3(seroval@1.5.0):
+  seroval-plugins@1.3.3(seroval@1.5.3):
     dependencies:
-      seroval: 1.5.0
+      seroval: 1.5.3
 
-  seroval-plugins@1.5.0(seroval@1.5.0):
+  seroval-plugins@1.5.0(seroval@1.5.3):
     dependencies:
-      seroval: 1.5.0
+      seroval: 1.5.3
 
-  seroval@1.5.0: {}
+  seroval@1.5.3: {}
 
   serve-static@1.16.2:
     dependencies:
@@ -40751,8 +40774,8 @@ snapshots:
   solid-js@1.9.10:
     dependencies:
       csstype: 3.1.2
-      seroval: 1.5.0
-      seroval-plugins: 1.3.3(seroval@1.5.0)
+      seroval: 1.5.3
+      seroval-plugins: 1.3.3(seroval@1.5.3)
 
   sonic-boom@4.0.1:
     dependencies:
