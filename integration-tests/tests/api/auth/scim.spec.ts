@@ -4082,7 +4082,7 @@ describe('Personal Access Tokens', () => {
   );
 });
 
-describe.only('provisioned user jail', () => {
+describe('provisioned user jail', () => {
   test.concurrent(
     'provisioned user cannot update their profile via GraphQL',
     async ({ expect }) => {
