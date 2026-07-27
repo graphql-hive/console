@@ -16,7 +16,6 @@ import { Redis } from './redis';
 import { S3 } from './s3';
 import { Schema } from './schema';
 import { Sentry } from './sentry';
-import { Tokens } from './tokens';
 import { Usage } from './usage';
 import { Zendesk } from './zendesk';
 
@@ -31,7 +30,6 @@ export function deployGraphQL({
   clickhouse,
   image,
   environment,
-  tokens,
   schema,
   schemaPolicy,
   cdn,
@@ -55,7 +53,6 @@ export function deployGraphQL({
   image: string;
   clickhouse: Clickhouse;
   environment: Environment;
-  tokens: Tokens;
   schema: Schema;
   schemaPolicy: SchemaPolicy;
   redis: Redis;
@@ -132,7 +129,6 @@ export function deployGraphQL({
             featureFlagsConfig.get('metricAlertRulesEnabled') ?? '0',
           REQUEST_LOGGING: '1',
           COMMERCE_ENDPOINT: serviceLocalEndpoint(commerce.service),
-          TOKENS_ENDPOINT: serviceLocalEndpoint(tokens.service),
           SCHEMA_ENDPOINT: serviceLocalEndpoint(schema.service),
           SCHEMA_POLICY_ENDPOINT: serviceLocalEndpoint(schemaPolicy.service),
           WEB_APP_URL: `https://${environment.appDns}`,
