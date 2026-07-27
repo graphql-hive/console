@@ -99,12 +99,13 @@ export const Flow = (props: {
     scale: 1,
   });
   const [nodeSizes, setNodeSizes] = useState<Record<string, { width: number; height: number }>>({});
-  const [nodes, edges, graphSize] = useMemo(() => {
+  const [nodes, edges, graphSize, layoutGraph] = useMemo(() => {
     if (Object.keys(nodeSizes).length === 0) {
       return [
         props.nodes.map(node => ({ ...node, x: 0, y: 0, width: 0, height: 0, isCluster: false })),
         [],
         { width: 0, height: 0 },
+        null,
       ];
     }
 
@@ -139,8 +140,6 @@ export const Flow = (props: {
 
     dagre.layout(result);
 
-    props.onGraphLayout?.(result);
-
     const graph = result.graph();
 
     return [
@@ -162,8 +161,20 @@ export const Flow = (props: {
         };
       }),
       { width: graph.width, height: graph.height },
+      result,
     ];
   }, [nodeSizes, props.nodes, props.margin, props.gapX]);
+
+  const onGraphLayoutRef = useRef(props.onGraphLayout);
+  onGraphLayoutRef.current = props.onGraphLayout;
+
+  // Reported after commit, never during render: the parent sizes its nodes from
+  // this, and setting state mid-render warns and can tear.
+  useEffect(() => {
+    if (layoutGraph) {
+      onGraphLayoutRef.current?.(layoutGraph);
+    }
+  }, [layoutGraph]);
 
   const handleWheel = useCallback(
     (event: WheelEvent<HTMLDivElement>) => {
@@ -411,14 +422,19 @@ export const Flow = (props: {
                     gapY={16}
                     onGraphLayout={graph => {
                       const { width, height } = graph.graph();
+                      const size = { width: width + 20, height: node.height + height + 4 };
 
-                      setNodeSizes(prev => ({
-                        ...prev,
-                        [node.id]: {
-                          width: width + 20,
-                          height: node.height + height + 4,
-                        },
-                      }));
+                      setNodeSizes(prev => {
+                        const previous = prev[node.id];
+
+                        // Bail out when nothing moved, otherwise this feeds the
+                        // layout memo that produced it and loops forever.
+                        if (previous?.width === size.width && previous?.height === size.height) {
+                          return prev;
+                        }
+
+                        return { ...prev, [node.id]: size };
+                      });
                     }}
                     disableBackground
                     disableGestures

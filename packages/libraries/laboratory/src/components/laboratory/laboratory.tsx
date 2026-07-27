@@ -1,4 +1,12 @@
-import { ReactNode, useCallback, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import {
+  ReactNode,
+  useCallback,
+  useInsertionEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import { createPortal } from 'react-dom';
 import laboratoryStyles from '../../index.css?inline';
 import { FileIcon, FoldersIcon, HistoryIcon, SettingsIcon } from 'lucide-react';
@@ -6,9 +14,11 @@ import monacoStyles from 'monaco-editor/min/vs/editor/editor.main.css?inline';
 import * as z from 'zod';
 import { useForm } from '@tanstack/react-form';
 import { useCollections } from '../../lib/collections';
+import { ensureDocumentFontFaces } from '../../lib/document-styles';
 import { useEndpoint } from '../../lib/endpoint';
 import { useEnv } from '../../lib/env';
 import { useHistory } from '../../lib/history';
+import { keepEditorMouseMovesInShadowRoot } from '../../lib/monaco-shadow-dom';
 import { useOperations } from '../../lib/operations';
 import { LaboratoryPluginTab, usePlugins } from '../../lib/plugins';
 import { usePreflight } from '../../lib/preflight';
@@ -75,6 +85,14 @@ const ShadowRootContainer = (props: { children: ReactNode }) => {
     }
 
     setShadowRoot(hostRef.current.attachShadow({ mode: 'open' }));
+  }, [shadowRoot]);
+
+  useLayoutEffect(() => {
+    if (!shadowRoot) {
+      return;
+    }
+
+    return keepEditorMouseMovesInShadowRoot(shadowRoot);
   }, [shadowRoot]);
 
   useLayoutEffect(() => {
@@ -352,7 +370,7 @@ const LaboratoryContent = () => {
         >
           <Tooltip>
             <DropdownMenu>
-              <DropdownMenuTrigger>
+              <DropdownMenuTrigger asChild>
                 <TooltipTrigger asChild>
                   <Button
                     variant="ghost"
@@ -486,6 +504,7 @@ export const Laboratory = (
       | 'onPluginsStateChange'
       | 'theme'
       | 'defaultSchemaIntrospection'
+      | 'enableFullScreen'
     >
   >,
 ) => {
@@ -641,6 +660,10 @@ export const Laboratory = (
     setIsFullScreen(false);
   }, []);
 
+  useInsertionEffect(() => {
+    ensureDocumentFontFaces(monacoStyles);
+  }, []);
+
   return (
     <ShadowRootContainer>
       <style>{`${laboratoryStyles}\n${monacoStyles}`}</style>
@@ -672,6 +695,7 @@ export const Laboratory = (
           goToFullScreen={goToFullScreen}
           exitFullScreen={exitFullScreen}
           isFullScreen={isFullScreen}
+          enableFullScreen={props.enableFullScreen !== false}
           checkPermissions={checkPermissions}
         >
           <Dialog open={isUpdateEndpointDialogOpen} onOpenChange={setIsUpdateEndpointDialogOpen}>

@@ -17,12 +17,11 @@ import {
   CuboidIcon,
   FolderIcon,
   ListTreeIcon,
-  RotateCcwIcon,
+  RefreshCwIcon,
   SearchIcon,
   SettingsIcon,
   TextAlignStartIcon,
 } from 'lucide-react';
-import { toast } from 'sonner';
 import type { LaboratoryOperation } from '../../lib/operations';
 import {
   getFieldByPath,
@@ -34,7 +33,7 @@ import {
 import { cn, splitIdentifier } from '../../lib/utils';
 import { GraphQLType } from '../graphql-type';
 import { GraphQLIcon } from '../icons';
-import { Button } from '../ui/button';
+import { Button, buttonVariants } from '../ui/button';
 import { Checkbox } from '../ui/checkbox';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '../ui/collapsible';
 import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from '../ui/empty';
@@ -73,13 +72,17 @@ export const BuilderArgument = (props: {
   }, [operation?.query, path, props.field.name]);
 
   return (
-    <Button
+    // A div, not a Button: the row is a styled container, and a button here would
+    // nest the checkbox's own button inside it.
+    <div
       key={props.field.name}
-      variant="ghost"
-      className={cn('text-muted-foreground p-1! w-full justify-start text-xs', {
-        'text-foreground-primary': isInQuery,
-      })}
-      size="sm"
+      className={cn(
+        buttonVariants({ variant: 'ghost', size: 'sm' }),
+        'text-muted-foreground p-1! w-full justify-start text-xs',
+        {
+          'text-foreground-primary': isInQuery,
+        },
+      )}
     >
       <div className="size-4" />
       <Checkbox
@@ -109,7 +112,7 @@ export const BuilderArgument = (props: {
       />
       <BoxIcon className="size-4 text-rose-400" />
       {props.field.name}: <GraphQLType type={props.field.type} />
-    </Button>
+    </div>
   );
 };
 
@@ -178,9 +181,11 @@ export const BuilderScalarField = (props: {
 
   if (props.disableChildren) {
     return (
-      <Button
-        variant="ghost"
+      // A div, not a Button: the row is a styled container, and a button here would
+      // nest the checkbox's own button inside it.
+      <div
         className={cn(
+          buttonVariants({ variant: 'ghost', size: 'sm' }),
           'text-muted-foreground bg-card p-1! group sticky top-0 z-10 w-full justify-start overflow-hidden text-xs',
           {
             'text-foreground-primary': isInQuery,
@@ -189,7 +194,6 @@ export const BuilderScalarField = (props: {
         style={{
           top: `${(props.path.length - 2) * 32}px`,
         }}
-        size="sm"
       >
         <div className="bg-card absolute left-0 top-0 -z-20 size-full" />
         <div className="group-hover:bg-accent/50 absolute left-0 top-0 -z-10 size-full transition-colors" />
@@ -217,7 +221,7 @@ export const BuilderScalarField = (props: {
           </span>
         )}
         : <GraphQLType type={props.field.type} />
-      </Button>
+      </div>
     );
   }
 
@@ -246,6 +250,7 @@ export const BuilderScalarField = (props: {
               })}
             />
             <Checkbox
+              asSpan
               onClick={e => e.stopPropagation()}
               checked={isInQuery}
               disabled={activeTab?.type !== 'operation' || props.isReadOnly}
@@ -295,7 +300,12 @@ export const BuilderScalarField = (props: {
                           '-rotate-90': !isOpen,
                         })}
                       />
-                      <Checkbox onClick={e => e.stopPropagation()} checked={hasArgs} disabled />
+                      <Checkbox
+                        asSpan
+                        onClick={e => e.stopPropagation()}
+                        checked={hasArgs}
+                        disabled
+                      />
                       <CuboidIcon className="size-4 text-rose-400" />
                       [arguments]
                     </Button>
@@ -321,13 +331,17 @@ export const BuilderScalarField = (props: {
   }
 
   return (
-    <Button
+    // A div, not a Button: the row is a styled container, and a button here would
+    // nest the checkbox's own button inside it.
+    <div
       key={props.field.name}
-      variant="ghost"
-      className={cn('text-muted-foreground p-1! w-full justify-start text-xs', {
-        'text-foreground-primary': isInQuery,
-      })}
-      size="sm"
+      className={cn(
+        buttonVariants({ variant: 'ghost', size: 'sm' }),
+        'text-muted-foreground p-1! w-full justify-start text-xs',
+        {
+          'text-foreground-primary': isInQuery,
+        },
+      )}
     >
       <div className="size-4" />
       <Checkbox
@@ -353,7 +367,7 @@ export const BuilderScalarField = (props: {
         </span>
       )}
       : <GraphQLType type={props.field.type} />
-    </Button>
+    </div>
   );
 };
 
@@ -435,9 +449,11 @@ export const BuilderObjectField = (props: {
 
   if (props.disableChildren) {
     return (
-      <Button
-        variant="ghost"
+      // A div, not a Button: the row is a styled container, and a button here would
+      // nest the checkbox's own button inside it.
+      <div
         className={cn(
+          buttonVariants({ variant: 'ghost', size: 'sm' }),
           'text-muted-foreground bg-card p-1! group sticky top-0 z-10 w-full justify-start overflow-hidden text-xs',
           {
             'text-foreground-primary': isInQuery,
@@ -446,7 +462,6 @@ export const BuilderObjectField = (props: {
         style={{
           top: `${(props.path.length - 2) * 32}px`,
         }}
-        size="sm"
       >
         <div className="bg-card absolute left-0 top-0 -z-20 size-full" />
         <div className="group-hover:bg-accent/50 absolute left-0 top-0 -z-10 size-full transition-colors" />
@@ -474,7 +489,7 @@ export const BuilderObjectField = (props: {
           </span>
         )}
         : <GraphQLType type={props.field.type} />
-      </Button>
+      </div>
     );
   }
 
@@ -502,6 +517,7 @@ export const BuilderObjectField = (props: {
             })}
           />
           <Checkbox
+            asSpan
             onClick={e => e.stopPropagation()}
             checked={isInQuery}
             disabled={activeTab?.type !== 'operation' || props.isReadOnly}
@@ -551,7 +567,12 @@ export const BuilderObjectField = (props: {
                         '-rotate-90': !isOpen,
                       })}
                     />
-                    <Checkbox onClick={e => e.stopPropagation()} checked={hasArgs} disabled />
+                    <Checkbox
+                      asSpan
+                      onClick={e => e.stopPropagation()}
+                      checked={hasArgs}
+                      disabled
+                    />
                     <CuboidIcon className="size-4 text-rose-400" />
                     [arguments]
                   </Button>
@@ -654,10 +675,65 @@ export const BuilderField = (props: {
   );
 };
 
-enum BuilderSearchResultMode {
+export enum BuilderSearchResultMode {
   LIST = 'list',
   TREE = 'tree',
 }
+
+export const BuilderSearchModeToggle = (props: {
+  mode: BuilderSearchResultMode;
+  onModeChange: (mode: BuilderSearchResultMode) => void;
+  isSearchActive: boolean;
+}) => {
+  const hint = props.isSearchActive ? null : 'Search fields to switch between tree and list';
+
+  return (
+    <ToggleGroup
+      type="single"
+      variant="outline"
+      value={props.mode}
+      disabled={!props.isSearchActive}
+      onValueChange={value => {
+        // Radix emits '' when the active item is clicked again, which would leave
+        // the group with nothing selected while still rendering tree results.
+        if (value) {
+          props.onModeChange(value as BuilderSearchResultMode);
+        }
+      }}
+    >
+      {/* Wrapper, not asChild: Tooltip would merge its own data-state onto the
+          button and clobber the data-[state=on] selected styling. */}
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <span className="flex">
+            <ToggleGroupItem
+              value={BuilderSearchResultMode.TREE}
+              aria-label="Tree"
+              className="h-6 !rounded-l-sm !rounded-r-none border-r-0 p-2"
+            >
+              <ListTreeIcon className="size-4" />
+            </ToggleGroupItem>
+          </span>
+        </TooltipTrigger>
+        <TooltipContent>{hint ?? 'Tree'}</TooltipContent>
+      </Tooltip>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <span className="flex">
+            <ToggleGroupItem
+              value={BuilderSearchResultMode.LIST}
+              aria-label="List"
+              className="h-6 !rounded-l-none !rounded-r-sm p-2"
+            >
+              <TextAlignStartIcon className="size-4" />
+            </ToggleGroupItem>
+          </span>
+        </TooltipTrigger>
+        <TooltipContent>{hint ?? 'List'}</TooltipContent>
+      </Tooltip>
+    </ToggleGroup>
+  );
+};
 
 export const BuilderSearchResults = (props: {
   type: 'query' | 'mutation' | 'subscription';
@@ -765,11 +841,12 @@ export const Builder = (props: {
     activeOperation,
     endpoint,
     setEndpoint,
-    defaultEndpoint,
+    reloadSchema,
+    isFetchingSchema,
     tabs,
     addTab,
     setActiveTab,
-    shouldPollSchema,
+    canIntrospect,
   } = useLaboratory();
 
   const [endpointValue, setEndpointValue] = useState<string>(endpoint ?? '');
@@ -847,19 +924,12 @@ export const Builder = (props: {
     throttleSetEndpoint(endpointValue);
   }, [endpointValue, throttleSetEndpoint]);
 
-  const restoreEndpoint = useCallback(() => {
-    setEndpointValue(endpoint ?? '');
-    setEndpoint(defaultEndpoint ?? '');
-
-    toast.success('Endpoint restored to default');
-  }, [defaultEndpoint, setEndpointValue]);
-
   return (
     <div className="bg-card flex size-full flex-col overflow-hidden">
       <div className="flex items-center gap-3 px-3 pt-3">
         <span className="text-base font-medium">Builder</span>
         <div className="ml-auto flex items-center gap-3">
-          {shouldPollSchema && (
+          {canIntrospect && (
             <Button
               onClick={() => {
                 const tab =
@@ -907,22 +977,26 @@ export const Builder = (props: {
           <InputGroupAddon>
             <GraphQLIcon />
           </InputGroupAddon>
-          {defaultEndpoint && (
-            <InputGroupAddon align="inline-end">
-              <Tooltip>
-                <TooltipTrigger>
+          <InputGroupAddon align="inline-end">
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <span className="flex">
                   <InputGroupButton
                     className="rounded-full"
                     size="icon-xs"
-                    onClick={restoreEndpoint}
+                    onClick={reloadSchema}
+                    disabled={isFetchingSchema || !endpointValue}
+                    aria-label="Reload schema"
                   >
-                    <RotateCcwIcon className="size-4" />
+                    <RefreshCwIcon className={cn('size-4', isFetchingSchema && 'animate-spin')} />
                   </InputGroupButton>
-                </TooltipTrigger>
-                <TooltipContent>Restore default endpoint</TooltipContent>
-              </Tooltip>
-            </InputGroupAddon>
-          )}
+                </span>
+              </TooltipTrigger>
+              <TooltipContent>
+                {isFetchingSchema ? 'Introspecting…' : 'Reload schema'}
+              </TooltipContent>
+            </Tooltip>
+          </InputGroupAddon>
         </InputGroup>
       </div>
       <div className="flex-1 overflow-hidden">
@@ -966,37 +1040,11 @@ export const Builder = (props: {
                     <SearchIcon className="text-muted-foreground size-4" />
                   </InputGroupAddon>
                   <InputGroupAddon align="inline-end" className="py-0 pr-1.5">
-                    <ToggleGroup
-                      type="single"
-                      variant="outline"
-                      defaultValue={searchResultMode}
-                      onValueChange={value => setSearchResultMode(value as BuilderSearchResultMode)}
-                    >
-                      <Tooltip>
-                        <TooltipTrigger>
-                          <ToggleGroupItem
-                            value={BuilderSearchResultMode.TREE}
-                            aria-label="Toggle tree"
-                            className="h-6 !rounded-l-sm !rounded-r-none border-r-0 p-2"
-                          >
-                            <ListTreeIcon className="size-4" />
-                          </ToggleGroupItem>
-                        </TooltipTrigger>
-                        <TooltipContent>Tree</TooltipContent>
-                      </Tooltip>
-                      <Tooltip>
-                        <TooltipTrigger>
-                          <ToggleGroupItem
-                            value={BuilderSearchResultMode.LIST}
-                            aria-label="Toggle list"
-                            className="h-6 !rounded-l-none !rounded-r-sm p-2"
-                          >
-                            <TextAlignStartIcon className="size-4" />
-                          </ToggleGroupItem>
-                        </TooltipTrigger>
-                        <TooltipContent>List</TooltipContent>
-                      </Tooltip>
-                    </ToggleGroup>
+                    <BuilderSearchModeToggle
+                      mode={searchResultMode}
+                      onModeChange={setSearchResultMode}
+                      isSearchActive={isSearchActive}
+                    />
                   </InputGroupAddon>
                 </InputGroup>
               </div>
