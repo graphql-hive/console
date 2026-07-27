@@ -64,7 +64,7 @@
     "@types/node": "24.13.3",
     "esbuild": "0.28.1",
     "fastify": "5.10.0",
-    "graphql": "16.9.0"
+    "graphql": "16.14.2"
   },
   "publishConfig": {
     "registry": "https://registry.npmjs.org",

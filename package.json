@@ -94,7 +94,7 @@
     "eslint": "8.57.1",
     "eslint-plugin-better-tailwindcss": "^4.3.2",
     "eslint-plugin-hive": "file:rules",
-    "graphql": "16.9.0",
+    "graphql": "16.14.2",
     "jest-snapshot-serializer-raw": "2.0.0",
     "pg": "8.13.1",
     "prettier": "3.4.2",

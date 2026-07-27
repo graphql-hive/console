@@ -105,7 +105,7 @@
     "formik": "2.4.6",
     "framer-motion": "11.18.2",
     "graphiql": "4.0.0-alpha.5",
-    "graphql": "16.9.0",
+    "graphql": "16.14.2",
     "graphql-sse": "2.5.3",
     "graphql-ws": "5.16.1",
     "idb-keyval": "6.2.1",
