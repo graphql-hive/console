@@ -53,6 +53,7 @@ const UpdateOIDCIntegrationForm_UpdateOIDCIntegrationMutation = graphql(`
           clientId
           clientSecretPreview
           additionalScopes
+          userIdClaim
         }
       }
       error {
@@ -79,6 +80,7 @@ const OIDCIntegrationConfiguration_OIDCIntegration = graphql(`
     authorizationEndpoint
     tokenEndpoint
     userinfoEndpoint
+    userIdClaim
     clientId
     clientSecretPreview
     additionalScopes
@@ -294,7 +296,7 @@ export function OIDCIntegrationConfiguration(props: {
             </Table.TableRow>
             <Table.TableRow>
               <Table.TableCell className="font-medium">Client ID</Table.TableCell>
-              <Table.TableCell>{oidcIntegration.clientId}</Table.TableCell>
+              <Table.TableCell className="font-mono">{oidcIntegration.clientId}</Table.TableCell>
             </Table.TableRow>
             <Table.TableRow>
               <Table.TableCell className="font-medium">Client Secret</Table.TableCell>
@@ -303,8 +305,38 @@ export function OIDCIntegrationConfiguration(props: {
               </Table.TableCell>
             </Table.TableRow>
             <Table.TableRow>
-              <Table.TableCell className="font-medium">Additional Scopes</Table.TableCell>
-              <Table.TableCell>{oidcIntegration.additionalScopes.join(' ')}</Table.TableCell>
+              <Table.TableCell className="font-medium">
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger>User ID Claim</TooltipTrigger>
+                    <TooltipContent className="text-xs">
+                      The claim that should be used to uniquely identify an user.
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              </Table.TableCell>
+              <Table.TableCell className="font-mono">
+                {oidcIntegration.userIdClaim ?? <span className="text-neutral-10">none set</span>}
+              </Table.TableCell>
+            </Table.TableRow>
+            <Table.TableRow>
+              <Table.TableCell className="font-medium">
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger>Additional Scopes</TooltipTrigger>
+                    <TooltipContent className="text-xs">
+                      Additional scopes that are requested from the OIDC provider.
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              </Table.TableCell>
+              <Table.TableCell>
+                {oidcIntegration.additionalScopes.length ? (
+                  <span className="font-mono">{oidcIntegration.additionalScopes.join(' ')}</span>
+                ) : (
+                  <span className="text-neutral-8">none</span>
+                )}
+              </Table.TableCell>
             </Table.TableRow>
           </Table.TableBody>
         </Table.Table>
@@ -409,6 +441,7 @@ export function OIDCIntegrationConfiguration(props: {
           onClose={() => setModalState(ModalState.closed)}
           initialValues={{
             additionalScopes: oidcIntegration.additionalScopes.join(' '),
+            userIdClaim: oidcIntegration.userIdClaim ?? '',
             clientId: oidcIntegration.clientId,
             authorizationEndpoint: oidcIntegration.authorizationEndpoint,
             tokenEndpoint: oidcIntegration.tokenEndpoint,
@@ -421,6 +454,7 @@ export function OIDCIntegrationConfiguration(props: {
                 oidcIntegrationId: oidcIntegration.id,
                 clientId: args.clientId || undefined,
                 clientSecret: args.clientSecret || undefined,
+                userIdClaim: args.userIdClaim || undefined,
                 additionalScopes: args.additionalScopes?.trim()
                   ? args.additionalScopes.trim().split(' ')
                   : undefined,

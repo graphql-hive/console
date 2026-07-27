@@ -28,10 +28,23 @@ export default gql`
     """
     registeredDomains: [OIDCIntegrationDomain!]!
     """
-    The claim that should be used for identifying a user.
-    By default the "sub" claim is used.
+    The claim that should be used to uniquely identify a user.
+    When using a SCIM provider, the claim should map to the "externalId" shared with the SCIM provider.
+
+    By default the 'sub' claim is used.
     """
     userIdClaim: String
+    """
+    Whether an user account can be created JIT upon attempting a login with the OIDC provider.
+    If set to 'true', a successful login via OIDC will fail if the account was not provisioned before.
+    If set to 'false', a successful login via OIDC will create a new user account.
+    """
+    userProvisioningRequired: Boolean!
+    """
+    Prohibit email/password or social sign in/up for any email address that contains a verified domain.
+    This allows the organization admin to enforce all login to be performed through the organizations OIDC provider.
+    """
+    oidcForVerifiedDomainsRequired: Boolean!
   }
 
   extend type Mutation {
@@ -198,6 +211,13 @@ export default gql`
     userinfoEndpoint: String!
     authorizationEndpoint: String!
     additionalScopes: [String!]!
+    """
+    The claim that should be used to uniquely identify a user.
+    When using a SCIM provider, the claim should map to the "externalId" shared with the SCIM provider.
+
+    By default the 'sub' claim is used.
+    """
+    userIdClaim: String = "sub"
   }
 
   type CreateOIDCIntegrationResult {
@@ -235,14 +255,12 @@ export default gql`
     """
     The claim that should be used to uniquely identify a user.
     When using a SCIM provider, the claim should map to the "externalId" shared with the SCIM provider.
-
-    Defaults to the "sub" claim.
     """
     userIdClaim: String
     """
     Whether an user account can be created JIT upon attempting a login with the OIDC provider.
     If set to 'true', a successful login via OIDC will fail if the account was not provisioned before.
-    If set to 'false', as successful via OIDC will create a new user account.
+    If set to 'false', a successful login via OIDC will create a new user account.
     """
     userProvisioningRequired: Boolean
     """

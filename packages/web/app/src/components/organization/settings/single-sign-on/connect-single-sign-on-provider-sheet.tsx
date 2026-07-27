@@ -27,6 +27,7 @@ type ConnectSingleSignOnProviderSheetProps = {
     clientId: string;
     clientSecretPreview: string;
     additionalScopes: string;
+    userIdClaim: string;
   };
   onSave: (args: {
     tokenEndpoint: string;
@@ -34,6 +35,7 @@ type ConnectSingleSignOnProviderSheetProps = {
     authorizationEndpoint: string;
     clientId: string;
     clientSecret: null | string;
+    userIdClaim: null | string;
     additionalScopes: string;
   }) => Promise<
     | {
@@ -64,6 +66,7 @@ export function ConnectSingleSignOnProviderSheet(
       clientId: props.initialValues?.clientId ?? '',
       clientSecret: '',
       additionalScopes: props.initialValues?.additionalScopes ?? '',
+      userIdClaim: props.initialValues?.userIdClaim ?? '',
     },
     mode: 'onSubmit',
   });
@@ -78,6 +81,7 @@ export function ConnectSingleSignOnProviderSheet(
       clientSecret: props.initialValues?.clientSecretPreview
         ? state.clientSecret || null
         : state.clientSecret,
+      userIdClaim: state.userIdClaim,
       additionalScopes: state.additionalScopes,
     });
 
@@ -218,6 +222,21 @@ export function ConnectSingleSignOnProviderSheet(
                     type="password"
                     {...field}
                   />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            );
+          }}
+        />
+        <FormField
+          control={form.control}
+          name="userIdClaim"
+          render={({ field }) => {
+            return (
+              <FormItem>
+                <FormLabel>User ID Claim</FormLabel>
+                <FormControl>
+                  <Input placeholder="sub" autoComplete="off" {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>

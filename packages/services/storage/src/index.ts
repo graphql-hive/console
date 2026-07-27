@@ -2360,7 +2360,8 @@ export async function createStorage(
             "token_endpoint",
             "userinfo_endpoint",
             "authorization_endpoint",
-            "additional_scopes"
+            "additional_scopes",
+            "user_id_claim"
           )
           VALUES (
             ${args.organizationId},
@@ -2369,7 +2370,8 @@ export async function createStorage(
             ${args.tokenEndpoint},
             ${args.userinfoEndpoint},
             ${args.authorizationEndpoint},
-            ${psql.array(args.additionalScopes, 'text')}
+            ${psql.array(args.additionalScopes, 'text')},
+            ${args.userIdClaim}
           )
           RETURNING
             ${oidcIntegrationFields()}

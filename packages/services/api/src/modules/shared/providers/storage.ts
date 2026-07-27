@@ -475,6 +475,7 @@ export interface Storage {
     userinfoEndpoint: string;
     authorizationEndpoint: string;
     additionalScopes: readonly string[];
+    userIdClaim: string | null;
   }): Promise<{ type: 'ok'; oidcIntegration: OIDCIntegration } | { type: 'error'; reason: string }>;
 
   updateOIDCIntegration(_: {

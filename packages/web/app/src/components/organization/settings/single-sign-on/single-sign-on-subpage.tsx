@@ -128,6 +128,7 @@ export function SingleSignOnSubpage(props: SingleSignOnSubPageProps): React.Reac
                       authorizationEndpoint: values.authorizationEndpoint,
                       tokenEndpoint: values.tokenEndpoint,
                       userinfoEndpoint: values.userinfoEndpoint,
+                      userIdClaim: values.userIdClaim,
                       additionalScopes:
                         values.additionalScopes.trim() === ''
                           ? []

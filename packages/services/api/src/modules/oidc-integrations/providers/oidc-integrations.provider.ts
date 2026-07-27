@@ -109,6 +109,7 @@ export class OIDCIntegrationsProvider {
     userinfoEndpoint: string;
     authorizationEndpoint: string;
     additionalScopes: readonly string[];
+    userIdClaim: string | null;
   }) {
     if (this.isEnabled() === false) {
       return {
@@ -139,6 +140,7 @@ export class OIDCIntegrationsProvider {
     const userinfoEndpointResult = OAuthAPIUrlModel.safeParse(args.userinfoEndpoint);
     const authorizationEndpointResult = OAuthAPIUrlModel.safeParse(args.authorizationEndpoint);
     const additionalScopesResult = OIDCAdditionalScopesModel.safeParse(args.additionalScopes);
+    const userIdClaimResult = OIDCScopeModel.nullable().safeParse(args.userIdClaim);
 
     if (
       clientIdResult.success &&
@@ -146,7 +148,8 @@ export class OIDCIntegrationsProvider {
       tokenEndpointResult.success &&
       userinfoEndpointResult.success &&
       authorizationEndpointResult.success &&
-      additionalScopesResult.success
+      additionalScopesResult.success &&
+      userIdClaimResult.success
     ) {
       const creationResult = await this.storage.createOIDCIntegrationForOrganization({
         organizationId: args.organizationId,
@@ -156,6 +159,7 @@ export class OIDCIntegrationsProvider {
         userinfoEndpoint: userinfoEndpointResult.data,
         authorizationEndpoint: authorizationEndpointResult.data,
         additionalScopes: additionalScopesResult.data,
+        userIdClaim: userIdClaimResult.data,
       });
 
       if (creationResult.type === 'ok') {
@@ -180,6 +184,7 @@ export class OIDCIntegrationsProvider {
           userinfoEndpoint: null,
           authorizationEndpoint: null,
           additionalScopes: null,
+          userIdClaim: null,
         },
       } as const;
     }
@@ -204,6 +209,7 @@ export class OIDCIntegrationsProvider {
         additionalScopes: additionalScopesResult.success
           ? null
           : additionalScopesResult.error.issues[0].message,
+        userIdClaim: userIdClaimResult.success ? null : userIdClaimResult.error.issues[0].message,
       },
     } as const;
   }
