@@ -1,7 +1,7 @@
+import { createHash, randomBytes } from 'node:crypto';
 import { pollFor, readTokenInfo } from 'testkit/flow';
 import { ProjectType } from 'testkit/gql/graphql';
-import { createTokenStorage } from '@hive/storage';
-import { generateToken } from '@hive/tokens';
+import { TargetTokenStorage } from '@hive/api/modules/token/providers/target-token-storage';
 import { initSeed } from '../../testkit/seed';
 
 test.concurrent('deleting a token should clear the cache', async () => {
@@ -155,26 +155,26 @@ test.concurrent(
     const { createProject, organization } = await createOrg();
     const { project, target } = await createProject();
 
-    const tokenStorage = await createTokenStorage(seed.getPGConnectionString(), 1);
+    const token = randomBytes(16).toString('hex');
+    const secret = createHash('sha256').update(token).digest('hex');
+    const { pool } = await seed.createDbConnection();
+    const tokenStorage = new TargetTokenStorage(pool);
 
-    try {
-      const token = generateToken();
+    // create new token so it does not yet exist in redis cache
+    const record = await tokenStorage.createToken({
+      name: 'foo',
+      organization: organization.id,
+      project: project.id,
+      target: target.id,
+      scopes: [],
+      token: secret,
+      tokenAlias: 'foobars',
+    });
 
-      // create new token so it does not yet exist in redis cache
-      const record = await tokenStorage.createToken({
-        name: 'foo',
-        organization: organization.id,
-        project: project.id,
-        target: target.id,
-        scopes: [],
-        token: token.hash,
-        tokenAlias: token.alias,
-      });
-
-      // touch the token so it has a date
-      await tokenStorage.touchTokens({ tokens: [{ token: record.token, date: new Date() }] });
-      const result = await readTokenInfo(token.secret).then(res => res.expectNoGraphQLErrors());
-      expect(result.tokenInfo).toMatchInlineSnapshot(`
+    // touch the token so it has a date
+    await TargetTokenStorage.touchTokenByHash({ pool })(secret);
+    const result = await readTokenInfo(token).then(res => res.expectNoGraphQLErrors());
+    expect(result.tokenInfo).toMatchInlineSnapshot(`
         {
           __typename: TokenInfo,
           hasOrganizationDelete: false,
@@ -197,8 +197,5 @@ test.concurrent(
           hasTargetTokensWrite: false,
         }
       `);
-    } finally {
-      await tokenStorage.destroy();
-    }
   },
 );

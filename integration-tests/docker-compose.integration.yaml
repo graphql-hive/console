@@ -223,8 +223,6 @@ services:
     depends_on:
       broker:
         condition: service_started # Redpand is ready when it starts
-      tokens:
-        condition: service_healthy
 
   usage-ingestor:
     environment:
@@ -234,8 +232,6 @@ services:
     depends_on:
       broker:
         condition: service_started # Redpand is ready when it starts
-      tokens:
-        condition: service_healthy
 
   workflows:
     environment:

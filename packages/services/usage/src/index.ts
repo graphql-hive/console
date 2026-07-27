@@ -3,6 +3,7 @@ import 'reflect-metadata';
 import { PrometheusConfig } from '@hive/api/modules/shared/providers/prometheus-config';
 import { TargetsByIdCache } from '@hive/api/modules/target/providers/targets-by-id-cache';
 import { TargetsBySlugCache } from '@hive/api/modules/target/providers/targets-by-slug-cache';
+import { TargetTokenCache } from '@hive/api/modules/token/providers/target-token-cache';
 import { createPostgresDatabasePool } from '@hive/postgres';
 import {
   configureTracing,
@@ -81,6 +82,7 @@ async function main() {
   const prometheusConfig = new PrometheusConfig(!!tracing);
   const targetsByIdCache = new TargetsByIdCache(redis, pgPool, prometheusConfig);
   const targetsBySlugCache = new TargetsBySlugCache(redis, pgPool, prometheusConfig);
+  const targetTokenCache = new TargetTokenCache(redis, pgPool, prometheusConfig);
 
   if (tracing) {
     await server.register(...tracing.instrumentFastify());
@@ -117,7 +119,7 @@ async function main() {
     });
 
     const tokens = createTokens({
-      endpoint: env.hive.tokens.endpoint,
+      cache: targetTokenCache,
       logger: server.log,
     });
 
