@@ -218,6 +218,26 @@ export const Settings = () => {
                   );
                 }}
               </form.Field>
+              <form.Field name="introspection.pollSchema">
+                {field => {
+                  return (
+                    <Field className="flex-row items-start">
+                      <Switch
+                        className="mt-0.5 !w-8"
+                        checked={field.state.value ?? true}
+                        onCheckedChange={field.handleChange}
+                      />
+                      <div>
+                        <FieldLabel htmlFor={field.name}>Poll for schema changes</FieldLabel>
+                        <FieldDescription>
+                          Re-runs the introspection query every 5 seconds. Turn off to reload the
+                          schema only when you ask for it.
+                        </FieldDescription>
+                      </div>
+                    </Field>
+                  );
+                }}
+              </form.Field>
               <form.Field name="introspection.includeActiveOperationHeaders">
                 {field => {
                   return (

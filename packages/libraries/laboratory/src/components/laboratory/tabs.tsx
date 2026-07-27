@@ -337,6 +337,7 @@ export const Tabs = ({ className }: { className?: string }) => {
     goToFullScreen,
     exitFullScreen,
     isFullScreen,
+    enableFullScreen,
   } = useLaboratory();
 
   const handleAddOperation = useCallback(() => {
@@ -424,18 +425,16 @@ export const Tabs = ({ className }: { className?: string }) => {
               <Sortable.Content className="flex w-max items-stretch">
                 {tabs.map(item => {
                   return (
-                    <>
-                      <Tab
-                        key={item.id}
-                        item={item}
-                        activeTab={activeTab}
-                        setActiveTab={setActiveTab}
-                        isOperationLoading={isOperationLoading}
-                        handleDeleteTab={handleDeleteTab}
-                        handleDeleteAllTabs={handleDeleteAllTabs}
-                        handleDeleteOtherTabs={handleDeleteOtherTabs}
-                      />
-                    </>
+                    <Tab
+                      key={item.id}
+                      item={item}
+                      activeTab={activeTab}
+                      setActiveTab={setActiveTab}
+                      isOperationLoading={isOperationLoading}
+                      handleDeleteTab={handleDeleteTab}
+                      handleDeleteAllTabs={handleDeleteAllTabs}
+                      handleDeleteOtherTabs={handleDeleteOtherTabs}
+                    />
                   );
                 })}
               </Sortable.Content>
@@ -477,27 +476,47 @@ export const Tabs = ({ className }: { className?: string }) => {
           <ScrollBar orientation="horizontal" />
         </ScrollArea>
       </div>
-      <div className="group flex h-12 items-center border-l px-2">
-        {isFullScreen ? (
-          <Tooltip>
-            <TooltipTrigger>
-              <Button variant="ghost" size="sm" onClick={exitFullScreen}>
-                <MinimizeIcon className="size-4" />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent side="bottom">Exit full screen</TooltipContent>
-          </Tooltip>
-        ) : (
-          <Tooltip>
-            <TooltipTrigger>
-              <Button variant="ghost" size="sm" onClick={goToFullScreen}>
-                <MaximizeIcon className="size-4" />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent side="bottom">Go to full screen</TooltipContent>
-          </Tooltip>
-        )}
-      </div>
+      <FullScreenToggle
+        enabled={enableFullScreen !== false}
+        isFullScreen={isFullScreen === true}
+        onEnter={goToFullScreen}
+        onExit={exitFullScreen}
+      />
+    </div>
+  );
+};
+
+export const FullScreenToggle = (props: {
+  enabled: boolean;
+  isFullScreen: boolean;
+  onEnter?: () => void;
+  onExit?: () => void;
+}) => {
+  if (!props.enabled) {
+    return null;
+  }
+
+  const label = props.isFullScreen ? 'Exit full screen' : 'Go to full screen';
+
+  return (
+    <div className="group flex h-12 items-center border-l px-2">
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <Button
+            variant="ghost"
+            size="sm"
+            aria-label={label}
+            onClick={props.isFullScreen ? props.onExit : props.onEnter}
+          >
+            {props.isFullScreen ? (
+              <MinimizeIcon className="size-4" />
+            ) : (
+              <MaximizeIcon className="size-4" />
+            )}
+          </Button>
+        </TooltipTrigger>
+        <TooltipContent side="bottom">{label}</TooltipContent>
+      </Tooltip>
     </div>
   );
 };

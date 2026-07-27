@@ -15,6 +15,7 @@ import {
   PowerIcon,
   PowerOffIcon,
   SquarePenIcon,
+  SquareTerminal,
 } from 'lucide-react';
 import { compressToEncodedURIComponent } from 'lz-string';
 import * as monaco from 'monaco-editor/esm/vs/editor/editor.api';
@@ -22,7 +23,8 @@ import { toast } from 'sonner';
 import { z } from 'zod';
 import { Input } from '@/components/ui/input';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
-import { QueryPlanSchema } from '@/lib/query-plan/schema';
+import { buildCurlCommand } from '@/lib/curl';
+import { parseQueryPlan } from '@/lib/query-plan/parse';
 import { DropdownMenuTrigger } from '@radix-ui/react-dropdown-menu';
 import { useForm } from '@tanstack/react-form';
 import type {
@@ -32,7 +34,7 @@ import type {
 } from '../../lib/history';
 import type { LaboratoryOperation } from '../../lib/operations';
 import { QueryPlanTree, renderQueryPlan } from '../../lib/query-plan/utils';
-import { cn } from '../../lib/utils';
+import { cn, formatBytes } from '../../lib/utils';
 import { Badge } from '../ui/badge';
 import { Button } from '../ui/button';
 import {
@@ -192,24 +194,27 @@ export const ResponsePreflight = ({ historyItem }: { historyItem?: LaboratoryHis
 export const ResponseQueryPlan = ({ historyItem }: { historyItem?: LaboratoryHistory | null }) => {
   const [mode, setMode] = useState<'text' | 'visual'>('text');
 
-  const queryPlan = useMemo(() => {
-    try {
-      const queryPlan =
-        JSON.parse((historyItem as LaboratoryHistoryRequest)?.response ?? '{}').extensions
-          ?.queryPlan ?? {};
-
-      if (!queryPlan) {
-        return null;
-      }
-
-      return QueryPlanSchema.safeParse(queryPlan).success ? queryPlan : null;
-    } catch {
-      return null;
-    }
-  }, [historyItem]);
+  const queryPlan = useMemo(
+    () => parseQueryPlan((historyItem as LaboratoryHistoryRequest)?.response),
+    [historyItem],
+  );
 
   if (!queryPlan) {
-    return null;
+    return (
+      <Empty className="size-full">
+        <EmptyHeader>
+          <EmptyMedia variant="icon">
+            <NetworkIcon className="text-muted-foreground size-6" />
+          </EmptyMedia>
+          <EmptyTitle>{historyItem ? 'No query plan' : 'No query plan yet'}</EmptyTitle>
+          <EmptyDescription>
+            {historyItem
+              ? 'This response did not include one. Query plans show up here when your gateway returns extensions.queryPlan.'
+              : 'Run this operation against a gateway that returns extensions.queryPlan to see how it resolves across subgraphs.'}
+          </EmptyDescription>
+        </EmptyHeader>
+      </Empty>
+    );
   }
 
   return (
@@ -328,20 +333,6 @@ export const Response = ({ historyItem }: { historyItem?: LaboratoryHistoryReque
     );
   }, [historyItem]);
 
-  const hasValidQueryPlan = useMemo(() => {
-    if (!historyItem) {
-      return false;
-    }
-
-    const queryPlan = JSON.parse(historyItem.response).extensions?.queryPlan;
-
-    if (!queryPlan) {
-      return false;
-    }
-
-    return QueryPlanSchema.safeParse(queryPlan).success;
-  }, [historyItem?.response]);
-
   return (
     <Tabs
       defaultValue="response"
@@ -352,7 +343,7 @@ export const Response = ({ historyItem }: { historyItem?: LaboratoryHistoryReque
       <TabsList className="h-[50px] w-full items-center justify-start rounded-none border-b bg-transparent p-3">
         {isFullScreen ? (
           <Tooltip>
-            <TooltipTrigger>
+            <TooltipTrigger asChild>
               <Button
                 variant="ghost"
                 size="sm"
@@ -366,7 +357,7 @@ export const Response = ({ historyItem }: { historyItem?: LaboratoryHistoryReque
           </Tooltip>
         ) : (
           <Tooltip>
-            <TooltipTrigger>
+            <TooltipTrigger asChild>
               <Button
                 variant="ghost"
                 size="sm"
@@ -382,11 +373,6 @@ export const Response = ({ historyItem }: { historyItem?: LaboratoryHistoryReque
         <TabsTrigger value="response" className="grow-0 rounded-sm">
           Response
         </TabsTrigger>
-        {hasValidQueryPlan && (
-          <TabsTrigger value="query-plan" className="grow-0 rounded-sm">
-            Query Plan
-          </TabsTrigger>
-        )}
         <TabsTrigger value="headers" className="grow-0 rounded-sm">
           Headers
         </TabsTrigger>
@@ -395,6 +381,9 @@ export const Response = ({ historyItem }: { historyItem?: LaboratoryHistoryReque
             Preflight
           </TabsTrigger>
         )}
+        <TabsTrigger value="query-plan" className="grow-0 rounded-sm">
+          Query Plan
+        </TabsTrigger>
         {historyItem ? (
           <div className="ml-auto flex items-center gap-2">
             {!!historyItem?.status && (
@@ -420,13 +409,10 @@ export const Response = ({ historyItem }: { historyItem?: LaboratoryHistoryReque
                 </span>
               </Badge>
             )}
-            {historyItem?.size && (
+            {(historyItem as LaboratoryHistoryRequest).size != null && (
               <Badge variant="outline" className="bg-card">
                 <FileTextIcon className="size-3" />
-                <span>
-                  {Math.round((historyItem as LaboratoryHistoryRequest).size! / 1024)}
-                  KB
-                </span>
+                <span>{formatBytes((historyItem as LaboratoryHistoryRequest).size!)}</span>
               </Badge>
             )}
           </div>
@@ -481,6 +467,8 @@ export const Query = (props: {
     plugins,
     pluginsState,
     setPluginsState,
+    env,
+    settings,
   } = useLaboratory();
 
   const [operationName, setOperationName] = useState<string | null>(null);
@@ -566,7 +554,7 @@ export const Query = (props: {
       const status = extensionsResponse.status;
       const duration = performance.now() - startTime;
       const responseText = JSON.stringify(response, null, 2);
-      const size = responseText.length;
+      const size = new TextEncoder().encode(responseText).length;
 
       const newItemHistory = addHistory({
         status,
@@ -688,6 +676,30 @@ export const Query = (props: {
     [operation],
   );
 
+  const copyAsCurl = useCallback(() => {
+    if (!operation || !endpoint) {
+      return;
+    }
+
+    // Preflight headers already in state; running preflight from a copy would
+    // fire its side effects.
+    void navigator.clipboard.writeText(
+      buildCurlCommand({
+        endpoint,
+        query: operation.query,
+        variables: operation.variables,
+        headers: operation.headers,
+        extensions: operation.extensions,
+        operationName,
+        env: env?.variables,
+        pluginsState,
+        settings,
+      }),
+    );
+
+    toast.success('cURL command copied to clipboard');
+  }, [operation, endpoint, operationName, env, pluginsState, settings]);
+
   return (
     <div className="grid size-full grid-rows-[auto_1fr] overflow-hidden pb-0">
       <Dialog open={isSaveToCollectionDialogOpen} onOpenChange={setIsSaveToCollectionDialogOpen}>
@@ -787,8 +799,22 @@ export const Query = (props: {
           </Toggle>
         )}
         <div className="ml-auto flex items-center gap-2">
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                onClick={copyAsCurl}
+                variant="ghost"
+                size="icon-sm"
+                className="p-1! size-6 rounded-sm"
+                aria-label="Copy as cURL"
+              >
+                <SquareTerminal className="text-muted-foreground size-4" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>Copy as cURL</TooltipContent>
+          </Tooltip>
           <DropdownMenu>
-            <DropdownMenuTrigger>
+            <DropdownMenuTrigger asChild>
               <Button variant="outline" size="sm" className="h-6 rounded-sm">
                 Share
                 <MoreHorizontalIcon className="size-4" />

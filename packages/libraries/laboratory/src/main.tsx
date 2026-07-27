@@ -1,4 +1,5 @@
 import ReactDOM from 'react-dom/client';
+import { devCollections } from '../dev/collections';
 import { Laboratory } from './components/laboratory/laboratory';
 
 const getLocalStorage = (key: string) => {
@@ -13,11 +14,11 @@ const setLocalStorage = (key: string, value: unknown) => {
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <Laboratory
     theme="dark"
-    defaultEndpoint={getLocalStorage('endpoint') ?? null}
+    defaultEndpoint={getLocalStorage('endpoint') ?? `${window.location.origin}/graphql`}
     onEndpointChange={endpoint => {
       setLocalStorage('endpoint', endpoint ?? '');
     }}
-    defaultCollections={getLocalStorage('collections') ?? []}
+    defaultCollections={getLocalStorage('collections') ?? devCollections}
     onCollectionsChange={collections => {
       setLocalStorage('collections', collections);
     }}
