@@ -687,6 +687,9 @@ importers:
       '@envelop/types':
         specifier: ^5.0.0
         version: 5.0.0
+      graphql-yoga:
+        specifier: 5.13.3
+        version: 5.13.3(graphql@16.9.0)
     publishDirectory: dist
 
   packages/libraries/laboratory:

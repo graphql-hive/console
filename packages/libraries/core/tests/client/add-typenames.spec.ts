@@ -1,4 +1,4 @@
-import { buildSchema, parse as gql, print } from 'graphql';
+import { buildSchema, parse as gql, print, validate } from 'graphql';
 import { addTypenames } from '../../src/client/add-typenames.js';
 
 // ---------------------------------------------------------------------------
@@ -218,6 +218,62 @@ describe('interface types', () => {
       }
     `);
     expect(typenameCount(result)).toBe(1);
+  });
+
+  it('does not invalidate a query that uses __typename as an alias', () => {
+    const doc = gql(`
+      query {
+        node(id: "1") {
+          __typename: id
+        }
+      }
+    `);
+    expect(validate(schema, doc)).toEqual([]);
+
+    const result = addTypenames(doc, schema);
+    expect(validate(schema, result)).toEqual([]);
+  });
+
+  it.only('adds an unaliased __typename when the client aliases its typename field', () => {
+    const doc = gql(`
+      query {
+        node(id: "1") {
+          kind: __typename
+          id
+        }
+      }
+    `);
+
+    expect(print(addTypenames(doc, schema))).toMatchInlineSnapshot(`
+      {
+        node(id: "1") {
+          kind: __typename
+          id
+          __typename
+        }
+      }
+    `);
+  });
+
+  it('adds an unconditional __typename when the client typename is conditional', () => {
+    const doc = gql(`
+      query ($skipType: Boolean!) {
+        node(id: "1") {
+          __typename @skip(if: $skipType)
+          id
+        }
+      }
+    `);
+
+    expect(print(addTypenames(doc, schema))).toMatchInlineSnapshot(`
+      query ($skipType: Boolean!) {
+        node(id: "1") {
+          __typename @skip(if: $skipType)
+          id
+          __typename
+        }
+      }
+    `);
   });
 });
 
