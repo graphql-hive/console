@@ -340,47 +340,44 @@ function GroupRow(props: GroupRowProps): ReactNode {
                                 <AlertDialogCancel onClick={() => setSheetNode(null)}>
                                   Cancel
                                 </AlertDialogCancel>
-                                <AlertDialogAction asChild>
-                                  <Button
-                                    variant="destructive"
-                                    onClick={async e => {
-                                      e.stopPropagation();
-                                      try {
-                                        const result = await deleteRoleAssignment({
-                                          input: {
-                                            groupMappingId: groupRoleMapping.id,
-                                          },
-                                        });
-                                        if (result.error) {
-                                          toast({
-                                            variant: 'destructive',
-                                            title: 'Failed to remove role assignment',
-                                            description: result.error.message,
-                                          });
-                                        } else if (result.data?.removeGroupMapping.ok) {
-                                          toast({
-                                            title: 'Role assignment removed',
-                                            description:
-                                              'The role assignment was removed from the group',
-                                          });
-                                        } else if (result.data?.removeGroupMapping.error) {
-                                          toast({
-                                            title: 'Failed to remove role assignment',
-                                            description:
-                                              result.data.removeGroupMapping.error.message,
-                                          });
-                                        }
-                                      } catch (error) {
+                                <AlertDialogAction
+                                  variant="destructive"
+                                  onClick={async e => {
+                                    e.stopPropagation();
+                                    try {
+                                      const result = await deleteRoleAssignment({
+                                        input: {
+                                          groupMappingId: groupRoleMapping.id,
+                                        },
+                                      });
+                                      if (result.error) {
                                         toast({
                                           variant: 'destructive',
-                                          title: 'Failed to delete a member',
-                                          description: String(error),
+                                          title: 'Failed to remove role assignment',
+                                          description: result.error.message,
+                                        });
+                                      } else if (result.data?.removeGroupMapping.ok) {
+                                        toast({
+                                          title: 'Role assignment removed',
+                                          description:
+                                            'The role assignment was removed from the group',
+                                        });
+                                      } else if (result.data?.removeGroupMapping.error) {
+                                        toast({
+                                          title: 'Failed to remove role assignment',
+                                          description: result.data.removeGroupMapping.error.message,
                                         });
                                       }
-                                    }}
-                                  >
-                                    Delete
-                                  </Button>
+                                    } catch (error) {
+                                      toast({
+                                        variant: 'destructive',
+                                        title: 'Failed to delete a member',
+                                        description: String(error),
+                                      });
+                                    }
+                                  }}
+                                >
+                                  Delete
                                 </AlertDialogAction>
                               </AlertDialogFooter>
                             </AlertDialogContent>
@@ -471,7 +468,7 @@ function GroupRoleMappingRow(props: {
                 <PencilIcon className="h-3 w-3" />
               </Button>
             </TooltipTrigger>
-            <TooltipContent>Edit mapping</TooltipContent>
+            <TooltipContent className="text-xs">Edit mapping</TooltipContent>
           </Tooltip>
           <Tooltip>
             <TooltipTrigger asChild>
@@ -479,7 +476,7 @@ function GroupRoleMappingRow(props: {
                 <Trash2Icon className="h-3 w-3" />
               </Button>
             </TooltipTrigger>
-            <TooltipContent>Remove mapping</TooltipContent>
+            <TooltipContent className="text-xs">Remove mapping</TooltipContent>
           </Tooltip>
         </TooltipProvider>
       </div>
