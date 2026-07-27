@@ -306,7 +306,7 @@ function GroupRow(props: GroupRowProps): ReactNode {
       {isExpanded && (
         <>
           {groupDetailed ? (
-            <div className="border-t">
+            <div className="border-neutral-3 border-t">
               <div className="px-4 py-2 pl-16">
                 <div className="mb-2 text-xs font-medium">Role Mappings</div>
                 <div className="space-y-2">

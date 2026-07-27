@@ -333,7 +333,7 @@ const OrganizationMemberRow = memo(function OrganizationMemberRow(props: {
               <TooltipProvider>
                 <Tooltip>
                   <TooltipTrigger>
-                    <Badge variant="destructive">Inactive</Badge>
+                    <Badge variant="destructive">Disabled</Badge>
                   </TooltipTrigger>
                   <TooltipContent className="text-xs">This user is disabled.</TooltipContent>
                 </Tooltip>
