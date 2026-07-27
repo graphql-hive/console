@@ -10,6 +10,7 @@ import {
   joinOrganization,
   leaveOrganization,
   readProjectInfo,
+  requestOrganizationTransfer,
   updateMe,
   updateMemberRole,
 } from 'testkit/flow';
@@ -4295,6 +4296,47 @@ describe('provisioned user jail', () => {
       expect(result.joinOrganization).toEqual({
         __typename: 'OrganizationInvitationError',
         message: 'Provisioned users can not join any other organization.',
+      });
+    },
+  );
+
+  test.concurrent(
+    'organization ownership transfer cannot be requested for a provisioned user',
+    async ({ expect }) => {
+      const seed = initSeed();
+      const owner = await seed.createOwner();
+      const org = await owner.createOrg();
+      const oidc = await org.createOIDCIntegration();
+      const domain = await oidc.registerFakeDomain();
+      const accessToken = await org.createOrganizationAccessToken({
+        permissions: ['member:describe', 'member:modify'],
+        resources: { mode: ResourceAssignmentModeType.Granular },
+      });
+      const scim = createScimTestkit({
+        baseUrl,
+        headers: {
+          'Content-Type': 'application/scim+json',
+          Authorization: `Bearer ${accessToken.privateAccessKey}`,
+        },
+      });
+      const email = `request-ownership-transfer@${domain}`;
+      const scimUser = await scim.createUser({
+        externalId: crypto.randomUUID(),
+        emails: [{ primary: true, type: 'work', value: email }],
+        userName: email,
+      });
+
+      const result = await requestOrganizationTransfer(
+        {
+          organizationSlug: org.organization.slug,
+          userId: scimUser.body.id,
+        },
+        owner.ownerToken,
+      ).then(response => response.expectNoGraphQLErrors());
+
+      expect(result.requestOrganizationTransfer).toEqual({
+        ok: null,
+        error: { message: 'Provisioned users can not be modified.' },
       });
     },
   );

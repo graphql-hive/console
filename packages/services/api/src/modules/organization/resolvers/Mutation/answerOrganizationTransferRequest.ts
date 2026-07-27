@@ -9,11 +9,15 @@ export const answerOrganizationTransferRequest: NonNullable<
   const organization = await injector.get(IdTranslator).translateOrganizationId(input);
 
   try {
-    await injector.get(OrganizationManager).answerOwnershipTransferRequest({
+    const result = await injector.get(OrganizationManager).answerOwnershipTransferRequest({
       organizationId: organization,
       code: input.code,
       accept: input.accept,
     });
+
+    if (result) {
+      return result;
+    }
 
     return {
       ok: {

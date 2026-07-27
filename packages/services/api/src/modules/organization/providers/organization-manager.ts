@@ -777,6 +777,14 @@ export class OrganizationManager {
       };
     }
 
+    if (member.user.provisionedByOrganizationId) {
+      return {
+        error: {
+          message: 'Can not transfer ownership to a provisioned user.',
+        },
+      };
+    }
+
     const organization = await this.getOrganization(selector);
 
     const { code } = await this.storage.createOrganizationTransferRequest({
@@ -844,6 +852,14 @@ export class OrganizationManager {
       },
     });
     const currentUser = await this.session.getViewer();
+
+    if (currentUser.provisionedByOrganizationId) {
+      return {
+        error: {
+          message: 'Can not transfer ownership to a provisioned user.',
+        },
+      };
+    }
 
     await this.auditLog.record({
       eventType: 'ORGANIZATION_TRANSFERRED',
