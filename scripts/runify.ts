@@ -31,7 +31,6 @@ async function runify(packagePath: string) {
     cwd,
     entryPoints?.length ? entryPoints : 'src/index.ts',
     buildOptions,
-    Object.keys(pkg.dependencies ?? {}).concat(Object.keys(pkg.devDependencies ?? {})),
     pkg.type === 'module',
   );
   await rewritePackageJson(pkg, cwd);
@@ -85,7 +84,6 @@ async function compile(
   cwd: string,
   entryPoint: string | string[],
   buildOptions: BuildOptions,
-  dependencies: string[],
   useEsm = false,
 ) {
   const out = normalize(join(cwd, 'dist'));
@@ -102,7 +100,6 @@ async function compile(
     clean: true,
     shims: true,
     skipNodeModulesBundle: false,
-    // noExternal: dependencies,
     external: [...globalExternals, ...(buildOptions.external || [])],
     banner: {
       js: requireShim,
