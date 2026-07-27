@@ -77,6 +77,8 @@ async function rewritePackageJson(
 const globalExternals: string[] = [
   // TODO: dependency of hive gateway. why does it get built by all packages, mystery
   'ansi-color',
+  // it is bundled into docker images even though it is only used in dev mode.
+  '@fastify/vite',
 ];
 
 async function compile(

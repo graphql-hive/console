@@ -133,7 +133,6 @@
       "csstype": "3.1.2",
       "mjml-core@4.14.0>html-minifier": "-",
       "mjml-cli@4.14.0>html-minifier": "-",
-      "@fastify/vite@6>vite": "-",
       "ws@^8.0.0": "^8.21.0",
       "ws@*": ">=8.21.0 || >=7.5.10 || >=6.2.3 || >=5.2.4",
       "cookie@<0.7.0": "0.7.2",
