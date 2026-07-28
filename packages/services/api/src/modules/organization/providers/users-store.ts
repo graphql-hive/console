@@ -65,7 +65,7 @@ export class UsersStore {
         "users"
       WHERE
         "provisioned_by_organization_id" = ${organizationId}
-        AND "display_name" = ${displayName}
+        AND lower("display_name") = lower(${displayName})
     `;
 
     return await this.pool.maybeOne(query).then(UserModel.nullable().parse);

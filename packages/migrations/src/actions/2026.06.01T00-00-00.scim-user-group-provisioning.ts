@@ -37,7 +37,7 @@ export default {
     ;
 
     CREATE UNIQUE INDEX IF NOT EXISTS "uniq_groups_display_name"
-      ON "groups" ("organization_id", "display_name")
+      ON "groups" ("organization_id", lower("display_name"))
     ;
 
     CREATE TABLE IF NOT EXISTS "group_role_assignments" (

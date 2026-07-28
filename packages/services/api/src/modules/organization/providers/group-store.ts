@@ -79,7 +79,7 @@ export class GroupStore {
         "groups"
       WHERE
         "organization_id" = ${organizationId}
-        AND "display_name" = ${displayName}
+        AND lower("display_name") = lower(${displayName})
     `;
 
     return await this.pool.maybeOne(query).then(GroupModel.nullable().parse);

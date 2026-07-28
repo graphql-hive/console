@@ -1519,6 +1519,7 @@ export const createSCIMPlugin =
 
           for (const record of operation.value) {
             usersToAdd.add(record.value);
+            usersToRemove.delete(record.value);
           }
           continue;
         }
@@ -1534,6 +1535,7 @@ export const createSCIMPlugin =
           }
 
           for (const id of operation.userIds) {
+            usersToAdd.delete(id);
             usersToRemove.add(id);
           }
           continue;
@@ -1616,20 +1618,20 @@ export const createSCIMPlugin =
           return updateGroupPropertiesResult;
         }
 
-        if (usersToRemove.size) {
-          await groupMemberStore.removeGroupMembersFromGroupByOrganizationIdAndGroupId(
-            result.organizationId,
-            group.id,
-            Array.from(usersToRemove),
-            trx,
-          );
-        }
-
         if (usersToAdd.size) {
           await groupMemberStore.addGroupMembersToGroupByOrganizationIdAndGroupId(
             result.organizationId,
             group.id,
             Array.from(usersToAdd),
+            trx,
+          );
+        }
+
+        if (usersToRemove.size) {
+          await groupMemberStore.removeGroupMembersFromGroupByOrganizationIdAndGroupId(
+            result.organizationId,
+            group.id,
+            Array.from(usersToRemove),
             trx,
           );
         }
