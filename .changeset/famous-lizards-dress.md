@@ -3,6 +3,5 @@
 'hive': patch
 ---
 
-Upgrade `@theguild/federation-composition` to support oneOf directive in public sdl
+Retain the `@oneOf` directive in the schema sdl. (Upgrade [`@theguild/federation-composition`](https://github.com/graphql-hive/federation-composition/releases/tag/v0.23.3))
 
-https://github.com/graphql-hive/federation-composition/releases/tag/v0.23.3
