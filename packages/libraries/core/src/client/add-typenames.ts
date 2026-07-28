@@ -110,7 +110,12 @@ function walkSelectionSet(
     let newSelection = selection;
 
     if (selection.kind === 'Field') {
-      if (checkTypename && selection.name.value === '__typename') {
+      const alias = selection.alias?.value;
+      if (
+        checkTypename &&
+        selection.name.value === '__typename' &&
+        (alias === undefined || alias === '__typename')
+      ) {
         hasTypename = true;
       }
 
