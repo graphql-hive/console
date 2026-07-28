@@ -88,6 +88,12 @@ export function addTypenames(document: DocumentNode, schema: GraphQLSchema): Doc
   };
 }
 
+function hasSkipOrInclude(selection: SelectionNode) {
+  return selection.directives?.some(
+    dir => dir.name.value === 'skip' || dir.name.value === 'include',
+  );
+}
+
 function walkSelectionSet(
   selectionSet: SelectionSetNode,
   parentType: GraphQLCompositeType,
@@ -114,7 +120,8 @@ function walkSelectionSet(
       if (
         checkTypename &&
         selection.name.value === '__typename' &&
-        (alias === undefined || alias === '__typename')
+        (alias === undefined || alias === '__typename') &&
+        !hasSkipOrInclude(selection)
       ) {
         hasTypename = true;
       }

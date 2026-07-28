@@ -234,7 +234,7 @@ describe('interface types', () => {
     expect(validate(schema, result)).toEqual([]);
   });
 
-  it.only('adds an unaliased __typename when the client aliases its typename field', () => {
+  it('adds an unaliased __typename when the client aliases its typename field', () => {
     const doc = gql(`
       query {
         node(id: "1") {
