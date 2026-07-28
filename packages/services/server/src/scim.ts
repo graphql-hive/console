@@ -89,6 +89,11 @@ const QuerySchemaModel = z.object({
     .default(100),
 });
 
+const GetGroupQueryModel = z.object({
+  /** We only support members as it is required by entra */
+  excludedAttributes: z.literal('members').optional(),
+});
+
 const SharedUserRouteParams = z.object({
   userId: z.string().uuid(),
 });
@@ -1249,6 +1254,17 @@ export const createSCIMPlugin =
         );
       }
 
+      const query = GetGroupQueryModel.safeParse(req.query);
+
+      if (query.error) {
+        return reply.status(404).send(
+          createSCIMError({
+            detail: 'Failed parsing query string.',
+            status: 404,
+          }),
+        );
+      }
+
       const groupStore = new GroupStore(result.logger, pool);
 
       const group = await groupStore.getGroupByOrganizationIdAndGroupId(
@@ -1267,10 +1283,13 @@ export const createSCIMPlugin =
 
       const groupMemberStore = new GroupMemberStore(result.logger, pool);
 
-      const groupMembers = await groupMemberStore.getGroupMembersForOrganizationIdAndGroupId(
-        result.organizationId,
-        group.id,
-      );
+      const groupMembers =
+        query.data.excludedAttributes === 'members'
+          ? undefined
+          : await groupMemberStore.getGroupMembersForOrganizationIdAndGroupId(
+              result.organizationId,
+              group.id,
+            );
 
       return reply.status(200).send(createSCIMGroupObjectFromGroup(baseUri, group, groupMembers));
     });
@@ -1782,7 +1801,7 @@ function createSCIMUserObjectFromUser(
       },
     ],
     active: user.deactivatedAt === null,
-    groups: groupIds.map(groupId => ({
+    groups: groupIds?.map(groupId => ({
       value: groupId,
       $ref: baseUri + '/Groups/' + groupId,
     })),

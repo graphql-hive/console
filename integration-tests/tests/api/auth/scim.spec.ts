@@ -2572,6 +2572,49 @@ describe.concurrent('/Groups', () => {
     });
   });
   describe.concurrent('GET', () => {
+    test.concurrent('excludes members when requested', async ({ expect }) => {
+      const seed = initSeed();
+      const owner = await seed.createOwner();
+      const org = await owner.createOrg();
+      const oidc = await org.createOIDCIntegration();
+      const domain = await oidc.registerFakeDomain();
+      const accessToken = await org.createOrganizationAccessToken({
+        permissions: ['member:describe', 'member:modify'],
+        resources: { mode: ResourceAssignmentModeType.Granular },
+      });
+      const headers = {
+        'Content-Type': 'application/scim+json',
+        Authorization: 'Bearer ' + accessToken.privateAccessKey,
+      };
+      const scim = createScimTestkit({ baseUrl, headers });
+      const user = await scim
+        .createUser({
+          ...newUserValues(),
+          emails: [{ primary: true, type: 'work', value: 'excluded-member@' + domain }],
+        })
+        .then(response => response.body);
+      const group = await scim
+        .createGroup({
+          ...newGroupValues(),
+          members: [{ value: user.id }],
+        })
+        .then(response => response.body);
+
+      const groupResponse = await scim.getGroup(group.id);
+      expect(groupResponse.body.members).toEqual([
+        {
+          value: user.id,
+          $ref: baseUrl + '/scim/v2/Users/' + user.id,
+        },
+      ]);
+
+      const url = new URL(`/scim/v2/Groups/${group.id}`, baseUrl);
+      url.searchParams.set('excludedAttributes', 'members');
+      const excludedResponse = await fetch(url, { headers });
+      expect(excludedResponse.status).toBe(200);
+      expect(await excludedResponse.json()).not.toHaveProperty('members');
+    });
+
     test.concurrent('get and paginate groups', async () => {
       const seed = initSeed();
       const owner = await seed.createOwner();
