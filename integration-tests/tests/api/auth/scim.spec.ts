@@ -860,6 +860,7 @@ describe.concurrent('/Users', () => {
         emails: [{ primary: true, type: 'work', value: 'marty.mcfly@' + domain }],
       });
       const usersPatchResponse = await scim.patchUser(usersPostResponse.body.id, {
+        schemas: ['urn:ietf:params:scim:api:messages:2.0:PatchOp'],
         Operations: [
           {
             op: 'replace',
@@ -883,6 +884,75 @@ describe.concurrent('/Users', () => {
         },
       });
     });
+    test.concurrent(
+      'update provider-shaped user with filtered email and pathless operations',
+      async ({ expect }) => {
+        const seed = initSeed();
+        const owner = await seed.createOwner();
+        const org = await owner.createOrg();
+        const { registerFakeDomain } = await org.createOIDCIntegration();
+        const firstDomain = await registerFakeDomain();
+        const secondDomain = await registerFakeDomain();
+        const accessToken = await org.createOrganizationAccessToken({
+          permissions: ['member:describe', 'member:modify'],
+          resources: { mode: ResourceAssignmentModeType.Granular },
+        });
+        const scim = createScimTestkit({
+          baseUrl,
+          headers: {
+            'Content-Type': 'application/scim+json; charset=utf-8',
+            Authorization: 'Bearer ' + accessToken.privateAccessKey,
+          },
+        });
+        const userResponse = await scim.createUser({
+          active: true,
+          emails: [
+            {
+              type: 'work',
+              value: 'martine@' + firstDomain,
+            },
+          ],
+          externalId: 'f86d4d19-da78-47bd-8cc4-55b15325f46f',
+          schemas: ['urn:ietf:params:scim:schemas:core:2.0:User'],
+          userName: 'marilie.bashirian@armstrongnader.ca',
+        });
+
+        const patchResponse = await scim.patchUser(userResponse.body.id, {
+          Operations: [
+            {
+              op: 'replace',
+              path: 'emails[type eq "work"].value',
+              value: 'finn@' + secondDomain,
+            },
+            {
+              op: 'replace',
+              value: {
+                active: true,
+                externalId: 'ce40cc63-ff7f-442c-9785-d39571afe648',
+              },
+            },
+          ],
+          schemas: ['urn:ietf:params:scim:api:messages:2.0:PatchOp'],
+        });
+
+        expect(patchResponse.body).toEqual({
+          ...userResponse.body,
+          active: true,
+          emails: [
+            {
+              primary: true,
+              type: 'work',
+              value: 'finn@' + secondDomain,
+            },
+          ],
+          externalId: 'ce40cc63-ff7f-442c-9785-d39571afe648',
+          meta: {
+            ...userResponse.body.meta,
+            lastModified: expect.any(String),
+          },
+        });
+      },
+    );
     test.concurrent('update email to non-verified domain fails', async ({ expect }) => {
       const seed = initSeed();
       const owner = await seed.createOwner();

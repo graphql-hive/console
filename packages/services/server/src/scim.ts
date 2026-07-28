@@ -13,13 +13,11 @@ import { UsersStore, type User } from '@hive/api/modules/organization/providers/
 import { RedisRateLimiter } from '@hive/api/modules/shared/providers/redis-rate-limiter';
 import { CommonQueryMethods, PostgresDatabasePool } from '@hive/postgres';
 
-const EmailSchemaModel = z
-  .object({
-    value: z.string().email(),
-    type: z.string().optional(),
-    primary: z.boolean().optional(),
-  })
-  .strict();
+const EmailSchemaModel = z.object({
+  value: z.string().email(),
+  type: z.string().optional(),
+  primary: z.boolean().optional(),
+});
 
 const PostUsersBodyModel = z.object({
   userName: z.string().min(1),
@@ -51,19 +49,15 @@ const CaseInsensitiveRemoveOperationModel = z.string().toLowerCase().pipe(z.lite
 const CaseInsensitiveAddOperationModel = z.string().toLowerCase().pipe(z.literal('add'));
 const CaseInsensitiveReplaceModel = z.string().toLowerCase().pipe(z.literal('replace'));
 
-const PatchOperationModel = z
-  .object({
-    op: CaseInsensitiveReplaceModel,
-    path: z.string().optional(),
-    value: z.unknown().optional(),
-  })
-  .strict();
+const PatchOperationModel = z.object({
+  op: CaseInsensitiveReplaceModel,
+  path: z.string().optional(),
+  value: z.unknown().optional(),
+});
 
-const PatchUserRequestBodyModel = z
-  .object({
-    Operations: z.array(PatchOperationModel).min(1),
-  })
-  .strict();
+const PatchUserRequestBodyModel = z.object({
+  Operations: z.array(PatchOperationModel).min(1),
+});
 
 const QuerySchemaModel = z.object({
   filter: z.string().optional(),
@@ -336,7 +330,8 @@ export const createSCIMPlugin =
         }
       }
 
-      const newEmail = updates.emails?.find(e => e.primary)?.value ?? null;
+      const newEmail =
+        updates.emails?.find(e => e.primary)?.value ?? updates.emails?.at(0)?.value ?? null;
 
       if (newEmail !== null && newEmail !== user.email) {
         logger.debug('email changed');
@@ -675,15 +670,16 @@ export const createSCIMPlugin =
       }
 
       let rawEmail =
-        bodyParse.data.emails
-          ?.find(email => email.primary === true && email)
-          ?.value.toLowerCase() ?? null;
+        (
+          bodyParse.data.emails?.find(email => email.primary === true)?.value ??
+          bodyParse.data.emails?.at(0)?.value
+        )?.toLowerCase() ?? null;
 
-      // if (!rawEmail) {
-      //   if (z.string().email().safeParse(bodyParse.data.userName).success) {
-      //     rawEmail = bodyParse.data.userName;
-      //   }
-      // }
+      if (!rawEmail) {
+        if (z.string().email().safeParse(bodyParse.data.userName).success) {
+          rawEmail = bodyParse.data.userName.toLowerCase();
+        }
+      }
 
       if (!rawEmail) {
         return reply.status(403).send(
@@ -904,7 +900,7 @@ export const createSCIMPlugin =
             break;
           }
 
-          changes = body.data;
+          changes = { ...changes, ...body.data };
           continue;
         }
 
