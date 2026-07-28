@@ -229,3 +229,36 @@ describe.each([ProjectType.Stitching, ProjectType.Federation])('$projectType', p
     },
   );
 });
+
+test('Federation projects support @oneOf directive natively', async () => {
+  const { createOrg } = await initSeed().createOwner();
+  const { createProject } = await createOrg();
+  const { createTargetAccessToken } = await createProject(ProjectType.Federation);
+  const { publishSchema, fetchLatestValidSchema } = await createTargetAccessToken({});
+  const serviceA = /* GraphQL */ `
+    type Query {
+      query(input: Input): Boolean
+    }
+
+    input Input @oneOf {
+      id: ID
+      string: String
+    }
+  `;
+
+  await publishSchema({
+    sdl: serviceA,
+    service: 'service-a',
+    url: 'http://localhost:4001',
+  }).then(r => r.expectNoGraphQLErrors());
+
+  const latestValid = await fetchLatestValidSchema();
+
+  const supergraphSdl = latestValid.latestValidVersion?.supergraph;
+  expect(supergraphSdl).toContain(`directive @oneOf on INPUT_OBJECT`);
+  expect(supergraphSdl).toContain(`input Input @join__type(graph: SERVICE_A)  @oneOf`);
+
+  const publicSdl = latestValid.latestValidVersion?.sdl;
+  expect(publicSdl).toContain(`directive @oneOf on INPUT_OBJECT`);
+  expect(publicSdl).toContain(`input Input @oneOf`);
+});

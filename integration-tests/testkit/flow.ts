@@ -1632,6 +1632,7 @@ export function fetchLatestValidSchema(token: string) {
           }
           tags
           sdl
+          supergraph
           schemas {
             nodes {
               ... on SingleSchema {
