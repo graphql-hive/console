@@ -195,7 +195,9 @@ export class CompositionScheduler {
         .then(result => {
           if (result.ctx?.heapUsed) {
             const usedPercent = result.ctx.heapUsed / (maxOldGenerationSizeMb * 1024 * 1024);
-            trace.getActiveSpan()?.setAttribute('hive.composition.heap.percent', usedPercent);
+            trace
+              .getActiveSpan()
+              ?.setAttribute('hive.composition.heap.percent', Math.round(usedPercent));
           }
           return result.data;
         });
