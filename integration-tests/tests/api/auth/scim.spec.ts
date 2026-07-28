@@ -81,6 +81,7 @@ describe.concurrent('/Users', () => {
         password: 'fq77ZD37',
         active: true,
       });
+      expect(usersPostResponse.headers.get('content-type')).toBe('application/scim+json');
       expect(usersPostResponse.body).toEqual({
         emails: [
           {

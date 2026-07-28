@@ -528,7 +528,7 @@ export const createSCIMPlugin =
       };
     }
 
-    server.addHook('preParsing', (request, _reply, _payload, done) => {
+    server.addHook('preParsing', (request, reply, _payload, done) => {
       // Okta Custom App Integrations send 'Content-Type: application/scim+json' with no body which causes fastify to raise an error.
       // In order to still support deletes, we have this code that will unset the content-type in this case :)
       if (
@@ -546,6 +546,14 @@ export const createSCIMPlugin =
       { parseAs: 'string' },
       server.getDefaultJsonParser('ignore', 'ignore'),
     );
+
+    server.addHook('onSend', (_request, reply, payload, done) => {
+      if (reply.statusCode !== 204) {
+        void reply.type('application/scim+json');
+      }
+
+      done(null, payload);
+    });
 
     server.setErrorHandler(async (error, request, reply) => {
       request.log.error(error);
@@ -666,11 +674,11 @@ export const createSCIMPlugin =
           ?.find(email => email.primary === true && email)
           ?.value.toLowerCase() ?? null;
 
-      if (!rawEmail) {
-        if (z.string().email().safeParse(bodyParse.data.userName)) {
-          rawEmail = bodyParse.data.userName;
-        }
-      }
+      // if (!rawEmail) {
+      //   if (z.string().email().safeParse(bodyParse.data.userName).success) {
+      //     rawEmail = bodyParse.data.userName;
+      //   }
+      // }
 
       if (!rawEmail) {
         return reply.status(403).send(
