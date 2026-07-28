@@ -1,3 +1,4 @@
+import { schemaVersionPromote } from 'testkit/flow';
 import { ProjectType } from 'testkit/gql/graphql';
 import { initSeed } from '../../../testkit/seed';
 
@@ -230,35 +231,135 @@ describe.each([ProjectType.Stitching, ProjectType.Federation])('$projectType', p
   );
 });
 
-test('Federation projects support @oneOf directive natively', async () => {
-  const { createOrg } = await initSeed().createOwner();
-  const { createProject } = await createOrg();
-  const { createTargetAccessToken } = await createProject(ProjectType.Federation);
-  const { publishSchema, fetchLatestValidSchema } = await createTargetAccessToken({});
-  const serviceA = /* GraphQL */ `
-    type Query {
-      query(input: Input): Boolean
+describe('Federation projects support @oneOf directive natively', () => {
+  test('publish', async () => {
+    const { createOrg } = await initSeed().createOwner();
+    const { createProject } = await createOrg();
+    const { createTargetAccessToken } = await createProject(ProjectType.Federation);
+    const { publishSchema, fetchLatestValidSchema } = await createTargetAccessToken({});
+    const serviceA = /* GraphQL */ `
+      type Query {
+        query(input: Input): Boolean
+      }
+
+      input Input @oneOf {
+        id: ID
+        string: String
+      }
+    `;
+
+    await publishSchema({
+      sdl: serviceA,
+      service: 'service-a',
+      url: 'http://localhost:4001',
+    }).then(r => r.expectNoGraphQLErrors());
+
+    const latestValid = await fetchLatestValidSchema();
+
+    const supergraphSdl = latestValid.latestValidVersion?.supergraph;
+    expect(supergraphSdl).toContain(`directive @oneOf on INPUT_OBJECT`);
+    expect(supergraphSdl).toContain(`input Input @join__type(graph: SERVICE_A)  @oneOf`);
+
+    const publicSdl = latestValid.latestValidVersion?.sdl;
+    expect(publicSdl).toContain(`directive @oneOf on INPUT_OBJECT`);
+    expect(publicSdl).toContain(`input Input @oneOf`);
+  });
+
+  test('check', async () => {
+    const { createOrg } = await initSeed().createOwner();
+    const { createProject } = await createOrg();
+    const { createTargetAccessToken } = await createProject(ProjectType.Federation);
+    const { publishSchema, checkSchema } = await createTargetAccessToken({});
+    const serviceA = /* GraphQL */ `
+      type Query {
+        foo: Boolean
+      }
+    `;
+
+    await publishSchema({
+      sdl: serviceA,
+      service: 'service-a',
+      url: 'http://localhost:4001',
+    }).then(r => r.expectNoGraphQLErrors());
+
+    const serviceAOneOf = /* GraphQL */ `
+      type Query {
+        foo: Boolean
+        query(input: Input): Boolean
+      }
+
+      input Input @oneOf {
+        id: ID
+        string: String
+      }
+    `;
+
+    const check = await checkSchema(serviceAOneOf, 'service-a').then(r =>
+      r.expectNoGraphQLErrors(),
+    );
+
+    expect(check.schemaCheck.__typename).toBe('SchemaCheckSuccess');
+    if (check.schemaCheck.__typename === 'SchemaCheckSuccess') {
+      expect(check.schemaCheck.schemaCheck?.__typename).toBe('SuccessfulSchemaCheck');
+      if (check.schemaCheck.schemaCheck?.__typename === 'SuccessfulSchemaCheck') {
+        const supergraphSdl = check.schemaCheck.schemaCheck.supergraphSDL;
+        expect(supergraphSdl).toContain(`directive @oneOf on INPUT_OBJECT`);
+        expect(supergraphSdl).toContain(`input Input @join__type(graph: SERVICE_A)  @oneOf`);
+
+        const publicSdl = check.schemaCheck.schemaCheck.compositeSchemaSDL;
+        expect(publicSdl).toContain(`directive @oneOf on INPUT_OBJECT`);
+        expect(publicSdl).toContain(`input Input @oneOf`);
+      }
     }
+  });
 
-    input Input @oneOf {
-      id: ID
-      string: String
+  test('promotion', async () => {
+    const { createOrg, ownerToken } = await initSeed().createOwner();
+    const { createProject } = await createOrg();
+    const { createTargetAccessToken, target } = await createProject(ProjectType.Federation);
+    const { publishSchema, checkSchema } = await createTargetAccessToken({});
+    const serviceA = /* GraphQL */ `
+      type Query {
+        foo: Boolean
+        query(input: Input): Boolean
+      }
+
+      input Input @oneOf {
+        id: ID
+        string: String
+      }
+    `;
+
+    await publishSchema({
+      sdl: serviceA,
+      service: 'service-a',
+      url: 'http://localhost:4001',
+    }).then(r => r.expectNoGraphQLErrors());
+
+    const promoteResult = await schemaVersionPromote(
+      {
+        source: {
+          fromTarget: {
+            byId: target.id,
+          },
+        },
+        target: {
+          toTarget: {
+            byId: target.id,
+          },
+        },
+      },
+      ownerToken,
+    ).then(r => r.expectNoGraphQLErrors());
+    expect(promoteResult.schemaVersionPromote.ok).toBeDefined();
+    if (promoteResult.schemaVersionPromote.ok) {
+      const supergraphSdl = promoteResult.schemaVersionPromote.ok.newSchemaVersion.supergraph;
+      expect(supergraphSdl).toContain(`directive @oneOf on INPUT_OBJECT`);
+      expect(supergraphSdl).toContain(`input Input @join__type(graph: SERVICE_A)  @oneOf`);
+
+      const sdl = promoteResult.schemaVersionPromote.ok.newSchemaVersion.sdl;
+      expect(sdl).toContain(`directive @oneOf on INPUT_OBJECT`);
+      expect(sdl).toContain(`input Input @oneOf`);
     }
-  `;
-
-  await publishSchema({
-    sdl: serviceA,
-    service: 'service-a',
-    url: 'http://localhost:4001',
-  }).then(r => r.expectNoGraphQLErrors());
-
-  const latestValid = await fetchLatestValidSchema();
-
-  const supergraphSdl = latestValid.latestValidVersion?.supergraph;
-  expect(supergraphSdl).toContain(`directive @oneOf on INPUT_OBJECT`);
-  expect(supergraphSdl).toContain(`input Input @join__type(graph: SERVICE_A)  @oneOf`);
-
-  const publicSdl = latestValid.latestValidVersion?.sdl;
-  expect(publicSdl).toContain(`directive @oneOf on INPUT_OBJECT`);
-  expect(publicSdl).toContain(`input Input @oneOf`);
+  });
 });

@@ -997,6 +997,8 @@ export function schemaVersionPromote(input: SchemaVersionPromoteInput, accessTok
           ok {
             newSchemaVersion {
               id
+              supergraph
+              sdl
             }
           }
           error {
@@ -1196,7 +1198,13 @@ export function checkSchema(input: SchemaCheckInput, token: string) {
               total
             }
             schemaCheck {
+              __typename
               id
+              ... on SuccessfulSchemaCheck {
+                supergraphSDL
+                schemaSDL
+                compositeSchemaSDL
+              }
             }
           }
           ... on SchemaCheckError {
