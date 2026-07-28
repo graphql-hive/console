@@ -1,7 +1,7 @@
 import zod from 'zod';
-import { PostgresConnectionParamaters } from '@hive/postgres';
 import {
   OpenTelemetryConfigurationModel,
+  parsePostgresConfigFromEnvironment,
   parseRedisConfigFromEnvironment,
   resolveServerListenOptions,
 } from '@hive/service-common';
@@ -53,19 +53,6 @@ const SentryModel = zod.union([
     SENTRY_DSN: zod.string(),
   }),
 ]);
-
-const PostgresModel = zod.object({
-  POSTGRES_SSL: emptyString(zod.union([zod.literal('1'), zod.literal('0')]).optional()),
-  POSTGRES_HOST: zod.string(),
-  POSTGRES_PORT: NumberFromString,
-  POSTGRES_DB: zod.string(),
-  POSTGRES_USER: zod.string(),
-  POSTGRES_PASSWORD: emptyString(zod.string().optional()),
-  POSTGRES_AWS_REGION: emptyString(zod.string().optional()),
-  POSTGRES_AWS_IAM_AUTH_ENABLED: emptyString(
-    zod.union([zod.literal('0'), zod.literal('1')]).optional(),
-  ),
-});
 
 const PostmarkEmailModel = zod.object({
   EMAIL_PROVIDER: zod.literal('postmark'),
@@ -162,7 +149,6 @@ const configs = {
   base: EnvironmentModel.safeParse(process.env),
   email: EmailProviderModel.safeParse(process.env),
   sentry: SentryModel.safeParse(process.env),
-  postgres: PostgresModel.safeParse(process.env),
   prometheus: PrometheusModel.safeParse(process.env),
   log: LogModel.safeParse(process.env),
   tracing: OpenTelemetryConfigurationModel.safeParse(process.env),
@@ -188,17 +174,13 @@ if (redisConfigResult.type === 'error') {
   environmentErrors.push(...redisConfigResult.errors);
 }
 
-if (configs.postgres.success && configs.postgres.data.POSTGRES_AWS_IAM_AUTH_ENABLED === '1') {
-  const missingRdsIamVars: string[] = [];
-  if (configs.postgres.data.POSTGRES_SSL !== '1')
-    missingRdsIamVars.push('POSTGRES_SSL must be enabled (RDS IAM requires TLS)');
-  if (!configs.postgres.data.POSTGRES_AWS_REGION && !configs.base.data?.AWS_REGION)
-    missingRdsIamVars.push('POSTGRES_AWS_REGION or AWS_REGION');
-  if (missingRdsIamVars.length > 0) {
-    environmentErrors.push(
-      `POSTGRES_AWS_IAM_AUTH_ENABLED is enabled but the following required variables are missing or invalid: ${missingRdsIamVars.join(', ')}`,
-    );
-  }
+const postgresConfigResult = parsePostgresConfigFromEnvironment(
+  process.env,
+  configs.base.success ? configs.base.data.AWS_REGION : undefined,
+);
+
+if (postgresConfigResult.type === 'error') {
+  environmentErrors.push(...postgresConfigResult.errors);
 }
 
 if (environmentErrors.length) {
@@ -216,7 +198,6 @@ function extractConfig<Input, Output>(config: zod.SafeParseReturnType<Input, Out
 
 const base = extractConfig(configs.base);
 const email = extractConfig(configs.email);
-const postgres = extractConfig(configs.postgres);
 const sentry = extractConfig(configs.sentry);
 const prometheus = extractConfig(configs.prometheus);
 const log = extractConfig(configs.log);
@@ -294,16 +275,10 @@ export const env = {
           port: prometheus.PROMETHEUS_METRICS_PORT ?? 10_254,
         }
       : null,
-  postgres: {
-    ssl: postgres.POSTGRES_SSL === '1',
-    awsIamAuthEnabled: postgres.POSTGRES_AWS_IAM_AUTH_ENABLED === '1',
-    awsRegion: postgres.POSTGRES_AWS_REGION ?? process.env.AWS_REGION,
-    host: postgres.POSTGRES_HOST,
-    db: postgres.POSTGRES_DB,
-    password: postgres.POSTGRES_PASSWORD,
-    port: postgres.POSTGRES_PORT,
-    user: postgres.POSTGRES_USER,
-  },
+  postgres:
+    postgresConfigResult?.type === 'ok'
+      ? postgresConfigResult.config
+      : raiseInvariant('Unreachable: postgres config errors are caught above via process.exit(1)'),
   clickhouse:
     clickhouse.CLICKHOUSE === '1'
       ? {

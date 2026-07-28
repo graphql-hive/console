@@ -68,7 +68,7 @@ const rdsIamTokenGenerator = env.postgres.awsIamAuthEnabled
   ? () =>
       generateRdsIamAuthToken(
         {
-          region: env.postgres.awsRegion!,
+          region: env.postgres.awsRegion ?? '',
           hostname: env.postgres.host,
           port: env.postgres.port,
           username: env.postgres.user,

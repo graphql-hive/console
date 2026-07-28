@@ -33,6 +33,13 @@ export {
   type RedisConfig,
 } from './redis-config';
 export {
+  parsePostgresConfigFromEnvironment,
+  PostgresModel,
+  type PostgresEnvironment,
+  type ParsePostgresConfigFromEnvironmentResult,
+  type PostgresConfig,
+} from './postgres-config';
+export {
   createRedisClient,
   type Redis,
   type RedisConnectionConfig,

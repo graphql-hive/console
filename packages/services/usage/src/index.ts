@@ -72,7 +72,7 @@ async function main() {
     ? () =>
         generateRdsIamAuthToken(
           {
-            region: env.postgres.awsRegion!,
+            region: env.postgres.awsRegion ?? '',
             hostname: env.postgres.host,
             port: env.postgres.port,
             username: env.postgres.user,
