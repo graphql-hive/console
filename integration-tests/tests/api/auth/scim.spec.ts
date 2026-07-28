@@ -2524,29 +2524,26 @@ describe.concurrent('/Groups', () => {
     });
   });
   describe.concurrent('DELETE', () => {
-    test.concurrent(
-      'delete non-existing group yields correct error response',
-      async ({ expect }) => {
-        const seed = initSeed();
-        const owner = await seed.createOwner();
-        const org = await owner.createOrg();
-        // currenlty this must exist for the endpoint to be functional
-        await org.createOIDCIntegration();
-        const accessToken = await org.createOrganizationAccessToken({
-          permissions: ['member:describe', 'member:modify'],
-          resources: { mode: ResourceAssignmentModeType.Granular },
-        });
-        const scimAuthHeader = 'Bearer ' + accessToken.privateAccessKey;
-        const headers = {
-          'Content-Type': 'application/scim+json',
-          Authorization: scimAuthHeader,
-        };
-        const scim = createScimTestkit({ baseUrl, headers });
+    test.concurrent('delete non-existing group yields correct error response', async () => {
+      const seed = initSeed();
+      const owner = await seed.createOwner();
+      const org = await owner.createOrg();
+      // currenlty this must exist for the endpoint to be functional
+      await org.createOIDCIntegration();
+      const accessToken = await org.createOrganizationAccessToken({
+        permissions: ['member:describe', 'member:modify'],
+        resources: { mode: ResourceAssignmentModeType.Granular },
+      });
+      const scimAuthHeader = 'Bearer ' + accessToken.privateAccessKey;
+      const headers = {
+        'Content-Type': 'application/scim+json',
+        Authorization: scimAuthHeader,
+      };
+      const scim = createScimTestkit({ baseUrl, headers });
 
-        await scim.deleteGroup(crypto.randomUUID(), { expectedStatus: 404 });
-      },
-    );
-    test.concurrent('delete group succeeds', async ({ expect }) => {
+      await scim.deleteGroup(crypto.randomUUID(), { expectedStatus: 404 });
+    });
+    test.concurrent('delete group succeeds', async () => {
       const seed = initSeed();
       const owner = await seed.createOwner();
       const org = await owner.createOrg();
@@ -3329,7 +3326,7 @@ test.concurrent(
       };
       const scim = createScimTestkit({ baseUrl, headers });
 
-      const userResponse = await scim.createUser({
+      await scim.createUser({
         ...newUserValues(),
         externalId: subOrExternalId,
         emails: [{ primary: true, type: 'work', value: email }],
@@ -3385,7 +3382,7 @@ test.concurrent(
       };
       const scim = createScimTestkit({ baseUrl, headers });
 
-      const userResponse = await scim.createUser({
+      await scim.createUser({
         ...newUserValues(),
         userName: 'userA',
         emails: [{ primary: true, type: 'work', value: 'emmett.brown@' + domain }],
