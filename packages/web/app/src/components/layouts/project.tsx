@@ -22,6 +22,7 @@ import { useToggle } from '@/lib/hooks';
 import { useLastVisitedOrganizationWriter } from '@/lib/last-visited-org';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useRouter } from '@tanstack/react-router';
+import { LegacyCompositionWarn } from '../project/LegacyCompositionWarn';
 import { ResourceNotFoundComponent } from '../resource-not-found';
 import { HiveLink } from '../ui/hive-link';
 import { PlusIcon } from '../ui/icon';
@@ -54,6 +55,7 @@ const ProjectLayoutQuery = graphql(`
         viewerCanModifyAlerts
         viewerCanModifySettings
         viewerCanManageProjectAccessTokens
+        ...LegacyCompositionWarn_ProjectFragment
       }
       ...UserMenu_OrganizationFragment
     }
@@ -162,6 +164,12 @@ export function ProjectLayout({
             }
           />
           <div className="min-h-(--content-height) container pb-7">
+            {currentProject ? (
+              <LegacyCompositionWarn
+                organizationSlug={organizationSlug}
+                project={currentProject}
+              />
+            ) : null}
             <div className={className}>{children}</div>
           </div>
         </>
