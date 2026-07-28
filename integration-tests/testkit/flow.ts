@@ -2306,6 +2306,8 @@ export function updateOIDCRestrictions(
               id
               oidcUserJoinOnly
               oidcUserAccessOnly
+              userProvisioningRequired
+              oidcForVerifiedDomainsRequired
             }
           }
           error {

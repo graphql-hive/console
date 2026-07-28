@@ -257,17 +257,6 @@ export default gql`
     When using a SCIM provider, the claim should map to the "externalId" shared with the SCIM provider.
     """
     userIdClaim: String
-    """
-    Whether an user account can be created JIT upon attempting a login with the OIDC provider.
-    If set to 'true', a successful login via OIDC will fail if the account was not provisioned before.
-    If set to 'false', a successful login via OIDC will create a new user account.
-    """
-    userProvisioningRequired: Boolean
-    """
-    Prohibit email/password or social sign in/up for any email address that contains a verified domain.
-    This allows the organization admin to enforce all login to be performed through the organizations OIDC provider.
-    """
-    oidcForVerifiedDomainsRequired: Boolean
   }
 
   type UpdateOIDCIntegrationResult {
@@ -319,6 +308,17 @@ export default gql`
     oidcUserJoinOnly: Boolean
     oidcUserAccessOnly: Boolean
     requireInvitation: Boolean
+    """
+    Whether an user account can be created JIT upon attempting a login with the OIDC provider.
+    If set to 'true', a successful login via OIDC will fail if the account was not provisioned before.
+    If set to 'false', a successful login via OIDC will create a new user account.
+    """
+    userProvisioningRequired: Boolean
+    """
+    Prohibit email/password or social sign in/up for any email address that contains a verified domain.
+    This allows the organization admin to enforce all login to be performed through the organizations OIDC provider.
+    """
+    oidcForVerifiedDomainsRequired: Boolean
   }
 
   """

@@ -5,7 +5,7 @@ import z from 'zod';
 import formDataPlugin from '@fastify/formbody';
 import { psql, type PostgresDatabasePool } from '@hive/postgres';
 import { createServer, type FastifyReply, type FastifyRequest } from '@hive/service-common';
-import { updateOIDCIntegration } from './flow';
+import { updateOIDCIntegration, updateOIDCRestrictions } from './flow';
 import { graphql } from './gql';
 import { execute } from './graphql';
 import { getServiceHost, pollForEmailVerificationLink } from './utils';
@@ -198,14 +198,32 @@ export async function createOIDCIntegration(args: {
           clientId: args?.clientId,
           clientSecret: args?.clientSecret,
           userIdClaim: args?.userIdClaim,
-          userProvisioningRequired: args?.userProvisioningRequired,
-          oidcForVerifiedDomainsRequired: args?.oidcForVerifiedDomainsRequired,
         },
         authToken,
       ).then(r => r.expectNoGraphQLErrors());
 
       if (!result.updateOIDCIntegration.ok) {
         throw new Error(result.updateOIDCIntegration.error?.message ?? 'Unexpected error.');
+      }
+
+      if (
+        args?.userProvisioningRequired !== undefined ||
+        args?.oidcForVerifiedDomainsRequired !== undefined
+      ) {
+        const restrictionsResult = await updateOIDCRestrictions(
+          {
+            oidcIntegrationId: oidcIntegration.id,
+            userProvisioningRequired: args.userProvisioningRequired,
+            oidcForVerifiedDomainsRequired: args.oidcForVerifiedDomainsRequired,
+          },
+          authToken,
+        ).then(r => r.expectNoGraphQLErrors());
+
+        if (!restrictionsResult.updateOIDCRestrictions.ok) {
+          throw new Error(
+            restrictionsResult.updateOIDCRestrictions.error?.message ?? 'Unexpected error.',
+          );
+        }
       }
 
       return {

@@ -487,8 +487,6 @@ export interface Storage {
     authorizationEndpoint: string | null;
     additionalScopes: readonly string[] | null;
     userIdClaim: string | null;
-    userProvisioningRequired: boolean | null;
-    oidcForVerifiedDomainsRequired: boolean | null;
   }): Promise<OIDCIntegration>;
 
   deleteOIDCIntegration(_: { oidcIntegrationId: string }): Promise<void>;
@@ -498,6 +496,8 @@ export interface Storage {
     oidcUserJoinOnly: boolean | null;
     oidcUserAccessOnly: boolean | null;
     requireInvitation: boolean | null;
+    userProvisioningRequired: boolean | null;
+    oidcForVerifiedDomainsRequired: boolean | null;
   }): Promise<OIDCIntegration>;
 
   updateOIDCDefaultMemberRole(_: {
