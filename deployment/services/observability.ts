@@ -2,6 +2,7 @@ import * as pulumi from '@pulumi/pulumi';
 import { serviceLocalHost } from '../utils/local-endpoint';
 import { Observability as ObservabilityInstance } from '../utils/observability';
 import { Environment } from './environment';
+
 // import { deployGrafana } from './grafana';
 // import { deployGrafanaAlerts } from './grafana-alerts';
 
