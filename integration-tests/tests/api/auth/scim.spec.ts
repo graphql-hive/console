@@ -104,6 +104,40 @@ describe.concurrent('/Users', () => {
       });
     });
     test.concurrent(
+      'create new user without emails infers email from userName',
+      async ({ expect }) => {
+        const seed = initSeed();
+        const owner = await seed.createOwner();
+        const org = await owner.createOrg();
+        const { registerFakeDomain } = await org.createOIDCIntegration();
+        const domain = await registerFakeDomain();
+        const accessToken = await org.createOrganizationAccessToken({
+          permissions: ['member:describe', 'member:modify'],
+          resources: { mode: ResourceAssignmentModeType.Granular },
+        });
+        const userName = 'marty.mcfly@' + domain;
+        const scim = createScimTestkit({
+          baseUrl,
+          headers: {
+            'Content-Type': 'application/scim+json',
+            Authorization: 'Bearer ' + accessToken.privateAccessKey,
+          },
+        });
+
+        const response = await scim.createUser({
+          schemas: ['urn:ietf:params:scim:schemas:core:2.0:User'],
+          userName,
+          externalId: crypto.randomUUID(),
+          active: true,
+        });
+
+        expect(response.body).toMatchObject({
+          userName,
+          emails: [{ primary: true, type: 'work', value: userName }],
+        });
+      },
+    );
+    test.concurrent(
       'create new multiple users withdifferent emails succeeds',
       async ({ expect }) => {
         const seed = initSeed();
@@ -2355,6 +2389,61 @@ describe.concurrent('/Groups', () => {
         },
         schemas: ['urn:ietf:params:scim:schemas:core:2.0:Group'],
       });
+    });
+    test.concurrent('remove multiple members using Entra ID request format', async ({ expect }) => {
+      const seed = initSeed();
+      const owner = await seed.createOwner();
+      const org = await owner.createOrg();
+      const oidc = await org.createOIDCIntegration();
+      const domain = await oidc.registerFakeDomain();
+      const accessToken = await org.createOrganizationAccessToken({
+        permissions: ['member:describe', 'member:modify'],
+        resources: { mode: ResourceAssignmentModeType.Granular },
+      });
+      const scim = createScimTestkit({
+        baseUrl,
+        headers: {
+          'Content-Type': 'application/scim+json',
+          Authorization: 'Bearer ' + accessToken.privateAccessKey,
+        },
+      });
+      const firstUser = await scim.createUser({
+        ...newUserValues(),
+        emails: [{ primary: true, type: 'work', value: 'user-a@' + domain }],
+      });
+      const secondUser = await scim.createUser({
+        ...newUserValues(),
+        emails: [{ primary: true, type: 'work', value: 'user-b@' + domain }],
+      });
+      const thirdUser = await scim.createUser({
+        ...newUserValues(),
+        emails: [{ primary: true, type: 'work', value: 'user-c@' + domain }],
+      });
+      const group = await scim.createGroup({
+        ...newGroupValues(),
+        members: [
+          { value: firstUser.body.id },
+          { value: secondUser.body.id },
+          { value: thirdUser.body.id },
+        ],
+      });
+
+      const response = await scim.patchGroup(group.body.id, {
+        Operations: [
+          {
+            op: 'Remove',
+            path: 'members',
+            value: [{ value: firstUser.body.id }, { value: secondUser.body.id }],
+          },
+        ],
+      });
+
+      expect(response.body.members).toEqual([
+        {
+          $ref: baseUrl + '/scim/v2/Users/' + thirdUser.body.id,
+          value: thirdUser.body.id,
+        },
+      ]);
     });
     test.concurrent('remove multiple members', async ({ expect }) => {
       const seed = initSeed();

@@ -24,7 +24,8 @@ const EmailSchemaModel = z
 const PostUsersBodyModel = z.object({
   userName: z.string().min(1),
   active: z.boolean().optional(),
-  emails: z.array(EmailSchemaModel),
+  /** Entry ID omits this sometimes. In that case we infer the email from the user name. */
+  emails: z.array(EmailSchemaModel).optional(),
   externalId: z.string(),
 });
 
@@ -112,23 +113,34 @@ const AddOperationSchema = z.object({
   value: z.array(GroupMemberSchema),
 });
 
-const RemoveOperationSchema = z
-  .object({
-    op: CaseInsensitiveRemoveOperationModel,
-    // e.g. members[value eq "user-123"]
-    path: z
-      .string()
-      .regex(/^members\[value eq "([^"]+)"\]$/, 'Unsupported SCIM member removal path')
-      .transform(path => {
-        const [, userId] = path.match(/^members\[value eq "([^"]+)"\]$/)!;
-        return userId;
-      })
-      .pipe(z.string().uuid()),
-  })
-  .transform(value => ({
-    op: value.op,
-    userId: value.path,
-  }));
+const RemoveOperationSchema = z.union([
+  /** This is what Okta sends */
+  z
+    .object({
+      op: CaseInsensitiveRemoveOperationModel,
+      // e.g. members[value eq "user-123"]
+      path: z
+        .string()
+        .regex(/^members\[value eq "([^"]+)"\]$/, 'Unsupported SCIM member removal path')
+        .transform(path => {
+          const [, userId] = path.match(/^members\[value eq "([^"]+)"\]$/)!;
+          return userId;
+        })
+        .pipe(z.string().uuid()),
+    })
+    .transform(value => ({
+      op: value.op,
+      userIds: [value.path],
+    })),
+  /** This is what Entra ID sends */
+  z
+    .object({
+      op: CaseInsensitiveRemoveOperationModel,
+      path: z.literal('members'),
+      value: z.array(z.object({ value: z.string() })),
+    })
+    .transform(value => ({ op: value.op, userIds: value.value.map(v => v.value) })),
+]);
 
 const ReplaceOperationSchema = z.union([
   z.object({
@@ -649,10 +661,16 @@ export const createSCIMPlugin =
         );
       }
 
-      const rawEmail =
+      let rawEmail =
         bodyParse.data.emails
           ?.find(email => email.primary === true && email)
           ?.value.toLowerCase() ?? null;
+
+      if (!rawEmail) {
+        if (z.string().email().safeParse(bodyParse.data.userName)) {
+          rawEmail = bodyParse.data.userName;
+        }
+      }
 
       if (!rawEmail) {
         return reply.status(403).send(
@@ -1492,7 +1510,9 @@ export const createSCIMPlugin =
             break;
           }
 
-          usersToRemove.add(operation.userId);
+          for (const id of operation.userIds) {
+            usersToRemove.add(id);
+          }
           continue;
         }
 
