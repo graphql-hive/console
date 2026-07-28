@@ -117,6 +117,7 @@ export function useHive(clientOrOptions: HiveClient | GatewayPluginOptions): Gat
     onSchemaChange({ schema }) {
       hive.reportSchema({ schema });
       latestSchema = schema;
+      operationCache?.clear();
     },
     onParse(parseCtx) {
       return ctx => {
