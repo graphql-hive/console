@@ -9,6 +9,21 @@ import { composeSingle, type ComposeSingleArgs } from './composition/single';
 import { composeStitching, type ComposeStitchingArgs } from './composition/stitching';
 import type { env } from './environment';
 
+export type ErrorResultEvent = {
+  event: 'error';
+  id: string;
+  err: unknown;
+};
+
+export type TrackMetricEvent = {
+  event: 'metric';
+  target: string | undefined;
+  compositionType: CompositionEvent['data']['type'];
+} & {
+  type: 'heapUsed';
+  value: number;
+};
+
 export function createCompositionWorker(args: {
   baseLogger: Logger;
   port: MessagePort;
@@ -32,7 +47,22 @@ export function createCompositionWorker(args: {
       messageId: message.id,
       event: message.event,
     });
+
     logger.debug('processing message');
+    const postResult = (result: CompositionResultEvent | ErrorResultEvent) => {
+      args.port.postMessage(result);
+
+      if (args.env.compositionWorker.trackMemoryUsage) {
+        // send metric back to main thread so it can be reported
+        args.port.postMessage({
+          event: 'metric',
+          type: 'heapUsed',
+          value: process.memoryUsage().heapUsed,
+          target: message.targetId,
+          compositionType: message.data.type,
+        } satisfies TrackMetricEvent);
+      }
+    };
 
     try {
       if (message.event === 'composition') {
@@ -44,7 +74,7 @@ export function createCompositionWorker(args: {
           });
           const composed = await composeFederation(message.data.args);
 
-          args.port.postMessage({
+          postResult({
             event: 'compositionResult',
             id: message.id,
             data: {
@@ -73,7 +103,7 @@ export function createCompositionWorker(args: {
 
         if (message.data.type === 'single') {
           const result = await composeSingle(message.data.args);
-          args.port.postMessage({
+          postResult({
             event: 'compositionResult',
             id: message.id,
             data: {
@@ -86,7 +116,7 @@ export function createCompositionWorker(args: {
 
         if (message.data.type === 'stitching') {
           const result = await composeStitching(message.data.args);
-          args.port.postMessage({
+          postResult({
             event: 'compositionResult',
             id: message.id,
             data: {
@@ -106,7 +136,7 @@ export function createCompositionWorker(args: {
         message.id,
       );
       baseLogger.error(String(err));
-      args.port.postMessage({
+      postResult({
         event: 'error',
         id: message.id,
         err,
@@ -123,6 +153,7 @@ export type CompositionEvent = {
   id: string;
   event: 'composition';
   requestId: string;
+  targetId?: string;
   taskId: string;
   data:
     | {

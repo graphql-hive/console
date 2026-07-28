@@ -1,6 +1,6 @@
 import { Args, Errors, Flags, ux } from '@oclif/core';
 import Command from '../../base-command';
-import { graphql, useFragment } from '../../gql';
+import { DocumentType, graphql, useFragment } from '../../gql';
 import * as GraphQLSchema from '../../gql/graphql';
 import { graphqlEndpoint } from '../../helpers/config';
 import {
@@ -36,6 +36,9 @@ const schemaDeleteMutation = graphql(/* GraphQL */ `
         errors {
           ...RenderErrors_SchemaErrorConnectionFragment
         }
+      }
+      ... on SchemaDeleteRetry {
+        reason
       }
     }
   }
@@ -145,60 +148,68 @@ export default class SchemaDelete extends Command<typeof SchemaDelete> {
         target = result.data;
       }
 
-      const result = await this.registryApi(endpoint, accessToken).request({
-        operation: schemaDeleteMutation,
-        variables: {
-          input: {
-            serviceName: service,
-            dryRun: flags.dryRun,
-            target,
+      let result: DocumentType<typeof schemaDeleteMutation> | null = null;
+
+      do {
+        result = await this.registryApi(endpoint, accessToken).request({
+          operation: schemaDeleteMutation,
+          variables: {
+            input: {
+              serviceName: service,
+              dryRun: flags.dryRun,
+              target,
+              supportsRetry: true,
+            },
           },
-        },
-      });
+        });
 
-      if (result.schemaDelete.__typename === 'SchemaDeleteSuccess') {
-        const { errors, changes } = result.schemaDelete;
+        if (result.schemaDelete.__typename === 'SchemaDeleteRetry') {
+          this.log(result.schemaDelete.reason);
+          this.log('Waiting for other schema registry actions to complete...');
+          result = null;
+        } else if (result.schemaDelete.__typename === 'SchemaDeleteSuccess') {
+          const { errors, changes } = result.schemaDelete;
 
-        if (errors) {
-          const unmaskedErrors = useFragment(RenderErrors_SchemaErrorConnectionFragment, errors);
-          if (unmaskedErrors.edges.length > 0) {
-            this.log(renderErrors(errors));
+          if (errors) {
+            const unmaskedErrors = useFragment(RenderErrors_SchemaErrorConnectionFragment, errors);
+            if (unmaskedErrors.edges.length > 0) {
+              this.log(renderErrors(errors));
+            }
           }
-        }
 
-        if (changes) {
-          const unmaskedChanges = useFragment(RenderChanges_SchemaChanges, changes);
-          if (unmaskedChanges.edges.length > 0) {
-            this.log('');
-            this.log(renderChanges(changes));
+          if (changes) {
+            const unmaskedChanges = useFragment(RenderChanges_SchemaChanges, changes);
+            if (unmaskedChanges.edges.length > 0) {
+              this.log('');
+              this.log(renderChanges(changes));
+            }
           }
-        }
-        this.log('');
+          this.log('');
 
-        if (result.schemaDelete.valid) {
-          this.logSuccess(
-            flags.dryRun
-              ? `Deleting "${service}" will produce a composable graph. But be sure to review changes to ensure this is safe.`
-              : `Deleted "${service}" from target`,
-          );
+          if (result.schemaDelete.valid) {
+            this.logSuccess(
+              flags.dryRun
+                ? `Deleting "${service}" will produce a composable graph. But be sure to review changes to ensure this is safe.`
+                : `Deleted "${service}" from target`,
+            );
+          } else {
+            this.logWarning(
+              flags.dryRun
+                ? `Your graph will NOT be composable if "${service}" is deleted.`
+                : `Deleting "${service}" produced an uncomposable graph.`,
+            );
+          }
+
+          this.exit(0);
         } else {
-          this.logWarning(
-            flags.dryRun
-              ? `Your graph will NOT be composable if "${service}" is deleted.`
-              : `Deleting "${service}" produced an uncomposable graph.`,
-          );
+          this.logFailure(`Failed to delete "${service}"`);
+          const errors = result.schemaDelete.errors;
+
+          if (errors) {
+            throw new APIError(renderErrors(errors));
+          }
         }
-
-        this.exit(0);
-        return;
-      }
-
-      this.logFailure(`Failed to delete "${service}"`);
-      const errors = result.schemaDelete.errors;
-
-      if (errors) {
-        throw new APIError(renderErrors(errors));
-      }
+      } while (result === null);
     } catch (error) {
       if (error instanceof Errors.CLIError) {
         throw error;

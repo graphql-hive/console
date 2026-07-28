@@ -429,7 +429,14 @@ export default gql`
     | GitHubSchemaCheckSuccess
     | GitHubSchemaCheckError
 
-  union SchemaDeleteResult = SchemaDeleteSuccess | SchemaDeleteError
+  union SchemaDeleteResult = SchemaDeleteSuccess | SchemaDeleteError | SchemaDeleteRetry
+
+  type SchemaDeleteRetry {
+    """
+    The reason for the retry.
+    """
+    reason: String!
+  }
 
   type SchemaDeleteSuccess {
     valid: Boolean!
@@ -887,6 +894,10 @@ export default gql`
     target: TargetReferenceInput
     serviceName: ID!
     dryRun: Boolean
+    """
+    Whether the client supports retries in case the registry is busy and the operation could not be performed.
+    """
+    supportsRetry: Boolean = false
   }
 
   input GitHubSchemaCheckInput {

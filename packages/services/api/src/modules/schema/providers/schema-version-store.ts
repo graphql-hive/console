@@ -1777,7 +1777,7 @@ export type SchemaLogDiffInput = {
 
 const SchemaLogWithEdgesModel = z.union([
   SchemaLogEdgeAddedModel.extend({
-    node: CompositePushSchemaLogModel,
+    node: z.union([CompositePushSchemaLogModel, SinglePushSchemaLogModel]),
   }),
   SchemaLogEdgeChangedModel.extend({
     node: z.union([CompositePushSchemaLogModel, SinglePushSchemaLogModel]),

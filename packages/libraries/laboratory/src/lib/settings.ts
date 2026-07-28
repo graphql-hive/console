@@ -14,6 +14,7 @@ export type LaboratorySettings = {
     schemaDescription?: boolean;
     headers?: string;
     includeActiveOperationHeaders?: boolean;
+    pollSchema?: boolean;
   };
 };
 
@@ -31,6 +32,7 @@ export const defaultLaboratorySettings: LaboratorySettings = {
     schemaDescription: false,
     headers: '',
     includeActiveOperationHeaders: false,
+    pollSchema: true,
   },
 };
 
@@ -55,6 +57,8 @@ export const normalizeLaboratorySettings = (
     includeActiveOperationHeaders:
       settings?.introspection?.includeActiveOperationHeaders ??
       defaultLaboratorySettings.introspection.includeActiveOperationHeaders,
+    pollSchema:
+      settings?.introspection?.pollSchema ?? defaultLaboratorySettings.introspection.pollSchema,
   },
 });
 

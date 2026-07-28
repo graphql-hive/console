@@ -163,7 +163,7 @@ export const schemaBuilderApiRouter = t.router({
           'code' in error &&
           error.code === 'ERR_WORKER_OUT_OF_MEMORY'
         ) {
-          ctx.req.log.error('Composition memory limit exceeded. (error=%o)');
+          ctx.req.log.error('Composition memory limit exceeded. (error=%o)', error);
 
           return {
             errors: [
@@ -171,6 +171,7 @@ export const schemaBuilderApiRouter = t.router({
                 message:
                   'Composition exceeded resource limits. Please contact the Hive Console Team.',
                 source: 'composition',
+                code: 'ERR_WORKER_OUT_OF_MEMORY',
               },
             ],
             sdl: null,
