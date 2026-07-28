@@ -352,6 +352,9 @@ importers:
       '@hive/storage':
         specifier: workspace:*
         version: link:../packages/services/storage
+      '@hive/workflows':
+        specifier: workspace:*
+        version: link:../packages/services/workflows
       '@theguild/federation-composition':
         specifier: 0.23.3
         version: 0.23.3(graphql@16.9.0)

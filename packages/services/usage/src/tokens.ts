@@ -21,7 +21,7 @@ export function createTokens(config: { cache: TargetTokenCache; logger: ServiceL
     tokenRequests.inc();
 
     try {
-      const info = await config.cache.get(token);
+      const info = await config.cache.get(token, config.logger);
 
       if (!info) {
         return TokenStatus.NotFound;

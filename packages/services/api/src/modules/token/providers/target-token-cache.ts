@@ -12,6 +12,13 @@ import { PrometheusConfig } from '../../shared/providers/prometheus-config';
 import { REDIS_INSTANCE, type Redis } from '../../shared/providers/redis';
 import { hashTargetToken, TargetTokenStorage } from './target-token-storage';
 
+const targetTokenLastUsedRedisKeyPrefix = 'target-token:last-used';
+const targetTokenLastUsedBucketTtlSeconds = 10 * 60;
+
+function targetTokenLastUsedBucketKey(date: Date) {
+  return `${targetTokenLastUsedRedisKeyPrefix}:${Math.floor(date.getTime() / 60_000)}`;
+}
+
 @Injectable({
   scope: Scope.Singleton,
   global: true,
@@ -20,10 +27,10 @@ export class TargetTokenCache {
   private cache: BentoCache<{ store: ReturnType<typeof bentostore> }>;
 
   constructor(
-    @Inject(REDIS_INSTANCE) redis: Redis,
+    @Inject(REDIS_INSTANCE) private redis: Redis,
     private pool: PostgresDatabasePool,
     prometheusConfig: PrometheusConfig,
-    private taskScheduler: TaskScheduler,
+    private taskScheduler?: TaskScheduler,
   ) {
     this.cache = new BentoCache({
       default: 'targetTokens',
@@ -58,9 +65,14 @@ export class TargetTokenCache {
       })
       .then(result => {
         if (result) {
-          void TargetTokenStorage.touchTokenByHash({ pool: this.pool })(hashedToken).catch(err =>
-            logger.error('Failed to touch token. %s', err),
-          );
+          const lastUsedAt = new Date();
+          const bucketKey = targetTokenLastUsedBucketKey(lastUsedAt);
+          void this.redis
+            .pipeline()
+            .sadd(bucketKey, hashedToken)
+            .expire(bucketKey, targetTokenLastUsedBucketTtlSeconds)
+            .exec()
+            .catch(err => logger.error('Failed to touch token. %s', err));
         }
         return result;
       });
@@ -78,6 +90,10 @@ export class TargetTokenCache {
   async purge(tokens: string[]) {
     if (tokens.length === 0) {
       return;
+    }
+
+    if (!this.taskScheduler) {
+      throw new Error('Target token cache purging is not available.');
     }
 
     await this.taskScheduler.scheduleTask(PurgeTargetTokensTask, { tokens });
