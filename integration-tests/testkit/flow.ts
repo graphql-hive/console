@@ -2214,6 +2214,46 @@ export function deleteTarget(input: DeleteTargetInput, authToken: string) {
   });
 }
 
+export function createOIDCIntegration(
+  input: GraphQLSchema.CreateOidcIntegrationInput,
+  authToken: string,
+) {
+  return execute({
+    document: graphql(`
+      mutation TestKit_CreateOIDCIntegrationMutation($input: CreateOIDCIntegrationInput!) {
+        createOIDCIntegration(input: $input) {
+          ok {
+            createdOIDCIntegration {
+              id
+              clientId
+              clientSecretPreview
+              tokenEndpoint
+              userinfoEndpoint
+              authorizationEndpoint
+              additionalScopes
+              oidcUserJoinOnly
+              oidcUserAccessOnly
+            }
+          }
+          error {
+            message
+            details {
+              clientId
+              clientSecret
+              tokenEndpoint
+              userinfoEndpoint
+              authorizationEndpoint
+              additionalScopes
+            }
+          }
+        }
+      }
+    `),
+    variables: { input },
+    authToken,
+  });
+}
+
 export function updateOIDCIntegration(input: UpdateOidcIntegrationInput, authToken: string) {
   return execute({
     document: graphql(`
@@ -2250,6 +2290,32 @@ export function updateOIDCIntegration(input: UpdateOidcIntegrationInput, authTok
     variables: {
       input,
     },
+  });
+}
+
+export function updateOIDCRestrictions(
+  input: GraphQLSchema.UpdateOidcRestrictionsInput,
+  authToken: string,
+) {
+  return execute({
+    document: graphql(`
+      mutation TestKit_UpdateOIDCRestrictionsMutation($input: UpdateOIDCRestrictionsInput!) {
+        updateOIDCRestrictions(input: $input) {
+          ok {
+            updatedOIDCIntegration {
+              id
+              oidcUserJoinOnly
+              oidcUserAccessOnly
+            }
+          }
+          error {
+            message
+          }
+        }
+      }
+    `),
+    variables: { input },
+    authToken,
   });
 }
 

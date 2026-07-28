@@ -1,4 +1,5 @@
 import { userEmail } from 'testkit/auth';
+import { createOIDCIntegration, updateOIDCRestrictions } from 'testkit/flow';
 import { graphql } from '../../../testkit/gql';
 import { execute } from '../../../testkit/graphql';
 import { initSeed } from '../../../testkit/seed';
@@ -25,75 +26,24 @@ const OrganizationReadTest = graphql(`
   }
 `);
 
-const CreateOIDCIntegrationMutation = graphql(`
-  mutation CreateOIDCIntegrationMutation($input: CreateOIDCIntegrationInput!) {
-    createOIDCIntegration(input: $input) {
-      ok {
-        createdOIDCIntegration {
-          id
-          clientId
-          clientSecretPreview
-          tokenEndpoint
-          userinfoEndpoint
-          authorizationEndpoint
-          additionalScopes
-          oidcUserJoinOnly
-          oidcUserAccessOnly
-        }
-      }
-      error {
-        message
-        details {
-          clientId
-          clientSecret
-          tokenEndpoint
-          userinfoEndpoint
-          authorizationEndpoint
-          additionalScopes
-        }
-      }
-    }
-  }
-`);
-
-const UpdateOIDCRestrictionsMutation = graphql(`
-  mutation UpdateOIDCRestrictionsMutation($input: UpdateOIDCRestrictionsInput!) {
-    updateOIDCRestrictions(input: $input) {
-      ok {
-        updatedOIDCIntegration {
-          id
-          oidcUserJoinOnly
-          oidcUserAccessOnly
-        }
-      }
-      error {
-        message
-      }
-    }
-  }
-`);
-
 describe('create', () => {
   describe('permissions="organization:integrations"', () => {
     test.concurrent('success', async ({ expect }) => {
       const { ownerToken, createOrg } = await initSeed().createOwner();
       const { organization } = await createOrg();
 
-      const result = await execute({
-        document: CreateOIDCIntegrationMutation,
-        variables: {
-          input: {
-            organizationId: organization.id,
-            clientId: 'foo',
-            clientSecret: 'foofoofoofoo',
-            tokenEndpoint: 'http://localhost:8888/oauth/token',
-            userinfoEndpoint: 'http://localhost:8888/oauth/userinfo',
-            authorizationEndpoint: 'http://localhost:8888/oauth/authorize',
-            additionalScopes: [],
-          },
+      const result = await createOIDCIntegration(
+        {
+          organizationId: organization.id,
+          clientId: 'foo',
+          clientSecret: 'foofoofoofoo',
+          tokenEndpoint: 'http://localhost:8888/oauth/token',
+          userinfoEndpoint: 'http://localhost:8888/oauth/userinfo',
+          authorizationEndpoint: 'http://localhost:8888/oauth/authorize',
+          additionalScopes: [],
         },
-        authToken: ownerToken,
-      }).then(r => r.expectNoGraphQLErrors());
+        ownerToken,
+      ).then(r => r.expectNoGraphQLErrors());
 
       expect(result).toEqual({
         createOIDCIntegration: {
@@ -137,21 +87,18 @@ describe('create', () => {
 
     test.concurrent('error: non existing organization', async ({ expect }) => {
       const { ownerToken } = await initSeed().createOwner();
-      const errors = await execute({
-        document: CreateOIDCIntegrationMutation,
-        variables: {
-          input: {
-            organizationId: 'i-do-not-exist',
-            clientId: 'fo',
-            clientSecret: 'foofoofoofoo',
-            tokenEndpoint: 'http://localhost:8888/oauth/token',
-            userinfoEndpoint: 'http://localhost:8888/oauth/userinfo',
-            authorizationEndpoint: 'http://localhost:8888/oauth/authorize',
-            additionalScopes: [],
-          },
+      const errors = await createOIDCIntegration(
+        {
+          organizationId: 'i-do-not-exist',
+          clientId: 'fo',
+          clientSecret: 'foofoofoofoo',
+          tokenEndpoint: 'http://localhost:8888/oauth/token',
+          userinfoEndpoint: 'http://localhost:8888/oauth/userinfo',
+          authorizationEndpoint: 'http://localhost:8888/oauth/authorize',
+          additionalScopes: [],
         },
-        authToken: ownerToken,
-      }).then(r => r.expectGraphQLErrors());
+        ownerToken,
+      ).then(r => r.expectGraphQLErrors());
 
       expect(errors).toEqual(
         expect.arrayContaining([
@@ -166,21 +113,18 @@ describe('create', () => {
       const { ownerToken, createOrg } = await initSeed().createOwner();
       const { organization } = await createOrg();
 
-      const result = await execute({
-        document: CreateOIDCIntegrationMutation,
-        variables: {
-          input: {
-            organizationId: organization.id,
-            clientId: 'fo',
-            clientSecret: 'foofoofoofoo',
-            tokenEndpoint: 'http://localhost:8888/oauth/token',
-            userinfoEndpoint: 'http://localhost:8888/oauth/userinfo',
-            authorizationEndpoint: 'http://localhost:8888/oauth/authorize',
-            additionalScopes: [],
-          },
+      const result = await createOIDCIntegration(
+        {
+          organizationId: organization.id,
+          clientId: 'fo',
+          clientSecret: 'foofoofoofoo',
+          tokenEndpoint: 'http://localhost:8888/oauth/token',
+          userinfoEndpoint: 'http://localhost:8888/oauth/userinfo',
+          authorizationEndpoint: 'http://localhost:8888/oauth/authorize',
+          additionalScopes: [],
         },
-        authToken: ownerToken,
-      }).then(r => r.expectNoGraphQLErrors());
+        ownerToken,
+      ).then(r => r.expectNoGraphQLErrors());
 
       expect(result).toMatchInlineSnapshot(`
         {
@@ -206,21 +150,18 @@ describe('create', () => {
       const { ownerToken, createOrg } = await initSeed().createOwner();
       const { organization } = await createOrg();
 
-      const result = await execute({
-        document: CreateOIDCIntegrationMutation,
-        variables: {
-          input: {
-            organizationId: organization.id,
-            clientId: new Array(101).fill('a').join(''),
-            clientSecret: 'foofoofoofoo',
-            tokenEndpoint: 'http://localhost:8888/oauth/token',
-            userinfoEndpoint: 'http://localhost:8888/oauth/userinfo',
-            authorizationEndpoint: 'http://localhost:8888/oauth/authorize',
-            additionalScopes: [],
-          },
+      const result = await createOIDCIntegration(
+        {
+          organizationId: organization.id,
+          clientId: new Array(101).fill('a').join(''),
+          clientSecret: 'foofoofoofoo',
+          tokenEndpoint: 'http://localhost:8888/oauth/token',
+          userinfoEndpoint: 'http://localhost:8888/oauth/userinfo',
+          authorizationEndpoint: 'http://localhost:8888/oauth/authorize',
+          additionalScopes: [],
         },
-        authToken: ownerToken,
-      }).then(r => r.expectNoGraphQLErrors());
+        ownerToken,
+      ).then(r => r.expectNoGraphQLErrors());
 
       expect(result).toMatchInlineSnapshot(`
         {
@@ -246,21 +187,18 @@ describe('create', () => {
       const { ownerToken, createOrg } = await initSeed().createOwner();
       const { organization } = await createOrg();
 
-      const result = await execute({
-        document: CreateOIDCIntegrationMutation,
-        variables: {
-          input: {
-            organizationId: organization.id,
-            clientId: 'foo',
-            clientSecret: 'fo',
-            tokenEndpoint: 'http://localhost:8888/oauth/token',
-            userinfoEndpoint: 'http://localhost:8888/oauth/userinfo',
-            authorizationEndpoint: 'http://localhost:8888/oauth/authorize',
-            additionalScopes: [],
-          },
+      const result = await createOIDCIntegration(
+        {
+          organizationId: organization.id,
+          clientId: 'foo',
+          clientSecret: 'fo',
+          tokenEndpoint: 'http://localhost:8888/oauth/token',
+          userinfoEndpoint: 'http://localhost:8888/oauth/userinfo',
+          authorizationEndpoint: 'http://localhost:8888/oauth/authorize',
+          additionalScopes: [],
         },
-        authToken: ownerToken,
-      }).then(r => r.expectNoGraphQLErrors());
+        ownerToken,
+      ).then(r => r.expectNoGraphQLErrors());
 
       expect(result).toMatchInlineSnapshot(`
         {
@@ -286,21 +224,18 @@ describe('create', () => {
       const { ownerToken, createOrg } = await initSeed().createOwner();
       const { organization } = await createOrg();
 
-      const result = await execute({
-        document: CreateOIDCIntegrationMutation,
-        variables: {
-          input: {
-            organizationId: organization.id,
-            clientId: 'foo',
-            clientSecret: new Array(500).fill('a').join(''),
-            tokenEndpoint: 'http://localhost:8888/oauth/token',
-            userinfoEndpoint: 'http://localhost:8888/oauth/userinfo',
-            authorizationEndpoint: 'http://localhost:8888/oauth/authorize',
-            additionalScopes: [],
-          },
+      const result = await createOIDCIntegration(
+        {
+          organizationId: organization.id,
+          clientId: 'foo',
+          clientSecret: new Array(500).fill('a').join(''),
+          tokenEndpoint: 'http://localhost:8888/oauth/token',
+          userinfoEndpoint: 'http://localhost:8888/oauth/userinfo',
+          authorizationEndpoint: 'http://localhost:8888/oauth/authorize',
+          additionalScopes: [],
         },
-        authToken: ownerToken,
-      }).then(r => r.expectNoGraphQLErrors());
+        ownerToken,
+      ).then(r => r.expectNoGraphQLErrors());
 
       expect(result).toMatchInlineSnapshot(`
         {
@@ -326,21 +261,18 @@ describe('create', () => {
       const { ownerToken, createOrg } = await initSeed().createOwner();
       const { organization } = await createOrg();
 
-      const result = await execute({
-        document: CreateOIDCIntegrationMutation,
-        variables: {
-          input: {
-            organizationId: organization.id,
-            clientId: 'foo',
-            clientSecret: 'foo',
-            tokenEndpoint: 'foo',
-            userinfoEndpoint: 'foo',
-            authorizationEndpoint: 'foo',
-            additionalScopes: [],
-          },
+      const result = await createOIDCIntegration(
+        {
+          organizationId: organization.id,
+          clientId: 'foo',
+          clientSecret: 'foo',
+          tokenEndpoint: 'foo',
+          userinfoEndpoint: 'foo',
+          authorizationEndpoint: 'foo',
+          additionalScopes: [],
         },
-        authToken: ownerToken,
-      }).then(r => r.expectNoGraphQLErrors());
+        ownerToken,
+      ).then(r => r.expectNoGraphQLErrors());
 
       expect(result).toMatchInlineSnapshot(`
         {
@@ -366,21 +298,18 @@ describe('create', () => {
       const { ownerToken, createOrg } = await initSeed().createOwner();
       const { organization } = await createOrg();
 
-      const result = await execute({
-        document: CreateOIDCIntegrationMutation,
-        variables: {
-          input: {
-            organizationId: organization.id,
-            clientId: 'foo',
-            clientSecret: 'foofoofoofoo',
-            tokenEndpoint: 'http://localhost:8888/oauth/token',
-            userinfoEndpoint: 'http://localhost:8888/oauth/userinfo',
-            authorizationEndpoint: 'http://localhost:8888/oauth/authorize',
-            additionalScopes: [],
-          },
+      const result = await createOIDCIntegration(
+        {
+          organizationId: organization.id,
+          clientId: 'foo',
+          clientSecret: 'foofoofoofoo',
+          tokenEndpoint: 'http://localhost:8888/oauth/token',
+          userinfoEndpoint: 'http://localhost:8888/oauth/userinfo',
+          authorizationEndpoint: 'http://localhost:8888/oauth/authorize',
+          additionalScopes: [],
         },
-        authToken: ownerToken,
-      }).then(r => r.expectNoGraphQLErrors());
+        ownerToken,
+      ).then(r => r.expectNoGraphQLErrors());
 
       expect(result).toEqual({
         createOIDCIntegration: {
@@ -401,21 +330,18 @@ describe('create', () => {
         },
       });
 
-      const result2 = await execute({
-        document: CreateOIDCIntegrationMutation,
-        variables: {
-          input: {
-            organizationId: organization.id,
-            clientId: 'foo',
-            clientSecret: 'foofoofoofoo',
-            tokenEndpoint: 'http://localhost:8888/oauth/token',
-            userinfoEndpoint: 'http://localhost:8888/oauth/userinfo',
-            authorizationEndpoint: 'http://localhost:8888/oauth/authorize',
-            additionalScopes: [],
-          },
+      const result2 = await createOIDCIntegration(
+        {
+          organizationId: organization.id,
+          clientId: 'foo',
+          clientSecret: 'foofoofoofoo',
+          tokenEndpoint: 'http://localhost:8888/oauth/token',
+          userinfoEndpoint: 'http://localhost:8888/oauth/userinfo',
+          authorizationEndpoint: 'http://localhost:8888/oauth/authorize',
+          additionalScopes: [],
         },
-        authToken: ownerToken,
-      }).then(r => r.expectNoGraphQLErrors());
+        ownerToken,
+      ).then(r => r.expectNoGraphQLErrors());
 
       expect(result2).toEqual({
         createOIDCIntegration: {
@@ -456,21 +382,18 @@ describe('delete', () => {
       const { ownerToken, createOrg } = await initSeed().createOwner();
       const { organization } = await createOrg();
 
-      const createResult = await execute({
-        document: CreateOIDCIntegrationMutation,
-        variables: {
-          input: {
-            organizationId: organization.id,
-            clientId: 'foo',
-            clientSecret: 'foofoofoofoo',
-            tokenEndpoint: 'http://localhost:8888/oauth/token',
-            userinfoEndpoint: 'http://localhost:8888/oauth/userinfo',
-            authorizationEndpoint: 'http://localhost:8888/oauth/authorize',
-            additionalScopes: [],
-          },
+      const createResult = await createOIDCIntegration(
+        {
+          organizationId: organization.id,
+          clientId: 'foo',
+          clientSecret: 'foofoofoofoo',
+          tokenEndpoint: 'http://localhost:8888/oauth/token',
+          userinfoEndpoint: 'http://localhost:8888/oauth/userinfo',
+          authorizationEndpoint: 'http://localhost:8888/oauth/authorize',
+          additionalScopes: [],
         },
-        authToken: ownerToken,
-      }).then(r => r.expectNoGraphQLErrors());
+        ownerToken,
+      ).then(r => r.expectNoGraphQLErrors());
 
       const oidcIntegrationId = createResult.createOIDCIntegration.ok!.createdOIDCIntegration.id;
 
@@ -533,21 +456,18 @@ describe('delete', () => {
       const { ownerToken, createOrg } = await initSeed().createOwner();
       const { organization } = await createOrg();
 
-      const createResult = await execute({
-        document: CreateOIDCIntegrationMutation,
-        variables: {
-          input: {
-            organizationId: organization.id,
-            clientId: 'foo',
-            clientSecret: 'foofoofoofoo',
-            tokenEndpoint: 'http://localhost:8888/oauth/token',
-            userinfoEndpoint: 'http://localhost:8888/oauth/userinfo',
-            authorizationEndpoint: 'http://localhost:8888/oauth/authorize',
-            additionalScopes: [],
-          },
+      const createResult = await createOIDCIntegration(
+        {
+          organizationId: organization.id,
+          clientId: 'foo',
+          clientSecret: 'foofoofoofoo',
+          tokenEndpoint: 'http://localhost:8888/oauth/token',
+          userinfoEndpoint: 'http://localhost:8888/oauth/userinfo',
+          authorizationEndpoint: 'http://localhost:8888/oauth/authorize',
+          additionalScopes: [],
         },
-        authToken: ownerToken,
-      }).then(r => r.expectNoGraphQLErrors());
+        ownerToken,
+      ).then(r => r.expectNoGraphQLErrors());
 
       const oidcIntegrationId = createResult.createOIDCIntegration.ok!.createdOIDCIntegration.id;
 
@@ -609,21 +529,18 @@ describe('update', () => {
       const { ownerToken, createOrg } = await initSeed().createOwner();
       const { organization } = await createOrg();
 
-      const createResult = await execute({
-        document: CreateOIDCIntegrationMutation,
-        variables: {
-          input: {
-            organizationId: organization.id,
-            clientId: 'aaaa',
-            clientSecret: 'aaaaaaaaaaaa',
-            tokenEndpoint: 'http://localhost:8888/aaaa/token',
-            userinfoEndpoint: 'http://localhost:8888/aaaa/userinfo',
-            authorizationEndpoint: 'http://localhost:8888/aaaa/authorize',
-            additionalScopes: [],
-          },
+      const createResult = await createOIDCIntegration(
+        {
+          organizationId: organization.id,
+          clientId: 'aaaa',
+          clientSecret: 'aaaaaaaaaaaa',
+          tokenEndpoint: 'http://localhost:8888/aaaa/token',
+          userinfoEndpoint: 'http://localhost:8888/aaaa/userinfo',
+          authorizationEndpoint: 'http://localhost:8888/aaaa/authorize',
+          additionalScopes: [],
         },
-        authToken: ownerToken,
-      }).then(r => r.expectNoGraphQLErrors());
+        ownerToken,
+      ).then(r => r.expectNoGraphQLErrors());
 
       const oidcIntegrationId = createResult.createOIDCIntegration.ok!.createdOIDCIntegration.id;
 
@@ -665,21 +582,18 @@ describe('update', () => {
       const { ownerToken, createOrg } = await initSeed().createOwner();
       const { organization } = await createOrg();
 
-      const createResult = await execute({
-        document: CreateOIDCIntegrationMutation,
-        variables: {
-          input: {
-            organizationId: organization.id,
-            clientId: 'foo',
-            clientSecret: 'foofoofoofoo',
-            tokenEndpoint: 'http://localhost:8888/oauth/token',
-            userinfoEndpoint: 'http://localhost:8888/oauth/userinfo',
-            authorizationEndpoint: 'http://localhost:8888/oauth/authorize',
-            additionalScopes: [],
-          },
+      const createResult = await createOIDCIntegration(
+        {
+          organizationId: organization.id,
+          clientId: 'foo',
+          clientSecret: 'foofoofoofoo',
+          tokenEndpoint: 'http://localhost:8888/oauth/token',
+          userinfoEndpoint: 'http://localhost:8888/oauth/userinfo',
+          authorizationEndpoint: 'http://localhost:8888/oauth/authorize',
+          additionalScopes: [],
         },
-        authToken: ownerToken,
-      }).then(r => r.expectNoGraphQLErrors());
+        ownerToken,
+      ).then(r => r.expectNoGraphQLErrors());
 
       const oidcIntegrationId = createResult.createOIDCIntegration.ok!.createdOIDCIntegration.id;
       const { ownerToken: accessTokenExtra } = await initSeed().createOwner();
@@ -707,21 +621,18 @@ describe('update', () => {
 
 describe('restrictions', () => {
   async function configureOIDC(args: { ownerToken: string; organizationId: string }) {
-    const result = await execute({
-      document: CreateOIDCIntegrationMutation,
-      variables: {
-        input: {
-          organizationId: args.organizationId,
-          clientId: 'foo',
-          clientSecret: 'foofoofoofoo',
-          tokenEndpoint: 'http://localhost:8888/oauth/token',
-          userinfoEndpoint: 'http://localhost:8888/oauth/userinfo',
-          authorizationEndpoint: 'http://localhost:8888/oauth/authorize',
-          additionalScopes: [],
-        },
+    const result = await createOIDCIntegration(
+      {
+        organizationId: args.organizationId,
+        clientId: 'foo',
+        clientSecret: 'foofoofoofoo',
+        tokenEndpoint: 'http://localhost:8888/oauth/token',
+        userinfoEndpoint: 'http://localhost:8888/oauth/userinfo',
+        authorizationEndpoint: 'http://localhost:8888/oauth/authorize',
+        additionalScopes: [],
       },
-      authToken: args.ownerToken,
-    }).then(r => r.expectNoGraphQLErrors());
+      args.ownerToken,
+    ).then(r => r.expectNoGraphQLErrors());
 
     expect(result).toEqual({
       createOIDCIntegration: {
@@ -813,16 +724,13 @@ describe('restrictions', () => {
 
     expect(orgAfterOidc.organization?.oidcIntegration?.oidcUserJoinOnly).toEqual(true);
 
-    const restrictionsUpdateResult = await execute({
-      document: UpdateOIDCRestrictionsMutation,
-      variables: {
-        input: {
-          oidcIntegrationId,
-          oidcUserJoinOnly: false,
-        },
+    const restrictionsUpdateResult = await updateOIDCRestrictions(
+      {
+        oidcIntegrationId,
+        oidcUserJoinOnly: false,
       },
-      authToken: ownerToken,
-    }).then(r => r.expectNoGraphQLErrors());
+      ownerToken,
+    ).then(r => r.expectNoGraphQLErrors());
 
     expect(
       restrictionsUpdateResult.updateOIDCRestrictions.ok?.updatedOIDCIntegration.oidcUserJoinOnly,
@@ -934,16 +842,13 @@ describe('restrictions', () => {
 
       expect(orgAfterOidc.organization?.oidcIntegration?.oidcUserAccessOnly).toEqual(false);
 
-      const restrictionsUpdateResult = await execute({
-        document: UpdateOIDCRestrictionsMutation,
-        variables: {
-          input: {
-            oidcIntegrationId,
-            oidcUserAccessOnly: true,
-          },
+      const restrictionsUpdateResult = await updateOIDCRestrictions(
+        {
+          oidcIntegrationId,
+          oidcUserAccessOnly: true,
         },
-        authToken: ownerToken,
-      }).then(r => r.expectNoGraphQLErrors());
+        ownerToken,
+      ).then(r => r.expectNoGraphQLErrors());
 
       expect(
         restrictionsUpdateResult.updateOIDCRestrictions.ok?.updatedOIDCIntegration
@@ -981,21 +886,18 @@ test.concurrent(
     const { createOrg, ownerToken } = await seed.createOwner();
     const { organization, inviteAndJoinMember } = await createOrg();
 
-    const createOIDCIntegrationResult = await execute({
-      document: CreateOIDCIntegrationMutation,
-      variables: {
-        input: {
-          organizationId: organization.id,
-          clientId: 'aaaa',
-          clientSecret: 'aaaaaaaaaaaa',
-          tokenEndpoint: 'http://localhost:8888/aaaa/token',
-          userinfoEndpoint: 'http://localhost:8888/aaaa/userinfo',
-          authorizationEndpoint: 'http://localhost:8888/aaaa/authorize',
-          additionalScopes: [],
-        },
+    const createOIDCIntegrationResult = await createOIDCIntegration(
+      {
+        organizationId: organization.id,
+        clientId: 'aaaa',
+        clientSecret: 'aaaaaaaaaaaa',
+        tokenEndpoint: 'http://localhost:8888/aaaa/token',
+        userinfoEndpoint: 'http://localhost:8888/aaaa/userinfo',
+        authorizationEndpoint: 'http://localhost:8888/aaaa/authorize',
+        additionalScopes: [],
       },
-      authToken: ownerToken,
-    }).then(r => r.expectNoGraphQLErrors());
+      ownerToken,
+    ).then(r => r.expectNoGraphQLErrors());
     const oidcIntegrationId =
       createOIDCIntegrationResult.createOIDCIntegration.ok?.createdOIDCIntegration.id;
 
