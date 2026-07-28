@@ -10,8 +10,8 @@ import {
 } from 'react';
 import { OperationDefinitionNode, parse } from 'graphql';
 import * as monaco from 'monaco-editor';
-import { MonacoGraphQLAPI } from 'monaco-graphql/esm/api.js';
-import { initializeMode } from 'monaco-graphql/initializeMode';
+import { buildEditorOptions } from '@/lib/editor-options';
+import { syncMonacoGraphQL } from '@/lib/monaco-graphql';
 import { cn } from '@/lib/utils';
 import MonacoEditor, { loader } from '@monaco-editor/react';
 import { useLaboratory } from './context';
@@ -145,43 +145,17 @@ const EditorInner = forwardRef<EditorHandle, EditorProps>((props, ref) => {
   const [jsonReady, setJsonReady] = useState(
     monaco.languages.getLanguages().some(language => language.id === 'json'),
   );
-  const apiRef = useRef<MonacoGraphQLAPI | null>(null);
-
   useEffect(() => {
-    if (introspection) {
-      if (apiRef.current) {
-        apiRef.current.setSchemaConfig([
-          {
-            introspectionJSON: introspection,
-            uri: `schema_${endpoint}.graphql`,
-          },
-        ]);
-      } else {
-        apiRef.current = initializeMode({
-          schemas: [
-            {
-              introspectionJSON: introspection,
-              uri: `schema_${endpoint}.graphql`,
-            },
-          ],
-          diagnosticSettings:
-            props.uri && props.variablesUri
-              ? {
-                  validateVariablesJSON: {
-                    [props.uri.toString()]: [props.variablesUri.toString()],
-                  },
-                  jsonDiagnosticSettings: {
-                    allowComments: true, // allow json, parse with a jsonc parser to make requests
-                  },
-                }
-              : undefined,
-        });
-
-        apiRef.current.setCompletionSettings({
-          __experimental__fillLeafsOnComplete: true,
-        });
-      }
+    if (!introspection) {
+      return;
     }
+
+    syncMonacoGraphQL({
+      introspection,
+      schemaUri: `schema_${endpoint}.graphql`,
+      operationUri: props.uri?.toString(),
+      variablesUri: props.variablesUri?.toString(),
+    });
   }, [endpoint, introspection, props.uri?.toString(), props.variablesUri?.toString()]);
 
   useEffect(() => {
@@ -362,23 +336,7 @@ const EditorInner = forwardRef<EditorHandle, EditorProps>((props, ref) => {
         theme={theme === 'dark' ? 'hive-laboratory-dark' : 'hive-laboratory-light'}
         onMount={handleMount}
         loading={null}
-        options={{
-          ...props.options,
-          lineNumbers: 'on',
-          cursorStyle: 'line',
-          cursorBlinking: 'smooth',
-          padding: {
-            top: 16,
-          },
-          fontFamily:
-            'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace',
-          minimap: {
-            enabled: false,
-          },
-          automaticLayout: true,
-          tabSize: 2,
-          formatOnPaste: true,
-        }}
+        options={buildEditorOptions(props.options)}
         defaultPath={props.uri?.toString()}
       />
     </div>

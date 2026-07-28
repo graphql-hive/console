@@ -216,7 +216,7 @@
     },
     {
       "datasource": { "type": "prometheus", "uid": "PROM_DATASOURCE_UID" },
-      "description": "p99 duration of the evaluateMetricAlertRules task (full cron tick across all rule groups). Reuses the generic workflow job duration summary.",
+      "description": "Mean wall-clock time per run of the evaluateMetricAlertRules cron, measured from the scheduled minute boundary (run_at) to job completion. Computed as rate(_sum)/rate(_count) over a 10m window, aggregated across pods. Note this spans more than the handler: it includes graphile-worker's cron wake-up, the job INSERT, worker pickup, and the completion write, which together account for roughly a second regardless of rule count. Evaluation work rides on top of that baseline, so a ~1s reading at zero rules is correct rather than broken.",
       "fieldConfig": {
         "defaults": {
           "color": { "mode": "palette-classic" },
@@ -242,7 +242,6 @@
           },
           "mappings": [],
           "min": 0,
-          "noValue": "0",
           "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }] },
           "unit": "s"
         },
@@ -264,13 +263,13 @@
         {
           "datasource": { "type": "prometheus", "uid": "PROM_DATASOURCE_UID" },
           "editorMode": "code",
-          "expr": "hive_workflow_job_duration_seconds{task_identifier=\"evaluateMetricAlertRules\",quantile=\"0.99\"}",
-          "legendFormat": "p99 {{pod}}",
+          "expr": "sum(rate(hive_workflow_job_duration_seconds_sum{task_identifier=\"evaluateMetricAlertRules\"}[10m])) / sum(rate(hive_workflow_job_duration_seconds_count{task_identifier=\"evaluateMetricAlertRules\"}[10m]))",
+          "legendFormat": "mean duration",
           "range": true,
           "refId": "A"
         }
       ],
-      "title": "evaluateMetricAlertRules task duration (p99)",
+      "title": "evaluateMetricAlertRules task duration",
       "type": "timeseries"
     },
     {
@@ -489,7 +488,7 @@
     },
     {
       "datasource": { "type": "prometheus", "uid": "PROM_DATASOURCE_UID" },
-      "description": "p99 time a evaluateMetricAlertRules job waits in the graphile-worker queue before a worker picks it up. The cron enqueues every minute and groups run at GROUP_CONCURRENCY=5; sustained growth here means the evaluator can't drain a tick before the next is enqueued (workers saturated or ticks running long), so alerts are evaluated late even if each query is fast.",
+      "description": "Mean time per run between the scheduled minute boundary (run_at) and a worker picking the job up. Computed as rate(_sum)/rate(_count) over a 10m window, aggregated across pods. The cron enqueues every minute, so sustained growth here means the evaluator can't drain a tick before the next is enqueued (workers saturated or ticks running long), and alerts are evaluated late even if each query is fast.",
       "fieldConfig": {
         "defaults": {
           "color": { "mode": "palette-classic" },
@@ -515,7 +514,6 @@
           },
           "mappings": [],
           "min": 0,
-          "noValue": "0",
           "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }] },
           "unit": "s"
         },
@@ -537,13 +535,13 @@
         {
           "datasource": { "type": "prometheus", "uid": "PROM_DATASOURCE_UID" },
           "editorMode": "code",
-          "expr": "hive_workflow_job_queue_time_seconds{task_identifier=\"evaluateMetricAlertRules\",quantile=\"0.99\"}",
-          "legendFormat": "p99 {{pod}}",
+          "expr": "sum(rate(hive_workflow_job_queue_time_seconds_sum{task_identifier=\"evaluateMetricAlertRules\"}[10m])) / sum(rate(hive_workflow_job_queue_time_seconds_count{task_identifier=\"evaluateMetricAlertRules\"}[10m]))",
+          "legendFormat": "mean queue time",
           "range": true,
           "refId": "A"
         }
       ],
-      "title": "Task queue time (p99)",
+      "title": "Task queue time",
       "type": "timeseries"
     },
     {
