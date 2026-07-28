@@ -17,6 +17,8 @@ export type ErrorResultEvent = {
 
 export type TrackMetricEvent = {
   event: 'metric';
+  target: string | undefined;
+  compositionType: CompositionEvent['data']['type'];
 } & {
   type: 'heapUsed';
   value: number;
@@ -45,6 +47,7 @@ export function createCompositionWorker(args: {
       messageId: message.id,
       event: message.event,
     });
+
     logger.debug('processing message');
     const postResult = (result: CompositionResultEvent | ErrorResultEvent) => {
       args.port.postMessage(result);
@@ -55,6 +58,8 @@ export function createCompositionWorker(args: {
           event: 'metric',
           type: 'heapUsed',
           value: process.memoryUsage().heapUsed,
+          target: message.targetId,
+          compositionType: message.data.type,
         } satisfies TrackMetricEvent);
       }
     };
