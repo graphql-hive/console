@@ -184,7 +184,7 @@ export class Groups {
 
     if (args.newRoleId) {
       const role = await this.memberRoles.findMemberRoleById(args.newRoleId);
-      if (!role) {
+      if (!role || role.organizationId !== groupMapping.organizationId) {
         return {
           type: 'error' as const,
           message: 'Could not find role.',
