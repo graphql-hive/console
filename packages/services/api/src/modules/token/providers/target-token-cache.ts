@@ -96,6 +96,7 @@ export class TargetTokenCache {
       throw new Error('Target token cache purging is not available.');
     }
 
+    await this.cache.deleteMany({ keys: tokens });
     await this.taskScheduler.scheduleTask(PurgeTargetTokensTask, { tokens });
   }
 }
