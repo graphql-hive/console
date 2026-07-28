@@ -1,6 +1,5 @@
 import { parse } from 'graphql';
 import { composeAndValidate } from '@apollo/federation';
-import { composeServices as hiveComposeAndValidate } from '@theguild/federation-composition';
 
 test('patch', () => {
   const result = composeAndValidate([
