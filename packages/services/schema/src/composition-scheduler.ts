@@ -145,7 +145,7 @@ export class CompositionScheduler {
       if (data.event === 'metric') {
         if (data.type === 'heapUsed') {
           compositionWorkerMemoryUsedBytes.set(
-            { target: workerState?.args.targetId, type: workerState?.args.data.type },
+            { target: data.target, type: data.type },
             data.value,
           );
         }
