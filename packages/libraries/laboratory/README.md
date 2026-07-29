@@ -87,6 +87,14 @@ tests, plugins, plus granular `onXCreate`/`onXUpdate`/`onXDelete` callbacks and 
 object) is defined by [`LaboratoryApi`](src/components/laboratory/context.tsx). Treat that interface
 as the source of truth rather than this README.
 
+### Operations and tabs
+
+`operations` is the pool of documents; `tabs` is what is open in the tab bar. They are separate
+stores, so a host that seeds one must seed the other: an operation with no tab pointing at it is
+unreachable, and an operation tab whose `data.id` matches no operation renders an empty tab. Seed
+`defaultOperations`, `defaultTabs` and `defaultActiveTabId` together, with ids that line up. See
+[`dev/operations.ts`](dev/operations.ts) for a worked example.
+
 ### Permissions
 
 Pass a `permissions` object to gate actions per resource (`preflight`, `collections`,
@@ -109,8 +117,10 @@ pnpm lint  # eslint
 ```
 
 `pnpm dev` mounts the Lab via [`src/main.tsx`](src/main.tsx) / [`index.html`](index.html), a thin
-harness that persists all state to `localStorage`. No backend is required; set an endpoint in the UI
-and go.
+harness that seeds collections, operations and tabs from [`dev/`](dev) on every load and persists
+nothing, so a reload is always the same known state. No backend is required: the Vite dev server
+mounts a mock GraphQL endpoint at the same origin (see
+[`dev/mock-graphql.ts`](dev/mock-graphql.ts)), which the harness points at by default.
 
 Tests run from the monorepo root (this package has no `test` script):
 
