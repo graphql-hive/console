@@ -145,7 +145,6 @@ export async function sendTeamsNotification(args: {
   }
 
   const isFiring = event.state === 'firing';
-  const emoji = isFiring ? '🔴' : '✅';
   const action = isFiring ? 'triggered' : 'resolved';
   const themeColor = isFiring ? severityColor(event.rule.severity) : RESOLVED_COLOR;
 
@@ -158,7 +157,7 @@ export async function sendTeamsNotification(args: {
     summary: `Metric alert ${action}: "${event.rule.name}"`,
     sections: [
       {
-        activityTitle: `${emoji} ${event.rule.name} — ${action}`,
+        activityTitle: `${event.rule.name} — ${action}`,
         facts: [
           { name: 'Type', value: event.rule.type },
           { name: 'Severity', value: event.rule.severity },
