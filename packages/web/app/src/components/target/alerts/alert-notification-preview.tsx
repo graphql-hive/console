@@ -144,9 +144,7 @@ function SlackPreview(props: PreviewProps) {
         <div className="flex">
           <div className={`${colors.bar} w-1 shrink-0 rounded-l`} />
           <div className="bg-neutral-4/50 rounded-r p-3 text-sm leading-relaxed">
-            <div className="text-neutral-12 font-bold">
-              🚨 {props.alertName || 'Untitled alert'}
-            </div>
+            <div className="text-neutral-12 font-bold">{props.alertName || 'Untitled alert'}</div>
             <div className="text-neutral-10 mt-1">
               {notificationMetricLabel(props.alertType, props.metricLabel)} {threshold}
             </div>
@@ -241,7 +239,7 @@ function TeamsPreview(props: PreviewProps) {
         {/* Theme color bar */}
         <div className={`${colors.bar} h-1`} />
         <div className="p-3">
-          <div className="text-neutral-12 font-bold">🔴 {props.alertName || 'Untitled alert'}</div>
+          <div className="text-neutral-12 font-bold">{props.alertName || 'Untitled alert'}</div>
           <div className="mt-2 space-y-1 text-sm">
             <div className="flex">
               <span className="text-neutral-10 w-20">Condition</span>
