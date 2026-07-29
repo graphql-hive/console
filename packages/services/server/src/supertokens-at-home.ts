@@ -862,9 +862,6 @@ export async function registerSupertokensAtHome(
         }
 
         const scopes = new Set(['openid', 'email', ...oidcIntegration.additionalScopes]);
-        if (oidcIntegration.userIdClaim) {
-          scopes.add(oidcIntegration.userIdClaim);
-        }
 
         const useFederation =
           workloadIdentityFederation !== null &&
