@@ -26,6 +26,7 @@
     "@hive/server": "workspace:*",
     "@hive/service-common": "workspace:*",
     "@hive/storage": "workspace:*",
+    "@hive/workflows": "workspace:*",
     "@theguild/federation-composition": "0.23.3",
     "@trpc/client": "10.45.3",
     "@trpc/server": "10.45.3",
