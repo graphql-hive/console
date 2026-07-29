@@ -217,17 +217,6 @@ export function createScimTestkit({ baseUrl, headers }: { baseUrl: string; heade
         successSchema: SCIMUserListModel,
       });
     },
-    deleteUser<TExpectedStatus extends number = 204>(
-      id: string,
-      { expectedStatus = 204 as TExpectedStatus }: ExpectedStatusOptions<TExpectedStatus> = {},
-    ) {
-      return request({
-        method: 'DELETE',
-        path: `Users/${id}`,
-        expectedStatus,
-        successStatus: 204,
-      });
-    },
     createGroup<TExpectedStatus extends number = 201>(
       body: unknown,
       { expectedStatus = 201 as TExpectedStatus }: ExpectedStatusOptions<TExpectedStatus> = {},
