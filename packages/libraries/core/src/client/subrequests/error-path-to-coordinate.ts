@@ -13,7 +13,7 @@ import {
   SelectionNode,
   type GraphQLSchema,
 } from 'graphql';
-import { HIVE_INTERNAL_TYPENAME } from '../add-typenames';
+import { HIVE_INTERNAL_TYPENAME } from '../add-typenames.js';
 
 interface SelectionLookupResult {
   fieldNode: FieldNode;
