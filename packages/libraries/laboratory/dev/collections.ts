@@ -1,10 +1,8 @@
 /**
- * Seed collections for the dev harness, used by src/main.tsx when localStorage is
- * empty. They target the mock endpoint's schema (the repo root schema.graphql) and
- * are chosen to exercise the states that are otherwise fiddly to reach by hand:
- * query plans, diagnostics, large responses and template substitution.
- *
- * Clear them with `localStorage.removeItem('collections')` and reload.
+ * Seed collections for the dev harness, applied by src/main.tsx on every load. They
+ * target the mock endpoint's schema (the repo root schema.graphql) and are chosen to
+ * exercise the states that are otherwise fiddly to reach by hand: query plans,
+ * diagnostics, large responses and template substitution.
  */
 import type { LaboratoryCollection } from '../src/lib/collections';
 
@@ -82,7 +80,7 @@ export const devCollections: LaboratoryCollection[] = [
         headers: `{ "x-query-plan": "deep" }`,
       }),
       operation('dev-plan-defer', 'Defer plan', `query DeferPlan {\n  me {\n    id\n  }\n}`, {
-        description: 'Defer, Condition, Subscription and BatchFetch live here too',
+        description: 'A Defer node with one primary and one deferred branch',
         headers: `{ "x-query-plan": "defer" }`,
       }),
       operation('dev-plan-none', 'No plan', `query NoPlan {\n  me {\n    id\n  }\n}`, {

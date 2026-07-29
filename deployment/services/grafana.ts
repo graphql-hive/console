@@ -1,7 +1,7 @@
 import { readdirSync, readFileSync } from 'fs';
 import { join, parse } from 'path';
-import { Dashboard, Folder } from '@lbrlabs/pulumi-grafana';
 import * as pulumi from '@pulumi/pulumi';
+import { oss } from '@pulumiverse/grafana';
 
 const dashboardDirectory = join(__dirname, '../grafana-dashboards/');
 
@@ -10,18 +10,10 @@ const dashboardDirectory = join(__dirname, '../grafana-dashboards/');
  * @param tableSuffix suffix for the table names (production, staging, dev)
  */
 export function deployGrafana(envName: string, tableSuffix: string) {
-  // Dashboards excluded from provisioning:
-  const excludedDashboards = [
-    'ClickHouse-Latency.json', // temp workaround
-    // #8114: the outdated provider churns this dashboard's uid/folder on Grafana
-    // 13, so it's managed manually in the UI until the provider upgrade.
-    'Metric-Alerts.json',
-  ];
-  const availableFiles = readdirSync(dashboardDirectory).filter(
-    f => f.endsWith('.json') && !excludedDashboards.includes(f),
-  );
-  const folder = new Folder('grafana-hive-folder', {
+  const availableFiles = readdirSync(dashboardDirectory).filter(f => f.endsWith('.json'));
+  const folder = new oss.Folder('grafana-hive-folder', {
     title: `Hive Monitoring (${envName})`,
+    uid: 'hive-monitoring',
   });
 
   const params = new pulumi.Config('grafanaDashboards').requireObject<Record<string, string>>(
@@ -44,16 +36,13 @@ export function deployGrafana(envName: string, tableSuffix: string) {
 
     const configJson = JSON.parse(configString);
 
-    if ('uid' in configJson) {
-      delete configJson.uid;
-    }
+    // Pin a stable uid from the filename so dashboard URLs survive redeploys
+    configJson.uid = `hive-${identifier.toLowerCase().replace(/^hive-/, '')}`;
+    delete configJson.id;
+    delete configJson.version;
 
-    if ('version' in configJson) {
-      delete configJson.version;
-    }
-
-    return new Dashboard(`dashboard-${identifier.toLowerCase()}`, {
-      folder: folder.id,
+    return new oss.Dashboard(`dashboard-${identifier.toLowerCase()}`, {
+      folder: folder.uid,
       configJson: JSON.stringify(configJson, null, 2),
     });
   });

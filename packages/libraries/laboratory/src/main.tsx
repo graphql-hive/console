@@ -1,54 +1,20 @@
 import ReactDOM from 'react-dom/client';
 import { devCollections } from '../dev/collections';
+import { devActiveTabId, devOperations, devTabs } from '../dev/operations';
 import { Laboratory } from './components/laboratory/laboratory';
 
-const getLocalStorage = (key: string) => {
-  const value = localStorage.getItem(key);
-  return value ? JSON.parse(value) : null;
-};
-
-const setLocalStorage = (key: string, value: unknown) => {
-  localStorage.setItem(key, JSON.stringify(value));
-};
-
+/**
+ * Dev harness. State is seeded from dev/ on every load and never persisted, so a
+ * reload is always the same known state and edits to the seed files show up right
+ * away. Persistence is the host's job, so there is nothing here for it to prove.
+ */
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <Laboratory
     theme="dark"
-    defaultEndpoint={getLocalStorage('endpoint') ?? `${window.location.origin}/graphql`}
-    onEndpointChange={endpoint => {
-      setLocalStorage('endpoint', endpoint ?? '');
-    }}
-    defaultCollections={getLocalStorage('collections') ?? devCollections}
-    onCollectionsChange={collections => {
-      setLocalStorage('collections', collections);
-    }}
-    defaultTabs={getLocalStorage('tabs') ?? []}
-    onTabsChange={tabs => {
-      setLocalStorage('tabs', tabs);
-    }}
-    defaultOperations={getLocalStorage('operations') ?? []}
-    onOperationsChange={operations => {
-      setLocalStorage('operations', operations);
-    }}
-    defaultActiveTabId={getLocalStorage('activeTabId') ?? null}
-    onActiveTabIdChange={activeTabId => {
-      setLocalStorage('activeTabId', activeTabId ?? '');
-    }}
-    defaultPreflight={getLocalStorage('preflight') ?? null}
-    onPreflightChange={preflight => {
-      setLocalStorage('preflight', preflight ?? '');
-    }}
-    defaultEnv={getLocalStorage('env') ?? null}
-    onEnvChange={env => {
-      setLocalStorage('env', env ?? '');
-    }}
-    defaultSettings={getLocalStorage('settings') ?? null}
-    onSettingsChange={settings => {
-      setLocalStorage('settings', settings ?? '');
-    }}
-    defaultHistory={getLocalStorage('history') ?? []}
-    onHistoryChange={history => {
-      setLocalStorage('history', history);
-    }}
+    defaultEndpoint={`${window.location.origin}/graphql`}
+    defaultCollections={devCollections}
+    defaultOperations={devOperations}
+    defaultTabs={devTabs}
+    defaultActiveTabId={devActiveTabId}
   />,
 );

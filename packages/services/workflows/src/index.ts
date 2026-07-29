@@ -59,6 +59,8 @@ const modules = await Promise.all([
   import('./tasks/evaluate-metric-alert-rules.js'),
   import('./tasks/send-metric-alert-channel-notification.js'),
   import('./tasks/purge-expired-alert-state-log.js'),
+  import('./tasks/purge-target-tokens.js'),
+  import('./tasks/flush-target-token-last-used.js'),
 ]);
 
 const pg = await createPostgresDatabasePool({
@@ -74,6 +76,8 @@ logger.info({ pid: process.pid }, 'starting workflow service ' + process.pid);
 // configured. Otherwise the task would silently bail every minute. The
 // state-log purge task only touches Postgres so it stays unconditional.
 const crontabLines: string[] = [
+  '# Flush target token last-used dates every minute',
+  '* * * * * flushTargetTokenLastUsed',
   '# Purge expired schema checks every Sunday at 10:00AM',
   '0 10 * * 0 purgeExpiredSchemaChecks',
   '# Every day at 3:00 AM',
@@ -135,6 +139,7 @@ const context: Context = {
   pg,
   clickhouse,
   requestBroker: env.requestBroker,
+  redis,
   schema: schemaProvider({
     logger,
     schemaServiceUrl: env.schema.serviceUrl,
