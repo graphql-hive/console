@@ -49,6 +49,61 @@ function newGroupValues() {
   };
 }
 
+describe.concurrent('/ResourceTypes', () => {
+  test.concurrent('lists the supported resource types', async ({ expect }) => {
+    const seed = initSeed();
+    const owner = await seed.createOwner();
+    const org = await owner.createOrg();
+    await org.createOIDCIntegration();
+    const accessToken = await org.createOrganizationAccessToken({
+      permissions: ['member:modify'],
+      resources: { mode: ResourceAssignmentModeType.Granular },
+    });
+    const scim = createScimTestkit({
+      baseUrl,
+      headers: {
+        Authorization: `Bearer ${accessToken.privateAccessKey}`,
+      },
+    });
+
+    const response = await scim.getResourceTypes();
+
+    expect(response.headers.get('content-type')).toBe('application/scim+json');
+    expect(response.body).toEqual({
+      schemas: ['urn:ietf:params:scim:api:messages:2.0:ListResponse'],
+      totalResults: 2,
+      startIndex: 1,
+      itemsPerPage: 2,
+      Resources: [
+        {
+          schemas: ['urn:ietf:params:scim:schemas:core:2.0:ResourceType'],
+          id: 'User',
+          name: 'User',
+          endpoint: '/Users',
+          description: 'Hive Console user.',
+          schema: 'urn:ietf:params:scim:schemas:core:2.0:User',
+          meta: {
+            resourceType: 'ResourceType',
+            location: `${baseUrl}/scim/v2/ResourceTypes/User`,
+          },
+        },
+        {
+          schemas: ['urn:ietf:params:scim:schemas:core:2.0:ResourceType'],
+          id: 'Group',
+          name: 'Group',
+          endpoint: '/Groups',
+          description: 'Hive Console group.',
+          schema: 'urn:ietf:params:scim:schemas:core:2.0:Group',
+          meta: {
+            resourceType: 'ResourceType',
+            location: `${baseUrl}/scim/v2/ResourceTypes/Group`,
+          },
+        },
+      ],
+    });
+  });
+});
+
 describe.concurrent('/Users', () => {
   describe.concurrent('POST', () => {
     test.concurrent('create new user succeeds', async ({ expect }) => {

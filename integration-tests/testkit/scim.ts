@@ -50,6 +50,26 @@ export const SCIMGroupModel = z
   })
   .strict();
 
+export const SCIMResourceTypeModel = z
+  .object({
+    schemas: z.tuple([z.literal('urn:ietf:params:scim:schemas:core:2.0:ResourceType')]),
+    id: z.enum(['User', 'Group']),
+    name: z.enum(['User', 'Group']),
+    endpoint: z.enum(['/Users', '/Groups']),
+    description: z.string(),
+    schema: z.enum([
+      'urn:ietf:params:scim:schemas:core:2.0:User',
+      'urn:ietf:params:scim:schemas:core:2.0:Group',
+    ]),
+    meta: z
+      .object({
+        resourceType: z.literal('ResourceType'),
+        location: z.string(),
+      })
+      .strict(),
+  })
+  .strict();
+
 export const SCIMErrorModel = z
   .object({
     schemas: z.tuple([z.literal('urn:ietf:params:scim:api:messages:2.0:Error')]),
@@ -71,6 +91,10 @@ export const SCIMUserListModel = ListModel.extend({
 
 export const SCIMGroupListModel = ListModel.extend({
   Resources: z.array(SCIMGroupModel),
+}).strict();
+
+export const SCIMResourceTypeListModel = ListModel.extend({
+  Resources: z.array(SCIMResourceTypeModel),
 }).strict();
 
 type SCIMError = z.infer<typeof SCIMErrorModel>;
@@ -151,6 +175,17 @@ export function createScimTestkit({ baseUrl, headers }: { baseUrl: string; heade
   }
 
   return {
+    getResourceTypes<TExpectedStatus extends number = 200>({
+      expectedStatus = 200 as TExpectedStatus,
+    }: ExpectedStatusOptions<TExpectedStatus> = {}) {
+      return request({
+        method: 'GET',
+        path: 'ResourceTypes',
+        expectedStatus,
+        successStatus: 200,
+        successSchema: SCIMResourceTypeListModel,
+      });
+    },
     createUser<TExpectedStatus extends number = 201>(
       body: unknown,
       { expectedStatus = 201 as TExpectedStatus }: ExpectedStatusOptions<TExpectedStatus> = {},

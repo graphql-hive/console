@@ -234,7 +234,7 @@ export class GroupStore {
       displayName: string;
       externalId: string | null;
     },
-    trx: CommonQueryMethods,
+    trx: CommonQueryMethods = this.pool,
   ) {
     this.logger.debug(
       'create new group (organizationId=%s, externalGroupId=%s)',

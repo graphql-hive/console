@@ -587,6 +587,36 @@ export const createSCIMPlugin =
 
     server.post('/', (_, reply) => reply.status(200).send('Hive Console SCIM'));
 
+    server.get('/ResourceTypes', async (req, reply) => {
+      const auth = await authenticateAuthorizeAndResolveOrganizationFromRequest(req, reply);
+      if (auth.type === 'error') {
+        return reply.status(auth.error.status).send(auth.error);
+      }
+
+      const resources: SCIMResourceTypeObject[] = [
+        createSCIMResourceTypeObject(baseUri, {
+          id: 'User',
+          endpoint: '/Users',
+          description: 'Hive Console user.',
+          schema: 'urn:ietf:params:scim:schemas:core:2.0:User',
+        }),
+        createSCIMResourceTypeObject(baseUri, {
+          id: 'Group',
+          endpoint: '/Groups',
+          description: 'Hive Console group.',
+          schema: 'urn:ietf:params:scim:schemas:core:2.0:Group',
+        }),
+      ];
+
+      return reply.status(200).send({
+        schemas: ['urn:ietf:params:scim:api:messages:2.0:ListResponse'],
+        totalResults: resources.length,
+        startIndex: 1,
+        itemsPerPage: resources.length,
+        Resources: resources,
+      } satisfies SCIMListResponseObject);
+    });
+
     /**
      * This route is used for looking up a specific user
      */
@@ -1770,13 +1800,43 @@ type SCIMGroupObject = {
   };
 };
 
+type SCIMResourceTypeObject = {
+  schemas: ['urn:ietf:params:scim:schemas:core:2.0:ResourceType'];
+  id: 'User' | 'Group';
+  name: 'User' | 'Group';
+  endpoint: '/Users' | '/Groups';
+  description: string;
+  schema:
+    | 'urn:ietf:params:scim:schemas:core:2.0:User'
+    | 'urn:ietf:params:scim:schemas:core:2.0:Group';
+  meta: {
+    resourceType: 'ResourceType';
+    location: string;
+  };
+};
+
 type SCIMListResponseObject = {
   schemas: ['urn:ietf:params:scim:api:messages:2.0:ListResponse'];
   totalResults: number;
   startIndex: number;
   itemsPerPage: number;
-  Resources: SCIMGroupObject[] | SCIMUserObject[];
+  Resources: SCIMGroupObject[] | SCIMUserObject[] | SCIMResourceTypeObject[];
 };
+
+function createSCIMResourceTypeObject(
+  baseUri: string,
+  resource: Pick<SCIMResourceTypeObject, 'id' | 'endpoint' | 'description' | 'schema'>,
+): SCIMResourceTypeObject {
+  return {
+    schemas: ['urn:ietf:params:scim:schemas:core:2.0:ResourceType'],
+    ...resource,
+    name: resource.id,
+    meta: {
+      resourceType: 'ResourceType',
+      location: `${baseUri}/ResourceTypes/${resource.id}`,
+    },
+  };
+}
 
 function createSCIMUserObjectFromUser(
   baseUri: string,
