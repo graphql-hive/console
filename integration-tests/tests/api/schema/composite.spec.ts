@@ -1,4 +1,8 @@
-import { schemaVersionPromote } from 'testkit/flow';
+import {
+  getSchemaCheckDetails,
+  getSchemaVersionWithAllDetails,
+  schemaVersionPromote,
+} from 'testkit/flow';
 import { ProjectType } from 'testkit/gql/graphql';
 import { initSeed } from '../../../testkit/seed';
 
@@ -233,9 +237,9 @@ describe.each([ProjectType.Stitching, ProjectType.Federation])('$projectType', p
 
 describe('Federation projects support @oneOf directive natively', () => {
   test('publish', async () => {
-    const { createOrg } = await initSeed().createOwner();
+    const { createOrg, ownerToken } = await initSeed().createOwner();
     const { createProject } = await createOrg();
-    const { createTargetAccessToken } = await createProject(ProjectType.Federation);
+    const { createTargetAccessToken, target } = await createProject(ProjectType.Federation);
     const { publishSchema, fetchLatestValidSchema } = await createTargetAccessToken({});
     const serviceA = /* GraphQL */ `
       type Query {
@@ -255,20 +259,28 @@ describe('Federation projects support @oneOf directive natively', () => {
     }).then(r => r.expectNoGraphQLErrors());
 
     const latestValid = await fetchLatestValidSchema();
+    assert(latestValid.latestValidVersion?.id);
+    const details = await getSchemaVersionWithAllDetails(
+      target.id,
+      latestValid.latestValidVersion?.id,
+      ownerToken,
+    );
 
-    const supergraphSdl = latestValid.latestValidVersion?.supergraph;
+    const supergraphSdl = details?.supergraph;
     expect(supergraphSdl).toContain(`directive @oneOf on INPUT_OBJECT`);
     expect(supergraphSdl).toContain(`input Input @join__type(graph: SERVICE_A)  @oneOf`);
 
-    const publicSdl = latestValid.latestValidVersion?.sdl;
+    const publicSdl = details?.sdl;
     expect(publicSdl).toContain(`directive @oneOf on INPUT_OBJECT`);
     expect(publicSdl).toContain(`input Input @oneOf`);
   });
 
   test('check', async () => {
-    const { createOrg } = await initSeed().createOwner();
+    const { createOrg, ownerToken } = await initSeed().createOwner();
     const { createProject } = await createOrg();
-    const { createTargetAccessToken } = await createProject(ProjectType.Federation);
+    const { createTargetAccessToken, target, fetchVersions } = await createProject(
+      ProjectType.Federation,
+    );
     const { publishSchema, checkSchema } = await createTargetAccessToken({});
     const serviceA = /* GraphQL */ `
       type Query {
@@ -298,19 +310,24 @@ describe('Federation projects support @oneOf directive natively', () => {
       r.expectNoGraphQLErrors(),
     );
 
-    expect(check.schemaCheck.__typename).toBe('SchemaCheckSuccess');
-    if (check.schemaCheck.__typename === 'SchemaCheckSuccess') {
-      expect(check.schemaCheck.schemaCheck?.__typename).toBe('SuccessfulSchemaCheck');
-      if (check.schemaCheck.schemaCheck?.__typename === 'SuccessfulSchemaCheck') {
-        const supergraphSdl = check.schemaCheck.schemaCheck.supergraphSDL;
-        expect(supergraphSdl).toContain(`directive @oneOf on INPUT_OBJECT`);
-        expect(supergraphSdl).toContain(`input Input @join__type(graph: SERVICE_A)  @oneOf`);
+    assert(check.schemaCheck.__typename === 'SchemaCheckSuccess');
+    assert(check.schemaCheck.schemaCheck?.id);
+    const details = await getSchemaCheckDetails(
+      { byId: target.id },
+      check.schemaCheck.schemaCheck.id,
+      ownerToken,
+    ).then(r => r.expectNoGraphQLErrors());
 
-        const publicSdl = check.schemaCheck.schemaCheck.compositeSchemaSDL;
-        expect(publicSdl).toContain(`directive @oneOf on INPUT_OBJECT`);
-        expect(publicSdl).toContain(`input Input @oneOf`);
-      }
-    }
+    assert(details?.target?.schemaCheck?.__typename === 'SuccessfulSchemaCheck');
+    const supergraphSdl = details.target.schemaCheck.supergraphSDL;
+    assert(supergraphSdl);
+    expect(supergraphSdl).toContain(`directive @oneOf on INPUT_OBJECT`);
+    expect(supergraphSdl).toContain(`input Input @join__type(graph: SERVICE_A)  @oneOf`);
+
+    const publicSdl = details.target.schemaCheck.compositeSchemaSDL;
+    assert(publicSdl);
+    expect(publicSdl).toContain(`directive @oneOf on INPUT_OBJECT`);
+    expect(publicSdl).toContain(`input Input @oneOf`);
   });
 
   test('promotion', async () => {
@@ -351,15 +368,19 @@ describe('Federation projects support @oneOf directive natively', () => {
       },
       ownerToken,
     ).then(r => r.expectNoGraphQLErrors());
-    expect(promoteResult.schemaVersionPromote.ok).toBeDefined();
-    if (promoteResult.schemaVersionPromote.ok) {
-      const supergraphSdl = promoteResult.schemaVersionPromote.ok.newSchemaVersion.supergraph;
-      expect(supergraphSdl).toContain(`directive @oneOf on INPUT_OBJECT`);
-      expect(supergraphSdl).toContain(`input Input @join__type(graph: SERVICE_A)  @oneOf`);
+    assert(promoteResult.schemaVersionPromote.ok);
+    const details = await getSchemaVersionWithAllDetails(
+      target.id,
+      promoteResult.schemaVersionPromote.ok.newSchemaVersion.id,
+      ownerToken,
+    );
+    assert(details);
+    const supergraphSdl = details.supergraph;
+    expect(supergraphSdl).toContain(`directive @oneOf on INPUT_OBJECT`);
+    expect(supergraphSdl).toContain(`input Input @join__type(graph: SERVICE_A)  @oneOf`);
 
-      const sdl = promoteResult.schemaVersionPromote.ok.newSchemaVersion.sdl;
-      expect(sdl).toContain(`directive @oneOf on INPUT_OBJECT`);
-      expect(sdl).toContain(`input Input @oneOf`);
-    }
+    const sdl = details.sdl;
+    expect(sdl).toContain(`directive @oneOf on INPUT_OBJECT`);
+    expect(sdl).toContain(`input Input @oneOf`);
   });
 });

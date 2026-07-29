@@ -997,8 +997,6 @@ export function schemaVersionPromote(input: SchemaVersionPromoteInput, accessTok
           ok {
             newSchemaVersion {
               id
-              supergraph
-              sdl
             }
           }
           error {
@@ -1182,6 +1180,35 @@ export function getSchemaVersionWithAllDetails(
     .then(r => r.target?.schemaVersion ?? null);
 }
 
+export function getSchemaCheckDetails(
+  reference: GraphQLSchema.TargetReferenceInput,
+  checkId: string,
+  token: string,
+) {
+  return execute({
+    document: graphql(`
+      query getCheck($reference: TargetReferenceInput!, $checkId: ID!) {
+        target(reference: $reference) {
+          schemaCheck(id: $checkId) {
+            __typename
+            id
+            schemaSDL
+            ... on SuccessfulSchemaCheck {
+              supergraphSDL
+              compositeSchemaSDL
+            }
+          }
+        }
+      }
+    `),
+    token,
+    variables: {
+      reference,
+      checkId,
+    },
+  });
+}
+
 export function checkSchema(input: SchemaCheckInput, token: string) {
   return execute({
     document: graphql(`
@@ -1200,10 +1227,8 @@ export function checkSchema(input: SchemaCheckInput, token: string) {
             schemaCheck {
               __typename
               id
-              ... on SuccessfulSchemaCheck {
-                supergraphSDL
-                schemaSDL
-                compositeSchemaSDL
+              schemaVersion {
+                id
               }
             }
           }
@@ -1640,7 +1665,6 @@ export function fetchLatestValidSchema(token: string) {
           }
           tags
           sdl
-          supergraph
           schemas {
             nodes {
               ... on SingleSchema {
