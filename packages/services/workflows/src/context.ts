@@ -1,6 +1,7 @@
 import type { Logger } from '@graphql-hive/logger';
 import { PostgresDatabasePool } from '@hive/postgres';
 import type { HivePubSub } from '@hive/pubsub';
+import type { Redis } from '@hive/service-common';
 import type { ClickHouseClient } from './lib/clickhouse-client.js';
 import type { EmailProvider } from './lib/emails/providers.js';
 import type { SchemaProvider } from './lib/schema/provider.js';
@@ -14,4 +15,5 @@ export type Context = {
   clickhouse: ClickHouseClient | null;
   requestBroker: RequestBroker | null;
   pubSub: HivePubSub;
+  redis: Redis;
 };
