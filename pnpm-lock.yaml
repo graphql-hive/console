@@ -252,9 +252,6 @@ importers:
 
   deployment:
     dependencies:
-      '@lbrlabs/pulumi-grafana':
-        specifier: 0.1.0
-        version: 0.1.0(ts-node@10.9.2(@swc/core@1.13.5)(@types/node@24.13.3)(typescript@5.7.3))(typescript@5.7.3)
       '@manypkg/get-packages':
         specifier: 2.2.2
         version: 2.2.2
@@ -5941,9 +5938,6 @@ packages:
     peerDependencies:
       react: '>=18.0.0'
       react-dom: '>=18.0.0'
-
-  '@lbrlabs/pulumi-grafana@0.1.0':
-    resolution: {integrity: sha512-REc/LQOy17O9jbZnBNm4tLjLJKxOfLaWPIB2CFiAtM1VzwU3FzZQFs0K+XGkuZwWdB+tl2/VHdHv+FqsUrit2w==}
 
   '@lezer/common@1.5.1':
     resolution: {integrity: sha512-6YRVG9vBkaY7p1IVxL4s44n5nUnaNnGM2/AckNgYOnxTG2kWh1vR8BMxPseWPjRNpb5VtXnMpeYAEAADoRV1Iw==}
@@ -25884,16 +25878,6 @@ snapshots:
       - tsx
       - typescript
       - yaml
-
-  '@lbrlabs/pulumi-grafana@0.1.0(ts-node@10.9.2(@swc/core@1.13.5)(@types/node@24.13.3)(typescript@5.7.3))(typescript@5.7.3)':
-    dependencies:
-      '@pulumi/pulumi': 3.214.0(ts-node@10.9.2(@swc/core@1.13.5)(@types/node@24.13.3)(typescript@5.7.3))(typescript@5.7.3)
-    transitivePeerDependencies:
-      - bluebird
-      - kerberos
-      - supports-color
-      - ts-node
-      - typescript
 
   '@lezer/common@1.5.1': {}
 
