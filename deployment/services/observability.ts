@@ -2,9 +2,8 @@ import * as pulumi from '@pulumi/pulumi';
 import { serviceLocalHost } from '../utils/local-endpoint';
 import { Observability as ObservabilityInstance } from '../utils/observability';
 import { Environment } from './environment';
-
-// import { deployGrafana } from './grafana';
-// import { deployGrafanaAlerts } from './grafana-alerts';
+import { deployGrafana } from './grafana';
+import { deployGrafanaAlerts } from './grafana-alerts';
 
 // Change this to control OTEL tracing for usage service
 const enableTracingForUsageService = true;
@@ -49,16 +48,16 @@ export function deployObservability(config: { environment: Environment }) {
     throw new Error('OTLP collector service is required for observability');
   }
 
-  // const tableSuffix =
-  //   config.environment.envName === 'prod' ? 'production' : config.environment.envName;
+  const tableSuffix =
+    config.environment.envName === 'prod' ? 'production' : config.environment.envName;
 
   return {
     tracingEndpoint: serviceLocalHost(observabilityInstance.otlpCollectorService).apply(
       host => `http://${host}:4318/v1/traces`,
     ),
     observability: observabilityInstance,
-    grafana: undefined,
-    grafanaAlerts: undefined,
+    grafana: useLocal ? undefined : deployGrafana(config.environment.envName, tableSuffix),
+    grafanaAlerts: useLocal ? undefined : deployGrafanaAlerts(config.environment.envName),
     enabled: true,
     enabledForUsageService: enableTracingForUsageService,
   };
