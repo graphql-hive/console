@@ -678,7 +678,7 @@
         {
           "datasource": { "type": "prometheus", "uid": "PROM_DATASOURCE_UID" },
           "editorMode": "code",
-          "expr": "nodejs_eventloop_lag_p99_seconds{service=\"workflow-service\"}",
+          "expr": "nodejs_eventloop_lag_p99_seconds{pod=~\"workflow-service.*\"}",
           "legendFormat": "{{pod}}",
           "range": true,
           "refId": "A"
@@ -737,7 +737,7 @@
         {
           "datasource": { "type": "prometheus", "uid": "PROM_DATASOURCE_UID" },
           "editorMode": "code",
-          "expr": "rate(process_cpu_seconds_total{service=\"workflow-service\"}[$__rate_interval])",
+          "expr": "rate(process_cpu_seconds_total{pod=~\"workflow-service.*\"}[$__rate_interval])",
           "legendFormat": "{{pod}}",
           "range": true,
           "refId": "A"
@@ -796,7 +796,7 @@
         {
           "datasource": { "type": "prometheus", "uid": "PROM_DATASOURCE_UID" },
           "editorMode": "code",
-          "expr": "process_resident_memory_bytes{service=\"workflow-service\"}",
+          "expr": "process_resident_memory_bytes{pod=~\"workflow-service.*\"}",
           "legendFormat": "RSS {{pod}}",
           "range": true,
           "refId": "A"
@@ -804,7 +804,7 @@
         {
           "datasource": { "type": "prometheus", "uid": "PROM_DATASOURCE_UID" },
           "editorMode": "code",
-          "expr": "nodejs_heap_size_used_bytes{service=\"workflow-service\"}",
+          "expr": "nodejs_heap_size_used_bytes{pod=~\"workflow-service.*\"}",
           "legendFormat": "heap {{pod}}",
           "range": true,
           "refId": "B"
@@ -863,7 +863,7 @@
         {
           "datasource": { "type": "prometheus", "uid": "PROM_DATASOURCE_UID" },
           "editorMode": "code",
-          "expr": "rate(nodejs_gc_duration_seconds_sum{service=\"workflow-service\"}[$__rate_interval])",
+          "expr": "rate(nodejs_gc_duration_seconds_sum{pod=~\"workflow-service.*\"}[$__rate_interval])",
           "legendFormat": "{{pod}}",
           "range": true,
           "refId": "A"
