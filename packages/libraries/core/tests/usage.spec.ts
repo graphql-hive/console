@@ -230,6 +230,121 @@ test('should send data to Hive', async () => {
   expect(operation.execution.ok).toBe(true);
 });
 
+test('reports nested abstract type usage including lists', async () => {
+  const nestedSchema = buildSchema(/* GraphQL */ `
+    interface Node {
+      id: ID!
+      child: Node
+      children: [Node!]!
+    }
+
+    type Folder implements Node {
+      id: ID!
+      child: Node
+      children: [Node!]!
+    }
+
+    type File implements Node {
+      id: ID!
+      child: Node
+      children: [Node!]!
+    }
+
+    type Query {
+      node: Node
+    }
+  `);
+  const document = parse(/* GraphQL */ `
+    query NestedNode {
+      node {
+        id
+        child {
+          id
+        }
+        children {
+          id
+        }
+      }
+    }
+  `);
+  const reportReceived = Promise.withResolvers<Report>();
+  const hive = createHive({
+    enabled: true,
+    token: 'Token',
+    reporting: false,
+    usage: {
+      endpoint: 'http://localhost/usage',
+      fieldLevelMetricsEnabled: true,
+    },
+    agent: {
+      maxSize: 1,
+      maxRetries: 0,
+      async fetch(_url, init) {
+        reportReceived.resolve(JSON.parse(init?.body as string));
+        return new Response(null, { status: 200 });
+      },
+    },
+  });
+
+  await hive.collectUsage().finish(
+    {
+      schema: nestedSchema,
+      document,
+      operationName: 'NestedNode',
+    },
+    {
+      data: {
+        node: {
+          __typename: 'Folder',
+          id: 'folder-1',
+          child: {
+            __typename: 'File',
+            id: 'file-1',
+          },
+          children: [
+            {
+              __typename: 'File',
+              id: 'file-2',
+            },
+            {
+              __typename: 'File',
+              id: 'file-3',
+            },
+            {
+              __typename: 'Folder',
+              id: 'folder-2',
+            },
+          ],
+        },
+      },
+    },
+  );
+
+  const report = await reportReceived.promise;
+  await hive.dispose();
+
+  expect(report.operations).toHaveLength(1);
+  expect(report.operations?.[0].execution.fetches).toEqual([
+    expect.objectContaining({
+      fields: {
+        Query: 1,
+        'Query.node': 1,
+        Node: 5,
+        Folder: 2,
+        'Folder.id': 2,
+        'Node.id': 5,
+        ID: 5,
+        'Folder.child': 1,
+        'Node.child': 1,
+        'Folder.children': 1,
+        'Node.children': 1,
+        File: 3,
+        'File.id': 3,
+      },
+    }),
+  ]);
+});
+
 test('should send data to Hive (deprecated endpoint)', async () => {
   const logger = createHiveTestingLogger();
   const token = 'Token';

@@ -13,6 +13,7 @@ import { createServer } from '@hive/service-common';
 import { composeServices, ServiceDefinition } from '@theguild/federation-composition';
 
 type ModulesOrSDL = Parameters<typeof buildSubgraphSchema>[0];
+const HIVE_INTERNAL_TYPENAME = '__hive_typename__';
 
 async function createSubgraphService(name: string, modulesOrSDL: ModulesOrSDL) {
   const server = await createServer({
@@ -356,16 +357,15 @@ describe('GraphQL Hive Plugin', () => {
 
     const usageCollected = waitForRequestsCollected(1);
     const result = await gateway.handle(request);
-    await expect(result.json()).resolves.toMatchInlineSnapshot(`
-      {
+    await expect(result.json()).resolves.toEqual(
+      expect.objectContaining({
         data: {
           product: {
-            __typename: GoodieBag,
-            id: 1,
+            id: '1',
           },
         },
-      }
-    `);
+      }),
+    );
     await usageCollected;
 
     const yesterday = new Date();
@@ -383,6 +383,61 @@ describe('GraphQL Hive Plugin', () => {
         productStats.target?.schemaCoordinateStats.totalResolutions === 1 &&
         goodieStats.target?.schemaCoordinateStats.totalResolutions === 1
       );
+    });
+  });
+
+  test('field-level usage reporting should not result in unrequested __typename included in the client response', async () => {
+    const subgraphs = {
+      products: {
+        typeDefs: parse(/* GraphQL */ `
+          extend type Query {
+            product: Product
+          }
+
+          interface Product {
+            id: ID!
+          }
+
+          type GoodieBag implements Product @key(fields: "id") {
+            id: ID!
+          }
+        `),
+        resolvers: {
+          Query: {
+            product: () => ({ __typename: 'GoodieBag', id: 1 }),
+          },
+        },
+      },
+    };
+    const { gateway, waitForRequestsCollected } = await setup(subgraphs);
+    const query = /* GraphQL */ `
+      {
+        product {
+          id
+        }
+      }
+    `;
+
+    const usageCollected = waitForRequestsCollected(1);
+    const result = await gateway.handle(
+      new Request('http://localhost:4000/graphql', {
+        method: 'POST',
+        headers: {
+          'content-type': 'application/json',
+          accept: 'application/json',
+        },
+        body: JSON.stringify({ query }),
+      }),
+    );
+
+    const response = await result.json();
+    await usageCollected;
+    expect(response).toEqual({
+      data: {
+        product: {
+          id: '1',
+        },
+      },
     });
   });
 

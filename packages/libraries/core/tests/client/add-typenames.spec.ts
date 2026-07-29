@@ -1,4 +1,4 @@
-import { buildSchema, parse as gql, print } from 'graphql';
+import { buildSchema, parse as gql, print, validate } from 'graphql';
 import { addTypenames } from '../../src/client/add-typenames.js';
 
 // ---------------------------------------------------------------------------
@@ -121,7 +121,7 @@ describe('interface types', () => {
       {
         node(id: "1") {
           id
-          __typename
+          __hive_typename__: __typename
         }
       }
     `);
@@ -141,7 +141,7 @@ describe('interface types', () => {
       {
         animals {
           name
-          __typename
+          __hive_typename__: __typename
         }
       }
     `);
@@ -164,7 +164,7 @@ describe('interface types', () => {
         user(id: "1") {
           friends {
             id
-            __typename
+            __hive_typename__: __typename
           }
         }
       }
@@ -190,9 +190,9 @@ describe('interface types', () => {
           name
           offspring {
             name
-            __typename
+            __hive_typename__: __typename
           }
-          __typename
+          __hive_typename__: __typename
         }
       }
     `);
@@ -218,6 +218,62 @@ describe('interface types', () => {
       }
     `);
     expect(typenameCount(result)).toBe(1);
+  });
+
+  it('does not invalidate a query that uses __typename as an alias', () => {
+    const doc = gql(`
+      query {
+        node(id: "1") {
+          __typename: id
+        }
+      }
+    `);
+    expect(validate(schema, doc)).toEqual([]);
+
+    const result = addTypenames(doc, schema);
+    expect(validate(schema, result)).toEqual([]);
+  });
+
+  it('adds an unaliased __typename when the client aliases its typename field', () => {
+    const doc = gql(`
+      query {
+        node(id: "1") {
+          kind: __typename
+          id
+        }
+      }
+    `);
+
+    expect(print(addTypenames(doc, schema))).toMatchInlineSnapshot(`
+      {
+        node(id: "1") {
+          kind: __typename
+          id
+          __hive_typename__: __typename
+        }
+      }
+    `);
+  });
+
+  it('adds an unconditional __typename when the client typename is conditional', () => {
+    const doc = gql(`
+      query ($skipType: Boolean!) {
+        node(id: "1") {
+          __typename @skip(if: $skipType)
+          id
+        }
+      }
+    `);
+
+    expect(print(addTypenames(doc, schema))).toMatchInlineSnapshot(`
+      query ($skipType: Boolean!) {
+        node(id: "1") {
+          __typename @skip(if: $skipType)
+          id
+          __hive_typename__: __typename
+        }
+      }
+    `);
   });
 });
 
@@ -245,7 +301,7 @@ describe('union types', () => {
           ... on Post {
             title
           }
-          __typename
+          __hive_typename__: __typename
         }
       }
     `);
@@ -271,7 +327,7 @@ describe('concrete inline-fragment branches of abstract fields', () => {
           ... on User {
             name
           }
-          __typename
+          __hive_typename__: __typename
         }
       }
     `);
@@ -301,7 +357,7 @@ describe('concrete inline-fragment branches of abstract fields', () => {
           ... on Post {
             title
           }
-          __typename
+          __hive_typename__: __typename
         }
       }
     `);
@@ -327,7 +383,7 @@ describe('concrete inline-fragment branches of abstract fields', () => {
             __typename
             name
           }
-          __typename
+          __hive_typename__: __typename
         }
       }
     `);
@@ -358,10 +414,10 @@ describe('concrete inline-fragment branches of abstract fields', () => {
               breed
               offspring {
                 name
-                __typename
+                __hive_typename__: __typename
               }
             }
-            __typename
+            __hive_typename__: __typename
           }
         }
       }
@@ -385,9 +441,9 @@ describe('concrete inline-fragment branches of abstract fields', () => {
         node(id: "1") {
           ... {
             id
-            __typename
+            __hive_typename__: __typename
           }
-          __typename
+          __hive_typename__: __typename
         }
       }
     `);
@@ -423,7 +479,7 @@ describe('mixed fields', () => {
           }
           pets {
             name
-            __typename
+            __hive_typename__: __typename
           }
         }
       }
@@ -454,13 +510,13 @@ describe('named fragments', () => {
       {
         node(id: "1") {
           ...NodeFields
-          __typename
+          __hive_typename__: __typename
         }
       }
 
       fragment NodeFields on Node {
         id
-        __typename
+        __hive_typename__: __typename
       }
     `);
     expect(typenameCount(result)).toBe(2);
@@ -506,13 +562,13 @@ describe('named fragments', () => {
       {
         node(id: "1") {
           ...NodeFields
-          __typename
+          __hive_typename__: __typename
         }
       }
 
       fragment NodeFields on Node {
         id
-        __typename
+        __hive_typename__: __typename
       }
     `);
     expect(typenameCount(result)).toBe(2);

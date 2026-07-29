@@ -13,6 +13,7 @@ import {
   autoDisposeSymbol,
   CollectUsage,
   createHive as createHiveClient,
+  hideInjectedTypenames,
   HiveClient,
   HivePluginOptions,
   isAsyncIterable,
@@ -99,6 +100,7 @@ export function useHive(clientOrOptions: HiveClient | YogaPluginOptions): Plugin
     onSchemaChange({ schema }) {
       hive.reportSchema({ schema });
       latestSchema = schema;
+      operationCache?.clear();
     },
     onParams(context) {
       // we set the params if there is either a query or documentId in the request
@@ -156,6 +158,10 @@ export function useHive(clientOrOptions: HiveClient | YogaPluginOptions): Plugin
           record.executionArgs = args;
 
           if (!isAsyncIterable(result)) {
+            if (result.data && fieldLevelMetricsEnabled) {
+              hideInjectedTypenames(result.data);
+            }
+
             args.contextValue.waitUntil(
               record.callback.finish(
                 {
@@ -174,6 +180,9 @@ export function useHive(clientOrOptions: HiveClient | YogaPluginOptions): Plugin
 
           return {
             onNext(ctx) {
+              if (ctx.result.data && fieldLevelMetricsEnabled) {
+                hideInjectedTypenames(ctx.result.data);
+              }
               if (!ctx.result.errors) {
                 return;
               }

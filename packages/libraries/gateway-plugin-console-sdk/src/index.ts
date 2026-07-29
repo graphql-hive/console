@@ -3,6 +3,7 @@ import { lru } from 'tiny-lru';
 import {
   addTypenames,
   createHive as createHiveClient,
+  hideInjectedTypenames,
   isAsyncIterable,
   isHiveClient,
   type HiveClient,
@@ -117,6 +118,7 @@ export function useHive(clientOrOptions: HiveClient | GatewayPluginOptions): Gat
     onSchemaChange({ schema }) {
       hive.reportSchema({ schema });
       latestSchema = schema;
+      operationCache?.clear();
     },
     onParse(parseCtx) {
       return ctx => {
@@ -155,15 +157,21 @@ export function useHive(clientOrOptions: HiveClient | GatewayPluginOptions): Gat
       return {
         onExecuteDone({ result }) {
           if (!isAsyncIterable(result)) {
+            if (result.data && fieldLevelMetricsEnabled) {
+              hideInjectedTypenames(result.data);
+            }
             void collection.finish(args, result);
             return;
           }
 
           const errors: GraphQLError[] = [];
           return {
-            onNext(ctx) {
-              if (ctx.result.errors) {
-                errors.push(...ctx.result.errors);
+            onNext({ result }) {
+              if (result.data && fieldLevelMetricsEnabled) {
+                hideInjectedTypenames(result.data);
+              }
+              if (result.errors) {
+                errors.push(...result.errors);
               }
             },
             onEnd() {

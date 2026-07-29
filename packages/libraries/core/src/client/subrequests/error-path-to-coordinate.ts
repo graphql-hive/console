@@ -13,6 +13,7 @@ import {
   SelectionNode,
   type GraphQLSchema,
 } from 'graphql';
+import { HIVE_INTERNAL_TYPENAME } from '../add-typenames.js';
 
 interface SelectionLookupResult {
   fieldNode: FieldNode;
@@ -102,7 +103,7 @@ export function errorPathToCoordinate(
     let nextType: GraphQLNamedType | undefined = getNamedType(currentType);
 
     if (currentData && typeof currentData === 'object' && !Array.isArray(currentData)) {
-      const typeName = currentData.__typename;
+      const typeName = currentData[HIVE_INTERNAL_TYPENAME] ?? currentData.__typename;
       if (typeof typeName === 'string') {
         const runtimeType = schema.getType(typeName);
         if (runtimeType && (isObjectType(runtimeType) || isInterfaceType(runtimeType))) {
