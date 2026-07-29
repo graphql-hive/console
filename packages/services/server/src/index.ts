@@ -9,6 +9,7 @@ import {
   ClickHouse,
   createRegistry,
   CryptoProvider,
+  HttpClient,
   LogFn,
   Logger,
   OrganizationMemberRoles,
@@ -665,7 +666,7 @@ export async function main() {
         storage,
         registry.injector.get(OIDCIntegrationStore),
         registry.injector.get(RedisRateLimiter),
-        registry.injector.get(ClickHouse),
+        new ClickHouse(env.clickhouse, new HttpClient(), logger),
         env.graphql.origin + '/scim/v2',
       );
       await server.register(scimPlugin, { prefix: '/scim/v2' });
