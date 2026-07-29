@@ -12,6 +12,7 @@ import {
   OperationDefinitionNode,
   SelectionSetNode,
 } from 'graphql';
+import { HIVE_INTERNAL_TYPENAME } from '../add-typenames';
 
 export type CoordinateMap = Record<string, number>;
 interface FieldPlan {
@@ -181,7 +182,7 @@ function collectFieldsForType(
         const responseKey = selection.alias ? selection.alias.value : selection.name.value;
         const fieldName = selection.name.value;
 
-        if (fieldName === '__typename') continue;
+        if (fieldName === HIVE_INTERNAL_TYPENAME || fieldName === '__typename') continue;
 
         if (!fields[responseKey]) {
           fields[responseKey] = { fieldName, selectionSets: [] };
@@ -243,7 +244,7 @@ function traverseData(
     return;
   }
 
-  const typeName = data.__typename || fallbackTypeName;
+  const typeName = data[HIVE_INTERNAL_TYPENAME] ?? data.__typename ?? fallbackTypeName;
   const typePlan = planNode.get(typeName) || planNode.get(fallbackTypeName);
 
   if (!typePlan) {
@@ -265,7 +266,7 @@ function traverseData(
   if (typeof data !== 'object') return;
 
   for (const responseKey in data) {
-    if (responseKey === '__typename') continue;
+    if (responseKey === HIVE_INTERNAL_TYPENAME || responseKey === '__typename') continue;
 
     const fieldPlan = typePlan.fields[responseKey];
     if (!fieldPlan) continue;

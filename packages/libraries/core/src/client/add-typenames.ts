@@ -14,19 +14,24 @@ import {
   type SelectionSetNode,
 } from 'graphql';
 
+export const HIVE_INTERNAL_TYPENAME = '__hive_typename__';
 const TYPENAME_FIELD: FieldNode = {
   kind: 'Field' as Kind.FIELD,
   name: { kind: 'Name' as Kind.NAME, value: '__typename' },
+  alias: { kind: 'Name' as Kind.NAME, value: HIVE_INTERNAL_TYPENAME },
 };
 
 /**
- * Recursively adds __typename to every selection set whose parent type is
+ * Recursively adds the typename to every selection set whose parent type is
  * abstract (union or interface), or whose parent type is a concrete object
  * type that implements an abstract type (i.e. it appears as a possible type
  * of some interface or union in the schema).
  *
  * Requires the schema so it can resolve field return types as it walks the
  * document tree.
+ *
+ * The requested typename is mapped to "__hive_typename__" to avoid conflicting
+ * with crazy aliases like `__typename: id
  */
 export function addTypenames(document: DocumentNode, schema: GraphQLSchema): DocumentNode {
   let definitionsChanged = false;
@@ -120,7 +125,7 @@ function walkSelectionSet(
       if (
         checkTypename &&
         selection.name.value === '__typename' &&
-        (alias === undefined || alias === '__typename') &&
+        (alias === undefined || alias === HIVE_INTERNAL_TYPENAME || alias === '__typename') &&
         !hasSkipOrInclude(selection)
       ) {
         hasTypename = true;
@@ -207,4 +212,29 @@ function getFieldDef(parentType: GraphQLCompositeType, field: FieldNode) {
   }
 
   return 'getFields' in parentType ? (parentType.getFields()[name] ?? null) : null;
+}
+
+/**
+ * Takes a graphql response's data and remove all instances of `__hive_
+ */
+export function hideInjectedTypenames(data: any) {
+  if (!data || typeof data !== 'object') return;
+
+  if (Array.isArray(data)) {
+    for (let i = 0; i < data.length; i++) {
+      hideInjectedTypenames(data[i]);
+    }
+    return;
+  }
+
+  // If we find our injected alias, hide it from iteration/serialization
+  if (HIVE_INTERNAL_TYPENAME in data) {
+    delete data[HIVE_INTERNAL_TYPENAME];
+  }
+
+  for (const key in data) {
+    if (Object.prototype.hasOwnProperty.call(data, key)) {
+      hideInjectedTypenames(data[key]);
+    }
+  }
 }

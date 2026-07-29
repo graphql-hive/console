@@ -121,7 +121,7 @@ describe('interface types', () => {
       {
         node(id: "1") {
           id
-          __typename
+          __hive_typename__: __typename
         }
       }
     `);
@@ -141,7 +141,7 @@ describe('interface types', () => {
       {
         animals {
           name
-          __typename
+          __hive_typename__: __typename
         }
       }
     `);
@@ -164,7 +164,7 @@ describe('interface types', () => {
         user(id: "1") {
           friends {
             id
-            __typename
+            __hive_typename__: __typename
           }
         }
       }
@@ -190,9 +190,9 @@ describe('interface types', () => {
           name
           offspring {
             name
-            __typename
+            __hive_typename__: __typename
           }
-          __typename
+          __hive_typename__: __typename
         }
       }
     `);
@@ -249,7 +249,7 @@ describe('interface types', () => {
         node(id: "1") {
           kind: __typename
           id
-          __typename
+          __hive_typename__: __typename
         }
       }
     `);
@@ -270,7 +270,7 @@ describe('interface types', () => {
         node(id: "1") {
           __typename @skip(if: $skipType)
           id
-          __typename
+          __hive_typename__: __typename
         }
       }
     `);
@@ -301,7 +301,7 @@ describe('union types', () => {
           ... on Post {
             title
           }
-          __typename
+          __hive_typename__: __typename
         }
       }
     `);
@@ -327,7 +327,7 @@ describe('concrete inline-fragment branches of abstract fields', () => {
           ... on User {
             name
           }
-          __typename
+          __hive_typename__: __typename
         }
       }
     `);
@@ -357,7 +357,7 @@ describe('concrete inline-fragment branches of abstract fields', () => {
           ... on Post {
             title
           }
-          __typename
+          __hive_typename__: __typename
         }
       }
     `);
@@ -383,7 +383,7 @@ describe('concrete inline-fragment branches of abstract fields', () => {
             __typename
             name
           }
-          __typename
+          __hive_typename__: __typename
         }
       }
     `);
@@ -414,10 +414,10 @@ describe('concrete inline-fragment branches of abstract fields', () => {
               breed
               offspring {
                 name
-                __typename
+                __hive_typename__: __typename
               }
             }
-            __typename
+            __hive_typename__: __typename
           }
         }
       }
@@ -441,9 +441,9 @@ describe('concrete inline-fragment branches of abstract fields', () => {
         node(id: "1") {
           ... {
             id
-            __typename
+            __hive_typename__: __typename
           }
-          __typename
+          __hive_typename__: __typename
         }
       }
     `);
@@ -479,7 +479,7 @@ describe('mixed fields', () => {
           }
           pets {
             name
-            __typename
+            __hive_typename__: __typename
           }
         }
       }
@@ -510,13 +510,13 @@ describe('named fragments', () => {
       {
         node(id: "1") {
           ...NodeFields
-          __typename
+          __hive_typename__: __typename
         }
       }
 
       fragment NodeFields on Node {
         id
-        __typename
+        __hive_typename__: __typename
       }
     `);
     expect(typenameCount(result)).toBe(2);
@@ -562,13 +562,13 @@ describe('named fragments', () => {
       {
         node(id: "1") {
           ...NodeFields
-          __typename
+          __hive_typename__: __typename
         }
       }
 
       fragment NodeFields on Node {
         id
-        __typename
+        __hive_typename__: __typename
       }
     `);
     expect(typenameCount(result)).toBe(2);

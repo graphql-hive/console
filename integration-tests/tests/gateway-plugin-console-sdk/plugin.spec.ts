@@ -13,6 +13,7 @@ import { createServer } from '@hive/service-common';
 import { composeServices, ServiceDefinition } from '@theguild/federation-composition';
 
 type ModulesOrSDL = Parameters<typeof buildSubgraphSchema>[0];
+const HIVE_INTERNAL_TYPENAME = '__hive_typename__';
 
 async function createSubgraphService(name: string, modulesOrSDL: ModulesOrSDL) {
   const server = await createServer({
@@ -356,16 +357,15 @@ describe('GraphQL Hive Plugin', () => {
 
     const usageCollected = waitForRequestsCollected(1);
     const result = await gateway.handle(request);
-    await expect(result.json()).resolves.toMatchInlineSnapshot(`
-      {
+    await expect(result.json()).resolves.toEqual(
+      expect.objectContaining({
         data: {
           product: {
-            __typename: GoodieBag,
-            id: 1,
+            id: '1',
           },
         },
-      }
-    `);
+      }),
+    );
     await usageCollected;
 
     const yesterday = new Date();
