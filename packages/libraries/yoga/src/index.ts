@@ -158,7 +158,7 @@ export function useHive(clientOrOptions: HiveClient | YogaPluginOptions): Plugin
           record.executionArgs = args;
 
           if (!isAsyncIterable(result)) {
-            if (result.data) {
+            if (result.data && fieldLevelMetricsEnabled) {
               hideInjectedTypenames(result.data);
             }
 
@@ -180,7 +180,7 @@ export function useHive(clientOrOptions: HiveClient | YogaPluginOptions): Plugin
 
           return {
             onNext(ctx) {
-              if (ctx.result.data) {
+              if (ctx.result.data && fieldLevelMetricsEnabled) {
                 hideInjectedTypenames(ctx.result.data);
               }
               if (!ctx.result.errors) {

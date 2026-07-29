@@ -157,7 +157,7 @@ export function useHive(clientOrOptions: HiveClient | GatewayPluginOptions): Gat
       return {
         onExecuteDone({ result }) {
           if (!isAsyncIterable(result)) {
-            if (result.data) {
+            if (result.data && fieldLevelMetricsEnabled) {
               hideInjectedTypenames(result.data);
             }
             void collection.finish(args, result);
@@ -167,7 +167,7 @@ export function useHive(clientOrOptions: HiveClient | GatewayPluginOptions): Gat
           const errors: GraphQLError[] = [];
           return {
             onNext({ result }) {
-              if (result.data) {
+              if (result.data && fieldLevelMetricsEnabled) {
                 hideInjectedTypenames(result.data);
               }
               if (result.errors) {
