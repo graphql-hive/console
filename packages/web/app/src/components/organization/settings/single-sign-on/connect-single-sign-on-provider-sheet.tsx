@@ -81,7 +81,7 @@ export function ConnectSingleSignOnProviderSheet(
       clientSecret: props.initialValues?.clientSecretPreview
         ? state.clientSecret || null
         : state.clientSecret,
-      userIdClaim: state.userIdClaim,
+      userIdClaim: state.userIdClaim.trim() || null,
       additionalScopes: state.additionalScopes,
     });
 
