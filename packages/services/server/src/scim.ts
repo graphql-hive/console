@@ -234,9 +234,7 @@ export const createSCIMPlugin =
       }
 
       const canPerformAction = await session.canPerformAction({
-        // TODO: there should probably a dedicated permission for this
-        // member:provision or member:scim or scim:provision etc.
-        action: 'member:modify',
+        action: 'scim:provision',
         organizationId: actor.organizationAccessToken.organizationId,
         params: {
           organizationId: actor.organizationAccessToken.organizationId,
@@ -699,6 +697,7 @@ export const createSCIMPlugin =
         );
       }
 
+      const usersStore = new UsersStore(pool);
       const supertokensStore = new SuperTokensStore(pool, result.logger);
 
       const existingUser = await usersStore.findUserProvisionedByOrganizationIdAndExternalId(

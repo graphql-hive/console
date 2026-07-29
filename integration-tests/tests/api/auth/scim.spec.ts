@@ -60,7 +60,7 @@ describe.concurrent('/Users', () => {
       const domain = await registerFakeDomain();
       const userEmail = 'marty@' + domain;
       const accessToken = await org.createOrganizationAccessToken({
-        permissions: ['member:describe', 'member:modify'],
+        permissions: ['scim:provision'],
         resources: { mode: ResourceAssignmentModeType.Granular },
       });
       const scimAuthHeader = 'Bearer ' + accessToken.privateAccessKey;
@@ -114,7 +114,7 @@ describe.concurrent('/Users', () => {
         const { registerFakeDomain } = await org.createOIDCIntegration();
         const domain = await registerFakeDomain();
         const accessToken = await org.createOrganizationAccessToken({
-          permissions: ['member:describe', 'member:modify'],
+          permissions: ['scim:provision'],
           resources: { mode: ResourceAssignmentModeType.Granular },
         });
         const userName = 'marty.mcfly@' + domain;
@@ -148,7 +148,7 @@ describe.concurrent('/Users', () => {
         const { registerFakeDomain } = await org.createOIDCIntegration();
         const domain = await registerFakeDomain();
         const accessToken = await org.createOrganizationAccessToken({
-          permissions: ['member:describe', 'member:modify'],
+          permissions: ['scim:provision'],
           resources: { mode: ResourceAssignmentModeType.Granular },
         });
         const scimAuthHeader = 'Bearer ' + accessToken.privateAccessKey;
@@ -200,7 +200,7 @@ describe.concurrent('/Users', () => {
       const org = await owner.createOrg();
       await org.createOIDCIntegration();
       const accessToken = await org.createOrganizationAccessToken({
-        permissions: ['member:describe', 'member:modify'],
+        permissions: ['scim:provision'],
         resources: { mode: ResourceAssignmentModeType.Granular },
       });
       const scimAuthHeader = 'Bearer ' + accessToken.privateAccessKey;
@@ -244,7 +244,7 @@ describe.concurrent('/Users', () => {
         const { registerFakeDomain } = await org.createOIDCIntegration();
         const domain = await registerFakeDomain();
         const accessToken = await org.createOrganizationAccessToken({
-          permissions: ['member:describe', 'member:modify'],
+          permissions: ['scim:provision'],
           resources: { mode: ResourceAssignmentModeType.Granular },
         });
         const scimAuthHeader = 'Bearer ' + accessToken.privateAccessKey;
@@ -299,7 +299,7 @@ describe.concurrent('/Users', () => {
       const { registerFakeDomain } = await org.createOIDCIntegration();
       const domain = await registerFakeDomain();
       const accessToken = await org.createOrganizationAccessToken({
-        permissions: ['member:describe', 'member:modify'],
+        permissions: ['scim:provision'],
         resources: { mode: ResourceAssignmentModeType.Granular },
       });
       const scimAuthHeader = 'Bearer ' + accessToken.privateAccessKey;
@@ -355,7 +355,7 @@ describe.concurrent('/Users', () => {
         const { registerFakeDomain } = await org.createOIDCIntegration();
         const domain = await registerFakeDomain();
         const accessToken = await org.createOrganizationAccessToken({
-          permissions: ['member:describe', 'member:modify'],
+          permissions: ['scim:provision'],
           resources: { mode: ResourceAssignmentModeType.Granular },
         });
         const scimAuthHeader = 'Bearer ' + accessToken.privateAccessKey;
@@ -399,7 +399,7 @@ describe.concurrent('/Users', () => {
       const { registerFakeDomain } = await org.createOIDCIntegration();
       const domain = await registerFakeDomain();
       const accessToken = await org.createOrganizationAccessToken({
-        permissions: ['member:describe', 'member:modify'],
+        permissions: ['scim:provision'],
         resources: { mode: ResourceAssignmentModeType.Granular },
       });
       const scimAuthHeader = 'Bearer ' + accessToken.privateAccessKey;
@@ -457,7 +457,7 @@ describe.concurrent('/Users', () => {
       const { registerFakeDomain } = await org.createOIDCIntegration();
       const domain = await registerFakeDomain();
       const accessToken = await org.createOrganizationAccessToken({
-        permissions: ['member:describe', 'member:modify'],
+        permissions: ['scim:provision'],
         resources: { mode: ResourceAssignmentModeType.Granular },
       });
       const scimAuthHeader = 'Bearer ' + accessToken.privateAccessKey;
@@ -506,7 +506,7 @@ describe.concurrent('/Users', () => {
       const { registerFakeDomain } = await org.createOIDCIntegration();
       const domain = await registerFakeDomain();
       const accessToken = await org.createOrganizationAccessToken({
-        permissions: ['member:describe', 'member:modify'],
+        permissions: ['scim:provision'],
         resources: { mode: ResourceAssignmentModeType.Granular },
       });
       const scimAuthHeader = 'Bearer ' + accessToken.privateAccessKey;
@@ -554,7 +554,7 @@ describe.concurrent('/Users', () => {
       const { registerFakeDomain } = await org.createOIDCIntegration();
       const domain = await registerFakeDomain();
       const accessToken = await org.createOrganizationAccessToken({
-        permissions: ['member:describe', 'member:modify'],
+        permissions: ['scim:provision'],
         resources: { mode: ResourceAssignmentModeType.Granular },
       });
       const scimAuthHeader = 'Bearer ' + accessToken.privateAccessKey;
@@ -589,7 +589,7 @@ describe.concurrent('/Users', () => {
         const { registerFakeDomain } = await org.createOIDCIntegration();
         const domain = await registerFakeDomain();
         const accessToken = await org.createOrganizationAccessToken({
-          permissions: ['member:describe', 'member:modify'],
+          permissions: ['scim:provision'],
           resources: { mode: ResourceAssignmentModeType.Granular },
         });
         const scimAuthHeader = 'Bearer ' + accessToken.privateAccessKey;
@@ -635,7 +635,7 @@ describe.concurrent('/Users', () => {
       const { registerFakeDomain } = await org.createOIDCIntegration();
       const domain = await registerFakeDomain();
       const accessToken = await org.createOrganizationAccessToken({
-        permissions: ['member:describe', 'member:modify'],
+        permissions: ['scim:provision'],
         resources: { mode: ResourceAssignmentModeType.Granular },
       });
       const scimAuthHeader = 'Bearer ' + accessToken.privateAccessKey;
@@ -675,7 +675,7 @@ describe.concurrent('/Users', () => {
         const { registerFakeDomain } = await org.createOIDCIntegration();
         const domain = await registerFakeDomain();
         const accessToken = await org.createOrganizationAccessToken({
-          permissions: ['member:describe', 'member:modify'],
+          permissions: ['scim:provision'],
           resources: { mode: ResourceAssignmentModeType.Granular },
         });
         const scimAuthHeader = 'Bearer ' + accessToken.privateAccessKey;
@@ -725,7 +725,7 @@ describe.concurrent('/Users', () => {
         const { registerFakeDomain } = await org.createOIDCIntegration();
         const domain = await registerFakeDomain();
         const accessToken = await org.createOrganizationAccessToken({
-          permissions: ['member:describe', 'member:modify'],
+          permissions: ['scim:provision'],
           resources: { mode: ResourceAssignmentModeType.Granular },
         });
         const scimAuthHeader = 'Bearer ' + accessToken.privateAccessKey;
@@ -768,7 +768,7 @@ describe.concurrent('/Users', () => {
       const org = await owner.createOrg();
       await org.createOIDCIntegration();
       const accessToken = await org.createOrganizationAccessToken({
-        permissions: ['member:describe', 'member:modify'],
+        permissions: ['scim:provision'],
         resources: { mode: ResourceAssignmentModeType.Granular },
       });
       const scimAuthHeader = 'Bearer ' + accessToken.privateAccessKey;
@@ -801,7 +801,7 @@ describe.concurrent('/Users', () => {
       const oidc = await org.createOIDCIntegration();
       const domain = await oidc.registerFakeDomain();
       const accessToken = await org.createOrganizationAccessToken({
-        permissions: ['member:describe', 'member:modify'],
+        permissions: ['scim:provision'],
         resources: { mode: ResourceAssignmentModeType.Granular },
       });
       const scimAuthHeader = 'Bearer ' + accessToken.privateAccessKey;
@@ -846,7 +846,7 @@ describe.concurrent('/Users', () => {
       const oidc = await org.createOIDCIntegration();
       const domain = await oidc.registerFakeDomain();
       const accessToken = await org.createOrganizationAccessToken({
-        permissions: ['member:describe', 'member:modify'],
+        permissions: ['scim:provision'],
         resources: { mode: ResourceAssignmentModeType.Granular },
       });
       const scimAuthHeader = 'Bearer ' + accessToken.privateAccessKey;
@@ -892,7 +892,7 @@ describe.concurrent('/Users', () => {
       const oidc = await org.createOIDCIntegration();
       const domain = await oidc.registerFakeDomain();
       const accessToken = await org.createOrganizationAccessToken({
-        permissions: ['member:describe', 'member:modify'],
+        permissions: ['scim:provision'],
         resources: { mode: ResourceAssignmentModeType.Granular },
       });
       const scimAuthHeader = 'Bearer ' + accessToken.privateAccessKey;
@@ -940,7 +940,7 @@ describe.concurrent('/Users', () => {
         const firstDomain = await registerFakeDomain();
         const secondDomain = await registerFakeDomain();
         const accessToken = await org.createOrganizationAccessToken({
-          permissions: ['member:describe', 'member:modify'],
+          permissions: ['scim:provision'],
           resources: { mode: ResourceAssignmentModeType.Granular },
         });
         const scim = createScimTestkit({
@@ -1006,7 +1006,7 @@ describe.concurrent('/Users', () => {
       const { registerFakeDomain } = await org.createOIDCIntegration();
       const domain = await registerFakeDomain();
       const accessToken = await org.createOrganizationAccessToken({
-        permissions: ['member:describe', 'member:modify'],
+        permissions: ['scim:provision'],
         resources: { mode: ResourceAssignmentModeType.Granular },
       });
       const scimAuthHeader = 'Bearer ' + accessToken.privateAccessKey;
@@ -1058,7 +1058,7 @@ describe.concurrent('/Users', () => {
       const oidc = await org.createOIDCIntegration();
       const domain = await oidc.registerFakeDomain();
       const accessToken = await org.createOrganizationAccessToken({
-        permissions: ['member:describe', 'member:modify'],
+        permissions: ['scim:provision'],
         resources: { mode: ResourceAssignmentModeType.Granular },
       });
       const scimAuthHeader = 'Bearer ' + accessToken.privateAccessKey;
@@ -1096,7 +1096,7 @@ describe.concurrent('/Users', () => {
       const oidc = await org.createOIDCIntegration();
       const domain = await oidc.registerFakeDomain();
       const accessToken = await org.createOrganizationAccessToken({
-        permissions: ['member:describe', 'member:modify'],
+        permissions: ['scim:provision'],
         resources: { mode: ResourceAssignmentModeType.Granular },
       });
       const scimAuthHeader = 'Bearer ' + accessToken.privateAccessKey;
@@ -1141,7 +1141,7 @@ describe.concurrent('/Users', () => {
     const oidc = await org.createOIDCIntegration();
     const domain = await oidc.registerFakeDomain();
     const accessToken = await org.createOrganizationAccessToken({
-      permissions: ['member:describe', 'member:modify'],
+      permissions: ['scim:provision'],
       resources: { mode: ResourceAssignmentModeType.Granular },
     });
     const headers = {
@@ -1197,7 +1197,7 @@ describe.concurrent('/Users', () => {
       const oidc = await org.createOIDCIntegration();
       const domain = await oidc.registerFakeDomain();
       const accessToken = await org.createOrganizationAccessToken({
-        permissions: ['member:describe', 'member:modify'],
+        permissions: ['scim:provision'],
         resources: { mode: ResourceAssignmentModeType.Granular },
       });
       const headers = {
@@ -1299,7 +1299,7 @@ describe.concurrent('/Users', () => {
       const oidc = await org.createOIDCIntegration();
       const domain = await oidc.registerFakeDomain();
       const accessToken = await org.createOrganizationAccessToken({
-        permissions: ['member:describe', 'member:modify'],
+        permissions: ['scim:provision'],
         resources: { mode: ResourceAssignmentModeType.Granular },
       });
       const scimAuthHeader = 'Bearer ' + accessToken.privateAccessKey;
@@ -1438,7 +1438,7 @@ describe.concurrent('/Users', () => {
       const oidc = await org.createOIDCIntegration();
       const domain = await oidc.registerFakeDomain();
       const accessToken = await org.createOrganizationAccessToken({
-        permissions: ['member:describe', 'member:modify'],
+        permissions: ['scim:provision'],
         resources: { mode: ResourceAssignmentModeType.Granular },
       });
       const scimAuthHeader = 'Bearer ' + accessToken.privateAccessKey;
@@ -1515,7 +1515,7 @@ describe.concurrent('/Users', () => {
       const oidc = await org.createOIDCIntegration();
       const domain = await oidc.registerFakeDomain();
       const accessToken = await org.createOrganizationAccessToken({
-        permissions: ['member:describe', 'member:modify'],
+        permissions: ['scim:provision'],
         resources: { mode: ResourceAssignmentModeType.Granular },
       });
       const scim = createScimTestkit({
@@ -1558,7 +1558,7 @@ describe.concurrent('/Users', () => {
       const oidc = await org.createOIDCIntegration();
       const domain = await oidc.registerFakeDomain();
       const accessToken = await org.createOrganizationAccessToken({
-        permissions: ['member:describe', 'member:modify'],
+        permissions: ['scim:provision'],
         resources: { mode: ResourceAssignmentModeType.Granular },
       });
       const scimAuthHeader = 'Bearer ' + accessToken.privateAccessKey;
@@ -1636,7 +1636,7 @@ describe.concurrent('/Users', () => {
       const oidc = await org.createOIDCIntegration();
       const domain = await oidc.registerFakeDomain();
       const accessToken = await org.createOrganizationAccessToken({
-        permissions: ['member:describe', 'member:modify'],
+        permissions: ['scim:provision'],
         resources: { mode: ResourceAssignmentModeType.Granular },
       });
       const scimAuthHeader = 'Bearer ' + accessToken.privateAccessKey;
@@ -1715,7 +1715,7 @@ describe.concurrent('/Users', () => {
       const org = await owner.createOrg();
       await org.createOIDCIntegration();
       const accessToken = await org.createOrganizationAccessToken({
-        permissions: ['member:describe', 'member:modify'],
+        permissions: ['scim:provision'],
         resources: { mode: ResourceAssignmentModeType.Granular },
       });
       const scimAuthHeader = 'Bearer ' + accessToken.privateAccessKey;
@@ -1750,7 +1750,7 @@ describe.concurrent('/Groups', () => {
       // currenlty this must exist for the endpoint to be functional
       await org.createOIDCIntegration();
       const accessToken = await org.createOrganizationAccessToken({
-        permissions: ['member:describe', 'member:modify'],
+        permissions: ['scim:provision'],
         resources: { mode: ResourceAssignmentModeType.Granular },
       });
       const scimAuthHeader = 'Bearer ' + accessToken.privateAccessKey;
@@ -1789,7 +1789,7 @@ describe.concurrent('/Groups', () => {
         // currenlty this must exist for the endpoint to be functional
         await org.createOIDCIntegration();
         const accessToken = await org.createOrganizationAccessToken({
-          permissions: ['member:describe', 'member:modify'],
+          permissions: ['scim:provision'],
           resources: { mode: ResourceAssignmentModeType.Granular },
         });
         const scimAuthHeader = 'Bearer ' + accessToken.privateAccessKey;
@@ -1825,7 +1825,7 @@ describe.concurrent('/Groups', () => {
       // currenlty this must exist for the endpoint to be functional
       await org.createOIDCIntegration();
       const accessToken = await org.createOrganizationAccessToken({
-        permissions: ['member:describe', 'member:modify'],
+        permissions: ['scim:provision'],
         resources: { mode: ResourceAssignmentModeType.Granular },
       });
       const scimAuthHeader = 'Bearer ' + accessToken.privateAccessKey;
@@ -1868,7 +1868,7 @@ describe.concurrent('/Groups', () => {
       // currenlty this must exist for the endpoint to be functional
       await org.createOIDCIntegration();
       const accessToken = await org.createOrganizationAccessToken({
-        permissions: ['member:describe', 'member:modify'],
+        permissions: ['scim:provision'],
         resources: { mode: ResourceAssignmentModeType.Granular },
       });
       const scimAuthHeader = 'Bearer ' + accessToken.privateAccessKey;
@@ -1913,7 +1913,7 @@ describe.concurrent('/Groups', () => {
       // currenlty this must exist for the endpoint to be functional
       await org.createOIDCIntegration();
       const accessToken = await org.createOrganizationAccessToken({
-        permissions: ['member:describe', 'member:modify'],
+        permissions: ['scim:provision'],
         resources: { mode: ResourceAssignmentModeType.Granular },
       });
       const scimAuthHeader = 'Bearer ' + accessToken.privateAccessKey;
@@ -1949,7 +1949,7 @@ describe.concurrent('/Groups', () => {
       // currenlty this must exist for the endpoint to be functional
       await org.createOIDCIntegration();
       const accessToken = await org.createOrganizationAccessToken({
-        permissions: ['member:describe', 'member:modify'],
+        permissions: ['scim:provision'],
         resources: { mode: ResourceAssignmentModeType.Granular },
       });
       const scimAuthHeader = 'Bearer ' + accessToken.privateAccessKey;
@@ -1990,7 +1990,7 @@ describe.concurrent('/Groups', () => {
       // currenlty this must exist for the endpoint to be functional
       await org.createOIDCIntegration();
       const accessToken = await org.createOrganizationAccessToken({
-        permissions: ['member:describe', 'member:modify'],
+        permissions: ['scim:provision'],
         resources: { mode: ResourceAssignmentModeType.Granular },
       });
       const scimAuthHeader = 'Bearer ' + accessToken.privateAccessKey;
@@ -2030,7 +2030,7 @@ describe.concurrent('/Groups', () => {
       // currenlty this must exist for the endpoint to be functional
       await org.createOIDCIntegration();
       const accessToken = await org.createOrganizationAccessToken({
-        permissions: ['member:describe', 'member:modify'],
+        permissions: ['scim:provision'],
         resources: { mode: ResourceAssignmentModeType.Granular },
       });
       const scimAuthHeader = 'Bearer ' + accessToken.privateAccessKey;
@@ -2078,7 +2078,7 @@ describe.concurrent('/Groups', () => {
       // currenlty this must exist for the endpoint to be functional
       await org.createOIDCIntegration();
       const accessToken = await org.createOrganizationAccessToken({
-        permissions: ['member:describe', 'member:modify'],
+        permissions: ['scim:provision'],
         resources: { mode: ResourceAssignmentModeType.Granular },
       });
       const scimAuthHeader = 'Bearer ' + accessToken.privateAccessKey;
@@ -2127,7 +2127,7 @@ describe.concurrent('/Groups', () => {
       // currenlty this must exist for the endpoint to be functional
       await org.createOIDCIntegration();
       const accessToken = await org.createOrganizationAccessToken({
-        permissions: ['member:describe', 'member:modify'],
+        permissions: ['scim:provision'],
         resources: { mode: ResourceAssignmentModeType.Granular },
       });
       const scimAuthHeader = 'Bearer ' + accessToken.privateAccessKey;
@@ -2186,7 +2186,7 @@ describe.concurrent('/Groups', () => {
       // currenlty this must exist for the endpoint to be functional
       await org.createOIDCIntegration();
       const accessToken = await org.createOrganizationAccessToken({
-        permissions: ['member:describe', 'member:modify'],
+        permissions: ['scim:provision'],
         resources: { mode: ResourceAssignmentModeType.Granular },
       });
       const scimAuthHeader = 'Bearer ' + accessToken.privateAccessKey;
@@ -2234,7 +2234,7 @@ describe.concurrent('/Groups', () => {
       // currenlty this must exist for the endpoint to be functional
       await org.createOIDCIntegration();
       const accessToken = await org.createOrganizationAccessToken({
-        permissions: ['member:describe', 'member:modify'],
+        permissions: ['scim:provision'],
         resources: { mode: ResourceAssignmentModeType.Granular },
       });
       const scimAuthHeader = 'Bearer ' + accessToken.privateAccessKey;
@@ -2282,7 +2282,7 @@ describe.concurrent('/Groups', () => {
       // currenlty this must exist for the endpoint to be functional
       await org.createOIDCIntegration();
       const accessToken = await org.createOrganizationAccessToken({
-        permissions: ['member:describe', 'member:modify'],
+        permissions: ['scim:provision'],
         resources: { mode: ResourceAssignmentModeType.Granular },
       });
       const scimAuthHeader = 'Bearer ' + accessToken.privateAccessKey;
@@ -2342,7 +2342,7 @@ describe.concurrent('/Groups', () => {
       const oidc = await org.createOIDCIntegration();
       const domain = await oidc.registerFakeDomain();
       const accessToken = await org.createOrganizationAccessToken({
-        permissions: ['member:describe', 'member:modify'],
+        permissions: ['scim:provision'],
         resources: { mode: ResourceAssignmentModeType.Granular },
       });
       const scimAuthHeader = 'Bearer ' + accessToken.privateAccessKey;
@@ -2407,7 +2407,7 @@ describe.concurrent('/Groups', () => {
       const oidc = await org.createOIDCIntegration();
       const domain = await oidc.registerFakeDomain();
       const accessToken = await org.createOrganizationAccessToken({
-        permissions: ['member:describe', 'member:modify'],
+        permissions: ['scim:provision'],
         resources: { mode: ResourceAssignmentModeType.Granular },
       });
       const scimAuthHeader = 'Bearer ' + accessToken.privateAccessKey;
@@ -2477,7 +2477,7 @@ describe.concurrent('/Groups', () => {
       const oidc = await org.createOIDCIntegration();
       const domain = await oidc.registerFakeDomain();
       const accessToken = await org.createOrganizationAccessToken({
-        permissions: ['member:describe', 'member:modify'],
+        permissions: ['scim:provision'],
         resources: { mode: ResourceAssignmentModeType.Granular },
       });
       const scim = createScimTestkit({
@@ -2538,7 +2538,7 @@ describe.concurrent('/Groups', () => {
       const oidc = await org.createOIDCIntegration();
       const domain = await oidc.registerFakeDomain();
       const accessToken = await org.createOrganizationAccessToken({
-        permissions: ['member:describe', 'member:modify'],
+        permissions: ['scim:provision'],
         resources: { mode: ResourceAssignmentModeType.Granular },
       });
       const scimAuthHeader = 'Bearer ' + accessToken.privateAccessKey;
@@ -2616,7 +2616,7 @@ describe.concurrent('/Groups', () => {
       const oidc = await org.createOIDCIntegration();
       const domain = await oidc.registerFakeDomain();
       const accessToken = await org.createOrganizationAccessToken({
-        permissions: ['member:describe', 'member:modify'],
+        permissions: ['scim:provision'],
         resources: { mode: ResourceAssignmentModeType.Granular },
       });
       const scim = createScimTestkit({
@@ -2671,7 +2671,7 @@ describe.concurrent('/Groups', () => {
       const oidc = await org.createOIDCIntegration();
       const domain = await oidc.registerFakeDomain();
       const accessToken = await org.createOrganizationAccessToken({
-        permissions: ['member:describe', 'member:modify'],
+        permissions: ['scim:provision'],
         resources: { mode: ResourceAssignmentModeType.Granular },
       });
       const scimAuthHeader = 'Bearer ' + accessToken.privateAccessKey;
@@ -2750,7 +2750,7 @@ describe.concurrent('/Groups', () => {
       // currenlty this must exist for the endpoint to be functional
       await org.createOIDCIntegration();
       const accessToken = await org.createOrganizationAccessToken({
-        permissions: ['member:describe', 'member:modify'],
+        permissions: ['scim:provision'],
         resources: { mode: ResourceAssignmentModeType.Granular },
       });
       const scimAuthHeader = 'Bearer ' + accessToken.privateAccessKey;
@@ -2769,7 +2769,7 @@ describe.concurrent('/Groups', () => {
       // currenlty this must exist for the endpoint to be functional
       await org.createOIDCIntegration();
       const accessToken = await org.createOrganizationAccessToken({
-        permissions: ['member:describe', 'member:modify'],
+        permissions: ['scim:provision'],
         resources: { mode: ResourceAssignmentModeType.Granular },
       });
       const scimAuthHeader = 'Bearer ' + accessToken.privateAccessKey;
@@ -2797,7 +2797,7 @@ describe.concurrent('/Groups', () => {
       const oidc = await org.createOIDCIntegration();
       const domain = await oidc.registerFakeDomain();
       const accessToken = await org.createOrganizationAccessToken({
-        permissions: ['member:describe', 'member:modify'],
+        permissions: ['scim:provision'],
         resources: { mode: ResourceAssignmentModeType.Granular },
       });
       const headers = {
@@ -2840,7 +2840,7 @@ describe.concurrent('/Groups', () => {
       // currenlty this must exist for the endpoint to be functional
       await org.createOIDCIntegration();
       const accessToken = await org.createOrganizationAccessToken({
-        permissions: ['member:describe', 'member:modify'],
+        permissions: ['scim:provision'],
         resources: { mode: ResourceAssignmentModeType.Granular },
       });
       const scimAuthHeader = 'Bearer ' + accessToken.privateAccessKey;
@@ -2976,7 +2976,7 @@ describe.concurrent('/Groups', () => {
       // currenlty this must exist for the endpoint to be functional
       await org.createOIDCIntegration();
       const accessToken = await org.createOrganizationAccessToken({
-        permissions: ['member:describe', 'member:modify'],
+        permissions: ['scim:provision'],
         resources: { mode: ResourceAssignmentModeType.Granular },
       });
       const scimAuthHeader = 'Bearer ' + accessToken.privateAccessKey;
@@ -3051,7 +3051,7 @@ describe.concurrent('/Groups', () => {
       // currenlty this must exist for the endpoint to be functional
       await org.createOIDCIntegration();
       const accessToken = await org.createOrganizationAccessToken({
-        permissions: ['member:describe', 'member:modify'],
+        permissions: ['scim:provision'],
         resources: { mode: ResourceAssignmentModeType.Granular },
       });
       const scimAuthHeader = 'Bearer ' + accessToken.privateAccessKey;
@@ -3126,7 +3126,7 @@ describe.concurrent('/Groups', () => {
       // currenlty this must exist for the endpoint to be functional
       await org.createOIDCIntegration();
       const accessToken = await org.createOrganizationAccessToken({
-        permissions: ['member:describe', 'member:modify'],
+        permissions: ['scim:provision'],
         resources: { mode: ResourceAssignmentModeType.Granular },
       });
       const scimAuthHeader = 'Bearer ' + accessToken.privateAccessKey;
@@ -3205,7 +3205,7 @@ describe.concurrent('/Groups', () => {
       // currenlty this must exist for the endpoint to be functional
       await org.createOIDCIntegration();
       const accessToken = await org.createOrganizationAccessToken({
-        permissions: ['member:describe', 'member:modify'],
+        permissions: ['scim:provision'],
         resources: { mode: ResourceAssignmentModeType.Granular },
       });
       const scimAuthHeader = 'Bearer ' + accessToken.privateAccessKey;
@@ -3244,7 +3244,7 @@ describe.concurrent('provider flows', () => {
       // currenlty this must exist for the endpoint to be functional
       await org.createOIDCIntegration();
       const accessToken = await org.createOrganizationAccessToken({
-        permissions: ['member:describe', 'member:modify'],
+        permissions: ['scim:provision'],
         resources: { mode: ResourceAssignmentModeType.Granular },
       });
       const scimAuthHeader = 'Bearer ' + accessToken.privateAccessKey;
@@ -3305,7 +3305,7 @@ describe.concurrent('provider flows', () => {
       const oidc = await org.createOIDCIntegration();
       const domain = await oidc.registerFakeDomain();
       const accessToken = await org.createOrganizationAccessToken({
-        permissions: ['member:describe', 'member:modify'],
+        permissions: ['scim:provision'],
         resources: { mode: ResourceAssignmentModeType.Granular },
       });
       const scimAuthHeader = 'Bearer ' + accessToken.privateAccessKey;
@@ -3391,7 +3391,7 @@ describe.concurrent('provider flows', () => {
         const oidc = await org.createOIDCIntegration();
         const domain = await oidc.registerFakeDomain();
         const accessToken = await org.createOrganizationAccessToken({
-          permissions: ['member:describe', 'member:modify'],
+          permissions: ['scim:provision'],
           resources: { mode: ResourceAssignmentModeType.Granular },
         });
         const scimAuthHeader = 'Bearer ' + accessToken.privateAccessKey;
@@ -3500,7 +3500,7 @@ describe.concurrent('provider flows', () => {
       // currenlty this must exist for the endpoint to be functional
       await org.createOIDCIntegration();
       const accessToken = await org.createOrganizationAccessToken({
-        permissions: ['member:describe', 'member:modify'],
+        permissions: ['scim:provision'],
         resources: { mode: ResourceAssignmentModeType.Granular },
       });
       const scimAuthHeader = 'Bearer ' + accessToken.privateAccessKey;
@@ -3577,7 +3577,7 @@ test.concurrent(
       // Now we gonna attempt to provision the user with the same sub/externalId via SCIM
 
       const accessToken = await org.createOrganizationAccessToken({
-        permissions: ['member:describe', 'member:modify'],
+        permissions: ['scim:provision'],
         resources: { mode: ResourceAssignmentModeType.Granular },
       });
       const scimAuthHeader = 'Bearer ' + accessToken.privateAccessKey;
@@ -3633,7 +3633,7 @@ test.concurrent(
       // Now we gonna create some random unrelated scim user
 
       const accessToken = await org.createOrganizationAccessToken({
-        permissions: ['member:describe', 'member:modify'],
+        permissions: ['scim:provision'],
         resources: { mode: ResourceAssignmentModeType.Granular },
       });
       const scimAuthHeader = 'Bearer ' + accessToken.privateAccessKey;
@@ -3700,7 +3700,7 @@ test.concurrent('user cannot login via OIDC if SCIM user provisioning is require
   invariant(signInUpResult.type === 'error', 'Expected sign in up to fail.');
 
   const accessToken = await org.createOrganizationAccessToken({
-    permissions: ['member:describe', 'member:modify'],
+    permissions: ['scim:provision'],
     resources: { mode: ResourceAssignmentModeType.Granular },
   });
   const scimAuthHeader = 'Bearer ' + accessToken.privateAccessKey;
@@ -3786,7 +3786,7 @@ test.concurrent(
     const oidcMock = await oidc.createMockServerAndUpdateIntegrationEndpoints();
     const domain = await oidc.registerFakeDomain();
     const accessToken = await org.createOrganizationAccessToken({
-      permissions: ['member:describe', 'member:modify'],
+      permissions: ['scim:provision'],
       resources: { mode: ResourceAssignmentModeType.Granular },
     });
     const scimAuthHeader = 'Bearer ' + accessToken.privateAccessKey;
@@ -3943,7 +3943,7 @@ test.concurrent('disabled user is revoked access', async ({ expect }) => {
   const oidcMock = await oidc.createMockServerAndUpdateIntegrationEndpoints();
   const domain = await oidc.registerFakeDomain();
   const accessToken = await org.createOrganizationAccessToken({
-    permissions: ['member:describe', 'member:modify'],
+    permissions: ['scim:provision'],
     resources: { mode: ResourceAssignmentModeType.Granular },
   });
   const scimAuthHeader = 'Bearer ' + accessToken.privateAccessKey;
@@ -4065,7 +4065,7 @@ describe('Personal Access Tokens', () => {
       const oidcMock = await oidc.createMockServerAndUpdateIntegrationEndpoints();
       const domain = await oidc.registerFakeDomain();
       const accessToken = await org.createOrganizationAccessToken({
-        permissions: ['member:describe', 'member:modify'],
+        permissions: ['scim:provision'],
         resources: { mode: ResourceAssignmentModeType.Granular },
       });
       const scimAuthHeader = 'Bearer ' + accessToken.privateAccessKey;
@@ -4286,7 +4286,7 @@ describe('Personal Access Tokens', () => {
       const oidcMock = await oidc.createMockServerAndUpdateIntegrationEndpoints();
       const domain = await oidc.registerFakeDomain();
       const accessToken = await org.createOrganizationAccessToken({
-        permissions: ['member:describe', 'member:modify'],
+        permissions: ['scim:provision'],
         resources: { mode: ResourceAssignmentModeType.Granular },
       });
       const scimAuthHeader = 'Bearer ' + accessToken.privateAccessKey;
@@ -4444,7 +4444,7 @@ describe('provisioned user jail', () => {
       const provisioningOIDC = await provisioningOrg.createOIDCIntegration();
       const domain = await provisioningOIDC.registerFakeDomain();
       const accessToken = await provisioningOrg.createOrganizationAccessToken({
-        permissions: ['member:describe', 'member:modify'],
+        permissions: ['scim:provision'],
         resources: { mode: ResourceAssignmentModeType.Granular },
       });
       const scim = createScimTestkit({
@@ -4523,7 +4523,7 @@ describe('provisioned user jail', () => {
       const { oidcIntegration, registerFakeDomain } = await org.createOIDCIntegration();
       const domain = await registerFakeDomain();
       const accessToken = await org.createOrganizationAccessToken({
-        permissions: ['member:describe', 'member:modify'],
+        permissions: ['scim:provision'],
         resources: { mode: ResourceAssignmentModeType.Granular },
       });
       const scim = createScimTestkit({
@@ -4574,7 +4574,7 @@ describe('provisioned user jail', () => {
       const oidcMock = await oidc.createMockServerAndUpdateIntegrationEndpoints();
       const domain = await oidc.registerFakeDomain();
       const accessToken = await org.createOrganizationAccessToken({
-        permissions: ['member:describe', 'member:modify'],
+        permissions: ['scim:provision'],
         resources: { mode: ResourceAssignmentModeType.Granular },
       });
       const scim = createScimTestkit({
@@ -4618,7 +4618,7 @@ describe('provisioned user jail', () => {
     const oidcMock = await oidc.createMockServerAndUpdateIntegrationEndpoints();
     const domain = await oidc.registerFakeDomain();
     const accessToken = await org.createOrganizationAccessToken({
-      permissions: ['member:describe', 'member:modify'],
+      permissions: ['scim:provision'],
       resources: { mode: ResourceAssignmentModeType.Granular },
     });
     const scim = createScimTestkit({
@@ -4666,7 +4666,7 @@ describe('provisioned user jail', () => {
     const oidcMock = await oidc.createMockServerAndUpdateIntegrationEndpoints();
     const domain = await oidc.registerFakeDomain();
     const accessToken = await org.createOrganizationAccessToken({
-      permissions: ['member:describe', 'member:modify'],
+      permissions: ['scim:provision'],
       resources: { mode: ResourceAssignmentModeType.Granular },
     });
     const scim = createScimTestkit({
@@ -4718,7 +4718,7 @@ describe('provisioned user jail', () => {
       const oidcMock = await oidc.createMockServerAndUpdateIntegrationEndpoints();
       const domain = await oidc.registerFakeDomain();
       const accessToken = await provisioningOrg.createOrganizationAccessToken({
-        permissions: ['member:describe', 'member:modify'],
+        permissions: ['scim:provision'],
         resources: { mode: ResourceAssignmentModeType.Granular },
       });
       const scim = createScimTestkit({
@@ -4786,7 +4786,7 @@ describe('provisioned user jail', () => {
       const oidc = await org.createOIDCIntegration();
       const domain = await oidc.registerFakeDomain();
       const accessToken = await org.createOrganizationAccessToken({
-        permissions: ['member:describe', 'member:modify'],
+        permissions: ['scim:provision'],
         resources: { mode: ResourceAssignmentModeType.Granular },
       });
       const scim = createScimTestkit({
@@ -4825,7 +4825,7 @@ describe('provisioned user jail', () => {
     const oidc = await org.createOIDCIntegration();
     const domain = await oidc.registerFakeDomain();
     const accessToken = await org.createOrganizationAccessToken({
-      permissions: ['member:describe', 'member:modify'],
+      permissions: ['scim:provision'],
       resources: { mode: ResourceAssignmentModeType.Granular },
     });
     const scim = createScimTestkit({
@@ -4871,7 +4871,7 @@ describe('provisioned user jail', () => {
       const oidc = await org.createOIDCIntegration();
       const domain = await oidc.registerFakeDomain();
       const accessToken = await org.createOrganizationAccessToken({
-        permissions: ['member:describe', 'member:modify'],
+        permissions: ['scim:provision'],
         resources: { mode: ResourceAssignmentModeType.Granular },
       });
       const scim = createScimTestkit({
@@ -4923,7 +4923,7 @@ describe.concurrent('audit logs', () => {
     const { registerFakeDomain } = await org.createOIDCIntegration();
     const domain = await registerFakeDomain();
     const accessToken = await org.createOrganizationAccessToken({
-      permissions: ['member:modify'],
+      permissions: ['scim:provision'],
       resources: { mode: ResourceAssignmentModeType.Granular },
     });
     const scim = createScimTestkit({
@@ -4958,5 +4958,30 @@ describe.concurrent('audit logs', () => {
       'SCIM_USER_CREATED',
       'SCIM_USER_UPDATED',
     ]);
+  });
+});
+
+test.concurrent('member:modify does not grant access to SCIM endpoints', async ({ expect }) => {
+  const seed = initSeed();
+  const owner = await seed.createOwner();
+  const org = await owner.createOrg();
+  await org.createOIDCIntegration();
+  const accessToken = await org.createOrganizationAccessToken({
+    permissions: ['member:modify'],
+    resources: { mode: ResourceAssignmentModeType.Granular },
+  });
+  const scim = createScimTestkit({
+    baseUrl,
+    headers: {
+      Authorization: `Bearer ${accessToken.privateAccessKey}`,
+    },
+  });
+
+  const response = await scim.listUsers(undefined, { expectedStatus: 401 });
+
+  expect(response.body).toEqual({
+    schemas: ['urn:ietf:params:scim:api:messages:2.0:Error'],
+    detail: 'Invalid permissions for performing scim operations.',
+    status: 401,
   });
 });
