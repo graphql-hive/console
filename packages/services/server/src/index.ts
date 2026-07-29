@@ -6,6 +6,7 @@ import type { FastifyCorsOptionsDelegateCallback } from '@fastify/cors';
 import 'reflect-metadata';
 import formDataPlugin from '@fastify/formbody';
 import {
+  ClickHouse,
   createRegistry,
   CryptoProvider,
   LogFn,
@@ -664,6 +665,7 @@ export async function main() {
         storage,
         registry.injector.get(OIDCIntegrationStore),
         registry.injector.get(RedisRateLimiter),
+        registry.injector.get(ClickHouse),
         env.graphql.origin + '/scim/v2',
       );
       await server.register(scimPlugin, { prefix: '/scim/v2' });

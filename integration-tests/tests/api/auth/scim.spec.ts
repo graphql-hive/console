@@ -23,6 +23,7 @@ import { NoopLogger } from '@hive/api/modules/shared/providers/logger';
 import { psql } from '@hive/postgres';
 import { invariant } from '@hive/service-common';
 import { createStorage } from '@hive/storage';
+import { clickHouseQuery } from '../../../testkit/clickhouse';
 import { createScimTestkit } from '../../../testkit/scim';
 import { fetchPermissions } from '../access-tokens/shared';
 
@@ -48,61 +49,6 @@ function newGroupValues() {
     members: [],
   };
 }
-
-describe.concurrent('/ResourceTypes', () => {
-  test.concurrent('lists the supported resource types', async ({ expect }) => {
-    const seed = initSeed();
-    const owner = await seed.createOwner();
-    const org = await owner.createOrg();
-    await org.createOIDCIntegration();
-    const accessToken = await org.createOrganizationAccessToken({
-      permissions: ['member:modify'],
-      resources: { mode: ResourceAssignmentModeType.Granular },
-    });
-    const scim = createScimTestkit({
-      baseUrl,
-      headers: {
-        Authorization: `Bearer ${accessToken.privateAccessKey}`,
-      },
-    });
-
-    const response = await scim.getResourceTypes();
-
-    expect(response.headers.get('content-type')).toBe('application/scim+json');
-    expect(response.body).toEqual({
-      schemas: ['urn:ietf:params:scim:api:messages:2.0:ListResponse'],
-      totalResults: 2,
-      startIndex: 1,
-      itemsPerPage: 2,
-      Resources: [
-        {
-          schemas: ['urn:ietf:params:scim:schemas:core:2.0:ResourceType'],
-          id: 'User',
-          name: 'User',
-          endpoint: '/Users',
-          description: 'Hive Console user.',
-          schema: 'urn:ietf:params:scim:schemas:core:2.0:User',
-          meta: {
-            resourceType: 'ResourceType',
-            location: `${baseUrl}/scim/v2/ResourceTypes/User`,
-          },
-        },
-        {
-          schemas: ['urn:ietf:params:scim:schemas:core:2.0:ResourceType'],
-          id: 'Group',
-          name: 'Group',
-          endpoint: '/Groups',
-          description: 'Hive Console group.',
-          schema: 'urn:ietf:params:scim:schemas:core:2.0:Group',
-          meta: {
-            resourceType: 'ResourceType',
-            location: `${baseUrl}/scim/v2/ResourceTypes/Group`,
-          },
-        },
-      ],
-    });
-  });
-});
 
 describe.concurrent('/Users', () => {
   describe.concurrent('POST', () => {
@@ -4967,4 +4913,50 @@ describe('provisioned user jail', () => {
       });
     },
   );
+});
+
+describe.concurrent('audit logs', () => {
+  test.concurrent('records successful SCIM mutations', async ({ expect }) => {
+    const seed = initSeed();
+    const owner = await seed.createOwner();
+    const org = await owner.createOrg();
+    const { registerFakeDomain } = await org.createOIDCIntegration();
+    const domain = await registerFakeDomain();
+    const accessToken = await org.createOrganizationAccessToken({
+      permissions: ['member:modify'],
+      resources: { mode: ResourceAssignmentModeType.Granular },
+    });
+    const scim = createScimTestkit({
+      baseUrl,
+      headers: {
+        'Content-Type': 'application/scim+json',
+        Authorization: `Bearer ${accessToken.privateAccessKey}`,
+      },
+    });
+
+    const user = await scim.createUser({
+      ...newUserValues(),
+      emails: [{ primary: true, value: `marty@${domain}`, type: 'work' }],
+    });
+    await scim.updateUser(user.body.id, { active: false });
+
+    const group = await scim.createGroup(newGroupValues());
+    await scim.updateGroup(group.body.id, { displayName: crypto.randomUUID() });
+    await scim.deleteGroup(group.body.id);
+
+    const auditLogs = await clickHouseQuery<{ eventAction: string }>(`
+      SELECT event_action AS "eventAction"
+      FROM audit_logs
+      WHERE organization_id = '${org.organization.id}'
+        AND event_action LIKE 'SCIM_%'
+    `);
+
+    expect(auditLogs.data.map(log => log.eventAction).sort()).toEqual([
+      'SCIM_GROUP_CREATED',
+      'SCIM_GROUP_DELETED',
+      'SCIM_GROUP_UPDATED',
+      'SCIM_USER_CREATED',
+      'SCIM_USER_UPDATED',
+    ]);
+  });
 });

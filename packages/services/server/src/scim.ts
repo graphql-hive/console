@@ -1,7 +1,7 @@
 import type { FastifyPluginAsync, FastifyReply, FastifyRequest } from 'fastify';
 import { z } from 'zod';
-import { Logger, Storage } from '@hive/api';
-import { AuthN, UnauthenticatedSession } from '@hive/api/modules/auth/lib/authz';
+import { AuditLogRecorder, ClickHouse, Logger, Storage, type AuditLogSchemaEvent } from '@hive/api';
+import { AuthN, Session, UnauthenticatedSession } from '@hive/api/modules/auth/lib/authz';
 import { SuperTokensStore } from '@hive/api/modules/auth/providers/supertokens-store';
 import { OIDCIntegrationStore } from '@hive/api/modules/oidc-integrations/providers/oidc-integration.store';
 import {
@@ -190,6 +190,7 @@ export const createSCIMPlugin =
     storage: Storage,
     oidcIntegrations: OIDCIntegrationStore,
     rateLimiter: RedisRateLimiter,
+    clickHouse: ClickHouse,
     baseUri: string,
   ): FastifyPluginAsync =>
   async server => {
@@ -281,10 +282,21 @@ export const createSCIMPlugin =
 
       return {
         type: 'success' as const,
+        session,
         organizationId: actor.organizationAccessToken.organizationId,
         oidcIntegration,
         logger,
       };
+    }
+
+    async function recordAuditLog(
+      auth: { logger: Logger; organizationId: string; session: Session },
+      event: AuditLogSchemaEvent,
+    ) {
+      await new AuditLogRecorder(auth.logger, clickHouse, auth.session).record({
+        ...event,
+        organizationId: auth.organizationId,
+      });
     }
 
     async function handleEmailValidation(oidcIntegrationId: string, email: string) {
@@ -687,7 +699,6 @@ export const createSCIMPlugin =
         );
       }
 
-      const usersStore = new UsersStore(pool);
       const supertokensStore = new SuperTokensStore(pool, result.logger);
 
       const existingUser = await usersStore.findUserProvisionedByOrganizationIdAndExternalId(
@@ -773,6 +784,14 @@ export const createSCIMPlugin =
         createUserResult satisfies never;
       }
 
+      await recordAuditLog(result, {
+        eventType: 'SCIM_USER_CREATED',
+        metadata: {
+          userId: createUserResult.user.id,
+          externalId: createUserResult.user.externalId,
+        },
+      });
+
       return reply
         .status(201)
         .send(createSCIMUserObjectFromUser(baseUri, createUserResult.user, []));
@@ -841,6 +860,14 @@ export const createSCIMPlugin =
           .status(updateUserPropertyResult.error.status)
           .send(updateUserPropertyResult.error);
       }
+
+      await recordAuditLog(auth, {
+        eventType: 'SCIM_USER_UPDATED',
+        metadata: {
+          userId: updateUserPropertyResult.user.id,
+          updatedFields: Object.keys(body.data).sort().join(', '),
+        },
+      });
 
       const groupMemberStore = new GroupMemberStore(req.log, pool);
       const groupMemberships = await groupMemberStore.getGroupMemberForOrganizationIdAndUserId(
@@ -1007,6 +1034,14 @@ export const createSCIMPlugin =
           .status(updateUserPropertyResult.error.status)
           .send(updateUserPropertyResult.error);
       }
+
+      await recordAuditLog(auth, {
+        eventType: 'SCIM_USER_UPDATED',
+        metadata: {
+          userId: updateUserPropertyResult.user.id,
+          updatedFields: Object.keys(changes).sort().join(', '),
+        },
+      });
 
       const groupMemberStore = new GroupMemberStore(req.log, pool);
       const groupMemberships = await groupMemberStore.getGroupMemberForOrganizationIdAndUserId(
@@ -1367,6 +1402,14 @@ export const createSCIMPlugin =
         return reply.status(result.error.status).send(result.error);
       }
 
+      await recordAuditLog(auth, {
+        eventType: 'SCIM_GROUP_CREATED',
+        metadata: {
+          groupId: result.group.id,
+          externalId: result.group.externalId,
+        },
+      });
+
       return reply.status(201).send(createSCIMGroupObjectFromGroup(baseUri, result.group, members));
     });
 
@@ -1460,6 +1503,14 @@ export const createSCIMPlugin =
           .status(updateGroupPropertiesResult.error.status)
           .send(updateGroupPropertiesResult.error);
       }
+
+      await recordAuditLog(result, {
+        eventType: 'SCIM_GROUP_UPDATED',
+        metadata: {
+          groupId: updateGroupPropertiesResult.group.id,
+          updatedFields: Object.keys(body.data).sort().join(', '),
+        },
+      });
 
       return reply
         .status(200)
@@ -1689,6 +1740,26 @@ export const createSCIMPlugin =
         return reply.status(updateGroupResult.error.status).send(updateGroupResult.error);
       }
 
+      const updatedFields: Array<string> = [];
+
+      if (newDisplayName) {
+        updatedFields.push('displayName');
+      }
+      if (newExternalId) {
+        updatedFields.push('externalId');
+      }
+      if (usersToAdd.size || usersToRemove.size || fullReplaceUserIds !== null) {
+        updatedFields.push('members');
+      }
+
+      await recordAuditLog(result, {
+        eventType: 'SCIM_GROUP_UPDATED',
+        metadata: {
+          groupId: updateGroupResult.group.id,
+          updatedFields: updatedFields.sort().join(', '),
+        },
+      });
+
       const groupMembers = await groupMemberStore.getGroupMembersForOrganizationIdAndGroupId(
         result.organizationId,
         group.id,
@@ -1738,6 +1809,13 @@ export const createSCIMPlugin =
 
         deleteGroupResult satisfies never;
       }
+
+      await recordAuditLog(result, {
+        eventType: 'SCIM_GROUP_DELETED',
+        metadata: {
+          groupId: params.data.groupId,
+        },
+      });
 
       return reply.status(204).send();
     });
