@@ -4,6 +4,7 @@ import type { Metadata } from '../types';
 export type CompositionErrorType = {
   message: string;
   source: CompositionErrorSource;
+  code?: string;
 };
 
 type ContractResult<T> = {
