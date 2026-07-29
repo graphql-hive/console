@@ -835,6 +835,7 @@ export function AlertForm(props: AlertFormProps) {
                           <FormControl>
                             <Input
                               type="number"
+                              step="any"
                               min={0}
                               max={valueMax}
                               placeholder={valuePlaceholder}
