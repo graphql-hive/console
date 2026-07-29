@@ -185,7 +185,7 @@ export class UsersStore {
       });
   }
 
-  async disableUser(userId: string) {
+  async disableUser(userId: string, trx: CommonQueryMethods) {
     const updateUserQuery = psql`
       UPDATE "users"
       SET "deactivated_at" = NOW()
@@ -200,13 +200,13 @@ export class UsersStore {
       WHERE "user_id" = ${userId}
     `;
 
-    return await this.pool.transaction('disableUser', async trx => {
+    return await trx.transaction('disableUser', async trx => {
       await trx.query(deleteGroupMembershipsQuery);
       return await trx.maybeOne(updateUserQuery).then(UserModel.parse);
     });
   }
 
-  async enabledUser(userId: string) {
+  async enabledUser(userId: string, trx: CommonQueryMethods) {
     const query = psql`
       UPDATE "users"
       SET "deactivated_at" = NULL
@@ -215,22 +215,7 @@ export class UsersStore {
         ${userFields}
     `;
 
-    return await this.pool.maybeOne(query).then(UserModel.parse);
-  }
-
-  async updateUserExternalId(organizationId: string, userId: string, externalId: string) {
-    const query = psql`
-      UPDATE "users"
-      SET
-        "external_id" = ${externalId}
-      WHERE
-        "provisioned_by_organization_id" = ${organizationId}
-        AND "id" = ${userId}
-      RETURNING
-        ${userFields}
-    `;
-
-    return await this.pool.maybeOne(query).then(UserModel.parse);
+    return await trx.maybeOne(query).then(UserModel.parse);
   }
 
   async updateUserEmail(
@@ -257,6 +242,7 @@ export class UsersStore {
     organizationId: string,
     userId: string,
     displayName: string,
+    trx: CommonQueryMethods,
   ) {
     const query = psql`
       UPDATE
@@ -270,7 +256,7 @@ export class UsersStore {
         ${userFields}
     `;
 
-    return await this.pool
+    return await trx
       .maybeOne(query)
       .then(UserModel.nullable().parse)
       .then(user =>

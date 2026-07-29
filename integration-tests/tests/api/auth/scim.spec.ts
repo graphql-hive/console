@@ -714,6 +714,51 @@ describe.concurrent('/Users', () => {
       `);
       },
     );
+
+    test.concurrent(
+      'updates are batched and not partialy applied in case of an error (email)',
+      async ({ expect }) => {
+        const seed = initSeed();
+        const owner = await seed.createOwner();
+        const org = await owner.createOrg();
+        const { registerFakeDomain } = await org.createOIDCIntegration();
+        const domain = await registerFakeDomain();
+        const accessToken = await org.createOrganizationAccessToken({
+          permissions: ['member:describe', 'member:modify'],
+          resources: { mode: ResourceAssignmentModeType.Granular },
+        });
+        const scimAuthHeader = 'Bearer ' + accessToken.privateAccessKey;
+        const externalUserId = 'iliketurtles';
+
+        const headers = {
+          'Content-Type': 'application/scim+json',
+          Authorization: scimAuthHeader,
+        };
+        const scim = createScimTestkit({ baseUrl, headers });
+
+        const userPostResponse = await scim.createUser({
+          ...newUserValues(),
+          externalId: externalUserId,
+          emails: [{ primary: true, type: 'work', value: 'marty.mcfly@' + domain }],
+        });
+
+        // this test depends on business logic order!
+        // Active property update is applied before the emails update
+        await scim.updateUser(
+          userPostResponse.body.id,
+          {
+            active: false,
+            emails: [{ primary: true, value: 'marty@mcfly.dev', type: 'work' }],
+          },
+          { expectedStatus: 400 },
+        );
+
+        const result = await scim.getUser(userPostResponse.body.id);
+        expect(result.body).toMatchObject({
+          active: true,
+        });
+      },
+    );
   });
   describe.concurrent('PATCH', () => {
     test.concurrent('non-existing user', async ({ expect }) => {

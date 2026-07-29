@@ -1,6 +1,6 @@
 import { Inject, Injectable, Scope } from 'graphql-modules';
 import { z } from 'zod';
-import { PostgresDatabasePool, psql } from '@hive/postgres';
+import { CommonQueryMethods, PostgresDatabasePool, psql } from '@hive/postgres';
 import { sha256 } from '../../auth/lib/supertokens-at-home/crypto';
 import { Logger } from '../../shared/providers/logger';
 import { REDIS_INSTANCE, type Redis } from '../../shared/providers/redis';
@@ -141,6 +141,7 @@ export class OIDCIntegrationStore {
   async findVerifiedDomainByOIDCIntegrationIdAndDomainName(
     oidcIntegrationId: string,
     domainName: string,
+    trx: CommonQueryMethods = this.pool,
   ) {
     const query = psql`
       SELECT
@@ -153,7 +154,7 @@ export class OIDCIntegrationStore {
         AND "verified_at" IS NOT NULL
     `;
 
-    return this.pool.maybeOne(query).then(ValidatedOIDCIntegrationDomainModel.nullable().parse);
+    return trx.maybeOne(query).then(ValidatedOIDCIntegrationDomainModel.nullable().parse);
   }
 
   async updateDomainVerifiedAt(domainId: string) {

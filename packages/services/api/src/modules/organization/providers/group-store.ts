@@ -228,11 +228,14 @@ export class GroupStore {
     };
   }
 
-  async createGroup(args: {
-    organizationId: string;
-    displayName: string;
-    externalId: string | null;
-  }) {
+  async createGroup(
+    args: {
+      organizationId: string;
+      displayName: string;
+      externalId: string | null;
+    },
+    trx: CommonQueryMethods,
+  ) {
     this.logger.debug(
       'create new group (organizationId=%s, externalGroupId=%s)',
       args.organizationId,
@@ -253,7 +256,7 @@ export class GroupStore {
         ${groupFields}
     `;
 
-    return await this.pool
+    return await trx
       .one(query)
       .then(GroupModel.parse)
       .then(group => ({ type: 'success' as const, group }))

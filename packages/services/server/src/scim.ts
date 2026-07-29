@@ -294,6 +294,7 @@ export const createSCIMPlugin =
         await oidcIntegrations.findVerifiedDomainByOIDCIntegrationIdAndDomainName(
           oidcIntegrationId,
           emailDomainName,
+          pool,
         );
 
       if (!verifiedDomain) {
@@ -321,136 +322,138 @@ export const createSCIMPlugin =
       user: User,
       updates: z.TypeOf<typeof PutUsersBodyModel>,
     ) {
-      if (updates.active !== undefined) {
-        logger.debug('active changed');
-        if (user.deactivatedAt === null && !updates.active) {
-          user = await usersStore.disableUser(user.id);
-        } else if (user.deactivatedAt !== null && updates.active) {
-          user = await usersStore.enabledUser(user.id);
+      let email: string | null = null;
+
+      {
+        const newEmail =
+          updates.emails?.find(e => e.primary)?.value ?? updates.emails?.at(0)?.value ?? null;
+
+        if (newEmail && newEmail !== user.email) {
+          const emailValidationResult = await handleEmailValidation(oidcIntegrationId, newEmail);
+
+          if (emailValidationResult.error) {
+            return emailValidationResult;
+          }
+
+          email = newEmail;
         }
       }
 
-      const newEmail =
-        updates.emails?.find(e => e.primary)?.value ?? updates.emails?.at(0)?.value ?? null;
+      return await pool.transaction('update user properties', async trx => {
+        let needsSessionInvalidation = false;
 
-      if (newEmail !== null && newEmail !== user.email) {
-        logger.debug('email changed');
-
-        const emailValidationResult = await handleEmailValidation(oidcIntegrationId, newEmail);
-
-        if (emailValidationResult.error) {
-          return emailValidationResult;
+        if (updates.active !== undefined) {
+          logger.debug('active changed');
+          if (user.deactivatedAt === null && !updates.active) {
+            user = await usersStore.disableUser(user.id, trx);
+          } else if (user.deactivatedAt !== null && updates.active) {
+            user = await usersStore.enabledUser(user.id, trx);
+          }
         }
+        if (email) {
+          logger.debug('email changed');
 
-        user = await pool.transaction('scim email update', async trx => {
           await supertokensStore.updateOIDCUserEmail(
             {
               userId: user.supertokenUserId,
-              newEmail: emailValidationResult.email,
+              newEmail: email,
             },
             trx,
           );
-          const updatedUser = await usersStore.updateUserEmail(
-            organizationId,
-            user.id,
-            emailValidationResult.email,
+          user = await usersStore.updateUserEmail(organizationId, user.id, email, trx);
+          needsSessionInvalidation = true;
+        }
+
+        if (updates.externalId !== undefined && updates.externalId !== user.externalId) {
+          logger.debug('external id changed');
+          const newExternalId = updates.externalId;
+
+          await supertokensStore.updateOIDCUserExternalId(
+            {
+              oidcIntegrationId,
+              externalId: newExternalId,
+              userId: user.supertokenUserId,
+            },
             trx,
           );
-          // invalidate session as email changed
-          await supertokensStore.invalidateAllSessionsForUser(user.supertokenUserId, trx);
-          return updatedUser;
-        });
-      }
 
-      if (updates.externalId !== undefined && updates.externalId !== user.externalId) {
-        logger.debug('external id changed');
-        const newExternalId = updates.externalId;
-        const updateUserExternalIdResult = await pool.transaction(
-          'scim external id update',
-          async trx => {
-            await supertokensStore.updateOIDCUserExternalId(
-              {
-                oidcIntegrationId,
-                externalId: newExternalId,
-                userId: user.supertokenUserId,
-              },
-              trx,
-            );
-
-            const result = await usersStore.updateExternalIdByOrganizationIdAndUserId(
+          const updateUserExternalIdResult =
+            await usersStore.updateExternalIdByOrganizationIdAndUserId(
               organizationId,
               user.id,
               newExternalId,
               trx,
             );
 
-            if (result.type === 'success') {
-              await supertokensStore.invalidateAllSessionsForUser(user.supertokenUserId, trx);
+          if (updateUserExternalIdResult.type === 'success') {
+            needsSessionInvalidation = true;
+          }
+
+          if (updateUserExternalIdResult.type === 'error') {
+            if (updateUserExternalIdResult.errorCode === 'notFound') {
+              return {
+                type: 'error' as const,
+                error: createSCIMError({
+                  detail: 'User does not exist.',
+                  status: 404,
+                }),
+              };
             }
-
-            return result;
-          },
-        );
-
-        if (updateUserExternalIdResult.type === 'error') {
-          if (updateUserExternalIdResult.errorCode === 'notFound') {
-            return {
-              type: 'error' as const,
-              error: createSCIMError({
-                detail: 'User does not exist.',
-                status: 404,
-              }),
-            };
+            if (updateUserExternalIdResult.errorCode === 'conflictOnExternalId') {
+              return {
+                type: 'error' as const,
+                error: createSCIMError({
+                  detail: 'Another user with the same external id already exists.',
+                  status: 409,
+                }),
+              };
+            }
+            updateUserExternalIdResult satisfies never;
           }
-          if (updateUserExternalIdResult.errorCode === 'conflictOnExternalId') {
-            return {
-              type: 'error' as const,
-              error: createSCIMError({
-                detail: 'Another user with the same external id already exists.',
-                status: 409,
-              }),
-            };
-          }
-          updateUserExternalIdResult satisfies never;
+
+          user = updateUserExternalIdResult.user;
         }
 
-        user = updateUserExternalIdResult.user;
-      }
-
-      if (updates.userName !== undefined && updates.userName !== user.displayName) {
-        const result = await usersStore.updateUserDisplayNameByOrganizationIdAndUserId(
-          organizationId,
-          user.id,
-          updates.userName,
-        );
-        if (result.type === 'error') {
-          if (result.errorCode === 'notFound') {
-            return {
-              type: 'error' as const,
-              error: createSCIMError({
-                detail: 'User does not exist.',
-                status: 404,
-              }),
-            };
+        if (updates.userName !== undefined && updates.userName !== user.displayName) {
+          const result = await usersStore.updateUserDisplayNameByOrganizationIdAndUserId(
+            organizationId,
+            user.id,
+            updates.userName,
+            trx,
+          );
+          if (result.type === 'error') {
+            if (result.errorCode === 'notFound') {
+              return {
+                type: 'error' as const,
+                error: createSCIMError({
+                  detail: 'User does not exist.',
+                  status: 404,
+                }),
+              };
+            }
+            if (result.errorCode === 'displayNameConflict') {
+              return {
+                type: 'error' as const,
+                error: createSCIMError({
+                  detail: 'Another user with the same userName already exists.',
+                  status: 409,
+                }),
+              };
+            }
+            result satisfies never;
           }
-          if (result.errorCode === 'displayNameConflict') {
-            return {
-              type: 'error' as const,
-              error: createSCIMError({
-                detail: 'Another user with the same userName already exists.',
-                status: 409,
-              }),
-            };
-          }
-          result satisfies never;
+          user = result.user;
         }
-        user = result.user;
-      }
 
-      return {
-        type: 'success' as const,
-        user,
-      };
+        if (needsSessionInvalidation) {
+          await supertokensStore.invalidateAllSessionsForUser(user.supertokenUserId, trx);
+        }
+
+        return {
+          type: 'success' as const,
+          user,
+        };
+      });
     }
 
     async function handleGroupPropertyUpdates(
@@ -460,7 +463,7 @@ export const createSCIMPlugin =
         externalId?: string | null;
         displayName?: string | null;
       },
-      trx?: CommonQueryMethods,
+      trx: CommonQueryMethods,
     ) {
       if (
         group.externalId === properties.externalId &&
@@ -479,53 +482,55 @@ export const createSCIMPlugin =
         };
       }
 
-      const result = await groupStore.updateGroupPropertiesByOrganizationIdAndGroupId(
-        group.organizationId,
-        group.id,
-        {
-          displayName: properties.displayName ?? null,
-          externalId: properties.externalId ?? null,
-        },
-        trx,
-      );
+      return await trx.transaction('update group prperties', async () => {
+        const result = await groupStore.updateGroupPropertiesByOrganizationIdAndGroupId(
+          group.organizationId,
+          group.id,
+          {
+            displayName: properties.displayName ?? null,
+            externalId: properties.externalId ?? null,
+          },
+          trx,
+        );
 
-      if (result.type === 'error') {
-        if (result.errorCode === 'notFound') {
-          return {
-            type: 'error' as const,
-            error: createSCIMError({
-              detail: 'Group does not exist.',
-              status: 404,
-            }),
-          };
+        if (result.type === 'error') {
+          if (result.errorCode === 'notFound') {
+            return {
+              type: 'error' as const,
+              error: createSCIMError({
+                detail: 'Group does not exist.',
+                status: 404,
+              }),
+            };
+          }
+          if (result.errorCode === 'conflictOnDisplayName') {
+            return {
+              type: 'error' as const,
+              error: createSCIMError({
+                detail: 'Another group with the same display name already exists.',
+                status: 409,
+              }),
+            };
+          }
+
+          if (result.errorCode === 'conflictOnExternalId') {
+            return {
+              type: 'error' as const,
+              error: createSCIMError({
+                detail: 'Another group with the same external id already exists.',
+                status: 409,
+              }),
+            };
+          }
+
+          result satisfies never;
         }
-        if (result.errorCode === 'conflictOnDisplayName') {
-          return {
-            type: 'error' as const,
-            error: createSCIMError({
-              detail: 'Another group with the same display name already exists.',
-              status: 409,
-            }),
-          };
-        }
 
-        if (result.errorCode === 'conflictOnExternalId') {
-          return {
-            type: 'error' as const,
-            error: createSCIMError({
-              detail: 'Another group with the same external id already exists.',
-              status: 409,
-            }),
-          };
-        }
-
-        result satisfies never;
-      }
-
-      return {
-        type: 'success' as const,
-        group: result.group,
-      };
+        return {
+          type: 'success' as const,
+          group: result.group,
+        };
+      });
     }
 
     server.addHook('preParsing', (request, reply, _payload, done) => {
@@ -743,13 +748,6 @@ export const createSCIMPlugin =
         .send(createSCIMUserObjectFromUser(baseUri, createUserResult.user, []));
     });
 
-    /**
-     * This route is used for updating user properties
-     * - active (disabled state)
-     * - email
-     * - externalId
-     * - user name
-     */
     server.put('/Users/:userId', async (req, reply) => {
       const auth = await authenticateAuthorizeAndResolveOrganizationFromRequest(req, reply);
       if (auth.type === 'error') {
@@ -829,13 +827,6 @@ export const createSCIMPlugin =
       );
     });
 
-    /**
-     * This route is used for updating user properties
-     * - email
-     * - active (disabled state)
-     * - external id
-     * - user name
-     */
     server.patch('/Users/:userId', async (req, reply) => {
       const auth = await authenticateAuthorizeAndResolveOrganizationFromRequest(req, reply);
       if (auth.type === 'error') {
@@ -1002,11 +993,6 @@ export const createSCIMPlugin =
       );
     });
 
-    /**
-     * This route is used for:
-     * - retrieve a list of all available users
-     * - lookup if a user already exists (via email, external id, or display name)
-     */
     server.get('/Users', async (req, reply) => {
       const auth = await authenticateAuthorizeAndResolveOrganizationFromRequest(req, reply);
       if (auth.type === 'error') {
@@ -1131,11 +1117,6 @@ export const createSCIMPlugin =
       } satisfies SCIMListResponseObject);
     });
 
-    /**
-     * This route is used for:
-     * - retrieve a list of all available groups
-     * - lookup if a specific group already exists (via external id, id, or display name)
-     */
     server.get('/Groups', async (req, reply) => {
       const result = await authenticateAuthorizeAndResolveOrganizationFromRequest(req, reply);
       if (result.type === 'error') {
@@ -1230,9 +1211,6 @@ export const createSCIMPlugin =
       } satisfies SCIMListResponseObject);
     });
 
-    /**
-     * This route is used for listing a group with all its members
-     */
     server.get('/Groups/:groupId', async (req, reply) => {
       const result = await authenticateAuthorizeAndResolveOrganizationFromRequest(req, reply);
       if (result.type === 'error') {
@@ -1290,13 +1268,10 @@ export const createSCIMPlugin =
       return reply.status(200).send(createSCIMGroupObjectFromGroup(baseUri, group, groupMembers));
     });
 
-    /**
-     * This route is used for creating new groups
-     */
     server.post('/Groups', async (req, reply) => {
-      const result = await authenticateAuthorizeAndResolveOrganizationFromRequest(req, reply);
-      if (result.type === 'error') {
-        return reply.status(result.error.status).send(result.error);
+      const auth = await authenticateAuthorizeAndResolveOrganizationFromRequest(req, reply);
+      if (auth.type === 'error') {
+        return reply.status(auth.error.status).send(auth.error);
       }
 
       const body = PostGroupsBodyModel.safeParse(req.body);
@@ -1309,54 +1284,62 @@ export const createSCIMPlugin =
         );
       }
 
-      const groupStore = new GroupStore(result.logger, pool);
+      const groupStore = new GroupStore(auth.logger, pool);
 
-      const createGroupResult = await groupStore.createGroup({
-        organizationId: result.organizationId,
-        displayName: body.data.displayName,
-        externalId: body.data.externalId ?? null,
-      });
+      let members: Array<GroupMember> | undefined;
+      const result = await pool.transaction('create group', async trx => {
+        const createGroupResult = await groupStore.createGroup(
+          {
+            organizationId: auth.organizationId,
+            displayName: body.data.displayName,
+            externalId: body.data.externalId ?? null,
+          },
+          trx,
+        );
 
-      if (createGroupResult.type === 'error') {
-        if (createGroupResult.errorCode === 'displayNameConflict') {
-          return reply.status(409).send(
-            createSCIMError({
-              status: 409,
-              detail: 'A SCIM group with the same display name already exists.',
-            }),
-          );
+        if (createGroupResult.type === 'error') {
+          if (createGroupResult.errorCode === 'displayNameConflict') {
+            return {
+              type: 'error' as const,
+              error: createSCIMError({
+                status: 409,
+                detail: 'A SCIM group with the same display name already exists.',
+              }),
+            };
+          }
+          if (createGroupResult.errorCode === 'externalIdConflict') {
+            return {
+              type: 'error' as const,
+              error: createSCIMError({
+                status: 409,
+                detail: 'A SCIM group with the same external id already exists.',
+              }),
+            };
+          }
+
+          createGroupResult satisfies never;
         }
 
-        if (createGroupResult.errorCode === 'externalIdConflict') {
-          return reply.status(409).send(
-            createSCIMError({
-              status: 409,
-              detail: 'A SCIM group with the same external id already exists.',
-            }),
-          );
-        }
-
-        createGroupResult satisfies never;
-      }
-
-      const groupMembersStore = new GroupMemberStore(result.logger, pool);
-
-      const members = body.data.members
-        ? await groupMembersStore.addGroupMembersToGroupByOrganizationIdAndGroupId(
-            result.organizationId,
+        if (body.data.members) {
+          const groupMembersStore = new GroupMemberStore(auth.logger, pool);
+          members = await groupMembersStore.addGroupMembersToGroupByOrganizationIdAndGroupId(
+            auth.organizationId,
             createGroupResult.group.id,
             body.data.members.map(member => member.value),
-          )
-        : undefined;
+            trx,
+          );
+        }
 
-      return reply
-        .status(201)
-        .send(createSCIMGroupObjectFromGroup(baseUri, createGroupResult.group, members));
+        return createGroupResult;
+      });
+
+      if (result.type === 'error') {
+        return reply.status(result.error.status).send(result.error);
+      }
+
+      return reply.status(201).send(createSCIMGroupObjectFromGroup(baseUri, result.group, members));
     });
 
-    /**
-     * This route is not implemented as it is not needed.
-     */
     server.put('/Groups/:groupId', async (req, reply) => {
       const result = await authenticateAuthorizeAndResolveOrganizationFromRequest(req, reply);
       if (result.type === 'error') {
@@ -1398,40 +1381,54 @@ export const createSCIMPlugin =
         );
       }
 
-      const updateGroupPropertiesResult = await handleGroupPropertyUpdates(groupStore, group, {
-        externalId: body.data.externalId,
-        displayName: body.data.displayName,
+      let groupMembers: Array<GroupMember> | undefined;
+
+      const updateGroupPropertiesResult = await pool.transaction('update group', async trx => {
+        const updateGroupPropertiesResult = await handleGroupPropertyUpdates(
+          groupStore,
+          group,
+          {
+            externalId: body.data.externalId,
+            displayName: body.data.displayName,
+          },
+          trx,
+        );
+
+        if (updateGroupPropertiesResult.type === 'error') {
+          return updateGroupPropertiesResult;
+        }
+
+        const groupMemberStore = new GroupMemberStore(reply.log, pool);
+        const memberIds = body.data.members?.map(member => member.value);
+
+        if (Array.isArray(memberIds)) {
+          await trx.transaction('scim replace members', async trx => {
+            await groupMemberStore.removeAllGroupMembersFromGroupByOrganizationIdAndGroupId(
+              result.organizationId,
+              group.id,
+              trx,
+            );
+            groupMembers = [];
+
+            if (memberIds.length) {
+              groupMembers =
+                await groupMemberStore.addGroupMembersToGroupByOrganizationIdAndGroupId(
+                  result.organizationId,
+                  group.id,
+                  memberIds,
+                  trx,
+                );
+            }
+          });
+        }
+
+        return updateGroupPropertiesResult;
       });
 
       if (updateGroupPropertiesResult.type === 'error') {
         return reply
           .status(updateGroupPropertiesResult.error.status)
           .send(updateGroupPropertiesResult.error);
-      }
-
-      const groupMemberStore = new GroupMemberStore(reply.log, pool);
-      const memberIds = body.data.members?.map(member => member.value);
-
-      let groupMembers;
-
-      if (Array.isArray(memberIds)) {
-        await pool.transaction('scim replace members', async trx => {
-          await groupMemberStore.removeAllGroupMembersFromGroupByOrganizationIdAndGroupId(
-            result.organizationId,
-            group.id,
-            trx,
-          );
-          groupMembers = [];
-
-          if (memberIds.length) {
-            groupMembers = await groupMemberStore.addGroupMembersToGroupByOrganizationIdAndGroupId(
-              result.organizationId,
-              group.id,
-              memberIds,
-              trx,
-            );
-          }
-        });
       }
 
       return reply
@@ -1658,7 +1655,7 @@ export const createSCIMPlugin =
         return updateGroupPropertiesResult;
       });
 
-      if (updateGroupResult.error) {
+      if (updateGroupResult.type === 'error') {
         return reply.status(updateGroupResult.error.status).send(updateGroupResult.error);
       }
 
