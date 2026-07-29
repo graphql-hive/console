@@ -64,6 +64,8 @@ const modules = await Promise.all([
   import('./tasks/flush-target-token-last-used.js'),
 ]);
 
+const logger = new Logger({ level: env.log.level });
+
 const rdsIamTokenGenerator = env.postgres.awsIamAuthEnabled
   ? () =>
       generateRdsIamAuthToken(
@@ -73,7 +75,7 @@ const rdsIamTokenGenerator = env.postgres.awsIamAuthEnabled
           port: env.postgres.port,
           username: env.postgres.user,
         },
-        console,
+        logger.child({ source: 'RdsIamAuthTokenGenerator' }),
       )
   : undefined;
 
@@ -81,7 +83,6 @@ const pg = await createPostgresDatabasePool({
   connectionParameters: createConnectionStringProvider(env.postgres, rdsIamTokenGenerator),
   additionalInterceptors: tracing ? [tracing.instrumentSlonik()] : [],
 });
-const logger = new Logger({ level: env.log.level });
 
 logger.info({ pid: process.pid }, 'starting workflow service ' + process.pid);
 

@@ -195,7 +195,7 @@ export async function createPostgresDatabasePool(args: {
       ? args.connectionParameters
       : createConnectionString(args.connectionParameters as PostgresConnectionParamaters);
 
-  const pool = await createPool(connectionStringOrProvider as string, {
+  const pool = await createPool(connectionStringOrProvider, {
     interceptors: dbInterceptors.concat(args.additionalInterceptors ?? []),
     typeParsers,
     captureStackTrace: false,
