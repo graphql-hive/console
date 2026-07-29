@@ -65,7 +65,6 @@ export async function sendSlackNotification(args: {
   const client = new WebClient(token);
 
   const isFiring = event.state === 'firing';
-  const emoji = isFiring ? ':rotating_light:' : ':white_check_mark:';
   const action = isFiring ? 'triggered' : 'resolved';
   // Slack renders the named presets (`good`/`warning`/`danger`) as the default
   // grey bar, so both states pass an explicit hex.
@@ -75,7 +74,7 @@ export async function sendSlackNotification(args: {
 
   await client.chat.postMessage({
     channel: channel.slackChannel,
-    text: `${emoji} Metric alert ${action}: "${event.rule.name}"`,
+    text: `Metric alert ${action}: "${event.rule.name}"`,
     attachments: [
       {
         color,
