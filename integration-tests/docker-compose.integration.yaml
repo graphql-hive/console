@@ -294,3 +294,7 @@ services:
   zookeeper:
     image: node:24.18.0-alpine3.23
     command: ['npx', 'http-server']
+
+  redis:
+    ports:
+      - '6379:6379'
