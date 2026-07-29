@@ -16,6 +16,7 @@ const baseProps = {
   thresholdValue: '2000',
   targetSlug: 'production',
   projectSlug: 'my-api',
+  alertUrl: 'https://app.graphql-hive.com/acme/my-api/production/alerts/{ruleId}',
 };
 
 export const Slack: Story = () => (
@@ -116,6 +117,7 @@ export const EmptyForm: Story = () => (
       channelType="SLACK"
       targetSlug="production"
       projectSlug="my-api"
+      alertUrl="https://app.graphql-hive.com/acme/my-api/production/alerts/{ruleId}"
     />
   </div>
 );
@@ -215,6 +217,7 @@ export const Interactive: Story = () => {
           channelType={channel}
           targetSlug="production"
           projectSlug="my-api"
+          alertUrl="https://app.graphql-hive.com/acme/my-api/production/alerts/{ruleId}"
         />
       </div>
     </div>
