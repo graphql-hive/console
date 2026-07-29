@@ -60,6 +60,7 @@ const WEBHOOK_JSON_SCHEMA = {
       type: 'object',
       properties: { slug: { type: 'string' } },
     },
+    url: { type: ['string', 'null'] },
   },
 };
 
@@ -74,6 +75,8 @@ type PreviewProps = {
   channelType: 'SLACK' | 'WEBHOOK' | 'MSTEAMS_WEBHOOK' | null;
   targetSlug: string;
   projectSlug: string;
+  /** Link back to the rule, included in every real notification. */
+  alertUrl: string;
 };
 
 const SEVERITY_COLORS = {
@@ -152,6 +155,7 @@ function SlackPreview(props: PreviewProps) {
               <code className="bg-neutral-5 rounded-sm px-1 text-xs">{props.targetSlug}</code> in{' '}
               <code className="bg-neutral-5 rounded-sm px-1 text-xs">{props.projectSlug}</code>
             </div>
+            <div className="text-accent mt-1">View alert in Hive</div>
           </div>
         </div>
       </div>
@@ -189,6 +193,7 @@ export function buildPreviewWebhookPayload(props: PreviewProps) {
     target: { slug: props.targetSlug },
     project: { slug: props.projectSlug },
     organization: { slug: '' },
+    url: props.alertUrl,
   };
 }
 
@@ -255,6 +260,7 @@ function TeamsPreview(props: PreviewProps) {
               </span>
             </div>
           </div>
+          <div className="text-accent mt-2 text-sm">View alert in Hive</div>
         </div>
       </div>
     </div>
