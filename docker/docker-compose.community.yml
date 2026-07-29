@@ -317,6 +317,7 @@ services:
       PROMETHEUS_METRICS: '${PROMETHEUS_METRICS:-}'
       LOG_JSON: '1'
       SCHEMA_ENDPOINT: http://schema:3002
+      WEB_APP_URL: '${HIVE_APP_BASE_URL}'
       REDIS_HOST: redis
       REDIS_PORT: 6379
       REDIS_PASSWORD: '${REDIS_PASSWORD}'

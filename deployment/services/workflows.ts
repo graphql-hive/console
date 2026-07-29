@@ -62,6 +62,8 @@ export function deployWorkflows({
               : '',
           LOG_JSON: '1',
           SCHEMA_ENDPOINT: serviceLocalEndpoint(schema.service),
+          // Lets metric-alert notifications link back to the rule in Hive Console.
+          WEB_APP_URL: `https://${environment.appDns}`,
           FEATURE_FLAGS_METRIC_ALERT_RULES_ENABLED:
             featureFlagsConfig.get('metricAlertRulesEnabled') ?? '0',
           // Activate the ClickHouse client; without this toggle the workflows

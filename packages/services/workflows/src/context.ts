@@ -14,4 +14,6 @@ export type Context = {
   clickhouse: ClickHouseClient | null;
   requestBroker: RequestBroker | null;
   pubSub: HivePubSub;
+  /** Hive Console base URL, no trailing slash. Null when unconfigured. */
+  webAppUrl: string | null;
 };
