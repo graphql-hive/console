@@ -71,7 +71,6 @@ import { supportModule } from './modules/support';
 import { provideSupportConfig, SupportConfig } from './modules/support/providers/config';
 import { targetModule } from './modules/target';
 import { tokenModule } from './modules/token';
-import { TOKENS_CONFIG, TokensConfig } from './modules/token/providers/tokens';
 
 const modules = [
   sharedModule,
@@ -101,7 +100,6 @@ const modules = [
 export function createRegistry({
   app,
   commerce,
-  tokens,
   schemaService,
   schemaPolicyService,
   logger,
@@ -130,7 +128,6 @@ export function createRegistry({
   clickHouse: ClickHouseConfig;
   redis: Redis;
   commerce: CommerceConfig;
-  tokens: TokensConfig;
   schemaService: SchemaServiceConfig;
   schemaPolicyService: SchemaPolicyServiceConfig;
   githubApp: GitHubApplicationConfig | null;
@@ -235,11 +232,6 @@ export function createRegistry({
     {
       provide: CLICKHOUSE_CONFIG,
       useValue: clickHouse,
-      scope: Scope.Singleton,
-    },
-    {
-      provide: TOKENS_CONFIG,
-      useValue: tokens,
       scope: Scope.Singleton,
     },
     {
