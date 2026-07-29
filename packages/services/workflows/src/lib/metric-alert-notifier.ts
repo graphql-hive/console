@@ -15,6 +15,7 @@ export type AlertChannelRow = {
 
 export type NotificationEvent = {
   state: 'firing' | 'resolved';
+  ruleId: string;
   rule: Pick<
     MetricAlertRuleRow,
     | 'organizationId'
@@ -34,11 +35,25 @@ export type NotificationEvent = {
   targetSlug: string;
 };
 
+/**
+ * Deep link to the rule detail page. Null when the Hive Console URL isn't
+ * configured (`WEB_APP_URL` is optional for the workflows service), in which
+ * case notifications go out without a link.
+ */
+export function buildAlertUrl(webAppUrl: string | null, event: NotificationEvent): string | null {
+  if (!webAppUrl) {
+    return null;
+  }
+
+  return `${webAppUrl}/${event.organizationSlug}/${event.projectSlug}/${event.targetSlug}/alerts/${event.ruleId}`;
+}
+
 export async function sendSlackNotification(args: {
   channel: AlertChannelRow;
   event: NotificationEvent;
   pg: PostgresDatabasePool;
   logger: Logger;
+  webAppUrl: string | null;
 }) {
   const { channel, event, pg, logger } = args;
 
@@ -71,10 +86,14 @@ export async function sendSlackNotification(args: {
   const color = `#${isFiring ? severityColor(event.rule.severity) : RESOLVED_COLOR}`;
 
   const changeText = formatChangeText(event);
+  const alertUrl = buildAlertUrl(args.webAppUrl, event);
 
   await client.chat.postMessage({
     channel: channel.slackChannel,
     text: `Metric alert ${action}: "${event.rule.name}"`,
+    // Slack would otherwise attach a preview card for the console link.
+    unfurl_links: false,
+    unfurl_media: false,
     attachments: [
       {
         color,
@@ -88,6 +107,7 @@ export async function sendSlackNotification(args: {
                 `Type: ${event.rule.type} | Severity: ${event.rule.severity}`,
                 changeText,
                 `Target: \`${event.targetSlug}\` in \`${event.projectSlug}\``,
+                ...(alertUrl ? [`<${alertUrl}|View alert in Hive>`] : []),
               ].join('\n'),
             },
           },
@@ -107,6 +127,7 @@ export async function sendWebhookNotification(args: {
   idempotencyKey: string;
   attempt: number;
   maxAttempts: number;
+  webAppUrl: string | null;
 }) {
   const { channel, event, logger } = args;
 
@@ -115,7 +136,7 @@ export async function sendWebhookNotification(args: {
     return;
   }
 
-  const payload = buildWebhookPayload(event);
+  const payload = buildWebhookPayload(event, args.webAppUrl);
 
   await sendWebhook(logger, args.requestBroker, {
     attempt: args.attempt,
@@ -136,6 +157,7 @@ export async function sendTeamsNotification(args: {
   idempotencyKey: string;
   attempt: number;
   maxAttempts: number;
+  webAppUrl: string | null;
 }) {
   const { channel, event, logger } = args;
 
@@ -149,6 +171,7 @@ export async function sendTeamsNotification(args: {
   const themeColor = isFiring ? severityColor(event.rule.severity) : RESOLVED_COLOR;
 
   const changeText = formatChangeText(event);
+  const alertUrl = buildAlertUrl(args.webAppUrl, event);
 
   const card = {
     '@type': 'MessageCard',
@@ -163,7 +186,7 @@ export async function sendTeamsNotification(args: {
           { name: 'Severity', value: event.rule.severity },
           { name: 'Target', value: `${event.targetSlug} in ${event.projectSlug}` },
         ],
-        text: changeText,
+        text: alertUrl ? `${changeText}\n\n[View alert in Hive](${alertUrl})` : changeText,
       },
     ],
   };
@@ -222,7 +245,7 @@ function formatChangeText(event: NotificationEvent): string {
   return `${metricLabel}: **${currentValue.toFixed(2)}${unit}** (threshold: ${rule.thresholdValue}${rule.thresholdType === 'PERCENTAGE_CHANGE' ? '%' : unit})`;
 }
 
-function buildWebhookPayload(event: NotificationEvent) {
+export function buildWebhookPayload(event: NotificationEvent, webAppUrl: string | null) {
   const { rule, currentValue, previousValue } = event;
   const changePercent =
     previousValue !== null && previousValue !== 0
@@ -249,5 +272,8 @@ function buildWebhookPayload(event: NotificationEvent) {
     target: { slug: event.targetSlug },
     project: { slug: event.projectSlug },
     organization: { slug: event.organizationSlug },
+    // Always present so the payload shape stays stable; null when the Hive
+    // Console URL isn't configured.
+    url: buildAlertUrl(webAppUrl, event),
   };
 }

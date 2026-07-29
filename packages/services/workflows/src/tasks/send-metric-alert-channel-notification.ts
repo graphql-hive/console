@@ -153,6 +153,7 @@ export const task = implementTask(SendMetricAlertChannelNotificationTask, async 
 
         const event: NotificationEvent = {
           state: row.toState === 'FIRING' ? 'firing' : 'resolved',
+          ruleId: row.ruleId,
           rule: {
             organizationId: row.organizationId,
             name: row.ruleName,
@@ -182,7 +183,13 @@ export const task = implementTask(SendMetricAlertChannelNotificationTask, async 
 
         switch (channel.type) {
           case 'SLACK':
-            await sendSlackNotification({ channel, event, pg: context.pg, logger });
+            await sendSlackNotification({
+              channel,
+              event,
+              pg: context.pg,
+              logger,
+              webAppUrl: context.webAppUrl,
+            });
             break;
           case 'WEBHOOK':
             await sendWebhookNotification({
@@ -193,6 +200,7 @@ export const task = implementTask(SendMetricAlertChannelNotificationTask, async 
               idempotencyKey,
               attempt: helpers.job.attempts,
               maxAttempts: helpers.job.max_attempts,
+              webAppUrl: context.webAppUrl,
             });
             break;
           case 'MSTEAMS_WEBHOOK':
@@ -204,6 +212,7 @@ export const task = implementTask(SendMetricAlertChannelNotificationTask, async 
               idempotencyKey,
               attempt: helpers.job.attempts,
               maxAttempts: helpers.job.max_attempts,
+              webAppUrl: context.webAppUrl,
             });
             break;
         }

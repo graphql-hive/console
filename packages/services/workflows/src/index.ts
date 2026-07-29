@@ -145,6 +145,7 @@ const context: Context = {
     schemaServiceUrl: env.schema.serviceUrl,
   }),
   pubSub,
+  webAppUrl: env.webAppUrl,
 };
 
 server.route({

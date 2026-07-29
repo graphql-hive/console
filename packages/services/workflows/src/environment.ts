@@ -37,6 +37,10 @@ const EnvironmentModel = zod.object({
   HEARTBEAT_ENDPOINT: emptyString(zod.string().url().optional()),
   EMAIL_FROM: zod.string().email(),
   SCHEMA_ENDPOINT: zod.string().url(),
+  // Base URL of the Hive Console, used to link alert notifications back to the
+  // rule that fired. Optional so an existing self-hosted deployment keeps
+  // booting after an upgrade; notifications omit the link when it isn't set.
+  WEB_APP_URL: emptyString(zod.string().url().optional()),
   AWS_REGION: emptyString(zod.string().optional()),
 });
 
@@ -256,6 +260,10 @@ export const env = {
   schema: {
     serviceUrl: base.SCHEMA_ENDPOINT,
   },
+  // Trailing slash stripped so callers can append `/${slug}` paths. Deployment
+  // configs are inconsistent about it (deployment/services/commerce.ts sets the
+  // same variable with a trailing slash).
+  webAppUrl: base.WEB_APP_URL?.replace(/\/$/, '') ?? null,
   sentry: sentry.SENTRY === '1' ? { dsn: sentry.SENTRY_DSN } : null,
   log: {
     level: log.LOG_LEVEL ?? 'info',
