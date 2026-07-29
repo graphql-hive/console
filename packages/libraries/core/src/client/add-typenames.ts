@@ -215,7 +215,7 @@ function getFieldDef(parentType: GraphQLCompositeType, field: FieldNode) {
 }
 
 /**
- * Takes a graphql response's data and remove all instances of `__hive_
+ * Takes a graphql response's data and remove all instances of `__hive_typename__`
  */
 export function hideInjectedTypenames(data: any) {
   if (!data || typeof data !== 'object') return;
@@ -227,7 +227,6 @@ export function hideInjectedTypenames(data: any) {
     return;
   }
 
-  // If we find our injected alias, hide it from iteration/serialization
   if (HIVE_INTERNAL_TYPENAME in data) {
     delete data[HIVE_INTERNAL_TYPENAME];
   }
