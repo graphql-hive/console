@@ -65,17 +65,16 @@ export async function sendSlackNotification(args: {
   const client = new WebClient(token);
 
   const isFiring = event.state === 'firing';
-  const emoji = isFiring ? ':rotating_light:' : ':white_check_mark:';
   const action = isFiring ? 'triggered' : 'resolved';
-  // `good` is Slack's preset for the resolved state — it renders Slack's own
-  // green. Firing uses the severity hex (prefixed with `#`).
-  const color = isFiring ? `#${severityColor(event.rule.severity)}` : 'good';
+  // Slack renders the named presets (`good`/`warning`/`danger`) as the default
+  // grey bar, so both states pass an explicit hex.
+  const color = `#${isFiring ? severityColor(event.rule.severity) : RESOLVED_COLOR}`;
 
   const changeText = formatChangeText(event);
 
   await client.chat.postMessage({
     channel: channel.slackChannel,
-    text: `${emoji} Metric alert ${action}: "${event.rule.name}"`,
+    text: `Metric alert ${action}: "${event.rule.name}"`,
     attachments: [
       {
         color,
@@ -146,7 +145,6 @@ export async function sendTeamsNotification(args: {
   }
 
   const isFiring = event.state === 'firing';
-  const emoji = isFiring ? '🔴' : '✅';
   const action = isFiring ? 'triggered' : 'resolved';
   const themeColor = isFiring ? severityColor(event.rule.severity) : RESOLVED_COLOR;
 
@@ -159,7 +157,7 @@ export async function sendTeamsNotification(args: {
     summary: `Metric alert ${action}: "${event.rule.name}"`,
     sections: [
       {
-        activityTitle: `${emoji} ${event.rule.name} — ${action}`,
+        activityTitle: `${event.rule.name} — ${action}`,
         facts: [
           { name: 'Type', value: event.rule.type },
           { name: 'Severity', value: event.rule.severity },
@@ -190,8 +188,7 @@ const SEVERITY_COLORS: Record<NotificationEvent['rule']['severity'], string> = {
   CRITICAL: 'c62424',
 };
 /**
- * Resolved-state green for MS Teams. Teams' `themeColor` must be a hex, so it
- * can't use Slack's `good` preset.
+ * Resolved-state green (no leading `#`), shared by Slack and Teams.
  */
 const RESOLVED_COLOR = '2ECC71';
 
