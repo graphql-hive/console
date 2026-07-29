@@ -1,5 +1,16 @@
 # @graphql-hive/cli
 
+## 0.61.1
+
+### Patch Changes
+
+- [#8275](https://github.com/graphql-hive/console/pull/8275)
+  [`e967f76`](https://github.com/graphql-hive/console/commit/e967f7681933b035c88ad9323dde17e9a372bd69)
+  Thanks [@jdolle](https://github.com/jdolle)! - Upgrade `@theguild/federation-composition` to
+  support oneOf directive in public sdl
+
+  https://github.com/graphql-hive/federation-composition/releases/tag/v0.23.3
+
 ## 0.61.0
 
 ### Minor Changes
