@@ -295,10 +295,12 @@ const SubgraphRequestSchema = tb.Object(
     }),
 
     /** HTTP Status Code */
-    status: tb.Integer({
-      minimum: 0,
-      maximum: 599,
-    }),
+    status: tb.Optional(
+      tb.Integer({
+        minimum: 0,
+        maximum: 599,
+      }),
+    ),
 
     /** Number of times the field has been requested. Regardless of success or failure */
     fields: tb.Record(tb.String(), tb.Number()),

@@ -287,7 +287,6 @@ export function createUsage(pluginOptions: HiveInternalPluginOptions): UsageColl
               document: args.args.document,
               duration: args.duration,
               start: 0,
-              status: 200,
               subgraph: '',
               subgraphSchema: args.args.schema,
               type: 'ROOT',
@@ -506,8 +505,8 @@ type OperationSubRequest = {
   /** How long the request took */
   duration: number;
 
-  /** HTTP Status Code */
-  status: number;
+  /** HTTP Status Code. Optional if resolved locally. */
+  status?: number | undefined;
 
   /** Number of times the field has been requested. Regardless of success or failure */
   fields: { [coordinate: string]: number };
@@ -538,8 +537,8 @@ type CollectedOperationSubRequest = {
   /** How long the request took */
   duration: number;
 
-  /** HTTP Status Code */
-  status: number;
+  /** HTTP Status Code. Optional for if resolved locally */
+  status?: number | undefined;
 
   /** The graphql execution result. Used to calculate error code for a coordinate, with a code returned from the graphql extensions */
   result?: GraphQLResult;
