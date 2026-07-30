@@ -1,24 +1,22 @@
 import * as path from 'node:path';
 import { Worker } from 'node:worker_threads';
 import fastq from 'fastq';
+import { trace } from '@hive/service-common';
 import * as Sentry from '@sentry/node';
 import { registerWorkerLogging, type Logger } from '../../api/src/modules/shared/providers/logger';
 import type {
   CompositionEvent,
   CompositionResultEvent,
   ErrorResultEvent,
-  TrackMetricEvent,
 } from './composition-worker';
 import {
   compositionQueueDurationMS,
   compositionTotalDurationMS,
   compositionWorkerDurationMS,
-  compositionWorkerMemoryUsedBytes,
 } from './metrics';
 
 type WorkerRunArgs = {
   data: CompositionEvent['data'];
-  targetId?: string;
   requestId: string;
   abortSignal: AbortSignal;
 };
@@ -133,7 +131,7 @@ export class CompositionScheduler {
 
     registerWorkerLogging(this.logger, worker, name);
 
-    worker.on('message', (data: CompositionResultEvent | ErrorResultEvent | TrackMetricEvent) => {
+    worker.on('message', (data: CompositionResultEvent | ErrorResultEvent) => {
       if (data.event === 'error') {
         workerState?.task.reject(data.err);
       }
@@ -141,18 +139,9 @@ export class CompositionScheduler {
       if (data.event === 'compositionResult') {
         workerState?.task.resolve(data);
       }
-
-      if (data.event === 'metric') {
-        if (data.type === 'heapUsed') {
-          compositionWorkerMemoryUsedBytes.set(
-            { target: data.target, type: data.type },
-            data.value,
-          );
-        }
-      }
     });
 
-    const { logger: baseLogger } = this;
+    const { logger: baseLogger, maxOldGenerationSizeMb } = this;
 
     function run(args: WorkerRunArgs) {
       if (workerState) {
@@ -194,7 +183,6 @@ export class CompositionScheduler {
         event: 'composition',
         id: taskId,
         data: args.data,
-        targetId: args.targetId,
         taskId,
         requestId: args.requestId,
       } satisfies CompositionEvent);
@@ -204,7 +192,15 @@ export class CompositionScheduler {
           const endTime = process.hrtime(time);
           logger.debug('Time taken: %ds:%dms', endTime[0], endTime[1] / 1000000);
         })
-        .then(result => result.data);
+        .then(result => {
+          if (result.ctx?.heapUsed) {
+            const usedPercent = result.ctx.heapUsed / (maxOldGenerationSizeMb * 1024 * 1024);
+            trace
+              .getActiveSpan()
+              ?.setAttribute('hive.composition.heap.percent', Math.round(usedPercent * 100));
+          }
+          return result.data;
+        });
     }
 
     return {
