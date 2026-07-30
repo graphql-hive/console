@@ -917,6 +917,38 @@ export function getOpenPaths(query: string): string[] {
   return extractPaths(query).map(v => v.join('.'));
 }
 
+/**
+ * Folds the paths a document implies into the paths the builder already has open.
+ *
+ * Every edit rewrites the document, including a checkbox toggle, so replacing the
+ * open paths outright would throw away whatever the user expanded by hand. Paths the
+ * previous document contributed and this one does not are collapsed; the rest stay.
+ * Returns `current` untouched when nothing moved, so callers can skip a re-render.
+ */
+export function mergeOpenPaths(
+  current: string[],
+  previousDocumentPaths: string[],
+  documentPaths: string[],
+): string[] {
+  const next = new Set(current);
+
+  for (const path of previousDocumentPaths) {
+    if (!documentPaths.includes(path)) {
+      next.delete(path);
+    }
+  }
+
+  for (const path of documentPaths) {
+    next.add(path);
+  }
+
+  if (next.size === current.length && current.every(path => next.has(path))) {
+    return current;
+  }
+
+  return [...next];
+}
+
 type SearchableFieldType = GraphQLObjectType | GraphQLInterfaceType;
 
 export type SchemaPathSearchEntry = {
