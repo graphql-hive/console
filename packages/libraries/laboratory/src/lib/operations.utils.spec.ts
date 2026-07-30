@@ -14,6 +14,7 @@ import {
   healQuery,
   isArgInQuery,
   isPathInQuery,
+  mergeOpenPaths,
   pathsToStrings,
   removeArgFromField,
   schemaToPaths,
@@ -274,5 +275,42 @@ describe('schema path search index', () => {
     const set = buildForcedOpenPathSet(['query.user.name']);
     expect(set.has('query.user')).toBe(true);
     expect(set.has('query.user.name')).toBe(false);
+  });
+});
+
+describe('mergeOpenPaths', () => {
+  const DOCUMENT = ['query', 'query.billingPlans'];
+
+  // Toggling a checkbox rewrites the document, which used to replace the open paths
+  // outright and collapse everything the user had expanded by hand.
+  it('keeps paths the user expanded when the document changes', () => {
+    const merged = mergeOpenPaths(
+      [...DOCUMENT, 'query.organizations', 'query.organizations.nodes'],
+      DOCUMENT,
+      [...DOCUMENT, 'query.billingPlans.basePrice'],
+    );
+
+    expect(merged).toContain('query.organizations');
+    expect(merged).toContain('query.organizations.nodes');
+    expect(merged).toContain('query.billingPlans.basePrice');
+  });
+
+  it('collapses a path once it leaves the document', () => {
+    const merged = mergeOpenPaths([...DOCUMENT, 'query.me'], [...DOCUMENT, 'query.me'], DOCUMENT);
+
+    expect(merged).not.toContain('query.me');
+    expect(merged).toEqual(DOCUMENT);
+  });
+
+  it('keeps a manually expanded path even when it is absent from both documents', () => {
+    const merged = mergeOpenPaths([...DOCUMENT, 'query.me.id'], DOCUMENT, DOCUMENT);
+
+    expect(merged).toContain('query.me.id');
+  });
+
+  it('returns the same array when nothing moved, so no re-render is triggered', () => {
+    const current = [...DOCUMENT];
+
+    expect(mergeOpenPaths(current, DOCUMENT, DOCUMENT)).toBe(current);
   });
 });
