@@ -175,6 +175,11 @@ jobs:
               echo "sha_short=${GITHUB_SHA:0:7}" >> $GITHUB_OUTPUT
           fi
 
+      - name: configure Docker Node.js image tag
+        id: node-version-tag
+        if: ${{ inputs.dockerize }}
+        run: echo "value=:$(< .node-version)-slim" >> "$GITHUB_OUTPUT"
+
       - name: build docker images (${{ matrix.platform }})
         timeout-minutes: 60
         id: docker-bake
@@ -191,6 +196,7 @@ jobs:
           BUILD_STABLE: ${{ inputs.publishLatest && '1' || '' }}
           BUILD_PLATFORM: ${{ matrix.platform }}
           IMAGE_SUFFIX: ${{ matrix.suffix }}
+          NODE_VERSION_TAG: ${{ steps.node-version-tag.outputs.value }}
         with:
           # See https://github.com/docker/buildx/issues/1533
           provenance: false
@@ -255,6 +261,7 @@ jobs:
           IMAGE_NAME: ${{ inputs.imageName }}
           IMAGE_TAG: ${{ inputs.imageTag }}
         run: |
+          export NODE_VERSION_TAG=":$(< .node-version)-slim"
           targets=$(docker buildx bake -f docker/docker.hcl --print "$TARGETS" | jq -r '.group."'"$TARGETS"'".targets[]')
 
           for target in $targets
@@ -285,6 +292,7 @@ jobs:
           IMAGE_NAME: ${{ inputs.imageName }}
           IMAGE_TAG: ${{ steps.git_hash.outputs.sha_short }}
         run: |
+          export NODE_VERSION_TAG=":$(< .node-version)-slim"
           targets=$(docker buildx bake -f docker/docker.hcl --print "$TARGETS" | jq -r '.group."'"$TARGETS"'".targets[]')
 
           for target in $targets
@@ -309,6 +317,7 @@ jobs:
           RELEASE_STAGE: ${{ inputs.publishLatest == false && 'alpha-' || '' }}
           LATEST_VERSION: ${{ inputs.latestVersion }}
         run: |
+          export NODE_VERSION_TAG=":$(< .node-version)-slim"
           targets=$(docker buildx bake -f docker/docker.hcl --print "$TARGETS" | jq -r '.group."'"$TARGETS"'".targets[]')
 
           for target in $targets
@@ -329,6 +338,7 @@ jobs:
           REGISTRY: ${{ inputs.registry }}
           IMAGE_NAME: ${{ inputs.imageName }}
         run: |
+          export NODE_VERSION_TAG=":$(< .node-version)-slim"
           targets=$(docker buildx bake -f docker/docker.hcl --print "$TARGETS" | jq -r '.group."'"$TARGETS"'".targets[]')
 
           for target in $targets

@@ -43,6 +43,7 @@ jobs:
       - name: Prepare Bake inputs
         id: docker-bake-inputs
         run: |
+          export NODE_VERSION_TAG=":$(< .node-version)-slim"
           targets=$(docker buildx bake -f docker/docker.hcl --print build | jq -r '.group.build.targets[]')
           input_set=""
           first=0
