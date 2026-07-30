@@ -1,11 +1,12 @@
 import { run } from 'graphile-worker';
 import { Logger } from '@graphql-hive/logger';
-import { createPostgresDatabasePool } from '@hive/postgres';
+import { createConnectionStringProvider, createPostgresDatabasePool } from '@hive/postgres';
 import { bridgeGraphileLogger, createHivePubSub } from '@hive/pubsub';
 import {
   configureTracing,
   createRedisClient,
   createServer,
+  generateRdsIamAuthToken,
   registerShutdown,
   reportReadiness,
   sentryInit,
@@ -63,11 +64,25 @@ const modules = await Promise.all([
   import('./tasks/flush-target-token-last-used.js'),
 ]);
 
+const logger = new Logger({ level: env.log.level });
+
+const rdsIamTokenGenerator = env.postgres.awsIamAuthEnabled
+  ? () =>
+      generateRdsIamAuthToken(
+        {
+          region: env.postgres.awsRegion ?? '',
+          hostname: env.postgres.host,
+          port: env.postgres.port,
+          username: env.postgres.user,
+        },
+        logger.child({ source: 'RdsIamAuthTokenGenerator' }),
+      )
+  : undefined;
+
 const pg = await createPostgresDatabasePool({
-  connectionParameters: env.postgres.connectionString,
+  connectionParameters: createConnectionStringProvider(env.postgres, rdsIamTokenGenerator),
   additionalInterceptors: tracing ? [tracing.instrumentSlonik()] : [],
 });
-const logger = new Logger({ level: env.log.level });
 
 logger.info({ pid: process.pid }, 'starting workflow service ' + process.pid);
 

@@ -3,6 +3,7 @@ import zod from 'zod';
 import { isUUID } from '@hive/api/shared/is-uuid';
 import {
   OpenTelemetryConfigurationModel,
+  parsePostgresConfigFromEnvironment,
   parseRedisConfigFromEnvironment,
   resolveServerListenOptions,
 } from '@hive/service-common';
@@ -99,15 +100,6 @@ const ZendeskSupportModel = zod.union([
     ZENDESK_SUBDOMAIN: zod.string(),
   }),
 ]);
-
-const PostgresModel = zod.object({
-  POSTGRES_SSL: emptyString(zod.union([zod.literal('1'), zod.literal('0')]).optional()),
-  POSTGRES_HOST: zod.string(),
-  POSTGRES_PORT: NumberFromString,
-  POSTGRES_DB: zod.string(),
-  POSTGRES_USER: zod.string(),
-  POSTGRES_PASSWORD: emptyString(zod.string().optional()),
-});
 
 const ClickHouseModel = zod.object({
   CLICKHOUSE_PROTOCOL: zod.union([zod.literal('http'), zod.literal('https')]),
@@ -354,7 +346,6 @@ const configs = {
   base: EnvironmentModel.safeParse(processEnv),
   commerce: CommerceModel.safeParse(processEnv),
   sentry: SentryModel.safeParse(processEnv),
-  postgres: PostgresModel.safeParse(processEnv),
   clickhouse: ClickHouseModel.safeParse(processEnv),
   supertokens: SuperTokensModel.safeParse(processEnv),
   authGithub: AuthGitHubConfigSchema.safeParse(processEnv),
@@ -382,15 +373,6 @@ for (const config of Object.values(configs)) {
   if (config.success === false) {
     environmentErrors.push(JSON.stringify(config.error.format(), null, 4));
   }
-}
-
-const redisConfigResult = parseRedisConfigFromEnvironment(
-  processEnv,
-  configs.base.success ? configs.base.data.AWS_REGION : undefined,
-);
-
-if (redisConfigResult.type === 'error') {
-  environmentErrors.push(...redisConfigResult.errors);
 }
 
 if (configs.s3.success && configs.s3.data.S3_AWS_IAM_AUTH_ENABLED !== '1') {
@@ -438,6 +420,69 @@ if (
   }
 }
 
+if (configs.s3.success && configs.s3.data.S3_AWS_IAM_AUTH_ENABLED !== '1') {
+  const missingS3Vars: string[] = [];
+  if (!configs.s3.data.S3_ACCESS_KEY_ID) missingS3Vars.push('S3_ACCESS_KEY_ID');
+  if (!configs.s3.data.S3_SECRET_ACCESS_KEY) missingS3Vars.push('S3_SECRET_ACCESS_KEY');
+  if (missingS3Vars.length > 0) {
+    environmentErrors.push(
+      `S3_AWS_IAM_AUTH_ENABLED is not enabled so static credentials are required: ${missingS3Vars.join(', ')}`,
+    );
+  }
+}
+
+if (
+  configs.s3Mirror.success &&
+  configs.s3Mirror.data.S3_MIRROR === '1' &&
+  configs.s3Mirror.data.S3_MIRROR_AWS_IAM_AUTH_ENABLED !== '1'
+) {
+  const missingS3MirrorVars: string[] = [];
+  if (!configs.s3Mirror.data.S3_MIRROR_ACCESS_KEY_ID)
+    missingS3MirrorVars.push('S3_MIRROR_ACCESS_KEY_ID');
+  if (!configs.s3Mirror.data.S3_MIRROR_SECRET_ACCESS_KEY)
+    missingS3MirrorVars.push('S3_MIRROR_SECRET_ACCESS_KEY');
+  if (missingS3MirrorVars.length > 0) {
+    environmentErrors.push(
+      `S3_MIRROR_AWS_IAM_AUTH_ENABLED is not enabled so static credentials are required: ${missingS3MirrorVars.join(', ')}`,
+    );
+  }
+}
+
+if (
+  configs.s3AuditLog.success &&
+  configs.s3AuditLog.data.S3_AUDIT_LOG === '1' &&
+  configs.s3AuditLog.data.S3_AUDIT_LOG_AWS_IAM_AUTH_ENABLED !== '1'
+) {
+  const missingS3AuditVars: string[] = [];
+  if (!configs.s3AuditLog.data.S3_AUDIT_LOG_ACCESS_KEY_ID)
+    missingS3AuditVars.push('S3_AUDIT_LOG_ACCESS_KEY_ID');
+  if (!configs.s3AuditLog.data.S3_AUDIT_LOG_SECRET_ACCESS_KEY)
+    missingS3AuditVars.push('S3_AUDIT_LOG_SECRET_ACCESS_KEY');
+  if (missingS3AuditVars.length > 0) {
+    environmentErrors.push(
+      `S3_AUDIT_LOG_AWS_IAM_AUTH_ENABLED is not enabled so static credentials are required: ${missingS3AuditVars.join(', ')}`,
+    );
+  }
+}
+
+const redisConfigResult = parseRedisConfigFromEnvironment(
+  processEnv,
+  configs.base.success ? configs.base.data.AWS_REGION : undefined,
+);
+
+if (redisConfigResult.type === 'error') {
+  environmentErrors.push(...redisConfigResult.errors);
+}
+
+const postgresConfigResult = parsePostgresConfigFromEnvironment(
+  process.env,
+  configs.base.success ? configs.base.data.AWS_REGION : undefined,
+);
+
+if (postgresConfigResult.type === 'error') {
+  environmentErrors.push(...postgresConfigResult.errors);
+}
+
 if (environmentErrors.length) {
   const fullError = environmentErrors.join(`\n`);
   console.error('❌ Invalid environment variables:', fullError);
@@ -453,7 +498,6 @@ function extractConfig<Input, Output>(config: zod.SafeParseReturnType<Input, Out
 
 const base = extractConfig(configs.base);
 const commerce = extractConfig(configs.commerce);
-const postgres = extractConfig(configs.postgres);
 const sentry = extractConfig(configs.sentry);
 const clickhouse = extractConfig(configs.clickhouse);
 const supertokens = extractConfig(configs.supertokens);
@@ -539,14 +583,10 @@ export const env = {
       serverHostIpv6Only: base.SERVER_HOST_IPV6_ONLY,
     }),
   },
-  postgres: {
-    host: postgres.POSTGRES_HOST,
-    port: postgres.POSTGRES_PORT,
-    db: postgres.POSTGRES_DB,
-    user: postgres.POSTGRES_USER,
-    password: postgres.POSTGRES_PASSWORD,
-    ssl: postgres.POSTGRES_SSL === '1',
-  },
+  postgres:
+    postgresConfigResult?.type === 'ok'
+      ? postgresConfigResult.config
+      : raiseInvariant('Unreachable: postgres config errors are caught above via process.exit(1)'),
   clickhouse: {
     protocol: clickhouse.CLICKHOUSE_PROTOCOL,
     host: clickhouse.CLICKHOUSE_HOST,

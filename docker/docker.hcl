@@ -168,6 +168,7 @@ target "server" {
     IMAGE_TITLE = "graphql-hive/server"
     IMAGE_DESCRIPTION = "The server service of the GraphQL Hive project."
     PORT = "3001"
+    INSTALL_RDS_CA_CERTS = "1"
     HEALTHCHECK_CMD = "wget --spider -q http://127.0.0.1:$${PORT}/_readiness"
   }
   tags = [
@@ -188,6 +189,7 @@ target "storage" {
   args = {
     IMAGE_TITLE = "graphql-hive/storage"
     IMAGE_DESCRIPTION = "The migrations service of the GraphQL Hive project."
+    INSTALL_RDS_CA_CERTS = "1"
   }
   tags = [
     local_image_tag("storage"),
@@ -209,6 +211,7 @@ target "commerce" {
     IMAGE_TITLE = "graphql-hive/commerce"
     IMAGE_DESCRIPTION = "The commerce service of the GraphQL Hive project."
     PORT = "3010"
+    INSTALL_RDS_CA_CERTS = "1"
     HEALTHCHECK_CMD = "wget --spider -q http://127.0.0.1:$${PORT}/_readiness"
   }
   tags = [
@@ -231,6 +234,7 @@ target "tokens" {
     IMAGE_TITLE = "graphql-hive/tokens"
     IMAGE_DESCRIPTION = "The tokens service of the GraphQL Hive project."
     PORT = "3003"
+    INSTALL_RDS_CA_CERTS = "1"
     HEALTHCHECK_CMD = "wget --spider -q http://127.0.0.1:$${PORT}/_readiness"
   }
   tags = [
@@ -275,6 +279,7 @@ target "usage" {
     IMAGE_TITLE = "graphql-hive/usage"
     IMAGE_DESCRIPTION = "The usage ingestor service of the GraphQL Hive project."
     PORT = "3006"
+    INSTALL_RDS_CA_CERTS = "1"
     HEALTHCHECK_CMD = "wget --spider -q http://127.0.0.1:$${PORT}/_readiness"
   }
   tags = [
@@ -297,6 +302,7 @@ target "workflows" {
     IMAGE_TITLE = "graphql-hive/workflows"
     IMAGE_DESCRIPTION = "The workflow service of the GraphQL Hive project."
     PORT = "3013"
+    INSTALL_RDS_CA_CERTS = "1"
     HEALTHCHECK_CMD = "wget --spider -q http://127.0.0.1:$${PORT}/_readiness"
   }
   tags = [

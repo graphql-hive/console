@@ -13,6 +13,9 @@ APIs (usage service and GraphQL API).
 | `POSTGRES_DB`                        | **Yes**  | Name of the postgres database.                                                                           | `registry`                                           |
 | `POSTGRES_USER`                      | **Yes**  | User name for accessing the postgres database.                                                           | `postgres`                                           |
 | `POSTGRES_PASSWORD`                  | No       | Password for accessing the postgres database.                                                            | `postgres`                                           |
+| `AWS_REGION`                         | No       | The global AWS region for the service. Used as the default region for AWS connections.                   | `us-east-1`                                          |
+| `POSTGRES_AWS_IAM_AUTH_ENABLED`      | No       | Enable AWS IAM authentication for Aurora/RDS PostgreSQL (uses SigV4 token instead of password).          | `1` (enabled) or `0` (disabled)                      |
+| `POSTGRES_AWS_REGION`                | No       | AWS region for RDS IAM auth token generation. Required when `POSTGRES_AWS_IAM_AUTH_ENABLED` is `1`.      | `us-east-1`                                          |
 | `POSTGRES_SSL`                       | No       | Whether the postgres connection should be established via SSL.                                           | `1` (enabled) or `0` (disabled)                      |
 | `REDIS_HOST`                         | **Yes**  | The host of your redis instance.                                                                         | `"127.0.0.1"`                                        |
 | `REDIS_PORT`                         | **Yes**  | The port of your redis instance.                                                                         | `6379`                                               |
@@ -20,7 +23,6 @@ APIs (usage service and GraphQL API).
 | `REDIS_TLS_ENABLED`                  | **No**   | Enable TLS for redis connection (rediss://).                                                             | `"0"`                                                |
 | `REDIS_USERNAME`                     | No       | The username for Redis Access Control List authentication.                                               | `"default"`                                          |
 | `REDIS_CLUSTER_MODE_ENABLED`         | No       | Enable Redis Cluster mode.                                                                               | `1` (enabled) or `0` (disabled)                      |
-| `AWS_REGION`                         | No       | The global AWS region for the service. Used as the default region for AWS connections.                   | `us-east-1`                                          |
 | `REDIS_AWS_IAM_AUTH_ENABLED`         | No       | Enable AWS IAM authentication for Redis (requires `AWS_REGION`).                                         | `1` (enabled) or `0` (disabled)                      |
 | `REDIS_AWS_REGION`                   | No       | AWS region for IAM auth. Falls back to `AWS_REGION`.                                                     | `us-east-1`                                          |
 | `REDIS_AWS_IAM_CACHE_NAME`           | No       | ElastiCache cache name (required if `REDIS_AWS_IAM_AUTH_ENABLED` is `1`).                                | `my-cache`                                           |
