@@ -1,14 +1,22 @@
-import { ChangeEvent, ReactElement, useCallback, useMemo, useRef } from 'react';
+import { ChangeEvent, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { endOfDay, formatISO, startOfDay } from 'date-fns';
-import * as echarts from 'echarts';
-import ReactECharts from 'echarts-for-react';
-import { Globe, History, MoveDownIcon, MoveUpIcon, SearchIcon } from 'lucide-react';
-import AutoSizer from 'react-virtualized-auto-sizer';
+import { MoreHorizontal, MoveDownIcon, MoveUpIcon, SearchIcon } from 'lucide-react';
 import { useQuery } from 'urql';
 import { z } from 'zod';
 import { OrganizationLayout, Page } from '@/components/layouts/organization';
+import {
+  TargetCard,
+  TargetCardFragment,
+  TargetCardSkeleton,
+} from '@/components/organization/TargetCard';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { EmptyList } from '@/components/ui/empty-list';
 import { Input } from '@/components/ui/input';
 import { Meta } from '@/components/ui/meta';
@@ -16,12 +24,17 @@ import { Subtitle, Title } from '@/components/ui/page';
 import { QueryError } from '@/components/ui/query-error';
 import { Select, SelectContent, SelectItem, SelectTrigger } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { TooltipProvider } from '@/components/ui/tooltip';
 import { FragmentType, graphql, useFragment } from '@/gql';
-import { ProjectType } from '@/gql/graphql';
+import {
+  ProjectsSortDirectionType,
+  ProjectsSortFieldType,
+  ProjectType,
+  TargetsSortDirectionType,
+  TargetsSortFieldType,
+} from '@/gql/graphql';
 import { subDays } from '@/lib/date-time';
-import { useFormattedNumber } from '@/lib/hooks';
-import { pluralize } from '@/lib/utils';
+import { useIsInView } from '@/lib/hooks/use-is-in-view';
 import { UTCDate } from '@date-fns/utc';
 import { Link, useRouter } from '@tanstack/react-router';
 
@@ -33,11 +46,51 @@ export const OrganizationIndexRouteSearch = z.object({
 
 type RouteSearchProps = z.infer<typeof OrganizationIndexRouteSearch>;
 
-const ProjectCard_ProjectFragment = graphql(`
-  fragment ProjectCard_ProjectFragment on Project {
-    id
-    slug
-    type
+const OrganizationProjectsPageQuery = graphql(`
+  query OrganizationProjectsPageQuery(
+    $organizationSlug: String!
+    $search: String
+    $sort: ProjectsSortInput
+  ) {
+    organization: organizationBySlug(organizationSlug: $organizationSlug) {
+      id
+      slug
+      projects(search: $search, sort: $sort) {
+        edges {
+          node {
+            id
+            slug
+            type
+          }
+        }
+      }
+    }
+  }
+`);
+
+const OrganizationProjectsPageProjectDataQuery = graphql(`
+  query OrganizationProjectsPageProjectDataQuery(
+    $organizationSlug: String!
+    $projectSlug: String!
+    $period: DateRangeInput!
+    $chartResolution: Int!
+    $targetsSort: TargetsSortInput!
+  ) {
+    project(
+      reference: { bySelector: { organizationSlug: $organizationSlug, projectSlug: $projectSlug } }
+    ) {
+      id
+      slug
+      targets(sort: $targetsSort) {
+        edges {
+          node {
+            id
+            slug
+            ...TargetCardFragment
+          }
+        }
+      }
+    }
   }
 `);
 
@@ -48,209 +101,193 @@ const projectTypeFullNames = {
 };
 
 const ProjectCard = (props: {
-  project: FragmentType<typeof ProjectCard_ProjectFragment> | null;
-  cleanOrganizationId: string | null;
+  id: string;
+  slug: string;
+  type: ProjectType;
+  period: {
+    from: string;
+    to: string;
+  };
+  sortKey: string;
+  sortOrder: 'asc' | 'desc';
   highestNumberOfRequests: number;
-  requestsOverTime: { date: string; value: number }[] | null;
-  schemaVersionsCount: number | null;
   days: number;
-}): ReactElement | null => {
-  const project = useFragment(ProjectCard_ProjectFragment, props.project);
+  organizationSlug: string;
+  projectSlug: string;
+  onRequestsMaxChange: (projectId: string, value: number | null) => void;
+}) => {
+  const ref = useRef<HTMLDivElement>(null);
+  const isInView = useIsInView(ref);
+  const targetsSort = useMemo(() => {
+    let field: TargetsSortFieldType = TargetsSortFieldType.Name;
+    let direction: TargetsSortDirectionType = TargetsSortDirectionType.Asc;
 
-  const { highestNumberOfRequests } = props;
-
-  const requests = useMemo(() => {
-    if (props.requestsOverTime?.length) {
-      return props.requestsOverTime.map<[string, number]>(node => [node.date, node.value]);
+    if (props.sortKey === 'requests') {
+      field = TargetsSortFieldType.Requests;
+    } else if (props.sortKey === 'versions') {
+      field = TargetsSortFieldType.SchemaVersions;
     }
 
-    return [
-      [new Date(subDays(new Date(), props.days)).toISOString(), 0],
-      [new Date().toISOString(), 0],
-    ] as [string, number][];
-  }, [props.requestsOverTime]);
+    if (props.sortOrder === 'desc') {
+      direction = TargetsSortDirectionType.Desc;
+    }
 
-  const totalNumberOfRequests = useMemo(
-    () => requests.reduce((acc, [_, value]) => acc + value, 0),
-    [requests],
-  );
-  const totalNumberOfVersions = props.schemaVersionsCount ?? 0;
+    return { field, direction, period: props.period };
+  }, [props.sortKey, props.sortOrder, props.period]);
 
-  const requestsInDateRange = useFormattedNumber(totalNumberOfRequests);
-  const schemaVersionsInDateRange = useFormattedNumber(totalNumberOfVersions);
+  const [query] = useQuery({
+    query: OrganizationProjectsPageProjectDataQuery,
+    variables: {
+      organizationSlug: props.organizationSlug,
+      projectSlug: props.projectSlug,
+      chartResolution: props.days,
+      period: props.period,
+      targetsSort,
+    },
+    pause: !isInView,
+  });
 
-  return (
-    <Card className="hover:bg-neutral-4 hover:shadow-neutral-3/50 h-full self-start p-5 px-0 pt-4 hover:shadow-md">
-      <Link
-        to="/$organizationSlug/$projectSlug"
-        disabled={props.cleanOrganizationId == null || project?.slug == null}
-        params={{
-          organizationSlug: props.cleanOrganizationId ?? 'unknown-yet',
-          projectSlug: project?.slug ?? 'unknown-yet',
-        }}
-      >
-        <TooltipProvider>
-          <div className="flex items-start gap-x-2">
-            <div className="grow">
-              <div>
-                <AutoSizer disableHeight>
-                  {size => (
-                    <ReactECharts
-                      style={{ width: size.width, height: 90 }}
-                      option={{
-                        animation: !!project,
-                        color: ['#f4b740'],
-                        grid: {
-                          left: 0,
-                          top: 10,
-                          right: 0,
-                          bottom: 10,
-                        },
-                        tooltip: {
-                          trigger: 'axis',
-                          axisPointer: {
-                            label: {
-                              formatter({ value }: { value: number }) {
-                                return new Date(value).toDateString();
-                              },
-                            },
-                          },
-                        },
-                        xAxis: [
-                          {
-                            show: false,
-                            type: 'time',
-                            boundaryGap: false,
-                          },
-                        ],
-                        yAxis: [
-                          {
-                            show: false,
-                            type: 'value',
-                            min: 0,
-                            max: highestNumberOfRequests,
-                          },
-                        ],
-                        series: [
-                          {
-                            name: 'Requests',
-                            type: 'line',
-                            smooth: false,
-                            lineStyle: {
-                              width: 2,
-                            },
-                            showSymbol: false,
-                            areaStyle: {
-                              opacity: 0.8,
-                              color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
-                                {
-                                  offset: 0,
-                                  color: 'rgba(244, 184, 64, 0.20)',
-                                },
-                                {
-                                  offset: 1,
-                                  color: 'rgba(244, 184, 64, 0)',
-                                },
-                              ]),
-                            },
-                            emphasis: {
-                              focus: 'series',
-                            },
-                            data: requests,
-                          },
-                        ],
-                      }}
-                    />
-                  )}
-                </AutoSizer>
-              </div>
-              <div className="flex flex-row items-center justify-between gap-y-3 px-4 pt-4">
-                {project ? (
-                  <div>
-                    <h4 className="line-clamp-2 text-lg font-bold">{project.slug}</h4>
-                    <p className="text-neutral-11 text-xs">{projectTypeFullNames[project.type]}</p>
-                  </div>
-                ) : (
-                  <div>
-                    <div className="bg-neutral-5 mb-4 h-4 w-48 animate-pulse rounded-full py-2" />
-                    <div className="bg-neutral-5 h-2 w-24 animate-pulse rounded-full" />
-                  </div>
-                )}
-                <div className="flex flex-col gap-y-2 py-1">
-                  {project ? (
-                    <>
-                      <Tooltip>
-                        <TooltipTrigger>
-                          <div className="flex flex-row items-center gap-x-2">
-                            <Globe className="text-neutral-10 size-4" />
-                            <div className="text-xs">
-                              {requestsInDateRange}{' '}
-                              {pluralize(totalNumberOfRequests, 'request', 'requests')}
-                            </div>
-                          </div>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          Number of GraphQL requests in the last {props.days} days.
-                        </TooltipContent>
-                      </Tooltip>
-                      <Tooltip>
-                        <TooltipTrigger>
-                          <div className="flex flex-row items-center gap-x-2">
-                            <History className="text-neutral-10 size-4" />
-                            <div className="text-xs">
-                              {schemaVersionsInDateRange}{' '}
-                              {pluralize(totalNumberOfVersions, 'commit', 'commits')}
-                            </div>
-                          </div>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          Number of schemas pushed to this project in the last {props.days} days.
-                        </TooltipContent>
-                      </Tooltip>
-                    </>
-                  ) : (
-                    <>
-                      <div className="bg-neutral-5 my-1 h-2 w-16 animate-pulse rounded-full" />
-                      <div className="bg-neutral-5 my-1 h-2 w-16 animate-pulse rounded-full" />
-                    </>
-                  )}
-                </div>
-              </div>
-            </div>
-          </div>
-        </TooltipProvider>
-      </Link>
-    </Card>
-  );
-};
+  const targets = query.data?.project?.targets.edges.map(edge => edge.node) ?? [];
+  const targetCardData = useFragment(TargetCardFragment, targets);
 
-const OrganizationProjectsPageQuery = graphql(`
-  query OrganizationProjectsPageQuery(
-    $organizationSlug: String!
-    $chartResolution: Int!
-    $period: DateRangeInput!
-  ) {
-    organization: organizationBySlug(organizationSlug: $organizationSlug) {
-      id
-      slug
-      projects {
-        edges {
-          node {
-            id
-            slug
-            ...ProjectCard_ProjectFragment
-            totalRequests(period: $period)
-            requestsOverTime(resolution: $chartResolution, period: $period) {
-              date
-              value
-            }
-            schemaVersionsCount(period: $period)
-          }
+  const projectHighestNumberOfRequests = useMemo(() => {
+    let highest = 0;
+
+    for (const target of targetCardData) {
+      for (const dataPoint of target.operationsStats?.requestsOverTime ?? []) {
+        if (dataPoint.value > highest) {
+          highest = dataPoint.value;
         }
       }
     }
-  }
-`);
+
+    return highest;
+  }, [targetCardData]);
+
+  useEffect(() => {
+    if (query.fetching || targets.length === 0) {
+      return;
+    }
+
+    props.onRequestsMaxChange(props.id, projectHighestNumberOfRequests);
+  }, [
+    props.id,
+    props.onRequestsMaxChange,
+    projectHighestNumberOfRequests,
+    query.fetching,
+    targets.length,
+  ]);
+
+  useEffect(() => {
+    return () => {
+      props.onRequestsMaxChange(props.id, null);
+    };
+  }, [props.id, props.onRequestsMaxChange]);
+
+  return (
+    <TooltipProvider>
+      <div
+        className="border-neutral-5 dark:border-neutral-4 overflow-hidden rounded-lg border"
+        ref={ref}
+      >
+        <Link
+          to="/$organizationSlug/$projectSlug"
+          params={{ organizationSlug: props.organizationSlug, projectSlug: props.projectSlug }}
+          className="group grid w-full grid-cols-[1fr_auto] items-center gap-8 overflow-hidden p-4"
+        >
+          <div className="flex gap-x-2">
+            <h4 className="line-clamp-2 text-lg font-medium group-hover:underline">{props.slug}</h4>
+            <Badge variant="outline">{projectTypeFullNames[props.type]}</Badge>
+          </div>
+          <div className="flex">
+            <Button variant="outline" size="xs" className="rounded-r-none">
+              Open
+            </Button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="xs" className="rounded-l-none border-l-0">
+                  <MoreHorizontal className="size-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent>
+                <Link
+                  to="/$organizationSlug/$projectSlug"
+                  params={{
+                    organizationSlug: props.organizationSlug,
+                    projectSlug: props.projectSlug,
+                  }}
+                >
+                  <DropdownMenuItem>
+                    <span>Targets</span>
+                  </DropdownMenuItem>
+                </Link>
+                <Link
+                  to="/$organizationSlug/$projectSlug/view/alerts"
+                  params={{
+                    organizationSlug: props.organizationSlug,
+                    projectSlug: props.projectSlug,
+                  }}
+                >
+                  <DropdownMenuItem>
+                    <span>Alerts</span>
+                  </DropdownMenuItem>
+                </Link>
+                <Link
+                  to="/$organizationSlug/$projectSlug/view/settings"
+                  params={{
+                    organizationSlug: props.organizationSlug,
+                    projectSlug: props.projectSlug,
+                  }}
+                >
+                  <DropdownMenuItem>
+                    <span>Settings</span>
+                  </DropdownMenuItem>
+                </Link>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+        </Link>
+        <div className="grid grid-cols-[repeat(auto-fit,minmax(calc(var(--spacing)*128),1fr))] gap-4 px-4 pb-4">
+          {targets.length === 0 || query.fetching
+            ? Array.from({ length: 3 }).map((_, index) => (
+                <TargetCardSkeleton key={index} className="rounded-sm" />
+              ))
+            : targets?.map(target => (
+                <TargetCard
+                  key={target.id}
+                  id={target.id}
+                  slug={target.slug}
+                  organizationSlug={props.organizationSlug}
+                  projectSlug={props.projectSlug}
+                  highestNumberOfRequests={props.highestNumberOfRequests}
+                  days={props.days}
+                  className="rounded-sm"
+                  data={target as FragmentType<typeof TargetCardFragment>}
+                />
+              ))}
+        </div>
+      </div>
+    </TooltipProvider>
+  );
+};
+
+const ProjectCardSkeleton = () => {
+  return (
+    <div className="border-neutral-5 dark:border-neutral-4 overflow-hidden rounded-lg border">
+      <div className="group grid w-full grid-cols-[1fr_auto] items-center gap-8 overflow-hidden p-4">
+        <div className="flex gap-x-2">
+          <div className="bg-neutral-2 dark:bg-neutral-5 h-7 w-32 rounded-full" />
+          <Badge variant="secondary" className="w-16" />
+        </div>
+      </div>
+      <div className="grid grid-cols-[repeat(auto-fit,minmax(calc(var(--spacing)*128),1fr))] gap-4 px-4 pb-4">
+        {Array.from({ length: 3 }).map((_, index) => (
+          <TargetCardSkeleton key={index} className="rounded-sm" />
+        ))}
+      </div>
+    </div>
+  );
+};
 
 function OrganizationPageContent(
   props: {
@@ -258,39 +295,53 @@ function OrganizationPageContent(
   } & RouteSearchProps,
 ) {
   const days = 14;
+  const now = useRef<UTCDate>(new UTCDate());
+
   const period = useRef<{
     from: string;
     to: string;
-  }>();
+  }>({
+    from: formatISO(startOfDay(subDays(now.current, days))),
+    to: formatISO(endOfDay(now.current)),
+  });
 
   // Sort by requests by default
   const sortKey = props.sortBy ?? 'requests';
 
-  const sortOrder =
+  const sortOrder: 'asc' | 'desc' =
     props.sortOrder === 'asc'
-      ? -1
+      ? 'asc'
       : // if the sort order is not set, sort by name in ascending order by default
         !props.sortOrder && props.sortBy === 'name'
-        ? -1
+        ? 'asc'
         : // if the sort order is not set, sort in descending order by default
-          1;
-
-  if (!period.current) {
-    const now = new UTCDate();
-    const from = formatISO(startOfDay(subDays(now, days)));
-    const to = formatISO(endOfDay(now));
-
-    period.current = { from, to };
-  }
+          'desc';
 
   const router = useRouter();
+
+  const sort = useMemo(() => {
+    let field: ProjectsSortFieldType = ProjectsSortFieldType.Name;
+    let direction: ProjectsSortDirectionType = ProjectsSortDirectionType.Asc;
+
+    if (sortKey === 'requests') {
+      field = ProjectsSortFieldType.Requests;
+    } else if (sortKey === 'versions') {
+      field = ProjectsSortFieldType.SchemaVersions;
+    }
+
+    if (sortOrder === 'desc') {
+      direction = ProjectsSortDirectionType.Desc;
+    }
+
+    return { field, direction, period: period.current };
+  }, [sortKey, sortOrder, period.current]);
 
   const [query] = useQuery({
     query: OrganizationProjectsPageQuery,
     variables: {
       organizationSlug: props.organizationSlug,
-      chartResolution: days, // 14 days = 14 data points
-      period: period.current,
+      search: props.search,
+      sort,
     },
     requestPolicy: 'cache-and-network',
   });
@@ -298,56 +349,34 @@ function OrganizationPageContent(
   const currentOrganization = query.data?.organization;
   const projectsConnection = currentOrganization?.projects;
 
-  const highestNumberOfRequests = useMemo(() => {
-    let highest = 10;
+  const projects = projectsConnection?.edges.map(edge => edge.node);
 
-    if (projectsConnection?.edges.length) {
-      for (const edge of projectsConnection.edges) {
-        for (const dataPoint of edge.node.requestsOverTime) {
-          if (dataPoint.value > highest) {
-            highest = dataPoint.value;
-          }
-        }
+  const [projectRequestsMaxById, setProjectRequestsMaxById] = useState(
+    () => new Map<string, number>(),
+  );
+
+  useEffect(() => {
+    setProjectRequestsMaxById(new Map());
+  }, [props.organizationSlug, props.search, sortKey, sortOrder]);
+
+  const onProjectRequestsMaxChange = useCallback((projectId: string, value: number | null) => {
+    setProjectRequestsMaxById(current => {
+      const next = new Map(current);
+
+      if (value === null) {
+        next.delete(projectId);
+      } else {
+        next.set(projectId, value);
       }
-    }
 
-    return highest;
-  }, [projectsConnection]);
+      return next;
+    });
+  }, []);
 
-  const projects = useMemo(() => {
-    if (!projectsConnection) {
-      return [];
-    }
-
-    const searchPhrase = props.search;
-    const newProjects = searchPhrase
-      ? projectsConnection.edges.filter(edge =>
-          edge.node.slug.toLowerCase().includes(searchPhrase.toLowerCase()),
-        )
-      : projectsConnection.edges.slice();
-
-    return newProjects
-      .map(project => project.node)
-      .sort((a, b) => {
-        const diffRequests = b.totalRequests - a.totalRequests;
-        const diffVersions = b.schemaVersionsCount - a.schemaVersionsCount;
-
-        if (sortKey === 'requests' && diffRequests !== 0) {
-          return diffRequests * sortOrder;
-        }
-
-        if (sortKey === 'versions' && diffVersions !== 0) {
-          return diffVersions * sortOrder;
-        }
-
-        if (sortKey === 'name') {
-          return a.slug.localeCompare(b.slug) * sortOrder * -1;
-        }
-
-        // falls back to sort by name in ascending order
-        return a.slug.localeCompare(b.slug);
-      });
-  }, [projectsConnection, props.search, sortKey, sortOrder]);
+  const highestNumberOfRequests = useMemo(
+    () => Math.max(10, ...projectRequestsMaxById.values()),
+    [projectRequestsMaxById],
+  );
 
   const onSearchChange = useCallback(
     (event: ChangeEvent<HTMLInputElement>) => {
@@ -456,40 +485,37 @@ function OrganizationPageContent(
               </div>
             </div>
           </div>
-          {currentOrganization && projectsConnection ? (
-            projectsConnection.edges.length === 0 ? (
+          {currentOrganization && projects ? (
+            projects?.length === 0 ? (
               <EmptyList
                 title="Hive is waiting for your first project"
                 description='You can create a project by clicking the "New Project" button'
                 docsUrl="/schema-registry/management/projects#create-a-new-project"
               />
             ) : (
-              <div className="grid grid-cols-2 items-stretch gap-5 xl:grid-cols-3">
-                {projects.map(project => (
+              <div className="flex w-full flex-col gap-y-8" key={sort.field + sort.direction}>
+                {projects?.map(project => (
                   <ProjectCard
                     key={project.id}
-                    cleanOrganizationId={currentOrganization.slug}
+                    id={project.id}
+                    slug={project.slug}
+                    type={project.type}
                     days={days}
                     highestNumberOfRequests={highestNumberOfRequests}
-                    project={project}
-                    requestsOverTime={project.requestsOverTime}
-                    schemaVersionsCount={project.schemaVersionsCount}
+                    period={period.current}
+                    sortKey={sortKey}
+                    sortOrder={sortOrder}
+                    organizationSlug={props.organizationSlug}
+                    projectSlug={project.slug}
+                    onRequestsMaxChange={onProjectRequestsMaxChange}
                   />
                 ))}
               </div>
             )
           ) : (
-            <div className="grid grid-cols-2 items-stretch gap-5 xl:grid-cols-3">
+            <div className="flex w-full flex-col gap-y-8">
               {Array.from({ length: 4 }).map((_, index) => (
-                <ProjectCard
-                  key={index}
-                  days={days}
-                  highestNumberOfRequests={highestNumberOfRequests}
-                  project={null}
-                  cleanOrganizationId={null}
-                  requestsOverTime={null}
-                  schemaVersionsCount={null}
-                />
+                <ProjectCardSkeleton key={index} />
               ))}
             </div>
           )}
