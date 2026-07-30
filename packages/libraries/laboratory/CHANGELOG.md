@@ -1,5 +1,14 @@
 # @graphql-hive/laboratory
 
+## 0.2.2
+
+### Patch Changes
+
+- [#8292](https://github.com/graphql-hive/console/pull/8292)
+  [`e8e2a9e`](https://github.com/graphql-hive/console/commit/e8e2a9eb660e19e8eff5f77ff14a90de7694c064)
+  Thanks [@jonathanawesome](https://github.com/jonathanawesome)! - Laboratory: Harden builder merge
+  code so that toggles don't cause a view reset
+
 ## 0.2.1
 
 ### Patch Changes
