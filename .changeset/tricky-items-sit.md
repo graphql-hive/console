@@ -5,4 +5,4 @@
 ---
 
 Add a new experimental config option that allows sending additional metrics (errors and resolution counts) to
-Hive.
+Hive Console.
