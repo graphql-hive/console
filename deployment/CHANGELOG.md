@@ -1,5 +1,71 @@
 # hive
 
+## 11.8.0
+
+### Minor Changes
+
+- [#8084](https://github.com/graphql-hive/console/pull/8084)
+  [`43d7cb3`](https://github.com/graphql-hive/console/commit/43d7cb3555d80e0e2fcbf6a9cae030fd015afcf8)
+  Thanks [@mish-elle](https://github.com/mish-elle)! - Add opt-in AWS RDS IAM authentication for
+  PostgreSQL connections. When enabled, services authenticate to RDS/Aurora using short-lived IAM
+  tokens (SigV4) instead of static passwords.
+
+  ### New environment variables
+
+  | Variable                        | Services                                               | Description                                                            |
+  | ------------------------------- | ------------------------------------------------------ | ---------------------------------------------------------------------- |
+  | `AWS_REGION`                    | server, commerce, tokens, usage, workflows, migrations | Default AWS region for the service for all AWS connections.            |
+  | `POSTGRES_AWS_IAM_AUTH_ENABLED` | server, commerce, tokens, usage, workflows, migrations | Set to `1` to enable RDS IAM authentication.                           |
+  | `POSTGRES_AWS_REGION`           | server, commerce, tokens, usage, workflows, migrations | AWS region of the RDS instance. Falls back to `AWS_REGION` if not set. |
+
+  ### To enable
+
+  - `POSTGRES_SSL=1` must be set (RDS IAM requires TLS).
+  - `POSTGRES_AWS_REGION` or `AWS_REGION` must be set.
+  - The pod/instance must have AWS credentials available (e.g. IRSA, EKS Pod Identity, instance
+    profile) with `rds-db:connect` permission for the configured `POSTGRES_USER`.
+
+- [#8272](https://github.com/graphql-hive/console/pull/8272)
+  [`b695a80`](https://github.com/graphql-hive/console/commit/b695a80235c3abfa219ca0578acad33e3f567f09)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Remove the `tokens` service. Adjust the `server`
+  and `usage` services to resolve the legacy target access tokens directly from redis and postgres.
+
+  In order to update to this version remove the `tokens` entry within your docker compose file.
+
+  ```diff
+  -     tokens:
+  -       image: '${DOCKER_REGISTRY}tokens${DOCKER_TAG}'
+  -       # ...
+  ```
+
+  Then, make sure the `usage` service depends on the `db` container to be healthy.
+
+  ```diff
+       usage:
+         # ...
+         depends_on:
+  -        tokens:
+  +        db:
+             condition: service_healthy
+  ```
+
+### Patch Changes
+
+- [#8287](https://github.com/graphql-hive/console/pull/8287)
+  [`a0092fc`](https://github.com/graphql-hive/console/commit/a0092fc7a9e25f70a7a4d9883a84765f7ebc88ea)
+  Thanks [@jonathanawesome](https://github.com/jonathanawesome)! - Metric alert notifications now
+  link back to the alert rule in Hive Console. Slack and Microsoft Teams messages gain a "View alert
+  in Hive" link, and the webhook payload gains a `url` field pointing at the same page.
+
+  Self-hosted deployments need to set `WEB_APP_URL` on the workflows service to enable it:
+
+  ```env
+  WEB_APP_URL=https://your-hive-console-url
+  ```
+
+  The variable is optional. When it is unset, notifications are sent exactly as before, without the
+  link, and the webhook payload's `url` is `null`.
+
 ## 11.7.2
 
 ### Patch Changes
