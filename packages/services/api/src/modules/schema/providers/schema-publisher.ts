@@ -592,6 +592,11 @@ export class SchemaPublisher {
     let approvedSchemaChanges: Map<string, SchemaChangeType> | null = new Map();
     let approvedContractChanges: Map<string, Map<string, SchemaChangeType>> | null = null;
 
+    if (input.github?.mergedCommits?.length) {
+      // @todo
+      approvedSchemaChanges;
+    }
+
     if (contextId !== null) {
       approvedSchemaChanges = await this.storage.getApprovedSchemaChangesForContextId({
         targetId: target.id,

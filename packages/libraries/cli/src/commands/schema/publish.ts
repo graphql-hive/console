@@ -225,7 +225,9 @@ export default class SchemaPublish extends Command<typeof SchemaPublish> {
       let gitHub: null | {
         repository: string;
         commit: string;
+        mergedCommits?: string[] | undefined;
       } = null;
+      let mergedCommits: string[] | undefined;
 
       if (!commit || !author) {
         const git = await gitInfo(() => {
@@ -233,7 +235,7 @@ export default class SchemaPublish extends Command<typeof SchemaPublish> {
         });
 
         if (!commit) {
-          commit = git.commit;
+          [commit, ...mergedCommits] = git.commits;
         }
 
         if (!author) {
@@ -261,6 +263,7 @@ export default class SchemaPublish extends Command<typeof SchemaPublish> {
         gitHub = {
           repository,
           commit,
+          mergedCommits,
         };
       }
 

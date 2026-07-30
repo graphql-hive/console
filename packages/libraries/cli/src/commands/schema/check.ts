@@ -236,7 +236,8 @@ export default class SchemaCheck extends Command<typeof SchemaCheck> {
         // noop
       });
 
-      const commit = flags.commit || git?.commit;
+      const [commit, ...mergedCommits] =
+        flags.commit?.split(',').map(c => c.trim()) || git?.commits;
       const author = flags.author || git?.author;
 
       if (typeof rawSdl !== 'string' || rawSdl.length === 0) {
@@ -284,6 +285,7 @@ export default class SchemaCheck extends Command<typeof SchemaCheck> {
                 ? {
                     commit,
                     author,
+                    mergedCommits,
                   }
                 : null,
             contextId: flags.contextId ?? undefined,

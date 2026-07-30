@@ -366,6 +366,13 @@ export default gql`
     The commit sha.
     """
     commit: String!
+    """
+    A list of commits merged into this change. This supports merge queues,
+    which combine multiple checked commits into a single merge which must also
+    be ran as a check. This list can include the current commit but doesn't have to.
+    The commit is automatically included in the checked list.
+    """
+    mergedCommits: [String!]
   }
 
   input SchemaPublishInput {
@@ -923,6 +930,13 @@ export default gql`
     The pull request number of the schema check.
     """
     pullRequestNumber: String
+    """
+    A list of commits merged into this change. This supports merge queues,
+    which combine multiple checked commits into a single merge which must also
+    be ran as a check. This list can include the current commit but doesn't have to.
+    The commit is automatically included in the checked list.
+    """
+    mergedCommits: [String!]
   }
 
   input SchemaCompareInput {
