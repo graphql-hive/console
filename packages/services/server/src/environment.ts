@@ -1,6 +1,9 @@
+import { readFileSync } from 'node:fs';
 import zod from 'zod';
+import { isUUID } from '@hive/api/shared/is-uuid';
 import {
   OpenTelemetryConfigurationModel,
+  parsePostgresConfigFromEnvironment,
   parseRedisConfigFromEnvironment,
   resolveServerListenOptions,
 } from '@hive/service-common';
@@ -45,7 +48,6 @@ const EnvironmentModel = zod.object({
     })
     .url(),
   SCHEMA_POLICY_ENDPOINT: emptyString(zod.string().url().optional()),
-  TOKENS_ENDPOINT: zod.string().url(),
   SCHEMA_ENDPOINT: zod.string().url(),
   AUTH_ORGANIZATION_OIDC: emptyString(zod.union([zod.literal('1'), zod.literal('0')]).optional()),
   AUTH_REQUIRE_EMAIL_VERIFICATION: emptyString(
@@ -98,15 +100,6 @@ const ZendeskSupportModel = zod.union([
     ZENDESK_SUBDOMAIN: zod.string(),
   }),
 ]);
-
-const PostgresModel = zod.object({
-  POSTGRES_SSL: emptyString(zod.union([zod.literal('1'), zod.literal('0')]).optional()),
-  POSTGRES_HOST: zod.string(),
-  POSTGRES_PORT: NumberFromString,
-  POSTGRES_DB: zod.string(),
-  POSTGRES_USER: zod.string(),
-  POSTGRES_PASSWORD: emptyString(zod.string().optional()),
-});
 
 const ClickHouseModel = zod.object({
   CLICKHOUSE_PROTOCOL: zod.union([zod.literal('http'), zod.literal('https')]),
@@ -166,6 +159,9 @@ const HiveModel = zod.intersection(
       HIVE_USAGE_ENDPOINT: zod.string().url().optional(),
       HIVE_TARGET: zod.string(),
       HIVE_ACCESS_TOKEN: zod.string(),
+      HIVE_FIELD_USAGE_ENABLED: emptyString(
+        zod.union([zod.literal('0'), zod.literal('1')]).optional(),
+      ),
     }),
   ]),
   zod.union([
@@ -302,6 +298,50 @@ const LogModel = zod.object({
   ),
 });
 
+const OidcWorkloadFederationModel = zod.union([
+  zod.object({
+    OIDC_WORKLOAD_FEDERATION_IDENTITY_PROVIDER: zod.union([
+      zod.void(),
+      zod.literal(''),
+      zod.literal('0'),
+    ]),
+  }),
+  zod
+    .object({
+      OIDC_WORKLOAD_FEDERATION_IDENTITY_PROVIDER: zod.literal('azure'),
+      AZURE_FEDERATED_TOKEN_FILE: zod.string().min(1),
+      OIDC_WORKLOAD_FEDERATION_ORGANIZATION_IDS: zod.string().min(1),
+    })
+    .superRefine((data, ctx) => {
+      try {
+        const content = readFileSync(data.AZURE_FEDERATED_TOKEN_FILE, 'utf-8').trim();
+        if (!content) {
+          ctx.addIssue({
+            code: zod.ZodIssueCode.custom,
+            path: ['AZURE_FEDERATED_TOKEN_FILE'],
+            message: `Federated token file at path '${data.AZURE_FEDERATED_TOKEN_FILE}' is empty.`,
+          });
+        }
+      } catch {
+        ctx.addIssue({
+          code: zod.ZodIssueCode.custom,
+          path: ['AZURE_FEDERATED_TOKEN_FILE'],
+          message: `Cannot read federated token file at path '${data.AZURE_FEDERATED_TOKEN_FILE}'. Ensure the file exists and is readable.`,
+        });
+      }
+
+      const ids = data.OIDC_WORKLOAD_FEDERATION_ORGANIZATION_IDS.split(',').map(s => s.trim());
+      const invalid = ids.filter(id => !isUUID(id));
+      if (invalid.length > 0) {
+        ctx.addIssue({
+          code: zod.ZodIssueCode.custom,
+          path: ['OIDC_WORKLOAD_FEDERATION_ORGANIZATION_IDS'],
+          message: `The following values are not valid UUIDs: ${invalid.join(', ')}`,
+        });
+      }
+    }),
+]);
+
 const processEnv = process.env;
 
 const configs = {
@@ -309,7 +349,6 @@ const configs = {
   base: EnvironmentModel.safeParse(processEnv),
   commerce: CommerceModel.safeParse(processEnv),
   sentry: SentryModel.safeParse(processEnv),
-  postgres: PostgresModel.safeParse(processEnv),
   clickhouse: ClickHouseModel.safeParse(processEnv),
   supertokens: SuperTokensModel.safeParse(processEnv),
   authGithub: AuthGitHubConfigSchema.safeParse(processEnv),
@@ -328,6 +367,7 @@ const configs = {
   zendeskSupport: ZendeskSupportModel.safeParse(processEnv),
   tracing: OpenTelemetryConfigurationModel.safeParse(processEnv),
   hivePersistedDocuments: HivePersistedDocumentsSchema.safeParse(processEnv),
+  oidcWorkloadFederation: OidcWorkloadFederationModel.safeParse(processEnv),
 };
 
 const environmentErrors: Array<string> = [];
@@ -336,15 +376,6 @@ for (const config of Object.values(configs)) {
   if (config.success === false) {
     environmentErrors.push(JSON.stringify(config.error.format(), null, 4));
   }
-}
-
-const redisConfigResult = parseRedisConfigFromEnvironment(
-  processEnv,
-  configs.base.success ? configs.base.data.AWS_REGION : undefined,
-);
-
-if (redisConfigResult.type === 'error') {
-  environmentErrors.push(...redisConfigResult.errors);
 }
 
 if (configs.s3.success && configs.s3.data.S3_AWS_IAM_AUTH_ENABLED !== '1') {
@@ -392,6 +423,69 @@ if (
   }
 }
 
+if (configs.s3.success && configs.s3.data.S3_AWS_IAM_AUTH_ENABLED !== '1') {
+  const missingS3Vars: string[] = [];
+  if (!configs.s3.data.S3_ACCESS_KEY_ID) missingS3Vars.push('S3_ACCESS_KEY_ID');
+  if (!configs.s3.data.S3_SECRET_ACCESS_KEY) missingS3Vars.push('S3_SECRET_ACCESS_KEY');
+  if (missingS3Vars.length > 0) {
+    environmentErrors.push(
+      `S3_AWS_IAM_AUTH_ENABLED is not enabled so static credentials are required: ${missingS3Vars.join(', ')}`,
+    );
+  }
+}
+
+if (
+  configs.s3Mirror.success &&
+  configs.s3Mirror.data.S3_MIRROR === '1' &&
+  configs.s3Mirror.data.S3_MIRROR_AWS_IAM_AUTH_ENABLED !== '1'
+) {
+  const missingS3MirrorVars: string[] = [];
+  if (!configs.s3Mirror.data.S3_MIRROR_ACCESS_KEY_ID)
+    missingS3MirrorVars.push('S3_MIRROR_ACCESS_KEY_ID');
+  if (!configs.s3Mirror.data.S3_MIRROR_SECRET_ACCESS_KEY)
+    missingS3MirrorVars.push('S3_MIRROR_SECRET_ACCESS_KEY');
+  if (missingS3MirrorVars.length > 0) {
+    environmentErrors.push(
+      `S3_MIRROR_AWS_IAM_AUTH_ENABLED is not enabled so static credentials are required: ${missingS3MirrorVars.join(', ')}`,
+    );
+  }
+}
+
+if (
+  configs.s3AuditLog.success &&
+  configs.s3AuditLog.data.S3_AUDIT_LOG === '1' &&
+  configs.s3AuditLog.data.S3_AUDIT_LOG_AWS_IAM_AUTH_ENABLED !== '1'
+) {
+  const missingS3AuditVars: string[] = [];
+  if (!configs.s3AuditLog.data.S3_AUDIT_LOG_ACCESS_KEY_ID)
+    missingS3AuditVars.push('S3_AUDIT_LOG_ACCESS_KEY_ID');
+  if (!configs.s3AuditLog.data.S3_AUDIT_LOG_SECRET_ACCESS_KEY)
+    missingS3AuditVars.push('S3_AUDIT_LOG_SECRET_ACCESS_KEY');
+  if (missingS3AuditVars.length > 0) {
+    environmentErrors.push(
+      `S3_AUDIT_LOG_AWS_IAM_AUTH_ENABLED is not enabled so static credentials are required: ${missingS3AuditVars.join(', ')}`,
+    );
+  }
+}
+
+const redisConfigResult = parseRedisConfigFromEnvironment(
+  processEnv,
+  configs.base.success ? configs.base.data.AWS_REGION : undefined,
+);
+
+if (redisConfigResult.type === 'error') {
+  environmentErrors.push(...redisConfigResult.errors);
+}
+
+const postgresConfigResult = parsePostgresConfigFromEnvironment(
+  process.env,
+  configs.base.success ? configs.base.data.AWS_REGION : undefined,
+);
+
+if (postgresConfigResult.type === 'error') {
+  environmentErrors.push(...postgresConfigResult.errors);
+}
+
 if (environmentErrors.length) {
   const fullError = environmentErrors.join(`\n`);
   console.error('❌ Invalid environment variables:', fullError);
@@ -407,7 +501,6 @@ function extractConfig<Input, Output>(config: zod.SafeParseReturnType<Input, Out
 
 const base = extractConfig(configs.base);
 const commerce = extractConfig(configs.commerce);
-const postgres = extractConfig(configs.postgres);
 const sentry = extractConfig(configs.sentry);
 const clickhouse = extractConfig(configs.clickhouse);
 const supertokens = extractConfig(configs.supertokens);
@@ -427,6 +520,7 @@ const s3AuditLog = extractConfig(configs.s3AuditLog);
 const zendeskSupport = extractConfig(configs.zendeskSupport);
 const tracing = extractConfig(configs.tracing);
 const hivePersistedDocuments = extractConfig(configs.hivePersistedDocuments);
+const oidcWorkloadFederation = extractConfig(configs.oidcWorkloadFederation);
 const testUtils = extractConfig(configs.testUtils);
 
 const hiveUsageConfig =
@@ -435,6 +529,7 @@ const hiveUsageConfig =
         target: hive.HIVE_TARGET,
         token: hive.HIVE_ACCESS_TOKEN,
         endpoint: hive.HIVE_USAGE_ENDPOINT ?? null,
+        fieldLevelMetricsEnabled: hive.HIVE_FIELD_USAGE_ENABLED === '1',
       }
     : null;
 
@@ -471,9 +566,6 @@ export const env = {
     webApp: {
       url: base.WEB_APP_URL,
     },
-    tokens: {
-      endpoint: base.TOKENS_ENDPOINT,
-    },
     commerce: commerce.COMMERCE_ENDPOINT
       ? {
           endpoint: commerce.COMMERCE_ENDPOINT,
@@ -495,14 +587,10 @@ export const env = {
       serverHostIpv6Only: base.SERVER_HOST_IPV6_ONLY,
     }),
   },
-  postgres: {
-    host: postgres.POSTGRES_HOST,
-    port: postgres.POSTGRES_PORT,
-    db: postgres.POSTGRES_DB,
-    user: postgres.POSTGRES_USER,
-    password: postgres.POSTGRES_PASSWORD,
-    ssl: postgres.POSTGRES_SSL === '1',
-  },
+  postgres:
+    postgresConfigResult?.type === 'ok'
+      ? postgresConfigResult.config
+      : raiseInvariant('Unreachable: postgres config errors are caught above via process.exit(1)'),
   clickhouse: {
     protocol: clickhouse.CLICKHOUSE_PROTOCOL,
     host: clickhouse.CLICKHOUSE_HOST,
@@ -656,4 +744,14 @@ export const env = {
     /** Whether metric alert rules should be enabled cluster-wide. */
     metricAlertRulesEnabled: base.FEATURE_FLAGS_METRIC_ALERT_RULES_ENABLED === '1',
   },
+  oidcWorkloadFederation:
+    oidcWorkloadFederation.OIDC_WORKLOAD_FEDERATION_IDENTITY_PROVIDER === 'azure'
+      ? {
+          provider: 'azure' as const,
+          tokenFilePath: oidcWorkloadFederation.AZURE_FEDERATED_TOKEN_FILE,
+          organizationIds: oidcWorkloadFederation.OIDC_WORKLOAD_FEDERATION_ORGANIZATION_IDS.split(
+            ',',
+          ).map(s => s.trim()),
+        }
+      : null,
 } as const;

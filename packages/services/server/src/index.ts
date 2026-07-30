@@ -26,12 +26,13 @@ import { ArtifactStorageReader } from '@hive/cdn-script/artifact-storage-reader'
 import { AwsClient } from '@hive/cdn-script/aws';
 import { createIsAppDeploymentActive } from '@hive/cdn-script/is-app-deployment-active';
 import { createIsKeyValid } from '@hive/cdn-script/key-validation';
-import { createConnectionString } from '@hive/postgres';
+import { createConnectionStringProvider } from '@hive/postgres';
 import { createHivePubSub } from '@hive/pubsub';
 import {
   configureTracing,
   createRedisClient,
   createServer,
+  generateRdsIamAuthToken,
   registerShutdown,
   registerTRPC,
   reportReadiness,
@@ -49,6 +50,7 @@ import { SuperTokensUserAuthNStrategy } from '../../api/src/modules/auth/lib/sup
 import { TargetAccessTokenStrategy } from '../../api/src/modules/auth/lib/target-access-token-strategy';
 import { OrganizationAccessTokenValidationCache } from '../../api/src/modules/auth/providers/organization-access-token-validation-cache';
 import { OrganizationAccessTokensCache } from '../../api/src/modules/organization/providers/organization-access-tokens-cache';
+import { TargetTokenCache } from '../../api/src/modules/token/providers/target-token-cache';
 import { internalApiRouter } from './api';
 import { asyncStorage } from './async-storage';
 import { env } from './environment';
@@ -57,6 +59,7 @@ import { clickHouseElapsedDuration, clickHouseReadDuration } from './metrics';
 import { createOtelAuthEndpoint } from './otel-auth-endpoint';
 import { createPublicGraphQLHandler } from './public-graphql-handler';
 import { registerSupertokensAtHome } from './supertokens-at-home';
+import { WorkloadIdentityFederationProvider } from './workload-identity-federation';
 
 class CorsError extends Error {
   constructor() {
@@ -165,12 +168,36 @@ export async function main() {
     };
   });
 
+  const rdsIamTokenGenerator = env.postgres.awsIamAuthEnabled
+    ? () =>
+        generateRdsIamAuthToken(
+          {
+            region: env.postgres.awsRegion ?? '',
+            hostname: env.postgres.host,
+            port: env.postgres.port,
+            username: env.postgres.user,
+          },
+          server.log.child({ source: 'RdsIamAuthTokenGenerator' }),
+        )
+    : undefined;
+
   const storage = await createPostgreSQLStorage(
-    createConnectionString(env.postgres),
+    createConnectionStringProvider(env.postgres, rdsIamTokenGenerator),
     10,
     tracing ? [tracing.instrumentSlonik()] : [],
   );
   const taskScheduler = new TaskScheduler(storage.pool);
+
+  const workloadIdentityFederation = env.oidcWorkloadFederation
+    ? new WorkloadIdentityFederationProvider(
+        env.oidcWorkloadFederation.tokenFilePath,
+        server.log.child({ source: 'WorkloadIdentityFederation' }),
+      )
+    : null;
+
+  if (workloadIdentityFederation) {
+    await workloadIdentityFederation.start();
+  }
 
   const redis = await createRedisClient(env.redis, {
     logger: server.log.child({ source: 'Redis' }),
@@ -194,6 +221,7 @@ export async function main() {
       await server.close();
       server.log.info('Stopping Storage handler...');
       await storage.destroy();
+      workloadIdentityFederation?.stop();
       server.log.info('Shutdown complete.');
     },
   });
@@ -269,9 +297,6 @@ export async function main() {
             rateLimit: env.supertokens.rateLimit,
           }
         : null,
-      tokens: {
-        endpoint: env.hiveServices.tokens.endpoint,
-      },
       commerce: {
         endpoint: env.hiveServices.commerce ? env.hiveServices.commerce.endpoint : null,
         billingEnabled: env.hiveServices.commerce ? env.hiveServices.commerce.billing : false,
@@ -407,9 +432,7 @@ export async function main() {
           (logger: Logger) =>
             new TargetAccessTokenStrategy({
               logger,
-              tokensConfig: {
-                endpoint: env.hiveServices.tokens.endpoint,
-              },
+              cache: registry.injector.get(TargetTokenCache),
             }),
         ],
       }),
@@ -541,6 +564,7 @@ export async function main() {
       registry.injector.get(OAuthCache),
       broadcastLog,
       env.supertokens.secrets,
+      workloadIdentityFederation,
     );
 
     if (env.cdn.providers.api !== null) {

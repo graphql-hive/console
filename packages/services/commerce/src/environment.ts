@@ -1,5 +1,9 @@
 import zod from 'zod';
-import { OpenTelemetryConfigurationModel, resolveServerListenOptions } from '@hive/service-common';
+import {
+  OpenTelemetryConfigurationModel,
+  parsePostgresConfigFromEnvironment,
+  resolveServerListenOptions,
+} from '@hive/service-common';
 
 const isNumberString = (input: unknown) => zod.string().regex(/^\d+$/).safeParse(input).success;
 
@@ -20,12 +24,17 @@ export const emptyString = <T extends zod.ZodType>(input: T) => {
   }, input);
 };
 
+function raiseInvariant(reason: string): never {
+  throw new Error(reason);
+}
+
 const EnvironmentModel = zod.object({
   PORT: emptyString(NumberFromString.optional()),
   SERVER_HOST: emptyString(zod.string().optional()),
   SERVER_HOST_IPV6_ONLY: emptyString(zod.union([zod.literal('1'), zod.literal('0')]).optional()),
   ENVIRONMENT: emptyString(zod.string().optional()),
   RELEASE: emptyString(zod.string().optional()),
+  AWS_REGION: emptyString(zod.string().optional()),
 });
 
 const SentryModel = zod.union([
@@ -71,15 +80,6 @@ const ClickHouseModel = zod.object({
   CLICKHOUSE_PASSWORD: zod.string(),
 });
 
-const PostgresModel = zod.object({
-  POSTGRES_SSL: emptyString(zod.union([zod.literal('1'), zod.literal('0')]).optional()),
-  POSTGRES_HOST: zod.string(),
-  POSTGRES_PORT: NumberFromString,
-  POSTGRES_DB: zod.string(),
-  POSTGRES_USER: zod.string(),
-  POSTGRES_PASSWORD: emptyString(zod.string().optional()),
-});
-
 const HiveServicesModel = zod.object({
   WEB_APP_URL: emptyString(zod.string().url().optional()),
 });
@@ -97,7 +97,6 @@ const configs = {
   base: EnvironmentModel.safeParse(process.env),
   sentry: SentryModel.safeParse(process.env),
   clickhouse: ClickHouseModel.safeParse(process.env),
-  postgres: PostgresModel.safeParse(process.env),
   prometheus: PrometheusModel.safeParse(process.env),
   log: LogModel.safeParse(process.env),
   tracing: OpenTelemetryConfigurationModel.safeParse(process.env),
@@ -112,6 +111,15 @@ for (const config of Object.values(configs)) {
   if (config.success === false) {
     environmentErrors.push(JSON.stringify(config.error.format(), null, 4));
   }
+}
+
+const postgresConfigResult = parsePostgresConfigFromEnvironment(
+  process.env,
+  configs.base.success ? configs.base.data.AWS_REGION : undefined,
+);
+
+if (postgresConfigResult.type === 'error') {
+  environmentErrors.push(...postgresConfigResult.errors);
 }
 
 if (environmentErrors.length) {
@@ -129,7 +137,6 @@ function extractConfig<Input, Output>(config: zod.SafeParseReturnType<Input, Out
 
 const base = extractConfig(configs.base);
 const clickhouse = extractConfig(configs.clickhouse);
-const postgres = extractConfig(configs.postgres);
 const sentry = extractConfig(configs.sentry);
 const prometheus = extractConfig(configs.prometheus);
 const log = extractConfig(configs.log);
@@ -159,14 +166,10 @@ export const env = {
     username: clickhouse.CLICKHOUSE_USERNAME,
     password: clickhouse.CLICKHOUSE_PASSWORD,
   },
-  postgres: {
-    host: postgres.POSTGRES_HOST,
-    port: postgres.POSTGRES_PORT,
-    db: postgres.POSTGRES_DB,
-    user: postgres.POSTGRES_USER,
-    password: postgres.POSTGRES_PASSWORD,
-    ssl: postgres.POSTGRES_SSL === '1',
-  },
+  postgres:
+    postgresConfigResult?.type === 'ok'
+      ? postgresConfigResult.config
+      : raiseInvariant('Unreachable: postgres config errors are caught above via process.exit(1)'),
   sentry: sentry.SENTRY === '1' ? { dsn: sentry.SENTRY_DSN } : null,
   log: {
     level: log.LOG_LEVEL ?? 'info',

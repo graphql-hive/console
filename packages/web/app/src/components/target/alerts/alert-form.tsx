@@ -426,6 +426,13 @@ export function AlertForm(props: AlertFormProps) {
   } = props;
   const { toast } = useToast();
 
+  // Matches the link the workflows notifier builds (buildAlertUrl in
+  // packages/services/workflows/src/lib/metric-alert-notifier.ts). A rule being
+  // created has no id yet, so the preview shows a placeholder segment.
+  const alertUrl = `${window.location.origin}/${organizationSlug}/${projectSlug}/${targetSlug}/alerts/${
+    props.mode === 'edit' ? props.ruleId : '{ruleId}'
+  }`;
+
   const [channelsQuery] = useQuery({
     query: AlertForm_ChannelsQuery,
     variables: { organizationSlug, projectSlug },
@@ -828,6 +835,7 @@ export function AlertForm(props: AlertFormProps) {
                           <FormControl>
                             <Input
                               type="number"
+                              step="any"
                               min={0}
                               max={valueMax}
                               placeholder={valuePlaceholder}
@@ -969,6 +977,7 @@ export function AlertForm(props: AlertFormProps) {
               }
               targetSlug={targetSlug}
               projectSlug={projectSlug}
+              alertUrl={alertUrl}
             />
           </div>
         ) : null}

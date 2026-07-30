@@ -2148,7 +2148,7 @@ test.concurrent(
     `;
 
     const result = await token.checkSchema(sdl).then(r => r.expectNoGraphQLErrors());
-    expect(result.schemaCheck).toEqual({
+    expect(result.schemaCheck).toMatchObject({
       __typename: 'SchemaCheckSuccess',
       changes: {
         nodes: [

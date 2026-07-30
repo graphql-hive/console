@@ -15,6 +15,7 @@ export type AlertChannelRow = {
 
 export type NotificationEvent = {
   state: 'firing' | 'resolved';
+  ruleId: string;
   rule: Pick<
     MetricAlertRuleRow,
     | 'organizationId'
@@ -34,11 +35,25 @@ export type NotificationEvent = {
   targetSlug: string;
 };
 
+/**
+ * Deep link to the rule detail page. Null when the Hive Console URL isn't
+ * configured (`WEB_APP_URL` is optional for the workflows service), in which
+ * case notifications go out without a link.
+ */
+export function buildAlertUrl(webAppUrl: string | null, event: NotificationEvent): string | null {
+  if (!webAppUrl) {
+    return null;
+  }
+
+  return `${webAppUrl}/${event.organizationSlug}/${event.projectSlug}/${event.targetSlug}/alerts/${event.ruleId}`;
+}
+
 export async function sendSlackNotification(args: {
   channel: AlertChannelRow;
   event: NotificationEvent;
   pg: PostgresDatabasePool;
   logger: Logger;
+  webAppUrl: string | null;
 }) {
   const { channel, event, pg, logger } = args;
 
@@ -65,17 +80,20 @@ export async function sendSlackNotification(args: {
   const client = new WebClient(token);
 
   const isFiring = event.state === 'firing';
-  const emoji = isFiring ? ':rotating_light:' : ':white_check_mark:';
   const action = isFiring ? 'triggered' : 'resolved';
-  // `good` is Slack's preset for the resolved state — it renders Slack's own
-  // green. Firing uses the severity hex (prefixed with `#`).
-  const color = isFiring ? `#${severityColor(event.rule.severity)}` : 'good';
+  // Slack renders the named presets (`good`/`warning`/`danger`) as the default
+  // grey bar, so both states pass an explicit hex.
+  const color = `#${isFiring ? severityColor(event.rule.severity) : RESOLVED_COLOR}`;
 
   const changeText = formatChangeText(event);
+  const alertUrl = buildAlertUrl(args.webAppUrl, event);
 
   await client.chat.postMessage({
     channel: channel.slackChannel,
-    text: `${emoji} Metric alert ${action}: "${event.rule.name}"`,
+    text: `Metric alert ${action}: "${event.rule.name}"`,
+    // Slack would otherwise attach a preview card for the console link.
+    unfurl_links: false,
+    unfurl_media: false,
     attachments: [
       {
         color,
@@ -89,6 +107,7 @@ export async function sendSlackNotification(args: {
                 `Type: ${event.rule.type} | Severity: ${event.rule.severity}`,
                 changeText,
                 `Target: \`${event.targetSlug}\` in \`${event.projectSlug}\``,
+                ...(alertUrl ? [`<${alertUrl}|View alert in Hive>`] : []),
               ].join('\n'),
             },
           },
@@ -108,6 +127,7 @@ export async function sendWebhookNotification(args: {
   idempotencyKey: string;
   attempt: number;
   maxAttempts: number;
+  webAppUrl: string | null;
 }) {
   const { channel, event, logger } = args;
 
@@ -116,7 +136,7 @@ export async function sendWebhookNotification(args: {
     return;
   }
 
-  const payload = buildWebhookPayload(event);
+  const payload = buildWebhookPayload(event, args.webAppUrl);
 
   await sendWebhook(logger, args.requestBroker, {
     attempt: args.attempt,
@@ -137,6 +157,7 @@ export async function sendTeamsNotification(args: {
   idempotencyKey: string;
   attempt: number;
   maxAttempts: number;
+  webAppUrl: string | null;
 }) {
   const { channel, event, logger } = args;
 
@@ -146,11 +167,11 @@ export async function sendTeamsNotification(args: {
   }
 
   const isFiring = event.state === 'firing';
-  const emoji = isFiring ? '🔴' : '✅';
   const action = isFiring ? 'triggered' : 'resolved';
   const themeColor = isFiring ? severityColor(event.rule.severity) : RESOLVED_COLOR;
 
   const changeText = formatChangeText(event);
+  const alertUrl = buildAlertUrl(args.webAppUrl, event);
 
   const card = {
     '@type': 'MessageCard',
@@ -159,13 +180,13 @@ export async function sendTeamsNotification(args: {
     summary: `Metric alert ${action}: "${event.rule.name}"`,
     sections: [
       {
-        activityTitle: `${emoji} ${event.rule.name} — ${action}`,
+        activityTitle: `${event.rule.name} — ${action}`,
         facts: [
           { name: 'Type', value: event.rule.type },
           { name: 'Severity', value: event.rule.severity },
           { name: 'Target', value: `${event.targetSlug} in ${event.projectSlug}` },
         ],
-        text: changeText,
+        text: alertUrl ? `${changeText}\n\n[View alert in Hive](${alertUrl})` : changeText,
       },
     ],
   };
@@ -190,8 +211,7 @@ const SEVERITY_COLORS: Record<NotificationEvent['rule']['severity'], string> = {
   CRITICAL: 'c62424',
 };
 /**
- * Resolved-state green for MS Teams. Teams' `themeColor` must be a hex, so it
- * can't use Slack's `good` preset.
+ * Resolved-state green (no leading `#`), shared by Slack and Teams.
  */
 const RESOLVED_COLOR = '2ECC71';
 
@@ -280,7 +300,7 @@ function formatChangeText(event: NotificationEvent): string {
   return `${metricLabel}: **${currentValue.toFixed(2)}${unit}** (threshold: ${rule.thresholdValue}${rule.thresholdType === 'PERCENTAGE_CHANGE' ? '%' : unit})`;
 }
 
-function buildWebhookPayload(event: NotificationEvent) {
+export function buildWebhookPayload(event: NotificationEvent, webAppUrl: string | null) {
   const { rule, currentValue, previousValue } = event;
   const changePercent =
     previousValue !== null && previousValue !== 0
@@ -307,6 +327,9 @@ function buildWebhookPayload(event: NotificationEvent) {
     target: { slug: event.targetSlug },
     project: { slug: event.projectSlug },
     organization: { slug: event.organizationSlug },
+    // Always present so the payload shape stays stable; null when the Hive
+    // Console URL isn't configured.
+    url: buildAlertUrl(webAppUrl, event),
   };
 }
 

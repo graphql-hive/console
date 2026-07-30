@@ -16,6 +16,7 @@ import {
   SerializableValue,
   TaggedTemplateLiteralInvocation,
   UniqueIntegrityConstraintViolationError,
+  type ConnectionStringProvider,
 } from '@hive/postgres';
 import { createSDLHash, ProjectType } from '../../api/src/shared/entities';
 import { batch, batchBy } from '../../api/src/shared/helpers';
@@ -33,7 +34,6 @@ import {
 
 export type { Interceptor };
 
-export { createTokenStorage } from './tokens';
 export type { tokens, schema_policy_resource } from './db/types';
 
 const organizationGetStartedMapping: Record<
@@ -49,7 +49,7 @@ const organizationGetStartedMapping: Record<
 };
 
 export async function createStorage(
-  connection: string,
+  connection: string | ConnectionStringProvider,
   maximumPoolSize: number,
   additionalInterceptors?: Array<Interceptor>,
 ): Promise<Storage> {

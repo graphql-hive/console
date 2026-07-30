@@ -59,6 +59,7 @@ overrides:
   '@opentelemetry/propagator-jaeger@<2.9.0': 2.9.0
   sharp@<0.35.0: 0.35.0
   body-parser@1.x.x: 1.20.6
+  prettier-plugin-sh: 0.19.0
 
 patchedDependencies:
   '@apollo/federation@0.38.1':
@@ -83,7 +84,7 @@ patchedDependencies:
     hash: d1dc04fa0009203663f00e051630035b556b6bd06913c6ab45aeee47ccdedd46
     path: patches/@oclif__core@4.0.6.patch
   '@slonik/pg-driver':
-    hash: d281baceb3dc04c2d6348d8b2bb1f5598bef4e24a6a173fc0048c2b3ab6e27ea
+    hash: c9e1450b7d73280ac4a32ed554a05495054e82c2d65086f19d80c90bbf80d488
     path: patches/@slonik__pg-driver.patch
   '@theguild/editor@1.2.5':
     hash: a401455daa519af0fe686b4f970a02582f9e406c520aad19273a8eeef8f4adf7
@@ -110,7 +111,7 @@ patchedDependencies:
     hash: 195ae63d47810ca4c987421948f15869356e598dccde9e8c9a4ff4efd3e88322
     path: patches/p-cancelable@4.0.1.patch
   slonik:
-    hash: e16e74ebc8c5f42be257d540b5ac7d175ff3264481046b5c33fc647c9997acdc
+    hash: f3bf6d4d34249f6f9a4647d24fa4af00163597e4c8a5e94e20eca7959f1f2caa
     path: patches/slonik.patch
 
 importers:
@@ -252,9 +253,6 @@ importers:
 
   deployment:
     dependencies:
-      '@lbrlabs/pulumi-grafana':
-        specifier: 0.1.0
-        version: 0.1.0(ts-node@10.9.2(@swc/core@1.13.5)(@types/node@24.13.3)(typescript@5.7.3))(typescript@5.7.3)
       '@manypkg/get-packages':
         specifier: 2.2.2
         version: 2.2.2
@@ -279,6 +277,9 @@ importers:
       '@pulumi/random':
         specifier: 4.18.2
         version: 4.18.2(ts-node@10.9.2(@swc/core@1.13.5)(@types/node@24.13.3)(typescript@5.7.3))(typescript@5.7.3)
+      '@pulumiverse/grafana':
+        specifier: 2.35.0
+        version: 2.35.0(ts-node@10.9.2(@swc/core@1.13.5)(@types/node@24.13.3)(typescript@5.7.3))(typescript@5.7.3)
       js-yaml:
         specifier: 4.3.0
         version: 4.3.0
@@ -331,6 +332,12 @@ importers:
       '@graphql-hive/core':
         specifier: workspace:*
         version: link:../packages/libraries/core/dist
+      '@graphql-hive/gateway-plugin-console-sdk':
+        specifier: workspace:*
+        version: link:../packages/libraries/gateway-plugin-console-sdk/dist
+      '@graphql-hive/gateway-runtime':
+        specifier: ^1.0.0 || ^2.0.0
+        version: 2.9.10(graphql@16.9.0)(ioredis@5.10.1)(pino@10.3.0)(ws@8.21.0)
       '@graphql-typed-document-node/core':
         specifier: 3.2.0
         version: 3.2.0(graphql@16.9.0)
@@ -352,6 +359,9 @@ importers:
       '@hive/storage':
         specifier: workspace:*
         version: link:../packages/services/storage
+      '@hive/workflows':
+        specifier: workspace:*
+        version: link:../packages/services/workflows
       '@theguild/federation-composition':
         specifier: 0.23.3
         version: 0.23.3(graphql@16.9.0)
@@ -431,13 +441,13 @@ importers:
         version: 1.0.0
       slonik:
         specifier: 48.13.2
-        version: 48.13.2(patch_hash=e16e74ebc8c5f42be257d540b5ac7d175ff3264481046b5c33fc647c9997acdc)
+        version: 48.13.2(patch_hash=f3bf6d4d34249f6f9a4647d24fa4af00163597e4c8a5e94e20eca7959f1f2caa)
       slonik-interceptor-query-logging:
         specifier: 48.13.2
-        version: 48.13.2(slonik@48.13.2(patch_hash=e16e74ebc8c5f42be257d540b5ac7d175ff3264481046b5c33fc647c9997acdc))
+        version: 48.13.2(slonik@48.13.2(patch_hash=f3bf6d4d34249f6f9a4647d24fa4af00163597e4c8a5e94e20eca7959f1f2caa))
       slonik-sql-tag-raw:
         specifier: 48.13.2
-        version: 48.13.2(slonik@48.13.2(patch_hash=e16e74ebc8c5f42be257d540b5ac7d175ff3264481046b5c33fc647c9997acdc))
+        version: 48.13.2(slonik@48.13.2(patch_hash=f3bf6d4d34249f6f9a4647d24fa4af00163597e4c8a5e94e20eca7959f1f2caa))
       zod:
         specifier: 3.25.76
         version: 3.25.76
@@ -445,6 +455,9 @@ importers:
       '@hive/service-common':
         specifier: workspace:*
         version: link:../../services/service-common
+      vitest:
+        specifier: 4.1.3
+        version: 4.1.3(@opentelemetry/api@1.9.1)(@types/node@25.5.0)(happy-dom@20.10.6)(msw@2.12.7(@types/node@25.5.0)(typescript@5.7.3))(vite@7.3.6(@types/node@25.5.0)(jiti@2.6.1)(less@4.2.0)(lightningcss@1.31.1)(terser@5.37.0)(tsx@4.19.2)(yaml@2.8.3))
 
   packages/libraries/apollo:
     dependencies:
@@ -659,6 +672,29 @@ importers:
       graphql:
         specifier: 16.9.0
         version: 16.9.0
+    publishDirectory: dist
+
+  packages/libraries/gateway-plugin-console-sdk:
+    dependencies:
+      '@graphql-hive/core':
+        specifier: workspace:*
+        version: link:../core/dist
+      '@graphql-hive/gateway-runtime':
+        specifier: ^1.0.0 || ^2.0.0
+        version: 2.9.10(graphql@16.9.0)(ioredis@5.10.1)(pino@10.3.0)(ws@8.21.0)
+      graphql:
+        specifier: ^0.13.0 || ^14.0.0 || ^15.0.0 || ^16.0.0
+        version: 16.9.0
+      tiny-lru:
+        specifier: '*'
+        version: 11.4.7
+    devDependencies:
+      '@envelop/types':
+        specifier: ^5.0.0
+        version: 5.0.0
+      graphql-yoga:
+        specifier: 5.13.3
+        version: 5.13.3(graphql@16.9.0)
     publishDirectory: dist
 
   packages/libraries/laboratory:
@@ -1135,9 +1171,6 @@ importers:
       '@hive/storage':
         specifier: workspace:*
         version: link:../storage
-      '@hive/tokens':
-        specifier: workspace:*
-        version: link:../tokens
       '@hive/usage-common':
         specifier: workspace:*
         version: link:../usage-common
@@ -1713,6 +1746,9 @@ importers:
       '@aws-sdk/credential-providers':
         specifier: 3.1035.0
         version: 3.1035.0
+      '@aws-sdk/rds-signer':
+        specifier: 3.1035.0
+        version: 3.1035.0
       '@aws-sdk/util-format-url':
         specifier: 3.972.13
         version: 3.972.13
@@ -1852,57 +1888,6 @@ importers:
         specifier: 3.25.76
         version: 3.25.76
 
-  packages/services/tokens:
-    devDependencies:
-      '@hive/postgres':
-        specifier: workspace:*
-        version: link:../../internal/postgres
-      '@hive/service-common':
-        specifier: workspace:*
-        version: link:../service-common
-      '@hive/storage':
-        specifier: workspace:*
-        version: link:../storage
-      '@sentry/node':
-        specifier: 7.120.2
-        version: 7.120.2
-      '@trpc/server':
-        specifier: 10.45.3
-        version: 10.45.3
-      '@types/ms':
-        specifier: 0.7.34
-        version: 0.7.34
-      dotenv:
-        specifier: 16.4.7
-        version: 16.4.7
-      fastify:
-        specifier: 5.10.0
-        version: 5.10.0
-      lru-cache:
-        specifier: 11.0.2
-        version: 11.0.2
-      ms:
-        specifier: 2.1.3
-        version: 2.1.3
-      p-timeout:
-        specifier: 6.1.4
-        version: 6.1.4
-      pino-pretty:
-        specifier: 11.3.0
-        version: 11.3.0
-      reflect-metadata:
-        specifier: 0.2.2
-        version: 0.2.2
-      tiny-lru:
-        specifier: 11.4.7
-        version: 11.4.7
-      tslib:
-        specifier: 2.8.1
-        version: 2.8.1
-      zod:
-        specifier: 3.25.76
-        version: 3.25.76
-
   packages/services/usage:
     devDependencies:
       '@hive/api':
@@ -1917,9 +1902,6 @@ importers:
       '@hive/storage':
         specifier: workspace:*
         version: link:../storage
-      '@hive/tokens':
-        specifier: workspace:*
-        version: link:../tokens
       '@hive/usage-common':
         specifier: workspace:*
         version: link:../usage-common
@@ -1932,9 +1914,6 @@ importers:
       '@trpc/client':
         specifier: 10.45.3
         version: 10.45.3(@trpc/server@10.45.3)
-      '@trpc/server':
-        specifier: 10.45.3
-        version: 10.45.3
       ajv:
         specifier: ^8.18.0
         version: 8.18.0
@@ -3046,6 +3025,10 @@ packages:
 
   '@aws-sdk/nested-clients@3.997.11':
     resolution: {integrity: sha512-nWXXJ1r/r8N2Gw1pWolRgED38/A9A8DHR2ETWIv220zh4PZHcybbR4hUVWWktmNXTRHzDJwRluapHn0rZxuoqA==}
+    engines: {node: '>=20.0.0'}
+
+  '@aws-sdk/rds-signer@3.1035.0':
+    resolution: {integrity: sha512-FrrZh58MbXM0tbXF4tTVz1KV17vQqP9baWmjkqB21E6B3vggmLjzbsKAA0c0J7R7r5eNFULeRmOBvrGr5vOHIQ==}
     engines: {node: '>=20.0.0'}
 
   '@aws-sdk/region-config-resolver@3.969.0':
@@ -4671,12 +4654,6 @@ packages:
     peerDependencies:
       graphql: ^14.0.0 || ^15.0.0 || ^16.0.0 || ^17.0.0
 
-  '@graphql-tools/batch-execute@10.0.8':
-    resolution: {integrity: sha512-Kobt37qrVTFhX4HUK5/vPgMXFw/5f97AzmAlfmDBSRh/GnoAmLKCb48FrEI3gdeIwZB2fEhVHJyDqsojldnLQA==}
-    engines: {node: '>=20.0.0'}
-    peerDependencies:
-      graphql: ^14.0.0 || ^15.0.0 || ^16.0.0 || ^17.0.0
-
   '@graphql-tools/batch-execute@10.0.9':
     resolution: {integrity: sha512-khIgAPlyaWJ3dVX6SsqOkABZCH1Gii32WHn3xMzavupsxPCfb/9G3zjdswptzTFrOcZ92dWo7MXvwNFkRfNN4w==}
     engines: {node: '>=20.0.0'}
@@ -4738,12 +4715,6 @@ packages:
   '@graphql-tools/delegate@10.2.23':
     resolution: {integrity: sha512-xrPtl7f1LxS+B6o+W7ueuQh67CwRkfl+UKJncaslnqYdkxKmNBB4wnzVcW8ZsRdwbsla/v43PtwAvSlzxCzq2w==}
     engines: {node: '>=18.0.0'}
-    peerDependencies:
-      graphql: ^14.0.0 || ^15.0.0 || ^16.0.0 || ^17.0.0
-
-  '@graphql-tools/delegate@12.0.16':
-    resolution: {integrity: sha512-WEJaFwWG82a0VzhfE4sRsaOPjxgCVfn4fOe3ho+r3uIbPYpc7qHpFdu1PLg6meikq6fuW9NJ1J88fEgnWuXDVg==}
-    engines: {node: '>=20.0.0'}
     peerDependencies:
       graphql: ^14.0.0 || ^15.0.0 || ^16.0.0 || ^17.0.0
 
@@ -5941,9 +5912,6 @@ packages:
     peerDependencies:
       react: '>=18.0.0'
       react-dom: '>=18.0.0'
-
-  '@lbrlabs/pulumi-grafana@0.1.0':
-    resolution: {integrity: sha512-REc/LQOy17O9jbZnBNm4tLjLJKxOfLaWPIB2CFiAtM1VzwU3FzZQFs0K+XGkuZwWdB+tl2/VHdHv+FqsUrit2w==}
 
   '@lezer/common@1.5.1':
     resolution: {integrity: sha512-6YRVG9vBkaY7p1IVxL4s44n5nUnaNnGM2/AckNgYOnxTG2kWh1vR8BMxPseWPjRNpb5VtXnMpeYAEAADoRV1Iw==}
@@ -7582,6 +7550,9 @@ packages:
   '@pulumi/random@4.18.2':
     resolution: {integrity: sha512-jC0HfgkFKwgUGmocM7Tw6UyOrpLFXGO8kYfV6f5Q9R/yziaVxEVPQ0Uup2HfosDh926EZHJrt2EUIJHWCyOvFA==}
 
+  '@pulumiverse/grafana@2.35.0':
+    resolution: {integrity: sha512-WV/+L26dkGHSjAAqyqSe24OTIXDMCqbjY3UggZ0vhwUUzH8fsIsL7BQA5FQQNbBHzfCn6nBZCaGpVwY7EPobSQ==}
+
   '@radix-ui/number@1.1.0':
     resolution: {integrity: sha512-V3gRzhVNU1ldS5XhAPTom1fOIo4ccrjjJgmE+LI2h/WaFpHmx0MQApT+KZHnx8abG6Avtfcz4WoEciMnpFT3HQ==}
 
@@ -8988,6 +8959,31 @@ packages:
   '@repeaterjs/repeater@3.0.6':
     resolution: {integrity: sha512-Javneu5lsuhwNCryN+pXH93VPQ8g0dBX7wItHFgYiwQmzE1sVdg5tWHiOgHywzL2W21XQopa7IwIEnNbmeUJYA==}
 
+  '@reteps/dockerfmt-darwin-arm64@0.5.4':
+    resolution: {integrity: sha512-urMqV+dQyvVI8/WrXwClX9e1PEyS35wFdwJjpZYmL09AkV4Io5U1oam8UBKK7jZk0+YsdF88ay6e86Kn6DIyQg==}
+    cpu: [arm64]
+    os: [darwin]
+
+  '@reteps/dockerfmt-darwin-x64@0.5.4':
+    resolution: {integrity: sha512-fJORy6DFxbgDiMqxpLTPZlb5KUY0Vq0iR4NGnyKnuYZ9LdZUS508DK2kt/AJ87/jIKNV1qRG0JXG1Tc6xdvWjw==}
+    cpu: [x64]
+    os: [darwin]
+
+  '@reteps/dockerfmt-linux-arm64@0.5.4':
+    resolution: {integrity: sha512-6pVakO06eXtDuvxy1Dnjs/gQyUoGGycle8PRSt5IFRwLi/AVaOQwfkfmW0WP8VH9wNUeti6BfJ3ksTn2G+XMxg==}
+    cpu: [arm64]
+    os: [linux]
+
+  '@reteps/dockerfmt-linux-x64@0.5.4':
+    resolution: {integrity: sha512-OD6SIlUV1D4TgJoTui3FMBAZsGbTSPYsiT0BKhD6jMUcJb3GpFTa7dY9rL8rP9FUqfL7OTHVUGUOL4Rh64Olog==}
+    cpu: [x64]
+    os: [linux]
+
+  '@reteps/dockerfmt@0.5.4':
+    resolution: {integrity: sha512-HEGgXVVOb+JtGUSSzXl/XPKFIZjMDTUoHarCjaQdkY+cb5M9K/O3b5xm+x0IPIk3SfHurbc0bSgcFsQlzjitxA==}
+    engines: {node: ^v12.20.0 || ^14.13.0 || >=16.0.0}
+    hasBin: true
+
   '@rolldown/binding-android-arm64@1.0.0-beta.41':
     resolution: {integrity: sha512-Edflndd9lU7JVhVIvJlZhdCj5DkhYDJPIRn4Dx0RUdfc8asP9xHOI5gMd8MesDDx+BJpdIT/uAmVTearteU/mQ==}
     engines: {node: ^20.19.0 || >=22.12.0}
@@ -9644,6 +9640,11 @@ packages:
     resolution: {integrity: sha512-JStomOrINQA1VqNEopLsgcdgwd42au7mykKqVr30XFw89wLt9sDxJDi4djVPRwQmmzyTGy/uOvTc2ultMpFi1w==}
     engines: {node: '>=18.0.0'}
 
+  '@smithy/core@3.24.1':
+    resolution: {integrity: sha512-3mT7o4qQyUWttYnVK3A0Z/u3Xha3E81tXn32Tz6vjZiUXhBrkEivpw1hBYfh84iFF9CSzkBU9Y1DJ3Q6RQ231g==}
+    engines: {node: '>=18.0.0'}
+    deprecated: Deprecated due to bug in browser bundling instructions https://github.com/smithy-lang/smithy-typescript/issues/2025
+
   '@smithy/core@3.24.4':
     resolution: {integrity: sha512-3UNRKEyQyAgVgM0LGlerCLm+ChZWZ1GPfde+jBEW6bm6bSBGU1p0EbblaUV3unbhwvidjLA5Zs3sOs7mnZwvAw==}
     engines: {node: '>=18.0.0'}
@@ -9915,10 +9916,6 @@ packages:
   '@smithy/util-buffer-from@2.2.0':
     resolution: {integrity: sha512-IJdWBbTcMQ6DA0gdNhh/BwrLkDR+ADW5Kr1aZmd4k3DIF6ezMV4R2NIAmT08wQJ3yUK82thHWmC/TnK/wpMMIA==}
     engines: {node: '>=14.0.0'}
-
-  '@smithy/util-buffer-from@4.2.0':
-    resolution: {integrity: sha512-kAY9hTKulTNevM2nlRtxAG2FQ3B2OR6QIrPY3zE5LqJy1oxzmgBGsHLWTcNhWXKchgA0WHW+mZkQrng/pgcCew==}
-    engines: {node: '>=18.0.0'}
 
   '@smithy/util-buffer-from@4.2.2':
     resolution: {integrity: sha512-FDXD7cvUoFWwN6vtQfEta540Y/YBe5JneK3SoZg9bThSoOAC/eGeYEua6RkBgKjGa/sz6Y+DuBZj3+YEY21y4Q==}
@@ -16091,10 +16088,6 @@ packages:
     resolution: {integrity: sha512-WWdIxpyjEn+FhQJQQv9aQAYlHoNVdzIzUySNV1gHUPDSdZJ3yZn7pAAbQcV7B56Mvu881q9FZV+0Vx2xC44VWA==}
     engines: {node: ^18.17.0 || >=20.5.0}
 
-  mvdan-sh@0.10.1:
-    resolution: {integrity: sha512-kMbrH0EObaKmK3nVRKUIIya1dpASHIEusM13S4V1ViHFuxuNxCo+arxoa6j/dbV22YBGjl7UKJm9QQKJ2Crzhg==}
-    deprecated: See https://github.com/mvdan/sh/issues/1145
-
   mz@2.7.0:
     resolution: {integrity: sha512-z81GNO7nnYMEhrGh9LeymoE4+Yr0Wn5McHIZMK5cfQCl+NDX08sCZgUc9/6MHni9IWuFLm1Z3HTCXu2z9fN62Q==}
 
@@ -16949,11 +16942,11 @@ packages:
     peerDependencies:
       prettier: ^3.0.0
 
-  prettier-plugin-sh@0.14.0:
-    resolution: {integrity: sha512-hfXulj5+zEl/ulrO5kMuuTPKmXvOg0bnLHY1hKFNN/N+/903iZbNp8NyZBTsgI8dtkSgFfAEIQq0IQTyP1ZVFQ==}
+  prettier-plugin-sh@0.19.0:
+    resolution: {integrity: sha512-39VXFZH/cOGtcuu8aeSvqp/hhwomOR4QroZUj+jBz2cNb3os9s0sqFZSNlYts6jdtLLDU7D2YT3Z1+abtb7adQ==}
     engines: {node: '>=16.0.0'}
     peerDependencies:
-      prettier: ^3.0.3
+      prettier: ^3.6.0
 
   prettier-plugin-sql@0.18.1:
     resolution: {integrity: sha512-2+Nob2sg7hzLAKJoE6sfgtkhBZCqOzrWHZPvE4Kee/e80oOyI4qwy9vypeltqNBJwTtq3uiKPrCxlT03bBpOaw==}
@@ -17914,8 +17907,8 @@ packages:
   setprototypeof@1.2.0:
     resolution: {integrity: sha512-E5LDX7Wrp85Kil5bhZv46j8jOeboKq5JMmYM3gVGdGH8xFpPWXUMsNrlODCrkoxMEeNi/XZIwuRvY4XNwYMJpw==}
 
-  sh-syntax@0.4.1:
-    resolution: {integrity: sha512-MW/ZsCYTu11EIYYTSZcfAgMFszAodCmQVB27XssHoIN6L4EG0KSA3h32x8whaSOKuYBX5wz9EybfnPBUFQMCKA==}
+  sh-syntax@0.6.0:
+    resolution: {integrity: sha512-52VK6z/cdZHv7UURjIcwfBUQZrAhIEEe0bY4lrkfypjnFIKsDZdD3Uaz/dBiw/sF8BeX0Mssv140s8EnrsJ9dQ==}
     engines: {node: '>=16.0.0'}
 
   sha.js@2.4.12:
@@ -19982,13 +19975,13 @@ snapshots:
   '@aws-crypto/crc32@5.2.0':
     dependencies:
       '@aws-crypto/util': 5.2.0
-      '@aws-sdk/types': 3.973.9
+      '@aws-sdk/types': 3.973.8
       tslib: 2.8.1
 
   '@aws-crypto/crc32c@5.2.0':
     dependencies:
       '@aws-crypto/util': 5.2.0
-      '@aws-sdk/types': 3.973.9
+      '@aws-sdk/types': 3.973.8
       tslib: 2.8.1
 
   '@aws-crypto/sha1-browser@5.2.0':
@@ -20005,7 +19998,7 @@ snapshots:
       '@aws-crypto/sha256-js': 5.2.0
       '@aws-crypto/supports-web-crypto': 5.2.0
       '@aws-crypto/util': 5.2.0
-      '@aws-sdk/types': 3.973.8
+      '@aws-sdk/types': 3.973.9
       '@aws-sdk/util-locate-window': 3.208.0
       '@smithy/util-utf8': 2.3.0
       tslib: 2.8.1
@@ -20013,7 +20006,7 @@ snapshots:
   '@aws-crypto/sha256-js@4.0.0':
     dependencies:
       '@aws-crypto/util': 4.0.0
-      '@aws-sdk/types': 3.973.9
+      '@aws-sdk/types': 3.973.8
       tslib: 1.14.1
 
   '@aws-crypto/sha256-js@5.2.0':
@@ -20243,12 +20236,12 @@ snapshots:
       '@aws-sdk/middleware-user-agent': 3.972.38
       '@aws-sdk/region-config-resolver': 3.972.13
       '@aws-sdk/signature-v4-multi-region': 3.996.25
-      '@aws-sdk/types': 3.973.9
+      '@aws-sdk/types': 3.973.8
       '@aws-sdk/util-endpoints': 3.996.8
       '@aws-sdk/util-user-agent-browser': 3.972.10
       '@aws-sdk/util-user-agent-node': 3.973.24
       '@smithy/config-resolver': 4.4.17
-      '@smithy/core': 3.24.4
+      '@smithy/core': 3.24.1
       '@smithy/fetch-http-handler': 5.3.17
       '@smithy/hash-node': 4.2.14
       '@smithy/invalid-dependency': 4.2.14
@@ -20261,7 +20254,7 @@ snapshots:
       '@smithy/node-http-handler': 4.7.1
       '@smithy/protocol-http': 5.4.3
       '@smithy/smithy-client': 4.13.1
-      '@smithy/types': 4.14.2
+      '@smithy/types': 4.14.1
       '@smithy/url-parser': 4.2.14
       '@smithy/util-base64': 4.3.2
       '@smithy/util-body-length-browser': 4.2.2
@@ -20373,7 +20366,7 @@ snapshots:
   '@aws-sdk/credential-provider-http@3.972.32':
     dependencies:
       '@aws-sdk/core': 3.974.13
-      '@aws-sdk/types': 3.973.9
+      '@aws-sdk/types': 3.973.8
       '@smithy/fetch-http-handler': 5.3.17
       '@smithy/node-http-handler': 4.6.0
       '@smithy/property-provider': 4.2.14
@@ -20854,6 +20847,23 @@ snapshots:
       '@smithy/types': 4.14.2
       tslib: 2.8.1
 
+  '@aws-sdk/rds-signer@3.1035.0':
+    dependencies:
+      '@aws-crypto/sha256-browser': 5.2.0
+      '@aws-crypto/sha256-js': 5.2.0
+      '@aws-sdk/credential-providers': 3.1035.0
+      '@aws-sdk/util-format-url': 3.972.13
+      '@smithy/config-resolver': 4.4.17
+      '@smithy/hash-node': 4.2.14
+      '@smithy/invalid-dependency': 4.2.14
+      '@smithy/node-config-provider': 4.3.14
+      '@smithy/protocol-http': 5.4.3
+      '@smithy/signature-v4': 5.4.3
+      '@smithy/types': 4.14.2
+      tslib: 2.8.1
+    transitivePeerDependencies:
+      - aws-crt
+
   '@aws-sdk/region-config-resolver@3.969.0':
     dependencies:
       '@aws-sdk/types': 3.969.0
@@ -20975,9 +20985,9 @@ snapshots:
 
   '@aws-sdk/util-format-url@3.972.10':
     dependencies:
-      '@aws-sdk/types': 3.973.8
+      '@aws-sdk/types': 3.973.9
       '@smithy/querystring-builder': 4.2.14
-      '@smithy/types': 4.14.1
+      '@smithy/types': 4.14.2
       tslib: 2.8.1
 
   '@aws-sdk/util-format-url@3.972.13':
@@ -22292,7 +22302,7 @@ snapshots:
     dependencies:
       '@n1ru4l/push-pull-async-iterable-iterator': 3.2.0
       graphql: 16.9.0
-      meros: 1.2.1(@types/node@25.5.0)
+      meros: 1.3.2(@types/node@25.5.0)
     optionalDependencies:
       graphql-ws: 5.16.1(graphql@16.9.0)
     transitivePeerDependencies:
@@ -23755,14 +23765,6 @@ snapshots:
       graphql: 16.9.0
       tslib: 2.8.1
 
-  '@graphql-tools/batch-execute@10.0.8(graphql@16.14.2)':
-    dependencies:
-      '@graphql-tools/utils': 11.1.0(graphql@16.14.2)
-      '@whatwg-node/promise-helpers': 1.3.2
-      dataloader: 2.2.3
-      graphql: 16.14.2
-      tslib: 2.8.1
-
   '@graphql-tools/batch-execute@10.0.9(graphql@16.14.2)':
     dependencies:
       '@graphql-tools/utils': 11.1.0(graphql@16.14.2)
@@ -23882,18 +23884,6 @@ snapshots:
       dataloader: 2.2.3
       dset: 3.1.4
       graphql: 16.9.0
-      tslib: 2.8.1
-
-  '@graphql-tools/delegate@12.0.16(graphql@16.14.2)':
-    dependencies:
-      '@graphql-tools/batch-execute': 10.0.8(graphql@16.14.2)
-      '@graphql-tools/executor': 1.5.0(graphql@16.14.2)
-      '@graphql-tools/schema': 10.0.29(graphql@16.14.2)
-      '@graphql-tools/utils': 11.1.0(graphql@16.14.2)
-      '@repeaterjs/repeater': 3.0.6
-      '@whatwg-node/promise-helpers': 1.3.2
-      dataloader: 2.2.3
-      graphql: 16.14.2
       tslib: 2.8.1
 
   '@graphql-tools/delegate@12.0.19(graphql@16.14.2)':
@@ -25029,7 +25019,7 @@ snapshots:
 
   '@graphql-tools/wrap@11.1.2(graphql@16.14.2)':
     dependencies:
-      '@graphql-tools/delegate': 12.0.16(graphql@16.14.2)
+      '@graphql-tools/delegate': 12.0.19(graphql@16.14.2)
       '@graphql-tools/schema': 10.0.29(graphql@16.14.2)
       '@graphql-tools/utils': 10.11.0(graphql@16.14.2)
       '@whatwg-node/promise-helpers': 1.3.2
@@ -25884,16 +25874,6 @@ snapshots:
       - tsx
       - typescript
       - yaml
-
-  '@lbrlabs/pulumi-grafana@0.1.0(ts-node@10.9.2(@swc/core@1.13.5)(@types/node@24.13.3)(typescript@5.7.3))(typescript@5.7.3)':
-    dependencies:
-      '@pulumi/pulumi': 3.214.0(ts-node@10.9.2(@swc/core@1.13.5)(@types/node@24.13.3)(typescript@5.7.3))(typescript@5.7.3)
-    transitivePeerDependencies:
-      - bluebird
-      - kerberos
-      - supports-color
-      - ts-node
-      - typescript
 
   '@lezer/common@1.5.1': {}
 
@@ -28365,6 +28345,16 @@ snapshots:
       - ts-node
       - typescript
 
+  '@pulumiverse/grafana@2.35.0(ts-node@10.9.2(@swc/core@1.13.5)(@types/node@24.13.3)(typescript@5.7.3))(typescript@5.7.3)':
+    dependencies:
+      '@pulumi/pulumi': 3.214.0(ts-node@10.9.2(@swc/core@1.13.5)(@types/node@24.13.3)(typescript@5.7.3))(typescript@5.7.3)
+    transitivePeerDependencies:
+      - bluebird
+      - kerberos
+      - supports-color
+      - ts-node
+      - typescript
+
   '@radix-ui/number@1.1.0': {}
 
   '@radix-ui/number@1.1.1': {}
@@ -29895,6 +29885,25 @@ snapshots:
 
   '@repeaterjs/repeater@3.0.6': {}
 
+  '@reteps/dockerfmt-darwin-arm64@0.5.4':
+    optional: true
+
+  '@reteps/dockerfmt-darwin-x64@0.5.4':
+    optional: true
+
+  '@reteps/dockerfmt-linux-arm64@0.5.4':
+    optional: true
+
+  '@reteps/dockerfmt-linux-x64@0.5.4':
+    optional: true
+
+  '@reteps/dockerfmt@0.5.4':
+    optionalDependencies:
+      '@reteps/dockerfmt-darwin-arm64': 0.5.4
+      '@reteps/dockerfmt-darwin-x64': 0.5.4
+      '@reteps/dockerfmt-linux-arm64': 0.5.4
+      '@reteps/dockerfmt-linux-x64': 0.5.4
+
   '@rolldown/binding-android-arm64@1.0.0-beta.41':
     optional: true
 
@@ -30462,7 +30471,7 @@ snapshots:
     transitivePeerDependencies:
       - zod
 
-  '@slonik/pg-driver@48.13.2(patch_hash=d281baceb3dc04c2d6348d8b2bb1f5598bef4e24a6a173fc0048c2b3ab6e27ea)(zod@4.3.6)':
+  '@slonik/pg-driver@48.13.2(patch_hash=c9e1450b7d73280ac4a32ed554a05495054e82c2d65086f19d80c90bbf80d488)(zod@4.3.6)':
     dependencies:
       '@slonik/driver': 48.13.2(zod@4.3.6)
       '@slonik/errors': 48.13.2(zod@4.3.6)
@@ -30554,6 +30563,12 @@ snapshots:
       '@smithy/uuid': 1.1.2
       tslib: 2.8.1
 
+  '@smithy/core@3.24.1':
+    dependencies:
+      '@aws-crypto/crc32': 5.2.0
+      '@smithy/types': 4.14.2
+      tslib: 2.8.1
+
   '@smithy/core@3.24.4':
     dependencies:
       '@aws-crypto/crc32': 5.2.0
@@ -30643,7 +30658,7 @@ snapshots:
   '@smithy/hash-node@4.2.8':
     dependencies:
       '@smithy/types': 4.14.2
-      '@smithy/util-buffer-from': 4.2.0
+      '@smithy/util-buffer-from': 4.2.2
       '@smithy/util-utf8': 4.2.2
       tslib: 2.8.1
 
@@ -30942,7 +30957,7 @@ snapshots:
 
   '@smithy/util-base64@4.3.0':
     dependencies:
-      '@smithy/util-buffer-from': 4.2.0
+      '@smithy/util-buffer-from': 4.2.2
       '@smithy/util-utf8': 4.2.2
       tslib: 2.8.1
 
@@ -30971,11 +30986,6 @@ snapshots:
   '@smithy/util-buffer-from@2.2.0':
     dependencies:
       '@smithy/is-array-buffer': 2.2.0
-      tslib: 2.8.1
-
-  '@smithy/util-buffer-from@4.2.0':
-    dependencies:
-      '@smithy/is-array-buffer': 4.2.2
       tslib: 2.8.1
 
   '@smithy/util-buffer-from@4.2.2':
@@ -31093,7 +31103,7 @@ snapshots:
       '@smithy/node-http-handler': 4.7.4
       '@smithy/types': 4.14.2
       '@smithy/util-base64': 4.3.2
-      '@smithy/util-buffer-from': 4.2.0
+      '@smithy/util-buffer-from': 4.2.2
       '@smithy/util-hex-encoding': 4.2.2
       '@smithy/util-utf8': 4.2.2
       tslib: 2.8.1
@@ -31129,7 +31139,7 @@ snapshots:
 
   '@smithy/util-utf8@4.2.0':
     dependencies:
-      '@smithy/util-buffer-from': 4.2.0
+      '@smithy/util-buffer-from': 4.2.2
       tslib: 2.8.1
 
   '@smithy/util-utf8@4.2.2':
@@ -31715,7 +31725,7 @@ snapshots:
       '@ianvs/prettier-plugin-sort-imports': 4.3.1(prettier@3.4.2)
       prettier: 3.4.2
       prettier-plugin-pkg: 0.18.0(prettier@3.4.2)
-      prettier-plugin-sh: 0.14.0(prettier@3.4.2)
+      prettier-plugin-sh: 0.19.0(prettier@3.4.2)
     transitivePeerDependencies:
       - '@vue/compiler-sfc'
       - supports-color
@@ -38637,8 +38647,6 @@ snapshots:
 
   mute-stream@2.0.0: {}
 
-  mvdan-sh@0.10.1: {}
-
   mz@2.7.0:
     dependencies:
       any-promise: 1.3.0
@@ -39541,11 +39549,11 @@ snapshots:
     dependencies:
       prettier: 3.4.2
 
-  prettier-plugin-sh@0.14.0(prettier@3.4.2):
+  prettier-plugin-sh@0.19.0(prettier@3.4.2):
     dependencies:
-      mvdan-sh: 0.10.1
+      '@reteps/dockerfmt': 0.5.4
       prettier: 3.4.2
-      sh-syntax: 0.4.1
+      sh-syntax: 0.6.0
 
   prettier-plugin-sql@0.18.1(prettier@3.4.2):
     dependencies:
@@ -40606,9 +40614,7 @@ snapshots:
 
   setprototypeof@1.2.0: {}
 
-  sh-syntax@0.4.1:
-    dependencies:
-      tslib: 2.8.1
+  sh-syntax@0.6.0: {}
 
   sha.js@2.4.12:
     dependencies:
@@ -40750,25 +40756,25 @@ snapshots:
 
   slick@1.12.2: {}
 
-  slonik-interceptor-query-logging@48.13.2(slonik@48.13.2(patch_hash=e16e74ebc8c5f42be257d540b5ac7d175ff3264481046b5c33fc647c9997acdc)):
+  slonik-interceptor-query-logging@48.13.2(slonik@48.13.2(patch_hash=f3bf6d4d34249f6f9a4647d24fa4af00163597e4c8a5e94e20eca7959f1f2caa)):
     dependencies:
       crack-json: 1.3.0
       pretty-ms: 9.3.0
       serialize-error: 12.0.0
-      slonik: 48.13.2(patch_hash=e16e74ebc8c5f42be257d540b5ac7d175ff3264481046b5c33fc647c9997acdc)
+      slonik: 48.13.2(patch_hash=f3bf6d4d34249f6f9a4647d24fa4af00163597e4c8a5e94e20eca7959f1f2caa)
 
-  slonik-sql-tag-raw@48.13.2(slonik@48.13.2(patch_hash=e16e74ebc8c5f42be257d540b5ac7d175ff3264481046b5c33fc647c9997acdc)):
+  slonik-sql-tag-raw@48.13.2(slonik@48.13.2(patch_hash=f3bf6d4d34249f6f9a4647d24fa4af00163597e4c8a5e94e20eca7959f1f2caa)):
     dependencies:
       '@slonik/sql-tag': 48.13.2
       roarr: 7.21.4
-      slonik: 48.13.2(patch_hash=e16e74ebc8c5f42be257d540b5ac7d175ff3264481046b5c33fc647c9997acdc)
+      slonik: 48.13.2(patch_hash=f3bf6d4d34249f6f9a4647d24fa4af00163597e4c8a5e94e20eca7959f1f2caa)
 
-  slonik@48.13.2(patch_hash=e16e74ebc8c5f42be257d540b5ac7d175ff3264481046b5c33fc647c9997acdc):
+  slonik@48.13.2(patch_hash=f3bf6d4d34249f6f9a4647d24fa4af00163597e4c8a5e94e20eca7959f1f2caa):
     dependencies:
       '@opentelemetry/api': 1.9.0
       '@slonik/driver': 48.13.2(zod@4.3.6)
       '@slonik/errors': 48.13.2(zod@4.3.6)
-      '@slonik/pg-driver': 48.13.2(patch_hash=d281baceb3dc04c2d6348d8b2bb1f5598bef4e24a6a173fc0048c2b3ab6e27ea)(zod@4.3.6)
+      '@slonik/pg-driver': 48.13.2(patch_hash=c9e1450b7d73280ac4a32ed554a05495054e82c2d65086f19d80c90bbf80d488)(zod@4.3.6)
       '@slonik/sql-tag': 48.13.2
       '@slonik/utilities': 48.13.2(zod@4.3.6)
       '@standard-schema/spec': 1.0.0

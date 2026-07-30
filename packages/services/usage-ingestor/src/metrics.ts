@@ -51,6 +51,11 @@ export const ingestedOperationsWrites = new metrics.Counter({
   help: 'Number of successfully ingested operations',
 });
 
+export const ingestedOperationErrorsWrites = new metrics.Counter({
+  name: 'usage_ingested_operation_errors_writes',
+  help: 'Number of successfully ingested operations_errors',
+});
+
 export const ingestedOperationsFailures = new metrics.Counter({
   name: 'usage_ingested_operation_failures',
   help: 'Number of failed to ingest operations',
@@ -64,4 +69,9 @@ export const ingestedOperationRegistryWrites = new metrics.Counter({
 export const ingestedOperationRegistryFailures = new metrics.Counter({
   name: 'usage_ingested_operation_registry_failures',
   help: 'Number of failed to ingest registry records',
+});
+
+export const ingestedOperationErrorsFailures = new metrics.Counter({
+  name: 'usage_ingested_operation_errors_failures',
+  help: 'Number of failed to ingest operations_errors',
 });
