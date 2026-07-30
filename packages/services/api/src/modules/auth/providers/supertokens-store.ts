@@ -461,7 +461,7 @@ export class SuperTokensStore {
       )
     `;
 
-    return await (trx ?? this.pool)
+    return await trx
       .transaction('createThirdPartyUser', async t => {
         await t.query(appIdToUserIdQuery);
         const result = await t.one(oidcUserQuery);
