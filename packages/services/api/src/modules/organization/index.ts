@@ -8,9 +8,9 @@ import { OrganizationAccessTokensCache } from './providers/organization-access-t
 import { OrganizationManager } from './providers/organization-manager';
 import { OrganizationMemberRoles } from './providers/organization-member-roles';
 import { OrganizationMembers } from './providers/organization-members';
+import { ProvisionedUsersStore } from './providers/provisioned-users-store';
 import { ResourceAssignments } from './providers/resource-assignments';
 import { ResourceSelector } from './providers/resource-selector';
-import { UsersStore } from './providers/users-store';
 import { resolvers } from './resolvers.generated';
 import typeDefs from './module.graphql';
 
@@ -31,6 +31,6 @@ export const organizationModule = createModule({
     GroupMemberStore,
     GroupRoleAssignmentStore,
     Groups,
-    UsersStore,
+    ProvisionedUsersStore,
   ],
 });

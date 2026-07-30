@@ -15,7 +15,7 @@ import {
   type OrganizationAccessToken,
 } from './organization-access-tokens';
 import { OrganizationMembers } from './organization-members';
-import { UsersStore } from './users-store';
+import { ProvisionedUsersStore } from './provisioned-users-store';
 
 export type CachedAccessToken = {
   id: string;
@@ -80,7 +80,7 @@ export class OrganizationAccessTokensCache {
     if (accessToken.userId) {
       logger.debug('personal access token detected');
 
-      const provisionedUser = await UsersStore.findUserProvisionedByOrganizationIdAndId(
+      const provisionedUser = await ProvisionedUsersStore.findUserProvisionedByOrganizationIdAndId(
         this.pool,
         accessToken.organizationId,
         accessToken.userId,

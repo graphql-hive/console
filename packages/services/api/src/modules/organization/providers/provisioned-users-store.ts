@@ -7,17 +7,14 @@ import {
   UniqueIntegrityConstraintViolationError,
 } from '@hive/postgres';
 
-/**
- * Small user module for scim to interact with them users
- */
 @Injectable({ scope: Scope.Operation })
-export class UsersStore {
+export class ProvisionedUsersStore {
   constructor(private pool: PostgresDatabasePool) {}
 
   async findUserProvisionedByOrganizationIdAndExternalId(
     organizationId: string,
     externalId: string,
-  ): Promise<User | null> {
+  ): Promise<ProvisionedUser | null> {
     const query = psql`
       SELECT
         ${userFields}
@@ -28,18 +25,22 @@ export class UsersStore {
         AND "external_id" = ${externalId}
     `;
 
-    return await this.pool.maybeOne(query).then(UserModel.nullable().parse);
+    return await this.pool.maybeOne(query).then(ProvisionedUserModel.nullable().parse);
   }
 
   findUserProvisionedByOrganizationIdAndId(organizationId: string, userId: string) {
-    return UsersStore.findUserProvisionedByOrganizationIdAndId(this.pool, organizationId, userId);
+    return ProvisionedUsersStore.findUserProvisionedByOrganizationIdAndId(
+      this.pool,
+      organizationId,
+      userId,
+    );
   }
 
   static async findUserProvisionedByOrganizationIdAndId(
     pool: CommonQueryMethods,
     organizationId: string,
     userId: string,
-  ): Promise<User | null> {
+  ): Promise<ProvisionedUser | null> {
     const query = psql`
       SELECT
         ${userFields}
@@ -51,7 +52,7 @@ export class UsersStore {
 
     `;
 
-    return await pool.maybeOne(query).then(UserModel.nullable().parse);
+    return await pool.maybeOne(query).then(ProvisionedUserModel.nullable().parse);
   }
 
   async findUserProvisionedByOrganizationIdAndDisplayName(
@@ -68,7 +69,7 @@ export class UsersStore {
         AND lower("display_name") = lower(${displayName})
     `;
 
-    return await this.pool.maybeOne(query).then(UserModel.nullable().parse);
+    return await this.pool.maybeOne(query).then(ProvisionedUserModel.nullable().parse);
   }
 
   async createUser(
@@ -84,7 +85,7 @@ export class UsersStore {
     },
     trx: CommonQueryMethods = this.pool,
   ): Promise<
-    | { type: 'success'; user: User; errorCode?: never }
+    | { type: 'success'; user: ProvisionedUser; errorCode?: never }
     | { type: 'error'; errorCode: 'displayNameConflict'; user?: never }
   > {
     return trx
@@ -123,7 +124,7 @@ export class UsersStore {
             ${userFields}
         `;
 
-        const user = await trx.one(query).then(UserModel.parse);
+        const user = await trx.one(query).then(ProvisionedUserModel.parse);
 
         await trx.query(psql` /* Link User Identity */
           INSERT INTO "users_linked_identities" (
@@ -202,7 +203,7 @@ export class UsersStore {
 
     return await trx.transaction('disableUser', async trx => {
       await trx.query(deleteGroupMembershipsQuery);
-      return await trx.maybeOne(updateUserQuery).then(UserModel.parse);
+      return await trx.maybeOne(updateUserQuery).then(ProvisionedUserModel.parse);
     });
   }
 
@@ -215,7 +216,7 @@ export class UsersStore {
         ${userFields}
     `;
 
-    return await trx.maybeOne(query).then(UserModel.parse);
+    return await trx.maybeOne(query).then(ProvisionedUserModel.parse);
   }
 
   async updateUserEmail(
@@ -235,7 +236,7 @@ export class UsersStore {
         ${userFields}
     `;
 
-    return await trx.maybeOne(query).then(UserModel.parse);
+    return await trx.maybeOne(query).then(ProvisionedUserModel.parse);
   }
 
   async updateUserDisplayNameByOrganizationIdAndUserId(
@@ -258,7 +259,7 @@ export class UsersStore {
 
     return await trx
       .maybeOne(query)
-      .then(UserModel.nullable().parse)
+      .then(ProvisionedUserModel.nullable().parse)
       .then(user =>
         user
           ? { type: 'success' as const, user }
@@ -297,7 +298,7 @@ export class UsersStore {
 
     return await trx
       .maybeOne(query)
-      .then(UserModel.nullable().parse)
+      .then(ProvisionedUserModel.nullable().parse)
       .then(user =>
         user
           ? { type: 'success' as const, user }
@@ -336,7 +337,7 @@ export class UsersStore {
       OFFSET ${args.offset}
     `;
 
-    return await this.pool.any(query).then(z.array(UserModel).parse);
+    return await this.pool.any(query).then(z.array(ProvisionedUserModel).parse);
   }
 
   async getTotalProvisionedUserCountForOrganizationId(organizationId: string) {
@@ -367,7 +368,7 @@ export class UsersStore {
   }
 }
 
-const UserModel = z.object({
+const ProvisionedUserModel = z.object({
   id: z.string(),
   email: z.string(),
   displayName: z.string(),
@@ -380,7 +381,7 @@ const UserModel = z.object({
   lastUpdatedAt: z.string().nullable(),
 });
 
-export type User = z.TypeOf<typeof UserModel>;
+export type ProvisionedUser = z.TypeOf<typeof ProvisionedUserModel>;
 
 const userFields = psql`
   "id"

@@ -47,12 +47,12 @@ import { Groups } from './groups';
 import { OrganizationAccessTokensCache } from './organization-access-tokens-cache';
 import type { OrganizationMemberRole } from './organization-member-roles';
 import { OrganizationMembers, OrganizationMembership } from './organization-members';
+import { ProvisionedUsersStore } from './provisioned-users-store';
 import {
   resolveResourceAssignment,
   ResourceAssignments,
   translateResolvedResourcesToAuthorizationPolicyStatements,
 } from './resource-assignments';
-import { UsersStore } from './users-store';
 
 const TitleInputModel = z
   .string()
@@ -188,7 +188,7 @@ export class OrganizationAccessTokens {
     private auditLogs: AuditLogRecorder,
     private storage: Storage,
     private members: OrganizationMembers,
-    private usersStore: UsersStore,
+    private usersStore: ProvisionedUsersStore,
     logger: Logger,
     @Inject(OTEL_TRACING_ENABLED) private otelTracingEnabled: boolean,
     @Inject(APP_DEPLOYMENTS_ENABLED) private appDeploymentsEnabled: boolean,
