@@ -83,7 +83,7 @@ patchedDependencies:
     hash: d1dc04fa0009203663f00e051630035b556b6bd06913c6ab45aeee47ccdedd46
     path: patches/@oclif__core@4.0.6.patch
   '@slonik/pg-driver':
-    hash: d281baceb3dc04c2d6348d8b2bb1f5598bef4e24a6a173fc0048c2b3ab6e27ea
+    hash: c9e1450b7d73280ac4a32ed554a05495054e82c2d65086f19d80c90bbf80d488
     path: patches/@slonik__pg-driver.patch
   '@theguild/editor@1.2.5':
     hash: a401455daa519af0fe686b4f970a02582f9e406c520aad19273a8eeef8f4adf7
@@ -110,7 +110,7 @@ patchedDependencies:
     hash: 195ae63d47810ca4c987421948f15869356e598dccde9e8c9a4ff4efd3e88322
     path: patches/p-cancelable@4.0.1.patch
   slonik:
-    hash: e16e74ebc8c5f42be257d540b5ac7d175ff3264481046b5c33fc647c9997acdc
+    hash: f3bf6d4d34249f6f9a4647d24fa4af00163597e4c8a5e94e20eca7959f1f2caa
     path: patches/slonik.patch
 
 importers:
@@ -434,13 +434,13 @@ importers:
         version: 1.0.0
       slonik:
         specifier: 48.13.2
-        version: 48.13.2(patch_hash=e16e74ebc8c5f42be257d540b5ac7d175ff3264481046b5c33fc647c9997acdc)
+        version: 48.13.2(patch_hash=f3bf6d4d34249f6f9a4647d24fa4af00163597e4c8a5e94e20eca7959f1f2caa)
       slonik-interceptor-query-logging:
         specifier: 48.13.2
-        version: 48.13.2(slonik@48.13.2(patch_hash=e16e74ebc8c5f42be257d540b5ac7d175ff3264481046b5c33fc647c9997acdc))
+        version: 48.13.2(slonik@48.13.2(patch_hash=f3bf6d4d34249f6f9a4647d24fa4af00163597e4c8a5e94e20eca7959f1f2caa))
       slonik-sql-tag-raw:
         specifier: 48.13.2
-        version: 48.13.2(slonik@48.13.2(patch_hash=e16e74ebc8c5f42be257d540b5ac7d175ff3264481046b5c33fc647c9997acdc))
+        version: 48.13.2(slonik@48.13.2(patch_hash=f3bf6d4d34249f6f9a4647d24fa4af00163597e4c8a5e94e20eca7959f1f2caa))
       zod:
         specifier: 3.25.76
         version: 3.25.76
@@ -1711,6 +1711,9 @@ importers:
         specifier: 5.2.0
         version: 5.2.0
       '@aws-sdk/credential-providers':
+        specifier: 3.1035.0
+        version: 3.1035.0
+      '@aws-sdk/rds-signer':
         specifier: 3.1035.0
         version: 3.1035.0
       '@aws-sdk/util-format-url':
@@ -3040,6 +3043,10 @@ packages:
 
   '@aws-sdk/nested-clients@3.997.11':
     resolution: {integrity: sha512-nWXXJ1r/r8N2Gw1pWolRgED38/A9A8DHR2ETWIv220zh4PZHcybbR4hUVWWktmNXTRHzDJwRluapHn0rZxuoqA==}
+    engines: {node: '>=20.0.0'}
+
+  '@aws-sdk/rds-signer@3.1035.0':
+    resolution: {integrity: sha512-FrrZh58MbXM0tbXF4tTVz1KV17vQqP9baWmjkqB21E6B3vggmLjzbsKAA0c0J7R7r5eNFULeRmOBvrGr5vOHIQ==}
     engines: {node: '>=20.0.0'}
 
   '@aws-sdk/region-config-resolver@3.969.0':
@@ -9909,10 +9916,6 @@ packages:
   '@smithy/util-buffer-from@2.2.0':
     resolution: {integrity: sha512-IJdWBbTcMQ6DA0gdNhh/BwrLkDR+ADW5Kr1aZmd4k3DIF6ezMV4R2NIAmT08wQJ3yUK82thHWmC/TnK/wpMMIA==}
     engines: {node: '>=14.0.0'}
-
-  '@smithy/util-buffer-from@4.2.0':
-    resolution: {integrity: sha512-kAY9hTKulTNevM2nlRtxAG2FQ3B2OR6QIrPY3zE5LqJy1oxzmgBGsHLWTcNhWXKchgA0WHW+mZkQrng/pgcCew==}
-    engines: {node: '>=18.0.0'}
 
   '@smithy/util-buffer-from@4.2.2':
     resolution: {integrity: sha512-FDXD7cvUoFWwN6vtQfEta540Y/YBe5JneK3SoZg9bThSoOAC/eGeYEua6RkBgKjGa/sz6Y+DuBZj3+YEY21y4Q==}
@@ -19999,7 +20002,7 @@ snapshots:
       '@aws-crypto/sha256-js': 5.2.0
       '@aws-crypto/supports-web-crypto': 5.2.0
       '@aws-crypto/util': 5.2.0
-      '@aws-sdk/types': 3.973.8
+      '@aws-sdk/types': 3.973.9
       '@aws-sdk/util-locate-window': 3.208.0
       '@smithy/util-utf8': 2.3.0
       tslib: 2.8.1
@@ -20848,6 +20851,23 @@ snapshots:
       '@smithy/types': 4.14.2
       tslib: 2.8.1
 
+  '@aws-sdk/rds-signer@3.1035.0':
+    dependencies:
+      '@aws-crypto/sha256-browser': 5.2.0
+      '@aws-crypto/sha256-js': 5.2.0
+      '@aws-sdk/credential-providers': 3.1035.0
+      '@aws-sdk/util-format-url': 3.972.13
+      '@smithy/config-resolver': 4.4.17
+      '@smithy/hash-node': 4.2.14
+      '@smithy/invalid-dependency': 4.2.14
+      '@smithy/node-config-provider': 4.3.14
+      '@smithy/protocol-http': 5.4.3
+      '@smithy/signature-v4': 5.4.3
+      '@smithy/types': 4.14.2
+      tslib: 2.8.1
+    transitivePeerDependencies:
+      - aws-crt
+
   '@aws-sdk/region-config-resolver@3.969.0':
     dependencies:
       '@aws-sdk/types': 3.969.0
@@ -20969,9 +20989,9 @@ snapshots:
 
   '@aws-sdk/util-format-url@3.972.10':
     dependencies:
-      '@aws-sdk/types': 3.973.8
+      '@aws-sdk/types': 3.973.9
       '@smithy/querystring-builder': 4.2.14
-      '@smithy/types': 4.14.1
+      '@smithy/types': 4.14.2
       tslib: 2.8.1
 
   '@aws-sdk/util-format-url@3.972.13':
@@ -30456,7 +30476,7 @@ snapshots:
     transitivePeerDependencies:
       - zod
 
-  '@slonik/pg-driver@48.13.2(patch_hash=d281baceb3dc04c2d6348d8b2bb1f5598bef4e24a6a173fc0048c2b3ab6e27ea)(zod@4.3.6)':
+  '@slonik/pg-driver@48.13.2(patch_hash=c9e1450b7d73280ac4a32ed554a05495054e82c2d65086f19d80c90bbf80d488)(zod@4.3.6)':
     dependencies:
       '@slonik/driver': 48.13.2(zod@4.3.6)
       '@slonik/errors': 48.13.2(zod@4.3.6)
@@ -30637,7 +30657,7 @@ snapshots:
   '@smithy/hash-node@4.2.8':
     dependencies:
       '@smithy/types': 4.14.2
-      '@smithy/util-buffer-from': 4.2.0
+      '@smithy/util-buffer-from': 4.2.2
       '@smithy/util-utf8': 4.2.2
       tslib: 2.8.1
 
@@ -30936,7 +30956,7 @@ snapshots:
 
   '@smithy/util-base64@4.3.0':
     dependencies:
-      '@smithy/util-buffer-from': 4.2.0
+      '@smithy/util-buffer-from': 4.2.2
       '@smithy/util-utf8': 4.2.2
       tslib: 2.8.1
 
@@ -30965,11 +30985,6 @@ snapshots:
   '@smithy/util-buffer-from@2.2.0':
     dependencies:
       '@smithy/is-array-buffer': 2.2.0
-      tslib: 2.8.1
-
-  '@smithy/util-buffer-from@4.2.0':
-    dependencies:
-      '@smithy/is-array-buffer': 4.2.2
       tslib: 2.8.1
 
   '@smithy/util-buffer-from@4.2.2':
@@ -31087,7 +31102,7 @@ snapshots:
       '@smithy/node-http-handler': 4.7.4
       '@smithy/types': 4.14.2
       '@smithy/util-base64': 4.3.2
-      '@smithy/util-buffer-from': 4.2.0
+      '@smithy/util-buffer-from': 4.2.2
       '@smithy/util-hex-encoding': 4.2.2
       '@smithy/util-utf8': 4.2.2
       tslib: 2.8.1
@@ -31123,7 +31138,7 @@ snapshots:
 
   '@smithy/util-utf8@4.2.0':
     dependencies:
-      '@smithy/util-buffer-from': 4.2.0
+      '@smithy/util-buffer-from': 4.2.2
       tslib: 2.8.1
 
   '@smithy/util-utf8@4.2.2':
@@ -40744,25 +40759,25 @@ snapshots:
 
   slick@1.12.2: {}
 
-  slonik-interceptor-query-logging@48.13.2(slonik@48.13.2(patch_hash=e16e74ebc8c5f42be257d540b5ac7d175ff3264481046b5c33fc647c9997acdc)):
+  slonik-interceptor-query-logging@48.13.2(slonik@48.13.2(patch_hash=f3bf6d4d34249f6f9a4647d24fa4af00163597e4c8a5e94e20eca7959f1f2caa)):
     dependencies:
       crack-json: 1.3.0
       pretty-ms: 9.3.0
       serialize-error: 12.0.0
-      slonik: 48.13.2(patch_hash=e16e74ebc8c5f42be257d540b5ac7d175ff3264481046b5c33fc647c9997acdc)
+      slonik: 48.13.2(patch_hash=f3bf6d4d34249f6f9a4647d24fa4af00163597e4c8a5e94e20eca7959f1f2caa)
 
-  slonik-sql-tag-raw@48.13.2(slonik@48.13.2(patch_hash=e16e74ebc8c5f42be257d540b5ac7d175ff3264481046b5c33fc647c9997acdc)):
+  slonik-sql-tag-raw@48.13.2(slonik@48.13.2(patch_hash=f3bf6d4d34249f6f9a4647d24fa4af00163597e4c8a5e94e20eca7959f1f2caa)):
     dependencies:
       '@slonik/sql-tag': 48.13.2
       roarr: 7.21.4
-      slonik: 48.13.2(patch_hash=e16e74ebc8c5f42be257d540b5ac7d175ff3264481046b5c33fc647c9997acdc)
+      slonik: 48.13.2(patch_hash=f3bf6d4d34249f6f9a4647d24fa4af00163597e4c8a5e94e20eca7959f1f2caa)
 
-  slonik@48.13.2(patch_hash=e16e74ebc8c5f42be257d540b5ac7d175ff3264481046b5c33fc647c9997acdc):
+  slonik@48.13.2(patch_hash=f3bf6d4d34249f6f9a4647d24fa4af00163597e4c8a5e94e20eca7959f1f2caa):
     dependencies:
       '@opentelemetry/api': 1.9.0
       '@slonik/driver': 48.13.2(zod@4.3.6)
       '@slonik/errors': 48.13.2(zod@4.3.6)
-      '@slonik/pg-driver': 48.13.2(patch_hash=d281baceb3dc04c2d6348d8b2bb1f5598bef4e24a6a173fc0048c2b3ab6e27ea)(zod@4.3.6)
+      '@slonik/pg-driver': 48.13.2(patch_hash=c9e1450b7d73280ac4a32ed554a05495054e82c2d65086f19d80c90bbf80d488)(zod@4.3.6)
       '@slonik/sql-tag': 48.13.2
       '@slonik/utilities': 48.13.2(zod@4.3.6)
       '@standard-schema/spec': 1.0.0
