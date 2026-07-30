@@ -91,14 +91,13 @@ jobs:
 
   # Release RC version on NPM for Hive libraries
   release-candidate:
-    uses: the-guild-org/shared-config/.github/workflows/release-snapshot.yml@main
+    uses: the-guild-org/shared-config/.github/workflows/release-snapshot.yml@v1
     if: ${{ github.event.pull_request.title == 'Upcoming Release Changes' }}
     with:
       npmTag: rc
       restoreDeletedChangesets: true
       buildScript: build:libraries
-      packageManager: pnpm
-      nodeVersion: '24.18.1'
+      node-version-file: '.node-version'
     secrets:
       githubToken: ${{ secrets.GITHUB_TOKEN }}
       npmToken: ${{ secrets.NPM_TOKEN }}
