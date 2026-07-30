@@ -102,6 +102,7 @@ target "otel-collector-base" {
 target "cli-base" {
   dockerfile = "${PWD}/docker/cli.dockerfile"
   args = {
+    NODE_VERSION_TAG = NODE_VERSION_TAG
     RELEASE = "${RELEASE}"
   }
 }
