@@ -2,7 +2,6 @@ import { createHash } from 'node:crypto';
 import type { InjectionToken } from 'graphql-modules';
 import ms from 'ms';
 import { UTCDate } from '@date-fns/utc';
-import type { MaybePromise } from '@trpc/server';
 import type { DateRangeInput } from '../__generated__/types';
 import { DateRange } from './entities';
 
@@ -188,7 +187,7 @@ export function batchBy<TItem, TResult>(
   /** Function to determine the batch group. */
   buildBatchKey: (arg: TItem) => unknown,
   /** Loader for each batch group. */
-  loader: (args: TItem[]) => Promise<MaybePromise<TResult>[]>,
+  loader: (args: TItem[]) => Promise<(TResult | Promise<TResult>)[]>,
   /** Maximum amount of items per batch, if it is exceeded a new batch for a given batchKey is created. */
   maxBatchSize = Infinity,
 ) {
