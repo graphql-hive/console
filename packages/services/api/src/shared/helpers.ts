@@ -284,7 +284,7 @@ export function assertOk<TOk extends { ok: true }, TNot extends { ok: false; mes
 }
 
 export function batch<A, R>(
-  loader: (args: A[]) => Promise<MaybePromise<R>[]>,
+  loader: (args: A[]) => Promise<(Promise<R> | R)[]>,
 ): (arg: A) => Promise<R> {
   let currentBatch: {
     args: A[];
