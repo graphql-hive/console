@@ -1,10 +1,7 @@
 import type { FastifyBaseLogger } from 'fastify';
 import { LRUCache } from 'lru-cache';
 import ms from 'ms';
-import {
-  createConnectionStringProvider,
-  type PostgresConnectionParamaters,
-} from '@hive/postgres';
+import { createConnectionStringProvider, type PostgresConnectionParamaters } from '@hive/postgres';
 import type { Redis } from '@hive/service-common';
 import { createTokenStorage, type Interceptor } from '@hive/storage';
 import { captureException, captureMessage } from '@sentry/node';

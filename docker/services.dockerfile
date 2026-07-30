@@ -34,4 +34,4 @@ HEALTHCHECK --interval=5s \
   --retries=6 \
   CMD $HEALTHCHECK_CMD
 
-ENTRYPOINT [ "/entrypoint.sh" ]
+ENTRYPOINT ["/entrypoint.sh"]
