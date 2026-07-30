@@ -20,7 +20,7 @@ import {
   SuperTokensStore,
 } from '@hive/api/modules/auth/providers/supertokens-store';
 import { OIDCIntegrationStore } from '@hive/api/modules/oidc-integrations/providers/oidc-integration.store';
-import { UsersStore } from '@hive/api/modules/organization/providers/users-store';
+import { ProvisionedUsersStore } from '@hive/api/modules/organization/providers/provisioned-users-store';
 import { RedisRateLimiter } from '@hive/api/modules/shared/providers/redis-rate-limiter';
 import type { OIDCIntegration } from '@hive/api/shared/entities';
 import { TaskScheduler } from '@hive/workflows/kit';
@@ -104,7 +104,7 @@ export async function registerSupertokensAtHome(
       const hiveUser = await storage.getUserBySuperTokenId({ superTokensUserId: user.userId });
 
       if (hiveUser) {
-        const usersStore = new UsersStore(storage.pool);
+        const usersStore = new ProvisionedUsersStore(storage.pool);
         const isUserAdminOfAnyOrganization = await usersStore.isUserWithIdAdminOfAnyOrganization(
           hiveUser.id,
         );

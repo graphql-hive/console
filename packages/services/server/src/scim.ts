@@ -9,7 +9,10 @@ import {
   type GroupMember,
 } from '@hive/api/modules/organization/providers/group-member-store';
 import { GroupStore, type Group } from '@hive/api/modules/organization/providers/group-store';
-import { UsersStore, type User } from '@hive/api/modules/organization/providers/users-store';
+import {
+  ProvisionedUsersStore,
+  type ProvisionedUser,
+} from '@hive/api/modules/organization/providers/provisioned-users-store';
 import { RedisRateLimiter } from '@hive/api/modules/shared/providers/redis-rate-limiter';
 import { CommonQueryMethods, PostgresDatabasePool } from '@hive/postgres';
 
@@ -325,11 +328,11 @@ export const createSCIMPlugin =
 
     async function handleUserPropertyUpdates(
       logger: Logger,
-      usersStore: UsersStore,
+      usersStore: ProvisionedUsersStore,
       supertokensStore: SuperTokensStore,
       organizationId: string,
       oidcIntegrationId: string,
-      user: User,
+      user: ProvisionedUser,
       updates: z.TypeOf<typeof PutUsersBodyModel>,
     ) {
       let email: string | null = null;
@@ -647,7 +650,7 @@ export const createSCIMPlugin =
         );
       }
 
-      const usersStore = new UsersStore(pool);
+      const usersStore = new ProvisionedUsersStore(pool);
       const user = await usersStore.findUserProvisionedByOrganizationIdAndId(
         auth.organizationId,
         params.data.userId,
@@ -697,7 +700,7 @@ export const createSCIMPlugin =
         );
       }
 
-      const usersStore = new UsersStore(pool);
+      const usersStore = new ProvisionedUsersStore(pool);
       const supertokensStore = new SuperTokensStore(pool, result.logger);
 
       const existingUser = await usersStore.findUserProvisionedByOrganizationIdAndExternalId(
@@ -823,7 +826,7 @@ export const createSCIMPlugin =
         );
       }
 
-      const usersStore = new UsersStore(pool);
+      const usersStore = new ProvisionedUsersStore(pool);
       const supertokensStore = new SuperTokensStore(pool, auth.logger);
 
       let user = await usersStore.findUserProvisionedByOrganizationIdAndId(
@@ -910,7 +913,7 @@ export const createSCIMPlugin =
         );
       }
 
-      const usersStore = new UsersStore(pool);
+      const usersStore = new ProvisionedUsersStore(pool);
       const supertokensStore = new SuperTokensStore(pool, auth.logger);
       let user = await usersStore.findUserProvisionedByOrganizationIdAndId(
         auth.organizationId,
@@ -1076,7 +1079,7 @@ export const createSCIMPlugin =
       const startIndex = queryParse.data.startIndex ?? 1;
       const count = queryParse.data.count ?? 100;
 
-      const usersStore = new UsersStore(pool);
+      const usersStore = new ProvisionedUsersStore(pool);
       const groupMemberStore = new GroupMemberStore(req.log, pool);
 
       if (queryParse.data.filter) {
@@ -1090,7 +1093,7 @@ export const createSCIMPlugin =
         }
 
         const { property, value } = filterParseResult;
-        let user: User | null = null;
+        let user: ProvisionedUser | null = null;
 
         switch (property) {
           case 'userName': {
@@ -1917,7 +1920,7 @@ function createSCIMResourceTypeObject(
 
 function createSCIMUserObjectFromUser(
   baseUri: string,
-  user: User,
+  user: ProvisionedUser,
   groupIds: Array<string>,
 ): SCIMUserObject {
   return {

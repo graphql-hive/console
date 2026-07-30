@@ -16,7 +16,7 @@
     "./modules/token/providers/target-token-storage": "./src/modules/token/providers/target-token-storage.ts",
     "./modules/organization/providers/group-store": "./src/modules/organization/providers/group-store.ts",
     "./modules/organization/providers/group-member-store": "./src/modules/organization/providers/group-member-store.ts",
-    "./modules/organization/providers/users-store": "./src/modules/organization/providers/users-store.ts"
+    "./modules/organization/providers/provisioned-users-store": "./src/modules/organization/providers/provisioned-users-store.ts"
   },
   "peerDependencies": {
     "graphql": "^16.0.0",
