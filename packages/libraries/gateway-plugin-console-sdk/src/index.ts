@@ -1,7 +1,7 @@
 import { DocumentNode, GraphQLSchema, Kind, responsePathAsArray, type GraphQLError } from 'graphql';
 import { lru } from 'tiny-lru';
 import {
-  addTypenames,
+  addHiveTypenames,
   createHive as createHiveClient,
   hideInjectedTypenames,
   isAsyncIterable,
@@ -136,7 +136,7 @@ export function useHive(clientOrOptions: HiveClient | GatewayPluginOptions): Gat
               parseCtx.setParsedDocument(cachedDocument);
             }
           } else if (latestSchema) {
-            const modifiedDocument = addTypenames(ctx.result, latestSchema);
+            const modifiedDocument = addHiveTypenames(ctx.result, latestSchema);
             operationCache.set(query, ctx.result === modifiedDocument || modifiedDocument);
             if (ctx.result !== modifiedDocument) {
               parseCtx.setParsedDocument(modifiedDocument);

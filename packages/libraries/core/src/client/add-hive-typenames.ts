@@ -33,7 +33,7 @@ const TYPENAME_FIELD: FieldNode = {
  * The requested typename is mapped to "__hive_typename__" to avoid conflicting
  * with crazy aliases like `__typename: id
  */
-export function addTypenames(document: DocumentNode, schema: GraphQLSchema): DocumentNode {
+export function addHiveTypenames(document: DocumentNode, schema: GraphQLSchema): DocumentNode {
   let definitionsChanged = false;
   let newDefinitions: DefinitionNode[] | null = null;
 

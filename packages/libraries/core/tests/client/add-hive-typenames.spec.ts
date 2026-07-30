@@ -1,5 +1,5 @@
 import { buildSchema, parse as gql, print, validate } from 'graphql';
-import { addTypenames } from '../../src/client/add-typenames.js';
+import { addHiveTypenames } from '../../src/client/add-hive-typenames.js';
 
 // ---------------------------------------------------------------------------
 // Shared test schema
@@ -75,7 +75,7 @@ const schema = buildSchema(`
   }
 `);
 
-function typenameCount(doc: ReturnType<typeof addTypenames>): number {
+function typenameCount(doc: ReturnType<typeof addHiveTypenames>): number {
   return (print(doc).match(/__typename/g) ?? []).length;
 }
 
@@ -89,7 +89,7 @@ describe('concrete object types (not inside an abstract field)', () => {
         }
       }
     `);
-    expect(typenameCount(addTypenames(doc, schema))).toBe(0);
+    expect(typenameCount(addHiveTypenames(doc, schema))).toBe(0);
   });
 
   it('does not add __typename for nested concrete object fields', () => {
@@ -103,7 +103,7 @@ describe('concrete object types (not inside an abstract field)', () => {
         }
       }
     `);
-    expect(typenameCount(addTypenames(doc, schema))).toBe(0);
+    expect(typenameCount(addHiveTypenames(doc, schema))).toBe(0);
   });
 });
 
@@ -116,7 +116,7 @@ describe('interface types', () => {
         }
       }
     `);
-    const result = addTypenames(doc, schema);
+    const result = addHiveTypenames(doc, schema);
     expect(print(result)).toMatchInlineSnapshot(`
       {
         node(id: "1") {
@@ -136,7 +136,7 @@ describe('interface types', () => {
         }
       }
     `);
-    const result = addTypenames(doc, schema);
+    const result = addHiveTypenames(doc, schema);
     expect(print(result)).toMatchInlineSnapshot(`
       {
         animals {
@@ -158,7 +158,7 @@ describe('interface types', () => {
         }
       }
     `);
-    const result = addTypenames(doc, schema);
+    const result = addHiveTypenames(doc, schema);
     expect(print(result)).toMatchInlineSnapshot(`
       {
         user(id: "1") {
@@ -183,7 +183,7 @@ describe('interface types', () => {
         }
       }
     `);
-    const result = addTypenames(doc, schema);
+    const result = addHiveTypenames(doc, schema);
     expect(print(result)).toMatchInlineSnapshot(`
       {
         animals {
@@ -208,7 +208,7 @@ describe('interface types', () => {
         }
       }
     `);
-    const result = addTypenames(doc, schema);
+    const result = addHiveTypenames(doc, schema);
     expect(print(result)).toMatchInlineSnapshot(`
       {
         node(id: "1") {
@@ -230,7 +230,7 @@ describe('interface types', () => {
     `);
     expect(validate(schema, doc)).toEqual([]);
 
-    const result = addTypenames(doc, schema);
+    const result = addHiveTypenames(doc, schema);
     expect(validate(schema, result)).toEqual([]);
   });
 
@@ -244,7 +244,7 @@ describe('interface types', () => {
       }
     `);
 
-    expect(print(addTypenames(doc, schema))).toMatchInlineSnapshot(`
+    expect(print(addHiveTypenames(doc, schema))).toMatchInlineSnapshot(`
       {
         node(id: "1") {
           kind: __typename
@@ -265,7 +265,7 @@ describe('interface types', () => {
       }
     `);
 
-    expect(print(addTypenames(doc, schema))).toMatchInlineSnapshot(`
+    expect(print(addHiveTypenames(doc, schema))).toMatchInlineSnapshot(`
       query ($skipType: Boolean!) {
         node(id: "1") {
           __typename @skip(if: $skipType)
@@ -291,7 +291,7 @@ describe('union types', () => {
         }
       }
     `);
-    const result = addTypenames(doc, schema);
+    const result = addHiveTypenames(doc, schema);
     expect(print(result)).toMatchInlineSnapshot(`
       {
         search(term: "foo") {
@@ -320,7 +320,7 @@ describe('concrete inline-fragment branches of abstract fields', () => {
         }
       }
     `);
-    const result = addTypenames(doc, schema);
+    const result = addHiveTypenames(doc, schema);
     expect(print(result)).toMatchInlineSnapshot(`
       {
         node(id: "1") {
@@ -347,7 +347,7 @@ describe('concrete inline-fragment branches of abstract fields', () => {
         }
       }
     `);
-    const result = addTypenames(doc, schema);
+    const result = addHiveTypenames(doc, schema);
     expect(print(result)).toMatchInlineSnapshot(`
       {
         search(term: "foo") {
@@ -375,7 +375,7 @@ describe('concrete inline-fragment branches of abstract fields', () => {
         }
       }
     `);
-    const result = addTypenames(doc, schema);
+    const result = addHiveTypenames(doc, schema);
     expect(print(result)).toMatchInlineSnapshot(`
       {
         node(id: "1") {
@@ -405,7 +405,7 @@ describe('concrete inline-fragment branches of abstract fields', () => {
         }
       }
     `);
-    const result = addTypenames(doc, schema);
+    const result = addHiveTypenames(doc, schema);
     expect(print(result)).toMatchInlineSnapshot(`
       {
         user(id: "1") {
@@ -435,7 +435,7 @@ describe('concrete inline-fragment branches of abstract fields', () => {
         }
       }
     `);
-    const result = addTypenames(doc, schema);
+    const result = addHiveTypenames(doc, schema);
     expect(print(result)).toMatchInlineSnapshot(`
       {
         node(id: "1") {
@@ -470,7 +470,7 @@ describe('mixed fields', () => {
         }
       }
     `);
-    const result = addTypenames(doc, schema);
+    const result = addHiveTypenames(doc, schema);
     expect(print(result)).toMatchInlineSnapshot(`
       {
         user(id: "1") {
@@ -505,7 +505,7 @@ describe('named fragments', () => {
         id
       }
     `);
-    const result = addTypenames(doc, schema);
+    const result = addHiveTypenames(doc, schema);
     expect(print(result)).toMatchInlineSnapshot(`
       {
         node(id: "1") {
@@ -535,7 +535,7 @@ describe('named fragments', () => {
         name
       }
     `);
-    expect(typenameCount(addTypenames(doc, schema))).toBe(0);
+    expect(typenameCount(addHiveTypenames(doc, schema))).toBe(0);
   });
 
   /**
@@ -557,7 +557,7 @@ describe('named fragments', () => {
         id
       }
     `);
-    const result = addTypenames(doc, schema);
+    const result = addHiveTypenames(doc, schema);
     expect(print(result)).toMatchInlineSnapshot(`
       {
         node(id: "1") {
@@ -586,7 +586,7 @@ describe('introspection fields', () => {
         }
       }
     `);
-    expect(typenameCount(addTypenames(doc, schema))).toBe(0);
+    expect(typenameCount(addHiveTypenames(doc, schema))).toBe(0);
   });
 
   it('does not add __typename inside __type', () => {
@@ -599,7 +599,7 @@ describe('introspection fields', () => {
         }
       }
     `);
-    expect(typenameCount(addTypenames(doc, schema))).toBe(0);
+    expect(typenameCount(addHiveTypenames(doc, schema))).toBe(0);
   });
 });
 
@@ -617,7 +617,7 @@ describe('operation types', () => {
         }
       }
     `);
-    expect(typenameCount(addTypenames(doc, schema))).toBe(0);
+    expect(typenameCount(addHiveTypenames(doc, schema))).toBe(0);
   });
 
   it('does not add __typename for a subscription returning a concrete type', () => {
@@ -629,7 +629,7 @@ describe('operation types', () => {
         }
       }
     `);
-    expect(typenameCount(addTypenames(doc, schema))).toBe(0);
+    expect(typenameCount(addHiveTypenames(doc, schema))).toBe(0);
   });
 });
 
@@ -644,7 +644,7 @@ describe('scalar fields', () => {
         health
       }
     `);
-    expect(typenameCount(addTypenames(doc, schema))).toBe(0);
+    expect(typenameCount(addHiveTypenames(doc, schema))).toBe(0);
   });
 });
 
@@ -663,8 +663,8 @@ describe('idempotency', () => {
         }
       }
     `);
-    const once = addTypenames(doc, schema);
-    const twice = addTypenames(once, schema);
+    const once = addHiveTypenames(doc, schema);
+    const twice = addHiveTypenames(once, schema);
     expect(print(once)).toBe(print(twice));
   });
 });
@@ -685,7 +685,7 @@ describe('immutability', () => {
       }
     `);
     const before = print(doc);
-    addTypenames(doc, schema);
+    addHiveTypenames(doc, schema);
     expect(print(doc)).toBe(before);
   });
 });

@@ -12,7 +12,7 @@ import {
   OperationDefinitionNode,
   SelectionSetNode,
 } from 'graphql';
-import { HIVE_INTERNAL_TYPENAME } from '../add-typenames.js';
+import { HIVE_INTERNAL_TYPENAME } from '../add-hive-typenames.js';
 
 export type CoordinateMap = Record<string, number>;
 interface FieldPlan {

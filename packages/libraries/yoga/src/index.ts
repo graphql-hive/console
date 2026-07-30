@@ -9,7 +9,7 @@ import {
 } from 'graphql';
 import { _createLRUCache, YogaServer, type GraphQLParams, type Plugin } from 'graphql-yoga';
 import {
-  addTypenames,
+  addHiveTypenames,
   autoDisposeSymbol,
   CollectUsage,
   createHive as createHiveClient,
@@ -137,7 +137,7 @@ export function useHive(clientOrOptions: HiveClient | YogaPluginOptions): Plugin
                 parseCtx.setParsedDocument(cachedDocument);
               }
             } else if (latestSchema) {
-              const modifiedDocument = addTypenames(ctx.result, latestSchema);
+              const modifiedDocument = addHiveTypenames(ctx.result, latestSchema);
               operationCache.set(query, result === modifiedDocument || modifiedDocument);
               if (result !== modifiedDocument) {
                 parseCtx.setParsedDocument(modifiedDocument);
