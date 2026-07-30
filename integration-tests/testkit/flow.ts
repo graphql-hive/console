@@ -1442,6 +1442,30 @@ export function updateBaseSchema(input: UpdateBaseSchemaInput, token: string) {
   });
 }
 
+export function readTotalRequests(
+  reference: GraphQLSchema.TargetReferenceInput,
+  period: GraphQLSchema.DateRangeInput,
+  token: string,
+) {
+  return execute({
+    document: graphql(`
+      query IntegrationTests_ReadTotalRequests(
+        $reference: TargetReferenceInput!
+        $period: DateRangeInput!
+      ) {
+        target(reference: $reference) {
+          totalRequests(period: $period)
+        }
+      }
+    `),
+    token,
+    variables: {
+      reference,
+      period,
+    },
+  });
+}
+
 export function readClientStats(
   reference: GraphQLSchema.TargetReferenceInput,
   period: GraphQLSchema.DateRangeInput,
@@ -1541,6 +1565,81 @@ export function readOperationsStats(
       target,
       period,
       filter,
+    },
+  });
+}
+
+export function readErrorCodes(
+  coordinate: string,
+  target: GraphQLSchema.TargetReferenceInput,
+  period: GraphQLSchema.DateRangeInput,
+  token: string,
+) {
+  return execute({
+    document: graphql(`
+      query readErrorCodes(
+        $coordinate: String!
+        $target: TargetReferenceInput!
+        $period: DateRangeInput!
+      ) {
+        target(reference: $target) {
+          schemaCoordinateStats(schemaCoordinate: $coordinate, period: $period) {
+            errorCodes {
+              edges {
+                node {
+                  code
+                }
+              }
+            }
+          }
+        }
+      }
+    `),
+    token,
+    variables: {
+      target,
+      period,
+      coordinate,
+    },
+  });
+}
+
+export function readSchemaCoordinateStats(
+  selector: {
+    organizationSlug: string;
+    projectSlug: string;
+    targetSlug: string;
+    schemaCoordinate: string;
+  },
+  period: GraphQLSchema.DateRangeInput,
+  token: string,
+) {
+  return execute({
+    document: graphql(`
+      query readSchemaCoordinateStats(
+        $selector: TargetSelectorInput!
+        $schemaCoordinate: String!
+        $period: DateRangeInput!
+      ) {
+        target(reference: { bySelector: $selector }) {
+          id
+          schemaCoordinateStats(schemaCoordinate: $schemaCoordinate, period: $period) {
+            totalRequests
+            totalResolutions
+            totalFailures
+          }
+        }
+      }
+    `),
+    token,
+    variables: {
+      selector: {
+        organizationSlug: selector.organizationSlug,
+        projectSlug: selector.projectSlug,
+        targetSlug: selector.targetSlug,
+      },
+      schemaCoordinate: selector.schemaCoordinate,
+      period,
     },
   });
 }
