@@ -1,4 +1,4 @@
-import type { SamplingContext } from './types.js';
+import type { OperationSampleRate, SamplingContext } from './types.js';
 
 export function randomSampling(sampleRate: number) {
   if (sampleRate > 1 || sampleRate < 0) {
@@ -7,6 +7,61 @@ export function randomSampling(sampleRate: number) {
 
   return function shouldInclude(): boolean {
     return Math.random() <= sampleRate;
+  };
+}
+
+/**
+ * Builds a sampling function that applies operation-level sample rates.
+ *
+ * Each rule matches an operation by exact `name` or by `regex` (tested against the
+ * operation name). The first matching rule wins and its `sampleRate` is used.
+ * Operations that don't match any rule fall back to `fallbackSampleRate`.
+ *
+ * Rules are validated eagerly so misconfiguration fails fast at setup time.
+ */
+export function operationSampling(config: {
+  rates: OperationSampleRate[];
+  fallbackSampleRate: number;
+}) {
+  if (config.fallbackSampleRate > 1 || config.fallbackSampleRate < 0) {
+    throw new Error(
+      `Expected usage.sampleRate to be 0 <= x <= 1, received ${config.fallbackSampleRate}`,
+    );
+  }
+
+  const rules = config.rates.map(rate => {
+    const { name, regex, sampleRate } = rate;
+    const hasName = typeof name === 'string';
+    const hasRegex = regex instanceof RegExp;
+
+    if (hasName === hasRegex) {
+      throw new Error(
+        'Expected usage.sampleRates entry to define exactly one of "name" or "regex".',
+      );
+    }
+
+    if (sampleRate > 1 || sampleRate < 0) {
+      throw new Error(
+        `Expected usage.sampleRates sampleRate to be 0 <= x <= 1, received ${sampleRate}`,
+      );
+    }
+
+    const matches =
+      regex instanceof RegExp
+        ? (operationName: string) => regex.test(operationName)
+        : (operationName: string) => operationName === name;
+
+    return { matches, sampleRate };
+  });
+
+  return function shouldInclude(context: SamplingContext): boolean {
+    for (const rule of rules) {
+      if (rule.matches(context.operationName)) {
+        return Math.random() <= rule.sampleRate;
+      }
+    }
+
+    return Math.random() <= config.fallbackSampleRate;
   };
 }
 
