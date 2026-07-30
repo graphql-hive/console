@@ -25,5 +25,13 @@ export default {
         ;
       `,
     },
+    {
+      name: 'idx_supertokens_session_info_user_id',
+      query: psql`
+        CREATE INDEX CONCURRENTLY IF NOT EXISTS "idx_supertokens_session_info_user_id"
+        ON "supertokens_session_info" ("user_id")
+        ;
+      `,
+    },
   ],
 } satisfies MigrationExecutor;

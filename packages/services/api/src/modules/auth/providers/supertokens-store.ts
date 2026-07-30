@@ -103,7 +103,6 @@ export class SuperTokensStore {
     await this.pool.query(query);
   }
 
-  // TODO: there should be an index for user_id
   async invalidateAllSessionsForUser(userId: string, trx: CommonQueryMethods = this.pool) {
     this.logger.debug('Invalidate session for user. (userId=%s)', userId);
 
