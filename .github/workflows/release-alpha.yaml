@@ -1,6 +1,11 @@
 on:
   workflow_call:
 
+permissions:
+  id-token: write
+  pull-requests: write
+  contents: write
+
 jobs:
   # Release alpha version on NPM for Hive libraries
   npm:

@@ -9,6 +9,11 @@ concurrency:
 env:
   HIVE_TOKEN: ${{ secrets.HIVE_TOKEN }}
 
+permissions:
+  id-token: write
+  pull-requests: write
+  contents: write
+
 jobs:
   # Database Types Diff Check
   # We are committing the database types located under the "storage" package, to make it easier to maintain.
