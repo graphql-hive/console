@@ -17,7 +17,15 @@ services:
     networks:
       - 'stack'
     healthcheck:
-      test: ['CMD', 'wget', '--spider', '-q', 'localhost:3004/_readiness']
+      test:
+        [
+          'CMD',
+          'node',
+          '-e',
+          '-q',
+          "fetch('http://localhost:3004/_readiness').then(r => { if (!r.ok) process.exit(1)
+          }).catch(() => process.exit(1))",
+        ]
       interval: 5s
       timeout: 5s
       retries: 6
@@ -43,7 +51,15 @@ services:
     networks:
       - 'stack'
     healthcheck:
-      test: ['CMD', 'wget', '--spider', '-q', 'localhost:3013/_readiness']
+      test:
+        [
+          'CMD',
+          'node',
+          '-e',
+          '-q',
+          "fetch('http://localhost:3013/_readiness').then(r => { if (!r.ok) process.exit(1)
+          }).catch(() => process.exit(1))",
+        ]
       interval: 5s
       timeout: 5s
       retries: 6
@@ -95,7 +111,15 @@ services:
     networks:
       - 'stack'
     healthcheck:
-      test: ['CMD', 'wget', '--spider', '-q', 'localhost:3012/_readiness']
+      test:
+        [
+          'CMD',
+          'node',
+          '-e',
+          '-q',
+          "fetch('http://localhost:3012/_readiness').then(r => { if (!r.ok) process.exit(1)
+          }).catch(() => process.exit(1))",
+        ]
       interval: 5s
       timeout: 5s
       retries: 6
