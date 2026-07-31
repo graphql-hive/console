@@ -11,13 +11,20 @@ networks:
 
 services:
   local_cdn:
-    image: node:24.18.0-alpine3.23
+    image: node${NODE_VERSION_TAG}
     working_dir: /app
     command: ['node', 'index.js']
     networks:
       - 'stack'
     healthcheck:
-      test: ['CMD', 'wget', '--spider', '-q', 'localhost:3004/_readiness']
+      test:
+        [
+          'CMD',
+          'node',
+          '-e',
+          "fetch('http://localhost:3004/_readiness').then(r => { if (!r.ok) process.exit(1)
+          }).catch(() => process.exit(1))",
+        ]
       interval: 5s
       timeout: 5s
       retries: 6
@@ -37,13 +44,20 @@ services:
       S3_BUCKET_NAME: artifacts
 
   local_broker:
-    image: node:24.18.0-alpine3.23
+    image: node${NODE_VERSION_TAG}
     working_dir: /app
     command: ['node', 'broker.js']
     networks:
       - 'stack'
     healthcheck:
-      test: ['CMD', 'wget', '--spider', '-q', 'localhost:3013/_readiness']
+      test:
+        [
+          'CMD',
+          'node',
+          '-e',
+          "fetch('http://localhost:3013/_readiness').then(r => { if (!r.ok) process.exit(1)
+          }).catch(() => process.exit(1))",
+        ]
       interval: 5s
       timeout: 5s
       retries: 6
@@ -89,13 +103,20 @@ services:
       SECRET: '${EXTERNAL_COMPOSITION_SECRET}'
 
   external_composition:
-    image: node:24.18.0-alpine3.23
+    image: node${NODE_VERSION_TAG}
     working_dir: /app
     command: ['node', 'example.mjs']
     networks:
       - 'stack'
     healthcheck:
-      test: ['CMD', 'wget', '--spider', '-q', 'localhost:3012/_readiness']
+      test:
+        [
+          'CMD',
+          'node',
+          '-e',
+          "fetch('http://localhost:3012/_readiness').then(r => { if (!r.ok) process.exit(1)
+          }).catch(() => process.exit(1))",
+        ]
       interval: 5s
       timeout: 5s
       retries: 6
@@ -251,6 +272,7 @@ services:
       - '3002:3002'
 
   otel-collector:
+    image: '${DOCKER_REGISTRY}otel-collector${DOCKER_TAG}'
     depends_on:
       clickhouse:
         condition: service_healthy
@@ -287,12 +309,12 @@ services:
 
   # It's not part of integration tests
   app:
-    image: node:24.18.0-alpine3.23
+    image: node${NODE_VERSION_TAG}
     command: ['npx', 'http-server']
 
   # Redpand is used for integration tests, instead of Kafka. Zookeeper is no longer needed
   zookeeper:
-    image: node:24.18.0-alpine3.23
+    image: node${NODE_VERSION_TAG}
     command: ['npx', 'http-server']
 
   redis:

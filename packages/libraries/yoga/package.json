@@ -5,7 +5,7 @@
   "description": "GraphQL Hive + GraphQL Yoga",
   "repository": {
     "type": "git",
-    "url": "graphql-hive/platform",
+    "url": "https://github.com/graphql-hive/console",
     "directory": "packages/libraries/yoga"
   },
   "homepage": "https://the-guild.dev/graphql/hive",
@@ -64,7 +64,6 @@
     "ws": "8.21.0"
   },
   "publishConfig": {
-    "registry": "https://registry.npmjs.org",
     "access": "public",
     "directory": "dist"
   },

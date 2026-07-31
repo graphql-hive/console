@@ -3,7 +3,7 @@
   "type": "module",
   "repository": {
     "type": "git",
-    "url": "graphql-hive/platform"
+    "url": "https://github.com/graphql-hive/console"
   },
   "author": {
     "email": "contact@the-guild.dev",
@@ -14,7 +14,7 @@
   "private": true,
   "packageManager": "pnpm@10.33.2+sha512.a90faf6feeab71ad6c6e57f94e0fe1a12f5dcc22cd754db40ae9593eb6a3e0b6b12e3540218bb37ae083404b1f2ce6db2a4121e979829b4aff94b99f49da1cf8",
   "engines": {
-    "node": ">=24.18.0",
+    "node": ">=24.18.1",
     "pnpm": ">=10.33.2"
   },
   "scripts": {
@@ -27,7 +27,7 @@
     "dev:integration": "cd integration-tests && pnpm dev:integration",
     "dev:observability": "docker compose -f ./docker/docker-compose.dev.yml --profile observability up -d",
     "dev:observability:down": "docker compose -f ./docker/docker-compose.dev.yml --profile observability down",
-    "docker:build": "docker buildx bake -f docker/docker.hcl --load build",
+    "docker:build": "NODE_VERSION_TAG=\":$(< .node-version)-slim\" docker buildx bake -f docker/docker.hcl --load build",
     "docker:override-up": "docker compose -f ./docker/docker-compose.override.yml up -d --remove-orphans",
     "env:sync": "tsx scripts/sync-env-files.ts",
     "generate": "pnpm --filter @hive/storage db:generate && pnpm graphql:generate",

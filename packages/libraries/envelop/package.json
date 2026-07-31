@@ -5,7 +5,7 @@
   "description": "GraphQL Hive + GraphQL Envelop",
   "repository": {
     "type": "git",
-    "url": "graphql-hive/platform",
+    "url": "https://github.com/graphql-hive/console",
     "directory": "packages/libraries/envelop"
   },
   "homepage": "https://the-guild.dev/graphql/hive",
@@ -53,7 +53,6 @@
     "@envelop/types": "5.0.0"
   },
   "publishConfig": {
-    "registry": "https://registry.npmjs.org",
     "access": "public",
     "directory": "dist"
   },

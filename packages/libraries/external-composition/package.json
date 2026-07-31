@@ -5,7 +5,7 @@
   "description": "Compose schemas outside GraphQL Hive",
   "repository": {
     "type": "git",
-    "url": "graphql-hive/platform",
+    "url": "https://github.com/graphql-hive/console",
     "directory": "packages/libraries/external-composition"
   },
   "homepage": "https://the-guild.dev/graphql/hive",
@@ -67,7 +67,6 @@
     "graphql": "16.9.0"
   },
   "publishConfig": {
-    "registry": "https://registry.npmjs.org",
     "access": "public",
     "directory": "dist"
   },
