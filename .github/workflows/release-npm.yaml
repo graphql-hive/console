@@ -1,73 +1,71 @@
+name: release-npm
 on:
-  workflow_call:
-    inputs:
-      type:
-        description: 'The type of release to publish'
-        required: true
-        type: string
-      npmTag:
-        description: 'The npm distribution tag for snapshot releases'
-        default: alpha
-        type: string
-      restoreDeletedChangesets:
-        description: 'Whether deleted changesets should be restored before publishing a snapshot'
-        default: false
-        type: boolean
-    outputs:
-      published:
-        description: 'Whether any packages were published'
-        value: ${{ jobs.snapshot.outputs.published || jobs.stable.outputs.published }}
-      publishedPackages:
-        description: 'The published packages as JSON'
-        value:
-          ${{ jobs.snapshot.outputs.publishedPackages || jobs.stable.outputs.publishedPackages }}
-      hivePublish:
-        description: 'Whether the Hive package was published'
-        value: ${{ jobs.stable.outputs.hivePublish }}
-      hiveVersion:
-        description: 'The published Hive package version'
-        value: ${{ jobs.stable.outputs.hiveVersion }}
-      cliPublish:
-        description: 'Whether the CLI package was published'
-        value: ${{ jobs.stable.outputs.cliPublish }}
-      cliVersion:
-        description: 'The published CLI package version'
-        value: ${{ jobs.stable.outputs.cliVersion }}
-    secrets:
-      githubToken:
-        required: true
-      hiveToken:
-        required: false
-      r2AccessKeyId:
-        required: false
-      r2SecretAccessKey:
-        required: false
+  pull_request: {}
+  push:
+    branches:
+      - main
+
+concurrency:
+  group: release-npm-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 permissions:
   id-token: write
   pull-requests: write
   contents: write
+  packages: write
 
 jobs:
   snapshot:
-    if: inputs.type == 'snapshot'
+    if: github.event_name == 'pull_request'
     uses: the-guild-org/shared-config/.github/workflows/release-snapshot.yml@v1
     with:
-      npmTag: ${{ inputs.npmTag }}
+      npmTag:
+        ${{ github.event.pull_request.title == 'Upcoming Release Changes' && 'rc' || 'alpha' }}
       buildScript: build:libraries
       node-version-file: '.node-version'
-      restoreDeletedChangesets: ${{ inputs.restoreDeletedChangesets }}
+      restoreDeletedChangesets: ${{ github.event.pull_request.title == 'Upcoming Release Changes' }}
     secrets:
-      githubToken: ${{ secrets.githubToken }}
+      githubToken: ${{ secrets.BOT_GITHUB_TOKEN }}
+
+  snapshot-cli-version:
+    if:
+      github.event_name == 'pull_request' && github.event.pull_request.title != 'Upcoming Release
+      Changes'
+    needs: snapshot
+    runs-on: ubuntu-22.04
+    outputs:
+      published: ${{ steps.cli.outputs.published }}
+      version: ${{ steps.cli.outputs.version }}
+    steps:
+      - name: Extract published CLI version
+        if:
+          needs.snapshot.outputs.published && contains(needs.snapshot.outputs.publishedPackages,
+          '"@graphql-hive/cli"')
+        id: cli
+        run: |
+          echo '${{ needs.snapshot.outputs.publishedPackages }}' > cli-ver.json
+          VERSION=$(jq -r '.[] | select(.name | endswith("@graphql-hive/cli")).version' cli-ver.json)
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "published=true" >> "$GITHUB_OUTPUT"
+
+  publish-snapshot-docker-cli:
+    needs: snapshot-cli-version
+    if: needs.snapshot-cli-version.outputs.published == 'true'
+    uses: ./.github/workflows/dockerize-cli.yaml
+    with:
+      cliVersion: ${{ needs.snapshot-cli-version.outputs.version }}
+      publishLatest: false
+    secrets: inherit
 
   stable:
-    if: inputs.type == 'stable'
+    if: github.event_name == 'push'
     runs-on: ubuntu-22.04
     env:
-      HIVE_TOKEN: ${{ secrets.hiveToken }}
+      HIVE_TOKEN: ${{ secrets.HIVE_TOKEN }}
       # AWS_* are used by Oclif CLI
-      AWS_ACCESS_KEY_ID: ${{ secrets.r2AccessKeyId }}
-      AWS_SECRET_ACCESS_KEY: ${{ secrets.r2SecretAccessKey }}
+      AWS_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
       AWS_S3_ENDPOINT: https://6d5bc18cd8d13babe7ed321adba3d8ae.r2.cloudflarestorage.com
 
     outputs:
@@ -83,7 +81,7 @@ jobs:
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
         with:
           fetch-depth: 2
-          token: ${{ secrets.githubToken }}
+          token: ${{ secrets.BOT_GITHUB_TOKEN }}
 
       - name: setup environment
         uses: ./.github/actions/setup
@@ -110,7 +108,7 @@ jobs:
           title: 'Upcoming Release Changes'
           commitMode: github-api
         env:
-          GITHUB_TOKEN: ${{ secrets.githubToken }}
+          GITHUB_TOKEN: ${{ secrets.BOT_GITHUB_TOKEN }}
           NPM_CONFIG_PROVENANCE: true
           PNPM_CONFIG_PROVENANCE: true
 
@@ -157,3 +155,62 @@ jobs:
         env:
           VERSION: ${{ steps.cli.outputs.version }}
         run: pnpm oclif promote --no-xz --sha ${GITHUB_SHA:0:7} --version $VERSION
+
+  stable-changeset-version:
+    needs: stable
+    if: needs.stable.outputs.hivePublish != 'true'
+    uses: ./.github/workflows/changeset-version.yaml
+
+  build:
+    needs:
+      - stable
+      - stable-changeset-version
+    if:
+      always() && needs.stable.result == 'success' && (needs.stable-changeset-version.result ==
+      'success' || needs.stable-changeset-version.result == 'skipped')
+    uses: ./.github/workflows/build-and-dockerize.yaml
+    with:
+      imageTag:
+        # prettier-ignore
+        ${{ needs.stable.outputs.hivePublish == 'true' && needs.stable.outputs.hiveVersion || github.sha }}
+      publishSourceMaps: true
+      publishLatest: ${{ needs.stable.outputs.hivePublish == 'true' }}
+      targets: build
+      uploadJavaScriptArtifacts: true
+      latestVersion:
+        ${{ needs.stable.outputs.hivePublish == 'true' && needs.stable.outputs.hiveVersion ||
+        needs.stable-changeset-version.outputs.version }}
+    secrets: inherit
+
+  publish-stable-docker-cli:
+    needs: stable
+    if: needs.stable.outputs.cliPublish == 'true'
+    uses: ./.github/workflows/dockerize-cli.yaml
+    with:
+      cliVersion: ${{ needs.stable.outputs.cliVersion }}
+      publishLatest: true
+    secrets: inherit
+
+  deploy:
+    name: trigger staging deployment
+    needs: build
+    runs-on: ubuntu-22.04
+    if: ${{ vars.ENABLE_STAGING_DEPLOYMENT == '1' }}
+    steps:
+      - name: Dispatch Deployment
+        run: |
+          curl --request POST \
+            --url 'https://api.github.com/repos/${{ secrets.PRIVATE_REPO_OWNER }}/${{ secrets.PRIVATE_REPO_NAME }}/dispatches' \
+            --header 'Accept: application/vnd.github+json' \
+            --header 'Authorization: Bearer ${{ secrets.GH_PAT }}' \
+            --header 'X-GitHub-Api-Version: 2022-11-28' \
+            --header 'Content-Type: application/json' \
+            --data '{
+            "event_type": "deploy-staging",
+            "client_payload": {
+              "actor": "${{ github.actor }}",
+              "ref": "${{ github.sha }}",
+              "pulumiRefresh": "true",
+              "hiveAppUsePersistedDocuments": "true"
+            }
+          }'

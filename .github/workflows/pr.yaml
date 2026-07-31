@@ -89,29 +89,8 @@ jobs:
   typescript:
     uses: ./.github/workflows/typescript-typecheck.yaml
 
-  # Release alpha version on NPM for Hive libraries
+  # Build and test standalone CLI artifacts
   alpha:
     uses: ./.github/workflows/release-alpha.yaml
     if: ${{ github.event.pull_request.title != 'Upcoming Release Changes' }}
-    permissions:
-      id-token: write
-      pull-requests: write
-      contents: write
-      packages: write
     secrets: inherit
-
-  # Release RC version on NPM for Hive libraries
-  release-candidate:
-    uses: ./.github/workflows/release-npm.yaml
-    if: ${{ github.event.pull_request.title == 'Upcoming Release Changes' }}
-    permissions:
-      id-token: write
-      pull-requests: write
-      contents: write
-      packages: write
-    with:
-      type: snapshot
-      npmTag: rc
-      restoreDeletedChangesets: true
-    secrets:
-      githubToken: ${{ secrets.GITHUB_TOKEN }}
