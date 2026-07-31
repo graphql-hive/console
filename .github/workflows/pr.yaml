@@ -93,6 +93,10 @@ jobs:
   alpha:
     uses: ./.github/workflows/release-alpha.yaml
     if: ${{ github.event.pull_request.title != 'Upcoming Release Changes' }}
+    permissions:
+      id-token: write
+      pull-requests: write
+      contents: write
     secrets: inherit
 
   # Release RC version on NPM for Hive libraries
