@@ -85,8 +85,6 @@ jobs:
         env:
           NPM_TOKEN: ${{ secrets.npmToken }}
           GITHUB_TOKEN: ${{ secrets.githubToken }}
-          NPM_CONFIG_PROVENANCE: true
-          PNPM_CONFIG_PROVENANCE: true
 
   stable:
     if: inputs.type == 'stable'
@@ -145,8 +143,6 @@ jobs:
           commitMode: github-api
         env:
           GITHUB_TOKEN: ${{ secrets.githubToken }}
-          NPM_CONFIG_PROVENANCE: true
-          PNPM_CONFIG_PROVENANCE: true
 
       - name: extract published cli version
         if:
