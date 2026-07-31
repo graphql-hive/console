@@ -97,6 +97,7 @@ jobs:
       id-token: write
       pull-requests: write
       contents: write
+      packages: write
     secrets: inherit
 
   # Release RC version on NPM for Hive libraries
@@ -107,6 +108,7 @@ jobs:
       id-token: write
       pull-requests: write
       contents: write
+      packages: write
     with:
       type: snapshot
       npmTag: rc
