@@ -28,11 +28,6 @@ runs:
       env:
         INSTALL_DEPENDENCIES: ${{ inputs.installDependencies }}
       run: |
-        PNPM_VERSION=$(cat package.json | jq -r '.packageManager' | awk -F@ '{print $2}')
-        PNPM_VERSION=${PNPM_VERSION:-9}
-        echo "Using PNPM version $PNPM_VERSION"
-        echo "version=$PNPM_VERSION" >> $GITHUB_OUTPUT
-
         if [ $INSTALL_DEPENDENCIES = true ]; then
           echo "cache=pnpm" >> $GITHUB_OUTPUT
         else
@@ -41,8 +36,6 @@ runs:
 
     - name: install pnpm
       uses: pnpm/action-setup@0ebf47130e4866e96fce0953f49152a61190b271 # v6.0.9
-      with:
-        version: ${{ steps.pnpm.outputs.version }}
 
     - name: install nodejs
       uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
