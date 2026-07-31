@@ -27,6 +27,9 @@ jobs:
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
         with:
           fetch-depth: 2
+      - name: configure Docker Node.js image tag
+        id: node-version-tag
+        run: echo "value=:$(< .node-version)-slim" >> "$GITHUB_OUTPUT"
       - name: configure eqemu
         uses: docker/setup-qemu-action@29109295f81e9208d7d86ff1c6c12d2833863392 # v3
         with:
@@ -42,8 +45,9 @@ jobs:
 
       - name: Prepare Bake inputs
         id: docker-bake-inputs
+        env:
+          NODE_VERSION_TAG: ${{ steps.node-version-tag.outputs.value }}
         run: |
-          export NODE_VERSION_TAG=":$(< .node-version)-slim"
           targets=$(docker buildx bake -f docker/docker.hcl --print build | jq -r '.group.build.targets[]')
           input_set=""
           first=0
@@ -69,6 +73,7 @@ jobs:
           BUILD_TYPE: 'publish'
           PWD: ${{ github.workspace }}
           BUILD_STABLE: ${{ inputs.publishLatest && '1' || '' }}
+          NODE_VERSION_TAG: ${{ steps.node-version-tag.outputs.value }}
         with:
           # See https://github.com/docker/buildx/issues/1533
           provenance: false
