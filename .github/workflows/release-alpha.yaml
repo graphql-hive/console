@@ -14,7 +14,6 @@ jobs:
       npmTag: alpha
     secrets:
       githubToken: ${{ secrets.GITHUB_TOKEN }}
-      npmToken: ${{ secrets.NPM_TOKEN }}
 
   # Upload zipped tarballs to GitHub
   cli-artifacts:

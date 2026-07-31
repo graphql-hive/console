@@ -36,8 +36,6 @@ on:
     secrets:
       githubToken:
         required: true
-      npmToken:
-        required: true
       hiveToken:
         required: false
       r2AccessKeyId:
@@ -83,7 +81,6 @@ jobs:
           tag: ${{ inputs.npmTag }}
           prepareScript: ${{ format('{0} run build:libraries', steps.env.outputs.package-manager) }}
         env:
-          NPM_TOKEN: ${{ secrets.npmToken }}
           GITHUB_TOKEN: ${{ secrets.githubToken }}
 
   stable:
@@ -116,12 +113,6 @@ jobs:
         with:
           codegen: false # no need to run because release script will run it anyway
           actor: release-stable
-
-      - name: prepare npm credentials
-        run: |
-          echo "//registry.npmjs.org/:_authToken=$NPM_TOKEN" >> $HOME/.npmrc
-        env:
-          NPM_TOKEN: ${{ secrets.npmToken }}
 
       - uses: dtolnay/rust-toolchain@stable
         with:
