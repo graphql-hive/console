@@ -22,7 +22,6 @@ services:
           'CMD',
           'node',
           '-e',
-          '-q',
           "fetch('http://localhost:3004/_readiness').then(r => { if (!r.ok) process.exit(1)
           }).catch(() => process.exit(1))",
         ]
@@ -56,7 +55,6 @@ services:
           'CMD',
           'node',
           '-e',
-          '-q',
           "fetch('http://localhost:3013/_readiness').then(r => { if (!r.ok) process.exit(1)
           }).catch(() => process.exit(1))",
         ]
@@ -116,7 +114,6 @@ services:
           'CMD',
           'node',
           '-e',
-          '-q',
           "fetch('http://localhost:3012/_readiness').then(r => { if (!r.ok) process.exit(1)
           }).catch(() => process.exit(1))",
         ]
