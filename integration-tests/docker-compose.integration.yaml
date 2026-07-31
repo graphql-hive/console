@@ -275,6 +275,7 @@ services:
       - '3002:3002'
 
   otel-collector:
+    image: '${DOCKER_REGISTRY}otel-collector${DOCKER_TAG}'
     depends_on:
       clickhouse:
         condition: service_healthy
