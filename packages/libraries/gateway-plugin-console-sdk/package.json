@@ -5,7 +5,7 @@
   "description": "GraphQL Hive + GraphQL Hive Gateway",
   "repository": {
     "type": "git",
-    "url": "graphql-hive/platform",
+    "url": "https://github.com/graphql-hive/console",
     "directory": "packages/libraries/gateway-plugin-console-sdk"
   },
   "homepage": "https://the-guild.dev/graphql/hive",

@@ -3,7 +3,7 @@
   "type": "module",
   "repository": {
     "type": "git",
-    "url": "graphql-hive/platform"
+    "url": "https://github.com/graphql-hive/console"
   },
   "author": {
     "email": "contact@the-guild.dev",

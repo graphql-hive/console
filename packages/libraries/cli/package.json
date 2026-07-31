@@ -4,7 +4,7 @@
   "description": "A CLI util to manage and control your GraphQL Hive",
   "repository": {
     "type": "git",
-    "url": "graphql-hive/platform",
+    "url": "https://github.com/graphql-hive/console",
     "directory": "packages/libraries/cli"
   },
   "homepage": "https://the-guild.dev/graphql/hive",
