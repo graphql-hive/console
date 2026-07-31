@@ -1,5 +1,13 @@
 # @graphql-yoga/render-graphiql
 
+## 0.1.13
+
+### Patch Changes
+
+- Updated dependencies
+  [[`e8e2a9e`](https://github.com/graphql-hive/console/commit/e8e2a9eb660e19e8eff5f77ff14a90de7694c064)]:
+  - @graphql-hive/laboratory@0.2.2
+
 ## 0.1.12
 
 ### Patch Changes

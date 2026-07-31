@@ -58,6 +58,7 @@ export const createPublicGraphQLHandler = (
           ? {
               target: args.hiveUsageConfig.target,
               endpoint: args.hiveUsageConfig.endpoint ?? undefined,
+              fieldLevelMetricsEnabled: args.hiveUsageConfig.fieldLevelMetricsEnabled,
               clientInfo: () => ({
                 name: 'hive-public-api',
                 version: '0.1',

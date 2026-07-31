@@ -1,4 +1,12 @@
-import { Fragment, useCallback, useDeferredValue, useEffect, useMemo, useState } from 'react';
+import {
+  Fragment,
+  useCallback,
+  useDeferredValue,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import {
   GraphQLEnumType,
   GraphQLObjectType,
@@ -28,6 +36,7 @@ import {
   getOpenPaths,
   isArgInQuery,
   isPathInQuery,
+  mergeOpenPaths,
   searchSchemaPaths,
 } from '../../lib/operations.utils';
 import { cn, splitIdentifier } from '../../lib/utils';
@@ -861,16 +870,33 @@ export const Builder = (props: {
     return props.operation ?? activeOperation ?? null;
   }, [props.operation, activeOperation]);
 
-  useEffect(() => {
-    if (schema) {
-      const newOpenPaths = getOpenPaths(operation?.query ?? '');
+  const documentPathsRef = useRef<string[]>([]);
+  const operationIdRef = useRef<string | null>(operation?.id ?? null);
 
-      if (newOpenPaths.length > 0) {
-        setOpenPaths(newOpenPaths);
-        setTabValue(newOpenPaths[0] as OperationTypeNode);
-      }
+  useEffect(() => {
+    if (!schema) {
+      return;
     }
-  }, [schema, operation?.query]);
+
+    const documentPaths = getOpenPaths(operation?.query ?? '');
+
+    if (documentPaths.length === 0) {
+      return;
+    }
+
+    const isDifferentOperation = operationIdRef.current !== (operation?.id ?? null);
+    const previousDocumentPaths = documentPathsRef.current;
+
+    operationIdRef.current = operation?.id ?? null;
+    documentPathsRef.current = documentPaths;
+
+    setOpenPaths(current =>
+      isDifferentOperation
+        ? documentPaths
+        : mergeOpenPaths(current, previousDocumentPaths, documentPaths),
+    );
+    setTabValue(documentPaths[0] as OperationTypeNode);
+  }, [schema, operation?.id, operation?.query]);
 
   const queryFields = useMemo(
     () => Object.values(schema?.getQueryType()?.getFields?.() ?? {}),

@@ -13,15 +13,9 @@ export type ErrorResultEvent = {
   event: 'error';
   id: string;
   err: unknown;
-};
-
-export type TrackMetricEvent = {
-  event: 'metric';
-  target: string | undefined;
-  compositionType: CompositionEvent['data']['type'];
-} & {
-  type: 'heapUsed';
-  value: number;
+  ctx?: {
+    heapUsed?: number;
+  };
 };
 
 export function createCompositionWorker(args: {
@@ -41,6 +35,10 @@ export function createCompositionWorker(args: {
   });
 
   args.port.on('message', async (message: CompositionEvent) => {
+    let startMemoryUsage = 0;
+    if (args.env.compositionWorker.trackMemoryUsage) {
+      startMemoryUsage = process.memoryUsage().heapUsed;
+    }
     const logger = baseLogger.child({
       taskId: message.taskId,
       reqId: message.requestId,
@@ -50,18 +48,17 @@ export function createCompositionWorker(args: {
 
     logger.debug('processing message');
     const postResult = (result: CompositionResultEvent | ErrorResultEvent) => {
-      args.port.postMessage(result);
-
       if (args.env.compositionWorker.trackMemoryUsage) {
-        // send metric back to main thread so it can be reported
-        args.port.postMessage({
-          event: 'metric',
-          type: 'heapUsed',
-          value: process.memoryUsage().heapUsed,
-          target: message.targetId,
-          compositionType: message.data.type,
-        } satisfies TrackMetricEvent);
+        const memoryDiff = process.memoryUsage().heapUsed - startMemoryUsage;
+        // ignore if memory was freed during execution
+        if (memoryDiff > 0) {
+          result.ctx = {
+            heapUsed: memoryDiff,
+          };
+        }
       }
+
+      args.port.postMessage(result);
     };
 
     try {
@@ -153,7 +150,6 @@ export type CompositionEvent = {
   id: string;
   event: 'composition';
   requestId: string;
-  targetId?: string;
   taskId: string;
   data:
     | {
@@ -178,6 +174,10 @@ export type CompositionResultEvent = {
     result: CompositionResponse & {
       includesException?: boolean;
     };
+  };
+  ctx?: {
+    /** Amount of memory used during composition. Can be undefined if memory was freed during the run or if trackMemoryUsage is disabled */
+    heapUsed?: number;
   };
 };
 

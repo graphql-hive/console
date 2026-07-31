@@ -1,0 +1,15 @@
+{
+  "extends": "../../../tsconfig.json",
+  "include": ["src"],
+  "compilerOptions": {
+    "types": ["node"],
+    "baseUrl": ".",
+    "outDir": "dist",
+    "rootDir": "src",
+    "target": "es2017",
+    "module": "esnext",
+    "skipLibCheck": true,
+    "declaration": true,
+    "declarationMap": true
+  }
+}
