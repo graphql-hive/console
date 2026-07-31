@@ -27,7 +27,6 @@
     "got": "14.4.7",
     "graphql": "16.9.0",
     "ioredis-mock": "8.9.0",
-    "p-timeout": "6.1.4",
     "pino-pretty": "11.3.0",
     "reflect-metadata": "0.2.2",
     "zod": "3.25.76"
