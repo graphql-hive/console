@@ -133,7 +133,6 @@
     "zod": "^4.3.6"
   },
   "publishConfig": {
-    "registry": "https://registry.npmjs.org",
     "access": "public"
   },
   "sideEffects": [

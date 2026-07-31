@@ -78,7 +78,6 @@
     "typescript": "5.7.3"
   },
   "publishConfig": {
-    "registry": "https://registry.npmjs.org",
     "access": "public"
   },
   "oclif": {
