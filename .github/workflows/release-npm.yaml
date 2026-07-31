@@ -50,40 +50,15 @@ permissions:
 
 jobs:
   snapshot:
-    if:
-      inputs.type == 'snapshot' && github.event.pull_request.head.repo.full_name ==
-      github.repository
-    runs-on: ubuntu-latest
-    outputs:
-      published: ${{ steps.changesets.outputs.published }}
-      publishedPackages: ${{ steps.changesets.outputs.publishedPackages }}
-    steps:
-      - name: checkout
-        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
-        with:
-          fetch-depth: 0
-          ref: ${{ github.event.pull_request.head.sha }}
-
-      - name: setup environment
-        id: env
-        uses: the-guild-org/shared-config/setup@v1
-        with:
-          node-version-file: '.node-version'
-
-      - name: restore deleted changesets
-        if: inputs.restoreDeletedChangesets
-        run: git checkout HEAD~1 -- .
-
-      - name: ${{ inputs.npmTag }} release
-        id: changesets
-        uses: the-guild-org/changesets-snapshot-action@232ff9af22cfd043528fe2e4c403afd090ba3ed3 # v0.0.4
-        with:
-          tag: ${{ inputs.npmTag }}
-          prepareScript: ${{ format('{0} run build:libraries', steps.env.outputs.package-manager) }}
-        env:
-          GITHUB_TOKEN: ${{ secrets.githubToken }}
-          NPM_CONFIG_PROVENANCE: true
-          PNPM_CONFIG_PROVENANCE: true
+    if: inputs.type == 'snapshot'
+    uses: the-guild-org/shared-config/.github/workflows/release-snapshot.yml@v1
+    with:
+      npmTag: ${{ inputs.npmTag }}
+      buildScript: build:libraries
+      node-version-file: '.node-version'
+      restoreDeletedChangesets: ${{ inputs.restoreDeletedChangesets }}
+    secrets:
+      githubToken: ${{ secrets.githubToken }}
 
   stable:
     if: inputs.type == 'stable'
