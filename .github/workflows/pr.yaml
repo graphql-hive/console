@@ -98,6 +98,10 @@ jobs:
   release-candidate:
     uses: ./.github/workflows/release-npm.yaml
     if: ${{ github.event.pull_request.title == 'Upcoming Release Changes' }}
+    permissions:
+      id-token: write
+      pull-requests: write
+      contents: write
     with:
       type: snapshot
       npmTag: rc

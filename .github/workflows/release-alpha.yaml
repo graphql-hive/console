@@ -5,6 +5,10 @@ jobs:
   # Release alpha version on NPM for Hive libraries
   npm:
     uses: ./.github/workflows/release-npm.yaml
+    permissions:
+      id-token: write
+      pull-requests: write
+      contents: write
     with:
       type: snapshot
       npmTag: alpha
