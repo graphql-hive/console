@@ -1,0 +1,193 @@
+on:
+  workflow_call:
+    inputs:
+      type:
+        description: 'The type of release to publish'
+        required: true
+        type: string
+      npmTag:
+        description: 'The npm distribution tag for snapshot releases'
+        default: alpha
+        type: string
+      restoreDeletedChangesets:
+        description: 'Whether deleted changesets should be restored before publishing a snapshot'
+        default: false
+        type: boolean
+    outputs:
+      published:
+        description: 'Whether any packages were published'
+        value: ${{ jobs.snapshot.outputs.published || jobs.stable.outputs.published }}
+      publishedPackages:
+        description: 'The published packages as JSON'
+        value:
+          ${{ jobs.snapshot.outputs.publishedPackages || jobs.stable.outputs.publishedPackages }}
+      hivePublish:
+        description: 'Whether the Hive package was published'
+        value: ${{ jobs.stable.outputs.hivePublish }}
+      hiveVersion:
+        description: 'The published Hive package version'
+        value: ${{ jobs.stable.outputs.hiveVersion }}
+      cliPublish:
+        description: 'Whether the CLI package was published'
+        value: ${{ jobs.stable.outputs.cliPublish }}
+      cliVersion:
+        description: 'The published CLI package version'
+        value: ${{ jobs.stable.outputs.cliVersion }}
+    secrets:
+      githubToken:
+        required: true
+      npmToken:
+        required: true
+      hiveToken:
+        required: false
+      r2AccessKeyId:
+        required: false
+      r2SecretAccessKey:
+        required: false
+
+permissions:
+  id-token: write
+  pull-requests: write
+  contents: write
+
+jobs:
+  snapshot:
+    if:
+      inputs.type == 'snapshot' && github.event.pull_request.head.repo.full_name ==
+      github.repository
+    runs-on: ubuntu-latest
+    outputs:
+      published: ${{ steps.changesets.outputs.published }}
+      publishedPackages: ${{ steps.changesets.outputs.publishedPackages }}
+    steps:
+      - name: checkout
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.sha }}
+
+      - name: setup environment
+        id: env
+        uses: the-guild-org/shared-config/setup@v1
+        with:
+          node-version-file: '.node-version'
+
+      - name: restore deleted changesets
+        if: inputs.restoreDeletedChangesets
+        run: git checkout HEAD~1 -- .
+
+      - name: ${{ inputs.npmTag }} release
+        id: changesets
+        uses: the-guild-org/changesets-snapshot-action@232ff9af22cfd043528fe2e4c403afd090ba3ed3 # v0.0.4
+        with:
+          tag: ${{ inputs.npmTag }}
+          prepareScript: ${{ format('{0} run build:libraries', steps.env.outputs.package-manager) }}
+        env:
+          NPM_TOKEN: ${{ secrets.npmToken }}
+          GITHUB_TOKEN: ${{ secrets.githubToken }}
+          NPM_CONFIG_PROVENANCE: true
+          PNPM_CONFIG_PROVENANCE: true
+
+  stable:
+    if: inputs.type == 'stable'
+    runs-on: ubuntu-22.04
+    env:
+      HIVE_TOKEN: ${{ secrets.hiveToken }}
+      # AWS_* are used by Oclif CLI
+      AWS_ACCESS_KEY_ID: ${{ secrets.r2AccessKeyId }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.r2SecretAccessKey }}
+      AWS_S3_ENDPOINT: https://6d5bc18cd8d13babe7ed321adba3d8ae.r2.cloudflarestorage.com
+
+    outputs:
+      published: ${{ steps.changesets.outputs.published }}
+      publishedPackages: ${{ steps.changesets.outputs.publishedPackages }}
+      cliPublish: ${{ steps.cli.outputs.publish }}
+      cliVersion: ${{ steps.cli.outputs.version }}
+      hivePublish: ${{ steps.hive.outputs.publish }}
+      hiveVersion: ${{ steps.hive.outputs.version }}
+
+    steps:
+      - name: checkout
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
+        with:
+          fetch-depth: 2
+          token: ${{ secrets.githubToken }}
+
+      - name: setup environment
+        uses: ./.github/actions/setup
+        with:
+          codegen: false # no need to run because release script will run it anyway
+          actor: release-stable
+
+      - name: prepare npm credentials
+        run: |
+          echo "//registry.npmjs.org/:_authToken=$NPM_TOKEN" >> $HOME/.npmrc
+        env:
+          NPM_TOKEN: ${{ secrets.npmToken }}
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: stable
+
+      # see https://github.com/changesets/action/issues/523
+      - name: fix gh-api issues with changesets
+        run: |
+          git ls-files | while read -r file; do [ -x "$file" ] && chmod -x "$file" || true; done
+
+      - name: publish stable
+        id: changesets
+        uses: changesets/action@e0145edc7d9d8679003495b11f87bd8ef63c0cba # v1.5.3
+        with:
+          publish: pnpm release
+          version: pnpm release:version
+          commit: 'chore(release): update monorepo packages versions'
+          title: 'Upcoming Release Changes'
+          commitMode: github-api
+        env:
+          GITHUB_TOKEN: ${{ secrets.githubToken }}
+          NPM_CONFIG_PROVENANCE: true
+          PNPM_CONFIG_PROVENANCE: true
+
+      - name: extract published cli version
+        if:
+          steps.changesets.outputs.published && contains(steps.changesets.outputs.publishedPackages,
+          '"@graphql-hive/cli"')
+        id: cli
+        run: |
+          echo '${{steps.changesets.outputs.publishedPackages}}' > cli-ver.json
+          VERSION=`echo $(jq -r '.[] | select(.name | endswith("@graphql-hive/cli")).version' cli-ver.json)`
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "publish=true" >> $GITHUB_OUTPUT
+
+      - name: extract published hive version
+        if:
+          steps.changesets.outputs.published && contains(steps.changesets.outputs.publishedPackages,
+          '"hive"')
+        id: hive
+        run: |
+          echo '${{steps.changesets.outputs.publishedPackages}}' > hive-ver.json
+          VERSION=`echo $(jq -r '.[] | select(.name | endswith("hive")).version' hive-ver.json)`
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "publish=true" >> $GITHUB_OUTPUT
+
+      # Needed for `oclif pack win`
+      - name: Install NSIS
+        run: |
+          sudo apt-get -y install nsis
+
+      - name: pack tarballs
+        if: steps.cli.outputs.publish == 'true'
+        working-directory: packages/libraries/cli
+        run: pnpm oclif:pack
+
+      - name: upload tarballs
+        if: steps.cli.outputs.publish == 'true'
+        working-directory: packages/libraries/cli
+        run: pnpm oclif:upload
+
+      - name: promote tarballs
+        if: steps.cli.outputs.publish == 'true'
+        working-directory: packages/libraries/cli
+        env:
+          VERSION: ${{ steps.cli.outputs.version }}
+        run: pnpm oclif promote --no-xz --sha ${GITHUB_SHA:0:7} --version $VERSION

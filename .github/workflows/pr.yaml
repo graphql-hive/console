@@ -96,13 +96,12 @@ jobs:
 
   # Release RC version on NPM for Hive libraries
   release-candidate:
-    uses: the-guild-org/shared-config/.github/workflows/release-snapshot.yml@v1
+    uses: ./.github/workflows/release-npm.yaml
     if: ${{ github.event.pull_request.title == 'Upcoming Release Changes' }}
     with:
+      type: snapshot
       npmTag: rc
       restoreDeletedChangesets: true
-      buildScript: build:libraries
-      node-version-file: '.node-version'
     secrets:
       githubToken: ${{ secrets.GITHUB_TOKEN }}
       npmToken: ${{ secrets.NPM_TOKEN }}

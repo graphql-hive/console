@@ -1,23 +1,13 @@
 on:
   workflow_call:
 
-permissions:
-  id-token: write
-  pull-requests: write
-  contents: write
-
 jobs:
   # Release alpha version on NPM for Hive libraries
   npm:
-    uses: the-guild-org/shared-config/.github/workflows/release-snapshot.yml@v1
-    permissions:
-      pull-requests: write
-      actions: write
-      contents: write
+    uses: ./.github/workflows/release-npm.yaml
     with:
+      type: snapshot
       npmTag: alpha
-      buildScript: build:libraries
-      node-version-file: '.node-version'
     secrets:
       githubToken: ${{ secrets.GITHUB_TOKEN }}
       npmToken: ${{ secrets.NPM_TOKEN }}
