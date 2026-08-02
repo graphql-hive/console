@@ -12,7 +12,6 @@
     "@graphql-eslint/eslint-plugin": "3.20.1",
     "@hive/service-common": "workspace:*",
     "@sentry/node": "7.120.2",
-    "@sentry/tracing": "7.114.0",
     "@trpc/server": "10.45.3",
     "@types/eslint": "8.56.12",
     "ajv": "8.18.0",
