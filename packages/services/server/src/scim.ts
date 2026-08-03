@@ -363,7 +363,7 @@ export const createSCIMPlugin =
           if (user.deactivatedAt === null && !updates.active) {
             user = await usersStore.disableUser(user.id, trx);
           } else if (user.deactivatedAt !== null && updates.active) {
-            user = await usersStore.enabledUser(user.id, trx);
+            user = await usersStore.enableUser(user.id, trx);
           }
         }
         if (email) {
@@ -491,14 +491,14 @@ export const createSCIMPlugin =
         };
       }
 
-      if (!group.externalId && !group.displayName) {
+      if (!properties.externalId && !properties.displayName) {
         return {
           type: 'success' as const,
           group,
         };
       }
 
-      return await trx.transaction('update group prperties', async () => {
+      return await trx.transaction('update group properties', async () => {
         const result = await groupStore.updateGroupPropertiesByOrganizationIdAndGroupId(
           group.organizationId,
           group.id,
@@ -581,7 +581,7 @@ export const createSCIMPlugin =
       return reply.status(500).send(
         createSCIMError({
           status: 500,
-          detail: 'An unexpected error occured.',
+          detail: 'An unexpected error occurred.',
         }),
       );
     });
@@ -938,7 +938,7 @@ export const createSCIMPlugin =
       for (const operation of body.data.Operations) {
         if (operation.op !== 'replace') {
           auth.logger.debug(
-            'unsupported operation received. we aonly support replace for patch for now',
+            'unsupported operation received. we only support replace and patch for now',
             operation.op,
           );
           continue;
@@ -1092,7 +1092,7 @@ export const createSCIMPlugin =
           'id',
         ]);
         if (filterParseResult.type === 'error') {
-          return reply.status(400).send(auth.error);
+          return reply.status(400).send(filterParseResult.error);
         }
 
         const { property, value } = filterParseResult;

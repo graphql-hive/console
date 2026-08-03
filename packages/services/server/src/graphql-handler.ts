@@ -196,7 +196,7 @@ export const graphqlHandler = (options: GraphQLHandlerOptions): RouteHandlerMeth
     plugins: [
       useArmor(),
       useHiveErrorHandler(err => {
-        options.logger.error(err, 'Unexpected error occured while handling exception.');
+        options.logger.error(err, 'Unexpected error occurred while handling exception.');
       }),
       useExtendContext(async context => ({
         session: await options.authN.authenticate(context),

@@ -388,7 +388,7 @@ export default gql`
     subgraphs: [String!]
     """
     Wether the trace is successful.
-    A trace is a success if no GraphQL errors occured and the HTTP status code is in the 2XX to 3XX range.
+    A trace is a success if no GraphQL errors occurred and the HTTP status code is in the 2XX to 3XX range.
     """
     success: Boolean!
     """
@@ -449,7 +449,7 @@ export default gql`
     traceIds: [ID!]
     """
     Filter based on whether the operation is a success.
-    A operation is successful if no GraphQL error has occured and the result is within the 2XX or 3XX range.
+    A operation is successful if no GraphQL error has occurred and the result is within the 2XX or 3XX range.
     """
     success: [Boolean!]
     """

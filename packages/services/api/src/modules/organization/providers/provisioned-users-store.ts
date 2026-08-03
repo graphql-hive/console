@@ -207,7 +207,7 @@ export class ProvisionedUsersStore {
     });
   }
 
-  async enabledUser(userId: string, trx: CommonQueryMethods) {
+  async enableUser(userId: string, trx: CommonQueryMethods) {
     const query = psql`
       UPDATE "users"
       SET "deactivated_at" = NULL
