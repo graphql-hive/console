@@ -105,6 +105,9 @@ export function deployWorkflows({
       .withSecret('CLICKHOUSE_USERNAME', clickhouse.secret, 'username')
       .withSecret('CLICKHOUSE_PASSWORD', clickhouse.secret, 'password')
       .withSecret('CLICKHOUSE_PROTOCOL', clickhouse.secret, 'protocol')
+      // Same secret as the graphql and schema services, so `organizations.slack_token`
+      // written by the API decrypts here when dispatching metric-alert notifications.
+      .withSecret('ENCRYPTION_SECRET', environment.encryptionSecret, 'encryptionPrivateKey')
       .deploy()
   );
 }

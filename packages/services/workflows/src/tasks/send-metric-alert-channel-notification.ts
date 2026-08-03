@@ -6,8 +6,10 @@ import {
   sendSlackNotification,
   sendTeamsNotification,
   sendWebhookNotification,
+  summarizeNotificationResult,
   type AlertChannelRow,
   type NotificationEvent,
+  type NotificationResult,
 } from '../lib/metric-alert-notifier.js';
 
 const tracer = trace.getTracer('metric-alert-evaluator');
@@ -70,7 +72,14 @@ export const task = implementTask(SendMetricAlertChannelNotificationTask, async 
       },
     },
     async span => {
-      let outcome: 'sent' | 'deduped' | 'skipped-deleted' | 'failed' = 'failed';
+      let outcome:
+        | 'sent'
+        | 'deduped'
+        | 'skipped-deleted'
+        | 'skipped-config'
+        | 'failed-config'
+        | 'gave-up'
+        | 'failed' = 'failed';
       // Hoisted so the finally block can compute breach-to-dispatch lag
       // regardless of whether the dispatch succeeded, failed, or threw. Stays
       // null when the SELECT didn't return a row (already-deduped or
@@ -181,18 +190,20 @@ export const task = implementTask(SendMetricAlertChannelNotificationTask, async 
 
         const idempotencyKey = `metric-alert:${stateLogId}:${channelId}`;
 
+        let result: NotificationResult;
         switch (channel.type) {
           case 'SLACK':
-            await sendSlackNotification({
+            result = await sendSlackNotification({
               channel,
               event,
               pg: context.pg,
               logger,
               webAppUrl: context.webAppUrl,
+              crypto: context.crypto,
             });
             break;
           case 'WEBHOOK':
-            await sendWebhookNotification({
+            result = await sendWebhookNotification({
               channel,
               event,
               requestBroker: context.requestBroker,
@@ -204,7 +215,7 @@ export const task = implementTask(SendMetricAlertChannelNotificationTask, async 
             });
             break;
           case 'MSTEAMS_WEBHOOK':
-            await sendTeamsNotification({
+            result = await sendTeamsNotification({
               channel,
               event,
               requestBroker: context.requestBroker,
@@ -217,16 +228,27 @@ export const task = implementTask(SendMetricAlertChannelNotificationTask, async 
             break;
         }
 
-        // Record successful dispatch. ON CONFLICT covers the rare case where a
-        // concurrent retry (e.g. two workers picking up the job after a lock
-        // timeout) both completed the external call.
-        await context.pg.query(psql`
-          INSERT INTO "metric_alert_notifications_sent" ("state_log_id", "alert_channel_id")
-          VALUES (${stateLogId}, ${channelId})
-          ON CONFLICT ("state_log_id", "alert_channel_id") DO NOTHING
-        `);
+        const summary = summarizeNotificationResult(result);
 
-        outcome = 'sent';
+        // Only a real delivery earns the dedupe row. A misconfigured channel or an
+        // exhausted retry budget sent nothing, so recording one would suppress a
+        // later redelivery of a notification the user never received.
+        if (summary.delivered) {
+          // ON CONFLICT covers the rare case where a concurrent retry (e.g. two
+          // workers picking up the job after a lock timeout) both completed the
+          // external call.
+          await context.pg.query(psql`
+            INSERT INTO "metric_alert_notifications_sent" ("state_log_id", "alert_channel_id")
+            VALUES (${stateLogId}, ${channelId})
+            ON CONFLICT ("state_log_id", "alert_channel_id") DO NOTHING
+          `);
+        }
+
+        if (summary.reason) {
+          span.setAttribute('notification.skip_reason', summary.reason);
+        }
+
+        outcome = summary.outcome;
       } catch (err) {
         // outcome already initialized to 'failed'; record on the span for the
         // Failed-dispatches Grafana panel to filter by, then rethrow so

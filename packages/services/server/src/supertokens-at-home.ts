@@ -2,7 +2,7 @@ import { FastifyReply, type FastifyInstance } from 'fastify';
 import * as oidClient from 'openid-client';
 import z from 'zod';
 import cookie from '@fastify/cookie';
-import { CryptoProvider, Storage, User } from '@hive/api';
+import { Storage, User } from '@hive/api';
 import {
   AccessTokenKeyContainer,
   comparePassword,
@@ -23,6 +23,7 @@ import { OIDCIntegrationStore } from '@hive/api/modules/oidc-integrations/provid
 import { ProvisionedUsersStore } from '@hive/api/modules/organization/providers/provisioned-users-store';
 import { RedisRateLimiter } from '@hive/api/modules/shared/providers/redis-rate-limiter';
 import type { OIDCIntegration } from '@hive/api/shared/entities';
+import { Encryptor } from '@hive/service-common';
 import { TaskScheduler } from '@hive/workflows/kit';
 import { PasswordResetTask } from '@hive/workflows/tasks/password-reset';
 import { env } from './environment';
@@ -39,7 +40,7 @@ export async function registerSupertokensAtHome(
   storage: Storage,
   oidcIntegrations: OIDCIntegrationStore,
   taskScheduler: TaskScheduler,
-  crypto: CryptoProvider,
+  crypto: Encryptor,
   rateLimiter: RedisRateLimiter,
   oauthCache: OAuthCache,
   broadcastLog: BroadcastOIDCIntegrationLog,

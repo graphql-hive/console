@@ -1,7 +1,7 @@
 import dns from 'node:dns/promises';
 import { Inject, Injectable, Scope } from 'graphql-modules';
 import zod from 'zod';
-import { maskToken } from '@hive/service-common';
+import { Encryptor, maskToken } from '@hive/service-common';
 import * as GraphQLSchema from '../../../__generated__/types';
 import { OIDCIntegration, Organization } from '../../../shared/entities';
 import { HiveError } from '../../../shared/errors';
@@ -9,7 +9,6 @@ import { AuditLogRecorder } from '../../audit-logs/providers/audit-log-recorder'
 import { Session } from '../../auth/lib/authz';
 import { ResourceAssignmentGroup } from '../../organization/lib/resource-assignment-model';
 import { ResourceAssignments } from '../../organization/providers/resource-assignments';
-import { CryptoProvider } from '../../shared/providers/crypto';
 import { Logger } from '../../shared/providers/logger';
 import { PUB_SUB_CONFIG, type HivePubSub } from '../../shared/providers/pub-sub';
 import { Storage } from '../../shared/providers/storage';
@@ -35,7 +34,7 @@ export class OIDCIntegrationsProvider {
   constructor(
     logger: Logger,
     private storage: Storage,
-    private crypto: CryptoProvider,
+    private crypto: Encryptor,
     private auditLog: AuditLogRecorder,
     @Inject(PUB_SUB_CONFIG) private pubSub: HivePubSub,
     private oidcIntegrationConfig: OIDCIntegrationConfig,

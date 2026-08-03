@@ -1,11 +1,11 @@
-import { CryptoProvider } from 'packages/services/api/src/modules/shared/providers/crypto';
 import { z } from 'zod';
 import type { Storage } from '@hive/api';
+import { Encryptor } from '@hive/service-common';
 import { initTRPC } from '@trpc/server';
 
 export type Context = {
   storage: Storage;
-  crypto: CryptoProvider;
+  crypto: Encryptor;
 };
 
 const t = initTRPC.context<Context>().create();

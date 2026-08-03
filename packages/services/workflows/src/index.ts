@@ -6,6 +6,7 @@ import {
   configureTracing,
   createRedisClient,
   createServer,
+  Encryptor,
   generateRdsIamAuthToken,
   registerShutdown,
   reportReadiness,
@@ -148,6 +149,14 @@ const clickhouse = env.clickhouse
   ? new ClickHouseClient(env.clickhouse, logger.child({ source: 'ClickHouse' }))
   : null;
 
+const encryptor = env.encryptionSecret ? new Encryptor(env.encryptionSecret) : null;
+if (!encryptor) {
+  logger.warn(
+    'ENCRYPTION_SECRET not configured — Slack metric alert notifications will be skipped. ' +
+      'Set it to the same value as the API service to enable.',
+  );
+}
+
 const context: Context = {
   logger,
   email: createEmailProvider(env.email.provider, env.email.emailFrom),
@@ -161,6 +170,7 @@ const context: Context = {
   }),
   pubSub,
   webAppUrl: env.webAppUrl,
+  crypto: encryptor,
 };
 
 server.route({
