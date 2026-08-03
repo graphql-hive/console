@@ -20,8 +20,8 @@
     "fastify": "5.10.0",
     "graphql": "16.9.0",
     "pino-pretty": "11.3.0",
-    "zod": "3.25.76",
-    "zod-validation-error": "3.4.0"
+    "zod": "4.4.3",
+    "zod-validation-error": "5.0.0"
   },
   "buildOptions": {
     "runify": true,

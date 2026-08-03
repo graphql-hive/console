@@ -51,16 +51,16 @@ const UpdateOperationNameMutation = graphql(`
 const editOperationModalFormSchema = z.object({
   name: z
     .string({
-      required_error: 'Operation name is required',
+      error: issue => (issue.input == null ? 'Operation name is required' : issue.message),
     })
     .min(3, {
-      message: 'Operation name must be at least 3 characters long',
+      error: 'Operation name must be at least 3 characters long',
     })
     .max(50, {
-      message: 'Operation name must be less than 50 characters long',
+      error: 'Operation name must be less than 50 characters long',
     }),
   collectionId: z.string({
-    required_error: 'Collection is required',
+    error: issue => (issue.input == null ? 'Collection is required' : issue.message),
   }),
 });
 

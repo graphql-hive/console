@@ -245,16 +245,16 @@ export const CreateProjectMutation = graphql(`
 const createProjectFormSchema = z.object({
   projectSlug: z
     .string({
-      required_error: 'Project slug is required',
+      error: issue => (issue.input == null ? 'Project slug is required' : issue.message),
     })
     .min(2, {
-      message: 'Project slug must be at least 2 characters long',
+      error: 'Project slug must be at least 2 characters long',
     })
     .max(50, {
-      message: 'Project slug must be at most 50 characters long',
+      error: 'Project slug must be at most 50 characters long',
     }),
   projectType: z.nativeEnum(ProjectType, {
-    required_error: 'Project type is required',
+    error: issue => (issue.input == null ? 'Project type is required' : issue.message),
   }),
 });
 

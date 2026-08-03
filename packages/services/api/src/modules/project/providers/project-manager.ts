@@ -56,11 +56,12 @@ export class ProjectManager {
     const inputParseResult = CreateProjectModel.safeParse(input);
 
     if (!inputParseResult.success) {
+      const errors = z.treeifyError(inputParseResult.error);
       return {
         ok: false as const,
         message: 'Please check your input.',
         inputErrors: {
-          slug: inputParseResult.error.formErrors.fieldErrors.slug?.[0],
+          slug: errors?.properties?.slug?.errors?.at(0),
         },
       };
     }
@@ -307,10 +308,10 @@ export class ProjectManager {
     const inputParseResult = UpdateProjectSlugModel.safeParse(input);
 
     if (!inputParseResult.success) {
+      const errors = z.treeifyError(inputParseResult.error);
       return {
         ok: false,
-        message:
-          inputParseResult.error.formErrors.fieldErrors.slug?.[0] ?? 'Please check your input.',
+        message: errors?.errors.at(0) ?? 'Please check your input.',
       };
     }
 

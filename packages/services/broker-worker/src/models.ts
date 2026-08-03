@@ -9,12 +9,12 @@ const RequestModelSchema = z.union([
   z.object({
     method: z.literal('GET'),
     url: z.string().min(1),
-    headers: z.record(z.string()).optional(),
+    headers: z.record(z.string(), z.string()).optional(),
   }),
   z.object({
     method: z.literal('POST'),
     url: z.string().min(1),
-    headers: z.record(z.string()).optional(),
+    headers: z.record(z.string(), z.string()).optional(),
     body: z.string().optional(),
     resolveResponseBody: z.boolean().optional().default(true),
   }),

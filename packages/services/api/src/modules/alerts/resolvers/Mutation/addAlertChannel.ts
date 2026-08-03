@@ -22,13 +22,14 @@ export const addAlertChannel: NonNullable<MutationResolvers['addAlertChannel']> 
   const result = AddAlertChannelModel.safeParse(input);
 
   if (!result.success) {
+    const errors = z.treeifyError(result.error);
     return {
       error: {
         message: 'Please check your input.',
         inputErrors: {
-          slackChannel: result.error.formErrors.fieldErrors.slack?.[0],
-          webhookEndpoint: result.error.formErrors.fieldErrors.webhook?.[0],
-          name: result.error.formErrors.fieldErrors.name?.[0],
+          slackChannel: errors.properties?.slack?.errors.at(0),
+          webhookEndpoint: errors.properties?.webhook?.errors.at(0),
+          name: errors.properties?.name?.errors.at(0),
         },
       },
     };

@@ -185,9 +185,10 @@ export class SavedFiltersProvider {
 
     const validationResult = CreateSavedFilterInputModel.safeParse(input);
     if (!validationResult.success) {
+      const errors = zod.treeifyError(validationResult.error);
       return {
         type: 'error',
-        message: validationResult.error.errors[0].message,
+        message: errors.errors?.at(0) ?? 'Something went wrong.',
       };
     }
 
@@ -306,9 +307,10 @@ export class SavedFiltersProvider {
 
     const validationResult = UpdateSavedFilterInputModel.safeParse(input);
     if (!validationResult.success) {
+      const errors = zod.treeifyError(validationResult.error);
       return {
         type: 'error',
-        message: validationResult.error.errors[0].message,
+        message: errors.errors?.at(0) ?? 'Something went wrong.',
       };
     }
 

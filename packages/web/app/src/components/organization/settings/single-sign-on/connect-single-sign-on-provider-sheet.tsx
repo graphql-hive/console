@@ -357,15 +357,13 @@ function OIDCMetadataFetcher(props: {
 
       const metadataResult = OIDCMetadataSchema.safeParse(data.metadata);
       if (!metadataResult.success) {
+        const errors = z.treeifyError(metadataResult.error);
         toast({
           title: 'Failed to parse OIDC metadata',
           description: (
             <>
-              {[
-                metadataResult.error.formErrors.fieldErrors.authorization_endpoint?.[0],
-                metadataResult.error.formErrors.fieldErrors.token_endpoint?.[0],
-                metadataResult.error.formErrors.fieldErrors.userinfo_endpoint?.[0],
-              ]
+              {Object.values(errors.properties ?? {})
+                .map(v => v.errors.at(0))
                 .filter(Boolean)
                 .map((msg, i) => (
                   <p key={i}>{msg}</p>
@@ -477,17 +475,17 @@ async function fetchOIDCMetadata(url: string) {
 const OIDCMetadataSchema = z.object({
   token_endpoint: z
     .string({
-      required_error: 'Token endpoint not found',
+      error: issue => (issue.input == null ? 'Token endpoint not found' : issue.message),
     })
     .url('Token endpoint must be a valid URL'),
   userinfo_endpoint: z
     .string({
-      required_error: 'Userinfo endpoint not found',
+      error: issue => (issue.input == null ? 'Userinfo endpoint not found' : issue.message),
     })
     .url('Userinfo endpoint must be a valid URL'),
   authorization_endpoint: z
     .string({
-      required_error: 'Authorization endpoint not found',
+      error: issue => (issue.input == null ? 'Authorization endpoint not found' : issue.message),
     })
     .url('Authorization endpoint must be a valid URL'),
 });

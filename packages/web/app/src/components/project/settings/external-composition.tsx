@@ -188,14 +188,14 @@ const ExternalCompositionStatus = ({
 const formSchema = z.object({
   endpoint: z
     .string({
-      required_error: 'Please provide an endpoint',
+      error: issue => (issue.input == null ? 'Please provide an endpoint' : issue.message),
     })
     .url({
-      message: 'Invalid URL',
+      error: 'Invalid URL',
     }),
   secret: z
     .string({
-      required_error: 'Please provide a secret',
+      error: issue => (issue.input == null ? 'Please provide a secret' : issue.message),
     })
     .min(2, 'Too short')
     .max(256, 'Max 256 characters long'),

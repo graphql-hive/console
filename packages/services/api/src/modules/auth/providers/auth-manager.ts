@@ -104,13 +104,14 @@ export class AuthManager {
     const result = InputModel.safeParse(input);
 
     if (!result.success) {
+      const errors = z.treeifyError(result.error);
       return {
         type: 'error' as const,
         error: {
           message: 'Please check your input.',
           inputErrors: {
-            displayName: result.error.formErrors.fieldErrors.displayName?.[0],
-            fullName: result.error.formErrors.fieldErrors.fullName?.[0],
+            displayName: errors.properties?.displayName?.errors?.at(0),
+            fullName: errors.properties?.fullName?.errors?.at(0),
           },
         },
       };

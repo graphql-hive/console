@@ -737,13 +737,14 @@ export class SchemaManager {
         });
 
         if (!parseResult.success) {
+          const errors = z.treeifyError(parseResult.error);
           return {
             error: {
               __typename: 'UpdateSchemaCompositionExternalError' as const,
               message: parseResult.error.message,
               inputErrors: {
-                endpoint: parseResult.error.formErrors.fieldErrors.endpoint?.[0],
-                secret: parseResult.error.formErrors.fieldErrors.secret?.[0],
+                endpoint: errors?.properties?.endpoint?.errors.at(0),
+                secret: errors?.properties?.secret?.errors.at(0),
               },
             },
           };

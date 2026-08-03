@@ -101,13 +101,7 @@ const SentryConfigSchema = zod.union([
 ]);
 
 const MigrationsSchema = zod.object({
-  MEMBER_ROLES_DEADLINE: emptyString(
-    zod
-      .date({
-        coerce: true,
-      })
-      .optional(),
-  ),
+  MEMBER_ROLES_DEADLINE: emptyString(zod.coerce.date().optional()),
 });
 
 const LogModel = zod.object({
@@ -156,7 +150,7 @@ function buildConfig() {
     process.exit(1);
   }
 
-  function extractConfig<Input, Output>(config: zod.SafeParseReturnType<Input, Output>): Output {
+  function extractConfig<Output>(config: zod.ZodSafeParseResult<Output>): Output {
     if (!config.success) {
       throw new Error('Something went wrong.');
     }

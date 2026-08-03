@@ -580,16 +580,17 @@ export class OrganizationManager {
     });
 
     const InputModel = z.object({
-      email: z.string().email().max(128, 'Email must be at most 128 characters long'),
+      email: z.email().max(128, 'Email must be at most 128 characters long'),
     });
     const result = InputModel.safeParse(input);
 
     if (!result.success) {
+      const errors = z.treeifyError(result.error);
       return {
         error: {
           message: 'Please check your input.',
           inputErrors: {
-            email: result.error.formErrors.fieldErrors.email?.[0],
+            email: errors.properties?.email?.errors?.at(0),
           },
         },
       };
@@ -973,12 +974,13 @@ export class OrganizationManager {
     });
 
     if (!inputValidation.success) {
+      const errors = z.treeifyError(inputValidation.error);
       return {
         error: {
           message: 'Please check your input.',
           inputErrors: {
-            name: inputValidation.error.formErrors.fieldErrors.name?.[0],
-            description: inputValidation.error.formErrors.fieldErrors.description?.[0],
+            name: errors?.properties?.name?.errors.at(0),
+            description: errors?.properties?.description?.errors.at(0),
           },
         },
       };
@@ -1173,7 +1175,7 @@ export class OrganizationManager {
     });
 
     if (!updatedMembership) {
-      throw new Error('Somethign went wrong.');
+      throw new Error('Something went wrong.');
     }
 
     const result = {
@@ -1225,12 +1227,13 @@ export class OrganizationManager {
     });
 
     if (!inputValidation.success) {
+      const errors = z.treeifyError(inputValidation.error);
       return {
         error: {
           message: 'Please check your input.',
           inputErrors: {
-            name: inputValidation.error.formErrors.fieldErrors.name?.[0],
-            description: inputValidation.error.formErrors.fieldErrors.description?.[0],
+            name: errors?.properties?.name?.errors.at(0),
+            description: errors?.properties?.description?.errors.at(0),
           },
         },
       };

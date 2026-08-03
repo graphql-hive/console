@@ -554,6 +554,7 @@ export class SchemaPublisher {
     if (input.contextId !== undefined) {
       const result = SchemaCheckContextIdModel.safeParse(input.contextId);
       if (!result.success) {
+        const errors = z.treeifyError(result.error);
         return {
           __typename: 'SchemaCheckError',
           valid: false,
@@ -561,7 +562,7 @@ export class SchemaPublisher {
           warnings: [],
           errors: [
             {
-              message: result.error.errors[0].message,
+              message: errors.errors?.at(0) ?? 'Something went wrong.',
             },
           ],
         } as const;

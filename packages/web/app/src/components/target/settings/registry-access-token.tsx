@@ -84,7 +84,7 @@ function getFinalTargetAccessScopes(
 const createRegistryTokenFormSchema = z.object({
   tokenDescription: z
     .string({
-      required_error: 'Token description is required',
+      error: issue => (issue.input == null ? 'Token description is required' : issue.message),
     })
     .min(2, {
       message: 'Token description must be at least 2 characters long',

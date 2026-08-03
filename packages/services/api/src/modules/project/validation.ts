@@ -4,7 +4,7 @@ import { NameModel } from '../../shared/entities';
 export const ProjectNameModel = NameModel.min(2).max(40);
 export const ProjectSlugModel = z
   .string({
-    required_error: 'Project slug is required',
+    error: issue => (issue.input === undefined ? 'Project slug is required' : issue.message),
   })
   .min(1, 'Project slug is required')
   .max(50, 'Slug must be less than 50 characters')

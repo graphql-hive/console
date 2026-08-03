@@ -197,13 +197,13 @@ export const CreateTarget_CreateTargetMutation = graphql(`
 const createTargetFormSchema = z.object({
   targetSlug: z
     .string({
-      required_error: 'Target slug is required',
+      error: issue => (issue == null ? 'Target slug is required' : issue.message),
     })
     .min(2, {
-      message: 'Target slug must be at least 2 characters long',
+      error: 'Target slug must be at least 2 characters long',
     })
     .max(50, {
-      message: 'Target slug must be at most 50 characters long',
+      error: 'Target slug must be at most 50 characters long',
     }),
 });
 

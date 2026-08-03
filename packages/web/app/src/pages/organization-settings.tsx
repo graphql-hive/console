@@ -195,7 +195,7 @@ const SettingsPageRenderer_OrganizationFragment = graphql(`
 const SlugFormSchema = z.object({
   slug: z
     .string({
-      required_error: 'Organization slug is required',
+      error: issue => (issue.input == null ? 'Organization slug is required' : issue.message),
     })
     .min(1, 'Organization slug is required')
     .max(50, 'Slug must be less than 50 characters')

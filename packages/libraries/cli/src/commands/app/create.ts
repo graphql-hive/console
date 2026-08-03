@@ -310,7 +310,7 @@ export default class AppCreate extends Command<typeof AppCreate> {
   }
 }
 
-const ManifestModel = z.record(z.string());
+const ManifestModel = z.record(z.string(), z.string());
 
 const CreateAppDeploymentMutation = graphql(/* GraphQL */ `
   mutation CreateAppDeployment($input: CreateAppDeploymentInput!) {

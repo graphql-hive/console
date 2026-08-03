@@ -38,32 +38,30 @@ import { SignInButton } from './auth-sign-in';
 
 export const PasswordStringModel = z
   .string({
-    required_error: 'Password is required',
+    error: issue => (issue.input == null ? 'Password is required' : issue.message),
   })
-  .min(10, { message: 'Password must be at least 10 characters long.' })
+  .min(10, { error: 'Password must be at least 10 characters long.' })
   // Check 2: At least one uppercase letter
-  .regex(/[A-Z]/, { message: 'Password must contain at least one uppercase letter.' })
+  .regex(/[A-Z]/, { error: 'Password must contain at least one uppercase letter.' })
   // Check 3: At least one special character
   .regex(/[!@#$%^&*(),.?":{}|<>]/, {
-    message: 'Password must contain at least one special character.',
+    error: 'Password must contain at least one special character.',
   })
   // Check 4: At least one digit
-  .regex(/[0-9]/, { message: 'Password must contain at least one digit.' })
+  .regex(/[0-9]/, { error: 'Password must contain at least one digit.' })
   // Check 5: At least one lowercase letter
-  .regex(/[a-z]/, { message: 'Password must contain at least one lowercase letter.' });
+  .regex(/[a-z]/, { error: 'Password must contain at least one lowercase letter.' });
 
 const SignUpFormSchema = z.object({
   firstName: z.string({
-    required_error: 'First name is required',
+    error: issue => (issue.input == null ? 'First name is required' : issue.message),
   }),
   lastName: z.string({
-    required_error: 'Last name is required',
+    error: issue => (issue.input == null ? 'Last name is required' : issue.message),
   }),
-  email: z
-    .string({
-      required_error: 'Email is required',
-    })
-    .email('Invalid email address'),
+  email: z.email({
+    error: issue => (issue.input == null ? 'Email is required' : 'Invalid email address'),
+  }),
   password: PasswordStringModel,
 });
 
