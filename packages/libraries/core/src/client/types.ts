@@ -231,19 +231,19 @@ export interface HiveReportingPluginOptions {
 
 export interface HiveSelfHostingOptions {
   /**
-   * Point to your own instance of GraphQL Hive API
+   * Point to your own instance of Hive Console API
    *
    * Used by schema reporting and token info.
    */
   graphqlEndpoint: string;
   /**
-   * Address of your own GraphQL Hive application
+   * Address of your own Hive Console application
    *
    * Used by token info to generate a link to the organization, project and target.
    */
   applicationUrl: string;
   /**
-   * Point to your own instance of GraphQL Hive Usage API
+   * Point to your own instance of Hive Console Usage API
    *
    * Used by usage reporting
    */
@@ -283,7 +283,7 @@ export type HivePluginOptions = OptionalWhenFalse<
      */
     token: string;
     /**
-     * Use when self-hosting GraphQL Hive
+     * Use when self-hosting Hive Console
      */
     selfHosting?: HiveSelfHostingOptions;
     agent?: Omit<AgentOptions, 'endpoint' | 'token' | 'enabled' | 'debug'>;

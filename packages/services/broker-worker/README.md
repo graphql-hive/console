@@ -1,6 +1,6 @@
-## Hive Broker Worker
+## Hive Console Broker Worker
 
-Idea here is to have a broker worker that can be used to make requests outside GraphQL Hive and
+Idea here is to have a broker worker that can be used to make requests outside Hive Console and
 without any access to the internal network. This is very useful for example for making requests to
 external APIs.
 

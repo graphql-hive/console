@@ -5,7 +5,7 @@ export const appInfo = () => {
 
   return {
     // learn more about this on https://supertokens.com/docs/thirdpartyemailpassword/appinfo
-    appName: 'GraphQL Hive',
+    appName: 'Hive Console',
     apiDomain: graphqlPublicOrigin,
     websiteDomain: appBaseUrl,
     apiBasePath: '/auth-api',
