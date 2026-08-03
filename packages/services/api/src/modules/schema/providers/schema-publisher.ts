@@ -3189,7 +3189,7 @@ export class SchemaPublisher {
         summary = [
           errors ? this.errorsToMarkdown(errors) : null,
           args.failedContractCompositionCount > 0
-            ? `- ${args.failedContractCompositionCount} contract check(s) failed. (Click view more details on GraphQL Hive button below)`
+            ? `- ${args.failedContractCompositionCount} contract check(s) failed. (Click view more details on Hive Console button below)`
             : null,
           warnings ? this.warningsToMarkdown(warnings) : null,
           compositionErrors ? this.errorsToMarkdown(compositionErrors) : null,

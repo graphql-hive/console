@@ -320,6 +320,14 @@ export async function createStorage(
             )
             .then(UserModel.nullable().parse);
 
+          if (internalUser && internalUser.provisionedByOrganizationId !== null) {
+            return {
+              ok: true,
+              user: internalUser,
+              action: 'no_action',
+            };
+          }
+
           if (!internalUser) {
             // try automatic account linking
             const sameEmailUsers = await t
@@ -327,7 +335,9 @@ export async function createStorage(
                 psql`/* ensureUserExists */
                   SELECT ${userFields(psql`"users".`)}
                   FROM "users"
-                  WHERE "users"."email" = lower(${email})
+                  WHERE
+                    "users"."email" = lower(${email})
+                    AND "users"."provisioned_by_organization_id" IS NULL
                   ORDER BY "users"."created_at";
                 `,
               )
@@ -2350,7 +2360,8 @@ export async function createStorage(
             "token_endpoint",
             "userinfo_endpoint",
             "authorization_endpoint",
-            "additional_scopes"
+            "additional_scopes",
+            "user_id_claim"
           )
           VALUES (
             ${args.organizationId},
@@ -2359,7 +2370,8 @@ export async function createStorage(
             ${args.tokenEndpoint},
             ${args.userinfoEndpoint},
             ${args.authorizationEndpoint},
-            ${psql.array(args.additionalScopes, 'text')}
+            ${psql.array(args.additionalScopes, 'text')},
+            ${args.userIdClaim}
           )
           RETURNING
             ${oidcIntegrationFields()}
@@ -2410,6 +2422,7 @@ export async function createStorage(
           }
           , "additional_scopes" = ${args.additionalScopes ? psql.array(args.additionalScopes, 'text') : psql`"additional_scopes"`}
           , "oauth_api_url" = NULL
+          , "user_id_claim" = ${args.userIdClaim ?? psql`"user_id_claim"`}
         WHERE
           "id" = ${args.oidcIntegrationId}
         RETURNING
@@ -2428,6 +2441,8 @@ export async function createStorage(
             "oidc_user_join_only" = ${args.oidcUserJoinOnly ?? psql`"oidc_user_join_only"`}
             , "oidc_user_access_only" = ${args.oidcUserAccessOnly ?? psql`"oidc_user_access_only"`}
             , "require_invitation" = ${args.requireInvitation ?? psql`"require_invitation"`}
+            , "user_provisioning_required" = ${args.userProvisioningRequired ?? psql`"user_provisioning_required"`}
+            , "oidc_for_verified_domains_required" = ${args.oidcForVerifiedDomainsRequired ?? psql`"oidc_for_verified_domains_required"`}
           WHERE
             "id" = ${args.oidcIntegrationId}
           RETURNING
@@ -4037,6 +4052,11 @@ const OIDCIntegrationBaseModel = z.object({
   defaultRoleId: z.string().nullable(),
   defaultAssignedResources: z.any().nullable(),
   requireInvitation: z.boolean(),
+  userIdClaim: z.string().nullable(),
+  /** Whether a user needs to be provisioned before login. */
+  userProvisioningRequired: z.boolean(),
+  /** Whether a user with a verified domain needs to log in through the OIDC flow. */
+  oidcForVerifiedDomainsRequired: z.boolean(),
 });
 
 const OIDCIntegrationLegacyModel = OIDCIntegrationBaseModel.extend({
@@ -4055,6 +4075,9 @@ const OIDCIntegrationLegacyModel = OIDCIntegrationBaseModel.extend({
   requireInvitation: record.requireInvitation,
   defaultMemberRoleId: record.defaultRoleId,
   defaultResourceAssignment: record.defaultAssignedResources,
+  userIdClaim: record.userIdClaim ?? 'sub',
+  userProvisioningRequired: record.userProvisioningRequired,
+  oidcForVerifiedDomainsRequired: record.oidcForVerifiedDomainsRequired,
 }));
 
 const LatestOIDCIntegrationModel = OIDCIntegrationBaseModel.extend({
@@ -4076,6 +4099,9 @@ const LatestOIDCIntegrationModel = OIDCIntegrationBaseModel.extend({
   requireInvitation: record.requireInvitation,
   defaultMemberRoleId: record.defaultRoleId,
   defaultResourceAssignment: record.defaultAssignedResources,
+  userIdClaim: record.userIdClaim ?? 'sub',
+  userProvisioningRequired: record.userProvisioningRequired,
+  oidcForVerifiedDomainsRequired: record.oidcForVerifiedDomainsRequired,
 }));
 
 const OIDCIntegrationModel = z.union([OIDCIntegrationLegacyModel, LatestOIDCIntegrationModel]);
@@ -4100,6 +4126,8 @@ const FeatureFlagsModel = z
     schemaProposals: z.boolean().default(false),
     /** whether metric alert rules are enabled for the given organization */
     metricAlertRules: z.boolean().default(false),
+    /** whether SCIM provisioning is enabled for the given organization */
+    scim: z.boolean().default(false),
   })
   .optional()
   .nullable()
@@ -4112,6 +4140,7 @@ const FeatureFlagsModel = z
         otelTracing: false,
         schemaProposals: false,
         metricAlertRules: false,
+        scim: false,
       },
   );
 
@@ -4365,6 +4394,9 @@ export const userFields = (user: TaggedTemplateLiteralInvocation) => psql`
   , ${user}"is_admin" AS "isAdmin"
   , ${user}"oidc_integration_id" AS "oidcIntegrationId"
   , ${user}"zendesk_user_id" AS "zendeskId"
+  , ${user}"provisioned_by_organization_id" AS "provisionedByOrganizationId"
+  , ${user}"external_id" AS "externalId"
+  , to_json(${user}"deactivated_at") AS "deactivatedAt"
   , (
       SELECT ARRAY_AGG(DISTINCT "sub_stu"."third_party_id")
       FROM (
@@ -4487,6 +4519,9 @@ const oidcIntegrationFields = (prefix: TaggedTemplateLiteralInvocation = psql``)
   , ${prefix}"default_role_id" AS "defaultRoleId"
   , ${prefix}"default_assigned_resources" AS "defaultAssignedResources"
   , ${prefix}"require_invitation" AS "requireInvitation"
+  , ${prefix}"user_id_claim" AS "userIdClaim"
+  , ${prefix}"user_provisioning_required" AS "userProvisioningRequired"
+  , ${prefix}"oidc_for_verified_domains_required" AS "oidcForVerifiedDomainsRequired"
 `;
 
 const OrganizationModel = z
@@ -4656,6 +4691,8 @@ const MemberModel = z
           return null;
         }),
     ),
+    deactivatedAt: z.string().nullable(),
+    provisionedByOrganizationId: z.string().nullable(),
   })
   .transform(row => ({
     id: row.id,
@@ -4669,6 +4706,8 @@ const MemberModel = z
       superTokensUserId: row.superTokensUserId,
       isAdmin: row.isAdmin,
       zendeskId: row.zendeskId,
+      deactivatedAt: row.deactivatedAt,
+      provisionedByOrganizationId: row.provisionedByOrganizationId,
     },
     scopes: (row.scopes as Member['scopes']) || [],
     organization: row.organizationId,
@@ -4785,6 +4824,9 @@ export const UserModel = z.object({
         return 'USERNAME_PASSWORD' as const;
       }),
   ),
+  provisionedByOrganizationId: z.string().uuid().nullable(),
+  externalId: z.string().nullable(),
+  deactivatedAt: z.string().nullable(),
 });
 
 type UserType = z.TypeOf<typeof UserModel>;

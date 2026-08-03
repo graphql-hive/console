@@ -2,7 +2,7 @@
 
 ## 1. Purpose
 
-A primary goal of GraphQL Hive is to be inclusive to the largest number of contributors, with the
+A primary goal of Hive Console is to be inclusive to the largest number of contributors, with the
 most varied and diverse backgrounds possible. As such, we are committed to providing a friendly,
 safe and welcoming environment for all, regardless of gender, sexual orientation, ability,
 ethnicity, socioeconomic status, and religion (or lack thereof).
@@ -10,7 +10,7 @@ ethnicity, socioeconomic status, and religion (or lack thereof).
 This code of conduct outlines our expectations for all those who participate in our community, as
 well as the consequences for unacceptable behavior.
 
-We invite all those who participate in GraphQL Hive to help us create safe and positive experiences
+We invite all those who participate in Hive Console to help us create safe and positive experiences
 for everyone.
 
 ## 2. Open [Source/Culture/Tech] Citizenship
@@ -60,7 +60,7 @@ The following behaviors are considered harassment and are unacceptable within ou
 
 ## 5. Weapons Policy
 
-No weapons will be allowed at GraphQL Hive events, community spaces, or in other spaces covered by
+No weapons will be allowed at Hive Console events, community spaces, or in other spaces covered by
 the scope of this Code of Conduct. Weapons include but are not limited to guns, explosives
 (including fireworks), and large knives such as those used for hunting or display, as well as any
 other item used for the purpose of causing injury or harm to others. Anyone seen in possession of

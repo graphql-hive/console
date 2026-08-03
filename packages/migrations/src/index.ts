@@ -29,7 +29,7 @@ const slonik = await createPostgresDatabasePool({
 // This is used by production build of this package.
 // We are building a "cli" out of the package, so we need a workaround to pass the command to run.
 
-// This is only used for GraphQL Hive Cloud to perform a long running migration.
+// This is only used for Hive Console Cloud to perform a long running migration.
 // eslint-disable-next-line no-process-env
 if (process.env.SCHEMA_COORDINATE_STATUS_MIGRATION === '1') {
   try {

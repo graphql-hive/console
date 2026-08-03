@@ -2,7 +2,7 @@
   "name": "@graphql-hive/envelop",
   "version": "0.40.7",
   "type": "module",
-  "description": "GraphQL Hive + GraphQL Envelop",
+  "description": "Hive Console + GraphQL Envelop",
   "repository": {
     "type": "git",
     "url": "https://github.com/graphql-hive/console",

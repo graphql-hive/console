@@ -187,7 +187,7 @@ export function batchBy<TItem, TResult>(
   /** Function to determine the batch group. */
   buildBatchKey: (arg: TItem) => unknown,
   /** Loader for each batch group. */
-  loader: (args: TItem[]) => Promise<Promise<TResult>[]>,
+  loader: (args: TItem[]) => Promise<(TResult | Promise<TResult>)[]>,
   /** Maximum amount of items per batch, if it is exceeded a new batch for a given batchKey is created. */
   maxBatchSize = Infinity,
 ) {
@@ -206,9 +206,9 @@ export function batchBy<TItem, TResult>(
     }
 
     loader(tickArgs).then(
-      promises => {
+      maybePromise => {
         for (let i = 0; i < tickCallbacks.length; i++) {
-          promises[i].then(
+          Promise.resolve(maybePromise[i]).then(
             result => {
               tickCallbacks[i].resolve(result);
             },
@@ -283,7 +283,9 @@ export function assertOk<TOk extends { ok: true }, TNot extends { ok: false; mes
   }
 }
 
-export function batch<A, R>(loader: (args: A[]) => Promise<Promise<R>[]>): (arg: A) => Promise<R> {
+export function batch<A, R>(
+  loader: (args: A[]) => Promise<(Promise<R> | R)[]>,
+): (arg: A) => Promise<R> {
   let currentBatch: {
     args: A[];
     callbacks: Array<{ resolve(r: R): void; reject(error: Error): void }>;
@@ -307,9 +309,9 @@ export function batch<A, R>(loader: (args: A[]) => Promise<Promise<R>[]>): (arg:
         };
 
         loader(tickArgs)
-          .then(promises => {
+          .then(maybePromises => {
             for (let i = 0; i < tickCallbacks.length; i++) {
-              promises[i].then(
+              Promise.resolve(maybePromises[i]).then(
                 result => {
                   tickCallbacks[i].resolve(result);
                 },

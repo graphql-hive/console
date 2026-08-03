@@ -41,6 +41,7 @@ async function createSeedHelper(): Promise<SeedHelper> {
     async seedOrg() {
       const owner = await seed.createOwner();
       const org = await owner.createOrg();
+      await org.setFeatureFlag('scim', true);
 
       return {
         slug: org.organization.slug,
