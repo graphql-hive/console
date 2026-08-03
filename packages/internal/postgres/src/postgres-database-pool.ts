@@ -148,7 +148,7 @@ export class PostgresDatabasePool implements CommonQueryMethods {
             maybeOneFirst: methods.maybeOneFirst,
             anyFirst: methods.anyFirst,
             one: methods.one,
-            transaction<T>(_name: string, handler: (methods: CommonQueryMethods) => Promise<T>) {
+            transaction<T>(name: string, handler: (methods: CommonQueryMethods) => Promise<T>) {
               // We just mark this as a virtual transaction, it still runs as part of the current one.
               const span = tracer.startSpan(`Virtual PG Transaction: ${name}`, {
                 kind: SpanKind.INTERNAL,

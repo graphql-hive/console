@@ -72,7 +72,7 @@ export class GroupStore {
   }
 
   async getGroupByOrganizationIdAndDisplayName(organizationId: string, displayName: string) {
-    const query = psql` /* getGroupById (batch) */
+    const query = psql` /* getGroupByOrganizationIdAndDisplayName (batch) */
       SELECT
         ${groupFields}
       FROM
@@ -102,16 +102,16 @@ export class GroupStore {
 
   async getGroupByOrganizationIdAndExternalGroupId(
     organizationId: string,
-    externaGrouplId: string,
+    externalGroupId: string,
   ) {
-    const query = psql` /* getGroupById (batch) */
+    const query = psql` /* getGroupByOrganizationIdAndExternalGroupId */
       SELECT
         ${groupFields}
       FROM
         "groups"
       WHERE
         "organization_id" = ${organizationId}
-        AND "external_id" = ${externaGrouplId}
+        AND "external_id" = ${externalGroupId}
     `;
 
     return await this.pool.maybeOne(query).then(GroupModel.nullable().parse);
@@ -124,7 +124,7 @@ export class GroupStore {
       count: number;
     },
   ) {
-    const query = psql` /* getGroupById (batch) */
+    const query = psql` /* getOffsetPaginatedGroupsForOrganizationId */
       SELECT
         ${groupFields}
       FROM

@@ -146,7 +146,7 @@ export class OIDCIntegrationsProvider {
     const userinfoEndpointResult = OAuthAPIUrlModel.safeParse(args.userinfoEndpoint);
     const authorizationEndpointResult = OAuthAPIUrlModel.safeParse(args.authorizationEndpoint);
     const additionalScopesResult = OIDCAdditionalScopesModel.safeParse(args.additionalScopes);
-    const userIdClaimResult = OIDCScopeModel.nullable().safeParse(args.userIdClaim);
+    const userIdClaimResult = OIDCClaimModel.nullable().safeParse(args.userIdClaim);
 
     if (
       clientIdResult.success &&
@@ -271,7 +271,7 @@ export class OIDCIntegrationsProvider {
     const additionalScopesResult = maybe(OIDCAdditionalScopesModel).safeParse(
       args.additionalScopes,
     );
-    const userIdClaimResult = maybe(OIDCScopeModel).safeParse(args.userIdClaim);
+    const userIdClaimResult = maybe(OIDCClaimModel).safeParse(args.userIdClaim);
 
     if (
       clientIdResult.success &&
@@ -893,6 +893,13 @@ const OAuthAPIUrlModel = zod.string().url('Must be a valid OAuth API url.');
 const OIDCScopeModel = zod
   .string()
   .toLowerCase()
+  .nonempty('Must not be empty.')
+  .max(50, 'Can not be longer than 50 characters.')
+  .regex(/^[a-z0-9](?:[a-z0-9.:/_-]*[a-z0-9])?$/, 'Must be a valid scope.');
+
+const OIDCClaimModel = zod
+  .string()
+  .trim()
   .nonempty('Must not be empty.')
   .max(50, 'Can not be longer than 50 characters.')
   .regex(/^[a-z0-9](?:[a-z0-9.:/_-]*[a-z0-9])?$/, 'Must be a valid scope.');

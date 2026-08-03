@@ -1463,7 +1463,7 @@ export async function registerSupertokensAtHome(
           req.log.debug('received non 200 status from token endpoint %d', grantResponse.status);
           broadcastLog(
             oidcIntegration.id,
-            `an unexpected error occured while calling your token endoint '${oidcIntegration.tokenEndpoint}'. HTTP Status: ${grantResponse.status} Body: ${await grantResponse.text()}.`,
+            `an unexpected error occurred while calling your token endoint '${oidcIntegration.tokenEndpoint}'. HTTP Status: ${grantResponse.status} Body: ${await grantResponse.text()}.`,
           );
 
           return rep.status(200).send({
@@ -1523,7 +1523,7 @@ export async function registerSupertokensAtHome(
           );
           broadcastLog(
             oidcIntegration.id,
-            `an unexpected error occured while calling the user info endoint '${oidcIntegration.userinfoEndpoint}'. HTTP Status: ${userInfoResponse.status} HTTP Body: ${userInfoBodyRaw}.`,
+            `an unexpected error occurred while calling the user info endoint '${oidcIntegration.userinfoEndpoint}'. HTTP Status: ${userInfoResponse.status} HTTP Body: ${userInfoBodyRaw}.`,
           );
 
           return rep.status(200).send({
