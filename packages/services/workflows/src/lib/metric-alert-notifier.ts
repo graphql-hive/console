@@ -8,7 +8,7 @@ import { sendWebhook, type RequestBroker } from './webhooks/send-webhook.js';
 
 export type AlertChannelRow = {
   id: string;
-  type: 'SLACK' | 'WEBHOOK' | 'MSTEAMS_WEBHOOK';
+  type: 'SLACK' | 'WEBHOOK' | 'MSTEAMS_WEBHOOK' | 'DISCORD';
   name: string;
   slackChannel: string | null;
   webhookEndpoint: string | null;
@@ -301,6 +301,84 @@ function severityColor(severity: NotificationEvent['rule']['severity']): string 
   return SEVERITY_COLORS[severity] ?? SEVERITY_COLORS.WARNING;
 }
 
+// Discord rejects the whole message if any of these are exceeded. Mirrored in
+// the schema-change adapter (api/modules/alerts/providers/adapters/discord.ts);
+// kept local rather than shared so the two services stay independent.
+const DISCORD_MAX_TITLE_LENGTH = 256;
+const DISCORD_MAX_DESCRIPTION_LENGTH = 4096;
+const DISCORD_MAX_FIELD_VALUE_LENGTH = 1024;
+
+export async function sendDiscordNotification(args: {
+  channel: AlertChannelRow;
+  event: NotificationEvent;
+  requestBroker: RequestBroker | null;
+  logger: Logger;
+  idempotencyKey: string;
+  attempt: number;
+  maxAttempts: number;
+  webAppUrl: string | null;
+}): Promise<NotificationResult> {
+  const { channel, event, logger } = args;
+
+  if (!channel.webhookEndpoint) {
+    logger.warn({ channelId: channel.id }, 'Discord webhook endpoint not configured');
+    return { status: 'skipped-config', reason: 'no-discord-endpoint' };
+  }
+
+  const isFiring = event.state === 'firing';
+  const emoji = isFiring ? '🔴' : '✅';
+  const action = isFiring ? 'triggered' : 'resolved';
+  const color = Number.parseInt(isFiring ? severityColor(event.rule.severity) : RESOLVED_COLOR, 16);
+
+  const changeText = formatChangeText(event);
+  const alertUrl = buildAlertUrl(args.webAppUrl, event);
+  // Appended after truncation so the link survives a long change text.
+  const viewLink = alertUrl ? `\n\n[View alert in Hive](${alertUrl})` : '';
+
+  const payload = {
+    username: 'GraphQL Hive',
+    allowed_mentions: { parse: [] },
+    embeds: [
+      {
+        title: truncate(`${emoji} ${event.rule.name} — ${action}`, DISCORD_MAX_TITLE_LENGTH),
+        // Makes the embed title itself clickable, as in the schema-change adapter.
+        url: alertUrl ?? undefined,
+        color,
+        description:
+          truncate(changeText, DISCORD_MAX_DESCRIPTION_LENGTH - viewLink.length) + viewLink,
+        fields: [
+          { name: 'Type', value: event.rule.type, inline: true },
+          { name: 'Severity', value: event.rule.severity, inline: true },
+          {
+            name: 'Target',
+            value: truncate(
+              `${event.targetSlug} in ${event.projectSlug}`,
+              DISCORD_MAX_FIELD_VALUE_LENGTH,
+            ),
+            inline: false,
+          },
+        ],
+      },
+    ],
+  };
+
+  const result = await sendWebhook(logger, args.requestBroker, {
+    attempt: args.attempt,
+    maxAttempts: args.maxAttempts,
+    endpoint: channel.webhookEndpoint,
+    data: payload,
+    headers: { 'Idempotency-Key': args.idempotencyKey },
+  });
+
+  if (result.status === 'gave-up') {
+    return result;
+  }
+
+  logger.debug({ channelId: channel.id }, 'Discord notification sent');
+
+  return { status: 'sent' };
+}
+
 function formatChangeText(event: NotificationEvent): string {
   const { rule, currentValue, previousValue } = event;
   const unit = rule.type === 'LATENCY' ? 'ms' : rule.type === 'ERROR_RATE' ? '%' : ' requests';
@@ -358,4 +436,12 @@ export function buildWebhookPayload(event: NotificationEvent, webAppUrl: string 
     // Console URL isn't configured.
     url: buildAlertUrl(webAppUrl, event),
   };
+}
+
+function truncate(value: string, maxLength: number): string {
+  if (value.length <= maxLength) {
+    return value;
+  }
+
+  return value.slice(0, maxLength - 3) + '...';
 }

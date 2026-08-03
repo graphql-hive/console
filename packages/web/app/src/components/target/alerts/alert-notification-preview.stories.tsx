@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import type { Story, StoryDefault } from '@ladle/react';
-import { AlertPreview } from './alert-notification-preview';
+import { AlertPreview, type AlertPreviewChannelType } from './alert-notification-preview';
 
 export default {
   title: 'Alerts / Notification Preview',
@@ -98,6 +98,27 @@ export const TeamsInfo: Story = () => (
   </div>
 );
 
+export const Discord: Story = () => (
+  <div className="max-w-sm p-8">
+    <AlertPreview {...baseProps} channelType="DISCORD" />
+  </div>
+);
+
+export const DiscordInfo: Story = () => (
+  <div className="max-w-sm p-8">
+    <AlertPreview
+      {...baseProps}
+      alertName="Traffic Increased by 200%"
+      metricLabel="Total requests"
+      alertType="TRAFFIC"
+      severity="INFO"
+      thresholdType="PERCENTAGE_CHANGE"
+      thresholdValue="200"
+      channelType="DISCORD"
+    />
+  </div>
+);
+
 export const NoChannelSelected: Story = () => (
   <div className="max-w-sm p-8">
     <AlertPreview {...baseProps} channelType={null} />
@@ -133,13 +154,16 @@ export const SideBySide: Story = () => (
     <div className="w-80">
       <AlertPreview {...baseProps} channelType="MSTEAMS_WEBHOOK" />
     </div>
+    <div className="w-80">
+      <AlertPreview {...baseProps} channelType="DISCORD" />
+    </div>
   </div>
 );
 
 export const Interactive: Story = () => {
   const [name, setName] = useState('My Alert');
   const [severity, setSeverity] = useState('WARNING');
-  const [channel, setChannel] = useState<'SLACK' | 'WEBHOOK' | 'MSTEAMS_WEBHOOK'>('SLACK');
+  const [channel, setChannel] = useState<AlertPreviewChannelType>('SLACK');
   const [thresholdValue, setThresholdValue] = useState('200');
   const [thresholdType, setThresholdType] = useState('FIXED_VALUE');
 
@@ -180,6 +204,7 @@ export const Interactive: Story = () => {
             <option value="SLACK">Slack</option>
             <option value="WEBHOOK">Webhook</option>
             <option value="MSTEAMS_WEBHOOK">Teams</option>
+            <option value="DISCORD">Discord</option>
           </select>
         </div>
         <div>
