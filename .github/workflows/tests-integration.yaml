@@ -22,12 +22,19 @@ on:
 jobs:
   integration:
     runs-on: ubuntu-22.04
+    name: integration (${{ matrix.shardIndex }})
     strategy:
       fail-fast: false
       matrix:
-        # Divide integration tests into 3 shards, to run them in parallel.
-        shardIndex: [1, 2, 3, 'apollo-router']
-
+        include:
+          - shardIndex: 1
+            memoryLeakTest: '0'
+          - shardIndex: 2
+            memoryLeakTest: '0'
+          - shardIndex: 3
+            memoryLeakTest: '0'
+          - shardIndex: 'memory leaks'
+            memoryLeakTest: '1'
     env:
       DOCKER_REGISTRY: ${{ inputs.registry }}/${{ inputs.imageName }}/
       DOCKER_TAG: :${{ inputs.imageTag }}
@@ -43,6 +50,11 @@ jobs:
         env:
           CONFIGURE_ENV: ${{ inputs.configureEnv }}
         run: $CONFIGURE_ENV
+
+      - name: configure Docker Node.js image tag
+        id: node-version-tag
+        if: ${{ inputs.dockerize }}
+        run: echo "value=:$(< .node-version)-slim" >> "$GITHUB_OUTPUT"
 
       - name: setup environment
         uses: ./.github/actions/setup
@@ -70,88 +82,57 @@ jobs:
 
       - name: run containers
         timeout-minutes: 8
+        env:
+          NODE_VERSION_TAG: ${{ steps.node-version-tag.outputs.value }}
         run: |
-          docker compose -f docker/docker-compose.community.yml -f ./integration-tests/docker-compose.integration.yaml --env-file ./integration-tests/.env up -d --wait
+          docker compose \
+            -f docker/docker-compose.community.yml \
+            -f ./integration-tests/docker-compose.integration.yaml \
+            --env-file ./integration-tests/.env \
+            up -d --wait --no-build
 
       - name: troubleshoot containers
         if: ${{ failure() }}
+        env:
+          NODE_VERSION_TAG: ${{ steps.node-version-tag.outputs.value }}
         run: |
-          docker compose -f docker/docker-compose.community.yml -f ./integration-tests/docker-compose.integration.yaml --env-file ./integration-tests/.env ps
+          docker compose \
+            -f docker/docker-compose.community.yml \
+            -f ./integration-tests/docker-compose.integration.yaml \
+            --env-file ./integration-tests/.env \
+            ps
 
-      ##  ---- START ---- Apollo Router specific steps
-
-      - if: matrix.shardIndex == 'apollo-router'
-        name: Install Protoc
-        uses: arduino/setup-protoc@v3
-        with:
-          repo-token: ${{ secrets.GITHUB_TOKEN }}
-
-      - if: matrix.shardIndex == 'apollo-router'
-        name: Install Rust
-        uses: actions-rs/toolchain@16499b5e05bf2e26879000db0c1d13f7e13fa3af # v1
-        with:
-          toolchain: '1.91.1'
-          default: true
-          override: true
-
-      - if: matrix.shardIndex == 'apollo-router'
-        name: Cache Rust
-        uses: Swatinem/rust-cache@9d47c6ad4b02e050fd481d890b2ea34778fd09d6 # v2
-
-      # ---- START ---- Disk space cleanup before apollo router tests
-      - if: matrix.shardIndex == 'apollo-router'
-        name: Before cleanup disk space
-        run: df -h
-      - if: matrix.shardIndex == 'apollo-router'
-        name: Cleanup disk space
-        run: |
-          sudo rm -rf \
-            /usr/lib/jvm \
-            /usr/share/swift \
-            /usr/local/julia* \
-            /usr/local/share/chromium \
-            /opt/az \
-            /usr/local/share/powershell \
-            /opt/microsoft /opt/google \
-            /usr/local/lib/android \
-            /usr/local/.ghcup \
-            /usr/share/dotnet \
-            /usr/local/lib/android \
-            /opt/ghc /opt/hostedtoolcache/CodeQL
-          sudo docker image prune --all --force
-          sudo docker builder prune -a
-      - if: matrix.shardIndex == 'apollo-router'
-        name: After cleanup disk space
-        run: df -h
-      # ---- END ---- Disk space cleanup before apollo router tests
-
-      - if: matrix.shardIndex == 'apollo-router'
-        name: build apollo router
-        run: |
-          cargo build
-
-      - if: matrix.shardIndex == 'apollo-router'
-        name: run apollo router integration tests
+      - name: run integration tests
         timeout-minutes: 30
-        run: |
-          pnpm test:integration:apollo-router
-
-      ## ---- END ---- Apollo Router specific steps
-
-      - if: matrix.shardIndex != 'apollo-router'
-        name: run integration tests
-        timeout-minutes: 30
+        if: ${{ matrix.memoryLeakTest == '0' }}
         run: |
           pnpm test:integration --shard=${{ matrix.shardIndex }}/3
         env:
           VITEST_MAX_THREADS: ${{ steps.cpu-cores.outputs.count }}
 
+      - name: run mem leaks integration tests
+        timeout-minutes: 30
+        if: ${{ matrix.memoryLeakTest == '1' }}
+        run: |
+          pnpm test:integration
+        env:
+          VITEST_MAX_THREADS: 1
+          RUN_MEMORY_LEAKS_TESTS: '1'
+
       - name: log dump
         if: ${{ failure() }}
+        env:
+          NODE_VERSION_TAG: ${{ steps.node-version-tag.outputs.value }}
         run: |
-          docker compose -f docker/docker-compose.community.yml -f ./integration-tests/docker-compose.integration.yaml --env-file ./integration-tests/.env logs
+          docker compose \
+            -f docker/docker-compose.community.yml \
+            -f ./integration-tests/docker-compose.integration.yaml \
+            --env-file ./integration-tests/.env \
+            logs
 
       - name: inspect health
         if: ${{ failure() }}
+        env:
+          NODE_VERSION_TAG: ${{ steps.node-version-tag.outputs.value }}
         run: |
           docker inspect $(docker compose -f ./docker/docker-compose.community.yml -f ./integration-tests/docker-compose.integration.yaml --env-file ./integration-tests/.env ps -aq) | jq

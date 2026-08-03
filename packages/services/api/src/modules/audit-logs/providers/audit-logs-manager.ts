@@ -171,6 +171,9 @@ export class AuditLogManager {
           'Content-Type': 'text/csv',
         },
         body: csvData,
+        aws: {
+          signQuery: true,
+        },
       });
 
       if (!uploadResult.ok) {

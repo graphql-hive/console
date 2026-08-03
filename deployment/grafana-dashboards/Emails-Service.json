@@ -32,7 +32,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "grafanacloud-prom"
+        "uid": "PROM_DATASOURCE_UID"
       },
       "fieldConfig": {
         "defaults": {
@@ -79,7 +79,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "grafanacloud-prom"
+            "uid": "PROM_DATASOURCE_UID"
           },
           "editorMode": "code",
           "expr": "sum_over_time(emails_total[$__interval])",
@@ -90,7 +90,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "grafanacloud-prom"
+            "uid": "PROM_DATASOURCE_UID"
           },
           "editorMode": "code",
           "expr": "sum_over_time(emails_failures_total[$__interval])",

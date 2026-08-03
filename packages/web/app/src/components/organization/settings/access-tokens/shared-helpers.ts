@@ -87,3 +87,53 @@ export function permissionLevelToResourceName(level: GraphQLSchema.PermissionLev
     }
   }
 }
+
+export const expirationPeriods: { name: string; value: GraphQLSchema.TokenExpirationPeriod }[] = [
+  {
+    name: 'Never',
+    value: GraphQLSchema.TokenExpirationPeriod.Never,
+  },
+  {
+    name: 'One Week',
+    value: GraphQLSchema.TokenExpirationPeriod.OneWeek,
+  },
+  {
+    name: 'Two Weeks',
+    value: GraphQLSchema.TokenExpirationPeriod.TwoWeeks,
+  },
+  {
+    name: 'One Month',
+    value: GraphQLSchema.TokenExpirationPeriod.OneMonth,
+  },
+  {
+    name: 'Six Months',
+    value: GraphQLSchema.TokenExpirationPeriod.SixMonths,
+  },
+  {
+    name: 'One Year',
+    value: GraphQLSchema.TokenExpirationPeriod.OneYear,
+  },
+];
+
+export function timeRelative(d: Date, prefix: string = '', pastText: string = 'now') {
+  const rtf = new Intl.RelativeTimeFormat('en', { numeric: 'auto' });
+  // Define our units in milliseconds
+  const units = [
+    { label: 'year', ms: 1000 * 60 * 60 * 24 * 365 },
+    { label: 'month', ms: 1000 * 60 * 60 * 24 * 30 }, // Approximation
+    { label: 'day', ms: 1000 * 60 * 60 * 24 },
+    { label: 'hour', ms: 1000 * 60 * 60 },
+    { label: 'minute', ms: 1000 * 60 },
+    { label: 'second', ms: 1000 },
+  ] as const;
+  // Find the first unit where the difference is at least 1
+  const diffMS = d.getTime() - Date.now();
+  for (const unit of units) {
+    const value = Math.round(diffMS / unit.ms);
+
+    if (value >= 1) {
+      return `${prefix.length ? `${prefix} ` : ''}${rtf.format(value, unit.label)}`;
+    }
+  }
+  return pastText;
+}

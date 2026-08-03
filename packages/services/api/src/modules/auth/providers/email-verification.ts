@@ -1,13 +1,12 @@
 import { randomBytes } from 'node:crypto';
 import bcrypt from 'bcryptjs';
 import { Inject, Injectable } from 'graphql-modules';
-import { sql, TaggedTemplateLiteralInvocation, type DatabasePool } from 'slonik';
 import zod from 'zod';
+import { PostgresDatabasePool, psql, TaggedTemplateLiteralInvocation } from '@hive/postgres';
 import { TaskScheduler } from '@hive/workflows/kit';
 import { EmailVerificationTask } from '@hive/workflows/tasks/email-verification';
 import { HiveError } from '../../../shared/errors';
 import { InMemoryRateLimiter } from '../../shared/providers/in-memory-rate-limiter';
-import { PG_POOL_CONFIG } from '../../shared/providers/pg-pool';
 import { WEB_APP_URL } from '../../shared/providers/tokens';
 
 const EmailVerificationModelBase = zod.object({
@@ -34,7 +33,7 @@ const EmailVerificationModel = zod.union([
   VerifiedEmailVerificationModel,
 ]);
 
-const emailVerificationFields = (r: TaggedTemplateLiteralInvocation) => sql`
+const emailVerificationFields = (r: TaggedTemplateLiteralInvocation) => psql`
   ${r}"id" AS "id"
   , ${r}"user_identity_id" AS "userIdentityId"
   , ${r}"email" AS "email"
@@ -56,13 +55,13 @@ export class EmailVerification {
     private taskScheduler: TaskScheduler,
     private rateLimiter: InMemoryRateLimiter,
     @Inject(WEB_APP_URL) private appBaseUrl: string,
-    @Inject(PG_POOL_CONFIG) private pool: DatabasePool,
+    private pool: PostgresDatabasePool,
   ) {}
 
   async checkUserEmailVerified(input: { userIdentityId: string; email: string }) {
     const { provider } = await this.pool
       .one(
-        sql`
+        psql`
           SELECT COALESCE("stu"."third_party_id", 'emailpassword') "provider"
           FROM "supertokens_all_auth_recipe_users" "saaru"
           LEFT JOIN "supertokens_thirdparty_users" "stu"
@@ -80,12 +79,14 @@ export class EmailVerification {
 
     const emailVerification = await this.pool
       .maybeOne(
-        sql`
-          SELECT ${emailVerificationFields(sql`"ev".`)}
+        psql`
+          SELECT ${emailVerificationFields(psql`"ev".`)}
           FROM "email_verifications" "ev"
           WHERE
             "ev"."user_identity_id" = ${input.userIdentityId}
-            AND "ev"."email" = ${input.email}
+            AND lower("ev"."email") = lower(${input.email})
+            AND "ev"."verified_at" IS NOT NULL
+          LIMIT 1
         `,
       )
       .then(v => EmailVerificationModel.nullable().parse(v));
@@ -121,7 +122,7 @@ export class EmailVerification {
 
     const superTokensUser = await this.pool
       .maybeOne(
-        sql`
+        psql`
           SELECT COALESCE("seu"."email", "stu"."email") "email"
           FROM "supertokens_all_auth_recipe_users" "saaru"
           LEFT JOIN "supertokens_emailpassword_users" "seu"
@@ -139,12 +140,12 @@ export class EmailVerification {
 
     const existingVerification = await this.pool
       .maybeOne(
-        sql`
-          SELECT ${emailVerificationFields(sql`"ev".`)}
+        psql`
+          SELECT ${emailVerificationFields(psql`"ev".`)}
           FROM "email_verifications" "ev"
           WHERE
             "ev"."user_identity_id" = ${input.userIdentityId}
-            AND "ev"."email" = ${superTokensUser.email}
+            AND lower("ev"."email") = lower(${superTokensUser.email})
         `,
       )
       .then(v => EmailVerificationModel.nullable().parse(v));
@@ -168,7 +169,7 @@ export class EmailVerification {
     const tokenHash = await bcrypt.hash(token, await bcrypt.genSalt());
     const newVerification = await this.pool
       .one(
-        sql`
+        psql`
           INSERT INTO "email_verifications" AS "ev" (
             "user_identity_id"
             , "email"
@@ -185,7 +186,7 @@ export class EmailVerification {
             "token_hash" = EXCLUDED.token_hash
             , "expires_at" = EXCLUDED.expires_at
             , "verified_at" = NULL
-          RETURNING ${emailVerificationFields(sql`"ev".`)}
+          RETURNING ${emailVerificationFields(psql`"ev".`)}
         `,
       )
       .then<zod.output<typeof UnverifiedEmailVerificationModel>>(v =>
@@ -212,12 +213,12 @@ export class EmailVerification {
   }): Promise<{ ok: true; verified: boolean } | { ok: false; message: string }> {
     const emailVerification = await this.pool
       .maybeOne(
-        sql`
-          SELECT ${emailVerificationFields(sql`"ev".`)}
+        psql`
+          SELECT ${emailVerificationFields(psql`"ev".`)}
           FROM "email_verifications" "ev"
           WHERE
             "user_identity_id" = ${input.userIdentityId}
-            AND "email" = ${input.email}
+            AND lower("email") = lower(${input.email})
             AND "expires_at" IS NOT NULL
             AND "verified_at" IS NULL
         `,
@@ -236,7 +237,7 @@ export class EmailVerification {
     }
 
     if (emailVerification.expiresAt.getTime() <= Date.now()) {
-      await this.pool.query(sql`
+      await this.pool.query(psql`
         DELETE FROM "email_verifications"
         WHERE "id" = ${emailVerification.id}
       `);
@@ -247,7 +248,7 @@ export class EmailVerification {
       };
     }
 
-    await this.pool.query(sql`
+    await this.pool.query(psql`
       UPDATE "email_verifications"
       SET
         "verified_at" = now()

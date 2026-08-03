@@ -1,11 +1,9 @@
 import {
   CommonQueryMethods,
-  sql,
-  type DatabasePool,
-  type DatabaseTransactionConnection,
-  type SqlTaggedTemplate,
+  PostgresDatabasePool,
+  psql,
   type TaggedTemplateLiteralInvocation,
-} from 'slonik';
+} from '@hive/postgres';
 
 export type MigrationExecutor = {
   name: string;
@@ -18,7 +16,7 @@ export type MigrationExecutor = {
    * You can either return a SQL query to run or instead use the connection within the function to run custom logic.
    * You can also return an array of named steps so you can see the progress in the logs.
    */
-  run: (args: { connection: CommonQueryMethods; sql: SqlTaggedTemplate }) =>
+  run: (args: { connection: CommonQueryMethods; psql: typeof psql }) =>
     | Promise<void>
     | TaggedTemplateLiteralInvocation
     | Array<{
@@ -27,8 +25,8 @@ export type MigrationExecutor = {
       }>;
 };
 
-const seedMigrationsIfNotExists = async (args: { connection: DatabaseTransactionConnection }) => {
-  await args.connection.query(sql`
+const seedMigrationsIfNotExists = async (args: { connection: CommonQueryMethods }) => {
+  await args.connection.query(psql`
     CREATE TABLE IF NOT EXISTS "migration" (
       "name" text NOT NULL,
       "hash" text NOT NULL,
@@ -39,7 +37,7 @@ const seedMigrationsIfNotExists = async (args: { connection: DatabaseTransaction
 };
 
 async function runMigration(connection: CommonQueryMethods, migration: MigrationExecutor) {
-  const exists = await connection.maybeOneFirst(sql`
+  const exists = await connection.maybeOneFirst(psql`
     SELECT true
     FROM
       "migration"
@@ -54,7 +52,7 @@ async function runMigration(connection: CommonQueryMethods, migration: Migration
   const startTime = Date.now();
   console.log(`Running migration: ${migration.name}`);
 
-  const result = await migration.run({ connection, sql });
+  const result = await migration.run({ connection, psql });
   if (Array.isArray(result)) {
     for (const item of result) {
       console.log(`  Starting step ${item.name}`);
@@ -69,7 +67,7 @@ async function runMigration(connection: CommonQueryMethods, migration: Migration
   }
 
   // TODO: hash verification (but tbh nobody cares about that)
-  await connection.query(sql`
+  await connection.query(psql`
     INSERT INTO "migration" ("name", "hash")
     VALUES (${migration.name}, ${migration.name});
   `);
@@ -80,7 +78,7 @@ async function runMigration(connection: CommonQueryMethods, migration: Migration
 }
 
 export async function runMigrations(args: {
-  slonik: DatabasePool;
+  slonik: PostgresDatabasePool;
   migrations: Array<MigrationExecutor | { default: MigrationExecutor }>;
   runTo?: string;
 }) {
@@ -93,7 +91,9 @@ export async function runMigrations(args: {
     if (migration.noTransaction === true) {
       await runMigration(args.slonik, migration);
     } else {
-      await args.slonik.transaction(connection => runMigration(connection, migration));
+      await args.slonik.transaction(migration.name, connection =>
+        runMigration(connection, migration),
+      );
     }
 
     if (args.runTo && args.runTo === migration.name) {

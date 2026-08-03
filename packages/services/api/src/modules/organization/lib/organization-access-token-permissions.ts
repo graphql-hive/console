@@ -42,6 +42,17 @@ export const permissionGroups: Array<PermissionGroup> = [
     ],
   },
   {
+    id: 'scim',
+    title: 'SCIM',
+    permissions: [
+      {
+        id: 'scim:provision',
+        title: 'Provision users and groups',
+        description: 'Provision organization users and groups through SCIM.',
+      },
+    ],
+  },
+  {
     id: 'project',
     title: 'Project',
     permissions: [
@@ -140,6 +151,11 @@ export const permissionGroups: Array<PermissionGroup> = [
         id: 'schemaVersion:publish',
         title: 'Publish schema/service/subgraph',
         description: 'Grant access to publish services/schemas.',
+      },
+      {
+        id: 'schemaVersion:promote',
+        title: 'Promote a schema version.',
+        description: 'Promote a schema version within the same project.',
       },
       {
         id: 'schemaVersion:deleteService',

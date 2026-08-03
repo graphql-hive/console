@@ -3,8 +3,64 @@ import { useCallback, useState } from 'react';
 export type LaboratorySettings = {
   fetch: {
     credentials: 'include' | 'omit' | 'same-origin';
+    timeout?: number;
+    useGETForQueries?: boolean;
+  };
+  subscriptions: {
+    protocol: 'SSE' | 'GRAPHQL_SSE' | 'WS' | 'LEGACY_WS';
+  };
+  introspection: {
+    method?: 'GET' | 'POST';
+    schemaDescription?: boolean;
+    headers?: string;
+    includeActiveOperationHeaders?: boolean;
+    pollSchema?: boolean;
   };
 };
+
+export const defaultLaboratorySettings: LaboratorySettings = {
+  fetch: {
+    credentials: 'same-origin',
+    timeout: 10000,
+    useGETForQueries: false,
+  },
+  subscriptions: {
+    protocol: 'WS',
+  },
+  introspection: {
+    method: 'POST',
+    schemaDescription: false,
+    headers: '',
+    includeActiveOperationHeaders: false,
+    pollSchema: true,
+  },
+};
+
+export const normalizeLaboratorySettings = (
+  settings?: Partial<LaboratorySettings> | null,
+): LaboratorySettings => ({
+  fetch: {
+    credentials: settings?.fetch?.credentials ?? defaultLaboratorySettings.fetch.credentials,
+    timeout: settings?.fetch?.timeout ?? defaultLaboratorySettings.fetch.timeout,
+    useGETForQueries:
+      settings?.fetch?.useGETForQueries ?? defaultLaboratorySettings.fetch.useGETForQueries,
+  },
+  subscriptions: {
+    protocol: settings?.subscriptions?.protocol ?? defaultLaboratorySettings.subscriptions.protocol,
+  },
+  introspection: {
+    method: settings?.introspection?.method ?? defaultLaboratorySettings.introspection.method,
+    schemaDescription:
+      settings?.introspection?.schemaDescription ??
+      defaultLaboratorySettings.introspection.schemaDescription,
+    headers: settings?.introspection?.headers ?? defaultLaboratorySettings.introspection.headers,
+    includeActiveOperationHeaders:
+      settings?.introspection?.includeActiveOperationHeaders ??
+      defaultLaboratorySettings.introspection.includeActiveOperationHeaders,
+    pollSchema:
+      settings?.introspection?.pollSchema ?? defaultLaboratorySettings.introspection.pollSchema,
+  },
+});
 
 export interface LaboratorySettingsState {
   settings: LaboratorySettings;
@@ -19,17 +75,14 @@ export const useSettings = (props: {
   onSettingsChange?: (settings: LaboratorySettings | null) => void;
 }): LaboratorySettingsState & LaboratorySettingsActions => {
   const [settings, _setSettings] = useState<LaboratorySettings>(
-    props.defaultSettings ?? {
-      fetch: {
-        credentials: 'same-origin',
-      },
-    },
+    normalizeLaboratorySettings(props.defaultSettings),
   );
 
   const setSettings = useCallback(
     (settings: LaboratorySettings) => {
-      _setSettings(settings);
-      props.onSettingsChange?.(settings);
+      const normalizedSettings = normalizeLaboratorySettings(settings);
+      _setSettings(normalizedSettings);
+      props.onSettingsChange?.(normalizedSettings);
     },
     [props],
   );

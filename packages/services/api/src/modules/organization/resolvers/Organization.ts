@@ -1,4 +1,6 @@
 import { Session } from '../../auth/lib/authz';
+import { GroupStore } from '../providers/group-store';
+import { Groups } from '../providers/groups';
 import { OrganizationAccessTokens } from '../providers/organization-access-tokens';
 import { OrganizationManager } from '../providers/organization-manager';
 import { OrganizationMemberRoles } from '../providers/organization-member-roles';
@@ -16,6 +18,8 @@ export const Organization: Pick<
   | 'availableOrganizationAccessTokenPermissionGroups'
   | 'cleanId'
   | 'getStarted'
+  | 'group'
+  | 'groups'
   | 'id'
   | 'invitations'
   | 'me'
@@ -226,7 +230,10 @@ export const Organization: Pick<
     });
   },
   accessToken: async (organization, args, { injector }) => {
-    return injector.get(OrganizationAccessTokens).getForOrganization(organization, args.id, true);
+    return injector.get(OrganizationAccessTokens).getForOrganization(organization, args.id, {
+      includeExpired: true,
+      includeOnlyOrganizationScoped: true,
+    });
   },
   viewerCanManagePersonalAccessTokens: async (organization, _arg, { session }) => {
     return session.canPerformAction({
@@ -238,7 +245,9 @@ export const Organization: Pick<
     });
   },
   accessTokenById: async (organization, args, { injector }) => {
-    return injector.get(OrganizationAccessTokens).getForOrganization(organization, args.id);
+    return injector.get(OrganizationAccessTokens).getForOrganization(organization, args.id, {
+      includeExpired: true,
+    });
   },
   async allAccessTokens(organization, args, { injector }) {
     return injector.get(OrganizationAccessTokens).getPaginatedForOrganization(organization, {
@@ -255,5 +264,15 @@ export const Organization: Pick<
     return await injector
       .get(ResourceSelector)
       .getProjectsFromOrganizationForResourceSelector(organization, args.intent);
+  },
+  async groups(organization, args, { injector }) {
+    return injector.get(GroupStore).getPaginatedGroupsForOrganizationId(organization.id, {
+      first: args.first,
+      after: args.after,
+      searchTerm: args.filters?.searchTerm ?? null,
+    });
+  },
+  async group(organization, args, { injector }) {
+    return injector.get(Groups).getGroupByIdForOrganizationId(organization.id, args.id);
   },
 };

@@ -96,16 +96,13 @@ export function deployProxy({
         service: graphql.service,
         requestTimeout: '60s',
         retriable: true,
-        rateLimit: {
-          maxRequests: 10,
-          unit: 'minute',
-        },
       },
       {
         name: 'usage',
         path: '/usage',
         service: usage.service,
         retriable: true,
+        loadBalancerPolicy: 'WeightedLeastRequest',
       },
     ])
     .registerService({ record: environment.apiDns }, [
@@ -122,6 +119,14 @@ export function deployProxy({
         path: '/otel/v1/traces',
         customRewrite: '/v1/traces',
         service: otelCollector.service,
+        requestTimeout: '60s',
+        retriable: true,
+      },
+      {
+        name: 'scim-provisioning',
+        path: '/scim/v2',
+        customRewrite: '/scim/v2',
+        service: publicGraphQLAPIGateway.service,
         requestTimeout: '60s',
         retriable: true,
       },

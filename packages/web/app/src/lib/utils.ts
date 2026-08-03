@@ -23,6 +23,20 @@ function hslToHex(h: number, s: number, l: number): string {
   return `#${f(0)}${f(8)}${f(4)}`;
 }
 
+export function stringToHiveColor(str: string): string {
+  let hash = 0;
+
+  for (let i = 0; i < str.length; i++) {
+    hash = str.charCodeAt(i) + ((hash << 5) - hash);
+    hash = hash & hash;
+  }
+  const hue = Math.abs(hash) % 360;
+  const saturation = 75;
+  const lightness = 65;
+
+  return `hsl(${hue}, ${saturation}%, ${lightness}%)`;
+}
+
 function readChartStyles() {
   const s = getComputedStyle(document.documentElement);
   const textColor = s.getPropertyValue('--color-neutral-12').trim();
@@ -69,6 +83,21 @@ function readChartStyles() {
       overlayText: hex('--neutral-1'),
       /** Semi-transparent text color — for subtle borders on colored surfaces. */
       overlayBorder: rgba('--neutral-12', 0.2),
+      /** Muted axis label color. */
+      axisLabel: hex('--neutral-10'),
+      /** Subtle grid line color. */
+      gridSubtle: hex('--neutral-6'),
+      /** Line color for single-series charts. */
+      line: hex('--neutral-9'),
+      /** Area fill gradient top (neutral-1). */
+      areaFillFrom: hex('--neutral-1'),
+      /** Area fill gradient bottom (neutral-4). */
+      areaFillTo: hex('--neutral-4'),
+      /** Severity / state semantic colors — match the in-app icon colors. */
+      critical: hex('--critical'),
+      warning: hex('--warning'),
+      info: hex('--info'),
+      success: hex('--success'),
     },
   };
 }

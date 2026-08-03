@@ -1,14 +1,14 @@
 // It was ported from `bob runify --single` command.
 // The idea here is to compile a node service to a single file (not in case of next) and make it executable.
+import fs from 'node:fs/promises';
 import { join, normalize, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { parseArgs } from 'node:util';
-import fs from 'fs-extra';
 import { build as tsup } from 'tsup';
 
 const __dirname = fileURLToPath(new URL('.', import.meta.url));
 
-const requireShim = fs.readFileSync(normalize(join(__dirname, './banner.js')), 'utf-8');
+const requireShim = await fs.readFile(normalize(join(__dirname, './banner.js')), 'utf-8');
 
 const entryPoints = parseArgs({
   allowPositionals: true,
@@ -31,7 +31,6 @@ async function runify(packagePath: string) {
     cwd,
     entryPoints?.length ? entryPoints : 'src/index.ts',
     buildOptions,
-    Object.keys(pkg.dependencies ?? {}).concat(Object.keys(pkg.devDependencies ?? {})),
     pkg.type === 'module',
   );
   await rewritePackageJson(pkg, cwd);
@@ -77,13 +76,14 @@ async function rewritePackageJson(
 const globalExternals: string[] = [
   // TODO: dependency of hive gateway. why does it get built by all packages, mystery
   'ansi-color',
+  // it is bundled into docker images even though it is only used in dev mode.
+  '@fastify/vite',
 ];
 
 async function compile(
   cwd: string,
   entryPoint: string | string[],
   buildOptions: BuildOptions,
-  dependencies: string[],
   useEsm = false,
 ) {
   const out = normalize(join(cwd, 'dist'));
@@ -100,7 +100,6 @@ async function compile(
     clean: true,
     shims: true,
     skipNodeModulesBundle: false,
-    // noExternal: dependencies,
     external: [...globalExternals, ...(buildOptions.external || [])],
     banner: {
       js: requireShim,

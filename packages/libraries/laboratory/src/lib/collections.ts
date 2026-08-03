@@ -20,8 +20,10 @@ export interface LaboratoryCollection {
 
 export interface LaboratoryCollectionsActions {
   addCollection: (
-    collection: Omit<LaboratoryCollection, 'id' | 'createdAt' | 'operations'>,
-  ) => void;
+    collection: Omit<LaboratoryCollection, 'id' | 'createdAt' | 'operations'> & {
+      operations?: Omit<LaboratoryCollectionOperation, 'createdAt'>[];
+    },
+  ) => LaboratoryCollection;
   addOperationToCollection: (
     collectionId: string,
     operation: Omit<LaboratoryCollectionOperation, 'createdAt'>,
@@ -30,7 +32,7 @@ export interface LaboratoryCollectionsActions {
   deleteOperationFromCollection: (collectionId: string, operationId: string) => void;
   updateCollection: (
     collectionId: string,
-    collection: Omit<LaboratoryCollection, 'id' | 'createdAt'>,
+    collection: Omit<LaboratoryCollection, 'id' | 'createdAt' | 'operations'>,
   ) => void;
   updateOperationInCollection: (
     collectionId: string,
@@ -73,17 +75,27 @@ export const useCollections = (
   );
 
   const addCollection = useCallback(
-    (collection: Omit<LaboratoryCollection, 'id' | 'createdAt' | 'operations'>) => {
+    (
+      collection: Omit<LaboratoryCollection, 'id' | 'createdAt' | 'operations'> & {
+        operations?: Omit<LaboratoryCollectionOperation, 'createdAt'>[];
+      },
+    ) => {
       const newCollection: LaboratoryCollection = {
         ...collection,
         id: uuidv4(),
         createdAt: new Date().toISOString(),
-        operations: [],
+        operations:
+          collection.operations?.map(operation => ({
+            ...operation,
+            createdAt: new Date().toISOString(),
+          })) ?? [],
       };
       const newCollections = [...collections, newCollection];
       setCollections(newCollections);
       props.onCollectionsChange?.(newCollections);
       props.onCollectionCreate?.(newCollection);
+
+      return newCollection;
     },
     [collections, props],
   );
@@ -94,6 +106,7 @@ export const useCollections = (
         ...operation,
         createdAt: new Date().toISOString(),
       };
+
       const newCollections = collections.map(collection =>
         collection.id === collectionId
           ? {
@@ -105,7 +118,9 @@ export const useCollections = (
 
       setCollections(newCollections);
       props.onCollectionsChange?.(newCollections);
+
       const updatedCollection = newCollections.find(collection => collection.id === collectionId);
+
       if (updatedCollection) {
         props.onCollectionUpdate?.(updatedCollection);
         props.onCollectionOperationCreate?.(updatedCollection, newOperation);
@@ -158,7 +173,10 @@ export const useCollections = (
   );
 
   const updateCollection = useCallback(
-    (collectionId: string, collection: Omit<LaboratoryCollection, 'id' | 'createdAt'>) => {
+    (
+      collectionId: string,
+      collection: Omit<LaboratoryCollection, 'id' | 'createdAt' | 'operations'>,
+    ) => {
       const newCollections = collections.map(c =>
         c.id === collectionId ? { ...c, ...collection } : c,
       );

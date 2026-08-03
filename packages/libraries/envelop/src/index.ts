@@ -48,7 +48,7 @@ export function useHive(clientOrOptions: HiveClient | HivePluginOptions): Plugin
       }
     } else {
       console.error(
-        'It seems that GraphQL Hive is not being executed in Node.js. ' +
+        'It seems that the Hive Console SDK is not being executed in Node.js. ' +
           'Please attempt manual client disposal and use autoDispose: false option.',
       );
     }
@@ -59,12 +59,12 @@ export function useHive(clientOrOptions: HiveClient | HivePluginOptions): Plugin
       hive.reportSchema({ schema });
     },
     onExecute({ args }) {
-      const complete = hive.collectUsage();
+      const usageCollection = hive.collectUsage();
 
       return {
         onExecuteDone({ result }) {
           if (!isAsyncIterable(result)) {
-            void complete(args, result);
+            void usageCollection.finish(args, result);
             return;
           }
 
@@ -76,7 +76,7 @@ export function useHive(clientOrOptions: HiveClient | HivePluginOptions): Plugin
               }
             },
             onEnd() {
-              void complete(args, errors.length ? { errors } : {});
+              void usageCollection.finish(args, errors.length ? { errors } : {});
             },
           };
         },

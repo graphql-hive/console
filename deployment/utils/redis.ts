@@ -18,12 +18,15 @@ export class Redis {
     },
   ) {}
 
-  deploy(input: { limits: { memory: string; cpu: string } }) {
+  deploy(input: { limits: { memory: string; cpu: string }; requests: { cpu: string } }) {
     const redisService = getLocalComposeConfig().service('redis');
     const name = 'redis-store';
     const limits: k8s.types.input.core.v1.ResourceRequirements['limits'] = {
       memory: input.limits.memory,
       cpu: input.limits.cpu,
+    };
+    const requests: k8s.types.input.core.v1.ResourceRequirements['requests'] = {
+      cpu: input.requests.cpu,
     };
 
     const env: k8s.types.input.core.v1.EnvVar[] = normalizeEnv(this.options.env ?? {}).concat([
@@ -100,6 +103,7 @@ export class Redis {
           ports: [{ containerPort: REDIS_PORT, protocol: 'TCP' }],
           resources: {
             limits,
+            requests,
           },
           livenessProbe: {
             initialDelaySeconds: 3,
@@ -116,6 +120,12 @@ export class Redis {
           args: [
             '/opt/bitnami/scripts/redis/run.sh',
             `--maxmemory ${memoryInMegabytes}mb`,
+            // Once Redis reaches maxmemory (90% of the container limit, see above),
+            // evict the least-recently-used keys instead of failing writes with OOM
+            // errors (the default `noeviction` behaviour). Everything Hive stores in
+            // this Redis is a cache / lock / rate-limit entry with a TTL, so evicting
+            // cold keys is safe and LRU keeps hot keys (locks, fresh counters) around.
+            '--maxmemory-policy allkeys-lru',
             // This disables snapshotting to save cpu and reduce latency spikes
             '--save ""',
           ],
@@ -138,6 +148,10 @@ export class Redis {
             limits: {
               cpu: '200m',
               memory: '200Mi',
+            },
+            requests: {
+              cpu: '100m',
+              memory: '100Mi',
             },
           },
         },

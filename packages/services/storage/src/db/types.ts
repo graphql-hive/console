@@ -7,9 +7,16 @@
  *
  */
 
-export type alert_channel_type = 'MSTEAMS_WEBHOOK' | 'SLACK' | 'WEBHOOK';
+export type alert_channel_type = 'DISCORD' | 'MSTEAMS_WEBHOOK' | 'SLACK' | 'WEBHOOK';
 export type alert_type = 'SCHEMA_CHANGE_NOTIFICATIONS';
 export type breaking_change_formula = 'PERCENTAGE' | 'REQUEST_COUNT';
+export type hive_subgraph_log_type = 'added' | 'changed' | 'removed' | 'unchanged';
+export type metric_alert_direction = 'ABOVE' | 'BELOW';
+export type metric_alert_metric = 'AVG' | 'P75' | 'P90' | 'P95' | 'P99';
+export type metric_alert_severity = 'CRITICAL' | 'INFO' | 'WARNING';
+export type metric_alert_state = 'FIRING' | 'NORMAL' | 'PENDING' | 'RECOVERING';
+export type metric_alert_threshold_type = 'FIXED_VALUE' | 'PERCENTAGE_CHANGE';
+export type metric_alert_type = 'ERROR_RATE' | 'LATENCY' | 'TRAFFIC';
 export type saved_filter_visibility = 'private' | 'shared';
 export type schema_policy_resource = 'ORGANIZATION' | 'PROJECT';
 export type schema_proposal_stage = 'APPROVED' | 'CLOSED' | 'DRAFT' | 'IMPLEMENTED' | 'OPEN';
@@ -153,6 +160,94 @@ export interface graphile_worker_deduplication {
   task_name: string;
 }
 
+export interface group_members {
+  created_at: Date | null;
+  group_id: string | null;
+  id: string;
+  organization_id: string | null;
+  user_id: string | null;
+}
+
+export interface group_role_assignments {
+  assigned_resources: any | null;
+  created_at: Date | null;
+  group_id: string | null;
+  id: string;
+  organization_id: string | null;
+  role_id: string | null;
+}
+
+export interface groups {
+  created_at: Date | null;
+  disabled_at: Date | null;
+  display_name: string | null;
+  external_id: string | null;
+  id: string;
+  last_updated_at: Date | null;
+  organization_id: string | null;
+}
+
+export interface metric_alert_incidents {
+  current_value: number;
+  id: string;
+  metric_alert_rule_id: string;
+  previous_value: number | null;
+  resolved_at: Date | null;
+  started_at: Date;
+  threshold_value: number;
+}
+
+export interface metric_alert_notifications_sent {
+  alert_channel_id: string;
+  sent_at: Date;
+  state_log_id: string;
+}
+
+export interface metric_alert_rule_channels {
+  alert_channel_id: string;
+  metric_alert_rule_id: string;
+}
+
+export interface metric_alert_rules {
+  confirmation_minutes: number;
+  created_at: Date;
+  created_by_user_id: string | null;
+  direction: metric_alert_direction;
+  enabled: boolean;
+  id: string;
+  last_evaluated_at: Date | null;
+  last_triggered_at: Date | null;
+  metric: metric_alert_metric | null;
+  name: string;
+  organization_id: string;
+  project_id: string;
+  saved_filter_id: string | null;
+  severity: metric_alert_severity;
+  state: metric_alert_state;
+  state_changed_at: Date | null;
+  target_id: string;
+  threshold_type: metric_alert_threshold_type;
+  threshold_value: number;
+  time_window_minutes: number;
+  type: metric_alert_type;
+  updated_at: Date;
+  updated_by_user_id: string | null;
+}
+
+export interface metric_alert_state_log {
+  created_at: Date;
+  expires_at: Date;
+  from_state: metric_alert_state;
+  id: string;
+  incident_id: string | null;
+  metric_alert_rule_id: string;
+  previous_value: number | null;
+  target_id: string;
+  threshold_value: number | null;
+  to_state: metric_alert_state;
+  value: number | null;
+}
+
 export interface migration {
   date: Date;
   hash: string;
@@ -179,18 +274,22 @@ export interface oidc_integrations {
   id: string;
   linked_organization_id: string;
   oauth_api_url: string | null;
+  oidc_for_verified_domains_required: boolean | null;
   oidc_user_access_only: boolean;
   oidc_user_join_only: boolean;
   require_invitation: boolean;
   token_endpoint: string | null;
   updated_at: Date;
+  user_id_claim: string | null;
+  user_provisioning_required: boolean | null;
   userinfo_endpoint: string | null;
 }
 
 export interface organization_access_tokens {
   assigned_resources: any | null;
   created_at: Date;
-  description: string;
+  description: string | null;
+  expires_at: Date | null;
   first_characters: string;
   hash: string;
   id: string;
@@ -357,7 +456,7 @@ export interface schema_log {
   sdl: string | null;
   service_name: string | null;
   service_url: string | null;
-  target_id: string;
+  target_id: string | null;
 }
 
 export interface schema_policy_config {
@@ -415,6 +514,10 @@ export interface schema_version_changes {
 
 export interface schema_version_to_log {
   action_id: string;
+  previous_action_id: string | null;
+  schema_changes: any | null;
+  subgraph_name: string | null;
+  type: hive_subgraph_log_type | null;
   version_id: string;
 }
 
@@ -431,11 +534,14 @@ export interface schema_versions {
   has_persisted_schema_changes: boolean | null;
   id: string;
   is_composable: boolean;
+  meta: any | null;
   metadata_attributes: any | null;
+  origin: any | null;
   previous_schema_version_id: string | null;
   record_version: string | null;
   schema_composition_errors: any | null;
   schema_metadata: any | null;
+  supergraph_changes: any | null;
   supergraph_sdl: string | null;
   tags: Array<string> | null;
   target_id: string;
@@ -461,6 +567,8 @@ export interface targets {
   base_schema: string | null;
   clean_id: string;
   created_at: Date;
+  fail_all_dangerous_changes: boolean;
+  fail_dangerous_change_types: Array<string>;
   fail_diff_on_dangerous_change: boolean;
   graphql_endpoint_url: string | null;
   id: string;
@@ -491,13 +599,17 @@ export interface tokens {
 
 export interface users {
   created_at: Date;
+  deactivated_at: Date | null;
   display_name: string;
   email: string;
   external_auth_user_id: string | null;
+  external_id: string | null;
   full_name: string;
   id: string;
   is_admin: boolean | null;
+  last_updated_at: Date | null;
   oidc_integration_id: string | null;
+  provisioned_by_organization_id: string | null;
   supertoken_user_id: string | null;
   zendesk_user_id: string | null;
 }
@@ -538,6 +650,14 @@ export interface DBTables {
   document_preflight_scripts: document_preflight_scripts;
   email_verifications: email_verifications;
   graphile_worker_deduplication: graphile_worker_deduplication;
+  group_members: group_members;
+  group_role_assignments: group_role_assignments;
+  groups: groups;
+  metric_alert_incidents: metric_alert_incidents;
+  metric_alert_notifications_sent: metric_alert_notifications_sent;
+  metric_alert_rule_channels: metric_alert_rule_channels;
+  metric_alert_rules: metric_alert_rules;
+  metric_alert_state_log: metric_alert_state_log;
   migration: migration;
   oidc_integration_domains: oidc_integration_domains;
   oidc_integrations: oidc_integrations;

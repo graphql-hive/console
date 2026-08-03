@@ -5,10 +5,10 @@ import { type MigrationExecutor } from '../pg-migrator';
  */
 export default {
   name: '2025.05.29T00-00-00.schema-proposals.ts',
-  run: ({ sql }) => [
+  run: ({ psql }) => [
     {
       name: 'create schema_proposal tables',
-      query: sql`
+      query: psql`
         CREATE TYPE
           schema_proposal_stage AS ENUM('DRAFT', 'OPEN', 'APPROVED', 'IMPLEMENTED', 'CLOSED')
         ;
@@ -40,7 +40,7 @@ export default {
     {
       // Associate schema checks with schema proposals
       name: 'Add "schema_checks"."schema_proposal_id" column and index',
-      query: sql`
+      query: psql`
         ALTER TABLE "schema_checks"
           ADD COLUMN IF NOT EXISTS "schema_proposal_id" UUID REFERENCES "schema_proposals" ("id") ON DELETE SET NULL
         ;

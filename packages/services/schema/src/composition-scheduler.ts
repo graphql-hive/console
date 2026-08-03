@@ -1,9 +1,14 @@
 import * as path from 'node:path';
 import { Worker } from 'node:worker_threads';
 import fastq from 'fastq';
+import { trace } from '@hive/service-common';
 import * as Sentry from '@sentry/node';
 import { registerWorkerLogging, type Logger } from '../../api/src/modules/shared/providers/logger';
-import type { CompositionEvent, CompositionResultEvent } from './composition-worker';
+import type {
+  CompositionEvent,
+  CompositionResultEvent,
+  ErrorResultEvent,
+} from './composition-worker';
 import {
   compositionQueueDurationMS,
   compositionTotalDurationMS,
@@ -126,20 +131,17 @@ export class CompositionScheduler {
 
     registerWorkerLogging(this.logger, worker, name);
 
-    worker.on(
-      'message',
-      (data: CompositionResultEvent | { event: 'error'; id: string; err: Error }) => {
-        if (data.event === 'error') {
-          workerState?.task.reject(data.err);
-        }
+    worker.on('message', (data: CompositionResultEvent | ErrorResultEvent) => {
+      if (data.event === 'error') {
+        workerState?.task.reject(data.err);
+      }
 
-        if (data.event === 'compositionResult') {
-          workerState?.task.resolve(data);
-        }
-      },
-    );
+      if (data.event === 'compositionResult') {
+        workerState?.task.resolve(data);
+      }
+    });
 
-    const { logger: baseLogger } = this;
+    const { logger: baseLogger, maxOldGenerationSizeMb } = this;
 
     function run(args: WorkerRunArgs) {
       if (workerState) {
@@ -190,7 +192,15 @@ export class CompositionScheduler {
           const endTime = process.hrtime(time);
           logger.debug('Time taken: %ds:%dms', endTime[0], endTime[1] / 1000000);
         })
-        .then(result => result.data);
+        .then(result => {
+          if (result.ctx?.heapUsed) {
+            const usedPercent = result.ctx.heapUsed / (maxOldGenerationSizeMb * 1024 * 1024);
+            trace
+              .getActiveSpan()
+              ?.setAttribute('hive.composition.heap.percent', Math.round(usedPercent * 100));
+          }
+          return result.data;
+        });
     }
 
     return {

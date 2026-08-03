@@ -2,7 +2,7 @@ import { type MigrationExecutor } from '../pg-migrator';
 
 export default {
   name: '2021-04-30T11-47-26.validation.sql',
-  run: ({ sql }) => sql`
+  run: ({ psql }) => psql`
 --validation (up)
 ALTER TABLE
   targets

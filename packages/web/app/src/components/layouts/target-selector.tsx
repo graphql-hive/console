@@ -2,6 +2,7 @@ import { PrimaryNavigationLink } from '@/components/navigation/primary-navigatio
 import { Select, SelectContent, SelectItem, SelectTrigger } from '@/components/ui/select';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import { useRouter } from '@tanstack/react-router';
+import { resolveTargetSwitchTo, TARGET_ROUTE_PREFIX } from './target-selector.utils';
 
 const TargetSelector_OrganizationConnectionFragment = graphql(`
   fragment TargetSelector_OrganizationConnectionFragment on OrganizationConnection {
@@ -51,6 +52,25 @@ export function TargetSelector(props: {
   const targetEdges = currentProject?.targets.edges;
   const currentTarget = targetEdges?.find(edge => edge.node.slug === props.currentTargetSlug)?.node;
 
+  const onTargetChange = (targetSlug: string) => {
+    // Navigate to the current section under the new target, dropping the previous target's
+    // resource ids (e.g. the schema version id under /history/$versionId) that would otherwise
+    // resolve to "not found"; the section then picks its own default.
+    const to = resolveTargetSwitchTo(
+      router.state.matches.map(match => router.routesById[match.routeId]?.fullPath),
+      Object.values(router.routesById).map(route => route.fullPath),
+    );
+    void router.navigate({
+      // every resolved section needs exactly the three target-level params
+      to: to as typeof TARGET_ROUTE_PREFIX,
+      params: {
+        organizationSlug: props.currentOrganizationSlug,
+        projectSlug: props.currentProjectSlug,
+        targetSlug,
+      },
+    });
+  };
+
   return (
     <>
       {currentOrganization ? (
@@ -82,16 +102,7 @@ export function TargetSelector(props: {
       <div className="text-neutral-10 italic">/</div>
       {targetEdges?.length && currentOrganization && currentProject && currentTarget ? (
         <>
-          <Select
-            value={props.currentTargetSlug}
-            onValueChange={id => {
-              void router.navigate({
-                params: {
-                  targetSlug: id,
-                },
-              });
-            }}
-          >
+          <Select value={props.currentTargetSlug} onValueChange={onTargetChange}>
             <SelectTrigger variant="default" data-cy="target-picker-trigger">
               <div className="font-medium" data-cy="target-picker-current">
                 {currentTarget.slug}

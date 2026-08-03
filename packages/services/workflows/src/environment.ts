@@ -1,6 +1,10 @@
 import zod from 'zod';
-import { OpenTelemetryConfigurationModel } from '@hive/service-common';
-import { createConnectionString } from '@hive/storage';
+import {
+  OpenTelemetryConfigurationModel,
+  parsePostgresConfigFromEnvironment,
+  parseRedisConfigFromEnvironment,
+  resolveServerListenOptions,
+} from '@hive/service-common';
 import { RequestBroker } from './lib/webhooks/send-webhook.js';
 
 const isNumberString = (input: unknown) => zod.string().regex(/^\d+$/).safeParse(input).success;
@@ -20,13 +24,29 @@ const emptyString = <T extends zod.ZodType>(input: T) => {
   }, input);
 };
 
+function raiseInvariant(reason: string): never {
+  throw new Error(reason);
+}
+
 const EnvironmentModel = zod.object({
   PORT: emptyString(NumberFromString.optional()).default(3014),
+  SERVER_HOST: emptyString(zod.string().optional()),
+  SERVER_HOST_IPV6_ONLY: emptyString(zod.union([zod.literal('1'), zod.literal('0')]).optional()),
   ENVIRONMENT: emptyString(zod.string().optional()),
   RELEASE: emptyString(zod.string().optional()),
   HEARTBEAT_ENDPOINT: emptyString(zod.string().url().optional()),
   EMAIL_FROM: zod.string().email(),
   SCHEMA_ENDPOINT: zod.string().url(),
+  // Base URL of the Hive Console, used to link alert notifications back to the
+  // rule that fired. Optional so an existing self-hosted deployment keeps
+  // booting after an upgrade; notifications omit the link when it isn't set.
+  WEB_APP_URL: emptyString(zod.string().url().optional()),
+  // Must match the value given to the API service, which is what encrypts
+  // `organizations.slack_token`. Optional for the same reason as WEB_APP_URL above;
+  // without it, Slack metric-alert notifications are skipped rather than the whole
+  // service (all transactional email and crons) failing to boot.
+  ENCRYPTION_SECRET: emptyString(zod.string().optional()),
+  AWS_REGION: emptyString(zod.string().optional()),
 });
 
 const SentryModel = zod.union([
@@ -38,15 +58,6 @@ const SentryModel = zod.union([
     SENTRY_DSN: zod.string(),
   }),
 ]);
-
-const PostgresModel = zod.object({
-  POSTGRES_SSL: emptyString(zod.union([zod.literal('1'), zod.literal('0')]).optional()),
-  POSTGRES_HOST: zod.string(),
-  POSTGRES_PORT: NumberFromString,
-  POSTGRES_DB: zod.string(),
-  POSTGRES_USER: zod.string(),
-  POSTGRES_PASSWORD: emptyString(zod.string().optional()),
-});
 
 const PostmarkEmailModel = zod.object({
   EMAIL_PROVIDER: zod.literal('postmark'),
@@ -66,6 +77,9 @@ const SMTPEmailModel = zod.object({
   EMAIL_PROVIDER_SMTP_REJECT_UNAUTHORIZED: emptyString(
     zod.union([zod.literal('0'), zod.literal('1')]).optional(),
   ),
+  EMAIL_PROVIDER_SMTP_IGNORE_TLS: emptyString(
+    zod.union([zod.literal('0'), zod.literal('1')]).optional(),
+  ),
 });
 
 const SendmailEmailModel = zod.object({
@@ -83,12 +97,19 @@ const EmailProviderModel = zod.union([
   SendmailEmailModel,
 ]);
 
-const RedisModel = zod.object({
-  REDIS_HOST: zod.string(),
-  REDIS_PORT: NumberFromString,
-  REDIS_PASSWORD: emptyString(zod.string().optional()),
-  REDIS_TLS_ENABLED: emptyString(zod.union([zod.literal('1'), zod.literal('0')]).optional()),
-});
+const ClickHouseModel = zod.union([
+  zod.object({
+    CLICKHOUSE: emptyString(zod.literal('0').optional()),
+  }),
+  zod.object({
+    CLICKHOUSE: zod.literal('1'),
+    CLICKHOUSE_HOST: zod.string(),
+    CLICKHOUSE_PORT: NumberFromString,
+    CLICKHOUSE_USERNAME: zod.string(),
+    CLICKHOUSE_PASSWORD: emptyString(zod.string().optional()),
+    CLICKHOUSE_PROTOCOL: emptyString(zod.string().optional()),
+  }),
+]);
 
 const RequestBrokerModel = zod.union([
   zod.object({
@@ -107,6 +128,12 @@ const PrometheusModel = zod.object({
   ).default('0'),
   PROMETHEUS_METRICS_LABEL_INSTANCE: emptyString(zod.string().optional()).default('workflows'),
   PROMETHEUS_METRICS_PORT: emptyString(NumberFromString.optional()).default(10254),
+});
+
+const FeatureFlagsModel = zod.object({
+  FEATURE_FLAGS_METRIC_ALERT_RULES_ENABLED: emptyString(
+    zod.union([zod.literal('1'), zod.literal('0')]).optional(),
+  ),
 });
 
 const LogModel = zod.object({
@@ -130,12 +157,12 @@ const configs = {
   base: EnvironmentModel.safeParse(process.env),
   email: EmailProviderModel.safeParse(process.env),
   sentry: SentryModel.safeParse(process.env),
-  postgres: PostgresModel.safeParse(process.env),
   prometheus: PrometheusModel.safeParse(process.env),
   log: LogModel.safeParse(process.env),
   tracing: OpenTelemetryConfigurationModel.safeParse(process.env),
+  clickhouse: ClickHouseModel.safeParse(process.env),
   requestBroker: RequestBrokerModel.safeParse(process.env),
-  redis: RedisModel.safeParse(process.env),
+  featureFlags: FeatureFlagsModel.safeParse(process.env),
 };
 
 const environmentErrors: Array<string> = [];
@@ -144,6 +171,24 @@ for (const config of Object.values(configs)) {
   if (config.success === false) {
     environmentErrors.push(JSON.stringify(config.error.format(), null, 4));
   }
+}
+
+const redisConfigResult = parseRedisConfigFromEnvironment(
+  process.env,
+  configs.base.success ? configs.base.data.AWS_REGION : undefined,
+);
+
+if (redisConfigResult.type === 'error') {
+  environmentErrors.push(...redisConfigResult.errors);
+}
+
+const postgresConfigResult = parsePostgresConfigFromEnvironment(
+  process.env,
+  configs.base.success ? configs.base.data.AWS_REGION : undefined,
+);
+
+if (postgresConfigResult.type === 'error') {
+  environmentErrors.push(...postgresConfigResult.errors);
 }
 
 if (environmentErrors.length) {
@@ -161,13 +206,13 @@ function extractConfig<Input, Output>(config: zod.SafeParseReturnType<Input, Out
 
 const base = extractConfig(configs.base);
 const email = extractConfig(configs.email);
-const postgres = extractConfig(configs.postgres);
 const sentry = extractConfig(configs.sentry);
 const prometheus = extractConfig(configs.prometheus);
 const log = extractConfig(configs.log);
 const tracing = extractConfig(configs.tracing);
+const clickhouse = extractConfig(configs.clickhouse);
 const requestBroker = extractConfig(configs.requestBroker);
-const redis = extractConfig(configs.redis);
+const featureFlags = extractConfig(configs.featureFlags);
 
 const emailProviderConfig =
   email.EMAIL_PROVIDER === 'postmark'
@@ -189,6 +234,9 @@ const emailProviderConfig =
           tls: {
             rejectUnauthorized: email.EMAIL_PROVIDER_SMTP_REJECT_UNAUTHORIZED !== '0',
           },
+          // Opt-in, unlike `rejectUnauthorized` above: an unset variable must keep
+          // STARTTLS enabled for existing deployments.
+          ignoreTLS: email.EMAIL_PROVIDER_SMTP_IGNORE_TLS === '1',
         } as const)
       : email.EMAIL_PROVIDER === 'sendmail'
         ? ({ provider: 'sendmail' } as const)
@@ -205,6 +253,10 @@ export const env = {
   release: base.RELEASE ?? 'local',
   http: {
     port: base.PORT ?? 6260,
+    ...resolveServerListenOptions({
+      serverHost: base.SERVER_HOST,
+      serverHostIpv6Only: base.SERVER_HOST_IPV6_ONLY,
+    }),
   },
   tracing: {
     enabled: !!tracing.OPENTELEMETRY_COLLECTOR_ENDPOINT,
@@ -217,6 +269,11 @@ export const env = {
   schema: {
     serviceUrl: base.SCHEMA_ENDPOINT,
   },
+  // Trailing slash stripped so callers can append `/${slug}` paths. Deployment
+  // configs are inconsistent about it (deployment/services/commerce.ts sets the
+  // same variable with a trailing slash).
+  webAppUrl: base.WEB_APP_URL?.replace(/\/$/, '') ?? null,
+  encryptionSecret: base.ENCRYPTION_SECRET ?? null,
   sentry: sentry.SENTRY === '1' ? { dsn: sentry.SENTRY_DSN } : null,
   log: {
     level: log.LOG_LEVEL ?? 'info',
@@ -230,16 +287,20 @@ export const env = {
           port: prometheus.PROMETHEUS_METRICS_PORT ?? 10_254,
         }
       : null,
-  postgres: {
-    connectionString: createConnectionString({
-      ssl: postgres.POSTGRES_SSL === '1',
-      host: postgres.POSTGRES_HOST,
-      db: postgres.POSTGRES_DB,
-      password: postgres.POSTGRES_PASSWORD,
-      port: postgres.POSTGRES_PORT,
-      user: postgres.POSTGRES_USER,
-    }),
-  },
+  postgres:
+    postgresConfigResult?.type === 'ok'
+      ? postgresConfigResult.config
+      : raiseInvariant('Unreachable: postgres config errors are caught above via process.exit(1)'),
+  clickhouse:
+    clickhouse.CLICKHOUSE === '1'
+      ? {
+          host: clickhouse.CLICKHOUSE_HOST,
+          port: clickhouse.CLICKHOUSE_PORT,
+          username: clickhouse.CLICKHOUSE_USERNAME,
+          password: clickhouse.CLICKHOUSE_PASSWORD ?? '',
+          protocol: clickhouse.CLICKHOUSE_PROTOCOL,
+        }
+      : null,
   requestBroker:
     requestBroker.REQUEST_BROKER === '1'
       ? ({
@@ -248,10 +309,11 @@ export const env = {
         } satisfies RequestBroker)
       : null,
   httpHeartbeat: base.HEARTBEAT_ENDPOINT ? { endpoint: base.HEARTBEAT_ENDPOINT } : null,
-  redis: {
-    host: redis.REDIS_HOST,
-    port: redis.REDIS_PORT,
-    password: redis.REDIS_PASSWORD ?? '',
-    tlsEnabled: redis.REDIS_TLS_ENABLED === '1',
+  redis:
+    redisConfigResult?.type === 'ok'
+      ? redisConfigResult.config
+      : raiseInvariant('Unreachable: redis config errors are caught above via process.exit(1)'),
+  featureFlags: {
+    metricAlertRulesEnabled: featureFlags.FEATURE_FLAGS_METRIC_ALERT_RULES_ENABLED === '1',
   },
 } as const;

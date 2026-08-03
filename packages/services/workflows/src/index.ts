@@ -1,22 +1,37 @@
 import { run } from 'graphile-worker';
-import { createPool } from 'slonik';
 import { Logger } from '@graphql-hive/logger';
+import { createConnectionStringProvider, createPostgresDatabasePool } from '@hive/postgres';
 import { bridgeGraphileLogger, createHivePubSub } from '@hive/pubsub';
 import {
+  configureTracing,
+  createRedisClient,
   createServer,
+  Encryptor,
+  generateRdsIamAuthToken,
   registerShutdown,
   reportReadiness,
   sentryInit,
   startHeartbeats,
   startMetrics,
+  type TracingInstance,
 } from '@hive/service-common';
 import { Context } from './context.js';
 import { env } from './environment.js';
+import { ClickHouseClient } from './lib/clickhouse-client.js';
 import { createEmailProvider } from './lib/emails/providers.js';
 import { schemaProvider } from './lib/schema/provider.js';
 import { bridgeFastifyLogger } from './logger.js';
-import { createRedisClient } from './redis';
 import { createTaskEventEmitter } from './task-events.js';
+
+let tracing: TracingInstance | undefined;
+if (env.tracing.enabled) {
+  tracing = configureTracing({
+    collectorEndpoint: env.tracing.collectorEndpoint,
+    serviceName: 'workflows',
+  });
+  tracing.instrumentNodeFetch();
+  tracing.setup();
+}
 
 if (env.sentry) {
   sentryInit({
@@ -43,19 +58,63 @@ const modules = await Promise.all([
   import('./tasks/usage-rate-limit-exceeded.js'),
   import('./tasks/usage-rate-limit-warning.js'),
   import('./tasks/schema-proposal-composition.js'),
+  import('./tasks/evaluate-metric-alert-rules.js'),
+  import('./tasks/send-metric-alert-channel-notification.js'),
+  import('./tasks/purge-expired-alert-state-log.js'),
+  import('./tasks/purge-target-tokens.js'),
+  import('./tasks/flush-target-token-last-used.js'),
 ]);
 
-const crontab = `
-  # Purge expired schema checks every Sunday at 10:00AM
-  0 10 * * 0 purgeExpiredSchemaChecks
-  # Every day at 3:00 AM
-  0 3 * * * purgeExpiredDedupeKeys
-`;
-
-const pg = await createPool(env.postgres.connectionString);
 const logger = new Logger({ level: env.log.level });
 
-logger.info({ pid: process.pid }, 'starting workflow service');
+const rdsIamTokenGenerator = env.postgres.awsIamAuthEnabled
+  ? () =>
+      generateRdsIamAuthToken(
+        {
+          region: env.postgres.awsRegion ?? '',
+          hostname: env.postgres.host,
+          port: env.postgres.port,
+          username: env.postgres.user,
+        },
+        logger.child({ source: 'RdsIamAuthTokenGenerator' }),
+      )
+  : undefined;
+
+const pg = await createPostgresDatabasePool({
+  connectionParameters: createConnectionStringProvider(env.postgres, rdsIamTokenGenerator),
+  additionalInterceptors: tracing ? [tracing.instrumentSlonik()] : [],
+});
+
+logger.info({ pid: process.pid }, 'starting workflow service ' + process.pid);
+
+// Build the crontab. The metric-alerts evaluator queries ClickHouse for
+// metric windows, so its line is only included when ClickHouse is
+// configured. Otherwise the task would silently bail every minute. The
+// state-log purge task only touches Postgres so it stays unconditional.
+const crontabLines: string[] = [
+  '# Flush target token last-used dates every minute',
+  '* * * * * flushTargetTokenLastUsed',
+  '# Purge expired schema checks every Sunday at 10:00AM',
+  '0 10 * * 0 purgeExpiredSchemaChecks',
+  '# Every day at 3:00 AM',
+  '0 3 * * * purgeExpiredDedupeKeys',
+];
+if (env.clickhouse) {
+  crontabLines.push(
+    '# Evaluate metric alert rules every minute',
+    '* * * * * evaluateMetricAlertRules',
+  );
+} else {
+  logger.warn(
+    'ClickHouse not configured — metric alert rules will not be evaluated. ' +
+      'Set CLICKHOUSE=1 and the CLICKHOUSE_* env vars to enable.',
+  );
+}
+crontabLines.push(
+  '# Purge expired alert state log entries daily at 4:00 AM',
+  '0 4 * * * purgeExpiredAlertStateLog',
+);
+const crontab = crontabLines.join('\n');
 
 const stopHttpHeartbeat = env.httpHeartbeat
   ? startHeartbeats({
@@ -73,27 +132,45 @@ const server = await createServer({
   log: logger,
 });
 
-const redis = createRedisClient('Redis', env.redis, server.log.child({ source: 'Redis' }));
+const redis = await createRedisClient(env.redis, {
+  logger: server.log.child({ source: 'Redis' }),
+});
+
+const redisSubscriber = await createRedisClient(env.redis, {
+  logger: server.log.child({ source: 'RedisSubscribe' }),
+});
 
 const pubSub = createHivePubSub({
   publisher: redis,
-  subscriber: createRedisClient(
-    'subscriber',
-    env.redis,
-    server.log.child({ source: 'RedisSubscribe' }),
-  ),
+  subscriber: redisSubscriber,
 });
+
+const clickhouse = env.clickhouse
+  ? new ClickHouseClient(env.clickhouse, logger.child({ source: 'ClickHouse' }))
+  : null;
+
+const encryptor = env.encryptionSecret ? new Encryptor(env.encryptionSecret) : null;
+if (!encryptor) {
+  logger.warn(
+    'ENCRYPTION_SECRET not configured — Slack metric alert notifications will be skipped. ' +
+      'Set it to the same value as the API service to enable.',
+  );
+}
 
 const context: Context = {
   logger,
   email: createEmailProvider(env.email.provider, env.email.emailFrom),
   pg,
+  clickhouse,
   requestBroker: env.requestBroker,
+  redis,
   schema: schemaProvider({
     logger,
     schemaServiceUrl: env.schema.serviceUrl,
   }),
   pubSub,
+  webAppUrl: env.webAppUrl,
+  crypto: encryptor,
 };
 
 server.route({
@@ -132,17 +209,22 @@ if (context.email.id === 'mock') {
 
 await server.listen({
   port: env.http.port,
-  host: '::',
+  host: env.http.host,
+  ipv6Only: env.http.ipv6Only,
 });
 
 const shutdownMetrics = env.prometheus
-  ? await startMetrics(env.prometheus.labels.instance, env.prometheus.port)
+  ? await startMetrics(env.prometheus.labels.instance, {
+      port: env.prometheus.port,
+      host: env.http.host,
+      ipv6Only: env.http.ipv6Only,
+    })
   : null;
 
 const runner = await run({
   logger: bridgeGraphileLogger(logger),
   crontab,
-  pgPool: pg.pool,
+  pgPool: pg.getPgPoolCompat(),
   taskList: Object.fromEntries(modules.map(module => module.task(context))),
   noHandleSignals: true,
   events: createTaskEventEmitter(),
@@ -153,6 +235,10 @@ registerShutdown({
   logger: bridgeFastifyLogger(logger),
   async onShutdown() {
     try {
+      if (tracing) {
+        logger.info('Flushing tracing spans.');
+        await tracing.shutdown();
+      }
       logger.info('Stopping task runner.');
       await runner.stop();
       logger.info('Task runner shutdown successful.');
@@ -160,7 +246,7 @@ registerShutdown({
       await pg.end();
       logger.info('Shutdown postgres connection successful.');
       logger.info('Shutdown redis connection.');
-      redis.disconnect(false);
+      await Promise.all([redis.quit(), redisSubscriber.quit()]);
       if (shutdownMetrics) {
         logger.info('Stopping prometheus endpoint');
         await shutdownMetrics();

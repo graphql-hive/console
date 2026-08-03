@@ -146,7 +146,7 @@ function Comment({ node }: { node: FragmentType<typeof Comment_SupportTicketComm
         </TooltipContent>
       </Tooltip>
       {isSupport ? (
-        <img className="block size-6" src="/just-logo.svg" alt="GraphQL Hive logo" />
+        <img className="block size-6" src="/just-logo.svg" alt="Hive Console logo" />
       ) : null}
     </div>
   );

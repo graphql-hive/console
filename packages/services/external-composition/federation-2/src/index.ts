@@ -7,9 +7,20 @@ import { createRequestListener } from './server';
 const env = resolveEnv(process.env);
 const server = createServer(createRequestListener(env));
 
-server.listen(env.http.port, '::', () => {
-  console.log(`Listening on http://localhost:${env.http.port}`);
-});
+function formatListenAddress(host: string, port: number) {
+  return host.includes(':') ? `[${host}]:${port}` : `${host}:${port}`;
+}
+
+server.listen(
+  {
+    port: env.http.port,
+    host: env.http.host,
+    ipv6Only: env.http.ipv6Only,
+  },
+  () => {
+    console.log(`Listening on ${formatListenAddress(env.http.host, env.http.port)}`);
+  },
+);
 
 process.on('SIGINT', () => {
   server.close(err => {

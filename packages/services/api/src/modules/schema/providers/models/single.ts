@@ -1,4 +1,5 @@
 import { Injectable, Scope } from 'graphql-modules';
+import type { DangerousChangeType } from '@hive/api/__generated__/types';
 import { traceFn } from '@hive/service-common';
 import { SchemaChangeType } from '@hive/storage';
 import { AppDeployments } from '../../../app-deployments/providers/app-deployments';
@@ -57,6 +58,8 @@ export class SingleModel {
     approvedChanges,
     conditionalBreakingChangeDiffConfig,
     failDiffOnDangerousChange,
+    failAllDangerousChanges,
+    failDangerousChangeTypes,
     filterNestedChanges,
   }: {
     input: Pick<SingleSchemaInput, 'sdl'>;
@@ -81,6 +84,8 @@ export class SingleModel {
     approvedChanges: Map<string, SchemaChangeType>;
     conditionalBreakingChangeDiffConfig: null | ConditionalBreakingChangeDiffConfig;
     failDiffOnDangerousChange: boolean;
+    failAllDangerousChanges: boolean;
+    failDangerousChangeTypes: DangerousChangeType[];
     filterNestedChanges: boolean;
   }): Promise<SchemaCheckResult> {
     const incoming: SingleSchemaInput = {
@@ -107,7 +112,7 @@ export class SingleModel {
     });
 
     if (checksumResult === 'unchanged') {
-      this.logger.debug('No changes detected, skipping schema check');
+      this.logger.info('No changes detected, skipping schema check');
       return {
         conclusion: SchemaCheckConclusion.Skip,
       };
@@ -146,6 +151,8 @@ export class SingleModel {
         existingSdl: previousVersionSdl,
         incomingSdl: compositionCheck.result?.fullSchemaSdl ?? null,
         failDiffOnDangerousChange,
+        failAllDangerousChanges,
+        failDangerousChangeTypes,
         filterNestedChanges,
         getAffectedAppDeployments,
       }),
@@ -156,11 +163,16 @@ export class SingleModel {
       }),
     ]);
 
+    this.logger.debug('diff check status: %o', diffCheck);
+    this.logger.debug('policy check status: %o', policyCheck);
+
     if (
       compositionCheck.status === 'failed' ||
       diffCheck.status === 'failed' ||
       policyCheck.status === 'failed'
     ) {
+      this.logger.info('Schema check failed');
+
       return {
         conclusion: SchemaCheckConclusion.Failure,
         state: buildSchemaCheckFailureState({
@@ -171,6 +183,8 @@ export class SingleModel {
         }),
       };
     }
+
+    this.logger.info('Schema check successful');
 
     return {
       conclusion: SchemaCheckConclusion.Success,
@@ -196,6 +210,8 @@ export class SingleModel {
     baseSchema,
     conditionalBreakingChangeDiffConfig,
     failDiffOnDangerousChange,
+    failAllDangerousChanges,
+    failDangerousChangeTypes,
   }: {
     input: {
       sdl: string;
@@ -217,6 +233,8 @@ export class SingleModel {
     baseSchema: string | null;
     conditionalBreakingChangeDiffConfig: null | ConditionalBreakingChangeDiffConfig;
     failDiffOnDangerousChange: boolean;
+    failAllDangerousChanges: boolean;
+    failDangerousChangeTypes: DangerousChangeType[];
   }): Promise<SchemaPublishResult> {
     const incoming: SingleSchemaInput = {
       id: temp,
@@ -305,6 +323,8 @@ export class SingleModel {
         existingSdl: previousVersionSdl,
         incomingSdl: compositionCheck.result?.fullSchemaSdl ?? null,
         failDiffOnDangerousChange,
+        failAllDangerousChanges,
+        failDangerousChangeTypes,
         filterNestedChanges: true, // publish is never associated with schema proposals in this way. So always show the minimal changeset.
         getAffectedAppDeployments: getAffectedAppDeploymentsForPublish,
       }),
@@ -343,6 +363,9 @@ export class SingleModel {
           diffCheck.reason?.coordinatesDiff ??
           diffCheck.data?.coordinatesDiff ??
           null,
+        supergraphChanges: null,
+        previousSchemas: null,
+        serviceChanges: null,
         compositionErrors: compositionCheck.reason?.errors ?? null,
         schema: incoming,
         schemas,

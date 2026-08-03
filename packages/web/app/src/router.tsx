@@ -21,6 +21,7 @@ import {
   Navigate,
   Outlet,
   parseSearchWith,
+  redirect,
   stringifySearchWith,
   useNavigate,
   useParams,
@@ -33,7 +34,9 @@ import { Meta } from '@/components/ui/meta';
 import { useLocalStorage } from '@/lib/hooks';
 import { zodValidator } from '@tanstack/zod-adapter';
 import { authenticated } from './components/authenticated-container';
+import { AlertActivitySearch } from './components/target/alerts/search-schemas';
 import { InsightsFilterSearch } from './components/target/insights/search-schemas';
+import { DiffsWorkerPoolProvider } from './components/theme/diffs-worker-pool-provider';
 import { SchemaProposalStage } from './gql/graphql';
 import { AuthPage } from './pages/auth';
 import { AuthCallbackPage } from './pages/auth-callback';
@@ -66,6 +69,11 @@ import { ProjectIndexRouteSearch, ProjectPage } from './pages/project';
 import { ProjectAlertsPage } from './pages/project-alerts';
 import { ProjectSettingsPage, ProjectSettingsPageEnum } from './pages/project-settings';
 import { TargetPage } from './pages/target';
+import { TargetAlertsPage } from './pages/target-alerts';
+import { TargetAlertsActivityPage } from './pages/target-alerts-activity';
+import { TargetAlertsCreatePage } from './pages/target-alerts-create';
+import { TargetAlertsDetailPage } from './pages/target-alerts-detail';
+import { TargetAlertsRulesPage } from './pages/target-alerts-rules';
 import { TargetAppVersionPage } from './pages/target-app-version';
 import { TargetAppsPage, TargetAppsSortSchema, type SortState } from './pages/target-apps';
 import { TargetChecksPage } from './pages/target-checks';
@@ -75,8 +83,8 @@ import { TargetExplorerPage } from './pages/target-explorer';
 import { TargetExplorerDeprecatedPage } from './pages/target-explorer-deprecated';
 import { TargetExplorerTypePage } from './pages/target-explorer-type';
 import { TargetExplorerUnusedPage } from './pages/target-explorer-unused';
-import { TargetHistoryPage } from './pages/target-history';
-import { TargetHistoryVersionPage } from './pages/target-history-version';
+import { TargetHistoryPage, TargetHistoryPageQuery } from './pages/target-history';
+import { TargetHistorySchemaVersionPage } from './pages/target-history-schema-version';
 import { TargetInsightsPage } from './pages/target-insights';
 import { TargetInsightsClientPage } from './pages/target-insights-client';
 import { TargetInsightsCoordinatePage } from './pages/target-insights-coordinate';
@@ -113,6 +121,19 @@ if (env.sentry) {
       /Failed to fetch dynamically imported module/,
       /Importing a module script failed/,
     ],
+    beforeSend(event) {
+      const isMonacoError = event.exception?.values?.some(exception =>
+        exception.stacktrace?.frames?.some(frame => frame.filename?.includes('monaco-editor')),
+      );
+
+      if (isMonacoError) {
+        for (const exception of event.exception?.values ?? []) {
+          exception.value &&= `[Monaco] ${exception.value}`;
+        }
+      }
+
+      return event;
+    },
   });
 }
 
@@ -491,7 +512,7 @@ const organizationSettingsRoute = createRoute({
 });
 
 const OrganizationMembersRouteSearch = z.object({
-  page: z.enum(['list', 'roles', 'invitations']).catch('list').default('list'),
+  page: z.enum(['list', 'roles', 'invitations', 'groups']).catch('list').default('list'),
   search: z.string().optional(),
 });
 
@@ -623,6 +644,111 @@ const targetSettingsRoute = createRoute({
         projectSlug={projectSlug}
         targetSlug={targetSlug}
         page={page}
+      />
+    );
+  },
+});
+
+// --- Alerts (nested routes with Outlet) ---
+
+const targetAlertsRoute = createRoute({
+  getParentRoute: () => targetRoute,
+  path: 'alerts',
+  component: function TargetAlertsRoute() {
+    const { organizationSlug, projectSlug, targetSlug } = targetAlertsRoute.useParams();
+    return (
+      <TargetLayout
+        page={Page.Alerts}
+        organizationSlug={organizationSlug}
+        projectSlug={projectSlug}
+        targetSlug={targetSlug}
+      >
+        <TargetAlertsPage
+          organizationSlug={organizationSlug}
+          projectSlug={projectSlug}
+          targetSlug={targetSlug}
+        />
+      </TargetLayout>
+    );
+  },
+});
+
+const targetAlertsIndexRoute = createRoute({
+  getParentRoute: () => targetAlertsRoute,
+  path: '/',
+  component: function TargetAlertsIndexRoute() {
+    const params = targetAlertsIndexRoute.useParams();
+    return (
+      <Navigate to="/$organizationSlug/$projectSlug/$targetSlug/alerts/activity" params={params} />
+    );
+  },
+});
+
+const targetAlertsRulesRoute = createRoute({
+  getParentRoute: () => targetAlertsRoute,
+  path: 'rules',
+  component: function TargetAlertsRulesRoute() {
+    const { organizationSlug, projectSlug, targetSlug } = targetAlertsRulesRoute.useParams();
+    return (
+      <TargetAlertsRulesPage
+        organizationSlug={organizationSlug}
+        projectSlug={projectSlug}
+        targetSlug={targetSlug}
+      />
+    );
+  },
+});
+
+const targetAlertsActivityRoute = createRoute({
+  getParentRoute: () => targetAlertsRoute,
+  path: 'activity',
+  validateSearch: AlertActivitySearch.parse,
+  component: function TargetAlertsActivityRoute() {
+    const { organizationSlug, projectSlug, targetSlug } = targetAlertsActivityRoute.useParams();
+    return (
+      <TargetAlertsActivityPage
+        organizationSlug={organizationSlug}
+        projectSlug={projectSlug}
+        targetSlug={targetSlug}
+      />
+    );
+  },
+});
+
+const TargetAlertsCreateSearch = z.object({
+  savedFilterId: z.string().optional(),
+});
+
+const targetAlertsCreateRoute = createRoute({
+  getParentRoute: () => targetAlertsRoute,
+  path: 'create',
+  validateSearch: TargetAlertsCreateSearch.parse,
+  component: function TargetAlertsCreateRoute() {
+    const { organizationSlug, projectSlug, targetSlug } = targetAlertsCreateRoute.useParams();
+    const { savedFilterId } = targetAlertsCreateRoute.useSearch();
+    return (
+      <TargetAlertsCreatePage
+        organizationSlug={organizationSlug}
+        projectSlug={projectSlug}
+        targetSlug={targetSlug}
+        savedFilterId={savedFilterId}
+      />
+    );
+  },
+});
+
+const targetAlertsDetailRoute = createRoute({
+  getParentRoute: () => targetAlertsRoute,
+  path: '$ruleId',
+  component: function TargetAlertsDetailRoute() {
+    const { organizationSlug, projectSlug, targetSlug, ruleId } =
+      targetAlertsDetailRoute.useParams();
+    return (
+      <TargetAlertsDetailPage
+        organizationSlug={organizationSlug}
+        projectSlug={projectSlug}
+        targetSlug={targetSlug}
+        ruleId={ruleId}
       />
     );
   },
@@ -884,6 +1010,22 @@ const targetInsightsOperationsRoute = createRoute({
 const targetHistoryRoute = createRoute({
   getParentRoute: () => targetRoute,
   path: 'history',
+  // On the bare history route redirect to the target's latest version. Done here rather than in a
+  // render effect so it runs once, deterministically, and can't loop.
+  beforeLoad: async ({ params, location }) => {
+    if (!/\/history\/?$/.test(location.pathname)) {
+      return;
+    }
+    const result = await urqlClient.query(TargetHistoryPageQuery, params).toPromise();
+    const versionId = result.data?.target?.latestSchemaVersion?.id;
+    if (versionId) {
+      throw redirect({
+        to: '/$organizationSlug/$projectSlug/$targetSlug/history/$versionId',
+        params: { ...params, versionId },
+        replace: true,
+      });
+    }
+  },
   component: function TargetHistoryRoute() {
     const { organizationSlug, projectSlug, targetSlug } = targetHistoryRoute.useParams();
     return (
@@ -903,12 +1045,14 @@ const targetHistoryVersionRoute = createRoute({
     const { organizationSlug, projectSlug, targetSlug, versionId } =
       targetHistoryVersionRoute.useParams();
     return (
-      <TargetHistoryVersionPage
-        organizationSlug={organizationSlug}
-        projectSlug={projectSlug}
-        targetSlug={targetSlug}
-        versionId={versionId}
-      />
+      <DiffsWorkerPoolProvider>
+        <TargetHistorySchemaVersionPage
+          organizationSlug={organizationSlug}
+          projectSlug={projectSlug}
+          targetSlug={targetSlug}
+          schemaVersionId={versionId}
+        />
+      </DiffsWorkerPoolProvider>
     );
   },
 });
@@ -1165,6 +1309,13 @@ const routeTree = root.addChildren([
       targetAppVersionRoute,
       targetAppsRoute,
       targetProposalsRoute.addChildren([targetProposalsNewRoute, targetProposalsSingleRoute]),
+      targetAlertsRoute.addChildren([
+        targetAlertsIndexRoute,
+        targetAlertsRulesRoute,
+        targetAlertsActivityRoute,
+        targetAlertsCreateRoute,
+        targetAlertsDetailRoute,
+      ]),
     ]),
   ]),
 ]);

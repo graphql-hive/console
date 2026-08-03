@@ -1,10 +1,5 @@
 import type { DocumentNode, GraphQLSchema, Kind } from 'graphql';
-import type {
-  SchemaChangeType,
-  SchemaCheck,
-  SchemaCheckApprovalMetadata,
-  SchemaVersion,
-} from '@hive/storage';
+import type { SchemaChangeType, SchemaCheck, SchemaCheckApprovalMetadata } from '@hive/storage';
 import type { SchemaError } from '../../__generated__/types';
 import type { DateRange, PushedCompositeSchema, SingleSchema } from '../../shared/entities';
 import type { PromiseOrValue } from '../../shared/helpers';
@@ -16,6 +11,7 @@ import type {
   PaginatedContractConnection,
 } from './providers/contracts';
 import type { SchemaCheckWarning } from './providers/models/shared';
+import type { SchemaVersion } from './providers/schema-version-store';
 
 export type SchemaChangeConnectionMapper = ReadonlyArray<SchemaChangeMapper>;
 export type SchemaChangeMapper = SchemaChangeType;
@@ -39,11 +35,11 @@ export type SchemaVersionConnectionMapper = Readonly<{
     endCursor: string;
   }>;
 }>;
-export interface SchemaVersionMapper extends SchemaVersion {
+export type SchemaVersionMapper = SchemaVersion & {
   projectId: string;
   targetId: string;
   organizationId: string;
-}
+};
 export type SingleSchemaMapper = SingleSchema;
 export type CompositeSchemaMapper = PushedCompositeSchema;
 export type SchemaMapper = SingleSchemaMapper | CompositeSchemaMapper; // TODO: eddeee888 to check if union is wired up correctly by Server Preset
@@ -109,6 +105,8 @@ export type WithSchemaCoordinatesUsage<T> = T & {
     | PromiseOrValue<{
         [coordinate: string]: {
           total: number;
+          totalResolutions?: number | null;
+          errorTotal?: number | null;
           usedByClients: () => PromiseOrValue<Array<string>>;
           period: DateRange;
           organizationId: string;
@@ -256,6 +254,8 @@ export type SchemaCoordinateUsageMapper =
   | {
       isUsed: true;
       total: number;
+      totalResolutions?: number | null;
+      errorTotal?: number | null;
       usedByClients: () => PromiseOrValue<Array<string>>;
       period: DateRange;
       organizationId: string;
@@ -266,6 +266,8 @@ export type SchemaCoordinateUsageMapper =
   | {
       isUsed: false;
       total: number;
+      totalResolutions?: number | null;
+      errorTotal?: number | null;
       usedByClients: () => Array<string>;
     };
 

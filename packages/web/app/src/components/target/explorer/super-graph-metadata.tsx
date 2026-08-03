@@ -1,18 +1,24 @@
 import { Fragment, useMemo } from 'react';
+import { useTheme } from '@/components/theme/theme-provider';
 import { PackageIcon } from '@/components/ui/icon';
 import { Tooltip } from '@/components/v2';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import { LayersIcon as MetadataIcon } from '@radix-ui/react-icons';
 import { Link } from '@tanstack/react-router';
 
-function stringToHslColor(str: string, s = 30, l = 80) {
+function stringToHue(str: string) {
   let hash = 0;
   for (let i = 0; i < str.length; i++) {
     hash = str.charCodeAt(i) + ((hash << 5) - hash);
   }
+  return hash % 360;
+}
 
-  const h = hash % 360;
-  return 'hsl(' + h + ', ' + s + '%, ' + l + '%)';
+function subgraphChipColors(str: string, theme: 'light' | 'dark') {
+  const h = stringToHue(str);
+  return theme === 'dark'
+    ? { backgroundColor: `hsl(${h}, 45%, 32%)`, color: '#f2f2f2' }
+    : { backgroundColor: `hsl(${h}, 30%, 80%)`, color: '#4f4f4f' };
 }
 
 function Metadata(props: { supergraphMetadata: Array<{ name: string; content: string }> }) {
@@ -44,6 +50,8 @@ function SubgraphChip(props: {
   targetSlug: string;
   metadata?: Array<{ name: string; content: string }>;
 }): React.ReactElement {
+  const { resolvedTheme } = useTheme();
+
   const inner = (
     <Link
       to="/$organizationSlug/$projectSlug/$targetSlug"
@@ -55,12 +63,12 @@ function SubgraphChip(props: {
       search={{
         service: props.text,
       }}
-      style={{ backgroundColor: stringToHslColor(props.text) }}
-      className="my-[2px] ml-[6px] inline-block h-[22px] max-w-[100px] cursor-pointer items-center justify-between truncate rounded-[16px] py-0 pl-[8px] pr-[6px] text-[10px] font-normal normal-case leading-loose text-[#4f4f4f]"
+      style={subgraphChipColors(props.text, resolvedTheme)}
+      className="my-0.5 ml-1.5 inline-flex h-6 max-w-24 cursor-pointer items-center gap-1 rounded-full px-2 text-[10px] font-normal leading-none"
     >
-      {props.text}
-      <PackageIcon size={10} className="ml-1 inline-block" />
-      {props.metadata?.length && <span className="inline-block text-[8px] font-bold">*</span>}
+      <span className="min-w-0 truncate">{props.text}</span>
+      <PackageIcon size={10} className="shrink-0" />
+      {props.metadata?.length && <span className="shrink-0 text-[8px] font-bold">*</span>}
     </Link>
   );
 
@@ -98,7 +106,6 @@ const SupergraphMetadataList_SupergraphMetadataFragment = graphql(`
   }
 `);
 
-const tooltipColor = 'rgb(36, 39, 46)';
 const DEFAULT_PREVIEW_THRESHOLD = 3;
 
 export function SupergraphMetadataList(props: {
@@ -193,24 +200,16 @@ export function SupergraphMetadataList(props: {
   const [previewItems, allItems] = items ?? [null, null];
 
   return (
-    <div className="flex w-full justify-end">
+    <div className="flex w-full justify-end gap-1">
       {meta}
-      {previewItems}{' '}
+      {previewItems}
       {allItems && (
         <Tooltip
           content={
             <>
               <div className="mb-2 font-bold">All Subgraphs</div>
-              <div className="relative size-[250px]">
-                <div className="absolute inset-0 size-[250px] overflow-y-scroll py-2">
-                  {allItems}
-                </div>
-                <div
-                  className="pointer-events-none absolute inset-0"
-                  style={{
-                    boxShadow: `inset 0px 11px 8px -10px ${tooltipColor}, inset 0px -11px 8px -10px ${tooltipColor}`,
-                  }}
-                />
+              <div className="flex max-h-[250px] w-[250px] flex-wrap gap-1 overflow-y-auto py-1">
+                {allItems}
               </div>
             </>
           }

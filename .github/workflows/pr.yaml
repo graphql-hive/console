@@ -24,16 +24,21 @@ jobs:
     secrets:
       hiveToken: ${{ secrets.HIVE_TOKEN }}
 
+  changeset-version:
+    uses: ./.github/workflows/changeset-version.yaml
+
   # Build all packages and applications, and creates Docker images
   build:
     name: build
     uses: ./.github/workflows/build-and-dockerize.yaml
+    needs: changeset-version
     with:
       dockerize: ${{ !github.event.pull_request.head.repo.fork }}
       imageTag: ${{ github.event.pull_request.head.sha }}
       publishLatest: false
       targets: 'build'
       uploadJavaScriptArtifacts: true
+      latestVersion: ${{ needs.changeset-version.outputs.version }}
     secrets: inherit
 
   # Run db migrations tests
@@ -57,7 +62,7 @@ jobs:
     with:
       imageTag: ${{ github.event.pull_request.head.sha }}
 
-  # e2e tests using Cypress, runs Hive from pre-built Docker images.
+  # e2e tests using Playwright, runs Hive from pre-built Docker images.
   e2e:
     name: test
     needs: build
@@ -78,22 +83,8 @@ jobs:
   typescript:
     uses: ./.github/workflows/typescript-typecheck.yaml
 
-  # Release alpha version on NPM for Hive libraries
+  # Build and test standalone CLI artifacts
   alpha:
     uses: ./.github/workflows/release-alpha.yaml
     if: ${{ github.event.pull_request.title != 'Upcoming Release Changes' }}
     secrets: inherit
-
-  # Release RC version on NPM for Hive libraries
-  release-candidate:
-    uses: the-guild-org/shared-config/.github/workflows/release-snapshot.yml@main
-    if: ${{ github.event.pull_request.title == 'Upcoming Release Changes' }}
-    with:
-      npmTag: rc
-      restoreDeletedChangesets: true
-      buildScript: build:libraries
-      packageManager: pnpm
-      nodeVersion: '24.13'
-    secrets:
-      githubToken: ${{ secrets.GITHUB_TOKEN }}
-      npmToken: ${{ secrets.NPM_TOKEN }}

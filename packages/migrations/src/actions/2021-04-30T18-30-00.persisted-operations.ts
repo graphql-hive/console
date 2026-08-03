@@ -2,7 +2,7 @@ import { type MigrationExecutor } from '../pg-migrator';
 
 export default {
   name: '2021-04-30T18-30-00.persisted-operations.sql',
-  run: ({ sql }) => sql`
+  run: ({ psql }) => psql`
 --persisted_operations (up)
 CREATE TYPE
   operation_kind AS ENUM('query', 'mutation', 'subscription');

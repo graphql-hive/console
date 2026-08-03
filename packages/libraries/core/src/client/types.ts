@@ -1,14 +1,51 @@
-import type { ExecutionArgs } from 'graphql';
+import type { DocumentNode, ExecutionArgs, GraphQLErrorExtensions, GraphQLSchema } from 'graphql';
 import type { PromiseOrValue } from 'graphql/jsutils/PromiseOrValue.js';
 import { LogLevel as HiveLoggerLevel, Logger } from '@graphql-hive/logger';
 import { MaybePromise } from '@graphql-tools/utils';
 import type { AgentOptions } from './agent.js';
 import { CircuitBreakerConfiguration } from './circuit-breaker.js';
 import type { autoDisposeSymbol, hiveClientSymbol } from './client.js';
+import type { PersistedDocumentsManifest } from './persisted-documents.js';
 import type { SchemaReporter } from './reporting.js';
 
 type HeadersObject = {
   get(name: string): string | null;
+};
+
+export type SubRequestCallback = (args: {
+  /** Which subgraph resolved this path */
+  subgraph: string;
+
+  /**
+   * If this is an entity request, then this is the coordinate in the original operation that is being resolved.
+   * If undefined, then the path is assumed to be 'Query'.
+   */
+  paths?: string[] | string;
+
+  /**
+   * What type of request this is. Root is if resolving a root query/mutation field. Entity is
+   * if resolving an entity type in federation.
+   * */
+  type: 'ROOT' | 'ENTITY';
+}) => FinishSubRequestCallback;
+
+export type FinishSubRequestCallback = (args: {
+  /** HTTP Status Code */
+  status: number;
+
+  /** Used to calculate error code for a coordinate, with a code returned from the graphql extensions */
+  result?: GraphQLResult;
+
+  /** The GraphQL schema being accessed. Used to calculate coordinate from error path and the coordinate for field counts */
+  subgraphSchema: GraphQLSchema;
+
+  /** GraphQL operation document. Used to calculate field counts. */
+  document: DocumentNode;
+}) => void;
+
+export type CollectUsage = {
+  subrequest: SubRequestCallback;
+  finish: CollectUsageCallback;
 };
 
 export interface HiveClient {
@@ -17,11 +54,11 @@ export interface HiveClient {
   info(): void | Promise<void>;
   reportSchema: SchemaReporter['report'];
   /** Collect usage for Query and Mutation operations */
-  collectUsage(): CollectUsageCallback;
+  collectUsage(): CollectUsage;
   /** Collect usage for Query and Mutation operations */
   collectRequest(args: {
     args: ExecutionArgs;
-    result: GraphQLErrorsResult | AbortAction;
+    result: GraphQLResult | AbortAction;
     duration: number;
     /**
      * Persisted document if request is using a persisted document.
@@ -42,6 +79,10 @@ export interface HiveClient {
   createInstrumentedSubscribe(executeImpl: any): any;
   dispose(): Promise<void>;
   persistedDocuments: null | {
+    manifest(
+      deployment: { appName: string; appVersion: string },
+      context?: { waitUntil?: (promise: Promise<void> | void) => void },
+    ): PromiseOrValue<PersistedDocumentsManifest | null>;
     resolve(
       documentId: string,
       context?: { waitUntil?: (promise: Promise<void> | void) => void },
@@ -49,6 +90,8 @@ export interface HiveClient {
     allowArbitraryDocuments(context: { headers?: HeadersObject }): PromiseOrValue<boolean>;
   };
 }
+
+export type { PersistedDocumentsManifest };
 
 export type AsyncIterableIteratorOrValue<T> = AsyncIterableIterator<T> | T;
 export type AsyncIterableOrValue<T> = AsyncIterable<T> | T;
@@ -60,7 +103,7 @@ export type AbortAction = {
 
 export type CollectUsageCallback = (
   args: ExecutionArgs,
-  result: GraphQLErrorsResult | AbortAction,
+  result: GraphQLResult | AbortAction,
   /**
    * Persisted document if subscription is a persisted document.
    * It needs to be provided in order to collect app deployment specific information.
@@ -143,6 +186,15 @@ export interface HiveUsagePluginOptions {
    * Default: false
    */
   processVariables?: boolean;
+
+  /**
+   * Report usage data for resolved coordinates. This counts the number of times a coordinate is resolved and reports
+   * graphql errors and their codes to Hive. Before enabling this, be aware that this is CPU intensive since it must
+   * iterate over the entire response payload.
+   *
+   * Default: false
+   */
+  fieldLevelMetricsEnabled?: boolean;
 }
 
 export interface SamplingContext
@@ -179,19 +231,19 @@ export interface HiveReportingPluginOptions {
 
 export interface HiveSelfHostingOptions {
   /**
-   * Point to your own instance of GraphQL Hive API
+   * Point to your own instance of Hive Console API
    *
    * Used by schema reporting and token info.
    */
   graphqlEndpoint: string;
   /**
-   * Address of your own GraphQL Hive application
+   * Address of your own Hive Console application
    *
    * Used by token info to generate a link to the organization, project and target.
    */
   applicationUrl: string;
   /**
-   * Point to your own instance of GraphQL Hive Usage API
+   * Point to your own instance of Hive Console Usage API
    *
    * Used by usage reporting
    */
@@ -202,7 +254,7 @@ type OptionalWhenFalse<T, KCond extends keyof T, KExcluded extends keyof T> =
   // untouched by default or when true
   | T
   // when false, make KExcluded optional
-  | (Omit<T, KExcluded> & { [P in KCond]: false } & { [P in KExcluded]?: T[KExcluded] });
+  | (Omit<T, KExcluded> & { [_P in KCond]: false } & { [_P in KExcluded]?: T[KExcluded] });
 
 export type HivePluginOptions = OptionalWhenFalse<
   {
@@ -231,7 +283,7 @@ export type HivePluginOptions = OptionalWhenFalse<
      */
     token: string;
     /**
-     * Use when self-hosting GraphQL Hive
+     * Use when self-hosting Hive Console
      */
     selfHosting?: HiveSelfHostingOptions;
     agent?: Omit<AgentOptions, 'endpoint' | 'token' | 'enabled' | 'debug'>;
@@ -280,10 +332,15 @@ export type HiveInternalPluginOptions = HivePluginOptions & {
 
 export type Maybe<T> = null | undefined | T;
 
+export type GraphQLResult<TData = Record<string, unknown>> = {
+  data?: TData | null;
+} & GraphQLErrorsResult;
+
 export interface GraphQLErrorsResult {
   errors?: ReadonlyArray<{
     message: string;
     path?: Maybe<ReadonlyArray<string | number>>;
+    extensions?: GraphQLErrorExtensions;
   }>;
 }
 

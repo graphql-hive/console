@@ -2,7 +2,7 @@ import { type MigrationExecutor } from '../pg-migrator';
 
 export default {
   name: '2026.01.27T00-00-00.app-deployment-protection.ts',
-  run: ({ sql }) => sql`
+  run: ({ psql }) => psql`
     ALTER TABLE targets
       ADD COLUMN IF NOT EXISTS app_deployment_protection_enabled BOOLEAN NOT NULL DEFAULT FALSE
       , ADD COLUMN IF NOT EXISTS app_deployment_protection_min_days_inactive INT NOT NULL DEFAULT 7

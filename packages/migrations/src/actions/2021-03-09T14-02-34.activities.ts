@@ -2,7 +2,7 @@ import { type MigrationExecutor } from '../pg-migrator';
 
 export default {
   name: '2021-03-09T14-02-34.activities.sql',
-  run: ({ sql }) => sql`
+  run: ({ psql }) => psql`
 --activities (up)
 CREATE TABLE
   activities (

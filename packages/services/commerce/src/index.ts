@@ -1,8 +1,10 @@
 #!/usr/bin/env node
 import 'reflect-metadata';
+import { createConnectionStringProvider } from '@hive/postgres';
 import {
   configureTracing,
   createServer,
+  generateRdsIamAuthToken,
   registerShutdown,
   registerTRPC,
   reportReadiness,
@@ -10,7 +12,7 @@ import {
   startMetrics,
   TracingInstance,
 } from '@hive/service-common';
-import { createConnectionString, createStorage as createPostgreSQLStorage } from '@hive/storage';
+import { createStorage } from '@hive/storage';
 import { TaskScheduler } from '@hive/workflows/kit';
 import * as Sentry from '@sentry/node';
 import { commerceRouter } from './api';
@@ -52,13 +54,26 @@ async function main() {
   });
 
   try {
-    const postgres = await createPostgreSQLStorage(
-      createConnectionString(env.postgres),
+    const rdsIamTokenGenerator = env.postgres.awsIamAuthEnabled
+      ? () =>
+          generateRdsIamAuthToken(
+            {
+              region: env.postgres.awsRegion ?? '',
+              hostname: env.postgres.host,
+              port: env.postgres.port,
+              username: env.postgres.user,
+            },
+            server.log.child({ source: 'RdsIamAuthTokenGenerator' }),
+          )
+      : undefined;
+
+    const storage = await createStorage(
+      createConnectionStringProvider(env.postgres, rdsIamTokenGenerator),
       5,
       tracing ? [tracing.instrumentSlonik()] : undefined,
     );
 
-    const taskScheduler = new TaskScheduler(postgres.pool.pool);
+    const taskScheduler = new TaskScheduler(storage.pool);
 
     const usageEstimator = createEstimator({
       logger: server.log,
@@ -78,7 +93,7 @@ async function main() {
       },
       usageEstimator,
       taskScheduler,
-      storage: postgres,
+      storage,
     });
 
     const stripeBilling = createStripeBilling({
@@ -88,7 +103,7 @@ async function main() {
         syncIntervalMs: env.stripe.syncIntervalMs,
       },
       usageEstimator,
-      storage: postgres,
+      storage,
     });
 
     registerShutdown({
@@ -96,7 +111,7 @@ async function main() {
       async onShutdown() {
         await server.close();
         await Promise.all([usageEstimator.stop(), rateLimiter.stop(), stripeBilling.stop()]);
-        await postgres.destroy();
+        await storage.destroy();
       },
     });
 
@@ -127,7 +142,7 @@ async function main() {
         const readinessChecks = await Promise.all([
           usageEstimator.readiness(),
           rateLimiter.readiness(),
-          postgres.isReady(),
+          storage.isReady(),
         ]);
         const isReady = readinessChecks.every(val => val === true);
         reportReadiness(isReady);
@@ -136,11 +151,16 @@ async function main() {
     });
 
     if (env.prometheus) {
-      await startMetrics(env.prometheus.labels.instance, env.prometheus.port);
+      await startMetrics(env.prometheus.labels.instance, {
+        port: env.prometheus.port,
+        host: env.http.host,
+        ipv6Only: env.http.ipv6Only,
+      });
     }
     await server.listen({
       port: env.http.port,
-      host: '::',
+      host: env.http.host,
+      ipv6Only: env.http.ipv6Only,
     });
     await Promise.all([usageEstimator.start(), rateLimiter.start(), stripeBilling.start()]);
   } catch (error) {

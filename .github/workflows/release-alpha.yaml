@@ -2,22 +2,6 @@ on:
   workflow_call:
 
 jobs:
-  # Release alpha version on NPM for Hive libraries
-  npm:
-    uses: the-guild-org/shared-config/.github/workflows/release-snapshot.yml@main
-    permissions:
-      pull-requests: write
-      actions: write
-      contents: write
-    with:
-      npmTag: alpha
-      buildScript: build:libraries
-      packageManager: pnpm
-      nodeVersion: '24.13'
-    secrets:
-      githubToken: ${{ secrets.GITHUB_TOKEN }}
-      npmToken: ${{ secrets.NPM_TOKEN }}
-
   # Upload zipped tarballs to GitHub
   cli-artifacts:
     runs-on: ubuntu-22.04
@@ -105,31 +89,3 @@ jobs:
           tar -xzf *.tar.gz
           # Expect the command to succeed
           ./hive/bin/hive --version || exit 1
-
-  extract-cli-version:
-    needs: [npm]
-    runs-on: ubuntu-22.04
-    name: Extract CLI version
-    outputs:
-      published: ${{ steps.cli.outputs.published }}
-      version: ${{ steps.cli.outputs.version }}
-    steps:
-      - name: Extract published version
-        if:
-          needs.npm.outputs.published && contains(needs.npm.outputs.publishedPackages,
-          '"@graphql-hive/cli"')
-        id: cli
-        run: |
-          echo '${{needs.npm.outputs.publishedPackages}}' > cli-ver.json
-          VERSION=`echo $(jq -r '.[] | select(.name | endswith("@graphql-hive/cli")).version' cli-ver.json)`
-          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
-          echo "published=true" >> "$GITHUB_OUTPUT"
-
-  publish_docker:
-    needs: [extract-cli-version]
-    uses: ./.github/workflows/dockerize-cli.yaml
-    if: ${{ needs.extract-cli-version.outputs.published == 'true' }}
-    with:
-      cliVersion: ${{ needs.extract-cli-version.outputs.version }}
-      publishLatest: false
-    secrets: inherit

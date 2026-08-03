@@ -1,6 +1,7 @@
 import assert from 'node:assert';
 import { describe, test } from 'node:test';
-import { sql } from 'slonik';
+import z from 'zod';
+import { psql } from '@hive/postgres';
 import { createStorage } from '../../services/storage/src/index';
 import { initMigrationTestingEnvironment } from './utils/testkit';
 
@@ -47,7 +48,9 @@ await describe('migration: schema-cleanup-tracker', async () => {
         schema: string,
         previousSchemaVersionId: string | null,
       ): Promise<string> {
-        const logId = await db.oneFirst<string>(sql`
+        const logId = await db
+          .oneFirst(
+            psql`
           INSERT INTO schema_log
             (
               author,
@@ -73,9 +76,13 @@ await describe('migration: schema-cleanup-tracker', async () => {
               'PUSH'
             )
           RETURNING id
-        `);
+        `,
+          )
+          .then(z.string().parse);
 
-        const versionId = await db.oneFirst<string>(sql`
+        const versionId = await db
+          .oneFirst(
+            psql`
           INSERT INTO schema_versions
           (
             record_version,
@@ -117,7 +124,9 @@ await describe('migration: schema-cleanup-tracker', async () => {
             ${null}
           )
           RETURNING id
-        `);
+        `,
+          )
+          .then(z.string().parse);
 
         return versionId;
       }
@@ -186,17 +195,29 @@ await describe('migration: schema-cleanup-tracker', async () => {
 
       // check that coordinates are correct
 
-      const versions = await db.manyFirst<string>(sql`
+      const versions = await db
+        .anyFirst(
+          psql`
         SELECT id FROM schema_versions WHERE target_id = ${target.id} ORDER BY created_at ASC
-      `);
+      `,
+        )
+        .then(z.array(z.string()).parse);
 
-      const coordinates = await db.many<{
-        coordinate: string;
-        created_in_version_id: string;
-        deprecated_in_version_id: string | null;
-      }>(sql`
+      const coordinates = await db
+        .any(
+          psql`
         SELECT * FROM schema_coordinate_status WHERE target_id = ${target.id}
-      `);
+      `,
+        )
+        .then(
+          z.array(
+            z.object({
+              coordinate: z.string(),
+              created_in_version_id: z.string(),
+              deprecated_in_version_id: z.string().nullable(),
+            }),
+          ).parse,
+        );
 
       assert.strictEqual(versions.length, 6);
 

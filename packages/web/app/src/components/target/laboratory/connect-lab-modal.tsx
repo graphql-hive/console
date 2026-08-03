@@ -27,7 +27,7 @@ export const ConnectLabModal = (props: {
   endpoint: string;
   isCDNEnabled: FragmentType<typeof Laboratory_IsCDNEnabledFragment> | null;
 }): ReactElement => {
-  const docsUrl = getDocsUrl('/management/targets#registry-access-tokens');
+  const docsUrl = getDocsUrl('/schema-registry/management/targets#registry-access-tokens');
   const isCDNEnabled = useFragment(
     Laboratory_IsCDNEnabledFragment,
     props.isCDNEnabled,

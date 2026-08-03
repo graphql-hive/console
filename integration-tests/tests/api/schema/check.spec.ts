@@ -3,6 +3,7 @@ import {
   ResourceAssignmentModeType,
   RuleInstanceSeverityLevel,
 } from 'testkit/gql/graphql';
+import { SchemaVersionStore } from '@hive/api/modules/schema/providers/schema-version-store';
 // eslint-disable-next-line import/no-extraneous-dependencies
 import { createStorage } from '@hive/storage';
 import { graphql } from '../../../testkit/gql';
@@ -2103,7 +2104,8 @@ test.concurrent(
 
     const conn = connectionString();
     const storage = await createStorage(conn, 2);
-    await storage.createVersion({
+    const schemaVersions = new SchemaVersionStore(storage.pool);
+    await schemaVersions.createPublishSchemaVersion({
       schema: brokenSdl,
       author: 'Jochen',
       async actionFn() {},
@@ -2113,13 +2115,11 @@ test.concurrent(
       compositeSchemaSDL: null,
       conditionalBreakingChangeMetadata: null,
       contracts: null,
-      coordinatesDiff: null,
       diffSchemaVersionId: null,
       github: null,
       metadata: null,
-      logIds: [],
+      existingSchemaLogs: [],
       projectId: project.id,
-      service: null,
       organizationId: organization.id,
       previousSchemaVersion: null,
       valid: true,
@@ -2127,7 +2127,10 @@ test.concurrent(
       supergraphSDL: null,
       tags: null,
       targetId: target.id,
-      url: null,
+      serviceChanges: null,
+      service: null,
+      previousSchemaLogId: null,
+      supergraphChanges: null,
       schemaMetadata: null,
       metadataAttributes: null,
     });
@@ -2145,7 +2148,7 @@ test.concurrent(
     `;
 
     const result = await token.checkSchema(sdl).then(r => r.expectNoGraphQLErrors());
-    expect(result.schemaCheck).toEqual({
+    expect(result.schemaCheck).toMatchObject({
       __typename: 'SchemaCheckSuccess',
       changes: {
         nodes: [

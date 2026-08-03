@@ -6,8 +6,9 @@ import type { FastifyCorsOptionsDelegateCallback } from '@fastify/cors';
 import 'reflect-metadata';
 import formDataPlugin from '@fastify/formbody';
 import {
+  ClickHouse,
   createRegistry,
-  CryptoProvider,
+  HttpClient,
   LogFn,
   Logger,
   OrganizationMemberRoles,
@@ -16,8 +17,9 @@ import {
 import { AccessTokenKeyContainer } from '@hive/api/modules/auth/lib/supertokens-at-home/crypto';
 import { EmailVerification } from '@hive/api/modules/auth/providers/email-verification';
 import { OAuthCache } from '@hive/api/modules/auth/providers/oauth-cache';
+import { createDefaultCredentialProvider } from '@hive/api/modules/cdn/providers/aws';
+import { OIDCIntegrationConfig } from '@hive/api/modules/oidc-integrations/providers/oidc-integration-config';
 import { OIDCIntegrationStore } from '@hive/api/modules/oidc-integrations/providers/oidc-integration.store';
-import { createRedisClient } from '@hive/api/modules/shared/providers/redis';
 import { RedisRateLimiter } from '@hive/api/modules/shared/providers/redis-rate-limiter';
 import { TargetsByIdCache } from '@hive/api/modules/target/providers/targets-by-id-cache';
 import { TargetsBySlugCache } from '@hive/api/modules/target/providers/targets-by-slug-cache';
@@ -26,10 +28,14 @@ import { ArtifactStorageReader } from '@hive/cdn-script/artifact-storage-reader'
 import { AwsClient } from '@hive/cdn-script/aws';
 import { createIsAppDeploymentActive } from '@hive/cdn-script/is-app-deployment-active';
 import { createIsKeyValid } from '@hive/cdn-script/key-validation';
+import { createConnectionStringProvider } from '@hive/postgres';
 import { createHivePubSub } from '@hive/pubsub';
 import {
   configureTracing,
+  createRedisClient,
   createServer,
+  Encryptor,
+  generateRdsIamAuthToken,
   registerShutdown,
   registerTRPC,
   reportReadiness,
@@ -37,7 +43,7 @@ import {
   startMetrics,
   TracingInstance,
 } from '@hive/service-common';
-import { createConnectionString, createStorage as createPostgreSQLStorage } from '@hive/storage';
+import { createStorage as createPostgreSQLStorage } from '@hive/storage';
 import { TaskScheduler } from '@hive/workflows/kit';
 import { captureException, SeverityLevel } from '@sentry/node';
 import { createServerAdapter } from '@whatwg-node/server';
@@ -47,6 +53,7 @@ import { SuperTokensUserAuthNStrategy } from '../../api/src/modules/auth/lib/sup
 import { TargetAccessTokenStrategy } from '../../api/src/modules/auth/lib/target-access-token-strategy';
 import { OrganizationAccessTokenValidationCache } from '../../api/src/modules/auth/providers/organization-access-token-validation-cache';
 import { OrganizationAccessTokensCache } from '../../api/src/modules/organization/providers/organization-access-tokens-cache';
+import { TargetTokenCache } from '../../api/src/modules/token/providers/target-token-cache';
 import { internalApiRouter } from './api';
 import { asyncStorage } from './async-storage';
 import { env } from './environment';
@@ -54,7 +61,9 @@ import { graphqlHandler } from './graphql-handler';
 import { clickHouseElapsedDuration, clickHouseReadDuration } from './metrics';
 import { createOtelAuthEndpoint } from './otel-auth-endpoint';
 import { createPublicGraphQLHandler } from './public-graphql-handler';
+import { createSCIMPlugin } from './scim';
 import { registerSupertokensAtHome } from './supertokens-at-home';
+import { WorkloadIdentityFederationProvider } from './workload-identity-federation';
 
 class CorsError extends Error {
   constructor() {
@@ -163,22 +172,48 @@ export async function main() {
     };
   });
 
+  const rdsIamTokenGenerator = env.postgres.awsIamAuthEnabled
+    ? () =>
+        generateRdsIamAuthToken(
+          {
+            region: env.postgres.awsRegion ?? '',
+            hostname: env.postgres.host,
+            port: env.postgres.port,
+            username: env.postgres.user,
+          },
+          server.log.child({ source: 'RdsIamAuthTokenGenerator' }),
+        )
+    : undefined;
+
   const storage = await createPostgreSQLStorage(
-    createConnectionString(env.postgres),
+    createConnectionStringProvider(env.postgres, rdsIamTokenGenerator),
     10,
     tracing ? [tracing.instrumentSlonik()] : [],
   );
-  const taskScheduler = new TaskScheduler(storage.pool.pool);
+  const taskScheduler = new TaskScheduler(storage.pool);
 
-  const redis = createRedisClient('Redis', env.redis, server.log.child({ source: 'Redis' }));
+  const workloadIdentityFederation = env.oidcWorkloadFederation
+    ? new WorkloadIdentityFederationProvider(
+        env.oidcWorkloadFederation.tokenFilePath,
+        server.log.child({ source: 'WorkloadIdentityFederation' }),
+      )
+    : null;
+
+  if (workloadIdentityFederation) {
+    await workloadIdentityFederation.start();
+  }
+
+  const redis = await createRedisClient(env.redis, {
+    logger: server.log.child({ source: 'Redis' }),
+  });
+
+  const redisSubscriber = await createRedisClient(env.redis, {
+    logger: server.log.child({ source: 'RedisSubscribe' }),
+  });
 
   const pubSub = createHivePubSub({
     publisher: redis,
-    subscriber: createRedisClient(
-      'subscriber',
-      env.redis,
-      server.log.child({ source: 'RedisSubscribe' }),
-    ),
+    subscriber: redisSubscriber,
   });
 
   registerShutdown({
@@ -190,6 +225,7 @@ export async function main() {
       await server.close();
       server.log.info('Stopping Storage handler...');
       await storage.destroy();
+      workloadIdentityFederation?.stop();
       server.log.info('Shutdown complete.');
     },
   });
@@ -265,9 +301,6 @@ export async function main() {
             rateLimit: env.supertokens.rateLimit,
           }
         : null,
-      tokens: {
-        endpoint: env.hiveServices.tokens.endpoint,
-      },
       commerce: {
         endpoint: env.hiveServices.commerce ? env.hiveServices.commerce.endpoint : null,
         billingEnabled: env.hiveServices.commerce ? env.hiveServices.commerce.billing : false,
@@ -299,26 +332,35 @@ export async function main() {
       },
       cdn: env.cdn,
       s3: {
-        accessKeyId: env.s3.credentials.accessKeyId,
-        secretAccessKeyId: env.s3.credentials.secretAccessKey,
-        sessionToken: env.s3.credentials.sessionToken,
+        credentialProvider: createDefaultCredentialProvider({
+          label: 's3',
+          logger,
+          staticCredentials: env.s3.credentials,
+          awsIamAuthEnabled: env.s3.awsIamAuthEnabled,
+        }),
         bucketName: env.s3.bucketName,
         endpoint: env.s3.endpoint,
       },
       s3Mirror: env.s3Mirror
         ? {
-            accessKeyId: env.s3Mirror.credentials.accessKeyId,
-            secretAccessKeyId: env.s3Mirror.credentials.secretAccessKey,
-            sessionToken: env.s3Mirror.credentials.sessionToken,
+            credentialProvider: createDefaultCredentialProvider({
+              label: 's3mirror',
+              logger,
+              staticCredentials: env.s3Mirror.credentials,
+              awsIamAuthEnabled: env.s3Mirror.awsIamAuthEnabled,
+            }),
             bucketName: env.s3Mirror.bucketName,
             endpoint: env.s3Mirror.endpoint,
           }
         : null,
       s3AuditLogs: env.s3AuditLogs
         ? {
-            accessKeyId: env.s3AuditLogs.credentials.accessKeyId,
-            secretAccessKeyId: env.s3AuditLogs.credentials.secretAccessKey,
-            sessionToken: env.s3AuditLogs.credentials.sessionToken,
+            credentialProvider: createDefaultCredentialProvider({
+              label: 's3audit',
+              logger,
+              staticCredentials: env.s3AuditLogs.credentials,
+              awsIamAuthEnabled: env.s3AuditLogs.awsIamAuthEnabled,
+            }),
             bucketName: env.s3AuditLogs.bucketName,
             endpoint: env.s3AuditLogs.endpoint,
           }
@@ -340,12 +382,13 @@ export async function main() {
             },
           }
         : {},
-      organizationOIDC: env.organizationOIDC,
+      oidcIntegrationConfig: new OIDCIntegrationConfig(env.organizationOIDC, env.organizationSCIM),
       supportConfig: env.zendeskSupport,
       pubSub,
       appDeploymentsEnabled: env.featureFlags.appDeploymentsEnabled,
       schemaProposalsEnabled: env.featureFlags.schemaProposalsEnabled,
       otelTracingEnabled: env.featureFlags.otelTracingEnabled,
+      metricAlertRulesEnabled: env.featureFlags.metricAlertRulesEnabled,
       prometheus: env.prometheus,
       taskScheduler,
     });
@@ -393,9 +436,7 @@ export async function main() {
           (logger: Logger) =>
             new TargetAccessTokenStrategy({
               logger,
-              tokensConfig: {
-                endpoint: env.hiveServices.tokens.endpoint,
-              },
+              cache: registry.injector.get(TargetTokenCache),
             }),
         ],
       }),
@@ -436,7 +477,7 @@ export async function main() {
       operationName: 'readiness',
     });
 
-    const crypto = new CryptoProvider(env.encryptionSecret);
+    const crypto = new Encryptor(env.encryptionSecret);
 
     function broadcastLog(oidcId: string, message: string) {
       pubSub.publish('oidcIntegrationLogs', oidcId, {
@@ -461,7 +502,7 @@ export async function main() {
       method: ['GET', 'HEAD'],
       url: '/_health',
       async handler(_, res) {
-        res.status(200).send();
+        void res.status(200).send();
       },
     });
 
@@ -490,7 +531,7 @@ export async function main() {
             req.log.error(`Readiness check failed: [${response.statusCode}] ${response.body}`);
           } else {
             reportReadiness(true);
-            res.status(200).send();
+            void res.status(200).send();
             return;
           }
         } catch (error) {
@@ -498,7 +539,7 @@ export async function main() {
         }
 
         reportReadiness(false);
-        res.status(400).send();
+        void res.status(400).send();
       },
     });
 
@@ -521,19 +562,25 @@ export async function main() {
     await registerSupertokensAtHome(
       server,
       storage,
+      registry.injector.get(OIDCIntegrationStore),
       registry.injector.get(TaskScheduler),
-      registry.injector.get(CryptoProvider),
+      registry.injector.get(Encryptor),
       registry.injector.get(RedisRateLimiter),
       registry.injector.get(OAuthCache),
       broadcastLog,
       env.supertokens.secrets,
+      workloadIdentityFederation,
     );
 
     if (env.cdn.providers.api !== null) {
       const s3 = {
         client: new AwsClient({
-          accessKeyId: env.s3.credentials.accessKeyId,
-          secretAccessKey: env.s3.credentials.secretAccessKey,
+          credentialProvider: createDefaultCredentialProvider({
+            label: 'cdn-s3',
+            logger,
+            staticCredentials: env.s3.credentials,
+            awsIamAuthEnabled: env.s3.awsIamAuthEnabled,
+          }),
           service: 's3',
         }),
         endpoint: env.s3.endpoint,
@@ -543,8 +590,12 @@ export async function main() {
       const s3Mirror = env.s3Mirror
         ? {
             client: new AwsClient({
-              accessKeyId: env.s3Mirror.credentials.accessKeyId,
-              secretAccessKey: env.s3Mirror.credentials.secretAccessKey,
+              credentialProvider: createDefaultCredentialProvider({
+                label: 'cdn-s3mirror',
+                logger,
+                staticCredentials: env.s3Mirror.credentials,
+                awsIamAuthEnabled: env.s3Mirror.awsIamAuthEnabled,
+              }),
               service: 's3',
             }),
             endpoint: env.s3Mirror.endpoint,
@@ -608,13 +659,68 @@ export async function main() {
       });
     }
 
+    if (env.organizationSCIM) {
+      logger.debug('register scim routes');
+      const scimPlugin = createSCIMPlugin(
+        authN,
+        storage.pool,
+        storage,
+        registry.injector.get(OIDCIntegrationStore),
+        registry.injector.get(RedisRateLimiter),
+        new ClickHouse(env.clickhouse, new HttpClient(), logger),
+        env.graphql.origin + '/scim/v2',
+      );
+      await server.register(scimPlugin, { prefix: '/scim/v2' });
+    }
+
+    if (env.exposeMemoryUtils) {
+      logger.debug('exposing memory utils endpoints');
+      server.route({
+        method: ['GET'],
+        url: '/memory-stats',
+        handler(req, reply) {
+          let mem = process.memoryUsage();
+          logger.debug('memory stats requested, raw memory usage', mem);
+
+          void reply.send({
+            heapTotal: mem.heapTotal,
+            heapUsed: mem.heapUsed,
+            external: mem.external,
+            rss: mem.rss,
+          });
+        },
+      });
+
+      server.route({
+        method: ['POST'],
+        url: '/gc',
+        handler(req, reply) {
+          if (global.gc) {
+            logger.debug('gc requested');
+            global.gc();
+            void reply.status(200);
+            void reply.send('gc triggered');
+          } else {
+            logger.debug('gc requested but not available');
+            void reply.status(500);
+            void reply.send('gc not available');
+          }
+        },
+      });
+    }
+
     if (env.prometheus) {
-      await startMetrics(env.prometheus.labels.instance, env.prometheus.port);
+      await startMetrics(env.prometheus.labels.instance, {
+        port: env.prometheus.port,
+        host: env.http.host,
+        ipv6Only: env.http.ipv6Only,
+      });
     }
 
     await server.listen({
       port: env.http.port,
-      host: '::',
+      host: env.http.host,
+      ipv6Only: env.http.ipv6Only,
     });
   } catch (error) {
     server.log.fatal(error);

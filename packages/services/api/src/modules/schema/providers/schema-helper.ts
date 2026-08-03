@@ -35,7 +35,6 @@ export function ensureSingleSchema(schema: Schema | Schema[]): SingleSchema {
     if (schema.length > 1) {
       throw new Error(`Expected a single schema, got ${schema.length}`);
     }
-
     return ensureSingleSchema(schema[0]);
   }
 

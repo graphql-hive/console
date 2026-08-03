@@ -1,8 +1,8 @@
 import { Injectable, Scope } from 'graphql-modules';
+import { Encryptor } from '@hive/service-common';
 import { AccessError } from '../../../shared/errors';
 import { AuditLogRecorder } from '../../audit-logs/providers/audit-log-recorder';
 import { Session } from '../../auth/lib/authz';
-import { CryptoProvider } from '../../shared/providers/crypto';
 import { Logger } from '../../shared/providers/logger';
 import {
   OrganizationSelector,
@@ -23,7 +23,7 @@ export class SlackIntegrationManager {
     logger: Logger,
     private session: Session,
     private storage: Storage,
-    private crypto: CryptoProvider,
+    private crypto: Encryptor,
     private auditLog: AuditLogRecorder,
   ) {
     this.logger = logger.child({

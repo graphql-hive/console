@@ -2,7 +2,7 @@ import { type MigrationExecutor } from '../pg-migrator';
 
 export default {
   name: '2023.03.14T12.14.23.schema-policy.sql',
-  run: ({ sql }) => sql`
+  run: ({ psql }) => psql`
 CREATE TYPE
   schema_policy_resource AS ENUM('ORGANIZATION', 'PROJECT');
 

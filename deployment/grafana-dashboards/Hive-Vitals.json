@@ -774,7 +774,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "grafanacloud-prom"
+        "uid": "PROM_DATASOURCE_UID"
       },
       "description": "Memory usage.",
       "fieldConfig": {
@@ -859,7 +859,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "grafanacloud-prom"
+            "uid": "PROM_DATASOURCE_UID"
           },
           "editorMode": "code",
           "exemplar": true,
@@ -889,7 +889,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "grafanacloud-prom"
+        "uid": "PROM_DATASOURCE_UID"
       },
       "fieldConfig": {
         "defaults": {
@@ -971,7 +971,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "grafanacloud-prom"
+            "uid": "PROM_DATASOURCE_UID"
           },
           "editorMode": "code",
           "expr": "irate(process_cpu_user_seconds_total{pod=~\"usage-service-.*\"}[$__range])",
@@ -986,7 +986,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "grafanacloud-prom"
+        "uid": "PROM_DATASOURCE_UID"
       },
       "fieldConfig": {
         "defaults": {
@@ -1067,7 +1067,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "grafanacloud-prom"
+            "uid": "PROM_DATASOURCE_UID"
           },
           "editorMode": "code",
           "expr": "irate(process_cpu_user_seconds_total{pod=~\"usage-ingestor-service-.*\"}[$__range])",
@@ -1082,7 +1082,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "grafanacloud-prom"
+        "uid": "PROM_DATASOURCE_UID"
       },
       "fieldConfig": {
         "defaults": {
@@ -1159,7 +1159,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "grafanacloud-prom"
+            "uid": "PROM_DATASOURCE_UID"
           },
           "editorMode": "code",
           "expr": "process_resident_memory_bytes{pod=~\"schema-.*\"}",
@@ -1174,7 +1174,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "grafanacloud-prom"
+        "uid": "PROM_DATASOURCE_UID"
       },
       "fieldConfig": {
         "defaults": {
@@ -1250,7 +1250,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "grafanacloud-prom"
+            "uid": "PROM_DATASOURCE_UID"
           },
           "editorMode": "code",
           "expr": "irate(process_cpu_user_seconds_total{pod=~\"schema-.*\"}[$__range])",
@@ -1282,7 +1282,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "grafanacloud-prom"
+        "uid": "PROM_DATASOURCE_UID"
       },
       "fieldConfig": {
         "defaults": {
@@ -1363,7 +1363,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "grafanacloud-prom"
+            "uid": "PROM_DATASOURCE_UID"
           },
           "exemplar": true,
           "expr": "sum(rate(usage_operations_total[$__rate_interval]))",
@@ -1378,7 +1378,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "grafanacloud-prom"
+        "uid": "PROM_DATASOURCE_UID"
       },
       "fieldConfig": {
         "defaults": {
@@ -1452,7 +1452,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "grafanacloud-prom"
+            "uid": "PROM_DATASOURCE_UID"
           },
           "editorMode": "code",
           "exemplar": true,
@@ -1469,7 +1469,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "grafanacloud-prom"
+        "uid": "PROM_DATASOURCE_UID"
       },
       "description": "",
       "fieldConfig": {
@@ -1516,7 +1516,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "grafanacloud-prom"
+            "uid": "PROM_DATASOURCE_UID"
           },
           "editorMode": "code",
           "exemplar": true,
@@ -1533,7 +1533,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "grafanacloud-prom"
+        "uid": "PROM_DATASOURCE_UID"
       },
       "fieldConfig": {
         "defaults": {
@@ -1608,7 +1608,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "grafanacloud-prom"
+            "uid": "PROM_DATASOURCE_UID"
           },
           "editorMode": "code",
           "exemplar": true,
@@ -1625,7 +1625,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "grafanacloud-prom"
+        "uid": "PROM_DATASOURCE_UID"
       },
       "fieldConfig": {
         "defaults": {
@@ -1700,7 +1700,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "grafanacloud-prom"
+            "uid": "PROM_DATASOURCE_UID"
           },
           "editorMode": "code",
           "exemplar": true,
@@ -1717,7 +1717,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "grafanacloud-prom"
+        "uid": "PROM_DATASOURCE_UID"
       },
       "fieldConfig": {
         "defaults": {
@@ -1792,7 +1792,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "grafanacloud-prom"
+            "uid": "PROM_DATASOURCE_UID"
           },
           "editorMode": "code",
           "exemplar": true,
@@ -1809,7 +1809,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "grafanacloud-prom"
+        "uid": "PROM_DATASOURCE_UID"
       },
       "fieldConfig": {
         "defaults": {
@@ -1883,7 +1883,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "grafanacloud-prom"
+            "uid": "PROM_DATASOURCE_UID"
           },
           "editorMode": "code",
           "exemplar": true,
@@ -1897,7 +1897,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "grafanacloud-prom"
+            "uid": "PROM_DATASOURCE_UID"
           },
           "editorMode": "code",
           "expr": "avg(rate(usage_size_estimation_error{quantile=\"0.99\"}[$__rate_interval])) * 10",
@@ -1914,7 +1914,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "grafanacloud-prom"
+        "uid": "PROM_DATASOURCE_UID"
       },
       "fieldConfig": {
         "defaults": {
@@ -1990,7 +1990,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "grafanacloud-prom"
+            "uid": "PROM_DATASOURCE_UID"
           },
           "editorMode": "code",
           "exemplar": true,
@@ -2003,7 +2003,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "grafanacloud-prom"
+            "uid": "PROM_DATASOURCE_UID"
           },
           "editorMode": "code",
           "exemplar": true,
@@ -2021,7 +2021,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "grafanacloud-prom"
+        "uid": "PROM_DATASOURCE_UID"
       },
       "fieldConfig": {
         "defaults": {
@@ -2100,7 +2100,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "grafanacloud-prom"
+            "uid": "PROM_DATASOURCE_UID"
           },
           "editorMode": "code",
           "expr": "histogram_quantile(0.95, sum by (le, version) (rate(usage_parse_duration_seconds_bucket[$__rate_interval])))",
@@ -2115,7 +2115,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "grafanacloud-prom"
+        "uid": "PROM_DATASOURCE_UID"
       },
       "description": "",
       "fieldConfig": {
@@ -2192,7 +2192,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "grafanacloud-prom"
+            "uid": "PROM_DATASOURCE_UID"
           },
           "editorMode": "code",
           "exemplar": true,
@@ -2206,7 +2206,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "grafanacloud-prom"
+            "uid": "PROM_DATASOURCE_UID"
           },
           "exemplar": true,
           "expr": "sum(rate(usage_operations_invalid_total[$__rate_interval]))",
@@ -2222,7 +2222,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "grafanacloud-prom"
+        "uid": "PROM_DATASOURCE_UID"
       },
       "description": "",
       "fieldConfig": {
@@ -2299,7 +2299,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "grafanacloud-prom"
+            "uid": "PROM_DATASOURCE_UID"
           },
           "editorMode": "code",
           "exemplar": true,
@@ -2330,7 +2330,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "grafanacloud-prom"
+        "uid": "PROM_DATASOURCE_UID"
       },
       "fieldConfig": {
         "defaults": {
@@ -2380,7 +2380,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "grafanacloud-prom"
+            "uid": "PROM_DATASOURCE_UID"
           },
           "editorMode": "code",
           "expr": "count by (orgName, orgId) (rate_limited_operations_events_count_total)",
@@ -2396,7 +2396,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "grafanacloud-prom"
+        "uid": "PROM_DATASOURCE_UID"
       },
       "fieldConfig": {
         "defaults": {
@@ -2447,7 +2447,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "grafanacloud-prom"
+            "uid": "PROM_DATASOURCE_UID"
           },
           "editorMode": "code",
           "expr": "sum by(orgId) (usage_rate_limit_dropped_total)",
@@ -2543,7 +2543,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "grafanacloud-prom"
+            "uid": "PROM_DATASOURCE_UID"
           },
           "editorMode": "code",
           "expr": "histogram_quantile(0.95, sum by (le, type) (rate(usage_rate_limit_duration_seconds_bucket[$__rate_interval])))",
@@ -2571,7 +2571,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "grafanacloud-prom"
+        "uid": "PROM_DATASOURCE_UID"
       },
       "description": "",
       "fieldConfig": {
@@ -2649,7 +2649,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "grafanacloud-prom"
+            "uid": "PROM_DATASOURCE_UID"
           },
           "editorMode": "code",
           "exemplar": true,
@@ -2663,7 +2663,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "grafanacloud-prom"
+            "uid": "PROM_DATASOURCE_UID"
           },
           "exemplar": true,
           "expr": "sum(rate(usage_ingested_operation_writes_total[$__rate_interval]))",
@@ -2679,7 +2679,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "grafanacloud-prom"
+        "uid": "PROM_DATASOURCE_UID"
       },
       "description": "100% means it processed the same amount as it collects.\n\nHigher then 100% means we process more than collected. It's fine if we processed less then collected few minutes ago, but if it's continuously above 100%, something went wrong.\n\nLower than 100% means we lack of processing power.",
       "fieldConfig": {
@@ -2740,7 +2740,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "grafanacloud-prom"
+            "uid": "PROM_DATASOURCE_UID"
           },
           "editorMode": "code",
           "exemplar": true,
@@ -2754,7 +2754,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "grafanacloud-prom"
+            "uid": "PROM_DATASOURCE_UID"
           },
           "editorMode": "code",
           "exemplar": true,
@@ -2768,7 +2768,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "grafanacloud-prom"
+            "uid": "PROM_DATASOURCE_UID"
           },
           "editorMode": "code",
           "exemplar": false,
@@ -2786,7 +2786,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "grafanacloud-prom"
+        "uid": "PROM_DATASOURCE_UID"
       },
       "description": "",
       "fieldConfig": {
@@ -2861,7 +2861,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "grafanacloud-prom"
+            "uid": "PROM_DATASOURCE_UID"
           },
           "editorMode": "code",
           "expr": "histogram_quantile(0.95, rate(usage_ingestor_process_duration_seconds_bucket[$__rate_interval]))",
@@ -2877,7 +2877,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "grafanacloud-prom"
+        "uid": "PROM_DATASOURCE_UID"
       },
       "fieldConfig": {
         "defaults": {
@@ -2954,7 +2954,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "grafanacloud-prom"
+            "uid": "PROM_DATASOURCE_UID"
           },
           "editorMode": "code",
           "exemplar": true,
@@ -2972,7 +2972,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "grafanacloud-prom"
+        "uid": "PROM_DATASOURCE_UID"
       },
       "description": "",
       "fieldConfig": {
@@ -3051,7 +3051,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "grafanacloud-prom"
+            "uid": "PROM_DATASOURCE_UID"
           },
           "editorMode": "code",
           "exemplar": true,
@@ -3069,7 +3069,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "grafanacloud-prom"
+        "uid": "PROM_DATASOURCE_UID"
       },
       "fieldConfig": {
         "defaults": {
@@ -3115,7 +3115,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "grafanacloud-prom"
+            "uid": "PROM_DATASOURCE_UID"
           },
           "editorMode": "builder",
           "exemplar": true,
@@ -3132,7 +3132,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "grafanacloud-prom"
+        "uid": "PROM_DATASOURCE_UID"
       },
       "fieldConfig": {
         "defaults": {
@@ -3208,7 +3208,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "grafanacloud-prom"
+            "uid": "PROM_DATASOURCE_UID"
           },
           "exemplar": true,
           "expr": "sum(rate(usage_ingested_operation_writes_total[$__rate_interval]))",
@@ -3219,7 +3219,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "grafanacloud-prom"
+            "uid": "PROM_DATASOURCE_UID"
           },
           "exemplar": true,
           "expr": "sum(rate(usage_ingested_operation_failures[$__rate_interval]))",
@@ -3235,7 +3235,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "grafanacloud-prom"
+        "uid": "PROM_DATASOURCE_UID"
       },
       "fieldConfig": {
         "defaults": {
@@ -3311,7 +3311,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "grafanacloud-prom"
+            "uid": "PROM_DATASOURCE_UID"
           },
           "exemplar": true,
           "expr": "sum(rate(usage_ingested_operation_registry_writes[$__rate_interval]))",
@@ -3322,7 +3322,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "grafanacloud-prom"
+            "uid": "PROM_DATASOURCE_UID"
           },
           "exemplar": true,
           "expr": "sum(rate(usage_ingested_operation_registry_failures[$__rate_interval]))",
@@ -3355,7 +3355,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "grafanacloud-prom"
+        "uid": "PROM_DATASOURCE_UID"
       },
       "fieldConfig": {
         "defaults": {
@@ -3432,7 +3432,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "grafanacloud-prom"
+            "uid": "PROM_DATASOURCE_UID"
           },
           "editorMode": "code",
           "expr": "sum(irate(usage_http_requests_total[$__rate_interval]))",
@@ -3448,7 +3448,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "grafanacloud-prom"
+        "uid": "PROM_DATASOURCE_UID"
       },
       "description": "",
       "fieldConfig": {
@@ -3528,7 +3528,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "grafanacloud-prom"
+            "uid": "PROM_DATASOURCE_UID"
           },
           "editorMode": "code",
           "exemplar": true,
@@ -3546,7 +3546,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "grafanacloud-prom"
+        "uid": "PROM_DATASOURCE_UID"
       },
       "description": "",
       "fieldConfig": {
@@ -3620,7 +3620,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "grafanacloud-prom"
+            "uid": "PROM_DATASOURCE_UID"
           },
           "editorMode": "code",
           "exemplar": true,
@@ -3638,7 +3638,7 @@
       "collapsed": false,
       "datasource": {
         "type": "prometheus",
-        "uid": "grafanacloud-prom"
+        "uid": "PROM_DATASOURCE_UID"
       },
       "description": "Handler - the async function that runs after the request is parsed\n\nRequest - from receiving to responding",
       "fieldConfig": {
@@ -3721,7 +3721,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "grafanacloud-prom"
+            "uid": "PROM_DATASOURCE_UID"
           },
           "editorMode": "code",
           "expr": "histogram_quantile(0.999, sum(rate(usage_http_request_duration_seconds_bucket[$__rate_interval])) by (le, pod))",
@@ -3733,7 +3733,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "grafanacloud-prom"
+            "uid": "PROM_DATASOURCE_UID"
           },
           "editorMode": "code",
           "expr": "histogram_quantile(0.999, sum(rate(usage_http_request_handler_duration_seconds_bucket[$__rate_interval])) by (le, pod))",
@@ -3750,7 +3750,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "grafanacloud-prom"
+        "uid": "PROM_DATASOURCE_UID"
       },
       "description": "Handler - the async function that runs after the request is parsed\n\nRequest - from receiving to responding",
       "fieldConfig": {
@@ -3833,7 +3833,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "grafanacloud-prom"
+            "uid": "PROM_DATASOURCE_UID"
           },
           "editorMode": "code",
           "expr": "histogram_quantile(0.999, sum(rate(usage_http_request_duration_seconds_bucket[$__rate_interval])) by (le))",
@@ -3845,7 +3845,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "grafanacloud-prom"
+            "uid": "PROM_DATASOURCE_UID"
           },
           "editorMode": "code",
           "expr": "histogram_quantile(0.999, sum(rate(usage_http_request_handler_duration_seconds_bucket[$__rate_interval])) by (le))",
@@ -3874,7 +3874,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "grafanacloud-prom"
+        "uid": "PROM_DATASOURCE_UID"
       },
       "fieldConfig": {
         "defaults": {
@@ -3950,7 +3950,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "grafanacloud-prom"
+            "uid": "PROM_DATASOURCE_UID"
           },
           "editorMode": "code",
           "expr": "histogram_quantile(0.95, sum by (le, status) (rate(usage_tokens_duration_seconds_bucket[$__rate_interval])))",
@@ -3965,7 +3965,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "grafanacloud-prom"
+        "uid": "PROM_DATASOURCE_UID"
       },
       "fieldConfig": {
         "defaults": {
@@ -4042,7 +4042,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "grafanacloud-prom"
+            "uid": "PROM_DATASOURCE_UID"
           },
           "editorMode": "code",
           "exemplar": true,
@@ -4055,7 +4055,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "grafanacloud-prom"
+            "uid": "PROM_DATASOURCE_UID"
           },
           "editorMode": "code",
           "exemplar": true,
@@ -4069,7 +4069,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "grafanacloud-prom"
+            "uid": "PROM_DATASOURCE_UID"
           },
           "exemplar": true,
           "expr": "sum(rate(usage_http_requests_no_access[$__rate_interval]))",
@@ -4085,7 +4085,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "grafanacloud-prom"
+        "uid": "PROM_DATASOURCE_UID"
       },
       "fieldConfig": {
         "defaults": {
@@ -4163,7 +4163,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "grafanacloud-prom"
+            "uid": "PROM_DATASOURCE_UID"
           },
           "editorMode": "code",
           "exemplar": true,
@@ -4176,7 +4176,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "grafanacloud-prom"
+            "uid": "PROM_DATASOURCE_UID"
           },
           "editorMode": "code",
           "exemplar": true,

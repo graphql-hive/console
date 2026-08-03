@@ -1,6 +1,11 @@
 import * as fs from 'fs';
 import zod from 'zod';
-import { OpenTelemetryConfigurationModel } from '@hive/service-common';
+import {
+  OpenTelemetryConfigurationModel,
+  parsePostgresConfigFromEnvironment,
+  parseRedisConfigFromEnvironment,
+  resolveServerListenOptions,
+} from '@hive/service-common';
 
 const isNumberString = (input: unknown) => zod.string().regex(/^\d+$/).safeParse(input).success;
 
@@ -19,13 +24,19 @@ const emptyString = <T extends zod.ZodType>(input: T) => {
   }, input);
 };
 
+function raiseInvariant(reason: string): never {
+  throw new Error(reason);
+}
+
 const EnvironmentModel = zod.object({
   PORT: emptyString(NumberFromString.optional()),
-  TOKENS_ENDPOINT: zod.string().url(),
+  SERVER_HOST: emptyString(zod.string().optional()),
+  SERVER_HOST_IPV6_ONLY: emptyString(zod.union([zod.literal('1'), zod.literal('0')]).optional()),
   COMMERCE_ENDPOINT: emptyString(zod.string().url().optional()),
   RATE_LIMIT_TTL: emptyString(NumberFromString.optional()).default(30_000),
   ENVIRONMENT: emptyString(zod.string().optional()),
   RELEASE: emptyString(zod.string().optional()),
+  AWS_REGION: emptyString(zod.string().optional()),
 });
 
 const SentryModel = zod.union([
@@ -48,6 +59,10 @@ const KafkaBaseModel = zod.object({
   KAFKA_BUFFER_SIZE: NumberFromString,
   KAFKA_BUFFER_INTERVAL: NumberFromString,
   KAFKA_BUFFER_DYNAMIC: zod.union([zod.literal('1'), zod.literal('0')]),
+  KAFKA_AWS_REGION: emptyString(zod.string().optional()),
+  KAFKA_AWS_IAM_AUTH_ENABLED: emptyString(
+    zod.union([zod.literal('0'), zod.literal('1')]).optional(),
+  ),
 });
 
 const KafkaModel = zod.union([
@@ -64,22 +79,6 @@ const KafkaModel = zod.union([
     KAFKA_SASL_PASSWORD: zod.string(),
   }),
 ]);
-
-const PostgresModel = zod.object({
-  POSTGRES_SSL: emptyString(zod.union([zod.literal('1'), zod.literal('0')]).optional()),
-  POSTGRES_HOST: zod.string(),
-  POSTGRES_PORT: NumberFromString,
-  POSTGRES_DB: zod.string(),
-  POSTGRES_USER: zod.string(),
-  POSTGRES_PASSWORD: emptyString(zod.string().optional()),
-});
-
-const RedisModel = zod.object({
-  REDIS_HOST: zod.string(),
-  REDIS_PORT: NumberFromString,
-  REDIS_PASSWORD: emptyString(zod.string().optional()),
-  REDIS_TLS_ENABLED: emptyString(zod.union([zod.literal('1'), zod.literal('0')]).optional()),
-});
 
 const PrometheusModel = zod.object({
   PROMETHEUS_METRICS: emptyString(zod.union([zod.literal('0'), zod.literal('1')]).optional()),
@@ -110,8 +109,6 @@ const configs = {
   base: EnvironmentModel.safeParse(process.env),
   sentry: SentryModel.safeParse(process.env),
   kafka: KafkaModel.safeParse(process.env),
-  postgres: PostgresModel.safeParse(process.env),
-  redis: RedisModel.safeParse(process.env),
   prometheus: PrometheusModel.safeParse(process.env),
   log: LogModel.safeParse(process.env),
   tracing: OpenTelemetryConfigurationModel.safeParse(process.env),
@@ -122,6 +119,35 @@ const environmentErrors: Array<string> = [];
 for (const config of Object.values(configs)) {
   if (config.success === false) {
     environmentErrors.push(JSON.stringify(config.error.format(), null, 4));
+  }
+}
+
+const redisConfigResult = parseRedisConfigFromEnvironment(
+  process.env,
+  configs.base.success ? configs.base.data.AWS_REGION : undefined,
+);
+if (redisConfigResult.type === 'error') {
+  environmentErrors.push(...redisConfigResult.errors);
+}
+
+const postgresConfigResult = parsePostgresConfigFromEnvironment(
+  process.env,
+  configs.base.success ? configs.base.data.AWS_REGION : undefined,
+);
+if (postgresConfigResult.type === 'error') {
+  environmentErrors.push(...postgresConfigResult.errors);
+}
+
+if (configs.kafka.success && configs.kafka.data.KAFKA_AWS_IAM_AUTH_ENABLED === '1') {
+  const missingKafkaIamVars: string[] = [];
+  if (configs.kafka.data.KAFKA_SSL !== '1')
+    missingKafkaIamVars.push('KAFKA_SSL must be enabled (MSK IAM requires TLS)');
+  if (!configs.kafka.data.KAFKA_AWS_REGION && !configs.base.data?.AWS_REGION)
+    missingKafkaIamVars.push('KAFKA_AWS_REGION or AWS_REGION');
+  if (missingKafkaIamVars.length > 0) {
+    environmentErrors.push(
+      `KAFKA_AWS_IAM_AUTH_ENABLED is enabled but the following required variables are missing or invalid: ${missingKafkaIamVars.join(', ')}`,
+    );
   }
 }
 
@@ -141,8 +167,6 @@ function extractConfig<Input, Output>(config: zod.SafeParseReturnType<Input, Out
 const base = extractConfig(configs.base);
 const sentry = extractConfig(configs.sentry);
 const kafka = extractConfig(configs.kafka);
-const postgres = extractConfig(configs.postgres);
-const redis = extractConfig(configs.redis);
 const prometheus = extractConfig(configs.prometheus);
 const log = extractConfig(configs.log);
 const tracing = extractConfig(configs.tracing);
@@ -152,15 +176,16 @@ export const env = {
   release: base.RELEASE ?? 'local',
   http: {
     port: base.PORT ?? 5000,
+    ...resolveServerListenOptions({
+      serverHost: base.SERVER_HOST,
+      serverHostIpv6Only: base.SERVER_HOST_IPV6_ONLY,
+    }),
   },
   tracing: {
     enabled: !!tracing.OPENTELEMETRY_COLLECTOR_ENDPOINT,
     collectorEndpoint: tracing.OPENTELEMETRY_COLLECTOR_ENDPOINT,
   },
   hive: {
-    tokens: {
-      endpoint: base.TOKENS_ENDPOINT,
-    },
     commerce: base.COMMERCE_ENDPOINT
       ? {
           endpoint: base.COMMERCE_ENDPOINT,
@@ -185,13 +210,23 @@ export const env = {
             : true
           : false,
       sasl:
-        kafka.KAFKA_SASL_MECHANISM != null
+        kafka.KAFKA_AWS_IAM_AUTH_ENABLED === '1'
           ? {
-              mechanism: kafka.KAFKA_SASL_MECHANISM,
-              username: kafka.KAFKA_SASL_USERNAME,
-              password: kafka.KAFKA_SASL_PASSWORD,
+              mechanism: 'aws-iam' as const,
+              region:
+                kafka.KAFKA_AWS_REGION ??
+                base.AWS_REGION ??
+                raiseInvariant(
+                  'KAFKA_AWS_REGION or AWS_REGION must be set when KAFKA_AWS_IAM_AUTH_ENABLED is enabled',
+                ),
             }
-          : null,
+          : kafka.KAFKA_SASL_MECHANISM != null
+            ? {
+                mechanism: kafka.KAFKA_SASL_MECHANISM,
+                username: kafka.KAFKA_SASL_USERNAME,
+                password: kafka.KAFKA_SASL_PASSWORD,
+              }
+            : null,
     },
     buffer: {
       size: kafka.KAFKA_BUFFER_SIZE,
@@ -199,20 +234,14 @@ export const env = {
       dynamic: kafka.KAFKA_BUFFER_DYNAMIC === '1',
     },
   },
-  postgres: {
-    host: postgres.POSTGRES_HOST,
-    port: postgres.POSTGRES_PORT,
-    db: postgres.POSTGRES_DB,
-    user: postgres.POSTGRES_USER,
-    password: postgres.POSTGRES_PASSWORD,
-    ssl: postgres.POSTGRES_SSL === '1',
-  },
-  redis: {
-    host: redis.REDIS_HOST,
-    port: redis.REDIS_PORT,
-    password: redis.REDIS_PASSWORD ?? '',
-    tlsEnabled: redis.REDIS_TLS_ENABLED === '1',
-  },
+  postgres:
+    postgresConfigResult?.type === 'ok'
+      ? postgresConfigResult.config
+      : raiseInvariant('Unreachable: postgres config errors are caught above via process.exit(1)'),
+  redis:
+    redisConfigResult?.type === 'ok'
+      ? redisConfigResult.config
+      : raiseInvariant('Unreachable: redis config errors are caught above via process.exit(1)'),
   log: {
     level: log.LOG_LEVEL ?? 'info',
     requests: log.REQUEST_LOGGING === '1',

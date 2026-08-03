@@ -1,12 +1,14 @@
 import { buildASTSchema, parse } from 'graphql';
 import { createLogger } from 'graphql-yoga';
-import { sql } from 'slonik';
 import { pollFor } from 'testkit/flow';
 import { initSeed } from 'testkit/seed';
 import { getServiceHost } from 'testkit/utils';
+import z from 'zod';
 import { createHive } from '@graphql-hive/core';
-import { clickHouseInsert, clickHouseQuery } from '../../testkit/clickhouse';
+import { psql } from '@hive/postgres';
+import { clickHouseInsert } from '../../testkit/clickhouse';
 import { graphql } from '../../testkit/gql';
+import { ResourceAssignmentModeType } from '../../testkit/gql/graphql';
 import { execute } from '../../testkit/graphql';
 
 const CreateAppDeployment = graphql(`
@@ -957,6 +959,221 @@ test('add documents to app deployment fails if document does not pass validation
   });
 });
 
+test('app deployment validates documents with MCP directives when schema does not define them', async () => {
+  const { createOrg } = await initSeed().createOwner();
+  const { createProject, setFeatureFlag } = await createOrg();
+  await setFeatureFlag('appDeployments', true);
+  const { createTargetAccessToken } = await createProject();
+  const token = await createTargetAccessToken({});
+
+  await token.publishSchema({
+    sdl: /* GraphQL */ `
+      type Query {
+        weather(location: String!): Weather
+      }
+      type Weather {
+        temp: Float
+        conditions: String
+      }
+    `,
+  });
+
+  await execute({
+    document: CreateAppDeployment,
+    variables: {
+      input: {
+        appName: 'mcp-test',
+        appVersion: '1.0.0',
+      },
+    },
+    authToken: token.secret,
+  }).then(res => res.expectNoGraphQLErrors());
+
+  const { addDocumentsToAppDeployment } = await execute({
+    document: AddDocumentsToAppDeployment,
+    variables: {
+      input: {
+        appName: 'mcp-test',
+        appVersion: '1.0.0',
+        documents: [
+          {
+            hash: 'mcp-weather',
+            body: [
+              'query GetWeather(',
+              '  $location: String! @mcpDescription(provider: "langfuse:loc") @mcpHeader(name: "X-Location")',
+              ') @mcpTool(name: "get_weather", description: "Get weather") {',
+              '  weather(location: $location) { temp conditions }',
+              '}',
+            ].join('\n'),
+          },
+          {
+            hash: 'mcp-weather-title',
+            body: [
+              'query GetWeatherTitle(',
+              '  $location: String! @mcpDescription(provider: "langfuse:loc")',
+              ') @mcpTool(name: "get_weather_title", title: "Weather Tool", meta: "{}") {',
+              '  weather(location: $location) { temp conditions }',
+              '}',
+            ].join('\n'),
+          },
+        ],
+      },
+    },
+    authToken: token.secret,
+  }).then(res => res.expectNoGraphQLErrors());
+
+  expect(addDocumentsToAppDeployment.error).toBeNull();
+});
+
+test('app deployment validates documents with MCP directives when schema already defines them', async () => {
+  const { createOrg } = await initSeed().createOwner();
+  const { createProject, setFeatureFlag } = await createOrg();
+  await setFeatureFlag('appDeployments', true);
+  const { createTargetAccessToken } = await createProject();
+  const token = await createTargetAccessToken({});
+
+  await token.publishSchema({
+    sdl: /* GraphQL */ `
+      scalar JSON
+      directive @mcpTool(name: String!, description: String) on QUERY | MUTATION
+      directive @mcpDescription(provider: String!) on VARIABLE_DEFINITION | FIELD
+      directive @mcpHeader(name: String!) on VARIABLE_DEFINITION
+      type Query {
+        weather(location: String!): Weather
+      }
+      type Weather {
+        temp: Float
+        conditions: String
+      }
+    `,
+  });
+
+  await execute({
+    document: CreateAppDeployment,
+    variables: {
+      input: {
+        appName: 'mcp-existing',
+        appVersion: '1.0.0',
+      },
+    },
+    authToken: token.secret,
+  }).then(res => res.expectNoGraphQLErrors());
+
+  const { addDocumentsToAppDeployment: successResult } = await execute({
+    document: AddDocumentsToAppDeployment,
+    variables: {
+      input: {
+        appName: 'mcp-existing',
+        appVersion: '1.0.0',
+        documents: [
+          {
+            hash: 'mcp-weather-existing',
+            body: [
+              'query GetWeather(',
+              '  $location: String! @mcpDescription(provider: "langfuse:loc")',
+              ') @mcpTool(name: "get_weather", description: "Get weather") {',
+              '  weather(location: $location) { temp conditions }',
+              '}',
+            ].join('\n'),
+          },
+        ],
+      },
+    },
+    authToken: token.secret,
+  }).then(res => res.expectNoGraphQLErrors());
+
+  expect(successResult.error).toBeNull();
+
+  const { addDocumentsToAppDeployment: failResult } = await execute({
+    document: AddDocumentsToAppDeployment,
+    variables: {
+      input: {
+        appName: 'mcp-existing',
+        appVersion: '1.0.0',
+        documents: [
+          {
+            hash: 'mcp-weather-title',
+            body: [
+              'query GetWeather(',
+              '  $location: String! @mcpDescription(provider: "langfuse:loc")',
+              ') @mcpTool(name: "get_weather", title: "Weather Tool") {',
+              '  weather(location: $location) { temp conditions }',
+              '}',
+            ].join('\n'),
+          },
+        ],
+      },
+    },
+    authToken: token.secret,
+  }).then(res => res.expectNoGraphQLErrors());
+
+  expect(failResult.error).toEqual(
+    expect.objectContaining({
+      message: expect.stringContaining('not valid'),
+      details: expect.objectContaining({
+        message: expect.stringContaining('title'),
+      }),
+    }),
+  );
+});
+
+test('app deployment injects only missing MCP directives when schema partially defines them', async () => {
+  const { createOrg } = await initSeed().createOwner();
+  const { createProject, setFeatureFlag } = await createOrg();
+  await setFeatureFlag('appDeployments', true);
+  const { createTargetAccessToken } = await createProject();
+  const token = await createTargetAccessToken({});
+
+  await token.publishSchema({
+    sdl: /* GraphQL */ `
+      directive @mcpTool(name: String!, description: String) on QUERY | MUTATION
+      type Query {
+        weather(location: String!): Weather
+      }
+      type Weather {
+        temp: Float
+        conditions: String
+      }
+    `,
+  });
+
+  await execute({
+    document: CreateAppDeployment,
+    variables: {
+      input: {
+        appName: 'mcp-partial',
+        appVersion: '1.0.0',
+      },
+    },
+    authToken: token.secret,
+  }).then(res => res.expectNoGraphQLErrors());
+
+  const { addDocumentsToAppDeployment } = await execute({
+    document: AddDocumentsToAppDeployment,
+    variables: {
+      input: {
+        appName: 'mcp-partial',
+        appVersion: '1.0.0',
+        documents: [
+          {
+            hash: 'mcp-partial-weather',
+            body: [
+              'query GetWeather(',
+              '  $location: String! @mcpDescription(provider: "langfuse:loc")',
+              ') @mcpTool(name: "get_weather", description: "Get weather") {',
+              '  weather(location: $location) { temp conditions }',
+              '}',
+            ].join('\n'),
+          },
+        ],
+      },
+    },
+    authToken: token.secret,
+  }).then(res => res.expectNoGraphQLErrors());
+
+  expect(addDocumentsToAppDeployment.error).toBeNull();
+});
+
 test('add documents to app deployment fails if document contains multiple executable operation definitions', async () => {
   const { createOrg } = await initSeed().createOwner();
   const { createProject, setFeatureFlag } = await createOrg();
@@ -1526,8 +1743,9 @@ test('retire app deployments fails without feature flag enabled for organization
 });
 
 test('get app deployment documents via GraphQL API', async () => {
-  const { createOrg, ownerToken } = await initSeed().createOwner();
-  const { createProject, setFeatureFlag, organization } = await createOrg();
+  const { createOrg } = await initSeed().createOwner();
+  const { createProject, setFeatureFlag, organization, createOrganizationAccessToken } =
+    await createOrg();
   await setFeatureFlag('appDeployments', true);
   const { createTargetAccessToken, project, target } = await createProject();
   const token = await createTargetAccessToken({});
@@ -1555,12 +1773,23 @@ test('get app deployment documents via GraphQL API', async () => {
     `,
   });
 
+  // Ensure this is possible with the minimal available permissions.
+  const organizationAccessToken = await createOrganizationAccessToken({
+    permissions: ['appDeployment:create'],
+    resources: {
+      mode: ResourceAssignmentModeType.All,
+    },
+  });
+
   const { addDocumentsToAppDeployment } = await execute({
     document: AddDocumentsToAppDeployment,
     variables: {
       input: {
         appName: 'app-name',
         appVersion: 'app-version',
+        target: {
+          byId: target.id,
+        },
         documents: [
           {
             hash: 'aaa',
@@ -1581,7 +1810,7 @@ test('get app deployment documents via GraphQL API', async () => {
         ],
       },
     },
-    authToken: token.secret,
+    authToken: organizationAccessToken.privateAccessKey,
   }).then(res => res.expectNoGraphQLErrors());
   expect(addDocumentsToAppDeployment.error).toBeNull();
 
@@ -1596,7 +1825,7 @@ test('get app deployment documents via GraphQL API', async () => {
       appDeploymentName: 'app-name',
       appDeploymentVersion: 'app-version',
     },
-    authToken: ownerToken,
+    authToken: token.secret,
   }).then(res => res.expectNoGraphQLErrors());
   expect(result.target).toMatchObject({
     appDeployment: {
@@ -1913,7 +2142,7 @@ test('app deployment usage reporting', async () => {
     },
   });
 
-  await client.collectUsage()(
+  await client.collectUsage().finish(
     {
       document: parse(`query { a }`),
       schema: buildASTSchema(parse(sdl)),
@@ -1939,6 +2168,137 @@ test('app deployment usage reporting', async () => {
     authToken: ownerToken,
   }).then(res => res.expectNoGraphQLErrors());
   expect(data.target?.appDeployment?.lastUsed).toEqual(expect.any(String));
+});
+
+test('app deployment manifest is written to and accessible via CDN', async () => {
+  const { createOrg } = await initSeed().createOwner();
+  const { createProject, setFeatureFlag } = await createOrg();
+  await setFeatureFlag('appDeployments', true);
+  const { createTargetAccessToken, createCdnAccess } = await createProject();
+  const token = await createTargetAccessToken({});
+
+  const { createAppDeployment } = await execute({
+    document: CreateAppDeployment,
+    variables: {
+      input: {
+        appName: 'app-name',
+        appVersion: 'app-version',
+      },
+    },
+    authToken: token.secret,
+  }).then(res => res.expectNoGraphQLErrors());
+  expect(createAppDeployment.error).toBeNull();
+
+  await token.publishSchema({
+    sdl: /* GraphQL */ `
+      type Query {
+        a: String
+        b: String
+        c: String
+        d: String
+      }
+    `,
+  });
+
+  const { addDocumentsToAppDeployment } = await execute({
+    document: AddDocumentsToAppDeployment,
+    variables: {
+      input: {
+        appName: 'app-name',
+        appVersion: 'app-version',
+        documents: [
+          {
+            hash: 'aaa',
+            body: 'query { a }',
+          },
+          {
+            hash: 'bbb',
+            body: 'query { b }',
+          },
+          {
+            hash: 'ccc',
+            body: 'query { c }',
+          },
+          {
+            hash: 'ddd',
+            body: 'query { d }',
+          },
+        ],
+      },
+    },
+    authToken: token.secret,
+  }).then(res => res.expectNoGraphQLErrors());
+  expect(addDocumentsToAppDeployment.error).toBeNull();
+
+  const cdnAccess = await createCdnAccess();
+  const persistedOperationUrl = `${cdnAccess.cdnUrl}/apps/app-name/app-version`;
+
+  let response = await fetch(persistedOperationUrl, {
+    method: 'GET',
+    headers: {
+      'X-Hive-CDN-Key': cdnAccess.secretAccessToken,
+    },
+  });
+  // before the app deployment is activated it shall not exist.
+  expect(response.status).toEqual(404);
+
+  const { activateAppDeployment } = await execute({
+    document: ActivateAppDeployment,
+    variables: {
+      input: {
+        appName: 'app-name',
+        appVersion: 'app-version',
+      },
+    },
+    authToken: token.secret,
+  }).then(res => res.expectNoGraphQLErrors());
+  expect(activateAppDeployment.error).toBeNull();
+
+  response = await fetch(persistedOperationUrl, {
+    method: 'GET',
+    headers: {
+      'X-Hive-CDN-Key': cdnAccess.secretAccessToken,
+    },
+  });
+  expect(response.status).toEqual(200);
+  let manifest = await response.json();
+  expect(manifest).toMatchObject({
+    appName: 'app-name',
+    appVersion: 'app-version',
+    documentHashes: ['aaa', 'bbb', 'ccc', 'ddd'],
+    id: expect.any(String),
+    isActive: true,
+  });
+
+  // Retire flow.
+
+  const { retireAppDeployment } = await execute({
+    document: RetireAppDeployment,
+    variables: {
+      input: {
+        appName: 'app-name',
+        appVersion: 'app-version',
+      },
+    },
+    authToken: token.secret,
+  }).then(res => res.expectNoGraphQLErrors());
+  expect(retireAppDeployment.error).toBeNull();
+
+  response = await fetch(persistedOperationUrl, {
+    method: 'GET',
+    headers: {
+      'X-Hive-CDN-Key': cdnAccess.secretAccessToken,
+    },
+  });
+  expect(response.status).toEqual(200);
+  manifest = await response.json();
+  expect(manifest).toMatchObject({
+    appName: 'app-name',
+    appVersion: 'app-version',
+    documentHashes: ['aaa', 'bbb', 'ccc', 'ddd'],
+    id: expect.any(String),
+    isActive: false,
+  });
 });
 
 test('activeAppDeployments returns empty list when no active deployments exist', async () => {
@@ -2056,12 +2416,20 @@ test('activeAppDeployments works for > 1000 records with a date filter (neverUse
   );
 
   // insert into postgres
-  const result = await conn.pool.query(sql`
+  const result = await conn.pool
+    .any(
+      psql`
     INSERT INTO app_deployments ("target_id", "name", "version", "activated_at")
-    SELECT * FROM ${sql.unnest(appDeploymentRows, ['uuid', 'text', 'text', 'timestamptz'])}
+    SELECT * FROM ${psql.unnest(appDeploymentRows, ['uuid', 'text', 'text', 'timestamptz'])}
     RETURNING "id", "target_id", "name", "version"
-  `);
-  expect(result.rowCount).toBe(1200);
+  `,
+    )
+    .then(
+      z.array(
+        z.object({ id: z.string(), target_id: z.string(), name: z.string(), version: z.string() }),
+      ).parse,
+    );
+  expect(result.length).toBe(1200);
 
   // insert into clickhouse and activate
   const query = `INSERT INTO app_deployments (
@@ -2071,7 +2439,7 @@ test('activeAppDeployments works for > 1000 records with a date filter (neverUse
     ,"app_version"
     ,"is_active"
   ) VALUES
-${result.rows
+${result
   .map(
     r => `(
     '${r['target_id']}'
@@ -2352,7 +2720,7 @@ test('activeAppDeployments filters by lastUsedBefore', async () => {
     },
   });
 
-  await client.collectUsage()(
+  await client.collectUsage().finish(
     {
       document: parse(`query { hello }`),
       schema: buildASTSchema(parse(sdl)),
@@ -2514,7 +2882,7 @@ test('activeAppDeployments applies OR logic between lastUsedBefore and neverUsed
     },
   });
 
-  await client.collectUsage()(
+  await client.collectUsage().finish(
     {
       document: parse(`query { hello }`),
       schema: buildASTSchema(parse(sdl)),
@@ -2791,7 +3159,7 @@ test('activeAppDeployments filters by name combined with lastUsedBefore', async 
     },
   });
 
-  await client.collectUsage()(
+  await client.collectUsage().finish(
     {
       document: parse(`query { hello }`),
       schema: buildASTSchema(parse(sdl)),
@@ -5234,7 +5602,7 @@ test('retire app deployment with --force bypasses protection', async () => {
     },
   });
 
-  await client.collectUsage()(
+  await client.collectUsage().finish(
     {
       document: parse(`query { hello }`),
       schema: buildASTSchema(parse(sdl)),

@@ -1,4 +1,12 @@
-import { Fragment, useCallback, useDeferredValue, useEffect, useMemo, useState } from 'react';
+import {
+  Fragment,
+  useCallback,
+  useDeferredValue,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import {
   GraphQLEnumType,
   GraphQLObjectType,
@@ -17,29 +25,31 @@ import {
   CuboidIcon,
   FolderIcon,
   ListTreeIcon,
-  RotateCcwIcon,
+  RefreshCwIcon,
   SearchIcon,
+  SettingsIcon,
   TextAlignStartIcon,
 } from 'lucide-react';
-import { ToggleGroup, ToggleGroupItem } from '@/laboratory/components/ui/toggle-group';
 import type { LaboratoryOperation } from '../../lib/operations';
 import {
   getFieldByPath,
   getOpenPaths,
   isArgInQuery,
   isPathInQuery,
+  mergeOpenPaths,
   searchSchemaPaths,
 } from '../../lib/operations.utils';
 import { cn, splitIdentifier } from '../../lib/utils';
 import { GraphQLType } from '../graphql-type';
 import { GraphQLIcon } from '../icons';
-import { Button } from '../ui/button';
+import { Button, buttonVariants } from '../ui/button';
 import { Checkbox } from '../ui/checkbox';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '../ui/collapsible';
 import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from '../ui/empty';
 import { InputGroup, InputGroupAddon, InputGroupButton, InputGroupInput } from '../ui/input-group';
 import { ScrollArea, ScrollBar } from '../ui/scroll-area';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
+import { ToggleGroup, ToggleGroupItem } from '../ui/toggle-group';
 import { Tooltip, TooltipContent, TooltipTrigger } from '../ui/tooltip';
 import { useLaboratory } from './context';
 
@@ -48,6 +58,7 @@ export const BuilderArgument = (props: {
   path: string[];
   isReadOnly?: boolean;
   operation?: LaboratoryOperation | null;
+  operationName?: string | null;
 }) => {
   const {
     schema,
@@ -70,13 +81,17 @@ export const BuilderArgument = (props: {
   }, [operation?.query, path, props.field.name]);
 
   return (
-    <Button
+    // A div, not a Button: the row is a styled container, and a button here would
+    // nest the checkbox's own button inside it.
+    <div
       key={props.field.name}
-      variant="ghost"
-      className={cn('text-muted-foreground p-1! w-full justify-start text-xs', {
-        'text-foreground-primary': isInQuery,
-      })}
-      size="sm"
+      className={cn(
+        buttonVariants({ variant: 'ghost', size: 'sm' }),
+        'text-muted-foreground p-1! w-full justify-start text-xs',
+        {
+          'text-foreground-primary': isInQuery,
+        },
+      )}
     >
       <div className="size-4" />
       <Checkbox
@@ -89,15 +104,24 @@ export const BuilderArgument = (props: {
           }
 
           if (checked) {
-            addArgToActiveOperation(props.path.join('.'), props.field.name, schema);
+            addArgToActiveOperation(
+              props.path.join('.'),
+              props.field.name,
+              schema,
+              props.operationName,
+            );
           } else {
-            deleteArgFromActiveOperation(props.path.join('.'), props.field.name);
+            deleteArgFromActiveOperation(
+              props.path.join('.'),
+              props.field.name,
+              props.operationName,
+            );
           }
         }}
       />
       <BoxIcon className="size-4 text-rose-400" />
       {props.field.name}: <GraphQLType type={props.field.type} />
-    </Button>
+    </div>
   );
 };
 
@@ -111,6 +135,7 @@ export const BuilderScalarField = (props: {
   isSearchActive?: boolean;
   isReadOnly?: boolean;
   operation?: LaboratoryOperation | null;
+  operationName?: string | null;
   searchValue?: string;
   label?: React.ReactNode;
   disableChildren?: boolean;
@@ -140,16 +165,18 @@ export const BuilderScalarField = (props: {
   );
 
   const isInQuery = useMemo(() => {
-    return isPathInQuery(operation?.query ?? '', path);
-  }, [operation?.query, path]);
+    return isPathInQuery(operation?.query ?? '', path, props.operationName);
+  }, [operation?.query, path, props.operationName]);
 
   const args = useMemo(() => {
     return (props.field as GraphQLField<unknown, unknown, unknown>).args ?? [];
   }, [props.field]);
 
   const hasArgs = useMemo(() => {
-    return args.some(arg => isArgInQuery(operation?.query ?? '', path, arg.name));
-  }, [operation?.query, args, path]);
+    return args.some(arg =>
+      isArgInQuery(operation?.query ?? '', path, arg.name, props.operationName),
+    );
+  }, [operation?.query, args, path, props.operationName]);
 
   const shouldHighlight = useMemo(() => {
     const splittedName = splitIdentifier(props.field.name);
@@ -163,9 +190,11 @@ export const BuilderScalarField = (props: {
 
   if (props.disableChildren) {
     return (
-      <Button
-        variant="ghost"
+      // A div, not a Button: the row is a styled container, and a button here would
+      // nest the checkbox's own button inside it.
+      <div
         className={cn(
+          buttonVariants({ variant: 'ghost', size: 'sm' }),
           'text-muted-foreground bg-card p-1! group sticky top-0 z-10 w-full justify-start overflow-hidden text-xs',
           {
             'text-foreground-primary': isInQuery,
@@ -174,7 +203,6 @@ export const BuilderScalarField = (props: {
         style={{
           top: `${(props.path.length - 2) * 32}px`,
         }}
-        size="sm"
       >
         <div className="bg-card absolute left-0 top-0 -z-20 size-full" />
         <div className="group-hover:bg-accent/50 absolute left-0 top-0 -z-10 size-full transition-colors" />
@@ -185,9 +213,9 @@ export const BuilderScalarField = (props: {
           onCheckedChange={checked => {
             if (checked) {
               setIsOpen(true);
-              addPathToActiveOperation(path);
+              addPathToActiveOperation(path, props.operationName);
             } else {
-              deletePathFromActiveOperation(path);
+              deletePathFromActiveOperation(path, props.operationName);
             }
           }}
         />
@@ -202,7 +230,7 @@ export const BuilderScalarField = (props: {
           </span>
         )}
         : <GraphQLType type={props.field.type} />
-      </Button>
+      </div>
     );
   }
 
@@ -231,15 +259,16 @@ export const BuilderScalarField = (props: {
               })}
             />
             <Checkbox
+              asSpan
               onClick={e => e.stopPropagation()}
               checked={isInQuery}
               disabled={activeTab?.type !== 'operation' || props.isReadOnly}
               onCheckedChange={checked => {
                 if (checked) {
                   setIsOpen(true);
-                  addPathToActiveOperation(path);
+                  addPathToActiveOperation(path, props.operationName);
                 } else {
-                  deletePathFromActiveOperation(path);
+                  deletePathFromActiveOperation(path, props.operationName);
                 }
               }}
             />
@@ -280,7 +309,12 @@ export const BuilderScalarField = (props: {
                           '-rotate-90': !isOpen,
                         })}
                       />
-                      <Checkbox onClick={e => e.stopPropagation()} checked={hasArgs} disabled />
+                      <Checkbox
+                        asSpan
+                        onClick={e => e.stopPropagation()}
+                        checked={hasArgs}
+                        disabled
+                      />
                       <CuboidIcon className="size-4 text-rose-400" />
                       [arguments]
                     </Button>
@@ -306,13 +340,17 @@ export const BuilderScalarField = (props: {
   }
 
   return (
-    <Button
+    // A div, not a Button: the row is a styled container, and a button here would
+    // nest the checkbox's own button inside it.
+    <div
       key={props.field.name}
-      variant="ghost"
-      className={cn('text-muted-foreground p-1! w-full justify-start text-xs', {
-        'text-foreground-primary': isInQuery,
-      })}
-      size="sm"
+      className={cn(
+        buttonVariants({ variant: 'ghost', size: 'sm' }),
+        'text-muted-foreground p-1! w-full justify-start text-xs',
+        {
+          'text-foreground-primary': isInQuery,
+        },
+      )}
     >
       <div className="size-4" />
       <Checkbox
@@ -321,9 +359,9 @@ export const BuilderScalarField = (props: {
         disabled={activeTab?.type !== 'operation'}
         onCheckedChange={checked => {
           if (checked) {
-            addPathToActiveOperation(props.path.join('.'));
+            addPathToActiveOperation(props.path.join('.'), props.operationName);
           } else {
-            deletePathFromActiveOperation(props.path.join('.'));
+            deletePathFromActiveOperation(props.path.join('.'), props.operationName);
           }
         }}
       />
@@ -338,7 +376,7 @@ export const BuilderScalarField = (props: {
         </span>
       )}
       : <GraphQLType type={props.field.type} />
-    </Button>
+    </div>
   );
 };
 
@@ -352,6 +390,7 @@ export const BuilderObjectField = (props: {
   isSearchActive?: boolean;
   isReadOnly?: boolean;
   operation?: LaboratoryOperation | null;
+  operationName?: string | null;
   searchValue?: string;
   label?: React.ReactNode;
   disableChildren?: boolean;
@@ -419,9 +458,11 @@ export const BuilderObjectField = (props: {
 
   if (props.disableChildren) {
     return (
-      <Button
-        variant="ghost"
+      // A div, not a Button: the row is a styled container, and a button here would
+      // nest the checkbox's own button inside it.
+      <div
         className={cn(
+          buttonVariants({ variant: 'ghost', size: 'sm' }),
           'text-muted-foreground bg-card p-1! group sticky top-0 z-10 w-full justify-start overflow-hidden text-xs',
           {
             'text-foreground-primary': isInQuery,
@@ -430,7 +471,6 @@ export const BuilderObjectField = (props: {
         style={{
           top: `${(props.path.length - 2) * 32}px`,
         }}
-        size="sm"
       >
         <div className="bg-card absolute left-0 top-0 -z-20 size-full" />
         <div className="group-hover:bg-accent/50 absolute left-0 top-0 -z-10 size-full transition-colors" />
@@ -441,9 +481,9 @@ export const BuilderObjectField = (props: {
           onCheckedChange={checked => {
             if (checked) {
               setIsOpen(true);
-              addPathToActiveOperation(path);
+              addPathToActiveOperation(path, props.operationName);
             } else {
-              deletePathFromActiveOperation(path);
+              deletePathFromActiveOperation(path, props.operationName);
             }
           }}
         />
@@ -458,7 +498,7 @@ export const BuilderObjectField = (props: {
           </span>
         )}
         : <GraphQLType type={props.field.type} />
-      </Button>
+      </div>
     );
   }
 
@@ -486,15 +526,16 @@ export const BuilderObjectField = (props: {
             })}
           />
           <Checkbox
+            asSpan
             onClick={e => e.stopPropagation()}
             checked={isInQuery}
             disabled={activeTab?.type !== 'operation' || props.isReadOnly}
             onCheckedChange={checked => {
               if (checked) {
                 setIsOpen(true);
-                addPathToActiveOperation(path);
+                addPathToActiveOperation(path, props.operationName);
               } else {
-                deletePathFromActiveOperation(path);
+                deletePathFromActiveOperation(path, props.operationName);
               }
             }}
           />
@@ -535,7 +576,12 @@ export const BuilderObjectField = (props: {
                         '-rotate-90': !isOpen,
                       })}
                     />
-                    <Checkbox onClick={e => e.stopPropagation()} checked={hasArgs} disabled />
+                    <Checkbox
+                      asSpan
+                      onClick={e => e.stopPropagation()}
+                      checked={hasArgs}
+                      disabled
+                    />
                     <CuboidIcon className="size-4 text-rose-400" />
                     [arguments]
                   </Button>
@@ -564,6 +610,7 @@ export const BuilderObjectField = (props: {
                 isSearchActive={props.isSearchActive}
                 isReadOnly={props.isReadOnly}
                 operation={operation}
+                operationName={props.operationName}
                 searchValue={props.searchValue}
               />
             ))}
@@ -583,6 +630,7 @@ export const BuilderField = (props: {
   forcedOpenPaths?: Set<string> | null;
   isSearchActive?: boolean;
   operation?: LaboratoryOperation | null;
+  operationName?: string | null;
   isReadOnly?: boolean;
   searchValue?: string;
   label?: React.ReactNode;
@@ -609,6 +657,7 @@ export const BuilderField = (props: {
         isSearchActive={props.isSearchActive}
         isReadOnly={props.isReadOnly}
         operation={props.operation}
+        operationName={props.operationName}
         searchValue={props.searchValue}
         label={props.label}
         disableChildren={props.disableChildren}
@@ -627,6 +676,7 @@ export const BuilderField = (props: {
       isSearchActive={props.isSearchActive}
       isReadOnly={props.isReadOnly}
       operation={props.operation}
+      operationName={props.operationName}
       searchValue={props.searchValue}
       label={props.label}
       disableChildren={props.disableChildren}
@@ -634,10 +684,65 @@ export const BuilderField = (props: {
   );
 };
 
-enum BuilderSearchResultMode {
+export enum BuilderSearchResultMode {
   LIST = 'list',
   TREE = 'tree',
 }
+
+export const BuilderSearchModeToggle = (props: {
+  mode: BuilderSearchResultMode;
+  onModeChange: (mode: BuilderSearchResultMode) => void;
+  isSearchActive: boolean;
+}) => {
+  const hint = props.isSearchActive ? null : 'Search fields to switch between tree and list';
+
+  return (
+    <ToggleGroup
+      type="single"
+      variant="outline"
+      value={props.mode}
+      disabled={!props.isSearchActive}
+      onValueChange={value => {
+        // Radix emits '' when the active item is clicked again, which would leave
+        // the group with nothing selected while still rendering tree results.
+        if (value) {
+          props.onModeChange(value as BuilderSearchResultMode);
+        }
+      }}
+    >
+      {/* Wrapper, not asChild: Tooltip would merge its own data-state onto the
+          button and clobber the data-[state=on] selected styling. */}
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <span className="flex">
+            <ToggleGroupItem
+              value={BuilderSearchResultMode.TREE}
+              aria-label="Tree"
+              className="h-6 !rounded-l-sm !rounded-r-none border-r-0 p-2"
+            >
+              <ListTreeIcon className="size-4" />
+            </ToggleGroupItem>
+          </span>
+        </TooltipTrigger>
+        <TooltipContent>{hint ?? 'Tree'}</TooltipContent>
+      </Tooltip>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <span className="flex">
+            <ToggleGroupItem
+              value={BuilderSearchResultMode.LIST}
+              aria-label="List"
+              className="h-6 !rounded-l-none !rounded-r-sm p-2"
+            >
+              <TextAlignStartIcon className="size-4" />
+            </ToggleGroupItem>
+          </span>
+        </TooltipTrigger>
+        <TooltipContent>{hint ?? 'List'}</TooltipContent>
+      </Tooltip>
+    </ToggleGroup>
+  );
+};
 
 export const BuilderSearchResults = (props: {
   type: 'query' | 'mutation' | 'subscription';
@@ -651,6 +756,7 @@ export const BuilderSearchResults = (props: {
   mode: BuilderSearchResultMode;
   isReadOnly: boolean;
   operation: LaboratoryOperation | null;
+  operationName?: string | null;
   searchValue: string;
   schema: GraphQLSchema;
   tab: OperationTypeNode;
@@ -675,6 +781,7 @@ export const BuilderSearchResults = (props: {
           isSearchActive={props.isSearchActive}
           isReadOnly={props.isReadOnly}
           operation={props.operation}
+          operationName={props.operationName}
           searchValue={props.searchValue}
           disableChildren
           label={
@@ -726,6 +833,7 @@ export const BuilderSearchResults = (props: {
           isSearchActive={props.isSearchActive}
           isReadOnly={props.isReadOnly}
           operation={props.operation}
+          operationName={props.operationName}
           searchValue={props.searchValue}
         />
       );
@@ -734,9 +842,21 @@ export const BuilderSearchResults = (props: {
 
 export const Builder = (props: {
   operation?: LaboratoryOperation | null;
+  operationName?: string | null;
   isReadOnly?: boolean;
 }) => {
-  const { schema, activeOperation, endpoint, setEndpoint, defaultEndpoint } = useLaboratory();
+  const {
+    schema,
+    activeOperation,
+    endpoint,
+    setEndpoint,
+    reloadSchema,
+    isFetchingSchema,
+    tabs,
+    addTab,
+    setActiveTab,
+    canIntrospect,
+  } = useLaboratory();
 
   const [endpointValue, setEndpointValue] = useState<string>(endpoint ?? '');
   const [searchValue, setSearchValue] = useState<string>('');
@@ -750,16 +870,33 @@ export const Builder = (props: {
     return props.operation ?? activeOperation ?? null;
   }, [props.operation, activeOperation]);
 
-  useEffect(() => {
-    if (schema) {
-      const newOpenPaths = getOpenPaths(operation?.query ?? '');
+  const documentPathsRef = useRef<string[]>([]);
+  const operationIdRef = useRef<string | null>(operation?.id ?? null);
 
-      if (newOpenPaths.length > 0) {
-        setOpenPaths(newOpenPaths);
-        setTabValue(newOpenPaths[0] as OperationTypeNode);
-      }
+  useEffect(() => {
+    if (!schema) {
+      return;
     }
-  }, [schema, operation?.query]);
+
+    const documentPaths = getOpenPaths(operation?.query ?? '');
+
+    if (documentPaths.length === 0) {
+      return;
+    }
+
+    const isDifferentOperation = operationIdRef.current !== (operation?.id ?? null);
+    const previousDocumentPaths = documentPathsRef.current;
+
+    operationIdRef.current = operation?.id ?? null;
+    documentPathsRef.current = documentPaths;
+
+    setOpenPaths(current =>
+      isDifferentOperation
+        ? documentPaths
+        : mergeOpenPaths(current, previousDocumentPaths, documentPaths),
+    );
+    setTabValue(documentPaths[0] as OperationTypeNode);
+  }, [schema, operation?.id, operation?.query]);
 
   const queryFields = useMemo(
     () => Object.values(schema?.getQueryType()?.getFields?.() ?? {}),
@@ -791,8 +928,6 @@ export const Builder = (props: {
     });
   }, [schema, deferredSearchValue, isSearchActive, tabValue]);
 
-  console.log(searchResult);
-
   const visiblePaths = isSearchActive ? (searchResult?.visiblePaths ?? null) : null;
   const forcedOpenPaths =
     isSearchActive && deferredSearchValue.includes('.')
@@ -815,30 +950,47 @@ export const Builder = (props: {
     throttleSetEndpoint(endpointValue);
   }, [endpointValue, throttleSetEndpoint]);
 
-  const restoreEndpoint = useCallback(() => {
-    setEndpointValue(endpoint ?? '');
-    setEndpoint(defaultEndpoint ?? '');
-  }, [defaultEndpoint, setEndpointValue]);
-
   return (
     <div className="bg-card flex size-full flex-col overflow-hidden">
-      <div className="flex items-center px-3 pt-3">
+      <div className="flex items-center gap-3 px-3 pt-3">
         <span className="text-base font-medium">Builder</span>
-        <div className="ml-auto flex items-center">
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                onClick={() => setOpenPaths([])}
-                variant="ghost"
-                size="icon-sm"
-                className="p-1! size-6 rounded-sm"
-                disabled={openPaths.length === 0}
-              >
-                <CopyMinusIcon className="text-muted-foreground size-4" />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>Collapse all</TooltipContent>
-          </Tooltip>
+        <div className="ml-auto flex items-center gap-3">
+          {canIntrospect && (
+            <Button
+              onClick={() => {
+                const tab =
+                  tabs.find(t => t.type === 'settings') ??
+                  addTab({
+                    type: 'settings',
+                    data: {},
+                  });
+
+                setActiveTab(tab);
+              }}
+              variant="ghost"
+              size="sm"
+              className="p-1! h-6 rounded-sm !px-1.5"
+            >
+              <SettingsIcon className="size-4" />
+              Introspection settings
+            </Button>
+          )}
+          <div className="flex items-center">
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  onClick={() => setOpenPaths([])}
+                  variant="ghost"
+                  size="icon-sm"
+                  className="p-1! size-6 rounded-sm"
+                  disabled={openPaths.length === 0}
+                >
+                  <CopyMinusIcon className="text-muted-foreground size-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>Collapse all</TooltipContent>
+            </Tooltip>
+          </div>
         </div>
       </div>
       <div className="px-3 pt-3">
@@ -851,18 +1003,26 @@ export const Builder = (props: {
           <InputGroupAddon>
             <GraphQLIcon />
           </InputGroupAddon>
-          {defaultEndpoint && (
-            <InputGroupAddon align="inline-end">
-              <InputGroupButton className="rounded-full" size="icon-xs" onClick={restoreEndpoint}>
-                <Tooltip>
-                  <TooltipTrigger>
-                    <RotateCcwIcon className="size-4" />
-                  </TooltipTrigger>
-                  <TooltipContent>Restore default endpoint</TooltipContent>
-                </Tooltip>
-              </InputGroupButton>
-            </InputGroupAddon>
-          )}
+          <InputGroupAddon align="inline-end">
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <span className="flex">
+                  <InputGroupButton
+                    className="rounded-full"
+                    size="icon-xs"
+                    onClick={reloadSchema}
+                    disabled={isFetchingSchema || !endpointValue}
+                    aria-label="Reload schema"
+                  >
+                    <RefreshCwIcon className={cn('size-4', isFetchingSchema && 'animate-spin')} />
+                  </InputGroupButton>
+                </span>
+              </TooltipTrigger>
+              <TooltipContent>
+                {isFetchingSchema ? 'Introspecting…' : 'Reload schema'}
+              </TooltipContent>
+            </Tooltip>
+          </InputGroupAddon>
         </InputGroup>
       </div>
       <div className="flex-1 overflow-hidden">
@@ -906,37 +1066,11 @@ export const Builder = (props: {
                     <SearchIcon className="text-muted-foreground size-4" />
                   </InputGroupAddon>
                   <InputGroupAddon align="inline-end" className="py-0 pr-1.5">
-                    <ToggleGroup
-                      type="single"
-                      variant="outline"
-                      defaultValue={searchResultMode}
-                      onValueChange={value => setSearchResultMode(value as BuilderSearchResultMode)}
-                    >
-                      <Tooltip>
-                        <TooltipTrigger>
-                          <ToggleGroupItem
-                            value={BuilderSearchResultMode.TREE}
-                            aria-label="Toggle tree"
-                            className="h-6 !rounded-l-sm !rounded-r-none border-r-0 p-2"
-                          >
-                            <ListTreeIcon className="size-4" />
-                          </ToggleGroupItem>
-                        </TooltipTrigger>
-                        <TooltipContent>Tree</TooltipContent>
-                      </Tooltip>
-                      <Tooltip>
-                        <TooltipTrigger>
-                          <ToggleGroupItem
-                            value={BuilderSearchResultMode.LIST}
-                            aria-label="Toggle list"
-                            className="h-6 !rounded-l-none !rounded-r-sm p-2"
-                          >
-                            <TextAlignStartIcon className="size-4" />
-                          </ToggleGroupItem>
-                        </TooltipTrigger>
-                        <TooltipContent>List</TooltipContent>
-                      </Tooltip>
-                    </ToggleGroup>
+                    <BuilderSearchModeToggle
+                      mode={searchResultMode}
+                      onModeChange={setSearchResultMode}
+                      isSearchActive={isSearchActive}
+                    />
                   </InputGroupAddon>
                 </InputGroup>
               </div>
@@ -975,6 +1109,7 @@ export const Builder = (props: {
                           isSearchActive={isSearchActive}
                           isReadOnly={props.isReadOnly}
                           operation={operation}
+                          operationName={props.operationName}
                           searchValue={deferredSearchValue}
                         />
                       ))
@@ -1011,6 +1146,7 @@ export const Builder = (props: {
                           isSearchActive={isSearchActive}
                           isReadOnly={props.isReadOnly}
                           operation={operation}
+                          operationName={props.operationName}
                           searchValue={deferredSearchValue}
                         />
                       ))
@@ -1047,6 +1183,7 @@ export const Builder = (props: {
                           isSearchActive={isSearchActive}
                           isReadOnly={props.isReadOnly}
                           operation={operation}
+                          operationName={props.operationName}
                           searchValue={deferredSearchValue}
                         />
                       ))

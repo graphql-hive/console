@@ -99,6 +99,36 @@ test.concurrent('create: success', async () => {
   });
 });
 
+test.concurrent('create: success with empty description', async ({ expect }) => {
+  const { createOrg, ownerToken } = await initSeed().createOwner();
+  const org = await createOrg();
+
+  const result = await createOrganizationAccessToken(
+    {
+      organization: {
+        byId: org.organization.id,
+      },
+      title: 'an access token',
+      description: null,
+      resources: { mode: GraphQLSchema.ResourceAssignmentModeType.All },
+      permissions: [],
+    },
+    ownerToken,
+  ).then(e => e.expectNoGraphQLErrors());
+
+  expect(result.createOrganizationAccessToken.error).toEqual(null);
+  expect(result.createOrganizationAccessToken.ok).toEqual({
+    privateAccessKey: expect.any(String),
+    createdOrganizationAccessToken: {
+      id: expect.any(String),
+      title: 'an access token',
+      description: null,
+      permissions: [],
+      createdAt: expect.any(String),
+    },
+  });
+});
+
 test.concurrent('create: failure invalid title', async ({ expect }) => {
   const { createOrg, ownerToken } = await initSeed().createOwner();
   const org = await createOrg();
@@ -471,3 +501,53 @@ test.concurrent(
     ).toHaveLength(1);
   },
 );
+
+test.concurrent('query GraphQL API on resources after token expiration', async ({ expect }) => {
+  const { createOrg, ownerToken } = await initSeed().createOwner();
+  const org = await createOrg();
+  const project = await org.createProject(GraphQLSchema.ProjectType.Federation);
+
+  const result = await createOrganizationAccessToken(
+    {
+      organization: {
+        byId: org.organization.id,
+      },
+      title: 'second access token',
+      description: 'a description',
+      resources: {
+        mode: GraphQLSchema.ResourceAssignmentModeType.All,
+      },
+      permissions: ['organization:describe'],
+    },
+    ownerToken,
+  ).then(e => e.expectNoGraphQLErrors());
+  expect(result.createOrganizationAccessToken.error).toEqual(null);
+  const orgAccessToken = result.createOrganizationAccessToken.ok?.privateAccessKey;
+  expect(result.createOrganizationAccessToken.ok?.createdOrganizationAccessToken.id).toBeDefined();
+
+  await execute({
+    document: OrganizationProjectTargetQuery,
+    variables: {
+      organizationSlug: org.organization.slug,
+      projectSlug: project.project.slug,
+      targetSlug: project.target.slug,
+    },
+    authToken: orgAccessToken,
+  }).then(e => e.expectNoGraphQLErrors());
+
+  await org.forceExpireTokens([
+    result.createOrganizationAccessToken.ok?.createdOrganizationAccessToken.id!,
+  ]);
+
+  const expiredResult = await execute({
+    document: OrganizationProjectTargetQuery,
+    variables: {
+      organizationSlug: org.organization.slug,
+      projectSlug: project.project.slug,
+      targetSlug: project.target.slug,
+    },
+    authToken: orgAccessToken,
+  }).then(e => e.expectGraphQLErrors());
+  const error = expiredResult[0];
+  expect(error.message).toEqual('Invalid token provided');
+});

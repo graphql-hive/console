@@ -2,7 +2,7 @@ import { type MigrationExecutor } from '../pg-migrator';
 
 export default {
   name: '2021-03-05T19-06-23.initial.sql',
-  run: ({ sql }) => sql`
+  run: ({ psql }) => psql`
 --initial (up)
 -- Extensions
 CREATE EXTENSION

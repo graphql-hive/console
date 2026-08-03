@@ -1,11 +1,12 @@
-import { Inject, Injectable, Scope } from 'graphql-modules';
-import { CommonQueryMethods, sql, type DatabasePool } from 'slonik';
+import { Injectable, Scope } from 'graphql-modules';
 import { z } from 'zod';
+import { CommonQueryMethods, PostgresDatabasePool, psql } from '@hive/postgres';
 import {
   decodeCreatedAtAndUUIDIdBasedCursor,
   encodeCreatedAtAndUUIDIdBasedCursor,
 } from '@hive/storage';
 import { batch } from '../../../shared/helpers';
+import { isUUID } from '../../../shared/is-uuid';
 import {
   Permission,
   PermissionsModel,
@@ -19,7 +20,6 @@ import {
   TargetAccessScope,
 } from '../../auth/providers/scopes';
 import { Logger } from '../../shared/providers/logger';
-import { PG_POOL_CONFIG } from '../../shared/providers/pg-pool';
 import * as OrganizationMemberPermissions from '../lib/organization-member-permissions';
 
 function omit<T extends object, K extends keyof T>(obj: T, key: K): Omit<T, K> {
@@ -89,7 +89,7 @@ export class OrganizationMemberRoles {
   private logger: Logger;
 
   constructor(
-    @Inject(PG_POOL_CONFIG) private pool: DatabasePool,
+    private pool: PostgresDatabasePool,
     logger: Logger,
   ) {
     this.logger = logger.child({
@@ -110,7 +110,7 @@ export class OrganizationMemberRoles {
     }
     const limit = args.first ? (args.first > 0 ? Math.min(args.first, 50) : 50) : 50;
 
-    const query = sql`
+    const query = psql`
       SELECT
         ${organizationMemberRoleFields}
       FROM
@@ -119,7 +119,7 @@ export class OrganizationMemberRoles {
         "organization_id" = ${organizationId}
         ${
           cursor
-            ? sql`
+            ? psql`
                 AND (
                   (
                     "created_at" = ${cursor.createdAt}
@@ -128,7 +128,7 @@ export class OrganizationMemberRoles {
                   OR "created_at" < ${cursor.createdAt}
                 )
               `
-            : sql``
+            : psql``
         }
       ORDER BY
         "created_at" DESC
@@ -136,7 +136,7 @@ export class OrganizationMemberRoles {
       LIMIT ${limit + 1}
     `;
 
-    const records = await this.pool.any<unknown>(query);
+    const records = await this.pool.any(query);
 
     let edges = records.map(row => {
       const node = MemberRoleModel.parse(row);
@@ -171,37 +171,29 @@ export class OrganizationMemberRoles {
   async findMemberRolesByIds(roleIds: Array<string>): Promise<Map<string, OrganizationMemberRole>> {
     this.logger.debug('Find organization membership roles. (roleIds=%o)', roleIds);
 
-    const query = sql`
-      SELECT
-        ${organizationMemberRoleFields}
-      FROM
-        "organization_member_roles"
-      WHERE
-        "id" = ANY(${sql.array(roleIds, 'uuid')})
-    `;
-
-    const result = await this.pool.any<unknown>(query);
-
-    const rowsById = new Map<string, OrganizationMemberRole>();
-
-    for (const row of result) {
-      const record = MemberRoleModel.parse(row);
-
-      rowsById.set(record.id, record);
-    }
-    return rowsById;
+    return OrganizationMemberRoles.findMemberRolesByIds(this.pool, roleIds);
   }
 
-  findMemberRoleById = batch<string, OrganizationMemberRole | null>(async roleIds => {
-    const roles = await this.findMemberRolesByIds(roleIds);
-    return roleIds.map(async roleId => roles.get(roleId) ?? null);
-  });
+  private findMemberRoleByIdBatched = batch<string, OrganizationMemberRole | null>(
+    async roleIds => {
+      const roles = await this.findMemberRolesByIds(roleIds);
+      return roleIds.map(async roleId => roles.get(roleId) ?? null);
+    },
+  );
+
+  findMemberRoleById(roleId: string) {
+    if (!isUUID(roleId)) {
+      return null;
+    }
+
+    return this.findMemberRoleByIdBatched(roleId);
+  }
 
   async findRoleByOrganizationIdAndName(
     organizationId: string,
     name: string,
   ): Promise<OrganizationMemberRole | null> {
-    const result = await this.pool.maybeOne<unknown>(sql`/* findViewerRoleForOrganizationId */
+    const result = await this.pool.maybeOne(psql`/* findViewerRoleForOrganizationId */
       SELECT
         ${organizationMemberRoleFields}
       FROM
@@ -235,7 +227,7 @@ export class OrganizationMemberRoles {
       OrganizationMemberPermissions.permissions.assignable.has(permission as Permission),
     );
     const role = await this.pool.one(
-      sql`/* createOrganizationMemberRole */
+      psql`/* createOrganizationMemberRole */
         INSERT INTO "organization_member_roles" (
           "organization_id"
           , "name"
@@ -248,7 +240,7 @@ export class OrganizationMemberRoles {
           , ${args.name}
           , ${args.description}
           , NULL
-          , ${sql.array(permissions, 'text')}
+          , ${psql.array(permissions, 'text')}
         )
         RETURNING
           ${organizationMemberRoleFields}
@@ -270,14 +262,14 @@ export class OrganizationMemberRoles {
     );
 
     const role = await this.pool.one(
-      sql`/* updateOrganizationMemberRole */
+      psql`/* updateOrganizationMemberRole */
         UPDATE
           "organization_member_roles"
         SET
           "name" = ${args.name}
           , "description" = ${args.description}
           , "scopes" = NULL
-          , "permissions" = ${sql.array(permissions, 'text')}
+          , "permissions" = ${psql.array(permissions, 'text')}
         WHERE
           "organization_id" = ${args.organizationId} AND id = ${args.roleId}
         RETURNING
@@ -288,13 +280,35 @@ export class OrganizationMemberRoles {
     return MemberRoleModel.parse(role);
   }
 
+  static async findMemberRolesByIds(pool: CommonQueryMethods, roleIds: Array<string>) {
+    const query = psql`
+      SELECT
+        ${organizationMemberRoleFields}
+      FROM
+        "organization_member_roles"
+      WHERE
+        "id" = ANY(${psql.array(roleIds, 'uuid')})
+    `;
+
+    const result = await pool.any(query);
+
+    const rowsById = new Map<string, OrganizationMemberRole>();
+
+    for (const row of result) {
+      const record = MemberRoleModel.parse(row);
+
+      rowsById.set(record.id, record);
+    }
+    return rowsById;
+  }
+
   static findMemberRoleById(deps: { logger: Logger; pool: CommonQueryMethods }) {
     return async function findMemberRoleById(
       roleId: string,
     ): Promise<OrganizationMemberRole | null> {
       deps.logger.debug('Find organization membership role by id. (roleId=%s)', roleId);
 
-      const query = sql`
+      const query = psql`
         SELECT
           ${organizationMemberRoleFields}
         FROM
@@ -303,7 +317,7 @@ export class OrganizationMemberRoles {
           "id" = ${roleId}
       `;
 
-      const result = await deps.pool.maybeOne<unknown>(query);
+      const result = await deps.pool.maybeOne(query);
 
       if (result == null) {
         deps.logger.debug('Organization membership role not found. (roleId=%s)', roleId);
@@ -405,7 +419,7 @@ function transformOrganizationMemberLegacyScopesIntoPermissionGroup(
   ]);
 }
 
-const organizationMemberRoleFields = sql`
+const organizationMemberRoleFields = psql`
   "organization_member_roles"."id"
   , "organization_member_roles"."name"
   , "organization_member_roles"."description"

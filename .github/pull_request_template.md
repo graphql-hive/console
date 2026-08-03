@@ -1,3 +1,8 @@
+<!--
+Before Contributing, please review the contribution guide:
+https://the-guild.dev/graphql/hive/docs/schema-registry/contributing
+--->
+
 ### Background
 
 <!---

@@ -1,4 +1,5 @@
 import zod from 'zod';
+import { resolveServerListenOptions } from '@hive/service-common';
 
 function extractConfig<Input, Output>(config: zod.SafeParseReturnType<Input, Output>): Output {
   if (!config.success) {
@@ -15,6 +16,8 @@ const BaseSchema = zod.object({
     .number()
     .transform(port => port || 3069)
     .default(3069),
+  SERVER_HOST: zod.string().default('::'),
+  SERVER_HOST_IPV6_ONLY: zod.union([zod.literal('1'), zod.literal('0')]).default('0'),
   SECRET: zod.string(),
 });
 
@@ -44,6 +47,10 @@ export function resolveEnv(env: Record<string, string | undefined>) {
     release: base.RELEASE ?? 'local',
     http: {
       port: base.PORT,
+      ...resolveServerListenOptions({
+        serverHost: base.SERVER_HOST,
+        serverHostIpv6Only: base.SERVER_HOST_IPV6_ONLY,
+      }),
     },
     secret: base.SECRET,
   };

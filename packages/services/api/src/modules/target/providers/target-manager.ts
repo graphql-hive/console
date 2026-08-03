@@ -4,7 +4,7 @@ import * as zod from 'zod';
 import { z } from 'zod';
 import * as GraphQLSchema from '../../../__generated__/types';
 import type { Project, Target, TargetSettings } from '../../../shared/entities';
-import { share } from '../../../shared/helpers';
+import { cache, share } from '../../../shared/helpers';
 import { AuditLogRecorder } from '../../audit-logs/providers/audit-log-recorder';
 import { Session } from '../../auth/lib/authz';
 import { IdTranslator } from '../../shared/providers/id-translator';
@@ -300,6 +300,37 @@ export class TargetManager {
     return this.getTarget(selector);
   }
 
+  async updateTargetFailingDangerousChanges(args: {
+    target: GraphQLSchema.TargetReferenceInput;
+    all: boolean;
+    failingTypes: readonly GraphQLSchema.DangerousChangeType[];
+  }) {
+    this.logger.debug('Updating target dangerous change classification (target=%o)', args.target);
+    const selector = await this.idTranslator.resolveTargetReference({ reference: args.target });
+
+    if (!selector) {
+      this.session.raise('target:modifySettings');
+    }
+
+    await this.session.assertPerformAction({
+      action: 'target:modifySettings',
+      organizationId: selector.organizationId,
+      params: {
+        organizationId: selector.organizationId,
+        projectId: selector.projectId,
+        targetId: selector.targetId,
+      },
+    });
+
+    await this.storage.updateTargetFailingDangerousChanges({
+      ...selector,
+      all: args.all,
+      failingTypes: args.failingTypes,
+    });
+
+    return this.getTarget(selector);
+  }
+
   async updateTargetConditionalBreakingChangeConfiguration(args: {
     target: GraphQLSchema.TargetReferenceInput;
     configuration: GraphQLSchema.ConditionalBreakingChangeConfigurationInput;
@@ -539,25 +570,14 @@ export class TargetManager {
     } as const;
   }
 
+  @cache((args: { targetId: string }) => args.targetId)
   async getTargetById(args: { targetId: string }): Promise<Target> {
-    const breadcrumb = await this.storage.getTargetBreadcrumbForTargetId({
-      targetId: args.targetId,
-    });
-
-    if (!breadcrumb) {
+    const target = await this.storage.getTargetById(args.targetId);
+    if (!target) {
       throw new Error(`Target not found (targetId=${args.targetId})`);
     }
 
-    const [organizationId, projectId] = await Promise.all([
-      this.idTranslator.translateOrganizationId(breadcrumb),
-      this.idTranslator.translateProjectId(breadcrumb),
-    ]);
-
-    return this.storage.getTarget({
-      organizationId: organizationId,
-      projectId: projectId,
-      targetId: args.targetId,
-    });
+    return target;
   }
 
   /**

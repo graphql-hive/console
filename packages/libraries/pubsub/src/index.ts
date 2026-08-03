@@ -1,5 +1,5 @@
 import { createPubSub } from 'graphql-yoga';
-import { Redis } from 'ioredis';
+import type { Redis } from 'ioredis';
 import { createRedisEventTarget } from '@graphql-yoga/redis-event-target';
 import { bridgeGraphileLogger, type Logger } from './logger.js';
 import type { HivePubSub } from './pub-sub.js';

@@ -47,6 +47,16 @@ services:
     ports:
       - '6379:6379'
 
+  usage-ingestor:
+    environment:
+      # Make reported operations queryable in Insights synchronously, so the usage e2e tests
+      # don't race ClickHouse's async-insert timer. Both settings are required: wait-for-flush
+      # makes the insert block until the data is queryable, and the low busy-timeout makes that
+      # flush happen in ~100ms instead of waiting up to the default 30s. Prod keeps its
+      # fire-and-forget defaults.
+      CLICKHOUSE_WAIT_FOR_ASYNC_INSERT: '1'
+      CLICKHOUSE_ASYNC_INSERT_BUSY_TIMEOUT_MS: '100'
+
   server:
     environment:
       SUPERTOKENS_RATE_LIMIT: '0'

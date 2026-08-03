@@ -2,7 +2,7 @@ import { type MigrationExecutor } from '../pg-migrator';
 
 export default {
   name: '2022.12.20T09.20.36.oidc-columns.sql',
-  run: ({ sql }) => sql`
+  run: ({ psql }) => psql`
 ALTER TABLE
   "oidc_integrations"
 ADD COLUMN

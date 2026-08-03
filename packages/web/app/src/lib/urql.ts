@@ -6,7 +6,7 @@ import schema from '@/gql/schema';
 import { authExchange } from '@urql/exchange-auth';
 import { cacheExchange } from '@urql/exchange-graphcache';
 import { relayPagination } from '@urql/exchange-graphcache/extras';
-import { Mutation } from './urql-cache';
+import { Mutation, Optimistic } from './urql-cache';
 import { networkStatusExchange } from './urql-exchanges/state';
 
 const noKey = (): null => null;
@@ -32,6 +32,7 @@ export const urqlClient = createClient({
       updates: {
         Mutation,
       },
+      optimistic: Optimistic,
       resolvers: {
         Target: {
           appDeployments: relayPagination(),
@@ -41,6 +42,10 @@ export const urqlClient = createClient({
           documents: relayPagination(),
         },
         Organization: {
+          accessTokens: relayPagination(),
+          allAccessTokens: relayPagination(),
+        },
+        Project: {
           accessTokens: relayPagination(),
         },
       },
@@ -96,6 +101,12 @@ export const urqlClient = createClient({
         ClientFilter: noKey,
         SchemaChangeMeta: noKey,
         SchemaCheckMeta: noKey,
+        SchemaVersionMeta: noKey,
+        SchemaVersionGithubMetadata: noKey,
+        SchemaVersionPromoteOrigin: noKey,
+        SchemaVersionPublishOrigin: noKey,
+        SchemaVersionSubgraphRemoveOrigin: noKey,
+        SubgraphOriginSubgraphReference: noKey,
         FieldArgumentDescriptionChanged: noKey,
         FieldArgumentTypeChanged: noKey,
         DirectiveRemoved: noKey,
@@ -175,6 +186,9 @@ export const urqlClient = createClient({
         DirectiveUsageArgumentRemoved: noKey,
         DirectiveRepeatableAdded: noKey,
         DirectiveRepeatableRemoved: noKey,
+        SchemaCompositionResult: noKey,
+        NativeCompositionVersionStatus: noKey,
+        NativeCompositionCompatibility: noKey,
       },
       globalIDs: ['SuccessfulSchemaCheck', 'FailedSchemaCheck'],
     }),

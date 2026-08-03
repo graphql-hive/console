@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import clsx from 'clsx';
 import { buildSchema, introspectionFromSchema, Kind, parse, print } from 'graphql';
 import { throttle } from 'lodash';
@@ -30,6 +30,7 @@ import { useCurrentOperationWithFetchingState } from '@/lib/hooks/laboratory/use
 import { TargetLaboratoryPageQuery } from '@/lib/hooks/laboratory/use-operation-collections-plugin';
 import { useOperationFromQueryString } from '@/lib/hooks/laboratory/useOperationFromQueryString';
 import { useResetState } from '@/lib/hooks/use-reset-state';
+import { loadHistory, saveHistory } from '@/lib/laboratory-history-storage';
 import { cn } from '@/lib/utils';
 import {
   Laboratory,
@@ -161,6 +162,26 @@ export const CreateCollectionMutation = graphql(`
               cursor
             }
           }
+        }
+      }
+    }
+  }
+`);
+
+const UpdateCollectionMutation = graphql(`
+  mutation LaboratoryUpdateCollection(
+    $selector: TargetSelectorInput!
+    $input: UpdateDocumentCollectionInput!
+  ) {
+    updateDocumentCollection(selector: $selector, input: $input) {
+      error {
+        message
+      }
+      ok {
+        collection {
+          id
+          name
+          description
         }
       }
     }
@@ -319,6 +340,18 @@ function useLaboratoryState(props: {
     },
   });
 
+  const [historyData, setHistoryData] = useState<LaboratoryHistory[] | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    void loadHistory().then(history => {
+      if (!cancelled) setHistoryData(history);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   const preflight = useFragment(LaboratoryPreflightScriptTargetFragment, data?.target ?? null);
 
   const collections = useMemo(
@@ -451,6 +484,26 @@ function useLaboratoryState(props: {
     [mutateAddCollection, props.targetSlug, props.organizationSlug, props.projectSlug],
   );
 
+  const [, mutateUpdateCollection] = useMutation(UpdateCollectionMutation);
+  const updateCollection = useMemo(
+    () =>
+      throttle((collection: LaboratoryCollection) => {
+        void mutateUpdateCollection({
+          selector: {
+            targetSlug: props.targetSlug,
+            organizationSlug: props.organizationSlug,
+            projectSlug: props.projectSlug,
+          },
+          input: {
+            collectionId: collection.id,
+            name: collection.name,
+            description: collection.description,
+          },
+        });
+      }, 1000),
+    [mutateUpdateCollection, props.targetSlug, props.organizationSlug, props.projectSlug],
+  );
+
   const [, mutateUpdatePreflight] = useMutation(UpdatePreflightScriptMutation);
 
   const updatePreflight = useMemo(
@@ -566,25 +619,24 @@ function useLaboratoryState(props: {
   const operationIdFromSearch = useOperationFromQueryString();
 
   const fetching = useMemo(() => {
+    if (historyData === null) {
+      return true;
+    }
     if (operationIdFromSearch) {
       return dataFetching || currentOperationFetching;
     }
 
     return dataFetching;
-  }, [dataFetching, currentOperationFetching, operationIdFromSearch]);
+  }, [dataFetching, currentOperationFetching, operationIdFromSearch, historyData]);
 
   return {
     fetching,
     defaultCollections: collections,
     defaultOperations,
-    defaultHistory: getLocalStorageState('history', []),
+    defaultHistory: historyData ?? [],
     defaultTabs,
     defaultActiveTabId: getLocalStorageState('activeTabId', null),
-    defaultSettings: getLocalStorageState('settings', {
-      fetch: {
-        credentials: 'same-origin',
-      },
-    }),
+    defaultSettings: getLocalStorageState('settings', null),
     defaultPreflight: preflight?.preflightScript?.sourceCode
       ? {
           script: preflight.preflightScript.sourceCode,
@@ -603,7 +655,7 @@ function useLaboratoryState(props: {
       setLocalStorageState('operations', operations);
     },
     onHistoryChange: (history: LaboratoryHistory[]) => {
-      setLocalStorageState('history', history);
+      void saveHistory(history);
     },
     onTabsChange: (tabs: LaboratoryTab[]) => {
       setLocalStorageState('tabs', tabs);
@@ -635,6 +687,9 @@ function useLaboratoryState(props: {
     onCollectionCreate: (collection: LaboratoryCollection) => {
       addCollection(collection);
     },
+    onCollectionUpdate: (collection: LaboratoryCollection) => {
+      updateCollection(collection);
+    },
     onSettingsChange: (settings: LaboratorySettings | null) => {
       setLocalStorageState('settings', settings);
     },
@@ -648,6 +703,7 @@ function useLaboratoryState(props: {
       },
       collections: {
         create: data?.target?.viewerCanModifyLaboratory === true,
+        update: data?.target?.viewerCanModifyLaboratory === true,
         delete: data?.target?.viewerCanModifyLaboratory === true,
       },
       collectionsOperations: {

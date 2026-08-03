@@ -5,12 +5,12 @@ import {
   GraphQLSchema,
   Kind,
   parse,
-  printSchema,
   validateSchema,
 } from 'graphql';
 import { validateSDL } from 'graphql/validation/validate.js';
 import { stitchSchemas } from '@graphql-tools/stitch';
 import { stitchingDirectives } from '@graphql-tools/stitching-directives';
+import { printSchemaWithDirectives } from '@graphql-tools/utils';
 import { errorWithSource, toValidationError } from '../lib/errors';
 import { trimDescriptions } from '../lib/trim-descriptions';
 import type { ComposeAndValidateInput } from '../types';
@@ -68,10 +68,25 @@ export type ComposeStitchingArgs = {
 };
 
 export async function composeStitching(args: ComposeStitchingArgs) {
-  const parsed = args.schemas.map(s => parse(s.raw));
-  const errors: Array<CompositionErrorType> = parsed
-    .map(schema => validateStitchedSchema(schema))
-    .flat();
+  const errors: Array<CompositionErrorType> = [];
+  let subschemas: GraphQLSchema[] = [];
+  for (const schema of args.schemas) {
+    // parse inside a loop instead of using map to avoid holding on to the parsed schema
+    // in memory. This matters for large schemas.
+    const parsed = parse(schema.raw);
+    const stitchedErrors = validateStitchedSchema(parsed);
+    if (stitchedErrors.length) {
+      errors.push(...stitchedErrors);
+      subschemas = []; // no need to store subschemas if there are errors. It wont be used.
+    } else if (!errors.length) {
+      subschemas.push(
+        buildASTSchema(trimDescriptions(parsed), {
+          assumeValid: true,
+          assumeValidSDL: true,
+        }),
+      );
+    }
+  }
 
   let stitchedSchema: GraphQLSchema | null = null;
   let sdl: string | null = null;
@@ -79,14 +94,9 @@ export async function composeStitching(args: ComposeStitchingArgs) {
   if (errors.length === 0) {
     try {
       stitchedSchema = stitchSchemas({
-        subschemas: args.schemas.map(schema =>
-          buildASTSchema(trimDescriptions(parse(schema.raw)), {
-            assumeValid: true,
-            assumeValidSDL: true,
-          }),
-        ),
+        subschemas,
       });
-      sdl = printSchema(stitchedSchema);
+      sdl = printSchemaWithDirectives(stitchedSchema);
     } catch (error) {
       errors.push(toValidationError(error, 'composition'));
     }

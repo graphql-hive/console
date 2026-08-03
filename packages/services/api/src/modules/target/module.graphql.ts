@@ -55,6 +55,68 @@ export default gql`
     experimental__updateTargetSchemaComposition(
       input: Experimental__UpdateTargetSchemaCompositionInput!
     ): Target!
+
+    updateTargetFailingDangerousChanges(
+      input: UpdateTargetFailingDangerousChangesInput!
+    ): UpdateTargetFailingDangerousChangesResult!
+  }
+
+  type UpdateTargetFailingDangerousChangesResult {
+    ok: UpdateTargetFailingDangerousChangesOk
+    error: UpdateTargetFailingDangerousChangesError
+  }
+
+  type UpdateTargetFailingDangerousChangesError {
+    message: String!
+  }
+
+  """
+  If the option to consider dangerous changes failing is enabled, then
+  this contains granular configuration for which specific changes are
+  flagged as failing. The option to consider all types as failing is a
+  separate boolean because it allows saving the state of the granular
+  selection.
+  """
+  type UpdateTargetFailingDangerousChangesOk {
+    target: Target!
+  }
+
+  enum DangerousChangeType {
+    INPUT_FIELD_DEFAULT_VALUE_CHANGED
+    INPUT_FIELD_ADDED
+    OBJECT_TYPE_INTERFACE_ADDED
+    UNION_MEMBER_ADDED
+    FIELD_ARGUMENT_ADDED
+    FIELD_ARGUMENT_DEFAULT_CHANGED
+    ENUM_VALUE_ADDED
+    DIRECTIVE_USAGE_ARGUMENT_ADDED
+    DIRECTIVE_USAGE_ARGUMENT_DEFINITION_ADDED
+    DIRECTIVE_USAGE_ENUM_ADDED
+    DIRECTIVE_USAGE_FIELD_ADDED
+    DIRECTIVE_USAGE_FIELD_DEFINITION_ADDED
+    DIRECTIVE_USAGE_INPUT_FIELD_DEFINITION_ADDED
+    DIRECTIVE_USAGE_OBJECT_ADDED
+    DIRECTIVE_USAGE_SCALAR_ADDED
+    DIRECTIVE_USAGE_SCHEMA_ADDED
+    DIRECTIVE_USAGE_UNION_MEMBER_ADDED
+    DIRECTIVE_USAGE_ARGUMENT_REMOVED
+    DIRECTIVE_USAGE_ARGUMENT_DEFINITION_REMOVED
+    DIRECTIVE_USAGE_ENUM_REMOVED
+    DIRECTIVE_USAGE_FIELD_REMOVED
+    DIRECTIVE_USAGE_FIELD_DEFINITION_REMOVED
+    DIRECTIVE_USAGE_INPUT_FIELD_DEFINITION_REMOVED
+    DIRECTIVE_USAGE_OBJECT_REMOVED
+    DIRECTIVE_USAGE_SCALAR_REMOVED
+    DIRECTIVE_USAGE_SCHEMA_REMOVED
+    DIRECTIVE_USAGE_UNION_MEMBER_REMOVED
+    DIRECTIVE_ARGUMENT_DEFAULT_VALUE_CHANGED
+    DIRECTIVE_REPEATABLE_REMOVED
+  }
+
+  input UpdateTargetFailingDangerousChangesInput {
+    target: TargetReferenceInput!
+    all: Boolean!
+    failingTypes: [DangerousChangeType!]!
   }
 
   input Experimental__UpdateTargetSchemaCompositionInput {
@@ -286,6 +348,17 @@ export default gql`
     Whether a dangerous change fails a schema check and requires a manual approval.
     """
     failDiffOnDangerousChange: Boolean! @tag(name: "public")
+    """
+    If failDiffOnDangerousChange is enabled, then this determines if all dangerous changes are
+    considered failures, or if only the list provided by failDangerousChangeTypes will fail.
+    By default, this is true.
+    """
+    failAllDangerousChanges: Boolean!
+    """
+    IF failDiffOnDangerousChange is true and failAllDangerousChanges is false, then
+    this list determines which dangerous changes are considered failures.
+    """
+    failDangerousChangeTypes: [DangerousChangeType!]!
     """
     Configuration for conditional breaking change detection.
     """

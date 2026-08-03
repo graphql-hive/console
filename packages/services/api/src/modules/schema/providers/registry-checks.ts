@@ -3,6 +3,7 @@ import { type GraphQLSchema } from 'graphql';
 import { Injectable, Scope } from 'graphql-modules';
 import hashObject from 'object-hash';
 import { ChangeType, CriticalityLevel, DiffRule, TypeOfChangeType } from '@graphql-inspector/core';
+import type { DangerousChangeType } from '@hive/api/__generated__/types';
 import type { CheckPolicyResponse } from '@hive/policy';
 import type { CompositionFailureError, ContractsInputType } from '@hive/schema';
 import { traceFn } from '@hive/service-common';
@@ -225,7 +226,7 @@ export class RegistryChecks {
     );
 
     if (!args.existing) {
-      this.logger.debug('No exiting version');
+      this.logger.debug('No existing version');
       return 'initial' as const;
     }
 
@@ -400,7 +401,7 @@ export class RegistryChecks {
       this.logger.debug('Skip policy check due to no SDL being composed.');
       return {
         status: 'skipped',
-      };
+      } satisfies CheckResult;
     }
 
     const policyResult = await this.policy.checkPolicy(incomingSdl, modifiedSdl, selector);
@@ -506,7 +507,9 @@ export class RegistryChecks {
     approvedChanges: null | Map<string, SchemaChangeType>;
     /** Settings for fetching conditional breaking changes. */
     conditionalBreakingChangeConfig: null | ConditionalBreakingChangeDiffConfig;
-    failDiffOnDangerousChange: null | boolean;
+    failDiffOnDangerousChange: boolean;
+    failAllDangerousChanges: boolean;
+    failDangerousChangeTypes: DangerousChangeType[];
     /**
      * Set to true to reduce the number of changes to only what's relevant to the user.
      * Use false for schema proposals in order to capture every single change record for the patch function.
@@ -742,11 +745,18 @@ export class RegistryChecks {
 
     const coordinatesDiff = diffSchemaCoordinates(existingSchema, incomingSchema);
 
+    const isFailingDangerousChange = (change: { criticality: CriticalityLevel; type: string }) => {
+      return (
+        args.failDiffOnDangerousChange &&
+        change.criticality === CriticalityLevel.Dangerous &&
+        // if failAll is null or true, or if the list of failing change types includes this type...
+        (args.failAllDangerousChanges === true ||
+          (args.failDangerousChangeTypes as string[])?.includes(change.type))
+      );
+    };
+
     for (const change of inspectorChanges) {
-      if (
-        change.criticality === CriticalityLevel.Breaking ||
-        (args.failDiffOnDangerousChange && change.criticality === CriticalityLevel.Dangerous)
-      ) {
+      if (change.criticality === CriticalityLevel.Breaking || isFailingDangerousChange(change)) {
         if (change.isSafeBasedOnUsage === true) {
           breakingChanges.push(change);
           continue;

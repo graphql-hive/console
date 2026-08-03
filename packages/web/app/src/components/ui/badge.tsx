@@ -14,6 +14,7 @@ const badgeVariants = cva(
         success: 'bg-emerald-950 text-emerald-400 border-transparent',
         warning: 'bg-yellow-700 border-transparent',
         failure: 'bg-red-900 text-neutral-12 border-transparent',
+        informal: 'bg-blue-800 text-neutral-12 border-transparent',
       },
     },
     defaultVariants: {
@@ -40,6 +41,14 @@ const badgeRoundedVariants = cva(
         green: 'border-green-900 bg-green-500',
         gray: 'border-neutral-7 bg-neutral-11',
         orange: 'border-orange-900  bg-orange-500',
+        // Semantic severity / state variants — clean solid dots driven by
+        // `--critical` / `--warning` / `--info` / `--success` CSS vars.
+        // Override the base `border-[3px] p-[3px]` so `size-N` controls the
+        // rendered dot size literally.
+        critical: 'border-0 p-0 bg-critical',
+        warning: 'border-0 p-0 bg-warning',
+        info: 'border-0 p-0 bg-info',
+        successSemantic: 'border-0 p-0 bg-success',
       },
     },
     defaultVariants: {
@@ -51,7 +60,16 @@ const badgeRoundedVariants = cva(
 export interface BadgeRoundedProps
   extends React.HTMLAttributes<HTMLDivElement>,
     VariantProps<typeof badgeRoundedVariants> {
-  color: 'red' | 'yellow' | 'green' | 'gray' | 'orange';
+  color:
+    | 'red'
+    | 'yellow'
+    | 'green'
+    | 'gray'
+    | 'orange'
+    | 'critical'
+    | 'warning'
+    | 'info'
+    | 'successSemantic';
 }
 
 function BadgeRounded({ className, color, ...props }: BadgeRoundedProps) {

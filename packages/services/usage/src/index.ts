@@ -1,20 +1,21 @@
 #!/usr/bin/env node
 import 'reflect-metadata';
-import Redis from 'ioredis';
 import { PrometheusConfig } from '@hive/api/modules/shared/providers/prometheus-config';
 import { TargetsByIdCache } from '@hive/api/modules/target/providers/targets-by-id-cache';
 import { TargetsBySlugCache } from '@hive/api/modules/target/providers/targets-by-slug-cache';
+import { TargetTokenCache } from '@hive/api/modules/token/providers/target-token-cache';
+import { createConnectionStringProvider, createPostgresDatabasePool } from '@hive/postgres';
 import {
   configureTracing,
+  createRedisClient,
   createServer,
+  generateRdsIamAuthToken,
   registerShutdown,
   reportReadiness,
   sentryInit,
   startMetrics,
   TracingInstance,
 } from '@hive/service-common';
-import { createConnectionString } from '@hive/storage';
-import { getPool } from '@hive/storage/db/pool';
 import * as Sentry from '@sentry/node';
 import { createAuthN } from './authn';
 import { env } from './environment';
@@ -53,16 +54,6 @@ async function main() {
     });
   }
 
-  const redis = new Redis({
-    host: env.redis.host,
-    port: env.redis.port,
-    password: env.redis.password,
-    maxRetriesPerRequest: 20,
-    db: 0,
-    enableReadyCheck: false,
-    tls: env.redis.tlsEnabled ? {} : undefined,
-  });
-
   const server = await createServer({
     name: 'usage',
     sentryErrorHandler: true,
@@ -72,11 +63,29 @@ async function main() {
     },
   });
 
-  const pgPool = await getPool(
-    createConnectionString(env.postgres),
-    5,
-    tracing ? [tracing.instrumentSlonik()] : [],
-  );
+  const redis = await createRedisClient(env.redis, {
+    logger: server.log.child({ source: 'Redis' }),
+    maxRetriesPerRequest: 20,
+  });
+
+  const rdsIamTokenGenerator = env.postgres.awsIamAuthEnabled
+    ? () =>
+        generateRdsIamAuthToken(
+          {
+            region: env.postgres.awsRegion ?? '',
+            hostname: env.postgres.host,
+            port: env.postgres.port,
+            username: env.postgres.user,
+          },
+          server.log.child({ source: 'RdsIamAuthTokenGenerator' }),
+        )
+    : undefined;
+
+  const pgPool = await createPostgresDatabasePool({
+    connectionParameters: createConnectionStringProvider(env.postgres, rdsIamTokenGenerator),
+    maximumPoolSize: 5,
+    additionalInterceptors: tracing ? [tracing.instrumentSlonik()] : undefined,
+  });
 
   const authN = createAuthN({
     pgPool,
@@ -87,32 +96,13 @@ async function main() {
   const prometheusConfig = new PrometheusConfig(!!tracing);
   const targetsByIdCache = new TargetsByIdCache(redis, pgPool, prometheusConfig);
   const targetsBySlugCache = new TargetsBySlugCache(redis, pgPool, prometheusConfig);
+  const targetTokenCache = new TargetTokenCache(redis, pgPool, prometheusConfig);
 
   if (tracing) {
     await server.register(...tracing.instrumentFastify());
   }
 
   try {
-    redis.on('error', err => {
-      server.log.error(err, 'Redis connection error');
-    });
-
-    redis.on('connect', () => {
-      server.log.info('Redis connection established');
-    });
-
-    redis.on('ready', () => {
-      server.log.info('Redis connection ready... ');
-    });
-
-    redis.on('close', () => {
-      server.log.info('Redis connection closed');
-    });
-
-    redis.on('reconnecting', (timeToReconnect?: number) => {
-      server.log.info('Redis reconnecting in %s', timeToReconnect);
-    });
-
     redis.on('end', async () => {
       server.log.info('Redis ended - no more reconnections will be made');
       await shutdown();
@@ -143,7 +133,7 @@ async function main() {
     });
 
     const tokens = createTokens({
-      endpoint: env.hive.tokens.endpoint,
+      cache: targetTokenCache,
       logger: server.log,
     });
 
@@ -194,12 +184,17 @@ async function main() {
     });
 
     if (env.prometheus) {
-      await startMetrics(env.prometheus.labels.instance, env.prometheus.port);
+      await startMetrics(env.prometheus.labels.instance, {
+        port: env.prometheus.port,
+        host: env.http.host,
+        ipv6Only: env.http.ipv6Only,
+      });
     }
 
     await server.listen({
       port: env.http.port,
-      host: '::',
+      host: env.http.host,
+      ipv6Only: env.http.ipv6Only,
     });
     await usage.start();
   } catch (error) {

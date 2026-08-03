@@ -21,7 +21,9 @@ export const Project: Pick<
     return injector.get(OrganizationAccessTokens).getAvailablePermissionsGroupsForProject(project);
   },
   accessToken(project, args, { injector }) {
-    return injector.get(OrganizationAccessTokens).getForProject(project, args.id);
+    return injector.get(OrganizationAccessTokens).getForProject(project, args.id, {
+      includeExpired: true,
+    });
   },
   accessTokens(project, args, { injector }) {
     return injector.get(OrganizationAccessTokens).getPaginatedForProject(project, {

@@ -11,9 +11,14 @@ export const schemaDelete: NonNullable<MutationResolvers['schemaDelete']> = asyn
       dryRun: input.dryRun,
       serviceName: input.serviceName.toLowerCase(),
       target: input.target,
+      supportsRetry: input.supportsRetry,
     },
     request.signal,
   );
+
+  if (result.__typename === 'SchemaDeleteRetry') {
+    return result;
+  }
 
   return {
     ...result,

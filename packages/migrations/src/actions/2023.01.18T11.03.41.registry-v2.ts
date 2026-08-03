@@ -2,7 +2,7 @@ import { type MigrationExecutor } from '../pg-migrator';
 
 export default {
   name: '2023.01.18T11.03.41.registry-v2.sql',
-  run: ({ sql }) => sql`
+  run: ({ psql }) => psql`
 --
 CREATE INDEX
   IF NOT EXISTS version_commit_cid_vid_idx ON version_commit (commit_id, version_id);

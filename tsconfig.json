@@ -25,6 +25,8 @@
     "moduleResolution": "node",
     "strict": true,
     "paths": {
+      "@hive/clickhouse": ["./packages/internal/clickhouse/src/index.ts"],
+      "@hive/postgres": ["./packages/internal/postgres/src/index.ts"],
       "@hive/api": ["./packages/services/api/src/index.ts"],
       "@hive/api/*": ["./packages/services/api/src/*"],
       "@hive/service-common": ["./packages/services/service-common/src/index.ts"],
@@ -48,7 +50,6 @@
       "@hive/usage": ["./packages/services/usage/src/index.ts"],
       "@hive/usage-ingestor": ["./packages/services/usage-ingestor/src/index.ts"],
       "@hive/policy": ["./packages/services/policy/src/api.ts"],
-      "@hive/tokens": ["./packages/services/tokens/src/api.ts"],
       "@hive/commerce": ["./packages/services/commerce/src/api.ts"],
       "@hive/storage": ["./packages/services/storage/src/index.ts"],
       "@hive/storage/*": ["./packages/services/storage/src/*"],
@@ -57,6 +58,9 @@
       "@graphql-hive/envelop": ["./packages/libraries/envelop/src/index.ts"],
       "@graphql-hive/external-composition": [
         "./packages/libraries/external-composition/src/index.ts"
+      ],
+      "@graphql-hive/gateway-plugin-console-sdk": [
+        "./packages/libraries/gateway-plugin-console-sdk/src/index.ts"
       ],
       "@graphql-hive/core": ["./packages/libraries/core/src/index.ts"],
       "@graphql-hive/core/src/client/collect-schema-coordinates": [

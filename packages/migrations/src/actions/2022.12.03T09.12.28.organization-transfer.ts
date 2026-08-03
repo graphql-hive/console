@@ -2,7 +2,7 @@ import { type MigrationExecutor } from '../pg-migrator';
 
 export default {
   name: '2022.12.03T09.12.28.organization-transfer.sql',
-  run: ({ sql }) => sql`
+  run: ({ psql }) => psql`
 ALTER TABLE
   organizations
 ADD COLUMN

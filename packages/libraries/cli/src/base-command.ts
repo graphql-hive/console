@@ -121,7 +121,7 @@ export default abstract class BaseCommand<T extends typeof Command> extends Comm
   ensure<
     TKey extends ValidConfigurationKeys,
     TArgs extends {
-      [key in TKey]: GetConfigurationValueType<TKey>;
+      [_key in TKey]: GetConfigurationValueType<TKey>;
     },
   >({
     key,

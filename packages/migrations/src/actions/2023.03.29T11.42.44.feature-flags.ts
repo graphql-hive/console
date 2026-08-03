@@ -2,7 +2,7 @@ import { type MigrationExecutor } from '../pg-migrator';
 
 export default {
   name: '2023.03.29T11.42.44.feature-flags.sql',
-  run: ({ sql }) => sql`
+  run: ({ psql }) => psql`
 ALTER TABLE
   organizations
 ADD COLUMN

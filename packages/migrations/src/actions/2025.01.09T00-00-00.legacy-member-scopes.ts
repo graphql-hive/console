@@ -24,8 +24,8 @@ const QUERY_RESULT = z.array(
 export default {
   name: '2025.01.09T00-00-00.legacy-member-scopes.ts',
   noTransaction: true,
-  async run({ sql, connection }) {
-    const queryResult = await connection.query(sql`
+  async run({ psql, connection }) {
+    const queryResult = await connection.any(psql`
       SELECT
         organization_id as "organizationId",
         sorted_scopes as "sortedScopes",
@@ -49,7 +49,7 @@ export default {
       ORDER BY organization_id;
     `);
 
-    if (queryResult.rowCount === 0) {
+    if (queryResult.length === 0) {
       console.log('No members without role_id found.');
       return;
     }
@@ -57,7 +57,7 @@ export default {
     // rows are sorted by organization_id
     // and grouped by scopes
     // so we can process them in order
-    const rows = QUERY_RESULT.parse(queryResult.rows);
+    const rows = QUERY_RESULT.parse(queryResult);
 
     let counter = 1;
     let previousOrganizationId: string | null = null;
@@ -70,12 +70,12 @@ export default {
       }
 
       console.log(
-        `processing organization_id="${row.organizationId}" (${counter}) with ${row.userIds.length} users | ${index + 1}/${queryResult.rowCount}`,
+        `processing organization_id="${row.organizationId}" (${counter}) with ${row.userIds.length} users | ${index + 1}/${queryResult.length}`,
       );
 
       const startedAt = Date.now();
 
-      await connection.query(sql`
+      await connection.query(psql`
         WITH new_role AS (
           INSERT INTO organization_member_roles (
             organization_id, name, description, scopes
@@ -84,13 +84,13 @@ export default {
             ${row.organizationId},
             'Auto Role ' || substring(uuid_generate_v4()::text FROM 1 FOR 8),
             'Auto generated role to assign to members without a role',
-            ${sql.array(row.sortedScopes, 'text')}
+            ${psql.array(row.sortedScopes, 'text')}
           )
           RETURNING id
         )
         UPDATE organization_member
         SET role_id = (SELECT id FROM new_role)
-        WHERE organization_id = ${row.organizationId} AND user_id = ANY(${sql.array(row.userIds, 'uuid')})
+        WHERE organization_id = ${row.organizationId} AND user_id = ANY(${psql.array(row.userIds, 'uuid')})
       `);
 
       console.log(`finished after ${Date.now() - startedAt}ms`);

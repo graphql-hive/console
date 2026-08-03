@@ -52,7 +52,7 @@ export function PermissionDetailView(props: {
           {group.title}
           <span className="ml-auto mr-2">{totalAllowedCount} allowed</span>
         </Accordion.AccordionTrigger>
-        <Accordion.AccordionContent className="ml-1 flex max-w-[800px] flex-wrap items-start overflow-x-scroll">
+        <Accordion.AccordionContent className="flex max-w-[800px] flex-wrap items-start overflow-x-scroll pl-2">
           {group.resolvedPermissionGroups.map(group => (
             <div className="w-[50%] min-w-[400px] pb-4 pr-12" key={group.title}>
               <table key={group.title} className="w-full">
@@ -61,8 +61,8 @@ export function PermissionDetailView(props: {
                 </tr>
                 {group.permissions.map(permission => (
                   <tr key={permission.permission.id}>
-                    <td>{permission.permission.title}</td>
-                    <td className="ml-2 text-right">
+                    <td className="pl-2">{permission.permission.title}</td>
+                    <td className="ml-2 pb-1 text-right">
                       {permission.isGranted ? (
                         permission.permission.warning ? (
                           <Tooltip.TooltipProvider>
@@ -76,10 +76,14 @@ export function PermissionDetailView(props: {
                             </Tooltip.Tooltip>
                           </Tooltip.TooltipProvider>
                         ) : (
-                          <Badge variant="success">Allowed</Badge>
+                          <Badge className="w-[69px] justify-center" variant="success">
+                            Allowed
+                          </Badge>
                         )
                       ) : (
-                        <Badge variant="failure">Denied</Badge>
+                        <Badge className="w-[69px] justify-center" variant="failure">
+                          Denied
+                        </Badge>
                       )}
                     </td>
                   </tr>

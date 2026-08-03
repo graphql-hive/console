@@ -88,5 +88,24 @@ export function createEstimator(config: {
         timeout: 15_000,
       });
     },
+    async estimateCollectedOperationsForAllOrganizations(input: { month: number; year: number }) {
+      const startOfMonth = `${input.year}-${String(input.month).padStart(2, '0')}-01`;
+      const result = await clickhouse.query<{
+        total: string;
+        organization: string;
+      }>({
+        query: sql`
+          SELECT
+            sum(total) as total,
+            organization
+          FROM monthly_overview
+          PREWHERE date=${startOfMonth}
+          GROUP BY organization
+        `,
+        queryId: 'usage_estimator_count_operations',
+        timeout: 15_000,
+      });
+      return Object.fromEntries(result.data.map(item => [item.organization, parseInt(item.total)]));
+    },
   };
 }

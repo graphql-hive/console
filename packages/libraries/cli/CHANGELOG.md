@@ -1,5 +1,153 @@
 # @graphql-hive/cli
 
+## 0.61.2
+
+### Patch Changes
+
+- [#8291](https://github.com/graphql-hive/console/pull/8291)
+  [`ee8af3e`](https://github.com/graphql-hive/console/commit/ee8af3edcb06f4d59b742cf2c8f2f99167bb52a0)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Use npm trusted publishing.
+
+- Updated dependencies
+  [[`8270cac`](https://github.com/graphql-hive/console/commit/8270cac6516b20454914ee39d189e8c943487834),
+  [`ee8af3e`](https://github.com/graphql-hive/console/commit/ee8af3edcb06f4d59b742cf2c8f2f99167bb52a0)]:
+  - @graphql-hive/core@0.22.0
+
+## 0.61.1
+
+### Patch Changes
+
+- [#8275](https://github.com/graphql-hive/console/pull/8275)
+  [`e967f76`](https://github.com/graphql-hive/console/commit/e967f7681933b035c88ad9323dde17e9a372bd69)
+  Thanks [@jdolle](https://github.com/jdolle)! - Upgrade `@theguild/federation-composition` to
+  support oneOf directive in public sdl
+
+  https://github.com/graphql-hive/federation-composition/releases/tag/v0.23.3
+
+## 0.61.0
+
+### Minor Changes
+
+- [#8230](https://github.com/graphql-hive/console/pull/8230)
+  [`e7e26b6`](https://github.com/graphql-hive/console/commit/e7e26b6e6c2260cd60c09a56435742139ea73a77)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Support retries for deleting a schema in case the
+  registry is busy and locked.
+
+## 0.60.3
+
+### Patch Changes
+
+- [#8228](https://github.com/graphql-hive/console/pull/8228)
+  [`058c082`](https://github.com/graphql-hive/console/commit/058c08273c6aa24b0b0f3e7d4ff3d366869655e9)
+  Thanks [@jdolle](https://github.com/jdolle)! - Upgrade composition library to support oneOf
+  directive without requiring composeDirective, and to fix an edge case where an external field is
+  not flagged as external in the supergraph if another graph uses that field in the key
+
+## 0.60.2
+
+### Patch Changes
+
+- [#8171](https://github.com/graphql-hive/console/pull/8171)
+  [`277ce5c`](https://github.com/graphql-hive/console/commit/277ce5ced5c9c17769b43755ec12d27eb8550435)
+  Thanks [@jdolle](https://github.com/jdolle)! - Print schema delete changes and errors. Do not
+  require confirm on dry run deletes.
+
+## 0.60.1
+
+### Patch Changes
+
+- [#8117](https://github.com/graphql-hive/console/pull/8117)
+  [`e71896b`](https://github.com/graphql-hive/console/commit/e71896b13c744fd32a872cb74b9a95ff113cebbc)
+  Thanks [@enisdenjo](https://github.com/enisdenjo)! - Add `--publish` flag to `app:create` command
+  to publish the app deployment immediately after creation
+
+  Now `app:create` can immediately publish the created app deployment without needing to run
+  `app:publish` separately.
+
+  For example:
+
+  ```bash
+  hive app:create --name my-app --version 1.0.0 --publish ./operations.json
+  ```
+
+- [#8117](https://github.com/graphql-hive/console/pull/8117)
+  [`e71896b`](https://github.com/graphql-hive/console/commit/e71896b13c744fd32a872cb74b9a95ff113cebbc)
+  Thanks [@enisdenjo](https://github.com/enisdenjo)! - Make `--version` flag optional in
+  `app:create` command
+
+  When `--version` is not provided, a random 7-character alphanumeric version is generated and used
+  for creating the app deployment.
+
+  For example:
+
+  ```bash
+  hive app:create --name my-app ./operations.json
+  ```
+
+- [#8117](https://github.com/graphql-hive/console/pull/8117)
+  [`e71896b`](https://github.com/graphql-hive/console/commit/e71896b13c744fd32a872cb74b9a95ff113cebbc)
+  Thanks [@enisdenjo](https://github.com/enisdenjo)! - The `app:create` command now accepts a
+  directory or a glob pattern in addition to a persisted operations JSON manifest
+
+  When a directory or glob is provided, `app:create` scans for `*.graphql` files, normalizes each
+  operation by collapsing whitespace, computes a SHA-256 hash per operation, and uses the resulting
+  manifest directly without writing an intermediate file.
+
+  ```bash
+  # from a directory
+  hive app:create --name my-app --version 1.0.0 ./src/operations
+  
+  # from a glob pattern
+  hive app:create --name my-app --version 1.0.0 "./src/**/*.graphql"
+  
+  # from an existing manifest (unchanged behavior)
+  hive app:create --name my-app --version 1.0.0 persisted-operations.json
+  ```
+
+- Updated dependencies
+  [[`63a9126`](https://github.com/graphql-hive/console/commit/63a912691f0c7e5afdd2cc864de53df289592b54)]:
+  - @graphql-hive/core@0.21.1
+
+## 0.60.0
+
+### Minor Changes
+
+- [#8031](https://github.com/graphql-hive/console/pull/8031)
+  [`51345a9`](https://github.com/graphql-hive/console/commit/51345a9c7487a7949a10b07d178836b02c7de197)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Add support for promoting schema versions via the
+  new `hive schema:promote` command.
+
+### Patch Changes
+
+- [#8064](https://github.com/graphql-hive/console/pull/8064)
+  [`2b2339d`](https://github.com/graphql-hive/console/commit/2b2339d45f4ad5ffc111fd711a2904fcfb4bd64d)
+  Thanks [@jdolle](https://github.com/jdolle)! - Extend Hive CLI timeout for schema:check from 20s
+  to 55s to better align with the server's timeout
+
+## 0.59.2
+
+### Patch Changes
+
+- [#8035](https://github.com/graphql-hive/console/pull/8035)
+  [`0cd6cc5`](https://github.com/graphql-hive/console/commit/0cd6cc5606e8cf3c952583feec956c8f024ee615)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Address vulnerability
+  [GHSA-rpmf-866q-6p89](https://github.com/advisories/GHSA-rpmf-866q-6p89)
+
+## 0.59.1
+
+### Patch Changes
+
+- [#8018](https://github.com/graphql-hive/console/pull/8018)
+  [`083a4a7`](https://github.com/graphql-hive/console/commit/083a4a7d9f17b5cc86483c5ce274ec0496bcfdc1)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Correct fallback behavior for subgraph
+  introspection. If subgraph introspection using graphql's standard introspection query fails, then
+  it will fall back to Federation's Query.\_service query.
+
+- [#8014](https://github.com/graphql-hive/console/pull/8014)
+  [`32cdd14`](https://github.com/graphql-hive/console/commit/32cdd1474e510af21d5aa94029c3ad813e5baafd)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Show correct error code (116) with origin service
+  for failed introspection result.
+
 ## 0.59.0
 
 ### Minor Changes

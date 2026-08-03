@@ -1,5 +1,13 @@
 /* eslint-disable @typescript-eslint/no-non-null-asserted-optional-chain */
-import { ProjectType, SavedFilterVisibilityType } from 'testkit/gql/graphql';
+import {
+  AlertChannelType,
+  MetricAlertRuleDirection,
+  MetricAlertRuleSeverity,
+  MetricAlertRuleThresholdType,
+  MetricAlertRuleType,
+  ProjectType,
+  SavedFilterVisibilityType,
+} from 'testkit/gql/graphql';
 import { initSeed } from '../../../testkit/seed';
 
 describe('Saved Filters', () => {
@@ -529,6 +537,130 @@ describe('Saved Filters', () => {
         const fetched = await getSavedFilter({ filterId: createResult.ok?.savedFilter.id! });
         expect(fetched?.filters.excludeOperations).toBe(false);
         expect(fetched?.filters.excludeClientFilters).toBe(false);
+      },
+    );
+  });
+
+  describe('Alert usage', () => {
+    test.concurrent('exposes usedByAlertRulesCount on a saved filter', async ({ expect }) => {
+      const { createOrg } = await initSeed().createOwner();
+      const { createProject, organization, setFeatureFlag } = await createOrg();
+      await setFeatureFlag('metricAlertRules', true);
+      const {
+        project,
+        target,
+        addAlertChannel,
+        createSavedFilter,
+        getSavedFilter,
+        addMetricAlertRule,
+      } = await createProject(ProjectType.Single);
+
+      const organizationSlug = organization.slug;
+      const projectSlug = project.slug;
+      const targetSlug = target.slug;
+
+      const channel = await addAlertChannel({
+        name: 'wh',
+        organizationSlug,
+        projectSlug,
+        type: AlertChannelType.Webhook,
+        webhook: { endpoint: 'http://localhost:9876/webhook' },
+      });
+      const channelId = channel.ok!.addedAlertChannel.id;
+
+      const created = await createSavedFilter({
+        name: 'shared-filter',
+        visibility: SavedFilterVisibilityType.Shared,
+        insightsFilter: { operationHashes: ['op1'], clientFilters: [] },
+      });
+      const filterId = created.ok!.savedFilter.id;
+
+      // no alerts reference it yet
+      const before = await getSavedFilter({ filterId });
+      expect(before?.usedByAlertRulesCount).toBe(0);
+
+      await addMetricAlertRule({
+        target: { bySelector: { organizationSlug, projectSlug, targetSlug } },
+        name: 'rule',
+        type: MetricAlertRuleType.Traffic,
+        timeWindowMinutes: 30,
+        thresholdType: MetricAlertRuleThresholdType.FixedValue,
+        thresholdValue: 100,
+        direction: MetricAlertRuleDirection.Above,
+        severity: MetricAlertRuleSeverity.Warning,
+        channelIds: [channelId],
+        savedFilterId: filterId,
+      });
+
+      const after = await getSavedFilter({ filterId });
+      expect(after?.usedByAlertRulesCount).toBe(1);
+    });
+
+    test.concurrent(
+      'blocks deleting a saved filter that an alert depends on, until detached',
+      async ({ expect }) => {
+        const { createOrg } = await initSeed().createOwner();
+        const { createProject, organization, setFeatureFlag } = await createOrg();
+        await setFeatureFlag('metricAlertRules', true);
+        const {
+          project,
+          target,
+          addAlertChannel,
+          createSavedFilter,
+          deleteSavedFilter,
+          addMetricAlertRule,
+          deleteMetricAlertRules,
+        } = await createProject(ProjectType.Single);
+
+        const organizationSlug = organization.slug;
+        const projectSlug = project.slug;
+        const targetSlug = target.slug;
+
+        const channel = await addAlertChannel({
+          name: 'wh',
+          organizationSlug,
+          projectSlug,
+          type: AlertChannelType.Webhook,
+          webhook: { endpoint: 'http://localhost:9876/webhook' },
+        });
+        const channelId = channel.ok!.addedAlertChannel.id;
+
+        const created = await createSavedFilter({
+          name: 'shared-filter',
+          visibility: SavedFilterVisibilityType.Shared,
+          insightsFilter: { operationHashes: ['op1'], clientFilters: [] },
+        });
+        const filterId = created.ok!.savedFilter.id;
+
+        const rule = await addMetricAlertRule({
+          target: { bySelector: { organizationSlug, projectSlug, targetSlug } },
+          name: 'rule',
+          type: MetricAlertRuleType.Traffic,
+          timeWindowMinutes: 30,
+          thresholdType: MetricAlertRuleThresholdType.FixedValue,
+          thresholdValue: 100,
+          direction: MetricAlertRuleDirection.Above,
+          severity: MetricAlertRuleSeverity.Warning,
+          channelIds: [channelId],
+          savedFilterId: filterId,
+        });
+        expect(rule.ok).toBeTruthy();
+
+        // in use -> deletion is blocked with a friendly message
+        const blocked = await deleteSavedFilter({ filterId });
+        expect(blocked.ok).toBeFalsy();
+        expect(blocked.error?.message).toBe(
+          'This filter is used by 1 alert rule. Detach it from those alerts first.',
+        );
+
+        // detach (delete the rule) -> deletion now succeeds
+        await deleteMetricAlertRules({
+          project: { bySelector: { organizationSlug, projectSlug } },
+          ruleIds: [rule.ok!.addedMetricAlertRule.id],
+        });
+        const unblocked = await deleteSavedFilter({ filterId });
+        expect(unblocked.error).toBeNull();
+        expect(unblocked.ok).toBeTruthy();
       },
     );
   });

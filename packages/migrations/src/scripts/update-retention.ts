@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 import { got, HTTPError } from 'got';
-import { createPool, sql } from 'slonik';
 import { z } from 'zod';
-import { createConnectionString } from '../connection-string';
+import { createConnectionStringProvider, createPostgresDatabasePool, psql } from '@hive/postgres';
+import { generateRdsIamAuthToken } from '@hive/service-common';
 import { env } from '../environment';
 
 interface QueryResponse<T> {
@@ -136,6 +136,7 @@ function createClickHouseHelpers(endpoint: string, username: string, password: s
         body: queryString,
         searchParams: {
           default_format: 'JSON',
+          output_format_json_quote_64bit_integers: '1',
           wait_end_of_query: '1',
           ...settings,
         },
@@ -159,6 +160,7 @@ function createClickHouseHelpers(endpoint: string, username: string, password: s
         body: queryString,
         searchParams: {
           default_format: 'JSON',
+          output_format_json_quote_64bit_integers: '1',
           wait_end_of_query: '1',
         },
         headers: {
@@ -183,17 +185,36 @@ function createClickHouseHelpers(endpoint: string, username: string, password: s
 }
 
 async function updatePostgreSQLRetention(retention: RetentionValue) {
-  const pool = await createPool(createConnectionString(env.postgres), {
+  const rdsIamTokenGenerator = env.postgres.awsIamAuthEnabled
+    ? () =>
+        generateRdsIamAuthToken(
+          {
+            region: env.postgres.awsRegion ?? '',
+            hostname: env.postgres.host,
+            port: env.postgres.port,
+            username: env.postgres.user,
+          },
+          console,
+        )
+    : undefined;
+
+  const connectionStringProvider = createConnectionStringProvider(
+    env.postgres,
+    rdsIamTokenGenerator,
+  );
+
+  const pool = await createPostgresDatabasePool({
+    connectionParameters: connectionStringProvider,
     statementTimeout: 10 * 60 * 1000, // 10 minute timeout
   });
 
   try {
-    const result = await pool.query(sql`
+    const result = await pool.any(psql`
       UPDATE organizations
       SET limit_retention_days = ${retention.days}
     `);
 
-    const updatedCount = result.rowCount;
+    const updatedCount = result.length;
     console.log(
       `Updated ${updatedCount} organization(s) (limit_retention_days: ${retention.days})`,
     );

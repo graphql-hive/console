@@ -30,6 +30,36 @@
   --color-neutral-11: hsl(var(--neutral-11));
   --color-neutral-12: hsl(var(--neutral-12));
 
+  --color-accent: hsl(var(--accent));
+  --color-accent_80: hsl(var(--accent) / 0.8);
+  --color-accent_30: hsl(var(--accent) / 0.3);
+  --color-accent_10: hsl(var(--accent) / 0.1);
+  --color-accent_08: hsl(var(--accent) / 0.08);
+
+  --color-success: hsl(var(--success));
+  --color-success_80: hsla(var(--success) / 0.8);
+  --color-success_30: hsla(var(--success) / 0.3);
+  --color-success_10: hsla(var(--success) / 0.1);
+  --color-success_08: hsla(var(--success) / 0.08);
+
+  --color-info: hsl(var(--info));
+  --color-info_80: hsla(var(--info) / 0.8);
+  --color-info_30: hsla(var(--info) / 0.3);
+  --color-info_10: hsla(var(--info) / 0.1);
+  --color-info_08: hsla(var(--info) / 0.08);
+
+  --color-warning: hsl(var(--warning));
+  --color-warning_80: hsla(var(--warning) / 0.8);
+  --color-warning_30: hsla(var(--warning) / 0.3);
+  --color-warning_10: hsla(var(--warning) / 0.1);
+  --color-warning_08: hsla(var(--warning) / 0.08);
+
+  --color-critical: hsl(var(--critical));
+  --color-critical_80: hsla(var(--critical) / 0.8);
+  --color-critical_30: hsla(var(--critical) / 0.3);
+  --color-critical_10: hsla(var(--critical) / 0.1);
+  --color-critical_08: hsla(var(--critical) / 0.08);
+
   --color-red-50: #fef5f5;
   --color-red-100: #fdeaeb;
   --color-red-200: #fbcbce;
@@ -194,12 +224,6 @@
   --color-teal-900: #134e4a;
   --color-teal-950: #042f2e;
 
-  --color-accent: hsl(var(--accent));
-  --color-accent_80: hsl(var(--accent) / 0.8);
-  --color-accent_30: hsl(var(--accent) / 0.3);
-  --color-accent_10: hsl(var(--accent) / 0.1);
-  --color-accent_08: hsl(var(--accent) / 0.08);
-
   --color-ring: hsl(var(--ring));
 
   /* Border Radius */
@@ -257,6 +281,11 @@
 
     --accent: 206 96% 35%;
 
+    --success: 130 50% 46%;
+    --info: 206 96% 35%;
+    --warning: 40 88% 41%;
+    --critical: 0 69% 46%;
+
     --chart-1: 45 93% 47%;
     --chart-2: 0 86% 60%;
     --chart-3: 160 82% 39%;
@@ -283,6 +312,11 @@
     --neutral-12: 204 14% 93%;
 
     --accent: 48 100% 83%;
+
+    --success: 129 69% 65%;
+    --info: 203 100% 87%;
+    --warning: 40 96% 61%;
+    --critical: 0 69% 68%;
 
     --chart-1: 45 93% 52%;
     --chart-2: 0 86% 65%;

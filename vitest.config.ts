@@ -11,6 +11,7 @@ export default defineConfig({
     globals: true,
     exclude: [
       ...defaultExclude,
+      'e2e',
       'integration-tests',
       'packages/migrations/test',
       'docker/.hive-dev',

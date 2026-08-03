@@ -17,8 +17,8 @@ export const usageEstimatorRouter = router({
       const now = new Date();
       const rangeValidation = z
         .number()
-        .min(now.getFullYear() - 1)
-        .max(new Date(now.setMonth(now.getMonth() + 1)).getFullYear());
+        .min(now.getUTCFullYear() - 1)
+        .max(new Date(now.setUTCMonth(now.getUTCMonth() + 1)).getUTCFullYear());
       const year = rangeValidation.parse(input.year);
 
       const estimationResponse =
@@ -51,6 +51,28 @@ export const usageEstimatorRouter = router({
       return await ctx.usageEstimator.estimateOperationsForAllTargets({
         startTime: new Date(input.startTime),
         endTime: new Date(input.endTime),
+      });
+    }),
+  estimateCollectedOperationsForAllOrganizations: publicProcedure
+    .input(
+      z
+        .object({
+          month: z.number().min(1).max(12),
+          year: z.any(),
+        })
+        .required(),
+    )
+    .query(async ({ ctx, input }) => {
+      const now = new Date();
+      const rangeValidation = z
+        .number()
+        .min(now.getUTCFullYear() - 1)
+        .max(new Date(now.setUTCMonth(now.getUTCMonth() + 1)).getUTCFullYear());
+      const year = rangeValidation.parse(input.year);
+
+      return await ctx.usageEstimator.estimateCollectedOperationsForAllOrganizations({
+        month: input.month,
+        year,
       });
     }),
 });

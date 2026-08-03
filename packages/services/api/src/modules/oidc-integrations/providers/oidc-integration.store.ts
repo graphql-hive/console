@@ -1,16 +1,15 @@
 import { Inject, Injectable, Scope } from 'graphql-modules';
-import { sql, type DatabasePool } from 'slonik';
 import { z } from 'zod';
+import { CommonQueryMethods, PostgresDatabasePool, psql } from '@hive/postgres';
 import { sha256 } from '../../auth/lib/supertokens-at-home/crypto';
 import { Logger } from '../../shared/providers/logger';
-import { PG_POOL_CONFIG } from '../../shared/providers/pg-pool';
 import { REDIS_INSTANCE, type Redis } from '../../shared/providers/redis';
 
 const SharedOIDCIntegrationDomainFieldsModel = z.object({
   id: z.string().uuid(),
   organizationId: z.string().uuid(),
   oidcIntegrationId: z.string().uuid(),
-  domainName: z.string(),
+  domainName: z.string().transform(name => name.toLowerCase()),
   createdAt: z.string(),
 });
 
@@ -29,7 +28,7 @@ const OIDCIntegrationDomainModel = z.union([
 
 export type OIDCIntegrationDomain = z.TypeOf<typeof OIDCIntegrationDomainModel>;
 
-const oidcIntegrationDomainsFields = sql`
+const oidcIntegrationDomainsFields = psql`
   "id"
   , "organization_id" AS "organizationId"
   , "oidc_integration_id" AS "oidcIntegrationId"
@@ -42,13 +41,13 @@ const OIDCIntegrationDomainListModel = z.array(OIDCIntegrationDomainModel);
 
 @Injectable({
   global: true,
-  scope: Scope.Operation,
+  scope: Scope.Singleton,
 })
 export class OIDCIntegrationStore {
   private logger: Logger;
 
   constructor(
-    @Inject(PG_POOL_CONFIG) private pool: DatabasePool,
+    private pool: PostgresDatabasePool,
     @Inject(REDIS_INSTANCE) private redis: Redis,
     logger: Logger,
   ) {
@@ -61,7 +60,7 @@ export class OIDCIntegrationStore {
       oidcIntegrationId,
     );
 
-    const query = sql`
+    const query = psql`
       SELECT
         ${oidcIntegrationDomainsFields}
       FROM
@@ -79,7 +78,7 @@ export class OIDCIntegrationStore {
       oidcIntegrationId,
     );
 
-    const query = sql`
+    const query = psql`
       INSERT INTO "oidc_integration_domains" (
         "organization_id"
         , "oidc_integration_id"
@@ -87,7 +86,7 @@ export class OIDCIntegrationStore {
       ) VALUES (
         ${organizationId}
         , ${oidcIntegrationId}
-        , ${domainName}
+        , ${domainName.toLowerCase()}
       )
       ON CONFLICT ("oidc_integration_id", "domain_name")
         DO NOTHING
@@ -101,7 +100,7 @@ export class OIDCIntegrationStore {
   async deleteDomain(domainId: string) {
     this.logger.debug('delete domain on oidc integration. (oidcIntegrationId=%s)', domainId);
 
-    const query = sql`
+    const query = psql`
       DELETE
       FROM
         "oidc_integration_domains"
@@ -113,7 +112,7 @@ export class OIDCIntegrationStore {
   }
 
   async findDomainById(domainId: string) {
-    const query = sql`
+    const query = psql`
       SELECT
         ${oidcIntegrationDomainsFields}
       FROM
@@ -126,35 +125,36 @@ export class OIDCIntegrationStore {
   }
 
   async findVerifiedDomainByName(domainName: string) {
-    const query = sql`
+    const query = psql`
       SELECT
         ${oidcIntegrationDomainsFields}
       FROM
         "oidc_integration_domains"
       WHERE
-        "domain_name" = ${domainName}
+        "domain_name" = ${domainName.toLowerCase()}
         AND "verified_at" IS NOT NULL
     `;
 
-    return this.pool.maybeOne(query).then(OIDCIntegrationDomainModel.nullable().parse);
+    return this.pool.maybeOne(query).then(ValidatedOIDCIntegrationDomainModel.nullable().parse);
   }
 
   async findVerifiedDomainByOIDCIntegrationIdAndDomainName(
     oidcIntegrationId: string,
     domainName: string,
+    trx: CommonQueryMethods = this.pool,
   ) {
-    const query = sql`
+    const query = psql`
       SELECT
         ${oidcIntegrationDomainsFields}
       FROM
         "oidc_integration_domains"
       WHERE
         "oidc_integration_id" = ${oidcIntegrationId}
-        AND "domain_name" = ${domainName}
+        AND "domain_name" = ${domainName.toLowerCase()}
         AND "verified_at" IS NOT NULL
     `;
 
-    return this.pool.maybeOne(query).then(ValidatedOIDCIntegrationDomainModel.nullable().parse);
+    return trx.maybeOne(query).then(ValidatedOIDCIntegrationDomainModel.nullable().parse);
   }
 
   async updateDomainVerifiedAt(domainId: string) {
@@ -165,7 +165,7 @@ export class OIDCIntegrationStore {
 
     // The NOT EXISTS statement is to avoid verifying the domain twice for two different otganizations
     // only one org can own a domain
-    const query = sql`
+    const query = psql`
       UPDATE
         "oidc_integration_domains"
       SET

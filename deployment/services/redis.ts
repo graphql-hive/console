@@ -21,7 +21,10 @@ export function deployRedis(input: { environment: Environment }) {
   }).deploy({
     limits: {
       memory: input.environment.podsConfig.redis.memoryLimit,
-      cpu: input.environment.podsConfig.redis.cpuLimit,
+      cpu: input.environment.podsConfig.redis.cpuMax,
+    },
+    requests: {
+      cpu: input.environment.podsConfig.redis.cpuMin,
     },
   });
 

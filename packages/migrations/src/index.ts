@@ -1,13 +1,27 @@
 #!/usr/bin/env node
-import { createPool } from 'slonik';
+import { createConnectionStringProvider, createPostgresDatabasePool } from '@hive/postgres';
+import { generateRdsIamAuthToken } from '@hive/service-common';
 import { schemaCoordinateStatusMigration } from './actions/2024.07.23T09.36.00.schema-cleanup-tracker';
 import { migrateClickHouse } from './clickhouse';
-import { createConnectionString } from './connection-string';
 import { env } from './environment';
 import { runPGMigrations } from './run-pg-migrations';
 import { updateRetention } from './scripts/update-retention';
 
-const slonik = await createPool(createConnectionString(env.postgres), {
+const rdsIamTokenGenerator = env.postgres.awsIamAuthEnabled
+  ? () =>
+      generateRdsIamAuthToken(
+        {
+          region: env.postgres.awsRegion ?? '',
+          hostname: env.postgres.host,
+          port: env.postgres.port,
+          username: env.postgres.user,
+        },
+        console,
+      )
+  : undefined;
+
+const slonik = await createPostgresDatabasePool({
+  connectionParameters: createConnectionStringProvider(env.postgres, rdsIamTokenGenerator),
   // 10 minute timeout per statement
   statementTimeout: 10 * 60 * 1000,
 });
@@ -15,7 +29,7 @@ const slonik = await createPool(createConnectionString(env.postgres), {
 // This is used by production build of this package.
 // We are building a "cli" out of the package, so we need a workaround to pass the command to run.
 
-// This is only used for GraphQL Hive Cloud to perform a long running migration.
+// This is only used for Hive Console Cloud to perform a long running migration.
 // eslint-disable-next-line no-process-env
 if (process.env.SCHEMA_COORDINATE_STATUS_MIGRATION === '1') {
   try {

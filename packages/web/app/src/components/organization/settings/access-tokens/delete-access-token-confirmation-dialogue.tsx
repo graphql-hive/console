@@ -40,7 +40,8 @@ export function DeleteAccessTokenConfirmationDialogue(
             Do you want to delete this access token?
           </AlertDialog.AlertDialogTitle>
           <AlertDialog.AlertDialogDescription>
-            If you cancel now, any draft information will be lost.
+            Deleting will invalidate the access token within 5 minutes. Once deleted, this token
+            cannot be recovered.
           </AlertDialog.AlertDialogDescription>
         </AlertDialog.AlertDialogHeader>
         <AlertDialog.AlertDialogFooter>
@@ -77,7 +78,6 @@ export function DeleteAccessTokenConfirmationDialogue(
                   toast({
                     variant: 'default',
                     title: 'Access Token deleted.',
-                    description: 'It can take up to 5 minutes for changes to propagate.',
                   });
                   props.onConfirm();
                 }

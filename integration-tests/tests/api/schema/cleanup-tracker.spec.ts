@@ -1,21 +1,28 @@
 import 'reflect-metadata';
-import { sql, type CommonQueryMethods } from 'slonik';
 /* eslint-disable no-process-env */
 import { ProjectType } from 'testkit/gql/graphql';
 import { test } from 'vitest';
+import z from 'zod';
+import { psql, type CommonQueryMethods } from '@hive/postgres';
 import { initSeed } from '../../../testkit/seed';
 
 async function fetchCoordinates(db: CommonQueryMethods, target: { id: string }) {
-  const result = await db.query<{
-    coordinate: string;
-    created_in_version_id: string;
-    deprecated_in_version_id: string | null;
-  }>(sql`
+  const result = await db
+    .any(
+      psql`
     SELECT coordinate, created_in_version_id, deprecated_in_version_id
     FROM schema_coordinate_status WHERE target_id = ${target.id}
-  `);
+  `,
+    )
+    .then(
+      z.object({
+        coordinate: z.string(),
+        created_in_version_id: z.string(),
+        deprecated_in_version_id: z.string().nullable(),
+      }).parse,
+    );
 
-  return result.rows;
+  return result;
 }
 
 describe.skip('schema cleanup tracker', () => {

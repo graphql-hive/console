@@ -1,10 +1,12 @@
 import 'reflect-metadata';
-import { createPool, sql } from 'slonik';
 import { graphql } from 'testkit/gql';
 /* eslint-disable no-process-env */
 import { ProjectType } from 'testkit/gql/graphql';
 import { execute } from 'testkit/graphql';
 import { assertNonNull, getServiceHost } from 'testkit/utils';
+import z from 'zod';
+import { SchemaVersionStore } from '@hive/api/modules/schema/providers/schema-version-store';
+import { createPostgresDatabasePool, psql } from '@hive/postgres';
 // eslint-disable-next-line import/no-extraneous-dependencies
 import { createStorage } from '@hive/storage';
 import { createTarget, publishSchema, updateSchemaComposition } from '../../../testkit/flow';
@@ -626,16 +628,12 @@ describe('schema publishing changes are persisted', () => {
         return;
       }
 
-      const latestVersion = await storage.getMaybeLatestVersion({
-        targetId: target.id,
-        projectId: project.id,
-        organizationId: organization.id,
-      });
+      const schemaVersions = new SchemaVersionStore(storage.pool);
+
+      const latestVersion = await schemaVersions.getMaybeLatestSchemaVersionForTargetId(target.id);
       assertNonNull(latestVersion);
 
-      const changes = await storage.getSchemaChangesForVersion({
-        versionId: latestVersion.id,
-      });
+      const changes = await schemaVersions.getSchemaSchangesForSchemaVersion(latestVersion);
 
       if (!Array.isArray(changes)) {
         throw new Error('Expected changes to be an array');
@@ -3195,20 +3193,24 @@ const SchemaCompareToPreviousVersionQuery = graphql(`
         id
         sdl
         supergraph
-        log {
-          ... on PushedSchemaLog {
-            id
-            author
-            service
-            commit
-            serviceSdl
-            previousServiceSdl
+        origin {
+          ... on SchemaVersionPublishOrigin {
+            publishedSubgraphs {
+              name
+            }
           }
-          ... on DeletedSchemaLog {
-            id
-            deletedService
-            previousServiceSdl
+          ... on SchemaVersionSubgraphRemoveOrigin {
+            removedSubgraphs {
+              name
+            }
           }
+          ... on SchemaVersionPromoteOrigin {
+            schemaVersionId
+          }
+        }
+        meta {
+          author
+          commit
         }
         schemaCompositionErrors {
           nodes {
@@ -3262,6 +3264,7 @@ const SchemaCompareToPreviousVersionQuery = graphql(`
 
 test('Target.schemaVersion: result is read from the database', async () => {
   const storage = await createStorage(connectionString(), 1);
+  const schemaVersions = new SchemaVersionStore(storage.pool);
 
   try {
     const serviceName = {
@@ -3304,11 +3307,7 @@ test('Target.schemaVersion: result is read from the database', async () => {
       return;
     }
 
-    const latestVersion = await storage.getMaybeLatestVersion({
-      targetId: target.id,
-      projectId: project.id,
-      organizationId: organization.id,
-    });
+    const latestVersion = await schemaVersions.getMaybeLatestSchemaVersionForTargetId(target.id);
     assertNonNull(latestVersion);
 
     const result = await execute({
@@ -3345,6 +3344,7 @@ test('Target.schemaVersion: result is read from the database', async () => {
 
 test('Composition Error (Federation 2) can be served from the database', async () => {
   const storage = await createStorage(connectionString(), 1);
+  const schemaVersions = new SchemaVersionStore(storage.pool);
   const serviceAddress = await getServiceHost('composition_federation_2', 3069, false);
 
   try {
@@ -3443,11 +3443,7 @@ test('Composition Error (Federation 2) can be served from the database', async (
       return;
     }
 
-    const latestVersion = await storage.getMaybeLatestVersion({
-      targetId: target.id,
-      projectId: project.id,
-      organizationId: organization.id,
-    });
+    const latestVersion = await schemaVersions.getMaybeLatestSchemaVersionForTargetId(target.id);
     assertNonNull(latestVersion);
 
     const result = await execute({
@@ -3475,6 +3471,7 @@ test('Composition Error (Federation 2) can be served from the database', async (
 
 test('Composition Network Failure (Federation 2)', async () => {
   const storage = await createStorage(connectionString(), 1);
+  const schemaVersions = new SchemaVersionStore(storage.pool);
   const serviceAddress = await getServiceHost('composition_federation_2', 3069, false);
 
   try {
@@ -3609,11 +3606,7 @@ test('Composition Network Failure (Federation 2)', async () => {
       return;
     }
 
-    const latestVersion = await storage.getMaybeLatestVersion({
-      targetId: target.id,
-      projectId: project.id,
-      organizationId: organization.id,
-    });
+    const latestVersion = await schemaVersions.getMaybeLatestSchemaVersionForTargetId(target.id);
     assertNonNull(latestVersion);
 
     const result = await execute({
@@ -3820,7 +3813,7 @@ test.concurrent(
 );
 
 const insertLegacyVersion = async (
-  pool: Awaited<ReturnType<typeof createPool>>,
+  pool: Awaited<ReturnType<typeof createPostgresDatabasePool>>,
   args: {
     sdl: string;
     projectId: string;
@@ -3828,7 +3821,9 @@ const insertLegacyVersion = async (
     serviceUrl: string;
   },
 ) => {
-  const logId = await pool.oneFirst<string>(sql`
+  const logId = await pool
+    .oneFirst(
+      psql`
         INSERT INTO schema_log
           (
             author,
@@ -3854,9 +3849,13 @@ const insertLegacyVersion = async (
             'PUSH'
           )
         RETURNING id
-      `);
+      `,
+    )
+    .then(z.string().parse);
 
-  const versionId = await pool.oneFirst<string>(sql`
+  const versionId = await pool
+    .oneFirst(
+      psql`
         INSERT INTO schema_versions
           (
             is_composable,
@@ -3870,9 +3869,11 @@ const insertLegacyVersion = async (
             ${logId}
           )
         RETURNING "id"
-      `);
+      `,
+    )
+    .then(z.string().parse);
 
-  await pool.query(sql`
+  await pool.query(psql`
         INSERT INTO
           schema_version_to_log
           (version_id, action_id)
@@ -3886,7 +3887,7 @@ const insertLegacyVersion = async (
 test.concurrent(
   'service url change from legacy to new version is displayed correctly',
   async ({ expect }) => {
-    let pool: Awaited<ReturnType<typeof createPool>> | undefined;
+    let pool: Awaited<ReturnType<typeof createPostgresDatabasePool>> | undefined;
     try {
       const { createOrg } = await initSeed().createOwner();
       const { createProject } = await createOrg();
@@ -3899,7 +3900,9 @@ test.concurrent(
       // We need to seed a legacy entry in the database
 
       const conn = connectionString();
-      pool = await createPool(conn);
+      pool = await createPostgresDatabasePool({
+        connectionParameters: conn,
+      });
 
       const sdl = 'type Query { ping: String! }';
 
@@ -3950,7 +3953,7 @@ test.concurrent(
 test.concurrent(
   'service url change from legacy to legacy version is displayed correctly',
   async ({ expect }) => {
-    let pool: Awaited<ReturnType<typeof createPool>> | undefined;
+    let pool: Awaited<ReturnType<typeof createPostgresDatabasePool>> | undefined;
     try {
       const { createOrg } = await initSeed().createOwner();
       const { createProject } = await createOrg();
@@ -3963,7 +3966,7 @@ test.concurrent(
       // We need to seed a legacy entry in the database
 
       const conn = connectionString();
-      pool = await createPool(conn);
+      pool = await createPostgresDatabasePool({ connectionParameters: conn });
 
       const sdl = 'type Query { ping: String! }';
 
@@ -4532,7 +4535,8 @@ test.concurrent(
 
     const conn = connectionString();
     const storage = await createStorage(conn, 2);
-    await storage.createVersion({
+    const schemaVersions = new SchemaVersionStore(storage.pool);
+    await schemaVersions.createPublishSchemaVersion({
       schema: brokenSdl,
       author: 'Jochen',
       async actionFn() {},
@@ -4542,13 +4546,11 @@ test.concurrent(
       compositeSchemaSDL: null,
       conditionalBreakingChangeMetadata: null,
       contracts: null,
-      coordinatesDiff: null,
       diffSchemaVersionId: null,
       github: null,
       metadata: null,
-      logIds: [],
+      existingSchemaLogs: [],
       projectId: project.id,
-      service: null,
       organizationId: organization.id,
       previousSchemaVersion: null,
       valid: true,
@@ -4556,9 +4558,12 @@ test.concurrent(
       supergraphSDL: null,
       tags: null,
       targetId: target.id,
-      url: null,
+      service: null,
       schemaMetadata: null,
       metadataAttributes: null,
+      previousSchemaLogId: null,
+      serviceChanges: null,
+      supergraphChanges: null,
     });
     await storage.destroy();
 

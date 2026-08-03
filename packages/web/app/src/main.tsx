@@ -22,9 +22,12 @@ clearChunkReloadFlag();
 // a chunk or its CSS/JS dependencies fail to load. We catch it here and reload
 // the page so the browser fetches fresh HTML with the correct chunk references.
 // See: https://vite.dev/guide/build.html#load-error-handling
-window.addEventListener('vite:preloadError', event => {
-  // Prevent the error from propagating — we're handling it with a reload.
-  event.preventDefault();
+window.addEventListener('vite:preloadError', () => {
+  // Don't call preventDefault() — that flips Vite into a silent branch where
+  // the failed import resolves to `undefined`, causing downstream destructures
+  // (e.g. lazy() callers) to throw a cryptic TypeError before the reload runs.
+  // Letting the error propagate routes it through the unhandledrejection and
+  // error-boundary handlers below, which also reload on isChunkLoadError.
   reloadOnChunkError();
 });
 

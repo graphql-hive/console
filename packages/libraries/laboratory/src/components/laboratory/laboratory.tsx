@@ -1,4 +1,12 @@
-import { ReactNode, useCallback, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import {
+  ReactNode,
+  useCallback,
+  useInsertionEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import { createPortal } from 'react-dom';
 import laboratoryStyles from '../../index.css?inline';
 import { FileIcon, FoldersIcon, HistoryIcon, SettingsIcon } from 'lucide-react';
@@ -6,9 +14,11 @@ import monacoStyles from 'monaco-editor/min/vs/editor/editor.main.css?inline';
 import * as z from 'zod';
 import { useForm } from '@tanstack/react-form';
 import { useCollections } from '../../lib/collections';
+import { ensureDocumentFontFaces } from '../../lib/document-styles';
 import { useEndpoint } from '../../lib/endpoint';
 import { useEnv } from '../../lib/env';
 import { useHistory } from '../../lib/history';
+import { keepEditorMouseMovesInShadowRoot } from '../../lib/monaco-shadow-dom';
 import { useOperations } from '../../lib/operations';
 import { LaboratoryPluginTab, usePlugins } from '../../lib/plugins';
 import { usePreflight } from '../../lib/preflight';
@@ -75,6 +85,14 @@ const ShadowRootContainer = (props: { children: ReactNode }) => {
     }
 
     setShadowRoot(hostRef.current.attachShadow({ mode: 'open' }));
+  }, [shadowRoot]);
+
+  useLayoutEffect(() => {
+    if (!shadowRoot) {
+      return;
+    }
+
+    return keepEditorMouseMovesInShadowRoot(shadowRoot);
   }, [shadowRoot]);
 
   useLayoutEffect(() => {
@@ -344,7 +362,7 @@ const LaboratoryContent = () => {
         </Tooltip>
         <div
           className={cn(
-            'relative z-10 mt-auto flex aspect-square h-12 w-full items-center justify-center border-l-2 border-transparent',
+            'z-100 relative mt-auto flex aspect-square h-12 w-full items-center justify-center border-l-2 border-transparent',
             {
               'border-primary': activePanel === 'settings',
             },
@@ -352,7 +370,7 @@ const LaboratoryContent = () => {
         >
           <Tooltip>
             <DropdownMenu>
-              <DropdownMenuTrigger>
+              <DropdownMenuTrigger asChild>
                 <TooltipTrigger asChild>
                   <Button
                     variant="ghost"
@@ -433,7 +451,7 @@ const LaboratoryContent = () => {
           <div className="w-full">
             <Tabs />
           </div>
-          <div className="bg-card flex-1 overflow-hidden">{contentNode}</div>
+          <div className="bg-card relative flex-1 overflow-hidden">{contentNode}</div>
         </ResizablePanel>
       </ResizablePanelGroup>
     </div>
@@ -486,6 +504,7 @@ export const Laboratory = (
       | 'onPluginsStateChange'
       | 'theme'
       | 'defaultSchemaIntrospection'
+      | 'enableFullScreen'
     >
   >,
 ) => {
@@ -514,12 +533,10 @@ export const Laboratory = (
   const pluginsApi = usePlugins(props);
   const testsApi = useTests(props);
   const tabsApi = useTabs(props);
-  const endpointApi = useEndpoint(props);
   const collectionsApi = useCollections({
     ...props,
     tabsApi,
   });
-
   const operationsApi = useOperations({
     ...props,
     collectionsApi,
@@ -529,6 +546,14 @@ export const Laboratory = (
     settingsApi,
     pluginsApi,
     checkPermissions,
+  });
+  const endpointApi = useEndpoint({
+    ...props,
+    settingsApi,
+    operationsApi,
+    envApi,
+    pluginsApi,
+    preflightApi,
   });
 
   const historyApi = useHistory(props);
@@ -623,7 +648,7 @@ export const Laboratory = (
     [],
   );
 
-  const containerRef = useRef<HTMLDivElement>(null);
+  const [container, setContainer] = useState<HTMLDivElement | null>(null);
 
   const [isFullScreen, setIsFullScreen] = useState(false);
 
@@ -635,6 +660,10 @@ export const Laboratory = (
     setIsFullScreen(false);
   }, []);
 
+  useInsertionEffect(() => {
+    ensureDocumentFontFaces(monacoStyles);
+  }, []);
+
   return (
     <ShadowRootContainer>
       <style>{`${laboratoryStyles}\n${monacoStyles}`}</style>
@@ -642,160 +671,9 @@ export const Laboratory = (
         className={cn('hive-laboratory bg-background size-full', props.theme, {
           'fixed inset-0 z-50': isFullScreen,
         })}
-        ref={containerRef}
+        ref={setContainer}
       >
         <Toaster richColors closeButton position="top-right" theme={props.theme} />
-        <Dialog open={isUpdateEndpointDialogOpen} onOpenChange={setIsUpdateEndpointDialogOpen}>
-          <DialogContent className="sm:max-w-[425px]">
-            <DialogHeader>
-              <DialogTitle>Update endpoint</DialogTitle>
-              <DialogDescription>Update the endpoint of your laboratory.</DialogDescription>
-            </DialogHeader>
-            <div className="grid gap-4">
-              <form
-                id="update-endpoint-form"
-                onSubmit={e => {
-                  e.preventDefault();
-                  void updateEndpointForm.handleSubmit();
-                }}
-              >
-                <FieldGroup>
-                  <updateEndpointForm.Field name="endpoint">
-                    {field => {
-                      const isInvalid = field.state.meta.isTouched && !field.state.meta.isValid;
-
-                      return (
-                        <Input
-                          id={field.name}
-                          name={field.name}
-                          value={field.state.value}
-                          onBlur={field.handleBlur}
-                          onChange={e => field.handleChange(e.target.value)}
-                          aria-invalid={isInvalid}
-                          placeholder="Enter endpoint"
-                          autoComplete="off"
-                        />
-                      );
-                    }}
-                  </updateEndpointForm.Field>
-                </FieldGroup>
-              </form>
-            </div>
-            <DialogFooter>
-              <DialogClose asChild>
-                <Button variant="outline">Cancel</Button>
-              </DialogClose>
-              <Button type="submit" form="update-endpoint-form">
-                Update endpoint
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
-        <PreflightPromptModal
-          open={isPreflightPromptModalOpen}
-          onOpenChange={setIsPreflightPromptModalOpen}
-          {...preflightPromptModalProps}
-        />
-        <Dialog open={isAddCollectionDialogOpen} onOpenChange={setIsAddCollectionDialogOpen}>
-          <DialogContent className="sm:max-w-[425px]">
-            <DialogHeader>
-              <DialogTitle>Add collection</DialogTitle>
-              <DialogDescription>
-                Add a new collection of operations to your laboratory.
-              </DialogDescription>
-            </DialogHeader>
-            <div className="grid gap-4">
-              <form
-                id="add-collection-form"
-                onSubmit={e => {
-                  e.preventDefault();
-                  void addCollectionForm.handleSubmit();
-                }}
-              >
-                <FieldGroup>
-                  <addCollectionForm.Field name="name">
-                    {field => {
-                      const isInvalid = field.state.meta.isTouched && !field.state.meta.isValid;
-                      return (
-                        <Field data-invalid={isInvalid}>
-                          <FieldLabel htmlFor={field.name}>Name</FieldLabel>
-                          <Input
-                            id={field.name}
-                            name={field.name}
-                            value={field.state.value}
-                            onBlur={field.handleBlur}
-                            onChange={e => field.handleChange(e.target.value)}
-                            aria-invalid={isInvalid}
-                            placeholder="Enter name of the collection"
-                            autoComplete="off"
-                          />
-                          {isInvalid && <FieldError errors={field.state.meta.errors} />}
-                        </Field>
-                      );
-                    }}
-                  </addCollectionForm.Field>
-                </FieldGroup>
-              </form>
-            </div>
-            <DialogFooter>
-              <DialogClose asChild>
-                <Button variant="outline">Cancel</Button>
-              </DialogClose>
-              <Button type="submit" form="add-collection-form">
-                Add collection
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
-        <Dialog open={isAddTestDialogOpen} onOpenChange={setIsAddTestDialogOpen}>
-          <DialogContent className="sm:max-w-[425px]">
-            <DialogHeader>
-              <DialogTitle>Add test</DialogTitle>
-              <DialogDescription>Add a new test to your laboratory.</DialogDescription>
-            </DialogHeader>
-            <div className="grid gap-4">
-              <form
-                id="add-test-form"
-                onSubmit={e => {
-                  e.preventDefault();
-                  void addTestForm.handleSubmit();
-                }}
-              >
-                <FieldGroup>
-                  <addTestForm.Field name="name">
-                    {field => {
-                      const isInvalid = field.state.meta.isTouched && !field.state.meta.isValid;
-                      return (
-                        <Field data-invalid={isInvalid}>
-                          <FieldLabel htmlFor={field.name}>Name</FieldLabel>
-                          <Input
-                            id={field.name}
-                            name={field.name}
-                            value={field.state.value}
-                            onBlur={field.handleBlur}
-                            onChange={e => field.handleChange(e.target.value)}
-                            aria-invalid={isInvalid}
-                            placeholder="Enter name of the test"
-                            autoComplete="off"
-                          />
-                          {isInvalid && <FieldError errors={field.state.meta.errors} />}
-                        </Field>
-                      );
-                    }}
-                  </addTestForm.Field>
-                </FieldGroup>
-              </form>
-            </div>
-            <DialogFooter>
-              <DialogClose asChild>
-                <Button variant="outline">Cancel</Button>
-              </DialogClose>
-              <Button type="submit" form="add-test-form">
-                Add test
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
 
         <LaboratoryProvider
           {...props}
@@ -809,7 +687,7 @@ export const Laboratory = (
           {...collectionsApi}
           {...operationsApi}
           {...historyApi}
-          container={containerRef.current}
+          container={container}
           openAddCollectionDialog={openAddCollectionDialog}
           openUpdateEndpointDialog={openUpdateEndpointDialog}
           openAddTestDialog={openAddTestDialog}
@@ -817,8 +695,160 @@ export const Laboratory = (
           goToFullScreen={goToFullScreen}
           exitFullScreen={exitFullScreen}
           isFullScreen={isFullScreen}
+          enableFullScreen={props.enableFullScreen !== false}
           checkPermissions={checkPermissions}
         >
+          <Dialog open={isUpdateEndpointDialogOpen} onOpenChange={setIsUpdateEndpointDialogOpen}>
+            <DialogContent className="sm:max-w-[425px]">
+              <DialogHeader>
+                <DialogTitle>Update endpoint</DialogTitle>
+                <DialogDescription>Update the endpoint of your laboratory.</DialogDescription>
+              </DialogHeader>
+              <div className="grid gap-4">
+                <form
+                  id="update-endpoint-form"
+                  onSubmit={e => {
+                    e.preventDefault();
+                    void updateEndpointForm.handleSubmit();
+                  }}
+                >
+                  <FieldGroup>
+                    <updateEndpointForm.Field name="endpoint">
+                      {field => {
+                        const isInvalid = field.state.meta.isTouched && !field.state.meta.isValid;
+
+                        return (
+                          <Input
+                            id={field.name}
+                            name={field.name}
+                            value={field.state.value}
+                            onBlur={field.handleBlur}
+                            onChange={e => field.handleChange(e.target.value)}
+                            aria-invalid={isInvalid}
+                            placeholder="Enter endpoint"
+                            autoComplete="off"
+                          />
+                        );
+                      }}
+                    </updateEndpointForm.Field>
+                  </FieldGroup>
+                </form>
+              </div>
+              <DialogFooter>
+                <DialogClose asChild>
+                  <Button variant="outline">Cancel</Button>
+                </DialogClose>
+                <Button type="submit" form="update-endpoint-form">
+                  Update endpoint
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+          <PreflightPromptModal
+            open={isPreflightPromptModalOpen}
+            onOpenChange={setIsPreflightPromptModalOpen}
+            {...preflightPromptModalProps}
+          />
+          <Dialog open={isAddCollectionDialogOpen} onOpenChange={setIsAddCollectionDialogOpen}>
+            <DialogContent className="sm:max-w-[425px]">
+              <DialogHeader>
+                <DialogTitle>Add collection</DialogTitle>
+                <DialogDescription>
+                  Add a new collection of operations to your laboratory.
+                </DialogDescription>
+              </DialogHeader>
+              <div className="grid gap-4">
+                <form
+                  id="add-collection-form"
+                  onSubmit={e => {
+                    e.preventDefault();
+                    void addCollectionForm.handleSubmit();
+                  }}
+                >
+                  <FieldGroup>
+                    <addCollectionForm.Field name="name">
+                      {field => {
+                        const isInvalid = field.state.meta.isTouched && !field.state.meta.isValid;
+                        return (
+                          <Field data-invalid={isInvalid}>
+                            <FieldLabel htmlFor={field.name}>Name</FieldLabel>
+                            <Input
+                              id={field.name}
+                              name={field.name}
+                              value={field.state.value}
+                              onBlur={field.handleBlur}
+                              onChange={e => field.handleChange(e.target.value)}
+                              aria-invalid={isInvalid}
+                              placeholder="Enter name of the collection"
+                              autoComplete="off"
+                            />
+                            {isInvalid && <FieldError errors={field.state.meta.errors} />}
+                          </Field>
+                        );
+                      }}
+                    </addCollectionForm.Field>
+                  </FieldGroup>
+                </form>
+              </div>
+              <DialogFooter>
+                <DialogClose asChild>
+                  <Button variant="outline">Cancel</Button>
+                </DialogClose>
+                <Button type="submit" form="add-collection-form">
+                  Add collection
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+          <Dialog open={isAddTestDialogOpen} onOpenChange={setIsAddTestDialogOpen}>
+            <DialogContent className="sm:max-w-[425px]">
+              <DialogHeader>
+                <DialogTitle>Add test</DialogTitle>
+                <DialogDescription>Add a new test to your laboratory.</DialogDescription>
+              </DialogHeader>
+              <div className="grid gap-4">
+                <form
+                  id="add-test-form"
+                  onSubmit={e => {
+                    e.preventDefault();
+                    void addTestForm.handleSubmit();
+                  }}
+                >
+                  <FieldGroup>
+                    <addTestForm.Field name="name">
+                      {field => {
+                        const isInvalid = field.state.meta.isTouched && !field.state.meta.isValid;
+                        return (
+                          <Field data-invalid={isInvalid}>
+                            <FieldLabel htmlFor={field.name}>Name</FieldLabel>
+                            <Input
+                              id={field.name}
+                              name={field.name}
+                              value={field.state.value}
+                              onBlur={field.handleBlur}
+                              onChange={e => field.handleChange(e.target.value)}
+                              aria-invalid={isInvalid}
+                              placeholder="Enter name of the test"
+                              autoComplete="off"
+                            />
+                            {isInvalid && <FieldError errors={field.state.meta.errors} />}
+                          </Field>
+                        );
+                      }}
+                    </addTestForm.Field>
+                  </FieldGroup>
+                </form>
+              </div>
+              <DialogFooter>
+                <DialogClose asChild>
+                  <Button variant="outline">Cancel</Button>
+                </DialogClose>
+                <Button type="submit" form="add-test-form">
+                  Add test
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
           <LaboratoryContent />
         </LaboratoryProvider>
       </div>

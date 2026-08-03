@@ -31,7 +31,7 @@ export function healQuery(query: string) {
   return query.replace(/\{(\s+)?\}/g, '');
 }
 
-export function isPathInQuery(query: string, path: string, operationName?: string) {
+export function isPathInQuery(query: string, path: string, operationName?: string | null) {
   if (!query || !path) {
     return false;
   }
@@ -98,7 +98,7 @@ export function isPathInQuery(query: string, path: string, operationName?: strin
   return found;
 }
 
-export function addPathToQuery(query: string, path: string, operationName?: string) {
+export function addPathToQuery(query: string, path: string, operationName?: string | null) {
   query = healQuery(query);
 
   const [operation, ...parts] = path.split('.') as [OperationTypeNode, ...string[]];
@@ -244,7 +244,7 @@ export function addPathToQuery(query: string, path: string, operationName?: stri
   return print(doc);
 }
 
-export function deletePathFromQuery(query: string, path: string, operationName?: string) {
+export function deletePathFromQuery(query: string, path: string, operationName?: string | null) {
   query = healQuery(query);
 
   const [operation, ...segments] = path.split('.') as [OperationTypeNode, ...string[]];
@@ -348,8 +348,6 @@ export async function getOperationHash(
   operation: Pick<LaboratoryOperation, 'query' | 'variables'>,
 ) {
   try {
-    console.log(operation.query, operation.variables);
-
     const canonicalQuery = print(parse(operation.query));
     const canonicalVariables = '';
     const canonical = `${canonicalQuery}\n${canonicalVariables}`;
@@ -393,7 +391,12 @@ export function getOperationType(query: string) {
   }
 }
 
-export function isArgInQuery(query: string, path: string, argName: string, operationName?: string) {
+export function isArgInQuery(
+  query: string,
+  path: string,
+  argName: string,
+  operationName?: string | null,
+) {
   if (!query || !path) {
     return false;
   }
@@ -527,7 +530,7 @@ export function addArgToField(
   path: string,
   argName: string,
   schema: GraphQLSchema,
-  operationName?: string,
+  operationName?: string | null,
 ) {
   query = healQuery(query);
 
@@ -784,7 +787,7 @@ export function removeArgFromField(
   query: string,
   path: string,
   argName: string,
-  operationName?: string,
+  operationName?: string | null,
 ) {
   query = healQuery(query);
 
@@ -912,6 +915,38 @@ export function extractPaths(query: string): string[][] {
 
 export function getOpenPaths(query: string): string[] {
   return extractPaths(query).map(v => v.join('.'));
+}
+
+/**
+ * Folds the paths a document implies into the paths the builder already has open.
+ *
+ * Every edit rewrites the document, including a checkbox toggle, so replacing the
+ * open paths outright would throw away whatever the user expanded by hand. Paths the
+ * previous document contributed and this one does not are collapsed; the rest stay.
+ * Returns `current` untouched when nothing moved, so callers can skip a re-render.
+ */
+export function mergeOpenPaths(
+  current: string[],
+  previousDocumentPaths: string[],
+  documentPaths: string[],
+): string[] {
+  const next = new Set(current);
+
+  for (const path of previousDocumentPaths) {
+    if (!documentPaths.includes(path)) {
+      next.delete(path);
+    }
+  }
+
+  for (const path of documentPaths) {
+    next.add(path);
+  }
+
+  if (next.size === current.length && current.every(path => next.has(path))) {
+    return current;
+  }
+
+  return [...next];
 }
 
 type SearchableFieldType = GraphQLObjectType | GraphQLInterfaceType;

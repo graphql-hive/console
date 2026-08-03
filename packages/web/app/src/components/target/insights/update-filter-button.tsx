@@ -1,8 +1,8 @@
 import { useCallback, useMemo, useState } from 'react';
 import { useMutation } from 'urql';
-import type { SavedFilterView } from '@/components/base/insights-filters';
-import { Popover } from '@/components/base/popover/popover';
-import { TriggerButton } from '@/components/base/trigger-button';
+import { Button as BaseButton } from '@/components/base/button/button';
+import { Popover } from '@/components/base/floating/popover/popover';
+import type { SavedFilterView } from '@/components/target/insights/use-insights-filter-extra-sections';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/ui/use-toast';
 import { graphql } from '@/gql';
@@ -113,7 +113,7 @@ export function UpdateFilterButton({
       align="start"
       title="Update saved filter"
       description={`This will overwrite the current configuration of "${activeView.name}" with your current filter selections.`}
-      trigger={<TriggerButton label={`Update "${activeView.name}"`} variant="muted-action" />}
+      trigger={<BaseButton label={`Update "${activeView.name}"`} variant="muted-action" />}
       content={
         <div className="flex gap-2">
           <Button

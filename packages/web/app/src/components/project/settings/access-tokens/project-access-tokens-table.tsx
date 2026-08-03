@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { EllipsisIcon, LoaderCircleIcon } from 'lucide-react';
 import { useClient } from 'urql';
 import { DeleteAccessTokenConfirmationDialogue } from '@/components/organization/settings/access-tokens/delete-access-token-confirmation-dialogue';
+import { TokenExpiration } from '@/components/organization/settings/access-tokens/token-expiration';
 import { Button } from '@/components/ui/button';
 import * as DropDownMenu from '@/components/ui/dropdown-menu';
 import * as Table from '@/components/ui/table';
@@ -20,6 +21,7 @@ const ProjectAccessTokensTable_ProjectAccessTokenConnectionFragment = graphql(`
         title
         firstCharacters
         createdAt
+        expiresAt
       }
     }
     pageInfo {
@@ -110,7 +112,8 @@ export function ProjectAccessTokensTable(props: ProjectAccessTokensTable) {
         <Table.TableRow>
           <Table.TableHead>Title</Table.TableHead>
           <Table.TableHead className="w-[100px]">Private Key</Table.TableHead>
-          <Table.TableHead className="text-right">Created At</Table.TableHead>
+          <Table.TableHead className="text-center">Created At</Table.TableHead>
+          <Table.TableHead className="text-center">Expiration</Table.TableHead>
           <Table.TableHead className="text-right" />
         </Table.TableRow>
       </Table.TableHeader>
@@ -121,8 +124,11 @@ export function ProjectAccessTokensTable(props: ProjectAccessTokensTable) {
             <Table.TableCell className="font-mono">
               {edge.node.firstCharacters + privateKeyFiller}
             </Table.TableCell>
-            <Table.TableCell className="text-right">
+            <Table.TableCell className="text-center">
               created <TimeAgo date={edge.node.createdAt} />
+            </Table.TableCell>
+            <Table.TableCell className="text-center">
+              <TokenExpiration expiresAt={edge.node.expiresAt ?? null} />
             </Table.TableCell>
             <Table.TableCell className="text-right align-middle">
               <DropDownMenu.DropdownMenu>

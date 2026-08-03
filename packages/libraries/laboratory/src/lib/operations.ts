@@ -1,8 +1,17 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import type { GraphQLSchema } from 'graphql';
-import { createClient } from 'graphql-ws';
+import {
+  DocumentNode,
+  ExecutionResult,
+  getOperationAST,
+  GraphQLError,
+  Kind,
+  parse,
+  type GraphQLSchema,
+} from 'graphql';
 import { decompressFromEncodedURIComponent } from 'lz-string';
 import { v4 as uuidv4 } from 'uuid';
+import { isAsyncIterable } from '@/lib/utils';
+import { SubscriptionProtocol, UrlLoader } from '@graphql-tools/url-loader';
 import { LaboratoryPermission, LaboratoryPermissions } from '../components/laboratory/context';
 import type {
   LaboratoryCollectionOperation,
@@ -22,6 +31,14 @@ import { LaboratoryPlugin, LaboratoryPluginsActions, LaboratoryPluginsState } fr
 import type { LaboratoryPreflightActions, LaboratoryPreflightState } from './preflight';
 import type { LaboratorySettingsActions, LaboratorySettingsState } from './settings';
 import type { LaboratoryTabOperation, LaboratoryTabsActions, LaboratoryTabsState } from './tabs';
+
+function getOperationType(query: string): 'query' | 'mutation' | 'subscription' | null {
+  try {
+    return getOperationAST(parse(query))?.operation ?? null;
+  } catch {
+    return null;
+  }
+}
 
 export interface LaboratoryOperation {
   id: string;
@@ -45,18 +62,28 @@ export interface LaboratoryOperationsActions {
   setOperations: (operations: LaboratoryOperation[]) => void;
   updateActiveOperation: (operation: Partial<Omit<LaboratoryOperation, 'id'>>) => void;
   deleteOperation: (operationId: string) => void;
-  addPathToActiveOperation: (path: string) => void;
-  deletePathFromActiveOperation: (path: string) => void;
-  addArgToActiveOperation: (path: string, argName: string, schema: GraphQLSchema) => void;
-  deleteArgFromActiveOperation: (path: string, argName: string) => void;
+  addPathToActiveOperation: (path: string, operationName?: string | null) => void;
+  deletePathFromActiveOperation: (path: string, operationName?: string | null) => void;
+  addArgToActiveOperation: (
+    path: string,
+    argName: string,
+    schema: GraphQLSchema,
+    operationName?: string | null,
+  ) => void;
+  deleteArgFromActiveOperation: (
+    path: string,
+    argName: string,
+    operationName?: string | null,
+  ) => void;
   runActiveOperation: (
     endpoint: string,
     options?: {
       env?: LaboratoryEnv;
       headers?: Record<string, string>;
+      operationName?: string;
       onResponse?: (response: string) => void;
     },
-  ) => Promise<Response | null>;
+  ) => Promise<ExecutionResult | null>;
   stopActiveOperation: (() => void) | null;
   isActiveOperationLoading: boolean;
   isOperationLoading: (operationId: string) => boolean;
@@ -69,6 +96,27 @@ export interface LaboratoryOperationsCallbacks {
   onOperationUpdate?: (operation: LaboratoryOperation) => void;
   onOperationDelete?: (operation: LaboratoryOperation) => void;
 }
+
+const getOperationWithFragments = (
+  document: DocumentNode,
+  operationName?: string,
+): DocumentNode => {
+  const definitions = document.definitions.filter(definition => {
+    if (
+      definition.kind === Kind.OPERATION_DEFINITION &&
+      operationName &&
+      definition.name?.value !== operationName
+    ) {
+      return false;
+    }
+    return true;
+  });
+
+  return {
+    kind: Kind.DOCUMENT,
+    definitions,
+  };
+};
 
 export const useOperations = (
   props: {
@@ -243,13 +291,13 @@ export const useOperations = (
   );
 
   const addPathToActiveOperation = useCallback(
-    (path: string) => {
+    (path: string, operationName?: string | null) => {
       if (!activeOperation) {
         return;
       }
       const newActiveOperation = {
         ...activeOperation,
-        query: addPathToQuery(activeOperation.query, path),
+        query: addPathToQuery(activeOperation.query, path, operationName),
       };
       updateActiveOperation(newActiveOperation);
     },
@@ -257,14 +305,14 @@ export const useOperations = (
   );
 
   const deletePathFromActiveOperation = useCallback(
-    (path: string) => {
+    (path: string, operationName?: string | null) => {
       if (!activeOperation?.query) {
         return;
       }
 
       const newActiveOperation = {
         ...activeOperation,
-        query: deletePathFromQuery(activeOperation.query, path),
+        query: deletePathFromQuery(activeOperation.query, path, operationName),
       };
       updateActiveOperation(newActiveOperation);
     },
@@ -272,14 +320,14 @@ export const useOperations = (
   );
 
   const addArgToActiveOperation = useCallback(
-    (path: string, argName: string, schema: GraphQLSchema) => {
+    (path: string, argName: string, schema: GraphQLSchema, operationName?: string | null) => {
       if (!activeOperation?.query) {
         return;
       }
 
       const newActiveOperation = {
         ...activeOperation,
-        query: addArgToField(activeOperation.query, path, argName, schema),
+        query: addArgToField(activeOperation.query, path, argName, schema, operationName),
       };
       updateActiveOperation(newActiveOperation);
     },
@@ -287,14 +335,14 @@ export const useOperations = (
   );
 
   const deleteArgFromActiveOperation = useCallback(
-    (path: string, argName: string) => {
+    (path: string, argName: string, operationName?: string | null) => {
       if (!activeOperation?.query) {
         return;
       }
 
       const newActiveOperation = {
         ...activeOperation,
-        query: removeArgFromField(activeOperation.query, path, argName),
+        query: removeArgFromField(activeOperation.query, path, argName, operationName),
       };
       updateActiveOperation(newActiveOperation);
     },
@@ -316,6 +364,8 @@ export const useOperations = (
     return activeOperation ? isOperationLoading(activeOperation.id) : false;
   }, [activeOperation, isOperationLoading]);
 
+  const loader = useMemo(() => new UrlLoader(), []);
+
   const runActiveOperation = useCallback(
     async (
       endpoint: string,
@@ -323,10 +373,11 @@ export const useOperations = (
         env?: LaboratoryEnv;
         headers?: Record<string, string>;
         onResponse?: (response: string) => void;
+        operationName?: string;
       },
       plugins: LaboratoryPlugin[] = props.pluginsApi?.plugins ?? [],
       pluginsState: Record<string, any> = props.pluginsApi?.pluginsState ?? {},
-    ) => {
+    ): Promise<ExecutionResult | null> => {
       if (!activeOperation?.query) {
         return null;
       }
@@ -382,100 +433,94 @@ export const useOperations = (
           )
         : {};
 
-      if (activeOperation.query.startsWith('subscription')) {
-        const client = createClient({
-          url: endpoint.replace('http', 'ws'),
-          connectionParams: {
-            ...mergedHeaders,
+      const executor = loader.getExecutorAsync(endpoint, {
+        subscriptionsEndpoint: endpoint,
+        subscriptionsProtocol:
+          (props.settingsApi?.settings.subscriptions.protocol as SubscriptionProtocol) ??
+          SubscriptionProtocol.GRAPHQL_SSE,
+        credentials: props.settingsApi?.settings.fetch.credentials,
+        specifiedByUrl: true,
+        directiveIsRepeatable: true,
+        inputValueDeprecation: true,
+        timeout: props.settingsApi?.settings.fetch.timeout,
+        useGETForQueries: props.settingsApi?.settings.fetch.useGETForQueries,
+        exposeHTTPDetailsInExtensions: true,
+        fetch,
+      });
+
+      const document = getOperationWithFragments(parse(activeOperation.query));
+
+      const abortController = new AbortController();
+
+      setStopOperationsFunctions(prev => ({
+        ...prev,
+        [activeOperation.id]: () => {
+          abortController.abort('Operation aborted by user');
+        },
+      }));
+
+      try {
+        const response = await executor({
+          document,
+          operationName: options?.operationName,
+          variables,
+          extensions: {
+            ...extensions,
+            headers: mergedHeaders,
           },
+          signal: abortController.signal,
         });
 
-        client.on('connected', () => {
-          console.log('connected');
-        });
-
-        client.on('error', () => {
-          setStopOperationsFunctions(prev => {
-            const newStopOperationsFunctions = { ...prev };
-            delete newStopOperationsFunctions[activeOperation.id];
-            return newStopOperationsFunctions;
-          });
-        });
-
-        client.on('closed', () => {
-          setStopOperationsFunctions(prev => {
-            const newStopOperationsFunctions = { ...prev };
-            delete newStopOperationsFunctions[activeOperation.id];
-            return newStopOperationsFunctions;
-          });
-        });
-
-        client.subscribe(
-          {
-            query: activeOperation.query,
-            variables,
-            extensions,
-          },
-          {
-            next: message => {
-              options?.onResponse?.(JSON.stringify(message ?? {}));
-            },
-            error: () => {},
-            complete: () => {},
-          },
-        );
-
-        setStopOperationsFunctions(prev => ({
-          ...prev,
-          [activeOperation.id]: () => {
-            void client.dispose();
+        if (isAsyncIterable(response)) {
+          try {
+            for await (const item of response) {
+              options?.onResponse?.(JSON.stringify(item ?? {}));
+            }
+          } finally {
             setStopOperationsFunctions(prev => {
               const newStopOperationsFunctions = { ...prev };
               delete newStopOperationsFunctions[activeOperation.id];
               return newStopOperationsFunctions;
             });
-          },
-        }));
+          }
 
-        return Promise.resolve(new Response());
-      }
+          return null;
+        }
 
-      const abortController = new AbortController();
+        if (response.extensions?.response?.body) {
+          delete response.extensions.response.body;
+        }
 
-      const response = fetch(endpoint, {
-        method: 'POST',
-        credentials: props.settingsApi?.settings.fetch.credentials,
-        body: JSON.stringify({
-          query: activeOperation.query,
-          variables,
-          extensions,
-        }),
-        headers: {
-          ...mergedHeaders,
-          'Content-Type': 'application/json',
-        },
-        signal: abortController.signal,
-      }).finally(() => {
         setStopOperationsFunctions(prev => {
           const newStopOperationsFunctions = { ...prev };
           delete newStopOperationsFunctions[activeOperation.id];
-
           return newStopOperationsFunctions;
         });
-      });
 
-      setStopOperationsFunctions(prev => ({
-        ...prev,
-        [activeOperation.id]: () => abortController.abort(),
-      }));
+        return response;
+      } catch (error) {
+        setStopOperationsFunctions(prev => {
+          const newStopOperationsFunctions = { ...prev };
+          delete newStopOperationsFunctions[activeOperation.id];
+          return newStopOperationsFunctions;
+        });
 
-      return response;
+        if (abortController.signal.aborted) {
+          return null;
+        }
+
+        if (error instanceof Error) {
+          return new GraphQLError(error.message);
+        }
+
+        return new GraphQLError('An unknown error occurred');
+      }
     },
-    [activeOperation, props.preflightApi, props.envApi, props.pluginsApi],
+    [activeOperation, props.preflightApi, props.envApi, props.pluginsApi, props.settingsApi],
   );
 
   const isOperationSubscription = useCallback((operation: LaboratoryOperation) => {
-    return operation.query?.startsWith('subscription') ?? false;
+    return getOperationType(operation.query) === 'subscription';
   }, []);
 
   const isActiveOperationSubscription = useMemo(() => {

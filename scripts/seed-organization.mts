@@ -15,11 +15,11 @@ import { PromisePool } from '@supercharge/promise-pool';
 process.env.RUN_AGAINST_LOCAL_SERVICES = '1';
 await import('../integration-tests/local-dev.ts');
 const { initSeed } = await import('../integration-tests/testkit/seed');
+const { password } = await import('../integration-tests/testkit/auth');
 
 const seed = initSeed();
 
 const owner = await seed.createOwner();
-const password = 'ilikebigturtlesandicannotlie47';
 
 const org = await owner.createOrg();
 

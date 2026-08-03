@@ -2,7 +2,6 @@
 import crypto from 'node:crypto';
 import stableJSONStringify from 'fast-json-stable-stringify';
 import { Kind } from 'graphql';
-import { SerializableValue } from 'slonik';
 import { z } from 'zod';
 import {
   ChangeType,
@@ -89,6 +88,7 @@ import {
   UnionMemberAddedChange,
   UnionMemberRemovedChange,
 } from '@graphql-inspector/core';
+import { SerializableValue } from '@hive/postgres';
 import {
   RegistryServiceUrlChangeSerializableChange,
   schemaChangeFromSerializableChange,
@@ -263,7 +263,7 @@ export function implement<Model = never>() {
   return {
     with: <
       Schema extends Implements<Model> & {
-        [unknownKey in Exclude<keyof Schema, keyof Model>]: never;
+        [_Key in Exclude<keyof Schema, keyof Model>]: never;
       },
     >(
       schema: Schema,
@@ -1142,7 +1142,7 @@ export const RegistryServiceUrlChangeModel =
 
 // TODO: figure out a way to make sure that all the changes are included in the union
 // Similar to implement().with() but for unions
-export const SchemaChangeModel = z.union([
+export const SchemaChangeModel = z.discriminatedUnion('type', [
   FieldArgumentDescriptionChangedModel,
   FieldArgumentDefaultChangedModel,
   FieldArgumentTypeChangedModel,
@@ -1188,7 +1188,6 @@ export const SchemaChangeModel = z.union([
   EnumValueAddedModel,
   EnumValueDescriptionChangedModel,
   EnumValueDeprecationReasonChangedModel,
-  DirectiveArgumentTypeChangedModel,
   EnumValueDeprecationReasonAddedModel,
   EnumValueDeprecationReasonRemovedModel,
   FieldRemovedModel,
@@ -1412,7 +1411,10 @@ const FailedSchemaCompositionInputFields = {
 
 const SuccessfulSchemaCompositionOutputFields = {
   schemaCompositionErrors: z.null(),
-  compositeSchemaSDL: z.string(),
+  compositeSchemaSDL: z
+    .string()
+    .nullable()
+    .transform(value => value ?? ''),
   supergraphSDL: z.string().nullable(),
 };
 

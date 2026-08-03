@@ -331,7 +331,7 @@ function UnusedSchemaExplorer({
           <EmptyList
             title="Hive is waiting for your first collected operation"
             description="You can collect usage of your GraphQL API with Hive Client"
-            docsUrl="/features/usage-reporting"
+            docsUrl="/schema-registry/usage-reporting"
           />
         </div>
       ) : !query.fetching && !query.stale ? (

@@ -1,4 +1,5 @@
 import { Injectable, Scope } from 'graphql-modules';
+import type { DangerousChangeType } from '@hive/api/__generated__/types';
 import { traceFn } from '@hive/service-common';
 import { SchemaChangeType } from '@hive/storage';
 import { AppDeployments } from '../../../app-deployments/providers/app-deployments';
@@ -46,6 +47,8 @@ export class CompositeModel {
     compositionCheck: Awaited<ReturnType<RegistryChecks['composition']>>;
     conditionalBreakingChangeDiffConfig: null | ConditionalBreakingChangeDiffConfig;
     failDiffOnDangerousChange: null | boolean;
+    failAllDangerousChanges: null | boolean;
+    failDangerousChangeTypes: null | DangerousChangeType[];
     getAffectedAppDeployments: GetAffectedAppDeployments | null;
   }): Promise<Array<ContractCheckInput> | null> {
     const contractResults = (args.compositionCheck.result ?? args.compositionCheck.reason)
@@ -74,7 +77,9 @@ export class CompositeModel {
             approvedChanges: contract.approvedChanges ?? null,
             existingSdl: contract.latestValidVersion?.compositeSchemaSdl ?? null,
             incomingSdl: contractCompositionResult?.result?.fullSchemaSdl ?? null,
-            failDiffOnDangerousChange: args.failDiffOnDangerousChange,
+            failDiffOnDangerousChange: args.failDiffOnDangerousChange ?? false,
+            failAllDangerousChanges: args.failAllDangerousChanges ?? true,
+            failDangerousChangeTypes: args.failDangerousChangeTypes ?? [],
             filterNestedChanges: true,
             getAffectedAppDeployments: args.getAffectedAppDeployments,
           }),
@@ -114,6 +119,8 @@ export class CompositeModel {
     conditionalBreakingChangeDiffConfig,
     contracts,
     failDiffOnDangerousChange,
+    failAllDangerousChanges,
+    failDangerousChangeTypes,
     filterNestedChanges,
   }: {
     input: Pick<CompositeSchemaInput, 'sdl' | 'serviceName'> & {
@@ -142,6 +149,8 @@ export class CompositeModel {
     approvedChanges: Map<string, SchemaChangeType>;
     conditionalBreakingChangeDiffConfig: null | ConditionalBreakingChangeDiffConfig;
     failDiffOnDangerousChange: null | boolean;
+    failAllDangerousChanges: null | boolean;
+    failDangerousChangeTypes: null | DangerousChangeType[];
     contracts: Array<
       ContractInput & {
         approvedChanges: Map<string, SchemaChangeType> | null;
@@ -222,9 +231,11 @@ export class CompositeModel {
       compositionCheck,
       conditionalBreakingChangeDiffConfig,
       failDiffOnDangerousChange,
+      failAllDangerousChanges,
+      failDangerousChangeTypes,
       getAffectedAppDeployments,
     });
-    this.logger.info('Contract checks: %o', contractChecks);
+    this.logger.debug('Contract checks: %o', contractChecks);
 
     const [diffCheck, policyCheck] = await Promise.all([
       this.checks.diff({
@@ -235,18 +246,21 @@ export class CompositeModel {
         incomingSdl:
           compositionCheck.result?.fullSchemaSdl ?? compositionCheck.reason?.fullSchemaSdl ?? null,
         conditionalBreakingChangeConfig: conditionalBreakingChangeDiffConfig,
-        failDiffOnDangerousChange,
+        failDiffOnDangerousChange: failDiffOnDangerousChange ?? false,
+        failAllDangerousChanges: failAllDangerousChanges ?? true,
+        failDangerousChangeTypes: failDangerousChangeTypes ?? [],
         filterNestedChanges,
         getAffectedAppDeployments,
       }),
       this.checks.policyCheck({
         selector,
+        // if schema check does not compose then there's no point in linting. Pass in null in this case.
         incomingSdl: compositionCheck.result?.fullSchemaSdl ?? null,
         modifiedSdl: incoming.sdl,
       }),
     ]);
-    this.logger.info('diff check status: %o', diffCheck);
-    this.logger.info('policy check status: %o', policyCheck);
+    this.logger.debug('diff check status: %o', diffCheck);
+    this.logger.debug('policy check status: %o', policyCheck);
 
     if (
       compositionCheck.status === 'failed' ||
@@ -255,7 +269,7 @@ export class CompositeModel {
       // if any of the contract compositions failed, the schema check failed.
       (contractChecks?.length && contractChecks.some(check => !isContractChecksSuccessful(check)))
     ) {
-      this.logger.debug('Schema check failed');
+      this.logger.info('Schema check failed');
       return {
         conclusion: SchemaCheckConclusion.Failure,
         state: buildSchemaCheckFailureState({
@@ -267,7 +281,7 @@ export class CompositeModel {
       };
     }
 
-    this.logger.debug('Schema check successful');
+    this.logger.info('Schema check successful');
     return {
       conclusion: SchemaCheckConclusion.Success,
       state: {
@@ -309,6 +323,8 @@ export class CompositeModel {
     contracts,
     conditionalBreakingChangeDiffConfig,
     failDiffOnDangerousChange,
+    failAllDangerousChanges,
+    failDangerousChangeTypes,
   }: {
     input: {
       sdl: string;
@@ -328,12 +344,15 @@ export class CompositeModel {
     latestComposable: {
       isComposable: boolean;
       sdl: string | null;
+      supergraphSdl: string | null;
       schemas: CompositeSchemaInput[];
     } | null;
     baseSchema: string | null;
     contracts: Array<ContractInput> | null;
     conditionalBreakingChangeDiffConfig: null | ConditionalBreakingChangeDiffConfig;
     failDiffOnDangerousChange: null | boolean;
+    failAllDangerousChanges: null | boolean;
+    failDangerousChangeTypes: null | DangerousChangeType[];
   }): Promise<SchemaPublishResult> {
     const latestSchemaVersion = latest;
     const latestServiceVersion = latest?.schemas?.find(
@@ -453,28 +472,59 @@ export class CompositeModel {
           conditionalBreakingChangeDiffConfig?.excludedAppDeploymentNames ?? null,
       });
 
-    const diffCheck = await this.checks.diff({
-      conditionalBreakingChangeConfig: conditionalBreakingChangeDiffConfig,
-      includeUrlChanges: {
-        schemasBefore: latestComposable?.schemas ?? [],
-        schemasAfter: schemas,
-      },
-      filterOutFederationChanges: project.type === ProjectType.FEDERATION,
-      approvedChanges: null,
-      existingSdl: previousVersionSdl,
-      incomingSdl: compositionCheck.result?.fullSchemaSdl ?? null,
-      failDiffOnDangerousChange,
-      filterNestedChanges: true, // filter because publish is never associated to schema proposals in this way.
-      getAffectedAppDeployments: getAffectedAppDeploymentsForPublish,
-    });
-
-    const contractChecks = await this.getContractChecks({
-      contracts,
-      compositionCheck,
-      conditionalBreakingChangeDiffConfig,
-      failDiffOnDangerousChange,
-      getAffectedAppDeployments: getAffectedAppDeploymentsForPublish,
-    });
+    const [diffCheck, serviceDiffCheck, supergraphDiffCheck, contractChecks] = await Promise.all([
+      this.checks.diff({
+        conditionalBreakingChangeConfig: conditionalBreakingChangeDiffConfig,
+        includeUrlChanges: {
+          schemasBefore: latestComposable?.schemas ?? [],
+          schemasAfter: schemas,
+        },
+        filterOutFederationChanges: project.type === ProjectType.FEDERATION,
+        approvedChanges: null,
+        existingSdl: previousVersionSdl,
+        incomingSdl: compositionCheck.result?.fullSchemaSdl ?? null,
+        failDiffOnDangerousChange: failDiffOnDangerousChange ?? false,
+        failAllDangerousChanges: failAllDangerousChanges ?? true,
+        failDangerousChangeTypes: failDangerousChangeTypes ?? [],
+        filterNestedChanges: true, // filter because publish is never associated to schema proposals in this way.
+        getAffectedAppDeployments: getAffectedAppDeploymentsForPublish,
+      }),
+      this.checks.diff({
+        existingSdl: previousService?.sdl ?? null,
+        incomingSdl: input.sdl,
+        approvedChanges: null,
+        conditionalBreakingChangeConfig: null,
+        includeUrlChanges: false,
+        filterOutFederationChanges: false,
+        failDiffOnDangerousChange: false,
+        filterNestedChanges: true,
+        getAffectedAppDeployments: null,
+        failAllDangerousChanges: false,
+        failDangerousChangeTypes: [],
+      }),
+      this.checks.diff({
+        existingSdl: latestComposable?.supergraphSdl ?? null,
+        incomingSdl: compositionCheck.result?.supergraph ?? null,
+        approvedChanges: null,
+        conditionalBreakingChangeConfig: null,
+        includeUrlChanges: false,
+        filterOutFederationChanges: false,
+        failDiffOnDangerousChange: false,
+        filterNestedChanges: true,
+        getAffectedAppDeployments: null,
+        failAllDangerousChanges: false,
+        failDangerousChangeTypes: [],
+      }),
+      this.getContractChecks({
+        contracts,
+        compositionCheck,
+        conditionalBreakingChangeDiffConfig,
+        failDiffOnDangerousChange,
+        failAllDangerousChanges: false,
+        failDangerousChangeTypes: [],
+        getAffectedAppDeployments: getAffectedAppDeploymentsForPublish,
+      }),
+    ]);
 
     const messages: string[] = [];
 
@@ -492,6 +542,9 @@ export class CompositeModel {
         composable: compositionCheck.status === 'completed',
         initial: latestSchemaVersion === null,
         changes: diffCheck.result?.all ?? diffCheck.reason?.all ?? null,
+        serviceChanges: serviceDiffCheck.result?.all ?? serviceDiffCheck.reason?.all ?? null,
+        supergraphChanges:
+          supergraphDiffCheck.result?.all ?? supergraphDiffCheck.reason?.all ?? null,
         coordinatesDiff:
           diffCheck.result?.coordinatesDiff ??
           diffCheck.reason?.coordinatesDiff ??
@@ -502,6 +555,7 @@ export class CompositeModel {
         compositionErrors: compositionCheck.reason?.errors ?? null,
         schema: incoming,
         schemas,
+        previousSchemas: latest?.schemas ?? null,
         supergraph: compositionCheck.result?.supergraph ?? null,
         fullSchemaSdl: compositionCheck.result?.fullSchemaSdl ?? null,
         tags: compositionCheck.result?.tags ?? null,
@@ -536,6 +590,8 @@ export class CompositeModel {
     conditionalBreakingChangeDiffConfig,
     contracts,
     failDiffOnDangerousChange,
+    failAllDangerousChanges,
+    failDangerousChangeTypes,
   }: {
     input: {
       serviceName: string;
@@ -556,11 +612,14 @@ export class CompositeModel {
     latestComposable: {
       isComposable: boolean;
       sdl: string | null;
+      supergraphSdl: string | null;
       schemas: CompositeSchemaInput[];
     } | null;
     contracts: Array<ContractInput> | null;
     conditionalBreakingChangeDiffConfig: null | ConditionalBreakingChangeDiffConfig;
     failDiffOnDangerousChange: null | boolean;
+    failAllDangerousChanges: null | boolean;
+    failDangerousChangeTypes: null | DangerousChangeType[];
   }): Promise<SchemaDeleteResult> {
     const latestVersion = latest;
 
@@ -600,28 +659,46 @@ export class CompositeModel {
           conditionalBreakingChangeDiffConfig?.excludedAppDeploymentNames ?? null,
       });
 
-    const diffCheck = await this.checks.diff({
-      conditionalBreakingChangeConfig: conditionalBreakingChangeDiffConfig,
-      includeUrlChanges: {
-        schemasBefore: latestVersion.schemas,
-        schemasAfter: schemas,
-      },
-      filterOutFederationChanges: project.type === ProjectType.FEDERATION,
-      approvedChanges: null,
-      existingSdl: previousVersionSdl,
-      incomingSdl: compositionCheck.result?.fullSchemaSdl ?? null,
-      failDiffOnDangerousChange,
-      filterNestedChanges: true, // filter because deletes are never associated with schema proposals in this way.
-      getAffectedAppDeployments: getAffectedAppDeploymentsForDelete,
-    });
-
-    const contractChecks = await this.getContractChecks({
-      contracts,
-      compositionCheck,
-      conditionalBreakingChangeDiffConfig,
-      failDiffOnDangerousChange,
-      getAffectedAppDeployments: getAffectedAppDeploymentsForDelete,
-    });
+    const [diffCheck, contractChecks, supergraphDiffCheck] = await Promise.all([
+      this.checks.diff({
+        conditionalBreakingChangeConfig: conditionalBreakingChangeDiffConfig,
+        includeUrlChanges: {
+          schemasBefore: latestVersion.schemas,
+          schemasAfter: schemas,
+        },
+        filterOutFederationChanges: project.type === ProjectType.FEDERATION,
+        approvedChanges: null,
+        existingSdl: previousVersionSdl,
+        incomingSdl: compositionCheck.result?.fullSchemaSdl ?? null,
+        failDiffOnDangerousChange: failDiffOnDangerousChange ?? false,
+        failAllDangerousChanges: failAllDangerousChanges ?? true,
+        failDangerousChangeTypes: failDangerousChangeTypes ?? [],
+        filterNestedChanges: true, // filter because deletes are never associated with schema proposals in this way.
+        getAffectedAppDeployments: getAffectedAppDeploymentsForDelete,
+      }),
+      this.getContractChecks({
+        contracts,
+        compositionCheck,
+        conditionalBreakingChangeDiffConfig,
+        failDiffOnDangerousChange,
+        failAllDangerousChanges: failAllDangerousChanges ?? true,
+        failDangerousChangeTypes: failDangerousChangeTypes ?? [],
+        getAffectedAppDeployments: getAffectedAppDeploymentsForDelete,
+      }),
+      this.checks.diff({
+        existingSdl: latestComposable?.supergraphSdl ?? null,
+        incomingSdl: compositionCheck.result?.supergraph ?? null,
+        approvedChanges: null,
+        conditionalBreakingChangeConfig: null,
+        includeUrlChanges: false,
+        filterOutFederationChanges: false,
+        failDiffOnDangerousChange: false,
+        filterNestedChanges: true,
+        getAffectedAppDeployments: null,
+        failAllDangerousChanges: failAllDangerousChanges ?? true,
+        failDangerousChangeTypes: failDangerousChangeTypes ?? [],
+      }),
+    ]);
 
     const { changes, breakingChanges } =
       diffCheck.status === 'failed'
@@ -674,6 +751,8 @@ export class CompositeModel {
           null,
         compositionErrors: compositionCheck.reason?.errors ?? [],
         supergraph: compositionCheck.result?.supergraph ?? null,
+        supergraphChanges:
+          supergraphDiffCheck.result?.all ?? supergraphDiffCheck.reason?.all ?? null,
         tags: compositionCheck.result?.tags ?? null,
         schemaMetadata: compositionCheck.result?.schemaMetadata ?? null,
         metadataAttributes: compositionCheck.result?.metadataAttributes ?? null,

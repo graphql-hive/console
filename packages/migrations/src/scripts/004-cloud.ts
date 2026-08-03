@@ -57,6 +57,7 @@ async function main() {
         body: query,
         searchParams: {
           default_format: 'JSON',
+          output_format_json_quote_64bit_integers: '1',
           wait_end_of_query: '1',
           ...options?.settings,
         },

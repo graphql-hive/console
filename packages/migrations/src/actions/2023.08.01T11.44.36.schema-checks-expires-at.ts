@@ -2,7 +2,7 @@ import { type MigrationExecutor } from '../pg-migrator';
 
 export default {
   name: '2023.08.01T11.44.36.schema-checks-expires-at.ts',
-  run: ({ sql }) => sql`
+  run: ({ psql }) => psql`
     ALTER TABLE "schema_checks"
       ADD COLUMN "expires_at" TIMESTAMP WITH TIME ZONE
     ;

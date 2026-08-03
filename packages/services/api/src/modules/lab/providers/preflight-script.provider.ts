@@ -1,12 +1,11 @@
-import { Inject, Injectable, Scope } from 'graphql-modules';
-import { sql, type DatabasePool } from 'slonik';
+import { Injectable, Scope } from 'graphql-modules';
 import { z } from 'zod';
+import { PostgresDatabasePool, psql } from '@hive/postgres';
 import type { Target } from '../../../shared/entities';
 import { AuditLogRecorder } from '../../audit-logs/providers/audit-log-recorder';
 import { Session } from '../../auth/lib/authz';
 import { IdTranslator } from '../../shared/providers/id-translator';
 import { Logger } from '../../shared/providers/logger';
-import { PG_POOL_CONFIG } from '../../shared/providers/pg-pool';
 import { Storage } from '../../shared/providers/storage';
 
 const SourceCodeModel = z.string().max(5_000);
@@ -40,13 +39,13 @@ export class PreflightScriptProvider {
     private session: Session,
     private idTranslator: IdTranslator,
     private auditLogs: AuditLogRecorder,
-    @Inject(PG_POOL_CONFIG) private pool: DatabasePool,
+    private pool: PostgresDatabasePool,
   ) {
     this.logger = logger.child({ source: 'PreflightScriptProvider' });
   }
 
   async getPreflightScript(targetId: string) {
-    const result = await this.pool.maybeOne<unknown>(sql`/* getPreflightScript */
+    const result = await this.pool.maybeOne(psql`/* getPreflightScript */
       SELECT
         "id"
         , "source_code"         AS "sourceCode"
@@ -114,7 +113,7 @@ export class PreflightScriptProvider {
     }
 
     const currentUser = await this.session.getViewer();
-    const result = await this.pool.maybeOne(sql`/* createPreflightScript */
+    const result = await this.pool.maybeOne(psql`/* createPreflightScript */
       INSERT INTO "document_preflight_scripts" (
         "source_code"
         , "target_id"

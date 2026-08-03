@@ -1,5 +1,6 @@
 import { createServer } from 'http';
 import * as itty from 'itty-router';
+import { resolveServerListenOptions } from '@hive/service-common/listen-options';
 import { createServerAdapter } from '@whatwg-node/server';
 import { createArtifactRequestHandler } from './artifact-handler';
 import { ArtifactStorageReader } from './artifact-storage-reader';
@@ -22,6 +23,12 @@ const s3 = {
 
 // eslint-disable-next-line no-process-env
 const PORT = process.env.PORT ? parseInt(process.env.PORT, 10) : 4010;
+const listenOptions = resolveServerListenOptions({
+  // eslint-disable-next-line no-process-env
+  serverHost: process.env.SERVER_HOST,
+  // eslint-disable-next-line no-process-env
+  serverHostIpv6Only: process.env.SERVER_HOST_IPV6_ONLY === '1' ? '1' : '0',
+});
 
 const artifactStorageReader = new ArtifactStorageReader(s3, null, null, null);
 
@@ -93,7 +100,14 @@ function main() {
   const server = createServer(app);
 
   return new Promise<void>(resolve => {
-    server.listen(PORT, '::', resolve);
+    server.listen(
+      {
+        port: PORT,
+        host: listenOptions.host,
+        ipv6Only: listenOptions.ipv6Only,
+      },
+      resolve,
+    );
   });
 }
 

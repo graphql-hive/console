@@ -13,7 +13,9 @@
   "tasks": {
     "build": {
       "dependsOn": ["^build"],
-      "outputs": ["dist/**"]
+      "outputs": ["dist/**"],
+      "env": ["SENTRY_ORG", "SENTRY_PROJECT", "RELEASE"],
+      "passThroughEnv": ["SENTRY_AUTH_TOKEN"]
     },
     "check:build": {
       "outputs": [""]
@@ -23,7 +25,6 @@
         "//#graphql:generate:watch",
         "@hive/server#dev",
         "@hive/app#dev",
-        "@hive/tokens#dev",
         "@hive/schema#dev",
         "@hive/policy#dev",
         "@hive/commerce#dev",

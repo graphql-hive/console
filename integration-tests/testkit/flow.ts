@@ -2,8 +2,11 @@ import { graphql } from './gql';
 import type {
   AddAlertChannelInput,
   AddAlertInput,
+  AddGroupMappingToGroupInput,
+  AddMetricAlertRuleInput,
   AnswerOrganizationTransferRequestInput,
   AssignMemberRoleInput,
+  CreateContractInput,
   CreateMemberRoleInput,
   CreateOrganizationAccessTokenInput,
   CreateOrganizationInput,
@@ -11,19 +14,28 @@ import type {
   CreateTargetInput,
   CreateTokenInput,
   DeleteMemberRoleInput,
+  DeleteMetricAlertRulesInput,
+  DeleteTargetInput,
   DeleteTokensInput,
+  DisableContractInput,
   Experimental__UpdateTargetSchemaCompositionInput,
   InviteToOrganizationByEmailInput,
+  OrganizationMemberInput,
   OrganizationSelectorInput,
   OrganizationTransferRequestSelector,
   RateLimitInput,
+  RemoveGroupMappingInput,
   RequestOrganizationTransferInput,
   SchemaCheckInput,
   SchemaDeleteInput,
   SchemaPublishInput,
+  SchemaVersionPromoteInput,
   TargetSelectorInput,
   UpdateBaseSchemaInput,
+  UpdateGroupMappingInput,
   UpdateMemberRoleInput,
+  UpdateMetricAlertRuleInput,
+  UpdateOidcIntegrationInput,
   UpdateOrganizationSlugInput,
   UpdateProjectSlugInput,
   UpdateSchemaCompositionInput,
@@ -32,6 +44,19 @@ import type {
 } from './gql/graphql';
 import * as GraphQLSchema from './gql/graphql';
 import { execute } from './graphql';
+
+const LeaveOrganizationDocument = graphql(`
+  mutation TestKit_LeaveOrganization($input: OrganizationSelectorInput!) {
+    leaveOrganization(input: $input) {
+      ok {
+        organizationId
+      }
+      error {
+        message
+      }
+    }
+  }
+`);
 
 export function waitFor(ms: number) {
   return new Promise(resolve => setTimeout(resolve, ms));
@@ -267,6 +292,30 @@ export function joinOrganization(code: string, authToken: string) {
     variables: {
       code,
     },
+  });
+}
+
+export function leaveOrganization(input: OrganizationSelectorInput, authToken: string) {
+  return execute({
+    document: LeaveOrganizationDocument,
+    authToken,
+    variables: { input },
+  });
+}
+
+export function deleteOrganizationMember(input: OrganizationMemberInput, authToken: string) {
+  return execute({
+    document: graphql(`
+      mutation DeleteOrganizationMember($input: OrganizationMemberInput!) {
+        deleteOrganizationMember(input: $input) {
+          organization {
+            id
+          }
+        }
+      }
+    `),
+    authToken,
+    variables: { input },
   });
 }
 
@@ -594,6 +643,9 @@ export function addAlertChannel(input: AddAlertChannelInput, authToken: string) 
               ... on TeamsWebhookChannel {
                 endpoint
               }
+              ... on DiscordWebhookChannel {
+                endpoint
+              }
             }
           }
           error {
@@ -643,6 +695,92 @@ export function addAlert(input: AddAlertInput, authToken: string) {
     variables: {
       input,
     },
+    authToken,
+  });
+}
+
+export function addMetricAlertRule(input: AddMetricAlertRuleInput, authToken: string) {
+  return execute({
+    document: graphql(`
+      mutation IntegrationTests_AddMetricAlertRule($input: AddMetricAlertRuleInput!) {
+        addMetricAlertRule(input: $input) {
+          ok {
+            addedMetricAlertRule {
+              id
+              name
+              type
+              metric
+              thresholdType
+              thresholdValue
+              direction
+              severity
+              state
+              timeWindowMinutes
+              confirmationMinutes
+              enabled
+              channels {
+                id
+                name
+                type
+              }
+            }
+          }
+          error {
+            message
+          }
+        }
+      }
+    `),
+    variables: { input },
+    authToken,
+  });
+}
+
+export function updateMetricAlertRule(input: UpdateMetricAlertRuleInput, authToken: string) {
+  return execute({
+    document: graphql(`
+      mutation IntegrationTests_UpdateMetricAlertRule($input: UpdateMetricAlertRuleInput!) {
+        updateMetricAlertRule(input: $input) {
+          ok {
+            updatedMetricAlertRule {
+              id
+              name
+              type
+              metric
+              thresholdType
+              thresholdValue
+              direction
+              severity
+              state
+              enabled
+            }
+          }
+          error {
+            message
+          }
+        }
+      }
+    `),
+    variables: { input },
+    authToken,
+  });
+}
+
+export function deleteMetricAlertRules(input: DeleteMetricAlertRulesInput, authToken: string) {
+  return execute({
+    document: graphql(`
+      mutation IntegrationTests_DeleteMetricAlertRules($input: DeleteMetricAlertRulesInput!) {
+        deleteMetricAlertRules(input: $input) {
+          ok {
+            deletedMetricAlertRuleIds
+          }
+          error {
+            message
+          }
+        }
+      }
+    `),
+    variables: { input },
     authToken,
   });
 }
@@ -723,6 +861,9 @@ export function createMemberRole(input: CreateMemberRoleInput, authToken: string
       mutation createMemberRole($input: CreateMemberRoleInput!) {
         createMemberRole(input: $input) {
           ok {
+            createdMemberRole {
+              id
+            }
             updatedOrganization {
               id
               slug
@@ -896,6 +1037,226 @@ export function publishSchema(
   });
 }
 
+export function schemaVersionPromote(input: SchemaVersionPromoteInput, accessToken: string) {
+  return execute({
+    document: graphql(`
+      mutation TestKit_PromoteSchema($input: SchemaVersionPromoteInput!) {
+        schemaVersionPromote(input: $input) {
+          ok {
+            newSchemaVersion {
+              id
+            }
+          }
+          error {
+            message
+          }
+        }
+      }
+    `),
+    token: accessToken,
+    variables: {
+      input,
+    },
+  });
+}
+
+export function createContract(input: CreateContractInput, accessToken: string) {
+  return execute({
+    document: graphql(`
+      mutation TestKit_CreateContract($input: CreateContractInput!) {
+        createContract(input: $input) {
+          ok {
+            createdContract {
+              id
+              target {
+                id
+              }
+              includeTags
+              excludeTags
+              createdAt
+            }
+          }
+          error {
+            message
+            details {
+              target
+              contractName
+              includeTags
+              excludeTags
+            }
+          }
+        }
+      }
+    `),
+    variables: {
+      input,
+    },
+    token: accessToken,
+  });
+}
+
+export function disableContract(input: DisableContractInput, accessToken: string) {
+  return execute({
+    document: graphql(`
+      mutation TestKit_DisableContract($input: DisableContractInput!) {
+        disableContract(input: $input) {
+          ok {
+            disabledContract {
+              id
+              isDisabled
+            }
+          }
+          error {
+            message
+          }
+        }
+      }
+    `),
+    variables: {
+      input,
+    },
+    token: accessToken,
+  });
+}
+
+export function getSchemaVersionWithAllDetails(
+  targetId: string,
+  schemaVersionId: string,
+  accessToken: string,
+) {
+  return execute({
+    document: graphql(`
+      query TestKit_SchemaVersion($targetReference: TargetReferenceInput!, $schemaVersionId: ID!) {
+        target(reference: $targetReference) {
+          schemaVersion(id: $schemaVersionId) {
+            id
+            isValid
+            origin {
+              __typename
+              ... on SchemaVersionPromoteOrigin {
+                schemaVersionId
+              }
+              ... on SchemaVersionPublishOrigin {
+                publishedSubgraphs {
+                  name
+                }
+              }
+              ... on SchemaVersionSubgraphRemoveOrigin {
+                removedSubgraphs {
+                  name
+                }
+              }
+            }
+            supergraph
+            sdl
+            meta {
+              author
+              commit
+            }
+            subgraphDiffs {
+              __typename
+              ... on SubgraphDiffAdded {
+                subgraphVersion {
+                  id
+                  sdl
+                  serviceName
+                }
+              }
+              ... on SubgraphDiffChanged {
+                subgraphVersion {
+                  id
+                  sdl
+                  serviceName
+                }
+                previousSubgraphVersion {
+                  id
+                  sdl
+                  serviceName
+                }
+                changes {
+                  edges {
+                    node {
+                      message
+                    }
+                  }
+                }
+              }
+              ... on SubgraphDiffRemoved {
+                removedSubgraphVersion {
+                  id
+                  sdl
+                  serviceName
+                }
+              }
+              ... on SubgraphDiffUnchanged {
+                subgraphVersion {
+                  id
+                  sdl
+                  serviceName
+                }
+              }
+            }
+            previousDiffableSchemaVersion {
+              id
+            }
+            contractVersions {
+              edges {
+                node {
+                  id
+                  contractName
+                  supergraphSDL
+                  compositeSchemaSDL
+                  previousContractVersion {
+                    id
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    `),
+    variables: {
+      targetReference: {
+        byId: targetId,
+      },
+      schemaVersionId,
+    },
+    authToken: accessToken,
+  })
+    .then(r => r.expectNoGraphQLErrors())
+    .then(r => r.target?.schemaVersion ?? null);
+}
+
+export function getSchemaCheckDetails(
+  reference: GraphQLSchema.TargetReferenceInput,
+  checkId: string,
+  token: string,
+) {
+  return execute({
+    document: graphql(`
+      query getCheck($reference: TargetReferenceInput!, $checkId: ID!) {
+        target(reference: $reference) {
+          schemaCheck(id: $checkId) {
+            __typename
+            id
+            schemaSDL
+            ... on SuccessfulSchemaCheck {
+              supergraphSDL
+              compositeSchemaSDL
+            }
+          }
+        }
+      }
+    `),
+    token,
+    variables: {
+      reference,
+      checkId,
+    },
+  });
+}
+
 export function checkSchema(input: SchemaCheckInput, token: string) {
   return execute({
     document: graphql(`
@@ -912,7 +1273,11 @@ export function checkSchema(input: SchemaCheckInput, token: string) {
               total
             }
             schemaCheck {
+              __typename
               id
+              schemaVersion {
+                id
+              }
             }
           }
           ... on SchemaCheckError {
@@ -1039,6 +1404,76 @@ export function updateTargetValidationSettings(
   });
 }
 
+export function updateTargetDangerousChangeClassification(
+  input: GraphQLSchema.UpdateTargetDangerousChangeClassificationInput,
+  access:
+    | {
+        token: string;
+      }
+    | {
+        authToken: string;
+      },
+) {
+  return execute({
+    document: graphql(`
+      mutation UpdateTargetDangerousChangeClassification(
+        $input: UpdateTargetDangerousChangeClassificationInput!
+      ) {
+        updateTargetDangerousChangeClassification(input: $input) {
+          ok {
+            target {
+              id
+            }
+          }
+          error {
+            message
+          }
+        }
+      }
+    `),
+    ...access,
+    variables: {
+      input,
+    },
+  });
+}
+
+export function updateTargetFailingDangerousChanges(
+  input: GraphQLSchema.UpdateTargetFailingDangerousChangesInput,
+  access:
+    | {
+        token: string;
+      }
+    | {
+        authToken: string;
+      },
+) {
+  return execute({
+    document: graphql(`
+      mutation UpdateTargetFailingDangerousChanges(
+        $input: UpdateTargetFailingDangerousChangesInput!
+      ) {
+        updateTargetFailingDangerousChanges(input: $input) {
+          ok {
+            target {
+              id
+              failAllDangerousChanges
+              failDangerousChangeTypes
+            }
+          }
+          error {
+            message
+          }
+        }
+      }
+    `),
+    ...access,
+    variables: {
+      input,
+    },
+  });
+}
+
 export function updateBaseSchema(input: UpdateBaseSchemaInput, token: string) {
   return execute({
     document: graphql(`
@@ -1051,6 +1486,30 @@ export function updateBaseSchema(input: UpdateBaseSchemaInput, token: string) {
     token,
     variables: {
       input,
+    },
+  });
+}
+
+export function readTotalRequests(
+  reference: GraphQLSchema.TargetReferenceInput,
+  period: GraphQLSchema.DateRangeInput,
+  token: string,
+) {
+  return execute({
+    document: graphql(`
+      query IntegrationTests_ReadTotalRequests(
+        $reference: TargetReferenceInput!
+        $period: DateRangeInput!
+      ) {
+        target(reference: $reference) {
+          totalRequests(period: $period)
+        }
+      }
+    `),
+    token,
+    variables: {
+      reference,
+      period,
     },
   });
 }
@@ -1158,6 +1617,81 @@ export function readOperationsStats(
   });
 }
 
+export function readErrorCodes(
+  coordinate: string,
+  target: GraphQLSchema.TargetReferenceInput,
+  period: GraphQLSchema.DateRangeInput,
+  token: string,
+) {
+  return execute({
+    document: graphql(`
+      query readErrorCodes(
+        $coordinate: String!
+        $target: TargetReferenceInput!
+        $period: DateRangeInput!
+      ) {
+        target(reference: $target) {
+          schemaCoordinateStats(schemaCoordinate: $coordinate, period: $period) {
+            errorCodes {
+              edges {
+                node {
+                  code
+                }
+              }
+            }
+          }
+        }
+      }
+    `),
+    token,
+    variables: {
+      target,
+      period,
+      coordinate,
+    },
+  });
+}
+
+export function readSchemaCoordinateStats(
+  selector: {
+    organizationSlug: string;
+    projectSlug: string;
+    targetSlug: string;
+    schemaCoordinate: string;
+  },
+  period: GraphQLSchema.DateRangeInput,
+  token: string,
+) {
+  return execute({
+    document: graphql(`
+      query readSchemaCoordinateStats(
+        $selector: TargetSelectorInput!
+        $schemaCoordinate: String!
+        $period: DateRangeInput!
+      ) {
+        target(reference: { bySelector: $selector }) {
+          id
+          schemaCoordinateStats(schemaCoordinate: $schemaCoordinate, period: $period) {
+            totalRequests
+            totalResolutions
+            totalFailures
+          }
+        }
+      }
+    `),
+    token,
+    variables: {
+      selector: {
+        organizationSlug: selector.organizationSlug,
+        projectSlug: selector.projectSlug,
+        targetSlug: selector.targetSlug,
+      },
+      schemaCoordinate: selector.schemaCoordinate,
+      period,
+    },
+  });
+}
+
 export function readOperationBody(
   selector: {
     organizationSlug: string;
@@ -1195,16 +1729,28 @@ export function fetchLatestSchema(token: string) {
     document: graphql(`
       query latestVersion {
         latestVersion {
+          id
           baseSchema
-          log {
-            ... on PushedSchemaLog {
-              __typename
-              commit
-              service
+          meta {
+            author
+            commit
+          }
+          origin {
+            __typename
+            ... on SchemaVersionPromoteOrigin {
+              schemaVersionId
             }
-            ... on DeletedSchemaLog {
-              __typename
-              deletedService
+            ... on SchemaVersionPublishOrigin {
+              publishedSubgraphs {
+                name
+                versionId
+              }
+            }
+            ... on SchemaVersionSubgraphRemoveOrigin {
+              removedSubgraphs {
+                name
+                versionId
+              }
             }
           }
           isValid
@@ -1244,15 +1790,24 @@ export function fetchLatestValidSchema(token: string) {
         latestValidVersion {
           id
           baseSchema
-          log {
-            ... on PushedSchemaLog {
-              __typename
-              commit
-              service
+          meta {
+            author
+            commit
+          }
+          origin {
+            __typename
+            ... on SchemaVersionPromoteOrigin {
+              schemaVersionId
             }
-            ... on DeletedSchemaLog {
-              __typename
-              deletedService
+            ... on SchemaVersionPublishOrigin {
+              publishedSubgraphs {
+                name
+              }
+            }
+            ... on SchemaVersionSubgraphRemoveOrigin {
+              removedSubgraphs {
+                name
+              }
             }
           }
           tags
@@ -1289,17 +1844,35 @@ export function fetchVersions(selector: TargetSelectorInput, first: number, toke
             edges {
               node {
                 id
-                valid
-                date
-                log {
-                  ... on PushedSchemaLog {
-                    __typename
-                    commit
-                    service
+                origin {
+                  __typename
+                  ... on SchemaVersionPromoteOrigin {
+                    schemaVersionId
                   }
-                  ... on DeletedSchemaLog {
-                    __typename
-                    deletedService
+                }
+                valid
+                supergraph
+                sdl
+                previousDiffableSchemaVersion {
+                  id
+                }
+                date
+                origin {
+                  __typename
+                  ... on SchemaVersionPromoteOrigin {
+                    schemaVersionId
+                    targetSlug
+                    targetId
+                  }
+                  ... on SchemaVersionPublishOrigin {
+                    publishedSubgraphs {
+                      name
+                    }
+                  }
+                  ... on SchemaVersionSubgraphRemoveOrigin {
+                    removedSubgraphs {
+                      name
+                    }
                   }
                 }
                 baseSchema
@@ -1363,19 +1936,20 @@ export function compareToPreviousVersion(
             id
             sdl
             supergraph
-            log {
-              ... on PushedSchemaLog {
-                id
-                author
-                service
-                commit
-                serviceSdl
-                previousServiceSdl
+            origin {
+              __typename
+              ... on SchemaVersionPromoteOrigin {
+                schemaVersionId
               }
-              ... on DeletedSchemaLog {
-                id
-                deletedService
-                previousServiceSdl
+              ... on SchemaVersionPublishOrigin {
+                publishedSubgraphs {
+                  name
+                }
+              }
+              ... on SchemaVersionSubgraphRemoveOrigin {
+                removedSubgraphs {
+                  name
+                }
               }
             }
             schemaCompositionErrors {
@@ -1609,5 +2183,352 @@ export function createOrganizationAccessToken(
     variables: {
       input,
     },
+  });
+}
+
+export function deleteTarget(input: DeleteTargetInput, authToken: string) {
+  return execute({
+    document: graphql(`
+      mutation DeleteToken_Testkit($input: DeleteTargetInput!) {
+        deleteTarget(input: $input) {
+          ok {
+            deletedTargetId
+          }
+          error {
+            message
+          }
+        }
+      }
+    `),
+    authToken,
+    variables: {
+      input,
+    },
+  });
+}
+
+export function createOIDCIntegration(
+  input: GraphQLSchema.CreateOidcIntegrationInput,
+  authToken: string,
+) {
+  return execute({
+    document: graphql(`
+      mutation TestKit_CreateOIDCIntegrationMutation($input: CreateOIDCIntegrationInput!) {
+        createOIDCIntegration(input: $input) {
+          ok {
+            createdOIDCIntegration {
+              id
+              clientId
+              clientSecretPreview
+              tokenEndpoint
+              userinfoEndpoint
+              authorizationEndpoint
+              additionalScopes
+              oidcUserJoinOnly
+              oidcUserAccessOnly
+            }
+          }
+          error {
+            message
+            details {
+              clientId
+              clientSecret
+              tokenEndpoint
+              userinfoEndpoint
+              authorizationEndpoint
+              additionalScopes
+            }
+          }
+        }
+      }
+    `),
+    variables: { input },
+    authToken,
+  });
+}
+
+export function updateOIDCIntegration(input: UpdateOidcIntegrationInput, authToken: string) {
+  return execute({
+    document: graphql(`
+      mutation TestKit_OIDCIntegration_UpdateOIDCIntegrationMutation(
+        $input: UpdateOIDCIntegrationInput!
+      ) {
+        updateOIDCIntegration(input: $input) {
+          ok {
+            updatedOIDCIntegration {
+              id
+              tokenEndpoint
+              userinfoEndpoint
+              authorizationEndpoint
+              clientId
+              clientSecretPreview
+              additionalScopes
+            }
+          }
+          error {
+            message
+            details {
+              clientId
+              clientSecret
+              tokenEndpoint
+              userinfoEndpoint
+              authorizationEndpoint
+              additionalScopes
+            }
+          }
+        }
+      }
+    `),
+    authToken,
+    variables: {
+      input,
+    },
+  });
+}
+
+export function updateOIDCRestrictions(
+  input: GraphQLSchema.UpdateOidcRestrictionsInput,
+  authToken: string,
+) {
+  return execute({
+    document: graphql(`
+      mutation TestKit_UpdateOIDCRestrictionsMutation($input: UpdateOIDCRestrictionsInput!) {
+        updateOIDCRestrictions(input: $input) {
+          ok {
+            updatedOIDCIntegration {
+              id
+              oidcUserJoinOnly
+              oidcUserAccessOnly
+              userProvisioningRequired
+              oidcForVerifiedDomainsRequired
+            }
+          }
+          error {
+            message
+          }
+        }
+      }
+    `),
+    variables: { input },
+    authToken,
+  });
+}
+
+export function getGroupForOrganization(
+  organizationId: string,
+  groupId: string,
+  authToken: string,
+) {
+  return execute({
+    authToken,
+    variables: {
+      organizationId,
+      groupId,
+    },
+    document: graphql(`
+      query TestKit_GroupForOrganization($organizationId: ID!, $groupId: ID!) {
+        organization(reference: { byId: $organizationId }) {
+          id
+          group(id: $groupId) {
+            id
+            name
+            roleMappingCount
+            roleMappings {
+              id
+              role {
+                id
+                name
+              }
+            }
+            memberCount
+          }
+        }
+      }
+    `),
+  });
+}
+
+export function getPaginatedGroupsForOrganization(
+  authToken: string,
+  organizationId: string,
+  first: number,
+  after: string | null,
+  searchTerm: string | null = null,
+) {
+  return execute({
+    authToken,
+    variables: {
+      organizationId,
+      first,
+      after,
+      searchTerm,
+    },
+    document: graphql(`
+      query TestKit_PaginatedGroupsForOrganization(
+        $organizationId: ID!
+        $first: Int!
+        $after: String
+        $searchTerm: String
+      ) {
+        organization(reference: { byId: $organizationId }) {
+          id
+          groups(first: $first, after: $after, filters: { searchTerm: $searchTerm }) {
+            edges {
+              node {
+                id
+                name
+              }
+            }
+            pageInfo {
+              hasNextPage
+              endCursor
+            }
+          }
+        }
+      }
+    `),
+  });
+}
+
+export function addGroupMappingToGroup(input: AddGroupMappingToGroupInput, authToken: string) {
+  return execute({
+    authToken,
+    variables: {
+      input,
+    },
+    document: graphql(`
+      mutation TestKit_CreateGroupRoleMapping($input: AddGroupMappingToGroupInput!) {
+        addGroupMappingToGroup(input: $input) {
+          ok {
+            group {
+              id
+              roleMappings {
+                id
+                role {
+                  id
+                  name
+                }
+              }
+            }
+          }
+          error {
+            message
+          }
+        }
+      }
+    `),
+  });
+}
+
+export function updateGroupMapping(input: UpdateGroupMappingInput, authToken: string) {
+  return execute({
+    authToken,
+    variables: {
+      input,
+    },
+    document: graphql(`
+      mutation TestKit_UpdateGroupMapping($input: UpdateGroupMappingInput!) {
+        updateGroupMapping(input: $input) {
+          ok {
+            group {
+              id
+              roleMappings {
+                id
+                role {
+                  id
+                  name
+                }
+              }
+            }
+          }
+          error {
+            message
+          }
+        }
+      }
+    `),
+  });
+}
+
+export function removeGroupMapping(input: RemoveGroupMappingInput, authToken: string) {
+  return execute({
+    authToken,
+    variables: {
+      input,
+    },
+    document: graphql(`
+      mutation TestKit_RemoveGroupMapping($input: RemoveGroupMappingInput!) {
+        removeGroupMapping(input: $input) {
+          error {
+            message
+          }
+          ok {
+            group {
+              id
+              roleMappings {
+                id
+              }
+            }
+          }
+        }
+      }
+    `),
+  });
+}
+
+export function createPersonalAccessToken(
+  input: GraphQLSchema.CreatePersonalAccessTokenInput,
+  authToken: string,
+) {
+  return execute({
+    authToken,
+    variables: {
+      input,
+    },
+    document: graphql(`
+      mutation TestKit_CreatePersonalAccessTokenMutation($input: CreatePersonalAccessTokenInput!) {
+        createPersonalAccessToken(input: $input) {
+          ok {
+            privateAccessKey
+            createdPersonalAccessToken {
+              id
+              title
+              description
+              createdAt
+            }
+          }
+          error {
+            message
+            details {
+              title
+              description
+            }
+          }
+        }
+      }
+    `),
+  });
+}
+
+export function updateMe(input: GraphQLSchema.UpdateMeInput, authToken: string) {
+  return execute({
+    document: graphql(`
+      mutation TestKit_UpdateMeMutation($input: UpdateMeInput!) {
+        updateMe(input: $input) {
+          error {
+            message
+          }
+          ok {
+            updatedUser {
+              id
+              displayName
+              fullName
+            }
+          }
+        }
+      }
+    `),
+    variables: { input },
+    authToken,
   });
 }

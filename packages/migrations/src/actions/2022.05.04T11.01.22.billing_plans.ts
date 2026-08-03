@@ -2,10 +2,10 @@ import { type MigrationExecutor } from '../pg-migrator';
 
 export default {
   name: '2022.05.04T11.01.22.billing_plans.sql',
-  run: ({ sql }) => sql`
+  run: ({ psql }) => psql`
 CREATE TABLE
   organizations_billing (
-    organization_id UUID NOT NULL REFERENCES organizations (id) ON DELETE CASCADE, -- org id 
+    organization_id UUID NOT NULL REFERENCES organizations (id) ON DELETE CASCADE, -- org id
     external_billing_reference_id VARCHAR(255) NOT NULL, -- stripe customer id
     billing_email_address VARCHAR(255),
     PRIMARY KEY (organization_id)

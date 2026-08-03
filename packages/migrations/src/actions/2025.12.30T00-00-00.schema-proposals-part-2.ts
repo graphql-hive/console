@@ -5,10 +5,10 @@ import { type MigrationExecutor } from '../pg-migrator';
  */
 export default {
   name: '2025.12.30T00-00-00.schema-proposals-part-2.ts',
-  run: ({ sql }) => [
+  run: ({ psql }) => [
     {
       name: 'create schema proposal reviews and comments tables',
-      query: sql`
+      query: psql`
         CREATE TABLE IF NOT EXISTS "schema_proposal_reviews"
         (
           id UUID PRIMARY KEY DEFAULT uuid_generate_v4 ()

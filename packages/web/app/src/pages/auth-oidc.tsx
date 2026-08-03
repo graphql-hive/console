@@ -9,6 +9,7 @@ function AuthOIDC(props: { oidcId: string; redirectToPath: string }) {
   const auth = useQuery({
     queryKey: ['oidc', props.oidcId],
     refetchOnWindowFocus: false,
+    retry: false,
     retryOnMount: false,
     async queryFn() {
       if (!env.auth.oidc) {

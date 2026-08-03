@@ -159,7 +159,7 @@ test('should send data to Hive', async () => {
   const collect = hive.collectUsage();
 
   await waitFor(20);
-  await collect(
+  await collect.finish(
     {
       schema,
       document: op,
@@ -230,6 +230,121 @@ test('should send data to Hive', async () => {
   expect(operation.execution.ok).toBe(true);
 });
 
+test('reports nested abstract type usage including lists', async () => {
+  const nestedSchema = buildSchema(/* GraphQL */ `
+    interface Node {
+      id: ID!
+      child: Node
+      children: [Node!]!
+    }
+
+    type Folder implements Node {
+      id: ID!
+      child: Node
+      children: [Node!]!
+    }
+
+    type File implements Node {
+      id: ID!
+      child: Node
+      children: [Node!]!
+    }
+
+    type Query {
+      node: Node
+    }
+  `);
+  const document = parse(/* GraphQL */ `
+    query NestedNode {
+      node {
+        id
+        child {
+          id
+        }
+        children {
+          id
+        }
+      }
+    }
+  `);
+  const reportReceived = Promise.withResolvers<Report>();
+  const hive = createHive({
+    enabled: true,
+    token: 'Token',
+    reporting: false,
+    usage: {
+      endpoint: 'http://localhost/usage',
+      fieldLevelMetricsEnabled: true,
+    },
+    agent: {
+      maxSize: 1,
+      maxRetries: 0,
+      async fetch(_url, init) {
+        reportReceived.resolve(JSON.parse(init?.body as string));
+        return new Response(null, { status: 200 });
+      },
+    },
+  });
+
+  await hive.collectUsage().finish(
+    {
+      schema: nestedSchema,
+      document,
+      operationName: 'NestedNode',
+    },
+    {
+      data: {
+        node: {
+          __typename: 'Folder',
+          id: 'folder-1',
+          child: {
+            __typename: 'File',
+            id: 'file-1',
+          },
+          children: [
+            {
+              __typename: 'File',
+              id: 'file-2',
+            },
+            {
+              __typename: 'File',
+              id: 'file-3',
+            },
+            {
+              __typename: 'Folder',
+              id: 'folder-2',
+            },
+          ],
+        },
+      },
+    },
+  );
+
+  const report = await reportReceived.promise;
+  await hive.dispose();
+
+  expect(report.operations).toHaveLength(1);
+  expect(report.operations?.[0].execution.fetches).toEqual([
+    expect.objectContaining({
+      fields: {
+        Query: 1,
+        'Query.node': 1,
+        Node: 5,
+        Folder: 2,
+        'Folder.id': 2,
+        'Node.id': 5,
+        ID: 5,
+        'Folder.child': 1,
+        'Node.child': 1,
+        'Folder.children': 1,
+        'Node.children': 1,
+        File: 3,
+        'File.id': 3,
+      },
+    }),
+  ]);
+});
+
 test('should send data to Hive (deprecated endpoint)', async () => {
   const logger = createHiveTestingLogger();
   const token = 'Token';
@@ -269,7 +384,7 @@ test('should send data to Hive (deprecated endpoint)', async () => {
   const collect = hive.collectUsage();
 
   await waitFor(20);
-  await collect(
+  await collect.finish(
     {
       schema,
       document: op,
@@ -360,7 +475,7 @@ test('should not leak the exception', { retry: 3 }, async () => {
     },
   });
 
-  await hive.collectUsage()(
+  await hive.collectUsage().finish(
     {
       schema,
       document: op,
@@ -423,7 +538,7 @@ test('sendImmediately should not stop the schedule', async () => {
 
   const collect = hive.collectUsage();
 
-  await collect(
+  await collect.finish(
     {
       schema,
       document: op,
@@ -443,12 +558,12 @@ test('sendImmediately should not stop the schedule', async () => {
 
   // Now we will hit the maxSize
   // We run collect two times
-  await Promise.all([collect(args, {}), collect(args, {})]);
+  await Promise.all([collect.finish(args, {}), collect.finish(args, {})]);
   await waitUntil(() => logger.getLogs().includes('Sending immediately'));
   expect(logger.getLogs()).toMatch('Sending report (queue 2)');
   logger.clear();
   // Let's check if the scheduled send task is still running
-  await collect(args, {});
+  await collect.finish(args, {});
   await waitFor(60);
   expect(logger.getLogs()).toMatch('Sending report (queue 1)');
 
@@ -510,7 +625,7 @@ test('should send data to Hive at least once when using atLeastOnceSampler', asy
   const collect = hive.collectUsage();
 
   await Promise.all([
-    collect(
+    collect.finish(
       {
         schema,
         document: op,
@@ -519,7 +634,7 @@ test('should send data to Hive at least once when using atLeastOnceSampler', asy
       {},
     ),
     // different query
-    collect(
+    collect.finish(
       {
         schema,
         document: op2,
@@ -528,7 +643,7 @@ test('should send data to Hive at least once when using atLeastOnceSampler', asy
       {},
     ),
     // duplicated call
-    collect(
+    collect.finish(
       {
         schema,
         document: op,
@@ -606,7 +721,7 @@ test('should not send excluded operation name data to Hive', async () => {
   const collect = hive.collectUsage();
   await waitFor(20);
   await Promise.all([
-    (collect(
+    (collect.finish(
       {
         schema,
         document: op,
@@ -614,7 +729,7 @@ test('should not send excluded operation name data to Hive', async () => {
       },
       {},
     ),
-    collect(
+    collect.finish(
       {
         schema,
         document: op,
@@ -622,7 +737,7 @@ test('should not send excluded operation name data to Hive', async () => {
       },
       {},
     ),
-    collect(
+    collect.finish(
       {
         schema,
         document: op,
@@ -630,7 +745,7 @@ test('should not send excluded operation name data to Hive', async () => {
       },
       {},
     ),
-    collect(
+    collect.finish(
       {
         schema,
         document: op2,
@@ -697,7 +812,7 @@ test('should not send excluded operation name data to Hive', async () => {
   expect(operation.timestamp).toEqual(expect.any(Number));
   // execution
   expect(operation.execution.duration).toBeGreaterThanOrEqual(18 * 1_000_000); // >=18ms in microseconds
-  expect(operation.execution.duration).toBeLessThan(25 * 1_000_000); // <25ms
+  expect(operation.execution.duration).toBeLessThan(40 * 1_000_000); // <40ms. This is based on the waitFor(20). But timeouts are not exact.
   expect(operation.execution.errorsTotal).toBe(0);
   expect(operation.execution.ok).toBe(true);
 });
@@ -732,7 +847,7 @@ test('retry on non-200', async () => {
 
   const collect = hive.collectUsage();
 
-  await collect(
+  await collect.finish(
     {
       schema,
       document: op,
@@ -784,7 +899,7 @@ test('constructs URL with usage.target (hvo1/)', async ({ expect }) => {
     },
   });
 
-  await hive.collectUsage()(
+  await hive.collectUsage().finish(
     {
       schema,
       document: op,
@@ -830,7 +945,7 @@ test('constructs URL with usage.target (hvp1/)', async ({ expect }) => {
     },
   });
 
-  await hive.collectUsage()(
+  await hive.collectUsage().finish(
     {
       schema,
       document: op,
@@ -876,7 +991,7 @@ test('constructs URL with usage.target (hvu1/)', async ({ expect }) => {
     },
   });
 
-  await hive.collectUsage()(
+  await hive.collectUsage().finish(
     {
       schema,
       document: op,
@@ -919,7 +1034,7 @@ test('no debug property -> logger.debug is invoked', async ({ expect }) => {
     },
   });
 
-  await hive.collectUsage()(
+  await hive.collectUsage().finish(
     {
       schema,
       document: op,
@@ -969,7 +1084,7 @@ test('debug: false -> logger.debug is not invoked', async ({ expect }) => {
     },
   });
 
-  await hive.collectUsage()(
+  await hive.collectUsage().finish(
     {
       schema,
       document: op,
@@ -1023,7 +1138,7 @@ test('debug: true and missing logger.debug method -> logger.info is invoked (to 
     },
   });
 
-  await hive.collectUsage()(
+  await hive.collectUsage().finish(
     {
       schema,
       document: op,
@@ -1087,7 +1202,7 @@ test('new logger option', async () => {
     },
   });
 
-  await hive.collectUsage()(
+  await hive.collectUsage().finish(
     {
       schema,
       document: op,

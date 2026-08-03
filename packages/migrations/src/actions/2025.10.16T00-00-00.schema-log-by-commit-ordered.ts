@@ -6,10 +6,10 @@ import { type MigrationExecutor } from '../pg-migrator';
 export default {
   name: '2025.10.16T00-00-00.schema-log-by-commit-ordered.ts',
   noTransaction: true,
-  run: ({ sql }) => [
+  run: ({ psql }) => [
     {
       name: 'index schema_log_by_commit_ordered',
-      query: sql`
+      query: psql`
         CREATE INDEX CONCURRENTLY IF NOT EXISTS "schema_log_by_commit_ordered" ON "schema_log"(
           "project_id"
           , "target_id"
@@ -20,7 +20,7 @@ export default {
     },
     {
       name: 'drop index schema_log_by_ids',
-      query: sql`
+      query: psql`
         DROP INDEX CONCURRENTLY IF EXISTS "schema_log_by_ids";
       `,
     },

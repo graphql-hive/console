@@ -65,7 +65,8 @@ To run integration tests locally, from the pre-build Docker image, follow:
 
 ## E2E Tests
 
-We use [Cypress](https://www.cypress.io). Any file that ends with `.cy.ts` is an E2E test.
+We use [Playwright](https://playwright.dev). Root console app E2E tests live in `e2e/specs` and run
+against Chromium.
 
 #### Running Against Local Development Services
 
@@ -77,7 +78,7 @@ We use [Cypress](https://www.cypress.io). Any file that ends with `.cy.ts` is an
 1. Make sure you have Docker installed. If you are having issues, try to run `docker system prune`
    to clean the Docker caches.
 2. Install all deps: `pnpm i`
-3. Move into the `cypress` folder (`cd cypress`)
+3. Move into the `e2e` folder (`cd e2e`)
 4. Run `./local.sh` for building the project and starting the Docker containers
 5. Follow the output instruction from the script for starting the tests
 
@@ -101,7 +102,7 @@ We use [Cypress](https://www.cypress.io). Any file that ends with `.cy.ts` is an
      --env-file ./integration-tests/.env \
      up -d --wait
    ```
-7. Run Cypress: `pnpm test:e2e`
+7. Run Playwright: `pnpm test:e2e`
 
 #### Docker Compose Configuration
 

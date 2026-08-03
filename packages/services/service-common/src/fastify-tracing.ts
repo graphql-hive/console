@@ -1,6 +1,6 @@
 // Adapted from: https://github.com/autotelic/fastify-opentelemetry
 
-import {
+import type {
   FastifyPluginCallback,
   FastifyReply,
   FastifyRequest,

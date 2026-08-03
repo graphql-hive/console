@@ -1,3 +1,7 @@
+variable "NODE_VERSION_TAG" {
+  default = ""
+}
+
 variable "RELEASE" {
   default = "dev"
 }
@@ -11,6 +15,10 @@ variable "DOCKER_REGISTRY" {
 }
 
 variable "COMMIT_SHA" {
+  default = ""
+}
+
+variable "COMMIT_SHORT_SHA" {
   default = ""
 }
 
@@ -64,6 +72,7 @@ function "image_tag" {
 target "migrations-base" {
   dockerfile = "${PWD}/docker/migrations.dockerfile"
   args = {
+    NODE_VERSION_TAG = NODE_VERSION_TAG
     RELEASE = "${RELEASE}"
   }
 }
@@ -71,6 +80,7 @@ target "migrations-base" {
 target "service-base" {
   dockerfile = "${PWD}/docker/services.dockerfile"
   args = {
+    NODE_VERSION_TAG = NODE_VERSION_TAG
     RELEASE = "${RELEASE}"
   }
 }
@@ -92,6 +102,7 @@ target "otel-collector-base" {
 target "cli-base" {
   dockerfile = "${PWD}/docker/cli.dockerfile"
   args = {
+    NODE_VERSION_TAG = NODE_VERSION_TAG
     RELEASE = "${RELEASE}"
   }
 }
@@ -118,7 +129,7 @@ target "schema" {
   args = {
     SERVICE_DIR_NAME = "@hive/schema"
     IMAGE_TITLE = "graphql-hive/schema"
-    IMAGE_DESCRIPTION = "The schema service of the GraphQL Hive project."
+    IMAGE_DESCRIPTION = "The schema service of the Hive Console project."
     PORT = "3002"
     HEALTHCHECK_CMD = "wget --spider -q http://127.0.0.1:$${PORT}/_readiness"
   }
@@ -126,6 +137,7 @@ target "schema" {
     local_image_tag("schema"),
     stable_image_tag("schema"),
     image_tag("schema", COMMIT_SHA),
+    image_tag("schema", COMMIT_SHORT_SHA),
     image_tag("schema", BRANCH_NAME)
   ]
 }
@@ -139,7 +151,7 @@ target "policy" {
   args = {
     SERVICE_DIR_NAME = "@hive/policy"
     IMAGE_TITLE = "graphql-hive/policy"
-    IMAGE_DESCRIPTION = "The policy service of the GraphQL Hive project."
+    IMAGE_DESCRIPTION = "The policy service of the Hive Console project."
     PORT = "3012"
     HEALTHCHECK_CMD = "wget --spider -q http://127.0.0.1:$${PORT}/_readiness"
   }
@@ -147,6 +159,7 @@ target "policy" {
     local_image_tag("policy"),
     stable_image_tag("policy"),
     image_tag("policy", COMMIT_SHA),
+    image_tag("policy", COMMIT_SHORT_SHA),
     image_tag("policy", BRANCH_NAME)
   ]
 }
@@ -160,14 +173,16 @@ target "server" {
   args = {
     SERVICE_DIR_NAME = "@hive/server"
     IMAGE_TITLE = "graphql-hive/server"
-    IMAGE_DESCRIPTION = "The server service of the GraphQL Hive project."
+    IMAGE_DESCRIPTION = "The server service of the Hive Console project."
     PORT = "3001"
+    INSTALL_RDS_CA_CERTS = "1"
     HEALTHCHECK_CMD = "wget --spider -q http://127.0.0.1:$${PORT}/_readiness"
   }
   tags = [
     local_image_tag("server"),
     stable_image_tag("server"),
     image_tag("server", COMMIT_SHA),
+    image_tag("server", COMMIT_SHORT_SHA),
     image_tag("server", BRANCH_NAME)
   ]
 }
@@ -180,12 +195,14 @@ target "storage" {
   }
   args = {
     IMAGE_TITLE = "graphql-hive/storage"
-    IMAGE_DESCRIPTION = "The migrations service of the GraphQL Hive project."
+    IMAGE_DESCRIPTION = "The migrations service of the Hive Console project."
+    INSTALL_RDS_CA_CERTS = "1"
   }
   tags = [
     local_image_tag("storage"),
     stable_image_tag("storage"),
     image_tag("storage", COMMIT_SHA),
+    image_tag("storage", COMMIT_SHORT_SHA),
     image_tag("storage", BRANCH_NAME)
   ]
 }
@@ -199,36 +216,17 @@ target "commerce" {
   args = {
     SERVICE_DIR_NAME = "@hive/commerce"
     IMAGE_TITLE = "graphql-hive/commerce"
-    IMAGE_DESCRIPTION = "The commerce service of the GraphQL Hive project."
+    IMAGE_DESCRIPTION = "The commerce service of the Hive Console project."
     PORT = "3010"
+    INSTALL_RDS_CA_CERTS = "1"
     HEALTHCHECK_CMD = "wget --spider -q http://127.0.0.1:$${PORT}/_readiness"
   }
   tags = [
     local_image_tag("commerce"),
     stable_image_tag("commerce"),
     image_tag("commerce", COMMIT_SHA),
+    image_tag("commerce", COMMIT_SHORT_SHA),
     image_tag("commerce", BRANCH_NAME)
-  ]
-}
-
-target "tokens" {
-  inherits = ["service-base", get_target()]
-  contexts = {
-    dist = "${PWD}/packages/services/tokens/dist"
-    shared = "${PWD}/docker/shared"
-  }
-  args = {
-    SERVICE_DIR_NAME = "@hive/tokens"
-    IMAGE_TITLE = "graphql-hive/tokens"
-    IMAGE_DESCRIPTION = "The tokens service of the GraphQL Hive project."
-    PORT = "3003"
-    HEALTHCHECK_CMD = "wget --spider -q http://127.0.0.1:$${PORT}/_readiness"
-  }
-  tags = [
-    local_image_tag("tokens"),
-    stable_image_tag("tokens"),
-    image_tag("tokens", COMMIT_SHA),
-    image_tag("tokens", BRANCH_NAME)
   ]
 }
 
@@ -241,7 +239,7 @@ target "usage-ingestor" {
   args = {
     SERVICE_DIR_NAME = "@hive/usage-ingestor"
     IMAGE_TITLE = "graphql-hive/usage-ingestor"
-    IMAGE_DESCRIPTION = "The usage ingestor service of the GraphQL Hive project."
+    IMAGE_DESCRIPTION = "The usage ingestor service of the Hive Console project."
     PORT = "3007"
     HEALTHCHECK_CMD = "wget --spider -q http://127.0.0.1:$${PORT}/_readiness"
   }
@@ -249,6 +247,7 @@ target "usage-ingestor" {
     local_image_tag("usage-ingestor"),
     stable_image_tag("usage-ingestor"),
     image_tag("usage-ingestor", COMMIT_SHA),
+    image_tag("usage-ingestor", COMMIT_SHORT_SHA),
     image_tag("usage-ingestor", BRANCH_NAME)
   ]
 }
@@ -262,14 +261,16 @@ target "usage" {
   args = {
     SERVICE_DIR_NAME = "@hive/usage"
     IMAGE_TITLE = "graphql-hive/usage"
-    IMAGE_DESCRIPTION = "The usage ingestor service of the GraphQL Hive project."
+    IMAGE_DESCRIPTION = "The usage ingestor service of the Hive Console project."
     PORT = "3006"
+    INSTALL_RDS_CA_CERTS = "1"
     HEALTHCHECK_CMD = "wget --spider -q http://127.0.0.1:$${PORT}/_readiness"
   }
   tags = [
     local_image_tag("usage"),
     stable_image_tag("usage"),
     image_tag("usage", COMMIT_SHA),
+    image_tag("usage", COMMIT_SHORT_SHA),
     image_tag("usage", BRANCH_NAME)
   ]
 }
@@ -283,14 +284,16 @@ target "workflows" {
   args = {
     SERVICE_DIR_NAME = "@hive/workflows"
     IMAGE_TITLE = "graphql-hive/workflows"
-    IMAGE_DESCRIPTION = "The workflow service of the GraphQL Hive project."
+    IMAGE_DESCRIPTION = "The workflow service of the Hive Console project."
     PORT = "3013"
+    INSTALL_RDS_CA_CERTS = "1"
     HEALTHCHECK_CMD = "wget --spider -q http://127.0.0.1:$${PORT}/_readiness"
   }
   tags = [
     local_image_tag("workflows"),
     stable_image_tag("workflows"),
     image_tag("workflows", COMMIT_SHA),
+    image_tag("workflows", COMMIT_SHORT_SHA),
     image_tag("workflows", BRANCH_NAME)
   ]
 }
@@ -304,7 +307,7 @@ target "composition-federation-2" {
   args = {
     SERVICE_DIR_NAME = "@hive/external-composition"
     IMAGE_TITLE = "graphql-hive/composition-federation-2"
-    IMAGE_DESCRIPTION = "Federation 2 Composition Service for GraphQL Hive."
+    IMAGE_DESCRIPTION = "Federation 2 Composition Service for Hive Console."
     PORT = "3069"
     HEALTHCHECK_CMD = "wget --spider -q http://127.0.0.1:$${PORT}/_readiness"
   }
@@ -312,6 +315,7 @@ target "composition-federation-2" {
     local_image_tag("composition-federation-2"),
     stable_image_tag("composition-federation-2"),
     image_tag("composition-federation-2", COMMIT_SHA),
+    image_tag("composition-federation-2", COMMIT_SHORT_SHA),
     image_tag("composition-federation-2", BRANCH_NAME)
   ]
 }
@@ -326,33 +330,15 @@ target "app" {
     SERVICE_DIR_NAME = "@hive/app"
     IMAGE_TITLE = "graphql-hive/app"
     PORT = "3000"
-    IMAGE_DESCRIPTION = "The app of the GraphQL Hive project."
+    IMAGE_DESCRIPTION = "The app of the Hive Console project."
     HEALTHCHECK_CMD = "wget --spider -q http://127.0.0.1:$${PORT}/api/health"
   }
   tags = [
     local_image_tag("app"),
     stable_image_tag("app"),
     image_tag("app", COMMIT_SHA),
+    image_tag("app", COMMIT_SHORT_SHA),
     image_tag("app", BRANCH_NAME)
-  ]
-}
-
-target "apollo-router" {
-  inherits = ["router-base", get_target()]
-  contexts = {
-    router_pkg = "${PWD}/packages/libraries/router"
-    config = "${PWD}/configs/cargo"
-  }
-  args = {
-    IMAGE_TITLE = "graphql-hive/apollo-router"
-    PORT = "4000"
-    IMAGE_DESCRIPTION = "Apollo Router for GraphQL Hive."
-  }
-  tags = [
-    local_image_tag("apollo-router"),
-    stable_image_tag("apollo-router"),
-    image_tag("apollo-router", COMMIT_SHA),
-    image_tag("apollo-router", BRANCH_NAME)
   ]
 }
 
@@ -361,12 +347,13 @@ target "otel-collector" {
   context = "${PWD}/docker/configs/otel-collector"
   args = {
     IMAGE_TITLE = "graphql-hive/otel-collector"
-    IMAGE_DESCRIPTION = "OTEL Collector for GraphQL Hive."
+    IMAGE_DESCRIPTION = "OTEL Collector for Hive Console."
   }
   tags = [
     local_image_tag("otel-collector"),
     stable_image_tag("otel-collector"),
     image_tag("otel-collector", COMMIT_SHA),
+    image_tag("otel-collector", COMMIT_SHORT_SHA),
     image_tag("otel-collector", BRANCH_NAME)
   ]
 }
@@ -376,7 +363,7 @@ target "cli" {
   context = "${PWD}/packages/libraries/cli"
   args = {
     IMAGE_TITLE = "graphql-hive/cli"
-    IMAGE_DESCRIPTION = "GraphQL Hive CLI"
+    IMAGE_DESCRIPTION = "Hive Console CLI"
     # note that for CLI we always pass the npm version ! ! !
     CLI_VERSION = "${COMMIT_SHA}"
   }
@@ -384,6 +371,7 @@ target "cli" {
     local_image_tag("cli"),
     stable_image_tag("cli"),
     image_tag("cli", COMMIT_SHA),
+    image_tag("cli", COMMIT_SHORT_SHA),
     image_tag("cli", BRANCH_NAME)
   ]
 }
@@ -393,7 +381,6 @@ group "build" {
     "schema",
     "policy",
     "storage",
-    "tokens",
     "usage-ingestor",
     "usage",
     "server",
@@ -411,19 +398,12 @@ group "integration-tests" {
     "schema",
     "policy",
     "storage",
-    "tokens",
     "usage-ingestor",
     "usage",
     "server",
     "composition-federation-2",
     "workflows",
     "otel-collector"
-  ]
-}
-
-group "apollo-router-hive-build" {
-  targets = [
-    "apollo-router"
   ]
 }
 

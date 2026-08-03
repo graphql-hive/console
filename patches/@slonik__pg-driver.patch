@@ -1,0 +1,68 @@
+diff --git a/dist/factories/createPgDriverFactory.js b/dist/factories/createPgDriverFactory.js
+index ed4601ac233435cc8ea5e546c722ede4bd8873d7..a4f8f7de692fbcebc9f7bfce63dc06b0b9ab3680 100644
+--- a/dist/factories/createPgDriverFactory.js
++++ b/dist/factories/createPgDriverFactory.js
+@@ -52,7 +52,13 @@ const createClientConfiguration = (clientConfiguration) => {
+         database: connectionOptions.databaseName,
+         host: connectionOptions.host,
+         options: connectionOptions.options,
+-        password: connectionOptions.password,
++        password: clientConfiguration.connectionUriProvider
++            ? async () => {
++                const freshUri = await clientConfiguration.connectionUriProvider();
++                const freshOptions = parseDsn(freshUri);
++                return freshOptions.password ?? '';
++            }
++            : connectionOptions.password,
+         port: connectionOptions.port,
+         // @ts-expect-error - https://github.com/brianc/node-postgres/pull/3214
+         queryMode: "extended",
+@@ -230,7 +236,8 @@ export const createPgDriverFactory = () => {
+                             });
+                         }
+                         if (Array.isArray(result)) {
+-                            throw new InvalidInputError("Must not use multiple statements in a single query.");
++                          result = result[result.length - 1]
++                          // throw new InvalidInputError("Must not use multiple statements in a single query.");
+                         }
+                         return {
+                             command: result.command,
+diff --git a/src/factories/createPgDriverFactory.ts b/src/factories/createPgDriverFactory.ts
+index 608ed21b07e90fb67dc1d778a836e3554ff50671..30f67b31e7c42a13d99745089f7b6dc5d1763752 100644
+--- a/src/factories/createPgDriverFactory.ts
++++ b/src/factories/createPgDriverFactory.ts
+@@ -101,12 +101,23 @@ const createClientConfiguration = (
+ ): NativePostgresClientConfiguration => {
+   const connectionOptions = parseDsn(clientConfiguration.connectionUri);
+ 
++  // Type cast: connectionUriProvider added via Slonik patch, not in @slonik/driver types
++  const config = clientConfiguration as DriverConfiguration & {
++    connectionUriProvider?: () => Promise<string>;
++  };
++
+   const poolConfiguration: NativePostgresClientConfiguration = {
+     application_name: connectionOptions.applicationName,
+     database: connectionOptions.databaseName,
+     host: connectionOptions.host,
+     options: connectionOptions.options,
+-    password: connectionOptions.password,
++    password: config.connectionUriProvider
++      ? async () => {
++          const freshUri = await config.connectionUriProvider!();
++          const freshOptions = parseDsn(freshUri);
++          return freshOptions.password ?? '';
++        }
++      : connectionOptions.password,
+     port: connectionOptions.port,
+     // @ts-expect-error - https://github.com/brianc/node-postgres/pull/3214
+     queryMode: "extended",
+@@ -314,7 +325,8 @@ export const createPgDriverFactory = (): DriverFactory => {
+             }
+ 
+             if (Array.isArray(result)) {
+-              throw new InvalidInputError("Must not use multiple statements in a single query.");
++              result = result[result.length - 1]
++              // throw new InvalidInputError("Must not use multiple statements in a single query.");
+             }
+ 
+             return {

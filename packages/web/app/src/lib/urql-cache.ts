@@ -7,6 +7,7 @@ import type { CreateAlertModal_AddAlertMutation } from '@/components/project/ale
 import type { CreateChannel_AddAlertChannelMutation } from '@/components/project/alerts/create-channel';
 import type { DeleteAlertsButton_DeleteAlertsMutation } from '@/components/project/alerts/delete-alerts-button';
 import type { DeleteChannelsButton_DeleteChannelsMutation } from '@/components/project/alerts/delete-channels-button';
+import type { AlertForm_AddMetricAlertRuleMutation } from '@/components/target/alerts/alert-form';
 import type { CreateOperationMutationType } from '@/components/target/laboratory/create-operation-modal';
 import type { DeleteCollectionMutationType } from '@/components/target/laboratory/delete-collection-modal';
 import type { DeleteOperationMutationType } from '@/components/target/laboratory/delete-operation-modal';
@@ -26,7 +27,12 @@ import {
   type DeleteTokensDocument,
 } from '@/pages/target-settings';
 import { ResultOf, VariablesOf } from '@graphql-typed-document-node/core';
-import { Cache, QueryInput, UpdateResolver } from '@urql/exchange-graphcache';
+import {
+  Cache,
+  OptimisticMutationResolver,
+  QueryInput,
+  UpdateResolver,
+} from '@urql/exchange-graphcache';
 
 const TargetsDocument = graphql(`
   query targets($selector: ProjectSelectorInput!) {
@@ -387,6 +393,29 @@ const deleteSavedFilter: TypedDocumentNodeUpdateResolver<
   );
 };
 
+const addMetricAlertRule: TypedDocumentNodeUpdateResolver<
+  typeof AlertForm_AddMetricAlertRuleMutation
+> = ({ addMetricAlertRule }, _args, cache) => {
+  if (!addMetricAlertRule.ok) return;
+  cache.invalidate({
+    __typename: 'Target',
+    id: addMetricAlertRule.ok.updatedTarget.id,
+  });
+};
+
+const updateMetricAlertRule: UpdateResolver = (_result, args, cache) => {
+  const input = (args as { input?: Record<string, unknown> } | null)?.input;
+  const ruleId = input?.ruleId as string | undefined;
+  if (!input || !ruleId) return;
+  // Skip for a pure enable/disable toggle: the mutation returns the new `enabled`
+  // so graphcache merges it in place; invalidating would evict the entity and flash a refetch.
+  const isEnabledOnlyToggle = Object.keys(input).every(
+    key => key === 'project' || key === 'ruleId' || key === 'enabled',
+  );
+  if (isEnabledOnlyToggle) return;
+  cache.invalidate({ __typename: 'MetricAlertRule', id: ruleId });
+};
+
 // UpdateResolver
 export const Mutation = {
   createOrganization,
@@ -405,4 +434,34 @@ export const Mutation = {
   deleteOperationInDocumentCollection,
   createOperationInDocumentCollection,
   deleteSavedFilter,
+  addMetricAlertRule,
+  updateMetricAlertRule,
+};
+
+const updateMetricAlertRuleOptimistic: OptimisticMutationResolver = args => {
+  const input = (args as { input?: Record<string, unknown> }).input;
+  const ruleId = input?.ruleId as string | undefined;
+  if (!input || !ruleId) return null;
+  // Only the dedicated enable/disable toggle is safe to flip optimistically
+  const isEnabledOnlyToggle = Object.keys(input).every(
+    key => key === 'project' || key === 'ruleId' || key === 'enabled',
+  );
+  if (!isEnabledOnlyToggle) return null;
+  return {
+    __typename: 'UpdateMetricAlertRuleResult',
+    error: null,
+    ok: {
+      __typename: 'UpdateMetricAlertRuleOk',
+      updatedMetricAlertRule: {
+        __typename: 'MetricAlertRule',
+        id: ruleId,
+        enabled: input.enabled as boolean,
+        updatedAt: new Date().toISOString(),
+      },
+    },
+  };
+};
+
+export const Optimistic = {
+  updateMetricAlertRule: updateMetricAlertRuleOptimistic,
 };

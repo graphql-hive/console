@@ -1,5 +1,4 @@
-import { GraphQLError, print } from 'graphql';
-import { transformCommentsToDescriptions } from '@graphql-tools/utils';
+import { GraphQLError } from 'graphql';
 import { Args, Errors, Flags } from '@oclif/core';
 import Command from '../../base-command';
 import { DocumentType, graphql } from '../../gql';
@@ -280,8 +279,7 @@ export default class SchemaPublish extends Command<typeof SchemaPublish> {
           logger: this.logger,
         });
         invariant(typeof rawSdl === 'string' && rawSdl.length > 0, 'Schema seems empty');
-        const transformedSDL = print(transformCommentsToDescriptions(rawSdl));
-        sdl = minifySchema(transformedSDL);
+        sdl = minifySchema(rawSdl);
       } catch (err) {
         if (err instanceof GraphQLError) {
           throw new InvalidSDLError(err);

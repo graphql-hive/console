@@ -3,6 +3,7 @@ import { FlaskConicalIcon, HeartCrackIcon, PartyPopperIcon, RefreshCcwIcon } fro
 import { CombinedError, useMutation, useQuery } from 'urql';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Link } from '@/components/ui/link';
 import { Spinner } from '@/components/ui/spinner';
 import { Switch } from '@/components/ui/switch';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
@@ -315,13 +316,16 @@ export function NativeCompositionSettings(props: {
                   </a>{' '}
                   is not yet compatible with subgraphs of your project. We're working on it!
                   <br />
-                  Please reach out to us to explore solutions for addressing this issue and share
-                  this report with us:
-                  <a
+                  To determine the cause of this issue, view the{' '}
+                  <Link
+                    variant="primary"
                     href={`/native-composition-compatibility-report/${projectQuery.data.project.id}`}
                   >
-                    View full report
-                  </a>
+                    Native Composition Report
+                  </Link>
+                  .<br />
+                  <br />
+                  If unclear, please reach out to us to explore solutions for addressing this issue.
                 </>
               ) : null}
               {projectQuery.data.project.nativeFederationCompatibility.status ===

@@ -277,14 +277,14 @@ const OrganizationSettingsContent = (props: {
                 description={
                   <>
                     <CardDescription>
-                      This is your organization's URL namespace on GraphQL Hive. Changing it{' '}
+                      This is your organization's URL namespace on Hive Console. Changing it{' '}
                       <span className="font-bold">will</span> invalidate any existing links to your
                       organization.
                     </CardDescription>
                     <CardDescription>
                       <DocsLink
                         className="text-neutral-10 text-sm"
-                        href="/management/organizations#change-slug-of-organization"
+                        href="/schema-registry/management/organizations#change-slug-of-organization"
                       >
                         You can read more about it in the documentation
                       </DocsLink>
@@ -329,7 +329,7 @@ const OrganizationSettingsContent = (props: {
                 <CardDescription>
                   <DocsLink
                     className="text-neutral-10 text-sm"
-                    href="/management/organizations#slack"
+                    href="/schema-registry/management/organizations#slack"
                   >
                     Learn more.
                   </DocsLink>
@@ -351,7 +351,7 @@ const OrganizationSettingsContent = (props: {
                 <CardDescription>
                   <DocsLink
                     className="text-neutral-10 text-sm"
-                    href="/management/organizations#github"
+                    href="/schema-registry/management/organizations#github"
                   >
                     Learn more.
                   </DocsLink>
@@ -376,7 +376,7 @@ const OrganizationSettingsContent = (props: {
                 <CardDescription>
                   <DocsLink
                     className="text-neutral-10 text-sm"
-                    href="/management/organizations#transfer-ownership"
+                    href="/schema-registry/management/organizations#transfer-ownership"
                   >
                     Learn more about the process
                   </DocsLink>
@@ -408,7 +408,7 @@ const OrganizationSettingsContent = (props: {
                 <CardDescription>
                   <DocsLink
                     className="text-neutral-10 text-sm"
-                    href="/management/organizations#delete-an-organization"
+                    href="/schema-registry/management/organizations#delete-an-organization"
                   >
                     <span>
                       <strong>This action is not reversible!</strong> You can find more information
@@ -440,7 +440,10 @@ const OrganizationSettingsContent = (props: {
                   View a history of changes made to the organization settings.
                 </CardDescription>
                 <CardDescription>
-                  <DocsLink className="text-neutral-10 text-sm" href="/management/audit-logs">
+                  <DocsLink
+                    className="text-neutral-10 text-sm"
+                    href="/schema-registry/management/audit-logs"
+                  >
                     Learn more.
                   </DocsLink>
                 </CardDescription>
@@ -644,7 +647,7 @@ function SettingsPageContent(props: {
     if (currentOrganization?.viewerCanManageOIDCIntegration) {
       pages.push({
         key: 'sso',
-        title: 'Single Sign On',
+        title: 'SSO / SCIM',
       });
     }
 

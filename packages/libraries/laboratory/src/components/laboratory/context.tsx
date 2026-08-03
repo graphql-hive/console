@@ -47,6 +47,7 @@ type LaboratoryContextState = LaboratoryCollectionsState &
   LaboratoryPluginsState &
   LaboratoryTestState & {
     isFullScreen?: boolean;
+    enableFullScreen?: boolean;
     theme?: 'light' | 'dark';
   };
 type LaboratoryContextActions = LaboratoryCollectionsActions &
@@ -141,6 +142,8 @@ export interface LaboratoryApi {
     onSubmit?: (value: string | null) => void;
   }) => void;
   isFullScreen?: boolean;
+  /** Show the full screen control. Off for hosts that already fill the viewport. */
+  enableFullScreen?: boolean;
   goToFullScreen?: () => void;
   exitFullScreen?: () => void;
   defaultPreflight?: LaboratoryPreflight | null;

@@ -4,24 +4,34 @@
 
 Developing Hive locally requires you to have the following software installed locally:
 
-- Node.js >=22 (or `nvm` or `fnm`)
-- pnpm >=10.16.0
+- Node.js (or `nvm` or `fnm`): check the `package.json` `engines` entry for the correct version
+- pnpm: check the `package.json` `engines` entry for the correct version
 - Docker version 26.1.1 or later(previous versions will not work correctly on arm64)
-- make sure these ports are free: 5432, 6379, 9000, 9001, 8123, 9092, 8081, 8082, 9644, 3567, 7043
+- make sure these ports are free: 5432, 6379, 9000, 9001, 8123, 9092, 8081, 8082, 9644, 3567, 7043,
+  10255 (OTEL collector `/metrics`)
+- If using the optional observability profile (see below), additionally: 3030 (Grafana), 9090
+  (Prometheus)
 
 ## Setup Instructions
 
 - Clone the repository locally
 - Make sure to install the recommended VSCode extensions (defined in `.vscode/extensions.json`)
-- In the root of the repo, run `nvm use` to use the same version of node as mentioned above
+- In the root of the repo, run `nvm use` (or `fnm use`) to use the required Node.js version
 - Create `.env` file in the root, and use the following:
 
 ```dotenv
 ENVIRONMENT=local
 ```
 
-- Run `pnpm i` at the root to install all the dependencies and run the hooks
-- Run `pnpm local:setup` to run Docker compose dependencies, create databases and migrate database
+- Run `pnpm i` at the root to install all the dependencies and run the hooks. This also runs
+  `pnpm env:sync` automatically (part of `postinstall`), which copies each package's `.env.template`
+  to `.env` on first install, and on subsequent installs adds any newly-introduced keys to existing
+  `.env` files **without overwriting values you've customized**. So when pulling a branch that adds
+  env vars, `pnpm install` is usually all you need — no manual copying. Run `pnpm env:sync --force`
+  to force-regenerate from templates if you need to (overwrites local customizations).
+- Run `pnpm local:setup` to run Docker compose dependencies, create databases and migrate database.
+  This passes `--build` so any custom-built image (currently just `otel-collector`) is reconciled
+  with its source on every run. BuildKit caching makes it near-instant when nothing changed.
 
 Solving permission problems on this step:
 
@@ -42,7 +52,8 @@ Add "user" field to ./docker/docker-compose.dev.yml
 - Run `pnpm generate` to generate the typings from the graphql files (use `pnpm graphql:generate` if
   you only need to run GraphQL Codegen)
 - Run `pnpm build` to build all services
-- Click on `Start Hive` in the bottom bar of VSCode
+- Click on `Start Hive` in the bottom bar of VSCode (alternatively you can manually start the
+  services you need)
 - Open the UI (`http://localhost:3000` by default) and Sign in with any of the identity provider
 - Once this is done, you should be able to log in and use the project
 
@@ -80,6 +91,89 @@ We recommend the following flow if you are having issues with running Hive local
 4. Delete local `docker/.hive` and `docker/.hive-dev` dir used by Docker volumes.
 5. Reinstall dependencies using `pnpm install`
 6. Force-generate new `.env` files: `pnpm env:sync --force`
+
+## Local Grafana + Prometheus (optional)
+
+The dev stack includes an opt-in `observability` profile that runs Grafana and Prometheus locally
+with the production dashboards. It's useful when working on metrics, alerts, or anything that relies
+on visualizing what services emit. The default `pnpm local:setup` and the VSCode `Start Hive` button
+do not start it.
+
+The observability profile runs **alongside** the default stack, not instead of it. Start the default
+stack first (either way works), then add the observability profile on top.
+
+If you already started Hive via `pnpm local:setup` or the VSCode `Start Hive` button:
+
+```bash
+pnpm dev:observability
+```
+
+(equivalent to `docker compose -f docker/docker-compose.dev.yml --profile observability up -d`).
+Tear it down again with `pnpm dev:observability:down`.
+
+If you're starting from scratch and want both at once:
+
+```bash
+docker compose -f docker/docker-compose.dev.yml --profile observability up -d --remove-orphans
+```
+
+Either command is idempotent and safe to re-run.
+
+- Grafana: <http://localhost:3030> (anonymous admin enabled, local only). All dashboards from
+  `deployment/grafana-dashboards/` appear under the "Hive Monitoring (local)" folder.
+- Prometheus: <http://localhost:9090>, scrape targets at <http://localhost:9090/targets>.
+- Tempo: <http://localhost:3200>. Used by the Metric-Alerts dashboard's trace panels for the
+  workflows service's alert-evaluator and notification-dispatch spans. See
+  `scripts/seed-alerts-live/README.md` for a script that drives load through this path.
+
+> **Dual-collector model.** Production splits OTLP ingest across two collectors: one customer-facing
+> with `hiveauth` (deployed via
+> [`deployment/services/otel-collector.ts`](../deployment/services/otel-collector.ts)) for customer
+> trace ingest on `:4318`/`:4317`, and a separate auth-free internal collector (deployed via the
+> Helm chart in [`deployment/utils/observability.ts`](../deployment/utils/observability.ts)) for
+> Hive services' own spans. Internal services (`server`, `workflows`, `commerce`, etc.) point at the
+> **internal** collector via `OPENTELEMETRY_COLLECTOR_ENDPOINT`. Locally we collapse both roles into
+> the single `otel-collector` container by adding a second auth-free receiver block
+> (`otlp/internal`, ports `:4319` / `:4320`) alongside the customer-facing one. Hive services
+> running on the host point at `http://localhost:4320` (set in each service's `.env.template`);
+> customer-style ingest tests still hit `:4318` and exercise `hiveauth`.
+
+- Datasource UIDs locally: `local-prom` and `local-tempo` (clearly distinct from the prod UIDs
+  `grafanacloud-prom` / `grafanacloud-traces` so there's no ambiguity about which environment you're
+  looking at).
+
+### How dashboards get to local Grafana
+
+A small `grafana-dashboard-init` container copies the JSON files from
+`deployment/grafana-dashboards/` into `docker/.hive-dev/grafana/dashboards/` at startup, performing
+the same parameter substitution Pulumi does (`PROM_DATASOURCE_UID` becomes `local-prom`,
+`TEMPO_DATASOURCE_UID` becomes `local-tempo`, `TABLE_SUFFIX` becomes `dev`). Grafana picks them up
+via file-based provisioning. The source JSONs stay the single source of truth.
+
+### Scraping host-running services
+
+Prometheus is configured to scrape `host.docker.internal:10254`, which is where Hive services expose
+`/metrics` by default (their `PROMETHEUS_METRICS_PORT` env var defaults to `10254`). The compose
+file sets `extra_hosts: host.docker.internal:host-gateway` on the prometheus service so this
+resolves on Linux too (Docker Desktop on macOS/Windows provides it automatically).
+
+The OTEL collector container internally listens on `10254` as well, but
+[docker/docker-compose.dev.yml](../docker/docker-compose.dev.yml) publishes that container port on
+host port **10255**, not 10254, so the host's port 10254 stays free for any Hive service a developer
+runs natively (via `pnpm dev` or the VSCode `Start Hive` button). Prometheus reaches the OTEL
+collector via docker DNS (`otel-collector:10254`), which is unaffected by the host mapping choice.
+
+If you run more than one Hive service natively at the same time, only the first can use port 10254.
+For the others, set `PROMETHEUS_METRICS_PORT` to a different free port and add it as an extra target
+in [docker/configs/prometheus/prometheus.yml](../docker/configs/prometheus/prometheus.yml).
+
+### Linux: filesystem permissions on `.hive-dev/grafana/data`
+
+Grafana inside the container runs as UID 472. On Linux bind mounts that can produce
+permission-denied errors when Grafana tries to write to `docker/.hive-dev/grafana/data`. The same
+UID/GID workaround documented above for `clickhouse`/`db` applies: add `user: '${UID}:${GID}'` to
+the `grafana` service entry in `docker/docker-compose.dev.yml` (and ensure those env vars are
+exported in your shell). macOS does not need this.
 
 ## Publish your first schema (manually)
 

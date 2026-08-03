@@ -2,10 +2,10 @@ import { type MigrationExecutor } from '../pg-migrator';
 
 export default {
   name: '2026.01.30T00-00-00.account-linking.ts',
-  run: ({ sql }) => [
+  run: ({ psql }) => [
     {
       name: 'create `users_linked_identities` table',
-      query: sql`
+      query: psql`
         CREATE TABLE IF NOT EXISTS "users_linked_identities" (
           "user_id" uuid NOT NULL REFERENCES "users" ("id") ON DELETE CASCADE
           , "identity_id" uuid NOT NULL
@@ -16,7 +16,7 @@ export default {
     },
     {
       name: 'rename `oidc_user_access_only` to `oidc_user_join_only` and re-add `oidc_user_access_only` column',
-      query: sql`
+      query: psql`
         ALTER TABLE IF EXISTS "oidc_integrations"
         RENAME COLUMN "oidc_user_access_only" TO "oidc_user_join_only";
         ALTER TABLE IF EXISTS "oidc_integrations"

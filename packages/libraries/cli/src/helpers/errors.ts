@@ -228,7 +228,11 @@ export class NetworkError extends HiveCLIError {
 /** GraphQL Errors returned from an operation. Note that some GraphQL Errors that require specific steps to correct are handled through other error types. */
 export class APIError extends HiveCLIError {
   public ref?: string;
-  constructor(cause: Error | string, requestId?: string) {
+  constructor(
+    cause: Error | string,
+    requestId?: string,
+    public graphQLErrors?: ReadonlyArray<GraphQLError>,
+  ) {
     super(
       ExitCode.ERROR,
       errorCode(ErrorCategory.GENERIC, 15),
@@ -240,11 +244,11 @@ export class APIError extends HiveCLIError {
 }
 
 export class IntrospectionError extends HiveCLIError {
-  constructor() {
+  constructor(serviceName?: string) {
     super(
       ExitCode.ERROR,
       errorCode(ErrorCategory.GENERIC, 16),
-      'Could not get introspection result from the service. Make sure introspection is enabled by the server.',
+      `Could not get introspection result from the service${serviceName ? ` '${serviceName}'` : ''}. Make sure introspection is enabled by the server.`,
     );
   }
 }
@@ -387,11 +391,41 @@ export class InvalidFileContentsError extends HiveCLIError {
 }
 
 export class InvalidTargetError extends HiveCLIError {
-  constructor() {
+  constructor(flagName = '--target') {
     super(
       ExitCode.BAD_INIT,
       errorCode(ErrorCategory.GENERIC, 20),
-      `Invalid slug or ID provided for option "--target". Must match target slug "$organization_slug/$project_slug/$target_slug" (e.g. "the-guild/graphql-hive/staging") or UUID (e.g. c8164307-0b42-473e-a8c5-2860bb4beff6).`,
+      `Invalid slug or ID provided for option "${flagName}". Must match target slug "$organization_slug/$project_slug/$target_slug" (e.g. "the-guild/graphql-hive/staging") or UUID (e.g. c8164307-0b42-473e-a8c5-2860bb4beff6).`,
+    );
+  }
+}
+
+export class InvalidFederationSubgraphError extends HiveCLIError {
+  constructor(reason?: string) {
+    super(
+      ExitCode.BAD_INIT,
+      errorCode(ErrorCategory.GENERIC, 21),
+      `The provided service URL does not point to a valid Federation subgraph.${reason ? `\n${reason}\n` : ''}`,
+    );
+  }
+}
+
+export class InvalidVersionIdError extends HiveCLIError {
+  constructor(flagName = '--version', reason?: string) {
+    super(
+      ExitCode.BAD_INIT,
+      errorCode(ErrorCategory.GENERIC, 21),
+      `Invalid version id provided for "${flagName}".${reason ? `\n${reason}\n` : ''}`,
+    );
+  }
+}
+
+export class ConflictingOptionsError extends HiveCLIError {
+  constructor(flagNames: string[], reason?: string) {
+    super(
+      ExitCode.BAD_INIT,
+      errorCode(ErrorCategory.GENERIC, 21),
+      `The options ${flagNames.map(name => `"${name}"`).join(', ')} conflict. Please only provide one.".${reason ? `\n${reason}\n` : ''}`,
     );
   }
 }

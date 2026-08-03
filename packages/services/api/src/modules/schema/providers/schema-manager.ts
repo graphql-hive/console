@@ -4,7 +4,7 @@ import { parse, print } from 'graphql';
 import { Inject, Injectable, Scope } from 'graphql-modules';
 import lodash from 'lodash';
 import { z } from 'zod';
-import { trace, traceFn } from '@hive/service-common';
+import { Encryptor, trace, traceFn } from '@hive/service-common';
 import type {
   ConditionalBreakingChangeMetadata,
   SchemaChangeType,
@@ -30,7 +30,6 @@ import { parseGraphQLSource } from '../../../shared/schema';
 import { Session } from '../../auth/lib/authz';
 import { GitHubIntegrationManager } from '../../integrations/providers/github-integration-manager';
 import { ProjectManager } from '../../project/providers/project-manager';
-import { CryptoProvider } from '../../shared/providers/crypto';
 import { IdTranslator } from '../../shared/providers/id-translator';
 import { Logger } from '../../shared/providers/logger';
 import {
@@ -43,9 +42,9 @@ import { TargetManager } from '../../target/providers/target-manager';
 import { BreakingSchemaChangeUsageHelper } from './breaking-schema-changes-helper';
 import { SCHEMA_MODULE_CONFIG, type SchemaModuleConfig } from './config';
 import { Contracts } from './contracts';
-import type { SchemaCoordinatesDiffResult } from './inspector';
 import { CompositionOrchestrator } from './orchestrator/composition-orchestrator';
 import { ensureCompositeSchemas, removeDescriptions, SchemaHelper } from './schema-helper';
+import { SchemaVersionStore } from './schema-version-store';
 
 const ENABLE_EXTERNAL_COMPOSITION_SCHEMA = z.object({
   endpoint: z.string().url().nonempty(),
@@ -77,13 +76,14 @@ export class SchemaManager {
     private storage: Storage,
     private projectManager: ProjectManager,
     private compositionOrchestrator: CompositionOrchestrator,
-    private crypto: CryptoProvider,
+    private crypto: Encryptor,
     private githubIntegrationManager: GitHubIntegrationManager,
     private targetManager: TargetManager,
     private schemaHelper: SchemaHelper,
     private contracts: Contracts,
     private breakingSchemaChangeUsageHelper: BreakingSchemaChangeUsageHelper,
     private idTranslator: IdTranslator,
+    private schemaVersions: SchemaVersionStore,
     @Inject(SCHEMA_MODULE_CONFIG) private schemaModuleConfig: SchemaModuleConfig,
   ) {
     this.logger = logger.child({ source: 'SchemaManager' });
@@ -92,7 +92,9 @@ export class SchemaManager {
         return Promise.all(
           selectors.map(async selector => {
             return {
-              ...(await this.storage.getLatestValidVersion(selector)),
+              ...(await this.schemaVersions.getLatestValidSchemaVersionForTargetId(
+                selector.targetId,
+              )),
               projectId: selector.projectId,
               targetId: selector.targetId,
               organizationId: selector.organizationId,
@@ -110,11 +112,7 @@ export class SchemaManager {
 
   async hasSchema(target: Target) {
     this.logger.debug('Checking if schema is available (targetId=%s)', target.id);
-    return this.storage.hasSchema({
-      organizationId: target.orgId,
-      projectId: target.projectId,
-      targetId: target.id,
-    });
+    return this.schemaVersions.anyVersionExistsForTarget(target);
   }
 
   @traceFn('SchemaManager.compose', {
@@ -203,7 +201,7 @@ export class SchemaManager {
         input.services.map(service => ({
           serviceName: service.name,
           sdl: service.sdl,
-          serviceUrl: service.url ?? null,
+          serviceUrl: service.url ?? '',
         })),
       )
       .map(service => this.schemaHelper.createSchemaObject(service));
@@ -255,7 +253,7 @@ export class SchemaManager {
     } & TargetSelector,
   ) {
     this.logger.debug('Fetching non-empty list of schemas (selector=%o)', selector);
-    const schemas = await this.storage.getSchemasOfVersion(selector);
+    const schemas = await this.schemaVersions.getSchemasBySchemaVersionId(selector.versionId);
 
     if (schemas.length === 0) {
       throw new HiveError('No schemas found for this version.');
@@ -275,19 +273,17 @@ export class SchemaManager {
   @atomic(stringifySelector)
   async getMaybeSchemasOfVersion(schemaVersion: SchemaVersion) {
     this.logger.debug('Fetching schemas (schemaVersionId=%s)', schemaVersion.id);
-    return this.storage.getSchemasOfVersion({ versionId: schemaVersion.id });
+    return this.schemaVersions.getSchemasBySchemaVersionId(schemaVersion.id);
   }
 
   async getMatchingServiceSchemaOfVersions(versions: { before: string | null; after: string }) {
     this.logger.debug('Fetching service schema of versions (selector=%o)', versions);
-    return this.storage.getMatchingServiceSchemaOfVersions(versions);
+    return this.schemaVersions.getMatchingServiceSchemaOfVersions(versions);
   }
 
   async getMaybeLatestValidVersion(target: Target) {
     this.logger.debug('Fetching maybe latest valid version (targetId=%o)', target.id);
-    const version = await this.storage.getMaybeLatestValidVersion({
-      targetId: target.id,
-    });
+    const version = await this.schemaVersions.getMaybeLatestValidSchemaVersion(target);
 
     if (!version) {
       return null;
@@ -301,6 +297,65 @@ export class SchemaManager {
     };
   }
 
+  async getSchemaVersionWithTargetBySchemaVersionIdForProject(
+    project: Project,
+    schemaVersionId: string,
+  ): Promise<null | {
+    target: Target;
+    schemaVersion: SchemaVersion & {
+      projectId: string;
+      targetId: string;
+      organizationId: string;
+    };
+  }> {
+    this.logger.debug(
+      'Lookup up schema version by id for project (projectId=%s, schemaVersionId=%s)',
+      project.id,
+      schemaVersionId,
+    );
+    const schemaVersion = await this.schemaVersions.getSchemaVersionById(schemaVersionId);
+
+    if (!schemaVersion) {
+      this.logger.debug('The schema version was not found. (schemaVersionId=%s)', schemaVersionId);
+      return null;
+    }
+
+    const target = await this.storage.getTargetById(schemaVersion.targetId);
+
+    if (!target) {
+      this.logger.debug(
+        'The target of the schema version was not found. (targetId=%s)',
+        schemaVersion.targetId,
+      );
+      return null;
+    }
+
+    if (target.projectId !== project.id) {
+      this.logger.debug(
+        'The found schema version does not belong to the specified target. (expectedProjectId=%s, actualProjectId=%s)',
+        project.id,
+        target.projectId,
+      );
+      return null;
+    }
+
+    this.logger.debug(
+      'The schema version and its target were found.. (targetId=%s, schemaVersionId=%s)',
+      schemaVersion.targetId,
+      schemaVersion.id,
+    );
+
+    return {
+      target,
+      schemaVersion: {
+        ...schemaVersion,
+        projectId: target.projectId,
+        targetId: target.id,
+        organizationId: target.orgId,
+      },
+    };
+  }
+
   async getLatestValidVersion(selector: TargetSelector) {
     this.logger.debug('Fetching latest valid version (selector=%o)', selector);
     return this.latestSchemaVersionLoader.load(selector);
@@ -308,11 +363,7 @@ export class SchemaManager {
 
   async getMaybeLatestVersion(target: Target) {
     this.logger.debug('Fetching maybe latest version (targetId=%o)', target.id);
-    const latest = await this.storage.getMaybeLatestVersion({
-      targetId: target.id,
-      projectId: target.projectId,
-      organizationId: target.orgId,
-    });
+    const latest = await this.schemaVersions.getMaybeLatestSchemaVersionForTargetId(target.id);
 
     if (!latest) {
       return null;
@@ -326,7 +377,7 @@ export class SchemaManager {
     };
   }
 
-  async getSchemaVersion(
+  async getSchemaVersionBySelector(
     selector: TargetSelector & { versionId: string },
   ): Promise<SchemaVersion | null> {
     this.logger.debug('Fetching single schema version (selector=%o)', selector);
@@ -336,17 +387,20 @@ export class SchemaManager {
       return null;
     }
 
-    const result = await this.storage.getMaybeVersion(selector);
+    const version = await this.schemaVersions.getSchemaVersionById(selector.versionId);
 
-    if (!result) {
+    if (!version) {
+      return null;
+    }
+
+    if (version.targetId !== selector.targetId) {
       return null;
     }
 
     return {
       projectId: selector.projectId,
-      targetId: selector.targetId,
       organizationId: selector.organizationId,
-      ...result,
+      ...version,
     };
   }
 
@@ -362,10 +416,7 @@ export class SchemaManager {
       return null;
     }
 
-    const schemas = await this.storage.getSchemasOfVersion({
-      versionId: schemaVersion.id,
-      includeMetadata: true,
-    });
+    const schemas = await this.schemaVersions.getSchemasBySchemaVersionId(schemaVersion.id);
 
     return {
       version: schemaVersion,
@@ -373,14 +424,14 @@ export class SchemaManager {
     };
   }
 
-  async getPaginatedSchemaVersionsForTargetId(args: {
-    targetId: string;
-    organizationId: string;
-    projectId: string;
-    first: number | null;
-    cursor: null | string;
-  }) {
-    const connection = await this.storage.getPaginatedSchemaVersionsForTargetId(args);
+  async getPaginatedSchemaVersionsForTargetId(
+    target: Target,
+    args: {
+      first: number | null;
+      cursor: null | string;
+    },
+  ) {
+    const connection = await this.schemaVersions.getPaginatedSchemaVersionsForTarget(target, args);
 
     return {
       ...connection,
@@ -388,9 +439,9 @@ export class SchemaManager {
         ...edge,
         node: {
           ...edge.node,
-          organizationId: args.organizationId,
-          projectId: args.projectId,
-          targetId: args.targetId,
+          organizationId: target.orgId,
+          projectId: target.projectId,
+          targetId: target.id,
         },
       })),
     };
@@ -409,12 +460,9 @@ export class SchemaManager {
     return connection;
   }
 
-  async getSchemaLog(selector: { commit: string } & TargetSelector) {
-    this.logger.debug('Fetching schema log (selector=%o)', selector);
-    return this.storage.getSchemaLog({
-      commit: selector.commit,
-      targetId: selector.targetId,
-    });
+  async getSchemaLogById(schemaLogId: string) {
+    this.logger.debug('Fetching schema log by id (schemaLogId=%s)', schemaLogId);
+    return this.schemaVersions.getSchemaLogById(schemaLogId);
   }
 
   @traceFn('SchemaManager.createVersion', {
@@ -424,24 +472,26 @@ export class SchemaManager {
       'hive.project.id': input.projectId,
       'hive.version.commit': input.commit,
       'hive.version.valid': input.valid,
-      'hive.version.service': input.service || '',
+      'hive.version.service': input.service?.name || '',
     }),
   })
-  async createVersion(
+  async createPublishVersion(
     input: ({
+      service: {
+        name: string;
+        url: string;
+      } | null;
+      serviceChanges: Array<SchemaChangeType> | null;
+      previousSchemaLogId: string | null;
       commit: string;
       schema: string;
       author: string;
       valid: boolean;
-      service?: string | null;
-      logIds: string[];
-      url?: string | null;
+      existingSchemaLogs: Array<{ id: string; serviceName: string | null }>;
       base_schema: string | null;
       metadata: string | null;
-      projectType: ProjectType;
       actionFn(versionId: string): Promise<void>;
       changes: Array<SchemaChangeType>;
-      coordinatesDiff: SchemaCoordinatesDiffResult | null;
       previousSchemaVersion: string | null;
       diffSchemaVersionId: string | null;
       github: null | {
@@ -462,6 +512,7 @@ export class SchemaManager {
         | {
             compositeSchemaSDL: null;
             supergraphSDL: null;
+            supergraphChanges: null;
             schemaCompositionErrors: Array<SchemaCompositionError>;
             tags: null;
             schemaMetadata: null;
@@ -470,6 +521,7 @@ export class SchemaManager {
         | {
             compositeSchemaSDL: string;
             supergraphSDL: string | null;
+            supergraphChanges: Array<SchemaChangeType> | null;
             schemaCompositionErrors: null;
             tags: Array<string> | null;
             schemaMetadata: null | Record<
@@ -489,7 +541,6 @@ export class SchemaManager {
         'service',
         'logIds',
         'url',
-        'projectType',
         'previousSchemaVersion',
         'diffSchemaVersionId',
         'github',
@@ -497,9 +548,9 @@ export class SchemaManager {
       ]),
     );
 
-    return this.storage.createVersion({
+    return this.schemaVersions.createPublishSchemaVersion({
       ...input,
-      logIds: input.logIds,
+      existingSchemaLogs: input.existingSchemaLogs,
     });
   }
 
@@ -589,22 +640,14 @@ export class SchemaManager {
     await this.storage.updateBaseSchema(selector, newBaseSchema);
   }
 
-  countSchemaVersionsOfProject(
-    selector: ProjectSelector & {
-      period: DateRange | null;
-    },
-  ): Promise<number> {
-    this.logger.debug('Fetching schema versions count of project (selector=%o)', selector);
-    return this.storage.countSchemaVersionsOfProject(selector);
+  countSchemaVersionsOfProject(project: Project, period: DateRange | null): Promise<number> {
+    this.logger.debug('Fetching schema versions count of project (projectId=%s)', project.id);
+    return this.schemaVersions.countSchemaVersionsOfProject(project, period);
   }
 
-  countSchemaVersionsOfTarget(
-    selector: TargetSelector & {
-      period: DateRange | null;
-    },
-  ): Promise<number> {
-    this.logger.debug('Fetching schema versions count of target (selector=%o)', selector);
-    return this.storage.countSchemaVersionsOfTarget(selector);
+  countSchemaVersionsOfTarget(target: Target, period: DateRange | null): Promise<number> {
+    this.logger.debug('Fetching schema versions count of target (targetId=%s)', target.id);
+    return this.schemaVersions.countSchemaVersionsOfTarget(target, period);
   }
 
   async completeGetStartedCheck(
@@ -730,6 +773,8 @@ export class SchemaManager {
       cursor: string | null;
       transformNode: (check: SchemaCheck) => TransformedSchemaCheck;
       filters: SchemaChecksFilter | null;
+      withSDL: boolean;
+      withChanges: boolean;
     },
   ) {
     const paginatedResult = await this.storage.getPaginatedSchemaChecksForTarget({
@@ -738,6 +783,7 @@ export class SchemaManager {
       cursor: args.cursor,
       transformNode: node => args.transformNode(node),
       filters: args.filters,
+      withChanges: args.withChanges,
     });
 
     return paginatedResult;
@@ -1084,11 +1130,8 @@ export class SchemaManager {
       },
     });
 
-    const record = await this.storage.getSchemaVersionByCommit({
-      projectId: selector.projectId,
-      targetId: selector.targetId,
-      commit: args.commit,
-    });
+    const target = await this.targetManager.getTargetById({ targetId: selector.targetId });
+    const record = await this.schemaVersions.getSchemaVersionForTargetByCommit(target, args.commit);
 
     if (!record) {
       return null;
@@ -1102,47 +1145,31 @@ export class SchemaManager {
     };
   }
 
-  async getComposableVersionBeforeVersionId(args: {
-    organization: string;
-    project: string;
-    target: string;
-    beforeVersionId: string;
-    beforeVersionCreatedAt: string;
-  }) {
-    this.logger.debug('Fetch version before version id. (args=%o)', args);
+  async getComposableVersionBeforeVersionId(schemaVersion: SchemaVersion) {
+    this.logger.debug('Fetch version before version id. (schemaVersionId=%s)', schemaVersion.id);
 
-    const schemaVersion = await this.storage.getVersionBeforeVersionId({
-      targetId: args.target,
-      beforeVersionId: args.beforeVersionId,
-      beforeVersionCreatedAt: args.beforeVersionCreatedAt,
-      onlyComposable: true,
-    });
+    const previousSchemaVersion = await this.schemaVersions.getSchemaVersionBeforeSchemaVersion(
+      schemaVersion,
+      true,
+    );
 
-    if (!schemaVersion) {
+    if (!previousSchemaVersion) {
       return null;
     }
 
     return {
-      ...schemaVersion,
-      organizationId: args.organization,
-      projectId: args.project,
-      targetId: args.target,
+      ...previousSchemaVersion,
+      organizationId: schemaVersion.organizationId,
+      projectId: schemaVersion.projectId,
+      targetId: schemaVersion.targetId,
     };
   }
 
-  async getFirstComposableSchemaVersionBeforeVersionId(args: {
-    organization: string;
-    project: string;
-    target: string;
-    beforeVersionId: string;
-    beforeVersionCreatedAt: string;
-  }) {
-    const schemaVersion = await this.storage.getVersionBeforeVersionId({
-      targetId: args.target,
-      beforeVersionId: args.beforeVersionId,
-      beforeVersionCreatedAt: args.beforeVersionCreatedAt,
-      onlyComposable: true,
-    });
+  async getFirstComposableSchemaVersionBeforeSchemaVersion(previousSchemaVersion: SchemaVersion) {
+    const schemaVersion = await this.schemaVersions.getSchemaVersionBeforeSchemaVersion(
+      previousSchemaVersion,
+      true,
+    );
 
     if (!schemaVersion) {
       return null;
@@ -1150,9 +1177,9 @@ export class SchemaManager {
 
     return {
       ...schemaVersion,
-      organizationId: args.organization,
-      projectId: args.project,
-      targetId: args.target,
+      organizationId: previousSchemaVersion.organizationId,
+      projectId: previousSchemaVersion.projectId,
+      targetId: previousSchemaVersion.targetId,
     };
   }
 
@@ -1189,13 +1216,14 @@ export class SchemaManager {
   async getNativeFederationCompatibilityStatus(project: Project): Promise<{
     status: NativeFederationCompatibilityStatusType;
     results: Array<null | {
-      schemaVersion: SchemaVersion;
+      schemaVersion: SchemaVersion | null;
       target: Target;
       nativeCompositionResult: {
+        duration: number;
         supergraphSdl: string | null;
         errors: Array<{ message: string }> | null;
       };
-      currentSupergraphSdl: string;
+      currentSupergraphSdl: string | null;
     }>;
   }> {
     this.logger.debug(
@@ -1221,7 +1249,16 @@ export class SchemaManager {
         const schemaVersion = await this.getMaybeLatestValidVersion(target);
 
         if (schemaVersion === null) {
-          return null;
+          return {
+            target,
+            schemaVersion,
+            currentSupergraphSdl: null,
+            nativeCompositionResult: {
+              duration: 0,
+              supergraphSdl: null,
+              errors: null,
+            },
+          };
         }
 
         const currentSupergraphSdl = print(
@@ -1243,9 +1280,19 @@ export class SchemaManager {
         });
 
         if (schemas.length === 0) {
-          return null;
+          return {
+            target,
+            schemaVersion,
+            currentSupergraphSdl,
+            nativeCompositionResult: {
+              duration: 0,
+              supergraphSdl: null,
+              errors: null,
+            },
+          };
         }
 
+        const start = Date.now();
         const compositionResult = await this.compositionOrchestrator.composeAndValidate(
           'federation',
           ensureCompositeSchemas(schemas).map(s =>
@@ -1282,6 +1329,7 @@ export class SchemaManager {
           schemaVersion,
           currentSupergraphSdl,
           nativeCompositionResult: {
+            duration: Date.now() - start,
             supergraphSdl,
             errors: compositionResult.errors,
           },
@@ -1323,18 +1371,10 @@ export class SchemaManager {
       };
     }
 
-    const log = await this.getSchemaLog({
-      commit: schemaVersion.actionId,
-      organizationId: schemaVersion.organizationId,
-      projectId: schemaVersion.projectId,
-      targetId: schemaVersion.targetId,
-    });
+    const log = await this.getSchemaLogById(schemaVersion.actionId);
 
     if ('commit' in log && log.commit) {
-      const project = await this.storage.getProject({
-        organizationId: schemaVersion.organizationId,
-        projectId: schemaVersion.projectId,
-      });
+      const project = await this.projectManager.getProjectById(schemaVersion.projectId);
 
       if (project.gitRepository) {
         return {

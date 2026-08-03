@@ -310,6 +310,12 @@ export const permissionGroups: Array<PermissionGroup> = [
         dependsOn: 'personalAccessToken:modify',
       },
       {
+        id: 'schemaVersion:promote',
+        title: 'Promote a schema version.',
+        description: 'Promote a schema version within the same project.',
+        dependsOn: 'personalAccessToken:modify',
+      },
+      {
         id: 'appDeployment:create',
         title: 'Create app deployment',
         description: 'Grant access to creating app deployments.',
@@ -368,6 +374,8 @@ function assertAllRulesAreAssigned(excluded: Array<Permission>) {
  * assignable and exposed via our API.
  */
 assertAllRulesAreAssigned([
+  /** SCIM provisioning is only available to organization access tokens. */
+  'scim:provision',
   /** These are CLI only actions for now. */
   'schema:compose',
   'schemaCheck:create',

@@ -1,12 +1,11 @@
 /* eslint-disable import/first */
- 
+
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { config } from 'dotenv';
 import pgpFactory from 'pg-promise';
-import { createPool, sql } from 'slonik';
 import type * as DbTypes from '../../../services/storage/src/db/types';
-import { createConnectionString } from '../../src/connection-string';
+import { createConnectionString, psql, createPostgresDatabasePool } from '@hive/postgres';
 import { runPGMigrations } from '../../src/run-pg-migrations'
 
 export { type DbTypes }
@@ -18,6 +17,7 @@ config({
 });
 
 import { env } from '../../src/environment';
+import z from 'zod';
 
 export async function initMigrationTestingEnvironment() {
   const pgp = pgpFactory();
@@ -25,17 +25,18 @@ export async function initMigrationTestingEnvironment() {
     ...env.postgres,
     db: 'postgres',
   }));
-  
+
   const dbName = 'migration_test_' + Date.now() + Math.random().toString(16).substring(2);
   console.log('db name:', dbName)
   await db.query(`CREATE DATABASE ${dbName};`);
-  
+
   const connectionString = createConnectionString({
     ...env.postgres,
     db: dbName,
   });
-  const slonik = await createPool(
-    connectionString
+  const slonik = await createPostgresDatabasePool({
+    connectionParameters:   connectionString
+  }
   );
 
   const actionsDirectory = resolve(__dirname + '/../../src/actions/');
@@ -58,9 +59,9 @@ export async function initMigrationTestingEnvironment() {
           email: string;
         }
       }) {
-        return await slonik.one<DbTypes.users>(
-          sql`INSERT INTO users (email, display_name, full_name, supertoken_user_id) VALUES (${user.email}, ${user.name} , ${user.name}, ${superTokenUserIdCounter++}) RETURNING *;`,
-        );
+        return await slonik.one(
+          psql`INSERT INTO users (email, display_name, full_name, supertoken_user_id) VALUES (${user.email}, ${user.name} , ${user.name}, ${superTokenUserIdCounter++}) RETURNING *;`,
+        ).then(z.object({ id: z.string()}).parse);
       },
       async organization({
         organization,
@@ -73,9 +74,9 @@ export async function initMigrationTestingEnvironment() {
           id: string;
         }
       }) {
-        return await slonik.one<DbTypes.organizations>(
-          sql`INSERT INTO organizations (clean_id, name, user_id) VALUES (${organization.name}, ${organization.name}, ${user.id}) RETURNING *;`,
-        );
+        return await slonik.one(
+          psql`INSERT INTO organizations (clean_id, name, user_id) VALUES (${organization.name}, ${organization.name}, ${user.id}) RETURNING *;`,
+        ).then(z.object({ id: z.string()}).parse);
       },
       async project({
         project,
@@ -89,9 +90,9 @@ export async function initMigrationTestingEnvironment() {
           id: string;
         }
       }) {
-        return await slonik.one<DbTypes.projects>(
-          sql`INSERT INTO projects (clean_id, name, type, org_id) VALUES (${project.name}, ${project.name}, ${project.type}, ${organization.id}) RETURNING *;`,
-        )
+        return await slonik.one(
+          psql`INSERT INTO projects (clean_id, name, type, org_id) VALUES (${project.name}, ${project.name}, ${project.type}, ${organization.id}) RETURNING *;`,
+        ).then(z.object({ id: z.string()}).parse);
       },
       async target({
         project,
@@ -104,9 +105,9 @@ export async function initMigrationTestingEnvironment() {
           name: string;
         }
       }) {
-        return await slonik.one<DbTypes.targets>(
-          sql`INSERT INTO targets (clean_id, name, project_id) VALUES (${target.name}, ${target.name}, ${project.id}) RETURNING *;`,
-        )
+        return await slonik.one(
+          psql`INSERT INTO targets (clean_id, name, project_id) VALUES (${target.name}, ${target.name}, ${project.id}) RETURNING *;`,
+        ).then(z.object({ id: z.string()}).parse);
       },
     },
     async complete() {

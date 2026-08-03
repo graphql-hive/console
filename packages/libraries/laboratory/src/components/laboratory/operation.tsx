@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
+  AlignLeftIcon,
   BookmarkIcon,
   CircleCheckIcon,
   CircleXIcon,
@@ -7,15 +8,23 @@ import {
   FileTextIcon,
   HistoryIcon,
   MoreHorizontalIcon,
+  NetworkIcon,
+  PanelLeftCloseIcon,
+  PanelLeftOpenIcon,
   PlayIcon,
   PowerIcon,
   PowerOffIcon,
   SquarePenIcon,
+  SquareTerminal,
 } from 'lucide-react';
 import { compressToEncodedURIComponent } from 'lz-string';
 import * as monaco from 'monaco-editor/esm/vs/editor/editor.api';
 import { toast } from 'sonner';
 import { z } from 'zod';
+import { Input } from '@/components/ui/input';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { buildCurlCommand } from '@/lib/curl';
+import { parseQueryPlan } from '@/lib/query-plan/parse';
 import { DropdownMenuTrigger } from '@radix-ui/react-dropdown-menu';
 import { useForm } from '@tanstack/react-form';
 import type {
@@ -24,7 +33,8 @@ import type {
   LaboratoryHistorySubscription,
 } from '../../lib/history';
 import type { LaboratoryOperation } from '../../lib/operations';
-import { cn } from '../../lib/utils';
+import { QueryPlanTree, renderQueryPlan } from '../../lib/query-plan/utils';
+import { cn, formatBytes } from '../../lib/utils';
 import { Badge } from '../ui/badge';
 import { Button } from '../ui/button';
 import {
@@ -38,13 +48,14 @@ import {
 } from '../ui/dialog';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem } from '../ui/dropdown-menu';
 import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from '../ui/empty';
-import { Field, FieldGroup, FieldLabel } from '../ui/field';
+import { Field, FieldError, FieldGroup, FieldLabel } from '../ui/field';
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '../ui/resizable';
 import { ScrollArea, ScrollBar } from '../ui/scroll-area';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { Spinner } from '../ui/spinner';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
 import { Toggle } from '../ui/toggle';
+import { ToggleGroup, ToggleGroupItem } from '../ui/toggle-group';
 import { Builder } from './builder';
 import { useLaboratory } from './context';
 import { Editor } from './editor';
@@ -86,6 +97,7 @@ const Headers = (props: { operation?: LaboratoryOperation | null; isReadOnly?: b
     <Editor
       uri={monaco.Uri.file('headers.json')}
       value={operation?.headers ?? ''}
+      language="json"
       onChange={value => {
         updateActiveOperation({
           headers: value ?? '',
@@ -109,6 +121,7 @@ const Extensions = (props: { operation?: LaboratoryOperation | null; isReadOnly?
     <Editor
       uri={monaco.Uri.file('extensions.json')}
       value={operation?.extensions ?? ''}
+      language="json"
       onChange={value => {
         updateActiveOperation({
           extensions: value ?? '',
@@ -178,6 +191,63 @@ export const ResponsePreflight = ({ historyItem }: { historyItem?: LaboratoryHis
     </ScrollArea>
   );
 };
+export const ResponseQueryPlan = ({ historyItem }: { historyItem?: LaboratoryHistory | null }) => {
+  const [mode, setMode] = useState<'text' | 'visual'>('text');
+
+  const queryPlan = useMemo(
+    () => parseQueryPlan((historyItem as LaboratoryHistoryRequest)?.response),
+    [historyItem],
+  );
+
+  if (!queryPlan) {
+    return (
+      <Empty className="size-full">
+        <EmptyHeader>
+          <EmptyMedia variant="icon">
+            <NetworkIcon className="text-muted-foreground size-6" />
+          </EmptyMedia>
+          <EmptyTitle>{historyItem ? 'No query plan' : 'No query plan yet'}</EmptyTitle>
+          <EmptyDescription>
+            {historyItem
+              ? 'This response did not include one. Query plans show up here when your gateway returns extensions.queryPlan.'
+              : 'Run this operation against a gateway that returns extensions.queryPlan to see how it resolves across subgraphs.'}
+          </EmptyDescription>
+        </EmptyHeader>
+      </Empty>
+    );
+  }
+
+  return (
+    <div className="relative size-full">
+      <ToggleGroup
+        className="bg-card absolute right-4 top-4 z-10 shadow-sm"
+        type="single"
+        variant="outline"
+        value={mode}
+        onValueChange={value => setMode(value as 'text' | 'visual')}
+      >
+        <ToggleGroupItem value="text">
+          <AlignLeftIcon className="size-4" />
+          Text
+        </ToggleGroupItem>
+        <ToggleGroupItem value="visual">
+          <NetworkIcon className="size-4" />
+          Visual
+        </ToggleGroupItem>
+      </ToggleGroup>
+      {mode === 'visual' ? (
+        <QueryPlanTree key={historyItem?.id} plan={queryPlan} />
+      ) : (
+        <Editor
+          value={renderQueryPlan(queryPlan)}
+          defaultLanguage="graphql"
+          theme="hive-laboratory"
+          options={{ readOnly: true }}
+        />
+      )}
+    </div>
+  );
+};
 
 export const ResponseSubscription = ({
   historyItem,
@@ -245,6 +315,8 @@ export const ResponseSubscription = ({
 };
 
 export const Response = ({ historyItem }: { historyItem?: LaboratoryHistoryRequest | null }) => {
+  const [isFullScreen, setIsFullScreen] = useState(false);
+
   const isError = useMemo(() => {
     if (!historyItem) {
       return false;
@@ -262,8 +334,42 @@ export const Response = ({ historyItem }: { historyItem?: LaboratoryHistoryReque
   }, [historyItem]);
 
   return (
-    <Tabs defaultValue="response" className="grid size-full grid-rows-[auto_1fr]">
-      <TabsList className="h-[49.5px] w-full justify-start rounded-none border-b bg-transparent p-3">
+    <Tabs
+      defaultValue="response"
+      className={cn('bg-card grid size-full grid-rows-[auto_1fr]', {
+        'z-100 absolute inset-0 size-full': isFullScreen,
+      })}
+    >
+      <TabsList className="h-[50px] w-full items-center justify-start rounded-none border-b bg-transparent p-3">
+        {isFullScreen ? (
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="mr-2 mt-0.5 h-6 w-6"
+                onClick={() => setIsFullScreen(false)}
+              >
+                <PanelLeftOpenIcon className="size-4" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent side="bottom">Minimize panel</TooltipContent>
+          </Tooltip>
+        ) : (
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="mr-2 mt-0.5 h-6 w-6"
+                onClick={() => setIsFullScreen(true)}
+              >
+                <PanelLeftCloseIcon className="size-4" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent side="bottom">Maximize panel</TooltipContent>
+          </Tooltip>
+        )}
         <TabsTrigger value="response" className="grow-0 rounded-sm">
           Response
         </TabsTrigger>
@@ -275,9 +381,12 @@ export const Response = ({ historyItem }: { historyItem?: LaboratoryHistoryReque
             Preflight
           </TabsTrigger>
         )}
+        <TabsTrigger value="query-plan" className="grow-0 rounded-sm">
+          Query Plan
+        </TabsTrigger>
         {historyItem ? (
           <div className="ml-auto flex items-center gap-2">
-            {historyItem?.status && (
+            {!!historyItem?.status && (
               <Badge
                 className={cn('bg-green-400/10 text-green-500', {
                   'bg-red-400/10 text-red-500': isError,
@@ -300,13 +409,10 @@ export const Response = ({ historyItem }: { historyItem?: LaboratoryHistoryReque
                 </span>
               </Badge>
             )}
-            {historyItem?.size && (
+            {(historyItem as LaboratoryHistoryRequest).size != null && (
               <Badge variant="outline" className="bg-card">
                 <FileTextIcon className="size-3" />
-                <span>
-                  {Math.round((historyItem as LaboratoryHistoryRequest).size! / 1024)}
-                  KB
-                </span>
+                <span>{formatBytes((historyItem as LaboratoryHistoryRequest).size!)}</span>
               </Badge>
             )}
           </div>
@@ -314,6 +420,9 @@ export const Response = ({ historyItem }: { historyItem?: LaboratoryHistoryReque
       </TabsList>
       <TabsContent value="response" className="overflow-hidden">
         <ResponseBody historyItem={historyItem} />
+      </TabsContent>
+      <TabsContent value="query-plan" className="overflow-hidden">
+        <ResponseQueryPlan historyItem={historyItem} />
       </TabsContent>
       <TabsContent value="headers" className="overflow-hidden">
         <ResponseHeaders historyItem={historyItem} />
@@ -332,6 +441,7 @@ const saveToCollectionFormSchema = z.object({
 export const Query = (props: {
   onAfterOperationRun?: (historyItem: LaboratoryHistory | null) => void;
   operation?: LaboratoryOperation | null;
+  onOperationNameChange?: (operationName: string | null) => void;
   isReadOnly?: boolean;
 }) => {
   const {
@@ -342,6 +452,7 @@ export const Query = (props: {
     updateActiveOperation,
     collections,
     addOperationToCollection,
+    addCollection,
     addHistory,
     stopActiveOperation,
     addResponseToHistory,
@@ -356,7 +467,11 @@ export const Query = (props: {
     plugins,
     pluginsState,
     setPluginsState,
+    env,
+    settings,
   } = useLaboratory();
+
+  const [operationName, setOperationName] = useState<string | null>(null);
 
   const operation = useMemo(() => {
     return props.operation ?? activeOperation ?? null;
@@ -401,6 +516,7 @@ export const Query = (props: {
       void runActiveOperation(endpoint, {
         env: result?.env,
         headers: result?.headers,
+        operationName: operationName ?? undefined,
         onResponse: data => {
           addResponseToHistory(newItemHistory.id, data);
         },
@@ -413,22 +529,38 @@ export const Query = (props: {
       const response = await runActiveOperation(endpoint, {
         env: result?.env,
         headers: result?.headers,
+        operationName: operationName ?? undefined,
       });
 
       if (!response) {
         return;
       }
 
-      const status = response.status;
+      const extensionsResponse = (response.extensions?.response as {
+        status: number;
+        headers: Record<string, string>;
+      }) ?? {
+        status: 0,
+        headers: {},
+      };
+
+      delete response.extensions?.request;
+      delete response.extensions?.response;
+
+      if (Object.keys(response.extensions ?? {}).length === 0) {
+        delete response.extensions;
+      }
+
+      const status = extensionsResponse.status;
       const duration = performance.now() - startTime;
-      const responseText = await response.text();
-      const size = responseText.length;
+      const responseText = JSON.stringify(response, null, 2);
+      const size = new TextEncoder().encode(responseText).length;
 
       const newItemHistory = addHistory({
         status,
         duration,
         size,
-        headers: JSON.stringify(Object.fromEntries(response.headers.entries()), null, 2),
+        headers: JSON.stringify(extensionsResponse.headers, null, 2),
         operation,
         preflightLogs: result?.logs ?? [],
         response: responseText,
@@ -439,6 +571,7 @@ export const Query = (props: {
     }
   }, [
     operation,
+    operationName,
     endpoint,
     isActiveOperationSubscription,
     addHistory,
@@ -477,15 +610,34 @@ export const Query = (props: {
         return;
       }
 
-      addOperationToCollection(value.collectionId, {
-        id: operation.id ?? '',
-        name: operation.name ?? '',
-        query: operation.query ?? '',
-        variables: operation.variables ?? '',
-        headers: operation.headers ?? '',
-        extensions: operation.extensions ?? '',
-        description: '',
-      });
+      const collection = collections.find(c => c.id === value.collectionId);
+
+      if (!collection) {
+        addCollection({
+          name: value.collectionId,
+          operations: [
+            {
+              id: operation.id ?? '',
+              name: operation.name ?? '',
+              query: operation.query ?? '',
+              variables: operation.variables ?? '',
+              headers: operation.headers ?? '',
+              extensions: operation.extensions ?? '',
+              description: '',
+            },
+          ],
+        });
+      } else {
+        addOperationToCollection(value.collectionId, {
+          id: operation.id ?? '',
+          name: operation.name ?? '',
+          query: operation.query ?? '',
+          variables: operation.variables ?? '',
+          headers: operation.headers ?? '',
+          extensions: operation.extensions ?? '',
+          description: '',
+        });
+      }
 
       setIsSaveToCollectionDialogOpen(false);
     },
@@ -524,15 +676,37 @@ export const Query = (props: {
     [operation],
   );
 
+  const copyAsCurl = useCallback(() => {
+    if (!operation || !endpoint) {
+      return;
+    }
+
+    // Preflight headers already in state; running preflight from a copy would
+    // fire its side effects.
+    void navigator.clipboard.writeText(
+      buildCurlCommand({
+        endpoint,
+        query: operation.query,
+        variables: operation.variables,
+        headers: operation.headers,
+        extensions: operation.extensions,
+        operationName,
+        env: env?.variables,
+        pluginsState,
+        settings,
+      }),
+    );
+
+    toast.success('cURL command copied to clipboard');
+  }, [operation, endpoint, operationName, env, pluginsState, settings]);
+
   return (
     <div className="grid size-full grid-rows-[auto_1fr] overflow-hidden pb-0">
       <Dialog open={isSaveToCollectionDialogOpen} onOpenChange={setIsSaveToCollectionDialogOpen}>
         <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
-            <DialogTitle>Add collection</DialogTitle>
-            <DialogDescription>
-              Add a new collection of operations to your laboratory.
-            </DialogDescription>
+            <DialogTitle>Save operation to collection</DialogTitle>
+            <DialogDescription>Save the current operation to a collection.</DialogDescription>
           </DialogHeader>
           <div className="grid gap-4">
             <form
@@ -543,33 +717,58 @@ export const Query = (props: {
               }}
             >
               <FieldGroup>
-                <saveToCollectionForm.Field name="collectionId">
-                  {field => {
-                    const isInvalid = field.state.meta.isTouched && !field.state.meta.isValid;
+                {collections.length > 0 ? (
+                  <saveToCollectionForm.Field name="collectionId">
+                    {field => {
+                      const isInvalid = field.state.meta.isTouched && !field.state.meta.isValid;
 
-                    return (
-                      <Field data-invalid={isInvalid}>
-                        <FieldLabel htmlFor={field.name}>Collection</FieldLabel>
-                        <Select
-                          name={field.name}
-                          value={field.state.value}
-                          onValueChange={field.handleChange}
-                        >
-                          <SelectTrigger id={field.name} aria-invalid={isInvalid}>
-                            <SelectValue placeholder="Select collection" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {collections.map(c => (
-                              <SelectItem key={c.id} value={c.id}>
-                                {c.name}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </Field>
-                    );
-                  }}
-                </saveToCollectionForm.Field>
+                      return (
+                        <Field data-invalid={isInvalid}>
+                          <FieldLabel htmlFor={field.name}>Collection</FieldLabel>
+                          <Select
+                            name={field.name}
+                            value={field.state.value}
+                            onValueChange={field.handleChange}
+                          >
+                            <SelectTrigger id={field.name} aria-invalid={isInvalid}>
+                              <SelectValue placeholder="Select collection" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {collections.map(c => (
+                                <SelectItem key={c.id} value={c.id}>
+                                  {c.name}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </Field>
+                      );
+                    }}
+                  </saveToCollectionForm.Field>
+                ) : (
+                  <saveToCollectionForm.Field name="collectionId">
+                    {field => {
+                      const isInvalid = field.state.meta.isTouched && !field.state.meta.isValid;
+
+                      return (
+                        <Field data-invalid={isInvalid}>
+                          <FieldLabel htmlFor={field.name}>New collection name</FieldLabel>
+                          <Input
+                            id={field.name}
+                            name={field.name}
+                            value={field.state.value}
+                            onBlur={field.handleBlur}
+                            onChange={e => field.handleChange(e.target.value)}
+                            aria-invalid={isInvalid}
+                            placeholder="Enter name of the collection"
+                            autoComplete="off"
+                          />
+                          {isInvalid && <FieldError errors={field.state.meta.errors} />}
+                        </Field>
+                      );
+                    }}
+                  </saveToCollectionForm.Field>
+                )}
               </FieldGroup>
             </form>
           </div>
@@ -600,8 +799,22 @@ export const Query = (props: {
           </Toggle>
         )}
         <div className="ml-auto flex items-center gap-2">
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                onClick={copyAsCurl}
+                variant="ghost"
+                size="icon-sm"
+                className="p-1! size-6 rounded-sm"
+                aria-label="Copy as cURL"
+              >
+                <SquareTerminal className="text-muted-foreground size-4" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>Copy as cURL</TooltipContent>
+          </Tooltip>
           <DropdownMenu>
-            <DropdownMenuTrigger>
+            <DropdownMenuTrigger asChild>
               <Button variant="outline" size="sm" className="h-6 rounded-sm">
                 Share
                 <MoreHorizontalIcon className="size-4" />
@@ -700,6 +913,10 @@ export const Query = (props: {
             query: value ?? '',
           });
         }}
+        onOperationNameChange={operationName => {
+          setOperationName(operationName);
+          props.onOperationNameChange?.(operationName);
+        }}
         language="graphql"
         theme="hive-laboratory"
         options={{
@@ -715,6 +932,7 @@ export const Operation = (props: {
   historyItem?: LaboratoryHistory;
 }) => {
   const { activeOperation, history } = useLaboratory();
+  const [operationName, setOperationName] = useState<string | null>(null);
 
   const operation = useMemo(() => {
     return props.operation ?? activeOperation ?? null;
@@ -735,16 +953,20 @@ export const Operation = (props: {
   }, [props.historyItem]);
 
   return (
-    <div className="bg-card size-full">
+    <div className="bg-card relative size-full">
       <ResizablePanelGroup direction="horizontal" className="size-full">
         <ResizablePanel defaultSize={25}>
-          <Builder operation={operation} isReadOnly={isReadOnly} />
+          <Builder operation={operation} operationName={operationName} isReadOnly={isReadOnly} />
         </ResizablePanel>
         <ResizableHandle />
         <ResizablePanel minSize={10} defaultSize={40}>
           <ResizablePanelGroup direction="vertical">
             <ResizablePanel defaultSize={70}>
-              <Query operation={operation} isReadOnly={isReadOnly} />
+              <Query
+                operation={operation}
+                isReadOnly={isReadOnly}
+                onOperationNameChange={setOperationName}
+              />
             </ResizablePanel>
             <ResizableHandle />
             <ResizablePanel minSize={10} defaultSize={30}>

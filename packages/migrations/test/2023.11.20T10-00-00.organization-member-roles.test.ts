@@ -1,6 +1,7 @@
 import assert from 'node:assert';
 import { describe, test } from 'node:test';
-import { ForeignKeyIntegrityConstraintViolationError, sql } from 'slonik';
+import z from 'zod';
+import { ForeignKeyIntegrityConstraintViolationError, psql } from '@hive/postgres';
 import { createStorage } from '../../services/storage/src/index';
 import { initMigrationTestingEnvironment } from './utils/testkit';
 
@@ -93,40 +94,40 @@ await describe('migration: organization-member-roles', async () => {
       ];
 
       // Create an invitation to simulate a pending invitation
-      await db.query(sql`
+      await db.query(psql`
         INSERT INTO organization_invitations (organization_id, email) VALUES (${organization.id}, 'invited@test.com')
       `);
 
-      await db.query(sql`
+      await db.query(psql`
         INSERT INTO organization_member (organization_id, user_id, scopes)
         VALUES
-          (${organization.id}, ${admin.id}, ${sql.array(adminScopes, 'text')}),
-          (${organization.id}, ${contributor.id}, ${sql.array(contributorScopes, 'text')}),
-          (${organization.id}, ${noRoleUser.id}, ${sql.array(noRoleUserScopes, 'text')}),
-          (${secondaryOrganization.id}, ${secondaryAdmin.id}, ${sql.array(adminScopes, 'text')})
+          (${organization.id}, ${admin.id}, ${psql.array(adminScopes, 'text')}),
+          (${organization.id}, ${contributor.id}, ${psql.array(contributorScopes, 'text')}),
+          (${organization.id}, ${noRoleUser.id}, ${psql.array(noRoleUserScopes, 'text')}),
+          (${secondaryOrganization.id}, ${secondaryAdmin.id}, ${psql.array(adminScopes, 'text')})
       `);
 
       // assert correct scopes
       assert.deepStrictEqual(
-        await db.oneFirst(sql`
+        await db.oneFirst(psql`
         SELECT scopes FROM organization_member WHERE user_id = ${admin.id}
         `),
         adminScopes,
       );
       assert.deepStrictEqual(
-        await db.oneFirst(sql`
+        await db.oneFirst(psql`
         SELECT scopes FROM organization_member WHERE user_id = ${contributor.id}
         `),
         contributorScopes,
       );
       assert.deepStrictEqual(
-        await db.oneFirst(sql`
+        await db.oneFirst(psql`
         SELECT scopes FROM organization_member WHERE user_id = ${noRoleUser.id}
         `),
         noRoleUserScopes,
       );
       assert.deepStrictEqual(
-        await db.oneFirst(sql`
+        await db.oneFirst(psql`
         SELECT scopes FROM organization_member WHERE user_id = ${secondaryAdmin.id}
         `),
         adminScopes,
@@ -137,25 +138,25 @@ await describe('migration: organization-member-roles', async () => {
 
       // assert scopes are still in place and identical
       assert.deepStrictEqual(
-        await db.oneFirst(sql`
+        await db.oneFirst(psql`
         SELECT scopes FROM organization_member WHERE user_id = ${admin.id}
         `),
         adminScopes,
       );
       assert.deepStrictEqual(
-        await db.oneFirst(sql`
+        await db.oneFirst(psql`
         SELECT scopes FROM organization_member WHERE user_id = ${contributor.id}
         `),
         contributorScopes,
       );
       assert.deepStrictEqual(
-        await db.oneFirst(sql`
+        await db.oneFirst(psql`
         SELECT scopes FROM organization_member WHERE user_id = ${noRoleUser.id}
         `),
         noRoleUserScopes,
       );
       assert.deepStrictEqual(
-        await db.oneFirst(sql`
+        await db.oneFirst(psql`
         SELECT scopes FROM organization_member WHERE user_id = ${secondaryAdmin.id}
         `),
         adminScopes,
@@ -163,7 +164,7 @@ await describe('migration: organization-member-roles', async () => {
 
       // assert assigned roles have identical scopes
       assert.deepStrictEqual(
-        await db.oneFirst(sql`
+        await db.oneFirst(psql`
         SELECT omr.scopes
         FROM organization_member as om
         LEFT JOIN organization_member_roles as omr ON omr.id = om.role_id
@@ -172,7 +173,7 @@ await describe('migration: organization-member-roles', async () => {
         adminScopes,
       );
       assert.deepStrictEqual(
-        await db.oneFirst(sql`
+        await db.oneFirst(psql`
         SELECT omr.scopes
         FROM organization_member as om
         LEFT JOIN organization_member_roles as omr ON omr.id = om.role_id
@@ -182,13 +183,13 @@ await describe('migration: organization-member-roles', async () => {
       );
       // assert no role user has no role
       assert.strictEqual(
-        await db.oneFirst(sql`
+        await db.oneFirst(psql`
         SELECT role_id FROM organization_member WHERE user_id = ${noRoleUser.id}
         `),
         null,
       );
       assert.deepStrictEqual(
-        await db.oneFirst(sql`
+        await db.oneFirst(psql`
         SELECT omr.scopes
         FROM organization_member as om
         LEFT JOIN organization_member_roles as omr ON omr.id = om.role_id
@@ -200,7 +201,7 @@ await describe('migration: organization-member-roles', async () => {
       // deleting a role with assigned members should not be possible
       const deletionError = await db
         .query(
-          sql`
+          psql`
           DELETE FROM organization_member_roles WHERE organization_id = ${organization.id} AND id IN (
             SELECT role_id FROM organization_member WHERE organization_id = ${organization.id} AND user_id = ${contributor.id}
           )
@@ -214,48 +215,56 @@ await describe('migration: organization-member-roles', async () => {
 
       // locked roles should be Viewer and Admin
       assert.deepStrictEqual(
-        await db.manyFirst(sql`
+        await db.anyFirst(psql`
           SELECT name FROM organization_member_roles WHERE organization_id = ${organization.id} AND locked = true ORDER BY name ASC
         `),
         ['Admin', 'Viewer'],
       );
 
       // deleting a member should not delete the role
-      const contributorRoleId = await db.oneFirst<string>(sql`
+      const contributorRoleId = await db
+        .oneFirst(
+          psql`
         SELECT role_id FROM organization_member WHERE organization_id = ${organization.id} AND user_id = ${contributor.id}
-      `);
+      `,
+        )
+        .then(z.string().parse);
       assert.strictEqual(
-        await db.oneFirst(sql`
+        await db.oneFirst(psql`
           DELETE FROM organization_member WHERE user_id = ${contributor.id} AND organization_id = ${organization.id} RETURNING user_id
         `),
         contributor.id,
       );
       assert.strictEqual(
-        await db.oneFirst(sql`
+        await db.oneFirst(psql`
           SELECT id FROM organization_member_roles WHERE organization_id = ${organization.id} AND id = ${contributorRoleId}
         `),
         contributorRoleId,
       );
 
       // deleting a user should not delete the role
-      const customRoleId = await db.oneFirst<string>(sql`
+      const customRoleId = await db
+        .oneFirst(
+          psql`
         INSERT INTO organization_member_roles
         (organization_id, name, description, scopes)
         VALUES
-        (${organization.id}, 'Custom', 'Custom role', ${sql.array(noRoleUserScopes, 'text')})
+        (${organization.id}, 'Custom', 'Custom role', ${psql.array(noRoleUserScopes, 'text')})
         RETURNING id
-      `);
-      await db.query(sql`
+      `,
+        )
+        .then(z.string().parse);
+      await db.query(psql`
         UPDATE organization_member SET role_id = ${customRoleId} WHERE user_id = ${noRoleUser.id} AND organization_id = ${organization.id}
       `);
       assert.strictEqual(
-        await db.oneFirst(sql`
+        await db.oneFirst(psql`
           DELETE FROM users WHERE id = ${noRoleUser.id} RETURNING id
         `),
         noRoleUser.id,
       );
       assert.strictEqual(
-        await db.oneFirst(sql`
+        await db.oneFirst(psql`
           SELECT id FROM organization_member_roles WHERE organization_id = ${organization.id} AND id = ${customRoleId}
         `),
         customRoleId,
@@ -263,7 +272,7 @@ await describe('migration: organization-member-roles', async () => {
 
       // pending invitations should have Viewer role
       assert.deepStrictEqual(
-        await db.manyFirst(sql`
+        await db.anyFirst(psql`
           SELECT omr.name
           FROM organization_invitations as oi
           LEFT JOIN organization_member_roles as omr ON (omr.id = oi.role_id AND omr.organization_id = oi.organization_id)

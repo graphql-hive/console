@@ -1,5 +1,145 @@
 # @graphql-yoga/render-graphiql
 
+## 0.1.14
+
+### Patch Changes
+
+- [#8291](https://github.com/graphql-hive/console/pull/8291)
+  [`ee8af3e`](https://github.com/graphql-hive/console/commit/ee8af3edcb06f4d59b742cf2c8f2f99167bb52a0)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Use npm trusted publishing.
+
+- Updated dependencies
+  [[`ee8af3e`](https://github.com/graphql-hive/console/commit/ee8af3edcb06f4d59b742cf2c8f2f99167bb52a0)]:
+  - @graphql-hive/laboratory@0.2.3
+
+## 0.1.13
+
+### Patch Changes
+
+- Updated dependencies
+  [[`e8e2a9e`](https://github.com/graphql-hive/console/commit/e8e2a9eb660e19e8eff5f77ff14a90de7694c064)]:
+  - @graphql-hive/laboratory@0.2.2
+
+## 0.1.12
+
+### Patch Changes
+
+- Updated dependencies
+  [[`5cb4487`](https://github.com/graphql-hive/console/commit/5cb44871271713c0804b7f9393e5b8c7ad67521e)]:
+  - @graphql-hive/laboratory@0.2.1
+
+## 0.1.11
+
+### Patch Changes
+
+- Updated dependencies
+  [[`481f356`](https://github.com/graphql-hive/console/commit/481f356e7e0acf509e3e309c992e3c0ba5e9a955)]:
+  - @graphql-hive/laboratory@0.2.0
+
+## 0.1.10
+
+### Patch Changes
+
+- Updated dependencies
+  [[`6e9a210`](https://github.com/graphql-hive/console/commit/6e9a21009ca2754b8237da4afac1115d339be8d2)]:
+  - @graphql-hive/laboratory@0.1.9
+
+## 0.1.9
+
+### Patch Changes
+
+- [#8104](https://github.com/graphql-hive/console/pull/8104)
+  [`95bae6e`](https://github.com/graphql-hive/console/commit/95bae6e984945969915cc8adfc448f2d29b3d9e5)
+  Thanks [@enisdenjo](https://github.com/enisdenjo)! - GraphQL Yoga is a peer dependency to the
+  Laboratory renderer
+
+  Not a dependency.
+
+## 0.1.8
+
+### Patch Changes
+
+- [#8024](https://github.com/graphql-hive/console/pull/8024)
+  [`0e3ce40`](https://github.com/graphql-hive/console/commit/0e3ce400706c625925161f8d59cc5691380cef07)
+  Thanks [@mskorokhodov](https://github.com/mskorokhodov)! - Hive laboratory introspection query to
+  include active tab headers
+
+- Updated dependencies
+  [[`0e3ce40`](https://github.com/graphql-hive/console/commit/0e3ce400706c625925161f8d59cc5691380cef07)]:
+  - @graphql-hive/laboratory@0.1.8
+
+## 0.1.7
+
+### Patch Changes
+
+- [#8012](https://github.com/graphql-hive/console/pull/8012)
+  [`16a03c8`](https://github.com/graphql-hive/console/commit/16a03c8f2cad3c9a3693d69a8ffbd916e9ea8008)
+  Thanks [@mskorokhodov](https://github.com/mskorokhodov)! - Better reasons for abort controllers in
+  lab
+
+- Updated dependencies
+  [[`16a03c8`](https://github.com/graphql-hive/console/commit/16a03c8f2cad3c9a3693d69a8ffbd916e9ea8008),
+  [`bea8b7c`](https://github.com/graphql-hive/console/commit/bea8b7c4f62be5e704c8709a50ae3ea7d0466fe3)]:
+  - @graphql-hive/laboratory@0.1.7
+
+## 0.1.6
+
+### Patch Changes
+
+- [#7998](https://github.com/graphql-hive/console/pull/7998)
+  [`20b6892`](https://github.com/graphql-hive/console/commit/20b689279f3e8203f5568908b7452324c1c75019)
+  Thanks [@mskorokhodov](https://github.com/mskorokhodov)! - Proper handling of flatter/condition as
+  high order nodes to not break lab qp
+
+- Updated dependencies
+  [[`20b6892`](https://github.com/graphql-hive/console/commit/20b689279f3e8203f5568908b7452324c1c75019)]:
+  - @graphql-hive/laboratory@0.1.6
+
+## 0.1.5
+
+### Patch Changes
+
+- [#7989](https://github.com/graphql-hive/console/pull/7989)
+  [`863f920`](https://github.com/graphql-hive/console/commit/863f920b86505a3d84c9001fef1c3e8a723bdca9)
+  Thanks [@mskorokhodov](https://github.com/mskorokhodov)! - Enhanced behavior when no collection
+  exists and the user attempts to save an operation, along with the ability to edit the collection
+  name.
+- Updated dependencies
+  [[`863f920`](https://github.com/graphql-hive/console/commit/863f920b86505a3d84c9001fef1c3e8a723bdca9)]:
+  - @graphql-hive/laboratory@0.1.5
+
+## 0.1.4
+
+### Patch Changes
+
+- [#7963](https://github.com/graphql-hive/console/pull/7963)
+  [`4a8bd4f`](https://github.com/graphql-hive/console/commit/4a8bd4fd1b4fbb34076e97d06ed1341432de451d)
+  Thanks [@mskorokhodov](https://github.com/mskorokhodov)! - Implemented functionality that allows
+  to have multiple queries in same operation while working only with focused one (run button, query
+  builder)
+
+- [#7892](https://github.com/graphql-hive/console/pull/7892)
+  [`fab4b03`](https://github.com/graphql-hive/console/commit/fab4b03ace2ff20759bbcd33465d00a5cbbc4c97)
+  Thanks [@mskorokhodov](https://github.com/mskorokhodov)! - Hive Laboratory renders Hive Router
+  query plan if included in response extensions
+
+- Updated dependencies
+  [[`4a8bd4f`](https://github.com/graphql-hive/console/commit/4a8bd4fd1b4fbb34076e97d06ed1341432de451d),
+  [`fab4b03`](https://github.com/graphql-hive/console/commit/fab4b03ace2ff20759bbcd33465d00a5cbbc4c97)]:
+  - @graphql-hive/laboratory@0.1.4
+
+## 0.1.3
+
+### Patch Changes
+
+- [#7888](https://github.com/graphql-hive/console/pull/7888)
+  [`574a5d8`](https://github.com/graphql-hive/console/commit/574a5d823e71ca1d0628897a73e2fab1d0d5bfe0)
+  Thanks [@mskorokhodov](https://github.com/mskorokhodov)! - If schema introspection isn't provided
+  as property to Laboratory, lab will start interval to fetch schema every second.
+- Updated dependencies
+  [[`574a5d8`](https://github.com/graphql-hive/console/commit/574a5d823e71ca1d0628897a73e2fab1d0d5bfe0)]:
+  - @graphql-hive/laboratory@0.1.3
+
 ## 0.1.2
 
 ### Patch Changes

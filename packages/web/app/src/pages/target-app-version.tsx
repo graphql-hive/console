@@ -252,7 +252,7 @@ function TargetAppVersionContent(props: {
               </CardDescription>
               {/* <CardDescription>
                   <DocsLink
-                    href="/management/targets#cdn-access-tokens"
+                    href="/schema-registry/management/targets#cdn-access-tokens"
                     className="text-neutral-10 hover:text-neutral-11"
                   >
                     Learn more about App Deployments
@@ -308,7 +308,7 @@ function TargetAppVersionContent(props: {
                 ? 'No operations in this deployment use this schema coordinate'
                 : 'You can upload documents via the Hive CLI'
             }
-            docsUrl="/features/schema-registry#app-deplyments"
+            docsUrl="/schema-registry/app-deployments"
           />
         ) : (
           <>

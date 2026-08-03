@@ -55,6 +55,15 @@ export default gql`
     message: String!
   }
 
+  enum TokenExpirationPeriod {
+    NEVER
+    ONE_WEEK
+    TWO_WEEKS
+    ONE_MONTH
+    SIX_MONTHS
+    ONE_YEAR
+  }
+
   input CreateTokenInput {
     organizationSlug: String!
     projectSlug: String!
@@ -63,6 +72,7 @@ export default gql`
     organizationScopes: [OrganizationAccessScope!]!
     projectScopes: [ProjectAccessScope!]!
     targetScopes: [TargetAccessScope!]!
+    expirationPeriod: TokenExpirationPeriod! = NEVER
   }
 
   input DeleteTokensInput {

@@ -3,7 +3,7 @@ import { Check, Minus } from 'lucide-react';
 import { Checkbox as BaseCheckbox } from '@base-ui/react/checkbox';
 
 const checkboxVariants = cva(
-  'inline-flex shrink-0 items-center justify-center rounded-sm border transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-accent disabled:cursor-not-allowed disabled:opacity-50',
+  'inline-flex shrink-0 items-center justify-center rounded-sm border transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-accent data-[disabled]:cursor-not-allowed data-[disabled]:pointer-events-none data-[disabled]:opacity-50',
   {
     variants: {
       size: {
@@ -14,8 +14,8 @@ const checkboxVariants = cva(
         default: [
           'border-neutral-6',
           'data-[checked]:bg-accent_30 data-[checked]:border-accent_30 data-[checked]:text-accent',
-          'hover:bg-neutral-6 hover:border-accent_30',
-          'data-[checked]:hover:bg-accent_10',
+          'not-[[data-disabled]]:hover:bg-neutral-6 not-[[data-disabled]]:hover:border-accent_30',
+          'not-[[data-disabled]]:data-[checked]:hover:bg-accent_10',
           'data-[indeterminate]:bg-accent_30 data-[indeterminate]:border-accent_30 data-[indeterminate]:text-accent',
         ],
       },

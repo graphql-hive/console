@@ -15,3 +15,48 @@ export const USAGE_DEFAULT_LIMITATIONS: Record<
     retention: 365,
   },
 };
+
+/**
+ * How long alert state-log rows are kept before being purged by the
+ * `purgeExpiredAlertStateLog` cron task. The evaluation engine snapshots this
+ * value into `metric_alert_state_log.expires_at` at insert time based on the
+ * organization's plan, so changing the constant only affects new rows.
+ */
+export const ALERT_STATE_LOG_RETENTION_DAYS: Record<'HOBBY' | 'PRO' | 'ENTERPRISE', number> = {
+  HOBBY: 7,
+  PRO: 7,
+  ENTERPRISE: 30,
+};
+
+/**
+ * Maximum number of metric alert rules permitted per target. Flat across all
+ * plans so the UX is predictable and free-tier users hit the same ceiling
+ * paid users do. Counted against every row (enabled or disabled) so a user
+ * cannot circumvent the cap by toggling rules off.
+ */
+export const METRIC_ALERT_RULES_PER_TARGET_LIMIT = 10;
+
+/**
+ * Allowed range for `timeWindowMinutes` on a metric alert rule.
+ *
+ * Min = 1: the evaluator cron runs every minute, so a sub-1-minute window
+ * never gets a fresh evaluation and the rule's behaviour is undefined.
+ *
+ * Max = 7 days: the product ceiling for alert windows. At the max the window
+ * equals METRIC_ALERT_RULE_DAILY_ROLLUP_THRESHOLD_MINUTES, so it reads
+ * ClickHouse's whole-day rollup and must be a whole number of days (7d
+ * qualifies). Longer windows added little alerting value and pushed queries
+ * toward the edge of the retention policy.
+ *
+ * The UI form's `Select` exposes a smaller subset of this range for UX
+ * reasons; these constants are the absolute bounds the API enforces against
+ * any caller (form, seed scripts, customer integrations).
+ */
+export const MINUTES_PER_DAY = 24 * 60; // 1440
+export const METRIC_ALERT_RULE_TIME_WINDOW_MIN_MINUTES = 1;
+export const METRIC_ALERT_RULE_TIME_WINDOW_MAX_MINUTES = 7 * MINUTES_PER_DAY; // 10080
+
+// Windows >= this read the daily ClickHouse rollup (whole-day buckets), so they
+// must be a whole number of days. Mirrors DAILY_THRESHOLD_MINUTES in the workflows
+// evaluator; keep the two in sync.
+export const METRIC_ALERT_RULE_DAILY_ROLLUP_THRESHOLD_MINUTES = 7 * MINUTES_PER_DAY; // 10080

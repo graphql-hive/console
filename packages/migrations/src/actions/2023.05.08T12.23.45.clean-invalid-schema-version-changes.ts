@@ -2,11 +2,11 @@ import { type MigrationExecutor } from '../pg-migrator';
 
 export default {
   name: '2023.05.08T12.23.45.clean-invalid-schema-version-changes.sql',
-  run: ({ sql }) => sql`
-DELETE 
+  run: ({ psql }) => psql`
+DELETE
 FROM
   "schema_version_changes" "svc"
-WHERE 
+WHERE
   "svc"."change_type" = 'REGISTRY_SERVICE_URL_CHANGED'
   AND (
     NOT "svc"."meta"->'serviceUrls' ? 'new'

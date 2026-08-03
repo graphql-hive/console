@@ -1,23 +1,18 @@
 import { Injectable } from 'graphql-modules';
-import type { DatabasePool } from 'slonik';
 import type { PolicyConfigurationObject } from '@hive/policy';
+import { PostgresDatabasePool } from '@hive/postgres';
 import type {
-  ConditionalBreakingChangeMetadata,
   PaginatedOrganizationInvitationConnection,
-  PaginatedSchemaVersionConnection,
   SchemaChangeType,
   SchemaCheck,
   SchemaCheckInput,
-  SchemaCompositionError,
-  SchemaVersion,
   TargetBreadcrumb,
 } from '@hive/storage';
-import type { SchemaChecksFilter } from '../../../__generated__/types';
+import type { DangerousChangeType, SchemaChecksFilter } from '../../../__generated__/types';
 import type {
   Alert,
   AlertChannel,
   CDNAccessToken,
-  DeletedCompositeSchema,
   DocumentCollection,
   DocumentCollectionOperation,
   Member,
@@ -28,8 +23,6 @@ import type {
   PaginatedDocumentCollectionOperations,
   PaginatedDocumentCollections,
   Project,
-  Schema,
-  SchemaLog,
   SchemaPolicy,
   Target,
   TargetSettings,
@@ -42,7 +35,6 @@ import type {
 } from '../../auth/providers/scopes';
 import type { ResourceAssignmentGroup } from '../../organization/lib/resource-assignment-model';
 import type { Contracts } from '../../schema/providers/contracts';
-import type { SchemaCoordinatesDiffResult } from '../../schema/providers/inspector';
 
 export interface OrganizationSelector {
   organizationId: string;
@@ -56,18 +48,9 @@ export interface TargetSelector extends ProjectSelector {
   targetId: string;
 }
 
-type CreateContractVersionInput = {
-  contractId: string;
-  contractName: string;
-  compositeSchemaSDL: string | null;
-  supergraphSDL: string | null;
-  schemaCompositionErrors: Array<SchemaCompositionError> | null;
-  changes: null | Array<SchemaChangeType>;
-};
-
 // eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging
 export interface Storage {
-  pool: DatabasePool;
+  pool: PostgresDatabasePool;
   destroy(): Promise<void>;
   isReady(): Promise<boolean>;
   ensureUserExists(_: {
@@ -75,7 +58,6 @@ export interface Storage {
     email: string;
     oidcIntegration: null | {
       id: string;
-      defaultScopes: Array<OrganizationAccessScope | ProjectAccessScope | TargetAccessScope>;
     };
     firstName: string | null;
     lastName: string | null;
@@ -347,73 +329,17 @@ export interface Storage {
     _: TargetSelector & Pick<TargetSettings, 'failDiffOnDangerousChange'>,
   ): Promise<TargetSettings | never>; // @todo decide if something should be returned.
 
+  updateTargetFailingDangerousChanges(
+    _: TargetSelector & {
+      all: boolean;
+      failingTypes: readonly DangerousChangeType[];
+    },
+  ): Promise<void>;
+
   updateTargetAppDeploymentProtectionSettings(
     _: Pick<TargetSelector, 'targetId' | 'projectId'> &
       Partial<TargetSettings['appDeploymentProtection']>,
   ): Promise<TargetSettings['appDeploymentProtection']>;
-
-  countSchemaVersionsOfProject(
-    _: ProjectSelector & {
-      period: {
-        from: Date;
-        to: Date;
-      } | null;
-    },
-  ): Promise<number>;
-  countSchemaVersionsOfTarget(
-    _: TargetSelector & {
-      period: {
-        from: Date;
-        to: Date;
-      } | null;
-    },
-  ): Promise<number>;
-
-  hasSchema(_: TargetSelector): Promise<boolean>;
-
-  getLatestValidVersion(_: { targetId: string }): Promise<SchemaVersion | never>;
-
-  getMaybeLatestValidVersion(_: { targetId: string }): Promise<SchemaVersion | null | never>;
-
-  getMaybeLatestVersion(_: TargetSelector): Promise<SchemaVersion | null>;
-
-  /** Find the version before a schema version */
-  getVersionBeforeVersionId(_: {
-    targetId: string;
-    beforeVersionId: string;
-    beforeVersionCreatedAt: string;
-    onlyComposable: boolean;
-  }): Promise<SchemaVersion | null>;
-
-  /**
-   * Find a specific schema version via it's action id.
-   * The action id is the id of the action that created the schema version, it is user provided.
-   * Multiple entries with the same action ID can exist. In that case the latest one is returned.
-   */
-  getSchemaVersionByCommit(_: {
-    targetId: string;
-    projectId: string;
-    commit: string;
-  }): Promise<SchemaVersion | null>;
-  getMatchingServiceSchemaOfVersions(versions: {
-    before: string | null;
-    after: string;
-  }): Promise<null | {
-    serviceName: string;
-    before: string | null;
-    after: string | null;
-  }>;
-  getSchemasOfVersion(_: { versionId: string; includeMetadata?: boolean }): Promise<Schema[]>;
-  getSchemaByNameOfVersion(_: { versionId: string; serviceName: string }): Promise<Schema | null>;
-  getServiceSchemaOfVersion(args: {
-    schemaVersionId: string;
-    serviceName: string;
-  }): Promise<Schema | null>;
-  getPaginatedSchemaVersionsForTargetId(args: {
-    targetId: string;
-    first: number | null;
-    cursor: null | string;
-  }): Promise<PaginatedSchemaVersionConnection>;
   getPaginatedSchemaChecksForSchemaProposal<
     TransformedSchemaCheck extends SchemaCheck = SchemaCheck,
   >(_: {
@@ -438,96 +364,6 @@ export interface Storage {
       }>;
     }>
   >;
-  getMaybeVersion(_: TargetSelector & { versionId: string }): Promise<SchemaVersion | null>;
-  deleteSchema(
-    _: {
-      serviceName: string;
-      composable: boolean;
-      actionFn(versionId: string): Promise<void>;
-      changes: Array<SchemaChangeType> | null;
-      diffSchemaVersionId: string | null;
-      conditionalBreakingChangeMetadata: null | ConditionalBreakingChangeMetadata;
-      contracts: null | Array<CreateContractVersionInput>;
-      coordinatesDiff: SchemaCoordinatesDiffResult | null;
-    } & TargetSelector &
-      (
-        | {
-            compositeSchemaSDL: null;
-            supergraphSDL: null;
-            schemaCompositionErrors: Array<SchemaCompositionError>;
-            tags: null;
-            schemaMetadata: null;
-            metadataAttributes: null;
-          }
-        | {
-            compositeSchemaSDL: string;
-            supergraphSDL: string | null;
-            schemaCompositionErrors: null;
-            tags: null | Array<string>;
-            schemaMetadata: null | Record<
-              string,
-              Array<{ name: string; content: string; source: string | null }>
-            >;
-            metadataAttributes: null | Record<string, string[]>;
-          }
-      ),
-  ): Promise<DeletedCompositeSchema & { versionId: string }>;
-
-  createVersion(
-    _: ({
-      schema: string;
-      author: string;
-      service?: string | null;
-      metadata: string | null;
-      valid: boolean;
-      url?: string | null;
-      commit: string;
-      logIds: string[];
-      base_schema: string | null;
-      actionFn(versionId: string): Promise<void>;
-      changes: Array<SchemaChangeType>;
-      previousSchemaVersion: null | string;
-      diffSchemaVersionId: null | string;
-      github: null | {
-        repository: string;
-        sha: string;
-      };
-      contracts: null | Array<CreateContractVersionInput>;
-      conditionalBreakingChangeMetadata: null | ConditionalBreakingChangeMetadata;
-      coordinatesDiff: SchemaCoordinatesDiffResult | null;
-    } & TargetSelector) &
-      (
-        | {
-            compositeSchemaSDL: null;
-            supergraphSDL: null;
-            schemaCompositionErrors: Array<SchemaCompositionError>;
-            tags: null;
-            schemaMetadata: null;
-            metadataAttributes: null;
-          }
-        | {
-            compositeSchemaSDL: string;
-            supergraphSDL: string | null;
-            schemaCompositionErrors: null;
-            tags: null | Array<string>;
-            schemaMetadata: null | Record<
-              string,
-              Array<{ name: string; content: string; source: string | null }>
-            >;
-            metadataAttributes: null | Record<string, string[]>;
-          }
-      ),
-  ): Promise<SchemaVersion | never>;
-
-  /**
-   * Returns the changes between the given version and the previous version.
-   * If it return `null` the schema version does not have any changes persisted.
-   * This can happen if the schema version was created before we introduced persisting changes.
-   */
-  getSchemaChangesForVersion(_: { versionId: string }): Promise<null | Array<SchemaChangeType>>;
-
-  getSchemaLog(_: { commit: string; targetId: string }): Promise<SchemaLog>;
-
   addSlackIntegration(_: OrganizationSelector & { token: string }): Promise<void>;
 
   deleteSlackIntegration(_: OrganizationSelector): Promise<void>;
@@ -639,6 +475,7 @@ export interface Storage {
     userinfoEndpoint: string;
     authorizationEndpoint: string;
     additionalScopes: readonly string[];
+    userIdClaim: string | null;
   }): Promise<{ type: 'ok'; oidcIntegration: OIDCIntegration } | { type: 'error'; reason: string }>;
 
   updateOIDCIntegration(_: {
@@ -649,6 +486,7 @@ export interface Storage {
     userinfoEndpoint: string | null;
     authorizationEndpoint: string | null;
     additionalScopes: readonly string[] | null;
+    userIdClaim: string | null;
   }): Promise<OIDCIntegration>;
 
   deleteOIDCIntegration(_: { oidcIntegrationId: string }): Promise<void>;
@@ -658,6 +496,8 @@ export interface Storage {
     oidcUserJoinOnly: boolean | null;
     oidcUserAccessOnly: boolean | null;
     requireInvitation: boolean | null;
+    userProvisioningRequired: boolean | null;
+    oidcForVerifiedDomainsRequired: boolean | null;
   }): Promise<OIDCIntegration>;
 
   updateOIDCDefaultMemberRole(_: {
@@ -820,6 +660,16 @@ export interface Storage {
      * Optional filters config for filtering failed and/or changed schema checks.
      */
     filters?: SchemaChecksFilter | null;
+    /**
+     * Optionally include the SDLs (composite, service, and supergraph) in the result.
+     * This is separated for performance reasons.
+     */
+    withSDL?: boolean | null;
+    /**
+     * Optionally include changes (safe; breaking) in the result.
+     * This is seperated for performance reasons.
+     */
+    withChanges?: boolean;
   }): Promise<
     Readonly<{
       items: ReadonlyArray<{
@@ -881,4 +731,3 @@ export interface Storage {
 @Injectable()
 // eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging
 export class Storage implements Storage {}
-export type { PaginatedSchemaVersionConnection };

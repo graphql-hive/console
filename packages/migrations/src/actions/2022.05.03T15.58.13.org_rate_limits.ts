@@ -2,7 +2,7 @@ import { type MigrationExecutor } from '../pg-migrator';
 
 export default {
   name: '2022.05.03T15.58.13.org_rate_limits.sql',
-  run: ({ sql }) => sql`
+  run: ({ psql }) => psql`
 ALTER TABLE
   organizations
 ADD COLUMN

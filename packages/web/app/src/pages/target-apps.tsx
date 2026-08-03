@@ -298,7 +298,7 @@ function TargetAppsView(props: {
             </CardDescription>
             {/* <CardDescription>
               <DocsLink
-                 href="/management/app-deployments"
+                 href="/schema-registry/app-deployments"
                 className="text-neutral-10 hover:text-neutral-11"
               >
                 Learn more about App Deployments
@@ -324,7 +324,7 @@ function TargetAppsView(props: {
         <EmptyList
           title="Hive is waiting for your first app deployment"
           description="You can create an app deployment with the Hive CLI"
-          docsUrl="/features/schema-registry#app-deplyments"
+          docsUrl="/schema-registry/app-deployments"
         />
       ) : (
         <div>

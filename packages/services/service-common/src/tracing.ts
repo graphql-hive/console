@@ -3,13 +3,10 @@ import {
   FetchInstrumentation,
   type FetchInstrumentationConfig,
 } from 'opentelemetry-instrumentation-fetch-node';
-import type { Interceptor, Query, QueryContext } from 'slonik';
 import zod from 'zod';
-import {
-  HiveTracingSpanProcessor,
-  HiveTracingSpanProcessorOptions,
-  openTelemetrySetup,
-} from '@graphql-hive/plugin-opentelemetry/setup';
+import { type HiveTracingSpanProcessorOptions } from '@graphql-hive/plugin-opentelemetry/setup';
+import * as hiveOtel from '@graphql-hive/plugin-opentelemetry/setup';
+import type { Interceptor, Query, QueryContext } from '@hive/postgres';
 import {
   Attributes,
   AttributeValue,
@@ -27,6 +24,7 @@ import { OTLPTraceExporter } from '@opentelemetry/exporter-trace-otlp-http';
 import { Instrumentation, registerInstrumentations } from '@opentelemetry/instrumentation';
 import {
   BatchSpanProcessor,
+  ReadableSpan,
   Sampler,
   SamplingDecision,
   SpanProcessor,
@@ -40,6 +38,8 @@ import {
   SEMATTRS_HTTP_USER_AGENT,
 } from '@opentelemetry/semantic-conventions';
 import openTelemetryPlugin, { OpenTelemetryPluginOptions } from './fastify-tracing';
+
+const { HiveTracingSpanProcessor, openTelemetrySetup } = hiveOtel;
 
 export { trace, context, Span, SpanKind, SamplingDecision, SpanStatusCode };
 
@@ -64,7 +64,7 @@ export class TracingInstance {
     if (this.options.collectorEndpoint) {
       // Grafana endpoint
       const httpExporter = new OTLPTraceExporter({ url: this.options.collectorEndpoint });
-      processors.push(new BatchSpanProcessor(httpExporter));
+      processors.push(new ServiceBatchSpanProcessor(httpExporter));
     }
     if (this.options.hiveTracing) {
       // Hive Tracing endpoint
@@ -125,7 +125,12 @@ export class TracingInstance {
           query.sql === 'SELECT EXISTS(SELECT 1)' ||
           query.sql === 'SELECT 1' ||
           query.sql === '/* Heartbeat */ SELECT 1' ||
-          query.sql === 'SELECT EXISTS( SELECT 1)'
+          query.sql === 'SELECT EXISTS( SELECT 1)' ||
+          // graphile-worker's polling loop hits its own schema every ~2s per
+          // worker (default `pollInterval`). These are infrastructure noise,
+          // not application work...every query touches `graphile_worker.*`
+          // so a substring check is precise and zero false-positive risk.
+          query.sql.includes('graphile_worker.')
         );
       },
       ...options,
@@ -246,11 +251,12 @@ function extractParts(sqlStatement: string): {
 }
 
 export const createSlonikInterceptor = (options: SlonikTracingInterceptorOptions): Interceptor => {
-  const tracer = trace.getTracer('slonik');
+  const tracer = trace.getTracer('slonik-service-common');
   const connections: Record<string, Record<string, Span>> = {};
   const shouldExcludeFn = options.shouldExcludeStatement || (() => false);
 
   return {
+    name: 'slonik-tracing-interceptor',
     afterPoolConnection(context) {
       connections[context.connectionId] = {};
 
@@ -515,4 +521,10 @@ export function traceFn<This extends object, TArgs extends any[], TResult>(
       });
     } as any;
   };
+}
+
+class ServiceBatchSpanProcessor extends BatchSpanProcessor {
+  onEnd(span: ReadableSpan): void {
+    return super.onEnd(span);
+  }
 }

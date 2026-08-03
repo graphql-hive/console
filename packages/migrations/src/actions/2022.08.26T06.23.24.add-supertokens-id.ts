@@ -2,7 +2,7 @@ import { type MigrationExecutor } from '../pg-migrator';
 
 export default {
   name: '2022.08.26T06.23.24.add-supertokens-id.sql',
-  run: ({ sql }) => sql`
+  run: ({ psql }) => psql`
 ALTER TABLE
   users
 ADD COLUMN

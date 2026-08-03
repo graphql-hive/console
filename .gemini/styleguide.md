@@ -80,3 +80,56 @@ We use changesets for versioning.
   - These changesets should have the right amount of informational content for someone to understand
     what this change introduces for their self-hosted Hive instance, without going into too much
     internal technical detail.
+
+---
+
+## Pull Request Reviewing
+
+### What to Look For
+
+Code that looks wrong in isolation may be correct given surrounding logic—and vice versa. Read the
+full file to understand existing patterns, control flow, and error handling.
+
+**Bugs** - Your primary focus.
+
+- Logic errors, off-by-one mistakes, incorrect conditionals
+- If-else guards: missing guards, incorrect branching, unreachable code paths
+- Edge cases: null/empty/undefined inputs, error conditions, race conditions
+- Security issues: injection, auth bypass, data exposure
+- Broken error handling that swallows failures, throws unexpectedly or returns error types that are
+  not caught.
+
+**Structure** - Does the code fit the codebase?
+
+- Does it follow existing patterns and conventions?
+- Are there established abstractions it should use but doesn't?
+- Excessive nesting that could be flattened with early returns or extraction
+
+**Performance** - Only flag if obviously problematic.
+
+- O(n²) on unbounded data, N+1 queries, blocking I/O on hot paths
+
+**Behavior Changes** - If a behavioral change is introduced, raise it (especially if it's possibly
+unintentional).
+
+---
+
+### Before You Flag Something
+
+**Be certain.** If you're going to call something a bug, you need to be confident it actually is
+one.
+
+- Only review the changes - do not review pre-existing code that wasn't modified
+- Don't flag something as a bug if you're unsure - investigate first
+- Don't invent hypothetical problems - if an edge case matters, explain the realistic scenario where
+  it breaks
+- If you need more context to be sure, use the tools below to get it
+
+**Don't be a zealot about style.** When checking code against conventions:
+
+- Verify the code is _actually_ in violation. Don't complain about else statements if early returns
+  are already being used correctly.
+- Some "violations" are acceptable when they're the simplest option.
+- Excessive nesting is a legitimate concern regardless of other style choices.
+- Don't flag style preferences as issues unless they clearly violate established project
+  conventions.

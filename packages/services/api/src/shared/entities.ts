@@ -8,11 +8,17 @@ import type {
   AlertChannelType,
   AlertType,
   AuthProviderType,
+  DangerousChangeType,
   OrganizationAccessScope,
   ProjectAccessScope,
   TargetAccessScope,
 } from '../__generated__/types';
 import type { ResourceAssignmentGroup } from '../modules/organization/lib/resource-assignment-model';
+import type {
+  CompositeDeletedSchemaLog,
+  CompositePushSchemaLog,
+  SinglePushSchemaLog,
+} from '../modules/schema/providers/schema-version-store';
 import { parseGraphQLSource, sortDocumentNode } from './schema';
 
 export const NameModel = z
@@ -22,49 +28,9 @@ export const NameModel = z
     `Name restricted to alphanumerical characters, spaces and . , _ - / &`,
   );
 
-export const SingleSchemaModel = z
-  .object({
-    kind: z.literal('single'),
-    id: z.string(),
-    author: z.string(),
-    date: z.number(),
-    commit: z.string(),
-    target: z.string(),
-    sdl: z.string(),
-    metadata: z.string().nullish(),
-  })
-  .required();
-
-export const DeletedCompositeSchemaModel = z
-  .object({
-    kind: z.literal('composite'),
-    id: z.string(),
-    date: z.number(),
-    target: z.string(),
-    service_name: z.string(),
-    action: z.literal('DELETE'),
-  })
-  .required();
-
-export const PushedCompositeSchemaModel = z
-  .object({
-    kind: z.literal('composite'),
-    id: z.string(),
-    author: z.string(),
-    date: z.number(),
-    commit: z.string(),
-    target: z.string(),
-    sdl: z.string(),
-    service_name: z.string(),
-    service_url: z.string().nullable(),
-    action: z.literal('PUSH'),
-    metadata: z.string().nullish(),
-  })
-  .required();
-
-export type SingleSchema = z.infer<typeof SingleSchemaModel>;
-export type DeletedCompositeSchema = z.infer<typeof DeletedCompositeSchemaModel>;
-export type PushedCompositeSchema = z.infer<typeof PushedCompositeSchemaModel>;
+export type SingleSchema = SinglePushSchemaLog;
+export type DeletedCompositeSchema = CompositeDeletedSchemaLog;
+export type PushedCompositeSchema = CompositePushSchemaLog;
 export type CompositeSchema = PushedCompositeSchema;
 
 export type Schema = SingleSchema | CompositeSchema;
@@ -191,6 +157,8 @@ export interface Organization {
     appDeployments: boolean;
     otelTracing: boolean;
     schemaProposals: boolean;
+    metricAlertRules: boolean;
+    scim: boolean;
   };
   zendeskId: string | null;
   /** ID of the user that owns the organization */
@@ -228,6 +196,9 @@ export interface OIDCIntegration {
   requireInvitation: boolean;
   defaultMemberRoleId: string | null;
   defaultResourceAssignment: ResourceAssignmentGroup | null;
+  userIdClaim: string;
+  userProvisioningRequired: boolean;
+  oidcForVerifiedDomainsRequired: boolean;
 }
 
 export interface CDNAccessToken {
@@ -365,6 +336,8 @@ export interface Target {
   name: string;
   graphqlEndpointUrl: string | null;
   failDiffOnDangerousChange: boolean;
+  failAllDangerousChanges: boolean;
+  failDangerousChangeTypes: string[];
 }
 
 export interface Token {
@@ -388,6 +361,8 @@ export interface User {
   superTokensUserId: string | null;
   isAdmin: boolean;
   zendeskId: string | null;
+  provisionedByOrganizationId: string | null;
+  deactivatedAt: string | null;
 }
 
 export interface Member {
@@ -421,6 +396,8 @@ export interface TargetSettings {
     excludedAppDeployments: string[];
   };
   failDiffOnDangerousChange: boolean;
+  failAllDangerousChanges: boolean;
+  failDangerousChangeTypes: DangerousChangeType[];
   appDeploymentProtection: {
     isEnabled: boolean;
     minDaysInactive: number;
@@ -469,6 +446,62 @@ export interface Alert {
   projectId: string;
   targetId: string;
   createdAt: string;
+}
+
+export type MetricAlertRuleType = 'LATENCY' | 'ERROR_RATE' | 'TRAFFIC';
+export type MetricAlertRuleMetric = 'AVG' | 'P75' | 'P90' | 'P95' | 'P99';
+export type MetricAlertRuleThresholdType = 'FIXED_VALUE' | 'PERCENTAGE_CHANGE';
+export type MetricAlertRuleDirection = 'ABOVE' | 'BELOW';
+export type MetricAlertRuleSeverity = 'INFO' | 'WARNING' | 'CRITICAL';
+export type MetricAlertRuleState = 'NORMAL' | 'PENDING' | 'FIRING' | 'RECOVERING';
+
+export interface MetricAlertRule {
+  id: string;
+  organizationId: string;
+  projectId: string;
+  targetId: string;
+  createdByUserId: string | null;
+  updatedByUserId: string | null;
+  type: MetricAlertRuleType;
+  timeWindowMinutes: number;
+  metric: MetricAlertRuleMetric | null;
+  thresholdType: MetricAlertRuleThresholdType;
+  thresholdValue: number;
+  direction: MetricAlertRuleDirection;
+  severity: MetricAlertRuleSeverity;
+  name: string;
+  createdAt: string;
+  updatedAt: string;
+  enabled: boolean;
+  lastEvaluatedAt: string | null;
+  lastTriggeredAt: string | null;
+  state: MetricAlertRuleState;
+  stateChangedAt: string | null;
+  confirmationMinutes: number;
+  savedFilterId: string | null;
+}
+
+export interface MetricAlertIncident {
+  id: string;
+  metricAlertRuleId: string;
+  startedAt: string;
+  resolvedAt: string | null;
+  currentValue: number;
+  previousValue: number | null;
+  thresholdValue: number;
+}
+
+export interface MetricAlertStateLogEntry {
+  id: string;
+  metricAlertRuleId: string;
+  targetId: string;
+  fromState: MetricAlertRuleState;
+  toState: MetricAlertRuleState;
+  value: number | null;
+  previousValue: number | null;
+  thresholdValue: number | null;
+  createdAt: string;
+  expiresAt: string;
 }
 
 export interface AdminOrganizationStats {

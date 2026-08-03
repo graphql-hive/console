@@ -16,7 +16,6 @@ import { Redis } from './redis';
 import { S3 } from './s3';
 import { Schema } from './schema';
 import { Sentry } from './sentry';
-import { Tokens } from './tokens';
 import { Usage } from './usage';
 import { Zendesk } from './zendesk';
 
@@ -31,7 +30,6 @@ export function deployGraphQL({
   clickhouse,
   image,
   environment,
-  tokens,
   schema,
   schemaPolicy,
   cdn,
@@ -55,7 +53,6 @@ export function deployGraphQL({
   image: string;
   clickhouse: Clickhouse;
   environment: Environment;
-  tokens: Tokens;
   schema: Schema;
   schemaPolicy: SchemaPolicy;
   redis: Redis;
@@ -72,6 +69,7 @@ export function deployGraphQL({
 }) {
   const apiConfig = new pulumi.Config('api');
   const supertokensConfig = new pulumi.Config('supertokens');
+  const featureFlagsConfig = new pulumi.Config('featureFlags');
   const apiEnv = apiConfig.requireObject<Record<string, string>>('env');
 
   const hiveConfig = new pulumi.Config('hive');
@@ -104,25 +102,33 @@ export function deployGraphQL({
       {
         imagePullSecret: docker.secret,
         image,
-        replicas: environment.podsConfig.general.replicas,
+        replicas: environment.podsConfig.graphqlApi.replicas,
         pdb: true,
         readinessProbe: '/_readiness',
-        livenessProbe: '/_health',
+        livenessProbe: {
+          endpoint: '/_health',
+          initialDelaySeconds: 10,
+          timeoutSeconds: 5,
+          periodSeconds: 30,
+          failureThreshold: 10,
+        },
         startupProbe: {
           endpoint: '/_health',
-          initialDelaySeconds: 60,
-          failureThreshold: 10,
+          initialDelaySeconds: 5,
+          failureThreshold: 4,
           periodSeconds: 15,
-          timeoutSeconds: 15,
+          timeoutSeconds: 10,
         },
         availabilityOnEveryNode: true,
         env: {
           ...environment.envVars,
           ...apiEnv,
+          LOG_LEVEL: 'info',
           SENTRY: sentry.enabled ? '1' : '0',
-          REQUEST_LOGGING: '1', // disabled
+          FEATURE_FLAGS_METRIC_ALERT_RULES_ENABLED:
+            featureFlagsConfig.get('metricAlertRulesEnabled') ?? '0',
+          REQUEST_LOGGING: '1',
           COMMERCE_ENDPOINT: serviceLocalEndpoint(commerce.service),
-          TOKENS_ENDPOINT: serviceLocalEndpoint(tokens.service),
           SCHEMA_ENDPOINT: serviceLocalEndpoint(schema.service),
           SCHEMA_POLICY_ENDPOINT: serviceLocalEndpoint(schemaPolicy.service),
           WEB_APP_URL: `https://${environment.appDns}`,
@@ -131,6 +137,7 @@ export function deployGraphQL({
           HIVE_USAGE: '1',
           HIVE_TARGET: hiveConfig.require('target'),
           HIVE_USAGE_ENDPOINT: serviceLocalEndpoint(usage.service),
+          HIVE_FIELD_USAGE_ENABLED: '1',
           HIVE_TRACING: '1',
           HIVE_TRACING_ENDPOINT: environment.isProduction
             ? 'https://api.graphql-hive.com/otel/v1/traces'

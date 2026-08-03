@@ -1,6 +1,18 @@
-import { forwardRef, useEffect, useId, useImperativeHandle, useRef, useState } from 'react';
+import {
+  forwardRef,
+  useCallback,
+  useEffect,
+  useId,
+  useImperativeHandle,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from 'react';
+import { OperationDefinitionNode, parse } from 'graphql';
 import * as monaco from 'monaco-editor';
-import { initializeMode } from 'monaco-graphql/initializeMode';
+import { buildEditorOptions } from '@/lib/editor-options';
+import { syncMonacoGraphQL } from '@/lib/monaco-graphql';
+import { cn } from '@/lib/utils';
 import MonacoEditor, { loader } from '@monaco-editor/react';
 import { useLaboratory } from './context';
 
@@ -73,7 +85,7 @@ const darkTheme: monaco.editor.IStandaloneThemeData = {
   ],
   colors: {
     'editor.foreground': '#f6f8fa',
-    'editor.background': '#0f1214',
+    'editor.background': '#0f121400',
     'editor.selectionBackground': '#2A2F34',
     'editor.inactiveSelectionBackground': '#2A2F34',
     'editor.lineHighlightBackground': '#2A2F34',
@@ -121,51 +133,45 @@ export type EditorProps = React.ComponentProps<typeof MonacoEditor> & {
   uri?: monaco.Uri;
   variablesUri?: monaco.Uri;
   extraLibs?: string[];
+  onOperationNameChange?: (operationName: string | null) => void;
 };
 
 const EditorInner = forwardRef<EditorHandle, EditorProps>((props, ref) => {
   const id = useId();
   const editorRef = useRef<monaco.editor.IStandaloneCodeEditor | null>(null);
   const { introspection, endpoint, theme } = useLaboratory();
+  const wantsJson = props.language === 'json' || props.defaultLanguage === 'json';
   const [typescriptReady, setTypescriptReady] = useState(!!monaco.languages.typescript);
-
+  const [jsonReady, setJsonReady] = useState(
+    monaco.languages.getLanguages().some(language => language.id === 'json'),
+  );
   useEffect(() => {
-    if (introspection) {
-      const api = initializeMode({
-        schemas: [
-          {
-            introspectionJSON: introspection,
-            uri: `schema_${endpoint}.graphql`,
-          },
-        ],
-        diagnosticSettings:
-          props.uri && props.variablesUri
-            ? {
-                validateVariablesJSON: {
-                  [props.uri.toString()]: [props.variablesUri.toString()],
-                },
-                jsonDiagnosticSettings: {
-                  allowComments: true, // allow json, parse with a jsonc parser to make requests
-                },
-              }
-            : undefined,
-      });
-
-      api.setCompletionSettings({
-        __experimental__fillLeafsOnComplete: true,
-      });
+    if (!introspection) {
+      return;
     }
-  }, [introspection, props.uri?.toString(), props.variablesUri?.toString()]);
+
+    syncMonacoGraphQL({
+      introspection,
+      schemaUri: `schema_${endpoint}.graphql`,
+      operationUri: props.uri?.toString(),
+      variablesUri: props.variablesUri?.toString(),
+    });
+  }, [endpoint, introspection, props.uri?.toString(), props.variablesUri?.toString()]);
 
   useEffect(() => {
     void (async function () {
-      if (!props.extraLibs?.length) {
-        return;
+      if (wantsJson && !jsonReady) {
+        await import('monaco-editor/esm/vs/language/json/monaco.contribution');
+        setJsonReady(true);
       }
 
       if (!monaco.languages.typescript) {
         await import('monaco-editor/esm/vs/language/typescript/monaco.contribution');
         setTypescriptReady(true);
+      }
+
+      if (!props.extraLibs?.length) {
+        return;
       }
 
       const ts = monaco.languages.typescript;
@@ -197,7 +203,7 @@ const EditorInner = forwardRef<EditorHandle, EditorProps>((props, ref) => {
         })),
       );
     })();
-  }, [id, props.extraLibs]);
+  }, [id, jsonReady, props.extraLibs, wantsJson]);
 
   useImperativeHandle(
     ref,
@@ -211,37 +217,126 @@ const EditorInner = forwardRef<EditorHandle, EditorProps>((props, ref) => {
     [],
   );
 
+  const setupDecorationsHandler = useCallback(
+    (editor: monaco.editor.IStandaloneCodeEditor) => {
+      let decorationsCollection: monaco.editor.IEditorDecorationsCollection | null = null;
+
+      const handler = () => {
+        decorationsCollection?.clear();
+
+        try {
+          const value = editor.getValue();
+          const doc = parse(value);
+
+          const definition = doc.definitions.find(definition => {
+            if (definition.kind !== 'OperationDefinition') {
+              return false;
+            }
+
+            if (!definition.loc) {
+              return false;
+            }
+
+            const cursorPosition = editor.getPosition();
+
+            if (cursorPosition) {
+              return (
+                definition.loc.startToken.line <= cursorPosition.lineNumber &&
+                definition.loc.endToken.line >= cursorPosition.lineNumber
+              );
+            }
+          });
+
+          if (definition?.loc) {
+            const decorations: monaco.editor.IModelDeltaDecoration[] = [];
+
+            if (definition.loc.startToken.line > 1) {
+              decorations.push({
+                range: new monaco.Range(
+                  0,
+                  0,
+                  definition.loc.startToken.line - 1,
+                  definition.loc.startToken.column,
+                ),
+                options: {
+                  isWholeLine: true,
+                  inlineClassName: 'inactive-line',
+                },
+              });
+            }
+
+            const lineCount = editor.getModel()?.getLineCount() ?? 0;
+            const lastLineMaxColumn = editor.getModel()?.getLineMaxColumn(lineCount) ?? 0;
+
+            if (definition.loc.endToken.line < lineCount) {
+              decorations.push({
+                range: new monaco.Range(
+                  definition.loc.endToken.line + 1,
+                  definition.loc.endToken.column,
+                  lineCount,
+                  lastLineMaxColumn,
+                ),
+                options: {
+                  isWholeLine: true,
+                  inlineClassName: 'inactive-line',
+                },
+              });
+            }
+
+            decorationsCollection = editor.createDecorationsCollection(decorations);
+
+            props.onOperationNameChange?.(
+              (definition as OperationDefinitionNode).name?.value ?? null,
+            );
+          }
+        } catch (error) {}
+      };
+
+      editor.onDidChangeCursorPosition(handler);
+
+      handler();
+    },
+    [props.onOperationNameChange],
+  );
+
+  const handleMount = useCallback(
+    (editor: monaco.editor.IStandaloneCodeEditor) => {
+      editorRef.current = editor;
+      setupDecorationsHandler(editor);
+    },
+    [setupDecorationsHandler],
+  );
+
+  const recentCursorPosition = useRef<{ lineNumber: number; column: number } | null>(null);
+
+  useLayoutEffect(() => {
+    recentCursorPosition.current = editorRef.current?.getPosition() ?? null;
+  }, [props.value]);
+
+  useEffect(() => {
+    if (editorRef.current && recentCursorPosition.current) {
+      editorRef.current.setPosition(recentCursorPosition.current);
+      recentCursorPosition.current = null;
+    }
+  }, [props.value]);
+
   if (!typescriptReady && props.language === 'typescript') {
     return null;
   }
 
+  if (!jsonReady && wantsJson) {
+    return null;
+  }
+
   return (
-    <div className="size-full overflow-hidden">
+    <div className={cn('size-full overflow-hidden', props.className)}>
       <MonacoEditor
-        className="size-full"
         {...props}
+        className="size-full"
         theme={theme === 'dark' ? 'hive-laboratory-dark' : 'hive-laboratory-light'}
-        onMount={editor => {
-          editorRef.current = editor;
-        }}
+        onMount={handleMount}
         loading={null}
-        options={{
-          ...props.options,
-          lineNumbers: 'on',
-          cursorStyle: 'line',
-          cursorBlinking: 'smooth',
-          padding: {
-            top: 16,
-          },
-          fontFamily:
-            'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace',
-          minimap: {
-            enabled: false,
-          },
-          automaticLayout: true,
-          tabSize: 2,
-          formatOnPaste: true,
-        }}
+        options={buildEditorOptions(props.options)}
         defaultPath={props.uri?.toString()}
       />
     </div>

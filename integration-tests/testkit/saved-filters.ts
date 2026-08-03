@@ -23,6 +23,7 @@ export const GetSavedFilterQuery = graphql(`
         }
         visibility
         viewsCount
+        usedByAlertRulesCount
         createdAt
         updatedAt
         createdBy {

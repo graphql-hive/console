@@ -1,5 +1,46 @@
 # @graphql-hive/yoga
 
+## 0.49.0
+
+### Minor Changes
+
+- [#8062](https://github.com/graphql-hive/console/pull/8062)
+  [`8270cac`](https://github.com/graphql-hive/console/commit/8270cac6516b20454914ee39d189e8c943487834)
+  Thanks [@jdolle](https://github.com/jdolle)! - Add a new experimental config option that allows
+  sending additional metrics (errors and resolution counts) to Hive Console.
+
+### Patch Changes
+
+- [#8291](https://github.com/graphql-hive/console/pull/8291)
+  [`ee8af3e`](https://github.com/graphql-hive/console/commit/ee8af3edcb06f4d59b742cf2c8f2f99167bb52a0)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Use npm trusted publishing.
+
+- Updated dependencies
+  [[`8270cac`](https://github.com/graphql-hive/console/commit/8270cac6516b20454914ee39d189e8c943487834),
+  [`ee8af3e`](https://github.com/graphql-hive/console/commit/ee8af3edcb06f4d59b742cf2c8f2f99167bb52a0)]:
+  - @graphql-hive/core@0.22.0
+
+## 0.48.2
+
+### Patch Changes
+
+- [#8189](https://github.com/graphql-hive/console/pull/8189)
+  [`edda043`](https://github.com/graphql-hive/console/commit/edda043e8aa60f852228cac9a83ea3a746f58917)
+  Thanks [@enisdenjo](https://github.com/enisdenjo)! - Use original operation document when usage
+  reporting
+
+  Some envelop plugins (like extended-validation) mutate documents in place and can therefore cause
+  the document to be different AFTER execution than the one that was used FOR execution. To avoid
+  this rugpull, we create a new stable document operation (object) for usage reporting.
+
+## 0.48.1
+
+### Patch Changes
+
+- Updated dependencies
+  [[`63a9126`](https://github.com/graphql-hive/console/commit/63a912691f0c7e5afdd2cc864de53df289592b54)]:
+  - @graphql-hive/core@0.21.1
+
 ## 0.48.0
 
 ### Minor Changes

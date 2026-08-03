@@ -1,5 +1,6 @@
 import { config as dotenv } from 'dotenv';
 import zod from 'zod';
+import type { PostgresConnectionParamaters } from '@hive/postgres';
 
 dotenv({
   debug: true,
@@ -83,5 +84,5 @@ export const env = {
     user: postgres.POSTGRES_USER,
     password: postgres.POSTGRES_PASSWORD,
     ssl: postgres.POSTGRES_SSL === '1',
-  },
+  } satisfies PostgresConnectionParamaters,
 } as const;

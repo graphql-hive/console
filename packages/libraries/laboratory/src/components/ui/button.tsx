@@ -1,3 +1,4 @@
+import { forwardRef } from 'react';
 import { cva, type VariantProps } from 'class-variance-authority';
 import { Slot } from '@radix-ui/react-slot';
 import { cn } from '../../lib/utils';
@@ -9,7 +10,7 @@ const buttonVariants = cva(
       variant: {
         default: 'bg-primary text-primary-foreground hover:bg-primary/90',
         destructive:
-          '!text-white hover:bg-destructive/90 focus-visible:ring-destructive/40 bg-destructive/60',
+          '!text-white !hover:bg-destructive/90 !focus-visible:ring-destructive/40 !bg-destructive/60',
         outline:
           'border shadow-sm hover:text-accent-foreground bg-input/30 border-input hover:bg-input/50',
         secondary: 'bg-secondary text-secondary-foreground hover:bg-secondary/80',
@@ -32,25 +33,28 @@ const buttonVariants = cva(
   },
 );
 
-function Button({
-  className,
-  variant,
-  size,
-  asChild = false,
-  ...props
-}: React.ComponentProps<'button'> &
+type ButtonProps = React.ComponentProps<'button'> &
   VariantProps<typeof buttonVariants> & {
     asChild?: boolean;
-  }) {
-  const Comp = asChild ? Slot : 'button';
+  };
 
-  return (
-    <Comp
-      data-slot="button"
-      className={cn(buttonVariants({ variant, size, className }))}
-      {...props}
-    />
-  );
-}
+// forwardRef is required on React 18: without it Radix `asChild` triggers cannot
+// attach their ref, leaving popovers and tooltips with no anchor to position against.
+const Button = forwardRef<HTMLButtonElement, ButtonProps>(
+  ({ className, variant, size, asChild = false, ...props }, ref) => {
+    const Comp = asChild ? Slot : 'button';
+
+    return (
+      <Comp
+        ref={ref}
+        data-slot="button"
+        className={cn(buttonVariants({ variant, size, className }))}
+        {...props}
+      />
+    );
+  },
+);
+
+Button.displayName = 'Button';
 
 export { Button, buttonVariants };

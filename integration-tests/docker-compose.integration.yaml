@@ -3,7 +3,6 @@
 # This file also includes services that only exists in Hive's Cloud version, and are not available in the self-hosted version.
 # Please refer to TESTING.md for more information.
 
-version: '3.8'
 name: 'hive-tests'
 
 networks:
@@ -12,13 +11,20 @@ networks:
 
 services:
   local_cdn:
-    image: node:24.13.0-alpine3.23
+    image: node${NODE_VERSION_TAG}
     working_dir: /app
     command: ['node', 'index.js']
     networks:
       - 'stack'
     healthcheck:
-      test: ['CMD', 'wget', '--spider', '-q', 'localhost:3004/_readiness']
+      test:
+        [
+          'CMD',
+          'node',
+          '-e',
+          "fetch('http://localhost:3004/_readiness').then(r => { if (!r.ok) process.exit(1)
+          }).catch(() => process.exit(1))",
+        ]
       interval: 5s
       timeout: 5s
       retries: 6
@@ -38,13 +44,20 @@ services:
       S3_BUCKET_NAME: artifacts
 
   local_broker:
-    image: node:24.13.0-alpine3.23
+    image: node${NODE_VERSION_TAG}
     working_dir: /app
     command: ['node', 'broker.js']
     networks:
       - 'stack'
     healthcheck:
-      test: ['CMD', 'wget', '--spider', '-q', 'localhost:3013/_readiness']
+      test:
+        [
+          'CMD',
+          'node',
+          '-e',
+          "fetch('http://localhost:3013/_readiness').then(r => { if (!r.ok) process.exit(1)
+          }).catch(() => process.exit(1))",
+        ]
       interval: 5s
       timeout: 5s
       retries: 6
@@ -90,13 +103,20 @@ services:
       SECRET: '${EXTERNAL_COMPOSITION_SECRET}'
 
   external_composition:
-    image: node:24.13.0-alpine3.23
+    image: node${NODE_VERSION_TAG}
     working_dir: /app
     command: ['node', 'example.mjs']
     networks:
       - 'stack'
     healthcheck:
-      test: ['CMD', 'wget', '--spider', '-q', 'localhost:3012/_readiness']
+      test:
+        [
+          'CMD',
+          'node',
+          '-e',
+          "fetch('http://localhost:3012/_readiness').then(r => { if (!r.ok) process.exit(1)
+          }).catch(() => process.exit(1))",
+        ]
       interval: 5s
       timeout: 5s
       retries: 6
@@ -142,6 +162,8 @@ services:
   # Overrides only to `docker-compose.community.yaml` from now on:
   server:
     environment:
+      NODEJS_FLAGS: '--expose-gc'
+      EXPOSE_MEMORY_UTILS: '1'
       CDN_CF: '1'
       CDN_CF_BASE_PATH: http://local_cdn:3004
       CDN_CF_ACCOUNT_ID: 103df45224310d669213971ce28b5b70
@@ -165,6 +187,7 @@ services:
       # Auth
       WEB_APP_URL: '${HIVE_APP_BASE_URL}'
       AUTH_ORGANIZATION_OIDC: '1'
+      AUTH_ORGANIZATION_SCIM: '1'
       AUTH_REQUIRE_EMAIL_VERIFICATION: '1'
       GRAPHQL_PUBLIC_ORIGIN: http://localhost:8082
       SUPERTOKENS_RATE_LIMIT: '0'
@@ -222,8 +245,6 @@ services:
     depends_on:
       broker:
         condition: service_started # Redpand is ready when it starts
-      tokens:
-        condition: service_healthy
 
   usage-ingestor:
     environment:
@@ -233,8 +254,6 @@ services:
     depends_on:
       broker:
         condition: service_started # Redpand is ready when it starts
-      tokens:
-        condition: service_healthy
 
   workflows:
     environment:
@@ -254,6 +273,7 @@ services:
       - '3002:3002'
 
   otel-collector:
+    image: '${DOCKER_REGISTRY}otel-collector${DOCKER_TAG}'
     depends_on:
       clickhouse:
         condition: service_healthy
@@ -290,10 +310,14 @@ services:
 
   # It's not part of integration tests
   app:
-    image: node:24.13.0-alpine3.23
+    image: node${NODE_VERSION_TAG}
     command: ['npx', 'http-server']
 
   # Redpand is used for integration tests, instead of Kafka. Zookeeper is no longer needed
   zookeeper:
-    image: node:24.13.0-alpine3.23
+    image: node${NODE_VERSION_TAG}
     command: ['npx', 'http-server']
+
+  redis:
+    ports:
+      - '6379:6379'

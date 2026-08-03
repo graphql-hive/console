@@ -1,8 +1,16 @@
 import { differenceInCalendarDays, startOfDay, subDays } from 'date-fns';
 import { Inject, Injectable, Scope } from 'graphql-modules';
-import { sql, UniqueIntegrityConstraintViolationError, type DatabasePool } from 'slonik';
 import { z } from 'zod';
-import { buildAppDeploymentIsEnabledKey } from '@hive/cdn-script/artifact-storage-reader';
+import {
+  AppDeploymentManifestModel,
+  buildAppDeploymentIsEnabledKey,
+  buildAppDeploymentManifestKey,
+} from '@hive/cdn-script/artifact-storage-reader';
+import {
+  PostgresDatabasePool,
+  psql,
+  UniqueIntegrityConstraintViolationError,
+} from '@hive/postgres';
 import {
   AffectedAppDeployments,
   decodeAppDeploymentSortCursor,
@@ -12,10 +20,11 @@ import {
   encodeCreatedAtAndUUIDIdBasedCursor,
   encodeHashBasedCursor,
 } from '@hive/storage';
+import type { Target } from '../../../shared/entities';
 import { ClickHouse, sql as cSql } from '../../operations/providers/clickhouse-client';
 import { SchemaVersionHelper } from '../../schema/providers/schema-version-helper';
+import { SchemaVersionStore } from '../../schema/providers/schema-version-store';
 import { Logger } from '../../shared/providers/logger';
-import { PG_POOL_CONFIG } from '../../shared/providers/pg-pool';
 import { S3_CONFIG, type S3Config } from '../../shared/providers/s3-config';
 import { Storage } from '../../shared/providers/storage';
 import { APP_DEPLOYMENTS_ENABLED } from './app-deployments-enabled-token';
@@ -46,12 +55,13 @@ export class AppDeployments {
 
   constructor(
     logger: Logger,
-    @Inject(PG_POOL_CONFIG) private pool: DatabasePool,
+    private pool: PostgresDatabasePool,
     @Inject(S3_CONFIG) private s3: S3Config,
     private clickhouse: ClickHouse,
     private storage: Storage,
     private schemaVersionHelper: SchemaVersionHelper,
     private persistedDocumentScheduler: PersistedDocumentScheduler,
+    private schemaVersions: SchemaVersionStore,
     @Inject(APP_DEPLOYMENTS_ENABLED) private appDeploymentsEnabled: boolean,
   ) {
     this.logger = logger.child({ source: 'AppDeployments' });
@@ -62,8 +72,8 @@ export class AppDeployments {
   }): Promise<AppDeploymentRecord | null> {
     this.logger.debug('get app deployment by id (appDeploymentId=%s)', args.appDeploymentId);
 
-    const record = await this.pool.maybeOne<unknown>(
-      sql`
+    const record = await this.pool.maybeOne(
+      psql`
         SELECT
           ${appDeploymentFields}
         FROM
@@ -92,8 +102,8 @@ export class AppDeployments {
       args.version,
     );
 
-    const record = await this.pool.maybeOne<unknown>(
-      sql`
+    const record = await this.pool.maybeOne(
+      psql`
         SELECT
           ${appDeploymentFields}
         FROM
@@ -188,7 +198,7 @@ export class AppDeployments {
 
     try {
       const result = await this.pool.maybeOne(
-        sql`
+        psql`
           INSERT INTO "app_deployments" (
             "target_id"
             , "name"
@@ -246,9 +256,7 @@ export class AppDeployments {
   }
 
   async addDocumentsToAppDeployment(args: {
-    organizationId: string;
-    projectId: string;
-    targetId: string;
+    target: Target;
     appDeployment: {
       name: string;
       version: string;
@@ -260,7 +268,7 @@ export class AppDeployments {
   }) {
     if (this.appDeploymentsEnabled === false) {
       const organization = await this.storage.getOrganization({
-        organizationId: args.organizationId,
+        organizationId: args.target.orgId,
       });
       if (organization.featureFlags.appDeployments === false) {
         this.logger.debug(
@@ -280,7 +288,7 @@ export class AppDeployments {
     // todo: validate input
 
     const appDeployment = await this.findAppDeployment({
-      targetId: args.targetId,
+      targetId: args.target.id,
       name: args.appDeployment.name,
       version: args.appDeployment.version,
     });
@@ -306,9 +314,9 @@ export class AppDeployments {
     }
 
     if (args.operations.length !== 0) {
-      const latestSchemaVersion = await this.storage.getMaybeLatestValidVersion({
-        targetId: args.targetId,
-      });
+      const latestSchemaVersion = await this.schemaVersions.getMaybeLatestValidSchemaVersion(
+        args.target,
+      );
 
       if (latestSchemaVersion === null) {
         return {
@@ -323,9 +331,9 @@ export class AppDeployments {
 
       const compositeSchemaSdl = await this.schemaVersionHelper.getCompositeSchemaSdl({
         ...latestSchemaVersion,
-        organizationId: args.organizationId,
-        projectId: args.projectId,
-        targetId: args.targetId,
+        organizationId: args.target.orgId,
+        projectId: args.target.projectId,
+        targetId: args.target.id,
       });
       if (compositeSchemaSdl === null) {
         // No valid schema found.
@@ -340,7 +348,7 @@ export class AppDeployments {
 
       const result = await this.persistedDocumentScheduler.processBatch({
         schemaSdl: compositeSchemaSdl,
-        targetId: args.targetId,
+        targetId: args.target.id,
         appDeployment: {
           id: appDeployment.id,
           name: args.appDeployment.name,
@@ -361,6 +369,27 @@ export class AppDeployments {
       type: 'success' as const,
       appDeployment,
     };
+  }
+
+  private async _getAllDocumentHashesForAppDeployment(
+    appDeployment: AppDeploymentRecord,
+  ): Promise<Array<string>> {
+    return await this.clickhouse
+      .query({
+        query: cSql`
+          SELECT
+            DISTINCT "document_hash" AS "hash"
+          FROM
+            "app_deployment_documents"
+          WHERE
+            "app_deployment_id" = ${appDeployment.id}
+        `,
+        queryId: 'app-deployment-document-ids',
+        timeout: 10_000,
+      })
+      .then(res =>
+        z.array(z.object({ hash: z.string() }).transform(row => row.hash)).parse(res.data),
+      );
   }
 
   async activateAppDeployment(args: {
@@ -428,8 +457,11 @@ export class AppDeployments {
       };
     }
 
+    const appDeploymentDocumentHashes =
+      await this._getAllDocumentHashesForAppDeployment(appDeployment);
+
     for (const s3 of this.s3) {
-      const result = await s3.client.fetch(
+      let result = await s3.client.fetch(
         [
           s3.endpoint,
           s3.bucket,
@@ -454,11 +486,43 @@ export class AppDeployments {
       if (result.statusCode !== 200) {
         throw new Error(`Failed to enable app deployment: ${result.statusMessage}`);
       }
+
+      result = await s3.client.fetch(
+        [
+          s3.endpoint,
+          s3.bucket,
+          buildAppDeploymentManifestKey(
+            appDeployment.targetId,
+            appDeployment.name,
+            appDeployment.version,
+          ),
+        ].join('/'),
+        {
+          method: 'PUT',
+          body: JSON.stringify({
+            id: appDeployment.id,
+            appName: appDeployment.name,
+            appVersion: appDeployment.version,
+            documentHashes: appDeploymentDocumentHashes.sort(),
+            isActive: true,
+          } satisfies z.TypeOf<typeof AppDeploymentManifestModel>),
+          headers: {
+            'content-type': 'application/json',
+          },
+          aws: {
+            signQuery: true,
+          },
+        },
+      );
+
+      if (result.statusCode !== 200) {
+        throw new Error(`Failed to write app manifest: ${result.statusMessage}`);
+      }
     }
 
     const updatedAppDeployment = await this.pool
       .maybeOne(
-        sql`
+        psql`
           UPDATE
             "app_deployments"
           SET
@@ -687,8 +751,11 @@ export class AppDeployments {
       }
     }
 
+    const appDeploymentDocumentHashes =
+      await this._getAllDocumentHashesForAppDeployment(appDeployment);
+
     for (const s3 of this.s3) {
-      const result = await s3.client.fetch(
+      let result = await s3.client.fetch(
         [
           s3.endpoint,
           s3.bucket,
@@ -719,6 +786,38 @@ export class AppDeployments {
           `Failed to disable app deployment. Request failed with status code "${result.statusMessage}".`,
         );
       }
+
+      result = await s3.client.fetch(
+        [
+          s3.endpoint,
+          s3.bucket,
+          buildAppDeploymentManifestKey(
+            appDeployment.targetId,
+            appDeployment.name,
+            appDeployment.version,
+          ),
+        ].join('/'),
+        {
+          method: 'PUT',
+          body: JSON.stringify({
+            id: appDeployment.id,
+            appName: appDeployment.name,
+            appVersion: appDeployment.version,
+            documentHashes: appDeploymentDocumentHashes.sort(),
+            isActive: false,
+          } satisfies z.TypeOf<typeof AppDeploymentManifestModel>),
+          headers: {
+            'content-type': 'application/json',
+          },
+          aws: {
+            signQuery: true,
+          },
+        },
+      );
+
+      if (result.statusCode !== 200) {
+        throw new Error(`Failed to write app manifest: ${result.statusMessage}`);
+      }
     }
 
     await this.clickhouse.query({
@@ -744,7 +843,7 @@ export class AppDeployments {
 
     const updatedAppDeployment = await this.pool
       .one(
-        sql`
+        psql`
           UPDATE
             "app_deployments"
           SET
@@ -772,9 +871,13 @@ export class AppDeployments {
   }
 
   async countAppDeployments(targetId: string): Promise<number> {
-    return this.pool.oneFirst<number>(sql`
+    return this.pool
+      .oneFirst(
+        psql`
       SELECT count(*) FROM "app_deployments" WHERE "target_id" = ${targetId}
-    `);
+    `,
+      )
+      .then(z.number().parse);
   }
 
   async getPaginatedAppDeployments(args: {
@@ -816,33 +919,33 @@ export class AppDeployments {
       cursor = null;
     }
 
-    const col = sql.identifier([sortField === 'ACTIVATED_AT' ? 'activated_at' : 'created_at']);
+    const col = psql.identifier([sortField === 'ACTIVATED_AT' ? 'activated_at' : 'created_at']);
     const isNullable = sortField === 'ACTIVATED_AT';
     const isDesc = sortDirection === 'DESC';
 
-    let cursorCondition = sql``;
+    let cursorCondition = psql``;
     if (cursor) {
       const cv = cursor.sortValue;
-      const tiebreakOp = isDesc ? sql`<` : sql`>`;
+      const tiebreakOp = isDesc ? psql`<` : psql`>`;
 
       if (cv === null) {
-        cursorCondition = sql`AND (${col} IS NULL AND "id" ${tiebreakOp} ${cursor.id})`;
+        cursorCondition = psql`AND (${col} IS NULL AND "id" ${tiebreakOp} ${cursor.id})`;
       } else if (isNullable) {
         cursorCondition = isDesc
-          ? sql`AND ((${col} = ${cv} AND "id" < ${cursor.id}) OR ${col} < ${cv} OR ${col} IS NULL)`
-          : sql`AND ((${col} = ${cv} AND "id" > ${cursor.id}) OR ${col} > ${cv} OR ${col} IS NULL)`;
+          ? psql`AND ((${col} = ${cv} AND "id" < ${cursor.id}) OR ${col} < ${cv} OR ${col} IS NULL)`
+          : psql`AND ((${col} = ${cv} AND "id" > ${cursor.id}) OR ${col} > ${cv} OR ${col} IS NULL)`;
       } else {
         cursorCondition = isDesc
-          ? sql`AND ((${col} = ${cv} AND "id" < ${cursor.id}) OR ${col} < ${cv})`
-          : sql`AND ((${col} = ${cv} AND "id" > ${cursor.id}) OR ${col} > ${cv})`;
+          ? psql`AND ((${col} = ${cv} AND "id" < ${cursor.id}) OR ${col} < ${cv})`
+          : psql`AND ((${col} = ${cv} AND "id" > ${cursor.id}) OR ${col} > ${cv})`;
       }
     }
 
-    const dirSql = isDesc ? sql`DESC` : sql`ASC`;
-    const nullsLast = isNullable ? sql`NULLS LAST` : sql``;
-    const orderBy = sql`ORDER BY ${col} ${dirSql} ${nullsLast}, "id" ${dirSql}`;
+    const dirSql = isDesc ? psql`DESC` : psql`ASC`;
+    const nullsLast = isNullable ? psql`NULLS LAST` : psql``;
+    const orderBy = psql`ORDER BY ${col} ${dirSql} ${nullsLast}, "id" ${dirSql}`;
 
-    const result = await this.pool.query<unknown>(sql`
+    const result = await this.pool.any(psql`
       SELECT
         ${appDeploymentFields}
       FROM
@@ -854,7 +957,7 @@ export class AppDeployments {
       LIMIT ${limit + 1}
     `);
 
-    let items = result.rows.map(row => {
+    let items = result.map(row => {
       const node = AppDeploymentModel.parse(row);
       const sortValue = sortField === 'ACTIVATED_AT' ? node.activatedAt : node.createdAt;
 
@@ -972,13 +1075,13 @@ export class AppDeployments {
     const deploymentByPair = new Map();
 
     if (usagePairsForPage.length > 0) {
-      const pgResult = await this.pool.query<unknown>(sql`
+      const pgResult = await this.pool.any(psql`
         SELECT ${appDeploymentFields}
         FROM "app_deployments"
         WHERE "target_id" = ${args.targetId}
-          AND ("name" || ':' || "version") = ANY(${sql.array(usagePairsForPage, 'text')})
+          AND ("name" || ':' || "version") = ANY(${psql.array(usagePairsForPage, 'text')})
       `);
-      for (const row of pgResult.rows) {
+      for (const row of pgResult) {
         const d = AppDeploymentModel.parse(row);
         deploymentByPair.set(`${d.name}:${d.version}`, d);
       }
@@ -1008,20 +1111,20 @@ export class AppDeployments {
     const remaining = limit + 1 - pageItems.length;
     let fillHasMore = false;
     if (remaining > 0) {
-      const dirSql = isDesc ? sql`DESC` : sql`ASC`;
-      let fillCursorCondition = sql``;
+      const dirSql = isDesc ? psql`DESC` : psql`ASC`;
+      let fillCursorCondition = psql``;
       if (cursorInNoUsageSection) {
         fillCursorCondition = isDesc
-          ? sql`AND "id" < ${cursor!.id}`
-          : sql`AND "id" > ${cursor!.id}`;
+          ? psql`AND "id" < ${cursor!.id}`
+          : psql`AND "id" > ${cursor!.id}`;
       }
 
       const excludeCurrentPage =
         usagePairsForPage.length > 0
-          ? sql`AND NOT (("name" || ':' || "version") = ANY(${sql.array(usagePairsForPage, 'text')}))`
-          : sql``;
+          ? psql`AND NOT (("name" || ':' || "version") = ANY(${psql.array(usagePairsForPage, 'text')}))`
+          : psql``;
 
-      const fillResult = await this.pool.query<unknown>(sql`
+      const fillResult = await this.pool.any(psql`
         SELECT ${appDeploymentFields}
         FROM "app_deployments"
         WHERE "target_id" = ${args.targetId}
@@ -1031,7 +1134,7 @@ export class AppDeployments {
         LIMIT ${limit + 1}
       `);
 
-      const candidates = fillResult.rows.map(row => AppDeploymentModel.parse(row));
+      const candidates = fillResult.map(row => AppDeploymentModel.parse(row));
       fillHasMore = candidates.length > limit;
 
       if (candidates.length > 0) {
@@ -1341,7 +1444,7 @@ export class AppDeployments {
   private async getAffectedAppDeploymentsMetadata(appDeploymentIds: Array<string>) {
     return await this.pool
       .any(
-        sql`
+        psql`
           SELECT
             "id"
             , "name"
@@ -1351,7 +1454,7 @@ export class AppDeployments {
             , to_json("retired_at") AS "retiredAt"
           FROM
             "app_deployments"
-          WHERE "id" = ANY(${sql.array(appDeploymentIds, 'uuid')})
+          WHERE "id" = ANY(${psql.array(appDeploymentIds, 'uuid')})
         `,
       )
       .then(
@@ -1652,13 +1755,13 @@ export class AppDeployments {
 
         const batchResults = await Promise.all(
           batches.map(batchIds =>
-            this.pool.query<unknown>(sql`
+            this.pool.any(psql`
               SELECT
                 ${appDeploymentFields}
               FROM
                 "app_deployments"
               WHERE
-                "id" = ANY(${sql.array(batchIds, 'uuid')})
+                "id" = ANY(${psql.array(batchIds, 'uuid')})
                 AND "activated_at" IS NOT NULL
                 AND "retired_at" IS NULL
             `),
@@ -1667,7 +1770,7 @@ export class AppDeployments {
 
         // Merge and sort results
         activeDeployments = batchResults
-          .flatMap(result => result.rows.map(row => AppDeploymentModel.parse(row)))
+          .flatMap(result => result.map(row => AppDeploymentModel.parse(row)))
           .sort((a, b) => {
             // Sort by created_at DESC, id ASC
             if (a.createdAt > b.createdAt) return -1;
@@ -1675,21 +1778,21 @@ export class AppDeployments {
             return a.id.localeCompare(b.id);
           });
       } else {
-        const activeDeploymentsResult = await this.pool.query<unknown>(sql`
+        const activeDeploymentsResult = await this.pool.any(psql`
           SELECT
             ${appDeploymentFields}
           FROM
             "app_deployments"
           WHERE
             "target_id" = ${args.targetId}
-            ${args.filter.name ? sql`AND "name" ILIKE ${'%' + args.filter.name + '%'}` : sql``}
+            ${args.filter.name ? psql`AND "name" ILIKE ${'%' + args.filter.name + '%'}` : psql``}
             AND "activated_at" IS NOT NULL
             AND "retired_at" IS NULL
           ORDER BY "created_at" DESC, "id" ASC
           LIMIT ${maxDeployments}
         `);
 
-        activeDeployments = activeDeploymentsResult.rows.map(row => AppDeploymentModel.parse(row));
+        activeDeployments = activeDeploymentsResult.map(row => AppDeploymentModel.parse(row));
       }
     } catch (error) {
       const batchCount = staleDeploymentIds ? Math.ceil(staleDeploymentIds.length / BATCH_SIZE) : 0;
@@ -1881,7 +1984,7 @@ export class AppDeployments {
   }
 }
 
-const appDeploymentFields = sql`
+const appDeploymentFields = psql`
   "id"
   , "target_id" AS "targetId"
   , "name"

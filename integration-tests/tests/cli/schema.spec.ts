@@ -1,12 +1,18 @@
 /* eslint-disable no-process-env */
 import { createHash, randomUUID } from 'node:crypto';
 import { writeFile } from 'node:fs/promises';
+import { AddressInfo } from 'node:net';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import { parse } from 'graphql';
+import { createYoga } from 'graphql-yoga';
 import stripAnsi from 'strip-ansi';
 import { ProjectType, RuleInstanceSeverityLevel } from 'testkit/gql/graphql';
 import * as GraphQLSchema from 'testkit/gql/graphql';
+import { buildSubgraphSchema } from '@apollo/subgraph';
+import { useDisableIntrospection } from '@graphql-yoga/plugin-disable-introspection';
 import type { CompositeSchema } from '@hive/api/__generated__/types';
+import { createServer } from '@hive/service-common';
 import { appCreate, appPublish, createCLI, schemaCheck, schemaPublish } from '../../testkit/cli';
 import { cliOutputSnapshotSerializer } from '../../testkit/cli-snapshot-serializer';
 import { initSeed } from '../../testkit/seed';
@@ -519,6 +525,50 @@ describe.each([ProjectType.Stitching, ProjectType.Federation, ProjectType.Single
         );
       },
     );
+
+    test
+      /** federation relies on composeDirective which we don't test here */
+      .skipIf(projectType === ProjectType.Federation)
+      .concurrent(
+        'schema:fetch sdl includes directives on the schema definition',
+        async ({ expect }) => {
+          const { createOrg } = await initSeed().createOwner();
+          const { inviteAndJoinMember, createProject } = await createOrg();
+          await inviteAndJoinMember();
+          const { createTargetAccessToken } = await createProject(projectType);
+          const { secret, latestSchema } = await createTargetAccessToken({});
+
+          const cli = createCLI({
+            readonly: secret,
+            readwrite: secret,
+          });
+
+          await schemaPublish([
+            '--registry.accessToken',
+            secret,
+            '--author',
+            'Kamil',
+            '--commit',
+            'abc123',
+            ...serviceNameArgs,
+            ...serviceUrlArgs,
+            'fixtures/schema-with-directives.graphql',
+          ]);
+
+          const schema = await latestSchema();
+          const fetchCmd = cli.fetch({
+            type: 'sdl',
+            commit: 'abc123',
+          });
+          expect(schema.latestVersion?.sdl).toIncludeSubstringWithoutWhitespace(
+            'type Query @public',
+          );
+          await expect(fetchCmd).resolves.toIncludeSubstringWithoutWhitespace('type Query @public');
+          await expect(fetchCmd).resolves.toIncludeSubstringWithoutWhitespace(
+            'directive @public on SCHEMA | OBJECT',
+          );
+        },
+      );
 
     test.concurrent(
       'schema:fetch can fetch a latest schema with target:registry:read access',
@@ -1190,3 +1240,357 @@ Multi line description:
 """`),
   );
 });
+
+test.concurrent(
+  'schema:check malformed descriptions do not result in changes publish',
+  async () => {
+    const { createOrg } = await initSeed().createOwner();
+    const { inviteAndJoinMember, createProject } = await createOrg();
+    await inviteAndJoinMember();
+    const { createTargetAccessToken } = await createProject(ProjectType.Single);
+    const { secret } = await createTargetAccessToken({});
+
+    await expect(
+      schemaPublish([
+        '--registry.accessToken',
+        secret,
+        '--author',
+        'jdolle',
+        '--commit',
+        'abc123',
+        'fixtures/comments-to-descriptions.graphql',
+      ]),
+    ).resolves.toContain('Published initial schema');
+
+    await expect(
+      schemaCheck([
+        '--registry.accessToken',
+        secret,
+        '--commit',
+        'abc1234',
+        'fixtures/comments-to-descriptions.graphql',
+      ]),
+    ).resolves.toContain('No changes');
+  },
+);
+
+test.concurrent('schema:check works with federated subgraphs', async () => {
+  const server = await createServer({
+    sentryErrorHandler: false,
+    log: {
+      requests: false,
+      level: 'silent',
+    },
+    name: '',
+  });
+
+  const yogaFederation = createYoga({
+    logging: false,
+    plugins: [useDisableIntrospection()],
+    schema: buildSubgraphSchema({
+      typeDefs: parse(/* GraphQL */ `
+        extend type Query {
+          me: User
+          user(id: ID!): User
+          users: [User]
+        }
+
+        type User @key(fields: "id") {
+          id: ID!
+          name: String
+          username: String
+        }
+      `),
+    }),
+  });
+
+  server.route({
+    // Bind to the Yoga's endpoint to avoid rendering on any path
+    url: yogaFederation.graphqlEndpoint,
+    method: ['GET', 'POST', 'OPTIONS'],
+    handler: (req, reply) => yogaFederation.handleNodeRequestAndResponse(req, reply),
+  });
+
+  await server.listen({
+    port: 0,
+    host: '0.0.0.0',
+  });
+
+  const url = 'http://localhost:' + (server.server.address() as AddressInfo).port;
+
+  const { createOrg } = await initSeed().createOwner();
+  const { inviteAndJoinMember, createProject } = await createOrg();
+  await inviteAndJoinMember();
+  const { createTargetAccessToken } = await createProject(ProjectType.Single);
+  const { secret } = await createTargetAccessToken({});
+
+  await expect(
+    schemaPublish([
+      '--registry.accessToken',
+      secret,
+      '--author',
+      'jdolle',
+      '--commit',
+      'abc123',
+      url + yogaFederation.graphqlEndpoint,
+    ]),
+  ).resolves.toContain('Published initial schema');
+
+  await expect(
+    schemaCheck([
+      '--registry.accessToken',
+      secret,
+      '--commit',
+      'abc1234',
+      url + yogaFederation.graphqlEndpoint,
+    ]),
+  ).resolves.toContain('No changes');
+
+  await server.close();
+});
+
+test.concurrent(
+  'schema:check errors for dangerous changes when upgraded to breaking changes (fail all)',
+  async ({ expect }) => {
+    const { createOrg } = await initSeed().createOwner();
+    const { inviteAndJoinMember, createProject } = await createOrg();
+    await inviteAndJoinMember();
+    const {
+      createTargetAccessToken,
+      updateTargetFailingDangerousChanges,
+      updateTargetDangerousChangeClassification,
+      target,
+    } = await createProject(ProjectType.Single);
+    const { secret } = await createTargetAccessToken({});
+    const cli = createCLI({
+      readonly: secret,
+      readwrite: secret,
+    });
+
+    // enable: dangerous change -> breaking
+    await updateTargetDangerousChangeClassification({
+      failDiffOnDangerousChange: true,
+      target,
+    });
+    /** Explicitly specify failing dangerous type condition */
+    await updateTargetFailingDangerousChanges({
+      all: true,
+      failingTypes: [],
+      target,
+    });
+
+    const sdl = /* GraphQL */ `
+      type Query {
+        users: [User!]
+      }
+
+      type User {
+        id: ID!
+        name: String!
+        email: String!
+      }
+
+      enum UserType {
+        CUSTOMER
+      }
+    `;
+
+    await expect(
+      cli.publish({
+        sdl,
+        commit: 'push1',
+        expect: 'latest-composable',
+      }),
+    ).resolves.toMatchSnapshot('schemaPublish (initial)');
+
+    // add an enum value
+    const sdl2 = /* GraphQL */ `
+      type Query {
+        users: [User!]
+      }
+
+      type User {
+        id: ID!
+        name: String!
+        email: String!
+      }
+
+      enum UserType {
+        CUSTOMER
+        ADMIN
+      }
+    `;
+
+    const output = await cli.check({
+      sdl: sdl2,
+      expect: 'rejected',
+    });
+    /** remove colors */
+    const cleanOutput = output.replace(/\x1b\[[0-9;]*m/g, '');
+    expect(cleanOutput).toMatch(/Enum value ADMIN was added to enum UserType/);
+  },
+);
+
+test.concurrent(
+  'schema:check errors for dangerous changes when upgraded to breaking changes (fail specific change type)',
+  async ({ expect }) => {
+    const { createOrg } = await initSeed().createOwner();
+    const { inviteAndJoinMember, createProject } = await createOrg();
+    await inviteAndJoinMember();
+    const {
+      createTargetAccessToken,
+      updateTargetFailingDangerousChanges,
+      updateTargetDangerousChangeClassification,
+      target,
+    } = await createProject(ProjectType.Single);
+    const { secret } = await createTargetAccessToken({});
+    const cli = createCLI({
+      readonly: secret,
+      readwrite: secret,
+    });
+
+    // enable: dangerous change -> breaking
+    await updateTargetDangerousChangeClassification({
+      failDiffOnDangerousChange: true,
+      target,
+    });
+    /** Explicitly specify failing dangerous type condition */
+    await updateTargetFailingDangerousChanges({
+      all: false,
+      failingTypes: [GraphQLSchema.DangerousChangeType.EnumValueAdded],
+      target,
+    });
+
+    const sdl = /* GraphQL */ `
+      type Query {
+        users: [User!]
+      }
+
+      type User {
+        id: ID!
+        name: String!
+        email: String!
+      }
+
+      enum UserType {
+        CUSTOMER
+      }
+    `;
+
+    await expect(
+      cli.publish({
+        sdl,
+        commit: 'push1',
+        expect: 'latest-composable',
+      }),
+    ).resolves.toMatchSnapshot('schemaPublish (initial)');
+
+    // add an enum value
+    const sdl2 = /* GraphQL */ `
+      type Query {
+        users: [User!]
+      }
+
+      type User {
+        id: ID!
+        name: String!
+        email: String!
+      }
+
+      enum UserType {
+        CUSTOMER
+        ADMIN
+      }
+    `;
+
+    const output = await cli.check({
+      sdl: sdl2,
+      expect: 'rejected',
+    });
+    /** remove colors */
+    const cleanOutput = output.replace(/\x1b\[[0-9;]*m/g, '');
+    expect(cleanOutput).toMatch(/Enum value ADMIN was added to enum UserType/);
+  },
+);
+
+test.concurrent(
+  'schema:check passes for dangerous changes when upgraded to breaking changes, if type is not in the failing list',
+  async ({ expect }) => {
+    const { createOrg } = await initSeed().createOwner();
+    const { inviteAndJoinMember, createProject } = await createOrg();
+    await inviteAndJoinMember();
+    const {
+      createTargetAccessToken,
+      updateTargetFailingDangerousChanges,
+      updateTargetDangerousChangeClassification,
+      target,
+    } = await createProject(ProjectType.Single);
+    const { secret } = await createTargetAccessToken({});
+    const cli = createCLI({
+      readonly: secret,
+      readwrite: secret,
+    });
+
+    // enable: dangerous change -> breaking
+    await updateTargetDangerousChangeClassification({
+      failDiffOnDangerousChange: true,
+      target,
+    });
+    /** Explicitly specify failing dangerous type condition */
+    await updateTargetFailingDangerousChanges({
+      all: false,
+      failingTypes: [GraphQLSchema.DangerousChangeType.DirectiveArgumentDefaultValueChanged],
+      target,
+    });
+
+    const sdl = /* GraphQL */ `
+      type Query {
+        users: [User!]
+      }
+
+      type User {
+        id: ID!
+        name: String!
+        email: String!
+      }
+
+      enum UserType {
+        CUSTOMER
+      }
+    `;
+
+    await expect(
+      cli.publish({
+        sdl,
+        commit: 'push1',
+        expect: 'latest-composable',
+      }),
+    ).resolves.toMatchSnapshot('schemaPublish (initial)');
+
+    // add an enum value
+    const sdl2 = /* GraphQL */ `
+      type Query {
+        users: [User!]
+      }
+
+      type User {
+        id: ID!
+        name: String!
+        email: String!
+      }
+
+      enum UserType {
+        CUSTOMER
+        ADMIN
+      }
+    `;
+
+    const output = await cli.check({
+      sdl: sdl2,
+      expect: 'approved',
+    });
+    /** remove colors */
+    const cleanOutput = output.replace(/\x1b\[[0-9;]*m/g, '');
+    expect(cleanOutput).toMatch(/Enum value ADMIN was added to enum UserType/);
+  },
+);

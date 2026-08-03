@@ -1,5 +1,9 @@
 import zod from 'zod';
-import { OpenTelemetryConfigurationModel } from '@hive/service-common';
+import {
+  OpenTelemetryConfigurationModel,
+  parseRedisConfigFromEnvironment,
+  resolveServerListenOptions,
+} from '@hive/service-common';
 
 const isNumberString = (input: unknown) => zod.string().regex(/^\d+$/).safeParse(input).success;
 
@@ -19,14 +23,24 @@ const emptyString = <T extends zod.ZodType>(input: T) => {
   }, input);
 };
 
+function raiseInvariant(reason: string): never {
+  throw new Error(reason);
+}
+
 const EnvironmentModel = zod.object({
   PORT: emptyString(NumberFromString().optional()),
+  SERVER_HOST: emptyString(zod.string().optional()),
+  SERVER_HOST_IPV6_ONLY: emptyString(zod.union([zod.literal('1'), zod.literal('0')]).optional()),
   BODY_LIMIT: NumberFromString().optional().default(/* 15mb in bytes */ 15e6),
   ENVIRONMENT: emptyString(zod.string().optional()),
   RELEASE: emptyString(zod.string().optional()),
   ENCRYPTION_SECRET: zod.string(),
+  AWS_REGION: emptyString(zod.string().optional()),
   COMPOSITION_WORKER_COUNT: zod.number().min(1).default(4),
   COMPOSITION_WORKER_MAX_OLD_GENERATION_SIZE_MB: NumberFromString(1).optional().default(512),
+  COMPOSITION_WORKER_TRACK_MEMORY_USAGE: emptyString(
+    zod.union([zod.literal('1'), zod.literal('0')]),
+  ).optional(),
 });
 
 const RequestBrokerModel = zod.union([
@@ -58,13 +72,6 @@ const SentryModel = zod.union([
   }),
 ]);
 
-const RedisModel = zod.object({
-  REDIS_HOST: zod.string(),
-  REDIS_PORT: NumberFromString(),
-  REDIS_PASSWORD: emptyString(zod.string().optional()),
-  REDIS_TLS_ENABLED: emptyString(zod.union([zod.literal('1'), zod.literal('0')]).optional()),
-});
-
 const PrometheusModel = zod.object({
   PROMETHEUS_METRICS: emptyString(zod.union([zod.literal('0'), zod.literal('1')]).optional()),
   PROMETHEUS_METRICS_LABEL_INSTANCE: emptyString(zod.string().optional()),
@@ -95,8 +102,6 @@ const configs = {
 
   sentry: SentryModel.safeParse(process.env),
 
-  redis: RedisModel.safeParse(process.env),
-
   prometheus: PrometheusModel.safeParse(process.env),
 
   log: LogModel.safeParse(process.env),
@@ -116,6 +121,15 @@ for (const config of Object.values(configs)) {
   }
 }
 
+const redisConfigResult = parseRedisConfigFromEnvironment(
+  process.env,
+  configs.base.success ? configs.base.data.AWS_REGION : undefined,
+);
+
+if (redisConfigResult.type === 'error') {
+  environmentErrors.push(...redisConfigResult.errors);
+}
+
 if (environmentErrors.length) {
   const fullError = environmentErrors.join(`\n`);
   console.error('❌ Invalid environment variables:', fullError);
@@ -131,7 +145,6 @@ function extractConfig<Input, Output>(config: zod.SafeParseReturnType<Input, Out
 
 const base = extractConfig(configs.base);
 const sentry = extractConfig(configs.sentry);
-const redis = extractConfig(configs.redis);
 const prometheus = extractConfig(configs.prometheus);
 const log = extractConfig(configs.log);
 const requestBroker = extractConfig(configs.requestBroker);
@@ -144,18 +157,20 @@ export const env = {
   encryptionSecret: base.ENCRYPTION_SECRET,
   http: {
     port: base.PORT ?? 6500,
+    ...resolveServerListenOptions({
+      serverHost: base.SERVER_HOST,
+      serverHostIpv6Only: base.SERVER_HOST_IPV6_ONLY,
+    }),
     bodyLimit: base.BODY_LIMIT,
   },
   tracing: {
     enabled: !!tracing.OPENTELEMETRY_COLLECTOR_ENDPOINT,
     collectorEndpoint: tracing.OPENTELEMETRY_COLLECTOR_ENDPOINT,
   },
-  redis: {
-    host: redis.REDIS_HOST,
-    port: redis.REDIS_PORT,
-    password: redis.REDIS_PASSWORD ?? '',
-    tlsEnabled: redis.REDIS_TLS_ENABLED === '1',
-  },
+  redis:
+    redisConfigResult?.type === 'ok'
+      ? redisConfigResult.config
+      : raiseInvariant('Unreachable: redis config errors are caught above via process.exit(1)'),
   sentry: sentry.SENTRY === '1' ? { dsn: sentry.SENTRY_DSN } : null,
   log: {
     level: log.LOG_LEVEL ?? 'info',
@@ -194,5 +209,6 @@ export const env = {
   compositionWorker: {
     count: base.COMPOSITION_WORKER_COUNT,
     maxOldGenerationSizeMb: base.COMPOSITION_WORKER_MAX_OLD_GENERATION_SIZE_MB,
+    trackMemoryUsage: base.COMPOSITION_WORKER_TRACK_MEMORY_USAGE === '1',
   },
 } as const;

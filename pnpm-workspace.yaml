@@ -1,4 +1,5 @@
 packages:
+  - packages/internal/*
   - packages/services/demo/*
   - packages/services/*
   - packages/migrations
@@ -10,3 +11,16 @@ packages:
   - scripts
   - rules
   - load-tests/otel-traces
+
+minimumReleaseAge: 1440
+minimumReleaseAgeExclude:
+  - 'envelop'
+  - '@envelop/*'
+  - 'graphql-yoga'
+  - '@graphql-yoga/*'
+  - 'graphql-hive/*'
+  - '@graphql-inspector/*'
+  - '@graphql-tools/*'
+  - '@whatwg-node/*'
+  - '@theguild/federation-composition'
+  - graphql-modules

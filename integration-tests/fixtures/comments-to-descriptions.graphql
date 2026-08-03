@@ -1,0 +1,42 @@
+directive @inline on FIELD_DEFINITION
+
+""" This is an extremely long comment line that should extend past a reasonable number of columns for this to all be printed together on one line because we like to split long text into multiple lines for readability. Having a lot of text on one line requires excessive scrolling and horizontal scrolling is pretty bad.
+"""
+type Query {
+  # shows the status
+  # with comments on
+  # multiple lines
+  # This is an extremely long comment line that should extend past a reasonable number of columns for this to all be printed together on one line because we like to split long text into multiple lines for readability. Having a lot of text on one line requires excessive scrolling and horizontal scrolling is pretty bad.
+  status: Status @inline
+
+  """ This is an extremely long comment line that should extend past a reasonable number of columns for this to all be printed together on one line because we like to split long text into multiple lines for readability. Having a lot of text on one line requires excessive scrolling and horizontal scrolling is pretty bad.
+  """
+  value: Boolean @deprecated
+}
+
+# This is an extremely long comment line that should extend past a reasonable number of columns for this to all be printed together on one line because we like to split long text into multiple lines for \r\nreadability. Having a lot of text on one line requires excessive scrolling and horizontal scrolling is pretty bad.
+enum Status {
+  ACTIVE
+  INACTIVE
+  PENDING
+}
+
+"""
+Multi line description:
+1. Foo
+2. Bar
+3. Should stay in a list format
+This is an extremely long comment line that should extend past a reasonable number of columns for this to all be printed together on one line because we like to split long text into multiple lines for readability. Having a lot of text on one line requires excessive scrolling and horizontal scrolling is pretty bad.
+""" 
+type User
+extend type User {
+  id: ID! # comment on same line. This is an extremely long comment line that should extend past a reasonable number of columns for this to all be printed together on one line because we like to split long text into multiple \n\rlines for readability. Having a lot of text on one line requires excessive scrolling and horizontal scrolling is pretty bad.
+  # with dangling line
+
+  # This is an extremely long comment line that should extend past a reasonable number of columns for this to all be printed together on one line because we like to split long text into multiple lines for \r\nreadability. Having a lot of text on one line requires excessive scrolling and horizontal scrolling is pretty bad.
+  # with another line
+  """With a description after
+
+  This is an extremely long comment line that should extend past a reasonable number of columns for this to all be printed together on one line because we like to split long text into multiple lines for readability. Having a lot of text on one line requires excessive scrolling and horizontal scrolling is pretty bad. """
+  email: String
+}

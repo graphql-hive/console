@@ -2,7 +2,7 @@ import { type MigrationExecutor } from '../pg-migrator';
 
 export default {
   name: '2023.01.04T17.00.23.hobby-7-by-default.sql',
-  run: ({ sql }) => sql`
+  run: ({ psql }) => psql`
 -- Update Hobby with 3d to 7d - personal orgs were created with the default value of 3d
 UPDATE
   organizations

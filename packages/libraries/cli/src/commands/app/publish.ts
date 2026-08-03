@@ -101,7 +101,7 @@ export default class AppPublish extends Command<typeof AppPublish> {
   }
 }
 
-const ActivateAppDeploymentMutation = graphql(/* GraphQL */ `
+export const ActivateAppDeploymentMutation = graphql(/* GraphQL */ `
   mutation ActivateAppDeployment($input: ActivateAppDeploymentInput!) {
     activateAppDeployment(input: $input) {
       ok {

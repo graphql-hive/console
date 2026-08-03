@@ -1,0 +1,64 @@
+# Minimal Tempo config for local dev. Receives OTLP from the otel-collector on
+# the internal `stack` Docker network, stores trace blocks on local disk with a
+# short retention (production uses Grafana Cloud Tempo; this only needs to
+# survive a single dev session).
+server:
+  http_listen_port: 3200
+
+distributor:
+  receivers:
+    otlp:
+      protocols:
+        grpc:
+          endpoint: 0.0.0.0:4317
+        http:
+          endpoint: 0.0.0.0:4318
+
+ingester:
+  trace_idle_period: 10s
+  max_block_bytes: 1_000_000
+  max_block_duration: 5m
+
+compactor:
+  compaction:
+    block_retention: 6h
+
+storage:
+  trace:
+    backend: local
+    local:
+      path: /var/tempo/blocks
+    wal:
+      path: /var/tempo/wal
+
+# Required for TraceQL metrics queries (`| rate()`, `| quantile_over_time()`)
+# used by the Metric-Alerts dashboard's trace timeseries panels. Without the
+# `local-blocks` processor enabled in overrides below, Tempo's query frontend
+# returns "error finding generators: empty ring" because no metrics-generator
+# subprocess is registered. Production (Grafana Cloud Tempo) has this enabled
+# tenant-wide by default; locally we have to spell it out.
+metrics_generator:
+  processor:
+    local_blocks:
+      flush_to_storage: true
+  storage:
+    path: /var/tempo/generator/wal
+  # The local-blocks processor buffers the raw spans it ingests in its own
+  # WAL (separate from the prometheus-style samples WAL above). Without this
+  # path set, the generator fails to start with "local blocks processor
+  # requires traces wal" and the dashboard's trace-derived panels return 0
+  # series even though raw traces are queryable from the main block store.
+  traces_storage:
+    path: /var/tempo/generator/traces
+
+overrides:
+  defaults:
+    metrics_generator:
+      processors: [local-blocks]
+
+# Bump the metrics query window from Tempo's default 3h so the dashboard's
+# longer time-picker selections (Last 6h, Last 24h) don't error with "query
+# time range exceeds maximum allowed duration of 3h0m0s".
+query_frontend:
+  metrics:
+    max_duration: 24h

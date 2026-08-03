@@ -1,11 +1,11 @@
 {
   "name": "@graphql-hive/external-composition",
-  "version": "0.0.4",
+  "version": "0.0.5",
   "type": "module",
-  "description": "Compose schemas outside GraphQL Hive",
+  "description": "Compose schemas outside Hive Console",
   "repository": {
     "type": "git",
-    "url": "graphql-hive/platform",
+    "url": "https://github.com/graphql-hive/console",
     "directory": "packages/libraries/external-composition"
   },
   "homepage": "https://the-guild.dev/graphql/hive",
@@ -60,14 +60,13 @@
     "graphql": "^0.13.0 || ^14.0.0 || ^15.0.0 || ^16.0.0"
   },
   "devDependencies": {
-    "@apollo/composition": "2.13.2",
-    "@types/node": "24.10.9",
-    "esbuild": "0.25.9",
-    "fastify": "5.8.1",
+    "@apollo/composition": "2.14.0",
+    "@types/node": "24.13.3",
+    "esbuild": "0.28.1",
+    "fastify": "5.10.0",
     "graphql": "16.9.0"
   },
   "publishConfig": {
-    "registry": "https://registry.npmjs.org",
     "access": "public",
     "directory": "dist"
   },

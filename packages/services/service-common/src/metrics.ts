@@ -13,10 +13,18 @@ export function reportReadiness(isReady: boolean) {
   readiness.set(isReady ? 1 : 0);
 }
 
+type MetricsListenOptions = {
+  port?: number;
+  host?: string;
+  ipv6Only?: boolean;
+};
+
 export async function startMetrics(
   instanceLabel: string | undefined,
-  port = 10_254,
+  options: MetricsListenOptions = {},
 ): Promise<() => Promise<void>> {
+  const { port = 10_254, host = '::', ipv6Only = false } = options;
+
   promClient.collectDefaultMetrics({
     labels: { instance: instanceLabel },
   });
@@ -45,7 +53,8 @@ export async function startMetrics(
 
   await server.listen({
     port,
-    host: '::',
+    host,
+    ipv6Only,
   });
 
   return () => server.close();

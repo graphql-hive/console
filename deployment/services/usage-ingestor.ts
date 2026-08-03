@@ -61,11 +61,12 @@ export function deployUsageIngestor({
       exposesMetrics: true,
       port: 4000,
       pdb: true,
+      cpu: {
+        limit: environment.podsConfig.usageIngestorService.cpuMax,
+        requests: environment.podsConfig.usageIngestorService.cpuMin,
+      },
       autoScaling: {
-        cpu: {
-          cpuAverageToScale: environment.podsConfig.usageIngestorService.cpuAverageToScale,
-          limit: environment.podsConfig.usageIngestorService.cpuLimit,
-        },
+        cpuAverageToScale: environment.podsConfig.usageIngestorService.cpuAverageToScale,
         maxReplicas: environment.podsConfig.usageIngestorService.maxReplicas,
       },
     },

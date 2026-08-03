@@ -1,6 +1,16 @@
+import { createHash, randomBytes } from 'node:crypto';
 import { pollFor, readTokenInfo } from 'testkit/flow';
 import { ProjectType } from 'testkit/gql/graphql';
+import { NoopLogger } from '@hive/api/modules/shared/providers/logger';
+import { TargetTokenStorage } from '@hive/api/modules/token/providers/target-token-storage';
+import { psql } from '@hive/postgres';
+import { createRedisClient } from '@hive/service-common';
+import { TaskScheduler } from '@hive/workflows/kit';
+import { FlushTargetTokenLastUsedTask } from '@hive/workflows/tasks/flush-target-token-last-used';
+import { ensureEnv } from '../../testkit/env';
 import { initSeed } from '../../testkit/seed';
+
+const targetTokenCachePrefix = 'bentocache:target-tokens';
 
 test.concurrent('deleting a token should clear the cache', async () => {
   const { createOrg } = await initSeed().createOwner();
@@ -63,6 +73,113 @@ test.concurrent('deleting a token should clear the cache', async () => {
     { maxWait: 5_500 },
   );
   await expect(fetchTokenInfo()).rejects.toThrow();
+});
+
+test.concurrent('deleting tokens purges their L2 cache entries in one workflow', async () => {
+  const { createOrg } = await initSeed().createOwner();
+  const { createProject } = await createOrg();
+  const { createTargetAccessToken, removeTokens } = await createProject(ProjectType.Single);
+  const tokens = await Promise.all([
+    createTargetAccessToken({ mode: 'noAccess' }),
+    createTargetAccessToken({ mode: 'noAccess' }),
+  ]);
+  const cacheKeys = tokens.map(({ secret }) => {
+    const tokenHash = createHash('sha256').update(secret).digest('hex');
+    return `${targetTokenCachePrefix}:${tokenHash}`;
+  });
+  const redis = await createRedisClient(
+    {
+      host: ensureEnv('REDIS_HOST'),
+      password: ensureEnv('REDIS_PASSWORD'),
+      port: ensureEnv('REDIS_PORT', 'number'),
+      username: undefined,
+      tlsEnabled: false,
+      clusterModeEnabled: false,
+      awsIamAuthEnabled: false,
+      awsRegion: undefined,
+      awsIamAuthCacheName: undefined,
+    },
+    { logger: new NoopLogger() as any },
+  );
+
+  try {
+    expect(await redis.mget(cacheKeys)).toEqual([expect.any(String), expect.any(String)]);
+
+    await removeTokens(tokens.map(({ token }) => token.id));
+
+    await pollFor(async () => (await redis.mget(cacheKeys)).every(value => value === null));
+    expect(await redis.mget(cacheKeys)).toEqual([null, null]);
+  } finally {
+    redis.disconnect();
+  }
+});
+
+test('flushes target token last-used dates from Redis through a manually scheduled workflow', async () => {
+  const seed = initSeed();
+  const { createOrg } = await seed.createOwner();
+  const { createProject, organization } = await createOrg();
+  const { project, target } = await createProject();
+  await using connection = await seed.createDbConnection();
+  const tokenStorage = new TargetTokenStorage(connection.pool);
+  const tokenHash = createHash('sha256').update(randomBytes(16)).digest('hex');
+  const taskDate = new Date(Date.UTC(2000, 0, 1, 0, 10));
+  const bucket = Math.floor(taskDate.getTime() / 60_000) - 2;
+  const bucketKey = `target-token:last-used:${bucket}`;
+  const olderBucketKey = `target-token:last-used:${bucket - 1}`;
+  const expectedLastUsedAt = new Date(bucket * 60_000);
+
+  const redis = await createRedisClient(
+    {
+      host: ensureEnv('REDIS_HOST'),
+      password: ensureEnv('REDIS_PASSWORD'),
+      port: ensureEnv('REDIS_PORT', 'number'),
+      username: undefined,
+      tlsEnabled: false,
+      clusterModeEnabled: false,
+      awsIamAuthEnabled: false,
+      awsRegion: undefined,
+      awsIamAuthCacheName: undefined,
+    },
+    { logger: new NoopLogger() as any },
+  );
+
+  try {
+    await tokenStorage.createToken({
+      name: 'workflow last-used test',
+      organization: organization.id,
+      project: project.id,
+      target: target.id,
+      scopes: [],
+      token: tokenHash,
+      tokenAlias: randomBytes(8).toString('hex'),
+    });
+    await Promise.all([redis.sadd(bucketKey, tokenHash), redis.sadd(olderBucketKey, tokenHash)]);
+
+    const scheduler = new TaskScheduler(connection.pool, new NoopLogger() as any);
+    await scheduler.scheduleTask(FlushTargetTokenLastUsedTask, taskDate.getTime() / 1_000);
+
+    await pollFor(async () => {
+      const value = await connection.pool.maybeOneFirst(psql`
+        SELECT to_json("last_used_at")
+        FROM "tokens"
+        WHERE "token" = ${tokenHash}
+      `);
+      return (
+        typeof value === 'string' && new Date(value).getTime() === expectedLastUsedAt.getTime()
+      );
+    });
+    await pollFor(async () => (await redis.exists(bucketKey, olderBucketKey)) === 0);
+
+    const value = await connection.pool.oneFirst(psql`
+      SELECT to_json("last_used_at")
+      FROM "tokens"
+      WHERE "token" = ${tokenHash}
+    `);
+    expect(new Date(value as string).getTime()).toBe(expectedLastUsedAt.getTime());
+    expect(await redis.exists(bucketKey, olderBucketKey)).toBe(0);
+  } finally {
+    redis.disconnect();
+  }
 });
 
 test.concurrent('invalid token yields correct error message', async () => {
@@ -142,5 +259,58 @@ test.concurrent(
       hasTargetTokensWrite: false,
     }
   `);
+  },
+);
+
+test.concurrent(
+  'regression: reading existing token with "last_used_at" from pg database (and not redis cache) does not raise an exception',
+  async ({ expect }) => {
+    const seed = initSeed();
+    const { createOrg } = await seed.createOwner();
+    const { createProject, organization } = await createOrg();
+    const { project, target } = await createProject();
+
+    const token = randomBytes(16).toString('hex');
+    const secret = createHash('sha256').update(token).digest('hex');
+    const { pool } = await seed.createDbConnection();
+    const tokenStorage = new TargetTokenStorage(pool);
+
+    // create new token so it does not yet exist in redis cache
+    const record = await tokenStorage.createToken({
+      name: 'foo',
+      organization: organization.id,
+      project: project.id,
+      target: target.id,
+      scopes: [],
+      token: secret,
+      tokenAlias: 'foobars',
+    });
+
+    // touch the token so it has a date
+    await TargetTokenStorage.touchTokenByHash({ pool })(secret);
+    const result = await readTokenInfo(token).then(res => res.expectNoGraphQLErrors());
+    expect(result.tokenInfo).toMatchInlineSnapshot(`
+        {
+          __typename: TokenInfo,
+          hasOrganizationDelete: false,
+          hasOrganizationIntegrations: false,
+          hasOrganizationMembers: false,
+          hasOrganizationRead: false,
+          hasOrganizationSettings: false,
+          hasProjectAlerts: false,
+          hasProjectDelete: false,
+          hasProjectOperationsStoreRead: false,
+          hasProjectOperationsStoreWrite: false,
+          hasProjectRead: false,
+          hasProjectSettings: false,
+          hasTargetDelete: false,
+          hasTargetRead: false,
+          hasTargetRegistryRead: false,
+          hasTargetRegistryWrite: false,
+          hasTargetSettings: false,
+          hasTargetTokensRead: false,
+          hasTargetTokensWrite: false,
+        }
+      `);
   },
 );

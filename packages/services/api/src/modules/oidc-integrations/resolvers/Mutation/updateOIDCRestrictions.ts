@@ -9,6 +9,8 @@ export const updateOIDCRestrictions: NonNullable<
     oidcUserJoinOnly: input.oidcUserJoinOnly ?? null,
     oidcUserAccessOnly: input.oidcUserAccessOnly ?? null,
     requireInvitation: input.requireInvitation ?? null,
+    userProvisioningRequired: input.userProvisioningRequired ?? null,
+    oidcForVerifiedDomainsRequired: input.oidcForVerifiedDomainsRequired ?? null,
   });
 
   if (result.type === 'ok') {

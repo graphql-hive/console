@@ -3,6 +3,14 @@ import type { Analytics } from './analytics';
 import { AwsClient } from './aws';
 import type { Breadcrumb } from './breadcrumbs';
 
+export const AppDeploymentManifestModel = zod.object({
+  id: zod.string().uuid(),
+  appName: zod.string(),
+  appVersion: zod.string(),
+  isActive: zod.boolean(),
+  documentHashes: zod.array(zod.string()),
+});
+
 export function buildArtifactStorageKey(
   targetId: string,
   artifactType: string,
@@ -50,11 +58,18 @@ const AppDeploymentIsEnabledKeyModel = zod.tuple([
 /**
  * S3 key for determining whether app deployment is enabled or not.
  * Note: we validate to avoid invalid keys / collisions that could be caused by type errors.
+ *
  **/
 export function buildAppDeploymentIsEnabledKey(
   ...args: [targetId: string, appName: string, appVersion: string]
 ) {
   return ['apps-enabled', ...AppDeploymentIsEnabledKeyModel.parse(args)].join('/');
+}
+
+export function buildAppDeploymentManifestKey(
+  ...args: [targetId: string, appName: string, appVersion: string]
+) {
+  return ['apps-manifest', ...AppDeploymentIsEnabledKeyModel.parse(args)].join('/');
 }
 
 /**
@@ -351,6 +366,49 @@ export class ArtifactStorageReader {
     });
 
     return response.status === 200;
+  }
+
+  async readAppDeploymentManifest(targetId: string, appName: string, appVersion: string) {
+    const key = buildAppDeploymentManifestKey(targetId, appName, appVersion);
+
+    const response = await this.request({
+      key,
+      method: 'GET',
+      onAttempt: args => {
+        if (args.result.type === 'error') {
+          this.breadcrumb(
+            `Fetch attempt failed (source=${args.isMirror ? 'mirror' : 'primary'}, attempt=${args.attempt} duration=${args.duration}, result=${args.result.type}, key=${key}, message=${args.result.error.message})`,
+          );
+        } else {
+          this.breadcrumb(
+            `Fetch attempt succeeded (source=${args.isMirror ? 'mirror' : 'primary'}, attempt=${args.attempt} duration=${args.duration}, result=${args.result.type}, key=${key})`,
+          );
+        }
+        this.analytics?.track(
+          {
+            type: args.isMirror ? 's3' : 'r2',
+            statusCodeOrErrCode:
+              args.result.type === 'error'
+                ? String(args.result.error.name ?? 'unknown')
+                : args.result.response.status,
+            action: 'GET appDeploymentManifest',
+            duration: args.duration,
+          },
+          targetId,
+        );
+      },
+    });
+
+    if (response.status === 404) {
+      return null;
+    }
+
+    if (response.status !== 200) {
+      throw new Error('Failed to retrieve app deployment manifest');
+    }
+
+    const body = await response.json();
+    return AppDeploymentManifestModel.parse(body);
   }
 
   async loadAppDeploymentPersistedOperation(

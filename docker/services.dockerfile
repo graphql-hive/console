@@ -1,6 +1,14 @@
-FROM node:24.13.0-slim
+ARG NODE_VERSION_TAG
+FROM node${NODE_VERSION_TAG}
 
 RUN apt-get update && apt-get install -y wget ca-certificates && rm -rf /var/lib/apt/lists/*
+
+ARG INSTALL_RDS_CA_CERTS=0
+RUN if [ "$INSTALL_RDS_CA_CERTS" = "1" ]; then \
+      wget -q -O /usr/local/share/ca-certificates/aws-rds-global-bundle.pem https://truststore.pki.rds.amazonaws.com/global/global-bundle.pem && \
+      chmod 644 /usr/local/share/ca-certificates/aws-rds-global-bundle.pem && \
+      update-ca-certificates; \
+    fi
 
 ARG SERVICE_DIR_NAME
 WORKDIR /usr/src/app/$SERVICE_DIR_NAME
@@ -27,4 +35,4 @@ HEALTHCHECK --interval=5s \
   --retries=6 \
   CMD $HEALTHCHECK_CMD
 
-ENTRYPOINT [ "/entrypoint.sh" ]
+ENTRYPOINT ["/entrypoint.sh"]

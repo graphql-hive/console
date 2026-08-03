@@ -1,5 +1,5 @@
 import ReactDOM from 'react-dom/client';
-import { Laboratory } from './components/laboratory/laboratory';
+import { Laboratory, LaboratoryProps } from './components/laboratory/laboratory';
 
 export * from './components/laboratory/laboratory';
 export * from './components/laboratory/context';
@@ -17,7 +17,7 @@ export * from './lib/tabs';
 export * from './lib/tests';
 export * from './lib/plugins';
 
-export const renderLaboratory = (el: HTMLElement) => {
+export const renderLaboratory = (el: HTMLElement, props: LaboratoryProps) => {
   const prefix = 'hive-laboratory';
 
   const getLocalStorage = (key: string) => {
@@ -74,6 +74,7 @@ export const renderLaboratory = (el: HTMLElement) => {
       onHistoryChange={history => {
         setLocalStorage('history', history);
       }}
+      {...props}
     />,
   );
 };

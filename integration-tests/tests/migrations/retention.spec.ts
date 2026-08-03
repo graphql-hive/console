@@ -74,7 +74,6 @@ test('update-retention script skips gracefully when no env vars are set', async 
     delete process.env.CLICKHOUSE_TTL_HOURLY_MV_TABLES;
     delete process.env.CLICKHOUSE_TTL_MINUTELY_MV_TABLES;
 
-    vi.resetModules();
     const { updateRetention } = await import(
       '../../../packages/migrations/src/scripts/update-retention'
     );

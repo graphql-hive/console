@@ -87,7 +87,7 @@ function AuthCallback(props: { provider: Provider; redirectToPath: string }) {
     <AuthCard>
       <AuthCardHeader
         title={providerDetails.success}
-        description="Your are being redirected to GraphQL Hive."
+        description="Your are being redirected to Hive Console."
       />
     </AuthCard>
   );

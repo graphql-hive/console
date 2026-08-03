@@ -81,16 +81,16 @@ export function SingleSignOnSubpage(props: SingleSignOnSubPageProps): React.Reac
   return (
     <SubPageLayout>
       <SubPageLayoutHeader
-        subPageTitle="Single Sign On Provider"
+        subPageTitle="SSO and SCIM"
         description={
           <>
-            <CardDescription>
+            <CardDescription className="max-w-[600px]">
               Link your Hive organization to a single-sign-on provider such as Okta or Microsoft
-              Entra ID via OpenID Connect.
+              Entra ID via OpenID Connect. Provision users via the SCIM v2 protocol.
             </CardDescription>
             <CardDescription>
               <DocsLink className="text-neutral-10 text-sm" href="/management/sso-oidc-provider">
-                Instructions for connecting your provider.
+                Documentation
               </DocsLink>
             </CardDescription>
           </>
@@ -128,6 +128,7 @@ export function SingleSignOnSubpage(props: SingleSignOnSubPageProps): React.Reac
                       authorizationEndpoint: values.authorizationEndpoint,
                       tokenEndpoint: values.tokenEndpoint,
                       userinfoEndpoint: values.userinfoEndpoint,
+                      userIdClaim: values.userIdClaim,
                       additionalScopes:
                         values.additionalScopes.trim() === ''
                           ? []

@@ -1,0 +1,1197 @@
+{
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": { "type": "grafana", "uid": "-- Grafana --" },
+        "enable": true,
+        "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Annotations & Alerts",
+        "target": { "limit": 100, "matchAny": false, "tags": [], "type": "dashboard" },
+        "type": "dashboard"
+      }
+    ]
+  },
+  "description": "Health of the metric-alert evaluation cron and its ClickHouse queries.",
+  "uid": "metric-alerts",
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 0,
+  "links": [],
+  "liveNow": false,
+  "panels": [
+    {
+      "datasource": { "type": "prometheus", "uid": "PROM_DATASOURCE_UID" },
+      "description": "p50/p95/p99 round-trip duration of ClickHouse queries from the metric alert evaluator. The cron fires every minute; one query per (target, timeWindow, savedFilter) group.",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": {
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "axisSoftMin": 0,
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 0,
+            "gradientMode": "none",
+            "hideFrom": { "legend": false, "tooltip": false, "viz": false },
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": { "type": "linear" },
+            "showPoints": "auto",
+            "spanNulls": false,
+            "stacking": { "group": "A", "mode": "none" },
+            "thresholdsStyle": { "mode": "dashed" }
+          },
+          "mappings": [],
+          "min": 0,
+          "noValue": "0",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 1 },
+              { "color": "orange", "value": 2 },
+              { "color": "red", "value": 5 }
+            ]
+          },
+          "unit": "s"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 10, "w": 12, "x": 0, "y": 0 },
+      "id": 1,
+      "options": {
+        "legend": {
+          "calcs": ["max", "mean"],
+          "displayMode": "table",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": { "mode": "multi", "sort": "desc" }
+      },
+      "pluginVersion": "9.3.6",
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "PROM_DATASOURCE_UID" },
+          "editorMode": "code",
+          "expr": "histogram_quantile(0.50, sum by (le) (rate(hive_metric_alert_clickhouse_query_duration_seconds_bucket[$__rate_interval])))",
+          "legendFormat": "p50",
+          "range": true,
+          "refId": "A"
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "PROM_DATASOURCE_UID" },
+          "editorMode": "code",
+          "expr": "histogram_quantile(0.95, sum by (le) (rate(hive_metric_alert_clickhouse_query_duration_seconds_bucket[$__rate_interval])))",
+          "legendFormat": "p95",
+          "range": true,
+          "refId": "B"
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "PROM_DATASOURCE_UID" },
+          "editorMode": "code",
+          "expr": "histogram_quantile(0.99, sum by (le) (rate(hive_metric_alert_clickhouse_query_duration_seconds_bucket[$__rate_interval])))",
+          "legendFormat": "p99",
+          "range": true,
+          "refId": "C"
+        }
+      ],
+      "title": "ClickHouse query duration (p50/p95/p99)",
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "PROM_DATASOURCE_UID" },
+      "description": "ClickHouse queries per second issued by the evaluator, broken down by outcome (success vs error).",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": {
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "axisSoftMin": 0,
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "hideFrom": { "legend": false, "tooltip": false, "viz": false },
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": { "type": "linear" },
+            "showPoints": "auto",
+            "spanNulls": false,
+            "stacking": { "group": "A", "mode": "normal" },
+            "thresholdsStyle": { "mode": "off" }
+          },
+          "mappings": [],
+          "min": 0,
+          "noValue": "0",
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }] },
+          "unit": "reqps"
+        },
+        "overrides": [
+          {
+            "matcher": { "id": "byName", "options": "error" },
+            "properties": [{ "id": "color", "value": { "fixedColor": "red", "mode": "fixed" } }]
+          }
+        ]
+      },
+      "gridPos": { "h": 10, "w": 12, "x": 12, "y": 0 },
+      "id": 2,
+      "options": {
+        "legend": {
+          "calcs": ["mean", "max"],
+          "displayMode": "table",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": { "mode": "multi", "sort": "desc" }
+      },
+      "pluginVersion": "9.3.6",
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "PROM_DATASOURCE_UID" },
+          "editorMode": "code",
+          "expr": "sum by (outcome) (rate(hive_metric_alert_clickhouse_query_duration_seconds_count[$__rate_interval]))",
+          "legendFormat": "{{outcome}}",
+          "range": true,
+          "refId": "A"
+        }
+      ],
+      "title": "ClickHouse query rate by outcome",
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "PROM_DATASOURCE_UID" },
+      "description": "Fraction of evaluator ClickHouse queries that errored. Sustained above ~5% indicates ClickHouse degradation, network issues, or a malformed query for some rule.",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "mappings": [],
+          "min": 0,
+          "max": 1,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 0.01 },
+              { "color": "orange", "value": 0.05 },
+              { "color": "red", "value": 0.1 }
+            ]
+          },
+          "unit": "percentunit"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 10, "w": 12, "x": 0, "y": 10 },
+      "id": 3,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "textMode": "auto"
+      },
+      "pluginVersion": "9.3.6",
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "PROM_DATASOURCE_UID" },
+          "editorMode": "code",
+          "expr": "sum(rate(hive_metric_alert_clickhouse_query_duration_seconds_count{outcome=\"error\"}[$__rate_interval])) / clamp_min(sum(rate(hive_metric_alert_clickhouse_query_duration_seconds_count[$__rate_interval])), 0.001)",
+          "legendFormat": "error ratio",
+          "range": true,
+          "refId": "A"
+        }
+      ],
+      "title": "ClickHouse error ratio",
+      "type": "stat"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "PROM_DATASOURCE_UID" },
+      "description": "Mean wall-clock time per run of the evaluateMetricAlertRules cron, measured from the scheduled minute boundary (run_at) to job completion. Computed as rate(_sum)/rate(_count) over a 10m window, aggregated across pods. Note this spans more than the handler: it includes graphile-worker's cron wake-up, the job INSERT, worker pickup, and the completion write, which together account for roughly a second regardless of rule count. Evaluation work rides on top of that baseline, so a ~1s reading at zero rules is correct rather than broken.",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": {
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "axisSoftMin": 0,
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 0,
+            "gradientMode": "none",
+            "hideFrom": { "legend": false, "tooltip": false, "viz": false },
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": { "type": "linear" },
+            "showPoints": "auto",
+            "spanNulls": false,
+            "stacking": { "group": "A", "mode": "none" },
+            "thresholdsStyle": { "mode": "off" }
+          },
+          "mappings": [],
+          "min": 0,
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }] },
+          "unit": "s"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 10, "w": 12, "x": 12, "y": 10 },
+      "id": 4,
+      "options": {
+        "legend": {
+          "calcs": ["mean", "max"],
+          "displayMode": "table",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": { "mode": "single", "sort": "none" }
+      },
+      "pluginVersion": "9.3.6",
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "PROM_DATASOURCE_UID" },
+          "editorMode": "code",
+          "expr": "sum(rate(hive_workflow_job_duration_seconds_sum{task_identifier=\"evaluateMetricAlertRules\"}[10m])) / sum(rate(hive_workflow_job_duration_seconds_count{task_identifier=\"evaluateMetricAlertRules\"}[10m]))",
+          "legendFormat": "mean duration",
+          "range": true,
+          "refId": "A"
+        }
+      ],
+      "title": "evaluateMetricAlertRules task duration",
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "PROM_DATASOURCE_UID" },
+      "description": "Enabled query groups (one ClickHouse query each) split by whether a saved filter is attached. Filtered groups read the heavier legacy tables (cost scales with the target's traffic cardinality), so watch this for growth in the more expensive with-filter population.",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": {
+            "axisCenteredZero": false,
+            "axisPlacement": "auto",
+            "axisSoftMin": 0,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "stacking": { "group": "A", "mode": "none" },
+            "thresholdsStyle": { "mode": "off" }
+          },
+          "mappings": [],
+          "min": 0,
+          "noValue": "0",
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }] },
+          "unit": "short"
+        },
+        "overrides": [
+          {
+            "matcher": { "id": "byName", "options": "with filter" },
+            "properties": [{ "id": "color", "value": { "fixedColor": "orange", "mode": "fixed" } }]
+          }
+        ]
+      },
+      "gridPos": { "h": 10, "w": 12, "x": 0, "y": 20 },
+      "id": 5,
+      "options": {
+        "legend": {
+          "calcs": ["last", "max"],
+          "displayMode": "table",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": { "mode": "multi", "sort": "desc" }
+      },
+      "pluginVersion": "9.3.6",
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "PROM_DATASOURCE_UID" },
+          "editorMode": "code",
+          "expr": "max(hive_metric_alert_rule_groups{filtered=\"true\"})",
+          "legendFormat": "with filter",
+          "range": true,
+          "refId": "A"
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "PROM_DATASOURCE_UID" },
+          "editorMode": "code",
+          "expr": "max(hive_metric_alert_rule_groups{filtered=\"false\"})",
+          "legendFormat": "no filter",
+          "range": true,
+          "refId": "B"
+        }
+      ],
+      "title": "Alert query groups: filtered vs unfiltered",
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "PROM_DATASOURCE_UID" },
+      "description": "Enabled alert rules split by whether a saved filter is attached. Companion to the query-groups panel (a group can hold several rules that share one query).",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": {
+            "axisCenteredZero": false,
+            "axisPlacement": "auto",
+            "axisSoftMin": 0,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "stacking": { "group": "A", "mode": "none" },
+            "thresholdsStyle": { "mode": "off" }
+          },
+          "mappings": [],
+          "min": 0,
+          "noValue": "0",
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }] },
+          "unit": "short"
+        },
+        "overrides": [
+          {
+            "matcher": { "id": "byName", "options": "with filter" },
+            "properties": [{ "id": "color", "value": { "fixedColor": "orange", "mode": "fixed" } }]
+          }
+        ]
+      },
+      "gridPos": { "h": 10, "w": 12, "x": 12, "y": 20 },
+      "id": 6,
+      "options": {
+        "legend": {
+          "calcs": ["last", "max"],
+          "displayMode": "table",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": { "mode": "multi", "sort": "desc" }
+      },
+      "pluginVersion": "9.3.6",
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "PROM_DATASOURCE_UID" },
+          "editorMode": "code",
+          "expr": "max(hive_metric_alert_enabled_rules{filtered=\"true\"})",
+          "legendFormat": "with filter",
+          "range": true,
+          "refId": "A"
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "PROM_DATASOURCE_UID" },
+          "editorMode": "code",
+          "expr": "max(hive_metric_alert_enabled_rules{filtered=\"false\"})",
+          "legendFormat": "no filter",
+          "range": true,
+          "refId": "B"
+        }
+      ],
+      "title": "Enabled rules: filtered vs unfiltered",
+      "type": "timeseries"
+    },
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 30 },
+      "id": 10,
+      "panels": [],
+      "title": "Diagnostics",
+      "type": "row"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "PROM_DATASOURCE_UID" },
+      "description": "p99 round-trip latency of the metric-alert evaluator's ClickHouse queries, overlaid against p99 of all API-issued ClickHouse queries (api_clickhouse_elapsed_duration, the metric behind the ClickHouse-Latency dashboard). If both lines rise together the ClickHouse cluster is contended for everyone (ingestion, merges, another heavy consumer) and the slowdown is not specific to alert evaluation. If only the evaluator line rises, the cost is in the alert workload itself.",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": {
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "axisSoftMin": 0,
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 0,
+            "gradientMode": "none",
+            "hideFrom": { "legend": false, "tooltip": false, "viz": false },
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": { "type": "linear" },
+            "showPoints": "auto",
+            "spanNulls": false,
+            "stacking": { "group": "A", "mode": "none" },
+            "thresholdsStyle": { "mode": "dashed" }
+          },
+          "mappings": [],
+          "min": 0,
+          "noValue": "0",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 1 },
+              { "color": "orange", "value": 2 },
+              { "color": "red", "value": 5 }
+            ]
+          },
+          "unit": "s"
+        },
+        "overrides": [
+          {
+            "matcher": { "id": "byName", "options": "API-wide p99" },
+            "properties": [{ "id": "color", "value": { "fixedColor": "blue", "mode": "fixed" } }]
+          }
+        ]
+      },
+      "gridPos": { "h": 10, "w": 12, "x": 0, "y": 31 },
+      "id": 11,
+      "options": {
+        "legend": {
+          "calcs": ["max", "mean"],
+          "displayMode": "table",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": { "mode": "multi", "sort": "desc" }
+      },
+      "pluginVersion": "9.3.6",
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "PROM_DATASOURCE_UID" },
+          "editorMode": "code",
+          "expr": "histogram_quantile(0.99, sum by (le) (rate(hive_metric_alert_clickhouse_query_duration_seconds_bucket[$__rate_interval])))",
+          "legendFormat": "evaluator p99",
+          "range": true,
+          "refId": "A"
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "PROM_DATASOURCE_UID" },
+          "editorMode": "code",
+          "expr": "histogram_quantile(0.99, sum by (le) (rate(api_clickhouse_elapsed_duration_bucket[$__rate_interval])))",
+          "legendFormat": "API-wide p99",
+          "range": true,
+          "refId": "B"
+        }
+      ],
+      "title": "ClickHouse latency: evaluator vs API-wide (p99)",
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "PROM_DATASOURCE_UID" },
+      "description": "Mean time per run between the scheduled minute boundary (run_at) and a worker picking the job up. Computed as rate(_sum)/rate(_count) over a 10m window, aggregated across pods. The cron enqueues every minute, so sustained growth here means the evaluator can't drain a tick before the next is enqueued (workers saturated or ticks running long), and alerts are evaluated late even if each query is fast.",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": {
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "axisSoftMin": 0,
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 0,
+            "gradientMode": "none",
+            "hideFrom": { "legend": false, "tooltip": false, "viz": false },
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": { "type": "linear" },
+            "showPoints": "auto",
+            "spanNulls": false,
+            "stacking": { "group": "A", "mode": "none" },
+            "thresholdsStyle": { "mode": "off" }
+          },
+          "mappings": [],
+          "min": 0,
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }] },
+          "unit": "s"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 10, "w": 12, "x": 12, "y": 31 },
+      "id": 12,
+      "options": {
+        "legend": {
+          "calcs": ["max", "mean"],
+          "displayMode": "table",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": { "mode": "multi", "sort": "desc" }
+      },
+      "pluginVersion": "9.3.6",
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "PROM_DATASOURCE_UID" },
+          "editorMode": "code",
+          "expr": "sum(rate(hive_workflow_job_queue_time_seconds_sum{task_identifier=\"evaluateMetricAlertRules\"}[10m])) / sum(rate(hive_workflow_job_queue_time_seconds_count{task_identifier=\"evaluateMetricAlertRules\"}[10m]))",
+          "legendFormat": "mean queue time",
+          "range": true,
+          "refId": "A"
+        }
+      ],
+      "title": "Task queue time",
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "PROM_DATASOURCE_UID" },
+      "description": "Success vs error completion rate of the evaluateMetricAlertRules job. This is the task-level failure signal: the 'ClickHouse error ratio' panel above only counts failed ClickHouse queries, whereas a tick can also fail in PG state transitions or the task body. Any sustained 'error' here means whole ticks are throwing.",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": {
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "axisSoftMin": 0,
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "hideFrom": { "legend": false, "tooltip": false, "viz": false },
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": { "type": "linear" },
+            "showPoints": "auto",
+            "spanNulls": false,
+            "stacking": { "group": "A", "mode": "normal" },
+            "thresholdsStyle": { "mode": "off" }
+          },
+          "mappings": [],
+          "min": 0,
+          "noValue": "0",
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }] },
+          "unit": "reqps"
+        },
+        "overrides": [
+          {
+            "matcher": { "id": "byName", "options": "error" },
+            "properties": [{ "id": "color", "value": { "fixedColor": "red", "mode": "fixed" } }]
+          },
+          {
+            "matcher": { "id": "byName", "options": "success" },
+            "properties": [{ "id": "color", "value": { "fixedColor": "green", "mode": "fixed" } }]
+          }
+        ]
+      },
+      "gridPos": { "h": 10, "w": 24, "x": 0, "y": 41 },
+      "id": 13,
+      "options": {
+        "legend": {
+          "calcs": ["mean", "max"],
+          "displayMode": "table",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": { "mode": "multi", "sort": "desc" }
+      },
+      "pluginVersion": "9.3.6",
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "PROM_DATASOURCE_UID" },
+          "editorMode": "code",
+          "expr": "sum(rate(hive_workflow_job_success_total{task_identifier=\"evaluateMetricAlertRules\"}[$__rate_interval]))",
+          "legendFormat": "success",
+          "range": true,
+          "refId": "A"
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "PROM_DATASOURCE_UID" },
+          "editorMode": "code",
+          "expr": "sum(rate(hive_workflow_job_error_total{task_identifier=\"evaluateMetricAlertRules\"}[$__rate_interval]))",
+          "legendFormat": "error",
+          "range": true,
+          "refId": "B"
+        }
+      ],
+      "title": "Task success / error rate",
+      "type": "timeseries"
+    },
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 51 },
+      "id": 20,
+      "panels": [],
+      "title": "Runtime (workflow-service)",
+      "type": "row"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "PROM_DATASOURCE_UID" },
+      "description": "Per-pod Node.js event-loop lag p99 for the workflow-service. The evaluator's task-duration is wall-clock, so it inflates whenever the pod's event loop is blocked (heavy sync work, GC pauses, another workflow task saturating the pod) even when ClickHouse is fast. A lag climb that tracks the task-duration climb points at the runtime, not the query. Note: this is pod-level (all workflow tasks share the pod), not attributed to alert evaluation alone.",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": {
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "axisSoftMin": 0,
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 0,
+            "gradientMode": "none",
+            "hideFrom": { "legend": false, "tooltip": false, "viz": false },
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": { "type": "linear" },
+            "showPoints": "auto",
+            "spanNulls": false,
+            "stacking": { "group": "A", "mode": "none" },
+            "thresholdsStyle": { "mode": "off" }
+          },
+          "mappings": [],
+          "min": 0,
+          "noValue": "0",
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }] },
+          "unit": "s"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 10, "w": 12, "x": 0, "y": 52 },
+      "id": 21,
+      "options": {
+        "legend": {
+          "calcs": ["max", "mean"],
+          "displayMode": "table",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": { "mode": "multi", "sort": "desc" }
+      },
+      "pluginVersion": "9.3.6",
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "PROM_DATASOURCE_UID" },
+          "editorMode": "code",
+          "expr": "nodejs_eventloop_lag_p99_seconds{pod=~\"workflow-service.*\"}",
+          "legendFormat": "{{pod}}",
+          "range": true,
+          "refId": "A"
+        }
+      ],
+      "title": "Event-loop lag (p99) per pod",
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "PROM_DATASOURCE_UID" },
+      "description": "Per-pod CPU usage (cores) for the workflow-service, from process_cpu_seconds_total. Read alongside event-loop lag: high CPU with high lag means the pod is compute-bound.",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": {
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "cores",
+            "axisPlacement": "auto",
+            "axisSoftMin": 0,
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 0,
+            "gradientMode": "none",
+            "hideFrom": { "legend": false, "tooltip": false, "viz": false },
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": { "type": "linear" },
+            "showPoints": "auto",
+            "spanNulls": false,
+            "stacking": { "group": "A", "mode": "none" },
+            "thresholdsStyle": { "mode": "off" }
+          },
+          "mappings": [],
+          "min": 0,
+          "noValue": "0",
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }] },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 10, "w": 12, "x": 12, "y": 52 },
+      "id": 22,
+      "options": {
+        "legend": {
+          "calcs": ["max", "mean"],
+          "displayMode": "table",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": { "mode": "multi", "sort": "desc" }
+      },
+      "pluginVersion": "9.3.6",
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "PROM_DATASOURCE_UID" },
+          "editorMode": "code",
+          "expr": "rate(process_cpu_seconds_total{pod=~\"workflow-service.*\"}[$__rate_interval])",
+          "legendFormat": "{{pod}}",
+          "range": true,
+          "refId": "A"
+        }
+      ],
+      "title": "CPU (cores) per pod",
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "PROM_DATASOURCE_UID" },
+      "description": "Per-pod memory for the workflow-service: resident set (RSS) and Node.js used heap. A steady climb across a tick storm can indicate GC pressure or a leak that also shows up as rising GC time and event-loop lag.",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": {
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "axisSoftMin": 0,
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 0,
+            "gradientMode": "none",
+            "hideFrom": { "legend": false, "tooltip": false, "viz": false },
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": { "type": "linear" },
+            "showPoints": "auto",
+            "spanNulls": false,
+            "stacking": { "group": "A", "mode": "none" },
+            "thresholdsStyle": { "mode": "off" }
+          },
+          "mappings": [],
+          "min": 0,
+          "noValue": "0",
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }] },
+          "unit": "bytes"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 10, "w": 12, "x": 0, "y": 62 },
+      "id": 23,
+      "options": {
+        "legend": {
+          "calcs": ["max", "mean"],
+          "displayMode": "table",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": { "mode": "multi", "sort": "desc" }
+      },
+      "pluginVersion": "9.3.6",
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "PROM_DATASOURCE_UID" },
+          "editorMode": "code",
+          "expr": "process_resident_memory_bytes{pod=~\"workflow-service.*\"}",
+          "legendFormat": "RSS {{pod}}",
+          "range": true,
+          "refId": "A"
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "PROM_DATASOURCE_UID" },
+          "editorMode": "code",
+          "expr": "nodejs_heap_size_used_bytes{pod=~\"workflow-service.*\"}",
+          "legendFormat": "heap {{pod}}",
+          "range": true,
+          "refId": "B"
+        }
+      ],
+      "title": "Memory (RSS + heap) per pod",
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "PROM_DATASOURCE_UID" },
+      "description": "Per-pod Node.js GC time spent per second for the workflow-service (rate of nodejs_gc_duration_seconds_sum). Rising GC time steals from the event loop and shows up as event-loop lag and inflated task duration.",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": {
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "axisSoftMin": 0,
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 0,
+            "gradientMode": "none",
+            "hideFrom": { "legend": false, "tooltip": false, "viz": false },
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": { "type": "linear" },
+            "showPoints": "auto",
+            "spanNulls": false,
+            "stacking": { "group": "A", "mode": "none" },
+            "thresholdsStyle": { "mode": "off" }
+          },
+          "mappings": [],
+          "min": 0,
+          "noValue": "0",
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }] },
+          "unit": "s"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 10, "w": 12, "x": 12, "y": 62 },
+      "id": 24,
+      "options": {
+        "legend": {
+          "calcs": ["max", "mean"],
+          "displayMode": "table",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": { "mode": "multi", "sort": "desc" }
+      },
+      "pluginVersion": "9.3.6",
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "PROM_DATASOURCE_UID" },
+          "editorMode": "code",
+          "expr": "rate(nodejs_gc_duration_seconds_sum{pod=~\"workflow-service.*\"}[$__rate_interval])",
+          "legendFormat": "{{pod}}",
+          "range": true,
+          "refId": "A"
+        }
+      ],
+      "title": "GC time per second per pod",
+      "type": "timeseries"
+    },
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 72 },
+      "id": 100,
+      "panels": [],
+      "title": "Traces",
+      "type": "row"
+    },
+    {
+      "datasource": { "type": "tempo", "uid": "TEMPO_DATASOURCE_UID" },
+      "description": "Alert-evaluator ticks slower than $slowEvalThreshold. Click a row to open the full trace flame chart with per-group and per-PG-query children.",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "fixed" },
+          "custom": {
+            "align": "auto",
+            "cellOptions": { "type": "auto" },
+            "inspect": false
+          },
+          "mappings": [],
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }] }
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 10, "w": 12, "x": 0, "y": 73 },
+      "id": 101,
+      "options": {
+        "cellHeight": "sm",
+        "footer": { "countRows": false, "fields": "", "reducer": ["sum"], "show": false },
+        "showHeader": true
+      },
+      "targets": [
+        {
+          "datasource": { "type": "tempo", "uid": "TEMPO_DATASOURCE_UID" },
+          "filters": [{ "id": "slow-evals-filter", "operator": "=", "scope": "span" }],
+          "limit": 100,
+          "query": "{name=\"evaluate-metric-alert-rules\" && duration>$slowEvalThreshold}",
+          "queryType": "traceql",
+          "refId": "A",
+          "spss": 20,
+          "tableType": "traces"
+        }
+      ],
+      "title": "Recent slow alert evaluations",
+      "type": "table"
+    },
+    {
+      "datasource": { "type": "tempo", "uid": "TEMPO_DATASOURCE_UID" },
+      "description": "Per-target group evaluations slower than $slowGroupThreshold. The row's filter.applied, window.needs_previous, and metric.needs_percentiles explain the query cost (filtered legacy-table path, 2x window scan, heavy percentile blob); click to see the ClickHouse query and per-rule PG transactions inside the group.",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "fixed" },
+          "custom": {
+            "align": "auto",
+            "cellOptions": { "type": "auto" },
+            "inspect": false
+          },
+          "mappings": [],
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }] }
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 10, "w": 12, "x": 12, "y": 73 },
+      "id": 102,
+      "options": {
+        "cellHeight": "sm",
+        "footer": { "countRows": false, "fields": "", "reducer": ["sum"], "show": false },
+        "showHeader": true
+      },
+      "targets": [
+        {
+          "datasource": { "type": "tempo", "uid": "TEMPO_DATASOURCE_UID" },
+          "filters": [{ "id": "slow-groups-filter", "operator": "=", "scope": "span" }],
+          "limit": 100,
+          "query": "{name=\"evaluate-group\" && duration>$slowGroupThreshold} | select(span.target.id, span.rules.in_group, span.time_window_minutes, span.filter.applied, span.window.needs_previous, span.metric.needs_percentiles)",
+          "queryType": "traceql",
+          "refId": "A",
+          "spss": 20,
+          "tableType": "spans"
+        }
+      ],
+      "title": "Slow target groups",
+      "type": "table"
+    },
+    {
+      "datasource": { "type": "tempo", "uid": "TEMPO_DATASOURCE_UID" },
+      "description": "Rate of notification dispatch outcomes over time, derived from the `notification.outcome` attribute on `send-metric-alert-channel-notification` spans. Only `sent` is a real delivery. `skipped-config` means the channel is missing settings it needs (no Slack token, no webhook endpoint) and nothing was posted; `failed-config` means a misconfiguration retrying cannot fix, such as a missing or mismatched ENCRYPTION_SECRET leaving the Slack token undecryptable; `gave-up` means the retry budget ran out without a successful delivery. All three were previously reported as `sent`. `failed` means the attempt threw and graphile-worker will retry it. Sustained 'failed' above the baseline means external destinations (Slack / Teams / customer webhooks) are returning errors; sustained 'skipped-config' means a channel needs fixing. `notification.skip_reason` carries the specific reason.",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": {
+            "axisCenteredZero": false,
+            "axisPlacement": "auto",
+            "drawStyle": "line",
+            "fillOpacity": 30,
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "stacking": { "group": "A", "mode": "normal" },
+            "thresholdsStyle": { "mode": "off" }
+          },
+          "mappings": [],
+          "min": 0,
+          "noValue": "0",
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }] },
+          "unit": "reqps"
+        },
+        "overrides": [
+          {
+            "matcher": { "id": "byName", "options": "failed" },
+            "properties": [{ "id": "color", "value": { "fixedColor": "red", "mode": "fixed" } }]
+          },
+          {
+            "matcher": { "id": "byName", "options": "sent" },
+            "properties": [{ "id": "color", "value": { "fixedColor": "green", "mode": "fixed" } }]
+          }
+        ]
+      },
+      "gridPos": { "h": 10, "w": 12, "x": 0, "y": 83 },
+      "id": 104,
+      "options": {
+        "legend": {
+          "calcs": ["mean", "max"],
+          "displayMode": "table",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": { "mode": "multi", "sort": "desc" }
+      },
+      "targets": [
+        {
+          "datasource": { "type": "tempo", "uid": "TEMPO_DATASOURCE_UID" },
+          "query": "{name=\"send-metric-alert-channel-notification\"} | rate() by (span.notification.outcome)",
+          "queryType": "traceql",
+          "refId": "A"
+        }
+      ],
+      "title": "Notification delivery outcomes",
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "tempo", "uid": "TEMPO_DATASOURCE_UID" },
+      "description": "Trace-derived p50/p95/p99 of the full `evaluate-metric-alert-rules` tick duration. Includes the cron-task body plus all per-group ClickHouse queries and per-rule PG transactions. More complete than the Prometheus-derived 'evaluateMetricAlertRules task duration' panel above, which only measures the cron-task body.",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": {
+            "axisCenteredZero": false,
+            "axisPlacement": "auto",
+            "axisSoftMin": 0,
+            "drawStyle": "line",
+            "fillOpacity": 0,
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "thresholdsStyle": { "mode": "dashed" }
+          },
+          "mappings": [],
+          "min": 0,
+          "noValue": "0",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 1 },
+              { "color": "orange", "value": 3 },
+              { "color": "red", "value": 5 }
+            ]
+          },
+          "unit": "s"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 10, "w": 12, "x": 12, "y": 83 },
+      "id": 105,
+      "options": {
+        "legend": {
+          "calcs": ["max", "mean"],
+          "displayMode": "table",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": { "mode": "multi", "sort": "desc" }
+      },
+      "targets": [
+        {
+          "datasource": { "type": "tempo", "uid": "TEMPO_DATASOURCE_UID" },
+          "query": "{name=\"evaluate-metric-alert-rules\"} | quantile_over_time(duration, .5, .95, .99)",
+          "queryType": "traceql",
+          "refId": "A"
+        }
+      ],
+      "title": "Alert evaluation duration (trace-derived p50/p95/p99)",
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "tempo", "uid": "TEMPO_DATASOURCE_UID" },
+      "description": "Average and worst-case lag from breach (state-log row created) to notification dispatched. Captures the full breach→user-notified path: graphile-worker queue wait + worker pickup + dispatch task's PG lookups + the outbound POST to Slack/Teams/webhook. Sustained avg above ~10s usually means graphile-worker is backed up; max above ~30s means at least one dispatch is hitting an external destination that's timing out. (Uses avg/max instead of percentiles because TraceQL `quantile_over_time` on arbitrary span attributes isn't supported by the OSS Tempo local-blocks processor used in local dev; avg/max works on both local and Cloud Tempo.)",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": {
+            "axisCenteredZero": false,
+            "axisPlacement": "auto",
+            "axisSoftMin": 0,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "thresholdsStyle": { "mode": "dashed" }
+          },
+          "mappings": [],
+          "min": 0,
+          "noValue": "0",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 10 },
+              { "color": "orange", "value": 30 },
+              { "color": "red", "value": 60 }
+            ]
+          },
+          "unit": "s"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 10, "w": 24, "x": 0, "y": 93 },
+      "id": 106,
+      "options": {
+        "legend": {
+          "calcs": ["max", "mean"],
+          "displayMode": "table",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": { "mode": "multi", "sort": "desc" }
+      },
+      "targets": [
+        {
+          "datasource": { "type": "tempo", "uid": "TEMPO_DATASOURCE_UID" },
+          "query": "{name=\"send-metric-alert-channel-notification\"} | avg_over_time(span.breach_to_dispatch_seconds)",
+          "queryType": "traceql",
+          "refId": "A"
+        },
+        {
+          "datasource": { "type": "tempo", "uid": "TEMPO_DATASOURCE_UID" },
+          "query": "{name=\"send-metric-alert-channel-notification\"} | max_over_time(span.breach_to_dispatch_seconds)",
+          "queryType": "traceql",
+          "refId": "B"
+        }
+      ],
+      "title": "Breach → dispatch end-to-end latency (avg/max)",
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "tempo", "uid": "TEMPO_DATASOURCE_UID" },
+      "description": "Notification-dispatch tasks that exited with outcome=failed. Click a row for channel.type, rule.id, error attributes, and the outbound HTTP POST span.",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "fixed" },
+          "custom": {
+            "align": "auto",
+            "cellOptions": { "type": "auto" },
+            "inspect": false
+          },
+          "mappings": [],
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }] }
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 10, "w": 24, "x": 0, "y": 103 },
+      "id": 103,
+      "options": {
+        "cellHeight": "sm",
+        "footer": { "countRows": false, "fields": "", "reducer": ["sum"], "show": false },
+        "showHeader": true
+      },
+      "targets": [
+        {
+          "datasource": { "type": "tempo", "uid": "TEMPO_DATASOURCE_UID" },
+          "filters": [{ "id": "failed-dispatches-filter", "operator": "=", "scope": "span" }],
+          "limit": 100,
+          "query": "{name=\"send-metric-alert-channel-notification\" && span.notification.outcome=\"failed\"}",
+          "queryType": "traceql",
+          "refId": "A",
+          "spss": 20,
+          "tableType": "traces"
+        }
+      ],
+      "title": "Failed notification dispatches",
+      "type": "table"
+    }
+  ],
+  "refresh": "1m",
+  "revision": 1,
+  "schemaVersion": 38,
+  "style": "dark",
+  "tags": ["alerts", "metric-alerts", "workflows"],
+  "templating": {
+    "list": [
+      {
+        "current": { "selected": false, "text": "1s", "value": "1s" },
+        "label": "Slow eval threshold",
+        "name": "slowEvalThreshold",
+        "options": [{ "selected": true, "text": "1s", "value": "1s" }],
+        "query": "1s",
+        "type": "textbox"
+      },
+      {
+        "current": { "selected": false, "text": "500ms", "value": "500ms" },
+        "label": "Slow group threshold",
+        "name": "slowGroupThreshold",
+        "options": [{ "selected": true, "text": "500ms", "value": "500ms" }],
+        "query": "500ms",
+        "type": "textbox"
+      }
+    ]
+  },
+  "time": { "from": "now-6h", "to": "now" },
+  "timepicker": {},
+  "timezone": "",
+  "title": "Metric Alerts",
+  "weekStart": ""
+}

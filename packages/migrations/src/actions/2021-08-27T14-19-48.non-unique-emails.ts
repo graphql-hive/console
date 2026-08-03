@@ -2,7 +2,7 @@ import { type MigrationExecutor } from '../pg-migrator';
 
 export default {
   name: '2021-08-27T14-19-48.non-unique-emails.sql',
-  run: ({ sql }) => sql`
+  run: ({ psql }) => psql`
 --non-unique-emails (up)
 DROP INDEX
   email_idx;

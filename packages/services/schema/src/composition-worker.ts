@@ -9,6 +9,15 @@ import { composeSingle, type ComposeSingleArgs } from './composition/single';
 import { composeStitching, type ComposeStitchingArgs } from './composition/stitching';
 import type { env } from './environment';
 
+export type ErrorResultEvent = {
+  event: 'error';
+  id: string;
+  err: unknown;
+  ctx?: {
+    heapUsed?: number;
+  };
+};
+
 export function createCompositionWorker(args: {
   baseLogger: Logger;
   port: MessagePort;
@@ -26,13 +35,31 @@ export function createCompositionWorker(args: {
   });
 
   args.port.on('message', async (message: CompositionEvent) => {
+    let startMemoryUsage = 0;
+    if (args.env.compositionWorker.trackMemoryUsage) {
+      startMemoryUsage = process.memoryUsage().heapUsed;
+    }
     const logger = baseLogger.child({
       taskId: message.taskId,
       reqId: message.requestId,
       messageId: message.id,
       event: message.event,
     });
+
     logger.debug('processing message');
+    const postResult = (result: CompositionResultEvent | ErrorResultEvent) => {
+      if (args.env.compositionWorker.trackMemoryUsage) {
+        const memoryDiff = process.memoryUsage().heapUsed - startMemoryUsage;
+        // ignore if memory was freed during execution
+        if (memoryDiff > 0) {
+          result.ctx = {
+            heapUsed: memoryDiff,
+          };
+        }
+      }
+
+      args.port.postMessage(result);
+    };
 
     try {
       if (message.event === 'composition') {
@@ -44,7 +71,7 @@ export function createCompositionWorker(args: {
           });
           const composed = await composeFederation(message.data.args);
 
-          args.port.postMessage({
+          postResult({
             event: 'compositionResult',
             id: message.id,
             data: {
@@ -73,7 +100,7 @@ export function createCompositionWorker(args: {
 
         if (message.data.type === 'single') {
           const result = await composeSingle(message.data.args);
-          args.port.postMessage({
+          postResult({
             event: 'compositionResult',
             id: message.id,
             data: {
@@ -86,7 +113,7 @@ export function createCompositionWorker(args: {
 
         if (message.data.type === 'stitching') {
           const result = await composeStitching(message.data.args);
-          args.port.postMessage({
+          postResult({
             event: 'compositionResult',
             id: message.id,
             data: {
@@ -106,7 +133,7 @@ export function createCompositionWorker(args: {
         message.id,
       );
       baseLogger.error(String(err));
-      args.port.postMessage({
+      postResult({
         event: 'error',
         id: message.id,
         err,
@@ -147,6 +174,10 @@ export type CompositionResultEvent = {
     result: CompositionResponse & {
       includesException?: boolean;
     };
+  };
+  ctx?: {
+    /** Amount of memory used during composition. Can be undefined if memory was freed during the run or if trackMemoryUsage is disabled */
+    heapUsed?: number;
   };
 };
 

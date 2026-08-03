@@ -2,7 +2,7 @@ import { type MigrationExecutor } from '../pg-migrator';
 
 export default {
   name: '2022.01.21T12.34.46.validation-targets.sql',
-  run: ({ sql }) => sql`
+  run: ({ psql }) => psql`
 CREATE TABLE
   target_validation (
     target_id UUID NOT NULL REFERENCES targets (id) ON DELETE CASCADE,

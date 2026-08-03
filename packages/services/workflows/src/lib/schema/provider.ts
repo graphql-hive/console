@@ -1,11 +1,11 @@
 import { DocumentNode, GraphQLError, parse, print, SourceLocation } from 'graphql';
-import { DatabasePool, sql } from 'slonik';
 import { z } from 'zod';
 import type { Logger } from '@graphql-hive/logger';
 import type { Change } from '@graphql-inspector/core';
 import { errors, patch } from '@graphql-inspector/patch';
 import type { Project, SchemaObject } from '@hive/api';
 import type { ComposeAndValidateResult } from '@hive/api/shared/entities';
+import { PostgresDatabasePool, psql } from '@hive/postgres';
 import type { ContractsInputType, SchemaBuilderApi } from '@hive/schema';
 import { decodeCreatedAtAndUUIDIdBasedCursor, HiveSchemaChangeModel } from '@hive/storage';
 import { createTRPCProxyClient, httpLink } from '@trpc/client';
@@ -208,11 +208,11 @@ export function schemaProvider(providerConfig: SchemaProviderConfig) {
       timestamp: string;
       reason: string | null;
       status: 'ERROR' | 'SUCCESS';
-      pool: DatabasePool;
+      pool: PostgresDatabasePool;
     }) {
       const { pool, ...state } = args;
-      await pool.query<unknown>(
-        sql`/* updateSchemaProposalComposition */
+      await pool.query(
+        psql`/* updateSchemaProposalComposition */
           UPDATE schema_proposals
           SET
               composition_status = ${state.status}
@@ -222,24 +222,25 @@ export function schemaProvider(providerConfig: SchemaProviderConfig) {
       );
     },
 
-    async latestComposableSchemas(args: { targetId: string; pool: DatabasePool }) {
-      const latestVersion = await args.pool.maybeOne<{ id: string }>(
-        sql`/* findLatestComposableSchemaVersion */
+    async latestComposableSchemas(args: { targetId: string; pool: PostgresDatabasePool }) {
+      const latestVersionId = await args.pool
+        .maybeOneFirst(
+          psql`/* findLatestComposableSchemaVersion */
         SELECT sv.id
         FROM schema_versions as sv
         WHERE sv.target_id = ${args.targetId} AND sv.is_composable IS TRUE
         ORDER BY sv.created_at DESC
         LIMIT 1
       `,
-      );
+        )
+        .then(z.string().nullable().parse);
 
-      if (!latestVersion) {
+      if (!latestVersionId) {
         return [];
       }
 
-      const version = latestVersion.id;
-      const result = await args.pool.query<unknown>(
-        sql`/* getSchemasOfVersion */
+      const result = await args.pool.any(
+        psql`/* getSchemasOfVersion */
           SELECT
               sl.id
             , sl.sdl
@@ -250,28 +251,30 @@ export function schemaProvider(providerConfig: SchemaProviderConfig) {
           LEFT JOIN schema_log AS sl ON (sl.id = svl.action_id)
           LEFT JOIN projects as p ON (p.id = sl.project_id)
           WHERE
-            svl.version_id = ${version}
+            svl.version_id = ${latestVersionId}
             AND sl.action = 'PUSH'
             AND p.type != 'CUSTOM'
           ORDER BY
             sl.created_at DESC
         `,
       );
-      return result.rows.map(row => SchemaModel.parse(row));
+      return result.map(row => SchemaModel.parse(row));
     },
 
-    async getBaseSchema(args: { targetId: string; pool: DatabasePool }) {
-      const data = await args.pool.maybeOne<Record<string, string>>(
-        sql`/* getBaseSchema */ SELECT base_schema FROM targets WHERE id=${args.targetId}`,
-      );
-      return data?.base_schema ?? null;
+    async getBaseSchema(args: { targetId: string; pool: PostgresDatabasePool }) {
+      const baseSchema = await args.pool
+        .maybeOneFirst(
+          psql`/* getBaseSchema */ SELECT base_schema FROM targets WHERE id=${args.targetId}`,
+        )
+        .then(z.string().nullable().parse);
+      return baseSchema;
     },
 
     async proposedSchemas(args: {
       targetId: string;
       proposalId: string;
       cursor?: string | null;
-      pool: DatabasePool;
+      pool: PostgresDatabasePool;
     }) {
       const now = new Date().toISOString();
       let cursor: {
@@ -294,7 +297,7 @@ export function schemaProvider(providerConfig: SchemaProviderConfig) {
       // collect changes in paginated requests to avoid stalling the db
       let i = 0;
       do {
-        const result = await args.pool.query<unknown>(sql`
+        const result = await args.pool.any(psql`
           SELECT
               c."id"
             , c."service_name" as "serviceName"
@@ -308,7 +311,7 @@ export function schemaProvider(providerConfig: SchemaProviderConfig) {
               FROM schema_checks
               ${
                 cursor
-                  ? sql`
+                  ? psql`
                     WHERE "schema_proposal_id" = ${args.proposalId}
                     AND (
                       (
@@ -318,7 +321,7 @@ export function schemaProvider(providerConfig: SchemaProviderConfig) {
                       OR "created_at" < ${cursor.createdAt}
                     )
                   `
-                  : sql``
+                  : psql``
               }
               GROUP BY "service", "schema_proposal_id"
             ) as cc
@@ -330,7 +333,7 @@ export function schemaProvider(providerConfig: SchemaProviderConfig) {
             AND c."schema_proposal_id" = ${args.proposalId}
             ${
               cursor
-                ? sql`
+                ? psql`
                   AND (
                     (
                       c."created_at" = ${cursor.createdAt}
@@ -339,7 +342,7 @@ export function schemaProvider(providerConfig: SchemaProviderConfig) {
                     OR c."created_at" < ${cursor.createdAt}
                   )
                 `
-                : sql``
+                : psql``
             }
           ORDER BY
               c."created_at" DESC
@@ -347,7 +350,7 @@ export function schemaProvider(providerConfig: SchemaProviderConfig) {
           LIMIT 20
         `);
 
-        const changes = result.rows.map(row => {
+        const changes = result.map(row => {
           const value = SchemaProposalChangesModel.parse(row);
           return {
             ...value,

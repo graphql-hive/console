@@ -43,6 +43,7 @@ export function deploySchema({
         SCHEMA_CACHE_TTL_MS: '65000' /* 65s */,
         SCHEMA_CACHE_SUCCESS_TTL_MS: String(hourInMS * 2),
         COMPOSITION_WORKER_MAX_OLD_GENERATION_SIZE_MB: '716',
+        COMPOSITION_WORKER_TRACK_MEMORY_USAGE: '1',
         OPENTELEMETRY_COLLECTOR_ENDPOINT:
           observability.enabled && observability.tracingEndpoint
             ? observability.tracingEndpoint
@@ -52,8 +53,10 @@ export function deploySchema({
       livenessProbe: '/_health',
       startupProbe: '/_health',
       exposesMetrics: true,
-      replicas: environment.podsConfig.general.replicas,
-      memoryLimit: environment.podsConfig.schemaService.memoryLimit,
+      replicas: environment.podsConfig.schemaService.replicas,
+      memory: {
+        limit: environment.podsConfig.schemaService.memoryLimit,
+      },
       pdb: true,
     },
     [redis.deployment, redis.service],

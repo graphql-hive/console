@@ -1,6 +1,14 @@
 import { Fragment, useCallback, useMemo, useState } from 'react';
 import { format } from 'date-fns';
-import { BadgeCheck, ChevronDown, ChevronUp, GitCompareIcon, Loader2 } from 'lucide-react';
+import {
+  BadgeCheck,
+  ChevronDown,
+  ChevronUp,
+  CircleQuestionMarkIcon,
+  GitCompareIcon,
+  InfoIcon,
+  Loader2,
+} from 'lucide-react';
 import { useMutation, useQuery } from 'urql';
 import { SchemaEditor } from '@/components/schema-editor';
 import {
@@ -27,7 +35,7 @@ import { TimeAgo } from '@/components/ui/time-ago';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { DiffEditor } from '@/components/v2/diff-editor';
 import { FragmentType, graphql, useFragment } from '@/gql';
-import { ProjectType, SeverityLevelType } from '@/gql/graphql';
+import { ProjectType } from '@/gql/graphql';
 import { cn } from '@/lib/utils';
 import {
   CheckIcon,
@@ -192,22 +200,62 @@ const BreakingChangesTitle = () => {
   );
 };
 
+const PolicyInfo = () => {
+  return (
+    <TooltipProvider delayDuration={0}>
+      <Tooltip>
+        <TooltipTrigger>
+          <InfoIcon className="ml-2 inline-block" size={14} />
+        </TooltipTrigger>
+        <TooltipContent align="start">
+          Schema policy checks run on the composed API schema. Line numbers
+          <br />
+          reflect that and will not match the lines from the source schema.
+        </TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
+  );
+};
+
 const PolicyBlock = (props: {
   title: string;
   policies: FragmentType<typeof SchemaPolicyEditor_PolicyWarningsFragment>;
   type: 'warning' | 'error';
+  goToline?: (line: number | undefined) => void;
 }) => {
   const policies = useFragment(SchemaPolicyEditor_PolicyWarningsFragment, props.policies);
   return (
     <div>
-      <h2 className="text-neutral-2 mb-2 text-sm font-medium">{props.title}</h2>
+      <h2 className="text-neutral-10 mb-3 text-sm font-bold">
+        {props.title} <PolicyInfo />
+      </h2>
       <ul className="list-inside list-disc pl-3 text-sm/relaxed">
         {policies.edges.map((edge, key) => (
           <li
             key={key}
             className={cn(props.type === 'warning' ? 'text-yellow-400' : 'text-red-400', 'my-1')}
           >
-            <span className="text-neutral-8 text-left">{labelize(edge.node.message)}</span>
+            <span className="text-neutral-10 text-left">
+              {labelize(edge.node.message.replace(/\.$/, ''))}{' '}
+            </span>
+            {edge.node.start?.line ? (
+              <span
+                className="text-neutral-9 ml-1 cursor-default text-xs hover:underline"
+                onClick={() => props.goToline?.(edge.node.start?.line || undefined)}
+              >
+                on line {edge.node.start.line}
+              </span>
+            ) : null}
+            <TooltipProvider delayDuration={0}>
+              <Tooltip>
+                <TooltipTrigger>
+                  <CircleQuestionMarkIcon size={16} className="text-neutral-6 ml-2 inline-block" />
+                </TooltipTrigger>
+                <TooltipContent>
+                  rule: <span className="text-neutral-12">{edge.node.ruleId}</span>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
           </li>
         ))}
       </ul>
@@ -256,7 +304,7 @@ function ConditionalBreakingChangesMetadataSection(props: {
         Get more out of schema checks by enabling conditional breaking changes based on usage data.
         <br />
         <DocsLink
-          href="/management/targets#conditional-breaking-changes"
+          href="/schema-registry/management/targets#conditional-breaking-changes"
           className="text-neutral-10 hover:text-neutral-11"
         >
           Learn more about conditional breaking changes.
@@ -339,7 +387,7 @@ function ConditionalBreakingChangesMetadataSection(props: {
         ).
         <br />
         <DocsLink
-          href="/management/targets#conditional-breaking-changes"
+          href="/schema-registry/management/targets#conditional-breaking-changes"
           className="text-neutral-10 hover:text-neutral-11"
         >
           Learn more about conditional breaking changes.
@@ -426,6 +474,7 @@ function DefaultSchemaView(props: {
 }) {
   const schemaCheck = useFragment(DefaultSchemaView_SchemaCheckFragment, props.schemaCheck);
   const [selectedView, setSelectedView] = useState<string>('details');
+  const [scrollToLine, setScrollToLine] = useState<number | undefined>();
 
   const items = [
     {
@@ -480,7 +529,13 @@ function DefaultSchemaView(props: {
 
   return (
     <>
-      <Tabs value={selectedView} onValueChange={value => setSelectedView(value)}>
+      <Tabs
+        value={selectedView}
+        onValueChange={value => {
+          setScrollToLine(undefined);
+          setSelectedView(value);
+        }}
+      >
         <TabsList className="bg-neutral-5 dark:bg-neutral-3 border-neutral-5 dark:border-neutral-3 w-full justify-start rounded-none border-x border-b">
           {items.map(item => (
             <TabsTrigger key={item.value} value={item.value} disabled={item.isDisabled}>
@@ -509,7 +564,6 @@ function DefaultSchemaView(props: {
                   targetSlug={props.targetSlug}
                   schemaCheckId={schemaCheck.id}
                   title={<BreakingChangesTitle />}
-                  severityLevel={SeverityLevelType.Breaking}
                   changesWithUsage={schemaCheck.breakingSchemaChanges.edges.map(edge => edge.node)}
                   conditionBreakingChangeMetadata={schemaCheck.conditionalBreakingChangeMetadata}
                 />
@@ -523,7 +577,6 @@ function DefaultSchemaView(props: {
                   targetSlug={props.targetSlug}
                   schemaCheckId={schemaCheck.id}
                   title="Safe Changes"
-                  severityLevel={SeverityLevelType.Safe}
                   changes={schemaCheck.safeSchemaChanges.edges.map(edge => edge.node)}
                 />
               </div>
@@ -543,6 +596,10 @@ function DefaultSchemaView(props: {
                   title="Schema Policy Warnings"
                   policies={schemaCheck.schemaPolicyWarnings}
                   type="warning"
+                  goToline={line => {
+                    setScrollToLine(Math.max((line ?? 0) - 1, 0));
+                    setSelectedView('policy');
+                  }}
                 />
               </div>
             ) : null}
@@ -581,6 +638,7 @@ function DefaultSchemaView(props: {
               errors={
                 ('schemaPolicyErrors' in schemaCheck && schemaCheck.schemaPolicyErrors) || null
               }
+              scrollToLine={scrollToLine}
             />
           </>
         )}
@@ -708,7 +766,6 @@ function ContractCheckView(props: {
                   targetSlug={props.targetSlug}
                   schemaCheckId={schemaCheck.id}
                   title={<BreakingChangesTitle />}
-                  severityLevel={SeverityLevelType.Breaking}
                   changesWithUsage={contractCheck.breakingSchemaChanges.edges.map(
                     edge => edge.node,
                   )}
@@ -724,7 +781,6 @@ function ContractCheckView(props: {
                   targetSlug={props.targetSlug}
                   schemaCheckId={schemaCheck.id}
                   title="Safe Changes"
-                  severityLevel={SeverityLevelType.Safe}
                   changes={contractCheck.safeSchemaChanges.edges.map(edge => edge.node)}
                 />
               </div>
@@ -768,6 +824,7 @@ const SchemaPolicyEditor_PolicyWarningsFragment = graphql(`
     edges {
       node {
         message
+        ruleId
         start {
           line
           column
@@ -785,6 +842,7 @@ const SchemaPolicyEditor = (props: {
   compositeSchemaSDL: string;
   warnings: FragmentType<typeof SchemaPolicyEditor_PolicyWarningsFragment> | null;
   errors: FragmentType<typeof SchemaPolicyEditor_PolicyWarningsFragment> | null;
+  scrollToLine?: number;
 }) => {
   const warnings = useFragment(SchemaPolicyEditor_PolicyWarningsFragment, props.warnings);
   const errors = useFragment(SchemaPolicyEditor_PolicyWarningsFragment, props.errors);
@@ -794,10 +852,10 @@ const SchemaPolicyEditor = (props: {
       options={{
         renderLineHighlightOnlyWhenFocus: true,
         readOnly: true,
-        lineNumbers: 'off',
+        lineNumbers: 'on',
         renderValidationDecorations: 'on',
       }}
-      onMount={(_, monaco) => {
+      onMount={(editor, monaco) => {
         monaco.editor.setModelMarkers(monaco.editor.getModels()[0], 'owner', [
           ...(warnings?.edges
             .map(edge => edge.node)
@@ -822,6 +880,10 @@ const SchemaPolicyEditor = (props: {
               severity: monaco.MarkerSeverity.Error,
             })) ?? []),
         ]);
+
+        if (props.scrollToLine) {
+          editor.revealLineInCenter(props.scrollToLine);
+        }
       }}
       schema={props.compositeSchemaSDL}
     />
@@ -1099,7 +1161,7 @@ const ActiveSchemaCheck = (props: {
         className="border-0"
         title="Check not found"
         description="Learn how to check your schema with Hive CLI"
-        docsUrl="/features/schema-registry#check-a-schema"
+        docsUrl="/schema-registry#check-a-schema"
       />
     );
   }

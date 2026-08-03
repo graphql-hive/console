@@ -263,168 +263,6 @@ export interface ContourValues {
     };
     [k: string]: unknown;
   };
-  defaultBackend?: {
-    affinity?: {
-      [k: string]: unknown;
-    };
-    args?: unknown[];
-    command?: unknown[];
-    containerPorts?: {
-      http?: number;
-      [k: string]: unknown;
-    };
-    containerSecurityContext?: {
-      allowPrivilegeEscalation?: boolean;
-      capabilities?: {
-        drop?: string[];
-        [k: string]: unknown;
-      };
-      enabled?: boolean;
-      privileged?: boolean;
-      readOnlyRootFilesystem?: boolean;
-      runAsGroup?: number;
-      runAsNonRoot?: boolean;
-      runAsUser?: number;
-      seLinuxOptions?: {
-        [k: string]: unknown;
-      };
-      seccompProfile?: {
-        type?: string;
-        [k: string]: unknown;
-      };
-      [k: string]: unknown;
-    };
-    customLivenessProbe?: {
-      [k: string]: unknown;
-    };
-    customReadinessProbe?: {
-      [k: string]: unknown;
-    };
-    customStartupProbe?: {
-      [k: string]: unknown;
-    };
-    enabled?: boolean;
-    extraArgs?: {
-      [k: string]: unknown;
-    };
-    extraEnvVars?: unknown[];
-    extraEnvVarsCM?: string;
-    extraEnvVarsSecret?: string;
-    extraVolumeMounts?: unknown[];
-    extraVolumes?: unknown[];
-    hostAliases?: unknown[];
-    image?: {
-      digest?: string;
-      pullPolicy?: string;
-      pullSecrets?: unknown[];
-      registry?: string;
-      repository?: string;
-      tag?: string;
-      [k: string]: unknown;
-    };
-    initContainers?: unknown[];
-    lifecycleHooks?: {
-      [k: string]: unknown;
-    };
-    livenessProbe?: {
-      enabled?: boolean;
-      failureThreshold?: number;
-      initialDelaySeconds?: number;
-      periodSeconds?: number;
-      successThreshold?: number;
-      timeoutSeconds?: number;
-      [k: string]: unknown;
-    };
-    networkPolicy?: {
-      allowExternal?: boolean;
-      allowExternalEgress?: boolean;
-      enabled?: boolean;
-      extraEgress?: unknown[];
-      extraIngress?: unknown[];
-      ingressNSMatchLabels?: {
-        [k: string]: unknown;
-      };
-      ingressNSPodMatchLabels?: {
-        [k: string]: unknown;
-      };
-      [k: string]: unknown;
-    };
-    nodeAffinityPreset?: {
-      key?: string;
-      type?: string;
-      values?: unknown[];
-      [k: string]: unknown;
-    };
-    nodeSelector?: {
-      [k: string]: unknown;
-    };
-    pdb?: {
-      create?: boolean;
-      maxUnavailable?: string;
-      minAvailable?: string;
-      [k: string]: unknown;
-    };
-    podAffinityPreset?: string;
-    podAnnotations?: {
-      [k: string]: unknown;
-    };
-    podAntiAffinityPreset?: string;
-    podLabels?: {
-      [k: string]: unknown;
-    };
-    podSecurityContext?: {
-      enabled?: boolean;
-      fsGroup?: number;
-      fsGroupChangePolicy?: string;
-      supplementalGroups?: unknown[];
-      sysctls?: unknown[];
-      [k: string]: unknown;
-    };
-    priorityClassName?: string;
-    readinessProbe?: {
-      enabled?: boolean;
-      failureThreshold?: number;
-      initialDelaySeconds?: number;
-      periodSeconds?: number;
-      successThreshold?: number;
-      timeoutSeconds?: number;
-      [k: string]: unknown;
-    };
-    replicaCount?: number;
-    resources?: {
-      [k: string]: unknown;
-    };
-    resourcesPreset?: string;
-    schedulerName?: string;
-    service?: {
-      annotations?: {
-        [k: string]: unknown;
-      };
-      ports?: {
-        http?: number;
-        [k: string]: unknown;
-      };
-      type?: string;
-      [k: string]: unknown;
-    };
-    sidecars?: unknown[];
-    startupProbe?: {
-      enabled?: boolean;
-      failureThreshold?: number;
-      initialDelaySeconds?: number;
-      periodSeconds?: number;
-      successThreshold?: number;
-      timeoutSeconds?: number;
-      [k: string]: unknown;
-    };
-    terminationGracePeriodSeconds?: number;
-    tolerations?: unknown[];
-    topologySpreadConstraints?: unknown[];
-    updateStrategy?: {
-      [k: string]: unknown;
-    };
-    [k: string]: unknown;
-  };
   diagnosticMode?: {
     args?: number[];
     command?: string[];
@@ -485,6 +323,37 @@ export interface ContourValues {
     customStartupProbe?: {
       [k: string]: unknown;
     };
+    defaultInitContainers?: {
+      initConfig?: {
+        containerSecurityContext?: {
+          allowPrivilegeEscalation?: boolean;
+          capabilities?: {
+            drop?: string[];
+            [k: string]: unknown;
+          };
+          enabled?: boolean;
+          privileged?: boolean;
+          readOnlyRootFilesystem?: boolean;
+          runAsGroup?: number;
+          runAsNonRoot?: boolean;
+          runAsUser?: number;
+          seLinuxOptions?: {
+            [k: string]: unknown;
+          };
+          seccompProfile?: {
+            type?: string;
+            [k: string]: unknown;
+          };
+          [k: string]: unknown;
+        };
+        resources?: {
+          [k: string]: unknown;
+        };
+        resourcesPreset?: string;
+        [k: string]: unknown;
+      };
+      [k: string]: unknown;
+    };
     dnsPolicy?: string;
     enabled?: boolean;
     extraArgs?: unknown[];
@@ -514,30 +383,6 @@ export interface ContourValues {
       registry?: string;
       repository?: string;
       tag?: string;
-      [k: string]: unknown;
-    };
-    initConfig?: {
-      containerSecurityContext?: {
-        allowPrivilegeEscalation?: boolean;
-        capabilities?: {
-          drop?: string[];
-          [k: string]: unknown;
-        };
-        enabled?: boolean;
-        privileged?: boolean;
-        readOnlyRootFilesystem?: boolean;
-        runAsGroup?: number;
-        runAsNonRoot?: boolean;
-        runAsUser?: number;
-        seLinuxOptions?: {
-          [k: string]: unknown;
-        };
-        seccompProfile?: {
-          type?: string;
-          [k: string]: unknown;
-        };
-        [k: string]: unknown;
-      };
       [k: string]: unknown;
     };
     initContainers?: unknown[];
@@ -796,32 +641,7 @@ export interface ContourValues {
     defaultStorageClass?: string;
     imagePullSecrets?: unknown[];
     imageRegistry?: string;
-    security?: {
-      allowInsecureImages?: boolean;
-      [k: string]: unknown;
-    };
     storageClass?: string;
-    [k: string]: unknown;
-  };
-  ingress?: {
-    annotations?: {
-      [k: string]: unknown;
-    };
-    apiVersion?: string;
-    certManager?: boolean;
-    enabled?: boolean;
-    extraHosts?: unknown[];
-    extraPaths?: unknown[];
-    extraRules?: unknown[];
-    extraTls?: unknown[];
-    hostname?: string;
-    ingressClassName?: string;
-    path?: string;
-    pathType?: string;
-    rulesOverride?: unknown[];
-    secrets?: unknown[];
-    selfSigned?: boolean;
-    tls?: boolean;
     [k: string]: unknown;
   };
   kubeVersion?: string;

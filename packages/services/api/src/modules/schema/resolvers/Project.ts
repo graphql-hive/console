@@ -19,11 +19,9 @@ export const Project: Pick<
     return null;
   },
   schemaVersionsCount: (project, { period }, { injector }) => {
-    return injector.get(SchemaManager).countSchemaVersionsOfProject({
-      organizationId: project.orgId,
-      projectId: project.id,
-      period: period ? parseDateRangeInput(period) : null,
-    });
+    return injector
+      .get(SchemaManager)
+      .countSchemaVersionsOfProject(project, period ? parseDateRangeInput(period) : null);
   },
   isNativeFederationEnabled: project => {
     return project.nativeFederation === true;

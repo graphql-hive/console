@@ -2,7 +2,7 @@ import { type MigrationExecutor } from '../pg-migrator';
 
 export default {
   name: '2023.06.01T09.07.53.create_collections.sql',
-  run: ({ sql }) => sql`
+  run: ({ psql }) => psql`
 CREATE TABLE "document_collections" (
   "id" uuid NOT NULL DEFAULT uuid_generate_v4(),
   "title" text NOT NULL,

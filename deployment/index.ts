@@ -24,7 +24,6 @@ import { deployS3, deployS3AuditLog, deployS3Mirror } from './services/s3';
 import { deploySchema } from './services/schema';
 import { configureSentry } from './services/sentry';
 import { configureSlackApp } from './services/slack-app';
-import { deployTokens } from './services/tokens';
 import { deployUsage } from './services/usage';
 import { deployUsageIngestor } from './services/usage-ingestor';
 import { deployWorkflows, PostmarkSecret } from './services/workflows';
@@ -123,18 +122,6 @@ const dbMigrations = deployDbMigrations({
   dependencies: [databaseCleanupJob].filter(isDefined),
 });
 
-const tokens = deployTokens({
-  image: docker.factory.getImageId('tokens', imagesTag),
-  environment,
-  dbMigrations,
-  docker,
-  postgres,
-  redis,
-  heartbeat: heartbeatsConfig.get('tokens'),
-  sentry,
-  observability,
-});
-
 const commerce = deployCommerce({
   image: docker.factory.getImageId('commerce', imagesTag),
   docker,
@@ -150,7 +137,6 @@ const usage = deployUsage({
   image: docker.factory.getImageId('usage', imagesTag),
   docker,
   environment,
-  tokens,
   redis,
   postgres,
   kafka,
@@ -200,6 +186,8 @@ deployWorkflows({
   heartbeat: heartbeatsConfig.get('webhooks'),
   schema,
   redis,
+  clickhouse,
+  dbMigrations,
 });
 
 const zendesk = configureZendesk({ environment });
@@ -212,7 +200,6 @@ const graphql = deployGraphQL({
   clickhouse,
   image: docker.factory.getImageId('server', imagesTag),
   docker,
-  tokens,
   schema,
   schemaPolicy,
   dbMigrations,
@@ -339,7 +326,6 @@ deployCloudFlareSecurityTransform({
 export const graphqlApiServiceId = graphql.service.id;
 export const usageApiServiceId = usage.service.id;
 export const usageIngestorApiServiceId = usageIngestor.service.id;
-export const tokensApiServiceId = tokens.service.id;
 export const schemaApiServiceId = schema.service.id;
 
 export const appId = app.deployment.id;

@@ -311,7 +311,7 @@ export const Changelog_LatestChanges: Story = () => {
           <div className="grid">
             <div className="space-y-2 p-4">
               <h4 className="text-neutral-12 font-medium leading-none">
-                What's new in GraphQL Hive
+                What's new in Hive Console
               </h4>
               <p className="text-neutral-11 text-sm">
                 Find out about the newest features, and enhancements

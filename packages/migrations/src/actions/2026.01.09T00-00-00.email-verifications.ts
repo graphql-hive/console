@@ -5,7 +5,7 @@ import { type MigrationExecutor } from '../pg-migrator';
  */
 export default {
   name: '2026.01.09T00-00-00.email-verifications.ts',
-  run: ({ sql }) => sql`
+  run: ({ psql }) => psql`
     DO $$
     BEGIN
       CREATE TABLE IF NOT EXISTS "email_verifications" (

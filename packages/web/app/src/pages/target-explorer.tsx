@@ -19,6 +19,7 @@ import {
   SchemaExplorerProvider,
   useSchemaExplorerContext,
 } from '@/components/target/explorer/provider';
+import { useScrollRestoration } from '@/components/target/explorer/scroll-restoration';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { NoSchemaVersion, noValidSchemaVersion } from '@/components/ui/empty-list';
 import { Meta } from '@/components/ui/meta';
@@ -170,6 +171,18 @@ function ExplorerPageContent(props: {
   /* to avoid janky behaviour we keep track if the version has a successful explorer once, and in that case always show the filter bar. */
   const isFilterVisible = useRef(false);
 
+  const currentTarget = query.data?.target;
+  const latestSchemaVersion = currentTarget?.latestSchemaVersion;
+  const latestValidSchemaVersion = currentTarget?.latestValidSchemaVersion;
+
+  if (latestValidSchemaVersion?.explorer) {
+    isFilterVisible.current = true;
+  }
+
+  useScrollRestoration(
+    !!(!query.fetching && latestValidSchemaVersion?.explorer && latestSchemaVersion),
+  );
+
   if (query.error) {
     return (
       <QueryError
@@ -178,14 +191,6 @@ function ExplorerPageContent(props: {
         showLogoutButton={false}
       />
     );
-  }
-
-  const currentTarget = query.data?.target;
-  const latestSchemaVersion = currentTarget?.latestSchemaVersion;
-  const latestValidSchemaVersion = currentTarget?.latestValidSchemaVersion;
-
-  if (latestValidSchemaVersion?.explorer) {
-    isFilterVisible.current = true;
   }
 
   return (
@@ -220,7 +225,7 @@ function ExplorerPageContent(props: {
           )}
         </div>
       </div>
-      {!query.fetching && !query.stale ? (
+      {!query.fetching ? (
         <>
           {latestValidSchemaVersion?.explorer && latestSchemaVersion ? (
             <>

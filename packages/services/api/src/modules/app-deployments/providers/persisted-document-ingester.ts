@@ -1,4 +1,15 @@
-import { buildSchema, DocumentNode, GraphQLError, Kind, parse, TypeInfo, validate } from 'graphql';
+import {
+  buildSchema,
+  DirectiveDefinitionNode,
+  DocumentNode,
+  GraphQLError,
+  Kind,
+  parse,
+  print,
+  ScalarTypeDefinitionNode,
+  TypeInfo,
+  validate,
+} from 'graphql';
 import PromiseQueue from 'p-queue';
 import { z } from 'zod';
 import { collectSchemaCoordinates, preprocessOperation } from '@graphql-hive/core';
@@ -29,6 +40,60 @@ const AppDeploymentOperationHashModel = z
   );
 
 const AppDeploymentOperationBodyModel = z.string().min(3, 'Body must be at least 3 character long');
+
+const MCP_DIRECTIVES_DOC = parse(/* GraphQL */ `
+  directive @mcpTool(
+    name: String!
+    description: String
+    title: String
+    descriptionProvider: String
+    meta: _HiveMCPJSON
+  ) on QUERY | MUTATION
+  directive @mcpDescription(provider: String!) on VARIABLE_DEFINITION | FIELD
+  directive @mcpHeader(name: String!) on VARIABLE_DEFINITION
+  scalar _HiveMCPJSON
+`);
+
+/**
+ * Persisted operation documents may use MCP directives (`@mcpTool`, `@mcpDescription`,
+ * `@mcpHeader`) and the `JSON` scalar that may not be part of the user's schema.
+ * We inject any missing definitions so that `validate()` does not reject the documents
+ * for unknown directives or types.
+ *
+ * Only definitions absent from the SDL are added. When the user already defines an MCP
+ * directive (e.g. with a narrower arg set), their definition takes precedence.
+ */
+function injectMcpDirectives(schemaSdl: string): string {
+  const schemaDoc = parse(schemaSdl);
+
+  const mcpNames = new Set(
+    MCP_DIRECTIVES_DOC.definitions
+      .filter(
+        (def): def is DirectiveDefinitionNode | ScalarTypeDefinitionNode =>
+          def.kind === Kind.DIRECTIVE_DEFINITION || def.kind === Kind.SCALAR_TYPE_DEFINITION,
+      )
+      .map(def => def.name.value),
+  );
+
+  for (const def of schemaDoc.definitions) {
+    if ('name' in def && def.name && mcpNames.has(def.name.value)) {
+      mcpNames.delete(def.name.value);
+    }
+  }
+
+  const missing = MCP_DIRECTIVES_DOC.definitions.filter(def => {
+    if (def.kind === Kind.DIRECTIVE_DEFINITION || def.kind === Kind.SCALAR_TYPE_DEFINITION) {
+      return mcpNames.has(def.name.value);
+    }
+    return false;
+  });
+
+  if (missing.length === 0) {
+    return schemaSdl;
+  }
+
+  return schemaSdl + '\n' + print({ kind: Kind.DOCUMENT, definitions: missing });
+}
 
 export type BatchProcessEvent = {
   event: 'PROCESS';
@@ -107,7 +172,8 @@ export class PersistedDocumentIngester {
       data.documents.length,
     );
 
-    const schema = buildSchema(data.schemaSdl);
+    const schemaSdl = injectMcpDirectives(data.schemaSdl);
+    const schema = buildSchema(schemaSdl);
     const typeInfo = new TypeInfo(schema);
     const documents: Array<DocumentRecord> = [];
 
