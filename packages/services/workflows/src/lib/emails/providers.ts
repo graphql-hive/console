@@ -38,6 +38,7 @@ type SMTPEmailProviderConfig = {
   tls: {
     rejectUnauthorized: boolean;
   };
+  ignoreTLS: boolean;
 };
 
 type SendmailEmailProviderConfig = {
@@ -119,6 +120,7 @@ function smtp(config: SMTPEmailProviderConfig, emailFrom: string) {
     tls: {
       rejectUnauthorized: config.tls.rejectUnauthorized,
     },
+    ignoreTLS: config.ignoreTLS,
   });
 
   return {

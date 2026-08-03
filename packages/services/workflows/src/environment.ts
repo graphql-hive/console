@@ -72,6 +72,9 @@ const SMTPEmailModel = zod.object({
   EMAIL_PROVIDER_SMTP_REJECT_UNAUTHORIZED: emptyString(
     zod.union([zod.literal('0'), zod.literal('1')]).optional(),
   ),
+  EMAIL_PROVIDER_SMTP_IGNORE_TLS: emptyString(
+    zod.union([zod.literal('0'), zod.literal('1')]).optional(),
+  ),
 });
 
 const SendmailEmailModel = zod.object({
@@ -226,6 +229,9 @@ const emailProviderConfig =
           tls: {
             rejectUnauthorized: email.EMAIL_PROVIDER_SMTP_REJECT_UNAUTHORIZED !== '0',
           },
+          // Opt-in, unlike `rejectUnauthorized` above: an unset variable must keep
+          // STARTTLS enabled for existing deployments.
+          ignoreTLS: email.EMAIL_PROVIDER_SMTP_IGNORE_TLS === '1',
         } as const)
       : email.EMAIL_PROVIDER === 'sendmail'
         ? ({ provider: 'sendmail' } as const)
