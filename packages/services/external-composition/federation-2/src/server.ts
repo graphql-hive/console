@@ -126,7 +126,7 @@ export const createRequestListener = (env: ResolvedEnv): ReturnType<typeof creat
         body,
         // Pass here the signature from `X-Hive-Signature-256` header
         signature: signatureHeaderValue,
-        // Pass here the secret you configured in GraphQL Hive
+        // Pass here the secret you configured in Hive Console
         secret: env.secret,
       });
 

@@ -204,7 +204,7 @@ export function GenerateTokenContent(props: {
           <DialogHeader>
             <DialogTitle>Create an access token</DialogTitle>
             <DialogDescription>
-              To access GraphQL Hive, your application or tool needs an active API key.
+              To access Hive Console, your application or tool needs an active API key.
             </DialogDescription>
           </DialogHeader>
           <FormField

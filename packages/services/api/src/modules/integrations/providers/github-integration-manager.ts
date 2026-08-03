@@ -275,7 +275,7 @@ export class GitHubIntegrationManager {
 
     if (!octokit) {
       throw new HiveError(
-        'GitHub Integration not found. Please install our GraphQL Hive GitHub Application.',
+        'GitHub Integration not found. Please install our Hive Console GitHub Application.',
       );
     }
 
@@ -386,7 +386,7 @@ export class GitHubIntegrationManager {
 
     if (!octokit) {
       throw new HiveError(
-        'GitHub Integration not found. Please install our GraphQL Hive GitHub Application.',
+        'GitHub Integration not found. Please install our Hive Console GitHub Application.',
       );
     }
 

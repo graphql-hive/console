@@ -48,7 +48,7 @@ export function useHive(clientOrOptions: HiveClient | HivePluginOptions): Plugin
       }
     } else {
       console.error(
-        'It seems that GraphQL Hive is not being executed in Node.js. ' +
+        'It seems that the Hive Console SDK is not being executed in Node.js. ' +
           'Please attempt manual client disposal and use autoDispose: false option.',
       );
     }

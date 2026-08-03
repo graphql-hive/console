@@ -36,7 +36,7 @@ export function AuthPage() {
                 <Link to="/">
                   <div className="relative z-20 flex items-center text-lg font-medium">
                     <HiveLogo animated={false} className="mr-2 size-6" />
-                    GraphQL Hive
+                    Hive Console
                   </div>
                 </Link>
                 <div className="relative flex h-full flex-row items-center justify-center">
