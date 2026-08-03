@@ -43,7 +43,7 @@ import { resolveRangeAndResolution } from '@/lib/hooks/use-date-range-controller
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Link } from '@tanstack/react-router';
 import { AlertMetricChart } from './alert-metric-chart';
-import { AlertPreview } from './alert-notification-preview';
+import { AlertPreview, type AlertPreviewChannelType } from './alert-notification-preview';
 import { applyThresholdSign, thresholdUnit } from './alert-threshold';
 
 const AlertForm_ChannelsQuery = graphql(`
@@ -972,9 +972,7 @@ export function AlertForm(props: AlertFormProps) {
               direction={watchedValues.direction ?? 'ABOVE'}
               thresholdType={watchedValues.thresholdType ?? 'FIXED_VALUE'}
               thresholdValue={watchedValues.thresholdValue ?? ''}
-              channelType={
-                (firstChannel?.type as 'SLACK' | 'WEBHOOK' | 'MSTEAMS_WEBHOOK' | null) ?? null
-              }
+              channelType={(firstChannel?.type as AlertPreviewChannelType | null) ?? null}
               targetSlug={targetSlug}
               projectSlug={projectSlug}
               alertUrl={alertUrl}

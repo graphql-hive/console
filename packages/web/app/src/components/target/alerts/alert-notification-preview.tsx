@@ -64,6 +64,9 @@ const WEBHOOK_JSON_SCHEMA = {
   },
 };
 
+/** Channel types this preview can render. Callers narrow to this before passing. */
+export type AlertPreviewChannelType = 'SLACK' | 'WEBHOOK' | 'MSTEAMS_WEBHOOK' | 'DISCORD';
+
 type PreviewProps = {
   alertName: string;
   metricLabel: string;
@@ -72,7 +75,7 @@ type PreviewProps = {
   direction: string;
   thresholdType: string;
   thresholdValue: string;
-  channelType: 'SLACK' | 'WEBHOOK' | 'MSTEAMS_WEBHOOK' | 'DISCORD' | null;
+  channelType: AlertPreviewChannelType | null;
   targetSlug: string;
   projectSlug: string;
   /** Link back to the rule, included in every real notification. */

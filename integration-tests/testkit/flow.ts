@@ -601,6 +601,9 @@ export function addAlertChannel(input: AddAlertChannelInput, authToken: string) 
               ... on TeamsWebhookChannel {
                 endpoint
               }
+              ... on DiscordWebhookChannel {
+                endpoint
+              }
             }
           }
           error {
