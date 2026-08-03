@@ -3,6 +3,7 @@ import { gql } from 'graphql-modules';
 export default gql`
   extend type Organization {
     viewerCanManageOIDCIntegration: Boolean!
+    viewerCanManageSCIM: Boolean!
     oidcIntegration: OIDCIntegration
   }
 

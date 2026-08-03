@@ -50,12 +50,35 @@ function newGroupValues() {
   };
 }
 
+test.concurrent('requires the organization SCIM feature flag', async ({ expect }) => {
+  const owner = await initSeed().createOwner();
+  const org = await owner.createOrg();
+  await org.setFeatureFlag('scim', true);
+  await org.createOIDCIntegration();
+  const accessToken = await org.createOrganizationAccessToken({
+    permissions: ['scim:provision'],
+    resources: { mode: ResourceAssignmentModeType.Granular },
+  });
+  await org.setFeatureFlag('scim', false);
+
+  const scim = createScimTestkit({
+    baseUrl,
+    headers: { Authorization: `Bearer ${accessToken.privateAccessKey}` },
+  });
+  const response = await scim.getResourceTypes({ expectedStatus: 401 });
+
+  expect(response.body).toMatchObject({
+    detail: 'SCIM is not enabled for this organization.',
+  });
+});
+
 describe.concurrent('/Users', () => {
   describe.concurrent('POST', () => {
     test.concurrent('create new user succeeds', async ({ expect }) => {
       const seed = initSeed();
       const owner = await seed.createOwner();
       const org = await owner.createOrg();
+      await org.setFeatureFlag('scim', true);
       const { registerFakeDomain } = await org.createOIDCIntegration();
       const domain = await registerFakeDomain();
       const userEmail = 'marty@' + domain;
@@ -111,6 +134,7 @@ describe.concurrent('/Users', () => {
         const seed = initSeed();
         const owner = await seed.createOwner();
         const org = await owner.createOrg();
+        await org.setFeatureFlag('scim', true);
         const { registerFakeDomain } = await org.createOIDCIntegration();
         const domain = await registerFakeDomain();
         const accessToken = await org.createOrganizationAccessToken({
@@ -145,6 +169,7 @@ describe.concurrent('/Users', () => {
         const seed = initSeed();
         const owner = await seed.createOwner();
         const org = await owner.createOrg();
+        await org.setFeatureFlag('scim', true);
         const { registerFakeDomain } = await org.createOIDCIntegration();
         const domain = await registerFakeDomain();
         const accessToken = await org.createOrganizationAccessToken({
@@ -198,6 +223,7 @@ describe.concurrent('/Users', () => {
       const seed = initSeed();
       const owner = await seed.createOwner();
       const org = await owner.createOrg();
+      await org.setFeatureFlag('scim', true);
       await org.createOIDCIntegration();
       const accessToken = await org.createOrganizationAccessToken({
         permissions: ['scim:provision'],
@@ -241,6 +267,7 @@ describe.concurrent('/Users', () => {
         const seed = initSeed();
         const owner = await seed.createOwner();
         const org = await owner.createOrg();
+        await org.setFeatureFlag('scim', true);
         const { registerFakeDomain } = await org.createOIDCIntegration();
         const domain = await registerFakeDomain();
         const accessToken = await org.createOrganizationAccessToken({
@@ -296,6 +323,7 @@ describe.concurrent('/Users', () => {
       const seed = initSeed();
       const owner = await seed.createOwner();
       const org = await owner.createOrg();
+      await org.setFeatureFlag('scim', true);
       const { registerFakeDomain } = await org.createOIDCIntegration();
       const domain = await registerFakeDomain();
       const accessToken = await org.createOrganizationAccessToken({
@@ -352,6 +380,7 @@ describe.concurrent('/Users', () => {
         const seed = initSeed();
         const owner = await seed.createOwner();
         const org = await owner.createOrg();
+        await org.setFeatureFlag('scim', true);
         const { registerFakeDomain } = await org.createOIDCIntegration();
         const domain = await registerFakeDomain();
         const accessToken = await org.createOrganizationAccessToken({
@@ -396,6 +425,7 @@ describe.concurrent('/Users', () => {
       const seed = initSeed();
       const owner = await seed.createOwner();
       const org = await owner.createOrg();
+      await org.setFeatureFlag('scim', true);
       const { registerFakeDomain } = await org.createOIDCIntegration();
       const domain = await registerFakeDomain();
       const accessToken = await org.createOrganizationAccessToken({
@@ -454,6 +484,7 @@ describe.concurrent('/Users', () => {
       const seed = initSeed();
       const owner = await seed.createOwner();
       const org = await owner.createOrg();
+      await org.setFeatureFlag('scim', true);
       const { registerFakeDomain } = await org.createOIDCIntegration();
       const domain = await registerFakeDomain();
       const accessToken = await org.createOrganizationAccessToken({
@@ -503,6 +534,7 @@ describe.concurrent('/Users', () => {
       const seed = initSeed();
       const owner = await seed.createOwner();
       const org = await owner.createOrg();
+      await org.setFeatureFlag('scim', true);
       const { registerFakeDomain } = await org.createOIDCIntegration();
       const domain = await registerFakeDomain();
       const accessToken = await org.createOrganizationAccessToken({
@@ -551,6 +583,7 @@ describe.concurrent('/Users', () => {
       const seed = initSeed();
       const owner = await seed.createOwner();
       const org = await owner.createOrg();
+      await org.setFeatureFlag('scim', true);
       const { registerFakeDomain } = await org.createOIDCIntegration();
       const domain = await registerFakeDomain();
       const accessToken = await org.createOrganizationAccessToken({
@@ -586,6 +619,7 @@ describe.concurrent('/Users', () => {
         const seed = initSeed();
         const owner = await seed.createOwner();
         const org = await owner.createOrg();
+        await org.setFeatureFlag('scim', true);
         const { registerFakeDomain } = await org.createOIDCIntegration();
         const domain = await registerFakeDomain();
         const accessToken = await org.createOrganizationAccessToken({
@@ -632,6 +666,7 @@ describe.concurrent('/Users', () => {
       const seed = initSeed();
       const owner = await seed.createOwner();
       const org = await owner.createOrg();
+      await org.setFeatureFlag('scim', true);
       const { registerFakeDomain } = await org.createOIDCIntegration();
       const domain = await registerFakeDomain();
       const accessToken = await org.createOrganizationAccessToken({
@@ -672,6 +707,7 @@ describe.concurrent('/Users', () => {
         const seed = initSeed();
         const owner = await seed.createOwner();
         const org = await owner.createOrg();
+        await org.setFeatureFlag('scim', true);
         const { registerFakeDomain } = await org.createOIDCIntegration();
         const domain = await registerFakeDomain();
         const accessToken = await org.createOrganizationAccessToken({
@@ -722,6 +758,7 @@ describe.concurrent('/Users', () => {
         const seed = initSeed();
         const owner = await seed.createOwner();
         const org = await owner.createOrg();
+        await org.setFeatureFlag('scim', true);
         const { registerFakeDomain } = await org.createOIDCIntegration();
         const domain = await registerFakeDomain();
         const accessToken = await org.createOrganizationAccessToken({
@@ -766,6 +803,7 @@ describe.concurrent('/Users', () => {
       const seed = initSeed();
       const owner = await seed.createOwner();
       const org = await owner.createOrg();
+      await org.setFeatureFlag('scim', true);
       await org.createOIDCIntegration();
       const accessToken = await org.createOrganizationAccessToken({
         permissions: ['scim:provision'],
@@ -798,6 +836,7 @@ describe.concurrent('/Users', () => {
       const seed = initSeed();
       const owner = await seed.createOwner();
       const org = await owner.createOrg();
+      await org.setFeatureFlag('scim', true);
       const oidc = await org.createOIDCIntegration();
       const domain = await oidc.registerFakeDomain();
       const accessToken = await org.createOrganizationAccessToken({
@@ -843,6 +882,7 @@ describe.concurrent('/Users', () => {
       const seed = initSeed();
       const owner = await seed.createOwner();
       const org = await owner.createOrg();
+      await org.setFeatureFlag('scim', true);
       const oidc = await org.createOIDCIntegration();
       const domain = await oidc.registerFakeDomain();
       const accessToken = await org.createOrganizationAccessToken({
@@ -889,6 +929,7 @@ describe.concurrent('/Users', () => {
       const seed = initSeed();
       const owner = await seed.createOwner();
       const org = await owner.createOrg();
+      await org.setFeatureFlag('scim', true);
       const oidc = await org.createOIDCIntegration();
       const domain = await oidc.registerFakeDomain();
       const accessToken = await org.createOrganizationAccessToken({
@@ -936,6 +977,7 @@ describe.concurrent('/Users', () => {
         const seed = initSeed();
         const owner = await seed.createOwner();
         const org = await owner.createOrg();
+        await org.setFeatureFlag('scim', true);
         const { registerFakeDomain } = await org.createOIDCIntegration();
         const firstDomain = await registerFakeDomain();
         const secondDomain = await registerFakeDomain();
@@ -1003,6 +1045,7 @@ describe.concurrent('/Users', () => {
       const seed = initSeed();
       const owner = await seed.createOwner();
       const org = await owner.createOrg();
+      await org.setFeatureFlag('scim', true);
       const { registerFakeDomain } = await org.createOIDCIntegration();
       const domain = await registerFakeDomain();
       const accessToken = await org.createOrganizationAccessToken({
@@ -1055,6 +1098,7 @@ describe.concurrent('/Users', () => {
       const seed = initSeed();
       const owner = await seed.createOwner();
       const org = await owner.createOrg();
+      await org.setFeatureFlag('scim', true);
       const oidc = await org.createOIDCIntegration();
       const domain = await oidc.registerFakeDomain();
       const accessToken = await org.createOrganizationAccessToken({
@@ -1093,6 +1137,7 @@ describe.concurrent('/Users', () => {
       const seed = initSeed();
       const owner = await seed.createOwner();
       const org = await owner.createOrg();
+      await org.setFeatureFlag('scim', true);
       const oidc = await org.createOIDCIntegration();
       const domain = await oidc.registerFakeDomain();
       const accessToken = await org.createOrganizationAccessToken({
@@ -1138,6 +1183,7 @@ describe.concurrent('/Users', () => {
     const seed = initSeed();
     const owner = await seed.createOwner();
     const org = await owner.createOrg();
+    await org.setFeatureFlag('scim', true);
     const oidc = await org.createOIDCIntegration();
     const domain = await oidc.registerFakeDomain();
     const accessToken = await org.createOrganizationAccessToken({
@@ -1194,6 +1240,7 @@ describe.concurrent('/Users', () => {
       const seed = initSeed();
       const owner = await seed.createOwner();
       const org = await owner.createOrg();
+      await org.setFeatureFlag('scim', true);
       const oidc = await org.createOIDCIntegration();
       const domain = await oidc.registerFakeDomain();
       const accessToken = await org.createOrganizationAccessToken({
@@ -1296,6 +1343,7 @@ describe.concurrent('/Users', () => {
       const seed = initSeed();
       const owner = await seed.createOwner();
       const org = await owner.createOrg();
+      await org.setFeatureFlag('scim', true);
       const oidc = await org.createOIDCIntegration();
       const domain = await oidc.registerFakeDomain();
       const accessToken = await org.createOrganizationAccessToken({
@@ -1435,6 +1483,7 @@ describe.concurrent('/Users', () => {
       const seed = initSeed();
       const owner = await seed.createOwner();
       const org = await owner.createOrg();
+      await org.setFeatureFlag('scim', true);
       const oidc = await org.createOIDCIntegration();
       const domain = await oidc.registerFakeDomain();
       const accessToken = await org.createOrganizationAccessToken({
@@ -1512,6 +1561,7 @@ describe.concurrent('/Users', () => {
       const seed = initSeed();
       const owner = await seed.createOwner();
       const org = await owner.createOrg();
+      await org.setFeatureFlag('scim', true);
       const oidc = await org.createOIDCIntegration();
       const domain = await oidc.registerFakeDomain();
       const accessToken = await org.createOrganizationAccessToken({
@@ -1554,6 +1604,7 @@ describe.concurrent('/Users', () => {
       const seed = initSeed();
       const owner = await seed.createOwner();
       const org = await owner.createOrg();
+      await org.setFeatureFlag('scim', true);
       // currenlty this must exist for the endpoint to be functional
       const oidc = await org.createOIDCIntegration();
       const domain = await oidc.registerFakeDomain();
@@ -1632,6 +1683,7 @@ describe.concurrent('/Users', () => {
       const seed = initSeed();
       const owner = await seed.createOwner();
       const org = await owner.createOrg();
+      await org.setFeatureFlag('scim', true);
       // currenlty this must exist for the endpoint to be functional
       const oidc = await org.createOIDCIntegration();
       const domain = await oidc.registerFakeDomain();
@@ -1713,6 +1765,7 @@ describe.concurrent('/Users', () => {
       const seed = initSeed();
       const owner = await seed.createOwner();
       const org = await owner.createOrg();
+      await org.setFeatureFlag('scim', true);
       await org.createOIDCIntegration();
       const accessToken = await org.createOrganizationAccessToken({
         permissions: ['scim:provision'],
@@ -1747,6 +1800,7 @@ describe.concurrent('/Groups', () => {
       const seed = initSeed();
       const owner = await seed.createOwner();
       const org = await owner.createOrg();
+      await org.setFeatureFlag('scim', true);
       // currenlty this must exist for the endpoint to be functional
       await org.createOIDCIntegration();
       const accessToken = await org.createOrganizationAccessToken({
@@ -1786,6 +1840,7 @@ describe.concurrent('/Groups', () => {
         const seed = initSeed();
         const owner = await seed.createOwner();
         const org = await owner.createOrg();
+        await org.setFeatureFlag('scim', true);
         // currenlty this must exist for the endpoint to be functional
         await org.createOIDCIntegration();
         const accessToken = await org.createOrganizationAccessToken({
@@ -1822,6 +1877,7 @@ describe.concurrent('/Groups', () => {
       const seed = initSeed();
       const owner = await seed.createOwner();
       const org = await owner.createOrg();
+      await org.setFeatureFlag('scim', true);
       // currenlty this must exist for the endpoint to be functional
       await org.createOIDCIntegration();
       const accessToken = await org.createOrganizationAccessToken({
@@ -1865,6 +1921,7 @@ describe.concurrent('/Groups', () => {
       const seed = initSeed();
       const owner = await seed.createOwner();
       const org = await owner.createOrg();
+      await org.setFeatureFlag('scim', true);
       // currenlty this must exist for the endpoint to be functional
       await org.createOIDCIntegration();
       const accessToken = await org.createOrganizationAccessToken({
@@ -1910,6 +1967,7 @@ describe.concurrent('/Groups', () => {
       const seed = initSeed();
       const owner = await seed.createOwner();
       const org = await owner.createOrg();
+      await org.setFeatureFlag('scim', true);
       // currenlty this must exist for the endpoint to be functional
       await org.createOIDCIntegration();
       const accessToken = await org.createOrganizationAccessToken({
@@ -1946,6 +2004,7 @@ describe.concurrent('/Groups', () => {
       const seed = initSeed();
       const owner = await seed.createOwner();
       const org = await owner.createOrg();
+      await org.setFeatureFlag('scim', true);
       // currenlty this must exist for the endpoint to be functional
       await org.createOIDCIntegration();
       const accessToken = await org.createOrganizationAccessToken({
@@ -1987,6 +2046,7 @@ describe.concurrent('/Groups', () => {
       const seed = initSeed();
       const owner = await seed.createOwner();
       const org = await owner.createOrg();
+      await org.setFeatureFlag('scim', true);
       // currenlty this must exist for the endpoint to be functional
       await org.createOIDCIntegration();
       const accessToken = await org.createOrganizationAccessToken({
@@ -2027,6 +2087,7 @@ describe.concurrent('/Groups', () => {
       const seed = initSeed();
       const owner = await seed.createOwner();
       const org = await owner.createOrg();
+      await org.setFeatureFlag('scim', true);
       // currenlty this must exist for the endpoint to be functional
       await org.createOIDCIntegration();
       const accessToken = await org.createOrganizationAccessToken({
@@ -2075,6 +2136,7 @@ describe.concurrent('/Groups', () => {
       const seed = initSeed();
       const owner = await seed.createOwner();
       const org = await owner.createOrg();
+      await org.setFeatureFlag('scim', true);
       // currenlty this must exist for the endpoint to be functional
       await org.createOIDCIntegration();
       const accessToken = await org.createOrganizationAccessToken({
@@ -2124,6 +2186,7 @@ describe.concurrent('/Groups', () => {
       const seed = initSeed();
       const owner = await seed.createOwner();
       const org = await owner.createOrg();
+      await org.setFeatureFlag('scim', true);
       // currenlty this must exist for the endpoint to be functional
       await org.createOIDCIntegration();
       const accessToken = await org.createOrganizationAccessToken({
@@ -2183,6 +2246,7 @@ describe.concurrent('/Groups', () => {
       const seed = initSeed();
       const owner = await seed.createOwner();
       const org = await owner.createOrg();
+      await org.setFeatureFlag('scim', true);
       // currenlty this must exist for the endpoint to be functional
       await org.createOIDCIntegration();
       const accessToken = await org.createOrganizationAccessToken({
@@ -2231,6 +2295,7 @@ describe.concurrent('/Groups', () => {
       const seed = initSeed();
       const owner = await seed.createOwner();
       const org = await owner.createOrg();
+      await org.setFeatureFlag('scim', true);
       // currenlty this must exist for the endpoint to be functional
       await org.createOIDCIntegration();
       const accessToken = await org.createOrganizationAccessToken({
@@ -2279,6 +2344,7 @@ describe.concurrent('/Groups', () => {
       const seed = initSeed();
       const owner = await seed.createOwner();
       const org = await owner.createOrg();
+      await org.setFeatureFlag('scim', true);
       // currenlty this must exist for the endpoint to be functional
       await org.createOIDCIntegration();
       const accessToken = await org.createOrganizationAccessToken({
@@ -2338,6 +2404,7 @@ describe.concurrent('/Groups', () => {
       const seed = initSeed();
       const owner = await seed.createOwner();
       const org = await owner.createOrg();
+      await org.setFeatureFlag('scim', true);
       // currenlty this must exist for the endpoint to be functional
       const oidc = await org.createOIDCIntegration();
       const domain = await oidc.registerFakeDomain();
@@ -2403,6 +2470,7 @@ describe.concurrent('/Groups', () => {
       const seed = initSeed();
       const owner = await seed.createOwner();
       const org = await owner.createOrg();
+      await org.setFeatureFlag('scim', true);
       // currenlty this must exist for the endpoint to be functional
       const oidc = await org.createOIDCIntegration();
       const domain = await oidc.registerFakeDomain();
@@ -2474,6 +2542,7 @@ describe.concurrent('/Groups', () => {
       const seed = initSeed();
       const owner = await seed.createOwner();
       const org = await owner.createOrg();
+      await org.setFeatureFlag('scim', true);
       const oidc = await org.createOIDCIntegration();
       const domain = await oidc.registerFakeDomain();
       const accessToken = await org.createOrganizationAccessToken({
@@ -2534,6 +2603,7 @@ describe.concurrent('/Groups', () => {
       const seed = initSeed();
       const owner = await seed.createOwner();
       const org = await owner.createOrg();
+      await org.setFeatureFlag('scim', true);
       // currenlty this must exist for the endpoint to be functional
       const oidc = await org.createOIDCIntegration();
       const domain = await oidc.registerFakeDomain();
@@ -2613,6 +2683,7 @@ describe.concurrent('/Groups', () => {
       const seed = initSeed();
       const owner = await seed.createOwner();
       const org = await owner.createOrg();
+      await org.setFeatureFlag('scim', true);
       const oidc = await org.createOIDCIntegration();
       const domain = await oidc.registerFakeDomain();
       const accessToken = await org.createOrganizationAccessToken({
@@ -2668,6 +2739,7 @@ describe.concurrent('/Groups', () => {
       const seed = initSeed();
       const owner = await seed.createOwner();
       const org = await owner.createOrg();
+      await org.setFeatureFlag('scim', true);
       const oidc = await org.createOIDCIntegration();
       const domain = await oidc.registerFakeDomain();
       const accessToken = await org.createOrganizationAccessToken({
@@ -2747,6 +2819,7 @@ describe.concurrent('/Groups', () => {
       const seed = initSeed();
       const owner = await seed.createOwner();
       const org = await owner.createOrg();
+      await org.setFeatureFlag('scim', true);
       // currenlty this must exist for the endpoint to be functional
       await org.createOIDCIntegration();
       const accessToken = await org.createOrganizationAccessToken({
@@ -2766,6 +2839,7 @@ describe.concurrent('/Groups', () => {
       const seed = initSeed();
       const owner = await seed.createOwner();
       const org = await owner.createOrg();
+      await org.setFeatureFlag('scim', true);
       // currenlty this must exist for the endpoint to be functional
       await org.createOIDCIntegration();
       const accessToken = await org.createOrganizationAccessToken({
@@ -2794,6 +2868,7 @@ describe.concurrent('/Groups', () => {
       const seed = initSeed();
       const owner = await seed.createOwner();
       const org = await owner.createOrg();
+      await org.setFeatureFlag('scim', true);
       const oidc = await org.createOIDCIntegration();
       const domain = await oidc.registerFakeDomain();
       const accessToken = await org.createOrganizationAccessToken({
@@ -2837,6 +2912,7 @@ describe.concurrent('/Groups', () => {
       const seed = initSeed();
       const owner = await seed.createOwner();
       const org = await owner.createOrg();
+      await org.setFeatureFlag('scim', true);
       // currenlty this must exist for the endpoint to be functional
       await org.createOIDCIntegration();
       const accessToken = await org.createOrganizationAccessToken({
@@ -2973,6 +3049,7 @@ describe.concurrent('/Groups', () => {
       const seed = initSeed();
       const owner = await seed.createOwner();
       const org = await owner.createOrg();
+      await org.setFeatureFlag('scim', true);
       // currenlty this must exist for the endpoint to be functional
       await org.createOIDCIntegration();
       const accessToken = await org.createOrganizationAccessToken({
@@ -3048,6 +3125,7 @@ describe.concurrent('/Groups', () => {
       const seed = initSeed();
       const owner = await seed.createOwner();
       const org = await owner.createOrg();
+      await org.setFeatureFlag('scim', true);
       // currenlty this must exist for the endpoint to be functional
       await org.createOIDCIntegration();
       const accessToken = await org.createOrganizationAccessToken({
@@ -3123,6 +3201,7 @@ describe.concurrent('/Groups', () => {
       const seed = initSeed();
       const owner = await seed.createOwner();
       const org = await owner.createOrg();
+      await org.setFeatureFlag('scim', true);
       // currenlty this must exist for the endpoint to be functional
       await org.createOIDCIntegration();
       const accessToken = await org.createOrganizationAccessToken({
@@ -3202,6 +3281,7 @@ describe.concurrent('/Groups', () => {
       const seed = initSeed();
       const owner = await seed.createOwner();
       const org = await owner.createOrg();
+      await org.setFeatureFlag('scim', true);
       // currenlty this must exist for the endpoint to be functional
       await org.createOIDCIntegration();
       const accessToken = await org.createOrganizationAccessToken({
@@ -3241,6 +3321,7 @@ describe.concurrent('provider flows', () => {
       const seed = initSeed();
       const owner = await seed.createOwner();
       const org = await owner.createOrg();
+      await org.setFeatureFlag('scim', true);
       // currenlty this must exist for the endpoint to be functional
       await org.createOIDCIntegration();
       const accessToken = await org.createOrganizationAccessToken({
@@ -3301,6 +3382,7 @@ describe.concurrent('provider flows', () => {
       const seed = initSeed();
       const owner = await seed.createOwner();
       const org = await owner.createOrg();
+      await org.setFeatureFlag('scim', true);
       // currenlty this must exist for the endpoint to be functional
       const oidc = await org.createOIDCIntegration();
       const domain = await oidc.registerFakeDomain();
@@ -3387,6 +3469,7 @@ describe.concurrent('provider flows', () => {
         const seed = initSeed();
         const owner = await seed.createOwner();
         const org = await owner.createOrg();
+        await org.setFeatureFlag('scim', true);
         // currenlty this must exist for the endpoint to be functional
         const oidc = await org.createOIDCIntegration();
         const domain = await oidc.registerFakeDomain();
@@ -3497,6 +3580,7 @@ describe.concurrent('provider flows', () => {
       const seed = initSeed();
       const owner = await seed.createOwner();
       const org = await owner.createOrg();
+      await org.setFeatureFlag('scim', true);
       // currenlty this must exist for the endpoint to be functional
       await org.createOIDCIntegration();
       const accessToken = await org.createOrganizationAccessToken({
@@ -3548,6 +3632,7 @@ test.concurrent(
     const seed = initSeed();
     const owner = await seed.createOwner();
     const org = await owner.createOrg();
+    await org.setFeatureFlag('scim', true);
     const { pool } = await seed.createDbConnection();
     const { oidcIntegration, registerFakeDomain } = await org.createOIDCIntegration();
     const domain = await registerFakeDomain();
@@ -3605,6 +3690,7 @@ test.concurrent(
     const seed = initSeed();
     const owner = await seed.createOwner();
     const org = await owner.createOrg();
+    await org.setFeatureFlag('scim', true);
     const { pool } = await seed.createDbConnection();
     const { oidcIntegration, registerFakeDomain } = await org.createOIDCIntegration();
     const domain = await registerFakeDomain();
@@ -3681,6 +3767,7 @@ test.concurrent('user cannot login via OIDC if SCIM user provisioning is require
   const seed = initSeed();
   const owner = await seed.createOwner();
   const org = await owner.createOrg();
+  await org.setFeatureFlag('scim', true);
   const oidc = await org.createOIDCIntegration();
   const domain = await oidc.registerFakeDomain();
   const email = 'marty.mcfly@' + domain;
@@ -3741,6 +3828,7 @@ test.concurrent(
 
     const owner = await seed.createOwner(true, ownerEmail);
     const org = await owner.createOrg();
+    await org.setFeatureFlag('scim', true);
     const oidcIntegration = await org.createOIDCIntegration();
     await oidcIntegration.registerFakeDomain(domain);
     await oidcIntegration.createMockServerAndUpdateIntegrationEndpoints({
@@ -3782,6 +3870,7 @@ test.concurrent(
     const seed = initSeed();
     const owner = await seed.createOwner();
     const org = await owner.createOrg();
+    await org.setFeatureFlag('scim', true);
     const oidc = await org.createOIDCIntegration();
     const oidcMock = await oidc.createMockServerAndUpdateIntegrationEndpoints();
     const domain = await oidc.registerFakeDomain();
@@ -3939,6 +4028,7 @@ test.concurrent('disabled user is revoked access', async ({ expect }) => {
   const seed = initSeed();
   const owner = await seed.createOwner();
   const org = await owner.createOrg();
+  await org.setFeatureFlag('scim', true);
   const oidc = await org.createOIDCIntegration();
   const oidcMock = await oidc.createMockServerAndUpdateIntegrationEndpoints();
   const domain = await oidc.registerFakeDomain();
@@ -4060,6 +4150,7 @@ describe('Personal Access Tokens', () => {
       const seed = initSeed();
       const owner = await seed.createOwner();
       const org = await owner.createOrg();
+      await org.setFeatureFlag('scim', true);
       const project = await org.createProject();
       const oidc = await org.createOIDCIntegration();
       const oidcMock = await oidc.createMockServerAndUpdateIntegrationEndpoints();
@@ -4282,6 +4373,7 @@ describe('Personal Access Tokens', () => {
       const seed = initSeed();
       const owner = await seed.createOwner();
       const org = await owner.createOrg();
+      await org.setFeatureFlag('scim', true);
       const oidc = await org.createOIDCIntegration();
       const oidcMock = await oidc.createMockServerAndUpdateIntegrationEndpoints();
       const domain = await oidc.registerFakeDomain();
@@ -4441,6 +4533,7 @@ describe('provisioned user jail', () => {
       const seed = initSeed();
       const owner = await seed.createOwner();
       const provisioningOrg = await owner.createOrg();
+      await provisioningOrg.setFeatureFlag('scim', true);
       const provisioningOIDC = await provisioningOrg.createOIDCIntegration();
       const domain = await provisioningOIDC.registerFakeDomain();
       const accessToken = await provisioningOrg.createOrganizationAccessToken({
@@ -4520,6 +4613,7 @@ describe('provisioned user jail', () => {
       const seed = initSeed();
       const owner = await seed.createOwner();
       const org = await owner.createOrg();
+      await org.setFeatureFlag('scim', true);
       const { oidcIntegration, registerFakeDomain } = await org.createOIDCIntegration();
       const domain = await registerFakeDomain();
       const accessToken = await org.createOrganizationAccessToken({
@@ -4570,6 +4664,7 @@ describe('provisioned user jail', () => {
       const seed = initSeed();
       const owner = await seed.createOwner();
       const org = await owner.createOrg();
+      await org.setFeatureFlag('scim', true);
       const oidc = await org.createOIDCIntegration();
       const oidcMock = await oidc.createMockServerAndUpdateIntegrationEndpoints();
       const domain = await oidc.registerFakeDomain();
@@ -4614,6 +4709,7 @@ describe('provisioned user jail', () => {
     const seed = initSeed();
     const owner = await seed.createOwner();
     const org = await owner.createOrg();
+    await org.setFeatureFlag('scim', true);
     const oidc = await org.createOIDCIntegration();
     const oidcMock = await oidc.createMockServerAndUpdateIntegrationEndpoints();
     const domain = await oidc.registerFakeDomain();
@@ -4662,6 +4758,7 @@ describe('provisioned user jail', () => {
     const seed = initSeed();
     const owner = await seed.createOwner();
     const org = await owner.createOrg();
+    await org.setFeatureFlag('scim', true);
     const oidc = await org.createOIDCIntegration();
     const oidcMock = await oidc.createMockServerAndUpdateIntegrationEndpoints();
     const domain = await oidc.registerFakeDomain();
@@ -4714,6 +4811,7 @@ describe('provisioned user jail', () => {
       const seed = initSeed();
       const provisioningOwner = await seed.createOwner();
       const provisioningOrg = await provisioningOwner.createOrg();
+      await provisioningOrg.setFeatureFlag('scim', true);
       const oidc = await provisioningOrg.createOIDCIntegration();
       const oidcMock = await oidc.createMockServerAndUpdateIntegrationEndpoints();
       const domain = await oidc.registerFakeDomain();
@@ -4783,6 +4881,7 @@ describe('provisioned user jail', () => {
       const seed = initSeed();
       const owner = await seed.createOwner();
       const org = await owner.createOrg();
+      await org.setFeatureFlag('scim', true);
       const oidc = await org.createOIDCIntegration();
       const domain = await oidc.registerFakeDomain();
       const accessToken = await org.createOrganizationAccessToken({
@@ -4822,6 +4921,7 @@ describe('provisioned user jail', () => {
     const seed = initSeed();
     const owner = await seed.createOwner();
     const org = await owner.createOrg();
+    await org.setFeatureFlag('scim', true);
     const oidc = await org.createOIDCIntegration();
     const domain = await oidc.registerFakeDomain();
     const accessToken = await org.createOrganizationAccessToken({
@@ -4868,6 +4968,7 @@ describe('provisioned user jail', () => {
       const seed = initSeed();
       const owner = await seed.createOwner();
       const org = await owner.createOrg();
+      await org.setFeatureFlag('scim', true);
       const oidc = await org.createOIDCIntegration();
       const domain = await oidc.registerFakeDomain();
       const accessToken = await org.createOrganizationAccessToken({
@@ -4920,6 +5021,7 @@ describe.concurrent('audit logs', () => {
     const seed = initSeed();
     const owner = await seed.createOwner();
     const org = await owner.createOrg();
+    await org.setFeatureFlag('scim', true);
     const { registerFakeDomain } = await org.createOIDCIntegration();
     const domain = await registerFakeDomain();
     const accessToken = await org.createOrganizationAccessToken({
@@ -4965,6 +5067,7 @@ test.concurrent('member:modify does not grant access to SCIM endpoints', async (
   const seed = initSeed();
   const owner = await seed.createOwner();
   const org = await owner.createOrg();
+  await org.setFeatureFlag('scim', true);
   await org.createOIDCIntegration();
   const accessToken = await org.createOrganizationAccessToken({
     permissions: ['member:modify'],

@@ -657,6 +657,28 @@ describe('restrictions', () => {
   }
 
   test.concurrent(
+    'SCIM provisioning requires the organization feature flag',
+    async ({ expect }) => {
+      const { ownerToken, createOrg } = await initSeed().createOwner();
+      const { organization } = await createOrg();
+      const oidcIntegrationId = await configureOIDC({
+        ownerToken,
+        organizationId: organization.id,
+      });
+
+      const result = await updateOIDCRestrictions(
+        { oidcIntegrationId, userProvisioningRequired: true },
+        ownerToken,
+      ).then(r => r.expectNoGraphQLErrors());
+
+      expect(result.updateOIDCRestrictions).toEqual({
+        ok: null,
+        error: { message: 'SCIM provisioning is disabled.' },
+      });
+    },
+  );
+
+  test.concurrent(
     'users authorized with non-OIDC method cannot join an organization (default)',
     async ({ expect }) => {
       const seed = initSeed();

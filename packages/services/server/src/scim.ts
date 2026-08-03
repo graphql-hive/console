@@ -255,16 +255,19 @@ export const createSCIMPlugin =
         };
       }
 
-      const oidcIntegration = await storage.getOIDCIntegrationForOrganization({
-        organizationId: actor.organizationAccessToken.organizationId,
-      });
+      const [organization, oidcIntegration] = await Promise.all([
+        storage.getOrganization({ organizationId: actor.organizationAccessToken.organizationId }),
+        storage.getOIDCIntegrationForOrganization({
+          organizationId: actor.organizationAccessToken.organizationId,
+        }),
+      ]);
 
-      if (!oidcIntegration) {
+      if (!organization.featureFlags.scim || !oidcIntegration) {
         return {
           type: 'error' as const,
           error: createSCIMError({
             status: 401,
-            detail: 'Invalid organization configuration. No OIDC provider is connected.',
+            detail: 'SCIM is not enabled for this organization.',
           }),
         };
       }

@@ -1649,11 +1649,14 @@ export async function registerSupertokensAtHome(
           oidcIntegrationId: oidcIntegration.id,
           externalId: externalUserId,
         });
+        const organization = await storage.getOrganization({
+          organizationId: oidcIntegration.linkedOrganizationId,
+        });
 
         if (!supertokenUser) {
           req.log.debug('no existing user found.');
 
-          if (oidcIntegration.userProvisioningRequired) {
+          if (organization.featureFlags.scim && oidcIntegration.userProvisioningRequired) {
             req.log.debug('oidc integration settings requires user being provisioned.');
             return rep.status(200).send({
               status: 'SIGN_IN_UP_NOT_ALLOWED',
@@ -1673,17 +1676,33 @@ export async function registerSupertokensAtHome(
           superTokensUserId: supertokenUser.userId,
         });
 
-        if (maybeHiveUser?.deactivatedAt) {
-          req.log.debug('user is deactivated.');
-          return rep.status(200).send({
-            status: 'SIGN_IN_UP_NOT_ALLOWED',
-            reason: 'Sign in failed. Please contact your organization administrator.',
-          });
+        if (organization.featureFlags.scim) {
+          if (maybeHiveUser?.deactivatedAt) {
+            req.log.debug('user is deactivated.');
+            return rep.status(200).send({
+              status: 'SIGN_IN_UP_NOT_ALLOWED',
+              reason: 'Sign in failed. Please contact your organization administrator.',
+            });
+          }
+
+          if (
+            oidcIntegration.userProvisioningRequired &&
+            (!maybeHiveUser ||
+              (maybeHiveUser.provisionedByOrganizationId !== organization.id &&
+                // the owner always bypasses access restrictions
+                organization.ownerId !== maybeHiveUser.id))
+          ) {
+            req.log.debug('oidc integration settings requires user being provisioned.');
+            return rep.status(200).send({
+              status: 'SIGN_IN_UP_NOT_ALLOWED',
+              reason: 'Sign in failed. Please contact your organization administrator.',
+            });
+          }
         }
 
         // only perform these updates if the user is not provisioned
         // if the user is provisioned the SCIM provider is the source of truth for all attributes
-        if (!maybeHiveUser?.provisionedByOrganizationId) {
+        if (!organization.featureFlags.scim || !maybeHiveUser?.provisionedByOrganizationId) {
           if (supertokenUser.email !== email.data) {
             req.log.debug('providers email has changed. Update record.');
             supertokenUser = await supertokensStore.updateOIDCUserEmail({
@@ -1698,33 +1717,35 @@ export async function registerSupertokensAtHome(
               });
             }
           }
-        }
 
-        req.log.debug('supertokens user provisioned. ensure hive user exists');
-
-        const ensureUserExists = await storage.ensureUserExists({
-          superTokensUserId: supertokenUser.userId,
-          // make sure we are not updating the email when the user was provisioned
-          email: maybeHiveUser?.provisionedByOrganizationId ? maybeHiveUser.email : email.data,
-          firstName: null,
-          lastName: null,
-          // make sure that if the user was provisioned we do not apply the constraint for "require oidc integration"
-          oidcIntegration: maybeHiveUser?.provisionedByOrganizationId
-            ? null
-            : {
-                id: oidcIntegration.id,
-              },
-        });
-
-        if (!ensureUserExists.ok) {
-          req.log.debug('creating hive user is not allowed. Reason: %s', ensureUserExists.reason);
-          return rep.status(200).send({
-            status: 'SIGN_IN_UP_NOT_ALLOWED',
-            reason: 'Sign in not allowed.',
+          req.log.debug('supertokens user provisioned. ensure hive user exists');
+          const ensureUserExists = await storage.ensureUserExists({
+            superTokensUserId: supertokenUser.userId,
+            // make sure we are not updating the email when the user was provisioned
+            email: maybeHiveUser?.provisionedByOrganizationId ? maybeHiveUser.email : email.data,
+            firstName: null,
+            lastName: null,
+            // make sure that if the user was provisioned we do not apply the constraint for "require oidc integration"
+            oidcIntegration: maybeHiveUser?.provisionedByOrganizationId
+              ? null
+              : {
+                  id: oidcIntegration.id,
+                },
           });
+
+          if (!ensureUserExists.ok) {
+            req.log.debug('creating hive user is not allowed. Reason: %s', ensureUserExists.reason);
+            return rep.status(200).send({
+              status: 'SIGN_IN_UP_NOT_ALLOWED',
+              reason: 'Sign in not allowed.',
+            });
+          }
+          hiveUser = ensureUserExists.user;
+          supertokensUser = supertokenUser;
+        } else {
+          hiveUser = maybeHiveUser;
+          supertokensUser = supertokenUser;
         }
-        hiveUser = ensureUserExists.user;
-        supertokensUser = supertokenUser;
       } else {
         return rep.status(200).send({
           status: 'SIGN_IN_UP_NOT_ALLOWED',

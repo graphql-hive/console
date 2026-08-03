@@ -3,7 +3,7 @@ import { Inject, Injectable, Scope } from 'graphql-modules';
 import zod from 'zod';
 import { maskToken } from '@hive/service-common';
 import * as GraphQLSchema from '../../../__generated__/types';
-import { OIDCIntegration } from '../../../shared/entities';
+import { OIDCIntegration, Organization } from '../../../shared/entities';
 import { HiveError } from '../../../shared/errors';
 import { AuditLogRecorder } from '../../audit-logs/providers/audit-log-recorder';
 import { Session } from '../../auth/lib/authz';
@@ -13,8 +13,8 @@ import { CryptoProvider } from '../../shared/providers/crypto';
 import { Logger } from '../../shared/providers/logger';
 import { PUB_SUB_CONFIG, type HivePubSub } from '../../shared/providers/pub-sub';
 import { Storage } from '../../shared/providers/storage';
+import { OIDCIntegrationConfig } from './oidc-integration-config';
 import { OIDCIntegrationDomain, OIDCIntegrationStore } from './oidc-integration.store';
-import { OIDC_INTEGRATIONS_ENABLED } from './tokens';
 
 const dnsList = [
   // Google
@@ -38,7 +38,7 @@ export class OIDCIntegrationsProvider {
     private crypto: CryptoProvider,
     private auditLog: AuditLogRecorder,
     @Inject(PUB_SUB_CONFIG) private pubSub: HivePubSub,
-    @Inject(OIDC_INTEGRATIONS_ENABLED) private enabled: boolean,
+    private oidcIntegrationConfig: OIDCIntegrationConfig,
     private session: Session,
     private resourceAssignments: ResourceAssignments,
     private oidcIntegrationStore: OIDCIntegrationStore,
@@ -47,7 +47,7 @@ export class OIDCIntegrationsProvider {
   }
 
   isEnabled() {
-    return this.enabled;
+    return this.oidcIntegrationConfig.isEnabled;
   }
 
   async canViewerManageIntegrationForOrganization(organizationId: string) {
@@ -62,6 +62,13 @@ export class OIDCIntegrationsProvider {
         organizationId,
       },
     });
+  }
+
+  async canViewerManageSCIMForOrganization(organization: Organization) {
+    return (
+      (await this.canViewerManageIntegrationForOrganization(organization.id)) &&
+      (organization.featureFlags.scim || this.oidcIntegrationConfig.isSCIMEnabled)
+    );
   }
 
   async getOIDCIntegrationForOrganization(args: {
@@ -415,6 +422,19 @@ export class OIDCIntegrationsProvider {
         organizationId: oidcIntegration.linkedOrganizationId,
       },
     });
+
+    if (args.userProvisioningRequired === true) {
+      const organization = await this.storage.getOrganization({
+        organizationId: oidcIntegration.linkedOrganizationId,
+      });
+
+      if (!organization.featureFlags.scim) {
+        return {
+          type: 'error',
+          message: 'SCIM provisioning is disabled.',
+        } as const;
+      }
+    }
 
     return {
       type: 'ok',

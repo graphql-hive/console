@@ -1000,7 +1000,8 @@ export class OrganizationAccessTokens {
     return (id: Permission) =>
       (!isAppDeploymentsEnabled && id.startsWith('appDeployment:')) ||
       (!isOTELTracingEnabled && id.startsWith('traces:')) ||
-      (!isSchemaProposalsEnabled && id.startsWith('schemaProposal:'))
+      (!isSchemaProposalsEnabled && id.startsWith('schemaProposal:')) ||
+      (!organization.featureFlags.scim && id.startsWith('scim:provision'))
         ? false
         : true;
   }

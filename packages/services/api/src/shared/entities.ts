@@ -158,6 +158,7 @@ export interface Organization {
     otelTracing: boolean;
     schemaProposals: boolean;
     metricAlertRules: boolean;
+    scim: boolean;
   };
   zendeskId: string | null;
   /** ID of the user that owns the organization */

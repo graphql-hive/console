@@ -4126,6 +4126,8 @@ const FeatureFlagsModel = z
     schemaProposals: z.boolean().default(false),
     /** whether metric alert rules are enabled for the given organization */
     metricAlertRules: z.boolean().default(false),
+    /** whether SCIM provisioning is enabled for the given organization */
+    scim: z.boolean().default(false),
   })
   .optional()
   .nullable()
@@ -4138,6 +4140,7 @@ const FeatureFlagsModel = z
         otelTracing: false,
         schemaProposals: false,
         metricAlertRules: false,
+        scim: false,
       },
   );
 

@@ -19,6 +19,7 @@ import { AccessTokenKeyContainer } from '@hive/api/modules/auth/lib/supertokens-
 import { EmailVerification } from '@hive/api/modules/auth/providers/email-verification';
 import { OAuthCache } from '@hive/api/modules/auth/providers/oauth-cache';
 import { createDefaultCredentialProvider } from '@hive/api/modules/cdn/providers/aws';
+import { OIDCIntegrationConfig } from '@hive/api/modules/oidc-integrations/providers/oidc-integration-config';
 import { OIDCIntegrationStore } from '@hive/api/modules/oidc-integrations/providers/oidc-integration.store';
 import { RedisRateLimiter } from '@hive/api/modules/shared/providers/redis-rate-limiter';
 import { TargetsByIdCache } from '@hive/api/modules/target/providers/targets-by-id-cache';
@@ -381,7 +382,7 @@ export async function main() {
             },
           }
         : {},
-      organizationOIDC: env.organizationOIDC,
+      oidcIntegrationConfig: new OIDCIntegrationConfig(env.organizationOIDC, env.organizationSCIM),
       supportConfig: env.zendeskSupport,
       pubSub,
       appDeploymentsEnabled: env.featureFlags.appDeploymentsEnabled,

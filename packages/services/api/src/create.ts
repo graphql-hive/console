@@ -28,7 +28,7 @@ import {
 } from './modules/integrations/providers/github-integration-manager';
 import { labModule } from './modules/lab';
 import { oidcIntegrationsModule } from './modules/oidc-integrations';
-import { OIDC_INTEGRATIONS_ENABLED } from './modules/oidc-integrations/providers/tokens';
+import { OIDCIntegrationConfig } from './modules/oidc-integrations/providers/oidc-integration-config';
 import { operationsModule } from './modules/operations';
 import { CLICKHOUSE_CONFIG, ClickHouseConfig } from './modules/operations/providers/tokens';
 import { OTEL_TRACING_ENABLED } from './modules/operations/providers/traces';
@@ -114,7 +114,7 @@ export function createRegistry({
   encryptionSecret,
   schemaConfig,
   supportConfig,
-  organizationOIDC,
+  oidcIntegrationConfig,
   pubSub,
   appDeploymentsEnabled,
   schemaProposalsEnabled,
@@ -157,7 +157,7 @@ export function createRegistry({
   } | null;
   schemaConfig: SchemaModuleConfig;
   supportConfig: SupportConfig | null;
-  organizationOIDC: boolean;
+  oidcIntegrationConfig: OIDCIntegrationConfig;
   pubSub: HivePubSub;
   appDeploymentsEnabled: boolean;
   schemaProposalsEnabled: boolean;
@@ -265,8 +265,8 @@ export function createRegistry({
       scope: Scope.Singleton,
     },
     {
-      provide: OIDC_INTEGRATIONS_ENABLED,
-      useValue: organizationOIDC,
+      provide: OIDCIntegrationConfig,
+      useValue: oidcIntegrationConfig,
       scope: Scope.Singleton,
     },
     {

@@ -630,6 +630,7 @@ const OIDCAccessSettings_OrganizationFragment = graphql(`
         }
       }
     }
+    viewerCanManageSCIM
     ...OIDCDefaultResourceSelector_OrganizationFragment
   }
 `);
@@ -652,20 +653,22 @@ function OIDCAccessSettings(props: {
     props.oidcIntegration,
   );
   const isAdmin = organization?.me?.role.name === 'Admin';
+  const isSCIMProvisioningEnabled =
+    organization.viewerCanManageSCIM && oidcIntegration.userProvisioningRequired;
 
   return (
     <div>
       <Heading>User Provisioning</Heading>
       <div className="mt-2 space-y-4 rounded-lg border p-6">
         <RadioGroup
-          value={oidcIntegration.userProvisioningRequired ? 'scim' : 'oidc'}
+          value={isSCIMProvisioningEnabled ? 'scim' : 'oidc'}
           onValueChange={value =>
             props.onRestrictionChange('userProvisioningRequired', value === 'scim' ? true : false)
           }
           className="flex gap-4"
         >
           <Card
-            variant={!oidcIntegration.userProvisioningRequired ? 'selected' : 'selectable'}
+            variant={!isSCIMProvisioningEnabled ? 'selected' : 'selectable'}
             onClick={() => props.onRestrictionChange('userProvisioningRequired', false)}
           >
             <CardContent variant="selection">
@@ -682,25 +685,27 @@ function OIDCAccessSettings(props: {
             </CardContent>
           </Card>
 
-          <Card
-            variant={oidcIntegration.userProvisioningRequired ? 'selected' : 'selectable'}
-            onClick={() => props.onRestrictionChange('userProvisioningRequired', true)}
-          >
-            <CardContent variant="selection">
-              <RadioGroupItem value="scim" id="scim-mode" className="mt-0.5" />
-              <div className="flex-1">
-                <Label htmlFor="scim-mode" className="cursor-pointer text-base font-medium">
-                  Managed via SCIM
-                </Label>
-                <p className="mt-1 text-sm">
-                  Users and groups are synced via SCIM. Roles and permissions are assigned to groups
-                  via role mappings.
-                </p>
-              </div>
-            </CardContent>
-          </Card>
+          {organization.viewerCanManageSCIM ? (
+            <Card
+              variant={isSCIMProvisioningEnabled ? 'selected' : 'selectable'}
+              onClick={() => props.onRestrictionChange('userProvisioningRequired', true)}
+            >
+              <CardContent variant="selection">
+                <RadioGroupItem value="scim" id="scim-mode" className="mt-0.5" />
+                <div className="flex-1">
+                  <Label htmlFor="scim-mode" className="cursor-pointer text-base font-medium">
+                    Managed via SCIM
+                  </Label>
+                  <p className="mt-1 text-sm">
+                    Users and groups are synced via SCIM. Roles and permissions are assigned to
+                    groups via role mappings.
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+          ) : null}
         </RadioGroup>
-        {oidcIntegration.userProvisioningRequired ? (
+        {isSCIMProvisioningEnabled ? (
           <>
             <Card>
               <CardHeader>
@@ -719,16 +724,6 @@ function OIDCAccessSettings(props: {
                         </span>
                       </p>
                     </div>
-                    <div>
-                      {/*<TooltipProvider>
-                        <Tooltip>
-                          <TooltipTrigger>
-                            <Switch checked disabled />
-                          </TooltipTrigger>
-                          <TooltipContent className="text-xs">Enabled by default</TooltipContent>
-                        </Tooltip>
-                      </TooltipProvider>*/}
-                    </div>
                   </div>
                   <div className="flex items-center justify-between space-x-4">
                     <div className="flex flex-col space-y-1 text-sm font-medium leading-none">
@@ -736,16 +731,6 @@ function OIDCAccessSettings(props: {
                       <p className="text-neutral-10 max-w-[500px] text-xs font-normal leading-snug">
                         Groups are provisioned and updated via SCIM.
                       </p>
-                    </div>
-                    <div>
-                      {/*<TooltipProvider>
-                        <Tooltip>
-                          <TooltipTrigger>
-                            <Switch checked disabled />
-                          </TooltipTrigger>
-                          <TooltipContent className="text-xs">Enabled by default</TooltipContent>
-                        </Tooltip>
-                      </TooltipProvider>*/}
                     </div>
                   </div>
                   <div className="flex items-center justify-between space-x-4">
@@ -755,16 +740,6 @@ function OIDCAccessSettings(props: {
                         Users are provisioned and updated via SCIM.
                       </p>
                     </div>
-                    <div>
-                      {/*<TooltipProvider>
-                        <Tooltip>
-                          <TooltipTrigger>
-                            <Switch checked disabled />
-                          </TooltipTrigger>
-                          <TooltipContent className="text-xs">Enabled by default</TooltipContent>
-                        </Tooltip>
-                      </TooltipProvider>*/}
-                    </div>
                   </div>
                   <div className="flex items-center justify-between space-x-4">
                     <div className="flex flex-col space-y-1 text-sm font-medium leading-none">
@@ -772,16 +747,6 @@ function OIDCAccessSettings(props: {
                       <p className="text-neutral-10 max-w-[500px] text-xs font-normal leading-snug">
                         Assign role mappings to groups to grant permissions to group members.
                       </p>
-                    </div>
-                    <div>
-                      {/*<TooltipProvider>
-                        <Tooltip>
-                          <TooltipTrigger>
-                            <Switch checked disabled />
-                          </TooltipTrigger>
-                          <TooltipContent className="text-xs">Enabled by default</TooltipContent>
-                        </Tooltip>
-                      </TooltipProvider>*/}
                     </div>
                   </div>
                 </div>
