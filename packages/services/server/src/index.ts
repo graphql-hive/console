@@ -6,8 +6,9 @@ import type { FastifyCorsOptionsDelegateCallback } from '@fastify/cors';
 import 'reflect-metadata';
 import formDataPlugin from '@fastify/formbody';
 import {
+  ClickHouse,
   createRegistry,
-  CryptoProvider,
+  HttpClient,
   LogFn,
   Logger,
   OrganizationMemberRoles,
@@ -17,6 +18,7 @@ import { AccessTokenKeyContainer } from '@hive/api/modules/auth/lib/supertokens-
 import { EmailVerification } from '@hive/api/modules/auth/providers/email-verification';
 import { OAuthCache } from '@hive/api/modules/auth/providers/oauth-cache';
 import { createDefaultCredentialProvider } from '@hive/api/modules/cdn/providers/aws';
+import { OIDCIntegrationConfig } from '@hive/api/modules/oidc-integrations/providers/oidc-integration-config';
 import { OIDCIntegrationStore } from '@hive/api/modules/oidc-integrations/providers/oidc-integration.store';
 import { RedisRateLimiter } from '@hive/api/modules/shared/providers/redis-rate-limiter';
 import { TargetsByIdCache } from '@hive/api/modules/target/providers/targets-by-id-cache';
@@ -32,6 +34,7 @@ import {
   configureTracing,
   createRedisClient,
   createServer,
+  Encryptor,
   generateRdsIamAuthToken,
   registerShutdown,
   registerTRPC,
@@ -58,6 +61,7 @@ import { graphqlHandler } from './graphql-handler';
 import { clickHouseElapsedDuration, clickHouseReadDuration } from './metrics';
 import { createOtelAuthEndpoint } from './otel-auth-endpoint';
 import { createPublicGraphQLHandler } from './public-graphql-handler';
+import { createSCIMPlugin } from './scim';
 import { registerSupertokensAtHome } from './supertokens-at-home';
 import { WorkloadIdentityFederationProvider } from './workload-identity-federation';
 
@@ -378,7 +382,7 @@ export async function main() {
             },
           }
         : {},
-      organizationOIDC: env.organizationOIDC,
+      oidcIntegrationConfig: new OIDCIntegrationConfig(env.organizationOIDC, env.organizationSCIM),
       supportConfig: env.zendeskSupport,
       pubSub,
       appDeploymentsEnabled: env.featureFlags.appDeploymentsEnabled,
@@ -473,7 +477,7 @@ export async function main() {
       operationName: 'readiness',
     });
 
-    const crypto = new CryptoProvider(env.encryptionSecret);
+    const crypto = new Encryptor(env.encryptionSecret);
 
     function broadcastLog(oidcId: string, message: string) {
       pubSub.publish('oidcIntegrationLogs', oidcId, {
@@ -558,8 +562,9 @@ export async function main() {
     await registerSupertokensAtHome(
       server,
       storage,
+      registry.injector.get(OIDCIntegrationStore),
       registry.injector.get(TaskScheduler),
-      registry.injector.get(CryptoProvider),
+      registry.injector.get(Encryptor),
       registry.injector.get(RedisRateLimiter),
       registry.injector.get(OAuthCache),
       broadcastLog,
@@ -652,6 +657,20 @@ export async function main() {
           void reply.send(textResponse);
         },
       });
+    }
+
+    if (env.organizationSCIM) {
+      logger.debug('register scim routes');
+      const scimPlugin = createSCIMPlugin(
+        authN,
+        storage.pool,
+        storage,
+        registry.injector.get(OIDCIntegrationStore),
+        registry.injector.get(RedisRateLimiter),
+        new ClickHouse(env.clickhouse, new HttpClient(), logger),
+        env.graphql.origin + '/scim/v2',
+      );
+      await server.register(scimPlugin, { prefix: '/scim/v2' });
     }
 
     if (env.exposeMemoryUtils) {

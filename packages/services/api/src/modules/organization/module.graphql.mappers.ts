@@ -4,6 +4,8 @@ import type {
   OrganizationGetStarted,
   OrganizationInvitation,
 } from '../../shared/entities';
+import type { GroupRoleAssignment } from './providers/group-role-assignment-store';
+import type { Group } from './providers/group-store';
 import type {
   GraphQLResolvedResourcePermissionGroupOutput,
   OrganizationAccessToken,
@@ -38,3 +40,6 @@ export type WhoAmIMapper = {
 
 export type ProjectForResourceSelectorMapper = ProjectForResourceSelector;
 export type TargetForResourceSelectorMapper = TargetForResourceSelector;
+
+export type GroupMapper = Group;
+export type GroupRoleMappingMapper = GroupRoleAssignment;

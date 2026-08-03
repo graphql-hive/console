@@ -51,6 +51,7 @@
     "seed:insights-and-alerts": "tsx scripts/seed-insights-and-alerts/seed-insights-and-alerts.mts",
     "seed:org": "tsx scripts/seed-organization.mts",
     "seed:schemas": "tsx scripts/seed-schemas.ts",
+    "seed:scim-users-groups": "tsx scripts/seed-scim-users-groups/seed-scim-users-groups.mts",
     "seed:usage": "tsx scripts/seed-usage.ts",
     "sourcemaps:inject": "./scripts/sourcemaps-inject.sh",
     "sourcemaps:upload": "./scripts/sourcemaps-upload.sh",
@@ -60,6 +61,7 @@
     "test:e2e:local": "RUN_AGAINST_LOCAL_SERVICES=1 HIVE_APP_BASE_URL=http://localhost:3000 playwright test --ui",
     "test:e2e:open": "playwright test --ui",
     "test:integration": "cd integration-tests && pnpm test:integration",
+    "test:integration:local": "pnpm run --filter integration-tests test:local",
     "typecheck": "pnpm run -r --filter '!hive' typecheck",
     "workspace": "pnpm run --filter $1 $2"
   },

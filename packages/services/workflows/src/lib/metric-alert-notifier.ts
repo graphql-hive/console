@@ -1,6 +1,7 @@
 import type { Logger } from '@graphql-hive/logger';
 import type { PostgresDatabasePool } from '@hive/postgres';
 import { psql } from '@hive/postgres';
+import type { Encryptor } from '@hive/service-common';
 import { WebClient } from '@slack/web-api';
 import type { MetricAlertRuleRow } from './metric-alert-evaluator.js';
 import { sendWebhook, type RequestBroker } from './webhooks/send-webhook.js';
@@ -36,6 +37,45 @@ export type NotificationEvent = {
 };
 
 /**
+ * How a dispatch attempt ended. Only `sent` means the destination actually received
+ * something: `skipped-config` covers a channel that is missing the settings it needs,
+ * `failed-config` a misconfiguration retrying cannot fix (no or wrong ENCRYPTION_SECRET),
+ * and `gave-up` an exhausted retry budget. All three used to be indistinguishable from a
+ * successful send.
+ */
+export type NotificationResult =
+  | { status: 'sent' }
+  | { status: 'skipped-config'; reason: string }
+  | { status: 'failed-config'; reason: string }
+  | { status: 'gave-up' };
+
+/**
+ * Pure mapping from a dispatch result onto what the task records: the span outcome, the
+ * reason (when there is one), and whether the notification actually reached its
+ * destination, which is what gates the `metric_alert_notifications_sent` row.
+ */
+export function summarizeNotificationResult(result: NotificationResult): {
+  outcome: NotificationResult['status'];
+  delivered: boolean;
+  reason: string | null;
+} {
+  switch (result.status) {
+    case 'sent':
+      return { outcome: 'sent', delivered: true, reason: null };
+    case 'skipped-config':
+      return { outcome: 'skipped-config', delivered: false, reason: result.reason };
+    case 'failed-config':
+      return { outcome: 'failed-config', delivered: false, reason: result.reason };
+    case 'gave-up':
+      return { outcome: 'gave-up', delivered: false, reason: 'retries-exhausted' };
+    default: {
+      const exhaustive: never = result;
+      throw new Error(`Unhandled notification result: ${JSON.stringify(exhaustive)}`);
+    }
+  }
+}
+
+/**
  * Deep link to the rule detail page. Null when the Hive Console URL isn't
  * configured (`WEB_APP_URL` is optional for the workflows service), in which
  * case notifications go out without a link.
@@ -54,12 +94,13 @@ export async function sendSlackNotification(args: {
   pg: PostgresDatabasePool;
   logger: Logger;
   webAppUrl: string | null;
-}) {
+  crypto: Encryptor | null;
+}): Promise<NotificationResult> {
   const { channel, event, pg, logger } = args;
 
   if (!channel.slackChannel) {
     logger.warn({ channelId: channel.id }, 'Slack channel name not configured');
-    return;
+    return { status: 'skipped-config', reason: 'no-slack-channel' };
   }
 
   const tokenResult = await pg.maybeOneFirst(psql`
@@ -73,10 +114,37 @@ export async function sendSlackNotification(args: {
       { organizationId: event.rule.organizationId },
       'Slack integration not configured for organization',
     );
-    return;
+    return { status: 'skipped-config', reason: 'no-slack-token' };
   }
 
-  const token = tokenResult as string;
+  if (!args.crypto) {
+    logger.warn(
+      { organizationId: event.rule.organizationId },
+      'ENCRYPTION_SECRET not configured, cannot decrypt the Slack token',
+    );
+    return { status: 'failed-config', reason: 'no-encryption-secret' };
+  }
+
+  let token: string;
+  try {
+    // Written encrypted by the API's SlackIntegrationManager. `possiblyRaw` because rows
+    // predating encryption are still stored in plain text, and the API tolerates them too.
+    token = args.crypto.decrypt(tokenResult as string, true);
+  } catch (error) {
+    // A wrong ENCRYPTION_SECRET can't be fixed by retrying, so this must not throw:
+    // rethrowing would burn the job's whole retry budget on an unfixable error.
+    logger.error(
+      {
+        organizationId: event.rule.organizationId,
+        // Node's crypto errors describe the failure without echoing the input, so this
+        // is safe to log; the token and the ciphertext never are.
+        error: error instanceof Error ? error.message : String(error),
+      },
+      'Failed to decrypt the Slack token, check ENCRYPTION_SECRET matches the API service',
+    );
+    return { status: 'failed-config', reason: 'decrypt-failed' };
+  }
+
   const client = new WebClient(token);
 
   const isFiring = event.state === 'firing';
@@ -117,6 +185,8 @@ export async function sendSlackNotification(args: {
   });
 
   logger.debug({ channelId: channel.id }, 'Slack notification sent');
+
+  return { status: 'sent' };
 }
 
 export async function sendWebhookNotification(args: {
@@ -128,17 +198,17 @@ export async function sendWebhookNotification(args: {
   attempt: number;
   maxAttempts: number;
   webAppUrl: string | null;
-}) {
+}): Promise<NotificationResult> {
   const { channel, event, logger } = args;
 
   if (!channel.webhookEndpoint) {
     logger.warn({ channelId: channel.id }, 'Webhook endpoint not configured');
-    return;
+    return { status: 'skipped-config', reason: 'no-webhook-endpoint' };
   }
 
   const payload = buildWebhookPayload(event, args.webAppUrl);
 
-  await sendWebhook(logger, args.requestBroker, {
+  const result = await sendWebhook(logger, args.requestBroker, {
     attempt: args.attempt,
     maxAttempts: args.maxAttempts,
     endpoint: channel.webhookEndpoint,
@@ -146,7 +216,13 @@ export async function sendWebhookNotification(args: {
     headers: { 'Idempotency-Key': args.idempotencyKey },
   });
 
+  if (result.status === 'gave-up') {
+    return result;
+  }
+
   logger.debug({ channelId: channel.id }, 'Webhook notification sent');
+
+  return { status: 'sent' };
 }
 
 export async function sendTeamsNotification(args: {
@@ -158,12 +234,12 @@ export async function sendTeamsNotification(args: {
   attempt: number;
   maxAttempts: number;
   webAppUrl: string | null;
-}) {
+}): Promise<NotificationResult> {
   const { channel, event, logger } = args;
 
   if (!channel.webhookEndpoint) {
     logger.warn({ channelId: channel.id }, 'Teams webhook endpoint not configured');
-    return;
+    return { status: 'skipped-config', reason: 'no-teams-endpoint' };
   }
 
   const isFiring = event.state === 'firing';
@@ -191,7 +267,7 @@ export async function sendTeamsNotification(args: {
     ],
   };
 
-  await sendWebhook(logger, args.requestBroker, {
+  const result = await sendWebhook(logger, args.requestBroker, {
     attempt: args.attempt,
     maxAttempts: args.maxAttempts,
     endpoint: channel.webhookEndpoint,
@@ -199,7 +275,13 @@ export async function sendTeamsNotification(args: {
     headers: { 'Idempotency-Key': args.idempotencyKey },
   });
 
+  if (result.status === 'gave-up') {
+    return result;
+  }
+
   logger.debug({ channelId: channel.id }, 'Teams notification sent');
+
+  return { status: 'sent' };
 }
 
 /**
@@ -235,12 +317,12 @@ export async function sendDiscordNotification(args: {
   attempt: number;
   maxAttempts: number;
   webAppUrl: string | null;
-}) {
+}): Promise<NotificationResult> {
   const { channel, event, logger } = args;
 
   if (!channel.webhookEndpoint) {
     logger.warn({ channelId: channel.id }, 'Discord webhook endpoint not configured');
-    return;
+    return { status: 'skipped-config', reason: 'no-discord-endpoint' };
   }
 
   const isFiring = event.state === 'firing';
@@ -280,7 +362,7 @@ export async function sendDiscordNotification(args: {
     ],
   };
 
-  await sendWebhook(logger, args.requestBroker, {
+  const result = await sendWebhook(logger, args.requestBroker, {
     attempt: args.attempt,
     maxAttempts: args.maxAttempts,
     endpoint: channel.webhookEndpoint,
@@ -288,7 +370,13 @@ export async function sendDiscordNotification(args: {
     headers: { 'Idempotency-Key': args.idempotencyKey },
   });
 
+  if (result.status === 'gave-up') {
+    return result;
+  }
+
   logger.debug({ channelId: channel.id }, 'Discord notification sent');
+
+  return { status: 'sent' };
 }
 
 function formatChangeText(event: NotificationEvent): string {

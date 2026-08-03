@@ -46,3 +46,4 @@ export {
   type RedisClientOptions,
 } from './redis-client';
 export { generateRdsIamAuthToken } from './iam-rds';
+export { Encryptor } from './crypto';

@@ -122,5 +122,13 @@ export function deployProxy({
         requestTimeout: '60s',
         retriable: true,
       },
+      {
+        name: 'scim-provisioning',
+        path: '/scim/v2',
+        customRewrite: '/scim/v2',
+        service: publicGraphQLAPIGateway.service,
+        requestTimeout: '60s',
+        retriable: true,
+      },
     ]);
 }

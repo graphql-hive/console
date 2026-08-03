@@ -6,7 +6,7 @@ Hive comes with support for Apollo Federation v2, based on
 [external composition](https://the-guild.dev/graphql/hive/docs/features/external-schema-composition).
 
 This package provides a reference for running external composition as a NodeJS service, on your
-local infrastructure, and connect GraphQL Hive (Cloud or self-service).
+local infrastructure, and connect Hive Console (Cloud or self-service).
 
 # Usage
 

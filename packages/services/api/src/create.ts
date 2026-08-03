@@ -1,5 +1,6 @@
 import { CONTEXT, createApplication, Provider, Scope } from 'graphql-modules';
 import { PostgresDatabasePool } from '@hive/postgres';
+import { Encryptor } from '@hive/service-common';
 import { TaskScheduler } from '@hive/workflows/kit';
 import { adminModule } from './modules/admin';
 import { alertsModule } from './modules/alerts';
@@ -28,7 +29,7 @@ import {
 } from './modules/integrations/providers/github-integration-manager';
 import { labModule } from './modules/lab';
 import { oidcIntegrationsModule } from './modules/oidc-integrations';
-import { OIDC_INTEGRATIONS_ENABLED } from './modules/oidc-integrations/providers/tokens';
+import { OIDCIntegrationConfig } from './modules/oidc-integrations/providers/oidc-integration-config';
 import { operationsModule } from './modules/operations';
 import { CLICKHOUSE_CONFIG, ClickHouseConfig } from './modules/operations/providers/tokens';
 import { OTEL_TRACING_ENABLED } from './modules/operations/providers/traces';
@@ -50,7 +51,6 @@ import {
   SchemaServiceConfig,
 } from './modules/schema/providers/orchestrator/tokens';
 import { sharedModule } from './modules/shared';
-import { CryptoProvider, encryptionSecretProvider } from './modules/shared/providers/crypto';
 import { DistributedCache } from './modules/shared/providers/distributed-cache';
 import { HttpClient } from './modules/shared/providers/http-client';
 import { IdTranslator } from './modules/shared/providers/id-translator';
@@ -114,7 +114,7 @@ export function createRegistry({
   encryptionSecret,
   schemaConfig,
   supportConfig,
-  organizationOIDC,
+  oidcIntegrationConfig,
   pubSub,
   appDeploymentsEnabled,
   schemaProposalsEnabled,
@@ -157,7 +157,7 @@ export function createRegistry({
   } | null;
   schemaConfig: SchemaModuleConfig;
   supportConfig: SupportConfig | null;
-  organizationOIDC: boolean;
+  oidcIntegrationConfig: OIDCIntegrationConfig;
   pubSub: HivePubSub;
   appDeploymentsEnabled: boolean;
   schemaProposalsEnabled: boolean;
@@ -207,7 +207,6 @@ export function createRegistry({
     IdTranslator,
     Mutex,
     DistributedCache,
-    CryptoProvider,
     InMemoryRateLimitStore,
     InMemoryRateLimiter,
     RedisRateLimiter,
@@ -265,8 +264,8 @@ export function createRegistry({
       scope: Scope.Singleton,
     },
     {
-      provide: OIDC_INTEGRATIONS_ENABLED,
-      useValue: organizationOIDC,
+      provide: OIDCIntegrationConfig,
+      useValue: oidcIntegrationConfig,
       scope: Scope.Singleton,
     },
     {
@@ -305,7 +304,11 @@ export function createRegistry({
       useValue: storage.pool,
     },
     { provide: PUB_SUB_CONFIG, scope: Scope.Singleton, useValue: pubSub },
-    encryptionSecretProvider(encryptionSecret),
+    {
+      provide: Encryptor,
+      scope: Scope.Singleton,
+      useValue: new Encryptor(encryptionSecret),
+    },
     provideSchemaModuleConfig(schemaConfig),
     provideCommerceConfig(commerce),
     {

@@ -1,20 +1,19 @@
 import dns from 'node:dns/promises';
 import { Inject, Injectable, Scope } from 'graphql-modules';
 import zod from 'zod';
-import { maskToken } from '@hive/service-common';
+import { Encryptor, maskToken } from '@hive/service-common';
 import * as GraphQLSchema from '../../../__generated__/types';
-import { OIDCIntegration } from '../../../shared/entities';
+import { OIDCIntegration, Organization } from '../../../shared/entities';
 import { HiveError } from '../../../shared/errors';
 import { AuditLogRecorder } from '../../audit-logs/providers/audit-log-recorder';
 import { Session } from '../../auth/lib/authz';
 import { ResourceAssignmentGroup } from '../../organization/lib/resource-assignment-model';
 import { ResourceAssignments } from '../../organization/providers/resource-assignments';
-import { CryptoProvider } from '../../shared/providers/crypto';
 import { Logger } from '../../shared/providers/logger';
 import { PUB_SUB_CONFIG, type HivePubSub } from '../../shared/providers/pub-sub';
 import { Storage } from '../../shared/providers/storage';
+import { OIDCIntegrationConfig } from './oidc-integration-config';
 import { OIDCIntegrationDomain, OIDCIntegrationStore } from './oidc-integration.store';
-import { OIDC_INTEGRATIONS_ENABLED } from './tokens';
 
 const dnsList = [
   // Google
@@ -35,10 +34,10 @@ export class OIDCIntegrationsProvider {
   constructor(
     logger: Logger,
     private storage: Storage,
-    private crypto: CryptoProvider,
+    private crypto: Encryptor,
     private auditLog: AuditLogRecorder,
     @Inject(PUB_SUB_CONFIG) private pubSub: HivePubSub,
-    @Inject(OIDC_INTEGRATIONS_ENABLED) private enabled: boolean,
+    private oidcIntegrationConfig: OIDCIntegrationConfig,
     private session: Session,
     private resourceAssignments: ResourceAssignments,
     private oidcIntegrationStore: OIDCIntegrationStore,
@@ -47,7 +46,7 @@ export class OIDCIntegrationsProvider {
   }
 
   isEnabled() {
-    return this.enabled;
+    return this.oidcIntegrationConfig.isEnabled;
   }
 
   async canViewerManageIntegrationForOrganization(organizationId: string) {
@@ -62,6 +61,13 @@ export class OIDCIntegrationsProvider {
         organizationId,
       },
     });
+  }
+
+  async canViewerManageSCIMForOrganization(organization: Organization) {
+    return (
+      (await this.canViewerManageIntegrationForOrganization(organization.id)) &&
+      (organization.featureFlags.scim || this.oidcIntegrationConfig.isSCIMEnabled)
+    );
   }
 
   async getOIDCIntegrationForOrganization(args: {
@@ -109,6 +115,7 @@ export class OIDCIntegrationsProvider {
     userinfoEndpoint: string;
     authorizationEndpoint: string;
     additionalScopes: readonly string[];
+    userIdClaim: string | null;
   }) {
     if (this.isEnabled() === false) {
       return {
@@ -139,6 +146,7 @@ export class OIDCIntegrationsProvider {
     const userinfoEndpointResult = OAuthAPIUrlModel.safeParse(args.userinfoEndpoint);
     const authorizationEndpointResult = OAuthAPIUrlModel.safeParse(args.authorizationEndpoint);
     const additionalScopesResult = OIDCAdditionalScopesModel.safeParse(args.additionalScopes);
+    const userIdClaimResult = OIDCScopeModel.nullable().safeParse(args.userIdClaim);
 
     if (
       clientIdResult.success &&
@@ -146,7 +154,8 @@ export class OIDCIntegrationsProvider {
       tokenEndpointResult.success &&
       userinfoEndpointResult.success &&
       authorizationEndpointResult.success &&
-      additionalScopesResult.success
+      additionalScopesResult.success &&
+      userIdClaimResult.success
     ) {
       const creationResult = await this.storage.createOIDCIntegrationForOrganization({
         organizationId: args.organizationId,
@@ -156,6 +165,7 @@ export class OIDCIntegrationsProvider {
         userinfoEndpoint: userinfoEndpointResult.data,
         authorizationEndpoint: authorizationEndpointResult.data,
         additionalScopes: additionalScopesResult.data,
+        userIdClaim: userIdClaimResult.data,
       });
 
       if (creationResult.type === 'ok') {
@@ -180,6 +190,7 @@ export class OIDCIntegrationsProvider {
           userinfoEndpoint: null,
           authorizationEndpoint: null,
           additionalScopes: null,
+          userIdClaim: null,
         },
       } as const;
     }
@@ -204,6 +215,7 @@ export class OIDCIntegrationsProvider {
         additionalScopes: additionalScopesResult.success
           ? null
           : additionalScopesResult.error.issues[0].message,
+        userIdClaim: userIdClaimResult.success ? null : userIdClaimResult.error.issues[0].message,
       },
     } as const;
   }
@@ -216,6 +228,7 @@ export class OIDCIntegrationsProvider {
     userinfoEndpoint: string | null;
     authorizationEndpoint: string | null;
     additionalScopes: readonly string[] | null;
+    userIdClaim: string | null;
   }) {
     if (this.isEnabled() === false) {
       return {
@@ -258,6 +271,7 @@ export class OIDCIntegrationsProvider {
     const additionalScopesResult = maybe(OIDCAdditionalScopesModel).safeParse(
       args.additionalScopes,
     );
+    const userIdClaimResult = maybe(OIDCScopeModel).safeParse(args.userIdClaim);
 
     if (
       clientIdResult.success &&
@@ -265,7 +279,8 @@ export class OIDCIntegrationsProvider {
       tokenEndpointResult.success &&
       userinfoEndpointResult.success &&
       authorizationEndpointResult.success &&
-      additionalScopesResult.success
+      additionalScopesResult.success &&
+      userIdClaimResult.success
     ) {
       const oidcIntegration = await this.storage.updateOIDCIntegration({
         oidcIntegrationId: args.oidcIntegrationId,
@@ -277,6 +292,7 @@ export class OIDCIntegrationsProvider {
         userinfoEndpoint: userinfoEndpointResult.data,
         authorizationEndpoint: authorizationEndpointResult.data,
         additionalScopes: additionalScopesResult.data,
+        userIdClaim: userIdClaimResult.data,
       });
 
       const redactedClientSecret = maskToken(oidcIntegration.clientId);
@@ -324,6 +340,7 @@ export class OIDCIntegrationsProvider {
         additionalScopes: additionalScopesResult.success
           ? null
           : additionalScopesResult.error.issues[0].message,
+        userIdClaim: userIdClaimResult.error?.issues[0].message ?? null,
       },
     } as const;
   }
@@ -376,6 +393,8 @@ export class OIDCIntegrationsProvider {
     oidcUserJoinOnly: boolean | null;
     oidcUserAccessOnly: boolean | null;
     requireInvitation: boolean | null;
+    userProvisioningRequired: boolean | null;
+    oidcForVerifiedDomainsRequired: boolean | null;
   }) {
     if (this.isEnabled() === false) {
       return {
@@ -402,6 +421,19 @@ export class OIDCIntegrationsProvider {
         organizationId: oidcIntegration.linkedOrganizationId,
       },
     });
+
+    if (args.userProvisioningRequired === true) {
+      const organization = await this.storage.getOrganization({
+        organizationId: oidcIntegration.linkedOrganizationId,
+      });
+
+      if (!organization.featureFlags.scim) {
+        return {
+          type: 'error',
+          message: 'SCIM provisioning is disabled.',
+        } as const;
+      }
+    }
 
     return {
       type: 'ok',
@@ -858,15 +890,15 @@ const OIDCClientSecretModel = zod
 
 const OAuthAPIUrlModel = zod.string().url('Must be a valid OAuth API url.');
 
+const OIDCScopeModel = zod
+  .string()
+  .toLowerCase()
+  .nonempty('Must not be empty.')
+  .max(50, 'Can not be longer than 50 characters.')
+  .regex(/^[a-z0-9](?:[a-z0-9.:/_-]*[a-z0-9])?$/, 'Must be a valid scope.');
+
 const OIDCAdditionalScopesModel = zod
-  .array(
-    zod
-      .string()
-      .toLowerCase()
-      .nonempty('Must not be empty.')
-      .max(50, 'Can not be longer than 50 characters.')
-      .regex(/^[a-z0-9](?:[a-z0-9.:/_-]*[a-z0-9])?$/, 'Must be a valid scope.'),
-  )
+  .array(OIDCScopeModel)
   .max(20, 'Can not be more than 20 items.');
 
 const maybe = <TSchema>(schema: zod.ZodSchema<TSchema>) => zod.union([schema, zod.null()]);

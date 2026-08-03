@@ -1,33 +1,31 @@
 import crypto from 'node:crypto';
-import { Inject, Injectable, InjectionToken, Scope } from 'graphql-modules';
 
 const ALG = 'aes256';
 const IN_ENC = 'utf8';
 const OUT_ENC = 'hex';
 const IV = 16;
 
-export const ENCRYPTION_SECRET = new InjectionToken<string>('ENCRYPTION_SECRET');
+/**
+ * Shared by every service that touches an encrypted column (`organizations.slack_token`,
+ * OIDC client secrets, external composition secrets). The wire format is load-bearing:
+ * values encrypted by one service are decrypted by another, so changing the algorithm or
+ * the output shape silently bricks every stored secret. `crypto.spec.ts` pins it with a
+ * frozen ciphertext vector.
+ *
+ * Doubles as its own injection token in the API's graphql-modules container, provided
+ * with `useValue` the same way `PostgresDatabasePool` is. That means consumers must
+ * import it as a value: `import type { Encryptor }` erases at runtime, leaving the
+ * decorator metadata as `Object` and breaking injection with no compile-time error.
+ */
+export class Encryptor {
+  private secret: string;
 
-export function encryptionSecretProvider(value: string) {
-  return {
-    provide: ENCRYPTION_SECRET,
-    useValue: value,
-    scope: Scope.Singleton,
-  };
-}
-
-@Injectable({
-  scope: Scope.Singleton,
-})
-export class CryptoProvider {
-  encryptionSecret: string;
-
-  constructor(@Inject(ENCRYPTION_SECRET) encryptionSecret: string) {
-    this.encryptionSecret = crypto.createHash('md5').update(encryptionSecret).digest('hex');
+  constructor(encryptionSecret: string) {
+    this.secret = crypto.createHash('md5').update(encryptionSecret).digest('hex');
   }
 
   encrypt(text: string) {
-    const secretBuffer = Buffer.from(this.encryptionSecret, 'latin1');
+    const secretBuffer = Buffer.from(this.secret, 'latin1');
     const iv = crypto.randomBytes(IV);
     const cipher = crypto.createCipheriv(ALG, secretBuffer, iv);
     const ciphered = cipher.update(text, IN_ENC, OUT_ENC) + cipher.final(OUT_ENC);
@@ -46,7 +44,7 @@ export class CryptoProvider {
       }
     }
 
-    const secretBuffer = Buffer.from(this.encryptionSecret, 'latin1');
+    const secretBuffer = Buffer.from(this.secret, 'latin1');
     const components = text.split(':');
     const iv = Buffer.from(components.shift() || '', OUT_ENC);
     const decipher = crypto.createDecipheriv(ALG, secretBuffer, iv);

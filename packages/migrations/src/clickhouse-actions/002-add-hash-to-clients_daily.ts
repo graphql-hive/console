@@ -38,7 +38,7 @@ const action: Action = async (exec, _query, hiveCloudEnvironment) => {
         target LowCardinality(String) CODEC(ZSTD(1)),
         client_name String CODEC(ZSTD(1)),
         client_version String CODEC(ZSTD(1)),
-        hash String CODEC(ZSTD(1)), 
+        hash String CODEC(ZSTD(1)),
         timestamp DateTime('UTC'),
         expires_at DateTime('UTC'),
         total UInt32 CODEC(ZSTD(1)),
@@ -73,7 +73,7 @@ const action: Action = async (exec, _query, hiveCloudEnvironment) => {
 
   // Run the rest of the migration only for self-hosted instances, not for Cloud.
   if (hiveCloudEnvironment === 'prod') {
-    console.log('Detected GraphQL Hive Cloud. Skipping the rest of the migration.');
+    console.log('Detected Hive Console Cloud. Skipping the rest of the migration.');
     // In case of Cloud, we need to perform it in a different, more complicated way.
     // We need to insert partition by partition, because otherwise it will take too much time and resources.
     // The query below will generate a list of insert statements we need to run.
@@ -119,7 +119,7 @@ const action: Action = async (exec, _query, hiveCloudEnvironment) => {
     return;
   }
 
-  console.log('Detected self-hosted version of GraphQL Hive. Running the rest of the migration.');
+  console.log('Detected self-hosted version of Hive Console. Running the rest of the migration.');
 
   // Copy data
   await exec(`
@@ -137,7 +137,7 @@ const action: Action = async (exec, _query, hiveCloudEnvironment) => {
       SELECT
         fromUnixTimestamp(
           if(
-            minMerge(timestamp) > 0, 
+            minMerge(timestamp) > 0,
             minMerge(timestamp),
             toUnixTimestamp(now())
           )
