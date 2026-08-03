@@ -1,3 +1,7 @@
+variable "NODE_VERSION_TAG" {
+  default = ""
+}
+
 variable "RELEASE" {
   default = "dev"
 }
@@ -68,6 +72,7 @@ function "image_tag" {
 target "migrations-base" {
   dockerfile = "${PWD}/docker/migrations.dockerfile"
   args = {
+    NODE_VERSION_TAG = NODE_VERSION_TAG
     RELEASE = "${RELEASE}"
   }
 }
@@ -75,6 +80,7 @@ target "migrations-base" {
 target "service-base" {
   dockerfile = "${PWD}/docker/services.dockerfile"
   args = {
+    NODE_VERSION_TAG = NODE_VERSION_TAG
     RELEASE = "${RELEASE}"
   }
 }
@@ -96,6 +102,7 @@ target "otel-collector-base" {
 target "cli-base" {
   dockerfile = "${PWD}/docker/cli.dockerfile"
   args = {
+    NODE_VERSION_TAG = NODE_VERSION_TAG
     RELEASE = "${RELEASE}"
   }
 }

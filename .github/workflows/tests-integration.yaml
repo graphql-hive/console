@@ -51,6 +51,11 @@ jobs:
           CONFIGURE_ENV: ${{ inputs.configureEnv }}
         run: $CONFIGURE_ENV
 
+      - name: configure Docker Node.js image tag
+        id: node-version-tag
+        if: ${{ inputs.dockerize }}
+        run: echo "value=:$(< .node-version)-slim" >> "$GITHUB_OUTPUT"
+
       - name: setup environment
         uses: ./.github/actions/setup
         with:
@@ -77,13 +82,25 @@ jobs:
 
       - name: run containers
         timeout-minutes: 8
+        env:
+          NODE_VERSION_TAG: ${{ steps.node-version-tag.outputs.value }}
         run: |
-          docker compose -f docker/docker-compose.community.yml -f ./integration-tests/docker-compose.integration.yaml --env-file ./integration-tests/.env up -d --wait
+          docker compose \
+            -f docker/docker-compose.community.yml \
+            -f ./integration-tests/docker-compose.integration.yaml \
+            --env-file ./integration-tests/.env \
+            up -d --wait --no-build
 
       - name: troubleshoot containers
         if: ${{ failure() }}
+        env:
+          NODE_VERSION_TAG: ${{ steps.node-version-tag.outputs.value }}
         run: |
-          docker compose -f docker/docker-compose.community.yml -f ./integration-tests/docker-compose.integration.yaml --env-file ./integration-tests/.env ps
+          docker compose \
+            -f docker/docker-compose.community.yml \
+            -f ./integration-tests/docker-compose.integration.yaml \
+            --env-file ./integration-tests/.env \
+            ps
 
       - name: run integration tests
         timeout-minutes: 30
@@ -104,10 +121,18 @@ jobs:
 
       - name: log dump
         if: ${{ failure() }}
+        env:
+          NODE_VERSION_TAG: ${{ steps.node-version-tag.outputs.value }}
         run: |
-          docker compose -f docker/docker-compose.community.yml -f ./integration-tests/docker-compose.integration.yaml --env-file ./integration-tests/.env logs
+          docker compose \
+            -f docker/docker-compose.community.yml \
+            -f ./integration-tests/docker-compose.integration.yaml \
+            --env-file ./integration-tests/.env \
+            logs
 
       - name: inspect health
         if: ${{ failure() }}
+        env:
+          NODE_VERSION_TAG: ${{ steps.node-version-tag.outputs.value }}
         run: |
           docker inspect $(docker compose -f ./docker/docker-compose.community.yml -f ./integration-tests/docker-compose.integration.yaml --env-file ./integration-tests/.env ps -aq) | jq

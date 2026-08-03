@@ -1,11 +1,11 @@
 {
   "name": "@graphql-hive/gateway-plugin-console-sdk",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "type": "module",
   "description": "GraphQL Hive + GraphQL Hive Gateway",
   "repository": {
     "type": "git",
-    "url": "graphql-hive/platform",
+    "url": "https://github.com/graphql-hive/console",
     "directory": "packages/libraries/gateway-plugin-console-sdk"
   },
   "homepage": "https://the-guild.dev/graphql/hive",
@@ -57,7 +57,6 @@
     "tiny-lru": "^11.0.0 || ^12.0.0 || ^13.0.0"
   },
   "publishConfig": {
-    "registry": "https://registry.npmjs.org",
     "access": "public",
     "directory": "dist"
   },

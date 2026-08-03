@@ -1,4 +1,5 @@
-FROM node:24.18.0-slim
+ARG NODE_VERSION_TAG
+FROM node${NODE_VERSION_TAG}
 
 RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates git && rm -rf /var/lib/apt/lists/*
 

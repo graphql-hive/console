@@ -23,6 +23,7 @@ export BRANCH_NAME="local"
 export BUILD_TYPE=""
 export DOCKER_TAG=":local"
 export DOCKER_REGISTRY=""
+export NODE_VERSION_TAG=":$(< ../.node-version)-slim"
 
 echo "📦 Building local Docker images..."
 cd ..
