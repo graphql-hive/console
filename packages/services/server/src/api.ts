@@ -1,20 +1,12 @@
 import { CryptoProvider } from 'packages/services/api/src/modules/shared/providers/crypto';
 import { z } from 'zod';
 import type { Storage } from '@hive/api';
-import { OrganizationAccessScope, ProjectAccessScope, TargetAccessScope } from '@hive/api';
 import { initTRPC } from '@trpc/server';
 
 export type Context = {
   storage: Storage;
   crypto: CryptoProvider;
 };
-
-const oidcDefaultScopes = [
-  OrganizationAccessScope.READ,
-  ProjectAccessScope.READ,
-  TargetAccessScope.READ,
-  TargetAccessScope.REGISTRY_READ,
-];
 
 const t = initTRPC.context<Context>().create();
 
@@ -37,7 +29,6 @@ export const internalApiRouter = t.router({
         oidcIntegration: input.oidcIntegrationId
           ? {
               id: input.oidcIntegrationId,
-              defaultScopes: oidcDefaultScopes,
             }
           : null,
       });

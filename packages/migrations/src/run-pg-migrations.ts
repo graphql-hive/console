@@ -124,5 +124,8 @@ export const runPGMigrations = async (args: { slonik: PostgresDatabasePool; runT
       import('./actions/2026.06.05T00-00-00.metric-alert-filter-shared-only'),
       import('./actions/2026.06.25T00-00-00.failing-dangerous-change-types'),
       import('./actions/2026.07.31T00-00-00.drop-unused-supertokens-tables'),
+      import('./actions/2026.06.01T00-00-00.scim-user-group-provisioning'),
+      import('./actions/2026.06.01T00-00-00.scim-user-indices'),
+      import('./actions/2026.06.11T00-00-00.oidc-integration-user-id-claim'),
     ]),
   });

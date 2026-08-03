@@ -647,7 +647,7 @@ function SettingsPageContent(props: {
     if (currentOrganization?.viewerCanManageOIDCIntegration) {
       pages.push({
         key: 'sso',
-        title: 'Single Sign On',
+        title: 'SSO / SCIM',
       });
     }
 

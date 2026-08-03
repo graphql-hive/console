@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useQuery, UseQueryExecute } from 'urql';
 import { OrganizationLayout, Page } from '@/components/layouts/organization';
 import { SubPageNavigationLink } from '@/components/navigation/sub-page-navigation-link';
+import { Groups } from '@/components/organization/members/groups';
 import { OrganizationInvitations } from '@/components/organization/members/invitations';
 import { OrganizationMembers } from '@/components/organization/members/list';
 import { OrganizationMemberRoles } from '@/components/organization/members/roles';
@@ -17,6 +18,7 @@ const OrganizationMembersPage_OrganizationFragment = graphql(`
     ...OrganizationInvitations_OrganizationFragment
     ...OrganizationMemberRoles_OrganizationFragment
     ...OrganizationMembers_OrganizationFragment
+    ...Groups_OrganizationFragment
 
     viewerCanManageInvitations
     viewerCanManageRoles
@@ -31,6 +33,10 @@ const subPages = [
   {
     key: 'roles',
     title: 'Roles',
+  },
+  {
+    key: 'groups',
+    title: 'Groups',
   },
   {
     key: 'invitations',
@@ -97,6 +103,7 @@ function PageContent(props: {
             organization={organization}
           />
         ) : null}
+        {props.page === 'groups' && <Groups organization={organization} />}
       </PageLayoutContent>
     </PageLayout>
   );

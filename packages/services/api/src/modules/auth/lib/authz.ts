@@ -392,6 +392,7 @@ const permissionsByLevel = {
     z.literal('billing:update'),
     z.literal('member:describe'),
     z.literal('member:modify'),
+    z.literal('scim:provision'),
     z.literal('project:create'),
     z.literal('schemaLinting:modifyOrganizationRules'),
     z.literal('auditLog:export'),
