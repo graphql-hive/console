@@ -225,6 +225,7 @@ export const task = implementTask(SendMetricAlertChannelNotificationTask, async 
               idempotencyKey,
               attempt: helpers.job.attempts,
               maxAttempts: helpers.job.max_attempts,
+              webAppUrl: context.webAppUrl,
             });
             break;
         }

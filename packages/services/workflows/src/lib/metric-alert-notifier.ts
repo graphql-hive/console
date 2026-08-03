@@ -227,6 +227,7 @@ export async function sendDiscordNotification(args: {
   idempotencyKey: string;
   attempt: number;
   maxAttempts: number;
+  webAppUrl: string | null;
 }) {
   const { channel, event, logger } = args;
 
@@ -241,6 +242,9 @@ export async function sendDiscordNotification(args: {
   const color = Number.parseInt(isFiring ? severityColor(event.rule.severity) : RESOLVED_COLOR, 16);
 
   const changeText = formatChangeText(event);
+  const alertUrl = buildAlertUrl(args.webAppUrl, event);
+  // Appended after truncation so the link survives a long change text.
+  const viewLink = alertUrl ? `\n\n[View alert in Hive](${alertUrl})` : '';
 
   const payload = {
     username: 'GraphQL Hive',
@@ -248,8 +252,10 @@ export async function sendDiscordNotification(args: {
     embeds: [
       {
         title: truncate(`${emoji} ${event.rule.name} — ${action}`, 256),
+        // Makes the embed title itself clickable, as in the schema-change adapter.
+        url: alertUrl ?? undefined,
         color,
-        description: truncate(changeText, 4096),
+        description: truncate(changeText, 4096 - viewLink.length) + viewLink,
         fields: [
           { name: 'Type', value: event.rule.type, inline: true },
           { name: 'Severity', value: event.rule.severity, inline: true },

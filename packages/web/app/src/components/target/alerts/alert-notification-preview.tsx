@@ -304,6 +304,7 @@ function DiscordPreview(props: PreviewProps) {
               </span>
             </div>
           </div>
+          <div className="text-accent mt-2 text-sm">View alert in Hive</div>
         </div>
       </div>
     </div>
