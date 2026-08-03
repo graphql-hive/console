@@ -15,9 +15,8 @@ vi.mock('@slack/web-api', () => ({
   },
 }));
 
-const { buildAlertUrl, buildWebhookPayload, sendSlackNotification } = await import(
-  './metric-alert-notifier.js'
-);
+const { buildAlertUrl, buildWebhookPayload, sendSlackNotification, summarizeNotificationResult } =
+  await import('./metric-alert-notifier.js');
 
 const pg = {
   maybeOneFirst: async () => 'xoxb-test-token',
@@ -116,5 +115,80 @@ describe('sendSlackNotification', () => {
 
   test('omits the link when the Hive Console URL is not configured', async () => {
     await expect(bodyFor(makeEvent(), null)).resolves.not.toContain('View alert in Hive');
+  });
+
+  test('reports a delivery', async () => {
+    const result = await sendSlackNotification({
+      channel,
+      event: makeEvent(),
+      pg,
+      logger: makeLogger().logger,
+      webAppUrl: null,
+    });
+
+    expect(result).toEqual({ status: 'sent' });
+  });
+
+  test('skips without posting when the channel has no slack channel name', async () => {
+    postMessage.mockClear();
+    const { logger, warnings } = makeLogger();
+
+    const result = await sendSlackNotification({
+      channel: { ...channel, slackChannel: null },
+      event: makeEvent(),
+      pg,
+      logger,
+      webAppUrl: null,
+    });
+
+    expect(result).toEqual({ status: 'skipped-config', reason: 'no-slack-channel' });
+    expect(postMessage).not.toHaveBeenCalled();
+    expect(warnings).toHaveLength(1);
+  });
+
+  // Used to be indistinguishable from a successful send, which is how a whole org
+  // with no Slack integration looked healthy on the dashboard.
+  test('skips without posting when the organization has no slack token', async () => {
+    postMessage.mockClear();
+    const { logger, warnings } = makeLogger();
+    const pgWithoutToken = {
+      maybeOneFirst: async () => null,
+    } as unknown as PostgresDatabasePool;
+
+    const result = await sendSlackNotification({
+      channel,
+      event: makeEvent(),
+      pg: pgWithoutToken,
+      logger,
+      webAppUrl: null,
+    });
+
+    expect(result).toEqual({ status: 'skipped-config', reason: 'no-slack-token' });
+    expect(postMessage).not.toHaveBeenCalled();
+    expect(warnings).toHaveLength(1);
+  });
+});
+
+describe('summarizeNotificationResult', () => {
+  test('only a real send counts as delivered', () => {
+    expect(summarizeNotificationResult({ status: 'sent' })).toEqual({
+      outcome: 'sent',
+      delivered: true,
+      reason: null,
+    });
+  });
+
+  test('carries the skip reason through for the span attribute', () => {
+    expect(
+      summarizeNotificationResult({ status: 'skipped-config', reason: 'no-slack-token' }),
+    ).toEqual({ outcome: 'skipped-config', delivered: false, reason: 'no-slack-token' });
+  });
+
+  test('an exhausted retry budget is not a delivery', () => {
+    expect(summarizeNotificationResult({ status: 'gave-up' })).toEqual({
+      outcome: 'gave-up',
+      delivered: false,
+      reason: 'retries-exhausted',
+    });
   });
 });
