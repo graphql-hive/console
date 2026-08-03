@@ -60,8 +60,8 @@ export function prepareEnvironment(input: {
         },
       },
       schemaService: {
-        memoryLimit: isProduction || isStaging ? '3584Mi' : '1Gi',
-        replicas: isProduction ? 6 : isStaging ? 3 : 1,
+        memoryLimit: isProduction || isStaging ? '4Gi' : '1Gi',
+        replicas: isProduction || isStaging ? 6 : 1,
       },
       usageService: {
         replicas: isProduction || isStaging ? 6 : 1,
