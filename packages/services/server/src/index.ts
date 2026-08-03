@@ -8,7 +8,6 @@ import formDataPlugin from '@fastify/formbody';
 import {
   ClickHouse,
   createRegistry,
-  CryptoProvider,
   HttpClient,
   LogFn,
   Logger,
@@ -35,6 +34,7 @@ import {
   configureTracing,
   createRedisClient,
   createServer,
+  Encryptor,
   generateRdsIamAuthToken,
   registerShutdown,
   registerTRPC,
@@ -477,7 +477,7 @@ export async function main() {
       operationName: 'readiness',
     });
 
-    const crypto = new CryptoProvider(env.encryptionSecret);
+    const crypto = new Encryptor(env.encryptionSecret);
 
     function broadcastLog(oidcId: string, message: string) {
       pubSub.publish('oidcIntegrationLogs', oidcId, {
@@ -564,7 +564,7 @@ export async function main() {
       storage,
       registry.injector.get(OIDCIntegrationStore),
       registry.injector.get(TaskScheduler),
-      registry.injector.get(CryptoProvider),
+      registry.injector.get(Encryptor),
       registry.injector.get(RedisRateLimiter),
       registry.injector.get(OAuthCache),
       broadcastLog,

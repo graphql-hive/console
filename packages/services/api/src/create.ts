@@ -1,5 +1,6 @@
 import { CONTEXT, createApplication, Provider, Scope } from 'graphql-modules';
 import { PostgresDatabasePool } from '@hive/postgres';
+import { Encryptor } from '@hive/service-common';
 import { TaskScheduler } from '@hive/workflows/kit';
 import { adminModule } from './modules/admin';
 import { alertsModule } from './modules/alerts';
@@ -50,7 +51,6 @@ import {
   SchemaServiceConfig,
 } from './modules/schema/providers/orchestrator/tokens';
 import { sharedModule } from './modules/shared';
-import { CryptoProvider, encryptionSecretProvider } from './modules/shared/providers/crypto';
 import { DistributedCache } from './modules/shared/providers/distributed-cache';
 import { HttpClient } from './modules/shared/providers/http-client';
 import { IdTranslator } from './modules/shared/providers/id-translator';
@@ -207,7 +207,6 @@ export function createRegistry({
     IdTranslator,
     Mutex,
     DistributedCache,
-    CryptoProvider,
     InMemoryRateLimitStore,
     InMemoryRateLimiter,
     RedisRateLimiter,
@@ -305,7 +304,11 @@ export function createRegistry({
       useValue: storage.pool,
     },
     { provide: PUB_SUB_CONFIG, scope: Scope.Singleton, useValue: pubSub },
-    encryptionSecretProvider(encryptionSecret),
+    {
+      provide: Encryptor,
+      scope: Scope.Singleton,
+      useValue: new Encryptor(encryptionSecret),
+    },
     provideSchemaModuleConfig(schemaConfig),
     provideCommerceConfig(commerce),
     {

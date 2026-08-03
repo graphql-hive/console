@@ -1,5 +1,5 @@
 import type { PostgresDatabasePool } from '@hive/postgres';
-import { createEncryptor, type Encryptor } from '@hive/service-common';
+import { Encryptor } from '@hive/service-common';
 import type { AlertChannelRow, NotificationEvent } from './metric-alert-notifier.js';
 import { makeLogger, makeRule } from './metric-alert-test-utils.js';
 
@@ -28,7 +28,7 @@ const { buildAlertUrl, buildWebhookPayload, sendSlackNotification, summarizeNoti
   await import('./metric-alert-notifier.js');
 
 const SLACK_TOKEN = 'xoxb-test-token';
-const encryptor = createEncryptor('test-secret');
+const encryptor = new Encryptor('test-secret');
 
 // Legacy shape: rows written before the token column was encrypted are still plain text.
 const pg = {
@@ -240,7 +240,7 @@ describe('sendSlackNotification token decryption', () => {
   // Retrying cannot fix a wrong secret, so this must resolve rather than throw --
   // throwing would burn all 25 graphile-worker attempts.
   test('reports a config failure without throwing when the secret is wrong', async () => {
-    const encryptedElsewhere = createEncryptor('a-different-secret').encrypt(SLACK_TOKEN);
+    const encryptedElsewhere = new Encryptor('a-different-secret').encrypt(SLACK_TOKEN);
 
     const { result, token } = await send(encryptedElsewhere);
 

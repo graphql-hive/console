@@ -4,9 +4,9 @@ import { createConnectionStringProvider, createPostgresDatabasePool } from '@hiv
 import { bridgeGraphileLogger, createHivePubSub } from '@hive/pubsub';
 import {
   configureTracing,
-  createEncryptor,
   createRedisClient,
   createServer,
+  Encryptor,
   generateRdsIamAuthToken,
   registerShutdown,
   reportReadiness,
@@ -149,7 +149,7 @@ const clickhouse = env.clickhouse
   ? new ClickHouseClient(env.clickhouse, logger.child({ source: 'ClickHouse' }))
   : null;
 
-const encryptor = env.encryptionSecret ? createEncryptor(env.encryptionSecret) : null;
+const encryptor = env.encryptionSecret ? new Encryptor(env.encryptionSecret) : null;
 if (!encryptor) {
   logger.warn(
     'ENCRYPTION_SECRET not configured — Slack metric alert notifications will be skipped. ' +
