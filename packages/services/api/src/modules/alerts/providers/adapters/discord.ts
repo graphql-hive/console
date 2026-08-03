@@ -143,7 +143,7 @@ export class DiscordCommunicationAdapter implements CommunicationAdapter {
 
   async sendChannelConfirmation(input: ChannelConfirmationInput) {
     this.logger.debug(
-      `Sending Channel Confirmation over Discord (organization=%s, project=%s, channel=%s)`,
+      `Sending Channel Confirmation over Discord (organization=%s, project=%s)`,
       input.event.organization.id,
       input.event.project.id,
     );

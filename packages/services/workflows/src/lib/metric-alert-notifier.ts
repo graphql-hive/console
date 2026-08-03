@@ -219,6 +219,13 @@ function severityColor(severity: NotificationEvent['rule']['severity']): string 
   return SEVERITY_COLORS[severity] ?? SEVERITY_COLORS.WARNING;
 }
 
+// Discord rejects the whole message if any of these are exceeded. Mirrored in
+// the schema-change adapter (api/modules/alerts/providers/adapters/discord.ts);
+// kept local rather than shared so the two services stay independent.
+const DISCORD_MAX_TITLE_LENGTH = 256;
+const DISCORD_MAX_DESCRIPTION_LENGTH = 4096;
+const DISCORD_MAX_FIELD_VALUE_LENGTH = 1024;
+
 export async function sendDiscordNotification(args: {
   channel: AlertChannelRow;
   event: NotificationEvent;
@@ -251,17 +258,21 @@ export async function sendDiscordNotification(args: {
     allowed_mentions: { parse: [] },
     embeds: [
       {
-        title: truncate(`${emoji} ${event.rule.name} — ${action}`, 256),
+        title: truncate(`${emoji} ${event.rule.name} — ${action}`, DISCORD_MAX_TITLE_LENGTH),
         // Makes the embed title itself clickable, as in the schema-change adapter.
         url: alertUrl ?? undefined,
         color,
-        description: truncate(changeText, 4096 - viewLink.length) + viewLink,
+        description:
+          truncate(changeText, DISCORD_MAX_DESCRIPTION_LENGTH - viewLink.length) + viewLink,
         fields: [
           { name: 'Type', value: event.rule.type, inline: true },
           { name: 'Severity', value: event.rule.severity, inline: true },
           {
             name: 'Target',
-            value: truncate(`${event.targetSlug} in ${event.projectSlug}`, 1024),
+            value: truncate(
+              `${event.targetSlug} in ${event.projectSlug}`,
+              DISCORD_MAX_FIELD_VALUE_LENGTH,
+            ),
             inline: false,
           },
         ],

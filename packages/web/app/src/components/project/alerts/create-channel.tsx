@@ -31,6 +31,18 @@ export const CreateChannel_AddAlertChannelMutation = graphql(`
   }
 `);
 
+/** Channel types whose endpoint has to be created in a third-party UI first. */
+const WEBHOOK_SETUP_GUIDES: Partial<Record<AlertChannelType, { href: string; label: string }>> = {
+  [AlertChannelType.MsteamsWebhook]: {
+    href: 'https://learn.microsoft.com/en-us/microsoftteams/platform/webhooks-and-connectors/how-to/add-incoming-webhook?tabs=newteams%2Cdotnet',
+    label: 'Follow this guide to set up an incoming webhook connector in MS Teams',
+  },
+  [AlertChannelType.Discord]: {
+    href: 'https://support.discord.com/hc/en-us/articles/228383668-Intro-to-Webhooks',
+    label: 'Follow this guide to set up a Discord webhook',
+  },
+};
+
 export const CreateChannelModal = ({
   isOpen,
   toggleModalOpen,
@@ -93,29 +105,8 @@ export const CreateChannelModal = ({
     AlertChannelType.Discord,
   ].includes(values.type);
 
-  const endpointHelp = (() => {
-    if (values.endpoint) {
-      return <p className="text-neutral-10 text-sm">Hive will send alerts to your endpoint.</p>;
-    }
-
-    if (values.type === AlertChannelType.MsteamsWebhook) {
-      return (
-        <a href="https://learn.microsoft.com/en-us/microsoftteams/platform/webhooks-and-connectors/how-to/add-incoming-webhook?tabs=newteams%2Cdotnet">
-          Follow this guide to set up an incoming webhook connector in MS Teams
-        </a>
-      );
-    }
-
-    if (values.type === AlertChannelType.Discord) {
-      return (
-        <a href="https://support.discord.com/hc/en-us/articles/228383668-Intro-to-Webhooks">
-          Follow this guide to set up a Discord webhook
-        </a>
-      );
-    }
-
-    return <p className="text-neutral-10 text-sm">Hive will send alerts to your endpoint.</p>;
-  })();
+  // Once an endpoint has been pasted in, the setup guide has served its purpose.
+  const setupGuide = values.endpoint ? undefined : WEBHOOK_SETUP_GUIDES[values.type];
 
   return (
     <Modal open={isOpen} onOpenChange={toggleModalOpen}>
@@ -190,7 +181,18 @@ export const CreateChannelModal = ({
                 {mutation.data.addAlertChannel.error.inputErrors.webhookEndpoint}
               </div>
             )}
-            {endpointHelp}
+            {setupGuide ? (
+              <a
+                href={setupGuide.href}
+                target="_blank"
+                rel="noreferrer"
+                className="text-accent hover:text-accent/80 text-sm"
+              >
+                {setupGuide.label}
+              </a>
+            ) : (
+              <p className="text-neutral-10 text-sm">Hive will send alerts to your endpoint.</p>
+            )}
           </div>
         )}
 
