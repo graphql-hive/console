@@ -77,6 +77,7 @@ export const task = implementTask(SendMetricAlertChannelNotificationTask, async 
         | 'deduped'
         | 'skipped-deleted'
         | 'skipped-config'
+        | 'failed-config'
         | 'gave-up'
         | 'failed' = 'failed';
       // Hoisted so the finally block can compute breach-to-dispatch lag
@@ -198,6 +199,7 @@ export const task = implementTask(SendMetricAlertChannelNotificationTask, async 
               pg: context.pg,
               logger,
               webAppUrl: context.webAppUrl,
+              crypto: context.crypto,
             });
             break;
           case 'WEBHOOK':

@@ -4,6 +4,7 @@ import { createConnectionStringProvider, createPostgresDatabasePool } from '@hiv
 import { bridgeGraphileLogger, createHivePubSub } from '@hive/pubsub';
 import {
   configureTracing,
+  createEncryptor,
   createRedisClient,
   createServer,
   generateRdsIamAuthToken,
@@ -148,6 +149,14 @@ const clickhouse = env.clickhouse
   ? new ClickHouseClient(env.clickhouse, logger.child({ source: 'ClickHouse' }))
   : null;
 
+const encryptor = env.encryptionSecret ? createEncryptor(env.encryptionSecret) : null;
+if (!encryptor) {
+  logger.warn(
+    'ENCRYPTION_SECRET not configured — Slack metric alert notifications will be skipped. ' +
+      'Set it to the same value as the API service to enable.',
+  );
+}
+
 const context: Context = {
   logger,
   email: createEmailProvider(env.email.provider, env.email.emailFrom),
@@ -161,6 +170,7 @@ const context: Context = {
   }),
   pubSub,
   webAppUrl: env.webAppUrl,
+  crypto: encryptor,
 };
 
 server.route({

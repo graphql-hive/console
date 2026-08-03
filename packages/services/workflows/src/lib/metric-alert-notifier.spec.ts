@@ -1,4 +1,5 @@
 import type { PostgresDatabasePool } from '@hive/postgres';
+import { createEncryptor, type Encryptor } from '@hive/service-common';
 import type { AlertChannelRow, NotificationEvent } from './metric-alert-notifier.js';
 import { makeLogger, makeRule } from './metric-alert-test-utils.js';
 
@@ -9,18 +10,34 @@ const postMessage = vi.fn(
   }) => ({ ok: true }),
 );
 
+// The token the client was constructed with is the whole point of the decrypt fix, so
+// the stub has to capture it. It previously ignored the argument, which is exactly how
+// an encrypted token reached Slack unnoticed.
+let constructedWithToken: string | null = null;
+
 vi.mock('@slack/web-api', () => ({
   WebClient: class {
     chat = { postMessage };
+    constructor(token: string) {
+      constructedWithToken = token;
+    }
   },
 }));
 
 const { buildAlertUrl, buildWebhookPayload, sendSlackNotification, summarizeNotificationResult } =
   await import('./metric-alert-notifier.js');
 
+const SLACK_TOKEN = 'xoxb-test-token';
+const encryptor = createEncryptor('test-secret');
+
+// Legacy shape: rows written before the token column was encrypted are still plain text.
 const pg = {
-  maybeOneFirst: async () => 'xoxb-test-token',
+  maybeOneFirst: async () => SLACK_TOKEN,
 } as unknown as PostgresDatabasePool;
+
+function pgReturning(token: string | null) {
+  return { maybeOneFirst: async () => token } as unknown as PostgresDatabasePool;
+}
 
 const channel: AlertChannelRow = {
   id: 'channel-1',
@@ -75,7 +92,14 @@ describe('buildWebhookPayload', () => {
 
 async function post(event: NotificationEvent, webAppUrl: string | null = null) {
   postMessage.mockClear();
-  await sendSlackNotification({ channel, event, pg, logger: makeLogger().logger, webAppUrl });
+  await sendSlackNotification({
+    channel,
+    event,
+    pg,
+    logger: makeLogger().logger,
+    webAppUrl,
+    crypto: encryptor,
+  });
   const [args] = postMessage.mock.calls[0];
   return { args, attachment: args.attachments[0] };
 }
@@ -124,6 +148,7 @@ describe('sendSlackNotification', () => {
       pg,
       logger: makeLogger().logger,
       webAppUrl: null,
+      crypto: encryptor,
     });
 
     expect(result).toEqual({ status: 'sent' });
@@ -139,6 +164,7 @@ describe('sendSlackNotification', () => {
       pg,
       logger,
       webAppUrl: null,
+      crypto: encryptor,
     });
 
     expect(result).toEqual({ status: 'skipped-config', reason: 'no-slack-channel' });
@@ -151,21 +177,76 @@ describe('sendSlackNotification', () => {
   test('skips without posting when the organization has no slack token', async () => {
     postMessage.mockClear();
     const { logger, warnings } = makeLogger();
-    const pgWithoutToken = {
-      maybeOneFirst: async () => null,
-    } as unknown as PostgresDatabasePool;
 
     const result = await sendSlackNotification({
       channel,
       event: makeEvent(),
-      pg: pgWithoutToken,
+      pg: pgReturning(null),
       logger,
       webAppUrl: null,
+      crypto: encryptor,
     });
 
     expect(result).toEqual({ status: 'skipped-config', reason: 'no-slack-token' });
     expect(postMessage).not.toHaveBeenCalled();
     expect(warnings).toHaveLength(1);
+  });
+});
+
+// The bug this guards: the column is written encrypted by the API, but the workflows
+// service used to hand the raw column value to Slack, which answered `invalid_auth`.
+describe('sendSlackNotification token decryption', () => {
+  async function send(token: string | null, crypto: Encryptor | null = encryptor) {
+    postMessage.mockClear();
+    constructedWithToken = null;
+    const { logger } = makeLogger();
+
+    const result = await sendSlackNotification({
+      channel,
+      event: makeEvent(),
+      pg: pgReturning(token),
+      logger,
+      webAppUrl: null,
+      crypto,
+    });
+
+    return { result, token: constructedWithToken };
+  }
+
+  test('decrypts an encrypted token before authenticating to Slack', async () => {
+    const { result, token } = await send(encryptor.encrypt(SLACK_TOKEN));
+
+    expect(token).toBe(SLACK_TOKEN);
+    expect(result).toEqual({ status: 'sent' });
+  });
+
+  // Orgs that connected Slack before the column was encrypted still hold plain text,
+  // and the API tolerates them, so this path must keep working.
+  test('passes a legacy plaintext token through untouched', async () => {
+    const { result, token } = await send(SLACK_TOKEN);
+
+    expect(token).toBe(SLACK_TOKEN);
+    expect(result).toEqual({ status: 'sent' });
+  });
+
+  test('does not post when ENCRYPTION_SECRET is not configured', async () => {
+    const { result, token } = await send(encryptor.encrypt(SLACK_TOKEN), null);
+
+    expect(result).toEqual({ status: 'failed-config', reason: 'no-encryption-secret' });
+    expect(token).toBeNull();
+    expect(postMessage).not.toHaveBeenCalled();
+  });
+
+  // Retrying cannot fix a wrong secret, so this must resolve rather than throw --
+  // throwing would burn all 25 graphile-worker attempts.
+  test('reports a config failure without throwing when the secret is wrong', async () => {
+    const encryptedElsewhere = createEncryptor('a-different-secret').encrypt(SLACK_TOKEN);
+
+    const { result, token } = await send(encryptedElsewhere);
+
+    expect(result).toEqual({ status: 'failed-config', reason: 'decrypt-failed' });
+    expect(token).toBeNull();
+    expect(postMessage).not.toHaveBeenCalled();
   });
 });
 
@@ -182,6 +263,12 @@ describe('summarizeNotificationResult', () => {
     expect(
       summarizeNotificationResult({ status: 'skipped-config', reason: 'no-slack-token' }),
     ).toEqual({ outcome: 'skipped-config', delivered: false, reason: 'no-slack-token' });
+  });
+
+  test('a config failure is not a delivery', () => {
+    expect(
+      summarizeNotificationResult({ status: 'failed-config', reason: 'decrypt-failed' }),
+    ).toEqual({ outcome: 'failed-config', delivered: false, reason: 'decrypt-failed' });
   });
 
   test('an exhausted retry budget is not a delivery', () => {

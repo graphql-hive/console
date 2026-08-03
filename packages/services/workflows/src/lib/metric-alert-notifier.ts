@@ -1,6 +1,7 @@
 import type { Logger } from '@graphql-hive/logger';
 import type { PostgresDatabasePool } from '@hive/postgres';
 import { psql } from '@hive/postgres';
+import type { Encryptor } from '@hive/service-common';
 import { WebClient } from '@slack/web-api';
 import type { MetricAlertRuleRow } from './metric-alert-evaluator.js';
 import { sendWebhook, type RequestBroker } from './webhooks/send-webhook.js';
@@ -38,12 +39,14 @@ export type NotificationEvent = {
 /**
  * How a dispatch attempt ended. Only `sent` means the destination actually received
  * something: `skipped-config` covers a channel that is missing the settings it needs,
- * and `gave-up` an exhausted retry budget. Both used to be indistinguishable from a
+ * `failed-config` a misconfiguration retrying cannot fix (no or wrong ENCRYPTION_SECRET),
+ * and `gave-up` an exhausted retry budget. All three used to be indistinguishable from a
  * successful send.
  */
 export type NotificationResult =
   | { status: 'sent' }
   | { status: 'skipped-config'; reason: string }
+  | { status: 'failed-config'; reason: string }
   | { status: 'gave-up' };
 
 /**
@@ -61,6 +64,8 @@ export function summarizeNotificationResult(result: NotificationResult): {
       return { outcome: 'sent', delivered: true, reason: null };
     case 'skipped-config':
       return { outcome: 'skipped-config', delivered: false, reason: result.reason };
+    case 'failed-config':
+      return { outcome: 'failed-config', delivered: false, reason: result.reason };
     case 'gave-up':
       return { outcome: 'gave-up', delivered: false, reason: 'retries-exhausted' };
     default: {
@@ -89,6 +94,7 @@ export async function sendSlackNotification(args: {
   pg: PostgresDatabasePool;
   logger: Logger;
   webAppUrl: string | null;
+  crypto: Encryptor | null;
 }): Promise<NotificationResult> {
   const { channel, event, pg, logger } = args;
 
@@ -111,7 +117,34 @@ export async function sendSlackNotification(args: {
     return { status: 'skipped-config', reason: 'no-slack-token' };
   }
 
-  const token = tokenResult as string;
+  if (!args.crypto) {
+    logger.warn(
+      { organizationId: event.rule.organizationId },
+      'ENCRYPTION_SECRET not configured, cannot decrypt the Slack token',
+    );
+    return { status: 'failed-config', reason: 'no-encryption-secret' };
+  }
+
+  let token: string;
+  try {
+    // Written encrypted by the API's SlackIntegrationManager. `possiblyRaw` because rows
+    // predating encryption are still stored in plain text, and the API tolerates them too.
+    token = args.crypto.decrypt(tokenResult as string, true);
+  } catch (error) {
+    // A wrong ENCRYPTION_SECRET can't be fixed by retrying, so this must not throw:
+    // rethrowing would burn the job's whole retry budget on an unfixable error.
+    logger.error(
+      {
+        organizationId: event.rule.organizationId,
+        // Node's crypto errors describe the failure without echoing the input, so this
+        // is safe to log; the token and the ciphertext never are.
+        error: error instanceof Error ? error.message : String(error),
+      },
+      'Failed to decrypt the Slack token, check ENCRYPTION_SECRET matches the API service',
+    );
+    return { status: 'failed-config', reason: 'decrypt-failed' };
+  }
+
   const client = new WebClient(token);
 
   const isFiring = event.state === 'firing';
