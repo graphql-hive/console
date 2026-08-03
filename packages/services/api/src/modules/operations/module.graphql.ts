@@ -387,7 +387,7 @@ export default gql`
     """
     subgraphs: [String!]
     """
-    Wether the trace is successful.
+    Whether the trace is successful.
     A trace is a success if no GraphQL errors occurred and the HTTP status code is in the 2XX to 3XX range.
     """
     success: Boolean!
