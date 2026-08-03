@@ -41,6 +41,11 @@ const EnvironmentModel = zod.object({
   // rule that fired. Optional so an existing self-hosted deployment keeps
   // booting after an upgrade; notifications omit the link when it isn't set.
   WEB_APP_URL: emptyString(zod.string().url().optional()),
+  // Must match the value given to the API service, which is what encrypts
+  // `organizations.slack_token`. Optional for the same reason as WEB_APP_URL above;
+  // without it, Slack metric-alert notifications are skipped rather than the whole
+  // service (all transactional email and crons) failing to boot.
+  ENCRYPTION_SECRET: emptyString(zod.string().optional()),
   AWS_REGION: emptyString(zod.string().optional()),
 });
 
@@ -268,6 +273,7 @@ export const env = {
   // configs are inconsistent about it (deployment/services/commerce.ts sets the
   // same variable with a trailing slash).
   webAppUrl: base.WEB_APP_URL?.replace(/\/$/, '') ?? null,
+  encryptionSecret: base.ENCRYPTION_SECRET ?? null,
   sentry: sentry.SENTRY === '1' ? { dsn: sentry.SENTRY_DSN } : null,
   log: {
     level: log.LOG_LEVEL ?? 'info',

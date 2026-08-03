@@ -292,6 +292,7 @@ services:
       REDIS_HOST: redis
       REDIS_PORT: 6379
       REDIS_PASSWORD: '${REDIS_PASSWORD}'
+      ENCRYPTION_SECRET: '${HIVE_ENCRYPTION_SECRET}'
 
   usage:
     image: '${DOCKER_REGISTRY}usage${DOCKER_TAG}'
