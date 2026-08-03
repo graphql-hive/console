@@ -9,7 +9,7 @@ import type { Context } from './context';
 
 export type TaskDefinition<TName extends string, TModel> = {
   name: TName;
-  schema: z.ZodTypeAny & { _output: TModel };
+  schema: z.ZodType & { _output: TModel };
 };
 
 type TaskImplementationArgs<TPayload> = {
@@ -50,7 +50,7 @@ export function implementTask<TPayload>(
       function (unsafePayload, helpers) {
         const payload = schema.parse(unsafePayload);
         return implementation({
-          input: payload.input,
+          input: payload.input as TPayload,
           context,
           helpers,
           logger: context.logger.child({

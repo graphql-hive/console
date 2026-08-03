@@ -68,11 +68,9 @@ export function SignInButton(props: {
 }
 
 const SignInFormSchema = z.object({
-  email: z
-    .string({
-      required_error: 'Email is required',
-    })
-    .email('Invalid email address'),
+  email: z.email({
+    error: issue => (issue.input == null ? 'Email is required' : 'Invalid email address'),
+  }),
   password: z.string(),
 });
 

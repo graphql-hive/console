@@ -87,13 +87,7 @@ const SentryConfigSchema = zod.union([
 ]);
 
 const MigrationsSchema = protectedObject({
-  MEMBER_ROLES_DEADLINE: emptyString(
-    zod
-      .date({
-        coerce: true,
-      })
-      .optional(),
-  ),
+  MEMBER_ROLES_DEADLINE: emptyString(zod.coerce.date().optional()),
 });
 
 const envValues = getAllEnv();
@@ -124,7 +118,7 @@ function buildConfig() {
     throw new Error('Invalid environment variables.');
   }
 
-  function extractConfig<Input, Output>(config: zod.SafeParseReturnType<Input, Output>): Output {
+  function extractConfig<Output>(config: zod.ZodSafeParseResult<Output>): Output {
     if (!config.success) {
       throw new Error('Something went wrong.');
     }

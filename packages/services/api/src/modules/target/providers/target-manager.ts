@@ -386,15 +386,16 @@ export class TargetManager {
     }).safeParse(args.configuration);
 
     if (validationResult.success === false) {
+      const errors = z.treeifyError(validationResult.error);
       return {
         ok: false,
         error: {
           message: 'Please check your input.',
           inputErrors: {
-            period: validationResult.error.formErrors.fieldErrors.period?.[0],
-            percentage: validationResult.error.formErrors.fieldErrors.percentage?.[0],
-            requestCount: validationResult.error.formErrors.fieldErrors.requestCount?.[0],
-            targetIds: validationResult.error.formErrors.fieldErrors.targetIds?.[0],
+            period: errors?.properties?.period?.errors.at(0),
+            percentage: errors?.properties?.percentage?.errors.at(0),
+            requestCount: errors?.properties?.requestCount?.errors.at(0),
+            targetIds: errors?.properties?.targetIds?.errors.at(0),
           },
         },
       };
@@ -466,9 +467,10 @@ export class TargetManager {
 
     const slugParseResult = TargetSlugModel.safeParse(args.slug);
     if (!slugParseResult.success) {
+      const errors = z.treeifyError(slugParseResult.error);
       return {
         ok: false,
-        message: slugParseResult.error.formErrors.formErrors?.[0] ?? 'Please check your input.',
+        message: errors?.errors.at(0) ?? 'Please check your input.',
       };
     }
 
@@ -672,17 +674,16 @@ export class TargetManager {
     );
 
     if (validationResult.success === false) {
+      const errors = z.treeifyError(validationResult.error);
       return {
         ok: false,
         error: {
           message: 'Please check your input.',
           inputErrors: {
-            minDaysInactive: validationResult.error.formErrors.fieldErrors.minDaysInactive?.[0],
-            minDaysSinceCreation:
-              validationResult.error.formErrors.fieldErrors.minDaysSinceCreation?.[0],
-            maxTrafficPercentage:
-              validationResult.error.formErrors.fieldErrors.maxTrafficPercentage?.[0],
-            trafficPeriodDays: validationResult.error.formErrors.fieldErrors.trafficPeriodDays?.[0],
+            minDaysInactive: errors.properties?.minDaysInactive?.errors.at(0),
+            minDaysSinceCreation: errors.properties?.minDaysSinceCreation?.errors.at(0),
+            maxTrafficPercentage: errors.properties?.maxTrafficPercentage?.errors.at(0),
+            trafficPeriodDays: errors.properties?.trafficPeriodDays?.errors.at(0),
           },
         },
       };

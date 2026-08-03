@@ -19,9 +19,10 @@ export const updateBaseSchema: NonNullable<MutationResolvers['updateBaseSchema']
   const result = UpdateBaseSchemaModel.safeParse(input);
 
   if (!result.success) {
+    const errors = z.treeifyError(result.error);
     return {
       error: {
-        message: result.error.formErrors.fieldErrors?.newBase?.[0] ?? 'Please check your input.',
+        message: errors.properties?.newBase?.errors.at(0) ?? 'Please check your input.',
       },
     };
   }

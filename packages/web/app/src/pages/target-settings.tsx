@@ -1420,7 +1420,7 @@ const AppDeploymentProtection = (props: {
 const SlugFormSchema = z.object({
   slug: z
     .string({
-      required_error: 'Target slug is required',
+      error: issue => (issue.input == null ? 'Target slug is required' : issue.message),
     })
     .min(1, 'Target slug is required')
     .max(50, 'Slug must be less than 50 characters')

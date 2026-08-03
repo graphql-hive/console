@@ -185,7 +185,7 @@ const ProjectSettingsPage_UpdateProjectSlugMutation = graphql(`
 const SlugFormSchema = z.object({
   slug: z
     .string({
-      required_error: 'Project slug is required',
+      error: issue => (issue.input == null ? 'Project slug is required' : issue.message),
     })
     .min(1, 'Project slug is required')
     .max(50, 'Slug must be less than 50 characters')

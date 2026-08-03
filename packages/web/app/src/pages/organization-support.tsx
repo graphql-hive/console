@@ -48,13 +48,13 @@ import { Link } from '@tanstack/react-router';
 
 const newTicketFormSchema = z.object({
   subject: z.string().min(2, {
-    message: 'Subject must be at least 2 characters.',
+    error: 'Subject must be at least 2 characters.',
   }),
   priority: z.nativeEnum(SupportTicketPriority, {
-    required_error: 'A priority is required.',
+    error: issue => (issue.input == null ? 'A priority is required.' : issue.message),
   }),
   description: z.string().min(5, {
-    message: 'Description must be at least 5 characters.',
+    error: 'Description must be at least 5 characters.',
   }),
 });
 

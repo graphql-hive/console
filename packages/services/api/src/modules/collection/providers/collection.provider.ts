@@ -359,9 +359,10 @@ export class CollectionProvider {
     });
 
     if (validationResult.error) {
+      const errors = zod.treeifyError(validationResult.error);
       return {
         type: 'error' as const,
-        message: validationResult.error.errors[0].message,
+        message: errors.errors[0],
       };
     }
 
@@ -467,9 +468,10 @@ export class CollectionProvider {
     });
 
     if (validationResult.error) {
+      const errors = zod.treeifyError(validationResult.error);
       return {
         type: 'error' as const,
-        message: validationResult.error.errors[0].message,
+        message: errors.errors[0],
       };
     }
 

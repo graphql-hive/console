@@ -35,7 +35,7 @@ const EnvironmentModel = zod.object({
   ENVIRONMENT: emptyString(zod.string().optional()),
   RELEASE: emptyString(zod.string().optional()),
   HEARTBEAT_ENDPOINT: emptyString(zod.string().url().optional()),
-  EMAIL_FROM: zod.string().email(),
+  EMAIL_FROM: zod.email(),
   SCHEMA_ENDPOINT: zod.string().url(),
   // Base URL of the Hive Console, used to link alert notifications back to the
   // rule that fired. Optional so an existing self-hosted deployment keeps
@@ -192,7 +192,7 @@ if (environmentErrors.length) {
   process.exit(1);
 }
 
-function extractConfig<Input, Output>(config: zod.SafeParseReturnType<Input, Output>): Output {
+function extractConfig<Output>(config: zod.ZodSafeParseResult<Output>): Output {
   if (!config.success) {
     throw new Error('Something went wrong.');
   }

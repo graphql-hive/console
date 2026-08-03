@@ -12,7 +12,7 @@ import { WEB_APP_URL } from '../../shared/providers/tokens';
 const EmailVerificationModelBase = zod.object({
   id: zod.string().uuid(),
   userIdentityId: zod.string(),
-  email: zod.string().email(),
+  email: zod.email(),
   createdAt: zod.number().transform(v => new Date(v)),
 });
 
@@ -132,7 +132,7 @@ export class EmailVerification {
           WHERE "saaru"."user_id" = ${input.userIdentityId}
         `,
       )
-      .then(v => zod.object({ email: zod.string().email() }).nullable().parse(v));
+      .then(v => zod.object({ email: zod.email() }).nullable().parse(v));
 
     if (!superTokensUser) {
       throw new HiveError('User identity not found.');

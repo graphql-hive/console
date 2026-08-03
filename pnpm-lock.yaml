@@ -292,7 +292,7 @@ importers:
     devDependencies:
       '@graphql-hive/gateway':
         specifier: 2.10.4
-        version: 2.10.4(@tanstack/react-form@1.28.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(@types/ioredis-mock@8.2.5)(@types/node@24.13.3)(@types/react-dom@18.3.5(@types/react@18.3.18))(@types/react@18.3.18)(date-fns@4.1.0)(graphql@16.14.2)(ioredis@5.10.1)(lucide-react@0.548.0(react@18.3.1))(lz-string@1.5.0)(pino@10.3.0)(prom-client@15.1.3)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(subscriptions-transport-ws@0.11.0(graphql@16.14.2))(zod@4.3.6)
+        version: 2.10.4(@tanstack/react-form@1.28.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(@types/ioredis-mock@8.2.5)(@types/node@24.13.3)(@types/react-dom@18.3.5(@types/react@18.3.18))(@types/react@18.3.18)(date-fns@4.1.0)(graphql@16.14.2)(ioredis@5.10.1)(lucide-react@0.548.0(react@18.3.1))(lz-string@1.5.0)(pino@10.3.0)(prom-client@15.1.3)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(subscriptions-transport-ws@0.11.0(graphql@16.14.2))(zod@4.4.3)
       '@types/js-yaml':
         specifier: 4.0.9
         version: 4.0.9
@@ -423,8 +423,8 @@ importers:
         specifier: 4.1.3
         version: 4.1.3(@opentelemetry/api@1.9.1)(@types/node@25.5.0)(happy-dom@20.10.6)(msw@2.12.7(@types/node@25.5.0)(typescript@5.7.3))(vite@7.3.6(@types/node@25.5.0)(jiti@2.6.1)(less@4.2.0)(lightningcss@1.31.1)(terser@5.37.0)(tsx@4.19.2)(yaml@2.8.3))
       zod:
-        specifier: 3.25.76
-        version: 3.25.76
+        specifier: 4.4.3
+        version: 4.4.3
 
   load-tests/otel-traces:
     devDependencies:
@@ -449,8 +449,8 @@ importers:
         specifier: 48.13.2
         version: 48.13.2(slonik@48.13.2(patch_hash=f3bf6d4d34249f6f9a4647d24fa4af00163597e4c8a5e94e20eca7959f1f2caa))
       zod:
-        specifier: 3.25.76
-        version: 3.25.76
+        specifier: 4.4.3
+        version: 4.4.3
     devDependencies:
       '@hive/service-common':
         specifier: workspace:*
@@ -563,8 +563,8 @@ importers:
         specifier: 2.8.1
         version: 2.8.1
       zod:
-        specifier: 3.25.76
-        version: 3.25.76
+        specifier: 4.4.3
+        version: 4.4.3
     devDependencies:
       '@types/env-ci':
         specifier: 3.1.4
@@ -974,8 +974,8 @@ importers:
         specifier: ^1.1.0
         version: 1.1.0(monaco-editor@0.52.2)
       zod:
-        specifier: ^4.3.6
-        version: 4.3.6
+        specifier: 4.4.3
+        version: 4.4.3
 
   packages/libraries/pubsub:
     dependencies:
@@ -1114,8 +1114,8 @@ importers:
         specifier: 5.7.3
         version: 5.7.3
       zod:
-        specifier: 3.25.76
-        version: 3.25.76
+        specifier: 4.4.3
+        version: 4.4.3
 
   packages/services/api:
     dependencies:
@@ -1301,11 +1301,11 @@ importers:
         specifier: 4.1.3
         version: 4.1.3(@opentelemetry/api@1.9.1)(@types/node@25.5.0)(happy-dom@20.10.6)(msw@2.12.7(@types/node@25.5.0)(typescript@5.7.3))(vite@7.3.6(@types/node@25.5.0)(jiti@2.6.1)(less@4.2.0)(lightningcss@1.31.1)(terser@5.37.0)(tsx@4.19.2)(yaml@2.8.3))
       zod:
-        specifier: 3.25.76
-        version: 3.25.76
+        specifier: 4.4.3
+        version: 4.4.3
       zod-validation-error:
-        specifier: 3.4.0
-        version: 3.4.0(zod@3.25.76)
+        specifier: 5.0.0
+        version: 5.0.0(zod@4.4.3)
 
   packages/services/broker-worker:
     devDependencies:
@@ -1340,8 +1340,8 @@ importers:
         specifier: 0.1.15
         version: 0.1.15
       zod:
-        specifier: 3.25.76
-        version: 3.25.76
+        specifier: 4.4.3
+        version: 4.4.3
 
   packages/services/cdn-worker:
     devDependencies:
@@ -1385,8 +1385,8 @@ importers:
         specifier: 7.28.0
         version: 7.28.0
       zod:
-        specifier: 3.25.76
-        version: 3.25.76
+        specifier: 4.4.3
+        version: 4.4.3
 
   packages/services/commerce:
     devDependencies:
@@ -1430,8 +1430,8 @@ importers:
         specifier: 17.5.0
         version: 17.5.0
       zod:
-        specifier: 3.25.76
-        version: 3.25.76
+        specifier: 4.4.3
+        version: 4.4.3
 
   packages/services/demo/federation:
     dependencies:
@@ -1479,8 +1479,8 @@ importers:
         specifier: ^7.17.0
         version: 7.18.3
       zod:
-        specifier: 3.25.76
-        version: 3.25.76
+        specifier: 4.4.3
+        version: 4.4.3
 
   packages/services/policy:
     devDependencies:
@@ -1518,11 +1518,11 @@ importers:
         specifier: 11.3.0
         version: 11.3.0
       zod:
-        specifier: 3.25.76
-        version: 3.25.76
+        specifier: 4.4.3
+        version: 4.4.3
       zod-validation-error:
-        specifier: 3.4.0
-        version: 3.4.0(zod@3.25.76)
+        specifier: 5.0.0
+        version: 5.0.0(zod@4.4.3)
 
   packages/services/schema:
     devDependencies:
@@ -1587,8 +1587,8 @@ importers:
         specifier: 0.2.2
         version: 0.2.2
       zod:
-        specifier: 3.25.76
-        version: 3.25.76
+        specifier: 4.4.3
+        version: 4.4.3
 
   packages/services/server:
     devDependencies:
@@ -1707,8 +1707,8 @@ importers:
         specifier: 0.2.2
         version: 0.2.2
       zod:
-        specifier: 3.25.76
-        version: 3.25.76
+        specifier: 4.4.3
+        version: 4.4.3
 
   packages/services/service-common:
     dependencies:
@@ -1810,8 +1810,8 @@ importers:
         specifier: 4.1.3
         version: 4.1.3(@opentelemetry/api@1.9.1)(@types/node@25.5.0)(happy-dom@20.10.6)(msw@2.12.7(@types/node@25.5.0)(typescript@5.7.3))(vite@7.3.6(@types/node@25.5.0)(jiti@2.6.1)(less@4.2.0)(lightningcss@1.31.1)(terser@5.37.0)(tsx@4.19.2)(yaml@2.8.3))
       zod:
-        specifier: 3.25.76
-        version: 3.25.76
+        specifier: 4.4.3
+        version: 4.4.3
 
   packages/services/storage:
     devDependencies:
@@ -1852,8 +1852,8 @@ importers:
         specifier: 5.7.3
         version: 5.7.3
       zod:
-        specifier: 3.25.76
-        version: 3.25.76
+        specifier: 4.4.3
+        version: 4.4.3
 
   packages/services/usage:
     devDependencies:
@@ -1906,8 +1906,8 @@ importers:
         specifier: 0.2.2
         version: 0.2.2
       zod:
-        specifier: 3.25.76
-        version: 3.25.76
+        specifier: 4.4.3
+        version: 4.4.3
 
   packages/services/usage-common:
     devDependencies:
@@ -1951,8 +1951,8 @@ importers:
         specifier: 11.4.7
         version: 11.4.7
       zod:
-        specifier: 3.25.76
-        version: 3.25.76
+        specifier: 4.4.3
+        version: 4.4.3
 
   packages/services/workflows:
     devDependencies:
@@ -2029,8 +2029,8 @@ importers:
         specifier: 1.6.1
         version: 1.6.1
       zod:
-        specifier: 3.25.76
-        version: 3.25.76
+        specifier: 4.4.3
+        version: 4.4.3
 
   packages/web/app:
     devDependencies:
@@ -2228,7 +2228,7 @@ importers:
         version: 1.34.9(@tanstack/react-router@1.34.9(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(csstype@3.1.2)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@tanstack/zod-adapter':
         specifier: 1.120.5
-        version: 1.120.5(@tanstack/react-router@1.34.9(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(zod@3.25.76)
+        version: 1.120.5(@tanstack/react-router@1.34.9(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(zod@4.4.3)
       '@theguild/editor':
         specifier: 1.2.5
         version: 1.2.5(patch_hash=a401455daa519af0fe686b4f970a02582f9e406c520aad19273a8eeef8f4adf7)(@monaco-editor/react@4.8.0-rc.2(monaco-editor@0.52.2)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(@types/node@25.5.0)(cosmiconfig-toml-loader@1.0.0)(encoding@0.1.13)(graphql@16.9.0)(monaco-editor@0.52.2)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
@@ -2464,8 +2464,8 @@ importers:
         specifier: 1.6.1
         version: 1.6.1
       zod:
-        specifier: 3.25.76
-        version: 3.25.76
+        specifier: 4.4.3
+        version: 4.4.3
 
   rules:
     devDependencies:
@@ -19492,11 +19492,11 @@ packages:
   yup@1.6.1:
     resolution: {integrity: sha512-JED8pB50qbA4FOkDol0bYF/p60qSEDQqBD0/qeIrUCG1KbPBIQ776fCUNb9ldbPcSTxA69g/47XTo4TqWiuXOA==}
 
-  zod-validation-error@3.4.0:
-    resolution: {integrity: sha512-ZOPR9SVY6Pb2qqO5XHt+MkkTRxGXb4EVtnjc9JpXUOtUB1T9Ru7mZOT361AN3MsetVe7R0a1KZshJDZdgp9miQ==}
+  zod-validation-error@5.0.0:
+    resolution: {integrity: sha512-hmk+pkyKq7Q71PiWVSDUc3VfpzpvcRHZ3QPw9yEMVvmtCekaMeOHnbr3WbxfrgEnQTv6haGP4cmv0Ojmihzsxw==}
     engines: {node: '>=18.0.0'}
     peerDependencies:
-      zod: ^3.18.0
+      zod: ^3.25.0 || ^4.0.0
 
   zod@3.22.3:
     resolution: {integrity: sha512-EjIevzuJRiRPbVH4mGc8nApb/lVLKVpmUhAaR5R5doKGfAnGJ6Gr3CViAVjP+4FWSxCsybeWQdcgCtbX+7oZug==}
@@ -19504,8 +19504,8 @@ packages:
   zod@3.25.76:
     resolution: {integrity: sha512-gzUt/qt81nXsFGKIFcC3YnfEAx5NkunCfnDlvuBSSFS02bcXu4Lmea0AFIUwbLWxWPx3d9p8S5QoaujKcNQxcQ==}
 
-  zod@4.3.6:
-    resolution: {integrity: sha512-rftlrkhHZOcjDwkGlnUtZZkvaPHCsDATp4pGpuOOMDaTdDDXF91wuVDJoWoPsKX/3YPQ5fHuF3STjcYyKr+Qhg==}
+  zod@4.4.3:
+    resolution: {integrity: sha512-ytENFjIJFl2UwYglde2jchW2Hwm4GJFLDiSXWdTrJQBIN9Fcyp7n4DhxJEiWNAJMV1/BqWfW/kkg71UDcHJyTQ==}
 
   zone.js@0.15.1:
     resolution: {integrity: sha512-XE96n56IQpJM7NAoXswY3XRLcWFW83xe0BiAOeMD7K5k5xecOeul3Qcpx6GqEeeHNkW5DWL5zOyTbEfB4eti8w==}
@@ -22650,7 +22650,7 @@ snapshots:
       - winston
       - ws
 
-  '@graphql-hive/gateway@2.10.4(@tanstack/react-form@1.28.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(@types/ioredis-mock@8.2.5)(@types/node@24.13.3)(@types/react-dom@18.3.5(@types/react@18.3.18))(@types/react@18.3.18)(date-fns@4.1.0)(graphql@16.14.2)(ioredis@5.10.1)(lucide-react@0.548.0(react@18.3.1))(lz-string@1.5.0)(pino@10.3.0)(prom-client@15.1.3)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(subscriptions-transport-ws@0.11.0(graphql@16.14.2))(zod@4.3.6)':
+  '@graphql-hive/gateway@2.10.4(@tanstack/react-form@1.28.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(@types/ioredis-mock@8.2.5)(@types/node@24.13.3)(@types/react-dom@18.3.5(@types/react@18.3.18))(@types/react@18.3.18)(date-fns@4.1.0)(graphql@16.14.2)(ioredis@5.10.1)(lucide-react@0.548.0(react@18.3.1))(lz-string@1.5.0)(pino@10.3.0)(prom-client@15.1.3)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(subscriptions-transport-ws@0.11.0(graphql@16.14.2))(zod@4.4.3)':
     dependencies:
       '@commander-js/extra-typings': 14.0.0(commander@14.0.2)
       '@envelop/core': 5.5.1
@@ -22664,7 +22664,7 @@ snapshots:
       '@graphql-hive/plugin-aws-sigv4': 2.0.53(@types/node@24.13.3)(graphql@16.14.2)(ioredis@5.10.1)(pino@10.3.0)
       '@graphql-hive/plugin-opentelemetry': 1.4.35(graphql@16.14.2)(ioredis@5.10.1)(pino@10.3.0)(ws@8.21.0)
       '@graphql-hive/pubsub': 2.1.1(ioredis@5.10.1)
-      '@graphql-hive/render-laboratory': 0.1.10(@tanstack/react-form@1.28.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(@types/node@24.13.3)(@types/react-dom@18.3.5(@types/react@18.3.18))(@types/react@18.3.18)(date-fns@4.1.0)(graphql-yoga@5.21.1(graphql@16.14.2))(graphql@16.14.2)(lucide-react@0.548.0(react@18.3.1))(lz-string@1.5.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(subscriptions-transport-ws@0.11.0(graphql@16.14.2))(tslib@2.8.1)(zod@4.3.6)
+      '@graphql-hive/render-laboratory': 0.1.10(@tanstack/react-form@1.28.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(@types/node@24.13.3)(@types/react-dom@18.3.5(@types/react@18.3.18))(@types/react@18.3.18)(date-fns@4.1.0)(graphql-yoga@5.21.1(graphql@16.14.2))(graphql@16.14.2)(lucide-react@0.548.0(react@18.3.1))(lz-string@1.5.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(subscriptions-transport-ws@0.11.0(graphql@16.14.2))(tslib@2.8.1)(zod@4.4.3)
       '@graphql-hive/signal': 2.0.0
       '@graphql-mesh/cache-cfw-kv': 0.105.36(graphql@16.14.2)(ioredis@5.10.1)
       '@graphql-mesh/cache-localforage': 0.105.37(graphql@16.14.2)(ioredis@5.10.1)
@@ -22738,7 +22738,7 @@ snapshots:
 
   '@graphql-hive/importer@2.0.0': {}
 
-  '@graphql-hive/laboratory@0.1.9(@tanstack/react-form@1.28.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(@types/node@24.13.3)(@types/react-dom@18.3.5(@types/react@18.3.18))(@types/react@18.3.18)(date-fns@4.1.0)(graphql@16.14.2)(lucide-react@0.548.0(react@18.3.1))(lz-string@1.5.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(subscriptions-transport-ws@0.11.0(graphql@16.14.2))(tslib@2.8.1)(zod@4.3.6)':
+  '@graphql-hive/laboratory@0.1.9(@tanstack/react-form@1.28.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(@types/node@24.13.3)(@types/react-dom@18.3.5(@types/react@18.3.18))(@types/react@18.3.18)(date-fns@4.1.0)(graphql@16.14.2)(lucide-react@0.548.0(react@18.3.1))(lz-string@1.5.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(subscriptions-transport-ws@0.11.0(graphql@16.14.2))(tslib@2.8.1)(zod@4.4.3)':
     dependencies:
       '@base-ui/react': 1.1.0(@types/react@18.3.18)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@graphql-tools/url-loader': 9.1.0(@types/node@24.13.3)(graphql@16.14.2)
@@ -22753,7 +22753,7 @@ snapshots:
       subscriptions-transport-ws: 0.11.0(graphql@16.14.2)
       tslib: 2.8.1
       uuid: 14.0.0
-      zod: 4.3.6
+      zod: 4.4.3
     transitivePeerDependencies:
       - '@fastify/websocket'
       - '@types/node'
@@ -22874,9 +22874,9 @@ snapshots:
     optionalDependencies:
       ioredis: 5.10.1
 
-  '@graphql-hive/render-laboratory@0.1.10(@tanstack/react-form@1.28.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(@types/node@24.13.3)(@types/react-dom@18.3.5(@types/react@18.3.18))(@types/react@18.3.18)(date-fns@4.1.0)(graphql-yoga@5.21.1(graphql@16.14.2))(graphql@16.14.2)(lucide-react@0.548.0(react@18.3.1))(lz-string@1.5.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(subscriptions-transport-ws@0.11.0(graphql@16.14.2))(tslib@2.8.1)(zod@4.3.6)':
+  '@graphql-hive/render-laboratory@0.1.10(@tanstack/react-form@1.28.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(@types/node@24.13.3)(@types/react-dom@18.3.5(@types/react@18.3.18))(@types/react@18.3.18)(date-fns@4.1.0)(graphql-yoga@5.21.1(graphql@16.14.2))(graphql@16.14.2)(lucide-react@0.548.0(react@18.3.1))(lz-string@1.5.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(subscriptions-transport-ws@0.11.0(graphql@16.14.2))(tslib@2.8.1)(zod@4.4.3)':
     dependencies:
-      '@graphql-hive/laboratory': 0.1.9(@tanstack/react-form@1.28.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(@types/node@24.13.3)(@types/react-dom@18.3.5(@types/react@18.3.18))(@types/react@18.3.18)(date-fns@4.1.0)(graphql@16.14.2)(lucide-react@0.548.0(react@18.3.1))(lz-string@1.5.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(subscriptions-transport-ws@0.11.0(graphql@16.14.2))(tslib@2.8.1)(zod@4.3.6)
+      '@graphql-hive/laboratory': 0.1.9(@tanstack/react-form@1.28.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(@types/node@24.13.3)(@types/react-dom@18.3.5(@types/react@18.3.18))(@types/react@18.3.18)(date-fns@4.1.0)(graphql@16.14.2)(lucide-react@0.548.0(react@18.3.1))(lz-string@1.5.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(subscriptions-transport-ws@0.11.0(graphql@16.14.2))(tslib@2.8.1)(zod@4.4.3)
       graphql-yoga: 5.21.1(graphql@16.14.2)
     transitivePeerDependencies:
       - '@fastify/websocket'
@@ -30392,54 +30392,54 @@ snapshots:
       - debug
       - supports-color
 
-  '@slonik/driver@48.13.2(zod@4.3.6)':
+  '@slonik/driver@48.13.2(zod@4.4.3)':
     dependencies:
-      '@slonik/types': 48.13.2(zod@4.3.6)
-      '@slonik/utilities': 48.13.2(zod@4.3.6)
+      '@slonik/types': 48.13.2(zod@4.4.3)
+      '@slonik/utilities': 48.13.2(zod@4.4.3)
       roarr: 7.21.4
       serialize-error: 12.0.0
       strict-event-emitter-types: 2.0.0
-      zod: 4.3.6
+      zod: 4.4.3
 
-  '@slonik/errors@48.13.2(zod@4.3.6)':
+  '@slonik/errors@48.13.2(zod@4.4.3)':
     dependencies:
-      '@slonik/types': 48.13.2(zod@4.3.6)
+      '@slonik/types': 48.13.2(zod@4.4.3)
     transitivePeerDependencies:
       - zod
 
-  '@slonik/pg-driver@48.13.2(patch_hash=c9e1450b7d73280ac4a32ed554a05495054e82c2d65086f19d80c90bbf80d488)(zod@4.3.6)':
+  '@slonik/pg-driver@48.13.2(patch_hash=c9e1450b7d73280ac4a32ed554a05495054e82c2d65086f19d80c90bbf80d488)(zod@4.4.3)':
     dependencies:
-      '@slonik/driver': 48.13.2(zod@4.3.6)
-      '@slonik/errors': 48.13.2(zod@4.3.6)
+      '@slonik/driver': 48.13.2(zod@4.4.3)
+      '@slonik/errors': 48.13.2(zod@4.4.3)
       '@slonik/sql-tag': 48.13.2
-      '@slonik/types': 48.13.2(zod@4.3.6)
-      '@slonik/utilities': 48.13.2(zod@4.3.6)
+      '@slonik/types': 48.13.2(zod@4.4.3)
+      '@slonik/utilities': 48.13.2(zod@4.4.3)
       pg: 8.20.0
       pg-query-stream: 4.14.0(pg@8.20.0)
       pg-types: 4.1.0
       postgres-array: 3.0.4
-      zod: 4.3.6
+      zod: 4.4.3
     transitivePeerDependencies:
       - pg-native
 
   '@slonik/sql-tag@48.13.2':
     dependencies:
-      '@slonik/errors': 48.13.2(zod@4.3.6)
-      '@slonik/types': 48.13.2(zod@4.3.6)
+      '@slonik/errors': 48.13.2(zod@4.4.3)
+      '@slonik/types': 48.13.2(zod@4.4.3)
       roarr: 7.21.4
       safe-stable-stringify: 2.5.0
       serialize-error: 12.0.0
-      zod: 4.3.6
+      zod: 4.4.3
 
-  '@slonik/types@48.13.2(zod@4.3.6)':
+  '@slonik/types@48.13.2(zod@4.4.3)':
     dependencies:
-      zod: 4.3.6
+      zod: 4.4.3
 
-  '@slonik/utilities@48.13.2(zod@4.3.6)':
+  '@slonik/utilities@48.13.2(zod@4.4.3)':
     dependencies:
-      '@slonik/errors': 48.13.2(zod@4.3.6)
-      '@slonik/types': 48.13.2(zod@4.3.6)
-      zod: 4.3.6
+      '@slonik/errors': 48.13.2(zod@4.4.3)
+      '@slonik/types': 48.13.2(zod@4.4.3)
+      zod: 4.4.3
 
   '@smithy/abort-controller@4.2.8':
     dependencies:
@@ -31539,10 +31539,10 @@ snapshots:
 
   '@tanstack/virtual-file-routes@1.154.7': {}
 
-  '@tanstack/zod-adapter@1.120.5(@tanstack/react-router@1.34.9(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(zod@3.25.76)':
+  '@tanstack/zod-adapter@1.120.5(@tanstack/react-router@1.34.9(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(zod@4.4.3)':
     dependencies:
       '@tanstack/react-router': 1.34.9(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
-      zod: 3.25.76
+      zod: 4.4.3
 
   '@testing-library/dom@10.4.1':
     dependencies:
@@ -40706,11 +40706,11 @@ snapshots:
   slonik@48.13.2(patch_hash=f3bf6d4d34249f6f9a4647d24fa4af00163597e4c8a5e94e20eca7959f1f2caa):
     dependencies:
       '@opentelemetry/api': 1.9.0
-      '@slonik/driver': 48.13.2(zod@4.3.6)
-      '@slonik/errors': 48.13.2(zod@4.3.6)
-      '@slonik/pg-driver': 48.13.2(patch_hash=c9e1450b7d73280ac4a32ed554a05495054e82c2d65086f19d80c90bbf80d488)(zod@4.3.6)
+      '@slonik/driver': 48.13.2(zod@4.4.3)
+      '@slonik/errors': 48.13.2(zod@4.4.3)
+      '@slonik/pg-driver': 48.13.2(patch_hash=c9e1450b7d73280ac4a32ed554a05495054e82c2d65086f19d80c90bbf80d488)(zod@4.4.3)
       '@slonik/sql-tag': 48.13.2
-      '@slonik/utilities': 48.13.2(zod@4.3.6)
+      '@slonik/utilities': 48.13.2(zod@4.4.3)
       '@standard-schema/spec': 1.0.0
       iso8601-duration: 2.1.3
       p-limit: 6.2.0
@@ -40718,7 +40718,7 @@ snapshots:
       roarr: 7.21.4
       serialize-error: 12.0.0
       strict-event-emitter-types: 2.0.0
-      zod: 4.3.6
+      zod: 4.4.3
     transitivePeerDependencies:
       - pg-native
 
@@ -42410,15 +42410,15 @@ snapshots:
       toposort: 2.0.2
       type-fest: 2.19.0
 
-  zod-validation-error@3.4.0(zod@3.25.76):
+  zod-validation-error@5.0.0(zod@4.4.3):
     dependencies:
-      zod: 3.25.76
+      zod: 4.4.3
 
   zod@3.22.3: {}
 
   zod@3.25.76: {}
 
-  zod@4.3.6: {}
+  zod@4.4.3: {}
 
   zone.js@0.15.1: {}
 

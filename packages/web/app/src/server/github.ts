@@ -20,27 +20,25 @@ const GithubIntegration_addGitHubIntegration = graphql(/* GraphQL */ `
 
 const CallbackQuery = z.object({
   installation_id: z.string({
-    required_error: 'Invalid installation_id',
+    error: issue => (issue.input == null ? 'Invalid installation_id' : issue.message),
   }),
   state: z.string({
-    required_error: 'Invalid state',
+    error: issue => (issue.input == null ? 'Invalid state' : issue.message),
   }),
 });
 
 const SetupCallbackQuery = z.object({
   installation_id: z.string({
-    required_error: 'Invalid installation_id',
+    error: issue => (issue.input == null ? 'Invalid installation_id' : issue.message),
   }),
   state: z
-    .string({
-      required_error: 'Invalid state',
-    })
+    .string({ error: issue => (issue.input == null ? 'Invalid state' : issue.message) })
     .optional(),
 });
 
 const ConnectParams = z.object({
   organizationSlug: z.string({
-    required_error: 'Invalid organizationSlug',
+    error: issue => (issue.input == null ? 'Invalid organizationSlug' : issue.message),
   }),
 });
 
@@ -49,7 +47,15 @@ export function connectGithub(server: FastifyInstance) {
     const queryResult = CallbackQuery.safeParse(req.query);
 
     if (!queryResult.success) {
-      void res.status(400).send(queryResult.error.flatten().fieldErrors);
+      void res
+        .status(400)
+        .send(
+          Object.fromEntries(
+            Object.entries(z.treeifyError(queryResult.error).properties ?? {}).map(
+              ([key, value]) => [key, value.errors],
+            ),
+          ),
+        );
       return;
     }
 

@@ -26,11 +26,9 @@ import { Link, Navigate } from '@tanstack/react-router';
 import { PasswordStringModel } from './auth-sign-up';
 
 const ResetPasswordFormSchema = z.object({
-  email: z
-    .string({
-      required_error: 'Email is required',
-    })
-    .email('Invalid email address'),
+  email: z.email({
+    error: issue => (issue.input == null ? 'Email is required' : 'Invalid email address'),
+  }),
 });
 
 type ResetPasswordFormValues = z.infer<typeof ResetPasswordFormSchema>;

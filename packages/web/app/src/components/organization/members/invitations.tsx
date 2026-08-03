@@ -86,14 +86,14 @@ const MemberInvitationForm_OrganizationFragment = graphql(`
 
 const memberInvitationFormSchema = z.object({
   email: z
-    .string({
-      required_error: 'Please enter email address',
+    .email({
+      error: issue =>
+        issue.input == null ? 'Please enter email address' : 'Please enter valid email address',
     })
-    .max(128, 'Email address is too long')
-    .email('Please enter valid email address'),
+    .max(128, 'Email address is too long'),
   role: z
     .string({
-      required_error: 'Please select a role',
+      error: issue => (issue.input == null ? 'Please select a role' : issue.message),
     })
     .min(1, 'Please select a role'),
 });

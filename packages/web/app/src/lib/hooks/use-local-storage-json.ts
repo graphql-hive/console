@@ -15,7 +15,7 @@ export function useLocalStorageJson<$Schema extends z.ZodType>(...args: ArgsInpu
     manualDefaultValue !== undefined
       ? manualDefaultValue
       : Kit.ZodHelpers.isDefaultType(schema)
-        ? (schema._def.defaultValue() as z.infer<$Schema>)
+        ? (schema.def.defaultValue as z.infer<$Schema>)
         : Kit.never();
 
   const [value, setValue] = useState<z.infer<$Schema>>(() => {

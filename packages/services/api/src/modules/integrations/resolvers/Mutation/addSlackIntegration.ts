@@ -24,9 +24,8 @@ export const addSlackIntegration: NonNullable<MutationResolvers['addSlackIntegra
   const result = AddSlackTokenIntegrationModel.safeParse(input);
 
   if (!result.success) {
-    throw new HiveError(
-      result.error.formErrors.fieldErrors.token?.[0] ?? 'Please check your input.',
-    );
+    const errors = z.treeifyError(result.error);
+    throw new HiveError(errors.errors.at(0) ?? 'Please check your input.');
   }
 
   const organization = await injector.get(IdTranslator).translateOrganizationId(input);

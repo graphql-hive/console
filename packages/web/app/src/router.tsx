@@ -271,9 +271,7 @@ const authSSORoute = createRoute({
 
 const AuthOIDCRouteSearch = AuthSharedSearch.extend({
   id: z
-    .string({
-      required_error: 'OIDC ID is required',
-    })
+    .string({ error: issue => (issue.input == null ? 'OIDC ID is required' : issue.message) })
     .optional(),
 });
 const authOIDCRoute = createRoute({
@@ -403,7 +401,7 @@ const organizationRoute = createRoute({
 });
 
 const OrganizationOIDCRequestRouteSearch = z.object({
-  id: z.string({ required_error: 'OIDC ID is required' }),
+  id: z.string({ error: issue => (issue.input == null ? 'OIDC ID is required' : issue.message) }),
   redirectToPath: z.string().optional().default('/'),
 });
 const organizationOIDCRequestRoute = createRoute({

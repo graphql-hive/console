@@ -13,16 +13,14 @@ const SlackIntegration_addSlackIntegration = graphql(/* GraphQL */ `
 
 const CallBackQuery = z.object({
   code: z.string({
-    required_error: 'Invalid code',
+    error: issue => (issue.input == null ? 'Invalid code' : issue.message),
   }),
-  state: z.string({
-    required_error: 'Invalid state',
-  }),
+  state: z.string({ error: issue => (issue.input == null ? 'Invalid state' : issue.message) }),
 });
 
 const ConnectParams = z.object({
   organizationSlug: z.string({
-    required_error: 'Invalid organizationSlug',
+    error: issue => (issue.input == null ? 'Invalid organizationSlug' : issue.message),
   }),
 });
 

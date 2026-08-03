@@ -105,9 +105,10 @@ export class PreflightScriptProvider {
     const validationResult = UpdatePreflightScriptModel.safeParse({ sourceCode: args.sourceCode });
 
     if (validationResult.error) {
+      const errors = z.treeifyError(validationResult.error);
       return {
         error: {
-          message: validationResult.error.errors[0].message,
+          message: errors.errors[0],
         },
       };
     }
@@ -147,9 +148,10 @@ export class PreflightScriptProvider {
     const { data: preflightScript, error } = PreflightScriptModel.safeParse(result);
 
     if (error) {
+      const errors = z.treeifyError(error);
       return {
         error: {
-          message: error.errors[0].message,
+          message: errors.errors[0],
         },
       };
     }

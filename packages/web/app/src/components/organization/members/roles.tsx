@@ -53,7 +53,7 @@ import { SelectedPermissionOverview } from './selected-permission-overview';
 export const roleFormSchema = z.object({
   name: z
     .string({
-      required_error: 'Required',
+      error: issue => (issue.input == null ? 'Required' : issue.message),
     })
     .trim()
     .min(2, 'Too short')
@@ -65,7 +65,7 @@ export const roleFormSchema = z.object({
     .refine(val => val !== 'Viewer' && val !== 'Admin', 'Viewer and Admin are reserved'),
   description: z
     .string({
-      required_error: 'Please enter role description',
+      error: issue => (issue.input == null ? 'Please enter role description' : issue.message),
     })
     .trim()
     .min(2, 'Too short')

@@ -26,7 +26,7 @@ import { Link, Navigate, useRouter } from '@tanstack/react-router';
 const SSOFormSchema = z.object({
   slug: z
     .string({
-      required_error: 'Slug is required',
+      error: issue => (issue.input == null ? 'Slug is required' : issue.message),
     })
     .toLowerCase(),
 });

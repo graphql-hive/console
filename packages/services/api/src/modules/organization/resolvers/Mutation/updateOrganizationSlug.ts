@@ -1,3 +1,4 @@
+import z from 'zod';
 import { IdTranslator } from '../../../shared/providers/id-translator';
 import { OrganizationManager } from '../../providers/organization-manager';
 import { OrganizationSlugModel } from '../../validation';
@@ -9,11 +10,10 @@ export const updateOrganizationSlug: NonNullable<
   const parsedInput = OrganizationSlugModel.safeParse(input.slug);
 
   if (!parsedInput.success) {
+    const errors = z.treeifyError(parsedInput.error);
     return {
       error: {
-        message:
-          parsedInput.error.formErrors.fieldErrors?.[0]?.[0] ??
-          'Changing the organization slug failed.',
+        message: errors.errors.at(0) ?? 'Changing the organization slug failed.',
       },
     };
   }

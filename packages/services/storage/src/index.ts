@@ -1033,7 +1033,7 @@ export async function createStorage(
           .then(
             z.object({
               roleId: z.string(),
-              assignedResources: z.record(z.any()).nullable(),
+              assignedResources: z.record(z.string(), z.any()).nullable(),
             }).parse,
           );
 
@@ -4131,7 +4131,6 @@ const FeatureFlagsModel = z
   })
   .optional()
   .nullable()
-  .default({})
   .transform(
     val =>
       val ?? {
@@ -4368,7 +4367,7 @@ const OrganizationInvitationModel = z
   .object({
     organizationId: z.string(),
     code: z.string(),
-    email: z.string().email(),
+    email: z.email(),
     createdAt: z.string().transform(v => new Date(v).toISOString()),
     expiresAt: z.string().transform(v => new Date(v).toISOString()),
     roleId: z.string(),

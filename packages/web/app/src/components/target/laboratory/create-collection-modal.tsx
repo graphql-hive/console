@@ -123,13 +123,13 @@ const UpdateCollectionMutation = graphql(`
 const createCollectionModalFormSchema = z.object({
   name: z
     .string({
-      required_error: 'Collection name is required',
+      error: issue => (issue.input == null ? 'Collection name is required' : issue.message),
     })
     .min(2, {
-      message: 'Collection name must be at least 2 characters long',
+      error: 'Collection name must be at least 2 characters long',
     })
     .max(50, {
-      message: 'Collection name must be at most 50 characters long',
+      error: 'Collection name must be at most 50 characters long',
     }),
   description: z.string().optional(),
 });

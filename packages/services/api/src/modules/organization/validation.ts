@@ -5,7 +5,7 @@ import { reservedOrganizationSlugs } from './providers/organization-config';
 export const OrganizationNameModel = NameModel.min(2).max(50);
 export const OrganizationSlugModel = z
   .string({
-    required_error: 'Organization slug is required',
+    error: issue => (issue.input === undefined ? 'Organization slug is required' : issue.message),
   })
   .min(1, 'Organization slug is required')
   .max(50, 'Slug must be less than 50 characters')
@@ -16,7 +16,7 @@ export const OrganizationSlugModel = z
 export const CreateOrUpdateMemberRoleModel = z.object({
   name: z
     .string({
-      required_error: 'Please enter role name',
+      error: issue => (issue.input === undefined ? 'Please enter role name' : issue.message),
     })
     .trim()
     .min(2, 'Role name must be at least 2 characters long')
@@ -28,7 +28,7 @@ export const CreateOrUpdateMemberRoleModel = z.object({
     .refine(val => val !== 'Viewer' && val !== 'Admin', 'Viewer and Admin are reserved'),
   description: z
     .string({
-      required_error: 'Please enter role description',
+      error: issue => (issue.input === undefined ? 'Please enter role description' : issue.message),
     })
     .trim()
     .min(2, 'Role description must be at least 2 characters long')
