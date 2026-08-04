@@ -165,10 +165,7 @@ export function ProjectLayout({
           />
           <div className="min-h-(--content-height) container pb-7">
             {currentProject ? (
-              <LegacyCompositionWarn
-                organizationSlug={organizationSlug}
-                project={currentProject}
-              />
+              <LegacyCompositionWarn organizationSlug={organizationSlug} project={currentProject} />
             ) : null}
             <div className={className}>{children}</div>
           </div>
