@@ -14,7 +14,7 @@ overrides:
   cookie@<0.7.0: 0.7.2
   tar-fs: 2.1.4
   ip: npm:neoip@2.1.0
-  miniflare@3>undici: ^7.18.2
+  miniflare@3>undici: 7.29.0
   tailwindcss: 3.4.17
   '@graphql-hive/laboratory>tailwindcss': 4.1.18
   '@hive/app>tailwindcss': 4.1.18
@@ -54,8 +54,7 @@ overrides:
   js-yaml@<3.15.0: 3.15.0
   sigstore@<=4.1.0: '>=4.1.1'
   tar@<=7.5.18: 7.5.21
-  fast-uri@2.x.x: 3.1.4
-  fast-uri@3.x.x: 3.1.4
+  fast-uri@<4.0.0: 3.1.5
   '@opentelemetry/propagator-jaeger@<2.9.0': 2.9.0
   sharp@<0.35.0: 0.35.0
   body-parser@1.x.x: 1.20.6
@@ -234,7 +233,7 @@ importers:
         version: 3.4.17(ts-node@10.9.2(@swc/core@1.13.5)(@types/node@24.13.3)(typescript@5.7.3))
       tsup:
         specifier: 8.4.0
-        version: 8.4.0(@microsoft/api-extractor@7.56.3(@types/node@24.13.3))(@swc/core@1.13.5)(jiti@2.6.1)(postcss@8.5.18)(tsx@4.19.2)(typescript@5.7.3)(yaml@2.8.3)
+        version: 8.4.0(@microsoft/api-extractor@7.56.3(@types/node@24.13.3))(@swc/core@1.13.5)(jiti@2.6.1)(postcss@8.5.25)(tsx@4.19.2)(typescript@5.7.3)(yaml@2.8.3)
       tsx:
         specifier: 4.19.2
         version: 4.19.2
@@ -840,7 +839,7 @@ importers:
         version: 12.10.0(@types/react@18.3.18)(immer@10.1.3)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       autoprefixer:
         specifier: ^10.4.23
-        version: 10.4.24(postcss@8.5.18)
+        version: 10.4.24(postcss@8.5.25)
       babel-plugin-react-compiler:
         specifier: 19.1.0-rc.3
         version: 19.1.0-rc.3
@@ -908,11 +907,11 @@ importers:
         specifier: ^0.4.6
         version: 0.4.6(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       postcss:
-        specifier: 8.5.18
-        version: 8.5.18
+        specifier: 8.5.25
+        version: 8.5.25
       postcss-prefixwrap:
         specifier: ^1.57.2
-        version: 1.57.2(postcss@8.5.18)
+        version: 1.57.2(postcss@8.5.25)
       react:
         specifier: 18.3.1
         version: 18.3.1
@@ -942,13 +941,13 @@ importers:
         version: 4.1.18
       tailwindcss-scoped-preflight:
         specifier: ^3.5.7
-        version: 3.5.7(postcss@8.5.18)(tailwindcss@4.1.18)
+        version: 3.5.7(postcss@8.5.25)(tailwindcss@4.1.18)
       tslib:
         specifier: ^2.8.1
         version: 2.8.1
       tsup:
         specifier: ^8.5.1
-        version: 8.5.1(@microsoft/api-extractor@7.56.3(@types/node@24.13.3))(@swc/core@1.13.5)(jiti@2.6.1)(postcss@8.5.18)(tsx@4.19.2)(typescript@5.7.3)(yaml@2.8.3)
+        version: 8.5.1(@microsoft/api-extractor@7.56.3(@types/node@24.13.3))(@swc/core@1.13.5)(jiti@2.6.1)(postcss@8.5.25)(tsx@4.19.2)(typescript@5.7.3)(yaml@2.8.3)
       tw-animate-css:
         specifier: ^1.4.0
         version: 1.4.0
@@ -1331,8 +1330,8 @@ importers:
         specifier: 4.1.0
         version: 4.1.0
       undici:
-        specifier: 7.28.0
-        version: 7.28.0
+        specifier: 7.29.0
+        version: 7.29.0
       vitest:
         specifier: 4.1.3
         version: 4.1.3(@opentelemetry/api@1.9.1)(@types/node@25.5.0)(happy-dom@20.10.6)(msw@2.12.7(@types/node@25.5.0)(typescript@5.7.3))(vite@7.3.6(@types/node@25.5.0)(jiti@2.6.1)(less@4.2.0)(lightningcss@1.31.1)(terser@5.37.0)(tsx@4.19.2)(yaml@2.8.3))
@@ -1382,8 +1381,8 @@ importers:
         specifier: 4.1.0
         version: 4.1.0
       undici:
-        specifier: 7.28.0
-        version: 7.28.0
+        specifier: 7.29.0
+        version: 7.29.0
       zod:
         specifier: 3.25.76
         version: 3.25.76
@@ -3990,8 +3989,8 @@ packages:
   '@fastify/error@4.2.0':
     resolution: {integrity: sha512-RSo3sVDXfHskiBZKBPRgnQTtIqpi/7zhJOEmAxCiBcM7d0uwdGdxLlsCaLzGs8v8NnxIRlfG0N51p5yFaOentQ==}
 
-  '@fastify/fast-json-stringify-compiler@5.0.3':
-    resolution: {integrity: sha512-uik7yYHkLr6fxd8hJSZ8c+xF4WafPK+XzneQDPU+D10r5X19GW8lJcom2YijX2+qtFF1ENJlHXKFM9ouXNJYgQ==}
+  '@fastify/fast-json-stringify-compiler@5.1.0':
+    resolution: {integrity: sha512-PxcYtKLbQ8Z+yApiqjK8FwxIwvEj38k2OiLc17u8dkJSlmfi2wHHPaSnaoqBPQqtvF8YVsDgDpP2snDCfFrpfw==}
 
   '@fastify/formbody@8.0.2':
     resolution: {integrity: sha512-84v5J2KrkXzjgBpYnaNRPqwgMsmY7ZDjuj0YVuMR3NXCJRCgKEZy/taSP1wUYGn0onfxJpLyRGDLa+NMaDJtnA==}
@@ -13430,9 +13429,6 @@ packages:
   fast-json-stringify@5.16.1:
     resolution: {integrity: sha512-KAdnLvy1yu/XrRtP+LJnxbBGrhN+xXu+gt3EUvZhYGKCr3lFHq/7UFJHHFgmJKoqlh6B40bZLEv7w46B0mqn1g==}
 
-  fast-json-stringify@6.2.0:
-    resolution: {integrity: sha512-Eaf/KNIDwHkzfyeQFNfLXJnQ7cl1XQI3+zRqmPlvtkMigbXnAcasTrvJQmquBSxKfFGeRA6PFog8t+hFmpDoWw==}
-
   fast-json-stringify@7.0.1:
     resolution: {integrity: sha512-eRSayARSbbwlBjpP4vnTTIRD5QPcIrmihPxDeN1DtKnHPg66UuJLx+8hlK1kaFdjvzyQ/dzALoi4vwAQ+T+iZA==}
 
@@ -13455,11 +13451,11 @@ packages:
   fast-safe-stringify@2.1.1:
     resolution: {integrity: sha512-W+KJc2dmILlPplD/H4K9l9LcAHAfPtP6BY84uVLXQ6Evcz9Lcg33Y2z1IVblT6xdY54PXYVHEv+0Wpq8Io6zkA==}
 
-  fast-uri@3.1.4:
-    resolution: {integrity: sha512-8JnbkQ4juDyvYs4mgFGQqg4yCYtFDtUtmp2QIQq11ZZe5CFQ5wcqm1rqDgAh/QdMySuBnPzMUiJUNZG5N/AiQw==}
+  fast-uri@3.1.5:
+    resolution: {integrity: sha512-gHwA1O9LDIcKunMKhObS/HimwtehO1nPUECKAu5TpKgaO19fcWEl4bliWe1jWxVFvIXztJjjQ4L8XQ1EU9f7Jw==}
 
-  fast-uri@4.1.1:
-    resolution: {integrity: sha512-YPOs1zD5TG2+EZt+r88LwF6mclA7TPkpwMP7ZN3TO2HiHS8TXvq7QA/17iJsV9dubcLo/f8eEYqMBruyQV21hQ==}
+  fast-uri@4.1.2:
+    resolution: {integrity: sha512-TyGmBcbDTZXcb2cj5MV89DrF42DKvb3y5DDUNh95iO+IMeAzMkVSxK1PZRrRIpc9yg8U2GhGdbofNa0LS/a4Bw==}
 
   fast-url-parser@1.1.3:
     resolution: {integrity: sha512-5jOCVXADYNuRkKFzNJ0dCCewsZiYo0dz8QNYljkOpFC6r2U4OBmKtvm/Tsuh4w1YYdDqDb31a8TVhBJ2OJKdqQ==}
@@ -14503,8 +14499,8 @@ packages:
     resolution: {integrity: sha512-HuEDBTI70aYdx1v6U97SbNx9F1+svQKBDo30o0b9fw055LMepzpOOd0Ccg9Q6tbqmBSJaMuY0fB7yw9/vjBYCA==}
     engines: {node: '>=12.22.0'}
 
-  ip-address@10.2.0:
-    resolution: {integrity: sha512-/+S6j4E9AHvW9SWMSEY9Xfy66O5PWvVEJ08O0y5JGyEKQpojb0K0GKpz/v5HJ/G0vi3D2sjGK78119oXZeE0qA==}
+  ip-address@10.4.0:
+    resolution: {integrity: sha512-oSK96Grm3aP6OrS263xVxbNDGVL7rzBtYdpGqlDG8iQdoenDoTs/nkki+DflYbAEE8Xl6o5YxhxlrKvI3nqKXQ==}
     engines: {node: '>= 12'}
 
   ipaddr.js@1.9.1:
@@ -16835,8 +16831,8 @@ packages:
   postcss-value-parser@4.2.0:
     resolution: {integrity: sha512-1NNCs6uurfkVbeXG4S8JFT9t19m45ICnif8zWLd5oPSZ50QnwMfK+H3jv408d4jw/7Bttv5axS5IiHoLaVNHeQ==}
 
-  postcss@8.5.18:
-    resolution: {integrity: sha512-xdB1oSLHbz1vRWgCDalrCqEFTWzFlhqFC5tIHLMOSUIjhm3XXQ1qrFy8S/ESr1JYRRXqM3c1QFiMZUJdUTqyMQ==}
+  postcss@8.5.25:
+    resolution: {integrity: sha512-DTPx3RWSSnWyzLxQnlH0rJP+EW5ekl16ZU4/psbIhA0e53kJfdgaN5vKM+xP7yJtXVu+nfdVFmlgFDEKAe4Pyw==}
     engines: {node: ^10 || ^12 || >=14}
 
   postgres-array@2.0.0:
@@ -18792,8 +18788,8 @@ packages:
   undici-types@7.18.2:
     resolution: {integrity: sha512-AsuCzffGHJybSaRrmr5eHr81mwJU3kjw6M+uprWvCXiNeN9SOGwQ3Jn8jb8m3Z6izVgknn1R0FTCEAP2QrLY/w==}
 
-  undici@7.28.0:
-    resolution: {integrity: sha512-cRZYrTDwWznlnRiPjggAGxZXanty6M8RV1ff8Wm4LWXBp7/IG8v5DnOm74DtUBp9OONpK75YlPnIjQqX0dBDtA==}
+  undici@7.29.0:
+    resolution: {integrity: sha512-IDxfleLmmbSskfWSUATiN1nfn2rDuvnMOqb5CWR92iIfojA0Ud+ulOAAEQ57LPr9rWmsreUyf5lwyao+7GNNVw==}
     engines: {node: '>=20.18.1'}
 
   unenv@2.0.0-rc.14:
@@ -22078,7 +22074,7 @@ snapshots:
     dependencies:
       ajv: 8.18.0
       ajv-formats: 3.0.1(ajv@8.18.0)
-      fast-uri: 3.1.4
+      fast-uri: 3.1.5
 
   '@fastify/busboy@3.1.1': {}
 
@@ -22096,9 +22092,9 @@ snapshots:
 
   '@fastify/error@4.2.0': {}
 
-  '@fastify/fast-json-stringify-compiler@5.0.3':
+  '@fastify/fast-json-stringify-compiler@5.1.0':
     dependencies:
-      fast-json-stringify: 6.2.0
+      fast-json-stringify: 7.0.1
 
   '@fastify/formbody@8.0.2':
     dependencies:
@@ -31274,7 +31270,7 @@ snapshots:
       '@alloc/quick-lru': 5.2.0
       '@tailwindcss/node': 4.1.18
       '@tailwindcss/oxide': 4.1.18
-      postcss: 8.5.18
+      postcss: 8.5.25
       tailwindcss: 3.4.17(ts-node@10.9.2(@swc/core@1.13.5)(@types/node@24.13.3)(typescript@5.7.3))
     transitivePeerDependencies:
       - ts-node
@@ -32804,7 +32800,7 @@ snapshots:
   ajv@8.18.0:
     dependencies:
       fast-deep-equal: 3.1.3
-      fast-uri: 3.1.4
+      fast-uri: 3.1.5
       json-schema-traverse: 1.0.0
       require-from-string: 2.0.2
 
@@ -33024,13 +33020,13 @@ snapshots:
 
   auto-bind@5.0.1: {}
 
-  autoprefixer@10.4.24(postcss@8.5.18):
+  autoprefixer@10.4.24(postcss@8.5.25):
     dependencies:
       browserslist: 4.28.1
       caniuse-lite: 1.0.30001769
       fraction.js: 5.3.4
       picocolors: 1.1.1
-      postcss: 8.5.18
+      postcss: 8.5.25
       postcss-value-parser: 4.2.0
 
   available-typed-arrays@1.0.7:
@@ -35097,17 +35093,8 @@ snapshots:
       ajv: 8.18.0
       ajv-formats: 3.0.1(ajv@8.18.0)
       fast-deep-equal: 3.1.3
-      fast-uri: 3.1.4
+      fast-uri: 3.1.5
       json-schema-ref-resolver: 1.0.1
-      rfdc: 1.4.1
-
-  fast-json-stringify@6.2.0:
-    dependencies:
-      '@fastify/merge-json-schemas': 0.2.1
-      ajv: 8.18.0
-      ajv-formats: 3.0.1(ajv@8.18.0)
-      fast-uri: 3.1.4
-      json-schema-ref-resolver: 3.0.0
       rfdc: 1.4.1
 
   fast-json-stringify@7.0.1:
@@ -35115,7 +35102,7 @@ snapshots:
       '@fastify/merge-json-schemas': 0.2.1
       ajv: 8.18.0
       ajv-formats: 3.0.1(ajv@8.18.0)
-      fast-uri: 4.1.1
+      fast-uri: 4.1.2
       json-schema-ref-resolver: 3.0.0
       rfdc: 1.4.1
 
@@ -35137,9 +35124,9 @@ snapshots:
 
   fast-safe-stringify@2.1.1: {}
 
-  fast-uri@3.1.4: {}
+  fast-uri@3.1.5: {}
 
-  fast-uri@4.1.1: {}
+  fast-uri@4.1.2: {}
 
   fast-url-parser@1.1.3:
     dependencies:
@@ -35174,7 +35161,7 @@ snapshots:
     dependencies:
       '@fastify/ajv-compiler': 4.0.5
       '@fastify/error': 4.2.0
-      '@fastify/fast-json-stringify-compiler': 5.0.3
+      '@fastify/fast-json-stringify-compiler': 5.1.0
       '@fastify/proxy-addr': 5.1.0
       abstract-logging: 2.0.1
       avvio: 9.1.0
@@ -36623,7 +36610,7 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  ip-address@10.2.0: {}
+  ip-address@10.4.0: {}
 
   ipaddr.js@1.9.1: {}
 
@@ -38075,7 +38062,7 @@ snapshots:
       exit-hook: 2.2.1
       glob-to-regexp: 0.4.1
       stoppable: 1.1.0
-      undici: 7.28.0
+      undici: 7.29.0
       workerd: 1.20250718.0
       ws: 8.21.0
       youch: 3.3.4
@@ -39402,43 +39389,43 @@ snapshots:
 
   possible-typed-array-names@1.1.0: {}
 
-  postcss-import@15.1.0(postcss@8.5.18):
+  postcss-import@15.1.0(postcss@8.5.25):
     dependencies:
-      postcss: 8.5.18
+      postcss: 8.5.25
       postcss-value-parser: 4.2.0
       read-cache: 1.0.0
       resolve: 1.22.11
 
-  postcss-js@4.0.1(postcss@8.5.18):
+  postcss-js@4.0.1(postcss@8.5.25):
     dependencies:
       camelcase-css: 2.0.1
-      postcss: 8.5.18
+      postcss: 8.5.25
 
-  postcss-load-config@4.0.2(postcss@8.5.18)(ts-node@10.9.2(@swc/core@1.13.5)(@types/node@24.13.3)(typescript@5.7.3)):
+  postcss-load-config@4.0.2(postcss@8.5.25)(ts-node@10.9.2(@swc/core@1.13.5)(@types/node@24.13.3)(typescript@5.7.3)):
     dependencies:
       lilconfig: 3.1.3
       yaml: 2.8.3
     optionalDependencies:
-      postcss: 8.5.18
+      postcss: 8.5.25
       ts-node: 10.9.2(@swc/core@1.13.5)(@types/node@24.13.3)(typescript@5.7.3)
 
-  postcss-load-config@6.0.1(jiti@2.6.1)(postcss@8.5.18)(tsx@4.19.2)(yaml@2.8.3):
+  postcss-load-config@6.0.1(jiti@2.6.1)(postcss@8.5.25)(tsx@4.19.2)(yaml@2.8.3):
     dependencies:
       lilconfig: 3.1.3
     optionalDependencies:
       jiti: 2.6.1
-      postcss: 8.5.18
+      postcss: 8.5.25
       tsx: 4.19.2
       yaml: 2.8.3
 
-  postcss-nested@6.2.0(postcss@8.5.18):
+  postcss-nested@6.2.0(postcss@8.5.25):
     dependencies:
-      postcss: 8.5.18
+      postcss: 8.5.25
       postcss-selector-parser: 6.1.2
 
-  postcss-prefixwrap@1.57.2(postcss@8.5.18):
+  postcss-prefixwrap@1.57.2(postcss@8.5.25):
     dependencies:
-      postcss: 8.5.18
+      postcss: 8.5.25
 
   postcss-selector-parser@6.1.2:
     dependencies:
@@ -39447,7 +39434,7 @@ snapshots:
 
   postcss-value-parser@4.2.0: {}
 
-  postcss@8.5.18:
+  postcss@8.5.25:
     dependencies:
       nanoid: 3.3.16
       picocolors: 1.1.1
@@ -40300,7 +40287,7 @@ snapshots:
       fdir: 6.5.0(picomatch@4.0.4)
       lightningcss: 1.31.1
       picomatch: 4.0.4
-      postcss: 8.5.18
+      postcss: 8.5.25
       rolldown: 1.0.0-beta.41(@emnapi/core@1.8.1)(@emnapi/runtime@1.11.2)
       tinyglobby: 0.2.15
     optionalDependencies:
@@ -40751,7 +40738,7 @@ snapshots:
 
   socks@2.8.7:
     dependencies:
-      ip-address: 10.2.0
+      ip-address: 10.4.0
       smart-buffer: 4.2.0
 
   solid-js@1.9.10:
@@ -41152,9 +41139,9 @@ snapshots:
 
   tailwind-merge@3.4.0: {}
 
-  tailwindcss-scoped-preflight@3.5.7(postcss@8.5.18)(tailwindcss@4.1.18):
+  tailwindcss-scoped-preflight@3.5.7(postcss@8.5.25)(tailwindcss@4.1.18):
     dependencies:
-      postcss: 8.5.18
+      postcss: 8.5.25
       tailwindcss: 4.1.18
 
   tailwindcss@3.4.17(ts-node@10.9.2(@swc/core@1.13.5)(@types/node@24.13.3)(typescript@5.7.3)):
@@ -41173,11 +41160,11 @@ snapshots:
       normalize-path: 3.0.0
       object-hash: 3.0.0
       picocolors: 1.1.1
-      postcss: 8.5.18
-      postcss-import: 15.1.0(postcss@8.5.18)
-      postcss-js: 4.0.1(postcss@8.5.18)
-      postcss-load-config: 4.0.2(postcss@8.5.18)(ts-node@10.9.2(@swc/core@1.13.5)(@types/node@24.13.3)(typescript@5.7.3))
-      postcss-nested: 6.2.0(postcss@8.5.18)
+      postcss: 8.5.25
+      postcss-import: 15.1.0(postcss@8.5.25)
+      postcss-js: 4.0.1(postcss@8.5.25)
+      postcss-load-config: 4.0.2(postcss@8.5.25)(ts-node@10.9.2(@swc/core@1.13.5)(@types/node@24.13.3)(typescript@5.7.3))
+      postcss-nested: 6.2.0(postcss@8.5.25)
       postcss-selector-parser: 6.1.2
       resolve: 1.22.11
       sucrase: 3.35.0
@@ -41415,7 +41402,7 @@ snapshots:
 
   tsscmp@1.0.6: {}
 
-  tsup@8.4.0(@microsoft/api-extractor@7.56.3(@types/node@24.13.3))(@swc/core@1.13.5)(jiti@2.6.1)(postcss@8.5.18)(tsx@4.19.2)(typescript@5.7.3)(yaml@2.8.3):
+  tsup@8.4.0(@microsoft/api-extractor@7.56.3(@types/node@24.13.3))(@swc/core@1.13.5)(jiti@2.6.1)(postcss@8.5.25)(tsx@4.19.2)(typescript@5.7.3)(yaml@2.8.3):
     dependencies:
       bundle-require: 5.1.0(esbuild@0.28.1)
       cac: 6.7.14
@@ -41425,7 +41412,7 @@ snapshots:
       esbuild: 0.28.1
       joycon: 3.1.1
       picocolors: 1.1.1
-      postcss-load-config: 6.0.1(jiti@2.6.1)(postcss@8.5.18)(tsx@4.19.2)(yaml@2.8.3)
+      postcss-load-config: 6.0.1(jiti@2.6.1)(postcss@8.5.25)(tsx@4.19.2)(yaml@2.8.3)
       resolve-from: 5.0.0
       rollup: 4.59.0
       source-map: 0.8.0-beta.0
@@ -41436,7 +41423,7 @@ snapshots:
     optionalDependencies:
       '@microsoft/api-extractor': 7.56.3(@types/node@24.13.3)
       '@swc/core': 1.13.5
-      postcss: 8.5.18
+      postcss: 8.5.25
       typescript: 5.7.3
     transitivePeerDependencies:
       - jiti
@@ -41444,7 +41431,7 @@ snapshots:
       - tsx
       - yaml
 
-  tsup@8.5.1(@microsoft/api-extractor@7.56.3(@types/node@24.13.3))(@swc/core@1.13.5)(jiti@2.6.1)(postcss@8.5.18)(tsx@4.19.2)(typescript@5.7.3)(yaml@2.8.3):
+  tsup@8.5.1(@microsoft/api-extractor@7.56.3(@types/node@24.13.3))(@swc/core@1.13.5)(jiti@2.6.1)(postcss@8.5.25)(tsx@4.19.2)(typescript@5.7.3)(yaml@2.8.3):
     dependencies:
       bundle-require: 5.1.0(esbuild@0.28.1)
       cac: 6.7.14
@@ -41455,7 +41442,7 @@ snapshots:
       fix-dts-default-cjs-exports: 1.0.1
       joycon: 3.1.1
       picocolors: 1.1.1
-      postcss-load-config: 6.0.1(jiti@2.6.1)(postcss@8.5.18)(tsx@4.19.2)(yaml@2.8.3)
+      postcss-load-config: 6.0.1(jiti@2.6.1)(postcss@8.5.25)(tsx@4.19.2)(yaml@2.8.3)
       resolve-from: 5.0.0
       rollup: 4.59.0
       source-map: 0.7.6
@@ -41466,7 +41453,7 @@ snapshots:
     optionalDependencies:
       '@microsoft/api-extractor': 7.56.3(@types/node@24.13.3)
       '@swc/core': 1.13.5
-      postcss: 8.5.18
+      postcss: 8.5.25
       typescript: 5.7.3
     transitivePeerDependencies:
       - jiti
@@ -41608,7 +41595,7 @@ snapshots:
 
   undici-types@7.18.2: {}
 
-  undici@7.28.0: {}
+  undici@7.29.0: {}
 
   unenv@2.0.0-rc.14:
     dependencies:
@@ -42030,7 +42017,7 @@ snapshots:
       esbuild: 0.28.1
       fdir: 6.5.0(picomatch@4.0.4)
       picomatch: 4.0.4
-      postcss: 8.5.18
+      postcss: 8.5.25
       rollup: 4.59.0
       tinyglobby: 0.2.15
     optionalDependencies:
@@ -42048,7 +42035,7 @@ snapshots:
       esbuild: 0.28.1
       fdir: 6.5.0(picomatch@4.0.4)
       picomatch: 4.0.4
-      postcss: 8.5.18
+      postcss: 8.5.25
       rollup: 4.59.0
       tinyglobby: 0.2.15
     optionalDependencies:
@@ -42066,7 +42053,7 @@ snapshots:
       esbuild: 0.28.1
       fdir: 6.5.0(picomatch@4.0.4)
       picomatch: 4.0.4
-      postcss: 8.5.18
+      postcss: 8.5.25
       rollup: 4.59.0
       tinyglobby: 0.2.15
     optionalDependencies:
