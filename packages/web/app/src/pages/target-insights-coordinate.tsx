@@ -192,8 +192,9 @@ function SchemaCoordinateView(props: {
   const title = kind === 'GraphQLEnumType' ? `${typeName} (${props.coordinate})` : props.coordinate;
   const fieldLevelMetricsDisplayState = query.data?.target?.fieldLevelMetricsDisplayState;
   const showFieldLevelMetrics =
-    fieldLevelMetricsDisplayState === FieldLevelMetricsDisplayState.On ||
-    fieldLevelMetricsDisplayState === FieldLevelMetricsDisplayState.OnWithWarning;
+    (fieldLevelMetricsDisplayState === FieldLevelMetricsDisplayState.On ||
+      fieldLevelMetricsDisplayState === FieldLevelMetricsDisplayState.OnWithWarning) &&
+    kind !== 'GraphQLInputObjectType';
 
   if (query.error) {
     return <QueryError organizationSlug={props.organizationSlug} error={query.error} />;
