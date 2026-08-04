@@ -1,5 +1,16 @@
 # @graphql-hive/core
 
+## 0.22.1
+
+### Patch Changes
+
+- [#8308](https://github.com/graphql-hive/console/pull/8308)
+  [`3dbda7d`](https://github.com/graphql-hive/console/commit/3dbda7dbe895173578cc4c452a85ef6c2ce07383)
+  Thanks [@jdolle](https://github.com/jdolle)! - Fix usage collector error catching.
+
+  When async event collection fails, the error is now caught internally and logged rather than
+  leaking an unhandled promise rejection that would crash the node application.
+
 ## 0.22.0
 
 ### Minor Changes

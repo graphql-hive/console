@@ -1,5 +1,42 @@
 # hive
 
+## 11.10.0
+
+### Minor Changes
+
+- [#8184](https://github.com/graphql-hive/console/pull/8184)
+  [`4540184`](https://github.com/graphql-hive/console/commit/4540184353ce927d41296f75113a7bce334b28bb)
+  Thanks [@ben-m-klein](https://github.com/ben-m-klein)! - Add Discord as a first-class alert
+  channel with Discord webhook formatting for alert notifications.
+
+### Patch Changes
+
+- [#8301](https://github.com/graphql-hive/console/pull/8301)
+  [`df4ba0c`](https://github.com/graphql-hive/console/commit/df4ba0c2896b3d6683493dd4e225f6b5dae4e195)
+  Thanks [@overpod](https://github.com/overpod)! - Add `EMAIL_PROVIDER_SMTP_IGNORE_TLS` environment
+  variable for the `smtp` email provider.
+
+  Set it to `1` to never use STARTTLS, even when the SMTP server advertises support for it. This
+  allows sending emails through servers without working TLS support. The variable is opt-in and
+  defaults to `0`, so existing deployments keep their current behaviour.
+
+- [#8296](https://github.com/graphql-hive/console/pull/8296)
+  [`e239df7`](https://github.com/graphql-hive/console/commit/e239df71d4981f4a4acda865dd19a79eaf91bbe4)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - cleanup old unused database tables
+
+- [#8305](https://github.com/graphql-hive/console/pull/8305)
+  [`dee12d9`](https://github.com/graphql-hive/console/commit/dee12d9aa030ac3da5d6c87ea8d85bfc7276c3ab)
+  Thanks [@jonathanawesome](https://github.com/jonathanawesome)! - Add `ENCRYPTION_SECRET`
+  environment variable to the `workflows` service.
+
+  The service needs it to decrypt the Slack token stored by the API service when it dispatches
+  metric-alert notifications. Set it to the same value as `ENCRYPTION_SECRET` on the server and
+  schema services, otherwise the token cannot be decrypted and Slack notifications fail.
+
+  The variable is optional, so existing deployments keep booting after an upgrade. When it is not
+  set the service starts normally and every other task keeps running, but Slack metric-alert
+  notifications are skipped.
+
 ## 11.9.0
 
 ### Minor Changes
