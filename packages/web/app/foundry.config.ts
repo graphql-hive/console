@@ -4,7 +4,7 @@ import tailwindcss from '@tailwindcss/vite';
 
 export default defineConfig({
   previews: 'src/components/base/**/*.preview.tsx',
-  title: 'Hive Console',
+  title: 'Hive Console Components',
   viteConfig: {
     // Foundry's vite root is inside node_modules and this config is bundled to a cache
     // dir before it runs, so neither location can anchor tsconfig discovery. cwd is the

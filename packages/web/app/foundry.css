@@ -1,0 +1,18 @@
+/*
+ * index.css paints `#root, body` for the real app shell. In the workbench those elements
+ * are foundry's chrome, not ours, so hand them back. `body` already has foundry's own
+ * unlayered rule to fall back to, but foundry never styles `#root`, so that one needs an
+ * explicit release or it covers the whole viewport.
+ *
+ * Unlayered on purpose: index.css puts those rules in `@layer base`, and any unlayered
+ * declaration outranks every layer, so this wins without `!important`.
+ */
+#root {
+  background-color: transparent;
+  color: var(--foundry-colors-text-body);
+}
+
+/* Re-apply the app's default text colour where it belongs: the previews themselves. */
+[data-foundry-canvas] {
+  color: var(--color-neutral-11);
+}
