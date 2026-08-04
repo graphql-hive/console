@@ -4,6 +4,7 @@ export type {
   HivePluginOptions,
   HiveClient,
   CollectUsageCallback,
+  CollectUsage,
   LegacyLogger as Logger,
   PersistedDocumentsManifest,
   PersistedDocumentsCache,
@@ -21,3 +22,4 @@ export {
   type CDNArtifactFetcher,
 } from './client/cdn-artifact-fetcher.js';
 export type { CircuitBreakerConfiguration } from './client/circuit-breaker.js';
+export { addHiveTypenames, hideInjectedTypenames } from './client/add-hive-typenames.js';

@@ -678,7 +678,7 @@
         {
           "datasource": { "type": "prometheus", "uid": "PROM_DATASOURCE_UID" },
           "editorMode": "code",
-          "expr": "nodejs_eventloop_lag_p99_seconds{service=\"workflow-service\"}",
+          "expr": "nodejs_eventloop_lag_p99_seconds{pod=~\"workflow-service.*\"}",
           "legendFormat": "{{pod}}",
           "range": true,
           "refId": "A"
@@ -737,7 +737,7 @@
         {
           "datasource": { "type": "prometheus", "uid": "PROM_DATASOURCE_UID" },
           "editorMode": "code",
-          "expr": "rate(process_cpu_seconds_total{service=\"workflow-service\"}[$__rate_interval])",
+          "expr": "rate(process_cpu_seconds_total{pod=~\"workflow-service.*\"}[$__rate_interval])",
           "legendFormat": "{{pod}}",
           "range": true,
           "refId": "A"
@@ -796,7 +796,7 @@
         {
           "datasource": { "type": "prometheus", "uid": "PROM_DATASOURCE_UID" },
           "editorMode": "code",
-          "expr": "process_resident_memory_bytes{service=\"workflow-service\"}",
+          "expr": "process_resident_memory_bytes{pod=~\"workflow-service.*\"}",
           "legendFormat": "RSS {{pod}}",
           "range": true,
           "refId": "A"
@@ -804,7 +804,7 @@
         {
           "datasource": { "type": "prometheus", "uid": "PROM_DATASOURCE_UID" },
           "editorMode": "code",
-          "expr": "nodejs_heap_size_used_bytes{service=\"workflow-service\"}",
+          "expr": "nodejs_heap_size_used_bytes{pod=~\"workflow-service.*\"}",
           "legendFormat": "heap {{pod}}",
           "range": true,
           "refId": "B"
@@ -863,7 +863,7 @@
         {
           "datasource": { "type": "prometheus", "uid": "PROM_DATASOURCE_UID" },
           "editorMode": "code",
-          "expr": "rate(nodejs_gc_duration_seconds_sum{service=\"workflow-service\"}[$__rate_interval])",
+          "expr": "rate(nodejs_gc_duration_seconds_sum{pod=~\"workflow-service.*\"}[$__rate_interval])",
           "legendFormat": "{{pod}}",
           "range": true,
           "refId": "A"
@@ -958,7 +958,7 @@
     },
     {
       "datasource": { "type": "tempo", "uid": "TEMPO_DATASOURCE_UID" },
-      "description": "Rate of notification dispatch outcomes (sent / deduped / skipped-deleted / failed) over time, derived from the `notification.outcome` attribute on `send-metric-alert-channel-notification` spans. Sustained 'failed' above the baseline means external destinations (Slack / Teams / customer webhooks) are returning errors.",
+      "description": "Rate of notification dispatch outcomes over time, derived from the `notification.outcome` attribute on `send-metric-alert-channel-notification` spans. Only `sent` is a real delivery. `skipped-config` means the channel is missing settings it needs (no Slack token, no webhook endpoint) and nothing was posted; `failed-config` means a misconfiguration retrying cannot fix, such as a missing or mismatched ENCRYPTION_SECRET leaving the Slack token undecryptable; `gave-up` means the retry budget ran out without a successful delivery. All three were previously reported as `sent`. `failed` means the attempt threw and graphile-worker will retry it. Sustained 'failed' above the baseline means external destinations (Slack / Teams / customer webhooks) are returning errors; sustained 'skipped-config' means a channel needs fixing. `notification.skip_reason` carries the specific reason.",
       "fieldConfig": {
         "defaults": {
           "color": { "mode": "palette-classic" },

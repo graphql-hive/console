@@ -31,6 +31,18 @@ export const CreateChannel_AddAlertChannelMutation = graphql(`
   }
 `);
 
+/** Channel types whose endpoint has to be created in a third-party UI first. */
+const WEBHOOK_SETUP_GUIDES: Partial<Record<AlertChannelType, { href: string; label: string }>> = {
+  [AlertChannelType.MsteamsWebhook]: {
+    href: 'https://learn.microsoft.com/en-us/microsoftteams/platform/webhooks-and-connectors/how-to/add-incoming-webhook?tabs=newteams%2Cdotnet',
+    label: 'Follow this guide to set up an incoming webhook connector in MS Teams',
+  },
+  [AlertChannelType.Discord]: {
+    href: 'https://support.discord.com/hc/en-us/articles/228383668-Intro-to-Webhooks',
+    label: 'Follow this guide to set up a Discord webhook',
+  },
+};
+
 export const CreateChannelModal = ({
   isOpen,
   toggleModalOpen,
@@ -87,9 +99,14 @@ export const CreateChannelModal = ({
         }
       },
     });
-  const isWebhookLike = [AlertChannelType.Webhook, AlertChannelType.MsteamsWebhook].includes(
-    values.type,
-  );
+  const isWebhookLike = [
+    AlertChannelType.Webhook,
+    AlertChannelType.MsteamsWebhook,
+    AlertChannelType.Discord,
+  ].includes(values.type);
+
+  // Once an endpoint has been pasted in, the setup guide has served its purpose.
+  const setupGuide = values.endpoint ? undefined : WEBHOOK_SETUP_GUIDES[values.type];
 
   return (
     <Modal open={isOpen} onOpenChange={toggleModalOpen}>
@@ -135,6 +152,7 @@ export const CreateChannelModal = ({
               { value: AlertChannelType.Slack, name: 'Slack' },
               { value: AlertChannelType.Webhook, name: 'Webhook' },
               { value: AlertChannelType.MsteamsWebhook, name: 'MS Teams Webhook' },
+              { value: AlertChannelType.Discord, name: 'Discord Webhook' },
             ]}
           />
           {touched.type && errors.type && <div className="text-sm text-red-500">{errors.type}</div>}
@@ -163,12 +181,17 @@ export const CreateChannelModal = ({
                 {mutation.data.addAlertChannel.error.inputErrors.webhookEndpoint}
               </div>
             )}
-            {values.endpoint ? (
-              <p className="text-neutral-10 text-sm">Hive will send alerts to your endpoint.</p>
-            ) : (
-              <a href="https://learn.microsoft.com/en-us/microsoftteams/platform/webhooks-and-connectors/how-to/add-incoming-webhook?tabs=newteams%2Cdotnet">
-                Follow this guide to set up an incoming webhook connector in MS Teams
+            {setupGuide ? (
+              <a
+                href={setupGuide.href}
+                target="_blank"
+                rel="noreferrer"
+                className="text-accent hover:text-accent/80 text-sm"
+              >
+                {setupGuide.label}
               </a>
+            ) : (
+              <p className="text-neutral-10 text-sm">Hive will send alerts to your endpoint.</p>
             )}
           </div>
         )}

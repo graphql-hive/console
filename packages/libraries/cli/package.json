@@ -1,10 +1,10 @@
 {
   "name": "@graphql-hive/cli",
-  "version": "0.61.0",
+  "version": "0.61.3",
   "description": "A CLI util to manage and control your GraphQL Hive",
   "repository": {
     "type": "git",
-    "url": "graphql-hive/platform",
+    "url": "https://github.com/graphql-hive/console",
     "directory": "packages/libraries/cli"
   },
   "homepage": "https://the-guild.dev/graphql/hive",
@@ -78,7 +78,6 @@
     "typescript": "5.7.3"
   },
   "publishConfig": {
-    "registry": "https://registry.npmjs.org",
     "access": "public"
   },
   "oclif": {

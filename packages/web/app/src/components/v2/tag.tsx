@@ -2,6 +2,7 @@ import { ReactElement, ReactNode } from 'react';
 import { cn } from '@/lib/utils';
 
 const colors = {
+  blue: 'bg-blue-500/10 text-blue-500',
   green: 'bg-green-500/10 text-green-500',
   yellow: 'bg-yellow-500/10 text-yellow-500',
   gray: 'bg-neutral-10/10 text-neutral-10',

@@ -1,7 +1,29 @@
-import { type ReactElement, type ReactNode } from 'react';
+import { type ComponentProps, type ReactElement, type ReactNode } from 'react';
+import { cva, type VariantProps } from 'class-variance-authority';
 
-export function Card({ children }: { children: ReactNode }) {
-  return <div className="bg-neutral-1 border-neutral-4 rounded-lg border">{children}</div>;
+const cardVariants = cva('rounded-lg border', {
+  variants: {
+    variant: {
+      default: '',
+      selectable: 'hover:border-neutral-10 flex-1 cursor-pointer transition-colors',
+      selected: 'border-border-neutral-10 bg-neutral-3 flex-1 cursor-pointer transition-colors',
+    },
+  },
+  defaultVariants: {
+    variant: 'default',
+  },
+});
+
+export function Card({
+  children,
+  variant,
+  ...props
+}: Omit<ComponentProps<'div'>, 'className' | 'style'> & VariantProps<typeof cardVariants>) {
+  return (
+    <div className={cardVariants({ variant })} {...props}>
+      {children}
+    </div>
+  );
 }
 
 export function CardHeader({ children }: { children: ReactNode }) {
@@ -16,6 +38,21 @@ export function CardDescription({ description }: { description: ReactElement | s
   return <p className="text-neutral-10 text-[13px]">{description}</p>;
 }
 
-export function CardContent({ children }: { children: ReactNode }) {
-  return <div className="p-6 pt-0">{children}</div>;
+const cardContentVariants = cva('', {
+  variants: {
+    variant: {
+      default: 'p-6 pt-0',
+      selection: 'flex items-start gap-3 p-4',
+    },
+  },
+  defaultVariants: {
+    variant: 'default',
+  },
+});
+
+export function CardContent({
+  children,
+  variant,
+}: { children: ReactNode } & VariantProps<typeof cardContentVariants>) {
+  return <div className={cardContentVariants({ variant })}>{children}</div>;
 }

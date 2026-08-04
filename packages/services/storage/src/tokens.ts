@@ -1,5 +1,11 @@
 import { z } from 'zod';
-import { createPostgresDatabasePool, psql, toDate, type Interceptor } from '@hive/postgres';
+import {
+  createPostgresDatabasePool,
+  psql,
+  toDate,
+  type ConnectionStringProvider,
+  type Interceptor,
+} from '@hive/postgres';
 
 const TokenModel = z.object({
   token: z.string(),
@@ -29,7 +35,7 @@ const tokenFields = psql`
 `;
 
 export async function createTokenStorage(
-  connection: string,
+  connection: string | ConnectionStringProvider,
   maximumPoolSize: number,
   additionalInterceptors: Interceptor[] = [],
 ) {

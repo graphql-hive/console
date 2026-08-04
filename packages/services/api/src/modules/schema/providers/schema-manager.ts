@@ -4,7 +4,7 @@ import { parse, print } from 'graphql';
 import { Inject, Injectable, Scope } from 'graphql-modules';
 import lodash from 'lodash';
 import { z } from 'zod';
-import { trace, traceFn } from '@hive/service-common';
+import { Encryptor, trace, traceFn } from '@hive/service-common';
 import type {
   ConditionalBreakingChangeMetadata,
   SchemaChangeType,
@@ -30,7 +30,6 @@ import { parseGraphQLSource } from '../../../shared/schema';
 import { Session } from '../../auth/lib/authz';
 import { GitHubIntegrationManager } from '../../integrations/providers/github-integration-manager';
 import { ProjectManager } from '../../project/providers/project-manager';
-import { CryptoProvider } from '../../shared/providers/crypto';
 import { IdTranslator } from '../../shared/providers/id-translator';
 import { Logger } from '../../shared/providers/logger';
 import {
@@ -77,7 +76,7 @@ export class SchemaManager {
     private storage: Storage,
     private projectManager: ProjectManager,
     private compositionOrchestrator: CompositionOrchestrator,
-    private crypto: CryptoProvider,
+    private crypto: Encryptor,
     private githubIntegrationManager: GitHubIntegrationManager,
     private targetManager: TargetManager,
     private schemaHelper: SchemaHelper,

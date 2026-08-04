@@ -178,7 +178,7 @@ export function CreatePersonalAccessTokenSheetContent(
       if (error.message) {
         toast({
           variant: 'destructive',
-          title: 'An error occured',
+          title: 'An error occurred',
           description: error.message,
         });
       }
@@ -187,7 +187,7 @@ export function CreatePersonalAccessTokenSheetContent(
     if (result.error) {
       toast({
         variant: 'destructive',
-        title: 'An error occured',
+        title: 'An error occurred',
         description: 'Something went wrong. Try again later.',
       });
       return;

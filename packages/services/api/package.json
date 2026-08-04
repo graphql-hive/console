@@ -12,7 +12,11 @@
     "./modules/cdn/providers/aws": "./src/modules/cdn/providers/aws.ts",
     "./modules/shared/providers/logger": "./src/modules/shared/providers/logger.ts",
     "./modules/shared/providers/redis": "./src/modules/shared/providers/redis.ts",
-    "./modules/schema/providers/schema-version-store": "./src/modules/schema/providers/schema-version-store.ts"
+    "./modules/schema/providers/schema-version-store": "./src/modules/schema/providers/schema-version-store.ts",
+    "./modules/token/providers/target-token-storage": "./src/modules/token/providers/target-token-storage.ts",
+    "./modules/organization/providers/group-store": "./src/modules/organization/providers/group-store.ts",
+    "./modules/organization/providers/group-member-store": "./src/modules/organization/providers/group-member-store.ts",
+    "./modules/organization/providers/provisioned-users-store": "./src/modules/organization/providers/provisioned-users-store.ts"
   },
   "peerDependencies": {
     "graphql": "^16.0.0",
@@ -35,7 +39,6 @@
     "@hive/schema": "workspace:*",
     "@hive/service-common": "workspace:*",
     "@hive/storage": "workspace:*",
-    "@hive/tokens": "workspace:*",
     "@hive/usage-common": "workspace:*",
     "@hive/usage-ingestor": "workspace:*",
     "@hive/workflows": "workspace:*",
@@ -78,8 +81,6 @@
     "prom-client": "15.1.3",
     "redlock": "5.0.0-beta.2",
     "stripe": "17.5.0",
-    "tslib": "2.8.1",
-    "undici": "7.28.0",
     "vitest": "4.1.3",
     "zod": "3.25.76",
     "zod-validation-error": "3.4.0"

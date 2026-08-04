@@ -48,7 +48,7 @@ export const createPublicGraphQLHandler = (
         session: await args.authN.authenticate(context),
       })),
       useHiveErrorHandler(err => {
-        args.logger.error(err, 'Unexpected error occured while handling exception.');
+        args.logger.error(err, 'Unexpected error occurred while handling exception.');
       }),
       useHive({
         debug: true,
@@ -58,6 +58,7 @@ export const createPublicGraphQLHandler = (
           ? {
               target: args.hiveUsageConfig.target,
               endpoint: args.hiveUsageConfig.endpoint ?? undefined,
+              fieldLevelMetricsEnabled: args.hiveUsageConfig.fieldLevelMetricsEnabled,
               clientInfo: () => ({
                 name: 'hive-public-api',
                 version: '0.1',

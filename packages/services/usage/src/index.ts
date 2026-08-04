@@ -3,11 +3,13 @@ import 'reflect-metadata';
 import { PrometheusConfig } from '@hive/api/modules/shared/providers/prometheus-config';
 import { TargetsByIdCache } from '@hive/api/modules/target/providers/targets-by-id-cache';
 import { TargetsBySlugCache } from '@hive/api/modules/target/providers/targets-by-slug-cache';
-import { createPostgresDatabasePool } from '@hive/postgres';
+import { TargetTokenCache } from '@hive/api/modules/token/providers/target-token-cache';
+import { createConnectionStringProvider, createPostgresDatabasePool } from '@hive/postgres';
 import {
   configureTracing,
   createRedisClient,
   createServer,
+  generateRdsIamAuthToken,
   registerShutdown,
   reportReadiness,
   sentryInit,
@@ -66,8 +68,21 @@ async function main() {
     maxRetriesPerRequest: 20,
   });
 
+  const rdsIamTokenGenerator = env.postgres.awsIamAuthEnabled
+    ? () =>
+        generateRdsIamAuthToken(
+          {
+            region: env.postgres.awsRegion ?? '',
+            hostname: env.postgres.host,
+            port: env.postgres.port,
+            username: env.postgres.user,
+          },
+          server.log.child({ source: 'RdsIamAuthTokenGenerator' }),
+        )
+    : undefined;
+
   const pgPool = await createPostgresDatabasePool({
-    connectionParameters: env.postgres,
+    connectionParameters: createConnectionStringProvider(env.postgres, rdsIamTokenGenerator),
     maximumPoolSize: 5,
     additionalInterceptors: tracing ? [tracing.instrumentSlonik()] : undefined,
   });
@@ -81,6 +96,7 @@ async function main() {
   const prometheusConfig = new PrometheusConfig(!!tracing);
   const targetsByIdCache = new TargetsByIdCache(redis, pgPool, prometheusConfig);
   const targetsBySlugCache = new TargetsBySlugCache(redis, pgPool, prometheusConfig);
+  const targetTokenCache = new TargetTokenCache(redis, pgPool, prometheusConfig);
 
   if (tracing) {
     await server.register(...tracing.instrumentFastify());
@@ -117,7 +133,7 @@ async function main() {
     });
 
     const tokens = createTokens({
-      endpoint: env.hive.tokens.endpoint,
+      cache: targetTokenCache,
       logger: server.log,
     });
 

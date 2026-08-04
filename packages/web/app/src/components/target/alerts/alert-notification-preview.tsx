@@ -60,8 +60,12 @@ const WEBHOOK_JSON_SCHEMA = {
       type: 'object',
       properties: { slug: { type: 'string' } },
     },
+    url: { type: ['string', 'null'] },
   },
 };
+
+/** Channel types this preview can render. Callers narrow to this before passing. */
+export type AlertPreviewChannelType = 'SLACK' | 'WEBHOOK' | 'MSTEAMS_WEBHOOK' | 'DISCORD';
 
 type PreviewProps = {
   alertName: string;
@@ -71,9 +75,11 @@ type PreviewProps = {
   direction: string;
   thresholdType: string;
   thresholdValue: string;
-  channelType: 'SLACK' | 'WEBHOOK' | 'MSTEAMS_WEBHOOK' | null;
+  channelType: AlertPreviewChannelType | null;
   targetSlug: string;
   projectSlug: string;
+  /** Link back to the rule, included in every real notification. */
+  alertUrl: string;
 };
 
 const SEVERITY_COLORS = {
@@ -141,9 +147,7 @@ function SlackPreview(props: PreviewProps) {
         <div className="flex">
           <div className={`${colors.bar} w-1 shrink-0 rounded-l`} />
           <div className="bg-neutral-4/50 rounded-r p-3 text-sm leading-relaxed">
-            <div className="text-neutral-12 font-bold">
-              🚨 {props.alertName || 'Untitled alert'}
-            </div>
+            <div className="text-neutral-12 font-bold">{props.alertName || 'Untitled alert'}</div>
             <div className="text-neutral-10 mt-1">
               {notificationMetricLabel(props.alertType, props.metricLabel)} {threshold}
             </div>
@@ -152,6 +156,7 @@ function SlackPreview(props: PreviewProps) {
               <code className="bg-neutral-5 rounded-sm px-1 text-xs">{props.targetSlug}</code> in{' '}
               <code className="bg-neutral-5 rounded-sm px-1 text-xs">{props.projectSlug}</code>
             </div>
+            <div className="text-accent mt-1">View alert in Hive</div>
           </div>
         </div>
       </div>
@@ -189,6 +194,7 @@ export function buildPreviewWebhookPayload(props: PreviewProps) {
     target: { slug: props.targetSlug },
     project: { slug: props.projectSlug },
     organization: { slug: '' },
+    url: props.alertUrl,
   };
 }
 
@@ -236,7 +242,7 @@ function TeamsPreview(props: PreviewProps) {
         {/* Theme color bar */}
         <div className={`${colors.bar} h-1`} />
         <div className="p-3">
-          <div className="text-neutral-12 font-bold">🔴 {props.alertName || 'Untitled alert'}</div>
+          <div className="text-neutral-12 font-bold">{props.alertName || 'Untitled alert'}</div>
           <div className="mt-2 space-y-1 text-sm">
             <div className="flex">
               <span className="text-neutral-10 w-20">Condition</span>
@@ -255,6 +261,53 @@ function TeamsPreview(props: PreviewProps) {
               </span>
             </div>
           </div>
+          <div className="text-accent mt-2 text-sm">View alert in Hive</div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function DiscordPreview(props: PreviewProps) {
+  const colors =
+    SEVERITY_COLORS[props.severity as keyof typeof SEVERITY_COLORS] ?? SEVERITY_COLORS.WARNING;
+  const threshold = formatThreshold(
+    props.alertType,
+    props.direction,
+    props.thresholdValue,
+    props.thresholdType,
+  );
+
+  return (
+    <div className="space-y-1">
+      <div className="text-neutral-10 mb-2 text-xs font-medium">Discord preview</div>
+      <div className="bg-neutral-2 dark:bg-neutral-3 border-neutral-5 flex overflow-hidden rounded-md border">
+        {/* Discord embeds render the severity color as a vertical bar. */}
+        <div className={`${colors.bar} w-1 shrink-0`} />
+        <div className="p-3">
+          <div className="text-neutral-12 font-bold">
+            🔴 {props.alertName || 'Untitled alert'} — triggered
+          </div>
+          <div className="text-neutral-10 mt-2 text-sm">
+            {notificationMetricLabel(props.alertType, props.metricLabel)} {threshold}
+          </div>
+          <div className="mt-3 space-y-1 text-sm">
+            <div className="flex">
+              <span className="text-neutral-10 w-20">Type</span>
+              <span className="text-neutral-11">{props.alertType}</span>
+            </div>
+            <div className="flex">
+              <span className="text-neutral-10 w-20">Severity</span>
+              <span className={colors.text}>{props.severity}</span>
+            </div>
+            <div className="flex">
+              <span className="text-neutral-10 w-20">Target</span>
+              <span className="text-neutral-11">
+                {props.targetSlug} in {props.projectSlug}
+              </span>
+            </div>
+          </div>
+          <div className="text-accent mt-2 text-sm">View alert in Hive</div>
         </div>
       </div>
     </div>
@@ -280,6 +333,9 @@ export function AlertPreview(props: PreviewProps) {
       break;
     case 'MSTEAMS_WEBHOOK':
       preview = <TeamsPreview {...props} />;
+      break;
+    case 'DISCORD':
+      preview = <DiscordPreview {...props} />;
       break;
     default:
       return null;

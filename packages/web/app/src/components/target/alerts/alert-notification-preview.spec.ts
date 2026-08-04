@@ -47,6 +47,7 @@ const EXPECTED_WEBHOOK_KEYS = [
   'threshold.type',
   'threshold.value',
   'type',
+  'url',
 ];
 
 describe('AlertPreview', () => {
@@ -62,6 +63,7 @@ describe('AlertPreview', () => {
       channelType: 'WEBHOOK',
       targetSlug: 'production',
       projectSlug: 'my-api',
+      alertUrl: 'https://app.graphql-hive.com/acme/my-api/production/alerts/rule-1',
     });
 
     const previewKeys = getKeyPaths(previewPayload as unknown as Record<string, unknown>);

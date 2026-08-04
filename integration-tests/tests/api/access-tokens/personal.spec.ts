@@ -1,32 +1,10 @@
+import { createPersonalAccessToken } from 'testkit/flow';
 import { assertNonNullish } from 'testkit/utils';
 import { graphql } from '../../../testkit/gql';
 import * as GraphQLSchema from '../../../testkit/gql/graphql';
 import { execute } from '../../../testkit/graphql';
 import { initSeed } from '../../../testkit/seed';
 import { deleteAccessToken, fetchPermissions } from './shared';
-
-const CreatePersonalAccessTokenMutation = graphql(`
-  mutation CreatePersonalAccessTokenMutation($input: CreatePersonalAccessTokenInput!) {
-    createPersonalAccessToken(input: $input) {
-      ok {
-        privateAccessKey
-        createdPersonalAccessToken {
-          id
-          title
-          description
-          createdAt
-        }
-      }
-      error {
-        message
-        details {
-          title
-          description
-        }
-      }
-    }
-  }
-`);
 
 const OrganizationProjectTargetQuery1 = graphql(`
   query OrganizationProjectTargetQuery1(
@@ -53,21 +31,18 @@ test.concurrent('create: success with admin supertokens session', async () => {
   const { createOrg, ownerToken } = await initSeed().createOwner();
   const org = await createOrg();
 
-  const result = await execute({
-    document: CreatePersonalAccessTokenMutation,
-    variables: {
-      input: {
-        organization: {
-          byId: org.organization.id,
-        },
-        title: 'an access token',
-        description: 'Some description',
-        resources: { mode: GraphQLSchema.ResourceAssignmentModeType.All },
-        permissions: [],
+  const result = await createPersonalAccessToken(
+    {
+      organization: {
+        byId: org.organization.id,
       },
+      title: 'an access token',
+      description: 'Some description',
+      resources: { mode: GraphQLSchema.ResourceAssignmentModeType.All },
+      permissions: [],
     },
-    authToken: ownerToken,
-  }).then(e => e.expectNoGraphQLErrors());
+    ownerToken,
+  ).then(e => e.expectNoGraphQLErrors());
   expect(result.createPersonalAccessToken.error).toEqual(null);
   expect(result.createPersonalAccessToken.ok).toEqual({
     privateAccessKey: expect.any(String),
@@ -84,21 +59,18 @@ test.concurrent('create: failure invalid title', async ({ expect }) => {
   const { createOrg, ownerToken } = await initSeed().createOwner();
   const org = await createOrg();
 
-  const result = await execute({
-    document: CreatePersonalAccessTokenMutation,
-    variables: {
-      input: {
-        organization: {
-          byId: org.organization.id,
-        },
-        title: '   ',
-        description: 'Some description',
-        resources: { mode: GraphQLSchema.ResourceAssignmentModeType.All },
-        permissions: [],
+  const result = await createPersonalAccessToken(
+    {
+      organization: {
+        byId: org.organization.id,
       },
+      title: '   ',
+      description: 'Some description',
+      resources: { mode: GraphQLSchema.ResourceAssignmentModeType.All },
+      permissions: [],
     },
-    authToken: ownerToken,
-  }).then(e => e.expectNoGraphQLErrors());
+    ownerToken,
+  ).then(e => e.expectNoGraphQLErrors());
   expect(result.createPersonalAccessToken.ok).toEqual(null);
   expect(result.createPersonalAccessToken.error).toMatchInlineSnapshot(`
     {
@@ -115,21 +87,18 @@ test.concurrent('create: failure invalid description', async ({ expect }) => {
   const { createOrg, ownerToken } = await initSeed().createOwner();
   const org = await createOrg();
 
-  const result = await execute({
-    document: CreatePersonalAccessTokenMutation,
-    variables: {
-      input: {
-        organization: {
-          byId: org.organization.id,
-        },
-        title: 'an access token',
-        description: new Array(300).fill('A').join(''),
-        resources: { mode: GraphQLSchema.ResourceAssignmentModeType.All },
-        permissions: [],
+  const result = await createPersonalAccessToken(
+    {
+      organization: {
+        byId: org.organization.id,
       },
+      title: 'an access token',
+      description: new Array(300).fill('A').join(''),
+      resources: { mode: GraphQLSchema.ResourceAssignmentModeType.All },
+      permissions: [],
     },
-    authToken: ownerToken,
-  }).then(e => e.expectNoGraphQLErrors());
+    ownerToken,
+  ).then(e => e.expectNoGraphQLErrors());
   expect(result.createPersonalAccessToken.ok).toEqual(null);
   expect(result.createPersonalAccessToken.error).toMatchInlineSnapshot(`
     {
@@ -147,21 +116,18 @@ test.concurrent('create: failure because no access to organization', async ({ ex
   const actor2 = await initSeed().createOwner();
   const org = await actor1.createOrg();
 
-  const errors = await execute({
-    document: CreatePersonalAccessTokenMutation,
-    variables: {
-      input: {
-        organization: {
-          byId: org.organization.id,
-        },
-        title: 'an access token',
-        description: 'Some description',
-        resources: { mode: GraphQLSchema.ResourceAssignmentModeType.All },
-        permissions: [],
+  const errors = await createPersonalAccessToken(
+    {
+      organization: {
+        byId: org.organization.id,
       },
+      title: 'an access token',
+      description: 'Some description',
+      resources: { mode: GraphQLSchema.ResourceAssignmentModeType.All },
+      permissions: [],
     },
-    authToken: actor2.ownerToken,
-  }).then(e => e.expectGraphQLErrors());
+    actor2.ownerToken,
+  ).then(e => e.expectGraphQLErrors());
   expect(errors).toMatchObject([
     {
       extensions: {
@@ -178,21 +144,18 @@ test.concurrent('delete: successfuly delete own access token', async ({ expect }
   const { createOrg, ownerToken } = await initSeed().createOwner();
   const org = await createOrg();
 
-  const createResult = await execute({
-    document: CreatePersonalAccessTokenMutation,
-    variables: {
-      input: {
-        organization: {
-          byId: org.organization.id,
-        },
-        title: 'an access token',
-        description: 'Some description',
-        resources: { mode: GraphQLSchema.ResourceAssignmentModeType.All },
-        permissions: [],
+  const createResult = await createPersonalAccessToken(
+    {
+      organization: {
+        byId: org.organization.id,
       },
+      title: 'an access token',
+      description: 'Some description',
+      resources: { mode: GraphQLSchema.ResourceAssignmentModeType.All },
+      permissions: [],
     },
-    authToken: ownerToken,
-  }).then(e => e.expectNoGraphQLErrors());
+    ownerToken,
+  ).then(e => e.expectNoGraphQLErrors());
   expect(createResult.createPersonalAccessToken.error).toEqual(null);
   assertNonNullish(createResult.createPersonalAccessToken.ok);
 
@@ -208,7 +171,7 @@ test.concurrent('delete: successfuly delete own access token', async ({ expect }
 });
 
 test.concurrent('delete: fail delete access token of another user', async ({ expect }) => {
-  const { createOrg, ownerToken } = await initSeed().createOwner();
+  const { createOrg } = await initSeed().createOwner();
   const org = await createOrg();
 
   const user1 = await org.inviteAndJoinMember();
@@ -232,21 +195,18 @@ test.concurrent('delete: fail delete access token of another user', async ({ exp
     userId: user2.member.id,
   });
 
-  const createResult = await execute({
-    document: CreatePersonalAccessTokenMutation,
-    variables: {
-      input: {
-        organization: {
-          byId: org.organization.id,
-        },
-        title: 'an access token',
-        description: 'Some description',
-        resources: { mode: GraphQLSchema.ResourceAssignmentModeType.All },
-        permissions: [],
+  const createResult = await createPersonalAccessToken(
+    {
+      organization: {
+        byId: org.organization.id,
       },
+      title: 'an access token',
+      description: 'Some description',
+      resources: { mode: GraphQLSchema.ResourceAssignmentModeType.All },
+      permissions: [],
     },
-    authToken: user1.memberToken,
-  }).then(e => e.expectNoGraphQLErrors());
+    user1.memberToken,
+  ).then(e => e.expectNoGraphQLErrors());
   expect(createResult.createPersonalAccessToken.error).toEqual(null);
   assertNonNullish(createResult.createPersonalAccessToken.ok);
   const accessToken = createResult.createPersonalAccessToken.ok.createdPersonalAccessToken;
@@ -270,21 +230,18 @@ test.concurrent('query GraphQL API on resources with access', async ({ expect })
   const org = await createOrg();
   const project = await org.createProject(GraphQLSchema.ProjectType.Federation);
 
-  const result = await execute({
-    document: CreatePersonalAccessTokenMutation,
-    variables: {
-      input: {
-        organization: {
-          byId: org.organization.id,
-        },
-        title: 'an access token',
-        description: 'a description',
-        resources: { mode: GraphQLSchema.ResourceAssignmentModeType.All },
-        permissions: ['organization:describe', 'project:describe'],
+  const result = await createPersonalAccessToken(
+    {
+      organization: {
+        byId: org.organization.id,
       },
+      title: 'an access token',
+      description: 'a description',
+      resources: { mode: GraphQLSchema.ResourceAssignmentModeType.All },
+      permissions: ['organization:describe', 'project:describe'],
     },
-    authToken: ownerToken,
-  }).then(e => e.expectNoGraphQLErrors());
+    ownerToken,
+  ).then(e => e.expectNoGraphQLErrors());
   expect(result.createPersonalAccessToken.error).toEqual(null);
   assertNonNullish(result.createPersonalAccessToken.ok);
   const personalAccessToken = result.createPersonalAccessToken.ok.privateAccessKey;
@@ -322,29 +279,26 @@ test.concurrent('query GraphQL API on resources without access', async ({ expect
   const project1 = await org.createProject(GraphQLSchema.ProjectType.Federation);
   const project2 = await org.createProject(GraphQLSchema.ProjectType.Federation);
 
-  const result = await execute({
-    document: CreatePersonalAccessTokenMutation,
-    variables: {
-      input: {
-        organization: {
-          byId: org.organization.id,
-        },
-        title: 'an access token',
-        description: 'a description',
-        resources: {
-          mode: GraphQLSchema.ResourceAssignmentModeType.Granular,
-          projects: [
-            {
-              projectId: project1.project.id,
-              targets: { mode: GraphQLSchema.ResourceAssignmentModeType.All },
-            },
-          ],
-        },
-        permissions: ['organization:describe', 'project:describe'],
+  const result = await createPersonalAccessToken(
+    {
+      organization: {
+        byId: org.organization.id,
       },
+      title: 'an access token',
+      description: 'a description',
+      resources: {
+        mode: GraphQLSchema.ResourceAssignmentModeType.Granular,
+        projects: [
+          {
+            projectId: project1.project.id,
+            targets: { mode: GraphQLSchema.ResourceAssignmentModeType.All },
+          },
+        ],
+      },
+      permissions: ['organization:describe', 'project:describe'],
     },
-    authToken: ownerToken,
-  }).then(e => e.expectNoGraphQLErrors());
+    ownerToken,
+  ).then(e => e.expectNoGraphQLErrors());
   expect(result.createPersonalAccessToken.error).toEqual(null);
   assertNonNullish(result.createPersonalAccessToken.ok);
   const personalAccessToken = result.createPersonalAccessToken.ok.privateAccessKey;
@@ -370,7 +324,7 @@ test.concurrent('query GraphQL API on resources without access', async ({ expect
 test.concurrent(
   'query GraphQL API after membership resources have been downgraded',
   async ({ expect }) => {
-    const seed = await initSeed();
+    const seed = initSeed();
     const { createOrg } = await seed.createOwner();
     const org = await createOrg();
     const project = await org.createProject(GraphQLSchema.ProjectType.Federation);
@@ -390,21 +344,18 @@ test.concurrent(
       roleId: newRole.id,
     });
 
-    const result = await execute({
-      document: CreatePersonalAccessTokenMutation,
-      variables: {
-        input: {
-          organization: {
-            byId: org.organization.id,
-          },
-          title: 'an access token',
-          description: 'a description',
-          resources: { mode: GraphQLSchema.ResourceAssignmentModeType.All },
-          permissions: ['organization:describe', 'project:describe'],
+    const result = await createPersonalAccessToken(
+      {
+        organization: {
+          byId: org.organization.id,
         },
+        title: 'an access token',
+        description: 'a description',
+        resources: { mode: GraphQLSchema.ResourceAssignmentModeType.All },
+        permissions: ['organization:describe', 'project:describe'],
       },
-      authToken: memberToken,
-    }).then(e => e.expectNoGraphQLErrors());
+      memberToken,
+    ).then(e => e.expectNoGraphQLErrors());
 
     expect(result.createPersonalAccessToken.error).toEqual(null);
     assertNonNullish(result.createPersonalAccessToken.ok);
@@ -474,7 +425,7 @@ test.concurrent(
 test.concurrent(
   'query GraphQL API after membership permissions have been downgraded',
   async ({ expect }) => {
-    const seed = await initSeed();
+    const seed = initSeed();
     const { createOrg } = await seed.createOwner();
     const org = await createOrg();
     const project = await org.createProject(GraphQLSchema.ProjectType.Federation);
@@ -494,21 +445,18 @@ test.concurrent(
       roleId: memberRole.id,
     });
 
-    const result = await execute({
-      document: CreatePersonalAccessTokenMutation,
-      variables: {
-        input: {
-          organization: {
-            byId: org.organization.id,
-          },
-          title: 'an access token',
-          description: 'a description',
-          resources: { mode: GraphQLSchema.ResourceAssignmentModeType.All },
-          permissions: ['organization:describe', 'project:describe'],
+    const result = await createPersonalAccessToken(
+      {
+        organization: {
+          byId: org.organization.id,
         },
+        title: 'an access token',
+        description: 'a description',
+        resources: { mode: GraphQLSchema.ResourceAssignmentModeType.All },
+        permissions: ['organization:describe', 'project:describe'],
       },
-      authToken: memberToken,
-    }).then(e => e.expectNoGraphQLErrors());
+      memberToken,
+    ).then(e => e.expectNoGraphQLErrors());
 
     expect(result.createPersonalAccessToken.error).toEqual(null);
     assertNonNullish(result.createPersonalAccessToken.ok);
@@ -622,7 +570,7 @@ test.concurrent(
 test.concurrent(
   'query GraphQL API after membership was revoked using access tokens',
   async ({ expect }) => {
-    const seed = await initSeed();
+    const seed = initSeed();
     const { createOrg } = await seed.createOwner();
     const org = await createOrg();
     const project = await org.createProject(GraphQLSchema.ProjectType.Federation);
@@ -642,21 +590,18 @@ test.concurrent(
       roleId: memberRole.id,
     });
 
-    const result = await execute({
-      document: CreatePersonalAccessTokenMutation,
-      variables: {
-        input: {
-          organization: {
-            byId: org.organization.id,
-          },
-          title: 'an access token',
-          description: 'a description',
-          resources: { mode: GraphQLSchema.ResourceAssignmentModeType.All },
-          permissions: ['organization:describe', 'project:describe'],
+    const result = await createPersonalAccessToken(
+      {
+        organization: {
+          byId: org.organization.id,
         },
+        title: 'an access token',
+        description: 'a description',
+        resources: { mode: GraphQLSchema.ResourceAssignmentModeType.All },
+        permissions: ['organization:describe', 'project:describe'],
       },
-      authToken: memberToken,
-    }).then(e => e.expectNoGraphQLErrors());
+      memberToken,
+    ).then(e => e.expectNoGraphQLErrors());
 
     expect(result.createPersonalAccessToken.error).toEqual(null);
     assertNonNullish(result.createPersonalAccessToken.ok);
@@ -753,30 +698,27 @@ test.concurrent('query GraphQL API on resources after token expiration', async (
   const project1 = await org.createProject(GraphQLSchema.ProjectType.Federation);
   const project2 = await org.createProject(GraphQLSchema.ProjectType.Federation);
 
-  const result = await execute({
-    document: CreatePersonalAccessTokenMutation,
-    variables: {
-      input: {
-        organization: {
-          byId: org.organization.id,
-        },
-        title: 'an access token',
-        description: 'a description',
-        resources: {
-          mode: GraphQLSchema.ResourceAssignmentModeType.Granular,
-          projects: [
-            {
-              projectId: project1.project.id,
-              targets: { mode: GraphQLSchema.ResourceAssignmentModeType.All },
-            },
-          ],
-        },
-        expirationPeriod: GraphQLSchema.TokenExpirationPeriod.OneWeek,
-        permissions: ['organization:describe', 'project:describe'],
+  const result = await createPersonalAccessToken(
+    {
+      organization: {
+        byId: org.organization.id,
       },
+      title: 'an access token',
+      description: 'a description',
+      resources: {
+        mode: GraphQLSchema.ResourceAssignmentModeType.Granular,
+        projects: [
+          {
+            projectId: project1.project.id,
+            targets: { mode: GraphQLSchema.ResourceAssignmentModeType.All },
+          },
+        ],
+      },
+      expirationPeriod: GraphQLSchema.TokenExpirationPeriod.OneWeek,
+      permissions: ['organization:describe', 'project:describe'],
     },
-    authToken: ownerToken,
-  }).then(e => e.expectNoGraphQLErrors());
+    ownerToken,
+  ).then(e => e.expectNoGraphQLErrors());
   expect(result.createPersonalAccessToken.error).toEqual(null);
   assertNonNullish(result.createPersonalAccessToken.ok);
   const personalAccessToken = result.createPersonalAccessToken.ok.privateAccessKey;

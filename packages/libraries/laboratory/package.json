@@ -1,7 +1,12 @@
 {
   "name": "@graphql-hive/laboratory",
-  "version": "0.2.0",
+  "version": "0.2.3",
   "type": "module",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/graphql-hive/console",
+    "directory": "packages/libraries/laboratory"
+  },
   "license": "MIT",
   "main": "./dist/hive-laboratory.cjs.js",
   "module": "./dist/hive-laboratory.es.js",
@@ -108,7 +113,7 @@
     "monaco-graphql": "^1.7.3",
     "monacopilot": "^1.2.12",
     "next-themes": "^0.4.6",
-    "postcss": "8.5.18",
+    "postcss": "8.5.25",
     "postcss-prefixwrap": "^1.57.2",
     "react": "18.3.1",
     "react-dom": "18.3.1",
@@ -133,7 +138,6 @@
     "zod": "^4.3.6"
   },
   "publishConfig": {
-    "registry": "https://registry.npmjs.org",
     "access": "public"
   },
   "sideEffects": [

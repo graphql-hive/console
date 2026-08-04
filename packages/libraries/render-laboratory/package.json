@@ -1,11 +1,11 @@
 {
   "name": "@graphql-hive/render-laboratory",
-  "version": "0.1.11",
+  "version": "0.1.14",
   "type": "module",
   "description": "",
   "repository": {
     "type": "git",
-    "url": "https://github.com/graphql-hive/console.git",
+    "url": "https://github.com/graphql-hive/console",
     "directory": "packages/render-laboratory"
   },
   "author": "Michael Skorokhodov <michael@the-guild.dev>",

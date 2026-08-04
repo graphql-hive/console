@@ -3,7 +3,7 @@
   "type": "module",
   "repository": {
     "type": "git",
-    "url": "graphql-hive/platform"
+    "url": "https://github.com/graphql-hive/console"
   },
   "author": {
     "email": "contact@the-guild.dev",
@@ -14,7 +14,7 @@
   "private": true,
   "packageManager": "pnpm@10.33.2+sha512.a90faf6feeab71ad6c6e57f94e0fe1a12f5dcc22cd754db40ae9593eb6a3e0b6b12e3540218bb37ae083404b1f2ce6db2a4121e979829b4aff94b99f49da1cf8",
   "engines": {
-    "node": ">=24.18.0",
+    "node": ">=24.18.1",
     "pnpm": ">=10.33.2"
   },
   "scripts": {
@@ -27,7 +27,7 @@
     "dev:integration": "cd integration-tests && pnpm dev:integration",
     "dev:observability": "docker compose -f ./docker/docker-compose.dev.yml --profile observability up -d",
     "dev:observability:down": "docker compose -f ./docker/docker-compose.dev.yml --profile observability down",
-    "docker:build": "docker buildx bake -f docker/docker.hcl --load build",
+    "docker:build": "NODE_VERSION_TAG=\":$(< .node-version)-slim\" docker buildx bake -f docker/docker.hcl --load build",
     "docker:override-up": "docker compose -f ./docker/docker-compose.override.yml up -d --remove-orphans",
     "env:sync": "tsx scripts/sync-env-files.ts",
     "generate": "pnpm --filter @hive/storage db:generate && pnpm graphql:generate",
@@ -51,6 +51,7 @@
     "seed:insights-and-alerts": "tsx scripts/seed-insights-and-alerts/seed-insights-and-alerts.mts",
     "seed:org": "tsx scripts/seed-organization.mts",
     "seed:schemas": "tsx scripts/seed-schemas.ts",
+    "seed:scim-users-groups": "tsx scripts/seed-scim-users-groups/seed-scim-users-groups.mts",
     "seed:usage": "tsx scripts/seed-usage.ts",
     "sourcemaps:inject": "./scripts/sourcemaps-inject.sh",
     "sourcemaps:upload": "./scripts/sourcemaps-upload.sh",
@@ -60,6 +61,7 @@
     "test:e2e:local": "RUN_AGAINST_LOCAL_SERVICES=1 HIVE_APP_BASE_URL=http://localhost:3000 playwright test --ui",
     "test:e2e:open": "playwright test --ui",
     "test:integration": "cd integration-tests && pnpm test:integration",
+    "test:integration:local": "pnpm run --filter integration-tests test:local",
     "typecheck": "pnpm run -r --filter '!hive' typecheck",
     "workspace": "pnpm run --filter $1 $2"
   },
@@ -114,7 +116,6 @@
     "overrides.csstype": "To fix type check error https://github.com/JedWatson/react-select/issues/5952",
     "overrides.mjml": "Our patch removes html-minifier from mjml-core, we dont need this dependency and its causing false-alarm (CVE https://nvd.nist.gov/vuln/detail/cve-2022-37620)",
     "overrides.ip": "There is no update with fix for ip package, we use fork https://github.com/indutny/node-ip/issues/150#issuecomment-2325961380",
-    "overrides.miniflare@3>undici": "To address CVE: https://github.com/graphql-hive/console/security/dependabot/439",
     "overrides.tar-fs": "https://github.com/graphql-hive/console/security/dependabot/290",
     "overrides.@types/nodemailer>@aws-sdk/client-sesv2": "@types/nodemailer depends on some AWS stuff that causes the 3.x.x version to stick around. We don't need that dependency. (https://github.com/graphql-hive/console/security/dependabot/436)",
     "overrides.tar@6.x.x": "address https://github.com/graphql-hive/console/security/dependabot/443",
@@ -138,7 +139,7 @@
       "cookie@<0.7.0": "0.7.2",
       "tar-fs": "2.1.4",
       "ip": "npm:neoip@2.1.0",
-      "miniflare@3>undici": "^7.18.2",
+      "miniflare@3>undici": "7.29.0",
       "tailwindcss": "3.4.17",
       "@graphql-hive/laboratory>tailwindcss": "4.1.18",
       "@hive/app>tailwindcss": "4.1.18",
@@ -172,17 +173,17 @@
       "@babel/core": "7.29.7",
       "sha.js@<=2.4.11": ">=2.4.12",
       "brace-expansion@>=5.0.0 <5.0.8": "5.0.8",
-      "brace-expansion@>=2.0.0 <2.1.2": "^2.1.2",
-      "brace-expansion@<1.1.16": "^1.1.16",
+      "brace-expansion@>=2.0.0 <2.1.4": "2.1.4",
+      "brace-expansion@<1.1.18": "1.1.18",
       "@sigstore/core@<=3.2.0": ">=3.2.1",
       "js-yaml@<3.15.0": "3.15.0",
       "sigstore@<=4.1.0": ">=4.1.1",
       "tar@<=7.5.18": "7.5.21",
-      "fast-uri@2.x.x": "3.1.4",
-      "fast-uri@3.x.x": "3.1.4",
+      "fast-uri@<4.0.0": "3.1.5",
       "@opentelemetry/propagator-jaeger@<2.9.0": "2.9.0",
       "sharp@<0.35.0": "0.35.0",
-      "body-parser@1.x.x": "1.20.6"
+      "body-parser@1.x.x": "1.20.6",
+      "prettier-plugin-sh": "0.19.0"
     },
     "patchedDependencies": {
       "mjml-core@4.14.0": "patches/mjml-core@4.14.0.patch",

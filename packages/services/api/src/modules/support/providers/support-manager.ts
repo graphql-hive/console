@@ -357,7 +357,7 @@ export class SupportManager {
           );
         } else {
           this.logger.debug(
-            'An unexpected error occured while connecting the user to the zendesk organization. (err=%s, organization: %s, user: %s, zendeskUserId: %d, zendeskOrganizationId: %d)',
+            'An unexpected error occurred while connecting the user to the zendesk organization. (err=%s, organization: %s, user: %s, zendeskUserId: %d, zendeskOrganizationId: %d)',
             String(err),
             input.organizationId,
             input.userId,

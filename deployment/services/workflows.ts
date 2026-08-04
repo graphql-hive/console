@@ -62,6 +62,8 @@ export function deployWorkflows({
               : '',
           LOG_JSON: '1',
           SCHEMA_ENDPOINT: serviceLocalEndpoint(schema.service),
+          // Lets metric-alert notifications link back to the rule in Hive Console.
+          WEB_APP_URL: `https://${environment.appDns}`,
           FEATURE_FLAGS_METRIC_ALERT_RULES_ENABLED:
             featureFlagsConfig.get('metricAlertRulesEnabled') ?? '0',
           // Activate the ClickHouse client; without this toggle the workflows
@@ -103,6 +105,9 @@ export function deployWorkflows({
       .withSecret('CLICKHOUSE_USERNAME', clickhouse.secret, 'username')
       .withSecret('CLICKHOUSE_PASSWORD', clickhouse.secret, 'password')
       .withSecret('CLICKHOUSE_PROTOCOL', clickhouse.secret, 'protocol')
+      // Same secret as the graphql and schema services, so `organizations.slack_token`
+      // written by the API decrypts here when dispatching metric-alert notifications.
+      .withSecret('ENCRYPTION_SECRET', environment.encryptionSecret, 'encryptionPrivateKey')
       .deploy()
   );
 }

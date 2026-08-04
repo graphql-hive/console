@@ -175,6 +175,11 @@ jobs:
               echo "sha_short=${GITHUB_SHA:0:7}" >> $GITHUB_OUTPUT
           fi
 
+      - name: configure Docker Node.js image tag
+        id: node-version-tag
+        if: ${{ inputs.dockerize }}
+        run: echo "value=:$(< .node-version)-slim" >> "$GITHUB_OUTPUT"
+
       - name: build docker images (${{ matrix.platform }})
         timeout-minutes: 60
         id: docker-bake
@@ -191,6 +196,7 @@ jobs:
           BUILD_STABLE: ${{ inputs.publishLatest && '1' || '' }}
           BUILD_PLATFORM: ${{ matrix.platform }}
           IMAGE_SUFFIX: ${{ matrix.suffix }}
+          NODE_VERSION_TAG: ${{ steps.node-version-tag.outputs.value }}
         with:
           # See https://github.com/docker/buildx/issues/1533
           provenance: false
@@ -237,6 +243,10 @@ jobs:
         with:
           fetch-depth: 2
 
+      - name: configure Docker Node.js image tag
+        id: node-version-tag
+        run: echo "value=:$(< .node-version)-slim" >> "$GITHUB_OUTPUT"
+
       - name: configure docker buildx
         uses: docker/setup-buildx-action@6524bf65af31da8d45b59e8c27de4bd072b392f5 # v3.8.0
 
@@ -254,6 +264,7 @@ jobs:
           REGISTRY: ${{ inputs.registry }}
           IMAGE_NAME: ${{ inputs.imageName }}
           IMAGE_TAG: ${{ inputs.imageTag }}
+          NODE_VERSION_TAG: ${{ steps.node-version-tag.outputs.value }}
         run: |
           targets=$(docker buildx bake -f docker/docker.hcl --print "$TARGETS" | jq -r '.group."'"$TARGETS"'".targets[]')
 
@@ -284,6 +295,7 @@ jobs:
           REGISTRY: ${{ inputs.registry }}
           IMAGE_NAME: ${{ inputs.imageName }}
           IMAGE_TAG: ${{ steps.git_hash.outputs.sha_short }}
+          NODE_VERSION_TAG: ${{ steps.node-version-tag.outputs.value }}
         run: |
           targets=$(docker buildx bake -f docker/docker.hcl --print "$TARGETS" | jq -r '.group."'"$TARGETS"'".targets[]')
 
@@ -308,6 +320,7 @@ jobs:
           SHA_SHORT: ${{ steps.git_hash.outputs.sha_short }}
           RELEASE_STAGE: ${{ inputs.publishLatest == false && 'alpha-' || '' }}
           LATEST_VERSION: ${{ inputs.latestVersion }}
+          NODE_VERSION_TAG: ${{ steps.node-version-tag.outputs.value }}
         run: |
           targets=$(docker buildx bake -f docker/docker.hcl --print "$TARGETS" | jq -r '.group."'"$TARGETS"'".targets[]')
 
@@ -328,6 +341,7 @@ jobs:
           TARGETS: ${{ inputs.targets }}
           REGISTRY: ${{ inputs.registry }}
           IMAGE_NAME: ${{ inputs.imageName }}
+          NODE_VERSION_TAG: ${{ steps.node-version-tag.outputs.value }}
         run: |
           targets=$(docker buildx bake -f docker/docker.hcl --print "$TARGETS" | jq -r '.group."'"$TARGETS"'".targets[]')
 

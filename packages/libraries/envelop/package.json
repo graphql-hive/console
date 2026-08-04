@@ -1,11 +1,11 @@
 {
   "name": "@graphql-hive/envelop",
-  "version": "0.40.6",
+  "version": "0.40.8",
   "type": "module",
-  "description": "GraphQL Hive + GraphQL Envelop",
+  "description": "Hive Console + GraphQL Envelop",
   "repository": {
     "type": "git",
-    "url": "graphql-hive/platform",
+    "url": "https://github.com/graphql-hive/console",
     "directory": "packages/libraries/envelop"
   },
   "homepage": "https://the-guild.dev/graphql/hive",
@@ -53,7 +53,6 @@
     "@envelop/types": "5.0.0"
   },
   "publishConfig": {
-    "registry": "https://registry.npmjs.org",
     "access": "public",
     "directory": "dist"
   },

@@ -43,7 +43,7 @@ import { resolveRangeAndResolution } from '@/lib/hooks/use-date-range-controller
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Link } from '@tanstack/react-router';
 import { AlertMetricChart } from './alert-metric-chart';
-import { AlertPreview } from './alert-notification-preview';
+import { AlertPreview, type AlertPreviewChannelType } from './alert-notification-preview';
 import { applyThresholdSign, thresholdUnit } from './alert-threshold';
 
 const AlertForm_ChannelsQuery = graphql(`
@@ -425,6 +425,13 @@ export function AlertForm(props: AlertFormProps) {
     mode,
   } = props;
   const { toast } = useToast();
+
+  // Matches the link the workflows notifier builds (buildAlertUrl in
+  // packages/services/workflows/src/lib/metric-alert-notifier.ts). A rule being
+  // created has no id yet, so the preview shows a placeholder segment.
+  const alertUrl = `${window.location.origin}/${organizationSlug}/${projectSlug}/${targetSlug}/alerts/${
+    props.mode === 'edit' ? props.ruleId : '{ruleId}'
+  }`;
 
   const [channelsQuery] = useQuery({
     query: AlertForm_ChannelsQuery,
@@ -828,6 +835,7 @@ export function AlertForm(props: AlertFormProps) {
                           <FormControl>
                             <Input
                               type="number"
+                              step="any"
                               min={0}
                               max={valueMax}
                               placeholder={valuePlaceholder}
@@ -964,11 +972,10 @@ export function AlertForm(props: AlertFormProps) {
               direction={watchedValues.direction ?? 'ABOVE'}
               thresholdType={watchedValues.thresholdType ?? 'FIXED_VALUE'}
               thresholdValue={watchedValues.thresholdValue ?? ''}
-              channelType={
-                (firstChannel?.type as 'SLACK' | 'WEBHOOK' | 'MSTEAMS_WEBHOOK' | null) ?? null
-              }
+              channelType={(firstChannel?.type as AlertPreviewChannelType | null) ?? null}
               targetSlug={targetSlug}
               projectSlug={projectSlug}
+              alertUrl={alertUrl}
             />
           </div>
         ) : null}

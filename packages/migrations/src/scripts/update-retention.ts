@@ -1,7 +1,8 @@
 #!/usr/bin/env node
 import { got, HTTPError } from 'got';
 import { z } from 'zod';
-import { createPostgresDatabasePool, psql } from '@hive/postgres';
+import { createConnectionStringProvider, createPostgresDatabasePool, psql } from '@hive/postgres';
+import { generateRdsIamAuthToken } from '@hive/service-common';
 import { env } from '../environment';
 
 interface QueryResponse<T> {
@@ -184,8 +185,26 @@ function createClickHouseHelpers(endpoint: string, username: string, password: s
 }
 
 async function updatePostgreSQLRetention(retention: RetentionValue) {
+  const rdsIamTokenGenerator = env.postgres.awsIamAuthEnabled
+    ? () =>
+        generateRdsIamAuthToken(
+          {
+            region: env.postgres.awsRegion ?? '',
+            hostname: env.postgres.host,
+            port: env.postgres.port,
+            username: env.postgres.user,
+          },
+          console,
+        )
+    : undefined;
+
+  const connectionStringProvider = createConnectionStringProvider(
+    env.postgres,
+    rdsIamTokenGenerator,
+  );
+
   const pool = await createPostgresDatabasePool({
-    connectionParameters: env.postgres,
+    connectionParameters: connectionStringProvider,
     statementTimeout: 10 * 60 * 1000, // 10 minute timeout
   });
 
