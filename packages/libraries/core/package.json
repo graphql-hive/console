@@ -54,7 +54,8 @@
     "events": "^3.3.0",
     "js-md5": "0.8.3",
     "lodash.sortby": "^4.7.0",
-    "tiny-lru": "^11.4.7"
+    "tiny-lru": "^11.4.7",
+    "tslib": "^2.8.1"
   },
   "devDependencies": {
     "@apollo/federation": "0.38.1",
