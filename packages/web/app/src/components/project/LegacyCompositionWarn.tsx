@@ -42,9 +42,6 @@ export function LegacyCompositionWarn(props: {
       <b>This project is using Legacy Federation v1 composition.</b>
       <br />
       Migrate to Native Federation v2 for the recommended composition experience.{' '}
-      <ProductUpdatesLink href="2023-10-10-native-federation-2">
-        Read the announcement.
-      </ProductUpdatesLink>
       <Link
         to="/$organizationSlug/$projectSlug/view/settings"
         params={{
@@ -52,9 +49,15 @@ export function LegacyCompositionWarn(props: {
           projectSlug: project.slug,
         }}
         search={{ page: 'composition' }}
+        className="text-blue-500"
       >
         Open Composition settings
       </Link>
+      {' to change it.'}
+      <br />
+      <ProductUpdatesLink href="2023-10-10-native-federation-2">
+        Read the announcement
+      </ProductUpdatesLink>
     </Callout>
   );
 }
