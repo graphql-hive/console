@@ -42,7 +42,7 @@ const ProjectCard_ProjectFragment = graphql(`
 `);
 
 const projectTypeFullNames = {
-  [ProjectType.Federation]: 'Apollo Federation',
+  [ProjectType.Federation]: 'Federation',
   [ProjectType.Stitching]: 'Schema Stitching',
   [ProjectType.Single]: 'Monolithic Schema',
 };
