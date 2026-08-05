@@ -170,12 +170,12 @@ export const createComposeFederation = (deps: ComposeFederationDeps) =>
         const subgraphsMetadata = subgraphs.map(({ name, typeDefs }) =>
           extractMetadata(typeDefs, name),
         );
-        const supergraphDocumentNode =
-          composed.result.supergraphDocumentNode ?? parse(composed.result.supergraph);
-        const { resolveImportName } = extractLinkImplementations(supergraphDocumentNode);
+        const { resolveImportName } = extractLinkImplementations(
+          composed.result.supergraphDocumentNode,
+        );
         const tagDirectiveName = resolveImportName('https://specs.apollo.dev/tag', '@tag');
         const tagStrategy = createTagDirectiveNameExtractionStrategy(tagDirectiveName);
-        const tags = extractTagsFromDocument(supergraphDocumentNode, tagStrategy);
+        const tags = extractTagsFromDocument(composed.result.supergraphDocumentNode, tagStrategy);
         const schemaMetadata = mergeMetadata(...subgraphsMetadata);
         const metadataAttributes = new SetMap<string, string>();
         for (const [_coord, attrs] of schemaMetadata) {
@@ -261,11 +261,8 @@ export const createComposeFederation = (deps: ComposeFederationDeps) =>
           contract.filter.removeUnreachableTypesFromPublicApiSchema === true &&
           compositionResult.type === 'success'
         ) {
-          const supergraphDocumentNode =
-            compositionResult.result.supergraphDocumentNode ??
-            parse(compositionResult.result.supergraph);
-          const publicDocumentNode =
-            compositionResult.result.sdlDocumentNode ?? parse(compositionResult.result.sdl);
+          const supergraphDocumentNode = compositionResult.result.supergraphDocumentNode;
+          const publicDocumentNode = compositionResult.result.sdlDocumentNode;
 
           const { resolveImportName } = extractLinkImplementations(supergraphDocumentNode);
           const result = addInaccessibleToUnreachableTypes(resolveImportName, {

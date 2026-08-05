@@ -51,13 +51,13 @@ const ExternalCompositionResultModel = z.union([
   ExternalCompositionResultFailureModel,
 ]);
 
-type ExternalCompositionResultSuccess = z.TypeOf<typeof ExternalCompositionResultSuccessModel>;
-
-type ComposerMethodResultSuccess = Exclude<ExternalCompositionResultSuccess, 'result'> & {
-  result: ExternalCompositionResultSuccess['result'] & {
-    /** allow passing in the document nodes from the native composition to avoid an additional print and parse cycle. */
-    supergraphDocumentNode?: DocumentNode;
-    sdlDocumentNode?: DocumentNode;
+type ComposerMethodResultSuccess = {
+  type: 'success';
+  result: {
+    sdl: string;
+    supergraph: string;
+    supergraphDocumentNode: DocumentNode;
+    sdlDocumentNode: DocumentNode;
   };
 };
 
@@ -91,11 +91,15 @@ export function composeFederationV1(
     };
   }
 
+  const sdl = printSchema(result.schema);
+
   return {
     type: 'success',
     result: {
+      sdl,
+      sdlDocumentNode: parse(sdl),
       supergraph: result.supergraphSdl,
-      sdl: printSchema(result.schema),
+      supergraphDocumentNode: parse(result.supergraphSdl),
     },
   };
 }
@@ -253,11 +257,15 @@ export async function composeExternalFederation(args: {
 
     await checkExternalCompositionCompatibility(args.logger, parseResult.data.result.sdl);
 
+    const supergraph = parseResult.data.result.supergraph;
+    const sdl = parseResult.data.result.sdl;
     return {
       type: 'success',
       result: {
-        supergraph: parseResult.data.result.supergraph,
-        sdl: parseResult.data.result.sdl,
+        supergraph,
+        supergraphDocumentNode: parse(supergraph),
+        sdl,
+        sdlDocumentNode: parse(sdl),
       },
     };
   }
