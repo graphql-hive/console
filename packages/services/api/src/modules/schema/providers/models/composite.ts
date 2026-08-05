@@ -240,7 +240,7 @@ export class CompositeModel {
       );
 
       invariant(
-        existingPublicSchemaSdl === null,
+        existingPublicSchemaSdl !== null,
         'TODO: Fail because breaking-change evaluation is disrupted.',
       );
     }
@@ -253,7 +253,7 @@ export class CompositeModel {
           conditionalBreakingChangeDiffConfig?.excludedAppDeploymentNames ?? null,
       });
 
-    invariant(contracts && input.baseSdl, 'TODO: This case needs special handling.');
+    invariant(!contracts?.length || !input.baseSdl, 'TODO: This case needs special handling.');
 
     const contractChecks = await this.getContractChecks({
       contracts,
