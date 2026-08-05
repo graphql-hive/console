@@ -319,7 +319,8 @@ export function NativeCompositionSettings(props: {
                   To determine the cause of this issue, view the{' '}
                   <Link
                     variant="primary"
-                    href={`/native-composition-compatibility-report/${projectQuery.data.project.id}`}
+                    target="_blank"
+                    to={`/native-composition-compatibility-report/${projectQuery.data.project.id}`}
                   >
                     Native Composition Report
                   </Link>
