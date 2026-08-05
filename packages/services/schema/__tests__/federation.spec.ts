@@ -1,5 +1,6 @@
-import { parse } from 'graphql';
+import { parse, print } from 'graphql';
 import { composeAndValidate } from '@apollo/federation';
+import { composeFederationV2 } from '../src/lib/compose';
 
 test('patch', () => {
   const result = composeAndValidate([
@@ -51,4 +52,29 @@ test('patch', () => {
   expect(result.errors!.map(e => e.message)).toContainEqual(
     expect.stringMatching('Unknown type "Review"'),
   );
+});
+
+test('native federation formats the composed supergraph', () => {
+  const result = composeFederationV2([
+    {
+      typeDefs: parse(/* GraphQL */ `
+        extend schema @link(url: "https://specs.apollo.dev/federation/v2.3", import: ["@key"])
+
+        type Product @key(fields: "id") {
+          id: ID!
+        }
+
+        type Query {
+          product: Product
+        }
+      `),
+      name: 'products',
+      url: 'https://products.example.com/graphql',
+    },
+  ]);
+
+  expect(result.type).toBe('success');
+  if (result.type === 'success') {
+    expect(result.result.supergraph).toBe(print(parse(result.result.supergraph)));
+  }
 });

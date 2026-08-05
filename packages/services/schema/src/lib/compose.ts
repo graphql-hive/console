@@ -10,7 +10,6 @@ import * as Sentry from '@sentry/node';
 import {
   composeServices as nativeComposeServices,
   compositionHasErrors as nativeCompositionHasErrors,
-  transformSupergraphToPublicSchema,
 } from '@theguild/federation-composition';
 import type { ExternalComposition } from '../types';
 import { toValidationError } from './errors';
@@ -125,7 +124,7 @@ export function composeFederationV2(
       type: 'success',
       result: {
         supergraph: result.supergraphSdl,
-        sdl: print(transformSupergraphToPublicSchema(parse(result.supergraphSdl))),
+        sdl: result.publicSdl,
       },
       includesNetworkError: false,
       includesException: false,
@@ -244,7 +243,7 @@ export async function composeExternalFederation(args: {
       type: 'success',
       result: {
         supergraph: parseResult.data.result.supergraph,
-        sdl: print(transformSupergraphToPublicSchema(parse(parseResult.data.result.supergraph))),
+        sdl: parseResult.data.result.sdl,
       },
       includesNetworkError: false,
       includesException: false,
