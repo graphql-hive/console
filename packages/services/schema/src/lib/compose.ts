@@ -138,13 +138,9 @@ export function composeFederationV2(
       type: 'success',
       result: {
         supergraph: result.supergraphSdl,
-        get supergraphDocumentNode() {
-          return result.supergraphDocumentNode;
-        },
+        supergraphDocumentNode: result.supergraphDocumentNode,
         sdl: result.publicSdl,
-        get sdlDocumentNode() {
-          return result.publicDocumentNode;
-        },
+        sdlDocumentNode: result.publicDocumentNode,
       },
     } as const;
   } catch (error) {

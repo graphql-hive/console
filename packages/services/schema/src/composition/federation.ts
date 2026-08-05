@@ -170,11 +170,12 @@ export const createComposeFederation = (deps: ComposeFederationDeps) =>
         const subgraphsMetadata = subgraphs.map(({ name, typeDefs }) =>
           extractMetadata(typeDefs, name),
         );
-        const supergraphSDL = parse(composed.result.supergraph);
-        const { resolveImportName } = extractLinkImplementations(supergraphSDL);
+        const supergraphDocumentNode =
+          composed.result.sdlDocumentNode ?? parse(composed.result.supergraph);
+        const { resolveImportName } = extractLinkImplementations(supergraphDocumentNode);
         const tagDirectiveName = resolveImportName('https://specs.apollo.dev/tag', '@tag');
         const tagStrategy = createTagDirectiveNameExtractionStrategy(tagDirectiveName);
-        const tags = extractTagsFromDocument(supergraphSDL, tagStrategy);
+        const tags = extractTagsFromDocument(supergraphDocumentNode, tagStrategy);
         const schemaMetadata = mergeMetadata(...subgraphsMetadata);
         const metadataAttributes = new SetMap<string, string>();
         for (const [_coord, attrs] of schemaMetadata) {
