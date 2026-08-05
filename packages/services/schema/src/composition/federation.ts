@@ -260,11 +260,16 @@ export const createComposeFederation = (deps: ComposeFederationDeps) =>
           contract.filter.removeUnreachableTypesFromPublicApiSchema === true &&
           compositionResult.type === 'success'
         ) {
-          let supergraphSDL = parse(compositionResult.result.supergraph);
-          const { resolveImportName } = extractLinkImplementations(supergraphSDL);
+          const supergraphDocumentNode =
+            compositionResult.result.supergraphDocumentNode ??
+            parse(compositionResult.result.supergraph);
+          const publicDocumentNode =
+            compositionResult.result.sdlDocumentNode ?? parse(compositionResult.result.sdl);
+
+          const { resolveImportName } = extractLinkImplementations(supergraphDocumentNode);
           const result = addInaccessibleToUnreachableTypes(resolveImportName, {
-            supergraphSdl: compositionResult.result.supergraph,
-            publicSdl: compositionResult.result.sdl,
+            supergraphDocumentNode,
+            publicDocumentNode,
           });
 
           return {

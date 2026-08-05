@@ -24,35 +24,51 @@ interface BrokerPayload {
   body: string;
 }
 
+const ExternalCompositionResultSuccessModel = z.object({
+  type: z.literal('success'),
+  result: z.object({
+    supergraph: z.string(),
+    sdl: z.string(),
+  }),
+});
+
+const ExternalCompositionResultFailureModel = z.object({
+  type: z.literal('failure'),
+  result: z.object({
+    supergraph: z.string().nullish(),
+    sdl: z.string().nullish(),
+    errors: z.array(
+      z.object({
+        message: z.string(),
+        source: z.union([z.literal('composition'), z.literal('graphql')]).default('graphql'),
+      }),
+    ),
+  }),
+});
+
 const ExternalCompositionResultModel = z.union([
-  z.object({
-    type: z.literal('success'),
-    result: z.object({
-      supergraph: z.string(),
-      sdl: z.string(),
-    }),
-  }),
-  z.object({
-    type: z.literal('failure'),
-    result: z.object({
-      supergraph: z.string().nullish(),
-      sdl: z.string().nullish(),
-      errors: z.array(
-        z.object({
-          message: z.string(),
-          source: z.union([z.literal('composition'), z.literal('graphql')]).default('graphql'),
-        }),
-      ),
-    }),
-  }),
+  ExternalCompositionResultSuccessModel,
+  ExternalCompositionResultFailureModel,
 ]);
 
-export type ComposerMethodResult = z.TypeOf<typeof ExternalCompositionResultModel> & {
+type ExternalCompositionResultSuccess = z.TypeOf<typeof ExternalCompositionResultSuccessModel>;
+
+type ComposerMethodResultSuccess = Exclude<ExternalCompositionResultSuccess, 'result'> & {
+  result: ExternalCompositionResultSuccess['result'] & {
+    /** allow passing in the document nodes from the native composition to avoid an additional print and parse cycle. */
+    supergraphDocumentNode?: DocumentNode;
+    sdlDocumentNode?: DocumentNode;
+  };
+};
+
+type ComposerMethodResultError = z.TypeOf<typeof ExternalCompositionResultFailureModel> & {
   /** The result contains a network error */
   includesNetworkError: boolean;
   /** The result contains an internal unexpected exception */
   includesException: boolean;
 };
+
+export type ComposerMethodResult = ComposerMethodResultError | ComposerMethodResultSuccess;
 
 export function composeFederationV1(
   subgraphs: Array<{
@@ -81,8 +97,6 @@ export function composeFederationV1(
       supergraph: result.supergraphSdl,
       sdl: printSchema(result.schema),
     },
-    includesNetworkError: false,
-    includesException: false,
   };
 }
 
@@ -124,10 +138,14 @@ export function composeFederationV2(
       type: 'success',
       result: {
         supergraph: result.supergraphSdl,
+        get supergraphDocumentNode() {
+          return result.supergraphDocumentNode;
+        },
         sdl: result.publicSdl,
+        get sdlDocumentNode() {
+          return result.publicDocumentNode;
+        },
       },
-      includesNetworkError: false,
-      includesException: false,
     } as const;
   } catch (error) {
     logger?.error('Unexpected error during composition.');
@@ -245,8 +263,6 @@ export async function composeExternalFederation(args: {
         supergraph: parseResult.data.result.supergraph,
         sdl: parseResult.data.result.sdl,
       },
-      includesNetworkError: false,
-      includesException: false,
     };
   }
 
