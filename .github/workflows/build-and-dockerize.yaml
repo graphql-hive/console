@@ -101,7 +101,7 @@ jobs:
             packages/services/cdn-worker/dist/index.lambda.mjs
           dest: ${{ inputs.imageTag }}.zip
 
-      - name: archive CDN release artifacts
+      - name: prepare CDN release artifacts
         if:
           ${{ inputs.uploadJavaScriptArtifacts && inputs.publishLatest && github.ref_type == 'tag'
           && github.ref_name == format('hive@{0}', inputs.latestVersion) && matrix.platform ==
@@ -110,8 +110,30 @@ jobs:
           mkdir -p release-assets/cloudflare release-assets/lambda
           cp packages/services/cdn-worker/dist/index.worker.mjs release-assets/cloudflare/index.mjs
           cp packages/services/cdn-worker/dist/index.lambda.mjs release-assets/lambda/index.mjs
-          (cd release-assets/cloudflare && zip ../hive-cdn-cloudflare-worker.zip index.mjs)
-          (cd release-assets/lambda && zip ../hive-cdn-aws-lambda.zip index.mjs)
+
+      # recursive: true puts directory contents at the zip root (index.mjs), matching the
+      # Lambda handler `index.handler` and Wrangler `main = "index.mjs"`.
+      - uses: vimtor/action-zip@5f1c4aa587ea41db1110df6a99981dbe19cee310 # v1
+        name: archive CDN Cloudflare Worker release artifact
+        if:
+          ${{ inputs.uploadJavaScriptArtifacts && inputs.publishLatest && github.ref_type == 'tag'
+          && github.ref_name == format('hive@{0}', inputs.latestVersion) && matrix.platform ==
+          'linux/amd64' }}
+        with:
+          recursive: true
+          files: release-assets/cloudflare/
+          dest: release-assets/hive-cdn-cloudflare-worker.zip
+
+      - uses: vimtor/action-zip@5f1c4aa587ea41db1110df6a99981dbe19cee310 # v1
+        name: archive CDN AWS Lambda release artifact
+        if:
+          ${{ inputs.uploadJavaScriptArtifacts && inputs.publishLatest && github.ref_type == 'tag'
+          && github.ref_name == format('hive@{0}', inputs.latestVersion) && matrix.platform ==
+          'linux/amd64' }}
+        with:
+          recursive: true
+          files: release-assets/lambda/
+          dest: release-assets/hive-cdn-aws-lambda.zip
 
       - name: upload CDN release artifacts
         if:
