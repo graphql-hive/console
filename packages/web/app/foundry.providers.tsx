@@ -2,9 +2,6 @@ import { useEffect } from 'react';
 import type { FoundryProvider } from 'react-foundry';
 import { ThemeProvider, useTheme } from './src/components/theme/theme-provider';
 import './src/index.css';
-// Must come after index.css: it releases the app-shell rules that would otherwise paint
-// foundry's own chrome.
-import './foundry.css';
 
 /**
  * Foundry's toolbar owns the light/dark/system choice and hands down an already-resolved
